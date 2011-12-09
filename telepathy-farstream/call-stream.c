@@ -475,8 +475,28 @@ tf_call_stream_add_remote_candidates (TfCallStream *self,
 
   if (self->fsstream)
     {
-      if (!fs_stream_add_remote_candidates (self->fsstream, fscandidates,
-              &error))
+      gboolean ret;
+      GError *error = NULL;
+
+      switch (self->transport_type)
+        {
+        case TP_STREAM_TRANSPORT_TYPE_RAW_UDP:
+        case TP_STREAM_TRANSPORT_TYPE_SHM:
+        case TP_STREAM_TRANSPORT_TYPE_MULTICAST:
+          ret = fs_stream_force_remote_candidates (self->fsstream,
+              fscandidates, &error);
+          break;
+        case TP_STREAM_TRANSPORT_TYPE_ICE:
+        case TP_STREAM_TRANSPORT_TYPE_GTALK_P2P:
+        case TP_STREAM_TRANSPORT_TYPE_WLM_2009:
+          ret = fs_stream_add_remote_candidates (self->fsstream, fscandidates,
+              &error);
+          break;
+        default:
+          ret = FALSE;
+        }
+
+      if (!ret)
         {
           tf_content_error (TF_CONTENT (self->call_content),
               TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
