@@ -799,7 +799,8 @@ call_stream_endpoint_set_endpoint_state (TpSvcCallStreamEndpoint *iface,
       component, state);
 
   if (component == TP_STREAM_COMPONENT_DATA &&
-      state == TP_STREAM_ENDPOINT_STATE_PROVISIONALLY_CONNECTED)
+      (state == TP_STREAM_ENDPOINT_STATE_PROVISIONALLY_CONNECTED ||
+       state == TP_STREAM_ENDPOINT_STATE_FULLY_CONNECTED))
     {
       _tp_base_call_channel_maybe_initizalised (
           _tp_base_call_stream_get_channel (

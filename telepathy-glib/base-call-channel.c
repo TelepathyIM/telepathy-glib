@@ -700,7 +700,11 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
     const gchar *dbus_reason,
     const gchar *message)
 {
+  TpCallState old_state;
+
   g_return_if_fail (TP_IS_BASE_CALL_CHANNEL (self));
+
+  old_state = self->priv->state;
 
   self->priv->state = state;
   g_value_array_free (self->priv->reason);
@@ -717,6 +721,11 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
   if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
     tp_svc_channel_type_call_emit_call_state_changed (self, self->priv->state,
       self->priv->flags, self->priv->reason, self->priv->details);
+
+  /* If we moved to INITIALISING, maybe we are actually already INITIALISED */
+  if (self->priv->state != old_state &&
+      self->priv->state == TP_CALL_STATE_INITIALISING)
+    _tp_base_call_channel_maybe_initizalised (self);
 }
 
 /**
@@ -1302,6 +1311,9 @@ _tp_base_call_channel_maybe_initizalised (TpBaseCallChannel *self)
 
   g_return_if_fail (TP_IS_BASE_CALL_CHANNEL (self));
 
+  if (self->priv->state != TP_CALL_STATE_INITIALISING)
+    return;
+
   /* This is called from TpCallStreamEndpoint when it is connected. Check if
    * they are all connected now. */
   for (l = self->priv->contents; l != NULL; l = l->next)
@@ -1318,9 +1330,11 @@ _tp_base_call_channel_maybe_initizalised (TpBaseCallChannel *self)
           endpoints = tp_base_media_call_stream_get_endpoints (streams->data);
           for (; endpoints != NULL; endpoints = endpoints->next)
             {
-              if (tp_call_stream_endpoint_get_state (endpoints->data,
-                      TP_STREAM_COMPONENT_DATA) !=
-                  TP_STREAM_ENDPOINT_STATE_PROVISIONALLY_CONNECTED)
+              TpStreamEndpointState state = tp_call_stream_endpoint_get_state (
+                  endpoints->data, TP_STREAM_COMPONENT_DATA);
+
+              if (state != TP_STREAM_ENDPOINT_STATE_PROVISIONALLY_CONNECTED &&
+                  state != TP_STREAM_ENDPOINT_STATE_FULLY_CONNECTED)
                 return;
             }
         }
