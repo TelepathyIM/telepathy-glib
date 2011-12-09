@@ -290,7 +290,7 @@ run_until_answered_cb (TpCallChannel *channel,
     GHashTable *details,
     Test *test)
 {
-  if (state != TP_CALL_STATE_RINGING)
+  if (state != TP_CALL_STATE_INITIALISED)
     g_main_loop_quit (test->mainloop);
 }
 
@@ -301,7 +301,7 @@ run_until_answered (Test *test)
   guint id;
 
   state = tp_call_channel_get_state (test->call_chan, NULL, NULL, NULL);
-  if (state != TP_CALL_STATE_RINGING)
+  if (state != TP_CALL_STATE_INITIALISED)
     return;
 
   id = g_signal_connect (test->call_chan, "state-changed",
@@ -589,7 +589,7 @@ test_no_answer (Test *test,
   tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
 
   assert_call_properties (test->call_chan,
-      TP_CALL_STATE_RINGING, test->self_handle,
+      TP_CALL_STATE_INITIALISED, test->self_handle,
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       TRUE, 0,              /* call flags */
       TRUE, TRUE, FALSE);  /* initial audio/video must be TRUE, FALSE */
@@ -770,7 +770,7 @@ test_incoming (Test *test,
 
   /* ring, ring! */
   assert_call_properties (test->call_chan,
-      TP_CALL_STATE_RINGING, test->peer_handle,
+      TP_CALL_STATE_INITIALISED, test->peer_handle,
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       TRUE, 0,              /* call flags */
       TRUE, TRUE, FALSE);  /* initial audio/video must be TRUE, FALSE */

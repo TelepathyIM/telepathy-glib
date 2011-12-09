@@ -707,10 +707,11 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
   self->priv->reason = _tp_base_call_state_reason_new (actor_handle, reason,
       dbus_reason, message);
 
-  if (self->priv->state != TP_CALL_STATE_RINGING)
+  if (self->priv->state != TP_CALL_STATE_INITIALISED)
     self->priv->flags &= ~TP_CALL_FLAG_LOCALLY_RINGING;
 
-  if (self->priv->state == TP_CALL_STATE_ACCEPTED)
+  if (self->priv->state != TP_CALL_STATE_INITIALISING &&
+      self->priv->state != TP_CALL_STATE_INITIALISED)
     self->priv->flags &= ~TP_CALL_FLAG_LOCALLY_QUEUED;
 
   if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
@@ -1072,7 +1073,7 @@ tp_base_call_channel_set_ringing (TpSvcChannelTypeCall *iface,
           "Call was requested. Ringing doesn't make sense." };
       dbus_g_method_return_error (context, &e);
     }
-  else if (self->priv->state != TP_CALL_STATE_RINGING)
+  else if (self->priv->state != TP_CALL_STATE_INITIALISED)
     {
       GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
           "Call is not in the right state for Ringing." };
@@ -1113,7 +1114,7 @@ tp_base_call_channel_set_queued (TpSvcChannelTypeCall *iface,
       dbus_g_method_return_error (context, &e);
     }
   else if (self->priv->state != TP_CALL_STATE_INITIALISING &&
-           self->priv->state != TP_CALL_STATE_RINGING)
+           self->priv->state != TP_CALL_STATE_INITIALISED)
     {
       GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
           "Call is not in the right state for Queuing." };
@@ -1169,7 +1170,7 @@ tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
     }
   else
     {
-      if (self->priv->state == TP_CALL_STATE_RINGING)
+      if (self->priv->state == TP_CALL_STATE_INITIALISED)
         {
           tp_base_call_channel_set_state (self,
               TP_CALL_STATE_ACCEPTED,
@@ -1325,8 +1326,8 @@ _tp_base_call_channel_maybe_initizalised (TpBaseCallChannel *self)
         }
     }
 
-  /* Ok, all endpoints are connected, we can move to RINGING state */
-  tp_base_call_channel_set_state (self, TP_CALL_STATE_RINGING,
+  /* Ok, all endpoints are connected, we can move to INITIALISED state */
+  tp_base_call_channel_set_state (self, TP_CALL_STATE_INITIALISED,
       tp_base_channel_get_self_handle ((TpBaseChannel *) self),
       TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "",
       "All endpoints DATA component are CONNECTED");

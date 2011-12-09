@@ -156,7 +156,7 @@ constructed (GObject *object)
       /* This is an incoming call, so the self-handle is locally
        * pending, to indicate that we need to answer. */
       example_call_channel_set_state (self,
-          TP_CALL_STATE_RINGING, 0, self->priv->handle,
+          TP_CALL_STATE_INITIALISED, 0, self->priv->handle,
           TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
           NULL);
     }
@@ -386,7 +386,7 @@ simulate_contact_answered_cb (gpointer p)
 
   /* otherwise, we're waiting for a response from the contact, which now
    * arrives */
-  g_assert_cmpuint (call_state, ==, TP_CALL_STATE_RINGING);
+  g_assert_cmpuint (call_state, ==, TP_CALL_STATE_INITIALISED);
 
   g_message ("SIGNALLING: receive: contact answered our call");
 
@@ -438,7 +438,7 @@ simulate_contact_busy_cb (gpointer p)
 
   /* otherwise, we're waiting for a response from the contact, which now
    * arrives */
-  g_assert_cmpuint (call_state, ==, TP_CALL_STATE_RINGING);
+  g_assert_cmpuint (call_state, ==, TP_CALL_STATE_INITIALISED);
 
   g_message ("SIGNALLING: receive: call terminated: <user-is-busy/>");
 
@@ -602,7 +602,7 @@ example_call_channel_initiate_outgoing (ExampleCallChannel *self)
   g_message ("SIGNALLING: send: new streamed media call");
 
   example_call_channel_set_state (self,
-      TP_CALL_STATE_RINGING, 0,
+      TP_CALL_STATE_INITIALISED, 0,
       tp_base_connection_get_self_handle (self->priv->conn),
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       NULL);
