@@ -232,7 +232,7 @@ on_audio_input_volume_changed (TfContent *content,
   GstElement *volume;
   guint input_volume = 0;
 
-  g_object_get (content, "input-volume", &input_volume, NULL);
+  g_object_get (content, "request-input-volume", &input_volume, NULL);
 
   if (input_volume == 0)
     return;
@@ -247,7 +247,7 @@ setup_audio_source (ChannelContext *context, TfContent *content)
 {
   GstElement *result;
   GstElement *volume;
-  guint input_volume = 0;
+  gint input_volume = 0;
 
   result = gst_parse_bin_from_description (
       "pulsesrc ! audio/x-raw-int,rate=8000 ! queue"
@@ -255,18 +255,21 @@ setup_audio_source (ChannelContext *context, TfContent *content)
       " ! volume name=input_volume ! audioconvert ",
       TRUE, NULL);
 
+  /* FIXME Need to handle both requested/reported */
+  /* TODO Volume control should be handled in FsIo */
   g_object_get (content,
-      "input-volume", &input_volume,
+      "requested-input-volume", &input_volume,
       NULL);
 
-  if (input_volume != 0)
+  if (input_volume >= 0)
     {
       volume = gst_bin_get_by_name (GST_BIN (result), "input_volume");
+      g_debug ("Requested volume is: %i", input_volume);
       g_object_set (volume, "volume", (double)input_volume / 255.0, NULL);
       gst_object_unref (volume);
     }
 
-  g_signal_connect (content, "notify::input-volume",
+  g_signal_connect (content, "notify::request-input-volume",
       G_CALLBACK (on_audio_input_volume_changed),
       context);
 
