@@ -667,11 +667,21 @@ process_media_description_try_codecs (TfCallContent *self, FsStream *fsstream,
     }
   else
     {
+      GValueArray *reason = tp_value_array_build (4,
+          G_TYPE_UINT, 0,
+          G_TYPE_UINT, TP_CALL_STATE_CHANGE_REASON_MEDIA_ERROR,
+          G_TYPE_STRING, TP_ERROR_STR_MEDIA_CODECS_INCOMPATIBLE,
+          G_TYPE_STRING,
+          "Remote codecs are not compatible with the local ones",
+          G_TYPE_INVALID);
+
       g_debug ("Rejecting Media Description");
       tp_cli_call_content_media_description_call_reject (media_description,
-          -1, NULL, NULL, NULL, NULL, NULL);
+          -1, reason, NULL, NULL, NULL, NULL);
+      g_value_array_free (reason);
       g_object_unref (media_description);
     }
+  g_clear_error (&error);
 }
 
 static void
