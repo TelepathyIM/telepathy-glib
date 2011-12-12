@@ -119,6 +119,15 @@ safe_g_object_unref (gpointer data)
   g_object_unref (data);
 }
 
+static gpointer
+safe_g_object_ref (gpointer data)
+{
+  if (data == NULL)
+    return NULL;
+
+  return g_object_ref (data);
+}
+
 static GHashTable *
 dup_owners_table (TpChannel *self,
     GHashTable *source,
@@ -712,7 +721,7 @@ handle_owners_changed_prepared_cb (GObject *object,
     }
 
   tp_g_hash_table_update (self->priv->group_contact_owners, data->added, NULL,
-      g_object_ref);
+      safe_g_object_ref);
 
   handle_owners_changed_data_free (data);
 }
