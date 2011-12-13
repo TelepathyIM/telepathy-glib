@@ -44,8 +44,10 @@
  *  tp_add_dispatch_operation_context_accept (context);
  * }
  *
- * client = tp_simple_approver_new (dbus, "MyApprover", FALSE,
+ * factory = tp_automatic_client_factory_new (dbus);
+ * client = tp_simple_approver_new_with_factory (factory, "MyApprover", FALSE,
  *    my_add_dispatch_operation, user_data);
+ * g_object_unref (factory);
  *
  * tp_base_client_take_approver_filter (client, tp_asv_new (
  *      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
