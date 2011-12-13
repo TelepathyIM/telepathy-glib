@@ -1292,18 +1292,8 @@ tp_account_manager_create_account_finish (TpAccountManager *manager,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (manager), tp_account_manager_create_account_finish), NULL);
-
-  simple = (GSimpleAsyncResult *) result;
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  return TP_ACCOUNT (g_simple_async_result_get_op_res_gpointer (simple));
+  _tp_implement_finish_return_copy_pointer (manager,
+      tp_account_manager_create_account_finish, /* do not copy */);
 }
 
 /**

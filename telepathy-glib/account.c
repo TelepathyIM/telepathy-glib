@@ -2297,20 +2297,7 @@ tp_account_set_enabled_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (account), tp_account_set_enabled_finish), FALSE);
-
-  return TRUE;
+  _tp_implement_finish_void (account, tp_account_set_enabled_finish);
 }
 
 /**
@@ -2382,20 +2369,7 @@ tp_account_reconnect_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (account), tp_account_reconnect_finish), FALSE);
-
-  return TRUE;
+  _tp_implement_finish_void (account, tp_account_reconnect_finish);
 }
 
 /**
@@ -2510,20 +2484,7 @@ tp_account_request_presence_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (account), tp_account_request_presence_finish), FALSE);
-
-  return TRUE;
+  _tp_implement_finish_void (account, tp_account_request_presence_finish);
 }
 
 /**
@@ -2646,24 +2607,9 @@ tp_account_update_parameters_finish (TpAccount *account,
     gchar ***reconnect_required,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (account), tp_account_update_parameters_finish), FALSE);
-
-  if (reconnect_required != NULL)
-    *reconnect_required =
-      g_strdupv (g_simple_async_result_get_op_res_gpointer (simple));
-
-  return TRUE;
+  _tp_implement_finish_copy_pointer (account,
+      tp_account_update_parameters_finish, g_strdupv,
+      reconnect_required);
 }
 
 /**
@@ -2726,20 +2672,7 @@ tp_account_set_display_name_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (account), tp_account_set_display_name_finish), FALSE);
-
-  return TRUE;
+  _tp_implement_finish_void (account, tp_account_set_display_name_finish);
 }
 
 /**
@@ -2801,20 +2734,7 @@ tp_account_set_service_finish (TpAccount *self,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (self), tp_account_set_service_async), FALSE);
-
-  return TRUE;
+  _tp_implement_finish_void (self, tp_account_set_service_async);
 }
 
 /**
@@ -2878,20 +2798,7 @@ tp_account_set_icon_name_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (account), tp_account_set_icon_name_finish), FALSE);
-
-  return TRUE;
+  _tp_implement_finish_void (account, tp_account_set_icon_name_finish);
 }
 
 static void
@@ -2954,20 +2861,7 @@ tp_account_remove_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (account), tp_account_remove_finish), FALSE);
-
-  return TRUE;
+  _tp_implement_finish_void (account, tp_account_remove_finish);
 }
 
 /**
@@ -3061,20 +2955,8 @@ tp_account_set_connect_automatically_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (account), tp_account_set_connect_automatically_finish), FALSE);
-
-  return TRUE;
+  _tp_implement_finish_void (account,
+      tp_account_set_connect_automatically_finish);
 }
 
 /**
@@ -3221,20 +3103,7 @@ tp_account_set_nickname_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (account), tp_account_set_nickname_finish), FALSE);
-
-  return TRUE;
+  _tp_implement_finish_void (account, tp_account_set_nickname_finish);
 }
 
 /**
@@ -3357,21 +3226,8 @@ tp_account_get_avatar_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (account), tp_account_get_avatar_finish), NULL);
-
-  return g_simple_async_result_get_op_res_gpointer (
-      G_SIMPLE_ASYNC_RESULT (result));
+  _tp_implement_finish_return_copy_pointer (account,
+      tp_account_get_avatar_finish, /* do not copy */);
 }
 
 /**
@@ -3589,20 +3445,7 @@ tp_account_set_avatar_finish (TpAccount *self,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (self), tp_account_set_avatar_async), FALSE);
-
-  return TRUE;
+  _tp_implement_finish_void (self, tp_account_set_avatar_async);
 }
 
 /**
@@ -3835,20 +3678,8 @@ tp_account_get_storage_specific_information_finish (TpAccount *self,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (self),
-        tp_account_get_storage_specific_information_async), NULL);
-
-  return g_simple_async_result_get_op_res_gpointer (simple);
+  _tp_implement_finish_return_copy_pointer (self,
+      tp_account_get_storage_specific_information_async, /* do not copy */);
 }
 
 static void
@@ -4053,7 +3884,7 @@ tp_account_set_uri_scheme_association_finish (TpAccount *self,
     GAsyncResult *result,
     GError **error)
 {
-  _tp_implement_finish_void (self, tp_account_set_uri_scheme_association_async)
+  _tp_implement_finish_void (self, tp_account_set_uri_scheme_association_async);
 }
 
 /**
