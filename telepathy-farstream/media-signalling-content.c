@@ -244,7 +244,7 @@ request_resource (TfStream *stream, guint direction,
     TfMediaSignallingContent *self)
 {
   if (direction & TP_MEDIA_STREAM_DIRECTION_SEND)
-    return _tf_content_start_sending (TF_CONTENT (self));
+    return _tf_content_start_sending (TF_CONTENT (self), FALSE);
   else if (direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE)
     {
       if (!self->receiving)
@@ -269,11 +269,11 @@ free_resource (TfStream *stream, guint direction,
   guint handles[2] = { self->handle, 0};
 
   if (direction & TP_MEDIA_STREAM_DIRECTION_SEND)
-    _tf_content_stop_sending (TF_CONTENT (self));
+    _tf_content_stop_sending (TF_CONTENT (self), FALSE);
 
   if (self->receiving && direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE)
     {
-      _tf_content_stop_receiving (TF_CONTENT (self), handles, 1);
+      _tf_content_stop_receiving (TF_CONTENT (self), FALSE, handles, 1);
       self->receiving = FALSE;
     }
 }

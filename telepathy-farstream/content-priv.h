@@ -13,6 +13,7 @@ struct _TfContent {
   GObject parent;
 
   guint sending_count;
+  guint sending_paused_count;
 };
 
 struct _TfContentClass{
@@ -31,16 +32,17 @@ struct _TfContentClass{
       guint handle_count);
 };
 
-gboolean _tf_content_start_sending (TfContent *self);
-void _tf_content_stop_sending (TfContent *self);
+gboolean _tf_content_start_sending (TfContent *self, gboolean was_paused);
+void _tf_content_stop_sending (TfContent *self, gboolean pause);
+void _tf_content_pause_to_stop_sending (TfContent *self);
 
 void _tf_content_emit_src_pad_added (TfContent *self, guint handle,
     FsStream *stream, GstPad *pad, FsCodec *codec);
 
 gboolean _tf_content_start_receiving (TfContent *self, guint *handles,
     guint handle_count);
-void _tf_content_stop_receiving (TfContent *self, guint *handles,
-    guint handle_count);
+void _tf_content_stop_receiving (TfContent *self, gboolean pause,
+    guint *handles, guint handle_count);
 
 G_END_DECLS
 

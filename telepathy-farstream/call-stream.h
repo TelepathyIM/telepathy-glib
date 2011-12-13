@@ -90,9 +90,11 @@ struct _TfCallStream {
 
   TpStreamFlowState sending_state;
   gboolean has_send_resource;
+  gboolean is_sending_paused;
 
   TpStreamFlowState receiving_state;
   gboolean has_receive_resource;
+  gboolean is_receiving_paused;
 
   gboolean has_contact;
   guint contact_handle;

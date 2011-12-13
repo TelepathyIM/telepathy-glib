@@ -64,7 +64,6 @@ void tf_content_receiving_failed (TfContent *content,
     guint *handles, guint handle_count,
     const gchar *message_format, ...) G_GNUC_PRINTF (4, 5);
 
-
 GstIterator *tf_content_iterate_src_pads (TfContent *content,
     guint *handles, guint handle_count);
 
