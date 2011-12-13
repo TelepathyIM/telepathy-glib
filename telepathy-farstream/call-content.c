@@ -401,37 +401,25 @@ tf_call_content_get_property (GObject    *object,
 }
 
 static void
-create_stream (TfCallContent *self, TpCallStream *stream_proxy)
+add_stream (TfCallContent *self, TpCallStream *stream_proxy)
 {
   g_ptr_array_add (self->streams,
       tf_call_stream_new (self, stream_proxy));
 }
 
 static void
-add_stream (TfCallContent *self, TpCallStream *stream_proxy)
+add_initial_streams (TfCallContent *self)
 {
-
-  if (!self->fsconference)
-  {
-    self->outstanding_streams = g_list_prepend (self->outstanding_streams,
-        stream_proxy);
-  } else {
-    create_stream (self, stream_proxy);
-  }
-}
-
-static void
-update_streams (TfCallContent *self)
-{
-  GList *l;
+  GPtrArray *streams;
+  guint i;
 
   g_assert (self->fsconference);
+  g_assert (self->streams->len == 0);
 
-  for (l = self->outstanding_streams ; l != NULL; l = l->next)
-    create_stream (self, l->data);
+  streams = tp_call_content_get_streams (self->proxy);
 
-  g_list_free (self->outstanding_streams);
-  self->outstanding_streams = NULL;
+  for (i = 0; i < streams->len; i++)
+    add_stream (self, g_ptr_array_index (streams, i));
 }
 
 static void
@@ -920,6 +908,43 @@ on_content_video_mtu_changed (TpCallContent *proxy,
     }
 }
 
+static void
+streams_added (TpCallContent *proxy,
+    GPtrArray *streams,
+    TfCallContent *self)
+{
+  guint i;
+
+  /* Ignore signals before we got the "Contents" property to avoid races that
+   * could cause the same content to be added twice
+   */
+
+  if (!self->streams)
+    return;
+
+  for (i = 0; i < streams->len; i++)
+    add_stream (self, g_ptr_array_index (streams, i));
+}
+
+static void
+streams_removed (TpCallContent *proxy,
+    const GPtrArray *streams,
+    TfCallContent *self)
+{
+  guint i, j;
+
+  if (!self->streams)
+    return;
+
+  for (i = 0; i < streams->len; i++)
+    for (j = 0; j < self->streams->len; j++)
+      if (g_ptr_array_index (streams, i) ==
+          tf_call_stream_get_proxy (g_ptr_array_index (self->streams, j)))
+        {
+          g_ptr_array_remove_index_fast (self->streams, j);
+          break;
+        }
+}
 
 static void
 got_content_media_properties (TpProxy *proxy, GHashTable *properties,
@@ -1024,8 +1049,6 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
     fs_element_added_notifier_add (self->notifier,
       GST_BIN (self->fsconference));
 
-  /* Now process outstanding streams */
-  update_streams (self);
 
   gva = tp_asv_get_boxed (properties, "MediaDescriptionOffer",
       TP_STRUCT_TYPE_MEDIA_DESCRIPTION_OFFER);
@@ -1052,6 +1075,14 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
    * self possibly being disposed early */
   g_simple_async_result_set_op_res_gboolean (res, TRUE);
   g_simple_async_result_complete (res);
+
+  /* Now process outstanding streams */
+  add_initial_streams (self);
+
+  tp_g_signal_connect_object (self->proxy, "streams-added",
+      G_CALLBACK (streams_added), self, 0);
+  tp_g_signal_connect_object (self->proxy, "streams-removed",
+      G_CALLBACK (streams_removed), self, 0);
 
   tp_value_array_unpack (gva, 3, &media_description_objpath, &contact,
       &media_description_properties);
@@ -1319,9 +1350,7 @@ content_prepared (GObject *src, GAsyncResult *prepare_res,
   GSimpleAsyncResult *res = user_data;
   TfCallContent *self =
       TF_CALL_CONTENT (g_async_result_get_source_object (G_ASYNC_RESULT (res)));
-  GPtrArray *streams;
   GError *error = NULL;
-  guint i;
 
   if (!tp_proxy_prepare_finish (proxy, prepare_res, &error))
     {
@@ -1363,11 +1392,6 @@ content_prepared (GObject *src, GAsyncResult *prepare_res,
 
   self->streams = g_ptr_array_new_with_free_func (g_object_unref);
 
-  streams = tp_call_content_get_streams (proxy);
-
-  for (i = 0; i < streams->len; i++)
-    add_stream (self, g_ptr_array_index (streams, i));
-
   tp_cli_call_content_interface_media_connect_to_new_media_description_offer (
       self->proxy, new_media_description_offer, NULL, NULL,
       G_OBJECT (self), &error);
@@ -1395,44 +1419,6 @@ content_prepared (GObject *src, GAsyncResult *prepare_res,
   return;
 }
 
-static void
-streams_added (TpCallContent *proxy,
-    GPtrArray *streams,
-    TfCallContent *self)
-{
-  guint i;
-
-  /* Ignore signals before we got the "Contents" property to avoid races that
-   * could cause the same content to be added twice
-   */
-
-  if (!self->streams)
-    return;
-
-  for (i = 0; i < streams->len; i++)
-    add_stream (self, g_ptr_array_index (streams, i));
-}
-
-static void
-streams_removed (TpCallContent *proxy,
-    const GPtrArray *streams,
-    TfCallContent *self)
-{
-  guint i, j;
-
-  if (!self->streams)
-    return;
-
-  for (i = 0; i < streams->len; i++)
-    for (j = 0; j < self->streams->len; j++)
-      if (g_ptr_array_index (streams, i) ==
-          tf_call_stream_get_proxy (g_ptr_array_index (self->streams, j)))
-        {
-          g_ptr_array_remove_index_fast (self->streams, j);
-          break;
-        }
-}
-
 
 static void
 tf_call_content_init_async (GAsyncInitable *initable,
@@ -1451,11 +1437,6 @@ tf_call_content_init_async (GAsyncInitable *initable,
           "TfCallChannel initialisation does not support cancellation");
       return;
     }
-
-  tp_g_signal_connect_object (self->proxy, "streams-added",
-      G_CALLBACK (streams_added), self, 0);
-  tp_g_signal_connect_object (self->proxy, "streams-removed",
-      G_CALLBACK (streams_removed), self, 0);
 
 
   res = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
