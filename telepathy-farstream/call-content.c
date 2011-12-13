@@ -1475,7 +1475,7 @@ tf_call_content_new_async (TfCallChannel *call_channel,
   self = g_object_new (TF_TYPE_CALL_CONTENT, NULL);
 
   self->call_channel = call_channel;
-  self->proxy = content_proxy;
+  self->proxy = g_object_ref (content_proxy);
 
   g_async_initable_init_async (G_ASYNC_INITABLE (self), 0, NULL,
       callback, user_data);
