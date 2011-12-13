@@ -461,10 +461,11 @@ tpcodecs_to_fscodecs (FsMediaType fsmediatype, const GPtrArray *tpcodecs,
       GHashTable *params;
       FsCodec *fscodec;
       gchar *tmp;
-      GValueArray *feedback_params;
+      GValueArray *feedback_params = NULL;
+      gboolean updated;
 
-      tp_value_array_unpack (tpcodec, 5, &pt, &name, &clock_rate, &channels,
-          &params);
+      tp_value_array_unpack (tpcodec, 6, &pt, &name, &clock_rate, &channels,
+          &updated, &params);
 
       fscodec = fs_codec_new (pt, name, fsmediatype, clock_rate);
       fscodec->channels = channels;
@@ -474,7 +475,8 @@ tpcodecs_to_fscodecs (FsMediaType fsmediatype, const GPtrArray *tpcodecs,
       if (does_avpf)
         fscodec->minimum_reporting_interval = 0;
 
-      feedback_params = g_hash_table_lookup (rtcp_fb, GUINT_TO_POINTER (pt));
+      if (rtcp_fb)
+        feedback_params = g_hash_table_lookup (rtcp_fb, GUINT_TO_POINTER (pt));
 
       if (feedback_params)
         {
