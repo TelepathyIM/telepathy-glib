@@ -86,6 +86,7 @@ gboolean tf_call_content_bus_message (TfCallContent *content,
 /* Private */
 FsStream *_tf_call_content_get_fsstream_by_handle (TfCallContent *content,
     guint contact_handle,
+    FsStreamDirection dir,
     const gchar *transmitter,
     guint stream_transmitter_n_parameters,
     GParameter *stream_transmitter_parameters,

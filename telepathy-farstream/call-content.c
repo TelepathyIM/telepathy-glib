@@ -1979,6 +1979,7 @@ tf_call_content_get_existing_fsstream_by_handle (TfCallContent *content,
 FsStream *
 _tf_call_content_get_fsstream_by_handle (TfCallContent *content,
     guint contact_handle,
+    FsStreamDirection dir,
     const gchar *transmitter,
     guint stream_transmitter_n_parameters,
     GParameter *stream_transmitter_parameters,
@@ -1998,7 +1999,7 @@ _tf_call_content_get_fsstream_by_handle (TfCallContent *content,
   if (!p)
     return NULL;
 
-  s = fs_session_new_stream (content->fssession, p, FS_DIRECTION_RECV, error);
+  s = fs_session_new_stream (content->fssession, p, dir, error);
   if (!s)
     {
       _tf_call_channel_put_participant (content->call_channel, p);
