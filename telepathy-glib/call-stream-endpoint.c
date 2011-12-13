@@ -794,6 +794,7 @@ call_stream_endpoint_set_endpoint_state (TpSvcCallStreamEndpoint *iface,
   g_hash_table_insert (self->priv->endpoint_state,
       GUINT_TO_POINTER (component),
       GUINT_TO_POINTER (state));
+  g_object_notify (G_OBJECT (self), "endpoint-state");
 
   tp_svc_call_stream_endpoint_emit_endpoint_state_changed (self,
       component, state);
