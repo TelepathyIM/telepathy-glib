@@ -130,41 +130,48 @@ sending_state_changed (TpCallStream *proxy,
     gpointer user_data, GObject *weak_object)
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
+  FsStreamDirection dir;
 
   self->sending_state = arg_State;
+
+  if (!self->fsstream)
+    return;
+
+  g_object_get (self->fsstream, "direction", &dir, NULL);
 
   switch (arg_State)
     {
     case TP_STREAM_FLOW_STATE_PENDING_START:
-      if (self->fsstream)
+      if (self->has_send_resource ||
+          _tf_content_start_sending (TF_CONTENT (self->call_content)))
         {
-          if (self->has_send_resource ||
-              _tf_content_start_sending (TF_CONTENT (self->call_content)))
-            {
-              self->has_send_resource = TRUE;
-              tp_cli_call_stream_interface_media_call_complete_sending_state_change (
-                  proxy, -1, TP_STREAM_FLOW_STATE_STARTED,
-                  NULL, NULL, NULL, NULL);
-            }
-          else
-            {
-              tp_cli_call_stream_interface_media_call_report_sending_failure (
-                  proxy, -1, TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
-                  TP_ERROR_STR_MEDIA_STREAMING_ERROR,
-                  "Could not start sending", NULL, NULL, NULL, NULL);
-              return;
-            }
+          self->has_send_resource = TRUE;
+          tp_cli_call_stream_interface_media_call_complete_sending_state_change (
+              proxy, -1, TP_STREAM_FLOW_STATE_STARTED,
+              NULL, NULL, NULL, NULL);
+          g_object_set (self->fsstream,
+              "direction", dir | FS_DIRECTION_SEND, NULL);
+
+        }
+      else
+        {
+          tp_cli_call_stream_interface_media_call_report_sending_failure (
+              proxy, -1, TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+              TP_ERROR_STR_MEDIA_STREAMING_ERROR,
+              "Could not start sending", NULL, NULL, NULL, NULL);
+          return;
         }
       break;
     case TP_STREAM_FLOW_STATE_PENDING_STOP:
     case TP_STREAM_FLOW_STATE_PENDING_PAUSE:
+      g_object_set (self->fsstream,
+          "direction", dir & ~FS_DIRECTION_SEND, NULL);
       if (self->has_send_resource)
         {
           _tf_content_stop_sending (TF_CONTENT (self->call_content));
 
           self->has_send_resource = FALSE;
         }
-      g_object_set (self->fsstream, "direction", FS_DIRECTION_RECV, NULL);
       tp_cli_call_stream_interface_media_call_complete_sending_state_change (
           proxy, -1, arg_State == TP_STREAM_FLOW_STATE_PENDING_STOP ?
           TP_STREAM_FLOW_STATE_STOPPED : TP_STREAM_FLOW_STATE_PAUSED,
@@ -181,38 +188,42 @@ receiving_state_changed (TpCallStream *proxy,
     gpointer user_data, GObject *weak_object)
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
+  FsStreamDirection dir;
 
   self->receiving_state = arg_State;
 
   if (!self->fsstream)
     return;
 
+  g_object_get (self->fsstream, "direction", &dir, NULL);
+
   switch (arg_State)
     {
     case TP_STREAM_FLOW_STATE_PENDING_START:
-      if (self->fsstream)
+      if (self->has_receive_resource ||
+          _tf_content_start_receiving (TF_CONTENT (self->call_content),
+              &self->contact_handle, 1))
         {
-          if (self->has_receive_resource ||
-              _tf_content_start_receiving (TF_CONTENT (self->call_content),
-                  &self->contact_handle, 1))
-            {
-              self->has_receive_resource = TRUE;
-              tp_cli_call_stream_interface_media_call_complete_receiving_state_change (
-                  proxy, -1, TP_STREAM_FLOW_STATE_STARTED,
-                  NULL, NULL, NULL, NULL);
-            }
-          else
-            {
-              tp_cli_call_stream_interface_media_call_report_receiving_failure (
-                  proxy, -1, TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
-                  TP_ERROR_STR_MEDIA_STREAMING_ERROR,
-                  "Could not start receiving", NULL, NULL, NULL, NULL);
-              return;
-            }
+          self->has_receive_resource = TRUE;
+          g_object_set (self->fsstream,
+              "direction", dir | FS_DIRECTION_RECV, NULL);
+          tp_cli_call_stream_interface_media_call_complete_receiving_state_change (
+              proxy, -1, TP_STREAM_FLOW_STATE_STARTED,
+              NULL, NULL, NULL, NULL);
+        }
+      else
+        {
+          tp_cli_call_stream_interface_media_call_report_receiving_failure (
+              proxy, -1, TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+              TP_ERROR_STR_MEDIA_STREAMING_ERROR,
+              "Could not start receiving", NULL, NULL, NULL, NULL);
+          return;
         }
       break;
     case TP_STREAM_FLOW_STATE_PENDING_STOP:
     case TP_STREAM_FLOW_STATE_PENDING_PAUSE:
+      g_object_set (self->fsstream,
+          "direction", dir & ~FS_DIRECTION_RECV, NULL);
       if (self->has_receive_resource)
         {
           _tf_content_stop_receiving (TF_CONTENT (self->call_content),
@@ -220,7 +231,6 @@ receiving_state_changed (TpCallStream *proxy,
 
           self->has_receive_resource = FALSE;
         }
-      g_object_set (self->fsstream, "direction", FS_DIRECTION_RECV, NULL);
       tp_cli_call_stream_interface_media_call_complete_receiving_state_change (
           proxy, -1, arg_State == TP_STREAM_FLOW_STATE_PENDING_STOP ?
           TP_STREAM_FLOW_STATE_STOPPED : TP_STREAM_FLOW_STATE_PAUSED,

@@ -419,7 +419,7 @@ void
 _tf_content_stop_receiving (TfContent *self, guint *handles,
     guint handle_count)
 {
-  g_signal_emit (self, signals[SIGNAL_STOP_SENDING], 0, handles,
+  g_signal_emit (self, signals[SIGNAL_STOP_RECEIVING], 0, pause, handles,
       handle_count);
 }
 
