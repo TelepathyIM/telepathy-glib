@@ -234,7 +234,7 @@ tp_call_content_media_description_class_init (
   static TpDBusPropertiesMixinPropImpl media_description_props[] = {
     { "Interfaces", "interfaces", NULL },
     { "FurtherNegotiationRequired", "further-negotiation-required", NULL },
-    { "HasRemoteInformation", "has-remote-information, NULL "},
+    { "HasRemoteInformation", "has-remote-information", NULL},
     { "Codecs", "codecs", NULL },
     { "RemoteContact", "remote-contact", NULL },
     { "SSRCs", "ssrcs", NULL },
