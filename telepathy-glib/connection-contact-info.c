@@ -33,6 +33,8 @@
 #include "telepathy-glib/connection-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
+#include "telepathy-glib/util-internal.h"
+
 
 
 /**
@@ -631,19 +633,6 @@ tp_connection_set_contact_info_finish (TpConnection *self,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-      G_OBJECT (self), tp_connection_set_contact_info_finish), FALSE);
-
-  return TRUE;
+  _tp_implement_finish_void (self, tp_connection_set_contact_info_finish);
 }
 

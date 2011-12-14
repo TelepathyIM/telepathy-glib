@@ -76,6 +76,7 @@
 #define DEBUG_FLAG TP_DEBUG_SASL
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/base-password-channel.h"
+#include "telepathy-glib/util-internal.h"
 
 static void channel_manager_iface_init (gpointer, gpointer);
 static void tp_simple_password_manager_close_all (TpSimplePasswordManager *self);
@@ -461,21 +462,8 @@ tp_simple_password_manager_prompt_finish (
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_SIMPLE_PASSWORD_MANAGER (self), NULL);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (self), tp_simple_password_manager_prompt_async),
-      NULL);
-
-  return g_simple_async_result_get_op_res_gpointer (simple);
+  _tp_implement_finish_return_copy_pointer (self,
+      tp_simple_password_manager_prompt_async, /* do not copy */);
 }
 
 /**

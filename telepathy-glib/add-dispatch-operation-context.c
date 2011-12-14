@@ -53,6 +53,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/util-internal.h"
 
 struct _TpAddDispatchOperationContextClass {
     /*<private>*/
@@ -608,19 +609,6 @@ _tp_add_dispatch_operation_context_prepare_finish (
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ADD_DISPATCH_OPERATION_CONTEXT (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (self), _tp_add_dispatch_operation_context_prepare_async),
-      FALSE);
-
-  return TRUE;
+  _tp_implement_finish_void (self,
+      _tp_add_dispatch_operation_context_prepare_async);
 }

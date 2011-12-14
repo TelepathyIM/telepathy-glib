@@ -2004,19 +2004,7 @@ tp_proxy_prepare_finish (gpointer self,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_PROXY (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        self, tp_proxy_prepare_async), FALSE);
-
-  return TRUE;
+  _tp_implement_finish_void (self, tp_proxy_prepare_async);
 }
 
 static gboolean

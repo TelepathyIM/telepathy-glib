@@ -1149,20 +1149,8 @@ tp_channel_dispatch_operation_handle_with_finish (
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_CHANNEL_DISPATCH_OPERATION (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self), tp_channel_dispatch_operation_handle_with_async),
-      FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  return TRUE;
+  _tp_implement_finish_void (self,
+      tp_channel_dispatch_operation_handle_with_async);
 }
 
 static void
@@ -1243,20 +1231,7 @@ tp_channel_dispatch_operation_claim_finish (
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_CHANNEL_DISPATCH_OPERATION (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self), tp_channel_dispatch_operation_claim_async),
-      FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  return TRUE;
+  _tp_implement_finish_void (self, tp_channel_dispatch_operation_claim_async);
 }
 
 /* FIXME: This is temporary solution to share TpChannel objects until
@@ -1347,20 +1322,8 @@ gboolean
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_CHANNEL_DISPATCH_OPERATION (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self), tp_channel_dispatch_operation_handle_with_time_async),
-      FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  return TRUE;
+  _tp_implement_finish_void (self,
+      tp_channel_dispatch_operation_handle_with_time_async);
 }
 
 static void
