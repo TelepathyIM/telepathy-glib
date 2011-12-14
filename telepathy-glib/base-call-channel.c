@@ -207,8 +207,8 @@ _tp_base_call_state_reason_new (TpHandle actor_handle,
   return tp_value_array_build (4,
       G_TYPE_UINT, actor_handle,
       G_TYPE_UINT, reason,
-      G_TYPE_STRING, dbus_reason,
-      G_TYPE_STRING, message,
+      G_TYPE_STRING, dbus_reason != NULL ? dbus_reason : "",
+      G_TYPE_STRING, message != NULL ? message : "",
       G_TYPE_INVALID);
 }
 
