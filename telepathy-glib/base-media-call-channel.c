@@ -256,6 +256,8 @@ tp_base_media_call_channel_request_muted (TpSvcCallInterfaceMute *mute_iface,
     {
       tp_svc_call_interface_mute_emit_mute_state_changed (mute_iface, in_Muted);
       g_object_notify (G_OBJECT (self), "local-mute-state");
+      _tp_base_call_channel_set_locally_muted (TP_BASE_CALL_CHANNEL (self),
+          in_Muted);
     }
 
   tp_svc_call_interface_mute_return_from_request_muted (context);
