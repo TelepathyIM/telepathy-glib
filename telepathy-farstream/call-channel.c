@@ -253,6 +253,7 @@ tf_call_channel_dispose (GObject *object)
       g_ptr_array_foreach (self->contents, (GFunc) g_object_run_dispose, NULL);
       g_ptr_array_free (self->contents, TRUE);
     }
+  self->contents = NULL;
 
   if (self->participants)
     g_ptr_array_unref (self->participants);
