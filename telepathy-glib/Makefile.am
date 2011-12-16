@@ -36,6 +36,7 @@ our_headers = \
     base-channel.h \
     base-connection.h \
     base-connection-manager.h \
+    base-media-call-channel.h \
     base-media-call-content.h \
     base-media-call-stream.h \
     base-password-channel.h \
@@ -177,6 +178,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     base-connection.c \
     base-connection-internal.h \
     base-connection-manager.c \
+    base-media-call-channel.c \
     base-media-call-content.c \
     base-media-call-stream.c \
     base-password-channel.c \
