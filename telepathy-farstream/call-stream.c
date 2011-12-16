@@ -1262,7 +1262,7 @@ tf_call_stream_new (TfCallContent *call_content,
   self = g_object_new (TF_TYPE_CALL_STREAM, NULL);
 
   self->call_content = call_content;
-  self->proxy = stream_proxy;
+  self->proxy = g_object_ref (stream_proxy);
 
   tp_proxy_prepare_async (self->proxy, NULL, stream_prepared,
       g_object_ref (self));
