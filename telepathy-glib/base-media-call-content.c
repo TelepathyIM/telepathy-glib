@@ -57,6 +57,7 @@
 #define DEBUG_FLAG TP_DEBUG_CALL
 #include "telepathy-glib/base-call-internal.h"
 #include "telepathy-glib/base-connection.h"
+#include "telepathy-glib/base-media-call-stream.h"
 #include "telepathy-glib/dbus.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/gtypes.h"
@@ -676,4 +677,49 @@ call_content_media_iface_init (gpointer g_iface, gpointer iface_data)
   //IMPLEMENT(acknowledge_dtmf_change);
   IMPLEMENT(fail);
 #undef IMPLEMENT
+}
+
+gboolean
+_tp_base_media_call_content_ready_to_accept (TpBaseMediaCallContent *self)
+{
+  TpBaseCallContent *bcc = TP_BASE_CALL_CONTENT (self);
+  GList *item;
+  gboolean ret = TRUE;
+
+  if (tp_base_call_content_get_disposition (bcc) !=
+      TP_CALL_CONTENT_DISPOSITION_INITIAL)
+    return TRUE;
+
+  for (item = tp_base_call_content_get_streams (bcc); item; item = item->next)
+    {
+      TpBaseMediaCallStream *stream = item->data;
+      GHashTable *members = _tp_base_call_stream_borrow_remote_members (
+          TP_BASE_CALL_STREAM (stream));
+      GHashTableIter iter;
+      gpointer key, value;
+      TpStreamFlowState receiving_state =
+          tp_base_media_call_stream_get_receiving_state (stream);
+
+      g_hash_table_iter_init (&iter, members);
+      while (g_hash_table_iter_next (&iter, &key, &value))
+        {
+          TpSendingState member_state = GPOINTER_TO_INT (value);
+          guint contact = GPOINTER_TO_UINT (key);
+
+          if (member_state == TP_SENDING_STATE_PENDING_SEND ||
+              member_state == TP_SENDING_STATE_SENDING)
+            {
+              if (receiving_state != TP_STREAM_FLOW_STATE_STARTED)
+                {
+                  ret = FALSE;
+                  if (receiving_state !=
+                      TP_STREAM_FLOW_STATE_PENDING_START)
+                    _tp_base_media_call_stream_start_receiving (stream,
+                        contact);
+                }
+            }
+        }
+    }
+
+  return ret;
 }

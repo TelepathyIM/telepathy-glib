@@ -170,6 +170,7 @@ tp_base_call_content_dispose (GObject *object)
   g_assert (self->priv->deinit_has_run);
 
   tp_clear_pointer (&self->priv->streams, stream_list_destroy);
+  g_object_notify (G_OBJECT (self), "streams");
   tp_clear_object (&self->priv->conn);
 
   if (G_OBJECT_CLASS (tp_base_call_content_parent_class)->dispose != NULL)
@@ -563,6 +564,7 @@ tp_base_call_content_add_stream (TpBaseCallContent *self,
 
   self->priv->streams = g_list_prepend (self->priv->streams,
       g_object_ref (stream));
+  g_object_notify (G_OBJECT (self), "streams");
 
   paths = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
 
@@ -585,6 +587,7 @@ _tp_base_call_content_remove_stream_internal (TpBaseCallContent *self,
   g_return_if_fail (l != NULL);
 
   self->priv->streams = g_list_delete_link (self->priv->streams, l);
+  g_object_notify (G_OBJECT (self), "streams");
 
   paths = g_ptr_array_new ();
   g_ptr_array_add (paths, (gpointer)
@@ -724,7 +727,7 @@ _tp_base_call_content_accepted (TpBaseCallContent *self,
       if (tp_base_call_stream_get_local_sending_state (s) ==
           TP_SENDING_STATE_PENDING_SEND)
         _tp_base_call_stream_set_sending (s, TRUE, actor_handle,
-            TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "",
-            "Remote user accepted the Call", NULL);
+            TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+            "User accepted the Call", NULL);
     }
 }

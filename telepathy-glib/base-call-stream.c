@@ -596,6 +596,7 @@ tp_base_call_stream_update_remote_sending_state (TpBaseCallStream *self,
   g_hash_table_insert (self->priv->remote_members,
       GUINT_TO_POINTER (contact),
       GUINT_TO_POINTER (new_state));
+  g_object_notify (G_OBJECT (self), "remote-members");
 
   updates = g_hash_table_new (g_direct_hash, g_direct_equal);
   g_hash_table_insert (updates,
@@ -654,6 +655,7 @@ tp_base_call_stream_remove_member (TpBaseCallStream *self,
   if (!g_hash_table_remove (self->priv->remote_members,
           GUINT_TO_POINTER (contact)))
     return FALSE;
+  g_object_notify (G_OBJECT (self), "remote-members");
 
   empty_table = g_hash_table_new (g_direct_hash, g_direct_equal);
   removed_array = g_array_sized_new (FALSE, TRUE, sizeof (TpHandle), 1);
@@ -703,9 +705,10 @@ tp_base_call_stream_request_receiving (TpSvcCallStream *iface,
   TpBaseCallStream *self = TP_BASE_CALL_STREAM (iface);
   TpBaseCallStreamClass *klass = TP_BASE_CALL_STREAM_GET_CLASS (self);
   GError *error = NULL;
+  TpSendingState remote_sending_state;
 
   if (!g_hash_table_lookup_extended (self->priv->remote_members,
-          GUINT_TO_POINTER (contact), NULL, NULL))
+          GUINT_TO_POINTER (contact), NULL, (gpointer*) &remote_sending_state))
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "Contact %u is not member of this stream", contact);
@@ -719,9 +722,29 @@ tp_base_call_stream_request_receiving (TpSvcCallStream *iface,
       goto error;
     }
 
+ /* Determine if there is a state change for our receiving side
+  * aka remote sending
+  */
+  switch (remote_sending_state)
+    {
+      case TP_SENDING_STATE_NONE:
+      case TP_SENDING_STATE_PENDING_SEND:
+        if (!receiving)
+          goto out;
+        break;
+      case TP_SENDING_STATE_SENDING:
+      case TP_SENDING_STATE_PENDING_STOP_SENDING:
+        if (receiving)
+          goto out;
+        break;
+      default:
+        g_assert_not_reached ();
+    }
+
   if (!klass->request_receiving (self, contact, receiving, &error))
     goto error;
 
+ out:
   tp_svc_call_stream_return_from_request_receiving (context);
   return;
 
@@ -819,4 +842,12 @@ out:
       actor_handle, reason, dbus_reason, message);
 
   return TRUE;
+}
+
+GHashTable *
+_tp_base_call_stream_borrow_remote_members (TpBaseCallStream *stream)
+{
+  g_return_val_if_fail (TP_IS_BASE_CALL_STREAM (stream), NULL);
+
+  return stream->priv->remote_members;
 }

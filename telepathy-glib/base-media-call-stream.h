@@ -37,9 +37,15 @@ typedef GPtrArray *(*TpBaseMediaCallStreamAddCandidatesFunc) (
     GError **error);
 typedef void (*TpBaseMediaCallStreamReportFailureFunc) (
     TpBaseMediaCallStream *self,
+    TpStreamFlowState old_state,
     TpCallStateChangeReason reason,
     const gchar *dbus_reason,
     const gchar *message);
+
+typedef void (*TpBaseMediaCallStreamRequestReceivingFunc) (
+    TpBaseMediaCallStream *self,
+    TpHandle contact,
+    gboolean receive);
 
 struct _TpBaseMediaCallStreamClass {
   /*<private>*/
@@ -50,6 +56,9 @@ struct _TpBaseMediaCallStreamClass {
   TpBaseMediaCallStreamReportFailureFunc report_receiving_failure;
   TpBaseMediaCallStreamAddCandidatesFunc add_local_candidates;
   TpBaseMediaCallStreamVoidFunc finish_initial_candidates;
+
+  TpBaseMediaCallStreamRequestReceivingFunc request_receiving;
+  TpBaseCallStreamSetSendingFunc set_sending;
 
   /*<private>*/
   gpointer future[4];
@@ -95,6 +104,10 @@ void tp_base_media_call_stream_set_sending_state (TpBaseMediaCallStream *self,
     TpStreamFlowState state);
 void tp_base_media_call_stream_set_receiving_state (TpBaseMediaCallStream *self,
     TpStreamFlowState state);
+TpStreamFlowState tp_base_media_call_stream_get_sending_state (
+    TpBaseMediaCallStream *self);
+TpStreamFlowState tp_base_media_call_stream_get_receiving_state (
+    TpBaseMediaCallStream *self);
 
 G_END_DECLS
 

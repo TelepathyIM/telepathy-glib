@@ -173,6 +173,8 @@ struct _TpBaseCallChannelPrivate
   GHashTable *call_members;
 };
 
+static void tp_base_call_channel_accept_real (TpBaseCallChannel *self);
+
 GHashTable *
 _tp_base_call_dup_member_identifiers (TpBaseConnection *conn,
     GHashTable *source)
@@ -464,6 +466,8 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
   base_channel_class->fill_immutable_properties =
       tp_base_call_channel_fill_immutable_properties;
   base_channel_class->close = tp_base_call_channel_close;
+
+  klass->accept = tp_base_call_channel_accept_real;
 
   /**
    * TpBaseCallChannel:initial-audio:
@@ -838,6 +842,7 @@ _tp_base_call_channel_remove_content_internal (TpBaseCallChannel *self,
   g_return_if_fail (l != NULL);
 
   self->priv->contents = g_list_delete_link (self->priv->contents, l);
+  g_object_notify (G_OBJECT (self), "contents");
 
   path = tp_base_call_content_get_object_path (
       TP_BASE_CALL_CONTENT (content));
@@ -915,6 +920,7 @@ tp_base_call_channel_add_content (TpBaseCallChannel *self,
   self->priv->contents = g_list_prepend (self->priv->contents,
       g_object_ref (content));
   _tp_base_call_content_set_channel (content, self);
+  g_object_notify (G_OBJECT (self), "contents");
 
   if (tp_base_call_content_get_disposition (content) ==
       TP_CALL_CONTENT_DISPOSITION_INITIAL)
@@ -1196,14 +1202,18 @@ tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
         }
     }
 
-  if (klass->accept != NULL)
-    klass->accept (self);
-
-  g_list_foreach (self->priv->contents,
-      (GFunc) _tp_base_call_content_accepted, NULL);
+  klass->accept (self);
 
   tp_svc_channel_type_call_return_from_accept (context);
 }
+
+static void
+tp_base_call_channel_accept_real (TpBaseCallChannel *self)
+{
+  g_list_foreach (self->priv->contents,
+      (GFunc) _tp_base_call_content_accepted, NULL);
+}
+
 
 static void
 tp_base_call_channel_hangup (TpSvcChannelTypeCall *iface,

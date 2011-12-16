@@ -86,6 +86,8 @@ struct _TpBaseMediaCallChannelPrivate
 
   TpLocalHoldState hold_state;
   TpLocalHoldStateReason hold_state_reason;
+
+  gboolean accepted;
 };
 
 static const gchar *tp_base_media_call_channel_interfaces[] = {
@@ -102,6 +104,8 @@ enum
 
   LAST_PROPERTY
 };
+
+static void tp_base_media_call_channel_accept (TpBaseCallChannel *self);
 
 
 static void
@@ -128,6 +132,8 @@ tp_base_media_call_channel_class_init (TpBaseMediaCallChannelClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   TpBaseChannelClass *base_channel_class = TP_BASE_CHANNEL_CLASS (klass);
+  TpBaseCallChannelClass *base_call_channel_class =
+      TP_BASE_CALL_CHANNEL_CLASS (klass);
   GParamSpec *param_spec;
   static TpDBusPropertiesMixinPropImpl call_mute_props[] = {
       { "LocalMuteState", "local-mute-state", NULL },
@@ -139,6 +145,8 @@ tp_base_media_call_channel_class_init (TpBaseMediaCallChannelClass *klass)
   object_class->get_property = tp_base_media_call_channel_get_property;
 
   base_channel_class->interfaces = tp_base_media_call_channel_interfaces;
+
+  base_call_channel_class->accept = tp_base_media_call_channel_accept;
 
   /**
    * TpBaseMediaCallChannel:local-mute-state:
@@ -250,7 +258,6 @@ tp_base_media_call_channel_request_muted (TpSvcCallInterfaceMute *mute_iface,
   if (in_Muted != self->priv->local_mute_state)
     changed = TRUE;
 
-  self->priv->local_mute_state = in_Muted;
 
   if (changed)
     {
@@ -290,3 +297,81 @@ mute_iface_init (gpointer g_iface, gpointer iface_data)
 #undef IMPLEMENT
 }
 
+static void
+tp_base_media_call_channel_try_accept (TpBaseMediaCallChannel *self)
+{
+  TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
+  TpBaseMediaCallChannelClass *klass =
+      TP_BASE_MEDIA_CALL_CHANNEL_GET_CLASS (self);
+  GList *item;
+
+  if (self->priv->accepted)
+    return;
+
+  for (item = tp_base_call_channel_get_contents (bcc); item; item = item->next)
+    {
+      if (!_tp_base_media_call_content_ready_to_accept (item->data))
+        return;
+    }
+
+  if (klass->accept != NULL)
+    klass->accept (self);
+
+  TP_BASE_CALL_CHANNEL_CLASS (tp_base_media_call_channel_parent_class)->accept (bcc);
+
+  self->priv->accepted = TRUE;
+
+}
+
+static void
+streams_changed_cb (GObject *stream, gpointer spec,
+    TpBaseMediaCallChannel *self)
+{
+  if (self->priv->accepted)
+    g_signal_handlers_disconnect_by_func (stream, streams_changed_cb, self);
+
+  tp_base_media_call_channel_try_accept (self);
+
+}
+
+static void
+wait_for_streams_to_be_receiving (TpBaseMediaCallChannel *self)
+{
+  TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
+  GList *item;
+
+  for (item = tp_base_call_channel_get_contents (bcc); item; item = item->next)
+    {
+      TpBaseCallContent *content = item->data;
+      GList *item_stream;
+
+      if (tp_base_call_content_get_disposition (content) !=
+              TP_CALL_CONTENT_DISPOSITION_INITIAL)
+        continue;
+
+      for (item_stream = tp_base_call_content_get_streams (content);
+           item_stream;
+           item_stream = item_stream->next)
+        {
+          TpBaseCallStream *stream = item_stream->data;
+
+          g_signal_connect (stream, "notify::receiving-state",
+              G_CALLBACK (streams_changed_cb), self);
+          g_signal_connect (stream, "notify::remote-members",
+              G_CALLBACK (streams_changed_cb), self);
+        }
+    }
+}
+
+
+
+static void
+tp_base_media_call_channel_accept (TpBaseCallChannel *bcc)
+{
+  TpBaseMediaCallChannel *self = TP_BASE_MEDIA_CALL_CHANNEL (bcc);
+
+  tp_base_media_call_channel_try_accept (self);
+
+  if (!self->priv->accepted)
+    wait_for_streams_to_be_receiving (self);
+}

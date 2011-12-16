@@ -31,6 +31,7 @@ typedef struct _TpBaseCallChannel TpBaseCallChannel;
 typedef struct _TpBaseCallContent TpBaseCallContent;
 typedef struct _TpBaseCallStream  TpBaseCallStream;
 typedef struct _TpCallContentMediaDescription  TpCallContentMediaDescription;
+typedef struct _TpBaseMediaCallContent TpBaseMediaCallContent;
 typedef struct _TpBaseMediaCallStream TpBaseMediaCallStream;
 typedef struct _TpCallStreamEndpoint TpCallStreamEndpoint;
 
@@ -45,6 +46,10 @@ void _tp_base_call_content_remove_stream_internal (TpBaseCallContent *self,
     TpBaseCallStream *stream,
     const GValueArray *reason_array);
 
+/* Implemented in base-media-call-content.c */
+gboolean _tp_base_media_call_content_ready_to_accept (
+    TpBaseMediaCallContent *self);
+
 /* Implemented in base-call-stream.c */
 void _tp_base_call_stream_set_content (TpBaseCallStream *self,
     TpBaseCallContent *content);
@@ -57,6 +62,8 @@ gboolean _tp_base_call_stream_set_sending (TpBaseCallStream *self,
     const gchar *dbus_reason,
     const gchar *message,
     GError **error);
+GHashTable *_tp_base_call_stream_borrow_remote_members (
+    TpBaseCallStream *stream);
 
 /* Implemented in base-call-channel.c */
 GHashTable *_tp_base_call_dup_member_identifiers (TpBaseConnection *conn,
@@ -71,6 +78,10 @@ void _tp_base_call_channel_remove_content_internal (TpBaseCallChannel *self,
 void _tp_base_call_channel_maybe_initizalised (TpBaseCallChannel *self);
 void _tp_base_call_channel_set_locally_muted (TpBaseCallChannel *self,
     gboolean locally_muted);
+
+/* Implemented in base-media-call-channel.c */
+void _tp_base_media_call_stream_start_receiving (
+    TpBaseMediaCallStream *self, guint contact);
 
 /* Implemented in call-content-media-description.c */
 void _tp_call_content_media_description_offer_async (
