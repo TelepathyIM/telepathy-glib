@@ -1,3 +1,14 @@
+telepathy-glib 0.17.4 (2011-12-19)
+==================================
+
+Fixes:
+
+• Set the right source on tp_account_set_uri_scheme_association_async's
+  GAsyncResult. (Guillaume)
+
+• fdo#43755: Fix a crash when participating in a XMPP MUC containing
+members with an unknown real JID. (Guillaume)
+
 telepathy-glib 0.17.3 (2011-11-28)
 ==================================
 
