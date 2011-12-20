@@ -6,6 +6,7 @@
 
 <xi:include href="../spec/Call_Content_Interface_Media.xml" />
 <xi:include href="../spec/Call_Content_Interface_Video_Control.xml" />
+<xi:include href="../spec/Call_Content_Interface_Audio_Control.xml" />
 <xi:include href="../spec/Call_Content.xml" />
 
 </tp:spec>
