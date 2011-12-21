@@ -14,10 +14,6 @@
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/gnio-util.h>
-
-#include <gio/gunixsocketaddress.h>
-#include <gio/gunixconnection.h>
-
 #include <glib/gstdio.h>
 
 enum

@@ -1861,8 +1861,11 @@ _tp_determine_access_control_type (GHashTable *supported_sockets,
             }
         }
         break;
+#else
+      case TP_SOCKET_ADDRESS_TYPE_UNIX:
+      case TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX:
+        break;
 #endif
-
       case TP_SOCKET_ADDRESS_TYPE_IPV6:
       case TP_SOCKET_ADDRESS_TYPE_IPV4:
         {
