@@ -236,6 +236,25 @@ tp_base_media_call_content_get_property (GObject *object,
 }
 
 static void
+tp_base_media_call_content_set_property (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (object);
+
+  switch (property_id)
+    {
+      case PROP_PACKETIZATION:
+        self->priv->packetization = g_value_get_uint (value);
+        break;
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+        break;
+    }
+}
+
+static void
 tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -254,6 +273,7 @@ tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
   g_type_class_add_private (klass, sizeof (TpBaseMediaCallContentPrivate));
 
   object_class->get_property = tp_base_media_call_content_get_property;
+  object_class->set_property = tp_base_media_call_content_set_property;
   object_class->dispose = tp_base_media_call_content_dispose;
   object_class->finalize = tp_base_media_call_content_finalize;
 
@@ -318,7 +338,7 @@ tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
   param_spec = g_param_spec_uint ("packetization", "Packetization",
       "The Packetization of this content",
       0, G_MAXUINT, TP_CALL_CONTENT_PACKETIZATION_TYPE_RTP,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_PACKETIZATION,
       param_spec);
 
