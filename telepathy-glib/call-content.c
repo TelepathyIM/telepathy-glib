@@ -113,14 +113,6 @@ _tp_call_stream_new (TpCallContent *self,
 }
 
 static void
-content_removed_cb (TpCallContent *self,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  g_signal_emit (self, _signals[REMOVED], 0);
-}
-
-static void
 streams_added_cb (TpCallContent *self,
     const GPtrArray *streams,
     gpointer user_data,
@@ -258,8 +250,6 @@ tp_call_content_constructed (GObject *obj)
   ((GObjectClass *) tp_call_content_parent_class)->constructed (obj);
 
   /* Connect signals for mutable properties */
-  tp_cli_call_content_connect_to_removed (self,
-      content_removed_cb, NULL, NULL, G_OBJECT (self), NULL);
   tp_cli_call_content_connect_to_streams_added (self,
       streams_added_cb, NULL, NULL, G_OBJECT (self), NULL);
   tp_cli_call_content_connect_to_streams_removed (self,

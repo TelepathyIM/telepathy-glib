@@ -334,6 +334,7 @@ content_removed_cb (TpChannel *channel,
           g_object_ref (content);
           g_ptr_array_remove_index_fast (self->priv->contents, i);
           g_signal_emit (self, _signals[CONTENT_REMOVED], 0, content, r);
+          g_signal_emit_by_name (content, "removed");
           g_object_unref (content);
 
           _tp_call_state_reason_unref (r);

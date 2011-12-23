@@ -694,7 +694,7 @@ tp_base_media_call_stream_set_sending_state (TpBaseMediaCallStream *self,
   g_return_if_fail (TP_IS_BASE_MEDIA_CALL_STREAM (self));
   g_return_if_fail (state == TP_STREAM_FLOW_STATE_PENDING_START ||
       state == TP_STREAM_FLOW_STATE_PENDING_STOP ||
-      state == TP_STREAM_FLOW_STATE_PENDING_PAUSE);
+      state == TP_STREAM_FLOW_STATE_PENDING_MUTE);
 
   if (self->priv->sending_state == state)
     return;
@@ -722,7 +722,7 @@ tp_base_media_call_stream_set_receiving_state (TpBaseMediaCallStream *self,
   g_return_if_fail (TP_IS_BASE_MEDIA_CALL_STREAM (self));
   g_return_if_fail (state == TP_STREAM_FLOW_STATE_PENDING_START ||
       state == TP_STREAM_FLOW_STATE_PENDING_STOP ||
-      state == TP_STREAM_FLOW_STATE_PENDING_PAUSE);
+      state == TP_STREAM_FLOW_STATE_PENDING_MUTE);
 
   if (self->priv->receiving_state == state)
     return;
@@ -882,8 +882,8 @@ correct_state_transition (TpStreamFlowState old_state,
         return (old_state == TP_STREAM_FLOW_STATE_PENDING_START);
       case TP_STREAM_FLOW_STATE_STOPPED:
         return (old_state == TP_STREAM_FLOW_STATE_PENDING_STOP);
-      case TP_STREAM_FLOW_STATE_PAUSED:
-        return (old_state == TP_STREAM_FLOW_STATE_PENDING_PAUSE);
+      case TP_STREAM_FLOW_STATE_MUTED:
+        return (old_state == TP_STREAM_FLOW_STATE_PENDING_MUTE);
       default:
         return FALSE;
     }

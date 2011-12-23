@@ -415,7 +415,7 @@ set_local_properties (TpBaseMediaCallContent *self,
       contact, properties);
 
   tp_svc_call_content_interface_media_emit_local_media_description_changed (
-      self, contact, properties);
+      self, properties);
 }
 
 static void
@@ -615,12 +615,12 @@ tp_base_media_call_content_offer_media_description_finish (
 static void
 tp_base_media_call_content_update_local_media_description (
     TpSvcCallContentInterfaceMedia *iface,
-    guint contact,
     GHashTable *properties,
     DBusGMethodInvocation *context)
 {
   TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (iface);
   GHashTable *current_properties;
+  gpointer contact;
 
   if (self->priv->current_offer != NULL)
     {
@@ -631,9 +631,19 @@ tp_base_media_call_content_update_local_media_description (
       return;
     }
 
+  if (!g_hash_table_lookup_extended (properties, "RemoteContact",
+          NULL, &contact))
+
+    {
+      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "The media description is missing the RemoteContact key." };
+      dbus_g_method_return_error (context, &error);
+      return;
+    }
+
   current_properties = g_hash_table_lookup (
       self->priv->local_media_descriptions,
-      GUINT_TO_POINTER (contact));
+     contact);
 
   if (current_properties == NULL)
     {
@@ -643,7 +653,7 @@ tp_base_media_call_content_update_local_media_description (
       return;
     }
 
-  set_local_properties (self, contact, properties);
+  set_local_properties (self, GPOINTER_TO_UINT (contact), properties);
 
   tp_svc_call_content_interface_media_return_from_update_local_media_description
       (context);

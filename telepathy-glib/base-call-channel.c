@@ -847,7 +847,6 @@ _tp_base_call_channel_remove_content_internal (TpBaseCallChannel *self,
   path = tp_base_call_content_get_object_path (
       TP_BASE_CALL_CONTENT (content));
   tp_svc_channel_type_call_emit_content_removed (self, path, reason_array);
-  tp_svc_call_content_emit_removed (TP_BASE_CALL_CONTENT (content));
 
   _tp_base_call_content_deinit (TP_BASE_CALL_CONTENT (content));
   g_object_unref (content);
