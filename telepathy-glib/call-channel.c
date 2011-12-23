@@ -359,7 +359,7 @@ call_state_changed_cb (TpChannel *channel,
   if (!self->priv->properties_retrieved)
     return;
 
-  DEBUG ("Call state changed");
+  DEBUG ("Call state changed to %u (flags: %u)", state, flags);
 
   tp_clear_pointer (&self->priv->state_reason, _tp_call_state_reason_unref);
   tp_clear_pointer (&self->priv->state_details, g_hash_table_unref);
