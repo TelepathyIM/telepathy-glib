@@ -142,7 +142,7 @@ tf_content_class_init (TfContentClass *klass)
   /**
    * TfContent::stop-sending
    * @content: the #TfContent
-   * @pause: If %TRUE, this is a temporary pause, if %FALSE it is permanent
+   * @mute: If %TRUE, this is a temporary mute, if %FALSE it is permanent
    *
    * This signal is emitted when the connection manager ask to stop
    * sending media
@@ -210,7 +210,7 @@ tf_content_class_init (TfContentClass *klass)
   /**
    * TfContent::stop-receiving
    * @content: the #TfContent
-   * @pause: If %TRUE, this is a temporary pause, if %FALSE it is permanent
+   * @mute: If %TRUE, this is a temporary mute, if %FALSE it is permanent
    * @handles: a 0-terminated array of #guint containing the handles
    * @handle_count: The number of handles in the @handles array
    *
@@ -251,7 +251,7 @@ tf_content_init (TfContent *self)
 
 
 gboolean
-_tf_content_start_sending (TfContent *self, gboolean was_paused)
+_tf_content_start_sending (TfContent *self, gboolean was_muted)
 {
   GValue instance = {0};
   GValue sending_success_val = {0,};
@@ -260,8 +260,8 @@ _tf_content_start_sending (TfContent *self, gboolean was_paused)
 
   if (self->sending_count)
     {
-      if (was_paused)
-        self->sending_paused_count --;
+      if (was_muted)
+        self->sending_muted_count --;
       self->sending_count ++;
       return TRUE;
     }
@@ -285,34 +285,34 @@ _tf_content_start_sending (TfContent *self, gboolean was_paused)
 
   self->sending_count = 1;
 
-  if (was_paused)
-    self->sending_paused_count --;
+  if (was_muted)
+    self->sending_muted_count --;
 
   return sending_success;
 }
 
 void
-_tf_content_stop_sending (TfContent *self, gboolean pause)
+_tf_content_stop_sending (TfContent *self, gboolean mute)
 {
   self->sending_count --;
 
-  if (pause)
-    self->sending_paused_count ++;
+  if (mute)
+    self->sending_muted_count ++;
 
   if (self->sending_count == 0)
     {
       g_signal_emit (self, signals[SIGNAL_STOP_SENDING], 0,
-          self->sending_paused_count != 0);
+          self->sending_muted_count != 0);
     }
 }
 
 
 void
-_tf_content_pause_to_stop_sending (TfContent *self)
+_tf_content_mute_to_stop_sending (TfContent *self)
 {
-  self->sending_paused_count --;
+  self->sending_muted_count --;
 
-  if (self->sending_count == 0 &&  self->sending_paused_count == 0)
+  if (self->sending_count == 0 &&  self->sending_muted_count == 0)
     g_signal_emit (self, signals[SIGNAL_STOP_SENDING], 0,
         TRUE);
 }
@@ -441,12 +441,12 @@ _tf_content_start_receiving (TfContent *self, guint *handles,
 }
 
 void
-_tf_content_stop_receiving (TfContent *self, gboolean pause, guint *handles,
+_tf_content_stop_receiving (TfContent *self, gboolean mute, guint *handles,
     guint handle_count)
 {
   g_debug ("Requesting that the application %s receiving",
-      pause ? "pause" : "stop");
-  g_signal_emit (self, signals[SIGNAL_STOP_RECEIVING], 0, pause, handles,
+      mute ? "mute" : "stop");
+  g_signal_emit (self, signals[SIGNAL_STOP_RECEIVING], 0, mute, handles,
       handle_count);
 }
 

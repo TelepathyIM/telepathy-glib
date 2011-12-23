@@ -95,7 +95,8 @@ static gboolean tf_call_channel_init_finish (GAsyncInitable *initable,
 static void content_added (TpCallChannel *proxy,
     TpCallContent *context_proxy, TfCallChannel *self);
 static void content_removed (TpCallChannel *proxy,
-    TpCallContent *content_proxy, TfCallChannel *self);
+    TpCallContent *content_proxy, TpCallStateReason *reason,
+    TfCallChannel *self);
 static void channel_prepared (GObject *proxy, GAsyncResult *prepare_res,
     gpointer user_data);
 
@@ -374,6 +375,7 @@ content_added (TpCallChannel *proxy,
 static void
 content_removed (TpCallChannel *proxy,
     TpCallContent *content_proxy,
+    TpCallStateReason *reason,
     TfCallChannel *self)
 {
   guint i;

@@ -1716,7 +1716,7 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
         {
           g_debug ("Updating local Media Description");
           tp_cli_call_content_interface_media_call_update_local_media_description (
-              self->proxy, -1, 0, media_description, NULL, NULL, NULL, NULL);
+              self->proxy, -1, media_description, NULL, NULL, NULL, NULL);
         }
       else
         {
