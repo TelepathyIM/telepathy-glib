@@ -1534,7 +1534,12 @@ tf_call_stream_fail_literal (TfCallStream *self,
   g_warning ("%s", message);
   tp_cli_call_stream_interface_media_call_fail (
       self->proxy, -1,
-      tp_value_array_build (0, reason, detailed_reason, message),
+      tp_value_array_build (4,
+          G_TYPE_UINT, 0,
+          G_TYPE_UINT, reason,
+          G_TYPE_STRING, detailed_reason,
+          G_TYPE_STRING, message,
+          G_TYPE_INVALID),
       NULL, NULL, NULL, NULL);
 }
 

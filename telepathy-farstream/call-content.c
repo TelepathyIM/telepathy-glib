@@ -1623,7 +1623,7 @@ fscodecs_to_media_descriptions (TfCallContent *self, GList *codecs)
                   G_TYPE_UINT, fsdirection_to_tpdirection (hdrext->direction),
                   G_TYPE_STRING, hdrext->uri,
                   G_TYPE_STRING, "",
-                  NULL));
+                  G_TYPE_INVALID));
         }
 
       fs_rtp_header_extension_list_destroy (fs_rtp_hdrexts);
@@ -1916,7 +1916,12 @@ tf_call_content_error_literal (TfCallContent *self,
   g_warning ("%s", message);
   tp_cli_call_content_interface_media_call_fail (
       self->proxy, -1,
-      tp_value_array_build (0, reason, detailed_reason, message),
+      tp_value_array_build (4,
+          G_TYPE_UINT, 0,
+          G_TYPE_UINT, reason,
+          G_TYPE_STRING, detailed_reason,
+          G_TYPE_STRING, message,
+          G_TYPE_INVALID),
       NULL, NULL, NULL, NULL);
 }
 
