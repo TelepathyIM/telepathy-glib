@@ -80,17 +80,16 @@
           data, and everything is going swimmingly.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="Pending_Pause" value="4">
+      <tp:enumvalue suffix="Pending_Mute" value="4">
         <tp:docstring>
-          The streaming implementation has been told to pause sending or
-          displaying data, but it has not yet indicated that it has done so.
+          The streaming implementation has been told to mute sending,
+          but it has not yet indicated that it has done so.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="Paused" value="5">
+      <tp:enumvalue suffix="Muted" value="5">
         <tp:docstring>
-          The streaming implementation has successfully paused either sending or
-          displaying data, and the local user's privacy or peace-and-quiet is
-          protected.
+          The streaming implementation has successfully muted sending,
+          and the local user's privacy is protected.
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>

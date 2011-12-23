@@ -340,7 +340,12 @@
     <property name="Transport" tp:name-for-bindings="Transport"
       type="u" tp:type="Stream_Transport_Type" access="read">
       <tp:docstring>
-        The transport type for the stream endpoint.
+        The transport type for the stream endpoint. This can be
+        different from the transport of the Stream in the case where
+        of falling back from <tp:value-ref
+        type="Stream_Transport_Type">ICE</tp:value-ref> to
+        <tp:value-ref
+        type="Stream_Transport_Type">Raw_UDP</tp:value-ref>.
       </tp:docstring>
     </property>
 
