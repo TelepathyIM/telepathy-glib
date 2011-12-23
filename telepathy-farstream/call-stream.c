@@ -294,6 +294,8 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
     case TP_STREAM_TRANSPORT_TYPE_RAW_UDP:
       transmitter = "rawudp";
 
+      g_debug ("Transmitter: rawudp");
+
       switch (tf_call_content_get_fs_media_type (self->call_content))
         {
         case TP_MEDIA_STREAM_TYPE_VIDEO:
@@ -345,6 +347,10 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
         default:
           break;
         }
+
+      g_debug ("Transmitter: nice: TpTransportType:%d controlling:%d",
+          self->transport_type, self->controlling);
+
       n_params++;
       break;
     case TP_STREAM_TRANSPORT_TYPE_SHM:
@@ -353,6 +359,7 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
       g_value_init (&params[n_params].value, G_TYPE_BOOLEAN);
       g_value_set_boolean (&params[n_params].value, TRUE);
       n_params++;
+      g_debug ("Transmitter: shm");
       break;
     default:
       tf_call_stream_fail (self,
@@ -654,6 +661,10 @@ tf_call_stream_add_remote_candidates (TfCallStream *self,
       if (!valid)
         ttl = 0;
 
+      g_debug ("Remote Candidate: %s c:%d tptype:%d tpproto: %d ip:%s port:%u prio:%d u/p:%s/%s ttl:%d base_ip:%s base_port:%d",
+          foundation, component, type, protocol, ip, port, priority,
+          username, password, ttl, base_ip, base_port);
+
       cand = fs_candidate_new (foundation, component,
           tpcandidate_type_to_fs (type), tpnetworkproto_to_fs (protocol),
           ip, port);
@@ -728,6 +739,8 @@ remote_credentials_set (TpProxy *proxy,
   if ((self->creds_username && strcmp (self->creds_username, arg_Username)) ||
       (self->creds_password && strcmp (self->creds_password, arg_Password)))
     {
+      g_debug ("Remote credentials changed,"
+          " remote is doing an ICE restart");
       /* Remote credentials changed, this will perform a ICE restart, so
        * clear old remote candidates */
       fs_candidate_list_destroy (self->stored_remote_candidates);
@@ -738,6 +751,8 @@ remote_credentials_set (TpProxy *proxy,
   g_free (self->creds_password);
   self->creds_username = g_strdup (arg_Username);
   self->creds_password = g_strdup (arg_Password);
+
+  g_debug ("Credentials set: %s / %s", arg_Username, arg_Password);
 }
 
 
@@ -770,14 +785,21 @@ got_endpoint_properties (TpProxy *proxy, GHashTable *out_Properties,
       return;
     }
 
+  g_debug ("Got Endpoint Properties");
+
 
   credentials = tp_asv_get_boxed (out_Properties, "RemoteCredentials",
       TP_STRUCT_TYPE_STREAM_CREDENTIALS);
   if (!credentials)
     goto invalid_property;
   tp_value_array_unpack (credentials, 2, &username, &password);
-  self->creds_username = g_strdup (username);
-  self->creds_password = g_strdup (password);
+  if (username && username[0])
+    self->creds_username = g_strdup (username);
+  if (password && password[0])
+    self->creds_password = g_strdup (password);
+
+  if (self->creds_username || self->creds_password)
+    g_debug ("Credentials set: %s / %s", username, password);
 
   candidates = tp_asv_get_boxed (out_Properties, "RemoteCandidates",
       TP_ARRAY_TYPE_CANDIDATE_LIST);
@@ -1360,6 +1382,12 @@ cb_fs_new_local_candidate (TfCallStream *stream, FsCandidate *candidate)
         }
     }
 
+  g_debug ("Local Candidate: %s c:%d fstype:%d fsproto: %d ip:%s port:%u prio:%d u/p:%s/%s ttl:%d base_ip:%s base_port:%d",
+      candidate->foundation,candidate->component_id, candidate->type,
+      candidate->proto, candidate->ip, candidate->port,
+      candidate->priority, candidate->username, candidate->password,
+      candidate->ttl,candidate-> base_ip, candidate->base_port);
+
 
   g_ptr_array_add (candidate_list,
       fscandidate_to_tpcandidate (stream, candidate));
@@ -1375,9 +1403,10 @@ cb_fs_new_local_candidate (TfCallStream *stream, FsCandidate *candidate)
 static void
 cb_fs_local_candidates_prepared (TfCallStream *stream)
 {
+  g_debug ("Local candidates prepared");
+
   tp_cli_call_stream_interface_media_call_finish_initial_candidates (
       stream->proxy, -1, NULL, NULL, NULL, NULL);
-
 }
 
 static void
@@ -1391,8 +1420,10 @@ cb_fs_component_state_changed (TfCallStream *stream, guint component,
 
   switch (fsstate)
   {
-    case FS_STREAM_STATE_FAILED:
     default:
+      g_warning ("Unknown Farstream state, returning ExhaustedCandidates");
+      /* fall through */
+    case FS_STREAM_STATE_FAILED:
       state = TP_STREAM_ENDPOINT_STATE_EXHAUSTED_CANDIDATES;
       break;
     case FS_STREAM_STATE_DISCONNECTED:
@@ -1407,6 +1438,9 @@ cb_fs_component_state_changed (TfCallStream *stream, guint component,
       break;
   }
 
+  g_debug ("Endpoint state changed to %d (fs: %d)",
+      state, fsstate);
+
   tp_cli_call_stream_endpoint_call_set_endpoint_state (stream->endpoint,
       -1, component, state, NULL, NULL, NULL, NULL);
 }
@@ -1420,6 +1454,10 @@ cb_fs_new_active_candidate_pair (TfCallStream *stream,
       fscandidate_to_tpcandidate (stream, local_candidate);
   GValueArray *remote_tp_candidate =
       fscandidate_to_tpcandidate (stream, remote_candidate);
+
+  g_debug ("new active candidate pair local: %s (%d) remote: %s (%d)",
+      local_candidate->ip, local_candidate->port,
+      remote_candidate->ip, remote_candidate->port);
 
   tp_cli_call_stream_endpoint_call_set_selected_candidate_pair (
       stream->endpoint, -1, local_tp_candidate, remote_tp_candidate,
