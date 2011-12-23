@@ -991,8 +991,9 @@ tp_base_media_call_stream_complete_receiving_state_change (
           if (klass->request_receiving != NULL)
             klass->request_receiving (self, contact, TRUE);
         }
-      g_array_remove_range (self->priv->receiving_requests, 0,
-          self->priv->receiving_requests->len);
+      if (self->priv->receiving_requests->len > 0)
+        g_array_remove_range (self->priv->receiving_requests, 0,
+            self->priv->receiving_requests->len);
     }
   else if (state == TP_STREAM_FLOW_STATE_STOPPED)
     {
@@ -1021,8 +1022,9 @@ tp_base_media_call_stream_report_receiving_failure (
     {
     case TP_STREAM_FLOW_STATE_PENDING_START:
       /* Clear all receving requests, we can't receive */
-      g_array_remove_range (self->priv->receiving_requests, 0,
-          self->priv->receiving_requests->len);
+      if (self->priv->receiving_requests->len > 0)
+        g_array_remove_range (self->priv->receiving_requests, 0,
+            self->priv->receiving_requests->len);
       self->priv->receiving_state = TP_STREAM_FLOW_STATE_STOPPED;
       g_object_notify (G_OBJECT (self), "receiving-state");
       break;
