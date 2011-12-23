@@ -87,6 +87,12 @@ void tp_call_stream_endpoint_add_new_candidate (TpCallStreamEndpoint *self,
     guint port,
     const GHashTable *info_hash);
 
+void tp_call_stream_endpoint_set_remote_credentials (
+    TpCallStreamEndpoint *self,
+    const gchar *username,
+    const gchar *password);
+
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_CALL_STREAM_ENDPOINT_H__*/

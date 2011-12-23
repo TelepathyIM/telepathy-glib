@@ -49,6 +49,8 @@
 #include "config.h"
 #include "call-stream-endpoint.h"
 
+#include <string.h>
+
 #define DEBUG_FLAG TP_DEBUG_CALL
 #include "telepathy-glib/base-call-internal.h"
 #include "telepathy-glib/base-media-call-stream.h"
@@ -106,8 +108,8 @@ struct _TpCallStreamEndpointPrivate
   TpDBusDaemon *dbus_daemon;
   gchar *object_path;
 
-  /* (dbus struct) */
-  GValueArray *remote_credentials;
+  gchar *username;
+  gchar *password;
   /* GPtrArray of owned #GValueArray (dbus struct) */
   GPtrArray *remote_candidates;
   /* GPtrArray of owned #GValueArray (dbus struct) */
@@ -127,11 +129,6 @@ tp_call_stream_endpoint_init (TpCallStreamEndpoint *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TYPE_CALL_STREAM_ENDPOINT, TpCallStreamEndpointPrivate);
-
-  self->priv->remote_credentials = tp_value_array_build (2,
-      G_TYPE_STRING, "",
-      G_TYPE_STRING, "",
-      G_TYPE_INVALID);
   self->priv->remote_candidates = g_ptr_array_new_with_free_func (
       (GDestroyNotify) g_value_array_free);
   self->priv->selected_candidate_pairs = g_ptr_array_new_with_free_func (
@@ -172,7 +169,8 @@ tp_call_stream_endpoint_finalize (GObject *object)
   TpCallStreamEndpoint *self = TP_CALL_STREAM_ENDPOINT (object);
 
   tp_clear_pointer (&self->priv->object_path, g_free);
-  tp_clear_pointer (&self->priv->remote_credentials, g_value_array_free);
+  tp_clear_pointer (&self->priv->username, g_free);
+  tp_clear_pointer (&self->priv->password, g_free);
   tp_clear_pointer (&self->priv->remote_candidates, g_ptr_array_unref);
   tp_clear_pointer (&self->priv->selected_candidate_pairs, g_ptr_array_unref);
   tp_clear_pointer (&self->priv->endpoint_state, g_hash_table_unref);
@@ -197,8 +195,22 @@ tp_call_stream_endpoint_get_property (GObject *object,
         g_value_set_object (value, self->priv->dbus_daemon);
         break;
       case PROP_REMOTE_CREDENTIALS:
-        g_value_set_boxed (value, self->priv->remote_credentials);
-        break;
+        {
+          GValueArray *remote_credentials;
+
+          if (self->priv->username && self->priv->password)
+            remote_credentials = tp_value_array_build (2,
+                G_TYPE_STRING, self->priv->username,
+                G_TYPE_STRING, self->priv->password,
+                G_TYPE_INVALID);
+          else
+            remote_credentials = tp_value_array_build (2,
+                G_TYPE_STRING, "",
+                G_TYPE_STRING, "",
+                G_TYPE_INVALID);
+          g_value_take_boxed (value, remote_credentials);
+          break;
+        }
       case PROP_REMOTE_CANDIDATES:
         g_value_set_boxed (value, self->priv->remote_candidates);
         break;
@@ -608,6 +620,9 @@ tp_call_stream_endpoint_add_new_candidate (TpCallStreamEndpoint *self,
   GValueArray *c;
 
   g_return_if_fail (TP_IS_CALL_STREAM_ENDPOINT (self));
+  g_return_if_fail (address != NULL);
+  g_return_if_fail (port < 65536);
+  g_return_if_fail (info_hash != NULL);
 
   DEBUG ("Add one candidates to endpoint %s", self->priv->object_path);
 
@@ -625,6 +640,29 @@ tp_call_stream_endpoint_add_new_candidate (TpCallStreamEndpoint *self,
   tp_svc_call_stream_endpoint_emit_remote_candidates_added (self,
       candidates);
   g_ptr_array_unref (candidates);
+}
+
+
+void
+tp_call_stream_endpoint_set_remote_credentials (TpCallStreamEndpoint *self,
+    const gchar *username,
+    const gchar *password)
+{
+  g_return_if_fail (TP_IS_CALL_STREAM_ENDPOINT (self));
+
+  if (self->priv->username && self->priv->password &&
+      !strcmp (self->priv->username, username) &&
+      !strcmp (self->priv->password, password))
+    return;
+
+  g_free (self->priv->username);
+  g_free (self->priv->password);
+
+  self->priv->username = g_strdup (username);
+  self->priv->password = g_strdup (password);
+
+  tp_svc_call_stream_endpoint_emit_remote_credentials_set (self, username,
+      password);
 }
 
 static gboolean
