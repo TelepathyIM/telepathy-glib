@@ -929,6 +929,7 @@ streams_added (TpCallContent *proxy,
 static void
 streams_removed (TpCallContent *proxy,
     const GPtrArray *streams,
+    TpCallStateReason *reason,
     TfCallContent *self)
 {
   guint i, j;
