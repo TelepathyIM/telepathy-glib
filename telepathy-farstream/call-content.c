@@ -677,7 +677,7 @@ process_media_description_try_codecs (TfCallContent *self, FsStream *fsstream,
 static void
 process_media_description (TfCallContent *self,
     const gchar *media_description_objpath,
-    guint contact_handle, const GHashTable *properties)
+    const GHashTable *properties)
 {
   TpProxy *proxy;
   GError *error = NULL;
@@ -690,6 +690,8 @@ process_media_description (TfCallContent *self,
   const gchar * const *interfaces;
   guint i;
   GList *fsrtp_hdrext;
+  guint contact_handle;
+  gboolean valid;
 
   /* Guard against early disposal */
   if (self->call_channel == NULL)
@@ -700,6 +702,17 @@ process_media_description (TfCallContent *self,
       tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, TP_ERROR_STR_CONFUSED,
           "Invalid MediaDescription path: %s", error->message);
+      g_clear_error (&error);
+      return;
+    }
+
+  contact_handle = tp_asv_get_uint32 (properties,
+      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT, &valid);
+  if (!valid)
+    {
+      tf_call_content_error_literal (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, TP_ERROR_STR_CONFUSED,
+          "MediaDescription does not contain a valid contact handle");
       g_clear_error (&error);
       return;
     }
@@ -956,7 +969,6 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
   GValueArray *gva;
   const gchar *media_description_objpath = NULL;
   GHashTable *media_description_properties;
-  guint contact;
   GError *myerror = NULL;
   guint32 packetization;
   const gchar *conference_type;
@@ -1085,12 +1097,12 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
   tp_g_signal_connect_object (self->proxy, "streams-removed",
       G_CALLBACK (streams_removed), self, 0);
 
-  tp_value_array_unpack (gva, 3, &media_description_objpath, &contact,
+  tp_value_array_unpack (gva, 2, &media_description_objpath,
       &media_description_properties);
 
   if (strcmp (media_description_objpath, "/"))
     {
-      process_media_description (self, media_description_objpath, contact,
+      process_media_description (self, media_description_objpath,
           media_description_properties);
     }
   self->got_media_description_property = TRUE;
@@ -1315,7 +1327,6 @@ connect_failed:
 static void
 new_media_description_offer (TpCallContent *proxy,
     const gchar *arg_Media_Description,
-    guint arg_Contact,
     GHashTable *arg_Properties,
     gpointer user_data,
     GObject *weak_object)
@@ -1339,7 +1350,7 @@ new_media_description_offer (TpCallContent *proxy,
     self->current_md_rtp_hdrext = NULL;
   }
 
-  process_media_description (self, arg_Media_Description, arg_Contact, arg_Properties);
+  process_media_description (self, arg_Media_Description, arg_Properties);
 }
 
 
