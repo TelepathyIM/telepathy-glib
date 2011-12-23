@@ -524,7 +524,7 @@ tp_call_content_media_description_append_codec (
   g_return_if_fail (TP_IS_CALL_CONTENT_MEDIA_DESCRIPTION (self));
 
   if (parameters == NULL)
-    parameters = g_hash_table_new (NULL, NULL);
+    parameters = g_hash_table_new (g_str_hash, g_str_equal);
 
   g_ptr_array_add (self->priv->codecs, tp_value_array_build (6,
       G_TYPE_UINT, identifier,

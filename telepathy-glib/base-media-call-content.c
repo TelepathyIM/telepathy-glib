@@ -193,15 +193,12 @@ tp_base_media_call_content_get_property (GObject *object,
       case PROP_MEDIA_DESCRIPTION_OFFER:
         {
           const gchar *object_path = "/";
-          TpHandle contact = 0;
           GHashTable *properties;
           GValueArray *value_array;
 
           if (self->priv->current_offer != NULL)
             {
               object_path = tp_call_content_media_description_get_object_path (
-                  self->priv->current_offer);
-              contact = tp_call_content_media_description_get_remote_contact (
                   self->priv->current_offer);
               properties = _tp_call_content_media_description_dup_properties (
                   self->priv->current_offer);
@@ -211,9 +208,8 @@ tp_base_media_call_content_get_property (GObject *object,
               properties = g_hash_table_new (NULL, NULL);
             }
 
-          value_array = tp_value_array_build (3,
+          value_array = tp_value_array_build (2,
               DBUS_TYPE_G_OBJECT_PATH, object_path,
-              G_TYPE_UINT, contact,
               TP_HASH_TYPE_MEDIA_DESCRIPTION_PROPERTIES, properties,
               G_TYPE_INVALID);
 
@@ -494,7 +490,6 @@ static void
 next_offer (TpBaseMediaCallContent *self)
 {
   const gchar *object_path;
-  TpHandle contact;
   GHashTable *properties;
 
   if (self->priv->current_offer_result != NULL)
@@ -527,14 +522,12 @@ next_offer (TpBaseMediaCallContent *self)
 
   object_path = tp_call_content_media_description_get_object_path (
       self->priv->current_offer);
-  contact = tp_call_content_media_description_get_remote_contact (
-      self->priv->current_offer);
   properties = _tp_call_content_media_description_dup_properties (
       self->priv->current_offer);
 
   DEBUG ("emitting NewMediaDescriptionOffer: %s", object_path);
   tp_svc_call_content_interface_media_emit_new_media_description_offer (self,
-      object_path, contact, properties);
+      object_path, properties);
   g_hash_table_unref (properties);
 }
 

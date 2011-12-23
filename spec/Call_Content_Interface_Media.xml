@@ -327,11 +327,6 @@
           previous media description.
         </tp:docstring>
       </arg>
-      <arg name="Contact" type="u">
-        <tp:docstring>
-          The remote contact the media description belongs to.
-        </tp:docstring>
-      </arg>
       <arg name="Properties" type="a{sv}"
            tp:type="Media_Description_Properties">
         <tp:docstring>
