@@ -973,6 +973,22 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
     goto invalid_property;
   }
 
+  self->sending_state = tp_asv_get_uint32 (out_Properties, "SendingState",
+      &valid);
+  if (!valid)
+    {
+      g_warning ("No valid sending state");
+      goto invalid_property;
+    }
+
+  self->receiving_state = tp_asv_get_uint32 (out_Properties,
+      "ReceivingState", &valid);
+  if (!valid)
+    {
+      g_warning ("No valid receiving state");
+      goto invalid_property;
+    }
+
 /* FIXME: controlling is on the endpoint
   self->controlling = tp_asv_get_boolean (out_Properties,
       "Controlling", &valid);
