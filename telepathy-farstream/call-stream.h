@@ -77,6 +77,7 @@ struct _TfCallStream {
 
   TpCallStream *proxy;
 
+  gboolean has_endpoint_properties;
   gchar *endpoint_objpath;
   TpProxy *endpoint;
   gchar *creds_username;

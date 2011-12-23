@@ -725,6 +725,9 @@ remote_candidates_added (TpProxy *proxy,
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
 
+  if (!self->has_endpoint_properties)
+    return;
+
   tf_call_stream_add_remote_candidates (self, arg_Candidates);
 }
 
@@ -826,6 +829,7 @@ got_endpoint_properties (TpProxy *proxy, GHashTable *out_Properties,
       self->transport_type = transport_type;
     }
 
+  self->has_endpoint_properties = TRUE;
 
   tf_call_stream_add_remote_candidates (self, candidates);
 
