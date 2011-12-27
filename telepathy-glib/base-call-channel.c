@@ -724,14 +724,14 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
       self->priv->state != TP_CALL_STATE_INITIALISED)
     self->priv->flags &= ~TP_CALL_FLAG_LOCALLY_QUEUED;
 
+  if (self->priv->state != old_state &&
+      self->priv->state == TP_CALL_STATE_INITIALISING &&
+      tp_base_call_channel_is_connected (self))
+    self->priv->state = TP_CALL_STATE_INITIALISED;
+
   if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
     tp_svc_channel_type_call_emit_call_state_changed (self, self->priv->state,
       self->priv->flags, self->priv->reason, self->priv->details);
-
-  /* If we moved to INITIALISING, maybe we are actually already INITIALISED */
-  if (self->priv->state != old_state &&
-      self->priv->state == TP_CALL_STATE_INITIALISING)
-    _tp_base_call_channel_maybe_initizalised (self);
 }
 
 /**
@@ -1161,10 +1161,15 @@ tp_base_call_channel_set_queued (TpSvcChannelTypeCall *iface,
  * This should probably be in the TpBaseMediaCallChannel class
  */
 
-static TpCallState
-tp_base_call_channel_get_active_or_accepted (TpBaseCallChannel *self)
+gboolean
+tp_base_call_channel_is_connected (TpBaseCallChannel *self)
 {
-  return TP_CALL_STATE_ACTIVE;
+  TpBaseCallChannelClass *klass = TP_BASE_CALL_CHANNEL_GET_CLASS (self);
+
+  if (klass->is_connected)
+    return klass->is_connected (self);
+  else
+    return TRUE;
 }
 
 void
@@ -1183,7 +1188,8 @@ tp_base_call_channel_remote_accept (TpBaseCallChannel *self)
   self->priv->accepted = TRUE;
 
   tp_base_call_channel_set_state (self,
-      tp_base_call_channel_get_active_or_accepted (self),
+      tp_base_call_channel_is_connected (self) ? TP_CALL_STATE_ACTIVE :
+      TP_CALL_STATE_ACCEPTED,
       0, TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "", "");
 
   if (klass->remote_accept)
@@ -1205,7 +1211,8 @@ tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
       if (self->priv->state == TP_CALL_STATE_PENDING_INITIATOR)
         {
           tp_base_call_channel_set_state (self,
-              TP_CALL_STATE_INITIALISING,
+              tp_base_call_channel_is_connected (self) ?
+              TP_CALL_STATE_INITIALISED : TP_CALL_STATE_INITIALISING,
               tp_base_channel_get_self_handle ((TpBaseChannel *) self),
               TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
               "User has accepted to start the call");
@@ -1223,7 +1230,8 @@ tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
       if (self->priv->state == TP_CALL_STATE_INITIALISED)
         {
           tp_base_call_channel_set_state (self,
-              tp_base_call_channel_get_active_or_accepted (self),
+              tp_base_call_channel_is_connected (self) ? TP_CALL_STATE_ACTIVE :
+              TP_CALL_STATE_ACCEPTED,
               tp_base_channel_get_self_handle ((TpBaseChannel *) self),
               TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
               "User has accepted call");
@@ -1347,51 +1355,6 @@ call_iface_init (gpointer g_iface, gpointer iface_data)
   IMPLEMENT(hangup,);
   IMPLEMENT(add_content, _dbus);
 #undef IMPLEMENT
-}
-
-/* Internal functions */
-
-void
-_tp_base_call_channel_maybe_initizalised (TpBaseCallChannel *self)
-{
-  GList *l;
-
-  g_return_if_fail (TP_IS_BASE_CALL_CHANNEL (self));
-
-  if (self->priv->state != TP_CALL_STATE_INITIALISING)
-    return;
-
-  /* This is called from TpCallStreamEndpoint when it is connected. Check if
-   * they are all connected now. */
-  for (l = self->priv->contents; l != NULL; l = l->next)
-    {
-      GList *streams = tp_base_call_content_get_streams (l->data);
-
-      for (; streams != NULL; streams = streams->next)
-        {
-          GList *endpoints;
-
-          if (!TP_IS_BASE_MEDIA_CALL_STREAM (streams->data))
-            continue;
-
-          endpoints = tp_base_media_call_stream_get_endpoints (streams->data);
-          for (; endpoints != NULL; endpoints = endpoints->next)
-            {
-              TpStreamEndpointState state = tp_call_stream_endpoint_get_state (
-                  endpoints->data, TP_STREAM_COMPONENT_DATA);
-
-              if (state != TP_STREAM_ENDPOINT_STATE_PROVISIONALLY_CONNECTED &&
-                  state != TP_STREAM_ENDPOINT_STATE_FULLY_CONNECTED)
-                return;
-            }
-        }
-    }
-
-  /* Ok, all endpoints are connected, we can move to INITIALISED state */
-  tp_base_call_channel_set_state (self, TP_CALL_STATE_INITIALISED,
-      tp_base_channel_get_self_handle ((TpBaseChannel *) self),
-      TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "",
-      "All endpoints DATA component are CONNECTED");
 }
 
 void

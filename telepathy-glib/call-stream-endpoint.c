@@ -53,6 +53,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CALL
 #include "telepathy-glib/base-call-internal.h"
+#include "telepathy-glib/base-media-call-channel.h"
 #include "telepathy-glib/base-media-call-stream.h"
 #include "telepathy-glib/dbus.h"
 #include "telepathy-glib/dbus-properties-mixin.h"
@@ -837,13 +838,14 @@ call_stream_endpoint_set_endpoint_state (TpSvcCallStreamEndpoint *iface,
   tp_svc_call_stream_endpoint_emit_endpoint_state_changed (self,
       component, state);
 
-  if (component == TP_STREAM_COMPONENT_DATA &&
-      (state == TP_STREAM_ENDPOINT_STATE_PROVISIONALLY_CONNECTED ||
-       state == TP_STREAM_ENDPOINT_STATE_FULLY_CONNECTED))
+  if (component == TP_STREAM_COMPONENT_DATA)
     {
-      _tp_base_call_channel_maybe_initizalised (
-          _tp_base_call_stream_get_channel (
-              (TpBaseCallStream *) self->priv->stream));
+      TpBaseCallChannel *chan = _tp_base_call_stream_get_channel (
+          TP_BASE_CALL_STREAM (self->priv->stream));
+
+      if (chan && TP_IS_BASE_MEDIA_CALL_CHANNEL (chan))
+        _tp_base_media_call_channel_endpoint_state_changed (
+            TP_BASE_MEDIA_CALL_CHANNEL (chan));
     }
 
   tp_svc_call_stream_endpoint_return_from_set_endpoint_state (context);

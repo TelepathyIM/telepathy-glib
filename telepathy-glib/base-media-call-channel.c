@@ -107,6 +107,8 @@ enum
 
 static void tp_base_media_call_channel_accept (TpBaseCallChannel *self);
 static void tp_base_media_call_channel_remote_accept (TpBaseCallChannel *self);
+static gboolean tp_base_media_call_channel_is_connected (
+    TpBaseCallChannel *self);
 
 static void
 tp_base_media_call_channel_get_property (GObject *object,
@@ -149,6 +151,8 @@ tp_base_media_call_channel_class_init (TpBaseMediaCallChannelClass *klass)
   base_call_channel_class->accept = tp_base_media_call_channel_accept;
   base_call_channel_class->remote_accept =
       tp_base_media_call_channel_remote_accept;
+  base_call_channel_class->is_connected =
+      tp_base_media_call_channel_is_connected;
 
   /**
    * TpBaseMediaCallChannel:local-mute-state:
@@ -385,4 +389,83 @@ tp_base_media_call_channel_remote_accept (TpBaseCallChannel *self)
 {
   g_list_foreach (tp_base_call_channel_get_contents (self),
       (GFunc) _tp_base_media_call_content_remote_accepted, NULL);
+}
+
+static gboolean
+tp_base_media_call_channel_is_connected (TpBaseCallChannel *self)
+{
+  GList *l;
+
+  g_return_val_if_fail (TP_IS_BASE_MEDIA_CALL_CHANNEL (self), FALSE);
+
+  for (l = tp_base_call_channel_get_contents (self); l != NULL; l = l->next)
+    {
+      GList *streams = tp_base_call_content_get_streams (l->data);
+
+      for (; streams != NULL; streams = streams->next)
+        {
+          GList *endpoints;
+          gboolean has_connected_endpoint = FALSE;
+
+          endpoints = tp_base_media_call_stream_get_endpoints (streams->data);
+          for (; endpoints != NULL; endpoints = endpoints->next)
+            {
+              TpStreamEndpointState state = tp_call_stream_endpoint_get_state (
+                  endpoints->data, TP_STREAM_COMPONENT_DATA);
+
+              if (state == TP_STREAM_ENDPOINT_STATE_PROVISIONALLY_CONNECTED ||
+                  state == TP_STREAM_ENDPOINT_STATE_FULLY_CONNECTED)
+                {
+                  has_connected_endpoint = TRUE;
+                  break;
+                }
+            }
+          if (!has_connected_endpoint)
+            return FALSE;
+        }
+    }
+
+  return TRUE;
+}
+
+void
+_tp_base_media_call_channel_endpoint_state_changed (
+    TpBaseMediaCallChannel *self)
+{
+  TpBaseChannel *bc = TP_BASE_CHANNEL (self);
+  TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
+
+  switch (tp_base_call_channel_get_state (bcc))
+    {
+    case TP_CALL_STATE_INITIALISING:
+      if (tp_base_call_channel_is_connected (bcc))
+        {
+          tp_base_call_channel_set_state (bcc, TP_CALL_STATE_INITIALISED,
+              tp_base_channel_get_self_handle (bc),
+              TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "",
+              "There is a connected endpoint for each stream");
+        }
+      break;
+    case TP_CALL_STATE_ACTIVE:
+      if (!tp_base_call_channel_is_connected (bcc))
+        {
+          tp_base_call_channel_set_state (bcc, TP_CALL_STATE_ACCEPTED,
+              tp_base_channel_get_self_handle (bc),
+              TP_CALL_STATE_CHANGE_REASON_CONNECTIVITY_ERROR,
+              TP_ERROR_STR_CONNECTION_LOST,
+              "There is no longer connected endpoint for each stream");
+        }
+      break;
+    case TP_CALL_STATE_ACCEPTED:
+      if (tp_base_call_channel_is_connected (bcc))
+        {
+          tp_base_call_channel_set_state (bcc, TP_CALL_STATE_ACTIVE,
+              tp_base_channel_get_self_handle (bc),
+              TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "",
+              "There is a connected endpoint for each stream");
+        }
+      break;
+    default:
+      break;
+    }
 }

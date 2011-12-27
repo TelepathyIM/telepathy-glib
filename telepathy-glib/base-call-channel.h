@@ -56,6 +56,7 @@ struct _TpBaseCallChannelClass {
   /* For media subclasses */
 
 
+  gboolean (*is_connected) (TpBaseCallChannel *self);
   void (*remote_accept) (TpBaseCallChannel *self);
 
   /*<private>*/
@@ -129,6 +130,9 @@ void tp_base_call_channel_remove_member (TpBaseCallChannel *self,
 void tp_base_call_channel_remote_accept (TpBaseCallChannel *self);
 
 gboolean tp_base_call_channel_is_accepted (TpBaseCallChannel *self);
+
+gboolean tp_base_call_channel_is_connected (TpBaseCallChannel *self);
+
 
 G_END_DECLS
 
