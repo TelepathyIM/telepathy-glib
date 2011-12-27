@@ -106,7 +106,7 @@ enum
 };
 
 static void tp_base_media_call_channel_accept (TpBaseCallChannel *self);
-
+static void tp_base_media_call_channel_remote_accept (TpBaseCallChannel *self);
 
 static void
 tp_base_media_call_channel_get_property (GObject *object,
@@ -147,6 +147,8 @@ tp_base_media_call_channel_class_init (TpBaseMediaCallChannelClass *klass)
   base_channel_class->interfaces = tp_base_media_call_channel_interfaces;
 
   base_call_channel_class->accept = tp_base_media_call_channel_accept;
+  base_call_channel_class->remote_accept =
+      tp_base_media_call_channel_remote_accept;
 
   /**
    * TpBaseMediaCallChannel:local-mute-state:
@@ -303,16 +305,17 @@ tp_base_media_call_channel_try_accept (TpBaseMediaCallChannel *self)
   TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
   TpBaseMediaCallChannelClass *klass =
       TP_BASE_MEDIA_CALL_CHANNEL_GET_CLASS (self);
-  GList *item;
+  GList *l;
+  gboolean notready = FALSE;
 
   if (self->priv->accepted)
     return;
 
-  for (item = tp_base_call_channel_get_contents (bcc); item; item = item->next)
-    {
-      if (!_tp_base_media_call_content_ready_to_accept (item->data))
-        return;
-    }
+  for (l = tp_base_call_channel_get_contents (bcc); l; l = l->next)
+      notready |= !_tp_base_media_call_content_ready_to_accept (l->data);
+
+  if (notready)
+    return;
 
   if (klass->accept != NULL)
     klass->accept (self);
@@ -338,22 +341,22 @@ static void
 wait_for_streams_to_be_receiving (TpBaseMediaCallChannel *self)
 {
   TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
-  GList *item;
+  GList *l;
 
-  for (item = tp_base_call_channel_get_contents (bcc); item; item = item->next)
+  for (l = tp_base_call_channel_get_contents (bcc); l; l = l->next)
     {
-      TpBaseCallContent *content = item->data;
-      GList *item_stream;
+      TpBaseCallContent *content = l->data;
+      GList *l_stream;
 
       if (tp_base_call_content_get_disposition (content) !=
               TP_CALL_CONTENT_DISPOSITION_INITIAL)
         continue;
 
-      for (item_stream = tp_base_call_content_get_streams (content);
-           item_stream;
-           item_stream = item_stream->next)
+      for (l_stream = tp_base_call_content_get_streams (content);
+           l_stream;
+           l_stream = l_stream->next)
         {
-          TpBaseCallStream *stream = item_stream->data;
+          TpBaseCallStream *stream = l_stream->data;
 
           g_signal_connect (stream, "notify::receiving-state",
               G_CALLBACK (streams_changed_cb), self);
@@ -374,4 +377,12 @@ tp_base_media_call_channel_accept (TpBaseCallChannel *bcc)
 
   if (!self->priv->accepted)
     wait_for_streams_to_be_receiving (self);
+}
+
+
+static void
+tp_base_media_call_channel_remote_accept (TpBaseCallChannel *self)
+{
+  g_list_foreach (tp_base_call_channel_get_contents (self),
+      (GFunc) _tp_base_media_call_content_remote_accepted, NULL);
 }

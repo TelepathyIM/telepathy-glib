@@ -164,6 +164,8 @@ struct _TpBaseCallChannelPrivate
   gchar *initial_audio_name;
   gchar *initial_video_name;
 
+  gboolean accepted;
+
   TpCallState state;
   TpCallFlags flags;
   GHashTable *details;
@@ -1154,6 +1156,40 @@ tp_base_call_channel_set_queued (TpSvcChannelTypeCall *iface,
     }
 }
 
+/* FIXME: We need to decide if we should be active or accepted depending
+ * on the connectiveness
+ * This should probably be in the TpBaseMediaCallChannel class
+ */
+
+static TpCallState
+tp_base_call_channel_get_active_or_accepted (TpBaseCallChannel *self)
+{
+  return TP_CALL_STATE_ACTIVE;
+}
+
+void
+tp_base_call_channel_remote_accept (TpBaseCallChannel *self)
+{
+  TpBaseCallChannelClass *klass = TP_BASE_CALL_CHANNEL_GET_CLASS (self);
+
+  g_return_if_fail (tp_base_channel_is_requested (TP_BASE_CHANNEL (self)));
+
+  if (self->priv->accepted)
+    return;
+
+  g_return_if_fail (self->priv->state == TP_CALL_STATE_INITIALISED ||
+      self->priv->state == TP_CALL_STATE_INITIALISING);
+
+  self->priv->accepted = TRUE;
+
+  tp_base_call_channel_set_state (self,
+      tp_base_call_channel_get_active_or_accepted (self),
+      0, TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "", "");
+
+  if (klass->remote_accept)
+    klass->remote_accept (self);
+}
+
 static void
 tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
     DBusGMethodInvocation *context)
@@ -1187,7 +1223,7 @@ tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
       if (self->priv->state == TP_CALL_STATE_INITIALISED)
         {
           tp_base_call_channel_set_state (self,
-              TP_CALL_STATE_ACCEPTED,
+              tp_base_call_channel_get_active_or_accepted (self),
               tp_base_channel_get_self_handle ((TpBaseChannel *) self),
               TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
               "User has accepted call");
@@ -1199,6 +1235,8 @@ tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
           dbus_g_method_return_error (context, &e);
           return;
         }
+
+      self->priv->accepted = TRUE;
     }
 
   klass->accept (self);
@@ -1373,4 +1411,12 @@ _tp_base_call_channel_set_locally_muted (TpBaseCallChannel *self,
   if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
     tp_svc_channel_type_call_emit_call_state_changed (self, self->priv->state,
       self->priv->flags, self->priv->reason, self->priv->details);
+}
+
+gboolean
+tp_base_call_channel_is_accepted (TpBaseCallChannel *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CALL_CHANNEL (self), FALSE);
+
+  return self->priv->accepted;
 }

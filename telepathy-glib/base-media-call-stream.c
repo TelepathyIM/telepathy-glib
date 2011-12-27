@@ -759,26 +759,24 @@ tp_base_media_call_stream_set_sending (TpBaseCallStream *bcs,
       if (klass->set_sending != NULL &&
           !klass->set_sending (bcs, sending, error))
         return FALSE;
-
-      if (self->priv->sending_state != TP_STREAM_FLOW_STATE_PENDING_START &&
-          self->priv->sending_state != TP_STREAM_FLOW_STATE_STARTED)
-        tp_base_media_call_stream_set_sending_state (self,
-            TP_STREAM_FLOW_STATE_PENDING_START);
     }
   else
    {
-      if (self->priv->sending_state == TP_STREAM_FLOW_STATE_STOPPED)
-        {
-          if (klass->set_sending != NULL)
-            return klass->set_sending (bcs, sending, error);
-        }
-
-      /* Already waiting for the streaming implementation to stop sending */
-      if (self->priv->sending_state == TP_STREAM_FLOW_STATE_PENDING_STOP)
-        return TRUE;
-
-      tp_base_media_call_stream_set_sending_state (self,
-          TP_STREAM_FLOW_STATE_PENDING_STOP);
+     switch (self->priv->sending_state)
+       {
+       case TP_STREAM_FLOW_STATE_STOPPED:
+         /* Already stopped, lets call the callback directly */
+         if (klass->set_sending != NULL)
+           return klass->set_sending (bcs, sending, error);
+         break;
+       case TP_STREAM_FLOW_STATE_PENDING_STOP:
+         /* Already waiting for the streaming implementation to stop sending */
+         break;
+       default:
+         tp_base_media_call_stream_set_sending_state (self,
+             TP_STREAM_FLOW_STATE_PENDING_STOP);
+         break;
+       }
     }
 
   return TRUE;

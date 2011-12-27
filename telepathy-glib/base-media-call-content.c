@@ -56,6 +56,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CALL
 #include "telepathy-glib/base-call-internal.h"
+#include "telepathy-glib/base-channel.h"
 #include "telepathy-glib/base-connection.h"
 #include "telepathy-glib/base-media-call-stream.h"
 #include "telepathy-glib/dbus.h"
@@ -703,6 +704,20 @@ _tp_base_media_call_content_ready_to_accept (TpBaseMediaCallContent *self)
       TpStreamFlowState receiving_state =
           tp_base_media_call_stream_get_receiving_state (stream);
 
+      /* On incoming calls, start streaming (sending) when we accept the call,
+       * if that was what the other side proposed
+       */
+      if (!tp_base_channel_is_requested (
+              TP_BASE_CHANNEL (_tp_base_call_content_get_channel (bcc))) &&
+          tp_base_call_stream_get_local_sending_state (
+              TP_BASE_CALL_STREAM (stream)) == TP_SENDING_STATE_PENDING_SEND &&
+          tp_base_media_call_stream_get_sending_state (stream) !=
+          TP_STREAM_FLOW_STATE_STARTED)
+        {
+          tp_base_media_call_stream_set_sending_state (stream,
+              TP_STREAM_FLOW_STATE_PENDING_START);
+        }
+
       g_hash_table_iter_init (&iter, members);
       while (g_hash_table_iter_next (&iter, &key, &value))
         {
@@ -725,4 +740,32 @@ _tp_base_media_call_content_ready_to_accept (TpBaseMediaCallContent *self)
     }
 
   return ret;
+}
+
+
+void
+_tp_base_media_call_content_remote_accepted (TpBaseMediaCallContent *self)
+{
+  GList *l;
+  TpBaseCallContent *bcc = TP_BASE_CALL_CONTENT (self);
+
+  if (tp_base_call_content_get_disposition (bcc) !=
+      TP_CALL_CONTENT_DISPOSITION_INITIAL)
+    return;
+
+
+  for (l = tp_base_call_content_get_streams (bcc);
+       l != NULL;
+       l = g_list_next (l))
+    {
+      TpBaseMediaCallStream *stream = TP_BASE_MEDIA_CALL_STREAM (l->data);
+      TpSendingState local = tp_base_call_stream_get_local_sending_state (
+          TP_BASE_CALL_STREAM (stream));
+
+      if (local == TP_SENDING_STATE_SENDING &&
+          (tp_base_media_call_stream_get_sending_state (stream) !=
+              TP_STREAM_FLOW_STATE_STARTED))
+        tp_base_media_call_stream_set_sending_state (stream,
+            TP_STREAM_FLOW_STATE_PENDING_START);
+    }
 }

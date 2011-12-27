@@ -726,8 +726,9 @@ _tp_base_call_content_accepted (TpBaseCallContent *self,
 
       if (tp_base_call_stream_get_local_sending_state (s) ==
           TP_SENDING_STATE_PENDING_SEND)
-        _tp_base_call_stream_set_sending (s, TRUE, actor_handle,
+        tp_base_call_stream_update_local_sending_state (s,
+            TP_SENDING_STATE_SENDING, actor_handle,
             TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
-            "User accepted the Call", NULL);
+            "User accepted the Call");
     }
 }

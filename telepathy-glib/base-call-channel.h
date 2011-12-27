@@ -53,6 +53,11 @@ struct _TpBaseCallChannelClass {
   TpBaseCallChannelAddContentFunc add_content;
   TpBaseCallChannelHangupFunc hangup;
 
+  /* For media subclasses */
+
+
+  void (*remote_accept) (TpBaseCallChannel *self);
+
   /*<private>*/
   gpointer future[4];
 };
@@ -120,6 +125,10 @@ void tp_base_call_channel_remove_member (TpBaseCallChannel *self,
     TpCallStateChangeReason reason,
     const gchar *dbus_reason,
     const gchar *message);
+
+void tp_base_call_channel_remote_accept (TpBaseCallChannel *self);
+
+gboolean tp_base_call_channel_is_accepted (TpBaseCallChannel *self);
 
 G_END_DECLS
 

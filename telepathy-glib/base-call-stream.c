@@ -500,6 +500,12 @@ tp_base_call_stream_update_local_sending_state (TpBaseCallStream *self,
 
   g_return_val_if_fail (TP_IS_BASE_CALL_STREAM (self), FALSE);
 
+  if (new_state == TP_SENDING_STATE_SENDING &&
+      self->priv->channel != NULL &&
+      !tp_base_call_channel_is_accepted (self->priv->channel) &&
+      !tp_base_channel_is_requested (TP_BASE_CHANNEL (self->priv->channel)))
+    new_state = TP_SENDING_STATE_PENDING_SEND;
+
   if (self->priv->local_sending_state == new_state)
     return FALSE;
 
@@ -583,6 +589,12 @@ tp_base_call_stream_update_remote_sending_state (TpBaseCallStream *self,
   GValueArray *reason_array;
 
   g_return_val_if_fail (TP_IS_BASE_CALL_STREAM (self), FALSE);
+
+  if (new_state == TP_SENDING_STATE_SENDING &&
+      self->priv->channel != NULL &&
+      tp_base_channel_is_requested (TP_BASE_CHANNEL (self->priv->channel)) &&
+      !tp_base_call_channel_is_accepted (self->priv->channel))
+    new_state = TP_SENDING_STATE_PENDING_SEND;
 
   exists = g_hash_table_lookup_extended (self->priv->remote_members,
       GUINT_TO_POINTER (contact), NULL, &state_p);
@@ -684,7 +696,7 @@ tp_base_call_stream_set_sending_dbus (TpSvcCallStream *iface,
   if (_tp_base_call_stream_set_sending (TP_BASE_CALL_STREAM (iface), sending,
           tp_base_channel_get_self_handle ((TpBaseChannel *) self->priv->channel),
           TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
-          "User changed the sendingt state", &error))
+          "User changed the sending state", &error))
     {
       tp_svc_call_stream_return_from_set_sending (context);
     }

@@ -49,6 +49,7 @@ void _tp_base_call_content_remove_stream_internal (TpBaseCallContent *self,
 /* Implemented in base-media-call-content.c */
 gboolean _tp_base_media_call_content_ready_to_accept (
     TpBaseMediaCallContent *self);
+void _tp_base_media_call_content_remote_accepted (TpBaseMediaCallContent *self);
 
 /* Implemented in base-call-stream.c */
 void _tp_base_call_stream_set_content (TpBaseCallStream *self,
