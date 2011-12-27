@@ -718,6 +718,15 @@ tp_base_call_stream_request_receiving (TpSvcCallStream *iface,
   TpBaseCallStreamClass *klass = TP_BASE_CALL_STREAM_GET_CLASS (self);
   GError *error = NULL;
   TpSendingState remote_sending_state;
+  gboolean can_request_receiving;
+
+  g_object_get (self, "can-request-receiving", &can_request_receiving, NULL);
+  if (!can_request_receiving)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_CAPABLE,
+          "The contact does not support requesting to receive");
+      goto error;
+    }
 
   if (!g_hash_table_lookup_extended (self->priv->remote_members,
           GUINT_TO_POINTER (contact), NULL, (gpointer*) &remote_sending_state))
