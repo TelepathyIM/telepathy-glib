@@ -805,7 +805,7 @@ _tp_base_media_call_stream_start_receiving (TpBaseMediaCallStream *self,
     guint contact)
 {
 
-  if (find_handle_in_array (self->priv->receiving_requests, contact) !=
+  if (find_handle_in_array (self->priv->receiving_requests, contact) ==
       G_MAXUINT)
     g_array_append_val (self->priv->receiving_requests, contact);
 
@@ -837,7 +837,7 @@ tp_base_media_call_stream_request_receiving (TpBaseCallStream *bcs,
         {
           if (klass->request_receiving != NULL)
             {
-              klass->request_receiving (self, contact, receive);
+              klass->request_receiving (self, contact, TRUE);
               return TRUE;
             }
         }
@@ -859,7 +859,7 @@ tp_base_media_call_stream_request_receiving (TpBaseCallStream *bcs,
         g_array_remove_index_fast (self->priv->receiving_requests, i);
 
       if (klass->request_receiving != NULL)
-        klass->request_receiving (self, contact, receive);
+        klass->request_receiving (self, contact, FALSE);
 
       if (self->priv->receiving_state != TP_STREAM_FLOW_STATE_PENDING_STOP &&
           self->priv->receiving_state != TP_STREAM_FLOW_STATE_STOPPED)
