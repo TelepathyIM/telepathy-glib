@@ -814,7 +814,6 @@ TpBaseCallChannel *
 _tp_base_call_stream_get_channel (TpBaseCallStream *self)
 {
   g_return_val_if_fail (TP_IS_BASE_CALL_STREAM (self), NULL);
-  g_return_val_if_fail (self->priv->channel != NULL, NULL);
 
   return self->priv->channel;
 }

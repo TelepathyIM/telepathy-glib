@@ -113,6 +113,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CALL
 #include "telepathy-glib/base-call-content.h"
+#include "telepathy-glib/base-call-channel.h"
 #include "telepathy-glib/base-call-internal.h"
 #include "telepathy-glib/base-channel.h"
 #include "telepathy-glib/base-connection.h"
@@ -181,6 +182,9 @@ static gboolean tp_base_media_call_stream_request_receiving (
 static gboolean tp_base_media_call_stream_set_sending (TpBaseCallStream *self,
     gboolean sending, GError **error);
 
+static void remote_members_changed_cb (TpBaseMediaCallStream *self,
+    GParamSpec *pspec, gpointer user_data);
+
 static void
 tp_base_media_call_stream_init (TpBaseMediaCallStream *self)
 {
@@ -194,6 +198,9 @@ tp_base_media_call_stream_init (TpBaseMediaCallStream *self)
   self->priv->receiving_requests = g_array_new (TRUE, FALSE, sizeof (TpHandle));
   self->priv->sending_state = TP_STREAM_FLOW_STATE_STOPPED;
   self->priv->receiving_state = TP_STREAM_FLOW_STATE_STOPPED;
+
+  g_signal_connect (self, "notify::remote-members",
+      G_CALLBACK (remote_members_changed_cb), NULL);
 }
 
 static void
@@ -815,6 +822,57 @@ _tp_base_media_call_stream_start_receiving (TpBaseMediaCallStream *self,
         TP_STREAM_FLOW_STATE_PENDING_START);
 }
 
+static void
+remote_members_changed_cb (TpBaseMediaCallStream *self, GParamSpec *pspec,
+    gpointer user_data)
+{
+  TpBaseCallStream *bcs = TP_BASE_CALL_STREAM (self);
+  GHashTable *remote_members = _tp_base_call_stream_borrow_remote_members (bcs);
+  GHashTableIter iter;
+  gpointer key, value;
+  gboolean remote_sending = FALSE;
+  TpBaseCallChannel *channel = _tp_base_call_stream_get_channel (bcs);
+
+  if (channel == NULL || !tp_base_call_channel_is_locally_accepted (channel))
+    return;
+
+  g_hash_table_iter_init (&iter, remote_members);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      TpSendingState state = GPOINTER_TO_UINT (value);
+
+      switch (state)
+        {
+        case TP_SENDING_STATE_SENDING:
+        case TP_SENDING_STATE_PENDING_SEND:
+          remote_sending = TRUE;
+          break;
+        case TP_SENDING_STATE_PENDING_STOP_SENDING:
+        case TP_SENDING_STATE_NONE:
+          break;
+        default:
+          g_assert_not_reached ();
+        }
+      if (remote_sending)
+        break;
+    }
+
+  if (remote_sending)
+    {
+      if (self->priv->receiving_state == TP_STREAM_FLOW_STATE_STOPPED ||
+          self->priv->receiving_state == TP_STREAM_FLOW_STATE_PENDING_STOP)
+        tp_base_media_call_stream_set_receiving_state (self,
+            TP_STREAM_FLOW_STATE_PENDING_START);
+    }
+  else
+    {
+      if (self->priv->receiving_state == TP_STREAM_FLOW_STATE_STARTED ||
+          self->priv->receiving_state == TP_STREAM_FLOW_STATE_PENDING_START)
+        tp_base_media_call_stream_set_receiving_state (self,
+            TP_STREAM_FLOW_STATE_PENDING_STOP);
+    }
+}
+
 static gboolean
 tp_base_media_call_stream_request_receiving (TpBaseCallStream *bcs,
     TpHandle contact, gboolean receive, GError **error)
@@ -860,11 +918,6 @@ tp_base_media_call_stream_request_receiving (TpBaseCallStream *bcs,
 
       if (klass->request_receiving != NULL)
         klass->request_receiving (self, contact, FALSE);
-
-      if (self->priv->receiving_state != TP_STREAM_FLOW_STATE_PENDING_STOP &&
-          self->priv->receiving_state != TP_STREAM_FLOW_STATE_STOPPED)
-        tp_base_media_call_stream_set_receiving_state (self,
-            TP_STREAM_FLOW_STATE_PENDING_STOP);
     }
 
   return TRUE;

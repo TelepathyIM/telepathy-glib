@@ -164,6 +164,7 @@ struct _TpBaseCallChannelPrivate
   gchar *initial_audio_name;
   gchar *initial_video_name;
 
+  gboolean locally_accepted;
   gboolean accepted;
 
   TpCallState state;
@@ -1216,6 +1217,8 @@ tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
 
   DEBUG ("Client accepted the call");
 
+  self->priv->locally_accepted = TRUE;
+
   if (tp_base_channel_is_requested (tp_base))
     {
       if (self->priv->state == TP_CALL_STATE_PENDING_INITIATOR)
@@ -1231,8 +1234,6 @@ tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
                 tp_base_channel_get_self_handle ((TpBaseChannel *) self),
                 TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "",
                 "User has accepted to start the call and we are connected");
-
-
         }
       else
         {
@@ -1266,7 +1267,6 @@ tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
           dbus_g_method_return_error (context, &e);
           return;
         }
-
       self->priv->accepted = TRUE;
     }
 
@@ -1405,4 +1405,12 @@ tp_base_call_channel_is_accepted (TpBaseCallChannel *self)
   g_return_val_if_fail (TP_IS_BASE_CALL_CHANNEL (self), FALSE);
 
   return self->priv->accepted;
+}
+
+gboolean
+tp_base_call_channel_is_locally_accepted (TpBaseCallChannel *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CALL_CHANNEL (self), FALSE);
+
+  return self->priv->locally_accepted;
 }
