@@ -70,7 +70,6 @@
 static void hold_iface_init (gpointer g_iface, gpointer iface_data);
 static void mute_iface_init (gpointer g_iface, gpointer iface_data);
 
-
 G_DEFINE_TYPE_WITH_CODE(TpBaseMediaCallChannel, tp_base_media_call_channel,
   TP_TYPE_BASE_CALL_CHANNEL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_HOLD,
@@ -224,6 +223,8 @@ tp_base_media_call_channel_request_hold (
   TpBaseMediaCallChannel *self = TP_BASE_MEDIA_CALL_CHANNEL (hold_iface);
   TpBaseMediaCallChannelClass *klass =
       TP_BASE_MEDIA_CALL_CHANNEL_GET_CLASS (self);
+  TpLocalHoldState new_hold_state;
+  TpLocalHoldStateReason new_hold_state_reason;
 
   if ((in_Hold && (self->priv->hold_state == TP_LOCAL_HOLD_STATE_HELD ||
               self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_HOLD)) ||
@@ -234,16 +235,16 @@ tp_base_media_call_channel_request_hold (
       goto out;
     }
 
-  self->priv->hold_state_reason = TP_LOCAL_HOLD_STATE_REASON_REQUESTED;
+  new_hold_state_reason = TP_LOCAL_HOLD_STATE_REASON_REQUESTED;
 
   if (in_Hold)
-    self->priv->hold_state = TP_LOCAL_HOLD_STATE_PENDING_HOLD;
+    new_hold_state = TP_LOCAL_HOLD_STATE_PENDING_HOLD;
   else
-    self->priv->hold_state = TP_LOCAL_HOLD_STATE_PENDING_UNHOLD;
+    new_hold_state = TP_LOCAL_HOLD_STATE_PENDING_UNHOLD;
 
 
-  tp_svc_channel_interface_hold_emit_hold_state_changed (self,
-      self->priv->hold_state, self->priv->hold_state_reason);
+  tp_base_media_call_channel_set_hold_state (self, new_hold_state,
+      new_hold_state_reason);
 
   if (klass->hold_state_changed)
     klass->hold_state_changed (self,
