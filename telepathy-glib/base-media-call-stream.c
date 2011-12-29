@@ -703,7 +703,15 @@ tp_base_media_call_stream_set_sending_state (TpBaseMediaCallStream *self,
       state == TP_STREAM_FLOW_STATE_PENDING_STOP ||
       state == TP_STREAM_FLOW_STATE_PENDING_MUTE);
 
-  if (self->priv->sending_state == state)
+
+  /* Ignore sets that change nothing */
+  if ((self->priv->sending_state == state) ||
+      (state == TP_STREAM_FLOW_STATE_PENDING_START &&
+          self->priv->sending_state == TP_STREAM_FLOW_STATE_STARTED) ||
+      (state == TP_STREAM_FLOW_STATE_PENDING_STOP &&
+          self->priv->sending_state == TP_STREAM_FLOW_STATE_STOPPED) ||
+      (state == TP_STREAM_FLOW_STATE_PENDING_MUTE &&
+          self->priv->sending_state == TP_STREAM_FLOW_STATE_MUTED))
     return;
 
   self->priv->sending_state = state;
@@ -731,7 +739,14 @@ tp_base_media_call_stream_set_receiving_state (TpBaseMediaCallStream *self,
       state == TP_STREAM_FLOW_STATE_PENDING_STOP ||
       state == TP_STREAM_FLOW_STATE_PENDING_MUTE);
 
-  if (self->priv->receiving_state == state)
+  /* Ignore sets that change nothing */
+  if ((self->priv->receiving_state == state) ||
+      (state == TP_STREAM_FLOW_STATE_PENDING_START &&
+          self->priv->receiving_state == TP_STREAM_FLOW_STATE_STARTED) ||
+      (state == TP_STREAM_FLOW_STATE_PENDING_STOP &&
+          self->priv->receiving_state == TP_STREAM_FLOW_STATE_STOPPED) ||
+      (state == TP_STREAM_FLOW_STATE_PENDING_MUTE &&
+          self->priv->receiving_state == TP_STREAM_FLOW_STATE_MUTED))
     return;
 
   self->priv->receiving_state = state;
