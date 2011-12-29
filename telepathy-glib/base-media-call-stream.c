@@ -730,7 +730,7 @@ tp_base_media_call_stream_set_sending_state (TpBaseMediaCallStream *self,
  *
  * Since: 0.UNRELEASED
  */
-void
+static void
 tp_base_media_call_stream_set_receiving_state (TpBaseMediaCallStream *self,
     TpStreamFlowState state)
 {
@@ -823,16 +823,7 @@ tp_base_media_call_stream_get_receiving_state (TpBaseMediaCallStream *self)
 }
 
 void
-_tp_base_media_call_stream_start_receiving (TpBaseMediaCallStream *self,
-    guint contact)
-{
-  tp_base_media_call_stream_set_receiving_state (self,
-      TP_STREAM_FLOW_STATE_PENDING_START);
-}
-
-static void
-remote_members_changed_cb (TpBaseMediaCallStream *self, GParamSpec *pspec,
-    gpointer user_data)
+tp_base_media_call_stream_update_receiving_state (TpBaseMediaCallStream *self)
 {
   TpBaseCallStream *bcs = TP_BASE_CALL_STREAM (self);
   GHashTable *remote_members = _tp_base_call_stream_borrow_remote_members (bcs);
@@ -881,6 +872,13 @@ remote_members_changed_cb (TpBaseMediaCallStream *self, GParamSpec *pspec,
     }
 }
 
+static void
+remote_members_changed_cb (TpBaseMediaCallStream *self, GParamSpec *pspec,
+    gpointer user_data)
+{
+  tp_base_media_call_stream_update_receiving_state (self);
+}
+
 static gboolean
 tp_base_media_call_stream_request_receiving (TpBaseCallStream *bcs,
     TpHandle contact, gboolean receive, GError **error)
@@ -912,7 +910,7 @@ tp_base_media_call_stream_request_receiving (TpBaseCallStream *bcs,
           G_MAXUINT)
         g_array_append_val (self->priv->receiving_requests, contact);
 
-      _tp_base_media_call_stream_start_receiving (self, contact);
+      tp_base_media_call_stream_update_receiving_state (self);
     }
   else
     {

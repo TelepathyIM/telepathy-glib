@@ -689,10 +689,8 @@ _tp_base_media_call_content_ready_to_accept (TpBaseMediaCallContent *self)
   TpBaseCallContent *bcc = TP_BASE_CALL_CONTENT (self);
   GList *item;
   gboolean ret = TRUE;
-
-  if (tp_base_call_content_get_disposition (bcc) !=
-      TP_CALL_CONTENT_DISPOSITION_INITIAL)
-    return TRUE;
+  gboolean initial = tp_base_call_content_get_disposition (bcc) ==
+      TP_CALL_CONTENT_DISPOSITION_INITIAL;
 
   for (item = tp_base_call_content_get_streams (bcc); item; item = item->next)
     {
@@ -707,7 +705,7 @@ _tp_base_media_call_content_ready_to_accept (TpBaseMediaCallContent *self)
       /* On incoming calls, start streaming (sending) when we accept the call,
        * if that was what the other side proposed
        */
-      if (!tp_base_channel_is_requested (
+      if (initial && !tp_base_channel_is_requested (
               TP_BASE_CHANNEL (_tp_base_call_content_get_channel (bcc))) &&
           tp_base_call_stream_get_local_sending_state (
               TP_BASE_CALL_STREAM (stream)) == TP_SENDING_STATE_PENDING_SEND)
@@ -720,18 +718,15 @@ _tp_base_media_call_content_ready_to_accept (TpBaseMediaCallContent *self)
       while (g_hash_table_iter_next (&iter, &key, &value))
         {
           TpSendingState member_state = GPOINTER_TO_INT (value);
-          guint contact = GPOINTER_TO_UINT (key);
 
           if (member_state == TP_SENDING_STATE_PENDING_SEND ||
               member_state == TP_SENDING_STATE_SENDING)
             {
+              tp_base_media_call_stream_update_receiving_state (stream);
               if (receiving_state != TP_STREAM_FLOW_STATE_STARTED)
                 {
-                  ret = FALSE;
-                  if (receiving_state !=
-                      TP_STREAM_FLOW_STATE_PENDING_START)
-                    _tp_base_media_call_stream_start_receiving (stream,
-                        contact);
+                  if (initial)
+                    ret = FALSE;
                 }
             }
         }
