@@ -826,15 +826,8 @@ void
 _tp_base_media_call_stream_start_receiving (TpBaseMediaCallStream *self,
     guint contact)
 {
-
-  if (find_handle_in_array (self->priv->receiving_requests, contact) ==
-      G_MAXUINT)
-    g_array_append_val (self->priv->receiving_requests, contact);
-
-  /* Already waiting for the streaming implementation to start receiving */
-  if (self->priv->receiving_state != TP_STREAM_FLOW_STATE_PENDING_START)
-    tp_base_media_call_stream_set_receiving_state (self,
-        TP_STREAM_FLOW_STATE_PENDING_START);
+  tp_base_media_call_stream_set_receiving_state (self,
+      TP_STREAM_FLOW_STATE_PENDING_START);
 }
 
 static void
@@ -914,6 +907,10 @@ tp_base_media_call_stream_request_receiving (TpBaseCallStream *bcs,
               return TRUE;
             }
         }
+
+      if (find_handle_in_array (self->priv->receiving_requests, contact) ==
+          G_MAXUINT)
+        g_array_append_val (self->priv->receiving_requests, contact);
 
       _tp_base_media_call_stream_start_receiving (self, contact);
     }
