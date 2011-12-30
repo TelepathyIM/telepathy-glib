@@ -126,6 +126,7 @@ void tp_base_call_channel_remove_member (TpBaseCallChannel *self,
     TpCallStateChangeReason reason,
     const gchar *dbus_reason,
     const gchar *message);
+GHashTable *tp_base_call_channel_get_call_members (TpBaseCallChannel *self);
 
 void tp_base_call_channel_remote_accept (TpBaseCallChannel *self);
 

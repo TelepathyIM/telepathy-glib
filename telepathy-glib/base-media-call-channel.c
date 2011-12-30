@@ -110,6 +110,9 @@ static gboolean tp_base_media_call_channel_is_connected (
     TpBaseCallChannel *self);
 static void tp_base_media_call_channel_update_hold_state (
     TpBaseMediaCallChannel *self);
+static void call_members_changed_cb (TpBaseMediaCallChannel *self,
+    GHashTable *updates, GHashTable *identifiers, GArray *removed,
+    GValueArray *reason, gpointer user_data);
 
 static void
 tp_base_media_call_channel_get_property (GObject *object,
@@ -185,6 +188,9 @@ tp_base_media_call_channel_init (TpBaseMediaCallChannel *self)
 
   self->priv->hold_state = TP_LOCAL_HOLD_STATE_UNHELD;
   self->priv->hold_state_reason = TP_LOCAL_HOLD_STATE_REASON_REQUESTED;
+
+  g_signal_connect (self, "call-members-changed",
+      G_CALLBACK (call_members_changed_cb), NULL);
 }
 
 static void
@@ -592,4 +598,47 @@ _tp_base_media_call_channel_streams_receiving_state_changed (
     tp_base_media_call_channel_update_hold_state (self);
   else
     tp_base_media_call_channel_hold_change_failed (self);
+}
+
+static void
+call_members_changed_cb (TpBaseMediaCallChannel *self,
+    GHashTable *updates, GHashTable *identifiers, GArray *removed,
+    GValueArray *reason, gpointer user_data)
+{
+  TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
+  GList *l, *l2;
+  GHashTable *call_members = tp_base_call_channel_get_call_members (bcc);
+
+  /* check for remote hold */
+
+  for (l = tp_base_call_channel_get_contents (bcc); l != NULL; l = l->next)
+    {
+      for (l2 = tp_base_call_content_get_streams (l->data);
+           l2 != NULL; l2 = l2->next)
+        {
+          TpBaseMediaCallStream *stream = TP_BASE_MEDIA_CALL_STREAM (l2->data);
+          GHashTable *remote_members =
+              _tp_base_call_stream_borrow_remote_members (
+                  TP_BASE_CALL_STREAM (stream));
+          gboolean all_held = TRUE;
+          GHashTableIter iter;
+          gpointer contact;
+
+          g_hash_table_iter_init (&iter, remote_members);
+          while (g_hash_table_iter_next (&iter, &contact, NULL))
+            {
+              gpointer value;
+
+              if (g_hash_table_lookup_extended(call_members, contact, NULL,
+                      &value))
+                {
+                  TpCallMemberFlags flags = GPOINTER_TO_UINT (value);
+                  if (!(flags & TP_CALL_MEMBER_FLAG_HELD))
+                    all_held = FALSE;
+                }
+            }
+
+          _tp_base_media_call_stream_set_remotely_held (stream, all_held);
+        }
+    }
 }

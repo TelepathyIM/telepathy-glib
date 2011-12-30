@@ -178,6 +178,7 @@ struct _TpBaseMediaCallStreamPrivate
   GArray *receiving_requests;
 
   gboolean local_sending;
+  gboolean remotely_held;
 };
 
 static gboolean tp_base_media_call_stream_request_receiving (
@@ -897,6 +898,9 @@ tp_base_media_call_stream_update_sending_state (TpBaseMediaCallStream *self)
         goto done;
     }
 
+  if (self->priv->remotely_held)
+    goto done;
+
   sending = self->priv->local_sending;
 
  done:
@@ -922,6 +926,21 @@ tp_base_media_call_stream_set_local_sending (TpBaseMediaCallStream *self,
 
   tp_base_media_call_stream_update_sending_state (self);
 }
+
+void
+_tp_base_media_call_stream_set_remotely_held (TpBaseMediaCallStream *self,
+    gboolean remotely_held)
+{
+  g_return_if_fail (TP_IS_BASE_MEDIA_CALL_STREAM (self));
+
+  if (remotely_held == self->priv->remotely_held)
+    return;
+
+  self->priv->remotely_held = remotely_held;
+
+  tp_base_media_call_stream_update_sending_state (self);
+}
+
 
 
 static gboolean

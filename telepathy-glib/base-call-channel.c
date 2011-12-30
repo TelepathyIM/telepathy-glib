@@ -1414,3 +1414,11 @@ tp_base_call_channel_is_locally_accepted (TpBaseCallChannel *self)
 
   return self->priv->locally_accepted;
 }
+
+GHashTable *
+tp_base_call_channel_get_call_members (TpBaseCallChannel *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CALL_CHANNEL (self), NULL);
+
+  return self->priv->call_members;
+}
