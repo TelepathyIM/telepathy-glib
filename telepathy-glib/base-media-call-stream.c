@@ -117,6 +117,7 @@
 #include "telepathy-glib/base-call-internal.h"
 #include "telepathy-glib/base-channel.h"
 #include "telepathy-glib/base-connection.h"
+#include "telepathy-glib/base-media-call-channel.h"
 #include "telepathy-glib/call-stream-endpoint.h"
 #include "telepathy-glib/dbus.h"
 #include "telepathy-glib/debug-internal.h"
@@ -826,7 +827,15 @@ tp_base_media_call_stream_update_receiving_state (TpBaseMediaCallStream *self)
   TpBaseCallChannel *channel = _tp_base_call_stream_get_channel (bcs);
 
   if (channel == NULL || !tp_base_call_channel_is_locally_accepted (channel))
-    return;
+    goto done;
+
+  if (TP_IS_BASE_MEDIA_CALL_CHANNEL (channel))
+    {
+      TpBaseMediaCallChannel *mediachan = TP_BASE_MEDIA_CALL_CHANNEL (channel);
+
+      if (_tp_base_media_channel_is_held (mediachan))
+        goto done;
+    }
 
   g_hash_table_iter_init (&iter, remote_members);
   while (g_hash_table_iter_next (&iter, &key, &value))
@@ -849,19 +858,17 @@ tp_base_media_call_stream_update_receiving_state (TpBaseMediaCallStream *self)
         break;
     }
 
+ done:
+
   if (remote_sending)
     {
-      if (self->priv->receiving_state == TP_STREAM_FLOW_STATE_STOPPED ||
-          self->priv->receiving_state == TP_STREAM_FLOW_STATE_PENDING_STOP)
-        tp_base_media_call_stream_set_receiving_state (self,
-            TP_STREAM_FLOW_STATE_PENDING_START);
+      tp_base_media_call_stream_set_receiving_state (self,
+          TP_STREAM_FLOW_STATE_PENDING_START);
     }
   else
     {
-      if (self->priv->receiving_state == TP_STREAM_FLOW_STATE_STARTED ||
-          self->priv->receiving_state == TP_STREAM_FLOW_STATE_PENDING_START)
-        tp_base_media_call_stream_set_receiving_state (self,
-            TP_STREAM_FLOW_STATE_PENDING_STOP);
+      tp_base_media_call_stream_set_receiving_state (self,
+          TP_STREAM_FLOW_STATE_PENDING_STOP);
     }
 }
 
@@ -875,38 +882,31 @@ remote_members_changed_cb (TpBaseMediaCallStream *self, GParamSpec *pspec,
 void
 tp_base_media_call_stream_update_sending_state (TpBaseMediaCallStream *self)
 {
-  if (self->priv->local_sending)
+  gboolean sending = FALSE;
+  TpBaseCallChannel *channel = _tp_base_call_stream_get_channel (
+      TP_BASE_CALL_STREAM (self));
+
+  if (channel == NULL)
+    goto done;
+
+  if (TP_IS_BASE_MEDIA_CALL_CHANNEL (channel))
     {
-      switch (self->priv->sending_state)
-        {
-        case TP_STREAM_FLOW_STATE_PENDING_STOP:
-        case TP_STREAM_FLOW_STATE_STOPPED:
-          tp_base_media_call_stream_set_sending_state (self,
-              TP_STREAM_FLOW_STATE_PENDING_START);
-          break;
-        case TP_STREAM_FLOW_STATE_PENDING_START:
-        case TP_STREAM_FLOW_STATE_STARTED:
-          break;
-        default:
-          g_assert_not_reached ();
-        }
+      TpBaseMediaCallChannel *mediachan = TP_BASE_MEDIA_CALL_CHANNEL (channel);
+
+      if (_tp_base_media_channel_is_held (mediachan))
+        goto done;
     }
+
+  sending = self->priv->local_sending;
+
+ done:
+
+  if (sending)
+      tp_base_media_call_stream_set_sending_state (self,
+          TP_STREAM_FLOW_STATE_PENDING_START);
   else
-    {
-     switch (self->priv->sending_state)
-        {
-        case TP_STREAM_FLOW_STATE_PENDING_STOP:
-        case TP_STREAM_FLOW_STATE_STOPPED:
-          break;
-        case TP_STREAM_FLOW_STATE_PENDING_START:
-        case TP_STREAM_FLOW_STATE_STARTED:
-          tp_base_media_call_stream_set_sending_state (self,
-              TP_STREAM_FLOW_STATE_PENDING_STOP);
-          break;
-        default:
-          g_assert_not_reached ();
-        }
-    }
+      tp_base_media_call_stream_set_sending_state (self,
+          TP_STREAM_FLOW_STATE_PENDING_STOP);
 }
 
 void
@@ -1004,6 +1004,8 @@ tp_base_media_call_stream_complete_sending_state_change (
   TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (iface);
   TpBaseMediaCallStreamClass *klass =
       TP_BASE_MEDIA_CALL_STREAM_GET_CLASS (self);
+  TpBaseCallChannel *channel = _tp_base_call_stream_get_channel (
+      TP_BASE_CALL_STREAM (self));
 
   if (!correct_state_transition (self->priv->sending_state, state))
     {
@@ -1014,6 +1016,10 @@ tp_base_media_call_stream_complete_sending_state_change (
     }
 
   self->priv->sending_state = state;
+
+  if (channel != NULL && TP_IS_BASE_MEDIA_CALL_CHANNEL (channel))
+    _tp_base_media_call_channel_streams_sending_state_changed (
+        TP_BASE_MEDIA_CALL_CHANNEL (channel), TRUE);
 
   if (state == TP_STREAM_FLOW_STATE_STOPPED &&
       klass->set_sending != NULL)
@@ -1036,6 +1042,8 @@ tp_base_media_call_stream_report_sending_failure (
   TpBaseMediaCallStreamClass *klass =
       TP_BASE_MEDIA_CALL_STREAM_GET_CLASS (self);
   TpStreamFlowState old_state = self->priv->sending_state;
+  TpBaseCallChannel *channel = _tp_base_call_stream_get_channel (
+      TP_BASE_CALL_STREAM (self));
 
   switch (self->priv->sending_state)
     {
@@ -1054,10 +1062,17 @@ tp_base_media_call_stream_report_sending_failure (
       }
     }
 
+  if (channel != NULL && TP_IS_BASE_MEDIA_CALL_CHANNEL (channel))
+    _tp_base_media_call_channel_streams_sending_state_changed (
+        TP_BASE_MEDIA_CALL_CHANNEL (channel), FALSE);
+
+
   if (klass->report_sending_failure != NULL)
     klass->report_sending_failure (self, old_state, reason, dbus_reason,
         message);
 
+  tp_svc_call_stream_interface_media_emit_sending_state_changed (self,
+      self->priv->sending_state);
   tp_svc_call_stream_interface_media_return_from_report_sending_failure (
       context);
 }
@@ -1071,6 +1086,8 @@ tp_base_media_call_stream_complete_receiving_state_change (
   TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (iface);
   TpBaseMediaCallStreamClass *klass =
       TP_BASE_MEDIA_CALL_STREAM_GET_CLASS (self);
+  TpBaseCallChannel *channel = _tp_base_call_stream_get_channel (
+      TP_BASE_CALL_STREAM (self));
 
   if (!correct_state_transition (self->priv->receiving_state, state))
     {
@@ -1082,6 +1099,10 @@ tp_base_media_call_stream_complete_receiving_state_change (
 
   self->priv->receiving_state = state;
   g_object_notify (G_OBJECT (self), "receiving-state");
+
+  if (channel != NULL && TP_IS_BASE_MEDIA_CALL_CHANNEL (channel))
+    _tp_base_media_call_channel_streams_receiving_state_changed (
+        TP_BASE_MEDIA_CALL_CHANNEL (channel), TRUE);
 
   if (state == TP_STREAM_FLOW_STATE_STARTED)
     {
@@ -1117,6 +1138,8 @@ tp_base_media_call_stream_report_receiving_failure (
   TpBaseMediaCallStreamClass *klass =
       TP_BASE_MEDIA_CALL_STREAM_GET_CLASS (self);
   TpStreamFlowState old_state = self->priv->receiving_state;
+  TpBaseCallChannel *channel = _tp_base_call_stream_get_channel (
+      TP_BASE_CALL_STREAM (self));
 
   switch (self->priv->receiving_state)
     {
@@ -1141,10 +1164,16 @@ tp_base_media_call_stream_report_receiving_failure (
       }
     }
 
+  if (channel != NULL && TP_IS_BASE_MEDIA_CALL_CHANNEL (channel))
+    _tp_base_media_call_channel_streams_receiving_state_changed (
+        TP_BASE_MEDIA_CALL_CHANNEL (channel), FALSE);
+
   if (klass->report_receiving_failure != NULL)
     klass->report_receiving_failure (self, old_state,
         reason, dbus_reason, message);
 
+  tp_svc_call_stream_interface_media_emit_receiving_state_changed (self,
+      self->priv->receiving_state);
   tp_svc_call_stream_interface_media_return_from_report_receiving_failure (
       context);
 }

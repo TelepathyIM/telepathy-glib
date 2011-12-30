@@ -74,9 +74,6 @@ GType tp_base_media_call_channel_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), \
    TP_TYPE_BASE_MEDIA_CALL_CHANNEL, TpBaseMediaCallChannelClass))
 
-void tp_base_media_call_channel_set_hold_state (TpBaseMediaCallChannel *self,
-    TpLocalHoldState hold_state, TpLocalHoldStateReason hold_state_reason);
-
 
 G_END_DECLS
 
