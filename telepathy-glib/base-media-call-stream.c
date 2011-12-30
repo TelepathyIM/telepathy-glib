@@ -175,6 +175,8 @@ struct _TpBaseMediaCallStreamPrivate
   gboolean ice_restart_pending;
   /* Array of TpHandle that have requested to receive */
   GArray *receiving_requests;
+
+  gboolean local_sending;
 };
 
 static gboolean tp_base_media_call_stream_request_receiving (
@@ -694,7 +696,7 @@ tp_base_media_call_stream_get_endpoints (TpBaseMediaCallStream *self)
  *
  * Since: 0.UNRELEASED
  */
-void
+static void
 tp_base_media_call_stream_set_sending_state (TpBaseMediaCallStream *self,
     TpStreamFlowState state)
 {
@@ -784,22 +786,13 @@ tp_base_media_call_stream_set_sending (TpBaseCallStream *bcs,
     }
   else
    {
-     switch (self->priv->sending_state)
-       {
-       case TP_STREAM_FLOW_STATE_STOPPED:
-         /* Already stopped, lets call the callback directly */
-         if (klass->set_sending != NULL)
-           return klass->set_sending (bcs, sending, error);
-         break;
-       case TP_STREAM_FLOW_STATE_PENDING_STOP:
-         /* Already waiting for the streaming implementation to stop sending */
-         break;
-       default:
-         tp_base_media_call_stream_set_sending_state (self,
-             TP_STREAM_FLOW_STATE_PENDING_STOP);
-         break;
-       }
-    }
+     tp_base_media_call_stream_set_local_sending (self, FALSE);
+
+     /* Already stopped, lets call the callback directly */
+     if (self->priv->sending_state == TP_STREAM_FLOW_STATE_STOPPED &&
+         klass->set_sending != NULL)
+       return klass->set_sending (bcs, sending, error);
+   }
 
   return TRUE;
 }
@@ -878,6 +871,58 @@ remote_members_changed_cb (TpBaseMediaCallStream *self, GParamSpec *pspec,
 {
   tp_base_media_call_stream_update_receiving_state (self);
 }
+
+void
+tp_base_media_call_stream_update_sending_state (TpBaseMediaCallStream *self)
+{
+  if (self->priv->local_sending)
+    {
+      switch (self->priv->sending_state)
+        {
+        case TP_STREAM_FLOW_STATE_PENDING_STOP:
+        case TP_STREAM_FLOW_STATE_STOPPED:
+          tp_base_media_call_stream_set_sending_state (self,
+              TP_STREAM_FLOW_STATE_PENDING_START);
+          break;
+        case TP_STREAM_FLOW_STATE_PENDING_START:
+        case TP_STREAM_FLOW_STATE_STARTED:
+          break;
+        default:
+          g_assert_not_reached ();
+        }
+    }
+  else
+    {
+     switch (self->priv->sending_state)
+        {
+        case TP_STREAM_FLOW_STATE_PENDING_STOP:
+        case TP_STREAM_FLOW_STATE_STOPPED:
+          break;
+        case TP_STREAM_FLOW_STATE_PENDING_START:
+        case TP_STREAM_FLOW_STATE_STARTED:
+          tp_base_media_call_stream_set_sending_state (self,
+              TP_STREAM_FLOW_STATE_PENDING_STOP);
+          break;
+        default:
+          g_assert_not_reached ();
+        }
+    }
+}
+
+void
+tp_base_media_call_stream_set_local_sending (TpBaseMediaCallStream *self,
+    gboolean sending)
+{
+  g_return_if_fail (TP_IS_BASE_MEDIA_CALL_STREAM (self));
+
+  if (sending == self->priv->local_sending)
+    return;
+
+  self->priv->local_sending = sending;
+
+  tp_base_media_call_stream_update_sending_state (self);
+}
+
 
 static gboolean
 tp_base_media_call_stream_request_receiving (TpBaseCallStream *bcs,
@@ -970,11 +1015,9 @@ tp_base_media_call_stream_complete_sending_state_change (
 
   self->priv->sending_state = state;
 
-  if (state == TP_STREAM_FLOW_STATE_STOPPED)
-    {
-      if (klass->set_sending != NULL)
-        klass->set_sending (TP_BASE_CALL_STREAM (self), FALSE, NULL);
-    }
+  if (state == TP_STREAM_FLOW_STATE_STOPPED &&
+      klass->set_sending != NULL)
+    klass->set_sending (TP_BASE_CALL_STREAM (self), FALSE, NULL);
 
   tp_svc_call_stream_interface_media_emit_sending_state_changed (self, state);
   tp_svc_call_stream_interface_media_return_from_complete_sending_state_change
@@ -1055,10 +1098,6 @@ tp_base_media_call_stream_complete_receiving_state_change (
       if (self->priv->receiving_requests->len > 0)
         g_array_remove_range (self->priv->receiving_requests, 0,
             self->priv->receiving_requests->len);
-    }
-  else if (state == TP_STREAM_FLOW_STATE_STOPPED)
-    {
-      /* FIXME: Update the Stream RemoteMembers state if possible */
     }
 
   tp_svc_call_stream_interface_media_emit_receiving_state_changed (self, state);

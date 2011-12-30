@@ -100,14 +100,16 @@ const gchar *tp_base_media_call_stream_get_username (
     TpBaseMediaCallStream *self);
 const gchar *tp_base_media_call_stream_get_password (
     TpBaseMediaCallStream *self);
-void tp_base_media_call_stream_set_sending_state (TpBaseMediaCallStream *self,
-    TpStreamFlowState state);
 TpStreamFlowState tp_base_media_call_stream_get_sending_state (
     TpBaseMediaCallStream *self);
 TpStreamFlowState tp_base_media_call_stream_get_receiving_state (
     TpBaseMediaCallStream *self);
 void tp_base_media_call_stream_update_receiving_state (
     TpBaseMediaCallStream *self);
+void tp_base_media_call_stream_update_sending_state (
+    TpBaseMediaCallStream *self);
+void tp_base_media_call_stream_set_local_sending (TpBaseMediaCallStream *self,
+    gboolean sending);
 
 
 G_END_DECLS
