@@ -39,6 +39,12 @@ typedef struct _TpBaseCallContentPrivate TpBaseCallContentPrivate;
 typedef struct _TpBaseCallContentClass TpBaseCallContentClass;
 
 typedef void (*TpBaseCallContentDeinitFunc) (TpBaseCallContent *self);
+typedef gboolean (*TpBaseCallContentStartToneFunc) (TpBaseCallContent *self,
+    guchar event, GError **error);
+typedef gboolean (*TpBaseCallContentStopToneFunc) (TpBaseCallContent *self,
+    GError **error);
+typedef gboolean (*TpBaseCallContentMultipleTonesFunc) (TpBaseCallContent *self,
+    const gchar *tones, GError **error);
 
 struct _TpBaseCallContentClass {
   /*<private>*/
@@ -49,6 +55,10 @@ struct _TpBaseCallContentClass {
   /*< public >*/
   TpBaseCallContentDeinitFunc deinit;
   const gchar * const *extra_interfaces;
+
+  TpBaseCallContentStartToneFunc start_tone;
+  TpBaseCallContentStopToneFunc stop_tone;
+  TpBaseCallContentMultipleTonesFunc multiple_tones;
 
   /*<private>*/
   gpointer future[4];

@@ -82,6 +82,8 @@
 #include "telepathy-glib/util.h"
 
 static void call_content_iface_init (gpointer g_iface, gpointer iface_data);
+static void call_content_dtmf_iface_init (gpointer g_iface,
+    gpointer iface_data);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseCallContent, tp_base_call_content,
     G_TYPE_OBJECT,
@@ -90,6 +92,8 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseCallContent, tp_base_call_content,
         tp_dbus_properties_mixin_iface_init)
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_CONTENT,
         call_content_iface_init)
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_CONTENT_INTERFACE_DTMF,
+        call_content_dtmf_iface_init)
     )
 
 struct _TpBaseCallContentPrivate
@@ -117,12 +121,18 @@ enum
   PROP_OBJECT_PATH = 1,
   PROP_CONNECTION,
 
+  /* Call.Content Properties */
   PROP_INTERFACES,
   PROP_NAME,
   PROP_MEDIA_TYPE,
   PROP_CREATOR,
   PROP_DISPOSITION,
-  PROP_STREAMS
+  PROP_STREAMS,
+
+  /* Call.Content.Interface.DTMF properties */
+
+  PROP_CURRENTLY_SENDING_TONES,
+  PROP_DEFERRED_TONES,
 };
 
 static void
@@ -252,6 +262,12 @@ tp_base_call_content_get_property (
           g_value_take_boxed (value, arr);
           break;
         }
+      case PROP_CURRENTLY_SENDING_TONES:
+        g_value_set_boolean (value, FALSE);
+        break;
+      case PROP_DEFERRED_TONES:
+        g_value_set_static_string (value, "");
+        break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
@@ -308,11 +324,21 @@ tp_base_call_content_class_init (
     { "Streams", "streams", NULL },
     { NULL }
   };
+  static TpDBusPropertiesMixinPropImpl content_dtmf_props[] = {
+    { "CurrentlySendingTones", "current-sending-tones", NULL },
+    { "DeferredTones", "deferred-tones", NULL },
+    { NULL }
+  };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
       { TP_IFACE_CALL_CONTENT,
         tp_dbus_properties_mixin_getter_gobject_properties,
         NULL,
         content_props,
+      },
+      { TP_IFACE_CALL_CONTENT_INTERFACE_DTMF,
+        tp_dbus_properties_mixin_getter_gobject_properties,
+        NULL,
+        content_dtmf_props,
       },
       { NULL }
   };
@@ -431,6 +457,37 @@ tp_base_call_content_class_init (
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_STREAMS,
       param_spec);
+
+  /**
+   * TpBaseCallContent:currently-sending-tones
+   *
+   * If this content is currently sending tones or not
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_boolean ("currently-sending-tones",
+      "CurrentlySendingTones",
+      "If the Content is currently sending tones or not",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CURRENTLY_SENDING_TONES,
+      param_spec);
+
+  /**
+   * TpBaseCallContent:deferred-tones
+   *
+   * Tones that are waiting for the user action to play.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_string ("deferred-tones",
+      "DeferredTones",
+      "The tones requested in the initial channel request",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_DEFERRED_TONES,
+      param_spec);
+
 
   bcc_class->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
@@ -688,6 +745,19 @@ _tp_base_call_content_set_channel (TpBaseCallContent *self,
   g_return_if_fail (self->priv->channel == NULL);
 
   self->priv->channel = channel;
+
+  if (self->priv->disposition == TP_CALL_CONTENT_DISPOSITION_INITIAL)
+    {
+      TpBaseCallContentClass *klass = TP_BASE_CALL_CONTENT_GET_CLASS (self);
+      const gchar *tones;
+
+      tones =_tp_base_call_channel_get_initial_tones (channel);
+      if (tones && tones[0] && klass->multiple_tones != NULL)
+        {
+          klass->multiple_tones (self, tones, NULL);
+        }
+    }
+
 }
 
 TpBaseCallChannel *
@@ -735,4 +805,98 @@ _tp_base_call_content_accepted (TpBaseCallContent *self,
             TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
             "User accepted the Call");
     }
+}
+
+static void
+tp_call_content_start_tone (TpSvcCallContentInterfaceDTMF *dtmf,
+    guchar event,
+    DBusGMethodInvocation *context)
+{
+  TpBaseCallContent *self = TP_BASE_CALL_CONTENT (dtmf);
+  TpBaseCallContentClass *klass = TP_BASE_CALL_CONTENT_GET_CLASS (self);
+  GError *error = NULL;
+
+  if (klass->start_tone == NULL)
+    {
+      GError err = {G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD,
+                    "Method does not exist"};
+      dbus_g_method_return_error (context, &err);
+      return;
+    }
+
+  if (!klass->start_tone (self, event, &error))
+    {
+      dbus_g_method_return_error (context, error);
+      g_clear_error (&error);
+      return;
+    }
+
+  tp_svc_call_content_interface_dtmf_return_from_start_tone (context);
+}
+
+static void
+tp_call_content_stop_tone (TpSvcCallContentInterfaceDTMF *dtmf,
+   DBusGMethodInvocation *context)
+{
+  TpBaseCallContent *self = TP_BASE_CALL_CONTENT (dtmf);
+  TpBaseCallContentClass *klass = TP_BASE_CALL_CONTENT_GET_CLASS (self);
+  GError *error = NULL;
+
+  if (klass->stop_tone == NULL)
+    {
+      GError err = {G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD,
+                    "Method does not exist"};
+      dbus_g_method_return_error (context, &err);
+      return;
+    }
+
+  if (!klass->stop_tone (self, &error))
+    {
+      dbus_g_method_return_error (context, error);
+      g_clear_error (&error);
+      return;
+    }
+
+  tp_svc_call_content_interface_dtmf_return_from_stop_tone (context);
+}
+
+static void
+tp_call_content_multiple_tones (TpSvcCallContentInterfaceDTMF *dtmf,
+    const gchar *tones,
+    DBusGMethodInvocation *context)
+{
+  TpBaseCallContent *self = TP_BASE_CALL_CONTENT (dtmf);
+  TpBaseCallContentClass *klass = TP_BASE_CALL_CONTENT_GET_CLASS (self);
+  GError *error = NULL;
+
+  if (klass->multiple_tones == NULL)
+    {
+      GError err = {G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD,
+                    "Method does not exist"};
+      dbus_g_method_return_error (context, &err);
+      return;
+    }
+
+  if (!klass->multiple_tones (self, tones, &error))
+    {
+      dbus_g_method_return_error (context, error);
+      g_clear_error (&error);
+      return;
+    }
+
+  tp_svc_call_content_interface_dtmf_return_from_multiple_tones (context);
+}
+
+static void
+call_content_dtmf_iface_init (gpointer g_iface, gpointer iface_data)
+{
+  TpSvcCallContentInterfaceDTMFClass *klass =
+      (TpSvcCallContentInterfaceDTMFClass *) g_iface;
+
+#define IMPLEMENT(x) tp_svc_call_content_interface_dtmf_implement_##x (\
+    klass, tp_call_content_##x)
+  IMPLEMENT(start_tone);
+  IMPLEMENT(stop_tone);
+  IMPLEMENT(multiple_tones);
+#undef IMPLEMENT
 }
