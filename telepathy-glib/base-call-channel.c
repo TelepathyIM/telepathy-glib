@@ -729,11 +729,26 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
     tp_svc_channel_type_call_emit_call_state_changed (self, self->priv->state,
         self->priv->flags, self->priv->reason, self->priv->details);
 
+  /* Move from INITIALISING to INITIALISED if we are already connected */
   if (self->priv->state != old_state &&
       self->priv->state == TP_CALL_STATE_INITIALISING &&
       tp_base_call_channel_is_connected (self))
     {
       self->priv->state = TP_CALL_STATE_INITIALISED;
+      if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
+        {
+          tp_svc_channel_type_call_emit_call_state_changed (self,
+              self->priv->state, self->priv->flags, self->priv->reason,
+              self->priv->details);
+        }
+    }
+
+  /* Move from ACCEPTED to ACTIVE if we are already connected */
+  if (self->priv->state != old_state &&
+      self->priv->state == TP_CALL_STATE_ACCEPTED &&
+      tp_base_call_channel_is_connected (self))
+    {
+      self->priv->state = TP_CALL_STATE_ACTIVE;
       if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
         {
           tp_svc_channel_type_call_emit_call_state_changed (self,
@@ -1165,11 +1180,6 @@ tp_base_call_channel_set_queued (TpSvcChannelTypeCall *iface,
     }
 }
 
-/* FIXME: We need to decide if we should be active or accepted depending
- * on the connectiveness
- * This should probably be in the TpBaseMediaCallChannel class
- */
-
 gboolean
 tp_base_call_channel_is_connected (TpBaseCallChannel *self)
 {
@@ -1200,13 +1210,6 @@ tp_base_call_channel_remote_accept (TpBaseCallChannel *self)
       TP_CALL_STATE_ACCEPTED,
       0, TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "", "");
 
-  if (tp_base_call_channel_is_connected (self))
-    {
-      tp_base_call_channel_set_state (self,
-          TP_CALL_STATE_ACTIVE,
-          0, TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "", "");
-    }
-
   if (klass->remote_accept)
     klass->remote_accept (self);
 }
@@ -1232,12 +1235,6 @@ tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
               tp_base_channel_get_self_handle ((TpBaseChannel *) self),
               TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
               "User has accepted to start the call");
-          if (tp_base_call_channel_is_connected (self))
-            tp_base_call_channel_set_state (self,
-                TP_CALL_STATE_INITIALISED,
-                tp_base_channel_get_self_handle ((TpBaseChannel *) self),
-                TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "",
-                "User has accepted to start the call and we are connected");
         }
       else
         {
@@ -1256,13 +1253,6 @@ tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
               tp_base_channel_get_self_handle ((TpBaseChannel *) self),
               TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
               "User has accepted call");
-          if (tp_base_call_channel_is_connected (self))
-            tp_base_call_channel_set_state (self,
-                TP_CALL_STATE_ACTIVE,
-                tp_base_channel_get_self_handle ((TpBaseChannel *) self),
-                  TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "",
-                  "User has accepted call and we are connected");
-
         }
       else
         {
