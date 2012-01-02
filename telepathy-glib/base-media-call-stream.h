@@ -46,6 +46,10 @@ typedef void (*TpBaseMediaCallStreamRequestReceivingFunc) (
     TpBaseMediaCallStream *self,
     TpHandle contact,
     gboolean receive);
+typedef gboolean (*TpBaseMediaCallStreamSetSendingFunc) (
+    TpBaseMediaCallStream *self,
+    gboolean sending,
+    GError **error);
 
 struct _TpBaseMediaCallStreamClass {
   /*<private>*/
@@ -58,7 +62,7 @@ struct _TpBaseMediaCallStreamClass {
   TpBaseMediaCallStreamVoidFunc finish_initial_candidates;
 
   TpBaseMediaCallStreamRequestReceivingFunc request_receiving;
-  TpBaseCallStreamSetSendingFunc set_sending;
+  TpBaseMediaCallStreamSetSendingFunc set_sending;
 
   /*<private>*/
   gpointer future[4];

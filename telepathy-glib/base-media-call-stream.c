@@ -363,7 +363,7 @@ tp_base_media_call_stream_class_init (TpBaseMediaCallStreamClass *klass)
 
   bcs_class->extra_interfaces = tp_base_media_call_stream_interfaces;
   bcs_class->request_receiving = tp_base_media_call_stream_request_receiving;
-  bcs_class->set_sending = tp_base_media_call_stream_set_sending;;
+  bcs_class->set_sending = tp_base_media_call_stream_set_sending;
 
   /**
    * TpBaseMediaCallStream:sending-state:
@@ -871,7 +871,7 @@ tp_base_media_call_stream_set_sending (TpBaseCallStream *bcs,
   if (sending)
     {
       if (klass->set_sending != NULL &&
-          !klass->set_sending (bcs, sending, error))
+          !klass->set_sending (self, sending, error))
         return FALSE;
     }
   else
@@ -881,7 +881,7 @@ tp_base_media_call_stream_set_sending (TpBaseCallStream *bcs,
      /* Already stopped, lets call the callback directly */
      if (self->priv->sending_state == TP_STREAM_FLOW_STATE_STOPPED &&
          klass->set_sending != NULL)
-       return klass->set_sending (bcs, sending, error);
+       return klass->set_sending (self, sending, error);
    }
 
   return TRUE;
@@ -981,7 +981,7 @@ tp_base_media_call_stream_complete_sending_state_change (
 
   if (state == TP_STREAM_FLOW_STATE_STOPPED &&
       klass->set_sending != NULL)
-    klass->set_sending (TP_BASE_CALL_STREAM (self), FALSE, NULL);
+    klass->set_sending (self, FALSE, NULL);
 
   tp_svc_call_stream_interface_media_emit_sending_state_changed (self, state);
   tp_svc_call_stream_interface_media_return_from_complete_sending_state_change
