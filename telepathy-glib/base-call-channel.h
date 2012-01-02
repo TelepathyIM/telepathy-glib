@@ -53,13 +53,11 @@ struct _TpBaseCallChannelClass {
   TpBaseCallChannelAddContentFunc add_content;
   TpBaseCallChannelHangupFunc hangup;
 
+  /*<private>*/
   /* For media subclasses */
-
-
   gboolean (*is_connected) (TpBaseCallChannel *self);
   void (*remote_accept) (TpBaseCallChannel *self);
 
-  /*<private>*/
   gpointer future[4];
 };
 
