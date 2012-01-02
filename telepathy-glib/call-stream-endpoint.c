@@ -130,6 +130,9 @@ tp_call_stream_endpoint_init (TpCallStreamEndpoint *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TYPE_CALL_STREAM_ENDPOINT, TpCallStreamEndpointPrivate);
+
+  self->priv->username = g_strdup ("");
+  self->priv->password = g_strdup ("");
   self->priv->remote_candidates = g_ptr_array_new_with_free_func (
       (GDestroyNotify) g_value_array_free);
   self->priv->selected_candidate_pairs = g_ptr_array_new_with_free_func (
@@ -199,16 +202,10 @@ tp_call_stream_endpoint_get_property (GObject *object,
         {
           GValueArray *remote_credentials;
 
-          if (self->priv->username && self->priv->password)
-            remote_credentials = tp_value_array_build (2,
-                G_TYPE_STRING, self->priv->username,
-                G_TYPE_STRING, self->priv->password,
-                G_TYPE_INVALID);
-          else
-            remote_credentials = tp_value_array_build (2,
-                G_TYPE_STRING, "",
-                G_TYPE_STRING, "",
-                G_TYPE_INVALID);
+          remote_credentials = tp_value_array_build (2,
+              G_TYPE_STRING, self->priv->username,
+              G_TYPE_STRING, self->priv->password,
+              G_TYPE_INVALID);
           g_value_take_boxed (value, remote_credentials);
           break;
         }
@@ -643,7 +640,6 @@ tp_call_stream_endpoint_add_new_candidate (TpCallStreamEndpoint *self,
   g_ptr_array_unref (candidates);
 }
 
-
 void
 tp_call_stream_endpoint_set_remote_credentials (TpCallStreamEndpoint *self,
     const gchar *username,
@@ -651,9 +647,8 @@ tp_call_stream_endpoint_set_remote_credentials (TpCallStreamEndpoint *self,
 {
   g_return_if_fail (TP_IS_CALL_STREAM_ENDPOINT (self));
 
-  if (self->priv->username && self->priv->password &&
-      !strcmp (self->priv->username, username) &&
-      !strcmp (self->priv->password, password))
+  if (!tp_strdiff (self->priv->username, username) &&
+      !tp_strdiff (self->priv->password, password))
     return;
 
   g_free (self->priv->username);
