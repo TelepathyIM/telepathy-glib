@@ -77,6 +77,7 @@
 #include <telepathy-glib/base-call-content.h>
 #include <telepathy-glib/base-call-stream.h>
 #include <telepathy-glib/base-channel.h>
+#include <telepathy-glib/base-media-call-channel.h>
 #include <telepathy-glib/base-media-call-content.h>
 #include <telepathy-glib/base-media-call-stream.h>
 #include <telepathy-glib/base-connection.h>

@@ -640,6 +640,16 @@ tp_call_stream_endpoint_add_new_candidate (TpCallStreamEndpoint *self,
   g_ptr_array_unref (candidates);
 }
 
+/**
+ * tp_call_stream_endpoint_set_remote_credentials:
+ * @self: a #TpCallStreamEndpoint
+ * @username: the username
+ * @password: the password
+ *
+ * Set the username and password to use for @self's crendentials.
+ *
+ * Since: 0.UNRELEASED
+ */
 void
 tp_call_stream_endpoint_set_remote_credentials (TpCallStreamEndpoint *self,
     const gchar *username,

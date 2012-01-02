@@ -56,6 +56,13 @@
  * @finish_initial_candidates: optional; called when the initial batch of
  *  candidates has been added, and should now be processed/sent to the remote
  *  side
+ * @request_receiving: optional (see #TpBaseCallStream:can-request-receiving);
+ *  virtual method called when user requested receiving from the given remote
+ *  contact. This virtual method should be implemented instead of
+ *  #TpBaseCallStream.request_receiving
+ * @set_sending: mandatory; virtual method called when user requested to
+ *  start/stop sending to remote contacts. This virtual method should be
+ *  implemented instead of #TpBaseCallStream.set_sending
  *
  * The class structure for #TpBaseMediaCallStream
  *
@@ -93,6 +100,7 @@
 /**
  * TpBaseMediaCallStreamReportFailureFunc:
  * @self: a #TpBaseMediaCallStream
+ * @old_state: the previous #TpStreamFlowState
  * @reason: the #TpCallStateChangeReason of the change
  * @dbus_reason: a specific reason for the change, which may be a D-Bus error in
  *  the Telepathy namespace, a D-Bus error in any other namespace (for
@@ -104,6 +112,30 @@
  * Signature of an implementation of
  * #TpBaseMediaCallStreamClass.report_sending_failure and
  * #TpBaseMediaCallStreamClass.report_receiving_failure.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * TpBaseMediaCallStreamSetSendingFunc:
+ * @self: a #TpBaseMediaCallStream
+ * @sending: whether or not user would like to be sending
+ * @error: a #GError to fill
+ *
+ * Signature of an implementation of #TpBaseMediaCallStreamClass.set_sending.
+ *
+ * Returns: %TRUE on success, %FALSE otherwise.
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * TpBaseMediaCallStreamRequestReceivingFunc:
+ * @self: a #TpBaseMediaCallStream
+ * @contact: the contact from who user wants to start or stop receiving
+ * @receive: wheter or not user would like to be receiving
+ *
+ * Signature of an implementation of
+ * #TpBaseMediaCallStreamClass.request_receiving.
  *
  * Since: 0.UNRELEASED
  */
@@ -717,6 +749,14 @@ set_sending_state (TpBaseMediaCallStream *self,
   tp_svc_call_stream_interface_media_emit_sending_state_changed (self, state);
 }
 
+/**
+ * tp_base_media_call_stream_update_sending_state:
+ * @self: a #TpBaseMediaCallStream
+ *
+ * Update the sending state.
+ *
+ * Since: 0.UNRELEASED
+ */
 void
 tp_base_media_call_stream_update_sending_state (TpBaseMediaCallStream *self)
 {
@@ -748,6 +788,15 @@ done:
     set_sending_state (self, TP_STREAM_FLOW_STATE_PENDING_STOP);
 }
 
+/**
+ * tp_base_media_call_stream_get_sending_state:
+ * @self: a #TpBaseMediaCallStream
+ *
+ * <!-- -->
+ *
+ * Returns: the value of #TpBaseMediaCallStream:sending-state.
+ * Since: 0.UNRELEASED
+ */
 TpStreamFlowState
 tp_base_media_call_stream_get_sending_state (TpBaseMediaCallStream *self)
 {
@@ -757,6 +806,15 @@ tp_base_media_call_stream_get_sending_state (TpBaseMediaCallStream *self)
   return self->priv->sending_state;
 }
 
+/**
+ * tp_base_media_call_stream_set_local_sending:
+ * @self: a #TpBaseMediaCallStream
+ * @sending: whether or not we are sending
+ *
+ * Set local sending state.
+ *
+ * Since: 0.UNRELEASED
+ */
 void
 tp_base_media_call_stream_set_local_sending (TpBaseMediaCallStream *self,
     gboolean sending)
@@ -798,6 +856,14 @@ set_receiving_state (TpBaseMediaCallStream *self,
   tp_svc_call_stream_interface_media_emit_receiving_state_changed (self, state);
 }
 
+/**
+ * tp_base_media_call_stream_update_receiving_state:
+ * @self: a #TpBaseMediaCallStream
+ *
+ * Update the receiving state.
+ *
+ * Since: 0.UNRELEASED
+ */
 void
 tp_base_media_call_stream_update_receiving_state (TpBaseMediaCallStream *self)
 {
@@ -848,6 +914,15 @@ done:
     set_receiving_state (self, TP_STREAM_FLOW_STATE_PENDING_STOP);
 }
 
+/**
+ * tp_base_media_call_stream_get_receiving_state:
+ * @self: a #TpBaseMediaCallStream
+ *
+ * <!-- -->
+ *
+ * Returns: the value of #TpBaseMediaCallStream:receiving-state.
+ * Since: 0.UNRELEASED
+ */
 TpStreamFlowState
 tp_base_media_call_stream_get_receiving_state (TpBaseMediaCallStream *self)
 {
@@ -889,7 +964,9 @@ tp_base_media_call_stream_set_sending (TpBaseCallStream *bcs,
 
 static gboolean
 tp_base_media_call_stream_request_receiving (TpBaseCallStream *bcs,
-    TpHandle contact, gboolean receive, GError **error)
+    TpHandle contact,
+    gboolean receive,
+    GError **error)
 {
   TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (bcs);
   TpBaseMediaCallStreamClass *klass =
