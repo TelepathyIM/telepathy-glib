@@ -68,8 +68,7 @@ GHashTable *_tp_base_call_stream_borrow_remote_members (
     TpBaseCallStream *stream);
 
 /* Implemented in base-media-call-stream.c */
-void
-_tp_base_media_call_stream_set_remotely_held (TpBaseMediaCallStream *self,
+void _tp_base_media_call_stream_set_remotely_held (TpBaseMediaCallStream *self,
     gboolean remotely_held);
 
 /* Implemented in base-call-channel.c */
@@ -90,9 +89,11 @@ void _tp_base_media_call_channel_endpoint_state_changed (
     TpBaseMediaCallChannel *self);
 gboolean _tp_base_media_channel_is_held (TpBaseMediaCallChannel *self);
 void _tp_base_media_call_channel_streams_sending_state_changed (
-    TpBaseMediaCallChannel *self, gboolean success);
+    TpBaseMediaCallChannel *self,
+    gboolean success);
 void _tp_base_media_call_channel_streams_receiving_state_changed (
-    TpBaseMediaCallChannel *self, gboolean success);
+    TpBaseMediaCallChannel *self,
+    gboolean success);
 
 /* Implemented in call-content-media-description.c */
 void _tp_call_content_media_description_offer_async (
