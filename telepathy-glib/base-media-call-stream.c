@@ -182,12 +182,16 @@ struct _TpBaseMediaCallStreamPrivate
 };
 
 static gboolean tp_base_media_call_stream_request_receiving (
-    TpBaseCallStream *bcs, TpHandle contact, gboolean receive, GError **error);
+    TpBaseCallStream *bcs,
+    TpHandle contact,
+    gboolean receive,
+    GError **error);
 static gboolean tp_base_media_call_stream_set_sending (TpBaseCallStream *self,
-    gboolean sending, GError **error);
-
+    gboolean sending,
+    GError **error);
 static void remote_members_changed_cb (TpBaseMediaCallStream *self,
-    GParamSpec *pspec, gpointer user_data);
+    GParamSpec *pspec,
+    gpointer user_data);
 
 static void
 tp_base_media_call_stream_init (TpBaseMediaCallStream *self)
