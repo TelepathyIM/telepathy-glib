@@ -637,7 +637,7 @@ tp_base_media_call_content_update_local_media_description (
 
   current_properties = g_hash_table_lookup (
       self->priv->local_media_descriptions,
-     contact);
+      contact);
 
   if (current_properties == NULL)
     {
@@ -734,21 +734,17 @@ _tp_base_media_call_content_ready_to_accept (TpBaseMediaCallContent *self)
   return ret;
 }
 
-
 void
 _tp_base_media_call_content_remote_accepted (TpBaseMediaCallContent *self)
 {
-  GList *l;
   TpBaseCallContent *bcc = TP_BASE_CALL_CONTENT (self);
+  GList *l;
 
   if (tp_base_call_content_get_disposition (bcc) !=
       TP_CALL_CONTENT_DISPOSITION_INITIAL)
     return;
 
-
-  for (l = tp_base_call_content_get_streams (bcc);
-       l != NULL;
-       l = g_list_next (l))
+  for (l = tp_base_call_content_get_streams (bcc); l != NULL; l = l->next)
     {
       TpBaseMediaCallStream *stream = TP_BASE_MEDIA_CALL_STREAM (l->data);
       TpSendingState local = tp_base_call_stream_get_local_sending_state (
