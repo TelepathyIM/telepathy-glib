@@ -174,8 +174,8 @@ struct _TpBaseMediaCallStreamPrivate
   /* GList of reffed TpCallStreamEndpoint */
   GList *endpoints;
   gboolean ice_restart_pending;
-  /* Array of TpHandle that have requested to receive */
-  GArray *receiving_requests;
+  /* Intset of TpHandle that have requested to receive */
+  TpIntset *receiving_requests;
 
   gboolean local_sending;
   gboolean remotely_held;
@@ -199,7 +199,7 @@ tp_base_media_call_stream_init (TpBaseMediaCallStream *self)
       (GDestroyNotify) g_value_array_free);
   self->priv->username = g_strdup ("");
   self->priv->password = g_strdup ("");
-  self->priv->receiving_requests = g_array_new (TRUE, FALSE, sizeof (TpHandle));
+  self->priv->receiving_requests = tp_intset_new ();
   self->priv->sending_state = TP_STREAM_FLOW_STATE_STOPPED;
   self->priv->receiving_state = TP_STREAM_FLOW_STATE_STOPPED;
 
@@ -234,7 +234,7 @@ tp_base_media_call_stream_finalize (GObject *object)
   tp_clear_pointer (&self->priv->relay_info, g_ptr_array_unref);
   tp_clear_pointer (&self->priv->username, g_free);
   tp_clear_pointer (&self->priv->password, g_free);
-  tp_clear_pointer (&self->priv->receiving_requests, g_array_unref);
+  tp_clear_pointer (&self->priv->receiving_requests, tp_intset_destroy);
 
   G_OBJECT_CLASS (tp_base_media_call_stream_parent_class)->finalize (object);
 }
@@ -759,18 +759,6 @@ tp_base_media_call_stream_set_receiving_state (TpBaseMediaCallStream *self,
   tp_svc_call_stream_interface_media_emit_receiving_state_changed (self, state);
 }
 
-static guint
-find_handle_in_array (GArray *array, TpHandle handle)
-{
-  guint i;
-
-  for (i = 0; i < array->len; i++)
-    if (g_array_index (array, TpHandle, i) == handle)
-      return i;
-
-  return G_MAXUINT;
-}
-
 static gboolean
 tp_base_media_call_stream_set_sending (TpBaseCallStream *bcs,
     gboolean sending, GError **error)
@@ -970,25 +958,19 @@ tp_base_media_call_stream_request_receiving (TpBaseCallStream *bcs,
             }
         }
 
-      if (find_handle_in_array (self->priv->receiving_requests, contact) ==
-          G_MAXUINT)
-        g_array_append_val (self->priv->receiving_requests, contact);
+      tp_intset_add (self->priv->receiving_requests, contact);
 
       tp_base_media_call_stream_update_receiving_state (self);
     }
   else
     {
-      guint i;
-
       tp_base_call_stream_update_remote_sending_state (bcs, contact,
           TP_SENDING_STATE_PENDING_STOP_SENDING,
           tp_base_channel_get_self_handle (TP_BASE_CHANNEL (channel)),
           TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
           "User asked the remote side to stop sending");
 
-      i = find_handle_in_array (self->priv->receiving_requests, contact);
-      if (i != G_MAXUINT)
-        g_array_remove_index_fast (self->priv->receiving_requests, i);
+      tp_intset_remove (self->priv->receiving_requests, contact);
 
       if (klass->request_receiving != NULL)
         klass->request_receiving (self, contact, FALSE);
@@ -1125,19 +1107,17 @@ tp_base_media_call_stream_complete_receiving_state_change (
 
   if (state == TP_STREAM_FLOW_STATE_STARTED)
     {
-      guint i;
+      TpIntsetFastIter iter;
+      TpHandle contact;
 
-      for (i = 0; i < self->priv->receiving_requests->len; i++)
+      tp_intset_fast_iter_init (&iter, self->priv->receiving_requests);
+      while (tp_intset_fast_iter_next (&iter, &contact))
         {
-          TpHandle contact = g_array_index (self->priv->receiving_requests,
-              TpHandle, i);
-
           if (klass->request_receiving != NULL)
             klass->request_receiving (self, contact, TRUE);
         }
-      if (self->priv->receiving_requests->len > 0)
-        g_array_remove_range (self->priv->receiving_requests, 0,
-            self->priv->receiving_requests->len);
+
+      tp_intset_clear (self->priv->receiving_requests);
     }
 
   tp_svc_call_stream_interface_media_emit_receiving_state_changed (self, state);
@@ -1164,9 +1144,7 @@ tp_base_media_call_stream_report_receiving_failure (
     {
     case TP_STREAM_FLOW_STATE_PENDING_START:
       /* Clear all receving requests, we can't receive */
-      if (self->priv->receiving_requests->len > 0)
-        g_array_remove_range (self->priv->receiving_requests, 0,
-            self->priv->receiving_requests->len);
+      tp_intset_clear (self->priv->receiving_requests);
       self->priv->receiving_state = TP_STREAM_FLOW_STATE_STOPPED;
       g_object_notify (G_OBJECT (self), "receiving-state");
       break;
