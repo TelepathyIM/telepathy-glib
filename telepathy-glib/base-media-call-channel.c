@@ -617,9 +617,8 @@ call_members_changed_cb (TpBaseMediaCallChannel *self,
            l2 != NULL; l2 = l2->next)
         {
           TpBaseMediaCallStream *stream = TP_BASE_MEDIA_CALL_STREAM (l2->data);
-          GHashTable *remote_members =
-              _tp_base_call_stream_borrow_remote_members (
-                  TP_BASE_CALL_STREAM (stream));
+          GHashTable *remote_members = _tp_base_call_stream_get_remote_members (
+              TP_BASE_CALL_STREAM (stream));
           gboolean all_held = TRUE;
           GHashTableIter iter;
           gpointer contact;

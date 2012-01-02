@@ -865,9 +865,9 @@ out:
 }
 
 GHashTable *
-_tp_base_call_stream_borrow_remote_members (TpBaseCallStream *stream)
+_tp_base_call_stream_get_remote_members (TpBaseCallStream *self)
 {
-  g_return_val_if_fail (TP_IS_BASE_CALL_STREAM (stream), NULL);
+  g_return_val_if_fail (TP_IS_BASE_CALL_STREAM (self), NULL);
 
-  return stream->priv->remote_members;
+  return self->priv->remote_members;
 }

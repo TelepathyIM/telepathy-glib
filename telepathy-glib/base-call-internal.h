@@ -64,8 +64,7 @@ gboolean _tp_base_call_stream_set_sending (TpBaseCallStream *self,
     const gchar *dbus_reason,
     const gchar *message,
     GError **error);
-GHashTable *_tp_base_call_stream_borrow_remote_members (
-    TpBaseCallStream *stream);
+GHashTable *_tp_base_call_stream_get_remote_members (TpBaseCallStream *self);
 
 /* Implemented in base-media-call-stream.c */
 void _tp_base_media_call_stream_set_remotely_held (TpBaseMediaCallStream *self,

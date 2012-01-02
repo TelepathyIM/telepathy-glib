@@ -695,7 +695,7 @@ _tp_base_media_call_content_ready_to_accept (TpBaseMediaCallContent *self)
   for (item = tp_base_call_content_get_streams (bcc); item; item = item->next)
     {
       TpBaseMediaCallStream *stream = item->data;
-      GHashTable *members = _tp_base_call_stream_borrow_remote_members (
+      GHashTable *members = _tp_base_call_stream_get_remote_members (
           TP_BASE_CALL_STREAM (stream));
       GHashTableIter iter;
       gpointer key, value;

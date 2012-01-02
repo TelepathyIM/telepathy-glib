@@ -821,7 +821,7 @@ void
 tp_base_media_call_stream_update_receiving_state (TpBaseMediaCallStream *self)
 {
   TpBaseCallStream *bcs = TP_BASE_CALL_STREAM (self);
-  GHashTable *remote_members = _tp_base_call_stream_borrow_remote_members (bcs);
+  GHashTable *remote_members = _tp_base_call_stream_get_remote_members (bcs);
   GHashTableIter iter;
   gpointer key, value;
   gboolean remote_sending = FALSE;
