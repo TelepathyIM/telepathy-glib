@@ -189,9 +189,6 @@ static gboolean tp_base_media_call_stream_request_receiving (
 static gboolean tp_base_media_call_stream_set_sending (TpBaseCallStream *self,
     gboolean sending,
     GError **error);
-static void remote_members_changed_cb (TpBaseMediaCallStream *self,
-    GParamSpec *pspec,
-    gpointer user_data);
 
 static void
 tp_base_media_call_stream_init (TpBaseMediaCallStream *self)
@@ -208,7 +205,7 @@ tp_base_media_call_stream_init (TpBaseMediaCallStream *self)
   self->priv->receiving_state = TP_STREAM_FLOW_STATE_STOPPED;
 
   g_signal_connect (self, "notify::remote-members",
-      G_CALLBACK (remote_members_changed_cb), NULL);
+      G_CALLBACK (tp_base_media_call_stream_update_receiving_state), NULL);
 }
 
 static void
@@ -865,13 +862,6 @@ tp_base_media_call_stream_update_receiving_state (TpBaseMediaCallStream *self)
       tp_base_media_call_stream_set_receiving_state (self,
           TP_STREAM_FLOW_STATE_PENDING_STOP);
     }
-}
-
-static void
-remote_members_changed_cb (TpBaseMediaCallStream *self, GParamSpec *pspec,
-    gpointer user_data)
-{
-  tp_base_media_call_stream_update_receiving_state (self);
 }
 
 void
