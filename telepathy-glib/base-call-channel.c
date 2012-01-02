@@ -1099,6 +1099,66 @@ tp_base_call_channel_remove_member (TpBaseCallChannel *self,
   g_value_array_free (reason_array);
 }
 
+GHashTable *
+tp_base_call_channel_get_call_members (TpBaseCallChannel *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CALL_CHANNEL (self), NULL);
+
+  return self->priv->call_members;
+}
+
+void
+tp_base_call_channel_remote_accept (TpBaseCallChannel *self)
+{
+  TpBaseCallChannelClass *klass = TP_BASE_CALL_CHANNEL_GET_CLASS (self);
+
+  g_return_if_fail (tp_base_channel_is_requested (TP_BASE_CHANNEL (self)));
+
+  if (self->priv->accepted)
+    return;
+
+  g_return_if_fail (self->priv->state == TP_CALL_STATE_INITIALISED ||
+      self->priv->state == TP_CALL_STATE_INITIALISING);
+
+  self->priv->accepted = TRUE;
+
+  tp_base_call_channel_set_state (self,
+      TP_CALL_STATE_ACCEPTED,
+      0, TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "", "");
+
+  if (klass->remote_accept)
+    klass->remote_accept (self);
+}
+
+gboolean
+tp_base_call_channel_is_accepted (TpBaseCallChannel *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CALL_CHANNEL (self), FALSE);
+
+  return self->priv->accepted;
+}
+
+gboolean
+tp_base_call_channel_is_locally_accepted (TpBaseCallChannel *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CALL_CHANNEL (self), FALSE);
+
+  return self->priv->locally_accepted;
+}
+
+gboolean
+tp_base_call_channel_is_connected (TpBaseCallChannel *self)
+{
+  TpBaseCallChannelClass *klass = TP_BASE_CALL_CHANNEL_GET_CLASS (self);
+
+  if (klass->is_connected)
+    return klass->is_connected (self);
+  else
+    return TRUE;
+}
+
+/* DBus method implementation */
+
 static void
 tp_base_call_channel_set_ringing (TpSvcChannelTypeCall *iface,
     DBusGMethodInvocation *context)
@@ -1180,40 +1240,6 @@ tp_base_call_channel_set_queued (TpSvcChannelTypeCall *iface,
     }
 }
 
-gboolean
-tp_base_call_channel_is_connected (TpBaseCallChannel *self)
-{
-  TpBaseCallChannelClass *klass = TP_BASE_CALL_CHANNEL_GET_CLASS (self);
-
-  if (klass->is_connected)
-    return klass->is_connected (self);
-  else
-    return TRUE;
-}
-
-void
-tp_base_call_channel_remote_accept (TpBaseCallChannel *self)
-{
-  TpBaseCallChannelClass *klass = TP_BASE_CALL_CHANNEL_GET_CLASS (self);
-
-  g_return_if_fail (tp_base_channel_is_requested (TP_BASE_CHANNEL (self)));
-
-  if (self->priv->accepted)
-    return;
-
-  g_return_if_fail (self->priv->state == TP_CALL_STATE_INITIALISED ||
-      self->priv->state == TP_CALL_STATE_INITIALISING);
-
-  self->priv->accepted = TRUE;
-
-  tp_base_call_channel_set_state (self,
-      TP_CALL_STATE_ACCEPTED,
-      0, TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "", "");
-
-  if (klass->remote_accept)
-    klass->remote_accept (self);
-}
-
 static void
 tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
     DBusGMethodInvocation *context)
@@ -1275,7 +1301,6 @@ tp_base_call_channel_accept_real (TpBaseCallChannel *self)
   g_list_foreach (self->priv->contents,
       (GFunc) _tp_base_call_content_accepted, NULL);
 }
-
 
 static void
 tp_base_call_channel_hangup (TpSvcChannelTypeCall *iface,
@@ -1374,6 +1399,8 @@ call_iface_init (gpointer g_iface, gpointer iface_data)
 #undef IMPLEMENT
 }
 
+/* Internal functions */
+
 void
 _tp_base_call_channel_set_locally_muted (TpBaseCallChannel *self,
     gboolean locally_muted)
@@ -1391,28 +1418,4 @@ _tp_base_call_channel_set_locally_muted (TpBaseCallChannel *self,
   if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
     tp_svc_channel_type_call_emit_call_state_changed (self, self->priv->state,
       self->priv->flags, self->priv->reason, self->priv->details);
-}
-
-gboolean
-tp_base_call_channel_is_accepted (TpBaseCallChannel *self)
-{
-  g_return_val_if_fail (TP_IS_BASE_CALL_CHANNEL (self), FALSE);
-
-  return self->priv->accepted;
-}
-
-gboolean
-tp_base_call_channel_is_locally_accepted (TpBaseCallChannel *self)
-{
-  g_return_val_if_fail (TP_IS_BASE_CALL_CHANNEL (self), FALSE);
-
-  return self->priv->locally_accepted;
-}
-
-GHashTable *
-tp_base_call_channel_get_call_members (TpBaseCallChannel *self)
-{
-  g_return_val_if_fail (TP_IS_BASE_CALL_CHANNEL (self), NULL);
-
-  return self->priv->call_members;
 }
