@@ -111,7 +111,6 @@ void tp_base_media_call_stream_update_sending_state (
 void tp_base_media_call_stream_set_local_sending (TpBaseMediaCallStream *self,
     gboolean sending);
 
-
 G_END_DECLS
 
 #endif /* #ifndef __TP_BASE_MEDIA_CALL_STREAM_H__*/
