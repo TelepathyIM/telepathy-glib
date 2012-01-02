@@ -234,7 +234,7 @@ tp_base_media_call_stream_finalize (GObject *object)
   tp_clear_pointer (&self->priv->relay_info, g_ptr_array_unref);
   tp_clear_pointer (&self->priv->username, g_free);
   tp_clear_pointer (&self->priv->password, g_free);
-  g_array_free (self->priv->receiving_requests, TRUE);
+  tp_clear_pointer (&self->priv->receiving_requests, g_array_unref);
 
   G_OBJECT_CLASS (tp_base_media_call_stream_parent_class)->finalize (object);
 }

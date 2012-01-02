@@ -729,7 +729,7 @@ tp_base_call_stream_request_receiving (TpSvcCallStream *iface,
     }
 
   if (!g_hash_table_lookup_extended (self->priv->remote_members,
-          GUINT_TO_POINTER (contact), NULL, (gpointer*) &remote_sending_state))
+          GUINT_TO_POINTER (contact), NULL, (gpointer *) &remote_sending_state))
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "Contact %u is not member of this stream", contact);

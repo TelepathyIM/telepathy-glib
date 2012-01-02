@@ -629,7 +629,7 @@ call_members_changed_cb (TpBaseMediaCallChannel *self,
             {
               gpointer value;
 
-              if (g_hash_table_lookup_extended(call_members, contact, NULL,
+              if (g_hash_table_lookup_extended (call_members, contact, NULL,
                       &value))
                 {
                   TpCallMemberFlags flags = GPOINTER_TO_UINT (value);

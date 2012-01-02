@@ -735,9 +735,11 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
     {
       self->priv->state = TP_CALL_STATE_INITIALISED;
       if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
-        tp_svc_channel_type_call_emit_call_state_changed (self,
-            self->priv->state, self->priv->flags, self->priv->reason,
-            self->priv->details);
+        {
+          tp_svc_channel_type_call_emit_call_state_changed (self,
+              self->priv->state, self->priv->flags, self->priv->reason,
+              self->priv->details);
+        }
     }
 }
 
@@ -1199,9 +1201,11 @@ tp_base_call_channel_remote_accept (TpBaseCallChannel *self)
       0, TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "", "");
 
   if (tp_base_call_channel_is_connected (self))
-    tp_base_call_channel_set_state (self,
-        TP_CALL_STATE_ACTIVE,
-        0, TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "", "");
+    {
+      tp_base_call_channel_set_state (self,
+          TP_CALL_STATE_ACTIVE,
+          0, TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "", "");
+    }
 
   if (klass->remote_accept)
     klass->remote_accept (self);
