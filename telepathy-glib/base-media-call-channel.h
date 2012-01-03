@@ -30,17 +30,16 @@ typedef struct _TpBaseMediaCallChannelPrivate TpBaseMediaCallChannelPrivate;
 typedef struct _TpBaseMediaCallChannelClass TpBaseMediaCallChannelClass;
 
 typedef void (*TpBaseMediaCallChannelHoldStateChangedFunc) (
-    TpBaseMediaCallChannel *self, TpLocalHoldState hold_state,
+    TpBaseMediaCallChannel *self,
+    TpLocalHoldState hold_state,
     TpLocalHoldStateReason hold_state_reason);
 typedef void (*TpBaseMediaCallChannelVoidFunc) (TpBaseMediaCallChannel *self);
-
 
 struct _TpBaseMediaCallChannelClass {
   /*<private>*/
   TpBaseCallChannelClass parent_class;
 
   /*< public >*/
-
   TpBaseMediaCallChannelHoldStateChangedFunc hold_state_changed;
   TpBaseMediaCallChannelVoidFunc accept;
 

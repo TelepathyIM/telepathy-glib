@@ -26,7 +26,6 @@
  *
  * This is a base class for connection managers that use standard RTP media.
  *
- *
  * Since: 0.UNRELEASED
  */
 
@@ -119,7 +118,6 @@ static const gchar *tp_base_media_call_channel_interfaces[] = {
   NULL
 };
 
-
 /* properties */
 enum
 {
@@ -202,7 +200,6 @@ tp_base_media_call_channel_class_init (TpBaseMediaCallChannelClass *klass)
       NULL,
       call_mute_props);
 }
-
 
 static void
 tp_base_media_call_channel_init (TpBaseMediaCallChannel *self)
@@ -322,7 +319,6 @@ hold_iface_init (gpointer g_iface, gpointer iface_data)
   IMPLEMENT(request_hold,);
 #undef IMPLEMENT
 }
-
 
 static void
 mute_iface_init (gpointer g_iface, gpointer iface_data)
