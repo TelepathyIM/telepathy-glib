@@ -47,7 +47,9 @@
  * TpBaseCallChannelClass:
  * @set_ringing: Notify members that client is ringing.
  * @set_queued: Notify members that call is queued.
- * @accept: accept the call.
+ * @accept: accept the call. Note that #TpBaseMediaCallChannel subclasses should
+ *  not override this virtual method, but #TpBaseMediaCallChannelClass.accept
+ *  instead.
  * @add_content: add content to the call. Implementation must call
  *  tp_base_call_channel_add_content(). Can be %NULL if
  *  #TpBaseCallChannel:mutable-contents is %FALSE.
@@ -1099,6 +1101,15 @@ tp_base_call_channel_remove_member (TpBaseCallChannel *self,
   g_value_array_free (reason_array);
 }
 
+/**
+ * tp_base_call_channel_get_call_members:
+ * @self: a #TpBaseCallChannel
+ *
+ * <!-- -->
+ *
+ * Returns: the value of #TpBaseCallChannel:call-members.
+ * Since: 0.UNRELEASED
+ */
 GHashTable *
 tp_base_call_channel_get_call_members (TpBaseCallChannel *self)
 {
@@ -1107,6 +1118,18 @@ tp_base_call_channel_get_call_members (TpBaseCallChannel *self)
   return self->priv->call_members;
 }
 
+/**
+ * tp_base_call_channel_remote_accept:
+ * @self: a #TpBaseCallChannel
+ *
+ * Must be called when the remote contact accepted the call.
+ * #TpBaseCallChannel:state must be either %TP_CALL_STATE_INITIALISED or
+ * %TP_CALL_STATE_INITIALISING and will then change to %TP_CALL_STATE_ACCEPTED.
+ *
+ * Must be used only for outgoing calls.
+ *
+ * Since: 0.UNRELEASED
+ */
 void
 tp_base_call_channel_remote_accept (TpBaseCallChannel *self)
 {
@@ -1130,6 +1153,15 @@ tp_base_call_channel_remote_accept (TpBaseCallChannel *self)
     klass->remote_accept (self);
 }
 
+/**
+ * tp_base_call_channel_is_accepted:
+ * @self: a #TpBaseCallChannel
+ *
+ * <!-- -->
+ *
+ * Returns: Whether or not the call has been remotely accepted.
+ * Since: 0.UNRELEASED
+ */
 gboolean
 tp_base_call_channel_is_accepted (TpBaseCallChannel *self)
 {

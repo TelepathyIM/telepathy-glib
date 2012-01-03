@@ -40,12 +40,36 @@
 
 /**
  * TpBaseMediaCallChannelClass:
+ * @hold_state_changed: optional; virtual method called when the hold state
+ *  changed
+ * @accept: optional; virtual method called when the call is locally accepted
+ *  and contents are ready. This replaces #TpBaseCallChannelClass.accept.
  *
  * The class structure for #TpBaseMediaCallChannel
  *
  * Since: 0.UNRELEASED
  */
 
+/**
+ * TpBaseMediaCallChannelVoidFunc:
+ * @self: a #TpBaseMediaCallChannel
+ *
+ * Signature of an implementation of #TpBaseMediaCallChannelClass.accept.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * TpBaseMediaCallChannelHoldStateChangedFunc:
+ * @self: a #TpBaseMediaCallChannel
+ * @hold_state: the new #TpLocalHoldState
+ * @hold_state_reason: the #TpLocalHoldStateReason for this change
+ *
+ * Signature of an implementation of
+ * #TpBaseMediaCallChannelClass.hold_state_changed.
+ *
+ * Since: 0.UNRELEASED
+ */
 
 #include "config.h"
 #include "base-media-call-channel.h"
