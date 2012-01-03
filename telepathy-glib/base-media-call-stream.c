@@ -874,7 +874,7 @@ tp_base_media_call_stream_update_receiving_state (TpBaseMediaCallStream *self)
   gboolean remote_sending = FALSE;
   TpBaseCallChannel *channel = _tp_base_call_stream_get_channel (bcs);
 
-  if (channel == NULL || !tp_base_call_channel_is_locally_accepted (channel))
+  if (channel == NULL || !_tp_base_call_channel_is_locally_accepted (channel))
     goto done;
 
   if (TP_IS_BASE_MEDIA_CALL_CHANNEL (channel))

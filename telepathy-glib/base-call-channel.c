@@ -732,7 +732,7 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
   /* Move from INITIALISING to INITIALISED if we are already connected */
   if (self->priv->state != old_state &&
       self->priv->state == TP_CALL_STATE_INITIALISING &&
-      tp_base_call_channel_is_connected (self))
+      _tp_base_call_channel_is_connected (self))
     {
       self->priv->state = TP_CALL_STATE_INITIALISED;
       if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
@@ -746,7 +746,7 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
   /* Move from ACCEPTED to ACTIVE if we are already connected */
   if (self->priv->state != old_state &&
       self->priv->state == TP_CALL_STATE_ACCEPTED &&
-      tp_base_call_channel_is_connected (self))
+      _tp_base_call_channel_is_connected (self))
     {
       self->priv->state = TP_CALL_STATE_ACTIVE;
       if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
@@ -1138,25 +1138,6 @@ tp_base_call_channel_is_accepted (TpBaseCallChannel *self)
   return self->priv->accepted;
 }
 
-gboolean
-tp_base_call_channel_is_locally_accepted (TpBaseCallChannel *self)
-{
-  g_return_val_if_fail (TP_IS_BASE_CALL_CHANNEL (self), FALSE);
-
-  return self->priv->locally_accepted;
-}
-
-gboolean
-tp_base_call_channel_is_connected (TpBaseCallChannel *self)
-{
-  TpBaseCallChannelClass *klass = TP_BASE_CALL_CHANNEL_GET_CLASS (self);
-
-  if (klass->is_connected)
-    return klass->is_connected (self);
-  else
-    return TRUE;
-}
-
 /* DBus method implementation */
 
 static void
@@ -1418,4 +1399,23 @@ _tp_base_call_channel_set_locally_muted (TpBaseCallChannel *self,
   if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
     tp_svc_channel_type_call_emit_call_state_changed (self, self->priv->state,
       self->priv->flags, self->priv->reason, self->priv->details);
+}
+
+gboolean
+_tp_base_call_channel_is_locally_accepted (TpBaseCallChannel *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CALL_CHANNEL (self), FALSE);
+
+  return self->priv->locally_accepted;
+}
+
+gboolean
+_tp_base_call_channel_is_connected (TpBaseCallChannel *self)
+{
+  TpBaseCallChannelClass *klass = TP_BASE_CALL_CHANNEL_GET_CLASS (self);
+
+  if (klass->is_connected)
+    return klass->is_connected (self);
+  else
+    return TRUE;
 }

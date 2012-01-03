@@ -447,7 +447,7 @@ _tp_base_media_call_channel_endpoint_state_changed (
   switch (tp_base_call_channel_get_state (bcc))
     {
     case TP_CALL_STATE_INITIALISING:
-      if (tp_base_call_channel_is_connected (bcc))
+      if (_tp_base_call_channel_is_connected (bcc))
         {
           tp_base_call_channel_set_state (bcc, TP_CALL_STATE_INITIALISED,
               tp_base_channel_get_self_handle (bc),
@@ -456,7 +456,7 @@ _tp_base_media_call_channel_endpoint_state_changed (
         }
       break;
     case TP_CALL_STATE_ACTIVE:
-      if (!tp_base_call_channel_is_connected (bcc))
+      if (!_tp_base_call_channel_is_connected (bcc))
         {
           tp_base_call_channel_set_state (bcc, TP_CALL_STATE_ACCEPTED,
               tp_base_channel_get_self_handle (bc),
@@ -466,7 +466,7 @@ _tp_base_media_call_channel_endpoint_state_changed (
         }
       break;
     case TP_CALL_STATE_ACCEPTED:
-      if (tp_base_call_channel_is_connected (bcc))
+      if (_tp_base_call_channel_is_connected (bcc))
         {
           tp_base_call_channel_set_state (bcc, TP_CALL_STATE_ACTIVE,
               tp_base_channel_get_self_handle (bc),

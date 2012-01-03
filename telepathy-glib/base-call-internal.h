@@ -82,6 +82,8 @@ void _tp_base_call_channel_remove_content_internal (TpBaseCallChannel *self,
     const GValueArray *reason_array);
 void _tp_base_call_channel_set_locally_muted (TpBaseCallChannel *self,
     gboolean locally_muted);
+gboolean _tp_base_call_channel_is_locally_accepted (TpBaseCallChannel *self);
+gboolean _tp_base_call_channel_is_connected (TpBaseCallChannel *self);
 
 /* Implemented in base-media-call-channel.c */
 void _tp_base_media_call_channel_endpoint_state_changed (

@@ -129,8 +129,6 @@ GHashTable *tp_base_call_channel_get_call_members (TpBaseCallChannel *self);
 void tp_base_call_channel_remote_accept (TpBaseCallChannel *self);
 
 gboolean tp_base_call_channel_is_accepted (TpBaseCallChannel *self);
-gboolean tp_base_call_channel_is_locally_accepted (TpBaseCallChannel *self);
-gboolean tp_base_call_channel_is_connected (TpBaseCallChannel *self);
 
 G_END_DECLS
 
