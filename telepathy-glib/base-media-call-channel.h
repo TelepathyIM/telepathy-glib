@@ -19,7 +19,7 @@
  */
 
 #ifndef __TP_BASE_MEDIA_CALL_CHANNEL_H__
-#define __TP_BASE_MEDIACALL_CHANNEL_H__
+#define __TP_BASE_MEDIA_CALL_CHANNEL_H__
 
 #include <telepathy-glib/base-call-channel.h>
 
