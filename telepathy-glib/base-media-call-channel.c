@@ -126,15 +126,171 @@ enum
   LAST_PROPERTY
 };
 
-static void tp_base_media_call_channel_accept (TpBaseCallChannel *self);
-static void tp_base_media_call_channel_remote_accept (TpBaseCallChannel *self);
-static gboolean tp_base_media_call_channel_is_connected (
-    TpBaseCallChannel *self);
-static void tp_base_media_call_channel_update_hold_state (
-    TpBaseMediaCallChannel *self);
-static void call_members_changed_cb (TpBaseMediaCallChannel *self,
-    GHashTable *updates, GHashTable *identifiers, GArray *removed,
-    GValueArray *reason, gpointer user_data);
+static void
+call_members_changed_cb (TpBaseMediaCallChannel *self,
+    GHashTable *updates,
+    GHashTable *identifiers,
+    GArray *removed,
+    GValueArray *reason,
+    gpointer user_data)
+{
+  TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
+  GList *l, *l2;
+  GHashTable *call_members = tp_base_call_channel_get_call_members (bcc);
+
+  /* check for remote hold */
+
+  for (l = tp_base_call_channel_get_contents (bcc); l != NULL; l = l->next)
+    {
+      for (l2 = tp_base_call_content_get_streams (l->data);
+           l2 != NULL; l2 = l2->next)
+        {
+          TpBaseMediaCallStream *stream = TP_BASE_MEDIA_CALL_STREAM (l2->data);
+          GHashTable *remote_members = _tp_base_call_stream_get_remote_members (
+              TP_BASE_CALL_STREAM (stream));
+          gboolean all_held = TRUE;
+          GHashTableIter iter;
+          gpointer contact;
+
+          g_hash_table_iter_init (&iter, remote_members);
+          while (g_hash_table_iter_next (&iter, &contact, NULL))
+            {
+              gpointer value;
+
+              if (g_hash_table_lookup_extended (call_members, contact, NULL,
+                      &value))
+                {
+                  TpCallMemberFlags flags = GPOINTER_TO_UINT (value);
+                  if ((flags & TP_CALL_MEMBER_FLAG_HELD) == 0)
+                    all_held = FALSE;
+                }
+            }
+
+          _tp_base_media_call_stream_set_remotely_held (stream, all_held);
+        }
+    }
+}
+
+static void
+tp_base_media_call_channel_try_accept (TpBaseMediaCallChannel *self)
+{
+  TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
+  TpBaseMediaCallChannelClass *klass =
+      TP_BASE_MEDIA_CALL_CHANNEL_GET_CLASS (self);
+  GList *l;
+  gboolean notready = FALSE;
+
+  if (self->priv->accepted)
+    return;
+
+  for (l = tp_base_call_channel_get_contents (bcc); l; l = l->next)
+    notready |= !_tp_base_media_call_content_ready_to_accept (l->data);
+
+  if (notready && !_tp_base_media_channel_is_held (self))
+    return;
+
+  if (klass->accept != NULL)
+    klass->accept (self);
+
+  TP_BASE_CALL_CHANNEL_CLASS (tp_base_media_call_channel_parent_class)->accept (bcc);
+
+  self->priv->accepted = TRUE;
+}
+
+static void
+streams_changed_cb (GObject *stream,
+    gpointer spec,
+    TpBaseMediaCallChannel *self)
+{
+  tp_base_media_call_channel_try_accept (self);
+
+  if (self->priv->accepted)
+    g_signal_handlers_disconnect_by_func (stream, streams_changed_cb, self);
+}
+
+static void
+wait_for_streams_to_be_receiving (TpBaseMediaCallChannel *self)
+{
+  TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
+  GList *l;
+
+  for (l = tp_base_call_channel_get_contents (bcc); l; l = l->next)
+    {
+      TpBaseCallContent *content = l->data;
+      GList *l_stream;
+
+      if (tp_base_call_content_get_disposition (content) !=
+              TP_CALL_CONTENT_DISPOSITION_INITIAL)
+        continue;
+
+      for (l_stream = tp_base_call_content_get_streams (content);
+           l_stream;
+           l_stream = l_stream->next)
+        {
+          TpBaseCallStream *stream = l_stream->data;
+
+          g_signal_connect (stream, "notify::receiving-state",
+              G_CALLBACK (streams_changed_cb), self);
+          g_signal_connect (stream, "notify::remote-members",
+              G_CALLBACK (streams_changed_cb), self);
+        }
+    }
+}
+
+static void
+tp_base_media_call_channel_accept (TpBaseCallChannel *bcc)
+{
+  TpBaseMediaCallChannel *self = TP_BASE_MEDIA_CALL_CHANNEL (bcc);
+
+  tp_base_media_call_channel_try_accept (self);
+
+  if (!self->priv->accepted)
+    wait_for_streams_to_be_receiving (self);
+}
+
+static void
+tp_base_media_call_channel_remote_accept (TpBaseCallChannel *self)
+{
+  g_list_foreach (tp_base_call_channel_get_contents (self),
+      (GFunc) _tp_base_media_call_content_remote_accepted, NULL);
+}
+
+static gboolean
+tp_base_media_call_channel_is_connected (TpBaseCallChannel *self)
+{
+  GList *l;
+
+  g_return_val_if_fail (TP_IS_BASE_MEDIA_CALL_CHANNEL (self), FALSE);
+
+  for (l = tp_base_call_channel_get_contents (self); l != NULL; l = l->next)
+    {
+      GList *streams = tp_base_call_content_get_streams (l->data);
+
+      for (; streams != NULL; streams = streams->next)
+        {
+          GList *endpoints;
+          gboolean has_connected_endpoint = FALSE;
+
+          endpoints = tp_base_media_call_stream_get_endpoints (streams->data);
+          for (; endpoints != NULL; endpoints = endpoints->next)
+            {
+              TpStreamEndpointState state = tp_call_stream_endpoint_get_state (
+                  endpoints->data, TP_STREAM_COMPONENT_DATA);
+
+              if (state == TP_STREAM_ENDPOINT_STATE_PROVISIONALLY_CONNECTED ||
+                  state == TP_STREAM_ENDPOINT_STATE_FULLY_CONNECTED)
+                {
+                  has_connected_endpoint = TRUE;
+                  break;
+                }
+            }
+          if (!has_connected_endpoint)
+            return FALSE;
+        }
+    }
+
+  return TRUE;
+}
 
 static void
 tp_base_media_call_channel_get_property (GObject *object,
@@ -214,9 +370,11 @@ tp_base_media_call_channel_init (TpBaseMediaCallChannel *self)
       G_CALLBACK (call_members_changed_cb), NULL);
 }
 
+static void update_hold_state (TpBaseMediaCallChannel *self);
+
 static void
-tp_base_media_call_channel_set_hold_state (
-    TpBaseMediaCallChannel *self, TpLocalHoldState hold_state,
+set_hold_state (TpBaseMediaCallChannel *self,
+    TpLocalHoldState hold_state,
     TpLocalHoldStateReason hold_state_reason)
 {
   TpBaseMediaCallChannelClass *klass =
@@ -232,15 +390,97 @@ tp_base_media_call_channel_set_hold_state (
 
   if (changed)
     {
-      if (klass->hold_state_changed)
+      if (klass->hold_state_changed != NULL)
         klass->hold_state_changed (self, hold_state, hold_state_reason);
+
       tp_svc_channel_interface_hold_emit_hold_state_changed (self, hold_state,
           hold_state_reason);
 
-      tp_base_media_call_channel_update_hold_state (self);
+      update_hold_state (self);
     }
 }
 
+static void
+update_hold_state (TpBaseMediaCallChannel *self)
+{
+  TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
+  GList *l, *l2;
+  gboolean is_started = TRUE;
+  gboolean is_stopped = TRUE;
+  TpLocalHoldState new_hold_state = self->priv->hold_state;
+
+  if (self->priv->hold_state != TP_LOCAL_HOLD_STATE_PENDING_HOLD &&
+      self->priv->hold_state != TP_LOCAL_HOLD_STATE_PENDING_UNHOLD)
+    return;
+
+  if (!tp_base_call_channel_is_accepted (TP_BASE_CALL_CHANNEL (self)))
+    goto done;
+
+  for (l = tp_base_call_channel_get_contents (bcc); l != NULL; l = l->next)
+    {
+      for (l2 = tp_base_call_content_get_streams (l->data);
+           l2 != NULL; l2 = l2->next)
+        {
+          TpBaseMediaCallStream *stream = TP_BASE_MEDIA_CALL_STREAM (l2->data);
+
+          tp_base_media_call_stream_update_receiving_state (stream);
+          tp_base_media_call_stream_update_sending_state (stream);
+
+          if (tp_base_media_call_stream_get_sending_state (stream) !=
+                  TP_STREAM_FLOW_STATE_STOPPED ||
+              tp_base_media_call_stream_get_receiving_state (stream) !=
+                  TP_STREAM_FLOW_STATE_STOPPED)
+            is_stopped = FALSE;
+          if (tp_base_media_call_stream_get_sending_state (stream) !=
+                  TP_STREAM_FLOW_STATE_STARTED ||
+              tp_base_media_call_stream_get_receiving_state (stream) !=
+                  TP_STREAM_FLOW_STATE_STARTED)
+            is_started = FALSE;
+        }
+    }
+
+done:
+
+  if (self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_HOLD &&
+      is_stopped)
+      new_hold_state = TP_LOCAL_HOLD_STATE_HELD;
+  else if (self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_UNHOLD &&
+      is_started)
+      new_hold_state = TP_LOCAL_HOLD_STATE_UNHELD;
+
+  if (new_hold_state != self->priv->hold_state)
+    set_hold_state (self, new_hold_state, self->priv->hold_state_reason);
+}
+
+static void
+hold_change_failed (TpBaseMediaCallChannel *self)
+{
+  TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
+  GList *l, *l2;
+
+  if (self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_HOLD)
+    {
+      set_hold_state (self, TP_LOCAL_HOLD_STATE_UNHELD,
+          TP_LOCAL_HOLD_STATE_REASON_RESOURCE_NOT_AVAILABLE);
+    }
+  else if (self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_UNHOLD)
+    {
+      set_hold_state (self, TP_LOCAL_HOLD_STATE_HELD,
+          TP_LOCAL_HOLD_STATE_REASON_RESOURCE_NOT_AVAILABLE);
+    }
+
+  for (l = tp_base_call_channel_get_contents (bcc); l != NULL; l = l->next)
+    {
+      for (l2 = tp_base_call_content_get_streams (l->data);
+           l2 != NULL; l2 = l2->next)
+        {
+          TpBaseMediaCallStream *stream = TP_BASE_MEDIA_CALL_STREAM (l2->data);
+
+          tp_base_media_call_stream_update_receiving_state (stream);
+          tp_base_media_call_stream_update_sending_state (stream);
+        }
+    }
+}
 
 static void
 tp_base_media_call_channel_get_hold_state (
@@ -256,56 +496,58 @@ tp_base_media_call_channel_get_hold_state (
 static void
 tp_base_media_call_channel_request_hold (
     TpSvcChannelInterfaceHold *hold_iface,
-    gboolean in_Hold,
+    gboolean hold,
     DBusGMethodInvocation *context)
 {
   TpBaseMediaCallChannel *self = TP_BASE_MEDIA_CALL_CHANNEL (hold_iface);
 
-  if ((in_Hold && (self->priv->hold_state == TP_LOCAL_HOLD_STATE_HELD ||
+  if ((hold && (self->priv->hold_state == TP_LOCAL_HOLD_STATE_HELD ||
               self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_HOLD)) ||
-      (!in_Hold && (self->priv->hold_state == TP_LOCAL_HOLD_STATE_UNHELD ||
+      (!hold && (self->priv->hold_state == TP_LOCAL_HOLD_STATE_UNHELD ||
           self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_UNHOLD)))
     {
       self->priv->hold_state_reason = TP_LOCAL_HOLD_STATE_REASON_REQUESTED;
       goto out;
     }
 
-  if (in_Hold)
-    tp_base_media_call_channel_set_hold_state (self,
-        TP_LOCAL_HOLD_STATE_PENDING_HOLD,
-        TP_LOCAL_HOLD_STATE_REASON_REQUESTED);
+  if (hold)
+    {
+      set_hold_state (self, TP_LOCAL_HOLD_STATE_PENDING_HOLD,
+          TP_LOCAL_HOLD_STATE_REASON_REQUESTED);
+    }
   else
-    tp_base_media_call_channel_set_hold_state (self,
-        TP_LOCAL_HOLD_STATE_PENDING_UNHOLD,
-        TP_LOCAL_HOLD_STATE_REASON_REQUESTED);
+    {
+      set_hold_state (self, TP_LOCAL_HOLD_STATE_PENDING_UNHOLD,
+          TP_LOCAL_HOLD_STATE_REASON_REQUESTED);
+    }
 
  out:
   tp_svc_channel_interface_hold_return_from_request_hold (context);
 }
 
-
 static void
 tp_base_media_call_channel_request_muted (TpSvcCallInterfaceMute *mute_iface,
-    gboolean in_Muted, DBusGMethodInvocation *context)
+    gboolean muted,
+    DBusGMethodInvocation *context)
 {
   TpBaseMediaCallChannel *self = TP_BASE_MEDIA_CALL_CHANNEL (mute_iface);
   gboolean changed = FALSE;
 
-  if (in_Muted != self->priv->local_mute_state)
+  if (muted != self->priv->local_mute_state)
     changed = TRUE;
-
 
   if (changed)
     {
-      tp_svc_call_interface_mute_emit_mute_state_changed (mute_iface, in_Muted);
+      self->priv->local_mute_state = muted;
       g_object_notify (G_OBJECT (self), "local-mute-state");
+
+      tp_svc_call_interface_mute_emit_mute_state_changed (mute_iface, muted);
       _tp_base_call_channel_set_locally_muted (TP_BASE_CALL_CHANNEL (self),
-          in_Muted);
+          muted);
     }
 
   tp_svc_call_interface_mute_return_from_request_muted (context);
 }
-
 
 static void
 hold_iface_init (gpointer g_iface, gpointer iface_data)
@@ -330,131 +572,6 @@ mute_iface_init (gpointer g_iface, gpointer iface_data)
     klass, tp_base_media_call_channel_##x##suffix)
   IMPLEMENT(request_muted,);
 #undef IMPLEMENT
-}
-
-static void
-tp_base_media_call_channel_try_accept (TpBaseMediaCallChannel *self)
-{
-  TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
-  TpBaseMediaCallChannelClass *klass =
-      TP_BASE_MEDIA_CALL_CHANNEL_GET_CLASS (self);
-  GList *l;
-  gboolean notready = FALSE;
-
-  if (self->priv->accepted)
-    return;
-
-  for (l = tp_base_call_channel_get_contents (bcc); l; l = l->next)
-    notready |= !_tp_base_media_call_content_ready_to_accept (l->data);
-
-  if (notready && !_tp_base_media_channel_is_held (self))
-    return;
-
-  if (klass->accept != NULL)
-    klass->accept (self);
-
-  TP_BASE_CALL_CHANNEL_CLASS (tp_base_media_call_channel_parent_class)->accept (bcc);
-
-  self->priv->accepted = TRUE;
-
-}
-
-static void
-streams_changed_cb (GObject *stream, gpointer spec,
-    TpBaseMediaCallChannel *self)
-{
-  if (self->priv->accepted)
-    g_signal_handlers_disconnect_by_func (stream, streams_changed_cb, self);
-
-  tp_base_media_call_channel_try_accept (self);
-
-}
-
-static void
-wait_for_streams_to_be_receiving (TpBaseMediaCallChannel *self)
-{
-  TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
-  GList *l;
-
-  for (l = tp_base_call_channel_get_contents (bcc); l; l = l->next)
-    {
-      TpBaseCallContent *content = l->data;
-      GList *l_stream;
-
-      if (tp_base_call_content_get_disposition (content) !=
-              TP_CALL_CONTENT_DISPOSITION_INITIAL)
-        continue;
-
-      for (l_stream = tp_base_call_content_get_streams (content);
-           l_stream;
-           l_stream = l_stream->next)
-        {
-          TpBaseCallStream *stream = l_stream->data;
-
-          g_signal_connect (stream, "notify::receiving-state",
-              G_CALLBACK (streams_changed_cb), self);
-          g_signal_connect (stream, "notify::remote-members",
-              G_CALLBACK (streams_changed_cb), self);
-        }
-    }
-}
-
-
-
-static void
-tp_base_media_call_channel_accept (TpBaseCallChannel *bcc)
-{
-  TpBaseMediaCallChannel *self = TP_BASE_MEDIA_CALL_CHANNEL (bcc);
-
-  tp_base_media_call_channel_try_accept (self);
-
-  if (!self->priv->accepted)
-    wait_for_streams_to_be_receiving (self);
-}
-
-
-static void
-tp_base_media_call_channel_remote_accept (TpBaseCallChannel *self)
-{
-  g_list_foreach (tp_base_call_channel_get_contents (self),
-      (GFunc) _tp_base_media_call_content_remote_accepted, NULL);
-}
-
-static gboolean
-tp_base_media_call_channel_is_connected (TpBaseCallChannel *self)
-{
-  GList *l;
-
-  g_return_val_if_fail (TP_IS_BASE_MEDIA_CALL_CHANNEL (self), FALSE);
-
-  for (l = tp_base_call_channel_get_contents (self); l != NULL; l = l->next)
-    {
-      GList *streams = tp_base_call_content_get_streams (l->data);
-
-      for (; streams != NULL; streams = streams->next)
-        {
-          GList *endpoints;
-          gboolean has_connected_endpoint = FALSE;
-
-          endpoints = tp_base_media_call_stream_get_endpoints (streams->data);
-          for (; endpoints != NULL; endpoints = endpoints->next)
-            {
-              TpStreamEndpointState state = tp_call_stream_endpoint_get_state (
-                  endpoints->data, TP_STREAM_COMPONENT_DATA);
-
-              if (state == TP_STREAM_ENDPOINT_STATE_PROVISIONALLY_CONNECTED ||
-                  state == TP_STREAM_ENDPOINT_STATE_FULLY_CONNECTED)
-                {
-                  has_connected_endpoint = TRUE;
-                  break;
-                }
-            }
-          if (!has_connected_endpoint)
-            return FALSE;
-        }
-    }
-
-  return TRUE;
 }
 
 void
@@ -516,148 +633,24 @@ _tp_base_media_channel_is_held (TpBaseMediaCallChannel *self)
     }
 }
 
-static void
-tp_base_media_call_channel_hold_change_failed (
-    TpBaseMediaCallChannel *self)
-{
-  TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
-  GList *l, *l2;
-
-  if (self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_HOLD)
-    tp_base_media_call_channel_set_hold_state (self,
-        TP_LOCAL_HOLD_STATE_UNHELD,
-        TP_LOCAL_HOLD_STATE_REASON_RESOURCE_NOT_AVAILABLE);
-  else if (self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_UNHOLD)
-    tp_base_media_call_channel_set_hold_state (self,
-        TP_LOCAL_HOLD_STATE_HELD,
-        TP_LOCAL_HOLD_STATE_REASON_RESOURCE_NOT_AVAILABLE);
-
-
-  for (l = tp_base_call_channel_get_contents (bcc); l != NULL; l = l->next)
-    {
-      for (l2 = tp_base_call_content_get_streams (l->data);
-           l2 != NULL; l2 = l2->next)
-        {
-          TpBaseMediaCallStream *stream = TP_BASE_MEDIA_CALL_STREAM (l2->data);
-
-          tp_base_media_call_stream_update_receiving_state (stream);
-          tp_base_media_call_stream_update_sending_state (stream);
-        }
-    }
-}
-
-static void
-tp_base_media_call_channel_update_hold_state (
-    TpBaseMediaCallChannel *self)
-{
-  TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
-  GList *l, *l2;
-  gboolean is_started = TRUE;
-  gboolean is_stopped = TRUE;
-  TpLocalHoldState new_hold_state = self->priv->hold_state;
-
-  if (self->priv->hold_state != TP_LOCAL_HOLD_STATE_PENDING_HOLD &&
-      self->priv->hold_state != TP_LOCAL_HOLD_STATE_PENDING_UNHOLD)
-    return;
-
-  if (!tp_base_call_channel_is_accepted (TP_BASE_CALL_CHANNEL (self)))
-    goto done;
-
-  for (l = tp_base_call_channel_get_contents (bcc); l != NULL; l = l->next)
-    {
-      for (l2 = tp_base_call_content_get_streams (l->data);
-           l2 != NULL; l2 = l2->next)
-        {
-          TpBaseMediaCallStream *stream = TP_BASE_MEDIA_CALL_STREAM (l2->data);
-
-          tp_base_media_call_stream_update_receiving_state (stream);
-          tp_base_media_call_stream_update_sending_state (stream);
-
-          if (tp_base_media_call_stream_get_sending_state (stream) !=
-              TP_STREAM_FLOW_STATE_STOPPED ||
-              tp_base_media_call_stream_get_receiving_state (stream) !=
-              TP_STREAM_FLOW_STATE_STOPPED)
-            is_stopped = FALSE;
-          if (tp_base_media_call_stream_get_sending_state (stream) !=
-              TP_STREAM_FLOW_STATE_STARTED ||
-              tp_base_media_call_stream_get_receiving_state (stream) !=
-              TP_STREAM_FLOW_STATE_STARTED)
-            is_started = FALSE;
-        }
-    }
-
- done:
-
-  if (self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_HOLD &&
-      is_stopped)
-      new_hold_state = TP_LOCAL_HOLD_STATE_HELD;
-  else if (self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_UNHOLD &&
-      is_started)
-      new_hold_state = TP_LOCAL_HOLD_STATE_UNHELD;
-
-  if (new_hold_state != self->priv->hold_state)
-    tp_base_media_call_channel_set_hold_state (self,
-        new_hold_state, self->priv->hold_state_reason);
-}
-
 void
 _tp_base_media_call_channel_streams_sending_state_changed (
-    TpBaseMediaCallChannel *self, gboolean success)
+    TpBaseMediaCallChannel *self,
+    gboolean success)
 {
   if (success)
-    tp_base_media_call_channel_update_hold_state (self);
+    update_hold_state (self);
   else
-    tp_base_media_call_channel_hold_change_failed (self);
+    hold_change_failed (self);
 }
 
 void
 _tp_base_media_call_channel_streams_receiving_state_changed (
-    TpBaseMediaCallChannel *self, gboolean success)
+    TpBaseMediaCallChannel *self,
+    gboolean success)
 {
   if (success)
-    tp_base_media_call_channel_update_hold_state (self);
+    update_hold_state (self);
   else
-    tp_base_media_call_channel_hold_change_failed (self);
-}
-
-static void
-call_members_changed_cb (TpBaseMediaCallChannel *self,
-    GHashTable *updates, GHashTable *identifiers, GArray *removed,
-    GValueArray *reason, gpointer user_data)
-{
-  TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
-  GList *l, *l2;
-  GHashTable *call_members = tp_base_call_channel_get_call_members (bcc);
-
-  /* check for remote hold */
-
-  for (l = tp_base_call_channel_get_contents (bcc); l != NULL; l = l->next)
-    {
-      for (l2 = tp_base_call_content_get_streams (l->data);
-           l2 != NULL; l2 = l2->next)
-        {
-          TpBaseMediaCallStream *stream = TP_BASE_MEDIA_CALL_STREAM (l2->data);
-          GHashTable *remote_members = _tp_base_call_stream_get_remote_members (
-              TP_BASE_CALL_STREAM (stream));
-          gboolean all_held = TRUE;
-          GHashTableIter iter;
-          gpointer contact;
-
-          g_hash_table_iter_init (&iter, remote_members);
-          while (g_hash_table_iter_next (&iter, &contact, NULL))
-            {
-              gpointer value;
-
-              if (g_hash_table_lookup_extended (call_members, contact, NULL,
-                      &value))
-                {
-                  TpCallMemberFlags flags = GPOINTER_TO_UINT (value);
-                  if (!(flags & TP_CALL_MEMBER_FLAG_HELD))
-                    all_held = FALSE;
-                }
-            }
-
-          _tp_base_media_call_stream_set_remotely_held (stream, all_held);
-        }
-    }
+    hold_change_failed (self);
 }
