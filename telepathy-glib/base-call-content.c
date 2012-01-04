@@ -167,6 +167,9 @@ tp_base_call_content_dispose (GObject *object)
 {
   TpBaseCallContent *self = TP_BASE_CALL_CONTENT (object);
 
+  if (!self->priv->deinit_has_run)
+    _tp_base_call_content_deinit (self);
+
   g_assert (self->priv->deinit_has_run);
 
   tp_clear_pointer (&self->priv->streams, stream_list_destroy);
