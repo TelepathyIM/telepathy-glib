@@ -115,6 +115,19 @@ GHashTable *_tp_call_content_media_description_dup_properties (
 void _tp_call_stream_endpoint_set_stream (TpCallStreamEndpoint *self,
     TpBaseMediaCallStream *stream);
 
+/* Implemented in dtmf.c */
+
+typedef enum
+{
+  DTMF_CHAR_CLASS_MEANINGLESS,
+  DTMF_CHAR_CLASS_PAUSE,
+  DTMF_CHAR_CLASS_EVENT,
+  DTMF_CHAR_CLASS_WAIT_FOR_USER
+} DTMFCharClass;
+
+TpDTMFEvent _tp_dtmf_char_to_event (gchar c);
+DTMFCharClass _tp_dtmf_char_classify (gchar c);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_BASE_CALL_INTERNAL_H__*/

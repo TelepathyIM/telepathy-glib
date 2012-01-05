@@ -54,13 +54,17 @@
 #include "config.h"
 #include "base-media-call-content.h"
 
+#include <string.h>
+
 #define DEBUG_FLAG TP_DEBUG_CALL
 #include "telepathy-glib/base-call-internal.h"
+#include "telepathy-glib/base-call-channel.h"
 #include "telepathy-glib/base-channel.h"
 #include "telepathy-glib/base-connection.h"
 #include "telepathy-glib/base-media-call-stream.h"
 #include "telepathy-glib/dbus.h"
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/dtmf.h"
 #include "telepathy-glib/gtypes.h"
 #include "telepathy-glib/interfaces.h"
 #include "telepathy-glib/svc-call.h"
@@ -68,6 +72,8 @@
 #include "telepathy-glib/util.h"
 #include "telepathy-glib/util-internal.h"
 #include "telepathy-glib/_gen/signals-marshal.h"
+
+#define DTMF_PAUSE_MS (3000)
 
 static void call_content_media_iface_init (gpointer, gpointer);
 
@@ -80,18 +86,26 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseMediaCallContent,
 
 static const gchar *tp_base_media_call_content_interfaces[] = {
     TP_IFACE_CALL_CONTENT_INTERFACE_MEDIA,
+    TP_IFACE_CALL_CONTENT_INTERFACE_DTMF,
     NULL
 };
 
 /* properties */
 enum
 {
+  /* Call.Content.Interface.Media properties */
+
   PROP_REMOTE_MEDIA_DESCRIPTIONS = 1,
   PROP_LOCAL_MEDIA_DESCRIPTIONS,
   PROP_MEDIA_DESCRIPTION_OFFER,
   PROP_PACKETIZATION,
   PROP_CURRENT_DTMF_EVENT,
-  PROP_CURRENT_DTMF_STATE
+  PROP_CURRENT_DTMF_STATE,
+
+  /* Call.Content.Interface.DTMF properties */
+
+  PROP_CURRENTLY_SENDING_TONES,
+  PROP_DEFERRED_TONES
 };
 
 enum /* signals */
@@ -114,12 +128,28 @@ struct _TpBaseMediaCallContentPrivate
   TpDTMFEvent current_dtmf_event;
   TpSendingState current_dtmf_state;
 
+  gchar *requested_tones;
+  const gchar *currently_sending_tones;
+  gchar *deferred_tones;
+  gboolean multiple_tones;
+  gboolean tones_cancelled;
+  guint tones_pause_timeout_id;
+  gulong channel_state_changed_id;
+
   /* GQueue of GSimpleAsyncResult with a TpCallContentMediaDescription
    * as op_res_gpointer */
   GQueue *outstanding_offers;
   GSimpleAsyncResult *current_offer_result;
   GCancellable *current_offer_cancellable;
 };
+
+static gboolean tp_base_media_call_content_start_tone (TpBaseCallContent *self,
+    guchar event, GError **error);
+static gboolean tp_base_media_call_content_stop_tone (TpBaseCallContent *self,
+    GError **error);
+static gboolean tp_base_media_call_content_multiple_tones (
+    TpBaseCallContent *self, const gchar *tones, GError **error);
+static void tp_base_media_call_content_dtmf_next (TpBaseMediaCallContent *self);
 
 static void
 tp_base_media_call_content_init (TpBaseMediaCallContent *self)
@@ -161,6 +191,20 @@ tp_base_media_call_content_dispose (GObject *object)
   tp_clear_pointer (&self->priv->local_media_descriptions, g_hash_table_unref);
   tp_clear_pointer (&self->priv->remote_media_descriptions, g_hash_table_unref);
 
+  if (self->priv->tones_pause_timeout_id != 0)
+    g_source_remove (self->priv->tones_pause_timeout_id);
+  self->priv->tones_pause_timeout_id = 0;
+
+  if (self->priv->channel_state_changed_id != 0)
+    {
+      TpBaseCallChannel *channel = _tp_base_call_content_get_channel (
+          TP_BASE_CALL_CONTENT (self));
+
+      g_signal_handler_disconnect (channel,
+          self->priv->channel_state_changed_id);
+      self->priv->channel_state_changed_id = 0;
+    }
+
   if (G_OBJECT_CLASS (tp_base_media_call_content_parent_class)->dispose)
     G_OBJECT_CLASS (tp_base_media_call_content_parent_class)->dispose (object);
 }
@@ -171,6 +215,10 @@ tp_base_media_call_content_finalize (GObject *object)
   TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (object);
 
   g_queue_free (self->priv->outstanding_offers);
+
+  g_free (self->priv->requested_tones);
+  self->priv->requested_tones = NULL;
+  self->priv->currently_sending_tones = NULL;
 
   if (G_OBJECT_CLASS (tp_base_media_call_content_parent_class)->finalize)
     G_OBJECT_CLASS (tp_base_media_call_content_parent_class)->finalize (object);
@@ -228,6 +276,16 @@ tp_base_media_call_content_get_property (GObject *object,
       case PROP_CURRENT_DTMF_STATE:
         g_value_set_uint (value, self->priv->current_dtmf_state);
         break;
+      case PROP_CURRENTLY_SENDING_TONES:
+        g_value_set_boolean (value,
+            self->priv->currently_sending_tones != NULL);
+        break;
+      case PROP_DEFERRED_TONES:
+        if (self->priv->deferred_tones == NULL)
+          g_value_set_static_string (value, "");
+        else
+          g_value_set_string (value, self->priv->deferred_tones);
+        break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
@@ -278,6 +336,10 @@ tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
 
   bcc_class->extra_interfaces = tp_base_media_call_content_interfaces;
   bcc_class->deinit = call_content_deinit;
+  bcc_class->start_tone = tp_base_media_call_content_start_tone;
+  bcc_class->stop_tone = tp_base_media_call_content_stop_tone;
+  bcc_class->stop_tone = tp_base_media_call_content_stop_tone;
+  bcc_class->multiple_tones = tp_base_media_call_content_multiple_tones;
 
   /**
    * TpBaseMediaCallContent:remote-media-descriptions:
@@ -370,6 +432,11 @@ tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CURRENT_DTMF_STATE,
       param_spec);
+
+  g_object_class_override_property (object_class, PROP_CURRENTLY_SENDING_TONES,
+      "currently-sending-tones");
+  g_object_class_override_property (object_class, PROP_DEFERRED_TONES,
+      "deferred-tones");
 
   /**
    * TpBaseMediaCallContent::local-media-description-updated
@@ -671,6 +738,67 @@ tp_base_media_call_content_fail (TpSvcCallContentInterfaceMedia *iface,
 }
 
 static void
+tp_base_media_call_content_acknowledge_dtmf_change (
+    TpSvcCallContentInterfaceMedia *iface,
+    guchar in_Event,
+    guint in_State,
+    DBusGMethodInvocation *context)
+{
+  TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (iface);
+
+  if (self->priv->current_dtmf_event != in_Event)
+    {
+      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "The acknoledgement is not for the right event"};
+      dbus_g_method_return_error (context, &error);
+      return;
+    }
+
+  if (in_State != TP_SENDING_STATE_SENDING &&
+      in_State != TP_SENDING_STATE_NONE)
+    {
+      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "The new sending state can not be a pending state"};
+      dbus_g_method_return_error (context, &error);
+      return;
+    }
+
+  if (in_State == self->priv->current_dtmf_state)
+    goto out;
+
+  if (self->priv->current_dtmf_state != TP_SENDING_STATE_PENDING_SEND &&
+      self->priv->current_dtmf_state != TP_SENDING_STATE_PENDING_STOP_SENDING)
+    {
+      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Acknowledge rejected because we are not in a pending state"};
+      dbus_g_method_return_error (context, &error);
+      return;
+    }
+
+  if ((self->priv->current_dtmf_state == TP_SENDING_STATE_PENDING_SEND &&
+          in_State != TP_SENDING_STATE_SENDING) ||
+      (self->priv->current_dtmf_state ==
+          TP_SENDING_STATE_PENDING_STOP_SENDING &&
+          in_State != TP_SENDING_STATE_NONE))
+    {
+      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "The new sending state does not match the pending state"};
+      dbus_g_method_return_error (context, &error);
+      return;
+    }
+
+  self->priv->current_dtmf_state = in_State;
+
+  tp_base_media_call_content_dtmf_next (self);
+
+out:
+
+  tp_svc_call_content_interface_media_return_from_acknowledge_dtmf_change (
+      context);
+}
+
+
+static void
 call_content_media_iface_init (gpointer g_iface, gpointer iface_data)
 {
   TpSvcCallContentInterfaceMediaClass *klass =
@@ -679,7 +807,7 @@ call_content_media_iface_init (gpointer g_iface, gpointer iface_data)
 #define IMPLEMENT(x) tp_svc_call_content_interface_media_implement_##x (\
     klass, tp_base_media_call_content_##x)
   IMPLEMENT(update_local_media_description);
-  //IMPLEMENT(acknowledge_dtmf_change);
+  IMPLEMENT(acknowledge_dtmf_change);
   IMPLEMENT(fail);
 #undef IMPLEMENT
 }
@@ -753,5 +881,238 @@ _tp_base_media_call_content_remote_accepted (TpBaseMediaCallContent *self)
 
       if (local == TP_SENDING_STATE_SENDING)
         tp_base_media_call_stream_set_local_sending (stream, TRUE);
+    }
+}
+
+static gboolean
+tp_base_media_call_content_start_tone (TpBaseCallContent *bcc,
+    guchar event, GError **error)
+{
+  TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (bcc);
+
+  gchar buf[2] = { 0, 0 };
+
+  if (self->priv->currently_sending_tones != NULL)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_SERVICE_BUSY,
+          "Already sending a tone");
+      return FALSE;
+    }
+
+  buf[0] = tp_dtmf_event_to_char (event);
+
+  if (_tp_dtmf_char_classify (buf[0]) == DTMF_CHAR_CLASS_MEANINGLESS)
+    {
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+          "Invalid DTMF event %s", buf);
+      return FALSE;
+    }
+
+  self->priv->multiple_tones = FALSE;
+  self->priv->requested_tones = g_strdup (buf);
+  self->priv->currently_sending_tones = self->priv->requested_tones;
+
+  g_free (self->priv->deferred_tones);
+  self->priv->deferred_tones = NULL;
+
+  tp_base_media_call_content_dtmf_next (self);
+
+  return TRUE;
+}
+
+static gboolean
+tp_base_media_call_content_stop_tone (TpBaseCallContent *bcc,
+    GError **error)
+{
+  TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (bcc);
+
+  if (self->priv->currently_sending_tones == NULL)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "No tone is currently being played");
+      return FALSE;
+    }
+
+  self->priv->currently_sending_tones = "";
+  self->priv->tones_cancelled = TRUE;
+
+  tp_base_media_call_content_dtmf_next (self);
+
+  return TRUE;
+}
+
+static gboolean
+tp_base_media_call_content_multiple_tones (TpBaseCallContent *bcc,
+    const gchar *tones, GError **error)
+
+{
+  TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (bcc);
+  guint i;
+
+  if (self->priv->currently_sending_tones != NULL)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_SERVICE_BUSY,
+          "Already sending a tone");
+      return FALSE;
+    }
+
+  for (i = 0; tones[i] != '\0'; i++)
+    {
+      if (_tp_dtmf_char_classify (tones[i]) == DTMF_CHAR_CLASS_MEANINGLESS)
+        {
+          g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+              "Invalid character in DTMF string starting at %s",
+              tones + i);
+          return FALSE;
+        }
+    }
+
+  self->priv->multiple_tones = TRUE;
+  self->priv->requested_tones = g_strdup (tones);
+  self->priv->currently_sending_tones = self->priv->requested_tones;
+  g_free (self->priv->deferred_tones);
+  self->priv->deferred_tones = NULL;
+
+  tp_base_media_call_content_dtmf_next (self);
+
+  return TRUE;
+}
+
+
+static gboolean
+dtmf_pause_timeout_func (gpointer data)
+{
+  TpBaseMediaCallContent *self = data;
+
+  self->priv->tones_pause_timeout_id = 0;
+
+  tp_base_media_call_content_dtmf_next (self);
+
+  return FALSE;
+}
+
+static void
+channel_state_changed_cb (TpBaseCallChannel *channel, TpCallState state,
+    TpCallFlags flags, gpointer reason, GHashTable *details,
+    TpBaseMediaCallContent *self)
+{
+  if (state != TP_CALL_STATE_ACTIVE)
+    return;
+
+  if (self->priv->channel_state_changed_id != 0)
+    {
+      g_signal_handler_disconnect (self, self->priv->channel_state_changed_id);
+      self->priv->channel_state_changed_id = 0;
+    }
+
+  tp_base_media_call_content_dtmf_next (self);
+}
+
+static void
+tp_base_media_call_content_dtmf_next (TpBaseMediaCallContent *self)
+{
+  g_assert (self->priv->currently_sending_tones != NULL);
+
+  switch (self->priv->current_dtmf_state)
+    {
+    case TP_SENDING_STATE_PENDING_SEND:
+      if (self->priv->tones_cancelled)
+        {
+          self->priv->current_dtmf_state =
+              TP_SENDING_STATE_PENDING_STOP_SENDING;
+          tp_svc_call_content_interface_media_emit_dtmf_change_requested (self,
+              self->priv->current_dtmf_state,
+              self->priv->current_dtmf_event);
+          return;
+        }
+      break;
+    case TP_SENDING_STATE_PENDING_STOP_SENDING:
+      /* Waiting on streaming implementation, do nothing */
+      break;
+    case TP_SENDING_STATE_SENDING:
+      if (self->priv->tones_cancelled || self->priv->multiple_tones)
+        {
+          self->priv->current_dtmf_state =
+              TP_SENDING_STATE_PENDING_STOP_SENDING;
+
+          tp_svc_call_content_interface_media_emit_dtmf_change_requested (self,
+              self->priv->current_dtmf_state,
+              self->priv->current_dtmf_event);
+        }
+      break;
+    case TP_SENDING_STATE_NONE:
+      {
+        gchar next;
+        TpBaseCallChannel *channel = _tp_base_call_content_get_channel (
+            TP_BASE_CALL_CONTENT (self));
+
+        /* Waiting for timeout */
+        if (self->priv->tones_pause_timeout_id != 0)
+          return;
+
+        if (channel &&
+            tp_base_call_channel_get_state (channel) != TP_CALL_STATE_ACTIVE)
+          {
+            if (self->priv->channel_state_changed_id == 0)
+              self->priv->channel_state_changed_id =
+                  g_signal_connect (channel, "call-state-changed",
+                      G_CALLBACK (channel_state_changed_cb), self);
+            return;
+          }
+
+        next = self->priv->currently_sending_tones[0];
+
+        if (next)
+          {
+            switch (_tp_dtmf_char_classify (next))
+              {
+              case DTMF_CHAR_CLASS_EVENT:
+                self->priv->current_dtmf_event = _tp_dtmf_char_to_event (next);
+                self->priv->current_dtmf_state = TP_SENDING_STATE_PENDING_SEND;
+
+                tp_svc_call_content_interface_media_emit_dtmf_change_requested (
+                    self, self->priv->current_dtmf_state,
+                    self->priv->current_dtmf_event);
+                tp_svc_call_content_interface_dtmf_emit_sending_tones (self,
+                    self->priv->currently_sending_tones);
+
+                break;
+              case DTMF_CHAR_CLASS_PAUSE:
+                self->priv->tones_pause_timeout_id = g_timeout_add (
+                    DTMF_PAUSE_MS, dtmf_pause_timeout_func, self);
+                tp_svc_call_content_interface_dtmf_emit_sending_tones (self,
+                    self->priv->currently_sending_tones);
+                break;
+              case DTMF_CHAR_CLASS_WAIT_FOR_USER:
+                self->priv->deferred_tones =
+                    g_strdup (self->priv->currently_sending_tones);
+                self->priv->currently_sending_tones = "";
+                tp_svc_call_content_interface_dtmf_emit_tones_deferred (self,
+                    self->priv->deferred_tones);
+
+                /* Let's stop here ! */
+                goto done;
+                break;
+              default:
+                g_assert_not_reached ();
+              }
+
+            self->priv->currently_sending_tones++;
+
+          }
+        else
+          {
+          done:
+            tp_svc_call_content_interface_dtmf_emit_stopped_tones (self,
+                self->priv->tones_cancelled);
+            self->priv->tones_cancelled = FALSE;
+            g_free (self->priv->requested_tones);
+            self->priv->requested_tones = NULL;
+            self->priv->currently_sending_tones = NULL;
+          }
+      }
+      break;
+    default:
+      g_assert_not_reached ();
     }
 }
