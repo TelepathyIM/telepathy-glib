@@ -118,12 +118,15 @@
 #include "telepathy-glib/util.h"
 
 static void call_iface_init (gpointer, gpointer);
+static void dtmf_iface_init (gpointer, gpointer);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseCallChannel, tp_base_call_channel,
   TP_TYPE_BASE_CHANNEL,
 
   G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_CALL,
         call_iface_init)
+  G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_DTMF,
+        dtmf_iface_init)
   )
 
 static const gchar *tp_base_call_channel_interfaces[] = {
@@ -151,6 +154,8 @@ enum
   PROP_CALL_MEMBERS,
   PROP_MEMBER_IDENTIFIERS,
 
+  PROP_INITIAL_TONES,
+
   LAST_PROPERTY
 };
 
@@ -166,6 +171,7 @@ struct _TpBaseCallChannelPrivate
   gboolean initial_video;
   gchar *initial_audio_name;
   gchar *initial_video_name;
+  gchar *initial_tones;
 
   gboolean locally_accepted;
   gboolean accepted;
@@ -285,6 +291,7 @@ tp_base_call_channel_finalize (GObject *object)
   g_value_array_free (self->priv->reason);
   g_free (self->priv->initial_audio_name);
   g_free (self->priv->initial_video_name);
+  g_free (self->priv->initial_tones);
 
   G_OBJECT_CLASS (tp_base_call_channel_parent_class)->finalize (object);
 }
@@ -373,6 +380,9 @@ tp_base_call_channel_get_property (GObject *object,
           g_value_take_boxed (value, identifiers);
           break;
         }
+      case PROP_INITIAL_TONES:
+        g_value_set_string (value, self->priv->initial_tones);
+        break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
@@ -407,6 +417,9 @@ tp_base_call_channel_set_property (GObject *object,
       case PROP_MUTABLE_CONTENTS:
         self->priv->mutable_contents = g_value_get_boolean (value);
         break;
+      case PROP_INITIAL_TONES:
+        self->priv->initial_tones = g_value_dup_string (value);
+        break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
@@ -430,6 +443,7 @@ tp_base_call_channel_fill_immutable_properties (
       TP_IFACE_CHANNEL_TYPE_CALL, "InitialVideoName",
       TP_IFACE_CHANNEL_TYPE_CALL, "MutableContents",
       TP_IFACE_CHANNEL_TYPE_CALL, "HardwareStreaming",
+      TP_IFACE_CHANNEL_INTERFACE_DTMF, "InitialTones",
       NULL);
 }
 
@@ -454,7 +468,11 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
       { "InitialAudioName", "initial-audio-name", NULL },
       { "InitialVideoName", "initial-video-name", NULL },
       { "MutableContents", "mutable-contents", NULL },
-      { NULL }
+      { NULL },
+  };
+  static TpDBusPropertiesMixinPropImpl dtmf_props[] = {
+      { "InitialTones", "initial-tones", NULL },
+      { NULL },
   };
 
   g_type_class_add_private (klass, sizeof (TpBaseCallChannelPrivate));
@@ -677,11 +695,33 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
   g_object_class_install_property (object_class, PROP_MEMBER_IDENTIFIERS,
       param_spec);
 
+
+  /**
+   * TpBaseCallChannel:initial-tones
+   *
+   * DTMF Tones to be played on the channel created.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_string ("initial-tones",
+      "InitialTones", "DTMF Tones to be played on the channel created"
+      " by InitialAudio",
+      "",
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INITIAL_TONES,
+      param_spec);
+
   tp_dbus_properties_mixin_implement_interface (object_class,
       TP_IFACE_QUARK_CHANNEL_TYPE_CALL,
       tp_dbus_properties_mixin_getter_gobject_properties,
       NULL,
       call_props);
+
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CHANNEL_INTERFACE_DTMF,
+      tp_dbus_properties_mixin_getter_gobject_properties,
+      NULL,
+      dtmf_props);
 }
 
 /**
@@ -1414,6 +1454,12 @@ call_iface_init (gpointer g_iface, gpointer iface_data)
 #undef IMPLEMENT
 }
 
+/* Interface has no methods, only has a requestable property */
+static void
+dtmf_iface_init (gpointer g_iface, gpointer iface_data)
+{
+}
+
 /* Internal functions */
 
 void
@@ -1452,4 +1498,12 @@ _tp_base_call_channel_is_connected (TpBaseCallChannel *self)
     return klass->is_connected (self);
   else
     return TRUE;
+}
+
+const gchar *
+_tp_base_call_channel_get_initial_tones (TpBaseCallChannel *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CALL_CHANNEL (self), "");
+
+  return self->priv->initial_tones;
 }

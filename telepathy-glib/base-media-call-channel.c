@@ -115,6 +115,7 @@ struct _TpBaseMediaCallChannelPrivate
 
 static const gchar *tp_base_media_call_channel_interfaces[] = {
   TP_IFACE_CHANNEL_INTERFACE_HOLD,
+  TP_IFACE_CHANNEL_INTERFACE_DTMF,
   TP_IFACE_CALL_INTERFACE_MUTE,
   NULL
 };
