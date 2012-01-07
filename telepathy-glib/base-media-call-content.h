@@ -76,7 +76,7 @@ void tp_base_media_call_content_offer_media_description_async (
     GAsyncReadyCallback callback,
     gpointer user_data);
 gboolean tp_base_media_call_content_offer_media_description_finish (
-    TpCallContentMediaDescription *self,
+    TpBaseMediaCallContent *self,
     GAsyncResult *result,
     GError **error);
 

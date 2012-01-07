@@ -588,7 +588,7 @@ tp_base_media_call_content_offer_media_description_async (
 
 /**
  * tp_base_media_call_content_offer_media_description_finish:
- * @self: a #TpCallContentMediaDescription
+ * @self: a #TpBaseMediaCallContent
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
@@ -598,7 +598,7 @@ tp_base_media_call_content_offer_media_description_async (
  */
 gboolean
 tp_base_media_call_content_offer_media_description_finish (
-    TpCallContentMediaDescription *self,
+    TpBaseMediaCallContent *self,
     GAsyncResult *result,
     GError **error)
 {
