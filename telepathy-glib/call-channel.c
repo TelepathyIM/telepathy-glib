@@ -84,6 +84,7 @@ struct _TpCallChannelPrivate
   gchar *initial_video_name;
   gboolean mutable_contents;
 
+  GSimpleAsyncResult *core_result;
   gboolean properties_retrieved;
   gboolean initial_members_retrieved;
 };
@@ -420,8 +421,10 @@ update_call_members_prepared_cb (GObject *object,
   if (!self->priv->initial_members_retrieved)
     {
       self->priv->initial_members_retrieved = TRUE;
-      _tp_proxy_set_feature_prepared ((TpProxy *) self,
-          TP_CALL_CHANNEL_FEATURE_CORE, TRUE);
+
+      g_assert (self->priv->core_result != NULL);
+      g_simple_async_result_complete (self->priv->core_result);
+      g_clear_object (&self->priv->core_result);
     }
   else
     {
@@ -520,8 +523,9 @@ got_all_properties_cb (TpProxy *proxy,
   if (error != NULL)
     {
       DEBUG ("Could not get the call channel properties: %s", error->message);
-      _tp_proxy_set_feature_prepared (proxy,
-          TP_CALL_CHANNEL_FEATURE_CORE, FALSE);
+      g_simple_async_result_set_from_error (self->priv->core_result, error);
+      g_simple_async_result_complete (self->priv->core_result);
+      g_clear_object (&self->priv->core_result);
       return;
     }
 
@@ -559,15 +563,41 @@ got_all_properties_cb (TpProxy *proxy,
           _tp_call_content_new (self, object_path));
     }
 
-  /* CORE will be marked prepared in update_call_members_prepared_cb() when
+  /* core_result will be complete in update_call_members_prepared_cb() when
    * the initial members are prepared. */
+}
+
+static void
+_tp_call_channel_prepare_core_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpCallChannel *self = (TpCallChannel *) proxy;
+  TpChannel *channel = (TpChannel *) self;
+
+  tp_cli_channel_type_call_connect_to_content_added (channel,
+      content_added_cb, NULL, NULL, NULL, NULL);
+  tp_cli_channel_type_call_connect_to_content_removed (channel,
+      content_removed_cb, NULL, NULL, NULL, NULL);
+  tp_cli_channel_type_call_connect_to_call_state_changed (channel,
+      call_state_changed_cb, NULL, NULL, NULL, NULL);
+  tp_cli_channel_type_call_connect_to_call_members_changed (channel,
+      call_members_changed_cb, NULL, NULL, NULL, NULL);
+
+  g_assert (self->priv->core_result == NULL);
+  self->priv->core_result = g_simple_async_result_new ((GObject *) self,
+      callback, user_data, _tp_call_channel_prepare_core_async);
+
+  tp_cli_dbus_properties_call_get_all (self, -1,
+      TP_IFACE_CHANNEL_TYPE_CALL,
+      got_all_properties_cb, NULL, NULL, NULL);
 }
 
 static void
 tp_call_channel_constructed (GObject *obj)
 {
   TpCallChannel *self = (TpCallChannel *) obj;
-  TpChannel *channel = (TpChannel *) self;
   GHashTable *properties = tp_channel_borrow_immutable_properties (
       (TpChannel *) self);
 
@@ -591,26 +621,14 @@ tp_call_channel_constructed (GObject *obj)
     tp_clear_pointer (&self->priv->initial_audio_name, g_free);
   if (!self->priv->initial_video)
     tp_clear_pointer (&self->priv->initial_video_name, g_free);
-
-  /* Connect signals for mutable properties */
-  tp_cli_channel_type_call_connect_to_content_added (channel,
-      content_added_cb, NULL, NULL, NULL, NULL);
-  tp_cli_channel_type_call_connect_to_content_removed (channel,
-      content_removed_cb, NULL, NULL, NULL, NULL);
-  tp_cli_channel_type_call_connect_to_call_state_changed (channel,
-      call_state_changed_cb, NULL, NULL, NULL, NULL);
-  tp_cli_channel_type_call_connect_to_call_members_changed (channel,
-      call_members_changed_cb, NULL, NULL, NULL, NULL);
-
-  tp_cli_dbus_properties_call_get_all (self, -1,
-      TP_IFACE_CHANNEL_TYPE_CALL,
-      got_all_properties_cb, NULL, NULL, NULL);
 }
 
 static void
 tp_call_channel_dispose (GObject *obj)
 {
   TpCallChannel *self = (TpCallChannel *) obj;
+
+  g_assert (self->priv->core_result == NULL);
 
   tp_clear_pointer (&self->priv->contents, g_ptr_array_unref);
   tp_clear_pointer (&self->priv->state_details, g_hash_table_unref);
@@ -697,6 +715,7 @@ tp_call_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
 
   /* started from constructed */
   features[FEAT_CORE].name = TP_CALL_CHANNEL_FEATURE_CORE;
+  features[FEAT_CORE].prepare_async = _tp_call_channel_prepare_core_async;
   features[FEAT_CORE].core = TRUE;
 
   /* assert that the terminator at the end is there */
