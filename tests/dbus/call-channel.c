@@ -461,9 +461,10 @@ test_basics (Test *test,
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
   g_clear_error (&test->error);
 
-  /* Check the call state */
+  /* Check the call state, it should have moved directly to ACTIVE since we
+   * are not using media channel/content/stream. */
   assert_call_properties (test->call_chan,
-      TP_CALL_STATE_ACCEPTED, tp_channel_get_handle (test->chan, NULL),
+      TP_CALL_STATE_ACTIVE, tp_channel_get_handle (test->chan, NULL),
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       TRUE, 0,              /* call flags */
       FALSE, FALSE, FALSE); /* don't care about initial audio/video */
