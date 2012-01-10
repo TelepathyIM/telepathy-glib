@@ -465,7 +465,7 @@ test_basics (Test *test,
    * are not using media channel/content/stream. */
   assert_call_properties (test->call_chan,
       TP_CALL_STATE_ACTIVE, tp_channel_get_handle (test->chan, NULL),
-      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+      TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "",
       TRUE, 0,              /* call flags */
       FALSE, FALSE, FALSE); /* don't care about initial audio/video */
 
@@ -665,7 +665,7 @@ test_terminate_via_close (Test *test,
 
   assert_call_properties (test->call_chan,
       TP_CALL_STATE_ACCEPTED, test->peer_handle,
-      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+      TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "",
       TRUE, 0,              /* call flags */
       TRUE, FALSE, TRUE);  /* initial audio/video must be FALSE, TRUE */
 
@@ -793,7 +793,7 @@ test_incoming (Test *test,
   g_assert_no_error (test->error);
 
   assert_call_properties (test->call_chan,
-      TP_CALL_STATE_ACCEPTED, test->self_handle,
+      TP_CALL_STATE_ACTIVE, test->self_handle,
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       TRUE, 0,              /* call flags */
       TRUE, TRUE, FALSE);  /* initial audio/video are still TRUE, FALSE */

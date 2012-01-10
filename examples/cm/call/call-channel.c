@@ -390,10 +390,7 @@ simulate_contact_answered_cb (gpointer p)
 
   g_message ("SIGNALLING: receive: contact answered our call");
 
-  example_call_channel_set_state (self,
-      TP_CALL_STATE_ACCEPTED, 0, self->priv->handle,
-      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
-      NULL);
+  tp_base_call_channel_remote_accept (base);
 
   contents = tp_base_call_channel_get_contents (base);
   for (; contents != NULL; contents = contents->next)

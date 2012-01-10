@@ -1148,7 +1148,8 @@ tp_base_call_channel_remote_accept (TpBaseCallChannel *self)
 
   tp_base_call_channel_set_state (self,
       TP_CALL_STATE_ACCEPTED,
-      0, TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "", "");
+      tp_base_channel_get_target_handle (TP_BASE_CHANNEL (self)),
+      TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "", "");
 
   if (klass->remote_accept)
     klass->remote_accept (self);
