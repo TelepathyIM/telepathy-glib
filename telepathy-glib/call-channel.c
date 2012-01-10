@@ -1334,9 +1334,9 @@ tp_call_channel_set_queued_finish (TpCallChannel *self,
  * @callback: a callback to call when the operation finishes
  * @user_data: data to pass to @callback
  *
- * For incoming calls with #TpCallChannel:state set to %TP_CALL_STATE_RINGING,
- * accept the incoming call. This changes #TpCallChannel:state to
- * %TP_CALL_STATE_ACCEPTED.
+ * For incoming calls with #TpCallChannel:state set to
+ * %TP_CALL_STATE_INITIALISED, accept the incoming call. This changes
+ * #TpCallChannel:state to %TP_CALL_STATE_ACCEPTED.
  *
  * For outgoing calls with #TpCallChannel:state set to
  * %TP_CALL_STATE_PENDING_INITIATOR, actually call the remote contact; this
