@@ -119,11 +119,12 @@
 
 static void call_iface_init (gpointer, gpointer);
 
-G_DEFINE_TYPE_WITH_CODE(TpBaseCallChannel, tp_base_call_channel,
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseCallChannel, tp_base_call_channel,
   TP_TYPE_BASE_CHANNEL,
+
   G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_CALL,
-        call_iface_init);
-);
+        call_iface_init)
+  )
 
 static const gchar *tp_base_call_channel_interfaces[] = {
     NULL

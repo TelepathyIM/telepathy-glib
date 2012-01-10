@@ -71,11 +71,12 @@
 
 static void call_content_media_iface_init (gpointer, gpointer);
 
-G_DEFINE_TYPE_WITH_CODE(TpBaseMediaCallContent, tp_base_media_call_content,
-    TP_TYPE_BASE_CALL_CONTENT,
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseMediaCallContent,
+    tp_base_media_call_content, TP_TYPE_BASE_CALL_CONTENT,
+
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_CONTENT_INTERFACE_MEDIA,
-      call_content_media_iface_init);
-    );
+      call_content_media_iface_init)
+    )
 
 static const gchar *tp_base_media_call_content_interfaces[] = {
     TP_IFACE_CALL_CONTENT_INTERFACE_MEDIA,

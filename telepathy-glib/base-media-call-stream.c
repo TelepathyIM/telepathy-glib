@@ -162,11 +162,12 @@
 
 static void call_stream_media_iface_init (gpointer, gpointer);
 
-G_DEFINE_TYPE_WITH_CODE(TpBaseMediaCallStream, tp_base_media_call_stream,
-   TP_TYPE_BASE_CALL_STREAM,
-   G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_STREAM_INTERFACE_MEDIA,
-    call_stream_media_iface_init);
-  );
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseMediaCallStream,
+    tp_base_media_call_stream, TP_TYPE_BASE_CALL_STREAM,
+
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_STREAM_INTERFACE_MEDIA,
+      call_stream_media_iface_init)
+    )
 
 static const gchar *tp_base_media_call_stream_interfaces[] = {
     TP_IFACE_CALL_STREAM_INTERFACE_MEDIA,
