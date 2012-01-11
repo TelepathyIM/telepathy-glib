@@ -1085,7 +1085,7 @@ tp_base_media_call_content_dtmf_next (TpBaseMediaCallContent *self)
                 break;
               case DTMF_CHAR_CLASS_WAIT_FOR_USER:
                 self->priv->deferred_tones =
-                    g_strdup (self->priv->currently_sending_tones);
+                    g_strdup (self->priv->currently_sending_tones + 1);
                 self->priv->currently_sending_tones = "";
                 tp_svc_call_content_interface_dtmf_emit_tones_deferred (self,
                     self->priv->deferred_tones);
