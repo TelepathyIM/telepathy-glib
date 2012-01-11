@@ -232,13 +232,13 @@ _tp_channel_contacts_group_init (TpChannel *self,
     }
 }
 
-typedef struct
+struct _ContactsQueueItem
 {
   GSimpleAsyncResult *result;
   GPtrArray *contacts;
   GPtrArray *ids;
   GArray *handles;
-} ContactsQueueItem;
+};
 
 static ContactsQueueItem *
 contacts_queue_item_new (GPtrArray *contacts,
@@ -273,9 +273,7 @@ static void
 contacts_queue_head_ready (TpChannel *self,
     const GError *error)
 {
-  ContactsQueueItem *item;
-
-  item = g_queue_pop_head (self->priv->contacts_queue);
+  ContactsQueueItem *item = self->priv->current_item;
 
   if (error != NULL)
     {
@@ -284,6 +282,7 @@ contacts_queue_head_ready (TpChannel *self,
     }
   g_simple_async_result_complete (item->result);
 
+  self->priv->current_item = NULL;
   process_contacts_queue (self);
 
   contacts_queue_item_free (item);
@@ -366,8 +365,7 @@ process_contacts_queue (TpChannel *self)
   GArray *features;
   const GError *error = NULL;
 
-  item = g_queue_peek_head (self->priv->contacts_queue);
-  if (item == NULL)
+  if (self->priv->current_item != NULL)
     return;
 
   /* self can't die while there are queued items because item->result keeps a
@@ -386,6 +384,11 @@ process_contacts_queue (TpChannel *self)
 
       return;
     }
+
+  item = g_queue_pop_head (self->priv->contacts_queue);
+  if (item == NULL)
+    return;
+  self->priv->current_item = item;
 
   features = tp_simple_client_factory_dup_contact_features (
       tp_proxy_get_factory (self->priv->connection), self->priv->connection);
@@ -450,10 +453,7 @@ contacts_queue_item (TpChannel *self,
   g_simple_async_result_set_op_res_gpointer (item->result, item, NULL);
 
   g_queue_push_tail (self->priv->contacts_queue, item);
-
-  /* If this is the only item in the queue, we can process it right away */
-  if (self->priv->contacts_queue->length == 1)
-    process_contacts_queue (self);
+  process_contacts_queue (self);
 }
 
 void
