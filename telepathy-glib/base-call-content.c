@@ -325,7 +325,7 @@ tp_base_call_content_class_init (
     { NULL }
   };
   static TpDBusPropertiesMixinPropImpl content_dtmf_props[] = {
-    { "CurrentlySendingTones", "current-sending-tones", NULL },
+    { "CurrentlySendingTones", "currently-sending-tones", NULL },
     { "DeferredTones", "deferred-tones", NULL },
     { NULL }
   };
