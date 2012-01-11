@@ -1502,7 +1502,7 @@ tp_call_channel_add_content_async (TpCallChannel *self,
  * The returned #TpCallContent is NOT guaranteed to have
  * %TP_CALL_CONTENT_FEATURE_CORE prepared.
  *
- * Returns: (transfer full) reference to the new #TpCallContent.
+ * Returns: (transfer full): reference to the new #TpCallContent.
  * Since: 0.UNRELEASED
  */
 TpCallContent *
