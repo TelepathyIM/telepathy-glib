@@ -217,8 +217,7 @@ tp_base_media_call_content_finalize (GObject *object)
   g_queue_free (self->priv->outstanding_offers);
 
   g_free (self->priv->requested_tones);
-  self->priv->requested_tones = NULL;
-  self->priv->currently_sending_tones = NULL;
+  g_free (self->priv->deferred_tones);
 
   if (G_OBJECT_CLASS (tp_base_media_call_content_parent_class)->finalize)
     G_OBJECT_CLASS (tp_base_media_call_content_parent_class)->finalize (object);
