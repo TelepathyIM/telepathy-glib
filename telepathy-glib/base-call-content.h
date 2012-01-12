@@ -40,11 +40,13 @@ typedef struct _TpBaseCallContentClass TpBaseCallContentClass;
 
 typedef void (*TpBaseCallContentDeinitFunc) (TpBaseCallContent *self);
 typedef gboolean (*TpBaseCallContentStartToneFunc) (TpBaseCallContent *self,
-    guchar event, GError **error);
+    TpDTMFEvent event,
+    GError **error);
 typedef gboolean (*TpBaseCallContentStopToneFunc) (TpBaseCallContent *self,
     GError **error);
 typedef gboolean (*TpBaseCallContentMultipleTonesFunc) (TpBaseCallContent *self,
-    const gchar *tones, GError **error);
+    const gchar *tones,
+    GError **error);
 
 struct _TpBaseCallContentClass {
   /*<private>*/

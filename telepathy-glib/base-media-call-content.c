@@ -144,11 +144,14 @@ struct _TpBaseMediaCallContentPrivate
 };
 
 static gboolean tp_base_media_call_content_start_tone (TpBaseCallContent *self,
-    guchar event, GError **error);
+    TpDTMFEvent event,
+    GError **error);
 static gboolean tp_base_media_call_content_stop_tone (TpBaseCallContent *self,
     GError **error);
 static gboolean tp_base_media_call_content_multiple_tones (
-    TpBaseCallContent *self, const gchar *tones, GError **error);
+    TpBaseCallContent *self,
+    const gchar *tones,
+    GError **error);
 static void tp_base_media_call_content_dtmf_next (TpBaseMediaCallContent *self);
 
 static void
@@ -885,7 +888,8 @@ _tp_base_media_call_content_remote_accepted (TpBaseMediaCallContent *self)
 
 static gboolean
 tp_base_media_call_content_start_tone (TpBaseCallContent *bcc,
-    guchar event, GError **error)
+    TpDTMFEvent event,
+    GError **error)
 {
   TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (bcc);
 
@@ -942,7 +946,8 @@ tp_base_media_call_content_stop_tone (TpBaseCallContent *bcc,
 
 static gboolean
 tp_base_media_call_content_multiple_tones (TpBaseCallContent *bcc,
-    const gchar *tones, GError **error)
+    const gchar *tones,
+    GError **error)
 
 {
   TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (bcc);
@@ -976,7 +981,6 @@ tp_base_media_call_content_multiple_tones (TpBaseCallContent *bcc,
 
   return TRUE;
 }
-
 
 static gboolean
 dtmf_pause_timeout_func (gpointer data)
@@ -1074,7 +1078,6 @@ tp_base_media_call_content_dtmf_next (TpBaseMediaCallContent *self)
                     self->priv->current_dtmf_event);
                 tp_svc_call_content_interface_dtmf_emit_sending_tones (self,
                     self->priv->currently_sending_tones);
-
                 break;
               case DTMF_CHAR_CLASS_PAUSE:
                 self->priv->tones_pause_timeout_id = g_timeout_add (
@@ -1097,7 +1100,6 @@ tp_base_media_call_content_dtmf_next (TpBaseMediaCallContent *self)
               }
 
             self->priv->currently_sending_tones++;
-
           }
         else
           {
