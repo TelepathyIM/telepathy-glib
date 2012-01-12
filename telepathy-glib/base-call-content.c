@@ -49,6 +49,18 @@
  *  include %TP_IFACE_CALL_CONTENT itself)
  * @deinit: optional; virtual method called by #TpBaseCallChannel when removing
  *  the content
+ * @start_tone: optional; virtual method called when user requested to send
+ *  a DTMF tone. Note that this method is already implemented by
+ *  #TpBaseMediaCallContent and so does not have to be overriden when using that
+ *  subclass
+ * @stop_tone: optional; virtual method called when user requested to stop
+ *  sending currently being played DTMF tones. Note that this method is already
+ *  implemented by #TpBaseMediaCallContent and so does not have to be overriden
+ *  when using that subclass
+ * @multiple_tones: optional; virtual method called when user requested to send
+ *  multiple DTMF tones. Note that this method is already implemented by
+ *  #TpBaseMediaCallContent and so does not have to be overriden when using that
+ *  subclass
  *
  * The class structure for #TpBaseCallContent
  *
@@ -61,6 +73,41 @@
  *
  * Signature of an implementation of #TpBaseCallContentClass.deinit.
  *
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * TpBaseCallContentStartToneFunc:
+ * @self: a #TpBaseCallContent
+ * @event: a #TpDTMFEvent
+ * @error: a #GError to fill
+ *
+ * Signature of an implementation of #TpBaseCallContentClass.start_tone.
+ *
+ * Returns: %TRUE on success, otherwise %FALSE and set @error
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * TpBaseCallContentStopToneFunc:
+ * @self: a #TpBaseCallContent
+ * @error: a #GError to fill
+ *
+ * Signature of an implementation of #TpBaseCallContentClass.stop_tone.
+ *
+ * Returns: %TRUE on success, otherwise %FALSE and set @error
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * TpBaseCallContentMultipleTonesFunc:
+ * @self: a #TpBaseCallContent
+ * @tones: a string representation of one or more DTMF events
+ * @error: a #GError to fill
+ *
+ * Signature of an implementation of #TpBaseCallContentClass.multiple_tones.
+ *
+ * Returns: %TRUE on success, otherwise %FALSE and set @error
  * Since: 0.UNRELEASED
  */
 
