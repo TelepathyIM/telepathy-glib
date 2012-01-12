@@ -35,6 +35,8 @@ typedef struct {
     gchar *message;
 } LocalPendingInfo;
 
+typedef struct _ContactsQueueItem ContactsQueueItem;
+
 struct _TpChannelPrivate {
     gulong conn_invalidated_id;
 
@@ -87,6 +89,8 @@ struct _TpChannelPrivate {
     gboolean cm_too_old_for_contacts;
 
     GQueue *contacts_queue;
+    /* Item currently being prepared, not part of contacts_queue anymore */
+    ContactsQueueItem *current_item;
 
     /* NULL, or TpHandle => TpChannelChatState;
      * if non-NULL, we're watching for ChatStateChanged */
