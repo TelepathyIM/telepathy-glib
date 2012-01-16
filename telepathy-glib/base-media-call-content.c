@@ -892,6 +892,13 @@ tp_base_media_call_content_start_tone (TpBaseCallContent *bcc,
 
   gchar buf[2] = { 0, 0 };
 
+  if (tp_base_call_content_get_media_type (bcc) != TP_MEDIA_STREAM_TYPE_AUDIO)
+    {
+      g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD,
+          "Method does not exist");
+      return FALSE;
+    }
+
   if (self->priv->currently_sending_tones != NULL)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_SERVICE_BUSY,
@@ -926,6 +933,14 @@ tp_base_media_call_content_stop_tone (TpBaseCallContent *bcc,
 {
   TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (bcc);
 
+
+  if (tp_base_call_content_get_media_type (bcc) != TP_MEDIA_STREAM_TYPE_AUDIO)
+    {
+      g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD,
+          "Method does not exist");
+      return FALSE;
+    }
+
   if (self->priv->currently_sending_tones == NULL)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
@@ -949,6 +964,14 @@ tp_base_media_call_content_multiple_tones (TpBaseCallContent *bcc,
 {
   TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (bcc);
   guint i;
+
+
+  if (tp_base_call_content_get_media_type (bcc) != TP_MEDIA_STREAM_TYPE_AUDIO)
+    {
+      g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD,
+          "Method does not exist");
+      return FALSE;
+    }
 
   if (self->priv->currently_sending_tones != NULL)
     {
@@ -1124,7 +1147,9 @@ tp_base_media_call_content_get_interfaces (TpBaseCallContent *bcc)
       tp_base_media_call_content_parent_class)->get_interfaces (bcc);
 
   g_ptr_array_add (interfaces, TP_IFACE_CALL_CONTENT_INTERFACE_MEDIA);
-  g_ptr_array_add (interfaces, TP_IFACE_CALL_CONTENT_INTERFACE_DTMF);
+
+  if (tp_base_call_content_get_media_type (bcc) == TP_MEDIA_STREAM_TYPE_AUDIO)
+    g_ptr_array_add (interfaces, TP_IFACE_CALL_CONTENT_INTERFACE_DTMF);
 
   return interfaces;
 }
