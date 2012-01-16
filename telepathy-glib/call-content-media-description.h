@@ -98,6 +98,39 @@ void tp_call_content_media_description_append_codec (
     gboolean updated,
     GHashTable *parameters);
 
+void tp_call_content_media_description_add_rtp_header_extension (
+    TpCallContentMediaDescription *self,
+    guint id,
+    TpMediaStreamDirection direction,
+    const gchar *uri,
+    const gchar *parameters);
+
+void tp_call_content_media_description_add_rtcp_feedback_message (
+    TpCallContentMediaDescription *self,
+    guint codec_identifier,
+    const gchar *type,
+    const gchar *subtype,
+    const gchar *parameters);
+
+void tp_call_content_media_description_set_rtcp_feedback_minimum_interval (
+    TpCallContentMediaDescription *self,
+    guint codec_identifier,
+    guint rtcp_minimum_interval);
+
+void tp_call_content_media_description_set_does_avpf (
+    TpCallContentMediaDescription *self,
+    gboolean does_avpf);
+
+void tp_call_content_media_description_set_rtcp_extended_reports (
+    TpCallContentMediaDescription *self,
+    guint loss_rle_max_size,
+    guint duplicate_rle_max_size,
+    guint packet_receipt_times_max_size,
+    guint dlrr_max_size,
+    TpRCPTXRRTTMode rtt_mode,
+    TpRTCPXRStatisticsFlags statistic_flags,
+    gboolean enable_metrics);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_CALL_CONTENT_MEDIA_DESCRIPTION_H__*/

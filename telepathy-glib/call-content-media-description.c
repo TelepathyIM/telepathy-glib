@@ -64,20 +64,25 @@
 #include "telepathy-glib/util.h"
 #include "telepathy-glib/util-internal.h"
 
-static void call_content_media_description_iface_init (gpointer, gpointer);
+static void call_content_media_description_iface_init (gpointer iface,
+    gpointer data);
+static void call_content_media_description_extra_iface_init (gpointer iface,
+    gpointer data);
 
 G_DEFINE_TYPE_WITH_CODE(TpCallContentMediaDescription,
-  tp_call_content_media_description,
-  G_TYPE_OBJECT,
-  G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_CONTENT_MEDIA_DESCRIPTION,
+    tp_call_content_media_description,
+    G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_CONTENT_MEDIA_DESCRIPTION,
         call_content_media_description_iface_init);
-   G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
-    tp_dbus_properties_mixin_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
+        tp_dbus_properties_mixin_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS,
+        call_content_media_description_extra_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK,
+        call_content_media_description_extra_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_EXTENDED_REPORTS,
+        call_content_media_description_extra_iface_init);
   );
-
-static const gchar *tp_call_content_media_description_interfaces[] = {
-    NULL
-};
 
 /* properties */
 enum
@@ -90,7 +95,20 @@ enum
   PROP_HAS_REMOTE_INFORMATION,
   PROP_CODECS,
   PROP_REMOTE_CONTACT,
-  PROP_SSRCS
+  PROP_SSRCS,
+
+  PROP_HEADER_EXTENSIONS,
+
+  PROP_FEEDBACK_MESSAGES,
+  PROP_DOES_AVPF,
+
+  PROP_LOSS_RLE_MAX_SIZE,
+  PROP_DUPLICATE_RLE_MAX_SIZE,
+  PROP_PACKET_RECEIPT_TIMES_MAX_SIZE,
+  PROP_DLRR_MAX_SIZE,
+  PROP_RTT_MODE,
+  PROP_STATISTIC_FLAGS,
+  PROP_ENABLE_METRICS,
 };
 
 /* private structure */
@@ -99,6 +117,8 @@ struct _TpCallContentMediaDescriptionPrivate
   TpDBusDaemon *dbus_daemon;
   gchar *object_path;
 
+  /* GPtrArray of static strings, NULL-terminated */
+  GPtrArray *interfaces;
   gboolean further_negotiation_required;
   gboolean has_remote_information;
   /* GPtrArray of owned GValueArray */
@@ -106,6 +126,18 @@ struct _TpCallContentMediaDescriptionPrivate
   TpHandle remote_contact;
   /* TpHandle -> reffed GArray<uint> */
   GHashTable *ssrcs;
+
+  /* GPtrArray of owned GValueArray (dbus-struct) */
+  GPtrArray *header_extensions;
+  GHashTable *feedback_messages;
+  gboolean does_avpf;
+  guint loss_rle_max_size;
+  guint duplicate_rle_max_size;
+  guint packet_receipt_times_max_size;
+  guint dlrr_max_size;
+  TpRCPTXRRTTMode rtt_mode;
+  TpRTCPXRStatisticsFlags statistic_flags;
+  gboolean enable_metrics;
 
   GSimpleAsyncResult *result;
   GCancellable *cancellable;
@@ -119,9 +151,17 @@ tp_call_content_media_description_init (TpCallContentMediaDescription *self)
       TP_TYPE_CALL_CONTENT_MEDIA_DESCRIPTION,
       TpCallContentMediaDescriptionPrivate);
 
+  self->priv->interfaces = g_ptr_array_new ();
+  g_ptr_array_add (self->priv->interfaces, NULL);
+
   self->priv->ssrcs = g_hash_table_new_full (NULL, NULL, NULL,
       (GDestroyNotify) g_array_unref);
   self->priv->codecs = g_ptr_array_new_with_free_func (
+      (GDestroyNotify) g_value_array_free);
+
+  self->priv->header_extensions = g_ptr_array_new_with_free_func (
+      (GDestroyNotify) g_value_array_free);
+  self->priv->feedback_messages = g_hash_table_new_full (NULL, NULL, NULL,
       (GDestroyNotify) g_value_array_free);
 }
 
@@ -136,6 +176,9 @@ tp_call_content_media_description_dispose (GObject *object)
   tp_clear_pointer (&self->priv->ssrcs, g_hash_table_unref);
   g_clear_object (&self->priv->dbus_daemon);
 
+  tp_clear_pointer (&self->priv->header_extensions, g_ptr_array_unref);
+  tp_clear_pointer (&self->priv->feedback_messages, g_hash_table_unref);
+
   /* release any references held by the object here */
   if (G_OBJECT_CLASS (tp_call_content_media_description_parent_class)->dispose)
     G_OBJECT_CLASS (tp_call_content_media_description_parent_class)->dispose (
@@ -148,6 +191,7 @@ tp_call_content_media_description_finalize (GObject *object)
   TpCallContentMediaDescription *self = (TpCallContentMediaDescription *) object;
 
   g_free (self->priv->object_path);
+  g_ptr_array_unref (self->priv->interfaces);
 
   G_OBJECT_CLASS (tp_call_content_media_description_parent_class)->finalize (
       object);
@@ -170,7 +214,7 @@ tp_call_content_media_description_get_property (GObject *object,
         g_value_set_object (value, self->priv->dbus_daemon);
         break;
       case PROP_INTERFACES:
-        g_value_set_boxed (value, tp_call_content_media_description_interfaces);
+        g_value_set_boxed (value, self->priv->interfaces->pdata);
         break;
       case PROP_FURTHER_NEGOTIATION_REQUIRED:
         g_value_set_boolean (value, self->priv->further_negotiation_required);
@@ -186,6 +230,36 @@ tp_call_content_media_description_get_property (GObject *object,
         break;
       case PROP_SSRCS:
         g_value_set_boxed (value, self->priv->ssrcs);
+        break;
+      case PROP_HEADER_EXTENSIONS:
+        g_value_set_boxed (value, self->priv->header_extensions);
+        break;
+      case PROP_FEEDBACK_MESSAGES:
+        g_value_set_boxed (value, self->priv->feedback_messages);
+        break;
+      case PROP_DOES_AVPF:
+        g_value_set_boolean (value, self->priv->does_avpf);
+        break;
+      case PROP_LOSS_RLE_MAX_SIZE:
+        g_value_set_uint (value, self->priv->loss_rle_max_size);
+        break;
+      case PROP_DUPLICATE_RLE_MAX_SIZE:
+        g_value_set_uint (value, self->priv->duplicate_rle_max_size);
+        break;
+      case PROP_PACKET_RECEIPT_TIMES_MAX_SIZE:
+        g_value_set_uint (value, self->priv->packet_receipt_times_max_size);
+        break;
+      case PROP_DLRR_MAX_SIZE:
+        g_value_set_uint (value, self->priv->dlrr_max_size);
+        break;
+      case PROP_RTT_MODE:
+        g_value_set_uint (value, self->priv->rtt_mode);
+        break;
+      case PROP_STATISTIC_FLAGS:
+        g_value_set_uint (value, self->priv->statistic_flags);
+        break;
+      case PROP_ENABLE_METRICS:
+        g_value_set_boolean (value, self->priv->enable_metrics);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -241,11 +315,45 @@ tp_call_content_media_description_class_init (
     { "SSRCs", "ssrcs", NULL },
     { NULL }
   };
+  static TpDBusPropertiesMixinPropImpl rtp_header_extensions_props[] = {
+    { "HeaderExtensions", "header-extensions", NULL },
+    { NULL }
+  };
+  static TpDBusPropertiesMixinPropImpl rtcp_feedback_props[] = {
+    { "FeedbackMessages", "feedback-messages", NULL },
+    { "DoesAVPF", "does-avpf", NULL },
+    { NULL }
+  };
+  static TpDBusPropertiesMixinPropImpl rtcp_extended_reports_props[] = {
+    { "LossRLEMaxSize", "loss-rle-max-size", NULL },
+    { "DuplicateRLEMaxSize", "duplicate-rle-max-size", NULL },
+    { "PacketReceiptTimesMaxSize", "packet-receipt-times-max-size", NULL },
+    { "DLRRMaxSize", "dlrr-max-size", NULL },
+    { "RTTMode", "rtt-mode", NULL },
+    { "StatisticsFlags", "statistics-flags", NULL },
+    { "EnableMetrics", "enable-metrics", NULL },
+    { NULL }
+  };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
       { TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION,
         tp_dbus_properties_mixin_getter_gobject_properties,
         NULL,
         media_description_props,
+      },
+      { TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS,
+        tp_dbus_properties_mixin_getter_gobject_properties,
+        NULL,
+        rtp_header_extensions_props,
+      },
+      { TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK,
+        tp_dbus_properties_mixin_getter_gobject_properties,
+        NULL,
+        rtcp_feedback_props,
+      },
+      { TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_EXTENDED_REPORTS,
+        tp_dbus_properties_mixin_getter_gobject_properties,
+        NULL,
+        rtcp_extended_reports_props,
       },
       { NULL }
   };
@@ -377,6 +485,160 @@ tp_call_content_media_description_class_init (
       TP_HASH_TYPE_CONTACT_SSRCS_MAP,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SSRCS, spec);
+
+  /**
+   * TpCallContentMediaDescription:header-extensions:
+   *
+   * A list of remote header extensions which are supported.
+   *
+   * Since: 0.UNRELEASED
+   */
+  spec = g_param_spec_boxed ("header-extensions", "Header Extentions",
+      "A list of remote header extensions which are supported.",
+      TP_ARRAY_TYPE_RTP_HEADER_EXTENSIONS_LIST,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_HEADER_EXTENSIONS, spec);
+
+  /**
+   * TpCallContentMediaDescription:feedback-messages:
+   *
+   * A map of remote feedback codec properties that are supported.
+   *
+   * Since: 0.UNRELEASED
+   */
+  spec = g_param_spec_boxed ("feedback-messages", "Feedback Messages",
+      "A map of remote feedback codec properties that are supported.",
+      TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_FEEDBACK_MESSAGES, spec);
+
+  /**
+   * TpCallContentMediaDescription:does-avpf:
+   *
+   * %TRUE if the remote contact supports Audio-Visual Profile Feedback (AVPF),
+   * otherwise %FALSE.
+   *
+   * Since: 0.UNRELEASED
+   */
+  spec = g_param_spec_boolean ("does-avpf", "Does AVPF",
+      "True if the remote contact supports Audio-Visual Profile Feedback "
+      "(AVPF), otherwise False.",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_DOES_AVPF, spec);
+
+  /**
+   * TpCallContentMediaDescription:loss-rle-max-size:
+   *
+   * If non-zero, enable Loss Run Length Encoded Report Blocks. The value of
+   * this integer represents the max-size of report blocks, as specified in
+   * RFC 3611 section 5.1. MAXUINT32 is used to indicate that there is no limit.
+   *
+   * Since: 0.UNRELEASED
+   */
+  spec = g_param_spec_uint ("loss-rle-max-size", "Loss RLE max size",
+      "If non-zero, enable Loss Run Length Encoded Report Blocks.",
+      0, G_MAXUINT, 0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_LOSS_RLE_MAX_SIZE, spec);
+
+  /**
+   * TpCallContentMediaDescription:duplicate-rle-max-size:
+   *
+   * If non-zero, enable Duplicate Run-Length-Encoded Report Blocks. The value
+   * of this integer represents the max-size of report blocks, as specified in
+   * RFC 3611 section 5.1. MAXUINT32 is used to indicate that there is no limit.
+   *
+   * Since: 0.UNRELEASED
+   */
+  spec = g_param_spec_uint ("duplicate-rle-max-size",
+      "Duplicate Run-Length-Encoded max size",
+      "If non-zero, enable Duplicate Run-Length-Encoded Report Blocks.",
+      0, G_MAXUINT, 0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_DUPLICATE_RLE_MAX_SIZE,
+      spec);
+
+  /**
+   * TpCallContentMediaDescription:packet-receipt-times-max-size:
+   *
+   * If non-zero, enable Packet Receipt Times Report Blocks. The value of this
+   * integer represents the max-size of report blocks, as specified in RFC 3611
+   * section 5.1. MAXUINT32 is used to indicate that there is no limit.
+   *
+   * Since: 0.UNRELEASED
+   */
+  spec = g_param_spec_uint ("packet-receipt-times-max-size",
+      "Packet Receipt Times max size",
+      "If non-zero, enable Packet Receipt Times Report Blocks.",
+      0, G_MAXUINT, 0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class,
+      PROP_PACKET_RECEIPT_TIMES_MAX_SIZE, spec);
+
+  /**
+   * TpCallContentMediaDescription:dlrr-max-size:
+   *
+   * If non-zero, enable Receiver Reference Time and Delay since Last Receiver
+   * Report Blocks (for estimating Round Trip Times between non-senders and
+   * other parties in the call. The value of this integer represents the
+   * max-size of report blocks, as specified in RFC 3611 section 5.1. MAXUINT32
+   * is used to indicate that there is no limit.
+   *
+   * Since: 0.UNRELEASED
+   */
+  spec = g_param_spec_uint ("dlrr-max-size",
+      "Receiver Reference Time and Delay since Last Receiver max size",
+      "If non-zero, enable Receiver Reference Time and Delay since Last "
+      "Receiver Report Blocks.",
+      0, G_MAXUINT, 0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_DLRR_MAX_SIZE, spec);
+
+  /**
+   * TpCallContentMediaDescription:rtt-mode:
+   *
+   * Who is allowed to send Delay since Last Receiver Reports. Value from
+   * #TpRCPTXRRTTMode.
+   *
+   * Since: 0.UNRELEASED
+   */
+  spec = g_param_spec_uint ("rtt-mode", "RTT Mode",
+      "Who is allowed to send Delay since Last Receiver Reports.",
+      0, G_MAXUINT, 0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_RTT_MODE, spec);
+
+  /**
+   * TpCallContentMediaDescription:statistics-flags:
+   *
+   * Which fields SHOULD be included in the statistics summary report blocks
+   * that are sent, and whether to send VoIP Metrics Report Blocks. There can
+   * be zero or more flags set. Value from #TpRTCPXRStatisticsFlags.
+   *
+   * Since: 0.UNRELEASED
+   */
+  spec = g_param_spec_uint ("statistics-flags", "Statistics Flags",
+      "Which fields SHOULD be included in the statistics summary report blocks "
+      "that are sent, and whether to send VoIP Metrics Report Blocks.",
+      0, G_MAXUINT, 0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_STATISTIC_FLAGS, spec);
+
+  /**
+   * TpCallContentMediaDescription:enable-metrics:
+   *
+   * Whether to enable VoIP Metrics Report Blocks. These blocks are of a fixed
+   * size.
+   *
+   * Since: 0.UNRELEASED
+   */
+  spec = g_param_spec_boolean ("enable-metrics", "Enable Metrics",
+      "Whether to enable VoIP Metrics Report Blocks. These blocks are of a "
+      "fixed size.",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_ENABLE_METRICS, spec);
 
   klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
@@ -538,6 +800,255 @@ tp_call_content_media_description_append_codec (
 }
 
 static void
+add_interface (TpCallContentMediaDescription *self,
+    const gchar *interface)
+{
+  if (tp_g_ptr_array_contains (self->priv->interfaces, (gchar *) interface))
+    return;
+
+  /* Remove terminating NULL, add interface, then add the NULL back */
+  g_ptr_array_remove_index_fast (self->priv->interfaces,
+      self->priv->interfaces->len - 1);
+  g_ptr_array_add (self->priv->interfaces, (gchar *) interface);
+  g_ptr_array_add (self->priv->interfaces, NULL);
+}
+
+/**
+ * tp_call_content_media_description_add_rtp_header_extension:
+ * @self: a #TpCallContentMediaDescription
+ * @id: identifier to be negotiated.
+ * @direction: a #TpMediaStreamDirection in which the Header Extension is
+ *  negotiated.
+ * @uri: URI defining the extension.
+ * @parameters: Feedback parameters as a string. Format is defined in the
+ *  relevant RFC.
+ *
+ * Add an element to the #TpCallContentMediaDescription:rtp-header-extensions
+ * property.
+ *
+ * Implement
+ * %TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS
+ * interface.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_call_content_media_description_add_rtp_header_extension (
+    TpCallContentMediaDescription *self,
+    guint id,
+    TpMediaStreamDirection direction,
+    const gchar *uri,
+    const gchar *parameters)
+{
+  g_return_if_fail (TP_IS_CALL_CONTENT_MEDIA_DESCRIPTION (self));
+
+  g_ptr_array_add (self->priv->header_extensions, tp_value_array_build (4,
+      G_TYPE_UINT, id,
+      G_TYPE_UINT, direction,
+      G_TYPE_STRING, uri,
+      G_TYPE_STRING, parameters,
+      G_TYPE_INVALID));
+
+  add_interface (self,
+      TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS);
+}
+
+static GValueArray *
+ensure_rtcp_feedback_properties (TpCallContentMediaDescription *self,
+    guint codec_identifier)
+{
+  GValueArray *properties;
+  GPtrArray *messages_array;
+
+  properties = g_hash_table_lookup (self->priv->feedback_messages,
+      GUINT_TO_POINTER (codec_identifier));
+
+  if (properties == NULL)
+    {
+      messages_array = g_ptr_array_new_with_free_func (
+          (GDestroyNotify) g_value_array_free);
+      properties = tp_value_array_build (2,
+          G_TYPE_UINT, G_MAXUINT,
+          G_TYPE_PTR_ARRAY, messages_array,
+          G_TYPE_INVALID);
+
+      g_hash_table_insert (self->priv->feedback_messages,
+          GUINT_TO_POINTER (codec_identifier), properties);
+
+      g_ptr_array_unref (messages_array);
+    }
+
+  return properties;
+}
+
+/**
+ * tp_call_content_media_description_add_rtcp_feedback_message:
+ * @self: a #TpCallContentMediaDescription
+ * @codec_identifier: Numeric identifier for the codec. This will be used as the
+ *  PT in the SDP or content description.
+ * @type: feedback type, for example "ack", "nack", or "ccm".
+ * @subtype: feedback subtype, according to the Type, can be an empty string
+ *  (""), if there is no subtype. For example, generic nack is Type="nack"
+ *  Subtype="".
+ * @parameters: feedback parameters as a string. Format is defined in the
+ *  relevant RFC.
+ *
+ * Add a message for a given codec. This ensures @codec_identifier is
+ * in the #TpCallContentMediaDescription:feedback-messages map. The
+ * rtcp-minimum-interval is set to %G_MAXUINT and can then be changed using
+ * tp_call_content_media_description_set_rtcp_feedback_minimum_interval().
+ *
+ * Implement
+ * %TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK
+ * interface.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_call_content_media_description_add_rtcp_feedback_message (
+    TpCallContentMediaDescription *self,
+    guint codec_identifier,
+    const gchar *type,
+    const gchar *subtype,
+    const gchar *parameters)
+{
+  GValueArray *properties;
+  GValue *value;
+  GPtrArray *messages_array;
+
+  g_return_if_fail (TP_IS_CALL_CONTENT_MEDIA_DESCRIPTION (self));
+
+  properties = ensure_rtcp_feedback_properties (self, codec_identifier);
+  value = g_value_array_get_nth (properties, 1);
+  messages_array = g_value_get_boxed (value);
+
+  g_ptr_array_add (messages_array, tp_value_array_build (3,
+      G_TYPE_STRING, type,
+      G_TYPE_STRING, subtype,
+      G_TYPE_STRING, parameters,
+      G_TYPE_INVALID));
+
+  add_interface (self,
+      TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK);
+}
+
+/**
+ * tp_call_content_media_description_set_rtcp_feedback_minimum_interval:
+ * @self: a #TpCallContentMediaDescription
+ * @codec_identifier: Numeric identifier for the codec. This will be used as the
+ *  PT in the SDP or content description.
+ * @rtcp_minimum_interval: The minimum interval between two regular RTCP packets
+ *  in milliseconds for this content. If no special value is desired, one should
+ *  put MAXUINT (0xFFFFFFFF). Implementors and users of Call's RTCPFeedback
+ *  should not use the MAXUINT default. Instead, in RTP/AVP, the default should
+ *  be 5000 (5 seconds). If using the RTP/AVPF profile, it can be set to a lower
+ *  value, the default being 0.
+ *
+ * Set the minimum interval for a given codec. This ensures @codec_identifier is
+ * in the #TpCallContentMediaDescription:feedback-messages map. The messages
+ * can then be added using
+ * tp_call_content_media_description_add_rtcp_feedback_message().
+ *
+ * Implement
+ * %TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK
+ * interface.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_call_content_media_description_set_rtcp_feedback_minimum_interval (
+    TpCallContentMediaDescription *self,
+    guint codec_identifier,
+    guint rtcp_minimum_interval)
+{
+  GValueArray *properties;
+  GValue *value;
+
+  g_return_if_fail (TP_IS_CALL_CONTENT_MEDIA_DESCRIPTION (self));
+
+  properties = ensure_rtcp_feedback_properties (self, codec_identifier);
+  value = g_value_array_get_nth (properties, 0);
+  g_value_set_uint (value, rtcp_minimum_interval);
+
+  add_interface (self,
+      TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK);
+}
+
+/**
+ * tp_call_content_media_description_set_does_avpf:
+ * @self: a #TpCallContentMediaDescription
+ * @does_avpf: the value for
+ *  #TpCallContentMediaDescription:does-avpf property.
+ *
+ * Implement properties for
+ * %TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK
+ * interface
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_call_content_media_description_set_does_avpf (
+    TpCallContentMediaDescription *self,
+    gboolean does_avpf)
+{
+  g_return_if_fail (TP_IS_CALL_CONTENT_MEDIA_DESCRIPTION (self));
+
+  self->priv->does_avpf = does_avpf;
+
+  add_interface (self,
+      TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK);
+}
+
+/**
+ * tp_call_content_media_description_set_rtcp_extended_reports:
+ * @self: a #TpCallContentMediaDescription
+ * @loss_rle_max_size: the value for
+ *  #TpCallContentMediaDescription:loss-rle-max-size property.
+ * @duplicate_rle_max_size: the value for
+ *  #TpCallContentMediaDescription:duplicate-rle-max-size property.
+ * @packet_receipt_times_max_size: the value for
+ *  #TpCallContentMediaDescription:packet-receipt-times-max-size property.
+ * @dlrr_max_size: the value for
+ *  #TpCallContentMediaDescription:dlrr-max-size property.
+ * @rtt_mode: the value for
+ *  #TpCallContentMediaDescription:rtt-mpde property.
+ * @statistic_flags: the value for
+ *  #TpCallContentMediaDescription:statistic-flags property.
+ * @enable_metrics: the value for
+ *  #TpCallContentMediaDescription:enable-metrics property.
+ *
+ * Implement
+ * %TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_EXTENDED_REPORTS
+ * interface.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_call_content_media_description_set_rtcp_extended_reports (
+    TpCallContentMediaDescription *self,
+    guint loss_rle_max_size,
+    guint duplicate_rle_max_size,
+    guint packet_receipt_times_max_size,
+    guint dlrr_max_size,
+    TpRCPTXRRTTMode rtt_mode,
+    TpRTCPXRStatisticsFlags statistic_flags,
+    gboolean enable_metrics)
+{
+  g_return_if_fail (TP_IS_CALL_CONTENT_MEDIA_DESCRIPTION (self));
+
+  self->priv->loss_rle_max_size = loss_rle_max_size;
+  self->priv->duplicate_rle_max_size = duplicate_rle_max_size;
+  self->priv->packet_receipt_times_max_size = packet_receipt_times_max_size;
+  self->priv->dlrr_max_size = dlrr_max_size;
+  self->priv->rtt_mode = rtt_mode;
+  self->priv->statistic_flags = statistic_flags;
+  self->priv->enable_metrics = enable_metrics;
+
+  add_interface (self,
+      TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_EXTENDED_REPORTS);
+}
+
+static void
 cancelled_cb (GCancellable *cancellable,
     gpointer user_data)
 {
@@ -601,7 +1112,7 @@ _tp_call_content_media_description_dup_properties (
 
   return tp_asv_new (
       TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACES,
-          G_TYPE_STRV, tp_call_content_media_description_interfaces,
+          G_TYPE_STRV, self->priv->interfaces->pdata,
       TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_FURTHER_NEGOTIATION_REQUIRED,
           G_TYPE_BOOLEAN, self->priv->further_negotiation_required,
       TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_HAS_REMOTE_INFORMATION,
@@ -713,4 +1224,9 @@ call_content_media_description_iface_init (gpointer iface, gpointer data)
   IMPLEMENT(accept);
   IMPLEMENT(reject);
 #undef IMPLEMENT
+}
+
+static void
+call_content_media_description_extra_iface_init (gpointer iface, gpointer data)
+{
 }
