@@ -38,6 +38,8 @@ typedef struct _TpBaseCallContent TpBaseCallContent;
 typedef struct _TpBaseCallContentPrivate TpBaseCallContentPrivate;
 typedef struct _TpBaseCallContentClass TpBaseCallContentClass;
 
+typedef GPtrArray * (*TpBaseCallContentGetInterfacesFunc) (
+    TpBaseCallContent *self);
 typedef void (*TpBaseCallContentDeinitFunc) (TpBaseCallContent *self);
 typedef gboolean (*TpBaseCallContentStartToneFunc) (TpBaseCallContent *self,
     TpDTMFEvent event,
@@ -56,7 +58,7 @@ struct _TpBaseCallContentClass {
 
   /*< public >*/
   TpBaseCallContentDeinitFunc deinit;
-  const gchar * const *extra_interfaces;
+  TpBaseCallContentGetInterfacesFunc get_interfaces;
 
   TpBaseCallContentStartToneFunc start_tone;
   TpBaseCallContentStopToneFunc stop_tone;

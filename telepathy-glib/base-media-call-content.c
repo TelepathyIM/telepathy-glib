@@ -84,12 +84,6 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseMediaCallContent,
       call_content_media_iface_init)
     )
 
-static const gchar *tp_base_media_call_content_interfaces[] = {
-    TP_IFACE_CALL_CONTENT_INTERFACE_MEDIA,
-    TP_IFACE_CALL_CONTENT_INTERFACE_DTMF,
-    NULL
-};
-
 /* properties */
 enum
 {
@@ -142,6 +136,9 @@ struct _TpBaseMediaCallContentPrivate
   GSimpleAsyncResult *current_offer_result;
   GCancellable *current_offer_cancellable;
 };
+
+static GPtrArray *tp_base_media_call_content_get_interfaces (
+    TpBaseCallContent *bcc);
 
 static gboolean tp_base_media_call_content_start_tone (TpBaseCallContent *self,
     TpDTMFEvent event,
@@ -336,8 +333,8 @@ tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
   object_class->dispose = tp_base_media_call_content_dispose;
   object_class->finalize = tp_base_media_call_content_finalize;
 
-  bcc_class->extra_interfaces = tp_base_media_call_content_interfaces;
   bcc_class->deinit = call_content_deinit;
+  bcc_class->get_interfaces = tp_base_media_call_content_get_interfaces;
   bcc_class->start_tone = tp_base_media_call_content_start_tone;
   bcc_class->stop_tone = tp_base_media_call_content_stop_tone;
   bcc_class->stop_tone = tp_base_media_call_content_stop_tone;
@@ -1116,4 +1113,18 @@ tp_base_media_call_content_dtmf_next (TpBaseMediaCallContent *self)
     default:
       g_assert_not_reached ();
     }
+}
+
+static GPtrArray *
+tp_base_media_call_content_get_interfaces (TpBaseCallContent *bcc)
+{
+  GPtrArray *interfaces;
+
+  interfaces = TP_BASE_CALL_CONTENT_CLASS (
+      tp_base_media_call_content_parent_class)->get_interfaces (bcc);
+
+  g_ptr_array_add (interfaces, TP_IFACE_CALL_CONTENT_INTERFACE_MEDIA);
+  g_ptr_array_add (interfaces, TP_IFACE_CALL_CONTENT_INTERFACE_DTMF);
+
+  return interfaces;
 }

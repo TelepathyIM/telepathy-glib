@@ -29,7 +29,7 @@
  * This base class makes it easier to write #TpSvcCallStream
  * implementations by implementing its properties, and some of its methods.
  *
- * Subclasses should fill in #TpBaseCallStreamClass.extra_interfaces,
+ * Subclasses should fill in #TpBaseCallStreamClass.get_interfaces,
  * #TpBaseCallStreamClass.request_receiving and
  * #TpBaseCallStreamClass.set_sending virtual function.
  *
@@ -46,8 +46,9 @@
 
 /**
  * TpBaseCallStreamClass:
- * @extra_interfaces: extra interfaces provided by this stream (this SHOULD NOT
- *  include %TP_IFACE_CALL_STREAM itself)
+ * @get_interfaces: extra interfaces provided by this stream (this SHOULD NOT
+ *  include %TP_IFACE_CALL_STREAM itself). Implementation must first chainup on
+ *  parent class implementation then add extra interfaces into the #GPtrArray.
  * @request_receiving: optional (see #TpBaseCallStream:can-request-receiving);
  *  virtual method called when user requested receiving from the given remote
  *  contact.
@@ -56,6 +57,16 @@
  *
  * The class structure for #TpBaseCallStream
  *
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * TpBaseCallStreamGetInterfacesFunc:
+ * @self: a #TpBaseCallStream
+ *
+ * Signature of an implementation of #TpBaseCallStreamClass.get_interfaces.
+ *
+ * Returns: a #GPtrArray containing static strings.
  * Since: 0.UNRELEASED
  */
 
@@ -161,6 +172,12 @@ tp_base_call_stream_constructed (GObject *obj)
   tp_dbus_daemon_register_object (bus, self->priv->object_path, obj);
 }
 
+static GPtrArray *
+tp_base_call_stream_get_interfaces (TpBaseCallStream *self)
+{
+  return g_ptr_array_new ();
+}
+
 static void
 tp_base_call_stream_dispose (GObject *object)
 {
@@ -197,6 +214,7 @@ tp_base_call_stream_get_property (
     GParamSpec *pspec)
 {
   TpBaseCallStream *self = TP_BASE_CALL_STREAM (object);
+  TpBaseCallStreamClass *klass = TP_BASE_CALL_STREAM_GET_CLASS (self);
 
   switch (property_id)
     {
@@ -225,27 +243,16 @@ tp_base_call_stream_get_property (
         break;
       case PROP_CAN_REQUEST_RECEIVING:
         {
-          TpBaseCallStreamClass *klass =
-              TP_BASE_CALL_STREAM_GET_CLASS (self);
-
           g_value_set_boolean (value, klass->request_receiving != NULL);
           break;
         }
       case PROP_INTERFACES:
         {
-          TpBaseCallStreamClass *klass =
-              TP_BASE_CALL_STREAM_GET_CLASS (self);
+          GPtrArray *interfaces = klass->get_interfaces (self);
 
-          if (klass->extra_interfaces != NULL)
-            {
-              g_value_set_boxed (value, klass->extra_interfaces);
-            }
-          else
-            {
-              gchar *empty[] = { NULL };
-
-              g_value_set_boxed (value, empty);
-            }
+          g_ptr_array_add (interfaces, NULL);
+          g_value_set_boxed (value, interfaces->pdata);
+          g_ptr_array_unref (interfaces);
           break;
         }
       default:
@@ -283,9 +290,9 @@ tp_base_call_stream_set_property (
 }
 
 static void
-tp_base_call_stream_class_init (TpBaseCallStreamClass *bsc_class)
+tp_base_call_stream_class_init (TpBaseCallStreamClass *klass)
 {
-  GObjectClass *object_class = G_OBJECT_CLASS (bsc_class);
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;
   static TpDBusPropertiesMixinPropImpl stream_props[] = {
     { "Interfaces", "interfaces", NULL },
@@ -304,13 +311,15 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *bsc_class)
       { NULL }
   };
 
-  g_type_class_add_private (bsc_class, sizeof (TpBaseCallStreamPrivate));
+  g_type_class_add_private (klass, sizeof (TpBaseCallStreamPrivate));
 
   object_class->constructed = tp_base_call_stream_constructed;
   object_class->dispose = tp_base_call_stream_dispose;
   object_class->finalize = tp_base_call_stream_finalize;
   object_class->set_property = tp_base_call_stream_set_property;
   object_class->get_property = tp_base_call_stream_get_property;
+
+  klass->get_interfaces = tp_base_call_stream_get_interfaces;
 
   /**
    * TpBaseCallStream:connection:
@@ -412,7 +421,7 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *bsc_class)
   g_object_class_install_property (object_class, PROP_CAN_REQUEST_RECEIVING,
       param_spec);
 
-  bsc_class->dbus_props_class.interfaces = prop_interfaces;
+  klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpBaseCallStreamClass, dbus_props_class));
 }

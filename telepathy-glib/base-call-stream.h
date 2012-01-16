@@ -36,6 +36,8 @@ typedef struct _TpBaseCallStream TpBaseCallStream;
 typedef struct _TpBaseCallStreamPrivate TpBaseCallStreamPrivate;
 typedef struct _TpBaseCallStreamClass TpBaseCallStreamClass;
 
+typedef GPtrArray * (*TpBaseCallStreamGetInterfacesFunc) (
+    TpBaseCallStream *self);
 typedef gboolean (*TpBaseCallStreamSetSendingFunc) (TpBaseCallStream *self,
     gboolean sending,
     GError **error);
@@ -53,7 +55,7 @@ struct _TpBaseCallStreamClass {
   /*< public >*/
   TpBaseCallStreamRequestReceivingFunc request_receiving;
   TpBaseCallStreamSetSendingFunc set_sending;
-  const gchar * const *extra_interfaces;
+  TpBaseCallStreamGetInterfacesFunc get_interfaces;
 
   /*<private>*/
   gpointer future[4];

@@ -169,11 +169,6 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseMediaCallStream,
       call_stream_media_iface_init)
     )
 
-static const gchar *tp_base_media_call_stream_interfaces[] = {
-    TP_IFACE_CALL_STREAM_INTERFACE_MEDIA,
-    NULL
-};
-
 /* properties */
 enum
 {
@@ -214,6 +209,8 @@ struct _TpBaseMediaCallStreamPrivate
   gboolean remotely_held;
 };
 
+static GPtrArray *tp_base_media_call_stream_get_interfaces (
+    TpBaseCallStream *bcs);
 static gboolean tp_base_media_call_stream_request_receiving (
     TpBaseCallStream *bcs,
     TpHandle contact,
@@ -394,7 +391,7 @@ tp_base_media_call_stream_class_init (TpBaseMediaCallStreamClass *klass)
   object_class->dispose = tp_base_media_call_stream_dispose;
   object_class->finalize = tp_base_media_call_stream_finalize;
 
-  bcs_class->extra_interfaces = tp_base_media_call_stream_interfaces;
+  bcs_class->get_interfaces = tp_base_media_call_stream_get_interfaces;
   bcs_class->request_receiving = tp_base_media_call_stream_request_receiving;
   bcs_class->set_sending = tp_base_media_call_stream_set_sending;
 
@@ -961,6 +958,19 @@ tp_base_media_call_stream_set_sending (TpBaseCallStream *bcs,
    }
 
   return TRUE;
+}
+
+static GPtrArray *
+tp_base_media_call_stream_get_interfaces (TpBaseCallStream *bcs)
+{
+  GPtrArray *interfaces;
+
+  interfaces = TP_BASE_CALL_STREAM_CLASS (
+      tp_base_media_call_stream_parent_class)->get_interfaces (bcs);
+
+  g_ptr_array_add (interfaces, TP_IFACE_CALL_STREAM_INTERFACE_MEDIA);
+
+  return interfaces;
 }
 
 static gboolean

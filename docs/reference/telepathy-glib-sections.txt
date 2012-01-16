@@ -6815,6 +6815,7 @@ TpBaseCallChannelPrivate
 <SUBSECTION>
 TpBaseCallContent
 TpBaseCallContentClass
+TpBaseCallContentGetInterfacesFunc
 TpBaseCallContentDeinitFunc
 TpBaseCallContentMultipleTonesFunc
 TpBaseCallContentStartToneFunc
@@ -6846,6 +6847,7 @@ TpBaseCallContentPrivate
 <SUBSECTION>
 TpBaseCallStream
 TpBaseCallStreamClass
+TpBaseCallStreamGetInterfacesFunc
 TpBaseCallStreamRequestReceivingFunc
 TpBaseCallStreamSetSendingFunc
 tp_base_call_stream_get_connection

@@ -29,7 +29,7 @@
  * This base class makes it easier to write #TpSvcCallContent
  * implementations by implementing its properties, and some of its methods.
  *
- * Subclasses should fill in #TpBaseCallContentClass.extra_interfaces,
+ * Subclasses should fill in #TpBaseCallContentClass.get_interfaces,
  * and #TpBaseCallContentClass.deinit virtual function.
  *
  * Since: 0.UNRELEASED
@@ -45,8 +45,9 @@
 
 /**
  * TpBaseCallContentClass:
- * @extra_interfaces: extra interfaces provided by this content (this SHOULD NOT
- *  include %TP_IFACE_CALL_CONTENT itself)
+ * @get_interfaces: extra interfaces provided by this content (this SHOULD NOT
+ *  include %TP_IFACE_CALL_CONTENT itself). Implementation must first chainup on
+ *  parent class implementation then add extra interfaces into the #GPtrArray.
  * @deinit: optional; virtual method called by #TpBaseCallChannel when removing
  *  the content
  * @start_tone: optional; virtual method called when user requested to send
@@ -64,6 +65,16 @@
  *
  * The class structure for #TpBaseCallContent
  *
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * TpBaseCallContentGetInterfacesFunc:
+ * @self: a #TpBaseCallContent
+ *
+ * Signature of an implementation of #TpBaseCallContentClass.get_interfaces.
+ *
+ * Returns: a #GPtrArray containing static strings.
  * Since: 0.UNRELEASED
  */
 
@@ -210,7 +221,7 @@ stream_list_destroy (GList *streams)
 }
 
 static void
-base_call_content_deinit_real (TpBaseCallContent *self)
+tp_base_call_content_deinit_real (TpBaseCallContent *self)
 {
   TpDBusDaemon *bus = tp_base_connection_get_dbus_daemon (
       (TpBaseConnection *) self->priv->conn);
@@ -218,6 +229,12 @@ base_call_content_deinit_real (TpBaseCallContent *self)
   tp_dbus_daemon_unregister_object (bus, G_OBJECT (self));
 
   tp_clear_pointer (&self->priv->streams, stream_list_destroy);
+}
+
+static GPtrArray *
+tp_base_call_content_get_interfaces (TpBaseCallContent *self)
+{
+  return g_ptr_array_new ();
 }
 
 static void
@@ -270,16 +287,11 @@ tp_base_call_content_get_property (
         break;
       case PROP_INTERFACES:
         {
-          if (klass->extra_interfaces != NULL)
-            {
-              g_value_set_boxed (value, klass->extra_interfaces);
-            }
-          else
-            {
-              static gchar *empty[] = { NULL };
+          GPtrArray *interfaces = klass->get_interfaces (self);
 
-              g_value_set_boxed (value, empty);
-            }
+          g_ptr_array_add (interfaces, NULL);
+          g_value_set_boxed (value, interfaces->pdata);
+          g_ptr_array_unref (interfaces);
           break;
         }
       case PROP_NAME:
@@ -358,10 +370,9 @@ tp_base_call_content_set_property (
 }
 
 static void
-tp_base_call_content_class_init (
-    TpBaseCallContentClass *bcc_class)
+tp_base_call_content_class_init (TpBaseCallContentClass *klass)
 {
-  GObjectClass *object_class = G_OBJECT_CLASS (bcc_class);
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;
   static TpDBusPropertiesMixinPropImpl content_props[] = {
     { "Interfaces", "interfaces", NULL },
@@ -390,7 +401,7 @@ tp_base_call_content_class_init (
       { NULL }
   };
 
-  g_type_class_add_private (bcc_class, sizeof (TpBaseCallContentPrivate));
+  g_type_class_add_private (klass, sizeof (TpBaseCallContentPrivate));
 
   object_class->constructed = tp_base_call_content_constructed;
   object_class->dispose = tp_base_call_content_dispose;
@@ -398,7 +409,8 @@ tp_base_call_content_class_init (
   object_class->get_property = tp_base_call_content_get_property;
   object_class->set_property = tp_base_call_content_set_property;
 
-  bcc_class->deinit = base_call_content_deinit_real;
+  klass->deinit = tp_base_call_content_deinit_real;
+  klass->get_interfaces = tp_base_call_content_get_interfaces;
 
   /**
    * TpBaseCallContent:object-path:
@@ -535,8 +547,7 @@ tp_base_call_content_class_init (
   g_object_class_install_property (object_class, PROP_DEFERRED_TONES,
       param_spec);
 
-
-  bcc_class->dbus_props_class.interfaces = prop_interfaces;
+  klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpBaseCallContentClass, dbus_props_class));
 }
