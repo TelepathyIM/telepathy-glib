@@ -187,6 +187,7 @@ TpBaseChannelClass
 TpBaseChannelFillPropertiesFunc
 TpBaseChannelCloseFunc
 TpBaseChannelGetPathFunc
+TpBaseChannelGetInterfacesFunc
 tp_base_channel_register
 tp_base_channel_close
 tp_base_channel_destroyed
