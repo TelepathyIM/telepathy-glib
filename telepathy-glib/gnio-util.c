@@ -662,6 +662,19 @@ typedef struct
   guchar byte;
 } ReceiveCredentialsWithByteData;
 
+static ReceiveCredentialsWithByteData *
+receive_credentials_with_byte_data_new (GCredentials *creds,
+    guchar byte)
+{
+  ReceiveCredentialsWithByteData *data;
+
+  data = g_slice_new0 (ReceiveCredentialsWithByteData);
+  data->creds = g_object_ref (creds);
+  data->byte = byte;
+
+  return data;
+}
+
 static void
 receive_credentials_with_byte_data_free (ReceiveCredentialsWithByteData *data)
 {
@@ -674,7 +687,6 @@ receive_credentials_with_byte_async_thread (GSimpleAsyncResult *res,
     GObject *object,
     GCancellable *cancellable)
 {
-  ReceiveCredentialsWithByteData *data;
   guchar byte;
   GCredentials *creds;
   GError *error = NULL;
@@ -687,12 +699,11 @@ receive_credentials_with_byte_async_thread (GSimpleAsyncResult *res,
       return;
     }
 
-  data = g_slice_new0 (ReceiveCredentialsWithByteData);
-  data->creds = creds;
-  data->byte = byte;
-
-  g_simple_async_result_set_op_res_gpointer (res, data,
+  g_simple_async_result_set_op_res_gpointer (res,
+      receive_credentials_with_byte_data_new (creds, byte),
       (GDestroyNotify) receive_credentials_with_byte_data_free);
+
+  g_object_unref (creds);
 }
 
 /**
