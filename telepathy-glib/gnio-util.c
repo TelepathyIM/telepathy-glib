@@ -43,6 +43,7 @@
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/util-internal.h>
 
 #include <string.h>
 
@@ -365,6 +366,85 @@ tp_unix_connection_send_credentials_with_byte (GSocketConnection *connection,
 #endif
 }
 
+static void
+send_credentials_with_byte_async_thread (GSimpleAsyncResult *res,
+    GObject *object,
+    GCancellable *cancellable)
+{
+  guchar byte;
+  GError *error = NULL;
+
+  byte = GPOINTER_TO_UINT (g_simple_async_result_get_op_res_gpointer (res));
+
+  if (!tp_unix_connection_send_credentials_with_byte (
+          (GSocketConnection *) object, byte, cancellable, &error))
+    {
+      g_simple_async_result_take_error (res, error);
+    }
+}
+
+/**
+ * tp_unix_connection_send_credentials_with_byte_async:
+ * @connection: A #GUnixConnection.
+ * @byte: the byte to send with the credentials
+ * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
+ * @callback: (scope async): a #GAsyncReadyCallback to call when the request is satisfied
+ * @user_data: (closure): the data to pass to callback function
+ *
+ * Asynchronously send credentials.
+ *
+ * For more details, see tp_unix_connection_send_credentials_with_byte() which
+ * is the synchronous version of this call.
+ *
+ * When the operation is finished, @callback will be called. You can then call
+ * tp_unix_connection_send_credentials_with_byte_finish() to get the result of
+ * the operation.
+ *
+ * Since: 0.UNRELEASED
+ **/
+void
+tp_unix_connection_send_credentials_with_byte_async (
+    GSocketConnection *connection,
+    guchar byte,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *res;
+
+  res = g_simple_async_result_new (G_OBJECT (connection), callback, user_data,
+      tp_unix_connection_send_credentials_with_byte_async);
+  g_simple_async_result_set_op_res_gpointer (res, GUINT_TO_POINTER (byte), NULL);
+
+  g_simple_async_result_run_in_thread (res,
+      send_credentials_with_byte_async_thread, G_PRIORITY_DEFAULT, cancellable);
+
+  g_object_unref (res);
+}
+
+/**
+ * tp_unix_connection_send_credentials_with_byte_finish:
+ * @connection: A #GUnixConnection.
+ * @result: a #GAsyncResult.
+ * @error: a #GError, or %NULL
+ *
+ * Finishes an asynchronous send credentials operation started with
+ * tp_unix_connection_send_credentials_with_byte_async().
+ *
+ * Returns: %TRUE if the operation was successful, otherwise %FALSE.
+ *
+ * Since: 0.UNRELEASED
+ **/
+gboolean
+tp_unix_connection_send_credentials_with_byte_finish (
+    GSocketConnection *connection,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (connection,
+      tp_unix_connection_send_credentials_with_byte_async);
+}
+
 #ifdef HAVE_GIO_UNIX
 static GCredentials *
 _tp_unix_connection_receive_credentials_with_byte (GUnixConnection *connection,
@@ -574,4 +654,132 @@ tp_unix_connection_receive_credentials_with_byte (GSocketConnection *connection,
       "Unix sockets not supported");
   return FALSE;
 #endif
+}
+
+typedef struct
+{
+  GCredentials *creds;
+  guchar byte;
+} ReceiveCredentialsWithByteData;
+
+static ReceiveCredentialsWithByteData *
+receive_credentials_with_byte_data_new (GCredentials *creds,
+    guchar byte)
+{
+  ReceiveCredentialsWithByteData *data;
+
+  data = g_slice_new0 (ReceiveCredentialsWithByteData);
+  data->creds = g_object_ref (creds);
+  data->byte = byte;
+
+  return data;
+}
+
+static void
+receive_credentials_with_byte_data_free (ReceiveCredentialsWithByteData *data)
+{
+  g_object_unref (data->creds);
+  g_slice_free (ReceiveCredentialsWithByteData, data);
+}
+
+static void
+receive_credentials_with_byte_async_thread (GSimpleAsyncResult *res,
+    GObject *object,
+    GCancellable *cancellable)
+{
+  guchar byte;
+  GCredentials *creds;
+  GError *error = NULL;
+
+  creds = tp_unix_connection_receive_credentials_with_byte (
+      (GSocketConnection *) object, &byte, cancellable, &error);
+  if (creds == NULL)
+    {
+      g_simple_async_result_take_error (res, error);
+      return;
+    }
+
+  g_simple_async_result_set_op_res_gpointer (res,
+      receive_credentials_with_byte_data_new (creds, byte),
+      (GDestroyNotify) receive_credentials_with_byte_data_free);
+
+  g_object_unref (creds);
+}
+
+/**
+ * tp_unix_connection_receive_credentials_with_byte_async:
+ * @connection: A #GUnixConnection.
+ * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
+ * @callback: (scope async): a #GAsyncReadyCallback to call when the request is satisfied
+ * @user_data: (closure): the data to pass to callback function
+ *
+ * Asynchronously receive credentials.
+ *
+ * For more details, see tp_unix_connection_receive_credentials_with_byte()
+ * which is the synchronous version of this call.
+ *
+ * When the operation is finished, @callback will be called. You can then call
+ * tp_unix_connection_receive_credentials_with_byte_finish() to get the result
+ * of the operation.
+ *
+ * Since: 0.UNRELEASED
+ **/
+void
+tp_unix_connection_receive_credentials_with_byte_async (
+    GSocketConnection *connection,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *res;
+
+  res = g_simple_async_result_new (G_OBJECT (connection), callback, user_data,
+      tp_unix_connection_receive_credentials_with_byte_async);
+
+  g_simple_async_result_run_in_thread (res,
+      receive_credentials_with_byte_async_thread, G_PRIORITY_DEFAULT,
+      cancellable);
+
+  g_object_unref (res);
+}
+
+/**
+ * tp_unix_connection_receive_credentials_with_byte_finish:
+ * @connection: A #GUnixConnection.
+ * @result: a #GAsyncResult.
+ * @byte: (out): if not %NULL, used to return the byte
+ * @error: a #GError, or %NULL
+ *
+ * Finishes an asynchronous receive credentials operation started with
+ * tp_unix_connection_receive_credentials_with_byte_async().
+ *
+ * Returns: (transfer full): a #GCredentials, or %NULL on error.
+ *     Free the returned object with g_object_unref().
+ *
+ * Since: 0.UNRELEASED
+ **/
+GCredentials *
+tp_unix_connection_receive_credentials_with_byte_finish (
+    GSocketConnection *connection,
+    GAsyncResult *result,
+    guchar *byte,
+    GError **error)
+{
+  GSimpleAsyncResult *simple = (GSimpleAsyncResult *) result;
+  ReceiveCredentialsWithByteData *data;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+      G_OBJECT (connection),
+      tp_unix_connection_receive_credentials_with_byte_async),
+      NULL);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return NULL;
+
+  data = g_simple_async_result_get_op_res_gpointer (simple);
+
+  if (byte != NULL)
+    *byte = data->byte;
+
+  return g_object_ref (data->creds);
 }

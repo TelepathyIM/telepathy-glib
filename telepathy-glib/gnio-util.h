@@ -41,11 +41,31 @@ gboolean tp_unix_connection_send_credentials_with_byte (
     guchar byte,
     GCancellable *cancellable,
     GError **error);
+void tp_unix_connection_send_credentials_with_byte_async (
+    GSocketConnection *connection,
+    guchar byte,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_unix_connection_send_credentials_with_byte_finish (
+    GSocketConnection *connection,
+    GAsyncResult *result,
+    GError **error);
 
 GCredentials * tp_unix_connection_receive_credentials_with_byte (
     GSocketConnection *connection,
     guchar *byte,
     GCancellable *cancellable,
+    GError **error);
+void tp_unix_connection_receive_credentials_with_byte_async (
+    GSocketConnection *connection,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+GCredentials *tp_unix_connection_receive_credentials_with_byte_finish (
+    GSocketConnection *connection,
+    GAsyncResult *result,
+    guchar *byte,
     GError **error);
 
 G_END_DECLS
