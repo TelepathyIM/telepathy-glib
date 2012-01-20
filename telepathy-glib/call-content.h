@@ -71,6 +71,15 @@ gboolean tp_call_content_remove_finish (TpCallContent *self,
     GAsyncResult *result,
     GError **error);
 
+void tp_call_content_send_tones_async (TpCallContent *self,
+    const gchar *tones,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_call_content_send_tones_finish (TpCallContent *self,
+    GAsyncResult *result,
+    GError **error);
+
 G_END_DECLS
 
 #include "_gen/tp-cli-call-content.h"

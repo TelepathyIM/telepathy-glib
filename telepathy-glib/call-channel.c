@@ -1513,3 +1513,106 @@ tp_call_channel_add_content_finish (TpCallChannel *self,
   _tp_implement_finish_return_copy_pointer (self,
       tp_call_channel_add_content_async, g_object_ref);
 }
+
+static void
+send_tones_cb (GObject *source,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result = user_data;
+  guint count;
+  GError *error = NULL;
+
+  if (!tp_call_content_send_tones_finish ((TpCallContent *) source, res,
+          &error))
+    g_simple_async_result_take_error (result, error);
+
+  /* Decrement the op count */
+  count = GPOINTER_TO_UINT (g_simple_async_result_get_op_res_gpointer (result));
+  g_simple_async_result_set_op_res_gpointer (result, GUINT_TO_POINTER (--count),
+      NULL);
+
+  if (count == 0)
+    g_simple_async_result_complete (result);
+
+  g_object_unref (result);
+}
+
+/**
+ * tp_call_channel_send_tones_async:
+ * @self: a #TpCallChannel
+ * @tones: a string representation of one or more DTMF events.
+ * @cancellable: optional #GCancellable object, %NULL to ignore
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
+ *
+ * Send @tones on every of @self's contents which have the
+ * %TP_IFACE_CALL_CONTENT_INTERFACE_DTMF interface.
+ *
+ * For more details, see tp_call_content_send_tones_async().
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_call_channel_send_tones_async (TpCallChannel *self,
+    const gchar *tones,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  guint i;
+  guint count = 0;
+
+  g_return_if_fail (TP_IS_CALL_CHANNEL (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
+      tp_call_channel_send_tones_async);
+
+  for (i = 0; i < self->priv->contents->len; i++)
+    {
+      TpCallContent *content = g_ptr_array_index (self->priv->contents, i);
+
+      if (!tp_proxy_has_interface_by_id (content,
+              TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_DTMF))
+        continue;
+
+      count++;
+      tp_call_content_send_tones_async (content, tones, cancellable,
+          send_tones_cb, g_object_ref (result));
+    }
+
+  if (count == 0)
+    {
+      g_simple_async_result_set_error (result,
+          TP_ERRORS, TP_ERROR_NOT_CAPABLE,
+          "Channel has no content implementing DTMF interface");
+      g_simple_async_result_complete_in_idle (result);
+    }
+  else
+    {
+      g_simple_async_result_set_op_res_gpointer (result,
+          GUINT_TO_POINTER (count), NULL);
+    }
+
+  g_object_unref (result);
+}
+
+/**
+ * tp_call_channel_send_tones_finish:
+ * @self: a #TpCallChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_call_channel_send_tones_async().
+ *
+ * Returns: %TRUE on success, %FALSE otherwise.
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_call_channel_send_tones_finish (TpCallChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_call_channel_send_tones_async)
+}

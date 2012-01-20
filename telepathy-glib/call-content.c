@@ -50,6 +50,7 @@
 #include <telepathy-glib/call-misc.h>
 #include <telepathy-glib/call-stream.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/dtmf.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
@@ -68,6 +69,8 @@
 
 G_DEFINE_TYPE (TpCallContent, tp_call_content, TP_TYPE_PROXY)
 
+typedef struct _SendTonesData SendTonesData;
+
 struct _TpCallContentPrivate
 {
   TpConnection *connection;
@@ -78,6 +81,9 @@ struct _TpCallContentPrivate
   GPtrArray *streams;
 
   gboolean properties_retrieved;
+
+  GQueue *tones_queue;
+  SendTonesData *current_tones;
 };
 
 enum
@@ -242,6 +248,158 @@ got_all_properties_cb (TpProxy *proxy,
   _tp_proxy_set_feature_prepared (proxy, TP_CALL_CONTENT_FEATURE_CORE, TRUE);
 }
 
+struct _SendTonesData
+{
+  TpCallContent *content;
+  gchar *tones;
+  GSimpleAsyncResult *result;
+  GCancellable *cancellable;
+  guint cancel_id;
+};
+
+static void maybe_send_tones (TpCallContent *self);
+static void send_tones_cancelled_cb (GCancellable *cancellable,
+    SendTonesData *data);
+
+static SendTonesData *
+send_tones_data_new (TpCallContent *self,
+    const gchar *tones,
+    GSimpleAsyncResult *result,
+    GCancellable *cancellable)
+{
+  SendTonesData *data;
+
+  data = g_slice_new0 (SendTonesData);
+  data->content = g_object_ref (self);
+  data->tones = g_strdup (tones);
+  data->result = g_object_ref (result);
+
+  if (cancellable != NULL)
+    {
+      data->cancellable = g_object_ref (cancellable);
+      data->cancel_id = g_cancellable_connect (cancellable,
+          G_CALLBACK (send_tones_cancelled_cb), data, NULL);
+    }
+
+  return data;
+}
+
+static void
+send_tones_data_free (SendTonesData *data)
+{
+  g_free (data->tones);
+  g_object_unref (data->result);
+  g_object_unref (data->content);
+
+  if (data->cancellable != NULL)
+    {
+      if (data->cancel_id != 0)
+        g_cancellable_disconnect (data->cancellable, data->cancel_id);
+
+      g_object_unref (data->cancellable);
+    }
+
+  g_slice_free (SendTonesData, data);
+}
+
+static gboolean
+send_tones_cancelled_idle_cb (gpointer user_data)
+{
+  SendTonesData *data = user_data;
+  TpCallContent *self = data->content;
+
+  /* If it is the tone currently being played, stop it. Otherwise wait for its
+   * turn in the queue to preserve order. */
+  if (self->priv->current_tones == data)
+    {
+      tp_cli_call_content_interface_dtmf_call_stop_tone (self, -1,
+          NULL, NULL, NULL, NULL);
+    }
+
+  return FALSE;
+}
+
+static void
+send_tones_cancelled_cb (GCancellable *cancellable,
+    SendTonesData *data)
+{
+  /* Cancel in idle for thread-safeness */
+  g_idle_add (send_tones_cancelled_idle_cb, data);
+}
+
+static void
+complete_sending_tones (TpCallContent *self,
+    const GError *error)
+{
+  if (self->priv->current_tones == NULL)
+    return;
+
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (self->priv->current_tones->result,
+          error);
+    }
+
+  g_simple_async_result_complete (self->priv->current_tones->result);
+
+  send_tones_data_free (self->priv->current_tones);
+  self->priv->current_tones = NULL;
+
+  maybe_send_tones (self);
+}
+
+static void
+tones_stopped_cb (TpCallContent *self,
+    gboolean cancelled,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  if (cancelled)
+    {
+      GError e = { TP_ERRORS, TP_ERROR_CANCELLED,
+          "The DTMF tones were actively cancelled via StopTones" };
+      complete_sending_tones (self, &e);
+      return;
+    }
+
+  complete_sending_tones (self, NULL);
+}
+
+static void
+multiple_tones_cb (TpCallContent *self,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  if (error != NULL)
+    complete_sending_tones (self, error);
+}
+
+static void
+maybe_send_tones (TpCallContent *self)
+{
+  if (self->priv->current_tones != NULL)
+    return;
+
+  if (g_queue_is_empty (self->priv->tones_queue))
+    return;
+
+  self->priv->current_tones = g_queue_pop_head (self->priv->tones_queue);
+
+  /* Yes this is safe if cancellable is NULL! */
+  if (g_cancellable_is_cancelled (self->priv->current_tones->cancellable))
+    {
+      GError e = { TP_ERRORS, TP_ERROR_CANCELLED,
+          "The DTMF tones were cancelled before it has started" };
+      complete_sending_tones (self, &e);
+      return;
+    }
+
+  DEBUG ("Emitting multiple tones: %s", self->priv->current_tones->tones);
+  tp_cli_call_content_interface_dtmf_call_multiple_tones (self, -1,
+      self->priv->current_tones->tones, multiple_tones_cb, NULL, NULL, NULL);
+}
+
 static void
 tp_call_content_constructed (GObject *obj)
 {
@@ -254,6 +412,13 @@ tp_call_content_constructed (GObject *obj)
       streams_added_cb, NULL, NULL, G_OBJECT (self), NULL);
   tp_cli_call_content_connect_to_streams_removed (self,
       streams_removed_cb, NULL, NULL, G_OBJECT (self), NULL);
+
+  if (tp_proxy_has_interface_by_id (self,
+          TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_DTMF))
+    {
+      tp_cli_call_content_interface_dtmf_connect_to_stopped_tones (self,
+          tones_stopped_cb, NULL, NULL, NULL, NULL);
+    }
 
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CALL_CONTENT,
@@ -270,6 +435,19 @@ tp_call_content_dispose (GObject *object)
   tp_clear_pointer (&self->priv->streams, g_ptr_array_unref);
 
   G_OBJECT_CLASS (tp_call_content_parent_class)->dispose (object);
+}
+
+static void
+tp_call_content_finalize (GObject *object)
+{
+  TpCallContent *self = (TpCallContent *) object;
+
+  /* Results hold a ref on self, finalize can't happen if queue isn't empty */
+  g_assert (self->priv->current_tones == NULL);
+  g_assert (g_queue_is_empty (self->priv->tones_queue));
+  g_queue_free (self->priv->tones_queue);
+
+  G_OBJECT_CLASS (tp_call_content_parent_class)->finalize (object);
 }
 
 static void
@@ -357,6 +535,7 @@ tp_call_content_class_init (TpCallContentClass *klass)
   gobject_class->get_property = tp_call_content_get_property;
   gobject_class->set_property = tp_call_content_set_property;
   gobject_class->dispose = tp_call_content_dispose;
+  gobject_class->finalize = tp_call_content_finalize;
 
   proxy_class->list_features = tp_call_content_list_features;
   proxy_class->interface = TP_IFACE_QUARK_CALL_CONTENT;
@@ -515,6 +694,7 @@ tp_call_content_init (TpCallContent *self)
       TpCallContentPrivate);
 
   self->priv->streams = g_ptr_array_new_with_free_func (g_object_unref);
+  self->priv->tones_queue = g_queue_new ();
 }
 
 /**
@@ -692,4 +872,70 @@ tp_call_content_remove_finish (TpCallContent *self,
     GError **error)
 {
   _tp_implement_finish_void (self, tp_call_content_remove_async);
+}
+
+/**
+ * tp_call_content_send_tones_async:
+ * @self: a #TpCallContent
+ * @tones: a string representation of one or more DTMF events.
+ * @cancellable: optional #GCancellable object, %NULL to ignore
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
+ *
+ * Send @tones DTMF code on @self content. @self must have the
+ * %TP_IFACE_CALL_CONTENT_INTERFACE_DTMF interface.
+ *
+ * If DTMF tones are already being played, this request is queued.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_call_content_send_tones_async (TpCallContent *self,
+    const gchar *tones,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  SendTonesData *data;
+
+  g_return_if_fail (TP_IS_CALL_CONTENT (self));
+
+  if (!tp_proxy_has_interface_by_id (self,
+          TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_DTMF))
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (self),
+          callback, user_data, TP_ERRORS, TP_ERROR_NOT_CAPABLE,
+          "Content does not support DTMF");
+      return;
+    }
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
+      tp_call_content_send_tones_async);
+
+  data = send_tones_data_new (self, tones, result, cancellable);
+  g_queue_push_tail (self->priv->tones_queue, data);
+
+  maybe_send_tones (self);
+
+  g_object_unref (result);
+}
+
+/**
+ * tp_call_content_send_tones_finish:
+ * @self: a #TpCallContent
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_call_content_send_tones_async().
+ *
+ * Returns: %TRUE on success, %FALSE otherwise.
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_call_content_send_tones_finish (TpCallContent *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_call_content_send_tones_async);
 }

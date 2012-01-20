@@ -128,6 +128,15 @@ TpCallContent *tp_call_channel_add_content_finish (TpCallChannel *self,
     GAsyncResult *result,
     GError **error);
 
+void tp_call_channel_send_tones_async (TpCallChannel *self,
+    const gchar *tones,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_call_channel_send_tones_finish (TpCallChannel *self,
+    GAsyncResult *result,
+    GError **error);
+
 G_END_DECLS
 
 #endif

@@ -6466,6 +6466,8 @@ tp_call_channel_has_mutable_contents
 tp_call_channel_get_members
 <SUBSECTION>
 tp_call_channel_has_dtmf
+tp_call_channel_send_tones_async
+tp_call_channel_send_tones_finish
 <SUBSECTION>
 tp_call_channel_set_ringing_async
 tp_call_channel_set_ringing_finish
@@ -6569,6 +6571,9 @@ tp_call_content_get_streams
 <SUBSECTION>
 tp_call_content_remove_async
 tp_call_content_remove_finish
+<SUBSECTION>
+tp_call_content_send_tones_async
+tp_call_content_send_tones_finish
 <SUBSECTION Standard>
 TpCallContentPrivate
 tp_call_content_get_type
