@@ -129,10 +129,6 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseCallChannel, tp_base_call_channel,
         dtmf_iface_init)
   )
 
-static const gchar *tp_base_call_channel_interfaces[] = {
-    NULL
-};
-
 /* properties */
 enum
 {
@@ -486,7 +482,6 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
   object_class->finalize = tp_base_call_channel_finalize;
 
   base_channel_class->channel_type = TP_IFACE_CHANNEL_TYPE_CALL;
-  base_channel_class->interfaces = tp_base_call_channel_interfaces;
   base_channel_class->fill_immutable_properties =
       tp_base_call_channel_fill_immutable_properties;
   base_channel_class->close = tp_base_call_channel_close;

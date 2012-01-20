@@ -113,13 +113,6 @@ struct _TpBaseMediaCallChannelPrivate
   gboolean accepted;
 };
 
-static const gchar *tp_base_media_call_channel_interfaces[] = {
-  TP_IFACE_CHANNEL_INTERFACE_HOLD,
-  TP_IFACE_CHANNEL_INTERFACE_DTMF,
-  TP_IFACE_CALL_INTERFACE_MUTE,
-  NULL
-};
-
 /* properties */
 enum
 {
@@ -127,6 +120,21 @@ enum
 
   LAST_PROPERTY
 };
+
+static GPtrArray *
+tp_base_media_call_channel_get_interfaces (TpBaseChannel *base)
+{
+  GPtrArray *interfaces;
+
+  interfaces = TP_BASE_CHANNEL_CLASS (
+      tp_base_media_call_channel_parent_class)->get_interfaces (base);
+
+  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_HOLD);
+  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_DTMF);
+  g_ptr_array_add (interfaces, TP_IFACE_CALL_INTERFACE_MUTE);
+
+  return interfaces;
+}
 
 static void
 call_members_changed_cb (TpBaseMediaCallChannel *self,
@@ -330,7 +338,7 @@ tp_base_media_call_channel_class_init (TpBaseMediaCallChannelClass *klass)
 
   object_class->get_property = tp_base_media_call_channel_get_property;
 
-  base_channel_class->interfaces = tp_base_media_call_channel_interfaces;
+  base_channel_class->get_interfaces = tp_base_media_call_channel_get_interfaces;
 
   base_call_channel_class->accept = tp_base_media_call_channel_accept;
   base_call_channel_class->remote_accept =
