@@ -286,6 +286,10 @@ struct _TpBaseContactListPrivate
   gboolean svc_contact_list;
   gboolean svc_contact_groups;
   gboolean svc_contact_blocking;
+
+  /* TRUE if the contact list must be downloaded at connection. Default is
+   * TRUE. */
+  gboolean download_at_connection;
 };
 
 struct _TpBaseContactListClassPrivate
@@ -500,6 +504,7 @@ G_DEFINE_INTERFACE (TpMutableContactGroupList, tp_mutable_contact_group_list,
 
 enum {
     PROP_CONNECTION = 1,
+    PROP_DOWNLOAD_AT_CONNECTION,
     N_PROPS
 };
 
@@ -641,6 +646,10 @@ tp_base_contact_list_get_property (GObject *object,
       g_value_set_object (value, self->priv->conn);
       break;
 
+    case PROP_DOWNLOAD_AT_CONNECTION:
+      g_value_set_boolean (value, self->priv->download_at_connection);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -660,6 +669,10 @@ tp_base_contact_list_set_property (GObject *object,
     case PROP_CONNECTION:
       g_assert (self->priv->conn == NULL);    /* construct-only */
       self->priv->conn = g_value_dup_object (value);
+      break;
+
+    case PROP_DOWNLOAD_AT_CONNECTION:
+      self->priv->download_at_connection = g_value_get_boolean (value);
       break;
 
     default:
@@ -926,6 +939,23 @@ tp_base_contact_list_class_init (TpBaseContactListClass *cls)
         "The connection that owns this channel manager",
         TP_TYPE_BASE_CONNECTION,
         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TpBaseContactList:download-at-connection:
+   *
+   * Whether the roster is automatically downloaded at connection.
+   *
+   * It doesn't change anything in TpBaseContactsList's behaviour.
+   * Implementations should check this property when they become connected
+   * and in their Download method, and behave accordingly.
+   *
+   * Since: 0.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_DOWNLOAD_AT_CONNECTION,
+      g_param_spec_boolean ("download-at-connection", "Download at connection",
+        "Whether the roster is automatically downloaded at connection",
+        TRUE,
+        G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS));
 }
 
 static void
@@ -5188,6 +5218,7 @@ typedef enum {
     LP_CONTACT_LIST_PERSISTS,
     LP_CAN_CHANGE_CONTACT_LIST,
     LP_REQUEST_USES_MESSAGE,
+    LP_DOWNLOAD_AT_CONNECTION,
     NUM_LIST_PROPERTIES
 } ListProp;
 
@@ -5196,6 +5227,7 @@ static TpDBusPropertiesMixinPropImpl known_list_props[] = {
     { "ContactListPersists", GINT_TO_POINTER (LP_CONTACT_LIST_PERSISTS), },
     { "CanChangeContactList", GINT_TO_POINTER (LP_CAN_CHANGE_CONTACT_LIST) },
     { "RequestUsesMessage", GINT_TO_POINTER (LP_REQUEST_USES_MESSAGE) },
+    { "DownloadAtConnection", GINT_TO_POINTER (LP_DOWNLOAD_AT_CONNECTION) },
     { NULL }
 };
 
@@ -5236,6 +5268,11 @@ tp_base_contact_list_get_list_dbus_property (GObject *conn,
       g_return_if_fail (G_VALUE_HOLDS_BOOLEAN (value));
       g_value_set_boolean (value,
           tp_base_contact_list_get_request_uses_message (self));
+      break;
+
+    case LP_DOWNLOAD_AT_CONNECTION:
+      g_return_if_fail (G_VALUE_HOLDS_BOOLEAN (value));
+      g_value_set_boolean (value, self->priv->download_at_connection);
       break;
 
     default:
