@@ -1091,22 +1091,11 @@ tp_base_media_call_stream_report_sending_failure (
   TpBaseCallChannel *channel = _tp_base_call_stream_get_channel (
       TP_BASE_CALL_STREAM (self));
 
-  switch (self->priv->sending_state)
-    {
-    case TP_STREAM_FLOW_STATE_PENDING_START:
-      self->priv->sending_state = TP_STREAM_FLOW_STATE_STOPPED;
-      break;
-    case TP_STREAM_FLOW_STATE_PENDING_STOP:
-      self->priv->sending_state = TP_STREAM_FLOW_STATE_STARTED;
-      break;
-    default:
-      {
-        GError e = {TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-            "The Sending state was not in a pending state"};
-        dbus_g_method_return_error (context, &e);
-        return;
-      }
-    }
+  if (self->priv->sending_state == TP_STREAM_FLOW_STATE_STOPPED)
+    goto done;
+
+  self->priv->sending_state = TP_STREAM_FLOW_STATE_STOPPED;
+  g_object_notify (G_OBJECT (self), "sending-state");
 
   if (channel != NULL && TP_IS_BASE_MEDIA_CALL_CHANNEL (channel))
     _tp_base_media_call_channel_streams_sending_state_changed (
@@ -1118,6 +1107,8 @@ tp_base_media_call_stream_report_sending_failure (
 
   tp_svc_call_stream_interface_media_emit_sending_state_changed (self,
       self->priv->sending_state);
+
+done:
   tp_svc_call_stream_interface_media_return_from_report_sending_failure (
       context);
 }
@@ -1184,26 +1175,14 @@ tp_base_media_call_stream_report_receiving_failure (
   TpBaseCallChannel *channel = _tp_base_call_stream_get_channel (
       TP_BASE_CALL_STREAM (self));
 
-  switch (self->priv->receiving_state)
-    {
-    case TP_STREAM_FLOW_STATE_PENDING_START:
-      /* Clear all receving requests, we can't receive */
-      tp_intset_clear (self->priv->receiving_requests);
-      self->priv->receiving_state = TP_STREAM_FLOW_STATE_STOPPED;
-      g_object_notify (G_OBJECT (self), "receiving-state");
-      break;
-    case TP_STREAM_FLOW_STATE_PENDING_STOP:
-      self->priv->receiving_state = TP_STREAM_FLOW_STATE_STARTED;
-      g_object_notify (G_OBJECT (self), "receiving-state");
-      break;
-    default:
-      {
-        GError e = {TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-            "The Receiving state was not in a pending state"};
-        dbus_g_method_return_error (context, &e);
-        return;
-      }
-    }
+  /* Clear all receving requests, we can't receive */
+  tp_intset_clear (self->priv->receiving_requests);
+
+  if (self->priv->receiving_state == TP_STREAM_FLOW_STATE_STOPPED)
+    goto done;
+
+  self->priv->receiving_state = TP_STREAM_FLOW_STATE_STOPPED;
+  g_object_notify (G_OBJECT (self), "receiving-state");
 
   if (channel != NULL && TP_IS_BASE_MEDIA_CALL_CHANNEL (channel))
     _tp_base_media_call_channel_streams_receiving_state_changed (
@@ -1215,6 +1194,8 @@ tp_base_media_call_stream_report_receiving_failure (
 
   tp_svc_call_stream_interface_media_emit_receiving_state_changed (self,
       self->priv->receiving_state);
+
+done:
   tp_svc_call_stream_interface_media_return_from_report_receiving_failure (
       context);
 }

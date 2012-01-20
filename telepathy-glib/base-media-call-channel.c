@@ -468,14 +468,9 @@ hold_change_failed (TpBaseMediaCallChannel *self)
   TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
   GList *l, *l2;
 
-  if (self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_HOLD)
+  if (self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_UNHOLD)
     {
-      set_hold_state (self, TP_LOCAL_HOLD_STATE_UNHELD,
-          TP_LOCAL_HOLD_STATE_REASON_RESOURCE_NOT_AVAILABLE);
-    }
-  else if (self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_UNHOLD)
-    {
-      set_hold_state (self, TP_LOCAL_HOLD_STATE_HELD,
+      set_hold_state (self, TP_LOCAL_HOLD_STATE_PENDING_HOLD,
           TP_LOCAL_HOLD_STATE_REASON_RESOURCE_NOT_AVAILABLE);
     }
 
@@ -490,6 +485,10 @@ hold_change_failed (TpBaseMediaCallChannel *self)
           tp_base_media_call_stream_update_sending_state (stream);
         }
     }
+
+  /* Ensure we escape channel pending state if there is no more pending stream state
+   * change. */
+  update_hold_state (self);
 }
 
 static void
