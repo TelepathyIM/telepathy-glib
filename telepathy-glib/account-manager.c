@@ -352,9 +352,9 @@ _tp_account_manager_update_most_available_presence (TpAccountManager *manager)
 
   if (account == NULL)
     {
-      priv->most_available_presence = presence;
-      priv->most_available_status = NULL;
-      priv->most_available_status_message = NULL;
+      priv->most_available_presence = TP_CONNECTION_PRESENCE_TYPE_OFFLINE;
+      priv->most_available_status = g_strdup ("offline");
+      priv->most_available_status_message = g_strdup ("");
       return;
     }
 
