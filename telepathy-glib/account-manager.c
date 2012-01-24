@@ -327,6 +327,7 @@ _tp_account_manager_update_most_available_presence (TpAccountManager *manager)
   TpAccount *account = NULL;
   GHashTableIter iter;
   gpointer value;
+  TpAccount *has_unset_presence = NULL;
 
   /* this presence is equal to the presence of the account with the
    * highest availability */
@@ -339,11 +340,27 @@ _tp_account_manager_update_most_available_presence (TpAccountManager *manager)
 
       p = tp_account_get_current_presence (a, NULL, NULL);
 
+      if (p == TP_CONNECTION_PRESENCE_TYPE_UNSET)
+        {
+          has_unset_presence = a;
+          /* There is no point comparing the presence as UNSET is the
+           * 'smallest' presence of all */
+          continue;
+        }
+
       if (tp_connection_presence_type_cmp_availability (p, presence) > 0)
         {
           account = a;
           presence = p;
         }
+    }
+
+  if (presence == TP_CONNECTION_PRESENCE_TYPE_OFFLINE &&
+      has_unset_presence != NULL)
+    {
+      /* Use an account having UNSET as presence as the 'best' one,
+       * see tp_account_manager_get_most_available_presence() */
+      account = has_unset_presence;
     }
 
   priv->most_available_account = account;
@@ -865,6 +882,9 @@ _tp_account_manager_account_presence_changed_cb (TpAccount *account,
 {
   TpAccountManager *manager = TP_ACCOUNT_MANAGER (user_data);
   TpAccountManagerPrivate *priv = manager->priv;
+  TpConnectionPresenceType p;
+  gchar *s;
+  gchar *msg;
 
   if (tp_connection_presence_type_cmp_availability (presence,
           priv->most_available_presence) > 0)
@@ -888,10 +908,19 @@ _tp_account_manager_account_presence_changed_cb (TpAccount *account,
     }
 
   return;
+
 signal:
+  /* Use tp_account_manager_get_most_available_presence() as the effective
+   * most available presence may differ of the one stored in
+   * priv->most_available_presence. */
+  p = tp_account_manager_get_most_available_presence (manager,
+      &s, &msg);
+
   g_signal_emit (manager, signals[MOST_AVAILABLE_PRESENCE_CHANGED], 0,
-      priv->most_available_presence, priv->most_available_status,
-      priv->most_available_status_message);
+      p, s, msg);
+
+  g_free (s);
+  g_free (msg);
 }
 
 static void
@@ -1127,6 +1156,10 @@ tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
  * If no accounts are enabled or valid the output will be
  * (%TP_CONNECTION_PRESENCE_TYPE_OFFLINE, "offline", "").
  *
+ * Since 0.UNRELEASED, if the only connected accounts does not implement
+ * %TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE, the output will be
+ * (%TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, "available", "").
+ *
  * The return value of this function is not guaranteed to have been retrieved
  * until tp_proxy_prepare_async() has finished; until then, the
  * value will be the same as if no accounts are enabled or valid.
@@ -1147,6 +1180,20 @@ tp_account_manager_get_most_available_presence (TpAccountManager *manager,
       TP_CONNECTION_PRESENCE_TYPE_UNSET);
 
   priv = manager->priv;
+
+  if (priv->most_available_presence == TP_CONNECTION_PRESENCE_TYPE_UNSET)
+    {
+      /* The best we have is an account having UNSET as its presence, which
+       * means it's connected but does not implement SimplePresence; pretend
+       * we are available. */
+      if (status != NULL)
+        *status = g_strdup ("available");
+
+      if (message != NULL)
+        *message = g_strdup ("");
+
+      return TP_CONNECTION_PRESENCE_TYPE_AVAILABLE;
+    }
 
   if (status != NULL)
     *status = g_strdup (priv->most_available_status);

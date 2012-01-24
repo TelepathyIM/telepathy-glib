@@ -746,9 +746,9 @@ test_most_available_one_unset (Test *test,
   script_append_action (test, change_account1_presence,
       presence_new (TP_CONNECTION_PRESENCE_TYPE_UNSET, "unset", ""));
 
-  /* Pretend that we are offline */
+  /* Pretend that we are available */
   script_append_action (test, check_presence_action,
-      presence_new (TP_CONNECTION_PRESENCE_TYPE_OFFLINE, "offline", ""));
+      presence_new (TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, "available", ""));
 }
 
 static void
@@ -770,9 +770,9 @@ test_most_available_two_unset (Test *test,
   script_append_action (test, change_account2_presence,
       presence_new (TP_CONNECTION_PRESENCE_TYPE_OFFLINE, "offline", ""));
 
-  /* Pretent that we are offline */
+  /* Pretent that we are available */
   script_append_action (test, check_presence_action,
-      presence_new (TP_CONNECTION_PRESENCE_TYPE_OFFLINE, "offline", ""));
+      presence_new (TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, "available", ""));
 
   /* account2 reconnects with busy */
   script_append_action (test, change_account2_presence,
