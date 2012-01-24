@@ -414,7 +414,10 @@ tp_unix_connection_send_credentials_with_byte_async (
 
   res = g_simple_async_result_new (G_OBJECT (connection), callback, user_data,
       tp_unix_connection_send_credentials_with_byte_async);
-  g_simple_async_result_set_op_res_gpointer (res, GUINT_TO_POINTER (byte), NULL);
+
+  /* Extra casting to guint to work around GNOME#661546 for GLib < 2.32 */
+  g_simple_async_result_set_op_res_gpointer (res,
+      GUINT_TO_POINTER ((guint) byte), NULL);
 
   g_simple_async_result_run_in_thread (res,
       send_credentials_with_byte_async_thread, G_PRIORITY_DEFAULT, cancellable);
