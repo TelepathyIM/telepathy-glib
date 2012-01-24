@@ -12,8 +12,12 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>
 
+#include "tests/lib/simple-account.h"
 #include "tests/lib/simple-account-manager.h"
 #include "tests/lib/util.h"
+
+#define ACCOUNT1_PATH TP_ACCOUNT_OBJECT_PATH_BASE "badger/musher/account1"
+#define ACCOUNT2_PATH TP_ACCOUNT_OBJECT_PATH_BASE "badger/musher/account2"
 
 typedef struct {
     GFunc action;
@@ -30,6 +34,9 @@ typedef struct {
     gboolean prepared /* The result of prepare_finish */;
     guint timeout_id;
     GQueue *script /* A list of GAsyncReadyCallback */;
+
+    TpTestsSimpleAccount *account1_service;
+    TpTestsSimpleAccount *account2_service;
 
     GError *error /* initialized where needed */;
 } Test;
@@ -147,6 +154,16 @@ setup_service (Test *test,
       TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER, NULL);
   tp_dbus_daemon_register_object (test->dbus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
       test->service);
+
+  test->account1_service = tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_SIMPLE_ACCOUNT, NULL);
+  tp_dbus_daemon_register_object (test->dbus, ACCOUNT1_PATH,
+      test->account1_service);
+
+  test->account2_service = tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_SIMPLE_ACCOUNT, NULL);
+  tp_dbus_daemon_register_object (test->dbus, ACCOUNT2_PATH,
+      test->account2_service);
 }
 
 static void
@@ -185,6 +202,12 @@ teardown_service (Test *test,
                                &test->error));
   tp_dbus_daemon_unregister_object (test->dbus, test->service);
   g_object_unref (test->service);
+
+  tp_dbus_daemon_unregister_object (test->dbus, test->account1_service);
+  g_object_unref (test->account1_service);
+  tp_dbus_daemon_unregister_object (test->dbus, test->account2_service);
+  g_object_unref (test->account2_service);
+
   test->service = NULL;
   teardown (test, data);
 }
@@ -522,6 +545,92 @@ test_ensure (Test *test,
   script_append_action (test, assert_failed_action, NULL);
 }
 
+/* tp_account_manager_get_most_available_presence() tests */
+
+static void
+test_prepare_most_available (Test *test,
+    gconstpointer data,
+    guint nb_accounts)
+{
+  GPtrArray *accounts;
+
+  accounts = g_ptr_array_new_with_free_func (g_free);
+
+  if (nb_accounts >= 1)
+    g_ptr_array_add (accounts, g_strdup (ACCOUNT1_PATH));
+
+  if (nb_accounts >= 2)
+  g_ptr_array_add (accounts, g_strdup (ACCOUNT2_PATH));
+
+  tp_tests_simple_account_manager_set_valid_accounts (test->service, accounts);
+  g_ptr_array_unref (accounts);
+
+  test_prepare (test, data);
+  script_append_action (test, manager_new_action, NULL);
+  script_append_action (test, prepare_action, NULL);
+}
+
+typedef struct
+{
+  TpConnectionPresenceType presence;
+  gchar *status;
+  gchar *message;
+} Presence;
+
+static Presence *
+presence_new (TpConnectionPresenceType presence,
+    const gchar *status,
+    const gchar *message)
+{
+  Presence *p = g_slice_new (Presence);
+
+  p->presence = presence;
+  p->status = g_strdup (status);
+  p->message = g_strdup (message);
+  return p;
+}
+
+static void
+presence_free (Presence *p)
+{
+  g_free (p->status);
+  g_free (p->message);
+  g_slice_free (Presence, p);
+}
+
+static void
+check_presence_action (gpointer script_data,
+    gpointer user_data)
+{
+  Test *test = script_data;
+  Presence *p = user_data;
+  TpConnectionPresenceType presence;
+  gchar *status, *message;
+
+  presence = tp_account_manager_get_most_available_presence (test->am,
+      &status, &message);
+
+  g_assert_cmpuint (presence, ==, p->presence);
+  g_assert_cmpstr (status, ==, p->status);
+  g_assert_cmpstr (message, ==, p->message);
+
+  presence_free (p);
+  g_free (status);
+  g_free (message);
+
+  script_continue (script_data);
+}
+
+static void
+test_most_available_no_account (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  test_prepare_most_available (test, data, 0);
+
+  script_append_action (test, check_presence_action,
+      presence_new (TP_CONNECTION_PRESENCE_TYPE_OFFLINE, "offline", ""));
+}
+
 int
 main (int argc,
     char **argv)
@@ -545,5 +654,8 @@ main (int argc,
 
   g_test_add ("/am/ensure", Test, NULL, setup_service,
               test_ensure, teardown_service);
+
+  g_test_add ("/am/most-available/no-account", Test, NULL, setup_service,
+              test_most_available_no_account, teardown_service);
   return g_test_run ();
 }
