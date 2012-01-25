@@ -719,6 +719,38 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
       dtmf_props);
 }
 
+static const char *
+call_state_to_string (TpCallState state)
+{
+  const char *state_str = "INEXISTANT";
+  switch (state)
+    {
+    case TP_CALL_STATE_UNKNOWN:
+      state_str = "UNKNOWN";
+      break;
+    case TP_CALL_STATE_PENDING_INITIATOR:
+      state_str = "PENDING_INITIATOR";
+      break;
+    case TP_CALL_STATE_INITIALISING:
+      state_str = "INITIALISING";
+      break;
+    case TP_CALL_STATE_INITIALISED:
+      state_str = "INITIALISED";
+      break;
+    case TP_CALL_STATE_ACCEPTED:
+      state_str = "ACCEPTED";
+      break;
+    case TP_CALL_STATE_ACTIVE:
+      state_str = "ACTIVE";
+      break;
+    case TP_CALL_STATE_ENDED:
+      state_str = "ENDED";
+      break;
+    }
+
+  return state_str;
+}
+
 /**
  * tp_base_call_channel_set_state:
  * @self: a #TpBaseCallChannel
@@ -764,8 +796,14 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
     self->priv->flags &= ~TP_CALL_FLAG_LOCALLY_QUEUED;
 
   if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
-    tp_svc_channel_type_call_emit_call_state_changed (self, self->priv->state,
-        self->priv->flags, self->priv->reason, self->priv->details);
+    {
+      tp_svc_channel_type_call_emit_call_state_changed (self, self->priv->state,
+          self->priv->flags, self->priv->reason, self->priv->details);
+    }
+
+  DEBUG ("state changed from %s => %s",
+      call_state_to_string (old_state),
+      call_state_to_string (self->priv->state));
 
   /* Move from INITIALISING to INITIALISED if we are already connected */
   if (self->priv->state != old_state &&
@@ -779,6 +817,10 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
               self->priv->state, self->priv->flags, self->priv->reason,
               self->priv->details);
         }
+
+      DEBUG ("state changed from %s => %s (bumped)",
+          call_state_to_string (TP_CALL_STATE_INITIALISING),
+          call_state_to_string (self->priv->state));
     }
 
   /* Move from ACCEPTED to ACTIVE if we are already connected */
@@ -793,6 +835,10 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
               self->priv->state, self->priv->flags, self->priv->reason,
               self->priv->details);
         }
+
+      DEBUG ("state changed from %s => %s (bumped)",
+          call_state_to_string (TP_CALL_STATE_ACCEPTED),
+          call_state_to_string (self->priv->state));
     }
 }
 
