@@ -560,7 +560,7 @@ test_prepare_most_available (Test *test,
     g_ptr_array_add (accounts, g_strdup (ACCOUNT1_PATH));
 
   if (nb_accounts >= 2)
-  g_ptr_array_add (accounts, g_strdup (ACCOUNT2_PATH));
+    g_ptr_array_add (accounts, g_strdup (ACCOUNT2_PATH));
 
   tp_tests_simple_account_manager_set_valid_accounts (test->service, accounts);
   g_ptr_array_unref (accounts);
