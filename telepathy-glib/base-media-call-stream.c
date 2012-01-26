@@ -718,6 +718,36 @@ tp_base_media_call_stream_get_endpoints (TpBaseMediaCallStream *self)
   return self->priv->endpoints;
 }
 
+static const char *
+stream_flow_state_to_string (TpStreamFlowState state)
+{
+  const char *str = "INVALID";
+
+  switch (state)
+    {
+    case TP_STREAM_FLOW_STATE_STOPPED:
+      str = "STOPPED";
+      break;
+    case TP_STREAM_FLOW_STATE_PENDING_START:
+      str = "PENDING_START";
+      break;
+    case TP_STREAM_FLOW_STATE_PENDING_STOP:
+      str = "PENDING_STOP";
+      break;
+    case TP_STREAM_FLOW_STATE_STARTED:
+      str = "STARTED";
+      break;
+    case TP_STREAM_FLOW_STATE_PENDING_MUTE:
+      str = "PENDING_MUTE";
+      break;
+    case TP_STREAM_FLOW_STATE_MUTED:
+      str = "MUTED";
+      break;
+    }
+
+  return str;
+}
+
 static gboolean
 ignore_state_change (TpStreamFlowState old_state,
     TpStreamFlowState new_state)
@@ -740,6 +770,11 @@ set_sending_state (TpBaseMediaCallStream *self,
 {
   if (ignore_state_change (self->priv->sending_state, state))
     return;
+
+  DEBUG ("%s => %s (path: %s)",
+      stream_flow_state_to_string (self->priv->sending_state),
+      stream_flow_state_to_string (state),
+      tp_base_call_stream_get_object_path (TP_BASE_CALL_STREAM (self)));
 
   self->priv->sending_state = state;
   g_object_notify (G_OBJECT (self), "sending-state");
@@ -847,6 +882,11 @@ set_receiving_state (TpBaseMediaCallStream *self,
 {
   if (ignore_state_change (self->priv->receiving_state, state))
     return;
+
+  DEBUG ("%s => %s (path: %s)",
+      stream_flow_state_to_string (self->priv->receiving_state),
+      stream_flow_state_to_string (state),
+      tp_base_call_stream_get_object_path (TP_BASE_CALL_STREAM (self)));
 
   self->priv->receiving_state = state;
   g_object_notify (G_OBJECT (self), "receiving-state");
