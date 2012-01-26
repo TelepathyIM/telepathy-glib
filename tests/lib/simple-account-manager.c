@@ -15,6 +15,7 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/svc-account-manager.h>
+#include <telepathy-glib/util.h>
 
 static void account_manager_iface_init (gpointer, gpointer);
 
@@ -49,7 +50,7 @@ enum
 
 struct _TpTestsSimpleAccountManagerPrivate
 {
-  int dummy;
+  GPtrArray *valid_accounts;
 };
 
 static void
@@ -80,8 +81,15 @@ account_manager_iface_init (gpointer klass,
 static void
 tp_tests_simple_account_manager_init (TpTestsSimpleAccountManager *self)
 {
+  guint i;
+
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER, TpTestsSimpleAccountManagerPrivate);
+
+  self->priv->valid_accounts = g_ptr_array_new_with_free_func (g_free);
+
+  for (i = 0; VALID_ACCOUNTS[i] != NULL; i++)
+    g_ptr_array_add (self->priv->valid_accounts, g_strdup (VALID_ACCOUNTS[i]));
 }
 
 static void
@@ -90,6 +98,7 @@ tp_tests_simple_account_manager_get_property (GObject *object,
               GValue *value,
               GParamSpec *spec)
 {
+  TpTestsSimpleAccountManager *self = SIMPLE_ACCOUNT_MANAGER (object);
   GPtrArray *accounts;
   guint i = 0;
 
@@ -99,12 +108,7 @@ tp_tests_simple_account_manager_get_property (GObject *object,
       break;
 
     case PROP_VALID_ACCOUNTS:
-      accounts = g_ptr_array_new ();
-
-      for (i=0; VALID_ACCOUNTS[i] != NULL; i++)
-        g_ptr_array_add (accounts, g_strdup (VALID_ACCOUNTS[i]));
-
-      g_value_take_boxed (value, accounts);
+      g_value_set_boxed (value, self->priv->valid_accounts);
       break;
 
     case PROP_INVALID_ACCOUNTS:
@@ -120,6 +124,17 @@ tp_tests_simple_account_manager_get_property (GObject *object,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
       break;
   }
+}
+
+static void
+tp_tests_simple_account_manager_dispose (GObject *object)
+{
+  TpTestsSimpleAccountManager *self = SIMPLE_ACCOUNT_MANAGER (object);
+
+  tp_clear_pointer (&self->priv->valid_accounts, g_ptr_array_unref);
+
+  G_OBJECT_CLASS (tp_tests_simple_account_manager_parent_class)->dispose (
+      object);
 }
 
 /**
@@ -157,6 +172,7 @@ tp_tests_simple_account_manager_class_init (
 
   g_type_class_add_private (klass, sizeof (TpTestsSimpleAccountManagerPrivate));
   object_class->get_property = tp_tests_simple_account_manager_get_property;
+  object_class->dispose = tp_tests_simple_account_manager_dispose;
 
   param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
       "In this case we only implement AccountManager, so none.",
@@ -177,4 +193,14 @@ tp_tests_simple_account_manager_class_init (
   klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpTestsSimpleAccountManagerClass, dbus_props_class));
+}
+
+void
+tp_tests_simple_account_manager_set_valid_accounts (
+    TpTestsSimpleAccountManager *self,
+    GPtrArray *accounts)
+{
+  tp_clear_pointer (&self->priv->valid_accounts, g_ptr_array_unref);
+
+  self->priv->valid_accounts = g_ptr_array_ref (accounts);
 }

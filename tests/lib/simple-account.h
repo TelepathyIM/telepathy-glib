@@ -12,8 +12,9 @@
 #define __TP_TESTS_SIMPLE_ACCOUNT_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/dbus-properties-mixin.h>
 
+#include <telepathy-glib/connection.h>
+#include <telepathy-glib/dbus-properties-mixin.h>
 
 G_BEGIN_DECLS
 
@@ -50,6 +51,11 @@ GType tp_tests_simple_account_get_type (void);
 #define TP_TESTS_SIMPLE_ACCOUNT_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_SIMPLE_ACCOUNT, \
                               TpTestsSimpleAccountClass))
+
+void tp_tests_simple_account_set_presence (TpTestsSimpleAccount *self,
+    TpConnectionPresenceType presence,
+    const gchar *status,
+    const gchar *message);
 
 G_END_DECLS
 

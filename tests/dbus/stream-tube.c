@@ -728,6 +728,39 @@ run_tube_test (const char *test_path,
 }
 
 static void
+wait_tube_conn (Test *test,
+    GIOStream **alice_stream,
+    GIOStream **bob_stream)
+{
+  GSocketConnection *conn;
+  TpContact *contact;
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert (test->tube_conn != NULL);
+
+  conn = tp_stream_tube_connection_get_socket_connection (test->tube_conn);
+  contact = tp_stream_tube_connection_get_contact (test->tube_conn);
+
+  if (!tp_strdiff (tp_contact_get_identifier (contact), "bob"))
+    {
+      g_assert (*bob_stream == NULL);
+
+      *bob_stream = g_object_ref (conn);
+    }
+  else if (!tp_strdiff (tp_contact_get_identifier (contact), "alice"))
+    {
+      g_assert (*alice_stream == NULL);
+
+      *alice_stream = g_object_ref (conn);
+    }
+  else
+    {
+      g_assert_not_reached ();
+    }
+}
+
+static void
 test_offer_race (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
@@ -738,9 +771,7 @@ test_offer_race (Test *test,
   GSocketClient *client;
   TpHandle alice_handle, bob_handle;
   GIOStream *alice_cm_stream, *bob_cm_stream;
-  GIOStream *alice_stream, *bob_stream;
-  GSocketConnection *conn;
-  TpContact *contact;
+  GIOStream *alice_stream = NULL, *bob_stream = NULL;
 
   if (contexts[i].address_type == TP_SOCKET_ADDRESS_TYPE_UNIX &&
       contexts[i].access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS &&
@@ -821,27 +852,12 @@ test_offer_race (Test *test,
   tp_tests_stream_tube_channel_peer_connected (test->tube_chan_service,
       alice_cm_stream, alice_handle);
 
-  /* Bob connection is identified */
-  test->wait = 1;
-  g_main_loop_run (test->mainloop);
-  g_assert (test->tube_conn != NULL);
+  /* Both connections are received and identified */
+  wait_tube_conn (test, &alice_stream, &bob_stream);
+  wait_tube_conn (test, &alice_stream, &bob_stream);
 
-  conn = tp_stream_tube_connection_get_socket_connection (test->tube_conn);
-  bob_stream = g_object_ref (conn);
-  contact = tp_stream_tube_connection_get_contact (test->tube_conn);
-
-  g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "bob");
-
-  /* Alice connection is identified */
-  test->wait = 1;
-  g_main_loop_run (test->mainloop);
-  g_assert (test->tube_conn != NULL);
-
-  conn = tp_stream_tube_connection_get_socket_connection (test->tube_conn);
-  alice_stream = g_object_ref (conn);
-  contact = tp_stream_tube_connection_get_contact (test->tube_conn);
-
-  g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "alice");
+  g_assert (alice_stream != NULL);
+  g_assert (bob_stream != NULL);
 
   /* Check that the streams have been mapped to the right contact */
   use_tube_with_streams (test, alice_stream, alice_cm_stream);

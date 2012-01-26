@@ -68,7 +68,9 @@ enum
 
 struct _TpTestsSimpleAccountPrivate
 {
-  gpointer unused;
+  TpConnectionPresenceType presence;
+  gchar *presence_status;
+  gchar *presence_msg;
 };
 
 static void
@@ -87,6 +89,10 @@ tp_tests_simple_account_init (TpTestsSimpleAccount *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TESTS_TYPE_SIMPLE_ACCOUNT,
       TpTestsSimpleAccountPrivate);
+
+  self->priv->presence = TP_CONNECTION_PRESENCE_TYPE_AWAY;
+  self->priv->presence_status = g_strdup ("currently-away");
+  self->priv->presence_msg = g_strdup ("this is my CurrentPresence");
 }
 
 /* you may have noticed this is not entirely realistic */
@@ -98,6 +104,7 @@ tp_tests_simple_account_get_property (GObject *object,
               GValue *value,
               GParamSpec *spec)
 {
+  TpTestsSimpleAccount *self = TP_TESTS_SIMPLE_ACCOUNT (object);
   GValue identifier = { 0, };
 
   g_value_init (&identifier, G_TYPE_STRING);
@@ -146,9 +153,9 @@ tp_tests_simple_account_get_property (GObject *object,
       break;
     case PROP_CURRENT_PRESENCE:
       g_value_take_boxed (value, tp_value_array_build (3,
-            G_TYPE_UINT, TP_CONNECTION_PRESENCE_TYPE_AWAY,
-            G_TYPE_STRING, "currently-away",
-            G_TYPE_STRING, "this is my CurrentPresence",
+            G_TYPE_UINT, self->priv->presence,
+            G_TYPE_STRING, self->priv->presence_status,
+            G_TYPE_STRING, self->priv->presence_msg,
             G_TYPE_INVALID));
       break;
     case PROP_REQUESTED_PRESENCE:
@@ -191,6 +198,17 @@ tp_tests_simple_account_get_property (GObject *object,
   }
 
   g_value_unset (&identifier);
+}
+
+static void
+tp_tests_simple_account_finalize (GObject *object)
+{
+  TpTestsSimpleAccount *self = TP_TESTS_SIMPLE_ACCOUNT (object);
+
+  g_free (self->priv->presence_status);
+  g_free (self->priv->presence_msg);
+
+  G_OBJECT_CLASS (tp_tests_simple_account_parent_class)->finalize (object);
 }
 
 /**
@@ -260,6 +278,7 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpTestsSimpleAccountPrivate));
   object_class->get_property = tp_tests_simple_account_get_property;
+  object_class->finalize = tp_tests_simple_account_finalize;
 
   param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
       "In this case we only implement Account, so none.",
@@ -402,4 +421,31 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
   klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpTestsSimpleAccountClass, dbus_props_class));
+}
+
+void
+tp_tests_simple_account_set_presence (TpTestsSimpleAccount *self,
+    TpConnectionPresenceType presence,
+    const gchar *status,
+    const gchar *message)
+{
+  GHashTable *props;
+  GValueArray *v;
+
+  g_free (self->priv->presence_status);
+  g_free (self->priv->presence_msg);
+
+  self->priv->presence = presence;
+  self->priv->presence_status = g_strdup (status);
+  self->priv->presence_msg = g_strdup (message);
+
+  g_object_get (self, "current-presence", &v, NULL);
+
+  props = tp_asv_new (
+      "CurrentPresence", TP_STRUCT_TYPE_SIMPLE_PRESENCE, v,
+      NULL);
+
+  tp_svc_account_emit_account_property_changed (self, props);
+
+  g_boxed_free (TP_STRUCT_TYPE_SIMPLE_PRESENCE, v);
 }
