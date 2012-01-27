@@ -9,9 +9,9 @@ AC_PREREQ([2.59])
 #   make the release, tag it
 #   set nano_version to 1
 
-m4_define([tp_glib_major_version], [0])
-m4_define([tp_glib_minor_version], [17])
-m4_define([tp_glib_micro_version], [3])
+m4_define([tp_glib_major_version], [1])
+m4_define([tp_glib_minor_version], [0])
+m4_define([tp_glib_micro_version], [0])
 m4_define([tp_glib_nano_version], [1])
 
 # If library source has changed since last release, increment revision
