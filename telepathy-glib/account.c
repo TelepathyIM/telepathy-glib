@@ -2228,7 +2228,7 @@ tp_account_get_icon_name (TpAccount *account)
  * via tp_connection_manager_get_protocol() and
  * tp_connection_manager_protocol_get_param(). Well-known parameters are
  * listed
- * <ulink url="http://telepathy.freedesktop.org/spec/org.freedesktop.Telepathy.ConnectionManager.html#org.freedesktop.Telepathy.ConnectionManager.RequestConnection">in
+ * <ulink url="http://telepathy.freedesktop.org/spec/im.telepathy1.ConnectionManager.html#im.telepathy1.ConnectionManager.RequestConnection">in
  * the Telepathy D-Bus Interface Specification</ulink>.
  *
  * Returns: (transfer none) (element-type utf8 GObject.Value): the hash table of

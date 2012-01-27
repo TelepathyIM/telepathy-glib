@@ -855,7 +855,7 @@ parse_parameters (const TpCMParamSpec *paramspec,
  * tp_base_connection_manager_request_connection
  *
  * Implements D-Bus method RequestConnection
- * on interface org.freedesktop.Telepathy.ConnectionManager
+ * on interface im.telepathy1.ConnectionManager
  *
  * @error: Used to return a pointer to a GError detailing any error
  *         that occurred, D-Bus will throw the error only if this

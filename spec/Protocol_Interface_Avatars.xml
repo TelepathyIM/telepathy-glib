@@ -20,9 +20,9 @@
       02110-1301, USA.</p>
   </tp:license>
 
-  <interface name="org.freedesktop.Telepathy.Protocol.Interface.Avatars">
+  <interface name="im.telepathy1.Protocol.Interface.Avatars1">
     <tp:added version="0.21.5">(as stable API)</tp:added>
-    <tp:requires interface="org.freedesktop.Telepathy.Protocol"/>
+    <tp:requires interface="im.telepathy1.Protocol"/>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>An interface for protocols where it might be possible to set the
@@ -32,9 +32,9 @@
       <tp:rationale>
         <p>If the avatar requirements cannot be discovered while offline,
           it's impossible to avoid setting the <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy"
+            namespace="im.telepathy1"
             >Account</tp:dbus-ref>'s <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Account.Interface.Avatar"
+            namespace="im.telepathy1.Account.Interface.Avatar1"
             >Avatar</tp:dbus-ref> property to an unsupported avatar.</p>
       </tp:rationale>
 
@@ -52,7 +52,7 @@
         <code>.manager</code> file:</p>
 
 <pre>[Protocol jabber]
-Interfaces=org.freedesktop.Telepathy.Protocol.Interface.Avatars;
+Interfaces=im.telepathy1.Protocol.Interface.Avatars;
 param-account=s required
 param-password=s required
 SupportedAvatarMIMETypes=image/png;image/jpeg;image/gif;
@@ -71,8 +71,8 @@ MaximumAvatarBytes=8192
       type="as" access="read" tp:immutable="yes">
       <tp:docstring>
         The expected value of the <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy"
-          >Connection.Interface.Avatars.SupportedAvatarMIMETypes</tp:dbus-ref>
+          namespace="im.telepathy1"
+          >Connection.Interface.Avatars1.SupportedAvatarMIMETypes</tp:dbus-ref>
         property on connections to this protocol.
       </tp:docstring>
     </property>
@@ -82,8 +82,8 @@ MaximumAvatarBytes=8192
       type="u" access="read" tp:immutable="yes">
       <tp:docstring>
         The expected value of the <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy"
-          >Connection.Interface.Avatars.MinimumAvatarHeight</tp:dbus-ref>
+          namespace="im.telepathy1"
+          >Connection.Interface.Avatars1.MinimumAvatarHeight</tp:dbus-ref>
         property on connections to this protocol.
 </tp:docstring>
     </property>
@@ -93,8 +93,8 @@ MaximumAvatarBytes=8192
       type="u" access="read" tp:immutable="yes">
       <tp:docstring>
         The expected value of the <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy"
-          >Connection.Interface.Avatars.MinimumAvatarWidth</tp:dbus-ref>
+          namespace="im.telepathy1"
+          >Connection.Interface.Avatars1.MinimumAvatarWidth</tp:dbus-ref>
         property on connections to this protocol.
       </tp:docstring>
     </property>
@@ -104,8 +104,8 @@ MaximumAvatarBytes=8192
       type="u" access="read" tp:immutable="yes">
       <tp:docstring>
         The expected value of the <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy"
-          >Connection.Interface.Avatars.RecommendedAvatarHeight</tp:dbus-ref>
+          namespace="im.telepathy1"
+          >Connection.Interface.Avatars1.RecommendedAvatarHeight</tp:dbus-ref>
         property on connections to this protocol.
       </tp:docstring>
     </property>
@@ -115,8 +115,8 @@ MaximumAvatarBytes=8192
       type="u" access="read" tp:immutable="yes">
       <tp:docstring>
         The expected value of the <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy"
-          >Connection.Interface.Avatars.RecommendedAvatarWidth</tp:dbus-ref>
+          namespace="im.telepathy1"
+          >Connection.Interface.Avatars1.RecommendedAvatarWidth</tp:dbus-ref>
         property on connections to this protocol.
       </tp:docstring>
     </property>
@@ -126,8 +126,8 @@ MaximumAvatarBytes=8192
       type="u" access="read" tp:immutable="yes">
       <tp:docstring>
         The expected value of the <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy"
-          >Connection.Interface.Avatars.MaximumAvatarHeight</tp:dbus-ref>
+          namespace="im.telepathy1"
+          >Connection.Interface.Avatars1.MaximumAvatarHeight</tp:dbus-ref>
         property on connections to this protocol.
       </tp:docstring>
     </property>
@@ -137,8 +137,8 @@ MaximumAvatarBytes=8192
       type="u" access="read" tp:immutable="yes">
       <tp:docstring>
         The expected value of the <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy"
-          >Connection.Interface.Avatars.MaximumAvatarWidth</tp:dbus-ref>
+          namespace="im.telepathy1"
+          >Connection.Interface.Avatars1.MaximumAvatarWidth</tp:dbus-ref>
         property on connections to this protocol.
       </tp:docstring>
     </property>
@@ -148,8 +148,8 @@ MaximumAvatarBytes=8192
       type="u" access="read" tp:immutable="yes">
       <tp:docstring>
         The expected value of the <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy"
-          >Connection.Interface.Avatars.MaximumAvatarBytes</tp:dbus-ref>
+          namespace="im.telepathy1"
+          >Connection.Interface.Avatars1.MaximumAvatarBytes</tp:dbus-ref>
         property on connections to this protocol.
       </tp:docstring>
     </property>

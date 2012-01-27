@@ -20,8 +20,8 @@
       02110-1301, USA.</p>
   </tp:license>
 
-  <interface name="org.freedesktop.Telepathy.Channel.Interface.Subject2">
-    <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
+  <interface name="im.telepathy1.Channel.Interface.Subject1">
+    <tp:requires interface="im.telepathy1.Channel"/>
     <tp:added version="0.24.0">(version 2)</tp:added>
     <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal"
                 value="true"/>
@@ -30,7 +30,7 @@
       <p>An interface channels can implement to support subjects. Most
         of the time this will be implemented by channels implementing
         the <tp:dbus-ref
-        namespace="ofdT.Channel.Interface">Room2</tp:dbus-ref>
+        namespace="imt1.Channel.Interface">Room1</tp:dbus-ref>
         interface, but some protocols support subjects in 1-to-1 chats
         (such as XMPP). Note that this interface is not restricted to
         Text channels, and can also be used on Call channels.</p>
@@ -51,8 +51,8 @@
           further changes by other users or the server.</p>
       </tp:docstring>
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotImplemented"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
+        <tp:error name="im.telepathy1.Error.NotImplemented"/>
+        <tp:error name="im.telepathy1.Error.PermissionDenied"/>
       </tp:possible-errors>
     </method>
 

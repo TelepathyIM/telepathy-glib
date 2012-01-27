@@ -32,7 +32,7 @@ G_BEGIN_DECLS
  * The prefix for a connection manager's bus name, to which the CM's name
  * (e.g. "gabble") should be appended.
  */
-#define TP_CM_BUS_NAME_BASE    "org.freedesktop.Telepathy.ConnectionManager."
+#define TP_CM_BUS_NAME_BASE    "im.telepathy1.ConnectionManager."
 
 /**
  * TP_CM_OBJECT_PATH_BASE:
@@ -40,7 +40,7 @@ G_BEGIN_DECLS
  * The prefix for a connection manager's object path, to which the CM's name
  * (e.g. "gabble") should be appended.
  */
-#define TP_CM_OBJECT_PATH_BASE "/org/freedesktop/Telepathy/ConnectionManager/"
+#define TP_CM_OBJECT_PATH_BASE "/im/telepathy1/ConnectionManager/"
 
 /**
  * TP_CONN_BUS_NAME_BASE:
@@ -49,7 +49,7 @@ G_BEGIN_DECLS
  * (e.g. "gabble"), the protocol (e.g. "jabber") and an element or sequence
  * of elements representing the account should be appended.
  */
-#define TP_CONN_BUS_NAME_BASE "org.freedesktop.Telepathy.Connection."
+#define TP_CONN_BUS_NAME_BASE "im.telepathy1.Connection."
 
 /**
  * TP_CONN_OBJECT_PATH_BASE:
@@ -58,56 +58,56 @@ G_BEGIN_DECLS
  * (e.g. "gabble"), the protocol (e.g. "jabber") and an element or sequence
  * of elements representing the account should be appended.
  */
-#define TP_CONN_OBJECT_PATH_BASE "/org/freedesktop/Telepathy/Connection/"
+#define TP_CONN_OBJECT_PATH_BASE "/im/telepathy1/Connection/"
 
 /**
  * TP_ACCOUNT_MANAGER_BUS_NAME:
  *
  * The account manager's well-known bus name
  */
-#define TP_ACCOUNT_MANAGER_BUS_NAME "org.freedesktop.Telepathy.AccountManager"
+#define TP_ACCOUNT_MANAGER_BUS_NAME "im.telepathy1.AccountManager"
 
 /**
  * TP_ACCOUNT_MANAGER_OBJECT_PATH:
  *
  * The account manager's standard object path
  */
-#define TP_ACCOUNT_MANAGER_OBJECT_PATH "/org/freedesktop/Telepathy/AccountManager"
+#define TP_ACCOUNT_MANAGER_OBJECT_PATH "/im/telepathy1/AccountManager"
 
 /**
  * TP_ACCOUNT_OBJECT_PATH_BASE:
  *
  * The common prefix of the object path for all Account objects.
  */
-#define TP_ACCOUNT_OBJECT_PATH_BASE "/org/freedesktop/Telepathy/Account/"
+#define TP_ACCOUNT_OBJECT_PATH_BASE "/im/telepathy1/Account/"
 
 /**
  * TP_CHANNEL_DISPATCHER_BUS_NAME:
  *
  * The channel dispatcher's well-known bus name
  */
-#define TP_CHANNEL_DISPATCHER_BUS_NAME "org.freedesktop.Telepathy.ChannelDispatcher"
+#define TP_CHANNEL_DISPATCHER_BUS_NAME "im.telepathy1.ChannelDispatcher"
 
 /**
  * TP_CHANNEL_DISPATCHER_OBJECT_PATH:
  *
  * The channel dispatcher's standard object path
  */
-#define TP_CHANNEL_DISPATCHER_OBJECT_PATH "/org/freedesktop/Telepathy/ChannelDispatcher"
+#define TP_CHANNEL_DISPATCHER_OBJECT_PATH "/im/telepathy1/ChannelDispatcher"
 
 /**
  * TP_CLIENT_BUS_NAME_BASE:
  *
  * The common prefix of the well-known bus name for any Telepathy Client.
  */
-#define TP_CLIENT_BUS_NAME_BASE "org.freedesktop.Telepathy.Client."
+#define TP_CLIENT_BUS_NAME_BASE "im.telepathy1.Client."
 
 /**
  * TP_CLIENT_OBJECT_PATH_BASE:
  *
  * The common prefix of the well-known object path for any Telepathy Client.
  */
-#define TP_CLIENT_OBJECT_PATH_BASE "/org/freedesktop/Telepathy/Client/"
+#define TP_CLIENT_OBJECT_PATH_BASE "/im/telepathy1/Client/"
 
 /**
  * TP_USER_ACTION_TIME_NOT_USER_ACTION:

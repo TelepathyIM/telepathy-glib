@@ -20,11 +20,11 @@
       02110-1301, USA.</p>
   </tp:license>
   <interface
-    name="org.freedesktop.Telepathy.Channel.Interface.Conference">
+    name="im.telepathy1.Channel.Interface.Conference1">
     <tp:added version="0.19.13">(as stable API)</tp:added>
-    <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
+    <tp:requires interface="im.telepathy1.Channel"/>
     <tp:requires
-      interface="org.freedesktop.Telepathy.Channel.Interface.Group"/>
+      interface="im.telepathy1.Channel.Interface.Group1"/>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>An interface for multi-user conference channels that can "continue
@@ -44,13 +44,13 @@
 
       <p>Existing channels are upgraded by requesting a new channel of the same
         <tp:dbus-ref
-        namespace="org.freedesktop.Telepathy.Channel">ChannelType</tp:dbus-ref>,
+        namespace="im.telepathy1.Channel">ChannelType</tp:dbus-ref>,
         listing the channels to be merged into the new conference in the
         <tp:member-ref>InitialChannels</tp:member-ref> property of the request.
         If <tp:member-ref>InitialInviteeHandles</tp:member-ref> and
         <tp:member-ref>InitialInviteeIDs</tp:member-ref> are
         <var>Allowed_Properties</var> in <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy.Connection.Interface.Requests">RequestableChannelClasses</tp:dbus-ref>,
+          namespace="im.telepathy1.Connection.Interface.Requests">RequestableChannelClasses</tp:dbus-ref>,
         ad-hoc conferences to a set of contacts may be created by requesting a
         channel, specifying
         <tp:member-ref>InitialInviteeHandles</tp:member-ref> and/or
@@ -60,15 +60,15 @@
         upgrade a channel to a conference and invite others to join it.</p>
 
       <p>Channels with this interface MAY also implement <tp:dbus-ref
-        namespace='ofdT.Channel.Interface'>MergeableConference.DRAFT</tp:dbus-ref>
+        namespace='imt1.Channel.Interface'>MergeableConference1</tp:dbus-ref>
         to support merging more 1-1 channels into an ongoing conference.
         Similarly, 1-1 channels MAY implement <tp:dbus-ref
-        namespace='ofdT.Channel.Interface'>Splittable.DRAFT</tp:dbus-ref> to
+        namespace='imt1.Channel.Interface'>Splittable1</tp:dbus-ref> to
         support being broken out of a Conference channel.</p>
 
       <p>The <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy.Channel.Interface"
-          >Group</tp:dbus-ref> interface on Conference channels MAY use
+          namespace="im.telepathy1.Channel.Interface"
+          >Group1</tp:dbus-ref> interface on Conference channels MAY use
           channel-specific handles for participants; clients SHOULD support
           both Conferences that have channel-specific handles, and those that
           do not.</p>
@@ -114,8 +114,8 @@
         into a single conference call by calling:</p>
 
       <blockquote>
-        <code><tp:dbus-ref namespace="org.freedesktop.Telepathy.Connection.Interface.Requests">CreateChannel</tp:dbus-ref>({
-            ...<tp:dbus-ref namespace="org.freedesktop.Telepathy.Channel">ChannelType</tp:dbus-ref>: ...Call,
+        <code><tp:dbus-ref namespace="im.telepathy1.Connection.Interface.Requests">CreateChannel</tp:dbus-ref>({
+            ...<tp:dbus-ref namespace="im.telepathy1.Channel">ChannelType</tp:dbus-ref>: ...Call,
             ...<tp:member-ref>InitialChannels</tp:member-ref>: [C1, C2]
           })</code>
       </blockquote>
@@ -123,7 +123,7 @@
       <p>which returns a new channel <var>Cn</var> implementing the conference
         interface. (As a quirk of GSM, both 1-1 will cease to function normally
         until they are <tp:dbus-ref
-          namespace="ofdT.Channel.Interface.Splittable.DRAFT">Split</tp:dbus-ref>
+          namespace="imt1.Channel.Interface.Splittable1">Split</tp:dbus-ref>
         from the conference, or the conference ends.)</p>
 
       <p>An XMPP 1-1 conversation <var>C3</var> (with
@@ -153,10 +153,10 @@
         the room), call:</p>
 
       <blockquote>
-        <code><tp:dbus-ref namespace="org.freedesktop.Telepathy.Connection.Interface.Requests">EnsureChannel</tp:dbus-ref>({
+        <code><tp:dbus-ref namespace="im.telepathy1.Connection.Interface.Requests">EnsureChannel</tp:dbus-ref>({
             ...ChannelType: ...Text,
-            ...<tp:dbus-ref namespace="org.freedesktop.Telepathy.Channel">TargetHandleType</tp:dbus-ref>: ...Room,
-            ...<tp:dbus-ref namespace="org.freedesktop.Telepathy.Channel">TargetID</tp:dbus-ref>: 'telepathy@conf.example.com',
+            ...<tp:dbus-ref namespace="im.telepathy1.Channel">TargetHandleType</tp:dbus-ref>: ...Room,
+            ...<tp:dbus-ref namespace="im.telepathy1.Channel">TargetID</tp:dbus-ref>: 'telepathy@conf.example.com',
             ...<tp:member-ref>InitialChannels</tp:member-ref>: [C3]
           })</code>
       </blockquote>
@@ -189,7 +189,7 @@
           (maybe it transformed the existing tab into the group chat window,
           and so there'd be no UI element still around to show new messages),
           then it should just <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy.Channel">Close</tp:dbus-ref> the
+          namespace="im.telepathy1.Channel">Close</tp:dbus-ref> the
           old 1-1 channel; it'll respawn if necessary.</p>
       </tp:rationale>
 
@@ -204,7 +204,7 @@
         TargetHandle of C1 into Cn), then immediately inviting the
         TargetHandle of C2, the TargetHandle of C3, etc. into Cn as well.</p>
 
-      <h4>Sample <tp:dbus-ref namespace='ofdT.Connection.Interface.Requests'
+      <h4>Sample <tp:dbus-ref namespace='imt1.Connection.Interface.Requests'
                              >RequestableChannelClasses</tp:dbus-ref></h4>
 
       <p>A GSM connection might advertise the following channel class for
@@ -213,11 +213,11 @@
       <blockquote>
         <code>
 ( Fixed = {<br/>
-    ...<tp:dbus-ref namespace='ofdT.Channel'>ChannelType</tp:dbus-ref>:
-      ...<tp:dbus-ref namespace='ofdT.Channel.Type'>StreamedMedia</tp:dbus-ref><br/>
+    ...<tp:dbus-ref namespace='imt1.Channel'>ChannelType</tp:dbus-ref>:
+      ...<tp:dbus-ref namespace='imt1.Channel.Type'>Call1</tp:dbus-ref><br/>
   },<br/>
   Allowed = [ <tp:member-ref>InitialChannels</tp:member-ref>,
-              <tp:dbus-ref namespace='ofdT.Channel.Type.StreamedMedia'
+              <tp:dbus-ref namespace='imt1.Channel.Type.Call1'
                           >InitialAudio</tp:dbus-ref>
             ]<br/>
 )
@@ -235,8 +235,8 @@
       <blockquote>
         <code>
 ( Fixed = {<br/>
-    ...<tp:dbus-ref namespace='ofdT.Channel'>ChannelType</tp:dbus-ref>:
-      ...<tp:dbus-ref namespace='ofdT.Channel.Type'>Text</tp:dbus-ref><br/>
+    ...<tp:dbus-ref namespace='imt1.Channel'>ChannelType</tp:dbus-ref>:
+      ...<tp:dbus-ref namespace='imt1.Channel.Type'>Text</tp:dbus-ref><br/>
   },<br/>
   Allowed = [ <tp:member-ref>InitialChannels</tp:member-ref>,
               <tp:member-ref>InitialInviteeHandles</tp:member-ref>,
@@ -245,13 +245,13 @@
             ]<br/>
 ),<br/>
 ( Fixed = {<br/>
-    ...<tp:dbus-ref namespace='ofdT.Channel'>ChannelType</tp:dbus-ref>:
-      ...<tp:dbus-ref namespace='ofdT.Channel.Type'>Text</tp:dbus-ref>,<br/>
-    ...<tp:dbus-ref namespace='ofdT.Channel'>TargetHandleType</tp:dbus-ref>:
+    ...<tp:dbus-ref namespace='imt1.Channel'>ChannelType</tp:dbus-ref>:
+      ...<tp:dbus-ref namespace='imt1.Channel.Type'>Text</tp:dbus-ref>,<br/>
+    ...<tp:dbus-ref namespace='imt1.Channel'>TargetHandleType</tp:dbus-ref>:
       Room<br/>
   },<br/>
-  Allowed = [ <tp:dbus-ref namespace='ofdT.Channel'>TargetHandle</tp:dbus-ref>,
-              <tp:dbus-ref namespace='ofdT.Channel'>TargetID</tp:dbus-ref>,<br/>
+  Allowed = [ <tp:dbus-ref namespace='imt1.Channel'>TargetHandle</tp:dbus-ref>,
+              <tp:dbus-ref namespace='imt1.Channel'>TargetID</tp:dbus-ref>,<br/>
               <tp:member-ref>InitialChannels</tp:member-ref>,
               <tp:member-ref>InitialInviteeHandles</tp:member-ref>,
               <tp:member-ref>InitialInviteeIDs</tp:member-ref>,
@@ -272,11 +272,11 @@
       access="read" type="ao">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The individual <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy">Channel</tp:dbus-ref>s that
+            namespace="im.telepathy1">Channel</tp:dbus-ref>s that
           are continued by this conference, which have the same <tp:dbus-ref
-              namespace="org.freedesktop.Telepathy.Channel"
+              namespace="im.telepathy1.Channel"
               >ChannelType</tp:dbus-ref> as this one, but with <tp:dbus-ref
-              namespace="org.freedesktop.Telepathy.Channel"
+              namespace="im.telepathy1.Channel"
               >TargetHandleType</tp:dbus-ref> = CONTACT.</p>
 
         <p>This property MUST NOT be requestable; instead, the
@@ -288,7 +288,7 @@
             <tp:member-ref>InitialInviteeHandles</tp:member-ref> and
             <tp:member-ref>InitialInviteeIDs</tp:member-ref>, rather than
             requesting <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Channel.Interface">Group.Members</tp:dbus-ref>
+            namespace="im.telepathy1.Channel.Interface">Group1.Members</tp:dbus-ref>
             and some hypothetical ID version of that property.</p>
        </tp:rationale>
 
@@ -311,12 +311,12 @@
 
       <arg name="Channel_Specific_Handle" type="u" tp:type="Contact_Handle">
         <tp:docstring>A new channel-specific handle for the <tp:dbus-ref
-          namespace="ofdT.Channel">TargetHandle</tp:dbus-ref> of
+          namespace="imt1.Channel">TargetHandle</tp:dbus-ref> of
           <var>Channel</var>, as will appear in
           <tp:member-ref>OriginalChannels</tp:member-ref>, or <tt>0</tt> if a
           global handle is used for
           <var>Channel</var>'s TargetHandle on the <tp:dbus-ref
-            namespace="ofdT.Channel.Interface">Group</tp:dbus-ref> interface
+            namespace="imt1.Channel.Interface">Group1</tp:dbus-ref> interface
           of this channel.</tp:docstring>
       </arg>
 
@@ -331,11 +331,11 @@
         <p>Emitted when a channel is removed from the value of
           <tp:member-ref>Channels</tp:member-ref>, either because it closed
           or because it was split using the <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Channel.Interface"
-            >Splittable.DRAFT.Split</tp:dbus-ref> method.</p>
+            namespace="im.telepathy1.Channel.Interface"
+            >Splittable1.Split</tp:dbus-ref> method.</p>
 
         <p>If a channel is removed because it was closed, <tp:dbus-ref
-          namespace='ofdT.Channel'>Closed</tp:dbus-ref> should be emitted
+          namespace='imt1.Channel'>Closed</tp:dbus-ref> should be emitted
           before this signal.</p>
       </tp:docstring>
 
@@ -348,8 +348,8 @@
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           Additional information about the removal, which may include
           the same well-known keys as the Details argument of
-          <tp:dbus-ref namespace="ofdT.Channel.Interface.Group"
-            >MembersChangedDetailed</tp:dbus-ref>, with the same semantics.
+          <tp:dbus-ref namespace="imt1.Channel.Interface.Group1"
+            >MembersChanged</tp:dbus-ref>, with the same semantics.
         </tp:docstring>
       </arg>
     </signal>
@@ -366,7 +366,7 @@
           <tp:member-ref>InitialInviteeHandles</tp:member-ref> and
           <tp:member-ref>InitialInviteeIDs</tp:member-ref> are
           <var>Allowed_Properties</var> in <tp:dbus-ref
-            namespace='ofdT.Connection.Interface.Requests'
+            namespace='imt1.Connection.Interface.Requests'
             >RequestableChannelClasses</tp:dbus-ref>, then requests with zero
           or one channel paths SHOULD also succeed; otherwise, clients SHOULD
           NOT make requests with zero or one paths for this property.</p>
@@ -385,8 +385,8 @@
           the protocol, the Channels MAY be placed in a "frozen" state by placing
           them in this property's value or by calling
           <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Channel.Interface"
-            >MergeableConference.DRAFT.Merge</tp:dbus-ref> on them.</p>
+            namespace="im.telepathy1.Channel.Interface"
+            >MergeableConference1.Merge</tp:dbus-ref> on them.</p>
 
         <tp:rationale>
           <p>In Jingle, nothing special will happen to merged calls. UIs MAY
@@ -396,8 +396,8 @@
 
           <p>In GSM, the calls that are merged go into a state similar to
             Hold, but they cannot be unheld, only split from the conference
-            call using <tp:dbus-ref namespace="org.freedesktop.Telepathy"
-              >Channel.Interface.Splittable.DRAFT.Split</tp:dbus-ref>.</p>
+            call using <tp:dbus-ref namespace="im.telepathy1"
+              >Channel.Interface.Splittable1.Split</tp:dbus-ref>.</p>
         </tp:rationale>
 
         <p>Depending on the protocol, it might be signalled to remote users
@@ -428,7 +428,7 @@
           (as opposed to merging several channels into one new conference
           channel), this property SHOULD be requestable, and appear in the allowed
           properties in <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Connection.Interface.Requests"
+            namespace="im.telepathy1.Connection.Interface.Requests"
             >RequestableChannelClasses</tp:dbus-ref>. Otherwise, this property
           SHOULD NOT be requestable, and its value SHOULD always be the empty
           list.</p>
@@ -442,8 +442,8 @@
 
         <p>If included in a request, the given contacts are automatically
           invited into the new channel, as if they had been added with
-          <tp:dbus-ref namespace="org.freedesktop.Telepathy.Channel.Interface"
-            >Group.AddMembers</tp:dbus-ref>(InitialInviteeHandles,
+          <tp:dbus-ref namespace="im.telepathy1.Channel.Interface"
+            >Group1.AddMembers</tp:dbus-ref>(InitialInviteeHandles,
           <tp:member-ref>InvitationMessage</tp:member-ref>) immediately after
           the channel was created.</p>
 
@@ -454,8 +454,8 @@
         </tp:rationale>
 
         <p>If the local user was not the initiator of this channel, the
-          <tp:dbus-ref namespace="org.freedesktop.Telepathy.Channel.Interface"
-            >Group.SelfHandle</tp:dbus-ref> SHOULD appear in the value of this
+          <tp:dbus-ref namespace="im.telepathy1.Channel.Interface"
+            >Group1.SelfHandle</tp:dbus-ref> SHOULD appear in the value of this
           property, together with any other contacts invited at the same time
           (if that information is known).</p>
 
@@ -521,7 +521,7 @@
 
         <p>This property SHOULD be requestable, and appear in the allowed
           properties in <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Connection.Interface.Requests"
+            namespace="im.telepathy1.Connection.Interface.Requests"
             >RequestableChannelClasses</tp:dbus-ref>, in protocols where
           invitations can have an accompanying text message.</p>
 
@@ -546,9 +546,9 @@
           a corporate switchboard. This is represented using channel-specific
           handles; whether or not a channel uses channel-specific handles is
           reported in <tp:dbus-ref
-          namespace='ofdT.Channel.Interface'>Group.GroupFlags</tp:dbus-ref>.
+          namespace='imt1.Channel.Interface'>Group1.GroupFlags</tp:dbus-ref>.
           The <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Channel.Interface">Group.HandleOwners</tp:dbus-ref>
+            namespace="im.telepathy1.Channel.Interface">Group1.HandleOwners</tp:dbus-ref>
           property specifies the mapping from opaque channel-specific handles
           to actual numbers; this property specifies the original 1-1 channel
           corresponding to each channel-specific handle in the conference.</p>
@@ -577,13 +577,13 @@
         <blockquote>
           <code>{<br/>
             ...<tp:dbus-ref
-              namespace="ofdT.Channel.Interface">Group.GroupFlags</tp:dbus-ref>:
+              namespace="imt1.Channel.Interface">Group1.GroupFlags</tp:dbus-ref>:
                 Channel_Specific_Handles | (other flags),<br/>
             ...<tp:dbus-ref
-              namespace="ofdT.Channel.Interface">Group.Members</tp:dbus-ref>:
+              namespace="imt1.Channel.Interface">Group1.Members</tp:dbus-ref>:
                 [self_handle, s, j],<br/>
             ...<tp:dbus-ref
-              namespace="ofdT.Channel.Interface">Group.HandleOwners</tp:dbus-ref>:
+              namespace="imt1.Channel.Interface">Group1.HandleOwners</tp:dbus-ref>:
                 { s: h, j: h },<br/>
             ...<tp:member-ref>InitialChannels</tp:member-ref>:
                 ['/call/to/simon', '/call/to/jonny'],<br/>

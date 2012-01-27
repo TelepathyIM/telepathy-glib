@@ -18,9 +18,8 @@
       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,
       USA.</p>
   </tp:license>
-  <interface name="org.freedesktop.Telepathy.Connection.Interface.ContactBlocking">
-    <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
-    <tp:requires interface="org.freedesktop.Telepathy.Connection.Interface.ContactList"/>
+  <interface name="im.telepathy1.Connection.Interface.ContactBlocking1">
+    <tp:requires interface="im.telepathy1.Connection"/>
     <tp:added version='0.21.13'>Changes from the draft:
       methods and signals now return <tp:type>Handle_Identifier_Map</tp:type>
       (<code>a{us}</code>) rather than bare lists of contact handles
@@ -46,22 +45,6 @@
         to implement this interface using an on-disk file of blocked
         contacts or some other means to store blocked contacts between
         connections.</p>
-
-      <p>This interface is intended to replace the
-        <tp:dbus-ref namespace="ofdT.Channel.Type">ContactList</tp:dbus-ref>
-        channel with <tp:dbus-ref
-        namespace='ofdT.Channel'>TargetHandleType</tp:dbus-ref>
-        <code>List</code> and <tp:dbus-ref
-        namespace='ofdT.Channel'>TargetID</tp:dbus-ref> <code>"deny"</code>
-        (along with the <tp:dbus-ref
-        namespace='ofdT.Connection.Interface'>ContactList</tp:dbus-ref> and
-        <tp:dbus-ref
-        namespace='ofdT.Connection.Interface'>ContactGroups</tp:dbus-ref>
-        interfaces replacing other channels with <tp:dbus-ref
-        namespace='ofdT.Channel'>TargetHandleType</tp:dbus-ref>
-        <code>List</code> and <tp:dbus-ref
-        namespace='ofdT.Channel'>TargetHandleType</tp:dbus-ref>
-        <code>Group</code>, respectively).</p>
     </tp:docstring>
 
     <method name="BlockContacts" tp:name-for-bindings="Block_Contacts">
@@ -186,7 +169,7 @@
 
         <p>Note that there is no capability for supporting blocking itself:
           the presence of this interface on a <tp:dbus-ref
-          namespace='ofdT'>Connection</tp:dbus-ref> indicates that blocking
+          namespace='imt1'>Connection</tp:dbus-ref> indicates that blocking
           contacts is supported.</p>
       </tp:docstring>
     </property>

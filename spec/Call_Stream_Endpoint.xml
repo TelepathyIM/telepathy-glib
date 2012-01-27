@@ -20,7 +20,7 @@
       02110-1301, USA.</p>
   </tp:license>
 
-  <interface name="org.freedesktop.Telepathy.Call1.Stream.Endpoint"
+  <interface name="im.telepathy1.Call1.Stream.Endpoint"
     tp:causes-havoc="experimental">
     <tp:added version="0.19.0">(draft 1)</tp:added>
 
@@ -149,7 +149,7 @@
 
         <p>Also note that some or all of the local candidates in this list may
         represent a peer-reflexive candidate that do not appear in
-        <tp:dbus-ref namespace="ofdT.Call1.Stream.Interface.Media"
+        <tp:dbus-ref namespace="imt1.Call1.Stream.Interface.Media"
         >LocalCandidates</tp:dbus-ref>.</p>
 
         <p>See <a href='http://tools.ietf.org/html/rfc5245#appendix-B.6'>RFC
@@ -188,7 +188,7 @@
         </tp:docstring>
       </arg>
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument"/>
+        <tp:error name="im.telepathy1.Error.InvalidArgument"/>
       </tp:possible-errors>
     </method>
 
@@ -284,8 +284,8 @@
         </tp:docstring>
       </arg>
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable"/>
+        <tp:error name="im.telepathy1.Error.InvalidArgument"/>
+        <tp:error name="im.telepathy1.Error.NotAvailable"/>
       </tp:possible-errors>
     </method>
 
@@ -309,7 +309,7 @@
         </tp:docstring>
       </arg>
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument"/>
+        <tp:error name="im.telepathy1.Error.InvalidArgument"/>
       </tp:possible-errors>
     </method>
 
@@ -333,14 +333,19 @@
         </tp:docstring>
       </arg>
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument"/>
+        <tp:error name="im.telepathy1.Error.InvalidArgument"/>
       </tp:possible-errors>
     </method>
 
     <property name="Transport" tp:name-for-bindings="Transport"
       type="u" tp:type="Stream_Transport_Type" access="read">
       <tp:docstring>
-        The transport type for the stream endpoint.
+        The transport type for the stream endpoint. This can be
+        different from the transport of the Stream in the case where
+        of falling back from <tp:value-ref
+        type="Stream_Transport_Type">ICE</tp:value-ref> to
+        <tp:value-ref
+        type="Stream_Transport_Type">Raw_UDP</tp:value-ref>.
       </tp:docstring>
     </property>
 

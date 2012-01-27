@@ -16,17 +16,17 @@ Lesser General Public License for more details.</p>
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
-  <interface name="org.freedesktop.Telepathy.Channel.Type.ServerAuthentication">
+  <interface name="im.telepathy1.Channel.Type.ServerAuthentication1">
     <tp:added version="0.21.5">(as stable API)</tp:added>
-    <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
+    <tp:requires interface="im.telepathy1.Channel"/>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>The type for a channel representing an authentication step with the
         server. The actual authentication functionality is implemented by
         the additional interface named in
         <tp:member-ref>AuthenticationMethod</tp:member-ref>,
-        such as <tp:dbus-ref namespace="ofdT"
-          >Channel.Interface.SASLAuthentication</tp:dbus-ref>.</p>
+        such as <tp:dbus-ref namespace="imt1"
+          >Channel.Interface.SASLAuthentication1</tp:dbus-ref>.</p>
 
       <p>Future authentication steps also supported by this channel type might
         include solving a captcha and/or agreeing to an EULA or terms-of-use
@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:member-ref>AuthenticationMethod</tp:member-ref>.</p>
 
       <p>Channels of this type will normally be be signalled and dispatched
-        while the <tp:dbus-ref namespace="ofdT">Connection</tp:dbus-ref>
+        while the <tp:dbus-ref namespace="imt1">Connection</tp:dbus-ref>
         owning them is in the CONNECTING state. They MAY also appear on a
         Connection in the CONNECTED state, for instance if periodic
         re-authentication is required.</p>
@@ -46,24 +46,24 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
       <p>Channels of this type cannot be requested with methods such as
         <tp:dbus-ref
-          namespace="ofdT.Connection.Interface.Requests">CreateChannel</tp:dbus-ref>.
+          namespace="imt1.Connection.Interface.Requests">CreateChannel</tp:dbus-ref>.
         They always have <tp:dbus-ref
-          namespace="ofdT.Channel">Requested</tp:dbus-ref> = False,
+          namespace="imt1.Channel">Requested</tp:dbus-ref> = False,
         <tp:dbus-ref
-          namespace="ofdT.Channel">TargetHandleType</tp:dbus-ref> = None
+          namespace="imt1.Channel">TargetHandleType</tp:dbus-ref> = None
         and <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy.Channel">TargetHandle</tp:dbus-ref>
+          namespace="im.telepathy1.Channel">TargetHandle</tp:dbus-ref>
         = 0.</p>
 
       <p>While it is CONNECTING, the Connection MUST NOT proceed with
         connection, or signal
-        <tp:dbus-ref namespace="ofdT.Connection">StatusChanged</tp:dbus-ref>
+        <tp:dbus-ref namespace="imt1.Connection">StatusChanged</tp:dbus-ref>
         to the CONNECTED state, until each channel of this type has either
         been accepted as having a positive result (for instance, on SASL
         channels this is done with the <tp:dbus-ref
-          namespace="ofdT.Channel.Interface.SASLAuthentication"
+          namespace="imt1.Channel.Interface.SASLAuthentication1"
           >AcceptSASL</tp:dbus-ref> method), or closed with the <tp:dbus-ref
-          namespace="ofdT.Channel">Close</tp:dbus-ref> method.</p>
+          namespace="imt1.Channel">Close</tp:dbus-ref> method.</p>
 
       <tp:rationale>
         <p>ServerAuthentication channels normally represent the client
@@ -75,7 +75,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:rationale>
 
       <p>If a channel of this type is closed with the <tp:dbus-ref
-            namespace="ofdT.Channel">Close</tp:dbus-ref> method before
+            namespace="imt1.Channel">Close</tp:dbus-ref> method before
         authentication has succeeded, this indicates that the Handler has
         given up its attempts to authenticate or that no Handler is
         available.</p>
@@ -83,16 +83,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <p>If this occurs, the connection manager MAY attempt to continue
         connection (for instance, performing SASL authentication by using any
         credentials passed to <tp:dbus-ref
-          namespace="ofdT.ConnectionManager">RequestConnection</tp:dbus-ref>,
+          namespace="imt1.ConnectionManager">RequestConnection</tp:dbus-ref>,
         for instance from the <tp:dbus-ref
-          namespace="ofdT">Account.Parameters</tp:dbus-ref>). If this fails
+          namespace="imt1">Account.Parameters</tp:dbus-ref>). If this fails
         or has already been tried, the <tp:dbus-ref
-          namespace="ofdT">Connection</tp:dbus-ref> will
+          namespace="imt1">Connection</tp:dbus-ref> will
         disconnect.</p>
 
       <tp:rationale>
         <p>In particular, the <tp:dbus-ref
-            namespace="ofdT">ChannelDispatcher</tp:dbus-ref> will close the
+            namespace="imt1">ChannelDispatcher</tp:dbus-ref> will close the
           channel if it cannot find a handler.</p>
       </tp:rationale>
 
@@ -108,11 +108,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>This property defines the method used for the authentication step
           represented by this channel, which MUST be one of this channel's
-          <tp:dbus-ref namespace="ofdT.Channel">Interfaces</tp:dbus-ref>.</p>
+          <tp:dbus-ref namespace="imt1.Channel">Interfaces</tp:dbus-ref>.</p>
 
         <p>The initially-defined interface that can be used here is
-          <tp:dbus-ref namespace="ofdT"
-            >Channel.Interface.SASLAuthentication</tp:dbus-ref>.</p>
+          <tp:dbus-ref namespace="imt1"
+            >Channel.Interface.SASLAuthentication1</tp:dbus-ref>.</p>
       </tp:docstring>
     </property>
 

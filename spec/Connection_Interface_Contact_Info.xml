@@ -17,9 +17,9 @@ Lesser General Public License for more details.</p>
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
-  <interface name="org.freedesktop.Telepathy.Connection.Interface.ContactInfo">
+  <interface name="im.telepathy1.Connection.Interface.ContactInfo1">
     <tp:added version="0.19.4">(as stable API)</tp:added>
-    <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
+    <tp:requires interface="im.telepathy1.Connection"/>
 
     <tp:struct name="Contact_Info_Field" array-name="Contact_Info_Field_List">
       <tp:member type="s" name="Field_Name">
@@ -233,8 +233,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:rationale>
       </tp:docstring>
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle"/>
+        <tp:error name="im.telepathy1.Error.Disconnected"/>
+        <tp:error name="im.telepathy1.Error.InvalidHandle"/>
       </tp:possible-errors>
     </method>
 
@@ -262,10 +262,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:rationale>
       </tp:docstring>
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
+        <tp:error name="im.telepathy1.Error.Disconnected"/>
+        <tp:error name="im.telepathy1.Error.NetworkError"/>
+        <tp:error name="im.telepathy1.Error.InvalidHandle"/>
+        <tp:error name="im.telepathy1.Error.NotAvailable">
           <tp:docstring>
             The contact's information could not be retrieved.
           </tp:docstring>
@@ -288,16 +288,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </arg>
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotImplemented">
+        <tp:error name="im.telepathy1.Error.Disconnected"/>
+        <tp:error name="im.telepathy1.Error.NetworkError"/>
+        <tp:error name="im.telepathy1.Error.PermissionDenied"/>
+        <tp:error name="im.telepathy1.Error.NotAvailable"/>
+        <tp:error name="im.telepathy1.Error.NotImplemented">
           <tp:docstring>
             Setting your own information is not supported on this protocol.
           </tp:docstring>
         </tp:error>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
+        <tp:error name="im.telepathy1.Error.InvalidArgument">
           <tp:docstring>
             The supplied fields do not match the restrictions specified by
             <tp:member-ref>SupportedFields</tp:member-ref>.
@@ -475,9 +475,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>Indicates that this field will be overwritten when the user's alias
             is changed with <tp:dbus-ref
-              namespace="ofdT.Connection.Interface.Aliasing">SetAliases</tp:dbus-ref>
+              namespace="imt1.Connection.Interface.Aliasing1">SetAliases</tp:dbus-ref>
             or when the Account's <tp:dbus-ref
-              namespace="ofdT.Account">Nickname</tp:dbus-ref>
+              namespace="imt1.Account">Nickname</tp:dbus-ref>
             is updated.  Clients that allow the editing of the Alias and the
             ContactInfo in the same location should hide fields with this flag.</p>
           <tp:rationale>

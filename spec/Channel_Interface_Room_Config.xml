@@ -20,11 +20,11 @@
       02110-1301, USA.</p>
   </tp:license>
 
-  <interface name="org.freedesktop.Telepathy.Channel.Interface.RoomConfig1">
+  <interface name="im.telepathy1.Channel.Interface.RoomConfig1">
     <tp:added version="0.24.0">version 1. This replaces the old-school
       Telepathy properties on <tp:dbus-ref
-      namespace='ofdT.Channel.Type'>Text</tp:dbus-ref>.</tp:added>
-    <tp:requires interface='org.freedesktop.Telepathy.Channel.Interface.Room2'/>
+      namespace='imt1.Channel.Type'>Text</tp:dbus-ref>.</tp:added>
+    <tp:requires interface='im.telepathy1.Channel.Interface.Room1'/>
     <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal"
                 value="true"/>
 
@@ -36,7 +36,7 @@
 
       <p>The “topic” (on IRC) or “subject” (on XMPP) is not part of this
         interface; it can be found on the <tp:dbus-ref
-        namespace='ofdT.Channel.Interface'>Subject2</tp:dbus-ref>
+        namespace='imt1.Channel.Interface'>Subject1</tp:dbus-ref>
         interface.</p>
     </tp:docstring>
 
@@ -64,7 +64,7 @@
     <property name="Title" tp:name-for-bindings="Title" type="s" access="read">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       A human-visible name for the channel, if it differs from <tp:dbus-ref
-      namespace='ofdT.Channel.Interface'>Room2.RoomName</tp:dbus-ref>; the
+      namespace='imt1.Channel.Interface'>Room1.RoomName</tp:dbus-ref>; the
       empty string, otherwise.
 
       <tp:rationale>
@@ -75,10 +75,10 @@
 
         <ul>
           <li><tp:dbus-ref
-            namespace='ofdT.Channel.Interface'>Room2.RoomName</tp:dbus-ref>
+            namespace='imt1.Channel.Interface'>Room1.RoomName</tp:dbus-ref>
             = <code>"jdev"</code>;</li>
           <li><tp:dbus-ref
-            namespace='ofdT.Channel.Interface'>Room2.Server</tp:dbus-ref>
+            namespace='imt1.Channel.Interface'>Room1.Server</tp:dbus-ref>
             = <code>"conference.jabber.org"</code>;</li>
           <li><tp:member-ref>Title</tp:member-ref> = <code>"General Jabber
             development discussion"</code>.</li>
@@ -111,7 +111,7 @@
         <code>True</code> if contacts joining this channel must provide a
         password to be granted entry.  Note that this property does not
         indicate that a password is required <em>right now</em>; see the
-        <tp:dbus-ref namespace='ofdT.Channel.Interface'>Password</tp:dbus-ref>
+        <tp:dbus-ref namespace='imt1.Channel.Interface'>Password1</tp:dbus-ref>
         interface for the API used to provide a password while joining a room.
       </tp:docstring>
     </property>
@@ -233,26 +233,26 @@
           method.</p>
       </tp:docstring>
 
-      <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied">
+      <tp:error name="im.telepathy1.Error.PermissionDenied">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           The user is not allowed to reconfigure this room.
         </tp:docstring>
       </tp:error>
 
-      <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
+      <tp:error name="im.telepathy1.Error.InvalidArgument">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           One or more of the specified properties is unknown, or ill-typed.
         </tp:docstring>
       </tp:error>
 
-      <tp:error name="org.freedesktop.Telepathy.Error.NotImplemented">
+      <tp:error name="im.telepathy1.Error.NotImplemented">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           One or more of the specified properties cannot be modified on this
           protocol.
         </tp:docstring>
       </tp:error>
 
-      <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
+      <tp:error name="im.telepathy1.Error.NotAvailable">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           The room's current configuration has not yet been retrieved, so we
           cannot update it just yet. The application might like to try again

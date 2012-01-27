@@ -18,9 +18,9 @@ Lesser General Public License for more details.</p>
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
-  <interface name="org.freedesktop.Telepathy.Connection.Interface.Renaming"
+  <interface name="im.telepathy1.Connection.Interface.Renaming1"
     tp:causes-havoc='not well-tested'>
-    <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
+    <tp:requires interface="im.telepathy1.Connection"/>
     <signal name="Renamed" tp:name-for-bindings="Renamed">
       <arg name="Original" type="u" tp:type="Contact_Handle">
         <tp:docstring>
@@ -51,7 +51,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           a channel which has the groups interface, it will be removed from
           the channel and the new handle will be added. The resulting
           <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Channel.Interface.Group">MembersChanged</tp:dbus-ref>
+            namespace="im.telepathy1.Channel.Interface.Group1">MembersChanged</tp:dbus-ref>
           signal must be emitted <em>after</em> the
           <tp:member-ref>Renamed</tp:member-ref> signal; the reason should be
           RENAMED.
@@ -73,18 +73,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Request that the user's own identifier is changed on the server.
           If successful, a <tp:member-ref>Renamed</tp:member-ref> signal will
-          be emitted for the current "self handle" as returned by <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Connection">GetSelfHandle</tp:dbus-ref>.</p>
+          be emitted for the current "self handle" as returned by the <tp:dbus-ref
+            namespace="im.telepathy1.Connection">SelfHandle</tp:dbus-ref>
+          property.</p>
         <p>It is protocol-dependent how the identifier that's actually
           used will be derived from the supplied identifier; some sort of
           normalization might take place.</p>
       </tp:docstring>
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
+        <tp:error name="im.telepathy1.Error.Disconnected"/>
+        <tp:error name="im.telepathy1.Error.NetworkError"/>
+        <tp:error name="im.telepathy1.Error.NotAvailable"/>
+        <tp:error name="im.telepathy1.Error.InvalidArgument"/>
+        <tp:error name="im.telepathy1.Error.PermissionDenied"/>
       </tp:possible-errors>
     </method>
     <tp:docstring>

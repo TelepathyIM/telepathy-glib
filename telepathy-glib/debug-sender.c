@@ -33,7 +33,7 @@
  *
  * A #TpDebugSender object is an object exposing the Telepathy debug interface.
  * There should be one object per process as it registers the object path
- * /org/freedesktop/Telepathy/debug. Once the object exists and has the object
+ * /im/telepathy1/debug. Once the object exists and has the object
  * path, messages can be passed to it using tp_debug_sender_add_message and
  * signals will automatically be fired.
  *
@@ -229,7 +229,7 @@ tp_debug_sender_constructed (GObject *object)
   if (dbus_daemon != NULL)
     {
       tp_dbus_daemon_register_object (dbus_daemon,
-          "/org/freedesktop/Telepathy/debug", debug_sender);
+          "/im/telepathy1/debug", debug_sender);
 
       g_object_unref (dbus_daemon);
     }

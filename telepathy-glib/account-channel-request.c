@@ -1601,7 +1601,7 @@ tp_account_channel_request_set_delegate_to_preferred_handler (
   g_return_if_fail (!self->priv->requested);
 
   tp_asv_set_boolean (self->priv->hints,
-      "org.freedesktop.Telepathy.ChannelRequest.DelegateToPreferredHandler",
+      "im.telepathy1.ChannelRequest.DelegateToPreferredHandler",
       delegate);
 }
 
@@ -1614,7 +1614,7 @@ tp_account_channel_request_set_delegate_to_preferred_handler (
  * @destroy: called with the @user_data as argument, when @self is destroyed
  *
  * Turn on support for
- * the org.freedesktop.Telepathy.ChannelRequest.DelegateToPreferredHandler
+ * the im.telepathy1.ChannelRequest.DelegateToPreferredHandler
  * hint.
  *
  * When receiving a request containing this hint, @self will automatically

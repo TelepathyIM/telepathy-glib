@@ -70,8 +70,8 @@ setup (Test *test,
   gchar *bus_name;
   gchar *object_path;
   GHashTable *parameters;
-  guint audio = TP_MEDIA_STREAM_TYPE_AUDIO;
-  guint video = TP_MEDIA_STREAM_TYPE_VIDEO;
+  guint audio = FUTURE_MEDIA_STREAM_TYPE_AUDIO;
+  guint video = FUTURE_MEDIA_STREAM_TYPE_VIDEO;
   guint not_a_media_type = 31337;
   GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
@@ -383,7 +383,7 @@ assert_call_properties (GHashTable *get_all_return,
 
 static void
 assert_content_properties (GHashTable *get_all_return,
-    TpMediaStreamType type,
+    FutureMediaStreamType type,
     FutureCallContentDisposition disposition)
 {
   gboolean valid;
@@ -425,7 +425,7 @@ loop_until_answered (Test *test)
       g_assert_no_error (test->error);
 
       if (tp_asv_get_uint32 (test->get_all_return, "CallState",
-            NULL) != FUTURE_CALL_STATE_RINGING)
+            NULL) != FUTURE_CALL_STATE_INITIALISED)
         return;
     }
 }
@@ -510,7 +510,7 @@ test_basics (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
   assert_content_properties (test->get_all_return,
-      TP_MEDIA_STREAM_TYPE_AUDIO,
+      FUTURE_MEDIA_STREAM_TYPE_AUDIO,
       FUTURE_CALL_CONTENT_DISPOSITION_INITIAL);
 
   stream_paths = tp_asv_get_boxed (test->get_all_return, "Streams",
@@ -629,7 +629,7 @@ test_basics (Test *test,
   /* AddContent again, to add a video stream */
 
   future_cli_channel_type_call_call_add_content (test->chan, -1,
-      "", TP_MEDIA_STREAM_TYPE_VIDEO, added_content_cb,
+      "", FUTURE_MEDIA_STREAM_TYPE_VIDEO, added_content_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
@@ -668,7 +668,7 @@ test_basics (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
   assert_content_properties (test->get_all_return,
-      TP_MEDIA_STREAM_TYPE_VIDEO,
+      FUTURE_MEDIA_STREAM_TYPE_VIDEO,
       FUTURE_CALL_CONTENT_DISPOSITION_NONE);
 
   stream_paths = tp_asv_get_boxed (test->get_all_return, "Streams",
@@ -789,7 +789,7 @@ test_no_answer (Test *test,
   g_assert_no_error (test->error);
 
   assert_call_properties (test->get_all_return,
-      FUTURE_CALL_STATE_RINGING, test->self_handle,
+      FUTURE_CALL_STATE_INITIALISED, test->self_handle,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       TRUE, 0,              /* call flags */
       TRUE, TRUE, FALSE);  /* initial audio/video must be TRUE, FALSE */
@@ -990,7 +990,7 @@ test_incoming (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
   assert_call_properties (test->get_all_return,
-      FUTURE_CALL_STATE_RINGING, test->peer_handle,
+      FUTURE_CALL_STATE_INITIALISED, test->peer_handle,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       TRUE, 0,              /* call flags */
       TRUE, TRUE, FALSE);  /* initial audio/video must be TRUE, FALSE */

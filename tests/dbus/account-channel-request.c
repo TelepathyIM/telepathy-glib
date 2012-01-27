@@ -209,7 +209,6 @@ test_handle_create_success (Test *test,
       NULL, create_and_handle_cb, test);
 
   g_hash_table_unref (request);
-  g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
@@ -219,6 +218,8 @@ test_handle_create_success (Test *test,
   g_assert (TP_IS_CHANNEL_REQUEST (chan_req));
   g_assert (tp_account_channel_request_get_channel_request (req) == chan_req);
   g_object_unref (chan_req);
+
+  g_object_unref (req);
 }
 
 /* ChannelDispatcher.CreateChannel() call fails */
@@ -627,7 +628,7 @@ test_handle_delegated (Test *test,
   requests = g_ptr_array_new ();
 
   hints = tp_asv_new (
-      "org.freedesktop.Telepathy.ChannelRequest.DelegateToPreferredHandler",
+      "im.telepathy1.ChannelRequest.DelegateToPreferredHandler",
         G_TYPE_BOOLEAN, TRUE,
       NULL);
 

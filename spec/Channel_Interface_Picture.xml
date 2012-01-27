@@ -20,9 +20,9 @@
       02110-1301, USA.</p>
   </tp:license>
 
-  <interface name="org.freedesktop.Telepathy.Channel.Interface.Picture1"
+  <interface name="im.telepathy1.Channel.Interface.Picture1"
              tp:causes-havoc="draft">
-    <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
+    <tp:requires interface="im.telepathy1.Channel"/>
     <tp:added version="0.25.0"/>
     <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal"
                 value="true"/>
@@ -31,13 +31,13 @@
       <p>An interface channels can implement to support a picture. Most
         of the time this will be implemented by channels implementing
         the <tp:dbus-ref
-        namespace="ofdT.Channel.Interface">Room2</tp:dbus-ref>
+        namespace="imt1.Channel.Interface">Room1</tp:dbus-ref>
         interface. Note that this interface is not restricted to
         Text channels, and can also be used on Call channels.</p>
 
       <tp:rationale>
         This is a separate interface from
-        <tp:dbus-ref namespace="ofdT.Channel.Interface">RoomConfig1</tp:dbus-ref>
+        <tp:dbus-ref namespace="imt1.Channel.Interface">RoomConfig1</tp:dbus-ref>
         because (a) it's possible some protocol might support pictures for
         1:1 chats; and (b) it avoids downloading an unwanted picture in a
         GetAll request.
@@ -62,14 +62,14 @@
           further changes by other users or the server.</p>
       </tp:docstring>
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotImplemented"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
+        <tp:error name="im.telepathy1.Error.NotImplemented"/>
+        <tp:error name="im.telepathy1.Error.InvalidArgument">
           <tp:docstring>
             Picture is somehow invalid: e.g. unsupported MIME type,
             too big, etc.
           </tp:docstring>
         </tp:error>
-        <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
+        <tp:error name="im.telepathy1.Error.PermissionDenied"/>
       </tp:possible-errors>
     </method>
 

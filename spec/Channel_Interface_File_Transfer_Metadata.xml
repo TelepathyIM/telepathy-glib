@@ -21,8 +21,8 @@
   </tp:license>
 
   <interface
-    name="org.freedesktop.Telepathy.Channel.Interface.FileTransfer.Metadata">
-    <tp:requires interface="org.freedesktop.Telepathy.Channel.Type.FileTransfer"/>
+    name="im.telepathy1.Channel.Interface.FileTransfer.Metadata1">
+    <tp:requires interface="im.telepathy1.Channel.Type.FileTransfer1"/>
     <tp:added version="0.25.0"/>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
@@ -48,9 +48,9 @@
         <p>A string representing the service name that will be used
           over the file transfer channel. This property is equivalent
           to the <tp:dbus-ref
-            namespace="ofdT">Channel.Type.DBusTube.ServiceName</tp:dbus-ref>
+            namespace="imt1">Channel.Type.DBusTube1.ServiceName</tp:dbus-ref>
           and <tp:dbus-ref
-            namespace="ofdT">Channel.Type.StreamTube.Service</tp:dbus-ref>
+            namespace="imt1">Channel.Type.StreamTube1.Service</tp:dbus-ref>
           properties. If no service name is given then this property
           will be the empty string.</p>
       </tp:docstring>

@@ -20,8 +20,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
   </tp:license>
 
   <interface
-    name="org.freedesktop.Telepathy.Channel.Interface.SMS">
-    <tp:requires interface="org.freedesktop.Telepathy.Channel.Type.Text"/>
+    name="im.telepathy1.Channel.Interface.SMS1">
+    <tp:requires interface="im.telepathy1.Channel.Type.Text"/>
     <tp:added version='0.19.12'>Imported from
       rtcom-telepathy-glib, with the unused properties removed and the
       documentation tidied up.</tp:added>
@@ -34,7 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         messages will be delivered via SMS.</p>
 
       <p>This interface MAY appear in the
-        <tp:dbus-ref namespace="ofdT.Channel">Interfaces</tp:dbus-ref> property
+        <tp:dbus-ref namespace="imt1.Channel">Interfaces</tp:dbus-ref> property
         of channels where <tp:member-ref>SMSChannel</tp:member-ref> would be
         immutable and false. It SHOULD appear on channels where
         <tp:member-ref>SMSChannel</tp:member-ref> is immutable and true, and
@@ -47,16 +47,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       <p>A handler for class 0 SMSes should advertise the following filter:</p>
 
       <blockquote><code>
-{ ...<tp:dbus-ref namespace='ofdT.Channel'>ChannelType</tp:dbus-ref>:
-      ...<tp:dbus-ref namespace='ofdT.Channel.Type'>Text</tp:dbus-ref>,<br/>
-  ...<tp:dbus-ref namespace='ofdT.Channel'>TargetHandleType</tp:dbus-ref>:
+{ ...<tp:dbus-ref namespace='imt1.Channel'>ChannelType</tp:dbus-ref>:
+      ...<tp:dbus-ref namespace='imt1.Channel.Type'>Text</tp:dbus-ref>,<br/>
+  ...<tp:dbus-ref namespace='imt1.Channel'>TargetHandleType</tp:dbus-ref>:
       <tp:value-ref type="Handle_Type">Contact</tp:value-ref>,<br/>
-  ...<tp:dbus-ref namespace='ofdT.Channel.Interface'>SMS.Flash</tp:dbus-ref>:
+  ...<tp:dbus-ref namespace='imt1.Channel.Interface'>SMS1.Flash</tp:dbus-ref>:
       True,<br/>
 }</code></blockquote>
 
       <p>It should also set its <tp:dbus-ref
-        namespace='ofdT.Client.Handler'>BypassApproval</tp:dbus-ref> property
+        namespace='imt1.Client.Handler'>BypassApproval</tp:dbus-ref> property
         to <code>True</code>, so that it is invoked immediately for new
         channels.</p>
 
@@ -71,22 +71,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
       <blockquote><code>
 [<br/>
- ({ ...<tp:dbus-ref namespace='ofdT.Channel'>ChannelType</tp:dbus-ref>:
-     ...<tp:dbus-ref namespace='ofdT.Channel.Type'>Text</tp:dbus-ref>,<br/>
-    ...<tp:dbus-ref namespace='ofdT.Channel'>TargetHandleType</tp:dbus-ref>:
+ ({ ...<tp:dbus-ref namespace='imt1.Channel'>ChannelType</tp:dbus-ref>:
+     ...<tp:dbus-ref namespace='imt1.Channel.Type'>Text</tp:dbus-ref>,<br/>
+    ...<tp:dbus-ref namespace='imt1.Channel'>TargetHandleType</tp:dbus-ref>:
        <tp:value-ref type="Handle_Type">Contact</tp:value-ref>,<br/>
   },<br/>
-  [ ...<tp:dbus-ref namespace='ofdT.Channel'>TargetHandle</tp:dbus-ref>,
-    ...<tp:dbus-ref namespace='ofdT.Channel'>TargetID</tp:dbus-ref> ]),<br/>
+  [ ...<tp:dbus-ref namespace='imt1.Channel'>TargetHandle</tp:dbus-ref>,
+    ...<tp:dbus-ref namespace='imt1.Channel'>TargetID</tp:dbus-ref> ]),<br/>
 <br/>
- ({ ...<tp:dbus-ref namespace='ofdT.Channel'>ChannelType</tp:dbus-ref>:
-       ...<tp:dbus-ref namespace='ofdT.Channel.Type'>Text</tp:dbus-ref>,<br/>
-    ...<tp:dbus-ref namespace='ofdT.Channel'>TargetHandleType</tp:dbus-ref>:
+ ({ ...<tp:dbus-ref namespace='imt1.Channel'>ChannelType</tp:dbus-ref>:
+       ...<tp:dbus-ref namespace='imt1.Channel.Type'>Text</tp:dbus-ref>,<br/>
+    ...<tp:dbus-ref namespace='imt1.Channel'>TargetHandleType</tp:dbus-ref>:
        <tp:value-ref type="Handle_Type">Contact</tp:value-ref>,<br/>
     ...<tp:member-ref>SMSChannel</tp:member-ref>: True,<br/>
   },<br/>
-  [ ...<tp:dbus-ref namespace='ofdT.Channel'>TargetHandle</tp:dbus-ref>,
-    ...<tp:dbus-ref namespace='ofdT.Channel'>TargetID</tp:dbus-ref> ]),<br/>
+  [ ...<tp:dbus-ref namespace='imt1.Channel'>TargetHandle</tp:dbus-ref>,
+    ...<tp:dbus-ref namespace='imt1.Channel'>TargetID</tp:dbus-ref> ]),<br/>
 ]
       </code></blockquote>
     </tp:docstring>
@@ -96,13 +96,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>If <code>True</code>, then this channel is exclusively for
           receiving class 0 SMSes (and no SMSes can be sent using <tp:dbus-ref
-          namespace='ofdT.Channel.Interface.Messages'>SendMessage</tp:dbus-ref>
+          namespace='imt1.Channel.Type.Text'>SendMessage</tp:dbus-ref>
           on this channel). If <code>False</code>, no incoming class 0 SMSes
           will appear on this channel.</p>
 
         <p>This property is immutable (cannot change), and therefore SHOULD
           appear wherever immutable properties are reported, e.g. <tp:dbus-ref
-            namespace="ofdT.Connection.Interface.Requests"
+            namespace="imt1.Connection.Interface.Requests"
           >NewChannels</tp:dbus-ref> signals.</p>
 
         <tp:rationale>
@@ -114,9 +114,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
           <p>Separating class 0 SMSes into their own channel with this
             immutable property allows them to be dispatched to a different
-            <tp:dbus-ref namespace='ofdT.Client'>Handler</tp:dbus-ref>—which
+            <tp:dbus-ref namespace='imt1.Client'>Handler</tp:dbus-ref>—which
             would include this property in its <tp:dbus-ref
-            namespace='ofdT.Client.Handler'
+            namespace='imt1.Client.Handler'
             >HandlerChannelFilter</tp:dbus-ref>—avoiding the normal Text
             channel handler having to decide for each message whether it should
             be displayed to the user immediately or handled normally.</p>
@@ -260,7 +260,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>The estimated cost of sending this message. The currency and
             scale of this value are the same as the
-            <tp:dbus-ref namespace="ofdT.Connection.Interface">Balance.AccountBalance</tp:dbus-ref>
+            <tp:dbus-ref namespace="imt1.Connection.Interface">Balance1.AccountBalance</tp:dbus-ref>
             property.</p>
 
           <p>A value of <code>-1</code> indicates the cost could not be
@@ -270,13 +270,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </arg>
 
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotImplemented">
+        <tp:error name="im.telepathy1.Error.NotImplemented">
           <tp:docstring>
             Raised when the method is not available on this channel.
             Clients MAY choose to make their own estimation.
           </tp:docstring>
         </tp:error>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
+        <tp:error name="im.telepathy1.Error.InvalidArgument">
           <tp:docstring>
             Raised when the content cannot be encoded into a valid SMS.
           </tp:docstring>

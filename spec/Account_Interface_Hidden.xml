@@ -20,7 +20,7 @@
       02110-1301, USA.</p>
   </tp:license>
 
-  <interface name="org.freedesktop.Telepathy.Account.Interface.Hidden.DRAFT1"
+  <interface name="im.telepathy1.Account.Interface.Hidden1"
     tp:causes-havoc="outrageous">
     <tp:added version="0.21.10">(draft 1)</tp:added>
 
@@ -30,7 +30,7 @@
         Accounts whose <tp:member-ref>Hidden</tp:member-ref> property is
         <code>True</code> are intended for non-interactive use (by
         non-user-visible services), and appear on the <tp:dbus-ref
-          namespace='ofdT'>AccountManager.Interface.Hidden.DRAFT1</tp:dbus-ref>
+          namespace='imt1'>AccountManager.Interface.Hidden1</tp:dbus-ref>
         interface; in all other respects, they behave like any other
         account.</p>
 
@@ -54,9 +54,9 @@
         <p>If <code>True</code>, this account is intended for non-interactive
           use, and thus should not be presented to the user. It will not appear
           in properties and signals on the main <tp:dbus-ref
-            namespace='ofdT'>AccountManager</tp:dbus-ref> interface; instead, it
+            namespace='imt1'>AccountManager</tp:dbus-ref> interface; instead, it
           will show up on <tp:dbus-ref
-            namespace='ofdT'>AccountManager.Interface.Hidden.DRAFT1</tp:dbus-ref>.</p>
+            namespace='imt1'>AccountManager.Interface.Hidden1</tp:dbus-ref>.</p>
       </tp:docstring>
     </property>
 

@@ -2564,8 +2564,8 @@ _tp_connection_parse (const gchar *path_or_bus_name,
   g_return_val_if_fail (delimiter == '.' || delimiter == '/', FALSE);
 
   /* If CM respects the spec, object path and bus name should be in the form:
-   * /org/freedesktop/Telepathy/Connection/cmname/proto/account
-   * org.freedesktop.Telepathy.Connection.cmname.proto.account
+   * /im/telepathy1/Connection/cmname/proto/account
+   * im.telepathy1.Connection.cmname.proto.account
    */
   if (delimiter == '.')
     prefix = TP_CONN_BUS_NAME_BASE;

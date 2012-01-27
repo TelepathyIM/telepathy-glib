@@ -9,6 +9,7 @@ EXTRA_DIST = \
     Account_Manager_Interface_Hidden.xml \
     Authentication_TLS_Certificate.xml \
     Call_Content.xml \
+    Call_Content_Interface_Audio_Control.xml \
     Call_Content_Interface_Media.xml \
     Call_Content_Interface_Video_Control.xml \
     Call_Content_Media_Description.xml \

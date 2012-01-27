@@ -17,20 +17,20 @@ Lesser General Public License for more details.</p>
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
-  <interface name="org.freedesktop.Telepathy.Channel.Interface.SASLAuthentication">
+  <interface name="im.telepathy1.Channel.Interface.SASLAuthentication1">
     <tp:added version="0.21.5">(as stable API)</tp:added>
-    <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
+    <tp:requires interface="im.telepathy1.Channel"/>
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>A channel interface for SASL authentication,
         as defined by
         <a href="http://tools.ietf.org/html/rfc4422">RFC 4422</a>.
         When this interface appears on a <tp:dbus-ref
-          namespace="ofdT.Channel.Type">ServerAuthentication</tp:dbus-ref>
+          namespace="imt1.Channel.Type">ServerAuthentication1</tp:dbus-ref>
         channel, it represents authentication with the server. In future,
         it could also be used to authenticate with secondary services,
         or even to authenticate end-to-end connections with contacts. As a result,
-        this interface does not REQUIRE <tp:dbus-ref namespace="ofdT.Channel.Type"
-        >ServerAuthentication</tp:dbus-ref> to allow for a potential future
+        this interface does not REQUIRE <tp:dbus-ref namespace="imt1.Channel.Type"
+        >ServerAuthentication1</tp:dbus-ref> to allow for a potential future
         Channel.Type.PeerAuthentication interface.</p>
 
       <p>In any protocol that requires a password, the connection manager can
@@ -39,7 +39,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         interactively. This can be used to connect to protocols that may
         require a password, without requiring that the password is saved in
         the <tp:dbus-ref
-          namespace="ofdT">Account.Parameters</tp:dbus-ref>.</p>
+          namespace="imt1">Account.Parameters</tp:dbus-ref>.</p>
 
       <p>In some protocols, such as XMPP, authentication with the server
         is also carried out using SASL. In these protocols, a channel with this
@@ -55,9 +55,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:rationale>
 
       <p>For channels managed by a
-        <tp:dbus-ref namespace="ofdT">ChannelDispatcher</tp:dbus-ref>,
+        <tp:dbus-ref namespace="imt1">ChannelDispatcher</tp:dbus-ref>,
         only the channel's <tp:dbus-ref
-          namespace="ofdT.Client">Handler</tp:dbus-ref> may call the
+          namespace="imt1.Client">Handler</tp:dbus-ref> may call the
         methods on this interface. Other clients MAY observe the
         authentication process by watching its signals and properties.</p>
 
@@ -189,11 +189,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           <tp:error-ref>ServiceConfused</tp:error-ref>.</p>
 
         <p>If this interface appears on a <tp:dbus-ref
-            namespace="ofdT.Channel.Type">ServerAuthentication</tp:dbus-ref>
+            namespace="imt1.Channel.Type">ServerAuthentication1</tp:dbus-ref>
           channel, and connection to the server fails with an authentication
           failure, this error code SHOULD be copied into the
           <tp:dbus-ref
-            namespace="ofdT">Connection.ConnectionError</tp:dbus-ref>
+            namespace="imt1">Connection.ConnectionError</tp:dbus-ref>
           signal.</p>
       </tp:docstring>
     </property>
@@ -207,14 +207,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           disconnection; otherwise, the empty map. The keys and values are
           the same as for the second argument of
           <tp:dbus-ref
-            namespace="ofdT">Connection.ConnectionError</tp:dbus-ref>.</p>
+            namespace="imt1">Connection.ConnectionError</tp:dbus-ref>.</p>
 
         <p>If this interface appears on a <tp:dbus-ref
-            namespace="ofdT.Channel.Type">ServerAuthentication</tp:dbus-ref>
+            namespace="imt1.Channel.Type">ServerAuthentication1</tp:dbus-ref>
           channel, and connection to the server fails with an authentication
           failure, these details SHOULD be copied into the
           <tp:dbus-ref
-            namespace="ofdT">Connection.ConnectionError</tp:dbus-ref>
+            namespace="imt1">Connection.ConnectionError</tp:dbus-ref>
           signal.</p>
       </tp:docstring>
     </property>
@@ -225,7 +225,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The identity for which authorization is being attempted,
           typically the 'account' from the <tp:dbus-ref
-            namespace="ofdT.ConnectionManager">RequestConnection</tp:dbus-ref>
+            namespace="imt1.ConnectionManager">RequestConnection</tp:dbus-ref>
           parameters, normalized and formatted according to the
           conventions used for SASL in this protocol.</p>
 
@@ -311,7 +311,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
         <p>For example, in the simple case, if the user connects with
         <tp:dbus-ref
-        namespace="ofdT.ConnectionManager">RequestConnection</tp:dbus-ref>({
+        namespace="imt1.ConnectionManager">RequestConnection</tp:dbus-ref>({
         account: "<tt>user@example.com</tt>" }) and use PLAIN with
         password "password", he or she should authenticate like so:
         "<tt>\0user\0password</tt>" and the channel will look like
@@ -324,7 +324,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <p>In the complex case, if the same user is using his or her
           sysadmin powers to log in as the "announcements" role address,
           he or she would connect with <tp:dbus-ref
-            namespace="ofdT.ConnectionManager">RequestConnection</tp:dbus-ref>({
+            namespace="imt1.ConnectionManager">RequestConnection</tp:dbus-ref>({
           account: "<tt>announcements@example.com</tt>" }) and the SASL
           channel would look like this:</p>
 
@@ -407,7 +407,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
 
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
+        <tp:error name="im.telepathy1.Error.NotAvailable">
           <tp:docstring>
             The channel is not in a state where starting authentication makes
             sense (i.e. SASL_Status_Not_Started, or (if
@@ -418,8 +418,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
             SASL_Status_Client_Failed before starting another attempt.
           </tp:docstring>
         </tp:error>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotImplemented">
+        <tp:error name="im.telepathy1.Error.NetworkError"/>
+        <tp:error name="im.telepathy1.Error.NotImplemented">
           <tp:docstring>
             The server or connection manager doesn't implement the given
             SASL mechanism. Choose a SASL mechanism from
@@ -481,7 +481,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
 
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
+        <tp:error name="im.telepathy1.Error.NotAvailable">
           <tp:docstring>
             The channel is not in a state where starting authentication makes
             sense (i.e. SASL_Status_Not_Started, or (if
@@ -492,8 +492,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
             SASL_Status_Client_Failed before starting another attempt.
           </tp:docstring>
         </tp:error>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotImplemented">
+        <tp:error name="im.telepathy1.Error.NetworkError"/>
+        <tp:error name="im.telepathy1.Error.NotImplemented">
           <tp:docstring>
             The server or connection manager doesn't implement the given
             SASL mechanism (choose one from
@@ -519,13 +519,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
 
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
+        <tp:error name="im.telepathy1.Error.NotAvailable">
           <tp:docstring>
             Either the state is not In_Progress, or no challenge has been
             received yet, or you have already responded to the last challenge.
           </tp:docstring>
         </tp:error>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
+        <tp:error name="im.telepathy1.Error.NetworkError"/>
       </tp:possible-errors>
     </method>
 
@@ -546,21 +546,21 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <p>In mechanisms where the server authenticates itself to the client,
           calling this method indicates that the client considers this to have
           been successful. In the case of <tp:dbus-ref
-            namespace="ofdT.Channel.Type">ServerAuthentication</tp:dbus-ref>
+            namespace="imt1.Channel.Type">ServerAuthentication1</tp:dbus-ref>
           channels, this means that the connection manager MAY continue to
           connect, and MAY advance the <tp:dbus-ref
-            namespace="ofdT">Connection.Status</tp:dbus-ref> to Connected.</p>
+            namespace="imt1">Connection.Status</tp:dbus-ref> to Connected.</p>
       </tp:docstring>
 
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
+        <tp:error name="im.telepathy1.Error.NotAvailable">
           <tp:docstring>
             Either the state is neither In_Progress nor Server_Succeeded, or no
             challenge has been received yet, or you have already responded to
             the last challenge.
           </tp:docstring>
         </tp:error>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
+        <tp:error name="im.telepathy1.Error.NetworkError"/>
       </tp:possible-errors>
     </method>
 
@@ -587,7 +587,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           reason code.</p>
       </tp:docstring>
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
+        <tp:error name="im.telepathy1.Error.NotAvailable">
           <tp:docstring>
             The current state is either Succeeded or Client_Accepted.
           </tp:docstring>
@@ -694,7 +694,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           <tp:member-ref>AcceptSASL</tp:member-ref>). Connection to the server
           will proceed as soon as this state is reached. The Handler SHOULD
           call <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Channel">Close</tp:dbus-ref>
+            namespace="im.telepathy1.Channel">Close</tp:dbus-ref>
           to close the channel.
         </tp:docstring>
       </tp:enumvalue>
@@ -706,7 +706,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           <tp:member-ref>StartMechanism</tp:member-ref> or
           <tp:member-ref>StartMechanismWithData</tp:member-ref> again.
           Otherwise, it should give up completely, by calling <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Channel">Close</tp:dbus-ref>
+            namespace="im.telepathy1.Channel">Close</tp:dbus-ref>
           on the channel.
         </tp:docstring>
       </tp:enumvalue>

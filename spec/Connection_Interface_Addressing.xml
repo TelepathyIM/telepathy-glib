@@ -16,12 +16,14 @@
       along with this library; if not, write to the Free Software Foundation,
       Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
-  <interface name="org.freedesktop.Telepathy.Connection.Interface.Addressing.DRAFT"
+  <interface name="im.telepathy1.Connection.Interface.Addressing1"
              tp:causes-havoc="experimental">
-    <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
-    <tp:requires interface="org.freedesktop.Telepathy.Connection.Interface.Contacts"/>
+    <tp:requires interface="im.telepathy1.Connection"/>
+    <tp:requires interface="im.telepathy1.Connection.Interface.Contacts"/>
     <tp:added version="0.19.12">(as draft)</tp:added>
     <tp:changed version="0.25.1">Both methods now return two dictionaries.</tp:changed>
+    <tp:changed version="0.25.UNRELEASED">Replaced DRAFT with a version number
+      (still keeping the causes-havoc annotation)</tp:changed>
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>This interface deals with the multiple address types that can
       refer to the same contact, such as vCard fields and URIs.</p>
@@ -40,7 +42,7 @@
           <p>The vCard field of the addresses we are requesting. The
             field name SHOULD be in lower case. Supported
             fields can be found in
-            <tp:dbus-ref namespace="org.freedesktop.Telepathy.Protocol.Interface.Addressing">AddressableVCardFields</tp:dbus-ref>.</p>
+            <tp:dbus-ref namespace="im.telepathy1.Protocol.Interface.Addressing1">AddressableVCardFields</tp:dbus-ref>.</p>
 
           <p>The <code>url</code> vCard field MUST NOT appear here; see
             <tp:member-ref>GetContactsByURI</tp:member-ref> instead.</p>
@@ -67,13 +69,13 @@
             activity, will be in the reply.</p>
 
           <p>Attributes from this interface and from
-            <tp:dbus-ref>org.freedesktop.Telepathy.Connection</tp:dbus-ref>
+            <tp:dbus-ref>im.telepathy1.Connection</tp:dbus-ref>
             are always returned, and need not be requested
             explicitly.</p>
 
           <p>The behavior of this parameter is similar to the same
             parameter in
-            <tp:dbus-ref namespace="org.freedesktop.Telepathy.Connection.Interface">Contacts.GetContactAttributes</tp:dbus-ref>.</p>
+            <tp:dbus-ref namespace="im.telepathy1.Connection.Interface">Contacts.GetContactAttributes</tp:dbus-ref>.</p>
           </tp:docstring>
       </arg>
 
@@ -103,7 +105,7 @@
 
           <p>Each contact's attributes will always include at least the
             identifier that would be obtained by inspecting the handle
-            (<code>org.freedesktop.Telepathy.Connection/contact-id</code>).
+            (<code>im.telepathy1.Connection/contact-id</code>).
           </p>
         </tp:docstring>
       </arg>
@@ -111,17 +113,10 @@
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Request contacts and retrieve their attributes using a given field
           in their vCards.</p>
-
-        <p>The connection manager should record that these handles are in
-          use by the client who invokes this method, and must not
-          deallocate the handles until the client disconnects from the
-          bus or calls the
-          <tp:dbus-ref namespace="org.freedesktop.Telepathy">Connection.ReleaseHandles</tp:dbus-ref>
-          method.</p>
       </tp:docstring>
 
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
+        <tp:error name="im.telepathy1.Error.Disconnected"/>
       </tp:possible-errors>
     </method>
 
@@ -131,7 +126,7 @@
         <tp:docstring>
           The URI addresses to get contact handles for. Supported
           schemes can be found in
-          <tp:dbus-ref namespace="org.freedesktop.Telepathy.Protocol.Interface.Addressing">AddressableURISchemes</tp:dbus-ref>.
+          <tp:dbus-ref namespace="im.telepathy1.Protocol.Interface.Addressing1">AddressableURISchemes</tp:dbus-ref>.
         </tp:docstring>
       </arg>
       <arg direction="in" name="Interfaces" type="as"
@@ -143,13 +138,13 @@
             activity, will be in the reply.</p>
 
           <p>Attributes from this interface and from
-            <tp:dbus-ref>org.freedesktop.Telepathy.Connection</tp:dbus-ref>
+            <tp:dbus-ref>im.telepathy1.Connection</tp:dbus-ref>
             are always returned, and need not be requested
             explicitly.</p>
 
           <p>The behavior of this parameter is similar to the same
             parameter in
-            <tp:dbus-ref namespace="org.freedesktop.Telepathy.Connection.Interface">Contacts.GetContactAttributes</tp:dbus-ref>.</p>
+            <tp:dbus-ref namespace="im.telepathy1.Connection.Interface">Contacts.GetContactAttributes</tp:dbus-ref>.</p>
           </tp:docstring>
       </arg>
 
@@ -178,24 +173,17 @@
 
           <p>Each contact's attributes will always include at least the
             identifier that would be obtained by inspecting the handle
-            (<code>org.freedesktop.Telepathy.Connection/contact-id</code>).
+            (<code>im.telepathy1.Connection/contact-id</code>).
           </p>
         </tp:docstring>
       </arg>
 
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Request contacts and retrieve their attributes using URI addresses.</p>
-
-        <p>The connection manager should record that these handles are in
-          use by the client who invokes this method, and must not
-          deallocate the handles until the client disconnects from the
-          bus or calls the
-          <tp:dbus-ref namespace="org.freedesktop.Telepathy">Connection.ReleaseHandles</tp:dbus-ref>
-          method.</p>
       </tp:docstring>
 
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
+        <tp:error name="im.telepathy1.Error.Disconnected"/>
       </tp:possible-errors>
     </method>
 

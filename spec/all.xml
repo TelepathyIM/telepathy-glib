@@ -3,7 +3,7 @@
   xmlns:xi="http://www.w3.org/2001/XInclude">
 
 <tp:title>Telepathy D-Bus Interface Specification</tp:title>
-<tp:version>0.25.1</tp:version>
+<tp:version>0.25.1.1</tp:version>
 
 <tp:copyright>Copyright © 2005-2011 Collabora Limited</tp:copyright>
 <tp:copyright>Copyright © 2005-2011 Nokia Corporation</tp:copyright>
@@ -181,7 +181,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
    <tp:section name="Call-related interfaces">
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
      <p>These interfaces are only applicable to channels of type <tp:dbus-ref
-       namespace='ofdT.Channel.Type'>Call1</tp:dbus-ref>.</p>
+       namespace='imt1.Channel.Type'>Call1</tp:dbus-ref>.</p>
     </tp:docstring>
 
     <xi:include href="Channel_Interface_DTMF.xml"/>
@@ -192,8 +192,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
      <p>These interfaces provide functionality for ad-hoc conference calls and
        chat rooms. They are primarily intended for <tp:dbus-ref
-       namespace='ofdT.Channel.Type'>Text</tp:dbus-ref> and
-       <tp:dbus-ref namespace='ofdT.Channel.Type'>Call1</tp:dbus-ref>
+       namespace='imt1.Channel.Type'>Text</tp:dbus-ref> and
+       <tp:dbus-ref namespace='imt1.Channel.Type'>Call1</tp:dbus-ref>
        channels, but may also appear on other types of channel.</p>
     </tp:docstring>
 

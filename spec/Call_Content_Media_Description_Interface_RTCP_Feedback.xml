@@ -18,10 +18,10 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
   </tp:license>
 
-  <interface name="org.freedesktop.Telepathy.Call1.Content.MediaDescription.Interface.RTCPFeedback"
+  <interface name="im.telepathy1.Call1.Content.MediaDescription.Interface.RTCPFeedback1"
     tp:causes-havoc="experimental">
     <tp:added version="0.23.4">(draft version, not API-stable)</tp:added>
-    <tp:requires interface="org.freedesktop.Telepathy.Call1.Content.MediaDescription"/>
+    <tp:requires interface="im.telepathy1.Call1.Content.MediaDescription"/>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>This codec offer interface provides a method of signalling
@@ -31,7 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
       <p>The codec identifiers used in the description of the Feedback Messages
       sent in the <tp:dbus-ref
-        namespace="ofdT.Call1.Content.MediaDescription">Accept</tp:dbus-ref>'s
+        namespace="imt1.Call1.Content.MediaDescription">Accept</tp:dbus-ref>'s
       should match those used for the RemoteCodecs in the same Accept call.
       </p>
 
@@ -40,6 +40,72 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         <a href="http://www.faqs.org/rfcs/rfc4585.html">RFC 4585</a>.</p>
 
     </tp:docstring>
+
+    <tp:struct name="RTCP_Feedback_Message_Properties">
+      <tp:added version="0.22.1"/>
+      <tp:changed version="0.23.4">This struct is also used by Call, but
+        in call, the CM should know about RTP profiles, and never use MAXUINT
+        as a default value, because it complicates things unnecessarily.
+      </tp:changed>
+      <tp:member type="u" name="RTCPMinimumInterval">
+        <tp:docstring>
+          The minimum interval between two regular RTCP packets in
+          milliseconds for this content. If no special value is
+          required, 5000 (5 seconds) should be used in RTP/AVP, and a
+          lower value in RTP/AVPF (by default, 0).
+        </tp:docstring>
+      </tp:member>
+      <tp:member type="a(sss)" tp:type="RTCP_Feedback_Message[]"
+                 name="Messages">
+        <tp:docstring>
+          The RTCP feedback messages for this codec.
+        </tp:docstring>
+      </tp:member>
+    </tp:struct>
+
+    <tp:struct name="RTCP_Feedback_Message"
+               array-name="RTCP_Feedback_Message_List">
+      <tp:added version="0.22.1"/>
+      <tp:docstring>
+        A struct defining an RTCP feedback message.
+      </tp:docstring>
+      <tp:member type="s" name="Type">
+        <tp:docstring>
+          Feedback type, for example "ack", "nack", or "ccm".
+        </tp:docstring>
+      </tp:member>
+      <tp:member type="s" name="Subtype">
+        <tp:docstring>
+          Feedback subtype, according to the Type, can be an empty string (""),
+          if there is no subtype.
+          For example, generic nack is Type="nack" Subtype="".
+        </tp:docstring>
+      </tp:member>
+      <tp:member type="s" name="Parameters">
+        <tp:docstring>
+          Feedback parameters as a string. Format is defined in the relevant RFC
+        </tp:docstring>
+      </tp:member>
+    </tp:struct>
+
+    <tp:mapping name="RTCP_Feedback_Message_Map">
+      <tp:added version="0.22.1"/>
+      <tp:docstring>
+        A map of codec and its feedback properties.
+      </tp:docstring>
+      <tp:member type="u" name="Codec_Identifier">
+        <tp:docstring>
+          Numeric identifier for the codec. This will be used as the
+          PT in the SDP or content description.
+        </tp:docstring>
+      </tp:member>
+      <tp:member type="(ua(sss))" tp:type="RTCP_Feedback_Message_Properties"
+                 name="Properties">
+        <tp:docstring>
+          The RTCP feedback properties for this codec.
+        </tp:docstring>
+      </tp:member>
+    </tp:mapping>
 
     <property name="FeedbackMessages" type="a{u(ua(sss))}"
       tp:type="RTCP_Feedback_Message_Map"

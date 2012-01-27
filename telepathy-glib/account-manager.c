@@ -107,7 +107,7 @@ typedef struct {
   GArray *features;
 } TpAccountManagerFeatureCallback;
 
-#define MC5_BUS_NAME "org.freedesktop.Telepathy.MissionControl5"
+#define MC5_BUS_NAME "im.telepathy1.MissionControl5"
 
 enum {
   ACCOUNT_VALIDITY_CHANGED,

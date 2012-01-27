@@ -56,8 +56,8 @@ test_new (Test *test,
 {
   test->client = tp_tests_object_new_static_class (TP_TYPE_CLIENT,
       "dbus-daemon", test->dbus,
-      "object-path", "/org/freedesktop/Telepathy/Client/whatever",
-      "bus-name", "org.freedesktop.Telepathy.Client.whatever",
+      "object-path", "/im/telepathy1/Client/whatever",
+      "bus-name", "im.telepathy1.Client.whatever",
       NULL);
   g_assert (test->client != NULL);
 }

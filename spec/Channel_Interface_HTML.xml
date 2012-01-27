@@ -19,17 +19,16 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
   <interface
-    name="org.freedesktop.Telepathy.Channel.Interface.HTML.DRAFT"
+    name="im.telepathy1.Channel.Interface.HTML1"
     tp:causes-havoc="unfinished">
-    <tp:requires interface="org.freedesktop.Telepathy.Channel.Type.Text"/>
-    <tp:requires
-      interface="org.freedesktop.Telepathy.Channel.Interface.Messages"/>
+    <tp:requires interface="im.telepathy1.Channel.Type.Text"/>
     <tp:added version="0.17.5">(draft version, not API-stable)</tp:added>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-      <p>This interface extends the Messages interface to support
-        capability discovery, so clients can decide what subset of HTML
-        is supported.</p>
+      <p>This interface extends the <tp:dbus-ref
+        namespace="imt1.Channel.Type">Text</tp:dbus-ref> interface to
+        support capability discovery, so clients can decide what
+        subset of HTML is supported.</p>
 
       <p>(However, the capability discovery mechanism has not been written
         yet, so this interface MUST NOT be used. It exists only to

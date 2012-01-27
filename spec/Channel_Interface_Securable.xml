@@ -20,24 +20,24 @@
       USA.</p>
   </tp:license>
 
-  <interface name="org.freedesktop.Telepathy.Channel.Interface.Securable">
+  <interface name="im.telepathy1.Channel.Interface.Securable1">
     <tp:added version="0.21.5">as stable API</tp:added>
-    <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
+    <tp:requires interface="im.telepathy1.Channel"/>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>This interface exists to expose security information about
-        <tp:dbus-ref namespace="ofdT">Channel</tp:dbus-ref>s. The two
+        <tp:dbus-ref namespace="imt1">Channel</tp:dbus-ref>s. The two
         properties are sometimes immutable and can be used to make
         decisions on how cautious to be about transferring sensitive
         data. The special case of <tp:dbus-ref
-        namespace="ofdT.Channel.Type">ServerAuthentication</tp:dbus-ref>
+        namespace="imt1.Channel.Type">ServerAuthentication1</tp:dbus-ref>
         channels is one example of where the two properties are
         immutable.</p>
 
       <p>For example, clients MAY use these properties to decide
         whether the <code>PLAIN</code> mechanism is acceptable for a
         <tp:dbus-ref
-        namespace="ofdT.Channel.Interface">SASLAuthentication</tp:dbus-ref>
+        namespace="imt1.Channel.Interface">SASLAuthentication1</tp:dbus-ref>
         channel.</p>
     </tp:docstring>
 

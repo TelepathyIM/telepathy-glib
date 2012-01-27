@@ -2141,7 +2141,7 @@ delegate_channels_if_needed (TpBaseClient *self,
         continue;
 
       should_delegate = tp_asv_get_boolean (hints,
-          "org.freedesktop.Telepathy.ChannelRequest.DelegateToPreferredHandler",
+          "im.telepathy1.ChannelRequest.DelegateToPreferredHandler",
           NULL);
 
       if (!should_delegate)
@@ -3314,7 +3314,7 @@ tp_base_client_delegate_channels_finish (TpBaseClient *self,
  * @destroy: called with the @user_data as argument, when @self is destroyed
  *
  * Turn on support for
- * the org.freedesktop.Telepathy.ChannelRequest.DelegateToPreferredHandler
+ * the im.telepathy1.ChannelRequest.DelegateToPreferredHandler
  * hint.
  *
  * When receiving a request containing this hint, @self will automatically
