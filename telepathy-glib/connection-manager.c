@@ -255,11 +255,6 @@ struct _TpConnectionManagerPrivate {
      * is TRUE */
     GPtrArray *protocol_structs;
 
-    /* If we're waiting for a GetParameters, then GPtrArray of g_strdup'd
-     * gchar * representing protocols we haven't yet introspected.
-     * Otherwise NULL */
-    GPtrArray *pending_protocols;
-
     /* dup'd name => referenced TpProtocol
      *
      * If we're waiting for a GetParameters, protocols we found so far for
@@ -601,45 +596,6 @@ tp_connection_manager_call_when_ready (TpConnectionManager *self,
 static void tp_connection_manager_continue_introspection
     (TpConnectionManager *self);
 
-static void
-tp_connection_manager_got_parameters (TpConnectionManager *self,
-                                      const GPtrArray *parameters,
-                                      const GError *error,
-                                      gpointer user_data,
-                                      GObject *user_object)
-{
-  gchar *protocol = user_data;
-  TpProtocol *proto_object;
-  GHashTable *immutables;
-
-  g_assert (self->priv->introspection_step == INTROSPECT_GETTING_PARAMETERS);
-  g_assert (self->priv->introspection_call != NULL);
-  self->priv->introspection_call = NULL;
-
-  if (error != NULL)
-    {
-      DEBUG ("Error getting params for %s, skipping it", protocol);
-      goto out;
-    }
-
-  immutables = tp_asv_new (
-      TP_PROP_PROTOCOL_PARAMETERS, TP_ARRAY_TYPE_PARAM_SPEC_LIST, parameters,
-      NULL);
-  proto_object = tp_protocol_new (tp_proxy_get_dbus_daemon (self),
-      self->name, protocol, immutables, NULL);
-  g_hash_table_unref (immutables);
-
-  /* tp_protocol_new can currently only fail because of malformed names,
-   * and we already checked those */
-  g_assert (proto_object != NULL);
-
-  g_hash_table_insert (self->priv->found_protocols,
-      g_strdup (protocol), proto_object);
-
-out:
-  tp_connection_manager_continue_introspection (self);
-}
-
 static void tp_connection_manager_ready_or_failed (TpConnectionManager *self,
                                        const GError *error);
 
@@ -647,8 +603,6 @@ static void
 tp_connection_manager_end_introspection (TpConnectionManager *self,
                                          const GError *error)
 {
-  guint i;
-
   self->priv->introspection_step = INTROSPECT_IDLE;
 
   if (self->priv->introspection_call != NULL)
@@ -661,15 +615,6 @@ tp_connection_manager_end_introspection (TpConnectionManager *self,
     {
       g_hash_table_unref (self->priv->found_protocols);
       self->priv->found_protocols = NULL;
-    }
-
-  if (self->priv->pending_protocols != NULL)
-    {
-      for (i = 0; i < self->priv->pending_protocols->len; i++)
-        g_free (self->priv->pending_protocols->pdata[i]);
-
-      g_ptr_array_unref (self->priv->pending_protocols);
-      self->priv->pending_protocols = NULL;
     }
 
   DEBUG ("End of introspection, info source %u", self->info_source);
@@ -769,23 +714,27 @@ tp_connection_manager_get_all_cb (TpProxy *proxy,
     }
   else
     {
-      DEBUG ("Ignoring error getting ConnectionManager properties: %s %d: %s",
+      DEBUG ("Error getting ConnectionManager properties: %s %d: %s",
           g_quark_to_string (error->domain), error->code, error->message);
+
+      if (!self->running)
+        {
+          /* GetAll failed to start it - we assume this is because
+           * activation failed. */
+          g_signal_emit (self, signals[SIGNAL_EXITED], 0);
+        }
+
+      tp_connection_manager_end_introspection (self, error);
     }
 
   tp_connection_manager_continue_introspection (self);
 }
 
-static void tp_connection_manager_got_protocols (TpConnectionManager *self,
-    const gchar **protocols,
-    const GError *error,
-    gpointer user_data,
-    GObject *user_object);
-
 static void
 tp_connection_manager_continue_introspection (TpConnectionManager *self)
 {
-  gchar *next_protocol;
+  GHashTable *tmp;
+  guint old;
 
   if (self->priv->introspection_step == INTROSPECT_IDLE)
     {
@@ -797,111 +746,24 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
       return;
     }
 
-  if (self->priv->introspection_step == INTROSPECT_GETTING_PROPERTIES)
-    {
-      g_assert (self->priv->pending_protocols == NULL);
 
-      if (self->priv->found_protocols == NULL)
-        {
-          DEBUG ("calling ListProtocols on CM");
-          self->priv->introspection_step = INTROSPECT_LISTING_PROTOCOLS;
-          self->priv->introspection_call =
-            tp_cli_connection_manager_call_list_protocols (self, -1,
-                tp_connection_manager_got_protocols, NULL, NULL, NULL);
-          return;
-        }
-      /* else we already found the protocols and their parameters, so behave
-       * as though we'd already called GetParameters n times */
-    }
+  /* swap found_protocols and protocol_objects, so we'll free the old
+   * protocol_objects as part of end_introspection */
+  tmp = self->priv->protocol_objects;
+  self->priv->protocol_objects = self->priv->found_protocols;
+  self->priv->found_protocols = tmp;
 
-  if (self->priv->pending_protocols == NULL ||
-      self->priv->pending_protocols->len == 0)
-    {
-      GHashTable *tmp;
-      guint old;
+  tp_connection_manager_update_protocol_structs (self);
 
-      /* swap found_protocols and protocol_objects, so we'll free the old
-       * protocol_objects as part of end_introspection */
-      tmp = self->priv->protocol_objects;
-      self->priv->protocol_objects = self->priv->found_protocols;
-      self->priv->found_protocols = tmp;
+  old = self->info_source;
+  self->info_source = TP_CM_INFO_SOURCE_LIVE;
 
-      tp_connection_manager_update_protocol_structs (self);
+  if (old != TP_CM_INFO_SOURCE_LIVE)
+    g_object_notify ((GObject *) self, "info-source");
 
-      old = self->info_source;
-      self->info_source = TP_CM_INFO_SOURCE_LIVE;
+  tp_connection_manager_end_introspection (self, NULL);
 
-      if (old != TP_CM_INFO_SOURCE_LIVE)
-        g_object_notify ((GObject *) self, "info-source");
-
-      tp_connection_manager_end_introspection (self, NULL);
-
-      g_assert (self->priv->introspection_step == INTROSPECT_IDLE);
-    }
-  else
-    {
-      next_protocol = g_ptr_array_remove_index_fast (
-          self->priv->pending_protocols, 0);
-      self->priv->introspection_step = INTROSPECT_GETTING_PARAMETERS;
-      self->priv->introspection_call =
-          tp_cli_connection_manager_call_get_parameters (self, -1,
-              next_protocol, tp_connection_manager_got_parameters,
-              next_protocol, g_free, NULL);
-    }
-}
-
-static void
-tp_connection_manager_got_protocols (TpConnectionManager *self,
-                                     const gchar **protocols,
-                                     const GError *error,
-                                     gpointer user_data,
-                                     GObject *user_object)
-{
-  guint i = 0;
-  const gchar **iter;
-
-  g_assert (self->priv->introspection_call != NULL);
-  self->priv->introspection_call = NULL;
-
-  if (error != NULL)
-    {
-      DEBUG ("Failed: %s", error->message);
-
-      if (!self->running)
-        {
-          /* ListProtocols failed to start it - we assume this is because
-           * activation failed */
-          g_signal_emit (self, signals[SIGNAL_EXITED], 0);
-        }
-
-      tp_connection_manager_end_introspection (self, error);
-      return;
-    }
-
-  for (iter = protocols; *iter != NULL; iter++)
-    i++;
-
-  DEBUG ("Succeeded with %u protocols", i);
-
-  g_assert (self->priv->found_protocols == NULL);
-  self->priv->found_protocols = g_hash_table_new_full (g_str_hash,
-      g_str_equal, g_free, g_object_unref);
-
-  g_assert (self->priv->pending_protocols == NULL);
-  self->priv->pending_protocols = g_ptr_array_sized_new (i);
-
-  for (iter = protocols; *iter != NULL; iter++)
-    {
-      if (!tp_connection_manager_check_valid_protocol_name (*iter, NULL))
-        {
-          DEBUG ("Protocol %s has an invalid name", *iter);
-          continue;
-        }
-
-      g_ptr_array_add (self->priv->pending_protocols, g_strdup (*iter));
-    }
-
-  tp_connection_manager_continue_introspection (self);
+  g_assert (self->priv->introspection_step == INTROSPECT_IDLE);
 }
 
 static gboolean
@@ -1257,7 +1119,6 @@ static void
 tp_connection_manager_finalize (GObject *object)
 {
   TpConnectionManager *self = TP_CONNECTION_MANAGER (object);
-  guint i;
 
   g_free (self->priv->manager_file);
 
@@ -1266,14 +1127,6 @@ tp_connection_manager_finalize (GObject *object)
 
   if (self->priv->introspect_idle_id != 0)
     g_source_remove (self->priv->introspect_idle_id);
-
-  if (self->priv->pending_protocols != NULL)
-    {
-      for (i = 0; i < self->priv->pending_protocols->len; i++)
-        g_free (self->priv->pending_protocols->pdata[i]);
-
-      g_ptr_array_unref (self->priv->pending_protocols);
-    }
 
   G_OBJECT_CLASS (tp_connection_manager_parent_class)->finalize (object);
 }

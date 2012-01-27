@@ -324,20 +324,6 @@ test_unwelcome (Test *test,
   g_hash_table_unref (parameters);
 }
 
-static void
-test_get_parameters_bad_proto (Test *test,
-    gconstpointer data G_GNUC_UNUSED)
-{
-  GPtrArray *out = NULL;
-
-  tp_cli_connection_manager_run_get_parameters (test->cm, -1,
-      "not-example", &out, &test->error, NULL);
-  g_assert (out == NULL);
-  g_assert (test->error != NULL);
-  g_assert_cmpint (test->error->code, ==, TP_ERROR_NOT_IMPLEMENTED);
-  g_clear_error (&test->error);
-}
-
 int
 main (int argc,
       char **argv)
@@ -357,8 +343,6 @@ main (int argc,
       teardown);
   g_test_add ("/params-cm/unwelcome", Test, NULL, setup, test_unwelcome,
       teardown);
-  g_test_add ("/params-cm/get-parameters-bad-proto", Test, NULL, setup,
-      test_get_parameters_bad_proto, teardown);
 
   return g_test_run ();
 }

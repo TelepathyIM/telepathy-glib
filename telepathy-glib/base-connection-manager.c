@@ -851,96 +851,6 @@ parse_parameters (const TpCMParamSpec *paramspec,
   return TRUE;
 }
 
-
-/**
- * tp_base_connection_manager_get_parameters
- *
- * Implements D-Bus method GetParameters
- * on interface org.freedesktop.Telepathy.ConnectionManager
- */
-static void
-tp_base_connection_manager_get_parameters (TpSvcConnectionManager *iface,
-                                           const gchar *proto,
-                                           DBusGMethodInvocation *context)
-{
-  GPtrArray *ret;
-  GError *error = NULL;
-  TpBaseConnectionManager *self = TP_BASE_CONNECTION_MANAGER (iface);
-  guint i;
-  TpBaseProtocol *protocol;
-  const TpCMParamSpec *parameters;
-
-  g_assert (TP_IS_BASE_CONNECTION_MANAGER (iface));
-  /* a D-Bus method shouldn't be happening til we're on D-Bus */
-  g_assert (self->priv->registered);
-
-  protocol = tp_base_connection_manager_get_protocol (self, proto, &error);
-
-  if (protocol == NULL)
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-      return;
-    }
-
-  parameters = tp_base_protocol_get_parameters (protocol);
-  g_assert (parameters != NULL);
-
-  ret = g_ptr_array_new ();
-
-  for (i = 0; parameters[i].name != NULL; i++)
-    {
-      g_ptr_array_add (ret,
-          _tp_cm_param_spec_to_dbus (parameters + i));
-    }
-
-  tp_svc_connection_manager_return_from_get_parameters (context, ret);
-
-  for (i = 0; i < ret->len; i++)
-    {
-      g_value_array_free (g_ptr_array_index (ret, i));
-    }
-
-  g_ptr_array_unref (ret);
-}
-
-
-/**
- * tp_base_connection_manager_list_protocols
- *
- * Implements D-Bus method ListProtocols
- * on interface org.freedesktop.Telepathy.ConnectionManager
- */
-static void
-tp_base_connection_manager_list_protocols (TpSvcConnectionManager *iface,
-                                           DBusGMethodInvocation *context)
-{
-  TpBaseConnectionManager *self = TP_BASE_CONNECTION_MANAGER (iface);
-  GPtrArray *protocols;
-  GHashTableIter iter;
-  gpointer name;
-
-  /* a D-Bus method shouldn't be happening til we're on D-Bus */
-  g_assert (self->priv->registered);
-
-  protocols = g_ptr_array_sized_new (
-      g_hash_table_size (self->priv->protocols) + 1);
-
-  g_hash_table_iter_init (&iter, self->priv->protocols);
-
-  while (g_hash_table_iter_next (&iter, &name, NULL))
-    {
-      g_ptr_array_add (protocols, name);
-    }
-
-  g_ptr_array_add (protocols, NULL);
-
-  tp_svc_connection_manager_return_from_list_protocols (
-      context, (const gchar **) protocols->pdata);
-  g_ptr_array_unref (protocols);
-}
-
-
 /**
  * tp_base_connection_manager_request_connection
  *
@@ -1127,8 +1037,6 @@ service_iface_init (gpointer g_iface, gpointer iface_data)
 
 #define IMPLEMENT(x) tp_svc_connection_manager_implement_##x (klass, \
     tp_base_connection_manager_##x)
-  IMPLEMENT(get_parameters);
-  IMPLEMENT(list_protocols);
   IMPLEMENT(request_connection);
 #undef IMPLEMENT
 }
