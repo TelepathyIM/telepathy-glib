@@ -1430,20 +1430,13 @@ tp_contact_ensure (TpConnection *connection,
  * Try to return an existing contact object or create a new contact object
  * immediately.
  *
- * If tp_connection_has_immortal_handles() would return %TRUE and
- * @identifier is non-%NULL, this function always succeeds.
+ * If @identifier is non-%NULL, this function always succeeds.
  *
- * On connections without immortal handles, it is not possible to guarantee
- * that @handle remains valid without making asynchronous D-Bus calls, so
- * it might be necessary to delay processing of messages or other events
- * until a #TpContact can be constructed asynchronously, for instance by using
- * tp_connection_get_contacts_by_id().
- *
- * Similarly, if @identifier is %NULL, it might not be possible to find the
+ * If @identifier is %NULL, it might not be possible to find the
  * identifier for @handle without making asynchronous D-Bus calls, so
- * it might be necessary to delay processing of messages or other events
- * until a #TpContact can be constructed asynchronously, for instance by using
- * tp_connection_get_contacts_by_handle().
+ * it might be necessary to delay processing of messages or other
+ * events until a #TpContact can be constructed asynchronously, for
+ * instance by using tp_connection_get_contacts_by_handle().
  *
  * Returns: (transfer full): a contact or %NULL
  *
@@ -1465,8 +1458,7 @@ tp_connection_dup_contact_if_possible (TpConnection *connection,
     {
       g_object_ref (ret);
     }
-  else if (tp_connection_has_immortal_handles (connection) &&
-      identifier != NULL)
+  else if (identifier != NULL)
     {
       ret = tp_contact_ensure (connection, handle);
 
@@ -3287,7 +3279,6 @@ contacts_get_attributes (ContactsContext *context)
   tp_connection_get_contact_attributes (context->connection, -1,
       context->handles->len, (const TpHandle *) context->handles->data,
       supported_interfaces,
-      (context->signature == CB_BY_HANDLE && context->contacts->len == 0),
       contacts_got_attributes,
       context, contacts_context_unref, context->weak_object);
   g_free (supported_interfaces);

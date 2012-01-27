@@ -1194,18 +1194,6 @@ USA.</p>
       </arg>
     </method>
 
-    <property name="HasImmortalHandles"
-      tp:name-for-bindings="Has_Immortal_Handles"
-      access="read" type="b">
-      <tp:added version="0.21.6"/>
-      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>True if handles last for the whole lifetime of the Connection.
-          This SHOULD be the case in all connection managers, but clients
-          MUST interoperate with older connection managers
-          (which reference-count handles).</p>
-      </tp:docstring>
-    </property>
-
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>This models a connection to a single user account on a communication
         service. Its basic capability is to provide the facility to request and

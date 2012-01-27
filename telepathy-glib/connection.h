@@ -193,8 +193,6 @@ void tp_connection_add_client_interest (TpConnection *self,
 void tp_connection_add_client_interest_by_id (TpConnection *self,
     GQuark interested_in);
 
-gboolean tp_connection_has_immortal_handles (TpConnection *self);
-
 #define TP_CONNECTION_FEATURE_CORE \
   (tp_connection_get_feature_quark_core ())
 GQuark tp_connection_get_feature_quark_core (void) G_GNUC_CONST;
@@ -213,15 +211,6 @@ GQuark tp_connection_get_feature_quark_contact_info (void) G_GNUC_CONST;
 
 /* connection-handles.c */
 
-typedef void (*TpConnectionHoldHandlesCb) (TpConnection *connection,
-    TpHandleType handle_type, guint n_handles, const TpHandle *handles,
-    const GError *error, gpointer user_data, GObject *weak_object);
-
-void tp_connection_hold_handles (TpConnection *self, gint timeout_ms,
-    TpHandleType handle_type, guint n_handles, const TpHandle *handles,
-    TpConnectionHoldHandlesCb callback,
-    gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
-
 typedef void (*TpConnectionRequestHandlesCb) (TpConnection *connection,
     TpHandleType handle_type,
     guint n_handles, const TpHandle *handles, const gchar * const *ids,
@@ -231,9 +220,6 @@ void tp_connection_request_handles (TpConnection *self, gint timeout_ms,
     TpHandleType handle_type, const gchar * const *ids,
     TpConnectionRequestHandlesCb callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
-
-void tp_connection_unref_handles (TpConnection *self,
-    TpHandleType handle_type, guint n_handles, const TpHandle *handles);
 
 /* connection-avatars.c */
 
@@ -303,12 +289,12 @@ G_BEGIN_DECLS
 
 void tp_connection_get_contact_attributes (TpConnection *self,
     gint timeout_ms, guint n_handles, const TpHandle *handles,
-    const gchar * const *interfaces, gboolean hold,
+    const gchar * const *interfaces,
     tp_cli_connection_interface_contacts_callback_for_get_contact_attributes callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
 
 void tp_connection_get_contact_list_attributes (TpConnection *self,
-    gint timeout_ms, const gchar * const *interfaces, gboolean hold,
+    gint timeout_ms, const gchar * const *interfaces,
     tp_cli_connection_interface_contacts_callback_for_get_contact_attributes callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
 GBinding *tp_connection_bind_connection_status_to_property (TpConnection *self,

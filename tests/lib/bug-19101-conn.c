@@ -41,7 +41,6 @@ tp_tests_bug19101_connection_get_contact_attributes (
     TpSvcConnectionInterfaceContacts *iface,
     const GArray *handles,
     const char **interfaces,
-    gboolean hold,
     DBusGMethodInvocation *context)
 {
   TpBaseConnection *base_conn = TP_BASE_CONNECTION (iface);
@@ -59,7 +58,7 @@ tp_tests_bug19101_connection_get_contact_attributes (
       /* strictly speaking this should hold the handles on behalf of the
        * sending process, but handles are immortal now anyway... */
       result = tp_contacts_mixin_get_contact_attributes ((GObject *) iface,
-          handles, interfaces, assumed_interfaces, NULL);
+          handles, interfaces, assumed_interfaces);
       goto finally;
     }
 

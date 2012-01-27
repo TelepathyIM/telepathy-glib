@@ -1,4 +1,4 @@
-/* Helper to hold Telepathy handles.
+/* Helper to do stuff to Telepathy handles.
  *
  * Copyright (C) 2008 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2008 Nokia Corporation
@@ -25,172 +25,6 @@
 
 #define DEBUG_FLAG TP_DEBUG_HANDLES
 #include "telepathy-glib/debug-internal.h"
-
-/**
- * tp_connection_unref_handles:
- * @self: a connection
- * @handle_type: a handle type
- * @n_handles: the number of handles in @handles
- * @handles: (array length=n_handles): an array of @n_handles handles
- *
- * Do nothing. In versions of telepathy-glib prior to 0.13.8,
- * this released a reference to the handles in @handles.
- */
-void
-tp_connection_unref_handles (TpConnection *self G_GNUC_UNUSED,
-                             TpHandleType handle_type G_GNUC_UNUSED,
-                             guint n_handles G_GNUC_UNUSED,
-                             const TpHandle *handles G_GNUC_UNUSED)
-{
-}
-
-
-typedef struct {
-    TpHandleType handle_type;
-    GArray *handles;
-    gpointer user_data;
-    GDestroyNotify destroy;
-    TpConnectionHoldHandlesCb callback;
-} HoldHandlesContext;
-
-
-static void
-hold_handles_context_free (gpointer p)
-{
-  HoldHandlesContext *context = p;
-
-  if (context->destroy != NULL)
-    context->destroy (context->user_data);
-
-  g_array_unref (context->handles);
-
-  g_slice_free (HoldHandlesContext, context);
-}
-
-/**
- * TpConnectionHoldHandlesCb:
- * @connection: the connection
- * @handle_type: the handle type that was passed to
- *  tp_connection_hold_handles()
- * @n_handles: the number of handles that were passed to
- *  tp_connection_hold_handles() on success, or 0 on failure
- * @handles: a copy of the array of @n_handles handles that was passed to
- *  tp_connection_hold_handles() on success, or %NULL on failure
- * @error: %NULL on success, or an error on failure
- * @user_data: the same arbitrary pointer that was passed to
- *  tp_connection_hold_handles()
- * @weak_object: the same object that was passed to
- *  tp_connection_hold_handles()
- *
- * Signature of the callback called when tp_connection_hold_handles() succeeds
- * or fails.
- *
- * On success, the caller has a reference to each handle in @handles.
- *
- * Since telepathy-glib version 0.13.8,
- * the handles will remain valid until @connection becomes invalid
- * (signalled by #TpProxy::invalidated). In earlier versions, they could be
- * released with tp_connection_unref_handles().
- *
- * For convenience, the handle type and handles requested by the caller are
- * passed through to this callback on success, so the caller does not have to
- * include them in @user_data.
- */
-
-static void
-connection_held_handles (TpConnection *self,
-                         const GError *error,
-                         gpointer user_data,
-                         GObject *weak_object)
-{
-  HoldHandlesContext *context = user_data;
-
-  g_object_ref (self);
-
-  if (error == NULL)
-    {
-      DEBUG ("%u handles of type %u", context->handles->len,
-          context->handle_type);
-      /* On the Telepathy side, we have held these handles (at least once).
-       * That's all we need. */
-
-      context->callback (self, context->handle_type, context->handles->len,
-          (const TpHandle *) context->handles->data, NULL,
-          context->user_data, weak_object);
-    }
-  else
-    {
-      DEBUG ("%u handles of type %u failed: %s %u: %s",
-          context->handles->len, context->handle_type,
-          g_quark_to_string (error->domain), error->code, error->message);
-      context->callback (self, context->handle_type, 0, NULL, error,
-          context->user_data, weak_object);
-    }
-
-  g_object_unref (self);
-}
-
-
-/**
- * tp_connection_hold_handles:
- * @self: a connection
- * @timeout_ms: the timeout in milliseconds, or -1 to use the default
- * @handle_type: the handle type
- * @n_handles: the number of handles in @handles (must be at least 1)
- * @handles: (array length=n_handles): an array of handles
- * @callback: called on success or failure (unless @weak_object has become
- *  unreferenced)
- * @user_data: arbitrary user-supplied data
- * @destroy: called to destroy @user_data after calling @callback, or when
- *  @weak_object becomes unreferenced (whichever occurs sooner)
- * @weak_object: if not %NULL, an object to be weakly referenced: if it is
- *  destroyed, @callback will not be called
- *
- * Hold (ensure a reference to) the given handles, if they are valid.
- *
- * If they are valid, the callback will later be called with the given
- * handles; if not all of them are valid, the callback will be called with
- * an error.
- *
- * This function, along with tp_connection_unref_handles(),
- * tp_connection_get_contact_attributes() and #TpContact, keeps a client-side
- * reference count of handles; you should not use the RequestHandles,
- * HoldHandles and GetContactAttributes D-Bus methods directly as well as these
- * functions.
- */
-void
-tp_connection_hold_handles (TpConnection *self,
-                            gint timeout_ms,
-                            TpHandleType handle_type,
-                            guint n_handles,
-                            const TpHandle *handles,
-                            TpConnectionHoldHandlesCb callback,
-                            gpointer user_data,
-                            GDestroyNotify destroy,
-                            GObject *weak_object)
-{
-  HoldHandlesContext *context;
-
-  g_return_if_fail (TP_IS_CONNECTION (self));
-  g_return_if_fail (handle_type > TP_HANDLE_TYPE_NONE);
-  g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
-  g_return_if_fail (n_handles >= 1);
-  g_return_if_fail (callback != NULL);
-
-  context = g_slice_new0 (HoldHandlesContext);
-  context->handle_type = handle_type;
-  context->user_data = user_data;
-  context->destroy = destroy;
-  context->handles = g_array_sized_new (FALSE, FALSE, sizeof (guint),
-      n_handles);
-  g_array_append_vals (context->handles, handles, n_handles);
-  context->callback = callback;
-
-  tp_cli_connection_call_hold_handles (self, timeout_ms, handle_type,
-      context->handles, connection_held_handles,
-      context, hold_handles_context_free, weak_object);
-}
-
 
 typedef struct {
     TpHandleType handle_type;
@@ -238,11 +72,6 @@ request_handles_context_free (gpointer p)
  * succeeds or fails.
  *
  * On success, the caller has a reference to each handle in @handles.
- *
- * Since telepathy-glib version 0.13.8,
- * the handles will remain valid until @connection becomes invalid
- * (signalled by #TpProxy::invalidated). In earlier versions, they could be
- * released with tp_connection_unref_handles().
  *
  * For convenience, the handle type and IDs requested by the caller are
  * passed through to this callback, so the caller does not have to include
@@ -319,8 +148,8 @@ connection_requested_handles (TpConnection *self,
  * @weak_object: if not %NULL, an object to be weakly referenced: if it is
  *  destroyed, @callback will not be called
  *
- * Request the handles corresponding to the given identifiers, and if they
- * are valid, hold (ensure a reference to) the corresponding handles.
+ * Request the handles corresponding to the given identifiers if they
+ * are valid.
  *
  * If they are valid, the callback will later be called with the given
  * handles; if not all of them are valid, the callback will be called with
@@ -364,7 +193,6 @@ tp_connection_request_handles (TpConnection *self,
  * @n_handles: the number of handles in @handles (must be at least 1)
  * @handles: (array length=n_handles): an array of handles
  * @interfaces: a #GStrv of interfaces
- * @hold: if %TRUE, the callback will hold one reference to each valid handle
  * @callback: (type GObject.Callback): called on success or
  *  failure (unless @weak_object has become unreferenced)
  * @user_data: arbitrary user-supplied data
@@ -375,28 +203,17 @@ tp_connection_request_handles (TpConnection *self,
  *
  * Return (via a callback) any number of attributes of the given handles.
  *
- * Since telepathy-glib version 0.13.8,
- * the handles will remain valid until @connection becomes invalid
- * (signalled by #TpProxy::invalidated). In earlier versions, if @hold
- * was %TRUE, the callback would hold a reference to them which could be
- * released with tp_connection_unref_handles().
- *
- * This is a thin wrapper around the GetContactAttributes D-Bus method, and
- * should be used in preference to
- * tp_cli_connection_interface_contacts_call_get_contact_attributes(); mixing this
- * function, tp_connection_hold_handles(), tp_connection_unref_handles(), and
- * #TpContact with direct use of the RequestHandles, HoldHandles and
- * GetContactAttributes D-Bus methods is unwise, as #TpConnection and
- * #TpContact perform client-side reference counting of handles.
- * The #TpContact API provides a higher-level abstraction which should
- * usually be used instead.
+ * This is a thin wrapper around the GetContactAttributes D-Bus
+ * method, and should be used in preference to
+ * tp_cli_connection_interface_contacts_call_get_contact_attributes();
+ * mixing this function and #TpContact with direct use of the
+ * RequestHandles, and GetContactAttributes D-Bus methods is
+ * unwise. The #TpContact API provides a higher-level abstraction
+ * which should usually be used instead.
  *
  * @callback will later be called with the attributes of those of the given
  * handles that were valid. Invalid handles are simply omitted from the
  * parameter to the callback.
- *
- * If @hold is %TRUE, the @callback is given one reference to each handle
- * that appears as a key in the callback's @attributes parameter.
  */
 void
 tp_connection_get_contact_attributes (TpConnection *self,
@@ -404,7 +221,6 @@ tp_connection_get_contact_attributes (TpConnection *self,
     guint n_handles,
     const TpHandle *handles,
     const gchar * const *interfaces,
-    gboolean hold,
     tp_cli_connection_interface_contacts_callback_for_get_contact_attributes callback,
     gpointer user_data,
     GDestroyNotify destroy,
@@ -427,9 +243,8 @@ tp_connection_get_contact_attributes (TpConnection *self,
 
   g_array_append_vals (a, handles, n_handles);
 
-  /* We ignore @hold, and always hold the handles anyway */
   tp_cli_connection_interface_contacts_call_get_contact_attributes (self, -1,
-      a, (const gchar **) interfaces, TRUE, callback,
+      a, (const gchar **) interfaces, callback,
       user_data, destroy, weak_object);
   g_array_unref (a);
 }
@@ -440,8 +255,6 @@ tp_connection_get_contact_attributes (TpConnection *self,
  * @timeout_ms: the timeout in milliseconds (using a large timeout is
  *  recommended)
  * @interfaces: a #GStrv of interfaces
- * @hold: if %TRUE, the callback will hold one reference to each handle it
- *  receives
  * @callback: (type GObject.Callback): called on success or
  *  failure (unless @weak_object has become unreferenced)
  * @user_data: arbitrary user-supplied data
@@ -453,27 +266,17 @@ tp_connection_get_contact_attributes (TpConnection *self,
  * Return (via a callback) the contacts on the contact list and any number of
  * their attributes.
  *
- * Since telepathy-glib version 0.13.8,
- * the handles will remain valid until @connection becomes invalid
- * (signalled by #TpProxy::invalidated). In earlier versions, if @hold
- * was %TRUE, the callback would hold a reference to them which could be
- * released with tp_connection_unref_handles().
- *
  * This is a thin wrapper around the RequestContactList D-Bus method,
  * and should be used in preference to lower-level functions; it is similar
  * to tp_connection_get_contact_attributes().
  *
  * The #TpContact API provides a higher-level abstraction which should
  * usually be used instead.
- *
- * If @hold is %TRUE, the @callback is given a reference to each handle
- * that appears as a key in the callback's @attributes parameter.
  */
 void
 tp_connection_get_contact_list_attributes (TpConnection *self,
     gint timeout_ms,
     const gchar * const *interfaces,
-    gboolean hold,
     tp_cli_connection_interface_contacts_callback_for_get_contact_attributes callback,
     gpointer user_data,
     GDestroyNotify destroy,
@@ -482,8 +285,7 @@ tp_connection_get_contact_list_attributes (TpConnection *self,
   g_return_if_fail (TP_IS_CONNECTION (self));
   g_return_if_fail (callback != NULL);
 
-  /* We ignore @hold, and always hold the handles anyway */
   tp_cli_connection_interface_contact_list_call_get_contact_list_attributes (
-      self, -1, (const gchar **) interfaces, TRUE,
+      self, -1, (const gchar **) interfaces,
       callback, user_data, destroy, weak_object);
 }

@@ -107,8 +107,7 @@ void tp_contacts_mixin_set_contact_attribute (GHashTable *contact_attributes,
     TpHandle handle, const gchar *attribute, GValue *value);
 
 GHashTable *tp_contacts_mixin_get_contact_attributes (GObject *obj,
-    const GArray *handles, const gchar **interfaces, const gchar **assumed_interfaces,
-    const gchar *sender);
+    const GArray *handles, const gchar **interfaces, const gchar **assumed_interfaces);
 
 G_END_DECLS
 

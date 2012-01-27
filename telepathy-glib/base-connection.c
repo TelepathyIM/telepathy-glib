@@ -273,7 +273,6 @@ enum
     PROP_INTERFACES,
     PROP_DBUS_STATUS,
     PROP_DBUS_DAEMON,
-    PROP_HAS_IMMORTAL_HANDLES,
     N_PROPS
 };
 
@@ -473,10 +472,6 @@ tp_base_connection_get_property (GObject *object,
 
     case PROP_DBUS_DAEMON:
       g_value_set_object (value, self->priv->bus_proxy);
-      break;
-
-    case PROP_HAS_IMMORTAL_HANDLES:
-      g_value_set_boolean (value, TRUE);
       break;
 
     default:
@@ -1507,7 +1502,6 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
       { "SelfHandle", "self-handle", NULL },
       { "Status", "dbus-status", NULL },
       { "Interfaces", "interfaces", NULL },
-      { "HasImmortalHandles", "has-immortal-handles", NULL },
       { NULL }
   };
   static TpDBusPropertiesMixinPropImpl requests_properties[] = {
@@ -1608,21 +1602,6 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
       g_param_spec_object ("dbus-daemon", "D-Bus daemon",
         "The D-Bus daemon used by this object", TP_TYPE_DBUS_DAEMON,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-
-  /**
-   * TpBaseConnection:has-immortal-handles:
-   *
-   * This property is not useful to use directly. Its value is %TRUE, to
-   * indicate that this version of telepathy-glib never unreferences handles
-   * until the connection becomes disconnected.
-   *
-   * Since: 0.13.8
-   */
-  param_spec = g_param_spec_boolean ("has-immortal-handles",
-      "Connection.HasImmortalHandles",
-      "Always TRUE", TRUE, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_HAS_IMMORTAL_HANDLES,
-      param_spec);
 
   /* signal definitions */
 

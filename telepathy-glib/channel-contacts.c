@@ -156,12 +156,6 @@ _tp_channel_contacts_init (TpChannel *self)
 {
   /* Create TpContact objects if we have them for free */
 
-  if (!tp_connection_has_immortal_handles (self->priv->connection))
-    {
-      self->priv->cm_too_old_for_contacts = TRUE;
-      return;
-    }
-
   g_assert (self->priv->target_contact == NULL);
   g_assert (self->priv->initiator_contact == NULL);
 
@@ -191,13 +185,6 @@ _tp_channel_contacts_group_init (TpChannel *self,
   gpointer value;
 
   /* Create TpContact objects if we have them for free */
-
-  if (!tp_connection_has_immortal_handles (self->priv->connection) ||
-      identifiers == NULL)
-    {
-      self->priv->cm_too_old_for_contacts = TRUE;
-      return;
-    }
 
   g_assert (self->priv->group_self_contact == NULL);
   g_assert (self->priv->group_members_contacts == NULL);
@@ -650,9 +637,6 @@ _tp_channel_contacts_members_changed (TpChannel *self,
   GPtrArray *contacts;
   GHashTable *ids;
 
-  if (self->priv->cm_too_old_for_contacts)
-      return;
-
   ids = tp_asv_get_boxed (details, "contact-ids",
       TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP);
   if (ids == NULL)
@@ -735,9 +719,6 @@ _tp_channel_contacts_handle_owners_changed (TpChannel *self,
   HandleOwnersChangedData *data;
   GPtrArray *contacts;
 
-  if (self->priv->cm_too_old_for_contacts)
-      return;
-
   g_assert (self->priv->group_contact_owners != NULL);
 
   data = g_slice_new (HandleOwnersChangedData);
@@ -775,9 +756,6 @@ _tp_channel_contacts_self_contact_changed (TpChannel *self,
 {
   TpContact *contact;
   GPtrArray *contacts;
-
-  if (self->priv->cm_too_old_for_contacts)
-      return;
 
   contacts = g_ptr_array_new_with_free_func (g_object_unref);
   contact = tp_simple_client_factory_ensure_contact (
@@ -1121,15 +1099,6 @@ _tp_channel_contacts_prepare_async (TpProxy *proxy,
   GHashTableIter iter;
   gpointer value;
   GPtrArray *contacts;
-
-  if (self->priv->cm_too_old_for_contacts)
-    {
-      g_simple_async_report_error_in_idle ((GObject *) self, callback,
-          user_data, TP_ERRORS, TP_ERROR_SOFTWARE_UPGRADE_REQUIRED,
-          "The Connection Manager does not implement the required telepathy "
-          "specification (>= 0.23.4) to prepare TP_CHANNEL_FEATURE_CONTACTS.");
-      return;
-    }
 
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       _tp_channel_contacts_prepare_async);

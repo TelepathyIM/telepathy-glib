@@ -273,8 +273,6 @@ tp_contacts_mixin_finalize (GObject *obj)
  *  like %TP_IFACE_CONNECTION for GetContactAttributes,
  *  or %TP_IFACE_CONNECTION and %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST for
  *  GetContactListAttributes.
- * @sender: The DBus client's unique name. If this is not NULL, the requested handles
- * will be held on behalf of this client.
  *
  * Get contact attributes for the given contacts. Provide attributes for all requested
  * interfaces. If contact attributes are not immediately known, the behaviour is defined
@@ -288,8 +286,7 @@ GHashTable *
 tp_contacts_mixin_get_contact_attributes (GObject *obj,
     const GArray *handles,
     const gchar **interfaces,
-    const gchar **assumed_interfaces,
-    const gchar *sender)
+    const gchar **assumed_interfaces)
 {
   GHashTable *result;
   guint i;
@@ -322,9 +319,6 @@ tp_contacts_mixin_get_contact_attributes (GObject *obj,
           g_hash_table_insert (result, GUINT_TO_POINTER(h), attr_hash);
         }
     }
-
-  if (sender != NULL)
-    tp_handles_client_hold (contact_repo, sender, valid_handles, NULL);
 
   /* ensure the handles don't disappear while calling out to various functions
    */
@@ -363,12 +357,10 @@ tp_contacts_mixin_get_contact_attributes_impl (
   TpSvcConnectionInterfaceContacts *iface,
   const GArray *handles,
   const char **interfaces,
-  gboolean hold,
   DBusGMethodInvocation *context)
 {
   TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
   GHashTable *result;
-  gchar *sender = NULL;
   const gchar *assumed_interfaces[] = {
     TP_IFACE_CONNECTION,
     NULL
@@ -376,16 +368,12 @@ tp_contacts_mixin_get_contact_attributes_impl (
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
-  if (hold)
-    sender = dbus_g_method_get_sender (context);
-
   result = tp_contacts_mixin_get_contact_attributes (G_OBJECT (conn),
-      handles, interfaces, assumed_interfaces, sender);
+      handles, interfaces, assumed_interfaces);
 
   tp_svc_connection_interface_contacts_return_from_get_contact_attributes (
       context, result);
 
-  g_free (sender);
   g_hash_table_unref (result);
 }
 

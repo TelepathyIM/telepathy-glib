@@ -312,7 +312,7 @@ prepare_roster (TpConnection *self,
       (TpContactFeature *) features->data);
 
   tp_connection_get_contact_list_attributes (self, -1,
-      supported_interfaces, TRUE,
+      supported_interfaces,
       got_contact_list_attributes_cb,
       features, (GDestroyNotify) g_array_unref,
       result ? g_object_ref (result) : NULL);

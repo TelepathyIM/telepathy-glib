@@ -199,12 +199,8 @@ get_sender (TpTextChannel *self,
 
   if (*contact == NULL)
     {
-      if (!tp_connection_has_immortal_handles (conn))
-        DEBUG ("Connection %s don't have immortal handles, please fix CM",
-            tp_proxy_get_object_path (conn));
-      else if (tp_str_empty (sender_id))
-        DEBUG ("Message received on %s doesn't include message-sender-id, "
-            "please fix CM", tp_proxy_get_object_path (self));
+      DEBUG ("Message received on %s doesn't include message-sender-id, "
+          "please fix CM", tp_proxy_get_object_path (self));
     }
 
 out:

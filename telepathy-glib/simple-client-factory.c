@@ -835,9 +835,6 @@ tp_simple_client_factory_add_channel_features_varargs (
  * is responsible for calling tp_connection_upgrade_contacts() with the desired
  * features (as given by tp_simple_client_factory_dup_contact_features()).
  *
- * For this function to work properly, tp_connection_has_immortal_handles()
- * must return %TRUE for @connection.
- *
  * Returns: (transfer full): a reference to a #TpContact.
  *
  * Since: 0.15.5
@@ -853,7 +850,6 @@ tp_simple_client_factory_ensure_contact (TpSimpleClientFactory *self,
   g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (TP_IS_CONNECTION (connection), NULL);
   g_return_val_if_fail (tp_proxy_get_factory (connection) == self, NULL);
-  g_return_val_if_fail (tp_connection_has_immortal_handles (connection), NULL);
   g_return_val_if_fail (handle != 0, NULL);
   g_return_val_if_fail (identifier != NULL, NULL);
 

@@ -1181,14 +1181,6 @@ _tp_connection_extract_properties (TpConnection *self,
 {
   gboolean sufficient;
 
-  /* has_immortal_handles is a bitfield, so we can't pass a pointer to it.
-   * It is now mandatory for CM to have immortal handles. If we don't have it,
-   * returning FALSE will invalidate the proxy. */
-  if (tp_asv_get_boolean (asv, "HasImmortalHandles", NULL))
-    self->priv->has_immortal_handles = TRUE;
-  else
-    return FALSE;
-
   *status = tp_asv_get_uint32 (asv, "Status", &sufficient);
 
   if (!sufficient
@@ -3223,27 +3215,6 @@ tp_connection_add_client_interest_by_id (TpConnection *self,
   /* no-reply flag set, and we ignore any reply */
   tp_cli_connection_call_add_client_interest (self, -1,
       strv, NULL, NULL, NULL, NULL);
-}
-
-/**
- * tp_connection_has_immortal_handles:
- * @self: a connection
- *
- * Return %TRUE if this connection is known to not destroy handles
- * (#TpHandle) until it disconnects.
- *
- * On such connections, if you know that a handle maps to a particular
- * identifier now, then you can rely on that handle mapping to that
- * identifier for the whole lifetime of the connection.
- *
- * Returns: %TRUE if handles last as long as the connection itself
- */
-gboolean
-tp_connection_has_immortal_handles (TpConnection *self)
-{
-  g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
-
-  return self->priv->has_immortal_handles;
 }
 
 /**

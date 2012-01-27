@@ -74,7 +74,6 @@ struct _TpChannelPrivate {
     GHashTable *group_remote_pending_contacts;
     /* the TpContact can be NULL if the owner is unknown */
     GHashTable *group_contact_owners;
-    gboolean cm_too_old_for_contacts;
 
     GQueue *contacts_queue;
 

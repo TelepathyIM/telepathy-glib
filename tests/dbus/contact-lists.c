@@ -732,7 +732,7 @@ test_assert_contact_state (Test *test,
       NULL };
 
   tp_connection_get_contact_attributes (test->conn, -1,
-      1, &handle, interfaces, FALSE, contact_attrs_cb,
+      1, &handle, interfaces, contact_attrs_cb,
       test, test_quit_loop, NULL);
   g_main_loop_run (test->main_loop);
 
@@ -776,7 +776,7 @@ test_contact_list_attrs (Test *test,
       NULL };
 
   tp_connection_get_contact_list_attributes (test->conn, -1,
-      interfaces, FALSE, contact_attrs_cb, test, test_quit_loop, NULL);
+      interfaces, contact_attrs_cb, test, test_quit_loop, NULL);
   g_main_loop_run (test->main_loop);
 
   test_assert_contact_list_attrs (test, test->sjoerd,
@@ -830,7 +830,7 @@ test_contact_blocking_attrs (Test *test,
 
   tp_connection_get_contact_attributes (test->conn, -1,
       G_N_ELEMENTS (handles), handles,
-      interfaces, FALSE, contact_attrs_cb, test, test_quit_loop, NULL);
+      interfaces, contact_attrs_cb, test, test_quit_loop, NULL);
   g_main_loop_run (test->main_loop);
 
   test_assert_contact_blocking_attrs (test, test->sjoerd, FALSE);
