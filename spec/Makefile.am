@@ -23,8 +23,6 @@ EXTRA_DIST = \
     Channel_Dispatch_Operation.xml \
     Channel_Dispatcher.xml \
     Channel_Dispatcher_Interface_Operation_List.xml \
-    Channel_Future.xml \
-    Channel_Handler.xml \
     Channel_Interface_Addressing.xml \
     Channel_Interface_Anonymity.xml \
     Channel_Interface_Chat_State.xml \
@@ -48,7 +46,6 @@ EXTRA_DIST = \
     Channel_Interface_Service_Point.xml \
     Channel_Interface_Splittable.xml \
     Channel_Interface_Subject.xml \
-    Channel_Interface_Transfer.xml \
     Channel_Interface_Tube.xml \
     Channel_Request.xml \
     Channel_Type_Call.xml \
@@ -91,7 +88,6 @@ EXTRA_DIST = \
     Connection_Interface_Mail_Notification.xml \
     Connection_Interface_Power_Saving.xml \
     Connection_Interface_Presence.xml \
-    Connection_Interface_Privacy.xml \
     Connection_Interface_Renaming.xml \
     Connection_Interface_Requests.xml \
     Connection_Interface_Resources.xml \
