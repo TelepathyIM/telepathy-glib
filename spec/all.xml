@@ -86,7 +86,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
    <xi:include href="Connection_Interface_Presence.xml"/>
    <xi:include href="Connection_Interface_Renaming.xml"/>
    <xi:include href="Connection_Interface_Resources.xml"/>
-   <xi:include href="Connection_Interface_Simple_Presence.xml"/>
   </tp:section>
 
   <tp:section name="Connection feature interfaces">

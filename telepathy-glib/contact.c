@@ -1889,8 +1889,8 @@ contacts_bind_to_aliases_changed (TpConnection *connection)
 }
 
 static void
-contact_maybe_set_simple_presence (TpContact *contact,
-                                   GValueArray *presence)
+contact_maybe_set_presence (TpContact *contact,
+                            GValueArray *presence)
 {
   guint type;
   const gchar *status;
@@ -1988,7 +1988,7 @@ contacts_presences_changed (TpConnection *connection,
       TpContact *contact = _tp_connection_lookup_contact (connection,
           GPOINTER_TO_UINT (key));
 
-      contact_maybe_set_simple_presence (contact, value);
+      contact_maybe_set_presence (contact, value);
     }
 }
 
@@ -2000,7 +2000,7 @@ contacts_bind_to_presences_changed (TpConnection *connection)
     {
       connection->priv->tracking_presences_changed = TRUE;
 
-      tp_cli_connection_interface_simple_presence_connect_to_presences_changed
+      tp_cli_connection_interface_presence_connect_to_presences_changed
         (connection, contacts_presences_changed, NULL, NULL, NULL, NULL);
     }
 }
@@ -2906,17 +2906,17 @@ tp_contact_set_attributes (TpContact *contact,
   if (wanted & CONTACT_FEATURE_FLAG_PRESENCE)
     {
       boxed = tp_asv_get_boxed (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE,
+          TP_TOKEN_CONNECTION_INTERFACE_PRESENCE_PRESENCE,
           TP_STRUCT_TYPE_SIMPLE_PRESENCE);
 
       if (boxed == NULL)
-        WARNING ("%s supposedly implements Contacts and SimplePresence, "
+        WARNING ("%s supposedly implements Contacts and Presence, "
             "but omitted the mandatory "
-            TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE
+            TP_TOKEN_CONNECTION_INTERFACE_PRESENCE_PRESENCE
             " attribute",
             tp_proxy_get_object_path (connection));
       else
-        contact_maybe_set_simple_presence (contact, boxed);
+        contact_maybe_set_presence (contact, boxed);
     }
 
   /* Location */
@@ -3137,12 +3137,12 @@ contacts_bind_to_signals (TpConnection *connection,
               contacts_bind_to_avatar_retrieved (connection);
             }
         }
-      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_SIMPLE_PRESENCE)
+      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_PRESENCE)
         {
           if ((wanted & CONTACT_FEATURE_FLAG_PRESENCE) != 0)
             {
               g_ptr_array_add (array,
-                  TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE);
+                  TP_IFACE_CONNECTION_INTERFACE_PRESENCE);
               contacts_bind_to_presences_changed (connection);
             }
         }

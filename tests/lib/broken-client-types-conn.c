@@ -45,7 +45,7 @@ broken_fill_client_types (
 
       tp_contacts_mixin_set_contact_attribute (attributes,
           handle,
-          TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE,
+          TP_TOKEN_CONNECTION_INTERFACE_PRESENCE_PRESENCE,
           tp_g_value_slice_new_take_boxed (G_TYPE_VALUE_ARRAY, presence));
     }
 }

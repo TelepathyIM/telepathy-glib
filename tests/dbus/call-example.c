@@ -952,18 +952,16 @@ trigger_incoming_call (Test *test,
 {
   TpProxySignalConnection *new_channels_sig;
 
-  tp_cli_connection_interface_simple_presence_run_set_presence (test->conn, -1,
-      "away", "preparing for a test", &test->error, NULL);
-  g_assert_no_error (test->error);
+  tp_cli_connection_interface_presence_call_set_presence (test->conn, -1,
+      "away", "preparing for a test", NULL, NULL, NULL, NULL);
 
   new_channels_sig =
     tp_cli_connection_interface_requests_connect_to_new_channels (test->conn,
         expect_incoming_call_cb, test, NULL, NULL, &test->error);
   g_assert_no_error (test->error);
 
-  tp_cli_connection_interface_simple_presence_run_set_presence (test->conn, -1,
-      "available", message, &test->error, NULL);
-  g_assert_no_error (test->error);
+  tp_cli_connection_interface_presence_call_set_presence (test->conn, -1,
+      "available", message, NULL, NULL, NULL, NULL);
 
   /* wait for the call to happen if it hasn't already */
   while (test->chan == NULL)

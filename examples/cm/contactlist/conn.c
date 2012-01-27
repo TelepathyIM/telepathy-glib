@@ -36,9 +36,7 @@ G_DEFINE_TYPE_WITH_CODE (ExampleContactListConnection,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING,
       tp_base_contact_list_mixin_blocking_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE,
-      tp_presence_mixin_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
-      tp_presence_mixin_simple_presence_iface_init))
+        tp_presence_mixin_iface_init))
 
 enum
 {
@@ -300,7 +298,7 @@ constructed (GObject *object)
 
   tp_presence_mixin_init (object,
       G_STRUCT_OFFSET (ExampleContactListConnection, presence_mixin));
-  tp_presence_mixin_simple_presence_register_with_contacts_mixin (object);
+  tp_presence_mixin_register_with_contacts_mixin (object);
 }
 
 static gboolean
@@ -398,7 +396,6 @@ static const gchar *interfaces_always_present[] = {
     TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING,
     TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
     TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
-    TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
     NULL };
 
 const gchar * const *
@@ -451,7 +448,7 @@ example_contact_list_connection_class_init (
       G_STRUCT_OFFSET (ExampleContactListConnectionClass, presence_mixin),
       status_available, get_contact_statuses, set_own_status,
       example_contact_list_presence_statuses ());
-  tp_presence_mixin_simple_presence_init_dbus_properties (object_class);
+  tp_presence_mixin_init_dbus_properties (object_class);
 
   tp_base_contact_list_mixin_class_init (base_class);
 }

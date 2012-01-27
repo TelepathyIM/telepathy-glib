@@ -36,8 +36,6 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsContactsConnection,
       init_avatars);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE,
       tp_presence_mixin_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
-      tp_presence_mixin_simple_presence_iface_init)
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_LOCATION, NULL)
     G_IMPLEMENT_INTERFACE (
       TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_CAPABILITIES, NULL)
@@ -148,7 +146,6 @@ tp_tests_contacts_connection_init (TpTestsContactsConnection *self)
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
       TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
-      TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
       TP_IFACE_CONNECTION_INTERFACE_LOCATION,
       TP_IFACE_CONNECTION_INTERFACE_CLIENT_TYPES,
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES,
@@ -412,7 +409,7 @@ constructed (GObject *object)
 
   tp_presence_mixin_init (object,
       G_STRUCT_OFFSET (TpTestsContactsConnection, presence_mixin));
-  tp_presence_mixin_simple_presence_register_with_contacts_mixin (object);
+  tp_presence_mixin_register_with_contacts_mixin (object);
 }
 
 static const TpPresenceStatusOptionalArgumentSpec can_have_message[] = {
@@ -563,7 +560,7 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
   mixin_class->get_maximum_status_message_length =
       my_get_maximum_status_message_length_cb;
 
-  tp_presence_mixin_simple_presence_init_dbus_properties (object_class);
+  tp_presence_mixin_init_dbus_properties (object_class);
 
   klass->properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,

@@ -14,14 +14,16 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 
+#include <telepathy-glib/reentrants.h>
+
 #include "tests/lib/contacts-conn.h"
 #include "tests/lib/debug.h"
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
 
 static void
-test_simple_presence (TpTestsContactsConnection *service_conn,
-                      TpConnection *client_conn)
+test_presence (TpTestsContactsConnection *service_conn,
+               TpConnection *client_conn)
 {
   GError *error = NULL;
   GValue *value = NULL;
@@ -29,7 +31,7 @@ test_simple_presence (TpTestsContactsConnection *service_conn,
   GValueArray *spec;
 
   MYASSERT (tp_cli_dbus_properties_run_get (client_conn, -1,
-        TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE, "Statuses",
+        TP_IFACE_CONNECTION_INTERFACE_PRESENCE, "Statuses",
         &value, &error, NULL), "");
   g_assert_no_error (error);
 
@@ -81,21 +83,21 @@ test_simple_presence (TpTestsContactsConnection *service_conn,
   g_value_unset (value);
   g_free (value);
 
-  MYASSERT (!tp_cli_connection_interface_simple_presence_run_set_presence (
+  MYASSERT (!tp_cli_connection_interface_presence_run_set_presence (
         client_conn, -1, "offline", "", &error, NULL), "");
   g_assert_cmpstr (g_quark_to_string (error->domain), ==,
       g_quark_to_string (TP_ERRORS));
   g_error_free (error);
   error = NULL;
 
-  MYASSERT (tp_cli_connection_interface_simple_presence_run_set_presence (
+  MYASSERT (tp_cli_connection_interface_presence_run_set_presence (
         client_conn, -1, "available", "Here I am", &error, NULL), "");
   g_assert_no_error (error);
 
   value = NULL;
 
   MYASSERT (tp_cli_dbus_properties_run_get (client_conn, -1,
-        TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
+        TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
         "MaximumStatusMessageLength",
         &value, &error, NULL), "");
   g_assert_no_error (error);
@@ -108,113 +110,6 @@ test_simple_presence (TpTestsContactsConnection *service_conn,
 
   g_value_unset (value);
   g_free (value);
-}
-
-static void
-test_complex_presence (TpTestsContactsConnection *service_conn,
-              TpConnection *client_conn)
-{
-  GHashTable *statuses = NULL;
-  GValueArray *spec;
-  GHashTable *params;
-  GError *error = NULL;
-  GHashTable *monster;
-
-  MYASSERT (tp_cli_connection_interface_presence_run_get_statuses (
-        client_conn, -1, &statuses, &error, NULL), "");
-  g_assert_no_error (error);
-
-  spec = g_hash_table_lookup (statuses, "available");
-  MYASSERT (spec != NULL, "");
-  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
-      TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
-  MYASSERT (g_value_get_boolean (spec->values + 1), ""); /* can set on self */
-  MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */
-  params = g_value_get_boxed (spec->values + 3);
-  MYASSERT (params != NULL, "");
-  g_assert_cmpuint (g_hash_table_size (params), ==, 1);
-  g_assert_cmpstr (
-      (const gchar *) g_hash_table_lookup (params, "message"), ==, "s");
-
-  spec = g_hash_table_lookup (statuses, "away");
-  MYASSERT (spec != NULL, "");
-  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
-      TP_CONNECTION_PRESENCE_TYPE_AWAY);
-  MYASSERT (g_value_get_boolean (spec->values + 1), ""); /* can set on self */
-  MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */
-  params = g_value_get_boxed (spec->values + 3);
-  MYASSERT (params != NULL, "");
-  g_assert_cmpuint (g_hash_table_size (params), ==, 1);
-  g_assert_cmpstr (
-      (const gchar *) g_hash_table_lookup (params, "message"), ==, "s");
-
-  spec = g_hash_table_lookup (statuses, "busy");
-  MYASSERT (spec != NULL, "");
-  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
-      TP_CONNECTION_PRESENCE_TYPE_BUSY);
-  MYASSERT (g_value_get_boolean (spec->values + 1), ""); /* can set on self */
-  MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */
-  params = g_value_get_boxed (spec->values + 3);
-  MYASSERT (params != NULL, "");
-  g_assert_cmpuint (g_hash_table_size (params), ==, 1);
-  g_assert_cmpstr (
-      (const gchar *) g_hash_table_lookup (params, "message"), ==, "s");
-
-  spec = g_hash_table_lookup (statuses, "offline");
-  MYASSERT (spec != NULL, "");
-  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
-      TP_CONNECTION_PRESENCE_TYPE_OFFLINE);
-  MYASSERT (!g_value_get_boolean (spec->values + 1), ""); /* can set on self */
-  MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */
-  params = g_value_get_boxed (spec->values + 3);
-  MYASSERT (params != NULL, "");
-  g_assert_cmpuint (g_hash_table_size (params), ==, 0);
-
-  spec = g_hash_table_lookup (statuses, "error");
-  MYASSERT (spec != NULL, "");
-  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
-      TP_CONNECTION_PRESENCE_TYPE_ERROR);
-  MYASSERT (!g_value_get_boolean (spec->values + 1), ""); /* can set on self */
-  MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */
-  params = g_value_get_boxed (spec->values + 3);
-  MYASSERT (params != NULL, "");
-  g_assert_cmpuint (g_hash_table_size (params), ==, 0);
-
-  spec = g_hash_table_lookup (statuses, "unknown");
-  MYASSERT (spec != NULL, "");
-  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
-      TP_CONNECTION_PRESENCE_TYPE_UNKNOWN);
-  MYASSERT (!g_value_get_boolean (spec->values + 1), ""); /* can set on self */
-  MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */
-  params = g_value_get_boxed (spec->values + 3);
-  MYASSERT (params != NULL, "");
-  g_assert_cmpuint (g_hash_table_size (params), ==, 0);
-
-  monster = g_hash_table_new (g_str_hash, g_str_equal);
-  params = g_hash_table_new (g_str_hash, g_str_equal);
-
-  g_hash_table_insert (monster, "offline", params);
-
-  MYASSERT (!tp_cli_connection_interface_presence_run_set_status (
-        client_conn, -1, monster, &error, NULL), "");
-  g_assert_cmpstr (g_quark_to_string (error->domain), ==,
-      g_quark_to_string (TP_ERRORS));
-  g_error_free (error);
-  error = NULL;
-
-  g_hash_table_remove (monster, "offline");
-  g_hash_table_insert (monster, "available", params);
-
-  MYASSERT (tp_cli_connection_interface_presence_run_set_status (
-        client_conn, -1, monster, &error, NULL), "");
-  g_assert_no_error (error);
-
-  g_hash_table_unref (params);
-  params = NULL;
-  g_hash_table_unref (monster);
-  monster = NULL;
-  g_hash_table_unref (statuses);
-  statuses = NULL;
 }
 
 int
@@ -230,6 +125,7 @@ main (int argc,
   TpConnection *client_conn;
   guint status;
   gchar **interfaces;
+  GValue *value = NULL;
 
   /* Setup */
 
@@ -257,9 +153,10 @@ main (int argc,
   g_assert_no_error (error);
 
   /* Assert that GetInterfaces succeeds before we're CONNECTED */
-  MYASSERT (tp_cli_connection_run_get_interfaces (client_conn, -1, &interfaces,
-        &error, NULL), "");
+  MYASSERT (tp_cli_dbus_properties_run_get (client_conn, -1,
+          TP_IFACE_CONNECTION, "Interfaces", &value, &error, NULL), "");
   g_assert_no_error (error);
+  interfaces = g_value_get_boxed (value);
   MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
       TP_IFACE_CONNECTION_INTERFACE_ALIASING), "");
   MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
@@ -269,13 +166,17 @@ main (int argc,
   MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
       TP_IFACE_CONNECTION_INTERFACE_PRESENCE), "");
   MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
-      TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE), "");
-  g_strfreev (interfaces);
+      TP_IFACE_CONNECTION_INTERFACE_PRESENCE), "");
+  g_value_unset (value);
+  tp_clear_pointer (&value, g_free);
 
-  MYASSERT (tp_cli_connection_run_get_status (client_conn, -1, &status,
-        &error, NULL), "");
-  g_assert_cmpuint (status, ==, (guint) TP_CONNECTION_STATUS_DISCONNECTED);
+  MYASSERT (tp_cli_dbus_properties_run_get (client_conn, -1,
+          TP_IFACE_CONNECTION, "Status", &value, &error, NULL), "");
   g_assert_no_error (error);
+  status = g_value_get_uint (value);
+  g_assert_cmpuint (status, ==, (guint) TP_CONNECTION_STATUS_DISCONNECTED);
+  g_value_unset (value);
+  g_free (value);
 
   MYASSERT (tp_connection_run_until_ready (client_conn, TRUE, &error, NULL),
       "");
@@ -283,8 +184,7 @@ main (int argc,
 
   /* Tests */
 
-  test_simple_presence (service_conn, client_conn);
-  test_complex_presence (service_conn, client_conn);
+  test_presence (service_conn, client_conn);
 
   /* Teardown */
 

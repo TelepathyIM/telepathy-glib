@@ -89,7 +89,6 @@ EXTRA_DIST = \
     Connection_Interface_Requests.xml \
     Connection_Interface_Resources.xml \
     Connection_Interface_Service_Point.xml \
-    Connection_Interface_Simple_Presence.xml \
     Connection_Manager.xml \
     Connection_Manager_Interface_Account_Storage.xml \
     Debug.xml \

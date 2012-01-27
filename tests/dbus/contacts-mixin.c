@@ -66,7 +66,7 @@ test_features (TpTestsContactsConnection *service_conn,
   const gchar *interfaces[] = { TP_IFACE_CONNECTION,
       TP_IFACE_CONNECTION_INTERFACE_ALIASING,
       TP_IFACE_CONNECTION_INTERFACE_AVATARS,
-      TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
+      TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
       NULL };
   GError *error = NULL;
   GHashTable *contacts;
