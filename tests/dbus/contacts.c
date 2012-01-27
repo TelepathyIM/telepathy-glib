@@ -832,7 +832,7 @@ make_the_connection_disappear (Fixture *f)
       tp_base_connection_get_dbus_daemon (f->base_connection),
       f->base_connection);
   /* check that that worked */
-  ok = tp_cli_connection_run_get_self_handle (f->client_conn, -1, NULL,
+  ok = tp_cli_connection_run_connect (f->client_conn, -1,
       &error, NULL);
   g_assert_error (error, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
   g_assert (!ok);
@@ -852,7 +852,7 @@ put_the_connection_back (Fixture *f)
       tp_base_connection_get_dbus_daemon (f->base_connection),
       f->base_connection->object_path, f->base_connection);
   /* check that *that* worked */
-  ok = tp_cli_connection_run_get_self_handle (f->client_conn, -1, NULL,
+  ok = tp_cli_connection_run_connect (f->client_conn, -1,
       &error, NULL);
   g_assert_no_error (error);
   g_assert (ok);

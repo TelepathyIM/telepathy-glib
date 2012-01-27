@@ -291,7 +291,6 @@ static guint signals[N_SIGNALS] = {0};
 typedef struct _ChannelRequest ChannelRequest;
 
 typedef enum {
-    METHOD_REQUEST_CHANNEL,
     METHOD_CREATE_CHANNEL,
     METHOD_ENSURE_CHANNEL,
     NUM_METHODS
@@ -305,8 +304,6 @@ struct _ChannelRequest
   gchar *channel_type;
   guint handle_type;
   guint handle;
-  /* always TRUE for CREATE; always FALSE for ENSURE */
-  unsigned suppress_handler : 1;
 
   /* only meaningful for METHOD_ENSURE_CHANNEL; only true if this is the first
    * request to be satisfied with a particular channel, and no other request
@@ -320,8 +317,7 @@ channel_request_new (DBusGMethodInvocation *context,
                      ChannelRequestMethod method,
                      const char *channel_type,
                      guint handle_type,
-                     guint handle,
-                     gboolean suppress_handler)
+                     guint handle)
 {
   ChannelRequest *ret;
 
@@ -335,11 +331,10 @@ channel_request_new (DBusGMethodInvocation *context,
   ret->channel_type = g_strdup (channel_type);
   ret->handle_type = handle_type;
   ret->handle = handle;
-  ret->suppress_handler = suppress_handler;
   ret->yours = FALSE;
 
-  DEBUG("New channel request at %p: ctype=%s htype=%d handle=%d suppress=%d",
-        ret, channel_type, handle_type, handle, suppress_handler);
+  DEBUG("New channel request at %p: ctype=%s htype=%d handle=%d",
+        ret, channel_type, handle_type, handle);
 
   return ret;
 }
@@ -348,9 +343,9 @@ static void
 channel_request_free (ChannelRequest *request)
 {
   g_assert (NULL == request->context);
-  DEBUG("Freeing channel request at %p: ctype=%s htype=%d handle=%d "
-        "suppress=%d", request, request->channel_type, request->handle_type,
-        request->handle, request->suppress_handler);
+  DEBUG("Freeing channel request at %p: ctype=%s htype=%d handle=%d",
+        request, request->channel_type, request->handle_type,
+        request->handle);
   g_free (request->channel_type);
   g_slice_free (ChannelRequest, request);
 }
@@ -641,82 +636,6 @@ tp_base_connection_finalize (GObject *object)
   G_OBJECT_CLASS (tp_base_connection_parent_class)->finalize (object);
 }
 
-
-/**
- * exportable_channel_get_old_info:
- * @channel: a channel
- * @object_path_out:  address at which to store the channel's object path,
- *                    which the caller should g_free()
- * @channel_type_out: address at which to store the channel's type, which the
- *                    caller should g_free()
- * @handle_type_out:  address at which to store the channel's associated handle
- *                    type
- * @handle_out:       address at which to store the channel's associated
- *                    handle, if any.  This is a borrowed reference; the caller
- *                    does not need to tp_handle_unref() it.
- *
- * Given a new-style exportable channel, as used by the Requests interface's
- * API, fetches the information needed for the old-style ListChannels method
- * on Connections.
- */
-static void
-exportable_channel_get_old_info (TpExportableChannel *channel,
-                                 gchar **object_path_out,
-                                 gchar **channel_type_out,
-                                 guint *handle_type_out,
-                                 guint *handle_out)
-{
-  gchar *object_path;
-  GHashTable *channel_properties;
-  gboolean valid;
-
-  g_object_get (channel,
-      "object-path", &object_path,
-      "channel-properties", &channel_properties,
-      NULL);
-
-  g_assert (object_path != NULL);
-  g_assert (tp_dbus_check_valid_object_path (object_path, NULL));
-
-  if (object_path_out != NULL)
-    *object_path_out = object_path;
-  else
-    g_free (object_path);
-
-  if (channel_type_out != NULL)
-    {
-      *channel_type_out = g_strdup (tp_asv_get_string (channel_properties,
-          TP_PROP_CHANNEL_CHANNEL_TYPE));
-      g_assert (*channel_type_out != NULL);
-      g_assert (tp_dbus_check_valid_interface_name (*channel_type_out, NULL));
-    }
-
-  if (handle_type_out != NULL)
-    {
-      *handle_type_out = tp_asv_get_uint32 (channel_properties,
-          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
-      g_assert (valid);
-    }
-
-  if (handle_out != NULL)
-    {
-      *handle_out = tp_asv_get_uint32 (channel_properties,
-          TP_PROP_CHANNEL_TARGET_HANDLE, &valid);
-      g_assert (valid);
-
-      if (handle_type_out != NULL)
-        {
-          if (*handle_type_out == TP_HANDLE_TYPE_NONE)
-            g_assert (*handle_out == 0);
-          else
-            g_assert (*handle_out != 0);
-        }
-    }
-
-  g_hash_table_unref (channel_properties);
-}
-
-
 /*
  * get_channel_details:
  * @obj: a channel, which must implement one of #TpExportableChannel and
@@ -783,8 +702,7 @@ find_matching_channel_requests (TpBaseConnection *conn,
                                 const gchar *channel_type,
                                 guint handle_type,
                                 guint handle,
-                                ChannelRequest *channel_request,
-                                gboolean *suppress_handler)
+                                ChannelRequest *channel_request)
 {
   TpBaseConnectionPrivate *priv = conn->priv;
   GPtrArray *requests;
@@ -803,12 +721,7 @@ find_matching_channel_requests (TpBaseConnection *conn,
           tp_g_ptr_array_contains (priv->channel_requests, channel_request));
 
       if (channel_request)
-        {
-          g_ptr_array_add (requests, channel_request);
-
-          if (suppress_handler && channel_request->suppress_handler)
-            *suppress_handler = TRUE;
-        }
+        g_ptr_array_add (requests, channel_request);
 
       /* whether we've put any matches in requests or not */
       return requests;
@@ -829,9 +742,6 @@ find_matching_channel_requests (TpBaseConnection *conn,
 
       if (handle != request->handle)
         continue;
-
-      if (request->suppress_handler && suppress_handler)
-        *suppress_handler = TRUE;
 
       g_ptr_array_add (requests, request);
     }
@@ -856,16 +766,11 @@ satisfy_request (TpBaseConnection *conn,
 
   DEBUG ("completing queued request %p with success, "
       "channel_type=%s, handle_type=%u, "
-      "handle=%u, suppress_handler=%u", request, request->channel_type,
-      request->handle_type, request->handle, request->suppress_handler);
+      "handle=%u", request, request->channel_type,
+      request->handle_type, request->handle);
 
   switch (request->method)
     {
-    case METHOD_REQUEST_CHANNEL:
-      tp_svc_connection_return_from_request_channel (request->context,
-          object_path);
-      break;
-
     case METHOD_CREATE_CHANNEL:
         {
           GHashTable *properties;
@@ -914,7 +819,6 @@ factory_satisfy_requests (TpBaseConnection *conn,
 {
   gchar *object_path = NULL, *channel_type = NULL;
   guint handle_type = 0, handle = 0;
-  gboolean suppress_handler = FALSE;
   GPtrArray *tmp;
   guint i;
 
@@ -928,8 +832,7 @@ factory_satisfy_requests (TpBaseConnection *conn,
   DEBUG ("called for %s", object_path);
 
   tmp = find_matching_channel_requests (conn, channel_type, handle_type,
-                                        handle, channel_request,
-                                        &suppress_handler);
+                                        handle, channel_request);
 
   for (i = 0; i < tmp->len; i++)
     satisfy_request (conn, g_ptr_array_index (tmp, i), G_OBJECT (chan),
@@ -943,9 +846,6 @@ factory_satisfy_requests (TpBaseConnection *conn,
       tp_svc_connection_interface_requests_emit_new_channels (conn, array);
       g_value_array_free (g_ptr_array_index (array, 0));
       g_ptr_array_unref (array);
-
-      tp_svc_connection_emit_new_channel (conn, object_path, channel_type,
-          handle_type, handle, suppress_handler);
     }
 
   g_ptr_array_unref (tmp);
@@ -963,9 +863,9 @@ fail_channel_request (TpBaseConnection *conn,
   TpBaseConnectionPrivate *priv = conn->priv;
 
   DEBUG ("completing queued request %p with error, channel_type=%s, "
-      "handle_type=%u, handle=%u, suppress_handler=%u",
+      "handle_type=%u, handle=%u",
       request, request->channel_type,
-      request->handle_type, request->handle, request->suppress_handler);
+      request->handle_type, request->handle);
 
   dbus_g_method_return_error (request->context, error);
   request->context = NULL;
@@ -1032,7 +932,7 @@ factory_channel_error_cb (TpChannelFactoryIface *factory,
       NULL);
 
   tmp = find_matching_channel_requests (conn, channel_type, handle_type,
-                                        handle, channel_request, NULL);
+                                        handle, channel_request);
 
   for (i = 0; i < tmp->len; i++)
     fail_channel_request (conn, g_ptr_array_index (tmp, i), error);
@@ -1044,13 +944,6 @@ factory_channel_error_cb (TpChannelFactoryIface *factory,
 
 /* Channel manager signal handlers */
 
-typedef struct {
-    TpBaseConnection *self;
-    /* borrowed TpExportableChannel => itself if suppress_handler,
-     * omitted otherwise */
-    GHashTable *suppress_handler;
-} ManagerNewChannelContext;
-
 static void
 manager_new_channel (gpointer key,
                      gpointer value,
@@ -1058,46 +951,22 @@ manager_new_channel (gpointer key,
 {
   TpExportableChannel *channel = TP_EXPORTABLE_CHANNEL (key);
   GSList *request_tokens = value;
-  ManagerNewChannelContext *context = data;
-  TpBaseConnection *self = TP_BASE_CONNECTION (context->self);
+  TpBaseConnection *self = TP_BASE_CONNECTION (data);
   gchar *object_path;
   GSList *iter;
-  gboolean suppress_handler = FALSE;
   gboolean satisfies_create_channel = FALSE;
-  gboolean satisfies_request_channel = FALSE;
   ChannelRequest *first_ensure = NULL;
 
   g_object_get (channel,
       "object-path", &object_path,
       NULL);
 
-  /* suppress_handler on Connection.NewChannel should be TRUE if:
-   *   - any satisfied requests were calls to CreateChannel; or
-   *   - at least one satisfied RequestChannel call had suppress_handler=TRUE;
-   *     or
-   *   - any EnsureChannel call will receive Yours=TRUE (that is, if the
-   *     channel satisfies no CreateChannel or RequestChannel calls).
-   *
-   * So, it should be FALSE if:
-   *   - all the requests were RequestChannel(..., suppress_handler=FALSE) or
-   *     EnsureChannel and there was at least one RequestChannel; or
-   *   - no requests were satisfied by the channel.
-   */
   for (iter = request_tokens; iter != NULL; iter = iter->next)
     {
       ChannelRequest *request = iter->data;
 
       switch (request->method)
         {
-          case METHOD_REQUEST_CHANNEL:
-            satisfies_request_channel = TRUE;
-            if (request->suppress_handler)
-              {
-                suppress_handler = TRUE;
-                goto break_loop_early;
-              }
-            break;
-
           case METHOD_CREATE_CHANNEL:
             satisfies_create_channel = TRUE;
             goto break_loop_early;
@@ -1113,28 +982,16 @@ manager_new_channel (gpointer key,
         }
 
     }
+
 break_loop_early:
-
-  /* put the channel in the suppress_handler hash table if it needs
-   * suppress_handler set when signalling NewChannel */
-  if (request_tokens != NULL &&
-      (satisfies_create_channel || !satisfies_request_channel))
-    suppress_handler = TRUE;
-
-  if (suppress_handler)
-    g_hash_table_insert (context->suppress_handler, channel, channel);
-
   /* If the only type of request satisfied by this new channel is
    * EnsureChannel, give exactly one request Yours=True.
    * If other kinds of requests are involved, don't give anyone Yours=True.
    */
-  if (!satisfies_request_channel
-      && !satisfies_create_channel
-      && first_ensure != NULL)
+  if (!satisfies_create_channel && first_ensure != NULL)
     {
       first_ensure->yours = TRUE;
     }
-
 
   for (iter = request_tokens; iter != NULL; iter = iter->next)
     {
@@ -1152,17 +1009,14 @@ manager_new_channels_cb (TpChannelManager *manager,
                          TpBaseConnection *self)
 {
   GPtrArray *array;
-  ManagerNewChannelContext context = { self, g_hash_table_new (NULL, NULL) };
   GHashTableIter iter;
   gpointer key, value;
 
   g_assert (TP_IS_CHANNEL_MANAGER (manager));
   g_assert (TP_IS_BASE_CONNECTION (self));
 
-  /* satisfy the RequestChannel/CreateChannel/EnsureChannel calls; as
-   * a side-effect, fill in context.suppress_handler with those channels
-   * that will have to be signalled with suppress_handler = TRUE */
-  g_hash_table_foreach (channels, manager_new_channel, &context);
+  /* satisfy the RequestChannel/CreateChannel/EnsureChannel calls */
+  g_hash_table_foreach (channels, manager_new_channel, self);
 
   /* Emit NewChannels */
   array = g_ptr_array_sized_new (g_hash_table_size (channels));
@@ -1178,28 +1032,6 @@ manager_new_channels_cb (TpChannelManager *manager,
 
   g_ptr_array_foreach (array, (GFunc) g_value_array_free, NULL);
   g_ptr_array_unref (array);
-
-  /* Emit NewChannel */
-  g_hash_table_iter_init (&iter, channels);
-
-  while (g_hash_table_iter_next (&iter, &key, &value))
-    {
-      gboolean suppress_handler = (
-          g_hash_table_lookup (context.suppress_handler, key) != NULL);
-      gchar *object_path, *channel_type;
-      guint handle_type, handle;
-
-      exportable_channel_get_old_info (TP_EXPORTABLE_CHANNEL (key),
-          &object_path, &channel_type, &handle_type, &handle);
-
-      tp_svc_connection_emit_new_channel (self, object_path, channel_type,
-          handle_type, handle, suppress_handler);
-
-      g_free (object_path);
-      g_free (channel_type);
-    }
-
-  g_hash_table_unref (context.suppress_handler);
 }
 
 
@@ -1635,7 +1467,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    * The "signal detail" is a GQuark representing @token. Modules implementing
    * an interface (Location, say) should typically connect to a detailed signal
    * like
-   * "clients-interested::org.freedesktop.Telepathy.Connection.Interface.Location"
+   * "clients-interested::im.telepathy1.Connection.Interface.Location"
    * rather than receiving all emissions of this signal.
    */
   signals[CLIENTS_INTERESTED] =
@@ -1660,7 +1492,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    * As with #TpBaseConnection::clients-interested, the "signal detail" is a
    * GQuark representing @token. Modules implementing an interface (Location,
    * say) should typically connect to a detailed signal like
-   * "clients-uninterested::org.freedesktop.Telepathy.Connection.Interface.Location"
+   * "clients-uninterested::im.telepathy1.Connection.Interface.Location"
    * rather than receiving all emissions of this signal.
    */
   signals[CLIENTS_UNINTERESTED] =
@@ -2005,45 +1837,6 @@ tp_base_connection_get_interfaces (TpBaseConnection *self)
     }
 }
 
-static void
-tp_base_connection_dbus_get_interfaces (TpSvcConnection *iface,
-    DBusGMethodInvocation *context)
-{
-  tp_svc_connection_return_from_get_interfaces (context,
-      (const gchar **) tp_base_connection_get_interfaces (
-        (TpBaseConnection *) iface));
-}
-
-static void
-tp_base_connection_get_protocol (TpSvcConnection *iface,
-                                 DBusGMethodInvocation *context)
-{
-  TpBaseConnection *self = TP_BASE_CONNECTION (iface);
-  TpBaseConnectionPrivate *priv;
-
-  g_assert (TP_IS_BASE_CONNECTION (self));
-
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
-
-  priv = self->priv;
-
-  tp_svc_connection_return_from_get_protocol (context, priv->protocol);
-}
-
-static void
-tp_base_connection_dbus_get_self_handle (TpSvcConnection *iface,
-                                         DBusGMethodInvocation *context)
-{
-  TpBaseConnection *self = TP_BASE_CONNECTION (iface);
-
-  g_assert (TP_IS_BASE_CONNECTION (self));
-
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
-
-  tp_svc_connection_return_from_get_self_handle (
-      context, self->self_handle);
-}
-
 static guint
 tp_base_connection_get_dbus_status (TpBaseConnection *self)
 {
@@ -2058,42 +1851,6 @@ tp_base_connection_get_dbus_status (TpBaseConnection *self)
     {
       return self->status;
     }
-}
-
-static void
-tp_base_connection_dbus_get_status (TpSvcConnection *iface,
-    DBusGMethodInvocation *context)
-{
-  tp_svc_connection_return_from_get_status (
-      context, tp_base_connection_get_dbus_status (
-        (TpBaseConnection *) iface));
-}
-
-static void
-tp_base_connection_hold_handles (TpSvcConnection *iface,
-                                 guint handle_type,
-                                 const GArray *handles,
-                                 DBusGMethodInvocation *context)
-{
-  TpBaseConnection *self = TP_BASE_CONNECTION (iface);
-  TpBaseConnectionPrivate *priv;
-  GError *error = NULL;
-
-  g_assert (TP_IS_BASE_CONNECTION (self));
-
-  priv = self->priv;
-
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
-
-  if (!tp_handles_supported_and_valid (priv->handles,
-        handle_type, handles, FALSE, &error))
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-      return;
-    }
-
-  tp_svc_connection_return_from_hold_handles (context);
 }
 
 static void
@@ -2143,362 +1900,6 @@ tp_base_connection_inspect_handles (TpSvcConnection *iface,
   g_free (ret);
 }
 
-/*
- * list_channel_factory_foreach_one:
- * @chan: a channel
- * @data: a GPtrArray in which channel information should be stored
- *
- * Called by the exported ListChannels function for each channel in a channel
- * factory, this should add to the GPtrArray (in the data pointer) a
- * GValueArray containing the following:
- *  a D-Bus object path for the channel object on this service
- *  a D-Bus interface name representing the channel type
- *  an integer representing the handle type this channel communicates with,
- *    or zero
- *  an integer handle representing the contact, room or list this channel
- *    communicates with, or zero
- */
-static void
-list_channel_factory_foreach_one (TpChannelIface *chan,
-                                  gpointer data)
-{
-  GObject *channel = G_OBJECT (chan);
-  GPtrArray *values = (GPtrArray *) data;
-  gchar *path, *type;
-  guint handle_type, handle;
-  GValue *entry = tp_dbus_specialized_value_slice_new
-      (TP_STRUCT_TYPE_CHANNEL_INFO);
-
-  g_object_get (channel,
-      "object-path", &path,
-      "channel-type", &type,
-      "handle-type", &handle_type,
-      "handle", &handle,
-      NULL);
-
-  dbus_g_type_struct_set (entry,
-      0, path,
-      1, type,
-      2, handle_type,
-      3, handle,
-      G_MAXUINT);
-
-  g_ptr_array_add (values, entry);
-
-  g_free (path);
-  g_free (type);
-}
-
-
-/*
- * list_channel_manager_foreach_one:
- * @chan: a channel
- * @data: a GPtrArray in which channel information should be stored
- *
- * Called by the exported ListChannels function for each channel in a channel
- * manager, this should add to the GPtrArray (in the data pointer) a
- * GValueArray containing the following:
- *  a D-Bus object path for the channel object on this service
- *  a D-Bus interface name representing the channel type
- *  an integer representing the handle type this channel communicates with,
- *    or zero
- *  an integer handle representing the contact, room or list this channel
- *    communicates with, or zero
- */
-static void
-list_channel_manager_foreach_one (TpExportableChannel *channel,
-                                  gpointer data)
-{
-  GPtrArray *values = (GPtrArray *) data;
-  gchar *path, *type;
-  guint handle_type, handle;
-  GValue *entry = tp_dbus_specialized_value_slice_new
-      (TP_STRUCT_TYPE_CHANNEL_INFO);
-
-  g_assert (TP_IS_EXPORTABLE_CHANNEL (channel));
-
-  exportable_channel_get_old_info (channel, &path, &type, &handle_type,
-      &handle);
-
-  dbus_g_type_struct_set (entry,
-      0, path,
-      1, type,
-      2, handle_type,
-      3, handle,
-      G_MAXUINT);
-
-  g_ptr_array_add (values, entry);
-
-  g_free (path);
-  g_free (type);
-}
-
-
-static void
-tp_base_connection_list_channels (TpSvcConnection *iface,
-                                  DBusGMethodInvocation *context)
-{
-  TpBaseConnection *self = TP_BASE_CONNECTION (iface);
-  TpBaseConnectionPrivate *priv;
-  GPtrArray *channels, *values;
-  guint i;
-
-  g_assert (TP_IS_BASE_CONNECTION (self));
-
-  priv = self->priv;
-
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
-
-  /* I think on average, each factory will have 2 channels :D */
-  values = g_ptr_array_sized_new (priv->channel_factories->len * 2
-      + priv->channel_managers->len * 2);
-
-  for (i = 0; i < priv->channel_factories->len; i++)
-    {
-      TpChannelFactoryIface *factory = g_ptr_array_index
-        (priv->channel_factories, i);
-
-      tp_channel_factory_iface_foreach (factory,
-          list_channel_factory_foreach_one, values);
-    }
-
-  for (i = 0; i < priv->channel_managers->len; i++)
-    {
-      TpChannelManager *manager = g_ptr_array_index
-        (priv->channel_managers, i);
-
-      tp_channel_manager_foreach_channel (manager,
-          list_channel_manager_foreach_one, values);
-    }
-
-  channels = g_ptr_array_sized_new (values->len);
-
-  for (i = 0; i < values->len; i++)
-    {
-      g_ptr_array_add (channels, g_value_get_boxed (g_ptr_array_index
-            (values, i)));
-    }
-
-  tp_svc_connection_return_from_list_channels (context, channels);
-
-  g_ptr_array_unref (channels);
-  for (i = 0; i < values->len; i++)
-    {
-      tp_g_value_slice_free (g_ptr_array_index (values, i));
-    }
-  g_ptr_array_unref (values);
-}
-
-static void
-tp_base_connection_request_channel (TpSvcConnection *iface,
-                                    const gchar *type,
-                                    guint handle_type,
-                                    guint handle,
-                                    gboolean suppress_handler,
-                                    DBusGMethodInvocation *context)
-{
-  TpBaseConnection *self = TP_BASE_CONNECTION (iface);
-  TpBaseConnectionPrivate *priv;
-  TpChannelFactoryRequestStatus status =
-    TP_CHANNEL_FACTORY_REQUEST_STATUS_NOT_IMPLEMENTED;
-  GError *error = NULL;
-  guint i;
-  ChannelRequest *request;
-  GHashTable *request_properties;
-  gboolean claimed_by_channel_manager = FALSE;
-  TpHandleRepoIface *handle_repo = NULL;
-
-  g_assert (TP_IS_BASE_CONNECTION (self));
-
-  priv = self->priv;
-
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
-
-  if (handle_type == TP_HANDLE_TYPE_NONE)
-    {
-      if (handle != 0)
-        {
-          GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-              "When handle type is NONE, handle must be 0" };
-
-          dbus_g_method_return_error (context, &e);
-          return;
-        }
-    }
-  else
-    {
-      handle_repo = tp_base_connection_get_handles (self,
-          handle_type);
-
-      if (handle_repo == NULL)
-        {
-          GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-              "Handle type not supported by this connection manager" };
-
-          dbus_g_method_return_error (context, &e);
-          return;
-        }
-
-      if (!tp_handle_is_valid (handle_repo, handle, &error))
-        {
-          dbus_g_method_return_error (context, error);
-          g_error_free (error);
-          return;
-        }
-    }
-
-  request = channel_request_new (context, METHOD_REQUEST_CHANNEL,
-      type, handle_type, handle, suppress_handler);
-  g_ptr_array_add (priv->channel_requests, request);
-
-  /* First try the channel managers */
-
-  request_properties = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, type,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, handle_type,
-      NULL);
-
-  if (handle != 0)
-    {
-      tp_asv_set_uint32 (request_properties,
-          TP_PROP_CHANNEL_TARGET_HANDLE, handle);
-      g_assert (handle_repo != NULL);
-      tp_asv_set_string (request_properties,
-          TP_PROP_CHANNEL_TARGET_ID,
-          tp_handle_inspect (handle_repo, handle));
-    }
-
-  for (i = 0; i < priv->channel_managers->len; i++)
-    {
-      TpChannelManager *manager = TP_CHANNEL_MANAGER (
-          g_ptr_array_index (priv->channel_managers, i));
-
-      if (tp_channel_manager_request_channel (manager, request,
-            request_properties))
-        {
-          claimed_by_channel_manager = TRUE;
-          break;
-        }
-    }
-
-  g_hash_table_unref (request_properties);
-
-  if (claimed_by_channel_manager)
-    return;
-
-  /* OK, none of them wanted it. Now try the channel factories */
-
-  for (i = 0; i < priv->channel_factories->len; i++)
-    {
-      TpChannelFactoryIface *factory = g_ptr_array_index
-        (priv->channel_factories, i);
-      TpChannelFactoryRequestStatus cur_status;
-      TpChannelIface *chan = NULL;
-
-      cur_status = tp_channel_factory_iface_request (factory, type,
-          (TpHandleType) handle_type, handle, request, &chan, &error);
-
-      switch (cur_status)
-        {
-        case TP_CHANNEL_FACTORY_REQUEST_STATUS_EXISTING:
-          {
-            g_assert (NULL != chan);
-            factory_satisfy_requests (self, factory, chan, request, FALSE);
-            /* factory_satisfy_requests should remove the request */
-            g_assert (!tp_g_ptr_array_contains (priv->channel_requests,
-                  request));
-            return;
-          }
-        case TP_CHANNEL_FACTORY_REQUEST_STATUS_CREATED:
-          g_assert (NULL != chan);
-          /* the signal handler should have completed the queued request
-           * and freed the ChannelRequest already */
-          g_assert (!tp_g_ptr_array_contains (priv->channel_requests,
-                request));
-          return;
-        case TP_CHANNEL_FACTORY_REQUEST_STATUS_QUEUED:
-          DEBUG ("queued request, channel_type=%s, handle_type=%u, "
-              "handle=%u, suppress_handler=%u", type, handle_type,
-              handle, suppress_handler);
-          return;
-        case TP_CHANNEL_FACTORY_REQUEST_STATUS_ERROR:
-          /* pass through error */
-          goto ERROR;
-        default:
-          /* always return the most specific error */
-          if (cur_status > status)
-            status = cur_status;
-        }
-    }
-
-  switch (status)
-    {
-      case TP_CHANNEL_FACTORY_REQUEST_STATUS_INVALID_HANDLE:
-        DEBUG ("invalid handle %u", handle);
-
-        error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_HANDLE,
-                             "invalid handle %u", handle);
-
-        break;
-
-      case TP_CHANNEL_FACTORY_REQUEST_STATUS_NOT_AVAILABLE:
-        DEBUG ("requested channel is unavailable with "
-                 "handle type %u", handle_type);
-
-        error = g_error_new (TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-                             "requested channel is not available with "
-                             "handle type %u", handle_type);
-
-        break;
-
-      case TP_CHANNEL_FACTORY_REQUEST_STATUS_NOT_IMPLEMENTED:
-        DEBUG ("unsupported channel type %s", type);
-
-        error = g_error_new (TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-                             "unsupported channel type %s", type);
-
-        break;
-
-      default:
-        g_assert_not_reached ();
-    }
-
-ERROR:
-  g_assert (error != NULL);
-  dbus_g_method_return_error (request->context, error);
-  request->context = NULL;
-  g_error_free (error);
-
-  g_ptr_array_remove (priv->channel_requests, request);
-  channel_request_free (request);
-}
-
-static void
-tp_base_connection_release_handles (TpSvcConnection *iface,
-                                    guint handle_type,
-                                    const GArray * handles,
-                                    DBusGMethodInvocation *context)
-{
-  TpBaseConnection *self = TP_BASE_CONNECTION (iface);
-  TpBaseConnectionPrivate *priv = self->priv;
-  GError *error = NULL;
-
-  g_assert (TP_IS_BASE_CONNECTION (self));
-
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
-
-  if (!tp_handles_supported_and_valid (priv->handles,
-        handle_type, handles, FALSE, &error))
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-      return;
-    }
-
-  tp_svc_connection_return_from_release_handles (context);
-}
-
-
 /**
  * tp_base_connection_dbus_request_handles: (skip)
  * @iface: A pointer to #TpBaseConnection, cast to a pointer to
@@ -2508,7 +1909,7 @@ tp_base_connection_release_handles (TpSvcConnection *iface,
  * @context: The dbus-glib method invocation context
  *
  * Implements D-Bus method RequestHandles on interface
- * org.freedesktop.Telepathy.Connection. Exported so subclasses can
+ * im.telepathy1.Connection. Exported so subclasses can
  * use it as a basis for their own implementations (for instance,
  * at the time of writing Gabble's GabbleConnection does its own processing
  * for room handles, in order to validate them asynchronously, but delegates
@@ -3299,15 +2700,7 @@ conn_iface_init (gpointer g_iface, gpointer iface_data)
     tp_base_connection_##prefix##x)
   IMPLEMENT(,connect);
   IMPLEMENT(,disconnect);
-  IMPLEMENT(dbus_,get_interfaces);
-  IMPLEMENT(,get_protocol);
-  IMPLEMENT(dbus_,get_self_handle);
-  IMPLEMENT(dbus_,get_status);
-  IMPLEMENT(,hold_handles);
   IMPLEMENT(,inspect_handles);
-  IMPLEMENT(,list_channels);
-  IMPLEMENT(,request_channel);
-  IMPLEMENT(,release_handles);
   IMPLEMENT(dbus_,request_handles);
   IMPLEMENT(dbus_,add_client_interest);
   IMPLEMENT(dbus_,remove_client_interest);
@@ -3584,19 +2977,16 @@ conn_requests_offer_request (TpBaseConnection *self,
   TpBaseConnectionPrivate *priv = self->priv;
   TpChannelManagerRequestFunc func;
   ChannelRequest *request;
-  gboolean suppress_handler;
   guint i;
 
   switch (method)
     {
     case METHOD_CREATE_CHANNEL:
       func = tp_channel_manager_create_channel;
-      suppress_handler = TRUE;
       break;
 
     case METHOD_ENSURE_CHANNEL:
       func = tp_channel_manager_ensure_channel;
-      suppress_handler = FALSE;
       break;
 
     default:
@@ -3604,7 +2994,7 @@ conn_requests_offer_request (TpBaseConnection *self,
     }
 
   request = channel_request_new (context, method,
-      type, target_handle_type, target_handle, suppress_handler);
+      type, target_handle_type, target_handle);
   g_ptr_array_add (priv->channel_requests, request);
 
   for (i = 0; i < priv->channel_managers->len; i++)

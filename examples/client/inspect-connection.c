@@ -16,8 +16,8 @@
 static int exit_status = 1;
 
 static void
-got_channels (TpConnection *connection,
-              const GPtrArray *channels,
+got_channels (TpProxy *connection,
+              const GValue *value,
               const GError *error,
               gpointer user_data,
               GObject *weak_object)
@@ -26,6 +26,7 @@ got_channels (TpConnection *connection,
 
   if (error == NULL)
     {
+      GPtrArray *channels = g_value_get_boxed (value);
       guint i;
 
       for (i = 0; i < channels->len; i++)
@@ -66,8 +67,8 @@ connection_ready_cb (TpConnection *connection,
 
   printf ("Connection ready\n");
 
-  tp_cli_connection_call_list_channels (connection, -1,
-      /* If ListChannels() needed any arguments, they'd go here */
+  tp_cli_dbus_properties_call_get (connection, -1,
+      TP_IFACE_CONNECTION, "Channels",
       got_channels, g_main_loop_ref (mainloop),
       (GDestroyNotify) g_main_loop_unref, NULL);
 }

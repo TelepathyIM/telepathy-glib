@@ -23,7 +23,6 @@ tests_list = \
     test-connection-error \
     test-connection-handles \
     test-connection-interests \
-    test-connection-getinterfaces-failure \
     test-contact-lists \
     test-contact-list-client \
     test-contacts \
@@ -148,9 +147,6 @@ test_connection_handles_SOURCES = connection-handles.c
 test_connection_error_SOURCES = connection-error.c
 
 test_connection_interests_SOURCES = connection-interests.c
-
-test_connection_getinterfaces_failure_SOURCES = \
-    connection-getinterfaces-failure.c
 
 test_contacts_SOURCES = contacts.c
 
