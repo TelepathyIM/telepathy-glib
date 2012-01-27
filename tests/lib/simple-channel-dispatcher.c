@@ -113,29 +113,6 @@ create_channel_request (TpTestsSimpleChannelDispatcher *self,
   return path;
 }
 
-static gchar *
-create_channel (TpTestsSimpleChannelDispatcher *self,
-    const gchar *account,
-    GHashTable *request,
-    gint64 user_action_time,
-    const gchar *preferred_handler,
-    GHashTable *hints,
-    DBusGMethodInvocation *context)
-{
-  if (tp_asv_get_boolean (request, "CreateChannelFail", NULL))
-    {
-      /* Fail to create the channel */
-      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "Computer says no" };
-
-      dbus_g_method_return_error (context, &error);
-      return NULL;
-    }
-
-  return create_channel_request (self, account, request, user_action_time,
-      preferred_handler, hints);
-}
-
 static void
 tp_tests_simple_channel_dispatcher_create_channel (
     TpSvcChannelDispatcher *dispatcher,
@@ -143,65 +120,32 @@ tp_tests_simple_channel_dispatcher_create_channel (
     GHashTable *request,
     gint64 user_action_time,
     const gchar *preferred_handler,
-    DBusGMethodInvocation *context)
-{
-  TpTestsSimpleChannelDispatcher *self = SIMPLE_CHANNEL_DISPATCHER (dispatcher);
-  gchar *path;
-
-  path = create_channel (self, account, request, user_action_time,
-      preferred_handler, NULL, context);
-  if (path == NULL)
-    return;
-
-  tp_svc_channel_dispatcher_return_from_create_channel (context, path);
-
-  g_free (path);
-}
-
-static void
-tp_tests_simple_channel_dispatcher_create_channel_with_hints (
-    TpSvcChannelDispatcher *dispatcher,
-    const gchar *account,
-    GHashTable *request,
-    gint64 user_action_time,
-    const gchar *preferred_handler,
     GHashTable *hints,
     DBusGMethodInvocation *context)
 {
   TpTestsSimpleChannelDispatcher *self = SIMPLE_CHANNEL_DISPATCHER (dispatcher);
   gchar *path;
 
-  path = create_channel (self, account, request, user_action_time,
-      preferred_handler, hints, context);
+  if (tp_asv_get_boolean (request, "CreateChannelFail", NULL))
+    {
+      /* Fail to create the channel */
+      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Computer says no" };
+
+      dbus_g_method_return_error (context, &error);
+      return;
+    }
+
+  path = create_channel_request (self, account, request, user_action_time,
+      preferred_handler, hints);
+
   if (path == NULL)
     return;
 
-  tp_svc_channel_dispatcher_return_from_create_channel_with_hints (context,
+  tp_svc_channel_dispatcher_return_from_create_channel (context,
       path);
 
   g_free (path);
-}
-
-static gchar *
-ensure_channel (TpTestsSimpleChannelDispatcher *self,
-    const gchar *account,
-    GHashTable *request,
-    gint64 user_action_time,
-    const gchar *preferred_handler,
-    GHashTable *hints,
-    DBusGMethodInvocation *context)
-{
-  if (self->priv->old_handler != NULL)
-    {
-      /* Pretend that the channel already exists */
-      return create_channel_request (self, account, request, user_action_time,
-          self->priv->old_handler, hints);
-    }
-
-  self->priv->old_handler = g_strdup (preferred_handler);
-
-  return create_channel_request (self, account, request, user_action_time,
-          preferred_handler, hints);
 }
 
 static void
@@ -211,36 +155,27 @@ tp_tests_simple_channel_dispatcher_ensure_channel (
     GHashTable *request,
     gint64 user_action_time,
     const gchar *preferred_handler,
-    DBusGMethodInvocation *context)
-{
-  TpTestsSimpleChannelDispatcher *self = SIMPLE_CHANNEL_DISPATCHER (dispatcher);
-  gchar *path;
-
-  path = ensure_channel (self, account, request, user_action_time,
-      preferred_handler, NULL, context);
-
-  tp_svc_channel_dispatcher_return_from_ensure_channel (context, path);
-
-  g_free (path);
-}
-
-static void
-tp_tests_simple_channel_dispatcher_ensure_channel_with_hints (
-    TpSvcChannelDispatcher *dispatcher,
-    const gchar *account,
-    GHashTable *request,
-    gint64 user_action_time,
-    const gchar *preferred_handler,
     GHashTable *hints,
     DBusGMethodInvocation *context)
 {
   TpTestsSimpleChannelDispatcher *self = SIMPLE_CHANNEL_DISPATCHER (dispatcher);
   gchar *path;
 
-  path = ensure_channel (self, account, request, user_action_time,
-      preferred_handler, hints, context);
+  if (self->priv->old_handler != NULL)
+    {
+      /* Pretend that the channel already exists */
+      path = create_channel_request (self, account, request, user_action_time,
+          self->priv->old_handler, hints);
+    }
+  else
+    {
+      self->priv->old_handler = g_strdup (preferred_handler);
 
-  tp_svc_channel_dispatcher_return_from_ensure_channel_with_hints (context,
+      path = create_channel_request (self, account, request, user_action_time,
+          preferred_handler, hints);
+    }
+
+  tp_svc_channel_dispatcher_return_from_ensure_channel (context,
       path);
 
   g_free (path);
@@ -315,8 +250,6 @@ channel_dispatcher_iface_init (gpointer klass,
   klass, tp_tests_simple_channel_dispatcher_##x)
   IMPLEMENT (create_channel);
   IMPLEMENT (ensure_channel);
-  IMPLEMENT (create_channel_with_hints);
-  IMPLEMENT (ensure_channel_with_hints);
   IMPLEMENT (delegate_channels);
   IMPLEMENT (present_channel);
 #undef IMPLEMENT
