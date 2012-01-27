@@ -351,7 +351,7 @@ tp_tests_simple_connection_ensure_text_chan (TpTestsSimpleConnection *self,
 
        chan = TP_TESTS_TEXT_CHANNEL_NULL (
           tp_tests_object_new_static_class (
-            TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
+            TP_TESTS_TYPE_PROPS_TEXT_CHANNEL,
             "connection", self,
             "object-path", chan_path,
             "handle", handle,

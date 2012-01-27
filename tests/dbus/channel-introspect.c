@@ -190,10 +190,6 @@ main (int argc,
 
   tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
-  TP_TESTS_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called = 0;
-  TP_TESTS_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called = 0;
-  TP_TESTS_TEXT_CHANNEL_NULL (service_props_chan)->get_channel_type_called = 0;
-
   chan = tp_channel_new (conn, props_chan_path, NULL,
       TP_UNKNOWN_HANDLE_TYPE, 0, &error);
   g_assert_no_error (error);
@@ -209,15 +205,6 @@ main (int argc,
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   g_assert_no_error (error);
-  g_assert_cmpuint (
-      TP_TESTS_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called, ==,
-      0);
-  g_assert_cmpuint (
-      TP_TESTS_TEXT_CHANNEL_NULL (service_props_chan)->get_channel_type_called,
-      ==, 0);
-  g_assert_cmpuint (
-      TP_TESTS_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called,
-      ==, 0);
 
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
       TRUE);
@@ -260,10 +247,6 @@ main (int argc,
 
   tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
-  TP_TESTS_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called = 0;
-  TP_TESTS_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called = 0;
-  TP_TESTS_TEXT_CHANNEL_NULL (service_props_chan)->get_channel_type_called = 0;
-
   g_hash_table_remove_all (TP_TESTS_PROPS_TEXT_CHANNEL (service_props_chan)
       ->dbus_property_interfaces_retrieved);
 
@@ -288,20 +271,10 @@ main (int argc,
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   g_assert_no_error (error);
   g_assert_cmpuint (g_hash_table_size (
-      service_props_chan->dbus_property_interfaces_retrieved), ==, 0);
-  g_assert_cmpuint (
-      TP_TESTS_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called, ==, 0);
-  g_assert_cmpuint (
-      TP_TESTS_TEXT_CHANNEL_NULL (service_props_chan)->get_channel_type_called,
-      ==, 0);
-  /* FIXME: with an improved fast-path we could avoid this one too maybe? */
-  /*
-  g_assert_cmpuint (
-      TP_TESTS_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called,
-      ==, 0);
-   */
+      service_props_chan->dbus_property_interfaces_retrieved), ==, 1);
 
-  assert_chan_sane (chan, handle, FALSE, handle, IDENTIFIER);
+  assert_chan_sane (chan, handle, TRUE, service_conn_as_base->self_handle,
+      tp_handle_inspect (contact_repo, service_conn_as_base->self_handle));
 
   g_object_unref (chan);
   chan = NULL;
@@ -310,11 +283,6 @@ main (int argc,
       "properties)");
 
   tp_tests_proxy_run_until_dbus_queue_processed (conn);
-
-  TP_TESTS_TEXT_CHANNEL_NULL (service_props_group_chan)->get_handle_called = 0;
-  TP_TESTS_TEXT_CHANNEL_NULL (service_props_group_chan)->get_interfaces_called = 0;
-  TP_TESTS_TEXT_CHANNEL_NULL (service_props_group_chan)->get_channel_type_called
-      = 0;
 
   g_hash_table_remove_all (TP_TESTS_PROPS_TEXT_CHANNEL (
         service_props_group_chan)
@@ -348,22 +316,20 @@ main (int argc,
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   g_assert_no_error (error);
-  g_assert_cmpuint (TP_TESTS_TEXT_CHANNEL_NULL (service_props_group_chan)
-      ->get_handle_called, ==, 0);
-  g_assert_cmpuint (TP_TESTS_TEXT_CHANNEL_NULL (service_props_group_chan)
-      ->get_channel_type_called, ==, 0);
-  g_assert_cmpuint (TP_TESTS_TEXT_CHANNEL_NULL (service_props_group_chan)
-      ->get_interfaces_called, ==, 0);
   g_assert_cmpuint (g_hash_table_size (
       TP_TESTS_PROPS_TEXT_CHANNEL (service_props_group_chan)
-      ->dbus_property_interfaces_retrieved), ==, 1);
-  /* Only Chan.I.Group's properties should have been retrieved */
+      ->dbus_property_interfaces_retrieved), ==, 2);
   g_assert (g_hash_table_lookup (
       TP_TESTS_PROPS_TEXT_CHANNEL (service_props_group_chan)
       ->dbus_property_interfaces_retrieved,
       GUINT_TO_POINTER (TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP)) != NULL);
+  g_assert (g_hash_table_lookup (
+      TP_TESTS_PROPS_TEXT_CHANNEL (service_props_group_chan)
+      ->dbus_property_interfaces_retrieved,
+      GUINT_TO_POINTER (TP_IFACE_QUARK_CHANNEL)) != NULL);
 
-  assert_chan_sane (chan, handle, FALSE, handle, IDENTIFIER);
+  assert_chan_sane (chan, handle, TRUE, service_conn_as_base->self_handle,
+      tp_handle_inspect (contact_repo, service_conn_as_base->self_handle));
 
   g_object_unref (chan);
   chan = NULL;

@@ -49,7 +49,7 @@ create_contact_chan (Test *test)
   tp_clear_object (&test->chan_room_service);
 
   /* Create service-side channel object */
-  chan_path = g_strdup_printf ("%s/Channel",
+  chan_path = g_strdup_printf ("%s/ContactChannel",
       tp_proxy_get_object_path (test->connection));
 
   test->contact_repo = tp_base_connection_get_handles (test->base_connection,
@@ -61,7 +61,7 @@ create_contact_chan (Test *test)
   g_assert_no_error (test->error);
 
   test->chan_contact_service = tp_tests_object_new_static_class (
-      TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
+      TP_TESTS_TYPE_PROPS_TEXT_CHANNEL,
       "connection", test->base_connection,
       "handle", handle,
       "object-path", chan_path,
@@ -88,7 +88,7 @@ create_room_chan (Test *test)
   tp_clear_object (&test->chan_room_service);
 
   /* Create service-side channel object */
-  chan_path = g_strdup_printf ("%s/Channel2",
+  chan_path = g_strdup_printf ("%s/RoomChannel",
       tp_proxy_get_object_path (test->connection));
 
   test->room_repo = tp_base_connection_get_handles (test->base_connection,

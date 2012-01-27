@@ -902,32 +902,6 @@ channel_close (TpSvcChannel *iface,
 }
 
 static void
-channel_get_channel_type (TpSvcChannel *iface G_GNUC_UNUSED,
-    DBusGMethodInvocation *context)
-{
-  tp_svc_channel_return_from_get_channel_type (context,
-      FUTURE_IFACE_CHANNEL_TYPE_CALL);
-}
-
-static void
-channel_get_handle (TpSvcChannel *iface,
-    DBusGMethodInvocation *context)
-{
-  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
-
-  tp_svc_channel_return_from_get_handle (context, TP_HANDLE_TYPE_CONTACT,
-      self->priv->handle);
-}
-
-static void
-channel_get_interfaces (TpSvcChannel *iface G_GNUC_UNUSED,
-    DBusGMethodInvocation *context)
-{
-  tp_svc_channel_return_from_get_interfaces (context,
-      example_call_channel_interfaces);
-}
-
-static void
 channel_iface_init (gpointer iface,
                     gpointer data)
 {
@@ -935,9 +909,6 @@ channel_iface_init (gpointer iface,
 
 #define IMPLEMENT(x) tp_svc_channel_implement_##x (klass, channel_##x)
   IMPLEMENT (close);
-  IMPLEMENT (get_channel_type);
-  IMPLEMENT (get_handle);
-  IMPLEMENT (get_interfaces);
 #undef IMPLEMENT
 }
 

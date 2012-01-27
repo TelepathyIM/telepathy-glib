@@ -129,7 +129,7 @@ setup (Test *test,
 
   test->text_chan_service = TP_TESTS_TEXT_CHANNEL_NULL (
       tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
+        TP_TESTS_TYPE_PROPS_TEXT_CHANNEL,
         "connection", test->base_connection,
         "object-path", chan_path,
         "handle", handle,
@@ -152,7 +152,7 @@ setup (Test *test,
 
   test->text_chan_service_2 = TP_TESTS_TEXT_CHANNEL_NULL (
       tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
+        TP_TESTS_TYPE_PROPS_TEXT_CHANNEL,
         "connection", test->base_connection,
         "object-path", chan_path,
         "handle", handle,

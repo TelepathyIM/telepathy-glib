@@ -881,36 +881,6 @@ tp_base_channel_class_init (TpBaseChannelClass *tp_base_channel_class)
 }
 
 static void
-tp_base_channel_get_channel_type (TpSvcChannel *iface,
-                                  DBusGMethodInvocation *context)
-{
-  TpBaseChannelClass *klass = TP_BASE_CHANNEL_GET_CLASS (iface);
-
-  tp_svc_channel_return_from_get_channel_type (context, klass->channel_type);
-}
-
-static void
-tp_base_channel_get_handle (TpSvcChannel *iface,
-                            DBusGMethodInvocation *context)
-{
-  TpBaseChannelClass *klass = TP_BASE_CHANNEL_GET_CLASS (iface);
-  TpBaseChannel *chan = TP_BASE_CHANNEL (iface);
-
-  tp_svc_channel_return_from_get_handle (context, klass->target_handle_type,
-      chan->priv->target);
-}
-
-static void
-tp_base_channel_get_interfaces (TpSvcChannel *iface,
-                                DBusGMethodInvocation *context)
-{
-  TpBaseChannel *chan = TP_BASE_CHANNEL (iface);
-  TpBaseChannelClass *klass = TP_BASE_CHANNEL_GET_CLASS (chan);
-
-  tp_svc_channel_return_from_get_interfaces (context, klass->interfaces);
-}
-
-static void
 tp_base_channel_close_dbus (
     TpSvcChannel *iface,
     DBusGMethodInvocation *context)
@@ -934,13 +904,6 @@ channel_iface_init (gpointer g_iface,
                     gpointer iface_data)
 {
   TpSvcChannelClass *klass = (TpSvcChannelClass *) g_iface;
-
-#define IMPLEMENT(x) tp_svc_channel_implement_##x (\
-    klass, tp_base_channel_##x)
-  IMPLEMENT(get_channel_type);
-  IMPLEMENT(get_handle);
-  IMPLEMENT(get_interfaces);
-#undef IMPLEMENT
 
   tp_svc_channel_implement_close (klass, tp_base_channel_close_dbus);
 }

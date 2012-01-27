@@ -49,10 +49,6 @@ struct _TpTestsTextChannelNull {
     GObject parent;
     TpMessageMixin message;
 
-    guint get_handle_called;
-    guint get_interfaces_called;
-    guint get_channel_type_called;
-
     TpTestsTextChannelNullPrivate *priv;
 };
 

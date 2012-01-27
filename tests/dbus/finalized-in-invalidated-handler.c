@@ -121,7 +121,7 @@ main (int argc,
   chan_path = g_strdup_printf ("%s/Channel", conn_path);
 
   service_chan = TP_TESTS_TEXT_CHANNEL_NULL (tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
+        TP_TESTS_TYPE_PROPS_TEXT_CHANNEL,
         "connection", service_conn,
         "object-path", chan_path,
         "handle", handle,
