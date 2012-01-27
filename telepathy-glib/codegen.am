@@ -103,10 +103,34 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/tp-svc-connection-manager.c \
     _gen/tp-svc-debug.c \
     _gen/tp-svc-generic.c \
-    _gen/tp-svc-media-session-handler.c \
-    _gen/tp-svc-media-stream-handler.c \
     _gen/tp-svc-protocol.c \
     _gen/tp-svc-tls-cert.c
+
+nodist_libtelepathy_glib_reentrants_la_SOURCES = \
+    _gen/tp-cli-account-reentrant-body.h \
+    _gen/tp-cli-account-manager-reentrant-body.h \
+    _gen/tp-cli-channel-reentrant-body.h \
+    _gen/tp-cli-channel-dispatcher-reentrant-body.h \
+    _gen/tp-cli-channel-dispatch-operation-reentrant-body.h \
+    _gen/tp-cli-channel-request-reentrant-body.h \
+    _gen/tp-cli-client-reentrant-body.h \
+    _gen/tp-cli-connection-reentrant-body.h \
+    _gen/tp-cli-connection-manager-reentrant-body.h \
+    _gen/tp-cli-dbus-daemon-reentrant-body.h \
+    _gen/tp-cli-generic-reentrant-body.h \
+    _gen/tp-cli-protocol-reentrant-body.h \
+    _gen/tp-cli-account-reentrant.h \
+    _gen/tp-cli-account-manager-reentrant.h \
+    _gen/tp-cli-channel-reentrant.h \
+    _gen/tp-cli-channel-dispatcher-reentrant.h \
+    _gen/tp-cli-channel-dispatch-operation-reentrant.h \
+    _gen/tp-cli-channel-request-reentrant.h \
+    _gen/tp-cli-client-reentrant.h \
+    _gen/tp-cli-connection-reentrant.h \
+    _gen/tp-cli-connection-manager-reentrant.h \
+    _gen/tp-cli-dbus-daemon-reentrant.h \
+    _gen/tp-cli-generic-reentrant.h \
+    _gen/tp-cli-protocol-reentrant.h
 
 # Generated stuff
 
@@ -200,9 +224,8 @@ _gen/tp-svc-%.c _gen/tp-svc-%.h: _gen/tp-spec-%.xml \
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
 		$< Tp_Svc_
 
-_gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
-	_gen/reentrant-methods.list \
-	$(tools_dir)/glib-client-gen.py \
+_gen/tp-cli-%-body.h _gen/tp-cli-%.h _gen/tp-cli-%-reentrant-body.h _gen/tp-cli-%-reentrant.h: \
+	_gen/tp-spec-%.xml _gen/reentrant-methods.list $(tools_dir)/glib-client-gen.py \
 	codegen.am
 	$(AM_V_GEN)set -e; \
 	subclass= ; \
@@ -267,6 +290,7 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 		--deprecation-attribute=_TP_GNUC_DEPRECATED \
 		--deprecate-reentrant=TP_DISABLE_DEPRECATED \
 		--generate-reentrant=_gen/reentrant-methods.list \
+		--generate-all-reentrants=yes \
 		$< Tp_Cli _gen/tp-cli-$*
 
 # vim:set ft=automake:

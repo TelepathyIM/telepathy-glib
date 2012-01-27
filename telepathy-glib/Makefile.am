@@ -19,7 +19,8 @@ EXTRA_DIST = \
 # internal symbols (_tp_log) which are made invisible by GNU ld.
 
 lib_LTLIBRARIES = libtelepathy-glib.la
-noinst_LTLIBRARIES = libtelepathy-glib-internal.la
+noinst_LTLIBRARIES = libtelepathy-glib-internal.la \
+	libtelepathy-glib-reentrants.la
 
 # headers that are subject to coding-style checks
 our_headers = \
@@ -259,9 +260,12 @@ libtelepathy_glib_internal_la_SOURCES = \
     stream-tube-connection-internal.h \
     stream-tube-connection.c \
     text-channel.c \
-    text-mixin.c \
     util.c \
     util-internal.h
+
+libtelepathy_glib_reentrants_la_SOURCES = \
+    reentrants.c \
+    reentrants.h
 
 AM_CFLAGS = \
     -DG_LOG_DOMAIN=\"tp-glib\" \
