@@ -153,35 +153,6 @@
  */
 
 /**
- * SECTION:svc-channel-media
- * @title: Media channels
- * @short_description: service-side interfaces for the Streamed Media channel
- *  type, and the Call State, DTMF and Media Signalling interfaces
- *
- * This section documents the auto-generated C wrappers for the Streamed Media
- * channel type, and some interfaces which are optionally supported by
- * channels of this type.
- *
- * Streamed Media channels represent real-time audio or video streaming,
- * including voice over IP, webcams, and telephony.
- *
- * Channels of type Streamed Media may support the Media Signalling interface.
- * If not, the connection manager is assumed to be presenting the media
- * streams to the user automatically (for instance, in a connection manager
- * like gnome-phone-manager or telepathy-snom that remotely controls a
- * telephone, the phone's own speaker and microphone will probably be
- * used directly).
- *
- * If Media Signalling is supported, the Telepathy client is responsible for
- * actually streaming the media, using the Media Signalling interface to
- * provide signalling (connection managers might implement this interface in
- * terms of Jingle or SDP, for instance).
- *
- * Channels of type Streamed Media may also support the DTMF and
- * CallState interfaces.
- */
-
-/**
  * SECTION:svc-channel-tubes
  * @title: Tubes channels
  * @short_description: service-side interface for the Tubes channel type
@@ -337,18 +308,6 @@
  *
  * You don't need these interfaces unless you're implementing a
  * Telepathy ChannelDispatcher, such as Mission Control.
- */
-
-/**
- * SECTION:svc-media-interfaces
- * @title: Service-side media streaming helper interfaces
- * @short_description: media session and media stream
- * @see_also: #TpSvcChannelTypeStreamedMedia
- *
- * These interfaces (auto-generated from the telepathy spec) make it easier
- * to export the objects used to implement #TpSvcChannelTypeStreamedMedia,
- * with the correct method and signal signatures, and emit signals from those
- * objects.
  */
 
 /**

@@ -69,7 +69,6 @@
     <xi:include href="xml/channel-auth.xml"/>
     <xi:include href="xml/cli-anonymity.xml"/>
     <xi:include href="xml/cli-service-point.xml"/>
-    <xi:include href="xml/media-interfaces.xml"/>
     <xi:include href="xml/account-manager.xml"/>
     <xi:include href="xml/account.xml"/>
     <xi:include href="xml/channel-dispatcher.xml"/>
@@ -101,7 +100,6 @@
     <xi:include href="xml/svc-channel-contactlist.xml"/>
     <xi:include href="xml/svc-channel-contactsearch.xml"/>
     <xi:include href="xml/svc-channel-text.xml"/>
-    <xi:include href="xml/svc-channel-media.xml"/>
     <xi:include href="xml/svc-channel-file-transfer.xml"/>
     <xi:include href="xml/svc-channel-ft-metadata.xml"/>
     <xi:include href="xml/svc-channel-tubes.xml"/>
@@ -113,7 +111,6 @@
     <xi:include href="xml/svc-connection.xml"/>
     <xi:include href="xml/svc-anonymity.xml"/>
     <xi:include href="xml/svc-service-point.xml"/>
-    <xi:include href="xml/svc-media-interfaces.xml"/>
     <xi:include href="xml/svc-connection-manager.xml"/>
     <xi:include href="xml/svc-protocol.xml"/>
     <xi:include href="xml/svc-account-manager.xml"/>

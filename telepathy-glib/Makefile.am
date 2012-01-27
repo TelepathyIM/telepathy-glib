@@ -83,7 +83,6 @@ our_headers = \
     heap.h \
     interfaces.h \
     intset.h \
-    media-interfaces.h \
     message.h \
     message-mixin.h \
     observe-channels-context.h \
@@ -112,7 +111,6 @@ our_headers = \
     svc-connection-manager.h \
     svc-debug.h \
     svc-generic.h \
-    svc-media-interfaces.h \
     svc-properties-interface.h \
     svc-protocol.h \
     svc-tls.h \
@@ -232,7 +230,6 @@ libtelepathy_glib_internal_la_SOURCES = \
     intset.c \
     channel-iface.c \
     channel-factory-iface.c \
-    media-interfaces.c \
     message.c \
     message-internal.h \
     message-mixin.c \

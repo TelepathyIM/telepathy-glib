@@ -18,8 +18,6 @@ codegen_extra_dist = \
     generic.xml \
     genums.c.template \
     genums.h.template \
-    media-session-handler.xml \
-    media-stream-handler.xml \
     protocol.xml \
     stable-interfaces.xml \
     tls-cert.xml
@@ -49,8 +47,6 @@ nodist_geninclude_HEADERS = \
     _gen/tp-cli-connection-manager.h \
     _gen/tp-cli-dbus-daemon.h \
     _gen/tp-cli-generic.h \
-    _gen/tp-cli-media-session-handler.h \
-    _gen/tp-cli-media-stream-handler.h \
     _gen/tp-cli-protocol.h \
     _gen/tp-svc-account.h \
     _gen/tp-svc-account-manager.h \
@@ -63,8 +59,6 @@ nodist_geninclude_HEADERS = \
     _gen/tp-svc-connection-manager.h \
     _gen/tp-svc-debug.h \
     _gen/tp-svc-generic.h \
-    _gen/tp-svc-media-session-handler.h \
-    _gen/tp-svc-media-stream-handler.h \
     _gen/tp-svc-protocol.h \
     _gen/tp-svc-tls-cert.h
 
@@ -89,8 +83,6 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/tp-cli-connection-manager-body.h \
     _gen/tp-cli-dbus-daemon-body.h \
     _gen/tp-cli-generic-body.h \
-    _gen/tp-cli-media-session-handler-body.h \
-    _gen/tp-cli-media-stream-handler-body.h \
     _gen/tp-cli-protocol-body.h \
     _gen/tp-svc-account.c \
     _gen/tp-svc-account-manager.c \
@@ -268,14 +260,6 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h _gen/tp-cli-%-reentrant-body.h _gen/tp-cli-
 		connection) \
 			subclass=--subclass=TpConnection; \
 			subclass_assert=--subclass-assert=TP_IS_CONNECTION; \
-			;; \
-		media-session-handler) \
-			subclass=--subclass=TpMediaSessionHandler; \
-			subclass_assert=--subclass-assert=TP_IS_MEDIA_SESSION_HANDLER; \
-			;; \
-		media-stream-handler) \
-			subclass=--subclass=TpMediaStreamHandler; \
-			subclass_assert=--subclass-assert=TP_IS_MEDIA_STREAM_HANDLER; \
 			;; \
 		dbus-daemon) \
 			subclass=--subclass=TpDBusDaemon; \

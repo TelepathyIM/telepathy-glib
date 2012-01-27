@@ -27,7 +27,6 @@ EXTRA_DIST = \
     Channel_Handler.xml \
     Channel_Interface_Addressing.xml \
     Channel_Interface_Anonymity.xml \
-    Channel_Interface_Call_State.xml \
     Channel_Interface_Chat_State.xml \
     Channel_Interface_Conference.xml \
     Channel_Interface_Credentials_Storage.xml \
@@ -37,7 +36,6 @@ EXTRA_DIST = \
     Channel_Interface_Group.xml \
     Channel_Interface_HTML.xml \
     Channel_Interface_Hold.xml \
-    Channel_Interface_Media_Signalling.xml \
     Channel_Interface_Mergeable_Conference.xml \
     Channel_Interface_Messages.xml \
     Channel_Interface_Password.xml \
@@ -62,7 +60,6 @@ EXTRA_DIST = \
     Channel_Type_Server_Authentication.xml \
     Channel_Type_Server_TLS_Connection.xml \
     Channel_Type_Stream_Tube.xml \
-    Channel_Type_Streamed_Media.xml \
     Channel_Type_Text.xml \
     Channel_Type_Tubes.xml \
     Client.xml \
@@ -103,8 +100,6 @@ EXTRA_DIST = \
     Connection_Manager.xml \
     Connection_Manager_Interface_Account_Storage.xml \
     Debug.xml \
-    Media_Session_Handler.xml \
-    Media_Stream_Handler.xml \
     Properties_Interface.xml \
     Protocol.xml \
     Protocol_Interface_Addressing.xml \

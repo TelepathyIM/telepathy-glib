@@ -144,7 +144,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
    <xi:include href="Channel_Type_Server_Authentication.xml"/>
    <xi:include href="Channel_Type_Server_TLS_Connection.xml"/>
    <xi:include href="Channel_Type_Stream_Tube.xml"/>
-   <xi:include href="Channel_Type_Streamed_Media.xml"/>
    <xi:include href="Channel_Type_Text.xml"/>
    <xi:include href="Channel_Type_Tubes.xml"/>
   </tp:section>
@@ -178,7 +177,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
    <tp:section name="Text-specific interfaces">
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>These interfaces may only appear on channels of type <tp:dbus-ref
-        namespace='ofdT.Channel.Type'>Text</tp:dbus-ref>.</p>
+        namespace='imt1.Channel.Type'>Text</tp:dbus-ref>.</p>
     </tp:docstring>
 
     <xi:include href="Channel_Interface_Chat_State.xml"/>
@@ -187,29 +186,21 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     <xi:include href="Channel_Interface_SMS.xml"/>
    </tp:section>
 
-   <tp:section name="Streamed Media/Call-related interfaces">
+   <tp:section name="Call-related interfaces">
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
      <p>These interfaces are only applicable to channels of type <tp:dbus-ref
-       namespace='ofdT.Channel.Type'>StreamedMedia</tp:dbus-ref>, with the
-       exception of the <tp:dbus-ref
-       namespace='ofdT.Channel.Interface'>Hold</tp:dbus-ref> and
-       <tp:dbus-ref namespace="ofdT.Channel.Interface">DTMF</tp:dbus-ref>
-       interfaces, which may also appear on <tp:dbus-ref
-       namespace='ofdT.Channel.Type'>Call1</tp:dbus-ref> channels.</p>
+       namespace='ofdT.Channel.Type'>Call1</tp:dbus-ref>.</p>
     </tp:docstring>
 
-    <xi:include href="Channel_Interface_Call_State.xml"/>
     <xi:include href="Channel_Interface_DTMF.xml"/>
     <xi:include href="Channel_Interface_Hold.xml"/>
-    <xi:include href="Channel_Interface_Media_Signalling.xml"/>
    </tp:section>
 
    <tp:section name="Conference-related interfaces">
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
      <p>These interfaces provide functionality for ad-hoc conference calls and
        chat rooms. They are primarily intended for <tp:dbus-ref
-       namespace='ofdT.Channel.Type'>Text</tp:dbus-ref>, <tp:dbus-ref
-       namespace='ofdT.Channel.Type'>StreamedMedia</tp:dbus-ref> and
+       namespace='ofdT.Channel.Type'>Text</tp:dbus-ref> and
        <tp:dbus-ref namespace='ofdT.Channel.Type'>Call1</tp:dbus-ref>
        channels, but may also appear on other types of channel.</p>
     </tp:docstring>
@@ -230,11 +221,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </p>
   </tp:docstring>
   <xi:include href="Authentication_TLS_Certificate.xml"/>
- </tp:section>
-
- <tp:section name="Media">
-  <xi:include href="Media_Session_Handler.xml"/>
-  <xi:include href="Media_Stream_Handler.xml"/>
  </tp:section>
 
  <tp:section name="Calls">

@@ -9,7 +9,6 @@
 <xi:include href="../spec/Channel_Type_Contact_List.xml"/>
 <xi:include href="../spec/Channel_Type_Contact_Search.xml"/>
 <xi:include href="../spec/Channel_Type_File_Transfer.xml"/>
-<xi:include href="../spec/Channel_Type_Streamed_Media.xml"/>
 <xi:include href="../spec/Channel_Type_Room_List.xml"/>
 <xi:include href="../spec/Channel_Type_Text.xml"/>
 <xi:include href="../spec/Channel_Type_Tubes.xml"/>
@@ -19,7 +18,6 @@
 <xi:include href="../spec/Channel_Type_Server_TLS_Connection.xml"/>
 
 <xi:include href="../spec/Channel_Interface_Anonymity.xml"/>
-<xi:include href="../spec/Channel_Interface_Call_State.xml"/>
 <xi:include href="../spec/Channel_Interface_Chat_State.xml"/>
 <xi:include href="../spec/Channel_Interface_Conference.xml"/>
 <xi:include href="../spec/Channel_Interface_Destroyable.xml"/>
@@ -27,7 +25,6 @@
 <xi:include href="../spec/Channel_Interface_File_Transfer_Metadata.xml"/>
 <xi:include href="../spec/Channel_Interface_Group.xml"/>
 <xi:include href="../spec/Channel_Interface_Hold.xml"/>
-<xi:include href="../spec/Channel_Interface_Media_Signalling.xml"/>
 <xi:include href="../spec/Channel_Interface_Messages.xml"/>
 <xi:include href="../spec/Channel_Interface_Password.xml"/>
 <xi:include href="../spec/Channel_Interface_Room.xml"/>
