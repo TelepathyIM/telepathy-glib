@@ -17,13 +17,13 @@
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/svc-channel.h>
 
-static void text_iface_init (gpointer iface, gpointer data);
 static void destroyable_iface_init (gpointer iface, gpointer data);
 
 G_DEFINE_TYPE_WITH_CODE (TpTestsEchoChannel,
     tp_tests_echo_channel,
     TP_TYPE_BASE_CHANNEL,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT, text_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT,
+      tp_message_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_DESTROYABLE,
       destroyable_iface_init);
     )
@@ -40,6 +40,9 @@ tp_tests_echo_channel_init (TpTestsEchoChannel *self)
 {
 }
 
+static void text_send (GObject *object, TpMessage *message,
+    TpMessageSendingFlags flags);
+
 static GObject *
 constructor (GType type,
              guint n_props,
@@ -49,22 +52,26 @@ constructor (GType type,
       G_OBJECT_CLASS (tp_tests_echo_channel_parent_class)->constructor (type,
           n_props, props);
   TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (object);
-  TpHandleRepoIface *contact_repo = NULL;
   TpBaseConnection *conn = tp_base_channel_get_connection (TP_BASE_CHANNEL (self));
-  g_assert (conn != NULL);
-
-  contact_repo = tp_base_connection_get_handles (conn, TP_HANDLE_TYPE_CONTACT);
-
-  tp_base_channel_register (TP_BASE_CHANNEL (self));
-
-  tp_text_mixin_init (object, G_STRUCT_OFFSET (TpTestsEchoChannel, text),
-      contact_repo);
-
-  tp_text_mixin_set_message_types (object,
+  const TpChannelTextMessageType types[] = {
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE,
-      G_MAXUINT);
+  };
+  const gchar * supported_content_types[] = {
+      "text/plain",
+      NULL
+  };
+  g_assert (conn != NULL);
+
+  tp_base_channel_register (TP_BASE_CHANNEL (self));
+
+  tp_message_mixin_init (object,
+      G_STRUCT_OFFSET (TpTestsEchoChannel, message),
+      conn);
+  tp_message_mixin_implement_sending (object,
+      text_send, G_N_ELEMENTS (types), types, 0, 0,
+      supported_content_types);
 
   return object;
 }
@@ -72,7 +79,7 @@ constructor (GType type,
 static void
 finalize (GObject *object)
 {
-  tp_text_mixin_finalize (object);
+  tp_message_mixin_finalize (object);
 
   ((GObjectClass *) tp_tests_echo_channel_parent_class)->finalize (object);
 }
@@ -92,10 +99,10 @@ tp_tests_echo_channel_close (TpTestsEchoChannel *self)
        * to the contact who sent us those messages (if it isn't already),
        * and the messages must be marked as having been rescued so they
        * don't get logged twice. */
-      if (tp_text_mixin_has_pending_messages (object, &first_sender))
+      if (tp_message_mixin_has_pending_messages (object, &first_sender))
         {
           tp_base_channel_reopened (TP_BASE_CHANNEL (self), first_sender);
-          tp_text_mixin_set_rescued (object);
+          tp_message_mixin_set_rescued (object);
         }
       else
         {
@@ -126,31 +133,31 @@ tp_tests_echo_channel_class_init (TpTestsEchoChannelClass *klass)
   base_class->interfaces = tp_tests_echo_channel_interfaces;
   base_class->close = channel_close;
 
-  tp_text_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TpTestsEchoChannelClass, text_class));
+  tp_message_mixin_init_dbus_properties (object_class);
 }
 
+
 static void
-text_send (TpSvcChannelTypeText *iface,
-           guint type,
-           const gchar *text,
-           DBusGMethodInvocation *context)
+text_send (GObject *object,
+    TpMessage *message,
+    TpMessageSendingFlags flags)
 {
-  TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (iface);
-  time_t timestamp = time (NULL);
-  gchar *echo;
-  guint echo_type = type;
+  TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (object);
+  TpChannelTextMessageType type = tp_message_get_message_type (message);
+  TpChannelTextMessageType echo_type = type;
   TpHandle target = tp_base_channel_get_target_handle (TP_BASE_CHANNEL (self));
-
-  /* Send should return just before Sent is emitted. */
-  tp_svc_channel_type_text_return_from_send (context);
-
-  /* Tell the client that the message was submitted for sending */
-  tp_svc_channel_type_text_emit_sent ((GObject *) self, timestamp, type, text);
+  gchar *echo;
+  gint64 now = time (NULL);
+  const GHashTable *part;
+  const gchar *text;
+  TpMessage *msg;
 
   /* Pretend that the remote contact has replied. Normally, you'd
    * call tp_text_mixin_receive or tp_text_mixin_receive_with_flags
    * in response to network events */
+
+  part = tp_message_peek (message, 1);
+  text = tp_asv_get_string (part, "content");
 
   switch (type)
     {
@@ -169,21 +176,23 @@ text_send (TpSvcChannelTypeText *iface,
       echo_type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
     }
 
-  tp_text_mixin_receive ((GObject *) self, echo_type, target, timestamp, echo);
+  tp_message_mixin_sent (object, message, 0, "", NULL);
+
+  msg = tp_cm_message_new (
+      tp_base_channel_get_connection (TP_BASE_CHANNEL (self)),
+      2);
+
+  tp_cm_message_set_sender (msg, target);
+  tp_message_set_uint32 (msg, 0, "message-type", echo_type);
+  tp_message_set_int64 (msg, 0, "message-sent", now);
+  tp_message_set_int64 (msg, 0, "message-received", now);
+
+  tp_message_set_string (msg, 1, "content-type", "text/plain");
+  tp_message_set_string (msg, 1, "content", echo);
+
+  tp_message_mixin_take_received (object, msg);
 
   g_free (echo);
-}
-
-static void
-text_iface_init (gpointer iface,
-                 gpointer data)
-{
-  TpSvcChannelTypeTextClass *klass = iface;
-
-  tp_text_mixin_iface_init (iface, data);
-#define IMPLEMENT(x) tp_svc_channel_type_text_implement_##x (klass, text_##x)
-  IMPLEMENT (send);
-#undef IMPLEMENT
 }
 
 static void
@@ -192,7 +201,7 @@ destroyable_destroy (TpSvcChannelInterfaceDestroyable *iface,
 {
   TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (iface);
 
-  tp_text_mixin_clear ((GObject *) self);
+  tp_message_mixin_clear ((GObject *) self);
   tp_base_channel_destroyed (TP_BASE_CHANNEL (self));
 
   tp_svc_channel_interface_destroyable_return_from_destroy (context);

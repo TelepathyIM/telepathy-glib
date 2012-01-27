@@ -16,7 +16,7 @@
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/base-channel.h>
 #include <telepathy-glib/group-mixin.h>
-#include <telepathy-glib/text-mixin.h>
+#include <telepathy-glib/message-mixin.h>
 
 G_BEGIN_DECLS
 
@@ -45,7 +45,6 @@ GType tp_tests_text_channel_group_get_type (void);
 struct _TpTestsTextChannelGroupClass {
     TpBaseChannelClass parent_class;
 
-    TpTextMixinClass text_class;
     TpGroupMixinClass group_class;
     TpDBusPropertiesMixinClass dbus_properties_class;
 };
@@ -55,7 +54,7 @@ struct _TpTestsTextChannelGroup {
 
     TpBaseConnection *conn;
 
-    TpTextMixin text;
+    TpMessageMixin message;
     TpGroupMixin group;
 
     TpHandle removed_handle;

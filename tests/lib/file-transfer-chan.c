@@ -609,9 +609,6 @@ tp_tests_file_transfer_channel_class_init (
   base_class->close = channel_close;
   base_class->fill_immutable_properties = fill_immutable_properties;
 
-  tp_text_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TpTestsFileTransferChannelClass, text_class));
-
   param_spec = g_param_spec_boxed ("available-socket-types",
       "AvailableSocketTypes",
       "The AvailableSocketTypes property of this channel",

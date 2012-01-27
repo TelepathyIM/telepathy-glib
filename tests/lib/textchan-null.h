@@ -14,8 +14,8 @@
 
 #include <glib-object.h>
 #include <telepathy-glib/base-connection.h>
-#include <telepathy-glib/text-mixin.h>
 #include <telepathy-glib/group-mixin.h>
+#include <telepathy-glib/message-mixin.h>
 
 G_BEGIN_DECLS
 
@@ -43,13 +43,11 @@ GType tp_tests_text_channel_null_get_type (void);
 
 struct _TpTestsTextChannelNullClass {
     GObjectClass parent_class;
-
-    TpTextMixinClass text_class;
 };
 
 struct _TpTestsTextChannelNull {
     GObject parent;
-    TpTextMixin text;
+    TpMessageMixin message;
 
     guint get_handle_called;
     guint get_interfaces_called;

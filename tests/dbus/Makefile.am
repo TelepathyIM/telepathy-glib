@@ -54,7 +54,6 @@ tests_list = \
     test-simple-observer \
     test-stream-tube \
     test-text-channel \
-    test-text-mixin \
     test-text-respawn \
     test-unsupported-interface
 
@@ -206,8 +205,6 @@ test_protocol_objects_SOURCES = protocol-objects.c
 test_self_handle_SOURCES = self-handle.c
 
 test_self_presence_SOURCES = self-presence.c
-
-test_text_mixin_SOURCES = text-mixin.c
 
 test_text_respawn_SOURCES = text-respawn.c
 

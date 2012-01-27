@@ -19,14 +19,14 @@
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/svc-generic.h>
 
-static void text_iface_init (gpointer iface, gpointer data);
 static void channel_iface_init (gpointer iface, gpointer data);
 
 G_DEFINE_TYPE_WITH_CODE (TpTestsTextChannelNull,
     tp_tests_text_channel_null,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT, text_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT,
+        tp_message_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL))
 
 G_DEFINE_TYPE_WITH_CODE (TpTestsPropsTextChannel,
@@ -83,6 +83,15 @@ tp_tests_props_text_channel_init (TpTestsPropsTextChannel *self)
   self->dbus_property_interfaces_retrieved = g_hash_table_new (NULL, NULL);
 }
 
+static void
+text_send (GObject *object,
+           TpMessage *message,
+           TpMessageSendingFlags flags)
+{
+  /* silently swallow the message */
+  tp_message_mixin_sent (object, message, 0, "", NULL);
+}
+
 static GObject *
 constructor (GType type,
              guint n_props,
@@ -94,6 +103,15 @@ constructor (GType type,
   TpTestsTextChannelNull *self = TP_TESTS_TEXT_CHANNEL_NULL (object);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+  const TpChannelTextMessageType types[] = {
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE,
+  };
+  const gchar * supported_content_types[] = {
+      "text/plain",
+      NULL
+  };
 
   tp_handle_ref (contact_repo, self->priv->handle);
 
@@ -101,14 +119,13 @@ constructor (GType type,
       tp_base_connection_get_dbus_daemon (self->priv->conn),
       self->priv->object_path, self);
 
-  tp_text_mixin_init (object, G_STRUCT_OFFSET (TpTestsTextChannelNull, text),
-      contact_repo);
+  tp_message_mixin_init (object,
+      G_STRUCT_OFFSET (TpTestsTextChannelNull, message),
+      self->priv->conn);
 
-  tp_text_mixin_set_message_types (object,
-      TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
-      TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
-      TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE,
-      G_MAXUINT);
+  tp_message_mixin_implement_sending (object,
+      text_send, G_N_ELEMENTS (types), types, 0, 0,
+      supported_content_types);
 
   return object;
 }
@@ -241,7 +258,7 @@ finalize (GObject *object)
   tp_handle_unref (contact_handles, self->priv->handle);
   g_free (self->priv->object_path);
 
-  tp_text_mixin_finalize (object);
+  tp_message_mixin_finalize (object);
 
   ((GObjectClass *) tp_tests_text_channel_null_parent_class)->finalize (object);
 }
@@ -307,8 +324,7 @@ tp_tests_text_channel_null_class_init (TpTestsTextChannelNullClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_REQUESTED, param_spec);
 
-  tp_text_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TpTestsTextChannelNullClass, text_class));
+  tp_message_mixin_init_dbus_properties (object_class);
 }
 
 static void
@@ -505,28 +521,6 @@ channel_iface_init (gpointer iface,
   IMPLEMENT (get_channel_type);
   IMPLEMENT (get_handle);
   IMPLEMENT (get_interfaces);
-#undef IMPLEMENT
-}
-
-static void
-text_send (TpSvcChannelTypeText *iface,
-           guint type,
-           const gchar *text,
-           DBusGMethodInvocation *context)
-{
-  /* silently swallow the message */
-  tp_svc_channel_type_text_return_from_send (context);
-}
-
-static void
-text_iface_init (gpointer iface,
-                 gpointer data)
-{
-  TpSvcChannelTypeTextClass *klass = iface;
-
-  tp_text_mixin_iface_init (iface, data);
-#define IMPLEMENT(x) tp_svc_channel_type_text_implement_##x (klass, text_##x)
-  IMPLEMENT (send);
 #undef IMPLEMENT
 }
 

@@ -115,7 +115,6 @@ our_headers = \
     svc-tls.h \
     telepathy-glib.h \
     text-channel.h \
-    text-mixin.h \
     util.h
 
 tpginclude_HEADERS = \

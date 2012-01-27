@@ -14,7 +14,6 @@
 #include <glib-object.h>
 #include <telepathy-glib/base-channel.h>
 #include <telepathy-glib/base-connection.h>
-#include <telepathy-glib/text-mixin.h>
 
 G_BEGIN_DECLS
 
@@ -43,13 +42,11 @@ GType tp_tests_dbus_tube_channel_get_type (void);
 
 struct _TpTestsDBusTubeChannelClass {
     TpBaseChannelClass parent_class;
-    TpTextMixinClass text_class;
     TpDBusPropertiesMixinClass dbus_properties_class;
 };
 
 struct _TpTestsDBusTubeChannel {
     TpBaseChannel parent;
-    TpTextMixin text;
 
     TpTestsDBusTubeChannelPrivate *priv;
 };
