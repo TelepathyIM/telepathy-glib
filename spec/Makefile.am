@@ -57,7 +57,6 @@ EXTRA_DIST = \
     Channel_Type_Server_TLS_Connection.xml \
     Channel_Type_Stream_Tube.xml \
     Channel_Type_Text.xml \
-    Channel_Type_Tubes.xml \
     Client.xml \
     Client_Approver.xml \
     Client_Handler.xml \

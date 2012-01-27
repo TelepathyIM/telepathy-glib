@@ -44,7 +44,7 @@
  *
  * Since 0.5.13 you can also implement the group interface by forwarding all
  * group operations to the group mixin of an associated object (mainly useful
- * for Tubes channels). To do this, call tp_external_group_mixin_init()
+ * for old Tubes channels). To do this, call tp_external_group_mixin_init()
  * in the constructor after the associated object has been set,
  * tp_external_group_mixin_finalize() in the dispose or finalize function, and
  * <literal>G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP,

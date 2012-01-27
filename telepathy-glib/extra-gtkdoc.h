@@ -153,16 +153,6 @@
  */
 
 /**
- * SECTION:svc-channel-tubes
- * @title: Tubes channels
- * @short_description: service-side interface for the Tubes channel type
- *
- * A "tube" is a mechanism for arbitrary data transfer.
- * This section documents the auto-generated C wrappers for the Tubes
- * channel type.
- */
-
-/**
  * SECTION:svc-channel-tube
  * @title: Tube channels
  * @short_description: service-side interface for the Tube channel interface,
@@ -527,17 +517,6 @@
  *
  * Channels of type Streamed Media may also support the DTMF and
  * CallState interfaces.
- */
-
-/**
- * SECTION:channel-tubes
- * @title: Tubes channels
- * @short_description: client-side wrappers for the Tubes channel type
- * @see_also: channel-group
- *
- * A "tube" is a mechanism for arbitrary data transfer.
- * This section documents the auto-generated C wrappers for the Tubes
- * channel type.
  */
 
 /**
