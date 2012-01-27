@@ -111,7 +111,6 @@ enum
 enum {
   SIGNAL_GROUP_FLAGS_CHANGED,
   SIGNAL_GROUP_MEMBERS_CHANGED,
-  SIGNAL_GROUP_MEMBERS_CHANGED_DETAILED,
   SIGNAL_GROUP_CONTACTS_CHANGED,
   SIGNAL_CHAT_STATE_CHANGED,
   N_SIGNALS
@@ -1499,35 +1498,7 @@ tp_channel_class_init (TpChannelClass *klass)
       G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 
   /**
-   * TpChannel::group-members-changed: (skip)
-   * @self: a channel
-   * @message: an optional textual message
-   * @added: a #GArray of #guint containing the full members added
-   * @removed: a #GArray of #guint containing the members (full,
-   *  local-pending or remote-pending) removed
-   * @local_pending: a #GArray of #guint containing the local-pending
-   *  members added
-   * @remote_pending: a #GArray of #guint containing the remote-pending
-   *  members added
-   * @actor: the #TpHandle of the contact causing the change, or 0
-   * @reason: the reason for the change as a #TpChannelGroupChangeReason
-   *
-   * Emitted when the group members change in a Group channel that is ready.
-   *
-   * Since: 0.7.12
-   */
-  signals[SIGNAL_GROUP_MEMBERS_CHANGED] = g_signal_new (
-      "group-members-changed", G_OBJECT_CLASS_TYPE (klass),
-      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-      0,
-      NULL, NULL,
-      _tp_marshal_VOID__STRING_BOXED_BOXED_BOXED_BOXED_UINT_UINT,
-      G_TYPE_NONE, 7,
-      G_TYPE_STRING, au_type, au_type, au_type, au_type, G_TYPE_UINT,
-      G_TYPE_UINT);
-
-  /**
-   * TpChannel::group-members-changed-detailed:
+   * TpChannel::group-members-changed:
    * @self: a channel
    * @added: (type GLib.Array) (element-type uint): a #GArray of #guint
    *  containing the full members added
@@ -1540,17 +1511,14 @@ tp_channel_class_init (TpChannelClass *klass)
    * @details: (type GLib.HashTable) (element-type utf8 GObject.Value):
    *  a #GHashTable mapping (gchar *) to #GValue containing details
    *  about the change, as described in the specification of the
-   *  MembersChangedDetailed signal.
+   *  MembersChanged signal.
    *
    * Emitted when the group members change in a Group channel that is ready.
-   * Contains a superset of the information in the
-   * TpChannel::group-members-changed signal, and is emitted at the same time;
-   * applications can connect to this signal and ignore the other.
    *
    * Since: 0.7.21
    */
-  signals[SIGNAL_GROUP_MEMBERS_CHANGED_DETAILED] = g_signal_new (
-      "group-members-changed-detailed", G_OBJECT_CLASS_TYPE (klass),
+  signals[SIGNAL_GROUP_MEMBERS_CHANGED] = g_signal_new (
+      "group-members-changed", G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
       NULL, NULL,
@@ -1663,7 +1631,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * @details: (type GLib.HashTable) (element-type utf8 GObject.Value):
    *  a #GHashTable mapping (gchar *) to #GValue containing details
    *  about the change, as described in the specification of the
-   *  MembersChangedDetailed signal.
+   *  MembersChanged signal.
    *
    * Emitted when the group members change in a Group channel.
    *
@@ -2297,7 +2265,7 @@ group_prepared_cb (GObject *source,
   handles = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 1);
   g_array_append_val (handles, self_handle);
 
-  tp_cli_channel_interface_group_call_remove_members_with_reason (
+  tp_cli_channel_interface_group_call_remove_members (
       self, -1, handles, ctx->message, ctx->reason,
       channel_remove_self_cb, g_object_ref (ctx->result), NULL, NULL);
 

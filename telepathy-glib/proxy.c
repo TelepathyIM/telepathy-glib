@@ -733,7 +733,7 @@ error_mapping_quark (void)
  * Convert a D-Bus error name into a GError as if it was returned by a method
  * on this proxy. This method is useful when D-Bus error names are emitted in
  * signals, such as Connection.ConnectionError and
- * Group.MembersChangedDetailed.
+ * Group.MembersChanged.
  *
  * Since: 0.7.24
  */

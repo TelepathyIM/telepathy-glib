@@ -403,7 +403,6 @@ group_constructed (GObject *self)
       G_STRUCT_OFFSET (TpTestsPropsGroupTextChannel, group),
       tp_base_connection_get_handles (conn, TP_HANDLE_TYPE_CONTACT),
       tp_base_connection_get_self_handle (conn));
-  tp_group_mixin_change_flags (self, TP_CHANNEL_GROUP_FLAG_PROPERTIES, 0);
 }
 
 static void
@@ -449,6 +448,7 @@ tp_tests_props_group_text_channel_class_init (TpTestsPropsGroupTextChannelClass 
       { "Members", NULL, NULL },
       { "RemotePendingMembers", NULL, NULL },
       { "SelfHandle", NULL, NULL },
+      { "MemberIdentifiers", NULL, NULL },
       { NULL }
   };
 

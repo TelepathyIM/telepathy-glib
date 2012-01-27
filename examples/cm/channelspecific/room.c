@@ -93,6 +93,7 @@ complete_join (ExampleCSHRoomChannel *self)
   TpHandle alice_global, bob_global, chris_global;
   TpGroupMixin *mixin = TP_GROUP_MIXIN (self);
   TpIntset *added;
+  GHashTable *details;
 
   /* For this example, we assume that all chatrooms initially contain
    * Alice, Bob and Chris (and that their global IDs are also known),
@@ -139,9 +140,16 @@ complete_join (ExampleCSHRoomChannel *self)
           conn->self_handle);
       tp_group_mixin_change_self_handle ((GObject *) self, new_self);
 
-      tp_group_mixin_change_members ((GObject *) self, "", NULL, removed, NULL,
-          rp, 0, TP_CHANNEL_GROUP_CHANGE_REASON_RENAMED);
+      details = tp_asv_new (
+          "message", G_TYPE_STRING, "",
+          "change-reason", G_TYPE_UINT, TP_CHANNEL_GROUP_CHANGE_REASON_RENAMED,
+          "actor", G_TYPE_UINT, 0,
+          NULL);
 
+      tp_group_mixin_change_members ((GObject *) self, NULL, removed, NULL,
+          rp, details);
+
+      tp_clear_pointer (&details, g_hash_table_unref);
       tp_handle_unref (contact_repo, new_self);
       tp_intset_destroy (removed);
       tp_intset_destroy (rp);
@@ -165,8 +173,16 @@ complete_join (ExampleCSHRoomChannel *self)
   tp_intset_add (added, anon_local);
   tp_intset_add (added, mixin->self_handle);
 
-  tp_group_mixin_change_members ((GObject *) self, "", added, NULL, NULL,
-      NULL, 0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+  details = tp_asv_new (
+      "message", G_TYPE_STRING, "",
+      "change-reason", G_TYPE_UINT, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
+      "actor", G_TYPE_UINT, 0,
+      NULL);
+
+  tp_group_mixin_change_members ((GObject *) self, added, NULL, NULL,
+      NULL, details);
+
+  tp_clear_pointer (&details, g_hash_table_unref);
 
   tp_handle_unref (contact_repo, alice_local);
   tp_handle_unref (contact_repo, bob_local);
@@ -191,6 +207,7 @@ join_room (ExampleCSHRoomChannel *self)
   TpGroupMixin *mixin = TP_GROUP_MIXIN (self);
   GObject *object = (GObject *) self;
   TpIntset *add_remote_pending;
+  GHashTable *details;
 
   g_assert (!tp_handle_set_is_member (mixin->members, mixin->self_handle));
   g_assert (!tp_handle_set_is_member (mixin->remote_pending,
@@ -201,12 +218,18 @@ join_room (ExampleCSHRoomChannel *self)
   add_remote_pending = tp_intset_new ();
   tp_intset_add (add_remote_pending, mixin->self_handle);
 
+  details = tp_asv_new (
+      "message", G_TYPE_STRING, "",
+      "change-reason", G_TYPE_UINT, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
+      "actor", G_TYPE_UINT, conn->self_handle,
+      NULL);
+
   tp_group_mixin_add_handle_owner (object, mixin->self_handle,
       conn->self_handle);
-  tp_group_mixin_change_members (object, "", NULL, NULL, NULL,
-      add_remote_pending, conn->self_handle,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+  tp_group_mixin_change_members (object, NULL, NULL, NULL,
+      add_remote_pending, details);
 
+  g_hash_table_unref (details);
   tp_intset_destroy (add_remote_pending);
 
   /* Actually join the room. In a real implementation this would be a network
@@ -269,8 +292,7 @@ constructor (GType type,
 
   /* Initially, we can't do anything. */
   tp_group_mixin_change_flags (object,
-      TP_CHANNEL_GROUP_FLAG_CHANNEL_SPECIFIC_HANDLES |
-      TP_CHANNEL_GROUP_FLAG_PROPERTIES,
+      TP_CHANNEL_GROUP_FLAG_CHANNEL_SPECIFIC_HANDLES,
       0);
 
   /* Immediately attempt to join the group */

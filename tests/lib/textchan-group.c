@@ -40,18 +40,8 @@ static const char *text_channel_group_interfaces[] = {
 
 /* type definition stuff */
 
-enum
-{
-  PROP_DETAILED = 1,
-  PROP_PROPERTIES,
-  N_PROPS
-};
-
 struct _TpTestsTextChannelGroupPrivate
 {
-  gboolean detailed;
-  gboolean properties;
-
   gboolean closed;
   gboolean disposed;
 
@@ -67,11 +57,17 @@ add_member (GObject *obj,
 {
   TpTestsTextChannelGroup *self = TP_TESTS_TEXT_CHANNEL_GROUP (obj);
   TpIntset *add = tp_intset_new ();
+  GHashTable *details = tp_asv_new (
+      "actor", G_TYPE_UINT, self->conn->self_handle,
+      "change-reason", G_TYPE_UINT, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
+      "message", G_TYPE_STRING, message,
+      NULL);
 
   tp_intset_add (add, handle);
-  tp_group_mixin_change_members (obj, message, add, NULL, NULL, NULL,
-      self->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+  tp_group_mixin_change_members (obj, add, NULL, NULL, NULL, details);
   tp_intset_destroy (add);
+
+  g_hash_table_unref (details);
 
   return TRUE;
 }
@@ -165,62 +161,9 @@ constructor (GType type,
   tp_group_mixin_init (object, G_STRUCT_OFFSET (TpTestsTextChannelGroup, group),
       contact_repo, self->conn->self_handle);
 
-  if (!self->priv->detailed)
-    {
-      /* TpGroupMixin always set the Members_Changed_Detailed flag so we have
-       * to cheat and manually remove it to pretend we don't implement it. */
-      TpGroupMixin *group = TP_GROUP_MIXIN (self);
-
-      group->group_flags &= ~TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED;
-    }
-
   tp_group_mixin_change_flags (object, flags, 0);
 
   return object;
-}
-
-static void
-get_property (GObject *object,
-              guint property_id,
-              GValue *value,
-              GParamSpec *pspec)
-{
-  TpTestsTextChannelGroup *self = TP_TESTS_TEXT_CHANNEL_GROUP (object);
-
-  switch (property_id)
-    {
-    case PROP_DETAILED:
-      g_value_set_boolean (value, self->priv->detailed);
-      break;
-    case PROP_PROPERTIES:
-      g_value_set_boolean (value, self->priv->properties);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-      break;
-    }
-}
-
-static void
-set_property (GObject *object,
-              guint property_id,
-              const GValue *value,
-              GParamSpec *pspec)
-{
-  TpTestsTextChannelGroup *self = TP_TESTS_TEXT_CHANNEL_GROUP (object);
-
-  switch (property_id)
-    {
-    case PROP_DETAILED:
-      self->priv->detailed = g_value_get_boolean (value);
-      break;
-    case PROP_PROPERTIES:
-      self->priv->properties = g_value_get_boolean (value);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-      break;
-    }
 }
 
 static void
@@ -270,14 +213,11 @@ static void
 tp_tests_text_channel_group_class_init (TpTestsTextChannelGroupClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *) klass;
-  GParamSpec *param_spec;
   TpBaseChannelClass *base_class = (TpBaseChannelClass *) klass;
 
   g_type_class_add_private (klass, sizeof (TpTestsTextChannelGroupPrivate));
 
   object_class->constructor = constructor;
-  object_class->set_property = set_property;
-  object_class->get_property = get_property;
   object_class->dispose = dispose;
   object_class->finalize = finalize;
 
@@ -285,20 +225,6 @@ tp_tests_text_channel_group_class_init (TpTestsTextChannelGroupClass *klass)
   base_class->target_handle_type = TP_HANDLE_TYPE_NONE;
   base_class->interfaces = text_channel_group_interfaces;
   base_class->close = channel_close;
-
-  param_spec = g_param_spec_boolean ("detailed",
-      "Has the Members_Changed_Detailed flag?",
-      "True if the Members_Changed_Detailed group flag should be set",
-      TRUE,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_DETAILED, param_spec);
-
-  param_spec = g_param_spec_boolean ("properties",
-      "Has the Properties flag?",
-      "True if the Properties group flag should be set",
-      TRUE,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_PROPERTIES, param_spec);
 
   tp_group_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpTestsTextChannelGroupClass, group_class), add_member,
@@ -321,16 +247,22 @@ void
 tp_tests_text_channel_group_join (TpTestsTextChannelGroup *self)
 {
   TpIntset *add, *empty;
+  GHashTable *details = tp_asv_new (
+      "actor", G_TYPE_UINT, 0,
+      "change-reason", G_TYPE_UINT, 0,
+      "message", G_TYPE_STRING, "",
+      NULL);
 
  /* Add ourself as a member */
   add = tp_intset_new_containing (self->conn->self_handle);
   empty = tp_intset_new ();
 
-  tp_group_mixin_change_members ((GObject *) self, NULL, add, empty,
-      empty, empty, 0, 0);
+  tp_group_mixin_change_members ((GObject *) self, add, empty,
+      empty, empty, details);
 
   tp_intset_destroy (add);
   tp_intset_destroy (empty);
+  g_hash_table_unref (details);
 }
 
 void

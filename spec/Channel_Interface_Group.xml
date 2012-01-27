@@ -18,8 +18,10 @@ Lesser General Public License for more details.</p>
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
-  <interface name="org.freedesktop.Telepathy.Channel.Interface.Group">
-    <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
+  <interface name="im.telepathy1.Channel.Interface.Group1">
+    <tp:requires interface="im.telepathy1.Channel"/>
+    <tp:changed version="UNRELEASED">Deprecated methods, signals, and
+      properties have all been removed.</tp:changed>
 
     <tp:struct name="Local_Pending_Info" array-name="Local_Pending_Info_List">
       <tp:docstring>A structure representing a contact whose attempt to
@@ -73,50 +75,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           connection managers must silently accept this, without error.</p>
       </tp:docstring>
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotCapable"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.Channel.Full"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.Channel.InviteOnly"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.Channel.Banned"/>
-      </tp:possible-errors>
-    </method>
-
-    <method name="GetAllMembers" tp:name-for-bindings="Get_All_Members">
-      <tp:deprecated version="0.17.6">Use GetAll on the D-Bus
-        Properties D-Bus interface to get properties including Members,
-        RemotePendingMembers and LocalPendingMembers instead, falling back to
-        this method and GetLocalPendingMembersWithInfo if necessary.
-      </tp:deprecated>
-
-      <arg direction="out" type="au" tp:type="Contact_Handle[]"
-        name="Members">
-        <tp:docstring>
-          array of handles of current members
-        </tp:docstring>
-      </arg>
-      <arg direction="out" type="au" tp:type="Contact_Handle[]"
-        name="Local_Pending">
-        <tp:docstring>
-          array of handles of local pending members
-        </tp:docstring>
-      </arg>
-      <arg direction="out" type="au" tp:type="Contact_Handle[]"
-        name="Remote_Pending">
-        <tp:docstring>
-          array of handles of remote pending members
-        </tp:docstring>
-      </arg>
-      <tp:docstring>
-        Returns arrays of all current, local and remote pending channel
-        members.
-      </tp:docstring>
-      <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
+        <tp:error name="im.telepathy1.Error.Disconnected"/>
+        <tp:error name="im.telepathy1.Error.NetworkError"/>
+        <tp:error name="im.telepathy1.Error.NotAvailable"/>
+        <tp:error name="im.telepathy1.Error.NotCapable"/>
+        <tp:error name="im.telepathy1.Error.PermissionDenied"/>
+        <tp:error name="im.telepathy1.Error.InvalidHandle"/>
+        <tp:error name="im.telepathy1.Error.Channel.Full"/>
+        <tp:error name="im.telepathy1.Error.Channel.InviteOnly"/>
+        <tp:error name="im.telepathy1.Error.Channel.Banned"/>
       </tp:possible-errors>
     </method>
 
@@ -180,13 +147,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:flag suffix="Channel_Specific_Handles" value="256">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>
-            The members of this group have handles which are specific to
-            this channel, and are not valid as general-purpose handles on
-            the connection. Depending on the channel, it may be possible to
-            check the <tp:member-ref>HandleOwners</tp:member-ref> property or
-            call <tp:member-ref>GetHandleOwners</tp:member-ref> to find the
-            owners of these handles, which should be done if you wish to (e.g.)
-            subscribe to the contact's presence.
+            The members of this group have handles which are specific
+            to this channel, and are not valid as general-purpose
+            handles on the connection. Depending on the channel, it
+            may be possible to check the
+            <tp:member-ref>HandleOwners</tp:member-ref> property to
+            find the owners of these handles, which should be done if
+            you wish to (e.g.)  subscribe to the contact's presence.
           </p>
 
           <p>
@@ -206,43 +173,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:flag>
       <tp:flag suffix="Handle_Owners_Not_Available" value="1024">
         <tp:docstring>
-          In rooms with channel specific handles (ie Channel_Specific_Handles
+          In rooms with channel specific handles (i.e. Channel_Specific_Handles
           flag is set), this flag indicates that no handle owners are
           available, apart from the owner of the
           <tp:member-ref>SelfHandle</tp:member-ref>.
 
           <tp:rationale>
-            This used to be an important optimization to avoid repeated
-            GetHandleOwners calls, before we introduced the
+            This used to be an important optimization to avoid
+            repeated calls to the now-removed GetHandleOwners method,
+            before we introduced the
             <tp:member-ref>HandleOwners</tp:member-ref> property and
-            <tp:member-ref>HandleOwnersChanged</tp:member-ref> signal.
+            <tp:member-ref>HandleOwnersChanged</tp:member-ref>
+            signal.
           </tp:rationale>
         </tp:docstring>
       </tp:flag>
-      <tp:flag suffix="Properties" value="2048">
-        <tp:docstring>
-          This flag indicates that all the properties introduced in
-          specification 0.17.6 are fully supported.
-        </tp:docstring>
-      </tp:flag>
-      <tp:flag suffix="Members_Changed_Detailed" value="4096">
-        <tp:docstring>
-          Indicates that <tp:member-ref>MembersChangedDetailed</tp:member-ref>
-          will be emitted for changes to this group's members in addition to
-          <tp:member-ref>MembersChanged</tp:member-ref>.
-          Clients can then connect to the former and ignore emission of the
-          latter. This flag's state MUST NOT change over the lifetime of a
-          channel.
-
-          <tp:rationale>
-            If it were allowed to change, client bindings would have to always
-            connect to MembersChanged just in case the flag ever went away (and
-            generally be unnecessarily complicated), which would mostly negate
-            the point of having this flag in the first place.
-          </tp:rationale>
-        </tp:docstring>
-      </tp:flag>
-      <tp:flag suffix="Message_Depart" value="8192">
+      <tp:flag suffix="Message_Depart" value="2048">
         <tp:added version="0.17.21"/>
         <tp:docstring>
           A message may be sent to the server when calling
@@ -265,37 +211,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         which operations are currently valid. Change notification is via
         the <tp:member-ref>GroupFlagsChanged</tp:member-ref> signal.
       </tp:docstring>
-      <tp:added version="0.17.6">For backwards compatibility,
-        clients should fall back to calling GetGroupFlags if
-        Channel_Group_Flag_Properties is not present.</tp:added>
+      <tp:added version="0.17.6"/>
     </property>
-
-    <method name="GetGroupFlags" tp:name-for-bindings="Get_Group_Flags">
-      <arg direction="out" type="u" tp:type="Channel_Group_Flags"
-        name="Group_Flags">
-        <tp:docstring>
-          The value of the GroupFlags property
-        </tp:docstring>
-      </arg>
-      <tp:docstring>
-        Returns the value of the <tp:member-ref>GroupFlags</tp:member-ref> property.
-      </tp:docstring>
-      <tp:deprecated version="0.17.6">Use GetAll on the D-Bus
-        Properties D-Bus interface to get properties including GroupFlags
-        instead, falling back to this method if necessary.</tp:deprecated>
-      <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
-      </tp:possible-errors>
-    </method>
 
     <tp:mapping name="Handle_Owner_Map">
       <tp:docstring>
         A map from channel-specific handles to their owners.
       </tp:docstring>
-      <tp:added version="0.17.6">For backwards compatibility,
-        clients should fall back to calling GetHandleOwners if
-        Channel_Group_Flag_Properties is not present.</tp:added>
+      <tp:added version="0.17.6"/>
 
       <tp:member type="u" name="Channel_Specific_Handle"
         tp:type="Contact_Handle">
@@ -321,43 +244,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Handles which are channel-specific, but for which the owner is
         unknown, MUST appear in this mapping with 0 as owner. Change
         notification is via the
-        <tp:member-ref>HandleOwnersChanged</tp:member-ref> signal.
+        <tp:member-ref>HandleOwnersChanged</tp:member-ref>
+        signal.
       </tp:docstring>
       <tp:added version="0.17.6"/>
     </property>
 
     <signal name="HandleOwnersChanged"
       tp:name-for-bindings="Handle_Owners_Changed">
-      <tp:docstring>
-        Emitted whenever the <tp:member-ref>HandleOwners</tp:member-ref>
-        property changes.
-      </tp:docstring>
-      <tp:added version="0.17.6">This signal should not be relied on
-        unless Channel_Group_Flag_Properties is present.</tp:added>
-      <tp:deprecated version="0.23.4">Clients should listen to
-        <tp:member-ref>HandleOwnersChangedDetailed</tp:member-ref> instead to
-        get the new identifiers as well.
-        </tp:deprecated>
-
-      <arg name="Added" type="a{uu}" tp:type="Handle_Owner_Map">
-        <tp:docstring>
-          A map from channel-specific handles to their owners, in which the
-          keys include all the handles that were added to the keys of the
-          HandleOwners property, and all the handles in that property whose
-          owner has changed
-        </tp:docstring>
-      </arg>
-      <arg name="Removed" type="au" tp:type="Contact_Handle[]">
-        <tp:docstring>
-          The channel-specific handles that were removed from the keys of the
-          HandleOwners property, as a result of the contact leaving this group
-          in a previous <tp:member-ref>MembersChanged</tp:member-ref> signal
-        </tp:docstring>
-      </arg>
-    </signal>
-
-    <signal name="HandleOwnersChangedDetailed"
-      tp:name-for-bindings="Handle_Owners_Changed_Detailed">
       <tp:docstring>
         <p>Emitted whenever the <tp:member-ref>HandleOwners</tp:member-ref>
         property changes.</p>
@@ -394,102 +288,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </arg>
     </signal>
 
-    <method name="GetHandleOwners" tp:name-for-bindings="Get_Handle_Owners">
-      <arg direction="in" name="Handles" type="au" tp:type="Contact_Handle[]">
-        <tp:docstring>
-          A list of integer handles representing members of the channel
-        </tp:docstring>
-      </arg>
-      <arg direction="out" type="au" tp:type="Contact_Handle[]" name="Owners">
-        <tp:docstring>
-          An array of integer handles representing the owner handles of
-          the given room members, in the same order, or 0 if the
-          owner is not available
-        </tp:docstring>
-      </arg>
-      <tp:docstring>
-        If the CHANNEL_GROUP_FLAG_CHANNEL_SPECIFIC_HANDLES flag is set on
-        the channel, then the handles of the group members are specific
-        to this channel, and are not meaningful in a connection-wide
-        context such as contact lists. This method allows you to find
-        the owner of the handle if it can be discovered in this channel,
-        or 0 if the owner is not available.
-      </tp:docstring>
-      <tp:deprecated version="0.17.6">Clients should use the
-        HandleOwners property and HandleOwnersChanged signal if
-        Channel_Group_Flag_Properties is present.</tp:deprecated>
-      <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
-          <tp:docstring>
-            This channel doesn't have the CHANNEL_SPECIFIC_HANDLES flag,
-            so handles in this channel are globally meaningful and calling
-            this method is not necessary
-          </tp:docstring>
-        </tp:error>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
-          <tp:docstring>
-            One of the given handles is not a member
-          </tp:docstring>
-        </tp:error>
-      </tp:possible-errors>
-    </method>
-
-    <method name="GetLocalPendingMembers"
-      tp:name-for-bindings="Get_Local_Pending_Members">
-      <arg direction="out" type="au" tp:type="Contact_Handle[]"
-        name="Handles"/>
-      <tp:docstring>
-        Returns the To_Be_Added handle (only) for each structure in the
-        <tp:member-ref>LocalPendingMembers</tp:member-ref> property.
-      </tp:docstring>
-      <tp:deprecated version="0.17.6">Use the LocalPendingMembers
-        property, if Channel_Group_Flag_Properties is present.</tp:deprecated>
-      <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
-      </tp:possible-errors>
-    </method>
-
-    <method name="GetLocalPendingMembersWithInfo"
-      tp:name-for-bindings="Get_Local_Pending_Members_With_Info">
-      <tp:added version="0.15.0" />
-      <tp:docstring>
-        Returns the <tp:member-ref>LocalPendingMembers</tp:member-ref> property.
-      </tp:docstring>
-      <tp:deprecated version="0.17.6">Use the LocalPendingMembers
-        property, if Channel_Group_Flag_Properties is present.</tp:deprecated>
-      <arg direction="out" type="a(uuus)" tp:type="Local_Pending_Info[]"
-        name="Info">
-        <tp:docstring>
-          An array of structs containing:
-          <ul>
-            <li>
-              A handle representing the contact requesting channel membership
-            </li>
-            <li>
-              A handle representing the contact making the request, or 0 if
-              unknown
-            </li>
-            <li>
-              The reason for the request: one of the values of
-              <tp:type>Channel_Group_Change_Reason</tp:type>
-            </li>
-            <li>
-              A string message containing the reason for the request if any (or
-              blank if none)
-            </li>
-          </ul>
-        </tp:docstring>
-      </arg>
-      <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
-      </tp:possible-errors>
-    </method>
-
     <property name="LocalPendingMembers" access="read"
       type="a(uuus)" tp:type="Local_Pending_Info[]"
       tp:name-for-bindings="Local_Pending_Members">
@@ -498,10 +296,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         requesting channel membership and awaiting local approval with
         <tp:member-ref>AddMembers</tp:member-ref>.
       </tp:docstring>
-      <tp:added version="0.17.6">If Channel_Group_Flag_Properties is
-        not present, clients should fall back to using the
-        deprecated GetLocalPendingMembersWithInfo method, or fall back
-        from that to the deprecated GetAllMembers method.</tp:added>
+      <tp:added version="0.17.6"/>
     </property>
 
     <property name="Members" tp:name-for-bindings="Members"
@@ -509,23 +304,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring>
         The members of this channel.
       </tp:docstring>
-      <tp:added version="0.17.6">If Channel_Group_Flag_Properties
-        is not set, fall back to calling GetAllMembers.</tp:added>
+      <tp:added version="0.17.6"/>
     </property>
-
-    <method name="GetMembers" tp:name-for-bindings="Get_Members">
-      <arg direction="out" type="au" tp:type="Contact_Handle[]"
-        name="Handles"/>
-      <tp:docstring>
-        Returns the <tp:member-ref>Members</tp:member-ref> property.
-      </tp:docstring>
-      <tp:deprecated version="0.17.6">Use the Members
-        property, if Channel_Group_Flag_Properties is present.</tp:deprecated>
-      <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
-      </tp:possible-errors>
-    </method>
 
     <property name="RemotePendingMembers" access="read" type="au"
       tp:type="Contact_Handle[]" tp:name-for-bindings="Remote_Pending_Members">
@@ -533,45 +313,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         An array of handles representing contacts who have been
         invited to the channel and are awaiting remote approval.
       </tp:docstring>
-      <tp:added version="0.17.6">If Channel_Group_Flag_Properties
-        is not set, fall back to calling GetAllMembers.</tp:added>
+      <tp:added version="0.17.6"/>
     </property>
-
-    <method name="GetRemotePendingMembers"
-      tp:name-for-bindings="Get_Remote_Pending_Members">
-      <arg direction="out" type="au" tp:type="Contact_Handle[]"
-        name="Handles"/>
-      <tp:docstring>
-        Returns an array of handles representing contacts who have been
-        invited to the channel and are awaiting remote approval.
-      </tp:docstring>
-      <tp:deprecated version="0.17.6">Use the
-        <tp:member-ref>RemotePendingMembers</tp:member-ref>
-        property, if Channel_Group_Flag_Properties is present.</tp:deprecated>
-      <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
-      </tp:possible-errors>
-    </method>
-
-    <signal name="SelfHandleChanged" tp:name-for-bindings="Self_Handle_Changed">
-      <tp:docstring>
-        Emitted whenever the <tp:member-ref>SelfHandle</tp:member-ref> property
-        changes.
-      </tp:docstring>
-      <tp:added version="0.17.6">This signal should not be relied on
-        unless Channel_Group_Flag_Properties is present.</tp:added>
-      <tp:deprecated version="0.23.4">Clients should listen to
-        <tp:member-ref>SelfContactChanged</tp:member-ref> instead to get the new
-        identifier as well.
-        </tp:deprecated>
-
-      <arg type="u" tp:type="Contact_Handle" name="Self_Handle">
-        <tp:docstring>
-          The new value of the SelfHandle property.
-        </tp:docstring>
-      </arg>
-    </signal>
 
     <signal name="SelfContactChanged" tp:name-for-bindings="Self_Contact_Changed">
       <tp:docstring>
@@ -600,18 +343,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       access="read" tp:name-for-bindings="Self_Handle">
       <tp:docstring>
         The handle for the user on this channel (which can also be a
-        local or remote pending member), or 0 if the user is not a member at
-        all (which is likely to be the case, for instance, on <tp:dbus-ref
-        namespace="org.freedesktop.Telepathy.Channel.Type">ContactList</tp:dbus-ref>
-        channels). Note that this is different from the result of
-        <tp:dbus-ref
-        namespace="org.freedesktop.Telepathy">Connection.GetSelfHandle</tp:dbus-ref>
-        on some protocols, so the value of this handle should
+        local or remote pending member), or 0 if the user is not a
+        member at all (which is likely to be the case, for instance,
+        on the old ContactList channels). Note that this is different
+        from the value of the <tp:dbus-ref
+        namespace="im.telepathy1">Connection.SelfHandle</tp:dbus-ref>
+        property on some protocols, so the value of this handle should
         always be used with the methods of this interface.
       </tp:docstring>
-      <tp:added version="0.17.6">For backwards compatibility,
-        clients should fall back to calling GetSelfHandle if
-        Channel_Group_Flag_Properties is not present.</tp:added>
+      <tp:added version="0.17.6"/>
     </property>
 
     <property name="MemberIdentifiers" type="a{us}" tp:type="Handle_Identifier_Map"
@@ -623,29 +363,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         least the identifiers for
         <tp:member-ref>SelfHandle</tp:member-ref>,
         <tp:member-ref>Members</tp:member-ref>,
-        <tp:member-ref>LocalPendingMembers</tp:member-ref> (and their actors if
-        any),
         <tp:member-ref>RemotePendingMembers</tp:member-ref> and
         <tp:member-ref>HandleOwners</tp:member-ref>.
       </tp:docstring>
       <tp:added version="0.23.4"/>
     </property>
-
-    <method name="GetSelfHandle" tp:name-for-bindings="Get_Self_Handle">
-      <arg direction="out" type="u" tp:type="Contact_Handle"
-        name="Self_Handle"/>
-      <tp:docstring>
-        Returns the value of the <tp:member-ref>SelfHandle</tp:member-ref>
-        property.
-      </tp:docstring>
-      <tp:deprecated version="0.17.6">Clients should retrieve the
-        SelfHandle property using GetAll instead,
-        if Channel_Group_Flag_Properties is present.</tp:deprecated>
-      <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
-      </tp:possible-errors>
-    </method>
 
     <signal name="GroupFlagsChanged" tp:name-for-bindings="Group_Flags_Changed">
       <arg name="Added" type="u" tp:type="Channel_Group_Flags">
@@ -659,9 +381,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </arg>
       <tp:docstring>
-        Emitted when the flags as returned by
-        <tp:member-ref>GetGroupFlags</tp:member-ref> are changed.
-        The user interface should be updated as appropriate.
+        Emitted when the flags as retrieved by the
+        <tp:member-ref>GroupFlags</tp:member-ref> property are
+        changed. The user interface should be updated as appropriate.
       </tp:docstring>
     </signal>
 
@@ -669,14 +391,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The reason for a set of handles to move to one of
           <tp:member-ref>Members</tp:member-ref>,
-          <tp:member-ref>LocalPendingMembers</tp:member-ref> or
           <tp:member-ref>RemotePendingMembers</tp:member-ref>, or to be removed
           from the group. A client may supply a reason when attempting to
           remove members from a group with
-          <tp:member-ref>RemoveMembersWithReason</tp:member-ref>, and reasons
+          <tp:member-ref>RemoveMembers</tp:member-ref>, and reasons
           are supplied by the CM when emitting
-          <tp:member-ref>MembersChanged</tp:member-ref> and
-          <tp:member-ref>MembersChangedDetailed</tp:member-ref>. Some reason
+          <tp:member-ref>MembersChanged</tp:member-ref>. Some reason
           codes have different meanings depending on the <var>Actor</var> in a
           MembersChanged signal.</p>
       </tp:docstring>
@@ -693,11 +413,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           <p>If the <tp:member-ref>SelfHandle</tp:member-ref> is removed from
             a group for this reason and the actor is not the SelfHandle, the
             equivalent D-Bus error is
-            <code>org.freedesktop.Telepathy.Error.Terminated</code>.</p>
+            <code>im.telepathy1.Error.Terminated</code>.</p>
 
           <p>If the SelfHandle is removed from a group for this reason and
             the actor is also the SelfHandle, the equivalent D-Bus error is
-            <code>org.freedesktop.Telepathy.Error.Cancelled</code>.</p>
+            <code>im.telepathy1.Error.Cancelled</code>.</p>
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="Offline" value="1">
@@ -705,12 +425,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           <p>The change is due to a user going offline. Also used when
             user is already offline, but this wasn't known previously.</p>
 
-          <p>If a one-to-one <tp:dbus-ref
-              namespace="org.freedesktop.Telepathy.Channel.Type">StreamedMedia</tp:dbus-ref>
-            call fails because the contact being called is offline, the
-            connection manager SHOULD indicate this by removing both the
-            <tp:member-ref>SelfHandle</tp:member-ref> and the other contact's
-            handle from the Group interface with reason Offline.</p>
+          <p>If a one-to-one StreamedMedia call fails because the
+            contact being called is offline, the connection manager
+            SHOULD indicate this by removing both the
+            <tp:member-ref>SelfHandle</tp:member-ref> and the other
+            contact's handle from the Group interface with reason
+            Offline.</p>
 
           <tp:rationale>
             For 1-1 calls, the call terminates as a result of removing the
@@ -720,7 +440,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
           <p>If a handle is removed from a group for this reason, the
             equivalent D-Bus error is
-            <code>org.freedesktop.Telepathy.Error.Offline</code>.</p>
+            <code>im.telepathy1.Error.Offline</code>.</p>
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="Kicked" value="2">
@@ -729,7 +449,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
           <p>If the <tp:member-ref>SelfHandle</tp:member-ref> is removed
             from a group for this reason, the equivalent D-Bus error is
-            <code>org.freedesktop.Telepathy.Error.Channel.Kicked</code>.
+            <code>im.telepathy1.Error.Channel.Kicked</code>.
           </p>
         </tp:docstring>
       </tp:enumvalue>
@@ -737,12 +457,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>The change is due to a busy indication.</p>
 
-          <p>If a one-to-one <tp:dbus-ref
-              namespace="org.freedesktop.Telepathy.Channel.Type">StreamedMedia</tp:dbus-ref>
-            call fails because the contact being called is busy, the
-            connection manager SHOULD indicate this by removing both the
-            <tp:member-ref>SelfHandle</tp:member-ref> and the other contact's
-            handle from the Group interface with reason Busy.</p>
+          <p>If a one-to-one StreamedMedia call fails because the
+            contact being called is busy, the connection manager
+            SHOULD indicate this by removing both the
+            <tp:member-ref>SelfHandle</tp:member-ref> and the other
+            contact's handle from the Group interface with reason
+            Busy.</p>
 
           <tp:rationale>
             For 1-1 calls, the call terminates as a result of removing the
@@ -752,7 +472,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
           <p>If the <tp:member-ref>SelfHandle</tp:member-ref> is removed
             from a group for this reason, the equivalent D-Bus error is
-            <code>org.freedesktop.Telepathy.Error.Busy</code>.
+            <code>im.telepathy1.Error.Busy</code>.
           </p>
         </tp:docstring>
       </tp:enumvalue>
@@ -774,7 +494,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
           <p>If the <tp:member-ref>SelfHandle</tp:member-ref> is removed
             from a group for this reason, the equivalent D-Bus error is
-            <code>org.freedesktop.Telepathy.Error.Channel.Banned</code>.
+            <code>im.telepathy1.Error.Channel.Banned</code>.
           </p>
         </tp:docstring>
       </tp:enumvalue>
@@ -803,7 +523,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
           <p>If a contact is removed from a group for this reason, the
             equivalent D-Bus error is
-            <code>org.freedesktop.Telepathy.Error.DoesNotExist</code>.
+            <code>im.telepathy1.Error.DoesNotExist</code>.
           </p>
         </tp:docstring>
       </tp:enumvalue>
@@ -811,13 +531,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>The change is because the requested contact did not respond.</p>
 
-          <p>If a one-to-one <tp:dbus-ref
-              namespace="org.freedesktop.Telepathy.Channel.Type">StreamedMedia</tp:dbus-ref>
-            call fails because the contact being called did not respond, or the
-            local user did not respond to an incoming call, the
-            connection manager SHOULD indicate this by removing both the
-            <tp:member-ref>SelfHandle</tp:member-ref> and the other contact's
-            handle from the Group interface with reason No_Answer.</p>
+          <p>If a one-to-one StreamedMedia call fails because the
+            contact being called did not respond, or the local user
+            did not respond to an incoming call, the connection
+            manager SHOULD indicate this by removing both the
+            <tp:member-ref>SelfHandle</tp:member-ref> and the other
+            contact's handle from the Group interface with reason
+            No_Answer.</p>
 
           <tp:rationale>
             Documenting existing practice.
@@ -825,7 +545,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
           <p>If a contact is removed from a group for this reason, the
             equivalent D-Bus error is
-            <code>org.freedesktop.Telepathy.Error.NoAnswer</code>.
+            <code>im.telepathy1.Error.NoAnswer</code>.
           </p>
         </tp:docstring>
       </tp:enumvalue>
@@ -834,10 +554,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           <p>The change is because a contact's unique identifier changed.
           There must be exactly one handle in the removed set and exactly
           one handle in one of the added sets. The <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Connection.Interface.Renaming">Renamed</tp:dbus-ref>
+            namespace="im.telepathy1.Connection.Interface.Renaming1">Renamed</tp:dbus-ref>
           signal on the
           <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Connection.Interface">Renaming</tp:dbus-ref>
+            namespace="im.telepathy1.Connection.Interface">Renaming1</tp:dbus-ref>
           interface will have been emitted for the same handles,
           shortly before this <tp:member-ref>MembersChanged</tp:member-ref> signal is emitted.</p>
         </tp:docstring>
@@ -849,7 +569,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
           <p>If a contact is removed from a group for this reason, the
             equivalent D-Bus error is
-            <code>org.freedesktop.Telepathy.Error.PermissionDenied</code>.
+            <code>im.telepathy1.Error.PermissionDenied</code>.
           </p>
         </tp:docstring>
       </tp:enumvalue>
@@ -864,9 +584,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
             If members are added with this reason code, the change is because
             unconnected parts of the group have rejoined. If this channel
             carries messages (e.g. <tp:dbus-ref
-              namespace="org.freedesktop.Telepathy.Channel.Type">Text</tp:dbus-ref>
-            or <tp:dbus-ref
-              namespace="org.freedesktop.Telepathy.Channel.Type">Tubes</tp:dbus-ref>
+              namespace="im.telepathy1.Channel.Type">Text</tp:dbus-ref>
             channels) applications must
             assume that the contacts being added are likely to have missed some
             messages as a result of the separation, and that the contacts
@@ -886,66 +604,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:enumvalue>
     </tp:enum>
 
-    <signal name="MembersChanged" tp:name-for-bindings="Members_Changed">
-      <arg name="Message" type="s">
-        <tp:docstring>
-          A string message from the server, or blank if not
-        </tp:docstring>
-      </arg>
-      <arg name="Added" type="au" tp:type="Contact_Handle[]">
-        <tp:docstring>
-          A list of members added to the channel
-        </tp:docstring>
-      </arg>
-      <arg name="Removed" type="au" tp:type="Contact_Handle[]">
-        <tp:docstring>
-          A list of members removed from the channel
-        </tp:docstring>
-      </arg>
-      <arg name="Local_Pending" type="au" tp:type="Contact_Handle[]">
-        <tp:docstring>
-          A list of members who are pending local approval
-        </tp:docstring>
-      </arg>
-      <arg name="Remote_Pending" type="au" tp:type="Contact_Handle[]">
-        <tp:docstring>
-          A list of members who are pending remote approval
-        </tp:docstring>
-      </arg>
-      <arg name="Actor" type="u" tp:type="Contact_Handle">
-        <tp:docstring>
-          The contact handle of the person who made the change, or 0
-          if not known
-        </tp:docstring>
-      </arg>
-      <arg name="Reason" type="u" tp:type="Channel_Group_Change_Reason">
-        <tp:docstring>
-          A reason for the change
-        </tp:docstring>
-      </arg>
-      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>Emitted when contacts join any of the three lists (members, local
-          pending or remote pending) or when they leave any of the three lists.
-          There may also be a message from the server regarding this change,
-          which may be displayed to the user if desired.</p>
-
-        <p>All channel-specific handles that are mentioned in this signal
-          MUST be represented in the value of the
-          <tp:member-ref>HandleOwners</tp:member-ref> property.
-          In practice, this will mean that
-          <tp:member-ref>HandleOwnersChanged</tp:member-ref> is
-          emitted <em>before</em> emitting a MembersChanged signal in which
-          channel-specific handles are added, but that it is emitted
-          <em>after</em> emitting a MembersChanged signal in which
-          channel-specific handles are removed.</p>
-
-        <p>See <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy.Channel.Type">StreamedMedia</tp:dbus-ref>
-          for an overview of how group state changes are used to indicate the
-          progress of a call.</p>
-      </tp:docstring>
-    </signal>
-
     <tp:mapping name="Handle_Identifier_Map">
       <tp:docstring>
         A map from handles to the corresponding normalized string identifier.
@@ -960,14 +618,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:member type="s" name="Identifier">
         <tp:docstring>
           The same string that would be returned by <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Connection">InspectHandles</tp:dbus-ref>
+            namespace="im.telepathy1.Connection">InspectHandles</tp:dbus-ref>
           for this handle.
         </tp:docstring>
       </tp:member>
     </tp:mapping>
 
-    <signal name="MembersChangedDetailed"
-      tp:name-for-bindings="Members_Changed_Detailed">
+    <signal name="MembersChanged"
+      tp:name-for-bindings="Members_Changed">
       <arg name="Added" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           A list of members added to the channel
@@ -1055,26 +713,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Emitted when contacts join any of the three lists (members, local
           pending or remote pending) or when they leave any of the three
-          lists. This signal provides a superset of the information provided by
-          <tp:member-ref>MembersChanged</tp:member-ref>;
-          if the channel's <tp:member-ref>GroupFlags</tp:member-ref>
-          contains Members_Changed_Detailed, then clients may listen exclusively
-          to this signal in preference to that signal.</p>
+          lists.</p>
 
         <p>All channel-specific handles that are mentioned in this signal
           MUST be represented in the value of the
-          <tp:member-ref>HandleOwners</tp:member-ref> property.  In practice,
-          this will mean that
-          <tp:member-ref>HandleOwnersChanged</tp:member-ref> is emitted
-          <em>before</em> emitting a MembersChangedDetailed signal in which
-          channel-specific handles are added, but that it is emitted
-          <em>after</em> emitting a MembersChangedDetailed signal in which
-          channel-specific handles are removed.</p>
-
-        <p>See <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy.Channel.Type">StreamedMedia</tp:dbus-ref>
-          for an overview of how group state changes are used to indicate the
-          progress of a call.</p>
+          <tp:member-ref>HandleOwners</tp:member-ref> property.</p>
       </tp:docstring>
       <tp:added version="0.17.16"/>
     </signal>
@@ -1090,6 +733,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           A string message, which can be blank if desired
         </tp:docstring>
       </arg>
+      <arg direction="in" name="Reason" type="u"
+           tp:type="Channel_Group_Change_Reason">
+        <tp:docstring>
+          A reason for the change
+        </tp:docstring>
+      </arg>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Requests the removal of contacts from a channel, reject their
           request for channel membership on the pending local list, or
@@ -1097,10 +746,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
         <p>If the <tp:member-ref>SelfHandle</tp:member-ref> is in a Group,
           it can be removed via this method, in order to leave the group
-          gracefully. This is the recommended way to leave a chatroom, close
-          or reject a <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Channel.Type">StreamedMedia</tp:dbus-ref>
-          call, and so on.</p>
+          gracefully. This is the recommended way to leave a chatroom.</p>
 
         <p>Accordingly, connection managers SHOULD support
           doing this, regardless of the value of
@@ -1108,7 +754,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           If doing so fails with PermissionDenied, this is considered to a bug
           in the connection manager, but clients MUST recover by falling back
           to closing the channel with the <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Channel">Close</tp:dbus-ref>
+            namespace="im.telepathy1.Channel">Close</tp:dbus-ref>
           method.</p>
 
         <p>Removing any contact from the local pending list is always
@@ -1129,47 +775,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           Channel_Group_Flag_Message_Rescind
           <tp:member-ref>GroupFlags</tp:member-ref> to see in which cases this
           message should be provided.</p>
-      </tp:docstring>
-      <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle"/>
-      </tp:possible-errors>
-    </method>
 
-    <method name="RemoveMembersWithReason"
-      tp:name-for-bindings="Remove_Members_With_Reason">
-      <arg direction="in" name="Contacts" type="au" tp:type="Contact_Handle[]">
-        <tp:docstring>
-          An array of contact handles to remove from the channel
-        </tp:docstring>
-      </arg>
-      <arg direction="in" name="Message" type="s">
-        <tp:docstring>
-          A string message, which can be blank if desired
-        </tp:docstring>
-      </arg>
-      <arg direction="in" name="Reason" type="u"
-           tp:type="Channel_Group_Change_Reason">
-        <tp:docstring>
-          A reason for the change
-        </tp:docstring>
-      </arg>
-      <tp:docstring>
-        As <tp:member-ref>RemoveMembers</tp:member-ref>, but a reason code may
-        be provided where
-        appropriate. The reason code may be ignored if the underlying
-        protocol is unable to represent the given reason.
+          <p>The reason code may be ignored if the underlying
+            protocol is unable to represent the given reason.</p>
       </tp:docstring>
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
+        <tp:error name="im.telepathy1.Error.Disconnected"/>
+        <tp:error name="im.telepathy1.Error.NetworkError"/>
+        <tp:error name="im.telepathy1.Error.NotAvailable"/>
+        <tp:error name="im.telepathy1.Error.PermissionDenied"/>
+        <tp:error name="im.telepathy1.Error.InvalidHandle"/>
+        <tp:error name="im.telepathy1.Error.InvalidArgument">
           <tp:docstring>
             The provided reason code was invalid.
           </tp:docstring>
@@ -1183,11 +799,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     cannot be presumed by the channel's existence (for example, a channel you
     may request membership of but your request may not be granted).</p>
 
-  <p>This interface implements three lists: a list of current members
-    (<tp:member-ref>Members</tp:member-ref>), and two lists of local pending
-    and remote pending members
-    (<tp:member-ref>LocalPendingMembers</tp:member-ref> and
-    <tp:member-ref>RemotePendingMembers</tp:member-ref>, respectively).
+  <p>This interface implements two lists: a list of current members
+    (<tp:member-ref>Members</tp:member-ref>), and a list of remote
+    pending members (<tp:member-ref>RemotePendingMembers</tp:member-ref>).
     Contacts on the remote
     pending list have been invited to the channel, but the remote user has not
     accepted the invitation. Contacts on the local pending list have requested
@@ -1195,19 +809,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     their request before they may join. A single contact should never appear on
     more than one of the three lists. The lists are empty when the channel is
     created, and the <tp:member-ref>MembersChanged</tp:member-ref> signal
-    (and, if the channel's <tp:member-ref>GroupFlags</tp:member-ref> contains
-    Members_Changed_Detailed, the
-    <tp:member-ref>MembersChangedDetailed</tp:member-ref> signal)
-    should be emitted when information
-    is retrieved from the server, or changes occur.</p>
+    should be emitted when information is retrieved from the server,
+    or changes occur.</p>
 
-  <p>If the <tp:member-ref>MembersChanged</tp:member-ref> or
-    <tp:member-ref>MembersChangedDetailed</tp:member-ref> signal indicates
+  <p>If the <tp:member-ref>MembersChanged</tp:member-ref> signal indicates
     that the <tp:member-ref>SelfHandle</tp:member-ref> has been removed from
     the channel, and the channel subsequently emits <tp:dbus-ref
-      namespace="org.freedesktop.Telepathy.Channel">Closed</tp:dbus-ref>,
-    clients SHOULD consider the details given in the MembersChanged or
-    MembersChangedDetailed signal to be the reason why the channel closed.</p>
+      namespace="im.telepathy1.Channel">Closed</tp:dbus-ref>,
+    clients SHOULD consider the details given in the MembersChanged
+    signal to be the reason why the channel closed.</p>
 
   <p>Addition of members to the channel may be requested by using
     <tp:member-ref>AddMembers</tp:member-ref>. If

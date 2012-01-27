@@ -181,8 +181,6 @@ gboolean tp_group_mixin_get_group_flags (GObject *obj,
 gboolean tp_group_mixin_add_members (GObject *obj,
     const GArray *contacts, const gchar *message, GError **error);
 gboolean tp_group_mixin_remove_members (GObject *obj,
-    const GArray *contacts, const gchar *message, GError **error);
-gboolean tp_group_mixin_remove_members_with_reason (GObject *obj,
     const GArray *contacts, const gchar *message, guint reason,
     GError **error);
 
@@ -204,10 +202,6 @@ gboolean tp_group_mixin_get_handle_owners (GObject *obj,
 void tp_group_mixin_change_flags (GObject *obj,
     TpChannelGroupFlags add, TpChannelGroupFlags del);
 gboolean tp_group_mixin_change_members (GObject *obj,
-    const gchar *message, const TpIntset *add, const TpIntset *del,
-    const TpIntset *add_local_pending, const TpIntset *add_remote_pending,
-    TpHandle actor, TpChannelGroupChangeReason reason);
-gboolean tp_group_mixin_change_members_detailed (GObject *obj,
     const TpIntset *add, const TpIntset *del,
     const TpIntset *add_local_pending, const TpIntset *add_remote_pending,
     const GHashTable *details);

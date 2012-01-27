@@ -54,8 +54,6 @@ typedef struct
   GHashTable *get_members_return;
   guint uint_return;
 
-  gulong members_changed_detailed_id;
-
   FutureCallContent *added_content;
   FutureCallContent *audio_content;
   FutureCallContent *video_content;
@@ -1044,12 +1042,6 @@ teardown (Test *test,
 {
   tp_cli_connection_run_disconnect (test->conn, -1, &test->error, NULL);
   g_assert_no_error (test->error);
-
-  if (test->members_changed_detailed_id != 0)
-    {
-      g_signal_handler_disconnect (test->chan,
-          test->members_changed_detailed_id);
-    }
 
   g_array_unref (test->audio_request);
   g_array_unref (test->video_request);

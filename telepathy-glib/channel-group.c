@@ -542,16 +542,6 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
       _got_initial_group_flags (self,
           tp_asv_get_uint32 (asv, "GroupFlags", NULL));
 
-      if ((self->priv->group_flags & TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED) == 0 ||
-          (self->priv->group_flags & TP_CHANNEL_GROUP_FLAG_PROPERTIES) == 0)
-        {
-          GError e = { TP_ERRORS, TP_ERROR_SOFTWARE_UPGRADE_REQUIRED,
-              "MembersChangedDetailed and Properties group flags are "
-              "mandatory" };
-          _tp_channel_abort_introspection (self, "Invalid group flags", &e);
-          return;
-        }
-
       tp_channel_group_self_handle_changed_cb (self,
           tp_asv_get_uint32 (asv, "SelfHandle", NULL), NULL, NULL);
 
@@ -868,9 +858,7 @@ handle_members_changed (TpChannel *self,
         }
     }
 
-  g_signal_emit_by_name (self, "group-members-changed", message,
-      added, removed, local_pending, remote_pending, actor, reason);
-  g_signal_emit_by_name (self, "group-members-changed-detailed", added,
+  g_signal_emit_by_name (self, "group-members-changed", added,
       removed, local_pending, remote_pending, details);
 
   _tp_channel_contacts_members_changed (self, added, removed,
@@ -878,20 +866,20 @@ handle_members_changed (TpChannel *self,
 }
 
 static void
-tp_channel_group_members_changed_detailed_cb (TpChannel *self,
-                                              const GArray *added,
-                                              const GArray *removed,
-                                              const GArray *local_pending,
-                                              const GArray *remote_pending,
-                                              GHashTable *details,
-                                              gpointer unused G_GNUC_UNUSED,
-                                              GObject *weak_obj G_GNUC_UNUSED)
+tp_channel_group_members_changed_cb (TpChannel *self,
+                                     const GArray *added,
+                                     const GArray *removed,
+                                     const GArray *local_pending,
+                                     const GArray *remote_pending,
+                                     GHashTable *details,
+                                     gpointer unused G_GNUC_UNUSED,
+                                     GObject *weak_obj G_GNUC_UNUSED)
 {
   const gchar *message;
   guint actor;
   guint reason;
 
-  DEBUG ("%p MembersChangedDetailed: added %u, removed %u, "
+  DEBUG ("%p MembersChanged: added %u, removed %u, "
       "moved %u to LP and %u to RP",
       self, added->len, removed->len, local_pending->len, remote_pending->len);
 
@@ -911,6 +899,7 @@ static void
 tp_channel_handle_owners_changed_cb (TpChannel *self,
                                      GHashTable *added,
                                      const GArray *removed,
+                                     GHashTable *identifiers,
                                      gpointer unused G_GNUC_UNUSED,
                                      GObject *unused_object G_GNUC_UNUSED)
 {
@@ -927,28 +916,11 @@ tp_channel_handle_owners_changed_cb (TpChannel *self,
       g_hash_table_remove (self->priv->group_handle_owners,
           GUINT_TO_POINTER (g_array_index (removed, guint, i)));
     }
-}
-
-
-static void
-tp_channel_handle_owners_changed_detailed_cb (TpChannel *self,
-    GHashTable *added,
-    const GArray *removed,
-    GHashTable *identifiers,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  tp_channel_handle_owners_changed_cb (self, added, removed, user_data,
-      weak_object);
 
   _tp_channel_contacts_handle_owners_changed (self, added, removed,
       identifiers);
 }
 
-
-#define IMMUTABLE_FLAGS \
-  (TP_CHANNEL_GROUP_FLAG_PROPERTIES | \
-  TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED)
 
 static void
 tp_channel_group_flags_changed_cb (TpChannel *self,
@@ -967,19 +939,6 @@ tp_channel_group_flags_changed_cb (TpChannel *self,
       DEBUG ("%p GroupFlagsChanged (after filtering): +%u -%u",
           self, added, removed);
 
-      if ((added & IMMUTABLE_FLAGS) || (removed & IMMUTABLE_FLAGS))
-        {
-          GError *e = g_error_new (TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
-              "CM is broken: it changed the Properties/"
-              "Members_Changed_Detailed flags on an existing group channel "
-              "(offending changes: added=%u, removed=%u)",
-              added & IMMUTABLE_FLAGS, removed & IMMUTABLE_FLAGS);
-
-          tp_proxy_invalidate ((TpProxy *) self, e);
-          g_error_free (e);
-          return;
-        }
-
       self->priv->group_flags |= added;
       self->priv->group_flags &= ~removed;
 
@@ -990,9 +949,6 @@ tp_channel_group_flags_changed_cb (TpChannel *self,
         }
     }
 }
-
-#undef IMMUTABLE_FLAGS
-
 
 void
 _tp_channel_get_group_properties (TpChannel *self)
@@ -1024,11 +980,11 @@ _tp_channel_get_group_properties (TpChannel *self)
     return; \
   }
 
-  sc = tp_cli_channel_interface_group_connect_to_members_changed_detailed (self,
-      tp_channel_group_members_changed_detailed_cb, NULL, NULL, NULL, &error);
+  sc = tp_cli_channel_interface_group_connect_to_members_changed (self,
+      tp_channel_group_members_changed_cb, NULL, NULL, NULL, &error);
 
   if (sc == NULL)
-    DIE ("MembersChangedDetailed");
+    DIE ("MembersChanged");
 
   sc = tp_cli_channel_interface_group_connect_to_group_flags_changed (self,
       tp_channel_group_flags_changed_cb, NULL, NULL, NULL, &error);
@@ -1042,12 +998,12 @@ _tp_channel_get_group_properties (TpChannel *self)
   if (sc == NULL)
     DIE ("SelfContactChanged");
 
-  sc = tp_cli_channel_interface_group_connect_to_handle_owners_changed_detailed (
-      self, tp_channel_handle_owners_changed_detailed_cb, NULL, NULL, NULL,
+  sc = tp_cli_channel_interface_group_connect_to_handle_owners_changed (
+      self, tp_channel_handle_owners_changed_cb, NULL, NULL, NULL,
       &error);
 
   if (sc == NULL)
-    DIE ("HandleOwnersChangedDetailed");
+    DIE ("HandleOwnersChanged");
 
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CHANNEL_INTERFACE_GROUP, tp_channel_got_group_properties_cb,

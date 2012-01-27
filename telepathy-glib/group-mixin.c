@@ -334,8 +334,6 @@ tp_group_mixin_init (GObject *obj,
   if (self_handle != 0)
     mixin->self_handle = tp_handle_ref (handle_repo, self_handle);
 
-  mixin->group_flags = TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED;
-
   mixin->members = tp_handle_set_new (handle_repo);
   mixin->local_pending = tp_handle_set_new (handle_repo);
   mixin->remote_pending = tp_handle_set_new (handle_repo);
@@ -471,8 +469,6 @@ tp_group_mixin_change_self_handle (GObject *obj,
     mixin->self_handle = tp_handle_ref (mixin->handle_repo,
         new_self_handle);
 
-  tp_svc_channel_interface_group_emit_self_handle_changed (obj,
-      new_self_handle);
   tp_svc_channel_interface_group_emit_self_contact_changed (obj,
       new_self_handle, new_self_id);
 
@@ -480,25 +476,6 @@ tp_group_mixin_change_self_handle (GObject *obj,
     tp_handle_unref (mixin->handle_repo, old_self_handle);
 }
 
-
-static void
-tp_group_mixin_get_self_handle_async (TpSvcChannelInterfaceGroup *obj,
-                                      DBusGMethodInvocation *context)
-{
-  guint ret;
-  GError *error = NULL;
-
-  if (tp_group_mixin_get_self_handle ((GObject *) obj, &ret, &error))
-    {
-      tp_svc_channel_interface_group_return_from_get_self_handle (
-          context, ret);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
-}
 
 /**
  * tp_group_mixin_get_group_flags: (skip)
@@ -521,25 +498,6 @@ tp_group_mixin_get_group_flags (GObject *obj,
   *ret = mixin->group_flags;
 
   return TRUE;
-}
-
-static void
-tp_group_mixin_get_group_flags_async (TpSvcChannelInterfaceGroup *obj,
-                                      DBusGMethodInvocation *context)
-{
-  guint ret;
-  GError *error = NULL;
-
-  if (tp_group_mixin_get_group_flags ((GObject *) obj, &ret, &error))
-    {
-      tp_svc_channel_interface_group_return_from_get_group_flags (
-          context, ret);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
 }
 
 /**
@@ -643,32 +601,6 @@ tp_group_mixin_add_members_async (TpSvcChannelInterfaceGroup *obj,
  * @obj: An object implementing the group interface using this mixin
  * @contacts: A GArray of guint representing contacts
  * @message: A message to be sent to those contacts, if supported
- * @error: Used to return an error if %FALSE is returned
- *
- * Request that the given contacts be removed from the group as if in response
- * to user action. If the group's flags prohibit this, raise
- * PermissionDenied. If any of the handles is invalid, raise InvalidHandle.
- * If any of the handles is absent from the group, raise NotAvailable.
- * Otherwise attempt to remove the contacts by calling the callbacks provided
- * by the channel implementation.
- *
- * Returns: %TRUE on success
- */
-gboolean
-tp_group_mixin_remove_members (GObject *obj,
-                               const GArray *contacts,
-                               const gchar *message,
-                               GError **error)
-{
-  return tp_group_mixin_remove_members_with_reason (obj, contacts, message,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE, error);
-}
-
-/**
- * tp_group_mixin_remove_members_with_reason: (skip)
- * @obj: An object implementing the group interface using this mixin
- * @contacts: A GArray of guint representing contacts
- * @message: A message to be sent to those contacts, if supported
  * @reason: A #TpChannelGroupChangeReason
  * @error: Used to return an error if %FALSE is returned
  *
@@ -682,7 +614,7 @@ tp_group_mixin_remove_members (GObject *obj,
  * Returns: %TRUE on success
  */
 gboolean
-tp_group_mixin_remove_members_with_reason (GObject *obj,
+tp_group_mixin_remove_members (GObject *obj,
                                const GArray *contacts,
                                const gchar *message,
                                guint reason,
@@ -784,7 +716,7 @@ tp_group_mixin_remove_members_with_reason (GObject *obj,
 }
 
 static void
-tp_group_mixin_remove_members_with_reason_async
+tp_group_mixin_remove_members_async
     (TpSvcChannelInterfaceGroup *obj,
      const GArray *contacts,
      const gchar *message,
@@ -793,31 +725,11 @@ tp_group_mixin_remove_members_with_reason_async
 {
   GError *error = NULL;
 
-  if (tp_group_mixin_remove_members_with_reason ((GObject *) obj, contacts,
+  if (tp_group_mixin_remove_members ((GObject *) obj, contacts,
         message, reason, &error))
     {
-      tp_svc_channel_interface_group_return_from_remove_members_with_reason
+      tp_svc_channel_interface_group_return_from_remove_members
         (context);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
-}
-
-static void
-tp_group_mixin_remove_members_async (TpSvcChannelInterfaceGroup *obj,
-                                     const GArray *contacts,
-                                     const gchar *message,
-                                     DBusGMethodInvocation *context)
-{
-  GError *error = NULL;
-
-  if (tp_group_mixin_remove_members_with_reason ((GObject *) obj, contacts,
-        message, TP_CHANNEL_GROUP_CHANGE_REASON_NONE, &error))
-    {
-      tp_svc_channel_interface_group_return_from_remove_members (context);
     }
   else
     {
@@ -848,26 +760,6 @@ tp_group_mixin_get_members (GObject *obj,
   return TRUE;
 }
 
-static void
-tp_group_mixin_get_members_async (TpSvcChannelInterfaceGroup *obj,
-                                  DBusGMethodInvocation *context)
-{
-  GArray *ret;
-  GError *error = NULL;
-
-  if (tp_group_mixin_get_members ((GObject *) obj, &ret, &error))
-    {
-      tp_svc_channel_interface_group_return_from_get_members (
-          context, ret);
-      g_array_unref (ret);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
-}
-
 /**
  * tp_group_mixin_get_local_pending_members: (skip)
  * @obj: An object implementing the group interface using this mixin
@@ -888,26 +780,6 @@ tp_group_mixin_get_local_pending_members (GObject *obj,
   *ret = tp_handle_set_to_array (mixin->local_pending);
 
   return TRUE;
-}
-
-static void
-tp_group_mixin_get_local_pending_members_async (TpSvcChannelInterfaceGroup *obj,
-                                                DBusGMethodInvocation *context)
-{
-  GArray *ret;
-  GError *error = NULL;
-
-  if (tp_group_mixin_get_local_pending_members ((GObject *) obj, &ret, &error))
-    {
-      tp_svc_channel_interface_group_return_from_get_local_pending_members (
-          context, ret);
-      g_array_unref (ret);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
 }
 
 typedef struct {
@@ -973,32 +845,6 @@ tp_group_mixin_get_local_pending_members_with_info (
   return TRUE;
 }
 
-static void
-tp_group_mixin_get_local_pending_members_with_info_async (
-                                                TpSvcChannelInterfaceGroup *obj,
-                                                DBusGMethodInvocation *context)
-{
-  GPtrArray *ret;
-  GError *error = NULL;
-
-  if (tp_group_mixin_get_local_pending_members_with_info ((GObject *) obj,
-        &ret, &error))
-    {
-      guint i;
-      tp_svc_channel_interface_group_return_from_get_local_pending_members_with_info (
-          context, ret);
-      for (i = 0 ; i < ret->len; i++) {
-        g_value_array_free (g_ptr_array_index (ret,i));
-      }
-      g_ptr_array_unref (ret);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
-}
-
 /**
  * tp_group_mixin_get_remote_pending_members: (skip)
  * @obj: An object implementing the group interface using this mixin
@@ -1020,27 +866,6 @@ tp_group_mixin_get_remote_pending_members (GObject *obj,
   *ret = tp_handle_set_to_array (mixin->remote_pending);
 
   return TRUE;
-}
-
-static void
-tp_group_mixin_get_remote_pending_members_async (TpSvcChannelInterfaceGroup *obj,
-                                                 DBusGMethodInvocation *context)
-{
-  GArray *ret;
-  GError *error = NULL;
-
-  if (tp_group_mixin_get_remote_pending_members ((GObject *) obj,
-        &ret, &error))
-    {
-      tp_svc_channel_interface_group_return_from_get_remote_pending_members (
-          context, ret);
-      g_array_unref (ret);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
 }
 
 /**
@@ -1072,29 +897,6 @@ tp_group_mixin_get_all_members (GObject *obj,
   *remote_pending = tp_handle_set_to_array (mixin->remote_pending);
 
   return TRUE;
-}
-
-static void
-tp_group_mixin_get_all_members_async (TpSvcChannelInterfaceGroup *obj,
-                                      DBusGMethodInvocation *context)
-{
-  GArray *mem, *local, *remote;
-  GError *error = NULL;
-
-  if (tp_group_mixin_get_all_members ((GObject *) obj, &mem, &local, &remote,
-        &error))
-    {
-      tp_svc_channel_interface_group_return_from_get_all_members (
-          context, mem, local, remote);
-      g_array_unref (mem);
-      g_array_unref (local);
-      g_array_unref (remote);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
 }
 
 /**
@@ -1164,28 +966,6 @@ tp_group_mixin_get_handle_owners (GObject *obj,
   return TRUE;
 }
 
-static void
-tp_group_mixin_get_handle_owners_async (TpSvcChannelInterfaceGroup *obj,
-                                        const GArray *handles,
-                                        DBusGMethodInvocation *context)
-{
-  GArray *ret;
-  GError *error = NULL;
-
-  if (tp_group_mixin_get_handle_owners ((GObject *) obj, handles,
-        &ret, &error))
-    {
-      tp_svc_channel_interface_group_return_from_get_handle_owners (
-          context, ret);
-      g_array_unref (ret);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
-}
-
 #define GFTS_APPEND_FLAG_IF_SET(flag) \
   if (flags & flag) \
     { \
@@ -1214,8 +994,6 @@ group_flags_to_string (TpChannelGroupFlags flags)
   GFTS_APPEND_FLAG_IF_SET (TP_CHANNEL_GROUP_FLAG_CHANNEL_SPECIFIC_HANDLES);
   GFTS_APPEND_FLAG_IF_SET (TP_CHANNEL_GROUP_FLAG_ONLY_ONE_GROUP);
   GFTS_APPEND_FLAG_IF_SET (TP_CHANNEL_GROUP_FLAG_HANDLE_OWNERS_NOT_AVAILABLE);
-  GFTS_APPEND_FLAG_IF_SET (TP_CHANNEL_GROUP_FLAG_PROPERTIES);
-  GFTS_APPEND_FLAG_IF_SET (TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED);
 
   /* Print out any remaining flags that weren't removed in the above cases
    * numerically.
@@ -1508,9 +1286,7 @@ emit_members_changed_signals (GObject *channel,
   added_contact_ids = maybe_add_contact_ids (mixin, add, local_pending,
       remote_pending, actor, details_);
 
-  tp_svc_channel_interface_group_emit_members_changed (channel, message,
-      add, del, local_pending, remote_pending, actor, reason);
-  tp_svc_channel_interface_group_emit_members_changed_detailed (channel,
+  tp_svc_channel_interface_group_emit_members_changed (channel,
       add, del, local_pending, remote_pending, details_);
 
   if (mixin->priv->externals != NULL)
@@ -1521,9 +1297,7 @@ emit_members_changed_signals (GObject *channel,
         {
           GObject *external = g_ptr_array_index (mixin->priv->externals, i);
 
-          tp_svc_channel_interface_group_emit_members_changed (external,
-              message, add, del, local_pending, remote_pending, actor, reason);
-          tp_svc_channel_interface_group_emit_members_changed_detailed (
+          tp_svc_channel_interface_group_emit_members_changed (
               external, add, del, local_pending, remote_pending, details_);
         }
     }
@@ -1658,9 +1432,7 @@ change_members (GObject *obj,
         {
           GHashTable *empty_hash_table = g_hash_table_new (NULL, NULL);
 
-          tp_svc_channel_interface_group_emit_handle_owners_changed (obj,
-              empty_hash_table, arr_owners_removed);
-          tp_svc_channel_interface_group_emit_handle_owners_changed_detailed (
+          tp_svc_channel_interface_group_emit_handle_owners_changed (
               obj, empty_hash_table, arr_owners_removed, empty_hash_table);
 
           if (mixin->priv->externals != NULL)
@@ -1670,9 +1442,6 @@ change_members (GObject *obj,
               for (i = 0; i < mixin->priv->externals->len; i++)
                 {
                   tp_svc_channel_interface_group_emit_handle_owners_changed (
-                      g_ptr_array_index (mixin->priv->externals, i),
-                      empty_hash_table, arr_owners_removed);
-                  tp_svc_channel_interface_group_emit_handle_owners_changed_detailed (
                       g_ptr_array_index (mixin->priv->externals, i),
                       empty_hash_table, arr_owners_removed, empty_hash_table);
                 }
@@ -1713,80 +1482,6 @@ change_members (GObject *obj,
 /**
  * tp_group_mixin_change_members: (skip)
  * @obj: An object implementing the group interface using this mixin
- * @message: A message to be sent to the affected contacts if possible;
- *  %NULL is allowed, and is mapped to an empty string
- * @add: A set of contact handles to be added to the members (if not
- *  already present) and removed from local pending and remote pending
- *  (if present)
- * @del: A set of contact handles to be removed from members,
- *  local pending or remote pending, wherever they are present
- * @add_local_pending: A set of contact handles to be added to local pending,
- *  and removed from members and remote pending
- * @add_remote_pending: A set of contact handles to be added to remote pending,
- *  and removed from members and local pending
- * @actor: The handle of the contact responsible for this change
- * @reason: The reason for this change
- *
- * Change the sets of members as given by the arguments, and emit the
- * MembersChanged and MembersChangedDetailed signals if the changes were not a
- * no-op.
- *
- * This function must be called in response to events on the underlying
- * IM protocol, and must not be called in direct response to user input;
- * it does not respect the permissions flags, but changes the group directly.
- *
- * If any two of add, del, add_local_pending and add_remote_pending have
- * a non-empty intersection, the result is undefined. Don't do that.
- *
- * Each of the TpIntset arguments may be %NULL, which is treated as
- * equivalent to an empty set.
- *
- * Returns: %TRUE if the group was changed and the MembersChanged(Detailed)
- *  signals were emitted; %FALSE if nothing actually changed and the signals
- *  were suppressed.
- */
-gboolean
-tp_group_mixin_change_members (GObject *obj,
-                               const gchar *message,
-                               const TpIntset *add,
-                               const TpIntset *del,
-                               const TpIntset *add_local_pending,
-                               const TpIntset *add_remote_pending,
-                               TpHandle actor,
-                               TpChannelGroupChangeReason reason)
-{
-  GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal,
-      NULL, (GDestroyNotify) tp_g_value_slice_free);
-  gboolean ret;
-
-  if (actor != 0)
-    {
-      g_hash_table_insert (details, "actor",
-          tp_g_value_slice_new_uint (actor));
-    }
-
-  if (reason != TP_CHANNEL_GROUP_CHANGE_REASON_NONE)
-    {
-      g_hash_table_insert (details, "change-reason",
-          tp_g_value_slice_new_uint (reason));
-    }
-
-  if (message != NULL && message[0] != '\0')
-    {
-      g_hash_table_insert (details, "message",
-          tp_g_value_slice_new_string (message));
-    }
-
-  ret = change_members (obj, message, add, del, add_local_pending,
-      add_remote_pending, actor, reason, details);
-
-  g_hash_table_unref (details);
-  return ret;
-}
-
-/**
- * tp_group_mixin_change_members_detailed: (skip)
- * @obj: An object implementing the group interface using this mixin
  * @add: A set of contact handles to be added to the members (if not
  *  already present) and removed from local pending and remote pending
  *  (if present)
@@ -1799,8 +1494,7 @@ tp_group_mixin_change_members (GObject *obj,
  * @details: a map from strings to GValues detailing the change
  *
  * Change the sets of members as given by the arguments, and emit the
- * MembersChanged and MembersChangedDetailed signals if the changes were not a
- * no-op.
+ * MembersChanged signal if the changes were not a no-op.
  *
  * This function must be called in response to events on the underlying
  * IM protocol, and must not be called in direct response to user input;
@@ -1814,32 +1508,24 @@ tp_group_mixin_change_members (GObject *obj,
  *
  * details may contain, among other entries, the well-known
  * keys (and corresponding type, wrapped in a GValue) defined by the
- * Group.MembersChangedDetailed signal's specification; these include "actor"
+ * Group.MembersChanged signal's specification; these include "actor"
  * (a handle as G_TYPE_UINT), "change-reason" (an element of
  * #TpChannelGroupChangeReason as G_TYPE_UINT), "message" (G_TYPE_STRING),
  * "error" (G_TYPE_STRING), "debug-message" (G_TYPE_STRING).
  *
- * If all of the information in details could be passed to
- * tp_group_mixin_change_members() then calling this function instead provides
- * no benefit. Calling this function without setting
- * #TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED with
- * tp_group_mixin_change_members() first is not very useful, as clients will
- * not know to listen for MembersChangedDetailed and thus will miss the
- * details.
- *
- * Returns: %TRUE if the group was changed and the MembersChanged(Detailed)
+ * Returns: %TRUE if the group was changed and the MembersChanged
  *  signals were emitted; %FALSE if nothing actually changed and the signals
  *  were suppressed.
  *
  * Since: 0.7.21
  */
 gboolean
-tp_group_mixin_change_members_detailed (GObject *obj,
-                                        const TpIntset *add,
-                                        const TpIntset *del,
-                                        const TpIntset *add_local_pending,
-                                        const TpIntset *add_remote_pending,
-                                        const GHashTable *details)
+tp_group_mixin_change_members (GObject *obj,
+    const TpIntset *add,
+    const TpIntset *del,
+    const TpIntset *add_local_pending,
+    const TpIntset *add_remote_pending,
+    const GHashTable *details)
 {
   const gchar *message;
   TpHandle actor;
@@ -2006,11 +1692,8 @@ tp_group_mixin_add_handle_owners (GObject *obj,
   g_hash_table_foreach (local_to_owner_handle, add_handle_owners_helper,
       mixin);
 
-  tp_svc_channel_interface_group_emit_handle_owners_changed (obj,
-      local_to_owner_handle, empty_array);
-
   add_us_mapping_for_owners_map (ids, mixin->handle_repo, local_to_owner_handle);
-  tp_svc_channel_interface_group_emit_handle_owners_changed_detailed (obj,
+  tp_svc_channel_interface_group_emit_handle_owners_changed (obj,
       local_to_owner_handle, empty_array, ids);
 
   g_array_unref (empty_array);
@@ -2093,16 +1776,7 @@ tp_group_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 #define IMPLEMENT(x) tp_svc_channel_interface_group_implement_##x (klass,\
     tp_group_mixin_##x##_async)
   IMPLEMENT(add_members);
-  IMPLEMENT(get_all_members);
-  IMPLEMENT(get_group_flags);
-  IMPLEMENT(get_handle_owners);
-  IMPLEMENT(get_local_pending_members);
-  IMPLEMENT(get_local_pending_members_with_info);
-  IMPLEMENT(get_members);
-  IMPLEMENT(get_remote_pending_members);
-  IMPLEMENT(get_self_handle);
   IMPLEMENT(remove_members);
-  IMPLEMENT(remove_members_with_reason);
 #undef IMPLEMENT
 }
 
@@ -2409,94 +2083,7 @@ tp_external_group_mixin_add_members_async (TpSvcChannelInterfaceGroup *obj,
 }
 
 static void
-tp_external_group_mixin_get_self_handle_async (TpSvcChannelInterfaceGroup *obj,
-                                               DBusGMethodInvocation *context)
-{
-  EXTERNAL_OR_DIE (group)
-  tp_group_mixin_get_self_handle_async ((TpSvcChannelInterfaceGroup *) group,
-      context);
-}
-
-static void
-tp_external_group_mixin_get_group_flags_async (TpSvcChannelInterfaceGroup *obj,
-                                               DBusGMethodInvocation *context)
-{
-  EXTERNAL_OR_DIE (group)
-  tp_group_mixin_get_group_flags_async ((TpSvcChannelInterfaceGroup *) group,
-      context);
-}
-
-static void
-tp_external_group_mixin_get_members_async (TpSvcChannelInterfaceGroup *obj,
-                                               DBusGMethodInvocation *context)
-{
-  EXTERNAL_OR_DIE (group)
-  tp_group_mixin_get_members_async ((TpSvcChannelInterfaceGroup *) group,
-      context);
-}
-
-static void
-tp_external_group_mixin_get_local_pending_members_async
-    (TpSvcChannelInterfaceGroup *obj, DBusGMethodInvocation *context)
-{
-  EXTERNAL_OR_DIE (group)
-  tp_group_mixin_get_local_pending_members_async
-      ((TpSvcChannelInterfaceGroup *) group, context);
-}
-
-static void
-tp_external_group_mixin_get_local_pending_members_with_info_async
-    (TpSvcChannelInterfaceGroup *obj, DBusGMethodInvocation *context)
-{
-  EXTERNAL_OR_DIE (group)
-  tp_group_mixin_get_local_pending_members_with_info_async
-      ((TpSvcChannelInterfaceGroup *) group, context);
-}
-
-static void
-tp_external_group_mixin_get_remote_pending_members_async
-    (TpSvcChannelInterfaceGroup *obj, DBusGMethodInvocation *context)
-{
-  EXTERNAL_OR_DIE (group)
-  tp_group_mixin_get_remote_pending_members_async
-      ((TpSvcChannelInterfaceGroup *) group, context);
-}
-
-static void
-tp_external_group_mixin_get_all_members_async (TpSvcChannelInterfaceGroup *obj,
-                                               DBusGMethodInvocation *context)
-{
-  EXTERNAL_OR_DIE (group)
-  tp_group_mixin_get_all_members_async ((TpSvcChannelInterfaceGroup *) group,
-      context);
-}
-
-static void
-tp_external_group_mixin_get_handle_owners_async
-    (TpSvcChannelInterfaceGroup *obj,
-     const GArray *handles,
-     DBusGMethodInvocation *context)
-{
-  EXTERNAL_OR_DIE (group)
-  tp_group_mixin_get_handle_owners_async ((TpSvcChannelInterfaceGroup *) group,
-      handles, context);
-}
-
-static void
-tp_external_group_mixin_remove_members_async (TpSvcChannelInterfaceGroup *obj,
-                                              const GArray *contacts,
-                                              const gchar *message,
-                                              DBusGMethodInvocation *context)
-{
-  EXTERNAL_OR_DIE (group)
-  tp_group_mixin_remove_members_with_reason_async
-      ((TpSvcChannelInterfaceGroup *) group, contacts, message,
-       TP_CHANNEL_GROUP_CHANGE_REASON_NONE, context);
-}
-
-
-static void
-tp_external_group_mixin_remove_members_with_reason_async
+tp_external_group_mixin_remove_members_async
     (TpSvcChannelInterfaceGroup *obj,
      const GArray *contacts,
      const gchar *message,
@@ -2504,7 +2091,7 @@ tp_external_group_mixin_remove_members_with_reason_async
      DBusGMethodInvocation *context)
 {
   EXTERNAL_OR_DIE (group)
-  tp_group_mixin_remove_members_with_reason_async
+  tp_group_mixin_remove_members_async
       ((TpSvcChannelInterfaceGroup *) group, contacts, message, reason,
        context);
 }
@@ -2528,15 +2115,6 @@ tp_external_group_mixin_iface_init (gpointer g_iface,
 #define IMPLEMENT(x) tp_svc_channel_interface_group_implement_##x (klass,\
     tp_external_group_mixin_##x##_async)
   IMPLEMENT(add_members);
-  IMPLEMENT(get_all_members);
-  IMPLEMENT(get_group_flags);
-  IMPLEMENT(get_handle_owners);
-  IMPLEMENT(get_local_pending_members);
-  IMPLEMENT(get_local_pending_members_with_info);
-  IMPLEMENT(get_members);
-  IMPLEMENT(get_remote_pending_members);
-  IMPLEMENT(get_self_handle);
   IMPLEMENT(remove_members);
-  IMPLEMENT(remove_members_with_reason);
 #undef IMPLEMENT
 }
