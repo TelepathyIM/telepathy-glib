@@ -10,7 +10,6 @@
 <xi:include href="../spec/Connection_Interface_Anonymity.xml"/>
 <xi:include href="../spec/Connection_Interface_Avatars.xml"/>
 <xi:include href="../spec/Connection_Interface_Balance.xml"/>
-<xi:include href="../spec/Connection_Interface_Capabilities.xml"/>
 <xi:include href="../spec/Connection_Interface_Cellular.xml"/>
 <xi:include href="../spec/Connection_Interface_Client_Types.xml"/>
 <xi:include href="../spec/Connection_Interface_Contact_Blocking.xml"/>

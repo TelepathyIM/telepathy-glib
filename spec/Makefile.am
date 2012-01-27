@@ -72,7 +72,6 @@ EXTRA_DIST = \
     Connection_Interface_Anonymity.xml \
     Connection_Interface_Avatars.xml \
     Connection_Interface_Balance.xml \
-    Connection_Interface_Capabilities.xml \
     Connection_Interface_Cellular.xml \
     Connection_Interface_Client_Types.xml \
     Connection_Interface_Communication_Policy.xml \
