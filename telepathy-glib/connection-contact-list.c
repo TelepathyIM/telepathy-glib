@@ -302,7 +302,7 @@ prepare_roster (TpConnection *self,
   DEBUG ("CM has the roster for connection %s, fetch it now.",
       tp_proxy_get_object_path (self));
 
-  tp_cli_connection_interface_contact_list_connect_to_contacts_changed_with_id (
+  tp_cli_connection_interface_contact_list_connect_to_contacts_changed (
       self, contacts_changed_cb, NULL, NULL, NULL, NULL);
 
   features = tp_simple_client_factory_dup_contact_features (

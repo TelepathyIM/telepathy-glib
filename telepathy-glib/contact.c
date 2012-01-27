@@ -2694,13 +2694,13 @@ _tp_contact_set_subscription_states (TpContact *self,
 static void
 contacts_changed_cb (TpConnection *connection,
     GHashTable *changes,
-    const GArray *removals,
+    GHashTable *identifiers,
+    GHashTable *removals,
     gpointer user_data,
     GObject *weak_object)
 {
   GHashTableIter iter;
   gpointer key, value;
-  guint i;
 
   g_hash_table_iter_init (&iter, changes);
   while (g_hash_table_iter_next (&iter, &key, &value))
@@ -2712,16 +2712,17 @@ contacts_changed_cb (TpConnection *connection,
         _tp_contact_set_subscription_states (contact, value);
     }
 
-  for (i = 0; i < removals->len; i++)
+  g_hash_table_iter_init (&iter, removals);
+  while (g_hash_table_iter_next (&iter, &key, NULL))
     {
-      TpHandle handle = g_array_index (removals, TpHandle, i);
+      TpHandle handle = GPOINTER_TO_UINT (key);
       TpContact *contact = _tp_connection_lookup_contact (connection, handle);
 
-      if (contact == NULL)
-        continue;
-
-      contact_set_subscription_states (contact, TP_SUBSCRIPTION_STATE_NO,
-          TP_SUBSCRIPTION_STATE_NO, NULL);
+      if (contact != NULL)
+        {
+          contact_set_subscription_states (contact, TP_SUBSCRIPTION_STATE_NO,
+              TP_SUBSCRIPTION_STATE_NO, NULL);
+        }
     }
 }
 
