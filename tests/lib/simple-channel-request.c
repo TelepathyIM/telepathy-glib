@@ -72,6 +72,9 @@ handle_channels_cb (TpClient *client,
     GObject *weak_object)
 {
   TpTestsSimpleChannelRequest *self = SIMPLE_CHANNEL_REQUEST (weak_object);
+  TpBaseConnection *base_conn = TP_BASE_CONNECTION (self->priv->conn);
+  const gchar *chan_path = user_data;
+  GHashTable *props = tp_asv_new (NULL, NULL);
 
   if (error != NULL)
     {
@@ -80,10 +83,13 @@ handle_channels_cb (TpClient *client,
       return;
     }
 
-  tp_svc_channel_request_emit_succeeded (self);
+  tp_svc_channel_request_emit_succeeded (self,
+      base_conn->object_path, props, chan_path, props);
+
+  g_hash_table_unref (props);
 }
 
-static void
+static gchar *
 add_channel (TpTestsSimpleChannelRequest *self,
     GPtrArray *channels)
 {
@@ -104,8 +110,9 @@ add_channel (TpTestsSimpleChannelRequest *self,
       TP_HASH_TYPE_STRING_VARIANT_MAP, props,
       G_TYPE_INVALID));
 
-  g_free (chan_path);
   g_hash_table_unref (props);
+
+  return chan_path;
 }
 
 static void
@@ -148,6 +155,7 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
   TpBaseConnection *base_conn = (TpBaseConnection *) self->priv->conn;
   GHashTable *req;
   GHashTable *request_props;
+  gchar *chan_path;
 
   req = g_ptr_array_index (self->priv->requests, 0);
   g_assert (req != NULL);
@@ -186,19 +194,10 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
       GHashTable *props;
       props = g_hash_table_new (NULL, NULL);
 
-      tp_svc_channel_request_emit_succeeded_with_channel (self,
+      tp_svc_channel_request_emit_succeeded (self,
           base_conn->object_path, props, "/chan", props);
-      tp_svc_channel_request_emit_succeeded (self);
 
       g_hash_table_unref (props);
-      return;
-    }
-  else if (!tp_strdiff (self->priv->preferred_handler, "FakeNoChannel"))
-    {
-      /* Pretend that the channel has been handled but only fire the old
-       * Succeeded signal. */
-
-      tp_svc_channel_request_emit_succeeded (self);
       return;
     }
 
@@ -220,7 +219,7 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
       TP_IFACE_QUARK_CLIENT_HANDLER);
 
   channels = g_ptr_array_sized_new (1);
-  add_channel (self, channels);
+  chan_path = add_channel (self, channels);
 
   satisfied = g_ptr_array_sized_new (1);
   g_ptr_array_add (satisfied, self->priv->path);
@@ -238,9 +237,10 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
 
   tp_cli_client_handler_call_handle_channels (client, -1,
       self->priv->account_path, base_conn->object_path, channels,
-      satisfied, self->priv->user_action_time, info, handle_channels_cb, NULL,
-      NULL, G_OBJECT (self));
+      satisfied, self->priv->user_action_time, info, handle_channels_cb,
+      g_strdup (chan_path), g_free, G_OBJECT (self));
 
+  g_free (chan_path);
   g_free (client_path);
   g_ptr_array_foreach (channels, free_channel_details, NULL);
   g_ptr_array_unref (channels);

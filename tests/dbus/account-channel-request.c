@@ -1084,27 +1084,6 @@ test_observe_cancel_after_create (Test *test,
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_CANCELLED);
 }
 
-/* Succeeded is fired but not SucceededWithChannel */
-static void
-test_observe_no_channel (Test *test,
-    gconstpointer data G_GNUC_UNUSED)
-{
-  GHashTable *request;
-  TpAccountChannelRequest *req;
-
-  request = create_request ();
-  req = tp_account_channel_request_new (test->account, request, 0);
-
-  tp_account_channel_request_create_and_observe_channel_async (req,
-      "FakeNoChannel", NULL, create_and_observe_cb, test);
-
-  g_hash_table_unref (request);
-  g_object_unref (req);
-
-  g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_CONFUSED);
-}
-
 int
 main (int argc,
       char **argv)
@@ -1165,8 +1144,6 @@ main (int argc,
       setup, test_observe_cancel_before, teardown);
   g_test_add ("/account-channels/request-observe/after-create", Test, NULL,
       setup, test_observe_cancel_after_create, teardown);
-  g_test_add ("/account-channels/request-observe/no-channel", Test, NULL,
-      setup, test_observe_no_channel, teardown);
 
   return g_test_run ();
 }

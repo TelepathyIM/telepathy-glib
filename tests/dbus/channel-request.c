@@ -208,13 +208,7 @@ test_crash (Test *test,
 }
 
 static void
-succeeded_cb (Test *test)
-{
-  test->succeeded++;
-}
-
-static void
-succeeded_with_channel_cb (TpChannelRequest *request,
+succeeded_cb (TpChannelRequest *request,
     TpConnection *connection,
     TpChannel *channel,
     Test *test)
@@ -245,19 +239,15 @@ test_succeeded (Test *test,
   g_assert (test->cr != NULL);
   g_assert (tp_proxy_get_invalidated (test->cr) == NULL);
 
-  g_signal_connect_swapped (test->cr, "succeeded", G_CALLBACK (succeeded_cb),
-      test);
-  g_signal_connect (test->cr, "succeeded-with-channel",
-      G_CALLBACK (succeeded_with_channel_cb), test);
+  g_signal_connect (test->cr, "succeeded",
+      G_CALLBACK (succeeded_cb), test);
 
   props = g_hash_table_new (NULL, NULL);
 
-  tp_svc_channel_request_emit_succeeded_with_channel (test->cr_service,
+  tp_svc_channel_request_emit_succeeded (test->cr_service,
       test->base_connection->object_path, props, "/Channel", props);
 
   g_hash_table_unref (props);
-
-  tp_svc_channel_request_emit_succeeded (test->cr_service);
 
   tp_tests_proxy_run_until_dbus_queue_processed (test->cr);
 
@@ -265,7 +255,7 @@ test_succeeded (Test *test,
   g_assert (tp_proxy_get_invalidated (test->cr)->domain == TP_DBUS_ERRORS);
   g_assert (tp_proxy_get_invalidated (test->cr)->code ==
       TP_DBUS_ERROR_OBJECT_REMOVED);
-  g_assert_cmpuint (test->succeeded, ==, 2);
+  g_assert_cmpuint (test->succeeded, ==, 1);
 
   g_signal_handlers_disconnect_by_func (test->cr, G_CALLBACK (succeeded_cb),
       test);

@@ -98,7 +98,6 @@
 
 enum {
   SIGNAL_SUCCEEDED,
-  SIGNAL_SUCCEEDED_WITH_CHANNEL,
   N_SIGNALS
 };
 
@@ -117,7 +116,6 @@ struct _TpChannelRequestPrivate {
     GHashTable *immutable_properties;
 
     TpClientChannelFactory *channel_factory;
-    gboolean succeeded_with_chan_fired;
     TpAccount *account;
 };
 
@@ -214,30 +212,6 @@ tp_channel_request_failed_cb (TpChannelRequest *self,
 
 static void
 tp_channel_request_succeeded_cb (TpChannelRequest *self,
-    gpointer unused G_GNUC_UNUSED,
-    GObject *object G_GNUC_UNUSED)
-{
-  GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED,
-      "ChannelRequest succeeded and was removed" };
-
-  if (!self->priv->succeeded_with_chan_fired)
-    {
-      DEBUG ("MC is too old and didn't fired SucceededWithChannel");
-
-      g_signal_emit (self, signals[SIGNAL_SUCCEEDED_WITH_CHANNEL], 0,
-          NULL, NULL);
-
-      self->priv->succeeded_with_chan_fired = TRUE;
-    }
-
-  /* Fire the old legacy signal as well */
-  g_signal_emit (self, signals[SIGNAL_SUCCEEDED], 0);
-
-  tp_proxy_invalidate ((TpProxy *) self, &e);
-}
-
-static void
-tp_channel_request_succeeded_with_channel_cb (TpChannelRequest *self,
     const gchar *conn_path,
     GHashTable *conn_props,
     const gchar *chan_path,
@@ -248,6 +222,8 @@ tp_channel_request_succeeded_with_channel_cb (TpChannelRequest *self,
   TpConnection *connection;
   TpChannel *channel;
   GError *error = NULL;
+  GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED,
+               "ChannelRequest succeeded and was removed" };
 
   connection = tp_simple_client_factory_ensure_connection (
       tp_proxy_get_factory (self), conn_path, NULL, &error);
@@ -272,10 +248,10 @@ tp_channel_request_succeeded_with_channel_cb (TpChannelRequest *self,
       return;
     }
 
-  g_signal_emit (self, signals[SIGNAL_SUCCEEDED_WITH_CHANNEL], 0,
+  g_signal_emit (self, signals[SIGNAL_SUCCEEDED], 0,
       connection, channel);
 
-  self->priv->succeeded_with_chan_fired = TRUE;
+  tp_proxy_invalidate ((TpProxy *) self, &e);
 
   g_object_unref (connection);
   g_object_unref (channel);
@@ -313,18 +289,7 @@ tp_channel_request_constructed (GObject *object)
 
   if (sc == NULL)
     {
-      CRITICAL ("Couldn't connect to Succeeded: %s", error->message);
-      g_error_free (error);
-      g_assert_not_reached ();
-      return;
-    }
-
-  sc = tp_cli_channel_request_connect_to_succeeded_with_channel (self,
-      tp_channel_request_succeeded_with_channel_cb, NULL, NULL, NULL, &error);
-
-  if (sc == NULL)
-    {
-      DEBUG ("Couldn't connect to SucceededWithChannel: %s", error->message);
+      DEBUG ("Couldn't connect to Succeeded: %s", error->message);
       g_error_free (error);
       return;
     }
@@ -369,7 +334,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    *
    * The object implementing the #TpClientChannelFactoryInterface interface
    * that will be used to create channel proxies when the
-   * #TpChannelRequest::succeeded-with-channel signal is fired.
+   * #TpChannelRequest::succeeded signal is fired.
    * This property can be changed using
    * tp_channel_request_set_channel_factory().
    *
@@ -477,24 +442,6 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
   /**
    * TpChannelRequest::succeeded:
    * @self: the channel request proxy
-   *
-   * Emitted when the channel request succeeds.
-   *
-   * Deprecated: since 0.13.14. Use
-   * #TpChannelRequest::succeeded-with-channel, which provides the resulting
-   * channel, instead.
-   */
-  signals[SIGNAL_SUCCEEDED] = g_signal_new ("succeeded",
-      G_OBJECT_CLASS_TYPE (klass),
-      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-      0,
-      NULL, NULL,
-      g_cclosure_marshal_VOID__VOID,
-      G_TYPE_NONE, 0);
-
-  /**
-   * TpChannelRequest::succeeded-with-channel:
-   * @self: the channel request proxy
    * @connection: the #TpConnection of @channel, or %NULL
    * @channel: the #TpChannel created, or %NULL
    *
@@ -511,8 +458,8 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    *
    * Since: 0.13.14
    */
-  signals[SIGNAL_SUCCEEDED_WITH_CHANNEL] = g_signal_new (
-      "succeeded-with-channel",
+  signals[SIGNAL_SUCCEEDED] = g_signal_new (
+      "succeeded",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,

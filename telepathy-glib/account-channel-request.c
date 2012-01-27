@@ -684,7 +684,7 @@ acr_channel_request_invalidated_cb (TpProxy *proxy,
 }
 
 static void
-acr_channel_request_succeeded_with_channel (TpChannelRequest *chan_req,
+acr_channel_request_succeeded (TpChannelRequest *chan_req,
     TpConnection *connection,
     TpChannel *channel,
     TpAccountChannelRequest *self)
@@ -813,8 +813,8 @@ acr_request_cb (TpChannelDispatcher *cd,
       "invalidated", G_CALLBACK (acr_channel_request_invalidated_cb), self);
 
   self->priv->succeeded_chan_sig = g_signal_connect (self->priv->chan_request,
-      "succeeded-with-channel",
-      G_CALLBACK (acr_channel_request_succeeded_with_channel), self);
+      "succeeded",
+      G_CALLBACK (acr_channel_request_succeeded), self);
 
   if (self->priv->cancellable != NULL)
     {
