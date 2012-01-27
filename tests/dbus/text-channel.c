@@ -271,14 +271,9 @@ send_message_cb (GObject *source,
 
 static void
 on_received (TpChannel *chan,
-    guint id,
-    guint timestamp,
-    guint sender,
-    guint type,
-    guint flags,
-    const gchar *text,
+    const GPtrArray *message,
     gpointer user_data,
-    GObject *object)
+    GObject *weak_object)
 {
   Test *test = user_data;
 
@@ -298,8 +293,8 @@ test_pending_messages (Test *test,
   TpContact *sender;
 
   /* connect on the Received sig to check if the message has been received */
-  tp_cli_channel_type_text_connect_to_received (TP_CHANNEL (test->channel),
-      on_received, test, NULL, NULL, NULL);
+  tp_cli_channel_type_text_connect_to_message_received (
+      TP_CHANNEL (test->channel), on_received, test, NULL, NULL, NULL);
 
   /* Send a first message */
   msg = tp_client_message_new_text (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
@@ -349,7 +344,7 @@ test_pending_messages (Test *test,
   msg = messages->data;
   g_assert (TP_IS_SIGNALLED_MESSAGE (msg));
 
-  text = tp_message_to_text (msg, NULL);
+  text = tp_message_to_text (msg);
   g_assert_cmpstr (text, ==, "Badger");
   g_free (text);
   sender = tp_signalled_message_get_sender (msg);
@@ -360,7 +355,7 @@ test_pending_messages (Test *test,
   msg = messages->next->data;
   g_assert (TP_IS_SIGNALLED_MESSAGE (msg));
 
-  text = tp_message_to_text (msg, NULL);
+  text = tp_message_to_text (msg);
   g_assert_cmpstr (text, ==, "Snake");
   g_free (text);
   sender = tp_signalled_message_get_sender (msg);
@@ -414,7 +409,7 @@ test_message_received (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  text = tp_message_to_text (test->received_msg, NULL);
+  text = tp_message_to_text (test->received_msg);
   g_assert_cmpstr (text, ==, "Snake");
   g_free (text);
 
@@ -614,7 +609,7 @@ test_message_sent (Test *test,
   g_assert_no_error (test->error);
 
   g_assert (TP_IS_SIGNALLED_MESSAGE (test->sent_msg));
-  text = tp_message_to_text (test->sent_msg, NULL);
+  text = tp_message_to_text (test->sent_msg);
   g_assert_cmpstr (text, ==, "Badger");
   g_free (text);
 
@@ -829,7 +824,7 @@ test_pending_messages_with_no_sender_id (Test *test,
   g_assert (sender != NULL);
   g_assert_cmpstr (tp_contact_get_identifier (sender), ==, "bob");
 
-  text = tp_message_to_text ((TpMessage *) signalled_message, NULL);
+  text = tp_message_to_text ((TpMessage *) signalled_message);
   g_assert_cmpstr (text, ==, "hi mum");
   g_free (text);
 
@@ -911,7 +906,7 @@ test_sent_with_no_sender (Test *test,
   g_signal_connect (test->channel, "message-sent",
       G_CALLBACK (message_sent_cb), test);
 
-  tp_svc_channel_interface_messages_emit_message_sent (test->chan_service,
+  tp_svc_channel_type_text_emit_message_sent (test->chan_service,
       parts, 0, "this-is-a-token");
 
   g_main_loop_run (test->mainloop);
@@ -956,7 +951,7 @@ test_receive_muc_delivery (Test *test,
   tp_asv_set_string (header, "delivery-token", "delivery_token");
   tp_asv_set_uint32 (header, "delivery-status", TP_DELIVERY_STATUS_DELIVERED);
 
-  tp_svc_channel_interface_messages_emit_message_received (test->chan_service,
+  tp_svc_channel_type_text_emit_message_received (test->chan_service,
       parts);
 
   test->wait = 1;

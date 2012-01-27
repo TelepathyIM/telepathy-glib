@@ -300,8 +300,6 @@ tp_tests_text_channel_group_class_init (TpTestsTextChannelGroupClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_PROPERTIES, param_spec);
 
-  tp_text_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TpTestsTextChannelGroupClass, text_class));
   tp_group_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpTestsTextChannelGroupClass, group_class), add_member,
       NULL);

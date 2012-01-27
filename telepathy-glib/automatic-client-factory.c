@@ -133,19 +133,8 @@ create_channel_impl (TpSimpleClientFactory *self,
     }
   else if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_TEXT))
     {
-      const gchar * const * interfaces;
-
-      interfaces = tp_asv_get_strv (properties, TP_PROP_CHANNEL_INTERFACES);
-
-      /* Create a TpTextChannel only if the channel supports Messages */
-      if (tp_strv_contains (interfaces, TP_IFACE_CHANNEL_INTERFACE_MESSAGES))
-        {
-          return (TpChannel *) _tp_text_channel_new_with_factory (self, conn,
-              object_path, properties, error);
-        }
-
-      DEBUG ("channel %s doesn't implement Messages so we can't create "
-             "a TpTextChannel", object_path);
+      return (TpChannel *) _tp_text_channel_new_with_factory (self, conn,
+          object_path, properties, error);
     }
   else if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER))
     {

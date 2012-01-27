@@ -24,7 +24,7 @@
  * @short_description: a message in the Telepathy message interface, CM side
  *
  *  #TpCMMessage is used within connection managers to represent a
- *  message sent or received using the Messages interface.
+ *  message sent or received.
  *
  * Since: 0.13.9
  */

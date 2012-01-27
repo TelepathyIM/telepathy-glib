@@ -70,9 +70,7 @@ void tp_message_mixin_implement_sending (GObject *object,
 
 
 /* Initialization */
-void tp_message_mixin_text_iface_init (gpointer g_iface, gpointer iface_data);
-void tp_message_mixin_messages_iface_init (gpointer g_iface,
-    gpointer iface_data);
+void tp_message_mixin_iface_init (gpointer g_iface, gpointer iface_data);
 
 void tp_message_mixin_init (GObject *obj, gsize offset,
     TpBaseConnection *connection);

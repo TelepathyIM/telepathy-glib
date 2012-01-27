@@ -178,7 +178,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
     <xi:include href="Channel_Interface_Chat_State.xml"/>
     <xi:include href="Channel_Interface_HTML.xml"/>
-    <xi:include href="Channel_Interface_Messages.xml"/>
     <xi:include href="Channel_Interface_SMS.xml"/>
    </tp:section>
 

@@ -22,15 +22,9 @@ echo_message (TpTextChannel *channel,
   gchar *text;
   gchar *up;
   TpMessage *reply;
-  TpChannelTextMessageFlags flags;
   const gchar *comment = "";
 
-  text = tp_message_to_text (message, &flags);
-
-  if (flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT)
-    {
-      comment = " (and some non-text content we don't understand)";
-    }
+  text = tp_message_to_text (message);
 
   if (pending)
     g_print ("pending: '%s' %s\n", text, comment);

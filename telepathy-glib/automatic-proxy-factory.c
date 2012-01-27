@@ -37,8 +37,7 @@
  *   </listitem>
  *   <listitem>
  *     <para>a #TpTextChannel, if the channel is of type
- *     %TP_IFACE_CHANNEL_TYPE_TEXT and implements
- *     %TP_IFACE_CHANNEL_INTERFACE_MESSAGES;</para>
+ *     %TP_IFACE_CHANNEL_TYPE_TEXT;</para>
  *   </listitem>
  *   <listitem>
  *     <para>a #TpFileTransferChannel, if the channel is of type
@@ -141,17 +140,8 @@ tp_automatic_proxy_factory_create_channel_impl (
     }
   else if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_TEXT))
     {
-      /* Create a TpTextChannel only if the channel supports Messages */
-      const gchar * const * interfaces;
-
-      interfaces = tp_asv_get_strv (properties, TP_PROP_CHANNEL_INTERFACES);
-
-      if (tp_strv_contains (interfaces, TP_IFACE_CHANNEL_INTERFACE_MESSAGES))
-        return TP_CHANNEL (tp_text_channel_new (conn, path, properties,
+      return TP_CHANNEL (tp_text_channel_new (conn, path, properties,
               error));
-
-      DEBUG ("channel %s doesn't implement Messages so we can't create "
-          "a TpTextChannel", path);
     }
   else if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER))
     {

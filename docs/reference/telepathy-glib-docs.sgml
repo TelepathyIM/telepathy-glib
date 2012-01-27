@@ -170,7 +170,6 @@
     <title>Obsolete modules</title>
     <xi:include href="xml/channel-factory-iface.xml"/>
     <xi:include href="xml/debug-ansi.xml"/>
-    <xi:include href="xml/text-mixin.xml"/>
   </chapter>
 
   <xi:include href="xml/annotation-glossary.xml"><xi:fallback /></xi:include>

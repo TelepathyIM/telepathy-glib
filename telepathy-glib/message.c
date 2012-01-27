@@ -652,7 +652,6 @@ subtract_from_hash (gpointer key,
 /**
  * tp_message_to_text:
  * @message: a #TpMessage
- * @out_flags: (out) : if not %NULL, the #TpChannelTextMessageFlags of @message
  *
  * Concatene all the text parts contained in @message.
  *
@@ -662,11 +661,9 @@ subtract_from_hash (gpointer key,
  * Since: 0.13.9
  */
 gchar *
-tp_message_to_text (TpMessage *message,
-    TpChannelTextMessageFlags *out_flags)
+tp_message_to_text (TpMessage *message)
 {
   guint i;
-  GHashTable *header = g_ptr_array_index (message->parts, 0);
   /* Lazily created hash tables, used as a sets: keys are borrowed
    * "alternative" string values from @parts, value == key. */
   /* Alternative IDs for which we have already extracted an alternative */
@@ -677,21 +674,6 @@ tp_message_to_text (TpMessage *message,
    * Channel_Text_Message_Flag_Non_Text_Content must be set. */
   GHashTable *alternatives_needed = NULL;
   GString *buffer = g_string_new ("");
-  TpChannelTextMessageFlags flags = 0;
-
-  if (tp_asv_get_boolean (header, "scrollback", NULL))
-    flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_SCROLLBACK;
-
-  if (tp_asv_get_boolean (header, "rescued", NULL))
-    flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED;
-
-  /* If the message is on an extended interface or only contains headers,
-   * definitely set the "your client is too old" flag. */
-  if (message->parts->len <= 1 ||
-      g_hash_table_lookup (header, "interface") != NULL)
-    {
-      flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT;
-    }
 
   for (i = 1; i < message->parts->len; i++)
     {
@@ -739,26 +721,16 @@ tp_message_to_text (TpMessage *message,
             {
               DEBUG ("... using its text");
               g_string_append (buffer, g_value_get_string (value));
-
-              value = g_hash_table_lookup (part, "truncated");
-
-              if (value != NULL && (!G_VALUE_HOLDS_BOOLEAN (value) ||
-                  g_value_get_boolean (value)))
-                {
-                  DEBUG ("... appears to have been truncated");
-                  flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_TRUNCATED;
-                }
             }
           else
             {
               /* There was a text/plain part we couldn't parse:
                * that counts as "non-text content" I think */
-              DEBUG ("... didn't understand it, setting NON_TEXT_CONTENT");
-              flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT;
+              DEBUG ("... didn't understand it");
               tp_clear_pointer (&alternatives_needed, g_hash_table_unref);
             }
         }
-      else if ((flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT) == 0)
+      else
         {
           DEBUG ("... wondering whether this is NON_TEXT_CONTENT?");
 
@@ -768,7 +740,6 @@ tp_message_to_text (TpMessage *message,
                * isn't part of a multipart/alternative group
                * (attached image or something, perhaps) */
               DEBUG ("... ... yes, no possibility of a text alternative");
-              flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT;
               tp_clear_pointer (&alternatives_needed, g_hash_table_unref);
             }
           else if (alternatives_used != NULL &&
@@ -792,15 +763,11 @@ tp_message_to_text (TpMessage *message,
         }
     }
 
-  if ((flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT) == 0 &&
-      alternatives_needed != NULL)
+  if (alternatives_needed != NULL)
     {
       if (alternatives_used != NULL)
         g_hash_table_foreach (alternatives_used, subtract_from_hash,
             alternatives_needed);
-
-      if (g_hash_table_size (alternatives_needed) > 0)
-        flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT;
     }
 
   if (alternatives_needed != NULL)
@@ -808,11 +775,6 @@ tp_message_to_text (TpMessage *message,
 
   if (alternatives_used != NULL)
     g_hash_table_unref (alternatives_used);
-
-  if (out_flags != NULL)
-    {
-      *out_flags = flags;
-    }
 
   return g_string_free (buffer, FALSE);
 }

@@ -51,7 +51,6 @@ struct _TpCMMessage {
     /* for sending */
     DBusGMethodInvocation *outgoing_context;
     TpMessageSendingFlags outgoing_flags;
-    gboolean outgoing_text_api;
 };
 
 TpMessage * _tp_cm_message_new_from_parts (TpBaseConnection *conn,

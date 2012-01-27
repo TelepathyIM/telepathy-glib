@@ -27,9 +27,7 @@ G_DEFINE_TYPE_WITH_CODE (ExampleEcho2Channel,
     example_echo_2_channel,
     TP_TYPE_BASE_CHANNEL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT,
-      tp_message_mixin_text_iface_init)
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_MESSAGES,
-      tp_message_mixin_messages_iface_init)
+      tp_message_mixin_iface_init)
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_DESTROYABLE,
       destroyable_iface_init)
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_SMS, sms_iface_init)
@@ -38,7 +36,6 @@ G_DEFINE_TYPE_WITH_CODE (ExampleEcho2Channel,
 /* type definition stuff */
 
 static const char * example_echo_2_channel_interfaces[] = {
-    TP_IFACE_CHANNEL_INTERFACE_MESSAGES,
     TP_IFACE_CHANNEL_INTERFACE_DESTROYABLE,
     TP_IFACE_CHANNEL_INTERFACE_SMS,
     NULL };
@@ -245,10 +242,10 @@ example_echo_2_channel_fill_immutable_properties (TpBaseChannel *chan,
 
   tp_dbus_properties_mixin_fill_properties_hash (
       G_OBJECT (chan), properties,
-      TP_IFACE_CHANNEL_INTERFACE_MESSAGES, "MessagePartSupportFlags",
-      TP_IFACE_CHANNEL_INTERFACE_MESSAGES, "DeliveryReportingSupport",
-      TP_IFACE_CHANNEL_INTERFACE_MESSAGES, "SupportedContentTypes",
-      TP_IFACE_CHANNEL_INTERFACE_MESSAGES, "MessageTypes",
+      TP_IFACE_CHANNEL_TYPE_TEXT, "MessagePartSupportFlags",
+      TP_IFACE_CHANNEL_TYPE_TEXT, "DeliveryReportingSupport",
+      TP_IFACE_CHANNEL_TYPE_TEXT, "SupportedContentTypes",
+      TP_IFACE_CHANNEL_TYPE_TEXT, "MessageTypes",
       TP_IFACE_CHANNEL_INTERFACE_SMS, "Flash",
       NULL);
 }
@@ -398,7 +395,7 @@ sms_get_sms_length (TpSvcChannelInterfaceSMS *self,
           (GBoxedCopyFunc) tp_g_value_slice_dup);
     }
 
-  txt = tp_message_to_text (message, NULL);
+  txt = tp_message_to_text (message);
   len = strlen (txt);
 
   tp_svc_channel_interface_sms_return_from_get_sms_length (context, len,

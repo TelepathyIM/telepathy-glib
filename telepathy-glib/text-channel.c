@@ -387,29 +387,15 @@ tp_text_channel_constructed (GObject *obj)
       return;
     }
 
-  if (!tp_proxy_has_interface_by_id (self,
-        TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES))
-    {
-      GError error = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
-          "Channel does not implement the Messages interface" };
-
-      DEBUG ("Channel %s does not implement the Messages interface",
-          tp_proxy_get_object_path (self));
-
-      tp_proxy_invalidate (TP_PROXY (self), &error);
-      return;
-
-    }
-
   props = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
 
   self->priv->supported_content_types = (GStrv) tp_asv_get_strv (props,
-      TP_PROP_CHANNEL_INTERFACE_MESSAGES_SUPPORTED_CONTENT_TYPES);
+      TP_PROP_CHANNEL_TYPE_TEXT_SUPPORTED_CONTENT_TYPES);
   if (self->priv->supported_content_types == NULL)
     {
       const gchar * const plain[] = { "text/plain", NULL };
 
-      DEBUG ("Channel %s doesn't have Messages.SupportedContentTypes in its "
+      DEBUG ("Channel %s doesn't have SupportedContentTypes in its "
           "immutable properties", tp_proxy_get_object_path (self));
 
       /* spec mandates that plain text is always allowed. */
@@ -422,23 +408,23 @@ tp_text_channel_constructed (GObject *obj)
     }
 
   self->priv->message_part_support_flags = tp_asv_get_uint32 (props,
-      TP_PROP_CHANNEL_INTERFACE_MESSAGES_MESSAGE_PART_SUPPORT_FLAGS, &valid);
+      TP_PROP_CHANNEL_TYPE_TEXT_MESSAGE_PART_SUPPORT_FLAGS, &valid);
   if (!valid)
     {
-      DEBUG ("Channel %s doesn't have Messages.MessagePartSupportFlags in its "
+      DEBUG ("Channel %s doesn't have MessagePartSupportFlags in its "
           "immutable properties", tp_proxy_get_object_path (self));
     }
 
   self->priv->delivery_reporting_support = tp_asv_get_uint32 (props,
-      TP_PROP_CHANNEL_INTERFACE_MESSAGES_DELIVERY_REPORTING_SUPPORT, &valid);
+      TP_PROP_CHANNEL_TYPE_TEXT_DELIVERY_REPORTING_SUPPORT, &valid);
   if (!valid)
     {
-      DEBUG ("Channel %s doesn't have Messages.DeliveryReportingSupport in its "
+      DEBUG ("Channel %s doesn't have DeliveryReportingSupport in its "
           "immutable properties", tp_proxy_get_object_path (self));
     }
 
   self->priv->message_types = tp_asv_get_boxed (props,
-      TP_PROP_CHANNEL_INTERFACE_MESSAGES_MESSAGE_TYPES, DBUS_TYPE_G_UINT_ARRAY);
+      TP_PROP_CHANNEL_TYPE_TEXT_MESSAGE_TYPES, DBUS_TYPE_G_UINT_ARRAY);
   if (self->priv->message_types != NULL)
     {
       self->priv->message_types = g_boxed_copy (DBUS_TYPE_G_UINT_ARRAY,
@@ -449,11 +435,11 @@ tp_text_channel_constructed (GObject *obj)
       self->priv->message_types = g_array_new (FALSE, FALSE,
           sizeof (TpChannelTextMessageType));
 
-      DEBUG ("Channel %s doesn't have Messages.MessageTypes in its "
+      DEBUG ("Channel %s doesn't have MessageTypes in its "
           "immutable properties", tp_proxy_get_object_path (self));
     }
 
-  tp_cli_channel_interface_messages_connect_to_message_sent (chan,
+  tp_cli_channel_type_text_connect_to_message_sent (chan,
       message_sent_cb, NULL, NULL, NULL, &err);
   if (err != NULL)
     {
@@ -689,7 +675,7 @@ tp_text_channel_prepare_pending_messages_async (TpProxy *proxy,
   TpChannel *channel = (TpChannel *) self;
   GError *error = NULL;
 
-  tp_cli_channel_interface_messages_connect_to_message_received (channel,
+  tp_cli_channel_type_text_connect_to_message_received (channel,
       message_received_cb, proxy, NULL, G_OBJECT (proxy), &error);
   if (error != NULL)
     {
@@ -698,7 +684,7 @@ tp_text_channel_prepare_pending_messages_async (TpProxy *proxy,
       return;
     }
 
-  tp_cli_channel_interface_messages_connect_to_pending_messages_removed (
+  tp_cli_channel_type_text_connect_to_pending_messages_removed (
       channel, pending_messages_removed_cb, proxy, NULL, G_OBJECT (proxy),
       &error);
   if (error != NULL)
@@ -715,7 +701,7 @@ tp_text_channel_prepare_pending_messages_async (TpProxy *proxy,
 
 
   tp_cli_dbus_properties_call_get (proxy, -1,
-      TP_IFACE_CHANNEL_INTERFACE_MESSAGES, "PendingMessages",
+      TP_IFACE_CHANNEL_TYPE_TEXT, "PendingMessages",
       get_pending_messages_cb, NULL, NULL, G_OBJECT (proxy));
 }
 
@@ -857,7 +843,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    */
   param_spec = g_param_spec_boxed ("supported-content-types",
       "SupportedContentTypes",
-      "The Messages.SupportedContentTypes property of the channel",
+      "The SupportedContentTypes property of the channel",
       G_TYPE_STRV,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (gobject_class, PROP_SUPPORTED_CONTENT_TYPES,
@@ -873,7 +859,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    */
   param_spec = g_param_spec_uint ("message-part-support-flags",
       "MessagePartSupportFlags",
-      "The Messages.MessagePartSupportFlags property of the channel",
+      "The MessagePartSupportFlags property of the channel",
       0, G_MAXUINT32, 0,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (gobject_class,
@@ -889,7 +875,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    */
   param_spec = g_param_spec_uint ("delivery-reporting-support",
       "DeliveryReportingSupport",
-      "The Messages.DeliveryReportingSupport property of the channel",
+      "The DeliveryReportingSupport property of the channel",
       0, G_MAXUINT32, 0,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (gobject_class,
@@ -905,7 +891,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    */
   param_spec = g_param_spec_boxed ("message-types",
       "MessageTypes",
-      "The Messages.MessageTypes property of the channel",
+      "The MessageTypes property of the channel",
       DBUS_TYPE_G_UINT_ARRAY,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (gobject_class,
@@ -1252,7 +1238,7 @@ tp_text_channel_send_message_async (TpTextChannel *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_text_channel_send_message_async);
 
-  tp_cli_channel_interface_messages_call_send_message (TP_CHANNEL (self),
+  tp_cli_channel_type_text_call_send_message (TP_CHANNEL (self),
     -1, message->parts, flags, send_message_cb, result, NULL, NULL);
 }
 

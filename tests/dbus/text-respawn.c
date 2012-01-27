@@ -15,6 +15,8 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 
+#include <telepathy-glib/reentrants.h>
+
 #include "tests/lib/echo-chan.h"
 #include "tests/lib/echo-conn.h"
 #include "tests/lib/myassert.h"
@@ -22,10 +24,10 @@
 
 static guint received_count = 0;
 static guint last_received_id = 0;
-static guint last_received_time = 0;
+static gint64 last_received_time = 0;
 static guint last_received_sender = 0;
 static guint last_received_type = 0;
-static guint last_received_flags = 0;
+static gboolean last_received_rescued = FALSE;
 static gchar *last_received_text = NULL;
 
 static guint sent_count = 0;
@@ -34,13 +36,25 @@ static gchar *last_sent_text = NULL;
 
 static void
 on_sent (TpChannel *chan,
-         guint timestamp,
-         guint type,
-         const gchar *text,
-         gpointer data,
-         GObject *object)
+    const GPtrArray *message,
+    guint flags,
+    const gchar *message_token,
+    gpointer user_data,
+    GObject *weak_object)
 {
-  g_message ("%p: Sent: time %u, type %u, text '%s'",
+  GHashTable *header, *body;
+  gint64 timestamp;
+  guint type;
+  const gchar *text;
+
+  header = g_ptr_array_index (message, 0);
+  timestamp = tp_asv_get_int64 (header, "message-sent", NULL);
+  type = tp_asv_get_uint32 (header, "message-type", NULL);
+
+  body = g_ptr_array_index (message, 1);
+  text = tp_asv_get_string (body, "content");
+
+  g_message ("%p: Sent: time %" G_GINT64_FORMAT ", type %u, text '%s'",
       chan, timestamp, type, text);
 
   sent_count++;
@@ -51,29 +65,65 @@ on_sent (TpChannel *chan,
 
 static void
 on_received (TpChannel *chan,
-             guint id,
-             guint timestamp,
-             guint sender,
-             guint type,
-             guint flags,
-             const gchar *text,
-             gpointer data,
-             GObject *object)
+    const GPtrArray *message,
+    gpointer user_data,
+    GObject *weak_object)
 {
-  TpHandleRepoIface *contact_repo = data;
+  TpHandleRepoIface *contact_repo = user_data;
 
-  g_message ("%p: Received #%u: time %u, sender %u '%s', type %u, flags %u, "
+  GHashTable *header, *body;
+  guint id;
+  gint64 timestamp;
+  TpHandle sender;
+  guint type;
+  gboolean rescued;
+  const gchar *text;
+
+  header = g_ptr_array_index (message, 0);
+  id = tp_asv_get_uint32 (header, "message-pending-id", NULL);
+  timestamp = tp_asv_get_int64 (header, "message-sent", NULL);
+  sender = tp_asv_get_uint32 (header, "message-sender", NULL);
+  type = tp_asv_get_uint32 (header, "message-type", NULL);
+  rescued = tp_asv_get_boolean (header, "rescued", NULL);
+
+  body = g_ptr_array_index (message, 1);
+  text = tp_asv_get_string (body, "content");
+
+  g_message ("%p: Received #%u: time %" G_GINT64_FORMAT ", sender %u '%s', type %u, rescued %s, "
       "text '%s'", chan, id, timestamp, sender,
-      tp_handle_inspect (contact_repo, sender), type, flags, text);
+      tp_handle_inspect (contact_repo, sender), type,
+      rescued ? "yes" : "no", text);
 
   received_count++;
   last_received_id = id;
   last_received_time = timestamp;
   last_received_sender = sender;
   last_received_type = type;
-  last_received_flags = flags;
+  last_received_rescued = rescued;
   g_free (last_received_text);
   last_received_text = g_strdup (text);
+}
+
+static GPtrArray *
+build_message (TpChannelTextMessageType type,
+    const gchar *content)
+{
+  GPtrArray *out;
+  GHashTable *header, *body;
+
+  header = tp_asv_new (
+      "message-type", G_TYPE_UINT, type,
+      NULL);
+
+  body = tp_asv_new (
+      "content", G_TYPE_STRING, content,
+      NULL);
+
+  out = g_ptr_array_new_full (2, (GDestroyNotify) g_hash_table_unref);
+  g_ptr_array_add (out, header);
+  g_ptr_array_add (out, body);
+
+  return out;
 }
 
 int
@@ -92,6 +142,7 @@ main (int argc,
   gchar *conn_path;
   gchar *chan_path;
   TpHandle handle;
+  GPtrArray *message;
 
   tp_tests_abort_after (10);
   g_type_init ();
@@ -144,16 +195,18 @@ main (int argc,
   tp_channel_run_until_ready (chan, &error, NULL);
   g_assert_no_error (error);
 
-  MYASSERT (tp_cli_channel_type_text_connect_to_received (chan, on_received,
+  MYASSERT (tp_cli_channel_type_text_connect_to_message_received (chan, on_received,
       g_object_ref (contact_repo), g_object_unref, NULL, NULL) != NULL, "");
-  MYASSERT (tp_cli_channel_type_text_connect_to_sent (chan, on_sent,
+  MYASSERT (tp_cli_channel_type_text_connect_to_message_sent (chan, on_sent,
       NULL, NULL, NULL, NULL) != NULL, "");
 
   sent_count = 0;
   received_count = 0;
-  tp_cli_channel_type_text_run_send (chan, -1,
-      TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, "Hello, world!",
-      &error, NULL);
+  message = build_message (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      "Hello, world!");
+  tp_cli_channel_type_text_run_send_message (chan, -1,
+      message, 0, NULL, &error, NULL);
+  g_ptr_array_unref (message);
   g_assert_no_error (error);
 
   tp_tests_proxy_run_until_dbus_queue_processed (conn);
@@ -165,7 +218,8 @@ main (int argc,
       "'%s' != '%s'", last_sent_text, "Hello, world!");
   MYASSERT (last_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       ": %u != NORMAL", last_received_type);
-  MYASSERT (last_received_flags == 0, ": %u != 0", last_received_flags);
+  MYASSERT (last_received_rescued == FALSE, ": %s != FALSE",
+      last_received_rescued ? "TRUE" : "FALSE");
   MYASSERT (last_received_sender == handle,
       ": %u != %u", last_received_sender, handle);
   MYASSERT (!tp_strdiff (last_received_text, "You said: Hello, world!"),
@@ -204,30 +258,40 @@ main (int argc,
   g_print ("\n\n==== Listing messages ====\n");
 
     {
-      GPtrArray *messages;
-      GValueArray *structure;
+      GValue *value;
+      GPtrArray *messages, *parts;
+      GHashTable *header;
+      GHashTable *body;
 
-      tp_cli_channel_type_text_run_list_pending_messages (chan, -1,
-          FALSE, &messages, &error, NULL);
+      tp_cli_dbus_properties_run_get (chan, -1,
+          TP_IFACE_CHANNEL_TYPE_TEXT, "PendingMessages", &value,
+          &error, NULL);
       g_assert_no_error (error);
 
+      messages = g_value_get_boxed (value);
       g_assert_cmpuint (messages->len, ==, 1);
-      structure = g_ptr_array_index (messages, 0);
-      g_assert_cmpuint (g_value_get_uint (structure->values + 0), ==,
+
+      parts = g_ptr_array_index (messages, 0);
+      g_assert_cmpuint (parts->len, ==, 2);
+
+      header = g_ptr_array_index (parts, 0);
+      body = g_ptr_array_index (parts, 1);
+
+      g_assert_cmpuint (tp_asv_get_uint32 (header, "pending-message-id", NULL), ==,
           last_received_id);
-      g_assert_cmpuint (g_value_get_uint (structure->values + 1), ==,
+      g_assert_cmpuint (tp_asv_get_int64 (header, "message-sent", NULL), ==,
           last_received_time);
-      g_assert_cmpuint (g_value_get_uint (structure->values + 2), ==,
+      g_assert_cmpuint (tp_asv_get_uint32 (header, "message-sender", NULL), ==,
           handle);
-      g_assert_cmpuint (g_value_get_uint (structure->values + 3), ==,
+      g_assert_cmpuint (tp_asv_get_uint32 (header, "message-type", NULL), ==,
           TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL);
-      g_assert_cmpuint (g_value_get_uint (structure->values + 4), ==,
-          TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED);
-      g_assert_cmpstr (g_value_get_string (structure->values + 5), ==,
+      g_assert_cmpuint (tp_asv_get_boolean (header, "rescued", NULL), ==,
+          TRUE);
+      g_assert_cmpstr (tp_asv_get_string (body, "content"), ==,
           "You said: Hello, world!");
 
-      g_print ("Freeing\n");
-      g_boxed_free (TP_ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST, messages);
+      g_value_unset (value);
+      g_free (value);
     }
 
   g_print ("\n\n==== Destroying channel ====\n");

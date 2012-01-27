@@ -69,8 +69,7 @@ void tp_message_set_bytes (TpMessage *self, guint part, const gchar *key,
 void tp_message_set (TpMessage *self, guint part, const gchar *key,
     const GValue *source);
 
-gchar * tp_message_to_text (TpMessage *message,
-    TpChannelTextMessageFlags *out_flags) G_GNUC_WARN_UNUSED_RESULT;
+gchar * tp_message_to_text (TpMessage *message) G_GNUC_WARN_UNUSED_RESULT;
 
 #ifndef TP_DISABLE_DEPRECATED
 /* Takes a TpCMMessage */

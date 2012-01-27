@@ -21,14 +21,13 @@
 /**
  * SECTION:message-mixin
  * @title: TpMessageMixin
- * @short_description: a mixin implementation of the text channel type and the
- *  Messages interface
- * @see_also: #TpSvcChannelTypeText, #TpSvcChannelInterfaceMessages,
+ * @short_description: a mixin implementation of the text channel type
+ * @see_also: #TpSvcChannelTypeText
  *  <link linkend="telepathy-glib-dbus-properties-mixin">TpDBusPropertiesMixin</link>
  *
  * This mixin can be added to a channel GObject class to implement the
- * text channel type (with the Messages interface) in a general way.
- * The channel class should also have a #TpDBusPropertiesMixinClass.
+ * text channel type in a general way.  The channel class should also
+ * have a #TpDBusPropertiesMixinClass.
  *
  * To use the messages mixin, include a #TpMessageMixin somewhere in your
  * instance structure, and call tp_message_mixin_init() from your
@@ -40,9 +39,7 @@
  *
  * <informalexample><programlisting>
  *  G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT,
- *    tp_message_mixin_text_iface_init);
- *  G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_MESSAGES,
- *    tp_message_mixin_messages_iface_init);
+ *    tp_message_mixin_iface_init);
  * </programlisting></informalexample>
  *
  * To support sending messages, you must call
@@ -188,46 +185,6 @@ pending_item_id_equals_data (gconstpointer item,
    */
   return (self->incoming_id != id);
 }
-
-static gchar *
-parts_to_text (TpMessage *msg,
-               TpChannelTextMessageFlags *out_flags,
-               TpChannelTextMessageType *out_type,
-               TpHandle *out_sender,
-               guint *out_timestamp)
-{
-  GHashTable *header = g_ptr_array_index (msg->parts, 0);
-
-  if (out_type != NULL)
-    {
-      /* The fallback behaviour of tp_asv_get_uint32 is OK here, because
-       * message type NORMAL is zero */
-      *out_type = tp_asv_get_uint32 (header, "message-type", NULL);
-    }
-
-  if (out_sender != NULL)
-    {
-      /* The fallback behaviour of tp_asv_get_uint32 is OK here - if there's
-       * no good sender, then 0 is the least bad */
-      *out_sender = tp_asv_get_uint32 (header, "message-sender", NULL);
-    }
-
-  if (out_timestamp != NULL)
-    {
-      /* The fallback behaviour of tp_asv_get_uint32 is OK here - we assume
-       * that we won't legitimately receive messages from 1970-01-01 :-) */
-      *out_timestamp = tp_asv_get_uint32 (header, "message-sent", NULL);
-
-      if (*out_timestamp == 0)
-        *out_timestamp = tp_asv_get_uint32 (header, "message-received", NULL);
-
-      if (*out_timestamp == 0)
-        *out_timestamp = time (NULL);
-    }
-
-  return tp_message_to_text (msg, out_flags);
-}
-
 
 /**
  * TpMessageMixinSendImpl:
@@ -430,7 +387,7 @@ tp_message_mixin_acknowledge_pending_messages_async (
       g_ptr_array_add (links, link_);
     }
 
-  tp_svc_channel_interface_messages_emit_pending_messages_removed (iface,
+  tp_svc_channel_type_text_emit_pending_messages_removed (iface,
       ids);
 
   for (i = 0; i < links->len; i++)
@@ -451,254 +408,14 @@ tp_message_mixin_acknowledge_pending_messages_async (
 }
 
 static void
-tp_message_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
-                                              gboolean clear,
-                                              DBusGMethodInvocation *context)
-{
-  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (iface);
-  GType pending_type = TP_STRUCT_TYPE_PENDING_TEXT_MESSAGE;
-  guint count;
-  GPtrArray *messages;
-  GList *cur;
-  guint i;
-
-  count = g_queue_get_length (mixin->priv->pending);
-  messages = g_ptr_array_sized_new (count);
-
-  for (cur = g_queue_peek_head_link (mixin->priv->pending);
-       cur != NULL;
-       cur = cur->next)
-    {
-      TpMessage *msg = cur->data;
-      TpCMMessage *cm_msg = cur->data;
-      GValue val = { 0, };
-      gchar *text;
-      TpChannelTextMessageFlags flags;
-      TpChannelTextMessageType type;
-      TpHandle sender;
-      guint timestamp;
-
-      text = parts_to_text (msg, &flags, &type, &sender, &timestamp);
-
-      g_value_init (&val, pending_type);
-      g_value_take_boxed (&val,
-          dbus_g_type_specialized_construct (pending_type));
-      dbus_g_type_struct_set (&val,
-          0, cm_msg->incoming_id,
-          1, timestamp,
-          2, sender,
-          3, type,
-          4, flags,
-          5, text,
-          G_MAXUINT);
-
-      g_free (text);
-
-      g_ptr_array_add (messages, g_value_get_boxed (&val));
-    }
-
-  if (clear)
-    {
-      GArray *ids;
-
-      DEBUG ("WARNING: ListPendingMessages(clear=TRUE) is deprecated");
-      cur = g_queue_peek_head_link (mixin->priv->pending);
-
-      ids = g_array_sized_new (FALSE, FALSE, sizeof (guint), count);
-
-      while (cur != NULL)
-        {
-          TpMessage *msg = cur->data;
-          TpCMMessage *cm_msg = cur->data;
-          GList *next = cur->next;
-
-          i = cm_msg->incoming_id;
-          g_array_append_val (ids, i);
-          g_queue_delete_link (mixin->priv->pending, cur);
-          tp_message_destroy (msg);
-
-          cur = next;
-        }
-
-      tp_svc_channel_interface_messages_emit_pending_messages_removed (iface,
-          ids);
-      g_array_unref (ids);
-    }
-
-  tp_svc_channel_type_text_return_from_list_pending_messages (context,
-      messages);
-
-  for (i = 0; i < messages->len; i++)
-    g_value_array_free (g_ptr_array_index (messages, i));
-
-  g_ptr_array_unref (messages);
-}
-
-static void
-tp_message_mixin_get_pending_message_content_async (
-    TpSvcChannelInterfaceMessages *iface,
-    guint message_id,
-    const GArray *part_numbers,
-    DBusGMethodInvocation *context)
-{
-  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (iface);
-  GList *node;
-  TpMessage *item;
-  GHashTable *ret;
-  guint i;
-
-  node = g_queue_find_custom (mixin->priv->pending,
-      GUINT_TO_POINTER (message_id), pending_item_id_equals_data);
-
-  if (node == NULL)
-    {
-      GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "invalid message id %u", message_id);
-
-      DEBUG ("%s", error->message);
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-      return;
-    }
-
-  item = node->data;
-
-  for (i = 0; i < part_numbers->len; i++)
-    {
-      guint part = g_array_index (part_numbers, guint, i);
-
-      if (part == 0 || part >= item->parts->len)
-        {
-          GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-              "part number %u out of range", part);
-
-          DEBUG ("%s", error->message);
-          dbus_g_method_return_error (context, error);
-          g_error_free (error);
-          return;
-        }
-    }
-
-  /* no free callbacks set - we borrow the content from the message */
-  ret = g_hash_table_new (g_direct_hash, g_direct_equal);
-
-  /* FIXME: later, need a way to support streaming content */
-
-  for (i = 0; i < part_numbers->len; i++)
-    {
-      guint part = g_array_index (part_numbers, guint, i);
-      GHashTable *part_data;
-      GValue *value;
-
-      g_assert (part != 0 && part < item->parts->len);
-      part_data = g_ptr_array_index (item->parts, part);
-
-      /* skip parts with no type (reserved) */
-      if (tp_asv_get_string (part_data, "content-type") == NULL &&
-          /* Renamed to "content-type" in spec 0.17.14 */
-          tp_asv_get_string (part_data, "type") == NULL)
-        continue;
-
-      value = g_hash_table_lookup (part_data, "content");
-
-      /* skip parts with no content */
-      if (value == NULL)
-        continue;
-
-      g_hash_table_insert (ret, GUINT_TO_POINTER (part), value);
-    }
-
-  tp_svc_channel_interface_messages_return_from_get_pending_message_content (
-      context, ret);
-
-  g_hash_table_unref (ret);
-}
-
-static void
-tp_message_mixin_get_message_types_async (TpSvcChannelTypeText *iface,
-                                          DBusGMethodInvocation *context)
-{
-  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (iface);
-
-  tp_svc_channel_type_text_return_from_get_message_types (context,
-      mixin->priv->msg_types);
-}
-
-
-static void
 queue_pending (GObject *object, TpMessage *pending)
 {
   TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
-  TpChannelTextMessageFlags flags;
-  TpChannelTextMessageType type;
-  TpHandle sender;
-  guint timestamp;
-  gchar *text;
-  const GHashTable *header;
-  TpDeliveryStatus delivery_status;
-  TpCMMessage *cm_message = (TpCMMessage *) pending;
 
   g_queue_push_tail (mixin->priv->pending, pending);
 
-  text = parts_to_text (pending, &flags, &type, &sender, &timestamp);
-  tp_svc_channel_type_text_emit_received (object, cm_message->incoming_id,
-      timestamp, sender, type, flags, text);
-  g_free (text);
-
-  tp_svc_channel_interface_messages_emit_message_received (object,
+  tp_svc_channel_type_text_emit_message_received (object,
       pending->parts);
-
-
-  /* Check if it's a failed delivery report; if so, emit SendError too. */
-  header = tp_message_peek (pending, 0);
-  delivery_status = tp_asv_get_uint32 (header, "delivery-status", NULL);
-
-  if (delivery_status == TP_DELIVERY_STATUS_TEMPORARILY_FAILED ||
-      delivery_status == TP_DELIVERY_STATUS_PERMANENTLY_FAILED)
-    {
-      /* Fallback behaviour here is okay: 0 is Send_Error_Unknown */
-      TpChannelTextSendError send_error = tp_asv_get_uint32 (header,
-          "delivery-error", NULL);
-      GPtrArray *echo = tp_asv_get_boxed (header, "delivery-echo",
-          TP_ARRAY_TYPE_MESSAGE_PART_LIST);
-
-      type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
-
-      text = NULL;
-      timestamp = 0;
-
-      if (echo != NULL && echo->len < 1)
-        {
-          WARNING ("delivery-echo should contain at least 1 part");
-        }
-      else if (echo != NULL)
-        {
-          const GHashTable *echo_header = g_ptr_array_index (echo, 0);
-          TpMessage *echo_msg;
-
-          echo_msg = _tp_cm_message_new_from_parts (mixin->priv->connection,
-              echo);
-
-          /* The specification says that the timestamp in SendError should be the
-           * time at which the original message was sent.  parts_to_text falls
-           * back to setting timestamp to time (NULL) if it can't find out when
-           * the message was sent, but we want to use 0 in that case.  Hence,
-           * we look up timestamp here rather than delegating to parts_to_text.
-           * The fallback behaviour of tp_asv_get_uint32 is correct: we want
-           * timestamp to be 0 if we can't determine when the original message
-           * was sent.
-           */
-          text = parts_to_text (echo_msg, NULL, &type, NULL, NULL);
-          timestamp = tp_asv_get_uint32 (echo_header, "message-sent", NULL);
-
-          g_object_unref (echo_msg);
-        }
-
-      tp_svc_channel_type_text_emit_send_error (object, send_error, timestamp,
-          type, text != NULL ? text : "");
-
-      g_free (text);
-    }
 }
 
 
@@ -844,8 +561,7 @@ struct _TpMessageMixinOutgoingMessagePrivate {
 
 /**
  * tp_message_mixin_sent:
- * @object: An object implementing the Text and Messages interfaces with this
- *  mixin
+ * @object: An object implementing the Text interface with this mixin
  * @message: The outgoing message
  * @flags: The flags used when sending the message, which may be a subset of
  *  those passed to the #TpMessageMixinSendImpl implementation if not all are
@@ -874,7 +590,6 @@ tp_message_mixin_sent (GObject *object,
 {
   TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
   TpCMMessage *cm_msg = (TpCMMessage *) message;
-  time_t now = time (NULL);
 
   g_return_if_fail (mixin != NULL);
   g_return_if_fail (G_IS_OBJECT (object));
@@ -893,8 +608,6 @@ tp_message_mixin_sent (GObject *object,
     }
   else
     {
-      TpChannelTextMessageType message_type;
-      gchar *string;
       GHashTable *header = g_ptr_array_index (message->parts, 0);
       TpHandle self_handle = 0;
 
@@ -914,67 +627,21 @@ tp_message_mixin_sent (GObject *object,
 
       /* emit Sent and MessageSent */
 
-      tp_svc_channel_interface_messages_emit_message_sent (object,
+      tp_svc_channel_type_text_emit_message_sent (object,
           message->parts, flags, token);
-      string = parts_to_text (message, NULL, &message_type, NULL, NULL);
-      tp_svc_channel_type_text_emit_sent (object, now, message_type,
-          string);
-      g_free (string);
 
       /* return successfully */
 
-      if (cm_msg->outgoing_text_api)
-        {
-          tp_svc_channel_type_text_return_from_send (
-              cm_msg->outgoing_context);
-        }
-      else
-        {
-          tp_svc_channel_interface_messages_return_from_send_message (
-              cm_msg->outgoing_context, token);
-        }
+      tp_svc_channel_type_text_return_from_send_message (
+          cm_msg->outgoing_context, token);
     }
 
   cm_msg->outgoing_context = NULL;
   tp_message_destroy (message);
 }
 
-
 static void
-tp_message_mixin_send_async (TpSvcChannelTypeText *iface,
-                             guint message_type,
-                             const gchar *text,
-                             DBusGMethodInvocation *context)
-{
-  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (iface);
-  TpMessage *message;
-  TpCMMessage *cm_msg;
-
-  if (mixin->priv->send_message == NULL)
-    {
-      tp_dbus_g_method_return_not_implemented (context);
-      return;
-    }
-
-  message = tp_cm_message_new (mixin->priv->connection, 2);
-  cm_msg = (TpCMMessage *) message;
-
-  if (message_type != 0)
-    tp_message_set_uint32 (message, 0, "message-type", message_type);
-
-  tp_message_set_string (message, 1, "content-type", "text/plain");
-  tp_message_set_string (message, 1, "type", "text/plain"); /* Removed in 0.17.14 */
-  tp_message_set_string (message, 1, "content", text);
-
-  cm_msg->outgoing_context = context;
-  cm_msg->outgoing_text_api = TRUE;
-
-  mixin->priv->send_message ((GObject *) iface, message, 0);
-}
-
-
-static void
-tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessages *iface,
+tp_message_mixin_send_message_async (TpSvcChannelTypeText *iface,
                                      const GPtrArray *parts,
                                      guint flags,
                                      DBusGMethodInvocation *context)
@@ -1075,7 +742,6 @@ tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessages *iface,
     }
 
   cm_msg->outgoing_context = context;
-  cm_msg->outgoing_text_api = FALSE;
 
   mixin->priv->send_message ((GObject *) iface, message, flags);
 }
@@ -1086,7 +752,7 @@ tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessages *iface,
  * @cls: The class of an object with this mixin
  *
  * Set up a #TpDBusPropertiesMixinClass to use this mixin's implementation
- * of the Messages interface's properties.
+ * of the text channel interface's properties.
  *
  * This uses tp_message_mixin_get_dbus_property() as the property getter
  * and sets a list of the supported properties for it.
@@ -1104,7 +770,7 @@ tp_message_mixin_init_dbus_properties (GObjectClass *cls)
   };
 
   tp_dbus_properties_mixin_implement_interface (cls,
-      TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES,
+      TP_IFACE_QUARK_CHANNEL_TYPE_TEXT,
       tp_message_mixin_get_dbus_property, NULL, props);
 }
 
@@ -1112,16 +778,16 @@ tp_message_mixin_init_dbus_properties (GObjectClass *cls)
 /**
  * tp_message_mixin_get_dbus_property:
  * @object: An object with this mixin
- * @interface: Must be %TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES
+ * @interface: Must be %TP_IFACE_QUARK_CHANNEL_TYPE_TEXT
  * @name: A quark representing the D-Bus property name, either
  *  "PendingMessages", "SupportedContentTypes" or "MessagePartSupportFlags"
  * @value: A GValue pre-initialized to the right type, into which to put
  *  the value
  * @unused: Ignored
  *
- * An implementation of #TpDBusPropertiesMixinGetter which assumes that
- * the @object has the messages mixin. It can only be used for the Messages
- * interface.
+ * An implementation of #TpDBusPropertiesMixinGetter which assumes
+ * that the @object has the messages mixin. It can only be used for
+ * the Text channel type interface.
  */
 void
 tp_message_mixin_get_dbus_property (GObject *object,
@@ -1152,7 +818,7 @@ tp_message_mixin_get_dbus_property (GObject *object,
 
   mixin = TP_MESSAGE_MIXIN (object);
 
-  g_return_if_fail (interface == TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES);
+  g_return_if_fail (interface == TP_IFACE_QUARK_CHANNEL_TYPE_TEXT);
   g_return_if_fail (object != NULL);
   g_return_if_fail (name != 0);
   g_return_if_fail (value != NULL);
@@ -1197,7 +863,7 @@ tp_message_mixin_get_dbus_property (GObject *object,
 
 
 /**
- * tp_message_mixin_text_iface_init:
+ * tp_message_mixin_iface_init:
  * @g_iface: A pointer to the #TpSvcChannelTypeTextClass in an object class
  * @iface_data: Ignored
  *
@@ -1207,40 +873,14 @@ tp_message_mixin_get_dbus_property (GObject *object,
  * Since: 0.7.21
  */
 void
-tp_message_mixin_text_iface_init (gpointer g_iface,
-                                  gpointer iface_data)
+tp_message_mixin_iface_init (gpointer g_iface,
+                             gpointer iface_data)
 {
   TpSvcChannelTypeTextClass *klass = g_iface;
 
 #define IMPLEMENT(x) tp_svc_channel_type_text_implement_##x (klass,\
     tp_message_mixin_##x##_async)
   IMPLEMENT (acknowledge_pending_messages);
-  IMPLEMENT (get_message_types);
-  IMPLEMENT (list_pending_messages);
-  IMPLEMENT (send);
-#undef IMPLEMENT
-}
-
-/**
- * tp_message_mixin_messages_iface_init:
- * @g_iface: A pointer to the #TpSvcChannelInterfaceMessagesClass in an object
- *  class
- * @iface_data: Ignored
- *
- * Fill in this mixin's Messages method implementations in the given interface
- * vtable.
- *
- * Since: 0.7.21
- */
-void
-tp_message_mixin_messages_iface_init (gpointer g_iface,
-                                      gpointer iface_data)
-{
-  TpSvcChannelInterfaceMessagesClass *klass = g_iface;
-
-#define IMPLEMENT(x) tp_svc_channel_interface_messages_implement_##x (\
-    klass, tp_message_mixin_##x##_async)
   IMPLEMENT (send_message);
-  IMPLEMENT (get_pending_message_content);
 #undef IMPLEMENT
 }

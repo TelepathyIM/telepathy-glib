@@ -19,9 +19,7 @@ G_DEFINE_TYPE_WITH_CODE (ExampleCSHRoomChannel,
     example_csh_room_channel,
     TP_TYPE_BASE_CHANNEL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT,
-      tp_message_mixin_text_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_MESSAGES,
-      tp_message_mixin_messages_iface_init);
+      tp_message_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP,
       tp_group_mixin_iface_init);)
 
@@ -41,7 +39,6 @@ struct _ExampleCSHRoomChannelPrivate
 
 static const char * example_csh_room_channel_interfaces[] = {
     TP_IFACE_CHANNEL_INTERFACE_GROUP,
-    TP_IFACE_CHANNEL_INTERFACE_MESSAGES,
     NULL
 };
 
