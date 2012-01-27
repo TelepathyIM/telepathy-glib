@@ -42,10 +42,6 @@ tp_handle_type_to_string (TpHandleType type)
       return "contact";
     case TP_HANDLE_TYPE_ROOM:
       return "room";
-    case TP_HANDLE_TYPE_LIST:
-      return "contact list";
-    case TP_HANDLE_TYPE_GROUP:
-      return "group";
     }
 
   return "(invalid handle type)";

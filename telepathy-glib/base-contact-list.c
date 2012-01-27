@@ -19,7 +19,6 @@
 
 #include <config.h>
 #include <telepathy-glib/base-contact-list.h>
-#include <telepathy-glib/base-contact-list-internal.h>
 
 #include <dbus/dbus-glib-lowlevel.h>
 
@@ -30,7 +29,6 @@
 #include <telepathy-glib/interfaces.h>
 
 #include <telepathy-glib/base-connection-internal.h>
-#include <telepathy-glib/contact-list-channel-internal.h>
 #include <telepathy-glib/handle-repo-internal.h>
 
 /**
@@ -246,6 +244,9 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/util-internal.h"
 
+#define BASE_CONTACT_LIST \
+  g_quark_from_static_string ("tp-base-contact-list-conn")
+
 struct _TpBaseContactListPrivate
 {
   TpBaseConnection *conn;
@@ -255,21 +256,8 @@ struct _TpBaseContactListPrivate
   /* NULL unless state = FAILURE */
   GError *failure /* initially NULL */;
 
-  /* values referenced; 0'th remains NULL */
-  TpBaseContactListChannel *lists[NUM_TP_LIST_HANDLES];
-
-  TpHandleRepoIface *group_repo;
-  /* handle borrowed from channel => referenced TpContactGroupChannel */
+  /* owned gchar* => owned TpHandleSet */
   GHashTable *groups;
-
-  /* borrowed TpExportableChannel => GSList of gpointer (request tokens) that
-   * will be satisfied by that channel when the contact list has been
-   * downloaded. The requests are in reverse chronological order; the list
-   * can also contain NULL.
-   *
-   * If a channel appears in the keys of this map, that means it hasn't been
-   * announced via NewChannels yet. */
-  GHashTable *channel_requests;
 
   /* DBusGMethodInvocation *s for calls to RequestBlockedContacts which are
    * waiting for the contact list to (fail to) be downloaded.
@@ -291,13 +279,9 @@ struct _TpBaseContactListClassPrivate
   char dummy;
 };
 
-static void channel_manager_iface_init (TpChannelManagerIface *iface);
-
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseContactList,
     tp_base_contact_list,
     G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_MANAGER,
-      channel_manager_iface_init);
     g_type_add_class_private (g_define_type_id, sizeof (
         TpBaseContactListClassPrivate)))
 
@@ -510,46 +494,9 @@ tp_base_contact_list_init (TpBaseContactList *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_BASE_CONTACT_LIST,
       TpBaseContactListPrivate);
-  self->priv->groups = g_hash_table_new_full (NULL, NULL, NULL,
-      g_object_unref);
-  self->priv->channel_requests = g_hash_table_new (NULL, NULL);
   g_queue_init (&self->priv->blocked_contact_requests);
-}
-
-static void
-tp_base_contact_list_fail_channel_requests (TpBaseContactList *self,
-    GQuark domain,
-    gint code,
-    const gchar *message)
-{
-  if (self->priv->channel_requests != NULL)
-    {
-      GHashTable *tmp = self->priv->channel_requests;
-      GHashTableIter iter;
-      gpointer value;
-
-      self->priv->channel_requests = NULL;
-      g_hash_table_iter_init (&iter, tmp);
-
-      while (g_hash_table_iter_next (&iter, NULL, &value))
-        {
-          GSList *requests = value;
-          GSList *slist;
-
-          requests = g_slist_reverse (requests);
-
-          for (slist = requests; slist != NULL; slist = slist->next)
-            {
-              tp_channel_manager_emit_request_failed (self,
-                  slist->data, domain, code, message);
-            }
-
-          g_slist_free (requests);
-          g_hash_table_iter_steal (&iter);
-        }
-
-      g_hash_table_unref (tmp);
-    }
+  self->priv->groups = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, (GDestroyNotify) tp_handle_set_destroy);
 }
 
 static void
@@ -569,27 +516,10 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
 {
   GError error = { TP_ERRORS, TP_ERROR_DISCONNECTED,
       "Disconnected before blocked contacts were retrieved" };
-  guint i;
 
-  tp_base_contact_list_fail_channel_requests (self, TP_ERRORS,
-      TP_ERROR_DISCONNECTED,
-      "Unable to complete channel request due to disconnection");
   tp_base_contact_list_fail_blocked_contact_requests (self, &error);
 
-  for (i = 0; i < NUM_TP_LIST_HANDLES; i++)
-    tp_clear_object (self->priv->lists + i);
-
-  tp_clear_pointer (&self->priv->groups, g_hash_table_unref);
-  tp_clear_object (&self->priv->contact_repo);
-
-  if (self->priv->group_repo != NULL)
-    {
-      /* the normalization data is a borrowed reference to @self, which must
-       * be released when @self is no longer usable */
-      _tp_dynamic_handle_repo_set_normalization_data (self->priv->group_repo,
-          NULL, NULL);
-      tp_clear_object (&self->priv->group_repo);
-    }
+  g_clear_object (&self->priv->contact_repo);
 
   if (self->priv->conn != NULL)
     {
@@ -615,11 +545,7 @@ tp_base_contact_list_dispose (GObject *object)
     G_OBJECT_CLASS (tp_base_contact_list_parent_class)->dispose;
 
   tp_base_contact_list_free_contents (self);
-  g_assert (self->priv->groups == NULL);
   g_assert (self->priv->contact_repo == NULL);
-  g_assert (self->priv->group_repo == NULL);
-  g_assert (self->priv->lists[TP_LIST_HANDLE_SUBSCRIBE] == NULL);
-  g_assert (self->priv->channel_requests == NULL);
 
   if (dispose != NULL)
     dispose (object);
@@ -658,6 +584,7 @@ tp_base_contact_list_set_property (GObject *object,
     case PROP_CONNECTION:
       g_assert (self->priv->conn == NULL);    /* construct-only */
       self->priv->conn = g_value_dup_object (value);
+      g_object_set_qdata ((GObject *) self->priv->conn, BASE_CONTACT_LIST, self);
       break;
 
     default:
@@ -665,45 +592,6 @@ tp_base_contact_list_set_property (GObject *object,
       break;
     }
 }
-
-static gchar *
-tp_base_contact_list_repo_normalize_group (TpHandleRepoIface *repo,
-    const gchar *id,
-    gpointer context,
-    GError **error)
-{
-  TpBaseContactList *self =
-    _tp_dynamic_handle_repo_get_normalization_data (repo);
-  gchar *ret;
-
-  if (id == NULL)
-    id = "";
-
-  if (self == NULL)
-    {
-      /* already disconnected or something */
-      return g_strdup (id);
-    }
-
-  ret = tp_base_contact_list_normalize_group (self, id);
-
-  if (ret == NULL)
-    g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
-        "Invalid group name '%s'", id);
-
-  return ret;
-}
-
-/* elements 0, 1... of this enum must be kept in sync with elements 1, 2...
- * of the enum in the -internal header */
-static const gchar * const tp_base_contact_list_contact_lists
-  [NUM_TP_LIST_HANDLES + 1] = {
-    "subscribe",
-    "publish",
-    "stored",
-    "deny",
-    NULL
-};
 
 static void
 status_changed_cb (TpBaseConnection *conn,
@@ -722,7 +610,6 @@ tp_base_contact_list_constructed (GObject *object)
   TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   void (*chain_up) (GObject *) =
     G_OBJECT_CLASS (tp_base_contact_list_parent_class)->constructed;
-  TpHandleRepoIface *list_repo;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -779,9 +666,6 @@ tp_base_contact_list_constructed (GObject *object)
       TP_HANDLE_TYPE_CONTACT);
   g_object_ref (self->priv->contact_repo);
 
-  list_repo = tp_static_handle_repo_new (TP_HANDLE_TYPE_LIST,
-      (const gchar **) tp_base_contact_list_contact_lists);
-
   if (TP_IS_CONTACT_GROUP_LIST (self))
     {
       TpContactGroupListInterface *iface =
@@ -791,17 +675,6 @@ tp_base_contact_list_constructed (GObject *object)
       g_return_if_fail (iface->dup_groups != NULL);
       g_return_if_fail (iface->dup_contact_groups != NULL);
       g_return_if_fail (iface->dup_group_members != NULL);
-
-      self->priv->group_repo = tp_dynamic_handle_repo_new (TP_HANDLE_TYPE_GROUP,
-          tp_base_contact_list_repo_normalize_group, NULL);
-
-      /* borrowed ref so the handle repo can call our virtual method, released
-       * in tp_base_contact_list_free_contents */
-      _tp_dynamic_handle_repo_set_normalization_data (self->priv->group_repo,
-          self, NULL);
-
-      _tp_base_connection_set_handle_repo (self->priv->conn,
-          TP_HANDLE_TYPE_GROUP, self->priv->group_repo);
     }
 
   if (TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
@@ -820,12 +693,6 @@ tp_base_contact_list_constructed (GObject *object)
       g_return_if_fail (iface->remove_group_async != NULL);
       g_return_if_fail (iface->remove_group_finish != NULL);
     }
-
-  _tp_base_connection_set_handle_repo (self->priv->conn, TP_HANDLE_TYPE_LIST,
-      list_repo);
-
-  /* set_handle_repo doesn't steal a reference */
-  g_object_unref (list_repo);
 
   self->priv->status_changed_id = g_signal_connect (self->priv->conn,
       "status-changed", (GCallback) status_changed_cb, self);
@@ -926,836 +793,6 @@ tp_base_contact_list_class_init (TpBaseContactListClass *cls)
         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 }
 
-static void
-tp_base_contact_list_foreach_channel (TpChannelManager *manager,
-    TpExportableChannelFunc func,
-    gpointer user_data)
-{
-  TpBaseContactList *self = TP_BASE_CONTACT_LIST (manager);
-  GHashTableIter iter;
-  gpointer handle, channel;
-  guint i;
-
-  /* in both cases, we look in channel_requests to avoid including channels
-   * that don't officially exist yet */
-
-  for (i = 0; i < NUM_TP_LIST_HANDLES; i++)
-    {
-      if (self->priv->lists[i] != NULL &&
-          !g_hash_table_lookup_extended (self->priv->channel_requests,
-            self->priv->lists[i], NULL, NULL))
-        func (TP_EXPORTABLE_CHANNEL (self->priv->lists[i]), user_data);
-    }
-
-  g_hash_table_iter_init (&iter, self->priv->groups);
-
-  while (g_hash_table_iter_next (&iter, &handle, &channel))
-    {
-      if (!g_hash_table_lookup_extended (self->priv->channel_requests,
-            channel, NULL, NULL))
-        func (TP_EXPORTABLE_CHANNEL (channel), user_data);
-    }
-}
-
-static const gchar * const fixed_properties[] = {
-    TP_PROP_CHANNEL_CHANNEL_TYPE,
-    TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
-    NULL
-};
-
-static const gchar * const allowed_properties[] = {
-    TP_PROP_CHANNEL_TARGET_HANDLE,
-    TP_PROP_CHANNEL_TARGET_ID,
-    NULL
-};
-
-static void
-tp_base_contact_list_type_foreach_channel_class (GType type,
-    TpChannelManagerTypeChannelClassFunc func,
-    gpointer user_data)
-{
-  GHashTable *table = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE,
-          G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CONTACT_LIST,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_LIST,
-      NULL);
-
-  func (type, table, allowed_properties, user_data);
-
-  if (g_type_is_a (type, TP_TYPE_MUTABLE_CONTACT_GROUP_LIST))
-    {
-      g_hash_table_insert (table, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
-          tp_g_value_slice_new_uint (TP_HANDLE_TYPE_GROUP));
-      func (type, table, allowed_properties, user_data);
-    }
-
-  g_hash_table_unref (table);
-}
-
-static void
-tp_base_contact_list_associate_request (TpBaseContactList *self,
-    gpointer chan,
-    gpointer request_token)
-{
-  GSList *requests = NULL;
-
-  /* remember that it hasn't been announced yet, by putting it in
-   * channel_requests */
-  requests = g_hash_table_lookup (self->priv->channel_requests, chan);
-  g_hash_table_steal (self->priv->channel_requests, chan);
-  requests = g_slist_prepend (requests, request_token);
-  g_hash_table_insert (self->priv->channel_requests, chan, requests);
-}
-
-static gpointer
-tp_base_contact_list_new_channel (TpBaseContactList *self,
-    TpHandleType handle_type,
-    TpHandle handle,
-    gpointer request_token)
-{
-  gpointer chan;
-  gchar *object_path;
-  GType type;
-
-  if (handle_type == TP_HANDLE_TYPE_LIST)
-    {
-      object_path = g_strdup_printf ("%s/ContactList/%s",
-          self->priv->conn->object_path,
-          tp_base_contact_list_contact_lists[handle - 1]);
-      type = TP_TYPE_CONTACT_LIST_CHANNEL;
-    }
-  else
-    {
-      g_assert (handle_type == TP_HANDLE_TYPE_GROUP);
-      object_path = g_strdup_printf ("%s/Group/%u",
-          self->priv->conn->object_path, handle);
-      type = TP_TYPE_CONTACT_GROUP_CHANNEL;
-    }
-
-  chan = g_object_new (type,
-      "connection", self->priv->conn,
-      "manager", self,
-      "object-path", object_path,
-      "handle-type", handle_type,
-      "handle", handle,
-      NULL);
-
-  g_free (object_path);
-
-  if (handle_type == TP_HANDLE_TYPE_LIST)
-    {
-      g_assert (self->priv->lists[handle] == NULL);
-      self->priv->lists[handle] = chan;
-    }
-  else
-    {
-      g_assert (g_hash_table_lookup (self->priv->groups,
-            GUINT_TO_POINTER (handle)) == NULL);
-      g_hash_table_insert (self->priv->groups, GUINT_TO_POINTER (handle),
-          chan);
-    }
-
-  tp_base_contact_list_associate_request (self, chan, request_token);
-
-  return chan;
-}
-
-static void
-tp_base_contact_list_announce_channel (TpBaseContactList *self,
-    gpointer channel,
-    const GError *error)
-{
-  GSList *requests = g_hash_table_lookup (self->priv->channel_requests,
-      channel);
-
-  /* this is all fine even if requests is NULL */
-
-  g_hash_table_steal (self->priv->channel_requests, channel);
-
-  /* get into chronological order */
-  requests = g_slist_reverse (requests);
-  /* our list of requests can include NULL, which isn't a valid request
-   * token; get rid of it/them */
-  requests = g_slist_remove_all (requests, NULL);
-
-  if (error == NULL)
-    {
-      tp_channel_manager_emit_new_channel (self, channel, requests);
-    }
-  else
-    {
-      GSList *iter;
-
-      for (iter = requests; iter != NULL; iter = iter->next)
-        tp_channel_manager_emit_request_failed (self, iter->data,
-            error->domain, error->code, error->message);
-    }
-
-  g_slist_free (requests);
-}
-
-static void
-tp_base_contact_list_create_group_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer channel)
-{
-  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
-  GError *error = NULL;
-
-  if (tp_base_contact_list_add_to_group_finish (self, result, &error))
-    {
-      /* If all goes well, the channel should have been announced. */
-      GSList *tokens = g_hash_table_lookup (self->priv->channel_requests,
-          channel);
-
-      if (tokens == NULL)
-        return;
-
-      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "%s did not create a group even though it claims to have done so",
-          G_OBJECT_TYPE_NAME (self));
-    }
-
-  /**/
-
-  g_clear_error (&error);
-}
-
-static gboolean
-tp_base_contact_list_request_helper (TpChannelManager *manager,
-    gpointer request_token,
-    GHashTable *request_properties,
-    gboolean is_create)
-{
-  TpBaseContactList *self = (TpBaseContactList *) manager;
-  TpHandleType handle_type;
-  TpHandle handle;
-  TpBaseContactListChannel *chan;
-  GError *error = NULL;
-
-  g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), FALSE);
-
-  if (tp_strdiff (tp_asv_get_string (request_properties,
-          TP_PROP_CHANNEL_CHANNEL_TYPE),
-      TP_IFACE_CHANNEL_TYPE_CONTACT_LIST))
-    {
-      return FALSE;
-    }
-
-  handle_type = tp_asv_get_uint32 (request_properties,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL);
-
-  if (handle_type != TP_HANDLE_TYPE_LIST &&
-      (handle_type != TP_HANDLE_TYPE_GROUP ||
-       !TP_IS_CONTACT_GROUP_LIST (self)))
-    {
-      return FALSE;
-    }
-
-  handle = tp_asv_get_uint32 (request_properties,
-      TP_PROP_CHANNEL_TARGET_HANDLE, NULL);
-  g_assert (handle != 0);
-
-  if (tp_channel_manager_asv_has_unknown_properties (request_properties,
-        fixed_properties, allowed_properties, &error) ||
-      tp_base_contact_list_get_connection (self, &error) == NULL)
-    {
-      goto error;
-    }
-
-  if (handle_type == TP_HANDLE_TYPE_LIST)
-    {
-      /* TpBaseConnection already checked the handle for validity */
-      g_assert (handle > 0);
-      g_assert (handle < NUM_TP_LIST_HANDLES);
-
-      if (handle == TP_LIST_HANDLE_STORED &&
-          !tp_base_contact_list_get_contact_list_persists (self))
-        {
-          g_set_error_literal (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-              "Subscriptions do not persist, so this connection lacks the "
-              "'stored' channel");
-          goto error;
-        }
-
-      if (handle == TP_LIST_HANDLE_DENY &&
-          !tp_base_contact_list_can_block (self))
-        {
-          g_set_error_literal (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-              "This connection cannot put people on the 'deny' list");
-          goto error;
-        }
-
-      chan = self->priv->lists[handle];
-    }
-  else
-    {
-      chan = g_hash_table_lookup (self->priv->groups,
-          GUINT_TO_POINTER (handle));
-    }
-
-  if (chan == NULL)
-    {
-      if (handle_type == TP_HANDLE_TYPE_LIST)
-        {
-          /* make an object, don't announce it yet, and remember the
-           * request token for when it's announced in set_list_received */
-          tp_base_contact_list_new_channel (self, handle_type, handle,
-              request_token);
-        }
-      else
-        {
-          if (TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
-            {
-              const gchar *name = tp_handle_inspect (self->priv->group_repo,
-                  handle);
-              gpointer channel;
-              TpHandleSet *set = tp_handle_set_new (self->priv->contact_repo);
-
-              /* make an object, don't announce it yet, and remember the
-               * request token for when it's announced, if it's actually
-               * created */
-              channel = tp_base_contact_list_new_channel (self, handle_type,
-                  handle, request_token);
-
-              /* this will create the empty group, and announce the channel(s)
-               * later if appropriate */
-              tp_base_contact_list_add_to_group_async (self, name, set,
-                  tp_base_contact_list_create_group_cb, channel);
-              tp_handle_set_destroy (set);
-            }
-          else
-            {
-              g_set_error_literal (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-                  "This connection cannot create new groups");
-              goto error;
-            }
-        }
-    }
-  else if (is_create)
-    {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "A ContactList channel for type #%u, handle #%u already exists",
-          handle_type, handle);
-      goto error;
-    }
-  else if (g_hash_table_lookup_extended (self->priv->channel_requests, chan,
-        NULL, NULL))
-    {
-      /* there are outstanding requests for the channel, and there's an object
-       * to represent it, but it hasn't been announced; just append our
-       * request */
-      tp_base_contact_list_associate_request (self, chan, request_token);
-    }
-  else
-    {
-      tp_channel_manager_emit_request_already_satisfied (self,
-          request_token, TP_EXPORTABLE_CHANNEL (chan));
-    }
-
-  return TRUE;
-
-error:
-  tp_channel_manager_emit_request_failed (self, request_token,
-      error->domain, error->code, error->message);
-  g_error_free (error);
-  return TRUE;
-}
-
-static gboolean
-tp_base_contact_list_create_channel (TpChannelManager *manager,
-    gpointer request_token,
-    GHashTable *request_properties)
-{
-  return tp_base_contact_list_request_helper (manager, request_token,
-      request_properties, TRUE);
-}
-
-static gboolean
-tp_base_contact_list_ensure_channel (TpChannelManager *manager,
-    gpointer request_token,
-    GHashTable *request_properties)
-{
-  return tp_base_contact_list_request_helper (manager, request_token,
-      request_properties, FALSE);
-}
-
-static void
-channel_manager_iface_init (TpChannelManagerIface *iface)
-{
-  iface->foreach_channel = tp_base_contact_list_foreach_channel;
-  iface->type_foreach_channel_class =
-      tp_base_contact_list_type_foreach_channel_class;
-  iface->create_channel = tp_base_contact_list_create_channel;
-  iface->ensure_channel = tp_base_contact_list_ensure_channel;
-  /* In this channel manager, Request has the same semantics as Ensure */
-  iface->request_channel = tp_base_contact_list_ensure_channel;
-}
-
-TpChannelGroupFlags
-_tp_base_contact_list_get_group_flags (TpBaseContactList *self)
-{
-  if (TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
-    return TP_CHANNEL_GROUP_FLAG_CAN_ADD | TP_CHANNEL_GROUP_FLAG_CAN_REMOVE;
-
-  return 0;
-}
-
-TpChannelGroupFlags
-_tp_base_contact_list_get_list_flags (TpBaseContactList *self,
-    TpHandle list)
-{
-  if (!tp_base_contact_list_can_change_contact_list (self))
-    return 0;
-
-  switch (list)
-    {
-    case TP_LIST_HANDLE_PUBLISH:
-      /* We always allow an attempt to stop publishing presence to people,
-       * and an attempt to send people our presence (if only as a sort of
-       * pre-authorization). */
-      return TP_CHANNEL_GROUP_FLAG_CAN_ADD | TP_CHANNEL_GROUP_FLAG_CAN_REMOVE;
-
-    case TP_LIST_HANDLE_SUBSCRIBE:
-      /* We can ask people to show us their presence, with a message.
-       * We do our best to allow rescinding unreplied requests, and
-       * unsubscribing, even if the underlying protocol does not. */
-      return
-        TP_CHANNEL_GROUP_FLAG_CAN_ADD |
-        (tp_base_contact_list_get_request_uses_message (self)
-          ? TP_CHANNEL_GROUP_FLAG_MESSAGE_ADD
-          : 0) |
-        TP_CHANNEL_GROUP_FLAG_CAN_REMOVE |
-        TP_CHANNEL_GROUP_FLAG_CAN_RESCIND;
-
-    case TP_LIST_HANDLE_STORED:
-      /* We allow attempts to add people to the roster and remove them again,
-       * even if the real protocol doesn't. */
-      return TP_CHANNEL_GROUP_FLAG_CAN_ADD | TP_CHANNEL_GROUP_FLAG_CAN_REMOVE;
-
-    case TP_LIST_HANDLE_DENY:
-      /* A deny list wouldn't be much good if we couldn't actually deny,
-       * would it? */
-      return TP_CHANNEL_GROUP_FLAG_CAN_ADD | TP_CHANNEL_GROUP_FLAG_CAN_REMOVE;
-
-    default:
-      g_return_val_if_reached (0);
-    }
-}
-
-static void
-tp_base_contact_list_add_to_group_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
-  GError *error = NULL;
-
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (source));
-
-  if (tp_base_contact_list_add_to_group_finish (self, result, &error))
-    {
-      dbus_g_method_return (user_data);
-    }
-  else
-    {
-      dbus_g_method_return_error (user_data, error);
-      g_clear_error (&error);
-    }
-}
-
-void
-_tp_base_contact_list_add_to_group (TpBaseContactList *self,
-    TpHandle group,
-    const GArray *contacts_arr,
-    const gchar *message G_GNUC_UNUSED,
-    DBusGMethodInvocation *context)
-{
-  TpHandleSet *contacts;
-  const gchar *group_name;
-  GError *error = NULL;
-
-  /* fail if not ready yet, failed, or disconnected, or if handles are bad */
-  if (tp_base_contact_list_get_state (self, &error) !=
-      TP_CONTACT_LIST_STATE_SUCCESS ||
-      !tp_handles_are_valid (self->priv->contact_repo, contacts_arr, FALSE,
-        &error))
-    goto error;
-
-  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
-    {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Cannot add contacts to a group");
-      goto error;
-    }
-
-  contacts = tp_handle_set_new_from_array (self->priv->contact_repo,
-      contacts_arr);
-  group_name = tp_handle_inspect (self->priv->group_repo, group);
-
-  tp_base_contact_list_add_to_group_async (self, group_name, contacts,
-      tp_base_contact_list_add_to_group_cb, context);
-
-  tp_handle_set_destroy (contacts);
-  return;
-
-error:
-  dbus_g_method_return_error (context, error);
-  g_error_free (error);
-}
-
-static void
-tp_base_contact_list_remove_from_group_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
-  GError *error = NULL;
-
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (source));
-
-  if (tp_base_contact_list_remove_from_group_finish (self, result, &error))
-    {
-      dbus_g_method_return (user_data);
-    }
-  else
-    {
-      dbus_g_method_return_error (user_data, error);
-      g_clear_error (&error);
-    }
-}
-
-void
-_tp_base_contact_list_remove_from_group (TpBaseContactList *self,
-    TpHandle group,
-    const GArray *contacts_arr,
-    const gchar *message G_GNUC_UNUSED,
-    guint reason G_GNUC_UNUSED,
-    DBusGMethodInvocation *context)
-{
-  TpHandleSet *contacts;
-  const gchar *group_name;
-  GError *error = NULL;
-
-  /* fail if not ready yet, failed, or disconnected, or if handles are bad */
-  if (tp_base_contact_list_get_state (self, &error) !=
-      TP_CONTACT_LIST_STATE_SUCCESS ||
-      !tp_handles_are_valid (self->priv->contact_repo, contacts_arr, FALSE,
-        &error))
-    goto error;
-
-  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
-    {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Cannot remove contacts from a group");
-      goto error;
-    }
-
-  contacts = tp_handle_set_new_from_array (self->priv->contact_repo,
-      contacts_arr);
-  group_name = tp_handle_inspect (self->priv->group_repo, group);
-
-  tp_base_contact_list_remove_from_group_async (self, group_name, contacts,
-      tp_base_contact_list_remove_from_group_cb, context);
-
-  tp_handle_set_destroy (contacts);
-  return;
-
-error:
-  dbus_g_method_return_error (context, error);
-  g_error_free (error);
-}
-
-static void
-tp_base_contact_list_delete_group_by_handle_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
-  GError *error = NULL;
-
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (source));
-
-  if (tp_base_contact_list_remove_group_finish (self, result, &error))
-    {
-      DEBUG ("Removing group '%s' succeeded", (gchar *) user_data);
-    }
-  else
-    {
-      DEBUG ("Removing group '%s' failed: %s #%d: %s", (gchar *) user_data,
-          g_quark_to_string (error->domain), error->code, error->message);
-      g_clear_error (&error);
-    }
-
-  g_free (user_data);
-}
-
-gboolean
-_tp_base_contact_list_delete_group_by_handle (TpBaseContactList *self,
-    TpHandle group,
-    GError **error)
-{
-  gchar *group_name;
-
-  if (tp_base_contact_list_get_state (self, error) !=
-      TP_CONTACT_LIST_STATE_SUCCESS)
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_DISCONNECTED, "Disconnected");
-      return FALSE;
-    }
-
-  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Cannot remove a group");
-      return FALSE;
-    }
-
-  group_name = g_strdup (tp_handle_inspect (self->priv->group_repo, group));
-
-  tp_base_contact_list_remove_group_async (self, group_name,
-      tp_base_contact_list_delete_group_by_handle_cb, group_name);
-  return TRUE;
-}
-
-typedef struct {
-    DBusGMethodInvocation *context;
-    TpListHandle list;
-} ListContext;
-
-static ListContext *
-list_context_new (DBusGMethodInvocation *context,
-    TpListHandle list)
-{
-  ListContext *lc = g_slice_new0 (ListContext);
-
-  lc->context = context;
-  lc->list = list;
-  return lc;
-}
-
-static void
-list_context_finish_take_error (ListContext *lc,
-    GError *error)
-{
-  if (error == NULL)
-    {
-      dbus_g_method_return (lc->context);
-    }
-  else
-    {
-      dbus_g_method_return_error (lc->context, error);
-      g_error_free (error);
-    }
-
-  g_slice_free (ListContext, lc);
-}
-
-static void
-tp_base_contact_list_add_to_list_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
-  ListContext *lc = user_data;
-  GError *error = NULL;
-  gboolean ok;
-
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (source));
-
-  switch (lc->list)
-    {
-    case TP_LIST_HANDLE_SUBSCRIBE:
-      ok = tp_base_contact_list_request_subscription_finish (self, result,
-          &error);
-      break;
-
-    case TP_LIST_HANDLE_PUBLISH:
-      ok = tp_base_contact_list_authorize_publication_finish (self, result,
-          &error);
-      break;
-
-    case TP_LIST_HANDLE_STORED:
-      ok = tp_base_contact_list_store_contacts_finish (self, result, &error);
-      break;
-
-    case TP_LIST_HANDLE_DENY:
-      ok = tp_base_contact_list_block_contacts_finish (self, result, &error);
-      break;
-
-    default:
-      g_return_if_reached ();
-    }
-
-  g_assert (ok == (error == NULL));
-  list_context_finish_take_error (lc, error);
-}
-
-void
-_tp_base_contact_list_add_to_list (TpBaseContactList *self,
-    TpHandle list,
-    const GArray *contacts_arr,
-    const gchar *message,
-    DBusGMethodInvocation *context)
-{
-  TpHandleSet *contacts;
-  GError *error = NULL;
-  ListContext *lc;
-
-  /* fail if not ready yet, failed, or disconnected, or if handles are bad */
-  if (tp_base_contact_list_get_state (self, &error) !=
-      TP_CONTACT_LIST_STATE_SUCCESS ||
-      !tp_handles_are_valid (self->priv->contact_repo, contacts_arr, FALSE,
-        &error))
-    goto error;
-
-  if (!tp_base_contact_list_can_change_contact_list (self))
-    {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Cannot change subscriptions");
-      goto error;
-    }
-
-  contacts = tp_handle_set_new_from_array (self->priv->contact_repo,
-      contacts_arr);
-  lc = list_context_new (context, list);
-
-  switch (list)
-    {
-    case TP_LIST_HANDLE_SUBSCRIBE:
-      tp_base_contact_list_request_subscription_async (self, contacts,
-          message, tp_base_contact_list_add_to_list_cb, lc);
-      break;
-
-    case TP_LIST_HANDLE_PUBLISH:
-      tp_base_contact_list_authorize_publication_async (self, contacts,
-          tp_base_contact_list_add_to_list_cb, lc);
-      break;
-
-    case TP_LIST_HANDLE_STORED:
-      tp_base_contact_list_store_contacts_async (self, contacts,
-          tp_base_contact_list_add_to_list_cb, lc);
-      break;
-
-    case TP_LIST_HANDLE_DENY:
-      tp_base_contact_list_block_contacts_async (self, contacts,
-          tp_base_contact_list_add_to_list_cb, lc);
-      break;
-
-    default:
-      g_assert_not_reached ();
-    }
-
-  tp_handle_set_destroy (contacts);
-  return;
-
-error:
-  dbus_g_method_return_error (context, error);
-  g_error_free (error);
-}
-
-static void
-tp_base_contact_list_remove_from_list_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
-  ListContext *lc = user_data;
-  GError *error = NULL;
-  gboolean ok;
-
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (source));
-
-  switch (lc->list)
-    {
-    case TP_LIST_HANDLE_SUBSCRIBE:
-      ok = tp_base_contact_list_unsubscribe_finish (self, result, &error);
-      break;
-
-    case TP_LIST_HANDLE_PUBLISH:
-      ok = tp_base_contact_list_unpublish_finish (self, result, &error);
-      break;
-
-    case TP_LIST_HANDLE_STORED:
-      ok = tp_base_contact_list_remove_contacts_finish (self, result, &error);
-      break;
-
-    case TP_LIST_HANDLE_DENY:
-      ok = tp_base_contact_list_unblock_contacts_finish (self, result, &error);
-      break;
-
-    default:
-      g_return_if_reached ();
-    }
-
-  g_assert (ok == (error == NULL));
-  list_context_finish_take_error (lc, error);
-}
-
-void
-_tp_base_contact_list_remove_from_list (TpBaseContactList *self,
-    TpHandle list,
-    const GArray *contacts_arr,
-    const gchar *message G_GNUC_UNUSED,
-    guint reason G_GNUC_UNUSED,
-    DBusGMethodInvocation *context)
-{
-  TpHandleSet *contacts;
-  GError *error = NULL;
-  ListContext *lc;
-
-  /* fail if not ready yet, failed, or disconnected, or if handles are bad */
-  if (tp_base_contact_list_get_state (self, &error) !=
-      TP_CONTACT_LIST_STATE_SUCCESS ||
-      !tp_handles_are_valid (self->priv->contact_repo, contacts_arr, FALSE,
-        &error))
-    goto error;
-
-  if (!tp_base_contact_list_can_change_contact_list (self))
-    {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Cannot change subscriptions");
-      goto error;
-    }
-
-  contacts = tp_handle_set_new_from_array (self->priv->contact_repo,
-      contacts_arr);
-  lc = list_context_new (context, list);
-
-  switch (list)
-    {
-    case TP_LIST_HANDLE_SUBSCRIBE:
-      tp_base_contact_list_unsubscribe_async (self, contacts,
-          tp_base_contact_list_remove_from_list_cb, lc);
-      break;
-
-    case TP_LIST_HANDLE_PUBLISH:
-      tp_base_contact_list_unpublish_async (self, contacts,
-          tp_base_contact_list_remove_from_list_cb, lc);
-      break;
-
-    case TP_LIST_HANDLE_STORED:
-      tp_base_contact_list_remove_contacts_async (self, contacts,
-          tp_base_contact_list_remove_from_list_cb, lc);
-      break;
-
-    case TP_LIST_HANDLE_DENY:
-      tp_base_contact_list_unblock_contacts_async (self, contacts,
-          tp_base_contact_list_remove_from_list_cb, lc);
-      break;
-
-    default:
-      g_assert_not_reached ();
-    }
-
-  tp_handle_set_destroy (contacts);
-  return;
-
-error:
-  dbus_g_method_return_error (context, error);
-  g_error_free (error);
-}
-
 /**
  * tp_base_contact_list_set_list_pending:
  * @self: the contact list manager
@@ -1811,7 +848,6 @@ tp_base_contact_list_set_list_failed (TpBaseContactList *self,
   tp_svc_connection_interface_contact_list_emit_contact_list_state_changed (
       self->priv->conn, self->priv->state);
 
-  tp_base_contact_list_fail_channel_requests (self, domain, code, message);
   tp_base_contact_list_fail_blocked_contact_requests (self,
       self->priv->failure);
 }
@@ -1854,25 +890,6 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
   self->priv->state = TP_CONTACT_LIST_STATE_SUCCESS;
   /* we emit the signal for this later */
 
-  if (self->priv->lists[TP_LIST_HANDLE_SUBSCRIBE] == NULL)
-    {
-      tp_base_contact_list_new_channel (self,
-          TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_SUBSCRIBE, NULL);
-    }
-
-  if (self->priv->lists[TP_LIST_HANDLE_PUBLISH] == NULL)
-    {
-      tp_base_contact_list_new_channel (self,
-          TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_PUBLISH, NULL);
-    }
-
-  if (tp_base_contact_list_get_contact_list_persists (self) &&
-      self->priv->lists[TP_LIST_HANDLE_STORED] == NULL)
-    {
-      tp_base_contact_list_new_channel (self,
-          TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_STORED, NULL);
-    }
-
   contacts = tp_base_contact_list_dup_contacts (self);
   g_return_if_fail (contacts != NULL);
 
@@ -1895,12 +912,6 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
   if (tp_base_contact_list_can_block (self))
     {
       TpHandleSet *blocked;
-
-      if (self->priv->lists[TP_LIST_HANDLE_DENY] == NULL)
-        {
-          tp_base_contact_list_new_channel (self,
-              TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_DENY, NULL);
-        }
 
       blocked = tp_base_contact_list_dup_blocked_contacts (self);
 
@@ -1930,13 +941,6 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
       tp_handle_set_destroy (blocked);
     }
 
-  for (i = 0; i < NUM_TP_LIST_HANDLES; i++)
-    {
-      if (self->priv->lists[i] != NULL)
-        tp_base_contact_list_announce_channel (self, self->priv->lists[i],
-            NULL);
-    }
-
   /* The natural thing to do here would be to iterate over all contacts, and
    * for each contact, emit a signal adding them to their own groups. However,
    * that emits a signal per contact. Here we turn the data model inside out,
@@ -1945,8 +949,6 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
   if (TP_IS_CONTACT_GROUP_LIST (self))
     {
       GStrv groups = tp_base_contact_list_dup_groups (self);
-      GHashTableIter h_iter;
-      gpointer channel;
 
       tp_base_contact_list_groups_created (self,
           (const gchar * const *) groups, -1);
@@ -1960,11 +962,6 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
               (const gchar * const *) groups + i, 1, NULL, 0);
           tp_handle_set_destroy (members);
         }
-
-      g_hash_table_iter_init (&h_iter, self->priv->groups);
-
-      while (g_hash_table_iter_next (&h_iter, NULL, &channel))
-        tp_base_contact_list_announce_channel (self, channel, NULL);
 
       g_strfreev (groups);
     }
@@ -2036,12 +1033,8 @@ tp_base_contact_list_contacts_changed_internal (TpBaseContactList *self,
 {
   GHashTable *changes;
   GHashTable *change_ids;
-  GArray *removals;
   GHashTable *removal_ids;
   TpIntsetFastIter iter;
-  TpIntset *pub, *sub, *sub_rp, *unpub, *unsub, *store;
-  GObject *sub_chan, *pub_chan, *stored_chan;
-  TpHandle self_handle;
   TpHandle contact;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
@@ -2051,26 +1044,6 @@ tp_base_contact_list_contacts_changed_internal (TpBaseContactList *self,
   if (tp_base_contact_list_get_state (self, NULL) !=
       TP_CONTACT_LIST_STATE_SUCCESS)
     return;
-
-  self_handle = tp_base_connection_get_self_handle (self->priv->conn),
-
-  sub_chan = (GObject *) self->priv->lists[TP_LIST_HANDLE_SUBSCRIBE];
-  pub_chan = (GObject *) self->priv->lists[TP_LIST_HANDLE_PUBLISH];
-  stored_chan = (GObject *) self->priv->lists[TP_LIST_HANDLE_STORED];
-
-  g_return_if_fail (G_IS_OBJECT (sub_chan));
-  g_return_if_fail (G_IS_OBJECT (pub_chan));
-  /* stored_chan can legitimately be NULL, though */
-
-  /* For some changes, we emit signals one by one, because the actor is
-   * different every time. However, for these sets of changes, we do them all
-   * at once, since they'll share an actor. */
-  pub = tp_intset_new ();
-  unpub = tp_intset_new ();
-  unsub = tp_intset_new ();
-  sub = tp_intset_new ();
-  sub_rp = tp_intset_new ();
-  store = tp_intset_new ();
 
   changes = g_hash_table_new_full (NULL, NULL, NULL,
       (GDestroyNotify) g_value_array_free);
@@ -2085,8 +1058,6 @@ tp_base_contact_list_contacts_changed_internal (TpBaseContactList *self,
       TpSubscriptionState publish = TP_SUBSCRIPTION_STATE_NO;
       gchar *publish_request = NULL;
 
-      tp_intset_add (store, contact);
-
       tp_base_contact_list_dup_states (self, contact,
           &subscribe, &publish, &publish_request);
 
@@ -2097,95 +1068,6 @@ tp_base_contact_list_contacts_changed_internal (TpBaseContactList *self,
           tp_handle_inspect (self->priv->contact_repo, contact),
           presence_state_to_letter (subscribe),
           presence_state_to_letter (publish), publish_request);
-
-      switch (publish)
-        {
-        case TP_SUBSCRIPTION_STATE_NO:
-        case TP_SUBSCRIPTION_STATE_UNKNOWN:
-          tp_intset_add (unpub, contact);
-          break;
-
-        case TP_SUBSCRIPTION_STATE_ASK:
-            {
-              /* Emit any publication requests as we go along, since they can
-               * each have a different message and actor */
-              TpIntset *pub_lp = tp_intset_new_containing (contact);
-
-              tp_group_mixin_change_members (pub_chan, publish_request,
-                  NULL, NULL, pub_lp, NULL, contact,
-                  TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-              tp_intset_destroy (pub_lp);
-            }
-          break;
-
-        case TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY:
-            {
-              /* Also emit publication request cancellations as we go along:
-               * each one has a different actor */
-              TpIntset *pub_cancelled = tp_intset_new_containing (
-                  contact);
-
-              tp_group_mixin_change_members (pub_chan, "",
-                  NULL, pub_cancelled, NULL, NULL, contact,
-                  TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-              tp_intset_destroy (pub_cancelled);
-            }
-          break;
-
-        case TP_SUBSCRIPTION_STATE_YES:
-          tp_intset_add (pub, contact);
-          break;
-
-        default:
-          g_assert_not_reached ();
-        }
-
-      switch (subscribe)
-        {
-        case TP_SUBSCRIPTION_STATE_NO:
-        case TP_SUBSCRIPTION_STATE_UNKNOWN:
-          tp_intset_add (unsub, contact);
-          break;
-
-        case TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY:
-            {
-              /* If our subscription request was rejected, the actor is the
-               * other guy, and PERMISSION_DENIED seems a reasonable reason */
-              TpIntset *sub_rejected = tp_intset_new_containing (contact);
-
-              tp_group_mixin_change_members (sub_chan, "",
-                  NULL, sub_rejected, NULL, NULL, contact,
-                  TP_CHANNEL_GROUP_CHANGE_REASON_PERMISSION_DENIED);
-              tp_intset_destroy (sub_rejected);
-            }
-          break;
-
-        case TP_SUBSCRIPTION_STATE_ASK:
-          tp_intset_add (sub_rp, contact);
-          break;
-
-        case TP_SUBSCRIPTION_STATE_YES:
-          if (is_initial_roster)
-            {
-              tp_intset_add (sub, contact);
-            }
-          else
-            {
-              /* If our subscription request was accepted, the actor is the
-               * other guy accepting */
-              TpIntset *sub_approved = tp_intset_new_containing (contact);
-
-              tp_group_mixin_change_members (sub_chan, "",
-                  sub_approved, NULL, NULL, NULL, contact,
-                  TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-              tp_intset_destroy (sub_approved);
-            }
-
-          break;
-
-        default:
-          g_assert_not_reached ();
-        }
 
       g_hash_table_insert (changes, GUINT_TO_POINTER (contact),
           tp_value_array_build (3,
@@ -2203,89 +1085,35 @@ tp_base_contact_list_contacts_changed_internal (TpBaseContactList *self,
 
   if (removed != NULL)
     {
+      GArray *removals = tp_handle_set_to_array (removed);
       guint i;
-
-      tp_intset_union_update (unsub, tp_handle_set_peek (removed));
-      tp_intset_union_update (unpub, tp_handle_set_peek (removed));
-
-      removals = tp_handle_set_to_array (removed);
 
       for (i = 0; i < removals->len; i++)
         {
-          TpHandle handle = g_array_index (removals, guint, i);
+          TpHandle handle = g_array_index (removals, TpHandle, i);
 
           g_hash_table_insert (removal_ids, GUINT_TO_POINTER (handle),
               (gchar *) tp_handle_inspect (self->priv->contact_repo, handle));
         }
-    }
-  else
-    {
-      removals = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 0);
+
+      g_array_unref (removals);
     }
 
-  /* The actor is 0 for removals from subscribe and publish: we don't know
-   * whether it was our idea, or caused by an unknown contact or by server
-   * failure, since those are all represented as No. */
-  tp_group_mixin_change_members (sub_chan, "",
-      NULL, unsub, NULL, NULL, 0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-  tp_group_mixin_change_members (pub_chan, "",
-      NULL, unpub, NULL, NULL, 0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-
-  /* pub is the set of contacts changing to publish=Yes (i.e. contacts we'll
-   * allow to see our presence), which was presumably our idea. */
-  tp_group_mixin_change_members (pub_chan, "",
-      pub, NULL, NULL, NULL, self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-
-  /* sub is the set of contacts with subscribe=Yes while retrieving the
-   * initial roster. We don't know if the contacts were already in the roster
-   * or if they were added while we were offline, so the actor is 0.
-   * Having all the initial contacts grouped together means we emit a single
-   * MembersChanged and one MembersChangedDetailed for the whole roster. */
-  tp_group_mixin_change_members (sub_chan, "", sub, NULL, NULL, NULL, 0,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-
-  /* sub_rp is the set of contacts changing to subscribe=Ask, which was
-   * presumably our idea. */
-  tp_group_mixin_change_members (sub_chan, "", NULL, NULL, NULL, sub_rp,
-      self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-
-  /* We use actor 0 for the stored list, since people can land on the stored
-   * list for a variety of reasons (if someone has requested we publish to
-   * them, they're temporarily claimed to be stored). */
-  if (stored_chan != NULL)
-    {
-      tp_group_mixin_change_members (stored_chan, "",
-          store,
-          removed == NULL ? NULL : tp_handle_set_peek (removed),
-          NULL, NULL,
-          0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-    }
-
-  if (g_hash_table_size (changes) > 0 || removals->len > 0)
+  if (g_hash_table_size (changes) > 0 || g_hash_table_size (removal_ids) > 0)
     {
       DEBUG ("ContactsChanged([%u changed], [%u removed])",
-          g_hash_table_size (changes), removals->len);
+          g_hash_table_size (changes), g_hash_table_size (removal_ids));
 
       if (self->priv->svc_contact_list)
         {
-          tp_svc_connection_interface_contact_list_emit_contacts_changed_with_id (
-              self->priv->conn, changes, change_ids, removal_ids);
           tp_svc_connection_interface_contact_list_emit_contacts_changed (
-              self->priv->conn, changes, removals);
+              self->priv->conn, changes, change_ids, removal_ids);
         }
     }
-
-  tp_intset_destroy (pub);
-  tp_intset_destroy (unpub);
-  tp_intset_destroy (unsub);
-  tp_intset_destroy (sub_rp);
-  tp_intset_destroy (sub);
-  tp_intset_destroy (store);
 
   g_hash_table_unref (changes);
   g_hash_table_unref (change_ids);
   g_hash_table_unref (removal_ids);
-  g_array_unref (removals);
 }
 
 /**
@@ -2366,10 +1194,8 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
     TpHandleSet *changed)
 {
   TpHandleSet *now_blocked;
-  TpIntset *blocked, *unblocked;
   GHashTable *blocked_contacts, *unblocked_contacts;
   TpIntsetFastIter iter;
-  GObject *deny_chan;
   TpHandle handle;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
@@ -2383,13 +1209,8 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
 
   g_return_if_fail (tp_base_contact_list_can_block (self));
 
-  deny_chan = (GObject *) self->priv->lists[TP_LIST_HANDLE_DENY];
-  g_return_if_fail (G_IS_OBJECT (deny_chan));
-
   now_blocked = tp_base_contact_list_dup_blocked_contacts (self);
 
-  blocked = tp_intset_new ();
-  unblocked = tp_intset_new ();
   blocked_contacts = g_hash_table_new (NULL, NULL);
   unblocked_contacts = g_hash_table_new (NULL, NULL);
 
@@ -2401,13 +1222,11 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
 
       if (tp_handle_set_is_member (now_blocked, handle))
         {
-          tp_intset_add (blocked, handle);
           g_hash_table_insert (blocked_contacts, GUINT_TO_POINTER (handle),
               (gpointer) id);
         }
       else
         {
-          tp_intset_add (unblocked, handle);
           g_hash_table_insert (unblocked_contacts, GUINT_TO_POINTER (handle),
               (gpointer) id);
         }
@@ -2416,19 +1235,12 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
           tp_handle_set_is_member (now_blocked, handle) ? 'Y' : 'N');
     }
 
-  tp_group_mixin_change_members (deny_chan, "",
-      blocked, unblocked, NULL, NULL,
-      tp_base_connection_get_self_handle (self->priv->conn),
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-
   if (self->priv->svc_contact_blocking &&
       (g_hash_table_size (blocked_contacts) > 0 ||
        g_hash_table_size (unblocked_contacts) > 0))
     tp_svc_connection_interface_contact_blocking_emit_blocked_contacts_changed (
         self->priv->conn, blocked_contacts, unblocked_contacts);
 
-  tp_intset_destroy (blocked);
-  tp_intset_destroy (unblocked);
   g_hash_table_unref (blocked_contacts);
   g_hash_table_unref (unblocked_contacts);
   tp_handle_set_destroy (now_blocked);
@@ -3567,31 +2379,19 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
 
   for (i = 0; i < n_created; i++)
     {
-      TpHandle handle = tp_handle_ensure (self->priv->group_repo, created[i],
-          NULL, NULL);
+      gchar *normalized_group = tp_base_contact_list_normalize_group (
+          self, created[i]);
 
-      if (handle != 0)
+      if (g_hash_table_lookup (self->priv->groups, normalized_group) == NULL)
         {
-          gpointer c = g_hash_table_lookup (self->priv->groups,
-              GUINT_TO_POINTER (handle));
+          g_ptr_array_add (actually_created, (gchar *) created[i]);
 
-          if (c == NULL)
-            c = tp_base_contact_list_new_channel (self, TP_HANDLE_TYPE_GROUP,
-                handle, NULL);
-
-          if (g_hash_table_lookup_extended (self->priv->channel_requests, c,
-                NULL, NULL))
-            {
-              /* the channel hasn't been announced yet: do so, and include
-               * it in the GroupsCreated signal */
-              g_ptr_array_add (actually_created, (gchar *) tp_handle_inspect (
-                    self->priv->group_repo, handle));
-
-              tp_base_contact_list_announce_channel (self, c, NULL);
-            }
-
-          tp_handle_unref (self->priv->group_repo, handle);
+          g_hash_table_insert (self->priv->groups,
+              g_strdup (normalized_group),
+              tp_handle_set_new (self->priv->contact_repo));
         }
+
+      g_free (normalized_group);
     }
 
   if (actually_created->len > 0)
@@ -3664,54 +2464,31 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
     return;
 
   old_members = tp_handle_set_new (self->priv->contact_repo);
-  actually_removed = _tp_g_ptr_array_new_full (n_removed + 1, g_free);
+  actually_removed = g_ptr_array_sized_new (n_removed + 1);
 
   for (i = 0; i < n_removed; i++)
     {
-      TpHandle handle = tp_handle_lookup (self->priv->group_repo, removed[i],
-          NULL, NULL);
+      gchar *normalized_group = tp_base_contact_list_normalize_group (
+          self, removed[i]);
+      TpHandleSet *group_members = g_hash_table_lookup (self->priv->groups,
+          normalized_group);
+      TpHandle contact;
+      TpIntsetFastIter iter;
 
-      if (handle != 0)
+      if (group_members != NULL)
         {
-          gpointer c = g_hash_table_lookup (self->priv->groups,
-              GUINT_TO_POINTER (handle));
+          g_ptr_array_add (actually_removed, g_strdup (removed[i]));
 
-          if (c != NULL)
-            {
-              gchar *name;
-              TpHandleSet *group_members;
-              TpHandle contact;
-              TpIntsetFastIter iter;
+          tp_intset_fast_iter_init (&iter,
+              tp_handle_set_peek (group_members));
 
-              /* the handle might get unref'd by closing the channel, so copy
-               * the string */
-              name = g_strdup (tp_handle_inspect (self->priv->group_repo,
-                    handle));
-              g_ptr_array_add (actually_removed, name);
-              group_members = tp_base_contact_list_dup_group_members (self,
-                  name);
+          while (tp_intset_fast_iter_next (&iter, &contact))
+            tp_handle_set_add (old_members, contact);
 
-              tp_intset_fast_iter_init (&iter,
-                  tp_handle_set_peek (group_members));
-
-              while (tp_intset_fast_iter_next (&iter, &contact))
-                tp_handle_set_add (old_members, contact);
-
-              /* Remove members if any: presumably the self-handle is the
-               * actor. */
-              tp_group_mixin_change_members (c, "",
-                  NULL, tp_handle_set_peek (group_members), NULL, NULL,
-                  self->priv->conn->self_handle,
-                  TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-
-              tp_channel_manager_emit_channel_closed_for_object (self, c);
-              _tp_base_contact_list_channel_close (c);
-              g_hash_table_remove (self->priv->groups,
-                  GUINT_TO_POINTER (handle));
-
-              tp_handle_set_destroy (group_members);
-            }
+          g_hash_table_remove (self->priv->groups, normalized_group);
         }
+
+      g_free (normalized_group);
     }
 
   if (actually_removed->len > 0)
@@ -3771,8 +2548,6 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
     const gchar *old_name,
     const gchar *new_name)
 {
-  TpHandle old_handle, new_handle;
-  gpointer old_chan, new_chan;
   const gchar *old_names[] = { old_name, NULL };
   const gchar *new_names[] = { new_name, NULL };
   const TpIntset *set;
@@ -3783,59 +2558,6 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
 
   if (self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS)
     return;
-
-  old_handle = tp_handle_ensure (self->priv->group_repo, old_name, NULL, NULL);
-
-  if (old_handle == 0)
-    return;
-
-  old_chan = g_hash_table_lookup (self->priv->groups,
-      GUINT_TO_POINTER (old_handle));
-
-  new_handle = tp_handle_ensure (self->priv->group_repo, new_name, NULL, NULL);
-
-  if (new_handle == 0)
-    {
-      tp_handle_unref (self->priv->group_repo, old_handle);
-      return;
-    }
-
-  new_chan = g_hash_table_lookup (self->priv->groups,
-      GUINT_TO_POINTER (new_handle));
-
-  if (new_chan == NULL)
-    {
-      new_chan = tp_base_contact_list_new_channel (self, TP_HANDLE_TYPE_GROUP,
-          new_handle, NULL);
-    }
-
-  if (g_hash_table_lookup_extended (self->priv->channel_requests, new_chan,
-        NULL, NULL))
-    {
-      /* the channel hasn't been announced yet: do so */
-      tp_base_contact_list_announce_channel (self, new_chan, NULL);
-    }
-
-  old_members = tp_base_contact_list_dup_group_members (self, old_name);
-
-  /* move the members - presumably the self-handle is the actor */
-  set = tp_handle_set_peek (old_members);
-  tp_group_mixin_change_members (new_chan, "", set, NULL, NULL, NULL,
-      self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-
-  if (old_chan != NULL)
-    {
-      tp_group_mixin_change_members (old_chan, "", NULL, set, NULL, NULL,
-          self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-      tp_channel_manager_emit_channel_closed_for_object (self, old_chan);
-      _tp_base_contact_list_channel_close (old_chan);
-    }
-
-  g_hash_table_remove (self->priv->groups, GUINT_TO_POINTER (old_handle));
-
-  /* get normalized forms */
-  old_names[0] = tp_handle_inspect (self->priv->group_repo, old_handle);
-  new_names[0] = tp_handle_inspect (self->priv->group_repo, new_handle);
 
   DEBUG ("GroupRenamed('%s', '%s')", old_names[0], new_names[0]);
 
@@ -3850,6 +2572,9 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
       tp_svc_connection_interface_contact_groups_emit_groups_removed (
           self->priv->conn, old_names);
     }
+
+  old_members = tp_base_contact_list_dup_group_members (self, old_name);
+  set = tp_handle_set_peek (old_members);
 
   if (tp_intset_size (set) > 0)
     {
@@ -3866,9 +2591,35 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
         }
     }
 
-  tp_handle_unref (self->priv->group_repo, new_handle);
-  tp_handle_unref (self->priv->group_repo, old_handle);
   tp_handle_set_destroy (old_members);
+}
+
+static gboolean
+add_contacts_to_handle_set (TpHandleSet *set,
+    TpIntset *contacts)
+{
+  TpIntset *subset;
+  gboolean changed;
+
+  subset = tp_handle_set_update (set, contacts);
+  changed = tp_intset_size (subset) > 0;
+  tp_intset_destroy (subset);
+
+  return changed;
+}
+
+static gboolean
+remove_contacts_from_handle_set (TpHandleSet *set,
+    TpIntset *contacts)
+{
+  TpIntset *subset;
+  gboolean changed;
+
+  subset = tp_handle_set_difference_update (set, contacts);
+  changed = tp_intset_size (subset) > 0;
+  tp_intset_destroy (subset);
+
+  return changed;
 }
 
 /**
@@ -3967,52 +2718,56 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
 
   for (i = 0; i < n_added; i++)
     {
-      TpHandle handle = tp_handle_lookup (self->priv->group_repo, added[i],
-          NULL, NULL);
-      gpointer c;
+      gchar *normalized_group = tp_base_contact_list_normalize_group (
+          self, added[i]);
+      TpHandleSet *contacts_in_group = g_hash_table_lookup (self->priv->groups,
+          normalized_group);
 
-      /* it doesn't matter if handle is 0, we'll just get NULL */
-      c = g_hash_table_lookup (self->priv->groups,
-          GUINT_TO_POINTER (handle));
-
-      if (c == NULL)
+      if (contacts_in_group == NULL)
         {
-          DEBUG ("No channel for group '%s', it must be invalid?", added[i]);
-          continue;
+          DEBUG ("No record of group '%s', it must be invalid?",
+              normalized_group);
+        }
+      else
+        {
+          DEBUG ("Adding %u contacts to group '%s'",
+              tp_handle_set_size (contacts), added[i]);
+
+          if (add_contacts_to_handle_set (contacts_in_group,
+                  tp_handle_set_peek (contacts)))
+            {
+              g_ptr_array_add (really_added, (gchar *) added[i]);
+            }
         }
 
-      DEBUG ("Adding %u contacts to group '%s'", tp_handle_set_size (contacts),
-          added[i]);
-
-      if (tp_group_mixin_change_members (c, "",
-          tp_handle_set_peek (contacts), NULL, NULL, NULL,
-          self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE))
-        g_ptr_array_add (really_added, (gchar *) added[i]);
+      g_free (normalized_group);
     }
 
   for (i = 0; i < n_removed; i++)
     {
-      TpHandle handle = tp_handle_lookup (self->priv->group_repo, removed[i],
-          NULL, NULL);
-      gpointer c;
+      gchar *normalized_group = tp_base_contact_list_normalize_group (
+          self, removed[i]);
+      TpHandleSet *contacts_in_group = g_hash_table_lookup (self->priv->groups,
+          normalized_group);
 
-      /* it doesn't matter if handle is 0, we'll just get NULL */
-      c = g_hash_table_lookup (self->priv->groups,
-          GUINT_TO_POINTER (handle));
-
-      if (c == NULL)
+      if (contacts_in_group == NULL)
         {
-          DEBUG ("Group '%s' doesn't exist", removed[i]);
-          continue;
+          DEBUG ("No record of group '%s', it must be invalid?",
+              normalized_group);
+        }
+      else
+        {
+          DEBUG ("Removing %u contacts from group '%s'",
+              tp_handle_set_size (contacts), removed[i]);
+
+          if (remove_contacts_from_handle_set (contacts_in_group,
+                  tp_handle_set_peek (contacts)))
+            {
+              g_ptr_array_add (really_removed, (gchar *) removed[i]);
+            }
         }
 
-      DEBUG ("Removing %u contacts from group '%s'",
-          tp_handle_set_size (contacts), removed[i]);
-
-      if (tp_group_mixin_change_members (c, "",
-          NULL, tp_handle_set_peek (contacts), NULL, NULL,
-          self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE))
-        g_ptr_array_add (really_removed, (gchar *) removed[i]);
+      g_free (normalized_group);
     }
 
   if (really_added->len > 0 || really_removed->len > 0)
@@ -4470,17 +3225,8 @@ tp_base_contact_list_emulate_rename_group (TpBaseContactList *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TpHandle old_handle;
-  gpointer old_channel;
   GSimpleAsyncResult *result;
   TpHandleSet *old_members;
-
-  old_handle = tp_handle_lookup (self->priv->group_repo, old_name, NULL,
-      NULL);
-  g_return_if_fail (old_handle != 0);
-  old_channel = g_hash_table_lookup (self->priv->groups,
-      GUINT_TO_POINTER (old_handle));
-  g_return_if_fail (old_channel != NULL);
 
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_base_contact_list_emulate_rename_group);
@@ -4694,11 +3440,10 @@ static void
 tp_base_contact_list_mixin_get_contact_list_attributes (
     TpSvcConnectionInterfaceContactList *svc,
     const gchar **interfaces,
-    gboolean hold,
     DBusGMethodInvocation *context)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
+      BASE_CONTACT_LIST);
   TpContactsMixin *contacts_mixin = TP_CONTACTS_MIXIN (svc);
   GError *error = NULL;
 
@@ -4717,23 +3462,17 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
       GArray *contacts;
       const gchar *assumed[] = { TP_IFACE_CONNECTION,
           TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST, NULL };
-      gchar *sender = NULL;
       GHashTable *result;
-
-      if (hold)
-        sender = dbus_g_method_get_sender (context);
 
       set = tp_base_contact_list_dup_contacts (self);
       contacts = tp_handle_set_to_array (set);
       result = tp_contacts_mixin_get_contact_attributes (
-          (GObject *) self->priv->conn, contacts, interfaces, assumed,
-          sender);
+          (GObject *) self->priv->conn, contacts, interfaces, assumed);
       tp_svc_connection_interface_contact_list_return_from_get_contact_list_attributes (
           context, result);
 
       g_array_unref (contacts);
       tp_handle_set_destroy (set);
-      g_free (sender);
       g_hash_table_unref (result);
     }
 }
@@ -5000,8 +3739,8 @@ tp_base_contact_list_mixin_request_subscription (
     const gchar *message,
     DBusGMethodInvocation *context)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
+      BASE_CONTACT_LIST);
   GError *error = NULL;
   TpHandleSet *contacts_set;
 
@@ -5039,8 +3778,8 @@ tp_base_contact_list_mixin_authorize_publication (
     const GArray *contacts,
     DBusGMethodInvocation *context)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
+      BASE_CONTACT_LIST);
   GError *error = NULL;
   TpHandleSet *contacts_set;
 
@@ -5078,8 +3817,8 @@ tp_base_contact_list_mixin_remove_contacts (
     const GArray *contacts,
     DBusGMethodInvocation *context)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
+      BASE_CONTACT_LIST);
   GError *error = NULL;
   TpHandleSet *contacts_set;
 
@@ -5117,8 +3856,8 @@ tp_base_contact_list_mixin_unsubscribe (
     const GArray *contacts,
     DBusGMethodInvocation *context)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
+      BASE_CONTACT_LIST);
   GError *error = NULL;
   TpHandleSet *contacts_set;
 
@@ -5156,8 +3895,8 @@ tp_base_contact_list_mixin_unpublish (
     const GArray *contacts,
     DBusGMethodInvocation *context)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
+      BASE_CONTACT_LIST);
   GError *error = NULL;
   TpHandleSet *contacts_set;
 
@@ -5199,8 +3938,7 @@ tp_base_contact_list_get_list_dbus_property (GObject *conn,
     GValue *value,
     gpointer data)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) conn, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata (conn, BASE_CONTACT_LIST);
   ListProp p = GPOINTER_TO_INT (data);
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
@@ -5241,8 +3979,7 @@ tp_base_contact_list_fill_list_contact_attributes (GObject *obj,
   const GArray *contacts,
   GHashTable *attributes_hash)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) obj, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata (obj, BASE_CONTACT_LIST);
   guint i;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
@@ -5389,13 +4126,11 @@ tp_base_contact_list_mixin_set_contact_groups (
     const gchar **groups,
     DBusGMethodInvocation *context)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
+      BASE_CONTACT_LIST);
   const gchar *empty_strv[] = { NULL };
   GError *error = NULL;
-  TpHandleSet *group_set = NULL;
   GPtrArray *normalized_groups = NULL;
-  guint i;
 
   if (!tp_base_contact_list_check_group_change (self, NULL, &error))
     goto finally;
@@ -5403,25 +4138,20 @@ tp_base_contact_list_mixin_set_contact_groups (
   if (groups == NULL)
     groups = empty_strv;
 
-  group_set = tp_handle_set_new (self->priv->group_repo);
-  normalized_groups = g_ptr_array_sized_new (g_strv_length ((GStrv) groups));
+  normalized_groups = g_ptr_array_new_full (g_strv_length ((GStrv) groups),
+      (GDestroyNotify) g_free);
 
-  for (i = 0; groups[i] != NULL; i++)
+  for (; groups != NULL && *groups != NULL; groups++)
     {
-      TpHandle group_handle = tp_handle_ensure (self->priv->group_repo,
-          groups[i], NULL, NULL);
+      gchar *normalized = tp_base_contact_list_normalize_group (self, *groups);
 
-      if (group_handle != 0)
+      if (normalized != NULL)
         {
-          g_ptr_array_add (normalized_groups,
-              (gchar *) tp_handle_inspect (self->priv->group_repo,
-                group_handle));
-          tp_handle_set_add (group_set, group_handle);
-          tp_handle_unref (self->priv->group_repo, group_handle);
+          g_ptr_array_add (normalized_groups, normalized);
         }
       else
         {
-          DEBUG ("group '%s' not valid, ignoring it", groups[i]);
+          DEBUG ("group '%s' not valid, ignoring it", *groups);
         }
     }
 
@@ -5432,7 +4162,6 @@ tp_base_contact_list_mixin_set_contact_groups (
   context = NULL;     /* ownership transferred to callback */
 
 finally:
-  tp_clear_pointer (&group_set, tp_handle_set_destroy);
   tp_clear_pointer (&normalized_groups, g_ptr_array_unref);
 
   if (context != NULL)
@@ -5461,8 +4190,8 @@ tp_base_contact_list_mixin_set_group_members (
     const GArray *contacts,
     DBusGMethodInvocation *context)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
+      BASE_CONTACT_LIST);
   TpHandleSet *contacts_set = NULL;
   GError *error = NULL;
 
@@ -5502,38 +4231,31 @@ tp_base_contact_list_mixin_add_to_group (
     const GArray *contacts,
     DBusGMethodInvocation *context)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
+      BASE_CONTACT_LIST);
   GError *error = NULL;
-  TpHandle group_handle = 0;
+  gchar *normalized_group = NULL;
   TpHandleSet *contacts_set;
 
   if (!tp_base_contact_list_check_group_change (self, contacts, &error))
     goto sync_exit;
 
-  /* get the handle so we can use the normalized name */
-  group_handle = tp_handle_ensure (self->priv->group_repo, group, NULL,
-      &error);
+  normalized_group = tp_base_contact_list_normalize_group (self, group);
 
-  /* if the group's name is syntactically invalid, just fail */
-  if (group_handle == 0)
+  if (normalized_group == NULL)
     goto sync_exit;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
-  tp_base_contact_list_add_to_group_async (self,
-      tp_handle_inspect (self->priv->group_repo, group_handle),
+  tp_base_contact_list_add_to_group_async (self, normalized_group,
       contacts_set, tp_base_contact_list_mixin_add_to_group_cb, context);
-  tp_handle_unref (self->priv->group_repo, group_handle);
   tp_handle_set_destroy (contacts_set);
+  g_free (normalized_group);
   return;
 
 sync_exit:
   tp_base_contact_list_mixin_return_void (context, error);
   g_clear_error (&error);
-
-  if (group_handle != 0)
-    tp_handle_unref (self->priv->group_repo, group_handle);
 }
 
 static void
@@ -5556,33 +4278,34 @@ tp_base_contact_list_mixin_remove_from_group (
     const GArray *contacts,
     DBusGMethodInvocation *context)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
+      BASE_CONTACT_LIST);
   GError *error = NULL;
-  TpHandle group_handle;
+  gchar *normalized_group = NULL;
   TpHandleSet *contacts_set;
 
   if (!tp_base_contact_list_check_group_change (self, contacts, &error))
     goto sync_exit;
 
-  /* get the handle so we can use the normalized name */
-  group_handle = tp_handle_lookup (self->priv->group_repo, group, NULL, NULL);
+  normalized_group = tp_base_contact_list_normalize_group (self, group);
 
-  /* removing from a group that doesn't exist is a no-op */
-  if (group_handle == 0)
+  if (normalized_group == NULL
+      || g_hash_table_lookup (self->priv->groups, normalized_group) == NULL)
     goto sync_exit;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
-  tp_base_contact_list_remove_from_group_async (self,
-      tp_handle_inspect (self->priv->group_repo, group_handle),
+  tp_base_contact_list_remove_from_group_async (self, normalized_group,
       contacts_set, tp_base_contact_list_mixin_remove_from_group_cb, context);
   tp_handle_set_destroy (contacts_set);
+  g_free (normalized_group);
+
   return;
 
 sync_exit:
   tp_base_contact_list_mixin_return_void (context, error);
   g_clear_error (&error);
+  g_free (normalized_group);
 }
 
 static void
@@ -5604,20 +4327,21 @@ tp_base_contact_list_mixin_remove_group (
     const gchar *group,
     DBusGMethodInvocation *context)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
+      BASE_CONTACT_LIST);
   GError *error = NULL;
-  TpHandle group_handle;
+  gchar *normalized_group = NULL;
 
   if (!tp_base_contact_list_check_group_change (self, NULL, &error))
     goto sync_exit;
 
-  /* get the handle so we can use the normalized name */
-  group_handle = tp_handle_lookup (self->priv->group_repo, group, NULL, NULL);
+  normalized_group = tp_base_contact_list_normalize_group (self, group);
 
-  /* removing from a group that doesn't exist is a no-op */
-  if (group_handle == 0)
+  if (normalized_group == NULL
+      || g_hash_table_lookup (self->priv->groups, normalized_group) == NULL)
     goto sync_exit;
+
+  g_free (normalized_group);
 
   tp_base_contact_list_remove_group_async (self, group,
       tp_base_contact_list_mixin_remove_group_cb, context);
@@ -5626,6 +4350,7 @@ tp_base_contact_list_mixin_remove_group (
 sync_exit:
   tp_base_contact_list_mixin_return_void (context, error);
   g_clear_error (&error);
+  g_free (normalized_group);
 }
 
 static void
@@ -5648,54 +4373,47 @@ tp_base_contact_list_mixin_rename_group (
     const gchar *after,
     DBusGMethodInvocation *context)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
+      BASE_CONTACT_LIST);
   GError *error = NULL;
-  TpHandle old_handle;
-  gpointer old_channel;
-  TpHandle new_handle = 0;
+  gchar *old_normalized;
+  gchar *new_normalized;
 
   if (!tp_base_contact_list_check_group_change (self, NULL, &error))
     goto sync_exit;
 
-  old_handle = tp_handle_lookup (self->priv->group_repo, before, NULL, NULL);
-  old_channel = g_hash_table_lookup (self->priv->groups,
-      GUINT_TO_POINTER (old_handle));
+  /* jtodo: just use the normalize func directly */
 
-  if (old_handle == 0 || old_channel == NULL)
+  old_normalized = tp_base_contact_list_normalize_group (self, before);
+
+  if (g_hash_table_lookup (self->priv->groups, old_normalized) == NULL)
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_DOES_NOT_EXIST,
           "Group '%s' does not exist", before);
+      g_free (old_normalized);
       goto sync_exit;
     }
 
-  new_handle = tp_handle_ensure (self->priv->group_repo, after, NULL, &error);
+  new_normalized = tp_base_contact_list_normalize_group (self, after);
 
-  if (new_handle == 0)
-    goto sync_exit;
-
-  if (g_hash_table_lookup (self->priv->groups, GUINT_TO_POINTER (new_handle))
-      != NULL)
+  if (g_hash_table_lookup (self->priv->groups, new_normalized) != NULL)
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "Group '%s' already exists",
-          tp_handle_inspect (self->priv->group_repo, new_handle));
+          "Group '%s' already exists", new_normalized);
+      g_free (new_normalized);
       goto sync_exit;
     }
 
   tp_base_contact_list_rename_group_async (self,
-      tp_handle_inspect (self->priv->group_repo, old_handle),
-      tp_handle_inspect (self->priv->group_repo, new_handle),
+      old_normalized, new_normalized,
       tp_base_contact_list_mixin_rename_group_cb, context);
-  tp_handle_unref (self->priv->group_repo, new_handle);
+  g_free (old_normalized);
+  g_free (new_normalized);
   return;
 
 sync_exit:
   tp_base_contact_list_mixin_return_void (context, error);
   g_clear_error (&error);
-
-  if (new_handle != 0)
-    tp_handle_unref (self->priv->group_repo, new_handle);
 }
 
 typedef enum {
@@ -5719,8 +4437,7 @@ tp_base_contact_list_get_group_dbus_property (GObject *conn,
     GValue *value,
     gpointer data)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) conn, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata (conn, BASE_CONTACT_LIST);
   GroupProp p = GPOINTER_TO_INT (data);
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
@@ -5758,8 +4475,7 @@ tp_base_contact_list_fill_groups_contact_attributes (GObject *obj,
   const GArray *contacts,
   GHashTable *attributes_hash)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) obj, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata (obj, BASE_CONTACT_LIST);
   guint i;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
@@ -5788,8 +4504,7 @@ tp_base_contact_list_fill_blocking_contact_attributes (GObject *obj,
   const GArray *contacts,
   GHashTable *attributes_hash)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) obj, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata (obj, BASE_CONTACT_LIST);
   guint i;
   TpHandleSet *blocked;
 
@@ -5861,8 +4576,8 @@ tp_base_contact_list_mixin_request_blocked_contacts (
     TpSvcConnectionInterfaceContactBlocking *svc,
     DBusGMethodInvocation *context)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
+      BASE_CONTACT_LIST);
 
   ERROR_IF_BLOCKING_NOT_SUPPORTED (self, context);
 
@@ -5931,8 +4646,8 @@ tp_base_contact_list_mixin_block_contacts (
     gboolean report_abusive,
     DBusGMethodInvocation *context)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
+      BASE_CONTACT_LIST);
   TpHandleSet *contacts;
 
   ERROR_IF_BLOCKING_NOT_SUPPORTED (self, context);
@@ -5971,8 +4686,8 @@ tp_base_contact_list_mixin_unblock_contacts (
     const GArray *contacts_arr,
     DBusGMethodInvocation *context)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
+      BASE_CONTACT_LIST);
   TpHandleSet *contacts;
 
   ERROR_IF_BLOCKING_NOT_SUPPORTED (self, context);
@@ -6020,8 +4735,7 @@ tp_base_contact_list_get_blocking_dbus_property (GObject *conn,
     GValue *value,
     gpointer data)
 {
-  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) conn, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactList *self = g_object_get_qdata (conn, BASE_CONTACT_LIST);
   TpBlockableContactListInterface *iface =
       TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
   static GQuark contact_blocking_capabilities_q = 0;
@@ -6095,6 +4809,7 @@ tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls)
 
 /**
  * tp_base_contact_list_mixin_register_with_contacts_mixin:
+ * @self: a contact list
  * @conn: An instance of #TpBaseConnection that uses a #TpContactsMixin,
  *  and implements #TpSvcConnectionInterfaceContactList using
  *  #TpBaseContactList
@@ -6114,15 +4829,14 @@ tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls)
  */
 void
 tp_base_contact_list_mixin_register_with_contacts_mixin (
+    TpBaseContactList *self,
     TpBaseConnection *conn)
 {
-  TpBaseContactList *self;
   GType type = G_OBJECT_TYPE (conn);
   GObject *object = (GObject *) conn;
 
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (TP_IS_BASE_CONNECTION (conn));
-  self = _tp_base_connection_find_channel_manager (conn,
-      TP_TYPE_BASE_CONTACT_LIST);
   g_return_if_fail (self != NULL);
   g_return_if_fail (g_type_is_a (type,
         TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST));

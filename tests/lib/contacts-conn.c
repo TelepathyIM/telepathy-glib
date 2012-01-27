@@ -383,11 +383,17 @@ constructed (GObject *object)
   if (parent_impl != NULL)
     parent_impl (object);
 
+  self->priv->list_manager = g_object_new (TEST_TYPE_CONTACT_LIST_MANAGER,
+      "connection", self, NULL);
+
   tp_contacts_mixin_init (object,
       G_STRUCT_OFFSET (TpTestsContactsConnection, contacts_mixin));
   tp_base_connection_register_with_contacts_mixin (base);
   if (self->priv->list_manager)
-    tp_base_contact_list_mixin_register_with_contacts_mixin (base);
+    {
+      tp_base_contact_list_mixin_register_with_contacts_mixin (
+          TP_BASE_CONTACT_LIST (self->priv->list_manager), base);
+    }
   tp_contacts_mixin_add_contact_attributes_iface (object,
       TP_IFACE_CONNECTION_INTERFACE_ALIASING,
       aliasing_fill_contact_attributes);
@@ -511,15 +517,7 @@ my_get_maximum_status_message_length_cb (GObject *obj)
 static GPtrArray *
 create_channel_managers (TpBaseConnection *conn)
 {
-  TpTestsContactsConnection *self = TP_TESTS_CONTACTS_CONNECTION (conn);
-  GPtrArray *ret = g_ptr_array_sized_new (1);
-
-  self->priv->list_manager = g_object_new (TEST_TYPE_CONTACT_LIST_MANAGER,
-      "connection", conn, NULL);
-
-  g_ptr_array_add (ret, self->priv->list_manager);
-
-  return ret;
+  return g_ptr_array_new ();
 }
 
 static void

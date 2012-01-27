@@ -594,22 +594,6 @@ USA.</p>
           A chat room
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="List" value="3">
-        <tp:deprecated version="0.25.0">Replaced by <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy">Connection.Interface.ContactList</tp:dbus-ref>
-        </tp:deprecated>
-        <tp:docstring>
-          A server-generated contact list (see Channel.Interface.Group)
-        </tp:docstring>
-      </tp:enumvalue>
-      <tp:enumvalue suffix="Group" value="4">
-        <tp:deprecated version="0.25.0">Replaced by <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy">Connection.Interface.ContactList</tp:dbus-ref>
-        </tp:deprecated>
-        <tp:docstring>
-          A user-defined contact list (see Channel.Interface.Group)
-        </tp:docstring>
-      </tp:enumvalue>
     </tp:enum>
 
     <tp:simple-type name="Handle" type="u" array-name="Handle_List">

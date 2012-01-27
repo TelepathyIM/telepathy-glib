@@ -164,19 +164,6 @@
  */
 
 /**
- * SECTION:svc-channel-contactlist
- * @title: Contact List channels
- * @short_description: service-side interface for the Contact List channel type
- *
- * Many instant messaging protocols have the a concept of a contact list,
- * roster or buddy list. Some protocols also have user-defined groups or tags
- * which can be represented as subsets of the roster.
- *
- * This section documents the auto-generated C wrappers for the Contact List
- * channel type.
- */
-
-/**
  * SECTION:svc-channel-roomlist
  * @title: Room List channels
  * @short_description: service-side interface for the Room List channel type

@@ -560,7 +560,7 @@ struct _TpMutableContactGroupListInterface {
 
 void tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls);
 void tp_base_contact_list_mixin_register_with_contacts_mixin (
-    TpBaseConnection *conn);
+    TpBaseContactList *self, TpBaseConnection *conn);
 void tp_base_contact_list_mixin_list_iface_init (
     TpSvcConnectionInterfaceContactListClass *klass);
 void tp_base_contact_list_mixin_groups_iface_init (

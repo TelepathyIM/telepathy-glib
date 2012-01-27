@@ -266,7 +266,7 @@ test_prepare (Test *test,
   g_assert (caps != NULL);
   classes = tp_capabilities_get_channel_classes (caps);
   g_assert (classes != NULL);
-  g_assert_cmpint (classes->len, ==, 2);
+  g_assert_cmpint (classes->len, ==, 0);
 }
 
 static void

@@ -202,24 +202,7 @@ presence_updated_cb (ExampleContactList *contact_list,
 static GPtrArray *
 create_channel_managers (TpBaseConnection *conn)
 {
-  ExampleContactListConnection *self =
-    EXAMPLE_CONTACT_LIST_CONNECTION (conn);
-  GPtrArray *ret = g_ptr_array_sized_new (1);
-
-  self->priv->contact_list = EXAMPLE_CONTACT_LIST (g_object_new (
-          EXAMPLE_TYPE_CONTACT_LIST,
-          "connection", conn,
-          "simulation-delay", self->priv->simulation_delay,
-          NULL));
-
-  g_signal_connect (self->priv->contact_list, "alias-updated",
-      G_CALLBACK (alias_updated_cb), self);
-  g_signal_connect (self->priv->contact_list, "presence-updated",
-      G_CALLBACK (presence_updated_cb), self);
-
-  g_ptr_array_add (ret, self->priv->contact_list);
-
-  return ret;
+  return g_ptr_array_sized_new (0);
 }
 
 static gboolean
@@ -279,6 +262,7 @@ aliasing_fill_contact_attributes (GObject *object,
 static void
 constructed (GObject *object)
 {
+  ExampleContactListConnection *self = EXAMPLE_CONTACT_LIST_CONNECTION (object);
   TpBaseConnection *base = TP_BASE_CONNECTION (object);
   void (*chain_up) (GObject *) =
     G_OBJECT_CLASS (example_contact_list_connection_parent_class)->constructed;
@@ -290,7 +274,20 @@ constructed (GObject *object)
       G_STRUCT_OFFSET (ExampleContactListConnection, contacts_mixin));
 
   tp_base_connection_register_with_contacts_mixin (base);
-  tp_base_contact_list_mixin_register_with_contacts_mixin (base);
+
+  self->priv->contact_list = EXAMPLE_CONTACT_LIST (g_object_new (
+          EXAMPLE_TYPE_CONTACT_LIST,
+          "connection", self,
+          "simulation-delay", self->priv->simulation_delay,
+          NULL));
+
+  g_signal_connect (self->priv->contact_list, "alias-updated",
+      G_CALLBACK (alias_updated_cb), self);
+  g_signal_connect (self->priv->contact_list, "presence-updated",
+      G_CALLBACK (presence_updated_cb), self);
+
+  tp_base_contact_list_mixin_register_with_contacts_mixin (
+      TP_BASE_CONTACT_LIST (self->priv->contact_list), base);
 
   tp_contacts_mixin_add_contact_attributes_iface (object,
       TP_IFACE_CONNECTION_INTERFACE_ALIASING,

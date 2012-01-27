@@ -583,20 +583,6 @@ TP_SVC_CHANNEL_TYPE_ROOM_LIST_GET_CLASS
 </SECTION>
 
 <SECTION>
-<FILE>svc-channel-contactlist</FILE>
-<TITLE>svc-channel-contactlist</TITLE>
-<INCLUDE>telepathy-glib/svc-channel.h</INCLUDE>
-TpSvcChannelTypeContactList
-TpSvcChannelTypeContactListClass
-<SUBSECTION Standard>
-TP_SVC_CHANNEL_TYPE_CONTACT_LIST
-TP_IS_SVC_CHANNEL_TYPE_CONTACT_LIST
-TP_TYPE_SVC_CHANNEL_TYPE_CONTACT_LIST
-tp_svc_channel_type_contact_list_get_type
-TP_SVC_CHANNEL_TYPE_CONTACT_LIST_GET_CLASS
-</SECTION>
-
-<SECTION>
 <FILE>svc-channel-group</FILE>
 <TITLE>svc-channel-group</TITLE>
 <INCLUDE>telepathy-glib/svc-channel.h</INCLUDE>
@@ -2228,8 +2214,6 @@ TP_IFACE_CONNECTION_INTERFACE_MAIL_NOTIFICATION
 TP_IFACE_QUARK_CONNECTION_INTERFACE_MAIL_NOTIFICATION
 TP_IFACE_CHANNEL
 TP_IFACE_QUARK_CHANNEL
-TP_IFACE_CHANNEL_TYPE_CONTACT_LIST
-TP_IFACE_QUARK_CHANNEL_TYPE_CONTACT_LIST
 TP_IFACE_CHANNEL_TYPE_CONTACT_SEARCH
 TP_IFACE_QUARK_CHANNEL_TYPE_CONTACT_SEARCH
 TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER
@@ -2561,7 +2545,6 @@ tp_iface_quark_channel_interface_sasl_authentication
 tp_iface_quark_channel_interface_securable
 tp_iface_quark_channel_interface_sms
 tp_iface_quark_channel_interface_subject
-tp_iface_quark_channel_type_contact_list
 tp_iface_quark_channel_type_contact_search
 tp_iface_quark_channel_type_file_transfer
 tp_iface_quark_channel_type_room_list

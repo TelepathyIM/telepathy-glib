@@ -48,7 +48,6 @@ EXTRA_DIST = \
     Channel_Interface_Tube.xml \
     Channel_Request.xml \
     Channel_Type_Call.xml \
-    Channel_Type_Contact_List.xml \
     Channel_Type_Contact_Search.xml \
     Channel_Type_DBus_Tube.xml \
     Channel_Type_File_Transfer.xml \

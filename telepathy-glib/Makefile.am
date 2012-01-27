@@ -188,14 +188,11 @@ libtelepathy_glib_internal_la_SOURCES = \
     connection-manager.c \
     contact.c \
     contact-internal.h \
-    contact-list-channel-internal.h \
-    contact-list-channel.c \
     contact-operations.c \
     contact-search.c \
     contact-search-internal.h \
     contact-search-result.c \
     base-contact-list.c \
-    base-contact-list-internal.h \
     cm-message.c \
     cm-message-internal.h \
     contacts-mixin.c \
