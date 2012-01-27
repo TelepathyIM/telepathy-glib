@@ -73,16 +73,6 @@ requested_name (TpDBusDaemon *proxy,
 }
 
 static void
-prop_changed (TpProxy *proxy,
-              const GPtrArray *properties,
-              gpointer user_data,
-              GObject *weak_object)
-{
-  g_error ("prop_changed called - a signal connection which should have "
-      "failed has succeeded. Args: proxy=%p user_data=%p", proxy, user_data);
-}
-
-static void
 dummy_noc (TpDBusDaemon *proxy,
            const gchar *name,
            const gchar *old,
@@ -197,16 +187,6 @@ main (int argc,
   tp_cli_dbus_daemon_connect_to_name_owner_changed (a, noc, PTR (TEST_A),
       destroy_user_data, (GObject *) z, &error_out);
   g_assert_no_error (error_out);
-
-  /* assert that connecting to a signal on an interface we don't have fails */
-  freed = FALSE;
-  tp_cli_properties_interface_connect_to_properties_changed (a, prop_changed,
-      &freed, set_freed, NULL, &error_out);
-  MYASSERT (freed, "");
-  MYASSERT (error_out != NULL, "");
-  MYASSERT (error_out->code == TP_DBUS_ERROR_NO_INTERFACE, "");
-  g_error_free (error_out);
-  error_out = NULL;
 
   /* b gets its signal connection cancelled because stub is
    * destroyed */

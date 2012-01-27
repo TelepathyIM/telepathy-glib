@@ -145,22 +145,6 @@ tp_dbus_errors_quark (void)
  */
 
 /**
- * SECTION:proxy-tp-properties
- * @title: TpProxy Telepathy Properties
- * @short_description: The Telepathy Properties interface
- * @see_also: #TpProxy
- *
- * As well as #TpProxy, proxy.h includes auto-generated client wrappers for the
- * Telepathy Properties interface, which can be implemented by any type of
- * object.
- *
- * The Telepathy Properties interface should not be confused with the D-Bus
- * core Properties interface.
- *
- * Since: 0.7.1
- */
-
-/**
  * SECTION:proxy-subclass
  * @title: TpProxy subclasses and mixins
  * @short_description: Providing extra functionality for a #TpProxy or

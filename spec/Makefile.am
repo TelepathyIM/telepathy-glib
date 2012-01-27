@@ -100,7 +100,6 @@ EXTRA_DIST = \
     Connection_Manager.xml \
     Connection_Manager_Interface_Account_Storage.xml \
     Debug.xml \
-    Properties_Interface.xml \
     Protocol.xml \
     Protocol_Interface_Addressing.xml \
     Protocol_Interface_Avatars.xml \

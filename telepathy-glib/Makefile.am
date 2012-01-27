@@ -87,7 +87,6 @@ our_headers = \
     message-mixin.h \
     observe-channels-context.h \
     presence-mixin.h \
-    properties-mixin.h \
     protocol.h \
     proxy.h \
     proxy-subclass.h \
@@ -236,7 +235,6 @@ libtelepathy_glib_internal_la_SOURCES = \
     observe-channels-context-internal.h \
     observe-channels-context.c \
     presence-mixin.c \
-    properties-mixin.c \
     protocol.c \
     protocol-internal.h \
     proxy.c \
