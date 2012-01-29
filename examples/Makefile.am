@@ -1,3 +1,5 @@
+SUBDIRS=python
+
 noinst_PROGRAMS = call-handler
 
 LDADD =  \

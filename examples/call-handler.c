@@ -139,7 +139,7 @@ src_pad_added_cb (TfContent *content,
     }
 
   gst_bin_add (GST_BIN (context->pipeline), element);
-  sinkpad = gst_element_get_pad (element, "sink");
+  sinkpad = gst_element_get_static_pad (element, "sink");
   ret = gst_element_set_state (element, GST_STATE_PLAYING);
   if (ret == GST_STATE_CHANGE_FAILURE)
     {
@@ -252,7 +252,7 @@ setup_audio_source (ChannelContext *context, TfContent *content)
   gint input_volume = 0;
 
   result = gst_parse_bin_from_description (
-      "pulsesrc ! audio/x-raw-int,rate=8000 ! queue"
+      "pulsesrc ! audio/x-raw, rate=8000 ! queue"
       " ! audioconvert ! audioresample"
       " ! volume name=input_volume ! audioconvert ",
       TRUE, NULL);
@@ -286,7 +286,7 @@ setup_video_source (ChannelContext *context, TfContent *content)
   guint framerate = 0, width = 0, height = 0;
 
   result = gst_parse_bin_from_description_full (
-      "autovideosrc ! videomaxrate ! videoscale ! colorspace ! capsfilter name=c",
+      "autovideosrc ! videorate drop-only=1 average-period=20000000000 ! videoscale ! videoconvert ! capsfilter name=c",
       TRUE, NULL, GST_PARSE_FLAG_FATAL_ERRORS, NULL);
 
   g_assert (result);
@@ -311,7 +311,7 @@ setup_video_source (ChannelContext *context, TfContent *content)
   context->width = width;
   context->height = height;
 
-  caps = gst_caps_new_simple ("video/x-raw-yuv",
+  caps = gst_caps_new_simple ("video/x-raw",
       "width", G_TYPE_INT, width,
       "height", G_TYPE_INT, height,
       "framerate", GST_TYPE_FRACTION, framerate, 1,
@@ -373,7 +373,7 @@ start_sending_cb (TfContent *content, gpointer user_data)
 
 
   gst_bin_add (GST_BIN (context->pipeline), element);
-  srcpad = gst_element_get_pad (element, "src");
+  srcpad = gst_element_get_static_pad (element, "src");
 
   if (GST_PAD_LINK_FAILED (gst_pad_link (srcpad, sinkpad)))
     {

@@ -50,7 +50,7 @@ AC_PROG_LIBTOOL
 
 dnl decide error flags
 AS_COMPILER_FLAG(-Wall, ERROR_CFLAGS="-Wall", ERROR_CFLAGS="")
-AS_COMPILER_FLAG(-Werror, werror=yes, werror=no)
+AS_COMPILER_FLAG(-Werror -Wno-error=deprecated-declarations, werror=yes, werror=no)
 
 AC_ARG_ENABLE(Werror,
   AC_HELP_STRING([--disable-Werror],[compile without -Werror (normally enabled in development builds)]),
@@ -67,7 +67,7 @@ AS_COMPILER_FLAG(-Wno-unused-parameter,
 ifelse(tp_farstream_nano_version, 0, [],
     [
         if test x$werror = xyes; then
-            ERROR_CFLAGS="$ERROR_CFLAGS -Werror"
+            ERROR_CFLAGS="$ERROR_CFLAGS -Werror -Wno-error=deprecated-declarations"
         fi
         if test x$wextra = xyes -a \
             x$wno_missing_field_initializers = xyes -a \
@@ -82,6 +82,8 @@ AC_ARG_ENABLE(coverage,       [  --enable-coverage         compile with coverage
 if test "x$enable_coverage" = "xyes"; then
        CFLAGS="$CFLAGS -g -fprofile-arcs -ftest-coverage"
 fi
+
+CFLAGS="$CFLAGS -DGST_USE_UNSTABLE_API"
 
 dnl Check for Glib
 PKG_CHECK_MODULES(GLIB, gobject-2.0 >= 2.30 glib-2.0 >= 2.30 gio-2.0)
@@ -112,22 +114,6 @@ AC_SUBST(FARSTREAM_LIBS)
 dnl Always required to generate extensions
 AM_PATH_PYTHON([2.5])
 
-AC_ARG_ENABLE([python],
-  AC_HELP_STRING([--disable-python], [Disable Python bindings]),
-  [case "${enableval}" in
-      yes) WANT_PYTHON=yes ;;
-      no)  WANT_PYTHON=no ;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-python) ;;
-        esac],
-  WANT_PYTHON=yes)
-
-if test "x$WANT_PYTHON" = "xyes"; then
-   AM_CHECK_PYTHON_HEADERS(,[AC_MSG_ERROR(could not find Python headers)])
-   PKG_CHECK_MODULES(PYTPFARSTREAM, [ pygobject-2.0 >= 2.12.0
-      gst-python-0.10 >= 0.10.10 ])
-fi
-AM_CONDITIONAL(WANT_PYTHON, test "x$WANT_PYTHON" = "xyes")
-
 GTK_DOC_CHECK([1.17], [--flavour no-tmpl])
 
 LT_CURRENT=tp_farstream_lt_current
@@ -143,11 +129,9 @@ AC_OUTPUT( Makefile \
           doc/lib/Makefile \
           m4/Makefile \
           examples/Makefile \
+          examples/python/Makefile \
           telepathy-farstream/Makefile  \
           telepathy-farstream/telepathy-farstream.pc \
           telepathy-farstream/telepathy-farstream-uninstalled.pc
-          tools/Makefile \
-          python/Makefile \
-          python/codegen/Makefile \
-          python/examples/Makefile \
+          tools/Makefile
 )

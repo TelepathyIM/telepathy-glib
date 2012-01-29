@@ -1,15 +1,11 @@
 ACLOCAL_AMFLAGS = -I m4
 
 
-if WANT_PYTHON
-  PYTHON_SUBDIR = python
-endif
-
-SUBDIRS = m4 \
+ 
+SUBDIRS= m4 \
           tools \
           telepathy-farstream \
           doc \
-          $(PYTHON_SUBDIR) \
           examples
 
 DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc

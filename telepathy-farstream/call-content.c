@@ -2402,10 +2402,31 @@ struct StreamSrcPadIterator {
   TfCallContent *self;
 };
 
+
+static void
+streams_src_pads_iter_copy (const GstIterator *orig, GstIterator *copy)
+{
+  const struct StreamSrcPadIterator *iter_orig =
+      (const struct StreamSrcPadIterator *) orig;
+  struct StreamSrcPadIterator *iter = (struct StreamSrcPadIterator *) copy;
+
+  iter->handles = g_array_sized_new (TRUE, FALSE, sizeof(guint),
+      iter_orig->handles->len );
+  iter->handles_backup = g_array_sized_new (TRUE, FALSE, sizeof(guint),
+      iter_orig->handles_backup->len );
+  g_array_append_vals (iter->handles, iter_orig->handles->data,
+      iter_orig->handles->len);
+  g_array_append_vals (iter->handles_backup, iter_orig->handles_backup->data,
+      iter_orig->handles_backup->len);
+  iter->self = g_object_ref (iter_orig->self);
+}
+
+
 static GstIteratorResult
-streams_src_pads_iter_next (GstIterator *it, gpointer *result)
+streams_src_pads_iter_next (GstIterator *it, GValue *result)
 {
   struct StreamSrcPadIterator *iter = (struct StreamSrcPadIterator *) it;
+
   guint i;
 
   if (iter->handles->len == 0)
@@ -2418,7 +2439,9 @@ streams_src_pads_iter_next (GstIterator *it, gpointer *result)
       if (cfs->contact_handle == g_array_index (iter->handles, guint, 0))
         {
           g_array_remove_index_fast (iter->handles, 0);
-          *result = cfs;
+          g_value_unset (result);
+          g_value_init (result, G_TYPE_POINTER);
+          g_value_set_pointer (result, cfs);
           return GST_ITERATOR_OK;
         }
     }
@@ -2428,9 +2451,11 @@ streams_src_pads_iter_next (GstIterator *it, gpointer *result)
 }
 
 static GstIteratorItem
-streams_src_pads_iter_item (GstIterator *it, gpointer item)
+streams_src_pads_iter_item (GstIterator *it, const GValue *item)
 {
-  struct CallFsStream *cfs = item;
+  struct CallFsStream *cfs = g_value_get_pointer (item);
+
+  g_value_unset ((GValue*) item);
 
   gst_iterator_push (it, fs_stream_iterate_src_pads (cfs->fsstream));
 
@@ -2467,6 +2492,7 @@ tf_call_content_iterate_src_pads (TfContent *content, guint *handles,
   iter = (struct StreamSrcPadIterator *) gst_iterator_new (
       sizeof (struct StreamSrcPadIterator), GST_TYPE_PAD,
       self->mutex, &self->fsstreams_cookie,
+      streams_src_pads_iter_copy,
       streams_src_pads_iter_next,
       streams_src_pads_iter_item,
       streams_src_pads_iter_resync,
