@@ -159,7 +159,13 @@ static void
 teardown (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
-  tp_cli_connection_run_disconnect (test->conn, -1, NULL, NULL);
+  GAsyncResult *result = NULL;
+
+  tp_connection_disconnect_async (connection, tp_tests_result_ready_cb,
+      &result);
+  tp_tests_run_until_result (&result);
+  /* Ignore success/failure: it might already have gone */
+  g_object_unref (result);
 
   test->service_conn_as_base = NULL;
   g_object_unref (test->service_conn);
