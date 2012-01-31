@@ -34,75 +34,44 @@
  * tp_presence_mixin_finalize() from your dispose or finalize function.
  *
  * <section>
- * <title>Implementing SimplePresence</title>
+ * <title>Implementing Presence</title>
  * <para>
- *   Since 0.7.13 this mixin supports the entire SimplePresence interface.
- *   You can implement #TpSvcConnectionInterfaceSimplePresence as follows:
+ *   Since 0.7.13 this mixin supports the entire Presence interface.
+ *   You can implement #TpSvcConnectionInterfacePresence as follows:
  *   <itemizedlist>
  *     <listitem>
  *       <para>use the #TpContactsMixin and
  *        <link linkend="telepathy-glib-dbus-properties-mixin">TpDBusPropertiesMixin</link>;</para>
  *     </listitem>
  *     <listitem>
- *       <para>pass tp_presence_mixin_simple_presence_iface_init() as an
+ *       <para>pass tp_presence_mixin_iface_init() as an
  *         argument to G_IMPLEMENT_INTERFACE(), like so:
  *       </para>
  *       |[
  *       G_DEFINE_TYPE_WITH_CODE (MyConnection, my_connection,
  *           TP_TYPE_BASE_CONNECTION,
  *           // ...
- *           G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
- *               tp_presence_mixin_simple_presence_iface_init);
+ *           G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE,
+ *               tp_presence_mixin_iface_init);
  *           // ...
  *           )
  *       ]|
  *     </listitem>
  *     <listitem>
  *       <para>
- *         call tp_presence_mixin_simple_presence_init_dbus_properties() in the
+ *         call tp_presence_mixin_init_dbus_properties() in the
  *         #GTypeInfo class_init function;
  *       </para>
  *     </listitem>
  *     <listitem>
  *       <para>
- *         call tp_presence_mixin_simple_presence_register_with_contacts_mixin()
+ *         call tp_presence_mixin_register_with_contacts_mixin()
  *         in the #GObjectClass constructed function.
  *       </para>
  *     </listitem>
  *   </itemizedlist>
  * </para>
- * </section> <!-- Simple Presence -->
- * <section>
- * <title>Implementing old-style Presence</title>
- * <para>
- *   This mixin also supports a large subset of the deprecated Presence
- *   interface. It does not support protocols where it is possible to set
- *   multiple statuses on yourself at once (all presence statuses will have the
- *   exclusive flag set), or last-activity-time information.
- * </para>
- * <para>
- *   To use the presence mixin as the implementation of
- *   #TpSvcConnectionInterfacePresence, use tp_presence_mixin_iface_init() as
- *   the function you pass to G_IMPLEMENT_INTERFACE(), as in the following
- *   example.  The presence mixin implements all of the D-Bus methods in the
- *   Presence interface.
- * </para>
- * |[
- * G_DEFINE_TYPE_WITH_CODE (MyConnection, my_connection,
- *     TP_TYPE_BASE_CONNECTION,
- *     // ...
- *     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE,
- *         tp_presence_mixin_iface_init);
- *     // ...
- *     )
- * ]|
- * <para>
- *   In telepathy-glib versions older than 0.11.13, every connection
- *   that used the #TpPresenceMixin was required to implement
- *   #TpSvcConnectionInterfacePresence; failing to do so would lead to an
- *   assertion failure. Since 0.11.13, this is no longer required.
- * </para>
- * </section> <!-- complex Presence -->
+ * </section>
  *
  * Since: 0.5.13
  */

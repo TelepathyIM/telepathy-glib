@@ -2395,7 +2395,7 @@ test_superfluous_attributes (Fixture *f,
   handle = tp_handle_ensure (f->service_repo, "helge", NULL, NULL);
   g_assert_cmpuint (handle, !=, 0);
 
-  /* We ask for ClientTypes; the CM is broken and adds SimplePresence
+  /* We ask for ClientTypes; the CM is broken and adds Presence
    * information to the reply... it also omits the /client-types attribute from
    * the reply, which, since the spec says “Omitted from the result if the
    * contact's client types are not known.” leaves us in the exciting position

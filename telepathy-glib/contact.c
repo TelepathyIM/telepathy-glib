@@ -434,9 +434,9 @@ tp_contact_get_avatar_mime_type (TpContact *self)
  * tp_contact_get_presence_type:
  * @self: a contact
  *
- * If this object has been set up to track %TP_CONTACT_FEATURE_PRESENCE
- * and the underlying connection supports either the Presence or
- * SimplePresence interfaces, return the type of the contact's presence.
+ * If this object has been set up to track
+ * %TP_CONTACT_FEATURE_PRESENCE and the underlying connection supports
+ * the Presence interface, return the type of the contact's presence.
  *
  * Otherwise, return %TP_CONNECTION_PRESENCE_TYPE_UNSET.
  *

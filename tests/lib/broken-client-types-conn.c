@@ -36,7 +36,7 @@ broken_fill_client_types (
   for (i = 0; i < contacts->len; i++)
     {
       TpHandle handle = g_array_index (contacts, guint, i);
-      /* Muahaha. Actually we add SimplePresence information. */
+      /* Muahaha. Actually we add Presence information. */
       GValueArray *presence = tp_value_array_build (3,
           G_TYPE_UINT, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE,
           G_TYPE_STRING, "available",

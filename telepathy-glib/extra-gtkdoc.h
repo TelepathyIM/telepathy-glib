@@ -613,18 +613,18 @@
  */
 
 /**
- * SECTION:connection-simple-presence
- * @title: Connection SimplePresence interface
- * @short_description: client-side wrappers for the SimplePresence interface
+ * SECTION:connection-presence
+ * @title: Connection Presence interface
+ * @short_description: client-side wrappers for the Presence interface
  * @see_also: #TpConnection
  *
  * Most instant messaging protocols allow users to advertise their presence
- * status. In Telepathy, this is represented by the SimplePresence
+ * status. In Telepathy, this is represented by the Presence
  * interface, which lets applications advertise the presence status of the
  * local user, and query the presence status of their contacts.
  *
  * This section documents the auto-generated C wrappers for the
- * SimplePresence interface, used with #TpConnection objects.
+ * Presence interface, used with #TpConnection objects.
  */
 
 /**
