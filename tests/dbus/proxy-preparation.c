@@ -52,9 +52,8 @@ setup (Test *test,
 static void
 disconnect_and_destroy_conn (Test *test)
 {
-  tp_cli_connection_run_disconnect (TP_CONNECTION (test->my_conn), -1,
-      &test->error, NULL);
-  g_assert_no_error (test->error);
+  tp_tests_connection_assert_disconnect_succeeds (
+      TP_CONNECTION (test->my_conn));
 
   tp_clear_object (&test->connection);
   tp_clear_object (&test->base_connection);

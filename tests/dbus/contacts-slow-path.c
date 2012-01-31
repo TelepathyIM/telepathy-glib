@@ -1221,12 +1221,7 @@ teardown (Fixture *f,
   gboolean ok;
 
   if (f->legacy_client_conn != NULL)
-    {
-      ok = tp_cli_connection_run_disconnect (f->legacy_client_conn, -1,
-            &error, NULL);
-      g_assert_no_error (error);
-      g_assert (ok);
-    }
+    tp_tests_connection_assert_disconnect_succeeds (f->legacy_client_conn);
 
   f->service_repo = NULL;
   tp_clear_object (&f->legacy_client_conn);

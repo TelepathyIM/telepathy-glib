@@ -177,9 +177,7 @@ main (int argc,
 
   /* Teardown */
 
-  MYASSERT (tp_cli_connection_run_disconnect (client_conn, -1, &error, NULL),
-      "");
-  g_assert_no_error (error);
+  tp_tests_connection_assert_disconnect_succeeds (client_conn);
   g_object_unref (client_conn);
 
   service_conn_as_base = NULL;

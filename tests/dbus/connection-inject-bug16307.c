@@ -69,8 +69,7 @@ main (int argc,
       "");
   g_assert_no_error (error);
 
-  MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
-  g_assert_no_error (error);
+  tp_tests_connection_assert_disconnect_succeeds (conn);
 
   service_conn_as_base = NULL;
   g_object_unref (service_conn);

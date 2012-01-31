@@ -474,9 +474,7 @@ teardown (Test *test,
       &error);
   g_assert (conn != NULL);
   g_assert_no_error (error);
-  ok = tp_cli_connection_run_disconnect (conn, -1, &error, NULL);
-  g_assert (ok);
-  g_assert_no_error (error);
+  tp_tests_connection_assert_disconnect_succeeds (conn);
   g_assert (!tp_connection_run_until_ready (conn, FALSE, &error, NULL));
   g_assert_error (error, TP_ERRORS, TP_ERROR_CANCELLED);
   g_clear_error (&error);
@@ -2565,8 +2563,6 @@ static void
 test_request_blocked_contacts_pre_connect (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
-  gboolean ok;
-
   /* This verifies that calling RequestBlockedContacts()
    * before Connect(), when Connect() ultimately succeeds, returns correctly.
    */
@@ -2576,8 +2572,7 @@ test_request_blocked_contacts_pre_connect (Test *test,
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
   g_main_loop_run (test->main_loop);
 
-  ok = tp_cli_connection_run_disconnect (test->conn, -1, NULL, NULL);
-  g_assert (ok);
+  tp_tests_connection_assert_disconnect_succeeds (test->conn);
 }
 
 static void

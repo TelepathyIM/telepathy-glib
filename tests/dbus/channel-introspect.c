@@ -758,8 +758,7 @@ main (int argc,
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
       ==, FALSE);
 
-  MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
-  g_assert_no_error (error);
+  tp_tests_connection_assert_disconnect_succeeds (conn);
 
   was_ready = FALSE;
 
