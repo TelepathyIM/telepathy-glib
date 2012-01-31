@@ -3507,3 +3507,70 @@ tp_connection_get_balance_uri (TpConnection *self)
 
   return self->priv->balance_uri;
 }
+
+static void
+_tp_connection_void_cb (TpConnection *proxy,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = G_SIMPLE_ASYNC_RESULT (user_data);
+
+  if (error != NULL)
+    g_simple_async_result_set_from_error (result, error);
+
+  g_simple_async_result_complete_in_idle (result);
+  g_object_unref (G_OBJECT (result));
+}
+
+/**
+ * tp_connection_disconnect_async:
+ * @self: a #TpConnection
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Disconnect the connection.
+ *
+ * This method is intended for use by AccountManager implementations,
+ * such as Mission Control. To disconnect a connection managed by an
+ * AccountManager, either use tp_account_request_presence_async()
+ * or tp_account_set_enabled_async(), depending whether the intention is
+ * to put the account offline temporarily, or disable it longer-term.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_connection_disconnect_async (TpConnection *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CONNECTION (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_connection_disconnect_async);
+
+  tp_cli_connection_call_disconnect (self, -1, _tp_connection_void_cb, result,
+      NULL, NULL);
+}
+
+/**
+ * tp_connection_disconnect_finish:
+ * @self: a #TpConnection
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Interpret the result of tp_connection_disconnect_async().
+ *
+ * Returns: %TRUE if the call was successful, otherwise %FALSE
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_connection_disconnect_finish (TpConnection *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_connection_disconnect_async);
+}
