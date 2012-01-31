@@ -244,8 +244,8 @@ finish_prepare_action (GObject *source_object,
   TpAccountManager *am = TP_ACCOUNT_MANAGER (source_object);
 
   g_assert (test->am == am);
-  test->prepared = tp_account_manager_prepare_finish (am, res, &test->error);
-  is_prepared_reply = tp_account_manager_is_prepared (test->am,
+  test->prepared = tp_proxy_prepare_finish (am, res, &test->error);
+  is_prepared_reply = tp_proxy_is_prepared (test->am,
       TP_ACCOUNT_MANAGER_FEATURE_CORE);
   g_assert_cmpint (is_prepared_reply, ==, test->prepared);
   script_continue (test);
@@ -257,7 +257,7 @@ prepare_action (gpointer script_data,
 {
   Test *test = (Test *) script_data;
 
-  tp_account_manager_prepare_async (test->am, NULL, finish_prepare_action, test);
+  tp_proxy_prepare_async (test->am, NULL, finish_prepare_action, test);
 }
 
 static void
@@ -307,7 +307,7 @@ assert_core_not_ready_action (gpointer script_data,
 {
   Test *test = (Test *) script_data;
 
-  g_assert (!tp_account_manager_is_prepared (test->am,
+  g_assert (!tp_proxy_is_prepared (test->am,
       TP_ACCOUNT_MANAGER_FEATURE_CORE));
 
   script_continue (script_data);
@@ -319,7 +319,7 @@ assert_feature_not_ready_action (gpointer script_data,
 {
   Test *test = (Test *) script_data;
 
-  g_assert (!tp_account_manager_is_prepared (test->am,
+  g_assert (!tp_proxy_is_prepared (test->am,
       g_quark_from_string ((gchar *) user_data)));
 
   g_free (user_data);
@@ -337,7 +337,7 @@ prepare_feature_action (gpointer script_data,
   features[1] = g_quark_from_string ((gchar *) user_data);
   features[2] = 0;
 
-  tp_account_manager_prepare_async (test->am, features, finish_prepare_action, test);
+  tp_proxy_prepare_async (test->am, features, finish_prepare_action, test);
 
   g_free (user_data);
 }
@@ -379,7 +379,7 @@ ensure_action (gpointer script_data,
   Test *test = (Test *) script_data;
   g_assert (test != NULL);
   g_assert (test->am != NULL);
-  g_assert (tp_account_manager_is_prepared (test->am, TP_ACCOUNT_MANAGER_FEATURE_CORE));
+  g_assert (tp_proxy_is_prepared (test->am, TP_ACCOUNT_MANAGER_FEATURE_CORE));
   test->account = tp_account_manager_ensure_account (test->am,
       path);
 
@@ -405,8 +405,8 @@ finish_account_prepare_action (GObject *source_object,
   TpAccount *account = TP_ACCOUNT (source_object);
 
   g_assert (test->account == account);
-  test->prepared = tp_account_prepare_finish (account, res, &test->error);
-  g_assert (test->prepared == tp_account_is_prepared (account, TP_ACCOUNT_FEATURE_CORE));
+  test->prepared = tp_proxy_prepare_finish (account, res, &test->error);
+  g_assert (test->prepared == tp_proxy_is_prepared (account, TP_ACCOUNT_FEATURE_CORE));
 
   script_continue (test);
 }
@@ -417,7 +417,7 @@ account_prepare_action (gpointer script_data,
 {
   Test *test = (Test *) script_data;
 
-  tp_account_prepare_async (test->account, NULL, finish_account_prepare_action, test);
+  tp_proxy_prepare_async (test->account, NULL, finish_account_prepare_action, test);
 }
 
 static void

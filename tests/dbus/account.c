@@ -313,7 +313,7 @@ test_prepare_success (Test *test,
   g_main_loop_run (test->mainloop);
 
   /* the obvious accessors */
-  g_assert (tp_account_is_prepared (test->account, TP_ACCOUNT_FEATURE_CORE));
+  g_assert (tp_proxy_is_prepared (test->account, TP_ACCOUNT_FEATURE_CORE));
   g_assert (tp_account_is_enabled (test->account));
   assert_boolprop (test->account, "enabled", TRUE);
   g_assert (tp_account_is_usable (test->account));
@@ -560,7 +560,7 @@ test_connection (Test *test,
       account_prepare_cb, test);
   g_main_loop_run (test->mainloop);
 
-  g_assert (tp_account_is_prepared (test->account, TP_ACCOUNT_FEATURE_CORE));
+  g_assert (tp_proxy_is_prepared (test->account, TP_ACCOUNT_FEATURE_CORE));
 
   /* a connection turns up */
 

@@ -3558,9 +3558,6 @@ tp_account_bind_connection_status_to_property
 <SUBSECTION>
 TP_ACCOUNT_FEATURE_CORE
 TP_ACCOUNT_FEATURE_CONNECTION
-tp_account_is_prepared
-tp_account_prepare_async
-tp_account_prepare_finish
 <SUBSECTION>
 TP_ACCOUNT_FEATURE_ADDRESSING
 tp_account_get_uri_schemes
@@ -3628,9 +3625,6 @@ tp_account_manager_set_all_requested_presences
 tp_account_manager_enable_restart
 <SUBSECTION>
 TP_ACCOUNT_MANAGER_FEATURE_CORE
-tp_account_manager_is_prepared
-tp_account_manager_prepare_async
-tp_account_manager_prepare_finish
 <SUBSECTION Private>
 tp_account_manager_get_feature_quark_core
 <SUBSECTION>

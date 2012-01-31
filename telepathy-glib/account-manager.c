@@ -1089,7 +1089,7 @@ tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
     {
       TpAccount *account = TP_ACCOUNT (value);
 
-      if (tp_account_is_prepared (account, TP_ACCOUNT_FEATURE_CORE))
+      if (tp_proxy_is_prepared (account, TP_ACCOUNT_FEATURE_CORE))
         tp_account_request_presence_async (account, type, status, message,
             NULL, NULL);
     }
@@ -1294,77 +1294,6 @@ tp_account_manager_create_account_finish (TpAccountManager *manager,
 {
   _tp_implement_finish_return_copy_pointer (manager,
       tp_account_manager_create_account_finish, /* do not copy */);
-}
-
-/**
- * tp_account_manager_is_prepared: (skip)
- * @manager: a #TpAccountManager
- * @feature: a feature which is required
- *
- * <!-- -->
- *
- * Returns: the same thing as tp_proxy_is_prepared()
- *
- * Since: 0.9.0
- */
-gboolean
-tp_account_manager_is_prepared (TpAccountManager *manager,
-    GQuark feature)
-{
-  return tp_proxy_is_prepared (manager, feature);
-}
-
-/**
- * tp_account_manager_prepare_async: (skip)
- * @manager: a #TpAccountManager
- * @features: a 0-terminated list of features, or %NULL
- * @callback: a callback to call when the request is satisfied
- * @user_data: data to pass to @callback
- *
- * Requests an asynchronous preparation of @manager with
- * %TP_ACCOUNT_MANAGER_FEATURE_CORE, plus any features specified
- * by @features. When the operation is finished, @callback will be called. You
- * can then call tp_account_manager_prepare_finish() to get the result of the
- * operation.
- *
- * If %NULL is given to @callback, then no callback will be called when the
- * operation is finished. Instead, it will simply set @features on @manager.
- * Note that if @callback is %NULL, then @user_data must also be %NULL.
- *
- * In version 0.11.3 or later, this is equivalent to calling
- * tp_proxy_prepare_async() with the same arguments.
- *
- * Since: 0.9.0
- * Deprecated: since 0.15.6, use tp_proxy_prepare_async() instead.
- */
-void
-tp_account_manager_prepare_async (TpAccountManager *manager,
-    const GQuark *features,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
-{
-  tp_proxy_prepare_async (manager, features, callback, user_data);
-}
-
-/**
- * tp_account_manager_prepare_finish: (skip)
- * @manager: a #TpAccountManager
- * @result: a #GAsyncResult
- * @error: a #GError to fill
- *
- * Finishes an async preparation of the account manager @manager.
- *
- * Returns: %TRUE if the preparation was successful, otherwise %FALSE
- *
- * Since: 0.9.0
- * Deprecated: since 0.15.6, use tp_proxy_prepare_finish() instead.
- */
-gboolean
-tp_account_manager_prepare_finish (TpAccountManager *manager,
-    GAsyncResult *result,
-    GError **error)
-{
-  return tp_proxy_prepare_finish (manager, result, error);
 }
 
 /**
