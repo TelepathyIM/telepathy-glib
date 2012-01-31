@@ -25,7 +25,7 @@
  *  interface
  *
  * This mixin can be added to a #TpBaseConnection subclass to implement the
- * Presence Presence interface.
+ * Presence interface.
  *
  * To use the presence mixin, include a #TpPresenceMixinClass somewhere in your
  * class structure and a #TpPresenceMixin somewhere in your instance structure,
