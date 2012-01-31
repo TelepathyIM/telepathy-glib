@@ -84,6 +84,7 @@ IGNORE_HFILES=\
     protocol-internal.h \
     proxy-internal.h \
     proxy-introspectable.h \
+    reentrants.h \
     signalled-message-internal.h \
     simple-client-factory-internal.h \
     util-internal.h
