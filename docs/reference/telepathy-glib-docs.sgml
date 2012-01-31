@@ -164,7 +164,6 @@
 
   <chapter id="ch-obsolete">
     <title>Obsolete modules</title>
-    <xi:include href="xml/channel-factory-iface.xml"/>
     <xi:include href="xml/debug-ansi.xml"/>
   </chapter>
 

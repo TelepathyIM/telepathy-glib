@@ -104,32 +104,6 @@ TpBaseConnectionManagerPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/channel-factory-iface.h</INCLUDE>
-<FILE>channel-factory-iface</FILE>
-TpChannelFactoryIfaceForeachImpl
-TpChannelFactoryIfaceProc
-TpChannelFactoryIfaceRequestImpl
-TpChannelFactoryRequestStatus
-<TITLE>TpChannelFactoryIface</TITLE>
-TpChannelFactoryIface
-TpChannelFactoryIfaceClass
-tp_channel_factory_iface_close_all
-tp_channel_factory_iface_connecting
-tp_channel_factory_iface_connected
-tp_channel_factory_iface_disconnected
-tp_channel_factory_iface_foreach
-tp_channel_factory_iface_request
-tp_channel_factory_iface_emit_new_channel
-tp_channel_factory_iface_emit_channel_error
-<SUBSECTION Standard>
-TP_CHANNEL_FACTORY_IFACE
-TP_IS_CHANNEL_FACTORY_IFACE
-TP_TYPE_CHANNEL_FACTORY_IFACE
-tp_channel_factory_iface_get_type
-TP_CHANNEL_FACTORY_IFACE_GET_CLASS
-</SECTION>
-
-<SECTION>
 <INCLUDE>telepathy-glib/channel-manager.h</INCLUDE>
 <FILE>channel-manager</FILE>
 TpChannelManagerChannelClassFunc
