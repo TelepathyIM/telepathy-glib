@@ -316,8 +316,8 @@ test_prepare_success (Test *test,
   g_assert (tp_account_is_prepared (test->account, TP_ACCOUNT_FEATURE_CORE));
   g_assert (tp_account_is_enabled (test->account));
   assert_boolprop (test->account, "enabled", TRUE);
-  g_assert (tp_account_is_valid (test->account));
-  assert_boolprop (test->account, "valid", TRUE);
+  g_assert (tp_account_is_usable (test->account));
+  assert_boolprop (test->account, "usable", TRUE);
   g_assert_cmpstr (tp_account_get_display_name (test->account), ==,
       "Fake Account");
   assert_strprop (test->account, "display-name", "Fake Account");

@@ -49,12 +49,12 @@
         <dd>If present, the user can set this status on themselves using
           <tp:dbus-ref namespace="im.telepathy1.Connection.Interface.Presence1"
             >SetPresence</tp:dbus-ref>; this corresponds to May_Set_On_Self
-          in the <tp:type>Simple_Status_Spec</tp:type> struct.</dd>
+          in the <tp:type>Status_Spec</tp:type> struct.</dd>
 
         <dt>message</dt>
         <dd>If present, the user can set a non-empty message for this status;
           this corresponds to Can_Have_Message in the
-          <tp:type>Simple_Status_Spec</tp:type> struct.</dd>
+          <tp:type>Status_Spec</tp:type> struct.</dd>
       </dl>
 
       <p>Unrecognised tokens MUST be ignored.</p>
@@ -96,7 +96,7 @@ status-chat=2 settable message
 
     <property name="Statuses"
       tp:name-for-bindings="Statuses"
-      type="a{s(ubb)}" tp:type="Simple_Status_Spec_Map" access="read">
+      type="a{s(ubb)}" tp:type="Status_Spec_Map" access="read">
       <tp:docstring>
         <p>The statuses that might appear in the <tp:dbus-ref
           namespace="im.telepathy1"

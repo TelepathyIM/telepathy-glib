@@ -48,7 +48,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:rationale>
           <p>This means that clients MAY use the triple
             (<tp:type>Connection_Manager_Name</tp:type>,
-            <tp:type>Protocol</tp:type>, avatar token) as a key for
+            <tp:type>Protocol_Name</tp:type>, avatar token) as a key for
             their avatar cache. For instance, an avatar for a
             telepathy-gabble Jabber contact might be stored in a file
             .../gabble/jabber/4e199b4a1c40b497a95fcd1cd896351733849949.png.</p>
@@ -353,7 +353,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     <p>Avatars are identified by a string, the <tp:type>Avatar_Token</tp:type>,
     which represents a particular avatar. Tokens MUST be chosen by the
     connection manager in such a way that the triple
-    (<tp:type>Connection_Manager_Name</tp:type>, <tp:type>Protocol</tp:type>,
+    (<tp:type>Connection_Manager_Name</tp:type>,
+    <tp:type>Protocol_Name</tp:type>,
     <tp:type>Avatar_Token</tp:type>) uniquely identifies an avatar.
     An empty token means that an avatar has not been set for this contact, and
     a changed token implies the contact's avatar has changed, but the strings

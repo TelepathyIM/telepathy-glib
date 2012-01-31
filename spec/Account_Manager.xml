@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       <p>The current account manager is defined to be the process that owns
         the well-known bus name <tt>im.telepathy1.AccountManager</tt> on
         the session bus. This process must export an
-        <tt>/im/telepathy/AccountManager</tt> object with the
+        <tt>/im/telepathy1/AccountManager</tt> object with the
         AccountManager interface.</p>
     </tp:docstring>
     <tp:added version="0.17.2"/>
@@ -50,13 +50,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </tp:docstring>
     </property>
 
-    <property name="ValidAccounts" type="ao" access="read"
-      tp:name-for-bindings="Valid_Accounts">
+    <property name="UsableAccounts" type="ao" access="read"
+      tp:name-for-bindings="Usable_Accounts">
       <tp:docstring>
         A list of the valid (complete, usable) <tp:dbus-ref
           namespace="im.telepathy1">Account</tp:dbus-ref>s. Change
         notification is via
-        <tp:member-ref>AccountValidityChanged</tp:member-ref>.
+        <tp:member-ref>AccountUsabilityChanged</tp:member-ref>.
 
         <tp:rationale>
           This split between valid and invalid accounts makes it easy to
@@ -67,13 +67,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </tp:docstring>
     </property>
 
-    <property name="InvalidAccounts" type="ao" access="read"
-      tp:name-for-bindings="Invalid_Accounts">
+    <property name="UnusableAccounts" type="ao" access="read"
+      tp:name-for-bindings="Unusable_Accounts">
       <tp:docstring>
         A list of incomplete or otherwise unusable <tp:dbus-ref
           namespace="im.telepathy1">Account</tp:dbus-ref>s. Change
         notification is via
-        <tp:member-ref>AccountValidityChanged</tp:member-ref>.
+        <tp:member-ref>AccountUsabilityChanged</tp:member-ref>.
       </tp:docstring>
     </property>
 
@@ -95,8 +95,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </arg>
     </signal>
 
-    <signal name="AccountValidityChanged"
-      tp:name-for-bindings="Account_Validity_Changed">
+    <signal name="AccountUsabilityChanged"
+      tp:name-for-bindings="Account_Usability_Changed">
       <tp:docstring>
         The validity of the given account has changed. New accounts are
         also indicated by this signal, as an account validity change
@@ -115,7 +115,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         </tp:docstring>
       </arg>
 
-      <arg name="Valid" type="b">
+      <arg name="Usable" type="b">
         <tp:docstring>
           True if the account is now valid.
         </tp:docstring>
@@ -153,7 +153,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
           <p>Examples of properties that would make no sense here include
             <tp:dbus-ref
-              namespace="im.telepathy1.Account">Valid</tp:dbus-ref>,
+              namespace="im.telepathy1.Account">Usable</tp:dbus-ref>,
             <tp:dbus-ref
               namespace="im.telepathy1.Account">Connection</tp:dbus-ref>,
             <tp:dbus-ref
@@ -203,7 +203,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </arg>
 
       <arg name="Protocol" direction="in" type="s"
-        tp:type="Protocol">
+        tp:type="Protocol_Name">
         <tp:docstring>The protocol, e.g. "local-xmpp".</tp:docstring>
       </arg>
 

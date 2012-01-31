@@ -26,6 +26,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       rather than handles; consequently, the values need not include
       <tt>x-telepathy-identifier</tt>.
     </tp:added>
+    <tp:changed version="UNRELEASED">
+      The requestable channel class now fixes TargetHandleType=NONE.
+    </tp:changed>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>A channel type for searching server-stored user directories. A new
@@ -37,16 +40,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         in <tp:dbus-ref namespace='imt1.Connection.Interface.Requests'
           >RequestableChannelClasses</tp:dbus-ref> with the <tp:dbus-ref
           namespace='imt1.Channel'>ChannelType</tp:dbus-ref> fixed to this
-        interface, and no other fixed properties. That requestable
+        interface,
+        <tp:dbus-ref namespace='imt1.Channel'>TargetHandleType</tp:dbus-ref>
+        fixed to Handle_Type_None, and no other fixed properties. That requestable
         channel class MAY also have the Server and Limit properties in its
         list of allowed properties, depending on the protocol.</p>
-
-      <tp:rationale>
-        <p>The requestable channel class would normally also have <tp:dbus-ref
-            namespace='imt1.Channel'>TargetHandleType</tp:dbus-ref> fixed to
-          <code>None</code>, but the initial implementation of ContactSearch
-          (in telepathy-gabble) didn't do this.</p>
-      </tp:rationale>
 
       <p>All channels of this type should have <tp:dbus-ref
         namespace='imt1.Channel'>TargetHandleType</tp:dbus-ref>

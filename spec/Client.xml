@@ -54,7 +54,7 @@
 
       <p>The client name, <em>clientname</em>, MUST be a non-empty string of
         ASCII digits, letters, dots and/or underscores, starting with a
-        letter, and without sets of two consecutive dots or a dot
+        letter or underscore, and without sets of two consecutive dots or a dot
         followed by a digit. For non-activatable services, it MAY contain a
         part that is generated per instance at runtime.</p>
 

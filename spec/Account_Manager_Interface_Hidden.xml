@@ -30,26 +30,26 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
     </tp:docstring>
     <tp:added version="0.21.10">first draft</tp:added>
 
-    <property name="ValidHiddenAccounts" type="ao" access="read"
-      tp:name-for-bindings="Valid_Hidden_Accounts">
+    <property name="UsableHiddenAccounts" type="ao" access="read"
+      tp:name-for-bindings="Usable_Hidden_Accounts">
       <tp:docstring>
         A list of valid (complete, usable) <tp:dbus-ref
           namespace="im.telepathy1">Account</tp:dbus-ref>s intended
         exclusively for noninteractive applications. These accounts are not
         included in <tp:dbus-ref
-          namespace='imt1'>AccountManager.ValidAccounts</tp:dbus-ref>.  Change
+          namespace='imt1'>AccountManager.UsableAccounts</tp:dbus-ref>.  Change
           notification is via
-        <tp:member-ref>HiddenAccountValidityChanged</tp:member-ref>.
+        <tp:member-ref>HiddenAccountUsabilityChanged</tp:member-ref>.
       </tp:docstring>
     </property>
 
-    <property name="InvalidHiddenAccounts" type="ao" access="read"
-      tp:name-for-bindings="Invalid_Hidden_Accounts">
+    <property name="UnusableHiddenAccounts" type="ao" access="read"
+      tp:name-for-bindings="Unusable_Hidden_Accounts">
       <tp:docstring>
         A list of incomplete or otherwise unusable <tp:dbus-ref
           namespace="im.telepathy1">Account</tp:dbus-ref>s intended
         exclusively for noninteractive applications. Change notification is via
-        <tp:member-ref>HiddenAccountValidityChanged</tp:member-ref>.
+        <tp:member-ref>HiddenAccountUsabilityChanged</tp:member-ref>.
       </tp:docstring>
     </property>
 
@@ -57,8 +57,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       tp:name-for-bindings="Hidden_Account_Removed">
       <tp:docstring>
         The given account has been removed from
-        <tp:member-ref>ValidHiddenAccounts</tp:member-ref> or
-        <tp:member-ref>InvalidHiddenAccounts</tp:member-ref>.
+        <tp:member-ref>UsableHiddenAccounts</tp:member-ref> or
+        <tp:member-ref>UnusableHiddenAccounts</tp:member-ref>.
       </tp:docstring>
 
       <arg name="Account" type="o">
@@ -68,8 +68,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </arg>
     </signal>
 
-    <signal name="HiddenAccountValidityChanged"
-      tp:name-for-bindings="Hidden_Account_Validity_Changed">
+    <signal name="HiddenAccountUsabilityChanged"
+      tp:name-for-bindings="Hidden_Account_Usability_Changed">
       <tp:docstring>
         The validity of the given account has changed. New magic
         accounts are also indicated by this signal, as an account validity
@@ -88,7 +88,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         </tp:docstring>
       </arg>
 
-      <arg name="Valid" type="b">
+      <arg name="Usable" type="b">
         <tp:docstring>
           True if the account is now valid.
         </tp:docstring>

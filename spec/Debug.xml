@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <p>An interface for providing debug messages.</p>
 
       <p>This interface is primarily provided by one object per
-      service, at the path <tt>/im/telepathy/debug</tt>.</p>
+      service, at the path <tt>/im/telepathy1/Debug</tt>.</p>
     </tp:docstring>
 
     <property name="Enabled" type="b" access="readwrite"

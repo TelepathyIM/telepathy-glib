@@ -56,11 +56,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         characters were not specified</tp:changed>
     </tp:simple-type>
 
-    <tp:simple-type name="Protocol" type="s" array-name="Protocol_List">
+    <tp:simple-type name="Protocol_Name" type="s" array-name="Protocol_Name_List">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>An instant messaging protocol. It must consist only of ASCII
-          letters, digits and hyphen/minus signs (U+002D "-"), and must start
-          with a letter. Where possible, this SHOULD be
+          letters, digits and underscores, and must start
+          with a letter or underscore. Where possible, this SHOULD be
           chosen from the following well-known values:</p>
 
         <ul>
@@ -70,7 +70,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           <li>icq - ICQ (OSCAR)</li>
           <li>irc - Internet Relay Chat (RFC 1459, 2810-2813)</li>
           <li>jabber - XMPP (RFC 3920, 3921) or Jabber</li>
-          <li>local-xmpp - Link-local XMPP (XEP-0174) (Bonjour, Salut)</li>
+          <li>local_xmpp - Link-local XMPP (XEP-0174) (Bonjour, Salut)</li>
           <li>msn - MSNP (Windows Live Messenger)</li>
           <li>myspace - MySpaceIM</li>
           <li>mxit - MXit</li>
@@ -89,9 +89,24 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           <li>yahoojp - Japanese version of YMSG</li>
           <li>zephyr - Zephyr</li>
         </ul>
+
+        <tp:rationale>
+          <p>Identifiers formed with letters, digits and underscores and not
+            starting with a digit are valid in all syntactically-restricted
+            strings used in D-Bus, and non-problematic in filenames.</p>
+
+          <p>Telepathy 0.x used hyphen/minus instead of underscore in the
+            canonical form of a protocol name, which meant that protocol
+            names often had to be transformed between their canonical form,
+            and a form that used underscores for use in a D-Bus name.</p>
+        </tp:rationale>
       </tp:docstring>
       <tp:changed version="0.17.1">Prior to version 0.17.1, the allowed
         characters were not specified</tp:changed>
+      <tp:changed version="UNRELEASED">
+        In Telepathy 0.x, protocol names could contain hyphen/minus signs,
+        but not underscores.
+      </tp:changed>
     </tp:simple-type>
 
     <tp:struct name="Param_Spec" array-name="Param_Spec_List">
@@ -189,7 +204,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
             >Protocol</tp:dbus-ref> objects.</p>
       </tp:docstring>
 
-      <tp:member name="Protocol" type="s" tp:type="Protocol">
+      <tp:member name="Name" type="s" tp:type="Protocol_Name">
         <tp:docstring>A protocol name</tp:docstring>
       </tp:member>
 
@@ -228,7 +243,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           The object path of the Connection object on this service
         </tp:docstring>
       </arg>
-      <arg name="Protocol" type="s" tp:type="Protocol">
+      <arg name="Protocol" type="s" tp:type="Protocol_Name">
         <tp:docstring>
           The identifier for the protocol this connection uses
         </tp:docstring>
@@ -241,7 +256,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </signal>
 
     <method name="RequestConnection" tp:name-for-bindings="Request_Connection">
-      <arg direction="in" name="Protocol" type="s" tp:type="Protocol">
+      <arg direction="in" name="Protocol" type="s" tp:type="Protocol_Name">
         <tp:docstring>
           The protocol identifier
         </tp:docstring>
@@ -464,7 +479,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
     <p>When the connection manager is running, it must have an object
       implementing the ConnectionManager interface at the object path
-      <code>/im/telepathy/ConnectionManager/<em>cmname</em></code>.
+      <code>/im/telepathy1/ConnectionManager/<em>cmname</em></code>.
     </p>
 
     <p>Connection managers' capabilities can be determined dynamically by
@@ -482,7 +497,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       colon-separated paths from $XDG_DATA_DIRS, defaulting to
       /usr/local/share:/usr/share if unset) for the first file named
       <code>telepathy/managers/<em>cmname</em>.manager</code> that can be
-      read without error. This file has the same syntax as a
+      read without error and contains a group whose name is the name of this
+      interface. This file has the same syntax as a
       <a href="http://standards.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html">freedesktop.org Desktop Entry file</a>.</p>
 
     <p>Clients must still support connection managers for which no
@@ -493,26 +509,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       a plugin architecture) should not install a <code>.manager</code>
       file.</p>
 
-    <p>The <code>.manager</code> file SHOULD have a group headed
-      <code>[ConnectionManager]</code>, containing a key
+    <p>The <code>.manager</code> file MUST have a group headed
+      <code>[im.telepathy1.ConnectionManager]</code>, containing a key
       <code>Interfaces</code> representing
       <tp:member-ref>Interfaces</tp:member-ref> as a sequence of strings
       each followed by a semicolon (the "localestrings" type from the Desktop
       Entry Specification).</p>
 
-    <p>The <code>[ConnectionManager]</code> group SHOULD NOT contain keys
-      <code>ObjectPath</code> or <code>BusName</code>. If it does, they MUST
-      be ignored.</p>
-
-    <tp:rationale>
-      <p>The object path and bus name are derivable from the connection
-        manager's name, which is part of the filename, so these keys are
-        redundant. They were required in very old versions of Telepathy.</p>
-    </tp:rationale>
-
     <p>For each protocol name <em>proto</em> that would be returned by
     the keys of the <tp:member-ref>Protocols</tp:member-ref> property,
-    the .manager file contains a group headed <code>[Protocol
+    the .manager file contains a group headed <code>[im.telepathy1.Protocol
     <em>proto</em>]</code>. For each parameter <em>p</em> that would
     be in the <tp:dbus-ref
     namespace="imt1.Protocol">Parameters</tp:dbus-ref> property

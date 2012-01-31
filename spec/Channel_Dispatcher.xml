@@ -51,7 +51,7 @@
         <code>im.telepathy1.ChannelDispatcher</code> on
         the session bus. This process MUST export an object with this
         interface at the object path
-        <code>/im/telepathy/ChannelDispatcher</code>.</p>
+        <code>/im/telepathy1/ChannelDispatcher</code>.</p>
 
       <p>Until a mechanism exists for making a reasonable automatic choice
         of ChannelDispatcher implementation, implementations SHOULD NOT

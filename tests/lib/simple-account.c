@@ -46,7 +46,7 @@ enum
   PROP_INTERFACES,
   PROP_DISPLAY_NAME,
   PROP_ICON,
-  PROP_VALID,
+  PROP_USABLE,
   PROP_ENABLED,
   PROP_NICKNAME,
   PROP_PARAMETERS,
@@ -113,7 +113,7 @@ tp_tests_simple_account_get_property (GObject *object,
     case PROP_ICON:
       g_value_set_string (value, "");
       break;
-    case PROP_VALID:
+    case PROP_USABLE:
       g_value_set_boolean (value, TRUE);
       break;
     case PROP_ENABLED:
@@ -208,7 +208,7 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
         { "Interfaces", "interfaces", NULL },
         { "DisplayName", "display-name", NULL },
         { "Icon", "icon", NULL },
-        { "Valid", "valid", NULL },
+        { "Usable", "usable", NULL },
         { "Enabled", "enabled", NULL },
         { "Nickname", "nickname", NULL },
         { "Parameters", "parameters", NULL },
@@ -279,11 +279,11 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ICON, param_spec);
 
-  param_spec = g_param_spec_boolean ("valid", "valid",
-      "Valid property",
+  param_spec = g_param_spec_boolean ("usable", "usable",
+      "Usable property",
       FALSE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_VALID, param_spec);
+  g_object_class_install_property (object_class, PROP_USABLE, param_spec);
 
   param_spec = g_param_spec_boolean ("enabled", "enabled",
       "Enabled property",
@@ -305,7 +305,7 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
 
   param_spec = g_param_spec_boxed ("automatic-presence", "automatic presence",
       "AutomaticPresence property",
-      TP_STRUCT_TYPE_SIMPLE_PRESENCE,
+      TP_STRUCT_TYPE_PRESENCE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_AUTOMATIC_PRESENCE,
       param_spec);
@@ -339,14 +339,14 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
 
   param_spec = g_param_spec_boxed ("current-presence", "current presence",
       "CurrentPresence property",
-      TP_STRUCT_TYPE_SIMPLE_PRESENCE,
+      TP_STRUCT_TYPE_PRESENCE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CURRENT_PRESENCE,
       param_spec);
 
   param_spec = g_param_spec_boxed ("requested-presence", "requested presence",
       "RequestedPresence property",
-      TP_STRUCT_TYPE_SIMPLE_PRESENCE,
+      TP_STRUCT_TYPE_PRESENCE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_REQUESTED_PRESENCE,
       param_spec);

@@ -110,7 +110,7 @@ struct _TpAccountPrivate {
   gchar *nickname;
 
   gboolean enabled;
-  gboolean valid;
+  gboolean usable;
   gboolean removed;
 
   gchar *cm_name;
@@ -161,7 +161,7 @@ enum {
   PROP_CONNECT_AUTOMATICALLY,
   PROP_HAS_BEEN_ONLINE,
   PROP_SERVICE,
-  PROP_VALID,
+  PROP_USABLE,
   PROP_REQUESTED_PRESENCE_TYPE,
   PROP_REQUESTED_STATUS,
   PROP_REQUESTED_STATUS_MESSAGE,
@@ -683,7 +683,7 @@ _tp_account_update (TpAccount *account,
     {
       presence_changed = TRUE;
       arr = tp_asv_get_boxed (properties, "CurrentPresence",
-          TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+          TP_STRUCT_TYPE_PRESENCE);
       priv->cur_presence = g_value_get_uint (g_value_array_get_nth (arr, 0));
 
       g_free (priv->cur_status);
@@ -696,7 +696,7 @@ _tp_account_update (TpAccount *account,
   if (g_hash_table_lookup (properties, "RequestedPresence") != NULL)
     {
       arr = tp_asv_get_boxed (properties, "RequestedPresence",
-          TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+          TP_STRUCT_TYPE_PRESENCE);
       priv->requested_presence =
         g_value_get_uint (g_value_array_get_nth (arr, 0));
 
@@ -716,7 +716,7 @@ _tp_account_update (TpAccount *account,
   if (g_hash_table_lookup (properties, "AutomaticPresence") != NULL)
     {
       arr = tp_asv_get_boxed (properties, "AutomaticPresence",
-          TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+          TP_STRUCT_TYPE_PRESENCE);
       priv->auto_presence =
         g_value_get_uint (g_value_array_get_nth (arr, 0));
 
@@ -817,14 +817,14 @@ _tp_account_update (TpAccount *account,
       g_free (old);
     }
 
-  if (g_hash_table_lookup (properties, "Valid") != NULL)
+  if (g_hash_table_lookup (properties, "Usable") != NULL)
     {
-      gboolean old = priv->valid;
+      gboolean old = priv->usable;
 
-      priv->valid = tp_asv_get_boolean (properties, "Valid", NULL);
+      priv->usable = tp_asv_get_boolean (properties, "Usable", NULL);
 
-      if (old != priv->valid)
-        g_object_notify (G_OBJECT (account), "valid");
+      if (old != priv->usable)
+        g_object_notify (G_OBJECT (account), "usable");
     }
 
   if (g_hash_table_lookup (properties, "Parameters") != NULL)
@@ -1048,8 +1048,8 @@ _tp_account_get_property (GObject *object,
     case PROP_SERVICE:
       g_value_set_string (value, self->priv->service);
       break;
-    case PROP_VALID:
-      g_value_set_boolean (value, self->priv->valid);
+    case PROP_USABLE:
+      g_value_set_boolean (value, self->priv->usable);
       break;
     case PROP_REQUESTED_PRESENCE_TYPE:
       g_value_set_uint (value, self->priv->requested_presence);
@@ -1562,9 +1562,9 @@ tp_account_class_init (TpAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpAccount:valid:
+   * TpAccount:usable:
    *
-   * Whether this account is valid.
+   * Whether this account is usable.
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
@@ -1576,10 +1576,10 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * Since: 0.9.0
    */
-  g_object_class_install_property (object_class, PROP_VALID,
-      g_param_spec_boolean ("valid",
-          "Valid",
-          "Whether this account is valid",
+  g_object_class_install_property (object_class, PROP_USABLE,
+      g_param_spec_boolean ("usable",
+          "Usable",
+          "Whether this account is usable",
           FALSE,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
@@ -2125,21 +2125,21 @@ tp_account_get_display_name (TpAccount *account)
 }
 
 /**
- * tp_account_is_valid:
+ * tp_account_is_usable:
  * @account: a #TpAccount
  *
  * <!-- -->
  *
- * Returns: the same as the #TpAccount:valid property
+ * Returns: the same as the #TpAccount:usable property
  *
  * Since: 0.9.0
  */
 gboolean
-tp_account_is_valid (TpAccount *account)
+tp_account_is_usable (TpAccount *account)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
 
-  return account->priv->valid;
+  return account->priv->usable;
 }
 
 /**
@@ -2453,7 +2453,7 @@ tp_account_set_automatic_presence_async (TpAccount *account,
   result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_set_automatic_presence_async);
 
-  g_value_init (&value, TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+  g_value_init (&value, TP_STRUCT_TYPE_PRESENCE);
   g_value_take_boxed (&value, tp_value_array_build (3,
         G_TYPE_UINT, type,
         G_TYPE_STRING, status,
@@ -2519,9 +2519,9 @@ tp_account_request_presence_async (TpAccount *account,
   result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_request_presence_finish);
 
-  g_value_init (&value, TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+  g_value_init (&value, TP_STRUCT_TYPE_PRESENCE);
   g_value_take_boxed (&value, dbus_g_type_specialized_construct (
-          TP_STRUCT_TYPE_SIMPLE_PRESENCE));
+          TP_STRUCT_TYPE_PRESENCE));
   arr = (GValueArray *) g_value_get_boxed (&value);
 
   g_value_set_uint (arr->values, type);

@@ -31,20 +31,15 @@
 
       <p>Each Protocol object has the same well-known bus name as its parent
         ConnectionManager. Its object path is formed by taking the
-        ConnectionManager's object path and appending '/', followed by the
-        <tp:type>Protocol</tp:type> name with any hyphen/minus '-' converted
-        to underscores '_'.</p>
+        ConnectionManager's object path and appending '/' followed by the
+        <tp:type>Protocol_Name</tp:type>.</p>
 
-      <tp:rationale>
-        <p>This is the same as the representation of protocol names
-          in Account object paths, and in Connection object paths and bus
-          names. For instance, telepathy-gabble and telepathy-salut would
-          implement objects at
-          <code>/im/telepathy/ConnectionManager/gabble/jabber</code>
-          and
-          <code>/im/telepathy/ConnectionManager/salut/local_xmpp</code>,
-          respectively.</p>
-      </tp:rationale>
+      <p>For instance, telepathy-gabble and telepathy-salut would
+        implement objects at
+        <code>/im/telepathy1/ConnectionManager/gabble/jabber</code>
+        and
+        <code>/im/telepathy1/ConnectionManager/salut/local_xmpp</code>,
+        respectively.</p>
 
       <p>If the ConnectionManager has a <tt>.manager</tt> file, each
         Protocol's immutable properties must be represented in that file;
@@ -268,9 +263,9 @@ allowed=im.telepathy1.Channel.TargetHandle;im.telepathy1.Channel.TargetID;im.tel
         <p>This is effectively in the C locale (international English);
           user interfaces requiring a localized protocol name SHOULD look
           one up in their own message catalog based on either the Telepathy
-          <tp:type>Protocol</tp:type> name or this property, but SHOULD use
-          this English version as a fallback if no translated version can be
-          found.</p>
+          <tp:type>Protocol_Name</tp:type> name or this property, but SHOULD
+          use this English version as a fallback if no translated version can
+          be found.</p>
 
         <tp:rationale>
           <p>Many protocols are named after a company or product which isn't
@@ -280,8 +275,8 @@ allowed=im.telepathy1.Channel.TargetHandle;im.telepathy1.Channel.TargetID;im.tel
         </tp:rationale>
 
         <p>If this property's value is empty, clients MAY fall back to using
-          the Telepathy <tp:type>Protocol</tp:type> name, possibly with its
-          capitalization adjusted.</p>
+          the Telepathy <tp:type>Protocol_Name</tp:type> name, possibly with
+          its capitalization adjusted.</p>
 
         <p>Connection managers with a <code>.manager</code> file
           MUST cache this property in the protocol's section of the
@@ -308,7 +303,7 @@ allowed=im.telepathy1.Channel.TargetHandle;im.telepathy1.Channel.TargetID;im.tel
         </tp:rationale>
 
         <p>If this property's value is empty, clients MAY fall back to
-          generating a name based on the <tp:type>Protocol</tp:type> name.</p>
+          generating a name based on the <tp:type>Protocol_Name</tp:type>.</p>
 
         <p>Connection managers with a <code>.manager</code> file
           MUST cache this property in the protocol's section of the

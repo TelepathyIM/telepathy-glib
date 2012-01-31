@@ -35,9 +35,9 @@ test_presence (TpTestsContactsConnection *service_conn,
         &value, &error, NULL), "");
   g_assert_no_error (error);
 
-  MYASSERT (G_VALUE_TYPE (value) == TP_HASH_TYPE_SIMPLE_STATUS_SPEC_MAP,
+  MYASSERT (G_VALUE_TYPE (value) == TP_HASH_TYPE_STATUS_SPEC_MAP,
       ": %s != %s", G_VALUE_TYPE_NAME (value),
-      g_type_name (TP_HASH_TYPE_SIMPLE_STATUS_SPEC_MAP));
+      g_type_name (TP_HASH_TYPE_STATUS_SPEC_MAP));
 
   statuses = g_value_get_boxed (value);
 

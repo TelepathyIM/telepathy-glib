@@ -2900,7 +2900,7 @@ tp_contact_set_attributes (TpContact *contact,
     {
       boxed = tp_asv_get_boxed (asv,
           TP_TOKEN_CONNECTION_INTERFACE_PRESENCE_PRESENCE,
-          TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+          TP_STRUCT_TYPE_PRESENCE);
 
       if (boxed == NULL)
         WARNING ("%s supposedly implements Contacts and Presence, "

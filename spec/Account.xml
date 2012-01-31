@@ -26,13 +26,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
       <p>Accounts are uniquely identified by object path. The object path
         of an Account MUST take the form
-        <code>/im/telepathy/Account/<em>cm</em>/<em>proto</em>/<em>acct</em></code>, where:</p>
+        <code>/im/telepathy1/Account/<em>cm</em>/<em>proto</em>/<em>acct</em></code>, where:</p>
 
       <ul>
         <li><em>cm</em> is the same <tp:type>Connection_Manager_Name</tp:type>
           that appears in the connection manager's well-known bus name and
           object path</li>
-        <li><em>proto</em> is the <tp:type>Protocol</tp:type> name as seen in
+        <li><em>proto</em> is the <tp:type>Protocol_Name</tp:type> as seen in
           <tp:dbus-ref
           namespace="im.telepathy1">ConnectionManager.Protocols</tp:dbus-ref>,
           but with "-" replaced with "_"
@@ -175,7 +175,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </tp:docstring>
     </property>
 
-    <property name="Valid" tp:name-for-bindings="Valid"
+    <property name="Usable" tp:name-for-bindings="Usable"
       type="b" access="read">
       <tp:docstring>
         If true, this account is considered by the account manager to be
@@ -256,23 +256,24 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           user-recognised brands, such as <i>Google Talk</i> and <i>Ovi by
           Nokia</i>. On accounts for such services, this property SHOULD be
           set to a string describing the service, which MUST consist only of
-          ASCII letters, numbers and hyphen/minus signs, and start with a
-          letter (matching the requirements for <tp:type>Protocol</tp:type>).
+          ASCII letters, numbers and underscores, and start with a
+          letter (matching the requirements for
+          <tp:type>Protocol_Name</tp:type>).
           For the <tt>jabber</tt> protocol, one of the following service names
           should be used if possible:</p>
 
         <ul>
-          <li><tt>google-talk</tt> (for <a
+          <li><tt>google_talk</tt> (for <a
             href="http://www.google.com/talk/">Google's IM service</a>)</li>
-          <li><tt>ovi-chat</tt> (for <a href="http://www.ovi.com/">Ovi</a>'s IM
+          <li><tt>ovi_chat</tt> (for <a href="http://www.ovi.com/">Ovi</a>'s IM
             service)</li>
           <li><tt>facebook</tt> (for <a
             href="http://www.facebook.com/sitetour/chat.php">Facebook's IM
             service</a>)</li>
-          <li><tt>lj-talk</tt> (for <a
+          <li><tt>lj_talk</tt> (for <a
             href="http://www.livejournal.com/chat/">LiveJournal's IM
             service</a>)</li>
-          <li><tt>windows-live</tt> (for <a
+          <li><tt>windows_live</tt> (for <a
             href="http://live.com">Windows Live Messenger IM service</a>)</li>
 
         </ul>
@@ -400,7 +401,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
     </method>
 
     <property name="AutomaticPresence" type="(uss)" access="readwrite"
-      tp:type="Simple_Presence" tp:name-for-bindings="Automatic_Presence">
+      tp:type="Presence" tp:name-for-bindings="Automatic_Presence">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The presence status that this account should have if it is brought
           online.</p>
@@ -549,7 +550,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
     </property>
 
     <property name="CurrentPresence" type="(uss)" access="read"
-      tp:type="Simple_Presence" tp:name-for-bindings="Current_Presence">
+      tp:type="Presence" tp:name-for-bindings="Current_Presence">
       <tp:docstring>
         The actual presence. If the connection is not online, the
         <tp:type>Connection_Presence_Type</tp:type> SHOULD be
@@ -563,7 +564,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
     </property>
 
     <property name="RequestedPresence" type="(uss)" access="readwrite"
-      tp:type="Simple_Presence" tp:name-for-bindings="Requested_Presence">
+      tp:type="Presence" tp:name-for-bindings="Requested_Presence">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The requested presence for this account. When this is changed, the
         account manager should attempt to manipulate the connection manager to
@@ -596,7 +597,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         non-offline <tp:member-ref>RequestedPresence</tp:member-ref> becomes
         able to go online (for instance because
         <tp:member-ref>Enabled</tp:member-ref> or
-        <tp:member-ref>Valid</tp:member-ref> changes to True),
+        <tp:member-ref>Usable</tp:member-ref> changes to True),
         ChangingPresence MUST change to True, and the two property changes MUST
         be emitted in the same
         <tp:member-ref>AccountPropertyChanged</tp:member-ref> signal, before the
@@ -629,7 +630,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         <p>Re-connect this account. If the account is currently disconnected
           and the requested presence is offline, or if the account
           is not <tp:member-ref>Enabled</tp:member-ref> or not
-          <tp:member-ref>Valid</tp:member-ref>, this does nothing.</p>
+          <tp:member-ref>Usable</tp:member-ref>, this does nothing.</p>
 
         <p>If the account is disconnected and the requested presence is not
           offline, this forces an attempt to connect with the requested

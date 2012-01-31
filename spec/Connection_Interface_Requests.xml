@@ -446,11 +446,7 @@
         <p>Channel classes SHOULD always include the keys
           <tp:dbus-ref>im.telepathy1.Channel.ChannelType</tp:dbus-ref>
           and
-          <tp:dbus-ref>im.telepathy1.Channel.TargetHandleType</tp:dbus-ref>.
-          (One exception is that <tp:dbus-ref namespace="imt1.Channel.Type"
-            >ContactSearch1</tp:dbus-ref> channels do not have TargetHandleType
-          <code>None</code> in their requestable channel classes, for
-          historical reasons.)</p>
+          <tp:dbus-ref>im.telepathy1.Channel.TargetHandleType</tp:dbus-ref>.</p>
       </tp:docstring>
 
       <tp:member type="s" name="Key" tp:type="DBus_Qualified_Member">

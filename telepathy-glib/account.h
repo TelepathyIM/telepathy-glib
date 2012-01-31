@@ -120,7 +120,7 @@ gboolean tp_account_reconnect_finish (TpAccount *account,
 
 gboolean tp_account_is_enabled (TpAccount *account);
 
-gboolean tp_account_is_valid (TpAccount *account);
+gboolean tp_account_is_usable (TpAccount *account);
 
 void tp_account_update_parameters_async (TpAccount *account,
     GHashTable *parameters, const gchar **unset_parameters,

@@ -22,7 +22,7 @@
   <interface name="im.telepathy1.Connection.Interface.Presence1">
     <tp:requires interface="im.telepathy1.Connection"/>
 
-    <tp:struct name="Simple_Presence">
+    <tp:struct name="Presence">
       <tp:docstring>
         A struct representing the presence of a contact.
       </tp:docstring>
@@ -62,7 +62,7 @@
       </tp:member>
     </tp:struct>
 
-    <tp:mapping name="Simple_Contact_Presences">
+    <tp:mapping name="Contact_Presence_Map">
       <tp:docstring>
         Mapping returned by <tp:member-ref>GetPresences</tp:member-ref>
         and signalled by <tp:member-ref>PresencesChanged</tp:member-ref>,
@@ -73,14 +73,14 @@
           A contact
         </tp:docstring>
       </tp:member>
-      <tp:member type="(uss)" tp:type="Simple_Presence" name="Presence">
+      <tp:member type="(uss)" tp:type="Presence" name="Presence">
         <tp:docstring>
           The contact's presence
         </tp:docstring>
       </tp:member>
     </tp:mapping>
 
-    <tp:struct name="Simple_Status_Spec">
+    <tp:struct name="Status_Spec">
       <tp:docstring>
         A struct containing information about a status.
       </tp:docstring>
@@ -112,7 +112,7 @@
       </tp:member>
     </tp:struct>
 
-    <tp:mapping name="Simple_Status_Spec_Map">
+    <tp:mapping name="Status_Spec_Map">
       <tp:docstring>
         A mapping describing possible statuses.
       </tp:docstring>
@@ -122,7 +122,7 @@
           The string identifier of this status.
         </tp:docstring>
       </tp:member>
-      <tp:member type="(ubb)" tp:type="Simple_Status_Spec" name="Spec">
+      <tp:member type="(ubb)" tp:type="Status_Spec" name="Spec">
         <tp:docstring>
           Details of this status.
         </tp:docstring>
@@ -206,7 +206,7 @@
         </tp:docstring>
       </arg>
       <arg direction="out" name="Presence" type="a{u(uss)}"
-        tp:type="Simple_Contact_Presences">
+        tp:type="Contact_Presence_Map">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>Presence information in the same format as for the
             <tp:member-ref>PresencesChanged</tp:member-ref> signal.
@@ -240,7 +240,7 @@
     </method>
 
     <property name="Statuses" tp:name-for-bindings="Statuses" access="read"
-      type="a{s(ubb)}" tp:type="Simple_Status_Spec_Map">
+      type="a{s(ubb)}" tp:type="Status_Spec_Map">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>A dictionary where the keys are the presence statuses that are
           available on this connection, and the values are the corresponding
@@ -320,7 +320,7 @@
     </property>
 
     <signal name="PresencesChanged" tp:name-for-bindings="Presences_Changed">
-      <arg name="Presence" type="a{u(uss)}" tp:type="Simple_Contact_Presences">
+      <arg name="Presence" type="a{u(uss)}" tp:type="Contact_Presence_Map">
         <tp:docstring>
           A dictionary of contact handles mapped to the status,
           presence type and status message.
@@ -557,7 +557,7 @@
     </tp:struct>
 
     <tp:contact-attribute name="presence"
-      type="(uss)" tp:type="Simple_Presence">
+      type="(uss)" tp:type="Presence">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The same struct that would be returned by
           <tp:member-ref>GetPresences</tp:member-ref>

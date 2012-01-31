@@ -27,7 +27,7 @@ account_manager_prepared_cb (GObject *object,
       goto OUT;
     }
 
-  for (accounts = tp_account_manager_get_valid_accounts (manager);
+  for (accounts = tp_account_manager_get_usable_accounts (manager);
        accounts != NULL; accounts = g_list_delete_link (accounts, accounts))
     {
       TpAccount *account = accounts->data;

@@ -162,7 +162,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       <blockquote>
         <pre>
 <tp:dbus-ref namespace="imt1.Connection.Interface.Requests">NewChannels</tp:dbus-ref>([
-  /im/telepathy/Connection/foo/bar/foo_40bar_2ecom/CallChannel,
+  /im/telepathy1/Connection/foo/bar/foo_40bar_2ecom/CallChannel,
   {
     ...<tp:dbus-ref namespace="imt1.Channel">ChannelType</tp:dbus-ref>: ...<tp:dbus-ref
       namespace="imt1.Channel.Type">Call1</tp:dbus-ref>,

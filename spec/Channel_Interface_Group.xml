@@ -255,10 +255,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring>
         <p>Emitted whenever the <tp:member-ref>HandleOwners</tp:member-ref>
         property changes.</p>
-
-        <p>Clients can assume this signal is emitted by the Connection Manager
-        if the <tp:member-ref>MemberIdentifiers</tp:member-ref> property exists
-        </p>
       </tp:docstring>
       <tp:added version="0.23.4"/>
 
@@ -391,6 +387,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The reason for a set of handles to move to one of
           <tp:member-ref>Members</tp:member-ref>,
+          <tp:member-ref>LocalPendingMembers</tp:member-ref> or
           <tp:member-ref>RemotePendingMembers</tp:member-ref>, or to be removed
           from the group. A client may supply a reason when attempting to
           remove members from a group with
@@ -799,9 +796,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     cannot be presumed by the channel's existence (for example, a channel you
     may request membership of but your request may not be granted).</p>
 
-  <p>This interface implements two lists: a list of current members
-    (<tp:member-ref>Members</tp:member-ref>), and a list of remote
-    pending members (<tp:member-ref>RemotePendingMembers</tp:member-ref>).
+  <p>This interface implements three lists: a list of current members
+    (<tp:member-ref>Members</tp:member-ref>), and two lists of local pending
+    and remote pending members
+    (<tp:member-ref>LocalPendingMembers</tp:member-ref> and
+    <tp:member-ref>RemotePendingMembers</tp:member-ref>, respectively).
     Contacts on the remote
     pending list have been invited to the channel, but the remote user has not
     accepted the invitation. Contacts on the local pending list have requested

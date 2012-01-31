@@ -73,7 +73,7 @@ USA.</p>
     </property>
 
     <property name="Protocol" tp:name-for-bindings="Protocol"
-      access="read" type="s" tp:type="Protocol">
+      access="read" type="s" tp:type="Protocol_Name">
       <tp:docstring>
         A string identifier for the protocol.
       </tp:docstring>
@@ -756,7 +756,7 @@ USA.</p>
 
       <p>In order to allow Connection objects to be discovered by new clients,
         the object path and well-known bus name MUST be of the form
-        <code>/im/telepathy/Connection/cmname/proto/account</code>
+        <code>/im/telepathy1/Connection/cmname/proto/account</code>
         and
         <code>im.telepathy1.Connection.cmname.proto.account</code>
         where:</p>
@@ -765,7 +765,7 @@ USA.</p>
         <li><em>cmname</em> is the same
           <tp:type>Connection_Manager_Name</tp:type> that appears
           in the connection manager's object path and well-known bus name</li>
-        <li><em>proto</em> is the <tp:type>Protocol</tp:type> name as seen in
+        <li><em>proto</em> is the <tp:type>Protocol_Name</tp:type> as seen in
           <tp:dbus-ref namespace="imt1.ConnectionManager">Protocols</tp:dbus-ref>,
           but with "-" replaced with "_" to get a valid
           object path/bus name</li>

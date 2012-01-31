@@ -110,7 +110,7 @@ typedef struct {
 #define MC5_BUS_NAME "im.telepathy1.MissionControl5"
 
 enum {
-  ACCOUNT_VALIDITY_CHANGED,
+  ACCOUNT_USABILITY_CHANGED,
   ACCOUNT_REMOVED,
   ACCOUNT_ENABLED,
   ACCOUNT_DISABLED,
@@ -133,9 +133,9 @@ G_DEFINE_TYPE (TpAccountManager, tp_account_manager, TP_TYPE_PROXY)
  * Additionally, the #TpAccount objects for accounts which existed at the time
  * this feature was prepared will have #TP_ACCOUNT_FEATURE_CORE prepared, but
  * #TpAccount objects subsequently announced by
- * #TpAccountManager::account-validity-changed are <emphasis>not</emphasis>
+ * #TpAccountManager::account-usability-changed are <emphasis>not</emphasis>
  * guaranteed to have this feature prepared. In practice, this means that
- * the accounts returned by calling tp_account_manager_get_valid_accounts()
+ * the accounts returned by calling tp_account_manager_get_usable_accounts()
  * immediately after successfully calling tp_proxy_prepare_finish() on the
  * #TpAccountManager will have #TP_ACCOUNT_FEATURE_CORE prepared, but later
  * calls to that function do not have the same guarantee.
@@ -240,7 +240,7 @@ _tp_account_manager_name_owner_cb (TpDBusDaemon *proxy,
 static void insert_account (TpAccountManager *self, TpAccount *account);
 
 static void
-validity_changed_account_prepared_cb (GObject *object,
+usability_changed_account_prepared_cb (GObject *object,
     GAsyncResult *res,
     gpointer user_data)
 {
@@ -256,11 +256,11 @@ validity_changed_account_prepared_cb (GObject *object,
     }
 
   /* Account could have been invalidated while we were preparing it */
-  if (tp_account_is_valid (account) &&
+  if (tp_account_is_usable (account) &&
       tp_proxy_get_invalidated (account) == NULL)
     {
       insert_account (self, account);
-      g_signal_emit (self, signals[ACCOUNT_VALIDITY_CHANGED], 0,
+      g_signal_emit (self, signals[ACCOUNT_USABILITY_CHANGED], 0,
           account, TRUE);
     }
 
@@ -269,9 +269,9 @@ OUT:
 }
 
 static void
-_tp_account_manager_validity_changed_cb (TpAccountManager *proxy,
+_tp_account_manager_usability_changed_cb (TpAccountManager *proxy,
     const gchar *path,
-    gboolean valid,
+    gboolean usable,
     gpointer user_data,
     GObject *weak_object)
 {
@@ -281,9 +281,9 @@ _tp_account_manager_validity_changed_cb (TpAccountManager *proxy,
   GArray *features;
   GError *error = NULL;
 
-  if (!valid)
+  if (!usable)
     {
-      /* If account became invalid, but we didn't have it anyway, ignore. */
+      /* If account became unusable, but we didn't have it anyway, ignore. */
       account = g_hash_table_lookup (priv->accounts, path);
       if (account == NULL)
         return;
@@ -291,7 +291,7 @@ _tp_account_manager_validity_changed_cb (TpAccountManager *proxy,
       g_object_ref (account);
       g_hash_table_remove (priv->accounts, path);
 
-      g_signal_emit (manager, signals[ACCOUNT_VALIDITY_CHANGED], 0,
+      g_signal_emit (manager, signals[ACCOUNT_USABILITY_CHANGED], 0,
           account, FALSE);
 
       g_object_unref (account);
@@ -313,7 +313,7 @@ _tp_account_manager_validity_changed_cb (TpAccountManager *proxy,
       tp_proxy_get_factory (manager), account);
 
   tp_proxy_prepare_async (account, (GQuark *) features->data,
-      validity_changed_account_prepared_cb, g_object_ref (manager));
+      usability_changed_account_prepared_cb, g_object_ref (manager));
 
   g_array_unref (features);
   g_object_unref (account);
@@ -412,7 +412,7 @@ account_prepared_cb (GObject *object,
     }
 
   /* Account could have been invalidated while we were preparing it */
-  if (tp_account_is_valid (account) &&
+  if (tp_account_is_usable (account) &&
       tp_proxy_get_invalidated (account) == NULL)
     {
       insert_account (self, account);
@@ -435,7 +435,7 @@ _tp_account_manager_got_all_cb (TpProxy *proxy,
     GObject *weak_object)
 {
   TpAccountManager *manager = TP_ACCOUNT_MANAGER (weak_object);
-  GPtrArray *valid_accounts;
+  GPtrArray *usable_accounts;
   guint i;
 
   if (error != NULL)
@@ -445,12 +445,12 @@ _tp_account_manager_got_all_cb (TpProxy *proxy,
       return;
     }
 
-  valid_accounts = tp_asv_get_boxed (properties, "ValidAccounts",
+  usable_accounts = tp_asv_get_boxed (properties, "UsableAccounts",
       TP_ARRAY_TYPE_OBJECT_PATH_LIST);
 
-  for (i = 0; i < valid_accounts->len; i++)
+  for (i = 0; i < usable_accounts->len; i++)
     {
-      const gchar *path = g_ptr_array_index (valid_accounts, i);
+      const gchar *path = g_ptr_array_index (usable_accounts, i);
       TpAccount *account;
       GArray *features;
       GError *e = NULL;
@@ -492,8 +492,8 @@ _tp_account_manager_constructed (GObject *object)
 
   _tp_proxy_ensure_factory (self, NULL);
 
-  tp_cli_account_manager_connect_to_account_validity_changed (self,
-      _tp_account_manager_validity_changed_cb, NULL,
+  tp_cli_account_manager_connect_to_account_usability_changed (self,
+      _tp_account_manager_usability_changed_cb, NULL,
       NULL, G_OBJECT (self), NULL);
 
   tp_cli_dbus_properties_call_get_all (self, -1, TP_IFACE_ACCOUNT_MANAGER,
@@ -564,12 +564,12 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
   tp_account_manager_init_known_interfaces ();
 
   /**
-   * TpAccountManager::account-validity-changed:
+   * TpAccountManager::account-usability-changed:
    * @manager: a #TpAccountManager
    * @account: a #TpAccount
-   * @valid: %TRUE if the account is now valid
+   * @usable: %TRUE if the account is now usable
    *
-   * Emitted when the validity on @account changes.
+   * Emitted when the usability on @account changes.
    *
    * @account is guaranteed to have %TP_ACCOUNT_FEATURE_CORE prepared, along
    * with all features previously passed to
@@ -577,7 +577,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    *
    * Since: 0.9.0
    */
-  signals[ACCOUNT_VALIDITY_CHANGED] = g_signal_new ("account-validity-changed",
+  signals[ACCOUNT_USABILITY_CHANGED] = g_signal_new ("account-usability-changed",
       G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
       0,
@@ -997,7 +997,7 @@ tp_account_manager_ensure_account (TpAccountManager *self,
     }
 
   /* We don't want to insert in self->priv->accounts random accounts we
-   * don't even know if they are valid. For compatibility we can't return a ref,
+   * don't even know if they are usable. For compatibility we can't return a ref,
    * so keep them into a legacy table */
   g_hash_table_insert (self->priv->legacy_accounts, g_strdup (path),
       account);
@@ -1010,10 +1010,10 @@ tp_account_manager_ensure_account (TpAccountManager *self,
 }
 
 /**
- * tp_account_manager_get_valid_accounts:
+ * tp_account_manager_get_usable_accounts:
  * @manager: a #TpAccountManager
  *
- * Returns a newly allocated #GList of valid accounts in @manager. The list
+ * Returns a newly allocated #GList of usable accounts in @manager. The list
  * must be freed with g_list_free() after used. None of the accounts in the
  * returned list are guaranteed to be ready.
  *
@@ -1022,7 +1022,7 @@ tp_account_manager_ensure_account (TpAccountManager *self,
  * like the following example:
  * |[
  * GList *accounts;
- * account = tp_account_manager_get_valid_accounts (manager);
+ * account = tp_account_manager_get_usable_accounts (manager);
  * g_list_foreach (accounts, (GFunc) g_object_ref, NULL);
  * ]|
  *
@@ -1030,17 +1030,17 @@ tp_account_manager_ensure_account (TpAccountManager *self,
  * %TP_ACCOUNT_FEATURE_CORE prepared, along with all features previously passed
  * to tp_simple_client_factory_add_account_features().
  *
- * The list of valid accounts returned is not guaranteed to have been retrieved
+ * The list of usable accounts returned is not guaranteed to have been retrieved
  * until %TP_ACCOUNT_MANAGER_FEATURE_CORE is prepared
  * (tp_proxy_prepare_async() has returned). Until this feature has
  * been prepared, an empty list (%NULL) will be returned.
  *
- * Returns: (element-type TelepathyGLib.Account) (transfer container): a newly allocated #GList of valid accounts in @manager
+ * Returns: (element-type TelepathyGLib.Account) (transfer container): a newly allocated #GList of usable accounts in @manager
  *
  * Since: 0.9.0
  */
 GList *
-tp_account_manager_get_valid_accounts (TpAccountManager *manager)
+tp_account_manager_get_usable_accounts (TpAccountManager *manager)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
 
@@ -1124,12 +1124,12 @@ tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
  * that there exists at least one account in @manager with the returned
  * presence.
  *
- * If no accounts are enabled or valid the output will be
+ * If no accounts are enabled or usable the output will be
  * (%TP_CONNECTION_PRESENCE_TYPE_OFFLINE, "offline", "").
  *
  * The return value of this function is not guaranteed to have been retrieved
  * until tp_proxy_prepare_async() has finished; until then, the
- * value will be the same as if no accounts are enabled or valid.
+ * value will be the same as if no accounts are enabled or usable.
  *
  * Returns: the most available presence across all accounts
  *
