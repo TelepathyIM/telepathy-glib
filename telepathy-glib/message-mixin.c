@@ -108,7 +108,6 @@ static const char * const forbidden_keys[] = {
 static const char * const body_only[] = {
     "alternative",
     "content-type",
-    "type",                     /* deprecated in 0.17.14 */
     "content",
     "identifier",
     "needs-retrieval",
