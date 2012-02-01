@@ -26,6 +26,8 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleAccount,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT,
         account_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_INTERFACE_AVATAR,
+        NULL);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_INTERFACE_ADDRESSING,
         NULL);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_INTERFACE_STORAGE,
@@ -63,7 +65,8 @@ enum
   PROP_STORAGE_PROVIDER,
   PROP_STORAGE_IDENTIFIER,
   PROP_STORAGE_SPECIFIC_INFORMATION,
-  PROP_STORAGE_RESTRICTIONS
+  PROP_STORAGE_RESTRICTIONS,
+  PROP_AVATAR
 };
 
 struct _TpTestsSimpleAccountPrivate
@@ -185,6 +188,21 @@ tp_tests_simple_account_get_property (GObject *object,
     case PROP_URI_SCHEMES:
       g_value_set_boxed (value, uri_schemes);
       break;
+    case PROP_AVATAR:
+        {
+          GArray *arr = g_array_new (FALSE, FALSE, sizeof (char));
+
+          /* includes NUL for simplicity */
+          g_array_append_vals (arr, ":-)", 4);
+
+          g_value_take_boxed (value,
+              tp_value_array_build (2,
+                TP_TYPE_UCHAR_ARRAY, arr,
+                G_TYPE_STRING, "text/plain",
+                G_TYPE_INVALID));
+          g_array_unref (arr);
+        }
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
       break;
@@ -237,6 +255,11 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
         { NULL },
   };
 
+  static TpDBusPropertiesMixinPropImpl avatar_props[] = {
+        { "Avatar", "avatar", NULL },
+        { NULL },
+  };
+
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
         { TP_IFACE_ACCOUNT,
           tp_dbus_properties_mixin_getter_gobject_properties,
@@ -254,6 +277,11 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
           tp_dbus_properties_mixin_getter_gobject_properties,
           NULL,
           aia_props
+        },
+        { TP_IFACE_ACCOUNT_INTERFACE_AVATAR,
+          tp_dbus_properties_mixin_getter_gobject_properties,
+          NULL,
+          avatar_props
         },
         { NULL },
   };
@@ -398,6 +426,13 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
       G_TYPE_STRV,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_URI_SCHEMES, param_spec);
+
+  param_spec = g_param_spec_boxed ("avatar",
+      "Avatar", "Avatar",
+      TP_STRUCT_TYPE_AVATAR,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class,
+      PROP_AVATAR, param_spec);
 
   klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
