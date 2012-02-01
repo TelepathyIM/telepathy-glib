@@ -16,6 +16,8 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
 
+#include "telepathy-glib/reentrants.h"
+
 #include "tests/lib/myassert.h"
 #include "tests/lib/contacts-conn.h"
 #include "tests/lib/util.h"

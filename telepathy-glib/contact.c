@@ -67,11 +67,9 @@
  *
  * Note that releasing a #TpContact object might release handle references
  * held by calling tp_cli_connection_call_request_handles(),
- * tp_cli_connection_run_request_handles(),
- * tp_cli_connection_call_hold_handles(),
- * tp_cli_connection_run_hold_handles(),
- * tp_cli_connection_interface_contacts_call_get_contact_attributes() or
- * tp_cli_connection_interface_contacts_run_get_contact_attributes() directly.
+ * tp_cli_connection_call_hold_handles() or
+ * tp_cli_connection_interface_contacts_call_get_contact_attributes()
+ * directly.
  * Those functions should be avoided in favour of using #TpContact,
  * tp_connection_hold_handles(), tp_connection_request_handles() and
  * tp_connection_get_contact_attributes().

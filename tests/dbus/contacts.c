@@ -30,6 +30,8 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/debug.h>
 
+#include "telepathy-glib/reentrants.h"
+
 #include "tests/lib/contacts-conn.h"
 #include "tests/lib/broken-client-types-conn.h"
 #include "tests/lib/debug.h"

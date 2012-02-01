@@ -12,6 +12,8 @@
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/util.h>
 
+#include "telepathy-glib/reentrants.h"
+
 #include "_gen/svc.h"
 #include "tests/lib/util.h"
 

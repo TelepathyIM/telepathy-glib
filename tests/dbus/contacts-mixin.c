@@ -15,6 +15,8 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/interfaces.h>
 
+#include "telepathy-glib/reentrants.h"
+
 #include "tests/lib/contacts-conn.h"
 #include "tests/lib/debug.h"
 #include "tests/lib/myassert.h"

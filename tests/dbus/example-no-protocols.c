@@ -6,6 +6,8 @@
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/errors.h>
 
+#include "telepathy-glib/reentrants.h"
+
 #include "tests/lib/util.h"
 
 static void

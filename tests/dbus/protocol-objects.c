@@ -12,6 +12,8 @@
 #include <telepathy-glib/protocol.h>
 #include <telepathy-glib/telepathy-glib.h>
 
+#include "telepathy-glib/reentrants.h"
+
 #include "tests/lib/echo-cm.h"
 
 #include "examples/cm/echo-message-parts/connection-manager.h"

@@ -12,6 +12,8 @@
 
 #include <telepathy-glib/connection.h>
 
+#include "telepathy-glib/reentrants.h"
+
 #include "examples/cm/contactlist/conn.h"
 #include "tests/lib/util.h"
 

@@ -22,6 +22,8 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
+#include "telepathy-glib/reentrants.h"
+
 #include "examples/future/call-cm/cm.h"
 #include "examples/future/call-cm/conn.h"
 #include "examples/future/call-cm/call-channel.h"

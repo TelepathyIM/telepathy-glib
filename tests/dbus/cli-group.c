@@ -20,6 +20,8 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/proxy-subclass.h>
 
+#include "telepathy-glib/reentrants.h"
+
 #include "tests/lib/debug.h"
 #include "tests/lib/myassert.h"
 #include "tests/lib/contacts-conn.h"

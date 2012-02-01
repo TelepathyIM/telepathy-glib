@@ -28,6 +28,8 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
+#include "telepathy-glib/reentrants.h"
+
 #include "tests/lib/util.h"
 #include "tests/lib/params-cm.h"
 
