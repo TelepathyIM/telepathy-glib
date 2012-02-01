@@ -79,22 +79,6 @@ static TpDebugFlags flags = 0;
 
 static gboolean tp_debug_persistent = FALSE;
 
-/**
- * tp_debug_set_all_flags: (skip)
- *
- * Activate all possible debug modes. This also activates persistent mode,
- * which should have been orthogonal.
- *
- * Deprecated: since 0.6.1. Use tp_debug_set_flags ("all") and
- * tp_debug_set_persistent() instead.
- */
-void
-tp_debug_set_all_flags (void)
-{
-  flags = 0xffff;
-  tp_debug_persistent = TRUE;
-}
-
 static GDebugKey keys[] = {
   { "misc",          TP_DEBUG_MISC },
   { "groups",        TP_DEBUG_GROUPS },
@@ -151,11 +135,6 @@ static DebugKeyToDomain key_to_domain[] = {
   { 0, NULL }
 };
 
-static GDebugKey persist_keys[] = {
-  { "persist",       1 },
-  { 0, },
-};
-
 /**
  * tp_debug_set_flags:
  * @flags_string: The flags to set, comma-separated. If %NULL or empty,
@@ -181,53 +160,6 @@ tp_debug_set_flags (const gchar *flags_string)
 
   if (flags_string != NULL)
     _tp_debug_set_flags (g_parse_debug_string (flags_string, keys, nkeys));
-}
-
-/**
- * tp_debug_set_flags_from_string: (skip)
- * @flags_string: The flags to set, comma-separated. If %NULL or empty,
- *  no additional flags are set.
- *
- * Set the debug flags indicated by @flags_string, in addition to any already
- * set. Unlike tp_debug_set_flags(), this enables persistence like
- * tp_debug_set_persistent() if the "persist" flag is present or the string
- * is "all" - this turns out to be unhelpful, as persistence should be
- * orthogonal.
- *
- * The parsing matches that of g_parse_debug_string().
- *
- * Deprecated: since 0.6.1. Use tp_debug_set_flags() and
- * tp_debug_set_persistent() instead
- */
-void
-tp_debug_set_flags_from_string (const gchar *flags_string)
-{
-  tp_debug_set_flags (flags_string);
-
-  if (flags_string != NULL &&
-      g_parse_debug_string (flags_string, persist_keys, 1) != 0)
-    tp_debug_set_persistent (TRUE);
-}
-
-/**
- * tp_debug_set_flags_from_env: (skip)
- * @var: The name of the environment variable to parse
- *
- * Equivalent to
- * <literal>tp_debug_set_flags_from_string (g_getenv (var))</literal>,
- * and has the same problem with persistence being included in "all".
- *
- * Deprecated: since 0.6.1. Use tp_debug_set_flags(g_getenv(...)) and
- * tp_debug_set_persistent() instead
- */
-void
-tp_debug_set_flags_from_env (const gchar *var)
-{
-  const gchar *val = g_getenv (var);
-
-  tp_debug_set_flags (val);
-  if (val != NULL && g_parse_debug_string (val, persist_keys, 1) != 0)
-    tp_debug_set_persistent (TRUE);
 }
 
 /**

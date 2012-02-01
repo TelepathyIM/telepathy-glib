@@ -1734,10 +1734,6 @@ tp_debug_set_flags
 tp_debug_set_persistent
 tp_debug_divert_messages
 tp_debug_timestamped_log_handler
-<SUBSECTION>
-tp_debug_set_flags_from_string
-tp_debug_set_flags_from_env
-tp_debug_set_all_flags
 </SECTION>
 
 <SECTION>
