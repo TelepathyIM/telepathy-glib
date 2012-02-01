@@ -139,12 +139,8 @@ int
 main (int argc,
       char **argv)
 {
-  TpDBusDaemon *dbus;
   TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
-  gchar *name;
-  gchar *conn_path;
-  GError *error = NULL;
   TpConnection *client_conn;
 
   /* Setup */
@@ -152,27 +148,10 @@ main (int argc,
   tp_tests_abort_after (10);
   g_type_init ();
   tp_debug_set_flags ("all");
-  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_CONTACTS_CONNECTION,
-        "account", "me@example.com",
-        "protocol", "simple",
-        NULL));
-  service_conn_as_base = TP_BASE_CONNECTION (service_conn);
-  MYASSERT (service_conn != NULL, "");
-  MYASSERT (service_conn_as_base != NULL, "");
-
-  MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
-        &name, &conn_path, &error), "");
-  g_assert_no_error (error);
-
-  client_conn = tp_connection_new (dbus, name, conn_path, &error);
-  MYASSERT (client_conn != NULL, "");
-  g_assert_no_error (error);
-  MYASSERT (tp_connection_run_until_ready (client_conn, TRUE, &error, NULL),
-      "");
-  g_assert_no_error (error);
+  tp_tests_create_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION, "me@example.com",
+      TRUE, &service_conn_as_base, &client_conn);
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (service_conn_as_base);
 
   /* Tests */
 
@@ -184,10 +163,6 @@ main (int argc,
 
   service_conn_as_base = NULL;
   g_object_unref (service_conn);
-  g_free (name);
-  g_free (conn_path);
-
-  g_object_unref (dbus);
 
   return 0;
 }

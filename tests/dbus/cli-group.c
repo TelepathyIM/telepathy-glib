@@ -30,7 +30,6 @@
 
 static GMainLoop *mainloop;
 TpTestsSimpleConnection *service_conn;
-gchar *conn_path;
 TpConnection *conn;
 TpHandleRepoIface *contact_repo;
 TpHandle self_handle, h1, h2, h3;
@@ -155,7 +154,8 @@ run_membership_test (void)
   GError *error = NULL;
   guint invalidated_id = 0;
 
-  chan_path = g_strdup_printf ("%s/Channel", conn_path);
+  chan_path = g_strdup_printf ("%s/Channel",
+      tp_proxy_get_object_path (conn));
   service_chan = TP_TESTS_TEXT_CHANNEL_GROUP (
       tp_tests_object_new_static_class (
       TP_TESTS_TYPE_TEXT_CHANNEL_GROUP,
@@ -223,7 +223,8 @@ check_removed_unknown_error_in_invalidated (void)
   GError *error = NULL;
   GHashTable *details;
 
-  chan_path = g_strdup_printf ("%s/Channel_1_6180339887", conn_path);
+  chan_path = g_strdup_printf ("%s/Channel_1_6180339887",
+      tp_proxy_get_object_path (conn));
   service_chan = TP_TESTS_TEXT_CHANNEL_GROUP (
       tp_tests_object_new_static_class (
       TP_TESTS_TYPE_TEXT_CHANNEL_GROUP,
@@ -314,7 +315,8 @@ check_removed_known_error_in_invalidated (void)
   gboolean invalidated = FALSE;
   GError *error = NULL;
 
-  chan_path = g_strdup_printf ("%s/Channel_1_6180339887", conn_path);
+  chan_path = g_strdup_printf ("%s/Channel_1_6180339887",
+      tp_proxy_get_object_path (conn));
   service_chan = TP_TESTS_TEXT_CHANNEL_GROUP (g_object_new (
       TP_TESTS_TYPE_TEXT_CHANNEL_GROUP,
       "connection", service_conn,
@@ -375,35 +377,15 @@ main (int argc,
       char **argv)
 {
   TpBaseConnection *service_conn_as_base;
-  TpDBusDaemon *dbus;
   GError *error = NULL;
-  gchar *name;
 
   tp_tests_abort_after (10);
   g_type_init ();
   tp_debug_set_flags ("all");
-  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_CONTACTS_CONNECTION,
-        "account", "me@example.com",
-        "protocol", "simple",
-        NULL));
-  service_conn_as_base = TP_BASE_CONNECTION (service_conn);
-  MYASSERT (service_conn != NULL, "");
-  MYASSERT (service_conn_as_base != NULL, "");
-
-  MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
-        &name, &conn_path, &error), "");
-  g_assert_no_error (error);
-
-  conn = tp_connection_new (dbus, name, conn_path, &error);
-  MYASSERT (conn != NULL, "");
-  g_assert_no_error (error);
-
-  MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
-      "");
-  g_assert_no_error (error);
+  tp_tests_create_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION, "me@example.com",
+      TRUE, &service_conn_as_base, &conn);
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (service_conn_as_base);
 
   contact_repo = tp_base_connection_get_handles (service_conn_as_base,
       TP_HANDLE_TYPE_CONTACT);
@@ -433,9 +415,6 @@ main (int argc,
 
   service_conn_as_base = NULL;
   g_object_unref (service_conn);
-  g_object_unref (dbus);
-  g_free (name);
-  g_free (conn_path);
 
   return 0;
 }

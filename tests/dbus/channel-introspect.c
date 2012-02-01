@@ -121,8 +121,6 @@ main (int argc,
   TpConnection *conn, *conn2;
   TpChannel *chan, *chan2;
   GError *error = NULL;
-  gchar *name;
-  gchar *conn_path;
   gchar *props_chan_path;
   gchar *props_group_chan_path;
   gchar *bad_chan_path;
@@ -137,26 +135,9 @@ main (int argc,
   tp_tests_abort_after (10);
   dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_CONTACTS_CONNECTION,
-        "account", "me@example.com",
-        "protocol", "simple",
-        NULL));
-  service_conn_as_base = TP_BASE_CONNECTION (service_conn);
-  g_assert (service_conn != NULL);
-  g_assert (service_conn_as_base != NULL);
-
-  MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
-        &name, &conn_path, &error), "");
-  g_assert_no_error (error);
-
-  conn = tp_connection_new (dbus, name, conn_path, &error);
-  g_assert (conn != NULL);
-  g_assert_no_error (error);
-
-  MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
-      "");
-  g_assert_no_error (error);
+  tp_tests_create_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION, "me@example.com",
+      TRUE, &service_conn_as_base, &conn);
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (service_conn_as_base);
 
   contact_repo = tp_base_connection_get_handles (service_conn_as_base,
       TP_HANDLE_TYPE_CONTACT);
@@ -165,7 +146,8 @@ main (int argc,
   handle = tp_handle_ensure (contact_repo, IDENTIFIER, NULL, &error);
   g_assert_no_error (error);
 
-  props_chan_path = g_strdup_printf ("%s/PropertiesChannel", conn_path);
+  props_chan_path = g_strdup_printf ("%s/PropertiesChannel",
+      tp_proxy_get_object_path (conn));
 
   service_props_chan = TP_TESTS_PROPS_TEXT_CHANNEL (
       tp_tests_object_new_static_class (
@@ -175,7 +157,8 @@ main (int argc,
         "handle", handle,
         NULL));
 
-  props_group_chan_path = g_strdup_printf ("%s/PropsGroupChannel", conn_path);
+  props_group_chan_path = g_strdup_printf ("%s/PropsGroupChannel",
+      tp_proxy_get_object_path (conn));
 
   service_props_group_chan = TP_TESTS_PROPS_GROUP_TEXT_CHANNEL (
       tp_tests_object_new_static_class (
@@ -335,7 +318,8 @@ main (int argc,
 
   g_message ("channel does not, in fact, exist (callback)");
 
-  bad_chan_path = g_strdup_printf ("%s/Does/Not/Actually/Exist", conn_path);
+  bad_chan_path = g_strdup_printf ("%s/Does/Not/Actually/Exist",
+      tp_proxy_get_object_path (conn));
   chan = tp_channel_new (conn, bad_chan_path, NULL,
       TP_UNKNOWN_HANDLE_TYPE, 0, &error);
   g_assert_no_error (error);
@@ -355,7 +339,8 @@ main (int argc,
 
   g_message ("channel does not, in fact, exist (run_until_ready)");
 
-  bad_chan_path = g_strdup_printf ("%s/Does/Not/Actually/Exist", conn_path);
+  bad_chan_path = g_strdup_printf ("%s/Does/Not/Actually/Exist",
+      tp_proxy_get_object_path (conn));
   chan = tp_channel_new (conn, bad_chan_path, NULL,
       TP_UNKNOWN_HANDLE_TYPE, 0, &error);
   g_assert_no_error (error);
@@ -405,7 +390,9 @@ main (int argc,
    * TpChannel isn't prepared yet, and check that the interface is added right
    * away after its construction.
    * */
-  conn2 = tp_connection_new (dbus, name, conn_path, &error);
+  conn2 = tp_connection_new (dbus, tp_proxy_get_bus_name (conn),
+      tp_proxy_get_object_path (conn),
+      &error);
   g_assert_no_error (error);
 
   {
@@ -514,8 +501,6 @@ main (int argc,
   service_conn_as_base = NULL;
   g_object_unref (service_conn);
   g_object_unref (dbus);
-  g_free (name);
-  g_free (conn_path);
   g_free (props_chan_path);
   g_free (props_group_chan_path);
 

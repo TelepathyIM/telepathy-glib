@@ -97,12 +97,9 @@ example_com_error_quark (void)
 }
 
 typedef struct {
-  TpDBusDaemon *dbus;
   GMainLoop *mainloop;
   TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
-  gchar *conn_name;
-  gchar *conn_path;
   TpConnection *conn;
 } Test;
 
@@ -127,34 +124,13 @@ static void
 setup (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
-  GError *error = NULL;
-
   global_setup ();
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  test->service_conn = TP_TESTS_SIMPLE_CONNECTION (
-      tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_CONTACTS_CONNECTION,
-        "account", "me@example.com",
-        "protocol", "simple",
-        NULL));
-  test->service_conn_as_base = TP_BASE_CONNECTION (test->service_conn);
-  MYASSERT (test->service_conn != NULL, "");
-  MYASSERT (test->service_conn_as_base != NULL, "");
-
-  MYASSERT (tp_base_connection_register (test->service_conn_as_base, "simple",
-        &test->conn_name, &test->conn_path, &error), "");
-  g_assert_no_error (error);
-
-  test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
-      &error);
-  MYASSERT (test->conn != NULL, "");
-  g_assert_no_error (error);
-  MYASSERT (tp_connection_run_until_ready (test->conn, TRUE, &error, NULL),
-      "");
-  g_assert_no_error (error);
+  tp_tests_create_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION, "me@example.com",
+      TRUE, &test->service_conn_as_base, &test->conn);
+  test->service_conn = TP_TESTS_SIMPLE_CONNECTION (test->service_conn_as_base);
 }
 
 static void
@@ -171,9 +147,6 @@ teardown (Test *test,
 
   test->service_conn_as_base = NULL;
   g_object_unref (test->service_conn);
-  g_free (test->conn_name);
-  g_free (test->conn_path);
-  g_object_unref (test->dbus);
   g_main_loop_unref (test->mainloop);
 }
 

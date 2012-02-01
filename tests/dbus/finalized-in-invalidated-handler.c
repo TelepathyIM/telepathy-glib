@@ -74,12 +74,9 @@ main (int argc,
   TpBaseConnection *service_conn_as_base;
   TpHandleRepoIface *contact_repo;
   TpTestsTextChannelNull *service_chan;
-  TpDBusDaemon *dbus;
   TpConnection *conn;
   TpChannel *chan;
   GError *error = NULL;
-  gchar *name;
-  gchar *conn_path;
   gchar *chan_path;
   TpHandle handle;
 
@@ -87,30 +84,13 @@ main (int argc,
   g_type_init ();
   tp_debug_set_flags ("all");
   mainloop = g_main_loop_new (NULL, FALSE);
-  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_CONTACTS_CONNECTION,
-        "account", "me@example.com",
-        "protocol", "simple",
-        NULL));
-  service_conn_as_base = TP_BASE_CONNECTION (service_conn);
-  MYASSERT (service_conn != NULL, "");
-  MYASSERT (service_conn_as_base != NULL, "");
+  tp_tests_create_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION, "me@example.com",
+      TRUE, &service_conn_as_base, &conn);
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (service_conn_as_base);
 
   g_signal_connect (service_conn, "shutdown-finished",
       G_CALLBACK (on_shutdown_finished), NULL);
-
-  MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
-        &name, &conn_path, &error), "");
-  g_assert_no_error (error);
-
-  conn = tp_connection_new (dbus, name, conn_path, &error);
-  MYASSERT (conn != NULL, "");
-  g_assert_no_error (error);
-
-  MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL), "");
-  g_assert_no_error (error);
 
   /* Paste on a channel */
 
@@ -120,7 +100,8 @@ main (int argc,
 
   handle = tp_handle_ensure (contact_repo, "them@example.org", NULL, &error);
   g_assert_no_error (error);
-  chan_path = g_strdup_printf ("%s/Channel", conn_path);
+  chan_path = g_strdup_printf ("%s/Channel",
+      tp_proxy_get_object_path (conn));
 
   service_chan = TP_TESTS_TEXT_CHANNEL_NULL (tp_tests_object_new_static_class (
         TP_TESTS_TYPE_PROPS_TEXT_CHANNEL,
@@ -151,10 +132,7 @@ main (int argc,
   g_object_unref (service_chan);
   service_conn_as_base = NULL;
   g_object_unref (service_conn);
-  g_object_unref (dbus);
   g_main_loop_unref (mainloop);
-  g_free (name);
-  g_free (conn_path);
   g_free (chan_path);
 
   return 0;
