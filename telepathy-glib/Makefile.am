@@ -77,7 +77,6 @@ our_headers = \
     defs.h \
     debug.h \
     debug-sender.h \
-    debug-ansi.h \
     dtmf.h \
     enums.h \
     errors.h \

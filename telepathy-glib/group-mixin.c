@@ -65,7 +65,6 @@
 #include <string.h>
 
 #include <telepathy-glib/dbus.h>
-#include <telepathy-glib/debug-ansi.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
