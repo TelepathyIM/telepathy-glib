@@ -90,8 +90,8 @@ main (int argc,
   MYASSERT (client != NULL, "");
   g_assert_no_error (error);
 
-  MYASSERT (tp_connection_run_until_ready (client, TRUE, &error, NULL), "");
-  g_assert_no_error (error);
+  tp_cli_connection_call_connect (client, -1, NULL, NULL, NULL, NULL);
+  tp_tests_proxy_run_until_prepared (client, NULL);
 
   MYASSERT (tp_cli_connection_connect_to_status_changed (client,
         on_status_changed, &client, NULL, NULL, NULL), "");

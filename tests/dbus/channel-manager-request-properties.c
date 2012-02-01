@@ -74,9 +74,8 @@ setup (Test *test,
   g_assert (test->conn != NULL);
   g_assert_no_error (test->error);
 
-  g_assert (tp_connection_run_until_ready (test->conn, TRUE, &test->error,
-          NULL));
-  g_assert_no_error (test->error);
+  tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
+  tp_tests_proxy_run_until_prepared (test->conn, NULL);
 
   g_free (name);
   g_free (conn_path);

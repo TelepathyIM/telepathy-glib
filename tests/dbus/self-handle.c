@@ -69,13 +69,10 @@ static void
 setup_and_connect (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
-  gboolean ok;
-
   setup (f, unused);
 
-  ok = tp_connection_run_until_ready (f->client_conn, TRUE, &f->error, NULL);
-  g_assert_no_error (f->error);
-  g_assert (ok);
+  tp_cli_connection_call_connect (f->client_conn, -1, NULL, NULL, NULL, NULL);
+  tp_tests_proxy_run_until_prepared (f->client_conn, NULL);
 }
 
 /* we'll get more arguments, but just ignore them */

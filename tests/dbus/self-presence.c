@@ -180,9 +180,8 @@ main (int argc,
   g_value_unset (value);
   g_free (value);
 
-  MYASSERT (tp_connection_run_until_ready (client_conn, TRUE, &error, NULL),
-      "");
-  g_assert_no_error (error);
+  tp_cli_connection_call_connect (client_conn, -1, NULL, NULL, NULL, NULL);
+  tp_tests_proxy_run_until_prepared (client_conn, NULL);
 
   /* Tests */
 
