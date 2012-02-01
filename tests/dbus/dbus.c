@@ -125,7 +125,6 @@ test_properties (void)
 
   g_assert_cmpstr (bus_name, ==, "org.freedesktop.DBus");
   g_assert (dbus_conn != NULL);
-  g_assert (dbus_conn == tp_get_bus ());
 
   g_free (bus_name);
   g_free (object_path);

@@ -1889,8 +1889,6 @@ tp_asv_dump
 <TITLE>dbus</TITLE>
 <INCLUDE>telepathy-glib/dbus.h</INCLUDE>
 tp_dbus_g_method_return_not_implemented
-tp_get_bus
-tp_get_bus_proxy
 TpDBusNameType
 TP_TYPE_DBUS_NAME_TYPE
 tp_dbus_check_valid_bus_name
