@@ -104,32 +104,6 @@ TpBaseConnectionManagerPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/channel-factory-iface.h</INCLUDE>
-<FILE>channel-factory-iface</FILE>
-TpChannelFactoryIfaceForeachImpl
-TpChannelFactoryIfaceProc
-TpChannelFactoryIfaceRequestImpl
-TpChannelFactoryRequestStatus
-<TITLE>TpChannelFactoryIface</TITLE>
-TpChannelFactoryIface
-TpChannelFactoryIfaceClass
-tp_channel_factory_iface_close_all
-tp_channel_factory_iface_connecting
-tp_channel_factory_iface_connected
-tp_channel_factory_iface_disconnected
-tp_channel_factory_iface_foreach
-tp_channel_factory_iface_request
-tp_channel_factory_iface_emit_new_channel
-tp_channel_factory_iface_emit_channel_error
-<SUBSECTION Standard>
-TP_CHANNEL_FACTORY_IFACE
-TP_IS_CHANNEL_FACTORY_IFACE
-TP_TYPE_CHANNEL_FACTORY_IFACE
-tp_channel_factory_iface_get_type
-TP_CHANNEL_FACTORY_IFACE_GET_CLASS
-</SECTION>
-
-<SECTION>
 <INCLUDE>telepathy-glib/channel-manager.h</INCLUDE>
 <FILE>channel-manager</FILE>
 TpChannelManagerChannelClassFunc
@@ -2429,7 +2403,6 @@ tp_iface_quark_connection_interface_mail_notification
 tp_iface_quark_connection_interface_requests
 tp_iface_quark_connection_interface_power_saving
 tp_iface_quark_connection_interface_presence
-tp_iface_quark_connection_interface_presence
 tp_iface_quark_connection_interface_location
 tp_iface_quark_connection_manager
 tp_iface_quark_dbus_daemon
@@ -3592,9 +3565,6 @@ tp_account_bind_connection_status_to_property
 <SUBSECTION>
 TP_ACCOUNT_FEATURE_CORE
 TP_ACCOUNT_FEATURE_CONNECTION
-tp_account_is_prepared
-tp_account_prepare_async
-tp_account_prepare_finish
 <SUBSECTION>
 TP_ACCOUNT_FEATURE_ADDRESSING
 tp_account_get_uri_schemes
@@ -3662,9 +3632,6 @@ tp_account_manager_set_all_requested_presences
 tp_account_manager_enable_restart
 <SUBSECTION>
 TP_ACCOUNT_MANAGER_FEATURE_CORE
-tp_account_manager_is_prepared
-tp_account_manager_prepare_async
-tp_account_manager_prepare_finish
 <SUBSECTION Private>
 tp_account_manager_get_feature_quark_core
 <SUBSECTION>

@@ -42,7 +42,6 @@ our_headers = \
     channel-iface.h \
     channel-dispatcher.h \
     channel-dispatch-operation.h \
-    channel-factory-iface.h \
     channel-manager.h \
     channel-request.h \
     client.h \
@@ -224,7 +223,6 @@ libtelepathy_glib_internal_la_SOURCES = \
     heap.c \
     intset.c \
     channel-iface.c \
-    channel-factory-iface.c \
     message.c \
     message-internal.h \
     message-mixin.c \

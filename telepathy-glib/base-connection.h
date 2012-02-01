@@ -87,8 +87,6 @@ struct _TpBaseConnectionClass {
     TpBaseConnectionCreateHandleReposImpl create_handle_repos;
 #endif
 
-    TpBaseConnectionCreateChannelFactoriesImpl create_channel_factories;
-
     TpBaseConnectionGetUniqueConnectionNameImpl get_unique_connection_name;
 
     TpBaseConnectionProc connecting;
