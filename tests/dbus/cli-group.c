@@ -65,11 +65,9 @@ test_channel_proxy (TpTestsTextChannelGroup *service_chan,
                     TpChannel *chan)
 {
   TpIntset *add, *rem, *expected_members;
-  GError *error = NULL;
   GHashTable *details;
 
-  MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  g_assert_no_error (error);
+  tp_tests_proxy_run_until_prepared (chan, NULL);
 
   g_signal_connect (chan, "group-members-changed",
       (GCallback) group_members_changed_cb, NULL);
@@ -237,8 +235,7 @@ check_removed_unknown_error_in_invalidated (void)
 
   g_assert_no_error (error);
 
-  MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  g_assert_no_error (error);
+  tp_tests_proxy_run_until_prepared (chan, NULL);
   DEBUG ("ready!");
 
   g_signal_connect (chan, "invalidated",
@@ -328,8 +325,7 @@ check_removed_known_error_in_invalidated (void)
 
   g_assert_no_error (error);
 
-  MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  g_assert_no_error (error);
+  tp_tests_proxy_run_until_prepared (chan, NULL);
   DEBUG ("ready!");
 
   g_signal_connect (chan, "invalidated",

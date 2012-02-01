@@ -473,10 +473,7 @@ in_the_desert (void)
 static void
 test_group_mixin (void)
 {
-  GError *error = NULL;
-
-  MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  g_assert_no_error (error);
+  tp_tests_proxy_run_until_prepared (chan, NULL);
 
   MYASSERT (tp_proxy_has_interface (chan, TP_IFACE_CHANNEL_INTERFACE_GROUP),
       "");
@@ -553,8 +550,7 @@ main (int argc,
       &error);
   g_assert_no_error (error);
 
-  MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  g_assert_no_error (error);
+  tp_tests_proxy_run_until_prepared (chan, NULL);
 
   test_group_mixin ();
 

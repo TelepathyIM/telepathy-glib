@@ -205,8 +205,7 @@ main (int argc,
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
       ==, FALSE);
 
-  MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  g_assert_no_error (error);
+  tp_tests_proxy_run_until_prepared (chan, NULL);
 
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
       TRUE);
@@ -270,8 +269,7 @@ main (int argc,
   g_hash_table_unref (asv);
   asv = NULL;
 
-  MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  g_assert_no_error (error);
+  tp_tests_proxy_run_until_prepared (chan, NULL);
   g_assert_cmpuint (g_hash_table_size (
       service_props_chan->dbus_property_interfaces_retrieved), ==, 1);
 
@@ -316,8 +314,7 @@ main (int argc,
   g_hash_table_unref (asv);
   asv = NULL;
 
-  MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  g_assert_no_error (error);
+  tp_tests_proxy_run_until_prepared (chan, NULL);
   g_assert_cmpuint (g_hash_table_size (
       TP_TESTS_PROPS_TEXT_CHANNEL (service_props_group_chan)
       ->dbus_property_interfaces_retrieved), ==, 2);
@@ -363,7 +360,7 @@ main (int argc,
       TP_UNKNOWN_HANDLE_TYPE, 0, &error);
   g_assert_no_error (error);
 
-  MYASSERT (!tp_channel_run_until_ready (chan, &error, NULL), "");
+  tp_tests_proxy_run_until_prepared_or_failed (chan, NULL, &error);
   g_assert_error (error, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
   g_error_free (error);
   error = NULL;

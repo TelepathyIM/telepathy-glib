@@ -236,8 +236,7 @@ main (int argc,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
   g_assert_no_error (error);
 
-  tp_channel_run_until_ready (chan, &error, NULL);
-  g_assert_no_error (error);
+  tp_tests_proxy_run_until_prepared (chan, NULL);
 
   MYASSERT (
       tp_cli_channel_type_text_connect_to_message_received (chan,

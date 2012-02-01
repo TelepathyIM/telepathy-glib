@@ -2495,7 +2495,6 @@ TpChannel
 TpChannelClass
 tp_channel_new
 tp_channel_new_from_properties
-tp_channel_run_until_ready
 TpChannelWhenReadyCb
 tp_channel_call_when_ready
 tp_channel_init_known_interfaces

@@ -82,11 +82,6 @@ TpChannel *tp_channel_new_from_properties (TpConnection *conn,
     const gchar *object_path, const GHashTable *immutable_properties,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
-#ifndef TP_DISABLE_DEPRECATED
-gboolean tp_channel_run_until_ready (TpChannel *self, GError **error,
-    GMainLoop **loop) _TP_GNUC_DEPRECATED;
-#endif
-
 typedef void (*TpChannelWhenReadyCb) (TpChannel *channel, const GError *error,
     gpointer user_data);
 
