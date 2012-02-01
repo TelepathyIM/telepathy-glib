@@ -99,6 +99,8 @@ void tp_base_media_call_stream_set_stun_servers (TpBaseMediaCallStream *self,
     GPtrArray *stun_servers);
 void tp_base_media_call_stream_add_endpoint (TpBaseMediaCallStream *self,
     TpCallStreamEndpoint *endpoint);
+void tp_base_media_call_stream_remove_endpoint (TpBaseMediaCallStream *self,
+    TpCallStreamEndpoint *endpoint);
 GList *tp_base_media_call_stream_get_endpoints (TpBaseMediaCallStream *self);
 const gchar *tp_base_media_call_stream_get_username (
     TpBaseMediaCallStream *self);

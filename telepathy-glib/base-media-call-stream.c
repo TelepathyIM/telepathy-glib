@@ -701,6 +701,48 @@ tp_base_media_call_stream_add_endpoint (TpBaseMediaCallStream *self,
   g_ptr_array_unref (removed);
 }
 
+
+/**
+ * tp_base_media_call_stream_remove_endpoint:
+ * @self: a #TpBaseMediaCallStream
+ * @endpoint: a #TpCallStreamEndpoint
+ *
+ * Remove @endpoint from #TpBaseMediaCallStream:endpoints list, and emits
+ * EndpointsChanged DBus signal.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_base_media_call_stream_remove_endpoint (TpBaseMediaCallStream *self,
+    TpCallStreamEndpoint *endpoint)
+{
+  const gchar *object_path;
+  GPtrArray *added;
+  GPtrArray *removed;
+
+  g_return_if_fail (TP_IS_BASE_MEDIA_CALL_STREAM (self));
+  g_return_if_fail (TP_IS_CALL_STREAM_ENDPOINT (endpoint));
+  g_return_if_fail (g_list_find (self->priv->endpoints, endpoint) != NULL);
+
+  object_path = tp_call_stream_endpoint_get_object_path (endpoint);
+  DEBUG ("Remove endpoint %s from stream %s", object_path,
+      tp_base_call_stream_get_object_path ((TpBaseCallStream *) self));
+
+  self->priv->endpoints = g_list_remove (self->priv->endpoints,
+      endpoint);
+
+  added = g_ptr_array_new ();
+  removed = g_ptr_array_new ();
+  g_ptr_array_add (removed, (gpointer) object_path);
+
+  tp_svc_call_stream_interface_media_emit_endpoints_changed (self,
+      added, removed);
+
+  g_ptr_array_unref (added);
+  g_ptr_array_unref (removed);
+  g_object_unref (endpoint);
+}
+
 /**
  * tp_base_media_call_stream_get_endpoints:
  * @self: a #TpBaseMediaCallStream
