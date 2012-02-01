@@ -22,8 +22,7 @@ lib_LTLIBRARIES = libtelepathy-glib.la
 noinst_LTLIBRARIES = libtelepathy-glib-internal.la \
 	libtelepathy-glib-reentrants.la
 
-# headers that are subject to coding-style checks
-our_headers = \
+tpginclude_HEADERS = \
     account.h \
     account-channel-request.h \
     account-manager.h \
@@ -128,10 +127,6 @@ our_headers = \
     text-channel.h \
     util.h
 
-tpginclude_HEADERS = \
-    $(our_headers) \
-    verify.h
-
 BUILT_SOURCES = $(codegen_sources)
 
 CLEANFILES = \
@@ -144,7 +139,7 @@ clean-local:
 	rm -rf tmp-introspect*
 
 check_c_sources = \
-    $(our_headers) \
+    $(tpginclude_HEADERS) \
     $(libtelepathy_glib_internal_la_SOURCES)
 
 include $(top_srcdir)/tools/check-coding-style.mk

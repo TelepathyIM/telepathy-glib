@@ -51,66 +51,6 @@
 #include "simple-client-factory-internal.h"
 
 /**
- * tp_verify:
- * @R: a requirement (constant expression) to be checked at compile-time
- *
- * Make an assertion at compile time, like C++0x's proposed static_assert
- * keyword. If @R is determined to be true, there is no overhead at runtime;
- * if @R is determined to be false, compilation will fail.
- *
- * This macro can be used at file scope (it expands to a dummy extern
- * declaration).
- *
- * (This is gnulib's verify macro, written by Paul Eggert, Bruno Haible and
- * Jim Meyering.)
- *
- * This macro will be deprecated in a future telepathy-glib release. Please
- * use GLib 2.20's G_STATIC_ASSERT() macro in new code.
- *
- * Since: 0.7.34
- */
-
-/**
- * tp_verify_true:
- * @R: a requirement (constant expression) to be checked at compile-time
- *
- * Make an assertion at compile time, like C++0x's proposed static_assert
- * keyword. If @R is determined to be true, there is no overhead at runtime,
- * and the macro evaluates to 1 as an integer constant expression;
- * if @R is determined to be false, compilation will fail.
- *
- * This macro can be used anywhere that an integer constant expression would
- * be allowed.
- *
- * (This is gnulib's verify_true macro, written by Paul Eggert, Bruno Haible
- * and Jim Meyering.)
- *
- * This macro will be deprecated in a future telepathy-glib release. Please
- * use GLib 2.20's G_STATIC_ASSERT() macro in new code.
- *
- * Returns: 1
- *
- * Since: 0.7.34
- */
-
-/**
- * tp_verify_statement:
- * @R: a requirement (constant expression) to be checked at compile-time
- *
- * Make an assertion at compile time, like C++0x's proposed static_assert
- * keyword. If @R is determined to be true, there is no overhead at runtime;
- * if @R is determined to be false, compilation will fail.
- *
- * This macro can be used anywhere that a statement would be allowed; it
- * is equivalent to ((void) tp_verify_true (R)).
- *
- * This macro will be deprecated in a future telepathy-glib release. Please
- * use GLib 2.20's G_STATIC_ASSERT() macro in new code.
- *
- * Since: 0.7.34
- */
-
-/**
  * tp_g_ptr_array_contains:
  * @haystack: The pointer array to be searched
  * @needle: The pointer to look for

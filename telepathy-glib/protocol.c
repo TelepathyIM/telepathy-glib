@@ -1312,7 +1312,7 @@ parse_default_value (GValue *value,
 
 #define PROTOCOL_PREFIX "Protocol "
 #define PROTOCOL_PREFIX_LEN 9
-tp_verify (sizeof (PROTOCOL_PREFIX) == PROTOCOL_PREFIX_LEN + 1);
+G_STATIC_ASSERT (sizeof (PROTOCOL_PREFIX) == PROTOCOL_PREFIX_LEN + 1);
 
 static gchar *
 replace_null_with_empty (gchar *in)

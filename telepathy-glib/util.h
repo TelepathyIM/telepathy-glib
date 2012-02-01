@@ -25,10 +25,6 @@
 
 #include <gio/gio.h>
 
-#include <telepathy-glib/verify.h>
-
-#define tp_verify_statement(R) ((void) tp_verify_true (R))
-
 G_BEGIN_DECLS
 
 gboolean tp_g_ptr_array_contains (GPtrArray *haystack, gpointer needle);

@@ -1246,9 +1246,6 @@ TP_SVC_CONNECTION_MANAGER_GET_CLASS
 <FILE>util</FILE>
 <TITLE>util</TITLE>
 <INCLUDE>telepathy-glib/util.h</INCLUDE>
-tp_verify
-tp_verify_true
-tp_verify_statement
 tp_g_hash_table_update
 tp_g_ptr_array_contains
 tp_g_ptr_array_extend
