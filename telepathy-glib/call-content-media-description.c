@@ -621,6 +621,9 @@ tp_call_content_media_description_accept (TpSvcCallContentMediaDescription *ifac
     DBusGMethodInvocation *context)
 {
   TpCallContentMediaDescription *self = (TpCallContentMediaDescription *) iface;
+  GPtrArray *codecs;
+  gboolean valid;
+  TpHandle remote_contact;
 
   DEBUG ("%s was accepted", self->priv->object_path);
 
@@ -629,6 +632,28 @@ tp_call_content_media_description_accept (TpSvcCallContentMediaDescription *ifac
       g_cancellable_disconnect (self->priv->cancellable, self->priv->handler_id);
       g_clear_object (&self->priv->cancellable);
       self->priv->handler_id = 0;
+    }
+
+  codecs = tp_asv_get_boxed (properties,
+      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_CODECS,
+      TP_ARRAY_TYPE_CODEC_LIST);
+  if (!codecs || codecs->len == 0)
+    {
+      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                       "Codecs can not be empty" };
+      dbus_g_method_return_error (context, &error);
+      return;
+    }
+
+  remote_contact = tp_asv_get_uint32 (properties,
+      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT,
+      &valid);
+  if (valid && remote_contact != self->priv->remote_contact)
+    {
+      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                       "Remote contact must the same as in request." };
+      dbus_g_method_return_error (context, &error);
+      return;
     }
 
   g_simple_async_result_set_op_res_gpointer (self->priv->result,
@@ -650,9 +675,18 @@ tp_call_content_media_description_reject (TpSvcCallContentMediaDescription *ifac
 
   DEBUG ("%s was rejected", self->priv->object_path);
 
+  if (!self->priv->has_remote_information)
+    {
+      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                       "Can not reject an empty Media Description" };
+      dbus_g_method_return_error (context, &error);
+      return;
+    }
+
   if (self->priv->cancellable != NULL)
     {
-      g_cancellable_disconnect (self->priv->cancellable, self->priv->handler_id);
+      g_cancellable_disconnect (self->priv->cancellable,
+          self->priv->handler_id);
       g_clear_object (&self->priv->cancellable);
       self->priv->handler_id = 0;
     }

@@ -682,6 +682,7 @@ tp_base_media_call_content_update_local_media_description (
 {
   TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (iface);
   GHashTable *current_properties;
+  GPtrArray *codecs;
   gpointer contact;
 
   if (self->priv->current_offer != NULL)
@@ -693,7 +694,8 @@ tp_base_media_call_content_update_local_media_description (
       return;
     }
 
-  if (!g_hash_table_lookup_extended (properties, "RemoteContact",
+  if (!g_hash_table_lookup_extended (properties,
+          TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT,
           NULL, &contact))
     {
       GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
@@ -710,6 +712,18 @@ tp_base_media_call_content_update_local_media_description (
     {
       GError error = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
           "The initial MediaDescription object has not yet appeared" };
+      dbus_g_method_return_error (context, &error);
+      return;
+    }
+
+
+  codecs = tp_asv_get_boxed (properties,
+      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_CODECS,
+      TP_ARRAY_TYPE_CODEC_LIST);
+  if (!codecs || codecs->len == 0)
+    {
+      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                       "Codecs can not be empty" };
       dbus_g_method_return_error (context, &error);
       return;
     }
