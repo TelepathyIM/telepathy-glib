@@ -92,8 +92,7 @@ main (int argc,
       service_conn_as_base->object_path, &error);
   MYASSERT (conn != NULL, "");
   g_assert_no_error (error);
-  MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL), "");
-  g_assert_no_error (error);
+  tp_tests_proxy_run_until_prepared (conn, NULL);
 
   tp_tests_connection_assert_disconnect_succeeds (conn);
   g_object_unref (conn);
