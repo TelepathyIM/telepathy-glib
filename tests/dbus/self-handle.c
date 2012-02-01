@@ -325,8 +325,6 @@ static void
 teardown (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
-  gboolean ok;
-
   g_clear_error (&f->error);
 
   if (f->client_conn != NULL)

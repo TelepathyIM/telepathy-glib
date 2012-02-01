@@ -448,7 +448,6 @@ teardown (Test *test,
     gconstpointer data)
 {
   TpConnection *conn;
-  gboolean ok;
   GError *error = NULL;
 
   g_array_unref (test->arr);

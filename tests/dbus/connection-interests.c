@@ -219,7 +219,6 @@ teardown (Test *test,
     gconstpointer data)
 {
   TpConnection *conn;
-  gboolean ok;
   GError *error = NULL;
 
   if (test->conn != NULL)

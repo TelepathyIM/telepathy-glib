@@ -1217,9 +1217,6 @@ static void
 teardown (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
-  GError *error = NULL;
-  gboolean ok;
-
   if (f->legacy_client_conn != NULL)
     tp_tests_connection_assert_disconnect_succeeds (f->legacy_client_conn);
 

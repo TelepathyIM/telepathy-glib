@@ -1044,7 +1044,7 @@ static void
 teardown (Test *test,
           gconstpointer data G_GNUC_UNUSED)
 {
-  tp_tests_connection_assert_disconnect_succeeds (test->connection);
+  tp_tests_connection_assert_disconnect_succeeds (test->conn);
 
   if (test->members_changed_detailed_id != 0)
     {

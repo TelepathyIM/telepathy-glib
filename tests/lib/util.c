@@ -466,7 +466,7 @@ tp_tests_connection_assert_disconnect_succeeds (TpConnection *connection)
   tp_connection_disconnect_async (connection, tp_tests_result_ready_cb,
       &result);
   tp_tests_run_until_result (&result);
-  ok = tp_connection_disconnect_finish (connection, result, error);
+  ok = tp_connection_disconnect_finish (connection, result, &error);
   g_assert_no_error (error);
   g_assert (ok);
   g_object_unref (result);

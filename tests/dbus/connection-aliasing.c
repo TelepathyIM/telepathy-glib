@@ -99,7 +99,6 @@ teardown (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpConnection *conn;
-  gboolean ok;
   GError *error = NULL;
 
   g_clear_error (&test->error);

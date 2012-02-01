@@ -161,7 +161,7 @@ teardown (Test *test,
 {
   GAsyncResult *result = NULL;
 
-  tp_connection_disconnect_async (connection, tp_tests_result_ready_cb,
+  tp_connection_disconnect_async (test->conn, tp_tests_result_ready_cb,
       &result);
   tp_tests_run_until_result (&result);
   /* Ignore success/failure: it might already have gone */
