@@ -616,6 +616,26 @@ new_local_connection_identified (TpStreamTubeChannel *self,
   g_array_unref (features);
 }
 
+#ifdef HAVE_GIO_UNIX
+static void
+send_credentials_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpStreamTubeChannel *self = user_data;
+  GError *error = NULL;
+
+  if (!tp_unix_connection_send_credentials_with_byte_finish (
+          (GSocketConnection *) source, result, &error))
+    {
+      DEBUG ("Failed to send credentials: %s", error->message);
+
+      operation_failed (self, error);
+      g_clear_error (&error);
+    }
+}
+#endif
+
 static void
 client_socket_connected (TpStreamTubeChannel *self)
 {
@@ -631,20 +651,10 @@ client_socket_connected (TpStreamTubeChannel *self)
   if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
     {
       guchar byte;
-      GError *error = NULL;
 
       byte = g_value_get_uchar (self->priv->access_control_param);
-
-      /* FIXME: we should an async version of this API (bgo #629503) */
-      if (!tp_unix_connection_send_credentials_with_byte (
-            conn, byte, NULL, &error))
-        {
-          DEBUG ("Failed to send credentials: %s", error->message);
-
-          operation_failed (self, error);
-          g_clear_error (&error);
-          return;
-        }
+      tp_unix_connection_send_credentials_with_byte_async (conn, byte, NULL,
+          send_credentials_cb, self);
     }
 #endif
 
@@ -1263,47 +1273,12 @@ find_sig_for_conn (TpStreamTubeChannel *self,
 }
 
 static void
-service_incoming_cb (GSocketService *service,
+credentials_received (TpStreamTubeChannel *self,
     GSocketConnection *conn,
-    GObject *source_object,
-    gpointer user_data)
+    guchar byte)
 {
-  TpStreamTubeChannel *self = user_data;
   SigWaitingConn *sig;
   ConnWaitingSig *c;
-  guchar byte = 0;
-
-  DEBUG ("New incoming connection");
-
-#ifdef HAVE_GIO_UNIX
-  /* Check the credentials if needed */
-  if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
-    {
-      GCredentials *creds;
-      uid_t uid;
-      GError *error = NULL;
-
-      /* FIXME: we should an async version of this API (bgo #629503) */
-      creds = tp_unix_connection_receive_credentials_with_byte (
-          conn, &byte, NULL, &error);
-      if (creds == NULL)
-        {
-          DEBUG ("Failed to receive credentials: %s", error->message);
-
-          g_error_free (error);
-          return;
-        }
-
-      uid = g_credentials_get_unix_user (creds, &error);
-      g_object_unref (creds);
-
-      if (uid != geteuid ())
-        {
-          DEBUG ("Wrong credentials received (user: %u)", uid);
-          return;
-        }
-    }
-#endif
 
   c = conn_waiting_sig_new (conn, byte);
 
@@ -1330,6 +1305,65 @@ service_incoming_cb (GSocketService *service,
 
   sig_waiting_conn_free (sig);
   conn_waiting_sig_free (c);
+}
+
+#ifdef HAVE_GIO_UNIX
+static void
+receive_credentials_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpStreamTubeChannel *self = user_data;
+  GSocketConnection *conn = (GSocketConnection *) source;
+  GCredentials *creds;
+  guchar byte;
+  uid_t uid;
+  GError *error = NULL;
+
+  creds = tp_unix_connection_receive_credentials_with_byte_finish (conn, result,
+      &byte, &error);
+
+  if (creds == NULL)
+    {
+      DEBUG ("Failed to receive credentials: %s", error->message);
+      g_error_free (error);
+      return;
+    }
+
+  uid = g_credentials_get_unix_user (creds, &error);
+  if (uid != geteuid ())
+    {
+      DEBUG ("Wrong credentials received (user: %u)", uid);
+      return;
+    }
+
+  credentials_received (self, conn, byte);
+
+  g_object_unref (creds);
+}
+#endif
+
+static void
+service_incoming_cb (GSocketService *service,
+    GSocketConnection *conn,
+    GObject *source_object,
+    gpointer user_data)
+{
+  TpStreamTubeChannel *self = user_data;
+
+  DEBUG ("New incoming connection");
+
+#ifdef HAVE_GIO_UNIX
+  /* Check the credentials if needed */
+  if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
+    {
+      tp_unix_connection_receive_credentials_with_byte_async (conn, NULL,
+          receive_credentials_cb, self);
+      return;
+    }
+#endif
+
+  credentials_received (self, conn, 0);
 }
 
 /**

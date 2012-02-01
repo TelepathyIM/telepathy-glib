@@ -18,9 +18,6 @@
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/gnio-util.h>
 
-#include <gio/gunixsocketaddress.h>
-#include <gio/gunixconnection.h>
-
 #include <glib/gstdio.h>
 
 static void file_transfer_iface_init (gpointer iface, gpointer data);

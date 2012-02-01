@@ -71,4 +71,6 @@ GValue *_tp_create_local_socket (TpSocketAddressType address_type,
 
 void _tp_destroy_socket_control_list (gpointer data);
 
+void tp_tests_connection_assert_disconnect_succeeds (TpConnection *connection);
+
 #endif /* #ifndef __TP_TESTS_LIB_UTIL_H__ */

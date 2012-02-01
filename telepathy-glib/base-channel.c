@@ -29,9 +29,10 @@
  * implementations by implementing some of its properties, and defining other
  * relevant properties.
  *
- * Subclasses should fill in #TpBaseChannelClass.channel_type,
- * #TpBaseChannelClass.target_handle_type and #TpBaseChannelClass.interfaces,
- * and implement the #TpBaseChannelClass.close virtual function.
+ * Subclasses should fill in #TpBaseChannelClass.channel_type and
+ * #TpBaseChannelClass.target_handle_type; and implement the
+ * #TpBaseChannelClass.get_interfaces and
+ * #TpBaseChannelClass.close virtual functions.
  *
  * If the channel type and/or interfaces being implemented define immutable
  * D-Bus properties besides those on the Channel interface, the subclass should
@@ -60,8 +61,7 @@
  * (e.g. #TP_IFACE_CHANNEL_TYPE_TEXT)
  * @target_handle_type: The type of handle that is the target of channels of
  * this type
- * @interfaces: Extra interfaces provided by this channel (this SHOULD NOT
- * include the channel type and interface itself)
+ * @interfaces: Deprecated. Replaced by @get_interfaces.
  * @close: A virtual function called to close the channel, which will be called
  *  by tp_base_channel_close() and by the implementation of the Closed D-Bus
  *  method.
@@ -75,6 +75,10 @@
  * #TpExportableChannel:object-path property is not set.  The default
  * implementation simply generates a unique path based on the object's address
  * in memory.  The returned string will be freed automatically.
+ * @get_interfaces: Extra interfaces provided by this channel (this SHOULD NOT
+ *  include the channel type and interface itself). Implementation must first
+ *  chainup on parent class implementation and then add extra interfaces into
+ *  the #GPtrArray. Replaces @interfaces.
  *
  * The class structure for #TpBaseChannel
  *
@@ -197,6 +201,36 @@
  * objects's object path to get the Channel's object path.
  *
  * Since: 0.11.14
+ */
+
+/**
+ * TpBaseChannelGetInterfacesFunc:
+ * @chan: a channel
+ *
+ * Signature of an implementation of #TpBaseChannelClass.get_interfaces virtual
+ * function.
+ *
+ * Implementation must first chainup on parent class implementation and then
+ * add extra interfaces into the #GPtrArray.
+ *
+ * |[
+ * static GPtrArray *
+ * my_channel_get_interfaces (TpBaseChannel *self)
+ * {
+ *   GPtrArray *interfaces;
+ *
+ *   interfaces = TP_BASE_CHANNEL_CLASS (my_channel_parent_class)->get_interfaces (self);
+ *
+ *   g_ptr_array_add (interfaces, TP_IFACE_BADGERS);
+ *
+ *   return interfaces;
+ * }
+ * ]|
+ *
+ * Returns: (transfer container): a #GPtrArray of static strings for D-Bus
+ *   interfaces implemented by this client.
+ *
+ * Since: UNRELEASED
  */
 
 #include "config.h"
@@ -559,6 +593,23 @@ tp_base_channel_get_basic_object_path_suffix (TpBaseChannel *self)
   return escaped;
 }
 
+static GPtrArray *
+tp_base_channel_get_basic_interfaces (TpBaseChannel *self)
+{
+  GPtrArray *interfaces = g_ptr_array_new ();
+  const char **ptr;
+
+  /* copy the klass->interfaces property for backwards compatibility */
+  for (ptr = TP_BASE_CHANNEL_GET_CLASS (self)->interfaces;
+       ptr != NULL && *ptr != NULL;
+       ptr++)
+    {
+      g_ptr_array_add (interfaces, (char *) *ptr);
+    }
+
+  return interfaces;
+}
+
 static void
 tp_base_channel_init (TpBaseChannel *self)
 {
@@ -671,8 +722,14 @@ tp_base_channel_get_property (GObject *object,
       g_value_set_object (value, chan->priv->conn);
       break;
     case PROP_INTERFACES:
-      g_value_set_boxed (value, klass->interfaces);
-      break;
+      {
+        GPtrArray *interfaces = klass->get_interfaces (chan);
+
+        g_ptr_array_add (interfaces, NULL);
+        g_value_set_boxed (value, interfaces->pdata);
+        g_ptr_array_unref (interfaces);
+        break;
+      }
     case PROP_CHANNEL_DESTROYED:
       g_value_set_boolean (value, chan->priv->destroyed);
       break;
@@ -878,6 +935,8 @@ tp_base_channel_class_init (TpBaseChannelClass *tp_base_channel_class)
       tp_base_channel_fill_basic_immutable_properties;
   tp_base_channel_class->get_object_path_suffix =
       tp_base_channel_get_basic_object_path_suffix;
+  tp_base_channel_class->get_interfaces =
+      tp_base_channel_get_basic_interfaces;
 }
 
 static void

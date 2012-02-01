@@ -766,8 +766,7 @@ main (int argc,
 
   g_print ("\n\n==== End of tests ====\n");
 
-  MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
-  g_assert_no_error (error);
+  tp_tests_connection_assert_disconnect_succeeds (conn);
 
   g_object_unref (chan);
   g_object_unref (conn);

@@ -278,6 +278,13 @@ gboolean tp_connection_get_balance (TpConnection *self,
     gint *balance, guint *scale, const gchar **currency);
 const gchar * tp_connection_get_balance_uri (TpConnection *self);
 
+void tp_connection_disconnect_async (TpConnection *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_connection_disconnect_finish (TpConnection *self,
+    GAsyncResult *result,
+    GError **error);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-connection.h>

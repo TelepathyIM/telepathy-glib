@@ -52,6 +52,9 @@ GType tp_tests_simple_account_manager_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER, \
                               TpTestsSimpleAccountManagerClass))
 
+void tp_tests_simple_account_manager_set_usable_accounts (
+    TpTestsSimpleAccountManager *self,
+    GPtrArray *accounts);
 
 G_END_DECLS
 
