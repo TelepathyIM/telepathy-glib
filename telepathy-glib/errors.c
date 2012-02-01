@@ -306,19 +306,6 @@ tp_g_set_error_unsupported_handle_type (guint type, GError **error)
  */
 
 /**
- * tp_errors_quark: (skip)
- *
- * <!-- -->
- *
- * Deprecated: Use tp_error_quark() instead.
- */
-GQuark
-tp_errors_quark (void)
-{
-  return tp_error_quark ();
-}
-
-/**
  * tp_error_quark:
  *
  * Return the error domain quark for #TpError.
@@ -332,9 +319,7 @@ tp_error_quark (void)
 
   if (g_once_init_enter (&quark))
     {
-      /* FIXME: When we next break API, this should be changed to
-       * "tp-error-quark" */
-      GQuark domain = g_quark_from_static_string ("tp_errors");
+      GQuark domain = g_quark_from_static_string ("tp-error-quark");
 
       g_type_init ();
       dbus_g_error_domain_register (domain, TP_ERROR_PREFIX,
@@ -345,5 +330,5 @@ tp_error_quark (void)
   return (GQuark) quark;
 }
 
-/* tp_errors_quark assumes this */
+/* tp_error_quark assumes this */
 G_STATIC_ASSERT (sizeof (GQuark) <= sizeof (gsize));

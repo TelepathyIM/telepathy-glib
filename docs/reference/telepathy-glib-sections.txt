@@ -2072,7 +2072,6 @@ TP_ERROR_STR_MEDIA_STREAMING_ERROR
 TP_ERROR_STR_CAPTCHA_NOT_SUPPORTED
 <SUBSECTION Standard>
 tp_error_get_type
-tp_errors_quark
 tp_error_quark
 <SUBSECTION Private>
 TP_ERRORS

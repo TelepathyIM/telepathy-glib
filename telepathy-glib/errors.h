@@ -28,7 +28,6 @@
 
 G_BEGIN_DECLS
 
-GQuark tp_errors_quark (void) G_GNUC_DEPRECATED_FOR(tp_error_quark);
 GQuark tp_error_quark (void);
 
 #define TP_ERROR_PREFIX "im.telepathy1.Error"
