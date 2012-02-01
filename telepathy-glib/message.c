@@ -117,47 +117,6 @@ tp_message_init (TpMessage *self)
   tp_message_append_part (self);
 }
 
-
-/**
- * tp_message_new:
- * @connection: a connection on which to reference handles
- * @initial_parts: number of parts to create (at least 1)
- * @size_hint: preallocate space for this many parts (at least @initial_parts)
- *
- * <!-- nothing more to say -->
- *
- * Returns: a newly allocated message suitable to be passed to
- * tp_message_mixin_take_received
- *
- * Since: 0.7.21
- * Deprecated: since 0.13.9. Use tp_cm_message_new()
- */
-TpMessage *
-tp_message_new (TpBaseConnection *connection,
-                guint initial_parts,
-                guint size_hint)
-{
-  g_return_val_if_fail (size_hint >= initial_parts, NULL);
-
-  return tp_cm_message_new (connection, initial_parts);
-}
-
-
-/**
- * tp_message_destroy:
- * @self: a message
- *
- * Since 0.13.9 this function is a simple wrapper around
- * g_object_unref()
- *
- * Since: 0.7.21
- */
-void
-tp_message_destroy (TpMessage *self)
-{
-  g_object_unref (self);
-}
-
 /**
  * tp_message_count_parts:
  * @self: a message
@@ -242,32 +201,6 @@ tp_message_delete_part (TpMessage *self,
 }
 
 /**
- * tp_message_ref_handle:
- * @self: a message
- * @handle_type: a handle type, greater than %TP_HANDLE_TYPE_NONE and less than
- *  %NUM_TP_HANDLE_TYPES
- * @handle: a handle of the given type
- *
- * Reference the given handle until this message is destroyed.
- *
- * Since: 0.7.21
- * Deprecated: since 0.13.9. Handles are now immortal so there is
- * no point to ref them. Furthermore, the only handle that should be stored
- * in a TpMessage is message-sender which should be set using
- * tp_cm_message_set_sender().
- */
-void
-tp_message_ref_handle (TpMessage *self,
-                       TpHandleType handle_type,
-                       TpHandle handle)
-{
-  g_return_if_fail (TP_IS_CM_MESSAGE (self));
-  g_return_if_fail (self->priv->mutable);
-
-  /* Handles are now immortal so we don't have to anything */
-}
-
-/**
  * tp_message_delete_key:
  * @self: a message
  * @part: a part number, which must be strictly less than the number
@@ -290,42 +223,6 @@ tp_message_delete_key (TpMessage *self,
 
   return g_hash_table_remove (g_ptr_array_index (self->parts, part), key);
 }
-
-
-/**
- * tp_message_set_handle:
- * @self: a #TpCMMessage
- * @part: a part number, which must be strictly less than the number
- *  returned by tp_message_count_parts()
- * @key: a key in the mapping representing the part
- * @handle_type: a handle type
- * @handle_or_0: a handle of that type, or 0
- *
- * If @handle_or_0 is not zero, reference it with tp_message_ref_handle().
- *
- * Set @key in part @part of @self to have @handle_or_0 as an unsigned integer
- * value.
- *
- * Since 0.13.9 this function has been deprecated in favor or
- * tp_cm_message_set_sender() as 'message-sender' is the only handle
- * you can put in a #TpCMMessage.
- *
- * Since: 0.7.21
- * Deprecated: since 0.13.9. Use tp_cm_message_set_sender()
- */
-void
-tp_message_set_handle (TpMessage *self,
-                       guint part,
-                       const gchar *key,
-                       TpHandleType handle_type,
-                       TpHandle handle_or_0)
-{
-  g_return_if_fail (TP_IS_CM_MESSAGE (self));
-  g_return_if_fail (self->priv->mutable);
-
-  tp_message_set_uint32 (self, part, key, handle_or_0);
-}
-
 
 /**
  * tp_message_set_boolean:
@@ -594,9 +491,6 @@ tp_message_set_bytes (TpMessage *self,
  *
  * Set @key in part @part of @self to have a copy of @source as its value.
  *
- * If @source represents a data structure containing handles, they should
- * all be referenced with tp_message_ref_handle() first.
- *
  * Since: 0.7.21
  */
 void
@@ -612,34 +506,6 @@ tp_message_set (TpMessage *self,
 
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
       g_strdup (key), tp_g_value_slice_dup (source));
-}
-
-/**
- * tp_message_take_message:
- * @self: a #TpCMMessage
- * @part: a part number, which must be strictly less than the number
- *  returned by tp_message_count_parts()
- * @key: a key in the mapping representing the part
- * @message: another (distinct) message created for the same #TpBaseConnection
- *
- * Set @key in part @part of @self to have @message as an aa{sv} value (that
- * is, an array of Message_Part), and take ownership of @message.  The caller
- * should not use @message after passing it to this function.  All handle
- * references owned by @message will subsequently belong to and be released
- * with @self.
- *
- * Since: 0.7.21
- * Deprecated: since 0.13.9. Use tp_cm_message_take_message()
- */
-void
-tp_message_take_message (TpMessage *self,
-                         guint part,
-                         const gchar *key,
-                         TpMessage *message)
-{
-  g_return_if_fail (TP_IS_CM_MESSAGE (self));
-
-  tp_cm_message_take_message (self, part, key, message);
 }
 
 static void

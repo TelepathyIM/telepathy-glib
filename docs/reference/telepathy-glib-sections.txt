@@ -2151,12 +2151,6 @@ tp_message_set_string_printf
 tp_message_set_uint16
 tp_message_set_uint32
 tp_message_set_uint64
-<SUBSECTION>
-tp_message_new
-tp_message_destroy
-tp_message_ref_handle
-tp_message_set_handle
-tp_message_take_message
 <SUBSECTION Standard>
 TP_IS_MESSAGE
 TP_IS_MESSAGE_CLASS

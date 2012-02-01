@@ -218,12 +218,12 @@ tp_cm_message_take_message (TpMessage *self,
           message->parts));
 
   /* Now that @self has stolen @message's parts, replace them with a stub to
-   * keep tp_message_destroy happy.
+   * keep the destructor happy.
    */
   message->parts = g_ptr_array_sized_new (1);
   tp_message_append_part (message);
 
-  tp_message_destroy (message);
+  g_object_unref (message);
 }
 
 /**

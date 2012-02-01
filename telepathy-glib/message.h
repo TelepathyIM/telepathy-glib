@@ -39,7 +39,6 @@ typedef struct _TpMessageClass TpMessageClass;
 
 GType tp_message_get_type (void);
 
-void tp_message_destroy (TpMessage *self);
 guint tp_message_count_parts (TpMessage *self);
 const GHashTable *tp_message_peek (TpMessage *self, guint part);
 guint tp_message_append_part (TpMessage *self);
@@ -70,18 +69,6 @@ void tp_message_set (TpMessage *self, guint part, const gchar *key,
     const GValue *source);
 
 gchar * tp_message_to_text (TpMessage *message) G_GNUC_WARN_UNUSED_RESULT;
-
-#ifndef TP_DISABLE_DEPRECATED
-/* Takes a TpCMMessage */
-void tp_message_set_handle (TpMessage *self, guint part, const gchar *key,
-    TpHandleType handle_type, TpHandle handle_or_0);
-
-void tp_message_take_message (TpMessage *self, guint part, const gchar *key,
-    TpMessage *message);
-
-void tp_message_ref_handle (TpMessage *self, TpHandleType handle_type,
-    TpHandle handle);
-#endif
 
 gboolean tp_message_is_mutable (TpMessage *self);
 

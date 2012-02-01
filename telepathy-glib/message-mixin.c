@@ -311,7 +311,7 @@ tp_message_mixin_clear (GObject *obj)
 
   while ((item = g_queue_pop_head (mixin->priv->pending)) != NULL)
     {
-      tp_message_destroy (item);
+      g_object_unref (item);
     }
 }
 
@@ -401,7 +401,7 @@ tp_message_mixin_acknowledge_pending_messages_async (
       DEBUG ("acknowledging message id %u", cm_msg->incoming_id);
 
       g_queue_delete_link (mixin->priv->pending, link_);
-      tp_message_destroy (item);
+      g_object_unref (item);
     }
 
   g_ptr_array_unref (links);
@@ -639,7 +639,7 @@ tp_message_mixin_sent (GObject *object,
     }
 
   cm_msg->outgoing_context = NULL;
-  tp_message_destroy (message);
+  g_object_unref (message);
 }
 
 static void
