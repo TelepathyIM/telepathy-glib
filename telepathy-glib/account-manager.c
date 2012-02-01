@@ -1280,7 +1280,7 @@ tp_account_manager_create_account_async (TpAccountManager *manager,
  * object, with the %TP_ACCOUNT_FEATURE_CORE feature ready on it.
  *
  * The caller must keep a ref to the returned object using g_object_ref() if
- * it is to be kept.
+ * it is to be kept beyond the lifetime of @result.
  *
  * Returns: (transfer none): a new #TpAccount which was just created on
  *  success, otherwise %NULL
