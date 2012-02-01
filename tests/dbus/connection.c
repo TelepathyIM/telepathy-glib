@@ -113,43 +113,6 @@ teardown (Test *test,
 }
 
 static void
-test_run_until_invalid (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
-{
-  GError *error = NULL;
-
-  test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
-      &error);
-  g_assert (test->conn != NULL);
-  g_assert_no_error (error);
-  tp_proxy_invalidate ((TpProxy *) test->conn, &invalidated_for_test);
-
-  MYASSERT (!tp_connection_run_until_ready (test->conn, TRUE, &error, NULL),
-      "");
-  g_assert (error != NULL);
-  g_assert_error (error, invalidated_for_test.domain,
-      invalidated_for_test.code);
-  g_assert_cmpstr (error->message, ==, invalidated_for_test.message);
-  g_error_free (error);
-}
-
-static void
-test_run_until_ready (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
-{
-  GError *error = NULL;
-
-  test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
-      &error);
-  g_assert (test->conn != NULL);
-  g_assert_no_error (error);
-
-  MYASSERT (tp_connection_run_until_ready (test->conn, TRUE, &error, NULL),
-      "");
-  g_assert_no_error (error);
-}
-
-static void
 conn_ready (TpConnection *connection,
             const GError *error,
             gpointer user_data)
@@ -402,10 +365,6 @@ main (int argc,
   g_test_add ("/conn/prepare", Test, NULL, setup, test_prepare, teardown);
   g_test_add ("/conn/fail_to_prepare", Test, NULL, setup, test_fail_to_prepare,
       teardown);
-  g_test_add ("/conn/run_until_invalid", Test, NULL, setup,
-      test_run_until_invalid, teardown);
-  g_test_add ("/conn/run_until_ready", Test, NULL, setup,
-      test_run_until_ready, teardown);
   g_test_add ("/conn/call_when_ready", Test, NULL, setup,
       test_call_when_ready, teardown);
   g_test_add ("/conn/call_when_invalid", Test, NULL, setup,

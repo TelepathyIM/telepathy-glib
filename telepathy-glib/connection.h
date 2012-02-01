@@ -154,12 +154,6 @@ gboolean tp_connection_set_contact_info_finish (TpConnection *self,
 
 gboolean tp_connection_is_ready (TpConnection *self);
 
-#ifndef TP_DISABLE_DEPRECATED
-gboolean tp_connection_run_until_ready (TpConnection *self,
-    gboolean connect, GError **error,
-    GMainLoop **loop) _TP_GNUC_DEPRECATED;
-#endif
-
 typedef void (*TpConnectionWhenReadyCb) (TpConnection *connection,
     const GError *error, gpointer user_data);
 
