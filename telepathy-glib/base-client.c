@@ -3181,7 +3181,7 @@ delegate_channels_cb (TpChannelDispatcher *cd,
         }
     }
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
 }
 
 /**

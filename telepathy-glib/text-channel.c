@@ -639,7 +639,7 @@ get_pending_messages_cb (TpProxy *proxy,
           error->domain, error->code,
           "Failed to get PendingMessages property: %s", error->message);
 
-      g_simple_async_result_complete (self->priv->pending_messages_result);
+      g_simple_async_result_complete_in_idle (self->priv->pending_messages_result);
       g_clear_object (&self->priv->pending_messages_result);
       return;
     }
@@ -652,7 +652,7 @@ get_pending_messages_cb (TpProxy *proxy,
           TP_ERRORS, TP_ERROR_CONFUSED,
           "PendingMessages property is of the wrong type");
 
-      g_simple_async_result_complete (self->priv->pending_messages_result);
+      g_simple_async_result_complete_in_idle (self->priv->pending_messages_result);
       g_clear_object (&self->priv->pending_messages_result);
       return;
     }
@@ -661,7 +661,7 @@ get_pending_messages_cb (TpProxy *proxy,
 
   if (messages->len == 0)
     {
-      g_simple_async_result_complete (self->priv->pending_messages_result);
+      g_simple_async_result_complete_in_idle (self->priv->pending_messages_result);
       g_clear_object (&self->priv->pending_messages_result);
       return;
     }
@@ -753,7 +753,7 @@ get_sms_channel_cb (TpProxy *proxy,
     g_object_notify (G_OBJECT (self), "is-sms-channel");
 
 out:
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
   g_object_unref (result);
 }
 
@@ -1213,7 +1213,7 @@ send_message_cb (TpChannel *proxy,
   g_simple_async_result_set_op_res_gpointer (result,
       tp_str_empty (token) ? NULL : g_strdup (token), g_free);
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
   g_object_unref (result);
 }
 
@@ -1291,7 +1291,7 @@ acknowledge_pending_messages_ready_cb (GObject *object,
 
   _tp_channel_contacts_queue_prepare_finish (channel, res, NULL, NULL);
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
   g_object_unref (result);
 }
 
@@ -1308,7 +1308,7 @@ acknowledge_pending_messages_cb (TpChannel *channel,
       DEBUG ("Failed to ack messages: %s", error->message);
 
       g_simple_async_result_set_from_error (result, error);
-      g_simple_async_result_complete (result);
+      g_simple_async_result_complete_in_idle (result);
       g_object_unref (result);
       return;
     }
@@ -1509,7 +1509,7 @@ set_chat_state_cb (TpChannel *proxy,
       g_simple_async_result_set_from_error (result, error);
     }
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
   g_object_unref (result);
 }
 
@@ -1721,7 +1721,7 @@ get_sms_length_cb (TpChannel *proxy,
       (GDestroyNotify) get_sms_length_return_free);
 
 out:
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
 }
 
 /**

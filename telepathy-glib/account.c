@@ -569,7 +569,7 @@ _tp_account_got_all_storage_cb (TpProxy *proxy,
   if (self->priv->storage_provider == NULL)
     self->priv->storage_provider = g_strdup ("");
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
 }
 
 static void
@@ -2414,7 +2414,7 @@ _tp_account_property_set_cb (TpProxy *proxy,
       g_simple_async_result_set_from_error (result, error);
     }
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
   g_object_unref (result);
 }
 
@@ -2476,7 +2476,7 @@ tp_account_set_enabled_async (TpAccount *account,
 }
 
 static void
-_tp_account_reconnected_cb (TpAccount *proxy,
+_tp_account_void_cb (TpAccount *proxy,
     const GError *error,
     gpointer user_data,
     GObject *weak_object)
@@ -2486,7 +2486,7 @@ _tp_account_reconnected_cb (TpAccount *proxy,
   if (error != NULL)
     g_simple_async_result_set_from_error (result, error);
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
   g_object_unref (result);
 }
 
@@ -2534,7 +2534,7 @@ tp_account_reconnect_async (TpAccount *account,
   result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_reconnect_finish);
 
-  tp_cli_account_call_reconnect (account, -1, _tp_account_reconnected_cb,
+  tp_cli_account_call_reconnect (account, -1, _tp_account_void_cb,
       result, NULL, G_OBJECT (account));
 }
 
@@ -2688,7 +2688,7 @@ _tp_account_updated_cb (TpAccount *proxy,
     g_simple_async_result_set_op_res_gpointer (result,
         g_strdupv ((GStrv) reconnect_required), (GDestroyNotify) g_strfreev);
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
   g_object_unref (G_OBJECT (result));
 }
 
@@ -3006,21 +3006,6 @@ tp_account_set_icon_name_finish (TpAccount *account,
     GError **error)
 {
   _tp_implement_finish_void (account, tp_account_set_icon_name_finish);
-}
-
-static void
-_tp_account_void_cb (TpAccount *proxy,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  GSimpleAsyncResult *result = G_SIMPLE_ASYNC_RESULT (user_data);
-
-  if (error != NULL)
-    g_simple_async_result_set_from_error (result, error);
-
-  g_simple_async_result_complete (result);
-  g_object_unref (G_OBJECT (result));
 }
 
 /**
@@ -3405,7 +3390,7 @@ _tp_account_got_avatar_cb (TpProxy *proxy,
           (GDestroyNotify) g_array_unref);
     }
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
   g_object_unref (result);
 }
 
@@ -3920,7 +3905,7 @@ _tp_account_get_storage_specific_information_cb (TpProxy *self,
           (GDestroyNotify) g_hash_table_unref);
     }
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
   g_object_unref (result);
 }
 
@@ -4058,7 +4043,7 @@ _tp_account_got_all_addressing_cb (TpProxy *proxy,
   if (self->priv->uri_schemes == NULL)
     self->priv->uri_schemes = g_new0 (gchar *, 1);
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
 }
 
 static void

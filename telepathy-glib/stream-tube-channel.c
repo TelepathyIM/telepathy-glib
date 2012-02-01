@@ -533,7 +533,7 @@ operation_failed (TpStreamTubeChannel *self,
 {
   g_simple_async_result_set_from_error (self->priv->result, error);
 
-  g_simple_async_result_complete (self->priv->result);
+  g_simple_async_result_complete_in_idle (self->priv->result);
   tp_clear_object (&self->priv->result);
 }
 
@@ -1203,7 +1203,7 @@ _channel_offered (TpChannel *channel,
 
   DEBUG ("Stream Tube offered");
 
-  g_simple_async_result_complete (self->priv->result);
+  g_simple_async_result_complete_in_idle (self->priv->result);
   tp_clear_object (&self->priv->result);
 }
 

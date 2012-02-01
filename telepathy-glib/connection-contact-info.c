@@ -475,7 +475,7 @@ tp_connection_get_contact_info_cb (TpProxy *proxy,
     }
 
 finally:
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
 }
 
 void
