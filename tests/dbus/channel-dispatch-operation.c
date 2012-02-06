@@ -8,6 +8,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/channel-dispatch-operation.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/debug.h>
@@ -217,8 +219,7 @@ teardown_services (Test *test,
   if (test->text_chan_service_2 != NULL)
     g_object_unref (test->text_chan_service_2);
 
-  tp_cli_connection_run_disconnect (test->connection, -1, &test->error, NULL);
-  g_assert_no_error (test->error);
+  tp_tests_connection_assert_disconnect_succeeds (test->connection);
 
   g_object_unref (test->connection);
   g_object_unref (test->base_connection);

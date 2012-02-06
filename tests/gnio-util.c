@@ -1,6 +1,6 @@
 /* tests of the GNIO utility functions */
 
-#include <config.h>
+#include "config.h"
 
 #include <string.h>
 

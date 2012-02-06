@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/cm-message.h>
 
@@ -35,9 +37,7 @@ static void
 teardown (Test *test,
           gconstpointer data)
 {
-  tp_cli_connection_run_disconnect (test->connection, -1, &test->error, NULL);
-  g_assert_no_error (test->error);
-
+  tp_tests_connection_assert_disconnect_succeeds (test->connection);
   g_object_unref (test->connection);
   g_object_unref (test->base_connection);
 }

@@ -7,6 +7,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 /* We include -internal headers of context to be able to easily access to
  * their semi-private attributes (connection, account, channels, etc). */
 #include <telepathy-glib/account-manager.h>
@@ -261,9 +263,7 @@ teardown (Test *test,
 
   tp_clear_object (&test->cdo_service);
 
-  tp_cli_connection_run_disconnect (test->connection, -1, &test->error, NULL);
-  g_assert_no_error (test->error);
-
+  tp_tests_connection_assert_disconnect_succeeds (test->connection);
   g_object_unref (test->connection);
   g_object_unref (test->base_connection);
 

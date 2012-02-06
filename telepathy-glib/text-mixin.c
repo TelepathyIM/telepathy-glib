@@ -45,6 +45,8 @@
  * of the Send method.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/text-mixin.h>
 
 #include <dbus/dbus-glib.h>

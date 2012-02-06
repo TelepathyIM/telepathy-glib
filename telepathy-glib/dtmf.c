@@ -18,6 +18,7 @@
  */
 
 #include "config.h"
+
 #include "telepathy-glib/dtmf.h"
 
 

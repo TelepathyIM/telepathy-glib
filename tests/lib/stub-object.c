@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include "stub-object.h"
 
 G_DEFINE_TYPE (TpTestsStubObject, tp_tests_stub_object, G_TYPE_OBJECT)

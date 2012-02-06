@@ -44,6 +44,8 @@
  * <literal>G_DEFINE_TYPE_WITH_CODE</literal>.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/properties-mixin.h>
 
 #include <dbus/dbus-glib.h>

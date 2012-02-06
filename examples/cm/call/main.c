@@ -21,6 +21,8 @@
 
 #include "config.h"
 
+#include "config.h"
+
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/run.h>
 

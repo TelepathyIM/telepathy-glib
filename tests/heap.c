@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <telepathy-glib/intset.h>
 #include <telepathy-glib/heap.h>
 

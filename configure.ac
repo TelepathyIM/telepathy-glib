@@ -68,6 +68,10 @@ AC_SUBST([LT_CURRENT])
 AC_SUBST([LT_REVISION])
 AC_SUBST([LT_AGE])
 
+# Disable GLib deprecation warnings for now; GValueArray is deprecated but we
+# need it for dbus-glib.
+AC_DEFINE(GLIB_DISABLE_DEPRECATION_WARNINGS, 1, [Build with GLib deprecated])
+
 dnl optimizations, etc.
 COMPILER_OPTIMISATIONS
 COMPILER_COVERAGE

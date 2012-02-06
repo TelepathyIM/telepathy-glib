@@ -7,6 +7,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include <glib.h>
 
 #include "telepathy-glib/contact-search-internal.h"

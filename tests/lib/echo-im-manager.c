@@ -11,6 +11,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include "echo-im-manager.h"
 
 #include <dbus/dbus-glib.h>

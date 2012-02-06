@@ -35,6 +35,8 @@
  * Deprecated: 0.11.7
  */
 
+#include "config.h"
+
 #include <telepathy-glib/channel-factory-iface.h>
 
 #include <glib-object.h>

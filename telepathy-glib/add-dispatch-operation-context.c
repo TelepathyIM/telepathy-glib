@@ -44,6 +44,8 @@
  * Since: 0.11.5
  */
 
+#include "config.h"
+
 #include "telepathy-glib/add-dispatch-operation-context-internal.h"
 #include "telepathy-glib/add-dispatch-operation-context.h"
 

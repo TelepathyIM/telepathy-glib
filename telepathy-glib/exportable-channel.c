@@ -53,6 +53,7 @@
  */
 
 #include "config.h"
+
 #include "exportable-channel.h"
 
 #include <telepathy-glib/gtypes.h>

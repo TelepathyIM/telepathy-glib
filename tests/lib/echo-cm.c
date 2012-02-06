@@ -8,6 +8,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include "echo-cm.h"
 
 #include <dbus/dbus-protocol.h>

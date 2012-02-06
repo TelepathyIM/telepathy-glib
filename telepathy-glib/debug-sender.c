@@ -17,8 +17,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "debug-sender.h"
 #include "config.h"
+
+#include "debug-sender.h"
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>

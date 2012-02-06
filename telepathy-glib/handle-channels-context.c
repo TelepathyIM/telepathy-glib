@@ -46,6 +46,8 @@
  * Since: 0.11.6
  */
 
+#include "config.h"
+
 #include "telepathy-glib/handle-channels-context.h"
 #include "telepathy-glib/handle-channels-context-internal.h"
 

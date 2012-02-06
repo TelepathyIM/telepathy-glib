@@ -45,7 +45,7 @@
  * Since: 0.15.6
  */
 
-#include <config.h>
+#include "config.h"
 
 #include "telepathy-glib/dbus-tube-channel.h"
 

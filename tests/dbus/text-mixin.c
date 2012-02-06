@@ -8,6 +8,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/dbus.h>
@@ -302,8 +304,7 @@ main (int argc,
 
   g_print ("\n\n==== End of tests ====\n");
 
-  MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
-  g_assert_no_error (error);
+  tp_tests_connection_assert_disconnect_succeeds (conn);
 
   tp_handle_unref (contact_repo, handle);
   g_object_unref (chan);

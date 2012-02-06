@@ -15,6 +15,9 @@
  * are permitted in any medium without royalty provided the copyright
  * notice and this notice are preserved.
  */
+
+#include "config.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <glib/gstdio.h>
@@ -2882,15 +2885,8 @@ static void
 teardown (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
-  gboolean ok;
-  GError *error = NULL;
-
   if (f->client_conn != NULL)
-    {
-      ok = tp_cli_connection_run_disconnect (f->client_conn, -1, &error, NULL);
-      g_assert_no_error (error);
-      g_assert (ok);
-    }
+    tp_tests_connection_assert_disconnect_succeeds (f->client_conn);
 
   tp_clear_object (&f->client_conn);
   f->service_repo = NULL;
@@ -2898,22 +2894,15 @@ teardown (Fixture *f,
   tp_clear_object (&f->base_connection);
 
   if (f->legacy_client_conn != NULL)
-    {
-      ok = tp_cli_connection_run_disconnect (f->legacy_client_conn, -1, &error,
-          NULL);
-      g_assert_no_error (error);
-      g_assert (ok);
-    }
+    tp_tests_connection_assert_disconnect_succeeds (f->legacy_client_conn);
 
   tp_clear_object (&f->legacy_client_conn);
   tp_clear_object (&f->legacy_base_connection);
 
   if (f->no_requests_client_conn != NULL)
     {
-      ok = tp_cli_connection_run_disconnect (f->no_requests_client_conn, -1,
-            &error, NULL);
-      g_assert_no_error (error);
-      g_assert (ok);
+      tp_tests_connection_assert_disconnect_succeeds (
+          f->no_requests_client_conn);
     }
 
   tp_clear_object (&f->no_requests_client_conn);

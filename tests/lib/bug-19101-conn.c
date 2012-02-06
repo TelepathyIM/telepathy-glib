@@ -9,6 +9,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include "bug-19101-conn.h"
 
 #include <telepathy-glib/interfaces.h>

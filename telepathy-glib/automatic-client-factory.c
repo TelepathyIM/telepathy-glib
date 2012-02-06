@@ -103,6 +103,8 @@
  * Since: 0.15.5
  */
 
+#include "config.h"
+
 #include "telepathy-glib/automatic-client-factory.h"
 
 #include <telepathy-glib/interfaces.h>

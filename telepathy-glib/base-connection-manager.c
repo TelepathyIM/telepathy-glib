@@ -31,6 +31,8 @@
  * only need to override the members of the class data structure.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/base-connection-manager.h>
 
 #include <string.h>

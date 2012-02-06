@@ -234,6 +234,7 @@
  */
 
 #include "config.h"
+
 #include "base-channel.h"
 
 #include <dbus/dbus-glib-lowlevel.h>

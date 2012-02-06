@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <telepathy-glib/errors.h>
 
 static void

@@ -12,6 +12,8 @@
 
 #include "tests/lib/util.h"
 
+#include <telepathy-glib/connection.h>
+
 #include <glib/gstdio.h>
 #include <string.h>
 
@@ -452,4 +454,20 @@ _tp_create_local_socket (TpSocketAddressType address_type,
   g_object_unref (address);
   g_object_unref (effective_address);
   return address_gvalue;
+}
+
+void
+tp_tests_connection_assert_disconnect_succeeds (TpConnection *connection)
+{
+  GAsyncResult *result = NULL;
+  GError *error = NULL;
+  gboolean ok;
+
+  tp_connection_disconnect_async (connection, tp_tests_result_ready_cb,
+      &result);
+  tp_tests_run_until_result (&result);
+  ok = tp_connection_disconnect_finish (connection, result, &error);
+  g_assert_no_error (error);
+  g_assert (ok);
+  g_object_unref (result);
 }

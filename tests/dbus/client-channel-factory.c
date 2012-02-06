@@ -7,6 +7,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include <string.h>
 
 #include <telepathy-glib/telepathy-glib.h>
@@ -100,9 +102,7 @@ teardown (Test *test,
 
   tp_clear_object (&test->tube_chan_service);
 
-  tp_cli_connection_run_disconnect (test->connection, -1, &test->error, NULL);
-  g_assert_no_error (test->error);
-
+  tp_tests_connection_assert_disconnect_succeeds (test->connection);
   g_object_unref (test->connection);
   g_object_unref (test->base_connection);
 

@@ -8,6 +8,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include <string.h>
 
 #include <telepathy-glib/channel.h>
@@ -536,8 +538,7 @@ main (int argc,
   check_removed_unknown_error_in_invalidated ();
   check_removed_known_error_in_invalidated ();
 
-  MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
-  g_assert_no_error (error);
+  tp_tests_connection_assert_disconnect_succeeds (conn);
 
   /* clean up */
 

@@ -8,6 +8,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/debug.h>
@@ -107,9 +109,7 @@ static void
 teardown (Test *test,
           gconstpointer data)
 {
-  tp_cli_connection_run_disconnect (test->connection, -1, &test->error, NULL);
-  g_assert_no_error (test->error);
-
+  tp_tests_connection_assert_disconnect_succeeds (test->connection);
   g_object_unref (test->connection);
   g_object_unref (test->base_connection);
 
@@ -250,6 +250,9 @@ test_succeeded (Test *test,
   g_signal_connect (test->cr, "succeeded-with-channel",
       G_CALLBACK (succeeded_with_channel_cb), test);
 
+  /* sync up both sockets to ensure that the match rules are in place */
+  tp_tests_proxy_run_until_dbus_queue_processed (test->cr);
+
   props = g_hash_table_new (NULL, NULL);
 
   tp_svc_channel_request_emit_succeeded_with_channel (test->cr_service,
@@ -287,6 +290,9 @@ test_failed (Test *test,
 
   g_signal_connect_swapped (test->cr, "succeeded", G_CALLBACK (succeeded_cb),
       test);
+
+  /* sync up both sockets to ensure that the match rules are in place */
+  tp_tests_proxy_run_until_dbus_queue_processed (test->cr);
 
   tp_svc_channel_request_emit_failed (test->cr_service,
       TP_ERROR_STR_NOT_YOURS, "lalala");

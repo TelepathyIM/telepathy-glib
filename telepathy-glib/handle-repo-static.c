@@ -39,6 +39,8 @@
  * %TP_HANDLE_TYPE_LIST.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/handle-repo-static.h>
 
 #include <string.h>

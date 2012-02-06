@@ -8,6 +8,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/debug.h>
@@ -325,17 +327,10 @@ static void
 teardown (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
-  gboolean ok;
-
   g_clear_error (&f->error);
 
   if (f->client_conn != NULL)
-    {
-      ok = tp_cli_connection_run_disconnect (f->client_conn, -1, &f->error,
-          NULL);
-      g_assert_no_error (f->error);
-      g_assert (ok);
-    }
+    tp_tests_connection_assert_disconnect_succeeds (f->client_conn);
 
   tp_clear_object (&f->result);
   tp_clear_object (&f->client_conn);

@@ -29,7 +29,7 @@
  * GLib, but aren't.
  */
 
-#include <config.h>
+#include "config.h"
 
 #include <gobject/gvaluecollector.h>
 

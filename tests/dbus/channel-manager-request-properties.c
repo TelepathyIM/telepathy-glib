@@ -7,6 +7,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/dbus.h>
@@ -86,8 +88,7 @@ static void
 teardown (Test *test,
           gconstpointer data)
 {
-  g_assert (tp_cli_connection_run_disconnect (test->conn, -1, &test->error, NULL));
-  g_assert_no_error (test->error);
+  tp_tests_connection_assert_disconnect_succeeds (test->conn);
 
   g_object_unref (test->service_conn);
   test->service_conn = NULL;
