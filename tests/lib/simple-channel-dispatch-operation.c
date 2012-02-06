@@ -9,6 +9,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include "simple-channel-dispatch-operation.h"
 
 #include <telepathy-glib/channel.h>

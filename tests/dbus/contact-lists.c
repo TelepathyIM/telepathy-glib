@@ -8,6 +8,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/connection.h>
 
 #include "examples/cm/contactlist/conn.h"

@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <dbus/dbus-shared.h>
 #include <glib.h>
 #include <telepathy-glib/dbus.h>

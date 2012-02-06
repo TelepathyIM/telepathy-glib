@@ -32,6 +32,8 @@
  * and #TpStaticHandleRepo for concrete implementations.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/handle-repo.h>
 
 #include <telepathy-glib/handle-repo-internal.h>

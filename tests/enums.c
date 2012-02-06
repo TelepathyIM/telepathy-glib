@@ -7,6 +7,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/enums.h>
 
 #include <telepathy-glib/contact.h>

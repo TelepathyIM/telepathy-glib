@@ -99,6 +99,8 @@
  * Since: 0.11.5
  */
 
+#include "config.h"
+
 #include "telepathy-glib/simple-approver.h"
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT

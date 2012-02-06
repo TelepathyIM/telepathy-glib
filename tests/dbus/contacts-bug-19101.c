@@ -1,5 +1,7 @@
 /* Regression test for fd.o bug #19101. */
 
+#include "config.h"
+
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/dbus.h>

@@ -63,6 +63,8 @@
  * Since: 0.13.2
  */
 
+#include "config.h"
+
 #include "telepathy-glib/client-channel-factory.h"
 
 #include <telepathy-glib/util.h>

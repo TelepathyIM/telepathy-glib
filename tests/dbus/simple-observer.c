@@ -7,6 +7,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/simple-observer.h>
 #include <telepathy-glib/client.h>
 #include <telepathy-glib/debug.h>

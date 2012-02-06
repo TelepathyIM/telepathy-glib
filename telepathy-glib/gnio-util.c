@@ -35,7 +35,7 @@
  * for UNIX sockets (only available on platforms with gio-unix).
  */
 
-#include <config.h>
+#include "config.h"
 
 #include <gio/gio.h>
 

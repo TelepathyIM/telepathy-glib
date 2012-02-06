@@ -43,7 +43,7 @@
  * Since: 0.13.10
  */
 
-#include <config.h>
+#include "config.h"
 
 #include "telepathy-glib/text-channel.h"
 

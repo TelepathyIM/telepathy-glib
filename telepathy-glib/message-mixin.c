@@ -52,6 +52,8 @@
  * Since: 0.7.21
  */
 
+#include "config.h"
+
 #include <telepathy-glib/message-mixin.h>
 
 #include <dbus/dbus-glib.h>

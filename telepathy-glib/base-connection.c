@@ -228,6 +228,7 @@
  * must be void). For use in D-Bus method implementations.
  */
 
+#include "config.h"
 
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/base-connection-internal.h>

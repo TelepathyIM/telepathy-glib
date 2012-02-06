@@ -32,6 +32,8 @@
  * Since: 0.13.9
  */
 
+#include "config.h"
+
 #include "client-message.h"
 #include "client-message-internal.h"
 #include "message-internal.h"

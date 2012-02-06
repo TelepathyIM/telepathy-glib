@@ -21,6 +21,8 @@
  *
  */
 
+#include "config.h"
+
 /* there is no handle-set.h - handle set and handle repo have a circular
  * dependency, so they share a header */
 #include <telepathy-glib/handle-repo.h>

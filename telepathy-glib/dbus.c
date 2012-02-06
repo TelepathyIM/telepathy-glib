@@ -51,6 +51,8 @@
  * Since: 0.7.9
  */
 
+#include "config.h"
+
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/dbus-internal.h>
 

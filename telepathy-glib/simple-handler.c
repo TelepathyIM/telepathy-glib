@@ -107,6 +107,8 @@
  * Since: 0.11.6
  */
 
+#include "config.h"
+
 #include "telepathy-glib/simple-handler.h"
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT

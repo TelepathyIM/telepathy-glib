@@ -66,6 +66,8 @@
  * Since: 0.13.8
  */
 
+#include "config.h"
+
 #include "telepathy-glib/simple-password-manager.h"
 
 #include <telepathy-glib/channel-manager.h>

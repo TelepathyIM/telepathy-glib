@@ -8,6 +8,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/debug.h>

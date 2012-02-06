@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <glib-object.h>
 #include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/debug.h>

@@ -8,6 +8,7 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
 
 #include "my-conn-proxy.h"
 

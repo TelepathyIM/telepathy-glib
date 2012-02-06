@@ -44,6 +44,8 @@
  * Since: 0.11.5
  */
 
+#include "config.h"
+
 #include "telepathy-glib/observe-channels-context-internal.h"
 #include "telepathy-glib/observe-channels-context.h"
 

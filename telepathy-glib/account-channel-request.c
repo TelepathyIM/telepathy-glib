@@ -68,6 +68,8 @@
  * Since: 0.15.3
  */
 
+#include "config.h"
+
 #include "telepathy-glib/account-channel-request.h"
 #include "telepathy-glib/account-channel-request-internal.h"
 

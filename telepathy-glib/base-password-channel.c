@@ -52,6 +52,8 @@
  * The class of a #TpBasePasswordChannel.
  */
 
+#include "config.h"
+
 #include "telepathy-glib/base-password-channel.h"
 
 #include <telepathy-glib/dbus.h>

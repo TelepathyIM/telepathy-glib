@@ -27,6 +27,8 @@
  * A heap queue of pointers.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/heap.h>
 
 #include <glib.h>
