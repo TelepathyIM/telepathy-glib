@@ -52,6 +52,7 @@
  */
 
 #include "config.h"
+
 #include "base-media-call-content.h"
 
 #include <string.h>

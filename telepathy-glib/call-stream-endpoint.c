@@ -47,6 +47,7 @@
  */
 
 #include "config.h"
+
 #include "call-stream-endpoint.h"
 
 #include <string.h>

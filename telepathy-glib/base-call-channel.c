@@ -97,6 +97,7 @@
  */
 
 #include "config.h"
+
 #include "base-call-channel.h"
 
 #define DEBUG_FLAG TP_DEBUG_CALL

@@ -43,9 +43,9 @@
  * Since: 0.UNRELEASED
  */
 
-#include "telepathy-glib/call-content.h"
+#include "config.h"
 
-#include <config.h>
+#include "telepathy-glib/call-content.h"
 
 #include <telepathy-glib/call-misc.h>
 #include <telepathy-glib/call-stream.h>

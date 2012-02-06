@@ -71,6 +71,7 @@
  */
 
 #include "config.h"
+
 #include "base-media-call-channel.h"
 
 #define DEBUG_FLAG TP_DEBUG_CALL

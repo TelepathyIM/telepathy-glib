@@ -43,6 +43,8 @@
  * Since: 0.UNRELEASED
  */
 
+#include "config.h"
+
 #include "telepathy-glib/call-channel.h"
 
 #include <config.h>

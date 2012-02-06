@@ -28,7 +28,7 @@
  * clients.
  */
 
-#include <config.h>
+#include "config.h"
 
 #include "telepathy-glib/call-misc.h"
 #include "telepathy-glib/errors.h"

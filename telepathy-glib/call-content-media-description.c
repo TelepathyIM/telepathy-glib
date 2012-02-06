@@ -49,6 +49,7 @@
  */
 
 #include "config.h"
+
 #include "call-content-media-description.h"
 
 #define DEBUG_FLAG TP_DEBUG_CALL

@@ -123,6 +123,7 @@
  */
 
 #include "config.h"
+
 #include "telepathy-glib/base-call-content.h"
 
 #define DEBUG_FLAG TP_DEBUG_CALL
