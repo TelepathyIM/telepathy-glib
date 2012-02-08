@@ -927,8 +927,8 @@ endpoints_changed (TpCallStream *proxy,
               self->endpoint_objpath))
         tf_call_stream_fail_literal (self,
             TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
-            TP_ERROR_STR_INVALID_ARGUMENT,
-            "Trying to give a different endpoint, CM bug");
+            TP_ERROR_STR_NOT_IMPLEMENTED,
+            "Having more than one endpoint is not implemented");
       return;
     }
 
