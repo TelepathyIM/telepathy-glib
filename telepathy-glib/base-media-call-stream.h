@@ -30,7 +30,9 @@ typedef struct _TpBaseMediaCallStream TpBaseMediaCallStream;
 typedef struct _TpBaseMediaCallStreamPrivate TpBaseMediaCallStreamPrivate;
 typedef struct _TpBaseMediaCallStreamClass TpBaseMediaCallStreamClass;
 
-typedef void (*TpBaseMediaCallStreamVoidFunc) (TpBaseMediaCallStream *self);
+typedef gboolean (*TpBaseMediaCallStreamFinishInitialCandidatesFunc) (
+    TpBaseMediaCallStream *self,
+    GError **error);
 typedef GPtrArray *(*TpBaseMediaCallStreamAddCandidatesFunc) (
     TpBaseMediaCallStream *self,
     const GPtrArray *candidates,
@@ -59,7 +61,7 @@ struct _TpBaseMediaCallStreamClass {
   TpBaseMediaCallStreamReportFailureFunc report_sending_failure;
   TpBaseMediaCallStreamReportFailureFunc report_receiving_failure;
   TpBaseMediaCallStreamAddCandidatesFunc add_local_candidates;
-  TpBaseMediaCallStreamVoidFunc finish_initial_candidates;
+  TpBaseMediaCallStreamFinishInitialCandidatesFunc finish_initial_candidates;
 
   TpBaseMediaCallStreamRequestReceivingFunc request_receiving;
   TpBaseMediaCallStreamSetSendingFunc set_sending;
