@@ -1013,6 +1013,24 @@ tp_base_media_call_stream_get_receiving_state (TpBaseMediaCallStream *self)
   return self->priv->receiving_state;
 }
 
+/**
+ * tp_base_media_call_stream_get_local_candidates:
+ * @self: a #TpBaseMediaCallStream
+ *
+ * <!-- -->
+ *
+ * Returns: the value of #TpBaseMediaCallStream:local-candidates as a #GtrArray
+ * Since: 0.UNRELEASED
+ */
+GPtrArray *
+tp_base_media_call_stream_get_local_candidates (TpBaseMediaCallStream *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_MEDIA_CALL_STREAM (self), NULL);
+
+  return self->priv->local_candidates;
+}
+
+
 /* TpBaseCallStreamClass virtual methods implementation */
 
 static gboolean
