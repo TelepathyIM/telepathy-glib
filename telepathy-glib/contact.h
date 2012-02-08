@@ -72,6 +72,7 @@ typedef enum {
 #define TP_CONTACT_FEATURE_INVALID ((TpContactFeature) -1)
 
 /* Basic functionality, always available */
+TpAccount *tp_contact_get_account (TpContact *self);
 TpConnection *tp_contact_get_connection (TpContact *self);
 TpHandle tp_contact_get_handle (TpContact *self);
 const gchar *tp_contact_get_identifier (TpContact *self);
