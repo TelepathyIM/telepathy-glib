@@ -198,7 +198,6 @@ tp_tests_echo_connection_class_init (TpTestsEchoConnectionClass *klass)
 
   param_spec = g_param_spec_string ("account", "Account name",
       "The username of this user", NULL,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-      G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
 }

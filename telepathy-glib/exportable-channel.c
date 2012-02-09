@@ -80,8 +80,7 @@ exportable_channel_base_init (gpointer klass)
        */
       param_spec = g_param_spec_string ("object-path", "D-Bus object path",
           "The D-Bus object path used for this object on the bus.", NULL,
-          G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-          G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+          G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
       g_object_interface_install_property (klass, param_spec);
 
       /**
@@ -130,8 +129,7 @@ exportable_channel_base_init (gpointer klass)
           "Channel properties",
           "The channel properties",
           TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP,
-          G_PARAM_READABLE |
-          G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
       g_object_interface_install_property (klass, param_spec);
 
       /**
@@ -150,8 +148,7 @@ exportable_channel_base_init (gpointer klass)
           "If true, the channel has *really* closed, rather than just "
           "appearing to do so",
           FALSE,
-          G_PARAM_READABLE |
-          G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
       g_object_interface_install_property (klass, param_spec);
     }
 }

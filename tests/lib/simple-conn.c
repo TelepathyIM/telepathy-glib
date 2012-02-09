@@ -308,15 +308,13 @@ tp_tests_simple_connection_class_init (TpTestsSimpleConnectionClass *klass)
 
   param_spec = g_param_spec_string ("account", "Account name",
       "The username of this user", NULL,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
 
   param_spec = g_param_spec_boolean ("break-0192-properties",
       "Break 0.19.2 properties",
       "Break Connection D-Bus properties introduced in spec 0.19.2", FALSE,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_BREAK_PROPS, param_spec);
 
   param_spec = g_param_spec_uint ("dbus-status",

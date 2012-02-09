@@ -1609,8 +1609,7 @@ tp_channel_class_init (TpChannelClass *klass)
    */
   param_spec = g_param_spec_boolean ("channel-ready", "Channel ready?",
       "Initially FALSE; changes to TRUE when introspection finishes", FALSE,
-      G_PARAM_READABLE
-      | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CHANNEL_READY,
       param_spec);
 
@@ -1622,8 +1621,7 @@ tp_channel_class_init (TpChannelClass *klass)
    */
   param_spec = g_param_spec_object ("connection", "TpConnection",
       "The connection to which this object belongs.", TP_TYPE_CONNECTION,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONNECTION,
       param_spec);
 
@@ -1642,8 +1640,7 @@ tp_channel_class_init (TpChannelClass *klass)
    */
   param_spec = g_param_spec_uint ("group-self-handle", "Group.SelfHandle",
       "Undefined if not a group", 0, G_MAXUINT32, 0,
-      G_PARAM_READABLE
-      | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_GROUP_SELF_HANDLE,
       param_spec);
 
@@ -1663,8 +1660,7 @@ tp_channel_class_init (TpChannelClass *klass)
    */
   param_spec = g_param_spec_uint ("group-flags", "Group.GroupFlags",
       "0 if not a group", 0, G_MAXUINT32, 0,
-      G_PARAM_READABLE
-      | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_GROUP_FLAGS,
       param_spec);
 

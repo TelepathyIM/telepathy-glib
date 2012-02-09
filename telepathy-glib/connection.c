@@ -1733,8 +1733,7 @@ tp_connection_class_init (TpConnectionClass *klass)
   param_spec = g_param_spec_uint ("status", "Status",
       "The status of this connection", 0, G_MAXUINT32,
       TP_UNKNOWN_CONNECTION_STATUS,
-      G_PARAM_READABLE
-      | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_STATUS,
       param_spec);
 
@@ -1829,8 +1828,7 @@ tp_connection_class_init (TpConnectionClass *klass)
   param_spec = g_param_spec_uint ("status-reason", "Last status change reason",
       "The reason why #TpConnection:status changed to its current value",
       0, G_MAXUINT32, TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED,
-      G_PARAM_READABLE
-      | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_STATUS_REASON,
       param_spec);
 
@@ -1850,8 +1848,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    */
   param_spec = g_param_spec_boolean ("connection-ready", "Connection ready?",
       "Initially FALSE; changes to TRUE when introspection finishes", FALSE,
-      G_PARAM_READABLE
-      | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONNECTION_READY,
       param_spec);
 

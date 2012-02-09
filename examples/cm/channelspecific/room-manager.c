@@ -156,8 +156,7 @@ example_csh_room_manager_class_init (ExampleCSHRoomManagerClass *klass)
   param_spec = g_param_spec_object ("connection", "Connection object",
       "The connection that owns this channel manager",
       TP_TYPE_BASE_CONNECTION,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-      G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
 
   param_spec = g_param_spec_uint ("simulation-delay", "Simulation delay",

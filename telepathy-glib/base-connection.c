@@ -1534,8 +1534,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
       "Telepathy identifier for protocol",
       "Identifier string used when the protocol name is required.",
       NULL,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_PROTOCOL, param_spec);
 
   /**
@@ -1550,8 +1549,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
       "Connection.SelfHandle",
       "The handle of type %TP_HANDLE_TYPE_CONTACT representing the local user.",
       0, G_MAXUINT, 0,
-      G_PARAM_READWRITE |
-      G_PARAM_STATIC_BLURB);
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SELF_HANDLE, param_spec);
 
   /**
