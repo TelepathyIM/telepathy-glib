@@ -695,7 +695,6 @@ tp_base_media_call_content_update_local_media_description (
 
   if (!g_hash_table_lookup_extended (properties, "RemoteContact",
           NULL, &contact))
-
     {
       GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "The media description is missing the RemoteContact key." };
