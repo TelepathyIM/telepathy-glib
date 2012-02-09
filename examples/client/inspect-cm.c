@@ -28,25 +28,29 @@
 #include <telepathy-glib/telepathy-glib.h>
 
 static void
-ready (TpConnectionManager *cm,
-       const GError *error,
-       gpointer user_data,
-       GObject *weak_object G_GNUC_UNUSED)
+ready (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
 {
+  TpConnectionManager *cm = TP_CONNECTION_MANAGER (source);
   GMainLoop *mainloop = user_data;
+  GError *error = NULL;
 
-  if (error != NULL)
+  if (!tp_proxy_prepare_finish (cm, result, &error))
     {
-      g_assert (!tp_connection_manager_is_ready (cm));
+      g_assert (!tp_proxy_is_prepared (cm,
+            TP_CONNECTION_MANAGER_FEATURE_CORE));
 
       g_warning ("Error getting CM info: %s", error->message);
+      g_error_free (error);
     }
   else
     {
       gchar **protocols;
       guint i;
 
-      g_assert (tp_connection_manager_is_ready (cm));
+      g_assert (tp_proxy_is_prepared (cm,
+            TP_CONNECTION_MANAGER_FEATURE_CORE));
 
       g_message ("Connection manager name: %s",
           tp_connection_manager_get_name (cm));
@@ -165,7 +169,7 @@ main (int argc,
       goto out;
     }
 
-  tp_connection_manager_call_when_ready (cm, ready, mainloop, NULL, NULL);
+  tp_proxy_prepare_async (cm, NULL, ready, mainloop);
   g_main_loop_run (mainloop);
   ret = 0;
 
