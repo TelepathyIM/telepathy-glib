@@ -72,7 +72,7 @@ class Generator(object):
         self.deprecation_attribute = opts.get('--deprecation-attribute',
                 'G_GNUC_DEPRECATED')
 
-        self.generate_all_reentrants = opts.get('--generate-all-reentrants', False)
+        self.split_reentrants = opts.get('--split-reentrants', False)
 
     def h(self, s):
         if isinstance(s, unicode):
@@ -896,7 +896,7 @@ class Generator(object):
             b = self.b
             h = self.h
             d = self.d
-        elif self.generate_all_reentrants:
+        elif self.split_reentrants:
             b = self.rb
             h = self.rh
             d = self.rb
@@ -1257,7 +1257,7 @@ class Generator(object):
         open(self.basename + '-body.h', 'w').write('\n'.join(self.__body))
         open(self.basename + '-gtk-doc.h', 'w').write('\n'.join(self.__docs))
 
-        if self.generate_all_reentrants:
+        if self.split_reentrants:
             open(self.basename + '-reentrant-body.h', 'w').write('\n'.join(self.__reentrant_body))
             open(self.basename + '-reentrant.h', 'w').write('\n'.join(self.__reentrant_header))
 
@@ -1271,7 +1271,7 @@ if __name__ == '__main__':
                                 'iface-quark-prefix=', 'tp-proxy-api=',
                                 'generate-reentrant=', 'deprecate-reentrant=',
                                 'deprecation-attribute=',
-                                'generate-all-reentrants='])
+                                'split-reentrants='])
 
     opts = {}
 

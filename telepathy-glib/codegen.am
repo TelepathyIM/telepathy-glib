@@ -274,7 +274,7 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h _gen/tp-cli-%-reentrant-body.h _gen/tp-cli-
 		--deprecation-attribute=_TP_GNUC_DEPRECATED \
 		--deprecate-reentrant=TP_DISABLE_DEPRECATED \
 		--generate-reentrant=_gen/reentrant-methods.list \
-		--generate-all-reentrants=yes \
+		--split-reentrants=yes \
 		$< Tp_Cli _gen/tp-cli-$*
 
 # vim:set ft=automake:
