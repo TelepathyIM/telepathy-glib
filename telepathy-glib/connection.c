@@ -1844,10 +1844,14 @@ tp_connection_class_init (TpConnectionClass *klass)
    * This is similar to %TP_CONNECTION_FEATURE_CONNECTED, except that once
    * it has changed to %TRUE, it remains %TRUE even if the connection has
    * been invalidated.
+   *
+   * Deprecated: 0.17.UNRELEASED: use tp_proxy_is_prepared() with
+   *  %TP_CHANNEL_FEATURE_CONNECTED for checks, or tp_proxy_prepare_async() for
+   *  notification
    */
   param_spec = g_param_spec_boolean ("connection-ready", "Connection ready?",
       "Initially FALSE; changes to TRUE when introspection finishes", FALSE,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS | G_PARAM_DEPRECATED);
   g_object_class_install_property (object_class, PROP_CONNECTION_READY,
       param_spec);
 
@@ -3185,6 +3189,8 @@ _tp_connection_add_contact (TpConnection *self,
  *
  * Returns: %TRUE if introspection has completed
  * Since: 0.7.17
+ * Deprecated: 0.17.UNRELEASED: use tp_proxy_is_prepared() with
+ *  %TP_CONNECTION_FEATURE_CONNECTED
  */
 gboolean
 tp_connection_is_ready (TpConnection *self)

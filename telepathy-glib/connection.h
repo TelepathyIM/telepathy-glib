@@ -152,9 +152,10 @@ void tp_connection_set_contact_info_async (TpConnection *self,
 gboolean tp_connection_set_contact_info_finish (TpConnection *self,
     GAsyncResult *result, GError **error);
 
-gboolean tp_connection_is_ready (TpConnection *self);
-
 #ifndef TP_DISABLE_DEPRECATED
+gboolean tp_connection_is_ready (TpConnection *self)
+  _TP_GNUC_DEPRECATED_FOR (tp_proxy_is_prepared);
+
 gboolean tp_connection_run_until_ready (TpConnection *self,
     gboolean connect, GError **error,
     GMainLoop **loop) _TP_GNUC_DEPRECATED;
