@@ -253,6 +253,43 @@ test_setters (Test *test,
 }
 
 static void
+test_reconnect (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *set = tp_asv_new (
+      "set", G_TYPE_STRING, "value",
+      NULL);
+  const gchar *unset[] = { "unset", NULL };
+  GStrv reconnect_required;
+
+  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  g_assert (test->account != NULL);
+
+  tp_account_update_parameters_async (test->account, set, unset,
+      tp_tests_result_ready_cb, &test->result);
+  tp_tests_run_until_result (&test->result);
+  tp_account_update_parameters_finish (test->account, test->result,
+      &reconnect_required, &test->error);
+  g_assert_no_error (test->error);
+  /* check that reconnect_required survives longer than result */
+  tp_clear_object (&test->result);
+
+  g_assert (reconnect_required != NULL);
+  g_assert_cmpstr (reconnect_required[0], ==, "set");
+  g_assert_cmpstr (reconnect_required[1], ==, "unset");
+  g_assert_cmpstr (reconnect_required[2], ==, NULL);
+  g_strfreev (reconnect_required);
+
+  tp_account_reconnect_async (test->account, tp_tests_result_ready_cb,
+      &test->result);
+  tp_tests_run_until_result (&test->result);
+  tp_account_reconnect_finish (test->account, test->result, &test->error);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED);
+  g_clear_error (&test->error);
+  tp_clear_object (&test->result);
+}
+
+static void
 account_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
@@ -776,6 +813,9 @@ main (int argc,
   g_test_add ("/account/new", Test, NULL, setup, test_new, teardown);
 
   g_test_add ("/account/setters", Test, NULL, setup_service, test_setters,
+      teardown_service);
+
+  g_test_add ("/account/reconnect", Test, NULL, setup_service, test_reconnect,
       teardown_service);
 
   g_test_add ("/account/prepare/success", Test, NULL, setup_service,

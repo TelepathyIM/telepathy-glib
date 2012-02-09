@@ -75,12 +75,42 @@ struct _TpTestsSimpleAccountPrivate
 };
 
 static void
+tp_tests_simple_account_update_parameters (TpSvcAccount *svc,
+    GHashTable *parameters,
+    const gchar **unset_parameters,
+    DBusGMethodInvocation *context)
+{
+  GPtrArray *reconnect_required = g_ptr_array_new ();
+  GHashTableIter iter;
+  gpointer k;
+  guint i;
+
+  /* We don't actually store any parameters, but for the purposes
+   * of this method we pretend that every parameter provided is
+   * valid and requires reconnection. */
+
+  g_hash_table_iter_init (&iter, parameters);
+
+  while (g_hash_table_iter_next (&iter, &k, NULL))
+    g_ptr_array_add (reconnect_required, k);
+
+  for (i = 0; unset_parameters != NULL && unset_parameters[i] != NULL; i++)
+    g_ptr_array_add (reconnect_required, (gchar *) unset_parameters[i]);
+
+  g_ptr_array_add (reconnect_required, NULL);
+
+  tp_svc_account_return_from_update_parameters (context,
+      (const gchar **) reconnect_required->pdata);
+  g_ptr_array_unref (reconnect_required);
+}
+
+static void
 account_iface_init (gpointer klass,
     gpointer unused G_GNUC_UNUSED)
 {
 #define IMPLEMENT(x) tp_svc_account_implement_##x (\
   klass, tp_tests_simple_account_##x)
-  /* TODO */
+  IMPLEMENT (update_parameters);
 #undef IMPLEMENT
 }
 
