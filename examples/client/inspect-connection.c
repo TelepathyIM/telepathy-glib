@@ -53,16 +53,19 @@ got_channels (TpConnection *connection,
 }
 
 static void
-connection_ready_cb (TpConnection *connection,
-    const GError *error,
+connection_ready_cb (GObject *source,
+    GAsyncResult *result,
     gpointer user_data)
 {
   GMainLoop *mainloop = user_data;
+  GError *error = NULL;
+  TpConnection *connection = TP_CONNECTION (source);
 
-  if (error != NULL)
+  if (!tp_proxy_prepare_finish (connection, result, &error))
     {
       g_warning ("%s", error->message);
       g_main_loop_quit (mainloop);
+      g_clear_error (&error);
       return;
     }
 
@@ -131,7 +134,7 @@ main (int argc,
    * else has called (or will call) Connect(), so we won't call Connect()
    * on it ourselves
    */
-  tp_connection_call_when_ready (connection, connection_ready_cb, mainloop);
+  tp_proxy_prepare_async (connection, NULL, connection_ready_cb, mainloop);
 
   g_main_loop_run (mainloop);
 
