@@ -2549,7 +2549,8 @@ _tp_account_updated_cb (TpAccount *proxy,
   if (error != NULL)
     g_simple_async_result_set_from_error (result, error);
   else
-    g_simple_async_result_set_op_res_gpointer (result, reconnect_required, NULL);
+    g_simple_async_result_set_op_res_gpointer (result,
+        g_strdupv ((GStrv) reconnect_required), (GDestroyNotify) g_strfreev);
 
   g_simple_async_result_complete (result);
   g_object_unref (G_OBJECT (result));
@@ -3173,8 +3174,9 @@ _tp_account_got_avatar_cb (TpProxy *proxy,
   else
     {
       avatar = g_value_get_boxed (out_Value);
-      res = g_value_get_boxed (g_value_array_get_nth (avatar, 0));
-      g_simple_async_result_set_op_res_gpointer (result, res, NULL);
+      res = g_value_dup_boxed (g_value_array_get_nth (avatar, 0));
+      g_simple_async_result_set_op_res_gpointer (result, res,
+          (GDestroyNotify) g_array_unref);
     }
 
   g_simple_async_result_complete (result);
@@ -3218,7 +3220,10 @@ tp_account_get_avatar_async (TpAccount *account,
  *
  * Finishes an async get operation of @account's avatar.
  *
- * Returns: (element-type guchar): a #GArray of #guchar
+ * Beware that the returned value is only valid until @result is freed.
+ * Copy it with g_array_ref() if you need to keep it for longer.
+ *
+ * Returns: (element-type guchar) (transfer none): a #GArray of #guchar
  *  containing the bytes of the account's avatar, or %NULL on failure
  *
  * Since: 0.9.0
@@ -3619,10 +3624,9 @@ _tp_account_get_storage_specific_information_cb (TpProxy *self,
     }
   else
     {
-      GHashTable *info;
-
-      info = g_value_get_boxed (value);
-      g_simple_async_result_set_op_res_gpointer (result, info, NULL);
+      g_simple_async_result_set_op_res_gpointer (result,
+          g_value_dup_boxed (value),
+          (GDestroyNotify) g_hash_table_unref);
     }
 
   g_simple_async_result_complete (result);
@@ -3669,6 +3673,9 @@ tp_account_get_storage_specific_information_async (TpAccount *self,
  *
  * Retrieve the value of the request begun with
  * tp_account_get_storage_specific_information_async().
+ *
+ * Beware that the returned value is only valid until @result is freed.
+ * Copy it with g_hash_table_ref() if you need to keep it for longer.
  *
  * Returns: (element-type utf8 GObject.Value) (transfer none): a #GHashTable
  *  of strings to GValues representing the D-Bus type a{sv}.
