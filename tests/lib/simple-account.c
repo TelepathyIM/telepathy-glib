@@ -8,6 +8,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include "simple-account.h"
 
 #include <telepathy-glib/dbus.h>
@@ -26,6 +28,8 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleAccount,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT,
         account_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_INTERFACE_AVATAR,
+        NULL);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_INTERFACE_ADDRESSING,
         NULL);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_INTERFACE_STORAGE,
@@ -63,7 +67,8 @@ enum
   PROP_STORAGE_PROVIDER,
   PROP_STORAGE_IDENTIFIER,
   PROP_STORAGE_SPECIFIC_INFORMATION,
-  PROP_STORAGE_RESTRICTIONS
+  PROP_STORAGE_RESTRICTIONS,
+  PROP_AVATAR
 };
 
 struct _TpTestsSimpleAccountPrivate
@@ -74,12 +79,42 @@ struct _TpTestsSimpleAccountPrivate
 };
 
 static void
+tp_tests_simple_account_update_parameters (TpSvcAccount *svc,
+    GHashTable *parameters,
+    const gchar **unset_parameters,
+    DBusGMethodInvocation *context)
+{
+  GPtrArray *reconnect_required = g_ptr_array_new ();
+  GHashTableIter iter;
+  gpointer k;
+  guint i;
+
+  /* We don't actually store any parameters, but for the purposes
+   * of this method we pretend that every parameter provided is
+   * valid and requires reconnection. */
+
+  g_hash_table_iter_init (&iter, parameters);
+
+  while (g_hash_table_iter_next (&iter, &k, NULL))
+    g_ptr_array_add (reconnect_required, k);
+
+  for (i = 0; unset_parameters != NULL && unset_parameters[i] != NULL; i++)
+    g_ptr_array_add (reconnect_required, (gchar *) unset_parameters[i]);
+
+  g_ptr_array_add (reconnect_required, NULL);
+
+  tp_svc_account_return_from_update_parameters (context,
+      (const gchar **) reconnect_required->pdata);
+  g_ptr_array_unref (reconnect_required);
+}
+
+static void
 account_iface_init (gpointer klass,
     gpointer unused G_GNUC_UNUSED)
 {
 #define IMPLEMENT(x) tp_svc_account_implement_##x (\
   klass, tp_tests_simple_account_##x)
-  /* TODO */
+  IMPLEMENT (update_parameters);
 #undef IMPLEMENT
 }
 
@@ -192,6 +227,21 @@ tp_tests_simple_account_get_property (GObject *object,
     case PROP_URI_SCHEMES:
       g_value_set_boxed (value, uri_schemes);
       break;
+    case PROP_AVATAR:
+        {
+          GArray *arr = g_array_new (FALSE, FALSE, sizeof (char));
+
+          /* includes NUL for simplicity */
+          g_array_append_vals (arr, ":-)", 4);
+
+          g_value_take_boxed (value,
+              tp_value_array_build (2,
+                TP_TYPE_UCHAR_ARRAY, arr,
+                G_TYPE_STRING, "text/plain",
+                G_TYPE_INVALID));
+          g_array_unref (arr);
+        }
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
       break;
@@ -255,6 +305,11 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
         { NULL },
   };
 
+  static TpDBusPropertiesMixinPropImpl avatar_props[] = {
+        { "Avatar", "avatar", NULL },
+        { NULL },
+  };
+
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
         { TP_IFACE_ACCOUNT,
           tp_dbus_properties_mixin_getter_gobject_properties,
@@ -272,6 +327,11 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
           tp_dbus_properties_mixin_getter_gobject_properties,
           NULL,
           aia_props
+        },
+        { TP_IFACE_ACCOUNT_INTERFACE_AVATAR,
+          tp_dbus_properties_mixin_getter_gobject_properties,
+          NULL,
+          avatar_props
         },
         { NULL },
   };
@@ -417,6 +477,13 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
       G_TYPE_STRV,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_URI_SCHEMES, param_spec);
+
+  param_spec = g_param_spec_boxed ("avatar",
+      "Avatar", "Avatar",
+      TP_STRUCT_TYPE_AVATAR,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class,
+      PROP_AVATAR, param_spec);
 
   klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,

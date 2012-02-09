@@ -94,7 +94,7 @@
  * Since: 0.15.5
  */
 
-#include <config.h>
+#include "config.h"
 
 #include "telepathy-glib/file-transfer-channel.h"
 

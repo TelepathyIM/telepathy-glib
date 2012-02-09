@@ -10,6 +10,8 @@
 
 #include "config.h"
 
+#include "config.h"
+
 #include "stream-tube-chan.h"
 #include "util.h"
 

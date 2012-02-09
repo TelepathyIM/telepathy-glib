@@ -48,6 +48,8 @@
  *
  */
 
+#include "config.h"
+
 #include <telepathy-glib/contacts-mixin.h>
 
 #include <dbus/dbus-glib-lowlevel.h>

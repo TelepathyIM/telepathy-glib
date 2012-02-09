@@ -56,6 +56,8 @@
  * tp_external_group_mixin_init_dbus_properties() (as appropriate).
  */
 
+#include "config.h"
+
 #include <telepathy-glib/group-mixin.h>
 
 #include <dbus/dbus-glib.h>

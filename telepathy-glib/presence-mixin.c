@@ -245,6 +245,8 @@
  * There are no public fields.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/presence-mixin.h>
 
 #include <dbus/dbus-glib.h>

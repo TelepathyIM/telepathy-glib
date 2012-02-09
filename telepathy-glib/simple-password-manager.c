@@ -66,6 +66,8 @@
  * Since: 0.13.8
  */
 
+#include "config.h"
+
 #include "telepathy-glib/simple-password-manager.h"
 
 #include <telepathy-glib/channel-manager.h>
@@ -306,6 +308,12 @@ tp_simple_password_manager_channel_closed_cb (GObject *chan,
 }
 
 static void
+free_gstring (gpointer p)
+{
+  g_string_free (p, TRUE);
+}
+
+static void
 tp_simple_password_manager_channel_finished_cb (
     TpBasePasswordChannel *channel,
     const GString *str,
@@ -326,7 +334,7 @@ tp_simple_password_manager_channel_finished_cb (
   else
     {
       g_simple_async_result_set_op_res_gpointer (
-          result, (gpointer) str, NULL);
+          result, g_boxed_copy (G_TYPE_GSTRING, str), free_gstring);
     }
 
   g_simple_async_result_complete (result);

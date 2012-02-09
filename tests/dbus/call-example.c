@@ -18,6 +18,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "config.h"
+
 #include <telepathy-glib/telepathy-glib.h>
 
 #include "examples/future/call-cm/cm.h"

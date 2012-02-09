@@ -32,6 +32,8 @@
  * Since: 0.11.11
  */
 
+#include "config.h"
+
 #include <telepathy-glib/protocol.h>
 #include <telepathy-glib/protocol-internal.h>
 

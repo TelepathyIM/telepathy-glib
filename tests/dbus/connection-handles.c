@@ -14,6 +14,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/debug.h>

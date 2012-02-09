@@ -45,7 +45,7 @@
  * Since: 0.13.2
  */
 
-#include <config.h>
+#include "config.h"
 
 #include "telepathy-glib/stream-tube-channel.h"
 

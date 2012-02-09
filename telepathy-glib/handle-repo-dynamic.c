@@ -43,7 +43,7 @@
  * valid until the handle repository is destroyed.
  */
 
-#include <config.h>
+#include "config.h"
 
 #include <telepathy-glib/handle-repo-dynamic.h>
 

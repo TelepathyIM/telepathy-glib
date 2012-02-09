@@ -8,6 +8,9 @@
  * are permitted in any medium without royalty provided the copyright
  * notice and this notice are preserved.
  */
+
+#include "config.h"
+
 #include "broken-client-types-conn.h"
 
 #include <telepathy-glib/interfaces.h>

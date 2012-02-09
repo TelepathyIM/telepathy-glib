@@ -9,6 +9,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include "simple-account-manager.h"
 
 #include <telepathy-glib/gtypes.h>

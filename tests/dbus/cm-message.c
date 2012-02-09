@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/cm-message.h>
 

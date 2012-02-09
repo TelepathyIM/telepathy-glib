@@ -29,6 +29,8 @@
  * used in #TpChannelFactoryIface to represent the returned channel objects.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/handle.h>
 

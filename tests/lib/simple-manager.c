@@ -9,6 +9,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include "simple-manager.h"
 
 #include <dbus/dbus-protocol.h>

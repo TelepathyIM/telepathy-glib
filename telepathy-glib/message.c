@@ -30,6 +30,8 @@
  * Since: 0.7.21
  */
 
+#include "config.h"
+
 #include "message.h"
 #include "message-internal.h"
 

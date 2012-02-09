@@ -9,6 +9,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include "textchan-group.h"
 
 #include <telepathy-glib/base-connection.h>

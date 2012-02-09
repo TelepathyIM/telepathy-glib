@@ -1,4 +1,5 @@
 #include "config.h"
+
 #include "telepathy-glib/dtmf.h"
 
 #include <telepathy-glib/util.h>

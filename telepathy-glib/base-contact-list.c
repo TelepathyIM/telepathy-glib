@@ -236,6 +236,8 @@
  * Since: 0.13.0
  */
 
+#include "config.h"
+
 #include <telepathy-glib/base-connection.h>
 
 #include <telepathy-glib/handle-repo.h>

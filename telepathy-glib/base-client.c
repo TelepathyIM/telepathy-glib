@@ -173,6 +173,8 @@
  * Since: 0.15.3
  */
 
+#include "config.h"
+
 #include "telepathy-glib/base-client.h"
 #include "telepathy-glib/base-client-internal.h"
 

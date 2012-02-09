@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/util.h>

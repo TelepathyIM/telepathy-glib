@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include "extensions.h"
 
 #include <telepathy-glib/telepathy-glib.h>

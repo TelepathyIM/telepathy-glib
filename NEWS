@@ -1,3 +1,11 @@
+telepathy-glib 0.17.5 (UNRELEASED)
+==================================
+
+Fixes:
+
+• fd.o #45554: fix use-after-free if various async results are kept until
+  after the callback has returned, which is considered valid. (Simon)
+
 telepathy-glib 0.17.4 (2011-12-19)
 ==================================
 

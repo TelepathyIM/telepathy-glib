@@ -123,6 +123,8 @@
  * Since: 0.15.5
  */
 
+#include "config.h"
+
 #include "telepathy-glib/simple-client-factory.h"
 
 #include <telepathy-glib/util.h>

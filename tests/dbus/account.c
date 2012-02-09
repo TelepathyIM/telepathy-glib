@@ -8,6 +8,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>
@@ -253,6 +255,43 @@ test_setters (Test *test,
 }
 
 static void
+test_reconnect (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *set = tp_asv_new (
+      "set", G_TYPE_STRING, "value",
+      NULL);
+  const gchar *unset[] = { "unset", NULL };
+  GStrv reconnect_required;
+
+  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  g_assert (test->account != NULL);
+
+  tp_account_update_parameters_async (test->account, set, unset,
+      tp_tests_result_ready_cb, &test->result);
+  tp_tests_run_until_result (&test->result);
+  tp_account_update_parameters_finish (test->account, test->result,
+      &reconnect_required, &test->error);
+  g_assert_no_error (test->error);
+  /* check that reconnect_required survives longer than result */
+  tp_clear_object (&test->result);
+
+  g_assert (reconnect_required != NULL);
+  g_assert_cmpstr (reconnect_required[0], ==, "set");
+  g_assert_cmpstr (reconnect_required[1], ==, "unset");
+  g_assert_cmpstr (reconnect_required[2], ==, NULL);
+  g_strfreev (reconnect_required);
+
+  tp_account_reconnect_async (test->account, tp_tests_result_ready_cb,
+      &test->result);
+  tp_tests_run_until_result (&test->result);
+  tp_account_reconnect_finish (test->account, test->result, &test->error);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED);
+  g_clear_error (&test->error);
+  tp_clear_object (&test->result);
+}
+
+static void
 account_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
@@ -417,33 +456,13 @@ test_prepare_success (Test *test,
 }
 
 static void
-get_storage_specific_info_cb (GObject *account,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  Test *test = user_data;
-  GHashTable *info;
-  GError *error = NULL;
-
-  info = tp_account_get_storage_specific_information_finish (
-      TP_ACCOUNT (account), result, &error);
-  g_assert_no_error (error);
-
-  g_assert_cmpuint (g_hash_table_size (info), ==, 3);
-
-  g_assert_cmpint (tp_asv_get_int32 (info, "one", NULL), ==, 1);
-  g_assert_cmpuint (tp_asv_get_uint32 (info, "two", NULL), ==, 2);
-  g_assert_cmpstr (tp_asv_get_string (info, "marco"), ==, "polo");
-
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
 test_storage (Test *test,
     gconstpointer mode)
 {
   GQuark account_features[] = { TP_ACCOUNT_FEATURE_STORAGE, 0 };
   GValue *gvalue;
+  GHashTable *info;
+  GError *error = NULL;
 
   test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
@@ -494,8 +513,20 @@ test_storage (Test *test,
 
   /* request the StorageSpecificProperties hash */
   tp_account_get_storage_specific_information_async (test->account,
-      get_storage_specific_info_cb, test);
-  g_main_loop_run (test->mainloop);
+      tp_tests_result_ready_cb, &test->result);
+  tp_tests_run_until_result (&test->result);
+
+  info = tp_account_get_storage_specific_information_finish (
+      test->account, test->result, &error);
+  g_assert_no_error (error);
+
+  g_assert_cmpuint (g_hash_table_size (info), ==, 3);
+
+  g_assert_cmpint (tp_asv_get_int32 (info, "one", NULL), ==, 1);
+  g_assert_cmpuint (tp_asv_get_uint32 (info, "two", NULL), ==, 2);
+  g_assert_cmpstr (tp_asv_get_string (info, "marco"), ==, "polo");
+
+  tp_clear_object (&test->result);
 }
 
 static void
@@ -542,6 +573,33 @@ test_addressing (Test *test,
   g_assert (!tp_account_associated_with_uri_scheme (test->account,
         "xmpp"));
 
+}
+
+static void
+test_avatar (Test *test,
+    gconstpointer mode)
+{
+  const GArray *blob;
+  GError *error = NULL;
+
+  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  g_assert (test->account != NULL);
+
+  tp_proxy_prepare_async (test->account, NULL, account_prepare_cb, test);
+  g_main_loop_run (test->mainloop);
+
+  tp_account_get_avatar_async (test->account,
+      tp_tests_result_ready_cb, &test->result);
+  tp_tests_run_until_result (&test->result);
+
+  blob = tp_account_get_avatar_finish (
+      test->account, test->result, &error);
+  g_assert_no_error (error);
+
+  g_assert_cmpuint (blob->len, ==, 4);
+  g_assert_cmpstr (((char *) blob->data), ==, ":-)");
+
+  tp_clear_object (&test->result);
 }
 
 static void
@@ -759,6 +817,9 @@ main (int argc,
   g_test_add ("/account/setters", Test, NULL, setup_service, test_setters,
       teardown_service);
 
+  g_test_add ("/account/reconnect", Test, NULL, setup_service, test_reconnect,
+      teardown_service);
+
   g_test_add ("/account/prepare/success", Test, NULL, setup_service,
               test_prepare_success, teardown_service);
 
@@ -768,6 +829,9 @@ main (int argc,
   g_test_add ("/account/storage", Test, "first", setup_service, test_storage,
       teardown_service);
   g_test_add ("/account/storage", Test, "later", setup_service, test_storage,
+      teardown_service);
+
+  g_test_add ("/account/avatar", Test, NULL, setup_service, test_avatar,
       teardown_service);
 
   g_test_add ("/account/addressing", Test, "first", setup_service,
