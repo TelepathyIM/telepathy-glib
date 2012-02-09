@@ -372,6 +372,8 @@ tp_channel_get_identifier (TpChannel *self)
  *
  * Returns: %TRUE if introspection has completed
  * Since: 0.7.12
+ * Deprecated: 0.17.UNRELEASED: use tp_proxy_is_prepared() with
+ *  %TP_CHANNEL_FEATURE_CORE
  */
 gboolean
 tp_channel_is_ready (TpChannel *self)
@@ -1605,10 +1607,14 @@ tp_channel_class_init (TpChannelClass *klass)
    * invalidated - but tp_proxy_is_prepared() returns %FALSE for all features.
    *
    * Change notification is via notify::channel-ready.
+   *
+   * Deprecated: 0.17.UNRELEASED: use tp_proxy_is_prepared() with
+   *  %TP_CHANNEL_FEATURE_CORE for checks, or tp_proxy_prepare_async() for
+   *  notification
    */
   param_spec = g_param_spec_boolean ("channel-ready", "Channel ready?",
       "Initially FALSE; changes to TRUE when introspection finishes", FALSE,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS | G_PARAM_DEPRECATED);
   g_object_class_install_property (object_class, PROP_CHANNEL_READY,
       param_spec);
 

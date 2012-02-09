@@ -92,11 +92,13 @@ typedef void (*TpChannelWhenReadyCb) (TpChannel *channel, const GError *error,
 void tp_channel_call_when_ready (TpChannel *self,
     TpChannelWhenReadyCb callback,
     gpointer user_data) _TP_GNUC_DEPRECATED_FOR (tp_proxy_prepare_async);
+
+gboolean tp_channel_is_ready (TpChannel *self)
+  _TP_GNUC_DEPRECATED_FOR (tp_proxy_is_ready);
 #endif
 
 void tp_channel_init_known_interfaces (void);
 
-gboolean tp_channel_is_ready (TpChannel *self);
 const gchar *tp_channel_get_channel_type (TpChannel *self);
 GQuark tp_channel_get_channel_type_id (TpChannel *self);
 TpHandle tp_channel_get_handle (TpChannel *self, TpHandleType *handle_type);
