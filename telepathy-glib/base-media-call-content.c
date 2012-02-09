@@ -854,7 +854,6 @@ _tp_base_media_call_content_ready_to_accept (TpBaseMediaCallContent *self)
         {
           tp_base_media_call_stream_set_local_sending (stream, TRUE);
         }
-
       g_hash_table_iter_init (&iter, members);
       while (g_hash_table_iter_next (&iter, &key, &value))
         {
