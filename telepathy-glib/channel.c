@@ -2118,9 +2118,9 @@ finally:
  *  %FALSE if the channel has become invalid.
  *
  * Since: 0.7.1
- * Deprecated: 0.11.0: Use tp_connection_call_when_ready,
- *  or restructure your program in such a way as to avoid re-entering the
- *  main loop.
+ * Deprecated: 0.11.0: Use tp_proxy_prepare_async() and re-enter the main
+ *  loop yourself, or restructure your program in such a way as to avoid
+ *  re-entering the main loop.
  */
 gboolean
 tp_channel_run_until_ready (TpChannel *self,
@@ -2235,6 +2235,8 @@ cwr_ready (TpChannel *self,
  * Signature of a callback passed to tp_channel_call_when_ready(), which
  * will be called exactly once, when the channel becomes ready or
  * invalid (whichever happens first)
+ *
+ * Deprecated: 0.17.UNRELEASED
  */
 
 /**
@@ -2255,6 +2257,7 @@ cwr_ready (TpChannel *self,
  * calls @callback from the main loop.)
  *
  * Since: 0.7.7
+ * Deprecated: 0.17.UNRELEASED: Use tp_proxy_prepare_async()
  */
 void
 tp_channel_call_when_ready (TpChannel *self,

@@ -158,13 +158,14 @@ gboolean tp_connection_is_ready (TpConnection *self);
 gboolean tp_connection_run_until_ready (TpConnection *self,
     gboolean connect, GError **error,
     GMainLoop **loop) _TP_GNUC_DEPRECATED;
-#endif
 
 typedef void (*TpConnectionWhenReadyCb) (TpConnection *connection,
     const GError *error, gpointer user_data);
 
 void tp_connection_call_when_ready (TpConnection *self,
-    TpConnectionWhenReadyCb callback, gpointer user_data);
+    TpConnectionWhenReadyCb callback,
+    gpointer user_data) _TP_GNUC_DEPRECATED_FOR (tp_proxy_prepare_async);
+#endif
 
 typedef void (*TpConnectionNameListCb) (const gchar * const *names,
     gsize n, const gchar * const *cms, const gchar * const *protocols,

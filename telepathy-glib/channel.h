@@ -85,13 +85,14 @@ TpChannel *tp_channel_new_from_properties (TpConnection *conn,
 #ifndef TP_DISABLE_DEPRECATED
 gboolean tp_channel_run_until_ready (TpChannel *self, GError **error,
     GMainLoop **loop) _TP_GNUC_DEPRECATED;
-#endif
 
 typedef void (*TpChannelWhenReadyCb) (TpChannel *channel, const GError *error,
     gpointer user_data);
 
 void tp_channel_call_when_ready (TpChannel *self,
-    TpChannelWhenReadyCb callback, gpointer user_data);
+    TpChannelWhenReadyCb callback,
+    gpointer user_data) _TP_GNUC_DEPRECATED_FOR (tp_proxy_prepare_async);
+#endif
 
 void tp_channel_init_known_interfaces (void);
 

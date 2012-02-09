@@ -2542,9 +2542,9 @@ tp_connection_get_protocol_name (TpConnection *self)
  *  %FALSE if the connection has become invalid.
  *
  * Since: 0.7.1
- * Deprecated: 0.11.0: Use tp_connection_call_when_ready,
- *  or restructure your program in such a way as to avoid re-entering the
- *  main loop.
+ * Deprecated: 0.11.0: Use tp_proxy_prepare_async() and re-enter the main
+ *  loop yourself, or restructure your program in such a way as to avoid
+ *  re-entering the main loop.
  */
 
 typedef struct {
@@ -2977,6 +2977,8 @@ cwr_ready (TpConnection *self,
  * Signature of a callback passed to tp_connection_call_when_ready(), which
  * will be called exactly once, when the connection becomes ready or
  * invalid (whichever happens first)
+ *
+ * Deprecated: 0.17.UNRELEASED
  */
 
 /**
@@ -2998,6 +3000,7 @@ cwr_ready (TpConnection *self,
  * Call tp_cli_connection_call_connect() too, if you want to do that.
  *
  * Since: 0.7.7
+ * Deprecated: 0.17.UNRELEASED: Use tp_proxy_prepare_async()
  */
 void
 tp_connection_call_when_ready (TpConnection *self,
