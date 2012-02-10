@@ -1286,6 +1286,7 @@ tp_base_call_channel_set_ringing (TpSvcChannelTypeCall *iface,
             klass->set_ringing (self);
 
           self->priv->flags |= TP_CALL_FLAG_LOCALLY_RINGING;
+          self->priv->flags &= ~TP_CALL_FLAG_LOCALLY_QUEUED;
           tp_base_call_channel_set_state (self, self->priv->state,
               tp_base_channel_get_self_handle ((TpBaseChannel *) self),
               TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "",
