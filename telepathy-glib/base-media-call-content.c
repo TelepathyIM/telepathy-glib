@@ -800,6 +800,11 @@ tp_base_media_call_content_acknowledge_dtmf_change (
       return;
     }
 
+  /* Only tell the UI we are sending if we are actually sending */
+  if (in_State == TP_SENDING_STATE_SENDING)
+    tp_svc_call_content_interface_dtmf_emit_sending_tones (self,
+        self->priv->currently_sending_tones);
+
   self->priv->current_dtmf_state = in_State;
 
   tp_base_media_call_content_dtmf_next (self);
@@ -1108,8 +1113,6 @@ tp_base_media_call_content_dtmf_next (TpBaseMediaCallContent *self)
                 tp_svc_call_content_interface_media_emit_dtmf_change_requested (
                     self, self->priv->current_dtmf_event,
                     self->priv->current_dtmf_state);
-                tp_svc_call_content_interface_dtmf_emit_sending_tones (self,
-                    self->priv->currently_sending_tones);
                 break;
               case DTMF_CHAR_CLASS_PAUSE:
                 self->priv->tones_pause_timeout_id = g_timeout_add (
