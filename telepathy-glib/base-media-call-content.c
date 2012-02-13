@@ -965,7 +965,6 @@ tp_base_media_call_content_multiple_tones (TpBaseCallContent *bcc,
   TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (bcc);
   guint i;
 
-
   if (tp_base_call_content_get_media_type (bcc) != TP_MEDIA_STREAM_TYPE_AUDIO)
     {
       g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD,
@@ -1044,8 +1043,8 @@ tp_base_media_call_content_dtmf_next (TpBaseMediaCallContent *self)
           self->priv->current_dtmf_state =
               TP_SENDING_STATE_PENDING_STOP_SENDING;
           tp_svc_call_content_interface_media_emit_dtmf_change_requested (self,
-              self->priv->current_dtmf_state,
-              self->priv->current_dtmf_event);
+              self->priv->current_dtmf_event,
+              self->priv->current_dtmf_state);
           return;
         }
       break;
@@ -1059,8 +1058,8 @@ tp_base_media_call_content_dtmf_next (TpBaseMediaCallContent *self)
               TP_SENDING_STATE_PENDING_STOP_SENDING;
 
           tp_svc_call_content_interface_media_emit_dtmf_change_requested (self,
-              self->priv->current_dtmf_state,
-              self->priv->current_dtmf_event);
+              self->priv->current_dtmf_event,
+              self->priv->current_dtmf_state);
         }
       break;
     case TP_SENDING_STATE_NONE:
@@ -1094,8 +1093,8 @@ tp_base_media_call_content_dtmf_next (TpBaseMediaCallContent *self)
                 self->priv->current_dtmf_state = TP_SENDING_STATE_PENDING_SEND;
 
                 tp_svc_call_content_interface_media_emit_dtmf_change_requested (
-                    self, self->priv->current_dtmf_state,
-                    self->priv->current_dtmf_event);
+                    self, self->priv->current_dtmf_event,
+                    self->priv->current_dtmf_state);
                 tp_svc_call_content_interface_dtmf_emit_sending_tones (self,
                     self->priv->currently_sending_tones);
                 break;

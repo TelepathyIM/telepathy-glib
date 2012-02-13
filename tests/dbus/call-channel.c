@@ -453,6 +453,31 @@ accept_cb (GObject *object,
 }
 
 static void
+run_until_accepted_cb (TpCallChannel *channel,
+    TpCallState state,
+    TpCallFlags flags,
+    TpCallStateReason *reason,
+    GHashTable *details,
+    Test *test)
+{
+  if (state == TP_CALL_STATE_ACCEPTED)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+run_until_accepted (Test *test)
+{
+  guint id;
+
+  tp_call_channel_accept_async (test->call_chan, NULL, NULL);
+
+  id = g_signal_connect (test->call_chan, "state-changed",
+      G_CALLBACK (run_until_accepted_cb), test);
+  g_main_loop_run (test->mainloop);
+  g_signal_handler_disconnect (test->call_chan, id);
+}
+
+static void
 hangup_cb (GObject *object,
     GAsyncResult *result,
     gpointer user_data)
@@ -920,6 +945,73 @@ test_incoming (Test *test,
 }
 
 static void
+send_tones_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+  GError *error = NULL;
+
+  tp_call_channel_send_tones_finish (test->call_chan, result, &error);
+  g_assert_no_error (error);
+
+  test->wait_count--;
+  if (test->wait_count <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+dtmf_change_requested_cb (TpCallContent *content,
+    guchar event,
+    TpSendingState state,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  /* Only PENDING states can be requested */
+  g_assert (state == TP_SENDING_STATE_PENDING_SEND ||
+            state == TP_SENDING_STATE_PENDING_STOP_SENDING);
+
+  if (state == TP_SENDING_STATE_PENDING_SEND)
+    {
+      tp_cli_call_content_interface_media_call_acknowledge_dtmf_change (content,
+          -1, event, TP_SENDING_STATE_SENDING, NULL, NULL, NULL, NULL);
+    }
+  else if (state == TP_SENDING_STATE_PENDING_STOP_SENDING)
+    {
+      tp_cli_call_content_interface_media_call_acknowledge_dtmf_change (content,
+          -1, event, TP_SENDING_STATE_NONE, NULL, NULL, NULL, NULL);
+    }
+}
+
+static void
+test_dtmf (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GPtrArray *contents;
+  TpCallContent *content;
+
+  outgoing_call (test, "dtmf-badger", TRUE, FALSE);
+  run_until_accepted (test);
+  run_until_active (test);
+
+  contents = tp_call_channel_get_contents (test->call_chan);
+  g_assert (contents->len == 1);
+  content = g_ptr_array_index (contents, 0);
+
+  tp_cli_call_content_interface_media_connect_to_dtmf_change_requested (content,
+      dtmf_change_requested_cb, test, NULL, NULL, NULL);
+
+  tp_call_channel_send_tones_async (test->call_chan, "123456789", NULL,
+      send_tones_cb, test);
+  tp_call_channel_send_tones_async (test->call_chan, "ABCD", NULL,
+      send_tones_cb, test);
+
+  test->wait_count = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+}
+
+static void
 teardown (Test *test,
           gconstpointer data G_GNUC_UNUSED)
 {
@@ -963,6 +1055,8 @@ main (int argc,
   g_test_add ("/call/terminate-via-close", Test, NULL, setup,
       test_terminate_via_close, teardown);
   g_test_add ("/call/incoming", Test, NULL, setup, test_incoming,
+      teardown);
+  g_test_add ("/call/dtmf", Test, NULL, setup, test_dtmf,
       teardown);
 
   return g_test_run ();

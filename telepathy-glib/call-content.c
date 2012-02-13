@@ -200,6 +200,11 @@ streams_removed_cb (TpCallContent *self,
   g_ptr_array_unref (removed_streams);
 }
 
+static void tones_stopped_cb (TpCallContent *self,
+    gboolean cancelled,
+    gpointer user_data,
+    GObject *weak_object);
+
 static void
 got_all_properties_cb (TpProxy *proxy,
     GHashTable *properties,
@@ -243,6 +248,13 @@ got_all_properties_cb (TpProxy *proxy,
 
       g_ptr_array_add (self->priv->streams,
           _tp_call_stream_new (self, object_path));
+    }
+
+  if (tp_proxy_has_interface_by_id (self,
+          TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_DTMF))
+    {
+      tp_cli_call_content_interface_dtmf_connect_to_stopped_tones (self,
+          tones_stopped_cb, NULL, NULL, NULL, NULL);
     }
 
   _tp_proxy_set_feature_prepared (proxy, TP_CALL_CONTENT_FEATURE_CORE, TRUE);
@@ -412,13 +424,6 @@ tp_call_content_constructed (GObject *obj)
       streams_added_cb, NULL, NULL, G_OBJECT (self), NULL);
   tp_cli_call_content_connect_to_streams_removed (self,
       streams_removed_cb, NULL, NULL, G_OBJECT (self), NULL);
-
-  if (tp_proxy_has_interface_by_id (self,
-          TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_DTMF))
-    {
-      tp_cli_call_content_interface_dtmf_connect_to_stopped_tones (self,
-          tones_stopped_cb, NULL, NULL, NULL, NULL);
-    }
 
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CALL_CONTENT,
