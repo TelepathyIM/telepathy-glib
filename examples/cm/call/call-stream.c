@@ -42,6 +42,7 @@ struct _ExampleCallStreamPrivate
   guint simulation_delay;
   gboolean locally_requested;
   TpHandle handle;
+  guint agreed_delay_id;
 };
 
 static void
@@ -142,6 +143,17 @@ static gboolean stream_set_sending (TpBaseCallStream *base,
     GError **error);
 
 static void
+finalize (GObject *object)
+{
+  ExampleCallStream *self = EXAMPLE_CALL_STREAM (object);
+
+  if (self->priv->agreed_delay_id != 0)
+    g_source_remove (self->priv->agreed_delay_id);
+
+  G_OBJECT_CLASS (example_call_stream_parent_class)->finalize (object);
+}
+
+static void
 example_call_stream_class_init (ExampleCallStreamClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *) klass;
@@ -153,6 +165,7 @@ example_call_stream_class_init (ExampleCallStreamClass *klass)
   object_class->constructed = constructed;
   object_class->set_property = set_property;
   object_class->get_property = get_property;
+  object_class->finalize = finalize;
 
   stream_class->request_receiving = stream_request_receiving;
   stream_class->set_sending = stream_set_sending;
@@ -280,9 +293,12 @@ example_call_stream_change_direction (ExampleCallStream *self,
               self->priv->handle, TP_SENDING_STATE_PENDING_SEND, 0,
               TP_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "");
 
-          g_timeout_add_full (G_PRIORITY_DEFAULT, self->priv->simulation_delay,
-              simulate_contact_agreed_to_send_cb, g_object_ref (self),
-              g_object_unref);
+          if (self->priv->agreed_delay_id == 0)
+            {
+              self->priv->agreed_delay_id = g_timeout_add (
+                  self->priv->simulation_delay,
+                  simulate_contact_agreed_to_send_cb, self);
+            }
         }
     }
   else
