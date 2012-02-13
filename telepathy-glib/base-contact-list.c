@@ -4441,6 +4441,7 @@ emulate_rename_group_remove_cb (GObject *source,
     }
 
   g_simple_async_result_complete (rename_result);
+  g_object_unref (rename_result);
 }
 
 static void
@@ -4457,12 +4458,15 @@ emulate_rename_group_add_cb (GObject *source,
       g_simple_async_result_set_from_error (rename_result, error);
       g_clear_error (&error);
       g_simple_async_result_complete (rename_result);
-      return;
+      goto out;
     }
 
   tp_base_contact_list_remove_group_async (self,
       g_simple_async_result_get_op_res_gpointer (rename_result),
-      emulate_rename_group_remove_cb, rename_result);
+      emulate_rename_group_remove_cb, g_object_ref (rename_result));
+
+out:
+  g_object_unref (rename_result);
 }
 
 static void
@@ -4493,7 +4497,7 @@ tp_base_contact_list_emulate_rename_group (TpBaseContactList *self,
 
   old_members = tp_base_contact_list_dup_group_members (self, old_name);
   tp_base_contact_list_add_to_group_async (self, new_name, old_members,
-      emulate_rename_group_add_cb, result);
+      emulate_rename_group_add_cb, g_object_ref (result));
   g_object_unref (result);
   tp_handle_set_destroy (old_members);
 }
