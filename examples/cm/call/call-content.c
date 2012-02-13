@@ -27,7 +27,7 @@
 
 G_DEFINE_TYPE (ExampleCallContent,
     example_call_content,
-    TP_TYPE_BASE_CALL_CONTENT)
+    TP_TYPE_BASE_MEDIA_CALL_CONTENT)
 
 struct _ExampleCallContentPrivate
 {

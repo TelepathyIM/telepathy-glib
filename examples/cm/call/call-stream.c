@@ -27,7 +27,7 @@
 
 G_DEFINE_TYPE (ExampleCallStream,
     example_call_stream,
-    TP_TYPE_BASE_CALL_STREAM)
+    TP_TYPE_BASE_MEDIA_CALL_STREAM)
 
 enum
 {
@@ -64,9 +64,25 @@ constructed (GObject *object)
   ExampleCallStream *self = EXAMPLE_CALL_STREAM (object);
   void (*chain_up) (GObject *) =
       ((GObjectClass *) example_call_stream_parent_class)->constructed;
+  static guint count = 0;
+  TpBaseConnection *conn;
+  TpDBusDaemon *dbus;
+  gchar *object_path;
+  TpCallStreamEndpoint *endpoint;
 
   if (chain_up != NULL)
     chain_up (object);
+
+  conn = tp_base_call_stream_get_connection ((TpBaseCallStream *) self);
+  dbus = tp_base_connection_get_dbus_daemon (conn);
+  object_path = g_strdup_printf ("%s/Endpoint%d",
+      tp_base_call_stream_get_object_path ((TpBaseCallStream *) self),
+      count++);
+  endpoint = tp_call_stream_endpoint_new (dbus, object_path,
+      TP_STREAM_TRANSPORT_TYPE_RAW_UDP, FALSE);
+
+  tp_base_media_call_stream_add_endpoint ((TpBaseMediaCallStream *) self,
+      endpoint);
 
   if (self->priv->locally_requested)
     {
@@ -76,6 +92,9 @@ constructed (GObject *object)
     {
       example_call_stream_receive_direction_request (self, TRUE, TRUE);
     }
+
+  g_object_unref (endpoint);
+  g_free (object_path);
 }
 
 static void

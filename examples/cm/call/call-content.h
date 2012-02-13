@@ -58,13 +58,13 @@ GType example_call_content_get_type (void);
                               ExampleCallContentClass))
 
 struct _ExampleCallContentClass {
-    TpBaseCallContentClass parent_class;
+    TpBaseMediaCallContentClass parent_class;
 
     ExampleCallContentClassPrivate *priv;
 };
 
 struct _ExampleCallContent {
-    TpBaseCallContent parent;
+    TpBaseMediaCallContent parent;
 
     ExampleCallContentPrivate *priv;
 };

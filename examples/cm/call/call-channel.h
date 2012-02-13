@@ -53,11 +53,11 @@ GType example_call_channel_get_type (void);
                               ExampleCallChannelClass))
 
 struct _ExampleCallChannelClass {
-    TpBaseCallChannelClass parent_class;
+    TpBaseMediaCallChannelClass parent_class;
 };
 
 struct _ExampleCallChannel {
-    TpBaseCallChannel parent;
+    TpBaseMediaCallChannel parent;
 
     ExampleCallChannelPrivate *priv;
 };

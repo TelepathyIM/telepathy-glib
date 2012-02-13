@@ -56,14 +56,13 @@ GType example_call_stream_get_type (void);
                               ExampleCallStreamClass))
 
 struct _ExampleCallStreamClass {
-    TpBaseCallStreamClass parent_class;
-    TpDBusPropertiesMixinClass dbus_properties_class;
+    TpBaseMediaCallStreamClass parent_class;
 
     ExampleCallStreamClassPrivate *priv;
 };
 
 struct _ExampleCallStream {
-    TpBaseCallStream parent;
+    TpBaseMediaCallStream parent;
 
     ExampleCallStreamPrivate *priv;
 };

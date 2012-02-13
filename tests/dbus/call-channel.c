@@ -19,6 +19,7 @@
  */
 
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/proxy-subclass.h>
 
 #include "examples/cm/call/cm.h"
 #include "examples/cm/call/conn.h"
@@ -32,6 +33,7 @@ typedef struct
   GMainLoop *mainloop;
   TpDBusDaemon *dbus;
   GError *error /* statically initialized to NULL */ ;
+  guint wait_count;
 
   ExampleCallConnectionManager *service_cm;
 
@@ -339,6 +341,105 @@ run_until_ended (Test *test)
 }
 
 static void
+run_until_active_cb (TpCallChannel *channel,
+    TpCallState state,
+    TpCallFlags flags,
+    TpCallStateReason *reason,
+    GHashTable *details,
+    Test *test)
+{
+  if (state == TP_CALL_STATE_ACTIVE)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+run_until_active_get_all_cb (TpProxy *proxy,
+    GHashTable *properties,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GPtrArray *endpoints;
+  guint i;
+
+  g_assert_no_error (error);
+
+  tp_asv_dump (properties);
+
+  endpoints = tp_asv_get_boxed (properties, "Endpoints",
+      TP_ARRAY_TYPE_OBJECT_PATH_LIST);
+  g_assert (endpoints != NULL);
+  g_assert (endpoints->len > 0);
+
+  for (i = 0; i < endpoints->len; i++)
+    {
+      const gchar *object_path = g_ptr_array_index (endpoints, i);
+      TpProxy *endpoint;
+
+      endpoint = g_object_new (TP_TYPE_PROXY,
+          "dbus-daemon", tp_proxy_get_dbus_daemon (proxy),
+          "bus-name", tp_proxy_get_bus_name (proxy),
+          "object-path", object_path,
+          NULL);
+      tp_proxy_add_interface_by_id (endpoint,
+          TP_IFACE_QUARK_CALL_STREAM_ENDPOINT);
+
+      tp_cli_call_stream_endpoint_call_set_endpoint_state (endpoint,
+          -1, TP_STREAM_COMPONENT_DATA,
+          TP_STREAM_ENDPOINT_STATE_FULLY_CONNECTED,
+          NULL, NULL, NULL, NULL);
+
+      g_object_unref (endpoint);
+    }
+}
+
+static void
+run_until_active (Test *test)
+{
+  GPtrArray *contents;
+  guint i, j;
+  guint n_streams = 0;
+  guint id;
+
+  if (tp_call_channel_get_state (test->call_chan, NULL, NULL, NULL) ==
+          TP_CALL_STATE_ACTIVE)
+    return;
+
+  g_assert (tp_call_channel_get_state (test->call_chan, NULL, NULL, NULL) ==
+      TP_CALL_STATE_ACCEPTED);
+
+  contents = tp_call_channel_get_contents (test->call_chan);
+  for (i = 0; i < contents->len; i++)
+    {
+      TpCallContent *content = g_ptr_array_index (contents, i);
+      GPtrArray *streams;
+
+      streams = tp_call_content_get_streams (content);
+      for (j = 0; j < streams->len; j++)
+        {
+          TpCallStream *stream = g_ptr_array_index (streams, j);
+
+          g_assert (tp_proxy_has_interface_by_id (stream,
+              TP_IFACE_QUARK_CALL_STREAM_INTERFACE_MEDIA));
+
+          n_streams++;
+          tp_cli_dbus_properties_call_get_all (stream, -1,
+              TP_IFACE_CALL_STREAM_INTERFACE_MEDIA,
+              run_until_active_get_all_cb,
+              test, NULL,
+              NULL);
+        }
+    }
+
+  g_assert_cmpuint (n_streams, >, 0);
+
+  id = g_signal_connect (test->call_chan, "state-changed",
+      G_CALLBACK (run_until_active_cb), test);
+  g_main_loop_run (test->mainloop);
+  g_signal_handler_disconnect (test->call_chan, id);
+}
+
+static void
 accept_cb (GObject *object,
     GAsyncResult *result,
     gpointer user_data)
@@ -461,10 +562,17 @@ test_basics (Test *test,
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
   g_clear_error (&test->error);
 
-  /* Check the call state, it should have moved directly to ACTIVE since we
-   * are not using media channel/content/stream. */
+  /* Check the call state. */
   assert_call_properties (test->call_chan,
-      TP_CALL_STATE_ACTIVE, tp_channel_get_handle (test->chan, NULL),
+      TP_CALL_STATE_ACCEPTED, tp_channel_get_handle (test->chan, NULL),
+      TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "",
+      TRUE, 0,              /* call flags */
+      FALSE, FALSE, FALSE); /* don't care about initial audio/video */
+
+  /* Connecting endpoints makes state become active */
+  run_until_active (test);
+  assert_call_properties (test->call_chan,
+      TP_CALL_STATE_ACTIVE, test->self_handle,
       TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "",
       TRUE, 0,              /* call flags */
       FALSE, FALSE, FALSE); /* don't care about initial audio/video */
@@ -793,7 +901,7 @@ test_incoming (Test *test,
   g_assert_no_error (test->error);
 
   assert_call_properties (test->call_chan,
-      TP_CALL_STATE_ACTIVE, test->self_handle,
+      TP_CALL_STATE_ACCEPTED, test->self_handle,
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       TRUE, 0,              /* call flags */
       TRUE, TRUE, FALSE);  /* initial audio/video are still TRUE, FALSE */

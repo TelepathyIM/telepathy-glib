@@ -53,7 +53,7 @@ static void hold_iface_init (gpointer iface, gpointer data);
 
 G_DEFINE_TYPE_WITH_CODE (ExampleCallChannel,
     example_call_channel,
-    TP_TYPE_BASE_CALL_CHANNEL,
+    TP_TYPE_BASE_MEDIA_CALL_CHANNEL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_HOLD,
       hold_iface_init))
 
