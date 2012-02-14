@@ -350,6 +350,7 @@ test_complex_file_got_info (Test *test,
   const TpConnectionManagerParam *param;
   const TpConnectionManagerProtocol *protocol;
   gchar **strv;
+  GPtrArray *arr;
 
   test->cm = tp_connection_manager_new (test->dbus, "test_manager_file",
       NULL, &error);
@@ -670,6 +671,17 @@ test_complex_file_got_info (Test *test,
   g_assert_cmpint (g_value_get_uchar (&param->default_value), ==, 42);
 
   param = &protocol->params[22];
+  g_assert_cmpstr (param->name, ==, "ao");
+  g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert_cmpstr (param->dbus_signature, ==, "ao");
+  g_assert (G_VALUE_HOLDS (&param->default_value,
+        TP_ARRAY_TYPE_OBJECT_PATH_LIST));
+  arr = g_value_get_boxed (&param->default_value);
+  g_assert_cmpuint (arr->len, ==, 2);
+  g_assert_cmpstr ((gchar *) g_ptr_array_index (arr, 0), ==, "/misc");
+  g_assert_cmpstr ((gchar *) g_ptr_array_index (arr, 1), ==, "/other");
+
+  param = &protocol->params[23];
   g_assert (param->name == NULL);
 }
 

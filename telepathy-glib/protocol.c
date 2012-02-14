@@ -1,6 +1,6 @@
 /* TpProtocol
  *
- * Copyright © 2010 Collabora Ltd.
+ * Copyright © 2010-2012 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1082,6 +1082,10 @@ init_gvalue_from_dbus_sig (const gchar *sig,
           g_value_init (value, G_TYPE_STRV);
           return TRUE;
 
+        case 'o':
+          g_value_init (value, TP_ARRAY_TYPE_OBJECT_PATH_LIST);
+          return TRUE;
+
         case 'y':
           g_value_init (value, DBUS_TYPE_G_UCHAR_ARRAY);
           return TRUE;
@@ -1258,6 +1262,43 @@ parse_default_value (GValue *value,
                   g_error_free (error);
                   return FALSE;
                 }
+
+              return TRUE;
+            }
+
+        case 'o':
+            {
+              gsize len = 0;
+              GStrv strv = g_key_file_get_string_list (file, group, key, &len,
+                  &error);
+              gchar **iter;
+              GPtrArray *arr;
+
+              if (error != NULL)
+                {
+                  g_error_free (error);
+                  return FALSE;
+                }
+
+              for (iter = strv; iter != NULL && *iter != NULL; iter++)
+                {
+                  if (!g_variant_is_object_path (*iter))
+                    {
+                      g_strfreev (strv);
+                      return FALSE;
+                    }
+                }
+
+              arr = g_ptr_array_sized_new (len);
+
+              for (iter = strv; iter != NULL && *iter != NULL; iter++)
+                {
+                  /* transfer ownership */
+                  g_ptr_array_add (arr, *iter);
+                }
+
+              g_free (strv);
+              g_value_take_boxed (value, arr);
 
               return TRUE;
             }
