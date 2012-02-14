@@ -1,7 +1,7 @@
 /*
  * simple-account.c - a simple account service.
  *
- * Copyright (C) 2010 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2010-2012 Collabora Ltd. <http://www.collabora.co.uk/>
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright
@@ -68,7 +68,9 @@ enum
   PROP_STORAGE_IDENTIFIER,
   PROP_STORAGE_SPECIFIC_INFORMATION,
   PROP_STORAGE_RESTRICTIONS,
-  PROP_AVATAR
+  PROP_AVATAR,
+  PROP_SUPERSEDES,
+  N_PROPS
 };
 
 struct _TpTestsSimpleAccountPrivate
@@ -242,6 +244,15 @@ tp_tests_simple_account_get_property (GObject *object,
           g_array_unref (arr);
         }
       break;
+    case PROP_SUPERSEDES:
+        {
+          GPtrArray *arr = g_ptr_array_new ();
+
+          g_ptr_array_add (arr,
+              g_strdup (TP_ACCOUNT_OBJECT_PATH_BASE "super/seded/whatever"));
+          g_value_take_boxed (value, arr);
+        }
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
       break;
@@ -289,6 +300,7 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
         { "RequestedPresence", "requested-presence", NULL },
         { "NormalizedName", "normalized-name", NULL },
         { "HasBeenOnline", "has-been-online", NULL },
+        { "Supersedes", "supersedes", NULL },
         { NULL }
   };
 
@@ -484,6 +496,13 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class,
       PROP_AVATAR, param_spec);
+
+  param_spec = g_param_spec_boxed ("supersedes",
+      "Supersedes", "List of superseded accounts",
+      TP_ARRAY_TYPE_OBJECT_PATH_LIST,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class,
+      PROP_SUPERSEDES, param_spec);
 
   klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
