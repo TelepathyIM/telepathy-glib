@@ -230,7 +230,7 @@
  * Returns: (transfer container): a #GPtrArray of static strings for D-Bus
  *   interfaces implemented by this client.
  *
- * Since: UNRELEASED
+ * Since: 0.17.5
  */
 
 #include "config.h"

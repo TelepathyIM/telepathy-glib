@@ -1158,7 +1158,7 @@ tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
  * If no accounts are enabled or valid the output will be
  * (%TP_CONNECTION_PRESENCE_TYPE_OFFLINE, "offline", "").
  *
- * Since 0.UNRELEASED, if the only connected accounts does not implement
+ * Since 0.17.5, if the only connected accounts does not implement
  * %TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE, the output will be
  * (%TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, "available", "").
  *

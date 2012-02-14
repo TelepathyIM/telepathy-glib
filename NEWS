@@ -1,6 +1,25 @@
 telepathy-glib 0.17.5 (UNRELEASED)
 ==================================
 
+The “I have no privates but I have a heart!” release.
+
+Enhancements:
+
+• tp_account_manager_get_most_available_presence() now returns
+  (AVAILABLE, "available, "") if the only connected accounts does not implement
+  SimplePresence. (Guillaume)
+
+• TpBaseChannel now has a virtual get_interfaces() method. (Danielle)
+
+• tp_connection_disconnect_async: high level API to disconnect a
+  TpConnection. (Simon)
+
+• tp_unix_connection_receive_credentials_with_byte() and
+  tp_unix_connection_send_credentials_with_byte() now have async equivalents.
+  (Xavier)
+
+• Produce DLL files when compiled for windows. (Siraj)
+
 Fixes:
 
 • fd.o #45554: fix use-after-free if various async results are kept until
@@ -13,7 +32,7 @@ Fixes:
 • TpChannel: fix a crash when preparing contacts. (Xavier)
 
 • fdo.o #45982: fix a crash in TpBaseContactList when using RenameGroup()'s
-  fallback code.
+  fallback code. (Guillaume)
 
 telepathy-glib 0.17.4 (2011-12-19)
 ==================================

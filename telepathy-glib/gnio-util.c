@@ -400,7 +400,7 @@ send_credentials_with_byte_async_thread (GSimpleAsyncResult *res,
  * tp_unix_connection_send_credentials_with_byte_finish() to get the result of
  * the operation.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  **/
 void
 tp_unix_connection_send_credentials_with_byte_async (
@@ -436,7 +436,7 @@ tp_unix_connection_send_credentials_with_byte_async (
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  **/
 gboolean
 tp_unix_connection_send_credentials_with_byte_finish (
@@ -725,7 +725,7 @@ receive_credentials_with_byte_async_thread (GSimpleAsyncResult *res,
  * tp_unix_connection_receive_credentials_with_byte_finish() to get the result
  * of the operation.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  **/
 void
 tp_unix_connection_receive_credentials_with_byte_async (
@@ -759,7 +759,7 @@ tp_unix_connection_receive_credentials_with_byte_async (
  * Returns: (transfer full): a #GCredentials, or %NULL on error.
  *     Free the returned object with g_object_unref().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  **/
 GCredentials *
 tp_unix_connection_receive_credentials_with_byte_finish (

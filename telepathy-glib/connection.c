@@ -3536,7 +3536,7 @@ _tp_connection_void_cb (TpConnection *proxy,
  * or tp_account_set_enabled_async(), depending whether the intention is
  * to put the account offline temporarily, or disable it longer-term.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_connection_disconnect_async (TpConnection *self,
@@ -3564,7 +3564,7 @@ tp_connection_disconnect_async (TpConnection *self,
  *
  * Returns: %TRUE if the call was successful, otherwise %FALSE
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_connection_disconnect_finish (TpConnection *self,
