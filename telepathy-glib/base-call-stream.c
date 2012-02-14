@@ -754,18 +754,19 @@ tp_base_call_stream_request_receiving (TpSvcCallStream *iface,
       goto error;
     }
 
- /* Determine if there is a state change for our receiving side
-  * aka remote sending
-  */
+
+  /* Determine if there is a state change for our receiving side
+   * aka remote sending
+   */
   switch (remote_sending_state)
     {
       case TP_SENDING_STATE_NONE:
-      case TP_SENDING_STATE_PENDING_SEND:
+      case TP_SENDING_STATE_PENDING_STOP_SENDING:
         if (!receiving)
           goto out;
         break;
       case TP_SENDING_STATE_SENDING:
-      case TP_SENDING_STATE_PENDING_STOP_SENDING:
+      case TP_SENDING_STATE_PENDING_SEND:
         if (receiving)
           goto out;
         break;
