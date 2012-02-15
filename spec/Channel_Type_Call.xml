@@ -732,25 +732,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         </tp:docstring>
       </tp:flag>
 
-      <tp:flag suffix="Locally_Muted" value="2">
-        <tp:docstring>
-          The call has been muted by the local user, e.g. using the
-          <tp:dbus-ref namespace="ofdT.Call1.Interface"
-          >Mute</tp:dbus-ref> interface. This flag SHOULD only
-          be set if there is at least one Content, and all Contents
-          are locally muted (for the same reason as Locally_Held).
-
-          <tp:rationale>
-            This flag exists to provide a simplified verson of <tp:dbus-ref
-            namespace="ofdT.Call1.Interface.Mute"
-              >MuteStateChanged</tp:dbus-ref>,
-            to reduce the number of signals that need to be
-            listened to by a simple UI.
-          </tp:rationale>
-        </tp:docstring>
-      </tp:flag>
-
-      <tp:flag suffix="Locally_Ringing" value="4">
+      <tp:flag suffix="Locally_Ringing" value="2">
         <tp:docstring>
           This flag exists for observability of the
           <tp:member-ref>SetRinging</tp:member-ref> method (e.g. so that
@@ -761,7 +743,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         </tp:docstring>
       </tp:flag>
 
-      <tp:flag suffix="Locally_Queued" value="8">
+      <tp:flag suffix="Locally_Queued" value="4">
         <tp:docstring>
           This flag exists for observability of the
           <tp:member-ref>SetQueued</tp:member-ref> method. It should be set
@@ -771,7 +753,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         </tp:docstring>
       </tp:flag>
 
-      <tp:flag suffix="Forwarded" value="16">
+      <tp:flag suffix="Forwarded" value="8">
         <tp:docstring>
           The initiator of the call originally called a contact other than the
           current recipient of the call, but the call was then forwarded or
@@ -781,7 +763,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         </tp:docstring>
       </tp:flag>
 
-      <tp:flag suffix="Clearing" value="32">
+      <tp:flag suffix="Clearing" value="16">
         <tp:docstring>
           This flag only occurs when the CallState is Ended. The call with
           this flag set has ended, but not all resources corresponding to the
@@ -1216,21 +1198,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         </tp:docstring>
       </tp:flag>
 
-      <tp:flag suffix="Muted" value="4">
-        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-          <p>The call member has muted their participation in this call. Note
-            that many protocols will not signal this flag, so clients should
-            not rely on it being set.</p>
-
-          <tp:rationale>
-            <p>This is a flag per member, not a flag for the call as a whole,
-              because in conference calls, any member could mute their own
-              streams.</p>
-          </tp:rationale>
-        </tp:docstring>
-      </tp:flag>
-
-      <tp:flag suffix="Conference_Host" value="8">
+      <tp:flag suffix="Conference_Host" value="4">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           This contact has merged this call into a conference. Note that GSM
           provides a notification when the remote party merges a call into a
