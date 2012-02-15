@@ -133,7 +133,6 @@ sending_state_changed (TpCallStream *proxy,
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
   FsStreamDirection dir;
-  gboolean mute = FALSE;
 
   self->sending_state = arg_State;
 
@@ -146,11 +145,10 @@ sending_state_changed (TpCallStream *proxy,
     {
     case TP_STREAM_FLOW_STATE_PENDING_START:
       if (self->has_send_resource ||
-          _tf_content_start_sending (TF_CONTENT (self->call_content),
-              self->is_sending_muted))
+          _tf_content_start_sending (TF_CONTENT (self->call_content)))
         {
           self->has_send_resource = TRUE;
-          self->is_sending_muted = FALSE;
+
           tp_cli_call_stream_interface_media_call_complete_sending_state_change (
               proxy, -1, TP_STREAM_FLOW_STATE_STARTED,
               NULL, NULL, NULL, NULL);
@@ -166,29 +164,17 @@ sending_state_changed (TpCallStream *proxy,
           return;
         }
       break;
-    case TP_STREAM_FLOW_STATE_PENDING_MUTE:
-      mute = TRUE;
-      /* fall through */
     case TP_STREAM_FLOW_STATE_PENDING_STOP:
       g_object_set (self->fsstream,
           "direction", dir & ~FS_DIRECTION_SEND, NULL);
       if (self->has_send_resource)
         {
-          _tf_content_stop_sending (TF_CONTENT (self->call_content), mute);
+          _tf_content_stop_sending (TF_CONTENT (self->call_content));
 
           self->has_send_resource = FALSE;
-
-          self->is_sending_muted = mute;
-        }
-      else if (!mute && self->is_sending_muted)
-        {
-          _tf_content_mute_to_stop_sending (TF_CONTENT (self->call_content));
-          self->is_sending_muted = FALSE;
         }
       tp_cli_call_stream_interface_media_call_complete_sending_state_change (
-          proxy, -1, arg_State == TP_STREAM_FLOW_STATE_PENDING_STOP ?
-          TP_STREAM_FLOW_STATE_STOPPED : TP_STREAM_FLOW_STATE_MUTED,
-          NULL, NULL, NULL, NULL);
+          proxy, -1, TP_STREAM_FLOW_STATE_STOPPED, NULL, NULL, NULL, NULL);
       break;
     default:
       break;
@@ -203,7 +189,6 @@ tf_call_stream_start_receiving (TfCallStream *self, FsStreamDirection dir)
           &self->contact_handle, 1))
     {
       self->has_receive_resource = TRUE;
-      self->is_receiving_muted = FALSE;
       if (self->fsstream)
         g_object_set (self->fsstream,
             "direction", dir | FS_DIRECTION_RECV, NULL);
@@ -227,7 +212,6 @@ receiving_state_changed (TpCallStream *proxy,
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
   FsStreamDirection dir;
-  gboolean mute = FALSE;
 
   self->receiving_state = arg_State;
 
@@ -241,30 +225,18 @@ receiving_state_changed (TpCallStream *proxy,
     case TP_STREAM_FLOW_STATE_PENDING_START:
       tf_call_stream_start_receiving (self, dir);
       break;
-    case TP_STREAM_FLOW_STATE_PENDING_MUTE:
-      mute = TRUE;
-      /* fall through */
     case TP_STREAM_FLOW_STATE_PENDING_STOP:
       g_object_set (self->fsstream,
           "direction", dir & ~FS_DIRECTION_RECV, NULL);
       if (self->has_receive_resource)
         {
-          _tf_content_stop_receiving (TF_CONTENT (self->call_content), mute,
+          _tf_content_stop_receiving (TF_CONTENT (self->call_content),
               &self->contact_handle, 1);
 
           self->has_receive_resource = FALSE;
-          self->is_receiving_muted = mute;
-        }
-      else if (!mute && self->is_receiving_muted)
-        {
-          self->is_receiving_muted = FALSE;
-          _tf_content_stop_receiving (TF_CONTENT (self->call_content), FALSE,
-              &self->contact_handle, 1);
         }
       tp_cli_call_stream_interface_media_call_complete_receiving_state_change (
-          proxy, -1, arg_State == TP_STREAM_FLOW_STATE_PENDING_STOP ?
-          TP_STREAM_FLOW_STATE_STOPPED : TP_STREAM_FLOW_STATE_MUTED,
-          NULL, NULL, NULL, NULL);
+          proxy, -1, TP_STREAM_FLOW_STATE_STOPPED, NULL, NULL, NULL, NULL);
       break;
     default:
       break;
