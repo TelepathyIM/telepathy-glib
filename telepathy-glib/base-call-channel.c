@@ -1505,25 +1505,6 @@ dtmf_iface_init (gpointer g_iface, gpointer iface_data)
 
 /* Internal functions */
 
-void
-_tp_base_call_channel_set_locally_muted (TpBaseCallChannel *self,
-    gboolean locally_muted)
-{
-  gboolean currently_muted = !!(self->priv->flags & TP_CALL_FLAG_LOCALLY_MUTED);
-
-  if (locally_muted == currently_muted)
-    return;
-
-  if (locally_muted)
-    self->priv->flags |= TP_CALL_FLAG_LOCALLY_MUTED;
-  else
-    self->priv->flags &= ~TP_CALL_FLAG_LOCALLY_MUTED;
-
-  if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
-    tp_svc_channel_type_call_emit_call_state_changed (self, self->priv->state,
-      self->priv->flags, self->priv->reason, self->priv->details);
-}
-
 gboolean
 _tp_base_call_channel_is_locally_accepted (TpBaseCallChannel *self)
 {

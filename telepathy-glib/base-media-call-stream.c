@@ -780,12 +780,6 @@ stream_flow_state_to_string (TpStreamFlowState state)
     case TP_STREAM_FLOW_STATE_STARTED:
       str = "STARTED";
       break;
-    case TP_STREAM_FLOW_STATE_PENDING_MUTE:
-      str = "PENDING_MUTE";
-      break;
-    case TP_STREAM_FLOW_STATE_MUTED:
-      str = "MUTED";
-      break;
     }
 
   return str;
@@ -799,9 +793,7 @@ ignore_state_change (TpStreamFlowState old_state,
       (new_state == TP_STREAM_FLOW_STATE_PENDING_START &&
           old_state == TP_STREAM_FLOW_STATE_STARTED) ||
       (new_state == TP_STREAM_FLOW_STATE_PENDING_STOP &&
-          old_state == TP_STREAM_FLOW_STATE_STOPPED) ||
-      (new_state == TP_STREAM_FLOW_STATE_PENDING_MUTE &&
-          old_state == TP_STREAM_FLOW_STATE_MUTED))
+          old_state == TP_STREAM_FLOW_STATE_STOPPED))
     return TRUE;
 
   return FALSE;
@@ -1135,8 +1127,6 @@ correct_state_transition (TpStreamFlowState old_state,
         return (old_state == TP_STREAM_FLOW_STATE_PENDING_START);
       case TP_STREAM_FLOW_STATE_STOPPED:
         return (old_state == TP_STREAM_FLOW_STATE_PENDING_STOP);
-      case TP_STREAM_FLOW_STATE_MUTED:
-        return (old_state == TP_STREAM_FLOW_STATE_PENDING_MUTE);
       default:
         return FALSE;
     }

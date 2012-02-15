@@ -80,8 +80,6 @@ GValueArray *_tp_base_call_state_reason_new (TpHandle actor_handle,
 void _tp_base_call_channel_remove_content_internal (TpBaseCallChannel *self,
     TpBaseCallContent *content,
     const GValueArray *reason_array);
-void _tp_base_call_channel_set_locally_muted (TpBaseCallChannel *self,
-    gboolean locally_muted);
 gboolean _tp_base_call_channel_is_locally_accepted (TpBaseCallChannel *self);
 gboolean _tp_base_call_channel_is_connected (TpBaseCallChannel *self);
 const gchar *_tp_base_call_channel_get_initial_tones (TpBaseCallChannel *self);

@@ -92,22 +92,17 @@
 #include "telepathy-glib/util.h"
 
 static void hold_iface_init (gpointer g_iface, gpointer iface_data);
-static void mute_iface_init (gpointer g_iface, gpointer iface_data);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseMediaCallChannel,
     tp_base_media_call_channel, TP_TYPE_BASE_CALL_CHANNEL,
 
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_HOLD,
         hold_iface_init)
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_INTERFACE_MUTE,
-        mute_iface_init)
 )
 
 /* private structure */
 struct _TpBaseMediaCallChannelPrivate
 {
-  gboolean local_mute_state;
-
   TpLocalHoldState hold_state;
   TpLocalHoldStateReason hold_state_reason;
 
@@ -117,8 +112,6 @@ struct _TpBaseMediaCallChannelPrivate
 /* properties */
 enum
 {
-  PROP_LOCAL_MUTE_STATE = 1,
-
   LAST_PROPERTY
 };
 
@@ -132,7 +125,6 @@ tp_base_media_call_channel_get_interfaces (TpBaseChannel *base)
 
   g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_HOLD);
   g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_DTMF);
-  g_ptr_array_add (interfaces, TP_IFACE_CALL_INTERFACE_MUTE);
 
   return interfaces;
 }
@@ -304,40 +296,13 @@ tp_base_media_call_channel_is_connected (TpBaseCallChannel *self)
 }
 
 static void
-tp_base_media_call_channel_get_property (GObject *object,
-    guint property_id,
-    GValue *value,
-    GParamSpec *pspec)
-{
-  TpBaseMediaCallChannel *self = TP_BASE_MEDIA_CALL_CHANNEL (object);
-
-  switch (property_id)
-    {
-    case PROP_LOCAL_MUTE_STATE:
-      g_value_set_boolean (value, self->priv->local_mute_state);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-      break;
-    }
-}
-
-static void
 tp_base_media_call_channel_class_init (TpBaseMediaCallChannelClass *klass)
 {
-  GObjectClass *object_class = G_OBJECT_CLASS (klass);
   TpBaseChannelClass *base_channel_class = TP_BASE_CHANNEL_CLASS (klass);
   TpBaseCallChannelClass *base_call_channel_class =
       TP_BASE_CALL_CHANNEL_CLASS (klass);
-  GParamSpec *param_spec;
-  static TpDBusPropertiesMixinPropImpl call_mute_props[] = {
-      { "LocalMuteState", "local-mute-state", NULL },
-      { NULL }
-  };
 
   g_type_class_add_private (klass, sizeof (TpBaseMediaCallChannelPrivate));
-
-  object_class->get_property = tp_base_media_call_channel_get_property;
 
   base_channel_class->get_interfaces = tp_base_media_call_channel_get_interfaces;
 
@@ -346,26 +311,6 @@ tp_base_media_call_channel_class_init (TpBaseMediaCallChannelClass *klass)
       tp_base_media_call_channel_remote_accept;
   base_call_channel_class->is_connected =
       tp_base_media_call_channel_is_connected;
-
-  /**
-   * TpBaseMediaCallChannel:local-mute-state:
-   *
-   * If set to %TRUE, the call is locally muted
-   *
-   * Since: 0.UNRELEASED
-   */
-  param_spec = g_param_spec_boolean ("local-mute-state", "LocalMuteState",
-      "Whether the channel is locally mutted",
-      FALSE,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_LOCAL_MUTE_STATE,
-      param_spec);
-
-  tp_dbus_properties_mixin_implement_interface (object_class,
-      TP_IFACE_QUARK_CALL_INTERFACE_MUTE,
-      tp_dbus_properties_mixin_getter_gobject_properties,
-      NULL,
-      call_mute_props);
 }
 
 static void
@@ -536,30 +481,6 @@ tp_base_media_call_channel_request_hold (
 }
 
 static void
-tp_base_media_call_channel_request_muted (TpSvcCallInterfaceMute *mute_iface,
-    gboolean muted,
-    DBusGMethodInvocation *context)
-{
-  TpBaseMediaCallChannel *self = TP_BASE_MEDIA_CALL_CHANNEL (mute_iface);
-  gboolean changed = FALSE;
-
-  if (muted != self->priv->local_mute_state)
-    changed = TRUE;
-
-  if (changed)
-    {
-      self->priv->local_mute_state = muted;
-      g_object_notify (G_OBJECT (self), "local-mute-state");
-
-      tp_svc_call_interface_mute_emit_mute_state_changed (mute_iface, muted);
-      _tp_base_call_channel_set_locally_muted (TP_BASE_CALL_CHANNEL (self),
-          muted);
-    }
-
-  tp_svc_call_interface_mute_return_from_request_muted (context);
-}
-
-static void
 hold_iface_init (gpointer g_iface, gpointer iface_data)
 {
   TpSvcChannelInterfaceHoldClass *klass =
@@ -569,18 +490,6 @@ hold_iface_init (gpointer g_iface, gpointer iface_data)
     klass, tp_base_media_call_channel_##x##suffix)
   IMPLEMENT(get_hold_state,);
   IMPLEMENT(request_hold,);
-#undef IMPLEMENT
-}
-
-static void
-mute_iface_init (gpointer g_iface, gpointer iface_data)
-{
-  TpSvcCallInterfaceMuteClass *klass =
-    (TpSvcCallInterfaceMuteClass *) g_iface;
-
-#define IMPLEMENT(x, suffix) tp_svc_call_interface_mute_implement_##x (\
-    klass, tp_base_media_call_channel_##x##suffix)
-  IMPLEMENT(request_muted,);
 #undef IMPLEMENT
 }
 
