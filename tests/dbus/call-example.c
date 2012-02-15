@@ -429,7 +429,7 @@ loop_until_answered (Test *test)
       g_assert_no_error (test->error);
 
       if (tp_asv_get_uint32 (test->get_all_return, "CallState",
-            NULL) != FUTURE_CALL_STATE_RINGING)
+            NULL) != FUTURE_CALL_STATE_INITIALISED)
         return;
     }
 }
@@ -793,7 +793,7 @@ test_no_answer (Test *test,
   g_assert_no_error (test->error);
 
   assert_call_properties (test->get_all_return,
-      FUTURE_CALL_STATE_RINGING, test->self_handle,
+      FUTURE_CALL_STATE_INITIALISED, test->self_handle,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       TRUE, 0,              /* call flags */
       TRUE, TRUE, FALSE);  /* initial audio/video must be TRUE, FALSE */
@@ -996,7 +996,7 @@ test_incoming (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
   assert_call_properties (test->get_all_return,
-      FUTURE_CALL_STATE_RINGING, test->peer_handle,
+      FUTURE_CALL_STATE_INITIALISED, test->peer_handle,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       TRUE, 0,              /* call flags */
       TRUE, TRUE, FALSE);  /* initial audio/video must be TRUE, FALSE */

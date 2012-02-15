@@ -20,8 +20,7 @@
       02110-1301, USA.</p>
   </tp:license>
 
-  <interface name="org.freedesktop.Telepathy.Call1.Content.MediaDescription"
-      tp:causes-havoc="experimental">
+  <interface name="org.freedesktop.Telepathy.Call1.Content.MediaDescription">
     <tp:added version="0.23.4">(draft 1)</tp:added>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
@@ -69,7 +68,7 @@
         Reject the proposed update to the remote description.
       </tp:docstring>
       <arg name="Reason" type="(uuss)" tp:type="Call_State_Reason"
-        direction="out">
+        direction="in">
         <tp:docstring>
           A structured reason for the rejection.
         </tp:docstring>

@@ -16,12 +16,14 @@
       along with this library; if not, write to the Free Software Foundation,
       Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
-  <interface name="org.freedesktop.Telepathy.Connection.Interface.Addressing.DRAFT"
+  <interface name="org.freedesktop.Telepathy.Connection.Interface.Addressing1"
              tp:causes-havoc="experimental">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
     <tp:requires interface="org.freedesktop.Telepathy.Connection.Interface.Contacts"/>
     <tp:added version="0.19.12">(as draft)</tp:added>
     <tp:changed version="0.25.1">Both methods now return two dictionaries.</tp:changed>
+    <tp:changed version="0.25.UNRELEASED">Replaced DRAFT with a version number
+      (still keeping the causes-havoc annotation)</tp:changed>
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>This interface deals with the multiple address types that can
       refer to the same contact, such as vCard fields and URIs.</p>

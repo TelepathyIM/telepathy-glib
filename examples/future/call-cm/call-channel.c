@@ -274,7 +274,7 @@ constructed (GObject *object)
       /* This is an incoming call, so the self-handle is locally
        * pending, to indicate that we need to answer. */
       example_call_channel_set_state (self,
-          FUTURE_CALL_STATE_RINGING, 0, self->priv->handle,
+          FUTURE_CALL_STATE_INITIALISED, 0, self->priv->handle,
           FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
           NULL);
     }
@@ -1005,7 +1005,6 @@ streams_removed_cb (ExampleCallContent *content,
 
   g_hash_table_remove (self->priv->contents, name);
 
-  future_svc_call_content_emit_removed (content);
   future_svc_channel_type_call_emit_content_removed (self, path,
       self->priv->call_state_reason);
   g_free (path);
@@ -1056,7 +1055,7 @@ simulate_contact_answered_cb (gpointer p)
 
   /* otherwise, we're waiting for a response from the contact, which now
    * arrives */
-  g_assert_cmpuint (self->priv->call_state, ==, FUTURE_CALL_STATE_RINGING);
+  g_assert_cmpuint (self->priv->call_state, ==, FUTURE_CALL_STATE_INITIALISED);
 
   g_message ("SIGNALLING: receive: contact answered our call");
 
@@ -1107,7 +1106,7 @@ simulate_contact_busy_cb (gpointer p)
 
   /* otherwise, we're waiting for a response from the contact, which now
    * arrives */
-  g_assert_cmpuint (self->priv->call_state, ==, FUTURE_CALL_STATE_RINGING);
+  g_assert_cmpuint (self->priv->call_state, ==, FUTURE_CALL_STATE_INITIALISED);
 
   g_message ("SIGNALLING: receive: call terminated: <user-is-busy/>");
 
@@ -1270,7 +1269,7 @@ example_call_channel_initiate_outgoing (ExampleCallChannel *self)
 {
   g_message ("SIGNALLING: send: new streamed media call");
   example_call_channel_set_state (self,
-      FUTURE_CALL_STATE_RINGING, 0,
+      FUTURE_CALL_STATE_INITIALISED, 0,
       tp_base_connection_get_self_handle (self->priv->conn),
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       NULL);
@@ -1296,7 +1295,7 @@ call_set_ringing (FutureSvcChannelTypeCall *iface,
       goto finally;
     }
 
-  if (self->priv->call_state != FUTURE_CALL_STATE_RINGING)
+  if (self->priv->call_state != FUTURE_CALL_STATE_INITIALISED)
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
           "Ringing() makes no sense now that we're not pending receiver");
@@ -1305,7 +1304,7 @@ call_set_ringing (FutureSvcChannelTypeCall *iface,
 
   g_message ("SIGNALLING: send: ring, ring!");
 
-  example_call_channel_set_state (self, FUTURE_CALL_STATE_RINGING,
+  example_call_channel_set_state (self, FUTURE_CALL_STATE_INITIALISED,
       self->priv->call_flags | FUTURE_CALL_FLAG_LOCALLY_RINGING,
       tp_base_connection_get_self_handle (self->priv->conn),
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", NULL);
@@ -1330,7 +1329,7 @@ accept_incoming_call (ExampleCallChannel *self)
   GHashTableIter iter;
   gpointer v;
 
-  g_assert_cmpint (self->priv->call_state, ==, FUTURE_CALL_STATE_RINGING);
+  g_assert_cmpint (self->priv->call_state, ==, FUTURE_CALL_STATE_INITIALISED);
 
   g_message ("SIGNALLING: send: Accepting incoming call from %s",
       tp_handle_inspect (contact_repo, self->priv->handle));
@@ -1393,7 +1392,7 @@ call_accept (FutureSvcChannelTypeCall *iface G_GNUC_UNUSED,
     }
   else
     {
-      if (self->priv->call_state == FUTURE_CALL_STATE_RINGING)
+      if (self->priv->call_state == FUTURE_CALL_STATE_INITIALISED)
         {
           accept_incoming_call (self);
           future_svc_channel_type_call_return_from_accept (context);

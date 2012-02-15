@@ -277,6 +277,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
         </ul>
 
+        <p>For the <tt>IRC</tt> protocol, the network name (<tt>freenode</tt>,
+          <tt>gimpnet</tt>, etc.) can be used if relevant.</p>
+
         <p>The <tp:member-ref>Icon</tp:member-ref> property SHOULD be set to a
           corresponding brand-specific icon name, if possible. In the future,
           this property may be used as an index into additional
