@@ -1203,19 +1203,31 @@ tp_call_channel_get_members (TpCallChannel *self)
  * tp_call_channel_has_dtmf:
  * @self: a #TpCallChannel
  *
- * Whether or not %self has the %TP_IFACE_CHANNEL_INTERFACE_DTMF
- * interfaces
+ * Whether or not %self can send DTMF tones using
+ * tp_call_channel_send_tones_async(). To be able to send DTMF tones, at least
+ * one of @self's #TpCallChannel:contents must implement
+ * %TP_IFACE_CALL_CONTENT_INTERFACE_DTMF interface.
  *
- * Returns: whether or not @self supports DTMF
+ * Returns: whether or not @self can send DTMF tones.
  * Since: 0.17.5
  */
 gboolean
 tp_call_channel_has_dtmf (TpCallChannel *self)
 {
+  guint i;
+
   g_return_val_if_fail (TP_IS_CALL_CHANNEL (self), FALSE);
 
-  return tp_proxy_has_interface_by_id (self,
-      TP_IFACE_QUARK_CHANNEL_INTERFACE_DTMF);
+  for (i = 0; i < self->priv->contents->len; i++)
+    {
+      TpCallContent *content = g_ptr_array_index (self->priv->contents, i);
+
+      if (tp_proxy_has_interface_by_id (content,
+              TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_DTMF))
+        return TRUE;
+    }
+
+  return FALSE;
 }
 
 static void
@@ -1560,9 +1572,9 @@ tp_call_channel_send_tones_async (TpCallChannel *self,
 {
   GSimpleAsyncResult *result;
   guint i;
-  guint count = 0;
 
   g_return_if_fail (TP_IS_CALL_CHANNEL (self));
+  g_return_if_fail (tp_call_channel_has_dtmf (self));
 
   result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
       tp_call_channel_send_tones_async);
@@ -1580,18 +1592,9 @@ tp_call_channel_send_tones_async (TpCallChannel *self,
           send_tones_cb, g_object_ref (result));
     }
 
-  if (count == 0)
-    {
-      g_simple_async_result_set_error (result,
-          TP_ERRORS, TP_ERROR_NOT_CAPABLE,
-          "Channel has no content implementing DTMF interface");
-      g_simple_async_result_complete_in_idle (result);
-    }
-  else
-    {
-      g_simple_async_result_set_op_res_gpointer (result,
-          GUINT_TO_POINTER (count), NULL);
-    }
+  g_assert (count > 0);
+  g_simple_async_result_set_op_res_gpointer (result,
+      GUINT_TO_POINTER (count), NULL);
 
   g_object_unref (result);
 }
