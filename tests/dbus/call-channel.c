@@ -394,11 +394,32 @@ run_until_active_get_all_cb (TpProxy *proxy,
 }
 
 static void
+run_until_active_stream_prepared_cb (GObject *stream,
+    GAsyncResult *res,
+    gpointer test)
+{
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (stream, res, &error))
+    {
+      g_error ("error %s", error->message);
+    }
+
+  g_assert (tp_proxy_has_interface_by_id (stream,
+          TP_IFACE_QUARK_CALL_STREAM_INTERFACE_MEDIA));
+
+  tp_cli_dbus_properties_call_get_all (stream, -1,
+      TP_IFACE_CALL_STREAM_INTERFACE_MEDIA,
+      run_until_active_get_all_cb, test, NULL,
+      NULL);
+}
+
+
+static void
 run_until_active (Test *test)
 {
   GPtrArray *contents;
   guint i, j;
-  guint n_streams = 0;
   guint id;
 
   if (tp_call_channel_get_state (test->call_chan, NULL, NULL, NULL) ==
@@ -419,19 +440,11 @@ run_until_active (Test *test)
         {
           TpCallStream *stream = g_ptr_array_index (streams, j);
 
-          g_assert (tp_proxy_has_interface_by_id (stream,
-              TP_IFACE_QUARK_CALL_STREAM_INTERFACE_MEDIA));
-
-          n_streams++;
-          tp_cli_dbus_properties_call_get_all (stream, -1,
-              TP_IFACE_CALL_STREAM_INTERFACE_MEDIA,
-              run_until_active_get_all_cb,
-              test, NULL,
-              NULL);
+          tp_proxy_prepare_async (stream, NULL,
+              run_until_active_stream_prepared_cb, test);
         }
     }
 
-  g_assert_cmpuint (n_streams, >, 0);
 
   id = g_signal_connect (test->call_chan, "state-changed",
       G_CALLBACK (run_until_active_cb), test);
