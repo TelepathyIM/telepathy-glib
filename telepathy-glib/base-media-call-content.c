@@ -804,6 +804,10 @@ tp_base_media_call_content_acknowledge_dtmf_change (
   if (in_State == TP_SENDING_STATE_SENDING)
     tp_svc_call_content_interface_dtmf_emit_sending_tones (self,
         self->priv->currently_sending_tones);
+  else if (in_State == TP_SENDING_STATE_NONE &&
+      self->priv->currently_sending_tones &&
+      self->priv->currently_sending_tones[0])
+    self->priv->currently_sending_tones++;
 
   self->priv->current_dtmf_state = in_State;
 
@@ -1133,8 +1137,6 @@ tp_base_media_call_content_dtmf_next (TpBaseMediaCallContent *self)
               default:
                 g_assert_not_reached ();
               }
-
-            self->priv->currently_sending_tones++;
           }
         else
           {
