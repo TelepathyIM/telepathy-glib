@@ -513,6 +513,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           call.
         </tp:docstring>
       </arg>
+      <arg direction="in" name="InitialDirection" type="u"
+          tp:type="Media_Stream_Direction">
+        <tp:docstring>
+          The requested initial direction of the new content.
+        </tp:docstring>
+      </arg>
       <arg direction="out" name="Content" type="o">
         <tp:docstring>
           Path to the newly-created <tp:dbus-ref
