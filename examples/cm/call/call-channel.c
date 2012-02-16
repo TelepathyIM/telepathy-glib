@@ -310,6 +310,7 @@ static void call_accept (TpBaseCallChannel *self);
 static TpBaseCallContent * call_add_content (TpBaseCallChannel *self,
       const gchar *name,
       TpMediaStreamType media,
+      TpMediaStreamDirection initial_direction,
       GError **error);
 static void call_hangup (TpBaseCallChannel *self,
       guint reason,
@@ -675,6 +676,7 @@ static TpBaseCallContent *
 call_add_content (TpBaseCallChannel *base,
     const gchar *content_name,
     guint content_type,
+      TpMediaStreamDirection initial_direction,
     GError **error)
 {
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (base);

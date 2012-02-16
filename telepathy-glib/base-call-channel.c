@@ -1433,6 +1433,7 @@ static void
 tp_base_call_channel_add_content_dbus (TpSvcChannelTypeCall *iface,
   const gchar *name,
   TpMediaStreamType mtype,
+  TpMediaStreamDirection initial_direction,
   DBusGMethodInvocation *context)
 {
   TpBaseCallChannel *self = TP_BASE_CALL_CHANNEL (iface);
@@ -1454,6 +1455,13 @@ tp_base_call_channel_add_content_dbus (TpSvcChannelTypeCall *iface,
       goto error;
     }
 
+  if (initial_direction >= NUM_TP_MEDIA_STREAM_DIRECTIONS)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Invalid initial direction");
+      goto error;
+    }
+
   if (!self->priv->mutable_contents || klass->add_content == NULL)
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_CAPABLE,
@@ -1461,7 +1469,7 @@ tp_base_call_channel_add_content_dbus (TpSvcChannelTypeCall *iface,
       goto error;
     }
 
-  content = klass->add_content (self, name, mtype, &error);
+  content = klass->add_content (self, name, mtype, initial_direction, &error);
 
   if (content == NULL)
     goto error;
