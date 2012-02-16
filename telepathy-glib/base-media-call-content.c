@@ -1142,7 +1142,7 @@ tp_base_media_call_content_dtmf_next (TpBaseMediaCallContent *self)
           {
           done:
             tp_svc_call_content_interface_dtmf_emit_stopped_tones (self,
-                self->priv->tones_cancelled);
+                self->priv->tones_cancelled && self->priv->multiple_tones);
             self->priv->tones_cancelled = FALSE;
             g_free (self->priv->requested_tones);
             self->priv->requested_tones = NULL;
