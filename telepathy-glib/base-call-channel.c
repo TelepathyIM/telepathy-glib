@@ -32,7 +32,7 @@
  * #TpBaseCallChannelClass.add_content and #TpBaseCallChannelClass.hangup
  * virtual function.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -40,7 +40,7 @@
  *
  * A base class for call channel implementations
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -57,7 +57,7 @@
  *
  * The class structure for #TpBaseCallChannel
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -67,7 +67,7 @@
  * Signature of an implementation of #TpBaseCallChannelClass.set_ringing,
  * #TpBaseCallChannelClass.set_queued and #TpBaseCallChannelClass.accept.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -82,7 +82,7 @@
  * Signature of an implementation of #TpBaseCallChannelClass.add_content.
  *
  * Returns: a borrowed #TpBaseCallContent.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -95,7 +95,7 @@
  *
  * Signature of an implementation of #TpBaseCallChannelClass.hangup.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 #include "config.h"
@@ -497,7 +497,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
    * If set to %TRUE on a requested channel, subclass should immediately attempt
    * to establish an audio stream to the remote contact.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boolean ("initial-audio", "InitialAudio",
       "Whether the channel initially contained an audio stream",
@@ -512,7 +512,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
    * If set to %TRUE on a requested channel, subclass should immediately attempt
    * to establish a video stream to the remote contact.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boolean ("initial-video", "InitialVideo",
       "Whether the channel initially contained an video stream",
@@ -527,7 +527,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
    * Name to use to create the audio #TpBaseCallContent if
    * #TpBaseCallChannel:initial-audio is set to %TRUE.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_string ("initial-audio-name", "InitialAudioName",
       "Name for the initial audio content",
@@ -542,7 +542,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
    * Name to use to create the video #TpBaseCallContent if
    * #TpBaseCallChannel:initial-video is set to %TRUE.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_string ("initial-video-name", "InitialVideoName",
       "Name for the initial video content",
@@ -557,7 +557,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
    * If set to %TRUE on a requested channel, this indicates the transport that
    * should be used for this call.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("initial-transport", "InitialTransport",
       "The transport that should be used for this call",
@@ -571,7 +571,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
    *
    * Indicate to clients whether or not they can add/remove contents.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boolean ("mutable-contents", "MutableContents",
       "Whether the set of streams on this channel are mutable once requested",
@@ -585,7 +585,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
    *
    * #GPtrArray of object-paths of the #TpBaseCallContent objects.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("contents", "Contents",
       "The contents of the channel",
@@ -600,7 +600,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
    * Indicate to clients whether or not this Connection Manager has hardware
    * streaming.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boolean ("hardware-streaming", "HardwareStreaming",
       "True if all the streaming is done by hardware",
@@ -614,7 +614,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
    *
    * The state of this call.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("call-state", "CallState",
       "The status of the call",
@@ -627,7 +627,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
    *
    * The flags of this call.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("call-flags", "CallFlags",
       "Flags representing the status of the call",
@@ -641,7 +641,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
    *
    * The reason for last call state change.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("call-state-reason", "CallStateReason",
       "The reason why the call is in the current state",
@@ -655,7 +655,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
    *
    * Details on the call state.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("call-state-details", "CallStateDetails",
       "The reason why the call is in the current state",
@@ -670,7 +670,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
    * #GHashTable mapping #TpHandle of each call member to their
    * #TpCallMemberFlags.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("call-members", "CallMembers",
       "The members",
@@ -684,7 +684,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
    *
    * #GHashTable mapping #TpHandle of each call member to their identifiers.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("member-identifiers",
       "MemberIdentifiers", "The members identifiers",
@@ -699,7 +699,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
    *
    * DTMF Tones to be played on the channel created.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_string ("initial-tones",
       "InitialTones", "DTMF Tones to be played on the channel created"
@@ -770,7 +770,7 @@ call_state_to_string (TpCallState state)
  *
  * Changes the call state and emit StateChanged signal with the new state.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_base_call_channel_set_state (TpBaseCallChannel *self,
@@ -852,7 +852,7 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
  * <!-- -->
  *
  * Returns: the value of #TpBaseCallChannel:call-state
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpCallState
 tp_base_call_channel_get_state (TpBaseCallChannel *self)
@@ -871,7 +871,7 @@ tp_base_call_channel_get_state (TpBaseCallChannel *self)
  * <!-- -->
  *
  * Returns: the value of #TpBaseCallChannel:initial-audio
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_base_call_channel_has_initial_audio (TpBaseCallChannel *self,
@@ -894,7 +894,7 @@ tp_base_call_channel_has_initial_audio (TpBaseCallChannel *self,
  * <!-- -->
  *
  * Returns: the value of #TpBaseCallChannel:initial-video
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_base_call_channel_has_initial_video (TpBaseCallChannel *self,
@@ -915,7 +915,7 @@ tp_base_call_channel_has_initial_video (TpBaseCallChannel *self,
  * <!-- -->
  *
  * Returns: the value of #TpBaseCallChannel:mutable-contents
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_base_call_channel_has_mutable_contents (TpBaseCallChannel *self)
@@ -933,7 +933,7 @@ tp_base_call_channel_has_mutable_contents (TpBaseCallChannel *self)
  * and should be copied before doing any modification.
  *
  * Returns: a #GList of #TpBaseCallContent
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 GList *
 tp_base_call_channel_get_contents (TpBaseCallChannel *self)
@@ -981,7 +981,7 @@ _tp_base_call_channel_remove_content_internal (TpBaseCallChannel *self,
  *
  * Remove @content from @self.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_base_call_channel_remove_content (TpBaseCallChannel *self,
@@ -1017,7 +1017,7 @@ tp_base_call_channel_remove_content (TpBaseCallChannel *self,
  * Note that it is not allowed to add INITIAL contents after having registered
  * @self on the bus.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_base_call_channel_add_content (TpBaseCallChannel *self,
@@ -1082,7 +1082,7 @@ tp_base_call_channel_add_content (TpBaseCallChannel *self,
  *
  * Add or update @contact call member with @flags flags.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_base_call_channel_update_member_flags (TpBaseCallChannel *self,
@@ -1150,7 +1150,7 @@ tp_base_call_channel_update_member_flags (TpBaseCallChannel *self,
  *
  * Remove @contact from call members.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_base_call_channel_remove_member (TpBaseCallChannel *self,
@@ -1193,7 +1193,7 @@ tp_base_call_channel_remove_member (TpBaseCallChannel *self,
  * <!-- -->
  *
  * Returns: the value of #TpBaseCallChannel:call-members.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 GHashTable *
 tp_base_call_channel_get_call_members (TpBaseCallChannel *self)
@@ -1213,7 +1213,7 @@ tp_base_call_channel_get_call_members (TpBaseCallChannel *self)
  *
  * Must be used only for outgoing calls.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_base_call_channel_remote_accept (TpBaseCallChannel *self)
@@ -1246,7 +1246,7 @@ tp_base_call_channel_remote_accept (TpBaseCallChannel *self)
  * <!-- -->
  *
  * Returns: Whether or not the call has been remotely accepted.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_base_call_channel_is_accepted (TpBaseCallChannel *self)

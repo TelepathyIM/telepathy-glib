@@ -29,7 +29,7 @@
  * This class is used to negociate the media description used with a remote
  * contact. To be used with #TpBaseMediaCallContent implementations.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -37,7 +37,7 @@
  *
  * A class for media content description
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -45,7 +45,7 @@
  *
  * The class structure for #TpCallContentMediaDescription
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 #include "config.h"
@@ -262,7 +262,7 @@ tp_call_content_media_description_class_init (
    *
    * The D-Bus object path used for this object on the bus.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   spec = g_param_spec_string ("object-path", "D-Bus object path",
       "The D-Bus object path used for this "
@@ -276,7 +276,7 @@ tp_call_content_media_description_class_init (
    *
    * The connection to the DBus daemon owning the CM.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   spec = g_param_spec_object ("dbus-daemon",
       "The DBus daemon connection",
@@ -290,7 +290,7 @@ tp_call_content_media_description_class_init (
    *
    * Additional interfaces implemented by this object.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   spec = g_param_spec_boxed ("interfaces",
       "Interfaces",
@@ -305,7 +305,7 @@ tp_call_content_media_description_class_init (
    *
    * %TRUE if more negotiation is required after MediaDescription is processed.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   spec = g_param_spec_boolean ("further-negotiation-required",
       "FurtherNegotiationRequired",
@@ -321,7 +321,7 @@ tp_call_content_media_description_class_init (
    *
    * %TRUE if the MediaDescription contains remote information.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   spec = g_param_spec_boolean ("has-remote-information",
       "HasRemoteInformation",
@@ -338,7 +338,7 @@ tp_call_content_media_description_class_init (
    * #GPtrArray{codecs #GValueArray}.
    * A list of codecs the remote contact supports.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   spec = g_param_spec_boxed ("codecs",
       "Codecs",
@@ -353,7 +353,7 @@ tp_call_content_media_description_class_init (
    *
    * The contact #TpHandle that this media description applies to.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   spec = g_param_spec_uint ("remote-contact",
       "RemoteContact",
@@ -369,7 +369,7 @@ tp_call_content_media_description_class_init (
    * #GHashTable{contact #TpHandle, #GArray{uint}}
    * A map of contacts to SSRCs.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   spec = g_param_spec_boxed ("ssrcs",
       "SSRCs",
@@ -403,7 +403,7 @@ tp_call_content_media_description_class_init (
  * using tp_base_media_call_content_offer_media_description().
  *
  * Returns: a new #TpCallContentMediaDescription.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpCallContentMediaDescription *
 tp_call_content_media_description_new (TpDBusDaemon *dbus_daemon,
@@ -430,7 +430,7 @@ tp_call_content_media_description_new (TpDBusDaemon *dbus_daemon,
  * <!-- -->
  *
  * Returns: the value of #TpCallContentMediaDescription:object-path
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 const gchar *
 tp_call_content_media_description_get_object_path (
@@ -448,7 +448,7 @@ tp_call_content_media_description_get_object_path (
  * <!-- -->
  *
  * Returns: the value of #TpCallContentMediaDescription:remote-contact
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpHandle
 tp_call_content_media_description_get_remote_contact (
@@ -467,7 +467,7 @@ tp_call_content_media_description_get_remote_contact (
  *
  * if you use this API, you know what it is about
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_content_media_description_add_ssrc (TpCallContentMediaDescription *self,
@@ -510,7 +510,7 @@ tp_call_content_media_description_add_ssrc (TpCallContentMediaDescription *self,
  *
  * Add description for a supported codec.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_content_media_description_append_codec (

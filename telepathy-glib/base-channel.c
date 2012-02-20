@@ -467,7 +467,7 @@ tp_base_channel_get_connection (TpBaseChannel *chan)
  *
  * Returns: the self handle of @chan
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpHandle
 tp_base_channel_get_self_handle (TpBaseChannel *chan)

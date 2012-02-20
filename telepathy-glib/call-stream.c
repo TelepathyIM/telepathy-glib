@@ -32,7 +32,7 @@
  *
  * Data structure representing a #TpCallStream.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -40,7 +40,7 @@
  *
  * The class of a #TpCallStream.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 #include "config.h"
@@ -339,7 +339,7 @@ tp_call_stream_class_init (TpCallStreamClass *klass)
    *
    * The #TpConnection of the call.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_object ("connection", "Connection",
       "The connection of this content",
@@ -353,7 +353,7 @@ tp_call_stream_class_init (TpCallStreamClass *klass)
    *
    * The local user's sending state, from #TpSendingState.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("local-sending-state", "LocalSendingState",
       "Local sending state",
@@ -368,7 +368,7 @@ tp_call_stream_class_init (TpCallStreamClass *klass)
    * If %TRUE, the user can request that a remote contact starts sending on this
    * stream.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boolean ("can-request-receiving",
       "CanRequestReceiving",
@@ -388,7 +388,7 @@ tp_call_stream_class_init (TpCallStreamClass *klass)
    * The ::local-sending-state-changed signal is emitted whenever the
    * stream sending state changes.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   _signals[LOCAL_SENDING_STATE_CHANGED] = g_signal_new ("local-sending-state-changed",
       G_OBJECT_CLASS_TYPE (klass),
@@ -413,7 +413,7 @@ tp_call_stream_class_init (TpCallStreamClass *klass)
    *
    * It is NOT guaranteed that #TpContact objects have any feature prepared.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   _signals[REMOTE_MEMBERS_CHANGED] = g_signal_new ("remote-members-changed",
       G_OBJECT_CLASS_TYPE (klass),
@@ -444,7 +444,7 @@ tp_call_stream_init (TpCallStream *self)
  * tp_proxy_or_subclass_hook_on_interface_add() with first argument
  * %TP_TYPE_CALL_STREAM.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_stream_init_known_interfaces (void)
@@ -487,7 +487,7 @@ tp_call_stream_get_feature_quark_core (void)
  * <!-- -->
  *
  * Returns: the value of #TpCallStream:local-seding-state
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpSendingState
 tp_call_stream_get_local_sending_state (TpCallStream *self)
@@ -504,7 +504,7 @@ tp_call_stream_get_local_sending_state (TpCallStream *self)
  * <!-- -->
  *
  * Returns: the value of #TpCallStream:can-request-receiving
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_call_stream_can_request_receiving (TpCallStream *self)
@@ -525,7 +525,7 @@ tp_call_stream_can_request_receiving (TpCallStream *self)
  *
  * Returns: (transfer none) (type GLib.HashTable) (element-type TelepathyGLib.Contact uint):
  *  #GHashTable mapping #TpContact to its new #TpSendingState
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 GHashTable *
 tp_call_stream_get_remote_members (TpCallStream *self)
@@ -567,7 +567,7 @@ generic_async_cb (TpCallStream *self,
  * If @send is %FALSE, #TpCallStream:local-sending-state should change to
  * %TP_SENDING_STATE_NONE, if it isn't already.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_stream_set_sending_async (TpCallStream *self,
@@ -594,7 +594,7 @@ tp_call_stream_set_sending_async (TpCallStream *self,
  *
  * Finishes tp_call_stream_set_sending_async().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_call_stream_set_sending_finish (TpCallStream *self,
@@ -620,7 +620,7 @@ tp_call_stream_set_sending_finish (TpCallStream *self,
  * If @receive is %TRUE, request that the given contact starts to send media.
  * If @receive is %FALSE, request that the given contact stops sending media.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_stream_request_receiving_async (TpCallStream *self,
@@ -652,7 +652,7 @@ tp_call_stream_request_receiving_async (TpCallStream *self,
  *
  * Finishes tp_call_stream_request_receiving_async().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_call_stream_request_receiving_finish (TpCallStream *self,

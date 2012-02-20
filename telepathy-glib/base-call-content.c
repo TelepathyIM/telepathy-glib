@@ -32,7 +32,7 @@
  * Subclasses should fill in #TpBaseCallContentClass.get_interfaces,
  * and #TpBaseCallContentClass.deinit virtual function.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -40,7 +40,7 @@
  *
  * A base class for call content implementations
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -65,7 +65,7 @@
  *
  * The class structure for #TpBaseCallContent
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -75,7 +75,7 @@
  * Signature of an implementation of #TpBaseCallContentClass.get_interfaces.
  *
  * Returns: a #GPtrArray containing static strings.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -84,7 +84,7 @@
  *
  * Signature of an implementation of #TpBaseCallContentClass.deinit.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -96,7 +96,7 @@
  * Signature of an implementation of #TpBaseCallContentClass.start_tone.
  *
  * Returns: %TRUE on success, otherwise %FALSE and set @error
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -107,7 +107,7 @@
  * Signature of an implementation of #TpBaseCallContentClass.stop_tone.
  *
  * Returns: %TRUE on success, otherwise %FALSE and set @error
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -119,7 +119,7 @@
  * Signature of an implementation of #TpBaseCallContentClass.multiple_tones.
  *
  * Returns: %TRUE on success, otherwise %FALSE and set @error
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 #include "config.h"
@@ -418,7 +418,7 @@ tp_base_call_content_class_init (TpBaseCallContentClass *klass)
    *
    * The D-Bus object path used for this object on the bus.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_string ("object-path", "D-Bus object path",
       "The D-Bus object path used for this object on the bus.",
@@ -431,7 +431,7 @@ tp_base_call_content_class_init (TpBaseCallContentClass *klass)
    *
    * #TpBaseConnection object that owns this call content.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_object ("connection", "TpBaseConnection object",
       "Tp base connection object that owns this call content",
@@ -444,7 +444,7 @@ tp_base_call_content_class_init (TpBaseCallContentClass *klass)
    *
    * Additional interfaces implemented by this content.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
       "Additional interfaces implemented by this content",
@@ -457,7 +457,7 @@ tp_base_call_content_class_init (TpBaseCallContentClass *klass)
    *
    * The name of this content, if any.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_string ("name", "Name",
       "The name of this content, if any",
@@ -470,7 +470,7 @@ tp_base_call_content_class_init (TpBaseCallContentClass *klass)
    *
    * The #TpMediaStreamType of this content.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("media-type", "Media Type",
       "The media type of this content",
@@ -483,7 +483,7 @@ tp_base_call_content_class_init (TpBaseCallContentClass *klass)
    *
    * The contact #TpHandle of the creator of this content.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("creator", "Creator",
       "The creator of this content",
@@ -496,7 +496,7 @@ tp_base_call_content_class_init (TpBaseCallContentClass *klass)
    *
    * The #TpCallContentDisposition of this content.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("disposition", "Disposition",
       "The disposition of this content",
@@ -509,7 +509,7 @@ tp_base_call_content_class_init (TpBaseCallContentClass *klass)
    *
    * A #GPtrArray of this content streams' #TpBaseCallStream:object-path.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("streams", "Stream",
       "The streams of this content",
@@ -523,7 +523,7 @@ tp_base_call_content_class_init (TpBaseCallContentClass *klass)
    *
    * If this content is currently sending tones or not
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boolean ("currently-sending-tones",
       "CurrentlySendingTones",
@@ -538,7 +538,7 @@ tp_base_call_content_class_init (TpBaseCallContentClass *klass)
    *
    * Tones that are waiting for the user action to play.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_string ("deferred-tones",
       "DeferredTones",
@@ -560,7 +560,7 @@ tp_base_call_content_class_init (TpBaseCallContentClass *klass)
  * <!-- -->
  *
  * Returns: the value of #TpBaseCallContent:connection
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpBaseConnection *
 tp_base_call_content_get_connection (TpBaseCallContent *self)
@@ -577,7 +577,7 @@ tp_base_call_content_get_connection (TpBaseCallContent *self)
  * <!-- -->
  *
  * Returns: the value of #TpBaseCallContent:object-path
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 const gchar *
 tp_base_call_content_get_object_path (TpBaseCallContent *self)
@@ -594,7 +594,7 @@ tp_base_call_content_get_object_path (TpBaseCallContent *self)
  * <!-- -->
  *
  * Returns: the value of #TpBaseCallContent:name
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 const gchar *
 tp_base_call_content_get_name (TpBaseCallContent *self)
@@ -611,7 +611,7 @@ tp_base_call_content_get_name (TpBaseCallContent *self)
  * <!-- -->
  *
  * Returns: the value of #TpBaseCallContent:media-type
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpMediaStreamType
 tp_base_call_content_get_media_type (TpBaseCallContent *self)
@@ -629,7 +629,7 @@ tp_base_call_content_get_media_type (TpBaseCallContent *self)
  * <!-- -->
  *
  * Returns: the value of #TpBaseCallContent:disposition
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpCallContentDisposition
 tp_base_call_content_get_disposition (TpBaseCallContent *self)
@@ -647,7 +647,7 @@ tp_base_call_content_get_disposition (TpBaseCallContent *self)
  * <!-- -->
  *
  * Returns: a #GList of #TpBaseCallStream of this content.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 GList *
 tp_base_call_content_get_streams (TpBaseCallContent *self)
@@ -665,7 +665,7 @@ tp_base_call_content_get_streams (TpBaseCallContent *self)
  * Add @stream to @self's #TpBaseCallContent:streams. Emitting StreamsAdded
  * DBus signal.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_base_call_content_add_stream (TpBaseCallContent *self,
@@ -736,7 +736,7 @@ _tp_base_call_content_remove_stream_internal (TpBaseCallContent *self,
  * Remove @stream from @self's #TpBaseCallContent:streams. Emitting
  * StreamsRemoved DBus signal.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_base_call_content_remove_stream (TpBaseCallContent *self,

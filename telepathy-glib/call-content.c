@@ -32,7 +32,7 @@
  *
  * Data structure representing a #TpCallContent.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -40,7 +40,7 @@
  *
  * The class of a #TpCallContent.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 #include "config.h"
@@ -553,7 +553,7 @@ tp_call_content_class_init (TpCallContentClass *klass)
    *
    * The #TpConnection of the call.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_object ("connection", "Connection",
       "The connection of this content",
@@ -567,7 +567,7 @@ tp_call_content_class_init (TpCallContentClass *klass)
    *
    * The name of this content.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_string ("name", "Name",
       "The name of this content, if any",
@@ -580,7 +580,7 @@ tp_call_content_class_init (TpCallContentClass *klass)
    *
    * The media type of this content, from #TpMediaStreamType.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("media-type", "Media type",
       "The media type of this content",
@@ -593,7 +593,7 @@ tp_call_content_class_init (TpCallContentClass *klass)
    *
    * The disposition of this content, from #TpCallContentDisposition.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("disposition", "Disposition",
       "The disposition of this content",
@@ -618,7 +618,7 @@ tp_call_content_class_init (TpCallContentClass *klass)
    * It is NOT guaranteed that %TP_CALL_STREAM_FEATURE_CORE is prepared on
    * those objects.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("streams", "Stream",
       "The streams of this content",
@@ -634,7 +634,7 @@ tp_call_content_class_init (TpCallContentClass *klass)
    * The ::removed signal is emitted when @self is removed from
    * a #TpCallChannel.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   _signals[REMOVED] = g_signal_new ("removed",
       G_OBJECT_CLASS_TYPE (klass),
@@ -656,7 +656,7 @@ tp_call_content_class_init (TpCallContentClass *klass)
    * It is NOT guaranteed that %TP_CALL_STREAM_FEATURE_CORE is prepared on
    * stream objects.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   _signals[STREAMS_ADDED] = g_signal_new ("streams-added",
       G_OBJECT_CLASS_TYPE (klass),
@@ -679,7 +679,7 @@ tp_call_content_class_init (TpCallContentClass *klass)
    * It is NOT guaranteed that %TP_CALL_STREAM_FEATURE_CORE is prepared on
    * stream objects.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   _signals[STREAMS_REMOVED] = g_signal_new ("streams-removed",
       G_OBJECT_CLASS_TYPE (klass),
@@ -711,7 +711,7 @@ tp_call_content_init (TpCallContent *self)
  * tp_proxy_or_subclass_hook_on_interface_add() with first argument
  * %TP_TYPE_CALL_CONTENT.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_content_init_known_interfaces (void)
@@ -754,7 +754,7 @@ tp_call_content_get_feature_quark_core (void)
  * <!-- -->
  *
  * Returns: the value of #TpCallContent:name
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 const gchar *
 tp_call_content_get_name (TpCallContent *self)
@@ -771,7 +771,7 @@ tp_call_content_get_name (TpCallContent *self)
  * <!-- -->
  *
  * Returns: the value of #TpCallContent:name
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpMediaStreamType
 tp_call_content_get_media_type (TpCallContent *self)
@@ -788,7 +788,7 @@ tp_call_content_get_media_type (TpCallContent *self)
  * <!-- -->
  *
  * Returns: the value of #TpCallContent:disposition
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpCallContentDisposition
 tp_call_content_get_disposition (TpCallContent *self)
@@ -806,7 +806,7 @@ tp_call_content_get_disposition (TpCallContent *self)
  *
  * Returns: (transfer none) (type GLib.PtrArray) (element-type TelepathyGLib.CallStream):
  *  the value of #TpCallContent:streams
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 GPtrArray *
 tp_call_content_get_streams (TpCallContent *self)
@@ -842,7 +842,7 @@ generic_async_cb (TpCallContent *self,
  * Remove the content from the call. This will cause #TpCallContent::removed
  * to be emitted.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_content_remove_async (TpCallContent *self,
@@ -868,7 +868,7 @@ tp_call_content_remove_async (TpCallContent *self,
  *
  * Finishes tp_call_content_remove_async().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_call_content_remove_finish (TpCallContent *self,
@@ -891,7 +891,7 @@ tp_call_content_remove_finish (TpCallContent *self,
  *
  * If DTMF tones are already being played, this request is queued.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_content_send_tones_async (TpCallContent *self,
@@ -934,7 +934,7 @@ tp_call_content_send_tones_async (TpCallContent *self,
  * Finishes tp_call_content_send_tones_async().
  *
  * Returns: %TRUE on success, %FALSE otherwise.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_call_content_send_tones_finish (TpCallContent *self,

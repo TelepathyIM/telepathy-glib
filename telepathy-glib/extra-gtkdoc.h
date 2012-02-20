@@ -970,7 +970,7 @@
  * allows providing a simple password to the connection manager for it to
  * use with SASL or non-SASL mechanisms.
  *
- * The CaptchaAuthentication interface (since 0.17.UNRELEASED) allows
+ * The CaptchaAuthentication interface (since 0.17.5) allows
  * interactive captcha-solving so that the user can prove that they are not
  * a bot, on protocols requiring this.
  *
@@ -1011,7 +1011,7 @@
  * An interface for connections in protocols where contacts' unique
  * identifiers can be expressed as vCard fields and/or URIs.
  *
- * Since: 0.17.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -1022,7 +1022,7 @@
  * Call channels represent real-time audio or video streaming, including
  * voice over IP, webcams, and telephony.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -1033,7 +1033,7 @@
  * Call channels represent real-time audio or video streaming, including
  * voice over IP, webcams, and telephony.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -1043,7 +1043,7 @@
  *
  * Represents the contents of a call.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -1053,7 +1053,7 @@
  *
  * Represents the streams of a call.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -1063,5 +1063,5 @@
  *
  * Misc interfaces for calls.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */

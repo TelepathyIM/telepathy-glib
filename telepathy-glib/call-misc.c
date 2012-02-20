@@ -48,7 +48,7 @@
  * tp_proxy_or_subclass_hook_on_interface_add() with first argument
  * %TP_TYPE_PROXY.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_stream_endpoint_init_known_interfaces (void)
@@ -77,7 +77,7 @@ tp_call_stream_endpoint_init_known_interfaces (void)
  * tp_proxy_or_subclass_hook_on_interface_add() with first argument
  * %TP_TYPE_PROXY.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_content_media_description_init_known_interfaces (void)

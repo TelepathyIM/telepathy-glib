@@ -33,7 +33,7 @@
  * #TpBaseCallStreamClass.request_receiving and
  * #TpBaseCallStreamClass.set_sending virtual function.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -41,7 +41,7 @@
  *
  * A base class for call stream implementations
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -57,7 +57,7 @@
  *
  * The class structure for #TpBaseCallStream
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -67,7 +67,7 @@
  * Signature of an implementation of #TpBaseCallStreamClass.get_interfaces.
  *
  * Returns: a #GPtrArray containing static strings.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -79,7 +79,7 @@
  * Signature of an implementation of #TpBaseCallStreamClass.set_sending.
  *
  * Returns: %TRUE on success, %FALSE otherwise.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -92,7 +92,7 @@
  * Signature of an implementation of #TpBaseCallStreamClass.request_receiving.
  *
  * Returns: %TRUE on success, %FALSE otherwise.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 #include "config.h"
@@ -327,7 +327,7 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *klass)
    *
    * #TpBaseConnection object that owns this call stream.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_object ("connection", "TpBaseConnection object",
       "Tp connection object that owns this call stream",
@@ -340,7 +340,7 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *klass)
    *
    * The D-Bus object path used for this object on the bus.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_string ("object-path", "D-Bus object path",
       "The D-Bus object path used for this object on the bus.",
@@ -353,7 +353,7 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *klass)
    *
    * Additional interfaces implemented by this stream.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("interfaces", "Interfaces",
       "Stream interfaces",
@@ -367,7 +367,7 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *klass)
    *
    * #GHashTable mapping contact #TpHandle to their #TpSendingState.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("remote-members", "Remote members",
       "Remote member map",
@@ -381,7 +381,7 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *klass)
    *
    * #GHashTable mapping contact #TpHandle to their identifies.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("remote-member-identifiers",
       "RemoteMemberIdentifiers", "The remote members identifiers",
@@ -395,7 +395,7 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *klass)
    *
    * The local #TpSendingState.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("local-sending-state", "LocalSendingState",
       "Local sending state",
@@ -411,7 +411,7 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *klass)
    * RequestSending DBus method call. The value is determined by whether or not
    * #TpBaseCallStreamClass.request_receiving is implemented.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boolean ("can-request-receiving",
       "CanRequestReceiving",
@@ -434,7 +434,7 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *klass)
  * <!-- -->
  *
  * Returns: the value of #TpBaseCallStream:connection
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpBaseConnection *
 tp_base_call_stream_get_connection (TpBaseCallStream *self)
@@ -451,7 +451,7 @@ tp_base_call_stream_get_connection (TpBaseCallStream *self)
  * <!-- -->
  *
  * Returns: the value of #TpBaseCallStream:object-path
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 const gchar *
 tp_base_call_stream_get_object_path (TpBaseCallStream *self)
@@ -468,7 +468,7 @@ tp_base_call_stream_get_object_path (TpBaseCallStream *self)
  * <!-- -->
  *
  * Returns: the value of #TpBaseCallStream:local-sending-state
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpSendingState
 tp_base_call_stream_get_local_sending_state (TpBaseCallStream *self)
@@ -497,7 +497,7 @@ tp_base_call_stream_get_local_sending_state (TpBaseCallStream *self)
  *
  * Returns: %TRUE if state was updated, %FALSE if it was already set to
  *  @new_state.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_base_call_stream_update_local_sending_state (TpBaseCallStream *self,
@@ -545,7 +545,7 @@ tp_base_call_stream_update_local_sending_state (TpBaseCallStream *self,
  * <!-- -->
  *
  * Returns: the #TpSendingState of @contact.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpSendingState
 tp_base_call_stream_get_remote_sending_state (TpBaseCallStream *self,
@@ -581,7 +581,7 @@ tp_base_call_stream_get_remote_sending_state (TpBaseCallStream *self,
  *
  * Returns: %TRUE if state was updated, %FALSE if it was already set to
  *  @new_state.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_base_call_stream_update_remote_sending_state (TpBaseCallStream *self,
@@ -659,7 +659,7 @@ tp_base_call_stream_update_remote_sending_state (TpBaseCallStream *self,
  * signal if needed. Do nothing if @contact is not member.
  *
  * Returns: %TRUE if @contact was removed, %FALSE if it was not member.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_base_call_stream_remove_member (TpBaseCallStream *self,

@@ -27,7 +27,7 @@
  * This class makes it easier to write #TpSvcCallStreamEndpoint
  * implementations by implementing its properties and methods.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -35,7 +35,7 @@
  *
  * A class for call stream endpoint implementations
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -43,7 +43,7 @@
  *
  * The class structure for #TpCallStreamEndpoint
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 #include "config.h"
@@ -301,7 +301,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
    *
    * The D-Bus object path used for this object on the bus.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_string ("object-path", "D-Bus object path",
       "The D-Bus object path used for this "
@@ -315,7 +315,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
    *
    * The connection to the DBus daemon owning the CM.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_object ("dbus-daemon",
       "The DBus daemon connection",
@@ -330,7 +330,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
    * #GValueArray{username string, password string}
    * The remote credentials of this endpoint.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("remote-credentials",
       "RemoteCredentials",
@@ -346,7 +346,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
    * #GPtrArray{candidate #GValueArray}
    * The remote candidates of this endpoint.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("remote-candidates",
       "RemoteCandidates",
@@ -362,7 +362,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
    * #GPtrArray{local-candidate #GValueArray, remote-candidate #GValueArray}
    * The candidate pairs selected for this endpoint.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("selected-candidate-pairs",
       "SelectedCandidatePairs",
@@ -378,7 +378,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
    * #GHashTable{#TpStreamComponent -> #TpStreamEndpointState}
    * The state of this endpoint.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("endpoint-state", "EndpointState",
       "The state of this endpoint.",
@@ -392,7 +392,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
    *
    * The #TpStreamTransportType for the content of this endpoint.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("transport",
       "Transport",
@@ -406,7 +406,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
    *
    * Whether or not the local side is taking the controlling role.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boolean ("controlling",
       "Controlling",
@@ -420,7 +420,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
    *
    * Whether or not the Remote side is an ICE Lite endpoint.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boolean ("is-ice-lite",
       "IsICELite",
@@ -442,7 +442,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
    * The ::candidate-selected signal is emitted whenever
    * SetSelectedCandidatePair DBus method has been called on this object.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   _signals[CANDIDATE_SELECTED] = g_signal_new ("candidate-selected",
       G_OBJECT_CLASS_TYPE (klass),
@@ -461,7 +461,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
    * The ::candidate-accepted signal is emitted whenever
    * AcceptSelectedCandidatePair DBus method has been called on this object.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   _signals[CANDIDATE_ACCEPTED] = g_signal_new ("candidate-accepted",
       G_OBJECT_CLASS_TYPE (klass),
@@ -480,7 +480,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
    * The ::candidate-rejected signal is emitted whenever
    * RejectSelectedCandidatePair DBus method has been called on this object.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   _signals[CANDIDATE_REJECTED] = g_signal_new ("candidate-rejected",
       G_OBJECT_CLASS_TYPE (klass),
@@ -502,7 +502,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
  * at construction, and is unregistered at dispose.
  *
  * Returns: a new #TpCallStreamEndpoint.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpCallStreamEndpoint *
 tp_call_stream_endpoint_new (TpDBusDaemon *dbus_daemon,
@@ -528,7 +528,7 @@ tp_call_stream_endpoint_new (TpDBusDaemon *dbus_daemon,
  * <!-- -->
  *
  * Returns: the value of #TpCallStreamEndpoint:object-path
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 const gchar *
 tp_call_stream_endpoint_get_object_path (TpCallStreamEndpoint *self)
@@ -546,7 +546,7 @@ tp_call_stream_endpoint_get_object_path (TpCallStreamEndpoint *self)
  * <!-- -->
  *
  * Returns: the state of @self's @component
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpStreamEndpointState
 tp_call_stream_endpoint_get_state (TpCallStreamEndpoint *self,
@@ -567,7 +567,7 @@ tp_call_stream_endpoint_get_state (TpCallStreamEndpoint *self,
  * Add @candidates to the #TpCallStreamEndpoint:remote-candidates property.
  * See Also: tp_call_stream_endpoint_add_new_candidate().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_stream_endpoint_add_new_candidates (TpCallStreamEndpoint *self,
@@ -606,7 +606,7 @@ tp_call_stream_endpoint_add_new_candidates (TpCallStreamEndpoint *self,
  * Add a candidate to the #TpCallStreamEndpoint:remote-candidates property.
  * See Also: tp_call_stream_endpoint_add_new_candidates().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_stream_endpoint_add_new_candidate (TpCallStreamEndpoint *self,
@@ -649,7 +649,7 @@ tp_call_stream_endpoint_add_new_candidate (TpCallStreamEndpoint *self,
  *
  * Set the username and password to use for @self's crendentials.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_stream_endpoint_set_remote_credentials (TpCallStreamEndpoint *self,

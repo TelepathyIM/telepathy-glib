@@ -35,7 +35,7 @@
  * #TpBaseMediaCallStreamClass.add_local_candidates and
  * #TpBaseMediaCallStreamClass.finish_initial_candidates.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -43,7 +43,7 @@
  *
  * A base class for media call stream implementations
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -66,7 +66,7 @@
  *
  * The class structure for #TpBaseMediaCallStream
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -77,7 +77,7 @@
  * Signature of an implementation of
  * #TpBaseMediaCallStreamClass.finish_initial_candidates.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -95,7 +95,7 @@
  * memory. It is fine to just add element pointers from @candidates to the
  * returned #GPtrArray without deep-copy them.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -114,7 +114,7 @@
  * #TpBaseMediaCallStreamClass.report_sending_failure and
  * #TpBaseMediaCallStreamClass.report_receiving_failure.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -126,7 +126,7 @@
  * Signature of an implementation of #TpBaseMediaCallStreamClass.set_sending.
  *
  * Returns: %TRUE on success, %FALSE otherwise.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -138,7 +138,7 @@
  * Signature of an implementation of
  * #TpBaseMediaCallStreamClass.request_receiving.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 #include "config.h"
@@ -402,7 +402,7 @@ tp_base_media_call_stream_class_init (TpBaseMediaCallStreamClass *klass)
    *
    * The sending #TpStreamFlowState.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("sending-state", "SendingState",
       "The sending state",
@@ -416,7 +416,7 @@ tp_base_media_call_stream_class_init (TpBaseMediaCallStreamClass *klass)
    *
    * The receiving #TpStreamFlowState.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("receiving-state", "ReceivingState",
       "The receiving state",
@@ -430,7 +430,7 @@ tp_base_media_call_stream_class_init (TpBaseMediaCallStreamClass *klass)
    *
    * The #TpStreamTransportType of this stream.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("transport", "Transport",
       "The transport type of this stream",
@@ -445,7 +445,7 @@ tp_base_media_call_stream_class_init (TpBaseMediaCallStreamClass *klass)
    * #GPtrArray{candidate #GValueArray}
    * List of local candidates.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("local-candidates", "LocalCandidates",
       "List of local candidates",
@@ -460,7 +460,7 @@ tp_base_media_call_stream_class_init (TpBaseMediaCallStreamClass *klass)
    * #GValueArray{username string, password string}
    * ufrag and pwd as defined by ICE.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("local-credentials", "LocalCredentials",
       "ufrag and pwd as defined by ICE",
@@ -475,7 +475,7 @@ tp_base_media_call_stream_class_init (TpBaseMediaCallStreamClass *klass)
    * #GPtrArray{stun-server #GValueArray}
    * List of STUN servers.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("stun-servers", "STUNServers",
       "List of STUN servers",
@@ -490,7 +490,7 @@ tp_base_media_call_stream_class_init (TpBaseMediaCallStreamClass *klass)
    * #GPtrArray{relay-info asv}
    * List of relay information.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("relay-info", "RelayInfo",
       "List of relay information",
@@ -505,7 +505,7 @@ tp_base_media_call_stream_class_init (TpBaseMediaCallStreamClass *klass)
    * %TRUE if #TpBaseMediaCallStream:relay-info and
    * #TpBaseMediaCallStream:stun-servers have been set.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boolean ("has-server-info", "HasServerInfo",
       "True if the server information about STUN and "
@@ -521,7 +521,7 @@ tp_base_media_call_stream_class_init (TpBaseMediaCallStreamClass *klass)
    * #GPtrArray{object-path string}
    * The endpoints of this content.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("endpoints", "Endpoints",
       "The endpoints of this content",
@@ -536,7 +536,7 @@ tp_base_media_call_stream_class_init (TpBaseMediaCallStreamClass *klass)
    * %TRUE when ICERestartRequested signal is emitted, and %FALSE when
    * SetCredentials is called. Useful for debugging.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boolean ("ice-restart-pending", "ICERestartPending",
       "True when ICERestartRequested signal is emitted, and False when "
@@ -560,7 +560,7 @@ tp_base_media_call_stream_class_init (TpBaseMediaCallStreamClass *klass)
  * <!-- -->
  *
  * Returns: the username part of #TpBaseMediaCallStream:local-credentials
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 const gchar *
 tp_base_media_call_stream_get_username (TpBaseMediaCallStream *self)
@@ -577,7 +577,7 @@ tp_base_media_call_stream_get_username (TpBaseMediaCallStream *self)
  * <!-- -->
  *
  * Returns: the password part of #TpBaseMediaCallStream:local-credentials
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 const gchar *
 tp_base_media_call_stream_get_password (TpBaseMediaCallStream *self)
@@ -614,7 +614,7 @@ maybe_got_server_info (TpBaseMediaCallStream *self)
  * Note that this replaces the previously set STUN servers, it is not an
  * addition.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_base_media_call_stream_set_stun_servers (TpBaseMediaCallStream *self,
@@ -643,7 +643,7 @@ tp_base_media_call_stream_set_stun_servers (TpBaseMediaCallStream *self,
  *
  * Note that this replaces the previously set relays, it is not an addition.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_base_media_call_stream_set_relay_info (TpBaseMediaCallStream *self,
@@ -669,7 +669,7 @@ tp_base_media_call_stream_set_relay_info (TpBaseMediaCallStream *self,
  * Add @endpoint to #TpBaseMediaCallStream:endpoints list, and emits
  * EndpointsChanged DBus signal.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_base_media_call_stream_add_endpoint (TpBaseMediaCallStream *self,
@@ -711,7 +711,7 @@ tp_base_media_call_stream_add_endpoint (TpBaseMediaCallStream *self,
  * Remove @endpoint from #TpBaseMediaCallStream:endpoints list, and emits
  * EndpointsChanged DBus signal.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_base_media_call_stream_remove_endpoint (TpBaseMediaCallStream *self,
@@ -752,7 +752,7 @@ tp_base_media_call_stream_remove_endpoint (TpBaseMediaCallStream *self,
  * #TpCallStreamEndpoint.
  *
  * Returns: Borrowed #GList of #TpCallStreamEndpoint.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 GList *
 tp_base_media_call_stream_get_endpoints (TpBaseMediaCallStream *self)
@@ -824,7 +824,7 @@ set_sending_state (TpBaseMediaCallStream *self,
  *
  * Update the sending state.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_base_media_call_stream_update_sending_state (TpBaseMediaCallStream *self)
@@ -864,7 +864,7 @@ done:
  * <!-- -->
  *
  * Returns: the value of #TpBaseMediaCallStream:sending-state.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpStreamFlowState
 tp_base_media_call_stream_get_sending_state (TpBaseMediaCallStream *self)
@@ -882,7 +882,7 @@ tp_base_media_call_stream_get_sending_state (TpBaseMediaCallStream *self)
  *
  * Set local sending state.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_base_media_call_stream_set_local_sending (TpBaseMediaCallStream *self,
@@ -936,7 +936,7 @@ set_receiving_state (TpBaseMediaCallStream *self,
  *
  * Update the receiving state.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_base_media_call_stream_update_receiving_state (TpBaseMediaCallStream *self)
@@ -995,7 +995,7 @@ done:
  * <!-- -->
  *
  * Returns: the value of #TpBaseMediaCallStream:receiving-state.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpStreamFlowState
 tp_base_media_call_stream_get_receiving_state (TpBaseMediaCallStream *self)
@@ -1013,7 +1013,7 @@ tp_base_media_call_stream_get_receiving_state (TpBaseMediaCallStream *self)
  * <!-- -->
  *
  * Returns: the value of #TpBaseMediaCallStream:local-candidates as a #GtrArray
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 GPtrArray *
 tp_base_media_call_stream_get_local_candidates (TpBaseMediaCallStream *self)

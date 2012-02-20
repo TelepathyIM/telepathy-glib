@@ -26,7 +26,7 @@
  *
  * This is a base class for connection managers that use standard RTP media.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -34,7 +34,7 @@
  *
  * A base class for call channel implementations with standard RTP
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -46,7 +46,7 @@
  *
  * The class structure for #TpBaseMediaCallChannel
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -55,7 +55,7 @@
  *
  * Signature of an implementation of #TpBaseMediaCallChannelClass.accept.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -67,7 +67,7 @@
  * Signature of an implementation of
  * #TpBaseMediaCallChannelClass.hold_state_changed.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 #include "config.h"

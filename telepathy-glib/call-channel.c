@@ -32,7 +32,7 @@
  *
  * Data structure representing a #TpCallChannel.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -40,7 +40,7 @@
  *
  * The class of a #TpCallChannel.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 #include "config.h"
@@ -144,7 +144,7 @@ _tp_call_content_new (TpCallChannel *self,
  *
  * Data structure representing the reason for a call state change.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 static TpCallStateReason *
@@ -758,7 +758,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    * It is NOT guaranteed that %TP_CALL_CONTENT_FEATURE_CORE is prepared on
    * those objects.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("contents", "Contents",
       "The content objects of this call",
@@ -771,7 +771,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    *
    * A #TpChannelCallState specifying the state of the call.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("state", "Call state",
       "The state of the call",
@@ -784,7 +784,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    *
    * A #TpCallFlags specifying the flags of the call state.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("flags", "Call flags",
       "The flags of the call",
@@ -797,7 +797,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    *
    * Detailed information about #TpCallChannel:state.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("state-details", "State details",
       "The details of the call",
@@ -811,7 +811,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    *
    * Reason why #TpCallChannel:state last changed.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("state-reason", "State reason",
       "The reason of the call's state",
@@ -825,7 +825,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    *
    * Whether or not the streaming is done by dedicated hardware.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boolean ("hardware-streaming", "Hardware streaming",
       "Hardware streaming",
@@ -839,7 +839,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    *
    * Whether or not the Call was started with audio.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boolean ("initial-audio", "Initial audio",
       "Initial audio",
@@ -853,7 +853,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    *
    * Whether or not the Call was started with video.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boolean ("initial-video", "Initial video",
       "Initial video",
@@ -868,7 +868,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    * If #TpCallChannel:initial-audio is set to %TRUE, then this property will
    * is the name of the intial audio content, %NULL otherwise.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_string ("initial-audio-name", "Initial audio name",
       "Initial audio name",
@@ -883,7 +883,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    * If #TpCallChannel:initial-video is set to %TRUE, then this property will
    * is the name of the intial video content, %NULL otherwise.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_string ("initial-video-name", "Initial video name",
       "Initial video name",
@@ -897,7 +897,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    *
    * Whether or not call contents can be added or removed.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boolean ("mutable-contents", "Mutable contents",
       "Mutable contents",
@@ -917,7 +917,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    * It is NOT guaranteed that %TP_CALL_CONTENT_FEATURE_CORE is prepared on
    * @content.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   _signals[CONTENT_ADDED] = g_signal_new ("content-added",
       G_OBJECT_CLASS_TYPE (klass),
@@ -939,7 +939,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    * It is NOT guaranteed that %TP_CALL_CONTENT_FEATURE_CORE is prepared on
    * @content.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   _signals[CONTENT_REMOVED] = g_signal_new ("content-removed",
       G_OBJECT_CLASS_TYPE (klass),
@@ -960,7 +960,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    * The ::state-changed signal is emitted whenever the
    * call state changes.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   _signals[STATE_CHANGED] = g_signal_new ("state-changed",
       G_OBJECT_CLASS_TYPE (klass),
@@ -987,7 +987,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    * previously passed to tp_simple_client_factory_add_contact_features()
    * prepared.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   _signals[MEMBERS_CHANGED] = g_signal_new ("members-changed",
       G_OBJECT_CLASS_TYPE (klass),
@@ -1059,7 +1059,7 @@ tp_call_channel_get_feature_quark_core (void)
  *
  * Returns: (transfer none) (type GLib.PtrArray) (element-type TelepathyGLib.CallContent):
  *  the value of #TpCallChannel:contents
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 GPtrArray *
 tp_call_channel_get_contents (TpCallChannel *self)
@@ -1082,7 +1082,7 @@ tp_call_channel_get_contents (TpCallChannel *self)
  * <!-- -->
  *
  * Returns: the value of #TpCallChannel:state
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpCallState
 tp_call_channel_get_state (TpCallChannel *self,
@@ -1109,7 +1109,7 @@ tp_call_channel_get_state (TpCallChannel *self,
  * <!-- -->
  *
  * Returns: the value of #TpCallChannel:hardware-streaming
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_call_channel_has_hardware_streaming (TpCallChannel *self)
@@ -1128,7 +1128,7 @@ tp_call_channel_has_hardware_streaming (TpCallChannel *self)
  * <!-- -->
  *
  * Returns: the value of #TpCallChannel:initial-audio
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_call_channel_has_initial_audio (TpCallChannel *self,
@@ -1151,7 +1151,7 @@ tp_call_channel_has_initial_audio (TpCallChannel *self,
  * <!-- -->
  *
  * Returns: the value of #TpCallChannel:initial-video
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_call_channel_has_initial_video (TpCallChannel *self,
@@ -1172,7 +1172,7 @@ tp_call_channel_has_initial_video (TpCallChannel *self,
  * <!-- -->
  *
  * Returns: the value of #TpCallChannel:mutable-contents
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_call_channel_has_mutable_contents (TpCallChannel *self)
@@ -1194,7 +1194,7 @@ tp_call_channel_has_mutable_contents (TpCallChannel *self)
  *
  * Returns: (transfer none) (type GLib.HashTable) (element-type TelepathyGLib.Contact uint):
  *  #GHashTable mapping #TpContact to its new #TpCallMemberFlags
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 GHashTable *
 tp_call_channel_get_members (TpCallChannel *self)
@@ -1212,7 +1212,7 @@ tp_call_channel_get_members (TpCallChannel *self)
  * interfaces
  *
  * Returns: whether or not @self supports DTMF
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_call_channel_has_dtmf (TpCallChannel *self)
@@ -1248,7 +1248,7 @@ generic_async_cb (TpChannel *channel,
  *
  * Indicate that the local user has been alerted about the incoming call.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_channel_set_ringing_async (TpCallChannel *self,
@@ -1274,7 +1274,7 @@ tp_call_channel_set_ringing_async (TpCallChannel *self,
  *
  * Finishes tp_call_channel_set_ringing_async().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_call_channel_set_ringing_finish (TpCallChannel *self,
@@ -1293,7 +1293,7 @@ tp_call_channel_set_ringing_finish (TpCallChannel *self,
  * Notifies the CM that the local user is already in a call, so this call has
  * been put in a call-waiting style queue.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_channel_set_queued_async (TpCallChannel *self,
@@ -1319,7 +1319,7 @@ tp_call_channel_set_queued_async (TpCallChannel *self,
  *
  * Finishes tp_call_channel_set_queued_async().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_call_channel_set_queued_finish (TpCallChannel *self,
@@ -1344,7 +1344,7 @@ tp_call_channel_set_queued_finish (TpCallChannel *self,
  * changes #TpCallChannel:state to
  * %TP_CALL_STATE_INITIALISING.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_channel_accept_async (TpCallChannel *self,
@@ -1370,7 +1370,7 @@ tp_call_channel_accept_async (TpCallChannel *self,
  *
  * Finishes tp_call_channel_accept_async().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_call_channel_accept_finish (TpCallChannel *self,
@@ -1393,7 +1393,7 @@ tp_call_channel_accept_finish (TpCallChannel *self,
  * Request that the call is ended. All contents will be removed from @self so
  * that the #TpCallChannel:contents property will be the empty list.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_channel_hangup_async (TpCallChannel *self,
@@ -1423,7 +1423,7 @@ tp_call_channel_hangup_async (TpCallChannel *self,
  *
  * Finishes tp_call_channel_hangup_async().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_call_channel_hangup_finish (TpCallChannel *self,
@@ -1472,7 +1472,7 @@ add_content_cb (TpChannel *channel,
  * check the value of the #TpCallChannel:mutable-contents property before trying
  * to add another content as it might not be allowed.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_channel_add_content_async (TpCallChannel *self,
@@ -1506,7 +1506,7 @@ tp_call_channel_add_content_async (TpCallChannel *self,
  * %TP_CALL_CONTENT_FEATURE_CORE prepared.
  *
  * Returns: (transfer full): reference to the new #TpCallContent.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 TpCallContent *
 tp_call_channel_add_content_finish (TpCallChannel *self,
@@ -1554,7 +1554,7 @@ send_tones_cb (GObject *source,
  *
  * For more details, see tp_call_content_send_tones_async().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_call_channel_send_tones_async (TpCallChannel *self,
@@ -1610,7 +1610,7 @@ tp_call_channel_send_tones_async (TpCallChannel *self,
  * Finishes tp_call_channel_send_tones_async().
  *
  * Returns: %TRUE on success, %FALSE otherwise.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_call_channel_send_tones_finish (TpCallChannel *self,

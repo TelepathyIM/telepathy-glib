@@ -1926,7 +1926,7 @@ tp_account_class_init (TpAccountClass *klass)
    * %TP_ACCOUNT_FEATURE_CORE feature has been prepared; until then,
    * the value is NULL.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   g_object_class_install_property (object_class, PROP_SUPERSEDES,
       g_param_spec_boxed ("supersedes",
@@ -3242,7 +3242,7 @@ tp_account_set_nickname_async (TpAccount *account,
  *
  * Returns: (transfer none): the same as the #TpAccount:supersedes property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 const gchar * const *
 tp_account_get_supersedes (TpAccount *self)

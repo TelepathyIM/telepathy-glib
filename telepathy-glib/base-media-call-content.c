@@ -32,7 +32,7 @@
  *
  * Subclasses must still implement #TpBaseCallContent's virtual methods.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -40,7 +40,7 @@
  *
  * A base class for media call content implementations
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 /**
@@ -48,7 +48,7 @@
  *
  * The class structure for #TpBaseMediaCallContent
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 
 #include "config.h"
@@ -347,7 +347,7 @@ tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
    * #GHashTable{contact #TpHandle, properties #GHashTable}
    * The map of contacts to remote media descriptions.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("remote-media-descriptions",
       "RemoteMediaDescriptions",
@@ -363,7 +363,7 @@ tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
    * #GHashTable{contact #TpHandle, properties #GHashTable}
    * The map of contacts to local media descriptions.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("local-media-descriptions",
       "LocalMediaDescriptions",
@@ -379,7 +379,7 @@ tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
    * #GValueArray{object-path, contact #TpHandle, properties #GHashTable}.
    * The current media description offer if any.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_boxed ("media-description-offer",
       "MediaDescriptionOffer",
@@ -394,7 +394,7 @@ tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
    *
    * The #TpCallContentPacketizationType of this content.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("packetization", "Packetization",
       "The Packetization of this content",
@@ -408,7 +408,7 @@ tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
    *
    * The currently being played #TpDTMFEvent if any
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uchar ("current-dtmf-event",
       "CurrentDTMFEvent",
@@ -423,7 +423,7 @@ tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
    *
    * The #TpSendingState of the dtmf events
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   param_spec = g_param_spec_uint ("current-dtmf-state",
       "CurrentDTMFState",
@@ -447,7 +447,7 @@ tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
    * The ::local-media-description-changed signal is emitted whenever the local
    * media description changes for a remote contact.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.5
    */
   _signals[LOCAL_MEDIA_DESCRIPTION_UPDATED] = g_signal_new (
       "local-media-description-updated",
@@ -608,7 +608,7 @@ next_offer (TpBaseMediaCallContent *self)
  * Get the media description used to stream to @contact.
  *
  * Returns: borrowed #GHashTable mapping iface propery string to #GValue.
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 GHashTable *
 tp_base_media_call_content_get_local_media_description (
@@ -630,7 +630,7 @@ tp_base_media_call_content_get_local_media_description (
  *
  * Offer @md for media description negociation.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_base_media_call_content_offer_media_description_async (
@@ -662,7 +662,7 @@ tp_base_media_call_content_offer_media_description_async (
  *
  * Finishes tp_base_media_call_content_offer_media_description_async().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_base_media_call_content_offer_media_description_finish (
