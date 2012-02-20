@@ -30,6 +30,7 @@ EXTRA_DIST = \
     Channel_Interface_Addressing.xml \
     Channel_Interface_Anonymity.xml \
     Channel_Interface_Call_State.xml \
+    Channel_Interface_Captcha_Authentication.xml \
     Channel_Interface_Chat_State.xml \
     Channel_Interface_Conference.xml \
     Channel_Interface_Credentials_Storage.xml \
