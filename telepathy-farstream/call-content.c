@@ -1302,7 +1302,7 @@ on_content_audio_control_properties_changed (TpProxy *proxy,
   gpointer user_data,
   GObject *weak_object)
 {
-  TfCallContent *self = TF_CALL_CONTENT (proxy);
+  TfCallContent *self = TF_CALL_CONTENT (weak_object);
 
   if (tp_strdiff (interface_name,
       TP_IFACE_CALL_CONTENT_INTERFACE_AUDIO_CONTROL))
@@ -1319,7 +1319,7 @@ static void
 got_content_audio_control_properties (TpProxy *proxy, GHashTable *properties,
     const GError *error, gpointer user_data, GObject *weak_object)
 {
-  TfCallContent *self = TF_CALL_CONTENT (proxy);
+  TfCallContent *self = TF_CALL_CONTENT (weak_object);
   GSimpleAsyncResult *res = user_data;
 
   if (error)
@@ -1372,13 +1372,13 @@ setup_content_audio_control (TfCallContent *self,
   GError *error = NULL;
 
   if (tp_cli_dbus_properties_connect_to_properties_changed (self->proxy,
-      on_content_audio_control_properties_changed,
-      NULL, NULL, NULL, &error) == NULL)
+          on_content_audio_control_properties_changed,
+          NULL, NULL, G_OBJECT (self), &error) == NULL)
     goto connect_failed;
 
   tp_cli_dbus_properties_call_get_all (self->proxy, -1,
       TP_IFACE_CALL_CONTENT_INTERFACE_AUDIO_CONTROL,
-      got_content_audio_control_properties, res, NULL, NULL);
+      got_content_audio_control_properties, res, NULL, G_OBJECT (self));
 
   return;
 
