@@ -9,7 +9,7 @@ AC_PREREQ([2.59])
 
 m4_define([tp_farstream_major_version], [0])
 m4_define([tp_farstream_minor_version], [2])
-m4_define([tp_farstream_micro_version], [99])
+m4_define([tp_farstream_micro_version], [0])
 m4_define([tp_farstream_nano_version], [1])
 
 dnl CURRENT, REVISION, AGE
@@ -17,8 +17,8 @@ dnl - library source changed -> increment REVISION
 dnl - interfaces added/removed/changed -> increment CURRENT, REVISION = 0
 dnl - interfaces added -> increment AGE
 dnl - interfaces removed -> AGE = 0
-m4_define([tp_farstream_lt_current], [0])
-m4_define([tp_farstream_lt_revision], [2])
+m4_define([tp_farstream_lt_current], [1])
+m4_define([tp_farstream_lt_revision], [0])
 m4_define([tp_farstream_lt_age], [0])
 
 
@@ -142,7 +142,6 @@ AC_OUTPUT( Makefile \
           doc/Makefile \
           doc/lib/Makefile \
           m4/Makefile \
-          extensions/Makefile \
           examples/Makefile \
           telepathy-farstream/Makefile  \
           telepathy-farstream/telepathy-farstream.pc \

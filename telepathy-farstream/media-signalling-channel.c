@@ -35,30 +35,8 @@
 
 #include "stream.h"
 #include "session-priv.h"
-#include "stream-priv.h"
 #include "tf-signals-marshal.h"
 
-
-struct _TfMediaSignallingChannel {
-  GObject parent;
-
-  TpChannel *channel_proxy;
-
-  TfNatProperties nat_props;
-  guint prop_id_nat_traversal;
-  guint prop_id_stun_server;
-  guint prop_id_stun_port;
-  guint prop_id_gtalk_p2p_relay_token;
-
-  /* sessions is NULL until we've had a reply from GetSessionHandlers */
-  TfSession *session;
-  gboolean got_sessions;
-  GPtrArray *streams;
-};
-
-struct _TfMediaSignallingChannelClass{
-  GObjectClass parent_class;
-};
 
 
 G_DEFINE_TYPE (TfMediaSignallingChannel, tf_media_signalling_channel,

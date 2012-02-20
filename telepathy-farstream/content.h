@@ -47,13 +47,21 @@ typedef struct _TfContentClass TfContentClass;
 GType tf_content_get_type (void);
 
 void tf_content_error_literal (TfContent *content,
-    guint reason, /* TfFutureContentRemovalReason */
-    const gchar *detailed_reason,
     const gchar *message);
-
 void tf_content_error (TfContent *content,
-    guint reason, /* TfFutureContentRemovalReason */
-    const gchar *detailed_reason,
+    const gchar *message_format, ...) G_GNUC_PRINTF (2, 3);
+
+
+void tf_content_sending_failed_literal (TfContent *content,
+    const gchar *message);
+void tf_content_sending_failed (TfContent *content,
+    const gchar *message_format, ...) G_GNUC_PRINTF (2, 3);
+
+void tf_content_receiving_failed_literal (TfContent *content,
+    guint *handles, guint handle_count,
+    const gchar *message);
+void tf_content_receiving_failed (TfContent *content,
+    guint *handles, guint handle_count,
     const gchar *message_format, ...) G_GNUC_PRINTF (4, 5);
 
 GstIterator *tf_content_iterate_src_pads (TfContent *content,

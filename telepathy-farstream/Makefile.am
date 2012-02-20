@@ -20,7 +20,6 @@ libtelepathy_farstream_la_SOURCES = \
 	session.c \
 	channel.c \
 	channel.h \
-	stream-priv.h \
 	session-priv.h \
 	channel-priv.h \
 	media-signalling-channel.c \
@@ -34,7 +33,6 @@ libtelepathy_farstream_la_SOURCES = \
 	call-stream.h \
 	call-stream.c \
 	telepathy-farstream.h \
-	telepathy-farstream.c \
 	utils.h
 
 nodist_libtelepathy_farstream_la_SOURCES = $(BUILT_SOURCES)
@@ -60,8 +58,7 @@ libtelepathy_farstream_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GST_LIBS) \
 	$(FARSTREAM_LIBS) \
-	$(TELEPATHY_LIBS) \
-	../extensions/libfuture-extensions.la
+	$(TELEPATHY_LIBS)
 
 libtelepathy_farstream_la_LDFLAGS =  -no-undefined \
 	-export-symbols-regex "^tf_(init|content_|channel_).*" \

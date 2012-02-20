@@ -28,16 +28,16 @@
  * channel using Farstream.
  */
 
-
 #include "media-signalling-content.h"
 
 #include <farstream/fs-conference.h>
 #include <farstream/fs-utils.h>
 
+#include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/util.h>
+
 #include <stdarg.h>
 #include <string.h>
-
-#include <telepathy-glib/proxy-subclass.h>
 
 #include "tf-signals-marshal.h"
 #include "utils.h"
@@ -86,8 +86,6 @@ tf_media_signalling_content_get_property (GObject    *object,
     GParamSpec *pspec);
 
 static void tf_media_signalling_content_error (TfContent *content,
-    guint reason, /* TfFutureContentRemovalReason */
-    const gchar *detailed_reason,
     const gchar *message);
 
 static GstIterator * tf_media_signalling_content_iterate_src_pads (
@@ -247,18 +245,20 @@ request_resource (TfStream *stream, guint direction,
 {
   if (direction & TP_MEDIA_STREAM_DIRECTION_SEND)
     return _tf_content_start_sending (TF_CONTENT (self));
-
-  if (!self->receiving && direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE)
+  else if (direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE)
     {
-      guint handles[2] = { self->handle, 0};
+      if (!self->receiving)
+        {
+          guint handles[2] = { self->handle, 0};
 
-      self->receiving = _tf_content_start_receiving (TF_CONTENT (self),
-          handles, 1);
+          self->receiving = _tf_content_start_receiving (TF_CONTENT (self),
+              handles, 1);
+        }
 
       return self->receiving;
     }
-
-  return FALSE;
+  else
+    g_assert_not_reached ();
 }
 
 
@@ -286,23 +286,11 @@ restart_source (TfStream *stream, TfMediaSignallingContent *self)
 
 static void
 tf_media_signalling_content_error (TfContent *content,
-    guint reason, /* TfFutureContentRemovalReason */
-    const gchar *detailed_reason,
     const gchar *message)
 {
   TfMediaSignallingContent *self = TF_MEDIA_SIGNALLING_CONTENT (content);
-  TpMediaStreamError stream_error;
 
-  switch (reason)
-    {
-    case TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR:
-      stream_error = TP_MEDIA_STREAM_ERROR_MEDIA_ERROR;
-      break;
-    default:
-      stream_error = TP_MEDIA_STREAM_ERROR_UNKNOWN;
-    }
-
-  tf_stream_error (self->stream,  stream_error, message);
+  tf_stream_error (self->stream, TP_MEDIA_STREAM_ERROR_MEDIA_ERROR, message);
 }
 
 static GstIterator *

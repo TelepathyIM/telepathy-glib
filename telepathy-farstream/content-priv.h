@@ -19,8 +19,12 @@ struct _TfContentClass{
   GObjectClass parent_class;
 
   void (*content_error) (TfContent *content,
-      guint reason, /* TfFutureContentRemovalReason */
-      const gchar *detailed_reason,
+      const gchar *message);
+
+  void (*sending_failed) (TfContent *content,
+      const gchar *message);
+  void (*receiving_failed) (TfContent *content,
+      guint *handles, guint handle_count,
       const gchar *message);
 
   GstIterator * (*iterate_src_pads) (TfContent *content, guint *handle,
@@ -29,14 +33,15 @@ struct _TfContentClass{
 
 gboolean _tf_content_start_sending (TfContent *self);
 void _tf_content_stop_sending (TfContent *self);
+void _tf_content_mute_to_stop_sending (TfContent *self);
 
 void _tf_content_emit_src_pad_added (TfContent *self, guint handle,
     FsStream *stream, GstPad *pad, FsCodec *codec);
 
 gboolean _tf_content_start_receiving (TfContent *self, guint *handles,
     guint handle_count);
-void _tf_content_stop_receiving (TfContent *self, guint *handles,
-    guint handle_count);
+void _tf_content_stop_receiving (TfContent *self,
+    guint *handles, guint handle_count);
 
 G_END_DECLS
 

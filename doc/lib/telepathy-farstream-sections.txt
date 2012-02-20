@@ -1,6 +1,5 @@
 <SECTION>
-<TITLE>Core</TITLE>
-tf_init
+<TITLE>Utilities</TITLE>
 tp_media_type_to_fs
 </SECTION>
 
@@ -12,6 +11,10 @@ TfContentClass
 tf_content_iterate_src_pads
 tf_content_error
 tf_content_error_literal
+tf_content_receiving_failed
+tf_content_receiving_failed_literal
+tf_content_sending_failed
+tf_content_sending_failed_literal
 <SUBSECTION Private>
 TfContentPrivate
 <SUBSECTION Standard>

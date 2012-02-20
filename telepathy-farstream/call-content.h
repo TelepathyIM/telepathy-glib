@@ -23,9 +23,8 @@
 #include <glib-object.h>
 
 #include <gst/gst.h>
-#include <telepathy-glib/channel.h>
+#include <telepathy-glib/telepathy-glib.h>
 
-#include "extensions/extensions.h"
 #include "call-channel.h"
 #include "content.h"
 #include "content-priv.h"
@@ -75,7 +74,7 @@ GType tf_call_content_get_type (void);
 
 TfCallContent *tf_call_content_new_async (
     TfCallChannel *call_channel,
-    const gchar *object_path,
+    TpCallContent *content_proxy,
     GError **error,
     GAsyncReadyCallback callback,
     gpointer user_data);
@@ -87,6 +86,7 @@ gboolean tf_call_content_bus_message (TfCallContent *content,
 /* Private */
 FsStream *_tf_call_content_get_fsstream_by_handle (TfCallContent *content,
     guint contact_handle,
+    FsStreamDirection dir,
     const gchar *transmitter,
     guint stream_transmitter_n_parameters,
     GParameter *stream_transmitter_parameters,
@@ -99,6 +99,9 @@ tf_call_content_get_fs_media_type (TfCallContent *content);
 
 gboolean
 tf_call_content_bus_message (TfCallContent *content, GstMessage *message);
+
+TpCallContent *
+tf_call_content_get_proxy (TfCallContent *content);
 
 G_END_DECLS
 

@@ -46,8 +46,7 @@
 #include <farstream/fs-utils.h>
 
 #include "stream.h"
-#include "stream-priv.h"
-#include "channel.h"
+#include "media-signalling-channel.h"
 #include "tf-signals-marshal.h"
 #include "utils.h"
 
@@ -83,7 +82,7 @@ struct DtmfEvent {
 
 struct _TfStreamPrivate
 {
-  TfChannel *channel;
+  TfMediaSignallingChannel *channel;
   FsConference *fs_conference;
   FsParticipant *fs_participant;
   FsSession *fs_session;
@@ -332,7 +331,7 @@ tf_stream_set_property (GObject      *object,
     {
     case PROP_CHANNEL:
       self->priv->channel =
-          TF_CHANNEL (g_value_get_object (value));
+          TF_MEDIA_SIGNALLING_CHANNEL (g_value_get_object (value));
       break;
     case PROP_FARSTREAM_CONFERENCE:
       self->priv->fs_conference =
@@ -430,7 +429,7 @@ tf_stream_dispose (GObject *object)
       tf_stream_free_resource (stream,
           TP_MEDIA_STREAM_DIRECTION_RECEIVE);
 
-      g_object_run_dispose (G_OBJECT (priv->fs_stream));
+      fs_stream_destroy (priv->fs_stream);
       g_object_unref (priv->fs_stream);
 
       tf_stream_free_resource (stream,
@@ -441,7 +440,7 @@ tf_stream_dispose (GObject *object)
 
   if (priv->fs_session)
     {
-      g_object_run_dispose (G_OBJECT (priv->fs_session));
+      fs_session_destroy (priv->fs_session);
       g_object_unref (priv->fs_session);
       priv->fs_session = NULL;
     }
@@ -506,7 +505,7 @@ tf_stream_class_init (TfStreamClass *klass)
       g_param_spec_object ("channel",
           "Telepathy channel",
           "The TfChannel this stream is in",
-          TF_TYPE_CHANNEL,
+          TF_TYPE_MEDIA_SIGNALLING_CHANNEL,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (object_class, PROP_FARSTREAM_CONFERENCE,
@@ -1606,23 +1605,6 @@ fill_fs_params (gpointer key, gpointer value, gpointer user_data)
   fs_codec_add_optional_parameter (codec, key, value);
 }
 
-static FsStreamDirection
-tpdirection_to_fsdirection (TpMediaStreamDirection dir)
-{
-  switch (dir) {
-  case TP_MEDIA_STREAM_DIRECTION_NONE:
-    return FS_DIRECTION_NONE;
-  case TP_MEDIA_STREAM_DIRECTION_SEND:
-    return FS_DIRECTION_SEND;
-  case TP_MEDIA_STREAM_DIRECTION_RECEIVE:
-    return FS_DIRECTION_RECV;
-  case TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL:
-    return FS_DIRECTION_BOTH;
-  default:
-    g_assert_not_reached ();
-  }
-}
-
 static void
 set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     const GPtrArray *codecs,
@@ -2035,13 +2017,11 @@ start_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
 static gboolean
 check_codecs_for_telephone_event (TfStream *self, GList **codecs,
-    FsCodec *send_codec, guint codecid)
+    FsCodec *send_codec, gint codecid)
 {
   GList *item = NULL;
-  gboolean found = FALSE;
   GError *error = NULL;
-
- again:
+  gboolean changed = FALSE;
 
   for (item = *codecs; item; item = item->next)
     {
@@ -2050,29 +2030,25 @@ check_codecs_for_telephone_event (TfStream *self, GList **codecs,
       if (!g_ascii_strcasecmp (codec->encoding_name, "telephone-event") &&
           send_codec->clock_rate == codec->clock_rate)
         {
-          if (found)
-            {
-              *codecs = g_list_delete_link (*codecs, item);
-              goto again;
-            }
-          else if (codecid == (guint) codec->id)
-            {
-              return TRUE;            }
+          if (codecid < 0 || codecid == codec->id)
+            return TRUE;
           else
-            {
-              codec->id = codecid;
-            }
+            codec->id = codecid;
+          changed = TRUE;
+          break;
         }
     }
 
-  if (!found)
+  if (codecid < 0)
+    return FALSE;
+
+  if (!changed)
     {
       FsCodec *codec = fs_codec_new (codecid, "telephone-event",
           FS_MEDIA_TYPE_AUDIO, send_codec->clock_rate);
 
       *codecs = g_list_append (*codecs, codec);
     }
-
   if (!fs_stream_set_remote_codecs (self->priv->fs_stream, *codecs, &error))
     {
       /*
@@ -2145,10 +2121,27 @@ start_sound_telephony_event (TpMediaStreamHandler *proxy, guchar event,
     gpointer user_data, GObject *object)
 {
   TfStream *self = TF_STREAM (object);
+  FsCodec *send_codec = NULL;
+  GList *codecs = NULL;
 
   g_assert (self->priv->fs_session != NULL);
 
   DEBUG (self, "called with event %u", event);
+
+  g_object_get (self->priv->fs_session,
+      "current-send-codec", &send_codec,
+      "codecs", &codecs,
+      NULL);
+
+  if (send_codec == NULL)
+    goto out;
+
+  if (check_codecs_for_telephone_event (self, &codecs, send_codec, -1))
+    {
+      WARNING (self, "Tried to do sound event while telephone-event is set,"
+          " ignoring");
+      goto out;
+    }
 
   if (self->priv->sending_telephony_event)
     {
@@ -2163,6 +2156,10 @@ start_sound_telephony_event (TpMediaStreamHandler *proxy, guchar event,
   if (!fs_session_start_telephony_event (self->priv->fs_session, event, 8))
     WARNING (self, "sending sound event %u failed", event);
   self->priv->sending_telephony_event = TRUE;
+
+ out:
+  fs_codec_destroy (send_codec);
+  fs_codec_list_destroy (codecs);
 }
 
 
@@ -2178,8 +2175,7 @@ stop_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   DEBUG (self, "called");
 
   if (!self->priv->sending_telephony_event)
-      WARNING (self, "Trying to stop telephony event without having started"
-          " one");
+    WARNING (self, "Trying to stop telephony event without having started one");
   self->priv->sending_telephony_event = FALSE;
 
   if (!fs_session_stop_telephony_event (self->priv->fs_session))
@@ -2494,11 +2490,15 @@ _tf_stream_bus_message (TfStream *stream,
       value = gst_structure_get_value (s, "stream");
       fsstream = g_value_get_object (value);
 
+      g_debug ("new local fs: %p s:%p", stream->priv->fs_stream, stream);
+
       if (fsstream != stream->priv->fs_stream)
         return FALSE;
 
       value = gst_structure_get_value (s, "candidate");
       candidate = g_value_get_boxed (value);
+
+      g_debug ("NEW LOCAL CAND");
 
       cb_fs_new_local_candidate (stream, candidate);
       return TRUE;
@@ -2511,8 +2511,12 @@ _tf_stream_bus_message (TfStream *stream,
       value = gst_structure_get_value (s, "stream");
       fsstream = g_value_get_object (value);
 
+      g_debug ("local cand prep fs: %p s:%p", stream->priv->fs_stream, stream);
+
       if (fsstream != stream->priv->fs_stream)
         return FALSE;
+
+      g_debug ("LOCAL CAND PREP");
 
       cb_fs_local_candidates_prepared (stream);
 
@@ -2608,10 +2612,6 @@ _tf_stream_bus_message (TfStream *stream,
             FS_CODEC_ARGS (codec));
 
       cb_fs_send_codec_changed (stream, codec, secondary_codecs);
-
-      if (codec)
-        fs_codec_destroy (codec);
-      fs_codec_list_destroy (secondary_codecs);
       return TRUE;
     }
   else if (gst_structure_has_name (s, "farstream-component-state-changed"))
@@ -2796,23 +2796,6 @@ fs_codecs_to_feedback_messages (GList *fscodecs)
   return feedback_messages;
 }
 
-
-static TpMediaStreamDirection
-fsdirection_to_tpdirection (FsStreamDirection dir)
-{
-  switch (dir) {
-  case FS_DIRECTION_NONE:
-    return TP_MEDIA_STREAM_DIRECTION_NONE;
-  case FS_DIRECTION_SEND:
-    return TP_MEDIA_STREAM_DIRECTION_SEND;
-  case FS_DIRECTION_RECV:
-    return TP_MEDIA_STREAM_DIRECTION_RECEIVE;
-  case FS_DIRECTION_BOTH:
-    return TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL;
-  default:
-    g_assert_not_reached ();
-  }
-}
 
 
 static GPtrArray *
@@ -3054,7 +3037,7 @@ cb_fs_component_state_changed (TfStream *self,
     FsStreamState fsstate)
 {
   TpMediaStreamState state;
-  const gchar *state_str;
+  const gchar *state_str = "";
 
   if (component != 1)
     return;

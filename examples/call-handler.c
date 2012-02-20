@@ -19,7 +19,6 @@
 
 #include <gst/gst.h>
 #include <telepathy-glib/telepathy-glib.h>
-#include <extensions/extensions.h>
 #include <farstream/fs-element-added-notifier.h>
 #include <farstream/fs-utils.h>
 #include <telepathy-farstream/telepathy-farstream.h>
@@ -546,7 +545,7 @@ new_call_channel_cb (TpSimpleHandler *handler,
 
   tp_handle_channels_context_accept (handler_context);
 
-  tf_future_cli_channel_type_call_call_accept (proxy, -1,
+  tp_cli_channel_type_call_call_accept (proxy, -1,
       NULL, NULL, NULL, NULL);
 
   context->proxy = g_object_ref (proxy);
@@ -559,17 +558,16 @@ int
 main (int argc, char **argv)
 {
   TpBaseClient *client;
-  TpAccountManager *account_manager;
+  TpAccountManager *am;
 
   g_type_init ();
-  tf_init ();
   gst_init (&argc, &argv);
 
   loop = g_main_loop_new (NULL, FALSE);
 
-  account_manager = tp_account_manager_dup ();
+  am = tp_account_manager_dup ();
 
-  client = tp_simple_handler_new_with_am (account_manager,
+  client = tp_simple_handler_new_with_am (am,
     FALSE,
     FALSE,
     "TpFsCallHandlerDemo",
@@ -581,35 +579,35 @@ main (int argc, char **argv)
   tp_base_client_take_handler_filter (client,
     tp_asv_new (
        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TF_FUTURE_IFACE_CHANNEL_TYPE_CALL,
+          TP_IFACE_CHANNEL_TYPE_CALL,
        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
           TP_HANDLE_TYPE_CONTACT,
-        TF_FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, G_TYPE_BOOLEAN,
+        TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, G_TYPE_BOOLEAN,
           TRUE,
        NULL));
 
   tp_base_client_take_handler_filter (client,
     tp_asv_new (
        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TF_FUTURE_IFACE_CHANNEL_TYPE_CALL,
+          TP_IFACE_CHANNEL_TYPE_CALL,
        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
           TP_HANDLE_TYPE_CONTACT,
-        TF_FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, G_TYPE_BOOLEAN,
+        TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, G_TYPE_BOOLEAN,
           TRUE,
        NULL));
 
   tp_base_client_add_handler_capabilities_varargs (client,
-    TF_FUTURE_IFACE_CHANNEL_TYPE_CALL "/video/h264",
-    TF_FUTURE_IFACE_CHANNEL_TYPE_CALL "/shm",
-    TF_FUTURE_IFACE_CHANNEL_TYPE_CALL "/ice",
-    TF_FUTURE_IFACE_CHANNEL_TYPE_CALL "/gtalk-p2p",
+    TP_IFACE_CHANNEL_TYPE_CALL "/video/h264",
+    TP_IFACE_CHANNEL_TYPE_CALL "/shm",
+    TP_IFACE_CHANNEL_TYPE_CALL "/ice",
+    TP_IFACE_CHANNEL_TYPE_CALL "/gtalk-p2p",
     NULL);
 
   tp_base_client_register (client, NULL);
 
   g_main_loop_run (loop);
 
-  g_object_unref (account_manager);
+  g_object_unref (am);
   g_object_unref (client);
   g_main_loop_unref (loop);
 

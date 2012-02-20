@@ -31,16 +31,10 @@
 
 #include <stdlib.h>
 
-#include <telepathy-glib/channel.h>
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/enums.h>
-#include <telepathy-glib/errors.h>
-#include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include <farstream/fs-conference.h>
 
-#include "extensions/extensions.h"
 
 #include "channel.h"
 #include "channel-priv.h"
@@ -152,8 +146,23 @@ tf_channel_get_property (GObject    *object,
       break;
     case PROP_FS_CONFERENCES:
       if (self->priv->call_channel)
-        g_object_get_property (G_OBJECT (self->priv->call_channel),
-            "fs-conferences", value);
+        {
+          g_object_get_property (G_OBJECT (self->priv->call_channel),
+              "fs-conferences", value);
+        }
+      else if (self->priv->media_signalling_channel &&
+               self->priv->media_signalling_channel->session)
+        {
+          GPtrArray *array =
+              g_ptr_array_new_with_free_func ((GDestroyNotify) gst_object_unref);
+          FsConference *conf = NULL;
+
+          g_object_get (self->priv->media_signalling_channel->session,
+              "farstream-conference", &conf, NULL);
+          g_ptr_array_add (array, conf);
+          g_value_take_boxed (value, array);
+        }
+
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -326,22 +335,34 @@ channel_prepared (GObject *obj,
           "stream-created", G_CALLBACK (channel_stream_created),
           self, 0);
       g_simple_async_result_set_op_res_gboolean (res, TRUE);
+      g_simple_async_result_complete (res);
     }
   else if (tp_proxy_has_interface_by_id (as_proxy,
-          TF_FUTURE_IFACE_QUARK_CHANNEL_TYPE_CALL))
+          TP_IFACE_QUARK_CHANNEL_TYPE_CALL))
     {
-      tf_call_channel_new_async (channel_proxy, call_channel_ready, res);
+      if (!TP_IS_CALL_CHANNEL (channel_proxy))
+        {
+          g_simple_async_result_set_error (res, TP_ERROR,
+              TP_ERROR_INVALID_ARGUMENT,
+              "You must pass a TpCallChannel object if its a Call channel");
+          g_simple_async_result_set_op_res_gboolean (res, FALSE);
+          g_simple_async_result_complete (res);
+        }
+      else
+        {
+          tf_call_channel_new_async (channel_proxy, call_channel_ready, res);
 
-      self->priv->channel_invalidated_handler = g_signal_connect (
-          self->priv->channel_proxy,
-          "invalidated", G_CALLBACK (channel_invalidated), self);
+          self->priv->channel_invalidated_handler = g_signal_connect (
+              self->priv->channel_proxy,
+              "invalidated", G_CALLBACK (channel_invalidated), self);
+        }
     }
   else
     {
       g_simple_async_result_set_error (res, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Channel does not implement "
           TP_IFACE_CHANNEL_INTERFACE_MEDIA_SIGNALLING " or "
-          TF_FUTURE_IFACE_CHANNEL_TYPE_CALL);
+          TP_IFACE_CHANNEL_TYPE_CALL);
       goto error;
     }
 
@@ -606,6 +627,9 @@ tf_channel_new_async (TpChannel *channel_proxy,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
+  g_return_if_fail (channel_proxy != NULL);
+  g_return_if_fail (callback != NULL);
+
   return g_async_initable_new_async (TF_TYPE_CHANNEL,
       0, NULL, callback, user_data,
       "channel", channel_proxy,
@@ -627,6 +651,9 @@ gboolean
 tf_channel_bus_message (TfChannel *channel,
     GstMessage *message)
 {
+  g_return_val_if_fail (channel != NULL, FALSE);
+  g_return_val_if_fail (message != NULL, FALSE);
+
   if (channel->priv->media_signalling_channel)
     return tf_media_signalling_channel_bus_message (
         channel->priv->media_signalling_channel, message);

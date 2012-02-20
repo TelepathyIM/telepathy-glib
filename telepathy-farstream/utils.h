@@ -24,5 +24,39 @@ tp_media_type_to_fs (TpMediaStreamType type)
     }
 }
 
+static inline TpMediaStreamDirection
+fsdirection_to_tpdirection (FsStreamDirection dir)
+{
+  switch (dir) {
+  case FS_DIRECTION_NONE:
+    return TP_MEDIA_STREAM_DIRECTION_NONE;
+  case FS_DIRECTION_SEND:
+    return TP_MEDIA_STREAM_DIRECTION_SEND;
+  case FS_DIRECTION_RECV:
+    return TP_MEDIA_STREAM_DIRECTION_RECEIVE;
+  case FS_DIRECTION_BOTH:
+    return TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL;
+  default:
+    g_assert_not_reached ();
+  }
+}
+
+static inline FsStreamDirection
+tpdirection_to_fsdirection (TpMediaStreamDirection dir)
+{
+  switch (dir) {
+  case TP_MEDIA_STREAM_DIRECTION_NONE:
+    return FS_DIRECTION_NONE;
+  case TP_MEDIA_STREAM_DIRECTION_SEND:
+    return FS_DIRECTION_SEND;
+  case TP_MEDIA_STREAM_DIRECTION_RECEIVE:
+    return FS_DIRECTION_RECV;
+  case TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL:
+    return FS_DIRECTION_BOTH;
+  default:
+    g_assert_not_reached ();
+  }
+}
+
 
 #endif /* __UTILS_H__ */

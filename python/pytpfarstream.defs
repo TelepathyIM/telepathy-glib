@@ -29,11 +29,6 @@
 
 ;; From telepathy-farstream.h
 
-(define-function tf_init
-  (c-name "tf_init")
-  (return-type "none")
-)
-
 
 ;; -*- scheme -*-
 ; object definitions ...
@@ -74,8 +69,6 @@
   (c-name "tf_content_error_literal")
   (return-type "none")
   (parameters
-    '("guint" "reason")
-    '("const-gchar*" "detailed_reason")
     '("const-gchar*" "message")
   )
 )
@@ -85,8 +78,48 @@
   (c-name "tf_content_error")
   (return-type "none")
   (parameters
-    '("guint" "reason")
-    '("const-gchar*" "detailed_reason")
+    '("const-gchar*" "message_format")
+  )
+  (varargs #t)
+)
+
+(define-method sending_failed_literal
+  (of-object "TfContent")
+  (c-name "tf_content_sending_failed_literal")
+  (return-type "none")
+  (parameters
+    '("const-gchar*" "message")
+  )
+)
+
+(define-method sending_failed
+  (of-object "TfContent")
+  (c-name "tf_content_sending_failed")
+  (return-type "none")
+  (parameters
+    '("const-gchar*" "message_format")
+  )
+  (varargs #t)
+)
+
+(define-method receiving_failed_literal
+  (of-object "TfContent")
+  (c-name "tf_content_receiving_failed_literal")
+  (return-type "none")
+  (parameters
+    '("guint*" "handles")
+    '("guint" "handle_count")
+    '("const-gchar*" "message")
+  )
+)
+
+(define-method receiving_failed
+  (of-object "TfContent")
+  (c-name "tf_content_receiving_failed")
+  (return-type "none")
+  (parameters
+    '("guint*" "handles")
+    '("guint" "handle_count")
     '("const-gchar*" "message_format")
   )
   (varargs #t)

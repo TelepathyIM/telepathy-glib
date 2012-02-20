@@ -15,7 +15,6 @@ inittpfarstream(void)
 {
   PyObject *m, *d;
 
-  tf_init ();
   init_pygobject ();
 
   m = Py_InitModule ("tpfarstream", tf_functions);
