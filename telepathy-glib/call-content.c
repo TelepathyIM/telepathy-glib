@@ -547,7 +547,6 @@ tp_call_content_class_init (TpCallContentClass *klass)
 
   g_type_class_add_private (gobject_class, sizeof (TpCallContentPrivate));
   tp_call_content_init_known_interfaces ();
-  tp_call_mute_init_known_interfaces ();
 
   /**
    * TpCallContent:connection:

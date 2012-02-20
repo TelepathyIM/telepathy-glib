@@ -36,37 +36,7 @@
 #include "telepathy-glib/proxy-subclass.h"
 
 #include "_gen/tp-cli-call-content-media-description-body.h"
-#include "_gen/tp-cli-call-mute-body.h"
 #include "_gen/tp-cli-call-stream-endpoint-body.h"
-
-/**
- * tp_call_mute_init_known_interfaces:
- *
- * Ensure that the known interfaces for #TpProxy have been set up.
- * This is done automatically when necessary, but for correct
- * overriding of library interfaces by local extensions, you should
- * call this function before calling
- * tp_proxy_or_subclass_hook_on_interface_add() with first argument
- * %TP_TYPE_PROXY.
- *
- * Since: 0.UNRELEASED
- */
-void
-tp_call_mute_init_known_interfaces (void)
-{
-  static gsize once = 0;
-
-  if (g_once_init_enter (&once))
-    {
-      GType tp_type = TP_TYPE_PROXY;
-
-      tp_proxy_init_known_interfaces ();
-      tp_proxy_or_subclass_hook_on_interface_add (tp_type,
-          tp_cli_call_mute_add_signals);
-
-      g_once_init_leave (&once, 1);
-    }
-}
 
 /**
  * tp_call_stream_endpoint_init_known_interfaces:

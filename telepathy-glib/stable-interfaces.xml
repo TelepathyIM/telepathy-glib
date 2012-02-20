@@ -28,7 +28,6 @@
 
 <xi:include href="call-content.xml"/>
 <xi:include href="call-content-media-description.xml"/>
-<xi:include href="call-mute.xml"/>
 <xi:include href="call-stream.xml"/>
 <xi:include href="call-stream-endpoint.xml"/>
 

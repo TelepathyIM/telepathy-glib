@@ -3,7 +3,6 @@
 
 #include <telepathy-glib/_gen/tp-svc-call-content.h>
 #include <telepathy-glib/_gen/tp-svc-call-content-media-description.h>
-#include <telepathy-glib/_gen/tp-svc-call-mute.h>
 #include <telepathy-glib/_gen/tp-svc-call-stream.h>
 #include <telepathy-glib/_gen/tp-svc-call-stream-endpoint.h>
 

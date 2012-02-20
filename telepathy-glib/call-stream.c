@@ -333,7 +333,6 @@ tp_call_stream_class_init (TpCallStreamClass *klass)
 
   g_type_class_add_private (gobject_class, sizeof (TpCallStreamPrivate));
   tp_call_stream_init_known_interfaces ();
-  tp_call_mute_init_known_interfaces ();
 
   /**
    * TpCallStream:connection:

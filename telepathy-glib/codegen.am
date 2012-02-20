@@ -5,7 +5,6 @@ codegen_extra_dist = \
     account-manager.xml \
     call-content.xml \
     call-content-media-description.xml \
-    call-mute.xml \
     call-stream.xml \
     call-stream-endpoint.xml \
     channel.xml \
@@ -47,7 +46,6 @@ nodist_geninclude_HEADERS = \
     _gen/tp-cli-account-manager.h \
     _gen/tp-cli-call-content.h \
     _gen/tp-cli-call-content-media-description.h \
-    _gen/tp-cli-call-mute.h \
     _gen/tp-cli-call-stream.h \
     _gen/tp-cli-call-stream-endpoint.h \
     _gen/tp-cli-channel.h \
@@ -66,7 +64,6 @@ nodist_geninclude_HEADERS = \
     _gen/tp-svc-account-manager.h \
     _gen/tp-svc-call-content.h \
     _gen/tp-svc-call-content-media-description.h \
-    _gen/tp-svc-call-mute.h \
     _gen/tp-svc-call-stream.h \
     _gen/tp-svc-call-stream-endpoint.h \
     _gen/tp-svc-channel.h \
@@ -97,7 +94,6 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/tp-cli-account-manager-body.h \
     _gen/tp-cli-call-content-body.h \
     _gen/tp-cli-call-content-media-description-body.h \
-    _gen/tp-cli-call-mute-body.h \
     _gen/tp-cli-call-stream-body.h \
     _gen/tp-cli-call-stream-endpoint-body.h \
     _gen/tp-cli-channel-body.h \
@@ -116,7 +112,6 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/tp-svc-account-manager.c \
     _gen/tp-svc-call-content.c \
     _gen/tp-svc-call-content-media-description.c \
-    _gen/tp-svc-call-mute.c \
     _gen/tp-svc-call-stream.c \
     _gen/tp-svc-call-stream-endpoint.c \
     _gen/tp-svc-channel.c \

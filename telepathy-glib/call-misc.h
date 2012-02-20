@@ -25,14 +25,12 @@
 
 G_BEGIN_DECLS
 
-void tp_call_mute_init_known_interfaces (void);
 void tp_call_stream_endpoint_init_known_interfaces (void);
 void tp_call_content_media_description_init_known_interfaces (void);
 
 G_END_DECLS
 
 #include "_gen/tp-cli-call-content-media-description.h"
-#include "_gen/tp-cli-call-mute.h"
 #include "_gen/tp-cli-call-stream-endpoint.h"
 
 #endif

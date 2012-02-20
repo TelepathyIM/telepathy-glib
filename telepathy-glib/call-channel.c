@@ -740,7 +740,6 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
   proxy_class->list_features = tp_call_channel_list_features;
 
   g_type_class_add_private (gobject_class, sizeof (TpCallChannelPrivate));
-  tp_call_mute_init_known_interfaces ();
 
   /* FIXME: Should be annoted with
    *
