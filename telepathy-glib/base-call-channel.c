@@ -75,6 +75,8 @@
  * @self: a #TpBaseCallChannel
  * @name: the name for the new content
  * @media: a #TpMediaStreamType
+ * @initial_direction: the desired initial direction of streams in the new
+ *  content
  * @error: a #GError to fill
  *
  * Signature of an implementation of #TpBaseCallChannelClass.add_content.

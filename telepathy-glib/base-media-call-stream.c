@@ -70,8 +70,9 @@
  */
 
 /**
- * TpBaseMediaCallStreamVoidFunc:
+ * TpBaseMediaCallStreamFinishInitialCandidatesFunc:
  * @self: a #TpBaseMediaCallStream
+ * @error: a #GError to fill
  *
  * Signature of an implementation of
  * #TpBaseMediaCallStreamClass.finish_initial_candidates.
