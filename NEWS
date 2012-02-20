@@ -1,3 +1,9 @@
+telepathy-farstream 0.2.1 (20 Feb 2012)
+======================================
+
+- Now use Call1 as well as Streamed Media
+- Now requires Farstream and telepathy-glib 0.17.5
+
 telepathy-farstream 0.1.2 (18 Nov 2011)
 ======================================
 

@@ -9,8 +9,8 @@ AC_PREREQ([2.59])
 
 m4_define([tp_farstream_major_version], [0])
 m4_define([tp_farstream_minor_version], [2])
-m4_define([tp_farstream_micro_version], [0])
-m4_define([tp_farstream_nano_version], [1])
+m4_define([tp_farstream_micro_version], [1])
+m4_define([tp_farstream_nano_version], [0])
 
 dnl CURRENT, REVISION, AGE
 dnl - library source changed -> increment REVISION
@@ -98,7 +98,7 @@ AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 
 dnl Check for Telepathy libraries
-PKG_CHECK_MODULES([TELEPATHY], [telepathy-glib >= 0.13.4])
+PKG_CHECK_MODULES([TELEPATHY], [telepathy-glib >= 0.17.5])
 
 AC_SUBST(TELEPATHY_CFLAGS)
 AC_SUBST(TELEPATHY_LIBS)
