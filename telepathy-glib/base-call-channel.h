@@ -36,6 +36,7 @@ typedef TpBaseCallContent * (*TpBaseCallChannelAddContentFunc) (
     TpBaseCallChannel *self,
     const gchar *name,
     TpMediaStreamType media,
+    TpMediaStreamDirection initial_direction,
     GError **error);
 typedef void (*TpBaseCallChannelHangupFunc) (TpBaseCallChannel *self,
     TpCallStateChangeReason reason,

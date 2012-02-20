@@ -632,16 +632,28 @@ test_basics (Test *test,
   /* AddContent with bad content-type must fail */
 
   tp_call_channel_add_content_async (test->call_chan,
-      "", 31337, add_content_cb, test);
+      "", 31337, TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
+      add_content_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert (test->error != NULL);
   g_assert (test->added_content == NULL);
   g_clear_error (&test->error);
 
-  /* AddContent again, to add a video stream */
+  /* AddContent with bad initial-direction must fail */
 
   tp_call_channel_add_content_async (test->call_chan,
-      "", TP_MEDIA_STREAM_TYPE_VIDEO, add_content_cb, test);
+      "", TP_MEDIA_STREAM_TYPE_AUDIO, 31337,
+      add_content_cb, test);
+  g_main_loop_run (test->mainloop);
+  g_assert (test->error != NULL);
+  g_assert (test->added_content == NULL);
+  g_clear_error (&test->error);
+
+   /* AddContent again, to add a video stream */
+
+  tp_call_channel_add_content_async (test->call_chan,
+      "", TP_MEDIA_STREAM_TYPE_VIDEO, TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
+      add_content_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 

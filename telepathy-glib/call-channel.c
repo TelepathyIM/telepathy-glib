@@ -1465,6 +1465,7 @@ add_content_cb (TpChannel *channel,
  * @name: the suggested name of the content to add
  * @type: the media stream type of the content to be added to the call, from
  *  #TpMediaStreamType
+ * @initial_direction: The initial direction of the content
  * @callback: a callback to call when the operation finishes
  * @user_data: data to pass to @callback
  *
@@ -1478,6 +1479,7 @@ void
 tp_call_channel_add_content_async (TpCallChannel *self,
     gchar *name,
     TpMediaStreamType type,
+    TpMediaStreamDirection initial_direction,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -1489,7 +1491,7 @@ tp_call_channel_add_content_async (TpCallChannel *self,
       user_data, tp_call_channel_add_content_async);
 
   tp_cli_channel_type_call_call_add_content (TP_CHANNEL (self), -1,
-      name, type,
+      name, type, initial_direction,
       add_content_cb, result, g_object_unref, G_OBJECT (self));
 }
 

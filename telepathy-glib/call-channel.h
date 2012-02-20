@@ -122,6 +122,7 @@ gboolean tp_call_channel_hangup_finish (TpCallChannel *self,
 void tp_call_channel_add_content_async (TpCallChannel *self,
     gchar *name,
     TpMediaStreamType type,
+    TpMediaStreamDirection initial_direction,
     GAsyncReadyCallback callback,
     gpointer user_data);
 TpCallContent *tp_call_channel_add_content_finish (TpCallChannel *self,
