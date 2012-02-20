@@ -432,8 +432,7 @@ _tf_content_stop_receiving (TfContent *self, guint *handles,
 /**
  * tf_content_sending_failed_literal:
  * @content: a #TfContent
- * @message_format: Message with printf style formatting
- * @...:  Parameters to insert into the @message_format string
+ * @message: The error message
  *
  * Informs the Connection Manager that sending has failed for this
  * content. This is a transient error and it may or not not end the Content
@@ -459,7 +458,8 @@ tf_content_sending_failed_literal (TfContent *content,
 /**
  * tf_content_sending_failed:
  * @content: a #TfContent
- * @message: The error message
+ * @message_format: Message with printf style formatting
+ * @...:  Parameters to insert into the @message_format string
  *
  * Informs the Connection Manager that sending has failed for this
  * content. This is a transient error and it may or not not end the Content

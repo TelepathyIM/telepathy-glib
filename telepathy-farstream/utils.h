@@ -1,7 +1,7 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 
-/**
+/*
  * tp_media_type_to_fs:
  * @type: A Telepathy Media Stream Type
  *

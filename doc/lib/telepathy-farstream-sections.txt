@@ -1,9 +1,4 @@
 <SECTION>
-<TITLE>Utilities</TITLE>
-tp_media_type_to_fs
-</SECTION>
-
-<SECTION>
 <FILE>content</FILE>
 <TITLE>TfContent</TITLE>
 TfContent
