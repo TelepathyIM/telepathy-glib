@@ -48,6 +48,7 @@ enum
   PROP_LOCAL_SENDING_STATE,
   PROP_REMOTE_MEMBERS,
   PROP_REMOTE_MEMBER_IDENTIFIERS,
+  PROP_INITIAL_DIRECTION,
   N_PROPS
 };
 
@@ -64,6 +65,7 @@ struct _ExampleCallStreamPrivate
   gchar *object_path;
   TpBaseConnection *conn;
   TpHandle handle;
+  TpMediaStreamDirection initial_direction;
   FutureSendingState local_sending_state;
   FutureSendingState remote_sending_state;
 
@@ -98,6 +100,8 @@ constructed (GObject *object)
   ExampleCallStream *self = EXAMPLE_CALL_STREAM (object);
   void (*chain_up) (GObject *) =
       ((GObjectClass *) example_call_stream_parent_class)->constructed;
+  gboolean local_send = FALSE;
+  gboolean remote_send = FALSE;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -106,13 +110,20 @@ constructed (GObject *object)
       tp_base_connection_get_dbus_daemon (self->priv->conn),
       self->priv->object_path, self);
 
+  if (self->priv->initial_direction & TP_MEDIA_STREAM_DIRECTION_SEND)
+    local_send = TRUE;
+
+  if (self->priv->initial_direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE)
+    remote_send = TRUE;
+
   if (self->priv->locally_requested)
     {
-      example_call_stream_change_direction (self, TRUE, TRUE);
+      example_call_stream_change_direction (self, local_send, remote_send);
     }
   else
     {
-      example_call_stream_receive_direction_request (self, TRUE, TRUE);
+      example_call_stream_receive_direction_request (self, local_send,
+          remote_send);
     }
 
   if (self->priv->handle != 0)
@@ -224,6 +235,10 @@ set_property (GObject *object,
 
     case PROP_LOCALLY_REQUESTED:
       self->priv->locally_requested = g_value_get_boolean (value);
+      break;
+
+    case PROP_INITIAL_DIRECTION:
+      self->priv->initial_direction = g_value_get_uint (value);
       break;
 
     default:
@@ -354,6 +369,15 @@ example_call_stream_class_init (ExampleCallStreamClass *klass)
       0, NUM_FUTURE_SENDING_STATES, FUTURE_SENDING_STATE_NONE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_LOCAL_SENDING_STATE,
+      param_spec);
+
+  param_spec = g_param_spec_uint ("initial-direction", "Initial direction",
+      "Direction requested when this stream was created",
+      TP_MEDIA_STREAM_DIRECTION_NONE,
+      TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
+      TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INITIAL_DIRECTION,
       param_spec);
 
   signals[SIGNAL_REMOVED] = g_signal_new ("removed",

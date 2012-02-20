@@ -22,7 +22,7 @@
 
   <interface
       name="org.freedesktop.Telepathy.Call1.Content.Interface.Media">
-    <tp:added version="0.23.4">(draft 2)</tp:added>
+    <tp:added version="0.25.2">(as stable API)</tp:added>
     <tp:requires interface="org.freedesktop.Telepathy.Call1.Content"/>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">

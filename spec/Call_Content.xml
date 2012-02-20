@@ -21,7 +21,7 @@
   </tp:license>
 
   <interface name="org.freedesktop.Telepathy.Call1.Content">
-    <tp:added version="0.19.0">(draft 1)</tp:added>
+    <tp:added version="0.25.2">(as stable API)</tp:added>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>This object represents one Content inside a <tp:dbus-ref

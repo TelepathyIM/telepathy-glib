@@ -20,7 +20,7 @@
   </tp:license>
 
   <interface name="org.freedesktop.Telepathy.Call1.Content.Interface.VideoControl">
-    <tp:added version="0.21.10">(draft 1)</tp:added>
+    <tp:added version="0.25.2">(as stable API)</tp:added>
     <tp:requires interface="org.freedesktop.Telepathy.Call1.Content.Interface.Media"/>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">

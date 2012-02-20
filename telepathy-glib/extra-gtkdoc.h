@@ -951,7 +951,9 @@
  * @short_description: client-side wrappers for authentication channels
  *
  * The ServerAuthentication channel type represents a request for client/UI
- * processes to carry out authentication with a server.
+ * processes to carry out authentication with a server, including password
+ * authentication (prove that you are who you say you are) and captcha
+ * authentication (prove that you are not a bot).
  *
  * Since: 0.13.7
  */
@@ -967,6 +969,10 @@
  * The SASLAuthentication interface allows authentication via SASL, and also
  * allows providing a simple password to the connection manager for it to
  * use with SASL or non-SASL mechanisms.
+ *
+ * The CaptchaAuthentication interface (since 0.17.UNRELEASED) allows
+ * interactive captcha-solving so that the user can prove that they are not
+ * a bot, on protocols requiring this.
  *
  * Since: 0.13.7
  */
@@ -994,4 +1000,39 @@
  * so would add NumberOfPs=42 to the Metadata property.
  *
  * Since: 0.17.1
+ */
+
+/**
+ * SECTION:connection-addressing
+ * @title: Connection Addressing interface
+ * @short_description: client-side wrappers for the Addressing interface
+ * @see_also: #TpConnection
+ *
+ * An interface for connections in protocols where contacts' unique
+ * identifiers can be expressed as vCard fields and/or URIs.
+ *
+ * Since: 0.17.UNRELEASED
+ */
+
+/**
+ * SECTION:channel-cli-call
+ * @title: Call channel type
+ * @short_description: client-side wrappers for the Call channel type
+ * @see_also: #TpChannel
+ *
+ * This section documents the auto-generated C wrappers for the Call
+ * channel type.
+ *
+ * Call channels represent real-time audio or video streaming, including
+ * voice over IP, webcams, and telephony.
+ */
+
+/**
+ * SECTION:svc-channel-call
+ * @title: Service-side Call channel type
+ * @short_description: GInterface to implement Call channels
+ * @see_also: #TpBaseChannel
+ *
+ * Call channels represent real-time audio or video streaming, including
+ * voice over IP, webcams, and telephony.
  */

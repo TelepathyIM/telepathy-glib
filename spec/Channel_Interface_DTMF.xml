@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:requires interface="org.freedesktop.Telepathy.Channel.Type.Call1"/>
     </tp:xor-requires>
 
-    <tp:changed version="0.UNRELEASED">The only part of this spec that should
+    <tp:changed version="0.25.2">The only part of this spec that should
     be used with a Call1 channel is the "InitialTones" property.
     </tp:changed>
 

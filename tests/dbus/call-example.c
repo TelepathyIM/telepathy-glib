@@ -622,10 +622,18 @@ test_basics (Test *test,
   g_assert_no_error (test->error);
   g_assert_cmpuint (test->uint_return, ==, FUTURE_SENDING_STATE_SENDING);
 
-  /* AddContent with bad content-type must fail */
+  /* AddContent with bad content-type or direction must fail */
 
   future_cli_channel_type_call_call_add_content (test->chan, -1,
-      "", 31337, added_content_cb, test, NULL, NULL);
+      "", 31337, TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
+      added_content_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  g_assert (test->error != NULL);
+  g_clear_error (&test->error);
+
+  future_cli_channel_type_call_call_add_content (test->chan, -1,
+      "", TP_MEDIA_STREAM_TYPE_VIDEO, 31337,
+      added_content_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   g_assert (test->error != NULL);
   g_clear_error (&test->error);
@@ -633,8 +641,8 @@ test_basics (Test *test,
   /* AddContent again, to add a video stream */
 
   future_cli_channel_type_call_call_add_content (test->chan, -1,
-      "", TP_MEDIA_STREAM_TYPE_VIDEO, added_content_cb,
-      test, NULL, NULL);
+      "", TP_MEDIA_STREAM_TYPE_VIDEO, TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
+      added_content_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 

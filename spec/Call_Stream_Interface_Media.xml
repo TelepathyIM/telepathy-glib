@@ -21,7 +21,7 @@
   </tp:license>
 
   <interface name="org.freedesktop.Telepathy.Call1.Stream.Interface.Media">
-    <tp:added version="0.19.0">(draft 1)</tp:added>
+    <tp:added version="0.25.2">(as stable API)</tp:added>
     <tp:requires interface="org.freedesktop.Telepathy.Call1.Stream"/>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
@@ -79,18 +79,6 @@
           data, and everything is going swimmingly.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="Pending_Mute" value="4">
-        <tp:docstring>
-          The streaming implementation has been told to mute sending,
-          but it has not yet indicated that it has done so.
-        </tp:docstring>
-      </tp:enumvalue>
-      <tp:enumvalue suffix="Muted" value="5">
-        <tp:docstring>
-          The streaming implementation has successfully muted sending,
-          and the local user's privacy is protected.
-        </tp:docstring>
-      </tp:enumvalue>
     </tp:enum>
 
     <property name="SendingState" tp:name-for-bindings="Sending_State"
@@ -101,7 +89,7 @@
         rely on reading this value and listening to
         <tp:member-ref>SendingStateChanged</tp:member-ref> to
         determine whether it should be sending media or not. It should not
-        need to listen to the Mute/Hold interfaces on the Call/Content.
+        need to listen to the Hold interfaces on the Call/Content.
         Feedback on success should be given via
         <tp:member-ref>CompleteSendingStateChange</tp:member-ref>. Failures
         should be reported via <tp:member-ref>ReportSendingFailure</tp:member-ref>.
@@ -418,6 +406,16 @@
           and then set the lowest priority candidate as the Raw UDP candidate.
         </tp:rationale>
       </tp:docstring>
+
+      <tp:possible-errors>
+        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
+          <tp:docstring>
+            The minimal required candidates have not been set. For
+            example, for an RTP protocol, at least one candidate on the
+            component 1 (RTP) must have been set.
+          </tp:docstring>
+        </tp:error>
+      </tp:possible-errors>
     </method>
 
     <tp:enum type="u" name="Stream_Transport_Type">

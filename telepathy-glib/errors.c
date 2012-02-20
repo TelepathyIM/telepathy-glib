@@ -247,6 +247,10 @@
  *     Raised when the call's streaming implementation has some kind of internal
  *     error.
  *     Since: 0.15.6
+ * @TP_ERROR_CAPTCHA_NOT_SUPPORTED:
+ *   <code>org.freedesktop.Telepathy.Error.Media.CaptchaNotSupported</code>:
+ *     Raised if no UI is available to present captchas, or if one is
+ *     available but it is unable to answer any of the captchas given.
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */

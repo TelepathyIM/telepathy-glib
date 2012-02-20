@@ -236,7 +236,8 @@ example_call_channel_init (ExampleCallChannel *self)
 static ExampleCallContent *example_call_channel_add_content (
     ExampleCallChannel *self, TpMediaStreamType media_type,
     gboolean locally_requested, gboolean initial,
-    const gchar *requested_name, GError **error);
+    const gchar *requested_name, TpMediaStreamDirection direction,
+    GError **error);
 
 static void example_call_channel_initiate_outgoing (ExampleCallChannel *self);
 
@@ -285,14 +286,16 @@ constructed (GObject *object)
         {
           g_message ("Channel initially has an audio stream");
           example_call_channel_add_content (self,
-              TP_MEDIA_STREAM_TYPE_AUDIO, TRUE, TRUE, NULL, NULL);
+              TP_MEDIA_STREAM_TYPE_AUDIO, TRUE, TRUE, NULL,
+              TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL, NULL);
         }
 
       if (self->priv->initial_video)
         {
           g_message ("Channel initially has a video stream");
           example_call_channel_add_content (self,
-              TP_MEDIA_STREAM_TYPE_VIDEO, TRUE, TRUE, NULL, NULL);
+              TP_MEDIA_STREAM_TYPE_VIDEO, TRUE, TRUE, NULL,
+              TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL, NULL);
         }
     }
   else
@@ -304,14 +307,16 @@ constructed (GObject *object)
         {
           g_message ("Channel initially has an audio stream");
           example_call_channel_add_content (self,
-              TP_MEDIA_STREAM_TYPE_AUDIO, FALSE, TRUE, NULL, NULL);
+              TP_MEDIA_STREAM_TYPE_AUDIO, FALSE, TRUE, NULL,
+              TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL, NULL);
         }
 
       if (self->priv->initial_video)
         {
           g_message ("Channel initially has a video stream");
           example_call_channel_add_content (self,
-              TP_MEDIA_STREAM_TYPE_VIDEO, FALSE, TRUE, NULL, NULL);
+              TP_MEDIA_STREAM_TYPE_VIDEO, FALSE, TRUE, NULL,
+              TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL, NULL);
         }
     }
 }
@@ -1124,6 +1129,7 @@ example_call_channel_add_content (ExampleCallChannel *self,
     gboolean locally_requested,
     gboolean initial,
     const gchar *requested_name,
+    TpMediaStreamDirection direction,
     GError **error)
 {
   ExampleCallContent *content;
@@ -1201,6 +1207,7 @@ example_call_channel_add_content (ExampleCallChannel *self,
       "connection", self->priv->conn,
       "handle", self->priv->handle,
       "locally-requested", locally_requested,
+      "initial-direction", direction,
       "object-path", path,
       NULL);
 
@@ -1444,6 +1451,7 @@ static void
 call_add_content (FutureSvcChannelTypeCall *iface,
     const gchar *content_name,
     guint content_type,
+    guint direction,
     DBusGMethodInvocation *context)
 {
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
@@ -1463,8 +1471,22 @@ call_add_content (FutureSvcChannelTypeCall *iface,
       goto error;
     }
 
+  switch (direction)
+    {
+    case TP_MEDIA_STREAM_DIRECTION_NONE:
+    case TP_MEDIA_STREAM_DIRECTION_SEND:
+    case TP_MEDIA_STREAM_DIRECTION_RECEIVE:
+    case TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL:
+      break;
+
+    default:
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "%u is not a supported Media_Stream_Direction", content_type);
+      goto error;
+    }
+
   content = example_call_channel_add_content (self, content_type, TRUE, FALSE,
-      content_name, &error);
+      content_name, direction, &error);
 
   if (content == NULL)
     goto error;
