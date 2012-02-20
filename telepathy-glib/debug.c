@@ -114,6 +114,7 @@ static GDebugKey keys[] = {
   { "contact-lists", TP_DEBUG_CONTACT_LISTS },
   { "sasl",          TP_DEBUG_SASL },
   { "room-config",   TP_DEBUG_ROOM_CONFIG },
+  { "call",          TP_DEBUG_CALL },
   { 0, }
 };
 

@@ -320,16 +320,13 @@ AC_OUTPUT( Makefile \
 	   examples/client/python/Makefile \
 	   examples/client/stream-tubes/Makefile \
 	   examples/cm/Makefile \
-	   examples/cm/callable/Makefile \
+	   examples/cm/call/Makefile \
 	   examples/cm/channelspecific/Makefile \
 	   examples/cm/contactlist/Makefile \
 	   examples/cm/echo-message-parts/Makefile \
 	   examples/cm/extended/Makefile \
 	   examples/cm/no-protocols/Makefile \
 	   examples/extensions/Makefile \
-	   examples/future/Makefile \
-	   examples/future/call-cm/Makefile \
-	   extensions/Makefile \
 	   spec/Makefile \
 	   telepathy-glib/Makefile \
 	   telepathy-glib/telepathy-glib.pc \

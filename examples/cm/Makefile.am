@@ -1,5 +1,5 @@
 SUBDIRS = \
-    callable \
+    call \
     channelspecific \
     contactlist \
     echo-message-parts \

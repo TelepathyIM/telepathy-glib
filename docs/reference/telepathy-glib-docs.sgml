@@ -68,7 +68,10 @@
     <xi:include href="xml/channel-roomlist.xml"/>
     <xi:include href="xml/channel-contactsearch.xml"/>
     <xi:include href="xml/channel-auth.xml"/>
-    <xi:include href="xml/channel-cli-call.xml"/>
+    <xi:include href="xml/cli-call-channel.xml"/>
+    <xi:include href="xml/cli-call-content.xml"/>
+    <xi:include href="xml/cli-call-stream.xml"/>
+    <xi:include href="xml/cli-call-misc.xml"/>
     <xi:include href="xml/cli-anonymity.xml"/>
     <xi:include href="xml/cli-service-point.xml"/>
     <xi:include href="xml/media-interfaces.xml"/>
@@ -91,6 +94,10 @@
     <xi:include href="xml/signalled-message.xml"/>
     <xi:include href="xml/text-channel.xml"/>
     <xi:include href="xml/file-transfer-channel.xml"/>
+    <xi:include href="xml/call-channel.xml"/>
+    <xi:include href="xml/call-content.xml"/>
+    <xi:include href="xml/call-stream.xml"/>
+    <xi:include href="xml/call-misc.xml"/>
   </chapter>
 
   <chapter id="ch-service-dbus">
@@ -156,6 +163,14 @@
     <xi:include href="xml/simple-approver.xml"/>
     <xi:include href="xml/simple-handler.xml"/>
     <xi:include href="xml/dtmf.xml"/>
+    <xi:include href="xml/base-call-channel.xml"/>
+    <xi:include href="xml/base-media-call-channel.xml"/>
+    <xi:include href="xml/base-call-content.xml"/>
+    <xi:include href="xml/base-media-call-content.xml"/>
+    <xi:include href="xml/call-content-media-description.xml"/>
+    <xi:include href="xml/base-call-stream.xml"/>
+    <xi:include href="xml/base-media-call-stream.xml"/>
+    <xi:include href="xml/call-stream-endpoint.xml"/>
   </chapter>
   <chapter id="ch-service-handles">
     <title>Service-side handle repositories</title>

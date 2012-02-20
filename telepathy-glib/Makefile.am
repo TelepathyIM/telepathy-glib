@@ -29,14 +29,26 @@ our_headers = \
     automatic-client-factory.h \
     automatic-proxy-factory.h \
     add-dispatch-operation-context.h \
+    base-call-channel.h \
+    base-call-content.h \
+    base-call-stream.h \
     base-client.h \
     base-channel.h \
     base-connection.h \
     base-connection-manager.h \
+    base-media-call-channel.h \
+    base-media-call-content.h \
+    base-media-call-stream.h \
     base-password-channel.h \
     base-protocol.h \
     base-room-config.h \
     basic-proxy-factory.h \
+    call-channel.h \
+    call-content.h \
+    call-content-media-description.h \
+    call-misc.h \
+    call-stream.h \
+    call-stream-endpoint.h \
     channel.h \
     channel-iface.h \
     channel-dispatcher.h \
@@ -102,6 +114,7 @@ our_headers = \
     stream-tube-connection.h \
     svc-account.h \
     svc-account-manager.h \
+    svc-call.h \
     svc-channel-dispatcher.h \
     svc-channel-dispatch-operation.h \
     svc-channel.h \
@@ -155,12 +168,19 @@ libtelepathy_glib_internal_la_SOURCES = \
     automatic-proxy-factory.c \
     add-dispatch-operation-context-internal.h \
     add-dispatch-operation-context.c \
+    base-call-channel.c \
+    base-call-content.c \
+    base-call-stream.c \
+    base-call-internal.h \
     base-channel.c \
     base-client.c \
     base-client-internal.h \
     base-connection.c \
     base-connection-internal.h \
     base-connection-manager.c \
+    base-media-call-channel.c \
+    base-media-call-content.c \
+    base-media-call-stream.c \
     base-password-channel.c \
     base-protocol-internal.h \
     base-protocol.c \
@@ -168,6 +188,13 @@ libtelepathy_glib_internal_la_SOURCES = \
     basic-proxy-factory.c \
     capabilities.c \
     capabilities-internal.h \
+    call-channel.c \
+    call-content.c \
+    call-content-media-description.c \
+    call-internal.h \
+    call-misc.c \
+    call-stream.c \
+    call-stream-endpoint.c \
     channel.c \
     channel-contacts.c \
     channel-group.c \

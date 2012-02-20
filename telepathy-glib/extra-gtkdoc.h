@@ -1015,24 +1015,53 @@
  */
 
 /**
- * SECTION:channel-cli-call
- * @title: Call channel type
- * @short_description: client-side wrappers for the Call channel type
- * @see_also: #TpChannel
- *
- * This section documents the auto-generated C wrappers for the Call
- * channel type.
+ * SECTION:svc-channel-call
+ * @title: Service-side Channel Call interface
+ * @short_description: GInterface to implement call channels
  *
  * Call channels represent real-time audio or video streaming, including
  * voice over IP, webcams, and telephony.
+ *
+ * Since: 0.UNRELEASED
  */
 
 /**
- * SECTION:svc-channel-call
- * @title: Service-side Call channel type
- * @short_description: GInterface to implement Call channels
- * @see_also: #TpBaseChannel
+ * SECTION:cli-call-channel
+ * @title: Channel Call interfaces
+ * @short_description: client-side wrappers for call channels
  *
  * Call channels represent real-time audio or video streaming, including
  * voice over IP, webcams, and telephony.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * SECTION:cli-call-content
+ * @title: Channel Call content interfaces
+ * @short_description: client-side wrappers for call contents
+ *
+ * Represents the contents of a call.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * SECTION:cli-call-stream
+ * @title: Channel Call stream interfaces
+ * @short_description: client-side wrappers for call streams
+ *
+ * Represents the streams of a call.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * SECTION:cli-call-misc
+ * @title: Channel Call misc interfaces
+ * @short_description: client-side wrappers for misc call interfaces
+ *
+ * Misc interfaces for calls.
+ *
+ * Since: 0.UNRELEASED
  */

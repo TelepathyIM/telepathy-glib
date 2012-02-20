@@ -3,6 +3,11 @@
 codegen_extra_dist = \
     account.xml \
     account-manager.xml \
+    call-content.xml \
+    call-content-media-description.xml \
+    call-mute.xml \
+    call-stream.xml \
+    call-stream-endpoint.xml \
     channel.xml \
     channel-dispatcher.xml \
     channel-dispatch-operation.xml \
@@ -40,6 +45,11 @@ nodist_geninclude_HEADERS = \
     _gen/gtypes.h \
     _gen/tp-cli-account.h \
     _gen/tp-cli-account-manager.h \
+    _gen/tp-cli-call-content.h \
+    _gen/tp-cli-call-content-media-description.h \
+    _gen/tp-cli-call-mute.h \
+    _gen/tp-cli-call-stream.h \
+    _gen/tp-cli-call-stream-endpoint.h \
     _gen/tp-cli-channel.h \
     _gen/tp-cli-channel-dispatcher.h \
     _gen/tp-cli-channel-dispatch-operation.h \
@@ -54,6 +64,11 @@ nodist_geninclude_HEADERS = \
     _gen/tp-cli-protocol.h \
     _gen/tp-svc-account.h \
     _gen/tp-svc-account-manager.h \
+    _gen/tp-svc-call-content.h \
+    _gen/tp-svc-call-content-media-description.h \
+    _gen/tp-svc-call-mute.h \
+    _gen/tp-svc-call-stream.h \
+    _gen/tp-svc-call-stream-endpoint.h \
     _gen/tp-svc-channel.h \
     _gen/tp-svc-channel-dispatcher.h \
     _gen/tp-svc-channel-dispatch-operation.h \
@@ -80,6 +95,11 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/register-dbus-glib-marshallers-body.h \
     _gen/tp-cli-account-body.h \
     _gen/tp-cli-account-manager-body.h \
+    _gen/tp-cli-call-content-body.h \
+    _gen/tp-cli-call-content-media-description-body.h \
+    _gen/tp-cli-call-mute-body.h \
+    _gen/tp-cli-call-stream-body.h \
+    _gen/tp-cli-call-stream-endpoint-body.h \
     _gen/tp-cli-channel-body.h \
     _gen/tp-cli-channel-dispatcher-body.h \
     _gen/tp-cli-channel-dispatch-operation-body.h \
@@ -94,6 +114,11 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/tp-cli-protocol-body.h \
     _gen/tp-svc-account.c \
     _gen/tp-svc-account-manager.c \
+    _gen/tp-svc-call-content.c \
+    _gen/tp-svc-call-content-media-description.c \
+    _gen/tp-svc-call-mute.c \
+    _gen/tp-svc-call-stream.c \
+    _gen/tp-svc-call-stream-endpoint.c \
     _gen/tp-svc-channel.c \
     _gen/tp-svc-channel-dispatcher.c \
     _gen/tp-svc-channel-dispatch-operation.c \
@@ -217,6 +242,14 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 		account) \
 			subclass=--subclass=TpAccount; \
 			subclass_assert=--subclass-assert=TP_IS_ACCOUNT; \
+			;; \
+		call-content) \
+			subclass=--subclass=TpCallContent; \
+			subclass_assert=--subclass-assert=TP_IS_CALL_CONTENT; \
+			;; \
+		call-stream) \
+			subclass=--subclass=TpCallStream; \
+			subclass_assert=--subclass-assert=TP_IS_CALL_STREAM; \
 			;; \
 		channel) \
 			subclass=--subclass=TpChannel; \
