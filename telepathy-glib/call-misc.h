@@ -30,7 +30,7 @@ void tp_call_content_media_description_init_known_interfaces (void);
 
 G_END_DECLS
 
-#include "_gen/tp-cli-call-content-media-description.h"
-#include "_gen/tp-cli-call-stream-endpoint.h"
+#include <telepathy-glib/_gen/tp-cli-call-content-media-description.h>
+#include <telepathy-glib/_gen/tp-cli-call-stream-endpoint.h>
 
 #endif

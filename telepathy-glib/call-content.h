@@ -82,6 +82,6 @@ gboolean tp_call_content_send_tones_finish (TpCallContent *self,
 
 G_END_DECLS
 
-#include "_gen/tp-cli-call-content.h"
+#include <telepathy-glib/_gen/tp-cli-call-content.h>
 
 #endif
