@@ -22,19 +22,17 @@
 #ifndef __TP_BASE_CALL_INTERNAL_H__
 #define __TP_BASE_CALL_INTERNAL_H__
 
+#include <telepathy-glib/base-call-channel.h>
+#include <telepathy-glib/base-call-content.h>
+#include <telepathy-glib/base-call-stream.h>
 #include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/base-media-call-channel.h>
+#include <telepathy-glib/base-media-call-content.h>
+#include <telepathy-glib/base-media-call-stream.h>
+#include <telepathy-glib/call-content-media-description.h>
+#include <telepathy-glib/call-stream-endpoint.h>
 
 G_BEGIN_DECLS
-
-/* Forward declaration */
-typedef struct _TpBaseCallChannel TpBaseCallChannel;
-typedef struct _TpBaseCallContent TpBaseCallContent;
-typedef struct _TpBaseCallStream  TpBaseCallStream;
-typedef struct _TpCallContentMediaDescription  TpCallContentMediaDescription;
-typedef struct _TpBaseMediaCallChannel TpBaseMediaCallChannel;
-typedef struct _TpBaseMediaCallContent TpBaseMediaCallContent;
-typedef struct _TpBaseMediaCallStream TpBaseMediaCallStream;
-typedef struct _TpCallStreamEndpoint TpCallStreamEndpoint;
 
 /* Implemented in base-call-content.c */
 void _tp_base_call_content_set_channel (TpBaseCallContent *self,

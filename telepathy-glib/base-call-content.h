@@ -31,9 +31,6 @@
 
 G_BEGIN_DECLS
 
-/* forward declaration */
-typedef struct _TpBaseCallChannel TpBaseCallChannel;
-
 typedef struct _TpBaseCallContent TpBaseCallContent;
 typedef struct _TpBaseCallContentPrivate TpBaseCallContentPrivate;
 typedef struct _TpBaseCallContentClass TpBaseCallContentClass;
