@@ -3,6 +3,7 @@
 import sys
 import xml.dom.minidom
 
+from libtpcodegen import file_set_contents
 from libglibcodegen import NS_TP, get_docstring, xml_escape
 
 class Generator(object):
@@ -71,9 +72,9 @@ class Generator(object):
         self.h('')
         self.b('')
 
-        open(self.basename + '.h', 'w').write('\n'.join(self.__header))
-        open(self.basename + '.c', 'w').write('\n'.join(self.__body))
-        open(self.basename + '-gtk-doc.h', 'w').write('\n'.join(self.__docs))
+        file_set_contents(self.basename + '.h', '\n'.join(self.__header))
+        file_set_contents(self.basename + '.c', '\n'.join(self.__body))
+        file_set_contents(self.basename + '-gtk-doc.h', '\n'.join(self.__docs))
 
 if __name__ == '__main__':
     argv = sys.argv[1:]
