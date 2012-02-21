@@ -139,14 +139,16 @@ _gen/stable-stamp: $(wildcard $(abs_srcdir)/*.xml) _gen/spec-stamp
 	touch $@
 
 _gen/stable-spec.xml: stable-interfaces.xml _gen/stable-stamp $(tools_dir)/xincludator.py
-	$(AM_V_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@.tmp
+	@mv $@.tmp $@
 
 # Grab a list of re-entrant tp_cli_*_run_* methods we are committed to
 # generating for backwards compatibility.
 _gen/reentrant-methods.list: \
 	$(top_srcdir)/docs/reference/telepathy-glib-sections.txt \
 	_gen/spec-stamp
-	$(AM_V_GEN)$(GREP) 'tp_cli_.*_run_.*' $< > $@
+	$(AM_V_GEN)$(GREP) 'tp_cli_.*_run_.*' $< > $@.tmp
+	@mv $@.tmp $@
 
 # Things generated from the whole spec at once
 
@@ -188,7 +190,8 @@ _gen/error-str.h _gen/error-str.c: _gen/stable-spec.xml \
 # Things generated per interface
 
 _gen/tp-spec-%.xml: %.xml _gen/spec-stamp $(tools_dir)/xincludator.py
-	$(AM_V_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@.tmp
+	@mv $@.tmp $@
 
 _gen/tp-svc-%.c _gen/tp-svc-%.h: _gen/tp-spec-%.xml \
 	$(tools_dir)/glib-ginterface-gen.py \
