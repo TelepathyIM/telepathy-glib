@@ -13,13 +13,13 @@ EnglishName=Example with Call channels
 Icon=face-smile
 
 [audio]
-org.freedesktop.Telepathy.Channel.ChannelType s=org.freedesktop.Telepathy.Channel.Type.Call.DRAFT
+org.freedesktop.Telepathy.Channel.ChannelType s=org.freedesktop.Telepathy.Channel.Type.Call1
 org.freedesktop.Telepathy.Channel.TargetHandleType u=1
-org.freedesktop.Telepathy.Channel.Type.Call.DRAFT.InitialAudio b=1
-allowed=org.freedesktop.Telepathy.Channel.TargetHandle;org.freedesktop.Telepathy.Channel.TargetID;org.freedesktop.Telepathy.Channel.Type.Call.DRAFT.InitialVideo;
+org.freedesktop.Telepathy.Channel.Type.Call1.InitialAudio b=1
+allowed=org.freedesktop.Telepathy.Channel.TargetHandle;org.freedesktop.Telepathy.Channel.TargetID;org.freedesktop.Telepathy.Channel.Type.Call1.InitialVideo;
 
 [video]
-org.freedesktop.Telepathy.Channel.ChannelType s=org.freedesktop.Telepathy.Channel.Type.Call.DRAFT
+org.freedesktop.Telepathy.Channel.ChannelType s=org.freedesktop.Telepathy.Channel.Type.Call1
 org.freedesktop.Telepathy.Channel.TargetHandleType u=1
-org.freedesktop.Telepathy.Channel.Type.Call.DRAFT.InitialVideo b=1
-allowed=org.freedesktop.Telepathy.Channel.TargetHandle;org.freedesktop.Telepathy.Channel.TargetID;org.freedesktop.Telepathy.Channel.Type.Call.DRAFT.InitialAudio;
+org.freedesktop.Telepathy.Channel.Type.Call1.InitialVideo b=1
+allowed=org.freedesktop.Telepathy.Channel.TargetHandle;org.freedesktop.Telepathy.Channel.TargetID;org.freedesktop.Telepathy.Channel.Type.Call1.InitialAudio;
