@@ -30,8 +30,6 @@
 
 G_BEGIN_DECLS
 
-typedef struct _TpBaseCallChannel TpBaseCallChannel;
-
 typedef struct _TpBaseCallStream TpBaseCallStream;
 typedef struct _TpBaseCallStreamPrivate TpBaseCallStreamPrivate;
 typedef struct _TpBaseCallStreamClass TpBaseCallStreamClass;
