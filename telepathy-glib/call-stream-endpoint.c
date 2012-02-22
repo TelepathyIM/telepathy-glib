@@ -549,7 +549,7 @@ tp_call_stream_endpoint_get_state (TpCallStreamEndpoint *self,
     TpStreamComponent component)
 {
   g_return_val_if_fail (TP_IS_CALL_STREAM_ENDPOINT (self),
-      TP_MEDIA_STREAM_STATE_DISCONNECTED);
+      TP_STREAM_ENDPOINT_STATE_FAILED);
 
   return GPOINTER_TO_UINT (g_hash_table_lookup (self->priv->endpoint_state,
       GUINT_TO_POINTER (component)));
