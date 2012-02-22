@@ -127,10 +127,19 @@ struct _TpContact {
  */
 
 /**
- * NUM_TP_CONTACT_FEATURES: (skip)
+ * TP_NUM_CONTACT_FEATURES:
  *
  * 1 higher than the highest #TpContactFeature supported by this version of
  * telepathy-glib.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * NUM_TP_CONTACT_FEATURES: (skip)
+ *
+ * 1 higher than the highest #TpContactFeature supported by this version of
+ * telepathy-glib. Use %TP_NUM_CONTACT_FEATURES in new code.
  *
  * Since: 0.7.18
  */

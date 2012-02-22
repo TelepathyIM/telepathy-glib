@@ -3574,6 +3574,7 @@ tp_proxy_dbus_error_to_gerror
 TP_DBUS_ERRORS
 TpDBusError
 NUM_TP_DBUS_ERRORS
+TP_NUM_DBUS_ERRORS
 TP_TYPE_DBUS_ERROR
 <SUBSECTION Standard>
 tp_dbus_error_get_type
@@ -4859,6 +4860,7 @@ TpContact
 TpContactFeature
 TP_CONTACT_FEATURE_INVALID
 NUM_TP_CONTACT_FEATURES
+TP_NUM_CONTACT_FEATURES
 TP_TYPE_CONTACT_FEATURE
 TpConnectionContactsByHandleCb
 tp_connection_dup_contact_if_possible
