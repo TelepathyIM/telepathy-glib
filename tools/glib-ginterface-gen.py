@@ -101,6 +101,9 @@ class Generator(object):
 
     def do_node(self, node):
         node_name = node.getAttribute('name').replace('/', '')
+        # This is a hack to get rid of interface version numbers
+        # until we migrate to generating version-numbered code
+        node_name = node_name.replace('Call1_', 'Call_').rstrip('1')
         node_name_mixed = self.node_name_mixed = node_name.replace('_', '')
         node_name_lc = self.node_name_lc = node_name.lower()
         node_name_uc = self.node_name_uc = node_name.upper()

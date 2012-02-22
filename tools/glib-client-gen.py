@@ -1157,6 +1157,9 @@ class Generator(object):
         assert len(ifaces) == 1
         iface = ifaces[0]
         name = node.getAttribute('name').replace('/', '')
+        # This is a hack to get rid of interface version numbers
+        # until we migrate to generating version-numbered code
+        name = name.replace('Call1_', 'Call_').rstrip('1')
 
         self.iface = name
         self.iface_lc = name.lower()
@@ -1242,6 +1245,9 @@ class Generator(object):
                 if not signals:
                     continue
                 name = node.getAttribute('name').replace('/', '').lower()
+                # This is a hack to get rid of interface version numbers
+                # until we migrate to generating version-numbered code
+                name = name.replace('call1_', 'call_').rstrip('1')
                 self.iface_uc = name.upper()
                 self.b('  if (quark == %s)' % self.get_iface_quark())
                 self.b('    %s_add_signals_for_%s (proxy);'
