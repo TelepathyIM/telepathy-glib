@@ -2180,7 +2180,7 @@ tp_connection_manager_get_info_source (TpConnectionManager *self)
  * The result is copied and must be freed by the caller, but it is not
  * necessarily still true after the main loop is re-entered.
  *
- * Returns: (type GObject.Strv) (transfer full): a #GStrv of protocol names
+ * Returns: (array zero-terminated=1) (transfer full): a #GStrv of protocol names
  * Since: 0.7.26
  */
 gchar **
@@ -2417,7 +2417,7 @@ tp_connection_manager_protocol_can_register (
  *
  * The result is copied and must be freed by the caller with g_strfreev().
  *
- * Returns: (type GObject.Strv) (transfer full): a #GStrv of protocol names
+ * Returns: (array zero-terminated=1) (transfer full): a #GStrv of protocol names
  * Since: 0.7.26
  */
 gchar **
