@@ -378,6 +378,7 @@ tp_connection_get_contact_info_cb (TpProxy *proxy,
     {
       DEBUG ("Failed to get contact info properties: %s", error->message);
       g_simple_async_result_set_from_error (result, error);
+      goto finally;
     }
 
   g_assert (self->priv->contact_info_supported_fields == NULL);
