@@ -273,7 +273,6 @@ libtelepathy_glib_internal_la_SOURCES = \
     proxy-methods.c \
     proxy-signals.c \
     run.c \
-    signals-marshal.list \
     signalled-message.c \
     signalled-message-internal.h \
     simple-approver.c \

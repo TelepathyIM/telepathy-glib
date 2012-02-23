@@ -32,7 +32,6 @@ EXTRA_DIST = \
     glib-ginterface-gen.py \
     glib-gtypes-generator.py \
     glib-interfaces-gen.py \
-    glib-signals-marshal-gen.py \
     gobject-foo.py \
     lcov.am \
     libtpcodegen.py \
@@ -67,8 +66,6 @@ glib-ginterface-gen.py: libglibcodegen.py
 glib-gtypes-generator.py: libglibcodegen.py
 	$(AM_V_GEN)touch $@
 glib-interfaces-gen.py: libglibcodegen.py
-	$(AM_V_GEN)touch $@
-glib-signals-marshal-gen.py: libglibcodegen.py
 	$(AM_V_GEN)touch $@
 
 TELEPATHY_SPEC_SRCDIR = $(top_srcdir)/../telepathy-spec
