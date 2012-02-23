@@ -2655,6 +2655,25 @@ test_unblock_contacts_no_op (Test *test,
   unblock_contacts_no_op (test, call_unblock_contacts);
 }
 
+static void
+download_contacts_cb (
+    TpConnection *conn,
+    const GError *error, gpointer user_data,
+    GObject *weak_object)
+{
+  g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED);
+}
+
+static void
+test_download_contacts (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  tp_cli_connection_interface_contact_list_call_download (
+    test->conn, -1, download_contacts_cb, test, test_quit_loop, NULL);
+
+  g_main_loop_run (test->main_loop);
+}
+
 int
 main (int argc,
       char **argv)
@@ -2821,6 +2840,9 @@ main (int argc,
       Test, NULL, setup, test_unblock_contacts, teardown);
   g_test_add ("/contact-lists/unblock-contacts/no-op",
       Test, NULL, setup, test_unblock_contacts_no_op, teardown);
+
+  g_test_add ("/contact-lists/download",
+      Test, NULL, setup, test_download_contacts, teardown);
 
   return g_test_run ();
 }
