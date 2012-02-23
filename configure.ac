@@ -201,7 +201,7 @@ AC_SUBST(tpglibtestsdir)
 
 dnl Check for Glib
 PKG_CHECK_MODULES(GLIB,
-  [glib-2.0 >= 2.28.0, gobject-2.0 >= 2.28.0, gio-2.0 >= 2.28.0])
+  [glib-2.0 >= 2.30.0, gobject-2.0 >= 2.30.0, gio-2.0 >= 2.30.0])
 
 dnl Check for GIO-Unix
 PKG_CHECK_MODULES(GIO_UNIX, [gio-unix-2.0],
