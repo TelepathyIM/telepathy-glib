@@ -35,7 +35,6 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
-#include "telepathy-glib/_gen/signals-marshal.h"
 
 #include "_gen/tp-cli-channel-body.h"
 
@@ -1779,8 +1778,7 @@ tp_channel_class_init (TpChannelClass *klass)
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__UINT_UINT,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 
   /**
@@ -1805,8 +1803,7 @@ tp_channel_class_init (TpChannelClass *klass)
       "group-members-changed", G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__STRING_BOXED_BOXED_BOXED_BOXED_UINT_UINT,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 7,
       G_TYPE_STRING, au_type, au_type, au_type, au_type, G_TYPE_UINT,
       G_TYPE_UINT);
@@ -1838,8 +1835,7 @@ tp_channel_class_init (TpChannelClass *klass)
       "group-members-changed-detailed", G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__BOXED_BOXED_BOXED_BOXED_BOXED,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 5,
       au_type, au_type, au_type, au_type, TP_HASH_TYPE_STRING_VARIANT_MAP);
 
@@ -1858,8 +1854,7 @@ tp_channel_class_init (TpChannelClass *klass)
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__UINT_UINT,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 
   /**
@@ -1962,8 +1957,7 @@ tp_channel_class_init (TpChannelClass *klass)
       "group-contacts-changed", G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__BOXED_BOXED_BOXED_BOXED_OBJECT_BOXED,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 6,
       G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY,
       TP_TYPE_CONTACT, TP_HASH_TYPE_STRING_VARIANT_MAP);

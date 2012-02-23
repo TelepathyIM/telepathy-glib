@@ -74,8 +74,6 @@
 
 #include "debug-internal.h"
 
-#include "_gen/signals-marshal.h"
-
 static const char *
 group_change_reason_str (guint reason)
 {

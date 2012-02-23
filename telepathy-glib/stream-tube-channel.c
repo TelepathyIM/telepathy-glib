@@ -64,8 +64,6 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/automatic-client-factory-internal.h"
 
-#include "_gen/signals-marshal.h"
-
 #include <stdio.h>
 #include <glib/gstdio.h>
 
@@ -454,8 +452,7 @@ tp_stream_tube_channel_class_init (TpStreamTubeChannelClass *klass)
   _signals[INCOMING] = g_signal_new ("incoming",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      g_cclosure_marshal_VOID__OBJECT,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       1, TP_TYPE_STREAM_TUBE_CONNECTION);
 

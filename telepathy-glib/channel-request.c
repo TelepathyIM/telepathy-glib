@@ -42,8 +42,6 @@
 #include "telepathy-glib/simple-client-factory-internal.h"
 #include "telepathy-glib/_gen/tp-cli-channel-request-body.h"
 
-#include "_gen/signals-marshal.h"
-
 /**
  * SECTION:channel-request
  * @title: TpChannelRequest
@@ -490,8 +488,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      g_cclosure_marshal_VOID__VOID,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 0);
 
   /**
@@ -518,8 +515,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__OBJECT_OBJECT,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 2, TP_TYPE_CONNECTION, TP_TYPE_CHANNEL);
 }
 

@@ -252,8 +252,7 @@ tp_stream_tube_connection_class_init (TpStreamTubeConnectionClass *cls)
   _signals[CLOSED] = g_signal_new ("closed",
       G_OBJECT_CLASS_TYPE (cls),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      g_cclosure_marshal_VOID__POINTER,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       1, G_TYPE_POINTER);
 }

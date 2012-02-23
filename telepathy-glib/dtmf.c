@@ -479,7 +479,7 @@ tp_dtmf_player_class_init (TpDTMFPlayerClass *cls)
    */
   sig_id_started_tone =  g_signal_new ("started-tone",
       G_OBJECT_CLASS_TYPE (cls), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-      g_cclosure_marshal_VOID__UINT, G_TYPE_NONE, 1, G_TYPE_UINT);
+      NULL, G_TYPE_NONE, 1, G_TYPE_UINT);
 
   /**
    * TpDTMFPlayer::stopped-tone:
@@ -491,7 +491,7 @@ tp_dtmf_player_class_init (TpDTMFPlayerClass *cls)
    */
   sig_id_stopped_tone =  g_signal_new ("stopped-tone",
       G_OBJECT_CLASS_TYPE (cls), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-      g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+      NULL, G_TYPE_NONE, 0);
 
   /**
    * TpDTMFPlayer::finished:
@@ -506,7 +506,7 @@ tp_dtmf_player_class_init (TpDTMFPlayerClass *cls)
    */
   sig_id_finished =  g_signal_new ("finished",
       G_OBJECT_CLASS_TYPE (cls), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-      g_cclosure_marshal_VOID__BOOLEAN, G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
+      NULL, G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 
   /**
    * TpDTMFPlayer::tones-deferred:
@@ -523,7 +523,7 @@ tp_dtmf_player_class_init (TpDTMFPlayerClass *cls)
    */
   sig_id_tones_deferred =  g_signal_new ("tones-deferred",
       G_OBJECT_CLASS_TYPE (cls), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-      g_cclosure_marshal_VOID__STRING, G_TYPE_NONE, 1, G_TYPE_STRING);
+      NULL, G_TYPE_NONE, 1, G_TYPE_STRING);
 }
 
 /**

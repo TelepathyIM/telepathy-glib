@@ -329,8 +329,7 @@ tp_tests_simple_connection_class_init (TpTestsSimpleConnectionClass *klass)
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      g_cclosure_marshal_VOID__VOID,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 0);
 }
 

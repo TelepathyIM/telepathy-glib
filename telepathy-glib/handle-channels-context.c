@@ -60,7 +60,6 @@
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
-#include "telepathy-glib/_gen/signals-marshal.h"
 
 struct _TpHandleChannelsContextClass {
     /*<private>*/
@@ -433,8 +432,7 @@ tp_handle_channels_context_class_init (
       "done", G_OBJECT_CLASS_TYPE (cls),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__VOID,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 0);
 
 }

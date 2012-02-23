@@ -202,7 +202,6 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/deprecated-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
-#include "telepathy-glib/_gen/signals-marshal.h"
 #include "telepathy-glib/util-internal.h"
 
 static void observer_iface_init (gpointer, gpointer);
@@ -1511,8 +1510,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
       "request-added", G_OBJECT_CLASS_TYPE (cls),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__OBJECT_OBJECT,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 2,
       TP_TYPE_ACCOUNT, TP_TYPE_CHANNEL_REQUEST);
 
@@ -1535,8 +1533,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
       "request-removed", G_OBJECT_CLASS_TYPE (cls),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__OBJECT_STRING_STRING,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 3,
       TP_TYPE_CHANNEL_REQUEST, G_TYPE_STRING, G_TYPE_STRING);
 

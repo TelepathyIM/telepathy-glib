@@ -63,7 +63,6 @@
 #include "telepathy-glib/call-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/util-internal.h"
-#include "telepathy-glib/_gen/signals-marshal.h"
 
 #include "_gen/tp-cli-call-content-body.h"
 
@@ -639,8 +638,7 @@ tp_call_content_class_init (TpCallContentClass *klass)
   _signals[REMOVED] = g_signal_new ("removed",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      g_cclosure_marshal_VOID__VOID,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       0);
 
@@ -661,8 +659,7 @@ tp_call_content_class_init (TpCallContentClass *klass)
   _signals[STREAMS_ADDED] = g_signal_new ("streams-added",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      g_cclosure_marshal_VOID__BOXED,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       1, G_TYPE_PTR_ARRAY);
 
@@ -684,8 +681,7 @@ tp_call_content_class_init (TpCallContentClass *klass)
   _signals[STREAMS_REMOVED] = g_signal_new ("streams-removed",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tp_marshal_VOID__BOXED_BOXED,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       2, G_TYPE_PTR_ARRAY, TP_TYPE_CALL_STATE_REASON);
 

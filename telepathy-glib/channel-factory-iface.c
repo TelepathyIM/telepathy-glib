@@ -43,8 +43,6 @@
 
 #include <telepathy-glib/channel-iface.h>
 
-#include "_gen/signals-marshal.h"
-
 enum {
     NEW_CHANNEL,
     CHANNEL_ERROR,
@@ -83,8 +81,7 @@ tp_channel_factory_iface_base_init (gpointer klass)
                   G_OBJECT_CLASS_TYPE (klass),
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
-                  NULL, NULL,
-                  _tp_marshal_VOID__OBJECT_POINTER,
+                  NULL, NULL, NULL,
                   G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_POINTER);
 
     /**
@@ -104,8 +101,7 @@ tp_channel_factory_iface_base_init (gpointer klass)
                   G_OBJECT_CLASS_TYPE (klass),
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
-                  NULL, NULL,
-                  _tp_marshal_VOID__OBJECT_POINTER_POINTER,
+                  NULL, NULL, NULL,
                   G_TYPE_NONE,
                   3, G_TYPE_OBJECT, G_TYPE_POINTER, G_TYPE_POINTER);
   }

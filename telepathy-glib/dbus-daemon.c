@@ -32,8 +32,6 @@
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util.h>
 
-#include "telepathy-glib/_gen/signals-marshal.h"
-
 #include "telepathy-glib/_gen/tp-cli-dbus-daemon-body.h"
 
 #define DEBUG_FLAG TP_DEBUG_PROXY

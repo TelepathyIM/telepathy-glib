@@ -65,8 +65,6 @@
 #define DEBUG_FLAG TP_DEBUG_SASL
 #include "telepathy-glib/debug-internal.h"
 
-#include "telepathy-glib/_gen/signals-marshal.h"
-
 static void sasl_auth_iface_init (gpointer g_iface, gpointer iface_data);
 
 G_DEFINE_TYPE_WITH_CODE (TpBasePasswordChannel, tp_base_password_channel,
@@ -405,8 +403,7 @@ tp_base_password_channel_class_init (TpBasePasswordChannelClass *tp_base_passwor
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__BOXED_UINT_INT_STRING,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 4,
       G_TYPE_GSTRING, G_TYPE_UINT, G_TYPE_INT, G_TYPE_STRING);
 

@@ -41,7 +41,6 @@
 #include "telepathy-glib/simple-client-factory-internal.h"
 #include <telepathy-glib/util-internal.h>
 
-#include "telepathy-glib/_gen/signals-marshal.h"
 #include "telepathy-glib/_gen/tp-cli-account-body.h"
 
 /**
@@ -1956,8 +1955,7 @@ tp_account_class_init (TpAccountClass *klass)
   signals[STATUS_CHANGED] = g_signal_new ("status-changed",
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tp_marshal_VOID__UINT_UINT_UINT_STRING_BOXED,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE, 5, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_STRING,
       G_TYPE_HASH_TABLE);
 
@@ -1975,8 +1973,7 @@ tp_account_class_init (TpAccountClass *klass)
   signals[PRESENCE_CHANGED] = g_signal_new ("presence-changed",
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tp_marshal_VOID__UINT_STRING_STRING,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_STRING, G_TYPE_STRING);
 
   proxy_class->interface = TP_IFACE_QUARK_ACCOUNT;

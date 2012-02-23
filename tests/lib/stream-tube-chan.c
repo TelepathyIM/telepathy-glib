@@ -304,8 +304,7 @@ tp_tests_stream_tube_channel_class_init (TpTestsStreamTubeChannelClass *klass)
   signals[SIG_INCOMING_CONNECTION] = g_signal_new ("incoming-connection",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      g_cclosure_marshal_VOID__OBJECT,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       1, G_TYPE_IO_STREAM);
 

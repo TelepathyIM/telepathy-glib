@@ -67,7 +67,6 @@
 #include "telepathy-glib/svc-properties-interface.h"
 #include "telepathy-glib/util.h"
 #include "telepathy-glib/util-internal.h"
-#include "telepathy-glib/_gen/signals-marshal.h"
 
 static void call_stream_endpoint_iface_init (gpointer, gpointer);
 
@@ -447,8 +446,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
   _signals[CANDIDATE_SELECTED] = g_signal_new ("candidate-selected",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tp_marshal_VOID__BOXED_BOXED,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       2, TP_STRUCT_TYPE_CANDIDATE, TP_STRUCT_TYPE_CANDIDATE);
 
@@ -466,8 +464,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
   _signals[CANDIDATE_ACCEPTED] = g_signal_new ("candidate-accepted",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tp_marshal_VOID__BOXED_BOXED,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       2, TP_STRUCT_TYPE_CANDIDATE, TP_STRUCT_TYPE_CANDIDATE);
 
@@ -485,8 +482,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
   _signals[CANDIDATE_REJECTED] = g_signal_new ("candidate-rejected",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tp_marshal_VOID__BOXED_BOXED,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       2, TP_STRUCT_TYPE_CANDIDATE, TP_STRUCT_TYPE_CANDIDATE);
 }

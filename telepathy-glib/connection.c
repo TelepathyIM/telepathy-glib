@@ -47,7 +47,6 @@
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
 #include "telepathy-glib/util-internal.h"
-#include "telepathy-glib/_gen/signals-marshal.h"
 
 #include "_gen/tp-cli-connection-body.h"
 
@@ -1954,8 +1953,7 @@ tp_connection_class_init (TpConnectionClass *klass)
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__INT_UINT_STRING,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 3, G_TYPE_INT, G_TYPE_UINT, G_TYPE_STRING);
 
   /**
@@ -2181,8 +2179,7 @@ tp_connection_class_init (TpConnectionClass *klass)
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__BOXED,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 1, G_TYPE_STRV);
 
   /**
@@ -2207,8 +2204,7 @@ tp_connection_class_init (TpConnectionClass *klass)
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__BOXED,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 1, G_TYPE_STRV);
 
   /**
@@ -2242,8 +2238,7 @@ tp_connection_class_init (TpConnectionClass *klass)
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__STRING_STRING,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
   /**
    * TpConnection::contact-list-changed:
@@ -2272,8 +2267,7 @@ tp_connection_class_init (TpConnectionClass *klass)
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__BOXED_BOXED,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 2, G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY);
 
   /**
@@ -2303,8 +2297,7 @@ tp_connection_class_init (TpConnectionClass *klass)
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__BOXED_BOXED,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 2, G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY);
 
 }

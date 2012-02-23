@@ -61,7 +61,6 @@
 #include "telepathy-glib/call-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/util-internal.h"
-#include "telepathy-glib/_gen/signals-marshal.h"
 
 #include "_gen/tp-cli-call-stream-body.h"
 
@@ -393,8 +392,7 @@ tp_call_stream_class_init (TpCallStreamClass *klass)
   _signals[LOCAL_SENDING_STATE_CHANGED] = g_signal_new ("local-sending-state-changed",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tp_marshal_VOID__UINT_BOXED,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       4, G_TYPE_UINT, G_TYPE_UINT, TP_TYPE_CALL_STATE_REASON,
       G_TYPE_HASH_TABLE);
@@ -418,8 +416,7 @@ tp_call_stream_class_init (TpCallStreamClass *klass)
   _signals[REMOTE_MEMBERS_CHANGED] = g_signal_new ("remote-members-changed",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tp_marshal_VOID__BOXED_BOXED_BOXED,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       3, G_TYPE_HASH_TABLE, G_TYPE_PTR_ARRAY, TP_TYPE_CALL_STATE_REASON);
 }

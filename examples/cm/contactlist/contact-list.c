@@ -1675,14 +1675,14 @@ example_contact_list_class_init (ExampleContactListClass *klass)
       G_SIGNAL_RUN_LAST,
       0,
       NULL, NULL,
-      g_cclosure_marshal_VOID__UINT, G_TYPE_NONE, 1, G_TYPE_UINT);
+      NULL, G_TYPE_NONE, 1, G_TYPE_UINT);
 
   signals[PRESENCE_UPDATED] = g_signal_new ("presence-updated",
       G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
       0,
       NULL, NULL,
-      g_cclosure_marshal_VOID__UINT, G_TYPE_NONE, 1, G_TYPE_UINT);
+      NULL, G_TYPE_NONE, 1, G_TYPE_UINT);
 }
 
 static void

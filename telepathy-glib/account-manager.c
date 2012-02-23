@@ -32,7 +32,6 @@
 #include <telepathy-glib/util.h>
 
 #include "telepathy-glib/account-manager.h"
-#include "telepathy-glib/_gen/signals-marshal.h"
 
 #define DEBUG_FLAG TP_DEBUG_ACCOUNTS
 #include "telepathy-glib/dbus-internal.h"
@@ -600,8 +599,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
       G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__OBJECT_BOOLEAN,
+      NULL, NULL, NULL,
       G_TYPE_NONE,
       2, TP_TYPE_ACCOUNT, G_TYPE_BOOLEAN);
 
@@ -618,8 +616,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
       G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      g_cclosure_marshal_VOID__OBJECT,
+      NULL, NULL, NULL,
       G_TYPE_NONE,
       1, TP_TYPE_ACCOUNT);
 
@@ -640,8 +637,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
       G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      g_cclosure_marshal_VOID__OBJECT,
+      NULL, NULL, NULL,
       G_TYPE_NONE,
       1, TP_TYPE_ACCOUNT);
 
@@ -658,8 +654,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
       G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      g_cclosure_marshal_VOID__OBJECT,
+      NULL, NULL, NULL,
       G_TYPE_NONE,
       1, TP_TYPE_ACCOUNT);
 
@@ -679,8 +674,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
         G_TYPE_FROM_CLASS (klass),
         G_SIGNAL_RUN_LAST,
         0,
-        NULL, NULL,
-        _tp_marshal_VOID__UINT_STRING_STRING,
+        NULL, NULL, NULL,
         G_TYPE_NONE,
         3, G_TYPE_UINT, /* Presence type */
         G_TYPE_STRING,  /* status */

@@ -36,8 +36,6 @@
 #include "simple-client-factory-internal.h"
 #include "util-internal.h"
 
-#include "_gen/signals-marshal.h"
-
 #include "_gen/tp-cli-generic-body.h"
 
 #if 0
@@ -1366,8 +1364,7 @@ tp_proxy_class_init (TpProxyClass *klass)
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__UINT_OBJECT,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 2, G_TYPE_UINT, DBUS_TYPE_G_PROXY);
 
   /**
@@ -1392,8 +1389,7 @@ tp_proxy_class_init (TpProxyClass *klass)
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__UINT_INT_STRING,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_INT, G_TYPE_STRING);
 }
 

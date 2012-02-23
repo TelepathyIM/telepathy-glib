@@ -169,8 +169,7 @@ tp_tests_bug16307_connection_class_init (TpTestsBug16307ConnectionClass *klass)
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      g_cclosure_marshal_VOID__VOID,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 0);
 
   /* break the Connection D-Bus properties implementation, so that we always

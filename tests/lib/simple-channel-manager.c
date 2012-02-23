@@ -37,8 +37,7 @@ tp_tests_simple_channel_manager_class_init (TpTestsSimpleChannelManagerClass *kl
   signals[REQUEST] = g_signal_new ("request",
       G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      g_cclosure_marshal_VOID__BOXED,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE, 1, G_TYPE_HASH_TABLE);
 }
 

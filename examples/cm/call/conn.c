@@ -416,8 +416,7 @@ example_call_connection_class_init (
    * available */
   signals[SIGNAL_AVAILABLE] = g_signal_new ("available",
       G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-      g_cclosure_marshal_VOID__STRING,
-      G_TYPE_NONE, 1, G_TYPE_STRING);
+      NULL, G_TYPE_NONE, 1, G_TYPE_STRING);
 
   tp_contacts_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleCallConnectionClass, contacts_mixin));

@@ -65,7 +65,6 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/util-internal.h"
-#include "telepathy-glib/_gen/signals-marshal.h"
 
 G_DEFINE_TYPE (TpCallChannel, tp_call_channel, TP_TYPE_CHANNEL)
 
@@ -922,8 +921,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
   _signals[CONTENT_ADDED] = g_signal_new ("content-added",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      g_cclosure_marshal_VOID__OBJECT,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       1, G_TYPE_OBJECT);
 
@@ -944,8 +942,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
   _signals[CONTENT_REMOVED] = g_signal_new ("content-removed",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tp_marshal_VOID__OBJECT_BOXED,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       2, G_TYPE_OBJECT, TP_TYPE_CALL_STATE_REASON);
 
@@ -965,8 +962,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
   _signals[STATE_CHANGED] = g_signal_new ("state-changed",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tp_marshal_VOID__UINT_UINT_BOXED_BOXED,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       4, G_TYPE_UINT, G_TYPE_UINT, TP_TYPE_CALL_STATE_REASON,
       G_TYPE_HASH_TABLE);
@@ -992,8 +988,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
   _signals[MEMBERS_CHANGED] = g_signal_new ("members-changed",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tp_marshal_VOID__BOXED_BOXED_BOXED,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       3, G_TYPE_HASH_TABLE, G_TYPE_PTR_ARRAY, TP_TYPE_CALL_STATE_REASON);
 }

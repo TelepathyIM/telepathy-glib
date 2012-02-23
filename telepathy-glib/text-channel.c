@@ -65,8 +65,6 @@
 #include "telepathy-glib/automatic-client-factory-internal.h"
 #include "telepathy-glib/channel-internal.h"
 
-#include "_gen/signals-marshal.h"
-
 #include <stdio.h>
 #include <glib/gstdio.h>
 
@@ -971,8 +969,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
   signals[SIG_MESSAGE_RECEIVED] = g_signal_new ("message-received",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      g_cclosure_marshal_VOID__OBJECT,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       1, TP_TYPE_SIGNALLED_MESSAGE);
 
@@ -997,8 +994,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
       "pending-message-removed",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      g_cclosure_marshal_VOID__OBJECT,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       1, TP_TYPE_SIGNALLED_MESSAGE);
 
@@ -1024,8 +1020,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
       "message-sent",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tp_marshal_VOID__OBJECT_UINT_STRING,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       3, TP_TYPE_SIGNALLED_MESSAGE, G_TYPE_UINT, G_TYPE_STRING);
 

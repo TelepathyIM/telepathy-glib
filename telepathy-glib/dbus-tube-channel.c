@@ -63,8 +63,6 @@
 #include "telepathy-glib/automatic-client-factory-internal.h"
 #include "telepathy-glib/debug-internal.h"
 
-#include "_gen/signals-marshal.h"
-
 #include <stdio.h>
 #include <glib/gstdio.h>
 

@@ -38,8 +38,6 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/util-internal.h"
 
-#include "telepathy-glib/_gen/signals-marshal.h"
-
 /**
  * SECTION:contact
  * @title: TpContact
@@ -1337,8 +1335,7 @@ tp_contact_class_init (TpContactClass *klass)
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__BOXED_BOXED,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 2, G_TYPE_STRV, G_TYPE_STRV);
 
   /**
@@ -1357,8 +1354,7 @@ tp_contact_class_init (TpContactClass *klass)
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__UINT_UINT_STRING,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_STRING);
 
   /**
@@ -1376,8 +1372,7 @@ tp_contact_class_init (TpContactClass *klass)
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__UINT_STRING_STRING,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_STRING, G_TYPE_STRING);
 }
 

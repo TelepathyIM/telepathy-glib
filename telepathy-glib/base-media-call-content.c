@@ -72,7 +72,6 @@
 #include "telepathy-glib/svc-properties-interface.h"
 #include "telepathy-glib/util.h"
 #include "telepathy-glib/util-internal.h"
-#include "telepathy-glib/_gen/signals-marshal.h"
 
 #define DTMF_PAUSE_MS (3000)
 
@@ -453,8 +452,7 @@ tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
       "local-media-description-updated",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tp_marshal_VOID__UINT_BOXED,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE,
       2, G_TYPE_UINT, G_TYPE_HASH_TABLE);
 
