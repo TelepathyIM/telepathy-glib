@@ -728,6 +728,16 @@ tp_base_media_call_content_update_local_media_description (
       return;
     }
 
+  if (self->priv->current_offer != NULL &&
+      tp_call_content_media_description_get_remote_contact (self->priv->current_offer) == GPOINTER_TO_UINT (contact))
+    {
+      GError error = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+                       "Can not update the media description while there is"
+                       " an outstanding offer for this contact." };
+      dbus_g_method_return_error (context, &error);
+      return;
+    }
+
   set_local_properties (self, GPOINTER_TO_UINT (contact), properties);
 
   tp_svc_call_content_interface_media_return_from_update_local_media_description
