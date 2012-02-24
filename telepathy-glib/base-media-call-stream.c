@@ -209,6 +209,7 @@ struct _TpBaseMediaCallStreamPrivate
 
   gboolean local_sending;
   gboolean remotely_held;
+  gboolean sending_stop_requested;
 };
 
 static GPtrArray *tp_base_media_call_stream_get_interfaces (
@@ -1049,6 +1050,8 @@ tp_base_media_call_stream_set_sending (TpBaseCallStream *bcs,
      if (self->priv->sending_state == TP_STREAM_FLOW_STATE_STOPPED &&
          klass->set_sending != NULL)
        return klass->set_sending (self, sending, error);
+     else
+       self->priv->sending_stop_requested = TRUE;
    }
 
   return TRUE;
@@ -1160,8 +1163,11 @@ tp_base_media_call_stream_complete_sending_state_change (
         TP_BASE_MEDIA_CALL_CHANNEL (channel), TRUE);
 
   if (state == TP_STREAM_FLOW_STATE_STOPPED &&
-      klass->set_sending != NULL)
+      klass->set_sending != NULL &&
+      self->priv->sending_stop_requested)
     klass->set_sending (self, FALSE, NULL);
+
+  self->priv->sending_stop_requested = FALSE;
 
   tp_svc_call_stream_interface_media_emit_sending_state_changed (self, state);
   tp_svc_call_stream_interface_media_return_from_complete_sending_state_change
@@ -1185,6 +1191,8 @@ tp_base_media_call_stream_report_sending_failure (
 
   if (self->priv->sending_state == TP_STREAM_FLOW_STATE_STOPPED)
     goto done;
+
+  self->priv->sending_stop_requested = FALSE;
 
   self->priv->sending_state = TP_STREAM_FLOW_STATE_STOPPED;
   g_object_notify (G_OBJECT (self), "sending-state");
