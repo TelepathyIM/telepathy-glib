@@ -692,7 +692,8 @@ tp_call_content_media_description_reject (TpSvcCallContentMediaDescription *ifac
     }
 
   g_simple_async_result_set_error (self->priv->result,
-      G_IO_ERROR, G_IO_ERROR_FAILED, "Media description was rejected");
+      TP_ERRORS, TP_ERROR_MEDIA_CODECS_INCOMPATIBLE,
+      "Media description was rejected");
   g_simple_async_result_complete (self->priv->result);
   g_clear_object (&self->priv->result);
 
