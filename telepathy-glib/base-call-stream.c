@@ -592,7 +592,8 @@ tp_base_call_stream_update_remote_sending_state (TpBaseCallStream *self,
     const gchar *dbus_reason,
     const gchar *message)
 {
-  gpointer state_p;
+  gpointer old_state_p = NULL;
+  TpSendingState old_state;
   gboolean exists;
   GHashTable *updates;
   GHashTable *identifiers;
@@ -608,13 +609,14 @@ tp_base_call_stream_update_remote_sending_state (TpBaseCallStream *self,
     new_state = TP_SENDING_STATE_PENDING_SEND;
 
   exists = g_hash_table_lookup_extended (self->priv->remote_members,
-      GUINT_TO_POINTER (contact), NULL, &state_p);
+      GUINT_TO_POINTER (contact), NULL, &old_state_p);
+  old_state = GPOINTER_TO_UINT (old_state_p);
 
-  if (exists && GPOINTER_TO_UINT (state_p) == new_state)
+  if (exists && old_state == new_state)
     return FALSE;
 
   DEBUG ("Updating remote member %d state: %d => %d for stream %s",
-      contact, GPOINTER_TO_UINT (state_p), new_state, self->priv->object_path);
+      contact, old_state, new_state, self->priv->object_path);
 
   g_hash_table_insert (self->priv->remote_members,
       GUINT_TO_POINTER (contact),
