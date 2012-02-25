@@ -112,6 +112,23 @@ void tp_base_contact_list_dup_states (TpBaseContactList *self,
     TpSubscriptionState *publish,
     gchar **publish_request);
 
+typedef void (*TpBaseContactListAsyncFunc) (
+    TpBaseContactList *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+void tp_base_contact_list_download_async (TpBaseContactList *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_base_contact_list_download_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error);
+
+typedef gboolean (*TpBaseContactListAsyncFinishFunc) (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error);
+
 struct _TpBaseContactListClass {
     GObjectClass parent_class;
 
@@ -119,8 +136,11 @@ struct _TpBaseContactListClass {
     TpBaseContactListDupStatesFunc dup_states;
     TpBaseContactListBooleanFunc get_contact_list_persists;
 
+    TpBaseContactListAsyncFunc download_async;
+    TpBaseContactListAsyncFinishFunc download_finish;
+
     /*<private>*/
-    GCallback _padding[7];
+    GCallback _padding[5];
     TpBaseContactListClassPrivate *priv;
 };
 
