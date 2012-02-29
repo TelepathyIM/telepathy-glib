@@ -361,6 +361,117 @@ tp_capabilities_supports_text_chatrooms (TpCapabilities *self)
 }
 
 static gboolean
+supports_call_full (TpCapabilities *self,
+    gboolean initial_audio,
+    gboolean initial_video)
+{
+  guint i;
+
+  g_return_val_if_fail (TP_IS_CAPABILITIES (self), FALSE);
+
+  for (i = 0; i < self->priv->classes->len; i++)
+    {
+      GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
+      GHashTable *fixed_prop;
+      const gchar * const *allowed_prop;
+      const gchar *chan_type;
+      TpHandleType handle_type;
+      gboolean valid;
+
+      tp_value_array_unpack (arr, 2,
+          &fixed_prop,
+          &allowed_prop);
+
+      chan_type = tp_asv_get_string (fixed_prop, TP_PROP_CHANNEL_CHANNEL_TYPE);
+      if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_CALL))
+        continue;
+
+      handle_type = tp_asv_get_uint32 (fixed_prop,
+          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
+      if (!valid || handle_type != TP_HANDLE_TYPE_CONTACT)
+        continue;
+
+      if (initial_audio &&
+          !tp_asv_get_boolean (fixed_prop,
+              TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, NULL) &&
+          !tp_strv_contains (allowed_prop,
+              TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO))
+        continue;
+
+      if (initial_video &&
+          !tp_asv_get_boolean (fixed_prop,
+              TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, NULL) &&
+          !tp_strv_contains (allowed_prop,
+              TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO))
+        continue;
+
+      /* We found the right class */
+      return TRUE;
+    }
+
+  return FALSE;
+}
+
+/**
+ * tp_capabilities_supports_audio_call:
+ * @self: a #TpCapabilities object
+ *
+ * Return whether private audio call can be established by providing
+ * a contact identifier.
+ *
+ * Returns: %TRUE if a channel request containing Call as ChannelType,
+ * HandleTypeContact as TargetHandleType, a True value for InitialAudio and a
+ * contact identifier can be expected to work, %FALSE otherwise.
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_capabilities_supports_audio_call (TpCapabilities *self)
+{
+  return supports_call_full (self, TRUE, FALSE);
+}
+
+/**
+ * tp_capabilities_supports_audio_video_call:
+ * @self: a #TpCapabilities object
+ *
+ * Return whether private audio/video call can be established by providing
+ * a contact identifier.
+ *
+ * Returns: %TRUE if a channel request containing Call as ChannelType,
+ * HandleTypeContact as TargetHandleType, a True value for
+ * InitialAudio/InitialVideo and a contact identifier can be expected to work,
+ * %FALSE otherwise.
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_capabilities_supports_audio_video_call (TpCapabilities *self)
+{
+  return supports_call_full (self, TRUE, TRUE);
+}
+
+/**
+ * tp_capabilities_supports_file_transfer:
+ * @self: a #TpCapabilities object
+ *
+ * Return whether private file transfer can be established by providing
+ * a contact identifier.
+ *
+ * Returns: %TRUE if a channel request containing FileTransfer as ChannelType,
+ * HandleTypeContact as TargetHandleType and a contact identifier can be
+ * expected to work, %FALSE otherwise.
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_capabilities_supports_file_transfer (TpCapabilities *self)
+{
+  return supports_simple_channel (self, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
+      TP_HANDLE_TYPE_CONTACT);
+}
+
+static gboolean
 tp_capabilities_supports_tubes_common (TpCapabilities *self,
     const gchar *expected_channel_type,
     TpHandleType expected_handle_type,
