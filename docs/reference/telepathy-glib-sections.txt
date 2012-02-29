@@ -7105,6 +7105,7 @@ TpBaseMediaCallChannel
 TpBaseMediaCallChannelClass
 TpBaseMediaCallChannelHoldStateChangedFunc
 TpBaseMediaCallChannelVoidFunc
+tp_base_media_call_channel_get_local_hold_state
 <SUBSECTION Standard>
 TP_BASE_MEDIA_CALL_CHANNEL
 TP_BASE_MEDIA_CALL_CHANNEL_CLASS

@@ -573,3 +573,28 @@ _tp_base_media_call_channel_streams_receiving_state_changed (
   else
     hold_change_failed (self);
 }
+
+/**
+ * tp_base_media_call_channel_get_local_hold_state:
+ * @channel: a #TpBaseMediaCallChannel
+ * @reason: pointer to a location where to store the @reason, or %NULL
+ *
+ * <!-- -->
+ *
+ * Returns: The current hold state
+ *
+ * Since: 0.17.UNRELEASED
+ */
+
+TpLocalHoldState
+tp_base_media_call_channel_get_local_hold_state (
+    TpBaseMediaCallChannel *channel, TpLocalHoldStateReason *reason)
+{
+  g_return_val_if_fail (TP_IS_BASE_MEDIA_CALL_CHANNEL (channel),
+      TP_LOCAL_HOLD_STATE_UNHELD);
+
+  if (reason)
+    *reason = channel->priv->hold_state_reason;
+
+  return channel->priv->hold_state;
+}
