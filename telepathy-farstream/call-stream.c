@@ -39,6 +39,8 @@
  * - Support IsICELite
  */
 
+#include "config.h"
+
 #include "call-stream.h"
 
 #include <telepathy-glib/telepathy-glib.h>

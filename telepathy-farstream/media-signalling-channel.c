@@ -27,6 +27,7 @@
  * channel using Farstream.
  */
 
+#include "config.h"
 
 #include "media-signalling-channel.h"
 
