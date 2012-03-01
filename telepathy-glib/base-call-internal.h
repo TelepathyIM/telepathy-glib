@@ -86,10 +86,10 @@ const gchar *_tp_base_call_channel_get_initial_tones (TpBaseCallChannel *self);
 void _tp_base_media_call_channel_endpoint_state_changed (
     TpBaseMediaCallChannel *self);
 gboolean _tp_base_media_channel_is_held (TpBaseMediaCallChannel *self);
-void _tp_base_media_call_channel_streams_sending_state_changed (
+gboolean _tp_base_media_call_channel_streams_sending_state_changed (
     TpBaseMediaCallChannel *self,
     gboolean success);
-void _tp_base_media_call_channel_streams_receiving_state_changed (
+gboolean _tp_base_media_call_channel_streams_receiving_state_changed (
     TpBaseMediaCallChannel *self,
     gboolean success);
 

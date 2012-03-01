@@ -1183,6 +1183,7 @@ tp_base_media_call_stream_report_sending_failure (
   TpStreamFlowState old_state = self->priv->sending_state;
   TpBaseCallChannel *channel = _tp_base_call_stream_get_channel (
       TP_BASE_CALL_STREAM (self));
+  gboolean was_unholding = FALSE;
 
   if (self->priv->sending_state == TP_STREAM_FLOW_STATE_STOPPED)
     goto done;
@@ -1193,10 +1194,10 @@ tp_base_media_call_stream_report_sending_failure (
   g_object_notify (G_OBJECT (self), "sending-state");
 
   if (channel != NULL && TP_IS_BASE_MEDIA_CALL_CHANNEL (channel))
-    _tp_base_media_call_channel_streams_sending_state_changed (
+    was_unholding = _tp_base_media_call_channel_streams_sending_state_changed (
         TP_BASE_MEDIA_CALL_CHANNEL (channel), FALSE);
 
-  if (klass->report_sending_failure != NULL)
+  if (klass->report_sending_failure != NULL && !was_unholding)
     klass->report_sending_failure (self, old_state, reason, dbus_reason,
         message);
 
@@ -1269,6 +1270,7 @@ tp_base_media_call_stream_report_receiving_failure (
   TpStreamFlowState old_state = self->priv->receiving_state;
   TpBaseCallChannel *channel = _tp_base_call_stream_get_channel (
       TP_BASE_CALL_STREAM (self));
+  gboolean was_unholding = FALSE;
 
   /* Clear all receving requests, we can't receive */
   tp_intset_clear (self->priv->receiving_requests);
@@ -1280,10 +1282,11 @@ tp_base_media_call_stream_report_receiving_failure (
   g_object_notify (G_OBJECT (self), "receiving-state");
 
   if (channel != NULL && TP_IS_BASE_MEDIA_CALL_CHANNEL (channel))
-    _tp_base_media_call_channel_streams_receiving_state_changed (
-        TP_BASE_MEDIA_CALL_CHANNEL (channel), FALSE);
+    was_unholding =
+        _tp_base_media_call_channel_streams_receiving_state_changed (
+            TP_BASE_MEDIA_CALL_CHANNEL (channel), FALSE);
 
-  if (klass->report_receiving_failure != NULL)
+  if (klass->report_receiving_failure != NULL && !was_unholding)
     klass->report_receiving_failure (self, old_state,
         reason, dbus_reason, message);
 

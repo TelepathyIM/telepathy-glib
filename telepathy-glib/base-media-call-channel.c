@@ -552,26 +552,36 @@ _tp_base_media_channel_is_held (TpBaseMediaCallChannel *self)
     }
 }
 
-void
+gboolean
 _tp_base_media_call_channel_streams_sending_state_changed (
     TpBaseMediaCallChannel *self,
     gboolean success)
 {
+  gboolean was_unholding =
+      (self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_UNHOLD);
+
   if (success)
     update_hold_state (self);
   else
     hold_change_failed (self);
+
+  return was_unholding;
 }
 
-void
+gboolean
 _tp_base_media_call_channel_streams_receiving_state_changed (
     TpBaseMediaCallChannel *self,
     gboolean success)
 {
+  gboolean was_unholding =
+      (self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_UNHOLD);
+
   if (success)
     update_hold_state (self);
   else
     hold_change_failed (self);
+
+  return was_unholding;
 }
 
 /**
