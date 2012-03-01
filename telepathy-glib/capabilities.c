@@ -362,8 +362,9 @@ tp_capabilities_supports_text_chatrooms (TpCapabilities *self)
 
 static gboolean
 supports_call_full (TpCapabilities *self,
-    gboolean initial_audio,
-    gboolean initial_video)
+    TpHandleType expected_handle_type,
+    gboolean expected_initial_audio,
+    gboolean expected_initial_video)
 {
   guint i;
 
@@ -388,17 +389,17 @@ supports_call_full (TpCapabilities *self,
 
       handle_type = tp_asv_get_uint32 (fixed_prop,
           TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
-      if (!valid || handle_type != TP_HANDLE_TYPE_CONTACT)
+      if (!valid || handle_type != expected_handle_type)
         continue;
 
-      if (initial_audio &&
+      if (expected_initial_audio &&
           !tp_asv_get_boolean (fixed_prop,
               TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, NULL) &&
           !tp_strv_contains (allowed_prop,
               TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO))
         continue;
 
-      if (initial_video &&
+      if (expected_initial_video &&
           !tp_asv_get_boolean (fixed_prop,
               TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, NULL) &&
           !tp_strv_contains (allowed_prop,
@@ -415,40 +416,47 @@ supports_call_full (TpCapabilities *self,
 /**
  * tp_capabilities_supports_audio_call:
  * @self: a #TpCapabilities object
+ * @handle_type: the handle type of the call; #TP_HANDLE_TYPE_CONTACT for
+ *  private, #TP_HANDLE_TYPE_ROOM or #TP_HANDLE_TYPE_NONE for conference
+ *  (depending on the protocol)
  *
- * Return whether private audio call can be established by providing
- * a contact identifier.
+ * Return whether audio call can be established.
  *
  * Returns: %TRUE if a channel request containing Call as ChannelType,
- * HandleTypeContact as TargetHandleType, a True value for InitialAudio and a
- * contact identifier can be expected to work, %FALSE otherwise.
+ * @handle_type as TargetHandleType, a True value for InitialAudio and an
+ * identifier of the appropriate type can be expected to work, %FALSE otherwise.
  *
  * Since: 0.UNRELEASED
  */
 gboolean
-tp_capabilities_supports_audio_call (TpCapabilities *self)
+tp_capabilities_supports_audio_call (TpCapabilities *self,
+    TpHandleType handle_type)
 {
-  return supports_call_full (self, TRUE, FALSE);
+  return supports_call_full (self, handle_type, TRUE, FALSE);
 }
 
 /**
  * tp_capabilities_supports_audio_video_call:
  * @self: a #TpCapabilities object
+ * @handle_type: the handle type of the call; #TP_HANDLE_TYPE_CONTACT for
+ *  private, #TP_HANDLE_TYPE_ROOM or #TP_HANDLE_TYPE_NONE for conference
+ *  (depending on the protocol)
  *
- * Return whether private audio/video call can be established by providing
- * a contact identifier.
+ * Return whether audio/video call can be established.
  *
  * Returns: %TRUE if a channel request containing Call as ChannelType,
- * HandleTypeContact as TargetHandleType, a True value for
- * InitialAudio/InitialVideo and a contact identifier can be expected to work,
+ * @handle_type as TargetHandleType, a True value for
+ * InitialAudio/InitialVideo and an identifier of the appropriate type can be
+ * expected to work,
  * %FALSE otherwise.
  *
  * Since: 0.UNRELEASED
  */
 gboolean
-tp_capabilities_supports_audio_video_call (TpCapabilities *self)
+tp_capabilities_supports_audio_video_call (TpCapabilities *self,
+    TpHandleType handle_type)
 {
-  return supports_call_full (self, TRUE, TRUE);
+  return supports_call_full (self, handle_type, TRUE, TRUE);
 }
 
 /**
