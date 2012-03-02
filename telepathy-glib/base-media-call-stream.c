@@ -211,6 +211,7 @@ struct _TpBaseMediaCallStreamPrivate
   gboolean local_sending;
   gboolean remotely_held;
   gboolean sending_stop_requested;
+  gboolean sending_failure;
 };
 
 static GPtrArray *tp_base_media_call_stream_get_interfaces (
@@ -843,6 +844,9 @@ tp_base_media_call_stream_update_sending_state (TpBaseMediaCallStream *self)
   if (self->priv->remotely_held)
     goto done;
 
+  if (self->priv->sending_failure)
+    goto done;
+
   sending = self->priv->local_sending;
 
 done:
@@ -1188,10 +1192,9 @@ tp_base_media_call_stream_report_sending_failure (
   if (self->priv->sending_state == TP_STREAM_FLOW_STATE_STOPPED)
     goto done;
 
+  self->priv->sending_failure = TRUE;
   self->priv->sending_stop_requested = FALSE;
-
   self->priv->sending_state = TP_STREAM_FLOW_STATE_STOPPED;
-  g_object_notify (G_OBJECT (self), "sending-state");
 
   if (channel != NULL && TP_IS_BASE_MEDIA_CALL_CHANNEL (channel))
     was_unholding = _tp_base_media_call_channel_streams_sending_state_changed (
@@ -1201,8 +1204,11 @@ tp_base_media_call_stream_report_sending_failure (
     klass->report_sending_failure (self, old_state, reason, dbus_reason,
         message);
 
+  g_object_notify (G_OBJECT (self), "sending-state");
   tp_svc_call_stream_interface_media_emit_sending_state_changed (self,
       self->priv->sending_state);
+
+  self->priv->sending_failure = FALSE;
 
 done:
   tp_svc_call_stream_interface_media_return_from_report_sending_failure (
