@@ -880,7 +880,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
   param_spec = g_param_spec_uint ("state",
       "State",
       "The TpFileTransferState of the channel",
-      0, NUM_TP_FILE_TRANSFER_STATES, TP_FILE_TRANSFER_STATE_NONE,
+      0, TP_NUM_FILE_TRANSFER_STATES, TP_FILE_TRANSFER_STATE_NONE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_STATE,
       param_spec);

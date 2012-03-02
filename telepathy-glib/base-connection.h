@@ -44,7 +44,7 @@ typedef gboolean (*TpBaseConnectionStartConnectingImpl) (
     TpBaseConnection *self, GError **error);
 
 typedef void (*TpBaseConnectionCreateHandleReposImpl) (TpBaseConnection *self,
-    TpHandleRepoIface *repos[NUM_TP_HANDLE_TYPES]);
+    TpHandleRepoIface *repos[TP_NUM_HANDLE_TYPES]);
 
 
 typedef GPtrArray *(*TpBaseConnectionCreateChannelFactoriesImpl) (

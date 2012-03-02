@@ -37,7 +37,7 @@ TestContext contexts[] = {
 //  { TP_SOCKET_ADDRESS_TYPE_IPV6, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
 //  { TP_SOCKET_ADDRESS_TYPE_IPV6, TP_SOCKET_ACCESS_CONTROL_PORT },
 
-  { NUM_TP_SOCKET_ADDRESS_TYPES, NUM_TP_SOCKET_ACCESS_CONTROLS }
+  { TP_NUM_SOCKET_ADDRESS_TYPES, TP_NUM_SOCKET_ACCESS_CONTROLS }
 };
 
 typedef struct {
@@ -329,7 +329,7 @@ run_file_transfer_test (const char *test_path,
 {
   guint i;
 
-  for (i = 0; contexts[i].address_type != NUM_TP_SOCKET_ADDRESS_TYPES; i++)
+  for (i = 0; contexts[i].address_type != TP_NUM_SOCKET_ADDRESS_TYPES; i++)
     {
       gchar *path = test_context_to_str (&contexts[i], test_path);
 

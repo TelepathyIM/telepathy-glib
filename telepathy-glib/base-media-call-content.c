@@ -412,7 +412,7 @@ tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
   param_spec = g_param_spec_uchar ("current-dtmf-event",
       "CurrentDTMFEvent",
       "The currently being played dtmf event if any",
-      0, NUM_TP_DTMF_EVENTS - 1, 0,
+      0, TP_NUM_DTMF_EVENTS - 1, 0,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CURRENT_DTMF_EVENT,
       param_spec);
@@ -427,7 +427,7 @@ tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
   param_spec = g_param_spec_uint ("current-dtmf-state",
       "CurrentDTMFState",
       "The sending state of the dtmf events",
-      0, NUM_TP_SENDING_STATES - 1, TP_SENDING_STATE_NONE,
+      0, TP_NUM_SENDING_STATES - 1, TP_SENDING_STATE_NONE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CURRENT_DTMF_STATE,
       param_spec);

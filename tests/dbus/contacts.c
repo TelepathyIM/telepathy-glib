@@ -82,7 +82,7 @@ static TpContactFeature all_contact_features[] = {
 /* If people add new features, they should add them to this test. We could
  * generate the list dynamically but this seems less brittle.
  */
-G_STATIC_ASSERT (G_N_ELEMENTS (all_contact_features) == NUM_TP_CONTACT_FEATURES);
+G_STATIC_ASSERT (G_N_ELEMENTS (all_contact_features) == TP_NUM_CONTACT_FEATURES);
 
 
 static void

@@ -29,7 +29,7 @@ test_tp_contact_feature (void)
   g_assert (klass != NULL);
   g_assert (G_IS_ENUM_CLASS (klass));
 
-  g_assert_cmpint (klass->n_values, ==, NUM_TP_CONTACT_FEATURES);
+  g_assert_cmpint (klass->n_values, ==, TP_NUM_CONTACT_FEATURES);
 
   g_type_class_unref (klass);
 }
@@ -47,7 +47,7 @@ test_tp_dbus_error (void)
   g_assert (klass != NULL);
   g_assert (G_IS_ENUM_CLASS (klass));
 
-  g_assert_cmpint (klass->n_values, ==, NUM_TP_DBUS_ERRORS);
+  g_assert_cmpint (klass->n_values, ==, TP_NUM_DBUS_ERRORS);
 }
 
 

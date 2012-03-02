@@ -1265,7 +1265,7 @@ tp_account_class_init (TpAccountClass *klass)
           "Presence",
           "The account connection's current presence type",
           0,
-          NUM_TP_CONNECTION_PRESENCE_TYPES,
+          TP_NUM_CONNECTION_PRESENCE_TYPES,
           TP_CONNECTION_PRESENCE_TYPE_UNSET,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
@@ -1364,7 +1364,7 @@ tp_account_class_init (TpAccountClass *klass)
           "ConnectionStatus",
           "The account's connection status type",
           0,
-          NUM_TP_CONNECTION_STATUSES,
+          TP_NUM_CONNECTION_STATUSES,
           TP_CONNECTION_STATUS_DISCONNECTED,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
@@ -1389,7 +1389,7 @@ tp_account_class_init (TpAccountClass *klass)
           "ConnectionStatusReason",
           "The account's connection status reason",
           0,
-          NUM_TP_CONNECTION_STATUS_REASONS,
+          TP_NUM_CONNECTION_STATUS_REASONS,
           TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
@@ -1668,7 +1668,7 @@ tp_account_class_init (TpAccountClass *klass)
           "RequestedPresence",
           "The account's requested presence type",
           0,
-          NUM_TP_CONNECTION_PRESENCE_TYPES,
+          TP_NUM_CONNECTION_PRESENCE_TYPES,
           TP_CONNECTION_PRESENCE_TYPE_UNSET,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
@@ -1771,7 +1771,7 @@ tp_account_class_init (TpAccountClass *klass)
           "AutomaticPresence type",
           "Presence type used to put the account online automatically",
           0,
-          NUM_TP_CONNECTION_PRESENCE_TYPES,
+          TP_NUM_CONNECTION_PRESENCE_TYPES,
           TP_CONNECTION_PRESENCE_TYPE_UNSET,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 

@@ -331,7 +331,7 @@ tp_base_password_channel_class_init (TpBasePasswordChannelClass *tp_base_passwor
   param_spec = g_param_spec_uint ("sasl-status",
       "Current status",
       "The status of the current SASL authentication.",
-      0, NUM_TP_SASL_STATUSES, 0,
+      0, TP_NUM_SASL_STATUSES, 0,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SASL_STATUS,
       param_spec);

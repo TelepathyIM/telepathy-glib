@@ -392,7 +392,7 @@
  * TP_ prefix, e.g. TP_CONNECTION_STATUS_CONNECTED.
  *
  * Each enum also has a constant for the number of members, named like
- * NUM_TP_CONNECTION_STATUSES. The pluralization is currently hard-coded
+ * TP_NUM_CONNECTION_STATUSES. The pluralization is currently hard-coded
  * in the conversion scripts, but should move into the specification
  * in future.
  *

@@ -175,7 +175,7 @@ tp_connection_hold_handles (TpConnection *self,
 
   g_return_if_fail (TP_IS_CONNECTION (self));
   g_return_if_fail (handle_type > TP_HANDLE_TYPE_NONE);
-  g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
+  g_return_if_fail (handle_type < TP_NUM_HANDLE_TYPES);
   g_return_if_fail (n_handles >= 1);
   g_return_if_fail (callback != NULL);
 
@@ -342,7 +342,7 @@ tp_connection_request_handles (TpConnection *self,
 
   g_return_if_fail (TP_IS_CONNECTION (self));
   g_return_if_fail (handle_type > TP_HANDLE_TYPE_NONE);
-  g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
+  g_return_if_fail (handle_type < TP_NUM_HANDLE_TYPES);
   g_return_if_fail (ids != NULL);
   g_return_if_fail (ids[0] != NULL);
   g_return_if_fail (callback != NULL);

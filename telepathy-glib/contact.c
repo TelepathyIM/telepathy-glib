@@ -344,7 +344,7 @@ tp_contact_has_feature (TpContact *self,
                         TpContactFeature feature)
 {
   g_return_val_if_fail (self != NULL, FALSE);
-  g_return_val_if_fail (feature < NUM_TP_CONTACT_FEATURES, FALSE);
+  g_return_val_if_fail (feature < TP_NUM_CONTACT_FEATURES, FALSE);
 
   return ((self->priv->has_features & (1 << feature)) != 0);
 }
@@ -4075,7 +4075,7 @@ get_feature_flags (guint n_features,
 
   for (i = 0; i < n_features; i++)
     {
-      g_return_val_if_fail (features[i] < NUM_TP_CONTACT_FEATURES, FALSE);
+      g_return_val_if_fail (features[i] < TP_NUM_CONTACT_FEATURES, FALSE);
       feature_flags |= (1 << features[i]);
     }
 

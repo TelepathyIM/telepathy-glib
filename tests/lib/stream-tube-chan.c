@@ -296,7 +296,7 @@ tp_tests_stream_tube_channel_class_init (TpTestsStreamTubeChannelClass *klass)
   param_spec = g_param_spec_uint (
       "state", "TpTubeState",
       "state of the tube",
-      0, NUM_TP_TUBE_CHANNEL_STATES - 1, 0,
+      0, TP_NUM_TUBE_CHANNEL_STATES - 1, 0,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_STATE,
       param_spec);

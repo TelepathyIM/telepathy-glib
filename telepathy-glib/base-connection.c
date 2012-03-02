@@ -384,7 +384,7 @@ struct _TpBaseConnectionPrivate
   /* array of (ChannelRequest *) */
   GPtrArray *channel_requests;
 
-  TpHandleRepoIface *handles[NUM_TP_HANDLE_TYPES];
+  TpHandleRepoIface *handles[TP_NUM_HANDLE_TYPES];
 
   /* If not %NULL, contains strings representing our interfaces.
    * If %NULL, we have no interfaces except those in
@@ -617,7 +617,7 @@ tp_base_connection_dispose (GObject *object)
       priv->channel_requests = NULL;
     }
 
-  for (i = 0; i < NUM_TP_HANDLE_TYPES; i++)
+  for (i = 0; i < TP_NUM_HANDLE_TYPES; i++)
     tp_clear_object (priv->handles + i);
 
   if (priv->interfaces)
@@ -1707,7 +1707,7 @@ tp_base_connection_init (TpBaseConnection *self)
   self->priv = priv;
   self->status = TP_INTERNAL_CONNECTION_STATUS_NEW;
 
-  for (i = 0; i < NUM_TP_HANDLE_TYPES; i++)
+  for (i = 0; i < TP_NUM_HANDLE_TYPES; i++)
     {
       priv->handles[i] = NULL;
     }
@@ -2618,7 +2618,7 @@ tp_base_connection_get_handles (TpBaseConnection *self,
 {
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
 
-  if (handle_type >= NUM_TP_HANDLE_TYPES)
+  if (handle_type >= TP_NUM_HANDLE_TYPES)
     return NULL;
 
   return self->priv->handles[handle_type];

@@ -419,14 +419,14 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
 
   param_spec = g_param_spec_uint ("connection-status", "connection status",
       "ConnectionStatus property",
-      0, NUM_TP_CONNECTION_STATUSES, TP_CONNECTION_STATUS_DISCONNECTED,
+      0, TP_NUM_CONNECTION_STATUSES, TP_CONNECTION_STATUS_DISCONNECTED,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONNECTION_STATUS,
       param_spec);
 
   param_spec = g_param_spec_uint ("connection-status-reason",
       "connection status reason", "ConnectionStatusReason property",
-      0, NUM_TP_CONNECTION_STATUS_REASONS,
+      0, TP_NUM_CONNECTION_STATUS_REASONS,
       TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONNECTION_STATUS_REASON,

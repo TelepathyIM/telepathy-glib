@@ -337,7 +337,7 @@ set_hold_state (TpBaseMediaCallChannel *self,
       TP_BASE_MEDIA_CALL_CHANNEL_GET_CLASS (self);
   gboolean changed;
 
-  g_return_if_fail (hold_state_reason < NUM_TP_LOCAL_HOLD_STATE_REASONS);
+  g_return_if_fail (hold_state_reason < TP_NUM_LOCAL_HOLD_STATE_REASONS);
 
   changed = (self->priv->hold_state != hold_state);
 
