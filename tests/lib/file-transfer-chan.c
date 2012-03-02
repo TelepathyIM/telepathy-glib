@@ -33,9 +33,6 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsFileTransferChannel,
       NULL);
     )
 
-static const char *
-tp_tests_file_transfer_channel_interfaces[] = { NULL };
-
 enum /* properties */
 {
   PROP_AVAILABLE_SOCKET_TYPES = 1,
@@ -603,7 +600,6 @@ tp_tests_file_transfer_channel_class_init (
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER;
   base_class->target_handle_type = TP_HANDLE_TYPE_CONTACT;
-  base_class->interfaces = tp_tests_file_transfer_channel_interfaces;
 
   base_class->close = channel_close;
   base_class->fill_immutable_properties = fill_immutable_properties;

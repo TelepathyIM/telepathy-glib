@@ -58,9 +58,16 @@ G_DEFINE_TYPE_WITH_CODE (TpContactGroupChannel, _tp_contact_group_channel,
       group_group_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, group_channel_iface_init))
 
-static const gchar *contact_list_interfaces[] = {
-    TP_IFACE_CHANNEL_INTERFACE_GROUP,
-    NULL
+static GPtrArray *
+base_contact_list_get_interfaces (TpBaseChannel *self)
+{
+  GPtrArray *interfaces;
+
+  interfaces = TP_BASE_CHANNEL_CLASS (
+      _tp_base_contact_list_channel_parent_class)->get_interfaces (self);
+
+  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_GROUP);
+  return interfaces;
 };
 
 enum
@@ -282,7 +289,7 @@ _tp_base_contact_list_channel_class_init (TpBaseContactListChannelClass *cls)
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_CONTACT_LIST;
   base_class->target_handle_type = 0;       /* placeholder, set in subclass */
-  base_class->interfaces = contact_list_interfaces;
+  base_class->get_interfaces = base_contact_list_get_interfaces;
   base_class->close = stub_close;           /* placeholder, not called */
 
   g_object_class_install_property (object_class, PROP_MANAGER,
