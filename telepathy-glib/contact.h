@@ -68,7 +68,6 @@ typedef enum {
     TP_CONTACT_FEATURE_CONTACT_BLOCKING,
 } TpContactFeature;
 #define TP_NUM_CONTACT_FEATURES (TP_CONTACT_FEATURE_CONTACT_BLOCKING + 1)
-#define NUM_TP_CONTACT_FEATURES TP_NUM_CONTACT_FEATURES
 #define TP_CONTACT_FEATURE_INVALID ((TpContactFeature) -1)
 
 /* Basic functionality, always available */

@@ -135,15 +135,6 @@ struct _TpContact {
  */
 
 /**
- * NUM_TP_CONTACT_FEATURES: (skip)
- *
- * 1 higher than the highest #TpContactFeature supported by this version of
- * telepathy-glib. Use %TP_NUM_CONTACT_FEATURES in new code.
- *
- * Since: 0.7.18
- */
-
-/**
  * TP_CONTACT_FEATURE_INVALID: (skip)
  *
  * An invalid TpContactFeature. Used as list termination. See for example
