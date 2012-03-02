@@ -640,26 +640,20 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy,
  * If the interface is the proxy's "main interface", or has already been
  * added, then do nothing.
  *
- * Returns: either %NULL or a borrowed #DBusGProxy corresponding to @iface,
- * depending on implementation details. To reliably borrow the #DBusGProxy, use
- * tp_proxy_borrow_interface_by_id(). (This method should probably have
- * returned void; sorry.)
- *
  * Since: 0.7.1
  */
-DBusGProxy *
+void
 tp_proxy_add_interface_by_id (TpProxy *self,
                               GQuark iface)
 {
   DBusGProxy *iface_proxy = g_datalist_id_get_data (&self->priv->interfaces,
       iface);
 
-  g_return_val_if_fail
+  g_return_if_fail
       (tp_dbus_check_valid_interface_name (g_quark_to_string (iface),
-          NULL),
-       NULL);
+          NULL));
 
-  g_return_val_if_fail (tp_proxy_get_invalidated (self) == NULL, NULL);
+  g_return_if_fail (tp_proxy_get_invalidated (self) == NULL);
 
   if (iface_proxy == NULL)
     {
@@ -670,8 +664,6 @@ tp_proxy_add_interface_by_id (TpProxy *self,
       g_datalist_id_set_data_full (&self->priv->interfaces, iface,
           self, NULL);
     }
-
-  return iface_proxy;
 }
 
 /**
