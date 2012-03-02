@@ -212,6 +212,7 @@ struct _TpBaseMediaCallStreamPrivate
   gboolean remotely_held;
   gboolean sending_stop_requested;
   gboolean sending_failure;
+  gboolean receiving_failure;
 };
 
 static GPtrArray *tp_base_media_call_stream_get_interfaces (
@@ -951,6 +952,9 @@ tp_base_media_call_stream_update_receiving_state (TpBaseMediaCallStream *self)
   if (channel == NULL || !_tp_base_call_channel_is_locally_accepted (channel))
     goto done;
 
+  if (self->priv->receiving_failure)
+    goto done;
+
   if (TP_IS_BASE_MEDIA_CALL_CHANNEL (channel))
     {
       TpBaseMediaCallChannel *mediachan = TP_BASE_MEDIA_CALL_CHANNEL (channel);
@@ -1285,6 +1289,7 @@ tp_base_media_call_stream_report_receiving_failure (
     goto done;
 
   self->priv->receiving_state = TP_STREAM_FLOW_STATE_STOPPED;
+  self->priv->receiving_failure = TRUE;
   g_object_notify (G_OBJECT (self), "receiving-state");
 
   if (channel != NULL && TP_IS_BASE_MEDIA_CALL_CHANNEL (channel))
@@ -1298,6 +1303,8 @@ tp_base_media_call_stream_report_receiving_failure (
 
   tp_svc_call_stream_interface_media_emit_receiving_state_changed (self,
       self->priv->receiving_state);
+
+  self->priv->receiving_failure = FALSE;
 
 done:
   tp_svc_call_stream_interface_media_return_from_report_receiving_failure (
