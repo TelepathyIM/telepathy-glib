@@ -796,33 +796,26 @@ class Generator(object):
         self.b('')
         self.b('  iface = tp_proxy_borrow_interface_by_id (')
         self.b('      (TpProxy *) proxy,')
-        self.b('      interface, &error);')
+        self.b('      interface, (callback == NULL ? NULL : &error));')
         self.b('')
-        self.b('  if (iface == NULL)')
+        self.b('  if (iface == NULL && callback != NULL)')
         self.b('    {')
-        self.b('      if (callback != NULL)')
-        self.b('        callback (proxy,')
-
-        for arg in out_args:
-            name, info, tp_type, elt = arg
-            ctype, gtype, marshaller, pointer = info
-
-            if pointer:
-                self.b('            NULL,')
-            else:
-                self.b('            0,')
-
-        self.b('            error, user_data, weak_object);')
+        self.b('      /* consumes error */')
+        self.b('      %s ((TpProxy *) proxy,' % invoke_callback)
+        self.b('          error, NULL, (GCallback) callback, user_data,')
+        self.b('          weak_object);')
         self.b('')
         self.b('      if (destroy != NULL)')
         self.b('        destroy (user_data);')
         self.b('')
-        self.b('      g_error_free (error);')
         self.b('      return NULL;')
         self.b('    }')
         self.b('')
         self.b('  if (callback == NULL)')
         self.b('    {')
+        self.b('      if (iface == NULL)')
+        self.b('        return NULL;')
+        self.b('')
         self.b('      dbus_g_proxy_call_no_reply (iface, "%s",' % member)
 
         for arg in in_args:
