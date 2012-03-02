@@ -21,8 +21,11 @@
 
 #include "telepathy-glib/dtmf.h"
 
+
+#include <telepathy-glib/base-call-internal.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/util.h>
+
 
 /**
  * SECTION:dtmf
@@ -89,8 +92,8 @@ tp_dtmf_event_to_char (TpDTMFEvent event)
 
 #define INVALID_DTMF_EVENT ((TpDTMFEvent) 0xFF)
 
-static TpDTMFEvent
-tp_dtmf_char_to_event (gchar c)
+TpDTMFEvent
+_tp_dtmf_char_to_event (gchar c)
 {
   switch (c)
     {
@@ -130,16 +133,8 @@ tp_dtmf_char_to_event (gchar c)
     }
 }
 
-typedef enum
-{
-  DTMF_CHAR_CLASS_MEANINGLESS,
-  DTMF_CHAR_CLASS_PAUSE,
-  DTMF_CHAR_CLASS_EVENT,
-  DTMF_CHAR_CLASS_WAIT_FOR_USER
-} DTMFCharClass;
-
-static DTMFCharClass
-tp_dtmf_char_classify (gchar c)
+DTMFCharClass
+_tp_dtmf_char_classify (gchar c)
 {
   switch (c)
     {
@@ -155,7 +150,7 @@ tp_dtmf_char_classify (gchar c)
         return DTMF_CHAR_CLASS_PAUSE;
 
       default:
-        if (tp_dtmf_char_to_event (c) != INVALID_DTMF_EVENT)
+        if (_tp_dtmf_char_to_event (c) != INVALID_DTMF_EVENT)
           return DTMF_CHAR_CLASS_EVENT;
         else
           return DTMF_CHAR_CLASS_MEANINGLESS;
@@ -293,7 +288,7 @@ tp_dtmf_player_timer_cb (gpointer data)
       return FALSE;
     }
 
-  switch (tp_dtmf_char_classify (*self->priv->dialstring_remaining))
+  switch (_tp_dtmf_char_classify (*self->priv->dialstring_remaining))
     {
       case DTMF_CHAR_CLASS_EVENT:
         if (was_playing)
@@ -307,7 +302,7 @@ tp_dtmf_player_timer_cb (gpointer data)
             /* We're at the end of a gap or pause, or in our initial state.
              * Play the tone straight away. */
             tp_dtmf_player_emit_started_tone (self,
-                tp_dtmf_char_to_event (*self->priv->dialstring_remaining));
+                _tp_dtmf_char_to_event (*self->priv->dialstring_remaining));
             self->priv->timer_id = g_timeout_add (self->priv->tone_ms,
                 tp_dtmf_player_timer_cb, self);
           }
@@ -400,7 +395,7 @@ tp_dtmf_player_play (TpDTMFPlayer *self,
 
   for (i = 0; tones[i] != '\0'; i++)
     {
-      if (tp_dtmf_char_classify (tones[i]) == DTMF_CHAR_CLASS_MEANINGLESS)
+      if (_tp_dtmf_char_classify (tones[i]) == DTMF_CHAR_CLASS_MEANINGLESS)
         {
           g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
               "Invalid character in DTMF string starting at %s",
@@ -484,7 +479,7 @@ tp_dtmf_player_class_init (TpDTMFPlayerClass *cls)
    */
   sig_id_started_tone =  g_signal_new ("started-tone",
       G_OBJECT_CLASS_TYPE (cls), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-      g_cclosure_marshal_VOID__UINT, G_TYPE_NONE, 1, G_TYPE_UINT);
+      NULL, G_TYPE_NONE, 1, G_TYPE_UINT);
 
   /**
    * TpDTMFPlayer::stopped-tone:
@@ -496,7 +491,7 @@ tp_dtmf_player_class_init (TpDTMFPlayerClass *cls)
    */
   sig_id_stopped_tone =  g_signal_new ("stopped-tone",
       G_OBJECT_CLASS_TYPE (cls), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-      g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+      NULL, G_TYPE_NONE, 0);
 
   /**
    * TpDTMFPlayer::finished:
@@ -511,7 +506,7 @@ tp_dtmf_player_class_init (TpDTMFPlayerClass *cls)
    */
   sig_id_finished =  g_signal_new ("finished",
       G_OBJECT_CLASS_TYPE (cls), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-      g_cclosure_marshal_VOID__BOOLEAN, G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
+      NULL, G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 
   /**
    * TpDTMFPlayer::tones-deferred:
@@ -528,7 +523,7 @@ tp_dtmf_player_class_init (TpDTMFPlayerClass *cls)
    */
   sig_id_tones_deferred =  g_signal_new ("tones-deferred",
       G_OBJECT_CLASS_TYPE (cls), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-      g_cclosure_marshal_VOID__STRING, G_TYPE_NONE, 1, G_TYPE_STRING);
+      NULL, G_TYPE_NONE, 1, G_TYPE_STRING);
 }
 
 /**

@@ -47,7 +47,6 @@
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
 #include "telepathy-glib/util-internal.h"
-#include "telepathy-glib/_gen/signals-marshal.h"
 
 #include "_gen/tp-cli-connection-body.h"
 
@@ -1594,8 +1593,7 @@ tp_connection_class_init (TpConnectionClass *klass)
   param_spec = g_param_spec_uint ("status", "Status",
       "The status of this connection", 0, G_MAXUINT32,
       TP_UNKNOWN_CONNECTION_STATUS,
-      G_PARAM_READABLE
-      | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_STATUS,
       param_spec);
 
@@ -1690,8 +1688,7 @@ tp_connection_class_init (TpConnectionClass *klass)
   param_spec = g_param_spec_uint ("status-reason", "Last status change reason",
       "The reason why #TpConnection:status changed to its current value",
       0, G_MAXUINT32, TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED,
-      G_PARAM_READABLE
-      | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_STATUS_REASON,
       param_spec);
 
@@ -1711,8 +1708,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    */
   param_spec = g_param_spec_boolean ("connection-ready", "Connection ready?",
       "Initially FALSE; changes to TRUE when introspection finishes", FALSE,
-      G_PARAM_READABLE
-      | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONNECTION_READY,
       param_spec);
 
@@ -1818,8 +1814,7 @@ tp_connection_class_init (TpConnectionClass *klass)
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__INT_UINT_STRING,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 3, G_TYPE_INT, G_TYPE_UINT, G_TYPE_STRING);
 
   /**
@@ -2045,8 +2040,7 @@ tp_connection_class_init (TpConnectionClass *klass)
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__BOXED,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 1, G_TYPE_STRV);
 
   /**
@@ -2071,8 +2065,7 @@ tp_connection_class_init (TpConnectionClass *klass)
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__BOXED,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 1, G_TYPE_STRV);
 
   /**
@@ -2106,8 +2099,7 @@ tp_connection_class_init (TpConnectionClass *klass)
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__STRING_STRING,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
   /**
    * TpConnection::contact-list-changed:
@@ -2136,8 +2128,7 @@ tp_connection_class_init (TpConnectionClass *klass)
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__BOXED_BOXED,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 2, G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY);
 
   /**
@@ -2167,8 +2158,7 @@ tp_connection_class_init (TpConnectionClass *klass)
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__BOXED_BOXED,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 2, G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY);
 
 }
@@ -3249,7 +3239,7 @@ _tp_connection_void_cb (TpConnection *proxy,
  * or tp_account_set_enabled_async(), depending whether the intention is
  * to put the account offline temporarily, or disable it longer-term.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 void
 tp_connection_disconnect_async (TpConnection *self,
@@ -3277,7 +3267,7 @@ tp_connection_disconnect_async (TpConnection *self,
  *
  * Returns: %TRUE if the call was successful, otherwise %FALSE
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.5
  */
 gboolean
 tp_connection_disconnect_finish (TpConnection *self,

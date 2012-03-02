@@ -3,9 +3,9 @@
   xmlns:xi="http://www.w3.org/2001/XInclude">
 
 <tp:title>Telepathy D-Bus Interface Specification</tp:title>
-<tp:version>0.25.1.1</tp:version>
+<tp:version>0.25.2.1</tp:version>
 
-<tp:copyright>Copyright © 2005-2011 Collabora Limited</tp:copyright>
+<tp:copyright>Copyright © 2005-2012 Collabora Limited</tp:copyright>
 <tp:copyright>Copyright © 2005-2011 Nokia Corporation</tp:copyright>
 <tp:copyright>Copyright © 2006 INdT</tp:copyright>
 
@@ -32,11 +32,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </p>
  </tp:docstring>
  <xi:include href="Connection_Manager.xml"/>
- <xi:include href="Connection_Manager_Interface_Account_Storage.xml"/>
+ <xi:include href="Connection_Manager_Interface_Account_Storage1.xml"/>
  <xi:include href="Protocol.xml"/>
- <xi:include href="Protocol_Interface_Addressing.xml"/>
- <xi:include href="Protocol_Interface_Avatars.xml"/>
- <xi:include href="Protocol_Interface_Presence.xml"/>
+ <xi:include href="Protocol_Interface_Addressing1.xml"/>
+ <xi:include href="Protocol_Interface_Avatars1.xml"/>
+ <xi:include href="Protocol_Interface_Presence1.xml"/>
 
  <tp:section name="Connection Object">
   <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
@@ -62,9 +62,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </p>
    </tp:docstring>
 
-   <xi:include href="Connection_Interface_Contact_List.xml"/>
-   <xi:include href="Connection_Interface_Contact_Groups.xml"/>
-   <xi:include href="Connection_Interface_Contact_Blocking.xml"/>
+   <xi:include href="Connection_Interface_Contact_List1.xml"/>
+   <xi:include href="Connection_Interface_Contact_Groups1.xml"/>
+   <xi:include href="Connection_Interface_Contact_Blocking1.xml"/>
   </tp:section>
 
   <tp:section name="Contact metadata interfaces">
@@ -77,15 +77,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </p>
    </tp:docstring>
 
-   <xi:include href="Connection_Interface_Aliasing.xml"/>
-   <xi:include href="Connection_Interface_Avatars.xml"/>
-   <xi:include href="Connection_Interface_Client_Types.xml"/>
-   <xi:include href="Connection_Interface_Contact_Capabilities.xml"/>
-   <xi:include href="Connection_Interface_Contact_Info.xml"/>
-   <xi:include href="Connection_Interface_Location.xml"/>
-   <xi:include href="Connection_Interface_Presence.xml"/>
-   <xi:include href="Connection_Interface_Renaming.xml"/>
-   <xi:include href="Connection_Interface_Resources.xml"/>
+   <xi:include href="Connection_Interface_Aliasing1.xml"/>
+   <xi:include href="Connection_Interface_Avatars1.xml"/>
+   <xi:include href="Connection_Interface_Client_Types1.xml"/>
+   <xi:include href="Connection_Interface_Contact_Capabilities1.xml"/>
+   <xi:include href="Connection_Interface_Contact_Info1.xml"/>
+   <xi:include href="Connection_Interface_Location1.xml"/>
+   <xi:include href="Connection_Interface_Presence1.xml"/>
+   <xi:include href="Connection_Interface_Renaming1.xml"/>
+   <xi:include href="Connection_Interface_Resources1.xml"/>
   </tp:section>
 
   <tp:section name="Connection feature interfaces">
@@ -96,16 +96,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </p>
    </tp:docstring>
 
-   <xi:include href="Connection_Interface_Addressing.xml"/>
-   <xi:include href="Connection_Interface_Anonymity.xml"/>
-   <xi:include href="Connection_Interface_Balance.xml"/>
-   <xi:include href="Connection_Interface_Cellular.xml"/>
-   <xi:include href="Connection_Interface_Communication_Policy.xml"/>
-   <xi:include href="Connection_Interface_Forwarding.xml"/>
-   <xi:include href="Connection_Interface_Keepalive.xml"/>
-   <xi:include href="Connection_Interface_Mail_Notification.xml"/>
-   <xi:include href="Connection_Interface_Power_Saving.xml"/>
-   <xi:include href="Connection_Interface_Service_Point.xml"/>
+   <xi:include href="Connection_Interface_Addressing1.xml"/>
+   <xi:include href="Connection_Interface_Anonymity1.xml"/>
+   <xi:include href="Connection_Interface_Balance1.xml"/>
+   <xi:include href="Connection_Interface_Cellular1.xml"/>
+   <xi:include href="Connection_Interface_Communication_Policy1.xml"/>
+   <xi:include href="Connection_Interface_Forwarding1.xml"/>
+   <xi:include href="Connection_Interface_Keepalive1.xml"/>
+   <xi:include href="Connection_Interface_Mail_Notification1.xml"/>
+   <xi:include href="Connection_Interface_Power_Saving1.xml"/>
+   <xi:include href="Connection_Interface_Service_Point1.xml"/>
   </tp:section>
  </tp:section>
 
@@ -130,14 +130,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
      Each Channel implements one of the following types:
     </p>
    </tp:docstring>
-   <xi:include href="Channel_Type_Call.xml"/>
-   <xi:include href="Channel_Type_Contact_Search.xml"/>
-   <xi:include href="Channel_Type_DBus_Tube.xml"/>
-   <xi:include href="Channel_Type_File_Transfer.xml"/>
-   <xi:include href="Channel_Type_Room_List.xml"/>
-   <xi:include href="Channel_Type_Server_Authentication.xml"/>
-   <xi:include href="Channel_Type_Server_TLS_Connection.xml"/>
-   <xi:include href="Channel_Type_Stream_Tube.xml"/>
+   <xi:include href="Channel_Type_Call1.xml"/>
+   <xi:include href="Channel_Type_Contact_Search1.xml"/>
+   <xi:include href="Channel_Type_DBus_Tube1.xml"/>
+   <xi:include href="Channel_Type_File_Transfer1.xml"/>
+   <xi:include href="Channel_Type_Room_List1.xml"/>
+   <xi:include href="Channel_Type_Server_Authentication1.xml"/>
+   <xi:include href="Channel_Type_Server_TLS_Connection1.xml"/>
+   <xi:include href="Channel_Type_Stream_Tube1.xml"/>
    <xi:include href="Channel_Type_Text.xml"/>
   </tp:section>
 
@@ -151,21 +151,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </p>
    </tp:docstring>
 
-   <xi:include href="Channel_Interface_Addressing.xml"/>
-   <xi:include href="Channel_Interface_Anonymity.xml"/>
-   <xi:include href="Channel_Interface_Destroyable.xml"/>
-   <xi:include href="Channel_Interface_File_Transfer_Metadata.xml"/>
-   <xi:include href="Channel_Interface_Group.xml"/>
-   <xi:include href="Channel_Interface_Password.xml"/>
-   <xi:include href="Channel_Interface_Room.xml"/>
-   <xi:include href="Channel_Interface_Room_Config.xml"/>
-   <xi:include href="Channel_Interface_SASL_Authentication.xml"/>
-   <xi:include href="Channel_Interface_Credentials_Storage.xml"/>
-   <xi:include href="Channel_Interface_Securable.xml"/>
-   <xi:include href="Channel_Interface_Service_Point.xml"/>
-   <xi:include href="Channel_Interface_Subject.xml"/>
-   <xi:include href="Channel_Interface_Picture.xml"/>
-   <xi:include href="Channel_Interface_Tube.xml"/>
+   <xi:include href="Channel_Interface_Addressing1.xml"/>
+   <xi:include href="Channel_Interface_Anonymity1.xml"/>
+   <xi:include href="Channel_Interface_Captcha_Authentication1.xml"/>
+   <xi:include href="Channel_Interface_Destroyable1.xml"/>
+   <xi:include href="Channel_Interface_File_Transfer_Metadata1.xml"/>
+   <xi:include href="Channel_Interface_Group1.xml"/>
+   <xi:include href="Channel_Interface_Password1.xml"/>
+   <xi:include href="Channel_Interface_Room1.xml"/>
+   <xi:include href="Channel_Interface_Room_Config1.xml"/>
+   <xi:include href="Channel_Interface_SASL_Authentication1.xml"/>
+   <xi:include href="Channel_Interface_Credentials_Storage1.xml"/>
+   <xi:include href="Channel_Interface_Securable1.xml"/>
+   <xi:include href="Channel_Interface_Service_Point1.xml"/>
+   <xi:include href="Channel_Interface_Subject1.xml"/>
+   <xi:include href="Channel_Interface_Picture1.xml"/>
+   <xi:include href="Channel_Interface_Tube1.xml"/>
 
    <tp:section name="Text-specific interfaces">
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
@@ -173,9 +174,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         namespace='imt1.Channel.Type'>Text</tp:dbus-ref>.</p>
     </tp:docstring>
 
-    <xi:include href="Channel_Interface_Chat_State.xml"/>
-    <xi:include href="Channel_Interface_HTML.xml"/>
-    <xi:include href="Channel_Interface_SMS.xml"/>
+    <xi:include href="Channel_Interface_Chat_State1.xml"/>
+    <xi:include href="Channel_Interface_HTML1.xml"/>
+    <xi:include href="Channel_Interface_SMS1.xml"/>
    </tp:section>
 
    <tp:section name="Call-related interfaces">
@@ -184,8 +185,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
        namespace='imt1.Channel.Type'>Call1</tp:dbus-ref>.</p>
     </tp:docstring>
 
-    <xi:include href="Channel_Interface_DTMF.xml"/>
-    <xi:include href="Channel_Interface_Hold.xml"/>
+    <xi:include href="Channel_Interface_DTMF1.xml"/>
+    <xi:include href="Channel_Interface_Hold1.xml"/>
    </tp:section>
 
    <tp:section name="Conference-related interfaces">
@@ -197,9 +198,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
        channels, but may also appear on other types of channel.</p>
     </tp:docstring>
 
-    <xi:include href="Channel_Interface_Conference.xml"/>
-    <xi:include href="Channel_Interface_Splittable.xml"/>
-    <xi:include href="Channel_Interface_Mergeable_Conference.xml"/>
+    <xi:include href="Channel_Interface_Conference1.xml"/>
+    <xi:include href="Channel_Interface_Splittable1.xml"/>
+    <xi:include href="Channel_Interface_Mergeable_Conference1.xml"/>
    </tp:section>
   </tp:section>
  </tp:section>
@@ -216,23 +217,24 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
  </tp:section>
 
  <tp:section name="Calls">
-   <xi:include href="Call_Content.xml"/>
-   <xi:include href="Call_Content_Interface_Media.xml"/>
-   <xi:include href="Call_Interface_Mute.xml"/>
-   <xi:include href="Call_Content_Interface_Video_Control.xml"/>
-   <xi:include href="Call_Content_Interface_Audio_Control.xml"/>
-   <xi:include href="Call_Content_Media_Description.xml"/>
-   <xi:include href="Call_Content_Media_Description_Interface_RTP_Header_Extensions.xml"/>
-   <xi:include href="Call_Content_Media_Description_Interface_RTCP_Feedback.xml"/>
+   <xi:include href="Call1_Content.xml"/>
+   <xi:include href="Call1_Content_Interface_Media.xml"/>
+   <xi:include href="Call1_Interface_Mute.xml"/>
+   <xi:include href="Call1_Content_Interface_DTMF1.xml"/>
+   <xi:include href="Call1_Content_Interface_Video_Control1.xml"/>
+   <xi:include href="Call1_Content_Interface_Audio_Control1.xml"/>
+   <xi:include href="Call1_Content_Media_Description.xml"/>
+   <xi:include href="Call1_Content_Media_Description_Interface_RTP_Header_Extensions1.xml"/>
+   <xi:include href="Call1_Content_Media_Description_Interface_RTCP_Feedback1.xml"/>
    <xi:include
-   href="Call_Content_Media_Description_Interface_RTCP_Extended_Reports.xml"/>
-   <xi:include href="Call_Stream.xml"/>
-   <xi:include href="Call_Stream_Interface_Media.xml"/>
-   <xi:include href="Call_Stream_Endpoint.xml"/>
+   href="Call1_Content_Media_Description_Interface_RTCP_Extended_Reports1.xml"/>
+   <xi:include href="Call1_Stream.xml"/>
+   <xi:include href="Call1_Stream_Interface_Media.xml"/>
+   <xi:include href="Call1_Stream_Endpoint.xml"/>
  </tp:section>
 
  <tp:section name="Debugging">
-  <xi:include href="Debug.xml"/>
+  <xi:include href="Debug1.xml"/>
  </tp:section>
 </tp:section>
 
@@ -246,13 +248,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </p>
  </tp:docstring>
  <xi:include href="Account_Manager.xml"/>
- <xi:include href="Account_Manager_Interface_Hidden.xml"/>
+ <xi:include href="Account_Manager_Interface_Hidden1.xml"/>
  <xi:include href="Account.xml"/>
- <xi:include href="Account_Interface_Addressing.xml"/>
- <xi:include href="Account_Interface_Avatar.xml"/>
- <xi:include href="Account_Interface_Hidden.xml"/>
- <xi:include href="Account_Interface_Storage.xml"/>
- <xi:include href="Account_Interface_External_Password_Storage.xml"/>
+ <xi:include href="Account_Interface_Addressing1.xml"/>
+ <xi:include href="Account_Interface_Avatar1.xml"/>
+ <xi:include href="Account_Interface_Hidden1.xml"/>
+ <xi:include href="Account_Interface_Storage1.xml"/>
+ <xi:include href="Account_Interface_External_Password_Storage1.xml"/>
 </tp:section>
 
 <tp:section name="The Channel Dispatcher">
@@ -264,7 +266,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </p>
  </tp:docstring>
  <xi:include href="Channel_Dispatcher.xml"/>
- <xi:include href="Channel_Dispatcher_Interface_Operation_List.xml"/>
+ <xi:include href="Channel_Dispatcher_Interface_Operation_List1.xml"/>
  <xi:include href="Channel_Dispatch_Operation.xml"/>
  <xi:include href="Channel_Request.xml"/>
 </tp:section>

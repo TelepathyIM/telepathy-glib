@@ -362,8 +362,7 @@ tp_tests_simple_channel_dispatcher_class_init (
   signals[CHANNEL_REQUEST_CREATED] = g_signal_new ("channel-request-created",
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      g_cclosure_marshal_VOID__OBJECT,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE, 1, TP_TESTS_TYPE_SIMPLE_CHANNEL_REQUEST);
 
   klass->dbus_props_class.interfaces = prop_interfaces;

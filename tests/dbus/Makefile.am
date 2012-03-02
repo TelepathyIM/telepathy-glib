@@ -4,7 +4,7 @@ tests_list = \
     test-account-manager \
     test-base-client \
     test-call-cancellation \
-    test-call-example \
+    test-call-channel \
     test-channel \
     test-channel-dispatcher \
     test-channel-dispatch-operation \
@@ -110,10 +110,10 @@ test_channel_introspect_SOURCES = channel-introspect.c
 
 test_channel_request_SOURCES = channel-request.c
 
-test_call_example_SOURCES = call-example.c
-test_call_example_LDADD = \
+test_call_channel_SOURCES = call-channel.c
+test_call_channel_LDADD = \
     $(LDADD) \
-    $(top_builddir)/examples/future/call-cm/libexample-cm-call.la
+    $(top_builddir)/examples/cm/call/libexample-cm-call.la
 
 test_client_SOURCES = client.c
 

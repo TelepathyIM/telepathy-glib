@@ -113,3 +113,6 @@ param-false = b
 default-false = false
 param-y = y
 default-y = 42
+
+param-ao = ao
+default-ao = /misc;/other;

@@ -1,61 +1,64 @@
 EXTRA_DIST = \
     Account.xml \
-    Account_Interface_Addressing.xml \
-    Account_Interface_Avatar.xml \
-    Account_Interface_External_Password_Storage.xml \
-    Account_Interface_Hidden.xml \
-    Account_Interface_Storage.xml \
+    Account_Interface_Addressing1.xml \
+    Account_Interface_Avatar1.xml \
+    Account_Interface_External_Password_Storage1.xml \
+    Account_Interface_Hidden1.xml \
+    Account_Interface_Storage1.xml \
     Account_Manager.xml \
-    Account_Manager_Interface_Hidden.xml \
+    Account_Manager_Interface_Hidden1.xml \
     Authentication_TLS_Certificate.xml \
-    Call_Content.xml \
-    Call_Content_Interface_Audio_Control.xml \
-    Call_Content_Interface_Media.xml \
-    Call_Content_Interface_Video_Control.xml \
-    Call_Content_Media_Description.xml \
-    Call_Content_Media_Description_Interface_RTCP_Extended_Reports.xml \
-    Call_Content_Media_Description_Interface_RTCP_Feedback.xml \
-    Call_Content_Media_Description_Interface_RTP_Header_Extensions.xml \
-    Call_Interface_Mute.xml \
-    Call_Stream.xml \
-    Call_Stream_Endpoint.xml \
-    Call_Stream_Interface_Media.xml \
+    Call1_Content.xml \
+    Call1_Content_Interface_Audio_Control1.xml \
+    Call1_Content_Interface_DTMF1.xml \
+    Call1_Content_Interface_Media.xml \
+    Call1_Content_Interface_Audio_Control1.xml \
+    Call1_Content_Interface_Video_Control1.xml \
+    Call1_Content_Media_Description.xml \
+    Call1_Content_Media_Description_Interface_RTCP_Extended_Reports1.xml \
+    Call1_Content_Media_Description_Interface_RTCP_Feedback1.xml \
+    Call1_Content_Media_Description_Interface_RTP_Header_Extensions1.xml \
+    Call1_Interface_Mute.xml \
+    Call1_Stream.xml \
+    Call1_Stream_Endpoint.xml \
+    Call1_Stream_Interface_Media.xml \
     Channel.xml \
     Channel_Dispatch_Operation.xml \
     Channel_Dispatcher.xml \
-    Channel_Dispatcher_Interface_Operation_List.xml \
-    Channel_Interface_Addressing.xml \
-    Channel_Interface_Anonymity.xml \
-    Channel_Interface_Chat_State.xml \
-    Channel_Interface_Conference.xml \
-    Channel_Interface_Credentials_Storage.xml \
-    Channel_Interface_DTMF.xml \
-    Channel_Interface_Destroyable.xml \
-    Channel_Interface_File_Transfer_Metadata.xml \
-    Channel_Interface_Group.xml \
-    Channel_Interface_HTML.xml \
-    Channel_Interface_Hold.xml \
-    Channel_Interface_Mergeable_Conference.xml \
-    Channel_Interface_Password.xml \
-    Channel_Interface_Picture.xml \
-    Channel_Interface_Room.xml \
-    Channel_Interface_Room_Config.xml \
-    Channel_Interface_SASL_Authentication.xml \
-    Channel_Interface_SMS.xml \
-    Channel_Interface_Securable.xml \
-    Channel_Interface_Service_Point.xml \
-    Channel_Interface_Splittable.xml \
-    Channel_Interface_Subject.xml \
-    Channel_Interface_Tube.xml \
+    Channel_Dispatcher_Interface_Operation_List1.xml \
+    Channel_Interface_Addressing1.xml \
+    Channel_Interface_Anonymity1.xml \
+    Channel_Interface_Captcha_Authentication1.xml \
+    Channel_Interface_Chat_State1.xml \
+    Channel_Interface_Conference1.xml \
+    Channel_Interface_Credentials_Storage1.xml \
+    Channel_Interface_DTMF1.xml \
+    Channel_Interface_Destroyable1.xml \
+    Channel_Interface_File_Transfer_Metadata1.xml \
+    Channel_Interface_Group1.xml \
+    Channel_Interface_HTML1.xml \
+    Channel_Interface_Hold1.xml \
+    Channel_Interface_Mergeable_Conference1.xml \
+    Channel_Interface_Password1.xml \
+    Channel_Interface_Picture1.xml \
+    Channel_Interface_Room1.xml \
+    Channel_Interface_Room_Config1.xml \
+    Channel_Interface_SASL_Authentication1.xml \
+    Channel_Interface_SMS1.xml \
+    Channel_Interface_Securable1.xml \
+    Channel_Interface_Service_Point1.xml \
+    Channel_Interface_Splittable1.xml \
+    Channel_Interface_Subject1.xml \
+    Channel_Interface_Tube1.xml \
     Channel_Request.xml \
-    Channel_Type_Call.xml \
-    Channel_Type_Contact_Search.xml \
-    Channel_Type_DBus_Tube.xml \
-    Channel_Type_File_Transfer.xml \
-    Channel_Type_Room_List.xml \
-    Channel_Type_Server_Authentication.xml \
-    Channel_Type_Server_TLS_Connection.xml \
-    Channel_Type_Stream_Tube.xml \
+    Channel_Type_Call1.xml \
+    Channel_Type_Contact_Search1.xml \
+    Channel_Type_DBus_Tube1.xml \
+    Channel_Type_File_Transfer1.xml \
+    Channel_Type_Room_List1.xml \
+    Channel_Type_Server_Authentication1.xml \
+    Channel_Type_Server_TLS_Connection1.xml \
+    Channel_Type_Stream_Tube1.xml \
     Channel_Type_Text.xml \
     Client.xml \
     Client_Approver.xml \
@@ -65,37 +68,37 @@ EXTRA_DIST = \
     Client_Observer.xml \
     Connection.xml \
     Connection_Future.xml \
-    Connection_Interface_Addressing.xml \
-    Connection_Interface_Aliasing.xml \
-    Connection_Interface_Anonymity.xml \
-    Connection_Interface_Avatars.xml \
-    Connection_Interface_Balance.xml \
-    Connection_Interface_Cellular.xml \
-    Connection_Interface_Client_Types.xml \
-    Connection_Interface_Communication_Policy.xml \
-    Connection_Interface_Contact_Blocking.xml \
-    Connection_Interface_Contact_Capabilities.xml \
-    Connection_Interface_Contact_Groups.xml \
-    Connection_Interface_Contact_Info.xml \
-    Connection_Interface_Contact_List.xml \
+    Connection_Interface_Addressing1.xml \
+    Connection_Interface_Aliasing1.xml \
+    Connection_Interface_Anonymity1.xml \
+    Connection_Interface_Avatars1.xml \
+    Connection_Interface_Balance1.xml \
+    Connection_Interface_Cellular1.xml \
+    Connection_Interface_Client_Types1.xml \
+    Connection_Interface_Communication_Policy1.xml \
+    Connection_Interface_Contact_Blocking1.xml \
+    Connection_Interface_Contact_Capabilities1.xml \
+    Connection_Interface_Contact_Groups1.xml \
+    Connection_Interface_Contact_Info1.xml \
+    Connection_Interface_Contact_List1.xml \
     Connection_Interface_Contacts.xml \
-    Connection_Interface_Forwarding.xml \
-    Connection_Interface_Keepalive.xml \
-    Connection_Interface_Location.xml \
-    Connection_Interface_Mail_Notification.xml \
-    Connection_Interface_Power_Saving.xml \
-    Connection_Interface_Presence.xml \
-    Connection_Interface_Renaming.xml \
+    Connection_Interface_Forwarding1.xml \
+    Connection_Interface_Keepalive1.xml \
+    Connection_Interface_Location1.xml \
+    Connection_Interface_Mail_Notification1.xml \
+    Connection_Interface_Power_Saving1.xml \
+    Connection_Interface_Presence1.xml \
+    Connection_Interface_Renaming1.xml \
     Connection_Interface_Requests.xml \
-    Connection_Interface_Resources.xml \
-    Connection_Interface_Service_Point.xml \
+    Connection_Interface_Resources1.xml \
+    Connection_Interface_Service_Point1.xml \
     Connection_Manager.xml \
-    Connection_Manager_Interface_Account_Storage.xml \
-    Debug.xml \
+    Connection_Manager_Interface_Account_Storage1.xml \
+    Debug1.xml \
     Protocol.xml \
-    Protocol_Interface_Addressing.xml \
-    Protocol_Interface_Avatars.xml \
-    Protocol_Interface_Presence.xml \
+    Protocol_Interface_Addressing1.xml \
+    Protocol_Interface_Avatars1.xml \
+    Protocol_Interface_Presence1.xml \
     all.xml \
     errors.xml \
     generic-types.xml \

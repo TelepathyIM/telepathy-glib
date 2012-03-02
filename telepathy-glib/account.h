@@ -1,7 +1,7 @@
 /*
  * account-manager.h - proxy for an account in the Telepathy account manager
  *
- * Copyright (C) 2009 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2009-2012 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2009 Nokia Corporation
  *
  * This library is free software; you can redistribute it and/or
@@ -205,6 +205,10 @@ void tp_account_set_nickname_async (TpAccount *account,
 
 gboolean tp_account_set_nickname_finish (TpAccount *account,
     GAsyncResult *result, GError **error);
+
+const gchar * const *
+/* ugh, gtk-doc */
+tp_account_get_supersedes (TpAccount *self);
 
 void tp_account_get_avatar_async (TpAccount *account,
     GAsyncReadyCallback callback, gpointer user_data);

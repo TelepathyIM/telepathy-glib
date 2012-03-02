@@ -204,8 +204,6 @@
 #include <telepathy-glib/exportable-channel.h>
 #include <telepathy-glib/util.h>
 
-#include "_gen/signals-marshal.h"
-
 enum {
     S_NEW_CHANNELS,
     S_REQUEST_ALREADY_SATISFIED,
@@ -244,8 +242,7 @@ channel_manager_base_init (gpointer klass)
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
           0,
-          NULL, NULL,
-          g_cclosure_marshal_VOID__POINTER,
+          NULL, NULL, NULL,
           G_TYPE_NONE, 1, G_TYPE_POINTER);
 
       /**
@@ -265,8 +262,7 @@ channel_manager_base_init (gpointer klass)
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
           0,
-          NULL, NULL,
-          _tp_marshal_VOID__POINTER_OBJECT,
+          NULL, NULL, NULL,
           G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_OBJECT);
 
       /**
@@ -289,8 +285,7 @@ channel_manager_base_init (gpointer klass)
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
           0,
-          NULL, NULL,
-          _tp_marshal_VOID__POINTER_UINT_INT_STRING,
+          NULL, NULL, NULL,
           G_TYPE_NONE, 4, G_TYPE_POINTER, G_TYPE_UINT, G_TYPE_INT,
           G_TYPE_STRING);
 
@@ -306,8 +301,7 @@ channel_manager_base_init (gpointer klass)
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
           0,
-          NULL, NULL,
-          g_cclosure_marshal_VOID__STRING,
+          NULL, NULL, NULL,
           G_TYPE_NONE, 1, G_TYPE_STRING);
 
     }

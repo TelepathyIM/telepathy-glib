@@ -41,9 +41,6 @@ libexample_extensions_la_SOURCES = \
     extensions.h
 
 nodist_libexample_extensions_la_SOURCES = \
-    _gen/signals-marshal.c \
-    _gen/signals-marshal.h \
-    _gen/signals-marshal.list \
     _gen/register-dbus-glib-marshallers-body.h \
     _gen/enums.h \
     _gen/gtypes.h \
@@ -83,17 +80,6 @@ _gen/gtypes.h _gen/gtypes-body.h: _gen/all.xml \
 	$(top_srcdir)/tools/glib-gtypes-generator.py
 	$(AM_V_GEN)$(PYTHON) $(top_srcdir)/tools/glib-gtypes-generator.py \
 		$< _gen/gtypes Example
-
-_gen/signals-marshal.list: _gen/all.xml \
-	$(tools_dir)/glib-signals-marshal-gen.py
-	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-signals-marshal-gen.py $< > $@
-
-_gen/signals-marshal.h: _gen/signals-marshal.list Makefile.am
-	$(AM_V_GEN)$(GLIB_GENMARSHAL) --header --prefix=_example_ext_marshal $< > $@
-
-_gen/signals-marshal.c: _gen/signals-marshal.list Makefile.am
-	$(AM_V_GEN){ echo '#include "_gen/signals-marshal.h"' && \
-	$(GLIB_GENMARSHAL) --body --prefix=_example_ext_marshal $< ; } > $@
 
 _gen/register-dbus-glib-marshallers-body.h: _gen/all.xml \
 	$(tools_dir)/glib-client-marshaller-gen.py
@@ -135,7 +121,6 @@ _gen/svc-connection.c _gen/svc-connection.h: _gen/connection.xml \
 		--filename=_gen/svc-connection \
 		--signal-marshal-prefix=_example_ext \
 		--include='<telepathy-glib/dbus.h>' \
-		--include='"_gen/signals-marshal.h"' \
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
 		--allow-unstable \
 		$< Example_Svc_

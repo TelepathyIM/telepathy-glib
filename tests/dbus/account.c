@@ -1,6 +1,6 @@
 /* A very basic feature test for TpAccount
  *
- * Copyright (C) 2009 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2009-2012 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2009 Nokia Corporation
  *
  * Copying and distribution of this file, with or without modification,
@@ -24,6 +24,7 @@
 #define CONN2_PATH TP_CONN_OBJECT_PATH_BASE "what/ev/s"
 #define CONN1_BUS_NAME TP_CONN_BUS_NAME_BASE "what.ev.er"
 #define CONN2_BUS_NAME TP_CONN_BUS_NAME_BASE "what.ev.s"
+#define SUPERSEDED_PATH TP_ACCOUNT_OBJECT_PATH_BASE "super/seded/whatever"
 
 static void
 test_parse_failure (gconstpointer test_data)
@@ -343,6 +344,8 @@ test_prepare_success (Test *test,
   gchar *status = NULL;
   gchar *message = NULL;
   const GHashTable *details = GUINT_TO_POINTER (666);
+  GStrv strv;
+  const gchar * const *cstrv;
 
   test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
@@ -453,6 +456,17 @@ test_prepare_success (Test *test,
       "bob.mcbadgers@example.com");
   assert_strprop (test->account, "normalized-name",
       "bob.mcbadgers@example.com");
+
+  g_object_get (test->account,
+      "supersedes", &strv,
+      NULL);
+  g_assert_cmpstr (strv[0], ==, SUPERSEDED_PATH);
+  g_assert_cmpstr (strv[1], ==, NULL);
+  g_strfreev (strv);
+
+  cstrv = tp_account_get_supersedes (test->account);
+  g_assert_cmpstr (cstrv[0], ==, SUPERSEDED_PATH);
+  g_assert_cmpstr (cstrv[1], ==, NULL);
 }
 
 static void

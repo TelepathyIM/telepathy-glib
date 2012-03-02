@@ -39,7 +39,6 @@
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
-#include "telepathy-glib/_gen/signals-marshal.h"
 
 #include "telepathy-glib/_gen/tp-cli-channel-dispatch-operation-body.h"
 
@@ -830,8 +829,7 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
       "channel-lost", G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__OBJECT_UINT_INT_STRING,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 4,
       TP_TYPE_CHANNEL, G_TYPE_UINT, G_TYPE_INT, G_TYPE_STRING);
 

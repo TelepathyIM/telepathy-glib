@@ -35,7 +35,6 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
-#include "telepathy-glib/_gen/signals-marshal.h"
 
 #include "_gen/tp-cli-channel-body.h"
 
@@ -1321,8 +1320,7 @@ tp_channel_class_init (TpChannelClass *klass)
    */
   param_spec = g_param_spec_boolean ("channel-ready", "Channel ready?",
       "Initially FALSE; changes to TRUE when introspection finishes", FALSE,
-      G_PARAM_READABLE
-      | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CHANNEL_READY,
       param_spec);
 
@@ -1334,8 +1332,7 @@ tp_channel_class_init (TpChannelClass *klass)
    */
   param_spec = g_param_spec_object ("connection", "TpConnection",
       "The connection to which this object belongs.", TP_TYPE_CONNECTION,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONNECTION,
       param_spec);
 
@@ -1354,8 +1351,7 @@ tp_channel_class_init (TpChannelClass *klass)
    */
   param_spec = g_param_spec_uint ("group-self-handle", "Group.SelfHandle",
       "Undefined if not a group", 0, G_MAXUINT32, 0,
-      G_PARAM_READABLE
-      | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_GROUP_SELF_HANDLE,
       param_spec);
 
@@ -1375,8 +1371,7 @@ tp_channel_class_init (TpChannelClass *klass)
    */
   param_spec = g_param_spec_uint ("group-flags", "Group.GroupFlags",
       "0 if not a group", 0, G_MAXUINT32, 0,
-      G_PARAM_READABLE
-      | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_GROUP_FLAGS,
       param_spec);
 
@@ -1495,8 +1490,7 @@ tp_channel_class_init (TpChannelClass *klass)
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__UINT_UINT,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 
   /**
@@ -1523,8 +1517,7 @@ tp_channel_class_init (TpChannelClass *klass)
       "group-members-changed", G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__BOXED_BOXED_BOXED_BOXED_BOXED,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 5,
       au_type, au_type, au_type, au_type, TP_HASH_TYPE_STRING_VARIANT_MAP);
 
@@ -1543,8 +1536,7 @@ tp_channel_class_init (TpChannelClass *klass)
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__UINT_UINT,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 
   /**
@@ -1647,8 +1639,7 @@ tp_channel_class_init (TpChannelClass *klass)
       "group-contacts-changed", G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__BOXED_BOXED_BOXED_BOXED_OBJECT_BOXED,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 6,
       G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY,
       TP_TYPE_CONTACT, TP_HASH_TYPE_STRING_VARIANT_MAP);

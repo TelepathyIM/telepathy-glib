@@ -26,9 +26,9 @@ m4_define([tp_glib_nano_version], [1])
 # (we don't guarantee that we won't add ABI then remove it again, if it was
 # never seen in a release).
 
-m4_define([tp_glib_lt_current], [66])
-m4_define([tp_glib_lt_revision], [1])
-m4_define([tp_glib_lt_age], [66])
+m4_define([tp_glib_lt_current], [67])
+m4_define([tp_glib_lt_revision], [0])
+m4_define([tp_glib_lt_age], [67])
 
 # Some magic
 m4_define([tp_glib_base_version],
@@ -201,7 +201,7 @@ AC_SUBST(tpglibtestsdir)
 
 dnl Check for Glib
 PKG_CHECK_MODULES(GLIB,
-  [glib-2.0 >= 2.28.0, gobject-2.0 >= 2.28.0, gio-2.0 >= 2.28.0])
+  [glib-2.0 >= 2.30.0, gobject-2.0 >= 2.30.0, gio-2.0 >= 2.30.0])
 
 dnl Check for GIO-Unix
 PKG_CHECK_MODULES(GIO_UNIX, [gio-unix-2.0],
@@ -320,15 +320,13 @@ AC_OUTPUT( Makefile \
 	   examples/client/python/Makefile \
 	   examples/client/stream-tubes/Makefile \
 	   examples/cm/Makefile \
+	   examples/cm/call/Makefile \
 	   examples/cm/channelspecific/Makefile \
 	   examples/cm/contactlist/Makefile \
 	   examples/cm/echo-message-parts/Makefile \
 	   examples/cm/extended/Makefile \
 	   examples/cm/no-protocols/Makefile \
 	   examples/extensions/Makefile \
-	   examples/future/Makefile \
-	   examples/future/call-cm/Makefile \
-	   extensions/Makefile \
 	   spec/Makefile \
 	   telepathy-glib/Makefile \
 	   telepathy-glib/telepathy-glib.pc \

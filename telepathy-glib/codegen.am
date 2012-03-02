@@ -3,6 +3,10 @@
 codegen_extra_dist = \
     account.xml \
     account-manager.xml \
+    call-content.xml \
+    call-content-media-description.xml \
+    call-stream.xml \
+    call-stream-endpoint.xml \
     channel.xml \
     channel-dispatcher.xml \
     channel-dispatch-operation.xml \
@@ -38,6 +42,10 @@ nodist_geninclude_HEADERS = \
     _gen/gtypes.h \
     _gen/tp-cli-account.h \
     _gen/tp-cli-account-manager.h \
+    _gen/tp-cli-call-content.h \
+    _gen/tp-cli-call-content-media-description.h \
+    _gen/tp-cli-call-stream.h \
+    _gen/tp-cli-call-stream-endpoint.h \
     _gen/tp-cli-channel.h \
     _gen/tp-cli-channel-dispatcher.h \
     _gen/tp-cli-channel-dispatch-operation.h \
@@ -50,6 +58,10 @@ nodist_geninclude_HEADERS = \
     _gen/tp-cli-protocol.h \
     _gen/tp-svc-account.h \
     _gen/tp-svc-account-manager.h \
+    _gen/tp-svc-call-content.h \
+    _gen/tp-svc-call-content-media-description.h \
+    _gen/tp-svc-call-stream.h \
+    _gen/tp-svc-call-stream-endpoint.h \
     _gen/tp-svc-channel.h \
     _gen/tp-svc-channel-dispatcher.h \
     _gen/tp-svc-channel-dispatch-operation.h \
@@ -64,16 +76,16 @@ nodist_geninclude_HEADERS = \
 
 nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/error-str.c \
-    _gen/signals-marshal.c \
-    _gen/signals-marshal.h \
-    _gen/signals-marshal.list \
-    _gen/tp-signals-marshal.list \
     _gen/interfaces-body.h \
     _gen/genums.c \
     _gen/gtypes-body.h \
     _gen/register-dbus-glib-marshallers-body.h \
     _gen/tp-cli-account-body.h \
     _gen/tp-cli-account-manager-body.h \
+    _gen/tp-cli-call-content-body.h \
+    _gen/tp-cli-call-content-media-description-body.h \
+    _gen/tp-cli-call-stream-body.h \
+    _gen/tp-cli-call-stream-endpoint-body.h \
     _gen/tp-cli-channel-body.h \
     _gen/tp-cli-channel-dispatcher-body.h \
     _gen/tp-cli-channel-dispatch-operation-body.h \
@@ -86,6 +98,10 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/tp-cli-protocol-body.h \
     _gen/tp-svc-account.c \
     _gen/tp-svc-account-manager.c \
+    _gen/tp-svc-call-content.c \
+    _gen/tp-svc-call-content-media-description.c \
+    _gen/tp-svc-call-stream.c \
+    _gen/tp-svc-call-stream-endpoint.c \
     _gen/tp-svc-channel.c \
     _gen/tp-svc-channel-dispatcher.c \
     _gen/tp-svc-channel-dispatch-operation.c \
@@ -163,21 +179,6 @@ _gen/register-dbus-glib-marshallers-body.h: _gen/stable-spec.xml \
 	$(tools_dir)/glib-client-marshaller-gen.py
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-client-marshaller-gen.py $< _tp > $@
 
-_gen/tp-signals-marshal.list: $(tools_dir)/glib-signals-marshal-gen.py \
-	_gen/stable-spec.xml
-	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-signals-marshal-gen.py \
-		_gen/stable-spec.xml > $@
-
-_gen/signals-marshal.list: signals-marshal.list _gen/tp-signals-marshal.list
-	$(AM_V_GEN)sort -u $^ > $@
-
-_gen/signals-marshal.h: _gen/signals-marshal.list codegen.am
-	$(AM_V_GEN)$(GLIB_GENMARSHAL) --header --prefix=_tp_marshal $< > $@
-
-_gen/signals-marshal.c: _gen/signals-marshal.list codegen.am
-	$(AM_V_GEN){ echo '#include "_gen/signals-marshal.h"' && \
-	$(GLIB_GENMARSHAL) --body --prefix=_tp_marshal $< ; } > $@
-
 _gen/genums.c: _gen/spec-stamp genums.c.template $(our_headers) codegen.am
 	$(AM_V_GEN)( cd $(srcdir) && \
 		$(GLIB_MKENUMS) --template genums.c.template $(our_headers) \
@@ -205,7 +206,6 @@ _gen/tp-svc-%.c _gen/tp-svc-%.h: _gen/tp-spec-%.xml \
 		--filename=_gen/tp-svc-$* \
 		--signal-marshal-prefix=_tp \
 		--include='<telepathy-glib/dbus.h>' \
-		--include="\"_gen/signals-marshal.h\"" \
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
 		$< Tp_Svc_
 
@@ -225,6 +225,12 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h _gen/tp-cli-%-reentrant-body.h _gen/tp-cli-
 		account) \
 			subclass=--subclass=TpAccount; \
 			subclass_assert=--subclass-assert=TP_IS_ACCOUNT; \
+			;; \
+		call-content) \
+			subclass=--subclass=TpCallContent; \
+			;; \
+		call-stream) \
+			subclass=--subclass=TpCallStream; \
 			;; \
 		channel) \
 			subclass=--subclass=TpChannel; \

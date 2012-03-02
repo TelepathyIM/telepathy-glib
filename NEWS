@@ -1,10 +1,55 @@
-telepathy-glib 0.17.5 (UNRELEASED)
+telepathy-glib 0.17.6 (UNRELEASED)
 ==================================
+
+...
+
+telepathy-glib 0.17.5 (2012-02-20)
+==================================
+
+The “I have no privates but I have a heart!” release.
+
+Enhancements:
+
+• telepathy-spec 0.25.2:
+  · the Call1 family of interfaces
+  · Conn.I.Addressing1
+  · Chan.I.CaptchaAuthentication1
+  · Account.Supersedes
+
+• Add TpCallChannel, TpBaseCallChannel and other Call-related high-level API.
+  (A team effort involving Olivier, Xavier, Danielle, Sjoerd, Will, Nicolas,
+  Jonny, David and possibly others)
+
+• tp_account_manager_get_most_available_presence() now returns
+  (AVAILABLE, "available, "") if the only connected accounts does not implement
+  SimplePresence. (Guillaume)
+
+• Add tp_base_channel_get_self_handle(). (Xavier)
+
+• TpBaseChannel now has a virtual get_interfaces() method. (Danielle)
+
+• tp_connection_disconnect_async: high level API to disconnect a
+  TpConnection. (Simon)
+
+• tp_unix_connection_receive_credentials_with_byte() and
+  tp_unix_connection_send_credentials_with_byte() now have async equivalents.
+  (Xavier)
+
+• Produce DLL files when compiled for Windows. (Siraj)
 
 Fixes:
 
 • fd.o #45554: fix use-after-free if various async results are kept until
   after the callback has returned, which is considered valid. (Simon)
+
+• tp_account_manager_get_most_available_presence() now returns ("offline, "")
+  as status and message if no account is connected, as stated in the doc,
+  instead of (NULL, NULL). (Guillaume)
+
+• TpChannel: fix a crash when preparing contacts. (Xavier)
+
+• fdo.o #45982: fix a crash in TpBaseContactList when using RenameGroup()'s
+  fallback code. (Guillaume)
 
 telepathy-glib 0.17.4 (2011-12-19)
 ==================================

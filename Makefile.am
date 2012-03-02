@@ -14,7 +14,6 @@ endif
 endif
 
 SUBDIRS += \
-    extensions \
     examples \
     tests \
     docs \

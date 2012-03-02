@@ -1,0 +1,25 @@
+[ConnectionManager]
+Interfaces=
+
+[Protocol example]
+Interfaces=
+ConnectionInterfaces=im.telepathy1.Connection.Interface.Requests;im.telepathy1.Connection.Interface.Contacts;im.telepathy1.Connection.Interface.Presence;
+param-account=s required register
+param-simulation-delay=u
+default-simulation-delay=1000
+RequestableChannelClasses=audio;video;
+VCardField=x-telepathy-example
+EnglishName=Example with Call channels
+Icon=face-smile
+
+[audio]
+im.telepathy1.Channel.ChannelType s=im.telepathy1.Channel.Type.Call1
+im.telepathy1.Channel.TargetHandleType u=1
+im.telepathy1.Channel.Type.Call1.InitialAudio b=1
+allowed=im.telepathy1.Channel.TargetHandle;im.telepathy1.Channel.TargetID;im.telepathy1.Channel.Type.Call1.InitialVideo;
+
+[video]
+im.telepathy1.Channel.ChannelType s=im.telepathy1.Channel.Type.Call1
+im.telepathy1.Channel.TargetHandleType u=1
+im.telepathy1.Channel.Type.Call1.InitialVideo b=1
+allowed=im.telepathy1.Channel.TargetHandle;im.telepathy1.Channel.TargetID;im.telepathy1.Channel.Type.Call1.InitialAudio;

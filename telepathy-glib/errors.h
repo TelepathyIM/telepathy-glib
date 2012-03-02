@@ -93,6 +93,7 @@ typedef enum {
     TP_ERROR_MEDIA_CODECS_INCOMPATIBLE, /*< nick=Media.CodecsIncompatible >*/
     TP_ERROR_MEDIA_UNSUPPORTED_TYPE, /*< nick=Media.UnsupportedType >*/
     TP_ERROR_MEDIA_STREAMING_ERROR, /*< nick=Media.StreamingError >*/
+    TP_ERROR_CAPTCHA_NOT_SUPPORTED, /*< nick=CaptchaNotSupported >*/
 } TpError;
 
 const gchar *tp_error_get_dbus_name (TpError error);

@@ -87,7 +87,6 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/deprecated-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
-#include "telepathy-glib/_gen/signals-marshal.h"
 
 struct _TpAccountChannelRequestClass {
     /*<private>*/
@@ -442,8 +441,7 @@ tp_account_channel_request_class_init (
       "re-handled", G_OBJECT_CLASS_TYPE (cls),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      _tp_marshal_VOID__OBJECT_INT64_OBJECT,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 3, TP_TYPE_CHANNEL, G_TYPE_INT64,
       TP_TYPE_HANDLE_CHANNELS_CONTEXT);
 }
