@@ -22,20 +22,23 @@ typedef struct {
 } InspectChannelData;
 
 static void
-channel_ready_cb (TpChannel *channel,
-    const GError *error,
+channel_ready_cb (GObject *source,
+    GAsyncResult *result,
     gpointer user_data)
 {
+  TpChannel *channel = TP_CHANNEL (source);
   InspectChannelData *data = user_data;
   guint handle_type, handle;
   gchar *channel_type;
   gchar **interfaces, **iter;
+  GError *error = NULL;
 
-  if (error != NULL)
+  if (!tp_proxy_prepare_finish (channel, result, &error))
     {
       g_warning ("%s", error->message);
       data->exit_status = 1;
       g_main_loop_quit (data->main_loop);
+      g_clear_error (&error);
       return;
     }
 
@@ -108,7 +111,7 @@ connection_ready_cb (TpConnection *connection,
       return;
     }
 
-  tp_channel_call_when_ready (channel, channel_ready_cb, data);
+  tp_proxy_prepare_async (channel, NULL, channel_ready_cb, user_data);
 
   /* the channel will remain referenced as long as it has calls pending on
    * it */
