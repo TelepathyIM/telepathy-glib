@@ -275,7 +275,7 @@ struct _TpBaseContactListPrivate
   GError *failure /* initially NULL */;
 
   /* values referenced; 0'th remains NULL */
-  TpBaseContactListChannel *lists[NUM_TP_LIST_HANDLES];
+  TpBaseContactListChannel *lists[TP_NUM_LIST_HANDLES];
 
   TpHandleRepoIface *group_repo;
   /* handle borrowed from channel => referenced TpContactGroupChannel */
@@ -600,7 +600,7 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
       "Unable to complete channel request due to disconnection");
   tp_base_contact_list_fail_blocked_contact_requests (self, &error);
 
-  for (i = 0; i < NUM_TP_LIST_HANDLES; i++)
+  for (i = 0; i < TP_NUM_LIST_HANDLES; i++)
     tp_clear_object (self->priv->lists + i);
 
   tp_clear_pointer (&self->priv->groups, g_hash_table_unref);
@@ -729,7 +729,7 @@ tp_base_contact_list_repo_normalize_group (TpHandleRepoIface *repo,
 /* elements 0, 1... of this enum must be kept in sync with elements 1, 2...
  * of the enum in the -internal header */
 static const gchar * const tp_base_contact_list_contact_lists
-  [NUM_TP_LIST_HANDLES + 1] = {
+  [TP_NUM_LIST_HANDLES + 1] = {
     "subscribe",
     "publish",
     "stored",
@@ -1001,7 +1001,7 @@ tp_base_contact_list_foreach_channel (TpChannelManager *manager,
   /* in both cases, we look in channel_requests to avoid including channels
    * that don't officially exist yet */
 
-  for (i = 0; i < NUM_TP_LIST_HANDLES; i++)
+  for (i = 0; i < TP_NUM_LIST_HANDLES; i++)
     {
       if (self->priv->lists[i] != NULL &&
           !g_hash_table_lookup_extended (self->priv->channel_requests,
@@ -1229,7 +1229,7 @@ tp_base_contact_list_request_helper (TpChannelManager *manager,
     {
       /* TpBaseConnection already checked the handle for validity */
       g_assert (handle > 0);
-      g_assert (handle < NUM_TP_LIST_HANDLES);
+      g_assert (handle < TP_NUM_LIST_HANDLES);
 
       if (handle == TP_LIST_HANDLE_STORED &&
           !tp_base_contact_list_get_contact_list_persists (self))
@@ -1992,7 +1992,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
       tp_handle_set_destroy (blocked);
     }
 
-  for (i = 0; i < NUM_TP_LIST_HANDLES; i++)
+  for (i = 0; i < TP_NUM_LIST_HANDLES; i++)
     {
       if (self->priv->lists[i] != NULL)
         tp_base_contact_list_announce_channel (self, self->priv->lists[i],
