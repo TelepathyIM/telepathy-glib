@@ -54,6 +54,11 @@ gboolean tp_capabilities_is_specific_to_contact (TpCapabilities *self);
 
 gboolean tp_capabilities_supports_text_chats (TpCapabilities *self);
 gboolean tp_capabilities_supports_text_chatrooms (TpCapabilities *self);
+gboolean tp_capabilities_supports_audio_call (TpCapabilities *self,
+    TpHandleType handle_type);
+gboolean tp_capabilities_supports_audio_video_call (TpCapabilities *self,
+    TpHandleType handle_type);
+gboolean tp_capabilities_supports_file_transfer (TpCapabilities *self);
 
 gboolean tp_capabilities_supports_stream_tubes (TpCapabilities *self,
     TpHandleType handle_type,
