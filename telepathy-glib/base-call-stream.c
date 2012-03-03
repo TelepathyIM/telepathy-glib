@@ -125,6 +125,8 @@ enum
 {
   PROP_OBJECT_PATH = 1,
   PROP_CONNECTION,
+  PROP_CONTENT,
+  PROP_CHANNEL,
 
   /* Call interface properties */
   PROP_INTERFACES,
@@ -225,6 +227,12 @@ tp_base_call_stream_get_property (
       case PROP_OBJECT_PATH:
         g_value_set_string (value, self->priv->object_path);
         break;
+      case PROP_CONTENT:
+        g_value_set_object (value, self->priv->content);
+        break;
+      case PROP_CHANNEL:
+        g_value_set_object (value, self->priv->channel);
+        break;
       case PROP_REMOTE_MEMBERS:
         g_value_set_boxed (value, self->priv->remote_members);
         break;
@@ -276,6 +284,13 @@ tp_base_call_stream_set_property (
       case PROP_CONNECTION:
         self->priv->conn = g_value_dup_object (value);
         g_assert (self->priv->conn != NULL);
+        break;
+      case PROP_CONTENT:
+        {
+          TpBaseCallContent *content = g_value_get_object (value);
+          if (content)
+            _tp_base_call_stream_set_content (self, content);
+        }
         break;
       case PROP_OBJECT_PATH:
         g_free (self->priv->object_path);
@@ -347,6 +362,32 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *klass)
       NULL,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
+
+  /**
+   * TpBaseCallStream:content:
+   *
+   * #TpBaseCallContent object that owns this call stream.
+   *
+   * Since: 0.17.UNRELEASED
+   */
+  param_spec = g_param_spec_object ("content", "TpBaseCallContent object",
+      "Tp Content object that owns this call stream",
+      TP_TYPE_BASE_CALL_CONTENT,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CONTENT, param_spec);
+
+  /**
+   * TpBaseCallStream:channel:
+   *
+   * #TpBaseChannel object that owns this call stream.
+   *
+   * Since: 0.17.5
+   */
+  param_spec = g_param_spec_object ("channel", "TpBaseCallChannel object",
+      "Tp base call channel object that owns this call stream",
+      TP_TYPE_BASE_CALL_CHANNEL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CHANNEL, param_spec);
 
   /**
    * TpBaseCallStream:interfaces:
@@ -809,7 +850,8 @@ _tp_base_call_stream_set_content (TpBaseCallStream *self,
 {
   g_return_if_fail (TP_IS_BASE_CALL_STREAM (self));
   g_return_if_fail (TP_IS_BASE_CALL_CONTENT (content));
-  g_return_if_fail (self->priv->content == NULL);
+  g_return_if_fail (self->priv->content == NULL ||
+      self->priv->content == content);
 
   self->priv->content = content;
   self->priv->channel = _tp_base_call_content_get_channel (content);
