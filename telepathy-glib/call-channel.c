@@ -795,7 +795,8 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
   /**
    * TpCallChannel:state-details:
    *
-   * Detailed information about #TpCallChannel:state.
+   * Detailed infoermation about #TpCallChannel:state. It is a #GHashTable
+   * mapping gchar*->GValue, it can be accessed using the tp_asv_* functions.
    *
    * Since: 0.17.5
    */
@@ -953,7 +954,8 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    * @state: the new #TpCallState
    * @flags: the new #TpCallFlags
    * @reason: the #TpCallStateReason for the change
-   * @details: additional details
+   * @details: additional details as a #GHashTable readable using the tp_asv_*
+   *   functions.
    *
    * The ::state-changed signal is emitted whenever the
    * call state changes.
