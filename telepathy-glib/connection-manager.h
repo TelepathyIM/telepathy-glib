@@ -117,6 +117,12 @@ void tp_list_connection_managers (TpDBusDaemon *bus_daemon,
     gpointer user_data, GDestroyNotify destroy,
     GObject *weak_object);
 
+void tp_list_connection_managers_async (TpDBusDaemon *dbus_daemon,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+GList *tp_list_connection_managers_finish (GAsyncResult *result,
+    GError **error);
+
 #ifndef TP_DISABLE_DEPRECATED
 typedef void (*TpConnectionManagerWhenReadyCb) (TpConnectionManager *cm,
     const GError *error, gpointer user_data, GObject *weak_object);
