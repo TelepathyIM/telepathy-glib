@@ -26,6 +26,8 @@ typedef struct {
     TpTestsEchoConnectionManager *service_cm;
 
     TpConnectionManager *cm;
+    TpConnectionManager *echo;
+    TpConnectionManager *spurious;
     GError *error /* initialized where needed */;
 } Test;
 
@@ -126,6 +128,8 @@ teardown (Test *test,
   g_clear_object (&test->service_cm);
   g_clear_object (&test->dbus);
   g_clear_object (&test->cm);
+  g_clear_object (&test->echo);
+  g_clear_object (&test->spurious);
   g_main_loop_unref (test->mainloop);
   test->mainloop = NULL;
 }
@@ -1036,43 +1040,20 @@ on_listed_connection_managers (TpConnectionManager * const * cms,
                                GObject *weak_object G_GNUC_UNUSED)
 {
   Test *test = user_data;
-  TpConnectionManager *spurious;
-  TpConnectionManager *echo;
 
   g_assert_cmpuint ((guint) n_cms, ==, 2);
   g_assert (cms[2] == NULL);
 
   if (tp_connection_manager_is_running (cms[0]))
     {
-      echo = cms[0];
-      spurious = cms[1];
+      test->echo = g_object_ref (cms[0]);
+      test->spurious = g_object_ref (cms[1]);
     }
   else
     {
-      spurious = cms[0];
-      echo = cms[1];
+      test->spurious = g_object_ref (cms[0]);
+      test->echo = g_object_ref (cms[1]);
     }
-
-  g_assert (tp_connection_manager_is_running (echo));
-  g_assert (!tp_connection_manager_is_running (spurious));
-
-  g_assert (tp_proxy_is_prepared (echo, TP_CONNECTION_MANAGER_FEATURE_CORE));
-  g_assert (tp_proxy_is_prepared (spurious,
-        TP_CONNECTION_MANAGER_FEATURE_CORE));
-
-  g_assert (tp_proxy_get_invalidated (echo) == NULL);
-  g_assert (tp_proxy_get_invalidated (spurious) == NULL);
-
-  g_assert (tp_connection_manager_is_ready (echo));
-  g_assert (tp_connection_manager_is_ready (spurious));
-
-  g_assert_cmpuint (tp_connection_manager_get_info_source (echo),
-      ==, TP_CM_INFO_SOURCE_LIVE);
-  g_assert_cmpuint (tp_connection_manager_get_info_source (spurious),
-      ==, TP_CM_INFO_SOURCE_FILE);
-
-  g_assert (tp_connection_manager_has_protocol (echo, "example"));
-  g_assert (tp_connection_manager_has_protocol (spurious, "normal"));
 
   g_main_loop_quit (test->mainloop);
 }
@@ -1084,6 +1065,28 @@ test_list (Test *test,
   tp_list_connection_managers (test->dbus, on_listed_connection_managers,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
+
+  g_assert (tp_connection_manager_is_running (test->echo));
+  g_assert (!tp_connection_manager_is_running (test->spurious));
+
+  g_assert (tp_proxy_is_prepared (test->echo,
+        TP_CONNECTION_MANAGER_FEATURE_CORE));
+  g_assert (tp_proxy_is_prepared (test->spurious,
+        TP_CONNECTION_MANAGER_FEATURE_CORE));
+
+  g_assert (tp_proxy_get_invalidated (test->echo) == NULL);
+  g_assert (tp_proxy_get_invalidated (test->spurious) == NULL);
+
+  g_assert (tp_connection_manager_is_ready (test->echo));
+  g_assert (tp_connection_manager_is_ready (test->spurious));
+
+  g_assert_cmpuint (tp_connection_manager_get_info_source (test->echo),
+      ==, TP_CM_INFO_SOURCE_LIVE);
+  g_assert_cmpuint (tp_connection_manager_get_info_source (test->spurious),
+      ==, TP_CM_INFO_SOURCE_FILE);
+
+  g_assert (tp_connection_manager_has_protocol (test->echo, "example"));
+  g_assert (tp_connection_manager_has_protocol (test->spurious, "normal"));
 }
 
 int
