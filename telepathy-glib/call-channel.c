@@ -1340,6 +1340,28 @@ tp_call_channel_has_dtmf (TpCallChannel *self)
   return FALSE;
 }
 
+
+/**
+ * tp_call_channel_has_hold:
+ * @self: a #TpCallChannel
+ *
+ * Whether or not %self has the %TP_IFACE_CHANNEL_INTERFACE_HOLD
+ * interfaces
+ *
+ * Returns: whether or not @self supports Hold
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_call_channel_has_hold (TpCallChannel *self)
+{
+  g_return_val_if_fail (TP_IS_CALL_CHANNEL (self), FALSE);
+  g_return_val_if_fail (
+      tp_proxy_is_prepared (self, TP_CALL_CHANNEL_FEATURE_CORE), FALSE);
+
+  return tp_proxy_has_interface_by_id (self,
+      TP_IFACE_QUARK_CHANNEL_INTERFACE_HOLD);
+}
+
 static void
 generic_async_cb (TpChannel *channel,
     const GError *error,

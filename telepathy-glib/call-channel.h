@@ -87,6 +87,7 @@ gboolean tp_call_channel_has_mutable_contents (TpCallChannel *self);
 GHashTable *tp_call_channel_get_members (TpCallChannel *self);
 
 gboolean tp_call_channel_has_dtmf (TpCallChannel *self);
+gboolean tp_call_channel_has_hold (TpCallChannel *self);
 
 void tp_call_channel_set_ringing_async (TpCallChannel *self,
     GAsyncReadyCallback callback,

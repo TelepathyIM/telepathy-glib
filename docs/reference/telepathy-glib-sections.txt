@@ -6574,6 +6574,7 @@ tp_call_channel_has_mutable_contents
 tp_call_channel_get_members
 <SUBSECTION>
 tp_call_channel_has_dtmf
+tp_call_channel_has_hold
 tp_call_channel_send_tones_async
 tp_call_channel_send_tones_finish
 <SUBSECTION>
