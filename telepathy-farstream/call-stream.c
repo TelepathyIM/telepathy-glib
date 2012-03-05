@@ -129,6 +129,9 @@ tf_call_stream_update_sending_state (TfCallStream *self)
   if (self->fsstream == NULL)
     goto done;
 
+  if (self->endpoint == NULL)
+    goto done;
+
   switch (self->sending_state)
     {
     case TP_STREAM_FLOW_STATE_PENDING_START:
@@ -719,6 +722,9 @@ remote_candidates_added (TpProxy *proxy,
   if (!self->has_endpoint_properties)
     return;
 
+  if (self->endpoint != proxy)
+    return;
+
   tf_call_stream_add_remote_candidates (self, arg_Candidates);
 }
 
@@ -729,6 +735,9 @@ remote_credentials_set (TpProxy *proxy,
     gpointer user_data, GObject *weak_object)
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
+
+  if (self->endpoint != proxy)
+    return;
 
   if ((self->creds_username && strcmp (self->creds_username, arg_Username)) ||
       (self->creds_password && strcmp (self->creds_password, arg_Password)))
@@ -760,6 +769,9 @@ got_endpoint_properties (TpProxy *proxy, GHashTable *out_Properties,
   GPtrArray *candidates;
   gboolean valid = FALSE;
   guint transport_type;
+
+  if (self->endpoint != proxy)
+    return;
 
   if (error)
     {
@@ -824,6 +836,7 @@ got_endpoint_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   tf_call_stream_add_remote_candidates (self, candidates);
 
+  tf_call_stream_update_sending_state (self);
 
   return;
 
@@ -919,16 +932,35 @@ endpoints_changed (TpCallStream *proxy,
   if (!self->has_media_properties)
     return;
 
-  if (arg_Endpoints_Removed->len != 0)
+  if (arg_Endpoints_Removed->len == 1)
+    {
+      if (self->endpoint_objpath == NULL ||
+          strcmp (self->endpoint_objpath,
+              g_ptr_array_index (arg_Endpoints_Removed, 0)))
+
+        {
+          tf_call_stream_fail_literal (self,
+              TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+              TP_ERROR_STR_CONFUSED,
+              "Can not remove endpoint that has not been previously added");
+          return;
+        }
+      _tf_call_stream_remove_endpoint (self);
+    }
+  else if (arg_Endpoints_Removed->len > 1)
     {
       tf_call_stream_fail_literal (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_NOT_IMPLEMENTED,
-          "Removing Endpoints is not implemented");
+          "Having more than one endpoint is not implemented");
       return;
     }
 
-  if (arg_Endpoints_Added->len != 1)
+  /* Nothing added, it's over */
+  if (arg_Endpoints_Added->len == 0)
+    return;
+
+  if (arg_Endpoints_Added->len > 1)
     {
       tf_call_stream_fail_literal (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
@@ -1468,14 +1500,18 @@ cb_fs_new_active_candidate_pair (TfCallStream *stream,
     FsCandidate *local_candidate,
     FsCandidate *remote_candidate)
 {
-  GValueArray *local_tp_candidate =
-      fscandidate_to_tpcandidate (stream, local_candidate);
-  GValueArray *remote_tp_candidate =
-      fscandidate_to_tpcandidate (stream, remote_candidate);
+  GValueArray *local_tp_candidate;
+  GValueArray *remote_tp_candidate;
 
   g_debug ("new active candidate pair local: %s (%d) remote: %s (%d)",
       local_candidate->ip, local_candidate->port,
       remote_candidate->ip, remote_candidate->port);
+
+  if (!stream->endpoint)
+    return;
+
+  local_tp_candidate =_to_tpcandidate (stream, local_candidate);
+  remote_tp_candidate = fscandidate_to_tpcandidate (stream, remote_candidate);
 
   tp_cli_call_stream_endpoint_call_set_selected_candidate_pair (
       stream->endpoint, -1, local_tp_candidate, remote_tp_candidate,
