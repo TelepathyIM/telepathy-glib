@@ -2039,3 +2039,33 @@ _tp_contacts_from_values (GHashTable *table)
 
   return contacts;
 }
+
+/*
+ * @l: (transfer none) (element-type GLib.Object): a list of #GObject or
+ *  any subclass
+ *
+ * Returns: (transfer full): a copy of @l
+ */
+GList *
+_tp_object_list_copy (GList *l)
+{
+  GList *new_l;
+
+  new_l = g_list_copy (l);
+  g_list_foreach (new_l, (GFunc) g_object_ref, NULL);
+  return new_l;
+}
+
+/*
+ * @l: (transfer full) (element-type GLib.Object): a list of #GObject or
+ *  any subclass
+ *
+ * Unref each item of @l and free the list.
+ *
+ * This function can be cast to #GDestroyNotify.
+ */
+void
+_tp_object_list_free (GList *l)
+{
+  g_list_free_full (l, g_object_unref);
+}

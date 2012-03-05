@@ -161,6 +161,7 @@
 #include "telepathy-glib/svc-properties-interface.h"
 #include "telepathy-glib/svc-call.h"
 #include "telepathy-glib/util.h"
+#include "telepathy-glib/util-internal.h"
 
 static void call_stream_media_iface_init (gpointer, gpointer);
 
@@ -242,17 +243,11 @@ tp_base_media_call_stream_init (TpBaseMediaCallStream *self)
 }
 
 static void
-endpoints_list_destroy (GList *endpoints)
-{
-  g_list_free_full (endpoints, g_object_unref);
-}
-
-static void
 tp_base_media_call_stream_dispose (GObject *object)
 {
   TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (object);
 
-  tp_clear_pointer (&self->priv->endpoints, endpoints_list_destroy);
+  tp_clear_pointer (&self->priv->endpoints, _tp_object_list_free);
 
   if (G_OBJECT_CLASS (tp_base_media_call_stream_parent_class)->dispose)
     G_OBJECT_CLASS (tp_base_media_call_stream_parent_class)->dispose (object);

@@ -105,4 +105,7 @@ gboolean _tp_contacts_to_handles (TpConnection *connection,
 
 GPtrArray *_tp_contacts_from_values (GHashTable *table);
 
+GList *_tp_object_list_copy (GList *l);
+void _tp_object_list_free (GList *l);
+
 #endif /* __TP_UTIL_INTERNAL_H__ */
