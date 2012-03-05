@@ -120,6 +120,35 @@ tf_call_stream_dispose (GObject *object)
 }
 
 
+static void
+tf_call_stream_update_sending_state (TfCallStream *self)
+{
+  gboolean sending = FALSE;
+  FsStreamDirection dir;
+
+  if (self->fsstream == NULL)
+    goto done;
+
+  switch (self->sending_state)
+    {
+    case TP_STREAM_FLOW_STATE_PENDING_START:
+      if (self->has_send_resource)
+        sending = TRUE;
+      break;
+    case TP_STREAM_FLOW_STATE_STARTED:
+      sending = TRUE;
+      break;
+    default:
+      break;
+    }
+
+ done:
+  g_object_get (self->fsstream, "direction", &dir, NULL);
+  if (sending)
+    g_object_set (self->fsstream, "direction", dir | FS_DIRECTION_SEND, NULL);
+  else
+    g_object_set (self->fsstream, "direction", dir & ~FS_DIRECTION_SEND, NULL);
+}
 
 static void
 sending_state_changed (TpCallStream *proxy,
@@ -127,14 +156,11 @@ sending_state_changed (TpCallStream *proxy,
     gpointer user_data, GObject *weak_object)
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
-  FsStreamDirection dir;
 
   self->sending_state = arg_State;
 
   if (!self->fsstream)
     return;
-
-  g_object_get (self->fsstream, "direction", &dir, NULL);
 
   switch (arg_State)
     {
@@ -147,8 +173,7 @@ sending_state_changed (TpCallStream *proxy,
           tp_cli_call_stream_interface_media_call_complete_sending_state_change (
               proxy, -1, TP_STREAM_FLOW_STATE_STARTED,
               NULL, NULL, NULL, NULL);
-          g_object_set (self->fsstream,
-              "direction", dir | FS_DIRECTION_SEND, NULL);
+          tf_call_stream_update_sending_state (self);
         }
       else
         {
@@ -160,8 +185,7 @@ sending_state_changed (TpCallStream *proxy,
         }
       break;
     case TP_STREAM_FLOW_STATE_PENDING_STOP:
-      g_object_set (self->fsstream,
-          "direction", dir & ~FS_DIRECTION_SEND, NULL);
+      tf_call_stream_update_sending_state (self);
       if (self->has_send_resource)
         {
           _tf_content_stop_sending (TF_CONTENT (self->call_content));
