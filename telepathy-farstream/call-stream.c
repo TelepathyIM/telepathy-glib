@@ -818,9 +818,11 @@ got_endpoint_properties (TpProxy *proxy, GHashTable *out_Properties,
 }
 
 static void
-tf_call_stream_add_endpoint (TfCallStream *self)
+tf_call_stream_add_endpoint (TfCallStream *self, const gchar *obj_path)
 {
   GError *error = NULL;
+
+  self->endpoint_objpath = g_strdup (obj_path);
 
   tp_call_stream_endpoint_init_known_interfaces ();
   self->endpoint = g_object_new (TP_TYPE_PROXY,
@@ -906,9 +908,8 @@ endpoints_changed (TpCallStream *proxy,
       return;
     }
 
-  self->endpoint_objpath = g_strdup (
+  tf_call_stream_add_endpoint (self,
       g_ptr_array_index (arg_Endpoints_Added, 0));
-  tf_call_stream_add_endpoint (self);
 }
 
 
@@ -1017,8 +1018,7 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (endpoints->len == 1)
     {
-      self->endpoint_objpath = g_strdup (g_ptr_array_index (endpoints, 0));
-      tf_call_stream_add_endpoint (self);
+      tf_call_stream_add_endpoint (self, g_ptr_array_index (endpoints, 0));
     }
 
   self->has_media_properties = TRUE;
