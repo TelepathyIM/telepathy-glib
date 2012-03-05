@@ -556,6 +556,8 @@ finally:
  * connection manager's protocol and parameter information could be retrieved,
  * @error is %NULL and @cm is considered to be ready. Otherwise, @error is
  * non-%NULL and @cm is not ready.
+ *
+ * Deprecated: since 0.UNRELEASED, use tp_proxy_prepare_async() instead
  */
 
 /**
@@ -572,6 +574,7 @@ finally:
  * supported protocols and parameters has been retrieved.
  *
  * Since: 0.7.26
+ * Deprecated: since 0.UNRELEASED, use tp_proxy_prepare_async() instead
  */
 void
 tp_connection_manager_call_when_ready (TpConnectionManager *self,
@@ -1545,8 +1548,8 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
    *
    * Emitted when the connection manager's capabilities have been discovered.
    *
-   * This signal is not very helpful. Since 0.7.26, using
-   * tp_connection_manager_call_when_ready() instead is recommended.
+   * This signal is not very helpful. Using
+   * tp_proxy_prepare_async() instead is recommended.
    */
   signals[SIGNAL_GOT_INFO] = g_signal_new ("got-info",
       G_OBJECT_CLASS_TYPE (klass),
@@ -1566,7 +1569,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
  *
  * Convenience function to create a new connection manager proxy. If
  * its protocol and parameter information are required, you should call
- * tp_connection_manager_call_when_ready() on the result.
+ * tp_proxy_prepare_async() on the result.
  *
  * Returns: a new reference to a connection manager proxy, or %NULL if @error
  *          is set.
@@ -1835,8 +1838,8 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
  * callback when done.
  *
  * Since 0.7.26, this function will wait for each #TpConnectionManager
- * to be ready, so all connection managers passed to @callback will be ready
- * (tp_connection_manager_is_ready() will return %TRUE) unless an error
+ * to be ready, so all connection managers passed to @callback will have
+ * their %TP_CONNECTION_MANAGER_FEATURE_CORE feature prepared, unless an error
  * occurred while launching that connection manager.
  *
  * Since: 0.7.1
@@ -2008,6 +2011,8 @@ tp_connection_manager_get_name (TpConnectionManager *self)
  * Returns: %TRUE, unless the #TpConnectionManager:info-source property is
  *          %TP_CM_INFO_SOURCE_NONE
  * Since: 0.7.26
+ * Deprecated: since 0.UNRELEASED, use tp_proxy_is_prepared()
+ *  with %TP_CONNECTION_MANAGER_FEATURE_CORE instead
  */
 gboolean
 tp_connection_manager_is_ready (TpConnectionManager *self)
@@ -2070,7 +2075,7 @@ tp_connection_manager_get_info_source (TpConnectionManager *self)
  *
  * If this function is called before the connection manager information has
  * been obtained, the result is always %NULL. Use
- * tp_connection_manager_call_when_ready() to wait for this.
+ * tp_proxy_prepare_async() to wait for this.
  *
  * The result is copied and must be freed by the caller, but it is not
  * necessarily still true after the main loop is re-entered.
@@ -2121,7 +2126,7 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
  *
  * If this function is called before the connection manager information has
  * been obtained, the result is always %NULL. Use
- * tp_connection_manager_call_when_ready() to wait for this.
+ * tp_proxy_prepare_async() to wait for this.
  *
  * The result is not necessarily valid after the main loop is re-entered.
  * Since 0.11.3, it can be copied with tp_connection_manager_protocol_copy()
@@ -2185,8 +2190,8 @@ tp_connection_manager_get_protocol_object (TpConnectionManager *self,
  * Return whether @protocol is supported by this connection manager.
  *
  * If this function is called before the connection manager information has
- * been obtained, the result is always %FALSE. Use
- * tp_connection_manager_call_when_ready() to wait for this.
+ * been obtained, the result is always %FALSE. Use tp_proxy_prepare_async()
+ * to wait for this.
  *
  * Returns: %TRUE if this connection manager supports @protocol
  * Since: 0.7.26
