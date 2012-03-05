@@ -168,7 +168,7 @@ test_nothing_got_info (Test *test,
   test->cm = tp_connection_manager_new (test->dbus, "not_actually_there",
       NULL, &error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
-  g_assert (error == NULL);
+  g_assert_no_error (error);
   g_test_queue_unref (test->cm);
 
   /* Spin the mainloop until we get the got-info signal. This API is rubbish,
@@ -214,7 +214,7 @@ test_file_got_info (Test *test,
   test->cm = tp_connection_manager_new (test->dbus, "spurious",
       NULL, &error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
-  g_assert (error == NULL);
+  g_assert_no_error (error);
   g_test_queue_unref (test->cm);
 
   g_test_bug ("18207");
@@ -355,7 +355,7 @@ test_complex_file_got_info (Test *test,
   test->cm = tp_connection_manager_new (test->dbus, "test_manager_file",
       NULL, &error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
-  g_assert (error == NULL);
+  g_assert_no_error (error);
   g_test_queue_unref (test->cm);
 
   g_test_bug ("18207");
@@ -710,7 +710,7 @@ test_dbus_got_info (Test *test,
       TP_BASE_CONNECTION_MANAGER_GET_CLASS (test->service_cm)->cm_dbus_name,
       NULL, &error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
-  g_assert (error == NULL);
+  g_assert_no_error (error);
   g_test_queue_unref (test->cm);
 
   g_test_bug ("18207");
@@ -745,7 +745,7 @@ test_nothing_ready (Test *test,
   test->cm = tp_connection_manager_new (test->dbus, "nonexistent_cm",
       NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
-  g_assert (test->error == NULL);
+  g_assert_no_error (test->error);
   g_test_queue_unref (test->cm);
 
   g_test_bug ("18291");
@@ -783,7 +783,7 @@ test_file_ready (Test *test,
   test->cm = tp_connection_manager_new (test->dbus, "spurious",
       NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
-  g_assert (test->error == NULL);
+  g_assert_no_error (test->error);
   g_test_queue_unref (test->cm);
 
   g_test_bug ("18291");
@@ -791,7 +791,7 @@ test_file_ready (Test *test,
   tp_connection_manager_call_when_ready (test->cm, ready_or_not,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  g_assert (test->error == NULL);
+  g_assert_no_error (test->error);
 
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "spurious");
@@ -821,7 +821,7 @@ test_complex_file_ready (Test *test,
   test->cm = tp_connection_manager_new (test->dbus, "test_manager_file",
       NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
-  g_assert (test->error == NULL);
+  g_assert_no_error (test->error);
   g_test_queue_unref (test->cm);
 
   g_test_bug ("18291");
@@ -829,7 +829,7 @@ test_complex_file_ready (Test *test,
   tp_connection_manager_call_when_ready (test->cm, ready_or_not,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  g_assert (test->error == NULL);
+  g_assert_no_error (test->error);
 
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "test_manager_file");
@@ -867,7 +867,7 @@ test_dbus_ready (Test *test,
       TP_BASE_CONNECTION_MANAGER_GET_CLASS (test->service_cm)->cm_dbus_name,
       NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
-  g_assert (test->error == NULL);
+  g_assert_no_error (test->error);
   g_test_queue_unref (test->cm);
 
   if (activate)
@@ -890,7 +890,7 @@ test_dbus_ready (Test *test,
   tp_connection_manager_call_when_ready (test->cm, ready_or_not,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  g_assert (test->error == NULL);
+  g_assert_no_error (test->error);
 
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "example_echo");
@@ -936,7 +936,7 @@ test_dbus_fallback (Test *test,
       TP_BASE_CONNECTION_MANAGER_GET_CLASS (test->service_cm)->cm_dbus_name,
       NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
-  g_assert (test->error == NULL);
+  g_assert_no_error (test->error);
   g_test_queue_unref (test->cm);
 
   if (activate)
@@ -959,7 +959,7 @@ test_dbus_fallback (Test *test,
   tp_connection_manager_call_when_ready (test->cm, ready_or_not,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  g_assert (test->error == NULL);
+  g_assert_no_error (test->error);
 
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "example_echo");
