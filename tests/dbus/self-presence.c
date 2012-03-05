@@ -128,6 +128,7 @@ main (int argc,
   guint status;
   gchar **interfaces;
   GValue *value = NULL;
+  GQuark connected_feature[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
   /* Setup */
 
@@ -181,7 +182,7 @@ main (int argc,
   g_free (value);
 
   tp_cli_connection_call_connect (client_conn, -1, NULL, NULL, NULL, NULL);
-  tp_tests_proxy_run_until_prepared (client_conn, NULL);
+  tp_tests_proxy_run_until_prepared (client_conn, connected_feature);
 
   /* Tests */
 

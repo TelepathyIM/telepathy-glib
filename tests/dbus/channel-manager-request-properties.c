@@ -41,6 +41,7 @@ setup (Test *test,
   TpBaseConnection *service_conn_as_base;
   gboolean ok;
   gchar *name, *conn_path;
+  GQuark connected_feature[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
   g_type_init ();
   tp_debug_set_flags ("all");
@@ -75,7 +76,7 @@ setup (Test *test,
   g_assert_no_error (test->error);
 
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
-  tp_tests_proxy_run_until_prepared (test->conn, NULL);
+  tp_tests_proxy_run_until_prepared (test->conn, connected_feature);
 
   g_free (name);
   g_free (conn_path);

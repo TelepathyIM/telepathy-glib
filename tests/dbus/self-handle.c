@@ -69,10 +69,12 @@ static void
 setup_and_connect (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
+  GQuark connected_feature[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+
   setup (f, unused);
 
   tp_cli_connection_call_connect (f->client_conn, -1, NULL, NULL, NULL, NULL);
-  tp_tests_proxy_run_until_prepared (f->client_conn, NULL);
+  tp_tests_proxy_run_until_prepared (f->client_conn, connected_feature);
 }
 
 /* we'll get more arguments, but just ignore them */

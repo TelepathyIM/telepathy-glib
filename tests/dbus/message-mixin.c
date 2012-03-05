@@ -158,6 +158,7 @@ main (int argc,
   TpHandle handle;
   gboolean ok;
   GHashTable *parameters;
+  GQuark connected_feature[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
   tp_tests_abort_after (10);
   g_type_init ();
@@ -194,7 +195,7 @@ main (int argc,
   g_assert_no_error (error);
 
   tp_cli_connection_call_connect (conn, -1, NULL, NULL, NULL, NULL);
-  tp_tests_proxy_run_until_prepared (conn, NULL);
+  tp_tests_proxy_run_until_prepared (conn, connected_feature);
 
     {
       GHashTable *properties = NULL;
