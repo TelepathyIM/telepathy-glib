@@ -94,11 +94,10 @@
  *
  * <note>
  *  <title>prepared does not imply connected</title>
- *  <para>Unlike the older #TpConnection:connection-ready mechanism, this
+ *  <para>This
  *    feature does not imply that the connection has successfully connected.
  *    It only implies that an initial status (disconnected, connecting or
- *    connected) has been discovered. %TP_CONNECTION_FEATURE_CONNECTED
- *    is the closest equivalent of #TpConnection:connection-ready.</para>
+ *    connected) has been discovered.</para>
  * </note>
  *
  * One can ask for a feature to be prepared using the
@@ -267,7 +266,6 @@ enum
   PROP_STATUS_REASON,
   PROP_CONNECTION_MANAGER_NAME,
   PROP_PROTOCOL_NAME,
-  PROP_CONNECTION_READY,
   PROP_SELF_CONTACT,
   PROP_SELF_HANDLE,
   PROP_CAPABILITIES,
@@ -318,9 +316,6 @@ tp_connection_get_property (GObject *object,
       break;
     case PROP_PROTOCOL_NAME:
       g_value_set_string (value, self->priv->proto_name);
-      break;
-    case PROP_CONNECTION_READY:
-      g_value_set_boolean (value, self->priv->ready);
       break;
     case PROP_STATUS:
       g_value_set_uint (value, self->priv->status);
@@ -625,7 +620,6 @@ signal_connected (TpConnection *self)
     tp_proxy_get_object_path (self), self);
   self->priv->status = TP_CONNECTION_STATUS_CONNECTED;
   self->priv->status_reason = TP_CONNECTION_STATUS_REASON_REQUESTED;
-  self->priv->ready = TRUE;
 
   _tp_proxy_set_feature_prepared ((TpProxy *) self,
       TP_CONNECTION_FEATURE_CONNECTED, TRUE);
@@ -634,7 +628,6 @@ signal_connected (TpConnection *self)
 
   g_object_notify ((GObject *) self, "status");
   g_object_notify ((GObject *) self, "status-reason");
-  g_object_notify ((GObject *) self, "connection-ready");
 }
 
 static void
@@ -1692,30 +1685,6 @@ tp_connection_class_init (TpConnectionClass *klass)
   g_object_class_install_property (object_class, PROP_STATUS_REASON,
       param_spec);
 
-  /**
-   * TpConnection:connection-ready:
-   *
-   * Initially %FALSE; changes to %TRUE when the connection has gone to
-   * CONNECTED status, introspection has finished and it's ready for use.
-   *
-   * By the time this property becomes %TRUE, any extra interfaces will
-   * have been set up and the #TpProxy:interfaces property will have been
-   * populated.
-   *
-   * This is similar to %TP_CONNECTION_FEATURE_CONNECTED, except that once
-   * it has changed to %TRUE, it remains %TRUE even if the connection has
-   * been invalidated.
-   *
-   * Deprecated: 0.17.UNRELEASED: use tp_proxy_is_prepared() with
-   *  %TP_CHANNEL_FEATURE_CONNECTED for checks, or tp_proxy_prepare_async() for
-   *  notification
-   */
-  param_spec = g_param_spec_boolean ("connection-ready", "Connection ready?",
-      "Initially FALSE; changes to TRUE when introspection finishes", FALSE,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS | G_PARAM_DEPRECATED);
-  g_object_class_install_property (object_class, PROP_CONNECTION_READY,
-      param_spec);
-
  /**
    * TpConnection:capabilities:
    *
@@ -2650,123 +2619,6 @@ tp_connection_init_known_interfaces (void)
   g_once (&once, tp_connection_once, NULL);
 }
 
-typedef struct {
-    TpConnectionWhenReadyCb callback;
-    gpointer user_data;
-    gulong invalidated_id;
-    gulong ready_id;
-} CallWhenReadyContext;
-
-static void
-cwr_invalidated (TpConnection *self,
-                 guint domain,
-                 gint code,
-                 gchar *message,
-                 gpointer user_data)
-{
-  CallWhenReadyContext *ctx = user_data;
-  GError e = { domain, code, message };
-
-  DEBUG ("enter");
-
-  g_assert (ctx->callback != NULL);
-
-  ctx->callback (self, &e, ctx->user_data);
-
-  g_signal_handler_disconnect (self, ctx->invalidated_id);
-  g_signal_handler_disconnect (self, ctx->ready_id);
-
-  ctx->callback = NULL;   /* poison it to detect errors */
-  g_slice_free (CallWhenReadyContext, ctx);
-}
-
-static void
-cwr_ready (TpConnection *self,
-           GParamSpec *unused G_GNUC_UNUSED,
-           gpointer user_data)
-{
-  CallWhenReadyContext *ctx = user_data;
-
-  DEBUG ("enter");
-
-  g_assert (ctx->callback != NULL);
-
-  ctx->callback (self, NULL, ctx->user_data);
-
-  g_signal_handler_disconnect (self, ctx->invalidated_id);
-  g_signal_handler_disconnect (self, ctx->ready_id);
-
-  ctx->callback = NULL;   /* poison it to detect errors */
-  g_slice_free (CallWhenReadyContext, ctx);
-}
-
-/**
- * TpConnectionWhenReadyCb:
- * @connection: the connection (which may be in the middle of being disposed,
- *  if error is non-%NULL, error->domain is TP_DBUS_ERRORS and error->code is
- *  TP_DBUS_ERROR_PROXY_UNREFERENCED)
- * @error: %NULL if the connection is ready for use, or the error with which
- *  it was invalidated if it is now invalid
- * @user_data: whatever was passed to tp_connection_call_when_ready()
- *
- * Signature of a callback passed to tp_connection_call_when_ready(), which
- * will be called exactly once, when the connection becomes ready or
- * invalid (whichever happens first)
- *
- * Deprecated: 0.17.UNRELEASED
- */
-
-/**
- * tp_connection_call_when_ready: (skip)
- * @self: a connection
- * @callback: called when the connection becomes ready or invalidated,
- *  whichever happens first
- * @user_data: arbitrary user-supplied data passed to the callback
- *
- * If @self is ready for use or has been invalidated, call @callback
- * immediately, then return. Otherwise, arrange
- * for @callback to be called when @self either becomes ready for use
- * or becomes invalid.
- *
- * Note that if the connection is not in state CONNECTED, the callback will
- * not be called until the connection either goes to state CONNECTED
- * or is invalidated (e.g. by going to state DISCONNECTED or by becoming
- * unreferenced). In particular, this method does not call Connect().
- * Call tp_cli_connection_call_connect() too, if you want to do that.
- *
- * Since: 0.7.7
- * Deprecated: 0.17.UNRELEASED: Use tp_proxy_prepare_async()
- */
-void
-tp_connection_call_when_ready (TpConnection *self,
-                               TpConnectionWhenReadyCb callback,
-                               gpointer user_data)
-{
-  TpProxy *as_proxy = (TpProxy *) self;
-
-  g_return_if_fail (TP_IS_CONNECTION (self));
-  g_return_if_fail (callback != NULL);
-
-  if (self->priv->ready || as_proxy->invalidated != NULL)
-    {
-      DEBUG ("already ready or invalidated");
-      callback (self, as_proxy->invalidated, user_data);
-    }
-  else
-    {
-      CallWhenReadyContext *ctx = g_slice_new (CallWhenReadyContext);
-
-      DEBUG ("arranging callback later");
-
-      ctx->callback = callback;
-      ctx->user_data = user_data;
-      ctx->invalidated_id = g_signal_connect (self, "invalidated",
-          G_CALLBACK (cwr_invalidated), ctx);
-      ctx->ready_id = g_signal_connect (self, "notify::connection-ready",
-          G_CALLBACK (cwr_ready), ctx);
-    }
-}
-
 static guint
 get_presence_type_availability (TpConnectionPresenceType type)
 {
@@ -2909,26 +2761,6 @@ _tp_connection_add_contact (TpConnection *self,
     {
       _tp_connection_set_contact_blocked (self, contact);
     }
-}
-
-
-/**
- * tp_connection_is_ready: (skip)
- * @self: a connection
- *
- * Returns the same thing as the #TpConnection:connection-ready property.
- *
- * Returns: %TRUE if introspection has completed
- * Since: 0.7.17
- * Deprecated: 0.17.UNRELEASED: use tp_proxy_is_prepared() with
- *  %TP_CONNECTION_FEATURE_CONNECTED
- */
-gboolean
-tp_connection_is_ready (TpConnection *self)
-{
-  g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
-
-  return self->priv->ready;
 }
 
 /**

@@ -80,8 +80,7 @@
  *
  * This proxy is usable but incomplete: accessors for the Account,
  * UserActionTime, PreferredHandler, Requests and Interfaces properties will
- * be added in a later version of telepathy-glib, along with a mechanism
- * similar to tp_connection_call_when_ready().
+ * be added in a later version of telepathy-glib.
  *
  * Until suitable convenience methods are implemented, the generic
  * tp_cli_dbus_properties_call_get_all() method can be used to get those

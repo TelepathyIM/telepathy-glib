@@ -152,18 +152,6 @@ void tp_connection_set_contact_info_async (TpConnection *self,
 gboolean tp_connection_set_contact_info_finish (TpConnection *self,
     GAsyncResult *result, GError **error);
 
-#ifndef TP_DISABLE_DEPRECATED
-gboolean tp_connection_is_ready (TpConnection *self)
-  _TP_GNUC_DEPRECATED_FOR (tp_proxy_is_prepared);
-
-typedef void (*TpConnectionWhenReadyCb) (TpConnection *connection,
-    const GError *error, gpointer user_data);
-
-void tp_connection_call_when_ready (TpConnection *self,
-    TpConnectionWhenReadyCb callback,
-    gpointer user_data) _TP_GNUC_DEPRECATED_FOR (tp_proxy_prepare_async);
-#endif
-
 typedef void (*TpConnectionNameListCb) (const gchar * const *names,
     gsize n, const gchar * const *cms, const gchar * const *protocols,
     const GError *error, gpointer user_data,

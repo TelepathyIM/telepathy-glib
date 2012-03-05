@@ -62,8 +62,7 @@
  * See the Telepathy D-Bus Interface Specification for details.
  *
  * This proxy is usable but incomplete: convenience methods will be added in
- * a later version of telepathy-glib, along with a mechanism similar to
- * tp_connection_call_when_ready().
+ * a later version of telepathy-glib.
  *
  * Since: 0.7.32
  */

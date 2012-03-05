@@ -105,7 +105,6 @@ struct _TpConnectionPrivate {
 
     TpProxyPendingCall *introspection_call;
 
-    unsigned ready:1;
     unsigned ready_enough_for_contacts:1;
     unsigned tracking_aliases_changed:1;
     unsigned tracking_avatar_updated:1;

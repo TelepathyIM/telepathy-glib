@@ -100,8 +100,7 @@
  * will be notified again.
  *
  * This proxy is usable but incomplete: accessors for the D-Bus properties will
- * be added in a later version of telepathy-glib, along with a mechanism
- * similar to tp_connection_call_when_ready().
+ * be added in a later version of telepathy-glib.
  *
  * Since: 0.7.32
  */

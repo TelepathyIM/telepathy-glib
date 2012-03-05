@@ -28,9 +28,6 @@ typedef struct {
     gchar *conn_path;
     TpConnection *conn;
 
-    gboolean cwr_ready;
-    GError *cwr_error /* initialized in setup */;
-
     GAsyncResult *prepare_result;
 } Test;
 
@@ -74,9 +71,6 @@ setup (Test *test,
   g_assert (tp_base_connection_register (test->service_conn_as_base, "simple",
         &test->conn_name, &test->conn_path, &error));
   g_assert_no_error (error);
-
-  test->cwr_ready = FALSE;
-  test->cwr_error = NULL;
 }
 
 static void
@@ -113,38 +107,6 @@ teardown (Test *test,
 }
 
 static void
-conn_ready (TpConnection *connection,
-            const GError *error,
-            gpointer user_data)
-{
-  Test *test = user_data;
-
-  test->cwr_ready = TRUE;
-
-  if (error == NULL)
-    {
-      gboolean parsed;
-      gchar *proto = NULL;
-      gchar *cm_name = NULL;
-
-      g_message ("connection %p ready", connection);
-      parsed = tp_connection_parse_object_path (connection, &proto, &cm_name);
-      g_assert (parsed);
-      g_assert_cmpstr (proto, ==, "simple-protocol");
-      g_assert_cmpstr (cm_name, ==, "simple");
-      g_free (proto);
-      g_free (cm_name);
-    }
-  else
-    {
-      g_message ("connection %p invalidated: %s #%u \"%s\"", connection,
-          g_quark_to_string (error->domain), error->code, error->message);
-
-      test->cwr_error = g_error_copy (error);
-    }
-}
-
-static void
 test_prepare (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
@@ -155,6 +117,7 @@ test_prepare (Test *test,
   TpCapabilities *caps;
   GPtrArray *classes;
   gchar *cm_name, *protocol_name;
+  gboolean parsed;
 
   test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
@@ -185,6 +148,14 @@ test_prepare (Test *test,
   g_assert_cmpuint (tp_connection_get_self_handle (test->conn), ==, 0);
   g_assert_cmpint (tp_connection_get_status (test->conn, NULL), ==,
       TP_CONNECTION_STATUS_DISCONNECTED);
+
+  parsed = tp_connection_parse_object_path (test->conn, &protocol_name,
+      &cm_name);
+  g_assert (parsed);
+  g_assert_cmpstr (protocol_name, ==, "simple-protocol");
+  g_assert_cmpstr (cm_name, ==, "simple");
+  g_free (protocol_name);
+  g_free (cm_name);
 
   g_assert_cmpstr (tp_connection_get_connection_manager_name (test->conn), ==,
           "simple");
@@ -293,69 +264,6 @@ test_fail_to_prepare (Test *test,
   g_assert (asv != NULL);
 }
 
-static void
-test_call_when_ready (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
-{
-  GError *error = NULL;
-
-  test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
-      &error);
-  g_assert (test->conn != NULL);
-  g_assert_no_error (error);
-
-  tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
-
-  tp_connection_call_when_ready (test->conn, conn_ready, test);
-
-  while (!test->cwr_ready)
-    g_main_context_iteration (NULL, TRUE);
-
-  g_assert_no_error (test->cwr_error);
-
-  /* Connection already ready here, so we are called back synchronously */
-
-  test->cwr_ready = FALSE;
-  test->cwr_error = NULL;
-  tp_connection_call_when_ready (test->conn, conn_ready, test);
-  g_assert_cmpint (test->cwr_ready, ==, TRUE);
-  g_assert_no_error (test->cwr_error);
-}
-
-static void
-test_call_when_invalid (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
-{
-  GError *error = NULL;
-
-  test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
-      &error);
-  g_assert (test->conn != NULL);
-  g_assert_no_error (error);
-
-  /* Connection becomes invalid, so we are called back synchronously */
-
-  tp_connection_call_when_ready (test->conn, conn_ready, test);
-  tp_proxy_invalidate ((TpProxy *) test->conn, &invalidated_for_test);
-  g_assert_cmpint (test->cwr_ready, ==, TRUE);
-  g_assert_error (test->cwr_error, invalidated_for_test.domain,
-      invalidated_for_test.code);
-  g_assert_cmpstr (test->cwr_error->message, ==, invalidated_for_test.message);
-  g_clear_error (&test->cwr_error);
-
-  /* Connection already invalid, so we are called back synchronously */
-
-  test->cwr_ready = FALSE;
-  test->cwr_error = NULL;
-  tp_connection_call_when_ready (test->conn, conn_ready, test);
-  g_assert (test->cwr_ready);
-  g_assert_error (test->cwr_error, invalidated_for_test.domain,
-      invalidated_for_test.code);
-  g_assert_cmpstr (test->cwr_error->message, ==, invalidated_for_test.message);
-  g_error_free (test->cwr_error);
-  test->cwr_error = NULL;
-}
-
 int
 main (int argc,
       char **argv)
@@ -365,10 +273,6 @@ main (int argc,
   g_test_add ("/conn/prepare", Test, NULL, setup, test_prepare, teardown);
   g_test_add ("/conn/fail_to_prepare", Test, NULL, setup, test_fail_to_prepare,
       teardown);
-  g_test_add ("/conn/call_when_ready", Test, NULL, setup,
-      test_call_when_ready, teardown);
-  g_test_add ("/conn/call_when_invalid", Test, NULL, setup,
-      test_call_when_invalid, teardown);
 
   return g_test_run ();
 }

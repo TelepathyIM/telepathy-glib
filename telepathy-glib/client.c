@@ -54,8 +54,7 @@
  * useful in the implementation of the ChannelDispatcher itself.
  *
  * This proxy is usable but very incomplete: accessors for D-Bus properties
- * will be added in a later version of telepathy-glib, along with a mechanism
- * similar to tp_connection_call_when_ready().
+ * will be added in a later version of telepathy-glib.
  *
  * Many operations performed on a Client are done via D-Bus properties.
  * Until convenience methods for this are implemented, use of the generic
