@@ -17,7 +17,8 @@
 
 typedef enum {
     ACTIVATE_CM = (1 << 0),
-    USE_CWR = (1 << 1)
+    USE_CWR = (1 << 1),
+    USE_OLD_LIST = (1 << 2)
 } TestFlags;
 
 typedef struct {
@@ -1060,11 +1061,43 @@ on_listed_connection_managers (TpConnectionManager * const * cms,
 
 static void
 test_list (Test *test,
-           gconstpointer data G_GNUC_UNUSED)
+           gconstpointer data)
 {
-  tp_list_connection_managers (test->dbus, on_listed_connection_managers,
-      test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
+  TestFlags flags = GPOINTER_TO_INT (data);
+
+  if (flags & USE_OLD_LIST)
+    {
+      tp_list_connection_managers (test->dbus, on_listed_connection_managers,
+          test, NULL, NULL);
+      g_main_loop_run (test->mainloop);
+    }
+  else
+    {
+      GAsyncResult *res = NULL;
+      GList *cms;
+
+      tp_list_connection_managers_async (test->dbus, tp_tests_result_ready_cb,
+          &res);
+      tp_tests_run_until_result (&res);
+      cms = tp_list_connection_managers_finish (res, &test->error);
+      g_assert_no_error (test->error);
+      g_assert_cmpuint (g_list_length (cms), ==, 2);
+
+      /* transfer ownership */
+      if (tp_connection_manager_is_running (cms->data))
+        {
+          test->echo = cms->data;
+          test->spurious = cms->next->data;
+        }
+      else
+        {
+          test->spurious = cms->data;
+          test->echo = cms->next->data;
+        }
+
+      g_object_unref (res);
+      g_list_free (cms);
+    }
 
   g_assert (tp_connection_manager_is_running (test->echo));
   g_assert (!tp_connection_manager_is_running (test->spurious));
@@ -1139,7 +1172,10 @@ main (int argc,
       GINT_TO_POINTER (ACTIVATE_CM | USE_CWR),
       setup, test_dbus_fallback, teardown);
 
-  g_test_add ("/cm/list", Test, NULL, setup, test_list, teardown);
+  g_test_add ("/cm/list", Test, GINT_TO_POINTER (0),
+      setup, test_list, teardown);
+  g_test_add ("/cm/list", Test, GINT_TO_POINTER (USE_OLD_LIST),
+      setup, test_list, teardown);
 
   return g_test_run ();
 }
