@@ -1093,6 +1093,7 @@ test_list (Test *test,
 {
   tp_list_connection_managers (test->dbus, on_listed_connection_managers,
       test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
 }
 
 int
