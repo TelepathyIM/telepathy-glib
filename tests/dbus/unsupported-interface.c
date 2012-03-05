@@ -144,8 +144,7 @@ inbox_url_cb (TpConnection *conn,
   Fixture *f = user_data;
 
   g_assert_no_error (f->error);
-  /* Unsupported interfaces are signalled by a re-entrant callback in 0.x */
-  g_assert (f->reentrant);
+  g_assert (!f->reentrant);
   g_assert (!f->freed);
 
   if (error != NULL)
@@ -166,14 +165,14 @@ test_unsupported_async (Fixture *f,
       f->conn, -1, inbox_url_cb, f, pretend_to_free, NULL);
   f->reentrant = FALSE;
 
-  /* Unsupported interfaces are signalled by a re-entrant callback in 0.x */
-  g_assert (call == NULL);
-  g_assert (f->freed);
+  g_assert (call != NULL);
+  g_assert (!f->freed);
 
   while (f->wait)
     g_main_context_iteration (NULL, TRUE);
 
   g_assert_error (f->error, TP_DBUS_ERRORS, TP_DBUS_ERROR_NO_INTERFACE);
+  g_assert (f->freed);
 }
 
 static void
