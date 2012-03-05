@@ -123,10 +123,9 @@ static void
 teardown (Test *test,
           gconstpointer data)
 {
-  g_object_unref (test->service_cm);
-  test->service_cm = NULL;
-  g_object_unref (test->dbus);
-  test->dbus = NULL;
+  g_clear_object (&test->service_cm);
+  g_clear_object (&test->dbus);
+  g_clear_object (&test->cm);
   g_main_loop_unref (test->mainloop);
   test->mainloop = NULL;
 }
@@ -174,7 +173,6 @@ test_nothing_got_info (Test *test,
       NULL, &error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (error);
-  g_test_queue_unref (test->cm);
 
   /* Spin the mainloop until we get the got-info signal. This API is rubbish,
    * but it's better than it used to be... */
@@ -220,7 +218,6 @@ test_file_got_info (Test *test,
       NULL, &error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (error);
-  g_test_queue_unref (test->cm);
 
   g_test_bug ("18207");
   id = g_signal_connect (test->cm, "got-info",
@@ -361,7 +358,6 @@ test_complex_file_got_info (Test *test,
       NULL, &error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (error);
-  g_test_queue_unref (test->cm);
 
   g_test_bug ("18207");
   id = g_signal_connect (test->cm, "got-info",
@@ -716,7 +712,6 @@ test_dbus_got_info (Test *test,
       NULL, &error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (error);
-  g_test_queue_unref (test->cm);
 
   g_test_bug ("18207");
   id = g_signal_connect (test->cm, "got-info",
@@ -752,7 +747,6 @@ test_nothing_ready (Test *test,
       NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (test->error);
-  g_test_queue_unref (test->cm);
 
   g_test_bug ("18291");
 
@@ -804,7 +798,6 @@ test_file_ready (Test *test,
       NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (test->error);
-  g_test_queue_unref (test->cm);
 
   g_test_bug ("18291");
 
@@ -853,7 +846,6 @@ test_complex_file_ready (Test *test,
       NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (test->error);
-  g_test_queue_unref (test->cm);
 
   g_test_bug ("18291");
 
@@ -909,7 +901,6 @@ test_dbus_ready (Test *test,
       NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (test->error);
-  g_test_queue_unref (test->cm);
 
   if (flags & ACTIVATE_CM)
     {
@@ -988,7 +979,6 @@ test_dbus_fallback (Test *test,
       NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (test->error);
-  g_test_queue_unref (test->cm);
 
   if (flags & ACTIVATE_CM)
     {
