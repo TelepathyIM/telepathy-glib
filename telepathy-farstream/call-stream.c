@@ -71,6 +71,8 @@ static void tf_call_stream_fail (TfCallStream *self,
     const gchar *message_format,
     ...);
 
+static void _tf_call_stream_remove_endpoint (TfCallStream *self);
+
 
 static void
 tf_call_stream_class_init (TfCallStreamClass *klass)
@@ -111,16 +113,7 @@ tf_call_stream_dispose (GObject *object)
   self->fsstream = NULL;
 
   if (self->endpoint)
-    g_object_unref (self->endpoint);
-  self->endpoint = NULL;
-
-  g_free (self->creds_username);
-  self->creds_username = NULL;
-  g_free (self->creds_password);
-  self->creds_password = NULL;
-
-  fs_candidate_list_destroy (self->stored_remote_candidates);
-  self->stored_remote_candidates = NULL;
+    _tf_call_stream_remove_endpoint (self);
 
   if (G_OBJECT_CLASS (tf_call_stream_parent_class)->dispose)
     G_OBJECT_CLASS (tf_call_stream_parent_class)->dispose (object);
@@ -866,6 +859,29 @@ tf_call_stream_add_endpoint (TfCallStream *self, const gchar *obj_path)
       got_endpoint_properties, NULL, NULL, G_OBJECT (self));
 }
 
+static void
+_tf_call_stream_remove_endpoint (TfCallStream *self)
+{
+  g_clear_object (&self->endpoint);
+
+  self->has_endpoint_properties = FALSE;
+  self->multiple_usernames = FALSE;
+  self->controlling = FALSE;
+
+  fs_candidate_list_destroy (self->stored_remote_candidates);
+  self->stored_remote_candidates = NULL;
+
+  g_free (self->creds_username);
+  self->creds_username = NULL;
+
+  g_free (self->creds_password);
+  self->creds_password = NULL;
+
+  g_free (self->endpoint_objpath);
+  self->endpoint_objpath = NULL;
+
+  tf_call_stream_update_sending_state (self);
+}
 
 static void
 endpoints_changed (TpCallStream *proxy,
