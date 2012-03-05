@@ -842,6 +842,9 @@ tp_base_media_call_stream_update_sending_state (TpBaseMediaCallStream *self)
         goto done;
     }
 
+  if (!tp_base_call_channel_is_accepted (TP_BASE_CALL_CHANNEL (channel)))
+    goto done;
+
   if (self->priv->remotely_held)
     goto done;
 
