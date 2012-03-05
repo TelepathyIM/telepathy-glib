@@ -1750,3 +1750,67 @@ tp_call_channel_send_tones_finish (TpCallChannel *self,
 {
   _tp_implement_finish_void (self, tp_call_channel_send_tones_async)
 }
+
+/**
+ * tp_call_channel_request_hold_async:
+ * @self: a #TpCallChannel
+ * @hold: Whether to request a hold or a unhold
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
+ *
+ * Requests that the connection manager holds or unholds the call. Watch
+ * #TpCallChannel::hold-state property to know when the channel goes on
+ * hold or is unheld. Unholding may fail if the streaming implementation
+ * can not obtain all the resources needed to restart the call.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+void
+tp_call_channel_request_hold_async (TpCallChannel *self,
+    gboolean hold,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+    GSimpleAsyncResult *result;
+
+    g_return_if_fail (TP_IS_CALL_CHANNEL (self));
+
+    result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
+        tp_call_channel_request_hold_async);
+
+    if (tp_call_channel_has_hold (self))
+      {
+        tp_cli_channel_interface_hold_call_request_hold (TP_CHANNEL (self), -1,
+            hold, generic_async_cb, g_object_ref (result), g_object_unref,
+            G_OBJECT (self));
+      }
+    else
+      {
+        g_simple_async_result_set_error (result,
+            TP_ERRORS, TP_ERROR_NOT_CAPABLE,
+            "Channel does NOT implement the Hold interface");
+        g_simple_async_result_complete_in_idle (result);
+      }
+
+    g_object_unref (result);
+}
+
+
+/**
+ * tp_call_channel_request_hold_finish:
+ * @self: a #TpCallChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_call_channel_request_hold_async
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_call_channel_request_hold_finish (TpCallChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_call_channel_request_hold_async);
+}

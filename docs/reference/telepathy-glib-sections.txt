@@ -6588,6 +6588,8 @@ tp_call_channel_hangup_async
 tp_call_channel_hangup_finish
 tp_call_channel_add_content_async
 tp_call_channel_add_content_finish
+tp_call_channel_request_hold_async
+tp_call_channel_request_hold_finish
 <SUBSECTION Standard>
 TpCallChannelPrivate
 tp_call_channel_get_type
