@@ -87,8 +87,6 @@ struct _TpChannelPrivate {
 
     /* These are really booleans, but gboolean is signed. Thanks, GLib */
 
-    /* channel-ready */
-    unsigned ready:1;
     /* Enough method calls have succeeded that we believe that the channel
      * exists (implied by ready) */
     unsigned exists:1;

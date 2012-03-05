@@ -24,33 +24,7 @@
 
 #define IDENTIFIER "them@example.org"
 
-static GError *invalidated = NULL;
 static GMainLoop *mainloop;
-
-static void
-channel_ready (TpChannel *channel,
-               const GError *error,
-               gpointer user_data)
-{
-  gboolean *set = user_data;
-
-  *set = TRUE;
-
-  if (error == NULL)
-    {
-      g_message ("channel %p ready", channel);
-    }
-  else
-    {
-      g_message ("channel %p invalidated: %s #%u \"%s\"", channel,
-          g_quark_to_string (error->domain), error->code, error->message);
-
-      invalidated = g_error_copy (error);
-    }
-
-  if (mainloop != NULL)
-    g_main_loop_quit (mainloop);
-}
 
 static void
 channel_prepared_cb (GObject *object,
@@ -76,7 +50,8 @@ assert_chan_sane (TpChannel *chan,
   GHashTable *asv;
   TpHandleType type;
 
-  g_assert (tp_channel_is_ready (chan));
+  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
+      TRUE);
   g_assert_cmpuint (tp_channel_get_handle (chan, NULL), ==, handle);
   g_assert_cmpuint (tp_channel_get_handle (chan, &type), ==, handle);
   g_assert_cmpuint (type, ==, TP_HANDLE_TYPE_CONTACT);
@@ -125,7 +100,6 @@ main (int argc,
   gchar *props_group_chan_path;
   gchar *bad_chan_path;
   TpHandle handle;
-  gboolean was_ready;
   GHashTable *asv;
   GAsyncResult *prepare_result;
   GQuark some_features[] = { TP_CHANNEL_FEATURE_CORE,
@@ -316,28 +290,7 @@ main (int argc,
   g_object_unref (chan);
   chan = NULL;
 
-  g_message ("channel does not, in fact, exist (callback)");
-
-  bad_chan_path = g_strdup_printf ("%s/Does/Not/Actually/Exist",
-      tp_proxy_get_object_path (conn));
-  chan = tp_channel_new (conn, bad_chan_path, NULL,
-      TP_UNKNOWN_HANDLE_TYPE, 0, &error);
-  g_assert_no_error (error);
-
-  was_ready = FALSE;
-  tp_channel_call_when_ready (chan, channel_ready, &was_ready);
-  g_main_loop_run (mainloop);
-  g_assert (was_ready);
-  g_assert_error (invalidated, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
-  g_error_free (invalidated);
-  invalidated = NULL;
-
-  g_object_unref (chan);
-  chan = NULL;
-  g_free (bad_chan_path);
-  bad_chan_path = NULL;
-
-  g_message ("channel does not, in fact, exist (run_until_ready)");
+  g_message ("channel does not, in fact, exist");
 
   bad_chan_path = g_strdup_printf ("%s/Does/Not/Actually/Exist",
       tp_proxy_get_object_path (conn));
@@ -429,7 +382,7 @@ main (int argc,
   g_clear_object (&chan2);
   g_clear_object (&conn2);
 
-  g_message ("Channel already dead, so we are called back synchronously");
+  g_message ("Channel already dead");
 
   chan = tp_channel_new (conn, props_chan_path, NULL,
       TP_UNKNOWN_HANDLE_TYPE, 0, &error);
@@ -452,37 +405,29 @@ main (int argc,
 
   tp_tests_connection_assert_disconnect_succeeds (conn);
 
-  was_ready = FALSE;
-
   prepare_result = NULL;
   tp_proxy_prepare_async (chan, some_features, channel_prepared_cb,
       &prepare_result);
-
-  tp_channel_call_when_ready (chan, channel_ready, &was_ready);
-  g_assert (was_ready);
-  g_assert_error (invalidated, TP_ERRORS, TP_ERROR_CANCELLED);
 
   /* is_prepared becomes FALSE because the channel broke */
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
       FALSE);
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
       ==, FALSE);
-  g_assert_error (invalidated, tp_proxy_get_invalidated (chan)->domain,
-      tp_proxy_get_invalidated (chan)->code);
-  g_assert_cmpstr (invalidated->message, ==,
-      tp_proxy_get_invalidated (chan)->message);
+  g_assert_error (tp_proxy_get_invalidated (chan),
+      TP_ERRORS, TP_ERROR_CANCELLED);
 
   /* ... but prepare_async still hasn't finished until we run the main loop */
   g_assert (prepare_result == NULL);
   g_main_loop_run (mainloop);
   g_assert (prepare_result != NULL);
   MYASSERT (!tp_proxy_prepare_finish (chan, prepare_result, &error), "");
-  g_assert_error (error, invalidated->domain, invalidated->code);
-  g_assert_cmpstr (error->message, ==, invalidated->message);
+  g_assert_error (error, TP_ERRORS, TP_ERROR_CANCELLED);
+  g_assert_cmpstr (error->message, ==,
+      tp_proxy_get_invalidated (chan)->message);
   tp_clear_object (&prepare_result);
 
   g_clear_error (&error);
-  g_clear_error (&invalidated);
 
   g_object_unref (chan);
   chan = NULL;

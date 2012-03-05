@@ -95,7 +95,6 @@ enum
   PROP_HANDLE_TYPE,
   PROP_HANDLE,
   PROP_IDENTIFIER,
-  PROP_CHANNEL_READY,
   PROP_CHANNEL_PROPERTIES,
   PROP_GROUP_SELF_HANDLE,
   PROP_GROUP_FLAGS,
@@ -141,12 +140,6 @@ G_DEFINE_TYPE_WITH_CODE (TpChannel,
  * - any extra interfaces will have been set up in TpProxy (i.e.
  *   #TpProxy:interfaces contains at least all extra Channel interfaces)
  *
- * (These are a subset of the guarantees offered by the older
- * #TpChannel:channel-ready
- * and tp_channel_call_when_ready() mechanisms, which are now equivalent to
- * (%TP_CHANNEL_FEATURE_CORE, %TP_CHANNEL_FEATURE_GROUP) if the channel is
- * a group, or just %TP_CHANNEL_FEATURE_CORE otherwise.)
- *
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
@@ -173,9 +166,6 @@ tp_channel_get_feature_quark_core (void)
  *   have been fetched and change notification will have been set up
  * - the initial value of the #TpChannel:group-flags property will
  *   have been fetched and change notification will have been set up
- *
- * (These are the same guarantees offered for Group channels by the older
- * #TpChannel:channel-ready and tp_channel_call_when_ready() mechanisms.)
  *
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
@@ -351,39 +341,6 @@ tp_channel_get_identifier (TpChannel *self)
 }
 
 /**
- * tp_channel_is_ready: (skip)
- * @self: a channel
- *
- * Returns the same thing as the #TpChannel:channel-ready property.
- *
- * New code should use tp_proxy_is_prepared(), which is a more general form of
- * this method.
- *
- * For group channels, this method is equivalent to checking for the
- * combination of %TP_CHANNEL_FEATURE_CORE and %TP_CHANNEL_FEATURE_GROUP; for
- * non-group channels, it's equivalent to checking for
- * %TP_CHANNEL_FEATURE_CORE.
- *
- * One important difference is that after #TpProxy::invalidated is
- * signalled, #TpChannel:channel-ready keeps its current value - which might
- * be %TRUE, if the channel was successfully prepared before it became
- * invalidated - but tp_proxy_is_prepared() returns %FALSE for all features.
- *
- * Returns: %TRUE if introspection has completed
- * Since: 0.7.12
- * Deprecated: 0.17.UNRELEASED: use tp_proxy_is_prepared() with
- *  %TP_CHANNEL_FEATURE_CORE
- */
-gboolean
-tp_channel_is_ready (TpChannel *self)
-{
-  g_return_val_if_fail (TP_IS_CHANNEL (self), FALSE);
-
-  return self->priv->ready;
-}
-
-
-/**
  * tp_channel_borrow_connection:
  * @self: a channel
  *
@@ -447,9 +404,6 @@ tp_channel_get_property (GObject *object,
     {
     case PROP_CONNECTION:
       g_value_set_object (value, self->priv->connection);
-      break;
-    case PROP_CHANNEL_READY:
-      g_value_set_boolean (value, self->priv->ready);
       break;
     case PROP_CHANNEL_TYPE:
       g_value_set_static_string (value,
@@ -792,8 +746,6 @@ _tp_channel_continue_introspection (TpChannel *self)
       self->priv->introspect_needed = NULL;
 
       DEBUG ("%p: channel ready", self);
-      self->priv->ready = TRUE;
-      g_object_notify ((GObject *) self, "channel-ready");
 
       /* for now, we only have one introspection queue, so CORE and
        * (if supported) GROUP turn up simultaneously */
@@ -1304,33 +1256,6 @@ tp_channel_class_init (TpChannelClass *klass)
       param_spec);
 
   /**
-   * TpChannel:channel-ready:
-   *
-   * Initially %FALSE; changes to %TRUE when tp_proxy_prepare_async() has
-   * finished preparing %TP_CHANNEL_FEATURE_CORE, and if the channel is a
-   * group, %TP_CHANNEL_FEATURE_GROUP.
-   *
-   * This is a less general form of tp_proxy_is_prepared(), which should be
-   * used in new code.
-   *
-   * One important difference is that after #TpProxy::invalidated is
-   * signalled, #TpChannel:channel-ready keeps its current value - which might
-   * be %TRUE, if the channel was successfully prepared before it became
-   * invalidated - but tp_proxy_is_prepared() returns %FALSE for all features.
-   *
-   * Change notification is via notify::channel-ready.
-   *
-   * Deprecated: 0.17.UNRELEASED: use tp_proxy_is_prepared() with
-   *  %TP_CHANNEL_FEATURE_CORE for checks, or tp_proxy_prepare_async() for
-   *  notification
-   */
-  param_spec = g_param_spec_boolean ("channel-ready", "Channel ready?",
-      "Initially FALSE; changes to TRUE when introspection finishes", FALSE,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS | G_PARAM_DEPRECATED);
-  g_object_class_install_property (object_class, PROP_CHANNEL_READY,
-      param_spec);
-
-  /**
    * TpChannel:connection:
    *
    * The #TpConnection to which this #TpChannel belongs. Used for e.g.
@@ -1787,122 +1712,6 @@ tp_channel_new (TpConnection *conn,
 finally:
 
   return ret;
-}
-
-typedef struct {
-    TpChannelWhenReadyCb callback;
-    gpointer user_data;
-    gulong invalidated_id;
-    gulong ready_id;
-} CallWhenReadyContext;
-
-static void
-cwr_invalidated (TpChannel *self,
-                 guint domain,
-                 gint code,
-                 gchar *message,
-                 gpointer user_data)
-{
-  CallWhenReadyContext *ctx = user_data;
-  GError e = { domain, code, message };
-
-  DEBUG ("enter");
-
-  g_assert (ctx->callback != NULL);
-
-  ctx->callback (self, &e, ctx->user_data);
-
-  g_signal_handler_disconnect (self, ctx->invalidated_id);
-  g_signal_handler_disconnect (self, ctx->ready_id);
-
-  ctx->callback = NULL;   /* poison it to detect errors */
-  g_slice_free (CallWhenReadyContext, ctx);
-}
-
-static void
-cwr_ready (TpChannel *self,
-           GParamSpec *unused G_GNUC_UNUSED,
-           gpointer user_data)
-{
-  CallWhenReadyContext *ctx = user_data;
-
-  DEBUG ("enter");
-
-  g_assert (ctx->callback != NULL);
-
-  ctx->callback (self, NULL, ctx->user_data);
-
-  g_signal_handler_disconnect (self, ctx->invalidated_id);
-  g_signal_handler_disconnect (self, ctx->ready_id);
-
-  ctx->callback = NULL;   /* poison it to detect errors */
-  g_slice_free (CallWhenReadyContext, ctx);
-}
-
-/**
- * TpChannelWhenReadyCb:
- * @channel: the channel (which may be in the middle of being disposed,
- *  if error is non-%NULL, error->domain is TP_DBUS_ERRORS and error->code is
- *  TP_DBUS_ERROR_PROXY_UNREFERENCED)
- * @error: %NULL if the channel is ready for use, or the error with which
- *  it was invalidated if it is now invalid
- * @user_data: whatever was passed to tp_channel_call_when_ready()
- *
- * Signature of a callback passed to tp_channel_call_when_ready(), which
- * will be called exactly once, when the channel becomes ready or
- * invalid (whichever happens first)
- *
- * Deprecated: 0.17.UNRELEASED
- */
-
-/**
- * tp_channel_call_when_ready: (skip)
- * @self: a channel
- * @callback: called when the channel becomes ready or invalidated, whichever
- *  happens first
- * @user_data: arbitrary user-supplied data passed to the callback
- *
- * If @self is ready for use or has been invalidated, call @callback
- * immediately, then return. Otherwise, arrange
- * for @callback to be called when @self either becomes ready for use
- * or becomes invalid.
- *
- * This is a less general form of tp_proxy_prepare_async(), which should be
- * used in new code. (One important difference is that this function can call
- * @callback before it has returned, whereas tp_proxy_prepare_async() always
- * calls @callback from the main loop.)
- *
- * Since: 0.7.7
- * Deprecated: 0.17.UNRELEASED: Use tp_proxy_prepare_async()
- */
-void
-tp_channel_call_when_ready (TpChannel *self,
-                            TpChannelWhenReadyCb callback,
-                            gpointer user_data)
-{
-  TpProxy *as_proxy = (TpProxy *) self;
-
-  g_return_if_fail (TP_IS_CHANNEL (self));
-  g_return_if_fail (callback != NULL);
-
-  if (self->priv->ready || as_proxy->invalidated != NULL)
-    {
-      DEBUG ("already ready or invalidated");
-      callback (self, as_proxy->invalidated, user_data);
-    }
-  else
-    {
-      CallWhenReadyContext *ctx = g_slice_new (CallWhenReadyContext);
-
-      DEBUG ("arranging callback later");
-
-      ctx->callback = callback;
-      ctx->user_data = user_data;
-      ctx->invalidated_id = g_signal_connect (self, "invalidated",
-          G_CALLBACK (cwr_invalidated), ctx);
-      ctx->ready_id = g_signal_connect (self, "notify::channel-ready",
-          G_CALLBACK (cwr_ready), ctx);
-    }
 }
 
 static gpointer

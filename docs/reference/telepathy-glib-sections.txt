@@ -2972,10 +2972,7 @@ TpChannel
 TpChannelClass
 tp_channel_new
 tp_channel_new_from_properties
-TpChannelWhenReadyCb
-tp_channel_call_when_ready
 tp_channel_init_known_interfaces
-tp_channel_is_ready
 <SUBSECTION>
 TP_CHANNEL_FEATURE_CORE
 TP_CHANNEL_FEATURE_CONTACTS
