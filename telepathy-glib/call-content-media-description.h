@@ -131,6 +131,16 @@ void tp_call_content_media_description_set_rtcp_extended_reports (
     TpRTCPXRStatisticsFlags statistic_flags,
     gboolean enable_metrics);
 
+void tp_call_content_media_description_add_rtp_header_extensions_interface (
+    TpCallContentMediaDescription *self);
+
+void tp_call_content_media_description_add_rtcp_feedback_interface (
+    TpCallContentMediaDescription *self);
+
+void tp_call_content_media_description_add_rtcp_extended_reports_interface (
+    TpCallContentMediaDescription *self);
+
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_CALL_CONTENT_MEDIA_DESCRIPTION_H__*/

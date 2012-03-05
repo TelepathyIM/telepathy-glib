@@ -814,6 +814,60 @@ add_interface (TpCallContentMediaDescription *self,
 }
 
 /**
+ * tp_call_content_media_description_add_rtp_header_extensions_interface:
+ * @self: a #TpCallContentMediaDescription
+ *
+ * Adds the RTPHeaderExtensions interface to the list of supported interfaces
+ *
+ * Since: 0.UNRELEASED
+ */
+
+void
+tp_call_content_media_description_add_rtp_header_extensions_interface (
+    TpCallContentMediaDescription *self)
+{
+  add_interface (self,
+      TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS);
+}
+
+
+/**
+ * tp_call_content_media_description_add_rtcp_feedback_interface:
+ * @self: a #TpCallContentMediaDescription
+ *
+ * Adds the RTCPFeedback interface to the list of supported interfaces
+ *
+ * Since: 0.UNRELEASED
+ */
+
+void
+tp_call_content_media_description_add_rtcp_feedback_interface (
+    TpCallContentMediaDescription *self)
+{
+  add_interface (self,
+      TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK);
+}
+
+
+/**
+ * tp_call_content_media_description_add_rtcp_extended_reports_interface:
+ * @self: a #TpCallContentMediaDescription
+ *
+ * Adds the RTCPExtendedReports interface to the list of supported interfaces
+ *
+ * Since: 0.UNRELEASED
+ */
+
+void
+tp_call_content_media_description_add_rtcp_extended_reports_interface (
+    TpCallContentMediaDescription *self)
+{
+  add_interface (self,
+      TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_EXTENDED_REPORTS);
+}
+
+
+/**
  * tp_call_content_media_description_add_rtp_header_extension:
  * @self: a #TpCallContentMediaDescription
  * @id: identifier to be negotiated.
@@ -849,8 +903,7 @@ tp_call_content_media_description_add_rtp_header_extension (
       G_TYPE_STRING, parameters,
       G_TYPE_INVALID));
 
-  add_interface (self,
-      TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS);
+  tp_call_content_media_description_add_rtp_header_extensions_interface (self);
 }
 
 static GValueArray *
@@ -928,8 +981,7 @@ tp_call_content_media_description_add_rtcp_feedback_message (
       G_TYPE_STRING, parameters,
       G_TYPE_INVALID));
 
-  add_interface (self,
-      TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK);
+  tp_call_content_media_description_add_rtcp_feedback_interface (self);
 }
 
 /**
@@ -970,8 +1022,7 @@ tp_call_content_media_description_set_rtcp_feedback_minimum_interval (
   value = g_value_array_get_nth (properties, 0);
   g_value_set_uint (value, rtcp_minimum_interval);
 
-  add_interface (self,
-      TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK);
+  tp_call_content_media_description_add_rtcp_feedback_interface (self);
 }
 
 /**
@@ -995,8 +1046,7 @@ tp_call_content_media_description_set_does_avpf (
 
   self->priv->does_avpf = does_avpf;
 
-  add_interface (self,
-      TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK);
+  tp_call_content_media_description_add_rtcp_feedback_interface (self);
 }
 
 /**
@@ -1044,8 +1094,7 @@ tp_call_content_media_description_set_rtcp_extended_reports (
   self->priv->statistic_flags = statistic_flags;
   self->priv->enable_metrics = enable_metrics;
 
-  add_interface (self,
-      TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_EXTENDED_REPORTS);
+  tp_call_content_media_description_add_rtcp_extended_reports_interface (self);
 }
 
 static void
