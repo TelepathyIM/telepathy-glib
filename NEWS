@@ -1,7 +1,40 @@
 telepathy-glib 0.17.6 (UNRELEASED)
 ==================================
 
-...
+Requirements:
+
+• GLib >= 2.30 is now required for telepathy-glib, and for code generated
+  by tools copied from this version.
+
+Deprecations:
+
+• tp_connection_is_ready(), tp_connection_call_when_ready,
+  TpConnection:connection-ready and the TpChannel equivalents are deprecated.
+  Use tp_proxy_prepare_async() and tp_proxy_is_ready() instead.
+  For connections, remember to ask for TP_CONNECTION_FEATURE_CONNECTED if
+  required.
+
+Enhancements:
+
+• TpCapabilities: add API to check for Call and FileTransfer support
+  (Xavier)
+
+• Use GObject's FFI-based generic marshaller instead of generating our own
+  marshallers (fd.o #46523, Simon)
+
+Fixes:
+
+• Don't change the direction of Call streams because of a Hold (Olivier)
+
+• Use the right error when rejecting incompatible codecs (Olivier)
+
+• Reject local updates to a media description while an offer is pending
+  (Olivier)
+
+• Avoid forward-declaring Call classes, fixing compilation on clang,
+  older gcc, and other compilers not targeting C1x (Simon)
+
+• Fix namespaces in example_call.manager (George)
 
 telepathy-glib 0.17.5 (2012-02-20)
 ==================================

@@ -168,11 +168,21 @@ contacts_ready_cb (TpConnection *conn,
 }
 
 static void
-conn_ready (TpConnection *conn,
-            GParamSpec *unused,
-            gpointer user_data)
+conn_ready (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
 {
+  GError *error = NULL;
   static const gchar * const names[] = { "myself@server", "other@server" };
+  TpConnection *conn = TP_CONNECTION (source);
+
+  if (!tp_proxy_prepare_finish (conn, result, &error))
+    {
+      g_warning ("%s", error->message);
+      g_main_loop_quit (mainloop);
+      g_clear_error (&error);
+      return;
+    }
 
   if (!tp_proxy_has_interface_by_id (conn,
         EXAMPLE_IFACE_QUARK_CONNECTION_INTERFACE_HATS))
@@ -214,7 +224,6 @@ cm_requested_connection (TpConnectionManager *manager,
   GError *e = NULL;
   TpConnection *conn;
   TpProxy *proxy = (TpProxy *) manager;
-  gboolean ready;
 
   if (die_if (error, "RequestConnection()"))
     return;
@@ -235,16 +244,7 @@ cm_requested_connection (TpConnectionManager *manager,
   tp_cli_connection_connect_to_status_changed (conn, conn_status_changed,
       NULL, NULL, NULL, NULL);
 
-  g_object_get (conn,
-      "connection-ready", &ready,
-      NULL);
-
-  if (ready)
-    conn_ready (conn, NULL, NULL);
-  else
-    g_signal_connect (conn, "notify::connection-ready",
-        G_CALLBACK (conn_ready), NULL);
-
+  tp_proxy_prepare_async (conn, NULL, conn_ready, NULL);
   tp_cli_connection_call_connect (conn, -1, NULL, NULL, NULL, NULL);
 }
 

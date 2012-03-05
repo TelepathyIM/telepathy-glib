@@ -127,8 +127,8 @@ got_contacts_by_id (TpConnection *connection,
 }
 
 static void
-connection_ready_cb (TpConnection *connection,
-    const GError *error,
+connection_ready_cb (GObject *source,
+    GAsyncResult *result,
     gpointer user_data)
 {
   static TpContactFeature features[] = {
@@ -137,12 +137,15 @@ connection_ready_cb (TpConnection *connection,
       TP_CONTACT_FEATURE_PRESENCE
   };
   InspectContactData *data = user_data;
+  TpConnection *connection = TP_CONNECTION (source);
+  GError *error = NULL;
 
-  if (error != NULL)
+  if (!tp_proxy_prepare_finish (connection, result, &error))
     {
       g_warning ("%s", error->message);
       data->exit_status = 1;
       g_main_loop_quit (data->main_loop);
+      g_clear_error (&error);
       return;
     }
 
@@ -227,7 +230,7 @@ main (int argc,
    * else has called (or will call) Connect(), so we won't call Connect()
    * on it ourselves
    */
-  tp_connection_call_when_ready (connection, connection_ready_cb, &data);
+  tp_proxy_prepare_async (connection, NULL, connection_ready_cb, &data);
 
   g_main_loop_run (data.main_loop);
 
