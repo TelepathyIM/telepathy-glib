@@ -84,10 +84,13 @@ struct _TpCallChannelPrivate
   gchar *initial_audio_name;
   gchar *initial_video_name;
   gboolean mutable_contents;
+  TpLocalHoldState hold_state;
+  TpLocalHoldStateReason hold_state_reason;
 
   GSimpleAsyncResult *core_result;
   gboolean properties_retrieved;
   gboolean initial_members_retrieved;
+  gboolean hold_state_retrieved;
 };
 
 enum /* props */
@@ -103,6 +106,8 @@ enum /* props */
   PROP_INITIAL_AUDIO_NAME,
   PROP_INITIAL_VIDEO_NAME,
   PROP_MUTABLE_CONTENTS,
+  PROP_HOLD_STATE,
+  PROP_HOLD_STATE_REASON,
 };
 
 enum /* signals */
@@ -390,6 +395,22 @@ typedef struct
   TpCallStateReason *reason;
 } UpdateCallMembersData;
 
+
+static void
+channel_maybe_core_prepared (TpCallChannel *self)
+{
+  if (self->priv->core_result == NULL)
+    return;
+
+  if (self->priv->initial_members_retrieved &&
+      self->priv->properties_retrieved &&
+      self->priv->hold_state_retrieved)
+    {
+      g_simple_async_result_complete (self->priv->core_result);
+      g_clear_object (&self->priv->core_result);
+    }
+}
+
 static void
 update_call_members_prepared_cb (GObject *object,
     GAsyncResult *result,
@@ -424,9 +445,7 @@ update_call_members_prepared_cb (GObject *object,
     {
       self->priv->initial_members_retrieved = TRUE;
 
-      g_assert (self->priv->core_result != NULL);
-      g_simple_async_result_complete (self->priv->core_result);
-      g_clear_object (&self->priv->core_result);
+      channel_maybe_core_prepared (self);
     }
   else
     {
@@ -566,7 +585,47 @@ got_all_properties_cb (TpProxy *proxy,
     }
 
   /* core_result will be complete in update_call_members_prepared_cb() when
-   * the initial members are prepared. */
+   * the initial members are prepared or when the hold state is retrived. */
+}
+
+static void
+hold_state_changed_cb (TpChannel *proxy,
+    guint arg_HoldState,
+    guint arg_Reason,
+    gpointer user_data, GObject *weak_object)
+{
+  TpCallChannel *self = TP_CALL_CHANNEL (proxy);
+
+  if (!self->priv->hold_state_retrieved)
+    return;
+
+  self->priv->hold_state = arg_HoldState;
+  self->priv->hold_state_reason = arg_Reason;
+
+  g_object_notify (G_OBJECT (proxy), "hold-state");
+  g_object_notify (G_OBJECT (proxy), "hold-state-reason");
+}
+
+static void
+got_hold_state_cb (TpChannel *proxy, guint arg_HoldState, guint arg_Reason,
+    const GError *error, gpointer user_data, GObject *weak_object)
+{
+  TpCallChannel *self = TP_CALL_CHANNEL (proxy);
+
+  if (error != NULL)
+    {
+      DEBUG ("Could not get the call channel hold state: %s", error->message);
+      g_simple_async_result_set_from_error (self->priv->core_result, error);
+      g_simple_async_result_complete (self->priv->core_result);
+      g_clear_object (&self->priv->core_result);
+      return;
+    }
+
+  self->priv->hold_state = arg_HoldState;
+  self->priv->hold_state_reason = arg_Reason;
+  self->priv->hold_state_retrieved = TRUE;
+
+  channel_maybe_core_prepared (self);
 }
 
 static void
@@ -594,6 +653,16 @@ _tp_call_channel_prepare_core_async (TpProxy *proxy,
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CHANNEL_TYPE_CALL,
       got_all_properties_cb, NULL, NULL, NULL);
+
+  if (tp_proxy_has_interface_by_id (proxy,
+          TP_IFACE_QUARK_CHANNEL_INTERFACE_HOLD))
+    {
+      tp_cli_channel_interface_hold_connect_to_hold_state_changed (channel,
+          hold_state_changed_cb, NULL, NULL, NULL, NULL);
+
+      tp_cli_channel_interface_hold_call_get_hold_state (channel, -1,
+          got_hold_state_cb, NULL, NULL, NULL);
+    }
 }
 
 static void
@@ -696,7 +765,15 @@ tp_call_channel_get_property (GObject *object,
         g_value_set_boolean (value, self->priv->mutable_contents);
         break;
 
-      default:
+      case PROP_HOLD_STATE:
+        g_value_set_uint (value, self->priv->hold_state);
+        break;
+
+      case PROP_HOLD_STATE_REASON:
+        g_value_set_uint (value, self->priv->hold_state_reason);
+        break;
+
+     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
     }
@@ -906,6 +983,36 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (gobject_class,
       PROP_MUTABLE_CONTENTS, param_spec);
+
+
+  /**
+   * TpCallChannel:hold-state:
+   *
+   * A #TpLocalHoldState specifying if the Call is currently held
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_uint ("hold-state", "Hold State",
+      "The Hold state of the call",
+      0, G_MAXUINT, TP_LOCAL_HOLD_STATE_UNHELD,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (gobject_class, PROP_HOLD_STATE, param_spec);
+
+
+  /**
+   * TpCallChannel:hold-state-reason:
+   *
+   * A #TpLocalHoldStateReason specifying why the Call is currently held.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_uint ("hold-state-reason", "Hold State Reason",
+      "The reason for the current hold state",
+      0, G_MAXUINT, TP_LOCAL_HOLD_STATE_REASON_NONE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (gobject_class, PROP_HOLD_STATE_REASON,
+      param_spec);
+
 
   /**
    * TpCallChannel::content-added
