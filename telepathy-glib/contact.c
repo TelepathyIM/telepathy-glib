@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include <telepathy-glib/capabilities-internal.h>
+#include <telepathy-glib/cli-connection.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>

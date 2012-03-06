@@ -3204,7 +3204,7 @@ tp_cli_channel_type_room_list_signal_callback_listing_rooms
 <SECTION>
 <FILE>cli-anonymity</FILE>
 <TITLE>cli-anonymity</TITLE>
-<INCLUDE>telepathy-glib/telepathy-glib.h,telepathy-glib/cli-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-connection.h,telepathy-glib/cli-channel.h</INCLUDE>
 tp_cli_connection_interface_anonymity_connect_to_anonymity_modes_changed
 tp_cli_connection_interface_anonymity_signal_callback_anonymity_modes_changed
 </SECTION>
@@ -3212,7 +3212,7 @@ tp_cli_connection_interface_anonymity_signal_callback_anonymity_modes_changed
 <SECTION>
 <FILE>cli-service-point</FILE>
 <TITLE>cli-service-point</TITLE>
-<INCLUDE>telepathy-glib/telepathy-glib.h,telepathy-glib/cli-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-connection.h,telepathy-glib/cli-channel.h</INCLUDE>
 tp_cli_channel_interface_service_point_connect_to_service_point_changed
 tp_cli_channel_interface_service_point_signal_callback_service_point_changed
 tp_cli_connection_interface_service_point_connect_to_service_points_changed
@@ -3249,8 +3249,6 @@ tp_connection_get_self_contact
 tp_connection_get_self_handle
 TpConnectionRequestHandlesCb
 tp_connection_request_handles
-tp_connection_get_contact_attributes
-tp_connection_get_contact_list_attributes
 tp_connection_init_known_interfaces
 tp_connection_presence_type_cmp_availability
 tp_connection_parse_object_path
@@ -3355,7 +3353,14 @@ tp_connection_can_report_abusive
 tp_connection_get_blocked_contacts
 <SUBSECTION aliasing>
 tp_connection_can_set_contact_alias
-<SUBSECTION>
+</SECTION>
+
+<SECTION>
+<FILE>cli-connection</FILE>
+<TITLE>cli-connection</TITLE>
+<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
+tp_connection_get_contact_attributes
+tp_connection_get_contact_list_attributes
 tp_cli_connection_callback_for_connect
 tp_cli_connection_call_connect
 tp_cli_connection_callback_for_disconnect
@@ -3379,7 +3384,7 @@ tp_cli_connection_callback_for_remove_client_interest
 <SECTION>
 <FILE>connection-aliasing</FILE>
 <TITLE>connection-aliasing</TITLE>
-<INCLUDE>telepathy-glib/connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
 tp_cli_connection_interface_aliasing_call_get_alias_flags
 tp_cli_connection_interface_aliasing_call_request_aliases
 tp_cli_connection_interface_aliasing_call_get_aliases
@@ -3395,7 +3400,7 @@ tp_cli_connection_interface_aliasing_signal_callback_aliases_changed
 <SECTION>
 <FILE>connection-avatars</FILE>
 <TITLE>connection-avatars</TITLE>
-<INCLUDE>telepathy-glib/connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
 tp_cli_connection_interface_avatars_call_clear_avatar
 tp_cli_connection_interface_avatars_call_get_known_avatar_tokens
 tp_cli_connection_interface_avatars_call_request_avatars
@@ -3413,7 +3418,7 @@ tp_cli_connection_interface_avatars_signal_callback_avatar_updated
 <SECTION>
 <FILE>connection-balance</FILE>
 <TITLE>connection-balance</TITLE>
-<INCLUDE>telepathy-glib/connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
 tp_cli_connection_interface_balance_connect_to_balance_changed
 tp_cli_connection_interface_balance_signal_callback_balance_changed
 </SECTION>
@@ -3421,7 +3426,7 @@ tp_cli_connection_interface_balance_signal_callback_balance_changed
 <SECTION>
 <FILE>connection-caps</FILE>
 <TITLE>connection-caps</TITLE>
-<INCLUDE>telepathy-glib/connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
 tp_cli_connection_interface_contact_capabilities_callback_for_get_contact_capabilities
 tp_cli_connection_interface_contact_capabilities_call_get_contact_capabilities
 tp_cli_connection_interface_contact_capabilities_callback_for_update_capabilities
@@ -3433,7 +3438,7 @@ tp_cli_connection_interface_contact_capabilities_connect_to_contact_capabilities
 <SECTION>
 <FILE>connection-contact-list</FILE>
 <TITLE>connection-contact-list</TITLE>
-<INCLUDE>telepathy-glib/connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
 tp_cli_connection_interface_contact_blocking_call_block_contacts
 tp_cli_connection_interface_contact_blocking_call_request_blocked_contacts
 tp_cli_connection_interface_contact_blocking_call_unblock_contacts
@@ -3488,7 +3493,7 @@ tp_cli_connection_interface_contact_list_callback_for_get_contact_list_attribute
 <SECTION>
 <FILE>connection-cellular</FILE>
 <TITLE>connection-cellular</TITLE>
-<INCLUDE>telepathy-glib/connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
 tp_cli_connection_interface_cellular_connect_to_imsi_changed
 tp_cli_connection_interface_cellular_signal_callback_imsi_changed
 </SECTION>
@@ -3496,7 +3501,7 @@ tp_cli_connection_interface_cellular_signal_callback_imsi_changed
 <SECTION>
 <FILE>connection-contacts</FILE>
 <TITLE>connection-contacts</TITLE>
-<INCLUDE>telepathy-glib/connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
 tp_cli_connection_interface_contacts_call_get_contact_attributes
 tp_cli_connection_interface_contacts_callback_for_get_contact_attributes
 </SECTION>
@@ -3504,7 +3509,7 @@ tp_cli_connection_interface_contacts_callback_for_get_contact_attributes
 <SECTION>
 <FILE>connection-contact-info</FILE>
 <TITLE>connection-contact-info</TITLE>
-<INCLUDE>telepathy-glib/connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
 tp_cli_connection_interface_contact_info_call_get_contact_info
 tp_cli_connection_interface_contact_info_call_refresh_contact_info
 tp_cli_connection_interface_contact_info_call_request_contact_info
@@ -3520,7 +3525,7 @@ tp_cli_connection_interface_contact_info_signal_callback_contact_info_changed
 <SECTION>
 <FILE>connection-requests</FILE>
 <TITLE>connection-requests</TITLE>
-<INCLUDE>telepathy-glib/connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
 tp_cli_connection_interface_requests_call_create_channel
 tp_cli_connection_interface_requests_call_ensure_channel
 tp_cli_connection_interface_requests_callback_for_create_channel
@@ -3534,7 +3539,7 @@ tp_cli_connection_interface_requests_signal_callback_new_channels
 <SECTION>
 <FILE>connection-presence</FILE>
 <TITLE>connection-presence</TITLE>
-<INCLUDE>telepathy-glib/connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
 tp_cli_connection_interface_presence_call_get_presences
 tp_cli_connection_interface_presence_call_set_presence
 tp_cli_connection_interface_presence_callback_for_get_presences
@@ -3546,7 +3551,7 @@ tp_cli_connection_interface_presence_signal_callback_presences_changed
 <SECTION>
 <FILE>connection-location</FILE>
 <TITLE>connection-location</TITLE>
-<INCLUDE>telepathy-glib/connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
 tp_cli_connection_interface_location_connect_to_location_updated
 tp_cli_connection_interface_location_signal_callback_location_updated
 tp_cli_connection_interface_location_call_get_locations
@@ -3562,7 +3567,7 @@ tp_cli_connection_interface_location_callback_for_set_location
 <SECTION>
 <FILE>connection-powersaving</FILE>
 <TITLE>connection-powersaving</TITLE>
-<INCLUDE>telepathy-glib/connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
 tp_cli_connection_interface_power_saving_call_set_power_saving
 tp_cli_connection_interface_power_saving_callback_for_set_power_saving
 tp_cli_connection_interface_power_saving_connect_to_power_saving_changed
@@ -3572,7 +3577,7 @@ tp_cli_connection_interface_power_saving_signal_callback_power_saving_changed
 <SECTION>
 <FILE>connection-client-types</FILE>
 <TITLE>connection-client-types</TITLE>
-<INCLUDE>telepathy-glib/connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
 tp_cli_connection_interface_client_types_call_get_client_types
 tp_cli_connection_interface_client_types_call_request_client_types
 tp_cli_connection_interface_client_types_callback_for_get_client_types
@@ -3584,7 +3589,7 @@ tp_cli_connection_interface_client_types_signal_callback_client_types_updated
 <SECTION>
 <FILE>connection-mail</FILE>
 <TITLE>connection-mail</TITLE>
-<INCLUDE>telepathy-glib/connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
 tp_cli_connection_interface_mail_notification_call_request_inbox_url
 tp_cli_connection_interface_mail_notification_call_request_mail_url
 tp_cli_connection_interface_mail_notification_callback_for_request_inbox_url
@@ -3598,7 +3603,7 @@ tp_cli_connection_interface_mail_notification_signal_callback_unread_mails_chang
 <SECTION>
 <FILE>connection-addressing</FILE>
 <TITLE>connection-addressing</TITLE>
-<INCLUDE>telepathy-glib/connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
 tp_cli_connection_interface_addressing_call_get_contacts_by_uri
 tp_cli_connection_interface_addressing_call_get_contacts_by_vcard_field
 tp_cli_connection_interface_addressing_callback_for_get_contacts_by_uri

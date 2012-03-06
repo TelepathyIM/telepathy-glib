@@ -71,6 +71,7 @@ our_headers = \
     channel-manager.h \
     channel-request.h \
     cli-channel.h \
+    cli-connection.h \
     cli-misc.h \
     client.h \
     client-channel-factory.h \

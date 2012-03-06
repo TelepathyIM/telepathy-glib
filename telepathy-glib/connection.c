@@ -27,6 +27,7 @@
 
 #include <dbus/dbus-protocol.h>
 
+#include <telepathy-glib/cli-connection.h>
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/dbus.h>

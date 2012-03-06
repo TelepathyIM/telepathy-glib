@@ -21,6 +21,7 @@
 
 #include <telepathy-glib/contact-operations.h>
 
+#include <telepathy-glib/cli-connection.h>
 #include <telepathy-glib/connection-contact-list.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONTACTS

@@ -9,6 +9,7 @@
 
 #include "config.h"
 
+#include <telepathy-glib/cli-connection.h>
 #include <telepathy-glib/telepathy-glib.h>
 
 #include "tests/lib/util.h"

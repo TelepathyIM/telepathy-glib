@@ -11,6 +11,7 @@
 
 #include "config.h"
 
+#include <telepathy-glib/cli-connection.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/debug.h>

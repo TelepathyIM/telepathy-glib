@@ -22,6 +22,8 @@
 
 #include "telepathy-glib/connection-internal.h"
 
+#include <telepathy-glib/cli-connection.h>
+
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 

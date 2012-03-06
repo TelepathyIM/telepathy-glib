@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/cli-connection.h>
 #include <telepathy-glib/message-mixin.h>
 
 #include "examples/cm/contactlist/conn.h"
