@@ -14,6 +14,7 @@ INTROSPECTION_GIRS = TelepathyGLib-1.gir TelepathyGLibDBus-1.gir
 TelepathyGLib-1.gir: libtelepathy-glib-1.la libtelepathy-glib-1-core.la
 # /!\ Order matters, see https://bugzilla.gnome.org/show_bug.cgi?id=660629
 TelepathyGLib_1_gir_FILES = \
+	$(srcdir)/core-dbus.c \
 	$(srcdir)/proxy.c _gen/proxy-introspectable.h \
 	$(srcdir)/account.c $(srcdir)/account.h \
 	$(srcdir)/account-channel-request.c $(srcdir)/account-channel-request.h \

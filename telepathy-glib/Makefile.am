@@ -169,6 +169,7 @@ check-local: check-coding-style
 
 libtelepathy_glib_core_internal_la_LIBADD = $(ALL_LIBS)
 libtelepathy_glib_core_internal_la_SOURCES = \
+    core-dbus.c \
     errors.c \
     $(NULL)
 
@@ -259,6 +260,7 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     dbus-daemon.c \
     dbus-internal.h \
     dbus-properties-mixin.c \
+    dbus-properties-mixin-internal.h \
     dbus-tube-channel.c \
     debug.c \
     debug-sender.c \

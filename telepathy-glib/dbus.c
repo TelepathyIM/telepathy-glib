@@ -82,21 +82,6 @@
  */
 /* (#define + static inline in dbus.h) */
 
-/**
- * tp_dbus_g_method_return_not_implemented: (skip)
- * @context: The D-Bus method invocation context
- *
- * Return the Telepathy error NotImplemented from the method invocation
- * given by @context.
- */
-void
-tp_dbus_g_method_return_not_implemented (DBusGMethodInvocation *context)
-{
-  GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED, "Not implemented" };
-
-  dbus_g_method_return_error (context, &e);
-}
-
 DBusGConnection *
 _tp_dbus_starter_bus_conn (GError **error)
 {
