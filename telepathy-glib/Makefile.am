@@ -70,6 +70,7 @@ our_headers = \
     channel-dispatch-operation.h \
     channel-manager.h \
     channel-request.h \
+    cli-call.h \
     cli-channel.h \
     cli-connection.h \
     cli-misc.h \

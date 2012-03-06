@@ -82,6 +82,4 @@ gboolean tp_call_stream_request_receiving_finish (TpCallStream *self,
 
 G_END_DECLS
 
-#include <telepathy-glib/_gen/tp-cli-call-stream.h>
-
 #endif

@@ -5438,7 +5438,7 @@ tp_call_channel_get_feature_quark_core
 <SECTION>
 <FILE>cli-call-content</FILE>
 <TITLE>cli-call-content</TITLE>
-<INCLUDE>telepathy-glib/call-content.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-call.h</INCLUDE>
 <SUBSECTION>
 tp_cli_call_content_call_remove
 tp_cli_call_content_callback_for_remove
@@ -5531,7 +5531,7 @@ tp_call_content_get_feature_quark_core
 <SECTION>
 <FILE>cli-call-stream</FILE>
 <TITLE>cli-call-stream</TITLE>
-<INCLUDE>telepathy-glib/call-stream.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-call.h</INCLUDE>
 <SUBSECTION>
 tp_cli_call_stream_call_request_receiving
 tp_cli_call_stream_call_set_sending
@@ -5611,7 +5611,7 @@ tp_call_stream_get_feature_quark_core
 <SECTION>
 <FILE>cli-call-misc</FILE>
 <TITLE>cli-call-misc</TITLE>
-<INCLUDE>telepathy-glib/call-misc.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-call.h</INCLUDE>
 tp_cli_call_content_media_description_call_accept
 tp_cli_call_content_media_description_call_reject
 tp_cli_call_content_media_description_callback_for_accept

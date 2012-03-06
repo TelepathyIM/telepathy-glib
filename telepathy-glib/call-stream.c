@@ -48,6 +48,7 @@
 #include "telepathy-glib/call-stream.h"
 
 #include <telepathy-glib/call-misc.h>
+#include <telepathy-glib/cli-call.h>
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/enums.h>

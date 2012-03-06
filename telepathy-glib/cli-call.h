@@ -1,7 +1,8 @@
 /*
- * call.h - misc low level API for Call
+ * cli-call.h - auto-generated methods for Call classes
  *
- * Copyright (C) 2011 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright © 2007-2012 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright © 2007 Nokia Corporation
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,16 +19,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __TP_CALL_MISC_H__
-#define __TP_CALL_MISC_H__
+#ifndef TELEPATHY_GLIB_CLI_CALL_H
+#define TELEPATHY_GLIB_CLI_CALL_H
 
-#include <telepathy-glib/proxy.h>
+#include <telepathy-glib/call-content.h>
+#include <telepathy-glib/call-misc.h>
+#include <telepathy-glib/call-stream.h>
 
-G_BEGIN_DECLS
-
-void tp_call_stream_endpoint_init_known_interfaces (void);
-void tp_call_content_media_description_init_known_interfaces (void);
-
-G_END_DECLS
+#include <telepathy-glib/_gen/tp-cli-call-content.h>
+#include <telepathy-glib/_gen/tp-cli-call-content-media-description.h>
+#include <telepathy-glib/_gen/tp-cli-call-stream.h>
+#include <telepathy-glib/_gen/tp-cli-call-stream-endpoint.h>
 
 #endif
+

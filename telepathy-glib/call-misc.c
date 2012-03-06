@@ -31,6 +31,7 @@
 #include "config.h"
 
 #include "telepathy-glib/call-misc.h"
+#include "telepathy-glib/cli-call.h"
 #include "telepathy-glib/errors.h"
 #include "telepathy-glib/interfaces.h"
 #include "telepathy-glib/proxy-subclass.h"
