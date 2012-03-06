@@ -49,6 +49,7 @@
 
 #include "telepathy-glib/stream-tube-channel.h"
 
+#include <telepathy-glib/cli-channel.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/enums.h>

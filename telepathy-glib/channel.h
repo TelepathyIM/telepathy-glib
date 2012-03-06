@@ -191,6 +191,4 @@ gboolean tp_channel_provide_password_finish (TpChannel *self,
 
 G_END_DECLS
 
-#include <telepathy-glib/_gen/tp-cli-channel.h>
-
 #endif

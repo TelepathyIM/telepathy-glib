@@ -1,4 +1,5 @@
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/cli-channel.h>
 
 static GMainLoop *loop = NULL;
 

@@ -13,6 +13,7 @@
 
 #include <string.h>
 
+#include <telepathy-glib/cli-channel.h>
 #include <telepathy-glib/telepathy-glib.h>
 
 #include "tests/lib/util.h"

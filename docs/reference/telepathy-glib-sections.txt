@@ -3034,6 +3034,12 @@ TP_CHANNEL_CLASS
 TP_CHANNEL_GET_CLASS
 TP_IS_CHANNEL
 TP_IS_CHANNEL_CLASS
+</SECTION>
+
+<SECTION>
+<FILE>cli-channel</FILE>
+<TITLE>cli-channel</TITLE>
+<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
 <SUBSECTION>
 tp_cli_channel_call_close
 tp_cli_channel_callback_for_close
@@ -3047,7 +3053,7 @@ tp_cli_channel_interface_destroyable_callback_for_destroy
 <SECTION>
 <FILE>channel-group</FILE>
 <TITLE>channel-group</TITLE>
-<INCLUDE>telepathy-glib/channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
 tp_cli_channel_interface_group_call_add_members
 tp_cli_channel_interface_group_call_remove_members
 tp_cli_channel_interface_group_callback_for_add_members
@@ -3072,7 +3078,7 @@ tp_cli_channel_interface_conference_signal_callback_channel_removed
 <SECTION>
 <FILE>channel-text</FILE>
 <TITLE>channel-text</TITLE>
-<INCLUDE>telepathy-glib/channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
 tp_cli_channel_type_text_call_acknowledge_pending_messages
 tp_cli_channel_type_text_call_send_message
 tp_cli_channel_type_text_callback_for_acknowledge_pending_messages
@@ -3103,7 +3109,7 @@ tp_cli_channel_interface_sms_callback_for_get_sms_length
 <SECTION>
 <FILE>channel-room</FILE>
 <TITLE>channel-room</TITLE>
-<INCLUDE>telepathy-glib/channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
 <SUBSECTION>
 tp_cli_channel_interface_room_config_call_update_configuration
 tp_cli_channel_interface_room_config_callback_for_update_configuration
@@ -3115,7 +3121,7 @@ tp_cli_channel_interface_subject_callback_for_set_subject
 <SECTION>
 <FILE>channel-file-transfer</FILE>
 <TITLE>channel-file-transfer</TITLE>
-<INCLUDE>telepathy-glib/channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
 tp_cli_channel_type_file_transfer_call_accept_file
 tp_cli_channel_type_file_transfer_call_provide_file
 tp_cli_channel_type_file_transfer_callback_for_accept_file
@@ -3133,7 +3139,7 @@ tp_cli_channel_type_file_transfer_signal_callback_uri_defined
 <SECTION>
 <FILE>channel-media</FILE>
 <TITLE>channel-media</TITLE>
-<INCLUDE>telepathy-glib/channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
 tp_cli_channel_interface_dtmf_call_start_tone
 tp_cli_channel_interface_dtmf_call_stop_tone
 tp_cli_channel_interface_dtmf_callback_for_start_tone
@@ -3158,7 +3164,7 @@ tp_cli_channel_interface_hold_connect_to_hold_state_changed
 <SECTION>
 <FILE>channel-tube</FILE>
 <TITLE>channel-tube</TITLE>
-<INCLUDE>telepathy-glib/channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
 tp_cli_channel_interface_tube_connect_to_tube_channel_state_changed
 tp_cli_channel_interface_tube_signal_callback_tube_channel_state_changed
 tp_cli_channel_type_stream_tube_call_offer
@@ -3182,7 +3188,7 @@ tp_cli_channel_type_dbus_tube_signal_callback_dbus_names_changed
 <SECTION>
 <FILE>channel-roomlist</FILE>
 <TITLE>channel-roomlist</TITLE>
-<INCLUDE>telepathy-glib/channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
 tp_cli_channel_type_room_list_call_get_listing_rooms
 tp_cli_channel_type_room_list_call_list_rooms
 tp_cli_channel_type_room_list_call_stop_listing
@@ -3198,7 +3204,7 @@ tp_cli_channel_type_room_list_signal_callback_listing_rooms
 <SECTION>
 <FILE>cli-anonymity</FILE>
 <TITLE>cli-anonymity</TITLE>
-<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h,telepathy-glib/cli-channel.h</INCLUDE>
 tp_cli_connection_interface_anonymity_connect_to_anonymity_modes_changed
 tp_cli_connection_interface_anonymity_signal_callback_anonymity_modes_changed
 </SECTION>
@@ -3206,7 +3212,7 @@ tp_cli_connection_interface_anonymity_signal_callback_anonymity_modes_changed
 <SECTION>
 <FILE>cli-service-point</FILE>
 <TITLE>cli-service-point</TITLE>
-<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h,telepathy-glib/cli-channel.h</INCLUDE>
 tp_cli_channel_interface_service_point_connect_to_service_point_changed
 tp_cli_channel_interface_service_point_signal_callback_service_point_changed
 tp_cli_connection_interface_service_point_connect_to_service_points_changed
@@ -4747,7 +4753,7 @@ TpProtocolClassPrivate
 <SECTION>
 <FILE>channel-contactsearch</FILE>
 <TITLE>channel-contactsearch</TITLE>
-<INCLUDE>telepathy-glib/channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
 tp_cli_channel_type_contact_search_call_more
 tp_cli_channel_type_contact_search_call_search
 tp_cli_channel_type_contact_search_call_stop
@@ -5192,7 +5198,7 @@ tp_svc_channel_interface_captcha_authentication_return_from_get_captchas
 <SECTION>
 <FILE>channel-auth</FILE>
 <TITLE>channel-auth</TITLE>
-<INCLUDE>telepathy-glib/channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
 tp_cli_channel_interface_sasl_authentication_call_abort_sasl
 tp_cli_channel_interface_sasl_authentication_call_accept_sasl
 tp_cli_channel_interface_sasl_authentication_call_respond
@@ -5335,7 +5341,7 @@ tp_file_transfer_channel_get_feature_quark_core
 <SECTION>
 <FILE>cli-call-channel</FILE>
 <TITLE>cli-call-channel</TITLE>
-<INCLUDE>telepathy-glib/channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
 <SUBSECTION>
 tp_cli_channel_type_call_call_accept
 tp_cli_channel_type_call_call_add_content

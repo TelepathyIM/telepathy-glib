@@ -12,6 +12,7 @@
 #include <telepathy-glib/telepathy-glib.h>
 
 #include <telepathy-glib/account-channel-request-internal.h>
+#include <telepathy-glib/cli-channel.h>
 #include <telepathy-glib/client.h>
 #include <telepathy-glib/proxy-subclass.h>
 
