@@ -551,6 +551,8 @@ finally:
  * connection manager's protocol and parameter information could be retrieved,
  * @error is %NULL and @cm is considered to be ready. Otherwise, @error is
  * non-%NULL and @cm is not ready.
+ *
+ * Deprecated: since 0.UNRELEASED, use tp_proxy_prepare_async() instead
  */
 
 /**
@@ -567,6 +569,7 @@ finally:
  * supported protocols and parameters has been retrieved.
  *
  * Since: 0.7.26
+ * Deprecated: since 0.UNRELEASED, use tp_proxy_prepare_async() instead
  */
 void
 tp_connection_manager_call_when_ready (TpConnectionManager *self,
@@ -1398,8 +1401,8 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
    *
    * Emitted when the connection manager's capabilities have been discovered.
    *
-   * This signal is not very helpful. Since 0.7.26, using
-   * tp_connection_manager_call_when_ready() instead is recommended.
+   * This signal is not very helpful. Using
+   * tp_proxy_prepare_async() instead is recommended.
    */
   signals[SIGNAL_GOT_INFO] = g_signal_new ("got-info",
       G_OBJECT_CLASS_TYPE (klass),
@@ -1419,7 +1422,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
  *
  * Convenience function to create a new connection manager proxy. If
  * its protocol and parameter information are required, you should call
- * tp_connection_manager_call_when_ready() on the result.
+ * tp_proxy_prepare_async() on the result.
  *
  * Returns: a new reference to a connection manager proxy, or %NULL if @error
  *          is set.
@@ -1524,11 +1527,13 @@ typedef struct
   TpConnectionManagerListCb callback;
   gpointer user_data;
   GDestroyNotify destroy;
+  gpointer weak_object;
   TpProxyPendingCall *pending_call;
   size_t base_len;
   gsize refcount;
   gsize cms_to_ready;
   unsigned getting_names:1;
+  unsigned had_weak_object:1;
 } _ListContext;
 
 static void
@@ -1538,6 +1543,10 @@ list_context_unref (_ListContext *list_context)
 
   if (--list_context->refcount > 0)
     return;
+
+  if (list_context->weak_object != NULL)
+    g_object_remove_weak_pointer (list_context->weak_object,
+        &list_context->weak_object);
 
   if (list_context->destroy != NULL)
     list_context->destroy (list_context->user_data);
@@ -1560,14 +1569,13 @@ list_context_unref (_ListContext *list_context)
 }
 
 static void
-tp_list_connection_managers_cm_ready (TpConnectionManager *cm,
-                                      const GError *error,
-                                      gpointer user_data,
-                                      GObject *weak_object)
+tp_list_connection_managers_cm_prepared (GObject *source G_GNUC_UNUSED,
+    GAsyncResult *result G_GNUC_UNUSED,
+    gpointer user_data)
 {
   _ListContext *list_context = user_data;
 
-  /* ignore errors here - all we guarantee is that the CM is ready
+  /* ignore the result here - all we guarantee is that the CM is ready
    * *if possible* */
 
   if ((--list_context->cms_to_ready) == 0)
@@ -1580,10 +1588,19 @@ tp_list_connection_managers_cm_ready (TpConnectionManager *cm,
       g_ptr_array_add (list_context->arr, NULL);
       cms = (TpConnectionManager **) list_context->arr->pdata;
 
-      list_context->callback (cms, n_cms, NULL, list_context->user_data,
-          weak_object);
+      /* If we never had a weak object anyway, call the callback.
+       * If we had a weak object when we started, only call the callback
+       * if it hasn't died yet. */
+      if (!list_context->had_weak_object || list_context->weak_object != NULL)
+        {
+          list_context->callback (cms, n_cms, NULL, list_context->user_data,
+              list_context->weak_object);
+        }
+
       list_context->callback = NULL;
     }
+
+  list_context_unref (list_context);
 }
 
 static void
@@ -1595,6 +1612,9 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
 {
   _ListContext *list_context = user_data;
   const gchar * const *name_iter;
+
+  /* The TpProxy APIs we use guarantee this */
+  g_assert (weak_object != NULL || !list_context->had_weak_object);
 
   if (error != NULL)
     {
@@ -1641,9 +1661,8 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
         {
           TpConnectionManager *cm = g_ptr_array_index (list_context->arr, i);
 
-          tp_connection_manager_call_when_ready (cm,
-              tp_list_connection_managers_cm_ready, list_context,
-              (GDestroyNotify) list_context_unref, weak_object);
+          tp_proxy_prepare_async (cm, NULL,
+              tp_list_connection_managers_cm_prepared, list_context);
         }
     }
   else
@@ -1672,8 +1691,8 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
  * callback when done.
  *
  * Since 0.7.26, this function will wait for each #TpConnectionManager
- * to be ready, so all connection managers passed to @callback will be ready
- * (tp_connection_manager_is_ready() will return %TRUE) unless an error
+ * to be ready, so all connection managers passed to @callback will have
+ * their %TP_CONNECTION_MANAGER_FEATURE_CORE feature prepared, unless an error
  * occurred while launching that connection manager.
  *
  * Since: 0.7.1
@@ -1698,6 +1717,13 @@ tp_list_connection_managers (TpDBusDaemon *bus_daemon,
       g_object_unref);
   list_context->arr = NULL;
   list_context->cms_to_ready = 0;
+
+  if (weak_object != NULL)
+    {
+      list_context->weak_object = weak_object;
+      list_context->had_weak_object = TRUE;
+      g_object_add_weak_pointer (weak_object, &list_context->weak_object);
+    }
 
   tp_dbus_daemon_list_activatable_names (bus_daemon, 2000,
       tp_list_connection_managers_got_names, list_context,
@@ -1838,6 +1864,8 @@ tp_connection_manager_get_name (TpConnectionManager *self)
  * Returns: %TRUE, unless the #TpConnectionManager:info-source property is
  *          %TP_CM_INFO_SOURCE_NONE
  * Since: 0.7.26
+ * Deprecated: since 0.UNRELEASED, use tp_proxy_is_prepared()
+ *  with %TP_CONNECTION_MANAGER_FEATURE_CORE instead
  */
 gboolean
 tp_connection_manager_is_ready (TpConnectionManager *self)
@@ -1900,7 +1928,7 @@ tp_connection_manager_get_info_source (TpConnectionManager *self)
  *
  * If this function is called before the connection manager information has
  * been obtained, the result is always %NULL. Use
- * tp_connection_manager_call_when_ready() to wait for this.
+ * tp_proxy_prepare_async() to wait for this.
  *
  * The result is copied and must be freed by the caller, but it is not
  * necessarily still true after the main loop is re-entered.
@@ -1951,7 +1979,7 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
  *
  * If this function is called before the connection manager information has
  * been obtained, the result is always %NULL. Use
- * tp_connection_manager_call_when_ready() to wait for this.
+ * tp_proxy_prepare_async() to wait for this.
  *
  * The result is not necessarily valid after the main loop is re-entered.
  * Since 0.11.3, it can be copied with tp_connection_manager_protocol_copy()
@@ -2015,8 +2043,8 @@ tp_connection_manager_get_protocol_object (TpConnectionManager *self,
  * Return whether @protocol is supported by this connection manager.
  *
  * If this function is called before the connection manager information has
- * been obtained, the result is always %FALSE. Use
- * tp_connection_manager_call_when_ready() to wait for this.
+ * been obtained, the result is always %FALSE. Use tp_proxy_prepare_async()
+ * to wait for this.
  *
  * Returns: %TRUE if this connection manager supports @protocol
  * Since: 0.7.26
