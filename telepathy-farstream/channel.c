@@ -618,7 +618,7 @@ channel_invalidated (TpChannel *channel_proxy,
  * Creates a new #TfChannel from an existing channel proxy, the new
  * TfChannel object will be return in the async callback.
  *
- * The user must call g_async_initable_new_finish() in the callback
+ * The user must call tf_channel_new_finish() in the callback
  * to get the finished object.
  */
 
@@ -692,4 +692,25 @@ static void
 content_removed (GObject *proxy, TfContent *content, TfChannel *self)
 {
   g_signal_emit (self, signals[SIGNAL_CONTENT_REMOVED], 0, content);
+}
+
+/**
+ * tf_channel_new_finish:
+ * @object: The #GObject
+ * @result: a #GAsyncResult
+ * @error: the location of a #GError or %NULL to ignore it
+ *
+ * Completes the construction of a TfChannel.
+ *
+ * Returns: a #TfChannel or %NULL if there was an error
+ * Since: 0.2.2
+ */
+
+TfChannel *
+tf_channel_new_finish (GObject *object,
+    GAsyncResult *result,
+    GError **error)
+{
+  return (TfChannel *) g_async_initable_new_finish (G_ASYNC_INITABLE (object),
+      result, error);
 }

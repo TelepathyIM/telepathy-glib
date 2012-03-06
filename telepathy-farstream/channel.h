@@ -53,6 +53,10 @@ void tf_channel_new_async (TpChannel *channel_proxy,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+TfChannel *tf_channel_new_finish (GObject *object,
+    GAsyncResult *result,
+    GError **error);
+
 
 gboolean tf_channel_bus_message (TfChannel *channel,
     GstMessage *message);

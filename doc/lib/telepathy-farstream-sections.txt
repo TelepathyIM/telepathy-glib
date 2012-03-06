@@ -27,6 +27,7 @@ TF_IS_CONTENT_CLASS
 <TITLE>TfChannel</TITLE>
 TfChannel
 tf_channel_new_async
+tf_channel_new_finish
 tf_channel_bus_message
 <SUBSECTION Private>
 TfChannelPrivate
