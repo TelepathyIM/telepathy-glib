@@ -30,7 +30,7 @@ noinst_LTLIBRARIES = libexample-extensions.la
 libexample_extensions_la_LIBADD = \
     $(GLIB_LIBS) \
     $(DBUS_LIBS) \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1.la
 
 # The client-specific parts are built into a separate .o file, so the linker
 # can discard them when linking services. The service-specific parts are

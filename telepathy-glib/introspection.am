@@ -1,18 +1,18 @@
 # To be included by Makefile.am.
 
 introspection_extra_dist = \
-	TelepathyGLib-0.12.metadata \
+	TelepathyGLib-1.metadata \
 	$(NULL)
 
 if HAVE_INTROSPECTION
 
 include $(INTROSPECTION_MAKEFILE)
 
-INTROSPECTION_GIRS = TelepathyGLib-0.12.gir
+INTROSPECTION_GIRS = TelepathyGLib-1.gir
 
-TelepathyGLib-0.12.gir: libtelepathy-glib.la
+TelepathyGLib-1.gir: libtelepathy-glib-1.la
 # /!\ Order matters, see https://bugzilla.gnome.org/show_bug.cgi?id=660629
-TelepathyGLib_0_12_gir_FILES = \
+TelepathyGLib_1_gir_FILES = \
 	$(srcdir)/proxy.c _gen/proxy-introspectable.h \
 	$(srcdir)/account.c $(srcdir)/account.h \
 	$(srcdir)/account-channel-request.c $(srcdir)/account-channel-request.h \
@@ -76,12 +76,12 @@ TelepathyGLib_0_12_gir_FILES = \
 	_gen/telepathy-interfaces.h \
 	$(NULL)
 
-TelepathyGLib_0_12_gir_NAMESPACE = TelepathyGLib
-TelepathyGLib_0_12_gir_VERSION = 0.12
-TelepathyGLib_0_12_gir_LIBS = libtelepathy-glib.la
-TelepathyGLib_0_12_gir_EXPORT_PACKAGES = telepathy-glib
+TelepathyGLib_1_gir_NAMESPACE = TelepathyGLib
+TelepathyGLib_1_gir_VERSION = 1
+TelepathyGLib_1_gir_LIBS = libtelepathy-glib-1.la
+TelepathyGLib_1_gir_EXPORT_PACKAGES = telepathy-glib-1
 
-TelepathyGLib_0_12_gir_SCANNERFLAGS = \
+TelepathyGLib_1_gir_SCANNERFLAGS = \
 	--identifier-prefix=Tp \
 	-I$(top_builddir) \
 	-I$(top_srcdir) \
@@ -89,12 +89,12 @@ TelepathyGLib_0_12_gir_SCANNERFLAGS = \
 	--warn-all \
 	$(NULL)
 
-TelepathyGLib_0_12_gir_INCLUDES = \
+TelepathyGLib_1_gir_INCLUDES = \
 	GLib-2.0 \
 	Gio-2.0 \
 	$(NULL)
 
-TelepathyGLib_0_12_gir_PACKAGES = \
+TelepathyGLib_1_gir_PACKAGES = \
 	gio-2.0	\
 	dbus-glib-1 \
 	$(NULL)
@@ -104,7 +104,7 @@ _gen/proxy-introspectable.h: proxy.h introspection.am
 	$(AM_V_GEN)sed -e 's/gpointer self/TpProxy *self/' < $< > $@
 
 girdir = $(datadir)/gir-1.0
-dist_gir_DATA = TelepathyGLib-0.12.gir
+dist_gir_DATA = TelepathyGLib-1.gir
 
 typelibsdir = $(libdir)/girepository-1.0/
 typelibs_DATA = $(dist_gir_DATA:.gir=.typelib)

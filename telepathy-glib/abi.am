@@ -7,17 +7,17 @@ ABI_LISTS = \
 # The quoting here is unnecessary but harmless, and has the useful side-effect
 # that vim quickfix mode (:make) doesn't interpret the libtool --mode=link
 # command as an error message in a bizarrely named file
-libtelepathy_glib_la_LDFLAGS = \
+libtelepathy_glib_1_la_LDFLAGS = \
     $(AM_LDFLAGS) \
     -no-undefined \
     -version-info "$(LT_CURRENT)":"$(LT_REVISION)":"$(LT_AGE)"
-libtelepathy_glib_la_LIBADD = libtelepathy-glib-internal.la
-nodist_libtelepathy_glib_la_SOURCES =
-libtelepathy_glib_la_DEPENDENCIES = libtelepathy-glib-internal.la abi.am
+libtelepathy_glib_1_la_LIBADD = libtelepathy-glib-internal.la
+nodist_libtelepathy_glib_1_la_SOURCES =
+libtelepathy_glib_1_la_DEPENDENCIES = libtelepathy-glib-internal.la abi.am
 
 if HAVE_LD_VERSION_SCRIPT
-nodist_libtelepathy_glib_la_SOURCES += _gen/version-script.txt
-libtelepathy_glib_la_DEPENDENCIES += _gen/version-script.txt _gen/abi.txt
+nodist_libtelepathy_glib_1_la_SOURCES += _gen/version-script.txt
+libtelepathy_glib_1_la_DEPENDENCIES += _gen/version-script.txt _gen/abi.txt
 
 if OFFICIAL_RELEASE
 # don't allow undocumented ABI
@@ -51,12 +51,12 @@ _gen/abi.txt: libtelepathy-glib-internal.la abi.am
 	grep "^tp" < _gen/abi.funcnames > _gen/abi.tpfuncnames
 	$(AM_V_GEN)sort -u < _gen/abi.tpfuncnames > $@
 
-libtelepathy_glib_la_LDFLAGS += \
+libtelepathy_glib_1_la_LDFLAGS += \
     $(VERSION_SCRIPT_ARG)=_gen/version-script.txt
 
 else # !HAVE_LD_VERSION_SCRIPT
 
-libtelepathy_glib_la_LDFLAGS += -export-symbols-regex '^tp'
+libtelepathy_glib_1_la_LDFLAGS += -export-symbols-regex '^tp'
 
 endif # !HAVE_LD_VERSION_SCRIPT
 

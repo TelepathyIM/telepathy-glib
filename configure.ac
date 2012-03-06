@@ -21,14 +21,14 @@ m4_define([tp_glib_nano_version], [1])
 # If interfaces have been removed since last release, set age to 0
 #
 # If interfaces have been added, release builds will fail unless you add a new
-# file like telepathy-glib/versions/0.7.3.abi to add them to the official ABI.
+# file like telepathy-glib/versions/1.1.0.abi to add them to the official ABI.
 # This also forces binaries built against devel versions to be rebuilt
 # (we don't guarantee that we won't add ABI then remove it again, if it was
 # never seen in a release).
 
-m4_define([tp_glib_lt_current], [67])
+m4_define([tp_glib_lt_current], [0])
 m4_define([tp_glib_lt_revision], [0])
-m4_define([tp_glib_lt_age], [67])
+m4_define([tp_glib_lt_age], [0])
 
 # Some magic
 m4_define([tp_glib_base_version],
@@ -328,8 +328,8 @@ AC_OUTPUT( Makefile \
 	   examples/extensions/Makefile \
 	   spec/Makefile \
 	   telepathy-glib/Makefile \
-	   telepathy-glib/telepathy-glib.pc \
-	   telepathy-glib/telepathy-glib-uninstalled.pc \
+	   telepathy-glib/telepathy-glib-1.pc \
+	   telepathy-glib/telepathy-glib-1-uninstalled.pc \
 	   tests/Makefile \
 	   tests/lib/Makefile \
 	   tests/dbus/Makefile \

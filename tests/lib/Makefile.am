@@ -1,9 +1,9 @@
 # It's necessary to distinguish between modules that link to
-# libtelepathy-glib.la (normally a shared library, containing a copy of
+# libtelepathy-glib-1.la (normally a shared library, containing a copy of
 # libtelepathy-glib-internal.la) and libtelepathy-glib-internal.la (a static
 # convenience library). Under -Bsymbolic, you can't safely link both.
 #
-# You can either link to libtp-glib-tests.la and libtelepathy-glib.la,
+# You can either link to libtp-glib-tests.la and libtelepathy-glib-1.la,
 # or to libtp-glib-tests-internal.la and libtelepathy-glib-internal.la.
 # Do not mix the versions.
 #
@@ -91,4 +91,4 @@ libtp_glib_tests_internal_la_LIBADD = \
 libtp_glib_tests_la_LIBADD = \
     $(DBUS_LIBS) \
     $(GLIB_LIBS) \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1.la

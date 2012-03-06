@@ -1,10 +1,10 @@
 include $(top_srcdir)/tools/flymake.mk
 
-tpgincludedir=$(includedir)/telepathy-1.0/telepathy-glib
+tpgincludedir=$(includedir)/telepathy-glib-1/telepathy-glib
 genincludedir=$(tpgincludedir)/_gen
 
 pkgconfigdir = ${libdir}/pkgconfig
-pkgconfig_DATA = telepathy-glib.pc
+pkgconfig_DATA = telepathy-glib-1.pc
 
 EXTRA_DIST = \
     $(ABI_LISTS) \
@@ -18,7 +18,7 @@ EXTRA_DIST = \
 # The static version is necessary because one of the tests wants to use
 # internal symbols (_tp_log) which are made invisible by GNU ld.
 
-lib_LTLIBRARIES = libtelepathy-glib.la
+lib_LTLIBRARIES = libtelepathy-glib-1.la
 noinst_LTLIBRARIES = libtelepathy-glib-internal.la \
 	libtelepathy-glib-reentrants.la
 

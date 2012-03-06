@@ -11,7 +11,7 @@ accepter_SOURCES = accepter.c
 LDADD = \
     @DBUS_LIBS@ \
     @GLIB_LIBS@ \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1.la
 
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \

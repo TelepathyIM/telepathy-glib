@@ -36,7 +36,7 @@ clean-local:
 # a different format here because we're part of the telepathy-glib source tree.
 LDADD = \
     $(top_builddir)/examples/extensions/libexample-extensions.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
     $(GLIB_LIBS) \
     $(DBUS_LIBS) \
     $(NULL)

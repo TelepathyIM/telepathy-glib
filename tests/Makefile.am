@@ -135,7 +135,7 @@ include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
 
 LDADD = \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
     $(GLIB_LIBS) \
     $(DBUS_LIBS) \
     $(NULL)

@@ -50,7 +50,7 @@ endif
 # Similarly, in an external project you'd put $(TP_GLIB_CFLAGS) at the end of
 # AM_CPPFLAGS.
 LDADD = \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
     $(GLIB_LIBS) \
     $(DBUS_LIBS) \
     $(NULL)

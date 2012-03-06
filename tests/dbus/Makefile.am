@@ -80,7 +80,7 @@ tpglib-dbus-tests.list:
 LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-reentrants.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
     $(GLIB_LIBS) \
     $(DBUS_LIBS) \
     $(NULL)

@@ -3,10 +3,10 @@ exec_prefix=
 abs_top_srcdir=@abs_top_srcdir@
 abs_top_builddir=@abs_top_builddir@
 
-Name: Telepathy-GLib (uninstalled copy)
+Name: Telepathy-GLib-1 (uninstalled copy)
 Description: GLib utility library for the Telepathy framework
 Version: @VERSION@
 Requires: pkg-config >= 0.21
 Requires.private: dbus-glib-1 >= 0.82, glib-2.0 >= 2.30, gobject-2.0 >= 2.30, gio-2.0 >= 2.30
-Libs: ${abs_top_builddir}/telepathy-glib/libtelepathy-glib.la
+Libs: ${abs_top_builddir}/telepathy-glib/libtelepathy-glib-1.la
 Cflags: -I${abs_top_srcdir} -I${abs_top_builddir}
