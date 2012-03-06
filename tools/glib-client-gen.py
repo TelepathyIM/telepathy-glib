@@ -511,19 +511,25 @@ class Generator(object):
                                                            iface_lc,
                                                            member_lc)
 
+        # This is needed by both reentrant and non-reentrant calls
+        if self.split_reentrants:
+            collector = lambda x: (self.b(x), self.rb(x))
+        else:
+            collector = self.b
+
         # The callback called by dbus-glib; this ends the call and collects
         # the results into a GValueArray.
-        self.b('static void')
-        self.b('%s (DBusGProxy *proxy,' % collect_callback)
-        self.b('    DBusGProxyCall *call,')
-        self.b('    gpointer user_data)')
-        self.b('{')
-        self.b('  GError *error = NULL;')
+        collector('static void')
+        collector('%s (DBusGProxy *proxy,' % collect_callback)
+        collector('    DBusGProxyCall *call,')
+        collector('    gpointer user_data)')
+        collector('{')
+        collector('  GError *error = NULL;')
 
         if len(out_args) > 0:
-            self.b('  GValueArray *args;')
-            self.b('  GValue blank = { 0 };')
-            self.b('  guint i;')
+            collector('  GValueArray *args;')
+            collector('  GValue blank = { 0 };')
+            collector('  guint i;')
 
             for arg in out_args:
                 name, info, tp_type, elt = arg
@@ -533,92 +539,93 @@ class Generator(object):
                 # have already allocated storage for them". Thanks,
                 # dbus-glib...
                 if gtype == 'G_TYPE_VALUE':
-                    self.b('  GValue *%s = g_new0 (GValue, 1);' % name)
+                    collector('  GValue *%s = g_new0 (GValue, 1);' % name)
                 else:
-                    self.b('  %s%s;' % (ctype, name))
+                    collector('  %s%s;' % (ctype, name))
 
-        self.b('')
-        self.b('  dbus_g_proxy_end_call (proxy, call, &error,')
+        collector('')
+        collector('  dbus_g_proxy_end_call (proxy, call, &error,')
 
         for arg in out_args:
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             if gtype == 'G_TYPE_VALUE':
-                self.b('      %s, %s,' % (gtype, name))
+                collector('      %s, %s,' % (gtype, name))
             else:
-                self.b('      %s, &%s,' % (gtype, name))
+                collector('      %s, &%s,' % (gtype, name))
 
-        self.b('      G_TYPE_INVALID);')
+        collector('      G_TYPE_INVALID);')
 
         if len(out_args) == 0:
-            self.b('  tp_proxy_pending_call_v0_take_results (user_data, error,'
+            collector('  tp_proxy_pending_call_v0_take_results (user_data, error,'
                    'NULL);')
         else:
-            self.b('')
-            self.b('  if (error != NULL)')
-            self.b('    {')
-            self.b('      tp_proxy_pending_call_v0_take_results (user_data, error,')
-            self.b('          NULL);')
+            collector('')
+            collector('  if (error != NULL)')
+            collector('    {')
+            collector('      tp_proxy_pending_call_v0_take_results (user_data, error,')
+            collector('          NULL);')
 
             for arg in out_args:
                 name, info, tp_type, elt = arg
                 ctype, gtype, marshaller, pointer = info
                 if gtype == 'G_TYPE_VALUE':
-                    self.b('      g_free (%s);' % name)
+                    collector('      g_free (%s);' % name)
 
-            self.b('      return;')
-            self.b('    }')
-            self.b('')
-            self.b('  args = g_value_array_new (%d);' % len(out_args))
-            self.b('  g_value_init (&blank, G_TYPE_INT);')
-            self.b('')
-            self.b('  for (i = 0; i < %d; i++)' % len(out_args))
-            self.b('    g_value_array_append (args, &blank);')
+            collector('      return;')
+            collector('    }')
+            collector('')
+            collector('  args = g_value_array_new (%d);' % len(out_args))
+            collector('  g_value_init (&blank, G_TYPE_INT);')
+            collector('')
+            collector('  for (i = 0; i < %d; i++)' % len(out_args))
+            collector('    g_value_array_append (args, &blank);')
 
             for i, arg in enumerate(out_args):
                 name, info, tp_type, elt = arg
                 ctype, gtype, marshaller, pointer = info
 
-                self.b('')
-                self.b('  g_value_unset (args->values + %d);' % i)
-                self.b('  g_value_init (args->values + %d, %s);' % (i, gtype))
+                collector('')
+                collector('  g_value_unset (args->values + %d);' % i)
+                collector('  g_value_init (args->values + %d, %s);'
+                          % (i, gtype))
 
                 if gtype == 'G_TYPE_STRING':
-                    self.b('  g_value_take_string (args->values + %d, %s);'
-                           % (i, name))
+                    collector('  g_value_take_string (args->values + %d, %s);'
+                              % (i, name))
                 elif marshaller == 'BOXED':
-                    self.b('  g_value_take_boxed (args->values + %d, %s);'
-                            % (i, name))
+                    collector('  g_value_take_boxed (args->values + %d, %s);'
+                              % (i, name))
                 elif gtype == 'G_TYPE_UCHAR':
-                    self.b('  g_value_set_uchar (args->values + %d, %s);'
-                            % (i, name))
+                    collector('  g_value_set_uchar (args->values + %d, %s);'
+                              % (i, name))
                 elif gtype == 'G_TYPE_BOOLEAN':
-                    self.b('  g_value_set_boolean (args->values + %d, %s);'
-                            % (i, name))
+                    collector('  g_value_set_boolean (args->values + %d, %s);'
+                              % (i, name))
                 elif gtype == 'G_TYPE_INT':
-                    self.b('  g_value_set_int (args->values + %d, %s);'
-                            % (i, name))
+                    collector('  g_value_set_int (args->values + %d, %s);'
+                              % (i, name))
                 elif gtype == 'G_TYPE_UINT':
-                    self.b('  g_value_set_uint (args->values + %d, %s);'
-                            % (i, name))
+                    collector('  g_value_set_uint (args->values + %d, %s);'
+                              % (i, name))
                 elif gtype == 'G_TYPE_INT64':
-                    self.b('  g_value_set_int (args->values + %d, %s);'
-                            % (i, name))
+                    collector('  g_value_set_int (args->values + %d, %s);'
+                              % (i, name))
                 elif gtype == 'G_TYPE_UINT64':
-                    self.b('  g_value_set_uint (args->values + %d, %s);'
-                            % (i, name))
+                    collector('  g_value_set_uint (args->values + %d, %s);'
+                              % (i, name))
                 elif gtype == 'G_TYPE_DOUBLE':
-                    self.b('  g_value_set_double (args->values + %d, %s);'
-                            % (i, name))
+                    collector('  g_value_set_double (args->values + %d, %s);'
+                              % (i, name))
                 else:
                     assert False, ("Don't know how to put %s in a GValue"
                                    % gtype)
 
-            self.b('  tp_proxy_pending_call_v0_take_results (user_data, '
-                   'NULL, args);')
+            collector('  tp_proxy_pending_call_v0_take_results (user_data, '
+                      'NULL, args);')
 
-        self.b('}')
+        collector('}')
 
         self.b('static void')
         self.b('%s (TpProxy *self,' % invoke_callback)
