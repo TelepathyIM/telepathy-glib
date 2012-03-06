@@ -1,7 +1,0 @@
-Version: TELEPATHY_GLIB_0.7.35
-Extends: TELEPATHY_GLIB_0.7.34
-Release: 0.7.35
-
-tp_dbus_daemon_get_unique_name
-tp_dbus_daemon_list_activatable_names
-tp_dbus_daemon_list_names

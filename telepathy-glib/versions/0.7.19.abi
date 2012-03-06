@@ -1,9 +1,0 @@
-Version: TELEPATHY_GLIB_0.7.19
-Extends: TELEPATHY_GLIB_0.7.18
-Release: 0.7.19
-
-tp_channel_borrow_immutable_properties
-tp_channel_new_from_properties
-tp_connection_get_contact_attributes
-tp_mixin_class_get_offset
-tp_mixin_instance_get_offset

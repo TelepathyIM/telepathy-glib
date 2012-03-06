@@ -1,6 +1,0 @@
-Version: TELEPATHY_GLIB_0.7.30
-Extends: TELEPATHY_GLIB_0.7.29
-Release: 0.7.30
-
-tp_dbus_daemon_release_name
-tp_dbus_daemon_request_name
