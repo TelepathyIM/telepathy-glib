@@ -93,6 +93,4 @@ void tp_dbus_daemon_unregister_object (TpDBusDaemon *self, gpointer object);
 
 G_END_DECLS
 
-#include <telepathy-glib/_gen/tp-cli-dbus-daemon.h>
-
 #endif

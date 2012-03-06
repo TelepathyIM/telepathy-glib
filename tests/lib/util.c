@@ -12,6 +12,7 @@
 
 #include "tests/lib/util.h"
 
+#include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/connection.h>
 
 #include <glib/gstdio.h>

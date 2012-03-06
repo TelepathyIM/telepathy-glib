@@ -26,6 +26,7 @@
 
 #include <telepathy-glib/base-client-internal.h>
 #include <telepathy-glib/channel.h>
+#include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>

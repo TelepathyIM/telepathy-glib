@@ -14,6 +14,7 @@
 #include <stdio.h>
 
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/cli-misc.h>
 
 static int exit_status = 1;
 

@@ -24,6 +24,7 @@
 #include "telepathy-glib/account-manager-internal.h"
 #include "telepathy-glib/account-internal.h"
 
+#include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>

@@ -23,6 +23,7 @@
 
 #include "telepathy-glib/channel-internal.h"
 
+#include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>

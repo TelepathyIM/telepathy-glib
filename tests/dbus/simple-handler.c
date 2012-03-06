@@ -10,6 +10,7 @@
 #include "config.h"
 
 #include <telepathy-glib/simple-handler.h>
+#include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/client.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>

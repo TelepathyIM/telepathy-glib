@@ -26,6 +26,7 @@
 
 #include <string.h>
 
+#include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/automatic-client-factory.h>
 #include <telepathy-glib/util.h>

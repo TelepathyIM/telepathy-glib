@@ -98,6 +98,7 @@
 
 #include "telepathy-glib/file-transfer-channel.h"
 
+#include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gnio-util.h>
 #include <telepathy-glib/gtypes.h>

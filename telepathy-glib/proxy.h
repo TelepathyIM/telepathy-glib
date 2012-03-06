@@ -182,6 +182,4 @@ gboolean tp_proxy_prepare_finish (gpointer self,
 
 G_END_DECLS
 
-#include <telepathy-glib/_gen/tp-cli-generic.h>
-
 #endif /* #ifndef __TP_PROXY_H__*/
