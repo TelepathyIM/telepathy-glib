@@ -1671,11 +1671,13 @@ typedef struct
   TpConnectionManagerListCb callback;
   gpointer user_data;
   GDestroyNotify destroy;
+  gpointer weak_object;
   TpProxyPendingCall *pending_call;
   size_t base_len;
   gsize refcount;
   gsize cms_to_ready;
   unsigned getting_names:1;
+  unsigned had_weak_object:1;
 } _ListContext;
 
 static void
@@ -1685,6 +1687,10 @@ list_context_unref (_ListContext *list_context)
 
   if (--list_context->refcount > 0)
     return;
+
+  if (list_context->weak_object != NULL)
+    g_object_remove_weak_pointer (list_context->weak_object,
+        &list_context->weak_object);
 
   if (list_context->destroy != NULL)
     list_context->destroy (list_context->user_data);
@@ -1707,14 +1713,13 @@ list_context_unref (_ListContext *list_context)
 }
 
 static void
-tp_list_connection_managers_cm_ready (TpConnectionManager *cm,
-                                      const GError *error,
-                                      gpointer user_data,
-                                      GObject *weak_object)
+tp_list_connection_managers_cm_prepared (GObject *source G_GNUC_UNUSED,
+    GAsyncResult *result G_GNUC_UNUSED,
+    gpointer user_data)
 {
   _ListContext *list_context = user_data;
 
-  /* ignore errors here - all we guarantee is that the CM is ready
+  /* ignore the result here - all we guarantee is that the CM is ready
    * *if possible* */
 
   if ((--list_context->cms_to_ready) == 0)
@@ -1727,10 +1732,19 @@ tp_list_connection_managers_cm_ready (TpConnectionManager *cm,
       g_ptr_array_add (list_context->arr, NULL);
       cms = (TpConnectionManager **) list_context->arr->pdata;
 
-      list_context->callback (cms, n_cms, NULL, list_context->user_data,
-          weak_object);
+      /* If we never had a weak object anyway, call the callback.
+       * If we had a weak object when we started, only call the callback
+       * if it hasn't died yet. */
+      if (!list_context->had_weak_object || list_context->weak_object != NULL)
+        {
+          list_context->callback (cms, n_cms, NULL, list_context->user_data,
+              list_context->weak_object);
+        }
+
       list_context->callback = NULL;
     }
+
+  list_context_unref (list_context);
 }
 
 static void
@@ -1742,6 +1756,9 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
 {
   _ListContext *list_context = user_data;
   const gchar * const *name_iter;
+
+  /* The TpProxy APIs we use guarantee this */
+  g_assert (weak_object != NULL || !list_context->had_weak_object);
 
   if (error != NULL)
     {
@@ -1788,9 +1805,8 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
         {
           TpConnectionManager *cm = g_ptr_array_index (list_context->arr, i);
 
-          tp_connection_manager_call_when_ready (cm,
-              tp_list_connection_managers_cm_ready, list_context,
-              (GDestroyNotify) list_context_unref, weak_object);
+          tp_proxy_prepare_async (cm, NULL,
+              tp_list_connection_managers_cm_prepared, list_context);
         }
     }
   else
@@ -1845,6 +1861,13 @@ tp_list_connection_managers (TpDBusDaemon *bus_daemon,
       g_object_unref);
   list_context->arr = NULL;
   list_context->cms_to_ready = 0;
+
+  if (weak_object != NULL)
+    {
+      list_context->weak_object = weak_object;
+      list_context->had_weak_object = TRUE;
+      g_object_add_weak_pointer (weak_object, &list_context->weak_object);
+    }
 
   tp_dbus_daemon_list_activatable_names (bus_daemon, 2000,
       tp_list_connection_managers_got_names, list_context,
