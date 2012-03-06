@@ -1510,7 +1510,7 @@ cb_fs_new_active_candidate_pair (TfCallStream *stream,
   if (!stream->endpoint)
     return;
 
-  local_tp_candidate =_to_tpcandidate (stream, local_candidate);
+  local_tp_candidate = fscandidate_to_tpcandidate (stream, local_candidate);
   remote_tp_candidate = fscandidate_to_tpcandidate (stream, remote_candidate);
 
   tp_cli_call_stream_endpoint_call_set_selected_candidate_pair (
