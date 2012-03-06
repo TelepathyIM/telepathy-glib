@@ -23,6 +23,7 @@
 
 #include "telepathy-glib/channel-dispatcher.h"
 
+#include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/errors.h>

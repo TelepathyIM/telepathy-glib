@@ -78,6 +78,7 @@
 #include <telepathy-glib/channel-dispatcher.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/channel.h>
+#include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/simple-handler.h>
 #include <telepathy-glib/util.h>

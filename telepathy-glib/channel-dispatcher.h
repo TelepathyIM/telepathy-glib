@@ -84,6 +84,4 @@ gboolean tp_channel_dispatcher_present_channel_finish (
 
 G_END_DECLS
 
-#include <telepathy-glib/_gen/tp-cli-channel-dispatcher.h>
-
 #endif

@@ -178,6 +178,4 @@ gboolean tp_channel_dispatch_operation_destroy_channels_finish (
 
 G_END_DECLS
 
-#include <telepathy-glib/_gen/tp-cli-channel-dispatch-operation.h>
-
 #endif

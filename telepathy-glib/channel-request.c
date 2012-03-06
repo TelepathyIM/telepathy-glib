@@ -26,6 +26,7 @@
 #include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/automatic-proxy-factory.h>
 #include <telepathy-glib/channel.h>
+#include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/errors.h>
