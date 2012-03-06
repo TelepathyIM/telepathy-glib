@@ -13,6 +13,7 @@
 #include "simple-channel-request.h"
 
 #include <telepathy-glib/client.h>
+#include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/svc-channel-request.h>

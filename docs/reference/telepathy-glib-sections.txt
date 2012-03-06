@@ -3987,23 +3987,6 @@ tp_account_get_feature_quark_core
 tp_account_get_feature_quark_connection
 tp_account_get_feature_quark_addressing
 tp_account_get_feature_quark_storage
-<SUBSECTION>
-tp_cli_account_callback_for_reconnect
-tp_cli_account_call_reconnect
-tp_cli_account_callback_for_remove
-tp_cli_account_call_remove
-tp_cli_account_callback_for_update_parameters
-tp_cli_account_call_update_parameters
-tp_cli_account_signal_callback_account_property_changed
-tp_cli_account_connect_to_account_property_changed
-tp_cli_account_signal_callback_removed
-tp_cli_account_connect_to_removed
-<SUBSECTION>
-tp_cli_account_interface_avatar_signal_callback_avatar_changed
-tp_cli_account_interface_avatar_connect_to_avatar_changed
-<SUBSECTION>
-tp_cli_account_interface_addressing_callback_for_set_uri_scheme_association
-tp_cli_account_interface_addressing_call_set_uri_scheme_association
 <SUBSECTION Standard>
 TP_ACCOUNT
 TP_IS_ACCOUNT
@@ -4038,13 +4021,6 @@ tp_account_manager_enable_restart
 TP_ACCOUNT_MANAGER_FEATURE_CORE
 <SUBSECTION Private>
 tp_account_manager_get_feature_quark_core
-<SUBSECTION>
-tp_cli_account_manager_callback_for_create_account
-tp_cli_account_manager_call_create_account
-tp_cli_account_manager_signal_callback_account_removed
-tp_cli_account_manager_connect_to_account_removed
-tp_cli_account_manager_signal_callback_account_usability_changed
-tp_cli_account_manager_connect_to_account_usability_changed
 <SUBSECTION Standard>
 TP_ACCOUNT_MANAGER
 TP_IS_ACCOUNT_MANAGER
@@ -4056,6 +4032,34 @@ TP_ACCOUNT_MANAGER_GET_CLASS
 TpAccountManagerPrivate
 TpAccountManagerClassPrivate
 </SECTION>
+
+<SECTION>
+<FILE>cli-account-manager</FILE>
+<INCLUDE>telepathy-glib/cli-misc.h</INCLUDE>
+<TITLE>cli-account-manager</TITLE>
+tp_cli_account_manager_callback_for_create_account
+tp_cli_account_manager_call_create_account
+tp_cli_account_manager_signal_callback_account_removed
+tp_cli_account_manager_connect_to_account_removed
+tp_cli_account_manager_signal_callback_account_usability_changed
+tp_cli_account_manager_connect_to_account_usability_changed
+<SUBSECTION>
+tp_cli_account_callback_for_reconnect
+tp_cli_account_call_reconnect
+tp_cli_account_callback_for_remove
+tp_cli_account_call_remove
+tp_cli_account_callback_for_update_parameters
+tp_cli_account_call_update_parameters
+tp_cli_account_signal_callback_account_property_changed
+tp_cli_account_connect_to_account_property_changed
+tp_cli_account_signal_callback_removed
+tp_cli_account_connect_to_removed
+<SUBSECTION>
+tp_cli_account_interface_avatar_signal_callback_avatar_changed
+tp_cli_account_interface_avatar_connect_to_avatar_changed
+<SUBSECTION>
+tp_cli_account_interface_addressing_callback_for_set_uri_scheme_association
+tp_cli_account_interface_addressing_call_set_uri_scheme_association
 
 <SECTION>
 <FILE>channel-dispatcher</FILE>
@@ -4273,7 +4277,22 @@ TP_TYPE_SVC_CHANNEL_REQUEST
 TpClient
 TpClientClass
 tp_client_init_known_interfaces
-<SUBSECTION>
+<SUBSECTION Standard>
+tp_client_get_type
+TP_CLIENT
+TP_CLIENT_CLASS
+TP_CLIENT_GET_CLASS
+TP_IS_CLIENT
+TP_IS_CLIENT_CLASS
+TP_TYPE_CLIENT
+TpClientClassPrivate
+TpClientPrivate
+</SECTION>
+
+<SECTION>
+<FILE>cli-client</FILE>
+<INCLUDE>telepathy-glib/cli-misc.h</INCLUDE>
+<TITLE>cli-client</TITLE>
 tp_cli_client_observer_callback_for_observe_channels
 tp_cli_client_observer_call_observe_channels
 <SUBSECTION>
@@ -4286,16 +4305,6 @@ tp_cli_client_interface_requests_call_remove_request
 <SUBSECTION>
 tp_cli_client_approver_callback_for_add_dispatch_operation
 tp_cli_client_approver_call_add_dispatch_operation
-<SUBSECTION Standard>
-tp_client_get_type
-TP_CLIENT
-TP_CLIENT_CLASS
-TP_CLIENT_GET_CLASS
-TP_IS_CLIENT
-TP_IS_CLIENT_CLASS
-TP_TYPE_CLIENT
-TpClientClassPrivate
-TpClientPrivate
 </SECTION>
 
 <SECTION>

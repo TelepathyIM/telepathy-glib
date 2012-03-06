@@ -75,12 +75,14 @@
     <xi:include href="xml/cli-anonymity.xml"/>
     <xi:include href="xml/cli-service-point.xml"/>
     <xi:include href="xml/account-manager.xml"/>
+    <xi:include href="xml/cli-account-manager.xml"/>
     <xi:include href="xml/account.xml"/>
     <xi:include href="xml/channel-dispatcher.xml"/>
     <xi:include href="xml/channel-dispatch-operation.xml"/>
     <xi:include href="xml/channel-request.xml"/>
     <xi:include href="xml/cli-channel-dispatcher.xml"/>
     <xi:include href="xml/client.xml"/>
+    <xi:include href="xml/cli-client.xml"/>
     <xi:include href="xml/account-channel-request.xml"/>
     <xi:include href="xml/stream-tube-channel.xml"/>
     <xi:include href="xml/stream-tube-connection.xml"/>

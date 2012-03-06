@@ -107,6 +107,4 @@ void tp_account_manager_enable_restart (TpAccountManager *manager);
 
 G_END_DECLS
 
-#include <telepathy-glib/_gen/tp-cli-account-manager.h>
-
 #endif

@@ -253,6 +253,4 @@ GBinding *tp_account_bind_connection_status_to_property (TpAccount *self,
 
 G_END_DECLS
 
-#include <telepathy-glib/_gen/tp-cli-account.h>
-
 #endif

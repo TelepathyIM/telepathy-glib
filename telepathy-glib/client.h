@@ -68,6 +68,4 @@ void tp_client_init_known_interfaces (void);
 
 G_END_DECLS
 
-#include <telepathy-glib/_gen/tp-cli-client.h>
-
 #endif
