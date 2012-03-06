@@ -107,6 +107,4 @@ TpAvatarRequirements * tp_protocol_get_avatar_requirements (TpProtocol *self);
 
 G_END_DECLS
 
-#include <telepathy-glib/_gen/tp-cli-protocol.h>
-
 #endif

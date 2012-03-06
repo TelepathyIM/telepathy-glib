@@ -42,6 +42,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_PARAMS
 #include "telepathy-glib/capabilities-internal.h"
+#include "telepathy-glib/cli-misc.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 

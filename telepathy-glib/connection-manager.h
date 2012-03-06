@@ -192,6 +192,4 @@ void tp_connection_manager_protocol_free (TpConnectionManagerProtocol *proto);
 
 G_END_DECLS
 
-#include <telepathy-glib/_gen/tp-cli-connection-manager.h>
-
 #endif

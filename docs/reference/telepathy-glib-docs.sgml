@@ -34,6 +34,7 @@
   <chapter id="ch-client">
     <title>Client-side proxies</title>
     <xi:include href="xml/connection-manager.xml"/>
+    <xi:include href="xml/cli-connection-manager.xml"/>
     <xi:include href="xml/protocol.xml"/>
     <xi:include href="xml/connection.xml"/>
     <xi:include href="xml/contact.xml"/>

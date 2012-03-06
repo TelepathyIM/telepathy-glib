@@ -22,10 +22,14 @@
 #ifndef TELEPATHY_GLIB_CLI_MISC_H
 #define TELEPATHY_GLIB_CLI_MISC_H
 
+#include <telepathy-glib/connection-manager.h>
+#include <telepathy-glib/protocol.h>
 #include <telepathy-glib/proxy.h>
 
+#include <telepathy-glib/_gen/tp-cli-connection-manager.h>
 #include <telepathy-glib/_gen/tp-cli-dbus-daemon.h>
 #include <telepathy-glib/_gen/tp-cli-generic.h>
+#include <telepathy-glib/_gen/tp-cli-protocol.h>
 
 #endif
 
