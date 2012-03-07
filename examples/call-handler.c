@@ -335,7 +335,7 @@ setup_video_source (ChannelContext *context, TfContent *content)
   return result;
 }
 
-static void
+static gboolean
 start_sending_cb (TfContent *content, gpointer user_data)
 {
   ChannelContext *context = user_data;
@@ -343,6 +343,7 @@ start_sending_cb (TfContent *content, gpointer user_data)
   FsMediaType mtype;
   GstElement *element;
   GstStateChangeReturn ret;
+  gboolean res = FALSE;
 
   g_debug ("Start sending");
 
@@ -378,7 +379,7 @@ start_sending_cb (TfContent *content, gpointer user_data)
     {
       tp_channel_close_async (TP_CHANNEL (context->proxy), NULL, NULL);
       g_warning ("Couldn't link source pipeline !?");
-      return;
+      goto out2;
     }
 
   ret = gst_element_set_state (element, GST_STATE_PLAYING);
@@ -386,12 +387,17 @@ start_sending_cb (TfContent *content, gpointer user_data)
     {
       tp_channel_close_async (TP_CHANNEL (context->proxy), NULL, NULL);
       g_warning ("source pipeline failed to start!?");
-      return;
+      goto out2;
     }
 
+  res = TRUE;
+
+out2:
   g_object_unref (srcpad);
 out:
   g_object_unref (sinkpad);
+
+  return res;
 }
 
 static void
