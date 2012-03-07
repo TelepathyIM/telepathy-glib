@@ -49,6 +49,7 @@ class Generator(object):
         f("""
  */
 
+#include <glib.h>
 """)
 
     # Body
