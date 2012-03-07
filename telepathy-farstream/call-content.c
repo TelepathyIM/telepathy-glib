@@ -2168,7 +2168,7 @@ tf_call_content_error_literal (TfCallContent *self,
     const gchar *detailed_reason,
     const gchar *message)
 {
-  g_warning ("%s", message);
+  g_debug ("Content error: %s", message);
   tp_cli_call_content_interface_media_call_fail (
       self->proxy, -1,
       tp_value_array_build (4,
