@@ -877,6 +877,7 @@ tp_protocol_has_param (TpProtocol *self,
   return (tp_protocol_get_param (self, param) != NULL);
 }
 
+/* FIXME: in Telepathy 1.0, rename to tp_protocol_borrow_param or remove */
 /**
  * tp_protocol_get_param:
  * @self: a protocol
@@ -895,6 +896,30 @@ const TpConnectionManagerParam *tp_protocol_get_param (TpProtocol *self,
   g_return_val_if_fail (TP_IS_PROTOCOL (self), FALSE);
   return tp_connection_manager_protocol_get_param (
       &self->priv->protocol_struct, param);
+}
+
+/* FIXME: in Telepathy 1.0, rename to tp_protocol_get_param */
+/**
+ * tp_protocol_dup_param:
+ * @self: a protocol
+ * @param: a parameter name
+ *
+ * <!-- no more to say -->
+ *
+ * Returns: (transfer full): a structure representing the parameter @param,
+ *  or %NULL if not supported. Free with tp_connection_manager_param_free()
+ *
+ * Since: 0.UNRELEASED
+ */
+TpConnectionManagerParam *
+tp_protocol_dup_param (TpProtocol *self,
+    const gchar *param)
+{
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
+
+  return tp_connection_manager_param_copy (
+      tp_connection_manager_protocol_get_param (
+        &self->priv->protocol_struct, param));
 }
 
 /**
@@ -934,6 +959,60 @@ tp_protocol_dup_param_names (TpProtocol *self)
   g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
   return tp_connection_manager_protocol_dup_param_names (
       &self->priv->protocol_struct);
+}
+
+/**
+ * tp_protocol_borrow_params: (skip)
+ * @self: a protocol
+ *
+ * Returns an array of parameters supported by this connection manager,
+ * without additional memory allocations. The returned array is owned by
+ * @self, and must not be used after @self has been freed.
+ *
+ * Returns: (transfer none): an array of #TpConnectionManagerParam structures,
+ *  terminated by one whose @name is %NULL
+ *
+ * Since: 0.UNRELEASED
+ */
+const TpConnectionManagerParam *
+tp_protocol_borrow_params (TpProtocol *self)
+{
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
+
+  return self->priv->protocol_struct.params;
+}
+
+/**
+ * tp_protocol_dup_params:
+ * @self: a protocol
+ *
+ * Returns a list of parameters supported by this connection manager.
+ *
+ * The returned list must be freed by the caller, for instance with
+ * <literal>g_list_free_full (l,
+ * (GDestroyNotify) tp_connection_manager_param_free)</literal>.
+ *
+ * Returns: (transfer full) (element-type TelepathyGLib.ConnectionManagerParam):
+ *  a list of #TpConnectionManagerParam structures, owned by the caller
+ *
+ * Since: 0.UNRELEASED
+ */
+GList *
+tp_protocol_dup_params (TpProtocol *self)
+{
+  guint i;
+  GList *ret = NULL;
+
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
+
+  for (i = 0; self->priv->protocol_struct.params[i].name != NULL; i++)
+    {
+      ret = g_list_prepend (ret,
+          tp_connection_manager_param_copy (
+            &(self->priv->protocol_struct.params[i])));
+    }
+
+  return g_list_reverse (ret);
 }
 
 /**

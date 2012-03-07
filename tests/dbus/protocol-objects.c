@@ -388,6 +388,8 @@ test_protocol_object (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpAvatarRequirements *req;
+  GList *l;
+  TpConnectionManagerParam *param;
 
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "example_echo_2");
@@ -424,6 +426,26 @@ test_protocol_object (Test *test,
 
   g_object_get (test->protocol, "avatar-requirements", &req, NULL);
   check_avatar_requirements (req);
+
+  l = tp_protocol_dup_params (test->protocol);
+  g_assert_cmpuint (g_list_length (l), ==, 1);
+  param = l->data;
+  g_assert_cmpstr (param->name, ==, "account");
+  g_list_free_full (l, (GDestroyNotify) tp_connection_manager_param_free);
+
+  g_assert_cmpstr (tp_protocol_get_param (test->protocol, "account")->name, ==,
+      "account");
+
+  param = tp_protocol_dup_param (test->protocol, "account");
+  /* it's a copy */
+  g_assert (param != tp_protocol_get_param (test->protocol, "account"));
+  g_assert_cmpstr (param->name, ==, "account");
+  tp_connection_manager_param_free (param);
+
+  g_assert_cmpstr (tp_protocol_borrow_params (test->protocol)[0].name, ==,
+      "account");
+  g_assert_cmpstr (tp_protocol_borrow_params (test->protocol)[1].name, ==,
+      NULL);
 }
 
 static void

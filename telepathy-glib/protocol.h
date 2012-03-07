@@ -85,10 +85,15 @@ GQuark tp_protocol_get_feature_quark_parameters (void) G_GNUC_CONST;
 
 const TpConnectionManagerParam *tp_protocol_get_param (TpProtocol *self,
     const gchar *param);
+TpConnectionManagerParam *tp_protocol_dup_param (TpProtocol *self,
+    const gchar *param);
 gboolean tp_protocol_has_param (TpProtocol *self,
     const gchar *param);
 gboolean tp_protocol_can_register (TpProtocol *self);
 GStrv tp_protocol_dup_param_names (TpProtocol *self) G_GNUC_WARN_UNUSED_RESULT;
+GList *tp_protocol_dup_params (TpProtocol *self) G_GNUC_WARN_UNUSED_RESULT;
+const TpConnectionManagerParam *tp_protocol_borrow_params (TpProtocol *self)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 const gchar * const *
 /* gtk-doc sucks */
