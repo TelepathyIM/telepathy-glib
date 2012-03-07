@@ -1,0 +1,6 @@
+Version: TELEPATHY_GLIB_DBUS_1.0.0
+Extends: -
+Release: 1.0.0
+
+# just to have something in this file
+tp_iface_quark_connection_manager

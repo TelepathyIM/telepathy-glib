@@ -7,11 +7,14 @@ offerer_SOURCES = offerer.c
 accepter_SOURCES = accepter.c
 
 # In an external project you'd use $(TP_GLIB_LIBS) (obtained from
-# pkg-config via autoconf) instead of the .la path
+# pkg-config via autoconf) instead of these .la paths
 LDADD = \
     @DBUS_LIBS@ \
     @GLIB_LIBS@ \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-1.la
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
+    $(NULL)
 
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \

@@ -27,17 +27,23 @@ codegen_extra_dist = \
     tls-cert.xml
 
 codegen_sources = \
-    $(nodist_libtelepathy_glib_internal_la_SOURCES) \
+    $(nodist_libtelepathy_glib_core_internal_la_SOURCES) \
+    $(nodist_libtelepathy_glib_dbus_internal_la_SOURCES) \
+    $(nodist_libtelepathy_glib_main_internal_la_SOURCES) \
     $(nodist_geninclude_HEADERS) \
+    $(nodist_gendbusinclude_HEADERS) \
     _gen/stable-spec.xml \
     _gen/spec-stamp \
     _gen/stable-stamp \
     $(NULL)
 
+nodist_gendbusinclude_HEADERS = \
+    _gen/telepathy-interfaces.h \
+    $(NULL)
+
 nodist_geninclude_HEADERS = \
     _gen/error-str.h \
     _gen/telepathy-enums.h \
-    _gen/telepathy-interfaces.h \
     _gen/genums.h \
     _gen/gtypes.h \
     _gen/tp-cli-account.h \
@@ -74,10 +80,16 @@ nodist_geninclude_HEADERS = \
     _gen/tp-svc-protocol.h \
     _gen/tp-svc-tls-cert.h
 
-nodist_libtelepathy_glib_internal_la_SOURCES = \
-    _gen/error-str.c \
-    _gen/interfaces-body.h \
+nodist_libtelepathy_glib_core_internal_la_SOURCES = \
     _gen/genums.c \
+    $(NULL)
+
+nodist_libtelepathy_glib_dbus_internal_la_SOURCES = \
+    _gen/interfaces-body.h \
+    $(NULL)
+
+nodist_libtelepathy_glib_main_internal_la_SOURCES = \
+    _gen/error-str.c \
     _gen/gtypes-body.h \
     _gen/register-dbus-glib-marshallers-body.h \
     _gen/tp-cli-account-body.h \

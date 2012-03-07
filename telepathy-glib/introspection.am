@@ -2,15 +2,16 @@
 
 introspection_extra_dist = \
 	TelepathyGLib-1.metadata \
+	TelepathyGLibDBus-1.metadata \
 	$(NULL)
 
 if HAVE_INTROSPECTION
 
 include $(INTROSPECTION_MAKEFILE)
 
-INTROSPECTION_GIRS = TelepathyGLib-1.gir
+INTROSPECTION_GIRS = TelepathyGLib-1.gir TelepathyGLibDBus-1.gir
 
-TelepathyGLib-1.gir: libtelepathy-glib-1.la
+TelepathyGLib-1.gir: libtelepathy-glib-1.la libtelepathy-glib-1-core.la
 # /!\ Order matters, see https://bugzilla.gnome.org/show_bug.cgi?id=660629
 TelepathyGLib_1_gir_FILES = \
 	$(srcdir)/proxy.c _gen/proxy-introspectable.h \
@@ -73,12 +74,19 @@ TelepathyGLib_1_gir_FILES = \
 	$(srcdir)/channel-dispatcher.c $(srcdir)/channel-dispatcher.h \
 	$(srcdir)/errors.c $(srcdir)/errors.h \
 	_gen/telepathy-enums.h _gen/telepathy-enums-gtk-doc.h \
+	$(NULL)
+
+TelepathyGLibDBus-1.gir: libtelepathy-glib-1-dbus.la TelepathyGLib-1.gir
+TelepathyGLibDBus_1_gir_FILES = \
 	_gen/telepathy-interfaces.h \
 	$(NULL)
 
 TelepathyGLib_1_gir_NAMESPACE = TelepathyGLib
 TelepathyGLib_1_gir_VERSION = 1
-TelepathyGLib_1_gir_LIBS = libtelepathy-glib-1.la
+TelepathyGLib_1_gir_LIBS = \
+    libtelepathy-glib-1.la \
+    libtelepathy-glib-1-core.la \
+    $(NULL)
 TelepathyGLib_1_gir_EXPORT_PACKAGES = telepathy-glib-1
 
 TelepathyGLib_1_gir_SCANNERFLAGS = \
@@ -99,12 +107,35 @@ TelepathyGLib_1_gir_PACKAGES = \
 	dbus-glib-1 \
 	$(NULL)
 
+TelepathyGLibDBus_1_gir_NAMESPACE = TelepathyGLibDBus
+TelepathyGLibDBus_1_gir_VERSION = 1
+TelepathyGLibDBus_1_gir_LIBS = \
+    libtelepathy-glib-1-dbus.la \
+    $(NULL)
+TelepathyGLibDBus_1_gir_EXPORT_PACKAGES = telepathy-glib-1-dbus
+TelepathyGLibDBus_1_gir_SCANNERFLAGS = \
+	--identifier-prefix=Tp \
+	-I$(top_builddir) \
+	-I$(top_srcdir) \
+	--c-include="telepathy-glib/telepathy-glib.h" \
+	--warn-all \
+	--include-uninstalled=TelepathyGLib-1.gir \
+	$(NULL)
+TelepathyGLibDBus_1_gir_INCLUDES = \
+	GLib-2.0 \
+	Gio-2.0 \
+	$(NULL)
+TelepathyGLibDBus_1_gir_PACKAGES = \
+	gio-2.0	\
+	dbus-glib-1 \
+	$(NULL)
+
 _gen/proxy-introspectable.h: proxy.h introspection.am
 	@$(mkdir_p) _gen
 	$(AM_V_GEN)sed -e 's/gpointer self/TpProxy *self/' < $< > $@
 
 girdir = $(datadir)/gir-1.0
-dist_gir_DATA = TelepathyGLib-1.gir
+dist_gir_DATA = TelepathyGLib-1.gir TelepathyGLibDBus-1.gir
 
 typelibsdir = $(libdir)/girepository-1.0/
 typelibs_DATA = $(dist_gir_DATA:.gir=.typelib)

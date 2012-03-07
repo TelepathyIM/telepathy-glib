@@ -77,7 +77,9 @@ test_capabilities_SOURCES = \
     capabilities.c
 test_capabilities_LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests-internal.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-main-internal.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
     $(GLIB_LIBS)
 
 # this one uses internal ABI
@@ -85,7 +87,9 @@ test_contact_search_result_SOURCES = \
     contact-search-result.c
 test_contact_search_result_LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests-internal.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-main-internal.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
     $(GLIB_LIBS)
 
 test_dtmf_player_SOURCES = dtmf-player.c
@@ -126,9 +130,15 @@ test_signal_connect_object_LDADD = \
 # this needs to link against the static convenience library so that
 # _tp_log is still visible
 test_debug_domain_LDADD = \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-main-internal.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
+    $(NULL)
 test_internal_debug_LDADD = \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-main-internal.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
+    $(NULL)
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
@@ -136,6 +146,8 @@ check-local: check-coding-style
 
 LDADD = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
     $(GLIB_LIBS) \
     $(DBUS_LIBS) \
     $(NULL)

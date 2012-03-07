@@ -26,9 +26,16 @@ m4_define([tp_glib_nano_version], [1])
 # (we don't guarantee that we won't add ABI then remove it again, if it was
 # never seen in a release).
 
+# These are shared by libtelepathy-glib-1 and libtelepathy-glib-1-core
 m4_define([tp_glib_lt_current], [0])
 m4_define([tp_glib_lt_revision], [0])
 m4_define([tp_glib_lt_age], [0])
+
+# The same, but for the generated code in libtelepathy-glib-1-dbus; this
+# breaks ABI more often
+m4_define([tp_glib_lt_dbus_current], [0])
+m4_define([tp_glib_lt_dbus_revision], [0])
+m4_define([tp_glib_lt_dbus_age], [0])
 
 # Some magic
 m4_define([tp_glib_base_version],
@@ -67,6 +74,13 @@ LT_AGE=tp_glib_lt_age
 AC_SUBST([LT_CURRENT])
 AC_SUBST([LT_REVISION])
 AC_SUBST([LT_AGE])
+
+LT_DBUS_CURRENT=tp_glib_lt_dbus_current
+LT_DBUS_REVISION=tp_glib_lt_dbus_revision
+LT_DBUS_AGE=tp_glib_lt_dbus_age
+AC_SUBST([LT_DBUS_CURRENT])
+AC_SUBST([LT_DBUS_REVISION])
+AC_SUBST([LT_DBUS_AGE])
 
 dnl optimizations, etc.
 COMPILER_OPTIMISATIONS
@@ -328,6 +342,8 @@ AC_OUTPUT( Makefile \
 	   examples/extensions/Makefile \
 	   spec/Makefile \
 	   telepathy-glib/Makefile \
+	   telepathy-glib/telepathy-glib-1-dbus.pc \
+	   telepathy-glib/telepathy-glib-1-dbus-uninstalled.pc \
 	   telepathy-glib/telepathy-glib-1.pc \
 	   telepathy-glib/telepathy-glib-1-uninstalled.pc \
 	   tests/Makefile \
