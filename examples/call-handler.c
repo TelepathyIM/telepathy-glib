@@ -33,6 +33,9 @@ typedef struct {
   guint input_volume;
   guint output_volume;
 
+  gboolean has_audio_src;
+  gboolean has_video_src;
+
   GstElement *video_input;
   GstElement *video_capsfilter;
 
@@ -278,19 +281,17 @@ setup_audio_source (ChannelContext *context, TfContent *content)
 static GstElement *
 setup_video_source (ChannelContext *context, TfContent *content)
 {
-  GstElement *result, *input, *rate, *scaler, *colorspace, *capsfilter;
+  GstElement *result, *capsfilter;
   GstCaps *caps;
   guint framerate = 0, width = 0, height = 0;
-  GstPad *pad, *ghost;
 
-  result = gst_bin_new ("video_input");
-  input = gst_element_factory_make ("autovideosrc", NULL);
-  rate = gst_element_factory_make ("videomaxrate", NULL);
-  scaler = gst_element_factory_make ("videoscale", NULL);
-  colorspace = gst_element_factory_make ("colorspace", NULL);
-  capsfilter = gst_element_factory_make ("capsfilter", NULL);
+  result = gst_parse_bin_from_description_full (
+      "autovideosrc ! videomaxrate ! videoscale ! colorspace ! capsfilter name=c",
+      TRUE, NULL, GST_PARSE_FLAG_FATAL_ERRORS, NULL);
 
-  g_assert (input && rate && scaler && colorspace && capsfilter);
+  g_assert (result);
+  capsfilter = gst_bin_get_by_name (GST_BIN (result), "c");
+
   g_object_get (content,
       "framerate", &framerate,
       "width", &width,
@@ -318,18 +319,7 @@ setup_video_source (ChannelContext *context, TfContent *content)
 
   g_object_set (G_OBJECT (capsfilter), "caps", caps, NULL);
 
-  gst_bin_add_many (GST_BIN (result), input, rate, scaler,
-      colorspace, capsfilter, NULL);
-  g_assert (gst_element_link_many (input, rate, scaler,
-      colorspace, capsfilter, NULL));
-
-  pad = gst_element_get_static_pad (capsfilter, "src");
-  g_assert (pad != NULL);
-
-  ghost = gst_ghost_pad_new ("src", pad);
-  gst_element_add_pad (result, ghost);
-
-  g_object_unref (pad);
+  gst_caps_unref (caps);
 
   context->video_input = result;
   context->video_capsfilter = capsfilter;
@@ -345,19 +335,16 @@ setup_video_source (ChannelContext *context, TfContent *content)
   return result;
 }
 
-
 static void
-content_added_cb (TfChannel *channel,
-    TfContent *content,
-    gpointer user_data)
+start_sending_cb (TfContent *content, gpointer user_data)
 {
+  ChannelContext *context = user_data;
   GstPad *srcpad, *sinkpad;
   FsMediaType mtype;
   GstElement *element;
   GstStateChangeReturn ret;
-  ChannelContext *context = user_data;
 
-  g_debug ("Content added");
+  g_debug ("Start sending");
 
   g_object_get (content,
     "sink-pad", &sinkpad,
@@ -367,9 +354,15 @@ content_added_cb (TfChannel *channel,
   switch (mtype)
     {
       case FS_MEDIA_TYPE_AUDIO:
+        if (context->has_audio_src)
+          goto out;
+
         element = setup_audio_source (context, content);
         break;
       case FS_MEDIA_TYPE_VIDEO:
+        if (context->has_video_src)
+          goto out;
+
         element = setup_video_source (context, content);
         break;
       default:
@@ -377,8 +370,6 @@ content_added_cb (TfChannel *channel,
         goto out;
     }
 
-  g_signal_connect (content, "src-pad-added",
-    G_CALLBACK (src_pad_added_cb), context);
 
   gst_bin_add (GST_BIN (context->pipeline), element);
   srcpad = gst_element_get_pad (element, "src");
@@ -401,6 +392,21 @@ content_added_cb (TfChannel *channel,
   g_object_unref (srcpad);
 out:
   g_object_unref (sinkpad);
+}
+
+static void
+content_added_cb (TfChannel *channel,
+    TfContent *content,
+    gpointer user_data)
+{
+  ChannelContext *context = user_data;
+
+  g_debug ("Content added");
+
+  g_signal_connect (content, "src-pad-added",
+    G_CALLBACK (src_pad_added_cb), context);
+  g_signal_connect (content, "start-sending",
+      G_CALLBACK (start_sending_cb), context);
 }
 
 static void
@@ -432,6 +438,19 @@ conference_added_cb (TfChannel *channel,
   gst_element_set_state (conference, GST_STATE_PLAYING);
 }
 
+
+static void
+conference_removed_cb (TfChannel *channel,
+  GstElement *conference,
+  gpointer user_data)
+{
+  ChannelContext *context = user_data;
+
+  gst_element_set_locked_state (conference, TRUE);
+  gst_element_set_state (conference, GST_STATE_NULL);
+  gst_bin_remove (GST_BIN (context->pipeline), conference);
+}
+
 static gboolean
 dump_pipeline_cb (gpointer data)
 {
@@ -450,17 +469,16 @@ new_tf_channel_cb (GObject *source,
   gpointer user_data)
 {
   ChannelContext *context = user_data;
+  GError *error = NULL;
 
   g_debug ("New TfChannel");
 
-  context->channel = TF_CHANNEL (g_async_initable_new_finish (
-      G_ASYNC_INITABLE (source), result, NULL));
-
+  context->channel = tf_channel_new_finish (source, result, &error);
 
   if (context->channel == NULL)
     {
-      g_warning ("Failed to create channel");
-      return;
+      g_error ("Failed to create channel: %s", error->message);
+      g_clear_error (&error);
     }
 
   g_debug ("Adding timeout");
@@ -468,6 +486,10 @@ new_tf_channel_cb (GObject *source,
 
   g_signal_connect (context->channel, "fs-conference-added",
     G_CALLBACK (conference_added_cb), context);
+
+
+  g_signal_connect (context->channel, "fs-conference-removed",
+    G_CALLBACK (conference_removed_cb), context);
 
   g_signal_connect (context->channel, "content-added",
     G_CALLBACK (content_added_cb), context);
