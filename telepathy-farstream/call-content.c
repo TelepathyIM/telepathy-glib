@@ -1088,13 +1088,7 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
 
   /* Guard against early disposal */
   if (self->call_channel == NULL)
-    {
-      g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-          "Call content has been disposed of");
-      g_simple_async_result_complete (res);
-      g_object_unref (res);
-      return;
-    }
+    goto disposed;
 
   if (error != NULL)
     {
@@ -1170,6 +1164,9 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
     fs_element_added_notifier_add (self->notifier,
       GST_BIN (self->fsconference));
 
+  /* Guard against early disposal */
+  if (self->call_channel == NULL)
+    goto disposed;
 
   gva = tp_asv_get_boxed (properties, "MediaDescriptionOffer",
       TP_STRUCT_TYPE_MEDIA_DESCRIPTION_OFFER);
@@ -1196,6 +1193,10 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
    * self possibly being disposed early */
   g_simple_async_result_set_op_res_gboolean (res, TRUE);
   g_simple_async_result_complete (res);
+
+  /* Guard against early disposal */
+  if (self->call_channel == NULL)
+    goto disposed_already_completed;
 
   /* Now process outstanding streams */
   add_initial_streams (self);
@@ -1241,6 +1242,17 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
   g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
       "Error getting the Content's properties: invalid type");
   g_simple_async_result_complete (res);
+  g_object_unref (res);
+  return;
+
+ disposed:
+
+  g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+      "Call content has been disposed of");
+  g_simple_async_result_complete (res);
+
+  /* fallthrough */
+ disposed_already_completed:
   g_object_unref (res);
   return;
 }
