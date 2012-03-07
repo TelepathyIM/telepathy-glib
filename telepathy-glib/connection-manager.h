@@ -155,6 +155,8 @@ const TpConnectionManagerProtocol *tp_connection_manager_get_protocol (
     TpConnectionManager *self, const gchar *protocol);
 TpProtocol *tp_connection_manager_get_protocol_object (
     TpConnectionManager *self, const gchar *protocol);
+GList *tp_connection_manager_dup_protocols (TpConnectionManager *self)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 gchar **tp_connection_manager_protocol_dup_param_names (
     const TpConnectionManagerProtocol *protocol)

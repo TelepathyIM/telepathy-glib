@@ -191,6 +191,7 @@ test_nothing_got_info (Test *test,
   g_assert_cmpuint (test->cm->running, ==, FALSE);
   g_assert_cmpuint (test->cm->info_source, ==, TP_CM_INFO_SOURCE_NONE);
   g_assert (test->cm->protocols == NULL);
+  g_assert (tp_connection_manager_dup_protocols (test->cm) == NULL);
 }
 
 static void
@@ -797,6 +798,7 @@ test_file_ready (Test *test,
   gchar *name;
   guint info_source;
   TestFlags flags = GPOINTER_TO_INT (data);
+  GList *l;
 
   test->error = NULL;
   test->cm = tp_connection_manager_new (test->dbus, "spurious",
@@ -836,6 +838,11 @@ test_file_ready (Test *test,
   g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_FILE);
   g_free (name);
 
+  l = tp_connection_manager_dup_protocols (test->cm);
+  g_assert_cmpuint (g_list_length (l), ==, 2);
+  g_assert (TP_IS_PROTOCOL (l->data));
+  g_assert (TP_IS_PROTOCOL (l->next->data));
+  g_list_free_full (l, g_object_unref);
 }
 
 static void
@@ -899,6 +906,7 @@ test_dbus_ready (Test *test,
   gchar *name;
   guint info_source;
   const TestFlags flags = GPOINTER_TO_INT (data);
+  GList *l;
 
   test->error = NULL;
   test->cm = tp_connection_manager_new (test->dbus,
@@ -953,6 +961,11 @@ test_dbus_ready (Test *test,
   g_assert_cmpstr (name, ==, "example_echo");
   g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_LIVE);
   g_free (name);
+
+  l = tp_connection_manager_dup_protocols (test->cm);
+  g_assert_cmpuint (g_list_length (l), ==, 1);
+  g_assert_cmpstr (tp_protocol_get_name (l->data), ==, "example");
+  g_list_free_full (l, g_object_unref);
 }
 
 static void

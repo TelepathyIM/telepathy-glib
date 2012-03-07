@@ -83,10 +83,10 @@
  * on a #TpConnectionManager.
  *
  * After this feature is prepared, basic information about the connection
- * manager's protocols (tp_connection_manager_get_protocol() and
- * tp_connection_manager_dup_protocol_names()), and their available parameters,
- * will have been retrieved, either by activating the connection manager over
- * D-Bus or by reading the .manager file in which that information is cached.
+ * manager's protocols (tp_connection_manager_dup_protocols()), and their
+ * available parameters, will have been retrieved, either by activating the
+ * connection manager over D-Bus or by reading the .manager file in which
+ * that information is cached.
  *
  * Since 0.11.11, this feature also finds any extra interfaces that
  * this connection manager has, and adds them to #TpProxy:interfaces (where
@@ -2279,6 +2279,43 @@ tp_connection_manager_get_protocol_object (TpConnectionManager *self,
     return NULL;
 
   return g_hash_table_lookup (self->priv->protocol_objects, protocol);
+}
+
+/* FIXME: in Telepathy 1.0, rename to get_protocols */
+/**
+ * tp_connection_manager_dup_protocols:
+ * @self: a connection manager
+ *
+ * Return objects representing all protocols supported by this connection
+ * manager.
+ *
+ * If this function is called before the connection manager information has
+ * been obtained, the result is always %NULL. Use tp_proxy_prepare_async()
+ * to wait for this.
+ *
+ * The caller must free the list, for instance with
+ * <literal>g_list_free_full (l, g_object_unref)</literal>.
+ *
+ * Returns: (transfer full) (element-type TelepathyGLib.Protocol): a list
+ *  of #TpProtocol objects representing the protocols supported by @self,
+ *  owned by the caller
+ *
+ * Since: 0.UNRELEASED
+ */
+GList *
+tp_connection_manager_dup_protocols (TpConnectionManager *self)
+{
+  GList *l;
+
+  g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), NULL);
+
+  if (self->priv->protocol_objects == NULL)
+    return NULL;
+
+  l = g_hash_table_get_values (self->priv->protocol_objects);
+
+  g_list_foreach (l, (GFunc) g_object_ref, NULL);
+  return l;
 }
 
 /**
