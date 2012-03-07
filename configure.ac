@@ -68,10 +68,6 @@ AC_SUBST([LT_CURRENT])
 AC_SUBST([LT_REVISION])
 AC_SUBST([LT_AGE])
 
-# Disable GLib deprecation warnings for now; GValueArray is deprecated but we
-# need it for dbus-glib.
-AC_DEFINE(GLIB_DISABLE_DEPRECATION_WARNINGS, 1, [Build with GLib deprecated])
-
 dnl optimizations, etc.
 COMPILER_OPTIMISATIONS
 COMPILER_COVERAGE
@@ -202,6 +198,9 @@ AC_SUBST(tpglibtestsdir)
 dnl Check for Glib
 PKG_CHECK_MODULES(GLIB,
   [glib-2.0 >= 2.30.0, gobject-2.0 >= 2.30.0, gio-2.0 >= 2.30.0])
+
+AC_DEFINE([GLIB_VERSION_MIN_REQUIRED], [GLIB_VERSION_2_30], [Ignore post 2.30 deprecations])
+AC_DEFINE([GLIB_VERSION_MAX_REQUIRED], [GLIB_VERSION_2_30], [Prevent post 2.30 APIs])
 
 dnl Check for GIO-Unix
 PKG_CHECK_MODULES(GIO_UNIX, [gio-unix-2.0],
