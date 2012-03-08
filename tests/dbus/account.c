@@ -478,6 +478,10 @@ test_storage (Test *test,
   GVariant *gvariant;
   GHashTable *info;
   GError *error = NULL;
+  gboolean found;
+  gint32 i;
+  guint32 u;
+  const gchar *s;
 
   test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
@@ -561,6 +565,31 @@ test_storage (Test *test,
   g_assert_cmpuint (tp_asv_get_uint32 (info, "two", NULL), ==, 2);
   g_assert_cmpstr (tp_asv_get_string (info, "marco"), ==, "polo");
 
+  tp_clear_object (&test->result);
+
+  /* the same, but with 100% more GVariant */
+  tp_account_dup_storage_specific_information_vardict_async (test->account,
+      tp_tests_result_ready_cb, &test->result);
+  tp_tests_run_until_result (&test->result);
+
+  gvariant = tp_account_dup_storage_specific_information_vardict_finish (
+      test->account, test->result, &error);
+  g_assert_no_error (error);
+
+  g_assert_cmpstr (g_variant_get_type_string (gvariant), ==, "a{sv}");
+  found = g_variant_lookup (gvariant, "one", "i", &i);
+  g_assert (found);
+  g_assert_cmpint (i, ==, 1);
+  found = g_variant_lookup (gvariant, "two", "u", &u);
+  g_assert (found);
+  g_assert_cmpint (u, ==, 2);
+  found = g_variant_lookup (gvariant, "marco", "&s", &s);
+  g_assert (found);
+  g_assert_cmpstr (s, ==, "polo");
+  found = g_variant_lookup (gvariant, "barisione", "&s", &s);
+  g_assert (!found);
+
+  g_variant_unref (gvariant);
   tp_clear_object (&test->result);
 }
 

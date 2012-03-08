@@ -248,6 +248,14 @@ void tp_account_get_storage_specific_information_async (TpAccount *self,
     GAsyncReadyCallback callback, gpointer user_data);
 GHashTable *tp_account_get_storage_specific_information_finish (TpAccount *self,
     GAsyncResult *result, GError **error);
+void tp_account_dup_storage_specific_information_vardict_async (
+    TpAccount *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+GVariant *tp_account_dup_storage_specific_information_vardict_finish (
+    TpAccount *self,
+    GAsyncResult *result,
+    GError **error);
 
 const gchar * const *
 /* ugh, gtk-doc */
