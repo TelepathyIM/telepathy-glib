@@ -3780,6 +3780,45 @@ tp_account_get_detailed_error (TpAccount *self,
 }
 
 /**
+ * tp_account_dup_detailed_error_vardict:
+ * @self: an account
+ * @details: (out) (allow-none) (transfer full):
+ *  optionally used to return a variant of type %G_VARIANT_TYPE_VARDICT,
+ *  which must be unreffed by the caller with g_variant_unref()
+ *
+ * If the account's connection is not connected, return the D-Bus error name
+ * with which it last disconnected or failed to connect (in particular, this
+ * is %TP_ERROR_STR_CANCELLED if it was disconnected by a user request).
+ * This is the same as #TpAccount:connection-error.
+ *
+ * If @details is not %NULL, it will be used to return additional details about
+ * the error (the same as #TpAccount:connection-error-details).
+ *
+ * Otherwise, return %NULL, without altering @details.
+ *
+ * The returned string and @details may become invalid when the main loop is
+ * re-entered or the account is destroyed.
+ *
+ * Returns: (transfer full) (allow-none): a D-Bus error name, or %NULL.
+ *
+ * Since: 0.UNRELEASED
+ */
+gchar *
+tp_account_dup_detailed_error_vardict (TpAccount *self,
+    GVariant **details)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
+
+  if (self->priv->connection_status == TP_CONNECTION_STATUS_CONNECTED)
+    return NULL;
+
+  if (details != NULL)
+    *details = _tp_asv_to_vardict (self->priv->error_details);
+
+  return g_strdup (self->priv->error);
+}
+
+/**
  * tp_account_get_storage_provider:
  * @self: a #TpAccount
  *

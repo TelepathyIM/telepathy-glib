@@ -190,6 +190,8 @@ TpConnectionStatus tp_account_get_connection_status (TpAccount *account,
 
 const gchar *tp_account_get_detailed_error (TpAccount *self,
     const GHashTable **details);
+gchar *tp_account_dup_detailed_error_vardict (TpAccount *self,
+    GVariant **details);
 
 TpConnectionPresenceType tp_account_get_current_presence (TpAccount *account,
     gchar **status, gchar **status_message);

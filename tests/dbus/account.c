@@ -695,6 +695,10 @@ test_connection (Test *test,
   GHashTable *change = tp_asv_new (NULL, NULL);
   TpConnection *conn;
   const GHashTable *details;
+  GVariant *details_v;
+  gboolean found;
+  gchar *s;
+  guint32 u;
 
   test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
@@ -836,6 +840,20 @@ test_connection (Test *test,
       "shiiiiii-");
   g_assert_cmpuint (tp_asv_get_uint32 (details, "bits-of-entropy", NULL), ==,
       15);
+
+  s = tp_account_dup_detailed_error_vardict (test->account, &details_v);
+  g_assert_cmpstr (s, ==, "org.debian.packages.OpenSSL.NotRandomEnough");
+  g_free (s);
+  g_assert_cmpuint (g_variant_n_children (details_v), >=, 2);
+  g_assert_cmpstr (g_variant_get_type_string (details_v), ==, "a{sv}");
+  found = g_variant_lookup (details_v, "debug-message", "s", &s);
+  g_assert (found);
+  g_assert_cmpstr (s, ==, "shiiiiii-");
+  g_free (s);
+  found = g_variant_lookup (details_v, "bits-of-entropy", "u", &u);
+  g_assert (found);
+  g_assert_cmpint (u, ==, 15);
+  g_variant_unref (details_v);
 
   /* staple on a Connection (this is intended for use in e.g. observers,
    * if they're told about a Connection that the Account hasn't told them
