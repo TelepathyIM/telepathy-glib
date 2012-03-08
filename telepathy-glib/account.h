@@ -125,8 +125,12 @@ gboolean tp_account_is_valid (TpAccount *account);
 void tp_account_update_parameters_async (TpAccount *account,
     GHashTable *parameters, const gchar **unset_parameters,
     GAsyncReadyCallback callback, gpointer user_data);
-
 gboolean tp_account_update_parameters_finish (TpAccount *account,
+    GAsyncResult *result, gchar ***reconnect_required, GError **error);
+void tp_account_update_parameters_vardict_async (TpAccount *account,
+    GVariant *parameters, const gchar **unset_parameters,
+    GAsyncReadyCallback callback, gpointer user_data);
+gboolean tp_account_update_parameters_vardict_finish (TpAccount *account,
     GAsyncResult *result, gchar ***reconnect_required, GError **error);
 
 void tp_account_remove_async (TpAccount *account,

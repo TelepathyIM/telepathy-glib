@@ -2752,6 +2752,74 @@ tp_account_update_parameters_finish (TpAccount *account,
 }
 
 /**
+ * tp_account_update_parameters_vardict_async:
+ * @account: a #TpAccount
+ * @parameters: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
+ *  containing new parameters to set on @account
+ * @unset_parameters: list of parameters to unset on @account
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous update of parameters of @account. When the
+ * operation is finished, @callback will be called. You can then call
+ * tp_account_update_parameters_finish() to get the result of the operation.
+ *
+ * If @parameters is a floating reference (see g_variant_ref_sink()),
+ * ownership of @parameters is taken by this function. This means
+ * you can pass the result of g_variant_new() or g_variant_new_parsed()
+ * directly to this function without additional reference-count management.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_account_update_parameters_vardict_async (TpAccount *account,
+    GVariant *parameters,
+    const gchar **unset_parameters,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GValue v = G_VALUE_INIT;
+
+  g_return_if_fail (parameters != NULL);
+  g_return_if_fail (g_variant_is_of_type (parameters, G_VARIANT_TYPE_VARDICT));
+
+  g_variant_ref_sink (parameters);
+
+  dbus_g_value_parse_g_variant (parameters, &v);
+  g_assert (G_VALUE_HOLDS (&v, TP_HASH_TYPE_STRING_VARIANT_MAP));
+
+  tp_account_update_parameters_async (account, g_value_get_boxed (&v),
+      unset_parameters, callback, user_data);
+  g_value_unset (&v);
+  g_variant_unref (parameters);
+}
+
+/**
+ * tp_account_update_parameters_vardict_finish:
+ * @account: a #TpAccount
+ * @result: a #GAsyncResult
+ * @reconnect_required: (out) (type GObject.Strv) (transfer full): a #GStrv to
+ *  fill with properties that need a reconnect to take effect
+ * @error: a #GError to fill
+ *
+ * Finishes an async update of the parameters on @account.
+ *
+ * Returns: %TRUE if the request succeeded, otherwise %FALSE
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_account_update_parameters_vardict_finish (TpAccount *account,
+    GAsyncResult *result,
+    gchar ***reconnect_required,
+    GError **error)
+{
+  /* share an implementation with the non-vardict version */
+  return tp_account_update_parameters_finish (account, result,
+      reconnect_required, error);
+}
+
+/**
  * tp_account_set_display_name_async:
  * @account: a #TpAccount
  * @display_name: a new display name, or %NULL to unset the display name
