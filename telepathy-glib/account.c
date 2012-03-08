@@ -174,6 +174,7 @@ enum {
   PROP_NORMALIZED_NAME,
   PROP_STORAGE_PROVIDER,
   PROP_STORAGE_IDENTIFIER,
+  PROP_STORAGE_IDENTIFIER_VARIANT,
   PROP_STORAGE_RESTRICTIONS,
   PROP_SUPERSEDES,
   N_PROPS
@@ -1137,6 +1138,10 @@ _tp_account_get_property (GObject *object,
     case PROP_STORAGE_IDENTIFIER:
       g_value_set_boxed (value, self->priv->storage_identifier);
       break;
+    case PROP_STORAGE_IDENTIFIER_VARIANT:
+      g_value_take_variant (value,
+          tp_account_dup_storage_identifier_variant (self));
+      break;
     case PROP_STORAGE_RESTRICTIONS:
       g_value_set_uint (value, self->priv->storage_restrictions);
       break;
@@ -1888,6 +1893,34 @@ tp_account_class_init (TpAccountClass *klass)
         "StorageIdentifier",
         "The storage identifier for this account",
         G_TYPE_VALUE,
+        G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:storage-identifier-variant:
+   *
+   * Provider-specific information used to identify this
+   * account. Use g_variant_get_type() to check that the type
+   * is what you expect. For instance, if you use a
+   * #TpAccount:storage-provider with numeric identifiers for accounts,
+   * this variant might have type %G_VARIANT_TYPE_UINT32;
+   * if the storage provider has string-based identifiers, it should
+   * have type %G_VARIANT_TYPE_STRING.
+   *
+   * This property cannot change once an Account has been created.
+   *
+   * This is not guaranteed to have been retrieved until the
+   * %TP_ACCOUNT_FEATURE_STORAGE feature has been prepared; until then,
+   * the value is %NULL.
+   *
+   * Since: 0.13.2
+   */
+  g_object_class_install_property (object_class,
+      PROP_STORAGE_IDENTIFIER_VARIANT,
+      g_param_spec_variant ("storage-identifier-variant",
+        "StorageIdentifier as variant",
+        "The storage identifier for this account",
+        G_VARIANT_TYPE_ANY,
+        NULL,
         G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
@@ -3665,6 +3698,7 @@ tp_account_get_storage_provider (TpAccount *self)
   return self->priv->storage_provider;
 }
 
+/* FIXME: in 1.0, remove */
 /**
  * tp_account_get_storage_identifier:
  * @self: a #TpAccount
@@ -3681,6 +3715,31 @@ tp_account_get_storage_identifier (TpAccount *self)
   g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
 
   return self->priv->storage_identifier;
+}
+
+/* FIXME: in 1.0, rename to tp_account_get_storage_identifier */
+/**
+ * tp_account_dup_storage_identifier_variant:
+ * @self: a #TpAccount
+ *
+ * Return provider-specific information used to identify this
+ * account. Use g_variant_get_type() to check that the type
+ * is what you expect; for instance, if the
+ * #TpAccount:storage-provider has string-based user identifiers,
+ * this variant should have type %G_VARIANT_TYPE_STRING.
+ *
+ * Returns: (transfer full): the same as the
+ *  #TpAccount:storage-identifier-variant property
+ *
+ * Since: 0.13.2
+ */
+GVariant *
+tp_account_dup_storage_identifier_variant (TpAccount *self)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
+
+  return g_variant_ref_sink (dbus_g_value_build_g_variant (
+        self->priv->storage_identifier));
 }
 
 /**
