@@ -127,7 +127,7 @@ tf_call_stream_update_sending_state (TfCallStream *self)
   FsStreamDirection dir;
 
   if (self->fsstream == NULL)
-    goto done;
+    return;
 
   if (self->endpoint == NULL)
     goto done;
