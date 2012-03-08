@@ -308,31 +308,31 @@ account_prepare_cb (GObject *source,
 
 #define assert_strprop(self, prop, val) \
   {\
-    gchar *s; \
+    gchar *_s; \
     \
     g_object_get (self, \
-        prop, &s, \
+        prop, &_s, \
         NULL); \
-    g_assert_cmpstr (s, ==, val);\
-    g_free (s); \
+    g_assert_cmpstr (_s, ==, val);\
+    g_free (_s); \
   }
 #define assert_uintprop(self, prop, val) \
   {\
-    guint u; \
+    guint _u; \
     \
     g_object_get (self, \
-        prop, &u, \
+        prop, &_u, \
         NULL); \
-    g_assert_cmpuint (u, ==, val);\
+    g_assert_cmpuint (_u, ==, val);\
   }
 #define assert_boolprop(self, prop, val) \
   {\
-    gboolean b; \
+    gboolean _b; \
     \
     g_object_get (self, \
-        prop, &b, \
+        prop, &_b, \
         NULL); \
-    g_assert_cmpint (b, ==, val);\
+    g_assert_cmpint (_b, ==, val);\
   }
 
 static void
