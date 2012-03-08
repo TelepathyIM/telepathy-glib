@@ -2353,6 +2353,36 @@ tp_account_get_parameters (TpAccount *account)
 }
 
 /**
+ * tp_account_dup_parameters_vardict:
+ * @account: a #TpAccount
+ *
+ * Returns the parameters of the account, in a variant of type
+ * %G_VARIANT_TYPE_VARDICT where the keys
+ * are parameter names (account, password, require-encryption etc.).
+ * Use g_variant_lookup() or g_variant_lookup_value() for convenient
+ * access to the values.
+ *
+ * The allowed parameters depend on the connection manager, and can be found
+ * via tp_connection_manager_get_protocol() and
+ * tp_connection_manager_protocol_get_param(). Well-known parameters are
+ * listed
+ * <ulink url="http://telepathy.freedesktop.org/spec/org.freedesktop.Telepathy.ConnectionManager.html#org.freedesktop.Telepathy.ConnectionManager.RequestConnection">in
+ * the Telepathy D-Bus Interface Specification</ulink>.
+ *
+ * Returns: (transfer full): the dictionary of
+ *  parameters on @account, of type %G_VARIANT_TYPE_VARDICT
+ *
+ * Since: 0.UNRELEASED
+ */
+GVariant *
+tp_account_dup_parameters_vardict (TpAccount *account)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+
+  return _tp_asv_to_vardict (account->priv->parameters);
+}
+
+/**
  * tp_account_is_enabled:
  * @account: a #TpAccount
  *

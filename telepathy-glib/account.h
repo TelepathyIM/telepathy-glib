@@ -197,6 +197,7 @@ TpConnectionPresenceType tp_account_get_automatic_presence (
     TpAccount *self, gchar **status, gchar **status_message);
 
 const GHashTable *tp_account_get_parameters (TpAccount *account);
+GVariant *tp_account_dup_parameters_vardict (TpAccount *account);
 
 const gchar *tp_account_get_nickname (TpAccount *account);
 

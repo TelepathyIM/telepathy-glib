@@ -346,6 +346,7 @@ test_prepare_success (Test *test,
   const GHashTable *details = GUINT_TO_POINTER (666);
   GStrv strv;
   const gchar * const *cstrv;
+  GVariant *variant;
 
   test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
@@ -367,6 +368,10 @@ test_prepare_success (Test *test,
   assert_strprop (test->account, "nickname", "badger");
   g_assert_cmpuint (tp_asv_size (tp_account_get_parameters (test->account)),
       ==, 0);
+  variant = tp_account_dup_parameters_vardict (test->account);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "a{sv}");
+  g_assert_cmpuint (g_variant_n_children (variant), ==, 0);
+  g_variant_unref (variant);
   g_assert (!tp_account_get_connect_automatically (test->account));
   assert_boolprop (test->account, "connect-automatically", FALSE);
   g_assert (tp_account_get_has_been_online (test->account));
