@@ -36,6 +36,8 @@ DBusGConnection *_tp_dbus_starter_bus_conn (GError **error)
 
 gboolean _tp_dbus_daemon_is_the_shared_one (TpDBusDaemon *self);
 
+GVariant *_tp_asv_to_vardict (const GHashTable *asv);
+
 G_END_DECLS
 
 #endif /* __TP_INTERNAL_DBUS_GLIB_H__ */
