@@ -1,23 +1,31 @@
+telepathy-farstream 0.2.2 (09 Mar 2012)
+=======================================
+
+- Allow an Endpoint to be removed so as it work with Rakia call transfers
+- Ignore port 2.26 deprecations
+- added a tf_channel_new_finish() function
+- Misc bug fixes
+
 telepathy-farstream 0.2.1 (20 Feb 2012)
-======================================
+=======================================
 
 - Now use Call1 as well as Streamed Media
 - Now requires Farstream and telepathy-glib 0.17.5
 
 telepathy-farstream 0.1.2 (18 Nov 2011)
-======================================
+=======================================
 
 - Fix linking with ld --as-needed (bigon)
 - Add AudioControl support (mike, sjoerd)
 - respond to farsight-negotiate events (olivier)
 
 telepathy-farstream 0.1.1 (14 Jul 2011)
-======================================
+=======================================
 - Fix the python bindings
 - Make the VideoControl interface actually work
 
 telepathy-farstream 0.1.0 (27 Jun 2011)
-======================================
+=======================================
 - Rename from telepathy-farsight to telepathy-farstream 
 - Implement Call API
 - Also implement Streamed Media API under the same C api
