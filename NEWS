@@ -1,9 +1,9 @@
-telepathy-farstream 0.2.2 (09 Mar 2012)
+telepathy-farstream 0.2.2 (08 Mar 2012)
 =======================================
 
 - Allow an Endpoint to be removed so as it work with Rakia call transfers
 - Ignore port 2.26 deprecations
-- added a tf_channel_new_finish() function
+- Added a tf_channel_new_finish() function
 - Misc bug fixes
 
 telepathy-farstream 0.2.1 (20 Feb 2012)
