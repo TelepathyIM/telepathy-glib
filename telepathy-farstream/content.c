@@ -5,7 +5,6 @@
 #include <farstream/fs-conference.h>
 
 #include "channel.h"
-#include "tf-signals-marshal.h"
 
 
 /**
@@ -135,8 +134,7 @@ tf_content_class_init (TfContentClass *klass)
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST,
           0,
-          g_signal_accumulator_true_handled, NULL,
-          _tf_marshal_BOOLEAN__VOID,
+          g_signal_accumulator_true_handled, NULL, NULL,
           G_TYPE_BOOLEAN, 0);
 
   /**
@@ -151,8 +149,7 @@ tf_content_class_init (TfContentClass *klass)
       g_signal_new ("stop-sending",
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST,
-          0, NULL, NULL,
-          g_cclosure_marshal_VOID__BOOLEAN,
+          0, NULL, NULL, NULL,
           G_TYPE_NONE, 0);
 
   /**
@@ -174,8 +171,7 @@ tf_content_class_init (TfContentClass *klass)
       g_signal_new ("src-pad-added",
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST,
-          0, NULL, NULL,
-          _tf_marshal_VOID__UINT_OBJECT_OBJECT_BOXED,
+          0, NULL, NULL, NULL,
           G_TYPE_NONE, 4,
           G_TYPE_UINT, FS_TYPE_STREAM, GST_TYPE_PAD, FS_TYPE_CODEC);
 
@@ -202,8 +198,7 @@ tf_content_class_init (TfContentClass *klass)
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST,
           0,
-          g_signal_accumulator_true_handled, NULL,
-          _tf_marshal_BOOLEAN__POINTER_UINT,
+          g_signal_accumulator_true_handled, NULL, NULL,
           G_TYPE_BOOLEAN, 2, G_TYPE_POINTER, G_TYPE_UINT);
 
   /**
@@ -220,8 +215,7 @@ tf_content_class_init (TfContentClass *klass)
       g_signal_new ("stop-receiving",
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST,
-          0, NULL, NULL,
-          _tf_marshal_VOID__BOOLEAN_POINTER_UINT,
+          0, NULL, NULL, NULL,
           G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_UINT);
 
   /**
@@ -236,8 +230,7 @@ tf_content_class_init (TfContentClass *klass)
       g_signal_new ("restart-source",
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST,
-          0, NULL, NULL,
-          _tf_marshal_VOID__VOID,
+          0, NULL, NULL, NULL,
           G_TYPE_NONE, 0);
 }
 

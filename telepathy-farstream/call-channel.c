@@ -35,7 +35,6 @@
 #include <farstream/fs-conference.h>
 
 #include "call-content.h"
-#include "tf-signals-marshal.h"
 
 
 static void call_channel_async_initable_init (GAsyncInitableIface *asynciface);
@@ -120,29 +119,25 @@ tf_call_channel_class_init (TfCallChannelClass *klass)
   signals[SIGNAL_FS_CONFERENCE_ADDED] = g_signal_new ("fs-conference-added",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tf_marshal_VOID__OBJECT,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE, 1, FS_TYPE_CONFERENCE);
 
   signals[SIGNAL_FS_CONFERENCE_REMOVED] = g_signal_new ("fs-conference-removed",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tf_marshal_VOID__OBJECT,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE, 1, FS_TYPE_CONFERENCE);
 
   signals[SIGNAL_CONTENT_ADDED] = g_signal_new ("content-added",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tf_marshal_VOID__OBJECT,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE, 1, TF_TYPE_CALL_CONTENT);
 
   signals[SIGNAL_CONTENT_REMOVED] = g_signal_new ("content-removed",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tf_marshal_VOID__OBJECT,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE, 1, TF_TYPE_CALL_CONTENT);
 }
 

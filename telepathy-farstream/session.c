@@ -25,7 +25,6 @@
 #include <farstream/fs-conference.h>
 
 #include "session-priv.h"
-#include "tf-signals-marshal.h"
 
 G_DEFINE_TYPE (TfSession, _tf_session, G_TYPE_OBJECT);
 
@@ -277,8 +276,7 @@ _tf_session_class_init (TfSessionClass *klass)
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST,
           0,
-          NULL, NULL,
-          _tf_marshal_VOID__BOXED_UINT_UINT_UINT,
+          NULL, NULL, NULL,
           G_TYPE_NONE, 4,
           DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
   signals[INVALIDATED] =
@@ -286,8 +284,7 @@ _tf_session_class_init (TfSessionClass *klass)
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST,
           0,
-          NULL, NULL,
-          g_cclosure_marshal_VOID__VOID,
+          NULL, NULL, NULL,
           G_TYPE_NONE, 0);
 }
 

@@ -38,7 +38,6 @@
 
 #include "channel.h"
 #include "channel-priv.h"
-#include "tf-signals-marshal.h"
 #include "media-signalling-channel.h"
 #include "media-signalling-content.h"
 #include "call-channel.h"
@@ -501,8 +500,7 @@ tf_channel_class_init (TfChannelClass *klass)
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST,
           0,
-          NULL, NULL,
-          g_cclosure_marshal_VOID__VOID,
+          NULL, NULL, NULL,
           G_TYPE_NONE, 0);
 
   /**
@@ -517,8 +515,7 @@ tf_channel_class_init (TfChannelClass *klass)
   signals[SIGNAL_FS_CONFERENCE_ADDED] = g_signal_new ("fs-conference-added",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tf_marshal_VOID__OBJECT,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE, 1, FS_TYPE_CONFERENCE);
 
   /**
@@ -533,8 +530,7 @@ tf_channel_class_init (TfChannelClass *klass)
   signals[SIGNAL_FS_CONFERENCE_REMOVED] = g_signal_new ("fs-conference-removed",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tf_marshal_VOID__OBJECT,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE, 1, FS_TYPE_CONFERENCE);
 
 
@@ -553,8 +549,7 @@ tf_channel_class_init (TfChannelClass *klass)
   signals[SIGNAL_CONTENT_ADDED] = g_signal_new ("content-added",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tf_marshal_VOID__OBJECT,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE, 1, TF_TYPE_CONTENT);
 
   /**
@@ -568,8 +563,7 @@ tf_channel_class_init (TfChannelClass *klass)
   signals[SIGNAL_CONTENT_REMOVED] = g_signal_new ("content-removed",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      _tf_marshal_VOID__OBJECT,
+      0, NULL, NULL, NULL,
       G_TYPE_NONE, 1, TF_TYPE_CONTENT);
 }
 

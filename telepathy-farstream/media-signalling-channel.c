@@ -36,7 +36,6 @@
 
 #include "stream.h"
 #include "session-priv.h"
-#include "tf-signals-marshal.h"
 
 
 
@@ -100,8 +99,7 @@ tf_media_signalling_channel_class_init (TfMediaSignallingChannelClass *klass)
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST,
           0,
-          NULL, NULL,
-          g_cclosure_marshal_VOID__OBJECT,
+          NULL, NULL, NULL,
           G_TYPE_NONE, 1, TF_TYPE_STREAM);
 
   /**
@@ -121,8 +119,7 @@ tf_media_signalling_channel_class_init (TfMediaSignallingChannelClass *klass)
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST,
           0,
-          NULL, NULL,
-          _tf_marshal_VOID__OBJECT,
+          NULL, NULL, NULL,
           G_TYPE_NONE, 1, FS_TYPE_CONFERENCE);
 
   /**
@@ -141,8 +138,7 @@ tf_media_signalling_channel_class_init (TfMediaSignallingChannelClass *klass)
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST,
           0,
-          NULL, NULL,
-          _tf_marshal_VOID__OBJECT_OBJECT,
+          NULL, NULL, NULL,
           G_TYPE_NONE, 2, FS_TYPE_CONFERENCE, FS_TYPE_PARTICIPANT);
 
 
@@ -151,8 +147,7 @@ tf_media_signalling_channel_class_init (TfMediaSignallingChannelClass *klass)
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST,
           0,
-          NULL, NULL,
-          _tf_marshal_BOXED__UINT,
+          NULL, NULL, NULL,
           FS_TYPE_CODEC_LIST, 1, G_TYPE_UINT);
 }
 

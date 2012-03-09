@@ -6,7 +6,6 @@ EXTRA_DIST = \
     glib-ginterface-gen.py \
     glib-gtypes-generator.py \
     glib-interfaces-gen.py \
-    glib-signals-marshal-gen.py \
     libglibcodegen.py \
     libtpcodegen.py \
     xincludator.py

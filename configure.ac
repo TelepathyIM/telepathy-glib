@@ -84,15 +84,12 @@ if test "x$enable_coverage" = "xyes"; then
 fi
 
 dnl Check for Glib
-PKG_CHECK_MODULES(GLIB, gobject-2.0 >= 2.26 glib-2.0 >= 2.26 gio-2.0)
-AC_DEFINE(GLIB_VERSION_MIN_REQUIRED, GLIB_VERSION_2_26, [Ignore post 2.26 deprecations])
-AC_DEFINE(GLIB_VERSION_MAX_REQUIRED, GLIB_VERSION_2_26, [Prevent post 2.26 APIs])
+PKG_CHECK_MODULES(GLIB, gobject-2.0 >= 2.30 glib-2.0 >= 2.30 gio-2.0)
+AC_DEFINE(GLIB_VERSION_MIN_REQUIRED, GLIB_VERSION_2_30, [Ignore post 2.30 deprecations])
+AC_DEFINE(GLIB_VERSION_MAX_REQUIRED, GLIB_VERSION_2_30, [Prevent post 2.30 APIs])
 
-
-GLIB_GENMARSHAL=`$PKG_CONFIG --variable=glib_genmarshal glib-2.0`
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
-AC_SUBST(GLIB_GENMARSHAL)
 
 dnl Check for DBus
 PKG_CHECK_MODULES(DBUS, [dbus-1 >= 0.60, dbus-glib-1 >= 0.60])
