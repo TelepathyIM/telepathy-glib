@@ -348,7 +348,10 @@ dbusconfigdir = @tpglibtestsdir@/dbus-installed
 dbusconfig_DATA = $(conf_files)
 endif
 
-_gen/svc.c _gen/svc.h: with-properties.xml \
+_gen/svc.h: _gen/svc.c
+	@:
+
+_gen/svc.c: with-properties.xml \
 	$(top_srcdir)/tools/glib-ginterface-gen.py \
 	Makefile.am
 	$(AM_V_at)$(mkdir_p) _gen
