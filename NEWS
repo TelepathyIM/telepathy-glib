@@ -9,10 +9,10 @@ Requirements:
 Deprecations:
 
 • tp_connection_is_ready(), tp_connection_call_when_ready,
-  TpConnection:connection-ready and the TpChannel equivalents are deprecated.
-  Use tp_proxy_prepare_async() and tp_proxy_is_ready() instead.
-  For connections, remember to ask for TP_CONNECTION_FEATURE_CONNECTED if
-  required.
+  TpConnection:connection-ready and the TpChannel and TpConnectionManager
+  equivalents are deprecated. Use tp_proxy_prepare_async() and
+  tp_proxy_is_ready() instead. For connections, remember to ask for
+  TP_CONNECTION_FEATURE_CONNECTED if required.
 
 Enhancements:
 
@@ -21,6 +21,13 @@ Enhancements:
 
 • Use GObject's FFI-based generic marshaller instead of generating our own
   marshallers (fd.o #46523, Simon)
+
+• Add tp_list_connection_managers_async, tp_protocol_dup_params,
+  tp_protocol_dup_param, tp_protocol_borrow_params,
+  tp_connection_manager_dup_protocols (Simon)
+
+• Add accessors for TpAccount properties, parameters and storage identifier
+  represented as a GVariant (fd.o #30422, Simon)
 
 Fixes:
 
@@ -35,6 +42,17 @@ Fixes:
   older gcc, and other compilers not targeting C1x (Simon)
 
 • Fix namespaces in example_call.manager (George)
+
+• Produce self-contained header files from glib-interfaces-gen.py
+  (fd.o #46835, Simon)
+
+• Correctly implement and document tp_call_channel_has_dtmf() (Xavier)
+
+• Fix various build failures in out-of-tree or parallel builds,
+  and don't rebuild everything whenever the documentation changes
+  (fd.o #36398, Simon)
+
+• Improve test coverage for the connection manager test (fd.o #46358, Simon)
 
 telepathy-glib 0.17.5 (2012-02-20)
 ==================================
