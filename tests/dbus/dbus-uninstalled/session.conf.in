@@ -12,7 +12,7 @@
 
   <listen>unix:tmpdir=/tmp</listen>
 
-  <servicedir>@abs_top_builddir@/tests/dbus/dbus-installed/services/</servicedir>
+  <servicedir>@abs_top_srcdir@/tests/dbus/dbus-uninstalled/services</servicedir>
 
   <policy context="default">
     <!-- Allow everything to be sent -->

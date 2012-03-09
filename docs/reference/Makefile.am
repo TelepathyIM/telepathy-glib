@@ -130,6 +130,13 @@ EXTRA_DIST += version.xml.in
 # for --rebuild-sections in $(SCAN_OPTIONS) e.g. $(DOC_MODULE)-sections.txt
 #DISTCLEANFILES +=
 
+# Work around gtk-doc using an outdated -sections.txt in out-of-tree builds:
+# redo the copy every time the files in the srcdir change
+setup-build.stamp: $(srcdir)/$(DOC_MODULE)-overrides.txt
+setup-build.stamp: $(srcdir)/$(DOC_MODULE)-sections.txt
+setup-build.stamp: $(srcdir)/$(DOC_MAIN_SGML_FILE)
+setup-build.stamp: $(srcdir)/tp-svc.xml
+
 if ENABLE_GTK_DOC
 check-local:
 	@err=0; \

@@ -324,7 +324,10 @@ run-test.sh: run-test.sh.in
 
 dbus-uninstalled/%.conf: $(srcdir)/dbus-uninstalled/%.conf.in
 	$(AM_V_at)$(mkdir_p) dbus-uninstalled
-	$(AM_V_GEN)sed -e "s|[@]abs_top_builddir[@]|@abs_top_builddir@|g" $< > $@
+	$(AM_V_GEN)sed \
+		-e "s|[@]abs_top_builddir[@]|@abs_top_builddir@|g" \
+		-e "s|[@]abs_top_srcdir[@]|@abs_top_srcdir@|g" \
+		$< > $@
 
 dbus-installed/%.conf: $(srcdir)/dbus-installed/%.conf.in
 	$(AM_V_at)$(mkdir_p) dbus-installed
@@ -342,7 +345,10 @@ dbusconfigdir = @tpglibtestsdir@/dbus-installed
 dbusconfig_DATA = $(conf_files)
 endif
 
-_gen/svc.c _gen/svc.h: with-properties.xml \
+_gen/svc.h: _gen/svc.c
+	@:
+
+_gen/svc.c: with-properties.xml \
 	$(top_srcdir)/tools/glib-ginterface-gen.py \
 	Makefile.am
 	$(AM_V_at)$(mkdir_p) _gen

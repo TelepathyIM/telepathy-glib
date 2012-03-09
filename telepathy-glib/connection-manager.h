@@ -117,6 +117,12 @@ void tp_list_connection_managers (TpDBusDaemon *bus_daemon,
     gpointer user_data, GDestroyNotify destroy,
     GObject *weak_object);
 
+void tp_list_connection_managers_async (TpDBusDaemon *dbus_daemon,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+GList *tp_list_connection_managers_finish (GAsyncResult *result,
+    GError **error);
+
 #ifndef TP_DISABLE_DEPRECATED
 typedef void (*TpConnectionManagerWhenReadyCb) (TpConnectionManager *cm,
     const GError *error, gpointer user_data, GObject *weak_object);
@@ -149,6 +155,8 @@ const TpConnectionManagerProtocol *tp_connection_manager_get_protocol (
     TpConnectionManager *self, const gchar *protocol);
 TpProtocol *tp_connection_manager_get_protocol_object (
     TpConnectionManager *self, const gchar *protocol);
+GList *tp_connection_manager_dup_protocols (TpConnectionManager *self)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 gchar **tp_connection_manager_protocol_dup_param_names (
     const TpConnectionManagerProtocol *protocol)

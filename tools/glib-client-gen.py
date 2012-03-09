@@ -27,6 +27,7 @@ import os.path
 import xml.dom.minidom
 from getopt import gnu_getopt
 
+from libtpcodegen import file_set_contents
 from libglibcodegen import Signature, type_to_gtype, cmp_by_name, \
         get_docstring, xml_escape, get_deprecated
 
@@ -1258,13 +1259,13 @@ class Generator(object):
         self.h('G_END_DECLS')
         self.h('')
 
-        open(self.basename + '.h', 'w').write('\n'.join(self.__header))
-        open(self.basename + '-body.h', 'w').write('\n'.join(self.__body))
-        open(self.basename + '-gtk-doc.h', 'w').write('\n'.join(self.__docs))
-
         if self.split_reentrants:
-            open(self.basename + '-reentrant-body.h', 'w').write('\n'.join(self.__reentrant_body))
-            open(self.basename + '-reentrant.h', 'w').write('\n'.join(self.__reentrant_header))
+            file_set_contents(self.basename + '-reentrant-body.h', '\n'.join(self.__reentrant_body))
+            file_set_contents(self.basename + '-reentrant.h', '\n'.join(self.__reentrant_header))
+
+        file_set_contents(self.basename + '.h', '\n'.join(self.__header))
+        file_set_contents(self.basename + '-body.h', '\n'.join(self.__body))
+        file_set_contents(self.basename + '-gtk-doc.h', '\n'.join(self.__docs))
 
 def types_to_gtypes(types):
     return [type_to_gtype(t)[1] for t in types]

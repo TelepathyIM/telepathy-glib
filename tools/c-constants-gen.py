@@ -3,6 +3,7 @@
 from sys import argv, stdout, stderr
 import xml.dom.minidom
 
+from libtpcodegen import file_set_contents
 from libglibcodegen import NS_TP, get_docstring, \
         get_descendant_text, get_by_path
 
@@ -11,19 +12,23 @@ class Generator(object):
         self.prefix = prefix + '_'
         self.spec = get_by_path(dom, "spec")[0]
 
-        self.__header = open(output_base + '.h', 'w')
-        self.__docs = open(output_base + '-gtk-doc.h', 'w')
+	self.output_base = output_base
+        self.__header = []
+        self.__docs = []
 
     def __call__(self):
         self.do_header()
         self.do_body()
         self.do_footer()
 
+        file_set_contents(self.output_base + '.h', ''.join(self.__header))
+        file_set_contents(self.output_base + '-gtk-doc.h', ''.join(self.__docs))
+
     def write(self, code):
-        self.__header.write(code.encode('utf-8'))
+        self.__header.append(code.encode('utf-8'))
 
     def d(self, code):
-        self.__docs.write(code.encode('utf-8'))
+        self.__docs.append(code.encode('utf-8'))
 
     # Header
     def do_header(self):

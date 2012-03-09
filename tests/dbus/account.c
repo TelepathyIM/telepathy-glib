@@ -257,22 +257,38 @@ test_setters (Test *test,
 
 static void
 test_reconnect (Test *test,
-    gconstpointer data G_GNUC_UNUSED)
+    gconstpointer data)
 {
-  GHashTable *set = tp_asv_new (
-      "set", G_TYPE_STRING, "value",
-      NULL);
-  const gchar *unset[] = { "unset", NULL };
   GStrv reconnect_required;
+  const gchar *unset[] = { "unset", NULL };
 
   test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
 
-  tp_account_update_parameters_async (test->account, set, unset,
-      tp_tests_result_ready_cb, &test->result);
-  tp_tests_run_until_result (&test->result);
-  tp_account_update_parameters_finish (test->account, test->result,
-      &reconnect_required, &test->error);
+  if (!tp_strdiff (data, "vardict"))
+    {
+      tp_account_update_parameters_vardict_async (test->account,
+          g_variant_new_parsed ("{ 'set': <%s> }", "value"), unset,
+          tp_tests_result_ready_cb, &test->result);
+      tp_tests_run_until_result (&test->result);
+      tp_account_update_parameters_vardict_finish (test->account, test->result,
+          &reconnect_required, &test->error);
+    }
+  else
+    {
+      GHashTable *set = tp_asv_new (
+          "set", G_TYPE_STRING, "value",
+          NULL);
+
+      tp_account_update_parameters_async (test->account, set, unset,
+          tp_tests_result_ready_cb, &test->result);
+      tp_tests_run_until_result (&test->result);
+      tp_account_update_parameters_finish (test->account, test->result,
+          &reconnect_required, &test->error);
+
+      g_hash_table_unref (set);
+    }
+
   g_assert_no_error (test->error);
   /* check that reconnect_required survives longer than result */
   tp_clear_object (&test->result);
@@ -308,31 +324,31 @@ account_prepare_cb (GObject *source,
 
 #define assert_strprop(self, prop, val) \
   {\
-    gchar *s; \
+    gchar *_s; \
     \
     g_object_get (self, \
-        prop, &s, \
+        prop, &_s, \
         NULL); \
-    g_assert_cmpstr (s, ==, val);\
-    g_free (s); \
+    g_assert_cmpstr (_s, ==, val);\
+    g_free (_s); \
   }
 #define assert_uintprop(self, prop, val) \
   {\
-    guint u; \
+    guint _u; \
     \
     g_object_get (self, \
-        prop, &u, \
+        prop, &_u, \
         NULL); \
-    g_assert_cmpuint (u, ==, val);\
+    g_assert_cmpuint (_u, ==, val);\
   }
 #define assert_boolprop(self, prop, val) \
   {\
-    gboolean b; \
+    gboolean _b; \
     \
     g_object_get (self, \
-        prop, &b, \
+        prop, &_b, \
         NULL); \
-    g_assert_cmpint (b, ==, val);\
+    g_assert_cmpint (_b, ==, val);\
   }
 
 static void
@@ -346,6 +362,7 @@ test_prepare_success (Test *test,
   const GHashTable *details = GUINT_TO_POINTER (666);
   GStrv strv;
   const gchar * const *cstrv;
+  GVariant *variant;
 
   test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
@@ -367,6 +384,10 @@ test_prepare_success (Test *test,
   assert_strprop (test->account, "nickname", "badger");
   g_assert_cmpuint (tp_asv_size (tp_account_get_parameters (test->account)),
       ==, 0);
+  variant = tp_account_dup_parameters_vardict (test->account);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "a{sv}");
+  g_assert_cmpuint (g_variant_n_children (variant), ==, 0);
+  g_variant_unref (variant);
   g_assert (!tp_account_get_connect_automatically (test->account));
   assert_boolprop (test->account, "connect-automatically", FALSE);
   g_assert (tp_account_get_has_been_online (test->account));
@@ -475,8 +496,13 @@ test_storage (Test *test,
 {
   GQuark account_features[] = { TP_ACCOUNT_FEATURE_STORAGE, 0 };
   GValue *gvalue;
+  GVariant *gvariant;
   GHashTable *info;
   GError *error = NULL;
+  gboolean found;
+  gint32 i;
+  guint32 u;
+  const gchar *s;
 
   test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
@@ -496,6 +522,11 @@ test_storage (Test *test,
           "storage-identifier", &gvalue,
           NULL);
       g_assert (gvalue == NULL);
+      g_assert (tp_account_get_storage_identifier (test->account) == NULL);
+      g_object_get (test->account,
+          "storage-identifier", &gvariant,
+          NULL);
+      g_assert (gvariant == NULL);
       g_assert_cmpuint (tp_account_get_storage_restrictions (test->account), ==,
           0);
       assert_uintprop (test->account, "storage-restrictions", 0);
@@ -510,6 +541,7 @@ test_storage (Test *test,
       "im.telepathy1.glib.test");
   assert_strprop (test->account, "storage-provider",
       "im.telepathy1.glib.test");
+
   g_assert_cmpstr (
       g_value_get_string (tp_account_get_storage_identifier (test->account)),
       ==, "unique-identifier");
@@ -518,6 +550,20 @@ test_storage (Test *test,
       NULL);
   g_assert_cmpstr (g_value_get_string (gvalue), ==, "unique-identifier");
   g_boxed_free (G_TYPE_VALUE, gvalue);
+
+  gvariant = tp_account_dup_storage_identifier_variant (test->account);
+  g_assert_cmpstr (g_variant_get_type_string (gvariant), ==, "s");
+  g_assert_cmpstr (g_variant_get_string (gvariant, NULL), ==,
+      "unique-identifier");
+  g_variant_unref (gvariant);
+  g_object_get (test->account,
+      "storage-identifier-variant", &gvariant,
+      NULL);
+  g_assert_cmpstr (g_variant_get_type_string (gvariant), ==, "s");
+  g_assert_cmpstr (g_variant_get_string (gvariant, NULL), ==,
+      "unique-identifier");
+  g_variant_unref (gvariant);
+
   g_assert_cmpuint (tp_account_get_storage_restrictions (test->account), ==,
       TP_STORAGE_RESTRICTION_FLAG_CANNOT_SET_ENABLED |
       TP_STORAGE_RESTRICTION_FLAG_CANNOT_SET_PARAMETERS);
@@ -540,6 +586,31 @@ test_storage (Test *test,
   g_assert_cmpuint (tp_asv_get_uint32 (info, "two", NULL), ==, 2);
   g_assert_cmpstr (tp_asv_get_string (info, "marco"), ==, "polo");
 
+  tp_clear_object (&test->result);
+
+  /* the same, but with 100% more GVariant */
+  tp_account_dup_storage_specific_information_vardict_async (test->account,
+      tp_tests_result_ready_cb, &test->result);
+  tp_tests_run_until_result (&test->result);
+
+  gvariant = tp_account_dup_storage_specific_information_vardict_finish (
+      test->account, test->result, &error);
+  g_assert_no_error (error);
+
+  g_assert_cmpstr (g_variant_get_type_string (gvariant), ==, "a{sv}");
+  found = g_variant_lookup (gvariant, "one", "i", &i);
+  g_assert (found);
+  g_assert_cmpint (i, ==, 1);
+  found = g_variant_lookup (gvariant, "two", "u", &u);
+  g_assert (found);
+  g_assert_cmpint (u, ==, 2);
+  found = g_variant_lookup (gvariant, "marco", "&s", &s);
+  g_assert (found);
+  g_assert_cmpstr (s, ==, "polo");
+  found = g_variant_lookup (gvariant, "barisione", "&s", &s);
+  g_assert (!found);
+
+  g_variant_unref (gvariant);
   tp_clear_object (&test->result);
 }
 
@@ -624,6 +695,10 @@ test_connection (Test *test,
   GHashTable *change = tp_asv_new (NULL, NULL);
   TpConnection *conn;
   const GHashTable *details;
+  GVariant *details_v;
+  gboolean found;
+  gchar *s;
+  guint32 u;
 
   test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
@@ -766,6 +841,20 @@ test_connection (Test *test,
   g_assert_cmpuint (tp_asv_get_uint32 (details, "bits-of-entropy", NULL), ==,
       15);
 
+  s = tp_account_dup_detailed_error_vardict (test->account, &details_v);
+  g_assert_cmpstr (s, ==, "org.debian.packages.OpenSSL.NotRandomEnough");
+  g_free (s);
+  g_assert_cmpuint (g_variant_n_children (details_v), >=, 2);
+  g_assert_cmpstr (g_variant_get_type_string (details_v), ==, "a{sv}");
+  found = g_variant_lookup (details_v, "debug-message", "s", &s);
+  g_assert (found);
+  g_assert_cmpstr (s, ==, "shiiiiii-");
+  g_free (s);
+  found = g_variant_lookup (details_v, "bits-of-entropy", "u", &u);
+  g_assert (found);
+  g_assert_cmpint (u, ==, 15);
+  g_variant_unref (details_v);
+
   /* staple on a Connection (this is intended for use in e.g. observers,
    * if they're told about a Connection that the Account hasn't told them
    * about yet) */
@@ -833,6 +922,8 @@ main (int argc,
 
   g_test_add ("/account/reconnect", Test, NULL, setup_service, test_reconnect,
       teardown_service);
+  g_test_add ("/account/reconnect", Test, "vardict", setup_service,
+      test_reconnect, teardown_service);
 
   g_test_add ("/account/prepare/success", Test, NULL, setup_service,
               test_prepare_success, teardown_service);

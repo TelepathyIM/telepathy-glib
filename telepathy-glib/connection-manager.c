@@ -38,6 +38,7 @@
 #define DEBUG_FLAG TP_DEBUG_MANAGER
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/protocol-internal.h"
+#include "telepathy-glib/util-internal.h"
 
 #include "telepathy-glib/_gen/tp-cli-connection-manager-body.h"
 
@@ -83,10 +84,10 @@
  * on a #TpConnectionManager.
  *
  * After this feature is prepared, basic information about the connection
- * manager's protocols (tp_connection_manager_get_protocol() and
- * tp_connection_manager_dup_protocol_names()), and their available parameters,
- * will have been retrieved, either by activating the connection manager over
- * D-Bus or by reading the .manager file in which that information is cached.
+ * manager's protocols (tp_connection_manager_dup_protocols()), and their
+ * available parameters, will have been retrieved, either by activating the
+ * connection manager over D-Bus or by reading the .manager file in which
+ * that information is cached.
  *
  * Since 0.11.11, this feature also finds any extra interfaces that
  * this connection manager has, and adds them to #TpProxy:interfaces (where
@@ -1525,6 +1526,7 @@ typedef struct
 {
   GHashTable *table;
   GPtrArray *arr;
+  GSimpleAsyncResult *result;
   TpConnectionManagerListCb callback;
   gpointer user_data;
   GDestroyNotify destroy;
@@ -1729,6 +1731,104 @@ tp_list_connection_managers (TpDBusDaemon *bus_daemon,
   tp_dbus_daemon_list_activatable_names (bus_daemon, 2000,
       tp_list_connection_managers_got_names, list_context,
       (GDestroyNotify) list_context_unref, weak_object);
+}
+
+static void
+list_connection_managers_async_cb (TpConnectionManager * const *cms,
+    gsize n_cms,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (result, error);
+    }
+  else
+    {
+      GList *l = NULL;
+      gsize i;
+
+      for (i = 0; i < n_cms; i++)
+          l = g_list_prepend (l, g_object_ref (cms[i]));
+
+      l = g_list_reverse (l);
+
+      g_simple_async_result_set_op_res_gpointer (result, l,
+          (GDestroyNotify) _tp_object_list_free);
+    }
+
+  g_simple_async_result_complete_in_idle (result);
+
+  /* result is unreffed by GDestroyNotify */
+}
+
+/**
+ * tp_list_connection_managers_async:
+ * @dbus_daemon: (allow-none): a #TpDBusDaemon, or %NULL to use
+ *  tp_dbus_daemon_dup()
+ * @callback: a callback to call with a list of CMs
+ * @user_data: data to pass to @callback
+ *
+ * List the available (running or installed) connection managers,
+ * asynchronously, and wait for their %TP_CONNECTION_MANAGER_FEATURE_CORE
+ * feature to be ready.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_list_connection_managers_async (TpDBusDaemon *dbus_daemon,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  GError *error = NULL;
+
+  if (dbus_daemon == NULL)
+    dbus_daemon = tp_dbus_daemon_dup (&error);
+  else
+    g_object_ref (dbus_daemon);
+
+  result = g_simple_async_result_new (NULL, callback, user_data,
+      tp_list_connection_managers_async);
+
+  if (dbus_daemon == NULL)
+    {
+      g_simple_async_result_take_error (result, error);
+      g_simple_async_result_complete_in_idle (result);
+      g_object_unref (result);
+    }
+  else
+    {
+      tp_list_connection_managers (dbus_daemon,
+          list_connection_managers_async_cb, result, g_object_unref, NULL);
+      g_object_unref (dbus_daemon);
+    }
+}
+
+/**
+ * tp_list_connection_managers_finish:
+ * @result: the result of tp_list_connection_managers_async()
+ * @error: used to raise an error if the operation failed
+ *
+ * Finish listing the available connection managers.
+ *
+ * Free the list after use, for instance with
+ * <literal>g_list_free_full (list, g_object_unref)</literal>.
+ *
+ * Returns: (transfer full) (element-type TelepathyGLib.ConnectionManager): a
+ *  newly allocated list of references to #TpConnectionManager objects
+ * Since: 0.UNRELEASED
+ */
+GList *
+tp_list_connection_managers_finish (GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_return_copy_pointer (NULL,
+      tp_list_connection_managers_async,
+      _tp_object_list_copy);
 }
 
 /**
@@ -2033,6 +2133,43 @@ tp_connection_manager_get_protocol_object (TpConnectionManager *self,
     return NULL;
 
   return g_hash_table_lookup (self->priv->protocol_objects, protocol);
+}
+
+/* FIXME: in Telepathy 1.0, rename to get_protocols */
+/**
+ * tp_connection_manager_dup_protocols:
+ * @self: a connection manager
+ *
+ * Return objects representing all protocols supported by this connection
+ * manager.
+ *
+ * If this function is called before the connection manager information has
+ * been obtained, the result is always %NULL. Use tp_proxy_prepare_async()
+ * to wait for this.
+ *
+ * The caller must free the list, for instance with
+ * <literal>g_list_free_full (l, g_object_unref)</literal>.
+ *
+ * Returns: (transfer full) (element-type TelepathyGLib.Protocol): a list
+ *  of #TpProtocol objects representing the protocols supported by @self,
+ *  owned by the caller
+ *
+ * Since: 0.UNRELEASED
+ */
+GList *
+tp_connection_manager_dup_protocols (TpConnectionManager *self)
+{
+  GList *l;
+
+  g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), NULL);
+
+  if (self->priv->protocol_objects == NULL)
+    return NULL;
+
+  l = g_hash_table_get_values (self->priv->protocol_objects);
+
+  g_list_foreach (l, (GFunc) g_object_ref, NULL);
+  return l;
 }
 
 /**

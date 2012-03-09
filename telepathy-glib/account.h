@@ -125,8 +125,12 @@ gboolean tp_account_is_usable (TpAccount *account);
 void tp_account_update_parameters_async (TpAccount *account,
     GHashTable *parameters, const gchar **unset_parameters,
     GAsyncReadyCallback callback, gpointer user_data);
-
 gboolean tp_account_update_parameters_finish (TpAccount *account,
+    GAsyncResult *result, gchar ***reconnect_required, GError **error);
+void tp_account_update_parameters_vardict_async (TpAccount *account,
+    GVariant *parameters, const gchar **unset_parameters,
+    GAsyncReadyCallback callback, gpointer user_data);
+gboolean tp_account_update_parameters_vardict_finish (TpAccount *account,
     GAsyncResult *result, gchar ***reconnect_required, GError **error);
 
 void tp_account_remove_async (TpAccount *account,
@@ -186,6 +190,8 @@ TpConnectionStatus tp_account_get_connection_status (TpAccount *account,
 
 const gchar *tp_account_get_detailed_error (TpAccount *self,
     const GHashTable **details);
+gchar *tp_account_dup_detailed_error_vardict (TpAccount *self,
+    GVariant **details);
 
 TpConnectionPresenceType tp_account_get_current_presence (TpAccount *account,
     gchar **status, gchar **status_message);
@@ -197,6 +203,7 @@ TpConnectionPresenceType tp_account_get_automatic_presence (
     TpAccount *self, gchar **status, gchar **status_message);
 
 const GHashTable *tp_account_get_parameters (TpAccount *account);
+GVariant *tp_account_dup_parameters_vardict (TpAccount *account);
 
 const gchar *tp_account_get_nickname (TpAccount *account);
 
@@ -231,11 +238,20 @@ gboolean tp_account_get_changing_presence (TpAccount *self);
 
 const gchar *tp_account_get_storage_provider (TpAccount *self);
 const GValue *tp_account_get_storage_identifier (TpAccount *self);
+GVariant *tp_account_dup_storage_identifier_variant (TpAccount *self);
 TpStorageRestrictionFlags tp_account_get_storage_restrictions (TpAccount *self);
 void tp_account_get_storage_specific_information_async (TpAccount *self,
     GAsyncReadyCallback callback, gpointer user_data);
 GHashTable *tp_account_get_storage_specific_information_finish (TpAccount *self,
     GAsyncResult *result, GError **error);
+void tp_account_dup_storage_specific_information_vardict_async (
+    TpAccount *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+GVariant *tp_account_dup_storage_specific_information_vardict_finish (
+    TpAccount *self,
+    GAsyncResult *result,
+    GError **error);
 
 const gchar * const *
 /* ugh, gtk-doc */

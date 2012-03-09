@@ -17,7 +17,8 @@
 
 typedef enum {
     ACTIVATE_CM = (1 << 0),
-    USE_CWR = (1 << 1)
+    USE_CWR = (1 << 1),
+    USE_OLD_LIST = (1 << 2)
 } TestFlags;
 
 typedef struct {
@@ -26,6 +27,8 @@ typedef struct {
     TpTestsEchoConnectionManager *service_cm;
 
     TpConnectionManager *cm;
+    TpConnectionManager *echo;
+    TpConnectionManager *spurious;
     GError *error /* initialized where needed */;
 } Test;
 
@@ -60,10 +63,11 @@ static void
 teardown (Test *test,
           gconstpointer data)
 {
-  g_object_unref (test->service_cm);
-  test->service_cm = NULL;
-  g_object_unref (test->dbus);
-  test->dbus = NULL;
+  g_clear_object (&test->service_cm);
+  g_clear_object (&test->dbus);
+  g_clear_object (&test->cm);
+  g_clear_object (&test->echo);
+  g_clear_object (&test->spurious);
   g_main_loop_unref (test->mainloop);
   test->mainloop = NULL;
 }
@@ -111,7 +115,6 @@ test_nothing_got_info (Test *test,
       NULL, &error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (error);
-  g_test_queue_unref (test->cm);
 
   /* Spin the mainloop until we get the got-info signal. This API is rubbish,
    * but it's better than it used to be... */
@@ -125,6 +128,7 @@ test_nothing_got_info (Test *test,
   g_assert_cmpuint (test->cm->running, ==, FALSE);
   g_assert_cmpuint (test->cm->info_source, ==, TP_CM_INFO_SOURCE_NONE);
   g_assert (test->cm->protocols == NULL);
+  g_assert (tp_connection_manager_dup_protocols (test->cm) == NULL);
 }
 
 static void
@@ -157,7 +161,6 @@ test_file_got_info (Test *test,
       NULL, &error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (error);
-  g_test_queue_unref (test->cm);
 
   g_test_bug ("18207");
   id = g_signal_connect (test->cm, "got-info",
@@ -298,7 +301,6 @@ test_complex_file_got_info (Test *test,
       NULL, &error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (error);
-  g_test_queue_unref (test->cm);
 
   g_test_bug ("18207");
   id = g_signal_connect (test->cm, "got-info",
@@ -653,7 +655,6 @@ test_dbus_got_info (Test *test,
       NULL, &error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (error);
-  g_test_queue_unref (test->cm);
 
   g_test_bug ("18207");
   id = g_signal_connect (test->cm, "got-info",
@@ -689,7 +690,6 @@ test_nothing_ready (Test *test,
       NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (test->error);
-  g_test_queue_unref (test->cm);
 
   g_test_bug ("18291");
 
@@ -735,13 +735,13 @@ test_file_ready (Test *test,
   gchar *name;
   guint info_source;
   TestFlags flags = GPOINTER_TO_INT (data);
+  GList *l;
 
   test->error = NULL;
   test->cm = tp_connection_manager_new (test->dbus, "spurious",
       NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (test->error);
-  g_test_queue_unref (test->cm);
 
   g_test_bug ("18291");
 
@@ -775,6 +775,11 @@ test_file_ready (Test *test,
   g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_FILE);
   g_free (name);
 
+  l = tp_connection_manager_dup_protocols (test->cm);
+  g_assert_cmpuint (g_list_length (l), ==, 2);
+  g_assert (TP_IS_PROTOCOL (l->data));
+  g_assert (TP_IS_PROTOCOL (l->next->data));
+  g_list_free_full (l, g_object_unref);
 }
 
 static void
@@ -790,7 +795,6 @@ test_complex_file_ready (Test *test,
       NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (test->error);
-  g_test_queue_unref (test->cm);
 
   g_test_bug ("18291");
 
@@ -839,6 +843,7 @@ test_dbus_ready (Test *test,
   gchar *name;
   guint info_source;
   const TestFlags flags = GPOINTER_TO_INT (data);
+  GList *l;
 
   test->error = NULL;
   test->cm = tp_connection_manager_new (test->dbus,
@@ -846,7 +851,6 @@ test_dbus_ready (Test *test,
       NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (test->error);
-  g_test_queue_unref (test->cm);
 
   if (flags & ACTIVATE_CM)
     {
@@ -894,6 +898,11 @@ test_dbus_ready (Test *test,
   g_assert_cmpstr (name, ==, "example_echo");
   g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_LIVE);
   g_free (name);
+
+  l = tp_connection_manager_dup_protocols (test->cm);
+  g_assert_cmpuint (g_list_length (l), ==, 1);
+  g_assert_cmpstr (tp_protocol_get_name (l->data), ==, "example");
+  g_list_free_full (l, g_object_unref);
 }
 
 static void
@@ -904,53 +913,85 @@ on_listed_connection_managers (TpConnectionManager * const * cms,
                                GObject *weak_object G_GNUC_UNUSED)
 {
   Test *test = user_data;
-  TpConnectionManager *spurious;
-  TpConnectionManager *echo;
 
   g_assert_cmpuint ((guint) n_cms, ==, 2);
   g_assert (cms[2] == NULL);
 
   if (tp_connection_manager_is_running (cms[0]))
     {
-      echo = cms[0];
-      spurious = cms[1];
+      test->echo = g_object_ref (cms[0]);
+      test->spurious = g_object_ref (cms[1]);
     }
   else
     {
-      spurious = cms[0];
-      echo = cms[1];
+      test->spurious = g_object_ref (cms[0]);
+      test->echo = g_object_ref (cms[1]);
     }
-
-  g_assert (tp_connection_manager_is_running (echo));
-  g_assert (!tp_connection_manager_is_running (spurious));
-
-  g_assert (tp_proxy_is_prepared (echo, TP_CONNECTION_MANAGER_FEATURE_CORE));
-  g_assert (tp_proxy_is_prepared (spurious,
-        TP_CONNECTION_MANAGER_FEATURE_CORE));
-
-  g_assert (tp_proxy_get_invalidated (echo) == NULL);
-  g_assert (tp_proxy_get_invalidated (spurious) == NULL);
-
-  g_assert (tp_connection_manager_is_ready (echo));
-  g_assert (tp_connection_manager_is_ready (spurious));
-
-  g_assert_cmpuint (tp_connection_manager_get_info_source (echo),
-      ==, TP_CM_INFO_SOURCE_LIVE);
-  g_assert_cmpuint (tp_connection_manager_get_info_source (spurious),
-      ==, TP_CM_INFO_SOURCE_FILE);
-
-  g_assert (tp_connection_manager_has_protocol (echo, "example"));
-  g_assert (tp_connection_manager_has_protocol (spurious, "normal"));
 
   g_main_loop_quit (test->mainloop);
 }
 
 static void
 test_list (Test *test,
-           gconstpointer data G_GNUC_UNUSED)
+           gconstpointer data)
 {
-  tp_list_connection_managers (test->dbus, on_listed_connection_managers,
-      test, NULL, NULL);
+  TestFlags flags = GPOINTER_TO_INT (data);
+
+  if (flags & USE_OLD_LIST)
+    {
+      tp_list_connection_managers (test->dbus, on_listed_connection_managers,
+          test, NULL, NULL);
+      g_main_loop_run (test->mainloop);
+    }
+  else
+    {
+      GAsyncResult *res = NULL;
+      GList *cms;
+
+      tp_list_connection_managers_async (test->dbus, tp_tests_result_ready_cb,
+          &res);
+      tp_tests_run_until_result (&res);
+      cms = tp_list_connection_managers_finish (res, &test->error);
+      g_assert_no_error (test->error);
+      g_assert_cmpuint (g_list_length (cms), ==, 2);
+
+      /* transfer ownership */
+      if (tp_connection_manager_is_running (cms->data))
+        {
+          test->echo = cms->data;
+          test->spurious = cms->next->data;
+        }
+      else
+        {
+          test->spurious = cms->data;
+          test->echo = cms->next->data;
+        }
+
+      g_object_unref (res);
+      g_list_free (cms);
+    }
+
+  g_assert (tp_connection_manager_is_running (test->echo));
+  g_assert (!tp_connection_manager_is_running (test->spurious));
+
+  g_assert (tp_proxy_is_prepared (test->echo,
+        TP_CONNECTION_MANAGER_FEATURE_CORE));
+  g_assert (tp_proxy_is_prepared (test->spurious,
+        TP_CONNECTION_MANAGER_FEATURE_CORE));
+
+  g_assert (tp_proxy_get_invalidated (test->echo) == NULL);
+  g_assert (tp_proxy_get_invalidated (test->spurious) == NULL);
+
+  g_assert (tp_connection_manager_is_ready (test->echo));
+  g_assert (tp_connection_manager_is_ready (test->spurious));
+
+  g_assert_cmpuint (tp_connection_manager_get_info_source (test->echo),
+      ==, TP_CM_INFO_SOURCE_LIVE);
+  g_assert_cmpuint (tp_connection_manager_get_info_source (test->spurious),
+      ==, TP_CM_INFO_SOURCE_FILE);
+
+  g_assert (tp_connection_manager_has_protocol (test->echo, "example"));
+  g_assert (tp_connection_manager_has_protocol (test->spurious, "normal"));
 }
 
 int
@@ -988,7 +1029,10 @@ main (int argc,
   g_test_add ("/cm/dbus/cwr", Test, GINT_TO_POINTER (USE_CWR), setup,
       test_dbus_ready, teardown);
 
-  g_test_add ("/cm/list", Test, NULL, setup, test_list, teardown);
+  g_test_add ("/cm/list", Test, GINT_TO_POINTER (0),
+      setup, test_list, teardown);
+  g_test_add ("/cm/list", Test, GINT_TO_POINTER (USE_OLD_LIST),
+      setup, test_list, teardown);
 
   return g_test_run ();
 }

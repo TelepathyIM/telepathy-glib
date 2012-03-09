@@ -163,13 +163,25 @@ if __name__ == '__main__':
     environment = {}
     execfile(sys.argv[1], environment)
 
-    f = open('%s/%s.manager' % (sys.argv[2], environment['MANAGER']), 'w')
+    filename = '%s/%s.manager' % (sys.argv[2], environment['MANAGER'])
+    try:
+        os.remove(filename)
+    except OSError:
+        pass
+    f = open(filename + '.tmp', 'w')
     write_manager(f, environment['MANAGER'], environment['PARAMS'])
     f.close()
+    os.rename(filename + '.tmp', filename)
 
-    f = open('%s/param-spec-struct.h' % sys.argv[2], 'w')
+    filename = '%s/param-spec-struct.h' % sys.argv[2]
+    try:
+        os.remove(filename)
+    except OSError:
+        pass
+    f = open(filename + '.tmp', 'w')
     for protocol in environment['PARAMS']:
         write_c_params(f, environment['MANAGER'], protocol,
                 environment['STRUCTS'][protocol],
                 environment['PARAMS'][protocol])
     f.close()
+    os.rename(filename + '.tmp', filename)

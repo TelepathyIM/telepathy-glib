@@ -37,6 +37,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_ACCOUNTS
 #include "telepathy-glib/connection-internal.h"
+#include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
@@ -175,6 +176,7 @@ enum {
   PROP_NORMALIZED_NAME,
   PROP_STORAGE_PROVIDER,
   PROP_STORAGE_IDENTIFIER,
+  PROP_STORAGE_IDENTIFIER_VARIANT,
   PROP_STORAGE_RESTRICTIONS,
   PROP_SUPERSEDES,
   N_PROPS
@@ -1138,6 +1140,10 @@ _tp_account_get_property (GObject *object,
     case PROP_STORAGE_IDENTIFIER:
       g_value_set_boxed (value, self->priv->storage_identifier);
       break;
+    case PROP_STORAGE_IDENTIFIER_VARIANT:
+      g_value_take_variant (value,
+          tp_account_dup_storage_identifier_variant (self));
+      break;
     case PROP_STORAGE_RESTRICTIONS:
       g_value_set_uint (value, self->priv->storage_restrictions);
       break;
@@ -1892,6 +1898,34 @@ tp_account_class_init (TpAccountClass *klass)
         G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
+   * TpAccount:storage-identifier-variant:
+   *
+   * Provider-specific information used to identify this
+   * account. Use g_variant_get_type() to check that the type
+   * is what you expect. For instance, if you use a
+   * #TpAccount:storage-provider with numeric identifiers for accounts,
+   * this variant might have type %G_VARIANT_TYPE_UINT32;
+   * if the storage provider has string-based identifiers, it should
+   * have type %G_VARIANT_TYPE_STRING.
+   *
+   * This property cannot change once an Account has been created.
+   *
+   * This is not guaranteed to have been retrieved until the
+   * %TP_ACCOUNT_FEATURE_STORAGE feature has been prepared; until then,
+   * the value is %NULL.
+   *
+   * Since: 0.13.2
+   */
+  g_object_class_install_property (object_class,
+      PROP_STORAGE_IDENTIFIER_VARIANT,
+      g_param_spec_variant ("storage-identifier-variant",
+        "StorageIdentifier as variant",
+        "The storage identifier for this account",
+        G_VARIANT_TYPE_ANY,
+        NULL,
+        G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
    * TpAccount:storage-restrictions
    *
    * The storage restrictions for this account.
@@ -2320,6 +2354,36 @@ tp_account_get_parameters (TpAccount *account)
 }
 
 /**
+ * tp_account_dup_parameters_vardict:
+ * @account: a #TpAccount
+ *
+ * Returns the parameters of the account, in a variant of type
+ * %G_VARIANT_TYPE_VARDICT where the keys
+ * are parameter names (account, password, require-encryption etc.).
+ * Use g_variant_lookup() or g_variant_lookup_value() for convenient
+ * access to the values.
+ *
+ * The allowed parameters depend on the connection manager, and can be found
+ * via tp_connection_manager_get_protocol() and
+ * tp_connection_manager_protocol_get_param(). Well-known parameters are
+ * listed
+ * <ulink url="http://telepathy.freedesktop.org/spec/org.freedesktop.Telepathy.ConnectionManager.html#org.freedesktop.Telepathy.ConnectionManager.RequestConnection">in
+ * the Telepathy D-Bus Interface Specification</ulink>.
+ *
+ * Returns: (transfer full): the dictionary of
+ *  parameters on @account, of type %G_VARIANT_TYPE_VARDICT
+ *
+ * Since: 0.UNRELEASED
+ */
+GVariant *
+tp_account_dup_parameters_vardict (TpAccount *account)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+
+  return _tp_asv_to_vardict (account->priv->parameters);
+}
+
+/**
  * tp_account_is_enabled:
  * @account: a #TpAccount
  *
@@ -2686,6 +2750,74 @@ tp_account_update_parameters_finish (TpAccount *account,
   _tp_implement_finish_copy_pointer (account,
       tp_account_update_parameters_finish, g_strdupv,
       reconnect_required);
+}
+
+/**
+ * tp_account_update_parameters_vardict_async:
+ * @account: a #TpAccount
+ * @parameters: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
+ *  containing new parameters to set on @account
+ * @unset_parameters: list of parameters to unset on @account
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous update of parameters of @account. When the
+ * operation is finished, @callback will be called. You can then call
+ * tp_account_update_parameters_finish() to get the result of the operation.
+ *
+ * If @parameters is a floating reference (see g_variant_ref_sink()),
+ * ownership of @parameters is taken by this function. This means
+ * you can pass the result of g_variant_new() or g_variant_new_parsed()
+ * directly to this function without additional reference-count management.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_account_update_parameters_vardict_async (TpAccount *account,
+    GVariant *parameters,
+    const gchar **unset_parameters,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GValue v = G_VALUE_INIT;
+
+  g_return_if_fail (parameters != NULL);
+  g_return_if_fail (g_variant_is_of_type (parameters, G_VARIANT_TYPE_VARDICT));
+
+  g_variant_ref_sink (parameters);
+
+  dbus_g_value_parse_g_variant (parameters, &v);
+  g_assert (G_VALUE_HOLDS (&v, TP_HASH_TYPE_STRING_VARIANT_MAP));
+
+  tp_account_update_parameters_async (account, g_value_get_boxed (&v),
+      unset_parameters, callback, user_data);
+  g_value_unset (&v);
+  g_variant_unref (parameters);
+}
+
+/**
+ * tp_account_update_parameters_vardict_finish:
+ * @account: a #TpAccount
+ * @result: a #GAsyncResult
+ * @reconnect_required: (out) (type GObject.Strv) (transfer full): a #GStrv to
+ *  fill with properties that need a reconnect to take effect
+ * @error: a #GError to fill
+ *
+ * Finishes an async update of the parameters on @account.
+ *
+ * Returns: %TRUE if the request succeeded, otherwise %FALSE
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_account_update_parameters_vardict_finish (TpAccount *account,
+    GAsyncResult *result,
+    gchar ***reconnect_required,
+    GError **error)
+{
+  /* share an implementation with the non-vardict version */
+  return tp_account_update_parameters_finish (account, result,
+      reconnect_required, error);
 }
 
 /**
@@ -3576,6 +3708,45 @@ tp_account_get_detailed_error (TpAccount *self,
 }
 
 /**
+ * tp_account_dup_detailed_error_vardict:
+ * @self: an account
+ * @details: (out) (allow-none) (transfer full):
+ *  optionally used to return a variant of type %G_VARIANT_TYPE_VARDICT,
+ *  which must be unreffed by the caller with g_variant_unref()
+ *
+ * If the account's connection is not connected, return the D-Bus error name
+ * with which it last disconnected or failed to connect (in particular, this
+ * is %TP_ERROR_STR_CANCELLED if it was disconnected by a user request).
+ * This is the same as #TpAccount:connection-error.
+ *
+ * If @details is not %NULL, it will be used to return additional details about
+ * the error (the same as #TpAccount:connection-error-details).
+ *
+ * Otherwise, return %NULL, without altering @details.
+ *
+ * The returned string and @details may become invalid when the main loop is
+ * re-entered or the account is destroyed.
+ *
+ * Returns: (transfer full) (allow-none): a D-Bus error name, or %NULL.
+ *
+ * Since: 0.UNRELEASED
+ */
+gchar *
+tp_account_dup_detailed_error_vardict (TpAccount *self,
+    GVariant **details)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
+
+  if (self->priv->connection_status == TP_CONNECTION_STATUS_CONNECTED)
+    return NULL;
+
+  if (details != NULL)
+    *details = _tp_asv_to_vardict (self->priv->error_details);
+
+  return g_strdup (self->priv->error);
+}
+
+/**
  * tp_account_get_storage_provider:
  * @self: a #TpAccount
  *
@@ -3593,6 +3764,7 @@ tp_account_get_storage_provider (TpAccount *self)
   return self->priv->storage_provider;
 }
 
+/* FIXME: in 1.0, remove */
 /**
  * tp_account_get_storage_identifier:
  * @self: a #TpAccount
@@ -3609,6 +3781,31 @@ tp_account_get_storage_identifier (TpAccount *self)
   g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
 
   return self->priv->storage_identifier;
+}
+
+/* FIXME: in 1.0, rename to tp_account_get_storage_identifier */
+/**
+ * tp_account_dup_storage_identifier_variant:
+ * @self: a #TpAccount
+ *
+ * Return provider-specific information used to identify this
+ * account. Use g_variant_get_type() to check that the type
+ * is what you expect; for instance, if the
+ * #TpAccount:storage-provider has string-based user identifiers,
+ * this variant should have type %G_VARIANT_TYPE_STRING.
+ *
+ * Returns: (transfer full): the same as the
+ *  #TpAccount:storage-identifier-variant property
+ *
+ * Since: 0.13.2
+ */
+GVariant *
+tp_account_dup_storage_identifier_variant (TpAccount *self)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
+
+  return g_variant_ref_sink (dbus_g_value_build_g_variant (
+        self->priv->storage_identifier));
 }
 
 /**
@@ -3655,6 +3852,7 @@ _tp_account_get_storage_specific_information_cb (TpProxy *self,
   g_object_unref (result);
 }
 
+/* FIXME: in Telepathy 1.0, remove this */
 /**
  * tp_account_get_storage_specific_information_async:
  * @self: a #TpAccount
@@ -3687,6 +3885,33 @@ tp_account_get_storage_specific_information_async (TpAccount *self,
       _tp_account_get_storage_specific_information_cb, result, NULL, NULL);
 }
 
+/* FIXME: in Telepathy 1.0, rename to ...get_storage_specific_information... */
+/**
+ * tp_account_dup_storage_specific_information_vardict_async:
+ * @self: a #TpAccount
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Makes an asynchronous request of @self's StorageSpecificInformation
+ * property (part of the Account.Interface.Storage interface).
+ *
+ * When the operation is finished, @callback will be called. You must then
+ * call tp_account_dup_storage_specific_information_vardict_finish() to get the
+ * result of the request.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_account_dup_storage_specific_information_vardict_async (TpAccount *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  /* we share an implementation */
+  tp_account_get_storage_specific_information_async (self, callback,
+      user_data);
+}
+
+/* FIXME: in Telepathy 1.0, remove this */
 /**
  * tp_account_get_storage_specific_information_finish:
  * @self: a #TpAccount
@@ -3711,6 +3936,31 @@ tp_account_get_storage_specific_information_finish (TpAccount *self,
 {
   _tp_implement_finish_return_copy_pointer (self,
       tp_account_get_storage_specific_information_async, /* do not copy */);
+}
+
+/* FIXME: in Telepathy 1.0, rename to ...get_storage_specific_information... */
+/**
+ * tp_account_dup_storage_specific_information_vardict_finish:
+ * @self: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Retrieve the value of the request begun with
+ * tp_account_dup_storage_specific_information_vardict_async().
+ *
+ * Returns: (transfer full): a map from strings to variants,
+ *  of type %G_VARIANT_TYPE_VARDICT
+ *
+ * Since: 0.13.2
+ */
+GVariant *
+tp_account_dup_storage_specific_information_vardict_finish (TpAccount *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  /* we share the source tag with the non-vardict version */
+  _tp_implement_finish_return_copy_pointer (self,
+      tp_account_get_storage_specific_information_async, _tp_asv_to_vardict);
 }
 
 static void

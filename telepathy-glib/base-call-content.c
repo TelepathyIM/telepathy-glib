@@ -139,6 +139,7 @@
 #include "telepathy-glib/svc-call.h"
 #include "telepathy-glib/svc-generic.h"
 #include "telepathy-glib/util.h"
+#include "telepathy-glib/util-internal.h"
 
 static void call_content_iface_init (gpointer g_iface, gpointer iface_data);
 static void call_content_dtmf_iface_init (gpointer g_iface,
@@ -216,12 +217,6 @@ tp_base_call_content_constructed (GObject *obj)
 }
 
 static void
-stream_list_destroy (GList *streams)
-{
-  g_list_free_full (streams, g_object_unref);
-}
-
-static void
 tp_base_call_content_deinit_real (TpBaseCallContent *self)
 {
   TpDBusDaemon *bus = tp_base_connection_get_dbus_daemon (
@@ -229,7 +224,7 @@ tp_base_call_content_deinit_real (TpBaseCallContent *self)
 
   tp_dbus_daemon_unregister_object (bus, G_OBJECT (self));
 
-  tp_clear_pointer (&self->priv->streams, stream_list_destroy);
+  tp_clear_pointer (&self->priv->streams, _tp_object_list_free);
 }
 
 static GPtrArray *
@@ -248,7 +243,7 @@ tp_base_call_content_dispose (GObject *object)
 
   g_assert (self->priv->deinit_has_run);
 
-  tp_clear_pointer (&self->priv->streams, stream_list_destroy);
+  tp_clear_pointer (&self->priv->streams, _tp_object_list_free);
   g_object_notify (G_OBJECT (self), "streams");
   tp_clear_object (&self->priv->conn);
 
