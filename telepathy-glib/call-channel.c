@@ -1572,6 +1572,7 @@ tp_call_channel_send_tones_async (TpCallChannel *self,
 {
   GSimpleAsyncResult *result;
   guint i;
+  guint count = 0;
 
   g_return_if_fail (TP_IS_CALL_CHANNEL (self));
   g_return_if_fail (tp_call_channel_has_dtmf (self));
