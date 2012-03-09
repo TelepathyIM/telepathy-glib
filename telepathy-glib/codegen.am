@@ -152,7 +152,11 @@ _gen/reentrant-methods.list: \
 
 # Things generated from the whole spec at once
 
-_gen/gtypes.h _gen/gtypes-body.h: _gen/stable-spec.xml \
+# do nothing, output as a side-effect
+_gen/gtypes.h: _gen/gtypes-body.h
+	@:
+
+_gen/gtypes-body.h: _gen/stable-spec.xml \
 	$(tools_dir)/glib-gtypes-generator.py
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-gtypes-generator.py \
 		_gen/stable-spec.xml \
@@ -163,7 +167,11 @@ _gen/telepathy-enums.h: _gen/stable-spec.xml \
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/c-constants-gen.py \
 		Tp $< _gen/telepathy-enums
 
-_gen/interfaces-body.h _gen/telepathy-interfaces.h: _gen/stable-spec.xml \
+# do nothing, output as a side-effect
+_gen/interfaces-body.h: _gen/telepathy-interfaces.h
+	@:
+
+_gen/telepathy-interfaces.h: _gen/stable-spec.xml \
 	$(tools_dir)/glib-interfaces-gen.py
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-interfaces-gen.py \
 		Tp _gen/interfaces-body.h _gen/telepathy-interfaces.h $<
@@ -182,7 +190,10 @@ _gen/genums.h: _gen/spec-stamp genums.h.template $(our_headers) codegen.am
 		$(GLIB_MKENUMS) --template genums.h.template $(our_headers) \
 		) > $@
 
-_gen/error-str.h _gen/error-str.c: _gen/stable-spec.xml \
+_gen/error-str.h: _gen/error-str.c
+	@: # do nothing, output as a side-effect
+
+_gen/error-str.c: _gen/stable-spec.xml \
 	$(tools_dir)/glib-errors-str-gen.py
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-errors-str-gen.py \
 		_gen/error-str $<
@@ -193,7 +204,11 @@ _gen/tp-spec-%.xml: %.xml _gen/spec-stamp $(tools_dir)/xincludator.py
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@.tmp
 	@mv $@.tmp $@
 
-_gen/tp-svc-%.c _gen/tp-svc-%.h: _gen/tp-spec-%.xml \
+# do nothing, output as a side-effect
+_gen/tp-svc-%.h: _gen/tp-svc-%.c
+	@:
+
+_gen/tp-svc-%.c: _gen/tp-spec-%.xml \
 	$(tools_dir)/glib-ginterface-gen.py \
 	codegen.am
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-ginterface-gen.py \
@@ -203,7 +218,11 @@ _gen/tp-svc-%.c _gen/tp-svc-%.h: _gen/tp-spec-%.xml \
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
 		$< Tp_Svc_
 
-_gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
+# do nothing, output as a side-effect
+_gen/tp-cli-%.h: _gen/tp-cli-%-body.h
+	@:
+
+_gen/tp-cli-%-body.h: _gen/tp-spec-%.xml \
 	_gen/reentrant-methods.list \
 	$(tools_dir)/glib-client-gen.py \
 	codegen.am
