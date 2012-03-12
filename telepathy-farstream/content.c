@@ -304,6 +304,8 @@ _tf_content_emit_src_pad_added (TfContent *self, guint handle,
  *
  * Send a fatal streaming error to the Content to the CM, the effect is most
  * likely that the content will be removed.
+ *
+ * Rename to: tf_content_error
  */
 
 void
@@ -322,7 +324,7 @@ tf_content_error_literal (TfContent *content,
 }
 
 /**
- * tf_content_error:
+ * tf_content_error: (skip):
  * @content: a #TfContent
  * @message_format: error Message with printf style formatting
  * @...:  Parameters to insert into the @message_format string
@@ -430,6 +432,8 @@ _tf_content_stop_receiving (TfContent *self, guint *handles,
  * Informs the Connection Manager that sending has failed for this
  * content. This is a transient error and it may or not not end the Content
  * and the call.
+ *
+ * Rename to: tf_content_sending_failed
  */
 
 void
@@ -449,7 +453,7 @@ tf_content_sending_failed_literal (TfContent *content,
 }
 
 /**
- * tf_content_sending_failed:
+ * tf_content_sending_failed: (skip):
  * @content: a #TfContent
  * @message_format: Message with printf style formatting
  * @...:  Parameters to insert into the @message_format string
@@ -489,6 +493,8 @@ tf_content_sending_failed (TfContent *content,
  * and the call.
  *
  * If handles are not specific, it assumes that it is valid for all handles.
+ *
+ * Rename to: tf_content_receiving_failed
  */
 
 void
@@ -510,7 +516,7 @@ tf_content_receiving_failed_literal (TfContent *content,
 
 
 /**
- * tf_content_receiving_failed:
+ * tf_content_receiving_failed: (skip):
  * @content: a #TfContent
  * @handles: an array of #guint representing Telepathy handles, may be %NULL
  * @handle_count: the numner of handles in @handles
