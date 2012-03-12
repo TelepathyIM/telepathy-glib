@@ -1486,8 +1486,8 @@ cb_fs_component_state_changed (TfCallStream *stream, guint component,
       break;
   }
 
-  g_debug ("Endpoint state changed to %d (fs: %d)",
-      state, fsstate);
+  g_debug ("Endpoint state for component %u changed to %d (fs: %d)",
+      component, state, fsstate);
 
   tp_cli_call_stream_endpoint_call_set_endpoint_state (stream->endpoint,
       -1, component, state, NULL, NULL, NULL, NULL);
