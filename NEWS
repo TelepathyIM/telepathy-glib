@@ -6,6 +6,8 @@ Requirements:
 • GLib >= 2.30 is now required for telepathy-glib, and for code generated
   by tools copied from this version.
 
+• dbus-glib >= 0.90 is now required.
+
 Deprecations:
 
 • tp_connection_is_ready(), tp_connection_call_when_ready,
