@@ -7,7 +7,7 @@ Name: Telepathy-GLib-1
 Description: GLib utility library for the Telepathy framework
 Version: @VERSION@
 Requires: pkg-config >= 0.21
-Requires.private: dbus-glib-1 >= 0.82, glib-2.0 >= 2.30, gobject-2.0 >= 2.30, gio-2.0 >= 2.30
+Requires.private: dbus-1 >= 0.95, dbus-glib-1 >= 0.90, glib-2.0 >= 2.30, gobject-2.0 >= 2.30, gio-2.0 >= 2.30
 Libs: -L${libdir} -ltelepathy-glib-1 -ltelepathy-glib-1-core
 Libs.private: -ltelepathy-glib-1-dbus
 Cflags: -I${includedir}/telepathy-glib-1

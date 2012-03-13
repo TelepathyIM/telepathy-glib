@@ -237,7 +237,7 @@ GLIB_MKENUMS=`$PKG_CONFIG --variable=glib_mkenums glib-2.0`
 AC_SUBST(GLIB_MKENUMS)
 
 dnl Check for D-Bus
-PKG_CHECK_MODULES(DBUS, [dbus-1 >= 0.95, dbus-glib-1 >= 0.82])
+PKG_CHECK_MODULES(DBUS, [dbus-1 >= 0.95, dbus-glib-1 >= 0.90])
 
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
