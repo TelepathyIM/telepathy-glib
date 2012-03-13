@@ -264,6 +264,42 @@ receiving_state_changed (TpCallStream *proxy,
 }
 
 static void
+_tf_call_stream_push_remote_candidates (TfCallStream *self,
+    GList *fscandidates)
+{
+  gboolean ret;
+  GError *error = NULL;
+
+  switch (self->transport_type)
+    {
+    case TP_STREAM_TRANSPORT_TYPE_RAW_UDP:
+    case TP_STREAM_TRANSPORT_TYPE_SHM:
+    case TP_STREAM_TRANSPORT_TYPE_MULTICAST:
+      ret = fs_stream_force_remote_candidates (self->fsstream,
+          fscandidates, &error);
+      break;
+    case TP_STREAM_TRANSPORT_TYPE_ICE:
+    case TP_STREAM_TRANSPORT_TYPE_GTALK_P2P:
+    case TP_STREAM_TRANSPORT_TYPE_WLM_2009:
+      ret = fs_stream_add_remote_candidates (self->fsstream, fscandidates,
+          &error);
+      break;
+    default:
+      ret = FALSE;
+    }
+
+  if (!ret)
+    {
+      tf_call_stream_fail (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_MEDIA_STREAMING_ERROR,
+          "Error setting the remote candidates: %s", error->message);
+      g_clear_error (&error);
+    }
+  fs_candidate_list_destroy (fscandidates);
+}
+
+static void
 tf_call_stream_try_adding_fsstream (TfCallStream *self)
 {
   gchar *transmitter;
@@ -479,6 +515,9 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
       return;
     }
 
+  _tf_call_stream_push_remote_candidates (self, self->stored_remote_candidates);
+  self->stored_remote_candidates = NULL;
+
   if (self->sending_state == TP_STREAM_FLOW_STATE_PENDING_START)
     sending_state_changed (self->proxy,
         self->sending_state, NULL, (GObject *) self);
@@ -584,7 +623,6 @@ tpnetworkproto_to_fs (TpMediaStreamBaseProto proto)
     }
 }
 
-
 static void
 tf_call_stream_add_remote_candidates (TfCallStream *self,
     const GPtrArray *candidates)
@@ -672,36 +710,7 @@ tf_call_stream_add_remote_candidates (TfCallStream *self,
 
   if (self->fsstream)
     {
-      gboolean ret;
-      GError *error = NULL;
-
-      switch (self->transport_type)
-        {
-        case TP_STREAM_TRANSPORT_TYPE_RAW_UDP:
-        case TP_STREAM_TRANSPORT_TYPE_SHM:
-        case TP_STREAM_TRANSPORT_TYPE_MULTICAST:
-          ret = fs_stream_force_remote_candidates (self->fsstream,
-              fscandidates, &error);
-          break;
-        case TP_STREAM_TRANSPORT_TYPE_ICE:
-        case TP_STREAM_TRANSPORT_TYPE_GTALK_P2P:
-        case TP_STREAM_TRANSPORT_TYPE_WLM_2009:
-          ret = fs_stream_add_remote_candidates (self->fsstream, fscandidates,
-              &error);
-          break;
-        default:
-          ret = FALSE;
-        }
-
-      if (!ret)
-        {
-          tf_call_stream_fail (self,
-              TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
-              TP_ERROR_STR_MEDIA_STREAMING_ERROR,
-              "Error setting the remote candidates: %s", error->message);
-          g_clear_error (&error);
-        }
-      fs_candidate_list_destroy (fscandidates);
+      _tf_call_stream_push_remote_candidates (self, fscandidates);
     }
   else
     {
