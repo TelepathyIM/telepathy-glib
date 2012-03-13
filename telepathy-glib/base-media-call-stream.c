@@ -242,6 +242,10 @@ tp_base_media_call_stream_init (TpBaseMediaCallStream *self)
 
   g_signal_connect (self, "notify::remote-members",
       G_CALLBACK (tp_base_media_call_stream_update_receiving_state), NULL);
+  g_signal_connect (self, "notify::channel",
+      G_CALLBACK (tp_base_media_call_stream_update_receiving_state), NULL);
+  g_signal_connect (self, "notify::channel",
+      G_CALLBACK (tp_base_media_call_stream_update_sending_state), NULL);
 }
 
 static void
