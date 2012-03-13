@@ -855,6 +855,9 @@ _tp_base_call_stream_set_content (TpBaseCallStream *self,
 
   self->priv->content = content;
   self->priv->channel = _tp_base_call_content_get_channel (content);
+
+  g_object_notify (G_OBJECT (self), "content");
+  g_object_notify (G_OBJECT (self), "channel");
 }
 
 TpBaseCallContent *
