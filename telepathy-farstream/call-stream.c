@@ -201,7 +201,7 @@ sending_state_changed (TpCallStream *proxy,
     }
 }
 
-static void
+static gboolean
 tf_call_stream_start_receiving (TfCallStream *self, FsStreamDirection dir)
 {
   if (self->has_receive_resource ||
@@ -215,6 +215,7 @@ tf_call_stream_start_receiving (TfCallStream *self, FsStreamDirection dir)
       tp_cli_call_stream_interface_media_call_complete_receiving_state_change (
           self->proxy, -1, TP_STREAM_FLOW_STATE_STARTED,
           NULL, NULL, NULL, NULL);
+      return TRUE;
     }
   else
     {
@@ -222,6 +223,7 @@ tf_call_stream_start_receiving (TfCallStream *self, FsStreamDirection dir)
           self->proxy, -1, TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_MEDIA_STREAMING_ERROR,
           "Could not start receiving", NULL, NULL, NULL, NULL);
+      return FALSE;
     }
 }
 
@@ -490,8 +492,8 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
 
   if (self->receiving_state == TP_STREAM_FLOW_STATE_PENDING_START)
     {
-      tf_call_stream_start_receiving (self, FS_DIRECTION_NONE);
-      dir = FS_DIRECTION_RECV;
+      if (tf_call_stream_start_receiving (self, FS_DIRECTION_NONE))
+        dir = FS_DIRECTION_RECV;
     }
 
   self->fsstream = _tf_call_content_get_fsstream_by_handle (self->call_content,
