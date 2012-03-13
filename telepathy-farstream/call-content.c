@@ -877,7 +877,7 @@ process_media_description (TfCallContent *self,
     }
 
 
-  g_debug ("Got MediaDescription");
+  g_debug ("Got MediaDescription %s", media_description_objpath);
   fscodecs = tpcodecs_to_fscodecs (tf_call_content_get_fs_media_type (self),
       codecs, does_avpf, rtcp_fb);
 
@@ -1942,12 +1942,6 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
 
   if (!codecs)
     return;
-
-  if (fs_codec_list_are_equal (codecs, self->last_sent_codecs))
-    {
-      fs_codec_list_destroy (codecs);
-      return;
-    }
 
   media_description = fscodecs_to_media_descriptions (self, codecs);
 
