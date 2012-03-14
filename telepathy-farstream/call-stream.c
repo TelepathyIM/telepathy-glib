@@ -57,6 +57,7 @@
 G_DEFINE_TYPE (TfCallStream, tf_call_stream, G_TYPE_OBJECT);
 
 static void tf_call_stream_dispose (GObject *object);
+static void tf_call_stream_finalize (GObject *object);
 
 static void tf_call_stream_fail_literal (TfCallStream *self,
     TpCallStateChangeReason reason,
@@ -78,6 +79,7 @@ tf_call_stream_class_init (TfCallStreamClass *klass)
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   object_class->dispose = tf_call_stream_dispose;
+  object_class->finalize = tf_call_stream_finalize;
 }
 
 static void
@@ -98,14 +100,6 @@ tf_call_stream_dispose (GObject *object)
     g_object_unref (self->proxy);
   self->proxy = NULL;
 
-  if (self->stun_servers)
-    g_boxed_free (TP_ARRAY_TYPE_SOCKET_ADDRESS_IP_LIST, self->stun_servers);
-  self->stun_servers = NULL;
-
-  if (self->relay_info)
-    g_boxed_free (TP_ARRAY_TYPE_STRING_VARIANT_MAP_LIST, self->relay_info);
-  self->relay_info = NULL;
-
   if (self->fsstream)
     _tf_call_content_put_fsstream (self->call_content, self->fsstream);
   self->fsstream = NULL;
@@ -115,6 +109,25 @@ tf_call_stream_dispose (GObject *object)
 
   if (G_OBJECT_CLASS (tf_call_stream_parent_class)->dispose)
     G_OBJECT_CLASS (tf_call_stream_parent_class)->dispose (object);
+}
+
+static void
+tf_call_stream_finalize (GObject *object)
+{
+  TfCallStream *self = TF_CALL_STREAM (object);
+
+  g_debug (G_STRFUNC);
+
+  if (self->stun_servers)
+    g_boxed_free (TP_ARRAY_TYPE_SOCKET_ADDRESS_IP_LIST, self->stun_servers);
+  self->stun_servers = NULL;
+
+  if (self->relay_info)
+    g_boxed_free (TP_ARRAY_TYPE_STRING_VARIANT_MAP_LIST, self->relay_info);
+  self->relay_info = NULL;
+
+  if (G_OBJECT_CLASS (tf_call_stream_parent_class)->finalize)
+    G_OBJECT_CLASS (tf_call_stream_parent_class)->finalize (object);
 }
 
 
