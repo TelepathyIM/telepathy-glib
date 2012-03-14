@@ -344,7 +344,13 @@ tf_call_content_dispose (GObject *object)
   g_debug (G_STRFUNC);
 
   if (self->streams)
-    g_ptr_array_free (self->streams, TRUE);
+    {
+      guint i;
+
+      for (i = 0; i < self->streams->len; i++)
+        g_object_run_dispose (G_OBJECT (g_ptr_array_index (self->streams, i)));
+      g_ptr_array_free (self->streams, TRUE);
+    }
   self->streams = NULL;
 
   if (self->fssession)
