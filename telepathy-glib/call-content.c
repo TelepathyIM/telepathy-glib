@@ -114,6 +114,7 @@ _tp_call_stream_new (TpCallContent *self,
       "dbus-connection", tp_proxy_get_dbus_connection (self),
       "object-path", object_path,
       "connection", self->priv->connection,
+      "content", self,
       NULL);
 }
 
