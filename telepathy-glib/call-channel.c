@@ -126,6 +126,7 @@ _tp_call_content_new (TpCallChannel *self,
       "dbus-connection", tp_proxy_get_dbus_connection (self),
       "object-path", object_path,
       "connection", tp_channel_borrow_connection ((TpChannel *) self),
+      "channel", self,
       NULL);
 }
 

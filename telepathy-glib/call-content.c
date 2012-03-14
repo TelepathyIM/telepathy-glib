@@ -47,6 +47,7 @@
 
 #include "telepathy-glib/call-content.h"
 
+#include <telepathy-glib/call-channel.h>
 #include <telepathy-glib/call-misc.h>
 #include <telepathy-glib/call-stream.h>
 #include <telepathy-glib/dbus.h>
@@ -73,6 +74,7 @@ typedef struct _SendTonesData SendTonesData;
 struct _TpCallContentPrivate
 {
   TpConnection *connection;
+  TpCallChannel *channel;
 
   gchar *name;
   TpMediaStreamType media_type;
@@ -91,7 +93,8 @@ enum
   PROP_NAME,
   PROP_MEDIA_TYPE,
   PROP_DISPOSITION,
-  PROP_STREAMS
+  PROP_STREAMS,
+  PROP_CHANNEL
 };
 
 enum
@@ -480,6 +483,9 @@ tp_call_content_get_property (GObject *object,
       case PROP_STREAMS:
         g_value_set_boxed (value, self->priv->streams);
         break;
+      case PROP_CHANNEL:
+        g_value_set_object (value, self->priv->channel);
+        break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
@@ -499,6 +505,10 @@ tp_call_content_set_property (GObject *object,
       case PROP_CONNECTION:
         g_assert (self->priv->connection == NULL); /* construct-only */
         self->priv->connection = g_value_dup_object (value);
+        break;
+      case PROP_CHANNEL:
+        g_assert (self->priv->channel == NULL); /* construct-only */
+        self->priv->channel = g_value_dup_object (value);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -626,6 +636,21 @@ tp_call_content_class_init (TpCallContentClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (gobject_class, PROP_STREAMS,
       param_spec);
+
+  /**
+   * TpCallContent:channel:
+   *
+   * The parent #TpCallChannel of the content.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_object ("channel", "Channel",
+      "The channel of this content",
+      TP_TYPE_CALL_CHANNEL,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (gobject_class, PROP_CHANNEL,
+      param_spec);
+
 
   /**
    * TpCallContent::removed
