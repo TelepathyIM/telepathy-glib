@@ -544,6 +544,9 @@ server_info_retrieved (TpCallStream *proxy,
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
 
+  if (self->proxy == NULL)
+    return;
+
   self->server_info_retrieved = TRUE;
 
   tf_call_stream_try_adding_fsstream (self);
@@ -555,6 +558,9 @@ relay_info_changed (TpCallStream *proxy,
     gpointer user_data, GObject *weak_object)
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
+
+  if (self->proxy == NULL)
+    return;
 
   if (self->server_info_retrieved)
     {
@@ -580,6 +586,9 @@ stun_servers_changed (TpCallStream *proxy,
     gpointer user_data, GObject *weak_object)
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
+
+  if (self->proxy == NULL)
+    return;
 
   if (self->server_info_retrieved)
     {
@@ -741,6 +750,9 @@ remote_candidates_added (TpProxy *proxy,
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
 
+  if (self->proxy == NULL)
+    return;
+
   if (!self->has_endpoint_properties)
     return;
 
@@ -757,6 +769,9 @@ remote_credentials_set (TpProxy *proxy,
     gpointer user_data, GObject *weak_object)
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
+
+  if (self->proxy == NULL)
+    return;
 
   if (self->endpoint != proxy)
     return;
@@ -950,6 +965,9 @@ endpoints_changed (TpCallStream *proxy,
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
 
+  if (self->proxy == NULL)
+    return;
+
   /* Ignore signals before getting the properties to avoid races */
   if (!self->has_media_properties)
     return;
@@ -1017,6 +1035,9 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
   GPtrArray *endpoints;
   gboolean valid;
 
+  if (self->proxy == NULL)
+    return;
+
   if (error)
     {
       tf_call_stream_fail (self,
@@ -1035,6 +1056,9 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
           "Error getting the Stream's media properties: there are none");
       return;
     }
+
+  if (self->proxy == NULL)
+    return;
 
   self->transport_type =
       tp_asv_get_uint32 (out_Properties, "Transport", &valid);
@@ -1175,6 +1199,9 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
   GHashTable *members;
   GHashTableIter iter;
   gpointer key, value;
+
+  if (self->proxy == NULL)
+    return;
 
   if (!tp_proxy_prepare_finish (src_object, res, &error))
     {
@@ -1425,7 +1452,7 @@ fscandidate_to_tpcandidate (TfCallStream *stream, FsCandidate *candidate)
 static void
 cb_fs_new_local_candidate (TfCallStream *stream, FsCandidate *candidate)
 {
-  GPtrArray *candidate_list = g_ptr_array_sized_new (1);
+  GPtrArray *candidate_list;
 
   if (!stream->multiple_usernames)
     {
@@ -1461,6 +1488,7 @@ cb_fs_new_local_candidate (TfCallStream *stream, FsCandidate *candidate)
       candidate->ttl,candidate-> base_ip, candidate->base_port);
 
 
+  candidate_list = g_ptr_array_sized_new (1);
   g_ptr_array_add (candidate_list,
       fscandidate_to_tpcandidate (stream, candidate));
 
@@ -1608,6 +1636,10 @@ tf_call_stream_fail_literal (TfCallStream *self,
     const gchar *message)
 {
   g_warning ("%s", message);
+
+  if (self->proxy == NULL)
+    return;
+
   tp_cli_call_stream_interface_media_call_fail (
       self->proxy, -1,
       tp_value_array_build (4,
@@ -1643,6 +1675,9 @@ tf_call_stream_sending_failed (TfCallStream *self, const gchar *message)
 {
   g_warning ("Reporting sending failure: %s", message);
 
+  if (self->proxy == NULL)
+    return;
+
   tp_cli_call_stream_interface_media_call_report_sending_failure (
       self->proxy, -1, TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
       TP_ERROR_STR_MEDIA_STREAMING_ERROR,
@@ -1655,6 +1690,9 @@ tf_call_stream_receiving_failed (TfCallStream *self,
     guint *handles, guint handle_count,
     const gchar *message)
 {
+  if (self->proxy == NULL)
+    return;
+
   if (handle_count && handle_count > 0)
     {
       guint i;
