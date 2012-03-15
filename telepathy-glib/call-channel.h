@@ -112,8 +112,8 @@ gboolean tp_call_channel_accept_finish (TpCallChannel *self,
 
 void tp_call_channel_hangup_async (TpCallChannel *self,
     TpCallStateChangeReason reason,
-    gchar *detailed_reason,
-    gchar *message,
+    const gchar *detailed_reason,
+    const gchar *message,
     GAsyncReadyCallback callback,
     gpointer user_data);
 gboolean tp_call_channel_hangup_finish (TpCallChannel *self,
@@ -121,7 +121,7 @@ gboolean tp_call_channel_hangup_finish (TpCallChannel *self,
     GError **error);
 
 void tp_call_channel_add_content_async (TpCallChannel *self,
-    gchar *name,
+    const gchar *name,
     TpMediaStreamType type,
     TpMediaStreamDirection initial_direction,
     GAsyncReadyCallback callback,
