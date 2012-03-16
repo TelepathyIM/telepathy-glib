@@ -906,6 +906,23 @@ tp_base_media_call_stream_set_local_sending (TpBaseMediaCallStream *self,
   tp_base_media_call_stream_update_sending_state (self);
 }
 
+/**
+ * tp_base_media_call_stream_get_local_sending:
+ * @self: a #TpBaseMediaCallStream
+ *
+ * Gets the local sending state
+ *
+ * Returns: The local sending state
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_base_media_call_stream_get_local_sending (TpBaseMediaCallStream *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_MEDIA_CALL_STREAM (self), FALSE);
+
+  return self->priv->local_sending;
+}
+
 void
 _tp_base_media_call_stream_set_remotely_held (TpBaseMediaCallStream *self,
     gboolean remotely_held)
