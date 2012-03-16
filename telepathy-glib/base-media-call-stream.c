@@ -1232,6 +1232,7 @@ tp_base_media_call_stream_report_sending_failure (
 
   if (!was_held)
     {
+      self->priv->local_sending = FALSE;
       if (klass->report_sending_failure != NULL)
         klass->report_sending_failure (self, old_state, reason, dbus_reason,
             message);
