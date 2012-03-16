@@ -1061,8 +1061,8 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    * @state: the new #TpCallState
    * @flags: the new #TpCallFlags
    * @reason: the #TpCallStateReason for the change
-   * @details: additional details as a #GHashTable readable using the tp_asv_*
-   *   functions.
+   * @details: (element-type utf8 GObject.Value): additional details as a
+   *   #GHashTable readable using the tp_asv_* functions.
    *
    * The ::state-changed signal is emitted whenever the
    * call state changes.
