@@ -871,6 +871,8 @@ _tp_base_media_call_content_ready_to_accept (TpBaseMediaCallContent *self)
         {
           tp_base_media_call_stream_set_local_sending (stream, TRUE);
         }
+      tp_base_media_call_stream_update_sending_state (stream);
+
       g_hash_table_iter_init (&iter, members);
       while (g_hash_table_iter_next (&iter, &key, &value))
         {
@@ -910,6 +912,7 @@ _tp_base_media_call_content_remote_accepted (TpBaseMediaCallContent *self)
 
       if (local == TP_SENDING_STATE_SENDING)
         tp_base_media_call_stream_set_local_sending (stream, TRUE);
+      tp_base_media_call_stream_update_sending_state (stream);
     }
 }
 
