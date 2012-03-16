@@ -414,11 +414,11 @@ hold_change_failed (TpBaseMediaCallChannel *self)
   TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
   GList *l, *l2;
 
-  if (self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_UNHOLD)
-    {
-      set_hold_state (self, TP_LOCAL_HOLD_STATE_PENDING_HOLD,
-          TP_LOCAL_HOLD_STATE_REASON_RESOURCE_NOT_AVAILABLE);
-    }
+  if (self->priv->hold_state != TP_LOCAL_HOLD_STATE_PENDING_UNHOLD)
+    return;
+
+  set_hold_state (self, TP_LOCAL_HOLD_STATE_PENDING_HOLD,
+      TP_LOCAL_HOLD_STATE_REASON_RESOURCE_NOT_AVAILABLE);
 
   for (l = tp_base_call_channel_get_contents (bcc); l != NULL; l = l->next)
     {
@@ -557,15 +557,15 @@ _tp_base_media_call_channel_streams_sending_state_changed (
     TpBaseMediaCallChannel *self,
     gboolean success)
 {
-  gboolean was_unholding =
-      (self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_UNHOLD);
+  gboolean was_held =
+      (self->priv->hold_state != TP_LOCAL_HOLD_STATE_UNHELD);
 
   if (success)
     update_hold_state (self);
   else
     hold_change_failed (self);
 
-  return was_unholding;
+  return was_held;
 }
 
 gboolean
@@ -573,15 +573,15 @@ _tp_base_media_call_channel_streams_receiving_state_changed (
     TpBaseMediaCallChannel *self,
     gboolean success)
 {
-  gboolean was_unholding =
-      (self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_UNHOLD);
+  gboolean was_held =
+      (self->priv->hold_state != TP_LOCAL_HOLD_STATE_UNHELD);
 
   if (success)
     update_hold_state (self);
   else
     hold_change_failed (self);
 
-  return was_unholding;
+  return was_held;
 }
 
 /**
