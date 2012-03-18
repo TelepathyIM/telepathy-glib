@@ -5,14 +5,13 @@ tfinclude_HEADERS = \
 	content.h
 
 libtelepathy_farstream_la_SOURCES = \
+	$(tfinclude_HEADERS)
 	stream.c \
 	stream.h \
 	content.c \
-	content.h \
 	content-priv.h \
 	session.c \
 	channel.c \
-	channel.h \
 	session-priv.h \
 	channel-priv.h \
 	media-signalling-channel.c \
@@ -25,7 +24,7 @@ libtelepathy_farstream_la_SOURCES = \
 	call-content.c \
 	call-stream.h \
 	call-stream.c \
-	telepathy-farstream.h \
+	call-priv.h \
 	utils.h
 
 nodist_libtelepathy_farstream_la_SOURCES = $(BUILT_SOURCES)

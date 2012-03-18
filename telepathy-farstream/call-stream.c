@@ -89,13 +89,9 @@ tf_call_stream_init (TfCallStream *self)
   self->receiving_state = TP_STREAM_FLOW_STATE_STOPPED;
 }
 
-static void
-tf_call_stream_dispose (GObject *object)
+void
+_tf_call_stream_destroy (TfCallStream *self)
 {
-  TfCallStream *self = TF_CALL_STREAM (object);
-
-  g_debug (G_STRFUNC);
-
   if (self->proxy)
     g_object_unref (self->proxy);
   self->proxy = NULL;
@@ -106,6 +102,18 @@ tf_call_stream_dispose (GObject *object)
 
   if (self->endpoint)
     _tf_call_stream_remove_endpoint (self);
+
+  self->call_content = NULL;
+}
+
+static void
+tf_call_stream_dispose (GObject *object)
+{
+  TfCallStream *self = TF_CALL_STREAM (object);
+
+  g_debug (G_STRFUNC);
+
+  _tf_call_stream_destroy (self);
 
   if (G_OBJECT_CLASS (tf_call_stream_parent_class)->dispose)
     G_OBJECT_CLASS (tf_call_stream_parent_class)->dispose (object);

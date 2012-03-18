@@ -35,6 +35,7 @@
 #include <farstream/fs-conference.h>
 
 #include "call-content.h"
+#include "call-priv.h"
 
 
 static void call_channel_async_initable_init (GAsyncInitableIface *asynciface);
@@ -245,7 +246,6 @@ tf_call_channel_dispose (GObject *object)
      already been disposed of. */
   if (self->contents)
     {
-      g_ptr_array_foreach (self->contents, (GFunc) g_object_run_dispose, NULL);
       g_ptr_array_free (self->contents, TRUE);
     }
   self->contents = NULL;
@@ -396,6 +396,15 @@ content_removed (TpCallChannel *proxy,
 }
 
 static void
+free_content (gpointer data)
+{
+  TfCallContent *content = data;
+
+  _tf_call_content_destroy (content);
+  g_object_unref (content);
+}
+
+static void
 channel_prepared (GObject *proxy, GAsyncResult *prepare_res, gpointer user_data)
 {
   GSimpleAsyncResult *res = user_data;
@@ -424,7 +433,7 @@ channel_prepared (GObject *proxy, GAsyncResult *prepare_res, gpointer user_data)
 
   contents = tp_call_channel_get_contents (TP_CALL_CHANNEL (proxy));
 
-  self->contents = g_ptr_array_new_with_free_func (g_object_unref);
+  self->contents = g_ptr_array_new_with_free_func (free_content);
 
   for (i = 0; i < contents->len; i++)
     if (!add_content (self, g_ptr_array_index (contents, i)))

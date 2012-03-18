@@ -53,6 +53,7 @@
 
 
 #include "call-stream.h"
+#include "call-priv.h"
 #include "utils.h"
 
 #define DTMF_TONE_VOLUME (8)
@@ -336,19 +337,11 @@ tf_call_content_init (TfCallContent *self)
   self->reported_output_volume = -1;
 }
 
-static void
-tf_call_content_dispose (GObject *object)
+void
+_tf_call_content_destroy (TfCallContent *self)
 {
-  TfCallContent *self = TF_CALL_CONTENT (object);
-
-  g_debug (G_STRFUNC);
-
   if (self->streams)
     {
-      guint i;
-
-      for (i = 0; i < self->streams->len; i++)
-        g_object_run_dispose (G_OBJECT (g_ptr_array_index (self->streams, i)));
       g_ptr_array_free (self->streams, TRUE);
     }
   self->streams = NULL;
@@ -378,16 +371,23 @@ tf_call_content_dispose (GObject *object)
         self->fsconference);
   self->fsconference = NULL;
 
-  if (self->proxy)
-    g_object_unref (self->proxy);
-  self->proxy = NULL;
-
-  fs_codec_list_destroy (self->last_sent_codecs);
-  self->last_sent_codecs = NULL;
-
   /* We do not hold a ref to the call channel, and use it as a flag to ensure
    * we will bail out when disposed */
   self->call_channel = NULL;
+}
+
+static void
+tf_call_content_dispose (GObject *object)
+{
+  TfCallContent *self = TF_CALL_CONTENT (object);
+
+  g_debug (G_STRFUNC);
+
+  _tf_call_content_destroy (self);
+
+  if (self->proxy)
+    g_object_unref (self->proxy);
+  self->proxy = NULL;
 
   if (G_OBJECT_CLASS (tf_call_content_parent_class)->dispose)
     G_OBJECT_CLASS (tf_call_content_parent_class)->dispose (object);
@@ -398,6 +398,9 @@ static void
 tf_call_content_finalize (GObject *object)
 {
   TfCallContent *self = TF_CALL_CONTENT (object);
+
+  fs_codec_list_destroy (self->last_sent_codecs);
+  self->last_sent_codecs = NULL;
 
   g_mutex_free (self->mutex);
 
@@ -1599,6 +1602,16 @@ new_media_description_offer (TpCallContent *proxy,
 
 
 static void
+free_stream (gpointer data)
+{
+  TfCallStream *stream = data;
+
+  _tf_call_stream_destroy (stream);
+  g_object_unref (stream);
+}
+
+
+static void
 content_prepared (GObject *src, GAsyncResult *prepare_res,
     gpointer user_data)
 {
@@ -1646,7 +1659,7 @@ content_prepared (GObject *src, GAsyncResult *prepare_res,
       return;
     }
 
-  self->streams = g_ptr_array_new_with_free_func (g_object_unref);
+  self->streams = g_ptr_array_new_with_free_func (free_stream);
 
   tp_cli_call_content_interface_media_connect_to_new_media_description_offer (
       self->proxy, new_media_description_offer, NULL, NULL,
