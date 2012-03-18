@@ -145,6 +145,8 @@
 
 #include "base-media-call-stream.h"
 
+#include <string.h>
+
 #define DEBUG_FLAG TP_DEBUG_CALL
 #include "telepathy-glib/base-call-content.h"
 #include "telepathy-glib/base-call-channel.h"
@@ -625,7 +627,41 @@ tp_base_media_call_stream_set_stun_servers (TpBaseMediaCallStream *self,
   g_return_if_fail (TP_IS_BASE_MEDIA_CALL_STREAM (self));
   g_return_if_fail (stun_servers != NULL);
 
-  tp_clear_pointer (&self->priv->stun_servers, g_ptr_array_unref);
+  if (self->priv->stun_servers != NULL)
+    {
+      if (stun_servers->len == self->priv->stun_servers->len)
+        {
+          guint i;
+          gboolean equal = TRUE;
+
+          for (i = 0; i < stun_servers->len; i++)
+            {
+              GValueArray *gva1 = g_ptr_array_index (stun_servers, i);
+              GValueArray *gva2 = g_ptr_array_index (self->priv->stun_servers,
+                  i);
+              gchar *ip1, *ip2;
+              guint port1, port2;
+
+              tp_value_array_unpack (gva1, 2, &ip1, &port1);
+              tp_value_array_unpack (gva2, 2, &ip2, &port2);
+
+              if (port1 != port2 || strcmp (ip1, ip2))
+                {
+                  equal = FALSE;
+                  break;
+                }
+            }
+
+          if (equal)
+            {
+              g_ptr_array_unref (stun_servers);
+              return;
+            }
+        }
+
+      g_ptr_array_unref (self->priv->stun_servers);
+    }
+
   self->priv->stun_servers = g_ptr_array_ref (stun_servers);
 
   tp_svc_call_stream_interface_media_emit_stun_servers_changed (self,
