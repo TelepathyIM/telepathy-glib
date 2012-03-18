@@ -61,6 +61,7 @@ struct _TpCallStateReason
   TpHandle actor;
   TpCallStateChangeReason reason;
   gchar *dbus_reason;
+  gchar *message;
 
   /*<private>*/
   guint ref_count;

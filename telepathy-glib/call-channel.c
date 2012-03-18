@@ -146,6 +146,8 @@ _tp_call_content_new (TpCallChannel *self,
  *  the Telepathy namespace, a D-Bus error in any other namespace
  *  (for implementation-specific errors), or the empty string to indicate that
  *  the state change was not an error
+ * @message: A developer readable debug message giving the reason for the state
+ *  change.
  *
  * Data structure representing the reason for a call state change.
  *
@@ -155,7 +157,8 @@ _tp_call_content_new (TpCallChannel *self,
 static TpCallStateReason *
 _tp_call_state_reason_new_full (TpHandle actor,
     TpCallStateChangeReason reason,
-    const gchar *dbus_reason)
+    const gchar *dbus_reason,
+    const gchar *message)
 {
   TpCallStateReason *r;
 
@@ -163,6 +166,7 @@ _tp_call_state_reason_new_full (TpHandle actor,
   r->actor = actor;
   r->reason = reason;
   r->dbus_reason = g_strdup (dbus_reason);
+  r->message = g_strdup (message);
   r->ref_count = 1;
 
   return r;
@@ -174,13 +178,15 @@ _tp_call_state_reason_new (const GValueArray *value_array)
   TpHandle handle;
   TpCallStateChangeReason reason;
   const gchar *dbus_reason;
+  const gchar *message;
 
-  tp_value_array_unpack ((GValueArray *) value_array, 3,
+  tp_value_array_unpack ((GValueArray *) value_array, 4,
       &handle,
       &reason,
-      &dbus_reason);
+      &dbus_reason,
+      &message);
 
-  return _tp_call_state_reason_new_full (handle, reason, dbus_reason);
+  return _tp_call_state_reason_new_full (handle, reason, dbus_reason, message);
 }
 
 TpCallStateReason *
@@ -198,6 +204,7 @@ _tp_call_state_reason_unref (TpCallStateReason *r)
   if (g_atomic_int_dec_and_test (&r->ref_count))
     {
       g_free (r->dbus_reason);
+      g_free (r->message);
       g_slice_free (TpCallStateReason, r);
     }
 }
