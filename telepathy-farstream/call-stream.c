@@ -97,7 +97,20 @@ _tf_call_stream_destroy (TfCallStream *self)
   self->proxy = NULL;
 
   if (self->fsstream)
-    _tf_call_content_put_fsstream (self->call_content, self->fsstream);
+    {
+      g_object_set (self->fsstream, "direction", FS_DIRECTION_NONE, NULL);
+
+      if (self->has_send_resource)
+        _tf_content_stop_sending (TF_CONTENT (self->call_content));
+      self->has_send_resource = FALSE;
+
+      if (self->has_receive_resource)
+        _tf_content_stop_receiving (TF_CONTENT (self->call_content),
+            &self->contact_handle, 1);
+      self->has_receive_resource = FALSE;
+      _tf_call_content_put_fsstream (self->call_content, self->fsstream);
+    }
+
   self->fsstream = NULL;
 
   if (self->endpoint)
