@@ -368,7 +368,7 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *klass)
    *
    * #TpBaseCallContent object that owns this call stream.
    *
-   * Since: 0.17.UNRELEASED
+   * Since: 0.17.6
    */
   param_spec = g_param_spec_object ("content", "TpBaseCallContent object",
       "Tp Content object that owns this call stream",

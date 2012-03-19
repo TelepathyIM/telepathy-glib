@@ -372,7 +372,7 @@ tp_channel_get_identifier (TpChannel *self)
  *
  * Returns: %TRUE if introspection has completed
  * Since: 0.7.12
- * Deprecated: 0.17.UNRELEASED: use tp_proxy_is_prepared() with
+ * Deprecated: 0.17.6: use tp_proxy_is_prepared() with
  *  %TP_CHANNEL_FEATURE_CORE
  */
 gboolean
@@ -1608,7 +1608,7 @@ tp_channel_class_init (TpChannelClass *klass)
    *
    * Change notification is via notify::channel-ready.
    *
-   * Deprecated: 0.17.UNRELEASED: use tp_proxy_is_prepared() with
+   * Deprecated: 0.17.6: use tp_proxy_is_prepared() with
    *  %TP_CHANNEL_FEATURE_CORE for checks, or tp_proxy_prepare_async() for
    *  notification
    */
@@ -2242,7 +2242,7 @@ cwr_ready (TpChannel *self,
  * will be called exactly once, when the channel becomes ready or
  * invalid (whichever happens first)
  *
- * Deprecated: 0.17.UNRELEASED
+ * Deprecated: 0.17.6
  */
 
 /**
@@ -2263,7 +2263,7 @@ cwr_ready (TpChannel *self,
  * calls @callback from the main loop.)
  *
  * Since: 0.7.7
- * Deprecated: 0.17.UNRELEASED: Use tp_proxy_prepare_async()
+ * Deprecated: 0.17.6: Use tp_proxy_prepare_async()
  */
 void
 tp_channel_call_when_ready (TpChannel *self,

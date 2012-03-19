@@ -491,7 +491,7 @@ tp_call_content_media_description_class_init (
    *
    * A list of remote header extensions which are supported.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.6
    */
   spec = g_param_spec_boxed ("header-extensions", "Header Extentions",
       "A list of remote header extensions which are supported.",
@@ -504,7 +504,7 @@ tp_call_content_media_description_class_init (
    *
    * A map of remote feedback codec properties that are supported.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.6
    */
   spec = g_param_spec_boxed ("feedback-messages", "Feedback Messages",
       "A map of remote feedback codec properties that are supported.",
@@ -518,7 +518,7 @@ tp_call_content_media_description_class_init (
    * %TRUE if the remote contact supports Audio-Visual Profile Feedback (AVPF),
    * otherwise %FALSE.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.6
    */
   spec = g_param_spec_boolean ("does-avpf", "Does AVPF",
       "True if the remote contact supports Audio-Visual Profile Feedback "
@@ -534,7 +534,7 @@ tp_call_content_media_description_class_init (
    * this integer represents the max-size of report blocks, as specified in
    * RFC 3611 section 5.1. MAXUINT32 is used to indicate that there is no limit.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.6
    */
   spec = g_param_spec_uint ("loss-rle-max-size", "Loss RLE max size",
       "If non-zero, enable Loss Run Length Encoded Report Blocks.",
@@ -549,7 +549,7 @@ tp_call_content_media_description_class_init (
    * of this integer represents the max-size of report blocks, as specified in
    * RFC 3611 section 5.1. MAXUINT32 is used to indicate that there is no limit.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.6
    */
   spec = g_param_spec_uint ("duplicate-rle-max-size",
       "Duplicate Run-Length-Encoded max size",
@@ -566,7 +566,7 @@ tp_call_content_media_description_class_init (
    * integer represents the max-size of report blocks, as specified in RFC 3611
    * section 5.1. MAXUINT32 is used to indicate that there is no limit.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.6
    */
   spec = g_param_spec_uint ("packet-receipt-times-max-size",
       "Packet Receipt Times max size",
@@ -585,7 +585,7 @@ tp_call_content_media_description_class_init (
    * max-size of report blocks, as specified in RFC 3611 section 5.1. MAXUINT32
    * is used to indicate that there is no limit.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.6
    */
   spec = g_param_spec_uint ("dlrr-max-size",
       "Receiver Reference Time and Delay since Last Receiver max size",
@@ -601,7 +601,7 @@ tp_call_content_media_description_class_init (
    * Who is allowed to send Delay since Last Receiver Reports. Value from
    * #TpRCPTXRRTTMode.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.6
    */
   spec = g_param_spec_uint ("rtt-mode", "RTT Mode",
       "Who is allowed to send Delay since Last Receiver Reports.",
@@ -616,7 +616,7 @@ tp_call_content_media_description_class_init (
    * that are sent, and whether to send VoIP Metrics Report Blocks. There can
    * be zero or more flags set. Value from #TpRTCPXRStatisticsFlags.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.6
    */
   spec = g_param_spec_uint ("statistics-flags", "Statistics Flags",
       "Which fields SHOULD be included in the statistics summary report blocks "
@@ -631,7 +631,7 @@ tp_call_content_media_description_class_init (
    * Whether to enable VoIP Metrics Report Blocks. These blocks are of a fixed
    * size.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.6
    */
   spec = g_param_spec_boolean ("enable-metrics", "Enable Metrics",
       "Whether to enable VoIP Metrics Report Blocks. These blocks are of a "
@@ -819,7 +819,7 @@ add_interface (TpCallContentMediaDescription *self,
  *
  * Adds the RTPHeaderExtensions interface to the list of supported interfaces
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 
 void
@@ -837,7 +837,7 @@ tp_call_content_media_description_add_rtp_header_extensions_interface (
  *
  * Adds the RTCPFeedback interface to the list of supported interfaces
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 
 void
@@ -855,7 +855,7 @@ tp_call_content_media_description_add_rtcp_feedback_interface (
  *
  * Adds the RTCPExtendedReports interface to the list of supported interfaces
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 
 void
@@ -884,7 +884,7 @@ tp_call_content_media_description_add_rtcp_extended_reports_interface (
  * %TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS
  * interface.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 void
 tp_call_content_media_description_add_rtp_header_extension (
@@ -955,7 +955,7 @@ ensure_rtcp_feedback_properties (TpCallContentMediaDescription *self,
  * %TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK
  * interface.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 void
 tp_call_content_media_description_add_rtcp_feedback_message (
@@ -1005,7 +1005,7 @@ tp_call_content_media_description_add_rtcp_feedback_message (
  * %TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK
  * interface.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 void
 tp_call_content_media_description_set_rtcp_feedback_minimum_interval (
@@ -1035,7 +1035,7 @@ tp_call_content_media_description_set_rtcp_feedback_minimum_interval (
  * %TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK
  * interface
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 void
 tp_call_content_media_description_set_does_avpf (
@@ -1071,7 +1071,7 @@ tp_call_content_media_description_set_does_avpf (
  * %TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_EXTENDED_REPORTS
  * interface.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 void
 tp_call_content_media_description_set_rtcp_extended_reports (

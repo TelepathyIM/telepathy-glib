@@ -31,6 +31,11 @@ Enhancements:
 • Add accessors for TpAccount properties, parameters and storage identifier
   represented as a GVariant (fd.o #30422, Simon)
 
+• TpCallChannel: add API to put the call on hold. (Olivier)
+
+• TpCallContentMediaDescription now implements the RTPHeaderExtensions,
+  RTCPFeedback and RTCPExtendedReports interfaces. (Olivier)
+
 Fixes:
 
 • Don't change the direction of Call streams because of a Hold (Olivier)
@@ -55,6 +60,8 @@ Fixes:
   (fd.o #36398, Simon)
 
 • Improve test coverage for the connection manager test (fd.o #46358, Simon)
+
+• TpCallChannel::state-changed is properly annotate (fdo.o #47410 Guillaume)
 
 telepathy-glib 0.17.5 (2012-02-20)
 ==================================

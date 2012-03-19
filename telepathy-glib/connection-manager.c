@@ -558,7 +558,7 @@ finally:
  * @error is %NULL and @cm is considered to be ready. Otherwise, @error is
  * non-%NULL and @cm is not ready.
  *
- * Deprecated: since 0.UNRELEASED, use tp_proxy_prepare_async() instead
+ * Deprecated: since 0.17.6, use tp_proxy_prepare_async() instead
  */
 
 /**
@@ -575,7 +575,7 @@ finally:
  * supported protocols and parameters has been retrieved.
  *
  * Since: 0.7.26
- * Deprecated: since 0.UNRELEASED, use tp_proxy_prepare_async() instead
+ * Deprecated: since 0.17.6, use tp_proxy_prepare_async() instead
  */
 void
 tp_connection_manager_call_when_ready (TpConnectionManager *self,
@@ -1922,7 +1922,7 @@ list_connection_managers_async_cb (TpConnectionManager * const *cms,
  * asynchronously, and wait for their %TP_CONNECTION_MANAGER_FEATURE_CORE
  * feature to be ready.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 void
 tp_list_connection_managers_async (TpDBusDaemon *dbus_daemon,
@@ -1966,7 +1966,7 @@ tp_list_connection_managers_async (TpDBusDaemon *dbus_daemon,
  *
  * Returns: (transfer full) (element-type TelepathyGLib.ConnectionManager): a
  *  newly allocated list of references to #TpConnectionManager objects
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 GList *
 tp_list_connection_managers_finish (GAsyncResult *result,
@@ -2111,7 +2111,7 @@ tp_connection_manager_get_name (TpConnectionManager *self)
  * Returns: %TRUE, unless the #TpConnectionManager:info-source property is
  *          %TP_CM_INFO_SOURCE_NONE
  * Since: 0.7.26
- * Deprecated: since 0.UNRELEASED, use tp_proxy_is_prepared()
+ * Deprecated: since 0.17.6, use tp_proxy_is_prepared()
  *  with %TP_CONNECTION_MANAGER_FEATURE_CORE instead
  */
 gboolean
@@ -2300,7 +2300,7 @@ tp_connection_manager_get_protocol_object (TpConnectionManager *self,
  *  of #TpProtocol objects representing the protocols supported by @self,
  *  owned by the caller
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 GList *
 tp_connection_manager_dup_protocols (TpConnectionManager *self)

@@ -1845,7 +1845,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * it has changed to %TRUE, it remains %TRUE even if the connection has
    * been invalidated.
    *
-   * Deprecated: 0.17.UNRELEASED: use tp_proxy_is_prepared() with
+   * Deprecated: 0.17.6: use tp_proxy_is_prepared() with
    *  %TP_CHANNEL_FEATURE_CONNECTED for checks, or tp_proxy_prepare_async() for
    *  notification
    */
@@ -2982,7 +2982,7 @@ cwr_ready (TpConnection *self,
  * will be called exactly once, when the connection becomes ready or
  * invalid (whichever happens first)
  *
- * Deprecated: 0.17.UNRELEASED
+ * Deprecated: 0.17.6
  */
 
 /**
@@ -3004,7 +3004,7 @@ cwr_ready (TpConnection *self,
  * Call tp_cli_connection_call_connect() too, if you want to do that.
  *
  * Since: 0.7.7
- * Deprecated: 0.17.UNRELEASED: Use tp_proxy_prepare_async()
+ * Deprecated: 0.17.6: Use tp_proxy_prepare_async()
  */
 void
 tp_connection_call_when_ready (TpConnection *self,
@@ -3189,7 +3189,7 @@ _tp_connection_add_contact (TpConnection *self,
  *
  * Returns: %TRUE if introspection has completed
  * Since: 0.7.17
- * Deprecated: 0.17.UNRELEASED: use tp_proxy_is_prepared() with
+ * Deprecated: 0.17.6: use tp_proxy_is_prepared() with
  *  %TP_CONNECTION_FEATURE_CONNECTED
  */
 gboolean

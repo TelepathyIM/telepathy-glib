@@ -395,7 +395,7 @@ tp_call_stream_class_init (TpCallStreamClass *klass)
    *
    * The Content that this streams belongs to
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.6
    */
   param_spec = g_param_spec_object ("content",
       "Content",

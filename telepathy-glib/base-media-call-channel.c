@@ -593,7 +593,7 @@ _tp_base_media_call_channel_streams_receiving_state_changed (
  *
  * Returns: The current hold state
  *
- * Since: 0.17.UNRELEASED
+ * Since: 0.17.6
  */
 
 TpLocalHoldState

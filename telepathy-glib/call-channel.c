@@ -990,7 +990,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    *
    * A #TpLocalHoldState specifying if the Call is currently held
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.6
    */
   param_spec = g_param_spec_uint ("hold-state", "Hold State",
       "The Hold state of the call",
@@ -1004,7 +1004,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    *
    * A #TpLocalHoldStateReason specifying why the Call is currently held.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.6
    */
   param_spec = g_param_spec_uint ("hold-state-reason", "Hold State Reason",
       "The reason for the current hold state",
@@ -1349,7 +1349,7 @@ tp_call_channel_has_dtmf (TpCallChannel *self)
  * interfaces
  *
  * Returns: whether or not @self supports Hold
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 gboolean
 tp_call_channel_has_hold (TpCallChannel *self)
@@ -1763,7 +1763,7 @@ tp_call_channel_send_tones_finish (TpCallChannel *self,
  * hold or is unheld. Unholding may fail if the streaming implementation
  * can not obtain all the resources needed to restart the call.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 
 void
@@ -1805,7 +1805,7 @@ tp_call_channel_request_hold_async (TpCallChannel *self,
  *
  * Finishes tp_call_channel_request_hold_async
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 gboolean
 tp_call_channel_request_hold_finish (TpCallChannel *self,

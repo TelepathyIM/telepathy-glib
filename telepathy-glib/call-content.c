@@ -642,7 +642,7 @@ tp_call_content_class_init (TpCallContentClass *klass)
    *
    * The parent #TpCallChannel of the content.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.6
    */
   param_spec = g_param_spec_object ("channel", "Channel",
       "The channel of this content",
