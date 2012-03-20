@@ -3156,6 +3156,20 @@ tp_base_contact_list_get_contact_list_persists (TpBaseContactList *self)
 }
 
 /**
+ * tp_base_contact_list_get_download_at_connection:
+ * @self: a contact list manager
+ *
+ * Returns: the download-at-connection property
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_base_contact_list_get_download_at_connection (TpBaseContactList *self)
+{
+  return self->priv->download_at_connection;
+}
+
+/**
  * tp_base_contact_list_download_async:
  * @self: a contact list manager
  * @callback: a callback to call when the operation succeeds or fails

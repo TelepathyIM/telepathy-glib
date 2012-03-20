@@ -64,6 +64,8 @@ TpContactListState tp_base_contact_list_get_state (TpBaseContactList *self,
     GError **error);
 TpBaseConnection *tp_base_contact_list_get_connection (
     TpBaseContactList *self, GError **error);
+gboolean tp_base_contact_list_get_download_at_connection (
+    TpBaseContactList *self);
 
 /* ---- Called by subclasses for ContactList (or both) ---- */
 
