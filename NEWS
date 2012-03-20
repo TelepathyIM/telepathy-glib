@@ -1,3 +1,10 @@
+telepathy-farstream 0.2.3 (20 Mar 2012)
+=======================================
+- Fix various bugs
+- Improve debug messages
+- Improve GI annotations
+- Use the generic marshallers
+
 telepathy-farstream 0.2.2 (08 Mar 2012)
 =======================================
 
