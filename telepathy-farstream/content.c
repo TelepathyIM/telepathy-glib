@@ -324,7 +324,7 @@ tf_content_error_literal (TfContent *content,
 }
 
 /**
- * tf_content_error: (skip):
+ * tf_content_error:
  * @content: a #TfContent
  * @message_format: error Message with printf style formatting
  * @...:  Parameters to insert into the @message_format string
@@ -453,7 +453,7 @@ tf_content_sending_failed_literal (TfContent *content,
 }
 
 /**
- * tf_content_sending_failed: (skip):
+ * tf_content_sending_failed:
  * @content: a #TfContent
  * @message_format: Message with printf style formatting
  * @...:  Parameters to insert into the @message_format string
@@ -516,7 +516,7 @@ tf_content_receiving_failed_literal (TfContent *content,
 
 
 /**
- * tf_content_receiving_failed: (skip):
+ * tf_content_receiving_failed:
  * @content: a #TfContent
  * @handles: an array of #guint representing Telepathy handles, may be %NULL
  * @handle_count: the numner of handles in @handles
