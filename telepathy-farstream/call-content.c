@@ -1159,7 +1159,7 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
       tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_MEDIA_ERROR,
           TP_ERROR_STR_MEDIA_UNSUPPORTED_TYPE,
-          "Could not create FsSession: %s", myerror->message);
+          "Could not create FsSession: %s", myerror != NULL ? myerror->message : "(unknown error)");
       g_simple_async_result_set_from_error (res, myerror);
       g_simple_async_result_complete (res);
       g_clear_error (&myerror);
