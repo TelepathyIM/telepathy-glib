@@ -5,7 +5,7 @@ tfinclude_HEADERS = \
 	content.h
 
 libtelepathy_farstream_la_SOURCES = \
-	$(tfinclude_HEADERS)
+	$(tfinclude_HEADERS) \
 	stream.c \
 	stream.h \
 	content.c \
