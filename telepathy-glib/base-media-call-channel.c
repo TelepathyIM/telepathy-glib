@@ -378,6 +378,26 @@ update_hold_state (TpBaseMediaCallChannel *self)
            l2 != NULL; l2 = l2->next)
         {
           TpBaseMediaCallStream *stream = TP_BASE_MEDIA_CALL_STREAM (l2->data);
+          GHashTable *members = _tp_base_call_stream_get_remote_members (
+              TP_BASE_CALL_STREAM (stream));
+          TpSendingState local = tp_base_call_stream_get_local_sending_state (
+              TP_BASE_CALL_STREAM (stream));
+          GHashTableIter iter;
+          gpointer key, value;
+          gboolean wants_receive = FALSE;
+
+          g_hash_table_iter_init (&iter, members);
+          while (g_hash_table_iter_next (&iter, &key, &value))
+            {
+              TpSendingState member_state = GPOINTER_TO_INT (value);
+
+              if (member_state == TP_SENDING_STATE_PENDING_SEND ||
+                  member_state == TP_SENDING_STATE_SENDING)
+                {
+                  wants_receive = TRUE;
+                  break;
+                }
+            }
 
           tp_base_media_call_stream_update_receiving_state (stream);
           tp_base_media_call_stream_update_sending_state (stream);
@@ -387,10 +407,12 @@ update_hold_state (TpBaseMediaCallChannel *self)
               tp_base_media_call_stream_get_receiving_state (stream) !=
                   TP_STREAM_FLOW_STATE_STOPPED)
             is_stopped = FALSE;
-          if (tp_base_media_call_stream_get_sending_state (stream) !=
-                  TP_STREAM_FLOW_STATE_STARTED ||
-              tp_base_media_call_stream_get_receiving_state (stream) !=
-                  TP_STREAM_FLOW_STATE_STARTED)
+          if ((tp_base_media_call_stream_get_sending_state (stream) !=
+                  TP_STREAM_FLOW_STATE_STARTED &&
+                  local == TP_SENDING_STATE_SENDING) ||
+              (tp_base_media_call_stream_get_receiving_state (stream) !=
+                  TP_STREAM_FLOW_STATE_STARTED &&
+                  wants_receive))
             is_started = FALSE;
         }
     }
