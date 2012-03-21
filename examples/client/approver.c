@@ -127,7 +127,7 @@ add_dispatch_operation_cb (TpSimpleApprover *self,
     }
   else if (c == 'n' || c == 'N')
     {
-      g_print ("Dissaprove channels\n");
+      g_print ("Reject channels\n");
 
       tp_channel_dispatch_operation_close_channels_async (cdo, close_cb, NULL);
     }
