@@ -1,3 +1,32 @@
+telepathy-glib 0.17.7 (2012-03-22)
+==================================
+
+API additions:
+
+• …get_local_sending on TpBaseMediaCallStream exposes the local
+  sending state. (Olivier)
+
+• TpCallStateReason structure now has a message string
+  member. (Olivier)
+
+Fixes:
+
+• TpBaseMediaCallContent: be sure to update the local sending state on
+  call acceptance. (Olivier)
+
+• A few miscellaneous fixes to the Call1 code, including:
+    • ensuring local sending state is updated on call acceptance,
+    • ignoring sending/receiving failures while held,
+    • only emitting STUNServersChanged when they have actually
+      changed,
+    • and not waiting for streams to start again after holding if they
+      weren't sending before. (Olivier)
+
+Enhancements:
+
+• Use close_channels_async on the channel dispatch operation in the
+  example approver. (Will)
+
 telepathy-glib 0.17.6 (19/03/2012)
 ==================================
 

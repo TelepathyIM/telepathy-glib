@@ -949,7 +949,7 @@ tp_base_media_call_stream_set_local_sending (TpBaseMediaCallStream *self,
  * Gets the local sending state
  *
  * Returns: The local sending state
- * Since: 0.UNRELEASED
+ * Since: 0.17.7
  */
 gboolean
 tp_base_media_call_stream_get_local_sending (TpBaseMediaCallStream *self)
