@@ -76,6 +76,8 @@ gboolean _tp_base_contact_list_delete_group_by_handle (
     TpHandle group,
     GError **error);
 
+char _tp_base_contact_list_presence_state_to_letter (TpSubscriptionState ps);
+
 G_END_DECLS
 
 #endif

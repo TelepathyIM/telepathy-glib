@@ -1979,8 +1979,8 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
       self->priv->conn, self->priv->state);
 }
 
-static char
-presence_state_to_letter (TpSubscriptionState ps)
+char
+_tp_base_contact_list_presence_state_to_letter (TpSubscriptionState ps)
 {
   switch (ps)
     {
@@ -2097,8 +2097,9 @@ tp_base_contact_list_contacts_changed_internal (TpBaseContactList *self,
 
       DEBUG ("Contact %s: subscribe=%c publish=%c '%s'",
           tp_handle_inspect (self->priv->contact_repo, contact),
-          presence_state_to_letter (subscribe),
-          presence_state_to_letter (publish), publish_request);
+          _tp_base_contact_list_presence_state_to_letter (subscribe),
+          _tp_base_contact_list_presence_state_to_letter (publish),
+          publish_request);
 
       switch (publish)
         {
