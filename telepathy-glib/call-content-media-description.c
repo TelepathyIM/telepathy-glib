@@ -724,10 +724,12 @@ tp_call_content_media_description_get_remote_contact (
 /**
  * tp_call_content_media_description_add_ssrc:
  * @self: a #TpCallContentMediaDescription
- * @contact: if you use this API, you know what it is about
- * @ssrc: if you use this API, you know what it is about
+ * @contact: The #TpHandle of a contact that is part of the call
+ * @ssrc: A SSRC that this contact may send from
  *
- * if you use this API, you know what it is about
+ * Add an SSRC to the list of SSRCs that a contact will send from. A SSRC
+ * is a synchronization source in RTP, it is the identifier for a continuous
+ * stream of packets following the same timeline.
  *
  * Since: 0.17.5
  */
@@ -763,12 +765,13 @@ tp_call_content_media_description_add_ssrc (TpCallContentMediaDescription *self,
 /**
  * tp_call_content_media_description_append_codec:
  * @self: a #TpCallContentMediaDescription
- * @identifier: if you use this API, you know what it is about
- * @name: if you use this API, you know what it is about
- * @clock_rate: if you use this API, you know what it is about
- * @channels: if you use this API, you know what it is about
- * @updated: if you use this API, you know what it is about
- * @parameters: if you use this API, you know what it is about
+ * @identifier: Numeric identifier for the codec. This will be used as the PT
+ *    in the SDP or content description.
+ * @name: The name of the codec.
+ * @clock_rate: The clock rate of the codec.
+ * @channels: Number of channels of the codec if applicable, otherwise 0.
+ * @updated: %TRUE if this codec was updated since the last Media Description
+ * @parameters: a #GHashTable of string->string containing optional parameters
  *
  * Add description for a supported codec.
  *
