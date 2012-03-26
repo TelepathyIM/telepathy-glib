@@ -643,10 +643,7 @@ test_avatar_data (Fixture *f,
 {
   TpTestsContactsConnection *service_conn = f->service_conn;
   TpConnection *client_conn = f->client_conn;
-  static const gchar letters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  gchar rand_str[RAND_STR_LEN + 1];
   gchar *dir;
-  guint i;
   gboolean avatar_retrieved_called;
   GError *error = NULL;
   GFile *file1, *file2;
@@ -655,14 +652,9 @@ test_avatar_data (Fixture *f,
   g_message (G_STRFUNC);
 
   /* Make sure g_get_user_cache_dir() returns a tmp directory, to not mess up
-   * user's cache dir.
-   * FIXME: Replace this with g_mkdtemp once it gets added to GLib.
-   * See GNOME bug #118563 */
-  for (i = 0; i < RAND_STR_LEN; i++)
-    rand_str[i] = letters[g_random_int_range (0, strlen (letters))];
-  rand_str[RAND_STR_LEN] = '\0';
-  dir = g_build_filename (g_get_tmp_dir (), rand_str, NULL);
-  g_assert (g_mkdir (dir, 0700) == 0);
+   * user's cache dir. */
+  dir = g_dir_make_tmp ("tp-glib-tests-XXXXXX", &error);
+  g_assert_no_error (error);
   g_setenv ("XDG_CACHE_HOME", dir, TRUE);
   g_assert_cmpstr (g_get_user_cache_dir (), ==, dir);
 
