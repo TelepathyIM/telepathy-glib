@@ -480,9 +480,12 @@ tp_stream_tube_channel_init (TpStreamTubeChannel *self)
  *  strings (D-Bus interface name + "." + property name) to #GValue instances
  * @error: used to indicate the error if %NULL is returned
  *
- * Convenient function to create a new #TpStreamTubeChannel
+ * Creates a new #TpStreamTubeChannel proxy object from the provided path and
+ * properties. Most developers will not need to use this function; use
+ * #TpAutomaticProxyFactory to automatically create #TpStreamTubeChannel proxy
+ * objects.
  *
- * Returns: (transfer full): a newly created #TpStreamTubeChannel
+ * Returns: (transfer full): a newly-created #TpStreamTubeChannel proxy
  *
  * Since: 0.13.2
  */
