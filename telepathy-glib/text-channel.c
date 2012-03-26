@@ -1254,16 +1254,17 @@ tp_text_channel_send_message_async (TpTextChannel *self,
 /**
  * tp_text_channel_send_message_finish:
  * @self: a #TpTextChannel
- * @result: a #GAsyncResult
+ * @result: a #GAsyncResult passed to the callback for tp_text_channel_send_message_async()
  * @token: (out) (transfer full): if not %NULL, used to return the
  * token of the sent message
  * @error: a #GError to fill
  *
- * Finishes to send a message.
+ * Completes a call to tp_text_channel_send_message_async().
  *
  * @token can be used to match any incoming delivery or failure reports
- * against the sent message. If the returned token is %NULL the
- * message is not readily identifiable.
+ * against the sent message. If this function returns true but the returned
+ * token is %NULL, the message was sent successfully but the protocol does not
+ * provide a way to identify it later.
  *
  * Returns: %TRUE if the message has been submitted to the server, %FALSE
  * otherwise.
@@ -1395,10 +1396,10 @@ tp_text_channel_ack_messages_async (TpTextChannel *self,
 /**
  * tp_text_channel_ack_messages_finish:
  * @self: a #TpTextChannel
- * @result: a #GAsyncResult
+ * @result: a #GAsyncResult passed to the callback for tp_text_channel_ack_messages_async()
  * @error: a #GError to fill
  *
- * Finishes to ack a list of messages.
+ * Finishes acknowledging a list of messages.
  *
  * Returns: %TRUE if the messages have been acked, %FALSE otherwise.
  *
@@ -1476,10 +1477,10 @@ tp_text_channel_ack_message_async (TpTextChannel *self,
 /**
  * tp_text_channel_ack_message_finish:
  * @self: a #TpTextChannel
- * @result: a #GAsyncResult
+ * @result: a #GAsyncResult passed to the callback for tp_text_channel_ack_message_async()
  * @error: a #GError to fill
  *
- * Finishes to ack a message.
+ * Finishes acknowledging a message.
  *
  * Returns: %TRUE if the message has been acked, %FALSE otherwise.
  *
@@ -1544,10 +1545,10 @@ tp_text_channel_set_chat_state_async (TpTextChannel *self,
 /**
  * tp_text_channel_set_chat_state_finish:
  * @self: a #TpTextChannel
- * @result: a #GAsyncResult
+ * @result: a #GAsyncResult passed to the callback for tp_text_channel_set_chat_state_async()
  * @error: a #GError to fill
  *
- * Finishes to set chat state.
+ * Completes a call to tp_text_channel_set_chat_state_async().
  *
  * Returns: %TRUE if the chat state has been changed, %FALSE otherwise.
  *

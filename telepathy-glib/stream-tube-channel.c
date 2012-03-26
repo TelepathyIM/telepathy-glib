@@ -919,7 +919,7 @@ tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
- * Finishes to accept an incoming stream tube. The returned
+ * Finishes accepting an incoming stream tube. The returned
  * #TpStreamTubeConnection can then be used to exchange data through the tube.
  *
  * Returns: (transfer full): a newly created #TpStreamTubeConnection
@@ -1493,7 +1493,7 @@ tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
- * Finishes to offer an outgoing stream tube.
+ * Finishes offering an outgoing stream tube.
  *
  * Returns: %TRUE when a Tube has been successfully offered; %FALSE otherwise
  *
