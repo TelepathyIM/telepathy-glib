@@ -78,6 +78,8 @@ struct _TpTestsSimpleAccountPrivate
   TpConnectionPresenceType presence;
   gchar *presence_status;
   gchar *presence_msg;
+  gchar *connection_path;
+  gboolean enabled;
 };
 
 static void
@@ -130,6 +132,8 @@ tp_tests_simple_account_init (TpTestsSimpleAccount *self)
   self->priv->presence = TP_CONNECTION_PRESENCE_TYPE_AWAY;
   self->priv->presence_status = g_strdup ("currently-away");
   self->priv->presence_msg = g_strdup ("this is my CurrentPresence");
+  self->priv->connection_path = g_strdup ("/");
+  self->priv->enabled = TRUE;
 }
 
 /* you may have noticed this is not entirely realistic */
@@ -161,7 +165,7 @@ tp_tests_simple_account_get_property (GObject *object,
       g_value_set_boolean (value, TRUE);
       break;
     case PROP_ENABLED:
-      g_value_set_boolean (value, TRUE);
+      g_value_set_boolean (value, self->priv->enabled);
       break;
     case PROP_NICKNAME:
       g_value_set_string (value, "badger");
@@ -180,7 +184,7 @@ tp_tests_simple_account_get_property (GObject *object,
       g_value_set_boolean (value, FALSE);
       break;
     case PROP_CONNECTION:
-      g_value_set_boxed (value, "/");
+      g_value_set_boxed (value, self->priv->connection_path);
       break;
     case PROP_CONNECTION_STATUS:
       g_value_set_uint (value, TP_CONNECTION_STATUS_CONNECTED);
@@ -534,4 +538,42 @@ tp_tests_simple_account_set_presence (TpTestsSimpleAccount *self,
   tp_svc_account_emit_account_property_changed (self, props);
 
   g_boxed_free (TP_STRUCT_TYPE_SIMPLE_PRESENCE, v);
+}
+
+void
+tp_tests_simple_account_set_connection (TpTestsSimpleAccount *self,
+    const gchar *object_path)
+{
+  GHashTable *change;
+
+  if (object_path == NULL)
+    object_path = "/";
+
+  g_free (self->priv->connection_path);
+  self->priv->connection_path = g_strdup (object_path);
+
+  change = tp_asv_new (NULL, NULL);
+  tp_asv_set_string (change, "Connection", object_path);
+  tp_svc_account_emit_account_property_changed (self, change);
+  g_hash_table_unref (change);
+}
+
+void
+tp_tests_simple_account_removed (TpTestsSimpleAccount *self)
+{
+  tp_svc_account_emit_removed (self);
+}
+
+void
+tp_tests_simple_account_set_enabled (TpTestsSimpleAccount *self,
+    gboolean enabled)
+{
+  GHashTable *change;
+
+  self->priv->enabled = enabled;
+
+  change = tp_asv_new (NULL, NULL);
+  tp_asv_set_boolean (change, "Enabled", enabled);
+  tp_svc_account_emit_account_property_changed (self, change);
+  g_hash_table_unref (change);
 }

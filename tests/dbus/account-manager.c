@@ -574,18 +574,13 @@ test_prepare_most_available (Test *test,
     gconstpointer data,
     guint nb_accounts)
 {
-  GPtrArray *accounts;
-
-  accounts = g_ptr_array_new_with_free_func (g_free);
-
   if (nb_accounts >= 1)
-    g_ptr_array_add (accounts, g_strdup (ACCOUNT1_PATH));
+    tp_tests_simple_account_manager_add_account (test->service, ACCOUNT1_PATH,
+        TRUE);
 
   if (nb_accounts >= 2)
-    g_ptr_array_add (accounts, g_strdup (ACCOUNT2_PATH));
-
-  tp_tests_simple_account_manager_set_valid_accounts (test->service, accounts);
-  g_ptr_array_unref (accounts);
+    tp_tests_simple_account_manager_add_account (test->service, ACCOUNT2_PATH,
+        TRUE);
 
   test_prepare (test, data);
   script_append_action (test, manager_new_action, NULL);
