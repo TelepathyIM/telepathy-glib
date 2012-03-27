@@ -973,9 +973,9 @@ tp_base_contact_list_class_init (TpBaseContactListClass *cls)
   /**
    * TpBaseContactList:download-at-connection:
    *
-   * Whether the roster is automatically downloaded at connection.
+   * Whether the roster should be automatically downloaded at connection.
    *
-   * It doesn't change anything in TpBaseContactsList's behaviour.
+   * This property doesn't change anything in TpBaseContactsList's behaviour.
    * Implementations should check this property when they become connected
    * and in their Download method, and behave accordingly.
    *
@@ -983,7 +983,7 @@ tp_base_contact_list_class_init (TpBaseContactListClass *cls)
    */
   g_object_class_install_property (object_class, PROP_DOWNLOAD_AT_CONNECTION,
       g_param_spec_boolean ("download-at-connection", "Download at connection",
-        "Whether the roster is automatically downloaded at connection",
+        "Whether the roster should be automatically downloaded at connection",
         TRUE,
         G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS));
 }
