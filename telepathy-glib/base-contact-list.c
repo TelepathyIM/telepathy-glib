@@ -3159,7 +3159,10 @@ tp_base_contact_list_get_contact_list_persists (TpBaseContactList *self)
  * tp_base_contact_list_get_download_at_connection:
  * @self: a contact list manager
  *
- * Returns: the download-at-connection property
+ * This function returns the
+ * #TpBaseContactList:download-at-connection property.
+ *
+ * Returns: the #TpBaseContactList:download-at-connection property
  *
  * Since: 0.UNRELEASED
  */
