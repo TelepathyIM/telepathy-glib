@@ -2197,7 +2197,7 @@ test_subscription_states (Fixture *f,
 {
   TpHandle alice_handle;
   TpContact *alice;
-  TestContactListManager *manager;
+  TpTestsContactListManager *manager;
   TpContactFeature features[] = { TP_CONTACT_FEATURE_SUBSCRIPTION_STATES };
   SubscriptionStates states = { TP_SUBSCRIPTION_STATE_NO,
       TP_SUBSCRIPTION_STATE_NO, "", f->result.loop };
@@ -2230,13 +2230,13 @@ test_subscription_states (Fixture *f,
       G_CALLBACK (subscription_states_changed_cb), &states);
 
   /* Request subscription */
-  test_contact_list_manager_request_subscription (manager, 1, &alice_handle, "");
+  tp_tests_contact_list_manager_request_subscription (manager, 1, &alice_handle, "");
   states.subscribe = TP_SUBSCRIPTION_STATE_ASK;
   g_main_loop_run (states.loop);
 
   /* Request again must re-emit the signal. Saying please this time will make
    * the request accepted and will ask for publish. */
-  test_contact_list_manager_request_subscription (manager, 1, &alice_handle, "please");
+  tp_tests_contact_list_manager_request_subscription (manager, 1, &alice_handle, "please");
   g_main_loop_run (states.loop);
   states.subscribe = TP_SUBSCRIPTION_STATE_YES;
   states.publish = TP_SUBSCRIPTION_STATE_ASK;
@@ -2244,7 +2244,7 @@ test_subscription_states (Fixture *f,
   g_main_loop_run (states.loop);
 
   /* Remove the contact */
-  test_contact_list_manager_remove (manager, 1, &alice_handle);
+  tp_tests_contact_list_manager_remove (manager, 1, &alice_handle);
   states.subscribe = TP_SUBSCRIPTION_STATE_NO;
   states.publish = TP_SUBSCRIPTION_STATE_NO;
   states.publish_request = "";
@@ -2289,7 +2289,7 @@ test_contact_groups (Fixture *f,
 {
   TpHandle alice_handle;
   TpContact *alice;
-  TestContactListManager *manager;
+  TpTestsContactListManager *manager;
   TpContactFeature features[] = { TP_CONTACT_FEATURE_CONTACT_GROUPS };
   ContactGroups data;
 
@@ -2324,15 +2324,15 @@ test_contact_groups (Fixture *f,
       G_CALLBACK (contact_groups_changed_cb), &data);
 
   g_ptr_array_add (data.groups, "group1");
-  test_contact_list_manager_add_to_group (manager, "group1", alice_handle);
+  tp_tests_contact_list_manager_add_to_group (manager, "group1", alice_handle);
   g_main_loop_run (data.loop);
 
   g_ptr_array_add (data.groups, "group2");
-  test_contact_list_manager_add_to_group (manager, "group2", alice_handle);
+  tp_tests_contact_list_manager_add_to_group (manager, "group2", alice_handle);
   g_main_loop_run (data.loop);
 
   g_ptr_array_remove_index_fast (data.groups, 0);
-  test_contact_list_manager_remove_from_group (manager, "group1", alice_handle);
+  tp_tests_contact_list_manager_remove_from_group (manager, "group1", alice_handle);
   g_main_loop_run (data.loop);
 
   g_ptr_array_set_size (data.groups, 0);
@@ -2603,7 +2603,7 @@ test_contact_list (Fixture *f,
 {
   const GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONTACT_LIST, 0 };
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
-  TestContactListManager *manager;
+  TpTestsContactListManager *manager;
   TpSimpleClientFactory *factory;
   const gchar *id = "contact-list-id";
   const gchar *alias = "Contact List Alias";
@@ -2628,7 +2628,7 @@ test_contact_list (Fixture *f,
   handle = tp_handle_ensure (f->service_repo, id, NULL, NULL);
   tp_tests_contacts_connection_change_aliases (f->service_conn,
       1, &handle, &alias);
-  test_contact_list_manager_request_subscription (manager, 1, &handle, message);
+  tp_tests_contact_list_manager_request_subscription (manager, 1, &handle, message);
 
   /* Tell connection's factory contact features we want */
   factory = tp_proxy_get_factory (f->client_conn);
@@ -2759,7 +2759,7 @@ test_initial_contact_list (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
   const GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONTACT_LIST, 0 };
-  TestContactListManager *manager;
+  TpTestsContactListManager *manager;
   MembersChangedClosure closure;
   DBusConnection *dbus_connection;
   TpHandle alice;
@@ -2794,11 +2794,11 @@ test_initial_contact_list (Fixture *f,
 
   /* Add contacts in our initial roster CM-side */
   alice = tp_handle_ensure (f->service_repo, alice_id, NULL, NULL);
-  test_contact_list_manager_add_initial_contacts (manager, 1, &alice);
+  tp_tests_contact_list_manager_add_initial_contacts (manager, 1, &alice);
 
   bob_carol[0] = tp_handle_ensure (f->service_repo, bob_id, NULL, NULL);
   bob_carol[1] = tp_handle_ensure (f->service_repo, carol_id, NULL, NULL);
-  test_contact_list_manager_add_initial_contacts (manager, 2, bob_carol);
+  tp_tests_contact_list_manager_add_initial_contacts (manager, 2, bob_carol);
 
   /* Now put it online and wait for the contact list state to move to
    * success */

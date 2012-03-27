@@ -99,7 +99,7 @@ struct _TpTestsContactsConnectionPrivate
   GHashTable *contact_info;
   GPtrArray *default_contact_info;
 
-  TestContactListManager *list_manager;
+  TpTestsContactListManager *list_manager;
 };
 
 typedef struct
@@ -504,7 +504,7 @@ create_channel_managers (TpBaseConnection *conn)
   TpTestsContactsConnection *self = TP_TESTS_CONTACTS_CONNECTION (conn);
   GPtrArray *ret = g_ptr_array_sized_new (1);
 
-  self->priv->list_manager = g_object_new (TEST_TYPE_CONTACT_LIST_MANAGER,
+  self->priv->list_manager = g_object_new (TP_TESTS_TYPE_CONTACT_LIST_MANAGER,
       "connection", conn, NULL);
 
   g_ptr_array_add (ret, self->priv->list_manager);
@@ -574,7 +574,7 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
   tp_base_contact_list_mixin_class_init (base_class);
 }
 
-TestContactListManager *
+TpTestsContactListManager *
 tp_tests_contacts_connection_get_contact_list_manager (
     TpTestsContactsConnection *self)
 {
