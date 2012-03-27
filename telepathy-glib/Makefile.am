@@ -308,7 +308,7 @@ include abi.am
 include codegen.am
 include introspection.am
 
-Android.mk: Makefile.am
+Android.mk: Makefile.am $(codegen_sources)
 	androgenizer -:PROJECT telepathy-glib -:SHARED libtelepathy-glib -:TAGS eng debug \
 	 -:REL_TOP $(top_srcdir) -:ABS_TOP $(abs_top_srcdir) \
 	 -:SOURCES $(libtelepathy_glib_internal_la_SOURCES) \
