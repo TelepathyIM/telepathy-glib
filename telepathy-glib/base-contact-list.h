@@ -127,6 +127,10 @@ gboolean tp_base_contact_list_download_finish (TpBaseContactList *self,
     GAsyncResult *result,
     GError **error);
 
+typedef gboolean (*TpBaseContactListAsyncFinishFunc) (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error);
+
 struct _TpBaseContactListClass {
     GObjectClass parent_class;
 
@@ -169,10 +173,6 @@ typedef void (*TpBaseContactListActOnContactsFunc) (
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
-
-typedef gboolean (*TpBaseContactListAsyncFinishFunc) (TpBaseContactList *self,
-    GAsyncResult *result,
-    GError **error);
 
 struct _TpMutableContactListInterface {
     GTypeInterface parent;
