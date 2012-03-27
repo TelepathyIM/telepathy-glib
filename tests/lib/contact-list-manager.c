@@ -296,17 +296,31 @@ contact_list_set_contact_groups_async (TpBaseContactList *base,
   ContactDetails *d;
   TpIntset *set, *added_set, *removed_set;
   GPtrArray *added_names, *removed_names;
+  GPtrArray *new_groups;
   TpIntSetFastIter iter;
   TpHandle group_handle;
   guint i;
 
   d = ensure_contact (self, contact);
 
+  new_groups = g_ptr_array_new ();
   set = tp_intset_new ();
   for (i = 0; i < n; i++)
     {
       group_handle = tp_handle_ensure (self->priv->group_repo, names[i], NULL, NULL);
       tp_intset_add (set, group_handle);
+
+      if (!tp_handle_set_is_member (self->priv->groups, group_handle))
+        {
+          tp_handle_set_add (self->priv->groups, group_handle);
+          g_ptr_array_add (new_groups, (gchar *) names[i]);
+        }
+    }
+
+  if (new_groups->len > 0)
+    {
+      tp_base_contact_list_groups_created ((TpBaseContactList *) self,
+          (const gchar * const *) new_groups->pdata, new_groups->len);
     }
 
   added_set = tp_intset_difference (set, tp_handle_set_peek (d->groups));
@@ -333,15 +347,19 @@ contact_list_set_contact_groups_async (TpBaseContactList *base,
   d->groups = tp_handle_set_new_from_intset (self->priv->group_repo, set);
   tp_intset_destroy (set);
 
-  tp_base_contact_list_one_contact_groups_changed (base, contact,
-      (const gchar * const *) added_names->pdata, added_names->len,
-      (const gchar * const *) removed_names->pdata, removed_names->len);
+  if (added_names->len > 0 || removed_names->len > 0)
+    {
+      tp_base_contact_list_one_contact_groups_changed (base, contact,
+          (const gchar * const *) added_names->pdata, added_names->len,
+          (const gchar * const *) removed_names->pdata, removed_names->len);
+    }
 
   tp_simple_async_report_success_in_idle ((GObject *) self, callback,
       user_data, contact_list_set_contact_groups_async);
 
   g_ptr_array_unref (added_names);
   g_ptr_array_unref (removed_names);
+  g_ptr_array_unref (new_groups);
 }
 
 static void
@@ -592,7 +610,15 @@ test_contact_list_manager_add_to_group (TestContactListManager *self,
   ContactDetails *d = ensure_contact (self, member);
   TpHandle group_handle;
 
-  group_handle = tp_handle_ensure (self->priv->group_repo, group_name, NULL, NULL);
+  group_handle = tp_handle_ensure (self->priv->group_repo,
+      group_name, NULL, NULL);
+
+  if (!tp_handle_set_is_member (self->priv->groups, group_handle))
+    {
+      tp_handle_set_add (self->priv->groups, group_handle);
+      tp_base_contact_list_groups_created ((TpBaseContactList *) self,
+          &group_name, 1);
+    }
 
   tp_handle_set_add (d->groups, group_handle);
   tp_base_contact_list_one_contact_groups_changed (base, member,
