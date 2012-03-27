@@ -33,13 +33,17 @@ struct _TestContactListManagerPrivate
 static void contact_groups_iface_init (TpContactGroupListInterface *iface);
 static void mutable_contact_groups_iface_init (
     TpMutableContactGroupListInterface *iface);
+static void mutable_iface_init (
+    TpMutableContactListInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (TestContactListManager, test_contact_list_manager,
     TP_TYPE_BASE_CONTACT_LIST,
     G_IMPLEMENT_INTERFACE (TP_TYPE_CONTACT_GROUP_LIST,
       contact_groups_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_MUTABLE_CONTACT_GROUP_LIST,
-      mutable_contact_groups_iface_init))
+      mutable_contact_groups_iface_init)
+    G_IMPLEMENT_INTERFACE (TP_TYPE_MUTABLE_CONTACT_LIST,
+      mutable_iface_init))
 
 typedef struct {
   TpSubscriptionState subscribe;
@@ -400,6 +404,97 @@ contact_list_remove_group_async (TpBaseContactList *base,
 }
 
 static void
+contact_list_request_subscription_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    const gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GArray *handles;
+
+  handles = tp_handle_set_to_array (contacts);
+  test_contact_list_manager_request_subscription (
+      (TestContactListManager *) self,
+      handles->len, (TpHandle *) handles->data, message);
+  g_array_unref (handles);
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, contact_list_request_subscription_async);
+}
+
+static void
+contact_list_authorize_publication_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GArray *handles;
+
+  handles = tp_handle_set_to_array (contacts);
+  test_contact_list_manager_authorize_publication (
+      (TestContactListManager *) self,
+      handles->len, (TpHandle *) handles->data);
+  g_array_unref (handles);
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, contact_list_authorize_publication_async);
+}
+
+static void
+contact_list_remove_contacts_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GArray *handles;
+
+  handles = tp_handle_set_to_array (contacts);
+  test_contact_list_manager_remove (
+      (TestContactListManager *) self,
+      handles->len, (TpHandle *) handles->data);
+  g_array_unref (handles);
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, contact_list_remove_contacts_async);
+}
+
+static void
+contact_list_unsubscribe_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GArray *handles;
+
+  handles = tp_handle_set_to_array (contacts);
+  test_contact_list_manager_unsubscribe (
+      (TestContactListManager *) self,
+      handles->len, (TpHandle *) handles->data);
+  g_array_unref (handles);
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, contact_list_unsubscribe_async);
+}
+
+static void
+contact_list_unpublish_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GArray *handles;
+
+  handles = tp_handle_set_to_array (contacts);
+  test_contact_list_manager_unpublish (
+      (TestContactListManager *) self,
+      handles->len, (TpHandle *) handles->data);
+  g_array_unref (handles);
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, contact_list_unpublish_async);
+}
+
+static void
 status_changed_cb (TpBaseConnection *conn,
                    guint status,
                    guint reason,
@@ -462,6 +557,16 @@ mutable_contact_groups_iface_init (
   iface->add_to_group_async = contact_list_add_to_group_async;
   iface->remove_from_group_async = contact_list_remove_from_group_async;
   iface->remove_group_async = contact_list_remove_group_async;
+}
+
+static void
+mutable_iface_init (TpMutableContactListInterface *iface)
+{
+  iface->request_subscription_async = contact_list_request_subscription_async;
+  iface->authorize_publication_async = contact_list_authorize_publication_async;
+  iface->remove_contacts_async = contact_list_remove_contacts_async;
+  iface->unsubscribe_async = contact_list_unsubscribe_async;
+  iface->unpublish_async = contact_list_unpublish_async;
 }
 
 static void

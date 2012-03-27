@@ -2621,8 +2621,8 @@ test_contact_list (Fixture *f,
   g_assert_cmpint (tp_connection_get_contact_list_state (f->client_conn), ==,
       TP_CONTACT_LIST_STATE_NONE);
   g_assert (tp_connection_get_contact_list_persists (f->client_conn));
-  g_assert (!tp_connection_get_can_change_contact_list (f->client_conn));
-  g_assert (!tp_connection_get_request_uses_message (f->client_conn));
+  g_assert (tp_connection_get_can_change_contact_list (f->client_conn));
+  g_assert (tp_connection_get_request_uses_message (f->client_conn));
 
   /* Add a remote-pending contact in our roster CM-side */
   handle = tp_handle_ensure (f->service_repo, id, NULL, NULL);
