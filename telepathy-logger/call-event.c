@@ -53,7 +53,7 @@ struct _TplCallEventPriv
 {
   GTimeSpan duration;
   TplEntity *end_actor;
-  TplCallEndReason end_reason;
+  TpCallStateChangeReason end_reason;
   gchar *detailed_end_reason;
 };
 
@@ -67,8 +67,19 @@ enum
 
 static const gchar* end_reasons[] = {
     "unknown",
+    "progress-made",
     "user-requested",
-    "no-answer"
+    "forwared",
+    "rejected",
+    "no-answer",
+    "invalid-contact",
+    "permission-denied",
+    "busy",
+    "internal-error",
+    "service-error",
+    "network-error",
+    "media-error",
+    "connectivity-error"
 };
 
 
@@ -167,7 +178,7 @@ static void tpl_call_event_class_init (TplCallEventClass *klass)
   param_spec = g_param_spec_int ("end-reason",
       "End Reason",
       "Reason for wich this call was ended",
-      0, G_MAXINT, TPL_CALL_END_REASON_UNKNOWN,
+      0, G_MAXINT, TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_END_REASON, param_spec);
 
@@ -225,13 +236,13 @@ tpl_call_event_get_end_actor (TplCallEvent *self)
  * tpl_call_event_get_end_reason:
  * @self: a #TplCallEvent
  *
- * Returns: the same #TplCallEndReason as #TplCallEvent:end-actor property
+ * Returns: the same #TpCallStateChangeReason as #TplCallEvent:end-reason property
  */
-TplCallEndReason
+TpCallStateChangeReason
 tpl_call_event_get_end_reason (TplCallEvent *self)
 {
   g_return_val_if_fail (TPL_IS_CALL_EVENT (self),
-      TPL_CALL_END_REASON_UNKNOWN);
+      TP_CALL_STATE_CHANGE_REASON_UNKNOWN);
 
   return self->priv->end_reason;
 }
@@ -254,14 +265,14 @@ tpl_call_event_get_detailed_end_reason (TplCallEvent *self)
 
 
 const gchar *
-_tpl_call_event_end_reason_to_str (TplCallEndReason reason)
+_tpl_call_event_end_reason_to_str (TpCallStateChangeReason reason)
 {
   g_return_val_if_fail (reason < G_N_ELEMENTS (end_reasons), end_reasons[0]);
   return end_reasons[reason];
 }
 
 
-TplCallEndReason
+TpCallStateChangeReason
 _tpl_call_event_str_to_end_reason (const gchar *str)
 {
   guint i;
@@ -269,5 +280,5 @@ _tpl_call_event_str_to_end_reason (const gchar *str)
     if (g_strcmp0 (str, end_reasons[i]) == 0)
       return i;
 
-  return TPL_CALL_END_REASON_UNKNOWN;
+  return TP_CALL_STATE_CHANGE_REASON_UNKNOWN;
 }

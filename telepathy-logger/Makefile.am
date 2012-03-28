@@ -27,26 +27,6 @@ EXTRA_DIST = \
 	tpl-marshal.list \
 	$(NULL)
 
-if ENABLE_CALL
-
-call_headers = call-event.h
-call_sources = \
-	       call-channel.c                  \
-	       call-channel-internal.h         \
-	       streamed-media-channel.c        \
-	       streamed-media-channel-internal.h
-
-else # ENABLE_CALL
-
-EXTRA_DIST += \
-	      call-event.h 		      \
-	      call-channel.c                  \
-	      call-channel-internal.h         \
-	      streamed-media-channel.c        \
-	      streamed-media-channel-internal.h
-
-endif # ENABLE_CALL
-
 LIBTPLdir = $(includedir)/telepathy-logger-0.2/telepathy-logger
 LIBTPL_HEADERS = \
 		entity.h			\
@@ -54,7 +34,7 @@ LIBTPL_HEADERS = \
 		log-manager.h			\
 		telepathy-logger.h 		\
 		text-event.h			\
-		$(call_headers)                 \
+		call-event.h			\
 		$(NULL)
 
 %-marshal.c: %-marshal.list Makefile.am
@@ -107,7 +87,10 @@ libtelepathy_logger_la_SOURCES = \
 		text-event-internal.h		\
 		util-internal.h			\
 		util.c				\
-		$(call_sources)                 \
+		call-channel.c                  \
+		call-channel-internal.h         \
+		streamed-media-channel.c        \
+		streamed-media-channel-internal.h \
 		$(NULL)
 
 nodist_libtelepathy_logger_la_SOURCES = \

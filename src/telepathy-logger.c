@@ -28,11 +28,8 @@
 #include <telepathy-logger/text-channel-internal.h>
 #include <telepathy-logger/observer-internal.h>
 #include <telepathy-logger/dbus-service-internal.h>
-
-#ifdef ENABLE_CALL
 #include <telepathy-logger/call-channel-internal.h>
 #include <telepathy-logger/streamed-media-channel-internal.h>
-#endif /* ENABLE_CALL */
 
 #define DEBUG_FLAG TPL_DEBUG_MAIN
 #include <telepathy-logger/debug-internal.h>
@@ -165,16 +162,13 @@ main (int argc,
       (TplChannelConstructor) _tpl_text_channel_new);
   DEBUG ("- TplTextChannel registered.");
 
-#ifdef ENABLE_CALL
   _tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.StreamedMedia",
       (TplChannelConstructor) _tpl_streamed_media_channel_new);
   DEBUG ("- TplStreamedMediaChannel registered.");
 
-  _tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Call.DRAFT",
+  _tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Call1",
       (TplChannelConstructor) _tpl_call_channel_new);
   DEBUG ("- TplCallChannel registered.");
-#endif /* ENABLE_CALL */
-
 
   observer = _tpl_observer_dup (&error);
 

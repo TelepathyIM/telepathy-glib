@@ -755,7 +755,7 @@ test_add_call_event (XmlTestCaseFixture *fixture,
       /* TplCallEvent */
       "duration", (gint64) 1234,
       "end-actor", me,
-      "end-reason", TPL_CALL_END_REASON_USER_REQUESTED,
+      "end-reason", TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
       "detailed-end-reason", TP_ERROR_STR_CANCELLED,
       NULL);
 
@@ -784,7 +784,7 @@ test_add_call_event (XmlTestCaseFixture *fixture,
       /* TplCallEvent */
       "duration", (gint64) 2345,
       "end-actor", contact,
-      "end-reason", TPL_CALL_END_REASON_USER_REQUESTED,
+      "end-reason", TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
       "detailed-end-reason", TP_ERROR_STR_TERMINATED,
       NULL);
 
@@ -813,7 +813,7 @@ test_add_call_event (XmlTestCaseFixture *fixture,
       /* TplCallEvent */
       "duration", (gint64) 3456,
       "end-actor", room,
-      "end-reason", TPL_CALL_END_REASON_USER_REQUESTED,
+      "end-reason", TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
       "detailed-end-reason", TP_ERROR_STR_CHANNEL_KICKED,
       NULL);
 
@@ -842,7 +842,7 @@ test_add_call_event (XmlTestCaseFixture *fixture,
       /* TplCallEvent */
       "duration", (gint64) -1,
       "end-actor", room,
-      "end-reason", TPL_CALL_END_REASON_NO_ANSWER,
+      "end-reason", TP_CALL_STATE_CHANGE_REASON_NO_ANSWER,
       "detailed-end-reason", "",
       NULL);
 
@@ -906,10 +906,8 @@ test_exists (XmlTestCaseFixture *fixture,
 
   g_assert (_tpl_log_store_exists (fixture->store, account2, user3, TPL_EVENT_MASK_ANY));
 
-#ifdef ENABLE_CALL
   g_assert (!_tpl_log_store_exists (fixture->store, account2, user3, TPL_EVENT_MASK_TEXT));
   g_assert (_tpl_log_store_exists (fixture->store, account2, user3, TPL_EVENT_MASK_CALL));
-#endif
 
   g_object_unref (account1);
   g_object_unref (account2);

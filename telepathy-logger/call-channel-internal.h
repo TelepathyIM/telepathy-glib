@@ -47,7 +47,7 @@ typedef enum
 typedef struct _TplCallChannelPriv TplCallChannelPriv;
 typedef struct
 {
-  TpChannel parent;
+  TpCallChannel parent;
 
   /* private */
   TplCallChannelPriv *priv;
@@ -55,7 +55,7 @@ typedef struct
 
 typedef struct
 {
-  TpChannelClass parent_class;
+  TpCallChannelClass parent_class;
 } TplCallChannelClass;
 
 GType _tpl_call_channel_get_type (void);

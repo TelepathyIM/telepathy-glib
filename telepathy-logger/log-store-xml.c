@@ -73,12 +73,7 @@
 #define LOG_FOOTER \
     "</log>\n"
 
-#ifdef ENABLE_CALL
 #define ALL_SUPPORTED_TYPES (TPL_EVENT_MASK_TEXT | TPL_EVENT_MASK_CALL)
-#else
-#define ALL_SUPPORTED_TYPES TPL_EVENT_MASK_TEXT
-#endif /* ENABLE_CALL */
-
 #define CONTAINS_ALL_SUPPORTED_TYPES(type_mask) \
   (((type_mask) & ALL_SUPPORTED_TYPES) == ALL_SUPPORTED_TYPES)
 
@@ -638,7 +633,7 @@ add_call_event (TplLogStoreXml *self,
   gchar *actor_avatar = NULL;
   gchar *actor_id = NULL;
   gchar *log_str = NULL;
-  TplCallEndReason reason;
+  TpCallStateChangeReason reason;
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
@@ -1221,7 +1216,7 @@ parse_call_node (TplLogStoreXml *self,
   gchar *duration_str;
   gint64 duration = -1;
   gchar *reason_str;
-  TplCallEndReason reason = TPL_CALL_END_REASON_UNKNOWN;
+  TpCallStateChangeReason reason = TP_CALL_STATE_CHANGE_REASON_UNKNOWN;
   gchar *detailed_reason;
 
   time_str = (gchar *) xmlGetProp (node, (const xmlChar *) "time");

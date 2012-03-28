@@ -23,6 +23,7 @@
 
 #include <telepathy-logger/entity.h>
 #include <telepathy-logger/text-event.h>
+#include <telepathy-logger/call-event.h>
 #include <telepathy-logger/event.h>
 #include <telepathy-logger/log-manager.h>
 

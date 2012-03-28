@@ -57,7 +57,7 @@ struct _TplStreamedMediaChannelPriv
   gboolean timer_started;
   CallState state;
   TplEntity *end_actor;
-  TplCallEndReason end_reason;
+  TpCallStateChangeReason end_reason;
   const gchar *detailed_end_reason;
 };
 
@@ -327,40 +327,49 @@ on_group_members_changed_cb (TpChannel *chan,
       break;
 
     case TP_CHANNEL_GROUP_CHANGE_REASON_OFFLINE:
+      priv->end_reason = TP_CALL_STATE_CHANGE_REASON_NO_ANSWER;
       priv->detailed_end_reason = TP_ERROR_STR_OFFLINE;
       break;
 
     case TP_CHANNEL_GROUP_CHANGE_REASON_KICKED:
+      priv->end_reason = TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED;
       priv->detailed_end_reason = TP_ERROR_STR_CHANNEL_KICKED;
       break;
 
     case TP_CHANNEL_GROUP_CHANGE_REASON_BUSY:
+      priv->end_reason = TP_CALL_STATE_CHANGE_REASON_BUSY;
       priv->detailed_end_reason = TP_ERROR_STR_BUSY;
       break;
 
     case TP_CHANNEL_GROUP_CHANGE_REASON_BANNED:
+      priv->end_reason = TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED;
       priv->detailed_end_reason = TP_ERROR_STR_CHANNEL_BANNED;
       break;
 
     case TP_CHANNEL_GROUP_CHANGE_REASON_ERROR:
+      priv->end_reason = TP_CALL_STATE_CHANGE_REASON_NETWORK_ERROR;
       priv->detailed_end_reason = TP_ERROR_STR_NETWORK_ERROR;
       break;
 
     case TP_CHANNEL_GROUP_CHANGE_REASON_INVALID_CONTACT:
+      priv->end_reason = TP_CALL_STATE_CHANGE_REASON_INVALID_CONTACT;
       priv->detailed_end_reason = TP_ERROR_STR_DOES_NOT_EXIST;
       break;
 
     case TP_CHANNEL_GROUP_CHANGE_REASON_NO_ANSWER:
+      priv->end_reason = TP_CALL_STATE_CHANGE_REASON_NO_ANSWER;
       priv->detailed_end_reason = TP_ERROR_STR_NO_ANSWER;
       break;
 
     case TP_CHANNEL_GROUP_CHANGE_REASON_PERMISSION_DENIED:
+      priv->end_reason = TP_CALL_STATE_CHANGE_REASON_PERMISSION_DENIED;
       priv->detailed_end_reason = TP_ERROR_STR_PERMISSION_DENIED;
       break;
 
     default:
       g_warning ("Invalid change reason for StreamMedia call ending: %i",
           reason);
+      priv->end_reason = TP_CALL_STATE_CHANGE_REASON_UNKNOWN;
       priv->detailed_end_reason = TP_ERROR_STR_INVALID_ARGUMENT;
       break;
     }
@@ -372,21 +381,25 @@ on_group_members_changed_cb (TpChannel *chan,
        * receiver terminates that call before accepting it, and no other
        * reason was provided. Also, even if the call was not answered, the
        * spec enforces that the end_reason must be user_requested */
-      if (reason == TP_CHANNEL_GROUP_CHANGE_REASON_NONE
-          && actor == receiver)
+      if (reason == TP_CHANNEL_GROUP_CHANGE_REASON_NONE)
         {
-          priv->end_reason = TPL_CALL_END_REASON_USER_REQUESTED;
-          priv->detailed_end_reason = TP_ERROR_STR_REJECTED;
+          if (actor == receiver)
+            {
+              priv->end_reason = TP_CALL_STATE_CHANGE_REASON_REJECTED;
+              priv->detailed_end_reason = TP_ERROR_STR_REJECTED;
+            }
+          else
+            {
+              priv->end_reason = TP_CALL_STATE_CHANGE_REASON_NO_ANSWER;
+            }
         }
-      else
-        priv->end_reason = TPL_CALL_END_REASON_NO_ANSWER;
       break;
 
     case ACCEPTED_STATE:
-      priv->end_reason = TPL_CALL_END_REASON_USER_REQUESTED;
-
       if (reason == TP_CHANNEL_GROUP_CHANGE_REASON_NONE)
         {
+          priv->end_reason = TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED;
+
           /*  If the SelfHandle is removed from a group for this reason and the
            *  actor is not the SelfHandle, the equivalent D-Bus error is
            *  org.freedesktop.Telepathy.Error.Terminated. If the SelfHandle is
@@ -402,7 +415,7 @@ on_group_members_changed_cb (TpChannel *chan,
 
     default:
       /* somethings wrong */
-      priv->end_reason = TPL_CALL_END_REASON_UNKNOWN;
+      priv->end_reason = TP_CALL_STATE_CHANGE_REASON_UNKNOWN;
       break;
     }
 

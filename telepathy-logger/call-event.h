@@ -37,18 +37,11 @@ typedef struct _TplCallEvent TplCallEvent;
 typedef struct _TplCallEventClass TplCallEventClass;
 typedef struct _TplCallEventPriv TplCallEventPriv;
 
-typedef enum
-{
-  TPL_CALL_END_REASON_UNKNOWN = 0,
-  TPL_CALL_END_REASON_USER_REQUESTED,
-  TPL_CALL_END_REASON_NO_ANSWER,
-} TplCallEndReason;
-
 GType tpl_call_event_get_type (void);
 
 GTimeSpan tpl_call_event_get_duration (TplCallEvent *self);
 TplEntity * tpl_call_event_get_end_actor (TplCallEvent *self);
-TplCallEndReason tpl_call_event_get_end_reason (TplCallEvent *self);
+TpCallStateChangeReason tpl_call_event_get_end_reason (TplCallEvent *self);
 const gchar * tpl_call_event_get_detailed_end_reason (TplCallEvent *self);
 
 

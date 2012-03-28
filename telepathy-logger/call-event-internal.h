@@ -39,8 +39,8 @@ struct _TplCallEventClass
   TplEventClass parent_class;
 };
 
-const gchar * _tpl_call_event_end_reason_to_str (TplCallEndReason reason);
-TplCallEndReason _tpl_call_event_str_to_end_reason (const gchar *str);
+const gchar * _tpl_call_event_end_reason_to_str (TpCallStateChangeReason reason);
+TpCallStateChangeReason _tpl_call_event_str_to_end_reason (const gchar *str);
 
 
 G_END_DECLS

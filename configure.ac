@@ -185,18 +185,6 @@ if test x$enable_debug = xyes; then
 fi
 AM_CONDITIONAL([ENABLE_DEBUG], [test "x$enable_debug" = xyes])
 
-#------------------------------------------------------------
-# Enable Call logging
-#------------------------------------------------------------
-AC_ARG_ENABLE(call,
-    AS_HELP_STRING([--enable-call],[compile with experimental Call logging support]),
-    enable_call=$enableval, enable_call=no )
-
-if test x$enable_call = xyes; then
-  AC_DEFINE(ENABLE_CALL, [], [Enable Call logging])
-fi
-AM_CONDITIONAL([ENABLE_CALL], [test "x$enable_call" = xyes])
-
 # -----------------------------------------------------------
 # Coding style checks
 # -----------------------------------------------------------
@@ -239,6 +227,5 @@ Configure summary:
 	Bugreporting URL............:  ${PACKAGE_BUGREPORT}
 	Public extensions library...:  ${enable_public_extensions}
 	Introspection support.......:  ${found_introspection}
-        Call support................:  ${enable_call}
 
 "

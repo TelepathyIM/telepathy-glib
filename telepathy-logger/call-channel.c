@@ -39,18 +39,6 @@
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
 #include "debug-internal.h"
 
-#define TPL_IFACE_CHANNEL_TYPE_CALL \
-  "org.freedesktop.Telepathy.Channel.Type.Call.DRAFT"
-#define TPL_IFACE_QUARK_CHANNEL_TYPE_CALL tpl_get_channel_type_call_interface ()
-
-typedef enum
-{
-  PENDING_INITIATOR_STATE = 1,
-  PENDING_RECEIVER_STATE,
-  ACCEPTED_STATE,
-  ENDED_STATE,
-} CallState;
-
 struct _TplCallChannelPriv
 {
   TpAccount *account;
@@ -61,33 +49,15 @@ struct _TplCallChannelPriv
   GTimer *timer;
   gboolean timer_started;
   TplEntity *end_actor;
-  TplCallEndReason end_reason;
+  TpCallStateChangeReason end_reason;
   gchar *detailed_end_reason;
-};
-
-static TpContactFeature features[3] = {
-  TP_CONTACT_FEATURE_ALIAS,
-  TP_CONTACT_FEATURE_PRESENCE,
-  TP_CONTACT_FEATURE_AVATAR_TOKEN
 };
 
 static void tpl_call_channel_iface_init (TplChannelInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (TplCallChannel, _tpl_call_channel,
-    TP_TYPE_CHANNEL,
+    TP_TYPE_CALL_CHANNEL,
     G_IMPLEMENT_INTERFACE (TPL_TYPE_CHANNEL, tpl_call_channel_iface_init))
-
-
-static GQuark
-tpl_get_channel_type_call_interface (void)
-{
-  static GQuark interface = 0;
-
-  if (G_UNLIKELY (interface == 0))
-    interface = g_quark_from_static_string (TPL_IFACE_CHANNEL_TYPE_CALL);
-
-  return interface;
-}
 
 
 static void
@@ -137,50 +107,46 @@ pendingproc_prepare_tp_channel (TplActionChain *ctx,
 
 
 static void
-get_remote_contacts_cb (TpConnection *connection,
-    guint n_contacts,
-    TpContact *const *contacts,
-    guint n_failed,
-    const TpHandle *failed,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
+pendingproc_get_contacts (TplActionChain *ctx,
+    gpointer user_data)
 {
-  TpChannel *chan = TP_CHANNEL (weak_object);
-  TplCallChannelPriv *priv = TPL_CALL_CHANNEL (weak_object)->priv;
-  TplActionChain *ctx = user_data;
-  guint i;
+  TplCallChannel *self = _tpl_action_chain_get_object (ctx);
+  TplCallChannelPriv *priv = self->priv;
+  TpChannel *chan = TP_CHANNEL (self);
+  TpConnection *con = tp_channel_borrow_connection (chan);
+  GHashTable *members;
+  GHashTableIter iter;
+  TpHandle handle;
+  TpHandleType handle_type;
+  gboolean is_room;
+  TpContact *contact;
+  TplEntity *entity;
 
-  if (error != NULL)
+  /* Get and store entities */
+  members = tp_call_channel_get_members (TP_CALL_CHANNEL (self));
+
+  g_hash_table_iter_init (&iter, members);
+  while (g_hash_table_iter_next (&iter, (gpointer *) &contact, NULL))
     {
-      DEBUG ("Failed to get remote contacts: %s", error->message);
-
-      if (ctx != NULL)
-        _tpl_action_chain_terminate (ctx, error);
-      return;
-    }
-
-  for (i = 0; i < n_contacts; i++)
-    {
-      TpContact *contact = contacts[i];
-      TpHandle handle = tp_contact_get_handle (contact);
-
+      handle = tp_contact_get_handle (contact);
       g_hash_table_insert (priv->entities, GUINT_TO_POINTER (handle),
           tpl_entity_new_from_tp_contact (contact, TPL_ENTITY_CONTACT));
     }
 
-  if (ctx != NULL)
+  /* Identify target */
+  handle = tp_channel_get_handle (chan, &handle_type);
+  is_room = (handle_type == TP_HANDLE_TYPE_ROOM);
+
+  if (is_room)
     {
-      TplEntity *target;
-      TpHandle target_handle;
+      priv->receiver =
+        tpl_entity_new_from_room_id (tp_channel_get_identifier (chan));
+    }
+  else
+    {
+      entity = g_hash_table_lookup (priv->entities,  GUINT_TO_POINTER (handle));
 
-      target_handle = tp_channel_get_handle (chan, NULL);
-
-      target = g_hash_table_lookup (priv->entities,
-          GUINT_TO_POINTER (target_handle));
-
-      /* Should not happen, but as we never know ... */
-      if (target == NULL)
+      if (entity == NULL)
         {
           GError *new_error = NULL;
           new_error = g_error_new (TPL_CALL_CHANNEL_ERROR,
@@ -192,204 +158,58 @@ get_remote_contacts_cb (TpConnection *connection,
         }
 
       if (tp_channel_get_requested (chan))
-        priv->receiver = g_object_ref (target);
+        priv->receiver = g_object_ref (entity);
       else
-        priv->sender = g_object_ref (target);
-
-      _tpl_action_chain_continue (ctx);
-    }
-}
-
-
-static void
-get_call_members_cb (TpProxy *proxy,
-    const GValue *value,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  TplCallChannel *self = TPL_CALL_CHANNEL (weak_object);
-  TplActionChain *ctx = user_data;
-  GHashTable *members;
-  GArray *arr;
-  GList *it;
-  TpHandle target;
-  TpHandleType target_type;
-
-  members = g_value_get_boxed (value);
-  arr = g_array_new (FALSE, FALSE, sizeof (TpHandle));
-
-  for (it = g_hash_table_get_keys (members); it != NULL; it = g_list_next (it))
-    {
-      TpHandle remote = GPOINTER_TO_INT (it->data);
-      g_array_append_val (arr, remote);
+        priv->sender = g_object_ref (entity);
     }
 
-   /* Get the contact of the TargetHandle */
-  target = tp_channel_get_handle (TP_CHANNEL (self), &target_type);
+  /* Get and store self entity */
+  contact = tp_channel_group_get_self_contact (chan);
+  if (contact == NULL)
+      contact = tp_connection_get_self_contact (con);
 
-  if (target_type == TP_HANDLE_TYPE_ROOM)
-    self->priv->receiver = tpl_entity_new_from_room_id (
-        tp_channel_get_identifier (TP_CHANNEL (self)));
-  else if (!g_hash_table_lookup_extended (members,
-        GINT_TO_POINTER (target), NULL, NULL))
-    g_array_append_val (arr, target);
+  handle = tp_contact_get_handle (contact);
+  entity = tpl_entity_new_from_tp_contact (contact, TPL_ENTITY_SELF);
+  g_hash_table_insert (priv->entities, GUINT_TO_POINTER (handle), entity);
 
-  if (arr->len > 0)
-    {
-      TpConnection *tp_conn = tp_channel_borrow_connection (TP_CHANNEL (self));
-
-      tp_connection_get_contacts_by_handle (tp_conn,
-          arr->len, (TpHandle *) arr->data,
-          G_N_ELEMENTS (features), features, get_remote_contacts_cb, ctx, NULL,
-          G_OBJECT (self));
-
-      g_array_unref (arr);
-    }
+  if (tp_channel_get_requested (chan) || is_room)
+    priv->sender = g_object_ref (entity);
   else
-    {
-      g_array_unref (arr);
-      _tpl_action_chain_continue (ctx);
-    }
-}
-
-
-static void
-pendingproc_get_remote_contacts (TplActionChain *ctx,
-    gpointer user_data)
-{
-  TplCallChannel *self = _tpl_action_chain_get_object (ctx);
-
-  tp_cli_dbus_properties_call_get (TP_PROXY (self), -1,
-        TPL_IFACE_CHANNEL_TYPE_CALL, "CallMembers",
-        get_call_members_cb, ctx, NULL,
-        G_OBJECT (self));
-}
-
-
-static void
-get_self_contact_cb (TpConnection *connection,
-    guint n_contacts,
-    TpContact *const *contacts,
-    guint n_failed,
-    const TpHandle *failed,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  TplActionChain *ctx = user_data;
-  TplCallChannel *tpl_call = _tpl_action_chain_get_object (ctx);
-  TplChannel *tpl_chan = TPL_CHANNEL (tpl_call);
-  TpChannel *tp_chan = TP_CHANNEL (tpl_chan);
-  TplEntity *self;
-  gboolean is_room = FALSE;
-
-  g_return_if_fail (TPL_IS_CALL_CHANNEL (tpl_call));
-
-  if (n_failed > 0)
-    {
-      TpConnection *tp_conn = tp_channel_borrow_connection (tp_chan);
-      const gchar *conn_path;
-      GError *new_error = NULL;
-
-      conn_path = tp_proxy_get_object_path (TP_PROXY (tp_conn));
-
-      new_error = g_error_new (error->domain, error->code,
-          "Error resolving self handle for connection %s: %s)",
-          conn_path, error->message);
-
-      _tpl_action_chain_terminate (ctx, new_error);
-      g_error_free (new_error);
-      return;
-    }
-
-  self = tpl_entity_new_from_tp_contact (contacts[0], TPL_ENTITY_SELF);
-
-  if (tpl_call->priv->receiver != NULL)
-    is_room = (tpl_entity_get_entity_type (tpl_call->priv->receiver)
-                == TPL_ENTITY_ROOM);
-
-  if (tp_channel_get_requested (tp_chan) || is_room)
-    tpl_call->priv->sender = self;
-  else
-    tpl_call->priv->receiver = self;
+    priv->receiver = g_object_ref (entity);
 
   _tpl_action_chain_continue (ctx);
 }
 
 
 static void
-pendingproc_get_local_contact (TplActionChain *ctx,
-    gpointer user_data)
-{
-  TplCallChannel *tpl_media = _tpl_action_chain_get_object (ctx);
-  TpChannel *chan = TP_CHANNEL (tpl_media);
-  TpConnection *tp_conn = tp_channel_borrow_connection (chan);
-  TpHandle my_handle;
-
-  my_handle = tp_channel_group_get_self_handle (chan);
-  if (my_handle == 0)
-      my_handle = tp_connection_get_self_handle (tp_conn);
-
-  tp_connection_get_contacts_by_handle (tp_conn, 1, &my_handle,
-      G_N_ELEMENTS (features), features, get_self_contact_cb, ctx, NULL,
-      G_OBJECT (tpl_media));
-}
-
-static TplCallEndReason
-tp_to_tpl_end_reason (guint reason)
-{
-  switch (reason)
-    {
-    case 1:
-      return TPL_CALL_END_REASON_USER_REQUESTED;
-    case 3:
-      return TPL_CALL_END_REASON_NO_ANSWER;
-    case 0:
-    default:
-      return TPL_CALL_END_REASON_UNKNOWN;
-    }
-}
-
-
-static void
-call_state_changed_cb (DBusGProxy *proxy,
-    CallState state,
-    guint flags,
-    GValueArray *reason,
+call_state_changed_cb (TpCallChannel *call,
+    TpCallState state,
+    TpCallFlags flags,
+    TpCallStateReason *reason,
     GHashTable *details,
     gpointer user_data)
 {
-  static const gchar *reasons[] = {
-      "Unknown",
-      "User Requested",
-      "No Answer"
-  };
   TplCallChannel *self = TPL_CALL_CHANNEL (user_data);
   TplCallChannelPriv *priv = self->priv;
 
   switch (state)
     {
-    case ACCEPTED_STATE:
+    case TP_CALL_STATE_ACCEPTED:
         {
-          DEBUG ("Moving to ACCEPTED_STATE, start_time=%li",
-              time (NULL));
-          g_timer_start (priv->timer);
-          priv->timer_started = TRUE;
+          if (!priv->timer_started)
+            {
+              DEBUG ("Moving to ACCEPTED_STATE, start_time=%li",
+                  time (NULL));
+              g_timer_start (priv->timer);
+              priv->timer_started = TRUE;
+            }
         }
       break;
 
-    case ENDED_STATE:
+    case TP_CALL_STATE_ENDED:
         {
-          TpHandle actor = g_value_get_uint (
-              g_value_array_get_nth (reason, 0));
-          TplCallEndReason end_reason = tp_to_tpl_end_reason (
-              g_value_get_uint (g_value_array_get_nth (reason, 1)));
-          gchar *detailed_reason = g_value_dup_string (
-              g_value_array_get_nth (reason, 2));
-
           priv->end_actor = g_hash_table_lookup (priv->entities,
-              GUINT_TO_POINTER (actor));
+              GUINT_TO_POINTER (reason->actor));
 
           if (priv->end_actor == NULL)
             priv->end_actor = tpl_entity_new ("unknown", TPL_ENTITY_UNKNOWN,
@@ -397,19 +217,19 @@ call_state_changed_cb (DBusGProxy *proxy,
           else
             g_object_ref (priv->end_actor);
 
-          priv->end_reason = end_reason;
+          priv->end_reason = reason->reason;
 
-          if (detailed_reason == NULL)
+          if (reason->dbus_reason == NULL)
             priv->detailed_end_reason = g_strdup ("");
           else
-            priv->detailed_end_reason = detailed_reason;
+            priv->detailed_end_reason = g_strdup (reason->dbus_reason);
 
           g_timer_stop (priv->timer);
 
           DEBUG (
               "Moving to ENDED_STATE, duration=%" G_GINT64_FORMAT " reason=%s details=%s",
               (gint64) (priv->timer_started ? g_timer_elapsed (priv->timer, NULL) : -1),
-              reasons[priv->end_reason],
+              _tpl_call_event_end_reason_to_str(priv->end_reason),
               priv->detailed_end_reason);
         }
       break;
@@ -422,57 +242,31 @@ call_state_changed_cb (DBusGProxy *proxy,
 
 
 static void
-call_members_changed_cb (DBusGProxy *proxy,
-    GHashTable *flags_changed,
+call_members_changed_cb (TpCallChannel *call,
+    GHashTable *updates,
     GArray *removed,
+    TpCallStateReason reason,
     gpointer user_data)
 {
-  TplCallChannel *self = user_data;
-  TpChannel *chan = TP_CHANNEL (self);
+  TplCallChannel *self = TPL_CALL_CHANNEL (call);
+  TplCallChannelPriv *priv = self->priv;
   GHashTableIter iter;
-  gpointer key;
-  GArray *added;
+  TpContact *contact;
 
-  added = g_array_new (FALSE, FALSE, sizeof (TpHandle));
-
-  g_hash_table_iter_init (&iter, flags_changed);
-  while (g_hash_table_iter_next (&iter, &key, NULL))
+  g_hash_table_iter_init (&iter, updates);
+  while (g_hash_table_iter_next (&iter, (gpointer *) &contact, NULL))
     {
-      TpHandle handle = GPOINTER_TO_INT (key);
-      g_array_append_val (added, handle);
-    }
+      TpHandle handle = tp_contact_get_handle (contact);
+      TplEntity *entity = g_hash_table_lookup (priv->entities,
+          GUINT_TO_POINTER (handle));
 
-  if (added->len > 0)
-    {
-      tp_connection_get_contacts_by_handle (tp_channel_borrow_connection (chan),
-          added->len, (TpHandle *) added->data,
-          G_N_ELEMENTS (features), features, get_remote_contacts_cb, NULL, NULL,
-          G_OBJECT (self));
-    }
-
-  g_array_unref (added);
-}
-
-
-static void
-chan_members_changed_cb (TpChannel *chan,
-    gchar *message,
-    GArray *added,
-    GArray *removed,
-    GArray *local_pending,
-    GArray *remote_pending,
-    TpHandle actor,
-    guint reason,
-    gpointer user_data)
-{
-  TplCallChannel *self = user_data;
-
-  if (added->len > 0)
-    {
-      tp_connection_get_contacts_by_handle (tp_channel_borrow_connection (chan),
-          added->len, (TpHandle *) added->data,
-          G_N_ELEMENTS (features), features, get_remote_contacts_cb, NULL, NULL,
-          G_OBJECT (self));
+      if (!entity)
+        {
+          entity = tpl_entity_new_from_tp_contact (contact,
+              TPL_ENTITY_CONTACT);
+          g_hash_table_insert (priv->entities, GUINT_TO_POINTER (handle),
+              entity);
+        }
     }
 }
 
@@ -548,47 +342,12 @@ pendingproc_connect_signals (TplActionChain *ctx,
     gpointer user_data)
 {
   TplCallChannel *self = _tpl_action_chain_get_object (ctx);
-  DBusGProxy *proxy;
-  GError *error = NULL;
 
-  proxy = tp_proxy_borrow_interface_by_id (TP_PROXY (self),
-      TPL_IFACE_QUARK_CHANNEL_TYPE_CALL, &error);
+  tp_g_signal_connect_object (self, "state-changed",
+      G_CALLBACK (call_state_changed_cb), self, 0);
 
-  if (proxy == NULL)
-    {
-      _tpl_action_chain_terminate (ctx, error);
-      g_error_free (error);
-      return;
-    }
-
-  dbus_g_proxy_add_signal (proxy,
-    "CallStateChanged",
-    G_TYPE_UINT,
-    G_TYPE_UINT,
-    dbus_g_type_get_struct ("GValueArray",
-        G_TYPE_UINT,
-        G_TYPE_UINT,
-        G_TYPE_STRING,
-        G_TYPE_INVALID),
-    dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
-    G_TYPE_INVALID);
-
-  dbus_g_proxy_add_signal (proxy,
-      "CallMembersChanged",
-      dbus_g_type_get_map ("GHashTable", G_TYPE_UINT, G_TYPE_UINT),
-      DBUS_TYPE_G_UINT_ARRAY,
-      G_TYPE_INVALID);
-
-  dbus_g_proxy_connect_signal (proxy,
-     "CallStateChanged",
-      G_CALLBACK (call_state_changed_cb), self, NULL);
-
-  dbus_g_proxy_connect_signal (proxy,
-     "CallMembersChanged",
-      G_CALLBACK (call_members_changed_cb), self, NULL);
-
-  tp_g_signal_connect_object (TP_CHANNEL (self), "group-members-changed",
-      G_CALLBACK (chan_members_changed_cb), self, 0);
+  tp_g_signal_connect_object (self, "members-changed",
+      G_CALLBACK (call_members_changed_cb), self, 0);
 
   tp_g_signal_connect_object (TP_CHANNEL (self), "invalidated",
       G_CALLBACK (channel_invalidated_cb), self, 0);
@@ -608,8 +367,7 @@ tpl_call_channel_prepare_async (TplChannel *chan,
   _tpl_action_chain_append (actions, pendingproc_connect_signals, NULL);
   _tpl_action_chain_append (actions, pendingproc_prepare_tp_connection, NULL);
   _tpl_action_chain_append (actions, pendingproc_prepare_tp_channel, NULL);
-  _tpl_action_chain_append (actions, pendingproc_get_remote_contacts, NULL);
-  _tpl_action_chain_append (actions, pendingproc_get_local_contact, NULL);
+  _tpl_action_chain_append (actions, pendingproc_get_contacts, NULL);
 
   _tpl_action_chain_continue (actions);
 }
