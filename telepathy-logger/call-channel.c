@@ -166,7 +166,7 @@ pendingproc_get_contacts (TplActionChain *ctx,
   /* Get and store self entity */
   contact = tp_channel_group_get_self_contact (chan);
   if (contact == NULL)
-      contact = tp_connection_get_self_contact (con);
+    contact = tp_connection_get_self_contact (con);
 
   handle = tp_contact_get_handle (contact);
   entity = tpl_entity_new_from_tp_contact (contact, TPL_ENTITY_SELF);
@@ -234,7 +234,7 @@ call_state_changed_cb (TpCallChannel *call,
           DEBUG (
               "Moving to ENDED_STATE, duration=%" G_GINT64_FORMAT " reason=%s details=%s",
               (gint64) (priv->timer_started ? g_timer_elapsed (priv->timer, NULL) : -1),
-              _tpl_call_event_end_reason_to_str(priv->end_reason),
+              _tpl_call_event_end_reason_to_str (priv->end_reason),
               priv->detailed_end_reason);
         }
       break;
