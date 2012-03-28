@@ -1273,8 +1273,8 @@ my_set_contact_info (TpSvcConnectionInterfaceContactInfo *obj,
     g_ptr_array_add (copy, g_value_array_copy (g_ptr_array_index (info, i)));
 
   self_handle = tp_base_connection_get_self_handle (base);
-  g_hash_table_insert (self->priv->contact_info, GUINT_TO_POINTER (self_handle),
-      copy);
+  tp_tests_contacts_connection_change_contact_info (self, self_handle, copy);
+  g_ptr_array_unref (copy);
 
   tp_svc_connection_interface_contact_info_return_from_set_contact_info (
       context);
