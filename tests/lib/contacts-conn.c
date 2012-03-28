@@ -330,11 +330,40 @@ conn_contact_info_properties_getter (GObject *object,
       if (supported_fields == NULL)
         {
           supported_fields = g_ptr_array_new ();
+
           g_ptr_array_add (supported_fields, tp_value_array_build (4,
-              G_TYPE_STRING, "n",
+              G_TYPE_STRING, "bday",
               G_TYPE_STRV, NULL,
               G_TYPE_UINT, 0,
+              G_TYPE_UINT, 1,
+              G_TYPE_INVALID));
+
+          g_ptr_array_add (supported_fields, tp_value_array_build (4,
+              G_TYPE_STRING, "email",
+              G_TYPE_STRV, NULL,
               G_TYPE_UINT, 0,
+              G_TYPE_UINT, G_MAXUINT32,
+              G_TYPE_INVALID));
+
+          g_ptr_array_add (supported_fields, tp_value_array_build (4,
+              G_TYPE_STRING, "fn",
+              G_TYPE_STRV, NULL,
+              G_TYPE_UINT, 0,
+              G_TYPE_UINT, 1,
+              G_TYPE_INVALID));
+
+          g_ptr_array_add (supported_fields, tp_value_array_build (4,
+              G_TYPE_STRING, "tel",
+              G_TYPE_STRV, NULL,
+              G_TYPE_UINT, 0,
+              G_TYPE_UINT, G_MAXUINT32,
+              G_TYPE_INVALID));
+
+          g_ptr_array_add (supported_fields, tp_value_array_build (4,
+              G_TYPE_STRING, "url",
+              G_TYPE_STRV, NULL,
+              G_TYPE_UINT, 0,
+              G_TYPE_UINT, G_MAXUINT32,
               G_TYPE_INVALID));
         }
       g_value_set_boxed (value, supported_fields);

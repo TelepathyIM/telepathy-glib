@@ -216,24 +216,41 @@ contact_info_prepare_cb (GObject *object,
   if (tp_proxy_prepare_finish (connection, res, &result->error))
     {
       TpContactInfoFlags flags;
-      GList *specs;
-      TpContactInfoFieldSpec *spec;
+      GList *specs, *l;
 
       flags = tp_connection_get_contact_info_flags (connection);
       g_assert_cmpint (flags, ==, TP_CONTACT_INFO_FLAG_PUSH |
           TP_CONTACT_INFO_FLAG_CAN_SET);
 
       specs = tp_connection_get_contact_info_supported_fields (connection);
-      g_assert (specs != NULL);
-      g_assert (specs->data != NULL);
-      g_assert (specs->next == NULL);
+      g_assert_cmpuint (g_list_length (specs), ==, 5);
 
-      spec = specs->data;
-      g_assert_cmpstr (spec->name, ==, "n");
-      g_assert (spec->parameters != NULL);
-      g_assert (spec->parameters[0] == NULL);
-      g_assert_cmpint (spec->flags, ==, 0);
-      g_assert_cmpint (spec->max, ==, 0);
+      for (l = specs; l != NULL; l = l->next)
+        {
+          TpContactInfoFieldSpec *spec = l->data;
+
+          if (!tp_strdiff (spec->name, "bday") ||
+              !tp_strdiff (spec->name, "fn"))
+            {
+              g_assert (spec->parameters != NULL);
+              g_assert (spec->parameters[0] == NULL);
+              g_assert_cmpint (spec->flags, ==, 0);
+              g_assert_cmpint (spec->max, ==, 1);
+            }
+          else if (!tp_strdiff (spec->name, "email") ||
+                   !tp_strdiff (spec->name, "tel") ||
+                   !tp_strdiff (spec->name, "url"))
+            {
+              g_assert (spec->parameters != NULL);
+              g_assert (spec->parameters[0] == NULL);
+              g_assert_cmpint (spec->flags, ==, 0);
+              g_assert_cmpint (spec->max, ==, G_MAXUINT32);
+            }
+          else
+            {
+              g_assert_not_reached ();
+            }
+        }
 
       g_list_free (specs);
     }
