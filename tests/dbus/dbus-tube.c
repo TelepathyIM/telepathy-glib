@@ -231,7 +231,7 @@ tube_offer_cb (GObject *source,
     g_main_loop_quit (test->mainloop);
 }
 
-static void
+static gboolean
 new_connection_cb (TpTestsDBusTubeChannel *chan,
     GDBusConnection *connection,
     Test *test)
@@ -242,6 +242,8 @@ new_connection_cb (TpTestsDBusTubeChannel *chan,
   test->wait--;
   if (test->wait <= 0)
     g_main_loop_quit (test->mainloop);
+
+  return TRUE;
 }
 
 static void

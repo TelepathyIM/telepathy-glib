@@ -261,9 +261,10 @@ tp_tests_dbus_tube_channel_class_init (TpTestsDBusTubeChannelClass *klass)
   _signals[SIG_NEW_CONNECTION] = g_signal_new ("new-connection",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      g_cclosure_marshal_VOID__OBJECT,
-      G_TYPE_NONE,
+      0,
+      g_signal_accumulator_true_handled, NULL,
+      NULL,
+      G_TYPE_BOOLEAN,
       1, G_TYPE_DBUS_CONNECTION);
 
   tp_dbus_properties_mixin_implement_interface (object_class,
@@ -289,14 +290,16 @@ change_state (TpTestsDBusTubeChannel *self,
   tp_svc_channel_interface_tube_emit_tube_channel_state_changed (self, state);
 }
 
-static void
+static gboolean
 dbus_new_connection_cb (GDBusServer *server,
     GDBusConnection *connection,
     gpointer user_data)
 {
   TpTestsDBusTubeChannel *self = user_data;
+  gboolean ret = FALSE;
 
-  g_signal_emit (self, _signals[SIG_NEW_CONNECTION], 0, connection);
+  g_signal_emit (self, _signals[SIG_NEW_CONNECTION], 0, connection, &ret);
+  return ret;
 }
 
 static void
