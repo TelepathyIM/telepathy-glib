@@ -564,7 +564,7 @@ tp_dbus_tube_channel_offer_async (TpDBusTubeChannel *self,
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
- * Finishes to offer an outgoing D-Bus tube. The returned #GDBusConnection
+ * Finishes offering an outgoing D-Bus tube. The returned #GDBusConnection
  * is ready to be used to exchange data through the tube.
  *
  * Returns: (transfer full): a reference on a #GDBusConnection if the tube
