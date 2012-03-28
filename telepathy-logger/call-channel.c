@@ -208,6 +208,9 @@ call_state_changed_cb (TpCallChannel *call,
 
     case TP_CALL_STATE_ENDED:
         {
+          if (priv->end_actor != NULL)
+            g_object_unref (priv->end_actor);
+
           priv->end_actor = g_hash_table_lookup (priv->entities,
               GUINT_TO_POINTER (reason->actor));
 
@@ -218,6 +221,8 @@ call_state_changed_cb (TpCallChannel *call,
             g_object_ref (priv->end_actor);
 
           priv->end_reason = reason->reason;
+
+          g_free (priv->detailed_end_reason);
 
           if (reason->dbus_reason == NULL)
             priv->detailed_end_reason = g_strdup ("");
