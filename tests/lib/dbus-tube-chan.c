@@ -36,6 +36,10 @@ enum
 static guint _signals[LAST_SIGNAL] = { 0, };
 
 struct _TpTestsDBusTubeChannelPrivate {
+    /* Controls whether the channel should become open before returning from
+     * Open/Accept, after returning, or never.
+     */
+    TpTestsDBusTubeChannelOpenMode open_mode;
     TpTubeChannelState state;
 
     /* TpHandle -> gchar * */
@@ -118,6 +122,7 @@ tp_tests_dbus_tube_channel_init (TpTestsDBusTubeChannel *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE ((self),
       TP_TESTS_TYPE_DBUS_TUBE_CHANNEL, TpTestsDBusTubeChannelPrivate);
 
+  self->priv->open_mode = TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_FIRST;
   self->priv->dbus_names = g_hash_table_new_full (g_direct_hash,
       g_direct_equal, NULL, g_free);
 }
@@ -319,7 +324,11 @@ open_tube (TpTestsDBusTubeChannel *self)
 
   g_signal_connect (self->priv->dbus_server, "new-connection",
       G_CALLBACK (dbus_new_connection_cb), self);
+}
 
+static void
+really_open_tube (TpTestsDBusTubeChannel *self)
+{
   g_dbus_server_start (self->priv->dbus_server);
 
   change_state (self, TP_TUBE_CHANNEL_STATE_OPEN);
@@ -335,8 +344,14 @@ dbus_tube_offer (TpSvcChannelTypeDBusTube *chan,
 
   open_tube (self);
 
+  if (self->priv->open_mode == TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_FIRST)
+    really_open_tube (self);
+
   tp_svc_channel_type_dbus_tube_return_from_offer (context,
       g_dbus_server_get_client_address (self->priv->dbus_server));
+
+  if (self->priv->open_mode == TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_SECOND)
+    really_open_tube (self);
 }
 
 static void
@@ -348,8 +363,22 @@ dbus_tube_accept (TpSvcChannelTypeDBusTube *chan,
 
   open_tube (self);
 
+  if (self->priv->open_mode == TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_FIRST)
+    really_open_tube (self);
+
   tp_svc_channel_type_dbus_tube_return_from_accept (context,
       g_dbus_server_get_client_address (self->priv->dbus_server));
+
+  if (self->priv->open_mode == TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_SECOND)
+    really_open_tube (self);
+}
+
+void
+tp_tests_dbus_tube_channel_set_open_mode (
+    TpTestsDBusTubeChannel *self,
+    TpTestsDBusTubeChannelOpenMode open_mode)
+{
+  self->priv->open_mode = open_mode;
 }
 
 static void

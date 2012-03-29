@@ -343,12 +343,14 @@ use_tube (Test *test,
 
 static void
 test_offer (Test *test,
-    gconstpointer data G_GNUC_UNUSED)
+    gconstpointer data)
 {
+  const TpTestsDBusTubeChannelOpenMode open_mode = GPOINTER_TO_UINT (data);
   GHashTable *params;
 
   /* Outgoing tube */
   create_tube_service (test, TRUE, TRUE);
+  tp_tests_dbus_tube_channel_set_open_mode (test->tube_chan_service, open_mode);
 
   params = tp_asv_new ("badger", G_TYPE_UINT, 42, NULL);
 
@@ -388,10 +390,13 @@ tube_accept_cb (GObject *source,
 
 static void
 test_accept (Test *test,
-    gconstpointer data G_GNUC_UNUSED)
+    gconstpointer data)
 {
+  const TpTestsDBusTubeChannelOpenMode open_mode = GPOINTER_TO_UINT (data);
+
   /* Incoming tube */
   create_tube_service (test, FALSE, TRUE);
+  tp_tests_dbus_tube_channel_set_open_mode (test->tube_chan_service, open_mode);
 
   g_signal_connect (test->tube_chan_service, "new-connection",
       G_CALLBACK (new_connection_cb), test);
@@ -419,10 +424,19 @@ main (int argc,
       teardown);
   g_test_add ("/dbus-tube/properties", Test, NULL, setup, test_properties,
       teardown);
-  g_test_add ("/dbus-tube/offer", Test, NULL, setup, test_offer,
-      teardown);
-  g_test_add ("/dbus-tube/accept", Test, NULL, setup, test_accept,
-      teardown);
+  /* Han shot first. */
+  g_test_add ("/dbus-tube/offer-open-first", Test,
+      GUINT_TO_POINTER (TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_FIRST),
+      setup, test_offer, teardown);
+  g_test_add ("/dbus-tube/offer-open-second", Test,
+      GUINT_TO_POINTER (TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_SECOND),
+      setup, test_offer, teardown);
+  g_test_add ("/dbus-tube/accept-open-first", Test,
+      GUINT_TO_POINTER (TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_FIRST),
+      setup, test_accept, teardown);
+  g_test_add ("/dbus-tube/accept-open-second", Test,
+      GUINT_TO_POINTER (TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_SECOND),
+      setup, test_accept, teardown);
 
   return g_test_run ();
 }
