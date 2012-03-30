@@ -318,6 +318,7 @@ AC_OUTPUT( Makefile \
 	   examples/client/js/Makefile \
 	   examples/client/python/Makefile \
 	   examples/client/stream-tubes/Makefile \
+	   examples/client/dbus-tubes/Makefile \
 	   examples/cm/Makefile \
 	   examples/cm/call/Makefile \
 	   examples/cm/channelspecific/Makefile \
