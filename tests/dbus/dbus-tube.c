@@ -372,6 +372,26 @@ test_offer (Test *test,
 }
 
 static void
+test_offer_invalidated_before_open (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  /* Outgoing tube */
+  create_tube_service (test, TRUE, TRUE);
+  tp_tests_dbus_tube_channel_set_open_mode (test->tube_chan_service,
+      TP_TESTS_DBUS_TUBE_CHANNEL_NEVER_OPEN);
+
+  tp_dbus_tube_channel_offer_async (test->tube, NULL, tube_offer_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  /* FIXME: this isn't a particularly good error… it's just what comes out when
+   * the channel gets closed from under us, and there isn't really API on
+   * DBusTube to give a better error.
+   */
+  g_assert_error (test->error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED);
+}
+
+static void
 tube_accept_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
@@ -413,6 +433,26 @@ test_accept (Test *test,
   use_tube (test, test->cm_conn, test->tube_conn);
 }
 
+static void
+test_accept_invalidated_before_open (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  /* Incoming tube */
+  create_tube_service (test, FALSE, TRUE);
+  tp_tests_dbus_tube_channel_set_open_mode (test->tube_chan_service,
+      TP_TESTS_DBUS_TUBE_CHANNEL_NEVER_OPEN);
+
+  tp_dbus_tube_channel_accept_async (test->tube, tube_accept_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  /* FIXME: this isn't a particularly good error… it's just what comes out when
+   * the channel gets closed from under us, and there isn't really API on
+   * DBusTube to give a better error.
+   */
+  g_assert_error (test->error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED);
+}
+
 int
 main (int argc,
       char **argv)
@@ -431,12 +471,16 @@ main (int argc,
   g_test_add ("/dbus-tube/offer-open-second", Test,
       GUINT_TO_POINTER (TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_SECOND),
       setup, test_offer, teardown);
+  g_test_add ("/dbus-tube/offer-invalidated-before-open", Test, NULL,
+      setup, test_offer_invalidated_before_open, teardown);
   g_test_add ("/dbus-tube/accept-open-first", Test,
       GUINT_TO_POINTER (TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_FIRST),
       setup, test_accept, teardown);
   g_test_add ("/dbus-tube/accept-open-second", Test,
       GUINT_TO_POINTER (TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_SECOND),
       setup, test_accept, teardown);
+  g_test_add ("/dbus-tube/accept-invalidated-before-open", Test, NULL,
+      setup, test_accept_invalidated_before_open, teardown);
 
   return g_test_run ();
 }

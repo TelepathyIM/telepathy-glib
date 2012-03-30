@@ -156,6 +156,12 @@ dispose (GObject *object)
 
   if (self->priv->dbus_server != NULL)
     {
+      /* FIXME: this is pretty stupid but apparently unless you start and then
+       * stop the server before freeing it, it doesn't stop listening. Calling
+       * _start() twice is a no-op.
+      */
+      g_dbus_server_start (self->priv->dbus_server);
+
       g_dbus_server_stop (self->priv->dbus_server);
       g_clear_object (&self->priv->dbus_server);
     }
@@ -352,6 +358,8 @@ dbus_tube_offer (TpSvcChannelTypeDBusTube *chan,
 
   if (self->priv->open_mode == TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_SECOND)
     really_open_tube (self);
+  else if (self->priv->open_mode == TP_TESTS_DBUS_TUBE_CHANNEL_NEVER_OPEN)
+    tp_base_channel_close (TP_BASE_CHANNEL (self));
 }
 
 static void
@@ -371,6 +379,8 @@ dbus_tube_accept (TpSvcChannelTypeDBusTube *chan,
 
   if (self->priv->open_mode == TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_SECOND)
     really_open_tube (self);
+  else if (self->priv->open_mode == TP_TESTS_DBUS_TUBE_CHANNEL_NEVER_OPEN)
+    tp_base_channel_close (TP_BASE_CHANNEL (self));
 }
 
 void

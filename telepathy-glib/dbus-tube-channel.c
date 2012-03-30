@@ -89,7 +89,8 @@ tp_dbus_tube_channel_dispose (GObject *obj)
   TpDBusTubeChannel *self = (TpDBusTubeChannel *) obj;
 
   tp_clear_pointer (&self->priv->parameters, g_hash_table_unref);
-  g_clear_object (&self->priv->result);
+  /* If priv->result isn't NULL, it owns a ref to self. */
+  g_warn_if_fail (self->priv->result == NULL);
   tp_clear_pointer (&self->priv->address, g_free);
 
   G_OBJECT_CLASS (tp_dbus_tube_channel_parent_class)->dispose (obj);
@@ -123,8 +124,19 @@ tp_dbus_tube_channel_get_property (GObject *object,
 static void
 complete_operation (TpDBusTubeChannel *self)
 {
-  g_simple_async_result_complete (self->priv->result);
-  g_clear_object (&self->priv->result);
+  TpDBusTubeChannelPrivate *priv = self->priv;
+  GSimpleAsyncResult *result = priv->result;
+
+  /* This dance is to ensure that we don't accidentally manipulate priv->result
+   * while calling out to user code. For instance, someone might call
+   * tp_proxy_invalidate() on us, which winds up landing us in here via our
+   * handler for that signal.
+   */
+  g_assert (priv->result != NULL);
+  result = priv->result;
+  priv->result = NULL;
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
 }
 
 static void
@@ -169,6 +181,27 @@ check_tube_open (TpDBusTubeChannel *self)
   g_dbus_connection_new_for_address (self->priv->address,
       G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT, NULL,
       NULL, dbus_connection_new_cb, self);
+}
+
+static void
+dbus_tube_invalidated_cb (
+    TpProxy *proxy,
+    guint domain,
+    gint code,
+    gchar *message,
+    gpointer user_data)
+{
+  TpDBusTubeChannel *self = TP_DBUS_TUBE_CHANNEL (proxy);
+  TpDBusTubeChannelPrivate *priv = self->priv;
+  GError error = { domain, code, message };
+
+  if (priv->result != NULL)
+    {
+      DEBUG ("Tube invalidated: '%s'; failing pending offer/accept method call",
+          message);
+      g_simple_async_result_set_from_error (priv->result, &error);
+      complete_operation (self);
+    }
 }
 
 static void
@@ -245,6 +278,9 @@ tp_dbus_tube_channel_constructed (GObject *obj)
               TP_HASH_TYPE_STRING_VARIANT_MAP, params);
         }
     }
+
+  g_signal_connect (self, "invalidated",
+      G_CALLBACK (dbus_tube_invalidated_cb), NULL);
 }
 
 static void
