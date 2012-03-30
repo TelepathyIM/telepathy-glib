@@ -361,6 +361,29 @@ content_removed_cb (TpChannel *channel,
   DEBUG ("Content '%s' removed but not found", object_path);
 }
 
+static const gchar *
+call_state_to_string (TpCallState state)
+{
+  switch (state)
+    {
+      case TP_CALL_STATE_UNKNOWN:
+        return "unknown";
+      case TP_CALL_STATE_PENDING_INITIATOR:
+        return "pending-initiator";
+      case TP_CALL_STATE_INITIALISING:
+        return "initialising";
+      case TP_CALL_STATE_INITIALISED:
+        return "initialised";
+      case TP_CALL_STATE_ACCEPTED:
+        return "accepted";
+      case TP_CALL_STATE_ACTIVE:
+        return "active";
+      case TP_CALL_STATE_ENDED:
+        return "ended";
+    }
+  return "invalid";
+}
+
 static void
 call_state_changed_cb (TpChannel *channel,
     guint state,
@@ -375,7 +398,8 @@ call_state_changed_cb (TpChannel *channel,
   if (!self->priv->properties_retrieved)
     return;
 
-  DEBUG ("Call state changed to %u (flags: %u)", state, flags);
+  DEBUG ("Call state changed to %s (flags: %u)", call_state_to_string (state),
+      flags);
 
   tp_clear_pointer (&self->priv->state_reason, _tp_call_state_reason_unref);
   tp_clear_pointer (&self->priv->state_details, g_hash_table_unref);
