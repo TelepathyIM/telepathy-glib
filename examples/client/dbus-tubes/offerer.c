@@ -37,7 +37,21 @@ handle_method_call (
     GDBusMethodInvocation *invocation,
     gpointer user_data)
 {
-  if (!tp_strdiff (method_name, "Add"))
+  if (tp_strdiff (method_name, "Add"))
+    {
+      g_dbus_method_invocation_return_error (invocation,
+          G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD,
+          "Unknown method '%s' on interface " EXAMPLE_INTERFACE,
+          method_name);
+    }
+  else if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(ii)")))
+    {
+      g_dbus_method_invocation_return_error (invocation,
+          G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+          "Add takes two int32 parameters, not %s",
+          g_variant_get_type_string (parameters));
+    }
+  else /* hooray! */
     {
       guint x, y;
       gboolean ret;
@@ -58,11 +72,6 @@ handle_method_call (
 
       g_dbus_connection_flush_sync (connection, NULL, NULL);
       g_dbus_connection_close (connection, NULL, connection_closed_cb, user_data);
-    }
-  else
-    {
-      /* We only have one method in our introspection XML. */
-      g_return_if_reached ();
     }
 }
 
