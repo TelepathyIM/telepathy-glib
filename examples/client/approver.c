@@ -163,7 +163,7 @@ main (int argc,
   /* call */
   tp_base_client_take_approver_filter (approver, tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA,
+          TP_IFACE_CHANNEL_TYPE_CALL,
         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
           TP_HANDLE_TYPE_CONTACT,
         NULL));
