@@ -549,10 +549,12 @@ proxy_prepare_offer_cb (GObject *source,
 
   g_object_notify (G_OBJECT (self), "parameters");
 
-  /* TODO: use TP_SOCKET_ACCESS_CONTROL_CREDENTIALS if supported */
-
+  /* TODO: provide a way to use TP_SOCKET_ACCESS_CONTROL_LOCALHOST if you're in
+   * an environment where you need to disable authentication. tp-glib can't
+   * guess this for you.
+   */
   tp_cli_channel_type_dbus_tube_call_offer (TP_CHANNEL (self), -1,
-      self->priv->parameters, TP_SOCKET_ACCESS_CONTROL_LOCALHOST,
+      self->priv->parameters, TP_SOCKET_ACCESS_CONTROL_CREDENTIALS,
       dbus_tube_offer_cb, NULL, NULL, G_OBJECT (self));
 
 out:
@@ -664,10 +666,12 @@ proxy_prepare_accept_cb (GObject *source,
       return;
     }
 
-  /* TODO: use TP_SOCKET_ACCESS_CONTROL_CREDENTIALS if supported */
-
+  /* TODO: provide a way to use TP_SOCKET_ACCESS_CONTROL_LOCALHOST if you're in
+   * an environment where you need to disable authentication. tp-glib can't
+   * guess this for you.
+   */
   tp_cli_channel_type_dbus_tube_call_accept (TP_CHANNEL (self), -1,
-      TP_SOCKET_ACCESS_CONTROL_LOCALHOST, dbus_tube_accept_cb,
+      TP_SOCKET_ACCESS_CONTROL_CREDENTIALS, dbus_tube_accept_cb,
       NULL, NULL, G_OBJECT (self));
 }
 
