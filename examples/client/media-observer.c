@@ -24,12 +24,8 @@ chan_invalidated_cb (TpProxy *proxy,
     gpointer user_data)
 {
   TpChannel *channel = TP_CHANNEL (proxy);
-  GHashTable *props;
 
-  props = tp_channel_borrow_immutable_properties (channel);
-
-  g_print ("Call with %s terminated\n",
-      tp_asv_get_string (props, TP_PROP_CHANNEL_TARGET_ID));
+  g_print ("Call with %s terminated\n", tp_channel_get_identifier (channel));
 
   g_object_unref (channel);
 }
@@ -52,21 +48,19 @@ observe_channels_cb (TpSimpleObserver *self,
   for (l = channels; l != NULL; l = g_list_next (l))
     {
       TpChannel *channel = l->data;
-      GHashTable *props;
       gboolean requested;
 
       if (tp_strdiff (tp_channel_get_channel_type (channel),
             TP_IFACE_CHANNEL_TYPE_CALL))
         continue;
 
-      props = tp_channel_borrow_immutable_properties (channel);
-      requested = tp_asv_get_boolean (props, TP_PROP_CHANNEL_REQUESTED, NULL);
+      requested = tp_channel_get_requested (channel);
 
       g_print ("Observing %s %s call %s %s\n",
           recovering? "existing": "new",
           requested? "outgoing": "incoming",
           requested? "to": "from",
-          tp_asv_get_string (props, TP_PROP_CHANNEL_TARGET_ID));
+          tp_channel_get_identifier (channel));
 
       g_signal_connect (g_object_ref (channel), "invalidated",
           G_CALLBACK (chan_invalidated_cb), NULL);
