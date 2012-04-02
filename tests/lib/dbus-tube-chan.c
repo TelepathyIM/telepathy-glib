@@ -159,6 +159,8 @@ dispose (GObject *object)
       /* FIXME: this is pretty stupid but apparently unless you start and then
        * stop the server before freeing it, it doesn't stop listening. Calling
        * _start() twice is a no-op.
+       *
+       * https://bugzilla.gnome.org/show_bug.cgi?id=673372
       */
       g_dbus_server_start (self->priv->dbus_server);
 

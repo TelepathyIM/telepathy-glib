@@ -387,6 +387,8 @@ test_offer_invalidated_before_open (Test *test,
   /* FIXME: this isn't a particularly good error… it's just what comes out when
    * the channel gets closed from under us, and there isn't really API on
    * DBusTube to give a better error.
+   *
+   * https://bugs.freedesktop.org/show_bug.cgi?id=48196
    */
   g_assert_error (test->error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED);
 }
@@ -449,6 +451,8 @@ test_accept_invalidated_before_open (Test *test,
   /* FIXME: this isn't a particularly good error… it's just what comes out when
    * the channel gets closed from under us, and there isn't really API on
    * DBusTube to give a better error.
+   *
+   * https://bugs.freedesktop.org/show_bug.cgi?id=48196
    */
   g_assert_error (test->error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED);
 }
