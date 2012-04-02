@@ -1,9 +1,29 @@
-telepathy-glib 0.17.8 (UNRELEASED)
+telepathy-glib 0.18.0 (UNRELEASED)
 ==================================
 
-y u no fill news file?
+This is the start of a new stable branch. We encourage those shipping
+GNOME 3.4 to track this stable branch.
 
-... yes Olivier, I'm talking to you.
+Changes since 0.17.7:
+
+• Support the DownloadAtConnection property in TpBaseContactList. (Alban)
+
+• Add high-level API for TpDBusTubeChannel classes. (fd.o#29271,
+  Guillaume and Will)
+
+• Various improvements to the ContactList test suite. (Xavier)
+
+Summary of particularly noteworthy changes since 0.16.x:
+
+• GLib ≥ 2.30, dbus-glib ≥ 0.90, gobject-introspection ≥ 1.30, and
+  valac ≥ 0.14 are now required.
+
+• TpCallChannel, TpBaseCallChannel, and other Call-related high-level
+  API has been added.
+
+• High-level API to accept and provide file transfers has been added.
+
+• Building on Android using 'androgenizer' is now supported.
 
 telepathy-glib 0.17.7 (2012-03-22)
 ==================================
