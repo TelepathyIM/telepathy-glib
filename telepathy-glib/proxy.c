@@ -567,7 +567,7 @@ static void tp_proxy_poll_features (TpProxy *self, const GError *error);
 static gboolean
 tp_proxy_emit_invalidated (gpointer p)
 {
-  TpProxy *self = p;
+  TpProxy *self = TP_PROXY (p);
 
   g_signal_emit (self, signals[SIGNAL_INVALIDATED], 0,
       self->invalidated->domain, self->invalidated->code,
@@ -1417,7 +1417,7 @@ void
 _tp_proxy_ensure_factory (gpointer proxy,
     TpSimpleClientFactory *factory)
 {
-  TpProxy *self = proxy;
+  TpProxy *self = TP_PROXY (proxy);
 
   if (self->priv->factory != NULL)
     return;
@@ -1823,7 +1823,7 @@ depends_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpProxy *self = (TpProxy *) source;
+  TpProxy *self = TP_PROXY (source);
 
   tp_proxy_poll_features (self, NULL);
 }
@@ -2013,7 +2013,7 @@ feature_prepared_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpProxy *self = (TpProxy *) source;
+  TpProxy *self = TP_PROXY (source);
   TpProxyFeature *feature = user_data;
   GError *error = NULL;
   gboolean prepared = TRUE;
@@ -2304,7 +2304,7 @@ prepare_before_signalling_connected_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpProxy *self = user_data;
+  TpProxy *self = TP_PROXY (user_data);
 
   /* We don't care if the call succeeded or not as it was already prepared */
   self->priv->pending_will_announce_calls--;

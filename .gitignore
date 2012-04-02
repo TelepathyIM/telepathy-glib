@@ -55,6 +55,8 @@ examples/client/telepathy-example-*
 examples/cm/*/telepathy-example-*
 examples/extensions/extensions.html
 /examples/future/*/telepathy-example-*
+examples/client/dbus-tubes/accepter
+examples/client/dbus-tubes/offerer
 examples/client/stream-tubes/accepter
 examples/client/stream-tubes/offerer
 /extensions/extensions.html

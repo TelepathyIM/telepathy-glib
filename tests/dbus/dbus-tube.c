@@ -34,6 +34,10 @@ typedef struct {
     TpConnection *connection;
     TpDBusTubeChannel *tube;
 
+    GDBusConnection *tube_conn;
+    GDBusConnection *cm_conn;
+    GVariant *call_result;
+
     GError *error /* initialized where needed */;
     gint wait;
 } Test;
@@ -68,6 +72,10 @@ teardown (Test *test,
   tp_tests_connection_assert_disconnect_succeeds (test->connection);
   g_object_unref (test->connection);
   g_object_unref (test->base_connection);
+
+  g_clear_object (&test->tube_conn);
+  g_clear_object (&test->cm_conn);
+  tp_clear_pointer (&test->call_result, g_variant_unref);
 }
 
 static void
@@ -206,6 +214,249 @@ test_properties (Test *test,
   g_hash_table_unref (parameters);
 }
 
+static void
+tube_offer_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  g_clear_object (&test->tube_conn);
+
+  test->tube_conn = tp_dbus_tube_channel_offer_finish (
+      TP_DBUS_TUBE_CHANNEL (source), result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static gboolean
+new_connection_cb (TpTestsDBusTubeChannel *chan,
+    GDBusConnection *connection,
+    Test *test)
+{
+  g_clear_object (&test->cm_conn);
+  test->cm_conn = g_object_ref (connection);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+
+  return TRUE;
+}
+
+static void
+handle_double_call (GDBusConnection       *connection,
+    const gchar *sender,
+    const gchar *object_path,
+    const gchar *interface_name,
+    const gchar *method_name,
+    GVariant *parameters,
+    GDBusMethodInvocation *invocation,
+    gpointer user_data)
+{
+  if (!tp_strdiff (method_name, "Double"))
+    {
+      guint value;
+
+      g_variant_get (parameters, "(i)", &value);
+
+      g_dbus_method_invocation_return_value (invocation,
+                                             g_variant_new ("(i)", value * 2));
+    }
+}
+
+static void
+register_object (GDBusConnection *connection)
+{
+  GDBusNodeInfo *introspection_data;
+  guint registration_id;
+  static const GDBusInterfaceVTable interface_vtable =
+  {
+    handle_double_call,
+    NULL,
+    NULL,
+  };
+  static const gchar introspection_xml[] =
+    "<node>"
+    "  <interface name='org.Example.TestInterface'>"
+    "    <method name='Double'>"
+    "      <arg type='i' name='value' direction='in'/>"
+    "      <arg type='i' name='result' direction='out'/>"
+    "    </method>"
+    "  </interface>"
+    "</node>";
+
+  introspection_data = g_dbus_node_info_new_for_xml (introspection_xml, NULL);
+  g_assert (introspection_data != NULL);
+
+  registration_id = g_dbus_connection_register_object (connection,
+      "/org/Example/TestObject", introspection_data->interfaces[0],
+      &interface_vtable, NULL, NULL, NULL);
+  g_assert (registration_id > 0);
+
+  g_dbus_node_info_unref (introspection_data);
+}
+
+static void
+double_call_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_clear_pointer (&test->call_result, g_variant_unref);
+
+  test->call_result = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source),
+      result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+use_tube (Test *test,
+    GDBusConnection *server_conn,
+    GDBusConnection *client_conn)
+{
+  gint result;
+
+  /* Server publishes an object on the tube */
+  register_object (server_conn);
+
+  /* Client calls a remote method */
+  g_dbus_connection_call (client_conn, NULL, "/org/Example/TestObject",
+      "org.Example.TestInterface", "Double",
+      g_variant_new ("(i)", 42),
+      G_VARIANT_TYPE ("(i)"), G_DBUS_CALL_FLAGS_NONE, -1,
+      NULL, double_call_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_variant_get (test->call_result, "(i)", &result);
+  g_assert_cmpuint (result, ==, 42 * 2);
+}
+
+static void
+test_offer (Test *test,
+    gconstpointer data)
+{
+  const TpTestsDBusTubeChannelOpenMode open_mode = GPOINTER_TO_UINT (data);
+  GHashTable *params;
+
+  /* Outgoing tube */
+  create_tube_service (test, TRUE, TRUE);
+  tp_tests_dbus_tube_channel_set_open_mode (test->tube_chan_service, open_mode);
+
+  params = tp_asv_new ("badger", G_TYPE_UINT, 42, NULL);
+
+  g_signal_connect (test->tube_chan_service, "new-connection",
+      G_CALLBACK (new_connection_cb), test);
+
+  tp_dbus_tube_channel_offer_async (test->tube, params, tube_offer_cb, test);
+
+  test->wait = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  check_parameters (tp_dbus_tube_channel_get_parameters (test->tube));
+
+  g_assert (G_IS_DBUS_CONNECTION (test->tube_conn));
+  g_assert (G_IS_DBUS_CONNECTION (test->cm_conn));
+
+  use_tube (test, test->tube_conn, test->cm_conn);
+}
+
+static void
+test_offer_invalidated_before_open (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  /* Outgoing tube */
+  create_tube_service (test, TRUE, TRUE);
+  tp_tests_dbus_tube_channel_set_open_mode (test->tube_chan_service,
+      TP_TESTS_DBUS_TUBE_CHANNEL_NEVER_OPEN);
+
+  tp_dbus_tube_channel_offer_async (test->tube, NULL, tube_offer_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  /* FIXME: this isn't a particularly good error… it's just what comes out when
+   * the channel gets closed from under us, and there isn't really API on
+   * DBusTube to give a better error.
+   *
+   * https://bugs.freedesktop.org/show_bug.cgi?id=48196
+   */
+  g_assert_error (test->error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED);
+}
+
+static void
+tube_accept_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  g_clear_object (&test->tube_conn);
+
+  test->tube_conn = tp_dbus_tube_channel_accept_finish (
+      TP_DBUS_TUBE_CHANNEL (source), result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_accept (Test *test,
+    gconstpointer data)
+{
+  const TpTestsDBusTubeChannelOpenMode open_mode = GPOINTER_TO_UINT (data);
+
+  /* Incoming tube */
+  create_tube_service (test, FALSE, TRUE);
+  tp_tests_dbus_tube_channel_set_open_mode (test->tube_chan_service, open_mode);
+
+  g_signal_connect (test->tube_chan_service, "new-connection",
+      G_CALLBACK (new_connection_cb), test);
+
+  tp_dbus_tube_channel_accept_async (test->tube, tube_accept_cb, test);
+
+  test->wait = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (G_IS_DBUS_CONNECTION (test->tube_conn));
+  g_assert (G_IS_DBUS_CONNECTION (test->cm_conn));
+
+  use_tube (test, test->cm_conn, test->tube_conn);
+}
+
+static void
+test_accept_invalidated_before_open (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  /* Incoming tube */
+  create_tube_service (test, FALSE, TRUE);
+  tp_tests_dbus_tube_channel_set_open_mode (test->tube_chan_service,
+      TP_TESTS_DBUS_TUBE_CHANNEL_NEVER_OPEN);
+
+  tp_dbus_tube_channel_accept_async (test->tube, tube_accept_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  /* FIXME: this isn't a particularly good error… it's just what comes out when
+   * the channel gets closed from under us, and there isn't really API on
+   * DBusTube to give a better error.
+   *
+   * https://bugs.freedesktop.org/show_bug.cgi?id=48196
+   */
+  g_assert_error (test->error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED);
+}
+
 int
 main (int argc,
       char **argv)
@@ -217,6 +468,23 @@ main (int argc,
       teardown);
   g_test_add ("/dbus-tube/properties", Test, NULL, setup, test_properties,
       teardown);
+  /* Han shot first. */
+  g_test_add ("/dbus-tube/offer-open-first", Test,
+      GUINT_TO_POINTER (TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_FIRST),
+      setup, test_offer, teardown);
+  g_test_add ("/dbus-tube/offer-open-second", Test,
+      GUINT_TO_POINTER (TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_SECOND),
+      setup, test_offer, teardown);
+  g_test_add ("/dbus-tube/offer-invalidated-before-open", Test, NULL,
+      setup, test_offer_invalidated_before_open, teardown);
+  g_test_add ("/dbus-tube/accept-open-first", Test,
+      GUINT_TO_POINTER (TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_FIRST),
+      setup, test_accept, teardown);
+  g_test_add ("/dbus-tube/accept-open-second", Test,
+      GUINT_TO_POINTER (TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_SECOND),
+      setup, test_accept, teardown);
+  g_test_add ("/dbus-tube/accept-invalidated-before-open", Test, NULL,
+      setup, test_accept_invalidated_before_open, teardown);
 
   return g_test_run ();
 }
