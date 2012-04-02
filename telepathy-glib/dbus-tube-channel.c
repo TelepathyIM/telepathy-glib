@@ -21,10 +21,44 @@
 /**
  * SECTION:dbus-tube-channel
  * @title: TpDBusTubeChannel
- * @short_description: proxy object for a dbus tube channel
+ * @short_description: proxy object for D-Bus tube channels
  *
- * #TpDBusTubeChannel is a sub-class of #TpChannel providing convenient API
- * to offer and accept a dbus tube.
+ * #TpDBusTubeChannel provides API for working with D-Bus tube channels, which
+ * allow applications to open D-Bus connections to a contact or chat room.
+ *
+ * To create a new outgoing D-Bus tube channel, do something like:
+ *
+ * |[
+ * GHashTable *request_properties = tp_asv_new (
+ *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_DBUS_TUBE,
+ *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
+ *     TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, tp_contact_get_identifier (contact),
+ *     TP_PROP_CHANNEL_TYPE_DBUS_TUBE_SERVICE_NAME, G_TYPE_STRING, "com.example.walrus",
+ *     NULL);
+ * TpAccountChannelRequest *req = tp_account_channel_request_new (account,
+ *     request_properties, TP_USER_ACTION_TIME_NOT_USER_ACTION);
+ * tp_account_channel_request_create_and_handle_channel_async (req, NULL, callback, NULL);
+ *
+ * // ...
+ *
+ * static void
+ * callback (
+ *     GObject *source,
+ *     GAsyncResult *result,
+ *     gpointer user_data)
+ * {
+ *   TpAccountChannelRequest *req = TP_ACCOUNT_CHANNEL_REQUEST (source);
+ *   TpChannel *channel;
+ *   GError *error = NULL;
+ *
+ *   channel = tp_account_channel_request_create_and_handle_channel_finish (req, result, &error);
+ *   tp_dbus_tube_channel_offer_async (TP_DBUS_TUBE_CHANNEL (channel), NULL, offer_callback, NULL);
+ * }
+ * ]|
+ *
+ * You can find a fuller example in the <ulink
+ * url="http://cgit.freedesktop.org/telepathy/telepathy-glib/tree/examples/client/dbus-tubes/">examples/client/dbus-tubes</ulink>
+ * directory.
  *
  * Since: 0.15.6
  */
