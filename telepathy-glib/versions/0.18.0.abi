@@ -1,0 +1,12 @@
+Version: TELEPATHY_GLIB_0.18.0
+Extends: TELEPATHY_GLIB_0.17.7
+Release: 0.18.0
+
+tp_dbus_tube_channel_accept_async
+tp_dbus_tube_channel_accept_finish
+tp_dbus_tube_channel_offer_async
+tp_dbus_tube_channel_offer_finish
+tp_dbus_tube_channel_feature_quark_core
+tp_base_contact_list_get_download_at_connection
+tp_base_contact_list_download_async
+tp_base_contact_list_download_finish

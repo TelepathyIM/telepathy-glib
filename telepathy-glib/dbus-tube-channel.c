@@ -519,7 +519,7 @@ tp_dbus_tube_channel_get_parameters (TpDBusTubeChannel *self)
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.18.0
  */
 GQuark
 tp_dbus_tube_channel_feature_quark_core (void)
@@ -607,7 +607,7 @@ out:
  * tp_dbus_tube_channel_offer_finish() to get the #GDBusConnection that will
  * be used to communicate through the tube.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.18.0
  */
 void
 tp_dbus_tube_channel_offer_async (TpDBusTubeChannel *self,
@@ -642,7 +642,7 @@ tp_dbus_tube_channel_offer_async (TpDBusTubeChannel *self,
  * Returns: (transfer full): a reference on a #GDBusConnection if the tube
  * has been successfully offered and opened; %NULL otherwise.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.18.0
  */
 GDBusConnection *
 tp_dbus_tube_channel_offer_finish (TpDBusTubeChannel *self,
@@ -720,7 +720,7 @@ proxy_prepare_accept_cb (GObject *source,
  * tp_dbus_tube_channel_accept_finish() to get the #GDBusConnection that will
  * be used to communicate through the tube.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.18.0
  */
 void
 tp_dbus_tube_channel_accept_async (TpDBusTubeChannel *self,
@@ -752,7 +752,7 @@ tp_dbus_tube_channel_accept_async (TpDBusTubeChannel *self,
  * Returns: (transfer full): a reference on a #GDBusConnection if the tube
  * has been successfully accepted and opened; %NULL otherwise.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.18.0
  */
 GDBusConnection *
 tp_dbus_tube_channel_accept_finish (TpDBusTubeChannel *self,

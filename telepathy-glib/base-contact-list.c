@@ -143,9 +143,9 @@
  * @download_async: the implementation of
  *  tp_base_contact_list_download_async(); if a subclass does not implement
  *  this itself, the default implementation will raise
- *  TP_ERROR_NOT_IMPLEMENTED asynchronously. Since: 0.UNRELEASED
+ *  TP_ERROR_NOT_IMPLEMENTED asynchronously. Since: 0.18.0
  * @download_finish: the implementation of
- *  tp_base_contact_list_download_finish(). Since: 0.UNRELEASED
+ *  tp_base_contact_list_download_finish(). Since: 0.18.0
  *
  * The class of a #TpBaseContactList.
  *
@@ -204,7 +204,7 @@
  *
  * Signature of a virtual method that needs no additional information.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.18.0
  */
 
 /**
@@ -979,7 +979,7 @@ tp_base_contact_list_class_init (TpBaseContactListClass *cls)
    * Implementations should check this property when they become connected
    * and in their Download method, and behave accordingly.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.18.0
    */
   g_object_class_install_property (object_class, PROP_DOWNLOAD_AT_CONNECTION,
       g_param_spec_boolean ("download-at-connection", "Download at connection",
@@ -3164,7 +3164,7 @@ tp_base_contact_list_get_contact_list_persists (TpBaseContactList *self)
  *
  * Returns: the #TpBaseContactList:download-at-connection property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.18.0
  */
 gboolean
 tp_base_contact_list_get_download_at_connection (TpBaseContactList *self)
@@ -3185,7 +3185,7 @@ tp_base_contact_list_get_download_at_connection (TpBaseContactList *self)
  * download_async, the default implementation will raise
  * TP_ERROR_NOT_IMPLEMENTED asynchronously.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.18.0
  */
 void
 tp_base_contact_list_download_async (TpBaseContactList *self,
@@ -3216,7 +3216,7 @@ tp_base_contact_list_download_async (TpBaseContactList *self,
  *
  * Returns: %TRUE on success or %FALSE on error
  *
- * Since: 0.UNRELEASED
+ * Since: 0.18.0
  */
 gboolean
 tp_base_contact_list_download_finish (TpBaseContactList *self,
