@@ -17,6 +17,7 @@ EXTRA_DIST = \
     libglibcodegen.py \
     libtpcodegen.py \
     log-strip.py \
+    make-release-mail.py \
     specparser.py \
     telepathy.am \
     test-wrapper.sh \
