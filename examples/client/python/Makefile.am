@@ -5,4 +5,5 @@ EXTRA_DIST = \
   text-handler.py \
   file-transfer.py \
   ft-handler.py \
-  stream-tubes.py/offerer.py
+  stream-tubes.py/offerer.py \
+  stream-tubes.py/accepter.py
