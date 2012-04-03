@@ -1511,7 +1511,7 @@ tp_stream_tube_channel_offer_finish (TpStreamTubeChannel *self,
 }
 
 /**
- * tp_stream_tube_channel_get_service: (skip)
+ * tp_stream_tube_channel_get_service:
  * @self: a #TpStreamTubeChannel
  *
  * Return the #TpStreamTubeChannel:service property

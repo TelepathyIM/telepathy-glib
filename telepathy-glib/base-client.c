@@ -2615,7 +2615,7 @@ tp_base_client_get_object_path (TpBaseClient *self)
 }
 
 /**
- * tp_base_client_get_name: (skip)
+ * tp_base_client_get_name:
  * @self: a #TpBaseClient
  *
  * Return the #TpBaseClient:name construct-only property, which is used as
@@ -2632,7 +2632,7 @@ tp_base_client_get_name (TpBaseClient *self)
 }
 
 /**
- * tp_base_client_get_uniquify_name: (skip)
+ * tp_base_client_get_uniquify_name:
  * @self: a #TpBaseClient
  *
  * Return the #TpBaseClient:uniquify-name construct-only property; if this
@@ -2650,7 +2650,7 @@ tp_base_client_get_uniquify_name (TpBaseClient *self)
 }
 
 /**
- * tp_base_client_get_dbus_daemon: (skip)
+ * tp_base_client_get_dbus_daemon:
  * @self: a #TpBaseClient
  *
  * Return the #TpBaseClient:dbus-daemon construct-only property, which
