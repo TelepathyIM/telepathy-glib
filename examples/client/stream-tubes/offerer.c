@@ -59,7 +59,7 @@ _incoming_iostream (TpStreamTubeChannel *tube,
   g_debug ("Received: %s", buf);
 
   g_debug ("Sending: Pong");
-  g_output_stream_write (out, "Pong", 4, NULL, &error);
+  g_output_stream_write (out, "Pong\n", 5, NULL, &error);
   g_assert_no_error (error);
 
   tp_channel_close_async (TP_CHANNEL (tube), channel_closed_cb, NULL);
