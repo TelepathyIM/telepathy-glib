@@ -1,6 +1,6 @@
 m4_define([tpl_major_version], [0])
 m4_define([tpl_minor_version], [4])
-m4_define([tpl_micro_version], [0])
+m4_define([tpl_micro_version], [999])
 m4_define([tpl_nano_version], [1])
 
 # If Tpl library source has changed since last release, increment revision
