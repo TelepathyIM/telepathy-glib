@@ -474,7 +474,7 @@ _tp_dbus_tube_channel_new_with_factory (
 }
 
 /**
- * tp_dbus_tube_channel_get_service_name: (skip)
+ * tp_dbus_tube_channel_get_service_name:
  * @self: a #TpDBusTubeChannel
  *
  * Return the #TpDBusTubeChannel:service-name property

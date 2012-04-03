@@ -269,7 +269,7 @@ _tp_stream_tube_connection_new (
 }
 
 /**
- * tp_stream_tube_connection_get_socket_connection: (skip)
+ * tp_stream_tube_connection_get_socket_connection:
  * @self: a #TpStreamTubeConnection
  *
  * Return the #TpStreamTubeConnection:socket-connection property
@@ -285,7 +285,7 @@ tp_stream_tube_connection_get_socket_connection (TpStreamTubeConnection *self)
 }
 
 /**
- * tp_stream_tube_connection_get_channel: (skip)
+ * tp_stream_tube_connection_get_channel:
  * @self: a #TpStreamTubeConnection
  *
  * Return the #TpStreamTubeConnection:channel property
@@ -302,7 +302,7 @@ tp_stream_tube_connection_get_channel (
 }
 
 /**
- * tp_stream_tube_connection_get_contact: (skip)
+ * tp_stream_tube_connection_get_contact:
  * @self: a #TpStreamTubeConnection
  *
  * Return the #TpStreamTubeConnection:contact property

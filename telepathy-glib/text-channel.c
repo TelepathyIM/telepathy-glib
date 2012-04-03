@@ -1093,7 +1093,7 @@ _tp_text_channel_new_with_factory (
 }
 
 /**
- * tp_text_channel_get_supported_content_types: (skip)
+ * tp_text_channel_get_supported_content_types:
  * @self: a #TpTextChannel
  *
  * Return the #TpTextChannel:supported-content-types property
@@ -1112,7 +1112,7 @@ tp_text_channel_get_supported_content_types (TpTextChannel *self)
 }
 
 /**
- * tp_text_channel_get_message_part_support_flags: (skip)
+ * tp_text_channel_get_message_part_support_flags:
  * @self: a #TpTextChannel
  *
  * Return the #TpTextChannel:message-part-support-flags property
@@ -1131,7 +1131,7 @@ tp_text_channel_get_message_part_support_flags (
 }
 
 /**
- * tp_text_channel_get_delivery_reporting_support: (skip)
+ * tp_text_channel_get_delivery_reporting_support:
  * @self: a #TpTextChannel
  *
  * Return the #TpTextChannel:delivery-reporting-support property
@@ -1563,7 +1563,7 @@ tp_text_channel_set_chat_state_finish (TpTextChannel *self,
 }
 
 /**
- * tp_text_channel_get_message_types: (skip)
+ * tp_text_channel_get_message_types:
  * @self: a #TpTextChannel
  *
  * Return the #TpTextChannel:message-types property
