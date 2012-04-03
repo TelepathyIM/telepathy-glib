@@ -1,7 +1,7 @@
 telepathy-logger 0.2.13 (2012-04-13)
 ===================================
 
-The "Emapthy really, really needs this" release
+The "Empathy really, really needs this" release
 
 This release ports the Call support in the logger to Call1. Since Call1 is in
 telepathy-glib, this is no longer a build option, and something we always
