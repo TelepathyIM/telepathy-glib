@@ -2,7 +2,7 @@ LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
 
-include ../telepathy-glib/telepathy-glib/codegen.am
+include $(LOCAL_PATH)/telepathy-glib/codegen.am
 
 TELEPATHY_GLIB_BUILT_SOURCES := \
 	telepathy-glib/telepathy-glib.pc \
