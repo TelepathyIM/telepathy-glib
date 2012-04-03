@@ -784,6 +784,9 @@ static gpointer starter_account_manager_proxy = NULL;
  * #TpAccountManager to use that factory should call this after calling
  * tp_account_manager_new_with_factory().
  *
+ * Unlike tp_account_manager_dup(), this function will keep an internal
+ * reference to @manager, so it will never be destroyed.
+ *
  * Note that @manager must use the default #TpDBusDaemon as returned by
  * tp_dbus_daemon_dup()
  *
