@@ -45,13 +45,13 @@ _incoming_iostream (TpStreamTubeChannel *tube,
   out = g_io_stream_get_output_stream (G_IO_STREAM (conn));
 
   /* this bit is not a good example */
-  g_output_stream_write (out, "Pong", 4, NULL, &error);
-  g_assert_no_error (error);
-
   g_input_stream_read (in, &buf, sizeof (buf), NULL, &error);
   g_assert_no_error (error);
+  g_debug ("Received: %s", buf);
 
-  g_debug ("Send Pong got: %s", buf);
+  g_debug ("Sending: Pong");
+  g_output_stream_write (out, "Pong", 4, NULL, &error);
+  g_assert_no_error (error);
 
   tp_cli_channel_call_close (TP_CHANNEL (tube), -1, channel_closed_cb,
       NULL, NULL, NULL);
