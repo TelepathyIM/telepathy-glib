@@ -3,11 +3,20 @@
 static GMainLoop *loop = NULL;
 
 static void
-channel_closed_cb (TpChannel *channel,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
+channel_closed_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
 {
+  TpChannel *channel = TP_CHANNEL (object);
+  GError *error = NULL;
+
+  if (!tp_channel_close_finish (channel, result, &error))
+    {
+      g_debug ("Failed to close tube channel: %s", error->message);
+      g_error_free (error);
+      return;
+    }
+
   g_debug ("Tube channel closed");
 }
 
@@ -53,8 +62,7 @@ _incoming_iostream (TpStreamTubeChannel *tube,
   g_output_stream_write (out, "Pong", 4, NULL, &error);
   g_assert_no_error (error);
 
-  tp_cli_channel_call_close (TP_CHANNEL (tube), -1, channel_closed_cb,
-      NULL, NULL, NULL);
+  tp_channel_close_async (TP_CHANNEL (tube), channel_closed_cb, NULL);
 
   g_object_unref (tube);
 }
