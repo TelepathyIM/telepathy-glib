@@ -1,4 +1,4 @@
-telepathy-logger 0.4.0 (UNRELEASED)
+telepathy-logger 0.4.0 (2012-04-03)
 ===================================
 
 This is the start of a new stable branch.
@@ -8,7 +8,7 @@ There are no changes since 0.2.13.
 For details of the changes since the last stable branch, please look
 at the git log, the list is just too long.
 
-telepathy-logger 0.2.13 (2012-04-13)
+telepathy-logger 0.2.13 (2012-04-03)
 ===================================
 
 The "Empathy really, really needs this" release
