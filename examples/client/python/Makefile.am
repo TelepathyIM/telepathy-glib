@@ -4,4 +4,5 @@ EXTRA_DIST = \
   inspect-cm.py \
   text-handler.py \
   file-transfer.py \
-  ft-handler.py
+  ft-handler.py \
+  stream-tubes.py/offerer.py
