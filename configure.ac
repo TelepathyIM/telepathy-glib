@@ -8,9 +8,9 @@ AC_PREREQ([2.59])
 #   set tp_farstream_release to 1
 
 m4_define([tp_farstream_major_version], [0])
-m4_define([tp_farstream_minor_version], [2])
-m4_define([tp_farstream_micro_version], [3])
-m4_define([tp_farstream_nano_version], [1])
+m4_define([tp_farstream_minor_version], [4])
+m4_define([tp_farstream_micro_version], [0])
+m4_define([tp_farstream_nano_version], [0])
 
 dnl CURRENT, REVISION, AGE
 dnl - library source changed -> increment REVISION
