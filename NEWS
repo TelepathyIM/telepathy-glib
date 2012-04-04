@@ -1,3 +1,13 @@
+telepathy-farstream 0.4.0 (UNRELEASED)
+======================================
+
+This is the start of a new stable branch.
+
+There have (basically) been no changes since 0.2.3.
+
+There are too many changes since the last stable release. For more
+details, look at the git log.
+
 telepathy-farstream 0.2.3 (20 Mar 2012)
 =======================================
 - Fix various bugs
