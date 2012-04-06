@@ -239,7 +239,7 @@ tp_stream_tube_connection_class_init (TpStreamTubeConnectionClass *cls)
   g_object_class_install_property (object_class, PROP_CONTACT, param_spec);
 
   /**
-   * TpStreamTubeConnection::closed
+   * TpStreamTubeConnection::closed:
    * @self: the #TpStreamTubeConnection
    * @error: (transfer none): a #GError representing the error reported by the
    * connection manager

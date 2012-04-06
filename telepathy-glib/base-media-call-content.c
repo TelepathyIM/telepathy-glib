@@ -438,7 +438,7 @@ tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
       "deferred-tones");
 
   /**
-   * TpBaseMediaCallContent::local-media-description-updated
+   * TpBaseMediaCallContent::local-media-description-updated:
    * @self: the #TpCallChannel
    * @contact: the remote contact
    * @properties: the new media description properties asv

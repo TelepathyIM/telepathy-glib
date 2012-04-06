@@ -406,7 +406,7 @@ tp_call_stream_class_init (TpCallStreamClass *klass)
       param_spec);
 
   /**
-   * TpCallStream::local-sending-state-changed
+   * TpCallStream::local-sending-state-changed:
    * @self: the #TpCallStream
    * @state: the new #TpSendingState
    * @reason: the #TpCallStateReason for the change
@@ -425,7 +425,7 @@ tp_call_stream_class_init (TpCallStreamClass *klass)
       G_TYPE_HASH_TABLE);
 
   /**
-   * TpCallStream::remote-members-changed
+   * TpCallStream::remote-members-changed:
    * @self: the #TpCallStream
    * @updates: (type GLib.HashTable) (element-type TelepathyGLib.Contact uint):
    *   #GHashTable mapping #TpContact to its new #TpSendingState
@@ -510,7 +510,7 @@ tp_call_stream_get_feature_quark_core (void)
  *
  * <!-- -->
  *
- * Returns: the value of #TpCallStream:local-seding-state
+ * Returns: the value of #TpCallStream:local-sending-state
  * Since: 0.17.5
  */
 TpSendingState

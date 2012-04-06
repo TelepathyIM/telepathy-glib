@@ -59,10 +59,10 @@
  * @request_receiving: optional (see #TpBaseCallStream:can-request-receiving);
  *  virtual method called when user requested receiving from the given remote
  *  contact. This virtual method should be implemented instead of
- *  #TpBaseCallStream.request_receiving
+ *  #TpBaseCallStreamClass.request_receiving
  * @set_sending: mandatory; virtual method called when user requested to
  *  start/stop sending to remote contacts. This virtual method should be
- *  implemented instead of #TpBaseCallStream.set_sending
+ *  implemented instead of #TpBaseCallStreamClass.set_sending
  *
  * The class structure for #TpBaseMediaCallStream
  *

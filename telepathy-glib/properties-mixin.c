@@ -615,7 +615,7 @@ tp_properties_context_remove (TpPropertiesContext *ctx, guint property)
 
 
 /**
- * tp_properties_context_return
+ * tp_properties_context_return:
  * @ctx: the properties context representing a SetProperties call
  * @error: If %NULL, return successfully; otherwise return this error
  *

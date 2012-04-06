@@ -159,8 +159,7 @@
  *  tp_base_connection_add_interfaces().
  * @create_channel_managers: Create an array of channel managers for this
  *  Connection. At least one of this or @create_channel_factories must be set
- *  by subclasses to a non-%NULL value.
- *  Since: 0.7.15
+ *  by subclasses to a non-%NULL value. Since: 0.7.15
  *
  * The class of a #TpBaseConnection. Many members are virtual methods etc.
  * to be filled in in the subclass' class_init function.

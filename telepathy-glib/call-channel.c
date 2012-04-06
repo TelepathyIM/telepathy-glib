@@ -877,7 +877,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
   /**
    * TpCallChannel:state:
    *
-   * A #TpChannelCallState specifying the state of the call.
+   * A #TpCallState specifying the state of the call.
    *
    * Since: 0.17.5
    */
@@ -1046,7 +1046,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
 
 
   /**
-   * TpCallChannel::content-added
+   * TpCallChannel::content-added:
    * @self: the #TpCallChannel
    * @content: the newly added #TpCallContent
    *
@@ -1066,7 +1066,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
       1, G_TYPE_OBJECT);
 
   /**
-   * TpCallChannel::content-removed
+   * TpCallChannel::content-removed:
    * @self: the #TpCallChannel
    * @content: the newly removed #TpCallContent
    * @reason: a #TpCallStateReason
@@ -1087,7 +1087,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
       2, G_TYPE_OBJECT, TP_TYPE_CALL_STATE_REASON);
 
   /**
-   * TpCallChannel::state-changed
+   * TpCallChannel::state-changed:
    * @self: the #TpCallChannel
    * @state: the new #TpCallState
    * @flags: the new #TpCallFlags
@@ -1109,7 +1109,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
       G_TYPE_HASH_TABLE);
 
   /**
-   * TpCallChannel::members-changed
+   * TpCallChannel::members-changed:
    * @self: the #TpCallChannel
    * @updates: (type GLib.HashTable) (element-type TelepathyGLib.Contact uint):
    *   #GHashTable mapping #TpContact to its new #TpCallMemberFlags
@@ -1344,7 +1344,7 @@ tp_call_channel_get_members (TpCallChannel *self)
  * tp_call_channel_has_dtmf:
  * @self: a #TpCallChannel
  *
- * Whether or not %self can send DTMF tones using
+ * Whether or not @self can send DTMF tones using
  * tp_call_channel_send_tones_async(). To be able to send DTMF tones, at least
  * one of @self's #TpCallChannel:contents must implement
  * %TP_IFACE_CALL_CONTENT_INTERFACE_DTMF interface.
@@ -1376,7 +1376,7 @@ tp_call_channel_has_dtmf (TpCallChannel *self)
  * tp_call_channel_has_hold:
  * @self: a #TpCallChannel
  *
- * Whether or not %self has the %TP_IFACE_CHANNEL_INTERFACE_HOLD
+ * Whether or not @self has the %TP_IFACE_CHANNEL_INTERFACE_HOLD
  * interfaces
  *
  * Returns: whether or not @self supports Hold
@@ -1790,7 +1790,7 @@ tp_call_channel_send_tones_finish (TpCallChannel *self,
  * @user_data: data to pass to @callback
  *
  * Requests that the connection manager holds or unholds the call. Watch
- * #TpCallChannel::hold-state property to know when the channel goes on
+ * #TpCallChannel:hold-state property to know when the channel goes on
  * hold or is unheld. Unholding may fail if the streaming implementation
  * can not obtain all the resources needed to restart the call.
  *

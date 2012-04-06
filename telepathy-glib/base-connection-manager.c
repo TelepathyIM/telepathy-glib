@@ -853,8 +853,8 @@ parse_parameters (const TpCMParamSpec *paramspec,
 }
 
 
-/**
- * tp_base_connection_manager_get_parameters
+/*
+ * tp_base_connection_manager_get_parameters:
  *
  * Implements D-Bus method GetParameters
  * on interface org.freedesktop.Telepathy.ConnectionManager
@@ -906,8 +906,8 @@ tp_base_connection_manager_get_parameters (TpSvcConnectionManager *iface,
 }
 
 
-/**
- * tp_base_connection_manager_list_protocols
+/*
+ * tp_base_connection_manager_list_protocols:
  *
  * Implements D-Bus method ListProtocols
  * on interface org.freedesktop.Telepathy.ConnectionManager
@@ -942,8 +942,8 @@ tp_base_connection_manager_list_protocols (TpSvcConnectionManager *iface,
 }
 
 
-/**
- * tp_base_connection_manager_request_connection
+/*
+ * tp_base_connection_manager_request_connection:
  *
  * Implements D-Bus method RequestConnection
  * on interface org.freedesktop.Telepathy.ConnectionManager

@@ -127,7 +127,7 @@ tp_message_init (TpMessage *self)
  * <!-- nothing more to say -->
  *
  * Returns: a newly allocated message suitable to be passed to
- * tp_message_mixin_take_received
+ * tp_message_mixin_take_received()
  *
  * Since: 0.7.21
  * Deprecated: since 0.13.9. Use tp_cm_message_new()

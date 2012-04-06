@@ -1723,7 +1723,7 @@ tp_account_class_init (TpAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpAccount:nickname
+   * TpAccount:nickname:
    *
    * The nickname that should be set for the user on this account.
    *
@@ -1826,7 +1826,7 @@ tp_account_class_init (TpAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpAccount:normalized-name
+   * TpAccount:normalized-name:
    *
    * The normalized form of the user's own unique identifier on this
    * protocol. For example, on XMPP accounts this is the user's JID; on
@@ -1925,7 +1925,7 @@ tp_account_class_init (TpAccountClass *klass)
         G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpAccount:storage-restrictions
+   * TpAccount:storage-restrictions:
    *
    * The storage restrictions for this account.
    *

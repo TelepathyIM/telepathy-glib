@@ -514,7 +514,7 @@ tp_base_call_content_class_init (TpBaseCallContentClass *klass)
       param_spec);
 
   /**
-   * TpBaseCallContent:currently-sending-tones
+   * TpBaseCallContent:currently-sending-tones:
    *
    * If this content is currently sending tones or not
    *
@@ -529,7 +529,7 @@ tp_base_call_content_class_init (TpBaseCallContentClass *klass)
       param_spec);
 
   /**
-   * TpBaseCallContent:deferred-tones
+   * TpBaseCallContent:deferred-tones:
    *
    * Tones that are waiting for the user action to play.
    *

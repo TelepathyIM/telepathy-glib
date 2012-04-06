@@ -946,7 +946,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
   g_object_class_install_property (gobject_class, PROP_SMS_FLASH, param_spec);
 
   /**
-   * TpTextChannel::message-received
+   * TpTextChannel::message-received:
    * @self: the #TpTextChannel
    * @message: a #TpSignalledMessage
    *
@@ -974,7 +974,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
       1, TP_TYPE_SIGNALLED_MESSAGE);
 
   /**
-   * TpTextChannel::pending-message-removed
+   * TpTextChannel::pending-message-removed:
    * @self: the #TpTextChannel
    * @message: a #TpSignalledMessage
    *
@@ -999,7 +999,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
       1, TP_TYPE_SIGNALLED_MESSAGE);
 
   /**
-   * TpTextChannel::message-sent
+   * TpTextChannel::message-sent:
    * @self: the #TpTextChannel
    * @message: a #TpSignalledMessage
    * @flags: the #TpMessageSendingFlags affecting how the message was sent
@@ -1582,7 +1582,7 @@ tp_text_channel_get_message_types (TpTextChannel *self)
 }
 
 /**
- * tp_text_channel_supports_message_type
+ * tp_text_channel_supports_message_type:
  * @self: a #TpTextChannel
  * @message_type: a #TpChannelTextMessageType
  *

@@ -112,7 +112,7 @@
  */
 
 /**
- * TpPresenceStatusOptionalArgumentSpec
+ * TpPresenceStatusOptionalArgumentSpec:
  * @name: Name of the argument as passed over D-Bus
  * @dtype: D-Bus type signature of the argument
  *
@@ -124,7 +124,7 @@
  */
 
 /**
- * TpPresenceStatusSpec
+ * TpPresenceStatusSpec:
  * @name: String identifier of the presence status
  * @presence_type: A type value, as specified by #TpConnectionPresenceType
  * @self: Indicates if this status may be set on yourself
@@ -303,7 +303,7 @@ static GHashTable *construct_simple_presence_hash (
   const TpPresenceStatusSpec *supported_statuses,
   GHashTable *contact_statuses);
 
-/**
+/*
  * deep_copy_hashtable
  *
  * Make a deep copy of a GHashTable.
@@ -648,14 +648,11 @@ tp_presence_mixin_emit_one_presence_update (GObject *obj,
 }
 
 
-/**
- * tp_presence_mixin_add_status: (skip)
+/*
+ * tp_presence_mixin_add_status:
  *
  * Implements D-Bus method AddStatus
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
- *
- * @context: The D-Bus invocation context to use to return values
- *           or throw an error.
  */
 static void
 tp_presence_mixin_add_status (TpSvcConnectionInterfacePresence *iface,
@@ -675,14 +672,11 @@ tp_presence_mixin_add_status (TpSvcConnectionInterfacePresence *iface,
 }
 
 
-/**
- * tp_presence_mixin_clear_status: (skip)
+/*
+ * tp_presence_mixin_clear_status:
  *
  * Implements D-Bus method ClearStatus
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
- *
- * @context: The D-Bus invocation context to use to return values
- *           or throw an error.
  */
 static void
 tp_presence_mixin_clear_status (TpSvcConnectionInterfacePresence *iface,
@@ -709,14 +703,11 @@ tp_presence_mixin_clear_status (TpSvcConnectionInterfacePresence *iface,
 }
 
 
-/**
- * tp_presence_mixin_get_presence: (skip)
+/*
+ * tp_presence_mixin_get_presence:
  *
  * Implements D-Bus method GetPresence
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
- *
- * @context: The D-Bus invocation context to use to return values
- *           or throw an error.
  */
 static void
 tp_presence_mixin_get_presence (TpSvcConnectionInterfacePresence *iface,
@@ -832,14 +823,11 @@ check_status_available (GObject *object,
   return TRUE;
 }
 
-/**
- * tp_presence_mixin_get_statuses: (skip)
+/*
+ * tp_presence_mixin_get_statuses:
  *
  * Implements D-Bus method GetStatuses
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
- *
- * @context: The D-Bus invocation context to use to return values
- *           or throw an error.
  */
 static void
 tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
@@ -900,14 +888,11 @@ tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
 }
 
 
-/**
- * tp_presence_mixin_set_last_activity_time: (skip)
+/*
+ * tp_presence_mixin_set_last_activity_time:
  *
  * Implements D-Bus method SetLastActivityTime
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
- *
- * @context: The D-Bus invocation context to use to return values
- *           or throw an error.
  */
 static void
 tp_presence_mixin_set_last_activity_time (TpSvcConnectionInterfacePresence *iface,
@@ -923,14 +908,11 @@ tp_presence_mixin_set_last_activity_time (TpSvcConnectionInterfacePresence *ifac
 }
 
 
-/**
- * tp_presence_mixin_remove_status: (skip)
+/*
+ * tp_presence_mixin_remove_status:
  *
  * Implements D-Bus method RemoveStatus
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
- *
- * @context: The D-Bus invocation context to use to return values
- *           or throw an error.
  */
 static void
 tp_presence_mixin_remove_status (TpSvcConnectionInterfacePresence *iface,
@@ -999,14 +981,11 @@ tp_presence_mixin_remove_status (TpSvcConnectionInterfacePresence *iface,
 }
 
 
-/**
- * tp_presence_mixin_request_presence: (skip)
+/*
+ * tp_presence_mixin_request_presence:
  *
  * Implements D-Bus method RequestPresence
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
- *
- * @context: The D-Bus invocation context to use to return values
- *           or throw an error.
  */
 static void
 tp_presence_mixin_request_presence (TpSvcConnectionInterfacePresence *iface,
@@ -1163,14 +1142,11 @@ set_status (
 }
 
 
-/**
- * tp_presence_mixin_set_status: (skip)
+/*
+ * tp_presence_mixin_set_status:
  *
  * Implements D-Bus method SetStatus
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
- *
- * @context: The D-Bus invocation context to use to return values
- *           or throw an error.
  */
 static void
 tp_presence_mixin_set_status (TpSvcConnectionInterfacePresence *iface,
@@ -1368,14 +1344,11 @@ tp_presence_mixin_simple_presence_init_dbus_properties (GObjectClass *cls)
       NULL, known_simple_presence_props);
 }
 
-/**
- * tp_presence_mixin_simple_presence_set_presence: (skip)
+/*
+ * tp_presence_mixin_simple_presence_set_presence:
  *
  * Implements D-Bus method SetPresence
  * on interface org.freedesktop.Telepathy.Connection.Interface.SimplePresence
- *
- * @context: The D-Bus invocation context to use to return values
- *           or throw an error.
  */
 static void
 tp_presence_mixin_simple_presence_set_presence (
@@ -1499,14 +1472,11 @@ construct_simple_presence_hash (const TpPresenceStatusSpec *supported_statuses,
   return presence_hash;
 }
 
-/**
- * tp_presence_mixin_get_simple_presence: (skip)
+/*
+ * tp_presence_mixin_get_simple_presence:
  *
  * Implements D-Bus method GetPresence
  * on interface org.freedesktop.Telepathy.Connection.Interface.SimplePresence
- *
- * @context: The D-Bus invocation context to use to return values
- *           or throw an error.
  */
 static void
 tp_presence_mixin_simple_presence_get_presences (

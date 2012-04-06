@@ -161,7 +161,7 @@
  */
 
 /**
- * TpBaseClientDelegatedChannelsCb
+ * TpBaseClientDelegatedChannelsCb:
  * @client: a #TpBaseClient instance
  * @channels: (element-type TelepathyGLib.Channel): a #GPtrArray of #TpChannel
  * @user_data: arbitrary user-supplied data passed to
