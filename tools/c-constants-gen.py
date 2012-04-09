@@ -101,8 +101,7 @@ extern "C" {
                       enum.getAttribute('name') + 's'
         self.d("""\
 /**
- *
-%s:
+ * %s:
 """ % (self.prefix + name).replace('_', ''))
         vals = get_by_path(enum, 'enumvalue')
         for val in vals:
