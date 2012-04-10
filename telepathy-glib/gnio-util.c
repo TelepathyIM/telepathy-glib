@@ -337,7 +337,7 @@ _tp_unix_connection_send_credentials_with_byte (GUnixConnection *connection,
 #endif
 
 /**
- * tp_unix_connection_send_credentials_with_byte
+ * tp_unix_connection_send_credentials_with_byte:
  * @connection: a #GUnixConnection
  * @byte: the byte to send with the credentials
  * @cancellable: (allow-none): a #GCancellable, or %NULL

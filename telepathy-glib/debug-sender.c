@@ -262,7 +262,7 @@ tp_debug_sender_class_init (TpDebugSenderClass *klass)
   object_class->constructed = tp_debug_sender_constructed;
 
   /**
-   * TpDebugSender:enabled
+   * TpDebugSender:enabled:
    *
    * %TRUE if the NewDebugMessage signal should be emitted when a new debug
    * message is generated.

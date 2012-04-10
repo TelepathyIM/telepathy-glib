@@ -48,13 +48,14 @@ _tube_accepted (GObject *tube,
   out = g_io_stream_get_output_stream (G_IO_STREAM (conn));
 
   /* this bit is not a good example */
-  g_output_stream_write (out, "Ping", 4, NULL, &error);
+  g_debug ("Sending: Ping");
+  g_output_stream_write (out, "Ping\n", 5, NULL, &error);
   g_assert_no_error (error);
 
   g_input_stream_read (in, &buf, sizeof (buf), NULL, &error);
   g_assert_no_error (error);
 
-  g_debug ("Sent Ping got: %s", buf);
+  g_debug ("Received: %s", buf);
 
   g_object_unref (tube_conn);
   g_object_unref (tube);

@@ -95,7 +95,7 @@ tp_cm_message_init (TpCMMessage *self)
  * <!-- nothing more to say -->
  *
  * Returns: a newly allocated message suitable to be passed to
- * tp_cm_message_mixin_take_received
+ * tp_cm_message_mixin_take_received()
  *
  * Since: 0.13.9
  */

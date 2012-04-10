@@ -522,7 +522,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
       param_spec);
 
   /**
-   * TpBaseCallChannel:initial-audio-name
+   * TpBaseCallChannel:initial-audio-name:
    *
    * Name to use to create the audio #TpBaseCallContent if
    * #TpBaseCallChannel:initial-audio is set to %TRUE.
@@ -537,7 +537,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
       param_spec);
 
   /**
-   * TpBaseCallChannel:initial-video-name
+   * TpBaseCallChannel:initial-video-name:
    *
    * Name to use to create the video #TpBaseCallContent if
    * #TpBaseCallChannel:initial-video is set to %TRUE.
@@ -552,7 +552,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
       param_spec);
 
   /**
-   * TpBaseCallChannel:initial-transport
+   * TpBaseCallChannel:initial-transport:
    *
    * If set to %TRUE on a requested channel, this indicates the transport that
    * should be used for this call.
@@ -567,7 +567,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
       param_spec);
 
   /**
-   * TpBaseCallChannel:mutable-contents
+   * TpBaseCallChannel:mutable-contents:
    *
    * Indicate to clients whether or not they can add/remove contents.
    *
@@ -581,7 +581,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
       param_spec);
 
   /**
-   * TpBaseCallChannel:contents
+   * TpBaseCallChannel:contents:
    *
    * #GPtrArray of object-paths of the #TpBaseCallContent objects.
    *
@@ -595,7 +595,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
       param_spec);
 
   /**
-   * TpBaseCallChannel:hardware-streaming
+   * TpBaseCallChannel:hardware-streaming:
    *
    * Indicate to clients whether or not this Connection Manager has hardware
    * streaming.
@@ -610,7 +610,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
       param_spec);
 
   /**
-   * TpBaseCallChannel:call-state
+   * TpBaseCallChannel:call-state:
    *
    * The state of this call.
    *
@@ -623,7 +623,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
   g_object_class_install_property (object_class, PROP_CALL_STATE, param_spec);
 
   /**
-   * TpBaseCallChannel:call-flags
+   * TpBaseCallChannel:call-flags:
    *
    * The flags of this call.
    *
@@ -637,7 +637,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
       param_spec);
 
   /**
-   * TpBaseCallChannel:call-state-reason
+   * TpBaseCallChannel:call-state-reason:
    *
    * The reason for last call state change.
    *
@@ -651,7 +651,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
       param_spec);
 
   /**
-   * TpBaseCallChannel:call-state-details
+   * TpBaseCallChannel:call-state-details:
    *
    * Details on the call state.
    *
@@ -665,7 +665,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
       param_spec);
 
   /**
-   * TpBaseCallChannel:call-members
+   * TpBaseCallChannel:call-members:
    *
    * #GHashTable mapping #TpHandle of each call member to their
    * #TpCallMemberFlags.
@@ -680,7 +680,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
       param_spec);
 
   /**
-   * TpBaseCallChannel:member-identifiers
+   * TpBaseCallChannel:member-identifiers:
    *
    * #GHashTable mapping #TpHandle of each call member to their identifiers.
    *
@@ -695,7 +695,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
 
 
   /**
-   * TpBaseCallChannel:initial-tones
+   * TpBaseCallChannel:initial-tones:
    *
    * DTMF Tones to be played on the channel created.
    *
@@ -1208,7 +1208,7 @@ tp_base_call_channel_get_call_members (TpBaseCallChannel *self)
  * @self: a #TpBaseCallChannel
  *
  * Must be called when the remote contact accepted the call.
- * #TpBaseCallChannel:state must be either %TP_CALL_STATE_INITIALISED or
+ * #TpBaseCallChannel:call-state must be either %TP_CALL_STATE_INITIALISED or
  * %TP_CALL_STATE_INITIALISING and will then change to %TP_CALL_STATE_ACCEPTED.
  *
  * Must be used only for outgoing calls.

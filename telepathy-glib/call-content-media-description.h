@@ -128,7 +128,7 @@ void tp_call_content_media_description_set_rtcp_extended_reports (
     guint packet_receipt_times_max_size,
     guint dlrr_max_size,
     TpRCPTXRRTTMode rtt_mode,
-    TpRTCPXRStatisticsFlags statistic_flags,
+    TpRTCPXRStatisticsFlags statistics_flags,
     gboolean enable_metrics);
 
 void tp_call_content_media_description_add_rtp_header_extensions_interface (

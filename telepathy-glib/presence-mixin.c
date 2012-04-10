@@ -77,7 +77,7 @@
  */
 
 /**
- * TpPresenceStatusOptionalArgumentSpec
+ * TpPresenceStatusOptionalArgumentSpec:
  * @name: Name of the argument as passed over D-Bus
  * @dtype: D-Bus type signature of the argument
  *
@@ -89,7 +89,7 @@
  */
 
 /**
- * TpPresenceStatusSpec
+ * TpPresenceStatusSpec:
  * @name: String identifier of the presence status
  * @presence_type: A type value, as specified by #TpConnectionPresenceType
  * @self: Indicates if this status may be set on yourself
@@ -268,7 +268,7 @@ static GHashTable *construct_presence_hash (
   const TpPresenceStatusSpec *supported_statuses,
   GHashTable *contact_statuses);
 
-/**
+/*
  * deep_copy_hashtable
  *
  * Make a deep copy of a GHashTable.
@@ -748,8 +748,8 @@ tp_presence_mixin_init_dbus_properties (GObjectClass *cls)
       NULL, known_presence_props);
 }
 
-/**
- * tp_presence_mixin_set_presence: (skip)
+/*
+ * tp_presence_mixin_set_presence:
  *
  * Implements D-Bus method SetPresence
  * on interface im.telepathy1.Connection.Interface.Presence
@@ -879,8 +879,8 @@ construct_presence_hash (const TpPresenceStatusSpec *supported_statuses,
   return presence_hash;
 }
 
-/**
- * tp_presence_mixin_get_presence: (skip)
+/*
+ * tp_presence_mixin_get_presence:
  *
  * Implements D-Bus method GetPresence
  * on interface im.telepathy1.Connection.Interface.Presence

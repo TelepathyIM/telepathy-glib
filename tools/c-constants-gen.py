@@ -67,8 +67,7 @@ extern "C" {
                        flags.getAttribute('name')
         self.d("""\
 /**
- *
-%s:
+ * %s:
 """ % (self.prefix + name).replace('_', ''))
         for flag in get_by_path(flags, 'flag'):
             self.do_gtkdoc(flag, value_prefix)

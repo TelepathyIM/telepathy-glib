@@ -385,7 +385,7 @@ tp_base_password_channel_class_init (TpBasePasswordChannelClass *tp_base_passwor
       param_spec);
 
   /**
-   * TpBasePasswordChannel::finished
+   * TpBasePasswordChannel::finished:
    * @password: the password provided by the user, or %NULL if the
    * authentication has been aborted
    * @domain: domain of a #GError indicating why the authentication has been

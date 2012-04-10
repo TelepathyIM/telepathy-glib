@@ -440,7 +440,7 @@ tp_stream_tube_channel_class_init (TpStreamTubeChannelClass *klass)
   g_object_class_install_property (gobject_class, PROP_PARAMETERS, param_spec);
 
   /**
-   * TpStreamTubeChannel::incoming
+   * TpStreamTubeChannel::incoming:
    * @self: the #TpStreamTubeChannel
    * @tube_connection: the #TpStreamTubeConnection for the connection
    *
@@ -1512,7 +1512,7 @@ tp_stream_tube_channel_offer_finish (TpStreamTubeChannel *self,
 }
 
 /**
- * tp_stream_tube_channel_get_service: (skip)
+ * tp_stream_tube_channel_get_service:
  * @self: a #TpStreamTubeChannel
  *
  * Return the #TpStreamTubeChannel:service property

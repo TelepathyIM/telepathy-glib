@@ -182,40 +182,40 @@
  * @TP_ERROR_CERT_REVOKED: im.telepathy1.Error.Cert.Revoked:
  *     Raised if the server provided an SSL/TLS certificate that has been
  *     revoked.
- *     Since: 0.11.12
+ *     Since 0.11.12
  * @TP_ERROR_CERT_INSECURE: im.telepathy1.Error.Cert.Insecure:
  *     Raised if the server provided an SSL/TLS certificate that uses an
  *     insecure cipher algorithm or is cryptographically weak.
- *     Since: 0.11.12
+ *     Since 0.11.12
  * @TP_ERROR_CERT_LIMIT_EXCEEDED: im.telepathy1.Error.Cert.LimitExceeded:
  *     Raised if the length in bytes of the server certificate, or the depth
  *     of the server certificate chain, exceed the limits imposed by the
  *     crypto library.
- *     Since: 0.11.12
+ *     Since 0.11.12
  * @TP_ERROR_NOT_YET: im.telepathy1.Error.NotYet:
  *     Raised when the requested functionality is not yet available, but is
  *     likely to become available after some time has passed.
- *     Since: 0.11.15
+ *     Since 0.11.15
  * @TP_ERROR_REJECTED: im.telepathy1.Error.Rejected:
  *     Raised when an incoming or outgoing call is rejected by the receiving
  *     contact.
- *     Since: 0.13.2
+ *     Since 0.13.2
  * @TP_ERROR_PICKED_UP_ELSEWHERE: im.telepathy1.Error.PickedUpElsewhere:
  *     Raised when a call was terminated as a result of the local user
  *     picking up the call on a different resource.
- *     Since: 0.13.3
+ *     Since 0.13.3
  * @TP_ERROR_CONFUSED: im.telepathy1.Error.Confused:
  *     Raised if a server rejects protocol messages from a connection manager
  *     claiming that they do not make sense, two local processes fail to
  *     understand each other, or an apparently impossible situation is
  *     reached. This has a similar meaning to %TP_DBUS_ERROR_INCONSISTENT but
  *     can be passed between processes via D-Bus.
- *     Since: 0.13.7
+ *     Since 0.13.7
  * @TP_ERROR_SERVICE_CONFUSED: im.telepathy1.Error.ServiceConfused:
  *     Raised when a server or other piece of infrastructure indicates an
  *     internal error, or when a message that makes no sense is received from
  *     a server or other piece of infrastructure.
- *     Since: 0.13.7
+ *     Since 0.13.7
  * @TP_ERROR_EMERGENCY_CALLS_NOT_SUPPORTED:
  *   im.telepathy1.Error.EmergencyCallsNotSupported:
  *     Raised when a client attempts to dial a number that is recognized as an
@@ -236,17 +236,17 @@
  *   <code>im.telepathy1.Error.Media.CodecsIncompatible</code>:
  *     Raised when the local streaming implementation has no codecs in common
  *     with the remote side.
- *     Since: 0.15.6
+ *     Since 0.15.6
  * @TP_ERROR_MEDIA_UNSUPPORTED_TYPE:
  *   <code>im.telepathy1.Error.Media.UnsupportedType</code>:
  *     The media stream type requested is not supported by either the local or
  *     remote side.
- *     Since: 0.15.6
+ *     Since 0.15.6
  * @TP_ERROR_MEDIA_STREAMING_ERROR:
  *   <code>im.telepathy1.Error.Media.StreamingError</code>:
  *     Raised when the call's streaming implementation has some kind of internal
  *     error.
- *     Since: 0.15.6
+ *     Since 0.15.6
  * @TP_ERROR_CAPTCHA_NOT_SUPPORTED:
  *   <code>im.telepathy1.Error.Media.CaptchaNotSupported</code>:
  *     Raised if no UI is available to present captchas, or if one is

@@ -107,7 +107,7 @@ enum
   PROP_PACKET_RECEIPT_TIMES_MAX_SIZE,
   PROP_DLRR_MAX_SIZE,
   PROP_RTT_MODE,
-  PROP_STATISTIC_FLAGS,
+  PROP_STATISTICS_FLAGS,
   PROP_ENABLE_METRICS,
 };
 
@@ -136,7 +136,7 @@ struct _TpCallContentMediaDescriptionPrivate
   guint packet_receipt_times_max_size;
   guint dlrr_max_size;
   TpRCPTXRRTTMode rtt_mode;
-  TpRTCPXRStatisticsFlags statistic_flags;
+  TpRTCPXRStatisticsFlags statistics_flags;
   gboolean enable_metrics;
 
   GSimpleAsyncResult *result;
@@ -255,8 +255,8 @@ tp_call_content_media_description_get_property (GObject *object,
       case PROP_RTT_MODE:
         g_value_set_uint (value, self->priv->rtt_mode);
         break;
-      case PROP_STATISTIC_FLAGS:
-        g_value_set_uint (value, self->priv->statistic_flags);
+      case PROP_STATISTICS_FLAGS:
+        g_value_set_uint (value, self->priv->statistics_flags);
         break;
       case PROP_ENABLE_METRICS:
         g_value_set_boolean (value, self->priv->enable_metrics);
@@ -623,7 +623,7 @@ tp_call_content_media_description_class_init (
       "that are sent, and whether to send VoIP Metrics Report Blocks.",
       0, G_MAXUINT, 0,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_STATISTIC_FLAGS, spec);
+  g_object_class_install_property (object_class, PROP_STATISTICS_FLAGS, spec);
 
   /**
    * TpCallContentMediaDescription:enable-metrics:
@@ -662,7 +662,7 @@ tp_call_content_media_description_class_init (
  * tp_call_content_media_description_add_ssrc().
  *
  * Once all information has been filled, the media description can be offered
- * using tp_base_media_call_content_offer_media_description().
+ * using tp_base_media_call_content_offer_media_description_async().
  *
  * Returns: a new #TpCallContentMediaDescription.
  * Since: 0.17.5
@@ -880,7 +880,7 @@ tp_call_content_media_description_add_rtcp_extended_reports_interface (
  * @parameters: Feedback parameters as a string. Format is defined in the
  *  relevant RFC.
  *
- * Add an element to the #TpCallContentMediaDescription:rtp-header-extensions
+ * Add an element to the #TpCallContentMediaDescription:header-extensions
  * property.
  *
  * Implement
@@ -1064,9 +1064,9 @@ tp_call_content_media_description_set_does_avpf (
  * @dlrr_max_size: the value for
  *  #TpCallContentMediaDescription:dlrr-max-size property.
  * @rtt_mode: the value for
- *  #TpCallContentMediaDescription:rtt-mpde property.
- * @statistic_flags: the value for
- *  #TpCallContentMediaDescription:statistic-flags property.
+ *  #TpCallContentMediaDescription:rtt-mode property.
+ * @statistics_flags: the value for
+ *  #TpCallContentMediaDescription:statistics-flags property.
  * @enable_metrics: the value for
  *  #TpCallContentMediaDescription:enable-metrics property.
  *
@@ -1084,7 +1084,7 @@ tp_call_content_media_description_set_rtcp_extended_reports (
     guint packet_receipt_times_max_size,
     guint dlrr_max_size,
     TpRCPTXRRTTMode rtt_mode,
-    TpRTCPXRStatisticsFlags statistic_flags,
+    TpRTCPXRStatisticsFlags statistics_flags,
     gboolean enable_metrics)
 {
   g_return_if_fail (TP_IS_CALL_CONTENT_MEDIA_DESCRIPTION (self));
@@ -1094,7 +1094,7 @@ tp_call_content_media_description_set_rtcp_extended_reports (
   self->priv->packet_receipt_times_max_size = packet_receipt_times_max_size;
   self->priv->dlrr_max_size = dlrr_max_size;
   self->priv->rtt_mode = rtt_mode;
-  self->priv->statistic_flags = statistic_flags;
+  self->priv->statistics_flags = statistics_flags;
   self->priv->enable_metrics = enable_metrics;
 
   tp_call_content_media_description_add_rtcp_extended_reports_interface (self);

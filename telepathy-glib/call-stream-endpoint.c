@@ -433,7 +433,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
       G_STRUCT_OFFSET (TpCallStreamEndpointClass, dbus_props_class));
 
   /**
-   * TpCallStreamEndpoint::candidate-selected
+   * TpCallStreamEndpoint::candidate-selected:
    * @self: the #TpCallStreamEndpoint
    * @local_candidate: the local candidate
    * @remote_candidate: the remote candidate
@@ -451,7 +451,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
       2, TP_STRUCT_TYPE_CANDIDATE, TP_STRUCT_TYPE_CANDIDATE);
 
   /**
-   * TpCallStreamEndpoint::candidate-accepted
+   * TpCallStreamEndpoint::candidate-accepted:
    * @self: the #TpCallStreamEndpoint
    * @local_candidate: the local candidate
    * @remote_candidate: the remote candidate
@@ -469,7 +469,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
       2, TP_STRUCT_TYPE_CANDIDATE, TP_STRUCT_TYPE_CANDIDATE);
 
   /**
-   * TpCallStreamEndpoint::candidate-rejected
+   * TpCallStreamEndpoint::candidate-rejected:
    * @self: the #TpCallStreamEndpoint
    * @local_candidate: the local candidate
    * @remote_candidate: the remote candidate

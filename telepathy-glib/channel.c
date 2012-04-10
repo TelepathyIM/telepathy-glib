@@ -1752,7 +1752,7 @@ tp_channel_init_known_interfaces (void)
 }
 
 /**
- * tp_channel_get_requested: (skip)
+ * tp_channel_get_requested:
  * @self: a #TpChannel
  *
  * Return the #TpChannel:requested property

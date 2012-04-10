@@ -604,7 +604,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   /**
-   * TpProtocol:protocol-properties
+   * TpProtocol:protocol-properties:
    *
    * The immutable properties of this Protocol, as provided at construction
    * time. This is a map from string to #GValue, which must not be modified.
@@ -1068,7 +1068,7 @@ tp_protocol_get_icon_name (TpProtocol *self)
 }
 
 /**
- * tp_protocol_get_authentication_types
+ * tp_protocol_get_authentication_types:
  * @self: a protocol object
  *
  *
@@ -1681,7 +1681,7 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
 }
 
 /**
- * tp_protocol_get_avatar_requirements
+ * tp_protocol_get_avatar_requirements:
  * @self: a #TpProtocol
  *
  * Return the #TpProtocol:avatar-requirements property

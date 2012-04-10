@@ -2024,7 +2024,7 @@ tp_base_contact_list_download_async (TpBaseContactList *self,
  * tp_base_contact_list_download_async().
  *
  * This is a virtual method which may be implemented using
- * #TpContactListClass.download_finish. If the @result
+ * #TpBaseContactListClass.download_finish. If the @result
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error

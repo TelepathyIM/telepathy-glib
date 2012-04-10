@@ -476,7 +476,7 @@ _tp_dbus_tube_channel_new_with_factory (
 }
 
 /**
- * tp_dbus_tube_channel_get_service_name: (skip)
+ * tp_dbus_tube_channel_get_service_name:
  * @self: a #TpDBusTubeChannel
  *
  * Return the #TpDBusTubeChannel:service-name property
@@ -598,7 +598,7 @@ out:
 }
 
 /**
- * tp_dbus_tube_channel_offer_async
+ * tp_dbus_tube_channel_offer_async:
  * @self: an outgoing #TpDBusTubeChannel
  * @params: (allow-none) (transfer none): parameters of the tube, or %NULL
  * @callback: a callback to call when the tube has been offered
@@ -712,7 +712,7 @@ proxy_prepare_accept_cb (GObject *source,
 }
 
 /**
- * tp_dbus_tube_channel_accept_async
+ * tp_dbus_tube_channel_accept_async:
  * @self: an incoming #TpDBusTubeChannel
  * @callback: a callback to call when the tube has been offered
  * @user_data: data to pass to @callback
