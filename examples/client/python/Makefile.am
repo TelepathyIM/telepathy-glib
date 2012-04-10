@@ -1,5 +1,6 @@
 EXTRA_DIST = \
   contact-list.py \
+  dialler.py \
   ensure-channel.py \
   inspect-cm.py \
   text-handler.py \
