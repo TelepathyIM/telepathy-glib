@@ -360,6 +360,84 @@ tp_capabilities_supports_text_chatrooms (TpCapabilities *self)
       TP_HANDLE_TYPE_ROOM);
 }
 
+/**
+ * tp_capabilities_supports_sms:
+ * @self: a #TpCapabilities object
+ *
+ * If the #TpCapabilities:contact-specific property is %FALSE, this function
+ * checks if SMS text channels can be requested with the connection associated
+ * with this #TpCapabilities.
+ *
+ * If the #TpCapabilities:contact-specific property is %TRUE, this function
+ * checks if the contact associated with this #TpCapabilities supports
+ * SMS text channels.
+ *
+ * Returns: %TRUE if a channel request containing Text as ChannelType,
+ * HandleTypeContact as TargetHandleType, a channel identifier and
+ * #TP_PROP_CHANNEL_INTERFACE_SMS_SMS_CHANNEL set to %TRUE can be
+ * expected to work, %FALSE otherwise.
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_capabilities_supports_sms (TpCapabilities *self)
+{
+  guint i;
+
+  g_return_val_if_fail (TP_IS_CAPABILITIES (self), FALSE);
+
+  for (i = 0; i < self->priv->classes->len; i++)
+    {
+      GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
+      GHashTable *fixed;
+      const gchar * const *allowed;
+      const gchar *chan_type;
+      TpHandleType handle_type;
+      gboolean valid;
+      guint nb_fixed_props;
+
+      fixed =  g_value_get_boxed (g_value_array_get_nth (arr, 0));
+      allowed = g_value_get_boxed (g_value_array_get_nth (arr, 1));
+
+      handle_type = tp_asv_get_uint32 (fixed,
+          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
+
+      if (!valid)
+        continue;
+
+      if (handle_type != TP_HANDLE_TYPE_CONTACT)
+        continue;
+
+      chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+
+      if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_TEXT))
+        continue;
+
+      /* SMSChannel be either in fixed or allowed properties */
+      if (tp_asv_get_boolean (fixed, TP_PROP_CHANNEL_INTERFACE_SMS_SMS_CHANNEL,
+            NULL))
+        {
+          /* In fixed, succeed if there is no more fixed properties required */
+          nb_fixed_props = 3;
+        }
+      else
+        {
+          /* Not in fixed; check allowed */
+          if (!tp_strv_contains (allowed,
+                TP_PROP_CHANNEL_INTERFACE_SMS_SMS_CHANNEL))
+            continue;
+
+          nb_fixed_props = 2;
+        }
+
+      if (g_hash_table_size (fixed) == nb_fixed_props)
+        return TRUE;
+    }
+
+  return FALSE;
+
+}
+
 static gboolean
 supports_call_full (TpCapabilities *self,
     TpHandleType expected_handle_type,

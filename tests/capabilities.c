@@ -177,6 +177,7 @@ test_supports (Test *test,
   g_assert (tp_capabilities_is_specific_to_contact (caps));
   g_assert (tp_capabilities_supports_text_chats (caps));
   g_assert (!tp_capabilities_supports_text_chatrooms (caps));
+  g_assert (!tp_capabilities_supports_sms (caps));
 
   g_object_unref (caps);
 
@@ -195,6 +196,7 @@ test_supports (Test *test,
   g_assert (tp_capabilities_is_specific_to_contact (caps));
   g_assert (!tp_capabilities_supports_text_chats (caps));
   g_assert (tp_capabilities_supports_text_chatrooms (caps));
+  g_assert (!tp_capabilities_supports_sms (caps));
 
   g_object_unref (caps);
 
@@ -214,6 +216,7 @@ test_supports (Test *test,
   g_assert (tp_capabilities_is_specific_to_contact (caps));
   g_assert (tp_capabilities_supports_text_chats (caps));
   g_assert (tp_capabilities_supports_text_chatrooms (caps));
+  g_assert (!tp_capabilities_supports_sms (caps));
 
   g_object_unref (caps);
 
@@ -223,6 +226,7 @@ test_supports (Test *test,
   g_assert (tp_capabilities_is_specific_to_contact (caps));
   g_assert (!tp_capabilities_supports_text_chats (caps));
   g_assert (!tp_capabilities_supports_text_chatrooms (caps));
+  g_assert (!tp_capabilities_supports_sms (caps));
 
   classes = tp_capabilities_get_channel_classes (caps);
   g_assert_cmpuint (classes->len, ==, 0);
@@ -651,6 +655,105 @@ test_supports_room_list (Test *test,
   g_object_unref (caps);
 }
 
+static void
+add_sms_class (GPtrArray *classes,
+    gboolean add_extra_fixed,
+    gboolean use_allowed)
+{
+  GHashTable *fixed;
+  GPtrArray *allowed;
+  GValueArray *arr;
+
+  fixed = tp_asv_new (
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+          TP_IFACE_CHANNEL_TYPE_TEXT,
+      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+          TP_HANDLE_TYPE_CONTACT,
+      NULL);
+
+  allowed = g_ptr_array_new ();
+
+  if (use_allowed)
+    {
+      g_ptr_array_add (allowed, TP_PROP_CHANNEL_INTERFACE_SMS_SMS_CHANNEL);
+    }
+  else
+    {
+      tp_asv_set_boolean (fixed, TP_PROP_CHANNEL_INTERFACE_SMS_SMS_CHANNEL,
+          TRUE);
+    }
+
+  g_ptr_array_add (allowed, NULL);
+
+  if (add_extra_fixed)
+    tp_asv_set_boolean (fixed, "ExtraBadgersRequired", TRUE);
+
+  arr = tp_value_array_build (2,
+      TP_HASH_TYPE_STRING_VARIANT_MAP, fixed,
+      G_TYPE_STRV, allowed->pdata,
+      G_TYPE_INVALID);
+
+  g_hash_table_unref (fixed);
+  g_ptr_array_unref (allowed);
+
+  g_ptr_array_add (classes, arr);
+}
+
+static void
+test_supports_sms (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpCapabilities *caps;
+  GPtrArray *classes;
+
+  classes = g_ptr_array_sized_new (1);
+  add_sms_class (classes, FALSE, FALSE);
+
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", FALSE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  g_assert (tp_capabilities_supports_sms (caps));
+
+  g_object_unref (caps);
+
+  /* Reject if more fixed properties are required */
+  classes = g_ptr_array_sized_new (1);
+  add_sms_class (classes, TRUE, FALSE);
+
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", FALSE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  g_assert (!tp_capabilities_supports_sms (caps));
+
+  g_object_unref (caps);
+
+  /* Test with SMS as an allowed property */
+  classes = g_ptr_array_sized_new (1);
+  add_sms_class (classes, FALSE, TRUE);
+
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", FALSE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  g_assert (tp_capabilities_supports_sms (caps));
+
+  g_object_unref (caps);
+}
+
 int
 main (int argc,
     char **argv)
@@ -668,6 +771,8 @@ main (int argc,
       test_supports_tube, NULL);
   g_test_add (TEST_PREFIX "supports/room-list", Test, NULL, setup,
       test_supports_room_list, NULL);
+  g_test_add (TEST_PREFIX "supports/sms", Test, NULL, setup,
+      test_supports_sms, NULL);
 
   return g_test_run ();
 }
