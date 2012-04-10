@@ -61,6 +61,7 @@ struct _TpCallStateReason
   TpHandle actor;
   TpCallStateChangeReason reason;
   gchar *dbus_reason;
+  gchar *message;
 
   /*<private>*/
   guint ref_count;
@@ -87,6 +88,7 @@ gboolean tp_call_channel_has_mutable_contents (TpCallChannel *self);
 GHashTable *tp_call_channel_get_members (TpCallChannel *self);
 
 gboolean tp_call_channel_has_dtmf (TpCallChannel *self);
+gboolean tp_call_channel_has_hold (TpCallChannel *self);
 
 void tp_call_channel_set_ringing_async (TpCallChannel *self,
     GAsyncReadyCallback callback,
@@ -111,8 +113,8 @@ gboolean tp_call_channel_accept_finish (TpCallChannel *self,
 
 void tp_call_channel_hangup_async (TpCallChannel *self,
     TpCallStateChangeReason reason,
-    gchar *detailed_reason,
-    gchar *message,
+    const gchar *detailed_reason,
+    const gchar *message,
     GAsyncReadyCallback callback,
     gpointer user_data);
 gboolean tp_call_channel_hangup_finish (TpCallChannel *self,
@@ -120,7 +122,7 @@ gboolean tp_call_channel_hangup_finish (TpCallChannel *self,
     GError **error);
 
 void tp_call_channel_add_content_async (TpCallChannel *self,
-    gchar *name,
+    const gchar *name,
     TpMediaStreamType type,
     TpMediaStreamDirection initial_direction,
     GAsyncReadyCallback callback,
@@ -135,6 +137,14 @@ void tp_call_channel_send_tones_async (TpCallChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
 gboolean tp_call_channel_send_tones_finish (TpCallChannel *self,
+    GAsyncResult *result,
+    GError **error);
+
+void tp_call_channel_request_hold_async (TpCallChannel *self,
+    gboolean hold,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_call_channel_request_hold_finish (TpCallChannel *self,
     GAsyncResult *result,
     GError **error);
 

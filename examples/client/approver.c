@@ -52,32 +52,22 @@ handle_with_cb (GObject *source,
 }
 
 static void
-claim_cb (GObject *source,
+close_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 
 {
   TpChannelDispatchOperation *cdo = TP_CHANNEL_DISPATCH_OPERATION (source);
   GError *error;
-  GPtrArray *channels;
-  guint i;
 
-  if (!tp_channel_dispatch_operation_claim_with_finish (cdo, result, &error))
+  if (!tp_channel_dispatch_operation_close_channels_finish (cdo, result, &error))
     {
-      g_print ("Claim() failed: %s\n", error->message);
+      g_print ("Rejecting channels failed: %s\n", error->message);
       g_error_free (error);
       return;
     }
 
-  g_print ("Claim() succeeded, close channels\n");
-
-  channels = tp_channel_dispatch_operation_borrow_channels (cdo);
-  for (i = 0; i < channels->len; i++)
-    {
-      TpChannel *channel = g_ptr_array_index (channels, i);
-
-      tp_cli_channel_call_close (channel, -1, NULL, NULL, NULL, NULL);
-    }
+  g_print ("Rejected all the things!\n");
 }
 
 
@@ -138,10 +128,9 @@ add_dispatch_operation_cb (TpSimpleApprover *self,
     }
   else if (c == 'n' || c == 'N')
     {
-      g_print ("Dissaprove channels\n");
+      g_print ("Reject channels\n");
 
-      tp_channel_dispatch_operation_claim_with_async (cdo,
-          TP_BASE_CLIENT (self), claim_cb, NULL);
+      tp_channel_dispatch_operation_close_channels_async (cdo, close_cb, NULL);
     }
   else
     {

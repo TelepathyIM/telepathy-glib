@@ -145,6 +145,8 @@
 
 #include "base-media-call-stream.h"
 
+#include <string.h>
+
 #define DEBUG_FLAG TP_DEBUG_CALL
 #include "telepathy-glib/base-call-content.h"
 #include "telepathy-glib/base-call-channel.h"
@@ -211,6 +213,8 @@ struct _TpBaseMediaCallStreamPrivate
   gboolean local_sending;
   gboolean remotely_held;
   gboolean sending_stop_requested;
+  gboolean sending_failure;
+  gboolean receiving_failure;
 };
 
 static GPtrArray *tp_base_media_call_stream_get_interfaces (
@@ -240,6 +244,10 @@ tp_base_media_call_stream_init (TpBaseMediaCallStream *self)
 
   g_signal_connect (self, "notify::remote-members",
       G_CALLBACK (tp_base_media_call_stream_update_receiving_state), NULL);
+  g_signal_connect (self, "notify::channel",
+      G_CALLBACK (tp_base_media_call_stream_update_receiving_state), NULL);
+  g_signal_connect (self, "notify::channel",
+      G_CALLBACK (tp_base_media_call_stream_update_sending_state), NULL);
 }
 
 static void
@@ -619,7 +627,41 @@ tp_base_media_call_stream_set_stun_servers (TpBaseMediaCallStream *self,
   g_return_if_fail (TP_IS_BASE_MEDIA_CALL_STREAM (self));
   g_return_if_fail (stun_servers != NULL);
 
-  tp_clear_pointer (&self->priv->stun_servers, g_ptr_array_unref);
+  if (self->priv->stun_servers != NULL)
+    {
+      if (stun_servers->len == self->priv->stun_servers->len)
+        {
+          guint i;
+          gboolean equal = TRUE;
+
+          for (i = 0; i < stun_servers->len; i++)
+            {
+              GValueArray *gva1 = g_ptr_array_index (stun_servers, i);
+              GValueArray *gva2 = g_ptr_array_index (self->priv->stun_servers,
+                  i);
+              gchar *ip1, *ip2;
+              guint port1, port2;
+
+              tp_value_array_unpack (gva1, 2, &ip1, &port1);
+              tp_value_array_unpack (gva2, 2, &ip2, &port2);
+
+              if (port1 != port2 || strcmp (ip1, ip2))
+                {
+                  equal = FALSE;
+                  break;
+                }
+            }
+
+          if (equal)
+            {
+              g_ptr_array_unref (stun_servers);
+              return;
+            }
+        }
+
+      g_ptr_array_unref (self->priv->stun_servers);
+    }
+
   self->priv->stun_servers = g_ptr_array_ref (stun_servers);
 
   tp_svc_call_stream_interface_media_emit_stun_servers_changed (self,
@@ -840,7 +882,13 @@ tp_base_media_call_stream_update_sending_state (TpBaseMediaCallStream *self)
         goto done;
     }
 
+  if (!tp_base_call_channel_is_accepted (TP_BASE_CALL_CHANNEL (channel)))
+    goto done;
+
   if (self->priv->remotely_held)
+    goto done;
+
+  if (self->priv->sending_failure)
     goto done;
 
   sending = self->priv->local_sending;
@@ -894,6 +942,23 @@ tp_base_media_call_stream_set_local_sending (TpBaseMediaCallStream *self,
   tp_base_media_call_stream_update_sending_state (self);
 }
 
+/**
+ * tp_base_media_call_stream_get_local_sending:
+ * @self: a #TpBaseMediaCallStream
+ *
+ * Gets the local sending state
+ *
+ * Returns: The local sending state
+ * Since: 0.17.7
+ */
+gboolean
+tp_base_media_call_stream_get_local_sending (TpBaseMediaCallStream *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_MEDIA_CALL_STREAM (self), FALSE);
+
+  return self->priv->local_sending;
+}
+
 void
 _tp_base_media_call_stream_set_remotely_held (TpBaseMediaCallStream *self,
     gboolean remotely_held)
@@ -945,6 +1010,9 @@ tp_base_media_call_stream_update_receiving_state (TpBaseMediaCallStream *self)
   TpBaseCallChannel *channel = _tp_base_call_stream_get_channel (bcs);
 
   if (channel == NULL || !_tp_base_call_channel_is_locally_accepted (channel))
+    goto done;
+
+  if (self->priv->receiving_failure)
     goto done;
 
   if (TP_IS_BASE_MEDIA_CALL_CHANNEL (channel))
@@ -1183,25 +1251,34 @@ tp_base_media_call_stream_report_sending_failure (
   TpStreamFlowState old_state = self->priv->sending_state;
   TpBaseCallChannel *channel = _tp_base_call_stream_get_channel (
       TP_BASE_CALL_STREAM (self));
+  gboolean was_held = FALSE;
 
   if (self->priv->sending_state == TP_STREAM_FLOW_STATE_STOPPED)
     goto done;
 
+  self->priv->sending_failure = TRUE;
   self->priv->sending_stop_requested = FALSE;
-
   self->priv->sending_state = TP_STREAM_FLOW_STATE_STOPPED;
-  g_object_notify (G_OBJECT (self), "sending-state");
 
   if (channel != NULL && TP_IS_BASE_MEDIA_CALL_CHANNEL (channel))
-    _tp_base_media_call_channel_streams_sending_state_changed (
-        TP_BASE_MEDIA_CALL_CHANNEL (channel), FALSE);
+    {
+      was_held = _tp_base_media_call_channel_streams_sending_state_changed (
+          TP_BASE_MEDIA_CALL_CHANNEL (channel), FALSE);
+    }
 
-  if (klass->report_sending_failure != NULL)
-    klass->report_sending_failure (self, old_state, reason, dbus_reason,
-        message);
+  if (!was_held)
+    {
+      self->priv->local_sending = FALSE;
+      if (klass->report_sending_failure != NULL)
+        klass->report_sending_failure (self, old_state, reason, dbus_reason,
+            message);
+    }
 
+  g_object_notify (G_OBJECT (self), "sending-state");
   tp_svc_call_stream_interface_media_emit_sending_state_changed (self,
       self->priv->sending_state);
+
+  self->priv->sending_failure = FALSE;
 
 done:
   tp_svc_call_stream_interface_media_return_from_report_sending_failure (
@@ -1269,6 +1346,7 @@ tp_base_media_call_stream_report_receiving_failure (
   TpStreamFlowState old_state = self->priv->receiving_state;
   TpBaseCallChannel *channel = _tp_base_call_stream_get_channel (
       TP_BASE_CALL_STREAM (self));
+  gboolean was_held = FALSE;
 
   /* Clear all receving requests, we can't receive */
   tp_intset_clear (self->priv->receiving_requests);
@@ -1277,18 +1355,22 @@ tp_base_media_call_stream_report_receiving_failure (
     goto done;
 
   self->priv->receiving_state = TP_STREAM_FLOW_STATE_STOPPED;
+  self->priv->receiving_failure = TRUE;
   g_object_notify (G_OBJECT (self), "receiving-state");
 
   if (channel != NULL && TP_IS_BASE_MEDIA_CALL_CHANNEL (channel))
-    _tp_base_media_call_channel_streams_receiving_state_changed (
-        TP_BASE_MEDIA_CALL_CHANNEL (channel), FALSE);
+    was_held =
+        _tp_base_media_call_channel_streams_receiving_state_changed (
+            TP_BASE_MEDIA_CALL_CHANNEL (channel), FALSE);
 
-  if (klass->report_receiving_failure != NULL)
+  if (klass->report_receiving_failure != NULL && !was_held)
     klass->report_receiving_failure (self, old_state,
         reason, dbus_reason, message);
 
   tp_svc_call_stream_interface_media_emit_receiving_state_changed (self,
       self->priv->receiving_state);
+
+  self->priv->receiving_failure = FALSE;
 
 done:
   tp_svc_call_stream_interface_media_return_from_report_receiving_failure (

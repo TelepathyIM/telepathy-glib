@@ -481,9 +481,12 @@ tp_stream_tube_channel_init (TpStreamTubeChannel *self)
  *  strings (D-Bus interface name + "." + property name) to #GValue instances
  * @error: used to indicate the error if %NULL is returned
  *
- * Convenient function to create a new #TpStreamTubeChannel
+ * Creates a new #TpStreamTubeChannel proxy object from the provided path and
+ * properties. Most developers will not need to use this function; use
+ * #TpAutomaticProxyFactory to automatically create #TpStreamTubeChannel proxy
+ * objects.
  *
- * Returns: (transfer full): a newly created #TpStreamTubeChannel
+ * Returns: (transfer full): a newly-created #TpStreamTubeChannel proxy
  *
  * Since: 0.13.2
  */
@@ -920,7 +923,7 @@ tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
- * Finishes to accept an incoming stream tube. The returned
+ * Finishes accepting an incoming stream tube. The returned
  * #TpStreamTubeConnection can then be used to exchange data through the tube.
  *
  * Returns: (transfer full): a newly created #TpStreamTubeConnection
@@ -1494,7 +1497,7 @@ tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
- * Finishes to offer an outgoing stream tube.
+ * Finishes offering an outgoing stream tube.
  *
  * Returns: %TRUE when a Tube has been successfully offered; %FALSE otherwise
  *

@@ -1,7 +1,7 @@
 /*
  * simple-account-manager.c - a simple account manager service.
  *
- * Copyright (C) 2007-2009 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2007-2012 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2007-2008 Nokia Corporation
  *
  * Copying and distribution of this file, with or without modification,
@@ -34,14 +34,6 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleAccountManager,
 /* TP_IFACE_ACCOUNT_MANAGER is implied */
 static const char *ACCOUNT_MANAGER_INTERFACES[] = { NULL };
 
-static gchar *USABLE_ACCOUNTS[] = {
-  "/im/telepathy1/Account/fakecm/fakeproto/usableaccount",
-  NULL };
-
-static gchar *UNUSABLE_ACCOUNTS[] = {
-  "/im/telepathy1/Account/fakecm/fakeproto/unusableaccount",
-  NULL };
-
 enum
 {
   PROP_0,
@@ -53,6 +45,7 @@ enum
 struct _TpTestsSimpleAccountManagerPrivate
 {
   GPtrArray *usable_accounts;
+  GPtrArray *unusable_accounts;
 };
 
 static void
@@ -83,15 +76,11 @@ account_manager_iface_init (gpointer klass,
 static void
 tp_tests_simple_account_manager_init (TpTestsSimpleAccountManager *self)
 {
-  guint i;
-
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER, TpTestsSimpleAccountManagerPrivate);
 
   self->priv->usable_accounts = g_ptr_array_new_with_free_func (g_free);
-
-  for (i = 0; USABLE_ACCOUNTS[i] != NULL; i++)
-    g_ptr_array_add (self->priv->usable_accounts, g_strdup (USABLE_ACCOUNTS[i]));
+  self->priv->unusable_accounts = g_ptr_array_new_with_free_func (g_free);
 }
 
 static void
@@ -101,8 +90,6 @@ tp_tests_simple_account_manager_get_property (GObject *object,
               GParamSpec *spec)
 {
   TpTestsSimpleAccountManager *self = SIMPLE_ACCOUNT_MANAGER (object);
-  GPtrArray *accounts;
-  guint i = 0;
 
   switch (property_id) {
     case PROP_INTERFACES:
@@ -114,12 +101,7 @@ tp_tests_simple_account_manager_get_property (GObject *object,
       break;
 
     case PROP_UNUSABLE_ACCOUNTS:
-      accounts = g_ptr_array_new ();
-
-      for (i=0; UNUSABLE_ACCOUNTS[i] != NULL; i++)
-        g_ptr_array_add (accounts, g_strdup (UNUSABLE_ACCOUNTS[i]));
-
-      g_value_take_boxed (value, accounts);
+      g_value_set_boxed (value, self->priv->unusable_accounts);
       break;
 
     default:
@@ -129,13 +111,14 @@ tp_tests_simple_account_manager_get_property (GObject *object,
 }
 
 static void
-tp_tests_simple_account_manager_dispose (GObject *object)
+tp_tests_simple_account_manager_finalize (GObject *object)
 {
   TpTestsSimpleAccountManager *self = SIMPLE_ACCOUNT_MANAGER (object);
 
-  tp_clear_pointer (&self->priv->usable_accounts, g_ptr_array_unref);
+  g_ptr_array_unref (self->priv->usable_accounts);
+  g_ptr_array_unref (self->priv->unusable_accounts);
 
-  G_OBJECT_CLASS (tp_tests_simple_account_manager_parent_class)->dispose (
+  G_OBJECT_CLASS (tp_tests_simple_account_manager_parent_class)->finalize (
       object);
 }
 
@@ -173,8 +156,8 @@ tp_tests_simple_account_manager_class_init (
   };
 
   g_type_class_add_private (klass, sizeof (TpTestsSimpleAccountManagerPrivate));
+  object_class->finalize = tp_tests_simple_account_manager_finalize;
   object_class->get_property = tp_tests_simple_account_manager_get_property;
-  object_class->dispose = tp_tests_simple_account_manager_dispose;
 
   param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
       "In this case we only implement AccountManager, so none.",
@@ -197,12 +180,44 @@ tp_tests_simple_account_manager_class_init (
       G_STRUCT_OFFSET (TpTestsSimpleAccountManagerClass, dbus_props_class));
 }
 
-void
-tp_tests_simple_account_manager_set_usable_accounts (
-    TpTestsSimpleAccountManager *self,
-    GPtrArray *accounts)
+static void
+remove_from_array (GPtrArray *array, const gchar *str)
 {
-  tp_clear_pointer (&self->priv->usable_accounts, g_ptr_array_unref);
+  guint i;
 
-  self->priv->usable_accounts = g_ptr_array_ref (accounts);
+  for (i = 0; i < array->len; i++)
+    if (!tp_strdiff (str, g_ptr_array_index (array, i)))
+      {
+        g_ptr_array_remove_index_fast (array, i);
+        return;
+      }
+}
+
+void
+tp_tests_simple_account_manager_add_account (
+    TpTestsSimpleAccountManager *self,
+    const gchar *object_path,
+    gboolean usable)
+{
+  remove_from_array (self->priv->usable_accounts, object_path);
+  remove_from_array (self->priv->unusable_accounts, object_path);
+
+  if (usable)
+    g_ptr_array_add (self->priv->usable_accounts, g_strdup (object_path));
+  else
+    g_ptr_array_add (self->priv->unusable_accounts, g_strdup (object_path));
+
+  tp_svc_account_manager_emit_account_usability_changed (self, object_path,
+      usable);
+}
+
+void
+tp_tests_simple_account_manager_remove_account (
+    TpTestsSimpleAccountManager *self,
+    const gchar *object_path)
+{
+  remove_from_array (self->priv->usable_accounts, object_path);
+  remove_from_array (self->priv->unusable_accounts, object_path);
+
+  tp_svc_account_manager_emit_account_removed (self, object_path);
 }

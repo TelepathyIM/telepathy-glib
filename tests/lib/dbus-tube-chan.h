@@ -51,6 +51,16 @@ struct _TpTestsDBusTubeChannel {
     TpTestsDBusTubeChannelPrivate *priv;
 };
 
+typedef enum {
+    TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_FIRST,
+    TP_TESTS_DBUS_TUBE_CHANNEL_OPEN_SECOND,
+    TP_TESTS_DBUS_TUBE_CHANNEL_NEVER_OPEN
+} TpTestsDBusTubeChannelOpenMode;
+
+void tp_tests_dbus_tube_channel_set_open_mode (
+    TpTestsDBusTubeChannel *self,
+    TpTestsDBusTubeChannelOpenMode open_mode);
+
 /* Contact DBus Tube */
 
 typedef struct _TpTestsContactDBusTubeChannel TpTestsContactDBusTubeChannel;

@@ -2373,7 +2373,7 @@ tp_account_get_parameters (TpAccount *account)
  * Returns: (transfer full): the dictionary of
  *  parameters on @account, of type %G_VARIANT_TYPE_VARDICT
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 GVariant *
 tp_account_dup_parameters_vardict (TpAccount *account)
@@ -2770,7 +2770,7 @@ tp_account_update_parameters_finish (TpAccount *account,
  * you can pass the result of g_variant_new() or g_variant_new_parsed()
  * directly to this function without additional reference-count management.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 void
 tp_account_update_parameters_vardict_async (TpAccount *account,
@@ -2807,7 +2807,7 @@ tp_account_update_parameters_vardict_async (TpAccount *account,
  *
  * Returns: %TRUE if the request succeeded, otherwise %FALSE
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 gboolean
 tp_account_update_parameters_vardict_finish (TpAccount *account,
@@ -3729,7 +3729,7 @@ tp_account_get_detailed_error (TpAccount *self,
  *
  * Returns: (transfer full) (allow-none): a D-Bus error name, or %NULL.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 gchar *
 tp_account_dup_detailed_error_vardict (TpAccount *self,
@@ -3899,7 +3899,7 @@ tp_account_get_storage_specific_information_async (TpAccount *self,
  * call tp_account_dup_storage_specific_information_vardict_finish() to get the
  * result of the request.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 void
 tp_account_dup_storage_specific_information_vardict_async (TpAccount *self,

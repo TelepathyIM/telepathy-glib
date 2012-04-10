@@ -1,7 +1,7 @@
 /*
  * simple-account-manager.h - header for a simple account manager service.
  *
- * Copyright (C) 2007-2009 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2007-2012 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2007-2008 Nokia Corporation
  *
  * Copying and distribution of this file, with or without modification,
@@ -52,9 +52,14 @@ GType tp_tests_simple_account_manager_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER, \
                               TpTestsSimpleAccountManagerClass))
 
-void tp_tests_simple_account_manager_set_usable_accounts (
+void tp_tests_simple_account_manager_add_account (
     TpTestsSimpleAccountManager *self,
-    GPtrArray *accounts);
+    const gchar *object_path,
+    gboolean usable);
+
+void tp_tests_simple_account_manager_remove_account (
+    TpTestsSimpleAccountManager *self,
+    const gchar *object_path);
 
 G_END_DECLS
 

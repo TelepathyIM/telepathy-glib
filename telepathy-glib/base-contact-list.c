@@ -19,6 +19,7 @@
 
 #include <config.h>
 #include <telepathy-glib/base-contact-list.h>
+#include <telepathy-glib/base-contact-list-internal.h>
 
 #include <dbus/dbus-glib-lowlevel.h>
 
@@ -138,6 +139,12 @@
  *  tp_base_contact_list_get_contact_list_persists(); if a subclass does not
  *  implement this itself, the default implementation always returns %TRUE,
  *  which is correct for most protocols
+ * @download_async: the implementation of
+ *  tp_base_contact_list_download_async(); if a subclass does not implement
+ *  this itself, the default implementation will raise
+ *  TP_ERROR_NOT_IMPLEMENTED asynchronously. Since: 0.18.0
+ * @download_finish: the implementation of
+ *  tp_base_contact_list_download_finish(). Since: 0.18.0
  *
  * The class of a #TpBaseContactList.
  *
@@ -186,6 +193,17 @@
  * contact list.
  *
  * Since: 0.13.0
+ */
+
+/**
+ * TpBaseContactListAsyncFunc:
+ * @self: the contact list manager
+ * @callback: a callback to call on success, failure or disconnection
+ * @user_data: user data for the callback
+ *
+ * Signature of a virtual method that needs no additional information.
+ *
+ * Since: 0.18.0
  */
 
 /**
@@ -274,6 +292,10 @@ struct _TpBaseContactListPrivate
   gboolean svc_contact_list;
   gboolean svc_contact_groups;
   gboolean svc_contact_blocking;
+
+  /* TRUE if the contact list must be downloaded at connection. Default is
+   * TRUE. */
+  gboolean download_at_connection;
 };
 
 struct _TpBaseContactListClassPrivate
@@ -484,6 +506,7 @@ G_DEFINE_INTERFACE (TpMutableContactGroupList, tp_mutable_contact_group_list,
 
 enum {
     PROP_CONNECTION = 1,
+    PROP_DOWNLOAD_AT_CONNECTION,
     N_PROPS
 };
 
@@ -567,6 +590,10 @@ tp_base_contact_list_get_property (GObject *object,
       g_value_set_object (value, self->priv->conn);
       break;
 
+    case PROP_DOWNLOAD_AT_CONNECTION:
+      g_value_set_boolean (value, self->priv->download_at_connection);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -587,6 +614,10 @@ tp_base_contact_list_set_property (GObject *object,
       g_assert (self->priv->conn == NULL);    /* construct-only */
       self->priv->conn = g_value_dup_object (value);
       g_object_set_qdata ((GObject *) self->priv->conn, BASE_CONTACT_LIST, self);
+      break;
+
+    case PROP_DOWNLOAD_AT_CONNECTION:
+      self->priv->download_at_connection = g_value_get_boolean (value);
       break;
 
     default:
@@ -621,6 +652,7 @@ tp_base_contact_list_constructed (GObject *object)
   g_return_if_fail (cls->dup_contacts != NULL);
   g_return_if_fail (cls->dup_states != NULL);
   g_return_if_fail (cls->get_contact_list_persists != NULL);
+  g_return_if_fail (cls->download_async != NULL);
 
   self->priv->svc_contact_list =
     TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_LIST (self->priv->conn);
@@ -714,6 +746,16 @@ tp_base_contact_list_simple_finish (TpBaseContactList *self,
 }
 
 static void
+tp_base_contact_list_download_async_default (TpBaseContactList *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  g_simple_async_report_error_in_idle (G_OBJECT (self), callback,
+      user_data, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      "This CM does not implement Download");
+}
+
+static void
 tp_mutable_contact_list_default_init (TpMutableContactListInterface *iface)
 {
   iface->request_subscription_finish = tp_base_contact_list_simple_finish;
@@ -774,6 +816,8 @@ tp_base_contact_list_class_init (TpBaseContactListClass *cls)
 
   /* defaults */
   cls->get_contact_list_persists = tp_base_contact_list_true_func;
+  cls->download_async = tp_base_contact_list_download_async_default;
+  cls->download_finish = tp_base_contact_list_simple_finish;
 
   object_class->get_property = tp_base_contact_list_get_property;
   object_class->set_property = tp_base_contact_list_set_property;
@@ -793,6 +837,23 @@ tp_base_contact_list_class_init (TpBaseContactListClass *cls)
         "The connection that owns this channel manager",
         TP_TYPE_BASE_CONNECTION,
         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TpBaseContactList:download-at-connection:
+   *
+   * Whether the roster should be automatically downloaded at connection.
+   *
+   * This property doesn't change anything in TpBaseContactsList's behaviour.
+   * Implementations should check this property when they become connected
+   * and in their Download method, and behave accordingly.
+   *
+   * Since: 0.18.0
+   */
+  g_object_class_install_property (object_class, PROP_DOWNLOAD_AT_CONNECTION,
+      g_param_spec_boolean ("download-at-connection", "Download at connection",
+        "Whether the roster should be automatically downloaded at connection",
+        TRUE,
+        G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS));
 }
 
 /**
@@ -976,8 +1037,8 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
       self->priv->conn, self->priv->state);
 }
 
-static char
-presence_state_to_letter (TpSubscriptionState ps)
+char
+_tp_base_contact_list_presence_state_to_letter (TpSubscriptionState ps)
 {
   switch (ps)
     {
@@ -1068,8 +1129,9 @@ tp_base_contact_list_contacts_changed_internal (TpBaseContactList *self,
 
       DEBUG ("Contact %s: subscribe=%c publish=%c '%s'",
           tp_handle_inspect (self->priv->contact_repo, contact),
-          presence_state_to_letter (subscribe),
-          presence_state_to_letter (publish), publish_request);
+          _tp_base_contact_list_presence_state_to_letter (subscribe),
+          _tp_base_contact_list_presence_state_to_letter (publish),
+          publish_request);
 
       g_hash_table_insert (changes, GUINT_TO_POINTER (contact),
           tp_value_array_build (3,
@@ -1904,6 +1966,82 @@ tp_base_contact_list_get_contact_list_persists (TpBaseContactList *self)
   g_return_val_if_fail (cls->get_contact_list_persists != NULL, TRUE);
 
   return cls->get_contact_list_persists (self);
+}
+
+/**
+ * tp_base_contact_list_get_download_at_connection:
+ * @self: a contact list manager
+ *
+ * This function returns the
+ * #TpBaseContactList:download-at-connection property.
+ *
+ * Returns: the #TpBaseContactList:download-at-connection property
+ *
+ * Since: 0.18.0
+ */
+gboolean
+tp_base_contact_list_get_download_at_connection (TpBaseContactList *self)
+{
+  return self->priv->download_at_connection;
+}
+
+/**
+ * tp_base_contact_list_download_async:
+ * @self: a contact list manager
+ * @callback: a callback to call when the operation succeeds or fails
+ * @user_data: optional data to pass to @callback
+ *
+ * Download the contact list when it is not done automatically at
+ * connection.
+ *
+ * If the #TpBaseContactList subclass does not override
+ * download_async, the default implementation will raise
+ * TP_ERROR_NOT_IMPLEMENTED asynchronously.
+ *
+ * Since: 0.18.0
+ */
+void
+tp_base_contact_list_download_async (TpBaseContactList *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
+
+  g_return_if_fail (cls != NULL);
+  g_return_if_fail (cls->download_async != NULL);
+
+  return cls->download_async (self, callback, user_data);
+}
+
+/**
+ * tp_base_contact_list_download_finish:
+ * @self: a contact list manager
+ * @result: the result passed to @callback by an implementation of
+ *  tp_base_contact_list_download_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Interpret the result of an asynchronous call to
+ * tp_base_contact_list_download_async().
+ *
+ * This is a virtual method which may be implemented using
+ * #TpContactListClass.download_finish. If the @result
+ * will be a #GSimpleAsyncResult, the default implementation may be used.
+ *
+ * Returns: %TRUE on success or %FALSE on error
+ *
+ * Since: 0.18.0
+ */
+gboolean
+tp_base_contact_list_download_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
+
+  g_return_val_if_fail (cls != NULL, FALSE);
+  g_return_val_if_fail (cls->download_finish != NULL, FALSE);
+
+  return cls->download_finish (self, result, error);
 }
 
 /**
@@ -3926,6 +4064,7 @@ typedef enum {
     LP_CONTACT_LIST_PERSISTS,
     LP_CAN_CHANGE_CONTACT_LIST,
     LP_REQUEST_USES_MESSAGE,
+    LP_DOWNLOAD_AT_CONNECTION,
     NUM_LIST_PROPERTIES
 } ListProp;
 
@@ -3934,6 +4073,7 @@ static TpDBusPropertiesMixinPropImpl known_list_props[] = {
     { "ContactListPersists", GINT_TO_POINTER (LP_CONTACT_LIST_PERSISTS), },
     { "CanChangeContactList", GINT_TO_POINTER (LP_CAN_CHANGE_CONTACT_LIST) },
     { "RequestUsesMessage", GINT_TO_POINTER (LP_REQUEST_USES_MESSAGE) },
+    { "DownloadAtConnection", GINT_TO_POINTER (LP_DOWNLOAD_AT_CONNECTION) },
     { NULL }
 };
 
@@ -3973,6 +4113,11 @@ tp_base_contact_list_get_list_dbus_property (GObject *conn,
       g_return_if_fail (G_VALUE_HOLDS_BOOLEAN (value));
       g_value_set_boolean (value,
           tp_base_contact_list_get_request_uses_message (self));
+      break;
+
+    case LP_DOWNLOAD_AT_CONNECTION:
+      g_return_if_fail (G_VALUE_HOLDS_BOOLEAN (value));
+      g_value_set_boolean (value, self->priv->download_at_connection);
       break;
 
     default:
@@ -4029,6 +4174,31 @@ tp_base_contact_list_fill_list_contact_attributes (GObject *obj,
     }
 }
 
+static void
+tp_base_contact_list_mixin_download_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer context)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  GError *error = NULL;
+
+  tp_base_contact_list_download_finish (self, result, &error);
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+}
+
+static void
+tp_base_contact_list_mixin_download (
+    TpSvcConnectionInterfaceContactList *svc,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
+      BASE_CONTACT_LIST);
+
+  tp_base_contact_list_download_async (self,
+      tp_base_contact_list_mixin_download_cb, context);
+}
+
 /**
  * tp_base_contact_list_mixin_list_iface_init:
  * @klass: the service-side D-Bus interface
@@ -4053,6 +4223,7 @@ tp_base_contact_list_mixin_list_iface_init (
   IMPLEMENT (remove_contacts);
   IMPLEMENT (unsubscribe);
   IMPLEMENT (unpublish);
+  IMPLEMENT (download);
 #undef IMPLEMENT
 }
 

@@ -118,6 +118,8 @@ void tp_base_media_call_stream_update_sending_state (
     TpBaseMediaCallStream *self);
 void tp_base_media_call_stream_set_local_sending (TpBaseMediaCallStream *self,
     gboolean sending);
+gboolean tp_base_media_call_stream_get_local_sending (
+    TpBaseMediaCallStream *self);
 GPtrArray *tp_base_media_call_stream_get_local_candidates (
     TpBaseMediaCallStream *self);
 

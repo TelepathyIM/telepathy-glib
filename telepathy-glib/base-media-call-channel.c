@@ -378,6 +378,26 @@ update_hold_state (TpBaseMediaCallChannel *self)
            l2 != NULL; l2 = l2->next)
         {
           TpBaseMediaCallStream *stream = TP_BASE_MEDIA_CALL_STREAM (l2->data);
+          GHashTable *members = _tp_base_call_stream_get_remote_members (
+              TP_BASE_CALL_STREAM (stream));
+          TpSendingState local = tp_base_call_stream_get_local_sending_state (
+              TP_BASE_CALL_STREAM (stream));
+          GHashTableIter iter;
+          gpointer key, value;
+          gboolean wants_receive = FALSE;
+
+          g_hash_table_iter_init (&iter, members);
+          while (g_hash_table_iter_next (&iter, &key, &value))
+            {
+              TpSendingState member_state = GPOINTER_TO_INT (value);
+
+              if (member_state == TP_SENDING_STATE_PENDING_SEND ||
+                  member_state == TP_SENDING_STATE_SENDING)
+                {
+                  wants_receive = TRUE;
+                  break;
+                }
+            }
 
           tp_base_media_call_stream_update_receiving_state (stream);
           tp_base_media_call_stream_update_sending_state (stream);
@@ -387,10 +407,12 @@ update_hold_state (TpBaseMediaCallChannel *self)
               tp_base_media_call_stream_get_receiving_state (stream) !=
                   TP_STREAM_FLOW_STATE_STOPPED)
             is_stopped = FALSE;
-          if (tp_base_media_call_stream_get_sending_state (stream) !=
-                  TP_STREAM_FLOW_STATE_STARTED ||
-              tp_base_media_call_stream_get_receiving_state (stream) !=
-                  TP_STREAM_FLOW_STATE_STARTED)
+          if ((tp_base_media_call_stream_get_sending_state (stream) !=
+                  TP_STREAM_FLOW_STATE_STARTED &&
+                  local == TP_SENDING_STATE_SENDING) ||
+              (tp_base_media_call_stream_get_receiving_state (stream) !=
+                  TP_STREAM_FLOW_STATE_STARTED &&
+                  wants_receive))
             is_started = FALSE;
         }
     }
@@ -414,11 +436,11 @@ hold_change_failed (TpBaseMediaCallChannel *self)
   TpBaseCallChannel *bcc = TP_BASE_CALL_CHANNEL (self);
   GList *l, *l2;
 
-  if (self->priv->hold_state == TP_LOCAL_HOLD_STATE_PENDING_UNHOLD)
-    {
-      set_hold_state (self, TP_LOCAL_HOLD_STATE_PENDING_HOLD,
-          TP_LOCAL_HOLD_STATE_REASON_RESOURCE_NOT_AVAILABLE);
-    }
+  if (self->priv->hold_state != TP_LOCAL_HOLD_STATE_PENDING_UNHOLD)
+    return;
+
+  set_hold_state (self, TP_LOCAL_HOLD_STATE_PENDING_HOLD,
+      TP_LOCAL_HOLD_STATE_REASON_RESOURCE_NOT_AVAILABLE);
 
   for (l = tp_base_call_channel_get_contents (bcc); l != NULL; l = l->next)
     {
@@ -552,24 +574,59 @@ _tp_base_media_channel_is_held (TpBaseMediaCallChannel *self)
     }
 }
 
-void
+gboolean
 _tp_base_media_call_channel_streams_sending_state_changed (
     TpBaseMediaCallChannel *self,
     gboolean success)
 {
+  gboolean was_held =
+      (self->priv->hold_state != TP_LOCAL_HOLD_STATE_UNHELD);
+
   if (success)
     update_hold_state (self);
   else
     hold_change_failed (self);
+
+  return was_held;
 }
 
-void
+gboolean
 _tp_base_media_call_channel_streams_receiving_state_changed (
     TpBaseMediaCallChannel *self,
     gboolean success)
 {
+  gboolean was_held =
+      (self->priv->hold_state != TP_LOCAL_HOLD_STATE_UNHELD);
+
   if (success)
     update_hold_state (self);
   else
     hold_change_failed (self);
+
+  return was_held;
+}
+
+/**
+ * tp_base_media_call_channel_get_local_hold_state:
+ * @channel: a #TpBaseMediaCallChannel
+ * @reason: pointer to a location where to store the @reason, or %NULL
+ *
+ * <!-- -->
+ *
+ * Returns: The current hold state
+ *
+ * Since: 0.17.6
+ */
+
+TpLocalHoldState
+tp_base_media_call_channel_get_local_hold_state (
+    TpBaseMediaCallChannel *channel, TpLocalHoldStateReason *reason)
+{
+  g_return_val_if_fail (TP_IS_BASE_MEDIA_CALL_CHANNEL (channel),
+      TP_LOCAL_HOLD_STATE_UNHELD);
+
+  if (reason)
+    *reason = channel->priv->hold_state_reason;
+
+  return channel->priv->hold_state;
 }

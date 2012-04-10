@@ -1872,12 +1872,12 @@ tp_channel_join_async (TpChannel *self,
 /**
  * tp_channel_join_finish:
  * @self: a #TpChannel
- * @result: a #GAsyncResult
+ * @result: a #GAsyncResult passed to the callback for tp_channel_join_async().
  * @error: a #GError to fill
  *
- * Finishes to join a channel.
+ * Completes a call to tp_channel_join_async().
  *
- * Returns: %TRUE if the channel has been joined; %FALSE otherwise
+ * Returns: %TRUE if the channel was successfully joined; %FALSE otherwise
  *
  * Since: 0.15.5
  */
@@ -2080,10 +2080,10 @@ tp_channel_leave_async (TpChannel *self,
 /**
  * tp_channel_leave_finish:
  * @self: a #TpChannel
- * @result: a #GAsyncResult
+ * @result: a #GAsyncResult passed to the callback for tp_channel_leave_async().
  * @error: a #GError to fill
  *
- * Finishes to leave a channel.
+ * Completes a call to tp_channel_leave_async().
  *
  * Returns: %TRUE if the channel has been left; %FALSE otherwise
  *
@@ -2137,10 +2137,10 @@ tp_channel_close_async (TpChannel *self,
 /**
  * tp_channel_close_finish:
  * @self: a #TpChannel
- * @result: a #GAsyncResult
+ * @result: a #GAsyncResult passed to the callback for tp_channel_close_async().
  * @error: a #GError to fill
  *
- * Finishes to close a channel.
+ * Finishes a call to tp_channel_leave_async().
  *
  * Returns: %TRUE if the channel has been closed; %FALSE otherwise
  *
@@ -2222,10 +2222,10 @@ tp_channel_destroy_async (TpChannel *self,
 /**
  * tp_channel_destroy_finish:
  * @self: a #TpChannel
- * @result: a #GAsyncResult
+ * @result: a #GAsyncResult passed to the callback for tp_channel_destroy_async().
  * @error: a #GError to fill
  *
- * Finishes to leave a channel.
+ * Completes a call to tp_channel_destroy_async().
  *
  * Returns: %TRUE if the channel has been destroyed or closed; %FALSE otherwise
  *
@@ -2338,10 +2338,12 @@ tp_channel_provide_password_async (TpChannel *self,
 /**
  * tp_channel_provide_password_finish:
  * @self: a #TpChannel
- * @result: a #GAsyncResult
+ * @result: a #GAsyncResult passed to the callback for
+ *  tp_channel_provide_password_async().
  * @error: a #GError to fill
  *
- * Finishes to provide a password. If the password was rejected, the operation
+ * Completes a call to tp_channel_provide_password_async().
+ * If the password was rejected, the operation
  * fails with #TP_ERROR_AUTHENTICATION_FAILED.
  *
  * Returns: %TRUE if the password has been provided and accepted,

@@ -16,7 +16,7 @@
 #include <string.h>
 #include <telepathy-glib/telepathy-glib.h>
 
-struct _TestContactListManagerPrivate
+struct _TpTestsContactListManagerPrivate
 {
   TpBaseConnection *conn;
 
@@ -32,13 +32,17 @@ struct _TestContactListManagerPrivate
 static void contact_groups_iface_init (TpContactGroupListInterface *iface);
 static void mutable_contact_groups_iface_init (
     TpMutableContactGroupListInterface *iface);
+static void mutable_iface_init (
+    TpMutableContactListInterface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (TestContactListManager, test_contact_list_manager,
+G_DEFINE_TYPE_WITH_CODE (TpTestsContactListManager, tp_tests_contact_list_manager,
     TP_TYPE_BASE_CONTACT_LIST,
     G_IMPLEMENT_INTERFACE (TP_TYPE_CONTACT_GROUP_LIST,
       contact_groups_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_MUTABLE_CONTACT_GROUP_LIST,
-      mutable_contact_groups_iface_init))
+      mutable_contact_groups_iface_init)
+    G_IMPLEMENT_INTERFACE (TP_TYPE_MUTABLE_CONTACT_LIST,
+      mutable_iface_init))
 
 typedef struct {
   TpSubscriptionState subscribe;
@@ -63,7 +67,7 @@ contact_detail_destroy (gpointer p)
 }
 
 static ContactDetails *
-lookup_contact (TestContactListManager *self,
+lookup_contact (TpTestsContactListManager *self,
                 TpHandle handle)
 {
   return g_hash_table_lookup (self->priv->contact_details,
@@ -71,7 +75,7 @@ lookup_contact (TestContactListManager *self,
 }
 
 static ContactDetails *
-ensure_contact (TestContactListManager *self,
+ensure_contact (TpTestsContactListManager *self,
                 TpHandle handle)
 {
   ContactDetails *d = lookup_contact (self, handle);
@@ -95,17 +99,17 @@ ensure_contact (TestContactListManager *self,
 }
 
 static void
-test_contact_list_manager_init (TestContactListManager *self)
+tp_tests_contact_list_manager_init (TpTestsContactListManager *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TEST_TYPE_CONTACT_LIST_MANAGER, TestContactListManagerPrivate);
+      TP_TESTS_TYPE_CONTACT_LIST_MANAGER, TpTestsContactListManagerPrivate);
 
   self->priv->contact_details = g_hash_table_new_full (g_direct_hash,
       g_direct_equal, NULL, contact_detail_destroy);
 }
 
 static void
-close_all (TestContactListManager *self)
+close_all (TpTestsContactListManager *self)
 {
   if (self->priv->status_changed_id != 0)
     {
@@ -120,18 +124,18 @@ close_all (TestContactListManager *self)
 static void
 dispose (GObject *object)
 {
-  TestContactListManager *self = TEST_CONTACT_LIST_MANAGER (object);
+  TpTestsContactListManager *self = TP_TESTS_CONTACT_LIST_MANAGER (object);
 
   close_all (self);
 
-  ((GObjectClass *) test_contact_list_manager_parent_class)->dispose (
+  ((GObjectClass *) tp_tests_contact_list_manager_parent_class)->dispose (
     object);
 }
 
 static TpHandleSet *
 contact_list_dup_contacts (TpBaseContactList *base)
 {
-  TestContactListManager *self = TEST_CONTACT_LIST_MANAGER (base);
+  TpTestsContactListManager *self = TP_TESTS_CONTACT_LIST_MANAGER (base);
   TpHandleSet *set;
   GHashTableIter iter;
   gpointer k, v;
@@ -159,7 +163,7 @@ contact_list_dup_states (TpBaseContactList *base,
     TpSubscriptionState *publish,
     gchar **publish_request)
 {
-  TestContactListManager *self = TEST_CONTACT_LIST_MANAGER (base);
+  TpTestsContactListManager *self = TP_TESTS_CONTACT_LIST_MANAGER (base);
   ContactDetails *d = lookup_contact (self, contact);
 
   if (d == NULL)
@@ -189,7 +193,7 @@ contact_list_dup_states (TpBaseContactList *base,
 static GStrv
 contact_list_dup_groups (TpBaseContactList *base)
 {
-  TestContactListManager *self = TEST_CONTACT_LIST_MANAGER (base);
+  TpTestsContactListManager *self = TP_TESTS_CONTACT_LIST_MANAGER (base);
   GPtrArray *ret;
 
   if (self->priv->groups != NULL)
@@ -219,7 +223,7 @@ static GStrv
 contact_list_dup_contact_groups (TpBaseContactList *base,
     TpHandle contact)
 {
-  TestContactListManager *self = TEST_CONTACT_LIST_MANAGER (base);
+  TpTestsContactListManager *self = TP_TESTS_CONTACT_LIST_MANAGER (base);
   ContactDetails *d = lookup_contact (self, contact);
   GPtrArray *ret;
 
@@ -250,7 +254,7 @@ static TpHandleSet *
 contact_list_dup_group_members (TpBaseContactList *base,
     const gchar *group)
 {
-  TestContactListManager *self = TEST_CONTACT_LIST_MANAGER (base);
+  TpTestsContactListManager *self = TP_TESTS_CONTACT_LIST_MANAGER (base);
   GHashTableIter iter;
   gpointer k, v;
   TpHandleSet *set;
@@ -302,18 +306,35 @@ contact_list_set_contact_groups_async (TpBaseContactList *base,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TestContactListManager *self = TEST_CONTACT_LIST_MANAGER (base);
+  TpTestsContactListManager *self = TP_TESTS_CONTACT_LIST_MANAGER (base);
   ContactDetails *d;
   GHashTable *tmp;
   GPtrArray *added, *removed;
+  GPtrArray *new_groups;
   guint i;
 
   d = ensure_contact (self, contact);
 
+  new_groups = g_ptr_array_new ();
   /* make a hash table so we only have one difference function */
   tmp = g_hash_table_new (g_str_hash, g_str_equal);
   for (i = 0; i < n; i++)
-    g_hash_table_insert (tmp, (gpointer) names[i], GUINT_TO_POINTER (1));
+    {
+      g_hash_table_insert (tmp, (gpointer) names[i], GUINT_TO_POINTER (1));
+
+      if (g_hash_table_lookup (self->priv->groups, names[i]) == NULL)
+        {
+          g_hash_table_insert (self->priv->groups, g_strdup (names[i]),
+              GUINT_TO_POINTER (1));
+          g_ptr_array_add (new_groups, (gchar *) names[i]);
+        }
+    }
+
+  if (new_groups->len > 0)
+    {
+      tp_base_contact_list_groups_created ((TpBaseContactList *) self,
+          (const gchar * const *) new_groups->pdata, new_groups->len);
+    }
 
   /* see which groups were added and which were removed */
   added = group_difference (tmp, d->groups);
@@ -327,15 +348,19 @@ contact_list_set_contact_groups_async (TpBaseContactList *base,
     g_hash_table_insert (d->groups, g_strdup (names[i]), GUINT_TO_POINTER (1));
 
   /* signal the change */
-  tp_base_contact_list_one_contact_groups_changed (base, contact,
-      (const gchar * const *) added->pdata, added->len,
-      (const gchar * const *) removed->pdata, removed->len);
+  if (added->len > 0 || removed->len > 0)
+    {
+      tp_base_contact_list_one_contact_groups_changed (base, contact,
+          (const gchar * const *) added->pdata, added->len,
+          (const gchar * const *) removed->pdata, removed->len);
+    }
 
   tp_simple_async_report_success_in_idle ((GObject *) self, callback,
       user_data, contact_list_set_contact_groups_async);
 
   g_ptr_array_unref (added);
   g_ptr_array_unref (removed);
+  g_ptr_array_unref (new_groups);
 }
 
 static void
@@ -398,10 +423,101 @@ contact_list_remove_group_async (TpBaseContactList *base,
 }
 
 static void
+contact_list_request_subscription_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    const gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GArray *handles;
+
+  handles = tp_handle_set_to_array (contacts);
+  tp_tests_contact_list_manager_request_subscription (
+      (TpTestsContactListManager *) self,
+      handles->len, (TpHandle *) handles->data, message);
+  g_array_unref (handles);
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, contact_list_request_subscription_async);
+}
+
+static void
+contact_list_authorize_publication_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GArray *handles;
+
+  handles = tp_handle_set_to_array (contacts);
+  tp_tests_contact_list_manager_authorize_publication (
+      (TpTestsContactListManager *) self,
+      handles->len, (TpHandle *) handles->data);
+  g_array_unref (handles);
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, contact_list_authorize_publication_async);
+}
+
+static void
+contact_list_remove_contacts_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GArray *handles;
+
+  handles = tp_handle_set_to_array (contacts);
+  tp_tests_contact_list_manager_remove (
+      (TpTestsContactListManager *) self,
+      handles->len, (TpHandle *) handles->data);
+  g_array_unref (handles);
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, contact_list_remove_contacts_async);
+}
+
+static void
+contact_list_unsubscribe_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GArray *handles;
+
+  handles = tp_handle_set_to_array (contacts);
+  tp_tests_contact_list_manager_unsubscribe (
+      (TpTestsContactListManager *) self,
+      handles->len, (TpHandle *) handles->data);
+  g_array_unref (handles);
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, contact_list_unsubscribe_async);
+}
+
+static void
+contact_list_unpublish_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GArray *handles;
+
+  handles = tp_handle_set_to_array (contacts);
+  tp_tests_contact_list_manager_unpublish (
+      (TpTestsContactListManager *) self,
+      handles->len, (TpHandle *) handles->data);
+  g_array_unref (handles);
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, contact_list_unpublish_async);
+}
+
+static void
 status_changed_cb (TpBaseConnection *conn,
                    guint status,
                    guint reason,
-                   TestContactListManager *self)
+                   TpTestsContactListManager *self)
 {
   switch (status)
     {
@@ -422,9 +538,9 @@ status_changed_cb (TpBaseConnection *conn,
 static void
 constructed (GObject *object)
 {
-  TestContactListManager *self = TEST_CONTACT_LIST_MANAGER (object);
+  TpTestsContactListManager *self = TP_TESTS_CONTACT_LIST_MANAGER (object);
   void (*chain_up) (GObject *) =
-      ((GObjectClass *) test_contact_list_manager_parent_class)->constructed;
+      ((GObjectClass *) tp_tests_contact_list_manager_parent_class)->constructed;
 
   if (chain_up != NULL)
     {
@@ -462,12 +578,22 @@ mutable_contact_groups_iface_init (
 }
 
 static void
-test_contact_list_manager_class_init (TestContactListManagerClass *klass)
+mutable_iface_init (TpMutableContactListInterface *iface)
+{
+  iface->request_subscription_async = contact_list_request_subscription_async;
+  iface->authorize_publication_async = contact_list_authorize_publication_async;
+  iface->remove_contacts_async = contact_list_remove_contacts_async;
+  iface->unsubscribe_async = contact_list_unsubscribe_async;
+  iface->unpublish_async = contact_list_unpublish_async;
+}
+
+static void
+tp_tests_contact_list_manager_class_init (TpTestsContactListManagerClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *) klass;
   TpBaseContactListClass *base_class =(TpBaseContactListClass *) klass;
 
-  g_type_class_add_private (klass, sizeof (TestContactListManagerPrivate));
+  g_type_class_add_private (klass, sizeof (TpTestsContactListManagerPrivate));
 
   object_class->constructed = constructed;
   object_class->dispose = dispose;
@@ -477,7 +603,7 @@ test_contact_list_manager_class_init (TestContactListManagerClass *klass)
 }
 
 void
-test_contact_list_manager_add_to_group (TestContactListManager *self,
+tp_tests_contact_list_manager_add_to_group (TpTestsContactListManager *self,
     const gchar *group_name, TpHandle member)
 {
   TpBaseContactList *base = TP_BASE_CONTACT_LIST (self);
@@ -485,12 +611,20 @@ test_contact_list_manager_add_to_group (TestContactListManager *self,
 
   g_hash_table_insert (d->groups, g_strdup (group_name), GUINT_TO_POINTER (1));
 
+  if (g_hash_table_lookup (self->priv->groups, group_name) == NULL)
+    {
+      g_hash_table_insert (self->priv->groups, g_strdup (group_name),
+          GUINT_TO_POINTER (1));
+      tp_base_contact_list_groups_created ((TpBaseContactList *) self,
+          &group_name, 1);
+    }
+
   tp_base_contact_list_one_contact_groups_changed (base, member,
       &group_name, 1, NULL, 0);
 }
 
 void
-test_contact_list_manager_remove_from_group (TestContactListManager *self,
+tp_tests_contact_list_manager_remove_from_group (TpTestsContactListManager *self,
     const gchar *group_name, TpHandle member)
 {
   TpBaseContactList *base = TP_BASE_CONTACT_LIST (self);
@@ -506,12 +640,12 @@ test_contact_list_manager_remove_from_group (TestContactListManager *self,
 }
 
 typedef struct {
-    TestContactListManager *self;
+    TpTestsContactListManager *self;
     TpHandleSet *handles;
 } SelfAndContact;
 
 static SelfAndContact *
-self_and_contact_new (TestContactListManager *self,
+self_and_contact_new (TpTestsContactListManager *self,
   TpHandleSet *handles)
 {
   SelfAndContact *ret = g_slice_new0 (SelfAndContact);
@@ -593,7 +727,7 @@ receive_unauthorized (gpointer p)
 }
 
 void
-test_contact_list_manager_request_subscription (TestContactListManager *self,
+tp_tests_contact_list_manager_request_subscription (TpTestsContactListManager *self,
     guint n_members, TpHandle *members,  const gchar *message)
 {
   TpHandleSet *handles;
@@ -636,7 +770,7 @@ test_contact_list_manager_request_subscription (TestContactListManager *self,
 }
 
 void
-test_contact_list_manager_unsubscribe (TestContactListManager *self,
+tp_tests_contact_list_manager_unsubscribe (TpTestsContactListManager *self,
     guint n_members, TpHandle *members)
 {
   TpHandleSet *handles;
@@ -661,7 +795,7 @@ test_contact_list_manager_unsubscribe (TestContactListManager *self,
 }
 
 void
-test_contact_list_manager_authorize_publication (TestContactListManager *self,
+tp_tests_contact_list_manager_authorize_publication (TpTestsContactListManager *self,
     guint n_members, TpHandle *members)
 {
   TpHandleSet *handles;
@@ -687,7 +821,7 @@ test_contact_list_manager_authorize_publication (TestContactListManager *self,
 }
 
 void
-test_contact_list_manager_unpublish (TestContactListManager *self,
+tp_tests_contact_list_manager_unpublish (TpTestsContactListManager *self,
     guint n_members, TpHandle *members)
 {
   TpHandleSet *handles;
@@ -713,7 +847,7 @@ test_contact_list_manager_unpublish (TestContactListManager *self,
 }
 
 void
-test_contact_list_manager_remove (TestContactListManager *self,
+tp_tests_contact_list_manager_remove (TpTestsContactListManager *self,
     guint n_members, TpHandle *members)
 {
   TpHandleSet *handles;
@@ -739,7 +873,7 @@ test_contact_list_manager_remove (TestContactListManager *self,
 }
 
 void
-test_contact_list_manager_add_initial_contacts (TestContactListManager *self,
+tp_tests_contact_list_manager_add_initial_contacts (TpTestsContactListManager *self,
     guint n_members, TpHandle *members)
 {
   TpHandleSet *handles;

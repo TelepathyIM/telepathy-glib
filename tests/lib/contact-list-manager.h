@@ -9,61 +9,61 @@
  * notice and this notice are preserved.
  */
 
-#ifndef __TEST_CONTACT_LIST_MANAGER_H__
-#define __TEST_CONTACT_LIST_MANAGER_H__
+#ifndef __TP_TESTS_CONTACT_LIST_MANAGER_H__
+#define __TP_TESTS_CONTACT_LIST_MANAGER_H__
 
 #include <telepathy-glib/base-contact-list.h>
 
 G_BEGIN_DECLS
 
-#define TEST_TYPE_CONTACT_LIST_MANAGER \
-  (test_contact_list_manager_get_type ())
-#define TEST_CONTACT_LIST_MANAGER(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), TEST_TYPE_CONTACT_LIST_MANAGER, \
-                              TestContactListManager))
-#define TEST_CONTACT_LIST_MANAGER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), TEST_TYPE_CONTACT_LIST_MANAGER, \
-                           TestContactListManagerClass))
-#define TEST_IS_CONTACT_LIST_MANAGER(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TEST_TYPE_CONTACT_LIST_MANAGER))
-#define TEST_IS_CONTACT_LIST_MANAGER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass), TEST_TYPE_CONTACT_LIST_MANAGER))
-#define TEST_CONTACT_LIST_MANAGER_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), TEST_TYPE_CONTACT_LIST_MANAGER, \
-                              TestContactListManagerClass))
+#define TP_TESTS_TYPE_CONTACT_LIST_MANAGER \
+  (tp_tests_contact_list_manager_get_type ())
+#define TP_TESTS_CONTACT_LIST_MANAGER(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), TP_TESTS_TYPE_CONTACT_LIST_MANAGER, \
+                              TpTestsContactListManager))
+#define TP_TESTS_CONTACT_LIST_MANAGER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), TP_TESTS_TYPE_CONTACT_LIST_MANAGER, \
+                           TpTestsContactListManagerClass))
+#define TP_TESTS_IS_CONTACT_LIST_MANAGER(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TP_TESTS_TYPE_CONTACT_LIST_MANAGER))
+#define TP_TESTS_IS_CONTACT_LIST_MANAGER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass), TP_TESTS_TYPE_CONTACT_LIST_MANAGER))
+#define TP_TESTS_CONTACT_LIST_MANAGER_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_CONTACT_LIST_MANAGER, \
+                              TpTestsContactListManagerClass))
 
-typedef struct _TestContactListManager TestContactListManager;
-typedef struct _TestContactListManagerClass TestContactListManagerClass;
-typedef struct _TestContactListManagerPrivate TestContactListManagerPrivate;
+typedef struct _TpTestsContactListManager TpTestsContactListManager;
+typedef struct _TpTestsContactListManagerClass TpTestsContactListManagerClass;
+typedef struct _TpTestsContactListManagerPrivate TpTestsContactListManagerPrivate;
 
-struct _TestContactListManagerClass {
+struct _TpTestsContactListManagerClass {
     TpBaseContactListClass parent_class;
 };
 
-struct _TestContactListManager {
+struct _TpTestsContactListManager {
     TpBaseContactList parent;
 
-    TestContactListManagerPrivate *priv;
+    TpTestsContactListManagerPrivate *priv;
 };
 
-GType test_contact_list_manager_get_type (void);
+GType tp_tests_contact_list_manager_get_type (void);
 
-void test_contact_list_manager_add_to_group (TestContactListManager *self,
+void tp_tests_contact_list_manager_add_to_group (TpTestsContactListManager *self,
     const gchar *group_name, TpHandle member);
-void test_contact_list_manager_remove_from_group (TestContactListManager *self,
+void tp_tests_contact_list_manager_remove_from_group (TpTestsContactListManager *self,
     const gchar *group_name, TpHandle member);
 
-void test_contact_list_manager_request_subscription (TestContactListManager *self,
+void tp_tests_contact_list_manager_request_subscription (TpTestsContactListManager *self,
     guint n_members, TpHandle *members,  const gchar *message);
-void test_contact_list_manager_unsubscribe (TestContactListManager *self,
+void tp_tests_contact_list_manager_unsubscribe (TpTestsContactListManager *self,
     guint n_members, TpHandle *members);
-void test_contact_list_manager_authorize_publication (TestContactListManager *self,
+void tp_tests_contact_list_manager_authorize_publication (TpTestsContactListManager *self,
     guint n_members, TpHandle *members);
-void test_contact_list_manager_unpublish (TestContactListManager *self,
+void tp_tests_contact_list_manager_unpublish (TpTestsContactListManager *self,
     guint n_members, TpHandle *members);
-void test_contact_list_manager_remove (TestContactListManager *self,
+void tp_tests_contact_list_manager_remove (TpTestsContactListManager *self,
     guint n_members, TpHandle *members);
-void test_contact_list_manager_add_initial_contacts (TestContactListManager *self,
+void tp_tests_contact_list_manager_add_initial_contacts (TpTestsContactListManager *self,
     guint n_members, TpHandle *members);
 
 G_END_DECLS

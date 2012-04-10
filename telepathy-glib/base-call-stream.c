@@ -125,6 +125,8 @@ enum
 {
   PROP_OBJECT_PATH = 1,
   PROP_CONNECTION,
+  PROP_CONTENT,
+  PROP_CHANNEL,
 
   /* Call interface properties */
   PROP_INTERFACES,
@@ -225,6 +227,12 @@ tp_base_call_stream_get_property (
       case PROP_OBJECT_PATH:
         g_value_set_string (value, self->priv->object_path);
         break;
+      case PROP_CONTENT:
+        g_value_set_object (value, self->priv->content);
+        break;
+      case PROP_CHANNEL:
+        g_value_set_object (value, self->priv->channel);
+        break;
       case PROP_REMOTE_MEMBERS:
         g_value_set_boxed (value, self->priv->remote_members);
         break;
@@ -276,6 +284,13 @@ tp_base_call_stream_set_property (
       case PROP_CONNECTION:
         self->priv->conn = g_value_dup_object (value);
         g_assert (self->priv->conn != NULL);
+        break;
+      case PROP_CONTENT:
+        {
+          TpBaseCallContent *content = g_value_get_object (value);
+          if (content)
+            _tp_base_call_stream_set_content (self, content);
+        }
         break;
       case PROP_OBJECT_PATH:
         g_free (self->priv->object_path);
@@ -347,6 +362,32 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *klass)
       NULL,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
+
+  /**
+   * TpBaseCallStream:content:
+   *
+   * #TpBaseCallContent object that owns this call stream.
+   *
+   * Since: 0.17.6
+   */
+  param_spec = g_param_spec_object ("content", "TpBaseCallContent object",
+      "Tp Content object that owns this call stream",
+      TP_TYPE_BASE_CALL_CONTENT,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CONTENT, param_spec);
+
+  /**
+   * TpBaseCallStream:channel:
+   *
+   * #TpBaseChannel object that owns this call stream.
+   *
+   * Since: 0.17.5
+   */
+  param_spec = g_param_spec_object ("channel", "TpBaseCallChannel object",
+      "Tp base call channel object that owns this call stream",
+      TP_TYPE_BASE_CALL_CHANNEL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CHANNEL, param_spec);
 
   /**
    * TpBaseCallStream:interfaces:
@@ -592,7 +633,8 @@ tp_base_call_stream_update_remote_sending_state (TpBaseCallStream *self,
     const gchar *dbus_reason,
     const gchar *message)
 {
-  gpointer state_p;
+  gpointer old_state_p = NULL;
+  TpSendingState old_state;
   gboolean exists;
   GHashTable *updates;
   GHashTable *identifiers;
@@ -608,13 +650,14 @@ tp_base_call_stream_update_remote_sending_state (TpBaseCallStream *self,
     new_state = TP_SENDING_STATE_PENDING_SEND;
 
   exists = g_hash_table_lookup_extended (self->priv->remote_members,
-      GUINT_TO_POINTER (contact), NULL, &state_p);
+      GUINT_TO_POINTER (contact), NULL, &old_state_p);
+  old_state = GPOINTER_TO_UINT (old_state_p);
 
-  if (exists && GPOINTER_TO_UINT (state_p) == new_state)
+  if (exists && old_state == new_state)
     return FALSE;
 
   DEBUG ("Updating remote member %d state: %d => %d for stream %s",
-      contact, GPOINTER_TO_UINT (state_p), new_state, self->priv->object_path);
+      contact, old_state, new_state, self->priv->object_path);
 
   g_hash_table_insert (self->priv->remote_members,
       GUINT_TO_POINTER (contact),
@@ -807,10 +850,14 @@ _tp_base_call_stream_set_content (TpBaseCallStream *self,
 {
   g_return_if_fail (TP_IS_BASE_CALL_STREAM (self));
   g_return_if_fail (TP_IS_BASE_CALL_CONTENT (content));
-  g_return_if_fail (self->priv->content == NULL);
+  g_return_if_fail (self->priv->content == NULL ||
+      self->priv->content == content);
 
   self->priv->content = content;
   self->priv->channel = _tp_base_call_content_get_channel (content);
+
+  g_object_notify (G_OBJECT (self), "content");
+  g_object_notify (G_OBJECT (self), "channel");
 }
 
 TpBaseCallContent *

@@ -74,7 +74,7 @@ typedef enum {
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_CONTACTS_CONNECTION, \
                               TpTestsContactsConnectionClass))
 
-TestContactListManager *tp_tests_contacts_connection_get_contact_list_manager (
+TpTestsContactListManager *tp_tests_contacts_connection_get_contact_list_manager (
     TpTestsContactsConnection *self);
 
 void tp_tests_contacts_connection_change_aliases (

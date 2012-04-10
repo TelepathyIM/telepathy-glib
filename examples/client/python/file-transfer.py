@@ -31,9 +31,13 @@ def state_changed_cb(channel, pspec, data):
         channel.provide_file_async(file, provide_file_cb, None)
 
 def create_channel_cb(request, result, data):
-    (chan, context) = request.create_and_handle_channel_finish(result)
+    try:
+        (chan, context) = request.create_and_handle_channel_finish(result)
 
-    chan.connect('notify::state', state_changed_cb, data)
+        chan.connect('notify::state', state_changed_cb, data)
+    except GObject.GError, e:
+        print "Failed to create channel: %s" % e
+        sys.exit(1)
 
 if __name__ == '__main__':
     #TelepathyGLib.debug_set_flags("all")

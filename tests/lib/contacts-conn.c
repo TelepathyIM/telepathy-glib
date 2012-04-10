@@ -93,7 +93,7 @@ struct _TpTestsContactsConnectionPrivate
   GHashTable *contact_info;
   GPtrArray *default_contact_info;
 
-  TestContactListManager *list_manager;
+  TpTestsContactListManager *list_manager;
 };
 
 typedef struct
@@ -343,11 +343,40 @@ conn_contact_info_properties_getter (GObject *object,
       if (supported_fields == NULL)
         {
           supported_fields = g_ptr_array_new ();
+
           g_ptr_array_add (supported_fields, tp_value_array_build (4,
-              G_TYPE_STRING, "n",
+              G_TYPE_STRING, "bday",
               G_TYPE_STRV, NULL,
               G_TYPE_UINT, 0,
+              G_TYPE_UINT, 1,
+              G_TYPE_INVALID));
+
+          g_ptr_array_add (supported_fields, tp_value_array_build (4,
+              G_TYPE_STRING, "email",
+              G_TYPE_STRV, NULL,
               G_TYPE_UINT, 0,
+              G_TYPE_UINT, G_MAXUINT32,
+              G_TYPE_INVALID));
+
+          g_ptr_array_add (supported_fields, tp_value_array_build (4,
+              G_TYPE_STRING, "fn",
+              G_TYPE_STRV, NULL,
+              G_TYPE_UINT, 0,
+              G_TYPE_UINT, 1,
+              G_TYPE_INVALID));
+
+          g_ptr_array_add (supported_fields, tp_value_array_build (4,
+              G_TYPE_STRING, "tel",
+              G_TYPE_STRV, NULL,
+              G_TYPE_UINT, 0,
+              G_TYPE_UINT, G_MAXUINT32,
+              G_TYPE_INVALID));
+
+          g_ptr_array_add (supported_fields, tp_value_array_build (4,
+              G_TYPE_STRING, "url",
+              G_TYPE_STRV, NULL,
+              G_TYPE_UINT, 0,
+              G_TYPE_UINT, G_MAXUINT32,
               G_TYPE_INVALID));
         }
       g_value_set_boxed (value, supported_fields);
@@ -386,7 +415,7 @@ constructed (GObject *object)
   if (parent_impl != NULL)
     parent_impl (object);
 
-  self->priv->list_manager = g_object_new (TEST_TYPE_CONTACT_LIST_MANAGER,
+  self->priv->list_manager = g_object_new (TP_TESTS_TYPE_CONTACT_LIST_MANAGER,
       "connection", self, NULL);
 
   tp_contacts_mixin_init (object,
@@ -570,7 +599,7 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
   tp_base_contact_list_mixin_class_init (base_class);
 }
 
-TestContactListManager *
+TpTestsContactListManager *
 tp_tests_contacts_connection_get_contact_list_manager (
     TpTestsContactsConnection *self)
 {
@@ -996,8 +1025,8 @@ my_set_contact_info (TpSvcConnectionInterfaceContactInfo *obj,
     g_ptr_array_add (copy, g_value_array_copy (g_ptr_array_index (info, i)));
 
   self_handle = tp_base_connection_get_self_handle (base);
-  g_hash_table_insert (self->priv->contact_info, GUINT_TO_POINTER (self_handle),
-      copy);
+  tp_tests_contacts_connection_change_contact_info (self, self_handle, copy);
+  g_ptr_array_unref (copy);
 
   tp_svc_connection_interface_contact_info_return_from_set_contact_info (
       context);

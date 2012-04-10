@@ -50,11 +50,36 @@ struct _TpDBusTubeChannelClass
   GCallback _padding[7];
 };
 
+#define TP_DBUS_TUBE_CHANNEL_FEATURE_CORE \
+  tp_dbus_tube_channel_feature_quark_core ()
+GQuark tp_dbus_tube_channel_feature_quark_core (void) G_GNUC_CONST;
+
 GType tp_dbus_tube_channel_get_type (void);
 
 const gchar * tp_dbus_tube_channel_get_service_name (TpDBusTubeChannel *self);
 
 GHashTable * tp_dbus_tube_channel_get_parameters (TpDBusTubeChannel *self);
+
+/* Outgoing tube methods */
+
+void tp_dbus_tube_channel_offer_async (TpDBusTubeChannel *self,
+    GHashTable *params,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+GDBusConnection * tp_dbus_tube_channel_offer_finish (TpDBusTubeChannel *self,
+    GAsyncResult *result,
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
+
+/* Incoming tube methods */
+
+void tp_dbus_tube_channel_accept_async (TpDBusTubeChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+GDBusConnection * tp_dbus_tube_channel_accept_finish (TpDBusTubeChannel *self,
+    GAsyncResult *result,
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 G_END_DECLS
 

@@ -426,7 +426,7 @@ supports_call_full (TpCapabilities *self,
  * @handle_type as TargetHandleType, a True value for InitialAudio and an
  * identifier of the appropriate type can be expected to work, %FALSE otherwise.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 gboolean
 tp_capabilities_supports_audio_call (TpCapabilities *self,
@@ -450,7 +450,7 @@ tp_capabilities_supports_audio_call (TpCapabilities *self,
  * expected to work,
  * %FALSE otherwise.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 gboolean
 tp_capabilities_supports_audio_video_call (TpCapabilities *self,
@@ -470,7 +470,7 @@ tp_capabilities_supports_audio_video_call (TpCapabilities *self,
  * HandleTypeContact as TargetHandleType and a contact identifier can be
  * expected to work, %FALSE otherwise.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 gboolean
 tp_capabilities_supports_file_transfer (TpCapabilities *self)

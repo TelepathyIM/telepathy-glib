@@ -215,24 +215,41 @@ contact_info_prepare_cb (GObject *object,
   if (tp_proxy_prepare_finish (connection, res, &result->error))
     {
       TpContactInfoFlags flags;
-      GList *specs;
-      TpContactInfoFieldSpec *spec;
+      GList *specs, *l;
 
       flags = tp_connection_get_contact_info_flags (connection);
       g_assert_cmpint (flags, ==, TP_CONTACT_INFO_FLAG_PUSH |
           TP_CONTACT_INFO_FLAG_CAN_SET);
 
       specs = tp_connection_get_contact_info_supported_fields (connection);
-      g_assert (specs != NULL);
-      g_assert (specs->data != NULL);
-      g_assert (specs->next == NULL);
+      g_assert_cmpuint (g_list_length (specs), ==, 5);
 
-      spec = specs->data;
-      g_assert_cmpstr (spec->name, ==, "n");
-      g_assert (spec->parameters != NULL);
-      g_assert (spec->parameters[0] == NULL);
-      g_assert_cmpint (spec->flags, ==, 0);
-      g_assert_cmpint (spec->max, ==, 0);
+      for (l = specs; l != NULL; l = l->next)
+        {
+          TpContactInfoFieldSpec *spec = l->data;
+
+          if (!tp_strdiff (spec->name, "bday") ||
+              !tp_strdiff (spec->name, "fn"))
+            {
+              g_assert (spec->parameters != NULL);
+              g_assert (spec->parameters[0] == NULL);
+              g_assert_cmpint (spec->flags, ==, 0);
+              g_assert_cmpint (spec->max, ==, 1);
+            }
+          else if (!tp_strdiff (spec->name, "email") ||
+                   !tp_strdiff (spec->name, "tel") ||
+                   !tp_strdiff (spec->name, "url"))
+            {
+              g_assert (spec->parameters != NULL);
+              g_assert (spec->parameters[0] == NULL);
+              g_assert_cmpint (spec->flags, ==, 0);
+              g_assert_cmpint (spec->max, ==, G_MAXUINT32);
+            }
+          else
+            {
+              g_assert_not_reached ();
+            }
+        }
 
       g_list_free (specs);
     }
@@ -642,10 +659,7 @@ test_avatar_data (Fixture *f,
 {
   TpTestsContactsConnection *service_conn = f->service_conn;
   TpConnection *client_conn = f->client_conn;
-  static const gchar letters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  gchar rand_str[RAND_STR_LEN + 1];
   gchar *dir;
-  guint i;
   gboolean avatar_retrieved_called;
   GError *error = NULL;
   GFile *file1, *file2;
@@ -654,14 +668,9 @@ test_avatar_data (Fixture *f,
   g_message (G_STRFUNC);
 
   /* Make sure g_get_user_cache_dir() returns a tmp directory, to not mess up
-   * user's cache dir.
-   * FIXME: Replace this with g_mkdtemp once it gets added to GLib.
-   * See GNOME bug #118563 */
-  for (i = 0; i < RAND_STR_LEN; i++)
-    rand_str[i] = letters[g_random_int_range (0, strlen (letters))];
-  rand_str[RAND_STR_LEN] = '\0';
-  dir = g_build_filename (g_get_tmp_dir (), rand_str, NULL);
-  g_assert (g_mkdir (dir, 0700) == 0);
+   * user's cache dir. */
+  dir = g_dir_make_tmp ("tp-glib-tests-XXXXXX", &error);
+  g_assert_no_error (error);
   g_setenv ("XDG_CACHE_HOME", dir, TRUE);
   g_assert_cmpstr (g_get_user_cache_dir (), ==, dir);
 
@@ -2083,7 +2092,7 @@ test_subscription_states (Fixture *f,
 {
   TpHandle alice_handle;
   TpContact *alice;
-  TestContactListManager *manager;
+  TpTestsContactListManager *manager;
   TpContactFeature features[] = { TP_CONTACT_FEATURE_SUBSCRIPTION_STATES };
   SubscriptionStates states = { TP_SUBSCRIPTION_STATE_NO,
       TP_SUBSCRIPTION_STATE_NO, "", f->result.loop };
@@ -2116,13 +2125,13 @@ test_subscription_states (Fixture *f,
       G_CALLBACK (subscription_states_changed_cb), &states);
 
   /* Request subscription */
-  test_contact_list_manager_request_subscription (manager, 1, &alice_handle, "");
+  tp_tests_contact_list_manager_request_subscription (manager, 1, &alice_handle, "");
   states.subscribe = TP_SUBSCRIPTION_STATE_ASK;
   g_main_loop_run (states.loop);
 
   /* Request again must re-emit the signal. Saying please this time will make
    * the request accepted and will ask for publish. */
-  test_contact_list_manager_request_subscription (manager, 1, &alice_handle, "please");
+  tp_tests_contact_list_manager_request_subscription (manager, 1, &alice_handle, "please");
   g_main_loop_run (states.loop);
   states.subscribe = TP_SUBSCRIPTION_STATE_YES;
   states.publish = TP_SUBSCRIPTION_STATE_ASK;
@@ -2130,7 +2139,7 @@ test_subscription_states (Fixture *f,
   g_main_loop_run (states.loop);
 
   /* Remove the contact */
-  test_contact_list_manager_remove (manager, 1, &alice_handle);
+  tp_tests_contact_list_manager_remove (manager, 1, &alice_handle);
   states.subscribe = TP_SUBSCRIPTION_STATE_NO;
   states.publish = TP_SUBSCRIPTION_STATE_NO;
   states.publish_request = "";
@@ -2175,7 +2184,7 @@ test_contact_groups (Fixture *f,
 {
   TpHandle alice_handle;
   TpContact *alice;
-  TestContactListManager *manager;
+  TpTestsContactListManager *manager;
   TpContactFeature features[] = { TP_CONTACT_FEATURE_CONTACT_GROUPS };
   ContactGroups data;
 
@@ -2210,15 +2219,15 @@ test_contact_groups (Fixture *f,
       G_CALLBACK (contact_groups_changed_cb), &data);
 
   g_ptr_array_add (data.groups, "group1");
-  test_contact_list_manager_add_to_group (manager, "group1", alice_handle);
+  tp_tests_contact_list_manager_add_to_group (manager, "group1", alice_handle);
   g_main_loop_run (data.loop);
 
   g_ptr_array_add (data.groups, "group2");
-  test_contact_list_manager_add_to_group (manager, "group2", alice_handle);
+  tp_tests_contact_list_manager_add_to_group (manager, "group2", alice_handle);
   g_main_loop_run (data.loop);
 
   g_ptr_array_remove_index_fast (data.groups, 0);
-  test_contact_list_manager_remove_from_group (manager, "group1", alice_handle);
+  tp_tests_contact_list_manager_remove_from_group (manager, "group1", alice_handle);
   g_main_loop_run (data.loop);
 
   g_ptr_array_set_size (data.groups, 0);
@@ -2489,7 +2498,7 @@ test_contact_list (Fixture *f,
 {
   const GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONTACT_LIST, 0 };
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
-  TestContactListManager *manager;
+  TpTestsContactListManager *manager;
   TpSimpleClientFactory *factory;
   const gchar *id = "contact-list-id";
   const gchar *alias = "Contact List Alias";
@@ -2507,14 +2516,14 @@ test_contact_list (Fixture *f,
   g_assert_cmpint (tp_connection_get_contact_list_state (f->client_conn), ==,
       TP_CONTACT_LIST_STATE_NONE);
   g_assert (tp_connection_get_contact_list_persists (f->client_conn));
-  g_assert (!tp_connection_get_can_change_contact_list (f->client_conn));
-  g_assert (!tp_connection_get_request_uses_message (f->client_conn));
+  g_assert (tp_connection_get_can_change_contact_list (f->client_conn));
+  g_assert (tp_connection_get_request_uses_message (f->client_conn));
 
   /* Add a remote-pending contact in our roster CM-side */
   handle = tp_handle_ensure (f->service_repo, id, NULL, NULL);
   tp_tests_contacts_connection_change_aliases (f->service_conn,
       1, &handle, &alias);
-  test_contact_list_manager_request_subscription (manager, 1, &handle, message);
+  tp_tests_contact_list_manager_request_subscription (manager, 1, &handle, message);
 
   /* Tell connection's factory contact features we want */
   factory = tp_proxy_get_factory (f->client_conn);

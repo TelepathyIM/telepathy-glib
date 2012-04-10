@@ -1,7 +1,7 @@
 /*
  * simple-account.h - header for a simple account service.
  *
- * Copyright (C) 2010 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2010-2012 Collabora Ltd. <http://www.collabora.co.uk/>
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright
@@ -56,6 +56,13 @@ void tp_tests_simple_account_set_presence (TpTestsSimpleAccount *self,
     TpConnectionPresenceType presence,
     const gchar *status,
     const gchar *message);
+
+void tp_tests_simple_account_set_connection (TpTestsSimpleAccount *self,
+    const gchar *object_path);
+
+void tp_tests_simple_account_removed (TpTestsSimpleAccount *self);
+void tp_tests_simple_account_set_enabled (TpTestsSimpleAccount *self,
+    gboolean enabled);
 
 G_END_DECLS
 

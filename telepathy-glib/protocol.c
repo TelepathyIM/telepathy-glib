@@ -910,7 +910,7 @@ const TpConnectionManagerParam *tp_protocol_get_param (TpProtocol *self,
  * Returns: (transfer full): a structure representing the parameter @param,
  *  or %NULL if not supported. Free with tp_connection_manager_param_free()
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 TpConnectionManagerParam *
 tp_protocol_dup_param (TpProtocol *self,
@@ -973,7 +973,7 @@ tp_protocol_dup_param_names (TpProtocol *self)
  * Returns: (transfer none): an array of #TpConnectionManagerParam structures,
  *  terminated by one whose @name is %NULL
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 const TpConnectionManagerParam *
 tp_protocol_borrow_params (TpProtocol *self)
@@ -996,7 +996,7 @@ tp_protocol_borrow_params (TpProtocol *self)
  * Returns: (transfer full) (element-type TelepathyGLib.ConnectionManagerParam):
  *  a list of #TpConnectionManagerParam structures, owned by the caller
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.6
  */
 GList *
 tp_protocol_dup_params (TpProtocol *self)

@@ -26,10 +26,6 @@ telepathy-glib-configure-real:
 	for file in $(TELEPATHY_GLIB_BUILT_SOURCES); do \
 		rm -f $$file && \
 		make -C $$(dirname $$file) $$(basename $$file) ; \
-	done && \
-	for file in $(TELEPATHY_GLIB_GENMARSHAL); do \
-		rm -f telepathy-glib/$$file && \
-		make -C telepathy-glib $$file ; \
 	done
 
 telepathy-glib-configure: telepathy-glib-configure-real

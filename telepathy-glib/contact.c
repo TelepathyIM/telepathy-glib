@@ -33,6 +33,7 @@
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONTACTS
+#include "telepathy-glib/base-contact-list-internal.h"
 #include "telepathy-glib/connection-contact-list.h"
 #include "telepathy-glib/connection-internal.h"
 #include "telepathy-glib/contact-internal.h"
@@ -2652,10 +2653,11 @@ contact_set_subscription_states (TpContact *self,
   if (publish_request == NULL)
     publish_request = "";
 
-  DEBUG ("contact#%u state changed:", self->priv->handle);
-  DEBUG ("  subscribe: %d", subscribe);
-  DEBUG ("  publish: %d", publish);
-  DEBUG ("  publish request: %s", publish_request);
+  DEBUG ("contact#%u state changed: subscribe=%c publish=%c '%s'",
+      self->priv->handle,
+      _tp_base_contact_list_presence_state_to_letter (subscribe),
+      _tp_base_contact_list_presence_state_to_letter (publish),
+      publish_request);
 
   self->priv->has_features |= CONTACT_FEATURE_FLAG_STATES;
 

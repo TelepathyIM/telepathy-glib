@@ -256,6 +256,7 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     contact-search.c \
     contact-search-internal.h \
     contact-search-result.c \
+    base-contact-list-internal.h \
     base-contact-list.c \
     cm-message.c \
     cm-message-internal.h \
@@ -338,7 +339,7 @@ include abi.am
 include codegen.am
 include introspection.am
 
-Android.mk: Makefile.am
+Android.mk: Makefile.am $(codegen_sources)
 	androgenizer -:PROJECT telepathy-glib \
 	\
 	-:SHARED libtelepathy-glib-1-core -:TAGS eng debug \
