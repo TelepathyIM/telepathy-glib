@@ -254,7 +254,7 @@ tp_stream_tube_connection_class_init (TpStreamTubeConnectionClass *cls)
       G_SIGNAL_RUN_LAST,
       0, NULL, NULL, NULL,
       G_TYPE_NONE,
-      1, G_TYPE_POINTER);
+      1, G_TYPE_ERROR);
 }
 
 TpStreamTubeConnection *
