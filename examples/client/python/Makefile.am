@@ -6,8 +6,8 @@ EXTRA_DIST = \
   text-handler.py \
   file-transfer.py \
   ft-handler.py \
-  stream-tubes.py/offerer.py \
-  stream-tubes.py/accepter.py
+  stream-tube-offerer.py \
+  stream-tube-accepter.py
 
 installable_scripts = \
     telepathy-example-python-dialler \
@@ -17,6 +17,8 @@ installable_scripts = \
     telepathy-example-python-ft-handler \
     telepathy-example-python-inspect-cm \
     telepathy-example-python-text-handler \
+    telepathy-example-python-stream-tube-accepter \
+    telepathy-example-python-stream-tube-offerer \
     $(NULL)
 
 telepathy-example-python-%: %.py
