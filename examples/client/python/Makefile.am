@@ -8,3 +8,23 @@ EXTRA_DIST = \
   ft-handler.py \
   stream-tubes.py/offerer.py \
   stream-tubes.py/accepter.py
+
+installable_scripts = \
+    telepathy-example-python-dialler \
+    telepathy-example-python-contact-list \
+    telepathy-example-python-ensure-channel \
+    telepathy-example-python-file-transfer \
+    telepathy-example-python-ft-handler \
+    telepathy-example-python-inspect-cm \
+    telepathy-example-python-text-handler \
+    $(NULL)
+
+telepathy-example-python-%: %.py
+	cp $< $@
+	chmod +x $@
+
+if INSTALL_EXAMPLES
+bin_SCRIPTS = $(installable_scripts)
+endif
+
+CLEANFILES = $(installable_scripts)
