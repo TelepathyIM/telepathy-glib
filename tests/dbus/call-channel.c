@@ -1086,5 +1086,5 @@ main (int argc,
   g_test_add ("/call/dtmf", Test, NULL, setup, test_dtmf,
       teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

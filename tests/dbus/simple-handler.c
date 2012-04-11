@@ -513,5 +513,5 @@ main (int argc,
   g_test_add ("/simple-handler/fail", Test, NULL, setup, test_fail,
       teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

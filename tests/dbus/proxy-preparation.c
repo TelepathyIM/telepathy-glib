@@ -435,5 +435,5 @@ main (int argc,
   g_test_add ("/proxy-preparation/interface-later", Test, NULL, setup,
       test_interface_later, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

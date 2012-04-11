@@ -446,5 +446,5 @@ main (int argc,
   g_test_add ("/conn/object_path", Test, NULL, setup,
       test_object_path, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

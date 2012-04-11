@@ -14,6 +14,14 @@ G_DEBUG=fatal_warnings,fatal_criticals
 export G_DEBUG
 libexec=@libexec@
 export libexec
+TP_TESTS_SERVICES_DIR=@tpglibtestsdir@/dbus-1/services
+export TP_TESTS_SERVICES_DIR
+GIO_USE_VFS=local
+export GIO_USE_VFS
+GSETTINGS_BACKEND=memory
+export GSETTINGS_BACKEND
+DBUS_SESSION_BUS_ADDRESS=this-is-clearly-not-valid
+export DBUS_SESSION_BUS_ADDRESS
 
 if [ -n "$1" ] ; then
   list="$1"
@@ -24,9 +32,6 @@ fi
 
 for i in $list ; do 
   echo "Testing $i"
-  @tpglibtestsdir@/tools/test-wrapper.sh \
-  sh @tpglibtestsdir@/tools/with-session-bus.sh \
-    --config-file=@tpglibtestsdir@/dbus-installed/session.conf \
-    -- @tpglibtestsdir@/$i
+  @tpglibtestsdir@/tools/test-wrapper.sh @tpglibtestsdir@/$i
 done
 

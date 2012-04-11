@@ -267,5 +267,5 @@ main (int argc,
   g_test_add ("/client-channel-factory/auto/dup", Test, NULL, setup,
       test_auto_dup, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

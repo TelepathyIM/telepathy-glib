@@ -945,5 +945,5 @@ main (int argc,
   g_test_add ("/cdo/destroy-channels", Test, NULL, setup_services,
       test_destroy_channels, teardown_services);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

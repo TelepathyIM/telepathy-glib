@@ -398,5 +398,5 @@ main (int argc,
       GSIZE_TO_POINTER (TP_TESTS_TYPE_SIMPLE_CONNECTION),
       setup, test_balance_unknown, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

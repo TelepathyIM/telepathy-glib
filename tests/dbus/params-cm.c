@@ -362,5 +362,5 @@ main (int argc,
   g_test_add ("/params-cm/get-parameters-bad-proto", Test, NULL, setup,
       test_get_parameters_bad_proto, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

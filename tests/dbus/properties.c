@@ -243,7 +243,7 @@ main (int argc, char **argv)
 
   g_test_add_data_func ("/properties/changed", &ctx, (GTestDataFunc) test_emit_changed);
 
-  g_test_run ();
+  tp_tests_run_with_bus ();
 
   g_object_unref (ctx.obj);
   g_object_unref (ctx.proxy);

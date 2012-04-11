@@ -332,5 +332,5 @@ main (int argc,
   g_test_add ("/debug-client/get-messages-failed", Test, NULL, setup,
       test_get_messages_failed, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

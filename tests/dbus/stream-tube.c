@@ -1129,5 +1129,5 @@ main (int argc,
   g_test_add ("/stream-tube/offer/bad-connection/sig-first", Test, NULL, setup,
       test_offer_bad_connection_sig_first, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

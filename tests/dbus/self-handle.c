@@ -379,5 +379,5 @@ main (int argc,
   g_test_add ("/self-handle/fails", Fixture, "archaic", setup,
       test_self_handle_fails, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

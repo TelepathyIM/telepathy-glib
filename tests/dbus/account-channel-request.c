@@ -1298,5 +1298,5 @@ main (int argc,
   g_test_add ("/account-channels/test-ft-props", Test, NULL,
       setup, test_ft_props, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

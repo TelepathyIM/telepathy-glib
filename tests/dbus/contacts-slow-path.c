@@ -1297,5 +1297,5 @@ main (int argc,
   g_test_add ("/contacts-slow-path/one-by-id", Fixture, NULL, setup,
       test_one_by_id, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

@@ -341,5 +341,5 @@ main (int argc,
   g_test_add (TEST_PREFIX "take_message", Test, NULL, setup,
       test_take_message, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

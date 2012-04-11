@@ -1082,5 +1082,5 @@ main (int argc,
   g_test_add ("/text-channel/chat-state", Test, NULL, setup,
       test_chat_state, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

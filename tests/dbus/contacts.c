@@ -3070,7 +3070,7 @@ main (int argc,
   g_test_add ("/contacts/self-contact", Fixture, NULL,
       setup_no_connect, test_self_contact, teardown);
 
-  ret = g_test_run ();
+  ret = tp_tests_run_with_bus ();
 
   g_assert (haze_remove_directory (dir));
   g_free (dir);

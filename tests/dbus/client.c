@@ -73,5 +73,5 @@ main (int argc,
 
   g_test_add ("/client/new", Test, NULL, setup, test_new, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

@@ -440,5 +440,5 @@ main (int argc,
       test_immutable_properties, teardown);
   g_test_add ("/cr/properties", Test, NULL, setup, test_properties, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }
