@@ -17,8 +17,7 @@
 
 typedef enum {
     ACTIVATE_CM = (1 << 0),
-    USE_CWR = (1 << 1),
-    USE_OLD_LIST = (1 << 2)
+    USE_OLD_LIST = (1 << 1)
 } TestFlags;
 
 typedef struct {
@@ -664,26 +663,11 @@ test_dbus_got_info (Test *test,
 }
 
 static void
-ready_or_not (TpConnectionManager *self,
-              const GError *error,
-              gpointer user_data,
-              GObject *weak_object G_GNUC_UNUSED)
-{
-  Test *test = user_data;
-
-  if (error != NULL)
-    test->error = g_error_copy (error);
-
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
 test_nothing_ready (Test *test,
                     gconstpointer data)
 {
   gchar *name;
   guint info_source;
-  TestFlags flags = GPOINTER_TO_INT (data);
 
   test->error = NULL;
   test->cm = tp_connection_manager_new (test->dbus, "nonexistent_cm",
@@ -693,25 +677,12 @@ test_nothing_ready (Test *test,
 
   g_test_bug ("18291");
 
-  if (flags & USE_CWR)
-    {
-      tp_connection_manager_call_when_ready (test->cm, ready_or_not,
-          test, NULL, NULL);
-      g_main_loop_run (test->mainloop);
-      g_assert (test->error != NULL);
-      g_clear_error (&test->error);
-    }
-  else
-    {
-      tp_tests_proxy_run_until_prepared_or_failed (test->cm, NULL,
-          &test->error);
-
-      g_assert_error (test->error, DBUS_GERROR, DBUS_GERROR_SERVICE_UNKNOWN);
-    }
+  tp_tests_proxy_run_until_prepared_or_failed (test->cm, NULL,
+      &test->error);
+  g_assert_error (test->error, DBUS_GERROR, DBUS_GERROR_SERVICE_UNKNOWN);
 
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "nonexistent_cm");
-  g_assert_cmpuint (tp_connection_manager_is_ready (test->cm), ==, FALSE);
   g_assert_cmpuint (tp_proxy_is_prepared (test->cm,
         TP_CONNECTION_MANAGER_FEATURE_CORE), ==, FALSE);
   g_assert (tp_proxy_get_invalidated (test->cm) == NULL);
@@ -734,7 +705,6 @@ test_file_ready (Test *test,
 {
   gchar *name;
   guint info_source;
-  TestFlags flags = GPOINTER_TO_INT (data);
   GList *l;
 
   test->error = NULL;
@@ -745,21 +715,10 @@ test_file_ready (Test *test,
 
   g_test_bug ("18291");
 
-  if (flags & USE_CWR)
-    {
-      tp_connection_manager_call_when_ready (test->cm, ready_or_not,
-          test, NULL, NULL);
-      g_main_loop_run (test->mainloop);
-      g_assert_no_error (test->error);
-    }
-  else
-    {
-      tp_tests_proxy_run_until_prepared (test->cm, NULL);
-    }
+  tp_tests_proxy_run_until_prepared (test->cm, NULL);
 
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "spurious");
-  g_assert_cmpuint (tp_connection_manager_is_ready (test->cm), ==, TRUE);
   g_assert_cmpuint (tp_connection_manager_is_running (test->cm), ==, FALSE);
   g_assert_cmpuint (tp_proxy_is_prepared (test->cm,
         TP_CONNECTION_MANAGER_FEATURE_CORE), ==, TRUE);
@@ -788,7 +747,6 @@ test_complex_file_ready (Test *test,
 {
   gchar *name;
   guint info_source;
-  TestFlags flags = GPOINTER_TO_INT (data);
 
   test->error = NULL;
   test->cm = tp_connection_manager_new (test->dbus, "test_manager_file",
@@ -798,24 +756,13 @@ test_complex_file_ready (Test *test,
 
   g_test_bug ("18291");
 
-  if (flags & USE_CWR)
-    {
-      tp_connection_manager_call_when_ready (test->cm, ready_or_not,
-          test, NULL, NULL);
-      g_main_loop_run (test->mainloop);
-      g_assert_no_error (test->error);
-    }
-  else
-    {
-      tp_tests_proxy_run_until_prepared (test->cm, NULL);
-    }
+  tp_tests_proxy_run_until_prepared (test->cm, NULL);
 
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "test_manager_file");
   g_assert_cmpuint (tp_proxy_is_prepared (test->cm,
         TP_CONNECTION_MANAGER_FEATURE_CORE), ==, TRUE);
   g_assert (tp_proxy_get_invalidated (test->cm) == NULL);
-  g_assert_cmpuint (tp_connection_manager_is_ready (test->cm), ==, TRUE);
   g_assert_cmpuint (tp_connection_manager_is_running (test->cm), ==, FALSE);
   g_assert_cmpuint (tp_connection_manager_get_info_source (test->cm), ==,
       TP_CM_INFO_SOURCE_FILE);
@@ -869,24 +816,13 @@ test_dbus_ready (Test *test,
       g_test_bug ("18291");
     }
 
-  if (flags & USE_CWR)
-    {
-      tp_connection_manager_call_when_ready (test->cm, ready_or_not,
-          test, NULL, NULL);
-      g_main_loop_run (test->mainloop);
-      g_assert_no_error (test->error);
-    }
-  else
-    {
-      tp_tests_proxy_run_until_prepared (test->cm, NULL);
-    }
+  tp_tests_proxy_run_until_prepared (test->cm, NULL);
 
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "example_echo");
   g_assert_cmpuint (tp_proxy_is_prepared (test->cm,
         TP_CONNECTION_MANAGER_FEATURE_CORE), ==, TRUE);
   g_assert (tp_proxy_get_invalidated (test->cm) == NULL);
-  g_assert_cmpuint (tp_connection_manager_is_ready (test->cm), ==, TRUE);
   g_assert_cmpuint (tp_connection_manager_is_running (test->cm), ==, TRUE);
   g_assert_cmpuint (tp_connection_manager_get_info_source (test->cm), ==,
       TP_CM_INFO_SOURCE_LIVE);
@@ -982,9 +918,6 @@ test_list (Test *test,
   g_assert (tp_proxy_get_invalidated (test->echo) == NULL);
   g_assert (tp_proxy_get_invalidated (test->spurious) == NULL);
 
-  g_assert (tp_connection_manager_is_ready (test->echo));
-  g_assert (tp_connection_manager_is_ready (test->spurious));
-
   g_assert_cmpuint (tp_connection_manager_get_info_source (test->echo),
       ==, TP_CM_INFO_SOURCE_LIVE);
   g_assert_cmpuint (tp_connection_manager_get_info_source (test->spurious),
@@ -1014,19 +947,11 @@ main (int argc,
 
   g_test_add ("/cm/nothing", Test, GINT_TO_POINTER (0),
       setup, test_nothing_ready, teardown);
-  g_test_add ("/cm/nothing/cwr", Test, GINT_TO_POINTER (USE_CWR),
-      setup, test_nothing_ready, teardown);
   g_test_add ("/cm/file", Test, GINT_TO_POINTER (0),
-      setup, test_file_ready, teardown);
-  g_test_add ("/cm/file/cwr", Test, GINT_TO_POINTER (USE_CWR),
       setup, test_file_ready, teardown);
   g_test_add ("/cm/file/complex", Test, GINT_TO_POINTER (0), setup,
       test_complex_file_ready, teardown);
-  g_test_add ("/cm/file/complex/cwr", Test, GINT_TO_POINTER (USE_CWR), setup,
-      test_complex_file_ready, teardown);
   g_test_add ("/cm/dbus", Test, GINT_TO_POINTER (0), setup,
-      test_dbus_ready, teardown);
-  g_test_add ("/cm/dbus/cwr", Test, GINT_TO_POINTER (USE_CWR), setup,
       test_dbus_ready, teardown);
 
   g_test_add ("/cm/list", Test, GINT_TO_POINTER (0),

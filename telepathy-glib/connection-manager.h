@@ -123,19 +123,6 @@ void tp_list_connection_managers_async (TpDBusDaemon *dbus_daemon,
 GList *tp_list_connection_managers_finish (GAsyncResult *result,
     GError **error);
 
-#ifndef TP_DISABLE_DEPRECATED
-typedef void (*TpConnectionManagerWhenReadyCb) (TpConnectionManager *cm,
-    const GError *error, gpointer user_data, GObject *weak_object);
-
-void tp_connection_manager_call_when_ready (TpConnectionManager *self,
-    TpConnectionManagerWhenReadyCb callback,
-    gpointer user_data, GDestroyNotify destroy, GObject *weak_object)
-  _TP_GNUC_DEPRECATED_FOR (tp_proxy_prepare_async);
-
-gboolean tp_connection_manager_is_ready (TpConnectionManager *self)
-  _TP_GNUC_DEPRECATED_FOR (tp_proxy_is_prepared);
-#endif
-
 const gchar *tp_connection_manager_get_name (TpConnectionManager *self);
 gboolean tp_connection_manager_is_running (TpConnectionManager *self);
 TpCMInfoSource tp_connection_manager_get_info_source (

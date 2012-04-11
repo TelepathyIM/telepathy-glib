@@ -93,9 +93,6 @@
  * this connection manager has, and adds them to #TpProxy:interfaces (where
  * they can be queried with tp_proxy_has_interface()).
  *
- * (These are the same guarantees offered by the older
- * tp_connection_manager_call_when_ready() mechanism.)
- *
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
@@ -446,38 +443,6 @@ tp_connection_manager_protocol_get_type (void)
   return type;
 }
 
-
-typedef struct {
-    TpConnectionManager *cm;
-    TpConnectionManagerWhenReadyCb callback;
-    gpointer user_data;
-    GDestroyNotify destroy;
-    TpWeakRef *weak_ref;
-} WhenReadyContext;
-
-static void
-when_ready_context_free (gpointer d)
-{
-  WhenReadyContext *c = d;
-
-  if (c->weak_ref != NULL)
-    {
-      tp_weak_ref_destroy (c->weak_ref);
-      c->weak_ref = NULL;
-    }
-
-  if (c->cm != NULL)
-    {
-      g_object_unref (c->cm);
-      c->cm = NULL;
-    }
-
-  if (c->destroy != NULL)
-    c->destroy (c->user_data);
-
-  g_slice_free (WhenReadyContext, c);
-}
-
 static void
 tp_connection_manager_ready_or_failed (TpConnectionManager *self,
                                        const GError *error)
@@ -501,103 +466,6 @@ tp_connection_manager_ready_or_failed (TpConnectionManager *self,
     {
       _tp_proxy_set_features_failed ((TpProxy *) self, error);
     }
-}
-
-static void
-tp_connection_manager_ready_cb (GObject *source_object,
-    GAsyncResult *res,
-    gpointer user_data)
-{
-  WhenReadyContext *c = user_data;
-  GError *error = NULL;
-  GObject *weak_object = NULL;
-
-  g_return_if_fail (source_object == (GObject *) c->cm);
-
-  if (c->weak_ref != NULL)
-    {
-      weak_object = tp_weak_ref_dup_object (c->weak_ref);
-
-      if (weak_object == NULL)
-        goto finally;
-    }
-
-  if (tp_proxy_prepare_finish (source_object, res, &error))
-    {
-      c->callback (c->cm, NULL, c->user_data, weak_object);
-    }
-  else
-    {
-      g_assert (error != NULL);
-      c->callback (c->cm, error, c->user_data, weak_object);
-      g_error_free (error);
-    }
-
-finally:
-  if (weak_object != NULL)
-    g_object_unref (weak_object);
-
-  when_ready_context_free (c);
-}
-
-/**
- * TpConnectionManagerWhenReadyCb:
- * @cm: a connection manager
- * @error: %NULL on success, or the reason why tp_connection_manager_is_ready()
- *         would return %FALSE
- * @user_data: the @user_data passed to tp_connection_manager_call_when_ready()
- * @weak_object: the @weak_object passed to
- *               tp_connection_manager_call_when_ready()
- *
- * Called as the result of tp_connection_manager_call_when_ready(). If the
- * connection manager's protocol and parameter information could be retrieved,
- * @error is %NULL and @cm is considered to be ready. Otherwise, @error is
- * non-%NULL and @cm is not ready.
- *
- * Deprecated: since 0.17.6, use tp_proxy_prepare_async() instead
- */
-
-/**
- * tp_connection_manager_call_when_ready: (skip)
- * @self: a connection manager
- * @callback: callback to call when information has been retrieved or on
- *            error
- * @user_data: arbitrary data to pass to the callback
- * @destroy: called to destroy @user_data
- * @weak_object: object to reference weakly; if it is destroyed, @callback
- *               will not be called, but @destroy will still be called
- *
- * Call the @callback from the main loop when information about @cm's
- * supported protocols and parameters has been retrieved.
- *
- * Since: 0.7.26
- * Deprecated: since 0.17.6, use tp_proxy_prepare_async() instead
- */
-void
-tp_connection_manager_call_when_ready (TpConnectionManager *self,
-                                       TpConnectionManagerWhenReadyCb callback,
-                                       gpointer user_data,
-                                       GDestroyNotify destroy,
-                                       GObject *weak_object)
-{
-  WhenReadyContext *c;
-
-  g_return_if_fail (TP_IS_CONNECTION_MANAGER (self));
-  g_return_if_fail (callback != NULL);
-
-  c = g_slice_new0 (WhenReadyContext);
-
-  c->cm = g_object_ref (self);
-  c->callback = callback;
-  c->user_data = user_data;
-  c->destroy = destroy;
-
-  if (weak_object != NULL)
-    {
-      c->weak_ref = tp_weak_ref_new (weak_object, NULL, NULL);
-    }
-
-  tp_proxy_prepare_async (self, NULL, tp_connection_manager_ready_cb, c);
 }
 
 static void tp_connection_manager_continue_introspection
@@ -1948,31 +1816,6 @@ tp_connection_manager_get_name (TpConnectionManager *self)
 {
   g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), NULL);
   return self->name;
-}
-
-/**
- * tp_connection_manager_is_ready: (skip)
- * @self: a connection manager
- *
- * If protocol and parameter information has been obtained from the connection
- * manager or the cache in the .manager file, return %TRUE. Otherwise,
- * return %FALSE.
- *
- * This may change from %FALSE to %TRUE at any time that the main loop is
- * running; the #GObject::notify signal is emitted for the
- * #TpConnectionManager:info-source property.
- *
- * Returns: %TRUE, unless the #TpConnectionManager:info-source property is
- *          %TP_CM_INFO_SOURCE_NONE
- * Since: 0.7.26
- * Deprecated: since 0.17.6, use tp_proxy_is_prepared()
- *  with %TP_CONNECTION_MANAGER_FEATURE_CORE instead
- */
-gboolean
-tp_connection_manager_is_ready (TpConnectionManager *self)
-{
-  g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), FALSE);
-  return self->info_source != TP_CM_INFO_SOURCE_NONE;
 }
 
 /**
