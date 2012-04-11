@@ -242,22 +242,6 @@ struct _ContactsQueueItem
   GArray *handles;
 };
 
-static ContactsQueueItem *
-contacts_queue_item_new (GPtrArray *contacts,
-    GPtrArray *ids,
-    GArray *handles)
-{
-  ContactsQueueItem *item;
-
-  item = g_slice_new (ContactsQueueItem);
-  item->contacts = contacts != NULL ? g_ptr_array_ref (contacts) : NULL;
-  item->ids = ids != NULL ? g_ptr_array_ref (ids) : NULL;
-  item->handles = handles != NULL ? g_array_ref (handles) : NULL;
-  item->result = NULL;
-
-  return item;
-}
-
 static void
 contacts_queue_item_free (ContactsQueueItem *item)
 {
@@ -445,10 +429,17 @@ process_contacts_queue (TpChannel *self)
 
 static void
 contacts_queue_item (TpChannel *self,
-    ContactsQueueItem *item,
+    GPtrArray *contacts,
+    GPtrArray *ids,
+    GArray *handles,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
+  ContactsQueueItem *item = g_slice_new (ContactsQueueItem);
+
+  item->contacts = contacts != NULL ? g_ptr_array_ref (contacts) : NULL;
+  item->ids = ids != NULL ? g_ptr_array_ref (ids) : NULL;
+  item->handles = handles != NULL ? g_array_ref (handles) : NULL;
   item->result = g_simple_async_result_new ((GObject *) self,
       callback, user_data, contacts_queue_item);
 
@@ -464,10 +455,7 @@ _tp_channel_contacts_queue_prepare_async (TpChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  ContactsQueueItem *item;
-
-  item = contacts_queue_item_new (contacts, NULL, NULL);
-  contacts_queue_item (self, item, callback, user_data);
+  contacts_queue_item (self, contacts, NULL, NULL, callback, user_data);
 }
 
 void
@@ -476,10 +464,7 @@ _tp_channel_contacts_queue_prepare_by_id_async (TpChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  ContactsQueueItem *item;
-
-  item = contacts_queue_item_new (NULL, ids, NULL);
-  contacts_queue_item (self, item, callback, user_data);
+  contacts_queue_item (self, NULL, ids, NULL, callback, user_data);
 }
 
 void
@@ -488,10 +473,7 @@ _tp_channel_contacts_queue_prepare_by_handle_async (TpChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  ContactsQueueItem *item;
-
-  item = contacts_queue_item_new (NULL, NULL, handles);
-  contacts_queue_item (self, item, callback, user_data);
+  contacts_queue_item (self, NULL, NULL, handles, callback, user_data);
 }
 
 gboolean
