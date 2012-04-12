@@ -1,7 +1,19 @@
 telepathy-glib 0.18.1 (UNRELEASED)
 ==================================
 
-...
+Enhancements:
+
+• Make various methods of the form get_foo() available to
+  gobject-introspection (Xavier)
+
+• Improve stream tube examples (Guillaume)
+
+Fixes:
+
+• Change the type of TpStreamTubeConnection::closed's argument from
+  POINTER to ERROR so PyGI can bind it (Guillaume)
+
+• Use the right macro to avoid post-2.30 GLib APIs (Guillaume)
 
 telepathy-glib 0.18.0 (2012-04-02)
 ==================================
