@@ -61,7 +61,6 @@
  * (e.g. #TP_IFACE_CHANNEL_TYPE_TEXT)
  * @target_handle_type: The type of handle that is the target of channels of
  * this type
- * @interfaces: Deprecated. Replaced by @get_interfaces.
  * @close: A virtual function called to close the channel, which will be called
  *  by tp_base_channel_close() and by the implementation of the Closed D-Bus
  *  method.
@@ -78,7 +77,7 @@
  * @get_interfaces: Extra interfaces provided by this channel (this SHOULD NOT
  *  include the channel type and interface itself). Implementation must first
  *  chainup on parent class implementation and then add extra interfaces into
- *  the #GPtrArray. Replaces @interfaces.
+ *  the #GPtrArray.
  *
  * The class structure for #TpBaseChannel
  *
@@ -624,18 +623,7 @@ tp_base_channel_get_basic_object_path_suffix (TpBaseChannel *self)
 static GPtrArray *
 tp_base_channel_get_basic_interfaces (TpBaseChannel *self)
 {
-  GPtrArray *interfaces = g_ptr_array_new ();
-  const char **ptr;
-
-  /* copy the klass->interfaces property for backwards compatibility */
-  for (ptr = TP_BASE_CHANNEL_GET_CLASS (self)->interfaces;
-       ptr != NULL && *ptr != NULL;
-       ptr++)
-    {
-      g_ptr_array_add (interfaces, (char *) *ptr);
-    }
-
-  return interfaces;
+  return g_ptr_array_new ();
 }
 
 static void
