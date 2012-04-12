@@ -15,6 +15,17 @@ Fixes:
 
 • Use the right macro to avoid post-2.30 GLib APIs (Guillaume)
 
+• Make it safe to hold refs to a remaining GAsyncResult after returning
+  to the main loop (fd.o #45554, Simon)
+
+• When a TpProxy method call returns, which can occasionally be synchronous,
+  use an idle to finish the corresponding GAsyncResult (fd.o #45514, Simon)
+
+• Add TP_NUM_DBUS_ERRORS (etc.) to supersede NUM_TP_DBUS_ERRORS (etc.)
+  (fd.o #46470, Simon)
+
+• Make several methods returning a GStrv introspectable (fd.o #46471, Simon)
+
 telepathy-glib 0.18.0 (2012-04-02)
 ==================================
 
