@@ -26,6 +26,8 @@ Fixes:
 
 • Make several methods returning a GStrv introspectable (fd.o #46471, Simon)
 
+• Fix warnings with newer gtk-doc and g-ir-scanner (fd.o #48592, Stef Walter)
+
 telepathy-glib 0.18.0 (2012-04-02)
 ==================================
 
