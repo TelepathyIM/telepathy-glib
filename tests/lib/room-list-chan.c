@@ -28,6 +28,7 @@ static guint signals[LAST_SIGNAL];
 
 struct _TpTestsRoomListChanPriv {
   gchar *server;
+  gboolean listing;
 };
 
 static void
@@ -153,12 +154,34 @@ tp_tests_room_list_chan_init (TpTestsRoomListChan *self)
 }
 
 static void
+room_list_list_rooms (TpSvcChannelTypeRoomList *chan,
+    DBusGMethodInvocation *context)
+{
+  TpTestsRoomListChan *self = TP_TESTS_ROOM_LIST_CHAN (chan);
+
+  if (self->priv->listing)
+    {
+      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Already listing" };
+
+      dbus_g_method_return_error (context, &error);
+      return;
+    }
+
+  self->priv->listing = TRUE;
+  tp_svc_channel_type_room_list_emit_listing_rooms (self, TRUE);
+
+  tp_svc_channel_type_room_list_return_from_list_rooms (context);
+}
+
+static void
 room_list_iface_init (gpointer iface,
     gpointer data)
 {
-  //TpSvcChannelTypeRoomListClass *klass = iface;
+  TpSvcChannelTypeRoomListClass *klass = iface;
 
 #define IMPLEMENT(x) \
   tp_svc_channel_type_room_list_implement_##x (klass, room_list_##x)
+  IMPLEMENT(list_rooms);
 #undef IMPLEMENT
 }

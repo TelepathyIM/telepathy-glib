@@ -61,6 +61,14 @@ gboolean tp_room_list_channel_get_listing (TpRoomListChannel *self);
 
 GQuark tp_room_list_channel_get_feature_quark_listing (void) G_GNUC_CONST;
 
+void tp_room_list_channel_start_listing_async (TpRoomListChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_room_list_channel_start_listing_finish (TpRoomListChannel *self,
+    GAsyncResult *result,
+    GError **error);
+
 G_END_DECLS
 
 #endif

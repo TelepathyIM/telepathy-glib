@@ -55,6 +55,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/util-internal.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 #include "telepathy-glib/debug-internal.h"
@@ -132,14 +133,105 @@ tp_room_list_channel_constructed (GObject *obj)
   g_assert_cmpstr (type, ==, TP_IFACE_CHANNEL_TYPE_ROOM_LIST);
 }
 
+enum {
+    FEAT_LISTING,
+    N_FEAT
+};
+
+static void
+listing_rooms_cb (TpChannel *proxy,
+    gboolean listing,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (proxy);
+
+  if (self->priv->listing == listing)
+    return;
+
+  self->priv->listing = listing;
+  g_object_notify (G_OBJECT (self), "listing");
+}
+
+static void
+get_listing_rooms_cb (TpChannel *channel,
+    gboolean in_progress,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (channel);
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (result, error);
+    }
+  else if (in_progress)
+    {
+      self->priv->listing = in_progress;
+      g_object_notify (G_OBJECT (self), "listing");
+    }
+
+  g_simple_async_result_complete (result);
+}
+
+static void
+tp_room_list_channel_prepare_listing_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (proxy);
+  TpChannel *channel = TP_CHANNEL (self);
+  GError *error = NULL;
+  GSimpleAsyncResult *result;
+
+  tp_cli_channel_type_room_list_connect_to_listing_rooms (channel,
+      listing_rooms_cb, proxy, NULL, G_OBJECT (proxy), &error);
+  if (error != NULL)
+    {
+      g_simple_async_report_take_gerror_in_idle ((GObject *) self,
+          callback, user_data, error);
+      return;
+    }
+
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      tp_room_list_channel_prepare_listing_async);
+
+  tp_cli_channel_type_room_list_call_get_listing_rooms (channel, -1,
+      get_listing_rooms_cb, result, g_object_unref, G_OBJECT (channel));
+}
+
+static const TpProxyFeature *
+tp_room_list_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
+{
+  static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
+
+  if (G_LIKELY (features[0].name != 0))
+    return features;
+
+  features[FEAT_LISTING].name = TP_ROOM_LIST_CHANNEL_FEATURE_LISTING;
+  features[FEAT_LISTING].prepare_async =
+    tp_room_list_channel_prepare_listing_async;
+
+  /* assert that the terminator at the end is there */
+  g_assert (features[N_FEAT].name == 0);
+
+  return features;
+}
+
 static void
 tp_room_list_channel_class_init (TpRoomListChannelClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+  TpProxyClass *proxy_class = TP_PROXY_CLASS (klass);
   GParamSpec *param_spec;
 
   gobject_class->constructed = tp_room_list_channel_constructed;
   gobject_class->get_property = tp_room_list_channel_get_property;
+
+  proxy_class->list_features = tp_room_list_channel_list_features;
 
   /**
    * TpRoomListChannel:server:
@@ -244,4 +336,42 @@ gboolean
 tp_room_list_channel_get_listing (TpRoomListChannel *self)
 {
   return self->priv->listing;
+}
+
+static void
+list_rooms_cb (TpChannel *channel,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (result, error);
+    }
+
+  g_simple_async_result_complete (result);
+}
+
+void
+tp_room_list_channel_start_listing_async (TpRoomListChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
+      tp_room_list_channel_start_listing_async);
+
+  tp_cli_channel_type_room_list_call_list_rooms (TP_CHANNEL (self), -1,
+      list_rooms_cb, result, g_object_unref, G_OBJECT (self));
+}
+
+gboolean
+tp_room_list_channel_start_listing_finish (TpRoomListChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_room_list_channel_start_listing_async)
 }
