@@ -537,7 +537,7 @@ complete_result (TpAccountChannelRequest *self)
 
   request_disconnect (self);
 
-  g_simple_async_result_complete_in_idle (self->priv->result);
+  g_simple_async_result_complete (self->priv->result);
 
   tp_clear_object (&self->priv->result);
 }

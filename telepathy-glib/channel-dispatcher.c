@@ -183,7 +183,7 @@ present_channel_cb (TpChannelDispatcher *cd,
       g_simple_async_result_set_from_error (result, error);
     }
 
-  g_simple_async_result_complete_in_idle (result);
+  g_simple_async_result_complete (result);
 }
 
 /**

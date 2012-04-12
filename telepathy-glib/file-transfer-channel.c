@@ -186,7 +186,7 @@ operation_failed (TpFileTransferChannel *self,
     GError *error)
 {
   g_simple_async_result_take_error (self->priv->result, error);
-  g_simple_async_result_complete_in_idle (self->priv->result);
+  g_simple_async_result_complete (self->priv->result);
   tp_clear_object (&self->priv->result);
 }
 
@@ -443,7 +443,7 @@ tp_file_transfer_channel_prepare_core_cb (TpProxy *proxy,
     self->priv->file = g_file_new_for_uri (uri);
 
 out:
-  g_simple_async_result_complete_in_idle (result);
+  g_simple_async_result_complete (result);
 }
 
 static void
@@ -1170,7 +1170,7 @@ accept_or_provide_file_cb (TpChannel *proxy,
       start_transfer (self);
     }
 
-  g_simple_async_result_complete_in_idle (self->priv->result);
+  g_simple_async_result_complete (self->priv->result);
 }
 
 static gboolean

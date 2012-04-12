@@ -91,7 +91,7 @@ get_alias_flag_cb (TpConnection *self,
   self->priv->alias_flags = flags;
 
 finally:
-  g_simple_async_result_complete_in_idle (result);
+  g_simple_async_result_complete (result);
 }
 
 void

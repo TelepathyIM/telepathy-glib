@@ -1235,7 +1235,7 @@ _tp_account_manager_created_cb (TpAccountManager *proxy,
   if (error != NULL)
     {
       g_simple_async_result_set_from_error (my_res, error);
-      g_simple_async_result_complete_in_idle (my_res);
+      g_simple_async_result_complete (my_res);
       return;
     }
 
@@ -1244,7 +1244,7 @@ _tp_account_manager_created_cb (TpAccountManager *proxy,
   if (account == NULL)
     {
       g_simple_async_result_take_error (my_res, e);
-      g_simple_async_result_complete_in_idle (my_res);
+      g_simple_async_result_complete (my_res);
       return;
     }
 

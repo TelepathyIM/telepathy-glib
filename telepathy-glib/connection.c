@@ -464,7 +464,7 @@ tp_connection_get_balance_cb (TpProxy *proxy,
   g_object_thaw_notify ((GObject *) self);
 
 finally:
-  g_simple_async_result_complete_in_idle (result);
+  g_simple_async_result_complete (result);
 }
 
 static void
@@ -539,7 +539,7 @@ tp_connection_get_rcc_cb (TpProxy *proxy,
 finally:
   while ((result = g_queue_pop_head (&self->priv->capabilities_queue)) != NULL)
     {
-      g_simple_async_result_complete_in_idle (result);
+      g_simple_async_result_complete (result);
       g_object_unref (result);
     }
 

@@ -649,7 +649,7 @@ out:
   if (e != NULL)
     g_simple_async_result_set_from_error (result, e);
 
-  g_simple_async_result_complete_in_idle (result);
+  g_simple_async_result_complete (result);
 
   if (!prepared)
     {
@@ -1079,7 +1079,7 @@ handle_with_cb (TpChannelDispatchOperation *self,
       g_simple_async_result_set_from_error (result, error);
     }
 
-  g_simple_async_result_complete_in_idle (result);
+  g_simple_async_result_complete (result);
   g_object_unref (result);
 }
 
@@ -1167,7 +1167,7 @@ claim_cb (TpChannelDispatchOperation *self,
       g_simple_async_result_set_from_error (result, error);
     }
 
-  g_simple_async_result_complete_in_idle (result);
+  g_simple_async_result_complete (result);
   g_object_unref (result);
 }
 
@@ -1339,7 +1339,7 @@ claim_with_cb (TpChannelDispatchOperation *self,
 
   _tp_base_client_now_handling_channels (client, self->priv->channels);
 
-  g_simple_async_result_complete_in_idle (result);
+  g_simple_async_result_complete (result);
   g_object_unref (result);
 }
 
@@ -1450,7 +1450,7 @@ claim_close_channels_cb (TpChannelDispatchOperation *self,
       tp_channel_close_async (channel, channel_close_cb, NULL);
     }
 
-  g_simple_async_result_complete_in_idle (result);
+  g_simple_async_result_complete (result);
   g_object_unref (result);
 }
 
@@ -1580,7 +1580,7 @@ claim_leave_channels_cb (TpChannelDispatchOperation *self,
           channel_leave_cb, NULL);
     }
 
-  g_simple_async_result_complete_in_idle (result);
+  g_simple_async_result_complete (result);
   g_object_unref (result);
 }
 
@@ -1691,7 +1691,7 @@ claim_destroy_channels_cb (TpChannelDispatchOperation *self,
       tp_channel_destroy_async (channel, channel_destroy_cb, NULL);
     }
 
-  g_simple_async_result_complete_in_idle (result);
+  g_simple_async_result_complete (result);
   g_object_unref (result);
 }
 
