@@ -86,7 +86,7 @@ tp_connection_get_avatar_requirements_cb (TpProxy *proxy,
       tp_asv_get_uint32 (properties, "MaximumAvatarBytes", NULL));
 
 finally:
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
 }
 
 void

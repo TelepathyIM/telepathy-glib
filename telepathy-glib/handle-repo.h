@@ -148,7 +148,7 @@ TpIntset *tp_handle_set_difference_update (TpHandleSet *set,
 
 gchar *tp_handle_set_dump (const TpHandleSet *self) G_GNUC_WARN_UNUSED_RESULT;
 
-/* static inline because it relies on NUM_TP_HANDLE_TYPES */
+/* static inline because it relies on TP_NUM_HANDLE_TYPES */
 /**
  * tp_handles_supported_and_valid: (skip)
  * @repos: An array of possibly null pointers to handle repositories, indexed
@@ -170,12 +170,12 @@ gchar *tp_handle_set_dump (const TpHandleSet *self) G_GNUC_WARN_UNUSED_RESULT;
 static inline
 /* spacer so gtkdoc documents this function as though not static */
 gboolean tp_handles_supported_and_valid (
-    TpHandleRepoIface *repos[NUM_TP_HANDLE_TYPES],
+    TpHandleRepoIface *repos[TP_NUM_HANDLE_TYPES],
     TpHandleType handle_type, const GArray *handles, gboolean allow_zero,
     GError **error);
 
 static inline gboolean
-tp_handles_supported_and_valid (TpHandleRepoIface *repos[NUM_TP_HANDLE_TYPES],
+tp_handles_supported_and_valid (TpHandleRepoIface *repos[TP_NUM_HANDLE_TYPES],
                                 TpHandleType handle_type,
                                 const GArray *handles,
                                 gboolean allow_zero,

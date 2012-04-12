@@ -84,7 +84,7 @@ tp_tests_echo_normalize_contact (TpHandleRepoIface *repo,
 
 static void
 create_handle_repos (TpBaseConnection *conn,
-                     TpHandleRepoIface *repos[NUM_TP_HANDLE_TYPES])
+                     TpHandleRepoIface *repos[TP_NUM_HANDLE_TYPES])
 {
   ((TpBaseConnectionClass *)
       tp_tests_echo_connection_parent_class)->create_handle_repos (conn, repos);

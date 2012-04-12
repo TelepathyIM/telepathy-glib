@@ -1450,14 +1450,14 @@ tp_base_call_channel_add_content_dbus (TpSvcChannelTypeCall *iface,
       goto error;
     }
 
-  if (mtype >= NUM_TP_MEDIA_STREAM_TYPES)
+  if (mtype >= TP_NUM_MEDIA_STREAM_TYPES)
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Unknown content type");
       goto error;
     }
 
-  if (initial_direction >= NUM_TP_MEDIA_STREAM_DIRECTIONS)
+  if (initial_direction >= TP_NUM_MEDIA_STREAM_DIRECTIONS)
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "Invalid initial direction");

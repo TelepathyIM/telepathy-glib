@@ -127,19 +127,29 @@ extern "C" {
 
         self.d("""\
 /**
- * NUM_%(upper-plural)s: (skip)
+ * %(upper-prefix)sNUM_%(upper-plural)s:
  *
  * 1 higher than the highest valid value of #%(mixed-name)s.
  */
+
+/**
+ * NUM_%(upper-prefix)s%(upper-plural)s: (skip)
+ *
+ * 1 higher than the highest valid value of #%(mixed-name)s.
+ * In new code, use %(upper-prefix)sNUM_%(upper-plural)s instead.
+ */
 """ % {'mixed-name' : (self.prefix + name).replace('_', ''),
-       'upper-plural' : (self.prefix + name_plural).upper(),
+       'upper-prefix' : self.prefix.upper(),
+       'upper-plural' : name_plural.upper(),
        'last-val' : vals[-1].getAttribute('value')})
 
         self.write("""\
-#define NUM_%(upper-plural)s (%(last-val)s+1)
+#define %(upper-prefix)sNUM_%(upper-plural)s (%(last-val)s+1)
+#define NUM_%(upper-prefix)s%(upper-plural)s %(upper-prefix)sNUM_%(upper-plural)s
 
 """ % {'mixed-name' : (self.prefix + name).replace('_', ''),
-       'upper-plural' : (self.prefix + name_plural).upper(),
+       'upper-prefix' : self.prefix.upper(),
+       'upper-plural' : name_plural.upper(),
        'last-val' : vals[-1].getAttribute('value')})
 
     def do_val(self, val, value_prefix):

@@ -440,7 +440,7 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *klass)
    */
   param_spec = g_param_spec_uint ("local-sending-state", "LocalSendingState",
       "Local sending state",
-      TP_SENDING_STATE_NONE, NUM_TP_SENDING_STATES, TP_SENDING_STATE_NONE,
+      TP_SENDING_STATE_NONE, TP_NUM_SENDING_STATES, TP_SENDING_STATE_NONE,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_LOCAL_SENDING_STATE,
       param_spec);

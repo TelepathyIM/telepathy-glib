@@ -77,9 +77,10 @@ struct _TpChannelPrivate {
     /* the TpContact can be NULL if the owner is unknown */
     GHashTable *group_contact_owners;
 
+    /* Queue of GSimpleAsyncResult with ContactsQueueItem payload */
     GQueue *contacts_queue;
     /* Item currently being prepared, not part of contacts_queue anymore */
-    ContactsQueueItem *current_item;
+    GSimpleAsyncResult *current_contacts_queue_result;
 
     /* NULL, or TpHandle => TpChannelChatState;
      * if non-NULL, we're watching for ChatStateChanged */

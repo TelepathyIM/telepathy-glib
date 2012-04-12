@@ -699,7 +699,7 @@ tp_channel_get_initial_chat_states_cb (TpProxy *proxy,
   /* else just ignore it and assume everyone was initially in the default
    * Inactive state, unless we already saw a signal for them */
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
 }
 
 static void
@@ -1093,7 +1093,7 @@ got_password_flags_cb (TpChannel *self,
         }
     }
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
 }
 
 static void
@@ -2172,7 +2172,7 @@ channel_destroy_cb (TpChannel *channel,
       return;
     }
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
   g_object_unref (result);
 }
 
@@ -2297,7 +2297,7 @@ provide_password_cb (TpChannel *self,
           TP_ERROR_AUTHENTICATION_FAILED, "Password was not correct");
     }
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
 }
 
 /**

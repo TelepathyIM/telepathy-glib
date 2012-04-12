@@ -291,7 +291,7 @@ got_contact_list_attributes_cb (TpConnection *self,
 OUT:
   if (result != NULL)
     {
-      g_simple_async_result_complete (result);
+      g_simple_async_result_complete_in_idle (result);
       g_object_unref (result);
     }
 }
@@ -406,7 +406,7 @@ prepare_contact_list_props_cb (TpProxy *proxy,
       self->priv->contact_list_state);
 
 OUT:
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
 }
 
 void _tp_connection_prepare_contact_list_async (TpProxy *proxy,
@@ -616,7 +616,7 @@ prepare_contact_groups_cb (TpProxy *proxy,
   g_ptr_array_add (self->priv->contact_groups, NULL);
 
 OUT:
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
 }
 
 void
@@ -1649,7 +1649,7 @@ blocked_changed_head_ready (TpConnection *self)
           _tp_connection_set_contact_blocked (self, contact);
         }
 
-      g_simple_async_result_complete (item->result);
+      g_simple_async_result_complete_in_idle (item->result);
     }
 
   blocked_changed_item_free (item);
@@ -1823,7 +1823,7 @@ request_blocked_contacts_cb (TpConnection *self,
     {
       DEBUG ("Error calling RequestBlockedContacts: %s", error->message);
       g_simple_async_result_set_from_error (result, error);
-      g_simple_async_result_complete (result);
+      g_simple_async_result_complete_in_idle (result);
       return;
     }
 

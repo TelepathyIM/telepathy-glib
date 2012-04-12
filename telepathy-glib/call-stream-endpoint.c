@@ -682,7 +682,7 @@ validate_candidate (const GValueArray *candidate,
     }
 
   value = g_value_array_get_nth ((GValueArray *) candidate, 0);
-  if (g_value_get_uint (value) >= NUM_TP_STREAM_COMPONENTS)
+  if (g_value_get_uint (value) >= TP_NUM_STREAM_COMPONENTS)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "Invalid component id: %d", g_value_get_uint (value));
@@ -811,7 +811,7 @@ call_stream_endpoint_set_endpoint_state (TpSvcCallStreamEndpoint *iface,
 {
   TpCallStreamEndpoint *self = TP_CALL_STREAM_ENDPOINT (iface);
 
-  if (component >= NUM_TP_STREAM_COMPONENTS)
+  if (component >= TP_NUM_STREAM_COMPONENTS)
     {
       GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "Stream component %d is out of the valid range.", state);
@@ -820,7 +820,7 @@ call_stream_endpoint_set_endpoint_state (TpSvcCallStreamEndpoint *iface,
       return;
     }
 
-  if (state >= NUM_TP_STREAM_ENDPOINT_STATES)
+  if (state >= TP_NUM_STREAM_ENDPOINT_STATES)
     {
       GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "Stream state %d is out of the valid range.", state);

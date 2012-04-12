@@ -32,9 +32,16 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsEchoChannel,
 
 /* type definition stuff */
 
-static const char * tp_tests_echo_channel_interfaces[] = {
-    TP_IFACE_CHANNEL_INTERFACE_DESTROYABLE,
-    NULL
+static GPtrArray *
+tp_tests_echo_channel_get_interfaces (TpBaseChannel *self)
+{
+  GPtrArray *interfaces;
+
+  interfaces = TP_BASE_CHANNEL_CLASS (tp_tests_echo_channel_parent_class)->
+    get_interfaces (self);
+
+  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_DESTROYABLE);
+  return interfaces;
 };
 
 static void
@@ -132,7 +139,7 @@ tp_tests_echo_channel_class_init (TpTestsEchoChannelClass *klass)
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_TEXT;
   base_class->target_handle_type = TP_HANDLE_TYPE_CONTACT;
-  base_class->interfaces = tp_tests_echo_channel_interfaces;
+  base_class->get_interfaces = tp_tests_echo_channel_get_interfaces;
   base_class->close = channel_close;
 
   tp_message_mixin_init_dbus_properties (object_class);

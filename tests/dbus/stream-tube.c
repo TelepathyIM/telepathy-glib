@@ -51,7 +51,7 @@ TestContext contexts[] = {
   { TRUE, TP_SOCKET_ADDRESS_TYPE_IPV6, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
   { TRUE, TP_SOCKET_ADDRESS_TYPE_IPV4, TP_SOCKET_ACCESS_CONTROL_PORT },
 
-  { FALSE, NUM_TP_SOCKET_ADDRESS_TYPES, NUM_TP_SOCKET_ACCESS_CONTROLS }
+  { FALSE, TP_NUM_SOCKET_ADDRESS_TYPES, TP_NUM_SOCKET_ACCESS_CONTROLS }
 };
 
 static gboolean have_ipv6 = FALSE;
@@ -715,7 +715,7 @@ run_tube_test (const char *test_path,
 {
   guint i;
 
-  for (i = 0; contexts[i].address_type != NUM_TP_SOCKET_ADDRESS_TYPES; i++)
+  for (i = 0; contexts[i].address_type != TP_NUM_SOCKET_ADDRESS_TYPES; i++)
     {
       gchar *path = test_context_to_str (&contexts[i], test_path);
 

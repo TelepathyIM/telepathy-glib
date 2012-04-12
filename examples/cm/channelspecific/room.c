@@ -36,12 +36,17 @@ struct _ExampleCSHRoomChannelPrivate
   guint simulation_delay;
 };
 
+static GPtrArray *
+example_csh_room_channel_get_interfaces (TpBaseChannel *self)
+{
+  GPtrArray *interfaces;
 
-static const char * example_csh_room_channel_interfaces[] = {
-    TP_IFACE_CHANNEL_INTERFACE_GROUP,
-    NULL
+  interfaces = TP_BASE_CHANNEL_CLASS (example_csh_room_channel_parent_class)->
+    get_interfaces (self);
+
+  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_GROUP);
+  return interfaces;
 };
-
 
 static void
 example_csh_room_channel_init (ExampleCSHRoomChannel *self)
@@ -411,7 +416,7 @@ example_csh_room_channel_class_init (ExampleCSHRoomChannelClass *klass)
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_TEXT;
   base_class->target_handle_type = TP_HANDLE_TYPE_ROOM;
-  base_class->interfaces = example_csh_room_channel_interfaces;
+  base_class->get_interfaces = example_csh_room_channel_get_interfaces;
 
   base_class->close = example_csh_room_channel_close;
 

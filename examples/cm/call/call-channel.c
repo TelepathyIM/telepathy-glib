@@ -77,10 +77,17 @@ struct _ExampleCallChannelPrivate
   gboolean closed;
 };
 
-static const char * example_call_channel_interfaces[] = {
-    TP_IFACE_CHANNEL_INTERFACE_HOLD,
-    NULL
-};
+static GPtrArray *
+example_call_channel_get_interfaces (TpBaseChannel *self)
+{
+  GPtrArray *interfaces;
+
+  interfaces = TP_BASE_CHANNEL_CLASS (
+      example_call_channel_parent_class)->get_interfaces (self);
+
+  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_HOLD);
+  return interfaces;
+}
 
 /* In practice you need one for audio, plus one per video (e.g. a
  * presentation might have separate video contents for the slides
@@ -333,7 +340,7 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
   call_class->hangup = call_hangup;
 
   base_class->target_handle_type = TP_HANDLE_TYPE_CONTACT;
-  base_class->interfaces = example_call_channel_interfaces;
+  base_class->get_interfaces = example_call_channel_get_interfaces;
   base_class->close = close_channel;
 
   object_class->constructed = constructed;

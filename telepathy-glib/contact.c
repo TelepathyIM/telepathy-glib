@@ -126,10 +126,19 @@ struct _TpContact {
  */
 
 /**
- * NUM_TP_CONTACT_FEATURES: (skip)
+ * TP_NUM_CONTACT_FEATURES:
  *
  * 1 higher than the highest #TpContactFeature supported by this version of
  * telepathy-glib.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * NUM_TP_CONTACT_FEATURES: (skip)
+ *
+ * 1 higher than the highest #TpContactFeature supported by this version of
+ * telepathy-glib. Use %TP_NUM_CONTACT_FEATURES in new code.
  *
  * Since: 0.7.18
  */
@@ -334,7 +343,7 @@ tp_contact_has_feature (TpContact *self,
                         TpContactFeature feature)
 {
   g_return_val_if_fail (self != NULL, FALSE);
-  g_return_val_if_fail (feature < NUM_TP_CONTACT_FEATURES, FALSE);
+  g_return_val_if_fail (feature < TP_NUM_CONTACT_FEATURES, FALSE);
 
   return ((self->priv->has_features & (1 << feature)) != 0);
 }
@@ -697,7 +706,7 @@ set_contact_groups_cb (TpConnection *connection,
       g_simple_async_result_set_from_error (result, error);
     }
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
   g_object_unref (result);
 }
 
@@ -3322,7 +3331,7 @@ get_feature_flags (guint n_features,
 
   for (i = 0; i < n_features; i++)
     {
-      g_return_val_if_fail (features[i] < NUM_TP_CONTACT_FEATURES, FALSE);
+      g_return_val_if_fail (features[i] < TP_NUM_CONTACT_FEATURES, FALSE);
       feature_flags |= (1 << features[i]);
     }
 

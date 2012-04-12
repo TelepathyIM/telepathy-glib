@@ -288,7 +288,7 @@ tp_message_mixin_init (GObject *obj,
   mixin->priv->pending = g_queue_new ();
   mixin->priv->recv_id = 0;
   mixin->priv->msg_types = g_array_sized_new (FALSE, FALSE, sizeof (guint),
-      NUM_TP_CHANNEL_TEXT_MESSAGE_TYPES);
+      TP_NUM_CHANNEL_TEXT_MESSAGE_TYPES);
   mixin->priv->connection = g_object_ref (connection);
 
   mixin->priv->supported_content_types = g_new0 (gchar *, 1);

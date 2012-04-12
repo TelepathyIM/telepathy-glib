@@ -35,10 +35,18 @@ G_DEFINE_TYPE_WITH_CODE (ExampleEcho2Channel,
 
 /* type definition stuff */
 
-static const char * example_echo_2_channel_interfaces[] = {
-    TP_IFACE_CHANNEL_INTERFACE_DESTROYABLE,
-    TP_IFACE_CHANNEL_INTERFACE_SMS,
-    NULL };
+static GPtrArray *
+example_echo_2_channel_get_interfaces (TpBaseChannel *self)
+{
+  GPtrArray *interfaces;
+
+  interfaces = TP_BASE_CHANNEL_CLASS (example_echo_2_channel_parent_class)->
+    get_interfaces (self);
+
+  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_DESTROYABLE);
+  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_SMS);
+  return interfaces;
+};
 
 enum
 {
@@ -312,7 +320,7 @@ example_echo_2_channel_class_init (ExampleEcho2ChannelClass *klass)
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_TEXT;
   base_class->target_handle_type = TP_HANDLE_TYPE_CONTACT;
-  base_class->interfaces = example_echo_2_channel_interfaces;
+  base_class->get_interfaces = example_echo_2_channel_get_interfaces;
   base_class->close = example_echo_2_channel_close;
   base_class->fill_immutable_properties =
     example_echo_2_channel_fill_immutable_properties;

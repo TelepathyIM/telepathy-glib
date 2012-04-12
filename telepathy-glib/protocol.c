@@ -949,7 +949,7 @@ tp_protocol_can_register (TpProtocol *self)
  *
  * The result is copied and must be freed by the caller with g_strfreev().
  *
- * Returns: (type GObject.Strv) (transfer full): a copy of
+ * Returns: (array zero-terminated=1) (transfer full): a copy of
  *  #TpProtocol:param-names
  *
  * Since: 0.11.11
