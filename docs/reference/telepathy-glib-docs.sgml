@@ -101,6 +101,7 @@
     <xi:include href="xml/debug-client.xml"/>
     <xi:include href="xml/debug-message.xml"/>
     <xi:include href="xml/room-list-channel.xml"/>
+    <xi:include href="xml/room-info.xml"/>
   </chapter>
 
   <chapter id="ch-service-dbus">
