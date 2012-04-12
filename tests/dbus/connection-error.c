@@ -273,6 +273,93 @@ test_unregistered_error (Test *test,
   error = NULL;
 }
 
+static void
+on_detailed_connection_error (TpConnection *conn,
+    const gchar *error,
+    GHashTable *details,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  connection_errors++;
+  g_assert_cmpstr (error, ==, "com.example.DomainSpecificError");
+  g_assert_cmpuint (g_hash_table_size (details), ==, 2);
+}
+
+static void
+test_detailed_error (Test *test,
+    gconstpointer mode)
+{
+  GError *error = NULL;
+  const GHashTable *asv;
+
+  asv = GUINT_TO_POINTER (0xDEADBEEF);
+  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, NULL), ==,
+      NULL);
+  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, &asv), ==,
+      NULL);
+  g_assert_cmpuint (GPOINTER_TO_UINT (asv), ==, 0xDEADBEEF);
+
+  connection_errors = 0;
+  tp_cli_connection_connect_to_connection_error (test->conn,
+      on_detailed_connection_error, NULL, NULL, NULL, NULL);
+  tp_cli_connection_connect_to_status_changed (test->conn, on_status_changed,
+      test->mainloop, NULL, NULL, NULL);
+
+  if (!tp_strdiff (mode, "variant"))
+    {
+      GVariant *details = g_variant_parse (G_VARIANT_TYPE_VARDICT,
+          "{ 'debug-message': <'not enough bees'>, "
+          " 'bees-required': <2342> }", NULL, NULL, &error);
+
+      g_assert_no_error (error);
+
+      tp_base_connection_disconnect_with_dbus_error_vardict (
+          test->service_conn_as_base,
+          "com.example.DomainSpecificError",
+          details,
+          TP_CONNECTION_STATUS_REASON_NETWORK_ERROR);
+      g_variant_unref (details);
+    }
+  else
+    {
+      GHashTable *details = tp_asv_new (
+          "debug-message", G_TYPE_STRING, "not enough bees",
+          "bees-required", G_TYPE_INT, 2342,
+          NULL);
+
+      tp_base_connection_disconnect_with_dbus_error (
+          test->service_conn_as_base,
+          "com.example.DomainSpecificError",
+          details,
+          TP_CONNECTION_STATUS_REASON_NETWORK_ERROR);
+      g_hash_table_unref (details);
+    }
+
+  g_main_loop_run (test->mainloop);
+
+  g_assert_cmpuint (connection_errors, ==, 1);
+
+  MYASSERT (!tp_connection_run_until_ready (test->conn, FALSE, &error, NULL),
+      "");
+
+  g_assert_error (error, example_com_error_quark (), DOMAIN_SPECIFIC_ERROR);
+
+  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, NULL), ==,
+      "com.example.DomainSpecificError");
+  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, &asv), ==,
+      "com.example.DomainSpecificError");
+  g_assert (asv != NULL);
+  g_assert_cmpstr (tp_asv_get_string (asv, "debug-message"), ==,
+      "not enough bees");
+  g_assert_cmpint (tp_asv_get_int32 (asv, "bees-required", NULL), ==, 2342);
+
+  g_assert_cmpstr (g_quark_to_string (error->domain), ==,
+      g_quark_to_string (example_com_error_quark ()));
+  g_assert_cmpuint (error->code, ==, DOMAIN_SPECIFIC_ERROR);
+  g_error_free (error);
+  error = NULL;
+}
+
 int
 main (int argc,
       char **argv)
@@ -284,6 +371,10 @@ main (int argc,
       test_registered_error, teardown);
   g_test_add ("/connection/unregistered-error", Test, NULL, setup,
       test_unregistered_error, teardown);
+  g_test_add ("/connection/detailed-error", Test, NULL, setup,
+      test_detailed_error, teardown);
+  g_test_add ("/connection/detailed-error-vardict", Test, "variant", setup,
+      test_detailed_error, teardown);
 
   return g_test_run ();
 }

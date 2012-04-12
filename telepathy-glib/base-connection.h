@@ -131,6 +131,11 @@ void tp_base_connection_disconnect_with_error (TpBaseConnection *self,
 void tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,
     const gchar *error_name, GHashTable *details,
     TpConnectionStatusReason reason);
+void tp_base_connection_disconnect_with_dbus_error_vardict (
+    TpBaseConnection *self,
+    const gchar *error_name,
+    GVariant *details,
+    TpConnectionStatusReason reason);
 
 void tp_base_connection_change_status (TpBaseConnection *self,
     TpConnectionStatus status, TpConnectionStatusReason reason);
