@@ -75,10 +75,28 @@ LINKER_OPTIMISATIONS
 LINKER_VERSION_SCRIPT
 
 ifelse(tp_glib_nano_version, 0,
-    [ official_release=yes ],
-    [ official_release=no ])
+[ # tp-glib is version x.y.z - "official release",
+  # disable extra checks by default
+  official_release=yes
+  AC_ARG_ENABLE([fatal-warnings],
+    [AC_HELP_STRING([--enable-fatal-warnings],
+                    [make various warnings fatal])],
+    [],
+    [enable_fatal_warnings=no])
+],
+[ # tp-glib is version x.y.z.1 - development snapshot,
+  # enable extra checks by default
+  official_release=no
+  AC_ARG_ENABLE([fatal-warnings],
+    [AC_HELP_STRING([--disable-fatal-warnings],
+                    [make various warnings non-fatal])],
+    [],
+    [enable_fatal_warnings=yes])
+])
 
-TP_COMPILER_WARNINGS([ERROR_CFLAGS], [test "x$official_release" = xno],
+AC_SUBST([enable_fatal_warnings])
+
+TP_COMPILER_WARNINGS([ERROR_CFLAGS], [test "x$enable_fatal_warnings" = xyes],
   [all \
    extra \
    declaration-after-statement \
@@ -96,7 +114,7 @@ AC_SUBST([ERROR_CFLAGS])
 
 # these aren't really error flags but they serve a similar purpose for us -
 # making the toolchain stricter
-if test "x$official_release" = xno; then
+if test "x$enable_fatal_warnings" = xyes; then
   TP_ADD_LINKER_FLAG([ERROR_LDFLAGS], [-Wl,--no-copy-dt-needed-entries])
 
   # --no-copy-dt-needed-entries is the new name for --no-add-needed which
@@ -110,6 +128,9 @@ if test "x$official_release" = xno; then
   esac
 fi
 
+# Only use this where we really do want things to depend on whether it's
+# a release or not (like ABI-stability enforcement). For fatal warnings,
+# use ${enable_fatal_warnings} instead.
 AM_CONDITIONAL([OFFICIAL_RELEASE], [test "x$official_release" = xyes])
 
 AC_ARG_ENABLE(debug,
@@ -130,31 +151,6 @@ fi
 AC_ARG_ENABLE(backtrace,
   AC_HELP_STRING([--enable-backtrace],[enable printing out the backtrace in case of crash (in most GLib connection managers)]),
     enable_backtrace=$enableval, enable_backtrace=no )
-
-ifelse(tp_glib_nano_version, 0,
-[ # tp-glib is version x.y.z - disable extra checks by default
-  AC_ARG_ENABLE(coding-style-checks,
-    AC_HELP_STRING([--enable-coding-style-checks],
-                   [check coding style using grep]),
-    [ENABLE_CODING_STYLE_CHECKS=$enableval], [ENABLE_CODING_STYLE_CHECKS=no] )
-  AC_ARG_ENABLE(doc-checks,
-    AC_HELP_STRING([--enable-doc-checks],
-                   [check for complete documentation coverage]),
-    [ENABLE_DOC_CHECKS=$enableval], [ENABLE_DOC_CHECKS=no] )
-],
-[ # tp-glib is version x.y.z.1 - enable extra checks by default
-  AC_ARG_ENABLE(coding-style-checks,
-    AC_HELP_STRING([--disable-coding-style-checks],
-                   [do not check coding style using grep]),
-    [ENABLE_CODING_STYLE_CHECKS=$enableval], [ENABLE_CODING_STYLE_CHECKS=yes])
-  AC_ARG_ENABLE(doc-checks,
-    AC_HELP_STRING([--disable-doc-checks],
-                   [do not check for complete documentation coverage]),
-    [ENABLE_DOC_CHECKS=$enableval], [ENABLE_DOC_CHECKS=yes])
-])
-
-AC_SUBST([ENABLE_CODING_STYLE_CHECKS])
-AC_SUBST([ENABLE_DOC_CHECKS])
 
 if test x$enable_debug = xyes; then
   AC_DEFINE(ENABLE_DEBUG, [], [Enable debug code])

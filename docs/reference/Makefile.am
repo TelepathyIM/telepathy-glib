@@ -168,7 +168,7 @@ check-local:
 			err=1; \
 		fi; \
 	done; \
-	case @ENABLE_DOC_CHECKS@/$$err in \
+	case $(enable_fatal_warnings)/$$err in \
 		(yes/1) \
 			echo "Documentation check failed" >&2; \
 			exit $$err; \
