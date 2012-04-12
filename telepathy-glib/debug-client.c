@@ -60,9 +60,9 @@ struct _TpDebugClientClass {
 /**
  * TpDebugClient:
  *
- * A proxy object for a Telepathy connection manager.
+ * A proxy object for the debug interface of a Telepathy component.
  *
- * Since: 0.7.1
+ * Since: 0.UNRELEASED
  */
 struct _TpDebugClient {
     TpProxy parent;
@@ -74,7 +74,8 @@ struct _TpDebugClientPrivate {
     gboolean enabled;
 };
 
-static const TpProxyFeature *tp_debug_client_list_features (TpProxyClass *klass);
+static const TpProxyFeature *tp_debug_client_list_features (
+    TpProxyClass *klass);
 static void tp_debug_client_prepare_core (TpDebugClient *self);
 static void name_owner_changed_cb (TpDBusDaemon *bus,
     const gchar *name,
@@ -259,6 +260,7 @@ tp_debug_client_init_known_interfaces (void)
  * @dbus: a D-Bus daemon; may not be %NULL
  * @unique_name: the unique name of the process to be debugged; may not be
  *  %NULL or a well-known name
+ * @error: used to raise an error if @unique_name is not valid
  *
  * <!-- -->
  *
@@ -298,6 +300,19 @@ set_enabled_cb (
   g_simple_async_result_complete (result);
 }
 
+/**
+ * tp_debug_client_set_enabled_async:
+ * @self: a #TpDebugClient
+ * @enabled: %TRUE if debug messages should be published on the bus, %FALSE
+ * otherwise
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Enable or disable publishing of debug messages on the bus by the component
+ * owning @self's bus name.
+ *
+ * Since: 0.UNRELEASED
+ */
 void
 tp_debug_client_set_enabled_async (
     TpDebugClient *self,
@@ -316,6 +331,17 @@ tp_debug_client_set_enabled_async (
   g_value_unset (&v);
 }
 
+/**
+ * tp_debug_client_set_enabled_finish:
+ * @self: a #TpDebugClient
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_debug_client_set_enabled_async().
+ *
+ * Returns: %TRUE, if the operation suceeded, %FALSE otherwise
+ * Since: UNRELEASED
+ */
 gboolean
 tp_debug_client_set_enabled_finish (
     TpDebugClient *self,
