@@ -3302,6 +3302,39 @@ tp_connection_get_detailed_error (TpConnection *self,
 }
 
 /**
+ * tp_connection_dup_detailed_error_vardict:
+ * @self: a connection
+ * @details: (out) (allow-none) (transfer full):
+ *  optionally used to return a %G_VARIANT_TYPE_VARDICT with details
+ *  of the error
+ *
+ * If the connection has disconnected, return the D-Bus error name with which
+ * it disconnected (in particular, this is %TP_ERROR_STR_CANCELLED if it was
+ * disconnected by a user request).
+ *
+ * Otherwise, return %NULL, without altering @details.
+ *
+ * Returns: (transfer full) (allow-none): a D-Bus error name, or %NULL.
+ *
+ * Since: 0.19.UNRELEASED
+ */
+gchar *
+tp_connection_dup_detailed_error_vardict (TpConnection *self,
+    GVariant **details)
+{
+  const GHashTable *asv;
+  const gchar *error = tp_connection_get_detailed_error (self, &asv);
+
+  if (error == NULL)
+    return NULL;
+
+  if (details != NULL)
+    *details = _tp_asv_to_vardict (asv);
+
+  return g_strdup (error);
+}
+
+/**
  * tp_connection_add_client_interest:
  * @self: a connection
  * @interested_in: a string identifying an interface or part of an interface

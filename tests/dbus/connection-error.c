@@ -291,6 +291,10 @@ test_detailed_error (Test *test,
 {
   GError *error = NULL;
   const GHashTable *asv;
+  gchar *str;
+  GVariant *variant;
+  gboolean ok;
+  gint32 bees;
 
   asv = GUINT_TO_POINTER (0xDEADBEEF);
   g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, NULL), ==,
@@ -352,6 +356,21 @@ test_detailed_error (Test *test,
   g_assert_cmpstr (tp_asv_get_string (asv, "debug-message"), ==,
       "not enough bees");
   g_assert_cmpint (tp_asv_get_int32 (asv, "bees-required", NULL), ==, 2342);
+
+  str = tp_connection_dup_detailed_error_vardict (test->conn, NULL);
+  g_assert_cmpstr (str, ==, "com.example.DomainSpecificError");
+  g_free (str);
+  str = tp_connection_dup_detailed_error_vardict (test->conn, &variant);
+  g_assert_cmpstr (str, ==, "com.example.DomainSpecificError");
+  g_free (str);
+  g_assert (variant != NULL);
+  ok = g_variant_lookup (variant, "debug-message", "s", &str);
+  g_assert (ok);
+  g_assert_cmpstr (str, ==, "not enough bees");
+  g_free (str);
+  ok = g_variant_lookup (variant, "bees-required", "i", &bees);
+  g_assert (ok);
+  g_assert_cmpint (bees, ==, 2342);
 
   g_assert_cmpstr (g_quark_to_string (error->domain), ==,
       g_quark_to_string (example_com_error_quark ()));
