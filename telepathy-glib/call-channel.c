@@ -1046,7 +1046,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
 
 
   /**
-   * TpCallChannel::content-added
+   * TpCallChannel::content-added:
    * @self: the #TpCallChannel
    * @content: the newly added #TpCallContent
    *
@@ -1066,7 +1066,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
       1, G_TYPE_OBJECT);
 
   /**
-   * TpCallChannel::content-removed
+   * TpCallChannel::content-removed:
    * @self: the #TpCallChannel
    * @content: the newly removed #TpCallContent
    * @reason: a #TpCallStateReason
@@ -1087,7 +1087,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
       2, G_TYPE_OBJECT, TP_TYPE_CALL_STATE_REASON);
 
   /**
-   * TpCallChannel::state-changed
+   * TpCallChannel::state-changed:
    * @self: the #TpCallChannel
    * @state: the new #TpCallState
    * @flags: the new #TpCallFlags
@@ -1109,7 +1109,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
       G_TYPE_HASH_TABLE);
 
   /**
-   * TpCallChannel::members-changed
+   * TpCallChannel::members-changed:
    * @self: the #TpCallChannel
    * @updates: (type GLib.HashTable) (element-type TelepathyGLib.Contact uint):
    *   #GHashTable mapping #TpContact to its new #TpCallMemberFlags

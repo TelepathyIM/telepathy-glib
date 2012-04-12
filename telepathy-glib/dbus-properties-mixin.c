@@ -1093,7 +1093,7 @@ tp_dbus_properties_mixin_emit_properties_changed (
  * tp_dbus_properties_mixin_emit_properties_changed_varargs: (skip)
  * @object: an object which uses the D-Bus properties mixin
  * @interface_name: the interface on which properties have changed
- * @...: (unqualified) property names whose values have changed, terminated by
+ * @...: unqualified property names whose values have changed, terminated by
  *  %NULL.
  *
  * A shortcut for calling tp_dbus_properties_mixin_emit_properties_changed().

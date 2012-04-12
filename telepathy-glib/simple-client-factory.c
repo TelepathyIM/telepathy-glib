@@ -79,15 +79,6 @@
 
 /**
  * TpSimpleClientFactoryClass:
- * @parent_class: the parent class
- *
- * The class of a #TpSimpleClientFactory.
- *
- * Since: 0.15.5
- */
-
-/**
- * TpSimpleClientFactoryClass:
  * @parent_class: the parent
  * @create_account: create a #TpAccount;
  *  see tp_simple_client_factory_ensure_account()

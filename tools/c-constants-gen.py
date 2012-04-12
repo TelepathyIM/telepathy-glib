@@ -67,7 +67,6 @@ extern "C" {
                        flags.getAttribute('name')
         self.d("""\
 /**
- *
 %s:
 """ % (self.prefix + name).replace('_', ''))
         for flag in get_by_path(flags, 'flag'):

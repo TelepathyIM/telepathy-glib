@@ -49,7 +49,7 @@ typedef guint TpHandle;
 #define TP_TYPE_HANDLE G_TYPE_UINT
 
 /**
- * TP_UNKNOWN_HANDLE_TYPE
+ * TP_UNKNOWN_HANDLE_TYPE:
  *
  * An invalid handle type (-1 cast to TpHandleType) used to represent an
  * unknown handle type.

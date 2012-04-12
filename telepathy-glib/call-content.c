@@ -653,7 +653,7 @@ tp_call_content_class_init (TpCallContentClass *klass)
 
 
   /**
-   * TpCallContent::removed
+   * TpCallContent::removed:
    * @self: the #TpCallContent
    *
    * The ::removed signal is emitted when @self is removed from
@@ -669,7 +669,7 @@ tp_call_content_class_init (TpCallContentClass *klass)
       0);
 
   /**
-   * TpCallContent::streams-added
+   * TpCallContent::streams-added:
    * @self: the #TpCallContent
    * @streams: (type GLib.PtrArray) (element-type TelepathyGLib.CallStream):
    *  a #GPtrArray of newly added #TpCallStream
@@ -690,7 +690,7 @@ tp_call_content_class_init (TpCallContentClass *klass)
       1, G_TYPE_PTR_ARRAY);
 
   /**
-   * TpCallContent::streams-removed
+   * TpCallContent::streams-removed:
    * @self: the #TpCallContent
    * @streams: (type GLib.PtrArray) (element-type TelepathyGLib.CallStream):
    *  a #GPtrArray of newly removed #TpCallStream
