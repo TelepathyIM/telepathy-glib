@@ -128,6 +128,13 @@ if test "x$enable_fatal_warnings" = xyes; then
   esac
 fi
 
+if test "x$enable_fatal_warnings" = xyes; then
+  ERROR_SCANNERFLAGS=--warn-error
+else
+  ERROR_SCANNERFLAGS=
+fi
+AC_SUBST([ERROR_SCANNERFLAGS])
+
 # Only use this where we really do want things to depend on whether it's
 # a release or not (like ABI-stability enforcement). For fatal warnings,
 # use ${enable_fatal_warnings} instead.

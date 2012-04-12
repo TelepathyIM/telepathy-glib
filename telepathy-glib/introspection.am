@@ -76,12 +76,6 @@ TelepathyGLib_0_12_gir_FILES = \
 	_gen/telepathy-interfaces.h \
 	$(NULL)
 
-if OFFICIAL_RELEASE
-SCANNER_WARN_ERROR =
-else
-SCANNER_WARN_ERROR = --warn-error
-endif
-
 TelepathyGLib_0_12_gir_NAMESPACE = TelepathyGLib
 TelepathyGLib_0_12_gir_VERSION = 0.12
 TelepathyGLib_0_12_gir_LIBS = libtelepathy-glib.la
@@ -93,7 +87,7 @@ TelepathyGLib_0_12_gir_SCANNERFLAGS = \
 	-I$(top_srcdir) \
 	--c-include="telepathy-glib/telepathy-glib.h" \
 	--warn-all \
-	$(SCANNER_WARN_ERROR) \
+	$(ERROR_SCANNERFLAGS) \
 	$(NULL)
 
 TelepathyGLib_0_12_gir_INCLUDES = \
