@@ -183,6 +183,8 @@ gboolean tp_connection_manager_param_is_dbus_property (
     const TpConnectionManagerParam *param);
 gboolean tp_connection_manager_param_get_default (
     const TpConnectionManagerParam *param, GValue *value);
+GVariant *tp_connection_manager_param_dup_default_variant (
+    const TpConnectionManagerParam *param);
 
 void tp_connection_manager_init_known_interfaces (void);
 

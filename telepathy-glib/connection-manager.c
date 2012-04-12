@@ -2576,3 +2576,30 @@ tp_connection_manager_param_get_default (
 
   return TRUE;
 }
+
+/**
+ * tp_connection_manager_param_dup_default_variant:
+ * @param: a parameter supported by a #TpConnectionManager
+ *
+ * Get the default value for this parameter.
+ *
+ * Use g_variant_get_type() to check that the type is what you expect.
+ * For instance, a string parameter should have type
+ * %G_VARIANT_TYPE_STRING.
+ *
+ * Returns: the default value, or %NULL if there is no default
+ * Since: 0.19.UNRELEASED
+ */
+GVariant *
+tp_connection_manager_param_dup_default_variant (
+    const TpConnectionManagerParam *param)
+{
+  g_return_val_if_fail (param != NULL, NULL);
+
+  if ((param->flags & TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT) == 0
+      || !G_IS_VALUE (&param->default_value))
+    return NULL;
+
+  return g_variant_ref_sink (dbus_g_value_build_g_variant (
+        &param->default_value));
+}
