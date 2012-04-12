@@ -91,7 +91,7 @@ class GTypesGenerator(object):
 
         docstring = get_docstring(mapping) or '(Undocumented)'
 
-        self.d('/**\n * %s:\n *\n' % name)
+        self.d('/**\n * %s:\n *\n' % name.strip())
         self.d(' * %s\n' % xml_escape(docstring))
         self.d(' *\n')
         self.d(' * This macro expands to a call to a function\n')
