@@ -154,6 +154,54 @@ tp_tests_room_list_chan_init (TpTestsRoomListChan *self)
 }
 
 static void
+add_room (GPtrArray *rooms)
+{
+  GHashTable *hash;
+
+  hash = tp_asv_new (
+      "handle-name", G_TYPE_STRING, "the handle name",
+      "name", G_TYPE_STRING, "the name",
+      "description", G_TYPE_STRING, "the description",
+      "subject", G_TYPE_STRING, "the subject",
+      "members", G_TYPE_UINT, 10,
+      "password", G_TYPE_BOOLEAN, TRUE,
+      "invite-only", G_TYPE_BOOLEAN, TRUE,
+      "room-id", G_TYPE_STRING, "the room id",
+      "server", G_TYPE_STRING, "the server",
+      NULL);
+
+  g_ptr_array_add (rooms, tp_value_array_build (3,
+        G_TYPE_UINT, 0,
+        G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
+        TP_HASH_TYPE_STRING_VARIANT_MAP, hash,
+        G_TYPE_INVALID));
+
+  g_hash_table_unref (hash);
+}
+
+static gboolean
+find_rooms (gpointer data)
+{
+  TpTestsRoomListChan *self = TP_TESTS_ROOM_LIST_CHAN (data);
+  GPtrArray *rooms;
+
+  rooms = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
+
+  /* Find 2 rooms */
+  add_room (rooms);
+  add_room (rooms);
+  tp_svc_channel_type_room_list_emit_got_rooms (self, rooms);
+  g_ptr_array_set_size (rooms, 0);
+
+  /* Find 1 room */
+  add_room (rooms);
+  tp_svc_channel_type_room_list_emit_got_rooms (self, rooms);
+  g_ptr_array_unref (rooms);
+
+  return FALSE;
+}
+
+static void
 room_list_list_rooms (TpSvcChannelTypeRoomList *chan,
     DBusGMethodInvocation *context)
 {
@@ -170,6 +218,8 @@ room_list_list_rooms (TpSvcChannelTypeRoomList *chan,
 
   self->priv->listing = TRUE;
   tp_svc_channel_type_room_list_emit_listing_rooms (self, TRUE);
+
+  g_idle_add (find_rooms, self);
 
   tp_svc_channel_type_room_list_return_from_list_rooms (context);
 }

@@ -22,6 +22,7 @@
 #define __TP_ROOM_LIST_CHANNEL_H__
 
 #include <telepathy-glib/channel.h>
+#include <telepathy-glib/room-info.h>
 
 G_BEGIN_DECLS
 

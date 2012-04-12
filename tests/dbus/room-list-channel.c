@@ -32,6 +32,7 @@ typedef struct {
     TpConnection *connection;
     TpRoomListChannel *channel;
 
+    GPtrArray *rooms; /* reffed TpRoomInfo */
     GError *error /* initialized where needed */;
     gint wait;
 } Test;
@@ -77,6 +78,8 @@ setup (Test *test,
 
   test->error = NULL;
 
+  test->rooms = g_ptr_array_new_with_free_func (g_object_unref);
+
   /* Create (service and client sides) connection objects */
   tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
       "me@test.com", &test->base_connection, &test->connection);
@@ -101,6 +104,7 @@ teardown (Test *test,
   g_object_unref (test->base_connection);
 
   tp_clear_object (&test->channel);
+  g_ptr_array_unref (test->rooms);
 }
 
 static void
@@ -175,10 +179,24 @@ notify_cb (GObject *object,
 }
 
 static void
+got_rooms_cb (TpRoomListChannel *channel,
+    TpRoomInfo *room,
+    Test *test)
+{
+  g_ptr_array_add (test->rooms, g_object_ref (room));
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
 test_listing (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GQuark features[] = { TP_ROOM_LIST_CHANNEL_FEATURE_LISTING, 0 };
+  TpRoomInfo *room;
+  gboolean known;
 
   g_assert (!tp_room_list_channel_get_listing (test->channel));
 
@@ -193,14 +211,38 @@ test_listing (Test *test,
   g_signal_connect (test->channel, "notify::listing",
       G_CALLBACK (notify_cb), test);
 
+  g_signal_connect (test->channel, "got-rooms",
+      G_CALLBACK (got_rooms_cb), test);
+
   tp_room_list_channel_start_listing_async (test->channel, start_listing_cb,
       test);
 
-  test->wait = 2;
+  test->wait = 5;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
   g_assert (tp_room_list_channel_get_listing (test->channel));
+
+  g_assert_cmpuint (test->rooms->len, ==, 3);
+
+  room = g_ptr_array_index (test->rooms, 0);
+  g_assert (TP_IS_ROOM_INFO (room));
+
+  g_assert_cmpuint (tp_room_info_get_handle (room), ==, 0);
+  g_assert_cmpstr (tp_room_info_get_channel_type (room), ==,
+      TP_IFACE_CHANNEL_TYPE_TEXT);
+  g_assert_cmpstr (tp_room_info_get_handle_name (room), ==, "the handle name");
+  g_assert_cmpstr (tp_room_info_get_name (room), ==, "the name");
+  g_assert_cmpstr (tp_room_info_get_description (room), ==, "the description");
+  g_assert_cmpstr (tp_room_info_get_subject (room), ==, "the subject");
+  g_assert_cmpuint (tp_room_info_get_members (room, &known), ==, 10);
+  g_assert (known);
+  g_assert (tp_room_info_get_requires_password (room, &known));
+  g_assert (known);
+  g_assert (tp_room_info_get_invite_only (room, &known));
+  g_assert (known);
+  g_assert_cmpstr (tp_room_info_get_room_id (room), ==, "the room id");
+  g_assert_cmpstr (tp_room_info_get_server (room), ==, "the server");
 }
 
 int

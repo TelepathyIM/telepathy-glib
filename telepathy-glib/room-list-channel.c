@@ -54,6 +54,7 @@
 #include <telepathy-glib/gnio-util.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/room-info-internal.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/util-internal.h>
 
@@ -96,6 +97,13 @@ enum
   PROP_LISTING,
 };
 
+enum {
+  SIG_GOT_ROOMS,
+  LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL];
+
 static void
 tp_room_list_channel_get_property (GObject *object,
     guint property_id,
@@ -121,16 +129,44 @@ tp_room_list_channel_get_property (GObject *object,
 }
 
 static void
+got_rooms_cb (TpChannel *channel,
+    const GPtrArray *rooms,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (channel);
+  guint i;
+
+  for (i = 0; i < rooms->len; i++)
+    {
+      TpRoomInfo *room;
+
+      room = _tp_room_info_new (g_ptr_array_index (rooms, i));
+      g_signal_emit (self, signals[SIG_GOT_ROOMS], 0, room);
+      g_object_unref (room);
+    }
+}
+
+static void
 tp_room_list_channel_constructed (GObject *obj)
 {
+  TpChannel *channel = TP_CHANNEL (obj);
   GHashTable *props;
   const char *type;
+  GError *error = NULL;
 
-  props = tp_channel_borrow_immutable_properties (TP_CHANNEL (obj));
+  props = tp_channel_borrow_immutable_properties (channel);
   g_assert (props != NULL);
 
   type = tp_asv_get_string (props, TP_PROP_CHANNEL_CHANNEL_TYPE);
   g_assert_cmpstr (type, ==, TP_IFACE_CHANNEL_TYPE_ROOM_LIST);
+
+  if (tp_cli_channel_type_room_list_connect_to_got_rooms (channel,
+        got_rooms_cb, NULL, NULL, NULL, &error) == NULL)
+    {
+      WARNING ("Failed to connect GotRooms signal: %s", error->message);
+      g_error_free (error);
+    }
 }
 
 enum {
@@ -263,6 +299,22 @@ tp_room_list_channel_class_init (TpRoomListChannelClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (gobject_class, PROP_LISTING, param_spec);
 
+
+  /**
+   * TpRoomListChannel::got-rooms:
+   * @self: a #TpRoomListChannel
+   *
+   * TODO
+   *
+   * Since: UNRELEASED
+   */
+  signals[SIG_GOT_ROOMS] = g_signal_new ("got-rooms",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL, NULL,
+      G_TYPE_NONE,
+      1, TP_TYPE_ROOM_INFO);
+
   g_type_class_add_private (gobject_class, sizeof (TpRoomListChannelPrivate));
 }
 
@@ -354,6 +406,17 @@ list_rooms_cb (TpChannel *channel,
   g_simple_async_result_complete (result);
 }
 
+/**
+ * tp_room_list_channel_start_listing_async:
+ * @self: a #TpRoomListChannel
+ * @callback: a callback to call when room listing have been started
+ * @user_data: data to pass to @callback
+ *
+ * Start listing rooms using @self. Use the TpRoomListChannel::got-rooms
+ * signal to get the rooms found.
+ *
+ * Since: UNRELEASED
+ */
 void
 tp_room_list_channel_start_listing_async (TpRoomListChannel *self,
     GAsyncReadyCallback callback,
@@ -368,6 +431,19 @@ tp_room_list_channel_start_listing_async (TpRoomListChannel *self,
       list_rooms_cb, result, g_object_unref, G_OBJECT (self));
 }
 
+/**
+ * tp_room_list_channel_start_listing_finish:
+ * @self: a #TpRoomListChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if the room listing process has been started,
+ * %FALSE otherwise.
+ *
+ * Since: UNRELEASED
+ */
 gboolean
 tp_room_list_channel_start_listing_finish (TpRoomListChannel *self,
     GAsyncResult *result,
