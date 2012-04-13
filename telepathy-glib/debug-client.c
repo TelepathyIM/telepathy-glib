@@ -90,6 +90,13 @@ enum
   PROP_ENABLED = 1
 };
 
+enum {
+  SIG_NEW_DEBUG_MESSAGE,
+  LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL];
+
 static void
 tp_debug_client_init (TpDebugClient *self)
 {
@@ -117,11 +124,29 @@ tp_debug_client_get_property (GObject *object,
 }
 
 static void
+new_debug_message_cb (TpDebugClient *self,
+    gdouble timestamp,
+    const gchar *domain,
+    TpDebugLevel level,
+    const gchar *message,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpDebugMessage *msg;
+
+  msg = _tp_debug_message_new (timestamp, domain, level, message);
+
+  g_signal_emit (self, signals[SIG_NEW_DEBUG_MESSAGE], 0, msg);
+  g_object_unref (msg);
+}
+
+static void
 tp_debug_client_constructed (GObject *object)
 {
   TpDebugClient *self = TP_DEBUG_CLIENT (object);
   TpProxy *proxy = TP_PROXY (object);
   GObjectClass *parent_class = G_OBJECT_CLASS (tp_debug_client_parent_class);
+  GError *error = NULL;
 
   if (parent_class->constructed != NULL)
     parent_class->constructed (object);
@@ -130,6 +155,13 @@ tp_debug_client_constructed (GObject *object)
       tp_proxy_get_dbus_daemon (proxy), tp_proxy_get_bus_name (proxy),
       name_owner_changed_cb, object, NULL);
   tp_debug_client_prepare_core (self);
+
+  if (!tp_cli_debug_connect_to_new_debug_message (self, new_debug_message_cb,
+        NULL, NULL, NULL, &error))
+    {
+      WARNING ("Failed to connect to NewDebugMessage: %s", error->message);
+      g_error_free (error);
+    }
 }
 
 static void
@@ -176,6 +208,23 @@ tp_debug_client_class_init (TpDebugClientClass *klass)
       FALSE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ENABLED, spec);
+
+  /**
+   * TpDebugClient::new-debug-message:
+   * @self: a #TpDebugClient
+   * @message: a #TpDebugMessage
+   *
+   * Emitted when a #TpDebugMessage is generated if the TpDebugMessage:enabled
+   * property is set to %TRUE.
+   *
+   * Since: UNRELEASED
+   */
+  signals[SIG_NEW_DEBUG_MESSAGE] = g_signal_new ("new-debug-message",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL, NULL,
+      G_TYPE_NONE,
+      1, TP_TYPE_DEBUG_MESSAGE);
 
   g_type_class_add_private (klass, sizeof (TpDebugClientPrivate));
   tp_debug_client_init_known_interfaces ();

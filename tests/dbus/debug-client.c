@@ -27,6 +27,7 @@ typedef struct {
     TpDebugClient *client;
 
     GPtrArray *messages;
+    TpDebugMessage *message;
     GError *error /* initialized where needed */;
     gint wait;
 } Test;
@@ -62,6 +63,7 @@ teardown (Test *test,
   tp_clear_object (&test->client);
 
   tp_clear_pointer (&test->messages, g_ptr_array_unref);
+  tp_clear_object (&test->message);
 }
 
 static void
@@ -237,6 +239,46 @@ test_get_messages (Test *test,
   g_assert_cmpstr (tp_debug_message_get_message (msg), ==, "message1");
 }
 
+static void
+new_debug_message_cb (TpDebugClient *client,
+    TpDebugMessage *message,
+    Test *test)
+{
+  tp_clear_object (&test->message);
+
+  test->message = g_object_ref (message);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+
+}
+
+static void
+test_new_debug_message (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  g_signal_connect (test->client, "new-debug-message",
+      G_CALLBACK (new_debug_message_cb), test);
+
+  g_object_set (test->sender, "enabled", TRUE, NULL);
+
+  tp_debug_sender_add_message (test->sender, NULL, "domain",
+      G_LOG_LEVEL_DEBUG, "new message");
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (TP_IS_DEBUG_MESSAGE (test->message));
+
+  g_assert_cmpstr (tp_debug_message_get_domain (test->message), ==, "domain");
+  g_assert_cmpuint (tp_debug_message_get_level (test->message), ==,
+      G_LOG_LEVEL_DEBUG);
+  g_assert_cmpstr (tp_debug_message_get_message (test->message), ==,
+      "new message");
+}
+
 int
 main (int argc,
       char **argv)
@@ -254,6 +296,8 @@ main (int argc,
       test_set_enabled, teardown);
   g_test_add ("/debug-client/get-messages", Test, NULL, setup,
       test_get_messages, teardown);
+  g_test_add ("/debug-client/new-debug-message", Test, NULL, setup,
+      test_new_debug_message, teardown);
 
   return g_test_run ();
 }
