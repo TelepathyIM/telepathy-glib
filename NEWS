@@ -8,6 +8,14 @@ Enhancements:
 
 • Improve stream tube examples (Guillaume)
 
+• Replace --disable-coding-style-checks and --disable-doc-checks with
+  --disable-fatal-warnings. In addition to what the removed options did,
+  it changes the default for --disable-Werror and turns off
+  g-ir-scanner warnings. In future releases, it might control additional
+  "warnings are treated as errors" options. Developers can also use
+  --enable-fatal-warnings to force all of these on, even in official
+  releases. (Simon)
+
 Fixes:
 
 • Change the type of TpStreamTubeConnection::closed's argument from
