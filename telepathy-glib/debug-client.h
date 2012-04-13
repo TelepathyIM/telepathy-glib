@@ -50,6 +50,8 @@ gboolean tp_debug_client_set_enabled_finish (
     GAsyncResult *result,
     GError **error);
 
+gboolean tp_debug_client_is_enabled (TpDebugClient *self);
+
 /* Tedious GObject boilerplate */
 
 GType tp_debug_client_get_type (void);

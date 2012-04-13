@@ -7191,6 +7191,7 @@ tp_debug_client_init_known_interfaces
 tp_debug_client_new
 tp_debug_client_set_enabled_async
 tp_debug_client_set_enabled_finish
+tp_debug_client_is_enabled
 <SUBSECTION Standard>
 TP_DEBUG_CLIENT
 TP_DEBUG_CLIENT_CLASS

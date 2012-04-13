@@ -84,11 +84,35 @@ static void name_owner_changed_cb (TpDBusDaemon *bus,
 
 G_DEFINE_TYPE (TpDebugClient, tp_debug_client, TP_TYPE_PROXY)
 
+enum
+{
+  PROP_ENABLED = 1
+};
+
 static void
 tp_debug_client_init (TpDebugClient *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_DEBUG_CLIENT,
       TpDebugClientPrivate);
+}
+
+static void
+tp_debug_client_get_property (GObject *object,
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
+{
+  TpDebugClient *self = TP_DEBUG_CLIENT (object);
+
+  switch (property_id)
+    {
+      case PROP_ENABLED:
+        g_value_set_boolean (value, self->priv->enabled);
+        break;
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+        break;
+    }
 }
 
 static void
@@ -126,13 +150,31 @@ tp_debug_client_class_init (TpDebugClientClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *) klass;
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
+  GParamSpec *spec;
 
+  object_class->get_property = tp_debug_client_get_property;
   object_class->constructed = tp_debug_client_constructed;
   object_class->dispose = tp_debug_client_dispose;
 
   proxy_class->must_have_unique_name = TRUE;
   proxy_class->interface = TP_IFACE_QUARK_DEBUG;
   proxy_class->list_features = tp_debug_client_list_features;
+
+  /**
+   * TpDebugClient:enabled:
+   *
+   * %TRUE if debug messages are published on the bus.
+   *
+   * This property is meaningless until the
+   * %TP_DEBUG_CLIENT_FEATURE_CORE feature has been prepared.
+   *
+   * Since: UNRELEASED
+   */
+  spec = g_param_spec_boolean ("enabled", "enabled",
+      "Enabled",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_ENABLED, spec);
 
   g_type_class_add_private (klass, sizeof (TpDebugClientPrivate));
   tp_debug_client_init_known_interfaces ();
@@ -349,4 +391,20 @@ tp_debug_client_set_enabled_finish (
     GError **error)
 {
   _tp_implement_finish_void (self, tp_debug_client_set_enabled_async)
+}
+
+/**
+ * tp_debug_client_is_enabled:
+ * @self: a #TpDebugClient
+ *
+ * Return the #TpDebugClient:enabled property
+ *
+ * Returns: the value of #TpDebugClient:enabled property
+ *
+ * Since: UNRELEASED
+ */
+gboolean
+tp_debug_client_is_enabled (TpDebugClient *self)
+{
+  return self->priv->enabled;
 }
