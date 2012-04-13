@@ -128,6 +128,51 @@ test_core_feature (Test *test,
   g_assert (tp_debug_client_is_enabled (test->client));
 }
 
+static void
+set_enabled_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_debug_client_set_enabled_finish (TP_DEBUG_CLIENT (source),
+      result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_set_enabled (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  gboolean enabled;
+
+  g_object_get (test->sender, "enabled", &enabled, NULL);
+  g_assert (!enabled);
+
+  /* Enable */
+  tp_debug_client_set_enabled_async (test->client, TRUE, set_enabled_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_object_get (test->sender, "enabled", &enabled, NULL);
+  g_assert (enabled);
+
+  /* Disable */
+  tp_debug_client_set_enabled_async (test->client, FALSE, set_enabled_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_object_get (test->sender, "enabled", &enabled, NULL);
+  g_assert (!enabled);
+}
+
 int
 main (int argc,
       char **argv)
@@ -141,6 +186,8 @@ main (int argc,
       test_invalidated, teardown);
   g_test_add ("/debug-client/core-feature", Test, NULL, setup,
       test_core_feature, teardown);
+  g_test_add ("/debug-client/set-enabled", Test, NULL, setup,
+      test_set_enabled, teardown);
 
   return g_test_run ();
 }
