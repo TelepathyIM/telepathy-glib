@@ -99,6 +99,7 @@
     <xi:include href="xml/call-stream.xml"/>
     <xi:include href="xml/call-misc.xml"/>
     <xi:include href="xml/debug-client.xml"/>
+    <xi:include href="xml/debug-message.xml"/>
   </chapter>
 
   <chapter id="ch-service-dbus">

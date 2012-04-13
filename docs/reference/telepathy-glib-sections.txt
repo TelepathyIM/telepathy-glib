@@ -7205,3 +7205,28 @@ tp_debug_client_get_feature_quark_core
 <SUBSECTION Private>
 TpDebugClientPrivate
 </SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
+<FILE>debug-message</FILE>
+<TITLE>TpDebugMessage</TITLE>
+<SUBSECTION>
+TpDebugMessage
+TpDebugMessageClass
+tp_debug_client_get_messages_async
+tp_debug_client_get_messages_finish
+tp_debug_message_get_domain
+tp_debug_message_get_level
+tp_debug_message_get_message
+tp_debug_message_get_time
+<SUBSECTION Standard>
+TP_DEBUG_MESSAGE
+TP_DEBUG_MESSAGE_CLASS
+TP_DEBUG_MESSAGE_GET_CLASS
+TP_IS_DEBUG_MESSAGE
+TP_IS_DEBUG_MESSAGE_CLASS
+TP_TYPE_DEBUG_MESSAGE
+tp_debug_message_get_type
+<SUBSECTION Private>
+TpDebugMessagePriv
+</SECTION>

@@ -79,6 +79,7 @@ our_headers = \
     debug-sender.h \
     debug-client.h \
     debug-ansi.h \
+    debug-message.h \
     dtmf.h \
     enums.h \
     errors.h \
@@ -238,6 +239,8 @@ libtelepathy_glib_internal_la_SOURCES = \
     debug.c \
     debug-client.c \
     debug-sender.c \
+    debug-message.c \
+    debug-message-internal.h \
     deprecated-internal.h \
     dtmf.c \
     interfaces.c \
