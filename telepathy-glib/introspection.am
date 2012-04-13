@@ -90,19 +90,13 @@ TelepathyGLib_1_gir_LIBS = \
     $(NULL)
 TelepathyGLib_1_gir_EXPORT_PACKAGES = telepathy-glib-1
 
-if OFFICIAL_RELEASE
-SCANNER_WARN_ERROR =
-else
-SCANNER_WARN_ERROR = --warn-error
-endif
-
 TelepathyGLib_1_gir_SCANNERFLAGS = \
 	--identifier-prefix=Tp \
 	-I$(top_builddir) \
 	-I$(top_srcdir) \
 	--c-include="telepathy-glib/telepathy-glib.h" \
 	--warn-all \
-	$(SCANNER_WARN_ERROR) \
+	$(ERROR_SCANNERFLAGS) \
 	$(NULL)
 
 TelepathyGLib_1_gir_INCLUDES = \
@@ -127,7 +121,7 @@ TelepathyGLibDBus_1_gir_SCANNERFLAGS = \
 	-I$(top_srcdir) \
 	--c-include="telepathy-glib/telepathy-glib.h" \
 	--warn-all \
-	$(SCANNER_WARN_ERROR) \
+	$(ERROR_SCANNERFLAGS) \
 	--include-uninstalled=TelepathyGLib-1.gir \
 	$(NULL)
 TelepathyGLibDBus_1_gir_INCLUDES = \

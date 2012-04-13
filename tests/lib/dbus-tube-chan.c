@@ -18,6 +18,12 @@
 #include <telepathy-glib/gnio-util.h>
 #include <glib/gstdio.h>
 
+#if defined(G_OS_UNIX)
+#   define LISTEN_ADDRESS "unix:tmpdir=/tmp"
+#else
+#   define LISTEN_ADDRESS "tcp:host=127.0.0.1"
+#endif
+
 enum
 {
   PROP_SERVICE_NAME = 1,
@@ -327,8 +333,7 @@ open_tube (TpTestsDBusTubeChannel *self)
 
   guid = g_dbus_generate_guid ();
 
-  self->priv->dbus_server = g_dbus_server_new_sync (
-      "unix:abstract=dbus-tube-test",
+  self->priv->dbus_server = g_dbus_server_new_sync (LISTEN_ADDRESS,
       G_DBUS_SERVER_FLAGS_NONE, guid, NULL, NULL, &error);
   g_assert_no_error (error);
 
