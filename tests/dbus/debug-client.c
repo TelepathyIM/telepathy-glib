@@ -94,6 +94,40 @@ test_invalidated (Test *test,
   g_assert_no_error (test->error);
 }
 
+static void
+proxy_prepare_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_proxy_prepare_finish (source, result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_core_feature (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_DEBUG_CLIENT_FEATURE_CORE, 0 };
+
+  g_object_set (test->sender, "enabled", TRUE, NULL);
+
+  /* feature is not prepared yet */
+  g_assert (!tp_debug_client_is_enabled (test->client));
+
+  tp_proxy_prepare_async (test->client, features, proxy_prepare_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (tp_debug_client_is_enabled (test->client));
+}
+
 int
 main (int argc,
       char **argv)
@@ -105,6 +139,8 @@ main (int argc,
       test_creation, teardown);
   g_test_add ("/debug-client/invalidated", Test, NULL, setup,
       test_invalidated, teardown);
+  g_test_add ("/debug-client/core-feature", Test, NULL, setup,
+      test_core_feature, teardown);
 
   return g_test_run ();
 }
