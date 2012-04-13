@@ -23,6 +23,7 @@
 
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/proxy.h>
+#include <telepathy-glib/debug-message.h>
 
 G_BEGIN_DECLS
 
@@ -73,6 +74,15 @@ GType tp_debug_client_get_type (void);
                               TpDebugClientClass))
 
 void tp_debug_client_init_known_interfaces (void);
+
+void tp_debug_client_get_messages_async (
+    TpDebugClient *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+GPtrArray * tp_debug_client_get_messages_finish (TpDebugClient *self,
+    GAsyncResult *result,
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 G_END_DECLS
 

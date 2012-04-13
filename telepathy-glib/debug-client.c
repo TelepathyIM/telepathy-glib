@@ -19,6 +19,7 @@
  */
 
 #include <telepathy-glib/debug-client.h>
+#include <telepathy-glib/debug-message-internal.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
@@ -407,4 +408,92 @@ gboolean
 tp_debug_client_is_enabled (TpDebugClient *self)
 {
   return self->priv->enabled;
+}
+
+static void
+get_messages_cb (TpDebugClient *self,
+    const GPtrArray *messages,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+  guint i;
+  GPtrArray *messages_arr;
+
+  if (error != NULL)
+    {
+      DEBUG ("GetMessages() failed: %s", error->message);
+      goto out;
+    }
+
+  messages_arr = g_ptr_array_new_with_free_func (g_object_unref);
+
+  for (i = 0; i < messages->len; i++)
+    {
+      TpDebugMessage *msg;
+      gdouble timestamp;
+      const gchar *domain, *message;
+      TpDebugLevel level;
+
+      tp_value_array_unpack (g_ptr_array_index (messages, i), 4,
+          &timestamp, &domain, &level, &message);
+
+      msg = _tp_debug_message_new (timestamp, domain, level, message);
+
+      g_ptr_array_add (messages_arr, msg);
+    }
+
+  g_simple_async_result_set_op_res_gpointer (result, messages_arr,
+      (GDestroyNotify) g_ptr_array_unref);
+
+out:
+  g_simple_async_result_complete (result);
+}
+
+/**
+ * tp_debug_client_get_messages_async:
+ * @self: a #TpDebugClient
+ * @callback: callback to call when the messages have been retrieved
+ * @user_data: data to pass to @callback
+ *
+ * Retrieve buffered messages from @self. Once @callback is called,
+ * use tp_debug_client_get_messages_finish() to retrieve the #TpDebugMessage
+ * objects.
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_debug_client_get_messages_async (
+    TpDebugClient *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result = g_simple_async_result_new (G_OBJECT (self),
+      callback, user_data, tp_debug_client_set_enabled_async);
+
+  tp_cli_debug_call_get_messages (self, -1, get_messages_cb,
+      result, g_object_unref, NULL);
+}
+
+/**
+ * tp_debug_client_get_messages_finish:
+ * @self: a #TpDebugClient
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_debug_client_set_enabled_async().
+ *
+ * Returns: (transfer full) (type GLib.PtrArray) (element-type TelepathyGLib.DebugMessage):
+ * a #GPtrArray of #TpDebugMessage
+ *
+ * Since: UNRELEASED
+ */
+GPtrArray *
+tp_debug_client_get_messages_finish (TpDebugClient *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_return_copy_pointer (self,
+      tp_debug_client_set_enabled_async, g_ptr_array_ref)
 }

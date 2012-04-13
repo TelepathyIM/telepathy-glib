@@ -26,6 +26,7 @@ typedef struct {
     /* Client side object */
     TpDebugClient *client;
 
+    GPtrArray *messages;
     GError *error /* initialized where needed */;
     gint wait;
 } Test;
@@ -59,6 +60,8 @@ teardown (Test *test,
 
   tp_clear_object (&test->sender);
   tp_clear_object (&test->client);
+
+  tp_clear_pointer (&test->messages, g_ptr_array_unref);
 }
 
 static void
@@ -173,6 +176,67 @@ test_set_enabled (Test *test,
   g_assert (!enabled);
 }
 
+static void
+get_messages_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_clear_pointer (&test->messages, g_ptr_array_unref);
+
+  test->messages = tp_debug_client_get_messages_finish (
+      TP_DEBUG_CLIENT (source), result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_get_messages (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GDateTime *time1, *time2, *t;
+  GTimeVal time_val;
+  TpDebugMessage *msg;
+
+  time1 = g_date_time_new_now_utc ();
+  g_date_time_to_timeval (time1, &time_val);
+
+  tp_debug_sender_add_message (test->sender, &time_val, "domain1",
+      G_LOG_LEVEL_MESSAGE, "message1");
+
+  time2 = g_date_time_new_now_local ();
+  g_date_time_to_timeval (time2, &time_val);
+
+  tp_debug_sender_add_message (test->sender, &time_val, "domain2",
+      G_LOG_LEVEL_DEBUG, "message2");
+
+  tp_debug_client_get_messages_async (test->client, get_messages_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (test->messages != NULL);
+  g_assert_cmpuint (test->messages->len, ==, 2);
+
+  msg = g_ptr_array_index (test->messages, 0);
+  g_assert (TP_IS_DEBUG_MESSAGE (msg));
+
+  t = tp_debug_message_get_time (msg);
+  g_assert (t != NULL);
+  /* Don't use g_date_time_equal() as the gouble -> GDateTime conversion in
+   * _tp_debug_message_new() may result in a difference of one (!)
+   * millisecond */
+  g_assert_cmpuint (g_date_time_to_unix (t), ==, g_date_time_to_unix (time1));
+
+  g_assert_cmpstr (tp_debug_message_get_domain (msg), ==, "domain1");
+  g_assert_cmpuint (tp_debug_message_get_level (msg), ==, G_LOG_LEVEL_MESSAGE);
+  g_assert_cmpstr (tp_debug_message_get_message (msg), ==, "message1");
+}
+
 int
 main (int argc,
       char **argv)
@@ -188,6 +252,8 @@ main (int argc,
       test_core_feature, teardown);
   g_test_add ("/debug-client/set-enabled", Test, NULL, setup,
       test_set_enabled, teardown);
+  g_test_add ("/debug-client/get-messages", Test, NULL, setup,
+      test_get_messages, teardown);
 
   return g_test_run ();
 }
