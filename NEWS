@@ -26,7 +26,11 @@ Fixes:
 
 • Make several methods returning a GStrv introspectable (fd.o #46471, Simon)
 
-• Fix warnings with newer gtk-doc and g-ir-scanner (fd.o #48592, Stef Walter)
+• Fix warnings with newer gtk-doc and g-ir-scanner (fd.o #48592, fd.o #48363,
+  fd.o #48620; Stef Walter, Alban Browaeys)
+
+• Don't hard-code use of a particular abstract socket in dbus-tube-chan test,
+  fixing test failure on non-Linux (fd.o #48600, Simon)
 
 telepathy-glib 0.18.0 (2012-04-02)
 ==================================
