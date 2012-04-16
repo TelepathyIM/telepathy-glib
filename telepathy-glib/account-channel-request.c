@@ -36,6 +36,9 @@
  * has to be re-handled. This can be useful for example to move its window
  * to the foreground, if applicable.
  *
+ * Using this object is appropriate for most channel types.
+ * For a contact search channel, use tp_contact_search_new_async() instead.
+ *
  * Since: 0.11.12
  */
 
@@ -1883,4 +1886,118 @@ tp_account_channel_request_set_request_property (
   dbus_g_value_parse_g_variant (value, v);
 
   g_hash_table_insert (self->priv->request, g_strdup (name), v);
+}
+
+/**
+ * tp_account_channel_request_new_audio_call:
+ * @account: a #TpAccount
+ * @user_action_time: the time of the user action that caused this request,
+ *  or one of the special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME (see
+ *  #TpAccountChannelRequest:user-action-time)
+ *
+ * Convenience function to create a new #TpAccountChannelRequest object
+ * which will yield a Call channel, initially carrying audio only.
+ *
+ * After creating the request, you will usually also need to set the "target"
+ * of the channel by calling one of the following functions:
+ *
+ * * tp_account_channel_request_set_target_contact()
+ * * tp_account_channel_request_set_target_id()
+ *
+ * To call a contact, either use
+ * tp_account_channel_request_set_target_contact() or one of the generic
+ * methods that takes a handle type argument. To check whether this
+ * is possible, use tp_capabilities_supports_audio_call() with
+ * @handle_type set to %TP_HANDLE_TYPE_CONTACT.
+ *
+ * In some protocols it is possible to create a conference call which
+ * takes place in a named chatroom, by calling
+ * tp_account_channel_request_set_target_id() with @handle_type
+ * set to %TP_HANDLE_TYPE_ROOM. To test whether this is possible, use
+ * tp_capabilities_supports_audio_call() with @handle_type set to
+ * %TP_HANDLE_TYPE_ROOM.
+ *
+ * In some protocols, it is possible to create a Call channel without
+ * setting a target at all, which will result in a new, empty
+ * conference call. To test whether this is possible, use
+ * tp_capabilities_supports_audio_call() with @handle_type set to
+ * %TP_HANDLE_TYPE_NONE.
+ *
+ * Returns: a new #TpAccountChannelRequest object
+ *
+ * Since: 0.19.UNRELEASED
+ */
+TpAccountChannelRequest *
+tp_account_channel_request_new_audio_call (
+    TpAccount *account,
+    gint64 user_action_time)
+{
+  TpAccountChannelRequest *self;
+  GHashTable *request;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+
+  request = tp_asv_new (
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CALL,
+      TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, G_TYPE_BOOLEAN, TRUE,
+      NULL);
+
+  self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
+      "account", account,
+      "request", request,
+      "user-action-time", user_action_time,
+      NULL);
+  g_hash_table_unref (request);
+  return self;
+}
+
+/**
+ * tp_account_channel_request_new_audio_video_call:
+ * @account: a #TpAccount
+ * @user_action_time: the time of the user action that caused this request,
+ *  or one of the special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME (see
+ *  #TpAccountChannelRequest:user-action-time)
+ *
+ * Convenience function to create a new #TpAccountChannelRequest object
+ * which will yield a Call channel, initially carrying both audio
+ * and video.
+ *
+ * This is the same as tp_account_channel_request_new_audio_call(),
+ * except that the channel will initially carry video as well as audio,
+ * and instead of using tp_capabilities_supports_audio_call()
+ * you should test capabilities with
+ * tp_capabilities_supports_audio_video_call().
+ *
+ * See the documentation of tp_account_channel_request_new_audio_call()
+ * for details of how to set the target (contact, chatroom etc.) for the call.
+ *
+ * Returns: a new #TpAccountChannelRequest object
+ *
+ * Since: 0.19.UNRELEASED
+ */
+TpAccountChannelRequest *
+tp_account_channel_request_new_audio_video_call (
+    TpAccount *account,
+    gint64 user_action_time)
+{
+  TpAccountChannelRequest *self;
+  GHashTable *request;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+
+  request = tp_asv_new (
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CALL,
+      TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, G_TYPE_BOOLEAN, TRUE,
+      TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, G_TYPE_BOOLEAN, TRUE,
+      NULL);
+
+  self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
+      "account", account,
+      "request", request,
+      "user-action-time", user_action_time,
+      NULL);
+  g_hash_table_unref (request);
+  return self;
 }

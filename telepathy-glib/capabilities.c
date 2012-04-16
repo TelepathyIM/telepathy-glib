@@ -520,7 +520,13 @@ supports_call_full (TpCapabilities *self,
  *  private, #TP_HANDLE_TYPE_ROOM or #TP_HANDLE_TYPE_NONE for conference
  *  (depending on the protocol)
  *
- * Return whether audio call can be established.
+ * Return whether audio calls can be established, for instance by calling
+ * tp_account_channel_request_new_audio_call(), followed by
+ * tp_account_channel_request_set_target_id() with @handle_type.
+ *
+ * To check whether requests using
+ * tp_account_channel_request_set_target_contact() would work, set
+ * @handle_type to %TP_HANDLE_TYPE_CONTACT.
  *
  * Returns: %TRUE if a channel request containing Call as ChannelType,
  * @handle_type as TargetHandleType, a True value for InitialAudio and an
@@ -542,7 +548,13 @@ tp_capabilities_supports_audio_call (TpCapabilities *self,
  *  private, #TP_HANDLE_TYPE_ROOM or #TP_HANDLE_TYPE_NONE for conference
  *  (depending on the protocol)
  *
- * Return whether audio/video call can be established.
+ * Return whether audio/video calls can be established, for instance by calling
+ * tp_account_channel_request_new_audio_video_call(), followed by
+ * tp_account_channel_request_set_target_id() with @handle_type.
+ *
+ * To check whether requests using
+ * tp_account_channel_request_set_target_contact() would work, set
+ * @handle_type to %TP_HANDLE_TYPE_CONTACT.
  *
  * Returns: %TRUE if a channel request containing Call as ChannelType,
  * @handle_type as TargetHandleType, a True value for

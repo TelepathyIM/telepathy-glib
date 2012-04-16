@@ -93,6 +93,15 @@ TpAccountChannelRequest *tp_account_channel_request_new_text (
     TpAccount *account,
     gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
 
+/* Calls */
+
+TpAccountChannelRequest *tp_account_channel_request_new_audio_call (
+    TpAccount *account,
+    gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
+TpAccountChannelRequest *tp_account_channel_request_new_audio_video_call (
+    TpAccount *account,
+    gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
+
 /* Channel target (shared between all channel types) */
 
 void tp_account_channel_request_set_target_contact (
