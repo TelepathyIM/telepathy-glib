@@ -1831,3 +1831,56 @@ tp_account_channel_request_new_text (
   g_hash_table_unref (request);
   return self;
 }
+
+/**
+ * tp_account_channel_request_set_request_property:
+ * @self: a #TpAccountChannelRequest
+ * @name: a D-Bus property name
+ * @value: an arbitrary value for the property
+ *
+ * Configure this channel request to include the given property, as
+ * documented in the Telepathy D-Bus API Specification or an
+ * implementation-specific extension.
+ *
+ * Using this method is not recommended, but it can be necessary for
+ * experimental or implementation-specific interfaces.
+ *
+ * If the property is not supported by the protocol or channel type, the
+ * channel request will fail. Use #TpCapabilities and the Telepathy
+ * D-Bus API Specification to determine which properties are available.
+ *
+ * If @value is a floating reference, this method takes ownership of it
+ * by using g_variant_ref_sink(). This allows convenient inline use of
+ * #GVariant constructors:
+ *
+ * |[
+ * tp_account_channel_request_set_request_property (acr, "com.example.Int",
+ *     g_variant_new_int32 (17));
+ * tp_account_channel_request_set_request_property (acr, "com.example.String",
+ *     g_variant_new_string ("ferret"));
+ * ]|
+ *
+ * It is an error to provide a @value which contains types not supported by
+ * D-Bus.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.19.UNRELEASED
+ */
+void
+tp_account_channel_request_set_request_property (
+    TpAccountChannelRequest *self,
+    const gchar *name,
+    GVariant *value)
+{
+  GValue *v;
+
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+
+  v = g_slice_new0 (GValue);
+  dbus_g_value_parse_g_variant (value, v);
+
+  g_hash_table_insert (self->priv->request, g_strdup (name), v);
+}

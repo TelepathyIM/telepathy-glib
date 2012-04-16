@@ -102,6 +102,13 @@ void tp_account_channel_request_set_target_id (TpAccountChannelRequest *self,
     TpHandleType handle_type,
     const gchar *identifier);
 
+/* Generic low-level */
+
+void tp_account_channel_request_set_request_property (
+    TpAccountChannelRequest *self,
+    const gchar *name,
+    GVariant *value);
+
 /* Request and handle API */
 
 void tp_account_channel_request_create_and_handle_channel_async (
