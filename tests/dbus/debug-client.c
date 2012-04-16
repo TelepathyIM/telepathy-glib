@@ -1,4 +1,4 @@
-/* Tests of TpTextChannel
+/* Tests of TpDebugClient
  *
  * Copyright © 2010 Collabora Ltd. <http://www.collabora.co.uk/>
  *
