@@ -111,6 +111,19 @@ TpAccountChannelRequest *tp_account_channel_request_new_file_transfer (
     guint64 size,
     gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
 
+void tp_account_channel_request_set_file_transfer_description (
+    TpAccountChannelRequest *self,
+    const gchar *description);
+void tp_account_channel_request_set_file_transfer_uri (
+    TpAccountChannelRequest *self,
+    const gchar *uri);
+void tp_account_channel_request_set_file_transfer_timestamp (
+    TpAccountChannelRequest *self,
+    guint64 timestamp);
+void tp_account_channel_request_set_file_transfer_initial_offset (
+    TpAccountChannelRequest *self,
+    guint64 offset);
+
 /* Channel target (shared between all channel types) */
 
 void tp_account_channel_request_set_target_contact (

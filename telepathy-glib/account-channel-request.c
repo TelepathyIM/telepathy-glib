@@ -2064,3 +2064,162 @@ tp_account_channel_request_new_file_transfer (
   g_hash_table_unref (request);
   return self;
 }
+
+/**
+ * tp_account_channel_request_set_file_transfer_description:
+ * @self: a #TpAccountChannelRequest
+ * @description: a description of the file
+ *
+ * Configure this channel request to provide the recipient of the file
+ * with the given description.
+ *
+ * If file descriptions are not supported by the protocol, or if this
+ * method is used on a request that is not actually a file transfer, the
+ * channel request will fail. Use
+ * tp_capabilities_supports_file_transfer_description() to determine
+ * whether outgoing file transfers can have a description.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.19.UNRELEASED
+ */
+void
+tp_account_channel_request_set_file_transfer_description (
+    TpAccountChannelRequest *self,
+    const gchar *description)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+  g_return_if_fail (description != NULL);
+
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DESCRIPTION),
+      tp_g_value_slice_new_string (description));
+}
+
+/**
+ * tp_account_channel_request_set_file_transfer_uri:
+ * @self: a #TpAccountChannelRequest
+ * @uri: the source URI for the file
+ *
+ * Configure this channel request to provide other local Telepathy
+ * components with the URI of the file being sent. Unlike most
+ * properties on a file transfer channel, this information is not
+ * sent to the recipient of the file; instead, it is signalled on
+ * D-Bus for use by other Telepathy components.
+ *
+ * The URI should usually be a <code>file</code> URI as defined by
+ * <ulink url="http://www.apps.ietf.org/rfc/rfc1738.html#sec-3.10">RFC 1738
+ * §3.10</ulink> (for instance, <code>file:///path/to/file</code> or
+ * <code>file://localhost/path/to/file</code>). If a remote resource
+ * is being transferred to a contact, it may have a different scheme,
+ * such as <code>http</code>.
+ *
+ * Even if this method is used, the connection manager will not read
+ * the file from disk: the handler for the channel is still
+ * responsible for streaming the file. However, providing the URI
+ * allows a local logger to log which file was transferred, for instance.
+ *
+ * If this functionality is not supported by the connection manager, or
+ * if this method is used on a request that is not actually a file transfer,
+ * the channel request will fail. Use
+ * tp_capabilities_supports_file_transfer_uri() to determine
+ * whether outgoing file transfers can have a URI.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.19.UNRELEASED
+ */
+void
+tp_account_channel_request_set_file_transfer_uri (
+    TpAccountChannelRequest *self,
+    const gchar *uri)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+  g_return_if_fail (uri != NULL);
+
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_URI),
+      tp_g_value_slice_new_string (uri));
+}
+
+/**
+ * tp_account_channel_request_set_file_transfer_timestamp:
+ * @self: a #TpAccountChannelRequest
+ * @timestamp: the modification timestamp of the file, in seconds since the
+ *  Unix epoch (the beginning of 1970 in the UTC time zone), as returned
+ *  by g_date_time_to_unix()
+ *
+ * Configure this channel request to accompany the file transfer with
+ * the given modification timestamp for the file.
+ *
+ * If file timestamps are not supported by the protocol, or if this
+ * method is used on a request that is not actually a file transfer, the
+ * channel request will fail. Use
+ * tp_capabilities_supports_file_transfer_date() to determine
+ * whether outgoing file transfers can have a timestamp.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.19.UNRELEASED
+ */
+void
+tp_account_channel_request_set_file_transfer_timestamp (
+    TpAccountChannelRequest *self,
+    guint64 timestamp)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DATE),
+      tp_g_value_slice_new_uint64 (timestamp));
+}
+
+/**
+ * tp_account_channel_request_set_file_transfer_initial_offset:
+ * @self: a #TpAccountChannelRequest
+ * @offset: the offset into the file at which the transfer will start
+ *
+ * Configure this channel request to inform the recipient of the file
+ * that this channel will not send the first @offset bytes of the file.
+ * In some protocols, this can be used to resume an interrupted transfer.
+ *
+ * If this method is not called, the default is to start from the
+ * beginning of the file (equivalent to @offset = 0).
+ *
+ * If offsets greater than 0 are not supported by the protocol, or if this
+ * method is used on a request that is not actually a file transfer, the
+ * channel request will fail. Use
+ * tp_capabilities_supports_file_transfer_initial_offset() to determine
+ * whether offsets greater than 0 are available.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.19.UNRELEASED
+ */
+void
+tp_account_channel_request_set_file_transfer_initial_offset (
+    TpAccountChannelRequest *self,
+    guint64 offset)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+
+  if (offset == 0)
+    {
+      g_hash_table_remove (self->priv->request,
+          TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET);
+    }
+  else
+    {
+      g_hash_table_insert (self->priv->request,
+          g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET),
+          tp_g_value_slice_new_uint64 (offset));
+    }
+}
