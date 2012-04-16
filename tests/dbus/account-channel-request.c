@@ -218,6 +218,15 @@ test_handle_create_success (Test *test,
   g_assert (TP_IS_CHANNEL_REQUEST (chan_req));
   g_assert (tp_account_channel_request_get_channel_request (req) == chan_req);
   g_object_unref (chan_req);
+
+  /* The request had the properties we wanted */
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_TEXT);
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
+  g_assert_cmpuint (tp_asv_get_uint32 (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL), ==, TP_HANDLE_TYPE_CONTACT);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 3);
 }
 
 /* ChannelDispatcher.CreateChannel() call fails */
@@ -356,6 +365,15 @@ test_handle_ensure_success (Test *test,
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_YOURS);
 
   g_object_unref (alice);
+
+  /* The request had the properties we wanted */
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_TEXT);
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
+  g_assert_cmpuint (tp_asv_get_uint32 (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL), ==, TP_HANDLE_TYPE_CONTACT);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 3);
 }
 
 /* Cancel the operation before starting it */

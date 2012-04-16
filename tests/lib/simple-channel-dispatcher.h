@@ -29,6 +29,13 @@ struct _TpTestsSimpleChannelDispatcherClass {
 struct _TpTestsSimpleChannelDispatcher {
     GObject parent;
 
+    /* so regression tests can verify what was asked for */
+    GHashTable *last_request;
+    gchar *last_account;
+    gint64 last_user_action_time;
+    gchar *last_preferred_handler;
+    GHashTable *last_hints;
+
     TpTestsSimpleChannelDispatcherPrivate *priv;
 
     gboolean refuse_delegate;

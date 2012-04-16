@@ -124,6 +124,16 @@ create_channel (TpTestsSimpleChannelDispatcher *self,
     GHashTable *hints,
     DBusGMethodInvocation *context)
 {
+  tp_clear_pointer (&self->last_request, g_hash_table_unref);
+  self->last_request = g_boxed_copy (TP_HASH_TYPE_STRING_VARIANT_MAP, request);
+  tp_clear_pointer (&self->last_hints, g_hash_table_unref);
+  self->last_hints = g_boxed_copy (TP_HASH_TYPE_STRING_VARIANT_MAP, request);
+  self->last_user_action_time = user_action_time;
+  g_free (self->last_account);
+  self->last_account = g_strdup (account);
+  g_free (self->last_preferred_handler);
+  self->last_preferred_handler = g_strdup (preferred_handler);
+
   if (tp_asv_get_boolean (request, "CreateChannelFail", NULL))
     {
       /* Fail to create the channel */
@@ -193,6 +203,16 @@ ensure_channel (TpTestsSimpleChannelDispatcher *self,
     GHashTable *hints,
     DBusGMethodInvocation *context)
 {
+  tp_clear_pointer (&self->last_request, g_hash_table_unref);
+  self->last_request = g_boxed_copy (TP_HASH_TYPE_STRING_VARIANT_MAP, request);
+  tp_clear_pointer (&self->last_hints, g_hash_table_unref);
+  self->last_hints = g_boxed_copy (TP_HASH_TYPE_STRING_VARIANT_MAP, request);
+  self->last_user_action_time = user_action_time;
+  g_free (self->last_account);
+  self->last_account = g_strdup (account);
+  g_free (self->last_preferred_handler);
+  self->last_preferred_handler = g_strdup (preferred_handler);
+
   if (self->priv->old_handler != NULL)
     {
       /* Pretend that the channel already exists */
@@ -380,6 +400,11 @@ tp_tests_simple_channel_dispatcher_dispose (GObject *object)
   g_slist_free (self->priv->requests);
 
   g_free (self->priv->old_handler);
+
+  tp_clear_pointer (&self->last_request, g_hash_table_unref);
+  tp_clear_pointer (&self->last_hints, g_hash_table_unref);
+  tp_clear_pointer (&self->last_account, g_free);
+  tp_clear_pointer (&self->last_preferred_handler, g_free);
 
   if (G_OBJECT_CLASS (tp_tests_simple_channel_dispatcher_parent_class)->dispose != NULL)
     G_OBJECT_CLASS (tp_tests_simple_channel_dispatcher_parent_class)->dispose (object);
