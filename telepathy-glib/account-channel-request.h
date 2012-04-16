@@ -102,6 +102,15 @@ TpAccountChannelRequest *tp_account_channel_request_new_audio_video_call (
     TpAccount *account,
     gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
 
+/* File transfer */
+
+TpAccountChannelRequest *tp_account_channel_request_new_file_transfer (
+    TpAccount *account,
+    const gchar *filename,
+    const gchar *mime_type,
+    guint64 size,
+    gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
+
 /* Channel target (shared between all channel types) */
 
 void tp_account_channel_request_set_target_contact (

@@ -2001,3 +2001,66 @@ tp_account_channel_request_new_audio_video_call (
   g_hash_table_unref (request);
   return self;
 }
+
+/**
+ * tp_account_channel_request_new_file_transfer:
+ * @account: a #TpAccount
+ * @filename: a suggested name for the file, which should not contain
+ *  directories or directory separators (for example, if you are sending
+ * a file called /home/user/monkey.pdf, set this to monkey.pdf)
+ * @mime_type: (allow-none): the MIME type (content-type) of the file;
+ *  a %NULL value is allowed, and is treated as
+ *  "application/octet-stream"
+ * @size: the file's size in bytes
+ * @user_action_time: the time of the user action that caused this request,
+ *  or one of the special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME (see
+ *  #TpAccountChannelRequest:user-action-time)
+ *
+ * Convenience function to create a new #TpAccountChannelRequest object,
+ * which will yield a FileTransfer channel to send a file to a contact.
+ *
+ * After creating the request, you will also need to set the "target"
+ * of the channel by calling one of the following functions:
+ *
+ * * tp_account_channel_request_set_target_contact()
+ * * tp_account_channel_request_set_target_id()
+ *
+ * Returns: a new #TpAccountChannelRequest object
+ *
+ * Since: 0.19.UNRELEASED
+ */
+TpAccountChannelRequest *
+tp_account_channel_request_new_file_transfer (
+    TpAccount *account,
+    const gchar *filename,
+    const gchar *mime_type,
+    guint64 size,
+    gint64 user_action_time)
+{
+  TpAccountChannelRequest *self;
+  GHashTable *request;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+  g_return_val_if_fail (!tp_str_empty (filename), NULL);
+  g_return_val_if_fail (mime_type == NULL || mime_type[0] != '\0', NULL);
+
+  if (mime_type == NULL)
+    mime_type = "application/octet-stream";
+
+  request = tp_asv_new (
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+          TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME, G_TYPE_STRING, filename,
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_TYPE, G_TYPE_STRING, mime_type,
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE, G_TYPE_UINT64, size,
+      NULL);
+
+  self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
+      "account", account,
+      "request", request,
+      "user-action-time", user_action_time,
+      NULL);
+  g_hash_table_unref (request);
+  return self;
+}
