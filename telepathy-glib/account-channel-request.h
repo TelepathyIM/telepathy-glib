@@ -87,6 +87,21 @@ void tp_account_channel_request_set_delegate_to_preferred_handler (
     TpAccountChannelRequest *self,
     gboolean delegate);
 
+/* Text */
+
+TpAccountChannelRequest *tp_account_channel_request_new_text (
+    TpAccount *account,
+    gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
+
+/* Channel target (shared between all channel types) */
+
+void tp_account_channel_request_set_target_contact (
+    TpAccountChannelRequest *self,
+    TpContact *contact);
+void tp_account_channel_request_set_target_id (TpAccountChannelRequest *self,
+    TpHandleType handle_type,
+    const gchar *identifier);
+
 /* Request and handle API */
 
 void tp_account_channel_request_create_and_handle_channel_async (

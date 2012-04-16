@@ -312,7 +312,9 @@ supports_simple_channel (TpCapabilities *self,
  * @self: a #TpCapabilities object
  *
  * Return whether private text channels can be established by providing
- * a contact identifier.
+ * a contact identifier, for instance by calling
+ * tp_account_channel_request_new_text() followed by
+ * tp_account_channel_request_set_target_contact().
  *
  * If the protocol is such that text chats can be established, but only via a
  * more elaborate D-Bus API than normal (because more information is needed),
@@ -337,7 +339,9 @@ tp_capabilities_supports_text_chats (TpCapabilities *self)
  *
  * If the #TpCapabilities:contact-specific property is %FALSE, this function
  * checks if named text chatrooms can be joined by providing a chatroom
- * identifier.
+ * identifier, for instance by calling
+ * tp_account_channel_request_new_text() followed by
+ * tp_account_channel_request_set_target_id() with %TP_HANDLE_TYPE_ROOM.
  *
  * If the #TpCapabilities:contact-specific property is %TRUE, this function
  * checks if the contact associated with this #TpCapabilities can be invited

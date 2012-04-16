@@ -79,6 +79,7 @@
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/simple-handler.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/util-internal.h>
@@ -1717,4 +1718,116 @@ _tp_account_channel_request_get_client (TpAccountChannelRequest *self)
   g_return_val_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self), NULL);
 
   return self->priv->handler;
+}
+
+/**
+ * tp_account_channel_request_set_target_contact:
+ * @self: a #TpAccountChannelRequest
+ * @contact: the contact to be contacted
+ *
+ * Configure this request to create a peer-to-peer channel with @contact as
+ * the other peer.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.19.UNRELEASED
+ */
+void
+tp_account_channel_request_set_target_contact (
+    TpAccountChannelRequest *self,
+    TpContact *contact)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (TP_IS_CONTACT (contact));
+  g_return_if_fail (!self->priv->requested);
+
+  /* Do not use tp_asv_set_uint32 or similar - the key is dup'd */
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TARGET_HANDLE_TYPE),
+      tp_g_value_slice_new_uint (TP_HANDLE_TYPE_CONTACT));
+  /* We use the ID because it persists across a disconnect/reconnect */
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TARGET_ID),
+      tp_g_value_slice_new_string (tp_contact_get_identifier (contact)));
+}
+
+/**
+ * tp_account_channel_request_set_target_id:
+ * @self: a #TpAccountChannelRequest
+ * @handle_type: the type of @identifier, typically %TP_HANDLE_TYPE_CONTACT
+ *  or %TP_HANDLE_TYPE_ROOM
+ * @identifier: the unique identifier of the contact, room etc. to be
+ *  contacted
+ *
+ * Configure this request to create a channel with @identifier,
+ * an identifier of type @handle_type.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.19.UNRELEASED
+ */
+void
+tp_account_channel_request_set_target_id (
+    TpAccountChannelRequest *self,
+    TpHandleType handle_type,
+    const gchar *identifier)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (identifier != NULL);
+  g_return_if_fail (handle_type != TP_HANDLE_TYPE_NONE);
+  g_return_if_fail (!self->priv->requested);
+
+  /* Do not use tp_asv_set_uint32 or similar - the key is dup'd */
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TARGET_HANDLE_TYPE),
+      tp_g_value_slice_new_uint (handle_type));
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TARGET_ID),
+      tp_g_value_slice_new_string (identifier));
+}
+
+/**
+ * tp_account_channel_request_new_text:
+ * @account: a #TpAccount
+ * @user_action_time: the time of the user action that caused this request,
+ *  or one of the special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME (see
+ *  #TpAccountChannelRequest:user-action-time)
+ *
+ * Convenience function to create a new #TpAccountChannelRequest object
+ * which will yield a Text channel.
+ *
+ * After creating the request, you will also need to set the "target"
+ * of the channel by calling one of the following functions:
+ *
+ * * tp_account_channel_request_set_target_contact()
+ * * tp_account_channel_request_set_target_id()
+ *
+ * Returns: a new #TpAccountChannelRequest object
+ *
+ * Since: 0.19.UNRELEASED
+ */
+TpAccountChannelRequest *
+tp_account_channel_request_new_text (
+    TpAccount *account,
+    gint64 user_action_time)
+{
+  TpAccountChannelRequest *self;
+  GHashTable *request;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+
+  request = tp_asv_new (
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
+      NULL);
+
+  self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
+      "account", account,
+      "request", request,
+      "user-action-time", user_action_time,
+      NULL);
+  g_hash_table_unref (request);
+  return self;
 }
