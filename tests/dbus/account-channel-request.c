@@ -234,25 +234,45 @@ static void
 test_handle_create_fail (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *request;
   TpAccountChannelRequest *req;
 
-  request = create_request ();
-
-  /* Ask to the CD to fail */
-  tp_asv_set_boolean (request, "CreateChannelFail", TRUE);
-
-  req = tp_account_channel_request_new (test->account, request, 0);
+  req = tp_account_channel_request_new_audio_call (test->account, 666);
+  tp_account_channel_request_set_target_id (req, TP_HANDLE_TYPE_CONTACT,
+      "alice");
+  tp_account_channel_request_set_request_property (req, "com.example.Int",
+      g_variant_new_int32 (17));
+  tp_account_channel_request_set_request_property (req, "com.example.String",
+      g_variant_new_string ("ferret"));
+  /* Ask the CD to fail */
+  tp_account_channel_request_set_request_property (req, "CreateChannelFail",
+      g_variant_new_boolean (TRUE));
 
   tp_account_channel_request_create_and_handle_channel_async (req,
       NULL, create_and_handle_cb, test);
 
-  g_hash_table_unref (request);
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
   g_assert (test->channel == NULL);
+
+  /* The request had the properties we wanted */
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_CALL);
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
+  g_assert_cmpuint (tp_asv_get_uint32 (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL), ==, TP_HANDLE_TYPE_CONTACT);
+  g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, NULL), ==, TRUE);
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        "com.example.String"), ==, "ferret");
+  g_assert_cmpuint (tp_asv_get_int32 (test->cd_service->last_request,
+        "com.example.Int", NULL), ==, 17);
+  g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
+        "CreateChannelFail", NULL), ==, TRUE);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 7);
+  g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 666);
 }
 
 /* ChannelRequest.Proceed() call fails */
@@ -260,25 +280,32 @@ static void
 test_handle_proceed_fail (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *request;
   TpAccountChannelRequest *req;
 
-  request = create_request ();
-
-  /* Ask to the CD to fail */
-  tp_asv_set_boolean (request, "ProceedFail", TRUE);
-
-  req = tp_account_channel_request_new (test->account, request, 0);
+  req = tp_account_channel_request_new_audio_video_call (test->account, 0);
+  /* Ask the CD to fail */
+  tp_account_channel_request_set_request_property (req, "ProceedFail",
+      g_variant_new_boolean (TRUE));
 
   tp_account_channel_request_create_and_handle_channel_async (req,
       NULL, create_and_handle_cb, test);
 
-  g_hash_table_unref (request);
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
   g_assert (test->channel == NULL);
+
+  /* The request had the properties we wanted */
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_CALL);
+  g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, NULL), ==, TRUE);
+  g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, NULL), ==, TRUE);
+  g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
+        "ProceedFail", NULL), ==, TRUE);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 4);
 }
 
 /* ChannelRequest fire the 'Failed' signal */
