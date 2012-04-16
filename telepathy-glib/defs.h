@@ -130,7 +130,7 @@ G_BEGIN_DECLS
  * The "user action time" used by methods like
  * tp_account_channel_request_new() to represent channel requests that should
  * be treated as though they happened at the current time. This is the same
- * concept as %GDK_CURRENT_TIME in Gdk (but note that the numerical value used
+ * concept as %GDK_CURRENT_TIME in GDK (but note that the numerical value used
  * in Telepathy is not the same).
  *
  * See also #TpAccountChannelRequest:user-action-time,

@@ -1419,7 +1419,7 @@ tp_simple_async_report_success_in_idle (GObject *source,
  *
  * Convert an X11 timestamp into a user action time as used in Telepathy.
  *
- * This also works for the timestamps used by Gdk 2.x and Clutter 1.0;
+ * This also works for the timestamps used by GDK 2, GDK 3 and Clutter 1.0;
  * it may or may not work with other toolkits or versions.
  *
  * Returns: a nonzero Telepathy user action time, or
@@ -1450,8 +1450,8 @@ tp_user_action_time_from_x11 (guint32 x11_time)
  * call gtk_window_present_with_time() using @x11_time as input, for instance.
  *
  * @x11_time is used to return a timestamp in the right format for X11,
- * Gdk 2.x and Clutter 1.0; it may or may not work with other toolkits or
- * versions.
+ * GDK 2, GDK 3 and Clutter 1.0; it may or may not work with other
+ * toolkits or versions.
  *
  * Returns: %TRUE if it would be appropriate to present a window
  *
