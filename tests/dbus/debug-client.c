@@ -207,7 +207,7 @@ test_get_messages (Test *test,
   g_date_time_to_timeval (time1, &time_val);
 
   tp_debug_sender_add_message (test->sender, &time_val, "domain1",
-      G_LOG_LEVEL_MESSAGE, "message1");
+      G_LOG_LEVEL_MESSAGE, "message1\n");
 
   time2 = g_date_time_new_now_local ();
   g_date_time_to_timeval (time2, &time_val);

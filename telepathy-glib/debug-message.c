@@ -164,7 +164,7 @@ tp_debug_message_class_init (
   /**
    * TpDebugMessage:message:
    *
-   * Text of the debug message
+   * Text of the debug message, stripped from its trailing whitespaces.
    *
    * Since: UNRELEASED
    */
@@ -226,6 +226,7 @@ _tp_debug_message_new (gdouble timestamp,
   self->priv->domain = g_strdup (domain);
   self->priv->level = debug_level_to_log_level_flags (level);
   self->priv->message = g_strdup (message);
+  g_strchomp (self->priv->message);
 
   return self;
 }
