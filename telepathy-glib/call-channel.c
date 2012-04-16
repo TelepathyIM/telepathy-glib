@@ -77,7 +77,7 @@ struct _TpCallChannelPrivate
   GHashTable *state_details;
   TpCallStateReason *state_reason;
   gboolean hardware_streaming;
-  /* TpHandle -> TpCallMemberFlags */
+  /* TpContact -> TpCallMemberFlags */
   GHashTable *members;
   gboolean initial_audio;
   gboolean initial_video;
@@ -270,14 +270,15 @@ _tp_call_members_convert_array (TpConnection *connection,
       TpContact *contact;
 
       /* The contact is supposed to already exists */
-      contact = _tp_connection_lookup_contact (connection, handle);
+      contact = tp_connection_dup_contact_if_possible (connection,
+          handle, NULL);
       if (contact == NULL)
         {
           DEBUG ("No TpContact found for handle %u", handle);
           continue;
         }
 
-      g_ptr_array_add (result, g_object_ref (contact));
+      g_ptr_array_add (result, contact);
     }
 
   return result;
