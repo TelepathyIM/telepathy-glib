@@ -212,7 +212,7 @@ test_get_messages (Test *test,
   time2 = g_date_time_new_now_local ();
   g_date_time_to_timeval (time2, &time_val);
 
-  tp_debug_sender_add_message (test->sender, &time_val, "domain2",
+  tp_debug_sender_add_message (test->sender, &time_val, "domain2/category",
       G_LOG_LEVEL_DEBUG, "message2");
 
   tp_debug_client_get_messages_async (test->client, get_messages_cb, test);
@@ -224,6 +224,7 @@ test_get_messages (Test *test,
   g_assert (test->messages != NULL);
   g_assert_cmpuint (test->messages->len, ==, 2);
 
+  /* first message */
   msg = g_ptr_array_index (test->messages, 0);
   g_assert (TP_IS_DEBUG_MESSAGE (msg));
 
@@ -235,8 +236,22 @@ test_get_messages (Test *test,
   g_assert_cmpuint (g_date_time_to_unix (t), ==, g_date_time_to_unix (time1));
 
   g_assert_cmpstr (tp_debug_message_get_domain (msg), ==, "domain1");
+  g_assert (tp_debug_message_get_category (msg) == NULL);
   g_assert_cmpuint (tp_debug_message_get_level (msg), ==, G_LOG_LEVEL_MESSAGE);
   g_assert_cmpstr (tp_debug_message_get_message (msg), ==, "message1");
+
+  /* second message */
+  msg = g_ptr_array_index (test->messages, 1);
+  g_assert (TP_IS_DEBUG_MESSAGE (msg));
+
+  t = tp_debug_message_get_time (msg);
+  g_assert (t != NULL);
+  g_assert_cmpuint (g_date_time_to_unix (t), ==, g_date_time_to_unix (time2));
+
+  g_assert_cmpstr (tp_debug_message_get_domain (msg), ==, "domain2");
+  g_assert_cmpstr (tp_debug_message_get_category (msg), ==, "category");
+  g_assert_cmpuint (tp_debug_message_get_level (msg), ==, G_LOG_LEVEL_DEBUG);
+  g_assert_cmpstr (tp_debug_message_get_message (msg), ==, "message2");
 }
 
 static void

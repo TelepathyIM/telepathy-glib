@@ -67,6 +67,7 @@ GType tp_debug_message_get_type (void);
 
 GDateTime * tp_debug_message_get_time (TpDebugMessage *self);
 const gchar * tp_debug_message_get_domain (TpDebugMessage *self);
+const gchar * tp_debug_message_get_category (TpDebugMessage *self);
 GLogLevelFlags tp_debug_message_get_level (TpDebugMessage *self);
 const gchar * tp_debug_message_get_message (TpDebugMessage *self);
 

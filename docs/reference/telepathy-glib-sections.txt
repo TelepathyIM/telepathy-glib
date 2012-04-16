@@ -7216,6 +7216,7 @@ TpDebugMessageClass
 tp_debug_client_get_messages_async
 tp_debug_client_get_messages_finish
 tp_debug_message_get_domain
+tp_debug_message_get_category
 tp_debug_message_get_level
 tp_debug_message_get_message
 tp_debug_message_get_time

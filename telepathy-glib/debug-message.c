@@ -58,6 +58,7 @@ G_DEFINE_TYPE (TpDebugMessage, tp_debug_message, G_TYPE_OBJECT)
 enum {
   PROP_TIME = 1,
   PROP_DOMAIN,
+  PROP_CATEGORY,
   PROP_LEVEL,
   PROP_MESSAGE,
   LAST_PROPERTY,
@@ -66,6 +67,7 @@ enum {
 struct _TpDebugMessagePriv {
   GDateTime *time;
   gchar *domain;
+  gchar *category;
   GLogLevelFlags level;
   gchar *message;
 };
@@ -89,6 +91,9 @@ tp_debug_message_get_property (GObject *object,
       case PROP_DOMAIN:
         g_value_set_string (value, self->priv->domain);
         break;
+      case PROP_CATEGORY:
+        g_value_set_string (value, self->priv->category);
+        break;
       case PROP_LEVEL:
         g_value_set_uint (value, self->priv->level);
         break;
@@ -106,6 +111,7 @@ tp_debug_message_finalize (GObject *object)
       ((GObjectClass *) tp_debug_message_parent_class)->finalize;
 
   g_free (self->priv->domain);
+  g_free (self->priv->category);
   g_free (self->priv->message);
 
   if (chain_up != NULL)
@@ -147,6 +153,19 @@ tp_debug_message_class_init (
       NULL,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (oclass, PROP_DOMAIN, spec);
+
+  /**
+   * TpDebugMessage:category:
+   *
+   * Category of the debug message, or %NULL if none was specified.
+   *
+   * Since: UNRELEASED
+   */
+  spec = g_param_spec_string ("category", "category",
+      "Category",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (oclass, PROP_CATEGORY, spec);
 
   /**
    * TpDebugMessage:level:
@@ -222,8 +241,21 @@ _tp_debug_message_new (gdouble timestamp,
   tv.tv_sec = (glong) timestamp;
   tv.tv_usec = ((timestamp - (int) timestamp) * 1e6);
 
+  if (g_strrstr (domain, "/"))
+    {
+      gchar **parts = g_strsplit (domain, "/", 2);
+      self->priv->domain = g_strdup (parts[0]);
+      self->priv->category = g_strdup (parts[1]);
+      g_strfreev (parts);
+    }
+  else
+    {
+      self->priv->domain = g_strdup (domain);
+      self->priv->category = NULL;
+    }
+
   self->priv->time = g_date_time_new_from_timeval_utc (&tv);
-  self->priv->domain = g_strdup (domain);
+
   self->priv->level = debug_level_to_log_level_flags (level);
   self->priv->message = g_strdup (message);
   g_strchomp (self->priv->message);
@@ -261,6 +293,22 @@ const gchar *
 tp_debug_message_get_domain (TpDebugMessage *self)
 {
   return self->priv->domain;
+}
+
+/**
+ * tp_debug_message_get_category:
+ * @self: a #TpDebugMessage
+ *
+ * Return the #TpDebugMessage:category property
+ *
+ * Returns: the value of #TpDebugMessage:category property
+ *
+ * Since: UNRELEASED
+ */
+const char *
+tp_debug_message_get_category (TpDebugMessage *self)
+{
+  return self->priv->category;
 }
 
 /**
