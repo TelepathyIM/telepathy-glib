@@ -313,25 +313,39 @@ static void
 test_handle_cr_failed (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *request;
   TpAccountChannelRequest *req;
 
-  request = create_request ();
+  req = tp_account_channel_request_new_file_transfer (test->account,
+      "warez.rar", "application/x-rar", G_GUINT64_CONSTANT (1234567890123), 0);
 
   /* Ask to the CR to fire the signal */
-  tp_asv_set_boolean (request, "FireFailed", TRUE);
-
-  req = tp_account_channel_request_new (test->account, request, 0);
+  tp_account_channel_request_set_request_property (req, "FireFailed",
+      g_variant_new_boolean (TRUE));
 
   tp_account_channel_request_create_and_handle_channel_async (req,
       NULL, create_and_handle_cb, test);
 
-  g_hash_table_unref (request);
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
   g_assert (test->channel == NULL);
+
+  /* The request had the properties we wanted */
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER);
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME), ==, "warez.rar");
+  g_assert_cmpuint (tp_asv_get_uint64 (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE, NULL), ==,
+      G_GUINT64_CONSTANT (1234567890123));
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_TYPE), ==,
+      "application/x-rar");
+  g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
+        "FireFailed", NULL), ==, TRUE);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 5);
+  g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
 }
 
 static void
