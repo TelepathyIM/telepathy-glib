@@ -127,6 +127,10 @@ typedef enum
 struct _TpAccountChannelRequestPrivate
 {
   TpAccount *account;
+  /* dup'd string => slice-allocated GValue
+   *
+   * Do not use tp_asv_new() and friends, because they expect static
+   * string keys. */
   GHashTable *request;
   gint64 user_action_time;
 
@@ -265,7 +269,14 @@ tp_account_channel_request_set_property (GObject *object,
         break;
 
       case PROP_REQUEST:
-        self->priv->request = g_value_dup_boxed (value);
+        /* We do not use tp_asv_new() and friends, because in principle,
+         * the request can contain user-defined keys. */
+        self->priv->request = g_hash_table_new_full (g_str_hash, g_str_equal,
+            g_free, (GDestroyNotify) tp_g_value_slice_free);
+        tp_g_hash_table_update (self->priv->request,
+            g_value_get_boxed (value),
+            (GBoxedCopyFunc) g_strdup,
+            (GBoxedCopyFunc) tp_g_value_slice_dup);
         break;
 
       case PROP_USER_ACTION_TIME:
