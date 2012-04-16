@@ -326,11 +326,14 @@ static void
 test_handle_ensure_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *request;
   TpAccountChannelRequest *req;
+  TpContact *alice;
 
-  request = create_request ();
-  req = tp_account_channel_request_new (test->account, request, 0);
+  alice = tp_tests_connection_run_until_contact_by_id (test->connection,
+      "alice", 0, NULL);
+
+  req = tp_account_channel_request_new_text (test->account, 0);
+  tp_account_channel_request_set_target_contact (req, alice);
 
   tp_account_channel_request_ensure_and_handle_channel_async (req,
       NULL, ensure_and_handle_cb, test);
@@ -341,16 +344,18 @@ test_handle_ensure_success (Test *test,
   g_assert_no_error (test->error);
 
   /* Try again, now it will fail as the channel already exist */
-  req = tp_account_channel_request_new (test->account, request, 0);
+  req = tp_account_channel_request_new_text (test->account, 0);
+  tp_account_channel_request_set_target_contact (req, alice);
 
   tp_account_channel_request_ensure_and_handle_channel_async (req,
       NULL, ensure_and_handle_cb, test);
 
-  g_hash_table_unref (request);
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_YOURS);
+
+  g_object_unref (alice);
 }
 
 /* Cancel the operation before starting it */
