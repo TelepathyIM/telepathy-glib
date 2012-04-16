@@ -193,12 +193,12 @@ static void
 test_handle_create_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *request;
   TpAccountChannelRequest *req;
   TpChannelRequest *chan_req;
 
-  request = create_request ();
-  req = tp_account_channel_request_new (test->account, request, 0);
+  req = tp_account_channel_request_new_text (test->account, 0);
+  tp_account_channel_request_set_target_id (req, TP_HANDLE_TYPE_CONTACT,
+      "alice");
 
   /* We didn't start requesting the channel yet, so there is no
    * ChannelRequest */
@@ -208,7 +208,6 @@ test_handle_create_success (Test *test,
   tp_account_channel_request_create_and_handle_channel_async (req,
       NULL, create_and_handle_cb, test);
 
-  g_hash_table_unref (request);
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
