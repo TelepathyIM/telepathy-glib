@@ -734,11 +734,13 @@ tp_capabilities_supports_contact_search (TpCapabilities *self,
 
       tp_value_array_unpack (arr, 2, &fixed, &allowed_properties);
 
+      /* ContactSearch channel should have ChannelType and TargetHandleType=NONE
+       * but CM implementations are wrong and omitted TargetHandleType,
+       * so it's set in stone now.  */
       if (g_hash_table_size (fixed) != 1)
         continue;
 
       chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
-
       if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_CONTACT_SEARCH))
         continue;
 
