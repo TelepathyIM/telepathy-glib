@@ -82,6 +82,7 @@ enum
 
 enum {
   SIG_GOT_ROOMS,
+  SIG_FAILED,
   LAST_SIGNAL
 };
 
@@ -272,8 +273,11 @@ tp_room_list_class_init (TpRoomListClass *klass)
   /**
    * TpRoomList::got-rooms:
    * @self: a #TpRoomList
+   * @room: a #TpRoomInfo
    *
-   * TODO
+   * Fired each time a room is found during the listing process.
+   * User should take his own reference on @room if he plans to
+   * continue using it once the signal callback has returned.
    *
    * Since: UNRELEASED
    */
@@ -283,6 +287,23 @@ tp_room_list_class_init (TpRoomListClass *klass)
       0, NULL, NULL, NULL,
       G_TYPE_NONE,
       1, TP_TYPE_ROOM_INFO);
+
+  /**
+   * TpRoomList::failed:
+   * @self: a #TpRoomList
+   * @error: a #GError indicating the reason of the error
+   *
+   * Fired when something goes wrong while listing the channels; see @error
+   * for details.
+   *
+   * Since: UNRELEASED
+   */
+  signals[SIG_FAILED] = g_signal_new ("failed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL, NULL,
+      G_TYPE_NONE,
+      1, G_TYPE_ERROR);
 
   g_type_class_add_private (gobject_class, sizeof (TpRoomListPrivate));
 }
@@ -348,62 +369,31 @@ list_rooms_cb (TpChannel *channel,
     gpointer user_data,
     GObject *weak_object)
 {
-  GSimpleAsyncResult *result = user_data;
+  TpRoomList *self = TP_ROOM_LIST (weak_object);
 
   if (error != NULL)
     {
-      g_simple_async_result_set_from_error (result, error);
+      g_signal_emit (self, signals[SIG_FAILED], 0, error);
     }
-
-  g_simple_async_result_complete (result);
 }
 
 /**
- * tp_room_list_start_listing_async:
+ * tp_room_list_start:
  * @self: a #TpRoomList
- * @callback: a callback to call when room listing have been started
- * @user_data: data to pass to @callback
  *
  * Start listing rooms using @self. Use the TpRoomList::got-rooms
  * signal to get the rooms found.
+ * Errors will be reported using the TpRoomList::failed signal.
  *
  * Since: UNRELEASED
  */
 void
-tp_room_list_start_listing_async (TpRoomList *self,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
+tp_room_list_start (TpRoomList *self)
 {
-  GSimpleAsyncResult *result;
-
   g_return_if_fail (self->priv->channel != NULL);
 
-  result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-      tp_room_list_start_listing_async);
-
   tp_cli_channel_type_room_list_call_list_rooms (self->priv->channel, -1,
-      list_rooms_cb, result, g_object_unref, G_OBJECT (self));
-}
-
-/**
- * tp_room_list_start_listing_finish:
- * @self: a #TpRoomList
- * @result: a #GAsyncResult
- * @error: a #GError to fill
- *
- * <!-- -->
- *
- * Returns: %TRUE if the room listing process has been started,
- * %FALSE otherwise.
- *
- * Since: UNRELEASED
- */
-gboolean
-tp_room_list_start_listing_finish (TpRoomList *self,
-    GAsyncResult *result,
-    GError **error)
-{
-  _tp_implement_finish_void (self, tp_room_list_start_listing_async)
+      list_rooms_cb, NULL, NULL, G_OBJECT (self));
 }
 
 static void

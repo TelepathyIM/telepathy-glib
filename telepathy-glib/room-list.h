@@ -67,13 +67,7 @@ const gchar * tp_room_list_get_server (TpRoomList *self);
 
 gboolean tp_room_list_get_listing (TpRoomList *self);
 
-void tp_room_list_start_listing_async (TpRoomList *self,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-
-gboolean tp_room_list_start_listing_finish (TpRoomList *self,
-    GAsyncResult *result,
-    GError **error);
+void tp_room_list_start (TpRoomList *self);
 
 G_END_DECLS
 

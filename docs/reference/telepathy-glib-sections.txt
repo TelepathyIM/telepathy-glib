@@ -7244,8 +7244,7 @@ tp_room_list_new_finish
 tp_room_list_get_listing
 tp_room_list_get_server
 tp_room_list_get_account
-tp_room_list_start_listing_async
-tp_room_list_start_listing_finish
+tp_room_list_start
 <SUBSECTION Standard>
 TP_IS_ROOM_LIST
 TP_IS_ROOM_LIST_CLASS

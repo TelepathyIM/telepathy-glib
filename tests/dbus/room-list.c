@@ -164,21 +164,6 @@ test_properties (Test *test,
 }
 
 static void
-start_listing_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  Test *test = user_data;
-
-  tp_room_list_start_listing_finish (TP_ROOM_LIST (source),
-      result, &test->error);
-
-  test->wait--;
-  if (test->wait <= 0)
-    g_main_loop_quit (test->mainloop);
-}
-
-static void
 notify_cb (GObject *object,
     GParamSpec *spec,
     Test *test)
@@ -215,10 +200,9 @@ test_listing (Test *test,
   g_signal_connect (test->room_list, "got-rooms",
       G_CALLBACK (got_rooms_cb), test);
 
-  tp_room_list_start_listing_async (test->room_list, start_listing_cb,
-      test);
+  tp_room_list_start (test->room_list);
 
-  test->wait = 5;
+  test->wait = 4;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
