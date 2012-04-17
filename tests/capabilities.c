@@ -269,7 +269,8 @@ add_stream_tube_class (GPtrArray *classes,
 static void
 add_dbus_tube_class (GPtrArray *classes,
     TpHandleType handle_type,
-    const gchar *service_name)
+    const gchar *service_name,
+    gboolean add_extra_fixed)
 {
   GHashTable *fixed;
   const gchar * const allowed[] = { NULL };
@@ -287,6 +288,9 @@ add_dbus_tube_class (GPtrArray *classes,
       tp_asv_set_string (fixed, TP_PROP_CHANNEL_TYPE_DBUS_TUBE_SERVICE_NAME,
           service_name);
     }
+
+  if (add_extra_fixed)
+    tp_asv_set_boolean (fixed, "ExtraBadgersRequired", TRUE);
 
   arr = tp_value_array_build (2,
       TP_HASH_TYPE_STRING_VARIANT_MAP, fixed,
@@ -433,7 +437,7 @@ test_supports_tube (Test *test,
   /* Connection capabilities */
   classes = g_ptr_array_sized_new (2);
   add_stream_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL);
-  add_dbus_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL);
+  add_dbus_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL, FALSE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -463,7 +467,7 @@ test_supports_tube (Test *test,
 
   /* TpCapabilities containing the private dbus tube caps without service */
   classes = g_ptr_array_sized_new (1);
-  add_dbus_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL);
+  add_dbus_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL, FALSE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -495,8 +499,8 @@ test_supports_tube (Test *test,
   /* TpCapabilities containing the private and muc dbus tube caps without
    * service */
   classes = g_ptr_array_sized_new (2);
-  add_dbus_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL);
-  add_dbus_tube_class (classes, TP_HANDLE_TYPE_ROOM, NULL);
+  add_dbus_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL, FALSE);
+  add_dbus_tube_class (classes, TP_HANDLE_TYPE_ROOM, NULL, FALSE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -528,10 +532,10 @@ test_supports_tube (Test *test,
   /* TpCapabilities containing the private and muc dbus tube caps and
    * one with a service */
   classes = g_ptr_array_sized_new (4);
-  add_dbus_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL);
-  add_dbus_tube_class (classes, TP_HANDLE_TYPE_ROOM, NULL);
-  add_dbus_tube_class (classes, TP_HANDLE_TYPE_CONTACT, "com.Test");
-  add_dbus_tube_class (classes, TP_HANDLE_TYPE_ROOM, "com.Test");
+  add_dbus_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL, FALSE);
+  add_dbus_tube_class (classes, TP_HANDLE_TYPE_ROOM, NULL, FALSE);
+  add_dbus_tube_class (classes, TP_HANDLE_TYPE_CONTACT, "com.Test", FALSE);
+  add_dbus_tube_class (classes, TP_HANDLE_TYPE_ROOM, "com.Test", FALSE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -563,11 +567,29 @@ test_supports_tube (Test *test,
         "com.Badger"));
 
   g_object_unref (caps);
+
+  /* Any extra fixed prop make it unsupported */
+  classes = g_ptr_array_sized_new (1);
+  add_dbus_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL, TRUE);
+
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", TRUE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps,
+      TP_HANDLE_TYPE_CONTACT, NULL));
+
+  g_object_unref (caps);
 }
 
 static void
 add_room_list_class (GPtrArray *classes,
-    gboolean server)
+    gboolean server,
+    gboolean add_extra_fixed)
 {
   GHashTable *fixed;
   const gchar * const allowed[] = {
@@ -582,6 +604,9 @@ add_room_list_class (GPtrArray *classes,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
           TP_HANDLE_TYPE_NONE,
       NULL);
+
+  if (add_extra_fixed)
+    tp_asv_set_boolean (fixed, "ExtraBadgersRequired", TRUE);
 
   arr = tp_value_array_build (2,
       TP_HASH_TYPE_STRING_VARIANT_MAP, fixed,
@@ -621,7 +646,7 @@ test_supports_room_list (Test *test,
   /* Support room list but no server */
   classes = g_ptr_array_sized_new (4);
   add_ft_class (classes);
-  add_room_list_class (classes, FALSE);
+  add_room_list_class (classes, FALSE, FALSE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -639,7 +664,7 @@ test_supports_room_list (Test *test,
   /* Support room list with server */
   classes = g_ptr_array_sized_new (4);
   add_ft_class (classes);
-  add_room_list_class (classes, TRUE);
+  add_room_list_class (classes, TRUE, FALSE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -651,6 +676,22 @@ test_supports_room_list (Test *test,
 
   g_assert (tp_capabilities_supports_room_list (caps, &with_server));
   g_assert (with_server);
+
+  g_object_unref (caps);
+
+  /* Any extra fixed prop make it unsupported */
+  classes = g_ptr_array_sized_new (1);
+  add_room_list_class (classes, FALSE, TRUE);
+
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", FALSE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  g_assert (!tp_capabilities_supports_room_list (caps, NULL));
 
   g_object_unref (caps);
 }
