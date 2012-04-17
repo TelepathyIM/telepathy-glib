@@ -230,6 +230,38 @@ test_listing (Test *test,
   g_assert_cmpstr (tp_room_info_get_server (room), ==, "the server");
 }
 
+static void
+room_list_failed_cb (TpRoomList *room_list,
+    GError *error,
+    Test *test)
+{
+  g_clear_error (&test->error);
+  test->error = g_error_copy (error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_list_room_fails (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  /* Use magic server to tell to the channel to fail ListRooms() */
+  tp_clear_object (&test->room_list);
+
+  create_room_list (test, "ListRoomsFail");
+
+  g_signal_connect (test->room_list, "failed",
+      G_CALLBACK (room_list_failed_cb), test);
+
+  tp_room_list_start (test->room_list);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_SERVICE_CONFUSED);
+}
+
 int
 main (int argc,
       char **argv)
@@ -243,6 +275,8 @@ main (int argc,
       test_properties, teardown);
   g_test_add ("/room-list-channel/listing", Test, NULL, setup,
       test_listing, teardown);
+  g_test_add ("/room-list-channel/list-rooms-fail", Test, NULL, setup,
+      test_list_room_fails, teardown);
 
   return g_test_run ();
 }

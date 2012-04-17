@@ -223,6 +223,15 @@ room_list_list_rooms (TpSvcChannelTypeRoomList *chan,
       return;
     }
 
+  if (!tp_strdiff (self->priv->server, "ListRoomsFail"))
+    {
+      GError error = { TP_ERRORS, TP_ERROR_SERVICE_CONFUSED,
+          "Computer says no" };
+
+      dbus_g_method_return_error (context, &error);
+      return;
+    }
+
   self->priv->listing = TRUE;
   tp_svc_channel_type_room_list_emit_listing_rooms (self, TRUE);
 
