@@ -487,7 +487,7 @@ my_get_contact_statuses (GObject *object,
           g_str_equal, NULL, (GDestroyNotify) tp_g_value_slice_free);
 
       if (presence_message != NULL)
-        g_hash_table_insert (parameters, "message",
+        g_hash_table_insert (parameters, (gpointer) "message",
             tp_g_value_slice_new_string (presence_message));
 
       g_hash_table_insert (result, key,
@@ -610,6 +610,14 @@ tp_tests_contacts_connection_get_contact_list_manager (
   return self->priv->list_manager;
 }
 
+/**
+ * tp_tests_contacts_connection_change_aliases:
+ * @self: a #TpTestsContactsConnection
+ * @n: the number of handles
+ * @handles: (array length=n): the handles
+ * @aliases: (array length=n): aliases
+ *
+ */
 void
 tp_tests_contacts_connection_change_aliases (TpTestsContactsConnection *self,
                                     guint n,
@@ -675,7 +683,7 @@ tp_tests_contacts_connection_change_presences (
           g_str_equal, NULL, (GDestroyNotify) tp_g_value_slice_free);
 
       if (messages[i] != NULL && messages[i][0] != '\0')
-        g_hash_table_insert (parameters, "message",
+        g_hash_table_insert (parameters, (gpointer) "message",
             tp_g_value_slice_new_string (messages[i]));
 
       g_hash_table_insert (presences, key, tp_presence_status_new (indexes[i],
