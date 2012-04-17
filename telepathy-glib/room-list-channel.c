@@ -46,16 +46,9 @@
 #include <config.h>
 
 #include "telepathy-glib/room-list-channel.h"
-#include "telepathy-glib/room-list-channel-internal.h"
-
-#include <telepathy-glib/contact.h>
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/enums.h>
-#include <telepathy-glib/gnio-util.h>
-#include <telepathy-glib/gtypes.h>
-#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/room-info-internal.h>
-#include <telepathy-glib/util.h>
+
+#include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/util-internal.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
@@ -64,36 +57,26 @@
 #include <stdio.h>
 #include <glib/gstdio.h>
 
-G_DEFINE_TYPE (TpRoomListChannel, tp_room_list_channel, TP_TYPE_CHANNEL)
+static void async_initable_iface_init (GAsyncInitableIface *iface);
 
-/**
- * TP_ROOM_LIST_CHANNEL_FEATURE_LISTING:
- *
- * Expands to a call to a function that returns a quark for the "listing"
- * feature on a #TpRoomListChannel.
- *
- * When this feature is prepared, the #TpRoomListChannel:listing property of the
- * Channel have been retrieved and is available for use.
- *
- * One can ask for a feature to be prepared using the
- * tp_proxy_prepare_async() function, and waiting for it to callback.
- *
- * Since: 0.UNRELEASED
- */
-GQuark
-tp_room_list_channel_get_feature_quark_listing (void)
-{
-  return g_quark_from_static_string ("tp-room-list-channel-feature-listing");
-}
+G_DEFINE_TYPE_WITH_CODE (TpRoomListChannel, tp_room_list_channel, G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, async_initable_iface_init))
 
 struct _TpRoomListChannelPrivate
 {
+  TpAccount *account;
+  gchar *server;
   gboolean listing;
+
+  TpChannel *channel;
+
+  GSimpleAsyncResult *async_res;
 };
 
 enum
 {
-  PROP_SERVER = 1,
+  PROP_ACCOUNT = 1,
+  PROP_SERVER,
   PROP_LISTING,
 };
 
@@ -114,6 +97,10 @@ tp_room_list_channel_get_property (GObject *object,
 
   switch (property_id)
     {
+      case PROP_ACCOUNT:
+        g_value_set_object (value, tp_room_list_channel_get_account (self));
+        break;
+
       case PROP_SERVER:
         g_value_set_string (value, tp_room_list_channel_get_server (self));
         break;
@@ -129,12 +116,38 @@ tp_room_list_channel_get_property (GObject *object,
 }
 
 static void
+tp_room_list_channel_set_property (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  TpRoomListChannel *self = (TpRoomListChannel *) object;
+
+  switch (property_id)
+    {
+      case PROP_ACCOUNT:
+        g_assert (self->priv->account == NULL); /* construct only */
+        self->priv->account = g_value_dup_object (value);
+        break;
+
+      case PROP_SERVER:
+        g_assert (self->priv->server == NULL); /* construct only */
+        self->priv->server = g_value_dup_string (value);
+        break;
+
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+        break;
+    }
+}
+
+static void
 got_rooms_cb (TpChannel *channel,
     const GPtrArray *rooms,
     gpointer user_data,
     GObject *weak_object)
 {
-  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (channel);
+  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (weak_object);
   guint i;
 
   for (i = 0; i < rooms->len; i++)
@@ -148,39 +161,12 @@ got_rooms_cb (TpChannel *channel,
 }
 
 static void
-tp_room_list_channel_constructed (GObject *obj)
-{
-  TpChannel *channel = TP_CHANNEL (obj);
-  GHashTable *props;
-  const char *type;
-  GError *error = NULL;
-
-  props = tp_channel_borrow_immutable_properties (channel);
-  g_assert (props != NULL);
-
-  type = tp_asv_get_string (props, TP_PROP_CHANNEL_CHANNEL_TYPE);
-  g_assert_cmpstr (type, ==, TP_IFACE_CHANNEL_TYPE_ROOM_LIST);
-
-  if (tp_cli_channel_type_room_list_connect_to_got_rooms (channel,
-        got_rooms_cb, NULL, NULL, NULL, &error) == NULL)
-    {
-      WARNING ("Failed to connect GotRooms signal: %s", error->message);
-      g_error_free (error);
-    }
-}
-
-enum {
-    FEAT_LISTING,
-    N_FEAT
-};
-
-static void
 listing_rooms_cb (TpChannel *proxy,
     gboolean listing,
     gpointer user_data,
     GObject *weak_object)
 {
-  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (proxy);
+  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (weak_object);
 
   if (self->priv->listing == listing)
     return;
@@ -190,84 +176,67 @@ listing_rooms_cb (TpChannel *proxy,
 }
 
 static void
-get_listing_rooms_cb (TpChannel *channel,
-    gboolean in_progress,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
+destroy_channel (TpRoomListChannel *self)
 {
-  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (channel);
-  GSimpleAsyncResult *result = user_data;
+  if (self->priv->channel == NULL)
+    return;
 
-  if (error != NULL)
-    {
-      g_simple_async_result_set_from_error (result, error);
-    }
-  else if (in_progress)
-    {
-      self->priv->listing = in_progress;
-      g_object_notify (G_OBJECT (self), "listing");
-    }
+  DEBUG ("Destroying existing RoomList channel");
 
-  g_simple_async_result_complete (result);
+  tp_channel_destroy_async (self->priv->channel, NULL, NULL);
+  tp_clear_object (&self->priv->channel);
 }
 
 static void
-tp_room_list_channel_prepare_listing_async (TpProxy *proxy,
-    const TpProxyFeature *feature,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
+tp_room_list_channel_dispose (GObject *object)
 {
-  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (proxy);
-  TpChannel *channel = TP_CHANNEL (self);
-  GError *error = NULL;
-  GSimpleAsyncResult *result;
+  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (object);
+  void (*chain_up) (GObject *) =
+      ((GObjectClass *) tp_room_list_channel_parent_class)->dispose;
 
-  tp_cli_channel_type_room_list_connect_to_listing_rooms (channel,
-      listing_rooms_cb, proxy, NULL, G_OBJECT (proxy), &error);
-  if (error != NULL)
-    {
-      g_simple_async_report_take_gerror_in_idle ((GObject *) self,
-          callback, user_data, error);
-      return;
-    }
+  destroy_channel (self);
+  g_clear_object (&self->priv->account);
 
-  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
-      tp_room_list_channel_prepare_listing_async);
-
-  tp_cli_channel_type_room_list_call_get_listing_rooms (channel, -1,
-      get_listing_rooms_cb, result, g_object_unref, G_OBJECT (channel));
+  if (chain_up != NULL)
+    chain_up (object);
 }
 
-static const TpProxyFeature *
-tp_room_list_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
+static void
+tp_room_list_channel_finalize (GObject *object)
 {
-  static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
+  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (object);
+  void (*chain_up) (GObject *) =
+      ((GObjectClass *) tp_room_list_channel_parent_class)->finalize;
 
-  if (G_LIKELY (features[0].name != 0))
-    return features;
+  g_free (self->priv->server);
 
-  features[FEAT_LISTING].name = TP_ROOM_LIST_CHANNEL_FEATURE_LISTING;
-  features[FEAT_LISTING].prepare_async =
-    tp_room_list_channel_prepare_listing_async;
-
-  /* assert that the terminator at the end is there */
-  g_assert (features[N_FEAT].name == 0);
-
-  return features;
+  if (chain_up != NULL)
+    chain_up (object);
 }
 
 static void
 tp_room_list_channel_class_init (TpRoomListChannelClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-  TpProxyClass *proxy_class = TP_PROXY_CLASS (klass);
   GParamSpec *param_spec;
 
-  gobject_class->constructed = tp_room_list_channel_constructed;
   gobject_class->get_property = tp_room_list_channel_get_property;
+  gobject_class->set_property = tp_room_list_channel_set_property;
+  gobject_class->dispose = tp_room_list_channel_dispose;
+  gobject_class->finalize = tp_room_list_channel_finalize;
 
-  proxy_class->list_features = tp_room_list_channel_list_features;
+  /**
+   * TpRoomListChannel:account:
+   *
+   * The #TpAccount to use for the room listing.
+   *
+   * Since: UNRELEASED
+   */
+  param_spec = g_param_spec_object ("account", "account",
+      "TpAccount",
+      TP_TYPE_ACCOUNT,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (gobject_class, PROP_ACCOUNT, param_spec);
 
   /**
    * TpRoomListChannel:server:
@@ -280,7 +249,7 @@ tp_room_list_channel_class_init (TpRoomListChannelClass *klass)
   param_spec = g_param_spec_string ("server", "Server",
       "The server associated with the channel",
       NULL,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (gobject_class, PROP_SERVER, param_spec);
 
   /**
@@ -325,31 +294,20 @@ tp_room_list_channel_init (TpRoomListChannel *self)
       TpRoomListChannelPrivate);
 }
 
-TpRoomListChannel *
-_tp_room_list_channel_new (TpSimpleClientFactory *factory,
-    TpConnection *conn,
-    const gchar *object_path,
-    const GHashTable *immutable_properties,
-    GError **error)
+/**
+ * tp_room_list_channel_get_account:
+ * @self: a #TpRoomListChannel
+ *
+ * Return the #TpRoomListChannel:account property
+ *
+ * Returns: (transfer none): the value of #TpRoomListChannel:account property
+ *
+ * Since: UNRELEASED
+ */
+TpAccount *
+tp_room_list_channel_get_account (TpRoomListChannel *self)
 {
-  TpProxy *conn_proxy = (TpProxy *) conn;
-
-  g_return_val_if_fail (TP_IS_CONNECTION (conn), NULL);
-  g_return_val_if_fail (object_path != NULL, NULL);
-  g_return_val_if_fail (immutable_properties != NULL, NULL);
-
-  if (!tp_dbus_check_valid_object_path (object_path, error))
-    return NULL;
-
-  return g_object_new (TP_TYPE_ROOM_LIST_CHANNEL,
-      "factory", factory,
-      "connection", conn,
-      "dbus-daemon", conn_proxy->dbus_daemon,
-      "bus-name", conn_proxy->bus_name,
-      "object-path", object_path,
-      "handle-type", (guint) TP_UNKNOWN_HANDLE_TYPE,
-      "channel-properties", immutable_properties,
-      NULL);
+  return self->priv->account;
 }
 
 /**
@@ -365,13 +323,7 @@ _tp_room_list_channel_new (TpSimpleClientFactory *factory,
 const gchar *
 tp_room_list_channel_get_server (TpRoomListChannel *self)
 {
-  GHashTable *props;
-  const gchar *server;
-
-  props = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
-  server = tp_asv_get_string (props, TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER);
-
-  return tp_str_empty (server) ? NULL : server;
+  return self->priv->server;
 }
 
 /**
@@ -424,10 +376,12 @@ tp_room_list_channel_start_listing_async (TpRoomListChannel *self,
 {
   GSimpleAsyncResult *result;
 
+  g_return_if_fail (self->priv->channel != NULL);
+
   result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
       tp_room_list_channel_start_listing_async);
 
-  tp_cli_channel_type_room_list_call_list_rooms (TP_CHANNEL (self), -1,
+  tp_cli_channel_type_room_list_call_list_rooms (self->priv->channel, -1,
       list_rooms_cb, result, g_object_unref, G_OBJECT (self));
 }
 
@@ -450,4 +404,188 @@ tp_room_list_channel_start_listing_finish (TpRoomListChannel *self,
     GError **error)
 {
   _tp_implement_finish_void (self, tp_room_list_channel_start_listing_async)
+}
+
+static void
+create_channel_cb (GObject *source_object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpAccountChannelRequest *channel_request = TP_ACCOUNT_CHANNEL_REQUEST (
+      source_object);
+  TpRoomListChannel *self = user_data;
+  GHashTable *properties;
+  GError *error = NULL;
+  const gchar *server;
+
+  self->priv->channel =
+      tp_account_channel_request_create_and_handle_channel_finish (
+          channel_request, result, NULL, &error);
+
+  if (self->priv->channel == NULL)
+    {
+      DEBUG ("Failed to create RoomList channel: %s", error->message);
+      goto out;
+    }
+
+  DEBUG ("Got channel: %s", tp_proxy_get_object_path (self->priv->channel));
+
+  if (tp_cli_channel_type_room_list_connect_to_got_rooms (self->priv->channel,
+        got_rooms_cb, NULL, NULL, G_OBJECT (self), &error) == NULL)
+    {
+      DEBUG ("Failed to connect GotRooms signal: %s", error->message);
+      goto out;
+    }
+
+  tp_cli_channel_type_room_list_connect_to_listing_rooms (self->priv->channel,
+      listing_rooms_cb, NULL, NULL, G_OBJECT (self), &error);
+  if (error != NULL)
+    {
+      DEBUG ("Failed to connect ListingRooms signal: %s", error->message);
+      goto out;
+    }
+
+  properties = tp_channel_borrow_immutable_properties (self->priv->channel);
+
+  server = tp_asv_get_string (properties,
+      TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER);
+  if (tp_strdiff (server, self->priv->server))
+    {
+      if (tp_str_empty (server) && self->priv->server != NULL)
+        {
+          g_free (self->priv->server);
+          self->priv->server = g_strdup (server);
+          g_object_notify (G_OBJECT (self), "server");
+        }
+    }
+
+ out:
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (self->priv->async_res, error);
+      g_error_free (error);
+      /* This function is safe if self->priv->channel is NULL. */
+      destroy_channel (self);
+    }
+
+  g_simple_async_result_complete (self->priv->async_res);
+  tp_clear_object (&self->priv->async_res);
+}
+
+static void
+open_new_channel (TpRoomListChannel *self)
+{
+  GHashTable *request;
+  TpAccountChannelRequest *channel_request;
+
+  DEBUG ("Requesting new RoomList channel");
+
+  request = tp_asv_new (
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+        TP_IFACE_CHANNEL_TYPE_ROOM_LIST,
+      NULL);
+
+  if (self->priv->server != NULL)
+    tp_asv_set_string (request, TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER,
+        self->priv->server);
+
+  channel_request = tp_account_channel_request_new (self->priv->account,
+      request, TP_USER_ACTION_TIME_NOT_USER_ACTION);
+
+  tp_account_channel_request_create_and_handle_channel_async (channel_request,
+      NULL, create_channel_cb, G_OBJECT (self));
+  g_object_unref (channel_request);
+
+  g_hash_table_unref (request);
+}
+
+static void
+room_list_channel_init_async (GAsyncInitable *initable,
+    gint io_priority,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (initable);
+
+  self->priv->async_res = g_simple_async_result_new (G_OBJECT (self),
+      callback, user_data, tp_room_list_channel_new_async);
+
+  open_new_channel (self);
+}
+
+static gboolean
+room_list_channel_init_finish (GAsyncInitable *initable,
+    GAsyncResult *res,
+    GError **error)
+{
+  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (res),
+          error))
+    return FALSE;
+
+  return TRUE;
+}
+
+static void
+async_initable_iface_init (GAsyncInitableIface *iface)
+{
+  iface->init_async = room_list_channel_init_async;
+  iface->init_finish = room_list_channel_init_finish;
+}
+
+/**
+ * tp_room_list_channel_new_async:
+ * @account: a #TpAccount for the room listing
+ * @server: the DNS name of the server whose rooms should listed
+ * @callback: a #GAsyncReadyCallback to call when the initialization
+ * is finished
+ * @user_data: data to pass to the callback function
+ *
+ * <!-- -->
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_room_list_channel_new_async (TpAccount *account,
+    const gchar *server,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+
+  g_async_initable_new_async (TP_TYPE_ROOM_LIST_CHANNEL,
+      G_PRIORITY_DEFAULT, NULL, callback, user_data,
+      "account", account,
+      "server", server,
+      NULL);
+}
+
+/**
+ * tp_room_list_channel_new_finish:
+ * @result: the #GAsyncResult from the callback
+ * @error: a #GError location to store an error, or %NULL
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer full): a new #TpRoomListChannel object, or %NULL
+ * in case of error.
+ *
+ * Since: UNRELEASED
+ */
+TpRoomListChannel *
+tp_room_list_channel_new_finish (GAsyncResult *result,
+    GError **error)
+{
+  GObject *object, *source_object;
+
+  source_object = g_async_result_get_source_object (result);
+
+  object = g_async_initable_new_finish (G_ASYNC_INITABLE (source_object),
+      result, error);
+  g_object_unref (source_object);
+
+  if (object != NULL)
+    return TP_ROOM_LIST_CHANNEL (object);
+  else
+    return NULL;
 }

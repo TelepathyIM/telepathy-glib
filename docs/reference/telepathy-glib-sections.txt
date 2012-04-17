@@ -7239,8 +7239,11 @@ TpDebugMessagePriv
 <SUBSECTION>
 TpRoomListChannel
 TpRoomListChannelClass
+tp_room_list_channel_new_async
+tp_room_list_channel_new_finish
 tp_room_list_channel_get_listing
 tp_room_list_channel_get_server
+tp_room_list_channel_get_account
 <SUBSECTION Standard>
 TP_IS_ROOM_LIST_CHANNEL
 TP_IS_ROOM_LIST_CHANNEL_CLASS

@@ -282,7 +282,6 @@ libtelepathy_glib_internal_la_SOURCES = \
     room-info.c \
     room-info-internal.h \
     room-list-channel.c \
-    room-list-channel-internal.h \
     run.c \
     signalled-message.c \
     signalled-message-internal.h \

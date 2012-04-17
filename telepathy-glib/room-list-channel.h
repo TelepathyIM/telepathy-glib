@@ -40,27 +40,32 @@ typedef struct _TpRoomListChannelPrivate TpRoomListChannelPrivate;
 struct _TpRoomListChannel
 {
   /*<private>*/
-  TpChannel parent;
+  GObject parent;
   TpRoomListChannelPrivate *priv;
 };
 
 struct _TpRoomListChannelClass
 {
   /*<private>*/
-  TpChannelClass parent_class;
+  GObjectClass parent_class;
   GCallback _padding[7];
 };
 
 GType tp_room_list_channel_get_type (void);
 
+void tp_room_list_channel_new_async (TpAccount *account,
+    const gchar *server,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+TpRoomListChannel * tp_room_list_channel_new_finish (GAsyncResult *result,
+    GError **error);
+
+TpAccount * tp_room_list_channel_get_account (TpRoomListChannel *self);
+
 const gchar * tp_room_list_channel_get_server (TpRoomListChannel *self);
 
 gboolean tp_room_list_channel_get_listing (TpRoomListChannel *self);
-
-#define TP_ROOM_LIST_CHANNEL_FEATURE_LISTING \
-  tp_room_list_channel_get_feature_quark_listing ()
-
-GQuark tp_room_list_channel_get_feature_quark_listing (void) G_GNUC_CONST;
 
 void tp_room_list_channel_start_listing_async (TpRoomListChannel *self,
     GAsyncReadyCallback callback,

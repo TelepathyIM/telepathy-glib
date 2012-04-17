@@ -12,11 +12,10 @@
 #include <string.h>
 
 #include <telepathy-glib/telepathy-glib.h>
-#include <telepathy-glib/room-list-channel-internal.h>
 
 #include "tests/lib/contacts-conn.h"
-#include "tests/lib/room-list-chan.h"
 #include "tests/lib/util.h"
+#include "tests/lib/simple-channel-dispatcher.h"
 
 #define SERVER "TestServer"
 
@@ -26,47 +25,45 @@ typedef struct {
 
     /* Service side objects */
     TpBaseConnection *base_connection;
-    TpTestsRoomListChan *chan_service;
+    TpTestsSimpleChannelDispatcher *cd_service;
 
     /* Client side objects */
+    TpAccount *account;
     TpConnection *connection;
-    TpRoomListChannel *channel;
+    TpRoomListChannel *room_list;
 
     GPtrArray *rooms; /* reffed TpRoomInfo */
     GError *error /* initialized where needed */;
     gint wait;
 } Test;
 
+#define ACCOUNT_PATH TP_ACCOUNT_OBJECT_PATH_BASE "what/ev/er"
+
 static void
-create_room_list_chan (Test *test)
+new_async_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
 {
-  gchar *chan_path;
-  GHashTable *props;
+  Test *test = user_data;
 
-  tp_clear_object (&test->chan_service);
+  test->room_list = tp_room_list_channel_new_finish (result, &test->error);
 
-  /* Create service-side tube channel object */
-  chan_path = g_strdup_printf ("%s/Channel",
-      tp_proxy_get_object_path (test->connection));
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
 
-  test->chan_service = g_object_new (
-      TP_TESTS_TYPE_ROOM_LIST_CHAN,
-      "connection", test->base_connection,
-      "object-path", chan_path,
-      "server", SERVER,
-      NULL);
+static void
+create_room_list (Test *test,
+    const char *server)
+{
+  tp_clear_object (&test->room_list);
 
-  g_object_get (test->chan_service,
-      "channel-properties", &props,
-      NULL);
+  tp_room_list_channel_new_async (test->account, server,
+      new_async_cb, test);
 
-  test->channel = _tp_room_list_channel_new (NULL,
-      test->connection, chan_path,
-      props, &test->error);
-  g_assert_no_error (test->error);
-
-  g_free (chan_path);
-  g_hash_table_unref (props);
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
 }
 
 static void
@@ -80,11 +77,29 @@ setup (Test *test,
 
   test->rooms = g_ptr_array_new_with_free_func (g_object_unref);
 
+  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  g_assert (test->account != NULL);
+
   /* Create (service and client sides) connection objects */
   tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
       "me@test.com", &test->base_connection, &test->connection);
 
-  create_room_list_chan (test);
+  /* Claim CD bus-name */
+  tp_dbus_daemon_request_name (test->dbus,
+          TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, &test->error);
+  g_assert_no_error (test->error);
+
+  /* Create and register CD */
+  test->cd_service = tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_SIMPLE_CHANNEL_DISPATCHER,
+      "connection", test->base_connection,
+      NULL);
+
+  tp_dbus_daemon_register_object (test->dbus, TP_CHANNEL_DISPATCHER_OBJECT_PATH,
+      test->cd_service);
+
+  create_room_list (test, SERVER);
+  g_assert_no_error (test->error);
 }
 
 static void
@@ -93,17 +108,22 @@ teardown (Test *test,
 {
   g_clear_error (&test->error);
 
+  tp_dbus_daemon_release_name (test->dbus, TP_CHANNEL_DISPATCHER_BUS_NAME,
+      &test->error);
+  g_assert_no_error (test->error);
+
+  tp_clear_object (&test->cd_service);
+
   tp_clear_object (&test->dbus);
   g_main_loop_unref (test->mainloop);
   test->mainloop = NULL;
 
-  tp_clear_object (&test->chan_service);
-
   tp_tests_connection_assert_disconnect_succeeds (test->connection);
+  tp_clear_object (&test->account);
   g_object_unref (test->connection);
   g_object_unref (test->base_connection);
 
-  tp_clear_object (&test->channel);
+  tp_clear_object (&test->room_list);
   g_ptr_array_unref (test->rooms);
 }
 
@@ -111,12 +131,7 @@ static void
 test_creation (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  const GError *error = NULL;
-
-  g_assert (TP_IS_ROOM_LIST_CHANNEL (test->channel));
-
-  error = tp_proxy_get_invalidated (test->channel);
-  g_assert_no_error (error);
+  g_assert (TP_IS_ROOM_LIST_CHANNEL (test->room_list));
 }
 
 static void
@@ -126,31 +141,26 @@ test_properties (Test *test,
   gchar *server;
   gboolean listing;
 
-  g_object_get (test->channel,
+  g_object_get (test->room_list,
       "server", &server,
       "listing", &listing,
       NULL);
 
   g_assert_cmpstr (server, ==, SERVER);
-  g_assert_cmpstr (tp_room_list_channel_get_server (test->channel), ==,
+  g_assert_cmpstr (tp_room_list_channel_get_server (test->room_list), ==,
       SERVER);
 
   g_assert (!listing);
-  g_assert (!tp_room_list_channel_get_listing (test->channel));
-}
+  g_assert (!tp_room_list_channel_get_listing (test->room_list));
 
-static void
-proxy_prepare_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  Test *test = user_data;
+  /* Create new one without server */
+  tp_clear_object (&test->room_list);
 
-  tp_proxy_prepare_finish (source, result, &test->error);
+  create_room_list (test, NULL);
+  g_assert_no_error (test->error);
 
-  test->wait--;
-  if (test->wait <= 0)
-    g_main_loop_quit (test->mainloop);
+  g_assert_cmpstr (tp_room_list_channel_get_server (test->room_list), ==,
+      NULL);
 }
 
 static void
@@ -194,34 +204,25 @@ static void
 test_listing (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GQuark features[] = { TP_ROOM_LIST_CHANNEL_FEATURE_LISTING, 0 };
   TpRoomInfo *room;
   gboolean known;
 
-  g_assert (!tp_room_list_channel_get_listing (test->channel));
+  g_assert (!tp_room_list_channel_get_listing (test->room_list));
 
-  tp_proxy_prepare_async (test->channel, features, proxy_prepare_cb, test);
-
-  test->wait = 1;
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-
-  g_assert (!tp_room_list_channel_get_listing (test->channel));
-
-  g_signal_connect (test->channel, "notify::listing",
+  g_signal_connect (test->room_list, "notify::listing",
       G_CALLBACK (notify_cb), test);
 
-  g_signal_connect (test->channel, "got-rooms",
+  g_signal_connect (test->room_list, "got-rooms",
       G_CALLBACK (got_rooms_cb), test);
 
-  tp_room_list_channel_start_listing_async (test->channel, start_listing_cb,
+  tp_room_list_channel_start_listing_async (test->room_list, start_listing_cb,
       test);
 
   test->wait = 5;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  g_assert (tp_room_list_channel_get_listing (test->channel));
+  g_assert (tp_room_list_channel_get_listing (test->room_list));
 
   g_assert_cmpuint (test->rooms->len, ==, 3);
 
