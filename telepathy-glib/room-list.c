@@ -1,5 +1,5 @@
 /*
- * room-list-channel.c - High level API for RoomList channels
+ * room-list.c - High level API for listing room channels
  *
  * Copyright (C) 2012 Collabora Ltd. <http://www.collabora.co.uk/>
  *
@@ -19,33 +19,33 @@
  */
 
 /**
- * SECTION:room-list-channel
- * @title: TpRoomListChannel
+ * SECTION:room-list
+ * @title: TpRoomList
  * @short_description: proxy object for a room list channel
  *
- * #TpRoomListChannel is a sub-class of #TpChannel providing convenient API
+ * #TpRoomList is a sub-class of #TpChannel providing convenient API
  * to list rooms.
  */
 
 /**
- * TpRoomListChannel:
+ * TpRoomList:
  *
- * Data structure representing a #TpRoomListChannel.
+ * Data structure representing a #TpRoomList.
  *
  * Since: UNRELEASED
  */
 
 /**
- * TpRoomListChannelClass:
+ * TpRoomListClass:
  *
- * The class of a #TpRoomListChannel.
+ * The class of a #TpRoomList.
  *
  * Since: UNRELEASED
  */
 
 #include <config.h>
 
-#include "telepathy-glib/room-list-channel.h"
+#include "telepathy-glib/room-list.h"
 #include <telepathy-glib/room-info-internal.h>
 
 #include <telepathy-glib/telepathy-glib.h>
@@ -59,10 +59,10 @@
 
 static void async_initable_iface_init (GAsyncInitableIface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (TpRoomListChannel, tp_room_list_channel, G_TYPE_OBJECT,
+G_DEFINE_TYPE_WITH_CODE (TpRoomList, tp_room_list, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, async_initable_iface_init))
 
-struct _TpRoomListChannelPrivate
+struct _TpRoomListPrivate
 {
   TpAccount *account;
   gchar *server;
@@ -88,21 +88,21 @@ enum {
 static guint signals[LAST_SIGNAL];
 
 static void
-tp_room_list_channel_get_property (GObject *object,
+tp_room_list_get_property (GObject *object,
     guint property_id,
     GValue *value,
     GParamSpec *pspec)
 {
-  TpRoomListChannel *self = (TpRoomListChannel *) object;
+  TpRoomList *self = (TpRoomList *) object;
 
   switch (property_id)
     {
       case PROP_ACCOUNT:
-        g_value_set_object (value, tp_room_list_channel_get_account (self));
+        g_value_set_object (value, tp_room_list_get_account (self));
         break;
 
       case PROP_SERVER:
-        g_value_set_string (value, tp_room_list_channel_get_server (self));
+        g_value_set_string (value, tp_room_list_get_server (self));
         break;
 
       case PROP_LISTING:
@@ -116,12 +116,12 @@ tp_room_list_channel_get_property (GObject *object,
 }
 
 static void
-tp_room_list_channel_set_property (GObject *object,
+tp_room_list_set_property (GObject *object,
     guint property_id,
     const GValue *value,
     GParamSpec *pspec)
 {
-  TpRoomListChannel *self = (TpRoomListChannel *) object;
+  TpRoomList *self = (TpRoomList *) object;
 
   switch (property_id)
     {
@@ -147,7 +147,7 @@ got_rooms_cb (TpChannel *channel,
     gpointer user_data,
     GObject *weak_object)
 {
-  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (weak_object);
+  TpRoomList *self = TP_ROOM_LIST (weak_object);
   guint i;
 
   for (i = 0; i < rooms->len; i++)
@@ -166,7 +166,7 @@ listing_rooms_cb (TpChannel *proxy,
     gpointer user_data,
     GObject *weak_object)
 {
-  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (weak_object);
+  TpRoomList *self = TP_ROOM_LIST (weak_object);
 
   if (self->priv->listing == listing)
     return;
@@ -176,7 +176,7 @@ listing_rooms_cb (TpChannel *proxy,
 }
 
 static void
-destroy_channel (TpRoomListChannel *self)
+destroy_channel (TpRoomList *self)
 {
   if (self->priv->channel == NULL)
     return;
@@ -188,11 +188,11 @@ destroy_channel (TpRoomListChannel *self)
 }
 
 static void
-tp_room_list_channel_dispose (GObject *object)
+tp_room_list_dispose (GObject *object)
 {
-  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (object);
+  TpRoomList *self = TP_ROOM_LIST (object);
   void (*chain_up) (GObject *) =
-      ((GObjectClass *) tp_room_list_channel_parent_class)->dispose;
+      ((GObjectClass *) tp_room_list_parent_class)->dispose;
 
   destroy_channel (self);
   g_clear_object (&self->priv->account);
@@ -202,11 +202,11 @@ tp_room_list_channel_dispose (GObject *object)
 }
 
 static void
-tp_room_list_channel_finalize (GObject *object)
+tp_room_list_finalize (GObject *object)
 {
-  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (object);
+  TpRoomList *self = TP_ROOM_LIST (object);
   void (*chain_up) (GObject *) =
-      ((GObjectClass *) tp_room_list_channel_parent_class)->finalize;
+      ((GObjectClass *) tp_room_list_parent_class)->finalize;
 
   g_free (self->priv->server);
 
@@ -215,18 +215,18 @@ tp_room_list_channel_finalize (GObject *object)
 }
 
 static void
-tp_room_list_channel_class_init (TpRoomListChannelClass *klass)
+tp_room_list_class_init (TpRoomListClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;
 
-  gobject_class->get_property = tp_room_list_channel_get_property;
-  gobject_class->set_property = tp_room_list_channel_set_property;
-  gobject_class->dispose = tp_room_list_channel_dispose;
-  gobject_class->finalize = tp_room_list_channel_finalize;
+  gobject_class->get_property = tp_room_list_get_property;
+  gobject_class->set_property = tp_room_list_set_property;
+  gobject_class->dispose = tp_room_list_dispose;
+  gobject_class->finalize = tp_room_list_finalize;
 
   /**
-   * TpRoomListChannel:account:
+   * TpRoomList:account:
    *
    * The #TpAccount to use for the room listing.
    *
@@ -239,7 +239,7 @@ tp_room_list_channel_class_init (TpRoomListChannelClass *klass)
   g_object_class_install_property (gobject_class, PROP_ACCOUNT, param_spec);
 
   /**
-   * TpRoomListChannel:server:
+   * TpRoomList:server:
    *
    * The DNS name of the server whose rooms are listed by this channel, or
    * %NULL.
@@ -253,12 +253,12 @@ tp_room_list_channel_class_init (TpRoomListChannelClass *klass)
   g_object_class_install_property (gobject_class, PROP_SERVER, param_spec);
 
   /**
-   * TpRoomListChannel:listing:
+   * TpRoomList:listing:
    *
    * %TRUE if the channel is currently listing rooms.
    *
    * This property is meaningless until the
-   * %TP_ROOM_LIST_CHANNEL_FEATURE_LISTING feature has been prepared.
+   * %TP_ROOM_LIST_FEATURE_LISTING feature has been prepared.
    *
    * Since: 0.UNRELEASED
    */
@@ -270,8 +270,8 @@ tp_room_list_channel_class_init (TpRoomListChannelClass *klass)
 
 
   /**
-   * TpRoomListChannel::got-rooms:
-   * @self: a #TpRoomListChannel
+   * TpRoomList::got-rooms:
+   * @self: a #TpRoomList
    *
    * TODO
    *
@@ -284,60 +284,60 @@ tp_room_list_channel_class_init (TpRoomListChannelClass *klass)
       G_TYPE_NONE,
       1, TP_TYPE_ROOM_INFO);
 
-  g_type_class_add_private (gobject_class, sizeof (TpRoomListChannelPrivate));
+  g_type_class_add_private (gobject_class, sizeof (TpRoomListPrivate));
 }
 
 static void
-tp_room_list_channel_init (TpRoomListChannel *self)
+tp_room_list_init (TpRoomList *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE ((self), TP_TYPE_ROOM_LIST_CHANNEL,
-      TpRoomListChannelPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE ((self), TP_TYPE_ROOM_LIST,
+      TpRoomListPrivate);
 }
 
 /**
- * tp_room_list_channel_get_account:
- * @self: a #TpRoomListChannel
+ * tp_room_list_get_account:
+ * @self: a #TpRoomList
  *
- * Return the #TpRoomListChannel:account property
+ * Return the #TpRoomList:account property
  *
- * Returns: (transfer none): the value of #TpRoomListChannel:account property
+ * Returns: (transfer none): the value of #TpRoomList:account property
  *
  * Since: UNRELEASED
  */
 TpAccount *
-tp_room_list_channel_get_account (TpRoomListChannel *self)
+tp_room_list_get_account (TpRoomList *self)
 {
   return self->priv->account;
 }
 
 /**
- * tp_room_list_channel_get_server:
- * @self: a #TpRoomListChannel
+ * tp_room_list_get_server:
+ * @self: a #TpRoomList
  *
- * Return the #TpRoomListChannel:server property
+ * Return the #TpRoomList:server property
  *
- * Returns: the value of #TpRoomListChannel:server property
+ * Returns: the value of #TpRoomList:server property
  *
  * Since: UNRELEASED
  */
 const gchar *
-tp_room_list_channel_get_server (TpRoomListChannel *self)
+tp_room_list_get_server (TpRoomList *self)
 {
   return self->priv->server;
 }
 
 /**
- * tp_room_list_channel_get_listing:
- * @self: a #TpRoomListChannel
+ * tp_room_list_get_listing:
+ * @self: a #TpRoomList
  *
- * Return the #TpRoomListChannel:listing property
+ * Return the #TpRoomList:listing property
  *
- * Returns: the value of #TpRoomListChannel:listing property
+ * Returns: the value of #TpRoomList:listing property
  *
  * Since: UNRELEASED
  */
 gboolean
-tp_room_list_channel_get_listing (TpRoomListChannel *self)
+tp_room_list_get_listing (TpRoomList *self)
 {
   return self->priv->listing;
 }
@@ -359,18 +359,18 @@ list_rooms_cb (TpChannel *channel,
 }
 
 /**
- * tp_room_list_channel_start_listing_async:
- * @self: a #TpRoomListChannel
+ * tp_room_list_start_listing_async:
+ * @self: a #TpRoomList
  * @callback: a callback to call when room listing have been started
  * @user_data: data to pass to @callback
  *
- * Start listing rooms using @self. Use the TpRoomListChannel::got-rooms
+ * Start listing rooms using @self. Use the TpRoomList::got-rooms
  * signal to get the rooms found.
  *
  * Since: UNRELEASED
  */
 void
-tp_room_list_channel_start_listing_async (TpRoomListChannel *self,
+tp_room_list_start_listing_async (TpRoomList *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -379,15 +379,15 @@ tp_room_list_channel_start_listing_async (TpRoomListChannel *self,
   g_return_if_fail (self->priv->channel != NULL);
 
   result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-      tp_room_list_channel_start_listing_async);
+      tp_room_list_start_listing_async);
 
   tp_cli_channel_type_room_list_call_list_rooms (self->priv->channel, -1,
       list_rooms_cb, result, g_object_unref, G_OBJECT (self));
 }
 
 /**
- * tp_room_list_channel_start_listing_finish:
- * @self: a #TpRoomListChannel
+ * tp_room_list_start_listing_finish:
+ * @self: a #TpRoomList
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
@@ -399,11 +399,11 @@ tp_room_list_channel_start_listing_async (TpRoomListChannel *self,
  * Since: UNRELEASED
  */
 gboolean
-tp_room_list_channel_start_listing_finish (TpRoomListChannel *self,
+tp_room_list_start_listing_finish (TpRoomList *self,
     GAsyncResult *result,
     GError **error)
 {
-  _tp_implement_finish_void (self, tp_room_list_channel_start_listing_async)
+  _tp_implement_finish_void (self, tp_room_list_start_listing_async)
 }
 
 static void
@@ -413,7 +413,7 @@ create_channel_cb (GObject *source_object,
 {
   TpAccountChannelRequest *channel_request = TP_ACCOUNT_CHANNEL_REQUEST (
       source_object);
-  TpRoomListChannel *self = user_data;
+  TpRoomList *self = user_data;
   GHashTable *properties;
   GError *error = NULL;
   const gchar *server;
@@ -473,7 +473,7 @@ create_channel_cb (GObject *source_object,
 }
 
 static void
-open_new_channel (TpRoomListChannel *self)
+open_new_channel (TpRoomList *self)
 {
   GHashTable *request;
   TpAccountChannelRequest *channel_request;
@@ -500,22 +500,22 @@ open_new_channel (TpRoomListChannel *self)
 }
 
 static void
-room_list_channel_init_async (GAsyncInitable *initable,
+room_list_init_async (GAsyncInitable *initable,
     gint io_priority,
     GCancellable *cancellable,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TpRoomListChannel *self = TP_ROOM_LIST_CHANNEL (initable);
+  TpRoomList *self = TP_ROOM_LIST (initable);
 
   self->priv->async_res = g_simple_async_result_new (G_OBJECT (self),
-      callback, user_data, tp_room_list_channel_new_async);
+      callback, user_data, tp_room_list_new_async);
 
   open_new_channel (self);
 }
 
 static gboolean
-room_list_channel_init_finish (GAsyncInitable *initable,
+room_list_init_finish (GAsyncInitable *initable,
     GAsyncResult *res,
     GError **error)
 {
@@ -529,12 +529,12 @@ room_list_channel_init_finish (GAsyncInitable *initable,
 static void
 async_initable_iface_init (GAsyncInitableIface *iface)
 {
-  iface->init_async = room_list_channel_init_async;
-  iface->init_finish = room_list_channel_init_finish;
+  iface->init_async = room_list_init_async;
+  iface->init_finish = room_list_init_finish;
 }
 
 /**
- * tp_room_list_channel_new_async:
+ * tp_room_list_new_async:
  * @account: a #TpAccount for the room listing
  * @server: the DNS name of the server whose rooms should listed
  * @callback: a #GAsyncReadyCallback to call when the initialization
@@ -546,14 +546,14 @@ async_initable_iface_init (GAsyncInitableIface *iface)
  * Since: UNRELEASED
  */
 void
-tp_room_list_channel_new_async (TpAccount *account,
+tp_room_list_new_async (TpAccount *account,
     const gchar *server,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
   g_return_if_fail (TP_IS_ACCOUNT (account));
 
-  g_async_initable_new_async (TP_TYPE_ROOM_LIST_CHANNEL,
+  g_async_initable_new_async (TP_TYPE_ROOM_LIST,
       G_PRIORITY_DEFAULT, NULL, callback, user_data,
       "account", account,
       "server", server,
@@ -561,19 +561,19 @@ tp_room_list_channel_new_async (TpAccount *account,
 }
 
 /**
- * tp_room_list_channel_new_finish:
+ * tp_room_list_new_finish:
  * @result: the #GAsyncResult from the callback
  * @error: a #GError location to store an error, or %NULL
  *
  * <!-- -->
  *
- * Returns: (transfer full): a new #TpRoomListChannel object, or %NULL
+ * Returns: (transfer full): a new #TpRoomList object, or %NULL
  * in case of error.
  *
  * Since: UNRELEASED
  */
-TpRoomListChannel *
-tp_room_list_channel_new_finish (GAsyncResult *result,
+TpRoomList *
+tp_room_list_new_finish (GAsyncResult *result,
     GError **error)
 {
   GObject *object, *source_object;
@@ -585,7 +585,7 @@ tp_room_list_channel_new_finish (GAsyncResult *result,
   g_object_unref (source_object);
 
   if (object != NULL)
-    return TP_ROOM_LIST_CHANNEL (object);
+    return TP_ROOM_LIST (object);
   else
     return NULL;
 }

@@ -50,7 +50,7 @@ tests_list = \
     test-properties \
     test-protocol-objects \
     test-proxy-preparation \
-    test-room-list-channel \
+    test-room-list \
     test-self-handle \
     test-self-presence \
     test-simple-approver \
@@ -255,13 +255,7 @@ test_text_channel_LDADD = \
 
 test_debug_client_SOURCES = debug-client.c
 
-# this one uses internal ABI
-test_room_list_channel_SOURCES = room-list-channel.c
-
-test_room_list_channel_LDADD = \
-    $(LDADD) \
-    $(top_builddir)/tests/lib/libtp-glib-tests-internal.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la
+test_room_list_SOURCES = room-list.c
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk

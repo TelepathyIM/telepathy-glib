@@ -7233,29 +7233,31 @@ TpDebugMessagePriv
 </SECTION>
 
 <SECTION>
-<FILE>room-list-channel</FILE>
-<TITLE>room-list-channel</TITLE>
+<FILE>room-list</FILE>
+<TITLE>room-list</TITLE>
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <SUBSECTION>
-TpRoomListChannel
-TpRoomListChannelClass
-tp_room_list_channel_new_async
-tp_room_list_channel_new_finish
-tp_room_list_channel_get_listing
-tp_room_list_channel_get_server
-tp_room_list_channel_get_account
+TpRoomList
+TpRoomListClass
+tp_room_list_new_async
+tp_room_list_new_finish
+tp_room_list_get_listing
+tp_room_list_get_server
+tp_room_list_get_account
+tp_room_list_start_listing_async
+tp_room_list_start_listing_finish
 <SUBSECTION Standard>
-TP_IS_ROOM_LIST_CHANNEL
-TP_IS_ROOM_LIST_CHANNEL_CLASS
-TP_ROOM_LIST_CHANNEL
-TP_ROOM_LIST_CHANNEL_CLASS
-TP_ROOM_LIST_CHANNEL_FEATURE_LISTING
-TP_ROOM_LIST_CHANNEL_GET_CLASS
-TP_TYPE_ROOM_LIST_CHANNEL
-tp_room_list_channel_get_type
+TP_IS_ROOM_LIST
+TP_IS_ROOM_LIST_CLASS
+TP_ROOM_LIST
+TP_ROOM_LIST_CLASS
+TP_ROOM_LIST_FEATURE_LISTING
+TP_ROOM_LIST_GET_CLASS
+TP_TYPE_ROOM_LIST
+tp_room_list_get_type
 <SUBSECTION Private>
-TpRoomListChannelPrivate
-tp_room_list_channel_get_feature_quark_listing
+TpRoomListPrivate
+tp_room_list_get_feature_quark_listing
 </SECTION>
 
 <SECTION>
@@ -7276,8 +7278,6 @@ tp_room_info_get_requires_password
 tp_room_info_get_room_id
 tp_room_info_get_server
 tp_room_info_get_subject
-tp_room_list_channel_start_listing_async
-tp_room_list_channel_start_listing_finish
 <SUBSECTION Standard>
 TP_IS_ROOM_INFO
 TP_IS_ROOM_INFO_CLASS

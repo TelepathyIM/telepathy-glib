@@ -30,7 +30,7 @@ typedef struct {
     /* Client side objects */
     TpAccount *account;
     TpConnection *connection;
-    TpRoomListChannel *room_list;
+    TpRoomList *room_list;
 
     GPtrArray *rooms; /* reffed TpRoomInfo */
     GError *error /* initialized where needed */;
@@ -46,7 +46,7 @@ new_async_cb (GObject *source,
 {
   Test *test = user_data;
 
-  test->room_list = tp_room_list_channel_new_finish (result, &test->error);
+  test->room_list = tp_room_list_new_finish (result, &test->error);
 
   test->wait--;
   if (test->wait <= 0)
@@ -59,7 +59,7 @@ create_room_list (Test *test,
 {
   tp_clear_object (&test->room_list);
 
-  tp_room_list_channel_new_async (test->account, server,
+  tp_room_list_new_async (test->account, server,
       new_async_cb, test);
 
   test->wait = 1;
@@ -131,7 +131,7 @@ static void
 test_creation (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  g_assert (TP_IS_ROOM_LIST_CHANNEL (test->room_list));
+  g_assert (TP_IS_ROOM_LIST (test->room_list));
 }
 
 static void
@@ -147,11 +147,11 @@ test_properties (Test *test,
       NULL);
 
   g_assert_cmpstr (server, ==, SERVER);
-  g_assert_cmpstr (tp_room_list_channel_get_server (test->room_list), ==,
+  g_assert_cmpstr (tp_room_list_get_server (test->room_list), ==,
       SERVER);
 
   g_assert (!listing);
-  g_assert (!tp_room_list_channel_get_listing (test->room_list));
+  g_assert (!tp_room_list_get_listing (test->room_list));
 
   /* Create new one without server */
   tp_clear_object (&test->room_list);
@@ -159,7 +159,7 @@ test_properties (Test *test,
   create_room_list (test, NULL);
   g_assert_no_error (test->error);
 
-  g_assert_cmpstr (tp_room_list_channel_get_server (test->room_list), ==,
+  g_assert_cmpstr (tp_room_list_get_server (test->room_list), ==,
       NULL);
 }
 
@@ -170,7 +170,7 @@ start_listing_cb (GObject *source,
 {
   Test *test = user_data;
 
-  tp_room_list_channel_start_listing_finish (TP_ROOM_LIST_CHANNEL (source),
+  tp_room_list_start_listing_finish (TP_ROOM_LIST (source),
       result, &test->error);
 
   test->wait--;
@@ -189,7 +189,7 @@ notify_cb (GObject *object,
 }
 
 static void
-got_rooms_cb (TpRoomListChannel *channel,
+got_rooms_cb (TpRoomList *channel,
     TpRoomInfo *room,
     Test *test)
 {
@@ -207,7 +207,7 @@ test_listing (Test *test,
   TpRoomInfo *room;
   gboolean known;
 
-  g_assert (!tp_room_list_channel_get_listing (test->room_list));
+  g_assert (!tp_room_list_get_listing (test->room_list));
 
   g_signal_connect (test->room_list, "notify::listing",
       G_CALLBACK (notify_cb), test);
@@ -215,14 +215,14 @@ test_listing (Test *test,
   g_signal_connect (test->room_list, "got-rooms",
       G_CALLBACK (got_rooms_cb), test);
 
-  tp_room_list_channel_start_listing_async (test->room_list, start_listing_cb,
+  tp_room_list_start_listing_async (test->room_list, start_listing_cb,
       test);
 
   test->wait = 5;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  g_assert (tp_room_list_channel_get_listing (test->room_list));
+  g_assert (tp_room_list_get_listing (test->room_list));
 
   g_assert_cmpuint (test->rooms->len, ==, 3);
 
