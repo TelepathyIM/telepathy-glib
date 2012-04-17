@@ -247,12 +247,14 @@ static void
 test_list_room_fails (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
+  gulong id;
+
   /* Use magic server to tell to the channel to fail ListRooms() */
   tp_clear_object (&test->room_list);
 
   create_room_list (test, "ListRoomsFail");
 
-  g_signal_connect (test->room_list, "failed",
+  id = g_signal_connect (test->room_list, "failed",
       G_CALLBACK (room_list_failed_cb), test);
 
   tp_room_list_start (test->room_list);
@@ -260,6 +262,40 @@ test_list_room_fails (Test *test,
   test->wait = 1;
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_SERVICE_CONFUSED);
+
+  /* We don't want the 'failed' cb be called when disconnecting the
+   * connection */
+  g_signal_handler_disconnect (test->room_list, id);
+}
+
+static void
+test_invalidated (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  const gchar *path;
+  TpChannel *chan;
+  gulong id;
+
+  id = g_signal_connect (test->room_list, "failed",
+      G_CALLBACK (room_list_failed_cb), test);
+
+  /* Create a proxy on the room list channel to close it */
+  path = tp_tests_simple_connection_ensure_room_list_chan (
+      TP_TESTS_SIMPLE_CONNECTION (test->base_connection), SERVER, NULL);
+
+  chan = tp_channel_new (test->connection, path,
+      TP_IFACE_CHANNEL_TYPE_ROOM_LIST, TP_HANDLE_TYPE_NONE, 0,
+      &test->error);
+  g_assert_no_error (test->error);
+
+  tp_channel_close_async (chan, NULL, NULL);
+  g_object_unref (chan);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED);
+
+  g_signal_handler_disconnect (test->room_list, id);
 }
 
 int
@@ -277,6 +313,8 @@ main (int argc,
       test_listing, teardown);
   g_test_add ("/room-list-channel/list-rooms-fail", Test, NULL, setup,
       test_list_room_fails, teardown);
+  g_test_add ("/room-list-channel/invalidated", Test, NULL, setup,
+      test_invalidated, teardown);
 
   return g_test_run ();
 }

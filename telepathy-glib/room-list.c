@@ -71,6 +71,7 @@ struct _TpRoomListPrivate
   TpChannel *channel;
 
   GSimpleAsyncResult *async_res;
+  gulong invalidated_id;
 };
 
 enum
@@ -194,6 +195,10 @@ tp_room_list_dispose (GObject *object)
   TpRoomList *self = TP_ROOM_LIST (object);
   void (*chain_up) (GObject *) =
       ((GObjectClass *) tp_room_list_parent_class)->dispose;
+
+  if (self->priv->channel != NULL)
+    g_signal_handler_disconnect (self->priv->channel,
+        self->priv->invalidated_id);
 
   destroy_channel (self);
   g_clear_object (&self->priv->account);
@@ -397,6 +402,22 @@ tp_room_list_start (TpRoomList *self)
 }
 
 static void
+chan_invalidated_cb (TpChannel *channel,
+    guint domain,
+    gint code,
+    gchar *message,
+    TpRoomList *self)
+{
+  GError *error = g_error_new_literal (domain, code, message);
+
+  DEBUG ("RoomList channel invalidated: %s", message);
+
+  g_signal_emit (self, signals[SIG_FAILED], 0, error);
+
+  g_error_free (error);
+}
+
+static void
 create_channel_cb (GObject *source_object,
     GAsyncResult *result,
     gpointer user_data)
@@ -419,6 +440,9 @@ create_channel_cb (GObject *source_object,
     }
 
   DEBUG ("Got channel: %s", tp_proxy_get_object_path (self->priv->channel));
+
+  self->priv->invalidated_id = tp_g_signal_connect_object (self->priv->channel,
+      "invalidated", G_CALLBACK (chan_invalidated_cb), self, 0);
 
   if (tp_cli_channel_type_room_list_connect_to_got_rooms (self->priv->channel,
         got_rooms_cb, NULL, NULL, G_OBJECT (self), &error) == NULL)
