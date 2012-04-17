@@ -112,6 +112,12 @@ fill_immutable_properties (TpBaseChannel *chan,
 }
 
 static void
+room_list_chan_close (TpBaseChannel *channel)
+{
+  tp_base_channel_destroyed (channel);
+}
+
+static void
 tp_tests_room_list_chan_class_init (
     TpTestsRoomListChanClass *klass)
 {
@@ -131,6 +137,7 @@ tp_tests_room_list_chan_class_init (
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_ROOM_LIST;
   base_class->target_handle_type = TP_HANDLE_TYPE_NONE;
   base_class->fill_immutable_properties = fill_immutable_properties;
+  base_class->close = room_list_chan_close;
 
   spec = g_param_spec_string ("server", "server",
       "Server",
