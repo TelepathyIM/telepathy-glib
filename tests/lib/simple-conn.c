@@ -25,6 +25,7 @@
 #include <telepathy-glib/util.h>
 
 #include "textchan-null.h"
+#include "room-list-chan.h"
 #include "util.h"
 
 static void conn_iface_init (TpSvcConnectionClass *);
@@ -406,6 +407,54 @@ tp_tests_simple_connection_ensure_text_chan (TpTestsSimpleConnection *self,
 
   if (props != NULL)
     *props = tp_tests_text_channel_get_props (chan);
+
+  return chan_path;
+}
+
+static void
+room_list_chan_closed_cb (TpBaseChannel *channel,
+    TpTestsSimpleConnection *self)
+{
+  g_hash_table_remove (self->priv->channels, GUINT_TO_POINTER (0));
+}
+
+gchar *
+tp_tests_simple_connection_ensure_room_list_chan (TpTestsSimpleConnection *self,
+    const gchar *server,
+    GHashTable **props)
+{
+  TpTestsRoomListChan *chan;
+  gchar *chan_path;
+  TpBaseConnection *base_conn = (TpBaseConnection *) self;
+
+  chan = g_hash_table_lookup (self->priv->channels, GUINT_TO_POINTER (0));
+  if (chan != NULL)
+    {
+      /* Channel already exist, reuse it */
+      g_object_get (chan, "object-path", &chan_path, NULL);
+    }
+  else
+    {
+      chan_path = g_strdup_printf ("%s/RoomListChannel",
+          base_conn->object_path);
+
+       chan = TP_TESTS_ROOM_LIST_CHAN (
+          tp_tests_object_new_static_class (
+            TP_TESTS_TYPE_ROOM_LIST_CHAN,
+            "connection", self,
+            "object-path", chan_path,
+            "server", server ? server : "",
+            NULL));
+
+       g_signal_connect (chan, "closed",
+           G_CALLBACK (room_list_chan_closed_cb), self);
+
+      g_hash_table_insert (self->priv->channels, GUINT_TO_POINTER (0),
+          chan);
+    }
+
+  if (props != NULL)
+    g_object_get (chan, "channel-properties", props, NULL);
 
   return chan_path;
 }
