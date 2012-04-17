@@ -93,13 +93,29 @@ add_channel (TpTestsSimpleChannelRequest *self,
   gchar *chan_path;
   GHashTable *request;
   GHashTable *props;
+  const char *chan_type;
 
   request = g_ptr_array_index (self->priv->requests, 0);
-  target_id = tp_asv_get_string (request, TP_PROP_CHANNEL_TARGET_ID);
-  g_assert (target_id != NULL);
+  chan_type = tp_asv_get_string (request, TP_PROP_CHANNEL_CHANNEL_TYPE);
 
-  chan_path = tp_tests_simple_connection_ensure_text_chan (self->priv->conn,
-      target_id, &props);
+  if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_TEXT))
+    {
+      target_id = tp_asv_get_string (request, TP_PROP_CHANNEL_TARGET_ID);
+      g_assert (target_id != NULL);
+
+      chan_path = tp_tests_simple_connection_ensure_text_chan (self->priv->conn,
+          target_id, &props);
+    }
+  else if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_ROOM_LIST))
+    {
+      chan_path = tp_tests_simple_connection_ensure_room_list_chan (
+          self->priv->conn, tp_asv_get_string (request,
+            TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER), &props);
+    }
+  else
+    {
+      g_assert_not_reached ();
+    }
 
   g_ptr_array_add (channels, tp_value_array_build (2,
       DBUS_TYPE_G_OBJECT_PATH, chan_path,
