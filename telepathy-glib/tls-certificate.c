@@ -883,3 +883,51 @@ tp_tls_certificate_get_nth_rejection (TpTLSCertificate *self,
 
   return rej->error;
 }
+
+/**
+ * tp_tls_certificate_get_cert_type:
+ * @self: a #TpTLSCertificate
+ *
+ * Return the #TpTLSCertificate:cert-type property
+ *
+ * Returns: the value of #TpTLSCertificate:cert-type property
+ *
+ * Since: UNRELEASED
+ */
+const gchar *
+tp_tls_certificate_get_cert_type (TpTLSCertificate *self)
+{
+  return self->priv->cert_type;
+}
+
+/**
+ * tp_tls_certificate_get_cert_data:
+ * @self: a #TpTLSCertificate
+ *
+ * Return the #TpTLSCertificate:cert-data property
+ *
+ * Returns: (transfer none) (type GLib.PtrArray) (element-type GLib.Array): the value of #TpTLSCertificate:cert-data property
+ *
+ * Since: UNRELEASED
+ */
+GPtrArray *
+tp_tls_certificate_get_cert_data (TpTLSCertificate *self)
+{
+  return self->priv->cert_data;
+}
+
+/**
+ * tp_tls_certificate_get_state:
+ * @self: a #TpTLSCertificate
+ *
+ * Return the #TpTLSCertificate:state property
+ *
+ * Returns: the value of #TpTLSCertificate:state property
+ *
+ * Since: UNRELEASED
+ */
+TpTLSCertificateState
+tp_tls_certificate_get_state (TpTLSCertificate *self)
+{
+  return self->priv->state;
+}
