@@ -60,6 +60,7 @@ tests_list = \
     test-text-channel \
     test-text-mixin \
     test-text-respawn \
+    test-tls-certificate \
     test-unsupported-interface
 
 if ENABLE_INSTALLED_TESTS
@@ -256,6 +257,8 @@ test_text_channel_LDADD = \
 test_debug_client_SOURCES = debug-client.c
 
 test_room_list_SOURCES = room-list.c
+
+test_tls_certificate_SOURCES = tls-certificate.c
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
