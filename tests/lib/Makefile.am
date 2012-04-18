@@ -72,6 +72,8 @@ libtp_glib_tests_la_SOURCES = \
     textchan-null.h \
     textchan-group.c \
     textchan-group.h \
+    tls-certificate.h \
+    tls-certificate.c \
     util.c \
     util.h
 libtp_glib_tests_internal_la_SOURCES = $(libtp_glib_tests_la_SOURCES)
