@@ -583,6 +583,7 @@ reject_reason_get_dbus_error (TpTLSCertificateRejectReason reason)
  * @conn_or_chan: a #TpConnection or #TpChannel parent for this object, whose
  *  invalidation will also result in invalidation of the returned object
  * @object_path: the object path of this TLS certificate
+ * @error: a #GError used to return an error if %NULL is returned, or %NULL
  *
  * <!-- -->
  *
