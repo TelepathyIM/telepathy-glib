@@ -607,7 +607,7 @@ tp_tls_certificate_new (TpProxy *conn_or_chan,
   retval = g_object_new (TP_TYPE_TLS_CERTIFICATE,
       "parent", conn_or_chan,
       "dbus-daemon", conn_or_chan->dbus_daemon,
-      "dbus-daemon", conn_or_chan->bus_name,
+      "bus-name", conn_or_chan->bus_name,
       "object-path", object_path,
       NULL);
 
