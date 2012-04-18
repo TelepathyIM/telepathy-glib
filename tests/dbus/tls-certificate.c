@@ -189,6 +189,65 @@ test_accept (Test *test,
       TP_TLS_CERTIFICATE_STATE_ACCEPTED);
 }
 
+static void
+reject_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_tls_certificate_reject_finish (TP_TLS_CERTIFICATE (source), result,
+      &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_reject (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *details;
+  const GError *error;
+  TpTLSCertificateRejectReason reason;
+  const gchar *dbus_error;
+
+  g_signal_connect (test->cert, "notify::state",
+      G_CALLBACK (notify_cb), test);
+
+  details = tp_asv_new ("user-requested", G_TYPE_BOOLEAN, TRUE, NULL);
+
+  tp_tls_certificate_add_rejection (test->cert,
+      TP_TLS_CERTIFICATE_REJECT_REASON_REVOKED, NULL, details);
+  tp_tls_certificate_add_rejection (test->cert,
+      TP_TLS_CERTIFICATE_REJECT_REASON_UNKNOWN,
+      TP_ERROR_STR_CAPTCHA_NOT_SUPPORTED, NULL);
+  g_hash_table_unref (details);
+
+  tp_tls_certificate_reject_async (test->cert, reject_cb, test);
+
+  test->wait = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert_cmpuint (tp_tls_certificate_get_state (test->cert), ==,
+      TP_TLS_CERTIFICATE_STATE_REJECTED);
+
+  error = tp_tls_certificate_get_rejection (test->cert, &reason, &dbus_error,
+      (const GHashTable **) &details);
+  g_assert_error (error, TP_ERRORS, TP_ERROR_CERT_REVOKED);
+  g_assert_cmpstr (dbus_error, ==, TP_ERROR_STR_CERT_REVOKED);
+  g_assert_cmpuint (g_hash_table_size (details), ==, 1);
+  g_assert (tp_asv_get_boolean (details, "user-requested", NULL));
+
+  error = tp_tls_certificate_get_nth_rejection (test->cert, 1, &reason,
+      &dbus_error, (const GHashTable **) &details);
+  g_assert_error (error, TP_ERRORS, TP_ERROR_CAPTCHA_NOT_SUPPORTED);
+  g_assert_cmpstr (dbus_error, ==, TP_ERROR_STR_CAPTCHA_NOT_SUPPORTED);
+  g_assert_cmpuint (g_hash_table_size (details), ==, 0);
+}
+
 int
 main (int argc,
       char **argv)
@@ -202,6 +261,8 @@ main (int argc,
       test_core, teardown);
   g_test_add ("/tls-certificate/accept", Test, NULL, setup,
       test_accept, teardown);
+  g_test_add ("/tls-certificate/reject", Test, NULL, setup,
+      test_reject, teardown);
 
   return g_test_run ();
 }
