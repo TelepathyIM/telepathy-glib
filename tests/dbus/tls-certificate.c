@@ -101,6 +101,52 @@ test_creation (Test *test,
   g_assert (TP_IS_TLS_CERTIFICATE (test->cert));
 }
 
+static void
+proxy_prepare_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_proxy_prepare_finish (source, result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_core (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_TLS_CERTIFICATE_FEATURE_CORE, 0 };
+  GPtrArray *cert_data;
+  GArray *d;
+
+  /* Properties are not valid yet */
+  g_assert_cmpstr (tp_tls_certificate_get_cert_type (test->cert), ==, NULL);
+  g_assert (tp_tls_certificate_get_cert_data (test->cert) == NULL);
+  g_assert_cmpuint (tp_tls_certificate_get_state (test->cert), ==,
+      TP_TLS_CERTIFICATE_STATE_PENDING);
+
+  tp_proxy_prepare_async (test->cert, features,
+      proxy_prepare_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert_cmpstr (tp_tls_certificate_get_cert_type (test->cert), ==, "x509");
+  g_assert_cmpuint (tp_tls_certificate_get_state (test->cert), ==,
+      TP_TLS_CERTIFICATE_STATE_PENDING);
+
+  cert_data = tp_tls_certificate_get_cert_data (test->cert);
+  g_assert (cert_data != NULL);
+  g_assert_cmpuint (cert_data->len, ==, 1);
+  d = g_ptr_array_index (cert_data, 0);
+  g_assert_cmpstr (d->data, ==, "BADGER");
+}
+
 int
 main (int argc,
       char **argv)
@@ -110,6 +156,8 @@ main (int argc,
 
   g_test_add ("/tls-certificate/creation", Test, NULL, setup,
       test_creation, teardown);
+  g_test_add ("/tls-certificate/core", Test, NULL, setup,
+      test_core, teardown);
 
   return g_test_run ();
 }
