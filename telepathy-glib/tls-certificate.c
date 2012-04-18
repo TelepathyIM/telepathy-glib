@@ -673,8 +673,8 @@ tp_tls_certificate_accept_finish (TpTLSCertificate *self,
  * @reason: the reason for rejection
  * @dbus_error: a D-Bus error name such as %TP_ERROR_STR_CERT_REVOKED, or
  *  %NULL to derive one from @reason
- * @details: (transfer none) (element-type utf8 GObject.Value): details of the
- *  rejection
+ * @details: (transfer none) (allow-none) (element-type utf8 GObject.Value): details of the
+ *  rejection, or %NULL
  *
  * Add a pending reason for rejection. The first call to this method is
  * considered "most important". After calling this method as many times
@@ -700,6 +700,11 @@ tp_tls_certificate_add_rejection (TpTLSCertificate *self,
   if (dbus_error == NULL)
     dbus_error = reject_reason_get_dbus_error (reason);
 
+  if (details == NULL)
+    details = g_hash_table_new (NULL, NULL);
+  else
+    g_hash_table_ref (details);
+
   rejection = tp_value_array_build (3,
       G_TYPE_UINT, reason,
       G_TYPE_STRING, dbus_error,
@@ -707,6 +712,8 @@ tp_tls_certificate_add_rejection (TpTLSCertificate *self,
       NULL);
 
   g_ptr_array_add (self->priv->pending_rejections, rejection);
+
+  g_hash_table_unref (details);
 }
 
 /**
