@@ -147,6 +147,48 @@ test_core (Test *test,
   g_assert_cmpstr (d->data, ==, "BADGER");
 }
 
+static void
+notify_cb (GObject *object,
+    GParamSpec *spec,
+    Test *test)
+{
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+accept_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_tls_certificate_accept_finish (TP_TLS_CERTIFICATE (source), result,
+      &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_accept (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  g_signal_connect (test->cert, "notify::state",
+      G_CALLBACK (notify_cb), test);
+
+  tp_tls_certificate_accept_async (test->cert, accept_cb, test);
+
+  test->wait = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert_cmpuint (tp_tls_certificate_get_state (test->cert), ==,
+      TP_TLS_CERTIFICATE_STATE_ACCEPTED);
+}
+
 int
 main (int argc,
       char **argv)
@@ -158,6 +200,8 @@ main (int argc,
       test_creation, teardown);
   g_test_add ("/tls-certificate/core", Test, NULL, setup,
       test_core, teardown);
+  g_test_add ("/tls-certificate/accept", Test, NULL, setup,
+      test_accept, teardown);
 
   return g_test_run ();
 }
