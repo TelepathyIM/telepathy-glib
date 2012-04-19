@@ -217,10 +217,11 @@ static void
 test_reject (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *details;
+  GVariant *details;
   const GError *error;
   TpTLSCertificateRejectReason reason;
   const gchar *dbus_error;
+  gboolean enabled;
 
   g_signal_connect (test->cert, "notify::state",
       G_CALLBACK (notify_cb), test);
@@ -243,17 +244,19 @@ test_reject (Test *test,
       TP_TLS_CERTIFICATE_STATE_REJECTED);
 
   error = tp_tls_certificate_get_rejection (test->cert, &reason, &dbus_error,
-      (const GHashTable **) &details);
+      (const GVariant **) &details);
   g_assert_error (error, TP_ERRORS, TP_ERROR_CERT_REVOKED);
   g_assert_cmpstr (dbus_error, ==, TP_ERROR_STR_CERT_REVOKED);
-  g_assert_cmpuint (g_hash_table_size (details), ==, 1);
-  g_assert (tp_asv_get_boolean (details, "user-requested", NULL));
+  g_assert (g_variant_is_of_type (details, G_VARIANT_TYPE_VARDICT));
+  g_assert_cmpuint (g_variant_n_children (details), ==, 1);
+  g_assert (g_variant_lookup (details, "user-requested", "b", &enabled));
+  g_assert (enabled);
 
   error = tp_tls_certificate_get_nth_rejection (test->cert, 1, &reason,
-      &dbus_error, (const GHashTable **) &details);
+      &dbus_error, (const GVariant **) &details);
   g_assert_error (error, TP_ERRORS, TP_ERROR_CAPTCHA_NOT_SUPPORTED);
   g_assert_cmpstr (dbus_error, ==, TP_ERROR_STR_CAPTCHA_NOT_SUPPORTED);
-  g_assert_cmpuint (g_hash_table_size (details), ==, 0);
+  g_assert_cmpuint (g_variant_n_children (details), ==, 0);
 }
 
 static void

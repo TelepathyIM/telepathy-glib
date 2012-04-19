@@ -79,12 +79,12 @@ TpTLSCertificate *tp_tls_certificate_new (TpProxy *conn_or_chan,
 const GError *tp_tls_certificate_get_rejection (TpTLSCertificate *self,
     TpTLSCertificateRejectReason *reason,
     const gchar **dbus_error,
-    const GHashTable **details);
+    const GVariant **details);
 const GError *tp_tls_certificate_get_nth_rejection (TpTLSCertificate *self,
     guint n,
     TpTLSCertificateRejectReason *reason,
     const gchar **dbus_error,
-    const GHashTable **details);
+    const GVariant **details);
 
 void tp_tls_certificate_accept_async (TpTLSCertificate *self,
     GAsyncReadyCallback callback,

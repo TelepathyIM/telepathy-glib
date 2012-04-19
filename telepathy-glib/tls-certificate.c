@@ -124,7 +124,7 @@ typedef struct {
     GError *error /* NULL-initialized later */ ;
     TpTLSCertificateRejectReason reason;
     gchar *dbus_error;
-    GHashTable *details;
+    GVariant *details;
 } SignalledRejection;
 
 static void
@@ -141,7 +141,7 @@ tp_tls_certificate_clear_rejections (TpTLSCertificate *self)
 
           g_clear_error (&sr->error);
           tp_clear_pointer (&sr->dbus_error, g_free);
-          tp_clear_pointer (&sr->details, g_hash_table_unref);
+          tp_clear_pointer (&sr->details, g_variant_unref);
         }
     }
 
@@ -175,7 +175,11 @@ tp_tls_certificate_rejected_cb (TpTLSCertificate *self,
                 "Rejected, no reason given"),
             TP_TLS_CERTIFICATE_REJECT_REASON_UNKNOWN,
             g_strdup (TP_ERROR_STR_CERT_INVALID),
-            tp_asv_new (NULL, NULL) };
+            NULL };
+      GVariantBuilder builder;
+
+      g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+      sr.details = g_variant_builder_end (&builder);
 
       self->priv->rejections = g_array_sized_new (FALSE, FALSE,
           sizeof (SignalledRejection), 1);
@@ -203,12 +207,7 @@ tp_tls_certificate_rejected_cb (TpTLSCertificate *self,
           tp_proxy_dbus_error_to_gerror (self, error_name,
               tp_asv_get_string (details, "debug-message"), &sr.error);
 
-          sr.details = g_hash_table_new_full (g_str_hash, g_str_equal,
-              g_free, (GDestroyNotify) tp_g_value_slice_free);
-          tp_g_hash_table_update (sr.details, (GHashTable *) details,
-              (GBoxedCopyFunc) g_strdup,
-              (GBoxedCopyFunc) tp_g_value_slice_dup);
-
+          sr.details = _tp_asv_to_vardict (details);
           sr.dbus_error = g_strdup (error_name);
 
           g_array_append_val (self->priv->rejections, sr);
@@ -834,7 +833,7 @@ tp_tls_certificate_init_known_interfaces (void)
  * @reason: (out) (allow-none): optionally used to return the reason code
  * @dbus_error: (out) (type utf8) (allow-none) (transfer none): optionally
  *  used to return the D-Bus error name
- * @details: (out) (allow-none) (transfer none) (element-type utf8 GObject.Value):
+ * @details: (out) (allow-none) (transfer none):
  *  optionally used to return a map from string to #GValue, which must not be
  *  modified or destroyed by the caller
  *
@@ -854,7 +853,7 @@ const GError *
 tp_tls_certificate_get_rejection (TpTLSCertificate *self,
     TpTLSCertificateRejectReason *reason,
     const gchar **dbus_error,
-    const GHashTable **details)
+    const GVariant **details)
 {
   return tp_tls_certificate_get_nth_rejection (self, 0, reason, dbus_error,
       details);
@@ -868,7 +867,7 @@ tp_tls_certificate_get_rejection (TpTLSCertificate *self,
  * @reason: (out) (allow-none): optionally used to return the reason code
  * @dbus_error: (out) (type utf8) (allow-none) (transfer none): optionally
  *  used to return the D-Bus error name
- * @details: (out) (allow-none) (transfer none) (element-type utf8 GObject.Value):
+ * @details: (out) (allow-none) (transfer none):
  *  optionally used to return a map from string to #GValue, which must not be
  *  modified or destroyed by the caller
  *
@@ -887,7 +886,7 @@ tp_tls_certificate_get_nth_rejection (TpTLSCertificate *self,
     guint n,
     TpTLSCertificateRejectReason *reason,
     const gchar **dbus_error,
-    const GHashTable **details)
+    const GVariant **details)
 {
   const SignalledRejection *rej;
 
