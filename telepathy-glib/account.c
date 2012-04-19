@@ -2796,20 +2796,16 @@ tp_account_update_parameters_vardict_async (TpAccount *account,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  GValue v = G_VALUE_INIT;
+  GHashTable *hash;
 
-  g_return_if_fail (parameters != NULL);
-  g_return_if_fail (g_variant_is_of_type (parameters, G_VARIANT_TYPE_VARDICT));
+  hash = _tp_asv_from_vardict (parameters);
 
   g_variant_ref_sink (parameters);
 
-  dbus_g_value_parse_g_variant (parameters, &v);
-  g_assert (G_VALUE_HOLDS (&v, TP_HASH_TYPE_STRING_VARIANT_MAP));
-
-  tp_account_update_parameters_async (account, g_value_get_boxed (&v),
+  tp_account_update_parameters_async (account, hash,
       unset_parameters, callback, user_data);
-  g_value_unset (&v);
   g_variant_unref (parameters);
+  g_hash_table_unref (hash);
 }
 
 /**
