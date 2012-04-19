@@ -96,7 +96,7 @@ gboolean tp_tls_certificate_accept_finish (TpTLSCertificate *self,
 void tp_tls_certificate_add_rejection (TpTLSCertificate *self,
     TpTLSCertificateRejectReason reason,
     const gchar *dbus_error,
-    GHashTable *details);
+    GVariant *details);
 void tp_tls_certificate_reject_async (TpTLSCertificate *self,
     GAsyncReadyCallback callback,
     gpointer user_data);

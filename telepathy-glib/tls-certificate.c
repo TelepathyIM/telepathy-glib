@@ -26,6 +26,7 @@
 #include <glib/gstdio.h>
 
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/dbus-internal.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
@@ -673,26 +674,34 @@ tp_tls_certificate_accept_finish (TpTLSCertificate *self,
  * @reason: the reason for rejection
  * @dbus_error: a D-Bus error name such as %TP_ERROR_STR_CERT_REVOKED, or
  *  %NULL to derive one from @reason
- * @details: (transfer none) (allow-none) (element-type utf8 GObject.Value): details of the
- *  rejection, or %NULL
+ * @details: (transfer none) (allow-none): a variant of type
+ * %G_VARIANT_TYPE_VARDICT containing the details of the rejection, or %NULL
  *
  * Add a pending reason for rejection. The first call to this method is
  * considered "most important". After calling this method as many times
  * as are required, call tp_tls_certificate_reject_async() to reject the
- * certif
+ * certificate.
+ *
+ * If @details is a floating reference (see g_variant_ref_sink()),
+ * ownership of @details is taken by this function. This means
+ * you can pass the result of g_variant_new() or g_variant_new_parsed()
+ * directly to this function without additional reference-count management.
+ *
  * Since: UNRELEASED
-ate.
  */
 void
 tp_tls_certificate_add_rejection (TpTLSCertificate *self,
     TpTLSCertificateRejectReason reason,
     const gchar *dbus_error,
-    GHashTable *details)
+    GVariant *details)
 {
   GValueArray *rejection;
+  GHashTable *hash;
 
   g_return_if_fail (dbus_error == NULL ||
       tp_dbus_check_valid_interface_name (dbus_error, NULL));
+  g_return_if_fail (details == NULL ||
+      g_variant_is_of_type (details, G_VARIANT_TYPE_VARDICT));
 
   if (self->priv->pending_rejections == NULL)
     self->priv->pending_rejections = g_ptr_array_new ();
@@ -701,19 +710,27 @@ tp_tls_certificate_add_rejection (TpTLSCertificate *self,
     dbus_error = reject_reason_get_dbus_error (reason);
 
   if (details == NULL)
-    details = g_hash_table_new (NULL, NULL);
+    {
+      hash = g_hash_table_new (NULL, NULL);
+    }
   else
-    g_hash_table_ref (details);
+    {
+      hash = _tp_asv_from_vardict (details);
+      g_variant_ref_sink (details);
+    }
 
   rejection = tp_value_array_build (3,
       G_TYPE_UINT, reason,
       G_TYPE_STRING, dbus_error,
-      TP_HASH_TYPE_STRING_VARIANT_MAP, details,
+      TP_HASH_TYPE_STRING_VARIANT_MAP, hash,
       NULL);
 
   g_ptr_array_add (self->priv->pending_rejections, rejection);
 
-  g_hash_table_unref (details);
+  g_hash_table_unref (hash);
+
+  if (details != NULL)
+    g_variant_unref (details);
 }
 
 /**

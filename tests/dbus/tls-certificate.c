@@ -225,14 +225,13 @@ test_reject (Test *test,
   g_signal_connect (test->cert, "notify::state",
       G_CALLBACK (notify_cb), test);
 
-  details = tp_asv_new ("user-requested", G_TYPE_BOOLEAN, TRUE, NULL);
 
   tp_tls_certificate_add_rejection (test->cert,
-      TP_TLS_CERTIFICATE_REJECT_REASON_REVOKED, NULL, details);
+      TP_TLS_CERTIFICATE_REJECT_REASON_REVOKED, NULL,
+      g_variant_new_parsed ("{ 'user-requested': <%b> }", TRUE));
   tp_tls_certificate_add_rejection (test->cert,
       TP_TLS_CERTIFICATE_REJECT_REASON_UNKNOWN,
       TP_ERROR_STR_CAPTCHA_NOT_SUPPORTED, NULL);
-  g_hash_table_unref (details);
 
   tp_tls_certificate_reject_async (test->cert, reject_cb, test);
 
