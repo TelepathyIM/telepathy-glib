@@ -125,10 +125,22 @@ proxy_prepare_cb (GObject *source,
 }
 
 static void
+prepare_cert (Test *test,
+    TpTLSCertificate *cert)
+{
+  GQuark features[] = { TP_TLS_CERTIFICATE_FEATURE_CORE, 0 };
+
+  tp_proxy_prepare_async (cert, features, proxy_prepare_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+}
+
+static void
 test_core (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GQuark features[] = { TP_TLS_CERTIFICATE_FEATURE_CORE, 0 };
   GPtrArray *cert_data;
   GArray *d;
 
@@ -138,12 +150,7 @@ test_core (Test *test,
   g_assert_cmpuint (tp_tls_certificate_get_state (test->cert), ==,
       TP_TLS_CERTIFICATE_STATE_PENDING);
 
-  tp_proxy_prepare_async (test->cert, features,
-      proxy_prepare_cb, test);
-
-  test->wait = 1;
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
+  prepare_cert (test, test->cert);
 
   g_assert_cmpstr (tp_tls_certificate_get_cert_type (test->cert), ==, "x509");
   g_assert_cmpuint (tp_tls_certificate_get_state (test->cert), ==,
@@ -222,6 +229,7 @@ test_reject (Test *test,
   TpTLSCertificateRejectReason reason;
   const gchar *dbus_error;
   gboolean enabled;
+  TpTLSCertificate *cert;
 
   g_signal_connect (test->cert, "notify::state",
       G_CALLBACK (notify_cb), test);
@@ -256,7 +264,26 @@ test_reject (Test *test,
       &dbus_error, (const GVariant **) &details);
   g_assert_error (error, TP_ERRORS, TP_ERROR_CAPTCHA_NOT_SUPPORTED);
   g_assert_cmpstr (dbus_error, ==, TP_ERROR_STR_CAPTCHA_NOT_SUPPORTED);
+  g_assert (g_variant_is_of_type (details, G_VARIANT_TYPE_VARDICT));
   g_assert_cmpuint (g_variant_n_children (details), ==, 0);
+
+  /* Test if we cope with an empty rejections list */
+  tp_tests_tls_certificate_clear_rejection (test->service_cert);
+
+  cert = tp_tls_certificate_new (TP_PROXY (test->connection),
+      tp_proxy_get_object_path (test->cert), &test->error);
+  g_assert_no_error (test->error);
+
+  prepare_cert (test, cert);
+
+  error = tp_tls_certificate_get_rejection (cert, &reason, &dbus_error,
+      (const GVariant **) &details);
+  g_assert_error (error, TP_ERRORS, TP_ERROR_CERT_INVALID);
+  g_assert_cmpstr (dbus_error, ==, TP_ERROR_STR_CERT_INVALID);
+  g_assert (g_variant_is_of_type (details, G_VARIANT_TYPE_VARDICT));
+  g_assert_cmpuint (g_variant_n_children (details), ==, 0);
+
+  g_object_unref (cert);
 }
 
 static void

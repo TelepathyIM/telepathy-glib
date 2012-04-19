@@ -61,6 +61,8 @@ GType tp_tests_tls_certificate_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_TLS_CERTIFICATE, \
       TpTestsTLSCertificateClass))
 
+void tp_tests_tls_certificate_clear_rejection (TpTestsTLSCertificate *self);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_TESTS_TLS_CERTIFICATE_H__*/

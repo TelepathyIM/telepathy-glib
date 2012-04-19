@@ -342,3 +342,9 @@ tls_certificate_iface_init (gpointer g_iface,
   IMPLEMENT (reject);
 #undef IMPLEMENT
 }
+
+void
+tp_tests_tls_certificate_clear_rejection (TpTestsTLSCertificate *self)
+{
+  g_ptr_array_set_size (self->priv->rejections, 0);
+}
