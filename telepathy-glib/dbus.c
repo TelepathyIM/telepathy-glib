@@ -1984,3 +1984,29 @@ _tp_boxed_to_variant (GType gtype,
 
   return g_variant_ref_sink (ret);
 }
+
+/*
+ * _tp_asv_from_vardict:
+ * @variant: a #GVariant of type %G_VARIANT_TYPE_VARDICT
+ *
+ * Returns: (transfer full): a newly created #GHashTable of
+ * type #TP_HASH_TYPE_STRING_VARIANT_MAP
+ */
+GHashTable *
+_tp_asv_from_vardict (GVariant *variant)
+{
+  GValue v = G_VALUE_INIT;
+  GHashTable *result;
+
+  g_return_val_if_fail (variant != NULL, NULL);
+  g_return_val_if_fail (g_variant_is_of_type (variant, G_VARIANT_TYPE_VARDICT),
+      NULL);
+
+  dbus_g_value_parse_g_variant (variant, &v);
+  g_assert (G_VALUE_HOLDS (&v, TP_HASH_TYPE_STRING_VARIANT_MAP));
+
+  result = g_value_dup_boxed (&v);
+
+  g_value_unset (&v);
+  return result;
+}
