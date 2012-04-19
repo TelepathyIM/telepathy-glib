@@ -77,6 +77,17 @@ setup (Test *test,
 }
 
 static void
+disconnect_conn (Test *test)
+{
+  if (test->connection == NULL)
+    return;
+
+  tp_tests_connection_assert_disconnect_succeeds (test->connection);
+  tp_clear_object (&test->connection);
+  tp_clear_object (&test->base_connection);
+}
+
+static void
 teardown (Test *test,
           gconstpointer data)
 {
@@ -89,9 +100,7 @@ teardown (Test *test,
   tp_clear_object (&test->service_cert);
   tp_clear_object (&test->cert);
 
-  tp_tests_connection_assert_disconnect_succeeds (test->connection);
-  g_object_unref (test->connection);
-  g_object_unref (test->base_connection);
+  disconnect_conn (test);
 }
 
 static void
@@ -248,6 +257,33 @@ test_reject (Test *test,
   g_assert_cmpuint (g_hash_table_size (details), ==, 0);
 }
 
+static void
+invalidated_cb (TpProxy *cert,
+    guint domain,
+    gint code,
+    const gchar *message,
+    Test *test)
+{
+  g_clear_error (&test->error);
+  test->error = g_error_new_literal (domain, code, message);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_invalidated (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  g_signal_connect (test->cert, "invalidated",
+      G_CALLBACK (invalidated_cb), test);
+
+  disconnect_conn (test);
+
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_CANCELLED);
+}
+
 int
 main (int argc,
       char **argv)
@@ -263,6 +299,8 @@ main (int argc,
       test_accept, teardown);
   g_test_add ("/tls-certificate/reject", Test, NULL, setup,
       test_reject, teardown);
+  g_test_add ("/tls-certificate/invalidated", Test, NULL, setup,
+      test_invalidated, teardown);
 
   return g_test_run ();
 }
