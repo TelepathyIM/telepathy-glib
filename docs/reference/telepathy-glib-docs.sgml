@@ -103,6 +103,7 @@
     <xi:include href="xml/room-list.xml"/>
     <xi:include href="xml/room-info.xml"/>
     <xi:include href="xml/tls-certificate.xml"/>
+    <xi:include href="xml/tls-certificate-rejection.xml"/>
   </chapter>
 
   <chapter id="ch-service-dbus">

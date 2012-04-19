@@ -7363,3 +7363,25 @@ TpTLSCertificateClassPrivate
 TpTLSCertificatePrivate
 tp_tls_certificate_get_type
 </SECTION>
+
+<SECTION>
+<FILE>tls-certificate-rejection</FILE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
+<TITLE>TpTLSCertificateRejection</TITLE>
+TpTLSCertificateRejection
+tp_tls_certificate_rejection_get_dbus_error
+tp_tls_certificate_rejection_get_details
+tp_tls_certificate_rejection_get_error
+tp_tls_certificate_rejection_get_reason
+<SUBSECTION Standard>
+TP_IS_TLS_CERTIFICATE_REJECTION
+TP_IS_TLS_CERTIFICATE_REJECTION_CLASS
+TP_TLS_CERTIFICATE_REJECTION
+TP_TLS_CERTIFICATE_REJECTION_CLASS
+TP_TLS_CERTIFICATE_REJECTION_GET_CLASS
+TP_TYPE_TLS_CERTIFICATE_REJECTION
+TpTLSCertificateRejectionClass
+tp_tls_certificate_rejection_get_type
+<SUBSECTION Private>
+TpTLSCertificateRejectionPriv
+</SECTION>

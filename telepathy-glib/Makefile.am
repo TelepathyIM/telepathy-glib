@@ -137,6 +137,7 @@ our_headers = \
     text-channel.h \
     text-mixin.h \
     tls-certificate.h \
+    tls-certificate-rejection.h \
     util.h
 
 tpginclude_HEADERS = \
@@ -303,6 +304,8 @@ libtelepathy_glib_internal_la_SOURCES = \
     text-channel.c \
     text-mixin.c \
     tls-certificate.c \
+    tls-certificate-rejection.c \
+    tls-certificate-rejection-internal.h \
     util.c \
     util-internal.h
 
