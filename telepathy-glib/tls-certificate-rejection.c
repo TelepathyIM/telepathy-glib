@@ -307,3 +307,23 @@ tp_tls_certificate_rejection_get_details (TpTLSCertificateRejection *self)
 {
   return self->priv->details;
 }
+
+/**
+ * tp_tls_certificate_rejection_raise_error:
+ * @self: a #TpTLSCertificateRejection
+ * @error: (out) (allow-none) (transfer full): a #GError to fill
+ *
+ * Convenient function to raise the #TpTLSCertificateRejection:error
+ * property in language binding supporting this feature.
+ *
+ * Since: UNRELEASED
+ */
+gboolean
+tp_tls_certificate_rejection_raise_error (TpTLSCertificateRejection *self,
+    GError **error)
+{
+  if (error != NULL)
+    *error = g_error_copy (self->priv->error);
+
+  return FALSE;
+}

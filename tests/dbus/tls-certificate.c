@@ -231,6 +231,7 @@ test_reject (Test *test,
   gboolean enabled;
   TpTLSCertificate *cert;
   TpTLSCertificateRejection *rej;
+  GError *err = NULL;
 
   g_signal_connect (test->cert, "notify::state",
       G_CALLBACK (notify_cb), test);
@@ -266,6 +267,10 @@ test_reject (Test *test,
   g_assert_cmpuint (g_variant_n_children (details), ==, 1);
   g_assert (g_variant_lookup (details, "user-requested", "b", &enabled));
   g_assert (enabled);
+
+  g_assert (!tp_tls_certificate_rejection_raise_error (rej, &err));
+  g_assert_error (err, TP_ERRORS, TP_ERROR_CERT_REVOKED);
+  g_error_free (err);
 
   rej = tp_tls_certificate_get_nth_rejection (test->cert, 1);
   g_assert (TP_IS_TLS_CERTIFICATE_REJECTION (rej));

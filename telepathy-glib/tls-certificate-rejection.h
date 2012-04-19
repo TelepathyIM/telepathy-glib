@@ -76,6 +76,10 @@ const gchar * tp_tls_certificate_rejection_get_dbus_error (
 GVariant * tp_tls_certificate_rejection_get_details (
     TpTLSCertificateRejection *self);
 
+gboolean tp_tls_certificate_rejection_raise_error (
+    TpTLSCertificateRejection *self,
+    GError **error);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_TLS_CERTIFICATE_REJECTION_H__*/
