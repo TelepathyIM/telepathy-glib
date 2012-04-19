@@ -29,6 +29,7 @@
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/proxy.h>
+#include <telepathy-glib/tls-certificate-rejection.h>
 
 G_BEGIN_DECLS
 
@@ -76,15 +77,12 @@ TpTLSCertificate *tp_tls_certificate_new (TpProxy *conn_or_chan,
     const gchar *object_path,
     GError **error);
 
-const GError *tp_tls_certificate_get_rejection (TpTLSCertificate *self,
-    TpTLSCertificateRejectReason *reason,
-    const gchar **dbus_error,
-    const GVariant **details);
-const GError *tp_tls_certificate_get_nth_rejection (TpTLSCertificate *self,
-    guint n,
-    TpTLSCertificateRejectReason *reason,
-    const gchar **dbus_error,
-    const GVariant **details);
+TpTLSCertificateRejection *tp_tls_certificate_get_rejection (
+    TpTLSCertificate *self);
+
+TpTLSCertificateRejection *tp_tls_certificate_get_nth_rejection (
+    TpTLSCertificate *self,
+    guint n);
 
 void tp_tls_certificate_accept_async (TpTLSCertificate *self,
     GAsyncReadyCallback callback,

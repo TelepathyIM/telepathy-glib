@@ -230,6 +230,7 @@ test_reject (Test *test,
   const gchar *dbus_error;
   gboolean enabled;
   TpTLSCertificate *cert;
+  TpTLSCertificateRejection *rej;
 
   g_signal_connect (test->cert, "notify::state",
       G_CALLBACK (notify_cb), test);
@@ -251,17 +252,27 @@ test_reject (Test *test,
   g_assert_cmpuint (tp_tls_certificate_get_state (test->cert), ==,
       TP_TLS_CERTIFICATE_STATE_REJECTED);
 
-  error = tp_tls_certificate_get_rejection (test->cert, &reason, &dbus_error,
-      (const GVariant **) &details);
+  rej = tp_tls_certificate_get_rejection (test->cert);
+  g_assert (TP_IS_TLS_CERTIFICATE_REJECTION (rej));
+  error = tp_tls_certificate_rejection_get_error (rej);
+  dbus_error = tp_tls_certificate_rejection_get_dbus_error (rej);
+  reason = tp_tls_certificate_rejection_get_reason (rej);
+  details = tp_tls_certificate_rejection_get_details (rej);
+
   g_assert_error (error, TP_ERRORS, TP_ERROR_CERT_REVOKED);
   g_assert_cmpstr (dbus_error, ==, TP_ERROR_STR_CERT_REVOKED);
+  g_assert_cmpuint (reason, ==, TP_TLS_CERTIFICATE_REJECT_REASON_REVOKED);
   g_assert (g_variant_is_of_type (details, G_VARIANT_TYPE_VARDICT));
   g_assert_cmpuint (g_variant_n_children (details), ==, 1);
   g_assert (g_variant_lookup (details, "user-requested", "b", &enabled));
   g_assert (enabled);
 
-  error = tp_tls_certificate_get_nth_rejection (test->cert, 1, &reason,
-      &dbus_error, (const GVariant **) &details);
+  rej = tp_tls_certificate_get_nth_rejection (test->cert, 1);
+  g_assert (TP_IS_TLS_CERTIFICATE_REJECTION (rej));
+  error = tp_tls_certificate_rejection_get_error (rej);
+  dbus_error = tp_tls_certificate_rejection_get_dbus_error (rej);
+  details = tp_tls_certificate_rejection_get_details (rej);
+
   g_assert_error (error, TP_ERRORS, TP_ERROR_CAPTCHA_NOT_SUPPORTED);
   g_assert_cmpstr (dbus_error, ==, TP_ERROR_STR_CAPTCHA_NOT_SUPPORTED);
   g_assert (g_variant_is_of_type (details, G_VARIANT_TYPE_VARDICT));
@@ -276,8 +287,12 @@ test_reject (Test *test,
 
   prepare_cert (test, cert);
 
-  error = tp_tls_certificate_get_rejection (cert, &reason, &dbus_error,
-      (const GVariant **) &details);
+  rej = tp_tls_certificate_get_rejection (cert);
+  g_assert (TP_IS_TLS_CERTIFICATE_REJECTION (rej));
+  error = tp_tls_certificate_rejection_get_error (rej);
+  dbus_error = tp_tls_certificate_rejection_get_dbus_error (rej);
+  details = tp_tls_certificate_rejection_get_details (rej);
+
   g_assert_error (error, TP_ERRORS, TP_ERROR_CERT_INVALID);
   g_assert_cmpstr (dbus_error, ==, TP_ERROR_STR_CERT_INVALID);
   g_assert (g_variant_is_of_type (details, G_VARIANT_TYPE_VARDICT));

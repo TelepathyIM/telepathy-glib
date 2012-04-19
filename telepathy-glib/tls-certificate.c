@@ -34,6 +34,7 @@
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/util-internal.h>
+#include <telepathy-glib/tls-certificate-rejection-internal.h>
 
 #define DEBUG_FLAG TP_DEBUG_TLS
 #include "debug-internal.h"
@@ -82,8 +83,8 @@ struct _TpTLSCertificatePrivate {
   gchar *cert_type;
   GPtrArray *cert_data;
   TpTLSCertificateState state;
-  /* array of SignalledRejection received from the CM */
-  GArray *rejections;
+  /* array of TpTLSCertificateRejection received from the CM */
+  GPtrArray *rejections;
   /* GPtrArray of TP_STRUCT_TYPE_TLS_CERTIFICATE_REJECTION to send to CM */
   GPtrArray *pending_rejections;
 };
@@ -120,40 +121,12 @@ tp_tls_certificate_get_feature_quark_core (void)
   return g_quark_from_static_string ("tp-tls-certificate-feature-core");
 }
 
-typedef struct {
-    GError *error /* NULL-initialized later */ ;
-    TpTLSCertificateRejectReason reason;
-    gchar *dbus_error;
-    GVariant *details;
-} SignalledRejection;
-
-static void
-tp_tls_certificate_clear_rejections (TpTLSCertificate *self)
-{
-  if (self->priv->rejections != NULL)
-    {
-      guint i;
-
-      for (i = 0; i < self->priv->rejections->len; i++)
-        {
-          SignalledRejection *sr = &g_array_index (self->priv->rejections,
-              SignalledRejection, i);
-
-          g_clear_error (&sr->error);
-          tp_clear_pointer (&sr->dbus_error, g_free);
-          tp_clear_pointer (&sr->details, g_variant_unref);
-        }
-    }
-
-  tp_clear_pointer (&self->priv->rejections, g_array_unref);
-}
-
 static void
 tp_tls_certificate_accepted_cb (TpTLSCertificate *self,
     gpointer unused G_GNUC_UNUSED,
     GObject *unused_object G_GNUC_UNUSED)
 {
-  tp_tls_certificate_clear_rejections (self);
+  tp_clear_pointer (&self->priv->rejections, g_ptr_array_unref);
   self->priv->state = TP_TLS_CERTIFICATE_STATE_ACCEPTED;
   g_object_notify ((GObject *) self, "state");
 }
@@ -166,51 +139,56 @@ tp_tls_certificate_rejected_cb (TpTLSCertificate *self,
 {
   self->priv->state = TP_TLS_CERTIFICATE_STATE_REJECTED;
 
-  tp_tls_certificate_clear_rejections (self);
+  tp_clear_pointer (&self->priv->rejections, g_ptr_array_unref);
+  self->priv->rejections = g_ptr_array_new_with_free_func (g_object_unref);
 
   if (rejections == NULL || rejections->len == 0)
     {
-      SignalledRejection sr = {
-            g_error_new_literal (TP_ERROR, TP_ERROR_CERT_INVALID,
-                "Rejected, no reason given"),
-            TP_TLS_CERTIFICATE_REJECT_REASON_UNKNOWN,
-            g_strdup (TP_ERROR_STR_CERT_INVALID),
-            NULL };
+      TpTLSCertificateRejection *rej;
       GVariantBuilder builder;
+      GError *error = g_error_new_literal (TP_ERROR, TP_ERROR_CERT_INVALID,
+          "Rejected, no reason given");
 
       g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
-      sr.details = g_variant_builder_end (&builder);
 
-      self->priv->rejections = g_array_sized_new (FALSE, FALSE,
-          sizeof (SignalledRejection), 1);
-      g_array_append_val (self->priv->rejections, sr);
+      rej = _tp_tls_certificate_rejection_new (error,
+          TP_TLS_CERTIFICATE_REJECT_REASON_UNKNOWN, TP_ERROR_STR_CERT_INVALID,
+          g_variant_builder_end (&builder));
+
+      g_ptr_array_add (self->priv->rejections, rej);
+      g_error_free (error);
     }
   else
     {
       guint i;
 
-      self->priv->rejections = g_array_sized_new (FALSE, FALSE,
-          sizeof (SignalledRejection), rejections->len);
-
       for (i = 0; i < rejections->len; i++)
         {
-          SignalledRejection sr = { NULL };
+          TpTLSCertificateRejection *rej;
           GValueArray *va = g_ptr_array_index (rejections, i);
           const gchar *error_name;
           const GHashTable *details;
+          TpTLSCertificateRejectReason reason;
+          GError *error = NULL;
+          GVariant *vardict;
 
           tp_value_array_unpack (va, 3,
-              &sr.reason,
+              &reason,
               &error_name,
               &details);
 
           tp_proxy_dbus_error_to_gerror (self, error_name,
-              tp_asv_get_string (details, "debug-message"), &sr.error);
+              tp_asv_get_string (details, "debug-message"), &error);
 
-          sr.details = _tp_asv_to_vardict (details);
-          sr.dbus_error = g_strdup (error_name);
+          vardict = _tp_asv_to_vardict (details);
 
-          g_array_append_val (self->priv->rejections, sr);
+          rej = _tp_tls_certificate_rejection_new (error,
+              reason, error_name, vardict);
+
+          g_ptr_array_add (self->priv->rejections, rej);
+
+          g_error_free (error);
+          g_variant_unref (vardict);
         }
     }
 
@@ -333,7 +311,7 @@ tp_tls_certificate_finalize (GObject *object)
 
   DEBUG ("%p", object);
 
-  tp_tls_certificate_clear_rejections (self);
+  tp_clear_pointer (&self->priv->rejections, g_ptr_array_unref);
   g_free (priv->cert_type);
   tp_clear_boxed (TP_ARRAY_TYPE_UCHAR_ARRAY_LIST, &priv->cert_data);
   tp_clear_boxed (TP_ARRAY_TYPE_TLS_CERTIFICATE_REJECTION_LIST,
@@ -830,15 +808,9 @@ tp_tls_certificate_init_known_interfaces (void)
 /**
  * tp_tls_certificate_get_rejection:
  * @self: a TLS certificate
- * @reason: (out) (allow-none): optionally used to return the reason code
- * @dbus_error: (out) (type utf8) (allow-none) (transfer none): optionally
- *  used to return the D-Bus error name
- * @details: (out) (allow-none) (transfer none):
- *  optionally used to return a map from string to #GValue, which must not be
- *  modified or destroyed by the caller
  *
- * If this certificate has been rejected, return a #GError (likely to be in
- * the %TP_ERROR domain) indicating the first rejection reason (by convention,
+ * If this certificate has been rejected, return a #TpTLSCertificateRejection
+ * indicating the first rejection reason (by convention,
  * the most important).
  *
  * If you want to list all the things that are wrong with the certificate
@@ -846,17 +818,13 @@ tp_tls_certificate_init_known_interfaces (void)
  * you can call tp_tls_certificate_get_nth_rejection(), increasing @n until
  * it returns %NULL.
  *
- * Returns: (transfer none) (allow-none): a #GError, or %NULL
+ * Returns: (transfer none) (allow-none): a #TpTLSCertificateRejection, or %NULL
  * Since: UNRELEASED
  */
-const GError *
-tp_tls_certificate_get_rejection (TpTLSCertificate *self,
-    TpTLSCertificateRejectReason *reason,
-    const gchar **dbus_error,
-    const GVariant **details)
+TpTLSCertificateRejection *
+tp_tls_certificate_get_rejection (TpTLSCertificate *self)
 {
-  return tp_tls_certificate_get_nth_rejection (self, 0, reason, dbus_error,
-      details);
+  return tp_tls_certificate_get_nth_rejection (self, 0);
 }
 
 /**
@@ -864,47 +832,24 @@ tp_tls_certificate_get_rejection (TpTLSCertificate *self,
  * @self: a TLS certificate
  * @n: the rejection reason to return; if 0, return the same thing as
  *  tp_tls_certificate_get_detailed_rejection()
- * @reason: (out) (allow-none): optionally used to return the reason code
- * @dbus_error: (out) (type utf8) (allow-none) (transfer none): optionally
- *  used to return the D-Bus error name
- * @details: (out) (allow-none) (transfer none):
- *  optionally used to return a map from string to #GValue, which must not be
- *  modified or destroyed by the caller
  *
  * If this certificate has been rejected and @n is less than the number of
- * rejection reasons, return a #GError representing the @n<!---->th rejection
- * reason (starting from 0), with additional information returned via the
- * 'out' parameters.
+ * rejection reasons, return a #TpTLSCertificateRejection representing the
+ * @n<!---->th rejection reason (starting from 0).
  *
  * With @n == 0 this is equivalent to tp_tls_certificate_get_rejection().
  *
- * Returns: (transfer none) (allow-none): a #GError, or %NULL
+ * Returns: (transfer none) (allow-none): a #TpTLSCertificateRejection, or %NULL
  * Since: UNRELEASED
  */
-const GError *
+TpTLSCertificateRejection *
 tp_tls_certificate_get_nth_rejection (TpTLSCertificate *self,
-    guint n,
-    TpTLSCertificateRejectReason *reason,
-    const gchar **dbus_error,
-    const GVariant **details)
+    guint n)
 {
-  const SignalledRejection *rej;
-
   if (self->priv->rejections == NULL || n >= self->priv->rejections->len)
     return NULL;
 
-  rej = &g_array_index (self->priv->rejections, SignalledRejection, n);
-
-  if (reason != NULL)
-    *reason = rej->reason;
-
-  if (dbus_error != NULL)
-    *dbus_error = rej->dbus_error;
-
-  if (details != NULL)
-    *details = rej->details;
-
-  return rej->error;
+  return g_ptr_array_index (self->priv->rejections, n);
 }
 
 /**
