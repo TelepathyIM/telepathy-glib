@@ -3,11 +3,6 @@ telepathy-glib 0.19.0 (UNRELEASED)
 
 Enhancements:
 
-• Make various methods of the form get_foo() available to
-  gobject-introspection (Xavier)
-
-• Improve stream tube examples (Guillaume)
-
 • Replace --disable-coding-style-checks and --disable-doc-checks with
   --disable-fatal-warnings. In addition to what the removed options did,
   it changes the default for --disable-Werror and turns off
@@ -17,11 +12,6 @@ Enhancements:
   releases. (Simon)
 
 Fixes:
-
-• Change the type of TpStreamTubeConnection::closed's argument from
-  POINTER to ERROR so PyGI can bind it (Guillaume)
-
-• Use the right macro to avoid post-2.30 GLib APIs (Guillaume)
 
 • Make it safe to hold refs to a remaining GAsyncResult after returning
   to the main loop (fd.o #45554, Simon)
@@ -34,8 +24,35 @@ Fixes:
 
 • Make several methods returning a GStrv introspectable (fd.o #46471, Simon)
 
+telepathy-glib 0.18.1 (2012-04-20)
+==================================
+
+The “King's Cross is unrecognisable” release.
+
+Enhancements:
+
+• Make various methods of the form get_foo() available to
+  gobject-introspection (Xavier)
+
+• Improve stream tube examples (Guillaume)
+
+• Improve documentation (Xavier)
+
+Fixes:
+
+• Change the type of TpStreamTubeConnection::closed's argument from
+  POINTER to ERROR so PyGI can bind it (Guillaume)
+
+• Avoid TpCallChannel potentially returning a TpContact with no identifier
+  (Xavier)
+
+• Use the right macro to avoid post-2.30 GLib APIs (Guillaume)
+
 • Fix warnings with newer gtk-doc and g-ir-scanner (fd.o #48592, fd.o #48363,
   fd.o #48620; Stef Walter, Alban Browaeys)
+
+• Make various warnings non-fatal for this stable branch: GIR scanner warnings,
+  documentation completeness, and deprecated functions (fd.o #48363, Simon)
 
 • Don't hard-code use of a particular abstract socket in dbus-tube-chan test,
   fixing test failure on non-Linux (fd.o #48600, Simon)
