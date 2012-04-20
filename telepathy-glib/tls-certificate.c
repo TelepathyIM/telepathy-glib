@@ -277,20 +277,24 @@ tp_tls_certificate_constructed (GObject *object)
   if (constructed != NULL)
     constructed (object);
 
-  g_return_if_fail (TP_IS_CHANNEL (self->priv->parent) ||
+  g_return_if_fail (self->priv->parent == NULL ||
+      TP_IS_CHANNEL (self->priv->parent) ||
       TP_IS_CONNECTION (self->priv->parent));
 
-  if (self->priv->parent->invalidated != NULL)
+  if (self->priv->parent != NULL)
     {
-      GError *invalidated = self->priv->parent->invalidated;
+      if (self->priv->parent->invalidated != NULL)
+        {
+          GError *invalidated = self->priv->parent->invalidated;
 
-      parent_invalidated_cb (self->priv->parent, invalidated->domain,
-          invalidated->code, invalidated->message, self);
-    }
-  else
-    {
-      tp_g_signal_connect_object (self->priv->parent,
-          "invalidated", G_CALLBACK (parent_invalidated_cb), self, 0);
+          parent_invalidated_cb (self->priv->parent, invalidated->domain,
+              invalidated->code, invalidated->message, self);
+        }
+      else
+        {
+          tp_g_signal_connect_object (self->priv->parent,
+              "invalidated", G_CALLBACK (parent_invalidated_cb), self, 0);
+        }
     }
 
   tp_cli_authentication_tls_certificate_connect_to_accepted (self,
