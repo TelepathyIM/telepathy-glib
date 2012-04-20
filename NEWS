@@ -1,6 +1,8 @@
 telepathy-glib 0.18.1 (2012-04-20)
 ==================================
 
+The “King's Cross is unrecognisable” release.
+
 Enhancements:
 
 • Make various methods of the form get_foo() available to
