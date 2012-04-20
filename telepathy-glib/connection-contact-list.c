@@ -193,7 +193,7 @@ process_queued_contacts_changed (TpConnection *self)
 
   tp_connection_upgrade_contacts (self,
       item->new_contacts->len, (TpContact **) item->new_contacts->pdata,
-      features->len, (TpContactFeature *) features->data,
+      (const GQuark *) features->data,
       new_contacts_upgraded_cb, NULL, NULL, NULL);
 
   g_array_unref (features);
@@ -262,7 +262,7 @@ got_contact_list_attributes_cb (TpConnection *self,
       contact = tp_simple_client_factory_ensure_contact (
           tp_proxy_get_factory (self), self, handle, id);
       if (!_tp_contact_set_attributes (contact, value,
-              features->len, (TpContactFeature *) features->data, &e))
+              (const GQuark *) features->data, &e))
         {
           DEBUG ("Error setting contact attributes: %s", e->message);
           g_clear_error (&e);
@@ -312,8 +312,8 @@ prepare_roster (TpConnection *self,
   features = tp_simple_client_factory_dup_contact_features (
       tp_proxy_get_factory (self), self);
 
-  supported_interfaces = _tp_contacts_bind_to_signals (self, features->len,
-      (TpContactFeature *) features->data);
+  supported_interfaces = _tp_contacts_bind_to_signals (self,
+      (const GQuark *) features->data);
 
   tp_connection_get_contact_list_attributes (self, -1,
       supported_interfaces,
@@ -1786,7 +1786,7 @@ process_queued_blocked_changed (TpConnection *self)
 
   tp_connection_upgrade_contacts (self,
       contacts->len, (TpContact **) contacts->pdata,
-      features->len, (TpContactFeature *) features->data,
+      (const GQuark *) features->data,
       blocked_contacts_upgraded_cb, NULL, NULL, NULL);
 
   g_array_unref (features);

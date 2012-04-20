@@ -374,7 +374,7 @@ process_contacts_queue (TpChannel *self)
 
       tp_connection_upgrade_contacts (self->priv->connection,
           item->contacts->len, (TpContact **) item->contacts->pdata,
-          features->len, (TpContactFeature *) features->data,
+          (const GQuark *) features->data,
           contacts_queue_item_upgraded_cb,
           item, NULL,
           (GObject *) self);
@@ -386,7 +386,7 @@ process_contacts_queue (TpChannel *self)
 
       tp_connection_get_contacts_by_id (self->priv->connection,
           item->ids->len, (const gchar * const*) item->ids->pdata,
-          features->len, (TpContactFeature *) features->data,
+          (const GQuark *) features->data,
           contacts_queue_item_by_id_cb,
           item, NULL,
           (GObject *) self);
@@ -398,7 +398,7 @@ process_contacts_queue (TpChannel *self)
 
       tp_connection_get_contacts_by_handle (self->priv->connection,
           item->handles->len, (TpHandle *) item->handles->data,
-          features->len, (TpContactFeature *) features->data,
+          (const GQuark *) features->data,
           contacts_queue_item_by_handle_cb,
           item, NULL,
           (GObject *) self);

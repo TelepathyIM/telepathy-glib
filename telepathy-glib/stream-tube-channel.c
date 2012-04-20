@@ -610,7 +610,7 @@ new_local_connection_identified (TpStreamTubeChannel *self,
   /* Pass ownership of tube_conn to the function */
   tp_connection_get_contacts_by_handle (connection,
       1, &initiator_handle,
-      features->len, (TpContactFeature *) features->data,
+      (const GQuark *) features->data,
       new_local_connection_with_contact,
       tube_conn, g_object_unref, G_OBJECT (self));
 
@@ -1081,7 +1081,7 @@ connection_identified (TpStreamTubeChannel *self,
       /* Pass the ref on tube_conn to the function */
       tp_connection_get_contacts_by_handle (connection,
           1, &handle,
-          features->len, (TpContactFeature *) features->data,
+          (const GQuark *) features->data,
           _new_remote_connection_with_contact,
           tube_conn, g_object_unref, G_OBJECT (self));
 

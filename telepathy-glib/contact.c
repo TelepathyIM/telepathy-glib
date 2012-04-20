@@ -57,7 +57,7 @@
  * An object representing a contact on a #TpConnection.
  *
  * Contact objects support tracking a number of attributes of contacts, as
- * described by the #TpContactFeature flags. Features can be specified when
+ * described by the contact feature #GQuark<!-- -->s. Features can be specified when
  * instantiating contact objects (with tp_connection_get_contacts_by_id() or
  * tp_connection_get_contacts_by_handle()), or added to an existing contact
  * object with tp_connection_upgrade_contacts(). For example, a client wishing
@@ -89,67 +89,225 @@ struct _TpContact {
 };
 
 /**
- * TpContactFeature:
- * @TP_CONTACT_FEATURE_ALIAS: #TpContact:alias
- * @TP_CONTACT_FEATURE_AVATAR_TOKEN: #TpContact:avatar-token
- * @TP_CONTACT_FEATURE_PRESENCE: #TpContact:presence-type,
- *  #TpContact:presence-status and #TpContact:presence-message
- * @TP_CONTACT_FEATURE_LOCATION: #TpContact:location (available since 0.11.1)
- * @TP_CONTACT_FEATURE_CAPABILITIES: #TpContact:capabilities
- *  (available since 0.11.3)
- * @TP_CONTACT_FEATURE_AVATAR_DATA: #TpContact:avatar-file and
- *  #TpContact:avatar-mime-type. Implies %TP_CONTACT_FEATURE_AVATAR_TOKEN
- *  (available since 0.11.6)
- * @TP_CONTACT_FEATURE_CONTACT_INFO: #TpContact:contact-info
- *  (available since 0.11.7)
- * @TP_CONTACT_FEATURE_CLIENT_TYPES: #TpContact:client-types
- *  (available since 0.13.1)
- * @TP_CONTACT_FEATURE_SUBSCRIPTION_STATES: #TpContact:subscribe-state,
- *  #TpContact:publish-state and #TpContact:publish-request. Require a
- *  Connection implementing the %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST
- *  interface. (available since 0.13.12)
- * @TP_CONTACT_FEATURE_CONTACT_GROUPS: #TpContact:contact-groups
- *  (available since 0.13.14)
- * @TP_CONTACT_FEATURE_CONTACT_BLOCKING: #TpContact:is-blocked. Require
- *  Connection implementing the %TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING
- *  interface. (available since 0.17.0)
+ * TP_CONTACT_FEATURE_ALIAS:
  *
- * Enumeration representing the features a #TpContact can optionally support.
- * When requesting a #TpContact, library users specify the desired features;
- * the #TpContact code will only initialize state for those features, to
- * avoid unwanted D-Bus round-trips and signal connections.
+ * Expands to a call to a function that returns a #GQuark representing the
+ * "alias" feature.
  *
- * Since 0.11.5, there is a corresponding #GEnumClass type,
- * %TP_TYPE_CONTACT_FEATURE.
- *
- * Since: 0.7.18
- */
-
-/**
- * TP_NUM_CONTACT_FEATURES:
- *
- * 1 higher than the highest #TpContactFeature supported by this version of
- * telepathy-glib.
+ * When this feature is prepared, the contact's alias has been retrieved.
+ * In particular, the #TpContact:alias property has been set.
  *
  * Since: 0.UNRELEASED
  */
 
-/**
- * TP_CONTACT_FEATURE_INVALID: (skip)
- *
- * An invalid TpContactFeature. Used as list termination. See for example
- * tp_simple_client_factory_add_contact_features_varargs().
- *
- * Since: 0.15.5
- */
+GQuark
+tp_contact_get_feature_quark_alias (void)
+{
+  return g_quark_from_static_string ("tp-contact-feature-alias");
+}
 
 /**
- * TP_TYPE_CONTACT_FEATURE:
+ * TP_CONTACT_FEATURE_AVATAR_TOKEN:
  *
- * The #GEnumClass type of a #TpContactFeature.
+ * Expands to a call to a function that returns a #GQuark representing the
+ * "avatar token" feature.
  *
- * Since: 0.11.5
+ * When this feature is prepared, the contact's avatar token has been
+ * retrieved.  In particular, the #TpContact:avatar-token property has
+ * been set.
+ *
+ * Since: 0.UNRELEASED
  */
+
+GQuark
+tp_contact_get_feature_quark_avatar_token (void)
+{
+  return g_quark_from_static_string ("tp-contact-feature-avatar-token");
+}
+
+/**
+ * TP_CONTACT_FEATURE_PRESENCE:
+ *
+ * Expands to a call to a function that returns a #GQuark representing the
+ * "presence" feature.
+ *
+ * When this feature is prepared, the contact's presence has been
+ * retrieved.  In particular, the #TpContact:presence-type,
+ * #TpContact:presence-status, and #TpContact:presence-message
+ * properties have been set.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+GQuark
+tp_contact_get_feature_quark_presence (void)
+{
+  return g_quark_from_static_string ("tp-contact-feature-presence");
+}
+
+/**
+ * TP_CONTACT_FEATURE_LOCATION:
+ *
+ * Expands to a call to a function that returns a #GQuark representing the
+ * "location" feature.
+ *
+ * When this feature is prepared, the contact's location has been
+ * retrieved.  In particular, the #TpContact:location property has
+ * been set.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+GQuark
+tp_contact_get_feature_quark_location (void)
+{
+  return g_quark_from_static_string ("tp-contact-feature-location");
+}
+
+/**
+ * TP_CONTACT_FEATURE_CAPABILITIES:
+ *
+ * Expands to a call to a function that returns a #GQuark representing the
+ * "capabilities" feature.
+ *
+ * When this feature is prepared, the contact's capabilities have been
+ * retrieved. In particular, the #TpContact:capabilities property has
+ * been set.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+GQuark
+tp_contact_get_feature_quark_capabilities (void)
+{
+  return g_quark_from_static_string ("tp-contact-feature-capabilities");
+}
+
+/**
+ * TP_CONTACT_FEATURE_AVATAR_DATA:
+ *
+ * Expands to a call to a function that returns a #GQuark representing
+ * the "avatar data" feature.
+ *
+ * When this feature is prepared, the contact's avatar has been
+ * retrieved. In particular, the #TpContact:avatar-file property has
+ * been set.
+ *
+ * This feature also implies the %TP_CONTACT_FEATURE_AVATAR_TOKEN.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+GQuark
+tp_contact_get_feature_quark_avatar_data (void)
+{
+  return g_quark_from_static_string ("tp-contact-feature-avatar-data");
+}
+
+/**
+ * TP_CONTACT_FEATURE_CONTACT_INFO:
+ *
+ * Expands to a call to a function that returns a #GQuark representing
+ * the "contact info" feature.
+ *
+ * When this feature is prepared, the contact's contact info has been
+ * retrieved. In particular, the #TpContact:contact-info property has
+ * been set.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+GQuark
+tp_contact_get_feature_quark_contact_info (void)
+{
+  return g_quark_from_static_string ("tp-contact-feature-contact-info");
+}
+
+/**
+ * TP_CONTACT_FEATURE_CLIENT_TYPES:
+ *
+ * Expands to a call to a function that returns a #GQuark representing
+ * the "client types" feature.
+ *
+ * When this feature is prepared, the contact's client types have been
+ * retrieved. In particular, the #TpContact:client-types property has
+ * been set.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+GQuark
+tp_contact_get_feature_quark_client_types (void)
+{
+  return g_quark_from_static_string ("tp-contact-feature-client-types");
+}
+
+/**
+ * TP_CONTACT_FEATURE_SUBSCRIPTION_STATES:
+ *
+ * Expands to a call to a function that returns a #GQuark representing
+ * the "subscription states" feature.
+ *
+ * When this feature is prepared, the contact's subscription states
+ * have been retrieved. In particular, the #TpContact:subscribe-state,
+ * #TpContact:publish-request, and #TpContact:publish-state properties
+ * have been set.
+ *
+ * This feature requires a Connection implementing the
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST interface.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+GQuark
+tp_contact_get_feature_quark_subscription_states (void)
+{
+  return g_quark_from_static_string ("tp-contact-feature-subscription-states");
+}
+
+/**
+ * TP_CONTACT_FEATURE_CONTACT_GROUPS:
+ *
+ * Expands to a call to a function that returns a #GQuark representing the
+ * "contact groups" feature.
+ *
+ * When this feature is prepared, the contact's contact groups have
+ * been retrieved. In particular, the #TpContact:contact-groups
+ * property has been set.
+ *
+ * This feature requires a Connection implementing the
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS interface.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+GQuark
+tp_contact_get_feature_quark_contact_groups (void)
+{
+  return g_quark_from_static_string ("tp-contact-feature-contact-groups");
+}
+
+/**
+ * TP_CONTACT_FEATURE_CONTACT_BLOCKING:
+ *
+ * Expands to a call to a function that returns a #GQuark representing
+ * the "contact blocking" feature.
+ *
+ * When this feature is prepared, the contact's blocking state have
+ * been retrieved. In particular, the #TpContact:is-blocked property
+ * has been set.
+ *
+ * This feature requires a Connection implementing the
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING interface.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+GQuark
+tp_contact_get_feature_quark_contact_blocking (void)
+{
+  return g_quark_from_static_string ("tp-contact-feature-contact-blocking");
+}
 
 G_DEFINE_TYPE (TpContact, tp_contact, G_TYPE_OBJECT)
 
@@ -186,20 +344,22 @@ enum {
 
 static guint signals[N_SIGNALS] = {0};
 
+static GQuark const no_quarks[] = { 0 };
+
 /* The API allows for more than 32 features, but this implementation does
  * not. We can easily expand this later. */
 typedef enum {
-    CONTACT_FEATURE_FLAG_ALIAS = 1 << TP_CONTACT_FEATURE_ALIAS,
-    CONTACT_FEATURE_FLAG_AVATAR_TOKEN = 1 << TP_CONTACT_FEATURE_AVATAR_TOKEN,
-    CONTACT_FEATURE_FLAG_PRESENCE = 1 << TP_CONTACT_FEATURE_PRESENCE,
-    CONTACT_FEATURE_FLAG_LOCATION = 1 << TP_CONTACT_FEATURE_LOCATION,
-    CONTACT_FEATURE_FLAG_CAPABILITIES = 1 << TP_CONTACT_FEATURE_CAPABILITIES,
-    CONTACT_FEATURE_FLAG_AVATAR_DATA = 1 << TP_CONTACT_FEATURE_AVATAR_DATA,
-    CONTACT_FEATURE_FLAG_CONTACT_INFO = 1 << TP_CONTACT_FEATURE_CONTACT_INFO,
-    CONTACT_FEATURE_FLAG_CLIENT_TYPES = 1 << TP_CONTACT_FEATURE_CLIENT_TYPES,
-    CONTACT_FEATURE_FLAG_STATES = 1 << TP_CONTACT_FEATURE_SUBSCRIPTION_STATES,
-    CONTACT_FEATURE_FLAG_CONTACT_GROUPS = 1 << TP_CONTACT_FEATURE_CONTACT_GROUPS,
-    CONTACT_FEATURE_FLAG_CONTACT_BLOCKING = 1 << TP_CONTACT_FEATURE_CONTACT_BLOCKING,
+    CONTACT_FEATURE_FLAG_ALIAS = 1 << 1,
+    CONTACT_FEATURE_FLAG_AVATAR_TOKEN = 1 << 2,
+    CONTACT_FEATURE_FLAG_PRESENCE = 1 << 3,
+    CONTACT_FEATURE_FLAG_LOCATION = 1 << 4,
+    CONTACT_FEATURE_FLAG_CAPABILITIES = 1 << 5,
+    CONTACT_FEATURE_FLAG_AVATAR_DATA = 1 << 6,
+    CONTACT_FEATURE_FLAG_CONTACT_INFO = 1 << 7,
+    CONTACT_FEATURE_FLAG_CLIENT_TYPES = 1 << 8,
+    CONTACT_FEATURE_FLAG_STATES = 1 << 9,
+    CONTACT_FEATURE_FLAG_CONTACT_GROUPS = 1 << 10,
+    CONTACT_FEATURE_FLAG_CONTACT_BLOCKING = 1 << 11,
 } ContactFeatureFlags;
 
 struct _TpContactPrivate {
@@ -318,6 +478,35 @@ tp_contact_get_identifier (TpContact *self)
   return self->priv->identifier;
 }
 
+static guint
+get_feature (GQuark feature)
+{
+  if (feature == TP_CONTACT_FEATURE_ALIAS)
+    return CONTACT_FEATURE_FLAG_ALIAS;
+  else if (feature == TP_CONTACT_FEATURE_AVATAR_TOKEN)
+    return CONTACT_FEATURE_FLAG_AVATAR_TOKEN;
+  else if (feature == TP_CONTACT_FEATURE_PRESENCE)
+    return CONTACT_FEATURE_FLAG_PRESENCE;
+  else if (feature == TP_CONTACT_FEATURE_LOCATION)
+    return CONTACT_FEATURE_FLAG_LOCATION;
+  else if (feature == TP_CONTACT_FEATURE_CAPABILITIES)
+    return CONTACT_FEATURE_FLAG_CAPABILITIES;
+  else if (feature == TP_CONTACT_FEATURE_AVATAR_DATA)
+    return CONTACT_FEATURE_FLAG_AVATAR_DATA;
+  else if (feature == TP_CONTACT_FEATURE_CONTACT_INFO)
+    return CONTACT_FEATURE_FLAG_CONTACT_INFO;
+  else if (feature == TP_CONTACT_FEATURE_CLIENT_TYPES)
+    return CONTACT_FEATURE_FLAG_CLIENT_TYPES;
+  else if (feature == TP_CONTACT_FEATURE_SUBSCRIPTION_STATES)
+    return CONTACT_FEATURE_FLAG_STATES;
+  else if (feature == TP_CONTACT_FEATURE_CONTACT_GROUPS)
+    return CONTACT_FEATURE_FLAG_CONTACT_GROUPS;
+  else if (feature == TP_CONTACT_FEATURE_CONTACT_BLOCKING)
+    return CONTACT_FEATURE_FLAG_CONTACT_BLOCKING;
+
+  return 0;
+}
+
 /**
  * tp_contact_has_feature:
  * @self: a contact
@@ -331,12 +520,18 @@ tp_contact_get_identifier (TpContact *self)
  */
 gboolean
 tp_contact_has_feature (TpContact *self,
-                        TpContactFeature feature)
+                        GQuark feature)
 {
-  g_return_val_if_fail (self != NULL, FALSE);
-  g_return_val_if_fail (feature < TP_NUM_CONTACT_FEATURES, FALSE);
+  guint mask;
 
-  return ((self->priv->has_features & (1 << feature)) != 0);
+  g_return_val_if_fail (self != NULL, FALSE);
+
+  mask = get_feature (feature);
+
+  if (mask == 0)
+    return FALSE;
+
+  return ((self->priv->has_features & mask) != 0);
 }
 
 
@@ -2991,19 +3186,18 @@ tp_contact_set_attributes (TpContact *contact,
   return TRUE;
 }
 
-static gboolean get_feature_flags (guint n_features,
-    const TpContactFeature *features, ContactFeatureFlags *flags);
+static gboolean get_feature_flags (const GQuark *features,
+    ContactFeatureFlags *flags);
 
 gboolean
 _tp_contact_set_attributes (TpContact *contact,
     GHashTable *asv,
-    guint n_features,
-    const TpContactFeature *features,
+    const GQuark *features,
     GError **error)
 {
   ContactFeatureFlags feature_flags = 0;
 
-  if (!get_feature_flags (n_features, features, &feature_flags))
+  if (!get_feature_flags (features, &feature_flags))
     return FALSE;
 
   return tp_contact_set_attributes (contact, asv, feature_flags, error);
@@ -3219,12 +3413,11 @@ contacts_bind_to_signals (TpConnection *connection,
 
 const gchar **
 _tp_contacts_bind_to_signals (TpConnection *connection,
-    guint n_features,
-    const TpContactFeature *features)
+    const GQuark *features)
 {
   ContactFeatureFlags feature_flags = 0;
 
-  if (!get_feature_flags (n_features, features, &feature_flags))
+  if (!get_feature_flags (features, &feature_flags))
     return NULL;
 
   return contacts_bind_to_signals (connection, feature_flags);
@@ -3313,18 +3506,16 @@ lookup_all_contacts (ContactsContext *context)
 }
 
 static gboolean
-get_feature_flags (guint n_features,
-    const TpContactFeature *features,
+get_feature_flags (const GQuark *features,
     ContactFeatureFlags *flags)
 {
   ContactFeatureFlags feature_flags = 0;
   guint i;
 
-  for (i = 0; i < n_features; i++)
-    {
-      g_return_val_if_fail (features[i] < TP_NUM_CONTACT_FEATURES, FALSE);
-      feature_flags |= (1 << features[i]);
-    }
+  g_return_val_if_fail (features != NULL, FALSE);
+
+  for (i = 0; features[i] != 0; i++)
+    feature_flags |= get_feature (features[i]);
 
   /* Force AVATAR_TOKEN if we have AVATAR_DATA */
   if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0)
@@ -3364,10 +3555,10 @@ contacts_context_remove_common_features (ContactsContext *context)
  * @n_handles: The number of handles in @handles (must be at least 1)
  * @handles: (array length=n_handles) (element-type uint): An array of handles
  *  of type %TP_HANDLE_TYPE_CONTACT representing the desired contacts
- * @n_features: The number of features in @features (may be 0)
- * @features: (array length=n_features) (allow-none) (element-type uint): An array of features that
+ * @features: (transfer-none) (array zero-terminated=1) (allow-none)
+ *  (element-type GLib.Quark): A zero-terminated array of features that
  *  must be ready for use (if supported) before the callback is called (may
- *  be %NULL if @n_features is 0)
+ *  be %NULL)
  * @callback: A user callback to call when the contacts are ready
  * @user_data: Data to pass to the callback
  * @destroy: Called to destroy @user_data either after @callback has been
@@ -3391,8 +3582,7 @@ void
 tp_connection_get_contacts_by_handle (TpConnection *self,
                                       guint n_handles,
                                       const TpHandle *handles,
-                                      guint n_features,
-                                      const TpContactFeature *features,
+                                      const GQuark *features,
                                       TpConnectionContactsByHandleCb callback,
                                       gpointer user_data,
                                       GDestroyNotify destroy,
@@ -3410,10 +3600,12 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
   g_return_if_fail (tp_proxy_get_invalidated (self) == NULL);
   g_return_if_fail (n_handles >= 1);
   g_return_if_fail (handles != NULL);
-  g_return_if_fail (n_features == 0 || features != NULL);
   g_return_if_fail (callback != NULL);
 
-  if (!get_feature_flags (n_features, features, &feature_flags))
+  if (features == NULL)
+    features = no_quarks;
+
+  if (!get_feature_flags (features, &feature_flags))
     return;
 
   context = contacts_context_new (self, n_handles, feature_flags,
@@ -3444,8 +3636,8 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
  * @n_contacts: The number of contacts in @contacts (must be at least 1)
  * @contacts: (array length=n_contacts): An array of #TpContact objects
  *  associated with @self
- * @n_features: The number of features in @features (must be at least 1)
- * @features: (array length=n_features): An array of features that must be
+ * @features: (transfer-none) (array zero-terminated=1)
+ *  (element-type GLib.Quark): An array of features that must be
  *  ready for use (if supported) before the callback is called
  * @callback: A user callback to call when the contacts are ready
  * @user_data: Data to pass to the callback
@@ -3470,8 +3662,7 @@ void
 tp_connection_upgrade_contacts (TpConnection *self,
                                 guint n_contacts,
                                 TpContact * const *contacts,
-                                guint n_features,
-                                const TpContactFeature *features,
+                                const GQuark *features,
                                 TpConnectionUpgradeContactsCb callback,
                                 gpointer user_data,
                                 GDestroyNotify destroy,
@@ -3485,8 +3676,10 @@ tp_connection_upgrade_contacts (TpConnection *self,
         TP_CONNECTION_FEATURE_CONNECTED));
   g_return_if_fail (n_contacts >= 1);
   g_return_if_fail (contacts != NULL);
-  g_return_if_fail (n_features == 0 || features != NULL);
   g_return_if_fail (callback != NULL);
+
+  if (features == NULL)
+    features = no_quarks;
 
   for (i = 0; i < n_contacts; i++)
     {
@@ -3494,7 +3687,7 @@ tp_connection_upgrade_contacts (TpConnection *self,
       g_return_if_fail (contacts[i]->priv->identifier != NULL);
     }
 
-  if (!get_feature_flags (n_features, features, &feature_flags))
+  if (!get_feature_flags (features, &feature_flags))
     return;
 
   context = contacts_context_new (self, n_contacts, feature_flags,
@@ -3646,10 +3839,9 @@ contacts_requested_handles (TpConnection *connection,
  *  the desired contacts by their
  *  identifiers in the IM protocol (XMPP JIDs, SIP URIs, MSN Passports,
  *  AOL screen-names etc.)
- * @n_features: The number of features in @features (may be 0)
- * @features: (array length=n_features) (allow-none): An array of features
- *  that must be ready for use (if supported)
- *  before the callback is called (may be %NULL if @n_features is 0)
+ * @features: (transfer-none) (array zero-terminated=1) (allow-none)
+ *  (element-type GLib.Quark): An array of features that must be ready for
+ * use (if supported) before the callback is called (may be %NULL)
  * @callback: A user callback to call when the contacts are ready
  * @user_data: Data to pass to the callback
  * @destroy: Called to destroy @user_data either after @callback has been
@@ -3673,8 +3865,7 @@ void
 tp_connection_get_contacts_by_id (TpConnection *self,
                                   guint n_ids,
                                   const gchar * const *ids,
-                                  guint n_features,
-                                  const TpContactFeature *features,
+                                  const GQuark *features,
                                   TpConnectionContactsByIdCb callback,
                                   gpointer user_data,
                                   GDestroyNotify destroy,
@@ -3689,10 +3880,12 @@ tp_connection_get_contacts_by_id (TpConnection *self,
   g_return_if_fail (n_ids >= 1);
   g_return_if_fail (ids != NULL);
   g_return_if_fail (ids[0] != NULL);
-  g_return_if_fail (n_features == 0 || features != NULL);
   g_return_if_fail (callback != NULL);
 
-  if (!get_feature_flags (n_features, features, &feature_flags))
+  if (features == NULL)
+    features = no_quarks;
+
+  if (!get_feature_flags (features, &feature_flags))
     return;
 
   context = contacts_context_new (self, n_ids, feature_flags,

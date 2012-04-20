@@ -111,7 +111,7 @@ test_by_id (TpConnection *client_conn)
 
   tp_connection_get_contacts_by_id (client_conn,
       2, ids,
-      0, NULL,
+      NULL,
       by_id_cb,
       &result, finish, NULL);
 

@@ -258,14 +258,8 @@ static GArray *
 dup_contact_features_impl (TpSimpleClientFactory *self,
     TpConnection *connection)
 {
-  GArray *array;
-
-  array = g_array_sized_new (FALSE, FALSE, sizeof (TpContactFeature),
-      self->priv->desired_contact_features->len);
-  g_array_append_vals (array, self->priv->desired_contact_features->data,
-      self->priv->desired_contact_features->len);
-
-  return array;
+  return _tp_quark_array_copy (
+      (GQuark *) self->priv->desired_contact_features->data);
 }
 
 static void
@@ -357,8 +351,8 @@ tp_simple_client_factory_init (TpSimpleClientFactory *self)
   feature = TP_CHANNEL_FEATURE_CORE;
   g_array_append_val (self->priv->desired_channel_features, feature);
 
-  self->priv->desired_contact_features = g_array_new (FALSE, FALSE,
-      sizeof (TpContactFeature));
+  self->priv->desired_contact_features = g_array_new (TRUE, FALSE,
+      sizeof (GQuark));
 }
 
 static void
@@ -861,10 +855,10 @@ tp_simple_client_factory_ensure_contact (TpSimpleClientFactory *self,
  * @self: a #TpSimpleClientFactory object
  * @connection: a #TpConnection
  *
- * Return a #GArray containing the #TpContactFeature that should be prepared on
- * all contacts of @connection.
+ * Return a #GArray containing the contact feature #GQuark<!-- -->s
+ * that should be prepared on all contacts of @connection.
  *
- * Returns: (transfer full) (element-type TelepathyGLib.ContactFeature): a newly
+ * Returns: (transfer full) (element-type GLib.Quark): a newly
  *  allocated #GArray
  *
  * Since: 0.15.5
@@ -884,9 +878,8 @@ tp_simple_client_factory_dup_contact_features (TpSimpleClientFactory *self,
 /**
  * tp_simple_client_factory_add_contact_features:
  * @self: a #TpSimpleClientFactory object
- * @n_features: The number of features in @features (may be 0)
- * @features: (array length=n_features) (allow-none): an array of desired
- *  features (may be %NULL if @n_features is 0)
+ * @features: (transfer none) (array zero-terminated=1) (allow-none):
+ *  an array of desired features
  *
  * Add @features to the desired features to be prepared on #TpContact
  * objects. Those features will be added to the features already returned be
@@ -899,14 +892,15 @@ tp_simple_client_factory_dup_contact_features (TpSimpleClientFactory *self,
  */
 void
 tp_simple_client_factory_add_contact_features (TpSimpleClientFactory *self,
-    guint n_features, const TpContactFeature *features)
+    const GQuark *features)
 {
   guint i;
 
   g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
+  g_return_if_fail (features != NULL);
 
   /* Add features into desired_contact_features avoiding dups */
-  for (i = 0; i < n_features; i++)
+  for (i = 0; features[i] != 0; i++)
     {
       guint j;
       gboolean found = FALSE;
@@ -914,7 +908,7 @@ tp_simple_client_factory_add_contact_features (TpSimpleClientFactory *self,
       for (j = 0; j < self->priv->desired_contact_features->len; j++)
         {
           if (features[i] == g_array_index (
-              self->priv->desired_contact_features, TpContactFeature, j))
+              self->priv->desired_contact_features, GQuark, j))
             {
               found = TRUE;
               break;
@@ -930,8 +924,7 @@ tp_simple_client_factory_add_contact_features (TpSimpleClientFactory *self,
  * tp_simple_client_factory_add_contact_features_varargs: (skip)
  * @self: a #TpSimpleClientFactory
  * @feature: the first feature
- * @...: the second and subsequent features, if any, ending with
- *  %TP_CONTACT_FEATURE_INVALID
+ * @...: the second and subsequent features, if any, ending with 0
  *
  * The same as tp_simple_client_factory_add_contact_features(), but with a
  * more convenient calling convention from C.
@@ -941,24 +934,24 @@ tp_simple_client_factory_add_contact_features (TpSimpleClientFactory *self,
 void
 tp_simple_client_factory_add_contact_features_varargs (
     TpSimpleClientFactory *self,
-    TpContactFeature feature,
+    GQuark feature,
     ...)
 {
   va_list var_args;
   GArray *features;
-  TpContactFeature f;
+  GQuark f;
 
   g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
 
   va_start (var_args, feature);
-  features = g_array_new (FALSE, FALSE, sizeof (TpContactFeature));
+  features = g_array_new (TRUE, FALSE, sizeof (GQuark));
 
-  for (f = feature; f != TP_CONTACT_FEATURE_INVALID;
-      f = va_arg (var_args, TpContactFeature))
+  for (f = feature; f != 0;
+      f = va_arg (var_args, GQuark))
     g_array_append_val (features, f);
 
-  tp_simple_client_factory_add_contact_features (self, features->len,
-      (TpContactFeature *) features->data);
+  tp_simple_client_factory_add_contact_features (self,
+      (const GQuark *) features->data);
 
   g_array_unref (features);
   va_end (var_args);

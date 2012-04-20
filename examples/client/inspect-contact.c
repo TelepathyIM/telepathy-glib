@@ -131,10 +131,11 @@ connection_ready_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  static TpContactFeature features[] = {
+  GQuark features[] = {
       TP_CONTACT_FEATURE_ALIAS,
       TP_CONTACT_FEATURE_AVATAR_TOKEN,
-      TP_CONTACT_FEATURE_PRESENCE
+      TP_CONTACT_FEATURE_PRESENCE,
+      0
   };
   InspectContactData *data = user_data;
   TpConnection *connection = TP_CONNECTION (source);
@@ -155,7 +156,7 @@ connection_ready_cb (GObject *source,
 
       tp_connection_get_contacts_by_handle (connection,
           1, &self_handle,
-          G_N_ELEMENTS (features), features,
+          features,
           got_contacts_by_handle,
           data, NULL, NULL);
     }
@@ -165,7 +166,7 @@ connection_ready_cb (GObject *source,
 
       tp_connection_get_contacts_by_id (connection,
           1, contacts,
-          G_N_ELEMENTS (features), features,
+          features,
           got_contacts_by_id,
           data, NULL, NULL);
     }

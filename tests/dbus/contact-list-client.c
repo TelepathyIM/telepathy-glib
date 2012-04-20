@@ -455,7 +455,7 @@ test_is_blocked (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   const gchar *id = "bill@example.com";
-  TpContactFeature features[] = { TP_CONTACT_FEATURE_CONTACT_BLOCKING };
+  GQuark features[] = { TP_CONTACT_FEATURE_CONTACT_BLOCKING };
   GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONTACT_LIST, 0 };
 
   tp_proxy_prepare_async (test->connection, conn_features,
@@ -478,7 +478,7 @@ test_is_blocked (Test *test,
 
   /* Bill is already blocked in the CM */
   tp_connection_get_contacts_by_id (test->connection, 1, &id,
-      G_N_ELEMENTS (features), features, get_contacts_by_id_cb, test,
+      features, get_contacts_by_id_cb, test,
       NULL, NULL);
 
   test->wait = 1;

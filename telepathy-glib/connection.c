@@ -862,7 +862,7 @@ get_self_contact (TpConnection *self)
    * which makes it start working slightly early. */
    tp_connection_get_contacts_by_handle (self,
        1, &self->priv->last_known_self_handle,
-      features->len, (TpContactFeature *) features->data,
+      (GQuark *) features->data,
       tp_connection_got_self_contact_cb, NULL, NULL, NULL);
 
   g_array_unref (features);

@@ -195,7 +195,7 @@ conn_ready (GObject *source,
     }
 
   /* Get contact objects for myself and someone else */
-  tp_connection_get_contacts_by_id (conn, 2, names, 0, NULL,
+  tp_connection_get_contacts_by_id (conn, 2, names, NULL,
       contacts_ready_cb, NULL, NULL, NULL);
 }
 

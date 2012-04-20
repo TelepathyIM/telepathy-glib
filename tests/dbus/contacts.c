@@ -59,30 +59,12 @@ typedef struct {
   TpTestsContactsConnection *service_conn;
   TpHandleRepoIface *service_repo;
   TpConnection *client_conn;
+  GArray *all_contact_features;
 } Fixture;
 
 /* We only really actively test TP_CONTACT_FEATURE_ALIAS, but preparing any
  * of these once should be enough, assuming that the CM is not broken.
  */
-static TpContactFeature all_contact_features[] = {
-  TP_CONTACT_FEATURE_ALIAS,
-  TP_CONTACT_FEATURE_AVATAR_TOKEN,
-  TP_CONTACT_FEATURE_PRESENCE,
-  TP_CONTACT_FEATURE_LOCATION,
-  TP_CONTACT_FEATURE_CAPABILITIES,
-  TP_CONTACT_FEATURE_AVATAR_DATA,
-  TP_CONTACT_FEATURE_CONTACT_INFO,
-  TP_CONTACT_FEATURE_CLIENT_TYPES,
-  TP_CONTACT_FEATURE_SUBSCRIPTION_STATES,
-  TP_CONTACT_FEATURE_CONTACT_GROUPS,
-  TP_CONTACT_FEATURE_CONTACT_BLOCKING
-};
-
-/* If people add new features, they should add them to this test. We could
- * generate the list dynamically but this seems less brittle.
- */
-G_STATIC_ASSERT (G_N_ELEMENTS (all_contact_features) == TP_NUM_CONTACT_FEATURES);
-
 
 static void
 by_handle_cb (TpConnection *connection,
@@ -315,7 +297,7 @@ test_contact_info (Fixture *f,
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
       (TpBaseConnection *) service_conn, TP_HANDLE_TYPE_CONTACT);
-  TpContactFeature features[] = { TP_CONTACT_FEATURE_CONTACT_INFO };
+  GQuark features[] = { TP_CONTACT_FEATURE_CONTACT_INFO, 0 };
   TpContact *contact;
   TpHandle handle;
   const gchar *field_value[] = { "Foo", NULL };
@@ -353,7 +335,7 @@ test_contact_info (Fixture *f,
   handle = tp_connection_get_self_handle (client_conn);
   tp_connection_get_contacts_by_handle (client_conn,
       1, &handle,
-      0, NULL,
+      NULL,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -369,7 +351,7 @@ test_contact_info (Fixture *f,
   handle = tp_connection_get_self_handle (client_conn);
   tp_connection_get_contacts_by_handle (client_conn,
       1, &handle,
-      G_N_ELEMENTS (features), features,
+      features,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -385,7 +367,7 @@ test_contact_info (Fixture *f,
   handle = tp_handle_ensure (service_repo, "info-test-3", NULL, NULL);
   tp_connection_get_contacts_by_handle (client_conn,
       1, &handle,
-      G_N_ELEMENTS (features), features,
+      features,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -411,7 +393,7 @@ test_contact_info (Fixture *f,
 
   tp_connection_get_contacts_by_handle (client_conn,
       1, &handle,
-      0, NULL,
+      NULL,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -434,7 +416,7 @@ test_contact_info (Fixture *f,
   handle = tp_handle_ensure (service_repo, "info-test-5", NULL, NULL);
   tp_connection_get_contacts_by_handle (client_conn,
       1, &handle,
-      0, NULL,
+      NULL,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -456,7 +438,7 @@ test_contact_info (Fixture *f,
   handle = tp_handle_ensure (service_repo, "info-test-6", NULL, NULL);
   tp_connection_get_contacts_by_handle (client_conn,
       1, &handle,
-      0, NULL,
+      NULL,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -539,7 +521,7 @@ create_contact_with_fake_avatar (TpTestsContactsConnection *service_conn,
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
       (TpBaseConnection *) service_conn, TP_HANDLE_TYPE_CONTACT);
-  TpContactFeature features[] = { TP_CONTACT_FEATURE_AVATAR_DATA };
+  GQuark features[] = { TP_CONTACT_FEATURE_AVATAR_DATA, 0 };
   const gchar avatar_data[] = "fake-avatar-data";
   const gchar avatar_token[] = "fake-avatar-token";
   const gchar avatar_mime_type[] = "fake-avatar-mime-type";
@@ -558,7 +540,7 @@ create_contact_with_fake_avatar (TpTestsContactsConnection *service_conn,
 
   tp_connection_get_contacts_by_handle (client_conn,
       1, &handle,
-      G_N_ELEMENTS (features), features,
+      features,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -743,7 +725,7 @@ test_by_handle (Fixture *f,
    */
   tp_connection_get_contacts_by_handle (client_conn,
       5, handles,
-      0, NULL,
+      NULL,
       by_handle_cb,
       &result, finish, NULL);
 
@@ -782,7 +764,7 @@ test_by_handle (Fixture *f,
    */
   tp_connection_get_contacts_by_handle (client_conn,
       4, handles,
-      0, NULL,
+      NULL,
       by_handle_cb,
       &result, finish, NULL);
 
@@ -919,7 +901,7 @@ test_by_handle_again (Fixture *f,
 
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
-      G_N_ELEMENTS (all_contact_features), all_contact_features,
+      (const GQuark *) f->all_contact_features->data,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -941,7 +923,7 @@ test_by_handle_again (Fixture *f,
 
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
-      G_N_ELEMENTS (all_contact_features), all_contact_features,
+      (const GQuark *) f->all_contact_features->data,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -977,7 +959,7 @@ test_by_handle_upgrade (Fixture *f,
   TpContact *contact;
   gpointer weak_pointer;
   const gchar *alias = "Alice in Wonderland";
-  TpContactFeature feature = TP_CONTACT_FEATURE_ALIAS;
+  GQuark features[] = { TP_CONTACT_FEATURE_ALIAS, 0 };
 
   g_test_bug ("32191");
 
@@ -988,7 +970,7 @@ test_by_handle_upgrade (Fixture *f,
 
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
-      0, NULL,
+      NULL,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -1011,7 +993,7 @@ test_by_handle_upgrade (Fixture *f,
    * round trips */
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
-      1, &feature,
+      features,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -1055,7 +1037,7 @@ test_no_features (Fixture *f,
 
   tp_connection_get_contacts_by_handle (client_conn,
       3, handles,
-      0, NULL,
+      NULL,
       by_handle_cb,
       &result, finish, NULL);
 
@@ -1259,9 +1241,9 @@ test_upgrade (Fixture *f,
   TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
       (TpBaseConnection *) service_conn, TP_HANDLE_TYPE_CONTACT);
   TpContact *contacts[3];
-  TpContactFeature features[] = { TP_CONTACT_FEATURE_ALIAS,
+  GQuark features[] = { TP_CONTACT_FEATURE_ALIAS,
       TP_CONTACT_FEATURE_AVATAR_TOKEN, TP_CONTACT_FEATURE_PRESENCE,
-      TP_CONTACT_FEATURE_LOCATION, TP_CONTACT_FEATURE_CAPABILITIES };
+      TP_CONTACT_FEATURE_LOCATION, TP_CONTACT_FEATURE_CAPABILITIES, 0 };
   guint i;
 
   g_message (G_STRFUNC);
@@ -1284,7 +1266,7 @@ test_upgrade (Fixture *f,
 
   tp_connection_get_contacts_by_handle (client_conn,
       3, handles,
-      0, NULL,
+      NULL,
       by_handle_cb,
       &result, finish, NULL);
 
@@ -1335,7 +1317,7 @@ test_upgrade (Fixture *f,
 
   tp_connection_upgrade_contacts (client_conn,
       3, contacts,
-      G_N_ELEMENTS (features), features,
+      features,
       upgrade_cb,
       &result, finish, NULL);
 
@@ -1427,7 +1409,7 @@ test_upgrade_noop (Fixture *f,
   handle = get_handle_with_no_caps (f, "test-upgrade-noop");
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
-      G_N_ELEMENTS (all_contact_features), all_contact_features,
+      (const GQuark *) f->all_contact_features->data,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -1440,7 +1422,7 @@ test_upgrade_noop (Fixture *f,
   make_the_connection_disappear (f);
   tp_connection_upgrade_contacts (f->client_conn,
       1, &contact,
-      G_N_ELEMENTS (all_contact_features), all_contact_features,
+      (const GQuark *) f->all_contact_features->data,
       upgrade_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -1582,9 +1564,9 @@ test_features (Fixture *f,
   TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
       (TpBaseConnection *) service_conn, TP_HANDLE_TYPE_CONTACT);
   TpContact *contacts[3];
-  TpContactFeature features[] = { TP_CONTACT_FEATURE_ALIAS,
+  GQuark features[] = { TP_CONTACT_FEATURE_ALIAS,
       TP_CONTACT_FEATURE_AVATAR_TOKEN, TP_CONTACT_FEATURE_PRESENCE,
-      TP_CONTACT_FEATURE_LOCATION, TP_CONTACT_FEATURE_CAPABILITIES };
+      TP_CONTACT_FEATURE_LOCATION, TP_CONTACT_FEATURE_CAPABILITIES, 0 };
   guint i;
   struct {
       TpConnection *connection;
@@ -1622,7 +1604,7 @@ test_features (Fixture *f,
 
   tp_connection_get_contacts_by_handle (client_conn,
       3, handles,
-      G_N_ELEMENTS (features), features,
+      features,
       by_handle_cb,
       &result, finish, NULL);
 
@@ -1915,7 +1897,7 @@ test_by_id (Fixture *f,
 
   tp_connection_get_contacts_by_id (client_conn,
       1, ids + 2,
-      0, NULL,
+      NULL,
       by_id_cb,
       &result, finish, NULL);
 
@@ -1935,7 +1917,7 @@ test_by_id (Fixture *f,
 
   tp_connection_get_contacts_by_id (client_conn,
       2, ids,
-      0, NULL,
+      NULL,
       by_id_cb,
       &result, finish, NULL);
 
@@ -1961,7 +1943,7 @@ test_by_id (Fixture *f,
 
   tp_connection_get_contacts_by_id (client_conn,
       5, ids,
-      0, NULL,
+      NULL,
       by_id_cb,
       &result, finish, NULL);
 
@@ -2015,7 +1997,7 @@ test_dup_if_possible (Fixture *f,
 
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &alice_handle,
-      0, NULL,
+      NULL,
       by_handle_cb,
       &f->result, finish, NULL);
   g_main_loop_run (f->result.loop);
@@ -2093,7 +2075,7 @@ test_subscription_states (Fixture *f,
   TpHandle alice_handle;
   TpContact *alice;
   TpTestsContactListManager *manager;
-  TpContactFeature features[] = { TP_CONTACT_FEATURE_SUBSCRIPTION_STATES };
+  GQuark features[] = { TP_CONTACT_FEATURE_SUBSCRIPTION_STATES, 0 };
   SubscriptionStates states = { TP_SUBSCRIPTION_STATE_NO,
       TP_SUBSCRIPTION_STATE_NO, "", f->result.loop };
 
@@ -2105,7 +2087,7 @@ test_subscription_states (Fixture *f,
 
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &alice_handle,
-      G_N_ELEMENTS (features), features,
+      features,
       by_handle_cb,
       &f->result, finish, NULL);
   g_main_loop_run (f->result.loop);
@@ -2185,7 +2167,7 @@ test_contact_groups (Fixture *f,
   TpHandle alice_handle;
   TpContact *alice;
   TpTestsContactListManager *manager;
-  TpContactFeature features[] = { TP_CONTACT_FEATURE_CONTACT_GROUPS };
+  GQuark features[] = { TP_CONTACT_FEATURE_CONTACT_GROUPS, 0 };
   ContactGroups data;
 
   data.groups = g_ptr_array_new ();
@@ -2199,7 +2181,7 @@ test_contact_groups (Fixture *f,
 
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &alice_handle,
-      G_N_ELEMENTS (features), features,
+      features,
       by_handle_cb,
       &f->result, finish, NULL);
   g_main_loop_run (f->result.loop);
@@ -2267,7 +2249,7 @@ test_no_location (Fixture *f,
   TpHandle handle;
   TpContact *contact;
   gpointer weak_pointer;
-  TpContactFeature feature = TP_CONTACT_FEATURE_LOCATION;
+  GQuark features[] = { TP_CONTACT_FEATURE_LOCATION, 0 };
   GHashTable *norway = tp_asv_new ("country",  G_TYPE_STRING, "Norway", NULL);
   notify_ctx notify_ctx_alice;
 
@@ -2278,7 +2260,7 @@ test_no_location (Fixture *f,
 
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
-      1, &feature,
+      features,
       by_handle_cb,
       &f->result, finish, NULL);
   g_main_loop_run (f->result.loop);
@@ -2298,7 +2280,7 @@ test_no_location (Fixture *f,
   make_the_connection_disappear (f);
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
-      1, &feature,
+      features,
       by_handle_cb,
       &f->result, finish, NULL);
   g_main_loop_run (f->result.loop);
@@ -2342,7 +2324,7 @@ test_no_location (Fixture *f,
 
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
-      0, NULL,
+      NULL,
       by_handle_cb,
       &f->result, finish, NULL);
   g_main_loop_run (f->result.loop);
@@ -2360,7 +2342,7 @@ test_no_location (Fixture *f,
 
   tp_connection_upgrade_contacts (f->client_conn,
       1, &contact,
-      1, &feature,
+      features,
       upgrade_cb,
       &f->result, finish, NULL);
   g_main_loop_run (f->result.loop);
@@ -2402,8 +2384,8 @@ test_superfluous_attributes (Fixture *f,
   TpHandle handle;
   TpContact *contact;
   const gchar * const *client_types;
-  TpContactFeature client_types_feature = TP_CONTACT_FEATURE_CLIENT_TYPES;
-  TpContactFeature presence_feature = TP_CONTACT_FEATURE_PRESENCE;
+  GQuark client_types_features[] = { TP_CONTACT_FEATURE_CLIENT_TYPES, 0 };
+  GQuark presence_features[] = { TP_CONTACT_FEATURE_PRESENCE, 0 };
 
   g_assert (TP_TESTS_IS_BROKEN_CLIENT_TYPES_CONNECTION (f->service_conn));
 
@@ -2420,7 +2402,7 @@ test_superfluous_attributes (Fixture *f,
    */
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
-      1, &client_types_feature,
+      client_types_features,
       by_handle_cb,
       &f->result, finish, NULL);
   g_main_loop_run (f->result.loop);
@@ -2466,7 +2448,7 @@ test_superfluous_attributes (Fixture *f,
   make_the_connection_disappear (f);
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
-      1, &presence_feature,
+      presence_features,
       by_handle_cb,
       &f->result, finish, NULL);
   g_main_loop_run (f->result.loop);
@@ -2529,7 +2511,7 @@ test_contact_list (Fixture *f,
   factory = tp_proxy_get_factory (f->client_conn);
   tp_simple_client_factory_add_contact_features_varargs (factory,
       TP_CONTACT_FEATURE_ALIAS,
-      TP_CONTACT_FEATURE_INVALID);
+      0);
 
   /* Now put it online and wait for contact list state move to success */
   g_signal_connect (f->client_conn, "contact-list-changed",
@@ -2570,7 +2552,7 @@ test_self_contact (Fixture *f,
   factory = tp_proxy_get_factory (f->client_conn);
   tp_simple_client_factory_add_contact_features_varargs (factory,
       TP_CONTACT_FEATURE_ALIAS,
-      TP_CONTACT_FEATURE_INVALID);
+      0);
 
   tp_cli_connection_call_connect (f->client_conn, -1, NULL, NULL, NULL, NULL);
   tp_tests_proxy_run_until_prepared (f->client_conn, conn_features);
@@ -2585,6 +2567,27 @@ setup_internal (Fixture *f,
     gboolean connect,
     gconstpointer user_data)
 {
+/* TODO: we should assert that when people add new TpContact features
+ * they're added to this list and tested; this was easier with
+ * TpContactFeature... */
+  const GQuark features[] = {
+    TP_CONTACT_FEATURE_ALIAS,
+    TP_CONTACT_FEATURE_AVATAR_TOKEN,
+    TP_CONTACT_FEATURE_PRESENCE,
+    TP_CONTACT_FEATURE_LOCATION,
+    TP_CONTACT_FEATURE_CAPABILITIES,
+    TP_CONTACT_FEATURE_AVATAR_DATA,
+    TP_CONTACT_FEATURE_CONTACT_INFO,
+    TP_CONTACT_FEATURE_CLIENT_TYPES,
+    TP_CONTACT_FEATURE_SUBSCRIPTION_STATES,
+    TP_CONTACT_FEATURE_CONTACT_GROUPS,
+    TP_CONTACT_FEATURE_CONTACT_BLOCKING,
+  };
+
+  f->all_contact_features = g_array_new (TRUE, FALSE, sizeof (GQuark));
+  g_array_append_vals (f->all_contact_features,
+      features, G_N_ELEMENTS (features));
+
   tp_tests_create_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
       "me@test.com", connect, &f->base_connection, &f->client_conn);
 
@@ -2616,6 +2619,9 @@ teardown (Fixture *f,
 {
   if (f->client_conn != NULL)
     tp_tests_connection_assert_disconnect_succeeds (f->client_conn);
+
+  if (f->all_contact_features != NULL)
+    g_array_unref (f->all_contact_features);
 
   tp_clear_object (&f->client_conn);
   f->service_repo = NULL;

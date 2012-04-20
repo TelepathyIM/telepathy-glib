@@ -30,13 +30,11 @@ TpContact *_tp_contact_new (TpConnection *connection,
 
 gboolean _tp_contact_set_attributes (TpContact *contact,
     GHashTable *asv,
-    guint n_features,
-    const TpContactFeature *features,
+    const GQuark *features,
     GError **error);
 
 const gchar **_tp_contacts_bind_to_signals (TpConnection *connection,
-    guint n_features,
-    const TpContactFeature *features);
+    const GQuark *features);
 
 void _tp_contact_set_subscription_states (TpContact *self,
     GValueArray *value_array);

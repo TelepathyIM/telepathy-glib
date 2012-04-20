@@ -90,7 +90,7 @@ main (int argc,
   tp_simple_client_factory_add_contact_features_varargs (factory,
       TP_CONTACT_FEATURE_ALIAS,
       TP_CONTACT_FEATURE_CONTACT_GROUPS,
-      TP_CONTACT_FEATURE_INVALID);
+      0);
 
   tp_proxy_prepare_async (manager, NULL, account_manager_prepared_cb, loop);
 

@@ -865,7 +865,7 @@ test_sender_prepared (Test *test,
   factory = tp_proxy_get_factory (test->connection);
   tp_simple_client_factory_add_contact_features_varargs (factory,
       TP_CONTACT_FEATURE_ALIAS,
-      TP_CONTACT_FEATURE_INVALID);
+      0);
 
   msg = tp_cm_message_new_text (test->base_connection, admin,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,

@@ -162,11 +162,10 @@ GArray *tp_simple_client_factory_dup_contact_features (
     TpSimpleClientFactory *self,
     TpConnection *connection);
 void tp_simple_client_factory_add_contact_features (TpSimpleClientFactory *self,
-    guint n_features,
-    const TpContactFeature *features);
+    const GQuark *features);
 void tp_simple_client_factory_add_contact_features_varargs (
     TpSimpleClientFactory *self,
-    TpContactFeature feature,
+    GQuark feature,
     ...);
 
 G_END_DECLS

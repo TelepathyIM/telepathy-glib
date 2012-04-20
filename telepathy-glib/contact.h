@@ -54,27 +54,55 @@ GType tp_contact_get_type (void) G_GNUC_CONST;
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CONTACT, \
                               TpContactClass))
 
-typedef enum {
-    TP_CONTACT_FEATURE_ALIAS,
-    TP_CONTACT_FEATURE_AVATAR_TOKEN,
-    TP_CONTACT_FEATURE_PRESENCE,
-    TP_CONTACT_FEATURE_LOCATION,
-    TP_CONTACT_FEATURE_CAPABILITIES,
-    TP_CONTACT_FEATURE_AVATAR_DATA,
-    TP_CONTACT_FEATURE_CONTACT_INFO,
-    TP_CONTACT_FEATURE_CLIENT_TYPES,
-    TP_CONTACT_FEATURE_SUBSCRIPTION_STATES,
-    TP_CONTACT_FEATURE_CONTACT_GROUPS,
-    TP_CONTACT_FEATURE_CONTACT_BLOCKING,
-} TpContactFeature;
-#define TP_NUM_CONTACT_FEATURES (TP_CONTACT_FEATURE_CONTACT_BLOCKING + 1)
-#define TP_CONTACT_FEATURE_INVALID ((TpContactFeature) -1)
+#define TP_CONTACT_FEATURE_ALIAS \
+  (tp_contact_get_feature_quark_alias ())
+GQuark tp_contact_get_feature_quark_alias (void) G_GNUC_CONST;
+
+#define TP_CONTACT_FEATURE_AVATAR_TOKEN \
+  (tp_contact_get_feature_quark_avatar_token ())
+GQuark tp_contact_get_feature_quark_avatar_token (void) G_GNUC_CONST;
+
+#define TP_CONTACT_FEATURE_PRESENCE \
+  (tp_contact_get_feature_quark_presence ())
+GQuark tp_contact_get_feature_quark_presence (void) G_GNUC_CONST;
+
+#define TP_CONTACT_FEATURE_LOCATION \
+  (tp_contact_get_feature_quark_location ())
+GQuark tp_contact_get_feature_quark_location (void) G_GNUC_CONST;
+
+#define TP_CONTACT_FEATURE_CAPABILITIES \
+  (tp_contact_get_feature_quark_capabilities ())
+GQuark tp_contact_get_feature_quark_capabilities (void) G_GNUC_CONST;
+
+#define TP_CONTACT_FEATURE_AVATAR_DATA \
+  (tp_contact_get_feature_quark_avatar_data ())
+GQuark tp_contact_get_feature_quark_avatar_data (void) G_GNUC_CONST;
+
+#define TP_CONTACT_FEATURE_CONTACT_INFO \
+  (tp_contact_get_feature_quark_contact_info ())
+GQuark tp_contact_get_feature_quark_contact_info (void) G_GNUC_CONST;
+
+#define TP_CONTACT_FEATURE_CLIENT_TYPES \
+  (tp_contact_get_feature_quark_client_types ())
+GQuark tp_contact_get_feature_quark_client_types (void) G_GNUC_CONST;
+
+#define TP_CONTACT_FEATURE_SUBSCRIPTION_STATES \
+  (tp_contact_get_feature_quark_subscription_states ())
+GQuark tp_contact_get_feature_quark_subscription_states (void) G_GNUC_CONST;
+
+#define TP_CONTACT_FEATURE_CONTACT_GROUPS \
+  (tp_contact_get_feature_quark_contact_groups ())
+GQuark tp_contact_get_feature_quark_contact_groups (void) G_GNUC_CONST;
+
+#define TP_CONTACT_FEATURE_CONTACT_BLOCKING \
+  (tp_contact_get_feature_quark_contact_blocking ())
+GQuark tp_contact_get_feature_quark_contact_blocking (void) G_GNUC_CONST;
 
 /* Basic functionality, always available */
 TpConnection *tp_contact_get_connection (TpContact *self);
 TpHandle tp_contact_get_handle (TpContact *self);
 const gchar *tp_contact_get_identifier (TpContact *self);
-gboolean tp_contact_has_feature (TpContact *self, TpContactFeature feature);
+gboolean tp_contact_has_feature (TpContact *self, GQuark feature);
 
 /* TP_CONTACT_FEATURE_ALIAS */
 const gchar *tp_contact_get_alias (TpContact *self);
@@ -137,7 +165,7 @@ typedef void (*TpConnectionContactsByHandleCb) (TpConnection *connection,
 
 void tp_connection_get_contacts_by_handle (TpConnection *self,
     guint n_handles, const TpHandle *handles,
-    guint n_features, const TpContactFeature *features,
+    const GQuark *features,
     TpConnectionContactsByHandleCb callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
 
@@ -147,7 +175,7 @@ typedef void (*TpConnectionUpgradeContactsCb) (TpConnection *connection,
 
 void tp_connection_upgrade_contacts (TpConnection *self,
     guint n_contacts, TpContact * const *contacts,
-    guint n_features, const TpContactFeature *features,
+    const GQuark *features,
     TpConnectionUpgradeContactsCb callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
 
@@ -158,7 +186,7 @@ typedef void (*TpConnectionContactsByIdCb) (TpConnection *connection,
 
 void tp_connection_get_contacts_by_id (TpConnection *self,
     guint n_ids, const gchar * const *ids,
-    guint n_features, const TpContactFeature *features,
+    const GQuark *features,
     TpConnectionContactsByIdCb callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
 
