@@ -1,4 +1,4 @@
-telepathy-glib 0.18.1 (UNRELEASED)
+telepathy-glib 0.18.1 (2012-04-20)
 ==================================
 
 Enhancements:
@@ -8,10 +8,15 @@ Enhancements:
 
 • Improve stream tube examples (Guillaume)
 
+• Improve documentation (Xavier)
+
 Fixes:
 
 • Change the type of TpStreamTubeConnection::closed's argument from
   POINTER to ERROR so PyGI can bind it (Guillaume)
+
+• Avoid TpCallChannel potentially returning a TpContact with no identifier
+  (Xavier)
 
 • Use the right macro to avoid post-2.30 GLib APIs (Guillaume)
 
