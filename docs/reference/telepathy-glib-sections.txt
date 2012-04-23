@@ -4989,6 +4989,7 @@ TpContactPrivate
 <TITLE>capabilities</TITLE>
 TpCapabilities
 tp_capabilities_get_channel_classes
+tp_capabilities_dup_channel_classes_variant
 tp_capabilities_is_specific_to_contact
 tp_capabilities_supports_text_chatrooms
 tp_capabilities_supports_text_chats

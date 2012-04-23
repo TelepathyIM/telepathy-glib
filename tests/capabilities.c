@@ -1087,6 +1087,100 @@ test_supports_ft_props (Test *test,
   g_object_unref (caps);
 }
 
+static void
+test_classes_variant (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpCapabilities *caps;
+  GPtrArray *classes;
+  GVariant *v, *v2, *class, *fixed, *allowed;
+  const gchar *chan_type;
+  guint32 handle_type;
+  const gchar **strv;
+
+  /* TpCapabilities containing the text chats and ft caps */
+  classes = g_ptr_array_sized_new (2);
+  add_text_chat_class (classes, TP_HANDLE_TYPE_CONTACT);
+  add_ft_class (classes);
+
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", FALSE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  v = tp_capabilities_dup_channel_classes_variant (caps);
+
+  g_assert (v != NULL);
+  g_assert_cmpstr (g_variant_get_type_string (v), ==, "a(a{sv}as)");
+
+  g_assert_cmpuint (g_variant_n_children (v), ==, 2);
+
+  /* Check text chats class */
+  class = g_variant_get_child_value (v, 0);
+  g_assert_cmpstr (g_variant_get_type_string (class), ==, "(a{sv}as)");
+  g_assert_cmpuint (g_variant_n_children (class), ==, 2);
+
+  fixed = g_variant_get_child_value (class, 0);
+  allowed = g_variant_get_child_value (class, 1);
+
+  g_assert_cmpuint (g_variant_n_children (fixed), ==, 2);
+
+  g_assert (g_variant_lookup (fixed,
+      TP_PROP_CHANNEL_CHANNEL_TYPE, "&s", &chan_type));
+  g_assert_cmpstr (chan_type, ==, TP_IFACE_CHANNEL_TYPE_TEXT);
+
+  g_assert (g_variant_lookup (fixed,
+      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, "u", &handle_type));
+  g_assert_cmpuint (handle_type, ==, TP_HANDLE_TYPE_CONTACT);
+
+  g_assert_cmpuint (g_variant_n_children (allowed), ==, 0);
+
+  g_variant_unref (class);
+  g_variant_unref (fixed);
+  g_variant_unref (allowed);
+
+  /* Check ft class */
+  class = g_variant_get_child_value (v, 1);
+  g_assert_cmpstr (g_variant_get_type_string (class), ==, "(a{sv}as)");
+  g_assert_cmpuint (g_variant_n_children (class), ==, 2);
+
+  fixed = g_variant_get_child_value (class, 0);
+  allowed = g_variant_get_child_value (class, 1);
+
+  g_assert_cmpuint (g_variant_n_children (fixed), ==, 2);
+
+  g_assert (g_variant_lookup (fixed,
+      TP_PROP_CHANNEL_CHANNEL_TYPE, "&s", &chan_type));
+  g_assert_cmpstr (chan_type, ==, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER);
+
+  g_assert (g_variant_lookup (fixed,
+      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, "u", &handle_type));
+  g_assert_cmpuint (handle_type, ==, TP_HANDLE_TYPE_CONTACT);
+
+  g_assert_cmpuint (g_variant_n_children (allowed), ==, 2);
+  strv = g_variant_get_strv (allowed, NULL);
+  g_assert (tp_strv_contains ((const gchar * const * ) strv,
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME));
+  g_assert (tp_strv_contains ((const gchar * const * ) strv,
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE));
+  g_free (strv);
+
+  g_variant_unref (class);
+  g_variant_unref (fixed);
+  g_variant_unref (allowed);
+
+  /* Test GObject getter */
+  g_object_get (caps, "channel-classes-variant", &v2, NULL);
+  g_assert (g_variant_equal (v, v2));
+
+  g_variant_unref (v);
+  g_variant_unref (v2);
+  g_object_unref (caps);
+}
+
 int
 main (int argc,
     char **argv)
@@ -1110,6 +1204,8 @@ main (int argc,
       test_supports_sms, NULL);
   g_test_add (TEST_PREFIX "supports/call", Test, NULL, setup,
       test_supports_call, NULL);
+  g_test_add (TEST_PREFIX "classes-variant", Test, NULL, setup,
+      test_classes_variant, NULL);
 
   return g_test_run ();
 }
