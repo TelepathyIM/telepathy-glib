@@ -262,7 +262,7 @@ _tp_call_members_convert_array (TpConnection *connection,
   GPtrArray *result;
   guint i;
 
-  result = _tp_g_ptr_array_new_full (array->len, g_object_unref);
+  result = g_ptr_array_new_full (array->len, g_object_unref);
 
   for (i = 0; i < array->len; i++)
     {
@@ -509,7 +509,7 @@ update_call_members (TpCallChannel *self,
    * contact features on the factory, in which case this becomes no-op.
    */
 
-  contacts = _tp_g_ptr_array_new_full (g_hash_table_size (updates),
+  contacts = g_ptr_array_new_full (g_hash_table_size (updates),
       g_object_unref);
 
   g_hash_table_iter_init (&iter, updates);

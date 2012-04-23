@@ -3803,7 +3803,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
     return;
 
   old_members = tp_handle_set_new (self->priv->contact_repo);
-  actually_removed = _tp_g_ptr_array_new_full (n_removed + 1, g_free);
+  actually_removed = g_ptr_array_new_full (n_removed + 1, g_free);
 
   for (i = 0; i < n_removed; i++)
     {

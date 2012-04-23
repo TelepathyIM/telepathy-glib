@@ -52,7 +52,7 @@ test_new_from_parts (Test *test,
   const GHashTable *part;
   gboolean valid;
 
-  parts = _tp_g_ptr_array_new_full (2, (GDestroyNotify) g_hash_table_unref);
+  parts = g_ptr_array_new_full (2, (GDestroyNotify) g_hash_table_unref);
 
   sender = tp_handle_ensure (test->contact_repo, "bob", NULL, &test->error);
   g_assert_no_error (test->error);

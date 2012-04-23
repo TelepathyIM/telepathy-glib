@@ -1766,18 +1766,6 @@ _tp_bind_connection_status_to_boolean (GBinding *binding,
   return TRUE;
 }
 
-GPtrArray *
-_tp_g_ptr_array_new_full (guint reserved_size,
-    GDestroyNotify element_free_func)
-{
-  GPtrArray *array;
-
-  array = g_ptr_array_sized_new (reserved_size);
-  g_ptr_array_set_free_func (array, element_free_func);
-
-  return array;
-}
-
 /*
  * _tp_determine_socket_address_type:
  *
@@ -2024,7 +2012,7 @@ _tp_contacts_from_values (GHashTable *table)
   if (table == NULL)
       return NULL;
 
-  contacts = _tp_g_ptr_array_new_full (g_hash_table_size (table),
+  contacts = g_ptr_array_new_full (g_hash_table_size (table),
       g_object_unref);
 
   g_hash_table_iter_init (&iter, table);
