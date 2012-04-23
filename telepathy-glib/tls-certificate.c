@@ -205,6 +205,7 @@ tls_certificate_got_all_cb (TpProxy *proxy,
   GPtrArray *cert_data;
   TpTLSCertificate *self = TP_TLS_CERTIFICATE (proxy);
   guint state;
+  guint i;
 
   if (error != NULL)
     {
@@ -242,8 +243,18 @@ tls_certificate_got_all_cb (TpProxy *proxy,
   cert_data = tp_asv_get_boxed (properties, "CertificateChainData",
       TP_ARRAY_TYPE_UCHAR_ARRAY_LIST);
   g_assert (cert_data != NULL);
-  self->priv->cert_data = g_boxed_copy (TP_ARRAY_TYPE_UCHAR_ARRAY_LIST,
-      cert_data);
+
+  self->priv->cert_data = g_ptr_array_new_with_free_func (
+      (GDestroyNotify) g_bytes_unref);
+
+  for (i = 0; i < cert_data->len; i++)
+    {
+      GArray *arr = g_ptr_array_index (cert_data, i);
+      GBytes *bytes;
+
+      bytes = g_bytes_new (arr->data, arr->len);
+      g_ptr_array_add (self->priv->cert_data, bytes);
+    }
 
   DEBUG ("Got a certificate chain long %u, of type %s",
       self->priv->cert_data->len, self->priv->cert_type);
@@ -317,7 +328,8 @@ tp_tls_certificate_finalize (GObject *object)
 
   tp_clear_pointer (&self->priv->rejections, g_ptr_array_unref);
   g_free (priv->cert_type);
-  tp_clear_boxed (TP_ARRAY_TYPE_UCHAR_ARRAY_LIST, &priv->cert_data);
+  if (priv->cert_data != NULL)
+    g_ptr_array_unref (priv->cert_data);
   tp_clear_boxed (TP_ARRAY_TYPE_TLS_CERTIFICATE_REJECTION_LIST,
       &self->priv->pending_rejections);
 
@@ -441,7 +453,7 @@ tp_tls_certificate_class_init (TpTLSCertificateClass *klass)
    * TpTLSCertificate:cert-data:
    *
    * The raw data of the certificate or certificate chain, represented
-   * as a #GPtrArray of #GArray of #guchar. It should be interpreted
+   * as a #GPtrArray of #GBytes. It should be interpreted
    * according to #TpTLSCertificate:cert-type.
    *
    * The first certificate in this array is the server's certificate,
@@ -456,7 +468,7 @@ tp_tls_certificate_class_init (TpTLSCertificateClass *klass)
    */
   pspec = g_param_spec_boxed ("cert-data", "Certificate chain data",
       "The raw DER-encoded certificate chain data.",
-      TP_ARRAY_TYPE_UCHAR_ARRAY_LIST,
+      G_TYPE_PTR_ARRAY,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (oclass, PROP_CERT_DATA, pspec);
 
@@ -878,7 +890,7 @@ tp_tls_certificate_get_cert_type (TpTLSCertificate *self)
  *
  * Return the #TpTLSCertificate:cert-data property
  *
- * Returns: (transfer none) (type GLib.PtrArray) (element-type GLib.Array): the value of #TpTLSCertificate:cert-data property
+ * Returns: (transfer none) (type GLib.PtrArray) (element-type GLib.Bytes): the value of #TpTLSCertificate:cert-data property
  *
  * Since: UNRELEASED
  */

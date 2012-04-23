@@ -142,7 +142,7 @@ test_core (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GPtrArray *cert_data;
-  GArray *d;
+  GBytes *d;
 
   /* Properties are not valid yet */
   g_assert_cmpstr (tp_tls_certificate_get_cert_type (test->cert), ==, NULL);
@@ -160,7 +160,7 @@ test_core (Test *test,
   g_assert (cert_data != NULL);
   g_assert_cmpuint (cert_data->len, ==, 1);
   d = g_ptr_array_index (cert_data, 0);
-  g_assert_cmpstr (d->data, ==, "BADGER");
+  g_assert_cmpstr (g_bytes_get_data (d, NULL), ==, "BADGER");
 }
 
 static void
