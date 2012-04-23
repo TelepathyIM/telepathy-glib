@@ -3515,7 +3515,13 @@ get_feature_flags (const GQuark *features,
   g_return_val_if_fail (features != NULL, FALSE);
 
   for (i = 0; features[i] != 0; i++)
-    feature_flags |= get_feature (features[i]);
+    {
+      guint f = get_feature (features[i]);
+
+      g_return_val_if_fail (f != 0, FALSE);
+
+      feature_flags |= f;
+    }
 
   /* Force AVATAR_TOKEN if we have AVATAR_DATA */
   if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0)
