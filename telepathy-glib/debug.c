@@ -53,7 +53,7 @@
  *     #TpAccount objects (client)</listitem>
  * <listitem><literal>contact-lists</literal> - the #TpBaseContactList
  *    (service)</listitem>
- * <listitem><literal>debugger</literal> - #TpDebugClient objects<listitem>
+ * <listitem><literal>debugger</literal> - #TpDebugClient objects</listitem>
  * <listitem><literal>all</literal> - all of the above</listitem>
  * </itemizedlist>
  */
