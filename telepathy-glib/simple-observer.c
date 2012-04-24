@@ -44,10 +44,8 @@
  *  tp_observe_channels_context_accept (context);
  * }
  *
- * factory = tp_automatic_client_factory_new (dbus);
- * client = tp_simple_observer_new_with_factory (factory, TRUE, "MyObserver",
+ * client = tp_simple_observer_new (NULL, TRUE, "MyObserver",
  *     FALSE, my_observe_channels, user_data);
- * g_object_unref (factory);
  *
  * tp_base_client_take_observer_filter (client, tp_asv_new (
  *      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
@@ -289,7 +287,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
 
 /**
  * tp_simple_observer_new:
- * @dbus: a #TpDBusDaemon object, or %NULL
+ * @factory: a #TpClientFactory, or %NULL
  * @recover: the value of the Observer.Recover D-Bus property
  * @name: the name of the Observer (see #TpBaseClient:name: for details)
  * @uniquify: the value of the #TpBaseClient:uniquify-name: property
@@ -300,21 +298,14 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
  *
  * Convenient function to create a new #TpSimpleObserver instance.
  *
- * Since 0.UNRELEASED @dbus can be %NULL in which case
- * tp_dbus_daemon_dup() will be used internally.
- *
- * Since 0.UNRELEASED this won't create a #TpAccountManager anymore, but will
- * instead create a new #TpAutomaticClientFactory. If user already has a
- * #TpAccountManager or #TpClientFactory it is recommended to use
- * tp_simple_observer_new_with_am() or tp_simple_observer_new_with_factory()
- * instead.
+ * If @factory is %NULL a new #TpAutomaticClientFactory will be used.
  *
  * Returns: (type TelepathyGLib.SimpleObserver): a new #TpSimpleObserver
  *
- * Since: 0.11.5
+ * Since: 0.UNRELEASED
  */
 TpBaseClient *
-tp_simple_observer_new (TpDBusDaemon *dbus,
+tp_simple_observer_new (TpClientFactory *factory,
     gboolean recover,
     const gchar *name,
     gboolean uniquify,
@@ -323,7 +314,7 @@ tp_simple_observer_new (TpDBusDaemon *dbus,
     GDestroyNotify destroy)
 {
   return g_object_new (TP_TYPE_SIMPLE_OBSERVER,
-      "dbus-daemon", dbus,
+      "factory", factory,
       "recover", recover,
       "name", name,
       "uniquify-name", uniquify,
@@ -365,44 +356,6 @@ tp_simple_observer_new_with_am (TpAccountManager *account_manager,
 {
   return g_object_new (TP_TYPE_SIMPLE_OBSERVER,
       "account-manager", account_manager,
-      "recover", recover,
-      "name", name,
-      "uniquify-name", uniquify,
-      "callback", callback,
-      "user-data", user_data,
-      "destroy", destroy,
-      NULL);
-}
-
-/**
- * tp_simple_observer_new_with_factory:
- * @factory: a #TpClientFactory, which may not be %NULL
- * @recover: the value of the Observer.Recover D-Bus property
- * @name: the name of the Observer (see #TpBaseClient:name: for details)
- * @uniquify: the value of the #TpBaseClient:uniquify-name: property
- * @callback: the function called when ObserveChannels is called
- * @user_data: arbitrary user-supplied data passed to @callback
- * @destroy: called with the user_data as argument, when the #TpSimpleObserver
- * is destroyed
- *
- * Convenient function to create a new #TpSimpleObserver instance with a
- * specified #TpClientFactory.
- *
- * Returns: (type TelepathyGLib.SimpleObserver): a new #TpSimpleObserver
- *
- * Since: 0.15.5
- */
-TpBaseClient *
-tp_simple_observer_new_with_factory (TpClientFactory *factory,
-    gboolean recover,
-    const gchar *name,
-    gboolean uniquify,
-    TpSimpleObserverObserveChannelsImpl callback,
-    gpointer user_data,
-    GDestroyNotify destroy)
-{
-  return g_object_new (TP_TYPE_SIMPLE_OBSERVER,
-      "factory", factory,
       "recover", recover,
       "name", name,
       "uniquify-name", uniquify,

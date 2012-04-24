@@ -44,10 +44,8 @@
  *  tp_add_dispatch_operation_context_accept (context);
  * }
  *
- * factory = tp_automatic_client_factory_new (dbus);
- * client = tp_simple_approver_new_with_factory (factory, "MyApprover", FALSE,
+ * client = tp_simple_approver_new (NULL, "MyApprover", FALSE,
  *    my_add_dispatch_operation, user_data);
- * g_object_unref (factory);
  *
  * tp_base_client_take_approver_filter (client, tp_asv_new (
  *      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
@@ -264,7 +262,7 @@ tp_simple_approver_class_init (TpSimpleApproverClass *cls)
 
 /**
  * tp_simple_approver_new:
- * @dbus: a #TpDBusDaemon object, or %NULL
+ * @factory: a #TpClientFactory, or %NULL
  * @name: the name of the Approver (see #TpBaseClient:name for details)
  * @uniquify: the value of the #TpBaseClient:uniquify-name property
  * @callback: the function called when AddDispatchOperation is called
@@ -274,21 +272,14 @@ tp_simple_approver_class_init (TpSimpleApproverClass *cls)
  *
  * Convenient function to create a new #TpSimpleApprover instance.
  *
- * Since 0.UNRELEASED @dbus can be %NULL in which case
- * tp_dbus_daemon_dup() will be used internally.
- *
- * Since 0.UNRELEASED this won't create a #TpAccountManager anymore, but will
- * instead create a new #TpAutomaticClientFactory. If user already has a
- * #TpAccountManager or #TpClientFactory it is recommended to use
- * tp_simple_approver_new_with_am() or tp_simple_approver_new_with_factory()
- * instead.
+ * If @factory is %NULL a new #TpAutomaticClientFactory will be used.
  *
  * Returns: (type TelepathyGLib.SimpleApprover): a new #TpSimpleApprover
  *
- * Since: 0.11.5
+ * Since: 0.UNRELEASED
  */
 TpBaseClient *
-tp_simple_approver_new (TpDBusDaemon *dbus,
+tp_simple_approver_new (TpClientFactory *factory,
     const gchar *name,
     gboolean uniquify,
     TpSimpleApproverAddDispatchOperationImpl callback,
@@ -296,7 +287,7 @@ tp_simple_approver_new (TpDBusDaemon *dbus,
     GDestroyNotify destroy)
 {
   return g_object_new (TP_TYPE_SIMPLE_APPROVER,
-      "dbus-daemon", dbus,
+      "factory", factory,
       "name", name,
       "uniquify-name", uniquify,
       "callback", callback,
@@ -335,41 +326,6 @@ tp_simple_approver_new_with_am (TpAccountManager *account_manager,
 {
   return g_object_new (TP_TYPE_SIMPLE_APPROVER,
       "account-manager", account_manager,
-      "name", name,
-      "uniquify-name", uniquify,
-      "callback", callback,
-      "user-data", user_data,
-      "destroy", destroy,
-      NULL);
-}
-
-/**
- * tp_simple_approver_new_with_factory:
- * @factory: an #TpClientFactory, which may not be %NULL
- * @name: the name of the Approver (see #TpBaseClient:name for details)
- * @uniquify: the value of the #TpBaseClient:uniquify-name property
- * @callback: the function called when AddDispatchOperation is called
- * @user_data: arbitrary user-supplied data passed to @callback
- * @destroy: called with @user_data as its argument when the #TpSimpleApprover
- * is destroyed
- *
- * Convenient function to create a new #TpSimpleApprover instance with a
- * specified #TpClientFactory.
- *
- * Returns: (type TelepathyGLib.SimpleApprover): a new #TpSimpleApprover
- *
- * Since: 0.15.5
- */
-TpBaseClient *
-tp_simple_approver_new_with_factory (TpClientFactory *factory,
-    const gchar *name,
-    gboolean uniquify,
-    TpSimpleApproverAddDispatchOperationImpl callback,
-    gpointer user_data,
-    GDestroyNotify destroy)
-{
-  return g_object_new (TP_TYPE_SIMPLE_APPROVER,
-      "factory", factory,
       "name", name,
       "uniquify-name", uniquify,
       "callback", callback,

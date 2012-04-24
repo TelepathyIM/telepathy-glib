@@ -45,10 +45,8 @@
  *  tp_handle_channels_context_accept (context);
  * }
  *
- * factory = tp_automatic_client_factory_new (dbus);
- * client = tp_simple_handler_new_with_factory (factory, FALSE, FALSE,
+ * client = tp_simple_handler_new (NULL, FALSE, FALSE,
  *     "MyHandler", FALSE, my_handle_channels, user_data);
- * g_object_unref (factory);
  *
  * tp_base_client_take_handler_filter (client, tp_asv_new (
  *      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
@@ -314,7 +312,7 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
 
 /**
  * tp_simple_handler_new:
- * @dbus: a #TpDBusDaemon object, or %NULL
+ * @factory: a #TpClientFactory, or %NULL
  * @bypass_approval: the value of the Handler.BypassApproval D-Bus property
  * (see tp_base_client_set_handler_bypass_approval() for details)
  * @requests: whether this handler should implement Requests (see
@@ -328,21 +326,14 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
  *
  * Convenient function to create a new #TpSimpleHandler instance.
  *
- * Since 0.UNRELEASED @dbus can be %NULL in which case
- * tp_dbus_daemon_dup() will be used internally.
- *
- * Since 0.UNRELEASED this won't create a #TpAccountManager anymore, but will
- * instead create a new #TpAutomaticClientFactory. If user already has a
- * #TpAccountManager or #TpClientFactory it is recommended to use
- * tp_simple_handle_new_with_am() or tp_simple_handle_new_with_factory()
- * instead.
+ * If @factory is %NULL a new #TpAutomaticClientFactory will be used.
  *
  * Returns: (type TelepathyGLib.SimpleHandler): a new #TpSimpleHandler
  *
- * Since: 0.11.6
+ * Since: 0.UNRELEASED
  */
 TpBaseClient *
-tp_simple_handler_new (TpDBusDaemon *dbus,
+tp_simple_handler_new (TpClientFactory *factory,
     gboolean bypass_approval,
     gboolean requests,
     const gchar *name,
@@ -352,7 +343,7 @@ tp_simple_handler_new (TpDBusDaemon *dbus,
     GDestroyNotify destroy)
 {
   return g_object_new (TP_TYPE_SIMPLE_HANDLER,
-      "dbus-daemon", dbus,
+      "factory", factory,
       "bypass-approval", bypass_approval,
       "requests", requests,
       "name", name,
@@ -399,49 +390,6 @@ tp_simple_handler_new_with_am (TpAccountManager *account_manager,
 {
   return g_object_new (TP_TYPE_SIMPLE_HANDLER,
       "account-manager", account_manager,
-      "bypass-approval", bypass_approval,
-      "requests", requests,
-      "name", name,
-      "uniquify-name", uniquify,
-      "callback", callback,
-      "user-data", user_data,
-      "destroy", destroy,
-      NULL);
-}
-
-/**
- * tp_simple_handler_new_with_factory:
- * @factory: a #TpClientFactory, which may not be %NULL
- * @bypass_approval: the value of the Handler.BypassApproval D-Bus property
- * (see tp_base_client_set_handler_bypass_approval() for details)
- * @requests: whether this handler should implement Requests (see
- * tp_base_client_set_handler_request_notification() for details)
- * @name: the name of the Handler (see #TpBaseClient:name for details)
- * @uniquify: the value of the #TpBaseClient:uniquify-name property
- * @callback: the function called when HandleChannels is called
- * @user_data: arbitrary user-supplied data passed to @callback
- * @destroy: called with @user_data as its argument when the #TpSimpleHandler
- * is destroyed
- *
- * Convenient function to create a new #TpSimpleHandler instance with a
- * specified #TpClientFactory.
- *
- * Returns: (type TelepathyGLib.SimpleHandler): a new #TpSimpleHandler
- *
- * Since: 0.15.5
- */
-TpBaseClient *
-tp_simple_handler_new_with_factory (TpClientFactory *factory,
-    gboolean bypass_approval,
-    gboolean requests,
-    const gchar *name,
-    gboolean uniquify,
-    TpSimpleHandlerHandleChannelsImpl callback,
-    gpointer user_data,
-    GDestroyNotify destroy)
-{
-  return g_object_new (TP_TYPE_SIMPLE_HANDLER,
-      "factory", factory,
       "bypass-approval", bypass_approval,
       "requests", requests,
       "name", name,

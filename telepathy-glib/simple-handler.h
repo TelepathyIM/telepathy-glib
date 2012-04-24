@@ -73,7 +73,7 @@ typedef void (*TpSimpleHandlerHandleChannelsImpl) (
     TpHandleChannelsContext *context,
     gpointer user_data);
 
-TpBaseClient * tp_simple_handler_new (TpDBusDaemon *dbus,
+TpBaseClient *tp_simple_handler_new (TpClientFactory *factory,
     gboolean bypass_approval,
     gboolean requests,
     const gchar *name,
@@ -81,19 +81,8 @@ TpBaseClient * tp_simple_handler_new (TpDBusDaemon *dbus,
     TpSimpleHandlerHandleChannelsImpl callback,
     gpointer user_data,
     GDestroyNotify destroy);
-
 
 TpBaseClient *tp_simple_handler_new_with_am (TpAccountManager *account_manager,
-    gboolean bypass_approval,
-    gboolean requests,
-    const gchar *name,
-    gboolean uniquify,
-    TpSimpleHandlerHandleChannelsImpl callback,
-    gpointer user_data,
-    GDestroyNotify destroy);
-
-TpBaseClient *tp_simple_handler_new_with_factory (
-    TpClientFactory *factory,
     gboolean bypass_approval,
     gboolean requests,
     const gchar *name,

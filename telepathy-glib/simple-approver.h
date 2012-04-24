@@ -72,7 +72,7 @@ typedef void (*TpSimpleApproverAddDispatchOperationImpl) (
     TpAddDispatchOperationContext *context,
     gpointer user_data);
 
-TpBaseClient * tp_simple_approver_new (TpDBusDaemon *dbus,
+TpBaseClient * tp_simple_approver_new (TpClientFactory *factory,
     const gchar *name,
     gboolean uniquify,
     TpSimpleApproverAddDispatchOperationImpl callback,
@@ -81,14 +81,6 @@ TpBaseClient * tp_simple_approver_new (TpDBusDaemon *dbus,
 
 TpBaseClient *tp_simple_approver_new_with_am (
     TpAccountManager *account_manager,
-    const gchar *name,
-    gboolean uniquify,
-    TpSimpleApproverAddDispatchOperationImpl callback,
-    gpointer user_data,
-    GDestroyNotify destroy);
-
-TpBaseClient *tp_simple_approver_new_with_factory (
-    TpClientFactory *factory,
     const gchar *name,
     gboolean uniquify,
     TpSimpleApproverAddDispatchOperationImpl callback,

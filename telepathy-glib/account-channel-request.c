@@ -891,7 +891,7 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
   self->priv->ensure = ensure;
 
   /* Create a temp handler */
-  self->priv->handler = tp_simple_handler_new_with_factory (
+  self->priv->handler = tp_simple_handler_new (
       tp_proxy_get_factory (self->priv->account), TRUE, FALSE,
       "TpGLibRequestAndHandle", TRUE, handle_channels, self, NULL);
   _tp_base_client_set_only_for_account (self->priv->handler,
