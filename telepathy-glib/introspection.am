@@ -20,9 +20,6 @@ TelepathyGLib_1_gir_FILES = \
 	$(srcdir)/account-channel-request.c $(srcdir)/account-channel-request.h \
 	$(srcdir)/account-manager.c $(srcdir)/account-manager.h \
 	$(srcdir)/automatic-client-factory.c $(srcdir)/automatic-client-factory.h \
-	$(srcdir)/automatic-proxy-factory.c $(srcdir)/automatic-proxy-factory.h \
-	$(srcdir)/basic-proxy-factory.c $(srcdir)/basic-proxy-factory.h \
-	$(srcdir)/client-channel-factory.c $(srcdir)/client-channel-factory.h \
 	$(srcdir)/connection.c $(srcdir)/connection.h \
 	$(srcdir)/connection-contact-list.c $(srcdir)/connection-contact-list.h \
 	$(srcdir)/connection-handles.c $(srcdir)/connection-contact-info.c \

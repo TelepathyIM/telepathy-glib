@@ -12,6 +12,8 @@
 #define __TP_TESTS_SIMPLE_CLIENT_H__
 
 #include <glib-object.h>
+
+#include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/base-client.h>
 
 G_BEGIN_DECLS
@@ -50,7 +52,7 @@ GType tp_tests_simple_client_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_SIMPLE_CLIENT, \
                               TpTestsSimpleClientClass))
 
-TpTestsSimpleClient * tp_tests_simple_client_new (TpDBusDaemon *dbus_daemon,
+TpTestsSimpleClient * tp_tests_simple_client_new (TpClientFactory *factory,
     const gchar *name,
     gboolean uniquify_name);
 

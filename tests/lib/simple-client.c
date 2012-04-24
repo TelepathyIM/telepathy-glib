@@ -233,12 +233,12 @@ tp_tests_simple_client_class_init (TpTestsSimpleClientClass *klass)
 }
 
 TpTestsSimpleClient *
-tp_tests_simple_client_new (TpDBusDaemon *dbus_daemon,
+tp_tests_simple_client_new (TpClientFactory *factory,
     const gchar *name,
     gboolean uniquify_name)
 {
   return tp_tests_object_new_static_class (TP_TESTS_TYPE_SIMPLE_CLIENT,
-      "dbus-daemon", dbus_daemon,
+      "factory", factory,
       "name", name,
       "uniquify-name", uniquify_name,
       NULL);
@@ -249,9 +249,6 @@ tp_tests_simple_client_new_with_am (TpAccountManager *account_mgr,
     const gchar *name,
     gboolean uniquify_name)
 {
-  return tp_tests_object_new_static_class (TP_TESTS_TYPE_SIMPLE_CLIENT,
-      "account-manager", account_mgr,
-      "name", name,
-      "uniquify-name", uniquify_name,
-      NULL);
+  return tp_tests_simple_client_new (tp_proxy_get_factory (account_mgr),
+      name, uniquify_name);
 }

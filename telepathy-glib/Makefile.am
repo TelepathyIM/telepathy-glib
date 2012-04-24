@@ -42,7 +42,6 @@ our_headers = \
     account-channel-request.h \
     account-manager.h \
     automatic-client-factory.h \
-    automatic-proxy-factory.h \
     add-dispatch-operation-context.h \
     base-call-channel.h \
     base-call-content.h \
@@ -57,7 +56,6 @@ our_headers = \
     base-password-channel.h \
     base-protocol.h \
     base-room-config.h \
-    basic-proxy-factory.h \
     call-channel.h \
     call-content.h \
     call-content-media-description.h \
@@ -75,7 +73,6 @@ our_headers = \
     cli-connection.h \
     cli-misc.h \
     client.h \
-    client-channel-factory.h \
     client-factory.h \
     client-message.h \
     cm-message.h \
@@ -201,7 +198,6 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     account-manager-internal.h \
     automatic-client-factory-internal.h \
     automatic-client-factory.c \
-    automatic-proxy-factory.c \
     add-dispatch-operation-context-internal.h \
     add-dispatch-operation-context.c \
     base-call-channel.c \
@@ -221,7 +217,6 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     base-protocol-internal.h \
     base-protocol.c \
     base-room-config.c \
-    basic-proxy-factory.c \
     capabilities.c \
     capabilities-internal.h \
     call-channel.c \
@@ -241,7 +236,6 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     channel-manager.c \
     channel-request.c \
     client.c \
-    client-channel-factory.c \
     client-factory.c \
     client-factory-internal.h \
     client-message.c \
@@ -276,7 +270,6 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     debug-sender.c \
     debug-message.c \
     debug-message-internal.h \
-    deprecated-internal.h \
     dtmf.c \
     debug-internal.h \
     exportable-channel.c \

@@ -388,14 +388,6 @@ tp_simple_handler_new_with_am (TpAccountManager *account_manager,
     gpointer user_data,
     GDestroyNotify destroy)
 {
-  return g_object_new (TP_TYPE_SIMPLE_HANDLER,
-      "account-manager", account_manager,
-      "bypass-approval", bypass_approval,
-      "requests", requests,
-      "name", name,
-      "uniquify-name", uniquify,
-      "callback", callback,
-      "user-data", user_data,
-      "destroy", destroy,
-      NULL);
+  return tp_simple_handler_new (tp_proxy_get_factory (account_manager),
+      bypass_approval, requests, name, uniquify, callback, user_data, destroy);
 }

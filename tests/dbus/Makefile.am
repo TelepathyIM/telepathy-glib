@@ -13,7 +13,6 @@ tests_list = \
     test-channel-manager-request-properties \
     test-cli-group \
     test-client \
-    test-client-channel-factory \
     test-cm \
     test-cm-message \
     test-connection \
@@ -221,8 +220,6 @@ test_simple_approver_SOURCES = simple-approver.c
 test_simple_handler_SOURCES = simple-handler.c
 
 test_stream_tube_SOURCES = stream-tube.c
-
-test_client_channel_factory_SOURCES = client-channel-factory.c
 
 test_proxy_preparation_SOURCES = proxy-preparation.c
 

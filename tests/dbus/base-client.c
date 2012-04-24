@@ -11,7 +11,6 @@
 
 /* We include -internal headers of context to be able to easily access to
  * their semi-private attributes (connection, account, channels, etc). */
-#include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/add-dispatch-operation-context-internal.h>
 #include <telepathy-glib/base-client.h>
 #include <telepathy-glib/cli-channel.h>
@@ -47,7 +46,7 @@ typedef struct {
     TpTestsSimpleChannelDispatcher *cd_service;
 
     /* Client side objects */
-    TpAccountManager *account_mgr;
+    TpClientFactory *factory;
     TpClient *client;
     TpConnection *connection;
     TpAccount *account;
@@ -72,6 +71,7 @@ setup (Test *test,
   gchar *chan_path;
   TpHandle handle;
   TpHandleRepoIface *contact_repo;
+  GError *error = NULL;
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
@@ -79,10 +79,8 @@ setup (Test *test,
   test->error = NULL;
   test->interfaces = NULL;
 
-  /* The case of a non-shared TpAccountManager is tested in
-   * simple-approver.c */
-  test->account_mgr = tp_account_manager_dup ();
-  g_assert (test->account_mgr != NULL);
+  test->factory = tp_client_factory_new (test->dbus);
+  g_assert (test->factory != NULL);
 
   /* Claim AccountManager bus-name (needed as we're going to export an Account
    * object). */
@@ -91,7 +89,7 @@ setup (Test *test,
   g_assert_no_error (test->error);
 
   /* Create service-side Client object */
-  test->simple_client = tp_tests_simple_client_new_with_am (test->account_mgr,
+  test->simple_client = tp_tests_simple_client_new (test->factory,
       "Test", FALSE);
   g_assert (test->simple_client != NULL);
   test->base_client = TP_BASE_CLIENT (test->simple_client);
@@ -112,10 +110,10 @@ setup (Test *test,
   g_assert (test->client != NULL);
 
   /* Create client-side Account object */
-  test->account = tp_account_manager_ensure_account (test->account_mgr,
-      ACCOUNT_PATH);
+  test->account = tp_client_factory_ensure_account (test->factory,
+      ACCOUNT_PATH, NULL, &error);
+  g_assert_no_error (error);
   g_assert (test->account != NULL);
-  g_object_ref (test->account);
 
   /* Create (service and client sides) connection objects */
   tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
@@ -234,7 +232,7 @@ teardown (Test *test,
 
   g_strfreev (test->interfaces);
 
-  g_object_unref (test->account_mgr);
+  g_object_unref (test->factory);
 
   tp_dbus_daemon_release_name (test->dbus, TP_CHANNEL_DISPATCHER_BUS_NAME,
       NULL);
@@ -282,30 +280,27 @@ static void
 test_basics (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  TpAccountManager *account_manager;
+  TpClientFactory *factory;
   TpDBusDaemon *dbus;
   gchar *name;
   gboolean unique;
 
   g_object_get (test->base_client,
-      "account-manager", &account_manager,
+      "factory", &factory,
       "dbus-daemon", &dbus,
       "name", &name,
       "uniquify-name", &unique,
       NULL);
 
-  g_assert (test->account_mgr == account_manager);
+  g_assert (test->factory == factory);
   g_assert (test->dbus == dbus);
   g_assert_cmpstr ("Test", ==, name);
   g_assert (!unique);
 
-  g_assert (test->account_mgr == tp_base_client_get_account_manager (
-        test->base_client));
   g_assert (test->dbus == tp_base_client_get_dbus_daemon (test->base_client));
   g_assert_cmpstr ("Test", ==, tp_base_client_get_name (test->base_client));
   g_assert (!tp_base_client_get_uniquify_name (test->base_client));
 
-  g_object_unref (account_manager);
   g_object_unref (dbus);
   g_free (name);
 }
@@ -941,7 +936,7 @@ test_handler (Test *test,
         test->text_chan_2));
 
   /* Create another client sharing the same unique name */
-  client_2 = tp_tests_simple_client_new (test->dbus, "Test", TRUE);
+  client_2 = tp_tests_simple_client_new (NULL, "Test", TRUE);
   tp_base_client_be_a_handler (TP_BASE_CLIENT (client_2));
   tp_base_client_register (TP_BASE_CLIENT (client_2), &test->error);
   g_assert_no_error (test->error);

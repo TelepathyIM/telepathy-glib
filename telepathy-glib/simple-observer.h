@@ -24,6 +24,7 @@
 #include <dbus/dbus-glib.h>
 #include <glib-object.h>
 
+#include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/base-client.h>
 #include <telepathy-glib/defs.h>
 

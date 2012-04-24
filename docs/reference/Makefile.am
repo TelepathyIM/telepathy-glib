@@ -79,7 +79,6 @@ IGNORE_HFILES=\
     contact-internal.h \
     contact-list-channel-internal.h \
     debug-internal.h \
-    deprecated-internal.h \
     handle-channels-context-internal.h \
     handle-repo-internal.h \
     message-internal.h \

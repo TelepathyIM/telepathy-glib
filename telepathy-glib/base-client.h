@@ -25,9 +25,8 @@
 #include <glib-object.h>
 
 #include <telepathy-glib/account.h>
-#include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/add-dispatch-operation-context.h>
-#include <telepathy-glib/client-channel-factory.h>
+#include <telepathy-glib/channel.h>
 #include <telepathy-glib/handle-channels-context.h>
 #include <telepathy-glib/observe-channels-context.h>
 #include <telepathy-glib/connection.h>
@@ -139,36 +138,6 @@ void tp_base_client_add_handler_capabilities (TpBaseClient *self,
 void tp_base_client_add_handler_capabilities_varargs (TpBaseClient *self,
     const gchar *first_token, ...) G_GNUC_NULL_TERMINATED;
 
-void tp_base_client_add_account_features (TpBaseClient *self,
-    const GQuark *features, gssize n)
-    _TP_GNUC_DEPRECATED_FOR (tp_client_factory_add_account_features);
-
-void tp_base_client_add_account_features_varargs (TpBaseClient *self,
-    GQuark feature, ...)
-    _TP_GNUC_DEPRECATED_FOR (tp_client_factory_add_account_features_varargs);
-
-void tp_base_client_add_channel_features (TpBaseClient *self,
-    const GQuark *features, gssize n)
-    _TP_GNUC_DEPRECATED_FOR (tp_client_factory_add_channel_features);
-void tp_base_client_add_channel_features_varargs (TpBaseClient *self,
-    GQuark feature, ...)
-    _TP_GNUC_DEPRECATED_FOR (tp_client_factory_add_channel_features_varargs);
-
-
-void tp_base_client_add_connection_features (TpBaseClient *self,
-    const GQuark *features, gssize n)
-    _TP_GNUC_DEPRECATED_FOR (tp_client_factory_add_connection_features);
-void tp_base_client_add_connection_features_varargs (TpBaseClient *self,
-    GQuark feature, ...)
-    _TP_GNUC_DEPRECATED_FOR (tp_client_factory_add_connection_features_varargs);
-
-
-void tp_base_client_set_channel_factory (TpBaseClient *self,
-    TpClientChannelFactory *factory) _TP_GNUC_DEPRECATED;
-
-TpClientChannelFactory *tp_base_client_get_channel_factory (
-    TpBaseClient *self) _TP_GNUC_DEPRECATED;
-
 typedef void (*TpBaseClientDelegatedChannelsCb) (
     TpBaseClient *client,
     GPtrArray *channels,
@@ -213,8 +182,6 @@ gboolean tp_base_client_get_uniquify_name (TpBaseClient *self);
 const gchar *tp_base_client_get_bus_name (TpBaseClient *self);
 const gchar *tp_base_client_get_object_path (TpBaseClient *self);
 TpDBusDaemon *tp_base_client_get_dbus_daemon (TpBaseClient *self);
-TpAccountManager *tp_base_client_get_account_manager (TpBaseClient *self)
-    _TP_GNUC_DEPRECATED;
 
 void tp_base_client_unregister (TpBaseClient *self);
 

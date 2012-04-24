@@ -4221,7 +4221,6 @@ TpChannelRequest
 TpChannelRequestClass
 tp_channel_request_new
 tp_channel_request_init_known_interfaces
-tp_channel_request_set_channel_factory
 tp_channel_request_get_immutable_properties
 tp_channel_request_get_account
 tp_channel_request_get_user_action_time
@@ -4449,12 +4448,6 @@ tp_base_client_take_handler_filter
 tp_base_client_be_a_handler
 TpBaseClientClassHandleChannelsImpl
 tp_base_client_implement_handle_channels
-tp_base_client_add_account_features
-tp_base_client_add_account_features_varargs
-tp_base_client_add_connection_features
-tp_base_client_add_connection_features_varargs
-tp_base_client_add_channel_features
-tp_base_client_add_channel_features_varargs
 tp_base_client_get_handled_channels
 tp_base_client_is_handling_channel
 tp_base_client_delegate_channels_async
@@ -4474,8 +4467,6 @@ tp_base_client_get_dbus_daemon
 tp_base_client_get_name
 tp_base_client_get_uniquify_name
 tp_base_client_get_account_manager
-tp_base_client_set_channel_factory
-tp_base_client_get_channel_factory
 <SUBSECTION Standard>
 tp_base_client_get_type
 TP_BASE_CLIENT
@@ -4853,7 +4844,6 @@ tp_account_channel_request_create_and_observe_channel_async
 tp_account_channel_request_create_and_observe_channel_finish
 tp_account_channel_request_ensure_and_observe_channel_async
 tp_account_channel_request_ensure_and_observe_channel_finish
-tp_account_channel_request_set_channel_factory
 tp_account_channel_request_get_channel_request
 tp_account_channel_request_set_hints
 tp_account_channel_request_set_delegate_to_preferred_handler
@@ -5096,58 +5086,6 @@ TP_TYPE_DBUS_TUBE_CHANNEL
 tp_dbus_tube_channel_get_type
 TpDBusTubeChannelPrivate
 tp_dbus_tube_channel_feature_quark_core
-</SECTION>
-
-<SECTION>
-<FILE>client-channel-factory</FILE>
-<TITLE>client-channel-factory</TITLE>
-<INCLUDE>telepathy-glib/client-channel-factory.h</INCLUDE>
-TpClientChannelFactory
-TpClientChannelFactoryInterface
-tp_client_channel_factory_create_channel
-tp_client_channel_factory_dup_channel_features
-<SUBSECTION Standard>
-TP_CLIENT_CHANNEL_FACTORY
-TP_CLIENT_CHANNEL_FACTORY_GET_IFACE
-TP_IS_CLIENT_CHANNEL_FACTORY
-TP_TYPE_CLIENT_CHANNEL_FACTORY
-tp_client_channel_factory_get_type
-</SECTION>
-
-<SECTION>
-<FILE>basic-proxy-factory</FILE>
-<TITLE>basic-proxy-factory</TITLE>
-<INCLUDE>telepathy-glib/basic-proxy-factory.h</INCLUDE>
-TpBasicProxyFactory
-TpBasicProxyFactoryClass
-tp_basic_proxy_factory_new
-tp_basic_proxy_factory_dup
-<SUBSECTION Standard>
-TP_BASIC_PROXY_FACTORY
-TP_BASIC_PROXY_FACTORY_GET_CLASS
-TP_IS_BASIC_PROXY_FACTORY
-TP_TYPE_BASIC_PROXY_FACTORY
-TP_BASIC_PROXY_FACTORY_CLASS
-TP_IS_BASIC_PROXY_FACTORY_CLASS
-tp_basic_proxy_factory_get_type
-</SECTION>
-
-<SECTION>
-<FILE>automatic-proxy-factory</FILE>
-<TITLE>automatic-proxy-factory</TITLE>
-<INCLUDE>telepathy-glib/automatic-proxy-factory.h</INCLUDE>
-TpAutomaticProxyFactory
-TpAutomaticProxyFactoryClass
-tp_automatic_proxy_factory_new
-tp_automatic_proxy_factory_dup
-<SUBSECTION Standard>
-TP_AUTOMATIC_PROXY_FACTORY
-TP_AUTOMATIC_PROXY_FACTORY_CLASS
-TP_AUTOMATIC_PROXY_FACTORY_GET_CLASS
-TP_IS_AUTOMATIC_PROXY_FACTORY
-TP_IS_AUTOMATIC_PROXY_FACTORY_CLASS
-TP_TYPE_AUTOMATIC_PROXY_FACTORY
-tp_automatic_proxy_factory_get_type
 </SECTION>
 
 <SECTION>

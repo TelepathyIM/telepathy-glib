@@ -24,7 +24,6 @@
 #include "telepathy-glib/channel-request.h"
 
 #include <telepathy-glib/account-manager.h>
-#include <telepathy-glib/automatic-proxy-factory.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/connection.h>
@@ -38,7 +37,6 @@
 #define DEBUG_FLAG TP_DEBUG_DISPATCHER
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
-#include "telepathy-glib/deprecated-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/client-factory-internal.h"
 #include "telepathy-glib/_gen/tp-cli-channel-request-body.h"
@@ -102,8 +100,7 @@ enum {
 };
 
 enum {
-  PROP_CHANNEL_FACTORY = 1,
-  PROP_IMMUTABLE_PROPERTIES,
+  PROP_IMMUTABLE_PROPERTIES = 1,
   PROP_ACCOUNT,
   PROP_USER_ACTION_TIME,
   PROP_PREFERRED_HANDLER,
@@ -114,8 +111,6 @@ static guint signals[N_SIGNALS] = { 0 };
 
 struct _TpChannelRequestPrivate {
     GHashTable *immutable_properties;
-
-    TpClientChannelFactory *channel_factory;
     TpAccount *account;
 };
 
@@ -138,11 +133,6 @@ tp_channel_request_set_property (GObject *object,
 
   switch (property_id)
     {
-      case PROP_CHANNEL_FACTORY:
-        tp_clear_object (&self->priv->channel_factory);
-        self->priv->channel_factory = g_value_dup_object (value);
-        break;
-
       case PROP_IMMUTABLE_PROPERTIES:
         g_assert (self->priv->immutable_properties == NULL);
         self->priv->immutable_properties = g_value_dup_boxed (value);
@@ -164,10 +154,6 @@ tp_channel_request_get_property (GObject *object,
 
   switch (property_id)
     {
-      case PROP_CHANNEL_FACTORY:
-        g_value_set_object (value, self->priv->channel_factory);
-        break;
-
       case PROP_IMMUTABLE_PROPERTIES:
         g_value_set_boxed (value, self->priv->immutable_properties);
         break;
@@ -234,12 +220,8 @@ tp_channel_request_succeeded_cb (TpChannelRequest *self,
       return;
     }
 
-  if (self->priv->channel_factory != NULL)
-    channel = tp_client_channel_factory_create_channel (
-        self->priv->channel_factory, connection, chan_path, chan_props, &error);
-  else
-    channel = tp_client_factory_ensure_channel (tp_proxy_get_factory (self),
-        connection, chan_path, chan_props, &error);
+  channel = tp_client_factory_ensure_channel (tp_proxy_get_factory (self),
+      connection, chan_path, chan_props, &error);
   if (channel == NULL)
     {
       DEBUG ("Failed to create TpChannel: %s", error->message);
@@ -304,7 +286,6 @@ tp_channel_request_dispose (GObject *object)
 
   tp_clear_pointer (&self->priv->immutable_properties, g_hash_table_unref);
 
-  tp_clear_object (&self->priv->channel_factory);
   tp_clear_object (&self->priv->account);
 
   if (dispose != NULL)
@@ -328,27 +309,6 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
   proxy_class->interface = TP_IFACE_QUARK_CHANNEL_REQUEST;
   tp_channel_request_init_known_interfaces ();
   proxy_class->must_have_unique_name = TRUE;
-
-  /**
-   * TpChannelRequest:channel-factory:
-   *
-   * The object implementing the #TpClientChannelFactoryInterface interface
-   * that will be used to create channel proxies when the
-   * #TpChannelRequest::succeeded signal is fired.
-   * This property can be changed using
-   * tp_channel_request_set_channel_factory().
-   *
-   * If no channel factory is specified then #TpAutomaticProxyFactory is used.
-   *
-   * Since: 0.13.14
-   * Deprecated: since 0.15.5. Use #TpProxy:factory instead.
-   */
-  param_spec = g_param_spec_object ("channel-factory", "Channel factory",
-      "Object implementing TpClientChannelFactoryInterface",
-      G_TYPE_OBJECT,
-      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CHANNEL_FACTORY,
-      param_spec);
 
   /**
    * TpChannelRequest:immutable-properties:
@@ -451,10 +411,9 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    * @channel will be %NULL. When using newer versions, they will be correctly
    * set to the newly-created channel, and the connection which owns it.
    *
-   * The #TpChannel is created using #TpChannelRequest:channel-factory or
-   * #TpProxy:factory but the features of the factory are NOT prepared.
-   * It's up to the user to prepare the features returned by
-   * tp_client_factory_dup_channel_features() himself.
+   * The #TpChannel is created using #TpProxy:factory but the features of the
+   * factory are NOT prepared. It's up to the user to prepare the features
+   * returned by tp_client_factory_dup_channel_features() himself.
    *
    * Since: 0.13.14
    */
@@ -559,35 +518,6 @@ _tp_channel_request_new_with_factory (TpClientFactory *factory,
   g_free (unique_name);
 
   return self;
-}
-
-/**
- * tp_channel_request_set_channel_factory:
- * @self: a #TpChannelRequest
- * @factory: an object implementing the #TpClientChannelFactoryInterface
- * interface
- *
- * Change the value of the #TpChannelRequest:channel-factory property.
- *
- * Since: 0.13.14
- * Deprecated: since 0.15.5. Use #TpProxy:factory instead.
- */
-void
-tp_channel_request_set_channel_factory (TpChannelRequest *self,
-    TpClientChannelFactory *factory)
-{
-  _tp_channel_request_set_channel_factory (self, factory);
-}
-
-void
-_tp_channel_request_set_channel_factory (TpChannelRequest *self,
-    TpClientChannelFactory *factory)
-{
-  tp_clear_object (&self->priv->channel_factory);
-
-  if (factory != NULL)
-    self->priv->channel_factory = g_object_ref (factory);
-  g_object_notify (G_OBJECT (self), "channel-factory");
 }
 
 /**

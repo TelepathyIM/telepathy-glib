@@ -23,7 +23,6 @@
 #define TP_CHANNEL_REQUEST_H
 
 #include <telepathy-glib/account.h>
-#include <telepathy-glib/client-channel-factory.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/proxy.h>
@@ -71,9 +70,6 @@ TpChannelRequest *tp_channel_request_new (TpDBusDaemon *bus_daemon,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_channel_request_init_known_interfaces (void);
-
-void tp_channel_request_set_channel_factory (TpChannelRequest *self,
-    TpClientChannelFactory *factory) _TP_GNUC_DEPRECATED;
 
 const GHashTable * tp_channel_request_get_immutable_properties (
     TpChannelRequest *self);
