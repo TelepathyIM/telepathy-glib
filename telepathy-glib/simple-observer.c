@@ -305,7 +305,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
  *
  * Since 0.UNRELEASED this won't create a #TpAccountManager anymore, but will
  * instead create a new #TpAutomaticClientFactory. If user already has a
- * #TpAccountManager or #TpSimpleClientFactory it is recommended to use
+ * #TpAccountManager or #TpClientFactory it is recommended to use
  * tp_simple_observer_new_with_am() or tp_simple_observer_new_with_factory()
  * instead.
  *
@@ -376,7 +376,7 @@ tp_simple_observer_new_with_am (TpAccountManager *account_manager,
 
 /**
  * tp_simple_observer_new_with_factory:
- * @factory: a #TpSimpleClientFactory, which may not be %NULL
+ * @factory: a #TpClientFactory, which may not be %NULL
  * @recover: the value of the Observer.Recover D-Bus property
  * @name: the name of the Observer (see #TpBaseClient:name: for details)
  * @uniquify: the value of the #TpBaseClient:uniquify-name: property
@@ -386,14 +386,14 @@ tp_simple_observer_new_with_am (TpAccountManager *account_manager,
  * is destroyed
  *
  * Convenient function to create a new #TpSimpleObserver instance with a
- * specified #TpSimpleClientFactory.
+ * specified #TpClientFactory.
  *
  * Returns: (type TelepathyGLib.SimpleObserver): a new #TpSimpleObserver
  *
  * Since: 0.15.5
  */
 TpBaseClient *
-tp_simple_observer_new_with_factory (TpSimpleClientFactory *factory,
+tp_simple_observer_new_with_factory (TpClientFactory *factory,
     gboolean recover,
     const gchar *name,
     gboolean uniquify,

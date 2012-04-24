@@ -87,7 +87,7 @@
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/deprecated-internal.h"
-#include "telepathy-glib/simple-client-factory-internal.h"
+#include "telepathy-glib/client-factory-internal.h"
 
 struct _TpAccountChannelRequestClass {
     /*<private>*/
@@ -729,7 +729,7 @@ acr_channel_request_succeeded (TpChannelRequest *chan_req,
         features = tp_client_channel_factory_dup_channel_features (
             self->priv->factory, self->priv->channel);
       else
-        features = tp_simple_client_factory_dup_channel_features (
+        features = tp_client_factory_dup_channel_features (
             tp_proxy_get_factory (self->priv->account), self->priv->channel);
       g_assert (features != NULL);
 
@@ -800,7 +800,7 @@ acr_request_cb (TpChannelDispatcher *cd,
 
   DEBUG ("Got ChannelRequest: %s", channel_request_path);
 
-  self->priv->chan_request = _tp_simple_client_factory_ensure_channel_request (
+  self->priv->chan_request = _tp_client_factory_ensure_channel_request (
       tp_proxy_get_factory (self->priv->account), channel_request_path, NULL,
       &err);
   if (self->priv->chan_request == NULL)

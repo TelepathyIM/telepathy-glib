@@ -68,15 +68,15 @@
  * @client: a #TpBaseClient instance
  * @account: a #TpAccount with %TP_ACCOUNT_FEATURE_CORE, and any other
  *  features added via tp_base_client_add_account_features() or
- *  tp_simple_client_factory_add_account_features(), prepared if
+ *  tp_client_factory_add_account_features(), prepared if
  *  possible
  * @connection: a #TpConnection with %TP_CONNECTION_FEATURE_CORE,
  *  and any other features added via tp_base_client_add_connection_features(),
- *  or tp_simple_client_factory_add_connection_features(), prepared if possible
+ *  or tp_client_factory_add_connection_features(), prepared if possible
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
  *  each with %TP_CHANNEL_FEATURE_CORE, and any other features added via
  *  tp_base_client_add_channel_features() or
- *  tp_simple_client_factory_add_channel_features(), prepared if possible
+ *  tp_client_factory_add_channel_features(), prepared if possible
  * @dispatch_operation: (allow-none): a #TpChannelDispatchOperation or %NULL;
  *  the dispatch_operation is not guaranteed to be prepared
  * @requests: (element-type TelepathyGLib.ChannelRequest): a #GList of
@@ -99,15 +99,15 @@
  * @client: a #TpBaseClient instance
  * @account: a #TpAccount with %TP_ACCOUNT_FEATURE_CORE, and any other
  *  features added via tp_base_client_add_account_features() or
- *  tp_simple_client_factory_add_account_features(), prepared if
+ *  tp_client_factory_add_account_features(), prepared if
  *  possible
  * @connection: a #TpConnection with %TP_CONNECTION_FEATURE_CORE,
  *  and any other features added via tp_base_client_add_connection_features(),
- *  or tp_simple_client_factory_add_connection_features(), prepared if possible
+ *  or tp_client_factory_add_connection_features(), prepared if possible
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
  *  each with %TP_CHANNEL_FEATURE_CORE, and any other features added via
  *  tp_base_client_add_channel_features() or
- *  tp_simple_client_factory_add_channel_features(), prepared if possible
+ *  tp_client_factory_add_channel_features(), prepared if possible
  * @dispatch_operation: a #TpChannelDispatchOperation having
  * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE prepared if possible
  * @context: a #TpObserveChannelsContext representing the context of this
@@ -132,15 +132,15 @@
  * @client: a #TpBaseClient instance
  * @account: a #TpAccount with %TP_ACCOUNT_FEATURE_CORE, and any other
  *  features added via tp_base_client_add_account_features() or
- *  tp_simple_client_factory_add_account_features(), prepared if
+ *  tp_client_factory_add_account_features(), prepared if
  *  possible
  * @connection: a #TpConnection with %TP_CONNECTION_FEATURE_CORE,
  *  and any other features added via tp_base_client_add_connection_features(),
- *  or tp_simple_client_factory_add_connection_features(), prepared if possible
+ *  or tp_client_factory_add_connection_features(), prepared if possible
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
  *  each with %TP_CHANNEL_FEATURE_CORE, and any other features added via
  *  tp_base_client_add_channel_features() or
- *  tp_simple_client_factory_add_channel_features(), prepared if possible
+ *  tp_client_factory_add_channel_features(), prepared if possible
  * @requests_satisfied: (element-type TelepathyGLib.ChannelRequest): a #GList of
  *  #TpChannelRequest having their object-path defined but are not guaranteed
  *  to be prepared.
@@ -203,7 +203,7 @@
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/deprecated-internal.h"
-#include "telepathy-glib/simple-client-factory-internal.h"
+#include "telepathy-glib/client-factory-internal.h"
 #include "telepathy-glib/util-internal.h"
 
 static void observer_iface_init (gpointer, gpointer);
@@ -253,7 +253,7 @@ typedef enum {
 
 struct _TpBaseClientPrivate
 {
-  TpSimpleClientFactory *factory;
+  TpClientFactory *factory;
   TpDBusDaemon *dbus;
   gchar *name;
   gboolean uniquify_name;
@@ -332,7 +332,7 @@ tp_base_client_dup_account (TpBaseClient *self,
       return g_object_ref (self->priv->only_for_account);
     }
 
-  return tp_simple_client_factory_ensure_account (self->priv->factory,
+  return tp_client_factory_ensure_account (self->priv->factory,
       path, NULL, error);
 }
 
@@ -1165,10 +1165,10 @@ tp_base_client_constructed (GObject *object)
   if (self->priv->dbus == NULL)
     {
       self->priv->dbus = g_object_ref (
-          tp_simple_client_factory_get_dbus_daemon (self->priv->factory));
+          tp_client_factory_get_dbus_daemon (self->priv->factory));
     }
 
-  g_assert (tp_simple_client_factory_get_dbus_daemon (self->priv->factory) ==
+  g_assert (tp_client_factory_get_dbus_daemon (self->priv->factory) ==
       self->priv->dbus);
 
   /* Bus name */
@@ -1397,7 +1397,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    *
    * Since: 0.11.14
    * Deprecated: New code should not use this property, it may be %NULL in
-   *  the case @self was constructed with a #TpSimpleClientFactory.
+   *  the case @self was constructed with a #TpClientFactory.
    */
   param_spec = g_param_spec_object ("account-manager", "TpAccountManager",
       "The TpAccountManager used look up or create TpAccount objects",
@@ -1414,9 +1414,9 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    *
    * Since: 0.15.5
    */
-  param_spec = g_param_spec_object ("factory", "TpSimpleClientFactory",
-      "The TpSimpleClientFactory used look up or create TpAccount objects",
-      TP_TYPE_SIMPLE_CLIENT_FACTORY,
+  param_spec = g_param_spec_object ("factory", "TpClientFactory",
+      "The TpClientFactory used look up or create TpAccount objects",
+      TP_TYPE_CLIENT_FACTORY,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_FACTORY,
       param_spec);
@@ -1479,7 +1479,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * @account: the #TpAccount on which the request was made,
    *  with %TP_ACCOUNT_FEATURE_CORE, and any other features added via
    *  tp_base_client_add_account_features() or
-   *  tp_simple_client_factory_add_account_features(), prepared if possible
+   *  tp_client_factory_add_account_features(), prepared if possible
    * @request: a #TpChannelRequest having its object-path defined but
    * is not guaranteed to be prepared.
    *
@@ -1589,7 +1589,7 @@ dup_features_for_account (TpBaseClient *self,
 {
   GArray *features;
 
-  features = tp_simple_client_factory_dup_account_features (self->priv->factory,
+  features = tp_client_factory_dup_account_features (self->priv->factory,
       account);
 
   g_assert (features != NULL);
@@ -1608,7 +1608,7 @@ dup_features_for_connection (TpBaseClient *self,
 {
   GArray *features;
 
-  features = tp_simple_client_factory_dup_connection_features (
+  features = tp_client_factory_dup_connection_features (
       self->priv->factory, connection);
 
   g_assert (features != NULL);
@@ -1632,7 +1632,7 @@ dup_features_for_channel (TpBaseClient *self,
     features = tp_client_channel_factory_dup_channel_features (
         self->priv->channel_factory, channel);
   else
-    features = tp_simple_client_factory_dup_channel_features (
+    features = tp_client_factory_dup_channel_features (
         self->priv->factory, channel);
 
   g_assert (features != NULL);
@@ -1657,7 +1657,7 @@ ensure_channel (TpBaseClient *self,
     return tp_client_channel_factory_create_channel (
         self->priv->channel_factory, connection, chan_path, chan_props, error);
 
-  return tp_simple_client_factory_ensure_channel (self->priv->factory,
+  return tp_client_factory_ensure_channel (self->priv->factory,
       connection, chan_path, chan_props, error);
 }
 
@@ -1752,7 +1752,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   else
     {
       dispatch_operation =
-          _tp_simple_client_factory_ensure_channel_dispatch_operation (
+          _tp_client_factory_ensure_channel_dispatch_operation (
               self->priv->factory, dispatch_operation_path, NULL, &error);
      if (dispatch_operation == NULL)
        {
@@ -1768,7 +1768,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       const gchar *req_path = g_ptr_array_index (requests_arr, i);
       TpChannelRequest *request;
 
-      request = _tp_simple_client_factory_ensure_channel_request (
+      request = _tp_client_factory_ensure_channel_request (
           self->priv->factory, req_path, NULL, &error);
       if (request == NULL)
         {
@@ -1971,7 +1971,7 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
     }
 
   dispatch_operation =
-      _tp_simple_client_factory_ensure_channel_dispatch_operation (
+      _tp_client_factory_ensure_channel_dispatch_operation (
           self->priv->factory, dispatch_operation_path, properties, &error);
   if (dispatch_operation == NULL)
     {
@@ -2338,7 +2338,7 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
         }
       else
         {
-          request = _tp_simple_client_factory_ensure_channel_request (
+          request = _tp_client_factory_ensure_channel_request (
               self->priv->factory, req_path, NULL, &error);
           if (request == NULL)
             {
@@ -2455,7 +2455,7 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
   channel_request_prepare_account_ctx *ctx;
   GArray *account_features;
 
-  request = _tp_simple_client_factory_ensure_channel_request (
+  request = _tp_client_factory_ensure_channel_request (
       self->priv->factory, path, properties, &error);
   if (request == NULL)
     {
@@ -2671,7 +2671,7 @@ tp_base_client_get_dbus_daemon (TpBaseClient *self)
  * Returns: (transfer none): the value of #TpBaseClient:account-manager
  * Since: 0.11.14
  * Deprecated: New code should not use this function, it may return %NULL in
- *  the case @self was constructed with a #TpSimpleClientFactory.
+ *  the case @self was constructed with a #TpClientFactory.
  */
 TpAccountManager *
 tp_base_client_get_account_manager (TpBaseClient *self)
@@ -2791,7 +2791,7 @@ tp_base_client_unregister (TpBaseClient *self)
  *
  * Since: 0.11.14
  * Deprecated: New code should use
- *  tp_simple_client_factory_add_account_features_varargs() instead.
+ *  tp_client_factory_add_account_features_varargs() instead.
  */
 void
 tp_base_client_add_account_features_varargs (TpBaseClient *self,
@@ -2819,7 +2819,7 @@ tp_base_client_add_account_features_varargs (TpBaseClient *self,
  *
  * Since: 0.11.14
  * Deprecated: New code should use
- *  tp_simple_client_factory_add_connection_features_varargs() instead.
+ *  tp_client_factory_add_connection_features_varargs() instead.
  */
 void
 tp_base_client_add_connection_features_varargs (TpBaseClient *self,
@@ -2847,7 +2847,7 @@ tp_base_client_add_connection_features_varargs (TpBaseClient *self,
  *
  * Since: 0.11.14
  * Deprecated: New code should use
- *  tp_simple_client_factory_add_channel_features_varargs() instead.
+ *  tp_client_factory_add_channel_features_varargs() instead.
  */
 void
 tp_base_client_add_channel_features_varargs (TpBaseClient *self,
@@ -2879,7 +2879,7 @@ tp_base_client_add_channel_features_varargs (TpBaseClient *self,
  *
  * Since: 0.11.14
  * Deprecated: New code should use
- *  tp_simple_client_factory_add_account_features() instead.
+ *  tp_client_factory_add_account_features() instead.
  */
 void
 tp_base_client_add_account_features (TpBaseClient *self,
@@ -2907,7 +2907,7 @@ tp_base_client_add_account_features (TpBaseClient *self,
  *
  * Since: 0.11.14
  * Deprecated: New code should use
- *  tp_simple_client_factory_add_channel_features() instead.
+ *  tp_client_factory_add_channel_features() instead.
  */
 void
 tp_base_client_add_channel_features (TpBaseClient *self,
@@ -2934,7 +2934,7 @@ tp_base_client_add_channel_features (TpBaseClient *self,
  *
  * Since: 0.11.14
  * Deprecated: New code should use
- *  tp_simple_client_factory_add_connection_features() instead.
+ *  tp_client_factory_add_connection_features() instead.
  */
 void
 tp_base_client_add_connection_features (TpBaseClient *self,

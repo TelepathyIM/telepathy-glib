@@ -279,7 +279,7 @@ tp_simple_approver_class_init (TpSimpleApproverClass *cls)
  *
  * Since 0.UNRELEASED this won't create a #TpAccountManager anymore, but will
  * instead create a new #TpAutomaticClientFactory. If user already has a
- * #TpAccountManager or #TpSimpleClientFactory it is recommended to use
+ * #TpAccountManager or #TpClientFactory it is recommended to use
  * tp_simple_approver_new_with_am() or tp_simple_approver_new_with_factory()
  * instead.
  *
@@ -345,7 +345,7 @@ tp_simple_approver_new_with_am (TpAccountManager *account_manager,
 
 /**
  * tp_simple_approver_new_with_factory:
- * @factory: an #TpSimpleClientFactory, which may not be %NULL
+ * @factory: an #TpClientFactory, which may not be %NULL
  * @name: the name of the Approver (see #TpBaseClient:name for details)
  * @uniquify: the value of the #TpBaseClient:uniquify-name property
  * @callback: the function called when AddDispatchOperation is called
@@ -354,14 +354,14 @@ tp_simple_approver_new_with_am (TpAccountManager *account_manager,
  * is destroyed
  *
  * Convenient function to create a new #TpSimpleApprover instance with a
- * specified #TpSimpleClientFactory.
+ * specified #TpClientFactory.
  *
  * Returns: (type TelepathyGLib.SimpleApprover): a new #TpSimpleApprover
  *
  * Since: 0.15.5
  */
 TpBaseClient *
-tp_simple_approver_new_with_factory (TpSimpleClientFactory *factory,
+tp_simple_approver_new_with_factory (TpClientFactory *factory,
     const gchar *name,
     gboolean uniquify,
     TpSimpleApproverAddDispatchOperationImpl callback,

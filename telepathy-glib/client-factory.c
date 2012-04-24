@@ -19,8 +19,8 @@
  */
 
 /**
- * SECTION:simple-client-factory
- * @title: TpSimpleClientFactory
+ * SECTION:client-factory
+ * @title: TpClientFactory
  * @short_description: a factory for #TpContact<!-- -->s and plain subclasses
  *  of #TpProxy
  * @see_also: #TpAutomaticClientFactory
@@ -38,7 +38,7 @@
  * #TpChannel and #TpContact. Those objects should always be acquired through a
  * factory, rather than being constructed directly.
  *
- * One can subclass #TpSimpleClientFactory and override some of its virtual
+ * One can subclass #TpClientFactory and override some of its virtual
  * methods to construct more specialized objects. See #TpAutomaticClientFactory
  * for a subclass which automatically constructs subclasses of #TpChannel for
  * common channel types.
@@ -47,7 +47,7 @@
  * |[
  * int main(int argc, char *argv[])
  * {
- *   TpSimpleClientFactory *factory;
+ *   TpClientFactory *factory;
  *   TpAccountManager *manager;
  *
  *   g_type_init ();
@@ -70,33 +70,33 @@
  */
 
 /**
- * TpSimpleClientFactory:
+ * TpClientFactory:
  *
- * Data structure representing a #TpSimpleClientFactory
+ * Data structure representing a #TpClientFactory
  *
  * Since: 0.15.5
  */
 
 /**
- * TpSimpleClientFactoryClass:
+ * TpClientFactoryClass:
  * @parent_class: the parent
  * @create_account: create a #TpAccount;
- *  see tp_simple_client_factory_ensure_account()
- * @dup_account_features: implementation of tp_simple_client_factory_dup_account_features()
+ *  see tp_client_factory_ensure_account()
+ * @dup_account_features: implementation of tp_client_factory_dup_account_features()
  * @create_connection: create a #TpConnection;
- *  see tp_simple_client_factory_ensure_connection()
+ *  see tp_client_factory_ensure_connection()
  * @dup_connection_features: implementation of
- *  tp_simple_client_factory_dup_connection_features()
+ *  tp_client_factory_dup_connection_features()
  * @create_channel: create a #TpChannel;
- *  see tp_simple_client_factory_ensure_channel()
- * @dup_channel_features: implementation of tp_simple_client_factory_dup_channel_features()
+ *  see tp_client_factory_ensure_channel()
+ * @dup_channel_features: implementation of tp_client_factory_dup_channel_features()
  * @create_contact: create a #TpContact;
- *  see tp_simple_client_factory_ensure_contact()
- * @dup_contact_features: implementation of tp_simple_client_factory_dup_contact_features()
+ *  see tp_client_factory_ensure_contact()
+ * @dup_contact_features: implementation of tp_client_factory_dup_contact_features()
  *
- * The class structure for #TpSimpleClientFactory.
+ * The class structure for #TpClientFactory.
  *
- * #TpSimpleClientFactory maintains a cache of previously-constructed proxy
+ * #TpClientFactory maintains a cache of previously-constructed proxy
  * objects, so the implementations of @create_account,
  * @create_connection, @create_channel, and @create_contact may assume that a
  * new object should be created when they are called. The default
@@ -106,7 +106,7 @@
  *
  * The default implementation of @dup_channel_features returns
  * #TP_CHANNEL_FEATURE_CORE, plus all features passed to
- * tp_simple_client_factory_add_channel_features() by the application.
+ * tp_client_factory_add_channel_features() by the application.
  * Subclasses may override this method to prepare more interesting features
  * from subclasses of #TpChannel, for instance. The default implementations of
  * the other <function>dup_x_features</function> methods behave similarly.
@@ -116,7 +116,7 @@
 
 #include "config.h"
 
-#include "telepathy-glib/simple-client-factory.h"
+#include "telepathy-glib/client-factory.h"
 
 #include <telepathy-glib/util.h>
 
@@ -124,10 +124,10 @@
 #include "telepathy-glib/connection-internal.h"
 #include "telepathy-glib/contact-internal.h"
 #include "telepathy-glib/debug-internal.h"
-#include "telepathy-glib/simple-client-factory-internal.h"
+#include "telepathy-glib/client-factory-internal.h"
 #include "telepathy-glib/util-internal.h"
 
-struct _TpSimpleClientFactoryPrivate
+struct _TpClientFactoryPrivate
 {
   TpDBusDaemon *dbus;
   /* Owned object-path -> weakref to TpProxy */
@@ -144,21 +144,21 @@ enum
   N_PROPS
 };
 
-G_DEFINE_TYPE (TpSimpleClientFactory, tp_simple_client_factory, G_TYPE_OBJECT)
+G_DEFINE_TYPE (TpClientFactory, tp_client_factory, G_TYPE_OBJECT)
 
 static void
 proxy_invalidated_cb (TpProxy *proxy,
     guint domain,
     gint code,
     gchar *message,
-    TpSimpleClientFactory *self)
+    TpClientFactory *self)
 {
   g_hash_table_remove (self->priv->proxy_cache,
       tp_proxy_get_object_path (proxy));
 }
 
 static void
-insert_proxy (TpSimpleClientFactory *self,
+insert_proxy (TpClientFactory *self,
     gpointer proxy)
 {
   if (proxy == NULL)
@@ -174,14 +174,14 @@ insert_proxy (TpSimpleClientFactory *self,
 }
 
 static gpointer
-lookup_proxy (TpSimpleClientFactory *self,
+lookup_proxy (TpClientFactory *self,
     const gchar *object_path)
 {
   return g_hash_table_lookup (self->priv->proxy_cache, object_path);
 }
 
 void
-_tp_simple_client_factory_insert_proxy (TpSimpleClientFactory *self,
+_tp_client_factory_insert_proxy (TpClientFactory *self,
     gpointer proxy)
 {
   g_return_if_fail (lookup_proxy (self,
@@ -191,7 +191,7 @@ _tp_simple_client_factory_insert_proxy (TpSimpleClientFactory *self,
 }
 
 static TpAccount *
-create_account_impl (TpSimpleClientFactory *self,
+create_account_impl (TpClientFactory *self,
     const gchar *object_path,
     const GHashTable *immutable_properties G_GNUC_UNUSED,
     GError **error)
@@ -201,7 +201,7 @@ create_account_impl (TpSimpleClientFactory *self,
 }
 
 static GArray *
-dup_account_features_impl (TpSimpleClientFactory *self,
+dup_account_features_impl (TpClientFactory *self,
     TpAccount *account)
 {
   return _tp_quark_array_copy (
@@ -209,7 +209,7 @@ dup_account_features_impl (TpSimpleClientFactory *self,
 }
 
 static TpConnection *
-create_connection_impl (TpSimpleClientFactory *self,
+create_connection_impl (TpClientFactory *self,
     const gchar *object_path,
     const GHashTable *immutable_properties G_GNUC_UNUSED,
     GError **error)
@@ -219,7 +219,7 @@ create_connection_impl (TpSimpleClientFactory *self,
 }
 
 static GArray *
-dup_connection_features_impl (TpSimpleClientFactory *self,
+dup_connection_features_impl (TpClientFactory *self,
     TpConnection *connection)
 {
   return _tp_quark_array_copy (
@@ -227,7 +227,7 @@ dup_connection_features_impl (TpSimpleClientFactory *self,
 }
 
 static TpChannel *
-create_channel_impl (TpSimpleClientFactory *self,
+create_channel_impl (TpClientFactory *self,
     TpConnection *conn,
     const gchar *object_path,
     const GHashTable *immutable_properties,
@@ -238,7 +238,7 @@ create_channel_impl (TpSimpleClientFactory *self,
 }
 
 static GArray *
-dup_channel_features_impl (TpSimpleClientFactory *self,
+dup_channel_features_impl (TpClientFactory *self,
     TpChannel *channel)
 {
   return _tp_quark_array_copy (
@@ -246,7 +246,7 @@ dup_channel_features_impl (TpSimpleClientFactory *self,
 }
 
 static TpContact *
-create_contact_impl (TpSimpleClientFactory *self,
+create_contact_impl (TpClientFactory *self,
     TpConnection *connection,
     TpHandle handle,
     const gchar *identifier)
@@ -255,7 +255,7 @@ create_contact_impl (TpSimpleClientFactory *self,
 }
 
 static GArray *
-dup_contact_features_impl (TpSimpleClientFactory *self,
+dup_contact_features_impl (TpClientFactory *self,
     TpConnection *connection)
 {
   return _tp_quark_array_copy (
@@ -263,12 +263,12 @@ dup_contact_features_impl (TpSimpleClientFactory *self,
 }
 
 static void
-tp_simple_client_factory_get_property (GObject *object,
+tp_client_factory_get_property (GObject *object,
     guint property_id,
     GValue *value,
     GParamSpec *pspec)
 {
-  TpSimpleClientFactory *self = (TpSimpleClientFactory *) object;
+  TpClientFactory *self = (TpClientFactory *) object;
 
   switch (property_id)
     {
@@ -282,12 +282,12 @@ tp_simple_client_factory_get_property (GObject *object,
 }
 
 static void
-tp_simple_client_factory_set_property (GObject *object,
+tp_client_factory_set_property (GObject *object,
     guint property_id,
     const GValue *value,
     GParamSpec *pspec)
 {
-  TpSimpleClientFactory *self = (TpSimpleClientFactory *) object;
+  TpClientFactory *self = (TpClientFactory *) object;
 
   switch (property_id)
     {
@@ -302,19 +302,19 @@ tp_simple_client_factory_set_property (GObject *object,
 }
 
 static void
-tp_simple_client_factory_constructed (GObject *object)
+tp_client_factory_constructed (GObject *object)
 {
-  TpSimpleClientFactory *self = (TpSimpleClientFactory *) object;
+  TpClientFactory *self = (TpClientFactory *) object;
 
   g_assert (TP_IS_DBUS_DAEMON (self->priv->dbus));
 
-  G_OBJECT_CLASS (tp_simple_client_factory_parent_class)->constructed (object);
+  G_OBJECT_CLASS (tp_client_factory_parent_class)->constructed (object);
 }
 
 static void
-tp_simple_client_factory_finalize (GObject *object)
+tp_client_factory_finalize (GObject *object)
 {
-  TpSimpleClientFactory *self = (TpSimpleClientFactory *) object;
+  TpClientFactory *self = (TpClientFactory *) object;
 
   g_clear_object (&self->priv->dbus);
   tp_clear_pointer (&self->priv->proxy_cache, g_hash_table_unref);
@@ -323,16 +323,16 @@ tp_simple_client_factory_finalize (GObject *object)
   tp_clear_pointer (&self->priv->desired_channel_features, g_array_unref);
   tp_clear_pointer (&self->priv->desired_contact_features, g_array_unref);
 
-  G_OBJECT_CLASS (tp_simple_client_factory_parent_class)->finalize (object);
+  G_OBJECT_CLASS (tp_client_factory_parent_class)->finalize (object);
 }
 
 static void
-tp_simple_client_factory_init (TpSimpleClientFactory *self)
+tp_client_factory_init (TpClientFactory *self)
 {
   GQuark feature;
 
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_SIMPLE_CLIENT_FACTORY,
-      TpSimpleClientFactoryPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_CLIENT_FACTORY,
+      TpClientFactoryPrivate);
 
   self->priv->proxy_cache = g_hash_table_new (g_str_hash, g_str_equal);
 
@@ -356,17 +356,17 @@ tp_simple_client_factory_init (TpSimpleClientFactory *self)
 }
 
 static void
-tp_simple_client_factory_class_init (TpSimpleClientFactoryClass *klass)
+tp_client_factory_class_init (TpClientFactoryClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
 
-  g_type_class_add_private (klass, sizeof (TpSimpleClientFactoryPrivate));
+  g_type_class_add_private (klass, sizeof (TpClientFactoryPrivate));
 
-  object_class->get_property = tp_simple_client_factory_get_property;
-  object_class->set_property = tp_simple_client_factory_set_property;
-  object_class->constructed = tp_simple_client_factory_constructed;
-  object_class->finalize = tp_simple_client_factory_finalize;
+  object_class->get_property = tp_client_factory_get_property;
+  object_class->set_property = tp_client_factory_set_property;
+  object_class->constructed = tp_client_factory_constructed;
+  object_class->finalize = tp_client_factory_finalize;
 
   klass->create_account = create_account_impl;
   klass->dup_account_features = dup_account_features_impl;
@@ -378,7 +378,7 @@ tp_simple_client_factory_class_init (TpSimpleClientFactoryClass *klass)
   klass->dup_contact_features = dup_contact_features_impl;
 
   /**
-   * TpSimpleClientFactory:dbus-daemon:
+   * TpClientFactory:dbus-daemon:
    *
    * The D-Bus daemon for this object.
    */
@@ -391,45 +391,45 @@ tp_simple_client_factory_class_init (TpSimpleClientFactoryClass *klass)
 }
 
 /**
- * tp_simple_client_factory_new:
+ * tp_client_factory_new:
  * @dbus: a #TpDBusDaemon
  *
- * Creates a new #TpSimpleClientFactory instance.
+ * Creates a new #TpClientFactory instance.
  *
- * Returns: a new #TpSimpleClientFactory
+ * Returns: a new #TpClientFactory
  *
  * Since: 0.15.5
  */
-TpSimpleClientFactory *
-tp_simple_client_factory_new (TpDBusDaemon *dbus)
+TpClientFactory *
+tp_client_factory_new (TpDBusDaemon *dbus)
 {
-  return g_object_new (TP_TYPE_SIMPLE_CLIENT_FACTORY,
+  return g_object_new (TP_TYPE_CLIENT_FACTORY,
       "dbus-daemon", dbus,
       NULL);
 }
 
 /**
- * tp_simple_client_factory_get_dbus_daemon:
- * @self: a #TpSimpleClientFactory object
+ * tp_client_factory_get_dbus_daemon:
+ * @self: a #TpClientFactory object
  *
  * <!-- -->
  *
- * Returns: (transfer none): the value of the #TpSimpleClientFactory:dbus-daemon
+ * Returns: (transfer none): the value of the #TpClientFactory:dbus-daemon
  *  property
  *
  * Since: 0.15.5
  */
 TpDBusDaemon *
-tp_simple_client_factory_get_dbus_daemon (TpSimpleClientFactory *self)
+tp_client_factory_get_dbus_daemon (TpClientFactory *self)
 {
-  g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self), NULL);
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
 
   return self->priv->dbus;
 }
 
 /**
- * tp_simple_client_factory_ensure_account:
- * @self: a #TpSimpleClientFactory object
+ * tp_client_factory_ensure_account:
+ * @self: a #TpClientFactory object
  * @object_path: the object path of an account
  * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
  *  the immutable properties of the account, or %NULL.
@@ -441,7 +441,7 @@ tp_simple_client_factory_get_dbus_daemon (TpSimpleClientFactory *self)
  *
  * Note that the returned #TpAccount is not guaranteed to be ready; the caller
  * is responsible for calling tp_proxy_prepare_async() with the desired
- * features (as given by tp_simple_client_factory_dup_account_features()).
+ * features (as given by tp_client_factory_dup_account_features()).
  *
  * Returns: (transfer full): a reference to a #TpAccount;
  *  see tp_account_new().
@@ -449,21 +449,21 @@ tp_simple_client_factory_get_dbus_daemon (TpSimpleClientFactory *self)
  * Since: 0.15.5
  */
 TpAccount *
-tp_simple_client_factory_ensure_account (TpSimpleClientFactory *self,
+tp_client_factory_ensure_account (TpClientFactory *self,
     const gchar *object_path,
     const GHashTable *immutable_properties,
     GError **error)
 {
   TpAccount *account;
 
-  g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self), NULL);
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (g_variant_is_object_path (object_path), NULL);
 
   account = lookup_proxy (self, object_path);
   if (account != NULL)
     return g_object_ref (account);
 
-  account = TP_SIMPLE_CLIENT_FACTORY_GET_CLASS (self)->create_account (self,
+  account = TP_CLIENT_FACTORY_GET_CLASS (self)->create_account (self,
       object_path, immutable_properties, error);
   insert_proxy (self, account);
 
@@ -471,8 +471,8 @@ tp_simple_client_factory_ensure_account (TpSimpleClientFactory *self,
 }
 
 /**
- * tp_simple_client_factory_dup_account_features:
- * @self: a #TpSimpleClientFactory object
+ * tp_client_factory_dup_account_features:
+ * @self: a #TpClientFactory object
  * @account: a #TpAccount
  *
  * Return a zero-terminated #GArray containing the #TpAccount features that
@@ -484,27 +484,27 @@ tp_simple_client_factory_ensure_account (TpSimpleClientFactory *self,
  * Since: 0.15.5
  */
 GArray *
-tp_simple_client_factory_dup_account_features (TpSimpleClientFactory *self,
+tp_client_factory_dup_account_features (TpClientFactory *self,
     TpAccount *account)
 {
-  g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self), NULL);
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (tp_proxy_get_factory (account) == self, NULL);
 
-  return TP_SIMPLE_CLIENT_FACTORY_GET_CLASS (self)->dup_account_features (self,
+  return TP_CLIENT_FACTORY_GET_CLASS (self)->dup_account_features (self,
       account);
 }
 
 /**
- * tp_simple_client_factory_add_account_features:
- * @self: a #TpSimpleClientFactory object
+ * tp_client_factory_add_account_features:
+ * @self: a #TpClientFactory object
  * @features: (transfer none) (array zero-terminated=1) (allow-none): an array
  *  of desired features, ending with 0; %NULL is equivalent to an array
  *  containing only 0
  *
  * Add @features to the desired features to be prepared on #TpAccount
  * objects. Those features will be added to the features already returned be
- * tp_simple_client_factory_dup_account_features().
+ * tp_client_factory_dup_account_features().
  *
  * It is not necessary to add %TP_ACCOUNT_FEATURE_CORE as it is already
  * included by default.
@@ -515,35 +515,35 @@ tp_simple_client_factory_dup_account_features (TpSimpleClientFactory *self,
  * Since: 0.15.5
  */
 void
-tp_simple_client_factory_add_account_features (
-    TpSimpleClientFactory *self,
+tp_client_factory_add_account_features (
+    TpClientFactory *self,
     const GQuark *features)
 {
-  g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
+  g_return_if_fail (TP_IS_CLIENT_FACTORY (self));
 
   _tp_quark_array_merge (self->priv->desired_account_features, features, -1);
 }
 
 /**
- * tp_simple_client_factory_add_account_features_varargs: (skip)
- * @self: a #TpSimpleClientFactory
+ * tp_client_factory_add_account_features_varargs: (skip)
+ * @self: a #TpClientFactory
  * @feature: the first feature
  * @...: the second and subsequent features, if any, ending with 0
  *
- * The same as tp_simple_client_factory_add_account_features(), but with a more
+ * The same as tp_client_factory_add_account_features(), but with a more
  * convenient calling convention from C.
  *
  * Since: 0.15.5
  */
 void
-tp_simple_client_factory_add_account_features_varargs (
-    TpSimpleClientFactory *self,
+tp_client_factory_add_account_features_varargs (
+    TpClientFactory *self,
     GQuark feature,
     ...)
 {
   va_list var_args;
 
-  g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
+  g_return_if_fail (TP_IS_CLIENT_FACTORY (self));
 
   va_start (var_args, feature);
   _tp_quark_array_merge_valist (self->priv->desired_account_features, feature,
@@ -552,8 +552,8 @@ tp_simple_client_factory_add_account_features_varargs (
 }
 
 /**
- * tp_simple_client_factory_ensure_connection:
- * @self: a #TpSimpleClientFactory object
+ * tp_client_factory_ensure_connection:
+ * @self: a #TpClientFactory object
  * @object_path: the object path of a connection
  * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
  *  the immutable properties of the connection.
@@ -566,7 +566,7 @@ tp_simple_client_factory_add_account_features_varargs (
  *
  * Note that the returned #TpConnection is not guaranteed to be ready; the
  * caller is responsible for calling tp_proxy_prepare_async() with the desired
- * features (as given by tp_simple_client_factory_dup_connection_features()).
+ * features (as given by tp_client_factory_dup_connection_features()).
  *
  * Returns: (transfer full): a reference to a #TpConnection;
  *  see tp_connection_new().
@@ -574,21 +574,21 @@ tp_simple_client_factory_add_account_features_varargs (
  * Since: 0.15.5
  */
 TpConnection *
-tp_simple_client_factory_ensure_connection (TpSimpleClientFactory *self,
+tp_client_factory_ensure_connection (TpClientFactory *self,
     const gchar *object_path,
     const GHashTable *immutable_properties,
     GError **error)
 {
   TpConnection *connection;
 
-  g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self), NULL);
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (g_variant_is_object_path (object_path), NULL);
 
   connection = lookup_proxy (self, object_path);
   if (connection != NULL)
     return g_object_ref (connection);
 
-  connection = TP_SIMPLE_CLIENT_FACTORY_GET_CLASS (self)->create_connection (
+  connection = TP_CLIENT_FACTORY_GET_CLASS (self)->create_connection (
       self, object_path, immutable_properties, error);
   insert_proxy (self, connection);
 
@@ -596,8 +596,8 @@ tp_simple_client_factory_ensure_connection (TpSimpleClientFactory *self,
 }
 
 /**
- * tp_simple_client_factory_dup_connection_features:
- * @self: a #TpSimpleClientFactory object
+ * tp_client_factory_dup_connection_features:
+ * @self: a #TpClientFactory object
  * @connection: a #TpConnection
  *
  * Return a zero-terminated #GArray containing the #TpConnection features that
@@ -609,27 +609,27 @@ tp_simple_client_factory_ensure_connection (TpSimpleClientFactory *self,
  * Since: 0.15.5
  */
 GArray *
-tp_simple_client_factory_dup_connection_features (TpSimpleClientFactory *self,
+tp_client_factory_dup_connection_features (TpClientFactory *self,
     TpConnection *connection)
 {
-  g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self), NULL);
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (TP_IS_CONNECTION (connection), NULL);
   g_return_val_if_fail (tp_proxy_get_factory (connection) == self, NULL);
 
-  return TP_SIMPLE_CLIENT_FACTORY_GET_CLASS (self)->dup_connection_features (
+  return TP_CLIENT_FACTORY_GET_CLASS (self)->dup_connection_features (
       self, connection);
 }
 
 /**
- * tp_simple_client_factory_add_connection_features:
- * @self: a #TpSimpleClientFactory object
+ * tp_client_factory_add_connection_features:
+ * @self: a #TpClientFactory object
  * @features: (transfer none) (array zero-terminated=1) (allow-none): an array
  *  of desired features, ending with 0; %NULL is equivalent to an array
  *  containing only 0
  *
  * Add @features to the desired features to be prepared on #TpConnection
  * objects. Those features will be added to the features already returned be
- * tp_simple_client_factory_dup_connection_features().
+ * tp_client_factory_dup_connection_features().
  *
  * It is not necessary to add %TP_CONNECTION_FEATURE_CORE as it is already
  * included by default.
@@ -640,35 +640,35 @@ tp_simple_client_factory_dup_connection_features (TpSimpleClientFactory *self,
  * Since: 0.15.5
  */
 void
-tp_simple_client_factory_add_connection_features (
-    TpSimpleClientFactory *self,
+tp_client_factory_add_connection_features (
+    TpClientFactory *self,
     const GQuark *features)
 {
-  g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
+  g_return_if_fail (TP_IS_CLIENT_FACTORY (self));
 
   _tp_quark_array_merge (self->priv->desired_connection_features, features, -1);
 }
 
 /**
- * tp_simple_client_factory_add_connection_features_varargs: (skip)
- * @self: a #TpSimpleClientFactory
+ * tp_client_factory_add_connection_features_varargs: (skip)
+ * @self: a #TpClientFactory
  * @feature: the first feature
  * @...: the second and subsequent features, if any, ending with 0
  *
- * The same as tp_simple_client_factory_add_connection_features(), but with a
+ * The same as tp_client_factory_add_connection_features(), but with a
  * more convenient calling convention from C.
  *
  * Since: 0.15.5
  */
 void
-tp_simple_client_factory_add_connection_features_varargs (
-    TpSimpleClientFactory *self,
+tp_client_factory_add_connection_features_varargs (
+    TpClientFactory *self,
     GQuark feature,
     ...)
 {
   va_list var_args;
 
-  g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
+  g_return_if_fail (TP_IS_CLIENT_FACTORY (self));
 
   va_start (var_args, feature);
   _tp_quark_array_merge_valist (self->priv->desired_connection_features,
@@ -677,8 +677,8 @@ tp_simple_client_factory_add_connection_features_varargs (
 }
 
 /**
- * tp_simple_client_factory_ensure_channel:
- * @self: a #TpSimpleClientFactory object
+ * tp_client_factory_ensure_channel:
+ * @self: a #TpClientFactory object
  * @connection: a #TpConnection
  * @object_path: the object path of a channel on @connection
  * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
@@ -692,7 +692,7 @@ tp_simple_client_factory_add_connection_features_varargs (
  *
  * Note that the returned #TpChannel is not guaranteed to be ready; the
  * caller is responsible for calling tp_proxy_prepare_async() with the desired
- * features (as given by tp_simple_client_factory_dup_channel_features()).
+ * features (as given by tp_client_factory_dup_channel_features()).
  *
  * Returns: (transfer full): a reference to a #TpChannel;
  *  see tp_channel_new_from_properties().
@@ -700,7 +700,7 @@ tp_simple_client_factory_add_connection_features_varargs (
  * Since: 0.15.5
  */
 TpChannel *
-tp_simple_client_factory_ensure_channel (TpSimpleClientFactory *self,
+tp_client_factory_ensure_channel (TpClientFactory *self,
     TpConnection *connection,
     const gchar *object_path,
     const GHashTable *immutable_properties,
@@ -708,7 +708,7 @@ tp_simple_client_factory_ensure_channel (TpSimpleClientFactory *self,
 {
   TpChannel *channel;
 
-  g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self), NULL);
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (TP_IS_CONNECTION (connection), NULL);
   g_return_val_if_fail (tp_proxy_get_factory (connection) == self, NULL);
   g_return_val_if_fail (g_variant_is_object_path (object_path), NULL);
@@ -717,7 +717,7 @@ tp_simple_client_factory_ensure_channel (TpSimpleClientFactory *self,
   if (channel != NULL)
     return g_object_ref (channel);
 
-  channel = TP_SIMPLE_CLIENT_FACTORY_GET_CLASS (self)->create_channel (self,
+  channel = TP_CLIENT_FACTORY_GET_CLASS (self)->create_channel (self,
       connection, object_path, immutable_properties, error);
   insert_proxy (self, channel);
 
@@ -725,8 +725,8 @@ tp_simple_client_factory_ensure_channel (TpSimpleClientFactory *self,
 }
 
 /**
- * tp_simple_client_factory_dup_channel_features:
- * @self: a #TpSimpleClientFactory object
+ * tp_client_factory_dup_channel_features:
+ * @self: a #TpClientFactory object
  * @channel: a #TpChannel
  *
  * Return a zero-terminated #GArray containing the #TpChannel features that
@@ -738,27 +738,27 @@ tp_simple_client_factory_ensure_channel (TpSimpleClientFactory *self,
  * Since: 0.15.5
  */
 GArray *
-tp_simple_client_factory_dup_channel_features (TpSimpleClientFactory *self,
+tp_client_factory_dup_channel_features (TpClientFactory *self,
     TpChannel *channel)
 {
-  g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self), NULL);
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (TP_IS_CHANNEL (channel), NULL);
   g_return_val_if_fail (tp_proxy_get_factory (channel) == self, NULL);
 
-  return TP_SIMPLE_CLIENT_FACTORY_GET_CLASS (self)->dup_channel_features (
+  return TP_CLIENT_FACTORY_GET_CLASS (self)->dup_channel_features (
       self, channel);
 }
 
 /**
- * tp_simple_client_factory_add_channel_features:
- * @self: a #TpSimpleClientFactory object
+ * tp_client_factory_add_channel_features:
+ * @self: a #TpClientFactory object
  * @features: (transfer none) (array zero-terminated=1) (allow-none): an array
  *  of desired features, ending with 0; %NULL is equivalent to an array
  *  containing only 0
  *
  * Add @features to the desired features to be prepared on #TpChannel
  * objects. Those features will be added to the features already returned be
- * tp_simple_client_factory_dup_channel_features().
+ * tp_client_factory_dup_channel_features().
  *
  * It is not necessary to add %TP_CHANNEL_FEATURE_CORE as it is already
  * included by default.
@@ -769,35 +769,35 @@ tp_simple_client_factory_dup_channel_features (TpSimpleClientFactory *self,
  * Since: 0.15.5
  */
 void
-tp_simple_client_factory_add_channel_features (
-    TpSimpleClientFactory *self,
+tp_client_factory_add_channel_features (
+    TpClientFactory *self,
     const GQuark *features)
 {
-  g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
+  g_return_if_fail (TP_IS_CLIENT_FACTORY (self));
 
   _tp_quark_array_merge (self->priv->desired_channel_features, features, -1);
 }
 
 /**
- * tp_simple_client_factory_add_channel_features_varargs: (skip)
- * @self: a #TpSimpleClientFactory
+ * tp_client_factory_add_channel_features_varargs: (skip)
+ * @self: a #TpClientFactory
  * @feature: the first feature
  * @...: the second and subsequent features, if any, ending with 0
  *
- * The same as tp_simple_client_factory_add_channel_features(), but with a
+ * The same as tp_client_factory_add_channel_features(), but with a
  * more convenient calling convention from C.
  *
  * Since: 0.15.5
  */
 void
-tp_simple_client_factory_add_channel_features_varargs (
-    TpSimpleClientFactory *self,
+tp_client_factory_add_channel_features_varargs (
+    TpClientFactory *self,
     GQuark feature,
     ...)
 {
   va_list var_args;
 
-  g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
+  g_return_if_fail (TP_IS_CLIENT_FACTORY (self));
 
   va_start (var_args, feature);
   _tp_quark_array_merge_valist (self->priv->desired_channel_features,
@@ -806,8 +806,8 @@ tp_simple_client_factory_add_channel_features_varargs (
 }
 
 /**
- * tp_simple_client_factory_ensure_contact:
- * @self: a #TpSimpleClientFactory object
+ * tp_client_factory_ensure_contact:
+ * @self: a #TpClientFactory object
  * @connection: a #TpConnection
  * @handle: a #TpHandle
  * @identifier: a string representing the contact's identifier
@@ -819,21 +819,21 @@ tp_simple_client_factory_add_channel_features_varargs (
  *
  * Note that the returned #TpContact is not guaranteed to be ready; the caller
  * is responsible for calling tp_connection_upgrade_contacts() with the desired
- * features (as given by tp_simple_client_factory_dup_contact_features()).
+ * features (as given by tp_client_factory_dup_contact_features()).
  *
  * Returns: (transfer full): a reference to a #TpContact.
  *
  * Since: 0.15.5
  */
 TpContact *
-tp_simple_client_factory_ensure_contact (TpSimpleClientFactory *self,
+tp_client_factory_ensure_contact (TpClientFactory *self,
     TpConnection *connection,
     TpHandle handle,
     const gchar *identifier)
 {
   TpContact *contact;
 
-  g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self), NULL);
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (TP_IS_CONNECTION (connection), NULL);
   g_return_val_if_fail (tp_proxy_get_factory (connection) == self, NULL);
   g_return_val_if_fail (handle != 0, NULL);
@@ -844,7 +844,7 @@ tp_simple_client_factory_ensure_contact (TpSimpleClientFactory *self,
   if (contact != NULL)
     return contact;
 
-  contact = TP_SIMPLE_CLIENT_FACTORY_GET_CLASS (self)->create_contact (self,
+  contact = TP_CLIENT_FACTORY_GET_CLASS (self)->create_contact (self,
       connection, handle, identifier);
   _tp_connection_add_contact (connection, handle, contact);
 
@@ -852,8 +852,8 @@ tp_simple_client_factory_ensure_contact (TpSimpleClientFactory *self,
 }
 
 /**
- * tp_simple_client_factory_dup_contact_features:
- * @self: a #TpSimpleClientFactory object
+ * tp_client_factory_dup_contact_features:
+ * @self: a #TpClientFactory object
  * @connection: a #TpConnection
  *
  * Return a #GArray containing the contact feature #GQuark<!-- -->s
@@ -865,26 +865,26 @@ tp_simple_client_factory_ensure_contact (TpSimpleClientFactory *self,
  * Since: 0.15.5
  */
 GArray *
-tp_simple_client_factory_dup_contact_features (TpSimpleClientFactory *self,
+tp_client_factory_dup_contact_features (TpClientFactory *self,
     TpConnection *connection)
 {
-  g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self), NULL);
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (TP_IS_CONNECTION (connection), NULL);
   g_return_val_if_fail (tp_proxy_get_factory (connection) == self, NULL);
 
-  return TP_SIMPLE_CLIENT_FACTORY_GET_CLASS (self)->dup_contact_features (
+  return TP_CLIENT_FACTORY_GET_CLASS (self)->dup_contact_features (
       self, connection);
 }
 
 /**
- * tp_simple_client_factory_add_contact_features:
- * @self: a #TpSimpleClientFactory object
+ * tp_client_factory_add_contact_features:
+ * @self: a #TpClientFactory object
  * @features: (transfer none) (array zero-terminated=1) (allow-none):
  *  an array of desired features
  *
  * Add @features to the desired features to be prepared on #TpContact
  * objects. Those features will be added to the features already returned be
- * tp_simple_client_factory_dup_contact_features().
+ * tp_client_factory_dup_contact_features().
  *
  * Note that these features will not be added to existing #TpContact
  * objects; the user must call tp_connection_upgrade_contacts() themself.
@@ -892,12 +892,12 @@ tp_simple_client_factory_dup_contact_features (TpSimpleClientFactory *self,
  * Since: 0.15.5
  */
 void
-tp_simple_client_factory_add_contact_features (TpSimpleClientFactory *self,
+tp_client_factory_add_contact_features (TpClientFactory *self,
     const GQuark *features)
 {
   guint i;
 
-  g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
+  g_return_if_fail (TP_IS_CLIENT_FACTORY (self));
   g_return_if_fail (features != NULL);
 
   /* Add features into desired_contact_features avoiding dups */
@@ -922,19 +922,19 @@ tp_simple_client_factory_add_contact_features (TpSimpleClientFactory *self,
 }
 
 /**
- * tp_simple_client_factory_add_contact_features_varargs: (skip)
- * @self: a #TpSimpleClientFactory
+ * tp_client_factory_add_contact_features_varargs: (skip)
+ * @self: a #TpClientFactory
  * @feature: the first feature
  * @...: the second and subsequent features, if any, ending with 0
  *
- * The same as tp_simple_client_factory_add_contact_features(), but with a
+ * The same as tp_client_factory_add_contact_features(), but with a
  * more convenient calling convention from C.
  *
  * Since: 0.15.5
  */
 void
-tp_simple_client_factory_add_contact_features_varargs (
-    TpSimpleClientFactory *self,
+tp_client_factory_add_contact_features_varargs (
+    TpClientFactory *self,
     GQuark feature,
     ...)
 {
@@ -942,7 +942,7 @@ tp_simple_client_factory_add_contact_features_varargs (
   GArray *features;
   GQuark f;
 
-  g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
+  g_return_if_fail (TP_IS_CLIENT_FACTORY (self));
 
   va_start (var_args, feature);
   features = g_array_new (TRUE, FALSE, sizeof (GQuark));
@@ -951,7 +951,7 @@ tp_simple_client_factory_add_contact_features_varargs (
       f = va_arg (var_args, GQuark))
     g_array_append_val (features, f);
 
-  tp_simple_client_factory_add_contact_features (self,
+  tp_client_factory_add_contact_features (self,
       (const GQuark *) features->data);
 
   g_array_unref (features);
@@ -959,8 +959,8 @@ tp_simple_client_factory_add_contact_features_varargs (
 }
 
 /**
- * tp_simple_client_factory_ensure_channel_request:
- * @self: a #TpSimpleClientFactory object
+ * tp_client_factory_ensure_channel_request:
+ * @self: a #TpClientFactory object
  * @object_path: the object path of a channel request
  * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
  *  the immutable properties of the channel request
@@ -980,14 +980,14 @@ tp_simple_client_factory_add_contact_features_varargs (
  * Since: 0.15.5
  */
 TpChannelRequest *
-_tp_simple_client_factory_ensure_channel_request (TpSimpleClientFactory *self,
+_tp_client_factory_ensure_channel_request (TpClientFactory *self,
     const gchar *object_path,
     GHashTable *immutable_properties,
     GError **error)
 {
   TpChannelRequest *request;
 
-  g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self), NULL);
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (g_variant_is_object_path (object_path), NULL);
 
   request = lookup_proxy (self, object_path);
@@ -1011,8 +1011,8 @@ _tp_simple_client_factory_ensure_channel_request (TpSimpleClientFactory *self,
 }
 
 /**
- * tp_simple_client_factory_ensure_channel_dispatch_operation:
- * @self: a #TpSimpleClientFactory object
+ * tp_client_factory_ensure_channel_dispatch_operation:
+ * @self: a #TpClientFactory object
  * @object_path: the object path of a channel dispatch operation
  * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
  *  the immutable properties of the channel dispatch operation
@@ -1032,15 +1032,15 @@ _tp_simple_client_factory_ensure_channel_request (TpSimpleClientFactory *self,
  * Since: 0.15.5
  */
 TpChannelDispatchOperation *
-_tp_simple_client_factory_ensure_channel_dispatch_operation (
-    TpSimpleClientFactory *self,
+_tp_client_factory_ensure_channel_dispatch_operation (
+    TpClientFactory *self,
     const gchar *object_path,
     GHashTable *immutable_properties,
     GError **error)
 {
   TpChannelDispatchOperation *dispatch;
 
-  g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self), NULL);
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (g_variant_is_object_path (object_path), NULL);
 
   dispatch = lookup_proxy (self, object_path);

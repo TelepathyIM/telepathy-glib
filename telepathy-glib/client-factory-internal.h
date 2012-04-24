@@ -1,5 +1,5 @@
 /*
- * Internal methods of TpSimpleClientFactory
+ * Internal methods of TpClientFactory
  *
  * Copyright © 2011 Collabora Ltd.
  *
@@ -18,48 +18,47 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __TP_SIMPLE_CLIENT_FACTORY_INTERNAL_H__
-#define __TP_SIMPLE_CLIENT_FACTORY_INTERNAL_H__
+#ifndef __TP_CLIENT_FACTORY_INTERNAL_H__
+#define __TP_CLIENT_FACTORY_INTERNAL_H__
 
-#include <telepathy-glib/simple-client-factory.h>
+#include <telepathy-glib/client-factory.h>
 
 G_BEGIN_DECLS
 
-void _tp_simple_client_factory_insert_proxy (TpSimpleClientFactory *self,
+void _tp_client_factory_insert_proxy (TpClientFactory *self,
     gpointer proxy);
 
-TpChannelRequest *_tp_simple_client_factory_ensure_channel_request (
-    TpSimpleClientFactory *self,
+TpChannelRequest *_tp_client_factory_ensure_channel_request (
+    TpClientFactory *self,
     const gchar *object_path,
     GHashTable *immutable_properties,
     GError **error);
 
 TpChannelDispatchOperation *
-_tp_simple_client_factory_ensure_channel_dispatch_operation (
-    TpSimpleClientFactory *self,
+_tp_client_factory_ensure_channel_dispatch_operation (TpClientFactory *self,
     const gchar *object_path,
     GHashTable *immutable_properties,
     GError **error);
 
-TpAccount *_tp_account_new_with_factory (TpSimpleClientFactory *factory,
+TpAccount *_tp_account_new_with_factory (TpClientFactory *factory,
     TpDBusDaemon *bus_daemon,
     const gchar *object_path,
     GError **error);
 
-TpConnection *_tp_connection_new_with_factory (TpSimpleClientFactory *factory,
+TpConnection *_tp_connection_new_with_factory (TpClientFactory *factory,
     TpDBusDaemon *dbus,
     const gchar *bus_name,
     const gchar *object_path,
     GError **error);
 
-TpChannel *_tp_channel_new_with_factory (TpSimpleClientFactory *factory,
+TpChannel *_tp_channel_new_with_factory (TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
     const GHashTable *immutable_properties,
     GError **error);
 
 TpChannelRequest *_tp_channel_request_new_with_factory (
-    TpSimpleClientFactory *factory,
+    TpClientFactory *factory,
     TpDBusDaemon *bus_daemon,
     const gchar *object_path,
     GHashTable *immutable_properties,
@@ -68,7 +67,7 @@ void _tp_channel_request_ensure_immutable_properties (TpChannelRequest *self,
     GHashTable *immutable_properties);
 
 TpChannelDispatchOperation *_tp_channel_dispatch_operation_new_with_factory (
-    TpSimpleClientFactory *factory,
+    TpClientFactory *factory,
     TpDBusDaemon *bus_daemon,
     const gchar *object_path,
     GHashTable *immutable_properties,

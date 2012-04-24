@@ -595,7 +595,7 @@ static void
 test_contacts (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  TpSimpleClientFactory *factory;
+  TpClientFactory *factory;
   const gchar *id = "badger";
   const gchar *alias1 = "Alias 1";
   const gchar *alias2 = "Alias 2";
@@ -607,7 +607,7 @@ test_contacts (Test *test,
 
   /* Tell factory we want to prepare ALIAS feature on TpContact objects */
   factory = tp_proxy_get_factory (test->connection);
-  tp_simple_client_factory_add_contact_features_varargs (factory,
+  tp_client_factory_add_contact_features_varargs (factory,
       TP_CONTACT_FEATURE_ALIAS,
       0);
 

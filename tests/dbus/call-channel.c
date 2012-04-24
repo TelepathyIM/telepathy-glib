@@ -42,7 +42,7 @@ typedef struct
 
   ExampleCallConnectionManager *service_cm;
 
-  TpSimpleClientFactory *factory;
+  TpClientFactory *factory;
   TpConnectionManager *cm;
   TpConnection *conn;
   TpChannel *chan;
@@ -108,11 +108,11 @@ setup (Test *test,
   g_assert_no_error (test->error);
 
   test->factory = tp_automatic_client_factory_new (test->dbus);
-  tp_simple_client_factory_add_channel_features_varargs (test->factory,
+  tp_client_factory_add_channel_features_varargs (test->factory,
       TP_CHANNEL_FEATURE_CONTACTS,
       0);
 
-  test->conn = tp_simple_client_factory_ensure_connection (test->factory,
+  test->conn = tp_client_factory_ensure_connection (test->factory,
       object_path, NULL, &test->error);
     g_assert_no_error (test->error);
   g_assert (test->conn != NULL);
@@ -151,7 +151,7 @@ channel_created_cb (TpConnection *connection,
 
   g_assert_no_error ((GError *) error);
 
-  test->chan = tp_simple_client_factory_ensure_channel (test->factory,
+  test->chan = tp_client_factory_ensure_channel (test->factory,
       connection, object_path, immutable_properties, &new_error);
   g_assert_no_error (new_error);
 
@@ -874,7 +874,7 @@ expect_incoming_call_cb (TpConnection *conn,
       /* we only expect to receive one call */
       g_assert (test->chan == NULL);
 
-      test->chan = tp_simple_client_factory_ensure_channel (test->factory,
+      test->chan = tp_client_factory_ensure_channel (test->factory,
           conn, object_path, properties, &error);
       g_assert_no_error (error);
 

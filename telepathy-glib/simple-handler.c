@@ -333,7 +333,7 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
  *
  * Since 0.UNRELEASED this won't create a #TpAccountManager anymore, but will
  * instead create a new #TpAutomaticClientFactory. If user already has a
- * #TpAccountManager or #TpSimpleClientFactory it is recommended to use
+ * #TpAccountManager or #TpClientFactory it is recommended to use
  * tp_simple_handle_new_with_am() or tp_simple_handle_new_with_factory()
  * instead.
  *
@@ -411,7 +411,7 @@ tp_simple_handler_new_with_am (TpAccountManager *account_manager,
 
 /**
  * tp_simple_handler_new_with_factory:
- * @factory: a #TpSimpleClientFactory, which may not be %NULL
+ * @factory: a #TpClientFactory, which may not be %NULL
  * @bypass_approval: the value of the Handler.BypassApproval D-Bus property
  * (see tp_base_client_set_handler_bypass_approval() for details)
  * @requests: whether this handler should implement Requests (see
@@ -424,14 +424,14 @@ tp_simple_handler_new_with_am (TpAccountManager *account_manager,
  * is destroyed
  *
  * Convenient function to create a new #TpSimpleHandler instance with a
- * specified #TpSimpleClientFactory.
+ * specified #TpClientFactory.
  *
  * Returns: (type TelepathyGLib.SimpleHandler): a new #TpSimpleHandler
  *
  * Since: 0.15.5
  */
 TpBaseClient *
-tp_simple_handler_new_with_factory (TpSimpleClientFactory *factory,
+tp_simple_handler_new_with_factory (TpClientFactory *factory,
     gboolean bypass_approval,
     gboolean requests,
     const gchar *name,

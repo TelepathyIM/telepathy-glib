@@ -47,7 +47,7 @@
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
-#include "telepathy-glib/simple-client-factory-internal.h"
+#include "telepathy-glib/client-factory-internal.h"
 #include "telepathy-glib/util-internal.h"
 
 #include "_gen/tp-cli-connection-body.h"
@@ -850,13 +850,13 @@ tp_connection_got_self_contact_cb (TpConnection *self,
 static void
 get_self_contact (TpConnection *self)
 {
-  TpSimpleClientFactory *factory;
+  TpClientFactory *factory;
   GArray *features;
 
   factory = tp_proxy_get_factory (self);
-  features = tp_simple_client_factory_dup_contact_features (factory, self);
+  features = tp_client_factory_dup_contact_features (factory, self);
 
-  /* FIXME: We should use tp_simple_client_factory_ensure_contact(), but that would
+  /* FIXME: We should use tp_client_factory_ensure_contact(), but that would
    * require immortal-handles and spec change to give the self identifier. */
   /* This relies on the special case in tp_connection_get_contacts_by_handle()
    * which makes it start working slightly early. */
@@ -1656,7 +1656,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * representing the new identifier, and #GObject::notify will be emitted.
    *
    * The #TpContact object is guaranteed to have all of the features previously
-   * passed to tp_simple_client_factory_add_contact_features() prepared.
+   * passed to tp_client_factory_add_contact_features() prepared.
    *
    * To wait for a non-%NULL self-contact (and other properties), call
    * tp_proxy_prepare_async() with the feature
@@ -1977,7 +1977,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * #TpConnection::blocked-contacts-changed signal.
    *
    * These TpContact objects have been prepared with the desired features.
-   * See tp_simple_client_factory_add_contact_features() to define which
+   * See tp_client_factory_add_contact_features() to define which
    * features needs to be prepared on them.
    *
    * For this property to be valid, you must first call
@@ -2087,7 +2087,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * Notify of changes in the list of contacts as returned by
    * tp_connection_dup_contact_list(). It is guaranteed that all contacts have
    * desired features prepared. See
-   * tp_simple_client_factory_add_contact_features() to define which features
+   * tp_client_factory_add_contact_features() to define which features
    * needs to be prepared.
    *
    * This signal is also emitted for the initial set of contacts once retrieved.
@@ -2116,7 +2116,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    *
    * Notify of changes in #TpConnection:blocked-contacts.
    *  It is guaranteed that all contacts have desired features prepared. See
-   * tp_simple_client_factory_add_contact_features() to define which features
+   * tp_client_factory_add_contact_features() to define which features
    * needs to be prepared.
    *
    * This signal is also emitted for the initial set of blocked contacts once
@@ -2168,7 +2168,7 @@ tp_connection_new (TpDBusDaemon *dbus,
 }
 
 TpConnection *
-_tp_connection_new_with_factory (TpSimpleClientFactory *factory,
+_tp_connection_new_with_factory (TpClientFactory *factory,
     TpDBusDaemon *dbus,
     const gchar *bus_name,
     const gchar *object_path,

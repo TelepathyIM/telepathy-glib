@@ -32,8 +32,8 @@ G_BEGIN_DECLS
 
 /* Forward declaration of a subclass - from dbus.h */
 typedef struct _TpDBusDaemon TpDBusDaemon;
-/* Forward declaration - from simple-client-factory.h */
-typedef struct _TpSimpleClientFactory TpSimpleClientFactory;
+/* Forward declaration - from client-factory.h */
+typedef struct _TpClientFactory TpClientFactory;
 
 typedef struct _TpProxyPrivate TpProxyPrivate;
 
@@ -156,7 +156,7 @@ GType tp_proxy_get_type (void);
 gboolean tp_proxy_has_interface_by_id (gpointer self, GQuark iface);
 gboolean tp_proxy_has_interface (gpointer self, const gchar *iface);
 
-TpSimpleClientFactory *tp_proxy_get_factory (gpointer self);
+TpClientFactory *tp_proxy_get_factory (gpointer self);
 
 TpDBusDaemon *tp_proxy_get_dbus_daemon (gpointer self);
 

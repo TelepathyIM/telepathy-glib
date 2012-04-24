@@ -48,7 +48,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_MISC
 #include "debug-internal.h"
-#include "simple-client-factory-internal.h"
+#include "client-factory-internal.h"
 
 /**
  * tp_g_ptr_array_contains:
@@ -1530,7 +1530,7 @@ _tp_create_temp_unix_socket (GSocketService *service,
 #endif /* HAVE_GIO_UNIX */
 
 GList *
-_tp_create_channel_request_list (TpSimpleClientFactory *factory,
+_tp_create_channel_request_list (TpClientFactory *factory,
     GHashTable *request_props)
 {
   GHashTableIter iter;
@@ -1545,7 +1545,7 @@ _tp_create_channel_request_list (TpSimpleClientFactory *factory,
       GHashTable *props = value;
       GError *error = NULL;
 
-      req = _tp_simple_client_factory_ensure_channel_request (factory, path,
+      req = _tp_client_factory_ensure_channel_request (factory, path,
           props, &error);
       if (req == NULL)
         {

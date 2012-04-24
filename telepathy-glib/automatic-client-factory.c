@@ -22,9 +22,9 @@
  * SECTION:automatic-client-factory
  * @title: TpAutomaticClientFactory
  * @short_description: Factory for specialized #TpChannel subclasses.
- * @see_also: #TpSimpleClientFactory
+ * @see_also: #TpClientFactory
  *
- * This factory overrides some #TpSimpleClientFactory virtual methods to
+ * This factory overrides some #TpClientFactory virtual methods to
  * create specialized #TpChannel subclasses.
  *
  * #TpAutomaticClientFactory will currently create #TpChannel objects
@@ -119,9 +119,9 @@
 #include "telepathy-glib/automatic-client-factory-internal.h"
 
 G_DEFINE_TYPE (TpAutomaticClientFactory, tp_automatic_client_factory,
-    TP_TYPE_SIMPLE_CLIENT_FACTORY)
+    TP_TYPE_CLIENT_FACTORY)
 
-#define chainup ((TpSimpleClientFactoryClass *) \
+#define chainup ((TpClientFactoryClass *) \
     tp_automatic_client_factory_parent_class)
 
 typedef gboolean (*CheckPropertiesFunc) (
@@ -129,7 +129,7 @@ typedef gboolean (*CheckPropertiesFunc) (
     const GHashTable *properties);
 
 typedef TpChannel *(*NewFunc) (
-    TpSimpleClientFactory *client,
+    TpClientFactory *client,
     TpConnection *conn,
     const gchar *object_path,
     const GHashTable *properties,
@@ -194,7 +194,7 @@ build_channel_type_mapping (void)
 }
 
 static TpChannel *
-create_channel_impl (TpSimpleClientFactory *self,
+create_channel_impl (TpClientFactory *self,
     TpConnection *conn,
     const gchar *object_path,
     const GHashTable *properties,
@@ -222,7 +222,7 @@ create_channel_impl (TpSimpleClientFactory *self,
 }
 
 static GArray *
-dup_channel_features_impl (TpSimpleClientFactory *self,
+dup_channel_features_impl (TpClientFactory *self,
     TpChannel *channel)
 {
   GArray *features;
@@ -257,12 +257,12 @@ tp_automatic_client_factory_init (TpAutomaticClientFactory *self)
 }
 
 static void
-tp_automatic_client_factory_class_init (TpAutomaticClientFactoryClass *cls)
+tp_automatic_client_factory_class_init (TpAutomaticClientFactoryClass *klass)
 {
-  TpSimpleClientFactoryClass *simple_class = (TpSimpleClientFactoryClass *) cls;
+  TpClientFactoryClass *base_class = (TpClientFactoryClass *) klass;
 
-  simple_class->create_channel = create_channel_impl;
-  simple_class->dup_channel_features = dup_channel_features_impl;
+  base_class->create_channel = create_channel_impl;
+  base_class->dup_channel_features = dup_channel_features_impl;
 
   build_channel_type_mapping ();
 }
@@ -277,7 +277,7 @@ tp_automatic_client_factory_class_init (TpAutomaticClientFactoryClass *cls)
  *
  * Since: 0.15.5
  */
-TpSimpleClientFactory *
+TpClientFactory *
 tp_automatic_client_factory_new (TpDBusDaemon *dbus)
 {
   return g_object_new (TP_TYPE_AUTOMATIC_CLIENT_FACTORY,

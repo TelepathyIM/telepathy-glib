@@ -1073,7 +1073,7 @@ tp_file_transfer_channel_new (TpConnection *conn,
 
 TpFileTransferChannel *
 _tp_file_transfer_channel_new_with_factory (
-    TpSimpleClientFactory *factory,
+    TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
     const GHashTable *immutable_properties,

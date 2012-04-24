@@ -24,7 +24,7 @@
 
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/proxy.h>
-#include <telepathy-glib/simple-client-factory.h>
+#include <telepathy-glib/client-factory.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_GROUPS
@@ -60,7 +60,7 @@ dup_contact (TpChannel *self,
       return NULL;
     }
 
-  return tp_simple_client_factory_ensure_contact (
+  return tp_client_factory_ensure_contact (
       tp_proxy_get_factory (self->priv->connection), self->priv->connection,
       handle, id);
 }
@@ -164,7 +164,7 @@ _tp_channel_contacts_init (TpChannel *self)
   if (self->priv->handle != 0 && self->priv->identifier != NULL &&
       self->priv->handle_type == TP_HANDLE_TYPE_CONTACT)
     {
-      self->priv->target_contact = tp_simple_client_factory_ensure_contact (
+      self->priv->target_contact = tp_client_factory_ensure_contact (
           tp_proxy_get_factory (self->priv->connection), self->priv->connection,
           self->priv->handle, self->priv->identifier);
     }
@@ -172,7 +172,7 @@ _tp_channel_contacts_init (TpChannel *self)
   if (tp_channel_get_initiator_handle (self) != 0 &&
       !tp_str_empty (tp_channel_get_initiator_identifier (self)))
     {
-      self->priv->initiator_contact = tp_simple_client_factory_ensure_contact (
+      self->priv->initiator_contact = tp_client_factory_ensure_contact (
           tp_proxy_get_factory (self->priv->connection), self->priv->connection,
           tp_channel_get_initiator_handle (self),
           tp_channel_get_initiator_identifier (self));
@@ -364,7 +364,7 @@ process_contacts_queue (TpChannel *self)
   self->priv->current_contacts_queue_result = result;
   item = g_simple_async_result_get_op_res_gpointer (result);
 
-  features = tp_simple_client_factory_dup_contact_features (
+  features = tp_client_factory_dup_contact_features (
       tp_proxy_get_factory (self->priv->connection), self->priv->connection);
 
   if (item->contacts != NULL && item->contacts->len > 0)
@@ -745,7 +745,7 @@ _tp_channel_contacts_self_contact_changed (TpChannel *self,
   GPtrArray *contacts;
 
   contacts = g_ptr_array_new_with_free_func (g_object_unref);
-  contact = tp_simple_client_factory_ensure_contact (
+  contact = tp_client_factory_ensure_contact (
       tp_proxy_get_factory (self->priv->connection), self->priv->connection,
       self_handle, identifier);
   g_ptr_array_add (contacts, g_object_ref (contact));

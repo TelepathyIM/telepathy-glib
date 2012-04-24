@@ -26,7 +26,7 @@
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/simple-client-factory.h>
+#include <telepathy-glib/client-factory.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
@@ -176,7 +176,7 @@ process_queued_contacts_changed (TpConnection *self)
       if (contact != NULL)
         continue;
 
-      contact = tp_simple_client_factory_ensure_contact (
+      contact = tp_client_factory_ensure_contact (
           tp_proxy_get_factory (self), self, handle, identifier);
       _tp_contact_set_subscription_states (contact, value);
       g_ptr_array_add (item->new_contacts, contact);
@@ -188,7 +188,7 @@ process_queued_contacts_changed (TpConnection *self)
       return;
     }
 
-  features = tp_simple_client_factory_dup_contact_features (
+  features = tp_client_factory_dup_contact_features (
       tp_proxy_get_factory (self), self);
 
   tp_connection_upgrade_contacts (self,
@@ -259,7 +259,7 @@ got_contact_list_attributes_cb (TpConnection *self,
       TpContact *contact;
       GError *e = NULL;
 
-      contact = tp_simple_client_factory_ensure_contact (
+      contact = tp_client_factory_ensure_contact (
           tp_proxy_get_factory (self), self, handle, id);
       if (!_tp_contact_set_attributes (contact, value,
               (const GQuark *) features->data, &e))
@@ -309,7 +309,7 @@ prepare_roster (TpConnection *self,
   tp_cli_connection_interface_contact_list_connect_to_contacts_changed (
       self, contacts_changed_cb, NULL, NULL, NULL, NULL);
 
-  features = tp_simple_client_factory_dup_contact_features (
+  features = tp_client_factory_dup_contact_features (
       tp_proxy_get_factory (self), self);
 
   supported_interfaces = _tp_contacts_bind_to_signals (self,
@@ -656,7 +656,7 @@ _tp_connection_prepare_contact_groups_async (TpProxy *proxy,
  * %TP_CONTACT_LIST_STATE_SUCCESS, all #TpContact objects will also be created
  * and prepared with the desired features. See tp_connection_dup_contact_list()
  * to get the list of contacts, and
- * tp_simple_client_factory_add_contact_features() to define which features
+ * tp_client_factory_add_contact_features() to define which features
  * needs to be prepared on them.
  *
  * This feature will fail to prepare when using obsolete Telepathy connection
@@ -753,7 +753,7 @@ tp_connection_get_request_uses_message (TpConnection *self)
  * Retrieves the user's contact list. In general, blocked contacts are not
  * included in this list. The #TpContact objects returned are guaranteed to
  * have all of the features previously passed to
- * tp_simple_client_factory_add_contact_features() prepared.
+ * tp_client_factory_add_contact_features() prepared.
  *
  * Before calling this method, you must first call tp_proxy_prepare_async() with
  * the %TP_CONNECTION_FEATURE_CONTACT_LIST feature, and verify that
@@ -1749,7 +1749,7 @@ process_queued_blocked_changed (TpConnection *self)
       const gchar *identifier = value;
       TpContact *contact;
 
-      contact = tp_simple_client_factory_ensure_contact (
+      contact = tp_client_factory_ensure_contact (
           tp_proxy_get_factory (self), self, handle, identifier);
 
       g_ptr_array_add (item->added_contacts, contact);
@@ -1765,7 +1765,7 @@ process_queued_blocked_changed (TpConnection *self)
       const gchar *identifier = value;
       TpContact *contact;
 
-      contact = tp_simple_client_factory_ensure_contact (
+      contact = tp_client_factory_ensure_contact (
           tp_proxy_get_factory (self), self, handle, identifier);
 
       g_ptr_array_add (item->removed_contacts, contact);
@@ -1781,7 +1781,7 @@ process_queued_blocked_changed (TpConnection *self)
       return;
     }
 
-  features = tp_simple_client_factory_dup_contact_features (
+  features = tp_client_factory_dup_contact_features (
       tp_proxy_get_factory (self), self);
 
   tp_connection_upgrade_contacts (self,

@@ -1607,7 +1607,7 @@ _tp_contact_new (TpConnection *connection,
 
 /* FIXME: Ideally this should be replaced with
  *
- * tp_simple_client_factory_ensure_contact (tp_proxy_get_factory (connection),
+ * tp_client_factory_ensure_contact (tp_proxy_get_factory (connection),
  *     handle, identifier);
  *
  * but we cannot assert CM has immortal handles (yet). That means we cannot

@@ -34,7 +34,7 @@
 #include "dbus-internal.h"
 #define DEBUG_FLAG TP_DEBUG_PROXY
 #include "debug-internal.h"
-#include "simple-client-factory-internal.h"
+#include "client-factory-internal.h"
 #include "util-internal.h"
 
 
@@ -376,7 +376,7 @@ struct _TpProxyPrivate {
 
     gboolean dispose_has_run;
 
-    TpSimpleClientFactory *factory;
+    TpClientFactory *factory;
 };
 
 G_DEFINE_TYPE (TpProxy, tp_proxy, G_TYPE_OBJECT)
@@ -1313,12 +1313,12 @@ tp_proxy_class_init (TpProxyClass *klass)
   /**
    * TpProxy:factory:
    *
-   * The #TpSimpleClientFactory used to create this proxy,
+   * The #TpClientFactory used to create this proxy,
    * or %NULL if this proxy was not created through a factory.
    */
   param_spec = g_param_spec_object ("factory", "Simple Client Factory",
-      "The TpSimpleClientFactory used to create this proxy",
-      TP_TYPE_SIMPLE_CLIENT_FACTORY,
+      "The TpClientFactory used to create this proxy",
+      TP_TYPE_CLIENT_FACTORY,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_FACTORY,
       param_spec);
@@ -1381,7 +1381,7 @@ tp_proxy_class_init (TpProxyClass *klass)
  *
  * Since: 0.15.5
  */
-TpSimpleClientFactory *
+TpClientFactory *
 tp_proxy_get_factory (gpointer self)
 {
   TpProxy *proxy = self;
@@ -1393,7 +1393,7 @@ tp_proxy_get_factory (gpointer self)
 
 void
 _tp_proxy_ensure_factory (gpointer proxy,
-    TpSimpleClientFactory *factory)
+    TpClientFactory *factory)
 {
   TpProxy *self = TP_PROXY (proxy);
 
@@ -1409,7 +1409,7 @@ _tp_proxy_ensure_factory (gpointer proxy,
       self->priv->factory = tp_automatic_client_factory_new (self->dbus_daemon);
     }
 
-  _tp_simple_client_factory_insert_proxy (self->priv->factory, self);
+  _tp_client_factory_insert_proxy (self->priv->factory, self);
 }
 
 /**

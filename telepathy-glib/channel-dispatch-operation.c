@@ -39,7 +39,7 @@
 #define DEBUG_FLAG TP_DEBUG_DISPATCHER
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
-#include "telepathy-glib/simple-client-factory-internal.h"
+#include "telepathy-glib/client-factory-internal.h"
 
 #include "telepathy-glib/_gen/tp-cli-channel-dispatch-operation-body.h"
 
@@ -253,7 +253,7 @@ maybe_set_connection (TpChannelDispatchOperation *self,
   if (path == NULL)
     return;
 
-  self->priv->connection = tp_simple_client_factory_ensure_connection (
+  self->priv->connection = tp_client_factory_ensure_connection (
       tp_proxy_get_factory (self), path, NULL, &error);
   if (self->priv->connection == NULL)
     {
@@ -285,7 +285,7 @@ maybe_set_account (TpChannelDispatchOperation *self,
   if (path == NULL)
     return;
 
-  self->priv->account = tp_simple_client_factory_ensure_account (
+  self->priv->account = tp_client_factory_ensure_account (
       tp_proxy_get_factory (self), path, NULL, &error);
   if (self->priv->account == NULL)
     {
@@ -538,7 +538,7 @@ update_channels_array (TpChannelDispatchOperation *self,
         }
       else
         {
-          channel = tp_simple_client_factory_ensure_channel (
+          channel = tp_client_factory_ensure_channel (
               tp_proxy_get_factory (self), self->priv->connection,
               path, chan_props, &err);
 
@@ -898,7 +898,7 @@ tp_channel_dispatch_operation_new (TpDBusDaemon *bus_daemon,
 }
 
 TpChannelDispatchOperation *
-_tp_channel_dispatch_operation_new_with_factory (TpSimpleClientFactory *factory,
+_tp_channel_dispatch_operation_new_with_factory (TpClientFactory *factory,
     TpDBusDaemon *bus_daemon,
     const gchar *object_path,
     GHashTable *immutable_properties,
@@ -1235,7 +1235,7 @@ tp_channel_dispatch_operation_claim_finish (
 }
 
 /* FIXME: This is temporary solution to share TpChannel objects until
- * TpSimpleClientFactory can be used for that */
+ * TpClientFactory can be used for that */
 void
 _tp_channel_dispatch_operation_ensure_channels (TpChannelDispatchOperation *self,
     GPtrArray *channels)

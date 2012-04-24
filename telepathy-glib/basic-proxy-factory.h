@@ -59,11 +59,11 @@ GType tp_basic_proxy_factory_get_type (void);
                               TpBasicProxyFactoryClass))
 
 TpBasicProxyFactory * tp_basic_proxy_factory_new (void)
-    _TP_GNUC_DEPRECATED_FOR (tp_simple_client_factory_new);
+    _TP_GNUC_DEPRECATED_FOR (tp_client_factory_new);
 
 
 TpBasicProxyFactory * tp_basic_proxy_factory_dup (void)
-    _TP_GNUC_DEPRECATED_FOR (tp_simple_client_factory_new);
+    _TP_GNUC_DEPRECATED_FOR (tp_client_factory_new);
 
 G_END_DECLS
 

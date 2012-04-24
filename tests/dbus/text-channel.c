@@ -837,7 +837,7 @@ test_sender_prepared (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, 0 };
-  TpSimpleClientFactory *factory;
+  TpClientFactory *factory;
   TpHandle admin;
   TpContact *sender;
   TpMessage *msg;
@@ -863,7 +863,7 @@ test_sender_prepared (Test *test,
 
   /* Now ask to prepare ALIAS, on next msg it will be prepared */
   factory = tp_proxy_get_factory (test->connection);
-  tp_simple_client_factory_add_contact_features_varargs (factory,
+  tp_client_factory_add_contact_features_varargs (factory,
       TP_CONTACT_FEATURE_ALIAS,
       0);
 

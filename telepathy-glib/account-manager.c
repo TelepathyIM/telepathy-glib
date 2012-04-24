@@ -38,7 +38,7 @@
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
-#include "telepathy-glib/simple-client-factory-internal.h"
+#include "telepathy-glib/client-factory-internal.h"
 
 #include "telepathy-glib/_gen/tp-cli-account-manager-body.h"
 
@@ -301,7 +301,7 @@ _tp_account_manager_usability_changed_cb (TpAccountManager *proxy,
       return;
     }
 
-  account = tp_simple_client_factory_ensure_account (
+  account = tp_client_factory_ensure_account (
       tp_proxy_get_factory (manager), path, NULL, &error);
   if (account == NULL)
     {
@@ -311,7 +311,7 @@ _tp_account_manager_usability_changed_cb (TpAccountManager *proxy,
     }
 
   /* Delay signal emission until until account is prepared */
-  features = tp_simple_client_factory_dup_account_features (
+  features = tp_client_factory_dup_account_features (
       tp_proxy_get_factory (manager), account);
 
   tp_proxy_prepare_async (account, (GQuark *) features->data,
@@ -474,7 +474,7 @@ _tp_account_manager_got_all_cb (TpProxy *proxy,
       GArray *features;
       GError *e = NULL;
 
-      account = tp_simple_client_factory_ensure_account (
+      account = tp_client_factory_ensure_account (
           tp_proxy_get_factory (manager), path, NULL, &e);
       if (account == NULL)
         {
@@ -483,7 +483,7 @@ _tp_account_manager_got_all_cb (TpProxy *proxy,
           continue;
         }
 
-      features = tp_simple_client_factory_dup_account_features (
+      features = tp_client_factory_dup_account_features (
           tp_proxy_get_factory (manager), account);
 
       manager->priv->n_preparing_accounts++;
@@ -592,7 +592,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    *
    * @account is guaranteed to have %TP_ACCOUNT_FEATURE_CORE prepared, along
    * with all features previously passed to
-   * tp_simple_client_factory_add_account_features().
+   * tp_client_factory_add_account_features().
    *
    * Since: 0.9.0
    */
@@ -630,7 +630,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    *
    * @account is guaranteed to have %TP_ACCOUNT_FEATURE_CORE prepared, along
    * with all features previously passed to
-   * tp_simple_client_factory_add_account_features().
+   * tp_client_factory_add_account_features().
    *
    * Since: 0.9.0
    */
@@ -714,7 +714,7 @@ tp_account_manager_init_known_interfaces (void)
 }
 
 static TpAccountManager *
-_tp_account_manager_new_internal (TpSimpleClientFactory *factory,
+_tp_account_manager_new_internal (TpClientFactory *factory,
     TpDBusDaemon *bus_daemon)
 {
   return TP_ACCOUNT_MANAGER (g_object_new (TP_TYPE_ACCOUNT_MANAGER,
@@ -749,12 +749,12 @@ tp_account_manager_new (TpDBusDaemon *bus_daemon)
 
 /**
  * tp_account_manager_new_with_factory:
- * @factory: a #TpSimpleClientFactory
+ * @factory: a #TpClientFactory
  *
  * Convenience function to create a new account manager proxy. The returned
  * #TpAccountManager is not guaranteed to be ready on return.
  *
- * Should be used only by applications having their own #TpSimpleClientFactory
+ * Should be used only by applications having their own #TpClientFactory
  * subclass. Usually this should be done at application startup and followed by
  * a call to tp_account_manager_set_default() to ensure other libraries/plugins
  * will use this custom factory as well.
@@ -762,12 +762,12 @@ tp_account_manager_new (TpDBusDaemon *bus_daemon)
  * Returns: a new reference to an account manager proxy
  */
 TpAccountManager *
-tp_account_manager_new_with_factory (TpSimpleClientFactory *factory)
+tp_account_manager_new_with_factory (TpClientFactory *factory)
 {
-  g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (factory), NULL);
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (factory), NULL);
 
   return _tp_account_manager_new_internal (factory,
-      tp_simple_client_factory_get_dbus_daemon (factory));
+      tp_client_factory_get_dbus_daemon (factory));
 }
 
 static gpointer starter_account_manager_proxy = NULL;
@@ -781,7 +781,7 @@ static gpointer starter_account_manager_proxy = NULL;
  *
  * This function may only be called before the first call to
  * tp_account_manager_dup(), and may not be called more than once. Applications
- * which use a custom #TpSimpleClientFactory and want the default
+ * which use a custom #TpClientFactory and want the default
  * #TpAccountManager to use that factory should call this after calling
  * tp_account_manager_new_with_factory().
  *
@@ -1003,7 +1003,7 @@ insert_account (TpAccountManager *self,
  *  not a valid account path.
  *
  * Since: 0.9.0
- * Deprecated: New code should use tp_simple_client_factory_ensure_account()
+ * Deprecated: New code should use tp_client_factory_ensure_account()
  *  instead.
  */
 TpAccount *
@@ -1020,7 +1020,7 @@ tp_account_manager_ensure_account (TpAccountManager *self,
   if (account != NULL)
     return account;
 
-  account = tp_simple_client_factory_ensure_account (
+  account = tp_client_factory_ensure_account (
       tp_proxy_get_factory (self), path, NULL, &error);
   if (account == NULL)
     {
@@ -1061,7 +1061,7 @@ tp_account_manager_ensure_account (TpAccountManager *self,
  *
  * The returned #TpAccount<!-- -->s are guaranteed to have
  * %TP_ACCOUNT_FEATURE_CORE prepared, along with all features previously passed
- * to tp_simple_client_factory_add_account_features().
+ * to tp_client_factory_add_account_features().
  *
  * The list of usable accounts returned is not guaranteed to have been retrieved
  * until %TP_ACCOUNT_MANAGER_FEATURE_CORE is prepared
@@ -1246,7 +1246,7 @@ _tp_account_manager_created_cb (TpAccountManager *proxy,
       return;
     }
 
-  account = tp_simple_client_factory_ensure_account (
+  account = tp_client_factory_ensure_account (
       tp_proxy_get_factory (manager), account_path, NULL, &e);
   if (account == NULL)
     {
@@ -1258,7 +1258,7 @@ _tp_account_manager_created_cb (TpAccountManager *proxy,
   /* Give account's ref to the result */
   g_simple_async_result_set_op_res_gpointer (my_res, account, g_object_unref);
 
-  features = tp_simple_client_factory_dup_account_features (
+  features = tp_client_factory_dup_account_features (
       tp_proxy_get_factory (manager), account);
 
   tp_proxy_prepare_async (account, (GQuark *) features->data,

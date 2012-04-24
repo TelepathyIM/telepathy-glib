@@ -946,7 +946,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    *
    * It is guaranteed that @message's #TpSignalledMessage:sender has all of the
    * features previously passed to
-   * tp_simple_client_factory_add_contact_features() prepared.
+   * tp_client_factory_add_contact_features() prepared.
    *
    * Since: 0.13.10
    */
@@ -970,7 +970,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    *
    * It is guaranteed that @message's #TpSignalledMessage:sender has all of the
    * features previously passed to
-   * tp_simple_client_factory_add_contact_features() prepared.
+   * tp_client_factory_add_contact_features() prepared.
    *
    * Since: 0.13.10
    */
@@ -996,7 +996,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    *
    * It is guaranteed that @message's #TpSignalledMessage:sender has all of the
    * features previously passed to
-   * tp_simple_client_factory_add_contact_features() prepared.
+   * tp_client_factory_add_contact_features() prepared.
    *
    * Since: 0.13.10
    */
@@ -1050,7 +1050,7 @@ tp_text_channel_new (TpConnection *conn,
 
 TpTextChannel *
 _tp_text_channel_new_with_factory (
-    TpSimpleClientFactory *factory,
+    TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
     const GHashTable *immutable_properties,
@@ -1165,7 +1165,7 @@ tp_text_channel_get_feature_quark_incoming_messages (void)
  *
  * It is guaranteed that the #TpSignalledMessage:sender of each
  * #TpSignalledMessage has all of the features previously passed to
- * tp_simple_client_factory_add_contact_features() prepared.
+ * tp_client_factory_add_contact_features() prepared.
  *
  * Returns: (transfer container) (element-type TelepathyGLib.SignalledMessage):
  * a #GList of borrowed #TpSignalledMessage

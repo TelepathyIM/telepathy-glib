@@ -24,7 +24,7 @@
 #include <telepathy-glib/call-channel.h>
 #include <telepathy-glib/dbus-tube-channel.h>
 #include <telepathy-glib/file-transfer-channel.h>
-#include <telepathy-glib/simple-client-factory.h>
+#include <telepathy-glib/client-factory.h>
 #include <telepathy-glib/stream-tube-channel.h>
 #include <telepathy-glib/text-channel.h>
 
@@ -35,12 +35,12 @@ typedef struct _TpAutomaticClientFactoryClass TpAutomaticClientFactoryClass;
 
 struct _TpAutomaticClientFactoryClass {
     /*<public>*/
-    TpSimpleClientFactoryClass parent_class;
+    TpClientFactoryClass parent_class;
 };
 
 struct _TpAutomaticClientFactory {
     /*<private>*/
-    TpSimpleClientFactory parent;
+    TpClientFactory parent;
 };
 
 GType tp_automatic_client_factory_get_type (void);
@@ -61,7 +61,7 @@ GType tp_automatic_client_factory_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_AUTOMATIC_CLIENT_FACTORY, \
                               TpAutomaticClientFactoryClass))
 
-TpSimpleClientFactory *tp_automatic_client_factory_new (TpDBusDaemon *dbus);
+TpClientFactory *tp_automatic_client_factory_new (TpDBusDaemon *dbus);
 
 G_END_DECLS
 

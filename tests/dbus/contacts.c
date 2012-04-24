@@ -2481,7 +2481,7 @@ test_contact_list (Fixture *f,
   const GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONTACT_LIST, 0 };
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpTestsContactListManager *manager;
-  TpSimpleClientFactory *factory;
+  TpClientFactory *factory;
   const gchar *id = "contact-list-id";
   const gchar *alias = "Contact List Alias";
   const gchar *message = "I'm your best friend";
@@ -2509,7 +2509,7 @@ test_contact_list (Fixture *f,
 
   /* Tell connection's factory contact features we want */
   factory = tp_proxy_get_factory (f->client_conn);
-  tp_simple_client_factory_add_contact_features_varargs (factory,
+  tp_client_factory_add_contact_features_varargs (factory,
       TP_CONTACT_FEATURE_ALIAS,
       0);
 
@@ -2546,11 +2546,11 @@ test_self_contact (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
   const GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
-  TpSimpleClientFactory *factory;
+  TpClientFactory *factory;
   TpContact *contact;
 
   factory = tp_proxy_get_factory (f->client_conn);
-  tp_simple_client_factory_add_contact_features_varargs (factory,
+  tp_client_factory_add_contact_features_varargs (factory,
       TP_CONTACT_FEATURE_ALIAS,
       0);
 

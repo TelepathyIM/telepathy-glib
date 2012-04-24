@@ -82,7 +82,7 @@ tp_basic_proxy_factory_class_init (TpBasicProxyFactoryClass *cls)
  * Returns: a new #TpBasicProxyFactory
  *
  * Since: 0.13.2
- * Deprecated: New code should use #TpSimpleClientFactory instead
+ * Deprecated: New code should use #TpClientFactory instead
  */
 static TpBasicProxyFactory *
 _tp_basic_proxy_factory_new (void)
@@ -107,7 +107,7 @@ tp_basic_proxy_factory_new (void)
  * Returns: (transfer full): a #TpBasicProxyFactory
  *
  * Since: 0.13.2
- * Deprecated: New code should use #TpSimpleClientFactory instead
+ * Deprecated: New code should use #TpClientFactory instead
  */
 TpBasicProxyFactory *
 tp_basic_proxy_factory_dup (void)

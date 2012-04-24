@@ -76,6 +76,7 @@ our_headers = \
     cli-misc.h \
     client.h \
     client-channel-factory.h \
+    client-factory.h \
     client-message.h \
     cm-message.h \
     connection.h \
@@ -123,7 +124,6 @@ our_headers = \
     run.h \
     signalled-message.h \
     simple-approver.h \
-    simple-client-factory.h \
     simple-handler.h \
     simple-observer.h \
     simple-password-manager.h \
@@ -242,6 +242,8 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     channel-request.c \
     client.c \
     client-channel-factory.c \
+    client-factory.c \
+    client-factory-internal.h \
     client-message.c \
     client-message-internal.h \
     connection.c \
@@ -309,8 +311,6 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     signalled-message.c \
     signalled-message-internal.h \
     simple-approver.c \
-    simple-client-factory.c \
-    simple-client-factory-internal.h \
     simple-handler.c \
     simple-observer.c \
     simple-password-manager.c \

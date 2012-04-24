@@ -72,6 +72,7 @@ IGNORE_HFILES=\
     call-internal.h \
     channel-dispatch-operation-internal.h \
     channel-internal.h \
+    client-factory-internal.h \
     client-message-internal.h \
     cm-message-internal.h \
     connection-internal.h \
@@ -88,7 +89,6 @@ IGNORE_HFILES=\
     proxy-introspectable.h \
     reentrants.h \
     signalled-message-internal.h \
-    simple-client-factory-internal.h \
     util-internal.h
 
 # Images to copy into HTML directory.

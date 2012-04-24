@@ -36,7 +36,7 @@
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
-#include "telepathy-glib/simple-client-factory-internal.h"
+#include "telepathy-glib/client-factory-internal.h"
 
 #include "_gen/tp-cli-channel-body.h"
 
@@ -189,7 +189,7 @@ tp_channel_get_feature_quark_group (void)
  *
  * When this feature is prepared, the #TpContact objects of this channel are
  * guaranteed to have all of the features previously passed to
- * tp_simple_client_factory_add_contact_features() prepared.
+ * tp_client_factory_add_contact_features() prepared.
  *
  * On older connection managers, this feature may fail to prepare.
  *
@@ -1606,7 +1606,7 @@ tp_channel_new_from_properties (TpConnection *conn,
 }
 
 TpChannel *
-_tp_channel_new_with_factory (TpSimpleClientFactory *factory,
+_tp_channel_new_with_factory (TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
     const GHashTable *immutable_properties,

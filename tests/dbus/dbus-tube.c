@@ -87,7 +87,7 @@ create_tube_service (Test *test,
   TpHandle handle, alf_handle;
   GHashTable *props;
   GType type;
-  TpSimpleClientFactory *factory;
+  TpClientFactory *factory;
 
   /* If previous tube is still preparing, refs are kept on it. We want it to be
    * destroyed now otherwise it will get reused by the factory. */
@@ -138,7 +138,7 @@ create_tube_service (Test *test,
   g_object_get (test->tube_chan_service, "channel-properties", &props, NULL);
 
   factory = tp_proxy_get_factory (test->connection);
-  test->tube = (TpDBusTubeChannel *) tp_simple_client_factory_ensure_channel (
+  test->tube = (TpDBusTubeChannel *) tp_client_factory_ensure_channel (
       factory, test->connection, chan_path, props, &test->error);
   g_assert (TP_IS_DBUS_TUBE_CHANNEL (test->tube));
 

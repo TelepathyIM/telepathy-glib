@@ -93,7 +93,7 @@ TpBaseClient *tp_simple_handler_new_with_am (TpAccountManager *account_manager,
     GDestroyNotify destroy);
 
 TpBaseClient *tp_simple_handler_new_with_factory (
-    TpSimpleClientFactory *factory,
+    TpClientFactory *factory,
     gboolean bypass_approval,
     gboolean requests,
     const gchar *name,

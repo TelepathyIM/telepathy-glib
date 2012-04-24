@@ -88,7 +88,7 @@ TpBaseClient *tp_simple_approver_new_with_am (
     GDestroyNotify destroy);
 
 TpBaseClient *tp_simple_approver_new_with_factory (
-    TpSimpleClientFactory *factory,
+    TpClientFactory *factory,
     const gchar *name,
     gboolean uniquify,
     TpSimpleApproverAddDispatchOperationImpl callback,

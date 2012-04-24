@@ -40,7 +40,7 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/deprecated-internal.h"
 #include "telepathy-glib/proxy-internal.h"
-#include "telepathy-glib/simple-client-factory-internal.h"
+#include "telepathy-glib/client-factory-internal.h"
 #include "telepathy-glib/_gen/tp-cli-channel-request-body.h"
 
 /**
@@ -225,7 +225,7 @@ tp_channel_request_succeeded_cb (TpChannelRequest *self,
   GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED,
                "ChannelRequest succeeded and was removed" };
 
-  connection = tp_simple_client_factory_ensure_connection (
+  connection = tp_client_factory_ensure_connection (
       tp_proxy_get_factory (self), conn_path, NULL, &error);
   if (connection == NULL)
     {
@@ -238,7 +238,7 @@ tp_channel_request_succeeded_cb (TpChannelRequest *self,
     channel = tp_client_channel_factory_create_channel (
         self->priv->channel_factory, connection, chan_path, chan_props, &error);
   else
-    channel = tp_simple_client_factory_ensure_channel (tp_proxy_get_factory (self),
+    channel = tp_client_factory_ensure_channel (tp_proxy_get_factory (self),
         connection, chan_path, chan_props, &error);
   if (channel == NULL)
     {
@@ -454,7 +454,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    * The #TpChannel is created using #TpChannelRequest:channel-factory or
    * #TpProxy:factory but the features of the factory are NOT prepared.
    * It's up to the user to prepare the features returned by
-   * tp_simple_client_factory_dup_channel_features() himself.
+   * tp_client_factory_dup_channel_features() himself.
    *
    * Since: 0.13.14
    */
@@ -527,7 +527,7 @@ tp_channel_request_new (TpDBusDaemon *bus_daemon,
 }
 
 TpChannelRequest *
-_tp_channel_request_new_with_factory (TpSimpleClientFactory *factory,
+_tp_channel_request_new_with_factory (TpClientFactory *factory,
     TpDBusDaemon *bus_daemon,
     const gchar *object_path,
     GHashTable *immutable_properties,
@@ -648,7 +648,7 @@ tp_channel_request_get_account (TpChannelRequest *self)
       if (path == NULL)
         return NULL;
 
-      self->priv->account = tp_simple_client_factory_ensure_account (
+      self->priv->account = tp_client_factory_ensure_account (
           tp_proxy_get_factory (self), path, NULL, NULL);
     }
 

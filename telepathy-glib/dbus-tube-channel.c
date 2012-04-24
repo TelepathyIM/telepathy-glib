@@ -449,7 +449,7 @@ tp_dbus_tube_channel_init (TpDBusTubeChannel *self)
 
 TpDBusTubeChannel *
 _tp_dbus_tube_channel_new_with_factory (
-    TpSimpleClientFactory *factory,
+    TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
     const GHashTable *immutable_properties,

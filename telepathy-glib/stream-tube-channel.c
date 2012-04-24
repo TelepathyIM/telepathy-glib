@@ -502,7 +502,7 @@ tp_stream_tube_channel_new (TpConnection *conn,
 
 TpStreamTubeChannel *
 _tp_stream_tube_channel_new_with_factory (
-    TpSimpleClientFactory *factory,
+    TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
     const GHashTable *immutable_properties,
@@ -604,7 +604,7 @@ new_local_connection_identified (TpStreamTubeChannel *self,
 
 
   connection = tp_channel_borrow_connection (TP_CHANNEL (self));
-  features = tp_simple_client_factory_dup_contact_features (
+  features = tp_client_factory_dup_contact_features (
       tp_proxy_get_factory (connection), connection);
 
   /* Pass ownership of tube_conn to the function */
@@ -1075,7 +1075,7 @@ connection_identified (TpStreamTubeChannel *self,
       GArray *features;
 
       connection = tp_channel_borrow_connection (TP_CHANNEL (self));
-      features = tp_simple_client_factory_dup_contact_features (
+      features = tp_client_factory_dup_contact_features (
           tp_proxy_get_factory (connection), connection);
 
       /* Pass the ref on tube_conn to the function */

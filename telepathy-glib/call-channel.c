@@ -1123,7 +1123,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    * changes.
    *
    * The #TpContact objects are guaranteed to have all of the features
-   * previously passed to tp_simple_client_factory_add_contact_features()
+   * previously passed to tp_client_factory_add_contact_features()
    * prepared.
    *
    * Since: 0.17.5
@@ -1148,7 +1148,7 @@ tp_call_channel_init (TpCallChannel *self)
 }
 
 TpCallChannel *
-_tp_call_channel_new_with_factory (TpSimpleClientFactory *factory,
+_tp_call_channel_new_with_factory (TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
     const GHashTable *immutable_properties,
@@ -1327,7 +1327,7 @@ tp_call_channel_has_mutable_contents (TpCallChannel *self)
  * Get the members of this call.
  *
  * The #TpContact objects are guaranteed to have all of the features
- * previously passed to tp_simple_client_factory_add_contact_features()
+ * previously passed to tp_client_factory_add_contact_features()
  * prepared.
  *
  * Returns: (transfer none) (type GLib.HashTable) (element-type TelepathyGLib.Contact uint):

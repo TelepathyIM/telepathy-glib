@@ -71,7 +71,7 @@ main (int argc,
       char **argv)
 {
   TpAccountManager *manager;
-  TpSimpleClientFactory *factory;
+  TpClientFactory *factory;
   GMainLoop *loop;
 
   g_type_init ();
@@ -81,13 +81,13 @@ main (int argc,
 
   manager = tp_account_manager_dup ();
   factory = tp_proxy_get_factory (manager);
-  tp_simple_client_factory_add_account_features_varargs (factory,
+  tp_client_factory_add_account_features_varargs (factory,
       TP_ACCOUNT_FEATURE_CONNECTION,
       0);
-  tp_simple_client_factory_add_connection_features_varargs (factory,
+  tp_client_factory_add_connection_features_varargs (factory,
       TP_CONNECTION_FEATURE_CONTACT_LIST,
       0);
-  tp_simple_client_factory_add_contact_features_varargs (factory,
+  tp_client_factory_add_contact_features_varargs (factory,
       TP_CONTACT_FEATURE_ALIAS,
       TP_CONTACT_FEATURE_CONTACT_GROUPS,
       0);

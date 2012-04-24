@@ -40,7 +40,7 @@
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
-#include "telepathy-glib/simple-client-factory-internal.h"
+#include "telepathy-glib/client-factory-internal.h"
 #include <telepathy-glib/util-internal.h>
 
 #include "telepathy-glib/_gen/tp-cli-account-body.h"
@@ -230,11 +230,11 @@ connection_is_internal (TpAccount *self)
  *
  * When this feature is prepared, it is guaranteed that #TpAccount:connection
  * will always be either %NULL or prepared. If the account was created using a
- * #TpSimpleClientFactory, the same factory will be used to create #TpConnection
+ * #TpClientFactory, the same factory will be used to create #TpConnection
  * object and to determine desired connection features. Change notification of
  * #TpAccount:connection property will be delayed until all features (at least
  * %TP_CONNECTION_FEATURE_CORE) are prepared. See
- * tp_simple_client_factory_add_account_features() to define which features
+ * tp_client_factory_add_account_features() to define which features
  * needs to be prepared.
  *
  * One can ask for a feature to be prepared using the
@@ -505,7 +505,7 @@ _tp_account_set_connection (TpAccount *account,
       return;
     }
 
-  priv->connection = tp_simple_client_factory_ensure_connection (
+  priv->connection = tp_client_factory_ensure_connection (
       tp_proxy_get_factory (account), path, NULL, &error);
 
   if (priv->connection == NULL)
@@ -521,7 +521,7 @@ _tp_account_set_connection (TpAccount *account,
         {
           GArray *features;
 
-          features = tp_simple_client_factory_dup_connection_features (
+          features = tp_client_factory_dup_connection_features (
               tp_proxy_get_factory (account), priv->connection);
 
           tp_proxy_prepare_async (priv->connection, (GQuark *) features->data,
@@ -2068,7 +2068,7 @@ tp_account_new (TpDBusDaemon *bus_daemon,
 }
 
 TpAccount *
-_tp_account_new_with_factory (TpSimpleClientFactory *factory,
+_tp_account_new_with_factory (TpClientFactory *factory,
     TpDBusDaemon *bus_daemon,
     const gchar *object_path,
     GError **error)
@@ -4031,7 +4031,7 @@ tp_account_prepare_connection_async (TpProxy *proxy,
       return;
     }
 
-  features = tp_simple_client_factory_dup_connection_features (
+  features = tp_client_factory_dup_connection_features (
       tp_proxy_get_factory (self), self->priv->connection);
 
   tp_proxy_prepare_async (self->priv->connection, (GQuark *) features->data,
