@@ -306,7 +306,8 @@ tp_client_factory_constructed (GObject *object)
 {
   TpClientFactory *self = (TpClientFactory *) object;
 
-  g_assert (TP_IS_DBUS_DAEMON (self->priv->dbus));
+  if (self->priv->dbus == NULL)
+    self->priv->dbus = tp_dbus_daemon_dup (NULL);
 
   G_OBJECT_CLASS (tp_client_factory_parent_class)->constructed (object);
 }
@@ -392,9 +393,10 @@ tp_client_factory_class_init (TpClientFactoryClass *klass)
 
 /**
  * tp_client_factory_new:
- * @dbus: a #TpDBusDaemon
+ * @dbus: a #TpDBusDaemon, or %NULL
  *
- * Creates a new #TpClientFactory instance.
+ * Creates a new #TpClientFactory instance. If @dbus is %NULL then
+ * tp_dbus_daemon_dup() will be used.
  *
  * Returns: a new #TpClientFactory
  *
@@ -403,6 +405,8 @@ tp_client_factory_class_init (TpClientFactoryClass *klass)
 TpClientFactory *
 tp_client_factory_new (TpDBusDaemon *dbus)
 {
+  g_return_val_if_fail (dbus == NULL || TP_IS_DBUS_DAEMON (dbus), NULL);
+
   return g_object_new (TP_TYPE_CLIENT_FACTORY,
       "dbus-daemon", dbus,
       NULL);
