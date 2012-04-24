@@ -1156,8 +1156,8 @@ tp_base_client_constructed (GObject *object)
           if (self->priv->dbus == NULL)
             self->priv->dbus = tp_dbus_daemon_dup (NULL);
 
-          self->priv->factory = (TpSimpleClientFactory *)
-              tp_automatic_client_factory_new (self->priv->dbus);
+          self->priv->factory = tp_automatic_client_factory_new (
+              self->priv->dbus);
         }
     }
 

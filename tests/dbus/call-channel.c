@@ -107,8 +107,7 @@ setup (Test *test,
       "example", parameters, &bus_name, &object_path, &test->error, NULL);
   g_assert_no_error (test->error);
 
-  test->factory = (TpSimpleClientFactory *)
-      tp_automatic_client_factory_new (test->dbus);
+  test->factory = tp_automatic_client_factory_new (test->dbus);
   tp_simple_client_factory_add_channel_features_varargs (test->factory,
       TP_CHANNEL_FEATURE_CONTACTS,
       0);

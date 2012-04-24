@@ -277,7 +277,7 @@ tp_automatic_client_factory_class_init (TpAutomaticClientFactoryClass *cls)
  *
  * Since: 0.15.5
  */
-TpAutomaticClientFactory *
+TpSimpleClientFactory *
 tp_automatic_client_factory_new (TpDBusDaemon *dbus)
 {
   return g_object_new (TP_TYPE_AUTOMATIC_CLIENT_FACTORY,

@@ -1406,8 +1406,7 @@ _tp_proxy_ensure_factory (gpointer proxy,
     }
   else
     {
-      self->priv->factory = (TpSimpleClientFactory *)
-          tp_automatic_client_factory_new (self->dbus_daemon);
+      self->priv->factory = tp_automatic_client_factory_new (self->dbus_daemon);
     }
 
   _tp_simple_client_factory_insert_proxy (self->priv->factory, self);
