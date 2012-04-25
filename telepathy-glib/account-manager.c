@@ -68,7 +68,7 @@
  * account to a client.)
  *
  * The #TpAccountManager::account-removed signal is emitted when
- * existing accounts.
+ * existing accounts are removed.
  *
  * Since: 0.7.32
  */
@@ -610,7 +610,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    * Emitted when the validity on @account changes.
    *
    * This signal is also used to indicate a new account that did not
-   * previously exist has been added (with @valid to %TRUE).
+   * previously exist has been added (with @valid set to %TRUE).
    *
    * @account is guaranteed to have %TP_ACCOUNT_FEATURE_CORE prepared, along
    * with all features previously passed to
