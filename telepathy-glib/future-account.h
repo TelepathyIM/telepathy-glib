@@ -21,6 +21,8 @@
 #ifndef TP_FUTURE_ACCOUNT_H
 #define TP_FUTURE_ACCOUNT_H
 
+#include <telepathy-glib/account-manager.h>
+
 G_BEGIN_DECLS
 
 typedef struct _TpFutureAccount TpFutureAccount;
@@ -57,7 +59,8 @@ GType tp_future_account_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_FUTURE_ACCOUNT, \
                               TpFutureAccountClass))
 
-TpFutureAccount * tp_future_account_new (void) G_GNUC_WARN_UNUSED_RESULT;
+TpFutureAccount * tp_future_account_new (TpAccountManager *account_manager,
+    const gchar *manager, const gchar *protocol) G_GNUC_WARN_UNUSED_RESULT;
 
 G_END_DECLS
 
