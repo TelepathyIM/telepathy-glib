@@ -349,6 +349,65 @@ test_handle_cr_failed (Test *test,
 }
 
 static void
+test_ft_props (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpAccountChannelRequest *req;
+
+  req = tp_account_channel_request_new_file_transfer (test->account,
+      "warez.rar", "application/x-rar", G_GUINT64_CONSTANT (1234567890123), 0);
+  tp_account_channel_request_set_file_transfer_description (req,
+      "A collection of l33t warez");
+  tp_account_channel_request_set_file_transfer_initial_offset (req,
+      1024 * 1024);
+  tp_account_channel_request_set_file_transfer_timestamp (req,
+      1111222233);
+  tp_account_channel_request_set_file_transfer_uri (req,
+      "file:///home/Downloads/warez.rar");
+
+  /* Ask to the CR to fire the signal */
+  tp_account_channel_request_set_request_property (req, "FireFailed",
+      g_variant_new_boolean (TRUE));
+
+  tp_account_channel_request_create_and_handle_channel_async (req,
+      NULL, create_and_handle_cb, test);
+
+  g_object_unref (req);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert (test->channel == NULL);
+
+  /* The request had the properties we wanted */
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER);
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME), ==, "warez.rar");
+  g_assert_cmpuint (tp_asv_get_uint64 (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE, NULL), ==,
+      G_GUINT64_CONSTANT (1234567890123));
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_TYPE), ==,
+      "application/x-rar");
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DESCRIPTION), ==,
+      "A collection of l33t warez");
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_URI), ==,
+      "file:///home/Downloads/warez.rar");
+  g_assert_cmpuint (tp_asv_get_uint64 (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET, NULL), ==,
+      1024 * 1024);
+  g_assert_cmpuint (tp_asv_get_uint64 (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DATE, NULL), ==,
+      1111222233);
+  g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
+        "FireFailed", NULL), ==, TRUE);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 9);
+  g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
+}
+
+static void
 ensure_and_handle_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
@@ -1230,6 +1289,10 @@ main (int argc,
       setup, test_observe_cancel_after_create, teardown);
   g_test_add ("/account-channels/request-observe/no-channel", Test, NULL,
       setup, test_observe_no_channel, teardown);
+
+  /* Particular properties of the request */
+  g_test_add ("/account-channels/test-ft-props", Test, NULL,
+      setup, test_ft_props, teardown);
 
   return g_test_run ();
 }
