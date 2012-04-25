@@ -61,6 +61,13 @@ gboolean tp_capabilities_supports_audio_call (TpCapabilities *self,
 gboolean tp_capabilities_supports_audio_video_call (TpCapabilities *self,
     TpHandleType handle_type);
 gboolean tp_capabilities_supports_file_transfer (TpCapabilities *self);
+gboolean tp_capabilities_supports_file_transfer_uri (TpCapabilities *self);
+gboolean tp_capabilities_supports_file_transfer_description (
+    TpCapabilities *self);
+gboolean tp_capabilities_supports_file_transfer_timestamp (
+    TpCapabilities *self);
+gboolean tp_capabilities_supports_file_transfer_initial_offset (
+    TpCapabilities *self);
 
 gboolean tp_capabilities_supports_stream_tubes (TpCapabilities *self,
     TpHandleType handle_type,

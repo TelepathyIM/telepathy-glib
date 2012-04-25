@@ -53,14 +53,18 @@ add_text_chat_class (GPtrArray *classes,
 }
 
 static void
-add_ft_class (GPtrArray *classes)
+add_ft_class (GPtrArray *classes,
+    const gchar * const *allowed)
 {
   GHashTable *fixed;
-  const gchar * const allowed[] = {
+  const gchar * const default_allowed[] = {
       TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME,
       TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE,
       NULL };
   GValueArray *arr;
+
+  if (allowed == NULL)
+    allowed = default_allowed;
 
   fixed = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
@@ -95,7 +99,7 @@ test_basics (Test *test,
   /* TpCapabilities containing the text chats and ft caps */
   classes = g_ptr_array_sized_new (2);
   add_text_chat_class (classes, TP_HANDLE_TYPE_CONTACT);
-  add_ft_class (classes);
+  add_ft_class (classes, NULL);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -628,7 +632,7 @@ test_supports_room_list (Test *test,
 
   /* Does not support room list */
   classes = g_ptr_array_sized_new (4);
-  add_ft_class (classes);
+  add_ft_class (classes, NULL);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -645,7 +649,7 @@ test_supports_room_list (Test *test,
 
   /* Support room list but no server */
   classes = g_ptr_array_sized_new (4);
-  add_ft_class (classes);
+  add_ft_class (classes, NULL);
   add_room_list_class (classes, FALSE, FALSE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
@@ -663,7 +667,7 @@ test_supports_room_list (Test *test,
 
   /* Support room list with server */
   classes = g_ptr_array_sized_new (4);
-  add_ft_class (classes);
+  add_ft_class (classes, NULL);
   add_room_list_class (classes, TRUE, FALSE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
@@ -961,6 +965,128 @@ test_supports_call (Test *test,
   g_object_unref (caps);
 }
 
+static void
+test_supports_ft_props (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpCapabilities *caps;
+  GPtrArray *classes;
+  const gchar * const allow_uri[] = { TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_URI,
+      NULL };
+  const gchar * const allow_desc[] = {
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DESCRIPTION, NULL };
+  const gchar * const allow_date[] = {
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DATE, NULL };
+  const gchar * const allow_initial_offset[] = {
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET, NULL };
+
+  /* TpCapabilities containing no caps */
+  caps = _tp_capabilities_new (NULL, TRUE);
+
+  g_assert (!tp_capabilities_supports_file_transfer (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_uri (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_description (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_timestamp (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_initial_offset (caps));
+
+  g_object_unref (caps);
+
+  classes = g_ptr_array_sized_new (1);
+  add_ft_class (classes, NULL);
+
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", TRUE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  g_assert (tp_capabilities_supports_file_transfer (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_uri (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_description (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_timestamp (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_initial_offset (caps));
+
+  g_object_unref (caps);
+
+  classes = g_ptr_array_sized_new (1);
+  add_ft_class (classes, allow_uri);
+
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", TRUE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  g_assert (tp_capabilities_supports_file_transfer (caps));
+  g_assert (tp_capabilities_supports_file_transfer_uri (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_description (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_timestamp (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_initial_offset (caps));
+
+  g_object_unref (caps);
+
+  classes = g_ptr_array_sized_new (1);
+  add_ft_class (classes, allow_desc);
+
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", TRUE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  g_assert (tp_capabilities_supports_file_transfer (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_uri (caps));
+  g_assert (tp_capabilities_supports_file_transfer_description (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_timestamp (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_initial_offset (caps));
+
+  g_object_unref (caps);
+
+  classes = g_ptr_array_sized_new (1);
+  add_ft_class (classes, allow_date);
+
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", TRUE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  g_assert (tp_capabilities_supports_file_transfer (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_uri (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_description (caps));
+  g_assert (tp_capabilities_supports_file_transfer_timestamp (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_initial_offset (caps));
+
+  g_object_unref (caps);
+
+  classes = g_ptr_array_sized_new (1);
+  add_ft_class (classes, allow_initial_offset);
+
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", TRUE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  g_assert (tp_capabilities_supports_file_transfer (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_uri (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_description (caps));
+  g_assert (!tp_capabilities_supports_file_transfer_timestamp (caps));
+  g_assert (tp_capabilities_supports_file_transfer_initial_offset (caps));
+
+  g_object_unref (caps);
+}
+
 int
 main (int argc,
     char **argv)
@@ -974,6 +1100,8 @@ main (int argc,
       NULL);
   g_test_add (TEST_PREFIX "supports", Test, NULL, setup, test_supports,
       NULL);
+  g_test_add (TEST_PREFIX "supports/ft-props", Test, NULL, setup,
+      test_supports_ft_props, NULL);
   g_test_add (TEST_PREFIX "supports/tube", Test, NULL, setup,
       test_supports_tube, NULL);
   g_test_add (TEST_PREFIX "supports/room-list", Test, NULL, setup,
