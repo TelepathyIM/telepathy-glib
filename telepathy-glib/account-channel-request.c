@@ -1805,8 +1805,8 @@ tp_account_channel_request_set_target_id (
  * After creating the request, you will also need to set the "target"
  * of the channel by calling one of the following functions:
  *
- * * tp_account_channel_request_set_target_contact()
- * * tp_account_channel_request_set_target_id()
+ * - tp_account_channel_request_set_target_contact()
+ * - tp_account_channel_request_set_target_id()
  *
  * Returns: a new #TpAccountChannelRequest object
  *
@@ -1902,8 +1902,8 @@ tp_account_channel_request_set_request_property (
  * After creating the request, you will usually also need to set the "target"
  * of the channel by calling one of the following functions:
  *
- * * tp_account_channel_request_set_target_contact()
- * * tp_account_channel_request_set_target_id()
+ * - tp_account_channel_request_set_target_contact()
+ * - tp_account_channel_request_set_target_id()
  *
  * To call a contact, either use
  * tp_account_channel_request_set_target_contact() or one of the generic
@@ -2023,8 +2023,8 @@ tp_account_channel_request_new_audio_video_call (
  * After creating the request, you will also need to set the "target"
  * of the channel by calling one of the following functions:
  *
- * * tp_account_channel_request_set_target_contact()
- * * tp_account_channel_request_set_target_id()
+ * - tp_account_channel_request_set_target_contact()
+ * - tp_account_channel_request_set_target_id()
  *
  * Returns: a new #TpAccountChannelRequest object
  *
