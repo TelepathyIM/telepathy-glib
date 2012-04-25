@@ -1961,18 +1961,7 @@ tp_asv_dump (GHashTable *asv)
 GVariant *
 _tp_asv_to_vardict (const GHashTable *asv)
 {
-  GValue v = G_VALUE_INIT;
-  GVariant *ret;
-
-  g_value_init (&v, TP_HASH_TYPE_STRING_VARIANT_MAP);
-  g_value_set_boxed (&v, asv);
-
-  ret = dbus_g_value_build_g_variant (&v);
-  g_assert (!tp_strdiff (g_variant_get_type_string (ret), "a{sv}"));
-
-  g_value_unset (&v);
-
-  return g_variant_ref_sink (ret);
+  return _tp_boxed_to_variant (TP_HASH_TYPE_STRING_VARIANT_MAP, "a{sv}", (gpointer) asv);
 }
 
 GVariant *
