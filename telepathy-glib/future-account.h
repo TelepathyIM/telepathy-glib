@@ -62,6 +62,9 @@ GType tp_future_account_get_type (void);
 TpFutureAccount * tp_future_account_new (TpAccountManager *account_manager,
     const gchar *manager, const gchar *protocol) G_GNUC_WARN_UNUSED_RESULT;
 
+void tp_future_account_set_display_name (TpFutureAccount *self,
+    const gchar *name);
+
 G_END_DECLS
 
 #endif

@@ -68,24 +68,29 @@ test_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpAccountManager *am;
-  gchar *manager, *protocol;
+  gchar *manager, *protocol, *display_name;
 
   test->account = tp_future_account_new (test->account_manager,
       "gabble", "jabber");
+
+  tp_future_account_set_display_name (test->account, "Charles Dickens");
 
   g_object_get (test->account,
       "account-manager", &am,
       "connection-manager", &manager,
       "protocol", &protocol,
+      "display-name", &display_name,
       NULL);
 
   g_assert (am == test->account_manager);
   g_assert_cmpstr (manager, ==, "gabble");
   g_assert_cmpstr (protocol, ==, "jabber");
+  g_assert_cmpstr (display_name, ==, "Charles Dickens");
 
   g_object_unref (am);
   g_free (manager);
   g_free (protocol);
+  g_free (display_name);
 }
 
 int

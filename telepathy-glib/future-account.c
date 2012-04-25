@@ -60,6 +60,7 @@ struct _TpFutureAccountPrivate {
 
   gchar *cm_name;
   gchar *proto_name;
+  gchar *display_name;
 };
 
 G_DEFINE_TYPE (TpFutureAccount, tp_future_account, G_TYPE_OBJECT)
@@ -76,6 +77,7 @@ enum {
   PROP_ACCOUNT_MANAGER = 1,
   PROP_CONNECTION_MANAGER,
   PROP_PROTOCOL,
+  PROP_DISPLAY_NAME,
   N_PROPS
 };
 
@@ -104,6 +106,9 @@ tp_future_account_get_property (GObject *object,
       break;
     case PROP_PROTOCOL:
       g_value_set_string (value, self->priv->proto_name);
+      break;
+    case PROP_DISPLAY_NAME:
+      g_value_set_string (value, self->priv->display_name);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -165,6 +170,7 @@ tp_future_account_finalize (GObject *object)
 
   tp_clear_pointer (&priv->cm_name, g_free);
   tp_clear_pointer (&priv->proto_name, g_free);
+  tp_clear_pointer (&priv->display_name, g_free);
 
   /* free any data held directly by the object here */
 
@@ -221,6 +227,18 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           "The account's protocol name",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+  /**
+   * TpFutureAccount:display-name:
+   *
+   * The account's display name.
+   */
+  g_object_class_install_property (object_class, PROP_DISPLAY_NAME,
+      g_param_spec_string ("display-name",
+          "DisplayName",
+          "The account's display name",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 }
 
 /**
@@ -250,3 +268,24 @@ tp_future_account_new (TpAccountManager *account_manager,
       NULL);
 }
 
+/**
+ * tp_future_account_set_display_name:
+ * @self: a #TpFutureAccount
+ * @name: a display name for the account
+ *
+ * Set the display name for the new account @self to @name.
+ */
+void
+tp_future_account_set_display_name (TpFutureAccount *self,
+    const gchar *name)
+{
+  TpFutureAccountPrivate *priv;
+
+  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (name != NULL);
+
+  priv = self->priv;
+
+  g_free (priv->display_name);
+  priv->display_name = g_strdup (name);
+}
