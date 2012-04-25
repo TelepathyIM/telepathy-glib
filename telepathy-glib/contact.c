@@ -409,6 +409,27 @@ struct _TpContactPrivate {
 
 
 /**
+ * tp_contact_get_account:
+ * @self: a contact
+ *
+ * Return the #TpAccount of @self's #TpContact:connection.
+ * See tp_connection_get_account() for details.
+ *
+ * Returns: (transfer none): a borrowed reference to @self's account
+ *  (it must be referenced with g_object_ref if it must remain valid
+ *  longer than the contact)
+ *
+ * Since: 0.UNRELEASED
+ */
+TpAccount *
+tp_contact_get_account (TpContact *self)
+{
+  g_return_val_if_fail (TP_IS_CONTACT (self), NULL);
+
+  return tp_connection_get_account (self->priv->connection);
+}
+
+/**
  * tp_contact_get_connection:
  * @self: a contact
  *
@@ -427,7 +448,6 @@ tp_contact_get_connection (TpContact *self)
 
   return self->priv->connection;
 }
-
 
 /**
  * tp_contact_get_handle:
@@ -2943,7 +2963,7 @@ contact_maybe_set_contact_groups (TpContact *self,
   self->priv->has_features |= CONTACT_FEATURE_FLAG_CONTACT_GROUPS;
 
   tp_clear_pointer (&self->priv->contact_groups, g_ptr_array_unref);
-  self->priv->contact_groups = _tp_g_ptr_array_new_full (
+  self->priv->contact_groups = g_ptr_array_new_full (
       g_strv_length (contact_groups) + 1, g_free);
 
   for (iter = contact_groups; *iter != NULL; iter++)

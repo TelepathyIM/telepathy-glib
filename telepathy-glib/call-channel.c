@@ -79,7 +79,7 @@ struct _TpCallChannelPrivate
   GHashTable *state_details;
   TpCallStateReason *state_reason;
   gboolean hardware_streaming;
-  /* TpHandle -> TpCallMemberFlags */
+  /* TpContact -> TpCallMemberFlags */
   GHashTable *members;
   gboolean initial_audio;
   gboolean initial_video;
@@ -264,7 +264,7 @@ _tp_call_members_convert_array (TpConnection *connection,
   GPtrArray *result;
   guint i;
 
-  result = _tp_g_ptr_array_new_full (array->len, g_object_unref);
+  result = g_ptr_array_new_full (array->len, g_object_unref);
 
   for (i = 0; i < array->len; i++)
     {
@@ -272,14 +272,15 @@ _tp_call_members_convert_array (TpConnection *connection,
       TpContact *contact;
 
       /* The contact is supposed to already exists */
-      contact = _tp_connection_lookup_contact (connection, handle);
+      contact = tp_connection_dup_contact_if_possible (connection,
+          handle, NULL);
       if (contact == NULL)
         {
           DEBUG ("No TpContact found for handle %u", handle);
           continue;
         }
 
-      g_ptr_array_add (result, g_object_ref (contact));
+      g_ptr_array_add (result, contact);
     }
 
   return result;
@@ -510,7 +511,7 @@ update_call_members (TpCallChannel *self,
    * contact features on the factory, in which case this becomes no-op.
    */
 
-  contacts = _tp_g_ptr_array_new_full (g_hash_table_size (updates),
+  contacts = g_ptr_array_new_full (g_hash_table_size (updates),
       g_object_unref);
 
   g_hash_table_iter_init (&iter, updates);

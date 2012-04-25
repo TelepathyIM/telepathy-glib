@@ -90,9 +90,9 @@ contacts_changed_head_ready (TpConnection *self)
 
   item = g_queue_pop_head (self->priv->contacts_changed_queue);
 
-  added = _tp_g_ptr_array_new_full (g_hash_table_size (item->removals),
+  added = g_ptr_array_new_full (g_hash_table_size (item->removals),
       g_object_unref);
-  removed = _tp_g_ptr_array_new_full (item->new_contacts->len,
+  removed = g_ptr_array_new_full (item->new_contacts->len,
       g_object_unref);
 
   /* Remove contacts from roster, and build a list of contacts really removed */

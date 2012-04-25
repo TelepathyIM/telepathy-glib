@@ -360,6 +360,84 @@ tp_capabilities_supports_text_chatrooms (TpCapabilities *self)
       TP_HANDLE_TYPE_ROOM);
 }
 
+/**
+ * tp_capabilities_supports_sms:
+ * @self: a #TpCapabilities object
+ *
+ * If the #TpCapabilities:contact-specific property is %FALSE, this function
+ * checks if SMS text channels can be requested with the connection associated
+ * with this #TpCapabilities.
+ *
+ * If the #TpCapabilities:contact-specific property is %TRUE, this function
+ * checks if the contact associated with this #TpCapabilities supports
+ * SMS text channels.
+ *
+ * Returns: %TRUE if a channel request containing Text as ChannelType,
+ * HandleTypeContact as TargetHandleType, a channel identifier and
+ * #TP_PROP_CHANNEL_INTERFACE_SMS_SMS_CHANNEL set to %TRUE can be
+ * expected to work, %FALSE otherwise.
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_capabilities_supports_sms (TpCapabilities *self)
+{
+  guint i;
+
+  g_return_val_if_fail (TP_IS_CAPABILITIES (self), FALSE);
+
+  for (i = 0; i < self->priv->classes->len; i++)
+    {
+      GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
+      GHashTable *fixed;
+      const gchar * const *allowed;
+      const gchar *chan_type;
+      TpHandleType handle_type;
+      gboolean valid;
+      guint nb_fixed_props;
+
+      fixed =  g_value_get_boxed (g_value_array_get_nth (arr, 0));
+      allowed = g_value_get_boxed (g_value_array_get_nth (arr, 1));
+
+      handle_type = tp_asv_get_uint32 (fixed,
+          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
+
+      if (!valid)
+        continue;
+
+      if (handle_type != TP_HANDLE_TYPE_CONTACT)
+        continue;
+
+      chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+
+      if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_TEXT))
+        continue;
+
+      /* SMSChannel be either in fixed or allowed properties */
+      if (tp_asv_get_boolean (fixed, TP_PROP_CHANNEL_INTERFACE_SMS_SMS_CHANNEL,
+            NULL))
+        {
+          /* In fixed, succeed if there is no more fixed properties required */
+          nb_fixed_props = 3;
+        }
+      else
+        {
+          /* Not in fixed; check allowed */
+          if (!tp_strv_contains (allowed,
+                TP_PROP_CHANNEL_INTERFACE_SMS_SMS_CHANNEL))
+            continue;
+
+          nb_fixed_props = 2;
+        }
+
+      if (g_hash_table_size (fixed) == nb_fixed_props)
+        return TRUE;
+    }
+
+  return FALSE;
+
+}
+
 static gboolean
 supports_call_full (TpCapabilities *self,
     TpHandleType expected_handle_type,
@@ -378,6 +456,7 @@ supports_call_full (TpCapabilities *self,
       const gchar *chan_type;
       TpHandleType handle_type;
       gboolean valid;
+      guint nb_fixed_props = 2;
 
       tp_value_array_unpack (arr, 2,
           &fixed_prop,
@@ -392,22 +471,39 @@ supports_call_full (TpCapabilities *self,
       if (!valid || handle_type != expected_handle_type)
         continue;
 
-      if (expected_initial_audio &&
-          !tp_asv_get_boolean (fixed_prop,
-              TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, NULL) &&
-          !tp_strv_contains (allowed_prop,
-              TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO))
-        continue;
+      if (expected_initial_audio)
+        {
+          /* We want audio, INITIAL_AUDIO must be in either fixed or allowed */
+          if (tp_asv_get_boolean (fixed_prop,
+                  TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, NULL))
+            {
+              nb_fixed_props++;
+            }
+          else if (!tp_strv_contains (allowed_prop,
+                  TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO))
+            {
+              continue;
+            }
+        }
 
-      if (expected_initial_video &&
-          !tp_asv_get_boolean (fixed_prop,
-              TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, NULL) &&
-          !tp_strv_contains (allowed_prop,
-              TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO))
-        continue;
+      if (expected_initial_video)
+        {
+          /* We want video, INITIAL_VIDEO must be in either fixed or allowed */
+          if (tp_asv_get_boolean (fixed_prop,
+                  TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, NULL))
+            {
+              nb_fixed_props++;
+            }
+          else if (!tp_strv_contains (allowed_prop,
+                  TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO))
+            {
+              continue;
+            }
+        }
 
       /* We found the right class */
-      return TRUE;
+      if (g_hash_table_size (fixed_prop) == nb_fixed_props)
+        return TRUE;
     }
 
   return FALSE;
@@ -499,35 +595,31 @@ tp_capabilities_supports_tubes_common (TpCapabilities *self,
       const gchar *chan_type;
       TpHandleType handle_type;
       gboolean valid;
-      const gchar *service;
+      guint nb_fixed_props = 2;
 
       fixed =  g_value_get_boxed (g_value_array_get_nth (arr, 0));
 
       chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
-
       if (tp_strdiff (chan_type, expected_channel_type))
         continue;
 
       handle_type = tp_asv_get_uint32 (fixed,
           TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
-
-      if (!valid)
+      if (!valid || handle_type != expected_handle_type)
         continue;
 
-      if (handle_type != expected_handle_type)
-        continue;
+      if (expected_service != NULL && self->priv->contact_specific)
+        {
+          const gchar *service;
 
-      if (expected_service == NULL || !self->priv->contact_specific)
-        /* No need to check the service */
+          nb_fixed_props++;
+          service = tp_asv_get_string (fixed, service_prop);
+          if (tp_strdiff (service, expected_service))
+            continue;
+        }
+
+      if (g_hash_table_size (fixed) == nb_fixed_props)
         return TRUE;
-
-      service = tp_asv_get_string (fixed, service_prop);
-
-      if (tp_strdiff (service, expected_service))
-        continue;
-
-      /* We found the right service */
-      return TRUE;
     }
 
   return FALSE;
@@ -642,11 +734,13 @@ tp_capabilities_supports_contact_search (TpCapabilities *self,
 
       tp_value_array_unpack (arr, 2, &fixed, &allowed_properties);
 
+      /* ContactSearch channel should have ChannelType and TargetHandleType=NONE
+       * but CM implementations are wrong and omitted TargetHandleType,
+       * so it's set in stone now.  */
       if (g_hash_table_size (fixed) != 1)
         continue;
 
       chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
-
       if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_CONTACT_SEARCH))
         continue;
 
@@ -736,12 +830,21 @@ tp_capabilities_supports_room_list (TpCapabilities *self,
       GHashTable *fixed;
       const gchar *chan_type;
       const gchar **allowed_properties;
+      TpHandleType handle_type;
+      gboolean valid;
 
       tp_value_array_unpack (arr, 2, &fixed, &allowed_properties);
 
-      chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+      if (g_hash_table_size (fixed) != 2)
+        continue;
 
+      chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
       if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_ROOM_LIST))
+        continue;
+
+      handle_type = tp_asv_get_uint32 (fixed,
+          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
+      if (!valid || handle_type != TP_HANDLE_TYPE_NONE)
         continue;
 
       result = TRUE;

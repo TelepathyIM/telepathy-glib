@@ -30,6 +30,7 @@ tests_list = \
     test-contacts-mixin \
     test-dbus \
     test-dbus-tube \
+    test-debug-client \
     test-disconnection \
     test-error-enum \
     test-example-no-protocols \
@@ -244,6 +245,8 @@ test_text_channel_SOURCES = text-channel.c
 test_text_channel_LDADD = \
     $(LDADD) \
     $(top_builddir)/examples/cm/echo-message-parts/libexample-cm-echo-2.la
+
+test_debug_client_SOURCES = debug-client.c
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk

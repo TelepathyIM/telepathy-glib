@@ -110,6 +110,14 @@ G_BEGIN_DECLS
 #define TP_CLIENT_OBJECT_PATH_BASE "/im/telepathy1/Client/"
 
 /**
+ * TP_DEBUG_OBJECT_PATH:
+ *
+ * The standard path for objects implementing the Telepathy Debug interface
+ * (#TpSvcDebug).
+ */
+#define TP_DEBUG_OBJECT_PATH "/im/telepathy1/debug"
+
+/**
  * TP_USER_ACTION_TIME_NOT_USER_ACTION:
  *
  * The "user action time" used by methods like
@@ -130,7 +138,7 @@ G_BEGIN_DECLS
  * The "user action time" used by methods like
  * tp_account_channel_request_new() to represent channel requests that should
  * be treated as though they happened at the current time. This is the same
- * concept as %GDK_CURRENT_TIME in Gdk (but note that the numerical value used
+ * concept as %GDK_CURRENT_TIME in GDK (but note that the numerical value used
  * in Telepathy is not the same).
  *
  * See also #TpAccountChannelRequest:user-action-time,

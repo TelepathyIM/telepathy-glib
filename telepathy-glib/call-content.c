@@ -166,7 +166,7 @@ streams_removed_cb (TpCallContent *self,
   if (!self->priv->properties_retrieved)
     return;
 
-  removed_streams = _tp_g_ptr_array_new_full (streams->len, g_object_unref);
+  removed_streams = g_ptr_array_new_full (streams->len, g_object_unref);
 
   for (i = 0; i < streams->len; i++)
     {

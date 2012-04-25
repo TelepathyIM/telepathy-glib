@@ -366,7 +366,7 @@ tp_account_channel_request_class_init (
    * user action happened at the current time, e.g. a client may
    * request that its window gains focus.
    *
-   * On X11-based systems, Gdk 2.x, Clutter 1.0 etc.,
+   * On X11-based systems, GDK 2, GDK 3, Clutter 1.0 etc.,
    * tp_user_action_time_from_x11() can be used to convert an X11 timestamp to
    * a Telepathy user action time.
    *

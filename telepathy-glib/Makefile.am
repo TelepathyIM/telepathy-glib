@@ -95,6 +95,8 @@ our_headers = \
     defs.h \
     debug.h \
     debug-sender.h \
+    debug-client.h \
+    debug-message.h \
     dtmf.h \
     enums.h \
     errors.h \
@@ -268,7 +270,10 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     dbus-properties-mixin-internal.h \
     dbus-tube-channel.c \
     debug.c \
+    debug-client.c \
     debug-sender.c \
+    debug-message.c \
+    debug-message-internal.h \
     deprecated-internal.h \
     dtmf.c \
     debug-internal.h \

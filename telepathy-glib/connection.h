@@ -172,6 +172,9 @@ gboolean tp_connection_parse_object_path (TpConnection *self, gchar **protocol,
 
 const gchar *tp_connection_get_detailed_error (TpConnection *self,
     const GHashTable **details);
+gchar *tp_connection_dup_detailed_error_vardict (TpConnection *self,
+    GVariant **details) G_GNUC_WARN_UNUSED_RESULT;
+
 
 void tp_connection_add_client_interest (TpConnection *self,
     const gchar *interested_in);

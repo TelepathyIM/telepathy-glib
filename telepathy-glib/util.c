@@ -1359,7 +1359,7 @@ tp_simple_async_report_success_in_idle (GObject *source,
  *
  * Convert an X11 timestamp into a user action time as used in Telepathy.
  *
- * This also works for the timestamps used by Gdk 2.x and Clutter 1.0;
+ * This also works for the timestamps used by GDK 2, GDK 3 and Clutter 1.0;
  * it may or may not work with other toolkits or versions.
  *
  * Returns: a nonzero Telepathy user action time, or
@@ -1390,8 +1390,8 @@ tp_user_action_time_from_x11 (guint32 x11_time)
  * call gtk_window_present_with_time() using @x11_time as input, for instance.
  *
  * @x11_time is used to return a timestamp in the right format for X11,
- * Gdk 2.x and Clutter 1.0; it may or may not work with other toolkits or
- * versions.
+ * GDK 2, GDK 3 and Clutter 1.0; it may or may not work with other
+ * toolkits or versions.
  *
  * Returns: %TRUE if it would be appropriate to present a window
  *
@@ -1706,18 +1706,6 @@ _tp_bind_connection_status_to_boolean (GBinding *binding,
   return TRUE;
 }
 
-GPtrArray *
-_tp_g_ptr_array_new_full (guint reserved_size,
-    GDestroyNotify element_free_func)
-{
-  GPtrArray *array;
-
-  array = g_ptr_array_sized_new (reserved_size);
-  g_ptr_array_set_free_func (array, element_free_func);
-
-  return array;
-}
-
 /*
  * _tp_determine_socket_address_type:
  *
@@ -1964,7 +1952,7 @@ _tp_contacts_from_values (GHashTable *table)
   if (table == NULL)
       return NULL;
 
-  contacts = _tp_g_ptr_array_new_full (g_hash_table_size (table),
+  contacts = g_ptr_array_new_full (g_hash_table_size (table),
       g_object_unref);
 
   g_hash_table_iter_init (&iter, table);

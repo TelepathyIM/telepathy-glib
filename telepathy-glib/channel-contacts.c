@@ -73,7 +73,7 @@ dup_contact_array (TpChannel *self,
   GPtrArray *array;
   guint i;
 
-  array = _tp_g_ptr_array_new_full (handles->len, g_object_unref);
+  array = g_ptr_array_new_full (handles->len, g_object_unref);
 
   for (i = 0; i < handles->len; i++)
     {
@@ -279,7 +279,7 @@ contacts_queue_item_set_contacts (ContactsQueueItem *item,
   guint i;
 
   g_assert (item->contacts == NULL);
-  item->contacts = _tp_g_ptr_array_new_full (n_contacts, g_object_unref);
+  item->contacts = g_ptr_array_new_full (n_contacts, g_object_unref);
   for (i = 0; i < n_contacts; i++)
     g_ptr_array_add (item->contacts, g_object_ref (contacts[i]));
 }
@@ -532,7 +532,7 @@ members_changed_prepared_cb (GObject *object,
   /* For removed contacts, we have only handles because we are supposed to
    * already know them. So we have to search them in our tables, construct an
    * array of removed contacts and then remove them from our tables */
-  removed = _tp_g_ptr_array_new_full (data->removed->len, g_object_unref);
+  removed = g_ptr_array_new_full (data->removed->len, g_object_unref);
   for (i = 0; i < data->removed->len; i++)
     {
       TpHandle handle = g_array_index (data->removed, TpHandle, i);

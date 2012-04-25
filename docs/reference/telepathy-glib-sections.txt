@@ -29,6 +29,7 @@ TP_CHANNEL_DISPATCHER_BUS_NAME
 TP_CHANNEL_DISPATCHER_OBJECT_PATH
 TP_CLIENT_BUS_NAME_BASE
 TP_CLIENT_OBJECT_PATH_BASE
+TP_DEBUG_OBJECT_PATH
 TP_USER_ACTION_TIME_NOT_USER_ACTION
 TP_USER_ACTION_TIME_CURRENT_TIME
 </SECTION>
@@ -53,6 +54,7 @@ tp_base_connection_get_self_handle
 tp_base_connection_set_self_handle
 tp_base_connection_change_status
 tp_base_connection_disconnect_with_dbus_error
+tp_base_connection_disconnect_with_dbus_error_vardict
 tp_base_connection_finish_shutdown
 tp_base_connection_add_interfaces
 tp_base_connection_dbus_request_handles
@@ -3243,6 +3245,7 @@ tp_connection_set_contact_info_finish
 TP_UNKNOWN_CONNECTION_STATUS
 TP_ERRORS_DISCONNECTED
 tp_connection_get_detailed_error
+tp_connection_dup_detailed_error_vardict
 tp_connection_add_client_interest
 tp_connection_add_client_interest_by_id
 tp_connection_bind_connection_status_to_property
@@ -3628,6 +3631,7 @@ tp_connection_manager_param_is_required_for_registration
 tp_connection_manager_param_is_secret
 tp_connection_manager_param_is_dbus_property
 tp_connection_manager_param_get_default
+tp_connection_manager_param_dup_default_variant
 tp_connection_manager_check_valid_name
 tp_connection_manager_check_valid_protocol_name
 tp_connection_manager_init_known_interfaces
@@ -3730,6 +3734,7 @@ tp_connection_get_contacts_by_id
 TpConnectionUpgradeContactsCb
 tp_connection_upgrade_contacts
 <SUBSECTION>
+tp_contact_get_account
 tp_contact_get_connection
 tp_contact_get_handle
 tp_contact_get_identifier
@@ -3817,6 +3822,10 @@ tp_capabilities_get_channel_classes
 tp_capabilities_is_specific_to_contact
 tp_capabilities_supports_text_chatrooms
 tp_capabilities_supports_text_chats
+tp_capabilities_supports_sms
+tp_capabilities_supports_audio_call
+tp_capabilities_supports_audio_video_call
+tp_capabilities_supports_file_transfer
 tp_capabilities_supports_stream_tubes
 tp_capabilities_supports_dbus_tubes
 tp_capabilities_supports_contact_search
@@ -5974,4 +5983,60 @@ TP_TYPE_BASE_MEDIA_CALL_CHANNEL
 tp_base_media_call_channel_get_type
 <SUBSECTION Private>
 TpBaseMediaCallChannelPrivate
+</SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
+<FILE>debug-client</FILE>
+<TITLE>TpDebugClient</TITLE>
+<SUBSECTION>
+TpDebugClient
+TpDebugClientClass
+tp_cli_debug_call_get_messages
+tp_cli_debug_callback_for_get_messages
+tp_cli_debug_connect_to_new_debug_message
+tp_cli_debug_signal_callback_new_debug_message
+tp_debug_client_init_known_interfaces
+tp_debug_client_new
+tp_debug_client_set_enabled_async
+tp_debug_client_set_enabled_finish
+tp_debug_client_is_enabled
+<SUBSECTION Standard>
+TP_DEBUG_CLIENT
+TP_DEBUG_CLIENT_CLASS
+TP_DEBUG_CLIENT_FEATURE_CORE
+TP_DEBUG_CLIENT_GET_CLASS
+TP_IS_DEBUG_CLIENT
+TP_IS_DEBUG_CLIENT_CLASS
+TP_TYPE_DEBUG_CLIENT
+tp_debug_client_get_type
+tp_debug_client_get_feature_quark_core
+<SUBSECTION Private>
+TpDebugClientPrivate
+</SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
+<FILE>debug-message</FILE>
+<TITLE>TpDebugMessage</TITLE>
+<SUBSECTION>
+TpDebugMessage
+TpDebugMessageClass
+tp_debug_client_get_messages_async
+tp_debug_client_get_messages_finish
+tp_debug_message_get_domain
+tp_debug_message_get_category
+tp_debug_message_get_level
+tp_debug_message_get_message
+tp_debug_message_get_time
+<SUBSECTION Standard>
+TP_DEBUG_MESSAGE
+TP_DEBUG_MESSAGE_CLASS
+TP_DEBUG_MESSAGE_GET_CLASS
+TP_IS_DEBUG_MESSAGE
+TP_IS_DEBUG_MESSAGE_CLASS
+TP_TYPE_DEBUG_MESSAGE
+tp_debug_message_get_type
+<SUBSECTION Private>
+TpDebugMessagePriv
 </SECTION>
