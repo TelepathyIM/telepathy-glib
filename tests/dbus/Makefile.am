@@ -39,6 +39,7 @@ tests_list = \
     test-example-no-protocols \
     test-file-transfer-channel \
     test-finalized-in-invalidated-handler \
+    test-future-account \
     test-get-interface-after-invalidate \
     test-group-mixin \
     test-handle-repo \
@@ -179,6 +180,9 @@ test_file_transfer_channel_SOURCES = file-transfer-channel.c
 
 test_finalized_in_invalidated_handler_SOURCES = \
     finalized-in-invalidated-handler.c
+
+test_future_account_SOURCES = \
+    future-account.c
 
 test_get_interface_after_invalidate_SOURCES = \
     get-interface-after-invalidate.c
