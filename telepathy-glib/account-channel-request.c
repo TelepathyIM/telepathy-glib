@@ -1911,12 +1911,14 @@ tp_account_channel_request_set_request_property (
  * is possible, use tp_capabilities_supports_audio_call() with
  * @handle_type set to %TP_HANDLE_TYPE_CONTACT.
  *
+ * <!-- reinstate this when we have CMs that actually allow it:
  * In some protocols it is possible to create a conference call which
  * takes place in a named chatroom, by calling
  * tp_account_channel_request_set_target_id() with @handle_type
  * set to %TP_HANDLE_TYPE_ROOM. To test whether this is possible, use
  * tp_capabilities_supports_audio_call() with @handle_type set to
  * %TP_HANDLE_TYPE_ROOM.
+ * -->
  *
  * In some protocols, it is possible to create a Call channel without
  * setting a target at all, which will result in a new, empty
