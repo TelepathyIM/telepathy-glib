@@ -785,11 +785,13 @@ static gpointer starter_account_manager_proxy = NULL;
  * #TpAccountManager to use that factory should call this after calling
  * tp_account_manager_new_with_factory().
  *
- * Unlike tp_account_manager_dup(), this function will keep an internal
- * reference to @manager, so it will never be destroyed.
+ * Only a weak reference is taken on @manager. It is the caller's responsibility
+ * to keep it alive. If @manager is disposed after calling this function, the
+ * next call to tp_account_manager_dup() will return a newly created
+ * #TpAccountManager.
  *
  * Note that @manager must use the default #TpDBusDaemon as returned by
- * tp_dbus_daemon_dup()
+ * tp_dbus_daemon_dup().
  *
  * Since: 0.15.5
  */
@@ -812,7 +814,9 @@ tp_account_manager_set_default (TpAccountManager *manager)
       g_return_if_reached ();
     }
 
-  starter_account_manager_proxy = g_object_ref (manager);
+  starter_account_manager_proxy = manager;
+  g_object_add_weak_pointer (starter_account_manager_proxy,
+      &starter_account_manager_proxy);
 }
 
 /**
