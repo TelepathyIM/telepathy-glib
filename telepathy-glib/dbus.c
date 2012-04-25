@@ -1974,3 +1974,24 @@ _tp_asv_to_vardict (const GHashTable *asv)
 
   return g_variant_ref_sink (ret);
 }
+
+GVariant *
+_tp_boxed_to_variant (GType gtype,
+    const gchar *variant_type,
+    gpointer boxed)
+{
+  GValue v = G_VALUE_INIT;
+  GVariant *ret;
+
+  g_return_val_if_fail (boxed != NULL, NULL);
+
+  g_value_init (&v, gtype);
+  g_value_set_boxed (&v, boxed);
+
+  ret = dbus_g_value_build_g_variant (&v);
+  g_return_val_if_fail (!tp_strdiff (g_variant_get_type_string (ret), variant_type), NULL);
+
+  g_value_unset (&v);
+
+  return g_variant_ref_sink (ret);
+}
