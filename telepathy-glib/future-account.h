@@ -1,0 +1,64 @@
+/*
+ * future-account.h - object for a currently non-existent account to create
+ *
+ * Copyright (C) 2012 Collabora Ltd. <http://www.collabora.co.uk/>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#ifndef TP_FUTURE_ACCOUNT_H
+#define TP_FUTURE_ACCOUNT_H
+
+G_BEGIN_DECLS
+
+typedef struct _TpFutureAccount TpFutureAccount;
+typedef struct _TpFutureAccountClass TpFutureAccountClass;
+typedef struct _TpFutureAccountPrivate TpFutureAccountPrivate;
+
+struct _TpFutureAccount {
+    /*<private>*/
+    GObject parent;
+    TpFutureAccountPrivate *priv;
+};
+
+struct _TpFutureAccountClass {
+    /*<private>*/
+    GObjectClass parent_class;
+    GCallback _padding[7];
+};
+
+GType tp_future_account_get_type (void);
+
+#define TP_TYPE_FUTURE_ACCOUNT \
+  (tp_future_account_get_type ())
+#define TP_FUTURE_ACCOUNT(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_FUTURE_ACCOUNT, \
+                               TpFutureAccount))
+#define TP_FUTURE_ACCOUNT_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), TP_TYPE_FUTURE_ACCOUNT, \
+                            TpFutureAccountClass))
+#define TP_IS_FUTURE_ACCOUNT(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TYPE_FUTURE_ACCOUNT))
+#define TP_IS_FUTURE_ACCOUNT_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), TP_TYPE_FUTURE_ACCOUNT))
+#define TP_FUTURE_ACCOUNT_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_FUTURE_ACCOUNT, \
+                              TpFutureAccountClass))
+
+TpFutureAccount * tp_future_account_new (void) G_GNUC_WARN_UNUSED_RESULT;
+
+G_END_DECLS
+
+#endif
