@@ -1,0 +1,19 @@
+API/Behaviour changes
+=====================
+
+ - TpSimpleClientFactory got renamed to TpClientFactory
+
+ - tp_automatic_client_factory_new() now returns a TpSimpleClientFactory*
+   for less boring casting.
+
+ - Tp{Basic,Automatic}ProxyFactory and TpClientChannelFactory, as well as all
+   related APIs got removed. TpClientFactory and TpAutomaricClientFactory are
+   their replacement.
+
+ - tp_simple_{observer,approver,handler}_new() now takes a TpClientFactory as
+   first argument, and _new_with_factory() got removed.
+
+ - TpBaseClient lost its "account-manager" property, applications only
+   interested by channels does not have to create a full TpAccountManager,
+   TpAccount objects will be created only when a channel comes up for that
+   account.
