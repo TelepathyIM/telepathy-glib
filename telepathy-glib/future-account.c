@@ -573,6 +573,27 @@ tp_future_account_set_parameter (TpFutureAccount *self,
 }
 
 /**
+ * tp_future_account_unset_parameter:
+ * @self: a #TpFutureAccount
+ * @key: the parameter key
+ *
+ * Unset the account parameter @key.
+ */
+void
+tp_future_account_unset_parameter (TpFutureAccount *self,
+    const gchar *key)
+{
+  TpFutureAccountPrivate *priv;
+
+  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (key != NULL);
+
+  priv = self->priv;
+
+  g_hash_table_remove (priv->parameters, key);
+}
+
+/**
  * tp_future_account_set_parameter_string: (skip)
  * @self: a #TpFutureAccount
  * @key: the parameter key

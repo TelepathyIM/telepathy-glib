@@ -79,6 +79,9 @@ void tp_future_account_set_requested_presence (TpFutureAccount *self,
 void tp_future_account_set_parameter (TpFutureAccount *self,
     const gchar *key, GVariant *value);
 
+void tp_future_account_unset_parameter (TpFutureAccount *self,
+    const gchar *key);
+
 void tp_future_account_set_parameter_string (TpFutureAccount *self,
     const gchar *key, const gchar *value);
 

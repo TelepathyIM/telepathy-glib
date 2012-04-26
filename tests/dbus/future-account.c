@@ -133,9 +133,11 @@ test_parameters (Test *test,
 
   v_str = g_variant_new_string ("banana");
   tp_future_account_set_parameter (test->account, "cheese", v_str);
+  g_variant_unref (v_str);
 
   v_int = g_variant_new_uint32 (42);
   tp_future_account_set_parameter (test->account, "life", v_int);
+  g_variant_unref (v_int);
 
   tp_future_account_set_parameter_string (test->account,
       "great", "expectations");
@@ -150,8 +152,19 @@ test_parameters (Test *test,
   g_assert_cmpuint (tp_asv_get_uint32 (params, "life", NULL), ==, 42);
   g_assert_cmpstr (tp_asv_get_string (params, "great"), ==, "expectations");
 
-  g_variant_unref (v_str);
-  g_variant_unref (v_int);
+  g_hash_table_unref (params);
+
+  /* now let's unset one and see if it's okay */
+  tp_future_account_unset_parameter (test->account, "cheese");
+
+  g_object_get (test->account,
+      "parameters", &params,
+      NULL);
+
+  g_assert_cmpuint (g_hash_table_size (params), ==, 2);
+
+  g_assert_cmpuint (tp_asv_get_uint32 (params, "life", NULL), ==, 42);
+  g_assert_cmpstr (tp_asv_get_string (params, "great"), ==, "expectations");
 
   g_hash_table_unref (params);
 }
@@ -294,7 +307,7 @@ test_create_fail (Test *test,
 
   tp_future_account_set_display_name (test->account, "Walter White");
 
-  /* this will make CreateChannel fail */
+  /* this will make CreateAccount fail */
   tp_future_account_set_parameter_string (test->account,
       "fail", "yes");
 
@@ -308,6 +321,22 @@ test_create_fail (Test *test,
   g_assert (account == NULL);
 
   g_clear_error (&test->error);
+  test->result = NULL;
+
+  /* now let's unset the fail=yes and make sure it works */
+
+  tp_future_account_unset_parameter (test->account, "fail");
+
+  tp_future_account_create_account_async (test->account,
+      tp_tests_result_ready_cb, &test->result);
+  tp_tests_run_until_result (&test->result);
+
+  account = tp_future_account_create_account_finish (test->account,
+      test->result, &test->error);
+  g_assert_no_error (test->error);
+  g_assert (account != NULL);
+
+  g_object_unref (account);
 }
 
 int
