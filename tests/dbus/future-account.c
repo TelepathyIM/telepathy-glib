@@ -162,6 +162,8 @@ test_properties (Test *test,
 {
   GHashTable *props;
   gchar *icon_name, *nickname;
+  TpConnectionPresenceType presence_type;
+  gchar *presence_status, *presence_message;
 
   test->account = tp_future_account_new (test->account_manager,
       "gabble", "jabber");
@@ -204,6 +206,81 @@ test_properties (Test *test,
 
   g_hash_table_unref (props);
   g_free (nickname);
+
+  /* next is requested presence */
+  tp_future_account_set_requested_presence (test->account,
+      TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, "available",
+      "come at me, bro!");
+
+  g_object_get (test->account,
+      "requested-presence-type", &presence_type,
+      "requested-status", &presence_status,
+      "requested-status-message", &presence_message,
+      NULL);
+
+  g_assert_cmpuint (presence_type, ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  g_assert_cmpstr (presence_status, ==, "available");
+  g_assert_cmpstr (presence_message, ==, "come at me, bro!");
+
+  g_free (presence_status);
+  g_free (presence_message);
+}
+
+static void
+test_create (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpAccount *account;
+  GValueArray *array;
+
+  test->account = tp_future_account_new (test->account_manager,
+      "gabble", "jabber");
+
+  tp_future_account_set_display_name (test->account, "Walter White");
+  tp_future_account_set_icon_name (test->account, "gasmask");
+  tp_future_account_set_nickname (test->account, "Heisenberg");
+  tp_future_account_set_requested_presence (test->account,
+      TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, "available",
+      "Better call Saul!");
+
+  tp_future_account_set_parameter_string (test->account,
+      "account", "walter@white.us");
+  tp_future_account_set_parameter_string (test->account,
+      "password", "holly");
+
+  tp_future_account_create_account_async (test->account,
+      tp_tests_result_ready_cb, &test->result);
+  tp_tests_run_until_result (&test->result);
+
+  account = tp_future_account_create_account_finish (test->account,
+      test->result, &test->error);
+  g_assert_no_error (test->error);
+  g_assert (account != NULL);
+
+  g_assert_cmpstr (test->am->create_cm, ==, "gabble");
+  g_assert_cmpstr (test->am->create_protocol, ==, "jabber");
+  g_assert_cmpstr (test->am->create_display_name, ==, "Walter White");
+  g_assert_cmpuint (g_hash_table_size (test->am->create_parameters), ==, 2);
+  g_assert_cmpstr (tp_asv_get_string (test->am->create_parameters, "account"),
+      ==, "walter@white.us");
+  g_assert_cmpstr (tp_asv_get_string (test->am->create_parameters, "password"),
+      ==, "holly");
+  g_assert_cmpuint (g_hash_table_size (test->am->create_properties), ==, 3);
+  g_assert_cmpstr (tp_asv_get_string (test->am->create_properties, "Icon"),
+      ==, "gasmask");
+  g_assert_cmpstr (tp_asv_get_string (test->am->create_properties, "Nickname"),
+      ==, "Heisenberg");
+
+  array = tp_asv_get_boxed (test->am->create_properties, "RequestedPresence",
+      TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+  g_assert_cmpuint (g_value_get_uint (array->values), ==,
+      TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  g_assert_cmpstr (g_value_get_string (array->values + 1), ==,
+      "available");
+  g_assert_cmpstr (g_value_get_string (array->values + 2), ==,
+      "Better call Saul!");
+
+  g_object_unref (account);
 }
 
 int
@@ -224,6 +301,8 @@ main (int argc,
       test_parameters, teardown);
   g_test_add ("/future-account/properties", Test, NULL, setup,
       test_properties, teardown);
+  g_test_add ("/future-account/create", Test, NULL, setup,
+      test_create, teardown);
 
   return g_test_run ();
 }

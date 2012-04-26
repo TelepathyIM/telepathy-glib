@@ -71,6 +71,10 @@ void tp_future_account_set_icon_name (TpFutureAccount *self,
 void tp_future_account_set_nickname (TpFutureAccount *self,
     const gchar *nickname);
 
+void tp_future_account_set_requested_presence (TpFutureAccount *self,
+    TpConnectionPresenceType presence,
+    const gchar *status, const gchar *message);
+
 /* parameters */
 void tp_future_account_set_parameter (TpFutureAccount *self,
     const gchar *key, GVariant *value);

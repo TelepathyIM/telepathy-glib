@@ -22,6 +22,7 @@
 
 #include "telepathy-glib/future-account.h"
 
+#include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/simple-client-factory.h>
 
@@ -89,6 +90,9 @@ enum {
   PROP_PROPERTIES,
   PROP_ICON_NAME,
   PROP_NICKNAME,
+  PROP_REQUESTED_PRESENCE_TYPE,
+  PROP_REQUESTED_STATUS,
+  PROP_REQUESTED_STATUS_MESSAGE,
   N_PROPS
 };
 
@@ -151,6 +155,39 @@ tp_future_account_get_property (GObject *object,
     case PROP_NICKNAME:
       g_value_set_string (value,
           tp_asv_get_string (self->priv->properties, "Nickname"));
+      break;
+    case PROP_REQUESTED_PRESENCE_TYPE:
+      {
+        GValueArray *arr = tp_asv_get_boxed (self->priv->properties,
+            "RequestedPresence", TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+
+        if (arr != NULL)
+          g_value_set_uint (value, g_value_get_uint (arr->values));
+        else
+          g_value_set_uint (value, 0);
+      }
+      break;
+    case PROP_REQUESTED_STATUS:
+      {
+        GValueArray *arr = tp_asv_get_boxed (self->priv->properties,
+            "RequestedPresence", TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+
+        if (arr != NULL)
+          g_value_set_string (value, g_value_get_string (arr->values + 1));
+        else
+          g_value_set_string (value, "");
+      }
+      break;
+    case PROP_REQUESTED_STATUS_MESSAGE:
+      {
+        GValueArray *arr = tp_asv_get_boxed (self->priv->properties,
+            "RequestedPresence", TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+
+        if (arr != NULL)
+          g_value_set_string (value, g_value_get_string (arr->values + 2));
+        else
+          g_value_set_string (value, "");
+      }
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -335,6 +372,48 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           "The account's nickname",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpFutureAccount:requested-presence-type:
+   *
+   * The account's requested presence type (a
+   * #TpConnectionPresenceType). To change this property use
+   * tp_future_account_set_requested_presence().
+   */
+  g_object_class_install_property (object_class, PROP_REQUESTED_PRESENCE_TYPE,
+      g_param_spec_uint ("requested-presence-type",
+          "RequestedPresence",
+          "The account's requested presence type",
+          0,
+          TP_NUM_CONNECTION_PRESENCE_TYPES,
+          TP_CONNECTION_PRESENCE_TYPE_UNSET,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpFutureAccount:requested-status:
+   *
+   * The requested Status string of the account. To change this
+   * property use tp_future_account_set_requested_presence().
+   */
+  g_object_class_install_property (object_class, PROP_REQUESTED_STATUS,
+      g_param_spec_string ("requested-status",
+          "RequestedStatus",
+          "The account's requested status string",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpFutureAccount:requested-status-message:
+   *
+   * The requested status message message of the account. To change
+   * this property use tp_future_account_set_requested_presence().
+   */
+  g_object_class_install_property (object_class, PROP_REQUESTED_STATUS_MESSAGE,
+      g_param_spec_string ("requested-status-message",
+          "RequestedStatusMessage",
+          "The requested Status message string of the account",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 }
 
 /**
@@ -426,6 +505,41 @@ tp_future_account_set_nickname (TpFutureAccount *self,
   priv = self->priv;
 
   tp_asv_set_string (priv->properties, "Nickname", nickname);
+}
+
+/**
+ * tp_future_account_set_requested_presence:
+ * @self: a #TpFutureAccount
+ * @presence: the requested presence type
+ * @status: the requested presence status
+ * @message: the requested presence message
+ *
+ * Set the requested presence for the new account, @self, to the type
+ * (@presence, @status), with message @message.
+ */
+void
+tp_future_account_set_requested_presence (TpFutureAccount *self,
+    TpConnectionPresenceType presence,
+    const gchar *status,
+    const gchar *message)
+{
+  TpFutureAccountPrivate *priv;
+  GValue *value;
+  GValueArray *arr;
+
+  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+
+  priv = self->priv;
+
+  value = tp_g_value_slice_new_take_boxed (TP_STRUCT_TYPE_SIMPLE_PRESENCE,
+      dbus_g_type_specialized_construct (TP_STRUCT_TYPE_SIMPLE_PRESENCE));
+  arr = (GValueArray *) g_value_get_boxed (value);
+
+  g_value_set_uint (arr->values, presence);
+  g_value_set_string (arr->values + 1, status);
+  g_value_set_string (arr->values + 2, message);
+
+  g_hash_table_insert (priv->properties, "RequestedPresence", value);
 }
 
 /**
