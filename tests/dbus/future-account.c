@@ -11,11 +11,16 @@
 
 #include <telepathy-glib/future-account.h>
 
+#include "tests/lib/simple-account.h"
+#include "tests/lib/simple-account-manager.h"
 #include "tests/lib/util.h"
 
 typedef struct {
   GMainLoop *mainloop;
   TpDBusDaemon *dbus;
+
+  TpTestsSimpleAccountManager *am;
+  TpTestsSimpleAccount *account_service;
 
   TpAccountManager *account_manager;
   TpFutureAccount *account;
@@ -32,8 +37,25 @@ setup (Test *test,
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
   g_assert (test->dbus != NULL);
 
+  /* create the account manager service */
+  tp_dbus_daemon_request_name (test->dbus,
+      TP_ACCOUNT_MANAGER_BUS_NAME, FALSE, &test->error);
+  g_assert_no_error (test->error);
+  test->am = tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER, NULL);
+  tp_dbus_daemon_register_object (test->dbus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
+      test->am);
+
+  /* and now the account manager proxy */
   test->account_manager = tp_account_manager_dup ();
   g_assert (test->account_manager != NULL);
+
+  /* finally create the account service */
+  test->account_service = tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_SIMPLE_ACCOUNT, NULL);
+  tp_dbus_daemon_register_object (test->dbus,
+      TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/lospolloshermanos",
+      test->account_service);
 
   test->account = NULL;
 }
@@ -44,14 +66,20 @@ teardown (Test *test,
 {
   g_clear_object (&test->account);
 
-  /* make sure any pending calls on the account have happened, so it can die */
-  tp_tests_proxy_run_until_dbus_queue_processed (test->dbus);
+  tp_dbus_daemon_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
+      &test->error);
+  g_assert_no_error (test->error);
+  tp_dbus_daemon_unregister_object (test->dbus, test->am);
+  g_clear_object (&test->am);
+
+  tp_dbus_daemon_unregister_object (test->dbus, test->account_service);
+  g_clear_object (&test->account_service);
 
   g_clear_object (&test->dbus);
   tp_clear_pointer (&test->mainloop, g_main_loop_unref);
 
   g_clear_error (&test->error);
-  tp_clear_object (&test->result);
+  g_clear_object (&test->result);
 }
 
 static void
