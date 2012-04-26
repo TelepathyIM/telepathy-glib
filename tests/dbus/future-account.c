@@ -64,7 +64,7 @@ test_new (Test *test,
 }
 
 static void
-test_properties (Test *test,
+test_gobject_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpAccountManager *am;
@@ -128,6 +128,24 @@ test_parameters (Test *test,
   g_hash_table_unref (params);
 }
 
+static void
+test_properties (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *props;
+
+  test->account = tp_future_account_new (test->account_manager,
+      "gabble", "jabber");
+
+  g_object_get (test->account,
+      "properties", &props,
+      NULL);
+
+  g_assert_cmpuint (g_hash_table_size (props), ==, 0);
+
+  g_hash_table_unref (props);
+}
+
 int
 main (int argc,
     char **argv)
@@ -140,10 +158,12 @@ main (int argc,
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
   g_test_add ("/future-account/new", Test, NULL, setup, test_new, teardown);
-  g_test_add ("/future-account/properties", Test, NULL, setup,
-      test_properties, teardown);
+  g_test_add ("/future-account/gobject-properties", Test, NULL, setup,
+      test_gobject_properties, teardown);
   g_test_add ("/future-account/parameters", Test, NULL, setup,
       test_parameters, teardown);
+  g_test_add ("/future-account/properties", Test, NULL, setup,
+      test_properties, teardown);
 
   return g_test_run ();
 }

@@ -63,6 +63,7 @@ struct _TpFutureAccountPrivate {
   gchar *display_name;
 
   GHashTable *parameters;
+  GHashTable *properties;
 };
 
 G_DEFINE_TYPE (TpFutureAccount, tp_future_account, G_TYPE_OBJECT)
@@ -81,6 +82,7 @@ enum {
   PROP_PROTOCOL,
   PROP_DISPLAY_NAME,
   PROP_PARAMETERS,
+  PROP_PROPERTIES,
   N_PROPS
 };
 
@@ -101,6 +103,8 @@ tp_future_account_constructed (GObject *object)
 
   priv->parameters = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, (GDestroyNotify) tp_g_value_slice_free);
+
+  priv->properties = tp_asv_new (NULL, NULL);
 
   if (chain_up != NULL)
     chain_up (object);
@@ -130,6 +134,9 @@ tp_future_account_get_property (GObject *object,
       break;
     case PROP_PARAMETERS:
       g_value_set_boxed (value, self->priv->parameters);
+      break;
+    case PROP_PROPERTIES:
+      g_value_set_boxed (value, self->priv->properties);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -178,6 +185,7 @@ tp_future_account_dispose (GObject *object)
   priv->dispose_has_run = TRUE;
 
   tp_clear_pointer (&priv->parameters, g_hash_table_unref);
+  tp_clear_pointer (&priv->properties, g_hash_table_unref);
 
   /* release any references held by the object here */
 
@@ -273,6 +281,18 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
       g_param_spec_boxed ("parameters",
           "Parameters",
           "Connection parameters of the account",
+          G_TYPE_HASH_TABLE,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpFutureAccount:properties:
+   *
+   * TODO
+   */
+  g_object_class_install_property (object_class, PROP_PROPERTIES,
+      g_param_spec_boxed ("properties",
+          "Properties",
+          "Account properties",
           G_TYPE_HASH_TABLE,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 }
