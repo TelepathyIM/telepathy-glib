@@ -75,6 +75,9 @@ void tp_future_account_set_requested_presence (TpFutureAccount *self,
     TpConnectionPresenceType presence,
     const gchar *status, const gchar *message);
 
+void tp_future_account_set_enabled (TpFutureAccount *self,
+    gboolean enabled);
+
 /* parameters */
 void tp_future_account_set_parameter (TpFutureAccount *self,
     const gchar *key, GVariant *value);

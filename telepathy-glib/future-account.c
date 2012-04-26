@@ -93,6 +93,7 @@ enum {
   PROP_REQUESTED_PRESENCE_TYPE,
   PROP_REQUESTED_STATUS,
   PROP_REQUESTED_STATUS_MESSAGE,
+  PROP_ENABLED,
   N_PROPS
 };
 
@@ -188,6 +189,10 @@ tp_future_account_get_property (GObject *object,
         else
           g_value_set_string (value, "");
       }
+      break;
+    case PROP_ENABLED:
+      g_value_set_boolean (value,
+          tp_asv_get_boolean (self->priv->properties, "Enabled", NULL));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -414,6 +419,19 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           "The requested Status message string of the account",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpFutureAccount:enabled:
+   *
+   * Whether the account is enabled or not. To change this property
+   * use tp_future_account_set_enabled().
+   */
+  g_object_class_install_property (object_class, PROP_ENABLED,
+      g_param_spec_boolean ("enabled",
+          "Enabled",
+          "Whether this account is enabled or not",
+          FALSE,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 }
 
 /**
@@ -540,6 +558,26 @@ tp_future_account_set_requested_presence (TpFutureAccount *self,
   g_value_set_string (arr->values + 2, message);
 
   g_hash_table_insert (priv->properties, "RequestedPresence", value);
+}
+
+/**
+ * tp_future_account_set_enabled:
+ * @self: a #TpFutureAccount
+ * @enabled: %TRUE if the account is to be enabled
+ *
+ * Set the enabled property of the account on creation to @enabled.
+ */
+void
+tp_future_account_set_enabled (TpFutureAccount *self,
+    gboolean enabled)
+{
+  TpFutureAccountPrivate *priv;
+
+  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+
+  priv = self->priv;
+
+  tp_asv_set_boolean (priv->properties, "Enabled", enabled);
 }
 
 /**
