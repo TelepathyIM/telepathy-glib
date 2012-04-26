@@ -29,12 +29,12 @@
 /**
  * SECTION: room-info
  * @title: TpRoomInfo
- * @short_description: a room found by #TpRoomListChannel
+ * @short_description: a room found by #TpRoomList
  *
  * #TpRoomInfo represents a room found during a room listing using
- * #TpRoomListChannel.
+ * #TpRoomList.
  *
- * See also: #TpRoomListChannel
+ * See also: #TpRoomList
  */
 
 /**
