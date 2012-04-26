@@ -23,8 +23,7 @@
  * @title: TpRoomList
  * @short_description: proxy object for a room list channel
  *
- * #TpRoomList is a sub-class of #TpChannel providing convenient API
- * to list rooms.
+ * #TpRoomList provides convenient API to list rooms.
  */
 
 /**
