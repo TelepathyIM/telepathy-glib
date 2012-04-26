@@ -352,7 +352,7 @@ tp_room_list_get_server (TpRoomList *self)
 }
 
 /**
- * tp_room_list_get_listing:
+ * tp_room_list_is_listing:
  * @self: a #TpRoomList
  *
  * Return the #TpRoomList:listing property
@@ -362,7 +362,7 @@ tp_room_list_get_server (TpRoomList *self)
  * Since: UNRELEASED
  */
 gboolean
-tp_room_list_get_listing (TpRoomList *self)
+tp_room_list_is_listing (TpRoomList *self)
 {
   return self->priv->listing;
 }

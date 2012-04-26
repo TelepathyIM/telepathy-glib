@@ -65,7 +65,7 @@ TpAccount * tp_room_list_get_account (TpRoomList *self);
 
 const gchar * tp_room_list_get_server (TpRoomList *self);
 
-gboolean tp_room_list_get_listing (TpRoomList *self);
+gboolean tp_room_list_is_listing (TpRoomList *self);
 
 void tp_room_list_start (TpRoomList *self);
 

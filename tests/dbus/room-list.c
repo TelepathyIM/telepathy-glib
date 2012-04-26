@@ -151,7 +151,7 @@ test_properties (Test *test,
       SERVER);
 
   g_assert (!listing);
-  g_assert (!tp_room_list_get_listing (test->room_list));
+  g_assert (!tp_room_list_is_listing (test->room_list));
 
   /* Create new one without server */
   tp_clear_object (&test->room_list);
@@ -192,7 +192,7 @@ test_listing (Test *test,
   TpRoomInfo *room;
   gboolean known;
 
-  g_assert (!tp_room_list_get_listing (test->room_list));
+  g_assert (!tp_room_list_is_listing (test->room_list));
 
   g_signal_connect (test->room_list, "notify::listing",
       G_CALLBACK (notify_cb), test);
@@ -206,7 +206,7 @@ test_listing (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  g_assert (tp_room_list_get_listing (test->room_list));
+  g_assert (tp_room_list_is_listing (test->room_list));
 
   g_assert_cmpuint (test->rooms->len, ==, 3);
 

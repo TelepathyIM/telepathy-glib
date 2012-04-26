@@ -7241,7 +7241,7 @@ TpRoomList
 TpRoomListClass
 tp_room_list_new_async
 tp_room_list_new_finish
-tp_room_list_get_listing
+tp_room_list_is_listing
 tp_room_list_get_server
 tp_room_list_get_account
 tp_room_list_start
