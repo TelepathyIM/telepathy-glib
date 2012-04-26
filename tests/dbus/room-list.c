@@ -174,7 +174,7 @@ notify_cb (GObject *object,
 }
 
 static void
-got_rooms_cb (TpRoomList *channel,
+got_room_cb (TpRoomList *channel,
     TpRoomInfo *room,
     Test *test)
 {
@@ -197,8 +197,8 @@ test_listing (Test *test,
   g_signal_connect (test->room_list, "notify::listing",
       G_CALLBACK (notify_cb), test);
 
-  g_signal_connect (test->room_list, "got-rooms",
-      G_CALLBACK (got_rooms_cb), test);
+  g_signal_connect (test->room_list, "got-room",
+      G_CALLBACK (got_room_cb), test);
 
   tp_room_list_start (test->room_list);
 

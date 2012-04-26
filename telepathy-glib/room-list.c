@@ -81,7 +81,7 @@ enum
 };
 
 enum {
-  SIG_GOT_ROOMS,
+  SIG_GOT_ROOM,
   SIG_FAILED,
   LAST_SIGNAL
 };
@@ -156,7 +156,7 @@ got_rooms_cb (TpChannel *channel,
       TpRoomInfo *room;
 
       room = _tp_room_info_new (g_ptr_array_index (rooms, i));
-      g_signal_emit (self, signals[SIG_GOT_ROOMS], 0, room);
+      g_signal_emit (self, signals[SIG_GOT_ROOM], 0, room);
       g_object_unref (room);
     }
 }
@@ -275,7 +275,7 @@ tp_room_list_class_init (TpRoomListClass *klass)
 
 
   /**
-   * TpRoomList::got-rooms:
+   * TpRoomList::got-room:
    * @self: a #TpRoomList
    * @room: a #TpRoomInfo
    *
@@ -285,7 +285,7 @@ tp_room_list_class_init (TpRoomListClass *klass)
    *
    * Since: UNRELEASED
    */
-  signals[SIG_GOT_ROOMS] = g_signal_new ("got-rooms",
+  signals[SIG_GOT_ROOM] = g_signal_new ("got-room",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
       0, NULL, NULL, NULL,
