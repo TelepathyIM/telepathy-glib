@@ -75,6 +75,13 @@ void tp_future_account_set_parameter (TpFutureAccount *self,
 void tp_future_account_set_parameter_string (TpFutureAccount *self,
     const gchar *key, const gchar *value);
 
+/* create it */
+void tp_future_account_create_account_async (TpFutureAccount *self,
+    GAsyncReadyCallback callback, gpointer user_data);
+
+TpAccount * tp_future_account_create_account_finish (TpFutureAccount *self,
+    GAsyncResult *result, GError **error);
+
 G_END_DECLS
 
 #endif

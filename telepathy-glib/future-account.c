@@ -23,9 +23,11 @@
 #include "telepathy-glib/future-account.h"
 
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/simple-client-factory.h>
 
 #define DEBUG_FLAG TP_DEBUG_ACCOUNTS
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/util-internal.h"
 
 /**
  * SECTION:future-account
@@ -57,6 +59,8 @@ struct _TpFutureAccountPrivate {
   gboolean dispose_has_run;
 
   TpAccountManager *account_manager;
+
+  GSimpleAsyncResult *result;
 
   gchar *cm_name;
   gchar *proto_name;
@@ -437,4 +441,149 @@ tp_future_account_set_parameter_string (TpFutureAccount *self,
 
   g_hash_table_insert (priv->parameters, g_strdup (key),
       tp_g_value_slice_new_string (value));
+}
+
+static void
+tp_future_account_account_prepared_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpFutureAccount *self = user_data;
+  TpFutureAccountPrivate *priv = self->priv;
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (object, result, &error))
+    {
+      DEBUG ("Error preparing account: %s", error->message);
+      g_simple_async_result_take_error (priv->result, error);
+    }
+
+  g_simple_async_result_complete (priv->result);
+  g_clear_object (&priv->result);
+}
+
+static void
+tp_future_account_create_account_cb (TpAccountManager *proxy,
+    const gchar *account_path,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpFutureAccount *self = TP_FUTURE_ACCOUNT (weak_object);
+  TpFutureAccountPrivate *priv = self->priv;
+  GError *e = NULL;
+  TpAccount *account;
+  GArray *features;
+
+  if (error != NULL)
+    {
+      DEBUG ("failed to create account: %s", error->message);
+      g_simple_async_result_set_from_error (priv->result, error);
+      g_simple_async_result_complete (priv->result);
+      g_clear_object (&priv->result);
+      return;
+    }
+
+  account = tp_simple_client_factory_ensure_account (
+      tp_proxy_get_factory (proxy), account_path, NULL, &e);
+
+  if (account == NULL)
+    {
+      g_simple_async_result_take_error (priv->result, e);
+      g_simple_async_result_complete (priv->result);
+      g_clear_object (&priv->result);
+      return;
+    }
+
+  /* Give account's ref to the result */
+  g_simple_async_result_set_op_res_gpointer (priv->result, account,
+      g_object_unref);
+
+  features = tp_simple_client_factory_dup_account_features (
+      tp_proxy_get_factory (proxy), account);
+
+  tp_proxy_prepare_async (account, (GQuark *) features->data,
+      tp_future_account_account_prepared_cb, self);
+
+  g_array_unref (features);
+}
+
+/**
+ * tp_future_account_create_account_async:
+ * @self: a #TpFutureAccount
+ * @callback: a function to call when the account has been created
+ * @user_data: user data to @callback
+ *
+ * Start an asynchronous operation to create the account @self on the
+ * account manager.
+ *
+ * @callback will only be called when the newly created #TpAccount has
+ * the %TP_ACCOUNT_FEATURE_CORE feature ready on it, so when calling
+ * tp_future_account_create_account_finish(), one can guarantee this
+ * feature.
+ */
+void
+tp_future_account_create_account_async (TpFutureAccount *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpFutureAccountPrivate *priv = self->priv;
+
+  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+
+  priv = self->priv;
+
+  if (priv->result != NULL)
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (self),
+          callback, user_data,
+          TP_ERROR, TP_ERROR_BUSY,
+          "A account creation operation has already been started on this "
+          "future account");
+      return;
+    }
+
+  if (priv->account_manager == NULL
+      || priv->cm_name == NULL
+      || priv->proto_name == NULL
+      || priv->display_name == NULL)
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (self),
+          callback, user_data,
+          TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+          "Future account is missing one or more of: account manager, "
+          "connection manager name, protocol name, or display name");
+      return;
+    }
+
+  priv->result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
+      tp_future_account_create_account_async);
+
+  tp_cli_account_manager_call_create_account (priv->account_manager,
+      -1, priv->cm_name, priv->proto_name, priv->display_name,
+      priv->parameters, priv->properties,
+      tp_future_account_create_account_cb, NULL, NULL, G_OBJECT (self));
+}
+
+/**
+ * tp_future_account_create_account_finish:
+ * @self: a #TpFutureAccount
+ * @result: a #GAsyncResult
+ * @error: something
+ *
+ * Finishes an asynchronous account creation operation and returns a
+ * new #TpAccount object, with the %TP_ACCOUNT_FEATURE_CORE feature
+ * prepared on it.
+ *
+ * Returns: (transfer full) a new #TpAccount which was just created on
+ *   success, otherwise %NULL
+ */
+
+TpAccount *
+tp_future_account_create_account_finish (TpFutureAccount *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_return_copy_pointer (self,
+      tp_future_account_create_account_async, g_object_ref);
 }
