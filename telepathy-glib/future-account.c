@@ -83,6 +83,7 @@ enum {
   PROP_DISPLAY_NAME,
   PROP_PARAMETERS,
   PROP_PROPERTIES,
+  PROP_ICON_NAME,
   N_PROPS
 };
 
@@ -137,6 +138,9 @@ tp_future_account_get_property (GObject *object,
       break;
     case PROP_PROPERTIES:
       g_value_set_boxed (value, self->priv->properties);
+      break;
+    case PROP_ICON_NAME:
+      g_value_set_string (value, tp_asv_get_string (self->priv->properties, "Icon"));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -295,6 +299,19 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           "Account properties",
           G_TYPE_HASH_TABLE,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpFutureAccount:icon-name:
+   *
+   * The account's icon name. To change this propery, use
+   * tp_future_account_set_icon_name().
+   */
+  g_object_class_install_property (object_class, PROP_ICON_NAME,
+      g_param_spec_string ("icon-name",
+          "Icon",
+          "The account's icon name",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 }
 
 /**
@@ -344,6 +361,27 @@ tp_future_account_set_display_name (TpFutureAccount *self,
 
   g_free (priv->display_name);
   priv->display_name = g_strdup (name);
+}
+
+/**
+ * tp_future_account_set_icon_name:
+ * @self: a #TpFutureAccount
+ * @icon: an icon name for the account
+ *
+ * Set the icon name for the new account @self to @icon.
+ */
+void
+tp_future_account_set_icon_name (TpFutureAccount *self,
+    const gchar *icon)
+{
+  TpFutureAccountPrivate *priv;
+
+  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (icon != NULL);
+
+  priv = self->priv;
+
+  tp_asv_set_string (priv->properties, "Icon", icon);
 }
 
 /**
