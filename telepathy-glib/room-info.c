@@ -58,7 +58,7 @@ G_DEFINE_TYPE (TpRoomInfo, tp_room_info, G_TYPE_OBJECT)
 struct _TpRoomInfoPriv {
   TpHandle handle;
   gchar *channel_type;
-  GHashTable *hash;
+  GHashTable *info;
 };
 
 static void
@@ -69,7 +69,7 @@ tp_room_info_finalize (GObject *object)
       ((GObjectClass *) tp_room_info_parent_class)->finalize;
 
   g_free (self->priv->channel_type);
-  g_hash_table_unref (self->priv->hash);
+  g_hash_table_unref (self->priv->info);
 
   if (chain_up != NULL)
     chain_up (object);
@@ -114,7 +114,7 @@ _tp_room_info_new (GValueArray *dbus_struct)
   room->priv->channel_type = g_value_dup_string (v);
 
   v = g_value_array_get_nth (dbus_struct, 2);
-  room->priv->hash = g_value_dup_boxed (v);
+  room->priv->info = g_value_dup_boxed (v);
 
   return room;
 }
@@ -166,7 +166,7 @@ tp_room_info_get_channel_type (TpRoomInfo *self)
 const gchar *
 tp_room_info_get_handle_name (TpRoomInfo *self)
 {
-  return tp_asv_get_string (self->priv->hash, "handle-name");
+  return tp_asv_get_string (self->priv->info, "handle-name");
 }
 
 /**
@@ -183,7 +183,7 @@ tp_room_info_get_handle_name (TpRoomInfo *self)
 const gchar *
 tp_room_info_get_name (TpRoomInfo *self)
 {
-  return tp_asv_get_string (self->priv->hash, "name");
+  return tp_asv_get_string (self->priv->info, "name");
 }
 
 /**
@@ -199,7 +199,7 @@ tp_room_info_get_name (TpRoomInfo *self)
 const gchar *
 tp_room_info_get_description (TpRoomInfo *self)
 {
-  return tp_asv_get_string (self->priv->hash, "description");
+  return tp_asv_get_string (self->priv->info, "description");
 }
 
 /**
@@ -215,7 +215,7 @@ tp_room_info_get_description (TpRoomInfo *self)
 const gchar *
 tp_room_info_get_subject (TpRoomInfo *self)
 {
-  return tp_asv_get_string (self->priv->hash, "subject");
+  return tp_asv_get_string (self->priv->info, "subject");
 }
 
 /**
@@ -234,7 +234,7 @@ guint
 tp_room_info_get_members_count (TpRoomInfo *self,
     gboolean *known)
 {
-  return tp_asv_get_uint32 (self->priv->hash, "members", known);
+  return tp_asv_get_uint32 (self->priv->info, "members", known);
 }
 
 /**
@@ -253,7 +253,7 @@ gboolean
 tp_room_info_get_requires_password (TpRoomInfo *self,
     gboolean *known)
 {
-  return tp_asv_get_boolean (self->priv->hash, "password", known);
+  return tp_asv_get_boolean (self->priv->info, "password", known);
 }
 
 /**
@@ -272,7 +272,7 @@ gboolean
 tp_room_info_get_invite_only (TpRoomInfo *self,
     gboolean *known)
 {
-  return tp_asv_get_boolean (self->priv->hash, "invite-only", known);
+  return tp_asv_get_boolean (self->priv->info, "invite-only", known);
 }
 
 /**
@@ -288,7 +288,7 @@ tp_room_info_get_invite_only (TpRoomInfo *self,
 const gchar *
 tp_room_info_get_room_id (TpRoomInfo *self)
 {
-  return tp_asv_get_string (self->priv->hash, "room-id");
+  return tp_asv_get_string (self->priv->info, "room-id");
 }
 
 /**
@@ -304,5 +304,5 @@ tp_room_info_get_room_id (TpRoomInfo *self)
 const gchar *
 tp_room_info_get_server (TpRoomInfo *self)
 {
-  return tp_asv_get_string (self->priv->hash, "server");
+  return tp_asv_get_string (self->priv->info, "server");
 }
