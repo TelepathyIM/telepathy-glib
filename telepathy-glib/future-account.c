@@ -346,7 +346,7 @@ tp_future_account_new (TpAccountManager *account_manager,
  * @self: a #TpFutureAccount
  * @name: a display name for the account
  *
- * Set the display name for the new account @self to @name.
+ * Set the display name for the new account, @self, to @name.
  */
 void
 tp_future_account_set_display_name (TpFutureAccount *self,
@@ -368,7 +368,7 @@ tp_future_account_set_display_name (TpFutureAccount *self,
  * @self: a #TpFutureAccount
  * @icon: an icon name for the account
  *
- * Set the icon name for the new account @self to @icon.
+ * Set the icon name for the new account, @self, to @icon.
  */
 void
 tp_future_account_set_icon_name (TpFutureAccount *self,
