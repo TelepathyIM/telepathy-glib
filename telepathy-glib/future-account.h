@@ -65,6 +65,13 @@ TpFutureAccount * tp_future_account_new (TpAccountManager *account_manager,
 void tp_future_account_set_display_name (TpFutureAccount *self,
     const gchar *name);
 
+/* parameters */
+void tp_future_account_set_parameter (TpFutureAccount *self,
+    const gchar *key, GVariant *value);
+
+void tp_future_account_set_parameter_string (TpFutureAccount *self,
+    const gchar *key, const gchar *value);
+
 G_END_DECLS
 
 #endif

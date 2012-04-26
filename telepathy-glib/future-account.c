@@ -61,6 +61,8 @@ struct _TpFutureAccountPrivate {
   gchar *cm_name;
   gchar *proto_name;
   gchar *display_name;
+
+  GHashTable *parameters;
 };
 
 G_DEFINE_TYPE (TpFutureAccount, tp_future_account, G_TYPE_OBJECT)
@@ -78,6 +80,7 @@ enum {
   PROP_CONNECTION_MANAGER,
   PROP_PROTOCOL,
   PROP_DISPLAY_NAME,
+  PROP_PARAMETERS,
   N_PROPS
 };
 
@@ -86,6 +89,21 @@ tp_future_account_init (TpFutureAccount *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_FUTURE_ACCOUNT,
       TpFutureAccountPrivate);
+}
+
+static void
+tp_future_account_constructed (GObject *object)
+{
+  TpFutureAccount *self = TP_FUTURE_ACCOUNT (object);
+  TpFutureAccountPrivate *priv = self->priv;
+  void (*chain_up) (GObject *) =
+    ((GObjectClass *) tp_future_account_parent_class)->constructed;
+
+  priv->parameters = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, (GDestroyNotify) tp_g_value_slice_free);
+
+  if (chain_up != NULL)
+    chain_up (object);
 }
 
 static void
@@ -109,6 +127,9 @@ tp_future_account_get_property (GObject *object,
       break;
     case PROP_DISPLAY_NAME:
       g_value_set_string (value, self->priv->display_name);
+      break;
+    case PROP_PARAMETERS:
+      g_value_set_boxed (value, self->priv->parameters);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -156,6 +177,8 @@ tp_future_account_dispose (GObject *object)
 
   priv->dispose_has_run = TRUE;
 
+  tp_clear_pointer (&priv->parameters, g_hash_table_unref);
+
   /* release any references held by the object here */
 
   if (G_OBJECT_CLASS (tp_future_account_parent_class)->dispose != NULL)
@@ -185,6 +208,7 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpFutureAccountPrivate));
 
+  object_class->constructed = tp_future_account_constructed;
   object_class->get_property = tp_future_account_get_property;
   object_class->set_property = tp_future_account_set_property;
   object_class->dispose = tp_future_account_dispose;
@@ -239,6 +263,18 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           "The account's display name",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpFutureAccount:parameters:
+   *
+   * TODO
+   */
+  g_object_class_install_property (object_class, PROP_PARAMETERS,
+      g_param_spec_boxed ("parameters",
+          "Parameters",
+          "Connection parameters of the account",
+          G_TYPE_HASH_TABLE,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 }
 
 /**
@@ -288,4 +324,59 @@ tp_future_account_set_display_name (TpFutureAccount *self,
 
   g_free (priv->display_name);
   priv->display_name = g_strdup (name);
+}
+
+/**
+ * tp_future_account_set_parameter:
+ * @self: a #TpFutureAccount
+ * @key: the parameter key
+ * @value: (transfer none): a variant containing the parameter value
+ *
+ * Set an account parameter, @key, to @value.
+ */
+void
+tp_future_account_set_parameter (TpFutureAccount *self,
+    const gchar *key,
+    GVariant *value)
+{
+  TpFutureAccountPrivate *priv;
+  GValue one = G_VALUE_INIT, *two;
+
+  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (key != NULL);
+  g_return_if_fail (value != NULL);
+
+  priv = self->priv;
+
+  dbus_g_value_parse_g_variant (value, &one);
+  two = tp_g_value_slice_dup (&one);
+
+  g_hash_table_insert (priv->parameters, g_strdup (key), two);
+
+  g_value_unset (&one);
+}
+
+/**
+ * tp_future_account_set_parameter_string: (skip)
+ * @self: a #TpFutureAccount
+ * @key: the parameter key
+ * @value: the parameter value
+ *
+ * Set an account parameter, @key, to @value.
+ */
+void
+tp_future_account_set_parameter_string (TpFutureAccount *self,
+    const gchar *key,
+    const gchar *value)
+{
+  TpFutureAccountPrivate *priv;
+
+  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (key != NULL);
+  g_return_if_fail (value != NULL);
+
+  priv = self->priv;
+
+  g_hash_table_insert (priv->parameters, g_strdup (key),
+      tp_g_value_slice_new_string (value));
 }

@@ -93,6 +93,41 @@ test_properties (Test *test,
   g_free (display_name);
 }
 
+static void
+test_parameters (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GVariant *v_str, *v_int;
+  GHashTable *params;
+
+  test->account = tp_future_account_new (test->account_manager,
+      "gabble", "jabber");
+
+  v_str = g_variant_new_string ("banana");
+  tp_future_account_set_parameter (test->account, "cheese", v_str);
+
+  v_int = g_variant_new_uint32 (42);
+  tp_future_account_set_parameter (test->account, "life", v_int);
+
+  tp_future_account_set_parameter_string (test->account,
+      "great", "expectations");
+
+  g_object_get (test->account,
+      "parameters", &params,
+      NULL);
+
+  g_assert_cmpuint (g_hash_table_size (params), ==, 3);
+
+  g_assert_cmpstr (tp_asv_get_string (params, "cheese"), ==, "banana");
+  g_assert_cmpuint (tp_asv_get_uint32 (params, "life", NULL), ==, 42);
+  g_assert_cmpstr (tp_asv_get_string (params, "great"), ==, "expectations");
+
+  g_variant_unref (v_str);
+  g_variant_unref (v_int);
+
+  g_hash_table_unref (params);
+}
+
 int
 main (int argc,
     char **argv)
@@ -107,6 +142,8 @@ main (int argc,
   g_test_add ("/future-account/new", Test, NULL, setup, test_new, teardown);
   g_test_add ("/future-account/properties", Test, NULL, setup,
       test_properties, teardown);
+  g_test_add ("/future-account/parameters", Test, NULL, setup,
+      test_parameters, teardown);
 
   return g_test_run ();
 }
