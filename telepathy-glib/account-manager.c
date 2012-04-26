@@ -51,6 +51,26 @@
  * The #TpAccountManager object is used to communicate with the Telepathy
  * AccountManager service.
  *
+ * A new #TpAccountManager object can be created with
+ * tp_account_manager_dup().
+ *
+ * To list the existing valid accounts, the client should first
+ * prepare the %TP_ACCOUNT_MANAGER_FEATURE_CORE feature using
+ * tp_proxy_prepare_async(), then call
+ * tp_account_manager_get_valid_accounts().
+ *
+ * The #TpAccountManager::account-validity-changed signal is emitted
+ * to notify of the validity of an account changing. New accounts are
+ * also indicated by the emission of this signal on an account that
+ * did not previously exist. (The rationale behind indicating new
+ * accounts by an account validity change signal is that clients
+ * interested in this kind of thing should be connected to this signal
+ * anyway: an account having just become valid is effectively a new
+ * account to a client.)
+ *
+ * The #TpAccountManager::account-removed signal is emitted when
+ * existing accounts are removed.
+ *
  * Since: 0.7.32
  */
 
@@ -589,6 +609,9 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    * @usable: %TRUE if the account is now usable
    *
    * Emitted when the usability on @account changes.
+   *
+   * This signal is also used to indicate a new account that did not
+   * previously exist has been added (with @valid set to %TRUE).
    *
    * @account is guaranteed to have %TP_ACCOUNT_FEATURE_CORE prepared, along
    * with all features previously passed to
