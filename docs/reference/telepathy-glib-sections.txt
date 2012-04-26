@@ -7271,7 +7271,7 @@ tp_room_info_get_description
 tp_room_info_get_handle
 tp_room_info_get_handle_name
 tp_room_info_get_invite_only
-tp_room_info_get_members
+tp_room_info_get_members_count
 tp_room_info_get_name
 tp_room_info_get_requires_password
 tp_room_info_get_room_id

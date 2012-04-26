@@ -220,7 +220,7 @@ test_listing (Test *test,
   g_assert_cmpstr (tp_room_info_get_name (room), ==, "the name");
   g_assert_cmpstr (tp_room_info_get_description (room), ==, "the description");
   g_assert_cmpstr (tp_room_info_get_subject (room), ==, "the subject");
-  g_assert_cmpuint (tp_room_info_get_members (room, &known), ==, 10);
+  g_assert_cmpuint (tp_room_info_get_members_count (room, &known), ==, 10);
   g_assert (known);
   g_assert (tp_room_info_get_requires_password (room, &known));
   g_assert (known);

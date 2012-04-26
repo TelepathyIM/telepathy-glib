@@ -219,7 +219,7 @@ tp_room_info_get_subject (TpRoomInfo *self)
 }
 
 /**
- * tp_room_info_get_members:
+ * tp_room_info_get_members_count:
  * @self: a #TpRoomInfo
  * @known: either %NULL, or a location in which to store %TRUE if the
  * returned value is meaningful
@@ -231,7 +231,7 @@ tp_room_info_get_subject (TpRoomInfo *self)
  * Since: UNRELEASED
  */
 guint
-tp_room_info_get_members (TpRoomInfo *self,
+tp_room_info_get_members_count (TpRoomInfo *self,
     gboolean *known)
 {
   return tp_asv_get_uint32 (self->priv->hash, "members", known);

@@ -72,7 +72,7 @@ const gchar *tp_room_info_get_handle_name (TpRoomInfo *self);
 const gchar *tp_room_info_get_name (TpRoomInfo *self);
 const gchar *tp_room_info_get_description (TpRoomInfo *self);
 const gchar *tp_room_info_get_subject (TpRoomInfo *self);
-guint tp_room_info_get_members (TpRoomInfo *self,
+guint tp_room_info_get_members_count (TpRoomInfo *self,
     gboolean *known);
 gboolean tp_room_info_get_requires_password (TpRoomInfo *self,
     gboolean *known);
