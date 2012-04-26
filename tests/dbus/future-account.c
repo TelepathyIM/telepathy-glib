@@ -133,7 +133,7 @@ test_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *props;
-  gchar *icon_name;
+  gchar *icon_name, *nickname;
 
   test->account = tp_future_account_new (test->account_manager,
       "gabble", "jabber");
@@ -160,6 +160,22 @@ test_properties (Test *test,
 
   g_hash_table_unref (props);
   g_free (icon_name);
+
+  /* now set the nickname and try again */
+  tp_future_account_set_nickname (test->account, "Walter Jr.");
+
+  g_object_get (test->account,
+      "properties", &props,
+      "nickname", &nickname,
+      NULL);
+
+  g_assert_cmpuint (g_hash_table_size (props), ==, 2);
+  g_assert_cmpstr (tp_asv_get_string (props, "Icon"), ==, "user32.dll");
+  g_assert_cmpstr (tp_asv_get_string (props, "Nickname"), ==, "Walter Jr.");
+  g_assert_cmpstr (nickname, ==, "Walter Jr.");
+
+  g_hash_table_unref (props);
+  g_free (nickname);
 }
 
 int

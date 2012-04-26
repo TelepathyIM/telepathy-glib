@@ -88,6 +88,7 @@ enum {
   PROP_PARAMETERS,
   PROP_PROPERTIES,
   PROP_ICON_NAME,
+  PROP_NICKNAME,
   N_PROPS
 };
 
@@ -144,7 +145,12 @@ tp_future_account_get_property (GObject *object,
       g_value_set_boxed (value, self->priv->properties);
       break;
     case PROP_ICON_NAME:
-      g_value_set_string (value, tp_asv_get_string (self->priv->properties, "Icon"));
+      g_value_set_string (value,
+          tp_asv_get_string (self->priv->properties, "Icon"));
+      break;
+    case PROP_NICKNAME:
+      g_value_set_string (value,
+          tp_asv_get_string (self->priv->properties, "Nickname"));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -316,6 +322,19 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           "The account's icon name",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpFutureAccount:nickname:
+   *
+   * The account's nickname. To change this property use
+   * tp_future_account_set_nickname().
+   */
+  g_object_class_install_property (object_class, PROP_NICKNAME,
+      g_param_spec_string ("nickname",
+          "Nickname",
+          "The account's nickname",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 }
 
 /**
@@ -386,6 +405,27 @@ tp_future_account_set_icon_name (TpFutureAccount *self,
   priv = self->priv;
 
   tp_asv_set_string (priv->properties, "Icon", icon);
+}
+
+/**
+ * tp_future_account_set_nickname:
+ * @self: a #TpFutureAccount
+ * @nickname: a nickname for the account
+ *
+ * Set the nickname for the new account, @self, to @nickname.
+ */
+void
+tp_future_account_set_nickname (TpFutureAccount *self,
+    const gchar *nickname)
+{
+  TpFutureAccountPrivate *priv;
+
+  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (nickname != NULL);
+
+  priv = self->priv;
+
+  tp_asv_set_string (priv->properties, "Nickname", nickname);
 }
 
 /**

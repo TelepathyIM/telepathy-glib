@@ -68,6 +68,9 @@ void tp_future_account_set_display_name (TpFutureAccount *self,
 void tp_future_account_set_icon_name (TpFutureAccount *self,
     const gchar *icon);
 
+void tp_future_account_set_nickname (TpFutureAccount *self,
+    const gchar *nickname);
+
 /* parameters */
 void tp_future_account_set_parameter (TpFutureAccount *self,
     const gchar *key, GVariant *value);
