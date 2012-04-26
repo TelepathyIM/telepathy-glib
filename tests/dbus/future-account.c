@@ -227,7 +227,7 @@ test_properties (Test *test,
 }
 
 static void
-test_create (Test *test,
+test_create_succeed (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpAccount *account;
@@ -283,6 +283,33 @@ test_create (Test *test,
   g_object_unref (account);
 }
 
+static void
+test_create_fail (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpAccount *account;
+
+  test->account = tp_future_account_new (test->account_manager,
+      "gabble", "jabber");
+
+  tp_future_account_set_display_name (test->account, "Walter White");
+
+  /* this will make CreateChannel fail */
+  tp_future_account_set_parameter_string (test->account,
+      "fail", "yes");
+
+  tp_future_account_create_account_async (test->account,
+      tp_tests_result_ready_cb, &test->result);
+  tp_tests_run_until_result (&test->result);
+
+  account = tp_future_account_create_account_finish (test->account,
+      test->result, &test->error);
+  g_assert (test->error != NULL);
+  g_assert (account == NULL);
+
+  g_clear_error (&test->error);
+}
+
 int
 main (int argc,
     char **argv)
@@ -301,8 +328,10 @@ main (int argc,
       test_parameters, teardown);
   g_test_add ("/future-account/properties", Test, NULL, setup,
       test_properties, teardown);
-  g_test_add ("/future-account/create", Test, NULL, setup,
-      test_create, teardown);
+  g_test_add ("/future-account/create-succeed", Test, NULL, setup,
+      test_create_succeed, teardown);
+  g_test_add ("/future-account/create-fail", Test, NULL, setup,
+      test_create_fail, teardown);
 
   return g_test_run ();
 }

@@ -61,6 +61,14 @@ tp_tests_simple_account_manager_create_account (TpSvcAccountManager *svc,
   TpTestsSimpleAccountManager *self = (TpTestsSimpleAccountManager *) svc;
   const gchar *out = TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/lospolloshermanos";
 
+  /* if we have fail=yes as a parameter, make the call fail */
+  if (!tp_strdiff (tp_asv_get_string (in_Parameters, "fail"), "yes"))
+    {
+      GError e = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT, "loldongs" };
+      dbus_g_method_return_error (context, &e);
+      return;
+    }
+
   self->create_cm = g_strdup (in_Connection_Manager);
   self->create_protocol = g_strdup (in_Protocol);
   self->create_display_name = g_strdup (in_Display_Name);
