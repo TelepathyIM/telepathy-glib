@@ -60,6 +60,7 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/debug-client.h>
 #include <telepathy-glib/file-transfer-channel.h>
+#include <telepathy-glib/future-account.h>
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/proxy.h>
 #include <telepathy-glib/signalled-message.h>
