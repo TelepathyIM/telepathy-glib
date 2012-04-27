@@ -122,13 +122,6 @@ struct _TpFutureAccountPrivate {
 
 G_DEFINE_TYPE (TpFutureAccount, tp_future_account, G_TYPE_OBJECT)
 
-/* signals */
-enum {
-  LAST_SIGNAL
-};
-
-/*static guint signals[LAST_SIGNAL];*/
-
 /* properties */
 enum {
   PROP_ACCOUNT_MANAGER = 1,
