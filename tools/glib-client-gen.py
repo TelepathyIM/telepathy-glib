@@ -1256,6 +1256,10 @@ class Generator(object):
         self.b(' * confused by seeing function definitions, so mark it as: */')
         self.b('/*<private_header>*/')
         self.b('')
+        # if we're splitting out re-entrant things, we want them marked
+        # private too
+        self.rh('/*<private_header>*/')
+        self.rb('/*<private_header>*/')
 
         nodes = self.dom.getElementsByTagName('node')
         nodes.sort(cmp_by_name)
