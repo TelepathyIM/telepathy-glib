@@ -10,6 +10,7 @@
 #include "config.h"
 
 #include <telepathy-glib/future-account.h>
+#include <telepathy-glib/interfaces.h>
 
 #include "tests/lib/simple-account.h"
 #include "tests/lib/simple-account-manager.h"
@@ -199,7 +200,8 @@ test_properties (Test *test,
       NULL);
 
   g_assert_cmpuint (g_hash_table_size (props), ==, 1);
-  g_assert_cmpstr (tp_asv_get_string (props, "Icon"), ==, "user32.dll");
+  g_assert_cmpstr (tp_asv_get_string (props, TP_PROP_ACCOUNT_ICON),
+      ==, "user32.dll");
   g_assert_cmpstr (icon_name, ==, "user32.dll");
 
   g_hash_table_unref (props);
@@ -214,8 +216,10 @@ test_properties (Test *test,
       NULL);
 
   g_assert_cmpuint (g_hash_table_size (props), ==, 2);
-  g_assert_cmpstr (tp_asv_get_string (props, "Icon"), ==, "user32.dll");
-  g_assert_cmpstr (tp_asv_get_string (props, "Nickname"), ==, "Walter Jr.");
+  g_assert_cmpstr (tp_asv_get_string (props, TP_PROP_ACCOUNT_ICON),
+      ==, "user32.dll");
+  g_assert_cmpstr (tp_asv_get_string (props, TP_PROP_ACCOUNT_NICKNAME),
+      ==, "Walter Jr.");
   g_assert_cmpstr (nickname, ==, "Walter Jr.");
 
   g_hash_table_unref (props);
@@ -315,17 +319,21 @@ test_create_succeed (Test *test,
   g_assert_cmpstr (tp_asv_get_string (test->am->create_parameters, "password"),
       ==, "holly");
   g_assert_cmpuint (g_hash_table_size (test->am->create_properties), ==, 6);
-  g_assert_cmpstr (tp_asv_get_string (test->am->create_properties, "Icon"),
+  g_assert_cmpstr (tp_asv_get_string (test->am->create_properties,
+          TP_PROP_ACCOUNT_ICON),
       ==, "gasmask");
-  g_assert_cmpstr (tp_asv_get_string (test->am->create_properties, "Nickname"),
+  g_assert_cmpstr (tp_asv_get_string (test->am->create_properties,
+          TP_PROP_ACCOUNT_NICKNAME),
       ==, "Heisenberg");
-  g_assert_cmpint (tp_asv_get_boolean (test->am->create_properties, "Enabled", NULL),
+  g_assert_cmpint (tp_asv_get_boolean (test->am->create_properties,
+          TP_PROP_ACCOUNT_ENABLED, NULL),
       ==, TRUE);
   g_assert_cmpint (tp_asv_get_boolean (test->am->create_properties,
-          "ConnectAutomatically", NULL),
+          TP_PROP_ACCOUNT_CONNECT_AUTOMATICALLY, NULL),
       ==, TRUE);
 
-  array = tp_asv_get_boxed (test->am->create_properties, "RequestedPresence",
+  array = tp_asv_get_boxed (test->am->create_properties,
+      TP_PROP_ACCOUNT_REQUESTED_PRESENCE,
       TP_STRUCT_TYPE_SIMPLE_PRESENCE);
   g_assert_cmpuint (g_value_get_uint (array->values), ==,
       TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
@@ -334,7 +342,8 @@ test_create_succeed (Test *test,
   g_assert_cmpstr (g_value_get_string (array->values + 2), ==,
       "Better call Saul!");
 
-  array = tp_asv_get_boxed (test->am->create_properties, "AutomaticPresence",
+  array = tp_asv_get_boxed (test->am->create_properties,
+      TP_PROP_ACCOUNT_AUTOMATIC_PRESENCE,
       TP_STRUCT_TYPE_SIMPLE_PRESENCE);
   g_assert_cmpuint (g_value_get_uint (array->values), ==,
       TP_CONNECTION_PRESENCE_TYPE_BUSY);

@@ -23,6 +23,7 @@
 #include "telepathy-glib/future-account.h"
 
 #include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/simple-client-factory.h>
 
@@ -207,37 +208,41 @@ tp_future_account_get_property (GObject *object,
       break;
     case PROP_ICON_NAME:
       g_value_set_string (value,
-          tp_asv_get_string (self->priv->properties, "Icon"));
+          tp_asv_get_string (self->priv->properties,
+              TP_PROP_ACCOUNT_ICON));
       break;
     case PROP_NICKNAME:
       g_value_set_string (value,
-          tp_asv_get_string (self->priv->properties, "Nickname"));
+          tp_asv_get_string (self->priv->properties,
+              TP_PROP_ACCOUNT_NICKNAME));
       break;
     case PROP_REQUESTED_PRESENCE_TYPE:
-      GET_PRESENCE_VALUE ("RequestedPresence", 0, uint, 0);
+      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_REQUESTED_PRESENCE, 0, uint, 0);
       break;
     case PROP_REQUESTED_STATUS:
-      GET_PRESENCE_VALUE ("RequestedPresence", 1, string, "");
+      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_REQUESTED_PRESENCE, 1, string, "");
       break;
     case PROP_REQUESTED_STATUS_MESSAGE:
-      GET_PRESENCE_VALUE ("RequestedPresence", 2, string, "");
+      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_REQUESTED_PRESENCE, 2, string, "");
       break;
     case PROP_AUTOMATIC_PRESENCE_TYPE:
-      GET_PRESENCE_VALUE ("AutomaticPresence", 0, uint, 0);
+      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_AUTOMATIC_PRESENCE, 0, uint, 0);
       break;
     case PROP_AUTOMATIC_STATUS:
-      GET_PRESENCE_VALUE ("AutomaticPresence", 1, string, "");
+      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_AUTOMATIC_PRESENCE, 1, string, "");
       break;
     case PROP_AUTOMATIC_STATUS_MESSAGE:
-      GET_PRESENCE_VALUE ("AutomaticPresence", 2, string, "");
+      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_AUTOMATIC_PRESENCE, 2, string, "");
       break;
     case PROP_ENABLED:
       g_value_set_boolean (value,
-          tp_asv_get_boolean (self->priv->properties, "Enabled", NULL));
+          tp_asv_get_boolean (self->priv->properties,
+              TP_PROP_ACCOUNT_ENABLED, NULL));
       break;
     case PROP_CONNECT_AUTOMATICALLY:
       g_value_set_boolean (value,
-          tp_asv_get_boolean (self->priv->properties, "ConnectAutomatically",
+          tp_asv_get_boolean (self->priv->properties,
+              TP_PROP_ACCOUNT_CONNECT_AUTOMATICALLY,
               NULL));
       break;
     default:
@@ -618,7 +623,7 @@ tp_future_account_set_icon_name (TpFutureAccount *self,
 
   priv = self->priv;
 
-  tp_asv_set_string (priv->properties, "Icon", icon);
+  tp_asv_set_string (priv->properties, TP_PROP_ACCOUNT_ICON, icon);
 }
 
 /**
@@ -640,7 +645,7 @@ tp_future_account_set_nickname (TpFutureAccount *self,
 
   priv = self->priv;
 
-  tp_asv_set_string (priv->properties, "Nickname", nickname);
+  tp_asv_set_string (priv->properties, TP_PROP_ACCOUNT_NICKNAME, nickname);
 }
 
 /**
@@ -679,7 +684,8 @@ tp_future_account_set_requested_presence (TpFutureAccount *self,
   g_value_set_string (arr->values + 1, status);
   g_value_set_string (arr->values + 2, message);
 
-  g_hash_table_insert (priv->properties, "RequestedPresence", value);
+  g_hash_table_insert (priv->properties,
+      TP_PROP_ACCOUNT_REQUESTED_PRESENCE, value);
 }
 
 /**
@@ -718,7 +724,8 @@ tp_future_account_set_automatic_presence (TpFutureAccount *self,
   g_value_set_string (arr->values + 1, status);
   g_value_set_string (arr->values + 2, message);
 
-  g_hash_table_insert (priv->properties, "AutomaticPresence", value);
+  g_hash_table_insert (priv->properties,
+      TP_PROP_ACCOUNT_AUTOMATIC_PRESENCE, value);
 }
 
 /**
@@ -740,7 +747,7 @@ tp_future_account_set_enabled (TpFutureAccount *self,
 
   priv = self->priv;
 
-  tp_asv_set_boolean (priv->properties, "Enabled", enabled);
+  tp_asv_set_boolean (priv->properties, TP_PROP_ACCOUNT_ENABLED, enabled);
 }
 
 /**
@@ -764,7 +771,8 @@ tp_future_account_set_connect_automatically (TpFutureAccount *self,
 
   priv = self->priv;
 
-  tp_asv_set_boolean (priv->properties, "ConnectAutomatically",
+  tp_asv_set_boolean (priv->properties,
+      TP_PROP_ACCOUNT_CONNECT_AUTOMATICALLY,
       connect_automatically);
 }
 
