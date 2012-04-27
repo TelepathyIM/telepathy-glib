@@ -112,6 +112,7 @@ struct _TpFutureAccountPrivate {
   TpAccountManager *account_manager;
 
   GSimpleAsyncResult *result;
+  gboolean created;
 
   gchar *cm_name;
   gchar *proto_name;
@@ -1066,6 +1067,8 @@ tp_future_account_create_account_cb (TpAccountManager *proxy,
       return;
     }
 
+  priv->created = TRUE;
+
   account = tp_simple_client_factory_ensure_account (
       tp_proxy_get_factory (proxy), account_path, NULL, &e);
 
@@ -1137,6 +1140,9 @@ tp_future_account_create_account_async (TpFutureAccount *self,
           "connection manager name, protocol name, or display name");
       return;
     }
+
+  if (priv->created)
+    WARNING ("trying to create an account which has already been created");
 
   priv->result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
       tp_future_account_create_account_async);
