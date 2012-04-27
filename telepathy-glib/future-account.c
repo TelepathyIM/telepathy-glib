@@ -34,10 +34,58 @@
  * SECTION:future-account
  * @title: TpFutureAccount
  * @short_description: object for a currently non-existent account in
- *   order to create easily without knowing speaking fluent D-Bus
+ *   order to create easily without speaking fluent D-Bus
  * @see_also: #TpAccountManager
  *
- * TODO
+ * This is a convenience object to aid in the creation of accounts on
+ * a #TpAccountManager without having to construct #GHashTables with
+ * well-known keys. For example:
+ *
+ * |[
+ * static void created_cb (GObject *object, GAsyncResult *res, gpointer user_data);
+ *
+ * static void
+ * create_acount (void)
+ * {
+ *   TpAccountManager *am = tp_account_manager_dup ();
+ *   TpFutureAccount *future;
+ *
+ *   future = tp_future_account_new (am, "gabble", "jabber");
+ *   tp_future_account_set_display_name (future, "Work Jabber account");
+ *
+ *   tp_future_account_set_parameter (future, "account", "walter.white@example.com");
+ *
+ *   // ...
+ *
+ *   tp_future_account_create_account_async (future, created_cb, NULL);
+ *   g_object_unref (future);
+ *   g_object_unref (am);
+ * }
+ *
+ * static void
+ * created_cb (GObject *object,
+ *     GAsyncResult *result,
+ *     gpointer user_data)
+ * {
+ *   TpFutureAccount *future = TP_FUTURE_ACCOUNT (object);
+ *   TpAccount *account;
+ *   GError *error = NULL;
+ *
+ *   account = tp_future_account_create_account_finish (future, result, &error);
+ *
+ *   if (account == NULL)
+ *     {
+ *       g_error ("Failed to create account: %s\n", error->message);
+ *       g_clear_error (&error);
+ *       return;
+ *     }
+ *
+ *   // ...
+ *
+ *   g_object_unref (account);
+ * }
+ * ]|
+ *
  *
  * Since: 0.UNRELEASED
  */
@@ -45,7 +93,8 @@
 /**
  * TpFutureAccount:
  *
- * TODO
+ * An object for representing a currently non-existent account which
+ * is to be created on a #TpAccountManager.
  *
  * Since: 0.UNRELEASED
  */
@@ -287,7 +336,7 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
   /**
    * TpFutureAccount:account-manager:
    *
-   * TODO
+   * The #TpAccountManager to create the account on.
    */
   g_object_class_install_property (object_class, PROP_ACCOUNT_MANAGER,
       g_param_spec_object ("account-manager",
@@ -325,7 +374,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
   /**
    * TpFutureAccount:display-name:
    *
-   * The account's display name.
+   * The account's display name. To change this property use
+   * tp_future_account_set_display_name().
    */
   g_object_class_install_property (object_class, PROP_DISPLAY_NAME,
       g_param_spec_string ("display-name",
@@ -337,25 +387,26 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
   /**
    * TpFutureAccount:parameters:
    *
-   * TODO
+   * The account's connection parameters. To add a parameter, use
+   * tp_future_account_set_parameter() or another convience function.
    */
   g_object_class_install_property (object_class, PROP_PARAMETERS,
       g_param_spec_boxed ("parameters",
           "Parameters",
           "Connection parameters of the account",
-          G_TYPE_HASH_TABLE,
+          TP_HASH_TYPE_STRING_VARIANT_MAP,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
    * TpFutureAccount:properties:
    *
-   * TODO
+   * The account's properties.
    */
   g_object_class_install_property (object_class, PROP_PROPERTIES,
       g_param_spec_boxed ("properties",
           "Properties",
           "Account properties",
-          G_TYPE_HASH_TABLE,
+          TP_HASH_TYPE_STRING_VARIANT_MAP,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
@@ -455,11 +506,13 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
 
 /**
  * tp_future_account_new:
- * @account_manager: TODO
- * @manager: TODO
- * @protocol: TODO
+ * @account_manager: the #TpAccountManager to create the account on
+ * @manager: the name of the connection manager
+ * @protocol: the name of the protocol on @manager
  *
- * Convenience function to create a new future account object.
+ * Convenience function to create a new future account object which
+ * will assist in the creation of a new account on @account_manager,
+ * using connection manager @manager, and protocol @protocol.
  *
  * Returns: a new reference to a future account object, or %NULL if
  *   any argument is incorrect
@@ -485,7 +538,9 @@ tp_future_account_new (TpAccountManager *account_manager,
  * @self: a #TpFutureAccount
  * @name: a display name for the account
  *
- * Set the display name for the new account, @self, to @name.
+ * Set the display name for the new account, @self, to @name. Use the
+ * #TpFutureAccount:display-name property to read the current display
+ * name.
  */
 void
 tp_future_account_set_display_name (TpFutureAccount *self,
@@ -507,7 +562,8 @@ tp_future_account_set_display_name (TpFutureAccount *self,
  * @self: a #TpFutureAccount
  * @icon: an icon name for the account
  *
- * Set the icon name for the new account, @self, to @icon.
+ * Set the icon name for the new account, @self, to @icon. Use the
+ * #TpFutureAccount:icon-name property to read the current icon name.
  */
 void
 tp_future_account_set_icon_name (TpFutureAccount *self,
@@ -528,7 +584,8 @@ tp_future_account_set_icon_name (TpFutureAccount *self,
  * @self: a #TpFutureAccount
  * @nickname: a nickname for the account
  *
- * Set the nickname for the new account, @self, to @nickname.
+ * Set the nickname for the new account, @self, to @nickname. Use the
+ * #TpFutureAccount:nickname property to read the current nickname.
  */
 void
 tp_future_account_set_nickname (TpFutureAccount *self,
@@ -552,7 +609,11 @@ tp_future_account_set_nickname (TpFutureAccount *self,
  * @message: the requested presence message
  *
  * Set the requested presence for the new account, @self, to the type
- * (@presence, @status), with message @message.
+ * (@presence, @status), with message @message. Use the
+ * #TpFutureAccount:requested-presence-type,
+ * #TpFutureAccount:requested-status, and
+ * #TpFutureAccount:requested-status-message properties to read the
+ * current requested presence.
  */
 void
 tp_future_account_set_requested_presence (TpFutureAccount *self,
@@ -584,7 +645,9 @@ tp_future_account_set_requested_presence (TpFutureAccount *self,
  * @self: a #TpFutureAccount
  * @enabled: %TRUE if the account is to be enabled
  *
- * Set the enabled property of the account on creation to @enabled.
+ * Set the enabled property of the account on creation to
+ * @enabled. Use the #TpFutureAccount:enabled property to read the
+ * current enabled value.
  */
 void
 tp_future_account_set_enabled (TpFutureAccount *self,
@@ -606,7 +669,9 @@ tp_future_account_set_enabled (TpFutureAccount *self,
  *
  * Set the connect automatically property of the account on creation
  * to @connect_automatically so that the account is brought online to
- * the automatic presence.
+ * the automatic presence. Use the
+ * #TpFutureAccount:connect-automatically property to read the current
+ * connect automatically value.
  */
 void
 tp_future_account_set_connect_automatically (TpFutureAccount *self,
@@ -628,7 +693,11 @@ tp_future_account_set_connect_automatically (TpFutureAccount *self,
  * @key: the parameter key
  * @value: (transfer none): a variant containing the parameter value
  *
- * Set an account parameter, @key, to @value.
+ * Set an account parameter, @key, to @value. Use the
+ * #TpFutureAccount:parameters property to read the current list of
+ * set parameters.
+ *
+ * Parameters can be unset using tp_future_account_unset_parameter().
  */
 void
 tp_future_account_set_parameter (TpFutureAccount *self,
@@ -657,7 +726,9 @@ tp_future_account_set_parameter (TpFutureAccount *self,
  * @self: a #TpFutureAccount
  * @key: the parameter key
  *
- * Unset the account parameter @key.
+ * Unset the account parameter @key which has previously been set
+ * using tp_future_account_set_parameter() or another convenience
+ * function.
  */
 void
 tp_future_account_unset_parameter (TpFutureAccount *self,
@@ -679,7 +750,8 @@ tp_future_account_unset_parameter (TpFutureAccount *self,
  * @key: the parameter key
  * @value: the parameter value
  *
- * Set an account parameter, @key, to @value.
+ * Convenience function to set an account parameter string value. See
+ * tp_future_account_set_parameter() for more details.
  */
 void
 tp_future_account_set_parameter_string (TpFutureAccount *self,
