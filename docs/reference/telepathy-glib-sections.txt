@@ -5228,6 +5228,37 @@ TpAccountClassPrivate
 </SECTION>
 
 <SECTION>
+<FILE>future-account</FILE>
+<INCLUDE>telepathy-glib/future-account.h</INCLUDE>
+<TITLE>future-account</TITLE>
+TpFutureAccount
+TpFutureAccountClass
+tp_future_account_new
+<SUBSECTION>
+tp_future_account_set_display_name
+tp_future_account_set_icon_name
+tp_future_account_set_nickname
+tp_future_account_set_requested_presence
+tp_future_account_set_enabled
+tp_future_account_set_connect_automatically
+<SUBSECTION>
+tp_future_account_set_parameter
+tp_future_account_set_parameter_string
+<SUBSECTION>
+tp_future_account_create_account_async
+tp_future_account_create_account_finish
+<SUBSECTION Standard>
+TP_FUTURE_ACCOUNT
+TP_IS_FUTURE_ACCOUNT
+TP_IS_FUTURE_ACCOUNT_CLASS
+TP_TYPE_FUTURE_ACCOUNT
+tp_future_account_get_type
+TP_FUTURE_ACCOUNT_CLASS
+TP_FUTURE_ACCOUNT_GET_CLASS
+TpFutureAccountPrivate
+</SECTION>
+
+<SECTION>
 <FILE>account-manager</FILE>
 <INCLUDE>telepathy-glib/account-manager.h</INCLUDE>
 <TITLE>account-manager</TITLE>
