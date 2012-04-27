@@ -179,6 +179,7 @@ test_properties (Test *test,
   TpConnectionPresenceType presence_type;
   gchar *presence_status, *presence_message;
   gboolean enabled, connect_automatically;
+  gchar **supersedes;
 
   test->account = tp_future_account_new (test->account_manager,
       "gabble", "jabber");
@@ -272,6 +273,21 @@ test_properties (Test *test,
 
   g_assert_cmpint (enabled, ==, FALSE);
   g_assert_cmpint (connect_automatically, ==, TRUE);
+
+  /* supersedes */
+  tp_future_account_add_supersedes (test->account,
+      "/science/yeah/woo");
+
+  g_object_get (test->account,
+      "supersedes", &supersedes,
+      NULL);
+
+  g_assert_cmpuint (g_strv_length (supersedes), ==, 1);
+  g_assert_cmpstr (supersedes[0], ==,
+      "/science/yeah/woo");
+  g_assert (supersedes[1] == NULL);
+
+  g_strfreev (supersedes);
 }
 
 static void
@@ -280,6 +296,7 @@ test_create_succeed (Test *test,
 {
   TpAccount *account;
   GValueArray *array;
+  GPtrArray *supersedes;
 
   test->account = tp_future_account_new (test->account_manager,
       "gabble", "jabber");
@@ -301,6 +318,9 @@ test_create_succeed (Test *test,
   tp_future_account_set_parameter_string (test->account,
       "password", "holly");
 
+  tp_future_account_add_supersedes (test->account,
+      "/some/silly/account");
+
   tp_future_account_create_account_async (test->account,
       tp_tests_result_ready_cb, &test->result);
   tp_tests_run_until_result (&test->result);
@@ -318,7 +338,7 @@ test_create_succeed (Test *test,
       ==, "walter@white.us");
   g_assert_cmpstr (tp_asv_get_string (test->am->create_parameters, "password"),
       ==, "holly");
-  g_assert_cmpuint (g_hash_table_size (test->am->create_properties), ==, 6);
+  g_assert_cmpuint (g_hash_table_size (test->am->create_properties), ==, 7);
   g_assert_cmpstr (tp_asv_get_string (test->am->create_properties,
           TP_PROP_ACCOUNT_ICON),
       ==, "gasmask");
@@ -351,6 +371,13 @@ test_create_succeed (Test *test,
       "busy");
   g_assert_cmpstr (g_value_get_string (array->values + 2), ==,
       "Cooking");
+
+  supersedes = tp_asv_get_boxed (test->am->create_properties,
+      TP_PROP_ACCOUNT_SUPERSEDES,
+      TP_ARRAY_TYPE_OBJECT_PATH_LIST);
+  g_assert_cmpuint (supersedes->len, ==, 1);
+  g_assert_cmpstr (g_ptr_array_index (supersedes, 0), ==,
+      "/some/silly/account");
 
   g_object_unref (account);
 }

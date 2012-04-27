@@ -141,6 +141,7 @@ enum {
   PROP_AUTOMATIC_STATUS_MESSAGE,
   PROP_ENABLED,
   PROP_CONNECT_AUTOMATICALLY,
+  PROP_SUPERSEDES,
   N_PROPS
 };
 
@@ -244,6 +245,25 @@ tp_future_account_get_property (GObject *object,
           tp_asv_get_boolean (self->priv->properties,
               TP_PROP_ACCOUNT_CONNECT_AUTOMATICALLY,
               NULL));
+      break;
+    case PROP_SUPERSEDES:
+      {
+        GPtrArray *array = tp_asv_get_boxed (self->priv->properties,
+            TP_PROP_ACCOUNT_SUPERSEDES,
+            TP_ARRAY_TYPE_OBJECT_PATH_LIST);
+
+        if (array != NULL)
+          {
+            /* add the NULL-termination to make it a real GStrv */
+            g_ptr_array_add (array, NULL);
+            g_value_set_boxed (value, array->pdata);
+            g_ptr_array_remove_index (array, (array->len - 1));
+          }
+        else
+          {
+            g_value_set_boxed (value, NULL);
+          }
+      }
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -549,6 +569,22 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           "Whether this account should connect automatically or not",
           FALSE,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpFutureAccount:supersedes:
+   *
+   * The object paths of previously-active accounts superseded by this one.
+   * For instance, this can be used in a logger to read old logs for an
+   * account that has been migrated from one connection manager to another.
+   *
+   * To add to this property use tp_future_account_add_supersedes().
+   */
+  g_object_class_install_property (object_class, PROP_SUPERSEDES,
+      g_param_spec_boxed ("supersedes",
+        "Supersedes",
+        "Accounts superseded by this one",
+        G_TYPE_STRV,
+        G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 }
 
 /**
@@ -774,6 +810,45 @@ tp_future_account_set_connect_automatically (TpFutureAccount *self,
   tp_asv_set_boolean (priv->properties,
       TP_PROP_ACCOUNT_CONNECT_AUTOMATICALLY,
       connect_automatically);
+}
+
+/**
+ * tp_future_account_add_supersedes:
+ * @self: a #TpFutureAccount
+ * @superseded_path: an account object path to add to the supersedes
+ *   list
+ *
+ * Add an account object path to the list of superseded accounts which
+ * this new account will supersede. Use the
+ * #TpFutureAccount:supersedes property to read the current list of
+ * superseded accounts.
+ */
+void
+tp_future_account_add_supersedes (TpFutureAccount *self,
+    const gchar *superseded_path)
+{
+  TpFutureAccountPrivate *priv;
+  GPtrArray *array;
+
+  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (g_variant_is_object_path (superseded_path));
+
+  priv = self->priv;
+
+  array = tp_asv_get_boxed (priv->properties,
+      TP_PROP_ACCOUNT_SUPERSEDES,
+      TP_ARRAY_TYPE_OBJECT_PATH_LIST);
+
+  if (array == NULL)
+    {
+      array = g_ptr_array_new ();
+
+      tp_asv_take_boxed (priv->properties,
+          TP_PROP_ACCOUNT_SUPERSEDES,
+          TP_ARRAY_TYPE_OBJECT_PATH_LIST, array);
+    }
+
+  g_ptr_array_add (array, g_strdup (superseded_path));
 }
 
 /**
