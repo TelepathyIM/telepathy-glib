@@ -368,6 +368,43 @@ test_before_connected (Test *test,
       BEFORE_CONNECTED_STATE_CONNECTED);
 }
 
+static void
+test_interface_later (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_TESTS_MY_CONN_PROXY_FEATURE_INTERFACE_LATER, 0 };
+  GQuark connected[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+  const gchar *interfaces[] = { TP_TESTS_MY_CONN_PROXY_IFACE_LATER, NULL };
+
+  /* We need a not yet connected connection */
+  recreate_connection (test);
+
+  /* Try preparing before the connection is connected */
+  tp_proxy_prepare_async (test->my_conn, features, prepare_cb, test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* Feature isn't prepared */
+  g_assert (!tp_proxy_is_prepared (test->my_conn,
+        TP_TESTS_MY_CONN_PROXY_FEATURE_INTERFACE_LATER));
+
+  tp_cli_connection_call_connect (test->connection, -1, NULL, NULL, NULL, NULL);
+
+  /* While connecting the interface is added */
+  tp_base_connection_add_interfaces (test->base_connection, interfaces);
+
+  /* Wait that CONNECTED is announced */
+  tp_proxy_prepare_async (test->my_conn, connected, prepare_cb, test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* The feature has been prepared now */
+  g_assert (tp_proxy_is_prepared (test->my_conn,
+        TP_TESTS_MY_CONN_PROXY_FEATURE_INTERFACE_LATER));
+}
+
 int
 main (int argc,
       char **argv)
@@ -395,6 +432,8 @@ main (int argc,
       test_retry_dep, teardown);
   g_test_add ("/proxy-preparation/before-connected", Test, NULL, setup,
       test_before_connected, teardown);
+  g_test_add ("/proxy-preparation/interface-later", Test, NULL, setup,
+      test_interface_later, teardown);
 
   return g_test_run ();
 }
