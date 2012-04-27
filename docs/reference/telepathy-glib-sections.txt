@@ -2923,6 +2923,9 @@ tp_cli_dbus_daemon_connect_to_name_owner_changed
 tp_cli_dbus_daemon_signal_callback_name_acquired
 tp_cli_dbus_daemon_signal_callback_name_lost
 tp_cli_dbus_daemon_signal_callback_name_owner_changed
+<SUBSECTION Standard>
+tp_cli_dbus_daemon_add_signals
+tp_cli_generic_add_signals
 </SECTION>
 
 <SECTION>
@@ -3032,6 +3035,8 @@ tp_cli_channel_signal_callback_closed
 <SUBSECTION>
 tp_cli_channel_interface_destroyable_call_destroy
 tp_cli_channel_interface_destroyable_callback_for_destroy
+<SUBSECTION Standard>
+tp_cli_channel_add_signals
 </SECTION>
 
 <SECTION>
@@ -3364,6 +3369,8 @@ tp_cli_connection_call_add_client_interest
 tp_cli_connection_call_remove_client_interest
 tp_cli_connection_callback_for_add_client_interest
 tp_cli_connection_callback_for_remove_client_interest
+<SUBSECTION Standard>
+tp_cli_connection_add_signals
 </SECTION>
 
 <SECTION>
@@ -3673,6 +3680,9 @@ tp_cli_protocol_interface_addressing_call_normalize_contact_uri
 tp_cli_protocol_interface_addressing_call_normalize_vcard_address
 tp_cli_protocol_interface_addressing_callback_for_normalize_contact_uri
 tp_cli_protocol_interface_addressing_callback_for_normalize_vcard_address
+<SUBSECTION Standard>
+tp_cli_connection_manager_add_signals
+tp_cli_protocol_add_signals
 </SECTION>
 
 <SECTION>
@@ -4080,6 +4090,9 @@ tp_cli_account_interface_avatar_connect_to_avatar_changed
 <SUBSECTION>
 tp_cli_account_interface_addressing_callback_for_set_uri_scheme_association
 tp_cli_account_interface_addressing_call_set_uri_scheme_association
+<SUBSECTION Standard>
+tp_cli_account_add_signals
+tp_cli_account_manager_add_signals
 </SECTION>
 
 <SECTION>
@@ -4139,6 +4152,10 @@ tp_cli_channel_dispatch_operation_signal_callback_channel_lost
 tp_cli_channel_dispatch_operation_connect_to_channel_lost
 tp_cli_channel_dispatch_operation_signal_callback_finished
 tp_cli_channel_dispatch_operation_connect_to_finished
+<SUBSECTION Standard>
+tp_cli_channel_dispatcher_add_signals
+tp_cli_channel_dispatch_operation_add_signals
+tp_cli_channel_request_add_signals
 </SECTION>
 
 <SECTION>
@@ -4325,6 +4342,8 @@ tp_cli_client_interface_requests_call_remove_request
 <SUBSECTION>
 tp_cli_client_approver_callback_for_add_dispatch_operation
 tp_cli_client_approver_call_add_dispatch_operation
+<SUBSECTION Standard>
+tp_cli_client_add_signals
 </SECTION>
 
 <SECTION>
@@ -5477,6 +5496,8 @@ tp_cli_call_content_interface_dtmf_connect_to_tones_deferred
 tp_cli_call_content_interface_dtmf_signal_callback_sending_tones
 tp_cli_call_content_interface_dtmf_signal_callback_stopped_tones
 tp_cli_call_content_interface_dtmf_signal_callback_tones_deferred
+<SUBSECTION Standard>
+tp_cli_call_content_add_signals
 </SECTION>
 
 <SECTION>
@@ -5559,6 +5580,8 @@ tp_cli_call_stream_interface_media_signal_callback_relay_info_changed
 tp_cli_call_stream_interface_media_signal_callback_sending_state_changed
 tp_cli_call_stream_interface_media_signal_callback_server_info_retrieved
 tp_cli_call_stream_interface_media_signal_callback_stun_servers_changed
+<SUBSECTION Standard>
+tp_cli_call_stream_add_signals
 </SECTION>
 
 <SECTION>
@@ -5620,6 +5643,9 @@ tp_cli_call_stream_endpoint_signal_callback_controlling_changed
 tp_cli_call_stream_endpoint_signal_callback_endpoint_state_changed
 tp_cli_call_stream_endpoint_signal_callback_remote_candidates_added
 tp_cli_call_stream_endpoint_signal_callback_remote_credentials_set
+<SUBSECTION Standard>
+tp_cli_call_content_media_description_add_signals
+tp_cli_call_stream_endpoint_add_signals
 </SECTION>
 
 <SECTION>
@@ -5958,6 +5984,7 @@ TP_IS_DEBUG_CLIENT_CLASS
 TP_TYPE_DEBUG_CLIENT
 tp_debug_client_get_type
 tp_debug_client_get_feature_quark_core
+tp_cli_debug_add_signals
 <SUBSECTION Private>
 TpDebugClientPrivate
 tp_cli_debug_call_get_messages
