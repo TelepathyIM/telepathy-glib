@@ -175,6 +175,7 @@ check-local: check-coding-style
 libtelepathy_glib_core_internal_la_LIBADD = $(ALL_LIBS)
 libtelepathy_glib_core_internal_la_SOURCES = \
     core-dbus.c \
+    core-proxy.c \
     errors.c \
     $(NULL)
 

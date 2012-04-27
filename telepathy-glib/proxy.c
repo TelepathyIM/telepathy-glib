@@ -424,10 +424,13 @@ static void tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy, TpProxy *self);
  *
  * Since: 0.7.1
  */
+
+/* that's implemented in the core library, but it calls this: */
+
 DBusGProxy *
-tp_proxy_borrow_interface_by_id (TpProxy *self,
-                                 GQuark iface,
-                                 GError **error)
+_tp_proxy_borrow_interface_by_id (TpProxy *self,
+    GQuark iface,
+    GError **error)
 {
   gpointer dgproxy;
 
@@ -1516,55 +1519,26 @@ tp_proxy_get_invalidated (gpointer self)
   return proxy->invalidated;
 }
 
-/**
- * tp_proxy_dbus_g_proxy_claim_for_signal_adding:
- * @proxy: a #DBusGProxy
- *
- * Attempt to "claim" a #DBusGProxy for addition of signal signatures.
- * If this function has not been called on @proxy before, %TRUE is
- * returned, and the caller may safely call dbus_g_proxy_add_signal()
- * on @proxy. If this function has already been caled, %FALSE is
- * returned, and the caller may not safely call dbus_g_proxy_add_signal().
- *
- * This is intended for use by auto-generated signal-adding functions,
- * to allow interfaces provided as local extensions to override those in
- * telepathy-glib without causing assertion failures.
- *
- * Returns: %TRUE if it is safe to call dbus_g_proxy_add_signal()
- * Since: 0.7.6
- */
-gboolean
-tp_proxy_dbus_g_proxy_claim_for_signal_adding (DBusGProxy *proxy)
-{
-  static GQuark q = 0;
-
-  g_return_val_if_fail (proxy != NULL, FALSE);
-
-  if (G_UNLIKELY (q == 0))
-    {
-      q = g_quark_from_static_string (
-          "tp_proxy_dbus_g_proxy_claim_for_signal_adding@0.7.6");
-    }
-
-  if (g_object_get_qdata ((GObject *) proxy, q) != NULL)
-    {
-      /* Someone else has already added signal signatures for this interface.
-       * We can't do it again or it'll cause an assertion */
-      return FALSE;
-    }
-
-  /* the proxy is just used as qdata here because it's a convenient
-   * non-NULL pointer */
-  g_object_set_qdata ((GObject *) proxy, q, proxy);
-  return TRUE;
-}
-
 static gpointer
 tp_proxy_once (gpointer data G_GNUC_UNUSED)
 {
-  GType type = TP_TYPE_PROXY;
+  TpProxyImplementation impl = {
+      VERSION,
+      sizeof (TpProxyImplementation),
+      _tp_proxy_borrow_interface_by_id,
+      _tp_proxy_pending_call_new,
+      _tp_proxy_pending_call_take_pending_call,
+      _tp_proxy_pending_call_take_results,
+      _tp_proxy_pending_call_completed,
+      _tp_proxy_signal_connection_new,
+      _tp_proxy_signal_connection_take_results,
+      /* keep this at the end as a final sanity-check of the size */
+      TP_TYPE_PROXY
+  };
 
-  tp_proxy_or_subclass_hook_on_interface_add (type,
+  tp_private_proxy_set_implementation (&impl);
+
+  tp_proxy_or_subclass_hook_on_interface_add (impl.type,
       tp_cli_generic_add_signals);
 
   return NULL;

@@ -20,6 +20,7 @@
 #include "config.h"
 
 #include "telepathy-glib/proxy-subclass.h"
+#include "telepathy-glib/proxy-internal.h"
 
 #define DEBUG_FLAG TP_DEBUG_PROXY
 #include "telepathy-glib/debug-internal.h"
@@ -314,7 +315,7 @@ _tp_proxy_signal_connection_dgproxy_destroy (DBusGProxy *iface_proxy,
 static void
 collect_none (DBusGProxy *dgproxy, TpProxySignalConnection *sc)
 {
-  tp_proxy_signal_connection_v0_take_results (sc, NULL);
+  _tp_proxy_signal_connection_take_results (sc, NULL);
 }
 
 /**
@@ -356,18 +357,21 @@ collect_none (DBusGProxy *dgproxy, TpProxySignalConnection *sc)
  *
  * Since: 0.7.1
  */
+
+/* that's implemented in the core library, but it calls this: */
+
 TpProxySignalConnection *
-tp_proxy_signal_connection_v0_new (TpProxy *self,
-                                   GQuark iface,
-                                   const gchar *member,
-                                   const GType *expected_types,
-                                   GCallback collect_args,
-                                   TpProxyInvokeFunc invoke_callback,
-                                   GCallback callback,
-                                   gpointer user_data,
-                                   GDestroyNotify destroy,
-                                   GObject *weak_object,
-                                   GError **error)
+_tp_proxy_signal_connection_new (TpProxy *self,
+    GQuark iface,
+    const gchar *member,
+    const GType *expected_types,
+    GCallback collect_args,
+    TpProxyInvokeFunc invoke_callback,
+    GCallback callback,
+    gpointer user_data,
+    GDestroyNotify destroy,
+    GObject *weak_object,
+    GError **error)
 {
   TpProxySignalConnection *sc;
   DBusGProxy *iface_proxy = tp_proxy_borrow_interface_by_id (self,
@@ -437,9 +441,12 @@ tp_proxy_signal_connection_v0_new (TpProxy *self,
  *
  * Since: 0.7.1
  */
+
+/* that's implemented in the core library, but it calls this: */
+
 void
-tp_proxy_signal_connection_v0_take_results (TpProxySignalConnection *sc,
-                                            GValueArray *args)
+_tp_proxy_signal_connection_take_results (TpProxySignalConnection *sc,
+    GValueArray *args)
 {
   TpProxySignalInvocation *invocation = g_slice_new0 (TpProxySignalInvocation);
   /* FIXME: assert that the GValueArray is the right length, or

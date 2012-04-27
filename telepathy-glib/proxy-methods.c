@@ -242,17 +242,20 @@ _tp_proxy_pending_call_dgproxy_destroy (DBusGProxy *iface_proxy,
  *
  * Since: 0.7.1
  */
+
+/* that's implemented in the core library, but it calls this: */
+
 TpProxyPendingCall *
-tp_proxy_pending_call_v0_new (TpProxy *self,
-                              GQuark iface,
-                              const gchar *member,
-                              DBusGProxy *iface_proxy,
-                              TpProxyInvokeFunc invoke_callback,
-                              GCallback callback,
-                              gpointer user_data,
-                              GDestroyNotify destroy,
-                              GObject *weak_object,
-                              gboolean cancel_must_raise)
+_tp_proxy_pending_call_new (TpProxy *self,
+    GQuark iface,
+    const gchar *member,
+    DBusGProxy *iface_proxy,
+    TpProxyInvokeFunc invoke_callback,
+    GCallback callback,
+    gpointer user_data,
+    GDestroyNotify destroy,
+    GObject *weak_object,
+    gboolean cancel_must_raise)
 {
   TpProxyPendingCall *pc;
 
@@ -408,8 +411,11 @@ tp_proxy_pending_call_free (TpProxyPendingCall *pc)
  *
  * Since: 0.7.1
  */
+
+/* that's implemented in the core library, but it calls this: */
+
 void
-tp_proxy_pending_call_v0_completed (gpointer p)
+_tp_proxy_pending_call_completed (gpointer p)
 {
   TpProxyPendingCall *pc = p;
 
@@ -455,9 +461,12 @@ tp_proxy_pending_call_v0_completed (gpointer p)
  *
  * Since: 0.7.1
  */
+
+/* that's implemented in the core library, but it calls this: */
+
 void
-tp_proxy_pending_call_v0_take_pending_call (TpProxyPendingCall *pc,
-                                            DBusGProxyCall *pending_call)
+_tp_proxy_pending_call_take_pending_call (TpProxyPendingCall *pc,
+    DBusGProxyCall *pending_call)
 {
   g_return_if_fail (pc->priv == pending_call_magic);
   g_return_if_fail (pc->pending_call == NULL);
@@ -499,10 +508,13 @@ _tp_proxy_pending_call_idle_completed (gpointer p)
  *
  * Since: 0.7.1
  */
+
+/* that's implemented in the core library, but it calls this: */
+
 void
-tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *pc,
-                                       GError *error,
-                                       GValueArray *args)
+_tp_proxy_pending_call_take_results (TpProxyPendingCall *pc,
+    GError *error,
+    GValueArray *args)
 {
   g_return_if_fail (pc->proxy != NULL);
   g_return_if_fail (pc->priv == pending_call_magic);
