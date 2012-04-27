@@ -267,6 +267,7 @@ test_properties (Test *test,
   tp_future_account_set_connect_automatically (test->account, TRUE);
 
   g_object_get (test->account,
+      "properties", &props,
       "enabled", &enabled,
       "connect-automatically", &connect_automatically,
       NULL);
@@ -274,11 +275,20 @@ test_properties (Test *test,
   g_assert_cmpint (enabled, ==, FALSE);
   g_assert_cmpint (connect_automatically, ==, TRUE);
 
+  g_assert_cmpint (tp_asv_get_boolean (props, TP_PROP_ACCOUNT_ENABLED, NULL),
+      ==, FALSE);
+  g_assert_cmpint (tp_asv_get_boolean (props,
+          TP_PROP_ACCOUNT_CONNECT_AUTOMATICALLY, NULL),
+      ==, TRUE);
+
+  g_hash_table_unref (props);
+
   /* supersedes */
   tp_future_account_add_supersedes (test->account,
       "/science/yeah/woo");
 
   g_object_get (test->account,
+      "properties", &props,
       "supersedes", &supersedes,
       NULL);
 
@@ -287,7 +297,11 @@ test_properties (Test *test,
       "/science/yeah/woo");
   g_assert (supersedes[1] == NULL);
 
+  g_assert (tp_asv_get_boxed (props, TP_PROP_ACCOUNT_SUPERSEDES,
+          TP_ARRAY_TYPE_OBJECT_PATH_LIST) != NULL);
+
   g_strfreev (supersedes);
+  g_hash_table_unref (props);
 }
 
 static void
