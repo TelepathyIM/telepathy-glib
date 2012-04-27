@@ -599,8 +599,9 @@ new_local_connection_identified (TpStreamTubeChannel *self,
 
   /* We are accepting a tube so the contact of the connection is the
    * initiator of the tube */
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   initiator_handle = tp_channel_get_initiator_handle (TP_CHANNEL (self));
-
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   connection = tp_channel_borrow_connection (TP_CHANNEL (self));
   features = tp_simple_client_factory_dup_contact_features (

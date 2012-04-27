@@ -106,21 +106,29 @@ const gchar *tp_channel_get_identifier (TpChannel *self);
 TpConnection *tp_channel_borrow_connection (TpChannel *self);
 GHashTable *tp_channel_borrow_immutable_properties (TpChannel *self);
 
-TpHandle tp_channel_group_get_self_handle (TpChannel *self);
+TpHandle tp_channel_group_get_self_handle (TpChannel *self)
+    _TP_GNUC_DEPRECATED_FOR (tp_channel_group_get_self_contact);
 TpChannelGroupFlags tp_channel_group_get_flags (TpChannel *self);
-const TpIntset *tp_channel_group_get_members (TpChannel *self);
-const TpIntset *tp_channel_group_get_local_pending (TpChannel *self);
-const TpIntset *tp_channel_group_get_remote_pending (TpChannel *self);
+const TpIntset *tp_channel_group_get_members (TpChannel *self)
+    _TP_GNUC_DEPRECATED_FOR (tp_channel_group_dup_members_contacts);
+const TpIntset *tp_channel_group_get_local_pending (TpChannel *self)
+    _TP_GNUC_DEPRECATED_FOR (tp_channel_group_dup_local_pending_contacts);
+const TpIntset *tp_channel_group_get_remote_pending (TpChannel *self)
+    _TP_GNUC_DEPRECATED_FOR (tp_channel_group_dup_remote_pending_contacts);
 gboolean tp_channel_group_get_local_pending_info (TpChannel *self,
     TpHandle local_pending, TpHandle *actor,
-    TpChannelGroupChangeReason *reason, const gchar **message);
+    TpChannelGroupChangeReason *reason, const gchar **message)
+    _TP_GNUC_DEPRECATED_FOR (tp_channel_group_get_local_pending_contact_info);
 
-TpHandle tp_channel_group_get_handle_owner (TpChannel *self, TpHandle handle);
+TpHandle tp_channel_group_get_handle_owner (TpChannel *self, TpHandle handle)
+    _TP_GNUC_DEPRECATED_FOR (tp_channel_group_get_contact_owner);
 
 gboolean tp_channel_get_requested (TpChannel *self);
 
-TpHandle tp_channel_get_initiator_handle (TpChannel *self);
-const gchar * tp_channel_get_initiator_identifier (TpChannel *self);
+TpHandle tp_channel_get_initiator_handle (TpChannel *self)
+    _TP_GNUC_DEPRECATED_FOR (tp_channel_get_initiator_contact);
+const gchar * tp_channel_get_initiator_identifier (TpChannel *self)
+    _TP_GNUC_DEPRECATED_FOR (tp_channel_get_initiator_contact);
 
 #define TP_CHANNEL_FEATURE_CORE \
   tp_channel_get_feature_quark_core ()

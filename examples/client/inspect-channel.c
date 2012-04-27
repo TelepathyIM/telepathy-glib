@@ -64,18 +64,20 @@ channel_ready_cb (GObject *source,
   if (tp_proxy_has_interface_by_id (channel,
         TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP))
     {
-      const TpIntset *members = tp_channel_group_get_members (channel);
-      TpIntsetFastIter group_iter;
-      TpHandle member;
+      GPtrArray *members = tp_channel_group_dup_members_contacts (channel);
+      guint i;
 
       printf ("Group members:\n");
 
-      tp_intset_fast_iter_init (&group_iter, members);
-
-      while (tp_intset_fast_iter_next (&group_iter, &member))
+      for (i = 0; i < members->len; i++)
         {
-          printf ("\tcontact #%u\n", member);
+          TpContact *member = g_ptr_array_index (members, i);
+
+          printf ("\tcontact #%u %s\n",
+              tp_contact_get_handle (member),
+              tp_contact_get_identifier (member));
         }
+      g_ptr_array_unref (members);
     }
 
   data->exit_status = 0;

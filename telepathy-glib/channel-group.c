@@ -79,6 +79,7 @@ local_pending_info_free (LocalPendingInfo *info)
  *
  * Returns: the handle representing the user, or 0
  * Since: 0.7.12
+ * Deprecated: New code should use tp_channel_group_get_self_contact() instead.
  */
 TpHandle
 tp_channel_group_get_self_handle (TpChannel *self)
@@ -122,6 +123,8 @@ tp_channel_group_get_flags (TpChannel *self)
  *
  * Returns: (transfer none): the members, or %NULL
  * Since: 0.7.12
+ * Deprecated: New code should use tp_channel_group_dup_members_contacts()
+ *  instead.
  */
 const TpIntset *
 tp_channel_group_get_members (TpChannel *self)
@@ -146,6 +149,8 @@ tp_channel_group_get_members (TpChannel *self)
  *
  * Returns: (transfer none): the local-pending members, or %NULL
  * Since: 0.7.12
+ * Deprecated: New code should use tp_channel_group_dup_local_pending_contacts()
+ *  instead.
  */
 const TpIntset *
 tp_channel_group_get_local_pending (TpChannel *self)
@@ -170,6 +175,8 @@ tp_channel_group_get_local_pending (TpChannel *self)
  *
  * Returns: (transfer none): the remote-pending members, or %NULL
  * Since: 0.7.12
+ * Deprecated: New code should use
+ *  tp_channel_group_dup_remote_pending_contacts() instead.
   */
 const TpIntset *
 tp_channel_group_get_remote_pending (TpChannel *self)
@@ -203,6 +210,8 @@ tp_channel_group_get_remote_pending (TpChannel *self)
  *
  * Returns: %TRUE if the contact is in fact local-pending
  * Since: 0.7.12
+ * Deprecated: New code should use
+ *  tp_channel_group_get_local_pending_contact_info() instead.
  */
 gboolean
 tp_channel_group_get_local_pending_info (TpChannel *self,
@@ -302,6 +311,7 @@ tp_channel_group_get_local_pending_info (TpChannel *self,
  *
  * Returns: the global handle that owns the given handle, or 0
  * Since: 0.7.12
+ * Deprecated: New code should use tp_channel_group_get_contact_owner() instead.
  */
 TpHandle
 tp_channel_group_get_handle_owner (TpChannel *self,
@@ -707,8 +717,10 @@ _tp_channel_emit_initial_sets (TpChannel *self)
       TpChannelGroupChangeReason reason;
       const gchar *message;
 
+      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
       tp_channel_group_get_local_pending_info (self, handle, &actor, &reason,
           &message);
+      G_GNUC_END_IGNORE_DEPRECATIONS
 
       g_signal_emit_by_name (self, "group-members-changed", message,
           &empty_array, &empty_array, &local_pending, &empty_array, actor,

@@ -444,6 +444,8 @@ tp_channel_get_property (GObject *object,
 {
   TpChannel *self = TP_CHANNEL (object);
 
+  /* We still need to use deprecated getters funcs */
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   switch (property_id)
     {
     case PROP_CONNECTION:
@@ -499,6 +501,7 @@ tp_channel_get_property (GObject *object,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
   }
+  G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 /**
@@ -1642,6 +1645,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * Change notification is via notify::group-self-handle.
    *
    * Since: 0.7.12
+   * Deprecated: Use #TpChannel:group-self-contact instead.
    */
   param_spec = g_param_spec_uint ("group-self-handle", "Group.SelfHandle",
       "Undefined if not a group", 0, G_MAXUINT32, 0,
@@ -1718,6 +1722,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * finished preparing %TP_CHANNEL_FEATURE_CORE; until then, it may be 0.
    *
    * Since: 0.11.15
+   * Deprecated: Use #TpChannel:initiator-contact instead.
    */
   param_spec = g_param_spec_uint ("initiator-handle", "TpHandle",
       "The handle of the initiator of the channel",
@@ -1738,6 +1743,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * the empty string.
    *
    * Since: 0.11.15
+   * Deprecated: Use #TpChannel:initiator-contact instead.
    */
   param_spec = g_param_spec_string ("initiator-identifier",
       "Initiator identifier",
@@ -1804,6 +1810,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * Emitted when the group members change in a Group channel that is ready.
    *
    * Since: 0.7.12
+   * Deprecated: Use #TpChannel::group-contacts-changed instead.
    */
   signals[SIGNAL_GROUP_MEMBERS_CHANGED] = g_signal_new (
       "group-members-changed", G_OBJECT_CLASS_TYPE (klass),
@@ -1836,6 +1843,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * applications can connect to this signal and ignore the other.
    *
    * Since: 0.7.21
+   * Deprecated: Use #TpChannel::group-contacts-changed instead.
    */
   signals[SIGNAL_GROUP_MEMBERS_CHANGED_DETAILED] = g_signal_new (
       "group-members-changed-detailed", G_OBJECT_CLASS_TYPE (klass),
@@ -2356,6 +2364,7 @@ tp_channel_get_requested (TpChannel *self)
  * Returns: the value of #TpChannel:initiator-handle
  *
  * Since: 0.11.15
+ * Deprecated: New code should use tp_channel_get_initiator_contact() instead.
  */
 TpHandle
 tp_channel_get_initiator_handle (TpChannel *self)
@@ -2373,6 +2382,7 @@ tp_channel_get_initiator_handle (TpChannel *self)
  * Returns: the value of #TpChannel:initiator-identifier
  *
  * Since: 0.11.15
+ * Deprecated: New code should use tp_channel_get_initiator_contact() instead.
  */
 const gchar *
 tp_channel_get_initiator_identifier (TpChannel *self)
@@ -2430,7 +2440,6 @@ tp_channel_join_async (TpChannel *self,
 {
   GSimpleAsyncResult *result;
   GArray *array;
-  TpHandle self_handle;
 
   g_return_if_fail (TP_IS_CHANNEL (self));
   g_return_if_fail (tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_GROUP));
@@ -2438,9 +2447,8 @@ tp_channel_join_async (TpChannel *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_channel_join_async);
 
-  self_handle = tp_channel_group_get_self_handle (self);
   array = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 1);
-  g_array_append_val (array, self_handle);
+  g_array_append_val (array, self->priv->group_self_handle);
 
   tp_cli_channel_interface_group_call_add_members (self, -1, array, message,
       channel_join_cb, result, g_object_unref, NULL);
@@ -2563,7 +2571,6 @@ group_prepared_cb (GObject *source,
   LeaveCtx *ctx = user_data;
   TpChannel *self = (TpChannel *) source;
   GError *error = NULL;
-  TpHandle self_handle;
   GArray *handles;
 
   if (!tp_proxy_prepare_finish (source, res, &error))
@@ -2575,15 +2582,14 @@ group_prepared_cb (GObject *source,
       goto call_close;
     }
 
-  self_handle = tp_channel_group_get_self_handle (self);
-  if (self_handle == 0)
+  if (self->priv->group_self_handle == 0)
     {
       DEBUG ("We are not in the channel, fallback to Close()");
       goto call_close;
     }
 
   handles = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 1);
-  g_array_append_val (handles, self_handle);
+  g_array_append_val (handles, self->priv->group_self_handle);
 
   tp_cli_channel_interface_group_call_remove_members_with_reason (
       self, -1, handles, ctx->message, ctx->reason,
