@@ -11,6 +11,12 @@ Enhancements:
   --enable-fatal-warnings to force all of these on, even in official
   releases. (Simon)
 
+• All TpChannel APIs using contact TpHandle have been deprecated in favor of
+  their TpContact variants. Note that replacement APIs are only guaranteed to
+  work with Connection Managers implementing spec >= 0.23.4. Any CMs using
+  telepathy-glib's TpGroupMixin for implementing the channel's group iface
+  are fine.
+
 Fixes:
 
 • Make it safe to hold refs to a remaining GAsyncResult after returning
