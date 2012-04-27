@@ -4080,6 +4080,7 @@ tp_cli_account_interface_avatar_connect_to_avatar_changed
 <SUBSECTION>
 tp_cli_account_interface_addressing_callback_for_set_uri_scheme_association
 tp_cli_account_interface_addressing_call_set_uri_scheme_association
+</SECTION>
 
 <SECTION>
 <FILE>channel-dispatcher</FILE>
