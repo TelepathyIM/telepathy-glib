@@ -60,7 +60,7 @@ struct _TpTestsSimpleConnectionPrivate
   gboolean break_fastpath_props;
 
   /* TpHandle => reffed TpTestsTextChannelNull */
-  GHashTable *channels;
+  GHashTable *text_channels;
   TpTestsRoomListChan *room_list_chan;
 
   GError *get_self_handle_error /* initially NULL */ ;
@@ -72,7 +72,7 @@ tp_tests_simple_connection_init (TpTestsSimpleConnection *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TESTS_TYPE_SIMPLE_CONNECTION, TpTestsSimpleConnectionPrivate);
 
-  self->priv->channels = g_hash_table_new_full (NULL, NULL, NULL,
+  self->priv->text_channels = g_hash_table_new_full (NULL, NULL, NULL,
       (GDestroyNotify) g_object_unref);
 }
 
@@ -138,7 +138,7 @@ dispose (GObject *object)
 {
   TpTestsSimpleConnection *self = TP_TESTS_SIMPLE_CONNECTION (object);
 
-  g_hash_table_unref (self->priv->channels);
+  g_hash_table_unref (self->priv->text_channels);
   g_clear_object (&self->priv->room_list_chan);
 
   G_OBJECT_CLASS (tp_tests_simple_connection_parent_class)->dispose (object);
@@ -265,7 +265,7 @@ pretend_disconnected (gpointer data)
   TpTestsSimpleConnection *self = TP_TESTS_SIMPLE_CONNECTION (data);
 
   /* We are disconnected, all our channels are invalidated */
-  g_hash_table_remove_all (self->priv->channels);
+  g_hash_table_remove_all (self->priv->text_channels);
   g_clear_object (&self->priv->room_list_chan);
 
   tp_base_connection_finish_shutdown (TP_BASE_CONNECTION (data));
@@ -383,7 +383,8 @@ tp_tests_simple_connection_ensure_text_chan (TpTestsSimpleConnection *self,
 
   handle = tp_handle_ensure (contact_repo, target_id, NULL, NULL);
 
-  chan = g_hash_table_lookup (self->priv->channels, GUINT_TO_POINTER (handle));
+  chan = g_hash_table_lookup (self->priv->text_channels,
+      GUINT_TO_POINTER (handle));
   if (chan != NULL)
     {
       /* Channel already exist, reuse it */
@@ -402,7 +403,7 @@ tp_tests_simple_connection_ensure_text_chan (TpTestsSimpleConnection *self,
             "handle", handle,
             NULL));
 
-      g_hash_table_insert (self->priv->channels, GUINT_TO_POINTER (handle),
+      g_hash_table_insert (self->priv->text_channels, GUINT_TO_POINTER (handle),
           chan);
     }
 
