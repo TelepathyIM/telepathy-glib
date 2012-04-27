@@ -74,8 +74,10 @@ tp_type_dbus_array_of_o (void)
 GValue *
 tp_dbus_specialized_value_slice_new (GType type)
 {
-  GValue *value = tp_g_value_slice_new (type);
+  /* inlining tp_g_value_slice_new here to reduce inter-library calls */
+  GValue *value = g_slice_new0 (GValue);
 
+  g_value_init (value, type);
   g_value_take_boxed (value, dbus_g_type_specialized_construct (type));
   return value;
 }

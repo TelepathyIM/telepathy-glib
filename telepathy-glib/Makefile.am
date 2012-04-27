@@ -98,7 +98,6 @@ tpginclude_HEADERS = \
     file-transfer-channel.h \
     gnio-util.h \
     group-mixin.h \
-    gtypes.h \
     handle.h \
     handle-channels-context.h \
     handle-repo.h \
@@ -149,6 +148,7 @@ tpgdbusinclude_HEADERS = \
     cli-channel.h \
     cli-connection.h \
     cli-misc.h \
+    gtypes.h \
     $(NULL)
 
 BUILT_SOURCES = $(codegen_sources)
@@ -188,6 +188,7 @@ libtelepathy_glib_dbus_internal_la_SOURCES = \
     cli-channel.c \
     cli-connection.c \
     cli-misc.c \
+    gtypes.c \
     interfaces.c \
     $(NULL)
 
@@ -283,7 +284,6 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     file-transfer-channel.c \
     gnio-util.c \
     group-mixin.c \
-    gtypes.c \
     handle.c \
     handle-channels-context-internal.h \
     handle-channels-context.c \

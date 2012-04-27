@@ -38,6 +38,7 @@ codegen_sources = \
     $(NULL)
 
 nodist_gendbusinclude_HEADERS = \
+    _gen/gtypes.h \
     _gen/telepathy-interfaces.h \
     $(NULL)
 
@@ -45,7 +46,6 @@ nodist_geninclude_HEADERS = \
     _gen/error-str.h \
     _gen/telepathy-enums.h \
     _gen/genums.h \
-    _gen/gtypes.h \
     $(NULL)
 
 nodist_gendbusinclude_HEADERS += \
@@ -90,12 +90,12 @@ nodist_libtelepathy_glib_core_internal_la_SOURCES = \
     $(NULL)
 
 nodist_libtelepathy_glib_dbus_internal_la_SOURCES = \
+    _gen/gtypes-body.h \
     _gen/interfaces-body.h \
     $(NULL)
 
 nodist_libtelepathy_glib_main_internal_la_SOURCES = \
     _gen/error-str.c \
-    _gen/gtypes-body.h \
     $(NULL)
 
 nodist_libtelepathy_glib_dbus_internal_la_SOURCES += \
