@@ -325,9 +325,11 @@ class Generator(object):
         # emitted the 'invalidated' signal, or because the weakly referenced
         # object has gone away.
 
-        self.d('/**')
-        self.d(' * %s_%s_connect_to_%s:'
+        connect_to = ('%s_%s_connect_to_%s'
                % (self.prefix_lc, iface_lc, member_lc))
+
+        self.d('/**')
+        self.d(' * %s:' % connect_to)
         self.d(' * @proxy: %s' % self.proxy_doc)
         self.d(' * @callback: Callback to be called when the signal is')
         self.d(' *   received')
@@ -352,8 +354,8 @@ class Generator(object):
         self.d(' */')
         self.d('')
 
-        self.h('TpProxySignalConnection *%s_%s_connect_to_%s (%sproxy,'
-               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
+        self.h('TpProxySignalConnection *%s (%sproxy,'
+               % (connect_to, self.proxy_arg))
         self.h('    %s callback,' % callback_name)
         self.h('    gpointer user_data,')
         self.h('    GDestroyNotify destroy,')
@@ -362,8 +364,7 @@ class Generator(object):
         self.h('')
 
         self.b('TpProxySignalConnection *')
-        self.b('%s_%s_connect_to_%s (%sproxy,'
-               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
+        self.b('(%s) (%sproxy,' % (connect_to, self.proxy_arg))
         self.b('    %s callback,' % callback_name)
         self.b('    gpointer user_data,')
         self.b('    GDestroyNotify destroy,')
@@ -380,8 +381,6 @@ class Generator(object):
 
         self.b('      G_TYPE_INVALID };')
         self.b('')
-        self.b('  g_return_val_if_fail (%s (proxy), NULL);'
-               % self.proxy_assert)
         self.b('  g_return_val_if_fail (callback != NULL, NULL);')
         self.b('')
         self.b('  return tp_proxy_signal_connection_v0_new ((TpProxy *) proxy,')
@@ -398,6 +397,26 @@ class Generator(object):
         self.b('      weak_object, error);')
         self.b('}')
         self.b('')
+
+        # Inline the type-check into the header file, so the object code
+        # doesn't depend on tp_channel_get_type() or whatever
+        self.h('#ifndef __GTK_DOC_IGNORE__')
+        self.h('static inline TpProxySignalConnection *')
+        self.h('_%s (%sproxy,' % (connect_to, self.proxy_arg))
+        self.h('    %s callback,' % callback_name)
+        self.h('    gpointer user_data,')
+        self.h('    GDestroyNotify destroy,')
+        self.h('    GObject *weak_object,')
+        self.h('    GError **error)')
+        self.h('{')
+        self.h('  g_return_val_if_fail (%s (proxy), NULL);'
+               % self.proxy_assert)
+        self.h('  return %s (proxy, callback, user_data,' % connect_to)
+        self.h('      destroy, weak_object, error);')
+        self.h('}')
+        self.h('#define %s(...) _%s (__VA_ARGS__)'
+                % (connect_to, connect_to))
+        self.h('#endif /* __GTK_DOC_IGNORE__ */')
 
     def do_method(self, iface, method):
         iface_lc = iface.lower()
@@ -711,13 +730,15 @@ class Generator(object):
         #   gpointer user_data,
         #   GDestroyNotify *destructor);
 
-        self.h('TpProxyPendingCall *%s_%s_call_%s (%sproxy,'
-               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
+        caller_name = ('%s_%s_call_%s'
+               % (self.prefix_lc, iface_lc, member_lc))
+
+        self.h('TpProxyPendingCall *%s (%sproxy,'
+               % (caller_name, self.proxy_arg))
         self.h('    gint timeout_ms,')
 
         self.d('/**')
-        self.d(' * %s_%s_call_%s:'
-               % (self.prefix_lc, iface_lc, member_lc))
+        self.d(' * %s:' % caller_name)
         self.d(' * @proxy: the #TpProxy')
         self.d(' * @timeout_ms: the timeout in milliseconds, or -1 to use the')
         self.d(' *   default')
@@ -765,8 +786,8 @@ class Generator(object):
         self.d(' */')
         self.d('')
 
-        self.b('TpProxyPendingCall *\n%s_%s_call_%s (%sproxy,'
-               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
+        self.b('TpProxyPendingCall *\n(%s) (%sproxy,'
+               % (caller_name, self.proxy_arg))
         self.b('    gint timeout_ms,')
 
         for arg in in_args:
@@ -793,8 +814,6 @@ class Generator(object):
         self.b('  GQuark interface = %s;' % self.get_iface_quark())
         self.b('  DBusGProxy *iface;')
         self.b('')
-        self.b('  g_return_val_if_fail (%s (proxy), NULL);'
-               % self.proxy_assert)
         self.b('  g_return_val_if_fail (callback != NULL || '
                'user_data == NULL, NULL);')
         self.b('  g_return_val_if_fail (callback != NULL || '
@@ -867,6 +886,38 @@ class Generator(object):
         self.b('    }')
         self.b('}')
         self.b('')
+
+        # Inline the type-check into the header file, so the object code
+        # doesn't depend on tp_channel_get_type() or whatever
+        self.h('#ifndef __GTK_DOC_IGNORE__')
+        self.h('static inline TpProxyPendingCall *')
+        self.h('_%s (%sproxy,' % (caller_name, self.proxy_arg))
+        self.h('    gint timeout_ms,')
+
+        for arg in in_args:
+            name, info, tp_type, elt = arg
+            ctype, gtype, marshaller, pointer = info
+            const = pointer and 'const ' or ''
+            self.h('    %s%s%s,' % (const, ctype, name))
+
+        self.h('    %s callback,' % callback_name)
+        self.h('    gpointer user_data,')
+        self.h('    GDestroyNotify destroy,')
+        self.h('    GObject *weak_object)')
+        self.h('{')
+        self.h('  g_return_val_if_fail (%s (proxy), NULL);'
+               % self.proxy_assert)
+        self.h('  return %s (proxy, timeout_ms,' % caller_name)
+
+        for arg in in_args:
+            name, info, tp_type, elt = arg
+            self.h('    %s,' % name)
+
+        self.h('      callback, user_data, destroy, weak_object);')
+        self.h('}')
+        self.h('#define %s(...) _%s (__VA_ARGS__)'
+                % (caller_name, caller_name))
+        self.h('#endif /* __GTK_DOC_IGNORE__ */')
 
         self.do_method_reentrant(method, iface_lc, member, member_lc,
                                  in_args, out_args, collect_callback)

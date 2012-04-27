@@ -434,6 +434,8 @@ _tp_proxy_borrow_interface_by_id (TpProxy *self,
 {
   gpointer dgproxy;
 
+  g_return_val_if_fail (TP_IS_PROXY (self), NULL);
+
   if (self->invalidated != NULL)
     {
       g_set_error (error, self->invalidated->domain, self->invalidated->code,
