@@ -65,8 +65,6 @@
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/util-internal.h"
 
-#include "_gen/tp-cli-call-stream-body.h"
-
 G_DEFINE_TYPE (TpCallStream, tp_call_stream, TP_TYPE_PROXY)
 
 struct _TpCallStreamPrivate

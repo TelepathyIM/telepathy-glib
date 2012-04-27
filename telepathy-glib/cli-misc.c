@@ -21,6 +21,7 @@
 
 #include "config.h"
 
+#include <telepathy-glib/cli-call.h>
 #include <telepathy-glib/cli-misc.h>
 
 #include <telepathy-glib/interfaces.h>
@@ -28,6 +29,10 @@
 
 #include "telepathy-glib/_gen/tp-cli-account-body.h"
 #include "telepathy-glib/_gen/tp-cli-account-manager-body.h"
+#include "telepathy-glib/_gen/tp-cli-call-content-body.h"
+#include "telepathy-glib/_gen/tp-cli-call-content-media-description-body.h"
+#include "telepathy-glib/_gen/tp-cli-call-stream-body.h"
+#include "telepathy-glib/_gen/tp-cli-call-stream-endpoint-body.h"
 #include "telepathy-glib/_gen/tp-cli-channel-dispatcher-body.h"
 #include "telepathy-glib/_gen/tp-cli-channel-dispatch-operation-body.h"
 #include "telepathy-glib/_gen/tp-cli-channel-request-body.h"

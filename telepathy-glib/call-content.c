@@ -67,8 +67,6 @@
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/util-internal.h"
 
-#include "_gen/tp-cli-call-content-body.h"
-
 G_DEFINE_TYPE (TpCallContent, tp_call_content, TP_TYPE_PROXY)
 
 typedef struct _SendTonesData SendTonesData;

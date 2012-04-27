@@ -36,9 +36,6 @@
 #include "telepathy-glib/interfaces.h"
 #include "telepathy-glib/proxy-subclass.h"
 
-#include "_gen/tp-cli-call-content-media-description-body.h"
-#include "_gen/tp-cli-call-stream-endpoint-body.h"
-
 /**
  * tp_call_stream_endpoint_init_known_interfaces:
  *
