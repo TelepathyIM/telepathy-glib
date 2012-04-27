@@ -5234,6 +5234,7 @@ TpAccountClassPrivate
 TpFutureAccount
 TpFutureAccountClass
 tp_future_account_new
+tp_future_account_from_protocol
 <SUBSECTION>
 tp_future_account_set_display_name
 tp_future_account_set_icon_name

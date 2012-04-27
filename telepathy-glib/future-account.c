@@ -665,6 +665,33 @@ tp_future_account_new (TpAccountManager *account_manager,
 }
 
 /**
+ * tp_future_account_new_from_protocol:
+ * @account_manager: the #TpAccountManager to create the account on
+ * @protocol: a #TpProtocol
+ *
+ * Convenience function to create a new #TpFutureAccount object using
+ * a #TpProtocol instance, instead of specifying connection manager
+ * and protocol name specifically. See tp_future_account_new() for
+ * more details.
+ *
+ * Returns: a new reference to a future account object, or %NULL if
+ *   any argument is incorrect
+ */
+TpFutureAccount *
+tp_future_account_new_from_protocol (TpAccountManager *account_manager,
+    TpProtocol *protocol)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (account_manager), NULL);
+  g_return_val_if_fail (TP_IS_PROTOCOL (protocol), NULL);
+
+  return g_object_new (TP_TYPE_FUTURE_ACCOUNT,
+      "account-manager", account_manager,
+      "connection-manager", tp_protocol_get_cm_name (protocol),
+      "protocol", tp_protocol_get_name (protocol),
+      NULL);
+}
+
+/**
  * tp_future_account_set_display_name:
  * @self: a #TpFutureAccount
  * @name: a display name for the account

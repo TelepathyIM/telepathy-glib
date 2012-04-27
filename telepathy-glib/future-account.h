@@ -22,6 +22,7 @@
 #define TP_FUTURE_ACCOUNT_H
 
 #include <telepathy-glib/account-manager.h>
+#include <telepathy-glib/protocol.h>
 
 G_BEGIN_DECLS
 
@@ -61,6 +62,10 @@ GType tp_future_account_get_type (void);
 
 TpFutureAccount * tp_future_account_new (TpAccountManager *account_manager,
     const gchar *manager, const gchar *protocol) G_GNUC_WARN_UNUSED_RESULT;
+
+TpFutureAccount * tp_future_account_new_from_protocol (
+    TpAccountManager *account_manager,
+    TpProtocol *protocol) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_future_account_set_display_name (TpFutureAccount *self,
     const gchar *name);
