@@ -9,6 +9,8 @@
 
 #include "config.h"
 
+#include <string.h>
+
 #include <telepathy-glib/future-account.h>
 #include <telepathy-glib/interfaces.h>
 
@@ -180,6 +182,8 @@ test_properties (Test *test,
   gchar *presence_status, *presence_message;
   gboolean enabled, connect_automatically;
   gchar **supersedes;
+  GArray *avatar;
+  gchar *mime_type;
 
   test->account = tp_future_account_new (test->account_manager,
       "gabble", "jabber");
@@ -302,6 +306,32 @@ test_properties (Test *test,
 
   g_strfreev (supersedes);
   g_hash_table_unref (props);
+
+  /* avatar */
+  avatar = g_array_new (FALSE, FALSE, sizeof (guchar));
+  g_array_append_vals (avatar, "hello world", strlen ("hello world") + 1);
+  tp_future_account_set_avatar (test->account,
+      (const guchar *) avatar->data, avatar->len, "image/lolz");
+  g_array_unref (avatar);
+  avatar = NULL;
+
+  g_object_get (test->account,
+      "properties", &props,
+      "avatar", &avatar,
+      "avatar-mime-type", &mime_type,
+      NULL);
+
+  g_assert_cmpstr (avatar->data, ==, "hello world");
+  g_assert_cmpuint (avatar->len, ==, strlen ("hello world") + 1);
+  g_assert_cmpstr (mime_type, ==, "image/lolz");
+
+  g_assert (tp_asv_get_boxed (props,
+          TP_PROP_ACCOUNT_INTERFACE_AVATAR_AVATAR,
+          TP_STRUCT_TYPE_AVATAR) != NULL);
+
+  g_hash_table_unref (props);
+  g_array_unref (avatar);
+  g_free (mime_type);
 }
 
 static void
@@ -311,6 +341,7 @@ test_create_succeed (Test *test,
   TpAccount *account;
   GValueArray *array;
   GPtrArray *supersedes;
+  GArray *avatar;
 
   test->account = tp_future_account_new (test->account_manager,
       "gabble", "jabber");
@@ -335,6 +366,13 @@ test_create_succeed (Test *test,
   tp_future_account_add_supersedes (test->account,
       "/some/silly/account");
 
+  avatar = g_array_new (FALSE, FALSE, sizeof (guchar));
+  g_array_append_vals (avatar, "blue meth", strlen ("blue meth") + 1);
+  tp_future_account_set_avatar (test->account,
+      (const guchar *) avatar->data, avatar->len, "image/png");
+  g_array_unref (avatar);
+  avatar = NULL;
+
   tp_future_account_create_account_async (test->account,
       tp_tests_result_ready_cb, &test->result);
   tp_tests_run_until_result (&test->result);
@@ -352,7 +390,7 @@ test_create_succeed (Test *test,
       ==, "walter@white.us");
   g_assert_cmpstr (tp_asv_get_string (test->am->create_parameters, "password"),
       ==, "holly");
-  g_assert_cmpuint (g_hash_table_size (test->am->create_properties), ==, 7);
+  g_assert_cmpuint (g_hash_table_size (test->am->create_properties), ==, 8);
   g_assert_cmpstr (tp_asv_get_string (test->am->create_properties,
           TP_PROP_ACCOUNT_ICON),
       ==, "gasmask");
@@ -392,6 +430,14 @@ test_create_succeed (Test *test,
   g_assert_cmpuint (supersedes->len, ==, 1);
   g_assert_cmpstr (g_ptr_array_index (supersedes, 0), ==,
       "/some/silly/account");
+
+  array = tp_asv_get_boxed (test->am->create_properties,
+      TP_PROP_ACCOUNT_INTERFACE_AVATAR_AVATAR,
+      TP_STRUCT_TYPE_AVATAR);
+  avatar = g_value_get_boxed (array->values);
+  g_assert_cmpstr (avatar->data, ==, "blue meth");
+  g_assert_cmpstr (g_value_get_string (array->values + 1), ==,
+      "image/png");
 
   g_object_unref (account);
 }

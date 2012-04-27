@@ -142,6 +142,8 @@ enum {
   PROP_ENABLED,
   PROP_CONNECT_AUTOMATICALLY,
   PROP_SUPERSEDES,
+  PROP_AVATAR,
+  PROP_AVATAR_MIME_TYPE,
   N_PROPS
 };
 
@@ -261,6 +263,26 @@ tp_future_account_get_property (GObject *object,
           {
             g_value_set_boxed (value, NULL);
           }
+      }
+      break;
+    case PROP_AVATAR:
+      {
+        GValueArray *array = tp_asv_get_boxed (self->priv->properties,
+            TP_PROP_ACCOUNT_INTERFACE_AVATAR_AVATAR,
+            TP_STRUCT_TYPE_AVATAR);
+
+        if (array != NULL)
+          g_value_set_boxed (value, g_value_get_boxed (array->values));
+      }
+      break;
+    case PROP_AVATAR_MIME_TYPE:
+      {
+        GValueArray *array = tp_asv_get_boxed (self->priv->properties,
+            TP_PROP_ACCOUNT_INTERFACE_AVATAR_AVATAR,
+            TP_STRUCT_TYPE_AVATAR);
+
+        if (array != NULL)
+          g_value_set_string (value, g_value_get_string (array->values + 1));
       }
       break;
     default:
@@ -583,6 +605,33 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
         "Accounts superseded by this one",
         G_TYPE_STRV,
         G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpFutureAccount:avatar:
+   *
+   * The avatar set on the account. The avatar's mime type can be read
+   * in the #TpFutureAccount:avatar-mime-type property. To change this
+   * property, use tp_future_account_set_avatar().
+   */
+  g_object_class_install_property (object_class, PROP_AVATAR,
+      g_param_spec_boxed ("avatar",
+        "Avatar",
+        "The account's avatar data",
+        G_TYPE_ARRAY,
+        G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpFutureAccount:avatar-mime-type
+   *
+   * The mime type of the #TpFutureAccount:avatar property. To change
+   * this property, use tp_future_account_set_avatar().
+   */
+  g_object_class_install_property (object_class, PROP_AVATAR_MIME_TYPE,
+      g_param_spec_string ("avatar-mime-type",
+          "Avatar mime type",
+          "The account's avatar's mime type",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 }
 
 /**
@@ -847,6 +896,50 @@ tp_future_account_add_supersedes (TpFutureAccount *self,
     }
 
   g_ptr_array_add (array, g_strdup (superseded_path));
+}
+
+/**
+ * tp_future_account_set_avatar:
+ * @self: a #TpFutureAccount
+ * @avatar: (allow-none) (array length=len) a new avatar to set; can
+ *   be %NULL only if %len equals 0
+ * @len: the length of the new avatar
+ * @mime_type: (allow-none): the MIME type of the new avatar; can be %NULL
+ *  only if @len equals 0
+ *
+ * Set the avatar of the account @self to @avatar. Use the
+ * #TpFutureAccount:avatar and #TpFutureAccount:avatar-mime-type
+ * properties to read the current avatar.
+ */
+void
+tp_future_account_set_avatar (TpFutureAccount *self,
+    const guchar *avatar,
+    gsize len,
+    const gchar *mime_type)
+{
+  TpFutureAccountPrivate *priv;
+  GArray *tmp;
+  GValueArray *arr;
+
+  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (avatar != NULL || len == 0);
+  g_return_if_fail (mime_type != NULL || len == 0);
+
+  priv = self->priv;
+
+  tmp = g_array_new (FALSE, FALSE, sizeof (guchar));
+
+  if (len > 0)
+    g_array_append_vals (tmp, avatar, len);
+
+  arr = tp_value_array_build (2,
+      TP_TYPE_UCHAR_ARRAY, tmp,
+      G_TYPE_STRING, mime_type,
+      G_TYPE_INVALID);
+
+  tp_asv_take_boxed (priv->properties,
+      TP_PROP_ACCOUNT_INTERFACE_AVATAR_AVATAR,
+      TP_STRUCT_TYPE_AVATAR, arr);
 }
 
 /**

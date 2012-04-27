@@ -88,6 +88,9 @@ void tp_future_account_set_connect_automatically (TpFutureAccount *self,
 void tp_future_account_add_supersedes (TpFutureAccount *self,
     const gchar *superseded_path);
 
+void tp_future_account_set_avatar (TpFutureAccount *self,
+    const guchar *avatar, gsize len, const gchar *mime_type);
+
 /* parameters */
 void tp_future_account_set_parameter (TpFutureAccount *self,
     const gchar *key, GVariant *value);
