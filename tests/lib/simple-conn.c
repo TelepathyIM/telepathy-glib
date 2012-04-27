@@ -61,6 +61,7 @@ struct _TpTestsSimpleConnectionPrivate
 
   /* TpHandle => reffed TpTestsTextChannelNull */
   GHashTable *channels;
+  TpTestsRoomListChan *room_list_chan;
 
   GError *get_self_handle_error /* initially NULL */ ;
 };
@@ -138,6 +139,7 @@ dispose (GObject *object)
   TpTestsSimpleConnection *self = TP_TESTS_SIMPLE_CONNECTION (object);
 
   g_hash_table_unref (self->priv->channels);
+  g_clear_object (&self->priv->room_list_chan);
 
   G_OBJECT_CLASS (tp_tests_simple_connection_parent_class)->dispose (object);
 }
@@ -264,6 +266,7 @@ pretend_disconnected (gpointer data)
 
   /* We are disconnected, all our channels are invalidated */
   g_hash_table_remove_all (self->priv->channels);
+  g_clear_object (&self->priv->room_list_chan);
 
   tp_base_connection_finish_shutdown (TP_BASE_CONNECTION (data));
   self->priv->disconnect_source = 0;
@@ -415,7 +418,7 @@ static void
 room_list_chan_closed_cb (TpBaseChannel *channel,
     TpTestsSimpleConnection *self)
 {
-  g_hash_table_remove (self->priv->channels, GUINT_TO_POINTER (0));
+  g_clear_object (&self->priv->room_list_chan);
 }
 
 gchar *
@@ -423,22 +426,21 @@ tp_tests_simple_connection_ensure_room_list_chan (TpTestsSimpleConnection *self,
     const gchar *server,
     GHashTable **props)
 {
-  TpTestsRoomListChan *chan;
   gchar *chan_path;
   TpBaseConnection *base_conn = (TpBaseConnection *) self;
 
-  chan = g_hash_table_lookup (self->priv->channels, GUINT_TO_POINTER (0));
-  if (chan != NULL)
+  if (self->priv->room_list_chan != NULL)
     {
       /* Channel already exist, reuse it */
-      g_object_get (chan, "object-path", &chan_path, NULL);
+      g_object_get (self->priv->room_list_chan,
+          "object-path", &chan_path, NULL);
     }
   else
     {
       chan_path = g_strdup_printf ("%s/RoomListChannel",
           base_conn->object_path);
 
-       chan = TP_TESTS_ROOM_LIST_CHAN (
+      self->priv->room_list_chan = TP_TESTS_ROOM_LIST_CHAN (
           tp_tests_object_new_static_class (
             TP_TESTS_TYPE_ROOM_LIST_CHAN,
             "connection", self,
@@ -446,15 +448,13 @@ tp_tests_simple_connection_ensure_room_list_chan (TpTestsSimpleConnection *self,
             "server", server ? server : "",
             NULL));
 
-       g_signal_connect (chan, "closed",
-           G_CALLBACK (room_list_chan_closed_cb), self);
-
-      g_hash_table_insert (self->priv->channels, GUINT_TO_POINTER (0),
-          chan);
+      g_signal_connect (self->priv->room_list_chan, "closed",
+          G_CALLBACK (room_list_chan_closed_cb), self);
     }
 
   if (props != NULL)
-    g_object_get (chan, "channel-properties", props, NULL);
+    g_object_get (self->priv->room_list_chan,
+        "channel-properties", props, NULL);
 
   return chan_path;
 }
