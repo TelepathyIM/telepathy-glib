@@ -169,14 +169,12 @@ tp_future_account_constructed (GObject *object)
     chain_up (object);
 }
 
-#define GET_PRESENCE_VALUE(key, offset, type, default_value) \
+#define GET_PRESENCE_VALUE(key, offset, type) \
   G_STMT_START { \
   GValueArray *_arr = tp_asv_get_boxed (self->priv->properties, \
       key, TP_STRUCT_TYPE_SIMPLE_PRESENCE); \
   if (_arr != NULL) \
     g_value_set_##type (value, g_value_get_##type (_arr->values + offset)); \
-  else \
-    g_value_set_##type (value, default_value); \
   } G_STMT_END
 
 static void
@@ -218,22 +216,22 @@ tp_future_account_get_property (GObject *object,
               TP_PROP_ACCOUNT_NICKNAME));
       break;
     case PROP_REQUESTED_PRESENCE_TYPE:
-      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_REQUESTED_PRESENCE, 0, uint, 0);
+      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_REQUESTED_PRESENCE, 0, uint);
       break;
     case PROP_REQUESTED_STATUS:
-      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_REQUESTED_PRESENCE, 1, string, "");
+      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_REQUESTED_PRESENCE, 1, string);
       break;
     case PROP_REQUESTED_STATUS_MESSAGE:
-      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_REQUESTED_PRESENCE, 2, string, "");
+      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_REQUESTED_PRESENCE, 2, string);
       break;
     case PROP_AUTOMATIC_PRESENCE_TYPE:
-      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_AUTOMATIC_PRESENCE, 0, uint, 0);
+      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_AUTOMATIC_PRESENCE, 0, uint);
       break;
     case PROP_AUTOMATIC_STATUS:
-      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_AUTOMATIC_PRESENCE, 1, string, "");
+      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_AUTOMATIC_PRESENCE, 1, string);
       break;
     case PROP_AUTOMATIC_STATUS_MESSAGE:
-      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_AUTOMATIC_PRESENCE, 2, string, "");
+      GET_PRESENCE_VALUE (TP_PROP_ACCOUNT_AUTOMATIC_PRESENCE, 2, string);
       break;
     case PROP_ENABLED:
       g_value_set_boolean (value,
