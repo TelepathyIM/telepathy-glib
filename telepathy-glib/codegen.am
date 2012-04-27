@@ -46,6 +46,9 @@ nodist_geninclude_HEADERS = \
     _gen/telepathy-enums.h \
     _gen/genums.h \
     _gen/gtypes.h \
+    $(NULL)
+
+nodist_gendbusinclude_HEADERS += \
     _gen/tp-cli-account.h \
     _gen/tp-cli-account-manager.h \
     _gen/tp-cli-call-content.h \
@@ -63,9 +66,6 @@ nodist_geninclude_HEADERS = \
     _gen/tp-cli-debug.h \
     _gen/tp-cli-generic.h \
     _gen/tp-cli-protocol.h \
-    $(NULL)
-
-nodist_gendbusinclude_HEADERS += \
     _gen/tp-svc-account.h \
     _gen/tp-svc-account-manager.h \
     _gen/tp-svc-call-content.h \
@@ -96,6 +96,9 @@ nodist_libtelepathy_glib_dbus_internal_la_SOURCES = \
 nodist_libtelepathy_glib_main_internal_la_SOURCES = \
     _gen/error-str.c \
     _gen/gtypes-body.h \
+    $(NULL)
+
+nodist_libtelepathy_glib_dbus_internal_la_SOURCES += \
     _gen/register-dbus-glib-marshallers-body.h \
     _gen/tp-cli-account-body.h \
     _gen/tp-cli-account-manager-body.h \
@@ -114,9 +117,6 @@ nodist_libtelepathy_glib_main_internal_la_SOURCES = \
     _gen/tp-cli-debug-body.h \
     _gen/tp-cli-generic-body.h \
     _gen/tp-cli-protocol-body.h \
-    $(NULL)
-
-nodist_libtelepathy_glib_dbus_internal_la_SOURCES += \
     _gen/tp-svc-account.c \
     _gen/tp-svc-account-manager.c \
     _gen/tp-svc-call-content.c \
@@ -210,14 +210,18 @@ _gen/register-dbus-glib-marshallers-body.h: _gen/stable-spec.xml \
 	$(tools_dir)/glib-client-marshaller-gen.py
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-client-marshaller-gen.py $< _tp > $@
 
-_gen/genums.c: _gen/spec-stamp genums.c.template $(our_headers) codegen.am
+_gen/genums.c: _gen/spec-stamp genums.c.template \
+		$(tpginclude_HEADERS) codegen.am
 	$(AM_V_GEN)( cd $(srcdir) && \
-		$(GLIB_MKENUMS) --template genums.c.template $(our_headers) \
+		$(GLIB_MKENUMS) --template genums.c.template \
+		$(tpginclude_HEADERS) \
 		) > $@
 
-_gen/genums.h: _gen/spec-stamp genums.h.template $(our_headers) codegen.am
+_gen/genums.h: _gen/spec-stamp genums.h.template \
+		$(tpginclude_HEADERS) codegen.am
 	$(AM_V_GEN)( cd $(srcdir) && \
-		$(GLIB_MKENUMS) --template genums.h.template $(our_headers) \
+		$(GLIB_MKENUMS) --template genums.h.template \
+		$(tpginclude_HEADERS) \
 		) > $@
 
 _gen/error-str.h: _gen/error-str.c

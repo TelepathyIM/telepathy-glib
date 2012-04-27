@@ -40,8 +40,6 @@
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/client-factory-internal.h"
 
-#include "telepathy-glib/_gen/tp-cli-account-manager-body.h"
-
 /**
  * SECTION:account-manager
  * @title: TpAccountManager

@@ -33,8 +33,6 @@
 #define DEBUG_FLAG TP_DEBUG_DISPATCHER
 #include "telepathy-glib/debug-internal.h"
 
-#include "telepathy-glib/_gen/tp-cli-client-body.h"
-
 /**
  * SECTION:client
  * @title: TpClient

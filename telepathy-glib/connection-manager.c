@@ -40,8 +40,6 @@
 #include "telepathy-glib/protocol-internal.h"
 #include "telepathy-glib/util-internal.h"
 
-#include "telepathy-glib/_gen/tp-cli-connection-manager-body.h"
-
 /**
  * SECTION:connection-manager
  * @title: TpConnectionManager

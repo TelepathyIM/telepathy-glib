@@ -50,8 +50,6 @@
 #include "telepathy-glib/client-factory-internal.h"
 #include "telepathy-glib/util-internal.h"
 
-#include "_gen/tp-cli-connection-body.h"
-
 /**
  * SECTION:connection
  * @title: TpConnection

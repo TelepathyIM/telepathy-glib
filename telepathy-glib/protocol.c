@@ -46,8 +46,6 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 
-#include "telepathy-glib/_gen/tp-cli-protocol-body.h"
-
 #include <string.h>
 
 struct _TpProtocolClass

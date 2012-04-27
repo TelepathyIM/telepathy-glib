@@ -41,8 +41,6 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/client-factory-internal.h"
 
-#include "telepathy-glib/_gen/tp-cli-channel-dispatch-operation-body.h"
-
 /**
  * SECTION:channel-dispatch-operation
  * @title: TpChannelDispatchOperation

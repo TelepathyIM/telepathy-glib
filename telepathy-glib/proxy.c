@@ -37,9 +37,6 @@
 #include "client-factory-internal.h"
 #include "util-internal.h"
 
-
-#include "_gen/tp-cli-generic-body.h"
-
 #if 0
 #define MORE_DEBUG DEBUG
 #else

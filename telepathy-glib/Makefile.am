@@ -37,7 +37,7 @@ noinst_LTLIBRARIES = \
     $(NULL)
 
 # headers that are subject to coding-style checks
-our_headers = \
+tpginclude_HEADERS = \
     account.h \
     account-channel-request.h \
     account-manager.h \
@@ -68,10 +68,6 @@ our_headers = \
     channel-dispatch-operation.h \
     channel-manager.h \
     channel-request.h \
-    cli-call.h \
-    cli-channel.h \
-    cli-connection.h \
-    cli-misc.h \
     client.h \
     client-factory.h \
     client-message.h \
@@ -145,10 +141,14 @@ our_headers = \
     svc-tls.h \
     telepathy-glib.h \
     text-channel.h \
-    util.h
+    util.h \
+    $(NULL)
 
-tpginclude_HEADERS = \
-    $(our_headers) \
+tpgdbusinclude_HEADERS = \
+    cli-call.h \
+    cli-channel.h \
+    cli-connection.h \
+    cli-misc.h \
     $(NULL)
 
 BUILT_SOURCES = $(codegen_sources)
@@ -163,7 +163,8 @@ clean-local:
 	rm -rf tmp-introspect*
 
 check_c_sources = \
-    $(our_headers) \
+    $(tpginclude_HEADERS) \
+    $(tpgdbusinclude_HEADERS) \
     $(libtelepathy_glib_core_internal_la_SOURCES) \
     $(libtelepathy_glib_dbus_internal_la_SOURCES) \
     $(libtelepathy_glib_main_internal_la_SOURCES) \
@@ -184,6 +185,9 @@ libtelepathy_glib_dbus_internal_la_LIBADD = \
     libtelepathy-glib-1-core.la \
     $(NULL)
 libtelepathy_glib_dbus_internal_la_SOURCES = \
+    cli-channel.c \
+    cli-connection.c \
+    cli-misc.c \
     interfaces.c \
     $(NULL)
 
