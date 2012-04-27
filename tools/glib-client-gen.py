@@ -1213,6 +1213,12 @@ class Generator(object):
             self.do_interface(node)
 
         if self.group is not None:
+            self.h('void %s_%s_add_signals (TpProxy *self,'
+                    % (self.prefix_lc, self.group))
+            self.h('    guint quark,')
+            self.h('    DBusGProxy *proxy,')
+            self.h('    gpointer unused);')
+            self.h('')
 
             self.b('/*')
             self.b(' * %s_%s_add_signals:' % (self.prefix_lc, self.group))
@@ -1229,7 +1235,7 @@ class Generator(object):
             self.b(' * This function should be used as a signal handler for')
             self.b(' * #TpProxy::interface-added.')
             self.b(' */')
-            self.b('static void G_GNUC_UNUSED')
+            self.b('void')
             self.b('%s_%s_add_signals (TpProxy *self G_GNUC_UNUSED,'
                     % (self.prefix_lc, self.group))
             self.b('    guint quark,')
