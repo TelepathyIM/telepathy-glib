@@ -143,6 +143,7 @@ struct _TpProtocolPrivate
   GStrv authentication_types;
   TpCapabilities *capabilities;
   TpAvatarRequirements *avatar_req;
+  gchar *cm_name;
 };
 
 enum
@@ -156,6 +157,7 @@ enum
     PROP_PARAM_NAMES,
     PROP_AUTHENTICATION_TYPES,
     PROP_AVATAR_REQUIREMENTS,
+    PROP_CM_NAME,
     N_PROPS
 };
 
@@ -286,6 +288,10 @@ tp_protocol_get_property (GObject *object,
       g_value_set_pointer (value, tp_protocol_get_avatar_requirements (self));
       break;
 
+    case PROP_CM_NAME:
+      g_value_set_string (value, tp_protocol_get_cm_name (self));
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -310,6 +316,11 @@ tp_protocol_set_property (GObject *object,
     case PROP_PROTOCOL_PROPERTIES:
       g_assert (self->priv->protocol_properties == NULL);
       self->priv->protocol_properties = g_value_dup_boxed (value);
+      break;
+
+    case PROP_CM_NAME:
+      g_assert (self->priv->cm_name == NULL);
+      self->priv->cm_name = g_value_dup_string (value);
       break;
 
     default:
@@ -381,6 +392,7 @@ tp_protocol_finalize (GObject *object)
   g_free (self->priv->vcard_field);
   g_free (self->priv->english_name);
   g_free (self->priv->icon_name);
+  g_free (self->priv->cm_name);
 
   if (self->priv->protocol_properties != NULL)
     g_hash_table_unref (self->priv->protocol_properties);
@@ -737,6 +749,20 @@ tp_protocol_class_init (TpProtocolClass *klass)
         "Avatars requirements",
         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
+  /**
+   * TpProtocol:cm-name:
+   *
+   * The name of the connection manager this protocol is on.
+   *
+   * Since: 0.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_CM_NAME,
+      g_param_spec_string ("cm-name",
+        "Connection manager name",
+        "Name of the CM this protocol is on",
+        NULL,
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
   proxy_class->list_features = tp_protocol_list_features;
   proxy_class->must_have_unique_name = FALSE;
   proxy_class->interface = TP_IFACE_QUARK_PROTOCOL;
@@ -795,6 +821,7 @@ tp_protocol_new (TpDBusDaemon *dbus,
         "object-path", object_path,
         "protocol-name", protocol_name,
         "protocol-properties", immutable_properties,
+        "cm-name", cm_name,
         NULL));
 
 finally:
@@ -1695,4 +1722,22 @@ tp_protocol_get_avatar_requirements (TpProtocol *self)
   g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
 
   return self->priv->avatar_req;
+}
+
+/**
+ * tp_protocol_get_cm_name:
+ * @self: a #TpProtocol
+ *
+ * Return the #TpProtocol:cm-name property.
+ *
+ * Returns: the value of #TpProtocol:cm-name
+ *
+ * Since: 0.UNRELEASED
+ */
+const gchar *
+tp_protocol_get_cm_name (TpProtocol *self)
+{
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
+
+  return self->priv->cm_name;
 }
