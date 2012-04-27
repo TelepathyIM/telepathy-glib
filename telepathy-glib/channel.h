@@ -220,7 +220,7 @@ TpContact *tp_channel_group_get_contact_owner (TpChannel *self,
   tp_channel_get_feature_quark_chat_states ()
 GQuark tp_channel_get_feature_quark_chat_states (void) G_GNUC_CONST;
 TpChannelChatState tp_channel_get_chat_state (TpChannel *self,
-    TpHandle contact);
+    TpHandle contact) _TP_GNUC_DEPRECATED_FOR (tp_text_channel_get_chat_state);
 
 /* Channel.Interface.Password */
 #define TP_CHANNEL_FEATURE_PASSWORD \

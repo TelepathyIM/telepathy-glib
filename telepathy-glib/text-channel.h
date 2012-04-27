@@ -121,6 +121,12 @@ gboolean tp_text_channel_ack_all_pending_messages_finish (TpTextChannel *self,
     GAsyncResult *result,
     GError **error);
 
+#define TP_TEXT_CHANNEL_FEATURE_CHAT_STATES \
+  tp_text_channel_get_feature_quark_chat_states ()
+GQuark tp_text_channel_get_feature_quark_chat_states (void) G_GNUC_CONST;
+TpChannelChatState tp_text_channel_get_chat_state (TpTextChannel *self,
+    TpContact *contact);
+
 void tp_text_channel_set_chat_state_async (TpTextChannel *self,
     TpChannelChatState state,
     GAsyncReadyCallback callback,

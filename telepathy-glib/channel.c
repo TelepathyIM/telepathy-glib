@@ -227,6 +227,7 @@ tp_channel_get_feature_quark_contacts (void)
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
  * Since: 0.11.3
+ * Deprecated: Use TP_TEXT_CHANNEL_FEATURE_CHAT_STATES instead.
  */
 
 GQuark
@@ -516,6 +517,7 @@ tp_channel_get_property (GObject *object,
  * Returns: the chat state for @contact, or %TP_CHANNEL_CHAT_STATE_INACTIVE
  *  if their chat state is not known
  * Since: 0.11.3
+ * Deprecated: Use tp_text_channel_get_chat_state() instead.
  */
 TpChannelChatState
 tp_channel_get_chat_state (TpChannel *self,
@@ -1863,6 +1865,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * has finished preparing the feature %TP_CHANNEL_FEATURE_CHAT_STATES.
    *
    * Since: 0.11.3
+   * Deprecated: Use #TpTextChannel::contact-chat-state-changed instead
    */
   signals[SIGNAL_CHAT_STATE_CHANGED] = g_signal_new ("chat-state-changed",
       G_OBJECT_CLASS_TYPE (klass),
