@@ -135,6 +135,9 @@ enum {
   PROP_REQUESTED_PRESENCE_TYPE,
   PROP_REQUESTED_STATUS,
   PROP_REQUESTED_STATUS_MESSAGE,
+  PROP_AUTOMATIC_PRESENCE_TYPE,
+  PROP_AUTOMATIC_STATUS,
+  PROP_AUTOMATIC_STATUS_MESSAGE,
   PROP_ENABLED,
   PROP_CONNECT_AUTOMATICALLY,
   N_PROPS
@@ -163,6 +166,16 @@ tp_future_account_constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 }
+
+#define GET_PRESENCE_VALUE(key, offset, type, default_value) \
+  G_STMT_START { \
+  GValueArray *_arr = tp_asv_get_boxed (self->priv->properties, \
+      key, TP_STRUCT_TYPE_SIMPLE_PRESENCE); \
+  if (_arr != NULL) \
+    g_value_set_##type (value, g_value_get_##type (_arr->values + offset)); \
+  else \
+    g_value_set_##type (value, default_value); \
+  } G_STMT_END
 
 static void
 tp_future_account_get_property (GObject *object,
@@ -201,37 +214,22 @@ tp_future_account_get_property (GObject *object,
           tp_asv_get_string (self->priv->properties, "Nickname"));
       break;
     case PROP_REQUESTED_PRESENCE_TYPE:
-      {
-        GValueArray *arr = tp_asv_get_boxed (self->priv->properties,
-            "RequestedPresence", TP_STRUCT_TYPE_SIMPLE_PRESENCE);
-
-        if (arr != NULL)
-          g_value_set_uint (value, g_value_get_uint (arr->values));
-        else
-          g_value_set_uint (value, 0);
-      }
+      GET_PRESENCE_VALUE ("RequestedPresence", 0, uint, 0);
       break;
     case PROP_REQUESTED_STATUS:
-      {
-        GValueArray *arr = tp_asv_get_boxed (self->priv->properties,
-            "RequestedPresence", TP_STRUCT_TYPE_SIMPLE_PRESENCE);
-
-        if (arr != NULL)
-          g_value_set_string (value, g_value_get_string (arr->values + 1));
-        else
-          g_value_set_string (value, "");
-      }
+      GET_PRESENCE_VALUE ("RequestedPresence", 1, string, "");
       break;
     case PROP_REQUESTED_STATUS_MESSAGE:
-      {
-        GValueArray *arr = tp_asv_get_boxed (self->priv->properties,
-            "RequestedPresence", TP_STRUCT_TYPE_SIMPLE_PRESENCE);
-
-        if (arr != NULL)
-          g_value_set_string (value, g_value_get_string (arr->values + 2));
-        else
-          g_value_set_string (value, "");
-      }
+      GET_PRESENCE_VALUE ("RequestedPresence", 2, string, "");
+      break;
+    case PROP_AUTOMATIC_PRESENCE_TYPE:
+      GET_PRESENCE_VALUE ("AutomaticPresence", 0, uint, 0);
+      break;
+    case PROP_AUTOMATIC_STATUS:
+      GET_PRESENCE_VALUE ("AutomaticPresence", 1, string, "");
+      break;
+    case PROP_AUTOMATIC_STATUS_MESSAGE:
+      GET_PRESENCE_VALUE ("AutomaticPresence", 2, string, "");
       break;
     case PROP_ENABLED:
       g_value_set_boolean (value,
@@ -247,6 +245,8 @@ tp_future_account_get_property (GObject *object,
       break;
     }
 }
+
+#undef GET_PRESENCE_VALUE
 
 static void
 tp_future_account_set_property (GObject *object,
@@ -471,6 +471,55 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
+   * TpFutureAccount:automatic-presence-type:
+   *
+   * The account's automatic presence type (a
+   * #TpConnectionPresenceType). To change this property use
+   * tp_future_account_set_automatic_presence().
+   *
+   * When the account is put online automatically, for instance to
+   * make a channel request or because network connectivity becomes
+   * available, the automatic presence type, status and message will
+   * be copied to their "requested" counterparts.
+   */
+  g_object_class_install_property (object_class, PROP_AUTOMATIC_PRESENCE_TYPE,
+      g_param_spec_uint ("automatic-presence-type",
+          "AutomaticPresence type",
+          "Presence type used to put the account online automatically",
+          0,
+          TP_NUM_CONNECTION_PRESENCE_TYPES,
+          TP_CONNECTION_PRESENCE_TYPE_UNSET,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpFutureAccount:automatic-status:
+   *
+   * The string status name to use in conjunction with the
+   * #TpFutureAccount:automatic-presence-type. To change this property
+   * use tp_future_account_set_automatic_presence().
+   */
+  g_object_class_install_property (object_class, PROP_AUTOMATIC_STATUS,
+      g_param_spec_string ("automatic-status",
+          "AutomaticPresence status",
+          "Presence status used to put the account online automatically",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpFutureAccount:automatic-status-message:
+   *
+   * The user-defined message to use in conjunction with the
+   * #TpAccount:automatic-presence-type. To change this property use
+   * tp_future_account_set_automatic_presence().
+   */
+  g_object_class_install_property (object_class, PROP_AUTOMATIC_STATUS_MESSAGE,
+      g_param_spec_string ("automatic-status-message",
+          "AutomaticPresence message",
+          "User-defined message used to put the account online automatically",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
    * TpFutureAccount:enabled:
    *
    * Whether the account is enabled or not. To change this property
@@ -631,6 +680,45 @@ tp_future_account_set_requested_presence (TpFutureAccount *self,
   g_value_set_string (arr->values + 2, message);
 
   g_hash_table_insert (priv->properties, "RequestedPresence", value);
+}
+
+/**
+ * tp_future_account_set_autmatic_presence:
+ * @self: a #TpFutureAccount
+ * @presence: the automatic presence type
+ * @status: the automatic presence status
+ * @message: the automatic presence message
+ *
+ * Set the automatic presence for the new account, @self, to the type
+ * (@presence, @status), with message @message. Use the
+ * #TpFutureAccount:automatic-presence-type,
+ * #TpFutureAccount:automatic-status, and
+ * #TpFutureAccount:automatic-status-message properties to read the
+ * current automatic presence.
+ */
+void
+tp_future_account_set_automatic_presence (TpFutureAccount *self,
+    TpConnectionPresenceType presence,
+    const gchar *status,
+    const gchar *message)
+{
+  TpFutureAccountPrivate *priv;
+  GValue *value;
+  GValueArray *arr;
+
+  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+
+  priv = self->priv;
+
+  value = tp_g_value_slice_new_take_boxed (TP_STRUCT_TYPE_SIMPLE_PRESENCE,
+      dbus_g_type_specialized_construct (TP_STRUCT_TYPE_SIMPLE_PRESENCE));
+  arr = (GValueArray *) g_value_get_boxed (value);
+
+  g_value_set_uint (arr->values, presence);
+  g_value_set_string (arr->values + 1, status);
+  g_value_set_string (arr->values + 2, message);
+
+  g_hash_table_insert (priv->properties, "AutomaticPresence", value);
 }
 
 /**

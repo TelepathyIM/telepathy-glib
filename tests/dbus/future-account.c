@@ -239,6 +239,24 @@ test_properties (Test *test,
   g_free (presence_status);
   g_free (presence_message);
 
+  /* and automatic presence */
+  tp_future_account_set_automatic_presence (test->account,
+      TP_CONNECTION_PRESENCE_TYPE_BUSY, "busy",
+      "come at me later, actually!");
+
+  g_object_get (test->account,
+      "automatic-presence-type", &presence_type,
+      "automatic-status", &presence_status,
+      "automatic-status-message", &presence_message,
+      NULL);
+
+  g_assert_cmpuint (presence_type, ==, TP_CONNECTION_PRESENCE_TYPE_BUSY);
+  g_assert_cmpstr (presence_status, ==, "busy");
+  g_assert_cmpstr (presence_message, ==, "come at me later, actually!");
+
+  g_free (presence_status);
+  g_free (presence_message);
+
   /* now enabled and connect automatically */
   tp_future_account_set_enabled (test->account, FALSE);
   tp_future_account_set_connect_automatically (test->account, TRUE);
@@ -268,6 +286,9 @@ test_create_succeed (Test *test,
   tp_future_account_set_requested_presence (test->account,
       TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, "available",
       "Better call Saul!");
+  tp_future_account_set_automatic_presence (test->account,
+      TP_CONNECTION_PRESENCE_TYPE_BUSY, "busy",
+      "Cooking");
   tp_future_account_set_enabled (test->account, TRUE);
   tp_future_account_set_connect_automatically (test->account, TRUE);
 
@@ -293,7 +314,7 @@ test_create_succeed (Test *test,
       ==, "walter@white.us");
   g_assert_cmpstr (tp_asv_get_string (test->am->create_parameters, "password"),
       ==, "holly");
-  g_assert_cmpuint (g_hash_table_size (test->am->create_properties), ==, 5);
+  g_assert_cmpuint (g_hash_table_size (test->am->create_properties), ==, 6);
   g_assert_cmpstr (tp_asv_get_string (test->am->create_properties, "Icon"),
       ==, "gasmask");
   g_assert_cmpstr (tp_asv_get_string (test->am->create_properties, "Nickname"),
@@ -312,6 +333,15 @@ test_create_succeed (Test *test,
       "available");
   g_assert_cmpstr (g_value_get_string (array->values + 2), ==,
       "Better call Saul!");
+
+  array = tp_asv_get_boxed (test->am->create_properties, "AutomaticPresence",
+      TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+  g_assert_cmpuint (g_value_get_uint (array->values), ==,
+      TP_CONNECTION_PRESENCE_TYPE_BUSY);
+  g_assert_cmpstr (g_value_get_string (array->values + 1), ==,
+      "busy");
+  g_assert_cmpstr (g_value_get_string (array->values + 2), ==,
+      "Cooking");
 
   g_object_unref (account);
 }
