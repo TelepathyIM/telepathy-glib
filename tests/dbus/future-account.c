@@ -177,7 +177,7 @@ test_properties (Test *test,
   gchar *icon_name, *nickname;
   TpConnectionPresenceType presence_type;
   gchar *presence_status, *presence_message;
-  gboolean enabled;
+  gboolean enabled, connect_automatically;
 
   test->account = tp_future_account_new (test->account_manager,
       "gabble", "jabber");
@@ -239,14 +239,17 @@ test_properties (Test *test,
   g_free (presence_status);
   g_free (presence_message);
 
-  /* now enabled */
+  /* now enabled and connect automatically */
   tp_future_account_set_enabled (test->account, FALSE);
+  tp_future_account_set_connect_automatically (test->account, TRUE);
 
   g_object_get (test->account,
       "enabled", &enabled,
+      "connect-automatically", &connect_automatically,
       NULL);
 
   g_assert_cmpint (enabled, ==, FALSE);
+  g_assert_cmpint (connect_automatically, ==, TRUE);
 }
 
 static void
@@ -266,6 +269,7 @@ test_create_succeed (Test *test,
       TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, "available",
       "Better call Saul!");
   tp_future_account_set_enabled (test->account, TRUE);
+  tp_future_account_set_connect_automatically (test->account, TRUE);
 
   tp_future_account_set_parameter_string (test->account,
       "account", "walter@white.us");
@@ -289,12 +293,15 @@ test_create_succeed (Test *test,
       ==, "walter@white.us");
   g_assert_cmpstr (tp_asv_get_string (test->am->create_parameters, "password"),
       ==, "holly");
-  g_assert_cmpuint (g_hash_table_size (test->am->create_properties), ==, 4);
+  g_assert_cmpuint (g_hash_table_size (test->am->create_properties), ==, 5);
   g_assert_cmpstr (tp_asv_get_string (test->am->create_properties, "Icon"),
       ==, "gasmask");
   g_assert_cmpstr (tp_asv_get_string (test->am->create_properties, "Nickname"),
       ==, "Heisenberg");
   g_assert_cmpint (tp_asv_get_boolean (test->am->create_properties, "Enabled", NULL),
+      ==, TRUE);
+  g_assert_cmpint (tp_asv_get_boolean (test->am->create_properties,
+          "ConnectAutomatically", NULL),
       ==, TRUE);
 
   array = tp_asv_get_boxed (test->am->create_properties, "RequestedPresence",

@@ -94,6 +94,7 @@ enum {
   PROP_REQUESTED_STATUS,
   PROP_REQUESTED_STATUS_MESSAGE,
   PROP_ENABLED,
+  PROP_CONNECT_AUTOMATICALLY,
   N_PROPS
 };
 
@@ -193,6 +194,11 @@ tp_future_account_get_property (GObject *object,
     case PROP_ENABLED:
       g_value_set_boolean (value,
           tp_asv_get_boolean (self->priv->properties, "Enabled", NULL));
+      break;
+    case PROP_CONNECT_AUTOMATICALLY:
+      g_value_set_boolean (value,
+          tp_asv_get_boolean (self->priv->properties, "ConnectAutomatically",
+              NULL));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -432,6 +438,19 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           "Whether this account is enabled or not",
           FALSE,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpFutureAccount:connect-automatically:
+   *
+   * Whether the account should connect automatically or not. To change this
+   * property, use tp_future_account_set_connect_automatically().
+   */
+  g_object_class_install_property (object_class, PROP_CONNECT_AUTOMATICALLY,
+      g_param_spec_boolean ("connect-automatically",
+          "ConnectAutomatically",
+          "Whether this account should connect automatically or not",
+          FALSE,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 }
 
 /**
@@ -578,6 +597,29 @@ tp_future_account_set_enabled (TpFutureAccount *self,
   priv = self->priv;
 
   tp_asv_set_boolean (priv->properties, "Enabled", enabled);
+}
+
+/**
+ * tp_future_account_set_connect_automatically:
+ * @self: a #TpFutureAccount
+ * @connect_automatically: %TRUE if the account is to connect automatically
+ *
+ * Set the connect automatically property of the account on creation
+ * to @connect_automatically so that the account is brought online to
+ * the automatic presence.
+ */
+void
+tp_future_account_set_connect_automatically (TpFutureAccount *self,
+    gboolean connect_automatically)
+{
+  TpFutureAccountPrivate *priv;
+
+  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+
+  priv = self->priv;
+
+  tp_asv_set_boolean (priv->properties, "ConnectAutomatically",
+      connect_automatically);
 }
 
 /**
