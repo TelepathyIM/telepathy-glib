@@ -73,4 +73,9 @@ void _tp_destroy_socket_control_list (gpointer data);
 
 void tp_tests_connection_assert_disconnect_succeeds (TpConnection *connection);
 
+TpContact *tp_tests_connection_run_until_contact_by_id (
+    TpConnection *connection,
+    const gchar *id,
+    const GQuark *features);
+
 #endif /* #ifndef __TP_TESTS_LIB_UTIL_H__ */

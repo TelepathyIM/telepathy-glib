@@ -36,6 +36,9 @@
  * has to be re-handled. This can be useful for example to move its window
  * to the foreground, if applicable.
  *
+ * Using this object is appropriate for most channel types.
+ * For a contact search channel, use tp_contact_search_new_async() instead.
+ *
  * Since: 0.11.12
  */
 
@@ -79,6 +82,7 @@
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/simple-handler.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/util-internal.h>
@@ -126,6 +130,10 @@ typedef enum
 struct _TpAccountChannelRequestPrivate
 {
   TpAccount *account;
+  /* dup'd string => slice-allocated GValue
+   *
+   * Do not use tp_asv_new() and friends, because they expect static
+   * string keys. */
   GHashTable *request;
   gint64 user_action_time;
 
@@ -262,7 +270,14 @@ tp_account_channel_request_set_property (GObject *object,
         break;
 
       case PROP_REQUEST:
-        self->priv->request = g_value_dup_boxed (value);
+        /* We do not use tp_asv_new() and friends, because in principle,
+         * the request can contain user-defined keys. */
+        self->priv->request = g_hash_table_new_full (g_str_hash, g_str_equal,
+            g_free, (GDestroyNotify) tp_g_value_slice_free);
+        tp_g_hash_table_update (self->priv->request,
+            g_value_get_boxed (value),
+            (GBoxedCopyFunc) g_strdup,
+            (GBoxedCopyFunc) tp_g_value_slice_dup);
         break;
 
       case PROP_USER_ACTION_TIME:
@@ -1606,4 +1621,507 @@ _tp_account_channel_request_get_client (TpAccountChannelRequest *self)
   g_return_val_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self), NULL);
 
   return self->priv->handler;
+}
+
+/**
+ * tp_account_channel_request_set_target_contact:
+ * @self: a #TpAccountChannelRequest
+ * @contact: the contact to be contacted
+ *
+ * Configure this request to create a peer-to-peer channel with @contact as
+ * the other peer.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.19.UNRELEASED
+ */
+void
+tp_account_channel_request_set_target_contact (
+    TpAccountChannelRequest *self,
+    TpContact *contact)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (TP_IS_CONTACT (contact));
+  g_return_if_fail (!self->priv->requested);
+
+  /* Do not use tp_asv_set_uint32 or similar - the key is dup'd */
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TARGET_HANDLE_TYPE),
+      tp_g_value_slice_new_uint (TP_HANDLE_TYPE_CONTACT));
+  /* We use the ID because it persists across a disconnect/reconnect */
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TARGET_ID),
+      tp_g_value_slice_new_string (tp_contact_get_identifier (contact)));
+}
+
+/**
+ * tp_account_channel_request_set_target_id:
+ * @self: a #TpAccountChannelRequest
+ * @handle_type: the type of @identifier, typically %TP_HANDLE_TYPE_CONTACT
+ *  or %TP_HANDLE_TYPE_ROOM
+ * @identifier: the unique identifier of the contact, room etc. to be
+ *  contacted
+ *
+ * Configure this request to create a channel with @identifier,
+ * an identifier of type @handle_type.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.19.UNRELEASED
+ */
+void
+tp_account_channel_request_set_target_id (
+    TpAccountChannelRequest *self,
+    TpHandleType handle_type,
+    const gchar *identifier)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (identifier != NULL);
+  g_return_if_fail (handle_type != TP_HANDLE_TYPE_NONE);
+  g_return_if_fail (!self->priv->requested);
+
+  /* Do not use tp_asv_set_uint32 or similar - the key is dup'd */
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TARGET_HANDLE_TYPE),
+      tp_g_value_slice_new_uint (handle_type));
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TARGET_ID),
+      tp_g_value_slice_new_string (identifier));
+}
+
+/**
+ * tp_account_channel_request_new_text:
+ * @account: a #TpAccount
+ * @user_action_time: the time of the user action that caused this request,
+ *  or one of the special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME (see
+ *  #TpAccountChannelRequest:user-action-time)
+ *
+ * Convenience function to create a new #TpAccountChannelRequest object
+ * which will yield a Text channel.
+ *
+ * After creating the request, you will also need to set the "target"
+ * of the channel by calling one of the following functions:
+ *
+ * - tp_account_channel_request_set_target_contact()
+ * - tp_account_channel_request_set_target_id()
+ *
+ * Returns: a new #TpAccountChannelRequest object
+ *
+ * Since: 0.19.UNRELEASED
+ */
+TpAccountChannelRequest *
+tp_account_channel_request_new_text (
+    TpAccount *account,
+    gint64 user_action_time)
+{
+  TpAccountChannelRequest *self;
+  GHashTable *request;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+
+  request = tp_asv_new (
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
+      NULL);
+
+  self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
+      "account", account,
+      "request", request,
+      "user-action-time", user_action_time,
+      NULL);
+  g_hash_table_unref (request);
+  return self;
+}
+
+/**
+ * tp_account_channel_request_set_request_property:
+ * @self: a #TpAccountChannelRequest
+ * @name: a D-Bus property name
+ * @value: an arbitrary value for the property
+ *
+ * Configure this channel request to include the given property, as
+ * documented in the Telepathy D-Bus API Specification or an
+ * implementation-specific extension.
+ *
+ * Using this method is not recommended, but it can be necessary for
+ * experimental or implementation-specific interfaces.
+ *
+ * If the property is not supported by the protocol or channel type, the
+ * channel request will fail. Use #TpCapabilities and the Telepathy
+ * D-Bus API Specification to determine which properties are available.
+ *
+ * If @value is a floating reference, this method takes ownership of it
+ * by using g_variant_ref_sink(). This allows convenient inline use of
+ * #GVariant constructors:
+ *
+ * |[
+ * tp_account_channel_request_set_request_property (acr, "com.example.Int",
+ *     g_variant_new_int32 (17));
+ * tp_account_channel_request_set_request_property (acr, "com.example.String",
+ *     g_variant_new_string ("ferret"));
+ * ]|
+ *
+ * It is an error to provide a @value which contains types not supported by
+ * D-Bus.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.19.UNRELEASED
+ */
+void
+tp_account_channel_request_set_request_property (
+    TpAccountChannelRequest *self,
+    const gchar *name,
+    GVariant *value)
+{
+  GValue *v;
+
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+
+  v = g_slice_new0 (GValue);
+  dbus_g_value_parse_g_variant (value, v);
+
+  g_hash_table_insert (self->priv->request, g_strdup (name), v);
+}
+
+/**
+ * tp_account_channel_request_new_audio_call:
+ * @account: a #TpAccount
+ * @user_action_time: the time of the user action that caused this request,
+ *  or one of the special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME (see
+ *  #TpAccountChannelRequest:user-action-time)
+ *
+ * Convenience function to create a new #TpAccountChannelRequest object
+ * which will yield a Call channel, initially carrying audio only.
+ *
+ * After creating the request, you will usually also need to set the "target"
+ * of the channel by calling one of the following functions:
+ *
+ * - tp_account_channel_request_set_target_contact()
+ * - tp_account_channel_request_set_target_id()
+ *
+ * To call a contact, either use
+ * tp_account_channel_request_set_target_contact() or one of the generic
+ * methods that takes a handle type argument. To check whether this
+ * is possible, use tp_capabilities_supports_audio_call() with
+ * @handle_type set to %TP_HANDLE_TYPE_CONTACT.
+ *
+ * <!-- reinstate this when we have CMs that actually allow it:
+ * In some protocols it is possible to create a conference call which
+ * takes place in a named chatroom, by calling
+ * tp_account_channel_request_set_target_id() with @handle_type
+ * set to %TP_HANDLE_TYPE_ROOM. To test whether this is possible, use
+ * tp_capabilities_supports_audio_call() with @handle_type set to
+ * %TP_HANDLE_TYPE_ROOM.
+ * -->
+ *
+ * In some protocols, it is possible to create a Call channel without
+ * setting a target at all, which will result in a new, empty
+ * conference call. To test whether this is possible, use
+ * tp_capabilities_supports_audio_call() with @handle_type set to
+ * %TP_HANDLE_TYPE_NONE.
+ *
+ * Returns: a new #TpAccountChannelRequest object
+ *
+ * Since: 0.19.UNRELEASED
+ */
+TpAccountChannelRequest *
+tp_account_channel_request_new_audio_call (
+    TpAccount *account,
+    gint64 user_action_time)
+{
+  TpAccountChannelRequest *self;
+  GHashTable *request;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+
+  request = tp_asv_new (
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CALL,
+      TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, G_TYPE_BOOLEAN, TRUE,
+      NULL);
+
+  self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
+      "account", account,
+      "request", request,
+      "user-action-time", user_action_time,
+      NULL);
+  g_hash_table_unref (request);
+  return self;
+}
+
+/**
+ * tp_account_channel_request_new_audio_video_call:
+ * @account: a #TpAccount
+ * @user_action_time: the time of the user action that caused this request,
+ *  or one of the special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME (see
+ *  #TpAccountChannelRequest:user-action-time)
+ *
+ * Convenience function to create a new #TpAccountChannelRequest object
+ * which will yield a Call channel, initially carrying both audio
+ * and video.
+ *
+ * This is the same as tp_account_channel_request_new_audio_call(),
+ * except that the channel will initially carry video as well as audio,
+ * and instead of using tp_capabilities_supports_audio_call()
+ * you should test capabilities with
+ * tp_capabilities_supports_audio_video_call().
+ *
+ * See the documentation of tp_account_channel_request_new_audio_call()
+ * for details of how to set the target (contact, chatroom etc.) for the call.
+ *
+ * Returns: a new #TpAccountChannelRequest object
+ *
+ * Since: 0.19.UNRELEASED
+ */
+TpAccountChannelRequest *
+tp_account_channel_request_new_audio_video_call (
+    TpAccount *account,
+    gint64 user_action_time)
+{
+  TpAccountChannelRequest *self;
+  GHashTable *request;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+
+  request = tp_asv_new (
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CALL,
+      TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, G_TYPE_BOOLEAN, TRUE,
+      TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, G_TYPE_BOOLEAN, TRUE,
+      NULL);
+
+  self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
+      "account", account,
+      "request", request,
+      "user-action-time", user_action_time,
+      NULL);
+  g_hash_table_unref (request);
+  return self;
+}
+
+/**
+ * tp_account_channel_request_new_file_transfer:
+ * @account: a #TpAccount
+ * @filename: a suggested name for the file, which should not contain
+ *  directories or directory separators (for example, if you are sending
+ * a file called /home/user/monkey.pdf, set this to monkey.pdf)
+ * @mime_type: (allow-none): the MIME type (content-type) of the file;
+ *  a %NULL value is allowed, and is treated as
+ *  "application/octet-stream"
+ * @size: the file's size in bytes
+ * @user_action_time: the time of the user action that caused this request,
+ *  or one of the special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME (see
+ *  #TpAccountChannelRequest:user-action-time)
+ *
+ * Convenience function to create a new #TpAccountChannelRequest object,
+ * which will yield a FileTransfer channel to send a file to a contact.
+ *
+ * After creating the request, you will also need to set the "target"
+ * of the channel by calling one of the following functions:
+ *
+ * - tp_account_channel_request_set_target_contact()
+ * - tp_account_channel_request_set_target_id()
+ *
+ * Returns: a new #TpAccountChannelRequest object
+ *
+ * Since: 0.19.UNRELEASED
+ */
+TpAccountChannelRequest *
+tp_account_channel_request_new_file_transfer (
+    TpAccount *account,
+    const gchar *filename,
+    const gchar *mime_type,
+    guint64 size,
+    gint64 user_action_time)
+{
+  TpAccountChannelRequest *self;
+  GHashTable *request;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+  g_return_val_if_fail (!tp_str_empty (filename), NULL);
+  g_return_val_if_fail (mime_type == NULL || mime_type[0] != '\0', NULL);
+
+  if (mime_type == NULL)
+    mime_type = "application/octet-stream";
+
+  request = tp_asv_new (
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+          TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME, G_TYPE_STRING, filename,
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_TYPE, G_TYPE_STRING, mime_type,
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE, G_TYPE_UINT64, size,
+      NULL);
+
+  self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
+      "account", account,
+      "request", request,
+      "user-action-time", user_action_time,
+      NULL);
+  g_hash_table_unref (request);
+  return self;
+}
+
+/**
+ * tp_account_channel_request_set_file_transfer_description:
+ * @self: a #TpAccountChannelRequest
+ * @description: a description of the file
+ *
+ * Configure this channel request to provide the recipient of the file
+ * with the given description.
+ *
+ * If file descriptions are not supported by the protocol, or if this
+ * method is used on a request that is not actually a file transfer, the
+ * channel request will fail. Use
+ * tp_capabilities_supports_file_transfer_description() to determine
+ * whether outgoing file transfers can have a description.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.19.UNRELEASED
+ */
+void
+tp_account_channel_request_set_file_transfer_description (
+    TpAccountChannelRequest *self,
+    const gchar *description)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+  g_return_if_fail (description != NULL);
+
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DESCRIPTION),
+      tp_g_value_slice_new_string (description));
+}
+
+/**
+ * tp_account_channel_request_set_file_transfer_uri:
+ * @self: a #TpAccountChannelRequest
+ * @uri: the source URI for the file
+ *
+ * Configure this channel request to provide other local Telepathy
+ * components with the URI of the file being sent. Unlike most
+ * properties on a file transfer channel, this information is not
+ * sent to the recipient of the file; instead, it is signalled on
+ * D-Bus for use by other Telepathy components.
+ *
+ * The URI should usually be a <code>file</code> URI as defined by
+ * <ulink url="http://www.apps.ietf.org/rfc/rfc1738.html#sec-3.10">RFC 1738
+ * §3.10</ulink> (for instance, <code>file:///path/to/file</code> or
+ * <code>file://localhost/path/to/file</code>). If a remote resource
+ * is being transferred to a contact, it may have a different scheme,
+ * such as <code>http</code>.
+ *
+ * Even if this method is used, the connection manager will not read
+ * the file from disk: the handler for the channel is still
+ * responsible for streaming the file. However, providing the URI
+ * allows a local logger to log which file was transferred, for instance.
+ *
+ * If this functionality is not supported by the connection manager, or
+ * if this method is used on a request that is not actually a file transfer,
+ * the channel request will fail. Use
+ * tp_capabilities_supports_file_transfer_uri() to determine
+ * whether outgoing file transfers can have a URI.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.19.UNRELEASED
+ */
+void
+tp_account_channel_request_set_file_transfer_uri (
+    TpAccountChannelRequest *self,
+    const gchar *uri)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+  g_return_if_fail (uri != NULL);
+
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_URI),
+      tp_g_value_slice_new_string (uri));
+}
+
+/**
+ * tp_account_channel_request_set_file_transfer_timestamp:
+ * @self: a #TpAccountChannelRequest
+ * @timestamp: the modification timestamp of the file, in seconds since the
+ *  Unix epoch (the beginning of 1970 in the UTC time zone), as returned
+ *  by g_date_time_to_unix()
+ *
+ * Configure this channel request to accompany the file transfer with
+ * the given modification timestamp for the file.
+ *
+ * If file timestamps are not supported by the protocol, or if this
+ * method is used on a request that is not actually a file transfer, the
+ * channel request will fail. Use
+ * tp_capabilities_supports_file_transfer_date() to determine
+ * whether outgoing file transfers can have a timestamp.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.19.UNRELEASED
+ */
+void
+tp_account_channel_request_set_file_transfer_timestamp (
+    TpAccountChannelRequest *self,
+    guint64 timestamp)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DATE),
+      tp_g_value_slice_new_uint64 (timestamp));
+}
+
+/**
+ * tp_account_channel_request_set_file_transfer_initial_offset:
+ * @self: a #TpAccountChannelRequest
+ * @offset: the offset into the file at which the transfer will start
+ *
+ * Configure this channel request to inform the recipient of the file
+ * that this channel will not send the first @offset bytes of the file.
+ * In some protocols, this can be used to resume an interrupted transfer.
+ *
+ * If this method is not called, the default is to start from the
+ * beginning of the file (equivalent to @offset = 0).
+ *
+ * If offsets greater than 0 are not supported by the protocol, or if this
+ * method is used on a request that is not actually a file transfer, the
+ * channel request will fail. Use
+ * tp_capabilities_supports_file_transfer_initial_offset() to determine
+ * whether offsets greater than 0 are available.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.19.UNRELEASED
+ */
+void
+tp_account_channel_request_set_file_transfer_initial_offset (
+    TpAccountChannelRequest *self,
+    guint64 offset)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+
+  if (offset == 0)
+    {
+      g_hash_table_remove (self->priv->request,
+          TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET);
+    }
+  else
+    {
+      g_hash_table_insert (self->priv->request,
+          g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET),
+          tp_g_value_slice_new_uint64 (offset));
+    }
 }

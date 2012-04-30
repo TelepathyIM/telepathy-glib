@@ -312,7 +312,9 @@ supports_simple_channel (TpCapabilities *self,
  * @self: a #TpCapabilities object
  *
  * Return whether private text channels can be established by providing
- * a contact identifier.
+ * a contact identifier, for instance by calling
+ * tp_account_channel_request_new_text() followed by
+ * tp_account_channel_request_set_target_contact().
  *
  * If the protocol is such that text chats can be established, but only via a
  * more elaborate D-Bus API than normal (because more information is needed),
@@ -337,7 +339,9 @@ tp_capabilities_supports_text_chats (TpCapabilities *self)
  *
  * If the #TpCapabilities:contact-specific property is %FALSE, this function
  * checks if named text chatrooms can be joined by providing a chatroom
- * identifier.
+ * identifier, for instance by calling
+ * tp_account_channel_request_new_text() followed by
+ * tp_account_channel_request_set_target_id() with %TP_HANDLE_TYPE_ROOM.
  *
  * If the #TpCapabilities:contact-specific property is %TRUE, this function
  * checks if the contact associated with this #TpCapabilities can be invited
@@ -516,7 +520,13 @@ supports_call_full (TpCapabilities *self,
  *  private, #TP_HANDLE_TYPE_ROOM or #TP_HANDLE_TYPE_NONE for conference
  *  (depending on the protocol)
  *
- * Return whether audio call can be established.
+ * Return whether audio calls can be established, for instance by calling
+ * tp_account_channel_request_new_audio_call(), followed by
+ * tp_account_channel_request_set_target_id() with @handle_type.
+ *
+ * To check whether requests using
+ * tp_account_channel_request_set_target_contact() would work, set
+ * @handle_type to %TP_HANDLE_TYPE_CONTACT.
  *
  * Returns: %TRUE if a channel request containing Call as ChannelType,
  * @handle_type as TargetHandleType, a True value for InitialAudio and an
@@ -538,7 +548,13 @@ tp_capabilities_supports_audio_call (TpCapabilities *self,
  *  private, #TP_HANDLE_TYPE_ROOM or #TP_HANDLE_TYPE_NONE for conference
  *  (depending on the protocol)
  *
- * Return whether audio/video call can be established.
+ * Return whether audio/video calls can be established, for instance by calling
+ * tp_account_channel_request_new_audio_video_call(), followed by
+ * tp_account_channel_request_set_target_id() with @handle_type.
+ *
+ * To check whether requests using
+ * tp_account_channel_request_set_target_contact() would work, set
+ * @handle_type to %TP_HANDLE_TYPE_CONTACT.
  *
  * Returns: %TRUE if a channel request containing Call as ChannelType,
  * @handle_type as TargetHandleType, a True value for
@@ -553,6 +569,95 @@ tp_capabilities_supports_audio_video_call (TpCapabilities *self,
     TpHandleType handle_type)
 {
   return supports_call_full (self, handle_type, TRUE, TRUE);
+}
+
+typedef enum {
+    FT_CAP_FLAGS_NONE = 0,
+    FT_CAP_FLAG_URI = (1<<0),
+    FT_CAP_FLAG_OFFSET = (1<<1),
+    FT_CAP_FLAG_DATE = (1<<2),
+    FT_CAP_FLAG_DESCRIPTION = (1<<3)
+} FTCapFlags;
+
+static gboolean
+supports_file_transfer (TpCapabilities *self,
+    FTCapFlags flags)
+{
+  guint i;
+
+  g_return_val_if_fail (TP_IS_CAPABILITIES (self), FALSE);
+
+  for (i = 0; i < self->priv->classes->len; i++)
+    {
+      GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
+      GHashTable *fixed;
+      const gchar *chan_type;
+      TpHandleType handle_type;
+      gboolean valid;
+      guint n_fixed = 2;
+      const gchar * const *allowed;
+
+      tp_value_array_unpack (arr, 2, &fixed, &allowed);
+
+      chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+
+      if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER))
+        continue;
+
+      handle_type = tp_asv_get_uint32 (fixed,
+          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
+
+      if (!valid)
+        continue;
+
+      if (handle_type != TP_HANDLE_TYPE_CONTACT)
+        continue;
+
+      /* ContentType, Filename, Size are mandatory. In principle we could check
+       * that the CM allows them, but not allowing them would be ridiculous,
+       * so we don't.
+       */
+
+      if ((flags & FT_CAP_FLAG_DESCRIPTION) != 0)
+        {
+          /* Description makes no sense as a fixed property so we assume
+           * the CM won't be ridiculous */
+          if (!tp_strv_contains (allowed,
+                TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DESCRIPTION))
+            continue;
+        }
+
+      if ((flags & FT_CAP_FLAG_DATE) != 0)
+        {
+          /* makes no sense as a fixed property */
+          if (!tp_strv_contains (allowed,
+                TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DATE))
+            continue;
+        }
+
+      if ((flags & FT_CAP_FLAG_URI) != 0)
+        {
+          /* makes no sense as a fixed property */
+          if (!tp_strv_contains (allowed,
+                TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_URI))
+            continue;
+        }
+
+      if ((flags & FT_CAP_FLAG_OFFSET) != 0)
+        {
+          /* makes no sense as a fixed property */
+          if (!tp_strv_contains (allowed,
+                TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET))
+            continue;
+        }
+
+      if (n_fixed != tp_asv_size (fixed))
+        continue;
+
+      return TRUE;
+    }
+
+  return FALSE;
 }
 
 /**
@@ -571,8 +676,81 @@ tp_capabilities_supports_audio_video_call (TpCapabilities *self,
 gboolean
 tp_capabilities_supports_file_transfer (TpCapabilities *self)
 {
-  return supports_simple_channel (self, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
-      TP_HANDLE_TYPE_CONTACT);
+  return supports_file_transfer (self, FT_CAP_FLAGS_NONE);
+}
+
+/**
+ * tp_capabilities_supports_file_transfer_uri:
+ * @self: a #TpCapabilities object
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if requests as described for
+ *  tp_capabilities_supports_file_transfer() can also specify the outgoing
+ *  file's URI
+ *
+ * Since: 0.19.UNRELEASED
+ */
+gboolean
+tp_capabilities_supports_file_transfer_uri (TpCapabilities *self)
+{
+  return supports_file_transfer (self, FT_CAP_FLAG_URI);
+}
+
+/**
+ * tp_capabilities_supports_file_transfer_description:
+ * @self: a #TpCapabilities object
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if requests as described for
+ *  tp_capabilities_supports_file_transfer() can also specify the outgoing
+ *  file's description
+ *
+ * Since: 0.19.UNRELEASED
+ */
+gboolean
+tp_capabilities_supports_file_transfer_description (TpCapabilities *self)
+{
+  return supports_file_transfer (self, FT_CAP_FLAG_DESCRIPTION);
+}
+
+/**
+ * tp_capabilities_supports_file_transfer_initial_offset:
+ * @self: a #TpCapabilities object
+ *
+ * Return whether an initial offset other than 0 can be specified on
+ * outgoing file transfers. This can be used to resume partial transfers,
+ * by omitting the part that has already been sent.
+ *
+ * Returns: %TRUE if requests as described for
+ *  tp_capabilities_supports_file_transfer() can also specify an
+ *  initial offset greater than 0
+ *
+ * Since: 0.19.UNRELEASED
+ */
+gboolean
+tp_capabilities_supports_file_transfer_initial_offset (TpCapabilities *self)
+{
+  return supports_file_transfer (self, FT_CAP_FLAG_OFFSET);
+}
+
+/**
+ * tp_capabilities_supports_file_transfer_timestamp:
+ * @self: a #TpCapabilities object
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if requests as described for
+ *  tp_capabilities_supports_file_transfer() can also specify the outgoing
+ *  file's timestamp
+ *
+ * Since: 0.19.UNRELEASED
+ */
+gboolean
+tp_capabilities_supports_file_transfer_timestamp (TpCapabilities *self)
+{
+  return supports_file_transfer (self, FT_CAP_FLAG_DATE);
 }
 
 static gboolean

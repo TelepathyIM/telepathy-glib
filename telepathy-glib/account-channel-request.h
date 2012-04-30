@@ -81,6 +81,59 @@ void tp_account_channel_request_set_delegate_to_preferred_handler (
     TpAccountChannelRequest *self,
     gboolean delegate);
 
+/* Text */
+
+TpAccountChannelRequest *tp_account_channel_request_new_text (
+    TpAccount *account,
+    gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
+
+/* Calls */
+
+TpAccountChannelRequest *tp_account_channel_request_new_audio_call (
+    TpAccount *account,
+    gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
+TpAccountChannelRequest *tp_account_channel_request_new_audio_video_call (
+    TpAccount *account,
+    gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
+
+/* File transfer */
+
+TpAccountChannelRequest *tp_account_channel_request_new_file_transfer (
+    TpAccount *account,
+    const gchar *filename,
+    const gchar *mime_type,
+    guint64 size,
+    gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
+
+void tp_account_channel_request_set_file_transfer_description (
+    TpAccountChannelRequest *self,
+    const gchar *description);
+void tp_account_channel_request_set_file_transfer_uri (
+    TpAccountChannelRequest *self,
+    const gchar *uri);
+void tp_account_channel_request_set_file_transfer_timestamp (
+    TpAccountChannelRequest *self,
+    guint64 timestamp);
+void tp_account_channel_request_set_file_transfer_initial_offset (
+    TpAccountChannelRequest *self,
+    guint64 offset);
+
+/* Channel target (shared between all channel types) */
+
+void tp_account_channel_request_set_target_contact (
+    TpAccountChannelRequest *self,
+    TpContact *contact);
+void tp_account_channel_request_set_target_id (TpAccountChannelRequest *self,
+    TpHandleType handle_type,
+    const gchar *identifier);
+
+/* Generic low-level */
+
+void tp_account_channel_request_set_request_property (
+    TpAccountChannelRequest *self,
+    const gchar *name,
+    GVariant *value);
+
 /* Request and handle API */
 
 void tp_account_channel_request_create_and_handle_channel_async (
