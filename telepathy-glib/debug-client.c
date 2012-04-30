@@ -35,8 +35,6 @@
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/util-internal.h"
 
-#include "telepathy-glib/_gen/tp-cli-debug-body.h"
-
 /**
  * SECTION:debug-client
  * @title: TpDebugClient

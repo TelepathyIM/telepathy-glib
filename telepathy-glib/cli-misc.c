@@ -39,5 +39,6 @@
 #include "telepathy-glib/_gen/tp-cli-client-body.h"
 #include "telepathy-glib/_gen/tp-cli-connection-manager-body.h"
 #include "telepathy-glib/_gen/tp-cli-dbus-daemon-body.h"
+#include "telepathy-glib/_gen/tp-cli-debug-body.h"
 #include "telepathy-glib/_gen/tp-cli-generic-body.h"
 #include "telepathy-glib/_gen/tp-cli-protocol-body.h"

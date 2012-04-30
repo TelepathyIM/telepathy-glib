@@ -86,6 +86,4 @@ GPtrArray * tp_debug_client_get_messages_finish (TpDebugClient *self,
 
 G_END_DECLS
 
-#include <telepathy-glib/_gen/tp-cli-debug.h>
-
 #endif

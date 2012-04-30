@@ -29,6 +29,7 @@
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/client.h>
 #include <telepathy-glib/connection-manager.h>
+#include <telepathy-glib/debug-client.h>
 #include <telepathy-glib/protocol.h>
 #include <telepathy-glib/proxy.h>
 
@@ -40,6 +41,7 @@
 #include <telepathy-glib/_gen/tp-cli-client.h>
 #include <telepathy-glib/_gen/tp-cli-connection-manager.h>
 #include <telepathy-glib/_gen/tp-cli-dbus-daemon.h>
+#include <telepathy-glib/_gen/tp-cli-debug.h>
 #include <telepathy-glib/_gen/tp-cli-generic.h>
 #include <telepathy-glib/_gen/tp-cli-protocol.h>
 
