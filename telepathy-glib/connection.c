@@ -1444,7 +1444,10 @@ tp_connection_constructed (GObject *object)
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CONNECTION, _tp_connection_got_properties, NULL, NULL, NULL);
 
-  g_signal_connect (self, "invalidated",
+  /* Give a chance to TpAccount to know about invalidated connection before we
+   * unref all roster contacts. This is to let applications properly remove all
+   * contacts at once instead of getting weak notify on each. */
+  g_signal_connect_after (self, "invalidated",
       G_CALLBACK (tp_connection_invalidated), NULL);
 }
 

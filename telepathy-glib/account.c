@@ -466,6 +466,18 @@ OUT:
   g_object_unref (self);
 }
 
+static void _tp_account_set_connection (TpAccount *account, const gchar *path);
+
+static void
+connection_invalidated_cb (TpConnection *connection,
+    guint domain,
+    gint code,
+    gchar *message,
+    TpAccount *account)
+{
+  _tp_account_set_connection (account, "/");
+}
+
 static void
 _tp_account_set_connection (TpAccount *account,
     const gchar *path)
@@ -475,14 +487,17 @@ _tp_account_set_connection (TpAccount *account,
   gboolean have_public_connection;
   GError *error = NULL;
 
-  /* Do nothing if we already have a connection for the same path */
   if (priv->connection != NULL)
     {
       const gchar *current;
 
+      /* Do nothing if we already have a connection for the same path */
       current = tp_proxy_get_object_path (priv->connection);
       if (!tp_strdiff (current, path))
         return;
+
+      g_signal_handlers_disconnect_by_func (priv->connection,
+          connection_invalidated_cb, account);
     }
 
   had_public_connection = (priv->connection != NULL &&
@@ -515,6 +530,9 @@ _tp_account_set_connection (TpAccount *account,
     }
   else
     {
+      tp_g_signal_connect_object (priv->connection, "invalidated",
+          G_CALLBACK (connection_invalidated_cb), account, 0);
+
       _tp_connection_set_account (priv->connection, account);
       if (tp_proxy_is_prepared (account, TP_ACCOUNT_FEATURE_CONNECTION))
         {
@@ -1163,7 +1181,7 @@ _tp_account_dispose (GObject *object)
 
   priv->dispose_has_run = TRUE;
 
-  tp_clear_object (&self->priv->connection);
+  _tp_account_set_connection (self, "/");
 
   /* release any references held by the object here */
   if (G_OBJECT_CLASS (tp_account_parent_class)->dispose != NULL)
