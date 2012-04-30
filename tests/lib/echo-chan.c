@@ -19,6 +19,10 @@
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/svc-channel.h>
 
+/* This is for text-mixin unit tests, others should be using ExampleEcho2Channel
+ * which uses newer TpMessageMixin */
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+
 static void text_iface_init (gpointer iface, gpointer data);
 static void destroyable_iface_init (gpointer iface, gpointer data);
 
@@ -218,3 +222,5 @@ destroyable_iface_init (gpointer iface,
   IMPLEMENT (destroy);
 #undef IMPLEMENT
 }
+
+G_GNUC_END_IGNORE_DEPRECATIONS

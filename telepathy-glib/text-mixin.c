@@ -43,6 +43,8 @@
  * you should first call tp_text_mixin_iface_init(), then call
  * tp_svc_channel_type_text_implement_send() to register your implementation
  * of the Send method.
+ *
+ * Deprecated: Use #TpMessageMixin instead.
  */
 
 #include "config.h"
@@ -59,6 +61,9 @@
 #define DEBUG_FLAG TP_DEBUG_IM
 
 #include "debug-internal.h"
+
+/* Deprecated module can use deprecated APIs */
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 
 struct _TpTextMixinPrivate
 {
@@ -100,6 +105,7 @@ typedef struct
  * <!--no documentation beyond Returns: needed-->
  *
  * Returns: the quark used for storing mixin offset on a GObjectClass
+ * Deprecated: Use #TpMessageMixin instead.
  */
 GQuark
 tp_text_mixin_class_get_offset_quark ()
@@ -118,6 +124,7 @@ tp_text_mixin_class_get_offset_quark ()
  * <!--no documentation beyond Returns: needed-->
  *
  * Returns: the quark used for storing mixin offset on a GObject
+ * Deprecated: Use #TpMessageMixin instead.
  */
 GQuark
 tp_text_mixin_get_offset_quark ()
@@ -143,6 +150,8 @@ tp_text_mixin_get_offset_quark ()
  * tp_text_mixin_class_init ((GObjectClass *) klass,
  *                           G_STRUCT_OFFSET (SomeObjectClass, text_mixin));
  * </programlisting></informalexample>
+ *
+ * Deprecated: Use #TpMessageMixin instead.
  */
 
 void
@@ -175,6 +184,8 @@ tp_text_mixin_class_init (GObjectClass *obj_cls, glong offset)
  *                     G_STRUCT_OFFSET (SomeObject, text_mixin),
  *                     self->contact_repo);
  * </programlisting></informalexample>
+ *
+ * Deprecated: Use tp_message_mixin_init() instead.
  */
 void
 tp_text_mixin_init (GObject *obj,
@@ -208,6 +219,8 @@ tp_text_mixin_init (GObject *obj,
  *  by G_MAXUINT
  *
  * Set the supported message types.
+ *
+ * Deprecated: Use #TpMessageMixin instead.
  */
 void
 tp_text_mixin_set_message_types (GObject *obj,
@@ -250,6 +263,8 @@ _pending_free (_PendingMessage *msg,
  * @obj: An object with this mixin.
  *
  * Free resources held by the text mixin.
+ *
+ * Deprecated: Use tp_message_mixin_finalize() instead.
  */
 void
 tp_text_mixin_finalize (GObject *obj)
@@ -282,6 +297,8 @@ tp_text_mixin_finalize (GObject *obj)
  *
  * Returns: %TRUE on success; %FALSE if the message was lost due to the memory
  * limit.
+ *
+ * Deprecated: Use tp_message_mixin_take_received() instead.
  */
 gboolean
 tp_text_mixin_receive_with_flags (GObject *obj,
@@ -355,6 +372,8 @@ tp_text_mixin_receive_with_flags (GObject *obj,
  *
  * Returns: %TRUE on success; %FALSE if the message was lost due to the memory
  * limit.
+ *
+ * Deprecated: Use tp_message_mixin_take_received() instead.
  */
 gboolean
 tp_text_mixin_receive (GObject *obj,
@@ -389,6 +408,8 @@ compare_pending_message (gconstpointer haystack,
  * on interface org.freedesktop.Telepathy.Channel.Type.Text
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
+ *
+ * Deprecated: Use #TpMessageMixin instead.
  */
 gboolean
 tp_text_mixin_acknowledge_pending_messages (GObject *obj,
@@ -470,6 +491,8 @@ tp_text_mixin_acknowledge_pending_messages_async (TpSvcChannelTypeText *iface,
  * on interface org.freedesktop.Telepathy.Channel.Type.Text
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
+ *
+ * Deprecated: Use #TpMessageMixin instead.
  */
 gboolean
 tp_text_mixin_list_pending_messages (GObject *obj,
@@ -557,6 +580,8 @@ tp_text_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
  * taken from #TpChannelTextMessageType, through @ret.
  *
  * Returns: %TRUE on success
+ *
+ * Deprecated: Use #TpMessageMixin instead.
  */
 gboolean
 tp_text_mixin_get_message_types (GObject *obj,
@@ -594,6 +619,8 @@ tp_text_mixin_get_message_types_async (TpSvcChannelTypeText *iface,
  * @obj: An object with this mixin
  *
  * Clear the pending message queue, deleting all messages.
+ *
+ * Deprecated: Use tp_message_mixin_clear() instead.
  */
 void
 tp_text_mixin_clear (GObject *obj)
@@ -618,6 +645,8 @@ tp_text_mixin_clear (GObject *obj)
  * is placed in it, without incrementing the handle's reference count.
  *
  * Returns: %TRUE if there are pending messages
+ *
+ * Deprecated: Use tp_message_mixin_has_pending_messages() instead.
  */
 gboolean
 tp_text_mixin_has_pending_messages (GObject *obj,
@@ -640,6 +669,8 @@ tp_text_mixin_has_pending_messages (GObject *obj,
  *
  * Mark all pending messages as having been "rescued" from a channel that
  * previously closed.
+ *
+ * Deprecated: Use tp_message_mixin_set_rescued() instead.
  */
 void
 tp_text_mixin_set_rescued (GObject *obj)
@@ -667,6 +698,8 @@ tp_text_mixin_set_rescued (GObject *obj)
  * In addition to calling this function during interface initialization, the
  * implementor is expected to call tp_svc_channel_type_text_implement_send(),
  * providing a Send implementation.
+ *
+ * Deprecated: Use tp_message_mixin_text_iface_init() instead.
  */
 void
 tp_text_mixin_iface_init (gpointer g_iface,
@@ -682,3 +715,5 @@ tp_text_mixin_iface_init (gpointer g_iface,
   /* send not implemented here */
 #undef IMPLEMENT
 }
+
+G_GNUC_END_IGNORE_DEPRECATIONS

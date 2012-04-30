@@ -23,6 +23,7 @@
 
 #include <time.h>
 
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/handle-repo.h>
 #include <telepathy-glib/svc-channel.h>
 #include "util.h"
@@ -75,34 +76,43 @@ struct _TpTextMixin {
 #define TP_TEXT_MIXIN(o) \
   ((TpTextMixin *) tp_mixin_offset_cast (o, TP_TEXT_MIXIN_OFFSET (o)))
 
-GQuark tp_text_mixin_class_get_offset_quark (void);
-GQuark tp_text_mixin_get_offset_quark (void);
+GQuark tp_text_mixin_class_get_offset_quark (void) _TP_GNUC_DEPRECATED;
+GQuark tp_text_mixin_get_offset_quark (void) _TP_GNUC_DEPRECATED;
 
-void tp_text_mixin_class_init (GObjectClass *obj_cls, glong offset);
+void tp_text_mixin_class_init (GObjectClass *obj_cls, glong offset)
+    _TP_GNUC_DEPRECATED;
 
 void tp_text_mixin_init (GObject *obj, glong offset,
-    TpHandleRepoIface *contacts_repo);
-void tp_text_mixin_set_message_types (GObject *obj, ...);
-void tp_text_mixin_finalize (GObject *obj);
+    TpHandleRepoIface *contacts_repo)
+    _TP_GNUC_DEPRECATED_FOR (tp_message_mixin_init);
+void tp_text_mixin_set_message_types (GObject *obj, ...) _TP_GNUC_DEPRECATED;
+void tp_text_mixin_finalize (GObject *obj)
+    _TP_GNUC_DEPRECATED_FOR (tp_message_mixin_finalize);
 
 gboolean tp_text_mixin_receive_with_flags (GObject *obj,
     TpChannelTextMessageType type, TpHandle sender, time_t timestamp,
-    const char *text, TpChannelTextMessageFlags flags);
+    const char *text, TpChannelTextMessageFlags flags)
+    _TP_GNUC_DEPRECATED_FOR (tp_message_mixin_take_received);
 gboolean tp_text_mixin_receive (GObject *obj, TpChannelTextMessageType type,
-    TpHandle sender, time_t timestamp, const char *text);
+    TpHandle sender, time_t timestamp, const char *text)
+    _TP_GNUC_DEPRECATED_FOR (tp_message_mixin_take_received);
 gboolean tp_text_mixin_acknowledge_pending_messages (GObject *obj,
-    const GArray * ids, GError **error);
+    const GArray * ids, GError **error) _TP_GNUC_DEPRECATED;
 gboolean tp_text_mixin_list_pending_messages (GObject *obj, gboolean clear,
-    GPtrArray ** ret, GError **error);
+    GPtrArray ** ret, GError **error) _TP_GNUC_DEPRECATED;
 gboolean tp_text_mixin_get_message_types (GObject *obj, GArray **ret,
-    GError **error);
-void tp_text_mixin_clear (GObject *obj);
+    GError **error) _TP_GNUC_DEPRECATED;
+void tp_text_mixin_clear (GObject *obj)
+    _TP_GNUC_DEPRECATED_FOR (tp_message_mixin_clear);
 
 gboolean tp_text_mixin_has_pending_messages (GObject *obj,
-    TpHandle *first_sender);
-void tp_text_mixin_set_rescued (GObject *obj);
+    TpHandle *first_sender)
+    _TP_GNUC_DEPRECATED_FOR (tp_message_mixin_has_pending_messages);
+void tp_text_mixin_set_rescued (GObject *obj)
+    _TP_GNUC_DEPRECATED_FOR (tp_message_mixin_set_rescued);
 
-void tp_text_mixin_iface_init (gpointer g_iface, gpointer iface_data);
+void tp_text_mixin_iface_init (gpointer g_iface, gpointer iface_data)
+    _TP_GNUC_DEPRECATED_FOR (tp_message_mixin_text_iface_init);
 
 G_END_DECLS
 

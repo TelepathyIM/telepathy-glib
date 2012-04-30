@@ -21,6 +21,10 @@
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/svc-generic.h>
 
+/* This is for text-mixin unit tests, others should be using ExampleEcho2Channel
+ * which uses newer TpMessageMixin */
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+
 static void text_iface_init (gpointer iface, gpointer data);
 static void channel_iface_init (gpointer iface, gpointer data);
 
@@ -569,3 +573,5 @@ tp_tests_text_channel_get_props (TpTestsTextChannelNull *self)
   g_strfreev (interfaces);
   return props;
 }
+
+G_GNUC_END_IGNORE_DEPRECATIONS
