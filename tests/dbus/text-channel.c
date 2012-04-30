@@ -969,6 +969,81 @@ test_receive_muc_delivery (Test *test,
   g_ptr_array_unref (parts);
 }
 
+static void
+set_chat_state_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_text_channel_set_chat_state_finish (TP_TEXT_CHANNEL (source), result,
+      &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+contact_chat_state_changed_cb (TpTextChannel *channel,
+    TpContact *contact,
+    TpChannelChatState state,
+    Test *test)
+{
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_chat_state (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark features[] = {
+      TP_CHANNEL_FEATURE_CONTACTS,
+      TP_TEXT_CHANNEL_FEATURE_CHAT_STATES,
+      0 };
+  TpContact *contact;
+  TpChannelChatState state;
+
+  /* Set an initial chat state, prepare the channel, and verify target contact
+   * has that state */
+  tp_message_mixin_change_chat_state (G_OBJECT (test->chan_service),
+      test->bob, TP_CHANNEL_CHAT_STATE_COMPOSING);
+
+  tp_tests_proxy_run_until_prepared (test->channel, features);
+
+  contact = tp_channel_get_target_contact ((TpChannel *) test->channel);
+  state = tp_text_channel_get_chat_state (test->channel, contact);
+  g_assert_cmpuint (state, ==, TP_CHANNEL_CHAT_STATE_COMPOSING);
+
+  /* Test setting invalid chat state */
+  tp_text_channel_set_chat_state_async (test->channel, -1,
+      set_chat_state_cb, test);
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_clear_error (&test->error);
+
+  tp_text_channel_set_chat_state_async (test->channel,
+      TP_CHANNEL_CHAT_STATE_GONE, set_chat_state_cb, test);
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_clear_error (&test->error);
+
+  /* Now set a valid chat state and verify self contact has that state */
+  tp_text_channel_set_chat_state_async (test->channel,
+      TP_CHANNEL_CHAT_STATE_COMPOSING, set_chat_state_cb, test);
+  g_signal_connect (test->channel, "contact-chat-state-changed",
+      G_CALLBACK (contact_chat_state_changed_cb), test);
+  test->wait = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  contact = tp_connection_get_self_contact (test->connection);
+  state = tp_text_channel_get_chat_state (test->channel, contact);
+  g_assert_cmpuint (state, ==, TP_CHANNEL_CHAT_STATE_COMPOSING);
+}
+
 int
 main (int argc,
       char **argv)
@@ -1004,6 +1079,8 @@ main (int argc,
       test_sent_with_no_sender, teardown);
   g_test_add ("/text-channel/receive-muc-delivery", Test, NULL, setup,
       test_receive_muc_delivery, teardown);
+  g_test_add ("/text-channel/chat-state", Test, NULL, setup,
+      test_chat_state, teardown);
 
   return g_test_run ();
 }
