@@ -31,6 +31,8 @@ G_DEFINE_TYPE_WITH_CODE (ExampleEcho2Channel,
       tp_message_mixin_text_iface_init)
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_MESSAGES,
       tp_message_mixin_messages_iface_init)
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_CHAT_STATE,
+      tp_message_mixin_chat_state_iface_init)
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_DESTROYABLE,
       destroyable_iface_init)
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_SMS, sms_iface_init)
@@ -49,6 +51,8 @@ example_echo_2_channel_get_interfaces (TpBaseChannel *self)
   g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_MESSAGES);
   g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_DESTROYABLE);
   g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_SMS);
+  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_CHAT_STATE);
+
   return interfaces;
 };
 
@@ -176,6 +180,13 @@ finally:
     }
 }
 
+static gboolean
+send_chat_state (GObject *object,
+    TpChannelChatState state,
+    GError **error)
+{
+  return TRUE;
+}
 
 static GObject *
 constructor (GType type,
@@ -206,6 +217,8 @@ constructor (GType type,
       TP_DELIVERY_REPORTING_SUPPORT_FLAG_RECEIVE_FAILURES,
       content_types);
 
+  tp_message_mixin_implement_send_chat_state (object, send_chat_state);
+
   return object;
 }
 
@@ -221,6 +234,8 @@ static void
 example_echo_2_channel_close (TpBaseChannel *self)
 {
   GObject *object = (GObject *) self;
+
+  tp_message_mixin_maybe_send_gone (object);
 
   if (!tp_base_channel_is_destroyed (self))
     {
