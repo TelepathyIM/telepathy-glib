@@ -214,10 +214,11 @@ AC_SUBST(tpglibtestsdir)
 
 dnl Check for Glib
 PKG_CHECK_MODULES(GLIB,
-  [glib-2.0 >= 2.30.0, gobject-2.0 >= 2.30.0, gio-2.0 >= 2.30.0])
+  [glib-2.0 >= 2.32.0, gobject-2.0 >= 2.32.0, gio-2.0 >= 2.32.0])
 
-AC_DEFINE([GLIB_VERSION_MIN_REQUIRED], [GLIB_VERSION_2_30], [Ignore post 2.30 deprecations])
-AC_DEFINE([GLIB_VERSION_MAX_ALLOWED], [GLIB_VERSION_2_30], [Prevent post 2.30 APIs])
+dnl MIN_REQUIRED must stay to 2.30 because of GValueArray
+AC_DEFINE([GLIB_VERSION_MIN_REQUIRED], [GLIB_VERSION_2_30], [Ignore post 2.32 deprecations])
+AC_DEFINE([GLIB_VERSION_MAX_ALLOWED], [GLIB_VERSION_2_32], [Prevent post 2.32 APIs])
 
 dnl Check for GIO-Unix
 PKG_CHECK_MODULES(GIO_UNIX, [gio-unix-2.0],

@@ -169,6 +169,7 @@ _tp_channel_contacts_init (TpChannel *self)
           self->priv->handle, self->priv->identifier);
     }
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   if (tp_channel_get_initiator_handle (self) != 0 &&
       !tp_str_empty (tp_channel_get_initiator_identifier (self)))
     {
@@ -177,6 +178,7 @@ _tp_channel_contacts_init (TpChannel *self)
           tp_channel_get_initiator_handle (self),
           tp_channel_get_initiator_identifier (self));
     }
+  G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 void

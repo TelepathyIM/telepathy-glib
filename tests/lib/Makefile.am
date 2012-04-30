@@ -41,6 +41,8 @@ libtp_glib_tests_la_SOURCES = \
     my-conn-proxy.c \
     params-cm.h \
     params-cm.c \
+    room-list-chan.h \
+    room-list-chan.c \
     simple-account.c \
     simple-account.h \
     simple-account-manager.c\

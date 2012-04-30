@@ -309,6 +309,11 @@ typedef enum {
     FEATURE_STATE_WANTED,
     /* Want to prepare, have called prepare_async */
     FEATURE_STATE_TRYING,
+    /* Couldn't prepare because a required interface on the connection
+     * was missing and the connection wasn't connected yet. We'll retry to
+     * prepare once the connection is connected.
+     * This state is only used when preparing Connection features */
+    FEATURE_STATE_MISSING_IFACE,
     /* Couldn't prepare, gave up */
     FEATURE_STATE_FAILED,
     /* Prepared */
@@ -1766,6 +1771,7 @@ check_depends_ready (TpProxy *self,
             return FALSE;
 
           case FEATURE_STATE_FAILED:
+          case FEATURE_STATE_MISSING_IFACE:
             if (!can_retry || !dep_feature->can_retry)
               {
                 DEBUG ("Can't prepare %s, because %s (a dependency) is "
@@ -2066,8 +2072,21 @@ request_is_complete (TpProxy *self,
                  * in tp_proxy_prepare_async() as CORE have to be prepared */
                 if (!check_feature_interfaces (self, feature))
                   {
-                    tp_proxy_set_feature_state (self, feature,
-                        FEATURE_STATE_FAILED);
+                    if (TP_IS_CONNECTION (self) &&
+                        tp_connection_get_status ((TpConnection *) self, NULL)
+                        != TP_CONNECTION_STATUS_CONNECTED)
+                      {
+                        /* Give a chance to retry preparing the feature once
+                         * the Connection is connected as it may still gain
+                         * the interface. */
+                        tp_proxy_set_feature_state (self, feature,
+                            FEATURE_STATE_MISSING_IFACE);
+                      }
+                    else
+                      {
+                        tp_proxy_set_feature_state (self, feature,
+                            FEATURE_STATE_FAILED);
+                      }
                     continue;
                   }
 
@@ -2103,6 +2122,7 @@ request_is_complete (TpProxy *self,
 
           case FEATURE_STATE_INVALID:
           case FEATURE_STATE_FAILED:
+          case FEATURE_STATE_MISSING_IFACE:
           case FEATURE_STATE_READY:
             /* nothing more to do */
             break;
@@ -2295,20 +2315,34 @@ static void foreach_feature (GQuark name,
 {
   FeatureState state = GPOINTER_TO_INT (data);
   TpProxy *self = user_data;
-  const TpProxyFeature *feature;
 
-  if (state != FEATURE_STATE_READY)
-    return;
+  if (state == FEATURE_STATE_MISSING_IFACE)
+    {
+      GQuark features[] = { 0, 0};
 
-  feature = tp_proxy_subclass_get_feature (G_OBJECT_TYPE (self), name);
+      tp_proxy_set_feature_state (self, name, FEATURE_STATE_UNWANTED);
 
-  if (feature->prepare_before_signalling_connected_async == NULL)
-    return;
+      self->priv->pending_will_announce_calls++;
 
-  self->priv->pending_will_announce_calls++;
+      features[0] = name;
 
-  feature->prepare_before_signalling_connected_async (self, feature,
-      prepare_before_signalling_connected_cb, self);
+      tp_proxy_prepare_async (self, features,
+          prepare_before_signalling_connected_cb, self);
+    }
+  else if (state == FEATURE_STATE_READY)
+    {
+      const TpProxyFeature *feature;
+
+      feature = tp_proxy_subclass_get_feature (G_OBJECT_TYPE (self), name);
+
+      if (feature->prepare_before_signalling_connected_async == NULL)
+        return;
+
+      self->priv->pending_will_announce_calls++;
+
+      feature->prepare_before_signalling_connected_async (self, feature,
+          prepare_before_signalling_connected_cb, self);
+    }
 }
 
 /*

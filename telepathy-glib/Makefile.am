@@ -118,6 +118,8 @@ our_headers = \
     protocol.h \
     proxy.h \
     proxy-subclass.h \
+    room-info.h \
+    room-list.h \
     run.h \
     signalled-message.h \
     simple-approver.h \
@@ -300,6 +302,9 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     proxy-internal.h \
     proxy-methods.c \
     proxy-signals.c \
+    room-info.c \
+    room-info-internal.h \
+    room-list.c \
     run.c \
     signalled-message.c \
     signalled-message-internal.h \

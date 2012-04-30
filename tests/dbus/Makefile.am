@@ -46,6 +46,7 @@ tests_list = \
     test-properties \
     test-protocol-objects \
     test-proxy-preparation \
+    test-room-list \
     test-self-handle \
     test-self-presence \
     test-simple-approver \
@@ -244,6 +245,8 @@ test_text_channel_LDADD = \
     $(top_builddir)/examples/cm/echo-message-parts/libexample-cm-echo-2.la
 
 test_debug_client_SOURCES = debug-client.c
+
+test_room_list_SOURCES = room-list.c
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk

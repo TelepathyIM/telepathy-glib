@@ -66,6 +66,11 @@ gchar * tp_tests_simple_connection_ensure_text_chan (
     const gchar *target_id,
     GHashTable **props);
 
+gchar * tp_tests_simple_connection_ensure_room_list_chan (
+    TpTestsSimpleConnection *self,
+    const gchar *server,
+    GHashTable **props);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_TESTS_SIMPLE_CONN_H__ */
