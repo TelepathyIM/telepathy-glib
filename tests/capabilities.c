@@ -448,6 +448,9 @@ test_supports_tube (Test *test,
       "contact-specific", FALSE,
       NULL);
 
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
   g_assert (tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_CONTACT,
         NULL));
   g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
