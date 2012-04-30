@@ -2691,6 +2691,12 @@ tp_message_mixin_take_received
 tp_message_mixin_has_pending_messages
 tp_message_mixin_clear
 tp_message_mixin_text_iface_init
+<SUBSECTION>
+TpMessageMixinSendChatStateImpl
+tp_message_mixin_chat_state_iface_init
+tp_message_mixin_change_chat_state
+tp_message_mixin_implement_send_chat_state
+tp_message_mixin_maybe_send_gone
 <SUBSECTION Private>
 TpMessageMixinPrivate
 </SECTION>
