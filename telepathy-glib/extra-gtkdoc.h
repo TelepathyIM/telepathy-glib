@@ -388,6 +388,17 @@
  */
 
 /**
+ * SECTION:cli-channel
+ * @title: Channel interface
+ * @short_description: client-side wrappers for Channel core functionality
+ * @see_also: #TpChannel
+ *
+ * This section documents the auto-generated C wrappers for the
+ * Channel D-Bus interface. These are not generally useful
+ * (the #TpChannel object provides a more convenient API for them).
+ */
+
+/**
  * SECTION:channel-group
  * @title: Group and Conference interfaces on Channels
  * @short_description: client-side wrappers for Group and Conference
@@ -527,6 +538,17 @@
  * Many instant messaging protocols allow named chatrooms to be listed.
  * This section documents the auto-generated C wrappers for the Room List
  * channel type.
+ */
+
+/**
+ * SECTION:cli-connection
+ * @title: Connection interface
+ * @short_description: client-side wrappers for Connection core functionality
+ * @see_also: #TpConnection
+ *
+ * This section documents the auto-generated C wrappers for the
+ * Connection D-Bus interface. These are not generally useful
+ * (the #TpConnection object provides a more convenient API for them).
  */
 
 /**
@@ -989,4 +1011,48 @@
  * Misc interfaces for calls.
  *
  * Since: 0.17.5
+ */
+
+/**
+ * SECTION:cli-connection-manager
+ * @title: ConnectionManager interface
+ * @short_description: client-side wrappers for ConnectionManager core
+ *  functionality
+ * @see_also: #TpConnectionManager
+ *
+ * This section documents the auto-generated C wrappers for the
+ * ConnectionManager D-Bus interface.
+ */
+
+/**
+ * SECTION:cli-channel-dispatcher
+ * @title: ChannelDispatcher interface
+ * @short_description: client-side wrappers for ChannelDispatcher core
+ *  functionality
+ * @see_also: #TpChannelDispatcher
+ *
+ * This section documents the auto-generated C wrappers for the
+ * ChannelDispatcher D-Bus interface.
+ */
+
+/**
+ * SECTION:cli-client
+ * @title: Client interface
+ * @short_description: client-side wrappers for Client functionality
+ * @see_also: #TpClient
+ *
+ * This section documents the auto-generated C wrappers for the
+ * Client, Handler, Approver, Observer and other related D-Bus interfaces.
+ * These should normally only be used by the Channel Dispatcher implementation.
+ */
+
+/**
+ * SECTION:cli-account-manager
+ * @title: AccountManager interface
+ * @short_description: client-side wrappers for AccountManager functionality
+ * @see_also: #TpAccountManager
+ *
+ * This section documents the auto-generated C wrappers for the
+ * AccountManager. These are not usually useful, since #TpAccountManager
+ * provides a high-level API.
  */
