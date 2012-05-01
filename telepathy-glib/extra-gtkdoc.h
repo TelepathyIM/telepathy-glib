@@ -337,35 +337,6 @@
  */
 
 /**
- * SECTION:interfaces
- * @title: Telepathy protocol interface and property names
- * @short_description: D-Bus interface and property names from the
- *  Telepathy spec
- *
- * This header exposes the interface names from the Telepathy specification
- * as cpp defines for strings, such as %TP_IFACE_PROPERTIES_INTERFACE.
- * It is automatically generated from the specification.
- *
- * Since 0.7.0 it also provides cpp defines like
- * %TP_IFACE_QUARK_PROPERTIES_INTERFACE, which expand to function calls that
- * return GQuarks for the same strings.
- *
- * Since 0.9.2 it also provides cpp defines like
- * %TP_PROP_CHANNEL_INTERFACE_GROUP_GROUP_FLAGS, which expand to string
- * constants representing fully-qualified D-Bus property names, like
- * <literal>im.telepathy1.Channel.Interface.Group.GroupFlags</literal>.
- *
- * Since 0.11.5 it also provides cpp defines like
- * %TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS for contact attributes like
- * "im.telepathy1.Connection.Interface.Aliasing/alias",
- * and defines like
- * %TP_TOKEN_CHANNEL_INTERFACE_MEDIA_SIGNALLING_ICE_UDP
- * for handler capability tokens like
- * "im.telepathy1.Channel.Interface.MediaSignalling/gtalk-p2p".
- * (These were present in an incorrect form since 0.11.3.)
- */
-
-/**
  * SECTION:errors
  * @title: Telepathy protocol errors
  * @short_description: The errors from the Telepathy D-Bus spec, as a
