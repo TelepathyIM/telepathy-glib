@@ -106,7 +106,7 @@ tp_dbus_daemon_dup (GError **error)
   if (starter_bus_daemon != NULL)
     return g_object_ref (starter_bus_daemon);
 
-  conn = _tp_dbus_starter_bus_conn (error);
+  conn = dbus_g_bus_get (DBUS_BUS_STARTER, error);
 
   if (conn == NULL)
     return NULL;

@@ -83,19 +83,6 @@
  */
 /* (#define + static inline in dbus.h) */
 
-DBusGConnection *
-_tp_dbus_starter_bus_conn (GError **error)
-{
-  static DBusGConnection *starter_bus = NULL;
-
-  if (starter_bus == NULL)
-    {
-      starter_bus = dbus_g_bus_get (DBUS_BUS_STARTER, error);
-    }
-
-  return starter_bus;
-}
-
 /**
  * TpDBusNameType:
  * @TP_DBUS_NAME_TYPE_UNIQUE: accept unique names like :1.123
