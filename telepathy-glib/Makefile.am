@@ -104,7 +104,6 @@ tpginclude_HEADERS = \
     handle-repo-static.h \
     handle-repo-dynamic.h \
     heap.h \
-    interfaces.h \
     intset.h \
     message.h \
     message-mixin.h \
@@ -149,6 +148,7 @@ tpgdbusinclude_HEADERS = \
     cli-connection.h \
     cli-misc.h \
     gtypes.h \
+    interfaces.h \
     $(NULL)
 
 BUILT_SOURCES = $(codegen_sources)
