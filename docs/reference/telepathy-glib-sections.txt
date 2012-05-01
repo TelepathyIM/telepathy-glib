@@ -15,14 +15,6 @@ TpChannelPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/defs.h</INCLUDE>
-<FILE>defs</FILE>
-<TITLE>defs</TITLE>
-TP_USER_ACTION_TIME_NOT_USER_ACTION
-TP_USER_ACTION_TIME_CURRENT_TIME
-</SECTION>
-
-<SECTION>
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>base-connection</FILE>
 <TITLE>TpBaseConnection</TITLE>
@@ -2137,6 +2129,8 @@ tp_cm_message_get_type
 <FILE>enums</FILE>
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>enums</TITLE>
+TP_USER_ACTION_TIME_NOT_USER_ACTION
+TP_USER_ACTION_TIME_CURRENT_TIME
 TpHandleType
 TP_NUM_HANDLE_TYPES
 TpConnMgrParamFlags

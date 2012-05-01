@@ -1,8 +1,8 @@
 /* This file contains no code - it's just here for gtkdoc to pick up
  * documentation for otherwise undocumented generated files.
  *
- * Copyright (C) 2007 Collabora Ltd.
- * Copyright (C) 2007 Nokia Corporation
+ * Copyright © 2007-2012 Collabora Ltd.
+ * Copyright © 2007-2009 Nokia Corporation
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,6 +17,36 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+/**
+ * TP_USER_ACTION_TIME_NOT_USER_ACTION:
+ *
+ * The "user action time" used by methods like
+ * tp_account_channel_request_new() to represent channel requests that are
+ * not a result of user action.
+ *
+ * See also #TpAccountChannelRequest:user-action-time,
+ * tp_user_action_time_from_x11(), tp_user_action_time_should_present() and
+ * %TP_USER_ACTION_TIME_CURRENT_TIME.
+ *
+ * Since: 0.11.13
+ */
+
+/**
+ * TP_USER_ACTION_TIME_CURRENT_TIME:
+ *
+ * The "user action time" used by methods like
+ * tp_account_channel_request_new() to represent channel requests that should
+ * be treated as though they happened at the current time. This is the same
+ * concept as %GDK_CURRENT_TIME in GDK (but note that the numerical value used
+ * in Telepathy is not the same).
+ *
+ * See also #TpAccountChannelRequest:user-action-time,
+ * tp_user_action_time_from_x11(), tp_user_action_time_should_present() and
+ * %TP_USER_ACTION_TIME_NOT_USER_ACTION.
+ *
+ * Since: 0.11.13
  */
 
 /**
@@ -328,12 +358,10 @@
  * TP_ prefix, e.g. TP_CONNECTION_STATUS_CONNECTED.
  *
  * Each enum also has a constant for the number of members, named like
- * TP_NUM_CONNECTION_STATUSES. The pluralization is currently hard-coded
- * in the conversion scripts, but should move into the specification
- * in future.
+ * TP_NUM_CONNECTION_STATUSES.
  *
- * Constants LAST_TP_CONNECTION_STATUS, etc. are also provided. These are
- * deprecated and will be removed in a future release.
+ * The numeric constants %TP_USER_ACTION_TIME_NOT_USER_ACTION and
+ * %TP_USER_ACTION_TIME_CURRENT_TIME are also provided.
  */
 
 /**

@@ -26,38 +26,6 @@
 
 G_BEGIN_DECLS
 
-/**
- * TP_USER_ACTION_TIME_NOT_USER_ACTION:
- *
- * The "user action time" used by methods like
- * tp_account_channel_request_new() to represent channel requests that are
- * not a result of user action.
- *
- * See also #TpAccountChannelRequest:user-action-time,
- * tp_user_action_time_from_x11(), tp_user_action_time_should_present() and
- * %TP_USER_ACTION_TIME_CURRENT_TIME.
- *
- * Since: 0.11.13
- */
-#define TP_USER_ACTION_TIME_NOT_USER_ACTION (G_GINT64_CONSTANT (0))
-
-/**
- * TP_USER_ACTION_TIME_CURRENT_TIME:
- *
- * The "user action time" used by methods like
- * tp_account_channel_request_new() to represent channel requests that should
- * be treated as though they happened at the current time. This is the same
- * concept as %GDK_CURRENT_TIME in GDK (but note that the numerical value used
- * in Telepathy is not the same).
- *
- * See also #TpAccountChannelRequest:user-action-time,
- * tp_user_action_time_from_x11(), tp_user_action_time_should_present() and
- * %TP_USER_ACTION_TIME_NOT_USER_ACTION.
- *
- * Since: 0.11.13
- */
-#define TP_USER_ACTION_TIME_CURRENT_TIME (G_MAXINT64)
-
 /* telepathy-glib-specific version of G_GNUC_DEPRECATED so our regression
  * tests can continue to test deprecated functionality, while avoiding
  * deprecated bits of other libraries */

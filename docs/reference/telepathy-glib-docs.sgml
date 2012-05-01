@@ -22,7 +22,6 @@
   </chapter>
   <chapter id="ch-protocol">
     <title>The Telepathy protocol</title>
-    <xi:include href="xml/defs.xml"/>
     <xi:include href="xml/handle.xml"/>
     <xi:include href="xml/enums.xml"/>
     <xi:include href="xml/errors.xml"/>
