@@ -216,6 +216,7 @@ teardown_service (Test *test,
 
   g_clear_object (&test->account1);
   g_clear_object (&test->account2);
+  g_clear_object (&test->account);
 
   test->service = NULL;
   teardown (test, data);
@@ -414,6 +415,7 @@ ensure_action (gpointer script_data,
   g_assert (tp_proxy_is_prepared (test->am, TP_ACCOUNT_MANAGER_FEATURE_CORE));
   test->account = tp_account_manager_ensure_account (test->am,
       path);
+  g_object_ref (test->account);
 
   script_continue (script_data);
 }
