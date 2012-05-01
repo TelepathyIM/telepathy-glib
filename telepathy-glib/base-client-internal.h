@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * Base class for Client implementations
  *

@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * base-call-internal.h - Header for TpBaseCall* (internals)
  * Copyright © 2011 Collabora Ltd.

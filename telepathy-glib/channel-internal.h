@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * TpChannel - proxy for a Telepathy channel (internals)
  *

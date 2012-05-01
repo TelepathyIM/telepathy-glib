@@ -1,3 +1,4 @@
+/*<private_header>*/
 /* Object representing a Telepathy contact (internal)
  *
  * Copyright © 2011 Collabora Ltd. <http://www.collabora.co.uk/>

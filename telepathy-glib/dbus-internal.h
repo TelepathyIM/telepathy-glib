@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * internal-dbus-glib.h - private header for dbus-glib glue
  *

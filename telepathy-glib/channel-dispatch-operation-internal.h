@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * channel-dispatch-operation-internal.h - proxy for channels awaiting approval
  *

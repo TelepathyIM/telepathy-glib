@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * contact-search-internal.h - private functions for contact searches
  *

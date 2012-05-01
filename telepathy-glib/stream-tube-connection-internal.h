@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * Object representing a connection on a Stream Tube (internal)
  *

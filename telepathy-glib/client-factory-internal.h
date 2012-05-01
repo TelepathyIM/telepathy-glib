@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * Internal methods of TpClientFactory
  *

@@ -1,3 +1,4 @@
+/*<private_header>*/
 /* TpProtocol - internal header
  *
  * Copyright © 2010 Collabora Ltd.

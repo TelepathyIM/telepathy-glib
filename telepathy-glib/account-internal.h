@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * TpAccount - proxy for a Telepathy account (internals)
  *

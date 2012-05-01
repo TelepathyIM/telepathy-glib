@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * dbus-properties-mixin-internal.h - D-Bus core Properties
  * Copyright © 2008-2012 Collabora Ltd.

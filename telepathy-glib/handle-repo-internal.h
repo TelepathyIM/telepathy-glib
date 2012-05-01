@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * internal-handle-repo.h - private header for handle repositories
  *

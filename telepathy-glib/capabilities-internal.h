@@ -1,3 +1,4 @@
+/*<private_header>*/
 /* Object representing the capabilities a Connection or a Contact
  * supports (internals).
  *

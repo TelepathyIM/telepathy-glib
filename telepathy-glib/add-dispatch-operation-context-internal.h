@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * Context objects for AddDispatchOperation calls (internal)
  *

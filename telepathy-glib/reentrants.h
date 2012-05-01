@@ -1,3 +1,5 @@
+/*<private_header>*/
+
 #include <telepathy-glib/telepathy-glib.h>
 
 #include <telepathy-glib/client.h>
