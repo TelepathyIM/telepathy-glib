@@ -1005,7 +1005,7 @@ tp_presence_mixin_fill_contact_attributes (GObject *obj,
 }
 
 /**
- * tp_presence_mixin_presence_register_with_contacts_mixin: (skip)
+ * tp_presence_mixin_register_with_contacts_mixin: (skip)
  * @obj: An instance that of the implementation that uses both the Contacts
  * mixin and this mixin
  *
