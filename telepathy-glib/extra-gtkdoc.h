@@ -380,6 +380,125 @@
  */
 
 /**
+ * SECTION:version
+ * @title: Version information
+ * @short_description: Checking the telepathy-glib version
+ *
+ * Since 0.UNRELEASED, telepathy-glib provides version information similar
+ * to that used in GLib.
+ *
+ * Typical usage from configure.ac is similar to GLib's:
+ *
+ * |[
+ * AC_DEFINE([TP_VERSION_MIN_REQUIRED], [TP_VERSION_0_18],
+ *   [Ignore deprecations newer than this branch])
+ * AC_DEFINE([TP_VERSION_MAX_ALLOWED], [TP_VERSION_0_20],
+ *   [Prevent use of APIs newer than this branch])
+ * ]|
+ *
+ * or you can define the macros directly on the compiler command line
+ * if required:
+ *
+ * |[
+ * cc -o foo foo.c \
+ *     -DTP_VERSION_MIN_REQUIRED=TP_VERSION_0_18 \
+ *     -DTP_VERSION_MAX_ALLOWED=TP_VERSION_0_20 \
+ *     ${TP_CFLAGS} ${TP_LIBS}
+ * ]|
+ *
+ * This functionality was added in telepathy-glib 0.UNRELEASED, but it
+ * is safe to define the TP_VERSION_MIN_REQUIRED and TP_VERSION_MAX_ALLOWED
+ * macros even for older versions of telepathy-glib, as long as you do
+ * not try to expand them.
+ */
+
+/**
+ * TP_MAJOR_VERSION:
+ *
+ * The major version of telepathy-glib (e.g. the 0 in 0.18.1) at the time your
+ * code was compiled.
+ */
+
+/**
+ * TP_MINOR_VERSION:
+ *
+ * The minor version of telepathy-glib (e.g. the 18 in 0.18.1) at the time your
+ * code was compiled.
+ *
+ * Odd minor versions indicate a development branch; even minor versions
+ * indicate a stable branch.
+ */
+
+/**
+ * TP_MICRO_VERSION:
+ *
+ * The micro version of telepathy-glib (e.g. the 1 in 0.18.1) at the time your
+ * code was compiled.
+ *
+ * Within a stable branch (even minor version), micro versions fix bugs
+ * but do not add features.
+ *
+ * Within a development branch (odd minor version), micro versions can
+ * fix bugs and/or add features.
+ */
+
+/**
+ * TP_VERSION_0_16: (skip)
+ *
+ * A constant representing the telepathy-glib 0.16 stable branch,
+ * and the 0.15 development branch that led to it.
+ */
+
+/**
+ * TP_VERSION_0_18: (skip)
+ *
+ * A constant representing the telepathy-glib 0.18 stable branch,
+ * and the 0.17 development branch that led to it.
+ */
+
+/**
+ * TP_VERSION_0_20: (skip)
+ *
+ * A constant representing the telepathy-glib 0.20 stable branch,
+ * and the 0.19 development branch that led to it.
+ */
+
+/**
+ * TP_VERSION_1_0: (skip)
+ *
+ * A constant representing the telepathy-glib 1.0 stable branch,
+ * and the 0.99 development branch that led to it.
+ */
+
+/**
+ * TP_VERSION_MIN_REQUIRED: (skip)
+ *
+ * A version-number constant like %TP_VERSION_0_18.
+ *
+ * This may be defined to a value like %TP_VERSION_0_18 by users of
+ * telepathy-glib, to set the minimum version they wish to
+ * require. Warnings will be issued for functions deprecated in or
+ * before that version.
+ *
+ * If not defined, the default value is the previous stable branch.
+ */
+
+/**
+ * TP_VERSION_MAX_ALLOWED: (skip)
+ *
+ * A version-number constant like %TP_VERSION_0_18.
+ *
+ * This may be defined to a value like %TP_VERSION_0_18 by users of
+ * telepathy-glib, to set the maximum version they wish to
+ * depend on. Warnings will be issued for functions deprecated in or
+ * before that version.
+ *
+ * If not defined, the default value in stable branches is that stable
+ * branch, and the default value in development branches is the next
+ * stable branch.
+ */
+
+/**
  * SECTION:enums
  * @title: Telepathy protocol enumerations
  * @short_description: Enumerated types and bitfields from the Telepathy spec

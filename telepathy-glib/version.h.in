@@ -1,0 +1,5 @@
+/* @configure_input@ */
+
+#define TP_MAJOR_VERSION @TP_MAJOR_VERSION@
+#define TP_MINOR_VERSION @TP_MINOR_VERSION@
+#define TP_MICRO_VERSION @TP_MICRO_VERSION@

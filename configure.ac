@@ -61,6 +61,13 @@ GTK_DOC_CHECK([1.17],[--flavour no-tmpl])
 
 GOBJECT_INTROSPECTION_CHECK([1.30])
 
+TP_MAJOR_VERSION=tp_glib_major_version
+TP_MINOR_VERSION=tp_glib_minor_version
+TP_MICRO_VERSION=tp_glib_micro_version
+AC_SUBST([TP_MAJOR_VERSION])
+AC_SUBST([TP_MINOR_VERSION])
+AC_SUBST([TP_MICRO_VERSION])
+
 LT_CURRENT=tp_glib_lt_current
 LT_REVISION=tp_glib_lt_revision
 LT_AGE=tp_glib_lt_age
@@ -335,6 +342,7 @@ AC_OUTPUT( Makefile \
 	   telepathy-glib/Makefile \
 	   telepathy-glib/telepathy-glib.pc \
 	   telepathy-glib/telepathy-glib-uninstalled.pc \
+	   telepathy-glib/version.h \
 	   tests/Makefile \
 	   tests/lib/Makefile \
 	   tests/dbus/Makefile \
