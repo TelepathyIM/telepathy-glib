@@ -44,14 +44,12 @@ display_contact (TpContact *contact)
 }
 
 static void
-got_contacts_by_handle (TpConnection *connection,
-                        guint n_contacts,
-                        TpContact * const *contacts,
-                        guint n_invalid,
-                        const TpHandle *invalid,
-                        const GError *error,
-                        gpointer user_data,
-                        GObject *weak_object)
+contacts_upgraded_cb (TpConnection *connection,
+    guint n_contacts,
+    TpContact * const *contacts,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
 {
   InspectContactData *data = user_data;
 
@@ -64,12 +62,6 @@ got_contacts_by_handle (TpConnection *connection,
       for (i = 0; i < n_contacts; i++)
         {
           display_contact (contacts[i]);
-        }
-
-      for (i = 0; i < n_invalid; i++)
-        {
-          g_warning ("Invalid handle %u", invalid[i]);
-          data->exit_status = 1;
         }
     }
   else
@@ -151,12 +143,12 @@ connection_ready_cb (GObject *source,
 
   if (data->to_inspect == NULL)
     {
-      TpHandle self_handle = tp_connection_get_self_handle (connection);
+      TpContact *self_contact = tp_connection_get_self_contact (connection);
 
-      tp_connection_get_contacts_by_handle (connection,
-          1, &self_handle,
+      tp_connection_upgrade_contacts (connection,
+          1, &self_contact,
           G_N_ELEMENTS (features), features,
-          got_contacts_by_handle,
+          contacts_upgraded_cb,
           data, NULL, NULL);
     }
   else
