@@ -7,6 +7,7 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/interfaces.h>
 
 #include "telepathy-glib/reentrants.h"
 

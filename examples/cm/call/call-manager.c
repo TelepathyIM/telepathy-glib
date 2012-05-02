@@ -28,11 +28,8 @@
 
 #include <dbus/dbus-glib.h>
 
-#include <telepathy-glib/base-connection.h>
-#include <telepathy-glib/channel-manager.h>
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/errors.h>
-#include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include "call-channel.h"
 

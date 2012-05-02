@@ -11,6 +11,7 @@
 #include "config.h"
 
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include "tests/lib/echo-cm.h"
 #include "tests/lib/util.h"

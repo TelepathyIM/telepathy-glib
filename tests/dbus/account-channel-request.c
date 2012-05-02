@@ -15,6 +15,8 @@
 #include <telepathy-glib/cli-channel.h>
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/client.h>
+#include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
 
 #include "tests/lib/util.h"

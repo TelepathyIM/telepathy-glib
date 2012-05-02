@@ -1,6 +1,13 @@
 API/Behaviour changes
 =====================
 
+ - The library has been split in half. To use high-level APIs, use the
+   pkg-config module "telepathy-glib-1" and
+   #include <telepathy-glib/telepathy-glib.h>. To use lower-level APIs that
+   rely on dbus-glib GTypes or specific D-Bus interfaces, methods or signals,
+   also use the pkg-config module "telepathy-glib-1-dbus" and
+   #include <telepathy-glib/telepathy-glib-dbus.h>.
+
  - TpSimpleClientFactory got renamed to TpClientFactory
 
  - tp_automatic_client_factory_new() now returns a TpSimpleClientFactory*

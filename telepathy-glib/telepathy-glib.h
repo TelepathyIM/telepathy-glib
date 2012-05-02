@@ -22,8 +22,6 @@
 #define __TP_GLIB_H__
 #define __TP_IN_GLIB_H__
 
-#include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/util.h>
@@ -68,9 +66,6 @@
 #include <telepathy-glib/stream-tube-connection.h>
 #include <telepathy-glib/text-channel.h>
 #include <telepathy-glib/room-list.h>
-
-#include <telepathy-glib/svc-generic.h>
-#include <telepathy-glib/svc-client.h>
 
 #include <telepathy-glib/base-call-channel.h>
 #include <telepathy-glib/base-call-content.h>

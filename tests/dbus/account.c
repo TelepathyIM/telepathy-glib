@@ -13,8 +13,10 @@
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>
-#include <telepathy-glib/svc-account.h>
 #include <telepathy-glib/enums.h>
+#include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/svc-account.h>
 
 #include "tests/lib/simple-account.h"
 #include "tests/lib/util.h"

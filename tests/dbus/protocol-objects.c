@@ -11,6 +11,7 @@
 
 #include <telepathy-glib/protocol.h>
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include "telepathy-glib/reentrants.h"
 

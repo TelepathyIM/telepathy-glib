@@ -12,6 +12,8 @@
 
 #include <telepathy-glib/cli-connection.h>
 #include <telepathy-glib/connection.h>
+#include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
 
 #include "telepathy-glib/reentrants.h"
 

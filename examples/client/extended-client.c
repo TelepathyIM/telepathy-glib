@@ -17,9 +17,8 @@
 
 #include <stdio.h>
 
-#include <telepathy-glib/cli-connection.h>
-#include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 /* Usually this'd be a top-level extensions/ directory in practice */
 #include "examples/extensions/extensions.h"

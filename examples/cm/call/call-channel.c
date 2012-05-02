@@ -45,6 +45,7 @@
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/svc-call.h>
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include "call-content.h"
 #include "call-stream.h"

@@ -15,6 +15,7 @@
 #include <glib.h>
 
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 static void
 echo_message (TpTextChannel *channel,

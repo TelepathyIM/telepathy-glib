@@ -23,6 +23,8 @@
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
 
 #include "telepathy-glib/reentrants.h"
 

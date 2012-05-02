@@ -13,6 +13,7 @@
 #include <telepathy-glib/channel-dispatch-operation.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/debug.h>
+#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-channel-dispatch-operation.h>
 
 #include <dbus/dbus.h>

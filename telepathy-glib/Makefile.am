@@ -149,6 +149,7 @@ tpgdbusinclude_HEADERS = \
     cli-misc.h \
     gtypes.h \
     interfaces.h \
+    telepathy-glib-dbus.h \
     $(NULL)
 
 BUILT_SOURCES = $(codegen_sources)

@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include "tests/lib/contacts-conn.h"
 #include "tests/lib/util.h"

@@ -13,6 +13,7 @@
 #include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>
+#include <telepathy-glib/interfaces.h>
 
 #include "tests/lib/simple-account.h"
 #include "tests/lib/simple-account-manager.h"

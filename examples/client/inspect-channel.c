@@ -14,6 +14,7 @@
 #include <stdio.h>
 
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 typedef struct {
     int exit_status;

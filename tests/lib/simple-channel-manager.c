@@ -11,6 +11,7 @@
 #include "config.h"
 
 #include <telepathy-glib/channel-manager.h>
+#include <telepathy-glib/interfaces.h>
 
 #include "simple-channel-manager.h"
 #include "util.h"

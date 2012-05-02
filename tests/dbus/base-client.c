@@ -18,7 +18,9 @@
 #include <telepathy-glib/client.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>
+#include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/handle-channels-context-internal.h>
+#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/observe-channels-context-internal.h>
 #include <telepathy-glib/proxy-subclass.h>
 

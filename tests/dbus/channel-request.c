@@ -13,6 +13,8 @@
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/debug.h>
+#include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-channel-request.h>
 
 #include <dbus/dbus.h>

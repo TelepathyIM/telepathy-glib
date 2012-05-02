@@ -39,6 +39,9 @@
 
 #include <dbus/dbus-protocol.h>
 
+#include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/telepathy-glib.h>
 
 #define DEBUG_FLAG TP_DEBUG_PARAMS

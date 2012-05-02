@@ -48,6 +48,7 @@
 #include <telepathy-glib/room-info-internal.h>
 
 #include <telepathy-glib/cli-channel.h>
+#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/util-internal.h>
 

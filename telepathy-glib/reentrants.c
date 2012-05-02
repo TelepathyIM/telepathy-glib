@@ -1,4 +1,5 @@
-#include "reentrants.h"
+#include "telepathy-glib/interfaces.h"
+#include "telepathy-glib/reentrants.h"
 
 #include <telepathy-glib/_gen/tp-cli-account-reentrant-body.h>
 #include <telepathy-glib/_gen/tp-cli-account-manager-reentrant-body.h>
