@@ -46,6 +46,10 @@ Enhancements:
 
 • Improve documentation (Jonny, Simon, Xavier)
 
+• Add "clean-for-new-branch" Makefile target which is more thorough than
+  clean, but less thorough than distclean (in particular, it doesn't
+  forget your ./configure options) (Simon)
+
 Fixes:
 
 • Make it safe to hold refs to a remaining GAsyncResult after returning
