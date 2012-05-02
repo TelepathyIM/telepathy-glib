@@ -127,13 +127,13 @@ GList *tp_list_connection_managers_finish (GAsyncResult *result,
 typedef void (*TpConnectionManagerWhenReadyCb) (TpConnectionManager *cm,
     const GError *error, gpointer user_data, GObject *weak_object);
 
+_TP_DEPRECATED_IN_0_18_FOR (tp_proxy_prepare_async)
 void tp_connection_manager_call_when_ready (TpConnectionManager *self,
     TpConnectionManagerWhenReadyCb callback,
-    gpointer user_data, GDestroyNotify destroy, GObject *weak_object)
-  _TP_GNUC_DEPRECATED_FOR (tp_proxy_prepare_async);
+    gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
 
-gboolean tp_connection_manager_is_ready (TpConnectionManager *self)
-  _TP_GNUC_DEPRECATED_FOR (tp_proxy_is_prepared);
+_TP_DEPRECATED_IN_0_18_FOR (tp_proxy_is_prepared)
+gboolean tp_connection_manager_is_ready (TpConnectionManager *self);
 #endif
 
 const gchar *tp_connection_manager_get_name (TpConnectionManager *self);

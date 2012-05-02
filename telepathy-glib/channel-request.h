@@ -72,8 +72,11 @@ TpChannelRequest *tp_channel_request_new (TpDBusDaemon *bus_daemon,
 
 void tp_channel_request_init_known_interfaces (void);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_16
 void tp_channel_request_set_channel_factory (TpChannelRequest *self,
-    TpClientChannelFactory *factory) _TP_GNUC_DEPRECATED;
+    TpClientChannelFactory *factory);
+#endif
 
 const GHashTable * tp_channel_request_get_immutable_properties (
     TpChannelRequest *self);

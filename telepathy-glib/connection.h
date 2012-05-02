@@ -136,8 +136,11 @@ const gchar *tp_connection_get_connection_manager_name (TpConnection *self);
 
 const gchar *tp_connection_get_protocol_name (TpConnection *self);
 
-TpHandle tp_connection_get_self_handle (TpConnection *self)
-    _TP_GNUC_DEPRECATED_FOR (tp_connection_get_self_contact);
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_20_FOR (tp_connection_get_self_contact)
+TpHandle tp_connection_get_self_handle (TpConnection *self);
+#endif
+
 TpContact *tp_connection_get_self_contact (TpConnection *self);
 
 TpCapabilities * tp_connection_get_capabilities (TpConnection *self);
@@ -154,19 +157,21 @@ gboolean tp_connection_set_contact_info_finish (TpConnection *self,
     GAsyncResult *result, GError **error);
 
 #ifndef TP_DISABLE_DEPRECATED
-gboolean tp_connection_is_ready (TpConnection *self)
-  _TP_GNUC_DEPRECATED_FOR (tp_proxy_is_prepared);
+_TP_DEPRECATED_IN_0_18_FOR (tp_proxy_is_prepared)
+gboolean tp_connection_is_ready (TpConnection *self);
 
+_TP_DEPRECATED_IN_0_18
 gboolean tp_connection_run_until_ready (TpConnection *self,
     gboolean connect, GError **error,
-    GMainLoop **loop) _TP_GNUC_DEPRECATED;
+    GMainLoop **loop);
 
 typedef void (*TpConnectionWhenReadyCb) (TpConnection *connection,
     const GError *error, gpointer user_data);
 
+_TP_DEPRECATED_IN_0_18_FOR (tp_proxy_prepare_async)
 void tp_connection_call_when_ready (TpConnection *self,
     TpConnectionWhenReadyCb callback,
-    gpointer user_data) _TP_GNUC_DEPRECATED_FOR (tp_proxy_prepare_async);
+    gpointer user_data);
 #endif
 
 typedef void (*TpConnectionNameListCb) (const gchar * const *names,

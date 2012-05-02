@@ -83,18 +83,20 @@ TpChannel *tp_channel_new_from_properties (TpConnection *conn,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 #ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_18
 gboolean tp_channel_run_until_ready (TpChannel *self, GError **error,
-    GMainLoop **loop) _TP_GNUC_DEPRECATED;
+    GMainLoop **loop);
 
 typedef void (*TpChannelWhenReadyCb) (TpChannel *channel, const GError *error,
     gpointer user_data);
 
+_TP_DEPRECATED_IN_0_18_FOR (tp_proxy_prepare_async)
 void tp_channel_call_when_ready (TpChannel *self,
     TpChannelWhenReadyCb callback,
-    gpointer user_data) _TP_GNUC_DEPRECATED_FOR (tp_proxy_prepare_async);
+    gpointer user_data);
 
-gboolean tp_channel_is_ready (TpChannel *self)
-  _TP_GNUC_DEPRECATED_FOR (tp_proxy_is_ready);
+_TP_DEPRECATED_IN_0_18_FOR (tp_proxy_is_prepared)
+gboolean tp_channel_is_ready (TpChannel *self);
 #endif
 
 void tp_channel_init_known_interfaces (void);
@@ -106,29 +108,37 @@ const gchar *tp_channel_get_identifier (TpChannel *self);
 TpConnection *tp_channel_borrow_connection (TpChannel *self);
 GHashTable *tp_channel_borrow_immutable_properties (TpChannel *self);
 
-TpHandle tp_channel_group_get_self_handle (TpChannel *self)
-    _TP_GNUC_DEPRECATED_FOR (tp_channel_group_get_self_contact);
 TpChannelGroupFlags tp_channel_group_get_flags (TpChannel *self);
-const TpIntset *tp_channel_group_get_members (TpChannel *self)
-    _TP_GNUC_DEPRECATED_FOR (tp_channel_group_dup_members_contacts);
-const TpIntset *tp_channel_group_get_local_pending (TpChannel *self)
-    _TP_GNUC_DEPRECATED_FOR (tp_channel_group_dup_local_pending_contacts);
-const TpIntset *tp_channel_group_get_remote_pending (TpChannel *self)
-    _TP_GNUC_DEPRECATED_FOR (tp_channel_group_dup_remote_pending_contacts);
+
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_20_FOR (tp_channel_group_get_self_contact)
+TpHandle tp_channel_group_get_self_handle (TpChannel *self);
+
+_TP_DEPRECATED_IN_0_20_FOR (tp_channel_group_dup_members_contacts)
+const TpIntset *tp_channel_group_get_members (TpChannel *self);
+
+_TP_DEPRECATED_IN_0_20_FOR (tp_channel_group_dup_local_pending_contacts)
+const TpIntset *tp_channel_group_get_local_pending (TpChannel *self);
+
+_TP_DEPRECATED_IN_0_20_FOR (tp_channel_group_dup_remote_pending_contacts)
+const TpIntset *tp_channel_group_get_remote_pending (TpChannel *self);
+
+_TP_DEPRECATED_IN_0_20_FOR (tp_channel_group_get_local_pending_contact_info)
 gboolean tp_channel_group_get_local_pending_info (TpChannel *self,
     TpHandle local_pending, TpHandle *actor,
-    TpChannelGroupChangeReason *reason, const gchar **message)
-    _TP_GNUC_DEPRECATED_FOR (tp_channel_group_get_local_pending_contact_info);
+    TpChannelGroupChangeReason *reason, const gchar **message);
 
-TpHandle tp_channel_group_get_handle_owner (TpChannel *self, TpHandle handle)
-    _TP_GNUC_DEPRECATED_FOR (tp_channel_group_get_contact_owner);
+_TP_DEPRECATED_IN_0_20_FOR (tp_channel_group_get_contact_owner)
+TpHandle tp_channel_group_get_handle_owner (TpChannel *self, TpHandle handle);
+
+_TP_DEPRECATED_IN_0_20_FOR (tp_channel_get_initiator_contact)
+TpHandle tp_channel_get_initiator_handle (TpChannel *self);
+
+_TP_DEPRECATED_IN_0_20_FOR (tp_channel_get_initiator_contact)
+const gchar * tp_channel_get_initiator_identifier (TpChannel *self);
+#endif
 
 gboolean tp_channel_get_requested (TpChannel *self);
-
-TpHandle tp_channel_get_initiator_handle (TpChannel *self)
-    _TP_GNUC_DEPRECATED_FOR (tp_channel_get_initiator_contact);
-const gchar * tp_channel_get_initiator_identifier (TpChannel *self)
-    _TP_GNUC_DEPRECATED_FOR (tp_channel_get_initiator_contact);
 
 #define TP_CHANNEL_FEATURE_CORE \
   tp_channel_get_feature_quark_core ()

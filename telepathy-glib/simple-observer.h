@@ -73,15 +73,16 @@ typedef void (*TpSimpleObserverObserveChannelsImpl) (
     TpObserveChannelsContext *context,
     gpointer user_data);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_16_FOR (tp_simple_observer_new_with_factory)
 TpBaseClient * tp_simple_observer_new (TpDBusDaemon *dbus,
     gboolean recover,
     const gchar *name,
     gboolean uniquify,
     TpSimpleObserverObserveChannelsImpl callback,
     gpointer user_data,
-    GDestroyNotify destroy)
-    _TP_GNUC_DEPRECATED_FOR (tp_simple_observer_new_with_factory);
-
+    GDestroyNotify destroy);
+#endif
 
 TpBaseClient *tp_simple_observer_new_with_am (
     TpAccountManager *account_manager,

@@ -198,25 +198,33 @@ struct _TpChannelFactoryIfaceClass {
 
 GType tp_channel_factory_iface_get_type (void);
 
+_TP_DEPRECATED
 void tp_channel_factory_iface_close_all (TpChannelFactoryIface *self);
 
+_TP_DEPRECATED
 void tp_channel_factory_iface_connecting (TpChannelFactoryIface *self);
 
+_TP_DEPRECATED
 void tp_channel_factory_iface_connected (TpChannelFactoryIface *self);
 
+_TP_DEPRECATED
 void tp_channel_factory_iface_disconnected (TpChannelFactoryIface *self);
 
+_TP_DEPRECATED
 void tp_channel_factory_iface_foreach (TpChannelFactoryIface *self,
     TpChannelFunc func, gpointer data);
 
+_TP_DEPRECATED
 TpChannelFactoryRequestStatus tp_channel_factory_iface_request (
     TpChannelFactoryIface *self, const gchar *chan_type,
     TpHandleType handle_type, guint handle, gpointer request,
     TpChannelIface **ret, GError **error);
 
+_TP_DEPRECATED
 void tp_channel_factory_iface_emit_new_channel (gpointer instance,
     TpChannelIface *channel, gpointer request);
 
+_TP_DEPRECATED
 void tp_channel_factory_iface_emit_channel_error (gpointer instance,
     TpChannelIface *channel, GError *error, gpointer request);
 

@@ -131,8 +131,11 @@ void tp_asv_set_strv (GHashTable *asv, const gchar *key, gchar **value);
 void tp_asv_dump (GHashTable *asv);
 
 #ifndef TP_DISABLE_DEPRECATED
-DBusGConnection * tp_get_bus (void) _TP_GNUC_DEPRECATED;
-DBusGProxy * tp_get_bus_proxy (void) _TP_GNUC_DEPRECATED;
+_TP_DEPRECATED
+DBusGConnection * tp_get_bus (void);
+
+_TP_DEPRECATED
+DBusGProxy * tp_get_bus_proxy (void);
 #endif
 
 G_END_DECLS

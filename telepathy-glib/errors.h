@@ -23,12 +23,18 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/defs.h>
+
 #include <telepathy-glib/_gen/error-str.h>
 #include <telepathy-glib/_gen/genums.h>
 
 G_BEGIN_DECLS
 
-GQuark tp_errors_quark (void) G_GNUC_DEPRECATED_FOR(tp_error_quark);
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_FOR (TP_ERROR)
+GQuark tp_errors_quark (void);
+#endif
+
 GQuark tp_error_quark (void);
 
 #define TP_ERROR_PREFIX "org.freedesktop.Telepathy.Error"

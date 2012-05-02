@@ -72,10 +72,12 @@ GHashTable * tp_account_channel_request_get_request (
 gint64 tp_account_channel_request_get_user_action_time (
     TpAccountChannelRequest *self);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_16
 void tp_account_channel_request_set_channel_factory (
     TpAccountChannelRequest *self,
-    TpClientChannelFactory *factory) _TP_GNUC_DEPRECATED;
-
+    TpClientChannelFactory *factory);
+#endif
 
 TpChannelRequest * tp_account_channel_request_get_channel_request (
     TpAccountChannelRequest *self);
