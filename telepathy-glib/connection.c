@@ -1571,9 +1571,7 @@ tp_connection_dispose (GObject *object)
 
   if (self->priv->interests != NULL)
     {
-      TpIntsetIter iter = TP_INTSET_ITER_INIT (self->priv->interests);
       guint size = tp_intset_size (self->priv->interests);
-      GPtrArray *strings;
 
       /* Before freeing the set of tokens in which we declared an
        * interest, cancel those interests. We'll still get the signals
@@ -1581,11 +1579,17 @@ tp_connection_dispose (GObject *object)
        * because the CM uses distributed refcounting. */
       if (size > 0)
         {
+          TpIntsetFastIter iter;
+          GPtrArray *strings;
+          guint element;
+
           strings = g_ptr_array_sized_new (size + 1);
 
-          while (tp_intset_iter_next (&iter))
+          tp_intset_fast_iter_init (&iter, self->priv->interests);
+
+          while (tp_intset_fast_iter_next (&iter, &element))
             g_ptr_array_add (strings,
-                (gchar *) g_quark_to_string (iter.element));
+                (gchar *) g_quark_to_string (element));
 
           g_ptr_array_add (strings, NULL);
 
