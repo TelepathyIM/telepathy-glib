@@ -35,6 +35,9 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 
+/* channel-group.c is ~all deprecated APIs, modern APIs are in
+ * channel-contacts.c. So we allow this module to use deprecated functions. */
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 
 /**
  * TP_ERRORS_REMOVED_FROM_GROUP:
@@ -514,10 +517,8 @@ _tp_channel_emit_initial_sets (TpChannel *self)
       TpChannelGroupChangeReason reason;
       const gchar *message;
 
-      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
       tp_channel_group_get_local_pending_info (self, handle, &actor, &reason,
           &message);
-      G_GNUC_END_IGNORE_DEPRECATIONS
 
       g_signal_emit_by_name (self, "group-members-changed", message,
           &empty_array, &empty_array, &local_pending, &empty_array, actor,
@@ -1025,3 +1026,5 @@ _tp_channel_get_group_properties (TpChannel *self)
       TP_IFACE_CHANNEL_INTERFACE_GROUP, tp_channel_got_group_properties_cb,
       NULL, NULL, NULL);
 }
+
+G_GNUC_END_IGNORE_DEPRECATIONS

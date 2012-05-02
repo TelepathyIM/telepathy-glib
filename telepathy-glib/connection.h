@@ -136,7 +136,8 @@ const gchar *tp_connection_get_connection_manager_name (TpConnection *self);
 
 const gchar *tp_connection_get_protocol_name (TpConnection *self);
 
-TpHandle tp_connection_get_self_handle (TpConnection *self);
+TpHandle tp_connection_get_self_handle (TpConnection *self)
+    _TP_GNUC_DEPRECATED_FOR (tp_connection_get_self_contact);
 TpContact *tp_connection_get_self_contact (TpConnection *self);
 
 TpCapabilities * tp_connection_get_capabilities (TpConnection *self);

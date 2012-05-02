@@ -309,6 +309,8 @@ tp_connection_get_property (GObject *object,
 {
   TpConnection *self = TP_CONNECTION (object);
 
+  /* Deprecated properties uses deprecated getters */
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   switch (property_id)
     {
     case PROP_CONNECTION_MANAGER_NAME:
@@ -375,6 +377,7 @@ tp_connection_get_property (GObject *object,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
     }
+  G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 static void
@@ -1635,6 +1638,8 @@ tp_connection_class_init (TpConnectionClass *klass)
    * To wait for a valid self-handle (and other properties), call
    * tp_proxy_prepare_async() with the feature
    * %TP_CONNECTION_FEATURE_CONNECTED.
+   *
+   * Deprecated: Use #TpConnection:self-contact instead.
    */
   param_spec = g_param_spec_uint ("self-handle", "Self handle",
       "The local user's Contact handle on this connection", 0, G_MAXUINT32,
@@ -2282,6 +2287,7 @@ _tp_connection_set_account (TpConnection *self,
  * Returns: the value of the TpConnection:self-handle property
  *
  * Since: 0.7.26
+ * Deprecated: Use tp_connection_get_self_handle() instead.
  */
 TpHandle
 tp_connection_get_self_handle (TpConnection *self)

@@ -23,6 +23,7 @@
 #include "telepathy-glib/capabilities-internal.h"
 
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/dbus-internal.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
@@ -66,12 +67,14 @@ G_DEFINE_TYPE (TpCapabilities, tp_capabilities, G_TYPE_OBJECT)
 enum {
     PROP_CHANNEL_CLASSES = 1,
     PROP_CONTACT_SPECIFIC,
+    PROP_CHANNEL_CLASSES_VARIANT,
     N_PROPS
 };
 
 struct _TpCapabilitiesPrivate {
     GPtrArray *classes;
     gboolean contact_specific;
+    GVariant *classes_variant;
 };
 
 /**
@@ -136,6 +139,8 @@ tp_capabilities_dispose (GObject *object)
       self->priv->classes = NULL;
     }
 
+  tp_clear_pointer (&self->priv->classes_variant, g_variant_unref);
+
   ((GObjectClass *) tp_capabilities_parent_class)->dispose (object);
 }
 
@@ -157,6 +162,10 @@ tp_capabilities_get_property (GObject *object,
       g_value_set_boolean (value, self->priv->contact_specific);
       break;
 
+    case PROP_CHANNEL_CLASSES_VARIANT:
+      g_value_set_variant (value, self->priv->classes_variant);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -175,6 +184,9 @@ tp_capabilities_set_property (GObject *object,
     {
     case PROP_CHANNEL_CLASSES:
       self->priv->classes = g_value_dup_boxed (value);
+      self->priv->classes_variant = _tp_boxed_to_variant (
+          TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST, "a(a{sv}as)",
+          self->priv->classes);
       break;
 
     case PROP_CONTACT_SPECIFIC:
@@ -235,6 +247,32 @@ tp_capabilities_class_init (TpCapabilitiesClass *klass)
       FALSE,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONTACT_SPECIFIC,
+      param_spec);
+
+  /**
+   * TpCapabilities:channel-classes-variant:
+   *
+   * The underlying data structure used by Telepathy to represent the
+   * requests that can succeed.
+   *
+   * This can be used by advanced clients to determine whether an unusually
+   * complex request would succeed. See the Telepathy D-Bus API Specification
+   * for details of how to interpret the returned #GVariant of type
+   * a(a{sv}as).
+   *
+   * The higher-level methods like
+   * tp_capabilities_supports_text_chats() are likely to be more useful to
+   * the majority of clients.
+   *
+   * Since: UNRELEASED
+   */
+  param_spec = g_param_spec_variant ("channel-classes-variant",
+      "GVariant of type a(a{sv}as)",
+      "The channel classes supported",
+      G_VARIANT_TYPE ("a(a{sv}as)"),
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CHANNEL_CLASSES_VARIANT,
       param_spec);
 }
 
@@ -1036,4 +1074,21 @@ tp_capabilities_supports_room_list (TpCapabilities *self,
     *with_server = server;
 
   return result;
+}
+
+/**
+ * tp_capabilities_dup_channel_classes_variant:
+ * @self: a #TpCapabilities
+ *
+ * Return the #TpCapabilities:channel-classes-variant property
+ *
+ * Returns: (transfer full): the value of the
+ * #TpCapabilities:channel-classes-variant property
+ *
+ * Since: UNRELEASED
+ */
+GVariant *
+tp_capabilities_dup_channel_classes_variant (TpCapabilities *self)
+{
+  return g_variant_ref (self->priv->classes_variant);
 }
