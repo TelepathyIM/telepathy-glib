@@ -2851,6 +2851,7 @@ test_self_contact (Fixture *f,
   contact = tp_connection_get_self_contact (f->client_conn);
   g_assert (contact != NULL);
   g_assert (tp_contact_has_feature (contact, TP_CONTACT_FEATURE_ALIAS));
+  g_assert (tp_contact_is_self (contact));
 }
 
 static void

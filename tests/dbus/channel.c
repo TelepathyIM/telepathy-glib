@@ -633,6 +633,7 @@ test_contacts (Test *test,
 
   contact = tp_channel_group_get_self_contact (test->channel_room);
   g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "me@test.com");
+  g_assert (tp_contact_is_self (contact));
 
   /* Add a member in the room, assert that the member fetched its alias before
    * being signaled. */

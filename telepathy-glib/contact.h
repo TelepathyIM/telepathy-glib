@@ -77,6 +77,7 @@ TpConnection *tp_contact_get_connection (TpContact *self);
 TpHandle tp_contact_get_handle (TpContact *self);
 const gchar *tp_contact_get_identifier (TpContact *self);
 gboolean tp_contact_has_feature (TpContact *self, TpContactFeature feature);
+gboolean tp_contact_is_self (TpContact *self);
 
 /* TP_CONTACT_FEATURE_ALIAS */
 const gchar *tp_contact_get_alias (TpContact *self);

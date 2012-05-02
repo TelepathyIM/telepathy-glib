@@ -42,6 +42,7 @@
 #include "telepathy-glib/capabilities-internal.h"
 #include "telepathy-glib/connection-internal.h"
 #include "telepathy-glib/connection-contact-list.h"
+#include "telepathy-glib/contact-internal.h"
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
@@ -786,6 +787,10 @@ tp_connection_set_self_contact (TpConnection *self,
   if (contact != self->priv->self_contact)
     {
       TpContact *tmp = self->priv->self_contact;
+
+      if (self->priv->self_contact != NULL)
+        _tp_contact_set_is_self (self->priv->self_contact, FALSE);
+      _tp_contact_set_is_self (contact, TRUE);
 
       self->priv->self_contact = g_object_ref (contact);
       tp_clear_object (&tmp);
