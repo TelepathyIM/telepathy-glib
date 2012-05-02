@@ -25,6 +25,8 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/defs.h>
+
 G_BEGIN_DECLS
 
 #define TP_TYPE_INTSET (tp_intset_get_type ())
@@ -80,25 +82,25 @@ TpIntset *tp_intset_symmetric_difference (const TpIntset *left,
 
 gchar *tp_intset_dump (const TpIntset *set) G_GNUC_WARN_UNUSED_RESULT;
 
+#ifndef TP_DISABLE_DEPRECATED
 typedef struct {
     const TpIntset *set;
     guint element;
 } TpIntsetIter;
 
-#ifndef TP_DISABLE_DEPRECATED
-/**
- * TpIntSetIter: (skip)
- *
- * Before 0.11.16, this was the name for <type>TpIntsetIter</type>, but
- * it's now just a backwards compatibility typedef.
- */
 typedef TpIntsetIter TpIntSetIter;
-#endif
 
 #define TP_INTSET_ITER_INIT(set) { (set), (guint)(-1) }
+
+_TP_DEPRECATED_IN_0_20_FOR (tp_intset_fast_iter_init)
 void tp_intset_iter_init (TpIntsetIter *iter, const TpIntset *set);
+
+_TP_DEPRECATED_IN_0_20_FOR (tp_intset_fast_iter_init)
 void tp_intset_iter_reset (TpIntsetIter *iter);
+
+_TP_DEPRECATED_IN_0_20_FOR (tp_intset_fast_iter_next)
 gboolean tp_intset_iter_next (TpIntsetIter *iter);
+#endif
 
 typedef struct {
     /*<private>*/
@@ -106,12 +108,6 @@ typedef struct {
 } TpIntsetFastIter;
 
 #ifndef TP_DISABLE_DEPRECATED
-/**
- * TpIntSetFastIter: (skip)
- *
- * Before 0.11.16, this was the name for <type>TpIntsetFastIter</type>,
- * but it's now just a backwards compatibility typedef.
- */
 typedef TpIntsetFastIter TpIntSetFastIter;
 #endif
 
