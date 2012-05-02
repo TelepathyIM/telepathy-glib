@@ -32,6 +32,7 @@ GType tp_intset_get_type (void);
 
 typedef struct _TpIntset TpIntset;
 
+#ifndef TP_DISABLE_DEPRECATED
 /* See fdo#30134 for the reasoning behind the rename of TpIntSet to TpIntset */
 
 /**
@@ -41,6 +42,7 @@ typedef struct _TpIntset TpIntset;
  * now just a backwards compatibility typedef.
  */
 typedef TpIntset TpIntSet;
+#endif
 
 typedef void (*TpIntFunc) (guint i, gpointer userdata);
 
@@ -83,6 +85,7 @@ typedef struct {
     guint element;
 } TpIntsetIter;
 
+#ifndef TP_DISABLE_DEPRECATED
 /**
  * TpIntSetIter: (skip)
  *
@@ -90,6 +93,7 @@ typedef struct {
  * it's now just a backwards compatibility typedef.
  */
 typedef TpIntsetIter TpIntSetIter;
+#endif
 
 #define TP_INTSET_ITER_INIT(set) { (set), (guint)(-1) }
 void tp_intset_iter_init (TpIntsetIter *iter, const TpIntset *set);
@@ -101,6 +105,7 @@ typedef struct {
     gpointer _dummy[16];
 } TpIntsetFastIter;
 
+#ifndef TP_DISABLE_DEPRECATED
 /**
  * TpIntSetFastIter: (skip)
  *
@@ -108,6 +113,7 @@ typedef struct {
  * but it's now just a backwards compatibility typedef.
  */
 typedef TpIntsetFastIter TpIntSetFastIter;
+#endif
 
 void tp_intset_fast_iter_init (TpIntsetFastIter *iter,
     const TpIntset *set);
