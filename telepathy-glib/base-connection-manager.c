@@ -124,7 +124,7 @@ _tp_legacy_protocol_new_connection (TpBaseProtocol *protocol,
 
   if (self->cm == NULL)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "Connection manager no longer available");
       return NULL;
     }
@@ -605,7 +605,7 @@ tp_base_connection_manager_get_protocol (TpBaseConnectionManager *self,
   if (protocol != NULL)
     return protocol;
 
-  g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+  g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
       "unknown protocol %s", protocol_name);
 
   return NULL;
@@ -808,7 +808,7 @@ set_param_from_value (const TpCMParamSpec *paramspec,
       DEBUG ("expected type %s for parameter %s, got %s",
                g_type_name (paramspec->gtype), paramspec->name,
                G_VALUE_TYPE_NAME (value));
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "expected type %s for account parameter %s, got %s",
           g_type_name (paramspec->gtype), paramspec->name,
           G_VALUE_TYPE_NAME (value));

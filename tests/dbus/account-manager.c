@@ -100,7 +100,7 @@ test_timed_out (gpointer data)
   test->prepared = FALSE;
   /* Note that this is a completely bogus error, but it only gets returned if
    * you comment out the g_assert_not_reached() above. */
-  test->error = g_error_new_literal (TP_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
+  test->error = g_error_new_literal (TP_ERROR, TP_DBUS_ERROR_INCONSISTENT,
                                      "timeout");
   g_print ("about to quit");
   g_main_loop_quit (test->mainloop);

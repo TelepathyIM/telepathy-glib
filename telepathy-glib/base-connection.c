@@ -358,7 +358,7 @@ static void
 channel_request_cancel (gpointer data, gpointer user_data)
 {
   ChannelRequest *request = (ChannelRequest *) data;
-  GError error = { TP_ERRORS, TP_ERROR_DISCONNECTED,
+  GError error = { TP_ERROR, TP_ERROR_DISCONNECTED,
       "unable to service this channel request, we're disconnecting!" };
 
   DEBUG ("cancelling request at %p for %s/%u/%u", request,
@@ -1883,7 +1883,7 @@ tp_base_connection_close_all_channels (TpBaseConnection *self)
 static inline TpConnectionStatusReason
 conn_status_reason_from_g_error (GError *error)
 {
-  if (error->domain == TP_ERRORS)
+  if (error->domain == TP_ERROR)
     {
       switch (error->code)
         {
@@ -1927,7 +1927,7 @@ conn_status_reason_from_g_error (GError *error)
         case TP_ERROR_SERVICE_BUSY:
           return TP_CONNECTION_STATUS_REASON_NETWORK_ERROR;
 
-        /* current status: all TP_ERRORS up to and including
+        /* current status: all TP_ERRORs up to and including
          * TP_ERROR_RESOURCE_UNAVAILABLE have been looked at */
         }
     }
@@ -2338,7 +2338,7 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
     {
       if (handle != 0)
         {
-          GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          GError e = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
               "When handle type is NONE, handle must be 0" };
 
           dbus_g_method_return_error (context, &e);
@@ -2352,7 +2352,7 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
 
       if (handle_repo == NULL)
         {
-          GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          GError e = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
               "Handle type not supported by this connection manager" };
 
           dbus_g_method_return_error (context, &e);
@@ -2458,7 +2458,7 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
       case TP_CHANNEL_FACTORY_REQUEST_STATUS_INVALID_HANDLE:
         DEBUG ("invalid handle %u", handle);
 
-        error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_HANDLE,
+        error = g_error_new (TP_ERROR, TP_ERROR_INVALID_HANDLE,
                              "invalid handle %u", handle);
 
         break;
@@ -2467,7 +2467,7 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
         DEBUG ("requested channel is unavailable with "
                  "handle type %u", handle_type);
 
-        error = g_error_new (TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+        error = g_error_new (TP_ERROR, TP_ERROR_NOT_AVAILABLE,
                              "requested channel is not available with "
                              "handle type %u", handle_type);
 
@@ -2476,7 +2476,7 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
       case TP_CHANNEL_FACTORY_REQUEST_STATUS_NOT_IMPLEMENTED:
         DEBUG ("unsupported channel type %s", type);
 
-        error = g_error_new (TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+        error = g_error_new (TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
                              "unsupported channel type %s", type);
 
         break;
@@ -2568,7 +2568,7 @@ tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
     {
       DEBUG ("unimplemented handle type %u", handle_type);
 
-      error = g_error_new (TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      error = g_error_new (TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
                           "unimplemented handle type %u", handle_type);
       goto out;
     }
@@ -3432,7 +3432,7 @@ static void conn_requests_offer_request (TpBaseConnection *self,
 
 #define RETURN_INVALID_ARGUMENT(message) \
   G_STMT_START { \
-    GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT, message }; \
+    GError e = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT, message }; \
     dbus_g_method_return_error (context, &e); \
     return; \
   } G_STMT_END
@@ -3571,7 +3571,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
 
       if (handles == NULL)
         {
-          GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          GError e = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
               "Handle type not supported by this connection manager" };
 
           dbus_g_method_return_error (context, &e);
@@ -3588,7 +3588,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
               /* tp_handle_ensure can return any error in any domain; force
                * the domain and code to be as documented for CreateChannel.
                */
-              error->domain = TP_ERRORS;
+              error->domain = TP_ERROR;
               error->code = TP_ERROR_INVALID_HANDLE;
               dbus_g_method_return_error (context, error);
               g_error_free (error);
@@ -3611,7 +3611,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
           /* Check the supplied TargetHandle is valid */
           if (!tp_handle_is_valid (handles, target_handle, &error))
             {
-              error->domain = TP_ERRORS;
+              error->domain = TP_ERROR;
               error->code = TP_ERROR_INVALID_HANDLE;
               dbus_g_method_return_error (context, error);
               g_error_free (error);

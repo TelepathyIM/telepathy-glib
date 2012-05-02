@@ -300,7 +300,7 @@ test_failed (Test *test,
   tp_tests_proxy_run_until_dbus_queue_processed (test->cr);
 
   g_assert (tp_proxy_get_invalidated (test->cr) != NULL);
-  g_assert (tp_proxy_get_invalidated (test->cr)->domain == TP_ERRORS);
+  g_assert (tp_proxy_get_invalidated (test->cr)->domain == TP_ERROR);
   g_assert (tp_proxy_get_invalidated (test->cr)->code == TP_ERROR_NOT_YOURS);
   g_assert_cmpstr (tp_proxy_get_invalidated (test->cr)->message, ==,
       "lalala");

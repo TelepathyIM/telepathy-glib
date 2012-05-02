@@ -417,7 +417,7 @@ tp_message_mixin_acknowledge_pending_messages_async (
 
       if (link_ == NULL)
         {
-          GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          GError *error = g_error_new (TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
               "invalid message id %u", id);
 
           DEBUG ("%s", error->message);
@@ -554,7 +554,7 @@ tp_message_mixin_get_pending_message_content_async (
 
   if (node == NULL)
     {
-      GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      GError *error = g_error_new (TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "invalid message id %u", message_id);
 
       DEBUG ("%s", error->message);
@@ -571,7 +571,7 @@ tp_message_mixin_get_pending_message_content_async (
 
       if (part == 0 || part >= item->parts->len)
         {
-          GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          GError *error = g_error_new (TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
               "part number %u out of range", part);
 
           DEBUG ("%s", error->message);
@@ -997,7 +997,7 @@ tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessages *iface,
   /* it must have at least a header part */
   if (parts->len < 1)
     {
-      GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      GError e = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
         "Cannot send a message that does not have at least one part" };
 
       dbus_g_method_return_error (context, &e);
@@ -1012,7 +1012,7 @@ tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessages *iface,
         {
           if (g_hash_table_lookup (header, *iter) != NULL)
             {
-              GError *error = g_error_new (TP_ERRORS,
+              GError *error = g_error_new (TP_ERROR,
                   TP_ERROR_INVALID_ARGUMENT,
                   "Key '%s' not allowed in a sent message", *iter);
 
@@ -1026,7 +1026,7 @@ tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessages *iface,
     {
       if (g_hash_table_lookup (header, *iter) != NULL)
         {
-          GError *error = g_error_new (TP_ERRORS,
+          GError *error = g_error_new (TP_ERROR,
               TP_ERROR_INVALID_ARGUMENT,
               "Key '%s' not allowed in a message header", *iter);
 
@@ -1039,7 +1039,7 @@ tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessages *iface,
     {
       if (g_hash_table_lookup (header, *iter) != NULL)
         {
-          GError *error = g_error_new (TP_ERRORS,
+          GError *error = g_error_new (TP_ERROR,
               TP_ERROR_INVALID_ARGUMENT,
               "Key '%s' not allowed in an outgoing message header", *iter);
 
@@ -1055,7 +1055,7 @@ tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessages *iface,
           if (g_hash_table_lookup (g_ptr_array_index (parts, i), *iter)
               != NULL)
             {
-              GError *error = g_error_new (TP_ERRORS,
+              GError *error = g_error_new (TP_ERROR,
                   TP_ERROR_INVALID_ARGUMENT,
                   "Key '%s' not allowed in a message body", *iter);
 

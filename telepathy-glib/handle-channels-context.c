@@ -119,7 +119,7 @@ tp_handle_channels_context_dispose (GObject *object)
   if (self->priv->state == TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE ||
       self->priv->state == TP_HANDLE_CHANNELS_CONTEXT_STATE_DELAYED)
     {
-      GError error = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      GError error = { TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
           "Disposing the TpHandleChannelsContext" };
 
       WARNING ("Disposing a context in the %s state",

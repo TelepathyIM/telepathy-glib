@@ -275,7 +275,7 @@ got_enabled_cb (
     }
   else if (!G_VALUE_HOLDS_BOOLEAN (value))
     {
-      GError *e = g_error_new (TP_ERRORS,
+      GError *e = g_error_new (TP_ERROR,
           TP_ERROR_NOT_IMPLEMENTED,
           "this service doesn't implement the Debug interface correctly "
           "(the Enabled property is not a boolean, but a %s)",
@@ -343,7 +343,7 @@ tp_debug_client_init_known_interfaces (void)
       tp_proxy_or_subclass_hook_on_interface_add (tp_type,
           tp_cli_debug_add_signals);
       tp_proxy_subclass_add_error_mapping (tp_type,
-          TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
+          TP_ERROR_PREFIX, TP_ERROR, TP_TYPE_ERROR);
 
       g_once_init_leave (&once, 1);
     }

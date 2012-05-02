@@ -130,7 +130,7 @@ main (int argc,
   gchar *bad_chan_path;
   TpHandle handle;
   gboolean was_ready;
-  GError invalidated_for_test = { TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
+  GError invalidated_for_test = { TP_ERROR, TP_ERROR_PERMISSION_DENIED,
       "No channel for you!" };
   GHashTable *asv;
   GAsyncResult *prepare_result;
@@ -770,7 +770,7 @@ main (int argc,
 
   tp_channel_call_when_ready (chan, channel_ready, &was_ready);
   g_assert (was_ready);
-  g_assert_error (invalidated, TP_ERRORS, TP_ERROR_CANCELLED);
+  g_assert_error (invalidated, TP_ERROR, TP_ERROR_CANCELLED);
 
   /* is_prepared becomes FALSE because the channel broke */
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,

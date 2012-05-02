@@ -649,7 +649,7 @@ get_pending_messages_cb (TpProxy *proxy,
       DEBUG ("PendingMessages property is of the wrong type");
 
       g_simple_async_result_set_error (self->priv->pending_messages_result,
-          TP_ERRORS, TP_ERROR_CONFUSED,
+          TP_ERROR, TP_ERROR_CONFUSED,
           "PendingMessages property is of the wrong type");
 
       g_simple_async_result_complete_in_idle (self->priv->pending_messages_result);
@@ -740,7 +740,7 @@ get_sms_channel_cb (TpProxy *proxy,
     {
       DEBUG ("SMSChannel property is of the wrong type");
 
-      g_simple_async_result_set_error (result, TP_ERRORS, TP_ERROR_CONFUSED,
+      g_simple_async_result_set_error (result, TP_ERROR, TP_ERROR_CONFUSED,
           "SMSChannel property is of the wrong type");
       goto out;
     }
@@ -1456,7 +1456,7 @@ tp_text_channel_ack_message_async (TpTextChannel *self,
   if (!valid)
     {
       g_simple_async_report_error_in_idle (G_OBJECT (self), callback, user_data,
-          TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Message doesn't have a pending-message-id");
 
       return;

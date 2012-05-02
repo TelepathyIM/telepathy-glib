@@ -221,7 +221,7 @@ tp_cm_param_filter_uint_nonzero (const TpCMParamSpec *paramspec,
 {
   if (g_value_get_uint (value) == 0)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Account parameter '%s' may not be set to zero",
           paramspec->name);
       return FALSE;
@@ -248,7 +248,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
 
   if (str == NULL || str[0] == '\0')
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Account parameter '%s' may not be set to an empty string",
           paramspec->name);
       return FALSE;
@@ -1314,7 +1314,7 @@ _tp_cm_param_spec_check_all_allowed (const TpCMParamSpec *parameters,
       error_txt = g_string_free (error_str, FALSE);
 
       DEBUG ("%s", error_txt);
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "%s", error_txt);
       g_free (error_txt);
       ret = FALSE;
@@ -1335,7 +1335,7 @@ _tp_cm_param_spec_coerce (const TpCMParamSpec *param_spec,
 
   if (tp_asv_lookup (asv, name) == NULL)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "%s not found in parameters", name);
       return NULL;
     }
@@ -1351,7 +1351,7 @@ _tp_cm_param_spec_coerce (const TpCMParamSpec *param_spec,
 
           if (G_VALUE_TYPE (value) != param_spec->gtype)
             {
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                   "%s has type %s, but %s was expected",
                   name, G_VALUE_TYPE_NAME (value),
                   g_type_name (param_spec->gtype));
@@ -1372,7 +1372,7 @@ _tp_cm_param_spec_coerce (const TpCMParamSpec *param_spec,
 
           if (!valid)
             {
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                   "%s has a non-integer type or is out of range (type=%s)",
                   name, G_VALUE_TYPE_NAME (value));
               return NULL;
@@ -1381,7 +1381,7 @@ _tp_cm_param_spec_coerce (const TpCMParamSpec *param_spec,
           if (param_spec->dtype[0] == DBUS_TYPE_INT16 &&
               (i < -0x8000 || i > 0x7fff))
             {
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                   "%s is out of range for a 16-bit signed integer", name);
               return NULL;
             }
@@ -1401,7 +1401,7 @@ _tp_cm_param_spec_coerce (const TpCMParamSpec *param_spec,
 
           if (!valid)
             {
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                   "%s has a non-integer type or is out of range (type=%s)",
                   name, G_VALUE_TYPE_NAME (value));
               return NULL;
@@ -1409,14 +1409,14 @@ _tp_cm_param_spec_coerce (const TpCMParamSpec *param_spec,
 
           if (param_spec->dtype[0] == DBUS_TYPE_BYTE && i > 0xff)
             {
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                   "%s is out of range for a byte", name);
               return NULL;
             }
 
           if (param_spec->dtype[0] == DBUS_TYPE_UINT16 && i > 0xffff)
             {
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                   "%s is out of range for a 16-bit unsigned integer", name);
               return NULL;
             }
@@ -1437,7 +1437,7 @@ _tp_cm_param_spec_coerce (const TpCMParamSpec *param_spec,
 
           if (!valid)
             {
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                   "%s is not a valid 64-bit signed integer (type=%s)", name,
                   G_VALUE_TYPE_NAME (value));
               return NULL;
@@ -1456,7 +1456,7 @@ _tp_cm_param_spec_coerce (const TpCMParamSpec *param_spec,
 
           if (!valid)
             {
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                   "%s is not a valid 64-bit unsigned integer (type=%s)", name,
                   G_VALUE_TYPE_NAME (value));
               return NULL;
@@ -1475,7 +1475,7 @@ _tp_cm_param_spec_coerce (const TpCMParamSpec *param_spec,
 
           if (!valid)
             {
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                   "%s is not a valid double (type=%s)", name,
                   G_VALUE_TYPE_NAME (value));
               return NULL;
@@ -1579,7 +1579,7 @@ tp_base_protocol_sanitize_parameters (TpBaseProtocol *self,
       else if ((parameters[i].flags & mandatory_flag) != 0)
         {
           DEBUG ("missing mandatory account parameter %s", name);
-          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
               "missing mandatory account parameter %s",
               name);
           goto except;
@@ -1669,7 +1669,7 @@ protocol_normalize_contact (TpSvcProtocol *protocol,
     }
   else
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      g_set_error (&error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
           "This Protocol does not implement NormalizeContact");
     }
 
@@ -1710,7 +1710,7 @@ protocol_identify_account (TpSvcProtocol *protocol,
     }
   else
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      g_set_error (&error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
           "This Protocol does not implement IdentifyAccount");
     }
 

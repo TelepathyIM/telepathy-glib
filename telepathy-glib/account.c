@@ -2040,7 +2040,7 @@ tp_account_init_known_interfaces (void)
       tp_proxy_or_subclass_hook_on_interface_add (tp_type,
           tp_cli_account_add_signals);
       tp_proxy_subclass_add_error_mapping (tp_type,
-          TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
+          TP_ERROR_PREFIX, TP_ERROR, TP_TYPE_ERROR);
 
       g_once_init_leave (&once, 1);
     }
@@ -3571,7 +3571,7 @@ tp_account_parse_object_path (const gchar *object_path,
 
   if (!g_str_has_prefix (object_path, TP_ACCOUNT_OBJECT_PATH_BASE))
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Account path does not start with the right prefix: %s",
           object_path);
       return FALSE;
@@ -3583,7 +3583,7 @@ tp_account_parse_object_path (const gchar *object_path,
 
   if (g_strv_length (segments) != 3)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Account path '%s' is malformed: should have 3 trailing components, "
           "not %u", object_path, g_strv_length (segments));
       goto free_segments_and_fail;
@@ -3591,7 +3591,7 @@ tp_account_parse_object_path (const gchar *object_path,
 
   if (!g_ascii_isalpha (segments[0][0]))
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Account path '%s' is malformed: CM name should start with a letter",
           object_path);
       goto free_segments_and_fail;
@@ -3599,7 +3599,7 @@ tp_account_parse_object_path (const gchar *object_path,
 
   if (!g_ascii_isalpha (segments[1][0]))
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Account path '%s' is malformed: "
           "protocol name should start with a letter",
           object_path);
@@ -3608,7 +3608,7 @@ tp_account_parse_object_path (const gchar *object_path,
 
   if (!g_ascii_isalpha (segments[2][0]) && segments[2][0] != '_')
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Account path '%s' is malformed: "
           "account ID should start with a letter or underscore",
           object_path);

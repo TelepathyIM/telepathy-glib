@@ -216,7 +216,7 @@ room_list_list_rooms (TpSvcChannelTypeRoomList *chan,
 
   if (self->priv->listing)
     {
-      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Already listing" };
 
       dbus_g_method_return_error (context, &error);
@@ -225,7 +225,7 @@ room_list_list_rooms (TpSvcChannelTypeRoomList *chan,
 
   if (!tp_strdiff (self->priv->server, "ListRoomsFail"))
     {
-      GError error = { TP_ERRORS, TP_ERROR_SERVICE_CONFUSED,
+      GError error = { TP_ERROR, TP_ERROR_SERVICE_CONFUSED,
           "Computer says no" };
 
       dbus_g_method_return_error (context, &error);

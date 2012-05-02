@@ -1799,7 +1799,7 @@ _tp_determine_socket_address_type (GHashTable *supported_sockets,
     }
 
   /* This should never happen */
-  g_set_error (error, TP_ERRORS,
+  g_set_error (error, TP_ERROR,
       TP_ERROR_NOT_IMPLEMENTED, "No supported socket types");
 
   return FALSE;
@@ -1880,7 +1880,7 @@ _tp_determine_access_control_type (GHashTable *supported_sockets,
   /* This should never happen */
   if (!support_localhost)
     {
-      g_set_error (error, TP_ERRORS,
+      g_set_error (error, TP_ERROR,
           TP_ERROR_NOT_IMPLEMENTED, "No supported access control");
       return FALSE;
     }

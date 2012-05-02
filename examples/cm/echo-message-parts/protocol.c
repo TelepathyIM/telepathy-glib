@@ -77,7 +77,7 @@ new_connection (TpBaseProtocol *protocol,
 
   if (account == NULL || account[0] == '\0')
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "The 'account' parameter is required");
       return NULL;
     }
@@ -96,7 +96,7 @@ example_echo_2_protocol_normalize_contact (const gchar *id, GError **error)
 {
   if (id[0] == '\0')
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_HANDLE,
           "ID must not be empty");
       return NULL;
     }
@@ -122,7 +122,7 @@ identify_account (TpBaseProtocol *self G_GNUC_UNUSED,
   if (account != NULL)
     return g_strdup (account);
 
-  g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+  g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
       "'account' parameter not given");
   return NULL;
 }

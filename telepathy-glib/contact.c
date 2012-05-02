@@ -1804,7 +1804,7 @@ contacts_context_fail (ContactsContext *c,
  * @contacts will contain contact objects for those IDs that were
  * valid (it may be empty), and @failed_id_errors will map the IDs
  * that were not valid to a corresponding #GError (if the connection manager
- * complies with the Telepathy spec, it will have domain %TP_ERRORS and code
+ * complies with the Telepathy spec, it will have domain %TP_ERROR and code
  * %TP_ERROR_INVALID_HANDLE).
  *
  * If an unrecoverable error occurs (for instance, if @connection
@@ -1944,7 +1944,7 @@ contacts_held_one (TpConnection *connection,
       g_ptr_array_add (c->contacts, contact);
       c->next_index++;
     }
-  else if (error->domain == TP_ERRORS &&
+  else if (error->domain == TP_ERROR &&
       error->code == TP_ERROR_INVALID_HANDLE)
     {
       g_array_append_val (c->invalid,
@@ -2006,7 +2006,7 @@ contacts_held_handles (TpConnection *connection,
                 g_array_index (c->handles, TpHandle, i)));
         }
     }
-  else if (error->domain == TP_ERRORS &&
+  else if (error->domain == TP_ERROR &&
       error->code == TP_ERROR_INVALID_HANDLE)
     {
       /* One of the handles is bad. We don't know which one :-( so split
@@ -2211,7 +2211,7 @@ contacts_got_aliases (TpConnection *connection,
           g_object_notify ((GObject *) contact, "alias");
         }
     }
-  else if ((error->domain == TP_ERRORS &&
+  else if ((error->domain == TP_ERROR &&
       error->code == TP_ERROR_NOT_IMPLEMENTED) ||
       (error->domain == DBUS_GERROR &&
        error->code == DBUS_GERROR_UNKNOWN_METHOD))
@@ -4370,7 +4370,7 @@ contacts_requested_one_handle (TpConnection *connection,
       g_ptr_array_add (c->contacts, contact);
       c->next_index++;
     }
-  else if (error->domain == TP_ERRORS &&
+  else if (error->domain == TP_ERROR &&
       (error->code == TP_ERROR_INVALID_HANDLE ||
        error->code == TP_ERROR_NOT_AVAILABLE ||
        error->code == TP_ERROR_INVALID_ARGUMENT))
@@ -4434,7 +4434,7 @@ contacts_requested_handles (TpConnection *connection,
           g_ptr_array_add (c->contacts, contact);
         }
     }
-  else if (error->domain == TP_ERRORS &&
+  else if (error->domain == TP_ERROR &&
       (error->code == TP_ERROR_INVALID_HANDLE ||
        error->code == TP_ERROR_NOT_AVAILABLE ||
        error->code == TP_ERROR_INVALID_ARGUMENT))

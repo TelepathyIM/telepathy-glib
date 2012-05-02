@@ -110,7 +110,7 @@ prepare_fail_async (TpProxy *proxy,
   g_assert (tp_proxy_is_prepared (proxy, TP_TESTS_MY_CONN_PROXY_FEATURE_CORE));
 
   result = g_simple_async_result_new_error ((GObject *) proxy, callback,
-      user_data, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      user_data, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
       "No feature for you!");
 
   g_simple_async_result_complete_in_idle (result);
@@ -132,7 +132,7 @@ prepare_retry_async (TpProxy *proxy,
   if (!self->retry_feature_success)
     {
       /* Fail the first time we try to prepare the feature */
-      g_simple_async_result_set_error (result, TP_ERRORS,
+      g_simple_async_result_set_error (result, TP_ERROR,
           TP_ERROR_NOT_YET, "Nah");
     }
 

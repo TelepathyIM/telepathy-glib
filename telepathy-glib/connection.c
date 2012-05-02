@@ -1177,7 +1177,7 @@ _tp_connection_status_reason_to_gerror (TpConnectionStatusReason reason,
       return;
     }
 
-  g_set_error (error, TP_ERRORS, code, "%s", message);
+  g_set_error (error, TP_ERROR, code, "%s", message);
 
   if (ret_str != NULL)
     *ret_str = tp_error_get_dbus_name (code);
@@ -2900,7 +2900,7 @@ tp_connection_once (gpointer data G_GNUC_UNUSED)
   tp_proxy_or_subclass_hook_on_interface_add (type,
       tp_cli_connection_add_signals);
   tp_proxy_subclass_add_error_mapping (type,
-      TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
+      TP_ERROR_PREFIX, TP_ERROR, TP_TYPE_ERROR);
 
   return NULL;
 }
@@ -3276,7 +3276,7 @@ tp_connection_get_detailed_error (TpConnection *self,
           *details = self->priv->connection_error_details;
         }
 
-      if (proxy->invalidated->domain == TP_ERRORS)
+      if (proxy->invalidated->domain == TP_ERROR)
         {
           return tp_error_get_dbus_name (proxy->invalidated->code);
         }

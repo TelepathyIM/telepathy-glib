@@ -47,7 +47,7 @@ main (int argc,
 
   tp_tests_abort_after (10);
   g_type_init ();
-  invalidated_for_test.domain = TP_ERRORS;
+  invalidated_for_test.domain = TP_ERROR;
 
   tp_debug_set_flags ("all");
   mainloop = g_main_loop_new (NULL, FALSE);

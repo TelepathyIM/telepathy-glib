@@ -569,7 +569,7 @@ proxy_prepare_offer_cb (GObject *source,
 
   if (self->priv->state != TP_TUBE_CHANNEL_STATE_NOT_OFFERED)
     {
-      g_simple_async_result_set_error (self->priv->result, TP_ERRORS,
+      g_simple_async_result_set_error (self->priv->result, TP_ERROR,
           TP_ERROR_INVALID_ARGUMENT, "Tube is not in the NotOffered state");
       complete_operation (self);
       goto out;
@@ -694,7 +694,7 @@ proxy_prepare_accept_cb (GObject *source,
 
   if (self->priv->state != TP_TUBE_CHANNEL_STATE_LOCAL_PENDING)
     {
-      g_simple_async_result_set_error (self->priv->result, TP_ERRORS,
+      g_simple_async_result_set_error (self->priv->result, TP_ERROR,
           TP_ERROR_INVALID_ARGUMENT, "Tube is not in the LocalPending state");
       complete_operation (self);
       return;

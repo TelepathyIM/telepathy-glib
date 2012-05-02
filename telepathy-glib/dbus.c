@@ -93,7 +93,7 @@
 void
 tp_dbus_g_method_return_not_implemented (DBusGMethodInvocation *context)
 {
-  GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED, "Not implemented" };
+  GError e = { TP_ERROR, TP_ERROR_NOT_IMPLEMENTED, "Not implemented" };
 
   dbus_g_method_return_error (context, &e);
 }

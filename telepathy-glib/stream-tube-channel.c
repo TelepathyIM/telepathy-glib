@@ -833,7 +833,7 @@ tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
   if (self->priv->access_control_param != NULL)
     {
       g_simple_async_report_error_in_idle (G_OBJECT (self), callback, user_data,
-          TP_ERRORS, TP_ERROR_INVALID_ARGUMENT, "Tube has already be accepted");
+          TP_ERROR, TP_ERROR_INVALID_ARGUMENT, "Tube has already be accepted");
 
       return;
     }

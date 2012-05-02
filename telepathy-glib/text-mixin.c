@@ -435,7 +435,7 @@ tp_text_mixin_acknowledge_pending_messages (GObject *obj,
         {
           DEBUG ("invalid message id %u", id);
 
-          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
               "invalid message id %u", id);
 
           g_free (nodes);

@@ -12,7 +12,7 @@ test_get_interface_after_invalidate (void)
 {
   TpDBusDaemon *bus_daemon;
   DBusGProxy *props;
-  GError invalidation_reason = { TP_ERRORS, TP_ERROR_NOT_YOURS, "bees!" };
+  GError invalidation_reason = { TP_ERROR, TP_ERROR_NOT_YOURS, "bees!" };
   GError *error = NULL;
 
   bus_daemon = tp_tests_dbus_daemon_dup_or_die ();
