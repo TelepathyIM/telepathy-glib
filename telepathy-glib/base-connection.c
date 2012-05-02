@@ -1405,6 +1405,7 @@ conn_requests_get_channel_details (TpBaseConnection *self)
       + priv->channel_factories->len * 2);
   guint i;
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   for (i = 0; i < priv->channel_factories->len; i++)
     {
       TpChannelFactoryIface *factory = TP_CHANNEL_FACTORY_IFACE (
@@ -1413,6 +1414,7 @@ conn_requests_get_channel_details (TpBaseConnection *self)
       tp_channel_factory_iface_foreach (factory,
           factory_get_channel_details_foreach, details);
     }
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   for (i = 0; i < priv->channel_managers->len; i++)
     {
@@ -1869,9 +1871,11 @@ tp_base_connection_close_all_channels (TpBaseConnection *self)
    * TpSvcConnection::status-changed on the connection for themselves.
    */
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   /* trigger close_all on all channel factories */
   g_ptr_array_foreach (priv->channel_factories, (GFunc)
       tp_channel_factory_iface_close_all, NULL);
+  G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 /* D-Bus methods on Connection interface ----------------------------*/
@@ -2267,6 +2271,7 @@ tp_base_connection_list_channels (TpSvcConnection *iface,
   values = g_ptr_array_sized_new (priv->channel_factories->len * 2
       + priv->channel_managers->len * 2);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   for (i = 0; i < priv->channel_factories->len; i++)
     {
       TpChannelFactoryIface *factory = g_ptr_array_index
@@ -2275,6 +2280,7 @@ tp_base_connection_list_channels (TpSvcConnection *iface,
       tp_channel_factory_iface_foreach (factory,
           list_channel_factory_foreach_one, values);
     }
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   for (i = 0; i < priv->channel_managers->len; i++)
     {
@@ -2409,8 +2415,10 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
       TpChannelFactoryRequestStatus cur_status;
       TpChannelIface *chan = NULL;
 
+      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
       cur_status = tp_channel_factory_iface_request (factory, type,
           (TpHandleType) handle_type, handle, request, &chan, &error);
+      G_GNUC_END_IGNORE_DEPRECATIONS
 
       switch (cur_status)
         {
@@ -2960,8 +2968,10 @@ tp_base_connection_change_status (TpBaseConnection *self,
     case TP_CONNECTION_STATUS_CONNECTING:
       if (klass->connecting)
         (klass->connecting) (self);
+      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
       g_ptr_array_foreach (priv->channel_factories, (GFunc)
           tp_channel_factory_iface_connecting, NULL);
+      G_GNUC_END_IGNORE_DEPRECATIONS
       break;
 
     case TP_CONNECTION_STATUS_CONNECTED:
@@ -2973,8 +2983,10 @@ tp_base_connection_change_status (TpBaseConnection *self,
                 self->self_handle, NULL));
       if (klass->connected)
         (klass->connected) (self);
+      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
       g_ptr_array_foreach (priv->channel_factories, (GFunc)
           tp_channel_factory_iface_connected, NULL);
+      G_GNUC_END_IGNORE_DEPRECATIONS
       break;
 
     case TP_CONNECTION_STATUS_DISCONNECTED:
@@ -2993,8 +3005,10 @@ tp_base_connection_change_status (TpBaseConnection *self,
         {
           if (klass->disconnected)
             (klass->disconnected) (self);
+          G_GNUC_BEGIN_IGNORE_DEPRECATIONS
           g_ptr_array_foreach (priv->channel_factories, (GFunc)
               tp_channel_factory_iface_disconnected, NULL);
+          G_GNUC_END_IGNORE_DEPRECATIONS
         }
       (klass->shut_down) (self);
       tp_base_connection_unregister (self);
