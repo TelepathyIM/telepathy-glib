@@ -1571,7 +1571,7 @@ tp_connection_dispose (GObject *object)
 
   if (self->priv->interests != NULL)
     {
-      TpIntSetIter iter = TP_INTSET_ITER_INIT (self->priv->interests);
+      TpIntsetIter iter = TP_INTSET_ITER_INIT (self->priv->interests);
       guint size = tp_intset_size (self->priv->interests);
       GPtrArray *strings;
 

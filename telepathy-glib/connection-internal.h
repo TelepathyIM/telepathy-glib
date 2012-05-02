@@ -53,7 +53,7 @@ struct _TpConnectionPrivate {
 
     /* items are GQuarks that represent arguments to
      * Connection.AddClientInterests */
-    TpIntSet *interests;
+    TpIntset *interests;
 
     /* TpHandle => weak ref to TpContact */
     GHashTable *contacts;
