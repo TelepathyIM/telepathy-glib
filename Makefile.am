@@ -52,3 +52,16 @@ CHANGELOG_RANGE = telepathy-glib-0.14.0..
 CHECK_FOR_UNRELEASED = $(srcdir)/NEWS $(wildcard $(srcdir)/telepathy-glib/*.[ch])
 
 include tools/telepathy.am
+
+# Don't just "make distclean", because that would result in forgetting
+# the options we used when we ran configure.
+#
+# However, we do want to distclean in docs (to get rid of xml, html etc.)
+# and in telepathy-glib (to get rid of any stray files in _gen which might
+# not exist on the new branch).
+clean-for-new-branch:
+	$(MAKE) clean
+	$(MAKE) -C docs distclean
+	$(MAKE) -C telepathy-glib distclean
+	$(SHELL) ./config.status --recheck
+	$(SHELL) ./config.status
