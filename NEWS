@@ -1,7 +1,17 @@
 telepathy-glib 0.18.2 (UNRELEASED)
 ==================================
 
-…
+Enhancements:
+
+• Add "clean-for-new-branch" Makefile target which is more thorough than
+  clean, but less thorough than distclean (in particular, it doesn't
+  forget your ./configure options) (Simon)
+
+Fixes:
+
+• Retry preparation of features that depended on a missing connection
+  interface after the connection connects, in the hope that the interface has
+  now become available (fd.o #42981, Guillaume)
 
 telepathy-glib 0.18.1 (2012-04-20)
 ==================================
