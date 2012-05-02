@@ -1104,7 +1104,7 @@ test_classes_variant (Test *test,
   /* TpCapabilities containing the text chats and ft caps */
   classes = g_ptr_array_sized_new (2);
   add_text_chat_class (classes, TP_HANDLE_TYPE_CONTACT);
-  add_ft_class (classes);
+  add_ft_class (classes, NULL);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
