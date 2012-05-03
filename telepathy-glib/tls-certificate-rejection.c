@@ -174,7 +174,7 @@ tp_tls_certificate_rejection_class_init (
   spec = g_param_spec_uint ("reason", "reason",
       "TpTLSCertificateRejectReason",
       TP_TLS_CERTIFICATE_REJECT_REASON_UNKNOWN,
-      NUM_TP_TLS_CERTIFICATE_REJECT_REASONS,
+      TP_NUM_TLS_CERTIFICATE_REJECT_REASONS,
       TP_TLS_CERTIFICATE_REJECT_REASON_UNKNOWN,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (oclass, PROP_REASON, spec);
