@@ -24,6 +24,7 @@
 
 #include <telepathy-glib/base-channel.h>
 #include <telepathy-glib/base-call-content.h>
+#include <telepathy-glib/defs.h>
 
 G_BEGIN_DECLS
 
@@ -69,6 +70,7 @@ struct _TpBaseCallChannel {
   TpBaseCallChannelPrivate *priv;
 };
 
+_TP_AVAILABLE_IN_0_18
 GType tp_base_call_channel_get_type (void);
 
 /* TYPE MACROS */
@@ -88,7 +90,9 @@ GType tp_base_call_channel_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), \
    TP_TYPE_BASE_CALL_CHANNEL, TpBaseCallChannelClass))
 
+_TP_AVAILABLE_IN_0_18
 TpCallState tp_base_call_channel_get_state (TpBaseCallChannel *self);
+_TP_AVAILABLE_IN_0_18
 void tp_base_call_channel_set_state (TpBaseCallChannel *self,
     TpCallState state,
     guint actor_handle,
@@ -96,15 +100,21 @@ void tp_base_call_channel_set_state (TpBaseCallChannel *self,
     const gchar *dbus_reason,
     const gchar *message);
 
+_TP_AVAILABLE_IN_0_18
 gboolean tp_base_call_channel_has_initial_audio (TpBaseCallChannel *self,
     const gchar **initial_audio_name);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_base_call_channel_has_initial_video (TpBaseCallChannel *self,
     const gchar **initial_video_name);
 
+_TP_AVAILABLE_IN_0_18
 gboolean tp_base_call_channel_has_mutable_contents (TpBaseCallChannel *self);
+_TP_AVAILABLE_IN_0_18
 GList * tp_base_call_channel_get_contents (TpBaseCallChannel *self);
+_TP_AVAILABLE_IN_0_18
 void tp_base_call_channel_add_content (TpBaseCallChannel *self,
     TpBaseCallContent *content);
+_TP_AVAILABLE_IN_0_18
 void tp_base_call_channel_remove_content (TpBaseCallChannel *self,
     TpBaseCallContent *content,
     TpHandle actor_handle,
@@ -112,6 +122,7 @@ void tp_base_call_channel_remove_content (TpBaseCallChannel *self,
     const gchar *dbus_reason,
     const gchar *message);
 
+_TP_AVAILABLE_IN_0_18
 void tp_base_call_channel_update_member_flags (TpBaseCallChannel *self,
     TpHandle contact,
     TpCallMemberFlags new_flags,
@@ -119,16 +130,20 @@ void tp_base_call_channel_update_member_flags (TpBaseCallChannel *self,
     TpCallStateChangeReason reason,
     const gchar *dbus_reason,
     const gchar *message);
+_TP_AVAILABLE_IN_0_18
 void tp_base_call_channel_remove_member (TpBaseCallChannel *self,
     TpHandle contact,
     TpHandle actor_handle,
     TpCallStateChangeReason reason,
     const gchar *dbus_reason,
     const gchar *message);
+_TP_AVAILABLE_IN_0_18
 GHashTable *tp_base_call_channel_get_call_members (TpBaseCallChannel *self);
 
+_TP_AVAILABLE_IN_0_18
 void tp_base_call_channel_remote_accept (TpBaseCallChannel *self);
 
+_TP_AVAILABLE_IN_0_18
 gboolean tp_base_call_channel_is_accepted (TpBaseCallChannel *self);
 
 G_END_DECLS

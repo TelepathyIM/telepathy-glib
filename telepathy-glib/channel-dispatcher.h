@@ -71,12 +71,14 @@ TpChannelDispatcher *tp_channel_dispatcher_new (TpDBusDaemon *bus_daemon)
 
 void tp_channel_dispatcher_init_known_interfaces (void);
 
+_TP_AVAILABLE_IN_0_16
 void tp_channel_dispatcher_present_channel_async (TpChannelDispatcher *self,
     TpChannel *channel,
     gint64 user_action_time,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_16
 gboolean tp_channel_dispatcher_present_channel_finish (
     TpChannelDispatcher *self,
     GAsyncResult *result,

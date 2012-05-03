@@ -178,6 +178,7 @@ typedef void (*TpBaseClientDelegatedChannelsCb) (
     GPtrArray *channels,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_16
 void tp_base_client_set_delegated_channels_callback (TpBaseClient *self,
     TpBaseClientDelegatedChannelsCb callback,
     gpointer user_data,
@@ -199,6 +200,7 @@ GList *tp_base_client_get_handled_channels (TpBaseClient *self);
 gboolean tp_base_client_is_handling_channel (TpBaseClient *self,
     TpChannel *channel);
 
+_TP_AVAILABLE_IN_0_16
 void tp_base_client_delegate_channels_async (TpBaseClient *self,
     GList *channels,
     gint64 user_action_time,
@@ -206,6 +208,7 @@ void tp_base_client_delegate_channels_async (TpBaseClient *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_16
 gboolean tp_base_client_delegate_channels_finish (TpBaseClient *self,
     GAsyncResult *result,
     GPtrArray **delegated,

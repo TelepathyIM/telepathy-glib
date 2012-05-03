@@ -28,6 +28,7 @@
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/handle.h>
 
 G_BEGIN_DECLS
@@ -72,6 +73,7 @@ GType tp_call_content_media_description_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CALL_CONTENT_MEDIA_DESCRIPTION, \
   TpCallContentMediaDescriptionClass))
 
+_TP_AVAILABLE_IN_0_18
 TpCallContentMediaDescription *tp_call_content_media_description_new (
     TpDBusDaemon *dbus_daemon,
     const gchar *object_path,
@@ -79,16 +81,20 @@ TpCallContentMediaDescription *tp_call_content_media_description_new (
     gboolean has_remote_information,
     gboolean further_negotiation_required);
 
+_TP_AVAILABLE_IN_0_18
 const gchar *tp_call_content_media_description_get_object_path (
     TpCallContentMediaDescription *self);
+_TP_AVAILABLE_IN_0_18
 TpHandle tp_call_content_media_description_get_remote_contact (
     TpCallContentMediaDescription *self);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_content_media_description_add_ssrc (
     TpCallContentMediaDescription *self,
     TpHandle contact,
     guint ssrc);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_content_media_description_append_codec (
     TpCallContentMediaDescription *self,
     guint identifier,
@@ -98,6 +104,7 @@ void tp_call_content_media_description_append_codec (
     gboolean updated,
     GHashTable *parameters);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_content_media_description_add_rtp_header_extension (
     TpCallContentMediaDescription *self,
     guint id,
@@ -105,6 +112,7 @@ void tp_call_content_media_description_add_rtp_header_extension (
     const gchar *uri,
     const gchar *parameters);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_content_media_description_add_rtcp_feedback_message (
     TpCallContentMediaDescription *self,
     guint codec_identifier,
@@ -112,15 +120,18 @@ void tp_call_content_media_description_add_rtcp_feedback_message (
     const gchar *subtype,
     const gchar *parameters);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_content_media_description_set_rtcp_feedback_minimum_interval (
     TpCallContentMediaDescription *self,
     guint codec_identifier,
     guint rtcp_minimum_interval);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_content_media_description_set_does_avpf (
     TpCallContentMediaDescription *self,
     gboolean does_avpf);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_content_media_description_set_rtcp_extended_reports (
     TpCallContentMediaDescription *self,
     guint loss_rle_max_size,
@@ -131,12 +142,15 @@ void tp_call_content_media_description_set_rtcp_extended_reports (
     TpRTCPXRStatisticsFlags statistics_flags,
     gboolean enable_metrics);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_content_media_description_add_rtp_header_extensions_interface (
     TpCallContentMediaDescription *self);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_content_media_description_add_rtcp_feedback_interface (
     TpCallContentMediaDescription *self);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_content_media_description_add_rtcp_extended_reports_interface (
     TpCallContentMediaDescription *self);
 

@@ -23,6 +23,7 @@
 
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/client-message.h>
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/signalled-message.h>
 
 G_BEGIN_DECLS
@@ -110,10 +111,12 @@ gboolean tp_text_channel_ack_message_finish (TpTextChannel *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_16
 void tp_text_channel_ack_all_pending_messages_async (TpTextChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_16
 gboolean tp_text_channel_ack_all_pending_messages_finish (TpTextChannel *self,
     GAsyncResult *result,
     GError **error);
@@ -129,17 +132,22 @@ gboolean tp_text_channel_set_chat_state_finish (TpTextChannel *self,
 
 #define TP_TEXT_CHANNEL_FEATURE_SMS \
   tp_text_channel_get_feature_quark_sms ()
+_TP_AVAILABLE_IN_0_16
 GQuark tp_text_channel_get_feature_quark_sms (void) G_GNUC_CONST;
 
+_TP_AVAILABLE_IN_0_16
 gboolean tp_text_channel_is_sms_channel (TpTextChannel *self);
 
+_TP_AVAILABLE_IN_0_16
 gboolean tp_text_channel_get_sms_flash (TpTextChannel *self);
 
+_TP_AVAILABLE_IN_0_16
 void tp_text_channel_get_sms_length_async (TpTextChannel *self,
     TpMessage *message,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_16
 gboolean tp_text_channel_get_sms_length_finish (TpTextChannel *self,
     GAsyncResult *result,
     guint *chunks_required,

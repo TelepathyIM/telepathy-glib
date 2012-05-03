@@ -76,6 +76,7 @@ TpAccountManager *tp_account_manager_new (TpDBusDaemon *bus_daemon)
 TpAccountManager *tp_account_manager_new_with_factory (
     TpSimpleClientFactory *factory) G_GNUC_WARN_UNUSED_RESULT;
 
+_TP_AVAILABLE_IN_0_16
 void tp_account_manager_set_default (TpAccountManager *manager);
 TpAccountManager *tp_account_manager_dup (void) G_GNUC_WARN_UNUSED_RESULT;
 

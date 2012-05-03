@@ -151,17 +151,26 @@ GQuark tp_channel_get_feature_quark_group (void) G_GNUC_CONST;
 
 #define TP_CHANNEL_FEATURE_CONTACTS \
   tp_channel_get_feature_quark_contacts ()
+_TP_AVAILABLE_IN_0_16
 GQuark tp_channel_get_feature_quark_contacts (void) G_GNUC_CONST;
 
+_TP_AVAILABLE_IN_0_16
 TpContact *tp_channel_get_target_contact (TpChannel *self);
+_TP_AVAILABLE_IN_0_16
 TpContact *tp_channel_get_initiator_contact (TpChannel *self);
+_TP_AVAILABLE_IN_0_16
 TpContact *tp_channel_group_get_self_contact (TpChannel *self);
+_TP_AVAILABLE_IN_0_16
 GPtrArray *tp_channel_group_dup_members_contacts (TpChannel *self);
+_TP_AVAILABLE_IN_0_16
 GPtrArray *tp_channel_group_dup_local_pending_contacts (TpChannel *self);
+_TP_AVAILABLE_IN_0_16
 GPtrArray *tp_channel_group_dup_remote_pending_contacts (TpChannel *self);
+_TP_AVAILABLE_IN_0_16
 gboolean tp_channel_group_get_local_pending_contact_info (TpChannel *self,
     TpContact *local_pending, TpContact **actor,
     TpChannelGroupChangeReason *reason, const gchar **message);
+_TP_AVAILABLE_IN_0_16
 TpContact *tp_channel_group_get_contact_owner (TpChannel *self,
     TpContact *contact);
 
@@ -171,11 +180,13 @@ GQuark tp_channel_get_feature_quark_chat_states (void) G_GNUC_CONST;
 TpChannelChatState tp_channel_get_chat_state (TpChannel *self,
     TpHandle contact);
 
+_TP_AVAILABLE_IN_0_16
 void tp_channel_join_async (TpChannel *self,
     const gchar *message,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_16
 gboolean tp_channel_join_finish (TpChannel *self,
     GAsyncResult *result,
     GError **error);
@@ -198,10 +209,12 @@ gboolean tp_channel_close_finish (TpChannel *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_16
 void tp_channel_destroy_async (TpChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_16
 gboolean tp_channel_destroy_finish (TpChannel *self,
     GAsyncResult *result,
     GError **error);
@@ -209,15 +222,19 @@ gboolean tp_channel_destroy_finish (TpChannel *self,
 /* Channel.Interface.Password */
 #define TP_CHANNEL_FEATURE_PASSWORD \
   tp_channel_get_feature_quark_password ()
+_TP_AVAILABLE_IN_0_16
 GQuark tp_channel_get_feature_quark_password (void) G_GNUC_CONST;
 
+_TP_AVAILABLE_IN_0_16
 gboolean tp_channel_password_needed (TpChannel *self);
 
+_TP_AVAILABLE_IN_0_16
 void tp_channel_provide_password_async (TpChannel *self,
     const gchar *password,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_16
 gboolean tp_channel_provide_password_finish (TpChannel *self,
     GAsyncResult *result,
     GError **error);

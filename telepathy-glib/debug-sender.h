@@ -23,6 +23,7 @@
 #include <glib-object.h>
 
 #include <telepathy-glib/dbus-properties-mixin.h>
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/svc-debug.h>
 
@@ -88,6 +89,7 @@ void tp_debug_sender_add_message_printf (TpDebugSender *self,
 void tp_debug_sender_log_handler (const gchar *log_domain,
     GLogLevelFlags log_level, const gchar *message, gpointer exclude);
 
+_TP_AVAILABLE_IN_0_16
 void tp_debug_sender_set_timestamps (TpDebugSender *self, gboolean maybe);
 
 G_END_DECLS

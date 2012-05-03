@@ -60,7 +60,7 @@
  * url="http://cgit.freedesktop.org/telepathy/telepathy-glib/tree/examples/client/dbus-tubes/">examples/client/dbus-tubes</ulink>
  * directory.
  *
- * Since: 0.15.6
+ * Since: 0.18.0
  */
 
 /**
@@ -68,7 +68,7 @@
  *
  * Data structure representing a #TpDBusTubeChannel.
  *
- * Since: 0.15.6
+ * Since: 0.18.0
  */
 
 /**
@@ -76,7 +76,7 @@
  *
  * The class of a #TpDBusTubeChannel.
  *
- * Since: 0.15.6
+ * Since: 0.18.0
  */
 
 #include "config.h"
@@ -411,7 +411,7 @@ tp_dbus_tube_channel_class_init (TpDBusTubeChannelClass *klass)
    *
    * A string representing the service name that will be used over the tube.
    *
-   * Since: 0.15.6
+   * Since: 0.18.0
    */
   param_spec = g_param_spec_string ("service-name", "Service Name",
       "The service name of the dbus tube",
@@ -427,7 +427,7 @@ tp_dbus_tube_channel_class_init (TpDBusTubeChannelClass *klass)
    *
    * Will be %NULL for outgoing tubes until the tube has been offered.
    *
-   * Since: 0.15.6
+   * Since: 0.18.0
    */
   param_spec = g_param_spec_boxed ("parameters", "Parameters",
       "The parameters of the dbus tube",
@@ -481,7 +481,7 @@ _tp_dbus_tube_channel_new_with_factory (
  *
  * Returns: (transfer none): the value of #TpDBusTubeChannel:service-name
  *
- * Since: 0.15.6
+ * Since: 0.18.0
  */
 const gchar *
 tp_dbus_tube_channel_get_service_name (TpDBusTubeChannel *self)
@@ -502,7 +502,7 @@ tp_dbus_tube_channel_get_service_name (TpDBusTubeChannel *self)
  * Returns: (transfer none) (element-type utf8 GObject.Value):
  * the value of #TpDBusTubeChannel:parameters
  *
- * Since: 0.15.6
+ * Since: 0.18.0
  */
 GHashTable *
 tp_dbus_tube_channel_get_parameters (TpDBusTubeChannel *self)

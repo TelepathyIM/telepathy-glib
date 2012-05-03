@@ -93,6 +93,7 @@ TpBaseClient *tp_simple_observer_new_with_am (
     gpointer user_data,
     GDestroyNotify destroy);
 
+_TP_AVAILABLE_IN_0_16
 TpBaseClient *tp_simple_observer_new_with_factory (
     TpSimpleClientFactory *factory,
     gboolean recover,

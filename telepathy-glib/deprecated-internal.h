@@ -24,6 +24,7 @@
 #include <telepathy-glib/base-client.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/client-channel-factory.h>
+#include <telepathy-glib/defs.h>
 
 G_BEGIN_DECLS
 

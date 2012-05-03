@@ -4008,7 +4008,7 @@ tp_account_get_storage_specific_information_finish (TpAccount *self,
  * Returns: (transfer full): a map from strings to variants,
  *  of type %G_VARIANT_TYPE_VARDICT
  *
- * Since: 0.13.2
+ * Since: 0.17.6
  */
 GVariant *
 tp_account_dup_storage_specific_information_vardict_finish (TpAccount *self,

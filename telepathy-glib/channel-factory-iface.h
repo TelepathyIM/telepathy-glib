@@ -25,6 +25,7 @@
 #include <glib-object.h>
 
 #include <telepathy-glib/channel-iface.h>
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/handle.h>
 
