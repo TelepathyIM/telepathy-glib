@@ -737,40 +737,6 @@ _tp_channel_contacts_self_contact_changed (TpChannel *self,
 }
 
 /**
- * tp_channel_get_target_contact:
- * @self: a channel
- *
- * <!-- -->
- *
- * Returns: (transfer none): the value of #TpChannel:target-contact
- * Since: 0.15.6
- */
-TpContact *
-tp_channel_get_target_contact (TpChannel *self)
-{
-  g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
-
-  return self->priv->target_contact;
-}
-
-/**
- * tp_channel_get_initiator_contact:
- * @self: a channel
- *
- * <!-- -->
- *
- * Returns: (transfer none): the value of #TpChannel:initiator-contact
- * Since: 0.15.6
- */
-TpContact *
-tp_channel_get_initiator_contact (TpChannel *self)
-{
-  g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
-
-  return self->priv->initiator_contact;
-}
-
-/**
  * tp_channel_group_get_self_contact:
  * @self: a channel
  *
