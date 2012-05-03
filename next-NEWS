@@ -24,3 +24,6 @@ API/Behaviour changes
    interested by channels does not have to create a full TpAccountManager,
    TpAccount objects will be created only when a channel comes up for that
    account.
+
+ - TpContact now uses GQuark instead of TpContactFeature. This make them
+   consistent with TpProxy features.

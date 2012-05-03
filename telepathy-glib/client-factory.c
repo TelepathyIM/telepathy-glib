@@ -899,30 +899,9 @@ void
 tp_client_factory_add_contact_features (TpClientFactory *self,
     const GQuark *features)
 {
-  guint i;
-
   g_return_if_fail (TP_IS_CLIENT_FACTORY (self));
-  g_return_if_fail (features != NULL);
 
-  /* Add features into desired_contact_features avoiding dups */
-  for (i = 0; features[i] != 0; i++)
-    {
-      guint j;
-      gboolean found = FALSE;
-
-      for (j = 0; j < self->priv->desired_contact_features->len; j++)
-        {
-          if (features[i] == g_array_index (
-              self->priv->desired_contact_features, GQuark, j))
-            {
-              found = TRUE;
-              break;
-            }
-        }
-
-      if (!found)
-        g_array_append_val (self->priv->desired_contact_features, features[i]);
-    }
+  _tp_quark_array_merge (self->priv->desired_contact_features, features, -1);
 }
 
 /**
@@ -943,22 +922,12 @@ tp_client_factory_add_contact_features_varargs (
     ...)
 {
   va_list var_args;
-  GArray *features;
-  GQuark f;
 
   g_return_if_fail (TP_IS_CLIENT_FACTORY (self));
 
   va_start (var_args, feature);
-  features = g_array_new (TRUE, FALSE, sizeof (GQuark));
-
-  for (f = feature; f != 0;
-      f = va_arg (var_args, GQuark))
-    g_array_append_val (features, f);
-
-  tp_client_factory_add_contact_features (self,
-      (const GQuark *) features->data);
-
-  g_array_unref (features);
+  _tp_quark_array_merge_valist (self->priv->desired_contact_features,
+      feature, var_args);
   va_end (var_args);
 }
 
