@@ -107,8 +107,6 @@
  */
 
 struct _TpFutureAccountPrivate {
-  gboolean dispose_has_run;
-
   TpAccountManager *account_manager;
 
   GSimpleAsyncResult *result;
@@ -328,11 +326,6 @@ tp_future_account_dispose (GObject *object)
 {
   TpFutureAccount *self = TP_FUTURE_ACCOUNT (object);
   TpFutureAccountPrivate *priv = self->priv;
-
-  if (priv->dispose_has_run)
-    return;
-
-  priv->dispose_has_run = TRUE;
 
   tp_clear_pointer (&priv->parameters, g_hash_table_unref);
   tp_clear_pointer (&priv->properties, g_hash_table_unref);
