@@ -25,6 +25,8 @@
 
 #include <glib/gstdio.h>
 
+#include <telepathy-glib/_gen/tp-cli-tls-cert.h>
+
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/dbus-internal.h>
 #include <telepathy-glib/enums.h>

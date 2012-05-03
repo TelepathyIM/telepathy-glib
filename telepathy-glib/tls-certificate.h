@@ -110,6 +110,4 @@ TpTLSCertificateState tp_tls_certificate_get_state (TpTLSCertificate *self);
 
 G_END_DECLS
 
-#include <telepathy-glib/_gen/tp-cli-tls-cert.h>
-
 #endif /* multiple-inclusion guard */
