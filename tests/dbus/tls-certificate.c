@@ -260,7 +260,7 @@ test_reject (Test *test,
   reason = tp_tls_certificate_rejection_get_reason (rej);
   details = tp_tls_certificate_rejection_get_details (rej);
 
-  g_assert_error (error, TP_ERRORS, TP_ERROR_CERT_REVOKED);
+  g_assert_error (error, TP_ERROR, TP_ERROR_CERT_REVOKED);
   g_assert_cmpstr (dbus_error, ==, TP_ERROR_STR_CERT_REVOKED);
   g_assert_cmpuint (reason, ==, TP_TLS_CERTIFICATE_REJECT_REASON_REVOKED);
   g_assert (g_variant_is_of_type (details, G_VARIANT_TYPE_VARDICT));
@@ -269,7 +269,7 @@ test_reject (Test *test,
   g_assert (enabled);
 
   g_assert (!tp_tls_certificate_rejection_raise_error (rej, &err));
-  g_assert_error (err, TP_ERRORS, TP_ERROR_CERT_REVOKED);
+  g_assert_error (err, TP_ERROR, TP_ERROR_CERT_REVOKED);
   g_error_free (err);
 
   rej = tp_tls_certificate_get_nth_rejection (test->cert, 1);
@@ -278,7 +278,7 @@ test_reject (Test *test,
   dbus_error = tp_tls_certificate_rejection_get_dbus_error (rej);
   details = tp_tls_certificate_rejection_get_details (rej);
 
-  g_assert_error (error, TP_ERRORS, TP_ERROR_CAPTCHA_NOT_SUPPORTED);
+  g_assert_error (error, TP_ERROR, TP_ERROR_CAPTCHA_NOT_SUPPORTED);
   g_assert_cmpstr (dbus_error, ==, TP_ERROR_STR_CAPTCHA_NOT_SUPPORTED);
   g_assert (g_variant_is_of_type (details, G_VARIANT_TYPE_VARDICT));
   g_assert_cmpuint (g_variant_n_children (details), ==, 0);
@@ -298,7 +298,7 @@ test_reject (Test *test,
   dbus_error = tp_tls_certificate_rejection_get_dbus_error (rej);
   details = tp_tls_certificate_rejection_get_details (rej);
 
-  g_assert_error (error, TP_ERRORS, TP_ERROR_CERT_INVALID);
+  g_assert_error (error, TP_ERROR, TP_ERROR_CERT_INVALID);
   g_assert_cmpstr (dbus_error, ==, TP_ERROR_STR_CERT_INVALID);
   g_assert (g_variant_is_of_type (details, G_VARIANT_TYPE_VARDICT));
   g_assert_cmpuint (g_variant_n_children (details), ==, 0);
@@ -330,7 +330,7 @@ test_invalidated (Test *test,
 
   disconnect_conn (test);
 
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_CANCELLED);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_CANCELLED);
 }
 
 int
