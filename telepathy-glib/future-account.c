@@ -327,6 +327,8 @@ tp_future_account_dispose (GObject *object)
   TpFutureAccount *self = TP_FUTURE_ACCOUNT (object);
   TpFutureAccountPrivate *priv = self->priv;
 
+  g_clear_object (&priv->account_manager);
+
   tp_clear_pointer (&priv->parameters, g_hash_table_unref);
   tp_clear_pointer (&priv->properties, g_hash_table_unref);
 
