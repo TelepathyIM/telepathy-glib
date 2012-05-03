@@ -633,36 +633,6 @@ test_handle_with (Test *test,
 }
 
 static void
-claim_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  Test *test = user_data;
-
-  tp_channel_dispatch_operation_claim_finish (
-      TP_CHANNEL_DISPATCH_OPERATION (source), result, &test->error);
-
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
-test_claim (Test *test,
-    gconstpointer data G_GNUC_UNUSED)
-{
-  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
-      "/whatever", NULL, &test->error);
-  g_assert_no_error (test->error);
-
-  tp_channel_dispatch_operation_claim_async (test->cdo, claim_cb, test);
-  g_main_loop_run (test->mainloop);
-
-  g_assert_no_error (test->error);
-
-  /* tp_channel_dispatch_operation_claim_with_async() is tested in
-   * tests/dbus/base-client.c */
-}
-
-static void
 test_channel_lost_preparing (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
@@ -931,8 +901,6 @@ main (int argc,
       test_channel_lost, teardown_services);
   g_test_add ("/cdo/handle-with", Test, NULL, setup_services,
       test_handle_with, teardown_services);
-  g_test_add ("/cdo/claim", Test, NULL, setup_services,
-      test_claim, teardown_services);
   g_test_add ("/cdo/channel-lost-preparing", Test, NULL, setup_services,
       test_channel_lost_preparing, teardown_services);
   g_test_add ("/cdo/finished--preparing", Test, NULL, setup_services,
@@ -945,6 +913,9 @@ main (int argc,
       test_leave_channels, teardown_services);
   g_test_add ("/cdo/destroy-channels", Test, NULL, setup_services,
       test_destroy_channels, teardown_services);
+
+  /* tp_channel_dispatch_operation_claim_with_async() is tested in
+   * tests/dbus/base-client.c */
 
   return g_test_run ();
 }

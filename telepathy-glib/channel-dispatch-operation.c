@@ -71,7 +71,7 @@
  *
  * If the user wishes to reject the communication channels, or if the user
  * accepts the channels and the approver will handle them itself, the approver
- * should call tp_cli_channel_dispatch_operation_call_claim(). If this method
+ * should call tp_channel_dispatch_operation_claim_with_async(). If this method
  * succeeds, the approver immediately has control over the channels as their
  * primary handler, and may do anything with them (in particular, it may close
  * them in whatever way seems most appropriate).
@@ -1104,7 +1104,7 @@ handle_with_cb (TpChannelDispatchOperation *self,
  * invoked as the handler.
  *
  * Approvers which are also channel handlers SHOULD use
- * tp_channel_dispatch_operation_claim_async() instead
+ * tp_channel_dispatch_operation_claim_with_async() instead
  * of tp_channel_dispatch_operation_handle_with_async() to request
  * that they can handle a channel bundle themselves.
  *
@@ -1149,87 +1149,6 @@ tp_channel_dispatch_operation_handle_with_finish (
 {
   _tp_implement_finish_void (self,
       tp_channel_dispatch_operation_handle_with_async);
-}
-
-static void
-claim_cb (TpChannelDispatchOperation *self,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  GSimpleAsyncResult *result = user_data;
-
-  if (error != NULL)
-    {
-      DEBUG ("Claim failed: %s", error->message);
-      g_simple_async_result_set_from_error (result, error);
-    }
-
-  g_simple_async_result_complete (result);
-  g_object_unref (result);
-}
-
-/**
- * tp_channel_dispatch_operation_claim_async:
- * @self: a #TpChannelDispatchOperation
- * @callback: a callback to call when the call returns
- * @user_data: data to pass to @callback
- *
- * Called by an approver to claim channels for handling internally.
- * If this method is called successfully, the process calling this
- * method becomes the handler for the channel.
- *
- * If successful, this method will cause the #TpProxy::invalidated signal
- * to be emitted, in the same way as for
- * tp_channel_dispatch_operation_handle_with_async().
- *
- * This method may fail because the dispatch operation has already
- * been completed. Again, see tp_channel_dispatch_operation_handle_with_async()
- * for more details. The approver MUST NOT attempt to interact with
- * the channels further in this case.
- *
- * Since: 0.11.5
- * Deprecated: since 0.15.0. Use
- * tp_channel_dispatch_operation_claim_with_async()
- */
-void
-tp_channel_dispatch_operation_claim_async (
-    TpChannelDispatchOperation *self,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
-{
-  GSimpleAsyncResult *result;
-
-  g_return_if_fail (TP_IS_CHANNEL_DISPATCH_OPERATION (self));
-
-  result = g_simple_async_result_new (G_OBJECT (self),
-      callback, user_data, tp_channel_dispatch_operation_claim_async);
-
-  tp_cli_channel_dispatch_operation_call_claim (self, -1,
-      claim_cb, result, NULL, G_OBJECT (self));
-}
-
-/**
- * tp_channel_dispatch_operation_claim_finish:
- * @self: a #TpChannelDispatchOperation
- * @result: a #GAsyncResult
- * @error: a #GError to fill
- *
- * Finishes an async call to Claim().
- *
- * Returns: %TRUE if the Claim() call was successful, otherwise %FALSE
- *
- * Since: 0.11.5
- * Deprecated: since 0.15.0. Use
- * tp_channel_dispatch_operation_claim_with_finish()
- */
-gboolean
-tp_channel_dispatch_operation_claim_finish (
-    TpChannelDispatchOperation *self,
-    GAsyncResult *result,
-    GError **error)
-{
-  _tp_implement_finish_void (self, tp_channel_dispatch_operation_claim_async);
 }
 
 /* FIXME: This is temporary solution to share TpChannel objects until
@@ -1360,9 +1279,6 @@ claim_with_cb (TpChannelDispatchOperation *self,
  * been completed. Again, see tp_channel_dispatch_operation_handle_with_async()
  * for more details. The approver MUST NOT attempt to interact with
  * the channels further in this case.
- *
- * This is an improved version of tp_channel_dispatch_operation_claim_async()
- * as it tells @client about the new channels being handled.
  *
  * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE feature must be prepared before
  * calling this function.
