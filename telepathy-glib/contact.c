@@ -1952,6 +1952,9 @@ contacts_context_fail (ContactsContext *c,
 static gboolean
 contacts_context_complete (ContactsContext *c)
 {
+  if (c->no_purpose_in_life)
+    return FALSE;
+
   switch (c->signature)
     {
     case CB_BY_HANDLE:
