@@ -331,7 +331,7 @@ tp_properties_mixin_get_properties (GObject *obj,
       /* Valid? */
       if (prop_id >= mixin_cls->num_props)
         {
-          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
               "invalid property identifier %d", prop_id);
 
           return FALSE;
@@ -340,7 +340,7 @@ tp_properties_mixin_get_properties (GObject *obj,
       /* Permitted? */
       if (!tp_properties_mixin_is_readable (obj, prop_id))
         {
-          g_set_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
+          g_set_error (error, TP_ERROR, TP_ERROR_PERMISSION_DENIED,
               "permission denied for property identifier %d", prop_id);
 
           return FALSE;
@@ -396,7 +396,7 @@ tp_properties_mixin_set_properties (GObject *obj,
   /* Is another SetProperties request already in progress? */
   if (ctx->dbus_ctx)
     {
-      error = g_error_new (TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      error = g_error_new (TP_ERROR, TP_ERROR_NOT_AVAILABLE,
                            "A SetProperties request is already in progress");
       dbus_g_method_return_error (context, error);
       g_error_free (error);
@@ -434,7 +434,7 @@ tp_properties_mixin_set_properties (GObject *obj,
       if (prop_id >= mixin_cls->num_props)
         {
           g_boxed_free (G_TYPE_VALUE, prop_val);
-          error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          error = g_error_new (TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                                "invalid property identifier %d", prop_id);
           goto ERROR;
         }
@@ -443,7 +443,7 @@ tp_properties_mixin_set_properties (GObject *obj,
       if (!tp_properties_mixin_is_writable (obj, prop_id))
         {
           g_boxed_free (G_TYPE_VALUE, prop_val);
-          error = g_error_new (TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
+          error = g_error_new (TP_ERROR, TP_ERROR_PERMISSION_DENIED,
                                "permission denied for property identifier %d",
                                prop_id);
           goto ERROR;
@@ -454,7 +454,7 @@ tp_properties_mixin_set_properties (GObject *obj,
                                     mixin_cls->signatures[prop_id].type))
         {
           g_boxed_free (G_TYPE_VALUE, prop_val);
-          error = g_error_new (TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          error = g_error_new (TP_ERROR, TP_ERROR_NOT_AVAILABLE,
                                "incompatible value type for property "
                                "identifier %d", prop_id);
           goto ERROR;

@@ -23,6 +23,7 @@
 
 #include <telepathy-glib/proxy.h>
 #include <telepathy-glib/call-channel.h>
+#include <telepathy-glib/defs.h>
 
 G_BEGIN_DECLS
 
@@ -51,31 +52,42 @@ struct _TpCallContentClass
   GCallback _padding[7];
 };
 
+_TP_AVAILABLE_IN_0_18
 GType tp_call_content_get_type (void);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_content_init_known_interfaces (void);
 
 #define TP_CALL_CONTENT_FEATURE_CORE \
   tp_call_content_get_feature_quark_core ()
+_TP_AVAILABLE_IN_0_18
 GQuark tp_call_content_get_feature_quark_core (void) G_GNUC_CONST;
 
+_TP_AVAILABLE_IN_0_18
 const gchar *tp_call_content_get_name (TpCallContent *self);
+_TP_AVAILABLE_IN_0_18
 TpMediaStreamType tp_call_content_get_media_type (TpCallContent *self);
+_TP_AVAILABLE_IN_0_18
 TpCallContentDisposition tp_call_content_get_disposition (TpCallContent *self);
+_TP_AVAILABLE_IN_0_18
 GPtrArray *tp_call_content_get_streams (TpCallContent *self);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_content_remove_async (TpCallContent *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_call_content_remove_finish (TpCallContent *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_content_send_tones_async (TpCallContent *self,
     const gchar *tones,
     GCancellable *cancellable,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_call_content_send_tones_finish (TpCallContent *self,
     GAsyncResult *result,
     GError **error);

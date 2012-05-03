@@ -588,7 +588,7 @@ test_basics (Test *test,
   /* Calling Accept again makes no sense, but mustn't crash */
   tp_call_channel_accept_async (test->call_chan, accept_cb, test);
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_NOT_AVAILABLE);
   g_clear_error (&test->error);
 
   /* Wait for the remote contact to answer, if they haven't already */
@@ -597,7 +597,7 @@ test_basics (Test *test,
   /* Calling Accept again makes no sense, but mustn't crash */
   tp_call_channel_accept_async (test->call_chan, accept_cb, test);
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_NOT_AVAILABLE);
   g_clear_error (&test->error);
 
   /* Check the call state. */

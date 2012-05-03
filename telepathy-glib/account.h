@@ -77,6 +77,7 @@ GType tp_account_get_type (void);
   tp_account_get_feature_quark_addressing ()
 
 GQuark tp_account_get_feature_quark_core (void) G_GNUC_CONST;
+_TP_AVAILABLE_IN_0_16
 GQuark tp_account_get_feature_quark_connection (void) G_GNUC_CONST;
 GQuark tp_account_get_feature_quark_storage (void) G_GNUC_CONST;
 GQuark tp_account_get_feature_quark_addressing (void) G_GNUC_CONST;
@@ -127,9 +128,11 @@ void tp_account_update_parameters_async (TpAccount *account,
     GAsyncReadyCallback callback, gpointer user_data);
 gboolean tp_account_update_parameters_finish (TpAccount *account,
     GAsyncResult *result, gchar ***reconnect_required, GError **error);
+_TP_AVAILABLE_IN_0_18
 void tp_account_update_parameters_vardict_async (TpAccount *account,
     GVariant *parameters, const gchar **unset_parameters,
     GAsyncReadyCallback callback, gpointer user_data);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_account_update_parameters_vardict_finish (TpAccount *account,
     GAsyncResult *result, gchar ***reconnect_required, GError **error);
 
@@ -190,6 +193,7 @@ TpConnectionStatus tp_account_get_connection_status (TpAccount *account,
 
 const gchar *tp_account_get_detailed_error (TpAccount *self,
     const GHashTable **details);
+_TP_AVAILABLE_IN_0_18
 gchar *tp_account_dup_detailed_error_vardict (TpAccount *self,
     GVariant **details);
 
@@ -203,6 +207,7 @@ TpConnectionPresenceType tp_account_get_automatic_presence (
     TpAccount *self, gchar **status, gchar **status_message);
 
 const GHashTable *tp_account_get_parameters (TpAccount *account);
+_TP_AVAILABLE_IN_0_18
 GVariant *tp_account_dup_parameters_vardict (TpAccount *account);
 
 const gchar *tp_account_get_nickname (TpAccount *account);
@@ -213,6 +218,7 @@ void tp_account_set_nickname_async (TpAccount *account,
 gboolean tp_account_set_nickname_finish (TpAccount *account,
     GAsyncResult *result, GError **error);
 
+_TP_AVAILABLE_IN_0_18
 const gchar * const *
 /* ugh, gtk-doc */
 tp_account_get_supersedes (TpAccount *self);
@@ -225,14 +231,18 @@ const GArray *tp_account_get_avatar_finish (TpAccount *account,
 
 gboolean tp_account_is_prepared (TpAccount *account, GQuark feature);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_16_FOR (tp_proxy_prepare_async)
 void tp_account_prepare_async (TpAccount *account,
     const GQuark *features,
     GAsyncReadyCallback callback,
-    gpointer user_data) _TP_GNUC_DEPRECATED_FOR (tp_proxy_prepare_async);
+    gpointer user_data);
 
+_TP_DEPRECATED_IN_0_16_FOR (tp_proxy_prepare_finish)
 gboolean tp_account_prepare_finish (TpAccount *account,
     GAsyncResult *result,
-    GError **error) _TP_GNUC_DEPRECATED_FOR (tp_proxy_prepare_finish);
+    GError **error);
+#endif
 
 void tp_account_set_avatar_async (TpAccount *self,
     const guchar *avatar,
@@ -255,10 +265,12 @@ void tp_account_get_storage_specific_information_async (TpAccount *self,
     GAsyncReadyCallback callback, gpointer user_data);
 GHashTable *tp_account_get_storage_specific_information_finish (TpAccount *self,
     GAsyncResult *result, GError **error);
+_TP_AVAILABLE_IN_0_18
 void tp_account_dup_storage_specific_information_vardict_async (
     TpAccount *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_18
 GVariant *tp_account_dup_storage_specific_information_vardict_finish (
     TpAccount *self,
     GAsyncResult *result,

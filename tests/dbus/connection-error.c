@@ -261,7 +261,7 @@ test_unregistered_error (Test *test,
 
   /* Because we didn't understand net.example.WTF as a GError, TpConnection
    * falls back to turning the Connection_Status_Reason into a GError. */
-  g_assert_error (error, TP_ERRORS, TP_ERROR_NETWORK_ERROR);
+  g_assert_error (error, TP_ERROR, TP_ERROR_NETWORK_ERROR);
 
   g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, NULL), ==,
       "net.example.WTF");

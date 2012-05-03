@@ -443,7 +443,7 @@ observe_channels_fail (
     TpObserveChannelsContext *context,
     gpointer user_data)
 {
-  GError error = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+  GError error = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
       "No ObserveChannels for you!" };
 
   tp_observe_channels_context_fail (context, &error);
@@ -462,7 +462,7 @@ test_fail (Test *test,
   g_assert_no_error (test->error);
 
   call_observe_channels (test);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_NOT_AVAILABLE);
 }
 
 int

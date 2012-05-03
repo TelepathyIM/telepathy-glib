@@ -72,13 +72,15 @@ typedef void (*TpSimpleApproverAddDispatchOperationImpl) (
     TpAddDispatchOperationContext *context,
     gpointer user_data);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_16_FOR (tp_simple_approver_new_with_factory)
 TpBaseClient * tp_simple_approver_new (TpDBusDaemon *dbus,
     const gchar *name,
     gboolean uniquify,
     TpSimpleApproverAddDispatchOperationImpl callback,
     gpointer user_data,
-    GDestroyNotify destroy)
-    _TP_GNUC_DEPRECATED_FOR (tp_simple_approver_new_with_factory);
+    GDestroyNotify destroy);
+#endif
 
 TpBaseClient *tp_simple_approver_new_with_am (
     TpAccountManager *account_manager,
@@ -88,6 +90,7 @@ TpBaseClient *tp_simple_approver_new_with_am (
     gpointer user_data,
     GDestroyNotify destroy);
 
+_TP_AVAILABLE_IN_0_16
 TpBaseClient *tp_simple_approver_new_with_factory (
     TpSimpleClientFactory *factory,
     const gchar *name,

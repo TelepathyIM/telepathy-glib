@@ -238,7 +238,7 @@ teardown (Test *test,
   tp_tests_connection_assert_disconnect_succeeds (conn);
 
   g_assert (!tp_connection_run_until_ready (conn, FALSE, &error, NULL));
-  g_assert_error (error, TP_ERRORS, TP_ERROR_CANCELLED);
+  g_assert_error (error, TP_ERROR, TP_ERROR_CANCELLED);
   g_clear_error (&error);
 
   test->service_conn_as_base = NULL;

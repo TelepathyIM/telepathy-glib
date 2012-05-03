@@ -22,6 +22,7 @@
 #include <glib-object.h>
 #include <gio/gio.h>
 
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/enums.h>
 
 #ifndef __TP_GNIO_UTIL_H__
@@ -41,22 +42,26 @@ gboolean tp_unix_connection_send_credentials_with_byte (
     guchar byte,
     GCancellable *cancellable,
     GError **error);
+_TP_AVAILABLE_IN_0_18
 void tp_unix_connection_send_credentials_with_byte_async (
     GSocketConnection *connection,
     guchar byte,
     GCancellable *cancellable,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_unix_connection_send_credentials_with_byte_finish (
     GSocketConnection *connection,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_18
 GCredentials * tp_unix_connection_receive_credentials_with_byte (
     GSocketConnection *connection,
     guchar *byte,
     GCancellable *cancellable,
     GError **error);
+_TP_AVAILABLE_IN_0_18
 void tp_unix_connection_receive_credentials_with_byte_async (
     GSocketConnection *connection,
     GCancellable *cancellable,

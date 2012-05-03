@@ -22,6 +22,7 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/enums.h>
 
 G_BEGIN_DECLS
@@ -30,6 +31,7 @@ typedef struct _TpCapabilities TpCapabilities;
 typedef struct _TpCapabilitiesClass TpCapabilitiesClass;
 typedef struct _TpCapabilitiesPrivate TpCapabilitiesPrivate;
 
+_TP_AVAILABLE_IN_0_18
 GType tp_capabilities_get_type (void) G_GNUC_CONST;
 
 #define TP_TYPE_CAPABILITIES \
@@ -49,24 +51,34 @@ GType tp_capabilities_get_type (void) G_GNUC_CONST;
                               TpCapabilitiesClass))
 
 GPtrArray * tp_capabilities_get_channel_classes (TpCapabilities *self);
+
+_TP_AVAILABLE_IN_0_20
 GVariant * tp_capabilities_dup_channel_classes_variant (TpCapabilities *self);
 
 gboolean tp_capabilities_is_specific_to_contact (TpCapabilities *self);
 
 gboolean tp_capabilities_supports_text_chats (TpCapabilities *self);
 gboolean tp_capabilities_supports_text_chatrooms (TpCapabilities *self);
+_TP_AVAILABLE_IN_0_20
 gboolean tp_capabilities_supports_sms (TpCapabilities *self);
 
+_TP_AVAILABLE_IN_0_18
 gboolean tp_capabilities_supports_audio_call (TpCapabilities *self,
     TpHandleType handle_type);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_capabilities_supports_audio_video_call (TpCapabilities *self,
     TpHandleType handle_type);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_capabilities_supports_file_transfer (TpCapabilities *self);
+_TP_AVAILABLE_IN_0_20
 gboolean tp_capabilities_supports_file_transfer_uri (TpCapabilities *self);
+_TP_AVAILABLE_IN_0_20
 gboolean tp_capabilities_supports_file_transfer_description (
     TpCapabilities *self);
+_TP_AVAILABLE_IN_0_20
 gboolean tp_capabilities_supports_file_transfer_timestamp (
     TpCapabilities *self);
+_TP_AVAILABLE_IN_0_20
 gboolean tp_capabilities_supports_file_transfer_initial_offset (
     TpCapabilities *self);
 

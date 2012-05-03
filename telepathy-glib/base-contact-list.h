@@ -24,6 +24,7 @@
 #include <gio/gio.h>
 
 #include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/handle-repo.h>
 #include <telepathy-glib/svc-connection.h>
 
@@ -64,6 +65,7 @@ TpContactListState tp_base_contact_list_get_state (TpBaseContactList *self,
     GError **error);
 TpBaseConnection *tp_base_contact_list_get_connection (
     TpBaseContactList *self, GError **error);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_base_contact_list_get_download_at_connection (
     TpBaseContactList *self);
 
@@ -119,10 +121,12 @@ typedef void (*TpBaseContactListAsyncFunc) (
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_18
 void tp_base_contact_list_download_async (TpBaseContactList *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_18
 gboolean tp_base_contact_list_download_finish (TpBaseContactList *self,
     GAsyncResult *result,
     GError **error);
@@ -304,12 +308,14 @@ gboolean tp_base_contact_list_block_contacts_finish (TpBaseContactList *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_16
 void tp_base_contact_list_block_contacts_with_abuse_async (
     TpBaseContactList *self,
     TpHandleSet *contacts,
     gboolean report_abusive,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_16
 gboolean tp_base_contact_list_block_contacts_with_abuse_finish (
     TpBaseContactList *self,
     GAsyncResult *result,
@@ -583,6 +589,7 @@ void tp_base_contact_list_mixin_list_iface_init (
     TpSvcConnectionInterfaceContactListClass *klass);
 void tp_base_contact_list_mixin_groups_iface_init (
     TpSvcConnectionInterfaceContactGroupsClass *klass);
+_TP_AVAILABLE_IN_0_16
 void tp_base_contact_list_mixin_blocking_iface_init (
     TpSvcConnectionInterfaceContactBlockingClass *klass);
 

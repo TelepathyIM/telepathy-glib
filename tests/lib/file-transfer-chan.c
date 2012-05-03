@@ -443,7 +443,7 @@ file_transfer_provide_file (TpSvcChannelTypeFileTransfer *iface,
 
   if (tp_base_channel_is_requested (base_chan) != TRUE)
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "File transfer is not outgoing. Cannot offer file");
       goto fail;
     }
@@ -451,21 +451,21 @@ file_transfer_provide_file (TpSvcChannelTypeFileTransfer *iface,
   if (self->priv->state != TP_FILE_TRANSFER_STATE_PENDING &&
       self->priv->state != TP_FILE_TRANSFER_STATE_ACCEPTED)
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "File transfer is not pending or accepted. Cannot offer file");
       goto fail;
     }
 
   if (self->priv->address != NULL)
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      g_set_error (&error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "ProvideFile has already been called for this channel");
       goto fail;
     }
 
   if (!check_address_type (self, address_type, access_control))
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Address type %i is not supported with access control %i",
           address_type, access_control);
       goto fail;
@@ -476,7 +476,7 @@ file_transfer_provide_file (TpSvcChannelTypeFileTransfer *iface,
 
   if (self->priv->address == NULL)
       {
-        g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+        g_set_error (&error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
             "Could not set up local socket");
         goto fail;
       }
@@ -517,21 +517,21 @@ file_transfer_accept_file (TpSvcChannelTypeFileTransfer *iface,
 
   if (tp_base_channel_is_requested (base_chan) == TRUE)
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "File transfer is not incoming. Cannot accept file");
       goto fail;
     }
 
   if (self->priv->state != TP_FILE_TRANSFER_STATE_PENDING)
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "File transfer is not in the pending state");
       goto fail;
     }
 
   if (!check_address_type (self, address_type, access_control))
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Address type %i is not supported with access control %i",
           address_type, access_control);
       goto fail;

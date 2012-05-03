@@ -23,6 +23,7 @@
 #define __TP_DEFS_H__
 
 #include <glib.h>
+#include <telepathy-glib/version.h>
 
 G_BEGIN_DECLS
 
@@ -149,13 +150,133 @@ G_BEGIN_DECLS
  */
 #define TP_USER_ACTION_TIME_CURRENT_TIME (G_MAXINT64)
 
-/* telepathy-glib-specific version of G_GNUC_DEPRECATED so our regression
+#define _TP_ENCODE_VERSION(major, minor) (((major) << 16) | ((minor) << 8))
+
+#define TP_VERSION_0_16 (_TP_ENCODE_VERSION (0, 16))
+#define TP_VERSION_0_18 (_TP_ENCODE_VERSION (0, 18))
+#define TP_VERSION_0_20 (_TP_ENCODE_VERSION (0, 20))
+#define TP_VERSION_1_0 (_TP_ENCODE_VERSION (1, 0))
+
+#if (TP_MINOR_VERSION == 99)
+  /* special case for telepathy-glib 1.0 prereleases */
+# define _TP_VERSION_CUR_STABLE (_TP_ENCODE_VERSION (TP_MAJOR_VERSION + 1, 0))
+# define _TP_VERSION_PREV_STABLE (_TP_ENCODE_VERSION (TP_MAJOR_VERSION + 1, 0))
+#elif (TP_MINOR_VERSION == 0)
+  /* special case for telepathy-glib 1.0 itself */
+# define _TP_VERSION_CUR_STABLE (_TP_ENCODE_VERSION (TP_MAJOR_VERSION, 0))
+# define _TP_VERSION_PREV_STABLE (_TP_ENCODE_VERSION (TP_MAJOR_VERSION, 0))
+#elif (TP_MICRO_VERSION >= 99 && (TP_MINOR_VERSION % 2) == 0)
+  /* development branch about to start (0.18.999.1) */
+# define _TP_VERSION_CUR_STABLE \
+  (_TP_ENCODE_VERSION (TP_MAJOR_VERSION, TP_MINOR_VERSION + 2))
+# define _TP_VERSION_PREV_STABLE \
+  (_TP_ENCODE_VERSION (TP_MAJOR_VERSION, TP_MINOR_VERSION))
+#elif (TP_MINOR_VERSION % 2)
+  /* development branch */
+# define _TP_VERSION_CUR_STABLE \
+  (_TP_ENCODE_VERSION (TP_MAJOR_VERSION, TP_MINOR_VERSION + 1))
+# define _TP_VERSION_PREV_STABLE \
+  (_TP_ENCODE_VERSION (TP_MAJOR_VERSION, TP_MINOR_VERSION - 1))
+#else
+  /* stable branch */
+# define _TP_VERSION_CUR_STABLE \
+  (_TP_ENCODE_VERSION (TP_MAJOR_VERSION, TP_MINOR_VERSION))
+# define _TP_VERSION_PREV_STABLE \
+  (_TP_ENCODE_VERSION (TP_MAJOR_VERSION, TP_MINOR_VERSION - 2))
+#endif
+
+#ifndef TP_VERSION_MIN_REQUIRED
+# define TP_VERSION_MIN_REQUIRED (_TP_VERSION_PREV_STABLE)
+#endif
+
+#ifndef TP_VERSION_MAX_ALLOWED
+# define TP_VERSION_MAX_ALLOWED (_TP_VERSION_CUR_STABLE)
+#endif
+
+#if TP_VERSION_MAX_ALLOWED < TP_VERSION_MIN_REQUIRED
+# error "TP_VERSION_MAX_ALLOWED must be >= TP_VERSION_MIN_REQUIRED"
+#endif
+#if TP_VERSION_MIN_REQUIRED < TP_VERSION_0_16
+# error "TP_VERSION_MIN_REQUIRED must be >= TP_VERSION_0_16"
+#endif
+
+#if TP_VERSION_MIN_REQUIRED >= TP_VERSION_0_16
+# define _TP_DEPRECATED_IN_0_16 _TP_DEPRECATED
+# define _TP_DEPRECATED_IN_0_16_FOR(f) _TP_DEPRECATED_FOR(f)
+#else
+# define _TP_DEPRECATED_IN_0_16 /* nothing */
+# define _TP_DEPRECATED_IN_0_16_FOR(f) /* nothing */
+#endif
+
+#if TP_VERSION_MIN_REQUIRED >= TP_VERSION_0_18
+# define _TP_DEPRECATED_IN_0_18 _TP_DEPRECATED
+# define _TP_DEPRECATED_IN_0_18_FOR(f) _TP_DEPRECATED_FOR(f)
+#else
+# define _TP_DEPRECATED_IN_0_18 /* nothing */
+# define _TP_DEPRECATED_IN_0_18_FOR(f) /* nothing */
+#endif
+
+#if TP_VERSION_MIN_REQUIRED >= TP_VERSION_0_20
+# define _TP_DEPRECATED_IN_0_20 _TP_DEPRECATED
+# define _TP_DEPRECATED_IN_0_20_FOR(f) _TP_DEPRECATED_FOR(f)
+#else
+# define _TP_DEPRECATED_IN_0_20 /* nothing */
+# define _TP_DEPRECATED_IN_0_20_FOR(f) /* nothing */
+#endif
+
+#if TP_VERSION_MIN_REQUIRED >= TP_VERSION_1_0
+# define _TP_DEPRECATED_IN_1_0 _TP_DEPRECATED
+# define _TP_DEPRECATED_IN_1_0_FOR(f) _TP_DEPRECATED_FOR(f)
+#else
+# define _TP_DEPRECATED_IN_1_0 /* nothing */
+# define _TP_DEPRECATED_IN_1_0_FOR(f) /* nothing */
+#endif
+
+#if TP_VERSION_MAX_ALLOWED < TP_VERSION_0_16
+# define _TP_AVAILABLE_IN_0_16 _TP_UNAVAILABLE(0, 16)
+#else
+# define _TP_AVAILABLE_IN_0_16 /* nothing */
+#endif
+
+#if TP_VERSION_MAX_ALLOWED < TP_VERSION_0_18
+# define _TP_AVAILABLE_IN_0_18 _TP_UNAVAILABLE(0, 18)
+#else
+# define _TP_AVAILABLE_IN_0_18 /* nothing */
+#endif
+
+#if TP_VERSION_MAX_ALLOWED < TP_VERSION_0_20
+# define _TP_AVAILABLE_IN_0_20 _TP_UNAVAILABLE(0, 20)
+#else
+# define _TP_AVAILABLE_IN_0_20 /* nothing */
+#endif
+
+#if TP_VERSION_MAX_ALLOWED < TP_VERSION_1_0
+# define _TP_AVAILABLE_IN_1_0 _TP_UNAVAILABLE(1, 0)
+#else
+# define _TP_AVAILABLE_IN_1_0 /* nothing */
+#endif
+
+#if TP_VERSION_MAX_ALLOWED < _TP_VERSION_CUR_STABLE
+# define _TP_AVAILABLE_IN_UNRELEASED \
+  _TP_UNAVAILABLE (TP_MAJOR_VERSION, TP_MINOR_VERSION)
+#else
+# define _TP_AVAILABLE_IN_UNRELEASED /* nothing */
+#endif
+
+/* telepathy-glib-specific macros so our regression
  * tests can continue to test deprecated functionality, while avoiding
  * deprecated bits of other libraries */
 #ifdef _TP_IGNORE_DEPRECATIONS
+#define _TP_DEPRECATED /* nothing */
+#define _TP_DEPRECATED_FOR(f) /* nothing */
+#define _TP_UNAVAILABLE(major, minor) /* nothing */
 #define _TP_GNUC_DEPRECATED /* nothing */
 #define _TP_GNUC_DEPRECATED_FOR(f) /* nothing */
 #else
+#define _TP_DEPRECATED G_DEPRECATED
+#define _TP_DEPRECATED_FOR(f) G_DEPRECATED_FOR(f)
+#define _TP_UNAVAILABLE(major, minor) G_UNAVAILABLE(major, minor)
+  /* Available for typedefs etc., not just functions, but gcc-specific */
 #define _TP_GNUC_DEPRECATED G_GNUC_DEPRECATED
 #define _TP_GNUC_DEPRECATED_FOR(f) G_GNUC_DEPRECATED_FOR(f)
 #endif

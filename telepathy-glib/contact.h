@@ -26,6 +26,7 @@
 
 #include <telepathy-glib/capabilities.h>
 #include <telepathy-glib/connection.h>
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/handle.h>
 
 #include <telepathy-glib/_gen/genums.h>
@@ -72,6 +73,7 @@ typedef enum {
 #define TP_CONTACT_FEATURE_INVALID ((TpContactFeature) -1)
 
 /* Basic functionality, always available */
+_TP_AVAILABLE_IN_0_20
 TpAccount *tp_contact_get_account (TpContact *self);
 TpConnection *tp_contact_get_connection (TpContact *self);
 TpHandle tp_contact_get_handle (TpContact *self);
@@ -170,6 +172,7 @@ TpContact *tp_connection_dup_contact_if_possible (TpConnection *connection,
 
 /* TP_CONTACT_FEATURE_CONTACT_BLOCKING */
 
+_TP_AVAILABLE_IN_0_18
 gboolean tp_contact_is_blocked (TpContact *self);
 
 G_END_DECLS

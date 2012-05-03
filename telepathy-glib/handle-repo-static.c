@@ -197,7 +197,7 @@ static_handle_is_valid (TpHandleRepoIface *irepo,
 
   if (handle <= 0 || handle > self->last_handle)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_HANDLE,
           "handle %u is not a valid %s handle (type %u)",
           handle, tp_handle_type_to_string (self->handle_type),
           self->handle_type);
@@ -281,7 +281,7 @@ static_lookup_handle (TpHandleRepoIface *irepo,
         return (TpHandle) i + 1;
     }
 
-  g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+  g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
       "'%s' is not one of the valid handles", id);
   return 0;
 }

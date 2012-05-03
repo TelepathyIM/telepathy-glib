@@ -28,6 +28,7 @@
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/dbus-daemon.h>
+#include <telepathy-glib/defs.h>
 
 G_BEGIN_DECLS
 
@@ -82,6 +83,7 @@ struct _TpSimpleClientFactory {
     TpSimpleClientFactoryPrivate *priv;
 };
 
+_TP_AVAILABLE_IN_0_16
 GType tp_simple_client_factory_get_type (void);
 
 #define TP_TYPE_SIMPLE_CLIENT_FACTORY \
@@ -100,70 +102,88 @@ GType tp_simple_client_factory_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_SIMPLE_CLIENT_FACTORY, \
                               TpSimpleClientFactoryClass))
 
+_TP_AVAILABLE_IN_0_16
 TpSimpleClientFactory * tp_simple_client_factory_new (TpDBusDaemon *dbus);
 
+_TP_AVAILABLE_IN_0_16
 TpDBusDaemon *tp_simple_client_factory_get_dbus_daemon (
     TpSimpleClientFactory *self);
 
 /* TpAccount */
+_TP_AVAILABLE_IN_0_16
 TpAccount *tp_simple_client_factory_ensure_account (TpSimpleClientFactory *self,
     const gchar *object_path,
     const GHashTable *immutable_properties,
     GError **error);
+_TP_AVAILABLE_IN_0_16
 GArray *tp_simple_client_factory_dup_account_features (
     TpSimpleClientFactory *self,
     TpAccount *account);
+_TP_AVAILABLE_IN_0_16
 void tp_simple_client_factory_add_account_features (TpSimpleClientFactory *self,
     const GQuark *features);
+_TP_AVAILABLE_IN_0_16
 void tp_simple_client_factory_add_account_features_varargs (
     TpSimpleClientFactory *self,
     GQuark feature,
     ...);
 
 /* TpConnection */
+_TP_AVAILABLE_IN_0_16
 TpConnection *tp_simple_client_factory_ensure_connection (
     TpSimpleClientFactory *self,
     const gchar *object_path,
     const GHashTable *immutable_properties,
     GError **error);
+_TP_AVAILABLE_IN_0_16
 GArray *tp_simple_client_factory_dup_connection_features (
     TpSimpleClientFactory *self,
     TpConnection *connection);
+_TP_AVAILABLE_IN_0_16
 void tp_simple_client_factory_add_connection_features (
     TpSimpleClientFactory *self,
     const GQuark *features);
+_TP_AVAILABLE_IN_0_16
 void tp_simple_client_factory_add_connection_features_varargs (
     TpSimpleClientFactory *self,
     GQuark feature,
     ...);
 
 /* TpChannel */
+_TP_AVAILABLE_IN_0_16
 TpChannel *tp_simple_client_factory_ensure_channel (TpSimpleClientFactory *self,
     TpConnection *connection,
     const gchar *object_path,
     const GHashTable *immutable_properties,
     GError **error);
+_TP_AVAILABLE_IN_0_16
 GArray *tp_simple_client_factory_dup_channel_features (
     TpSimpleClientFactory *self,
     TpChannel *channel);
+_TP_AVAILABLE_IN_0_16
 void tp_simple_client_factory_add_channel_features (TpSimpleClientFactory *self,
     const GQuark *features);
+_TP_AVAILABLE_IN_0_16
 void tp_simple_client_factory_add_channel_features_varargs (
     TpSimpleClientFactory *self,
     GQuark feature,
     ...);
 
 /* TpContact */
+_TP_AVAILABLE_IN_0_16
 TpContact *tp_simple_client_factory_ensure_contact (TpSimpleClientFactory *self,
     TpConnection *connection,
     TpHandle handle,
     const gchar *identifier);
+_TP_AVAILABLE_IN_0_16
 GArray *tp_simple_client_factory_dup_contact_features (
     TpSimpleClientFactory *self,
     TpConnection *connection);
+_TP_AVAILABLE_IN_0_16
 void tp_simple_client_factory_add_contact_features (TpSimpleClientFactory *self,
     guint n_features,
     const TpContactFeature *features);
+_TP_AVAILABLE_IN_0_16
 void tp_simple_client_factory_add_contact_features_varargs (
     TpSimpleClientFactory *self,
     TpContactFeature feature,

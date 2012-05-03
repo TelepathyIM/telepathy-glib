@@ -73,6 +73,8 @@ typedef void (*TpSimpleHandlerHandleChannelsImpl) (
     TpHandleChannelsContext *context,
     gpointer user_data);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_16_FOR (tp_simple_handler_new_with_factory)
 TpBaseClient * tp_simple_handler_new (TpDBusDaemon *dbus,
     gboolean bypass_approval,
     gboolean requests,
@@ -80,9 +82,8 @@ TpBaseClient * tp_simple_handler_new (TpDBusDaemon *dbus,
     gboolean uniquify,
     TpSimpleHandlerHandleChannelsImpl callback,
     gpointer user_data,
-    GDestroyNotify destroy)
-    _TP_GNUC_DEPRECATED_FOR (tp_simple_handler_new_with_factory);
-
+    GDestroyNotify destroy);
+#endif
 
 TpBaseClient *tp_simple_handler_new_with_am (TpAccountManager *account_manager,
     gboolean bypass_approval,
@@ -93,6 +94,7 @@ TpBaseClient *tp_simple_handler_new_with_am (TpAccountManager *account_manager,
     gpointer user_data,
     GDestroyNotify destroy);
 
+_TP_AVAILABLE_IN_0_16
 TpBaseClient *tp_simple_handler_new_with_factory (
     TpSimpleClientFactory *factory,
     gboolean bypass_approval,

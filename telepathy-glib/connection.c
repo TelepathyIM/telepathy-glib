@@ -1182,7 +1182,7 @@ _tp_connection_status_reason_to_gerror (TpConnectionStatusReason reason,
       return;
     }
 
-  g_set_error (error, TP_ERRORS, code, "%s", message);
+  g_set_error (error, TP_ERROR, code, "%s", message);
 
   if (ret_str != NULL)
     *ret_str = tp_error_get_dbus_name (code);
@@ -1576,9 +1576,7 @@ tp_connection_dispose (GObject *object)
 
   if (self->priv->interests != NULL)
     {
-      TpIntSetIter iter = TP_INTSET_ITER_INIT (self->priv->interests);
       guint size = tp_intset_size (self->priv->interests);
-      GPtrArray *strings;
 
       /* Before freeing the set of tokens in which we declared an
        * interest, cancel those interests. We'll still get the signals
@@ -1586,11 +1584,17 @@ tp_connection_dispose (GObject *object)
        * because the CM uses distributed refcounting. */
       if (size > 0)
         {
+          TpIntsetFastIter iter;
+          GPtrArray *strings;
+          guint element;
+
           strings = g_ptr_array_sized_new (size + 1);
 
-          while (tp_intset_iter_next (&iter))
+          tp_intset_fast_iter_init (&iter, self->priv->interests);
+
+          while (tp_intset_fast_iter_next (&iter, &element))
             g_ptr_array_add (strings,
-                (gchar *) g_quark_to_string (iter.element));
+                (gchar *) g_quark_to_string (element));
 
           g_ptr_array_add (strings, NULL);
 
@@ -2905,7 +2909,7 @@ tp_connection_once (gpointer data G_GNUC_UNUSED)
   tp_proxy_or_subclass_hook_on_interface_add (type,
       tp_cli_connection_add_signals);
   tp_proxy_subclass_add_error_mapping (type,
-      TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
+      TP_ERROR_PREFIX, TP_ERROR, TP_TYPE_ERROR);
 
   return NULL;
 }
@@ -3281,7 +3285,7 @@ tp_connection_get_detailed_error (TpConnection *self,
           *details = self->priv->connection_error_details;
         }
 
-      if (proxy->invalidated->domain == TP_ERRORS)
+      if (proxy->invalidated->domain == TP_ERROR)
         {
           return tp_error_get_dbus_name (proxy->invalidated->code);
         }

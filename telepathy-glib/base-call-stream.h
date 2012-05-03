@@ -27,6 +27,7 @@
 
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
+#include <telepathy-glib/defs.h>
 
 G_BEGIN_DECLS
 
@@ -66,6 +67,7 @@ struct _TpBaseCallStream {
   TpBaseCallStreamPrivate *priv;
 };
 
+_TP_AVAILABLE_IN_0_18
 GType tp_base_call_stream_get_type (void);
 
 /* TYPE MACROS */
@@ -84,13 +86,17 @@ GType tp_base_call_stream_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_BASE_CALL_STREAM, \
     TpBaseCallStreamClass))
 
+_TP_AVAILABLE_IN_0_18
 TpBaseConnection *tp_base_call_stream_get_connection (
     TpBaseCallStream *self);
+_TP_AVAILABLE_IN_0_18
 const gchar *tp_base_call_stream_get_object_path (
     TpBaseCallStream *self);
 
+_TP_AVAILABLE_IN_0_18
 TpSendingState tp_base_call_stream_get_local_sending_state (
     TpBaseCallStream *self);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_base_call_stream_update_local_sending_state (
     TpBaseCallStream *self,
     TpSendingState new_state,
@@ -99,9 +105,11 @@ gboolean tp_base_call_stream_update_local_sending_state (
     const gchar *dbus_reason,
     const gchar *message);
 
+_TP_AVAILABLE_IN_0_18
 TpSendingState tp_base_call_stream_get_remote_sending_state (
     TpBaseCallStream *self,
     TpHandle contact);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_base_call_stream_update_remote_sending_state (
     TpBaseCallStream *self,
     TpHandle contact,
@@ -110,6 +118,7 @@ gboolean tp_base_call_stream_update_remote_sending_state (
     TpCallStateChangeReason reason,
     const gchar *dbus_reason,
     const gchar *message);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_base_call_stream_remove_member (
     TpBaseCallStream *self,
     TpHandle contact,

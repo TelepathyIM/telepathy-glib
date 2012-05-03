@@ -23,6 +23,7 @@
 #define __TP_DEBUG_MESSAGE_H__
 
 #include <glib-object.h>
+#include <telepathy-glib/defs.h>
 
 G_BEGIN_DECLS
 
@@ -41,6 +42,7 @@ struct _TpDebugMessage {
   TpDebugMessagePriv *priv;
 };
 
+_TP_AVAILABLE_IN_0_20
 GType tp_debug_message_get_type (void);
 
 /* TYPE MACROS */
@@ -65,10 +67,15 @@ GType tp_debug_message_get_type (void);
     TP_TYPE_DEBUG_MESSAGE, \
     TpDebugMessageClass))
 
+_TP_AVAILABLE_IN_0_20
 GDateTime * tp_debug_message_get_time (TpDebugMessage *self);
+_TP_AVAILABLE_IN_0_20
 const gchar * tp_debug_message_get_domain (TpDebugMessage *self);
+_TP_AVAILABLE_IN_0_20
 const gchar * tp_debug_message_get_category (TpDebugMessage *self);
+_TP_AVAILABLE_IN_0_20
 GLogLevelFlags tp_debug_message_get_level (TpDebugMessage *self);
+_TP_AVAILABLE_IN_0_20
 const gchar * tp_debug_message_get_message (TpDebugMessage *self);
 
 G_END_DECLS

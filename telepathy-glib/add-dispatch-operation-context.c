@@ -106,7 +106,7 @@ tp_add_dispatch_operation_context_dispose (GObject *object)
   if (self->priv->state == TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_NONE ||
       self->priv->state == TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_DELAYED)
     {
-      GError error = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      GError error = { TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
           "Disposing the TpAddDispatchOperationContext" };
 
       WARNING ("Disposing a context in the %s state",

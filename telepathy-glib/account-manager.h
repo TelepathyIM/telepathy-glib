@@ -76,14 +76,17 @@ TpAccountManager *tp_account_manager_new (TpDBusDaemon *bus_daemon)
 TpAccountManager *tp_account_manager_new_with_factory (
     TpSimpleClientFactory *factory) G_GNUC_WARN_UNUSED_RESULT;
 
+_TP_AVAILABLE_IN_0_16
 void tp_account_manager_set_default (TpAccountManager *manager);
 TpAccountManager *tp_account_manager_dup (void) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_account_manager_init_known_interfaces (void);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_16_FOR (tp_simple_client_factory_ensure_account)
 TpAccount *tp_account_manager_ensure_account (TpAccountManager *manager,
-    const gchar *path)
-    _TP_GNUC_DEPRECATED_FOR (tp_simple_client_factory_ensure_account);
+    const gchar *path);
+#endif
 
 GList *tp_account_manager_get_valid_accounts (TpAccountManager *manager)
   G_GNUC_WARN_UNUSED_RESULT;
@@ -106,14 +109,18 @@ TpAccount * tp_account_manager_create_account_finish (
 gboolean tp_account_manager_is_prepared (TpAccountManager *manager,
     GQuark feature);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_16_FOR (tp_proxy_prepare_async)
 void tp_account_manager_prepare_async (TpAccountManager *manager,
     const GQuark *features,
     GAsyncReadyCallback callback,
-    gpointer user_data) _TP_GNUC_DEPRECATED_FOR (tp_proxy_prepare_async);
+    gpointer user_data);
 
+_TP_DEPRECATED_IN_0_16_FOR (tp_proxy_prepare_finish)
 gboolean tp_account_manager_prepare_finish (TpAccountManager *manager,
     GAsyncResult *result,
-    GError **error) _TP_GNUC_DEPRECATED_FOR (tp_proxy_prepare_finish);
+    GError **error);
+#endif
 
 void tp_account_manager_enable_restart (TpAccountManager *manager);
 

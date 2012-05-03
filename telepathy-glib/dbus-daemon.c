@@ -805,7 +805,7 @@ tp_dbus_daemon_request_name (TpDBusDaemon *self,
         }
       else
         {
-          g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
               "Name '%s' already in use by this process", well_known_name);
           return FALSE;
         }
@@ -813,18 +813,18 @@ tp_dbus_daemon_request_name (TpDBusDaemon *self,
     case DBUS_REQUEST_NAME_REPLY_EXISTS:
     case DBUS_REQUEST_NAME_REPLY_IN_QUEUE:
       /* the latter shouldn't actually happen since we said DO_NOT_QUEUE */
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "Name '%s' already in use by another process", well_known_name);
       return FALSE;
 
     case -1:
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "%s: %s", dbus_error.name, dbus_error.message);
       dbus_error_free (&dbus_error);
       return FALSE;
 
     default:
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "RequestName('%s') returned %d and I don't know what that means",
           well_known_name, result);
       return FALSE;
@@ -883,23 +883,23 @@ tp_dbus_daemon_release_name (TpDBusDaemon *self,
       return TRUE;
 
     case DBUS_RELEASE_NAME_REPLY_NOT_OWNER:
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_YOURS,
+      g_set_error (error, TP_ERROR, TP_ERROR_NOT_YOURS,
           "Name '%s' owned by another process", well_known_name);
       return FALSE;
 
     case DBUS_RELEASE_NAME_REPLY_NON_EXISTENT:
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "Name '%s' not owned", well_known_name);
       return FALSE;
 
     case -1:
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "%s: %s", dbus_error.name, dbus_error.message);
       dbus_error_free (&dbus_error);
       return FALSE;
 
     default:
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "ReleaseName('%s') returned %d and I don't know what that means",
           well_known_name, result);
       return FALSE;

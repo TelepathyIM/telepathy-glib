@@ -973,7 +973,7 @@ main (int argc,
           ids, &error, NULL),
           "");
       MYASSERT (error != NULL, "");
-      MYASSERT (error->domain == TP_ERRORS, "%s",
+      MYASSERT (error->domain == TP_ERROR, "%s",
           g_quark_to_string (error->domain));
       MYASSERT (error->code == TP_ERROR_INVALID_ARGUMENT, "%u", error->code);
       g_error_free (error);

@@ -371,7 +371,7 @@ tones_stopped_cb (TpCallContent *self,
 {
   if (cancelled)
     {
-      GError e = { TP_ERRORS, TP_ERROR_CANCELLED,
+      GError e = { TP_ERROR, TP_ERROR_CANCELLED,
           "The DTMF tones were actively cancelled via StopTones" };
       complete_sending_tones (self, &e);
       return;
@@ -404,7 +404,7 @@ maybe_send_tones (TpCallContent *self)
   /* Yes this is safe if cancellable is NULL! */
   if (g_cancellable_is_cancelled (self->priv->current_tones->cancellable))
     {
-      GError e = { TP_ERRORS, TP_ERROR_CANCELLED,
+      GError e = { TP_ERROR, TP_ERROR_CANCELLED,
           "The DTMF tones were cancelled before it has started" };
       complete_sending_tones (self, &e);
       return;
@@ -748,7 +748,7 @@ tp_call_content_init_known_interfaces (void)
       tp_proxy_or_subclass_hook_on_interface_add (tp_type,
           tp_cli_call_content_add_signals);
       tp_proxy_subclass_add_error_mapping (tp_type,
-          TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
+          TP_ERROR_PREFIX, TP_ERROR, TP_TYPE_ERROR);
 
       g_once_init_leave (&once, 1);
     }
@@ -931,7 +931,7 @@ tp_call_content_send_tones_async (TpCallContent *self,
           TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_DTMF))
     {
       g_simple_async_report_error_in_idle (G_OBJECT (self),
-          callback, user_data, TP_ERRORS, TP_ERROR_NOT_CAPABLE,
+          callback, user_data, TP_ERROR, TP_ERROR_NOT_CAPABLE,
           "Content does not support DTMF");
       return;
     }

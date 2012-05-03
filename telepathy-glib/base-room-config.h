@@ -22,6 +22,7 @@
 
 #include <glib-object.h>
 #include <telepathy-glib/base-channel.h>
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/_gen/genums.h>
 
 typedef struct _TpBaseRoomConfig TpBaseRoomConfig;
@@ -72,6 +73,7 @@ typedef enum {
     TP_NUM_BASE_ROOM_CONFIG_PROPERTIES /*< skip >*/
 } TpBaseRoomConfigProperty;
 
+_TP_AVAILABLE_IN_0_16
 GType tp_base_room_config_get_type (void);
 
 #define TP_TYPE_BASE_ROOM_CONFIG \
@@ -89,27 +91,34 @@ GType tp_base_room_config_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_BASE_ROOM_CONFIG, \
                               TpBaseRoomConfigClass))
 
+_TP_AVAILABLE_IN_0_16
 void tp_base_room_config_register_class (
     TpBaseChannelClass *base_channel_class);
+_TP_AVAILABLE_IN_0_16
 void tp_base_room_config_iface_init (
     gpointer g_iface,
     gpointer iface_data);
 
+_TP_AVAILABLE_IN_0_16
 TpBaseChannel *tp_base_room_config_dup_channel (
     TpBaseRoomConfig *self);
 
+_TP_AVAILABLE_IN_0_16
 void tp_base_room_config_set_can_update_configuration (
     TpBaseRoomConfig *self,
     gboolean can_update_configuration);
 
+_TP_AVAILABLE_IN_0_16
 void tp_base_room_config_set_property_mutable (
     TpBaseRoomConfig *self,
     TpBaseRoomConfigProperty property_id,
     gboolean is_mutable);
 
+_TP_AVAILABLE_IN_0_16
 void tp_base_room_config_emit_properties_changed (
     TpBaseRoomConfig *self);
 
+_TP_AVAILABLE_IN_0_16
 void tp_base_room_config_set_retrieved (
     TpBaseRoomConfig *self);
 

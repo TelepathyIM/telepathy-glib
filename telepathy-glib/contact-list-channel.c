@@ -219,7 +219,7 @@ tp_base_contact_list_channel_check_still_usable (
 {
   if (self->manager == NULL)
     {
-      GError e = { TP_ERRORS, TP_ERROR_TERMINATED, "Channel already closed" };
+      GError e = { TP_ERROR, TP_ERROR_TERMINATED, "Channel already closed" };
       dbus_g_method_return_error (context, &e);
       return FALSE;
     }
@@ -340,7 +340,7 @@ static void
 list_channel_close (TpSvcChannel *iface G_GNUC_UNUSED,
     DBusGMethodInvocation *context)
 {
-  GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+  GError e = { TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
       "ContactList channels with handle type LIST may not be closed" };
 
   dbus_g_method_return_error (context, &e);
@@ -358,7 +358,7 @@ group_channel_close (TpSvcChannel *iface,
 
   if (tp_handle_set_size (self->group.members) > 0)
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      g_set_error (&error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "Non-empty groups may not be deleted (closed)");
       goto error;
     }

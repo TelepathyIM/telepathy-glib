@@ -137,7 +137,7 @@ create_channel (TpTestsSimpleChannelDispatcher *self,
   if (tp_asv_get_boolean (request, "CreateChannelFail", NULL))
     {
       /* Fail to create the channel */
-      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Computer says no" };
 
       dbus_g_method_return_error (context, &error);

@@ -685,7 +685,7 @@ tp_base_media_call_content_update_local_media_description (
 
   if (self->priv->current_offer != NULL)
     {
-      GError error = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      GError error = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "There is a media description offer around so "
           "UpdateMediaDescription shouldn't be called." };
       dbus_g_method_return_error (context, &error);
@@ -696,7 +696,7 @@ tp_base_media_call_content_update_local_media_description (
           TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT,
           NULL, &contact))
     {
-      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "The media description is missing the RemoteContact key." };
       dbus_g_method_return_error (context, &error);
       return;
@@ -708,7 +708,7 @@ tp_base_media_call_content_update_local_media_description (
 
   if (current_properties == NULL)
     {
-      GError error = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      GError error = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "The initial MediaDescription object has not yet appeared" };
       dbus_g_method_return_error (context, &error);
       return;
@@ -720,7 +720,7 @@ tp_base_media_call_content_update_local_media_description (
       TP_ARRAY_TYPE_CODEC_LIST);
   if (!codecs || codecs->len == 0)
     {
-      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                        "Codecs can not be empty" };
       dbus_g_method_return_error (context, &error);
       return;
@@ -729,7 +729,7 @@ tp_base_media_call_content_update_local_media_description (
   if (self->priv->current_offer != NULL &&
       tp_call_content_media_description_get_remote_contact (self->priv->current_offer) == GPOINTER_TO_UINT (contact))
     {
-      GError error = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      GError error = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
                        "Can not update the media description while there is"
                        " an outstanding offer for this contact." };
       dbus_g_method_return_error (context, &error);
@@ -769,7 +769,7 @@ tp_base_media_call_content_acknowledge_dtmf_change (
 
   if (self->priv->current_dtmf_event != in_Event)
     {
-      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "The acknoledgement is not for the right event"};
       dbus_g_method_return_error (context, &error);
       return;
@@ -778,7 +778,7 @@ tp_base_media_call_content_acknowledge_dtmf_change (
   if (in_State != TP_SENDING_STATE_SENDING &&
       in_State != TP_SENDING_STATE_NONE)
     {
-      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "The new sending state can not be a pending state"};
       dbus_g_method_return_error (context, &error);
       return;
@@ -790,7 +790,7 @@ tp_base_media_call_content_acknowledge_dtmf_change (
   if (self->priv->current_dtmf_state != TP_SENDING_STATE_PENDING_SEND &&
       self->priv->current_dtmf_state != TP_SENDING_STATE_PENDING_STOP_SENDING)
     {
-      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Acknowledge rejected because we are not in a pending state"};
       dbus_g_method_return_error (context, &error);
       return;
@@ -802,7 +802,7 @@ tp_base_media_call_content_acknowledge_dtmf_change (
           TP_SENDING_STATE_PENDING_STOP_SENDING &&
           in_State != TP_SENDING_STATE_NONE))
     {
-      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "The new sending state does not match the pending state"};
       dbus_g_method_return_error (context, &error);
       return;
@@ -934,7 +934,7 @@ tp_base_media_call_content_start_tone (TpBaseCallContent *bcc,
 
   if (self->priv->currently_sending_tones != NULL)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_SERVICE_BUSY,
+      g_set_error (error, TP_ERROR, TP_ERROR_SERVICE_BUSY,
           "Already sending a tone");
       return FALSE;
     }
@@ -976,7 +976,7 @@ tp_base_media_call_content_stop_tone (TpBaseCallContent *bcc,
 
   if (self->priv->currently_sending_tones == NULL)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "No tone is currently being played");
       return FALSE;
     }
@@ -1007,7 +1007,7 @@ tp_base_media_call_content_multiple_tones (TpBaseCallContent *bcc,
 
   if (self->priv->currently_sending_tones != NULL)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_SERVICE_BUSY,
+      g_set_error (error, TP_ERROR, TP_ERROR_SERVICE_BUSY,
           "Already sending a tone");
       return FALSE;
     }

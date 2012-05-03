@@ -661,7 +661,7 @@ tp_presence_mixin_add_status (TpSvcConnectionInterfacePresence *iface,
                               DBusGMethodInvocation *context)
 {
   TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
-  GError error = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+  GError error = { TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
     "Only one status is possible at a time with this protocol!" };
 
   DEBUG ("called.");
@@ -786,7 +786,7 @@ check_status_available (GObject *object,
     {
       if (!mixin_cls->statuses[i].self)
         {
-          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
               "cannot set status '%s' on yourself",
               mixin_cls->statuses[i].name);
           return FALSE;
@@ -799,7 +799,7 @@ check_status_available (GObject *object,
         case TP_CONNECTION_PRESENCE_TYPE_OFFLINE:
         case TP_CONNECTION_PRESENCE_TYPE_UNKNOWN:
         case TP_CONNECTION_PRESENCE_TYPE_ERROR:
-          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
               "cannot set offline/unknown/error status '%s' on yourself",
               mixin_cls->statuses[i].name);
           return FALSE;
@@ -814,7 +814,7 @@ check_status_available (GObject *object,
     {
       DEBUG ("requested status %s is not available",
           mixin_cls->statuses[i].name);
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "requested status '%s' is not available on this connection",
           mixin_cls->statuses[i].name);
       return FALSE;
@@ -971,7 +971,7 @@ tp_presence_mixin_remove_status (TpSvcConnectionInterfacePresence *iface,
     }
   else
     {
-      GError nonexistent = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      GError nonexistent = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Attempting to remove non-existent presence." };
       dbus_g_method_return_error (context, &nonexistent);
     }
@@ -1057,7 +1057,7 @@ check_for_status (GObject *object, const gchar *status, GError **error)
   else
     {
       DEBUG ("got unknown status identifier %s", status);
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "unknown status identifier: %s", status);
       return -1;
     }
@@ -1167,7 +1167,7 @@ tp_presence_mixin_set_status (TpSvcConnectionInterfacePresence *iface,
   if (!g_hash_table_iter_next (&iter, &key, &value) ||
       g_hash_table_iter_next (&iter, NULL, NULL))
     {
-      GError invalid = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      GError invalid = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Only one status may be set at a time in this protocol" };
       DEBUG ("got more than one status");
       dbus_g_method_return_error (context, &invalid);

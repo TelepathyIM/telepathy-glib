@@ -14,7 +14,7 @@ main (int argc,
 {
   g_test_init (&argc, &argv, NULL);
 
-  g_test_add_func ("/test-error-enum/TP_ERRORS", test_tp_errors);
+  g_test_add_func ("/test-error-enum/TP_ERROR", test_tp_errors);
 
   return g_test_run ();
 }

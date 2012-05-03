@@ -22,6 +22,7 @@
 #define __TP_BASE_MEDIA_CALL_CHANNEL_H__
 
 #include <telepathy-glib/base-call-channel.h>
+#include <telepathy-glib/defs.h>
 
 G_BEGIN_DECLS
 
@@ -54,6 +55,7 @@ struct _TpBaseMediaCallChannel {
   TpBaseMediaCallChannelPrivate *priv;
 };
 
+_TP_AVAILABLE_IN_0_18
 GType tp_base_media_call_channel_get_type (void);
 
 /* TYPE MACROS */
@@ -73,7 +75,7 @@ GType tp_base_media_call_channel_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), \
    TP_TYPE_BASE_MEDIA_CALL_CHANNEL, TpBaseMediaCallChannelClass))
 
-
+_TP_AVAILABLE_IN_0_18
 TpLocalHoldState tp_base_media_call_channel_get_local_hold_state (
     TpBaseMediaCallChannel *channel, TpLocalHoldStateReason *reason);
 

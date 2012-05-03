@@ -328,7 +328,7 @@ dynamic_handle_is_valid (TpHandleRepoIface *irepo,
 
   if (handle_priv_lookup (self, handle) == NULL)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_HANDLE,
           "handle %u is not currently a valid %s handle (type %u)",
           handle, tp_handle_type_to_string (self->handle_type),
           self->handle_type);
@@ -458,7 +458,7 @@ dynamic_lookup_handle (TpHandleRepoIface *irepo,
 
   if (handle == 0)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "no %s handle (type %u) currently exists for ID \"%s\"",
           tp_handle_type_to_string (self->handle_type),
           self->handle_type, id);

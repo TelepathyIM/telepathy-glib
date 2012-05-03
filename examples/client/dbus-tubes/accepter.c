@@ -141,7 +141,7 @@ handle_channels (TpSimpleHandler *handler,
 {
   TpDBusTubeChannel *tube;
   GList *l;
-  GError error = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+  GError error = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
       "No channel to be handled" };
 
   g_debug ("Handling channels");

@@ -24,6 +24,7 @@
 #include <glib-object.h>
 
 #include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/presence-mixin.h>
 
 G_BEGIN_DECLS
@@ -224,6 +225,7 @@ struct _TpProtocolAddressingInterface {
   TpBaseProtocolNormalizeURIFunc normalize_contact_uri;
 };
 
+_TP_AVAILABLE_IN_0_18
 GType tp_protocol_addressing_get_type (void) G_GNUC_CONST;
 
 G_END_DECLS

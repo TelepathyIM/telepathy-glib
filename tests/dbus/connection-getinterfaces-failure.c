@@ -45,7 +45,7 @@ static void
 bug15306_get_interfaces (TpSvcConnection *iface,
                    DBusGMethodInvocation *context)
 {
-  GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE, "testing fd.o #15306" };
+  GError e = { TP_ERROR, TP_ERROR_NOT_AVAILABLE, "testing fd.o #15306" };
 
   dbus_g_method_return_error (context, &e);
 }

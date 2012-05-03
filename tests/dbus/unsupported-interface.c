@@ -232,7 +232,7 @@ teardown (Fixture *f,
 
   tp_tests_connection_assert_disconnect_succeeds (conn);
   tp_tests_proxy_run_until_prepared_or_failed (conn, NULL, &f->error);
-  g_assert_error (f->error, TP_ERRORS, TP_ERROR_CANCELLED);
+  g_assert_error (f->error, TP_ERROR, TP_ERROR_CANCELLED);
   g_clear_error (&f->error);
 
   g_object_unref (conn);

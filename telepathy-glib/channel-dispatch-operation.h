@@ -131,12 +131,14 @@ gboolean tp_channel_dispatch_operation_handle_with_time_finish (
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_16
 void tp_channel_dispatch_operation_claim_with_async (
     TpChannelDispatchOperation *self,
     TpBaseClient *client,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_16
 gboolean tp_channel_dispatch_operation_claim_with_finish (
     TpChannelDispatchOperation *self,
     GAsyncResult *result,
@@ -144,16 +146,19 @@ gboolean tp_channel_dispatch_operation_claim_with_finish (
 
 /* Reject API */
 
+_TP_AVAILABLE_IN_0_16
 void tp_channel_dispatch_operation_close_channels_async (
     TpChannelDispatchOperation *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_16
 gboolean tp_channel_dispatch_operation_close_channels_finish (
     TpChannelDispatchOperation *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_16
 void tp_channel_dispatch_operation_leave_channels_async (
     TpChannelDispatchOperation *self,
     TpChannelGroupChangeReason reason,
@@ -161,16 +166,19 @@ void tp_channel_dispatch_operation_leave_channels_async (
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_16
 gboolean tp_channel_dispatch_operation_leave_channels_finish (
     TpChannelDispatchOperation *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_16
 void tp_channel_dispatch_operation_destroy_channels_async (
     TpChannelDispatchOperation *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_16
 gboolean tp_channel_dispatch_operation_destroy_channels_finish (
     TpChannelDispatchOperation *self,
     GAsyncResult *result,

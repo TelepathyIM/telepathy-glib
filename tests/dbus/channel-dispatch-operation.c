@@ -515,7 +515,7 @@ channe_lost_cb (TpChannelDispatchOperation *cdo,
             tp_proxy_get_object_path (test->text_chan_2));
     }
 
-  g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
+  g_assert_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE);
 
   g_error_free (error);
 
@@ -627,7 +627,7 @@ test_handle_with (Test *test,
       "FAIL", handle_with_cb, test);
   g_main_loop_run (test->mainloop);
 
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
   g_clear_error (&test->error);
 }
 

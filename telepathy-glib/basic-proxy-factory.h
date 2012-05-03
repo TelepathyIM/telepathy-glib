@@ -58,12 +58,13 @@ GType tp_basic_proxy_factory_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_BASIC_PROXY_FACTORY, \
                               TpBasicProxyFactoryClass))
 
-TpBasicProxyFactory * tp_basic_proxy_factory_new (void)
-    _TP_GNUC_DEPRECATED_FOR (tp_simple_client_factory_new);
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_16_FOR (tp_simple_client_factory_new)
+TpBasicProxyFactory * tp_basic_proxy_factory_new (void);
 
-
-TpBasicProxyFactory * tp_basic_proxy_factory_dup (void)
-    _TP_GNUC_DEPRECATED_FOR (tp_simple_client_factory_new);
+_TP_DEPRECATED_IN_0_16_FOR (tp_simple_client_factory_new)
+TpBasicProxyFactory * tp_basic_proxy_factory_dup (void);
+#endif
 
 G_END_DECLS
 

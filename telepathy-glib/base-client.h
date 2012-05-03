@@ -139,41 +139,46 @@ void tp_base_client_add_handler_capabilities (TpBaseClient *self,
 void tp_base_client_add_handler_capabilities_varargs (TpBaseClient *self,
     const gchar *first_token, ...) G_GNUC_NULL_TERMINATED;
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_16_FOR (tp_simple_client_factory_add_account_features)
 void tp_base_client_add_account_features (TpBaseClient *self,
-    const GQuark *features, gssize n)
-    _TP_GNUC_DEPRECATED_FOR (tp_simple_client_factory_add_account_features);
+    const GQuark *features, gssize n);
 
+_TP_DEPRECATED_IN_0_16_FOR (tp_simple_client_factory_add_account_features_varargs)
 void tp_base_client_add_account_features_varargs (TpBaseClient *self,
-    GQuark feature, ...)
-    _TP_GNUC_DEPRECATED_FOR (tp_simple_client_factory_add_account_features_varargs);
+    GQuark feature, ...);
 
+_TP_DEPRECATED_IN_0_16_FOR (tp_simple_client_factory_add_channel_features)
 void tp_base_client_add_channel_features (TpBaseClient *self,
-    const GQuark *features, gssize n)
-    _TP_GNUC_DEPRECATED_FOR (tp_simple_client_factory_add_channel_features);
+    const GQuark *features, gssize n);
+
+_TP_DEPRECATED_IN_0_16_FOR (tp_simple_client_factory_add_channel_features_varargs)
 void tp_base_client_add_channel_features_varargs (TpBaseClient *self,
-    GQuark feature, ...)
-    _TP_GNUC_DEPRECATED_FOR (tp_simple_client_factory_add_channel_features_varargs);
+    GQuark feature, ...);
 
-
+_TP_DEPRECATED_IN_0_16_FOR (tp_simple_client_factory_add_connection_features)
 void tp_base_client_add_connection_features (TpBaseClient *self,
-    const GQuark *features, gssize n)
-    _TP_GNUC_DEPRECATED_FOR (tp_simple_client_factory_add_connection_features);
+    const GQuark *features, gssize n);
+
+_TP_DEPRECATED_IN_0_16_FOR (tp_simple_client_factory_add_connection_features_varargs)
 void tp_base_client_add_connection_features_varargs (TpBaseClient *self,
-    GQuark feature, ...)
-    _TP_GNUC_DEPRECATED_FOR (tp_simple_client_factory_add_connection_features_varargs);
+    GQuark feature, ...);
 
-
+_TP_DEPRECATED_IN_0_16
 void tp_base_client_set_channel_factory (TpBaseClient *self,
-    TpClientChannelFactory *factory) _TP_GNUC_DEPRECATED;
+    TpClientChannelFactory *factory);
 
+_TP_DEPRECATED_IN_0_16
 TpClientChannelFactory *tp_base_client_get_channel_factory (
-    TpBaseClient *self) _TP_GNUC_DEPRECATED;
+    TpBaseClient *self);
+#endif
 
 typedef void (*TpBaseClientDelegatedChannelsCb) (
     TpBaseClient *client,
     GPtrArray *channels,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_16
 void tp_base_client_set_delegated_channels_callback (TpBaseClient *self,
     TpBaseClientDelegatedChannelsCb callback,
     gpointer user_data,
@@ -195,6 +200,7 @@ GList *tp_base_client_get_handled_channels (TpBaseClient *self);
 gboolean tp_base_client_is_handling_channel (TpBaseClient *self,
     TpChannel *channel);
 
+_TP_AVAILABLE_IN_0_16
 void tp_base_client_delegate_channels_async (TpBaseClient *self,
     GList *channels,
     gint64 user_action_time,
@@ -202,6 +208,7 @@ void tp_base_client_delegate_channels_async (TpBaseClient *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_16
 gboolean tp_base_client_delegate_channels_finish (TpBaseClient *self,
     GAsyncResult *result,
     GPtrArray **delegated,
@@ -213,8 +220,11 @@ gboolean tp_base_client_get_uniquify_name (TpBaseClient *self);
 const gchar *tp_base_client_get_bus_name (TpBaseClient *self);
 const gchar *tp_base_client_get_object_path (TpBaseClient *self);
 TpDBusDaemon *tp_base_client_get_dbus_daemon (TpBaseClient *self);
-TpAccountManager *tp_base_client_get_account_manager (TpBaseClient *self)
-    _TP_GNUC_DEPRECATED;
+
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_16
+TpAccountManager *tp_base_client_get_account_manager (TpBaseClient *self);
+#endif
 
 void tp_base_client_unregister (TpBaseClient *self);
 

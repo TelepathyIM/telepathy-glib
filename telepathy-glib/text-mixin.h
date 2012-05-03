@@ -30,6 +30,8 @@
 
 G_BEGIN_DECLS
 
+#ifndef TP_DISABLE_DEPRECATED
+
 typedef struct _TpTextMixinClass TpTextMixinClass;
 typedef struct _TpTextMixinClassPrivate TpTextMixinClassPrivate;
 typedef struct _TpTextMixin TpTextMixin;
@@ -113,6 +115,8 @@ void tp_text_mixin_set_rescued (GObject *obj)
 
 void tp_text_mixin_iface_init (gpointer g_iface, gpointer iface_data)
     _TP_GNUC_DEPRECATED_FOR (tp_message_mixin_text_iface_init);
+
+#endif
 
 G_END_DECLS
 

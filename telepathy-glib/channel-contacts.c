@@ -1120,7 +1120,7 @@ _tp_channel_contacts_prepare_async (TpProxy *proxy,
   if (self->priv->cm_too_old_for_contacts)
     {
       g_simple_async_report_error_in_idle ((GObject *) self, callback,
-          user_data, TP_ERRORS, TP_ERROR_SOFTWARE_UPGRADE_REQUIRED,
+          user_data, TP_ERROR, TP_ERROR_SOFTWARE_UPGRADE_REQUIRED,
           "The Connection Manager does not implement the required telepathy "
           "specification (>= 0.23.4) to prepare TP_CHANNEL_FEATURE_CONTACTS.");
       return;

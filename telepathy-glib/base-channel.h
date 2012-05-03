@@ -26,6 +26,7 @@
 
 #include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/defs.h>
 
 #include "connection.h"
 
@@ -77,6 +78,7 @@ void tp_base_channel_reopened (TpBaseChannel *chan, TpHandle initiator);
 
 const gchar *tp_base_channel_get_object_path (TpBaseChannel *chan);
 TpBaseConnection *tp_base_channel_get_connection (TpBaseChannel *chan);
+_TP_AVAILABLE_IN_0_18
 TpHandle tp_base_channel_get_self_handle (TpBaseChannel *chan);
 TpHandle tp_base_channel_get_target_handle (TpBaseChannel *chan);
 TpHandle tp_base_channel_get_initiator (TpBaseChannel *chan);

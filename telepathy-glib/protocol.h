@@ -24,6 +24,7 @@
 
 #include <telepathy-glib/capabilities.h>
 #include <telepathy-glib/connection.h>
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
@@ -85,13 +86,16 @@ GQuark tp_protocol_get_feature_quark_parameters (void) G_GNUC_CONST;
 
 const TpConnectionManagerParam *tp_protocol_get_param (TpProtocol *self,
     const gchar *param);
+_TP_AVAILABLE_IN_0_18
 TpConnectionManagerParam *tp_protocol_dup_param (TpProtocol *self,
     const gchar *param);
 gboolean tp_protocol_has_param (TpProtocol *self,
     const gchar *param);
 gboolean tp_protocol_can_register (TpProtocol *self);
 GStrv tp_protocol_dup_param_names (TpProtocol *self) G_GNUC_WARN_UNUSED_RESULT;
+_TP_AVAILABLE_IN_0_18
 GList *tp_protocol_dup_params (TpProtocol *self) G_GNUC_WARN_UNUSED_RESULT;
+_TP_AVAILABLE_IN_0_18
 const TpConnectionManagerParam *tp_protocol_borrow_params (TpProtocol *self)
   G_GNUC_WARN_UNUSED_RESULT;
 
@@ -108,6 +112,7 @@ const gchar *tp_protocol_get_english_name (TpProtocol *self);
 const gchar *tp_protocol_get_icon_name (TpProtocol *self);
 TpCapabilities *tp_protocol_get_capabilities (TpProtocol *self);
 
+_TP_AVAILABLE_IN_0_16
 TpAvatarRequirements * tp_protocol_get_avatar_requirements (TpProtocol *self);
 
 G_END_DECLS

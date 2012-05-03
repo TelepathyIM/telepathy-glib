@@ -23,6 +23,7 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/_gen/genums.h>
 
 G_BEGIN_DECLS
@@ -56,6 +57,7 @@ typedef struct {
 
 void tp_svc_interface_set_dbus_properties_info (GType g_interface,
     TpDBusPropertiesMixinIfaceInfo *info);
+_TP_AVAILABLE_IN_0_16
 TpDBusPropertiesMixinIfaceInfo *tp_svc_interface_get_dbus_properties_info (
     GType g_interface);
 
@@ -124,6 +126,7 @@ void tp_dbus_properties_mixin_iface_init (gpointer g_iface,
 gboolean tp_dbus_properties_mixin_get (GObject *self,
     const gchar *interface_name, const gchar *property_name,
     GValue *value, GError **error);
+_TP_AVAILABLE_IN_0_16
 gboolean tp_dbus_properties_mixin_set (
     GObject *self,
     const gchar *interface_name,
@@ -143,11 +146,13 @@ void tp_dbus_properties_mixin_fill_properties_hash (GObject *object,
     ...)
   G_GNUC_NULL_TERMINATED;
 
+_TP_AVAILABLE_IN_0_16
 void tp_dbus_properties_mixin_emit_properties_changed (
     GObject *object,
     const gchar *interface_name,
     const gchar * const *properties);
 
+_TP_AVAILABLE_IN_0_16
 void tp_dbus_properties_mixin_emit_properties_changed_varargs (
     GObject *object,
     const gchar *interface_name,
