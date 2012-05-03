@@ -250,6 +250,13 @@ G_BEGIN_DECLS
 # define _TP_AVAILABLE_IN_1_0 /* nothing */
 #endif
 
+#if TP_VERSION_MAX_ALLOWED < _TP_VERSION_CUR_STABLE
+# define _TP_AVAILABLE_IN_UNRELEASED \
+  _TP_UNAVAILABLE (TP_MAJOR_VERSION, TP_MINOR_VERSION)
+#else
+# define _TP_AVAILABLE_IN_UNRELEASED /* nothing */
+#endif
+
 /* telepathy-glib-specific macros so our regression
  * tests can continue to test deprecated functionality, while avoiding
  * deprecated bits of other libraries */
