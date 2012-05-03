@@ -1840,11 +1840,6 @@ tp_intset_dump
 TpIntsetFastIter
 tp_intset_fast_iter_init
 tp_intset_fast_iter_next
-TP_INTSET_ITER_INIT
-TpIntsetIter
-tp_intset_iter_init
-tp_intset_iter_next
-tp_intset_iter_reset
 <SUBSECTION Standard>
 tp_intset_get_type
 <SUBSECTION Private>

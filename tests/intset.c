@@ -5,29 +5,6 @@
 #include <telepathy-glib/util.h>
 
 static void
-iterate_in_order (TpIntset *set)
-{
-  TpIntsetIter iter;
-  guint n = 0;
-  gint64 prev = (guint) -1;
-
-  tp_intset_iter_init (&iter, set);
-
-  while (tp_intset_iter_next (&iter))
-    {
-      g_assert (tp_intset_is_member (set, iter.element));
-
-      if (prev != (guint) -1)
-        g_assert_cmpuint (iter.element, >, prev);
-
-      prev = iter.element;
-      n++;
-    }
-
-  g_assert_cmpuint (n, ==, tp_intset_size (set));
-}
-
-static void
 iterate_fast (TpIntset *set)
 {
   TpIntsetFastIter iter;
@@ -49,7 +26,6 @@ static void
 test_iteration (TpIntset *set)
 {
   iterate_fast (set);
-  iterate_in_order (set);
 }
 
 int main (int argc, char **argv)
