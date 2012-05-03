@@ -25,6 +25,7 @@
 
 #include <telepathy-glib/cli-channel.h>
 #include <telepathy-glib/cli-misc.h>
+#include <telepathy-glib/contact.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
@@ -635,7 +636,8 @@ _tp_channel_group_improve_remove_error (TpChannel *self,
     {
     case TP_CHANNEL_GROUP_CHANGE_REASON_NONE:
       if (actor == self->priv->group_self_handle ||
-          actor == tp_connection_get_self_handle (self->priv->connection))
+          actor == tp_contact_get_handle (
+            tp_connection_get_self_contact (self->priv->connection)))
         {
           error->code = TP_ERROR_CANCELLED;
         }
@@ -825,7 +827,8 @@ handle_members_changed (TpChannel *self,
       tp_intset_remove (self->priv->group_remote_pending, handle);
 
       if (handle == self->priv->group_self_handle ||
-          handle == tp_connection_get_self_handle (self->priv->connection))
+          handle == tp_contact_get_handle (tp_connection_get_self_contact (
+              self->priv->connection)))
         {
           const gchar *error_detail = tp_asv_get_string (details, "error");
           const gchar *debug_message = tp_asv_get_string (details,

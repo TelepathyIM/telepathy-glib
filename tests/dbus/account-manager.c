@@ -216,6 +216,7 @@ teardown_service (Test *test,
 
   g_clear_object (&test->account1);
   g_clear_object (&test->account2);
+  g_clear_object (&test->account);
 
   test->service = NULL;
   teardown (test, data);
@@ -412,8 +413,10 @@ ensure_action (gpointer script_data,
   g_assert (test != NULL);
   g_assert (test->am != NULL);
   g_assert (tp_proxy_is_prepared (test->am, TP_ACCOUNT_MANAGER_FEATURE_CORE));
-  test->account = tp_account_manager_ensure_account (test->am,
-      path);
+  test->account = tp_client_factory_ensure_account (
+      tp_proxy_get_factory (test->am), path, NULL, &test->error);
+  g_assert_no_error (test->error);
+  g_assert (TP_IS_ACCOUNT (test->account));
 
   script_continue (script_data);
 }
@@ -561,11 +564,15 @@ create_tp_accounts (gpointer script_data,
 {
   Test *test = (Test *) script_data;
 
-  test->account1 = tp_account_manager_ensure_account (test->am, ACCOUNT1_PATH);
-  g_object_ref (test->account1);
+  test->account1 = tp_client_factory_ensure_account (
+      tp_proxy_get_factory (test->am), ACCOUNT1_PATH, NULL, &test->error);
+  g_assert_no_error (test->error);
+  g_assert (TP_IS_ACCOUNT (test->account1));
 
-  test->account2 = tp_account_manager_ensure_account (test->am, ACCOUNT2_PATH);
-  g_object_ref (test->account2);
+  test->account2 = tp_client_factory_ensure_account (
+      tp_proxy_get_factory (test->am), ACCOUNT2_PATH, NULL, &test->error);
+  g_assert_no_error (test->error);
+  g_assert (TP_IS_ACCOUNT (test->account2));
 
   script_continue (test);
 }

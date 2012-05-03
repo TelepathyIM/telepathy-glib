@@ -295,6 +295,7 @@ test_contact_info (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
   TpTestsContactsConnection *service_conn = f->service_conn;
+  TpBaseConnection *service_conn_base = (TpBaseConnection *) service_conn;
   TpConnection *client_conn = f->client_conn;
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
@@ -334,7 +335,7 @@ test_contact_info (Fixture *f,
 
   /* ... but first, get the SelfHandle contact without any features (regression
    * test for a related bug, fd.o #32191) */
-  handle = tp_connection_get_self_handle (client_conn);
+  handle = tp_base_connection_get_self_handle (service_conn_base);
   tp_connection_get_contacts_by_handle (client_conn,
       1, &handle,
       NULL,
@@ -350,7 +351,7 @@ test_contact_info (Fixture *f,
   g_main_loop_run (result.loop);
   g_assert_no_error (result.error);
 
-  handle = tp_connection_get_self_handle (client_conn);
+  handle = tp_base_connection_get_self_handle (service_conn_base);
   tp_connection_get_contacts_by_handle (client_conn,
       1, &handle,
       features,

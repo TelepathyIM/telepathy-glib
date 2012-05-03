@@ -66,25 +66,7 @@ G_STATIC_ASSERT (sizeof (gpointer) >= sizeof (gsize));
  * Since: 0.11.3
  */
 
-GType
-tp_intset_get_type (void)
-{
-  static GType type = 0;
-
-  if (G_UNLIKELY (type == 0))
-    {
-      /* The "TpIntSet" type has to be registered for backwards compatibility.
-       * The canonical name of the type is now "TpIntset"; see fdo#30134. */
-      g_boxed_type_register_static (g_intern_static_string ("TpIntSet"),
-          (GBoxedCopyFunc) tp_intset_copy,
-          (GBoxedFreeFunc) tp_intset_destroy);
-      type = g_boxed_type_register_static (g_intern_static_string ("TpIntset"),
-          (GBoxedCopyFunc) tp_intset_copy,
-          (GBoxedFreeFunc) tp_intset_destroy);
-    }
-
-  return type;
-}
+G_DEFINE_BOXED_TYPE (TpIntset, tp_intset, tp_intset_copy, tp_intset_destroy)
 
 /**
  * TpIntFunc:
@@ -96,96 +78,9 @@ tp_intset_get_type (void)
 /* (typedef, see header) */
 
 /**
- * TpIntSetIter: (skip)
- *
- * Before 0.11.16, this was the name for <type>TpIntsetIter</type>, but
- * it's now just a backwards compatibility typedef.
- *
- * Deprecated: since 0.UNRELEASED. Use #TpIntsetFastIter instead
- */
-
-/**
- * TpIntsetIter:
- * @set: The set iterated over.
- * @element: Must be (guint)(-1) before iteration starts. Set to the next
- *  element in the set by tp_intset_iter_next(); undefined after
- *  tp_intset_iter_next() returns %FALSE.
- *
- * A structure representing iteration over a set of integers. Must be
- * initialized with either TP_INTSET_ITER_INIT() or tp_intset_iter_init().
- *
- * Since 0.11.6, consider using #TpIntsetFastIter if iteration in
- * numerical order is not required.
- *
- * Before 0.11.16, this type was called <type>TpIntSetIter</type>,
- * which is now a backwards compatibility typedef.
- *
- * Deprecated: since 0.UNRELEASED. Use #TpIntsetFastIter instead
- */
-/* (public, see header) */
-
-/**
- * TP_INTSET_ITER_INIT:
- * @set: A set of integers
- *
- * A suitable static initializer for a #TpIntsetIter, to be used as follows:
- *
- * <informalexample><programlisting>
- * void
- * do_something (const TpIntset *intset)
- * {
- *   TpIntsetIter iter = TP_INTSET_ITER_INIT (intset);
- *   /<!-- -->* ... do something with iter ... *<!-- -->/
- * }
- * </programlisting></informalexample>
- *
- * Deprecated: since 0.UNRELEASED. Use #TpIntsetFastIter instead
- */
-/* (macro, see header) */
-
-/**
- * tp_intset_iter_init:
- * @iter: An integer set iterator to be initialized.
- * @set: An integer set to be used by that iterator
- *
- * Reset the iterator @iter to the beginning and make it iterate over @set.
- *
- * Deprecated: since 0.UNRELEASED. Use #TpIntsetFastIter instead
- */
-void
-tp_intset_iter_init (
-    TpIntsetIter *iter,
-    const TpIntset *set)
-{
-  g_return_if_fail (iter != NULL);
-  iter->set = set;
-  iter->element = (guint)(-1);
-}
-
-/**
- * tp_intset_iter_reset:
- * @iter: An integer set iterator to be reset.
- *
- * Reset the iterator @iter to the beginning. It must already be associated
- * with a set.
- *
- * Deprecated: since 0.UNRELEASED. Use #TpIntsetFastIter instead
- */
-void
-tp_intset_iter_reset (TpIntsetIter *iter)
-{
-  g_return_if_fail (iter != NULL);
-  g_return_if_fail (iter->set != NULL);
-  iter->element = (guint)(-1);
-}
-
-/**
  * TpIntset:
  *
  * Opaque type representing a set of unsigned integers.
- *
- * Before 0.11.16, this type was called <type>TpIntSet</type>, which is
- * now a backwards compatibility typedef.
  */
 
 struct _TpIntset
@@ -836,72 +731,10 @@ tp_intset_dump (const TpIntset *set)
 }
 
 /**
- * tp_intset_iter_next:
- * @iter: An iterator originally initialized with TP_INTSET_INIT(set)
- *
- * If there are integers in (@iter->set) higher than (@iter->element), set
- * (iter->element) to the next one and return %TRUE. Otherwise return %FALSE.
- *
- * Usage:
- *
- * <informalexample><programlisting>
- * TpIntsetIter iter = TP_INTSET_INIT (intset);
- * while (tp_intset_iter_next (&amp;iter))
- * {
- *   printf ("%u is in the intset\n", iter.element);
- * }
- * </programlisting></informalexample>
- *
- * Since 0.11.6, consider using #TpIntsetFastIter if iteration in
- * numerical order is not required.
- *
- * Returns: %TRUE if (@iter->element) has been advanced
- */
-gboolean
-tp_intset_iter_next (TpIntsetIter *iter)
-{
-  g_return_val_if_fail (iter != NULL, FALSE);
-  g_return_val_if_fail (iter->set != NULL, FALSE);
-
-  do
-    {
-      if (iter->element == (guint)(-1))
-        {
-          /* only just started */
-          iter->element = 0;
-        }
-      else
-        {
-          ++iter->element;
-        }
-
-      if (_tp_intset_is_member (iter->set, iter->element))
-        {
-          return TRUE;
-        }
-    }
-  while (iter->element < iter->set->largest_ever &&
-      iter->element != (guint)(-1));
-  return FALSE;
-}
-
-/**
- * TpIntSetFastIter: (skip)
- *
- * Before 0.11.16, this was the name for <type>TpIntsetFastIter</type>,
- * but it's now just a backwards compatibility typedef.
- *
- * Deprecated: since 0.UNRELEASED. Use #TpIntsetFastIter instead
- */
-
-/**
  * TpIntsetFastIter:
  *
  * An opaque structure representing iteration in undefined order over a set of
  * integers. Must be initialized with tp_intset_fast_iter_init().
- *
- * Before 0.11.16, this type was called <type>TpIntSetFastIter</type>,
- * which is now a backwards compatibility typedef.
  *
  * Usage is similar to #GHashTableIter:
  *

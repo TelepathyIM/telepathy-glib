@@ -77,10 +77,11 @@ setup (Test *test,
   g_assert (test->account_manager != NULL);
 
    /* Create client-side Account object */
-  test->account = tp_account_manager_ensure_account (test->account_manager,
-      ACCOUNT_PATH);
+  test->account = tp_client_factory_ensure_account (
+      tp_proxy_get_factory (test->account_manager), ACCOUNT_PATH, NULL,
+      &test->error);
+  g_assert_no_error (test->error);
   g_assert (test->account != NULL);
-  g_object_ref (test->account);
 
   /* Create (service and client sides) connection objects */
   tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,

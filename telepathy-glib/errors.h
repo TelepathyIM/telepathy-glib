@@ -34,7 +34,6 @@ GQuark tp_error_quark (void);
 
 #define TP_ERROR_PREFIX "im.telepathy1.Error"
 
-#define TP_ERRORS TP_ERROR
 #define TP_ERROR (tp_error_quark ())
 
 void tp_g_set_error_invalid_handle_type (guint type, GError **error);

@@ -109,16 +109,6 @@ gboolean tp_channel_dispatch_operation_handle_with_finish (
     GAsyncResult *result,
     GError **error);
 
-void tp_channel_dispatch_operation_claim_async (
-    TpChannelDispatchOperation *self,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-
-gboolean tp_channel_dispatch_operation_claim_finish (
-    TpChannelDispatchOperation *self,
-    GAsyncResult *result,
-    GError **error);
-
 void tp_channel_dispatch_operation_handle_with_time_async (
     TpChannelDispatchOperation *self,
     const gchar *handler,

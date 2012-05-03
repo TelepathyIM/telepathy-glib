@@ -1840,11 +1840,6 @@ tp_intset_dump
 TpIntsetFastIter
 tp_intset_fast_iter_init
 tp_intset_fast_iter_next
-TP_INTSET_ITER_INIT
-TpIntsetIter
-tp_intset_iter_init
-tp_intset_iter_next
-tp_intset_iter_reset
 <SUBSECTION Standard>
 tp_intset_get_type
 <SUBSECTION Private>
@@ -2036,8 +2031,6 @@ TP_ERROR_STR_CAPTCHA_NOT_SUPPORTED
 <SUBSECTION Standard>
 tp_error_get_type
 tp_error_quark
-<SUBSECTION Private>
-TP_ERRORS
 </SECTION>
 
 <SECTION>
@@ -3275,7 +3268,6 @@ tp_connection_get_status
 tp_connection_get_connection_manager_name
 tp_connection_get_protocol_name
 tp_connection_get_self_contact
-tp_connection_get_self_handle
 TpConnectionRequestHandlesCb
 tp_connection_request_handles
 tp_connection_init_known_interfaces
@@ -4097,7 +4089,6 @@ tp_account_manager_set_default
 tp_account_manager_dup
 tp_account_manager_create_account_async
 tp_account_manager_create_account_finish
-tp_account_manager_ensure_account
 tp_account_manager_get_usable_accounts
 tp_account_manager_get_most_available_presence
 tp_account_manager_set_all_requested_presences
@@ -4268,8 +4259,6 @@ tp_channel_dispatch_operation_handle_with_async
 tp_channel_dispatch_operation_handle_with_finish
 tp_channel_dispatch_operation_handle_with_time_async
 tp_channel_dispatch_operation_handle_with_time_finish
-tp_channel_dispatch_operation_claim_async
-tp_channel_dispatch_operation_claim_finish
 tp_channel_dispatch_operation_claim_with_async
 tp_channel_dispatch_operation_claim_with_finish
 tp_channel_dispatch_operation_close_channels_async
