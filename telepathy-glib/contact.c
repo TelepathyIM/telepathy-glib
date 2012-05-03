@@ -538,7 +538,7 @@ get_feature (GQuark feature)
  *
  * Returns: %TRUE if @self has been set up to track the feature @feature
  *
- * Since: 0.7.18
+ * Since: 1.0
  */
 gboolean
 tp_contact_has_feature (TpContact *self,
