@@ -31,3 +31,6 @@ API/Behaviour changes
  - TpAutomaticClientFactory now only has CORE features by default, other
    features must be added explicitly by the user using
    tp_client_factory_add_*_features().
+
+ - TpChannel:target-contact and TpChannel:initiator-contact are now prepared
+   as part of TP_CHANNEL_FEATURE_CORE instead of TP_CHANNEL_FEATURE_CONTACTS.

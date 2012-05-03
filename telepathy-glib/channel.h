@@ -134,6 +134,10 @@ TpHandle tp_channel_get_initiator_handle (TpChannel *self);
 _TP_DEPRECATED_IN_0_20_FOR (tp_channel_get_initiator_contact)
 const gchar * tp_channel_get_initiator_identifier (TpChannel *self);
 #endif
+_TP_AVAILABLE_IN_0_16
+TpContact *tp_channel_get_target_contact (TpChannel *self);
+_TP_AVAILABLE_IN_0_16
+TpContact *tp_channel_get_initiator_contact (TpChannel *self);
 
 #define TP_CHANNEL_FEATURE_GROUP \
   tp_channel_get_feature_quark_group ()
@@ -179,10 +183,6 @@ gboolean tp_channel_join_finish (TpChannel *self,
 _TP_AVAILABLE_IN_0_16
 GQuark tp_channel_get_feature_quark_contacts (void) G_GNUC_CONST;
 
-_TP_AVAILABLE_IN_0_16
-TpContact *tp_channel_get_target_contact (TpChannel *self);
-_TP_AVAILABLE_IN_0_16
-TpContact *tp_channel_get_initiator_contact (TpChannel *self);
 _TP_AVAILABLE_IN_0_16
 TpContact *tp_channel_group_get_self_contact (TpChannel *self);
 _TP_AVAILABLE_IN_0_16

@@ -111,7 +111,6 @@ void _tp_channel_get_group_properties (TpChannel *self);
 
 /* channel-contacts.c internals */
 
-void _tp_channel_contacts_init (TpChannel *self);
 void _tp_channel_contacts_group_init (TpChannel *self, GHashTable *identifiers);
 void _tp_channel_contacts_members_changed (TpChannel *self,
     const GArray *added, const GArray *removed, const GArray *local_pending,

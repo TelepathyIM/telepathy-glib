@@ -155,34 +155,6 @@ dup_owners_table (TpChannel *self,
 }
 
 void
-_tp_channel_contacts_init (TpChannel *self)
-{
-  /* Create TpContact objects if we have them for free */
-
-  g_assert (self->priv->target_contact == NULL);
-  g_assert (self->priv->initiator_contact == NULL);
-
-  if (self->priv->handle != 0 && self->priv->identifier != NULL &&
-      self->priv->handle_type == TP_HANDLE_TYPE_CONTACT)
-    {
-      self->priv->target_contact = tp_client_factory_ensure_contact (
-          tp_proxy_get_factory (self->priv->connection), self->priv->connection,
-          self->priv->handle, self->priv->identifier);
-    }
-
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  if (tp_channel_get_initiator_handle (self) != 0 &&
-      !tp_str_empty (tp_channel_get_initiator_identifier (self)))
-    {
-      self->priv->initiator_contact = tp_client_factory_ensure_contact (
-          tp_proxy_get_factory (self->priv->connection), self->priv->connection,
-          tp_channel_get_initiator_handle (self),
-          tp_channel_get_initiator_identifier (self));
-    }
-  G_GNUC_END_IGNORE_DEPRECATIONS
-}
-
-void
 _tp_channel_contacts_group_init (TpChannel *self,
     GHashTable *identifiers)
 {
@@ -1101,12 +1073,6 @@ _tp_channel_contacts_prepare_async (TpProxy *proxy,
   contacts = g_ptr_array_new ();
 
   /* Collect all the TpContacts we have for this channel */
-  if (self->priv->target_contact != NULL)
-    g_ptr_array_add (contacts, self->priv->target_contact);
-
-  if (self->priv->initiator_contact != NULL)
-    g_ptr_array_add (contacts, self->priv->initiator_contact);
-
   if (self->priv->group_self_contact != NULL)
     g_ptr_array_add (contacts, self->priv->group_self_contact);
 

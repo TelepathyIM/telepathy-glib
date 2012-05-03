@@ -880,10 +880,99 @@ _tp_channel_prepare_connection (TpChannel *self)
 }
 
 static void
+upgrade_contacts_cb (TpConnection *connection,
+    guint n_contacts,
+    TpContact * const *contacts,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpChannel *self = (TpChannel *) weak_object;
+
+  if (error != NULL)
+    {
+      _tp_channel_abort_introspection (self, "Upgrading contacts failed",
+          error);
+      return;
+    }
+
+  _tp_channel_continue_introspection (self);
+}
+
+static void
 _tp_channel_create_contacts (TpChannel *self)
 {
-  _tp_channel_contacts_init (self);
-  _tp_channel_continue_introspection (self);
+  GPtrArray *contacts;
+  TpHandle initiator_handle;
+  const gchar *initiator_id;
+
+  g_assert (self->priv->target_contact == NULL);
+  g_assert (self->priv->initiator_contact == NULL);
+
+  contacts = g_ptr_array_new ();
+
+  /* Create target contact */
+  if (self->priv->handle_type == TP_HANDLE_TYPE_CONTACT)
+    {
+      if (self->priv->handle == 0 || self->priv->identifier == NULL)
+        {
+          GError e = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+              "Channel with HandleType CONTACT must have a valid handle "
+              "and identifier" };
+          _tp_channel_abort_introspection (self, e.message, &e);
+          return;
+        }
+
+      self->priv->target_contact = tp_client_factory_ensure_contact (
+          tp_proxy_get_factory (self->priv->connection), self->priv->connection,
+          self->priv->handle, self->priv->identifier);
+      g_ptr_array_add (contacts, self->priv->target_contact);
+    }
+
+  /* Create initiator contact */
+  initiator_handle = tp_asv_get_uint32 (self->priv->channel_properties,
+      TP_PROP_CHANNEL_INITIATOR_HANDLE, NULL);
+  initiator_id = tp_asv_get_string (self->priv->channel_properties,
+      TP_PROP_CHANNEL_INITIATOR_ID);
+
+  if (initiator_handle != 0 && !tp_str_empty (initiator_id))
+    {
+      self->priv->initiator_contact = tp_client_factory_ensure_contact (
+          tp_proxy_get_factory (self->priv->connection), self->priv->connection,
+          initiator_handle, initiator_id);
+      g_ptr_array_add (contacts, self->priv->initiator_contact);
+    }
+  else if ((initiator_handle == 0) != (tp_str_empty (initiator_id)))
+    {
+      GError e = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+          "Channel must have both initiator handle and identifier, "
+          "or none of them" };
+      _tp_channel_abort_introspection (self, e.message, &e);
+      return;
+    }
+
+  /* Prepare initiator and target contacts */
+  if (contacts->len > 0)
+    {
+      GArray *features;
+
+      features = tp_client_factory_dup_contact_features (
+          tp_proxy_get_factory (self->priv->connection),
+          self->priv->connection);
+
+      tp_connection_upgrade_contacts (self->priv->connection,
+          contacts->len, (TpContact **) contacts->pdata,
+          (GQuark *) features->data,
+          upgrade_contacts_cb, NULL, NULL, (GObject *) self);
+
+      g_array_unref (features);
+    }
+  else
+    {
+      _tp_channel_continue_introspection (self);
+    }
+
+  g_ptr_array_unref (contacts);
 }
 
 static void
@@ -1312,7 +1401,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * %TRUE if this channel was created in response to a local request, such
    * as a call to tp_account_channel_request_create_channel_async(). %FALSE
    * if this channel was initiated by a remote contact
-   * (the #TpChannel:initiator-handle), or if it appeared as a side-effect
+   * (the #TpChannel:initiator-contact), or if it appeared as a side-effect
    * of some other action.
    *
    * For instance, this is %FALSE on incoming calls and file transfers,
@@ -1482,8 +1571,11 @@ tp_channel_class_init (TpChannelClass *klass)
    * other channels without a single remote contact, %NULL.
    *
    * This is not guaranteed to be set until tp_proxy_prepare_async() has
-   * finished preparing %TP_CHANNEL_FEATURE_CONTACTS; until then, it may be
+   * finished preparing %TP_CHANNEL_FEATURE_CORE; until then, it may be
    * %NULL.
+   *
+   * The #TpContact object is guaranteed to have all of the features previously
+   * passed to tp_client_factory_add_contact_features() prepared.
    *
    * Since: 0.15.6
    */
@@ -1512,8 +1604,11 @@ tp_channel_class_init (TpChannelClass *klass)
    * side-effect of connecting to the server), this property may be %NULL.
    *
    * This is not guaranteed to be set until tp_proxy_prepare_async() has
-   * finished preparing %TP_CHANNEL_FEATURE_CONTACTS; until then, it may be
+   * finished preparing %TP_CHANNEL_FEATURE_CORE; until then, it may be
    * %NULL.
+   *
+   * The #TpContact object is guaranteed to have all of the features previously
+   * passed to tp_client_factory_add_contact_features() prepared.
    *
    * Since: 0.15.6
    */
