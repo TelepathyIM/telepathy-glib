@@ -62,8 +62,10 @@ GType tp_future_account_get_type (void);
                               TpFutureAccountClass))
 
 _TP_AVAILABLE_IN_0_20
-TpFutureAccount * tp_future_account_new (TpAccountManager *account_manager,
-    const gchar *manager, const gchar *protocol) G_GNUC_WARN_UNUSED_RESULT;
+TpFutureAccount * tp_future_account_new (
+    TpAccountManager *account_manager,
+    const gchar *manager,
+    const gchar *protocol) G_GNUC_WARN_UNUSED_RESULT;
 
 _TP_AVAILABLE_IN_0_20
 TpFutureAccount * tp_future_account_new_from_protocol (
@@ -111,7 +113,8 @@ void tp_future_account_set_avatar (TpFutureAccount *self,
 /* parameters */
 _TP_AVAILABLE_IN_0_20
 void tp_future_account_set_parameter (TpFutureAccount *self,
-    const gchar *key, GVariant *value);
+    const gchar *key,
+    GVariant *value);
 
 _TP_AVAILABLE_IN_0_20
 void tp_future_account_unset_parameter (TpFutureAccount *self,
@@ -119,16 +122,19 @@ void tp_future_account_unset_parameter (TpFutureAccount *self,
 
 _TP_AVAILABLE_IN_0_20
 void tp_future_account_set_parameter_string (TpFutureAccount *self,
-    const gchar *key, const gchar *value);
+    const gchar *key,
+    const gchar *value);
 
 /* create it */
 _TP_AVAILABLE_IN_0_20
 void tp_future_account_create_account_async (TpFutureAccount *self,
-    GAsyncReadyCallback callback, gpointer user_data);
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
 _TP_AVAILABLE_IN_0_20
 TpAccount * tp_future_account_create_account_finish (TpFutureAccount *self,
-    GAsyncResult *result, GError **error);
+    GAsyncResult *result,
+    GError **error);
 
 G_END_DECLS
 
