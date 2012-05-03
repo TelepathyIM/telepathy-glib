@@ -26,6 +26,7 @@
 
 #include <telepathy-glib/capabilities.h>
 #include <telepathy-glib/connection.h>
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/handle.h>
 
 #include <telepathy-glib/_gen/genums.h>
@@ -99,11 +100,13 @@ GQuark tp_contact_get_feature_quark_contact_groups (void) G_GNUC_CONST;
 GQuark tp_contact_get_feature_quark_contact_blocking (void) G_GNUC_CONST;
 
 /* Basic functionality, always available */
+_TP_AVAILABLE_IN_0_20
 TpAccount *tp_contact_get_account (TpContact *self);
 TpConnection *tp_contact_get_connection (TpContact *self);
 TpHandle tp_contact_get_handle (TpContact *self);
 const gchar *tp_contact_get_identifier (TpContact *self);
 gboolean tp_contact_has_feature (TpContact *self, GQuark feature);
+_TP_AVAILABLE_IN_0_20
 gboolean tp_contact_is_self (TpContact *self);
 
 /* TP_CONTACT_FEATURE_ALIAS */
@@ -197,6 +200,7 @@ TpContact *tp_connection_dup_contact_if_possible (TpConnection *connection,
 
 /* TP_CONTACT_FEATURE_CONTACT_BLOCKING */
 
+_TP_AVAILABLE_IN_0_18
 gboolean tp_contact_is_blocked (TpContact *self);
 
 G_END_DECLS

@@ -2063,7 +2063,7 @@ contacts_context_complete_in_idle (ContactsContext *c)
  * @contacts will contain contact objects for those IDs that were
  * valid (it may be empty), and @failed_id_errors will map the IDs
  * that were not valid to a corresponding #GError (if the connection manager
- * complies with the Telepathy spec, it will have domain %TP_ERRORS and code
+ * complies with the Telepathy spec, it will have domain %TP_ERROR and code
  * %TP_ERROR_INVALID_HANDLE).
  *
  * If an unrecoverable error occurs (for instance, if @connection
@@ -3500,7 +3500,7 @@ contacts_get_attributes (ContactsContext *context)
   if (!tp_proxy_has_interface_by_id (context->connection,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
     {
-      GError *error = g_error_new_literal (TP_ERRORS,
+      GError *error = g_error_new_literal (TP_ERROR,
           TP_ERROR_SOFTWARE_UPGRADE_REQUIRED,
           "Connection does not implement CONTACTS interface. Legacy CMs "
           "are not supported anymore");
@@ -3813,7 +3813,7 @@ contacts_requested_one_handle (TpConnection *connection,
       g_ptr_array_add (c->contacts, contact);
       c->next_index++;
     }
-  else if (error->domain == TP_ERRORS &&
+  else if (error->domain == TP_ERROR &&
       (error->code == TP_ERROR_INVALID_HANDLE ||
        error->code == TP_ERROR_NOT_AVAILABLE ||
        error->code == TP_ERROR_INVALID_ARGUMENT))
@@ -3884,7 +3884,7 @@ contacts_requested_handles (TpConnection *connection,
         }
       contacts_get_attributes (c);
     }
-  else if (error->domain == TP_ERRORS &&
+  else if (error->domain == TP_ERROR &&
       (error->code == TP_ERROR_INVALID_HANDLE ||
        error->code == TP_ERROR_NOT_AVAILABLE ||
        error->code == TP_ERROR_INVALID_ARGUMENT))

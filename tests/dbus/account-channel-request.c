@@ -257,7 +257,7 @@ test_handle_create_fail (Test *test,
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
   g_assert (test->channel == NULL);
 
   /* The request had the properties we wanted */
@@ -297,7 +297,7 @@ test_handle_proceed_fail (Test *test,
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
   g_assert (test->channel == NULL);
 
   /* The request had the properties we wanted */
@@ -332,7 +332,7 @@ test_handle_cr_failed (Test *test,
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
   g_assert (test->channel == NULL);
 
   /* The request had the properties we wanted */
@@ -379,7 +379,7 @@ test_ft_props (Test *test,
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
   g_assert (test->channel == NULL);
 
   /* The request had the properties we wanted */
@@ -466,7 +466,7 @@ test_handle_ensure_success (Test *test,
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_YOURS);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_NOT_YOURS);
 
   g_object_unref (alice);
 
@@ -532,7 +532,7 @@ test_handle_cancel_after_create (Test *test,
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_CANCELLED);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_CANCELLED);
 }
 
 /* Test if re-handled is properly fired when a channel is
@@ -903,7 +903,7 @@ test_forget_create_fail (Test *test,
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
   g_assert (test->channel == NULL);
 }
 
@@ -929,7 +929,7 @@ test_forget_proceed_fail (Test *test,
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
   g_assert (test->channel == NULL);
 }
 
@@ -955,7 +955,7 @@ test_forget_cr_failed (Test *test,
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
   g_assert (test->channel == NULL);
 }
 
@@ -1002,7 +1002,7 @@ test_forget_cancel_after_create (Test *test,
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_CANCELLED);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_CANCELLED);
 }
 
 /* Request and observe tests */
@@ -1068,7 +1068,7 @@ test_observe_create_fail (Test *test,
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
   g_assert (test->channel == NULL);
 }
 
@@ -1094,7 +1094,7 @@ test_observe_proceed_fail (Test *test,
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
   g_assert (test->channel == NULL);
 }
 
@@ -1120,7 +1120,7 @@ test_observe_cr_failed (Test *test,
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
   g_assert (test->channel == NULL);
 }
 
@@ -1207,7 +1207,7 @@ test_observe_cancel_after_create (Test *test,
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_CANCELLED);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_CANCELLED);
 }
 
 int

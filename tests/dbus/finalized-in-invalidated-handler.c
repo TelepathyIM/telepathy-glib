@@ -34,7 +34,7 @@ on_invalidated (TpChannel *chan,
 {
   TpChannel **client = user_data;
 
-  MYASSERT (domain == TP_ERRORS, ": domain \"%s\"",
+  MYASSERT (domain == TP_ERROR, ": domain \"%s\"",
       g_quark_to_string (domain));
   MYASSERT (code == TP_ERROR_CANCELLED, ": code %u", code);
 

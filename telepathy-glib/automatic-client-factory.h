@@ -23,6 +23,7 @@
 
 #include <telepathy-glib/call-channel.h>
 #include <telepathy-glib/dbus-tube-channel.h>
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/file-transfer-channel.h>
 #include <telepathy-glib/client-factory.h>
 #include <telepathy-glib/stream-tube-channel.h>
@@ -43,6 +44,7 @@ struct _TpAutomaticClientFactory {
     TpClientFactory parent;
 };
 
+_TP_AVAILABLE_IN_0_16
 GType tp_automatic_client_factory_get_type (void);
 
 #define TP_TYPE_AUTOMATIC_CLIENT_FACTORY \

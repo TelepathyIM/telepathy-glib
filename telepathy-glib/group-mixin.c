@@ -541,7 +541,7 @@ tp_group_mixin_add_members (GObject *obj,
           DEBUG ("handle %u cannot be added to members without "
               "GROUP_FLAG_CAN_ADD", handle);
 
-          g_set_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
+          g_set_error (error, TP_ERROR, TP_ERROR_PERMISSION_DENIED,
               "handle %u cannot be added to members without "
               "GROUP_FLAG_CAN_ADD", handle);
 
@@ -563,7 +563,7 @@ tp_group_mixin_add_members (GObject *obj,
 
       if (mixin_cls->add_member == NULL)
         {
-          g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
               "Adding members to this Group channel is not possible");
           return FALSE;
         }
@@ -649,7 +649,7 @@ tp_group_mixin_remove_members (GObject *obj,
               DEBUG ("handle %u cannot be removed from members without "
                   "GROUP_FLAG_CAN_REMOVE", handle);
 
-              g_set_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
+              g_set_error (error, TP_ERROR, TP_ERROR_PERMISSION_DENIED,
                   "handle %u cannot be removed from members without "
                   "GROUP_FLAG_CAN_REMOVE", handle);
 
@@ -663,7 +663,7 @@ tp_group_mixin_remove_members (GObject *obj,
               DEBUG ("handle %u cannot be removed from remote pending "
                   "without GROUP_FLAG_CAN_RESCIND", handle);
 
-              g_set_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
+              g_set_error (error, TP_ERROR, TP_ERROR_PERMISSION_DENIED,
                   "handle %u cannot be removed from remote pending without "
                   "GROUP_FLAG_CAN_RESCIND", handle);
 
@@ -705,7 +705,7 @@ tp_group_mixin_remove_members (GObject *obj,
         }
       else
         {
-          g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
               "Removing contacts from this Group channel is not possible");
           return FALSE;
         }
@@ -926,7 +926,7 @@ tp_group_mixin_get_handle_owners (GObject *obj,
   if ((mixin->group_flags &
         TP_CHANNEL_GROUP_FLAG_CHANNEL_SPECIFIC_HANDLES) == 0)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "channel doesn't have channel specific handles");
 
       return FALSE;
@@ -946,7 +946,7 @@ tp_group_mixin_get_handle_owners (GObject *obj,
 
       if (!tp_handle_set_is_member (mixin->members, local_handle))
         {
-          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
               "handle %u is not a member", local_handle);
 
           g_array_unref (*ret);
@@ -2063,7 +2063,7 @@ tp_external_group_mixin_get_dbus_property (GObject *object,
     \
     if (var == NULL) \
       { \
-        GError na = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE, "I'm sure I " \
+        GError na = { TP_ERROR, TP_ERROR_NOT_AVAILABLE, "I'm sure I " \
                       "had a group object around here somewhere?" };\
         \
         dbus_g_method_return_error (context, &na); \

@@ -762,7 +762,7 @@ tp_call_content_remove (TpSvcCallContent *content,
 
   if (!tp_base_call_channel_has_mutable_contents (self->priv->channel))
     {
-      GError error = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      GError error = { TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
           "Contents are not mutable" };
       dbus_g_method_return_error (context, &error);
       return;

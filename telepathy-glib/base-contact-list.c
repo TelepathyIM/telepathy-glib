@@ -539,7 +539,7 @@ tp_base_contact_list_fail_blocked_contact_requests (
 static void
 tp_base_contact_list_free_contents (TpBaseContactList *self)
 {
-  GError error = { TP_ERRORS, TP_ERROR_DISCONNECTED,
+  GError error = { TP_ERROR, TP_ERROR_DISCONNECTED,
       "Disconnected before blocked contacts were retrieved" };
 
   tp_base_contact_list_fail_blocked_contact_requests (self, &error);
@@ -751,7 +751,7 @@ tp_base_contact_list_download_async_default (TpBaseContactList *self,
     gpointer user_data)
 {
   g_simple_async_report_error_in_idle (G_OBJECT (self), callback,
-      user_data, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      user_data, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
       "This CM does not implement Download");
 }
 
@@ -3824,7 +3824,7 @@ tp_base_contact_list_check_list_change (TpBaseContactList *self,
 
   if (!tp_base_contact_list_can_change_contact_list (self))
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
           "Cannot change subscriptions");
       return FALSE;
     }
@@ -3843,7 +3843,7 @@ tp_base_contact_list_check_group_change (TpBaseContactList *self,
   if (tp_base_contact_list_get_group_storage (self) ==
       TP_CONTACT_METADATA_STORAGE_TYPE_NONE)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
           "Cannot change group memberships");
       return FALSE;
     }
@@ -4565,7 +4565,7 @@ tp_base_contact_list_mixin_rename_group (
 
   if (g_hash_table_lookup (self->priv->groups, old_normalized) == NULL)
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_DOES_NOT_EXIST,
+      g_set_error (&error, TP_ERROR, TP_ERROR_DOES_NOT_EXIST,
           "Group '%s' does not exist", before);
       g_free (old_normalized);
       goto sync_exit;
@@ -4575,7 +4575,7 @@ tp_base_contact_list_mixin_rename_group (
 
   if (g_hash_table_lookup (self->priv->groups, new_normalized) != NULL)
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      g_set_error (&error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "Group '%s' already exists", new_normalized);
       g_free (new_normalized);
       goto sync_exit;
@@ -4742,7 +4742,7 @@ tp_base_contact_list_mixin_groups_iface_init (
 #define ERROR_IF_BLOCKING_NOT_SUPPORTED(self, context) \
   if (!self->priv->svc_contact_blocking) \
     { \
-      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED, \
+      GError e = { TP_ERROR, TP_ERROR_NOT_IMPLEMENTED, \
           "ContactBlocking is not supported on this connection" }; \
       dbus_g_method_return_error (context, &e); \
       return; \
@@ -4784,7 +4784,7 @@ tp_base_contact_list_mixin_request_blocked_contacts (
 
     default:
       {
-        GError broken = { TP_ERRORS, TP_ERROR_CONFUSED,
+        GError broken = { TP_ERROR, TP_ERROR_CONFUSED,
             "My internal list of blocked contacts is inconsistent! "
             "I apologise for any inconvenience caused." };
         dbus_g_method_return_error (context, &broken);
@@ -5075,7 +5075,7 @@ tp_base_contact_list_get_state (TpBaseContactList *self,
       TP_CONTACT_LIST_STATE_FAILURE);
 
   if (self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS)
-    g_set_error (error, TP_ERRORS, TP_ERROR_NOT_YET,
+    g_set_error (error, TP_ERROR, TP_ERROR_NOT_YET,
         "Contact list not downloaded yet");
 
   return self->priv->state;
@@ -5101,7 +5101,7 @@ tp_base_contact_list_get_connection (TpBaseContactList *self,
 
   if (self->priv->conn == NULL)
     {
-      g_set_error_literal (error, TP_ERRORS, TP_ERROR_DISCONNECTED,
+      g_set_error_literal (error, TP_ERROR, TP_ERROR_DISCONNECTED,
           "Connection is no longer connected");
       return NULL;
     }

@@ -171,7 +171,7 @@ main (int argc,
       char **argv)
 {
   GObject *b_stub, *i_stub, *j_stub, *k_stub;
-  GError err = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT, "Because I said so" };
+  GError err = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT, "Because I said so" };
   TpProxyPendingCall *pc;
   gpointer tmp_obj;
 

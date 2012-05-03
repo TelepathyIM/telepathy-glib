@@ -70,7 +70,7 @@
  * indicates that the channel request no longer exists).
  *
  * On failure, the #TpProxy::invalidated signal will be emitted with some
- * other suitable error, usually from the %TP_ERRORS domain.
+ * other suitable error, usually from the %TP_ERROR domain.
  *
  * If the channel dispatcher crashes or exits, the #TpProxy::invalidated
  * signal will be emitted with the domain %TP_DBUS_ERRORS and the error code
@@ -450,7 +450,7 @@ tp_channel_request_init_known_interfaces (void)
       tp_proxy_or_subclass_hook_on_interface_add (tp_type,
           tp_cli_channel_request_add_signals);
       tp_proxy_subclass_add_error_mapping (tp_type,
-          TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
+          TP_ERROR_PREFIX, TP_ERROR, TP_TYPE_ERROR);
 
       g_once_init_leave (&once, 1);
     }

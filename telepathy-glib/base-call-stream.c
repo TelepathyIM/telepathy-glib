@@ -777,7 +777,7 @@ tp_base_call_stream_request_receiving (TpSvcCallStream *iface,
   g_object_get (self, "can-request-receiving", &can_request_receiving, NULL);
   if (!can_request_receiving)
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_CAPABLE,
+      g_set_error (&error, TP_ERROR, TP_ERROR_NOT_CAPABLE,
           "The contact does not support requesting to receive");
       goto error;
     }
@@ -785,14 +785,14 @@ tp_base_call_stream_request_receiving (TpSvcCallStream *iface,
   if (!g_hash_table_lookup_extended (self->priv->remote_members,
           GUINT_TO_POINTER (contact), NULL, (gpointer *) &remote_sending_state))
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Contact %u is not member of this stream", contact);
       goto error;
     }
 
   if (klass->request_receiving == NULL)
     {
-      g_set_error_literal (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      g_set_error_literal (&error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
           "This CM does not implement request_receiving");
       goto error;
     }
@@ -907,7 +907,7 @@ _tp_base_call_stream_set_sending (TpBaseCallStream *self,
 
   if (klass->set_sending == NULL)
     {
-      g_set_error_literal (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      g_set_error_literal (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
         "This CM does not implement SetSending");
       return FALSE;
     }

@@ -1202,7 +1202,7 @@ tp_call_content_media_description_accept (TpSvcCallContentMediaDescription *ifac
       TP_ARRAY_TYPE_CODEC_LIST);
   if (!codecs || codecs->len == 0)
     {
-      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                        "Codecs can not be empty" };
       dbus_g_method_return_error (context, &error);
       return;
@@ -1213,7 +1213,7 @@ tp_call_content_media_description_accept (TpSvcCallContentMediaDescription *ifac
       &valid);
   if (valid && remote_contact != self->priv->remote_contact)
     {
-      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                        "Remote contact must the same as in request." };
       dbus_g_method_return_error (context, &error);
       return;
@@ -1240,7 +1240,7 @@ tp_call_content_media_description_reject (TpSvcCallContentMediaDescription *ifac
 
   if (!self->priv->has_remote_information)
     {
-      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                        "Can not reject an empty Media Description" };
       dbus_g_method_return_error (context, &error);
       return;
@@ -1255,7 +1255,7 @@ tp_call_content_media_description_reject (TpSvcCallContentMediaDescription *ifac
     }
 
   g_simple_async_result_set_error (self->priv->result,
-      TP_ERRORS, TP_ERROR_MEDIA_CODECS_INCOMPATIBLE,
+      TP_ERROR, TP_ERROR_MEDIA_CODECS_INCOMPATIBLE,
       "Media description was rejected");
   g_simple_async_result_complete (self->priv->result);
   g_clear_object (&self->priv->result);

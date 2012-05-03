@@ -23,6 +23,7 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/handle.h>
 
 G_BEGIN_DECLS
@@ -42,6 +43,7 @@ struct _TpRoomInfo {
   TpRoomInfoPriv *priv;
 };
 
+_TP_AVAILABLE_IN_0_20
 GType tp_room_info_get_type (void);
 
 /* TYPE MACROS */
@@ -66,19 +68,30 @@ GType tp_room_info_get_type (void);
     TP_TYPE_ROOM_INFO, \
     TpRoomInfoClass))
 
+_TP_AVAILABLE_IN_0_20
 TpHandle tp_room_info_get_handle (TpRoomInfo *self);
+_TP_AVAILABLE_IN_0_20
 const gchar * tp_room_info_get_channel_type (TpRoomInfo *self);
+_TP_AVAILABLE_IN_0_20
 const gchar *tp_room_info_get_handle_name (TpRoomInfo *self);
+_TP_AVAILABLE_IN_0_20
 const gchar *tp_room_info_get_name (TpRoomInfo *self);
+_TP_AVAILABLE_IN_0_20
 const gchar *tp_room_info_get_description (TpRoomInfo *self);
+_TP_AVAILABLE_IN_0_20
 const gchar *tp_room_info_get_subject (TpRoomInfo *self);
+_TP_AVAILABLE_IN_0_20
 guint tp_room_info_get_members_count (TpRoomInfo *self,
     gboolean *known);
+_TP_AVAILABLE_IN_0_20
 gboolean tp_room_info_get_requires_password (TpRoomInfo *self,
     gboolean *known);
+_TP_AVAILABLE_IN_0_20
 gboolean tp_room_info_get_invite_only (TpRoomInfo *self,
     gboolean *known);
+_TP_AVAILABLE_IN_0_20
 const gchar *tp_room_info_get_room_id (TpRoomInfo *self);
+_TP_AVAILABLE_IN_0_20
 const gchar *tp_room_info_get_server (TpRoomInfo *self);
 
 G_END_DECLS

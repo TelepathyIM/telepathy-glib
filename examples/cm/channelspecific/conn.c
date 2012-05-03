@@ -138,20 +138,20 @@ example_csh_normalize_room (TpHandleRepoIface *repo,
 
   if (id[0] != '#')
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_HANDLE,
           "Chatroom names in this protocol start with #");
     }
 
   if (id[1] == '\0')
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_HANDLE,
           "Chatroom name cannot be empty");
       return NULL;
     }
 
   if (strchr (id, '@') != NULL)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_HANDLE,
           "Chatroom names in this protocol cannot contain '@'");
       return NULL;
     }

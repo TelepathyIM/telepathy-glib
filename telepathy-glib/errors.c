@@ -48,8 +48,7 @@
  * dbus-glib for server-side use (using dbus_g_error_domain_register()) when
  * called.
  *
- * This used to be called %TP_ERRORS. To be compatible with telepathy-glib
- * 0.10.x, use %TP_ERRORS.
+ * This used to be called %TP_ERRORS.
  *
  * Since: 0.11.7
  */
@@ -269,7 +268,7 @@
 void
 tp_g_set_error_invalid_handle_type (guint type, GError **error)
 {
-  g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+  g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
       "unsupported handle type %u", type);
 }
 
@@ -287,7 +286,7 @@ tp_g_set_error_invalid_handle_type (guint type, GError **error)
 void
 tp_g_set_error_unsupported_handle_type (guint type, GError **error)
 {
-  g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+  g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
       "unsupported handle type %u", type);
 }
 

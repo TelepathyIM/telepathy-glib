@@ -575,7 +575,7 @@ test_observer (Test *test,
 
   test->wait++;
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
   g_clear_error (&test->error);
 
   /* The channel being observed is invalidated while preparing */
@@ -1353,7 +1353,7 @@ test_delegate_channels (Test *test,
   g_assert_cmpuint (test->delegated->len, ==, 0);
   g_assert_cmpuint (g_hash_table_size (test->not_delegated), ==, 1);
   error = g_hash_table_lookup (test->not_delegated, test->text_chan_2);
-  g_assert_error (error, TP_ERRORS, TP_ERROR_BUSY);
+  g_assert_error (error, TP_ERROR, TP_ERROR_BUSY);
 
   /* Client is still handling the channel */
   chans = tp_base_client_get_handled_channels (test->base_client);

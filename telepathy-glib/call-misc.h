@@ -21,11 +21,14 @@
 #ifndef __TP_CALL_MISC_H__
 #define __TP_CALL_MISC_H__
 
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_stream_endpoint_init_known_interfaces (void);
+_TP_AVAILABLE_IN_0_18
 void tp_call_content_media_description_init_known_interfaces (void);
 
 G_END_DECLS

@@ -21,74 +21,93 @@
 #define __TP_CONTACT_OPERATIONS_H__
 
 #include <telepathy-glib/contact.h>
+#include <telepathy-glib/defs.h>
 
 G_BEGIN_DECLS
 
+_TP_AVAILABLE_IN_0_16
 void tp_contact_request_subscription_async (TpContact *self,
     const gchar *message,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_16
 gboolean tp_contact_request_subscription_finish (TpContact *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_16
 void tp_contact_authorize_publication_async (TpContact *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_16
 gboolean tp_contact_authorize_publication_finish (TpContact *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_16
 void tp_contact_remove_async (TpContact *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_16
 gboolean tp_contact_remove_finish (TpContact *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_16
 void tp_contact_unsubscribe_async (TpContact *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_16
 gboolean tp_contact_unsubscribe_finish (TpContact *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_16
 void tp_contact_unpublish_async (TpContact *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_16
 gboolean tp_contact_unpublish_finish (TpContact *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_16
 void tp_contact_add_to_group_async (TpContact *self,
     const gchar *group,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_16
 gboolean tp_contact_add_to_group_finish (TpContact *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_16
 void tp_contact_remove_from_group_async (TpContact *self,
     const gchar *group,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_16
 gboolean tp_contact_remove_from_group_finish (TpContact *self,
     GAsyncResult *result,
     GError **error);
 
 /* ContactBlocking */
 
+_TP_AVAILABLE_IN_0_18
 void tp_contact_block_async (TpContact *self,
     gboolean report_abusive,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_contact_block_finish (TpContact *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_18
 void tp_contact_unblock_async (TpContact *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_contact_unblock_finish (TpContact *self,
     GAsyncResult *result,
     GError **error);

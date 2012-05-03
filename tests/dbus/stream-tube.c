@@ -644,7 +644,7 @@ test_accept_twice (Test *test,
   tp_stream_tube_channel_accept_async (test->tube, tube_accept_cb, test);
   test->wait = 1;
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
 }
 
 static void
@@ -659,7 +659,7 @@ test_accept_outgoing (Test *test,
 
   test->wait = 1;
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
 }
 
 typedef void (*TestFunc) (Test *, gconstpointer);

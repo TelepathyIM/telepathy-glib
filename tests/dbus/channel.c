@@ -532,7 +532,7 @@ test_password_provide (Test *test,
 
   test->wait = 1;
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_AUTHENTICATION_FAILED);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_AUTHENTICATION_FAILED);
 
   /* Try the right password */
   tp_channel_provide_password_async (test->channel_room, "test",

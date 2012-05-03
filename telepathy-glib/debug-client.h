@@ -31,6 +31,7 @@ typedef struct _TpDebugClient TpDebugClient;
 typedef struct _TpDebugClientPrivate TpDebugClientPrivate;
 typedef struct _TpDebugClientClass TpDebugClientClass;
 
+_TP_AVAILABLE_IN_0_20
 TpDebugClient *tp_debug_client_new (
     TpDBusDaemon *dbus,
     const gchar *unique_name,
@@ -38,23 +39,28 @@ TpDebugClient *tp_debug_client_new (
 
 #define TP_DEBUG_CLIENT_FEATURE_CORE \
     (tp_debug_client_get_feature_quark_core ())
+_TP_AVAILABLE_IN_0_20
 GQuark tp_debug_client_get_feature_quark_core (void) G_GNUC_CONST;
 
+_TP_AVAILABLE_IN_0_20
 void tp_debug_client_set_enabled_async (
     TpDebugClient *self,
     gboolean enabled,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_20
 gboolean tp_debug_client_set_enabled_finish (
     TpDebugClient *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_20
 gboolean tp_debug_client_is_enabled (TpDebugClient *self);
 
 /* Tedious GObject boilerplate */
 
+_TP_AVAILABLE_IN_0_20
 GType tp_debug_client_get_type (void);
 
 #define TP_TYPE_DEBUG_CLIENT \
@@ -73,13 +79,16 @@ GType tp_debug_client_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_DEBUG_CLIENT, \
                               TpDebugClientClass))
 
+_TP_AVAILABLE_IN_0_20
 void tp_debug_client_init_known_interfaces (void);
 
+_TP_AVAILABLE_IN_0_20
 void tp_debug_client_get_messages_async (
     TpDebugClient *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+_TP_AVAILABLE_IN_0_20
 GPtrArray * tp_debug_client_get_messages_finish (TpDebugClient *self,
     GAsyncResult *result,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;

@@ -149,7 +149,7 @@ main (int argc,
 {
   GObject *stub;
   GError *error_out = NULL;
-  GError err = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT, "Because I said so" };
+  GError err = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT, "Because I said so" };
   TpProxySignalConnection *sc;
   gpointer tmp_obj;
   gboolean freed = FALSE;

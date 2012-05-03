@@ -1821,7 +1821,7 @@ tp_call_channel_request_hold_async (TpCallChannel *self,
     else
       {
         g_simple_async_result_set_error (result,
-            TP_ERRORS, TP_ERROR_NOT_CAPABLE,
+            TP_ERROR, TP_ERROR_NOT_CAPABLE,
             "Channel does NOT implement the Hold interface");
         g_simple_async_result_complete_in_idle (result);
       }

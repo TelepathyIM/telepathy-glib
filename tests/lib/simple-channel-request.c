@@ -181,7 +181,7 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
   if (tp_asv_get_boolean (req, "ProceedFail", NULL))
     {
       /* We have been asked to fail */
-     GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+     GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Computer says no" };
 
       dbus_g_method_return_error (context, &error);

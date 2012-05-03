@@ -708,7 +708,7 @@ _tp_channel_group_improve_remove_error (TpChannel *self,
 
   /* If we changed the code we also need to change the domain; if not, we did
    * an early return, so we'll never reach this */
-  error->domain = TP_ERRORS;
+  error->domain = TP_ERROR;
 }
 
 static void

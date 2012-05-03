@@ -76,14 +76,17 @@ TpAccountManager *tp_account_manager_new (TpDBusDaemon *bus_daemon)
 TpAccountManager *tp_account_manager_new_with_factory (
     TpClientFactory *factory) G_GNUC_WARN_UNUSED_RESULT;
 
+_TP_AVAILABLE_IN_0_16
 void tp_account_manager_set_default (TpAccountManager *manager);
 TpAccountManager *tp_account_manager_dup (void) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_account_manager_init_known_interfaces (void);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_16_FOR (tp_client_factory_ensure_account)
 TpAccount *tp_account_manager_ensure_account (TpAccountManager *manager,
-    const gchar *path)
-    _TP_GNUC_DEPRECATED_FOR (tp_client_factory_ensure_account);
+    const gchar *path);
+#endif
 
 GList *tp_account_manager_get_usable_accounts (TpAccountManager *manager)
   G_GNUC_WARN_UNUSED_RESULT;

@@ -464,7 +464,7 @@ add_dispatch_fail (
     TpAddDispatchOperationContext *context,
     gpointer user_data)
 {
-  GError error = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+  GError error = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
       "No AddDispatchOperation for you!" };
 
   tp_add_dispatch_operation_context_fail (context, &error);
@@ -483,7 +483,7 @@ test_fail (Test *test,
   g_assert_no_error (test->error);
 
   call_add_dispatch (test);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_NOT_AVAILABLE);
 }
 
 int

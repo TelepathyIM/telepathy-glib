@@ -128,7 +128,7 @@ _handle_channels (TpSimpleHandler *handler,
 
       g_debug ("Rejecting channels");
 
-      error = g_error_new (TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      error = g_error_new (TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "No channels to be handled");
       tp_handle_channels_context_fail (context, error);
 

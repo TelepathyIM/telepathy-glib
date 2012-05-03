@@ -1448,7 +1448,7 @@ context_prepare_cb (GObject *source,
   if (_tp_observe_channels_context_get_state (ctx) ==
       TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE)
     {
-      error = g_error_new (TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      error = g_error_new (TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
           "Implementation of ObserveChannels in %s didn't call "
           "tp_observe_channels_context_{accept,fail,delay}",
           G_OBJECT_TYPE_NAME (self));
@@ -1556,7 +1556,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
 
   if (channels_arr->len == 0)
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Channels should contain at least one channel");
       DEBUG ("%s", error->message);
       goto out;
@@ -1570,7 +1570,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   connection = tp_account_ensure_connection (account, connection_path);
   if (connection == NULL)
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Connection %s doesn't seem to exist. (Maybe the CM doesn't own "
           "the corresponding bus name?)", connection_path);
       DEBUG ("Failed to create TpConnection: %s", error->message);
@@ -1711,7 +1711,7 @@ add_dispatch_context_prepare_cb (GObject *source,
   if (_tp_add_dispatch_operation_context_get_state (ctx) ==
       TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_NONE)
     {
-      error = g_error_new (TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      error = g_error_new (TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
           "Implementation of AddDispatchOperation in %s didn't call "
           "tp_add_dispatch_operation_context_{accept,fail,delay}",
           G_OBJECT_TYPE_NAME (self));
@@ -1766,7 +1766,7 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT);
   if (path == NULL)
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Properties doesn't contain 'Account'");
       DEBUG ("%s", error->message);
       goto out;
@@ -1781,7 +1781,7 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION);
   if (path == NULL)
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Properties doesn't contain 'Connection'");
       DEBUG ("%s", error->message);
       goto out;
@@ -1796,7 +1796,7 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
 
   if (channels_arr->len == 0)
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Channels should contain at least one channel");
       DEBUG ("%s", error->message);
       goto out;
@@ -2068,7 +2068,7 @@ handle_channels_context_prepare_cb (GObject *source,
   if (_tp_handle_channels_context_get_state (ctx) ==
       TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE)
     {
-      error = g_error_new (TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      error = g_error_new (TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
           "Implementation of HandledChannels in %s didn't call "
           "tp_handle_channels_context_{accept,fail,delay}",
           G_OBJECT_TYPE_NAME (self));
@@ -2139,7 +2139,7 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
 
   if (channels_arr->len == 0)
     {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Channels should contain at least one channel");
       DEBUG ("%s", error->message);
       goto out;
@@ -2318,7 +2318,7 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
   path = tp_asv_get_object_path (properties, TP_PROP_CHANNEL_REQUEST_ACCOUNT);
   if (path == NULL)
     {
-      error = g_error_new_literal (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      error = g_error_new_literal (TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Mandatory 'Account' property is missing");
 
       DEBUG ("%s", error->message);
@@ -2366,7 +2366,7 @@ _tp_base_client_remove_request (TpSvcClientInterfaceRequests *iface,
   request = find_request_by_path (self, path);
   if (request == NULL)
     {
-      GError err = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      GError err = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Uknown ChannelRequest" };
 
       dbus_g_method_return_error (context, &err);

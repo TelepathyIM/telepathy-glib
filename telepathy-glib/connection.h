@@ -127,6 +127,7 @@ GQuark tp_errors_disconnected_quark (void);
 TpConnection *tp_connection_new (TpDBusDaemon *dbus, const gchar *bus_name,
     const gchar *object_path, GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
+_TP_AVAILABLE_IN_0_16
 TpAccount *tp_connection_get_account (TpConnection *self);
 
 TpConnectionStatus tp_connection_get_status (TpConnection *self,
@@ -136,8 +137,11 @@ const gchar *tp_connection_get_connection_manager_name (TpConnection *self);
 
 const gchar *tp_connection_get_protocol_name (TpConnection *self);
 
-TpHandle tp_connection_get_self_handle (TpConnection *self)
-    _TP_GNUC_DEPRECATED_FOR (tp_connection_get_self_contact);
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_20_FOR (tp_connection_get_self_contact)
+TpHandle tp_connection_get_self_handle (TpConnection *self);
+#endif
+
 TpContact *tp_connection_get_self_contact (TpConnection *self);
 
 TpCapabilities * tp_connection_get_capabilities (TpConnection *self);
@@ -171,8 +175,10 @@ gint tp_connection_presence_type_cmp_availability (TpConnectionPresenceType p1,
 gboolean tp_connection_parse_object_path (TpConnection *self, gchar **protocol,
     gchar **cm_name);
 
+_TP_AVAILABLE_IN_0_20
 const gchar *tp_connection_get_detailed_error (TpConnection *self,
     const GHashTable **details);
+_TP_AVAILABLE_IN_0_20
 gchar *tp_connection_dup_detailed_error_vardict (TpConnection *self,
     GVariant **details) G_GNUC_WARN_UNUSED_RESULT;
 
@@ -256,21 +262,28 @@ TpAvatarRequirements * tp_connection_get_avatar_requirements (
 
 #define TP_CONNECTION_FEATURE_ALIASING \
   (tp_connection_get_feature_quark_aliasing ())
+_TP_AVAILABLE_IN_0_18
 GQuark tp_connection_get_feature_quark_aliasing (void) G_GNUC_CONST;
 
+_TP_AVAILABLE_IN_0_18
 gboolean tp_connection_can_set_contact_alias (TpConnection *self);
 
 #define TP_CONNECTION_FEATURE_BALANCE \
   (tp_connection_get_feature_quark_balance ())
+_TP_AVAILABLE_IN_0_16
 GQuark tp_connection_get_feature_quark_balance (void) G_GNUC_CONST;
 
+_TP_AVAILABLE_IN_0_16
 gboolean tp_connection_get_balance (TpConnection *self,
     gint *balance, guint *scale, const gchar **currency);
+_TP_AVAILABLE_IN_0_16
 const gchar * tp_connection_get_balance_uri (TpConnection *self);
 
+_TP_AVAILABLE_IN_0_18
 void tp_connection_disconnect_async (TpConnection *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_connection_disconnect_finish (TpConnection *self,
     GAsyncResult *result,
     GError **error);

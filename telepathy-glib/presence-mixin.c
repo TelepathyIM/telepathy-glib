@@ -551,7 +551,7 @@ check_status_available (GObject *object,
     {
       if (!mixin_cls->statuses[i].self)
         {
-          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
               "cannot set status '%s' on yourself",
               mixin_cls->statuses[i].name);
           return FALSE;
@@ -564,7 +564,7 @@ check_status_available (GObject *object,
         case TP_CONNECTION_PRESENCE_TYPE_OFFLINE:
         case TP_CONNECTION_PRESENCE_TYPE_UNKNOWN:
         case TP_CONNECTION_PRESENCE_TYPE_ERROR:
-          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
               "cannot set offline/unknown/error status '%s' on yourself",
               mixin_cls->statuses[i].name);
           return FALSE;
@@ -579,7 +579,7 @@ check_status_available (GObject *object,
     {
       DEBUG ("requested status %s is not available",
           mixin_cls->statuses[i].name);
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "requested status '%s' is not available on this connection",
           mixin_cls->statuses[i].name);
       return FALSE;
@@ -612,7 +612,7 @@ check_for_status (GObject *object, const gchar *status, GError **error)
   else
     {
       DEBUG ("got unknown status identifier %s", status);
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "unknown status identifier: %s", status);
       return -1;
     }

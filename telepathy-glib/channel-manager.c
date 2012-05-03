@@ -785,7 +785,7 @@ tp_channel_manager_asv_has_unknown_properties (GHashTable *properties,
       if (!tp_strv_contains (fixed, property_name) &&
           !tp_strv_contains (allowed, property_name))
         {
-          g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
               "Request contained unknown property '%s'", property_name);
           return TRUE;
         }

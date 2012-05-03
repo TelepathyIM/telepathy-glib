@@ -87,7 +87,7 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
       case TP_SOCKET_ADDRESS_TYPE_UNIX:
         if (!G_VALUE_HOLDS (variant, DBUS_TYPE_G_UCHAR_ARRAY))
           {
-            g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+            g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                 "variant is %s not DBUS_TYPE_G_UCHAR_ARRAY",
                 G_VALUE_TYPE_NAME (variant));
 
@@ -108,7 +108,7 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
       case TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX:
         if (!G_VALUE_HOLDS (variant, DBUS_TYPE_G_UCHAR_ARRAY))
           {
-            g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+            g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                 "variant is %s not DBUS_TYPE_G_UCHAR_ARRAY",
                 G_VALUE_TYPE_NAME (variant));
 
@@ -129,7 +129,7 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
         if (type == TP_SOCKET_ADDRESS_TYPE_IPV4 &&
             !G_VALUE_HOLDS (variant, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4))
           {
-            g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+            g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                 "variant is %s not TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4",
                 G_VALUE_TYPE_NAME (variant));
 
@@ -138,7 +138,7 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
         else if (type == TP_SOCKET_ADDRESS_TYPE_IPV6 &&
             !G_VALUE_HOLDS (variant, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV6))
           {
-            g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+            g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                 "variant is %s not TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV6",
                 G_VALUE_TYPE_NAME (variant));
 
@@ -167,7 +167,7 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
         break;
 
       default:
-        g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+        g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
             "Unknown TpSocketAddressType (%i)",
             type);
 
@@ -268,7 +268,7 @@ tp_address_variant_from_g_socket_address (GSocketAddress *address,
         break;
 
       default:
-        g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+        g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
             "Unknown GSocketAddressFamily %i",
             g_socket_address_get_family (address));
 

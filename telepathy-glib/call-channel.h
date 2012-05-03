@@ -22,6 +22,7 @@
 #define __TP_CALL_CHANNEL_H__
 
 #include <telepathy-glib/channel.h>
+#include <telepathy-glib/defs.h>
 
 G_BEGIN_DECLS
 
@@ -53,6 +54,7 @@ struct _TpCallChannelClass
   GCallback _padding[7];
 };
 
+_TP_AVAILABLE_IN_0_18
 GType tp_call_channel_get_type (void);
 
 typedef struct _TpCallStateReason TpCallStateReason;
@@ -68,82 +70,107 @@ struct _TpCallStateReason
 };
 
 #define TP_TYPE_CALL_STATE_REASON (tp_call_state_reason_get_type ())
+_TP_AVAILABLE_IN_0_18
 GType tp_call_state_reason_get_type (void);
 
 #define TP_CALL_CHANNEL_FEATURE_CORE \
   tp_call_channel_get_feature_quark_core ()
+_TP_AVAILABLE_IN_0_18
 GQuark tp_call_channel_get_feature_quark_core (void) G_GNUC_CONST;
 
+_TP_AVAILABLE_IN_0_18
 GPtrArray *tp_call_channel_get_contents (TpCallChannel *self);
+_TP_AVAILABLE_IN_0_18
 TpCallState tp_call_channel_get_state (TpCallChannel *self,
     TpCallFlags *flags,
     GHashTable **details,
     TpCallStateReason **reason);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_call_channel_has_hardware_streaming (TpCallChannel *self);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_call_channel_has_initial_audio (TpCallChannel *self,
     const gchar **initial_audio_name);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_call_channel_has_initial_video (TpCallChannel *self,
     const gchar **initial_video_name);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_call_channel_has_mutable_contents (TpCallChannel *self);
+_TP_AVAILABLE_IN_0_18
 GHashTable *tp_call_channel_get_members (TpCallChannel *self);
 
+_TP_AVAILABLE_IN_0_18
 gboolean tp_call_channel_has_dtmf (TpCallChannel *self);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_call_channel_has_hold (TpCallChannel *self);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_channel_set_ringing_async (TpCallChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_call_channel_set_ringing_finish (TpCallChannel *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_channel_set_queued_async (TpCallChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_call_channel_set_queued_finish (TpCallChannel *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_channel_accept_async (TpCallChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_call_channel_accept_finish (TpCallChannel *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_channel_hangup_async (TpCallChannel *self,
     TpCallStateChangeReason reason,
     const gchar *detailed_reason,
     const gchar *message,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_call_channel_hangup_finish (TpCallChannel *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_channel_add_content_async (TpCallChannel *self,
     const gchar *name,
     TpMediaStreamType type,
     TpMediaStreamDirection initial_direction,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_18
 TpCallContent *tp_call_channel_add_content_finish (TpCallChannel *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_channel_send_tones_async (TpCallChannel *self,
     const gchar *tones,
     GCancellable *cancellable,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_call_channel_send_tones_finish (TpCallChannel *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_18
 void tp_call_channel_request_hold_async (TpCallChannel *self,
     gboolean hold,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_call_channel_request_hold_finish (TpCallChannel *self,
     GAsyncResult *result,
     GError **error);

@@ -190,7 +190,7 @@ gboolean tp_base_connection_channel_manager_iter_next (
     \
     if (c->status != TP_CONNECTION_STATUS_CONNECTED) \
       { \
-        GError e = { TP_ERRORS, TP_ERROR_DISCONNECTED, \
+        GError e = { TP_ERROR, TP_ERROR_DISCONNECTED, \
             (gchar *) "Connection is disconnected" }; \
         \
         dbus_g_method_return_error ((context), &e); \

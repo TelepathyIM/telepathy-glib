@@ -599,7 +599,7 @@ handle_channels (TpSimpleHandler *handler,
 
   if (G_UNLIKELY (g_list_length (channels) != 1))
     {
-      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "We are supposed to handle only one channel" };
 
       tp_handle_channels_context_fail (context, &error);
@@ -709,7 +709,7 @@ acr_channel_request_succeeded (TpChannelRequest *chan_req,
   /* ChannelRequest succeeded */
   if (self->priv->action_type == ACTION_TYPE_HANDLE)
     {
-      GError err = { TP_ERRORS, TP_ERROR_NOT_YOURS,
+      GError err = { TP_ERROR, TP_ERROR_NOT_YOURS,
           "Another Handler is handling this channel" };
 
       if (self->priv->result == NULL)
@@ -726,7 +726,7 @@ acr_channel_request_succeeded (TpChannelRequest *chan_req,
 
       if (self->priv->channel == NULL)
         {
-          GError err = { TP_ERRORS, TP_ERROR_CONFUSED,
+          GError err = { TP_ERROR, TP_ERROR_CONFUSED,
               "Channel has been created but MC didn't give it back to us" };
 
           DEBUG ("%s", err.message);

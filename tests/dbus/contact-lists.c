@@ -410,7 +410,7 @@ teardown (Test *test,
   g_assert_no_error (error);
   tp_tests_connection_assert_disconnect_succeeds (conn);
   tp_tests_proxy_run_until_prepared_or_failed (conn, NULL, &error);
-  g_assert_error (error, TP_ERRORS, TP_ERROR_CANCELLED);
+  g_assert_error (error, TP_ERROR, TP_ERROR_CANCELLED);
   g_clear_error (&error);
 
   tp_clear_pointer (&test->contact_attributes, g_hash_table_unref);
@@ -1639,7 +1639,7 @@ test_rename_group_overwrite (Test *test,
 
   tp_cli_connection_interface_contact_groups_run_rename_group (test->conn,
       -1, "Cambridge", "Montreal", &error, NULL);
-  g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
+  g_assert_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE);
   g_assert_cmpuint (test->log->len, ==, 0);
   g_clear_error (&error);
 }
@@ -1652,7 +1652,7 @@ test_rename_group_absent (Test *test,
 
   tp_cli_connection_interface_contact_groups_run_rename_group (test->conn,
       -1, "Badgers", "Mushrooms", &error, NULL);
-  g_assert_error (error, TP_ERRORS, TP_ERROR_DOES_NOT_EXIST);
+  g_assert_error (error, TP_ERROR, TP_ERROR_DOES_NOT_EXIST);
   g_assert_cmpuint (test->log->len, ==, 0);
   g_clear_error (&error);
 }
@@ -1814,7 +1814,7 @@ request_blocked_contacts_failed_cb (
     gpointer user_data,
     GObject *weak_object)
 {
-  g_assert_error (error, TP_ERRORS, TP_ERROR_DISCONNECTED);
+  g_assert_error (error, TP_ERROR, TP_ERROR_DISCONNECTED);
 }
 
 static void
@@ -1891,7 +1891,7 @@ download_contacts_cb (
     const GError *error, gpointer user_data,
     GObject *weak_object)
 {
-  g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED);
+  g_assert_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED);
 }
 
 static void

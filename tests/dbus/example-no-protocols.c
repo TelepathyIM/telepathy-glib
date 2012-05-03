@@ -63,7 +63,7 @@ connection_manager_got_info (TpConnectionManager *cm,
       "jabber", empty, &bus_name, &object_path, &error, NULL);
 
   g_assert (error != NULL);
-  g_assert (error->domain == TP_ERRORS);
+  g_assert (error->domain == TP_ERROR);
   g_assert (error->code == TP_ERROR_NOT_IMPLEMENTED);
 
   g_error_free (error);

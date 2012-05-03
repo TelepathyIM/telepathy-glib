@@ -23,6 +23,8 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/defs.h>
+
 #include <telepathy-glib/_gen/error-str.h>
 #include <telepathy-glib/_gen/genums.h>
 

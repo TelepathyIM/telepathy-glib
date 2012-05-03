@@ -89,7 +89,7 @@ test_presence (TpTestsContactsConnection *service_conn,
   MYASSERT (!tp_cli_connection_interface_presence_run_set_presence (
         client_conn, -1, "offline", "", &error, NULL), "");
   g_assert_cmpstr (g_quark_to_string (error->domain), ==,
-      g_quark_to_string (TP_ERRORS));
+      g_quark_to_string (TP_ERROR));
   g_error_free (error);
   error = NULL;
 

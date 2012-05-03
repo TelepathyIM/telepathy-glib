@@ -262,7 +262,7 @@ test_list_room_fails (Test *test,
 
   test->wait = 1;
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_SERVICE_CONFUSED);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_SERVICE_CONFUSED);
 
   /* We don't want the 'failed' cb be called when disconnecting the
    * connection */

@@ -116,7 +116,7 @@ teardown (Test *test,
 
   tp_tests_connection_assert_disconnect_succeeds (conn);
   tp_tests_proxy_run_until_prepared_or_failed (conn, NULL, &error);
-  g_assert_error (error, TP_ERRORS, TP_ERROR_CANCELLED);
+  g_assert_error (error, TP_ERROR, TP_ERROR_CANCELLED);
   g_clear_error (&error);
 
   test->service_conn_as_base = NULL;

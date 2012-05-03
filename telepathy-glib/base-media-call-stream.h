@@ -23,6 +23,7 @@
 
 #include <telepathy-glib/base-call-stream.h>
 #include <telepathy-glib/call-stream-endpoint.h>
+#include <telepathy-glib/defs.h>
 
 G_BEGIN_DECLS
 
@@ -77,6 +78,7 @@ struct _TpBaseMediaCallStream {
   TpBaseMediaCallStreamPrivate *priv;
 };
 
+_TP_AVAILABLE_IN_0_18
 GType tp_base_media_call_stream_get_type (void);
 
 /* TYPE MACROS */
@@ -95,31 +97,45 @@ GType tp_base_media_call_stream_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_BASE_MEDIA_CALL_STREAM, \
     TpBaseMediaCallStreamClass))
 
+_TP_AVAILABLE_IN_0_18
 void tp_base_media_call_stream_set_relay_info (TpBaseMediaCallStream *self,
     GPtrArray *relays);
+_TP_AVAILABLE_IN_0_18
 void tp_base_media_call_stream_set_stun_servers (TpBaseMediaCallStream *self,
     GPtrArray *stun_servers);
+_TP_AVAILABLE_IN_0_18
 void tp_base_media_call_stream_add_endpoint (TpBaseMediaCallStream *self,
     TpCallStreamEndpoint *endpoint);
+_TP_AVAILABLE_IN_0_18
 void tp_base_media_call_stream_remove_endpoint (TpBaseMediaCallStream *self,
     TpCallStreamEndpoint *endpoint);
+_TP_AVAILABLE_IN_0_18
 GList *tp_base_media_call_stream_get_endpoints (TpBaseMediaCallStream *self);
+_TP_AVAILABLE_IN_0_18
 const gchar *tp_base_media_call_stream_get_username (
     TpBaseMediaCallStream *self);
+_TP_AVAILABLE_IN_0_18
 const gchar *tp_base_media_call_stream_get_password (
     TpBaseMediaCallStream *self);
+_TP_AVAILABLE_IN_0_18
 TpStreamFlowState tp_base_media_call_stream_get_sending_state (
     TpBaseMediaCallStream *self);
+_TP_AVAILABLE_IN_0_18
 TpStreamFlowState tp_base_media_call_stream_get_receiving_state (
     TpBaseMediaCallStream *self);
+_TP_AVAILABLE_IN_0_18
 void tp_base_media_call_stream_update_receiving_state (
     TpBaseMediaCallStream *self);
+_TP_AVAILABLE_IN_0_18
 void tp_base_media_call_stream_update_sending_state (
     TpBaseMediaCallStream *self);
+_TP_AVAILABLE_IN_0_18
 void tp_base_media_call_stream_set_local_sending (TpBaseMediaCallStream *self,
     gboolean sending);
+_TP_AVAILABLE_IN_0_18
 gboolean tp_base_media_call_stream_get_local_sending (
     TpBaseMediaCallStream *self);
+_TP_AVAILABLE_IN_0_18
 GPtrArray *tp_base_media_call_stream_get_local_candidates (
     TpBaseMediaCallStream *self);
 

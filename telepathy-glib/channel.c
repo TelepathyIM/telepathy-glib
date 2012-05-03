@@ -1692,7 +1692,7 @@ tp_channel_new (TpConnection *conn,
         {
           /* in the properties, we do actually allow the user to give us an
            * assumed-valid handle of unknown type - but that'd be silly */
-          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
               "Nonzero handle of type NONE or unknown makes no sense");
           goto finally;
         }
@@ -1727,7 +1727,7 @@ tp_channel_once (gpointer data G_GNUC_UNUSED)
   tp_proxy_or_subclass_hook_on_interface_add (type,
       tp_cli_channel_add_signals);
   tp_proxy_subclass_add_error_mapping (type,
-      TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
+      TP_ERROR_PREFIX, TP_ERROR, TP_TYPE_ERROR);
 
   return NULL;
 }
@@ -2292,7 +2292,7 @@ provide_password_cb (TpChannel *self,
     {
       DEBUG ("Wrong password provided for %s", tp_proxy_get_object_path (self));
 
-      g_simple_async_result_set_error (result, TP_ERRORS,
+      g_simple_async_result_set_error (result, TP_ERROR,
           TP_ERROR_AUTHENTICATION_FAILED, "Password was not correct");
     }
 

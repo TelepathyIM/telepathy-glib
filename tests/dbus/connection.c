@@ -53,7 +53,7 @@ setup (Test *test,
 {
   GError *error = NULL;
 
-  invalidated_for_test.domain = TP_ERRORS;
+  invalidated_for_test.domain = TP_ERROR;
 
   g_type_init ();
   tp_debug_set_flags ("all");
@@ -95,7 +95,7 @@ teardown (Test *test,
 
   tp_tests_connection_assert_disconnect_succeeds (conn);
   tp_tests_proxy_run_until_prepared_or_failed (conn, NULL, &error);
-  g_assert_error (error, TP_ERRORS, TP_ERROR_CANCELLED);
+  g_assert_error (error, TP_ERROR, TP_ERROR_CANCELLED);
   g_clear_error (&error);
 
   test->service_conn_as_base = NULL;
@@ -231,7 +231,7 @@ test_fail_to_prepare (Test *test,
 
   g_assert (!tp_proxy_prepare_finish (test->conn, test->prepare_result,
         &error));
-  g_assert_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED);
+  g_assert_error (error, TP_ERROR, TP_ERROR_PERMISSION_DENIED);
   g_clear_error (&error);
   g_object_unref (test->prepare_result);
   test->prepare_result = NULL;
@@ -249,7 +249,7 @@ test_fail_to_prepare (Test *test,
 
   g_assert (!tp_proxy_prepare_finish (test->conn, test->prepare_result,
         &error));
-  g_assert_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED);
+  g_assert_error (error, TP_ERROR, TP_ERROR_PERMISSION_DENIED);
   g_clear_error (&error);
   g_object_unref (test->prepare_result);
   test->prepare_result = NULL;

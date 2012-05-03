@@ -157,6 +157,10 @@ BUILT_SOURCES = $(codegen_sources)
 CLEANFILES = \
     $(BUILT_SOURCES)
 
+nodist_tpginclude_HEADERS = \
+    version.h \
+    $(NULL)
+
 distclean-local:
 	rm -rf _gen
 

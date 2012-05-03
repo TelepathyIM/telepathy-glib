@@ -46,7 +46,7 @@ example_csh_protocol_check_contact_id (const gchar *id,
 
   if (id[0] == '\0')
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_HANDLE,
           "ID must not be empty");
       return FALSE;
     }
@@ -55,28 +55,28 @@ example_csh_protocol_check_contact_id (const gchar *id,
 
   if (at == NULL || at == id || at[1] == '\0')
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_HANDLE,
           "ID must look like aaa@bbb");
       return FALSE;
     }
 
   if (strchr (at + 1, '@') != NULL)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_HANDLE,
           "ID cannot contain more than one '@'");
       return FALSE;
     }
 
   if (at[1] == '#' && at[2] == '\0')
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_HANDLE,
           "chatroom name cannot be empty");
       return FALSE;
     }
 
   if (strchr (at + 2, '#') != NULL)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_HANDLE,
           "realm/chatroom cannot contain '#' except at the beginning");
       return FALSE;
     }
@@ -169,7 +169,7 @@ identify_account (TpBaseProtocol *self G_GNUC_UNUSED,
   if (account != NULL)
     return normalize_contact (self, account, error);
 
-  g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+  g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
       "'account' parameter not given");
   return NULL;
 }

@@ -415,14 +415,14 @@ main (int argc,
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
       ==, FALSE);
   g_assert_error (tp_proxy_get_invalidated (chan),
-      TP_ERRORS, TP_ERROR_CANCELLED);
+      TP_ERROR, TP_ERROR_CANCELLED);
 
   /* ... but prepare_async still hasn't finished until we run the main loop */
   g_assert (prepare_result == NULL);
   g_main_loop_run (mainloop);
   g_assert (prepare_result != NULL);
   MYASSERT (!tp_proxy_prepare_finish (chan, prepare_result, &error), "");
-  g_assert_error (error, TP_ERRORS, TP_ERROR_CANCELLED);
+  g_assert_error (error, TP_ERROR, TP_ERROR_CANCELLED);
   g_assert_cmpstr (error->message, ==,
       tp_proxy_get_invalidated (chan)->message);
   tp_clear_object (&prepare_result);

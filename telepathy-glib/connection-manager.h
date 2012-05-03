@@ -117,9 +117,11 @@ void tp_list_connection_managers (TpDBusDaemon *bus_daemon,
     gpointer user_data, GDestroyNotify destroy,
     GObject *weak_object);
 
+_TP_AVAILABLE_IN_0_18
 void tp_list_connection_managers_async (TpDBusDaemon *dbus_daemon,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_18
 GList *tp_list_connection_managers_finish (GAsyncResult *result,
     GError **error);
 
@@ -142,6 +144,7 @@ const TpConnectionManagerProtocol *tp_connection_manager_get_protocol (
     TpConnectionManager *self, const gchar *protocol);
 TpProtocol *tp_connection_manager_get_protocol_object (
     TpConnectionManager *self, const gchar *protocol);
+_TP_AVAILABLE_IN_0_18
 GList *tp_connection_manager_dup_protocols (TpConnectionManager *self)
   G_GNUC_WARN_UNUSED_RESULT;
 
@@ -170,6 +173,7 @@ gboolean tp_connection_manager_param_is_dbus_property (
     const TpConnectionManagerParam *param);
 gboolean tp_connection_manager_param_get_default (
     const TpConnectionManagerParam *param, GValue *value);
+_TP_AVAILABLE_IN_0_20
 GVariant *tp_connection_manager_param_dup_default_variant (
     const TpConnectionManagerParam *param);
 
