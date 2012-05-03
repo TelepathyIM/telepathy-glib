@@ -66,7 +66,7 @@ struct _TpTLSCertificateRejectionPriv {
   TpTLSCertificateRejectReason reason;
   gchar *dbus_error;
   GVariant *details;
-  GError *error /* badger */ ;
+  GError *error;
 };
 
 static void
