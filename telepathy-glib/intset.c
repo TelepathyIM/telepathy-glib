@@ -66,20 +66,7 @@ G_STATIC_ASSERT (sizeof (gpointer) >= sizeof (gsize));
  * Since: 0.11.3
  */
 
-GType
-tp_intset_get_type (void)
-{
-  static GType type = 0;
-
-  if (G_UNLIKELY (type == 0))
-    {
-      type = g_boxed_type_register_static (g_intern_static_string ("TpIntset"),
-          (GBoxedCopyFunc) tp_intset_copy,
-          (GBoxedFreeFunc) tp_intset_destroy);
-    }
-
-  return type;
-}
+G_DEFINE_BOXED_TYPE (TpIntset, tp_intset, tp_intset_copy, tp_intset_destroy)
 
 /**
  * TpIntFunc:
