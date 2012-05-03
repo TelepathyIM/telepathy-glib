@@ -398,23 +398,8 @@ tp_connection_manager_protocol_free (TpConnectionManagerProtocol *proto)
  * Since: 0.11.3
  */
 
-
-GType
-tp_connection_manager_param_get_type (void)
-{
-  static GType type = 0;
-
-  if (G_UNLIKELY (type == 0))
-    {
-      type = g_boxed_type_register_static (
-          g_intern_static_string ("TpConnectionManagerParam"),
-          (GBoxedCopyFunc) tp_connection_manager_param_copy,
-          (GBoxedFreeFunc) tp_connection_manager_param_free);
-    }
-
-  return type;
-}
-
+G_DEFINE_BOXED_TYPE (TpConnectionManagerParam, tp_connection_manager_param,
+    tp_connection_manager_param_copy, tp_connection_manager_param_free)
 
 /**
  * TP_TYPE_CONNECTION_MANAGER_PROTOCOL:
@@ -424,22 +409,9 @@ tp_connection_manager_param_get_type (void)
  * Since: 0.11.3
  */
 
-
-GType
-tp_connection_manager_protocol_get_type (void)
-{
-  static GType type = 0;
-
-  if (G_UNLIKELY (type == 0))
-    {
-      type = g_boxed_type_register_static (
-          g_intern_static_string ("TpConnectionManagerProtocol"),
-          (GBoxedCopyFunc) tp_connection_manager_protocol_copy,
-          (GBoxedFreeFunc) tp_connection_manager_protocol_free);
-    }
-
-  return type;
-}
+G_DEFINE_BOXED_TYPE (TpConnectionManagerProtocol,
+    tp_connection_manager_protocol,
+    tp_connection_manager_protocol_copy, tp_connection_manager_protocol_free)
 
 static void
 tp_connection_manager_ready_or_failed (TpConnectionManager *self,

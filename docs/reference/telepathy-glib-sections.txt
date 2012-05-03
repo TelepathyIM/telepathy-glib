@@ -3344,6 +3344,9 @@ tp_contact_info_field_free
 TP_TYPE_CONTACT_INFO_LIST
 tp_contact_info_list_copy
 tp_contact_info_list_free
+<SUBSECTION Private>
+TpContactInfoSpecList
+TpContactInfoList
 <SUBSECTION contact-list>
 tp_connection_get_contact_list_state
 tp_connection_get_contact_list_persists

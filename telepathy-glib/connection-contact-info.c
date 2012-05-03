@@ -145,20 +145,9 @@ tp_contact_info_field_spec_free (TpContactInfoFieldSpec *self)
  *
  * Since: 0.11.7
  */
-GType
-tp_contact_info_field_spec_get_type (void)
-{
-  static GType type = 0;
 
-  if (G_UNLIKELY (type == 0))
-    {
-      type = g_boxed_type_register_static (g_intern_static_string ("TpContactInfoFieldSpec"),
-          (GBoxedCopyFunc) tp_contact_info_field_spec_copy,
-          (GBoxedFreeFunc) tp_contact_info_field_spec_free);
-    }
-
-  return type;
-}
+G_DEFINE_BOXED_TYPE (TpContactInfoFieldSpec, tp_contact_info_field_spec,
+    tp_contact_info_field_spec_copy, tp_contact_info_field_spec_free)
 
 /**
  * tp_contact_info_spec_list_copy: (skip)
@@ -206,20 +195,9 @@ tp_contact_info_spec_list_free (GList *list)
  *
  * Since: 0.11.7
  */
-GType
-tp_contact_info_spec_list_get_type (void)
-{
-  static GType type = 0;
 
-  if (G_UNLIKELY (type == 0))
-    {
-      type = g_boxed_type_register_static (g_intern_static_string ("TpContactInfoSpecList"),
-          (GBoxedCopyFunc) tp_contact_info_spec_list_copy,
-          (GBoxedFreeFunc) tp_contact_info_spec_list_free);
-    }
-
-  return type;
-}
+G_DEFINE_BOXED_TYPE (TpContactInfoSpecList, tp_contact_info_spec_list,
+    tp_contact_info_spec_list_copy, tp_contact_info_spec_list_free)
 
 /**
  * TpContactInfoField:
@@ -325,20 +303,9 @@ tp_contact_info_field_free (TpContactInfoField *self)
  *
  * Since: 0.11.7
  */
-GType
-tp_contact_info_field_get_type (void)
-{
-  static GType type = 0;
 
-  if (G_UNLIKELY (type == 0))
-    {
-      type = g_boxed_type_register_static (g_intern_static_string ("TpContactInfoField"),
-          (GBoxedCopyFunc) tp_contact_info_field_copy,
-          (GBoxedFreeFunc) tp_contact_info_field_free);
-    }
-
-  return type;
-}
+G_DEFINE_BOXED_TYPE (TpContactInfoField, tp_contact_info_field,
+    tp_contact_info_field_copy, tp_contact_info_field_free)
 
 /**
  * tp_contact_info_list_copy: (skip)
@@ -386,20 +353,9 @@ tp_contact_info_list_free (GList *list)
  *
  * Since: 0.11.7
  */
-GType
-tp_contact_info_list_get_type (void)
-{
-  static GType type = 0;
 
-  if (G_UNLIKELY (type == 0))
-    {
-      type = g_boxed_type_register_static (g_intern_static_string ("TpContactInfoList"),
-          (GBoxedCopyFunc) tp_contact_info_list_copy,
-          (GBoxedFreeFunc) tp_contact_info_list_free);
-    }
-
-  return type;
-}
+G_DEFINE_BOXED_TYPE (TpContactInfoList, tp_contact_info_list,
+    tp_contact_info_list_copy, tp_contact_info_list_free)
 
 /**
  * TP_CONNECTION_FEATURE_CONTACT_INFO:
