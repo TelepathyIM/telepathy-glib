@@ -161,13 +161,13 @@ tp_future_account_constructed (GObject *object)
   void (*chain_up) (GObject *) =
     ((GObjectClass *) tp_future_account_parent_class)->constructed;
 
+  if (chain_up != NULL)
+    chain_up (object);
+
   priv->parameters = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, (GDestroyNotify) tp_g_value_slice_free);
 
   priv->properties = tp_asv_new (NULL, NULL);
-
-  if (chain_up != NULL)
-    chain_up (object);
 }
 
 #define GET_PRESENCE_VALUE(key, offset, type) \
