@@ -165,6 +165,12 @@ G_BEGIN_DECLS
   /* special case for telepathy-glib 1.0 itself */
 # define _TP_VERSION_CUR_STABLE (_TP_ENCODE_VERSION (TP_MAJOR_VERSION, 0))
 # define _TP_VERSION_PREV_STABLE (_TP_ENCODE_VERSION (TP_MAJOR_VERSION, 0))
+#elif (TP_MICRO_VERSION >= 99 && (TP_MINOR_VERSION % 2) == 0)
+  /* development branch about to start (0.18.999.1) */
+# define _TP_VERSION_CUR_STABLE \
+  (_TP_ENCODE_VERSION (TP_MAJOR_VERSION, TP_MINOR_VERSION + 2))
+# define _TP_VERSION_PREV_STABLE \
+  (_TP_ENCODE_VERSION (TP_MAJOR_VERSION, TP_MINOR_VERSION))
 #elif (TP_MINOR_VERSION % 2)
   /* development branch */
 # define _TP_VERSION_CUR_STABLE \
