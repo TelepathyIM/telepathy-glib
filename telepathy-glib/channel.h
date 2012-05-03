@@ -101,12 +101,60 @@ gboolean tp_channel_is_ready (TpChannel *self);
 
 void tp_channel_init_known_interfaces (void);
 
+TpConnection *tp_channel_borrow_connection (TpChannel *self);
+GHashTable *tp_channel_borrow_immutable_properties (TpChannel *self);
+
+void tp_channel_leave_async (TpChannel *self,
+    TpChannelGroupChangeReason reason,
+    const gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_channel_leave_finish (TpChannel *self,
+    GAsyncResult *result,
+    GError **error);
+
+void tp_channel_close_async (TpChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_channel_close_finish (TpChannel *self,
+    GAsyncResult *result,
+    GError **error);
+
+_TP_AVAILABLE_IN_0_16
+void tp_channel_destroy_async (TpChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+_TP_AVAILABLE_IN_0_16
+gboolean tp_channel_destroy_finish (TpChannel *self,
+    GAsyncResult *result,
+    GError **error);
+
+gboolean tp_channel_get_requested (TpChannel *self);
+
+#define TP_CHANNEL_FEATURE_CORE \
+  tp_channel_get_feature_quark_core ()
+
+GQuark tp_channel_get_feature_quark_core (void) G_GNUC_CONST;
+
 const gchar *tp_channel_get_channel_type (TpChannel *self);
 GQuark tp_channel_get_channel_type_id (TpChannel *self);
 TpHandle tp_channel_get_handle (TpChannel *self, TpHandleType *handle_type);
 const gchar *tp_channel_get_identifier (TpChannel *self);
-TpConnection *tp_channel_borrow_connection (TpChannel *self);
-GHashTable *tp_channel_borrow_immutable_properties (TpChannel *self);
+
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_20_FOR (tp_channel_get_initiator_contact)
+TpHandle tp_channel_get_initiator_handle (TpChannel *self);
+
+_TP_DEPRECATED_IN_0_20_FOR (tp_channel_get_initiator_contact)
+const gchar * tp_channel_get_initiator_identifier (TpChannel *self);
+#endif
+
+#define TP_CHANNEL_FEATURE_GROUP \
+  tp_channel_get_feature_quark_group ()
+GQuark tp_channel_get_feature_quark_group (void) G_GNUC_CONST;
 
 TpChannelGroupFlags tp_channel_group_get_flags (TpChannel *self);
 
@@ -130,24 +178,18 @@ gboolean tp_channel_group_get_local_pending_info (TpChannel *self,
 
 _TP_DEPRECATED_IN_0_20_FOR (tp_channel_group_get_contact_owner)
 TpHandle tp_channel_group_get_handle_owner (TpChannel *self, TpHandle handle);
-
-_TP_DEPRECATED_IN_0_20_FOR (tp_channel_get_initiator_contact)
-TpHandle tp_channel_get_initiator_handle (TpChannel *self);
-
-_TP_DEPRECATED_IN_0_20_FOR (tp_channel_get_initiator_contact)
-const gchar * tp_channel_get_initiator_identifier (TpChannel *self);
 #endif
 
-gboolean tp_channel_get_requested (TpChannel *self);
+_TP_AVAILABLE_IN_0_16
+void tp_channel_join_async (TpChannel *self,
+    const gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
-#define TP_CHANNEL_FEATURE_CORE \
-  tp_channel_get_feature_quark_core ()
-
-GQuark tp_channel_get_feature_quark_core (void) G_GNUC_CONST;
-
-#define TP_CHANNEL_FEATURE_GROUP \
-  tp_channel_get_feature_quark_group ()
-GQuark tp_channel_get_feature_quark_group (void) G_GNUC_CONST;
+_TP_AVAILABLE_IN_0_16
+gboolean tp_channel_join_finish (TpChannel *self,
+    GAsyncResult *result,
+    GError **error);
 
 #define TP_CHANNEL_FEATURE_CONTACTS \
   tp_channel_get_feature_quark_contacts ()
@@ -179,45 +221,6 @@ TpContact *tp_channel_group_get_contact_owner (TpChannel *self,
 GQuark tp_channel_get_feature_quark_chat_states (void) G_GNUC_CONST;
 TpChannelChatState tp_channel_get_chat_state (TpChannel *self,
     TpHandle contact);
-
-_TP_AVAILABLE_IN_0_16
-void tp_channel_join_async (TpChannel *self,
-    const gchar *message,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-
-_TP_AVAILABLE_IN_0_16
-gboolean tp_channel_join_finish (TpChannel *self,
-    GAsyncResult *result,
-    GError **error);
-
-void tp_channel_leave_async (TpChannel *self,
-    TpChannelGroupChangeReason reason,
-    const gchar *message,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-
-gboolean tp_channel_leave_finish (TpChannel *self,
-    GAsyncResult *result,
-    GError **error);
-
-void tp_channel_close_async (TpChannel *self,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-
-gboolean tp_channel_close_finish (TpChannel *self,
-    GAsyncResult *result,
-    GError **error);
-
-_TP_AVAILABLE_IN_0_16
-void tp_channel_destroy_async (TpChannel *self,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-
-_TP_AVAILABLE_IN_0_16
-gboolean tp_channel_destroy_finish (TpChannel *self,
-    GAsyncResult *result,
-    GError **error);
 
 /* Channel.Interface.Password */
 #define TP_CHANNEL_FEATURE_PASSWORD \
