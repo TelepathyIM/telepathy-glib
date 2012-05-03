@@ -65,13 +65,8 @@
  *
  * <itemizedlist>
  *   <listitem>
- *     <para>%TP_CHANNEL_FEATURE_CORE, %TP_CHANNEL_FEATURE_GROUP
- *     and %TP_CHANNEL_FEATURE_PASSWORD for all
- *     type of channels.</para>
- *   </listitem>
- *   <listitem>
- *     <para>%TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES and
- *     %TP_TEXT_CHANNEL_FEATURE_SMS for #TpTextChannel</para>
+ *     <para>%TP_CHANNEL_FEATURE_CORE
+ *     for all type of channels.</para>
  *   </listitem>
  *   <listitem>
  *     <para>%TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE
@@ -87,7 +82,7 @@
  *   </listitem>
  * </itemizedlist>
  *
- * Since: 0.15.5
+ * Since: 1.0
  */
 
 /**
@@ -167,9 +162,7 @@ build_channel_type_mapping (void)
         TP_TYPE_TEXT_CHANNEL,
         NULL,
         (NewFunc) _tp_text_channel_new_with_factory,
-        { TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES,
-          TP_TEXT_CHANNEL_FEATURE_SMS,
-          0 },
+        { 0 },
       },
       { TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
         TP_TYPE_FILE_TRANSFER_CHANNEL,
@@ -226,16 +219,10 @@ dup_channel_features_impl (TpClientFactory *self,
     TpChannel *channel)
 {
   GArray *features;
-  GQuark standard_features[] = {
-      TP_CHANNEL_FEATURE_GROUP,
-      TP_CHANNEL_FEATURE_PASSWORD,
-  };
   ChannelTypeMapping *m;
 
   /* Chainup to get desired features for all channel types */
   features = chainup->dup_channel_features (self, channel);
-
-  g_array_append_vals (features, standard_features, G_N_ELEMENTS (standard_features));
 
   for (m = channel_type_mapping; m->channel_type != NULL; m++)
     {

@@ -27,3 +27,7 @@ API/Behaviour changes
 
  - TpContact now uses GQuark instead of TpContactFeature. This make them
    consistent with TpProxy features.
+
+ - TpAutomaticClientFactory now only has CORE features by default, other
+   features must be added explicitly by the user using
+   tp_client_factory_add_*_features().
