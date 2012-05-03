@@ -91,12 +91,9 @@ static void
 test_self_handle (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
-  TpHandle handle;
   TpContact *before, *after;
-  guint handle_times = 0, contact_times = 0;
+  guint contact_times = 0;
 
-  g_signal_connect_swapped (f->client_conn, "notify::self-handle",
-      G_CALLBACK (swapped_counter_cb), &handle_times);
   g_signal_connect_swapped (f->client_conn, "notify::self-contact",
       G_CALLBACK (swapped_counter_cb), &contact_times);
 
@@ -104,19 +101,13 @@ test_self_handle (Fixture *f,
         tp_base_connection_get_self_handle (f->service_conn_as_base)), ==,
       "me@example.com");
 
-  g_assert_cmpuint (tp_connection_get_self_handle (f->client_conn), ==,
-      tp_base_connection_get_self_handle (f->service_conn_as_base));
-
   g_object_get (f->client_conn,
-      "self-handle", &handle,
       "self-contact", &before,
       NULL);
-  g_assert_cmpuint (handle, ==,
+  g_assert_cmpuint (tp_contact_get_handle (before), ==,
       tp_base_connection_get_self_handle (f->service_conn_as_base));
-  g_assert_cmpuint (tp_contact_get_handle (before), ==, handle);
   g_assert_cmpstr (tp_contact_get_identifier (before), ==, "me@example.com");
 
-  g_assert_cmpuint (handle_times, ==, 0);
   g_assert_cmpuint (contact_times, ==, 0);
 
   /* similar to /nick in IRC */
@@ -124,27 +115,21 @@ test_self_handle (Fixture *f,
       "myself@example.org");
   tp_tests_proxy_run_until_dbus_queue_processed (f->client_conn);
 
-  while (handle_times < 1 || contact_times < 1)
+  while (contact_times < 1)
     g_main_context_iteration (NULL, TRUE);
 
-  g_assert_cmpuint (handle_times, ==, 1);
   g_assert_cmpuint (contact_times, ==, 1);
 
   g_assert_cmpstr (tp_handle_inspect (f->contact_repo,
         tp_base_connection_get_self_handle (f->service_conn_as_base)), ==,
       "myself@example.org");
 
-  g_assert_cmpuint (tp_connection_get_self_handle (f->client_conn), ==,
-      tp_base_connection_get_self_handle (f->service_conn_as_base));
-
   g_object_get (f->client_conn,
-      "self-handle", &handle,
       "self-contact", &after,
       NULL);
   g_assert (before != after);
-  g_assert_cmpuint (handle, ==,
+  g_assert_cmpuint (tp_contact_get_handle (after), ==,
       tp_base_connection_get_self_handle (f->service_conn_as_base));
-  g_assert_cmpuint (tp_contact_get_handle (after), ==, handle);
   g_assert_cmpstr (tp_contact_get_identifier (after), ==,
       "myself@example.org");
 
@@ -156,14 +141,11 @@ static void
 test_change_early (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
-  TpHandle handle;
   TpContact *after;
-  guint handle_times = 0, contact_times = 0;
+  guint contact_times = 0;
   gboolean ok;
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
-  g_signal_connect_swapped (f->client_conn, "notify::self-handle",
-      G_CALLBACK (swapped_counter_cb), &handle_times);
   g_signal_connect_swapped (f->client_conn, "notify::self-contact",
       G_CALLBACK (swapped_counter_cb), &contact_times);
 
@@ -198,19 +180,13 @@ test_change_early (Fixture *f,
   g_assert (ok);
 
   /* the self-handle and self-contact change once during connection */
-  g_assert_cmpuint (handle_times, ==, 1);
   g_assert_cmpuint (contact_times, ==, 1);
 
-  g_assert_cmpuint (tp_connection_get_self_handle (f->client_conn), ==,
-      tp_base_connection_get_self_handle (f->service_conn_as_base));
-
   g_object_get (f->client_conn,
-      "self-handle", &handle,
       "self-contact", &after,
       NULL);
-  g_assert_cmpuint (handle, ==,
+  g_assert_cmpuint (tp_contact_get_handle (after), ==,
       tp_base_connection_get_self_handle (f->service_conn_as_base));
-  g_assert_cmpuint (tp_contact_get_handle (after), ==, handle);
   g_assert_cmpstr (tp_contact_get_identifier (after), ==,
       "myself@example.org");
 

@@ -137,11 +137,6 @@ const gchar *tp_connection_get_connection_manager_name (TpConnection *self);
 
 const gchar *tp_connection_get_protocol_name (TpConnection *self);
 
-#ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_0_20_FOR (tp_connection_get_self_contact)
-TpHandle tp_connection_get_self_handle (TpConnection *self);
-#endif
-
 TpContact *tp_connection_get_self_contact (TpConnection *self);
 
 TpCapabilities * tp_connection_get_capabilities (TpConnection *self);

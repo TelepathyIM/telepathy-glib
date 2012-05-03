@@ -121,7 +121,8 @@ setup (Test *test,
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
   tp_tests_proxy_run_until_prepared (test->conn, conn_features);
 
-  test->self_handle = tp_connection_get_self_handle (test->conn);
+  test->self_handle = tp_contact_get_handle (
+      tp_connection_get_self_contact (test->conn));
   g_assert (test->self_handle != 0);
 
   test->audio_request = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);

@@ -146,7 +146,7 @@ test_prepare (Test *test,
   g_assert (tp_proxy_is_prepared (test->conn, TP_CONNECTION_FEATURE_CORE));
   g_assert (!tp_proxy_is_prepared (test->conn,
         TP_CONNECTION_FEATURE_CONNECTED));
-  g_assert_cmpuint (tp_connection_get_self_handle (test->conn), ==, 0);
+  g_assert (tp_connection_get_self_contact (test->conn) == NULL);
   g_assert_cmpint (tp_connection_get_status (test->conn, NULL), ==,
       TP_CONNECTION_STATUS_DISCONNECTED);
 
@@ -190,7 +190,7 @@ test_prepare (Test *test,
         TP_CONNECTION_FEATURE_CONNECTED));
   g_assert (tp_proxy_is_prepared (test->conn,
         TP_CONNECTION_FEATURE_CAPABILITIES));
-  g_assert_cmpuint (tp_connection_get_self_handle (test->conn), !=, 0);
+  g_assert (TP_IS_CONTACT (tp_connection_get_self_contact (test->conn)));
   g_assert_cmpint (tp_connection_get_status (test->conn, &reason), ==,
       TP_CONNECTION_STATUS_CONNECTED);
   g_assert_cmpint (reason, ==, TP_CONNECTION_STATUS_REASON_REQUESTED);
