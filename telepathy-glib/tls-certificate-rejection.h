@@ -24,6 +24,7 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/enums.h>
 
 G_BEGIN_DECLS
@@ -43,6 +44,7 @@ struct _TpTLSCertificateRejection {
   TpTLSCertificateRejectionPriv *priv;
 };
 
+_TP_AVAILABLE_IN_0_20
 GType tp_tls_certificate_rejection_get_type (void);
 
 /* TYPE MACROS */
@@ -67,15 +69,20 @@ GType tp_tls_certificate_rejection_get_type (void);
     TP_TYPE_TLS_CERTIFICATE_REJECTION, \
     TpTLSCertificateRejectionClass))
 
+_TP_AVAILABLE_IN_0_20
 const GError * tp_tls_certificate_rejection_get_error (
     TpTLSCertificateRejection *self);
+_TP_AVAILABLE_IN_0_20
 TpTLSCertificateRejectReason tp_tls_certificate_rejection_get_reason (
     TpTLSCertificateRejection *self);
+_TP_AVAILABLE_IN_0_20
 const gchar * tp_tls_certificate_rejection_get_dbus_error (
     TpTLSCertificateRejection *self);
+_TP_AVAILABLE_IN_0_20
 GVariant * tp_tls_certificate_rejection_get_details (
     TpTLSCertificateRejection *self);
 
+_TP_AVAILABLE_IN_0_20
 gboolean tp_tls_certificate_rejection_raise_error (
     TpTLSCertificateRejection *self,
     GError **error);

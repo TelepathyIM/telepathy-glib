@@ -51,6 +51,7 @@ struct _TpTLSCertificate {
     TpTLSCertificatePrivate *priv;
 };
 
+_TP_AVAILABLE_IN_0_20
 GType tp_tls_certificate_get_type (void);
 
 #define TP_TYPE_TLS_CERTIFICATE \
@@ -69,43 +70,56 @@ GType tp_tls_certificate_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_TLS_CERTIFICATE, \
                               TpTLSCertificateClass))
 
+_TP_AVAILABLE_IN_0_20
 GQuark tp_tls_certificate_get_feature_quark_core (void);
 #define TP_TLS_CERTIFICATE_FEATURE_CORE \
   (tp_tls_certificate_get_feature_quark_core ())
 
+_TP_AVAILABLE_IN_0_20
 TpTLSCertificate *tp_tls_certificate_new (TpProxy *conn_or_chan,
     const gchar *object_path,
     GError **error);
 
+_TP_AVAILABLE_IN_0_20
 TpTLSCertificateRejection *tp_tls_certificate_get_rejection (
     TpTLSCertificate *self);
 
+_TP_AVAILABLE_IN_0_20
 TpTLSCertificateRejection *tp_tls_certificate_get_nth_rejection (
     TpTLSCertificate *self,
     guint n);
 
+_TP_AVAILABLE_IN_0_20
 void tp_tls_certificate_accept_async (TpTLSCertificate *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_20
 gboolean tp_tls_certificate_accept_finish (TpTLSCertificate *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_20
 void tp_tls_certificate_add_rejection (TpTLSCertificate *self,
     TpTLSCertificateRejectReason reason,
     const gchar *dbus_error,
     GVariant *details);
+_TP_AVAILABLE_IN_0_20
 void tp_tls_certificate_reject_async (TpTLSCertificate *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
+_TP_AVAILABLE_IN_0_20
 gboolean tp_tls_certificate_reject_finish (TpTLSCertificate *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_0_20
 void tp_tls_certificate_init_known_interfaces (void);
 
+_TP_AVAILABLE_IN_0_20
 const gchar * tp_tls_certificate_get_cert_type (TpTLSCertificate *self);
+_TP_AVAILABLE_IN_0_20
 GPtrArray * tp_tls_certificate_get_cert_data (TpTLSCertificate *self);
+_TP_AVAILABLE_IN_0_20
 TpTLSCertificateState tp_tls_certificate_get_state (TpTLSCertificate *self);
 
 G_END_DECLS
