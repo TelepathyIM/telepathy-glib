@@ -49,7 +49,10 @@ upload-branch-docs: all
 include tools/lcov.am
 
 CHANGELOG_RANGE = telepathy-glib-0.14.0..
-CHECK_FOR_UNRELEASED = $(srcdir)/NEWS $(wildcard $(srcdir)/telepathy-glib/*.[ch])
+CHECK_FOR_UNRELEASED = \
+    $(srcdir)/NEWS \
+    $(filter-out %/defs.h,$(wildcard $(srcdir)/telepathy-glib/*.[ch])) \
+    $(NULL)
 
 include tools/telepathy.am
 
