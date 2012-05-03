@@ -29,6 +29,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_GROUPS
 #include "telepathy-glib/connection-internal.h"
+#include "telepathy-glib/contact-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/util-internal.h"
 
@@ -198,6 +199,7 @@ _tp_channel_contacts_group_init (TpChannel *self,
 
   self->priv->group_self_contact = dup_contact (self,
       self->priv->group_self_handle, identifiers);
+  _tp_contact_set_is_self (self->priv->group_self_contact, TRUE);
 
   self->priv->group_members_contacts = dup_contacts_table (self,
       self->priv->group_members, identifiers);
@@ -731,6 +733,10 @@ self_contact_changed_prepared_cb (GObject *object,
   TpContact *contact = user_data;
 
   _tp_channel_contacts_queue_prepare_finish (self, result, NULL, NULL);
+
+  if (self->priv->group_self_contact != NULL)
+    _tp_contact_set_is_self (self->priv->group_self_contact, FALSE);
+  _tp_contact_set_is_self (contact, TRUE);
 
   g_clear_object (&self->priv->group_self_contact);
   self->priv->group_self_contact = contact;

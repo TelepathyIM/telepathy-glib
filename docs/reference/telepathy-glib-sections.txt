@@ -3773,6 +3773,7 @@ tp_contact_get_connection
 tp_contact_get_handle
 tp_contact_get_identifier
 tp_contact_has_feature
+tp_contact_is_self
 <SUBSECTION>
 TP_CONTACT_FEATURE_ALIAS
 tp_contact_get_alias
