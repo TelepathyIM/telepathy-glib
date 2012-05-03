@@ -1006,64 +1006,6 @@ insert_account (TpAccountManager *self,
 }
 
 /**
- * tp_account_manager_ensure_account:
- * @manager: a #TpAccountManager
- * @path: the object path for an account
- *
- * Lookup an account in the account manager @manager. If the desired account
- * has already been ensured then the same object will be returned, otherwise
- * it will create a new #TpAccount and add it to @manager. As a result, if
- * @manager thinks that the account doesn't exist, this will still add it to
- * @manager to avoid races. Note that the returned #TpAccount is not guaranteed
- * to be ready on return.
- *
- * The caller must keep a ref to the returned object using g_object_ref() if
- * it is to be kept.
- *
- * Returns: (transfer none): a new #TpAccount at @path, or %NULL if @path is
- *  not a valid account path.
- *
- * Since: 0.9.0
- * Deprecated: New code should use tp_client_factory_ensure_account()
- *  instead.
- */
-TpAccount *
-tp_account_manager_ensure_account (TpAccountManager *self,
-    const gchar *path)
-{
-  TpAccount *account;
-  GError *error = NULL;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (self), NULL);
-  g_return_val_if_fail (path != NULL, NULL);
-
-  account = g_hash_table_lookup (self->priv->legacy_accounts, path);
-  if (account != NULL)
-    return account;
-
-  account = tp_client_factory_ensure_account (
-      tp_proxy_get_factory (self), path, NULL, &error);
-  if (account == NULL)
-    {
-      DEBUG ("failed to create account: %s", error->message);
-      g_clear_error (&error);
-      return NULL;
-    }
-
-  /* We don't want to insert in self->priv->accounts random accounts we
-   * don't even know if they are usable. For compatibility we can't return a ref,
-   * so keep them into a legacy table */
-  g_hash_table_insert (self->priv->legacy_accounts, g_strdup (path),
-      account);
-  tp_g_signal_connect_object (account, "invalidated",
-      G_CALLBACK (legacy_account_invalidated_cb), self, 0);
-
-  tp_proxy_prepare_async (account, NULL, NULL, NULL);
-
-  return account;
-}
-
-/**
  * tp_account_manager_get_usable_accounts:
  * @manager: a #TpAccountManager
  *
