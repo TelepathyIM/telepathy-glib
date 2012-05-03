@@ -556,6 +556,8 @@ tp_connection_manager_get_all_cb (TpProxy *proxy,
                 }
             }
         }
+
+      tp_connection_manager_continue_introspection (self);
     }
   else
     {
@@ -571,8 +573,6 @@ tp_connection_manager_get_all_cb (TpProxy *proxy,
 
       tp_connection_manager_end_introspection (self, error);
     }
-
-  tp_connection_manager_continue_introspection (self);
 }
 
 static void
