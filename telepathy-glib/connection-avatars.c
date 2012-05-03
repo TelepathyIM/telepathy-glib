@@ -158,20 +158,9 @@ tp_connection_get_avatar_requirements (TpConnection *self)
  *
  * Since: 0.11.4
  */
-GType
-tp_avatar_requirements_get_type (void)
-{
-  static GType type = 0;
 
-  if (G_UNLIKELY (type == 0))
-    {
-      type = g_boxed_type_register_static (g_intern_static_string ("TpAvatarRequirements"),
-          (GBoxedCopyFunc) tp_avatar_requirements_copy,
-          (GBoxedFreeFunc) tp_avatar_requirements_destroy);
-    }
-
-  return type;
-}
+G_DEFINE_BOXED_TYPE (TpAvatarRequirements, tp_avatar_requirements,
+    tp_avatar_requirements_copy, tp_avatar_requirements_destroy)
 
 /**
  * tp_avatar_requirements_new:

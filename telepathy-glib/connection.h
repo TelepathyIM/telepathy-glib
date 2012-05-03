@@ -48,6 +48,8 @@ TpContactInfoFieldSpec *tp_contact_info_field_spec_copy (
     const TpContactInfoFieldSpec *self);
 void tp_contact_info_field_spec_free (TpContactInfoFieldSpec *self);
 
+typedef GList TpContactInfoSpecList;
+
 #define TP_TYPE_CONTACT_INFO_SPEC_LIST (tp_contact_info_spec_list_get_type ())
 GType tp_contact_info_spec_list_get_type (void);
 GList *tp_contact_info_spec_list_copy (GList *list);
@@ -70,6 +72,8 @@ TpContactInfoField *tp_contact_info_field_new (const gchar *field_name,
     GStrv parameters, GStrv field_value);
 TpContactInfoField *tp_contact_info_field_copy (const TpContactInfoField *self);
 void tp_contact_info_field_free (TpContactInfoField *self);
+
+typedef GList TpContactInfoList;
 
 #define TP_TYPE_CONTACT_INFO_LIST (tp_contact_info_list_get_type ())
 GType tp_contact_info_list_get_type (void);

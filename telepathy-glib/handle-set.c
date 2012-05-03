@@ -53,21 +53,8 @@ struct _TpHandleSet
  * Since: 0.11.6
  */
 
-GType
-tp_handle_set_get_type (void)
-{
-  static GType type = 0;
-
-  if (G_UNLIKELY (type == 0))
-    {
-      type = g_boxed_type_register_static (
-          g_intern_static_string ("TpHandleSet"),
-          (GBoxedCopyFunc) tp_handle_set_copy,
-          (GBoxedFreeFunc) tp_handle_set_destroy);
-    }
-
-  return type;
-}
+G_DEFINE_BOXED_TYPE (TpHandleSet, tp_handle_set, tp_handle_set_copy,
+    tp_handle_set_destroy)
 
 /**
  * tp_handle_set_new: (skip)
