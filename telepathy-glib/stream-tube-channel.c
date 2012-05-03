@@ -549,46 +549,12 @@ complete_accept_operation (TpStreamTubeChannel *self,
 }
 
 static void
-new_local_connection_with_contact (TpConnection *conn,
-    guint n_contacts,
-    TpContact * const *contacts,
-    guint n_failed,
-    const TpHandle *failed,
-    const GError *in_error,
-    gpointer user_data,
-    GObject *obj)
-{
-  TpStreamTubeChannel *self = (TpStreamTubeChannel *) obj;
-  TpContact *contact;
-  TpStreamTubeConnection *tube_conn = user_data;
-
-  if (in_error != NULL)
-    {
-      DEBUG ("Failed to prepare TpContact: %s", in_error->message);
-      return;
-    }
-
-  if (n_failed > 0)
-    {
-      DEBUG ("Failed to prepare TpContact (InvalidHandle)");
-      return;
-    }
-
-  contact = contacts[0];
-  _tp_stream_tube_connection_set_contact (tube_conn, contact);
-
-  complete_accept_operation (self, tube_conn);
-}
-
-static void
 new_local_connection_identified (TpStreamTubeChannel *self,
     GSocketConnection *conn,
     guint connection_id)
 {
-  TpHandle initiator_handle;
   TpStreamTubeConnection *tube_conn;
-  TpConnection *connection;
-  GArray *features;
+  TpContact *initiator;
 
   tube_conn = _tp_stream_tube_connection_new (conn, self);
 
@@ -600,22 +566,12 @@ new_local_connection_identified (TpStreamTubeChannel *self,
 
   /* We are accepting a tube so the contact of the connection is the
    * initiator of the tube */
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  initiator_handle = tp_channel_get_initiator_handle (TP_CHANNEL (self));
-  G_GNUC_END_IGNORE_DEPRECATIONS
+  initiator = tp_channel_get_initiator_contact (TP_CHANNEL (self));
+  _tp_stream_tube_connection_set_contact (tube_conn, initiator);
 
-  connection = tp_channel_borrow_connection (TP_CHANNEL (self));
-  features = tp_client_factory_dup_contact_features (
-      tp_proxy_get_factory (connection), connection);
+  complete_accept_operation (self, tube_conn);
 
-  /* Pass ownership of tube_conn to the function */
-  tp_connection_get_contacts_by_handle (connection,
-      1, &initiator_handle,
-      (const GQuark *) features->data,
-      new_local_connection_with_contact,
-      tube_conn, g_object_unref, G_OBJECT (self));
-
-  g_array_unref (features);
+  g_object_unref (tube_conn);
 }
 
 #ifdef HAVE_GIO_UNIX

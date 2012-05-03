@@ -127,13 +127,6 @@ GQuark tp_channel_get_channel_type_id (TpChannel *self);
 TpHandle tp_channel_get_handle (TpChannel *self, TpHandleType *handle_type);
 const gchar *tp_channel_get_identifier (TpChannel *self);
 
-#ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_0_20_FOR (tp_channel_get_initiator_contact)
-TpHandle tp_channel_get_initiator_handle (TpChannel *self);
-
-_TP_DEPRECATED_IN_0_20_FOR (tp_channel_get_initiator_contact)
-const gchar * tp_channel_get_initiator_identifier (TpChannel *self);
-#endif
 _TP_AVAILABLE_IN_0_16
 TpContact *tp_channel_get_target_contact (TpChannel *self);
 _TP_AVAILABLE_IN_0_16

@@ -49,6 +49,7 @@ assert_chan_sane (TpChannel *chan,
 {
   GHashTable *asv;
   TpHandleType type;
+  TpContact *contact;
 
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
       TRUE);
@@ -62,10 +63,15 @@ assert_chan_sane (TpChannel *chan,
   g_assert (TP_IS_CONNECTION (tp_channel_borrow_connection (chan)));
   g_assert_cmpstr (tp_channel_get_identifier (chan), ==, IDENTIFIER);
   g_assert (tp_channel_get_requested (chan) == requested);
-  g_assert_cmpuint (tp_channel_get_initiator_handle (chan), ==,
-      initiator_handle);
-  g_assert_cmpstr (tp_channel_get_initiator_identifier (chan), ==,
-      initiator_id);
+
+  contact = tp_channel_get_initiator_contact (chan);
+  g_assert (contact != NULL);
+  g_assert_cmpuint (tp_contact_get_handle (contact), ==, initiator_handle);
+  g_assert_cmpstr (tp_contact_get_identifier (contact), ==, initiator_id);
+
+  contact = tp_channel_get_target_contact (chan);
+  g_assert (contact != NULL);
+  g_assert_cmpuint (tp_contact_get_handle (contact), ==, handle);
 
   asv = tp_channel_borrow_immutable_properties (chan);
   g_assert (asv != NULL);

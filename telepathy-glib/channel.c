@@ -95,8 +95,6 @@ enum
   PROP_GROUP_SELF_HANDLE,
   PROP_GROUP_FLAGS,
   PROP_REQUESTED,
-  PROP_INITIATOR_HANDLE,
-  PROP_INITIATOR_IDENTIFIER,
   PROP_PASSWORD_NEEDED,
   PROP_TARGET_CONTACT,
   PROP_INITIATOR_CONTACT,
@@ -460,12 +458,6 @@ tp_channel_get_property (GObject *object,
       break;
     case PROP_REQUESTED:
       g_value_set_boolean (value, tp_channel_get_requested (self));
-      break;
-    case PROP_INITIATOR_HANDLE:
-      g_value_set_uint (value, tp_channel_get_initiator_handle (self));
-      break;
-    case PROP_INITIATOR_IDENTIFIER:
-      g_value_set_string (value, tp_channel_get_initiator_identifier (self));
       break;
     case PROP_PASSWORD_NEEDED:
       g_value_set_boolean (value, tp_channel_password_needed (self));
@@ -1456,59 +1448,6 @@ tp_channel_class_init (TpChannelClass *klass)
       param_spec);
 
   /**
-   * TpChannel:initiator-handle:
-   *
-   * The %TP_HANDLE_TYPE_CONTACT #TpHandle of the initiator of this
-   * channel, or 0 if there is no particular initiator.
-   *
-   * If the channel was initiated by a remote contact, this handle represents
-   * that contact, and #TpChannel:requested will be %FALSE. For instance,
-   * for an incoming call this property indicates the caller, and for a
-   * chatroom invitation this property indicates who sent the invitation.
-   *
-   * If the channel was requested by the local user, #TpChannel:requested
-   * will be %TRUE, and this property may be the #TpChannel:group-self-handle
-   * or #TpConnection:self-handle.
-   *
-   * If the channel appeared for some other reason (for instance as a
-   * side-effect of connecting to the server), this property may be 0.
-   *
-   * This is not guaranteed to be set until tp_proxy_prepare_async() has
-   * finished preparing %TP_CHANNEL_FEATURE_CORE; until then, it may be 0.
-   *
-   * Since: 0.11.15
-   * Deprecated: Use #TpChannel:initiator-contact instead.
-   */
-  param_spec = g_param_spec_uint ("initiator-handle", "TpHandle",
-      "The handle of the initiator of the channel",
-      0, G_MAXUINT32, 0,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INITIATOR_HANDLE,
-      param_spec);
-
-  /**
-   * TpChannel:initiator-identifier:
-   *
-   * If #TpChannel:initiator-handle is 0, this will always be "".
-   * Otherwise, this will be the #TpContact:identifier of the contact
-   * with that handle.
-   *
-   * This is not guaranteed to be set until tp_proxy_prepare_async() has
-   * finished preparing %TP_CHANNEL_FEATURE_CORE; until then, it may be
-   * the empty string.
-   *
-   * Since: 0.11.15
-   * Deprecated: Use #TpChannel:initiator-contact instead.
-   */
-  param_spec = g_param_spec_string ("initiator-identifier",
-      "Initiator identifier",
-      "The identifier of the initiator of the channel",
-      "",
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INITIATOR_IDENTIFIER,
-      param_spec);
-
-  /**
    * TpChannel:password-needed:
    *
    * If %TRUE, tp_channel_provide_password_async() has to be called
@@ -1895,46 +1834,6 @@ tp_channel_get_requested (TpChannel *self)
 {
   return tp_asv_get_boolean (self->priv->channel_properties,
       TP_PROP_CHANNEL_REQUESTED, NULL);
-}
-
-/**
- * tp_channel_get_initiator_handle: (skip)
- * @self: a #TpChannel
- *
- * Return the #TpChannel:initiator-handle property
- *
- * Returns: the value of #TpChannel:initiator-handle
- *
- * Since: 0.11.15
- * Deprecated: New code should use tp_channel_get_initiator_contact() instead.
- */
-TpHandle
-tp_channel_get_initiator_handle (TpChannel *self)
-{
-  return tp_asv_get_uint32 (self->priv->channel_properties,
-      TP_PROP_CHANNEL_INITIATOR_HANDLE, NULL);
-}
-
-/**
- * tp_channel_get_initiator_identifier: (skip)
- * @self: a #TpChannel
- *
- * Return the #TpChannel:initiator-identifier property
- *
- * Returns: the value of #TpChannel:initiator-identifier
- *
- * Since: 0.11.15
- * Deprecated: New code should use tp_channel_get_initiator_contact() instead.
- */
-const gchar *
-tp_channel_get_initiator_identifier (TpChannel *self)
-{
-  const gchar *id;
-
-  id = tp_asv_get_string (self->priv->channel_properties,
-      TP_PROP_CHANNEL_INITIATOR_ID);
-
-  return id != NULL ? id : "";
 }
 
 /* tp_cli callbacks can potentially be called in a re-entrant way,
