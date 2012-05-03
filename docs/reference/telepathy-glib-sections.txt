@@ -4945,7 +4945,6 @@ tp_connection_get_contacts_by_id
 TpConnectionUpgradeContactsCb
 tp_connection_upgrade_contacts
 tp_connection_refresh_contact_info
-tp_contact_is_self
 tp_contact_get_alias
 tp_contact_get_avatar_token
 tp_contact_get_avatar_file

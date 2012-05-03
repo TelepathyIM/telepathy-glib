@@ -184,7 +184,6 @@ enum {
     PROP_PUBLISH_REQUEST,
     PROP_CONTACT_GROUPS,
     PROP_IS_BLOCKED,
-    PROP_IS_SELF,
     N_PROPS
 };
 
@@ -219,7 +218,6 @@ struct _TpContactPrivate {
     TpHandle handle;
     gchar *identifier;
     ContactFeatureFlags has_features;
-    gboolean is_self;
 
     /* aliasing */
     gchar *alias;
@@ -369,33 +367,6 @@ tp_contact_has_feature (TpContact *self,
   g_return_val_if_fail (feature < TP_NUM_CONTACT_FEATURES, FALSE);
 
   return ((self->priv->has_features & (1 << feature)) != 0);
-}
-
-/**
- * tp_contact_is_self:
- * @self: a contact
- *
- * <!-- -->
- *
- * Returns: the value of #TpContact:is-self property
- * Since: 0.UNRELEASED
- */
-gboolean
-tp_contact_is_self (TpContact *self)
-{
-  g_return_val_if_fail (TP_IS_CONTACT (self), FALSE);
-
-  return self->priv->is_self;
-}
-
-void
-_tp_contact_set_is_self (TpContact *self,
-    gboolean is_self)
-{
-  g_return_if_fail (TP_IS_CONTACT (self));
-
-  self->priv->is_self = is_self;
-  g_object_notify ((GObject *) self, "is-self");
 }
 
 
@@ -985,10 +956,6 @@ tp_contact_get_property (GObject *object,
       g_value_set_boolean (value, tp_contact_is_blocked (self));
       break;
 
-    case PROP_IS_SELF:
-      g_value_set_boolean (value, tp_contact_is_self (self));
-      break;
-
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -1364,7 +1331,7 @@ tp_contact_class_init (TpContactClass *klass)
   g_object_class_install_property (object_class, PROP_CONTACT_GROUPS,
       param_spec);
 
-  /**
+/**
    * TpContact:is-blocked:
    *
    * %TRUE if the contact has been blocked.
@@ -1381,22 +1348,6 @@ tp_contact_class_init (TpContactClass *klass)
       FALSE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_IS_BLOCKED, param_spec);
-
-  /**
-   * TpContact:is-self:
-   *
-   * This is %TRUE if the contact is set as
-   * #TpConnection's #TpConnection:self-contact or
-   * #TpChannel's #TpChannel:group-self-contact, %FALSE otherwise.
-   *
-   * Since: 0.UNRELEASED
-   */
-  param_spec = g_param_spec_boolean ("is-self",
-      "is local user",
-      "TRUE if contact is local user",
-      FALSE,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_IS_SELF, param_spec);
 
   /**
    * TpContact::contact-groups-changed:
