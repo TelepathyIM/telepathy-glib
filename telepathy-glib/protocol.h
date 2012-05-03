@@ -80,6 +80,7 @@ TpProtocol *tp_protocol_new (TpDBusDaemon *dbus, const gchar *cm_name,
 
 const gchar *tp_protocol_get_name (TpProtocol *self);
 
+_TP_AVAILABLE_IN_0_20
 const gchar *tp_protocol_get_cm_name (TpProtocol *self);
 
 #define TP_PROTOCOL_FEATURE_PARAMETERS \

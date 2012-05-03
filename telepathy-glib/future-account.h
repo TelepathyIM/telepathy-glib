@@ -22,6 +22,7 @@
 #define TP_FUTURE_ACCOUNT_H
 
 #include <telepathy-glib/account-manager.h>
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/protocol.h>
 
 G_BEGIN_DECLS
@@ -60,56 +61,72 @@ GType tp_future_account_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_FUTURE_ACCOUNT, \
                               TpFutureAccountClass))
 
+_TP_AVAILABLE_IN_0_20
 TpFutureAccount * tp_future_account_new (TpAccountManager *account_manager,
     const gchar *manager, const gchar *protocol) G_GNUC_WARN_UNUSED_RESULT;
 
+_TP_AVAILABLE_IN_0_20
 TpFutureAccount * tp_future_account_new_from_protocol (
     TpAccountManager *account_manager,
     TpProtocol *protocol) G_GNUC_WARN_UNUSED_RESULT;
 
+_TP_AVAILABLE_IN_0_20
 void tp_future_account_set_display_name (TpFutureAccount *self,
     const gchar *name);
 
+_TP_AVAILABLE_IN_0_20
 void tp_future_account_set_icon_name (TpFutureAccount *self,
     const gchar *icon);
 
+_TP_AVAILABLE_IN_0_20
 void tp_future_account_set_nickname (TpFutureAccount *self,
     const gchar *nickname);
 
+_TP_AVAILABLE_IN_0_20
 void tp_future_account_set_requested_presence (TpFutureAccount *self,
     TpConnectionPresenceType presence,
     const gchar *status, const gchar *message);
 
+_TP_AVAILABLE_IN_0_20
 void tp_future_account_set_automatic_presence (TpFutureAccount *self,
     TpConnectionPresenceType presence,
     const gchar *status, const gchar *message);
 
+_TP_AVAILABLE_IN_0_20
 void tp_future_account_set_enabled (TpFutureAccount *self,
     gboolean enabled);
 
+_TP_AVAILABLE_IN_0_20
 void tp_future_account_set_connect_automatically (TpFutureAccount *self,
     gboolean connect_automatically);
 
+_TP_AVAILABLE_IN_0_20
 void tp_future_account_add_supersedes (TpFutureAccount *self,
     const gchar *superseded_path);
 
+_TP_AVAILABLE_IN_0_20
 void tp_future_account_set_avatar (TpFutureAccount *self,
     const guchar *avatar, gsize len, const gchar *mime_type);
 
 /* parameters */
+_TP_AVAILABLE_IN_0_20
 void tp_future_account_set_parameter (TpFutureAccount *self,
     const gchar *key, GVariant *value);
 
+_TP_AVAILABLE_IN_0_20
 void tp_future_account_unset_parameter (TpFutureAccount *self,
     const gchar *key);
 
+_TP_AVAILABLE_IN_0_20
 void tp_future_account_set_parameter_string (TpFutureAccount *self,
     const gchar *key, const gchar *value);
 
 /* create it */
+_TP_AVAILABLE_IN_0_20
 void tp_future_account_create_account_async (TpFutureAccount *self,
     GAsyncReadyCallback callback, gpointer user_data);
 
+_TP_AVAILABLE_IN_0_20
 TpAccount * tp_future_account_create_account_finish (TpFutureAccount *self,
     GAsyncResult *result, GError **error);
 
