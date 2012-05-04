@@ -213,6 +213,8 @@ enum
  * relied on.
  *
  * Since: 0.7.1
+ *
+ * Deprecated: 0.UNRELEASED, use #TpProtocol objects instead
  */
 
 typedef enum {
@@ -348,6 +350,8 @@ tp_connection_manager_param_free (TpConnectionManagerParam *param)
  *  tp_connection_manager_protocol_free()
  *
  * Since: 0.11.3
+ *
+ * Deprecated: 0.UNRELEASED, use #TpProtocol objects instead
  */
 TpConnectionManagerProtocol *
 tp_connection_manager_protocol_copy (const TpConnectionManagerProtocol *in)
@@ -380,6 +384,8 @@ tp_connection_manager_protocol_copy (const TpConnectionManagerProtocol *in)
  * Frees @proto, which was copied with tp_connection_manager_protocol_copy().
  *
  * Since: 0.11.3
+ *
+ * Deprecated: 0.UNRELEASED, use #TpProtocol objects instead
  */
 void
 tp_connection_manager_protocol_free (TpConnectionManagerProtocol *proto)
@@ -407,11 +413,15 @@ G_DEFINE_BOXED_TYPE (TpConnectionManagerParam, tp_connection_manager_param,
  * The boxed type of a #TpConnectionManagerProtocol.
  *
  * Since: 0.11.3
+ *
+ * Deprecated: 0.UNRELEASED, use #TpProtocol objects instead
  */
 
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 G_DEFINE_BOXED_TYPE (TpConnectionManagerProtocol,
     tp_connection_manager_protocol,
     tp_connection_manager_protocol_copy, tp_connection_manager_protocol_free)
+G_GNUC_END_IGNORE_DEPRECATIONS
 
 typedef struct {
     TpConnectionManager *cm;
@@ -2200,6 +2210,8 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
  *
  * Returns: (transfer none): a structure representing the protocol
  * Since: 0.7.26
+ *
+ * Deprecated: 0.UNRELEASED, use tp_connection_manager_get_protocol_object()
  */
 const TpConnectionManagerProtocol *
 tp_connection_manager_get_protocol (TpConnectionManager *self,
@@ -2315,13 +2327,17 @@ tp_connection_manager_has_protocol (TpConnectionManager *self,
  *
  * Returns: %TRUE if @protocol supports the parameter @param.
  * Since: 0.7.26
+ *
+ * Deprecated: 0.UNRELEASED, use #TpProtocol objects instead
  */
 gboolean
 tp_connection_manager_protocol_has_param (
     const TpConnectionManagerProtocol *protocol,
     const gchar *param)
 {
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   return (tp_connection_manager_protocol_get_param (protocol, param) != NULL);
+G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 /**
@@ -2334,6 +2350,8 @@ tp_connection_manager_protocol_has_param (
  * Returns: a structure representing the parameter @param, or %NULL if not
  *          supported
  * Since: 0.7.26
+ *
+ * Deprecated: 0.UNRELEASED, use #TpProtocol objects instead
  */
 const TpConnectionManagerParam *
 tp_connection_manager_protocol_get_param (
@@ -2366,12 +2384,16 @@ tp_connection_manager_protocol_get_param (
  *
  * Returns: %TRUE if @protocol supports the parameter "register"
  * Since: 0.7.26
+ *
+ * Deprecated: 0.UNRELEASED, use #TpProtocol objects instead
  */
 gboolean
 tp_connection_manager_protocol_can_register (
     const TpConnectionManagerProtocol *protocol)
 {
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   return tp_connection_manager_protocol_has_param (protocol, "register");
+G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 /**
@@ -2385,6 +2407,8 @@ tp_connection_manager_protocol_can_register (
  *
  * Returns: (array zero-terminated=1) (transfer full): a #GStrv of protocol names
  * Since: 0.7.26
+ *
+ * Deprecated: 0.UNRELEASED, use #TpProtocol objects instead
  */
 gchar **
 tp_connection_manager_protocol_dup_param_names (
