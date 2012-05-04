@@ -66,7 +66,7 @@
  * <itemizedlist>
  *   <listitem>
  *     <para>%TP_CHANNEL_FEATURE_CORE
- *     for all type of channels.</para>
+ *     for all channel types.</para>
  *   </listitem>
  *   <listitem>
  *     <para>%TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE
