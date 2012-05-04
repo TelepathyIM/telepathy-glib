@@ -13,8 +13,7 @@
 #define EXAMPLE_ECHO_MESSAGE_PARTS_CONN_H
 
 #include <glib-object.h>
-#include <telepathy-glib/base-connection.h>
-#include <telepathy-glib/contacts-mixin.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
 

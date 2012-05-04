@@ -21,9 +21,8 @@
 
 #include "call-content.h"
 
-#include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/telepathy-glib.h>
-#include <telepathy-glib/svc-call.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 G_DEFINE_TYPE (ExampleCallContent,
     example_call_content,

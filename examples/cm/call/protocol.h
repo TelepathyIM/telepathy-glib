@@ -11,7 +11,8 @@
 #define EXAMPLE_CALL_PROTOCOL_H
 
 #include <glib-object.h>
-#include <telepathy-glib/base-protocol.h>
+
+#include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
 

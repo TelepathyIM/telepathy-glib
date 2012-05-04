@@ -2,7 +2,8 @@
 #define __EXAMPLE_EXTENSIONS_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/connection.h>
+
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "examples/extensions/_gen/enums.h"
 #include "examples/extensions/_gen/cli-connection.h"

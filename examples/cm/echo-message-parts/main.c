@@ -11,8 +11,7 @@
 
 #include "config.h"
 
-#include <telepathy-glib/debug.h>
-#include <telepathy-glib/run.h>
+#include <telepathy-glib/telepathy-glib.h>
 #include "connection-manager.h"
 
 static TpBaseConnectionManager *

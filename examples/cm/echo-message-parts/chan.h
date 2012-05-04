@@ -12,9 +12,7 @@
 #ifndef EXAMPLE_ECHO_MESSAGE_PARTS_CHAN_H
 #define EXAMPLE_ECHO_MESSAGE_PARTS_CHAN_H
 
-#include <telepathy-glib/base-channel.h>
-#include <telepathy-glib/base-connection.h>
-#include <telepathy-glib/message-mixin.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
 

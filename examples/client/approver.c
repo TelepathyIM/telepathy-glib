@@ -14,8 +14,6 @@
 #include <stdio.h>
 
 #include <telepathy-glib/telepathy-glib.h>
-#include <telepathy-glib/debug.h>
-#include <telepathy-glib/simple-approver.h>
 
 GMainLoop *mainloop = NULL;
 

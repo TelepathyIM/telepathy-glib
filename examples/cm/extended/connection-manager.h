@@ -11,7 +11,7 @@
 #define __EXAMPLE_EXTENDED_CONNECTION_MANAGER_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/base-connection-manager.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
 

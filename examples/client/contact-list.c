@@ -11,7 +11,6 @@
 #include "config.h"
 
 #include <telepathy-glib/telepathy-glib.h>
-#include <telepathy-glib/debug.h>
 
 static void
 account_manager_prepared_cb (GObject *object,

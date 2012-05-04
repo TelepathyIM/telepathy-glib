@@ -16,7 +16,6 @@
 #include <dbus/dbus-glib.h>
 
 #include <telepathy-glib/telepathy-glib.h>
-#include <telepathy-glib/handle-repo-dynamic.h>
 
 /* This would conventionally be extensions/extensions.h */
 #include "examples/extensions/extensions.h"

@@ -17,7 +17,6 @@
 
 #include <dbus/dbus-glib.h>
 
-#include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/telepathy-glib.h>
 
 /* this array must be kept in sync with the enum

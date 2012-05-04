@@ -16,9 +16,10 @@
 #include <string.h>
 
 #include <telepathy-glib/telepathy-glib.h>
-#include <telepathy-glib/channel-iface.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
+
+/* FIXME: example code should not be doing this! */
 #include <telepathy-glib/message-internal.h>
-#include <telepathy-glib/svc-channel.h>
 
 static void destroyable_iface_init (gpointer iface, gpointer data);
 static void sms_iface_init (gpointer iface, gpointer data);
