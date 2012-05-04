@@ -229,6 +229,7 @@ tp_tls_certificate_rejection_init (TpTLSCertificateRejection *self)
       TP_TYPE_TLS_CERTIFICATE_REJECTION, TpTLSCertificateRejectionPriv);
 }
 
+/* @details is sinked if it's a floating reference */
 TpTLSCertificateRejection *
 _tp_tls_certificate_rejection_new (
     GError *error,
@@ -236,12 +237,19 @@ _tp_tls_certificate_rejection_new (
     const gchar *dbus_error,
     GVariant *details)
 {
-  return g_object_new (TP_TYPE_TLS_CERTIFICATE_REJECTION,
+  TpTLSCertificateRejection *ret;
+
+  g_variant_ref_sink (details);
+
+  ret =  g_object_new (TP_TYPE_TLS_CERTIFICATE_REJECTION,
       "error", error,
       "reason", reason,
       "dbus-error", dbus_error,
       "details", details,
       NULL);
+
+  g_variant_unref (details);
+  return ret;
 }
 
 /**
