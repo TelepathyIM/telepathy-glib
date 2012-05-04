@@ -1807,6 +1807,8 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
  * occurred while launching that connection manager.
  *
  * Since: 0.7.1
+ *
+ * Deprecated: since 0.UNRELEASED, use tp_list_connection_managers_async()
  */
 void
 tp_list_connection_managers (TpDBusDaemon *bus_daemon,
@@ -1910,8 +1912,10 @@ tp_list_connection_managers_async (TpDBusDaemon *dbus_daemon,
     }
   else
     {
+      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
       tp_list_connection_managers (dbus_daemon,
           list_connection_managers_async_cb, result, g_object_unref, NULL);
+      G_GNUC_END_IGNORE_DEPRECATIONS
       g_object_unref (dbus_daemon);
     }
 }

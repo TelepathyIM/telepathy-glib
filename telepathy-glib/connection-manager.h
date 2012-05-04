@@ -112,10 +112,13 @@ typedef void (*TpConnectionManagerListCb) (TpConnectionManager * const *cms,
     gsize n_cms, const GError *error, gpointer user_data,
     GObject *weak_object);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_UNRELEASED_FOR (tp_list_connection_managers_async)
 void tp_list_connection_managers (TpDBusDaemon *bus_daemon,
     TpConnectionManagerListCb callback,
     gpointer user_data, GDestroyNotify destroy,
     GObject *weak_object);
+#endif
 
 _TP_AVAILABLE_IN_0_18
 void tp_list_connection_managers_async (TpDBusDaemon *dbus_daemon,
