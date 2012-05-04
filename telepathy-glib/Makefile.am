@@ -303,8 +303,12 @@ libtelepathy_glib_internal_la_SOURCES = \
     util.c \
     util-internal.h
 
-AM_CFLAGS = \
+AM_CPPFLAGS = \
     -DG_LOG_DOMAIN=\"tp-glib\" \
+    -D_TP_COMPILATION \
+    $(NULL)
+
+AM_CFLAGS = \
     $(ERROR_CFLAGS) \
     @DBUS_CFLAGS@ \
     @GLIB_CFLAGS@ \
