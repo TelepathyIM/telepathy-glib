@@ -33,13 +33,12 @@ typedef struct _TpConnectionManagerParam TpConnectionManagerParam;
 
 struct _TpConnectionManagerParam
 {
-  /*<public>*/
-  gchar *name;
-  gchar *dbus_signature;
-  GValue default_value;
-  guint flags;
-
-  gpointer priv;
+  /*<private>*/
+  gchar *_TP_SEAL (name);
+  gchar *_TP_SEAL (dbus_signature);
+  GValue _TP_SEAL (default_value);
+  guint _TP_SEAL (flags);
+  gpointer _TP_SEAL (priv);
 };
 
 typedef struct _TpProtocol TpProtocol;

@@ -197,16 +197,19 @@ enum
 
 /**
  * TpConnectionManagerParam:
- * @name: The name of this parameter
- * @dbus_signature: This parameter's D-Bus signature
- * @default_value: This parameter's default value, or an arbitrary value
- *  of an appropriate type if %TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT is not
- *  set on this parameter, or an unset GValue if the signature is not
- *  recognised by telepathy-glib
- * @flags: This parameter's flags (a combination of #TpConnMgrParamFlags)
- * @priv: Pointer to opaque private data
  *
  * Structure representing a connection manager parameter.
+ *
+ * Since 0.UNRELEASED, accessing the fields of this struct is deprecated,
+ * and they are no longer documented here.
+ * Use the accessors tp_connection_manager_protocol_param_get_name(),
+ * tp_connection_manager_protocol_param_get_dbus_signature(),
+ * tp_connection_manager_protocol_param_is_required(),
+ * tp_connection_manager_protocol_param_is_required_for_registration(),
+ * tp_connection_manager_protocol_param_is_secret(),
+ * tp_connection_manager_protocol_param_is_dbus_property(),
+ * tp_connection_manager_protocol_param_get_default(),
+ * tp_connection_manager_protocol_param_dup_default_variant() instead.
  *
  * Since: 0.7.1
  */
