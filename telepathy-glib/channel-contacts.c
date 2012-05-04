@@ -644,7 +644,8 @@ _tp_channel_contacts_members_changed (TpChannel *self,
 
   ids = tp_asv_get_boxed (details, "contact-ids",
       TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP);
-  if (ids == NULL)
+  if (ids == NULL && (added->len > 0 || local_pending->len > 0 ||
+      remote_pending->len > 0 || actor != 0 ))
     {
       DEBUG ("CM did not give identifiers, can't create TpContact");
       return;
