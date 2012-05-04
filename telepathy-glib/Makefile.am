@@ -23,10 +23,12 @@ EXTRA_DIST = \
 # internal symbols (_tp_log) which are made invisible by GNU ld, and it
 # makes checking consistency of the ABI easier.
 
+# Put the lowest-level library first, so that libtool will be able to relink
+# them during installation.
 lib_LTLIBRARIES = \
-    libtelepathy-glib-1.la \
-    libtelepathy-glib-1-dbus.la \
     libtelepathy-glib-1-core.la \
+    libtelepathy-glib-1-dbus.la \
+    libtelepathy-glib-1.la \
     $(NULL)
 
 noinst_LTLIBRARIES = \
