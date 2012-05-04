@@ -9,6 +9,10 @@
 
 tools_dir = $(top_srcdir)/tools
 
+AM_CPPFLAGS = \
+    -DTP_SEAL_ENABLE \
+    $(NULL)
+
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \
     $(DBUS_CFLAGS) \
