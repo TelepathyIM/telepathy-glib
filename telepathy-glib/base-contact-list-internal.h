@@ -1,3 +1,4 @@
+/*<private_header>*/
 /* ContactList channel manager - internals (for use by our channels)
  *
  * Copyright © 2010 Collabora Ltd.

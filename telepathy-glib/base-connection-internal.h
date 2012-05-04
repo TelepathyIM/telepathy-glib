@@ -1,3 +1,4 @@
+/*<private_header>*/
 /* Base class for Connection implementations
  *
  * Copyright © 2007-2010 Collabora Ltd.

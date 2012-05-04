@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * client-message-internal.h - Header for TpClientMessage (internal)
  * Copyright (C) 2006-2010 Collabora Ltd.

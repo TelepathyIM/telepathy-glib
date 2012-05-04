@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * Internal constructors for TpChannel subclasses
  *

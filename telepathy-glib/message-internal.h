@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * message-internal.h - Header for TpMessage (internal
  * Copyright (C) 2006-2010 Collabora Ltd.

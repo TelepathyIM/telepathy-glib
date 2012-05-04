@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * room-info-internal.h
  *

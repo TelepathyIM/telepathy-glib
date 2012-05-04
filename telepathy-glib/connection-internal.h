@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * TpConnection - proxy for a Telepathy connection (internals)
  *

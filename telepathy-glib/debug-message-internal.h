@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * debug-message-internal.h
  *

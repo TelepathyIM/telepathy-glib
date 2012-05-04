@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * object used to request a channel from a TpAccount (internal)
  *

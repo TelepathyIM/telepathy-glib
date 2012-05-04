@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * Internals for TpCallChannel, TpCallContent and TpCallStream
  *

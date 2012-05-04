@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * util-internal.h - Headers for non-public telepathy-glib utility functions
  *

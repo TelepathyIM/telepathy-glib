@@ -62,33 +62,8 @@ EXTRA_HFILES=
 # Header files or dirs to ignore when scanning. Use base file/dir names
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h private_code
 IGNORE_HFILES=\
-    account-channel-request-internal.h \
-    add-dispatch-operation-context-internal.h \
-    automatic-client-factory-internal.h \
-    base-call-internal.h \
-    base-connection-internal.h \
-    base-contact-list-internal.h \
-    base-protocol-internal.h \
-    call-internal.h \
-    channel-dispatch-operation-internal.h \
-    channel-internal.h \
-    client-message-internal.h \
-    cm-message-internal.h \
-    connection-internal.h \
-    contact-internal.h \
-    contact-list-channel-internal.h \
-    debug-internal.h \
-    deprecated-internal.h \
-    handle-channels-context-internal.h \
-    handle-repo-internal.h \
-    message-internal.h \
-    observe-channels-context-internal.h \
-    protocol-internal.h \
-    proxy-internal.h \
     proxy-introspectable.h \
-    signalled-message-internal.h \
-    simple-client-factory-internal.h \
-    util-internal.h
+    $(NULL)
 
 # Images to copy into HTML directory.
 # e.g. HTML_IMAGES=$(top_srcdir)/gtk/stock-icons/stock_about_24.png

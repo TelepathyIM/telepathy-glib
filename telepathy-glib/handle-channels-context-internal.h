@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * object for HandleChannels calls context (internal)
  *

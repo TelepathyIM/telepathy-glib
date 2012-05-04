@@ -1,3 +1,4 @@
+/*<private_header>*/
 /*
  * signalled-message-internal.h - Header for TpSignalledMessage (internal)
  * Copyright (C) 2006-2010 Collabora Ltd.

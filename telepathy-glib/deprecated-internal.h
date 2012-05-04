@@ -1,3 +1,4 @@
+/*<private_header>*/
 /* Deprecated functions still used internally
  *
  * Copyright (C) 2011 Collabora Ltd. <http://www.collabora.co.uk/>

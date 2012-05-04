@@ -1,3 +1,4 @@
+/*<private_header>*/
 /* TpBaseProtocol (not public API)
  *
  * Copyright © 2007-2010 Collabora Ltd.

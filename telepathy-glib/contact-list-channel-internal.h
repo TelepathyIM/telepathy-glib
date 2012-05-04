@@ -1,3 +1,4 @@
+/*<private_header>*/
 /* A ContactList channel with handle type LIST or GROUP.
  *
  * Copyright © 2009-2010 Collabora Ltd. <http://www.collabora.co.uk/>
