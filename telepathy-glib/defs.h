@@ -281,5 +281,13 @@ G_BEGIN_DECLS
 #define _TP_GNUC_DEPRECATED_FOR(f) G_GNUC_DEPRECATED_FOR(f)
 #endif
 
+/* like G_SEAL */
+#if (defined (TP_SEAL_ENABLE) || defined (TP_DISABLE_DEPRECATED)) \
+  && !defined (_TP_COMPILATION)
+# define _TP_SEAL(ident) _tp_sealed__ ## ident
+#else
+# define _TP_SEAL(ident) ident
+#endif
+
 G_END_DECLS
 #endif
