@@ -316,6 +316,8 @@ tp_tls_certificate_rejection_get_details (TpTLSCertificateRejection *self)
  * Convenient function to raise the #TpTLSCertificateRejection:error
  * property in language binding supporting this feature.
  *
+ * Returns: %FALSE
+ *
  * Since: UNRELEASED
  */
 gboolean
