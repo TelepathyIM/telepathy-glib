@@ -129,7 +129,11 @@ test_parameters (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GVariant *v_str, *v_int;
-  GHashTable *params;
+  GVariant *params;
+
+  gboolean found;
+  const gchar *s;
+  guint u;
 
   test->account = tp_future_account_new (test->account_manager,
       "gabble", "jabber");
@@ -149,13 +153,19 @@ test_parameters (Test *test,
       "parameters", &params,
       NULL);
 
-  g_assert_cmpuint (g_hash_table_size (params), ==, 3);
+  g_assert_cmpuint (g_variant_n_children (params), ==, 3);
 
-  g_assert_cmpstr (tp_asv_get_string (params, "cheese"), ==, "banana");
-  g_assert_cmpuint (tp_asv_get_uint32 (params, "life", NULL), ==, 42);
-  g_assert_cmpstr (tp_asv_get_string (params, "great"), ==, "expectations");
+  found = g_variant_lookup (params, "cheese", "&s", &s);
+  g_assert (found);
+  g_assert_cmpstr (s, ==, "banana");
+  found = g_variant_lookup (params, "life", "u", &u);
+  g_assert (found);
+  g_assert_cmpuint (u, ==, 42);
+  found = g_variant_lookup (params, "great", "&s", &s);
+  g_assert (found);
+  g_assert_cmpstr (s, ==, "expectations");
 
-  g_hash_table_unref (params);
+  g_variant_unref (params);
 
   /* now let's unset one and see if it's okay */
   tp_future_account_unset_parameter (test->account, "cheese");
@@ -164,19 +174,23 @@ test_parameters (Test *test,
       "parameters", &params,
       NULL);
 
-  g_assert_cmpuint (g_hash_table_size (params), ==, 2);
+  g_assert_cmpuint (g_variant_n_children (params), ==, 2);
 
-  g_assert_cmpuint (tp_asv_get_uint32 (params, "life", NULL), ==, 42);
-  g_assert_cmpstr (tp_asv_get_string (params, "great"), ==, "expectations");
+  found = g_variant_lookup (params, "life", "u", &u);
+  g_assert (found);
+  g_assert_cmpuint (u, ==, 42);
+  found = g_variant_lookup (params, "great", "&s", &s);
+  g_assert (found);
+  g_assert_cmpstr (s, ==, "expectations");
 
-  g_hash_table_unref (params);
+  g_variant_unref (params);
 }
 
 static void
 test_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *props;
+  GVariant *props;
   gchar *icon_name, *nickname;
   TpConnectionPresenceType presence_type;
   gchar *presence_status, *presence_message;
@@ -185,6 +199,12 @@ test_properties (Test *test,
   GArray *avatar;
   gchar *mime_type;
 
+  gboolean found;
+  const gchar *s;
+  gboolean b;
+  const gchar * const *ao;
+  GVariant *v;
+
   test->account = tp_future_account_new (test->account_manager,
       "gabble", "jabber");
 
@@ -192,9 +212,9 @@ test_properties (Test *test,
       "properties", &props,
       NULL);
 
-  g_assert_cmpuint (g_hash_table_size (props), ==, 0);
+  g_assert_cmpuint (g_variant_n_children (props), ==, 0);
 
-  g_hash_table_unref (props);
+  g_variant_unref (props);
 
   /* now set an icon and try again */
   tp_future_account_set_icon_name (test->account, "user32.dll");
@@ -204,12 +224,13 @@ test_properties (Test *test,
       "icon-name", &icon_name,
       NULL);
 
-  g_assert_cmpuint (g_hash_table_size (props), ==, 1);
-  g_assert_cmpstr (tp_asv_get_string (props, TP_PROP_ACCOUNT_ICON),
-      ==, "user32.dll");
+  g_assert_cmpuint (g_variant_n_children (props), ==, 1);
+  found = g_variant_lookup (props, TP_PROP_ACCOUNT_ICON, "&s", &s);
+  g_assert (found);
+  g_assert_cmpstr (s, ==, "user32.dll");
   g_assert_cmpstr (icon_name, ==, "user32.dll");
 
-  g_hash_table_unref (props);
+  g_variant_unref (props);
   g_free (icon_name);
 
   /* now set the nickname and try again */
@@ -220,14 +241,16 @@ test_properties (Test *test,
       "nickname", &nickname,
       NULL);
 
-  g_assert_cmpuint (g_hash_table_size (props), ==, 2);
-  g_assert_cmpstr (tp_asv_get_string (props, TP_PROP_ACCOUNT_ICON),
-      ==, "user32.dll");
-  g_assert_cmpstr (tp_asv_get_string (props, TP_PROP_ACCOUNT_NICKNAME),
-      ==, "Walter Jr.");
+  g_assert_cmpuint (g_variant_n_children (props), ==, 2);
+  found = g_variant_lookup (props, TP_PROP_ACCOUNT_ICON, "&s", &s);
+  g_assert (found);
+  g_assert_cmpstr (s, ==, "user32.dll");
+  found = g_variant_lookup (props, TP_PROP_ACCOUNT_NICKNAME, "&s", &s);
+  g_assert (found);
+  g_assert_cmpstr (s, ==, "Walter Jr.");
   g_assert_cmpstr (nickname, ==, "Walter Jr.");
 
-  g_hash_table_unref (props);
+  g_variant_unref (props);
   g_free (nickname);
 
   /* next is requested presence */
@@ -279,13 +302,15 @@ test_properties (Test *test,
   g_assert_cmpint (enabled, ==, FALSE);
   g_assert_cmpint (connect_automatically, ==, TRUE);
 
-  g_assert_cmpint (tp_asv_get_boolean (props, TP_PROP_ACCOUNT_ENABLED, NULL),
-      ==, FALSE);
-  g_assert_cmpint (tp_asv_get_boolean (props,
-          TP_PROP_ACCOUNT_CONNECT_AUTOMATICALLY, NULL),
-      ==, TRUE);
+  found = g_variant_lookup (props, TP_PROP_ACCOUNT_ENABLED, "b", &b);
+  g_assert (found);
+  g_assert_cmpint (b, ==, FALSE);
+  found = g_variant_lookup (props, TP_PROP_ACCOUNT_CONNECT_AUTOMATICALLY,
+      "b", &b);
+  g_assert (found);
+  g_assert_cmpint (b, ==, TRUE);
 
-  g_hash_table_unref (props);
+  g_variant_unref (props);
 
   /* supersedes */
   tp_future_account_add_supersedes (test->account,
@@ -301,11 +326,12 @@ test_properties (Test *test,
       "/science/yeah/woo");
   g_assert (supersedes[1] == NULL);
 
-  g_assert (tp_asv_get_boxed (props, TP_PROP_ACCOUNT_SUPERSEDES,
-          TP_ARRAY_TYPE_OBJECT_PATH_LIST) != NULL);
+  found = g_variant_lookup (props, TP_PROP_ACCOUNT_SUPERSEDES, "^a&o", &ao);
+  g_assert (found);
+  g_assert (ao != NULL);
 
   g_strfreev (supersedes);
-  g_hash_table_unref (props);
+  g_variant_unref (props);
 
   /* avatar */
   avatar = g_array_new (FALSE, FALSE, sizeof (guchar));
@@ -325,11 +351,12 @@ test_properties (Test *test,
   g_assert_cmpuint (avatar->len, ==, strlen ("hello world") + 1);
   g_assert_cmpstr (mime_type, ==, "image/lolz");
 
-  g_assert (tp_asv_get_boxed (props,
-          TP_PROP_ACCOUNT_INTERFACE_AVATAR_AVATAR,
-          TP_STRUCT_TYPE_AVATAR) != NULL);
+  v = g_variant_lookup_value (props, TP_PROP_ACCOUNT_INTERFACE_AVATAR_AVATAR,
+      NULL);
+  g_assert (v != NULL);
+  g_variant_unref (v);
 
-  g_hash_table_unref (props);
+  g_variant_unref (props);
   g_array_unref (avatar);
   g_free (mime_type);
 }

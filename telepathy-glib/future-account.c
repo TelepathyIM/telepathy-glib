@@ -28,6 +28,7 @@
 #include <telepathy-glib/simple-client-factory.h>
 
 #define DEBUG_FLAG TP_DEBUG_ACCOUNTS
+#include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/util-internal.h"
 
@@ -201,10 +202,10 @@ tp_future_account_get_property (GObject *object,
       g_value_set_string (value, self->priv->display_name);
       break;
     case PROP_PARAMETERS:
-      g_value_set_boxed (value, self->priv->parameters);
+      g_value_take_variant (value, _tp_asv_to_vardict (self->priv->parameters));
       break;
     case PROP_PROPERTIES:
-      g_value_set_boxed (value, self->priv->properties);
+      g_value_take_variant (value, _tp_asv_to_vardict (self->priv->properties));
       break;
     case PROP_ICON_NAME:
       g_value_set_string (value,
@@ -425,10 +426,10 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    * tp_future_account_set_parameter() or another convience function.
    */
   g_object_class_install_property (object_class, PROP_PARAMETERS,
-      g_param_spec_boxed ("parameters",
+      g_param_spec_variant ("parameters",
           "Parameters",
           "Connection parameters of the account",
-          TP_HASH_TYPE_STRING_VARIANT_MAP,
+          G_VARIANT_TYPE_VARDICT, NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
@@ -437,10 +438,10 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    * The account's properties.
    */
   g_object_class_install_property (object_class, PROP_PROPERTIES,
-      g_param_spec_boxed ("properties",
+      g_param_spec_variant ("properties",
           "Properties",
           "Account properties",
-          TP_HASH_TYPE_STRING_VARIANT_MAP,
+          G_VARIANT_TYPE_VARDICT, NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
