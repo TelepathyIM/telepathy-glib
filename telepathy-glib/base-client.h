@@ -31,6 +31,7 @@
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/add-dispatch-operation-context.h>
 #include <telepathy-glib/channel.h>
+#include <telepathy-glib/channel-filter.h>
 #include <telepathy-glib/handle-channel-context.h>
 #include <telepathy-glib/observe-channel-context.h>
 #include <telepathy-glib/connection.h>
@@ -112,6 +113,13 @@ _TP_AVAILABLE_IN_0_20
 void tp_base_client_add_observer_filter (TpBaseClient *self,
     GVariant *filter);
 
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_base_client_add_observer_filter_object (TpBaseClient *self,
+    TpChannelFilter *filter);
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_base_client_take_observer_filter_object (TpBaseClient *self,
+    TpChannelFilter *filter);
+
 void tp_base_client_set_observer_recover (TpBaseClient *self,
     gboolean recover);
 void tp_base_client_set_observer_delay_approvers (TpBaseClient *self,
@@ -121,11 +129,26 @@ _TP_AVAILABLE_IN_0_20
 void tp_base_client_add_approver_filter (TpBaseClient *self,
     GVariant *filter);
 
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_base_client_add_approver_filter_object (TpBaseClient *self,
+    TpChannelFilter *filter);
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_base_client_take_approver_filter_object (TpBaseClient *self,
+    TpChannelFilter *filter);
+
 void tp_base_client_be_a_handler (TpBaseClient *self);
 
 _TP_AVAILABLE_IN_0_20
 void tp_base_client_add_handler_filter (TpBaseClient *self,
     GVariant *filter);
+
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_base_client_add_handler_filter_object (TpBaseClient *self,
+    TpChannelFilter *filter);
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_base_client_take_handler_filter_object (TpBaseClient *self,
+    TpChannelFilter *filter);
+
 void tp_base_client_set_handler_bypass_approval (TpBaseClient *self,
     gboolean bypass_approval);
 

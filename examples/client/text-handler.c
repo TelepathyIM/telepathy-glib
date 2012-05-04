@@ -106,22 +106,18 @@ main (int argc,
   GMainLoop *mainloop;
   GError *error = NULL;
   TpBaseClient *handler;
-  GVariantDict dict;
+  TpChannelFilter *filter;
 
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
   handler = tp_simple_handler_new (NULL, FALSE, FALSE,
       "ExampleHandler", FALSE, handle_channel_cb, NULL, NULL);
 
-  g_variant_dict_init (&dict, NULL);
-  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_CHANNEL_TYPE, "s",
-      TP_IFACE_CHANNEL_TYPE_TEXT);
-  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, "u",
-      (guint32) TP_ENTITY_TYPE_CONTACT);
-  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_REQUESTED, "b", FALSE);
-
-  tp_base_client_add_handler_filter (handler,
-      g_variant_dict_end (&dict));
+  /* be a handler for 1-1 text chats which are initiated by the other
+   * contact */
+  filter = tp_channel_filter_new_for_text_chats ();
+  tp_channel_filter_require_locally_requested (filter, FALSE);
+  tp_base_client_take_handler_filter_object (handler, filter);
 
   if (!tp_base_client_register (handler, &error))
     {

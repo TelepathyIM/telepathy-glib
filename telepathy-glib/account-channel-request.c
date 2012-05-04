@@ -909,7 +909,7 @@ going_to_request (TpAccountChannelRequest *self,
 
   self->priv->ensure = ensure;
 
-  /* Set TargetHandleType: TP_HANDLE_TYPE_NONE if no TargetHandleType has been
+  /* Set TargetHandleType: TP_ENTITY_TYPE_NONE if no TargetHandleType has been
    * defined. */
   if (g_hash_table_lookup (self->priv->request,
         TP_PROP_CHANNEL_TARGET_ENTITY_TYPE) == NULL)

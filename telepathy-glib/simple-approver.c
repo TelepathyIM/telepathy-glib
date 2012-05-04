@@ -47,10 +47,8 @@
  * client = tp_simple_approver_new (NULL, "MyApprover", FALSE,
  *    my_add_dispatch_operation, user_data);
  *
- * tp_base_client_take_approver_filter (client, tp_asv_new (
- *      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
- *      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT, TP_ENTITY_TYPE_CONTACT,
- *      NULL));
+ * tp_base_client_take_approver_filter_object (client,
+ *      tp_channel_filter_new_for_text_chats ());
  *
  * tp_base_client_register (client, NULL);
  * ]|

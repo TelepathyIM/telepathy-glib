@@ -163,17 +163,17 @@ main (int argc,
 {
   TpAccountManager *manager;
   TpBaseClient *handler;
+  TpChannelFilter *filter;
   GError *error = NULL;
 
   manager = tp_account_manager_dup ();
   handler = tp_simple_handler_new_with_am (manager, FALSE, FALSE,
       "ExampleServiceHandler", FALSE, handle_channel, NULL, NULL);
 
-  tp_base_client_add_handler_filter (handler,
-      g_variant_new_parsed ("{ %s: <%s>, %s: <%u>, %s: <%s> }",
-        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_DBUS_TUBE1,
-        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT,
-        TP_PROP_CHANNEL_TYPE_DBUS_TUBE1_SERVICE_NAME, EXAMPLE_SERVICE_NAME));
+  filter = tp_channel_filter_new_for_dbus_tubes (EXAMPLE_SERVICE_NAME);
+  tp_channel_filter_require_locally_requested (filter, FALSE);
+  tp_channel_filter_require_target_is_contact (filter);
+  tp_base_client_take_handler_filter_object (handler, filter);
 
   tp_base_client_register (handler, &error);
   g_assert_no_error (error);

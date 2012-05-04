@@ -58,12 +58,9 @@ if __name__ == '__main__':
     handler = TelepathyGLib.SimpleHandler.new_with_am(am, False, False,
         'ExampleHandler', False, handle_channels_cb, None)
 
-    handler.add_handler_filter({
-        TelepathyGLib.PROP_CHANNEL_CHANNEL_TYPE: TelepathyGLib.IFACE_CHANNEL_TYPE_TEXT,
-        # bgo #637466
-        TelepathyGLib.PROP_CHANNEL_TARGET_ENTITY_TYPE: int(TelepathyGLib.HandleType.CONTACT),
-        TelepathyGLib.PROP_CHANNEL_REQUESTED: False,
-    })
+    channel_filter = TelepathyGLib.ChannelFilter.new_for_text_chats()
+    channel_filter.require_locally_requested(False)
+    handler.add_handler_filter_object(channel_filter)
 
     handler.register()
 

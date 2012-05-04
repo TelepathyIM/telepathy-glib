@@ -937,17 +937,9 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    * contact who also supports the metadata extension; see the
    * requestable channel classes for said contact), this property will
    * be set to the same value on the remote incoming channel and
-   * handlers can match on this in their handler filter. For example,
-   * a remote handler could call the following:
-   *
-   * |[
-   * tp_base_client_take_handler_filter (handler, tp_asv_new (
-   *               TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1,
-   *               TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT, TP_ENTITY_TYPE_CONTACT,
-   *               TP_PROP_CHANNEL_REQUESTED, G_TYPE_BOOLEAN, FALSE,
-   *               TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_SERVICE_NAME, G_TYPE_STRING, "service.name",
-   *               NULL));
-   * ]|
+   * handlers can match on this in their handler filter by passing
+   * a non-%NULL @service argument to
+   * tp_channel_filter_new_for_file_transfers().
    *
    * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be
    * prepared for this property to be meaningful.

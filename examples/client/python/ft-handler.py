@@ -53,13 +53,10 @@ if __name__ == '__main__':
     handler = TelepathyGLib.SimpleHandler.new(dbus, False, False,
         'ExampleFTHandler', False, handle_channels_cb, filename)
 
-    handler.add_handler_filter({
-        TelepathyGLib.PROP_CHANNEL_CHANNEL_TYPE:
-            TelepathyGLib.IFACE_CHANNEL_TYPE_FILE_TRANSFER,
-        TelepathyGLib.PROP_CHANNEL_TARGET_ENTITY_TYPE:
-            int(TelepathyGLib.HandleType.CONTACT),
-        TelepathyGLib.PROP_CHANNEL_REQUESTED: False
-        })
+    channel_filter = TelepathyGLib.ChannelFilter.new_for_file_transfers()
+    channel_filter.require_locally_requested(FALSE)
+    channel_filter.require_target_is_contact()
+    handler.add_handler_filter_object(channel_filter)
 
     handler.register()
 

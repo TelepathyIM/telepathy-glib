@@ -177,6 +177,7 @@
 #include <telepathy-glib/add-dispatch-operation-context-internal.h>
 #include <telepathy-glib/automatic-client-factory.h>
 #include <telepathy-glib/channel-dispatcher.h>
+#include <telepathy-glib/channel-filter-internal.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/cli-misc.h>
@@ -318,6 +319,73 @@ tp_base_client_dup_account (TpBaseClient *self,
 }
 
 /**
+ * tp_base_client_add_observer_filter_object:
+ * @self: a #TpBaseClient
+ * @filter: a filter
+ *
+ * Register a new filter to match channels as an Observer.
+ *
+ * The #TpBaseClientClass.observe_channel virtual method will be called
+ * whenever a new channel's properties match the ones in @filter.
+ *
+ * This method can be called more than once. If it is, the client will
+ * be an Observer for any channel that matches any of the filters.
+ * For instance, this Client:
+ *
+ * |[
+ * filter = tp_channel_filter_new_for_text_chats ();
+ * tp_base_client_add_observer_filter_object (client, filter);
+ * g_object_unref (filter);
+ *
+ * filter = tp_channel_filter_new_for_file_transfer (NULL);
+ * tp_channel_filter_require_target_is_contact (filter);
+ * tp_channel_filter_require_requested (filter, FALSE);
+ * tp_base_client_add_observer_filter_object (client, filter);
+ * g_object_unref (filter);
+ * ]|
+ *
+ * will be notified about all Text channels, and also about 1-1 incoming
+ * Call channels.
+ *
+ * This method may only be called before tp_base_client_register() is
+ * called, and may only be called on objects whose class implements
+ * #TpBaseClientClass.observe_channel.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_base_client_add_observer_filter_object (TpBaseClient *self,
+    TpChannelFilter *filter)
+{
+  g_return_if_fail (TP_IS_CHANNEL_FILTER (filter));
+  tp_base_client_add_observer_filter (self, _tp_channel_filter_use (filter));
+}
+
+/**
+ * tp_base_client_take_observer_filter_object: (skip)
+ * @self: a #TpBaseClient
+ * @filter: (transfer full): a filter
+ *
+ * The same as tp_base_client_add_observer_filter_object(), but also
+ * takes ownership of the filter. This makes it more convenient to call
+ * in simple situations:
+ *
+ * |[
+ * tp_base_client_take_observer_filter_object (client,
+ *     tp_channel_filter_new_for_text_chats ());
+ * ]|
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_base_client_take_observer_filter_object (TpBaseClient *self,
+    TpChannelFilter *filter)
+{
+  tp_base_client_add_observer_filter_object (self, filter);
+  g_object_unref (filter);
+}
+
+/**
  * tp_base_client_add_observer_filter:
  * @self: a client
  * @filter: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
@@ -447,6 +515,58 @@ tp_base_client_set_observer_delay_approvers (TpBaseClient *self,
 }
 
 /**
+ * tp_base_client_add_approver_filter_object:
+ * @self: a #TpBaseClient
+ * @filter: a filter
+ *
+ * Register a new filter to match channels as an Approver.
+ *
+ * The #TpBaseClientClass.add_dispatch_operation virtual method will be called
+ * whenever a new channel's properties match the ones in @filter.
+ *
+ * This method can be called more than once. If it is, the client will
+ * be an Approver for any channel that matches any of the filters.
+ * See tp_base_client_add_observer_filter_object().
+ *
+ * This method may only be called before tp_base_client_register() is
+ * called, and may only be called on objects whose class implements
+ * #TpBaseClientClass.add_dispatch_operation.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_base_client_add_approver_filter_object (TpBaseClient *self,
+    TpChannelFilter *filter)
+{
+  g_return_if_fail (TP_IS_CHANNEL_FILTER (filter));
+  tp_base_client_add_approver_filter (self, _tp_channel_filter_use (filter));
+}
+
+/**
+ * tp_base_client_take_approver_filter_object: (skip)
+ * @self: a #TpBaseClient
+ * @filter: (transfer full): a filter
+ *
+ * The same as tp_base_client_add_approver_filter_object(), but also
+ * takes ownership of the filter. This makes it more convenient to call
+ * in simple situations:
+ *
+ * |[
+ * tp_base_client_take_approver_filter_object (client,
+ *     tp_channel_filter_new_for_text_chats ());
+ * ]|
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_base_client_take_approver_filter_object (TpBaseClient *self,
+    TpChannelFilter *filter)
+{
+  tp_base_client_add_approver_filter_object (self, filter);
+  g_object_unref (filter);
+}
+
+/**
  * tp_base_client_add_approver_filter:
  * @self: a client
  * @filter: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
@@ -509,6 +629,34 @@ tp_base_client_be_a_handler (TpBaseClient *self)
 }
 
 /**
+ * tp_base_client_add_handler_filter_object:
+ * @self: a #TpBaseClient
+ * @filter: a filter
+ *
+ * Register a new filter to match channels as a Handler.
+ *
+ * The #TpBaseClientClass.handle_channel virtual method will be called
+ * whenever a new channel's properties match the ones in @filter.
+ *
+ * This method can be called more than once. If it is, the client will
+ * be a Handler for any channel that matches any of the filters.
+ * See tp_base_client_add_observer_filter_object().
+ *
+ * This method may only be called before tp_base_client_register() is
+ * called, and may only be called on objects whose class implements
+ * #TpBaseClientClass.handle_channel.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_base_client_add_handler_filter_object (TpBaseClient *self,
+    TpChannelFilter *filter)
+{
+  g_return_if_fail (TP_IS_CHANNEL_FILTER (filter));
+  tp_base_client_add_handler_filter (self, _tp_channel_filter_use (filter));
+}
+
+/**
  * tp_base_client_add_handler_filter:
  * @self: a client
  * @filter: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
@@ -542,6 +690,30 @@ tp_base_client_add_handler_filter (TpBaseClient *self,
   self->priv->flags |= CLIENT_IS_HANDLER;
   g_ptr_array_add (self->priv->handler_filters, tp_asv_from_vardict (filter));
   g_variant_unref (filter);
+}
+
+/**
+ * tp_base_client_take_handler_filter_object: (skip)
+ * @self: a #TpBaseClient
+ * @filter: (transfer full): a filter
+ *
+ * The same as tp_base_client_add_handler_filter_object(), but also
+ * takes ownership of the filter. This makes it more convenient to call
+ * in simple situations:
+ *
+ * |[
+ * tp_base_client_take_handler_filter_object (client,
+ *     tp_channel_filter_new_for_text_chats ());
+ * ]|
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_base_client_take_handler_filter_object (TpBaseClient *self,
+    TpChannelFilter *filter)
+{
+  tp_base_client_add_handler_filter_object (self, filter);
+  g_object_unref (filter);
 }
 
 /**

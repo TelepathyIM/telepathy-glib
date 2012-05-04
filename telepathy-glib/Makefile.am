@@ -69,6 +69,7 @@ tpginclude_HEADERS = \
     channel-iface.h \
     channel-dispatcher.h \
     channel-dispatch-operation.h \
+    channel-filter.h \
     channel-manager.h \
     channel-manager-request.h \
     channel-request.h \
@@ -250,6 +251,8 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     call-stream.c \
     call-stream-endpoint.c \
     channel.c \
+    channel-filter.c \
+    channel-filter-internal.h \
     channel-group.c \
     channel-internal.h \
     channel-dispatcher.c \

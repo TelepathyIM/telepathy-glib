@@ -467,18 +467,20 @@ static void
 test_observer (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *requests_satisfied, *chan_props;
+  TpChannelFilter *filter;
   GHashTable *info;
   TpChannel *chan;
+  GHashTable *chan_props, *requests_satisfied;
 
-  tp_base_client_add_observer_filter (test->base_client,
-      g_variant_new_parsed ("{ %s: <%s> }",
-        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT));
+  filter = tp_channel_filter_new ();
+  tp_channel_filter_require_channel_type (filter, TP_IFACE_CHANNEL_TYPE_TEXT);
+  tp_base_client_add_observer_filter_object (test->base_client, filter);
+  g_object_unref (filter);
 
-  tp_base_client_add_observer_filter (test->base_client,
-      g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
-        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
-        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT));
+  filter = tp_channel_filter_new_for_stream_tubes (NULL);
+  tp_channel_filter_require_target_is_contact (filter);
+  tp_base_client_add_observer_filter_object (test->base_client, filter);
+  g_object_unref (filter);
 
   tp_base_client_set_observer_recover (test->base_client, TRUE);
   tp_base_client_set_observer_delay_approvers (test->base_client, TRUE);
@@ -602,21 +604,23 @@ static void
 test_approver (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *chan_props;
-  TpChannel *chan;
+  TpChannelFilter *filter;
   GHashTable *properties;
   static const char *interfaces[] = { NULL };
   static const gchar *possible_handlers[] = {
     TP_CLIENT_BUS_NAME_BASE ".Badger", NULL, };
+  GHashTable *chan_props;
+  TpChannel *chan;
 
-  tp_base_client_add_approver_filter (test->base_client,
-      g_variant_new_parsed ("{ %s: <%s> }",
-        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT));
+  filter = tp_channel_filter_new ();
+  tp_channel_filter_require_channel_type (filter, TP_IFACE_CHANNEL_TYPE_TEXT);
+  tp_base_client_add_approver_filter_object (test->base_client, filter);
+  g_object_unref (filter);
 
-  tp_base_client_add_approver_filter (test->base_client,
-      g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
-        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
-        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, TP_ENTITY_TYPE_CONTACT));
+  filter = tp_channel_filter_new_for_stream_tubes (NULL);
+  tp_channel_filter_require_target_is_contact (filter);
+  tp_base_client_add_approver_filter_object (test->base_client, filter);
+  g_object_unref (filter);
 
   tp_base_client_register (test->base_client, &test->error);
   g_assert_no_error (test->error);
@@ -787,25 +791,20 @@ static void
 test_handler (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *filter;
+  TpChannelFilter *filter;
   const gchar *caps[] = { "mushroom", "snake", NULL };
   GList *chans;
   TpTestsSimpleClient *client_2;
 
-  filter = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
-      NULL);
+  filter = tp_channel_filter_new ();
+  tp_channel_filter_require_channel_type (filter, TP_IFACE_CHANNEL_TYPE_TEXT);
+  tp_base_client_add_handler_filter_object (test->base_client, filter);
+  g_object_unref (filter);
 
-  tp_base_client_add_handler_filter (test->base_client,
-      g_variant_new_parsed ("{ %s: <%s> }",
-        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT));
-
-  g_hash_table_unref (filter);
-
-  tp_base_client_add_handler_filter (test->base_client,
-      g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
-        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
-        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT));
+  filter = tp_channel_filter_new_for_stream_tubes (NULL);
+  tp_channel_filter_require_target_is_contact (filter);
+  tp_base_client_add_handler_filter_object (test->base_client, filter);
+  g_object_unref (filter);
 
   tp_base_client_set_handler_bypass_approval (test->base_client, TRUE);
 
@@ -951,11 +950,12 @@ test_handler_requests (Test *test,
   GHashTable *properties, *requests_satisfied;
   TpChannelRequest *request;
   GList *requests;
+  TpChannelFilter *filter;
 
-  tp_base_client_add_handler_filter (test->base_client,
-      g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
-        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
-        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT));
+  filter = tp_channel_filter_new_for_stream_tubes (NULL);
+  tp_channel_filter_require_target_is_contact (filter);
+  tp_base_client_add_handler_filter_object (test->base_client, filter);
+  g_object_unref (filter);
 
   tp_base_client_set_handler_request_notification (test->base_client);
 

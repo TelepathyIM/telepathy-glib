@@ -12,6 +12,7 @@ endif
 programs_list = \
     test-asv \
     test-capabilities \
+    test-channel-filter \
     test-availability-cmp \
     test-dtmf-player \
     test-enums \
@@ -87,6 +88,16 @@ test_asv_LDADD = \
 test_capabilities_SOURCES = \
     capabilities.c
 test_capabilities_LDADD = \
+    $(top_builddir)/tests/lib/libtp-glib-tests-internal.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-main-internal.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
+    $(GLIB_LIBS)
+
+# this one uses internal ABI
+test_channel_filter_SOURCES = \
+    channel-filter.c
+test_channel_filter_LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests-internal.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-main-internal.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \

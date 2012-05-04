@@ -105,17 +105,17 @@ main (int argc,
 {
   TpAccountManager *manager;
   TpBaseClient *handler;
+  TpChannelFilter *filter;
   GError *error = NULL;
 
   manager = tp_account_manager_dup ();
   handler = tp_simple_handler_new_with_am (manager, FALSE, FALSE,
       "ExampleServiceHandler", FALSE, _handle_channel, NULL, NULL);
 
-  tp_base_client_add_handler_filter (handler,
-      g_variant_new_parsed ("{ %s: <%s>, %s: <%u>, %s: <%s> }",
-        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
-        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT,
-        TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SERVICE, "ExampleService"));
+  filter = tp_channel_filter_new_for_stream_tubes ("ExampleService");
+  tp_channel_filter_require_locally_requested (filter, FALSE);
+  tp_channel_filter_require_target_is_contact (filter);
+  tp_base_client_take_handler_filter_object (handler, filter);
 
   tp_base_client_register (handler, &error);
   g_assert_no_error (error);
