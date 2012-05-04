@@ -133,6 +133,7 @@ our_headers = \
     svc-protocol.h \
     svc-tls.h \
     telepathy-glib.h \
+    telepathy-glib-dbus.h \
     text-channel.h \
     text-mixin.h \
     util.h
