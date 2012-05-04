@@ -159,21 +159,6 @@ enum
 
 /**
  * TpConnectionManager:
- * @parent: The parent class instance
- * @name: The identifier of the connection manager (e.g. "gabble").
- *  Should be considered read-only
- * @protocols: If info_source > %TP_CM_INFO_SOURCE_NONE, a %NULL-terminated
- *  array of pointers to #TpConnectionManagerProtocol structures; otherwise
- *  %NULL. Should be considered read-only
- * @running: %TRUE if the CM is currently known to be running. Should be
- *  considered read-only
- * @always_introspect: %TRUE if the CM will be introspected automatically.
- *  Should be considered read-only: use the
- *  #TpConnectionManager:always-introspect property if you want to change it
- * @info_source: The source of @protocols, or %TP_CM_INFO_SOURCE_NONE
- *  if no info has been discovered yet
- * @reserved_flags: Reserved for future use
- * @priv: Pointer to opaque private data
  *
  * A proxy object for a Telepathy connection manager.
  *
@@ -187,10 +172,13 @@ enum
  * %TP_CONNECTION_MANAGER_FEATURE_CORE is prepared. Use
  * tp_proxy_prepare_async() to wait for this to happen.
  *
- * Note that the @protocols may be freed and reallocated (based on new
- * information) whenever the main loop is entered. Since 0.11.3, each protocol
- * struct can be copied with tp_connection_manager_protocol_copy() if a
- * private copy is needed.
+ * Since 0.UNRELEASED, accessing the fields of this struct is deprecated,
+ * and they are no longer documented here.
+ * Use the accessors tp_connection_manager_get_name(),
+ * tp_connection_manager_is_running(),
+ * tp_connection_manager_dup_protocols(),
+ * tp_connection_manager_get_info_source()
+ * and the #TpConnectionManager:always-introspect property instead.
  *
  * Since: 0.7.1
  */

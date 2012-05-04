@@ -80,18 +80,18 @@ typedef enum
 } TpCMInfoSource;
 
 struct _TpConnectionManager {
-    /*<public>*/
+    /*<private>*/
     TpProxy parent;
 
-    const gchar *name;
-    const TpConnectionManagerProtocol * const *protocols;
+    const gchar *_TP_SEAL (name);
+    const TpConnectionManagerProtocol * const *_TP_SEAL (protocols);
 
     /* These are really booleans, but gboolean is signed. Thanks, GLib */
-    unsigned int running:1;
-    unsigned int always_introspect:1;
+    unsigned int _TP_SEAL (running):1;
+    unsigned int _TP_SEAL (always_introspect):1;
     /* TpCMInfoSource, but can't rely on enums being unsigned */
-    unsigned int info_source:2;
-    guint reserved_flags:28;
+    unsigned int _TP_SEAL (info_source):2;
+    guint _TP_SEAL (reserved_flags):28;
 
     TpConnectionManagerPrivate *priv;
 };
