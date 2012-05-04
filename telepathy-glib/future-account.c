@@ -641,7 +641,7 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
  * will assist in the creation of a new account on @account_manager,
  * using connection manager @manager, and protocol @protocol.
  *
- * Returns: (transfer full) a new reference to a future account
+ * Returns: (transfer full): a new reference to a future account
  *   object, or %NULL if any argument is incorrect
  */
 TpFutureAccount *
@@ -670,7 +670,7 @@ tp_future_account_new (TpAccountManager *account_manager,
  * and protocol name specifically. See tp_future_account_new() for
  * more details.
  *
- * Returns: (transfer full) a new reference to a future account
+ * Returns: (transfer full): a new reference to a future account
  *   object, or %NULL if any argument is incorrect
  */
 TpFutureAccount *
@@ -1186,7 +1186,7 @@ tp_future_account_create_account_async (TpFutureAccount *self,
  * new #TpAccount object, with the %TP_ACCOUNT_FEATURE_CORE feature
  * prepared on it.
  *
- * Returns: (transfer full) a new #TpAccount which was just created on
+ * Returns: (transfer full): a new #TpAccount which was just created on
  *   success, otherwise %NULL
  */
 
