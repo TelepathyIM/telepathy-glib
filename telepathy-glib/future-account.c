@@ -165,6 +165,10 @@ tp_future_account_constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 
+  g_assert (priv->account_manager != NULL);
+  g_assert (priv->cm_name != NULL);
+  g_assert (priv->proto_name != NULL);
+
   priv->parameters = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, (GDestroyNotify) tp_g_value_slice_free);
 
@@ -1151,16 +1155,12 @@ tp_future_account_create_account_async (TpFutureAccount *self,
       return;
     }
 
-  if (priv->account_manager == NULL
-      || priv->cm_name == NULL
-      || priv->proto_name == NULL
-      || priv->display_name == NULL)
+  if (priv->display_name == NULL)
     {
       g_simple_async_report_error_in_idle (G_OBJECT (self),
           callback, user_data,
           TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-          "Future account is missing one or more of: account manager, "
-          "connection manager name, protocol name, or display name");
+          "The future account needs a display name to create the account");
       return;
     }
 
