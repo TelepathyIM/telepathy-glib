@@ -517,7 +517,7 @@ tp_tests_channel_assert_expect_members (TpChannel *channel,
   guint i;
 
   members = tp_intset_new ();
-  contacts = tp_channel_group_dup_members_contacts (channel);
+  contacts = tp_channel_group_dup_members (channel);
   if (contacts != NULL)
     {
       for (i = 0; i < contacts->len; i++)

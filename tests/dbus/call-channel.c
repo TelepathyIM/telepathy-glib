@@ -110,9 +110,6 @@ setup (Test *test,
   g_assert_no_error (test->error);
 
   test->factory = tp_automatic_client_factory_new (test->dbus);
-  tp_client_factory_add_channel_features_varargs (test->factory,
-      TP_CHANNEL_FEATURE_CONTACTS,
-      0);
 
   test->conn = tp_client_factory_ensure_connection (test->factory,
       object_path, NULL, &test->error);

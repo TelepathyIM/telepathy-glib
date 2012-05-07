@@ -132,23 +132,23 @@ TpContact *tp_channel_get_target_contact (TpChannel *self);
 _TP_AVAILABLE_IN_0_16
 TpContact *tp_channel_get_initiator_contact (TpChannel *self);
 
-#define TP_CHANNEL_FEATURE_CONTACTS \
-  tp_channel_get_feature_quark_contacts ()
+#define TP_CHANNEL_FEATURE_GROUP \
+  tp_channel_get_feature_quark_group ()
 _TP_AVAILABLE_IN_0_16
-GQuark tp_channel_get_feature_quark_contacts (void) G_GNUC_CONST;
+GQuark tp_channel_get_feature_quark_group (void) G_GNUC_CONST;
 
 TpChannelGroupFlags tp_channel_group_get_flags (TpChannel *self);
 
 _TP_AVAILABLE_IN_0_16
 TpContact *tp_channel_group_get_self_contact (TpChannel *self);
 _TP_AVAILABLE_IN_0_16
-GPtrArray *tp_channel_group_dup_members_contacts (TpChannel *self);
+GPtrArray *tp_channel_group_dup_members (TpChannel *self);
 _TP_AVAILABLE_IN_0_16
-GPtrArray *tp_channel_group_dup_local_pending_contacts (TpChannel *self);
+GPtrArray *tp_channel_group_dup_local_pending (TpChannel *self);
 _TP_AVAILABLE_IN_0_16
-GPtrArray *tp_channel_group_dup_remote_pending_contacts (TpChannel *self);
+GPtrArray *tp_channel_group_dup_remote_pending (TpChannel *self);
 _TP_AVAILABLE_IN_0_16
-gboolean tp_channel_group_get_local_pending_contact_info (TpChannel *self,
+gboolean tp_channel_group_get_local_pending_info (TpChannel *self,
     TpContact *local_pending, TpContact **actor,
     TpChannelGroupChangeReason *reason, const gchar **message);
 _TP_AVAILABLE_IN_0_16

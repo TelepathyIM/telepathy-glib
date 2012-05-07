@@ -70,12 +70,12 @@ test_channel_proxy (TpTestsTextChannelGroup *service_chan,
 {
   TpIntset *add, *rem, *expected_members;
   GHashTable *details;
-  GQuark features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
+  GQuark features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
   GMainLoop *loop = g_main_loop_new (NULL, FALSE);
 
   tp_tests_proxy_run_until_prepared (chan, features);
 
-  g_signal_connect (chan, "group-contacts-changed",
+  g_signal_connect (chan, "group-members-changed",
       (GCallback) group_members_changed_cb, loop);
 
   /* Add a couple of members. */
@@ -98,7 +98,7 @@ test_channel_proxy (TpTestsTextChannelGroup *service_chan,
 
   tp_clear_pointer (&details, g_hash_table_unref);
 
-  /* Run until we get "group-contacts-changed" signal */
+  /* Run until we get "group-members-changed" signal */
   g_main_loop_run (loop);
 
   expected_members = add;
@@ -126,7 +126,7 @@ test_channel_proxy (TpTestsTextChannelGroup *service_chan,
   tp_intset_destroy (add);
   tp_intset_destroy (rem);
 
-  /* Run until we get "group-contacts-changed" signal */
+  /* Run until we get "group-members-changed" signal */
   g_main_loop_run (loop);
 
   tp_intset_add (expected_members, h3);
@@ -221,7 +221,7 @@ run_until_members_changed (TpChannel *channel)
   GMainLoop *loop = g_main_loop_new (NULL, FALSE);
   gulong id;
 
-  id = g_signal_connect_swapped (channel, "group-contacts-changed",
+  id = g_signal_connect_swapped (channel, "group-members-changed",
       G_CALLBACK (g_main_loop_quit), loop);
 
   g_main_loop_run (loop);
@@ -234,7 +234,7 @@ run_until_members_changed (TpChannel *channel)
 static void
 check_removed_unknown_error_in_invalidated (void)
 {
-  GQuark features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
+  GQuark features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
   gchar *chan_path;
   TpTestsTextChannelGroup *service_chan;
   TpChannel *chan;
@@ -326,7 +326,7 @@ check_invalidated_known_error_cb (TpProxy *proxy,
 static void
 check_removed_known_error_in_invalidated (void)
 {
-  GQuark features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
+  GQuark features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
   gchar *chan_path;
   TpTestsTextChannelGroup *service_chan;
   TpChannel *chan;

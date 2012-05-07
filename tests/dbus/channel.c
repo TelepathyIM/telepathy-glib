@@ -320,7 +320,7 @@ static void
 test_leave_room_prepared_no_reason (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GQuark features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
+  GQuark features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
 
   g_assert (tp_proxy_get_invalidated (test->channel_room) == NULL);
 
@@ -344,7 +344,7 @@ static void
 test_leave_room_prepared_reason (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GQuark features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
+  GQuark features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
 
   g_assert (tp_proxy_get_invalidated (test->channel_room) == NULL);
 
@@ -552,7 +552,7 @@ static void
 test_join_room (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GQuark features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
+  GQuark features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
 
   tp_tests_proxy_run_until_prepared (test->channel_room, features);
 
@@ -587,7 +587,7 @@ test_contacts (Test *test,
   const gchar *id = "badger";
   const gchar *alias1 = "Alias 1";
   const gchar *alias2 = "Alias 2";
-  GQuark channel_features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
+  GQuark channel_features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
   TpHandle handle;
   GArray *handles;
   TpContact *contact;
@@ -630,7 +630,7 @@ test_contacts (Test *test,
       TP_TESTS_CONTACTS_CONNECTION (test->base_connection),
       1, &handle, &alias2);
 
-  g_signal_connect (test->channel_room, "group-contacts-changed",
+  g_signal_connect (test->channel_room, "group-members-changed",
       G_CALLBACK (group_contacts_changed_cb), test);
 
   handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
@@ -642,7 +642,7 @@ test_contacts (Test *test,
   g_main_loop_run (test->mainloop);
 
   /* There is ourself and the new contact, get the new one */
-  contacts = tp_channel_group_dup_members_contacts (test->channel_room);
+  contacts = tp_channel_group_dup_members (test->channel_room);
   g_assert (contacts != NULL);
   g_assert (contacts->len == 2);
   contact = g_ptr_array_index (contacts, 0);

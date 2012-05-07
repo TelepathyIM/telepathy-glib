@@ -62,13 +62,13 @@ struct _TpChannelPrivate {
     TpContact *initiator_contact;
     TpContact *group_self_contact;
     /* TpHandle -> reffed TpContact */
-    GHashTable *group_members_contacts;
-    GHashTable *group_local_pending_contacts;
-    GHashTable *group_remote_pending_contacts;
+    GHashTable *group_members;
+    GHashTable *group_local_pending;
+    GHashTable *group_remote_pending;
     /* TpHandle -> reffed TpContact or NULL */
     GHashTable *group_contact_owners;
     /* TpHandle -> LocalPendingInfo */
-    GHashTable *group_local_pending_contact_info;
+    GHashTable *group_local_pending_info;
     gboolean group_properties_retrieved;
 
     /* Queue of GSimpleAsyncResult with ContactsQueueItem payload */
@@ -100,7 +100,7 @@ void _tp_channel_abort_introspection (TpChannel *self,
 
 /* channel-contacts.c internals */
 
-void _tp_channel_contacts_prepare_async (TpProxy *proxy,
+void _tp_channel_group_prepare_async (TpProxy *proxy,
     const TpProxyFeature *feature,
     GAsyncReadyCallback callback,
     gpointer user_data);

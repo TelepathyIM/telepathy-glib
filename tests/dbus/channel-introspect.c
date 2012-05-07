@@ -110,7 +110,7 @@ main (int argc,
   GAsyncResult *prepare_result;
   GQuark chat_states_features[] = { TP_CHANNEL_FEATURE_CORE,
       TP_CHANNEL_FEATURE_CHAT_STATES, 0 };
-  GQuark contacts_features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
+  GQuark group_features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
 
   g_type_init ();
   tp_tests_abort_after (10);
@@ -278,7 +278,7 @@ main (int argc,
   g_hash_table_unref (asv);
   asv = NULL;
 
-  tp_tests_proxy_run_until_prepared (chan, contacts_features);
+  tp_tests_proxy_run_until_prepared (chan, group_features);
   g_assert_cmpuint (g_hash_table_size (
       TP_TESTS_PROPS_TEXT_CHANNEL (service_props_group_chan)
       ->dbus_property_interfaces_retrieved), ==, 2);

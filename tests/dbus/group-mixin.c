@@ -474,13 +474,13 @@ in_the_desert (void)
 static void
 test_group_mixin (void)
 {
-  GQuark features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
+  GQuark features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
   tp_tests_proxy_run_until_prepared (chan, features);
 
   MYASSERT (tp_proxy_has_interface (chan, TP_IFACE_CHANNEL_INTERFACE_GROUP),
       "");
 
-  g_signal_connect (chan, "group-contacts-changed",
+  g_signal_connect (chan, "group-members-changed",
       G_CALLBACK (on_members_changed), NULL);
 
   check_initial_properties ();

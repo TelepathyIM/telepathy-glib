@@ -103,7 +103,7 @@ enum
 
 enum {
   SIGNAL_GROUP_FLAGS_CHANGED,
-  SIGNAL_GROUP_CONTACTS_CHANGED,
+  SIGNAL_GROUP_MEMBERS_CHANGED,
   SIGNAL_CHAT_STATE_CHANGED,
   N_SIGNALS
 };
@@ -145,27 +145,33 @@ tp_channel_get_feature_quark_core (void)
 }
 
 /**
- * TP_CHANNEL_FEATURE_CONTACTS:
+ * TP_CHANNEL_FEATURE_GROUP:
  *
  * Expands to a call to a function that returns a quark representing the
- * Contacts features of a TpChannel.
+ * group features of a TpChannel.
  *
- * When this feature is prepared, the #TpContact objects of this channel are
- * guaranteed to have all of the features previously passed to
- * tp_client_factory_add_contact_features() prepared.
+ * When this feature is prepared, the Group properties of the
+ * Channel have been retrieved and are available for use, and
+ * change-notification has been set up for those that can change:
  *
- * On older connection managers, this feature may fail to prepare.
+ * - the initial value of the #TpChannel:group-self-handle property will
+ *   have been fetched and change notification will have been set up
+ * - the initial value of the #TpChannel:group-flags property will
+ *   have been fetched and change notification will have been set up
+ *
+ * All #TpContact objects are guaranteed to have all of the features previously
+ * passed to tp_client_factory_add_contact_features() prepared.
  *
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.15.6
+ * Since: 0.UNRELEASED
  */
 
 GQuark
-tp_channel_get_feature_quark_contacts (void)
+tp_channel_get_feature_quark_group (void)
 {
-  return g_quark_from_static_string ("tp-channel-feature-contacts");
+  return g_quark_from_static_string ("tp-channel-feature-group");
 }
 
 /**
@@ -1103,13 +1109,13 @@ tp_channel_dispose (GObject *object)
   g_clear_object (&self->priv->target_contact);
   g_clear_object (&self->priv->initiator_contact);
   g_clear_object (&self->priv->group_self_contact);
-  tp_clear_pointer (&self->priv->group_members_contacts,
+  tp_clear_pointer (&self->priv->group_members,
       g_hash_table_unref);
-  tp_clear_pointer (&self->priv->group_local_pending_contacts,
+  tp_clear_pointer (&self->priv->group_local_pending,
       g_hash_table_unref);
-  tp_clear_pointer (&self->priv->group_local_pending_contact_info,
+  tp_clear_pointer (&self->priv->group_local_pending_info,
       g_hash_table_unref);
-  tp_clear_pointer (&self->priv->group_remote_pending_contacts,
+  tp_clear_pointer (&self->priv->group_remote_pending,
       g_hash_table_unref);
   tp_clear_pointer (&self->priv->group_contact_owners,
       g_hash_table_unref);
@@ -1205,7 +1211,7 @@ tp_channel_prepare_password_async (TpProxy *proxy,
 
 enum {
     FEAT_CORE,
-    FEAT_CONTACTS,
+    FEAT_GROUP,
     FEAT_CHAT_STATES,
     FEAT_PASSWORD,
     N_FEAT
@@ -1224,9 +1230,9 @@ tp_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_CORE].name = TP_CHANNEL_FEATURE_CORE;
   features[FEAT_CORE].core = TRUE;
 
-  features[FEAT_CONTACTS].name = TP_CHANNEL_FEATURE_CONTACTS;
-  features[FEAT_CONTACTS].prepare_async =
-    _tp_channel_contacts_prepare_async;
+  features[FEAT_GROUP].name = TP_CHANNEL_FEATURE_GROUP;
+  features[FEAT_GROUP].prepare_async =
+    _tp_channel_group_prepare_async;
 
   G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   features[FEAT_CHAT_STATES].name = TP_CHANNEL_FEATURE_CHAT_STATES;
@@ -1337,7 +1343,7 @@ tp_channel_class_init (TpChannelClass *klass)
   /**
    * TpChannel:group-flags:
    *
-   * If the %TP_CHANNEL_FEATURE_CONTACTS feature has been prepared successfully,
+   * If the %TP_CHANNEL_FEATURE_GROUP feature has been prepared successfully,
    * #TpChannelGroupFlags indicating the capabilities and behaviour of that
    * group.
    *
@@ -1499,7 +1505,7 @@ tp_channel_class_init (TpChannelClass *klass)
   /**
    * TpChannel:group-self-contact:
    *
-   * If this channel is a group and %TP_CHANNEL_FEATURE_CONTACTS has been
+   * If this channel is a group and %TP_CHANNEL_FEATURE_GROUP has been
    * prepared, and the user is a member of the group, the #TpContact
    * representing them in this group.
    *
@@ -1508,7 +1514,7 @@ tp_channel_class_init (TpChannelClass *klass)
    *
    * Change notification is via notify::group-self-contact.
    *
-   * Since: 0.15.6
+   * Since: 0.UNRELEASED
    */
   param_spec = g_param_spec_object ("group-self-contact", "Group.SelfHandle",
       "Undefined if not a group", TP_TYPE_CONTACT,
@@ -1517,7 +1523,7 @@ tp_channel_class_init (TpChannelClass *klass)
       param_spec);
 
   /**
-   * TpChannel::group-contacts-changed:
+   * TpChannel::group-members-changed:
    * @self: a channel
    * @added: (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
    *  a #GPtrArray of #TpContact containing the full members added
@@ -1537,13 +1543,13 @@ tp_channel_class_init (TpChannelClass *klass)
    * Emitted when the group members change in a Group channel.
    *
    * This is not guaranteed to be emitted until tp_proxy_prepare_async() has
-   * finished preparing %TP_CHANNEL_FEATURE_CONTACTS; until then, it may be
+   * finished preparing %TP_CHANNEL_FEATURE_GROUP; until then, it may be
    * omitted.
    *
-   * Since: 0.15.6
+   * Since: 0.UNRELEASED
    */
-  signals[SIGNAL_GROUP_CONTACTS_CHANGED] = g_signal_new (
-      "group-contacts-changed", G_OBJECT_CLASS_TYPE (klass),
+  signals[SIGNAL_GROUP_MEMBERS_CHANGED] = g_signal_new (
+      "group-members-changed", G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
       NULL, NULL, NULL,
@@ -1774,7 +1780,7 @@ channel_join_cb (TpChannel *self,
  * You can then call tp_channel_join_finish() to get the result of
  * the operation.
  *
- * %TP_CHANNEL_FEATURE_CONTACTS feature must be prepared before calling this
+ * %TP_CHANNEL_FEATURE_GROUP feature must be prepared before calling this
  * function.
  *
  * Since: 0.UNRELEASED
@@ -1790,7 +1796,7 @@ tp_channel_join_async (TpChannel *self,
   GArray *array;
 
   g_return_if_fail (TP_IS_CHANNEL (self));
-  g_return_if_fail (tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_CONTACTS));
+  g_return_if_fail (tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_GROUP));
 
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_channel_join_async);
@@ -1885,7 +1891,7 @@ channel_remove_self_cb (TpChannel *channel,
  * @user_data: data to pass to @callback
  *
  * Leave channel @self with @reason as reason and @message as leave message.
- * If %TP_CHANNEL_FEATURE_CONTACTS feature is not prepared, we close it.
+ * If %TP_CHANNEL_FEATURE_GROUP feature is not prepared, we close it.
  *
  * When we left the channel, @callback will be called.
  * You can then call tp_channel_leave_finish() to get the result of
@@ -1909,9 +1915,9 @@ tp_channel_leave_async (TpChannel *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_channel_leave_async);
 
-  if (!tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_CONTACTS))
+  if (!tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_GROUP))
     {
-      DEBUG ("TP_CHANNEL_FEATURE_CONTACTS is not prepared; "
+      DEBUG ("TP_CHANNEL_FEATURE_GROUP is not prepared; "
           "fallback to Close()");
 
       tp_cli_channel_call_close (self, -1, channel_close_cb, result,
