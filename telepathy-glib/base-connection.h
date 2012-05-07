@@ -115,6 +115,22 @@ struct _TpBaseConnectionClass {
 
 GType tp_base_connection_get_type (void);
 
+_TP_AVAILABLE_IN_UNRELEASED
+const gchar *tp_base_connection_get_bus_name (TpBaseConnection *self);
+
+_TP_AVAILABLE_IN_UNRELEASED
+const gchar *tp_base_connection_get_object_path (TpBaseConnection *self);
+
+_TP_AVAILABLE_IN_UNRELEASED
+TpConnectionStatus tp_base_connection_get_status (TpBaseConnection *self);
+
+_TP_AVAILABLE_IN_UNRELEASED
+gboolean tp_base_connection_is_destroyed (TpBaseConnection *self);
+
+_TP_AVAILABLE_IN_UNRELEASED
+gboolean tp_base_connection_check_connected (TpBaseConnection *self,
+    GError **error);
+
 TpHandleRepoIface *tp_base_connection_get_handles (TpBaseConnection *self,
     TpHandleType handle_type);
 
@@ -192,17 +208,15 @@ gboolean tp_base_connection_channel_manager_iter_next (
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_BASE_CONNECTION, \
                               TpBaseConnectionClass))
 
-/* The cast of a string literal to (gchar *) is to keep C++ compilers happy */
 #define TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED(conn, context) \
   G_STMT_START { \
-    TpBaseConnection *c = (conn); \
+    TpBaseConnection *c_ = (conn); \
+    GError *e_ = NULL; \
     \
-    if (c->status != TP_CONNECTION_STATUS_CONNECTED) \
+    if (!tp_base_connection_check_connected (c_, &e_)) \
       { \
-        GError e = { TP_ERROR, TP_ERROR_DISCONNECTED, \
-            (gchar *) "Connection is disconnected" }; \
-        \
-        dbus_g_method_return_error ((context), &e); \
+        dbus_g_method_return_error ((context), e_); \
+        g_error_free (e_); \
         return; \
       } \
   } G_STMT_END

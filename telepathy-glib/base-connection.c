@@ -424,7 +424,6 @@ struct _TpBaseConnectionPrivate
   GHashTable *client_interests;
 };
 
-static guint tp_base_connection_get_dbus_status (TpBaseConnection *self);
 static const gchar * const *tp_base_connection_get_interfaces (
     TpBaseConnection *self);
 
@@ -467,7 +466,7 @@ tp_base_connection_get_property (GObject *object,
       break;
 
     case PROP_DBUS_STATUS:
-      g_value_set_uint (value, tp_base_connection_get_dbus_status (self));
+      g_value_set_uint (value, tp_base_connection_get_status (self));
       break;
 
     case PROP_DBUS_DAEMON:
@@ -2049,8 +2048,27 @@ tp_base_connection_dbus_get_self_handle (TpSvcConnection *iface,
       context, self->self_handle);
 }
 
-static guint
-tp_base_connection_get_dbus_status (TpBaseConnection *self)
+/**
+ * tp_base_connection_get_status:
+ * @self: the connection
+ *
+ * Return the status of this connection, as set by
+ * tp_base_connection_change_status() or similar functions like
+ * tp_base_connection_disconnect_with_dbus_error().
+ *
+ * Like the corresponding D-Bus property, this method returns
+ * %TP_CONNECTION_STATUS_DISCONNECTED in two situations:
+ * either the connection is newly-created (and has never emitted
+ * #TpSvcConnection::status-changed), or D-Bus clients have already been
+ * told that it has been destroyed (by the Disconnect D-Bus method,
+ * a failed attempt to connect, or loss of an established connection).
+ * Use tp_base_connection_is_destroyed() to distinguish between the two.
+ *
+ * Returns: the value of #TpBaseConnection:dbus-status
+ * Since: 0.UNRELEASED
+ */
+TpConnectionStatus
+tp_base_connection_get_status (TpBaseConnection *self)
 {
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self),
       TP_CONNECTION_STATUS_DISCONNECTED);
@@ -2065,12 +2083,68 @@ tp_base_connection_get_dbus_status (TpBaseConnection *self)
     }
 }
 
+/**
+ * tp_base_connection_is_destroyed():
+ * @self: the connection
+ *
+ * Return whether this connection has already emitted the D-Bus signal
+ * indicating that it has been destroyed.
+ *
+ * In particular, this can be used to distinguish between the two reasons
+ * why tp_base_connection_get_status() would return
+ * %TP_CONNECTION_STATUS_DISCONNECTED: it will return %FALSE if the
+ * connection is newly-created, and %TRUE if the Disconnect D-Bus method
+ * has been called, an attempt to connect has failed, or an established
+ * connection has encountered an error.
+ *
+ * Returns: %TRUE if this connection is disappearing from D-Bus
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_base_connection_is_destroyed (TpBaseConnection *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), TRUE);
+
+  /* in particular return FALSE if the status is NEW */
+  return (self->status == TP_CONNECTION_STATUS_DISCONNECTED);
+}
+
+/**
+ * tp_base_connection_check_connected():
+ * @self: the connection
+ * @error: used to raise %TP_ERROR_DISCONNECTED if %FALSE is returned
+ *
+ * Return whether this connection is fully active and connected.
+ * If it is not, raise %TP_ERROR_DISCONNECTED.
+ *
+ * This is equivalent to checking whether tp_base_connection_get_status()
+ * returns %TP_CONNECTION_STATUS_CONNECTED; it is provided because methods
+ * on the connection often need to make this check, and return a
+ * #GError if it fails.
+ *
+ * Returns: %TRUE if this connection is connected
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_base_connection_check_connected (TpBaseConnection *self,
+    GError **error)
+{
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), FALSE);
+
+  if (self->status == TP_CONNECTION_STATUS_CONNECTED)
+    return TRUE;
+
+  g_set_error_literal (error, TP_ERROR, TP_ERROR_DISCONNECTED,
+      "Connection is disconnected");
+  return FALSE;
+}
+
 static void
 tp_base_connection_dbus_get_status (TpSvcConnection *iface,
     DBusGMethodInvocation *context)
 {
   tp_svc_connection_return_from_get_status (
-      context, tp_base_connection_get_dbus_status (
+      context, tp_base_connection_get_status (
         (TpBaseConnection *) iface));
 }
 
@@ -3882,4 +3956,56 @@ _tp_base_connection_find_channel_manager (TpBaseConnection *self,
     }
 
   return NULL;
+}
+
+/**
+ * tp_base_connection_get_bus_name:
+ * @self: the connection
+ *
+ * Return the bus name starting with %TP_CONN_BUS_NAME_BASE that represents
+ * this connection on D-Bus.
+ *
+ * The returned string belongs to the #TpBaseConnection and must be copied
+ * by the caller if it will be kept.
+ *
+ * If this connection has never been present on D-Bus
+ * (tp_base_connection_register() has never been called), return %NULL
+ * instead.
+ *
+ * Returns: (allow-none) (transfer none): the bus name of this connection,
+ *  or %NULL
+ * Since: 0.UNRELEASED
+ */
+const gchar *
+tp_base_connection_get_bus_name (TpBaseConnection *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
+
+  return self->bus_name;
+}
+
+/**
+ * tp_base_connection_get_object_path:
+ * @self: the connection
+ *
+ * Return the object path starting with %TP_CONN_OBJECT_PATH_BASE that
+ * represents this connection on D-Bus.
+ *
+ * The returned string belongs to the #TpBaseConnection and must be copied
+ * by the caller if it will be kept.
+ *
+ * If this connection has never been present on D-Bus
+ * (tp_base_connection_register() has never been called), return %NULL
+ * instead.
+ *
+ * Returns: (allow-none) (transfer none): the object path of this connection,
+ *  or %NULL
+ * Since: 0.UNRELEASED
+ */
+const gchar *
+tp_base_connection_get_object_path (TpBaseConnection *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
+
+  return self->object_path;
 }
