@@ -25,6 +25,8 @@ Deprecations:
 • TP_ERRORS has officially been deprecated since 0.11; it now produces
   deprecation warnings too.
 
+• Reimplementation of the RequestHandles method is deprecated.
+
 Enhancements:
 
 • <telepathy-glib/telepathy-glib.h> now includes all non-generated code
