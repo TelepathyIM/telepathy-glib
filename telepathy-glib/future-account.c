@@ -1183,11 +1183,12 @@ tp_future_account_create_account_async (TpFutureAccount *self,
  * @error: something
  *
  * Finishes an asynchronous account creation operation and returns a
- * new #TpAccount object, with the %TP_ACCOUNT_FEATURE_CORE feature
+ * new ref to a #TpAccount object. The returned account will have the
+ * features listed in tp_simple_client_factory_dup_account_features()
+ * (with the proxy factory from #TpFutureAccount:account-manager)
  * prepared on it.
  *
- * Returns: (transfer full): a new #TpAccount which was just created on
- *   success, otherwise %NULL
+ * Returns: (transfer full): a new ref to a #TpAccount, or %NULL
  */
 
 TpAccount *
