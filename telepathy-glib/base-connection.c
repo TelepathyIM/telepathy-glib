@@ -1628,22 +1628,7 @@ tp_base_connection_inspect_handles (TpSvcConnection *iface,
   g_free (ret);
 }
 
-/**
- * tp_base_connection_dbus_request_handles: (skip)
- * @iface: A pointer to #TpBaseConnection, cast to a pointer to
- *  #TpSvcConnection
- * @handle_type: The handle type (#TpHandleType) as a guint
- * @names: A strv of handle names
- * @context: The dbus-glib method invocation context
- *
- * Implements D-Bus method RequestHandles on interface
- * im.telepathy1.Connection. Exported so subclasses can
- * use it as a basis for their own implementations (for instance,
- * at the time of writing Gabble's GabbleConnection does its own processing
- * for room handles, in order to validate them asynchronously, but delegates
- * to this implementation for all other types).
- */
-void
+static void
 tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
                                          guint handle_type,
                                          const gchar **names,
