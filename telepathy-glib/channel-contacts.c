@@ -946,6 +946,34 @@ self_contact_changed_cb (TpChannel *self,
 }
 
 static void
+group_flags_changed_cb (TpChannel *self,
+    guint added,
+    guint removed,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  if (!self->priv->group_properties_retrieved)
+    return;
+
+  DEBUG ("%p GroupFlagsChanged: +%u -%u", self, added, removed);
+
+  added &= ~(self->priv->group_flags);
+  removed &= self->priv->group_flags;
+
+  DEBUG ("%p GroupFlagsChanged (after filtering): +%u -%u",
+      self, added, removed);
+
+  self->priv->group_flags |= added;
+  self->priv->group_flags &= ~removed;
+
+  if (added != 0 || removed != 0)
+    {
+      g_object_notify ((GObject *) self, "group-flags");
+      g_signal_emit_by_name (self, "group-flags-changed", added, removed);
+    }
+}
+
+static void
 contacts_prepared_cb (GObject *object,
     GAsyncResult *res,
     gpointer user_data)
@@ -1051,6 +1079,8 @@ got_group_properties_cb (TpProxy *proxy,
   DEBUG ("Received %u group properties", g_hash_table_size (asv));
   self->priv->group_properties_retrieved = TRUE;
 
+  self->priv->group_flags = tp_asv_get_uint32 (asv, "GroupFlags", NULL);
+
   identifiers = tp_asv_get_boxed (asv, "MemberIdentifiers",
       TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP);
 
@@ -1120,6 +1150,10 @@ _tp_channel_contacts_prepare_async (TpProxy *proxy,
       return;
     }
 
+  tp_cli_channel_interface_group_connect_to_group_flags_changed (self,
+      group_flags_changed_cb, NULL, NULL, NULL, &error);
+  g_assert_no_error (error);
+
   tp_cli_channel_interface_group_connect_to_self_contact_changed (self,
       self_contact_changed_cb, NULL, NULL, NULL, &error);
   g_assert_no_error (error);
@@ -1138,6 +1172,23 @@ _tp_channel_contacts_prepare_async (TpProxy *proxy,
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CHANNEL_INTERFACE_GROUP, got_group_properties_cb,
       result, g_object_unref, NULL);
+}
+
+/**
+ * tp_channel_group_get_flags:
+ * @self: a channel
+ *
+ * <!-- -->
+ *
+ * Returns: the value of #TpChannel:group-flags
+ * Since: 0.UNRELEASED
+ */
+TpChannelGroupFlags
+tp_channel_group_get_flags (TpChannel *self)
+{
+  g_return_val_if_fail (TP_IS_CHANNEL (self), 0);
+
+  return self->priv->group_flags;
 }
 
 /**

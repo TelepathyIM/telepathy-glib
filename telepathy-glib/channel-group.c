@@ -95,26 +95,6 @@ tp_channel_group_get_self_handle (TpChannel *self)
   return self->priv->group_self_handle;
 }
 
-
-/**
- * tp_channel_group_get_flags:
- * @self: a channel
- *
- * Return the #TpChannel:group-flags property (see the description
- * of that property for notes on validity).
- *
- * Returns: the group flags, or 0
- * Since: 0.7.12
- */
-TpChannelGroupFlags
-tp_channel_group_get_flags (TpChannel *self)
-{
-  g_return_val_if_fail (TP_IS_CHANNEL (self), 0);
-
-  return self->priv->group_flags;
-}
-
-
 /**
  * tp_channel_group_get_members:
  * @self: a channel
@@ -363,22 +343,6 @@ tp_channel_group_self_handle_changed_cb (TpChannel *self,
 }
 
 static void
-_got_initial_group_flags (TpChannel *self,
-                          TpChannelGroupFlags flags)
-{
-  TpChannelPrivate *priv = self->priv;
-
-  g_assert (priv->group_flags == 0);
-
-  DEBUG ("Initial GroupFlags: %u", flags);
-  priv->group_flags = flags;
-  priv->have_group_flags = TRUE;
-
-  if (flags != 0)
-    g_object_notify ((GObject *) self, "group-flags");
-}
-
-static void
 tp_channel_group_self_contact_changed_cb (TpChannel *self,
     guint self_handle,
     const gchar *identifier,
@@ -553,9 +517,6 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
       GArray *arr;
 
       DEBUG ("Received %u group properties", g_hash_table_size (asv));
-
-      _got_initial_group_flags (self,
-          tp_asv_get_uint32 (asv, "GroupFlags", NULL));
 
       tp_channel_group_self_handle_changed_cb (self,
           tp_asv_get_uint32 (asv, "SelfHandle", NULL), NULL, NULL);
@@ -787,33 +748,6 @@ tp_channel_handle_owners_changed_cb (TpChannel *self,
 }
 
 
-static void
-tp_channel_group_flags_changed_cb (TpChannel *self,
-                                   guint added,
-                                   guint removed,
-                                   gpointer unused G_GNUC_UNUSED,
-                                   GObject *unused_object G_GNUC_UNUSED)
-{
-  if (self->priv->have_group_flags)
-    {
-      DEBUG ("%p GroupFlagsChanged: +%u -%u", self, added, removed);
-
-      added &= ~(self->priv->group_flags);
-      removed &= self->priv->group_flags;
-
-      DEBUG ("%p GroupFlagsChanged (after filtering): +%u -%u",
-          self, added, removed);
-
-      self->priv->group_flags |= added;
-      self->priv->group_flags &= ~removed;
-
-      if (added != 0 || removed != 0)
-        {
-          g_object_notify ((GObject *) self, "group-flags");
-          g_signal_emit_by_name (self, "group-flags-changed", added, removed);
-        }
-    }
-}
 
 void
 _tp_channel_get_group_properties (TpChannel *self)
@@ -850,12 +784,6 @@ _tp_channel_get_group_properties (TpChannel *self)
 
   if (sc == NULL)
     DIE ("MembersChanged");
-
-  sc = tp_cli_channel_interface_group_connect_to_group_flags_changed (self,
-      tp_channel_group_flags_changed_cb, NULL, NULL, NULL, &error);
-
-  if (sc == NULL)
-    DIE ("GroupFlagsChanged");
 
   sc = tp_cli_channel_interface_group_connect_to_self_contact_changed (self,
       tp_channel_group_self_contact_changed_cb, NULL, NULL, NULL, &error);

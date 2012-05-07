@@ -1411,7 +1411,7 @@ tp_channel_class_init (TpChannelClass *klass)
   /**
    * TpChannel:group-flags:
    *
-   * If the %TP_CHANNEL_FEATURE_GROUP feature has been prepared successfully,
+   * If the %TP_CHANNEL_FEATURE_CONTACTS feature has been prepared successfully,
    * #TpChannelGroupFlags indicating the capabilities and behaviour of that
    * group.
    *
@@ -1420,7 +1420,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * Change notification is via notify::group-flags or
    * TpChannel::group-flags-changed.
    *
-   * Since: 0.7.12
+   * Since: 0.UNRELEASED
    */
   param_spec = g_param_spec_uint ("group-flags", "Group.GroupFlags",
       "0 if not a group", 0, G_MAXUINT32, 0,
