@@ -2515,7 +2515,7 @@ channel_remove_self_cb (TpChannel *channel,
 {
   GSimpleAsyncResult *result = user_data;
 
-  if (tp_proxy_get_invalidated (channel) != NULL &&
+  if (tp_proxy_get_invalidated (channel) == NULL &&
       error != NULL)
     {
       DEBUG ("RemoveMembersWithDetails() with self handle failed; call Close()"
