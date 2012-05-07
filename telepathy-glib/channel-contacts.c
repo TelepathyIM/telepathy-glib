@@ -508,38 +508,6 @@ members_changed_prepared_cb (GObject *object,
 
   _tp_channel_contacts_queue_prepare_finish (self, result, NULL, NULL);
 
-  /* For removed contacts, we have only handles because we are supposed to
-   * already know them. So we have to search them in our tables, construct an
-   * array of removed contacts and then remove them from our tables */
-  removed = g_ptr_array_new_full (data->removed->len, g_object_unref);
-  for (i = 0; i < data->removed->len; i++)
-    {
-      TpHandle handle = g_array_index (data->removed, TpHandle, i);
-      gpointer key = GUINT_TO_POINTER (handle);
-      TpContact *contact;
-
-      contact = g_hash_table_lookup (self->priv->group_members_contacts, key);
-      if (contact == NULL)
-          contact = g_hash_table_lookup (
-              self->priv->group_local_pending_contacts, key);
-      if (contact == NULL)
-          contact = g_hash_table_lookup (
-              self->priv->group_remote_pending_contacts, key);
-
-      if (contact == NULL)
-        {
-          DEBUG ("Handle %u removed but not found in our tables - broken CM",
-              handle);
-          continue;
-        }
-
-      g_ptr_array_add (removed, g_object_ref (contact));
-
-      g_hash_table_remove (self->priv->group_members_contacts, key);
-      g_hash_table_remove (self->priv->group_local_pending_contacts, key);
-      g_hash_table_remove (self->priv->group_remote_pending_contacts, key);
-    }
-
   for (i = 0; i < data->added->len; i++)
     {
       TpContact *contact = g_ptr_array_index (data->added, i);
@@ -580,6 +548,38 @@ members_changed_prepared_cb (GObject *object,
       g_hash_table_remove (self->priv->group_local_pending_contacts, key);
       g_hash_table_insert (self->priv->group_remote_pending_contacts, key,
           g_object_ref (contact));
+    }
+
+  /* For removed contacts, we have only handles because we are supposed to
+   * already know them. So we have to search them in our tables, construct an
+   * array of removed contacts and then remove them from our tables */
+  removed = g_ptr_array_new_full (data->removed->len, g_object_unref);
+  for (i = 0; i < data->removed->len; i++)
+    {
+      TpHandle handle = g_array_index (data->removed, TpHandle, i);
+      gpointer key = GUINT_TO_POINTER (handle);
+      TpContact *contact;
+
+      contact = g_hash_table_lookup (self->priv->group_members_contacts, key);
+      if (contact == NULL)
+          contact = g_hash_table_lookup (
+              self->priv->group_local_pending_contacts, key);
+      if (contact == NULL)
+          contact = g_hash_table_lookup (
+              self->priv->group_remote_pending_contacts, key);
+
+      if (contact == NULL)
+        {
+          DEBUG ("Handle %u removed but not found in our tables - broken CM",
+              handle);
+          continue;
+        }
+
+      g_ptr_array_add (removed, g_object_ref (contact));
+
+      g_hash_table_remove (self->priv->group_members_contacts, key);
+      g_hash_table_remove (self->priv->group_local_pending_contacts, key);
+      g_hash_table_remove (self->priv->group_remote_pending_contacts, key);
     }
 
   g_signal_emit_by_name (self, "group-contacts-changed", data->added,
