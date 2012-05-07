@@ -965,6 +965,8 @@ tp_future_account_set_avatar (TpFutureAccount *self,
       G_TYPE_STRING, mime_type,
       G_TYPE_INVALID);
 
+  g_array_unref (tmp);
+
   tp_asv_take_boxed (priv->properties,
       TP_PROP_ACCOUNT_INTERFACE_AVATAR_AVATAR,
       TP_STRUCT_TYPE_AVATAR, arr);
