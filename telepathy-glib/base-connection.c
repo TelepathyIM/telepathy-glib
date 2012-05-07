@@ -2530,11 +2530,12 @@ tp_base_connection_release_handles (TpSvcConnection *iface,
  * @context: The dbus-glib method invocation context
  *
  * Implements D-Bus method RequestHandles on interface
- * org.freedesktop.Telepathy.Connection. Exported so subclasses can
- * use it as a basis for their own implementations (for instance,
- * at the time of writing Gabble's GabbleConnection does its own processing
- * for room handles, in order to validate them asynchronously, but delegates
- * to this implementation for all other types).
+ * org.freedesktop.Telepathy.Connection.
+ *
+ * This was exported so subclasses could use it as a basis for their
+ * reimplementations, but reimplementing the method is now deprecated.
+ *
+ * Deprecated: 0.UNRELEASED
  */
 void
 tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
@@ -3402,7 +3403,9 @@ conn_iface_init (gpointer g_iface, gpointer iface_data)
   IMPLEMENT(,list_channels);
   IMPLEMENT(,request_channel);
   IMPLEMENT(,release_handles);
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   IMPLEMENT(dbus_,request_handles);
+G_GNUC_END_IGNORE_DEPRECATIONS
   IMPLEMENT(dbus_,add_client_interest);
   IMPLEMENT(dbus_,remove_client_interest);
 #undef IMPLEMENT
