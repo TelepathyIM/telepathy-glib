@@ -507,3 +507,28 @@ tp_tests_connection_run_until_contact_by_id (TpConnection *connection,
 
   return contact;
 }
+
+void
+tp_tests_channel_assert_expect_members (TpChannel *channel,
+    TpIntset *expected_members)
+{
+  GPtrArray *contacts;
+  TpIntset *members;
+  guint i;
+
+  members = tp_intset_new ();
+  contacts = tp_channel_group_dup_members_contacts (channel);
+  if (contacts != NULL)
+    {
+      for (i = 0; i < contacts->len; i++)
+        {
+          TpContact *contact = g_ptr_array_index (contacts, i);
+          tp_intset_add (members, tp_contact_get_handle (contact));
+        }
+    }
+
+  g_assert (tp_intset_is_equal (members, expected_members));
+
+  g_ptr_array_unref (contacts);
+  tp_intset_destroy (members);
+}

@@ -108,8 +108,9 @@ main (int argc,
   TpHandle handle;
   GHashTable *asv;
   GAsyncResult *prepare_result;
-  GQuark some_features[] = { TP_CHANNEL_FEATURE_CORE,
+  GQuark chat_states_features[] = { TP_CHANNEL_FEATURE_CORE,
       TP_CHANNEL_FEATURE_CHAT_STATES, 0 };
+  GQuark contacts_features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
 
   g_type_init ();
   tp_tests_abort_after (10);
@@ -160,7 +161,7 @@ main (int argc,
   g_assert_no_error (error);
 
   prepare_result = NULL;
-  tp_proxy_prepare_async (chan, some_features, channel_prepared_cb,
+  tp_proxy_prepare_async (chan, chat_states_features, channel_prepared_cb,
       &prepare_result);
 
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
@@ -188,10 +189,10 @@ main (int argc,
       tp_handle_inspect (contact_repo, service_conn_as_base->self_handle));
 
   /* no way to see what this is doing - just make sure it doesn't crash */
-  tp_proxy_prepare_async (chan, some_features, NULL, NULL);
+  tp_proxy_prepare_async (chan, chat_states_features, NULL, NULL);
 
   prepare_result = NULL;
-  tp_proxy_prepare_async (chan, some_features, channel_prepared_cb,
+  tp_proxy_prepare_async (chan, chat_states_features, channel_prepared_cb,
       &prepare_result);
 
   if (prepare_result == NULL)
@@ -277,7 +278,7 @@ main (int argc,
   g_hash_table_unref (asv);
   asv = NULL;
 
-  tp_tests_proxy_run_until_prepared (chan, NULL);
+  tp_tests_proxy_run_until_prepared (chan, contacts_features);
   g_assert_cmpuint (g_hash_table_size (
       TP_TESTS_PROPS_TEXT_CHANNEL (service_props_group_chan)
       ->dbus_property_interfaces_retrieved), ==, 2);
@@ -395,7 +396,7 @@ main (int argc,
   g_assert_no_error (error);
 
   prepare_result = NULL;
-  tp_proxy_prepare_async (chan, some_features, channel_prepared_cb,
+  tp_proxy_prepare_async (chan, chat_states_features, channel_prepared_cb,
       &prepare_result);
   g_assert (prepare_result == NULL);
   g_main_loop_run (mainloop);
@@ -412,7 +413,7 @@ main (int argc,
   tp_tests_connection_assert_disconnect_succeeds (conn);
 
   prepare_result = NULL;
-  tp_proxy_prepare_async (chan, some_features, channel_prepared_cb,
+  tp_proxy_prepare_async (chan, chat_states_features, channel_prepared_cb,
       &prepare_result);
 
   /* is_prepared becomes FALSE because the channel broke */

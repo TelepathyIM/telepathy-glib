@@ -42,14 +42,16 @@ gboolean expecting_invalidated = FALSE;
 
 static void
 group_members_changed_cb (TpChannel *chan_,
-                          GArray *added,
-                          GArray *removed,
-                          GArray *local_pending,
-                          GArray *remote_pending,
+                          GPtrArray *added,
+                          GPtrArray *removed,
+                          GPtrArray *local_pending,
+                          GPtrArray *remote_pending,
+                          TpContact *actor,
                           GHashTable *details,
                           gpointer user_data)
 {
   guint reason = tp_asv_get_uint32 (details, "change-reason", NULL);
+  GMainLoop *loop = user_data;
 
   DEBUG ("%u, %u, %u, %u, %u details", added->len, removed->len,
       local_pending->len, remote_pending->len, g_hash_table_size (details));
@@ -58,6 +60,7 @@ group_members_changed_cb (TpChannel *chan_,
   g_assert_cmpuint (reason, ==, expected_reason);
 
   expecting_group_members_changed = FALSE;
+  g_main_loop_quit (loop);
 }
 
 
@@ -67,11 +70,13 @@ test_channel_proxy (TpTestsTextChannelGroup *service_chan,
 {
   TpIntset *add, *rem, *expected_members;
   GHashTable *details;
+  GQuark features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
+  GMainLoop *loop = g_main_loop_new (NULL, FALSE);
 
-  tp_tests_proxy_run_until_prepared (chan, NULL);
+  tp_tests_proxy_run_until_prepared (chan, features);
 
-  g_signal_connect (chan, "group-members-changed",
-      (GCallback) group_members_changed_cb, NULL);
+  g_signal_connect (chan, "group-contacts-changed",
+      (GCallback) group_members_changed_cb, loop);
 
   /* Add a couple of members. */
   add = tp_intset_new ();
@@ -93,14 +98,11 @@ test_channel_proxy (TpTestsTextChannelGroup *service_chan,
 
   tp_clear_pointer (&details, g_hash_table_unref);
 
-  /* Clear the queue to ensure that there aren't any more
-   * MembersChanged signals waiting for us.
-   */
-  tp_tests_proxy_run_until_dbus_queue_processed (conn);
+  /* Run until we get "group-contacts-changed" signal */
+  g_main_loop_run (loop);
 
   expected_members = add;
-  MYASSERT (tp_intset_is_equal (expected_members,
-      tp_channel_group_get_members (chan)), "");
+  tp_tests_channel_assert_expect_members (chan, expected_members);
 
   /* Add one, remove one. Check that the cache is properly updated. */
   add = tp_intset_new ();
@@ -124,13 +126,13 @@ test_channel_proxy (TpTestsTextChannelGroup *service_chan,
   tp_intset_destroy (add);
   tp_intset_destroy (rem);
 
-  tp_tests_proxy_run_until_dbus_queue_processed (conn);
+  /* Run until we get "group-contacts-changed" signal */
+  g_main_loop_run (loop);
 
   tp_intset_add (expected_members, h3);
   tp_intset_remove (expected_members, h1);
 
-  MYASSERT (tp_intset_is_equal (expected_members,
-      tp_channel_group_get_members (chan)), "");
+  tp_tests_channel_assert_expect_members (chan, expected_members);
 
   tp_intset_destroy (expected_members);
 }

@@ -35,8 +35,8 @@ TpChannel *chan = NULL;
 TpHandleRepoIface *contact_repo;
 TpHandle self_handle, camel, camel2;
 
-typedef void (*diff_checker) (const GArray *added, const GArray *removed,
-    const GArray *local_pending, const GArray *remote_pending,
+typedef void (*diff_checker) (const GPtrArray *added, const GPtrArray *removed,
+    const GPtrArray *local_pending, const GPtrArray *remote_pending,
     const GHashTable *details);
 
 static gboolean expecting_members_changed = FALSE;
@@ -74,16 +74,15 @@ wait_for_outstanding_signals (void)
 
 static void
 on_members_changed (TpChannel *proxy,
-                    const GArray *arg_Added,
-                    const GArray *arg_Removed,
-                    const GArray *arg_Local_Pending,
-                    const GArray *arg_Remote_Pending,
-                    GHashTable *arg_Details,
-                    gpointer user_data,
-                    GObject *weak_object)
+                    GPtrArray *added,
+                    GPtrArray *removed,
+                    GPtrArray *local_pending,
+                    GPtrArray *remote_pending,
+                    TpContact *actor,
+                    GHashTable *details,
+                    gpointer user_data)
 {
   const gchar *message;
-  TpHandle actor;
   TpChannelGroupChangeReason reason;
   gboolean valid;
 
@@ -91,26 +90,23 @@ on_members_changed (TpChannel *proxy,
       ": got unexpected MembersChanged");
   expecting_members_changed = FALSE;
 
-  message = tp_asv_get_string (arg_Details, "message");
+  message = tp_asv_get_string (details, "message");
 
   if (message == NULL)
     message = "";
 
   g_assert_cmpstr (message, ==, expected_message);
 
-  actor = tp_asv_get_uint32 (arg_Details, "actor", &valid);
-  if (valid)
+  if (actor != NULL)
     {
-      g_assert_cmpuint (actor, ==, expected_actor);
+      g_assert_cmpuint (tp_contact_get_handle (actor), ==, expected_actor);
     }
   else
     {
       g_assert_cmpuint (expected_actor, ==, 0);
-      MYASSERT (tp_asv_lookup (arg_Details, "actor") == NULL,
-          ": wanted an actor, not an imposter");
     }
 
-  reason = tp_asv_get_uint32 (arg_Details, "change-reason", &valid);
+  reason = tp_asv_get_uint32 (details, "change-reason", &valid);
   if (valid)
     {
       g_assert_cmpuint (reason, ==, expected_reason);
@@ -119,12 +115,12 @@ on_members_changed (TpChannel *proxy,
     {
       g_assert_cmpuint (expected_reason, ==,
           TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-      MYASSERT (tp_asv_lookup (arg_Details, "reason") == NULL,
+      MYASSERT (tp_asv_lookup (details, "reason") == NULL,
           ": utterly unreasonable");
     }
 
-  expected_diffs (arg_Added, arg_Removed, arg_Local_Pending,
-      arg_Remote_Pending, arg_Details);
+  expected_diffs (added, removed, local_pending,
+      remote_pending, details);
 
   if (!outstanding_signals ())
     g_main_loop_quit (mainloop);
@@ -196,13 +192,13 @@ details_contains_ids_for (const GHashTable *details,
 }
 
 static void
-self_added_to_lp (const GArray *added,
-                  const GArray *removed,
-                  const GArray *local_pending,
-                  const GArray *remote_pending,
+self_added_to_lp (const GPtrArray *added,
+                  const GPtrArray *removed,
+                  const GPtrArray *local_pending,
+                  const GPtrArray *remote_pending,
                   const GHashTable *details)
 {
-  TpHandle h;
+  TpContact *c;
   TpHandle hs[] = { self_handle, 0 };
 
   MYASSERT (added->len == 0, ": no new added to members");
@@ -211,26 +207,26 @@ self_added_to_lp (const GArray *added,
   MYASSERT (local_pending->len == 1, ": one local pending...");
 
   /* ...which is us */
-  h = g_array_index (local_pending, TpHandle, 0);
-  g_assert_cmpuint (h, ==, self_handle);
+  c = g_ptr_array_index (local_pending, 0);
+  g_assert_cmpuint (tp_contact_get_handle (c), ==, self_handle);
 
   details_contains_ids_for (details, hs);
 }
 
 static void
-self_added_to_members (const GArray *added,
-                       const GArray *removed,
-                       const GArray *local_pending,
-                       const GArray *remote_pending,
+self_added_to_members (const GPtrArray *added,
+                       const GPtrArray *removed,
+                       const GPtrArray *local_pending,
+                       const GPtrArray *remote_pending,
                        const GHashTable *details)
 {
-  TpHandle h;
+  TpContact *c;
   TpHandle hs[] = { self_handle, 0 };
 
   MYASSERT (added->len == 1, ": one added");
 
-  h = g_array_index (added, TpHandle, 0);
-  g_assert_cmpuint (h, ==, self_handle);
+  c = g_ptr_array_index (added, 0);
+  g_assert_cmpuint (tp_contact_get_handle (c), ==, self_handle);
 
   MYASSERT (removed->len == 0, ": no-one removed");
   MYASSERT (local_pending->len == 0, ": no new local pending");
@@ -287,19 +283,19 @@ check_incoming_invitation (void)
 }
 
 static void
-camel_added (const GArray *added,
-             const GArray *removed,
-             const GArray *local_pending,
-             const GArray *remote_pending,
+camel_added (const GPtrArray *added,
+             const GPtrArray *removed,
+             const GPtrArray *local_pending,
+             const GPtrArray *remote_pending,
              const GHashTable *details)
 {
-  TpHandle h;
+  TpContact *c;
   TpHandle hs[] = { camel, 0 };
 
   MYASSERT (added->len == 1, ": one added");
 
-  h = g_array_index (added, TpHandle, 0);
-  g_assert_cmpuint (h, ==, camel);
+  c = g_ptr_array_index (added, 0);
+  g_assert_cmpuint (tp_contact_get_handle (c), ==, camel);
 
   details_contains_ids_for (details, hs);
 
@@ -309,20 +305,20 @@ camel_added (const GArray *added,
 }
 
 static void
-camel2_added (const GArray *added,
-              const GArray *removed,
-              const GArray *local_pending,
-              const GArray *remote_pending,
+camel2_added (const GPtrArray *added,
+              const GPtrArray *removed,
+              const GPtrArray *local_pending,
+              const GPtrArray *remote_pending,
               const GHashTable *details)
 {
-  TpHandle h;
+  TpContact *c;
   /* camel is the actor */
   TpHandle hs[] = { camel, camel2, 0 };
 
   MYASSERT (added->len == 1, ": one added");
 
-  h = g_array_index (added, TpHandle, 0);
-  g_assert_cmpuint (h, ==, camel2);
+  c = g_ptr_array_index (added, 0);
+  g_assert_cmpuint (tp_contact_get_handle (c), ==, camel2);
 
   details_contains_ids_for (details, hs);
 
@@ -332,13 +328,13 @@ camel2_added (const GArray *added,
 }
 
 static void
-camel_removed (const GArray *added,
-               const GArray *removed,
-               const GArray *local_pending,
-               const GArray *remote_pending,
+camel_removed (const GPtrArray *added,
+               const GPtrArray *removed,
+               const GPtrArray *local_pending,
+               const GPtrArray *remote_pending,
                const GHashTable *details)
 {
-  TpHandle h;
+  TpContact *c;
   /* camel2 is the actor. camel shouldn't be in the ids, because they were
    * removed and the spec says that you can leave those out, and we want
    * tp-glib's automatic construction of contact-ids to work in the #ubuntu
@@ -348,8 +344,8 @@ camel_removed (const GArray *added,
 
   MYASSERT (removed->len == 1, ": one removed");
 
-  h = g_array_index (removed, TpHandle, 0);
-  g_assert_cmpuint (h, ==, camel);
+  c = g_ptr_array_index (removed, 0);
+  g_assert_cmpuint (tp_contact_get_handle (c), ==, camel);
 
   MYASSERT (added->len == 0, ": no-one added");
   MYASSERT (local_pending->len == 0, ": no new local pending");
@@ -361,6 +357,11 @@ camel_removed (const GArray *added,
 static void
 in_the_desert (void)
 {
+  TpIntset *expected_members;
+
+  expected_members = tp_intset_new ();
+  tp_intset_add (expected_members, self_handle);
+
   camel  = tp_handle_ensure (contact_repo, "camel", NULL, NULL);
   camel2 = tp_handle_ensure (contact_repo, "camel2", NULL, NULL);
 
@@ -374,6 +375,7 @@ in_the_desert (void)
         NULL);
 
     tp_intset_add (add, camel);
+    tp_intset_add (expected_members, camel);
     expect_signals ("", camel, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
         camel_added);
     tp_group_mixin_change_members ((GObject *) service_chan, add, NULL,
@@ -392,6 +394,7 @@ in_the_desert (void)
         NULL, (GDestroyNotify) tp_g_value_slice_free);
 
     tp_intset_add (add, camel2);
+    tp_intset_add (expected_members, camel2);
 
     g_hash_table_insert (details, "actor", tp_g_value_slice_new_uint (camel));
 
@@ -413,6 +416,7 @@ in_the_desert (void)
         NULL, (GDestroyNotify) tp_g_value_slice_free);
 
     tp_intset_add (del, camel);
+    tp_intset_remove (expected_members, camel);
 
     g_hash_table_insert (details, "actor", tp_g_value_slice_new_uint (camel2));
 
@@ -445,43 +449,39 @@ in_the_desert (void)
 
   /* We and the second camel should be left in the channel */
   {
-    const TpIntset *members = tp_channel_group_get_members (chan);
     GArray *service_members;
-    TpHandle a, b;
+    TpIntset *service_members_intset;
 
-    g_assert_cmpuint (tp_intset_size (members), ==, 2);
-    MYASSERT (tp_intset_is_member (members, self_handle), "");
-    MYASSERT (tp_intset_is_member (members, camel2), ": what a pity");
+    tp_tests_channel_assert_expect_members (chan, expected_members);
 
     /* And let's check that the group mixin agrees, in case that's just the
      * client binding being wrong.
      */
     tp_group_mixin_get_members ((GObject *) service_chan, &service_members,
         NULL);
-    g_assert_cmpuint (service_members->len, ==, 2);
-    a = g_array_index (service_members, TpHandle, 0);
-    b = g_array_index (service_members, TpHandle, 1);
-    MYASSERT (a != b, "");
-    MYASSERT (a == self_handle || b == self_handle, "");
-    MYASSERT (a == camel2 || b == camel2, "");
+    service_members_intset = tp_intset_from_array (service_members);
+    g_assert (tp_intset_is_equal (service_members_intset, expected_members));
 
     g_array_unref (service_members);
+    tp_intset_destroy (service_members_intset);
   }
 
   tp_handle_unref (contact_repo, camel);
   tp_handle_unref (contact_repo, camel2);
+  tp_intset_destroy (expected_members);
 }
 
 static void
 test_group_mixin (void)
 {
-  tp_tests_proxy_run_until_prepared (chan, NULL);
+  GQuark features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
+  tp_tests_proxy_run_until_prepared (chan, features);
 
   MYASSERT (tp_proxy_has_interface (chan, TP_IFACE_CHANNEL_INTERFACE_GROUP),
       "");
 
-  tp_cli_channel_interface_group_connect_to_members_changed (chan,
-      on_members_changed, NULL, NULL, NULL, NULL);
+  g_signal_connect (chan, "group-contacts-changed",
+      G_CALLBACK (on_members_changed), NULL);
 
   check_initial_properties ();
 
