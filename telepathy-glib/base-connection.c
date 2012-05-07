@@ -179,29 +179,13 @@
 
 /**
  * TpBaseConnection:
- * @parent: Fields shared by the superclass.
- * @bus_name: A D-Bus well-known bus name, owned by the connection manager
- *  process and associated with this connection. Set by
- *  tp_base_connection_register; should be considered read-only by subclasses.
- * @object_path: The object-path of this connection. Set by
- *  tp_base_connection_register; should be considered read-only by subclasses.
- * @status: Connection status - may either be a valid TpConnectionStatus or
- *  TP_INTERNAL_CONNECTION_STATUS_NEW. Should be considered read-only by
- *  subclasses: use tp_base_connection_change_status() to set it.
- * @self_handle: The handle of type %TP_HANDLE_TYPE_CONTACT representing the
- *  local user. Must be set nonzero by the subclass before moving to state
- *  CONNECTED. Since 0.7.15, setting this property directly is
- *  deprecated, in favour of tp_base_connection_set_self_handle(); if this
- *  property is set directly, the connection must ensure it holds a reference
- *  to the handle. Changing this property directly having moved to state
- *  CONNECTED is very strongly discouraged, as this will prevent the
- *  SelfHandleChanged signal being emitted.
  *
  * Data structure representing a generic #TpSvcConnection implementation.
  *
- * In addition to the fields documented here, there are four gpointer fields
- * which must currently be %NULL (a meaning may be defined for these in a
- * future version of telepathy-glib), and a pointer to opaque private data.
+ * Since 0.UNRELEASED, accessing the fields of this structure is deprecated.
+ * Use tp_base_connection_get_bus_name(), tp_base_connection_get_object_path(),
+ * tp_base_connection_get_status(), tp_base_connection_get_self_handle()
+ * instead.
  */
 
 /**

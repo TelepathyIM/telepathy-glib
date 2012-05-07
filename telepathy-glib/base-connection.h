@@ -57,15 +57,15 @@ typedef gchar *(*TpBaseConnectionGetUniqueConnectionNameImpl) (
     TpBaseConnection *self);
 
 struct _TpBaseConnection {
-    /*<public>*/
+    /*<private>*/
     GObject parent;
 
-    gchar *bus_name;
-    gchar *object_path;
+    gchar *_TP_SEAL (bus_name);
+    gchar *_TP_SEAL (object_path);
 
-    TpConnectionStatus status;
+    TpConnectionStatus _TP_SEAL (status);
 
-    TpHandle self_handle;
+    TpHandle _TP_SEAL (self_handle);
 
     /*<private>*/
     gpointer _future1;
