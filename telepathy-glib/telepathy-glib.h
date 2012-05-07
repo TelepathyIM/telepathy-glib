@@ -58,6 +58,7 @@
 #include <telepathy-glib/capabilities.h>
 #include <telepathy-glib/channel-dispatch-operation.h>
 #include <telepathy-glib/channel-dispatcher.h>
+#include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/channel-manager.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/channel.h>
