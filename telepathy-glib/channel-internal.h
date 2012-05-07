@@ -31,7 +31,6 @@ typedef void (*TpChannelProc) (TpChannel *self);
 
 typedef struct {
     TpContact *actor_contact;
-    TpHandle actor;
     TpChannelGroupChangeReason reason;
     gchar *message;
 } LocalPendingInfo;
@@ -53,19 +52,10 @@ struct _TpChannelPrivate {
     /* owned string (iface + "." + prop) => slice-allocated GValue */
     GHashTable *channel_properties;
 
-    TpHandle group_self_handle;
     TpChannelGroupFlags group_flags;
-    /* NULL if members not discovered yet */
-    TpIntset *group_members;
-    TpIntset *group_local_pending;
-    TpIntset *group_remote_pending;
-    /* (TpHandle => LocalPendingInfo), or NULL if members not discovered yet */
-    GHashTable *group_local_pending_info;
 
     /* reason the self-handle left */
     GError *group_remove_error /* implicitly zero-initialized */ ;
-    /* guint => guint, NULL if not discovered yet */
-    GHashTable *group_handle_owners;
 
     /* reffed TpContact */
     TpContact *target_contact;
@@ -107,10 +97,6 @@ void _tp_channel_continue_introspection (TpChannel *self);
 void _tp_channel_abort_introspection (TpChannel *self,
     const gchar *debug,
     const GError *error);
-
-/* channel-group.c internals */
-
-void _tp_channel_get_group_properties (TpChannel *self);
 
 /* channel-contacts.c internals */
 

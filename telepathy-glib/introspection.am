@@ -27,7 +27,6 @@ TelepathyGLib_1_gir_FILES = \
 	$(srcdir)/protocol.c $(srcdir)/protocol.h \
 	$(srcdir)/connection-manager.c $(srcdir)/connection-manager.h \
 	$(srcdir)/channel.c $(srcdir)/channel.h \
-	$(srcdir)/channel-group.c \
 	$(srcdir)/channel-contacts.c \
 	$(srcdir)/handle.c $(srcdir)/handle.h \
 	$(srcdir)/handle-channels-context.c $(srcdir)/handle-channels-context.h \

@@ -92,7 +92,6 @@ enum
   PROP_HANDLE,
   PROP_IDENTIFIER,
   PROP_CHANNEL_PROPERTIES,
-  PROP_GROUP_SELF_HANDLE,
   PROP_GROUP_FLAGS,
   PROP_REQUESTED,
   PROP_PASSWORD_NEEDED,
@@ -104,7 +103,6 @@ enum
 
 enum {
   SIGNAL_GROUP_FLAGS_CHANGED,
-  SIGNAL_GROUP_MEMBERS_CHANGED,
   SIGNAL_GROUP_CONTACTS_CHANGED,
   SIGNAL_CHAT_STATE_CHANGED,
   N_SIGNALS
@@ -144,33 +142,6 @@ GQuark
 tp_channel_get_feature_quark_core (void)
 {
   return g_quark_from_static_string ("tp-channel-feature-core");
-}
-
-/**
- * TP_CHANNEL_FEATURE_GROUP:
- *
- * Expands to a call to a function that returns a quark representing the Group
- * features of a TpChannel.
- *
- * When this feature is prepared, the Group properties of the
- * Channel have been retrieved and are available for use, and
- * change-notification has been set up for those that can change:
- *
- * - the initial value of the #TpChannel:group-self-handle property will
- *   have been fetched and change notification will have been set up
- * - the initial value of the #TpChannel:group-flags property will
- *   have been fetched and change notification will have been set up
- *
- * One can ask for a feature to be prepared using the
- * tp_proxy_prepare_async() function, and waiting for it to callback.
- *
- * Since: 0.11.3
- */
-
-GQuark
-tp_channel_get_feature_quark_group (void)
-{
-  return g_quark_from_static_string ("tp-channel-feature-group");
 }
 
 /**
@@ -428,8 +399,6 @@ tp_channel_get_property (GObject *object,
 {
   TpChannel *self = TP_CHANNEL (object);
 
-  /* We still need to use deprecated getters funcs */
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   switch (property_id)
     {
     case PROP_CONNECTION:
@@ -450,9 +419,6 @@ tp_channel_get_property (GObject *object,
       break;
     case PROP_CHANNEL_PROPERTIES:
       g_value_set_boxed (value, self->priv->channel_properties);
-      break;
-    case PROP_GROUP_SELF_HANDLE:
-      g_value_set_uint (value, self->priv->group_self_handle);
       break;
     case PROP_GROUP_FLAGS:
       g_value_set_uint (value, self->priv->group_flags);
@@ -476,7 +442,6 @@ tp_channel_get_property (GObject *object,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
   }
-  G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 /**
@@ -775,14 +740,8 @@ _tp_channel_continue_introspection (TpChannel *self)
 
       DEBUG ("%p: channel ready", self);
 
-      /* for now, we only have one introspection queue, so CORE and
-       * (if supported) GROUP turn up simultaneously */
       _tp_proxy_set_feature_prepared ((TpProxy *) self,
           TP_CHANNEL_FEATURE_CORE, TRUE);
-      _tp_proxy_set_feature_prepared ((TpProxy *) self,
-          TP_CHANNEL_FEATURE_GROUP,
-          tp_proxy_has_interface_by_id (self,
-            TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP));
     }
   else
     {
@@ -1104,10 +1063,6 @@ tp_channel_constructor (GType type,
   g_queue_push_tail (self->priv->introspect_needed,
       _tp_channel_create_contacts);
 
-  /* this needs doing *after* GetInterfaces so we know whether we're a group */
-  g_queue_push_tail (self->priv->introspect_needed,
-      _tp_channel_get_group_properties);
-
   _tp_channel_continue_introspection (self);
 
   return (GObject *) self;
@@ -1171,11 +1126,6 @@ tp_channel_finalize (GObject *object)
   DEBUG ("%p", self);
 
   g_clear_error (&self->priv->group_remove_error);
-  tp_clear_pointer (&self->priv->group_local_pending_info, g_hash_table_unref);
-  tp_clear_pointer (&self->priv->group_members, tp_intset_destroy);
-  tp_clear_pointer (&self->priv->group_local_pending, tp_intset_destroy);
-  tp_clear_pointer (&self->priv->group_remote_pending, tp_intset_destroy);
-  tp_clear_pointer (&self->priv->group_handle_owners, g_hash_table_unref);
   tp_clear_pointer (&self->priv->introspect_needed, g_queue_free);
   tp_clear_pointer (&self->priv->chat_states, g_hash_table_unref);
   tp_clear_pointer (&self->priv->channel_properties, g_hash_table_unref);
@@ -1255,7 +1205,6 @@ tp_channel_prepare_password_async (TpProxy *proxy,
 
 enum {
     FEAT_CORE,
-    FEAT_GROUP,
     FEAT_CONTACTS,
     FEAT_CHAT_STATES,
     FEAT_PASSWORD,
@@ -1274,8 +1223,6 @@ tp_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
 
   features[FEAT_CORE].name = TP_CHANNEL_FEATURE_CORE;
   features[FEAT_CORE].core = TRUE;
-
-  features[FEAT_GROUP].name = TP_CHANNEL_FEATURE_GROUP;
 
   features[FEAT_CONTACTS].name = TP_CHANNEL_FEATURE_CONTACTS;
   features[FEAT_CONTACTS].prepare_async =
@@ -1307,7 +1254,6 @@ tp_channel_class_init (TpChannelClass *klass)
   GParamSpec *param_spec;
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
-  GType au_type = dbus_g_type_get_collection ("GArray", G_TYPE_UINT);
 
   tp_channel_init_known_interfaces ();
 
@@ -1386,26 +1332,6 @@ tp_channel_class_init (TpChannelClass *klass)
       "The connection to which this object belongs.", TP_TYPE_CONNECTION,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONNECTION,
-      param_spec);
-
-  /**
-   * TpChannel:group-self-handle:
-   *
-   * If this channel is a group and %TP_CHANNEL_FEATURE_GROUP has been
-   * prepared, and the user is a member of the group, the #TpHandle
-   * representing them in this group.
-   *
-   * Otherwise, the result may be either a handle representing the user, or 0.
-   *
-   * Change notification is via notify::group-self-handle.
-   *
-   * Since: 0.7.12
-   * Deprecated: Use #TpChannel:group-self-contact instead.
-   */
-  param_spec = g_param_spec_uint ("group-self-handle", "Group.SelfHandle",
-      "Undefined if not a group", 0, G_MAXUINT32, 0,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_GROUP_SELF_HANDLE,
       param_spec);
 
   /**
@@ -1494,35 +1420,6 @@ tp_channel_class_init (TpChannelClass *klass)
       0,
       NULL, NULL, NULL,
       G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
-
-  /**
-   * TpChannel::group-members-changed:
-   * @self: a channel
-   * @added: (type GLib.Array) (element-type uint): a #GArray of #guint
-   *  containing the full members added
-   * @removed: (type GLib.Array) (element-type uint):  a #GArray of #guint
-   *  containing the members (full, local-pending or remote-pending) removed
-   * @local_pending: (type GLib.Array) (element-type uint):  a #GArray of
-   *  #guint containing the local-pending members added
-   * @remote_pending: (type GLib.Array) (element-type uint):  a #GArray of
-   *  #guint containing the remote-pending members added
-   * @details: (type GLib.HashTable) (element-type utf8 GObject.Value):
-   *  a #GHashTable mapping (gchar *) to #GValue containing details
-   *  about the change, as described in the specification of the
-   *  MembersChanged signal.
-   *
-   * Emitted when the group members change in a Group channel that is ready.
-   *
-   * Since: 0.7.21
-   * Deprecated: Use #TpChannel::group-contacts-changed instead.
-   */
-  signals[SIGNAL_GROUP_MEMBERS_CHANGED] = g_signal_new (
-      "group-members-changed", G_OBJECT_CLASS_TYPE (klass),
-      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-      0,
-      NULL, NULL, NULL,
-      G_TYPE_NONE, 5,
-      au_type, au_type, au_type, au_type, TP_HASH_TYPE_STRING_VARIANT_MAP);
 
   /**
    * TpChannel::chat-state-changed:

@@ -132,32 +132,6 @@ TpContact *tp_channel_get_target_contact (TpChannel *self);
 _TP_AVAILABLE_IN_0_16
 TpContact *tp_channel_get_initiator_contact (TpChannel *self);
 
-#define TP_CHANNEL_FEATURE_GROUP \
-  tp_channel_get_feature_quark_group ()
-GQuark tp_channel_get_feature_quark_group (void) G_GNUC_CONST;
-
-#ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_0_20_FOR (tp_channel_group_get_self_contact)
-TpHandle tp_channel_group_get_self_handle (TpChannel *self);
-
-_TP_DEPRECATED_IN_0_20_FOR (tp_channel_group_dup_members_contacts)
-const TpIntset *tp_channel_group_get_members (TpChannel *self);
-
-_TP_DEPRECATED_IN_0_20_FOR (tp_channel_group_dup_local_pending_contacts)
-const TpIntset *tp_channel_group_get_local_pending (TpChannel *self);
-
-_TP_DEPRECATED_IN_0_20_FOR (tp_channel_group_dup_remote_pending_contacts)
-const TpIntset *tp_channel_group_get_remote_pending (TpChannel *self);
-
-_TP_DEPRECATED_IN_0_20_FOR (tp_channel_group_get_local_pending_contact_info)
-gboolean tp_channel_group_get_local_pending_info (TpChannel *self,
-    TpHandle local_pending, TpHandle *actor,
-    TpChannelGroupChangeReason *reason, const gchar **message);
-
-_TP_DEPRECATED_IN_0_20_FOR (tp_channel_group_get_contact_owner)
-TpHandle tp_channel_group_get_handle_owner (TpChannel *self, TpHandle handle);
-#endif
-
 #define TP_CHANNEL_FEATURE_CONTACTS \
   tp_channel_get_feature_quark_contacts ()
 _TP_AVAILABLE_IN_0_16
