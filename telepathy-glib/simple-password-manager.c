@@ -430,7 +430,7 @@ tp_simple_password_manager_prompt_async (
 {
   TpSimplePasswordManagerPrivate *priv = self->priv;
   gchar *object_path = g_strdup_printf ("%s/BasePasswordChannel",
-      priv->conn->object_path);
+      tp_base_connection_get_object_path (priv->conn));
   TpBasePasswordChannel *channel;
   GSimpleAsyncResult *result = g_simple_async_result_new (G_OBJECT (self),
       callback, user_data, tp_simple_password_manager_prompt_async);
@@ -440,7 +440,7 @@ tp_simple_password_manager_prompt_async (
       "object-path", object_path,
       "handle", 0,
       "requested", FALSE,
-      "initiator-handle", priv->conn->self_handle,
+      "initiator-handle", tp_base_connection_get_self_handle (priv->conn),
       NULL);
 
   tp_simple_password_manager_prompt_common_async (self, channel, result);

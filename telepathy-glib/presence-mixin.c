@@ -927,13 +927,15 @@ tp_presence_mixin_remove_status (TpSvcConnectionInterfacePresence *iface,
   GError *error = NULL;
   GHashTable *self_contact_statuses;
   TpPresenceStatus *self_status;
+  TpHandle self_handle;
 
   DEBUG ("called.");
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
   self_contacts = g_array_sized_new (TRUE, TRUE, sizeof (TpHandle), 1);
-  g_array_append_val (self_contacts, conn->self_handle);
+  self_handle = tp_base_connection_get_self_handle (conn);
+  g_array_append_val (self_contacts, self_handle);
   self_contact_statuses = mixin_cls->get_contact_statuses (obj, self_contacts,
       &error);
 
@@ -946,7 +948,7 @@ tp_presence_mixin_remove_status (TpSvcConnectionInterfacePresence *iface,
     }
 
   self_status = (TpPresenceStatus *) g_hash_table_lookup (self_contact_statuses,
-      GUINT_TO_POINTER (conn->self_handle));
+      GUINT_TO_POINTER (tp_base_connection_get_self_handle (conn)));
 
   if (!self_status)
     {

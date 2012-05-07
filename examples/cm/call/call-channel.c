@@ -521,7 +521,7 @@ example_call_channel_add_content (ExampleCallChannel *self,
   if (locally_requested)
     {
       g_message ("SIGNALLING: send: new %s stream %s", type_str, name);
-      creator = self->priv->conn->self_handle;
+      creator = tp_base_connection_get_self_handle (self->priv->conn);
     }
 
   path = g_strdup_printf ("%s/Content%u",

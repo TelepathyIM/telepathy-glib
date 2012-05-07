@@ -654,7 +654,7 @@ tp_base_channel_constructed (GObject *object)
       g_assert (*base_path != '\0');
 
       chan->priv->object_path = g_strdup_printf ("%s/%s",
-          conn->object_path, base_path);
+          tp_base_connection_get_object_path (conn), base_path);
       g_free (base_path);
     }
 }

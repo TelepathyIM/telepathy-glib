@@ -150,14 +150,16 @@ start_connecting (TpBaseConnection *conn,
   TpTestsEchoConnection *self = TP_TESTS_ECHO_CONNECTION (conn);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
       TP_HANDLE_TYPE_CONTACT);
+  TpHandle self_handle;
 
   /* In a real connection manager we'd ask the underlying implementation to
    * start connecting, then go to state CONNECTED when finished, but here
    * we can do it immediately. */
 
-  conn->self_handle = tp_handle_ensure (contact_repo, self->priv->account,
+  self_handle = tp_handle_ensure (contact_repo, self->priv->account,
       NULL, NULL);
 
+  tp_base_connection_set_self_handle (conn, self_handle);
   tp_base_connection_change_status (conn, TP_CONNECTION_STATUS_CONNECTED,
       TP_CONNECTION_STATUS_REASON_REQUESTED);
 

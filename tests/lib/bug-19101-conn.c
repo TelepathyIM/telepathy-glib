@@ -55,7 +55,8 @@ tp_tests_bug19101_connection_get_contact_attributes (
   };
 
   if (handles->len == 1 &&
-      g_array_index (handles, TpHandle, 0) == base_conn->self_handle)
+      g_array_index (handles, TpHandle, 0) ==
+      tp_base_connection_get_self_handle (base_conn))
     {
       DEBUG ("called for self-handle (during preparation), not being rubbish");
       /* strictly speaking this should hold the handles on behalf of the

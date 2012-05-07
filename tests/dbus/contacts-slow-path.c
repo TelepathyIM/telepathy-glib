@@ -1096,7 +1096,8 @@ test_by_handle_again (Fixture *f,
   /* OK, put it back so teardown() can use it */
   tp_dbus_daemon_register_object (
       tp_base_connection_get_dbus_daemon (f->base_connection),
-      f->base_connection->object_path, f->base_connection);
+      tp_base_connection_get_object_path (f->base_connection),
+      f->base_connection);
   /* check that *that* worked */
   ok = tp_cli_connection_run_get_self_handle (f->legacy_client_conn, -1, NULL,
       &result.error, NULL);

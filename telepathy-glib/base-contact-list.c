@@ -1082,7 +1082,7 @@ tp_base_contact_list_new_channel (TpBaseContactList *self,
   if (handle_type == TP_HANDLE_TYPE_LIST)
     {
       object_path = g_strdup_printf ("%s/ContactList/%s",
-          self->priv->conn->object_path,
+          tp_base_connection_get_object_path (self->priv->conn),
           tp_base_contact_list_contact_lists[handle - 1]);
       type = TP_TYPE_CONTACT_LIST_CHANNEL;
     }
@@ -1090,7 +1090,7 @@ tp_base_contact_list_new_channel (TpBaseContactList *self,
     {
       g_assert (handle_type == TP_HANDLE_TYPE_GROUP);
       object_path = g_strdup_printf ("%s/Group/%u",
-          self->priv->conn->object_path, handle);
+          tp_base_connection_get_object_path (self->priv->conn), handle);
       type = TP_TYPE_CONTACT_GROUP_CHANNEL;
     }
 
@@ -3838,7 +3838,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
                * actor. */
               tp_group_mixin_change_members (c, "",
                   NULL, tp_handle_set_peek (group_members), NULL, NULL,
-                  self->priv->conn->self_handle,
+                  tp_base_connection_get_self_handle (self->priv->conn),
                   TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
               tp_channel_manager_emit_channel_closed_for_object (self, c);
@@ -3955,12 +3955,14 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
   /* move the members - presumably the self-handle is the actor */
   set = tp_handle_set_peek (old_members);
   tp_group_mixin_change_members (new_chan, "", set, NULL, NULL, NULL,
-      self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+      tp_base_connection_get_self_handle (self->priv->conn),
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
   if (old_chan != NULL)
     {
       tp_group_mixin_change_members (old_chan, "", NULL, set, NULL, NULL,
-          self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+          tp_base_connection_get_self_handle (self->priv->conn),
+          TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
       tp_channel_manager_emit_channel_closed_for_object (self, old_chan);
       _tp_base_contact_list_channel_close (old_chan);
     }
@@ -4118,7 +4120,8 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
 
       if (tp_group_mixin_change_members (c, "",
           tp_handle_set_peek (contacts), NULL, NULL, NULL,
-          self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE))
+          tp_base_connection_get_self_handle (self->priv->conn),
+          TP_CHANNEL_GROUP_CHANGE_REASON_NONE))
         g_ptr_array_add (really_added, (gchar *) added[i]);
     }
 
@@ -4143,7 +4146,8 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
 
       if (tp_group_mixin_change_members (c, "",
           NULL, tp_handle_set_peek (contacts), NULL, NULL,
-          self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE))
+          tp_base_connection_get_self_handle (self->priv->conn),
+          TP_CHANNEL_GROUP_CHANGE_REASON_NONE))
         g_ptr_array_add (really_removed, (gchar *) removed[i]);
     }
 

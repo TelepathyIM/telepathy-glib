@@ -374,8 +374,10 @@ main (int argc,
   g_object_unref (prepare_result);
   prepare_result = NULL;
 
-  assert_chan_sane (chan, handle, TRUE, service_conn_as_base->self_handle,
-      tp_handle_inspect (contact_repo, service_conn_as_base->self_handle));
+  assert_chan_sane (chan, handle, TRUE,
+      tp_base_connection_get_self_handle (service_conn_as_base),
+      tp_handle_inspect (contact_repo,
+        tp_base_connection_get_self_handle (service_conn_as_base)));
 
   /* no way to see what this is doing - just make sure it doesn't crash */
   tp_proxy_prepare_async (chan, some_features, NULL, NULL);

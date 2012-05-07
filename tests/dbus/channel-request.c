@@ -223,7 +223,7 @@ succeeded_with_channel_cb (TpChannelRequest *request,
   g_assert (TP_IS_CHANNEL (channel));
 
   g_assert_cmpstr (tp_proxy_get_object_path (connection), ==,
-      test->base_connection->object_path);
+      tp_base_connection_get_object_path (test->base_connection));
   g_assert_cmpstr (tp_proxy_get_object_path (channel), ==,
       "/Channel");
 
@@ -256,7 +256,8 @@ test_succeeded (Test *test,
   props = g_hash_table_new (NULL, NULL);
 
   tp_svc_channel_request_emit_succeeded_with_channel (test->cr_service,
-      test->base_connection->object_path, props, "/Channel", props);
+      tp_base_connection_get_object_path (test->base_connection),
+      props, "/Channel", props);
 
   g_hash_table_unref (props);
 

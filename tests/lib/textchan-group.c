@@ -83,7 +83,8 @@ add_member (GObject *obj,
 
   tp_intset_add (add, handle);
   tp_group_mixin_change_members (obj, message, add, NULL, NULL, NULL,
-      self->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+      tp_base_connection_get_self_handle (self->conn),
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
   tp_intset_destroy (add);
 
   return TRUE;
@@ -162,7 +163,8 @@ constructor (GType type,
   flags |= TP_CHANNEL_GROUP_FLAG_CAN_ADD;
 
   tp_group_mixin_init (object, G_STRUCT_OFFSET (TpTestsTextChannelGroup, group),
-      contact_repo, self->conn->self_handle);
+      contact_repo,
+      tp_base_connection_get_self_handle (self->conn));
 
   if (!self->priv->detailed)
     {
@@ -344,7 +346,8 @@ tp_tests_text_channel_group_join (TpTestsTextChannelGroup *self)
   TpIntset *add, *empty;
 
  /* Add ourself as a member */
-  add = tp_intset_new_containing (self->conn->self_handle);
+  add = tp_intset_new_containing (
+      tp_base_connection_get_self_handle (self->conn));
   empty = tp_intset_new ();
 
   tp_group_mixin_change_members ((GObject *) self, NULL, add, empty,

@@ -78,14 +78,16 @@ pretend_connected (gpointer data)
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
       TP_HANDLE_TYPE_CONTACT);
   gchar *account;
+  TpHandle self_handle;
 
   g_object_get (self, "account", &account, NULL);
 
-  conn->self_handle = tp_handle_ensure (contact_repo, account,
+  self_handle = tp_handle_ensure (contact_repo, account,
       NULL, NULL);
 
   g_free (account);
 
+  tp_base_connection_set_self_handle (conn, self_handle);
   tp_base_connection_change_status (conn, TP_CONNECTION_STATUS_CONNECTED,
       TP_CONNECTION_STATUS_REASON_REQUESTED);
 
@@ -117,16 +119,8 @@ tp_tests_bug16307_connection_inject_get_status_return (TpTestsBug16307Connection
   context = self->priv->get_status_invocation;
   g_assert (context != NULL);
 
-  if (self_base->status == TP_INTERNAL_CONNECTION_STATUS_NEW)
-    {
-      tp_svc_connection_return_from_get_status (
-          context, TP_CONNECTION_STATUS_DISCONNECTED);
-    }
-  else
-    {
-      tp_svc_connection_return_from_get_status (
-          context, self_base->status);
-    }
+  tp_svc_connection_return_from_get_status (context,
+      tp_base_connection_get_status (self_base));
 
   self->priv->get_status_invocation = NULL;
 }
@@ -194,8 +188,8 @@ tp_tests_bug16307_connection_get_status (TpSvcConnection *iface,
   TpTestsBug16307Connection *self = TP_TESTS_BUG16307_CONNECTION (iface);
 
   /* auto-connect on get_status */
-  if ((self_base->status == TP_INTERNAL_CONNECTION_STATUS_NEW ||
-       self_base->status == TP_CONNECTION_STATUS_DISCONNECTED))
+  if (tp_base_connection_get_status (self_base) ==
+      TP_CONNECTION_STATUS_DISCONNECTED)
     {
       pretend_connected (self);
     }

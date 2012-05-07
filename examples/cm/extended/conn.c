@@ -148,13 +148,16 @@ start_connecting (TpBaseConnection *conn,
   ExampleExtendedConnection *self = EXAMPLE_EXTENDED_CONNECTION (conn);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
       TP_HANDLE_TYPE_CONTACT);
+  TpHandle self_handle;
 
   /* In a real connection manager we'd ask the underlying implementation to
    * start connecting, then go to state CONNECTED when finished, but here
    * we can do it immediately. */
 
-  conn->self_handle = tp_handle_ensure (contact_repo, self->priv->account,
+  self_handle = tp_handle_ensure (contact_repo, self->priv->account,
       NULL, NULL);
+
+  tp_base_connection_set_self_handle (conn, self_handle);
 
   tp_base_connection_change_status (conn, TP_CONNECTION_STATUS_CONNECTED,
       TP_CONNECTION_STATUS_REASON_REQUESTED);
@@ -274,7 +277,7 @@ my_get_hats (ExampleSvcConnectionInterfaceHats *iface,
 
       /* for the sake of a simple example, let's assume nobody except me
        * has any hats */
-      if (handle == base->self_handle)
+      if (handle == tp_base_connection_get_self_handle (base))
         {
           g_value_set_string (g_value_array_get_nth (vals, 1),
               self->priv->hat_color);
@@ -320,7 +323,8 @@ my_set_hat (ExampleSvcConnectionInterfaceHats *iface,
 
   /* success */
   example_svc_connection_interface_hats_emit_hats_changed (self,
-      base->self_handle, color, style, properties);
+      tp_base_connection_get_self_handle (base),
+      color, style, properties);
   example_svc_connection_interface_hats_return_from_set_hat (context);
 }
 

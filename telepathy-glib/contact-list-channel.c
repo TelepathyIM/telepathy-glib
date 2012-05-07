@@ -110,7 +110,8 @@ tp_base_contact_list_channel_constructed (GObject *object)
   tp_base_channel_register (base);
 
   tp_group_mixin_init (object, G_STRUCT_OFFSET (TpBaseContactListChannel,
-        group), contact_repo, conn->self_handle);
+        group), contact_repo,
+      tp_base_connection_get_self_handle (conn));
   /* Both the subclasses have full support for telepathy-spec 0.17.6. */
   tp_group_mixin_change_flags (object,
       TP_CHANNEL_GROUP_FLAG_PROPERTIES, 0);

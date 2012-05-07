@@ -184,16 +184,19 @@ start_connecting (TpBaseConnection *conn,
   ExampleCallConnection *self = EXAMPLE_CALL_CONNECTION (conn);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
       TP_HANDLE_TYPE_CONTACT);
+  TpHandle self_handle;
 
   /* In a real connection manager we'd ask the underlying implementation to
    * start connecting, then go to state CONNECTED when finished, but here
    * we can do it immediately. */
 
-  conn->self_handle = tp_handle_ensure (contact_repo, self->priv->account,
+  self_handle = tp_handle_ensure (contact_repo, self->priv->account,
       NULL, error);
 
-  if (conn->self_handle == 0)
+  if (self_handle == 0)
     return FALSE;
+
+  tp_base_connection_set_self_handle (conn, self_handle);
 
   tp_base_connection_change_status (conn, TP_CONNECTION_STATUS_CONNECTED,
       TP_CONNECTION_STATUS_REASON_REQUESTED);
@@ -235,10 +238,7 @@ status_available (GObject *object,
 {
   TpBaseConnection *base = TP_BASE_CONNECTION (object);
 
-  if (base->status != TP_CONNECTION_STATUS_CONNECTED)
-    return FALSE;
-
-  return TRUE;
+  return tp_base_connection_check_connected (base, NULL);
 }
 
 static GHashTable *
@@ -264,7 +264,7 @@ get_contact_statuses (GObject *object,
 
       /* we know our own status from the connection; for this example CM,
        * everyone else's status is assumed to be "available" */
-      if (contact == base->self_handle)
+      if (contact == tp_base_connection_get_self_handle (base))
         {
           presence = (self->priv->away ? EXAMPLE_CALL_PRESENCE_AWAY
               : EXAMPLE_CALL_PRESENCE_AVAILABLE);
@@ -332,7 +332,8 @@ set_own_status (GObject *object,
 
   presences = g_hash_table_new_full (g_direct_hash, g_direct_equal,
       NULL, NULL);
-  g_hash_table_insert (presences, GUINT_TO_POINTER (base->self_handle),
+  g_hash_table_insert (presences,
+      GUINT_TO_POINTER (tp_base_connection_get_self_handle (base)),
       (gpointer) status);
   tp_presence_mixin_emit_presence_update (object, presences);
   g_hash_table_unref (presences);
