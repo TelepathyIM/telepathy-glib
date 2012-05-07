@@ -800,7 +800,7 @@ tp_future_account_set_requested_presence (TpFutureAccount *self,
 }
 
 /**
- * tp_future_account_set_autmatic_presence:
+ * tp_future_account_set_automatic_presence:
  * @self: a #TpFutureAccount
  * @presence: the automatic presence type
  * @status: the automatic presence status
