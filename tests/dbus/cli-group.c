@@ -213,10 +213,26 @@ check_invalidated_unknown_error_cb (TpProxy *proxy,
       REMOVED_MESSAGE);
 }
 
+static void
+run_until_members_changed (TpChannel *channel)
+{
+  GMainLoop *loop = g_main_loop_new (NULL, FALSE);
+  gulong id;
+
+  id = g_signal_connect_swapped (channel, "group-contacts-changed",
+      G_CALLBACK (g_main_loop_quit), loop);
+
+  g_main_loop_run (loop);
+
+  g_signal_handler_disconnect (channel, id);
+
+  g_main_loop_unref (loop);
+}
 
 static void
 check_removed_unknown_error_in_invalidated (void)
 {
+  GQuark features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
   gchar *chan_path;
   TpTestsTextChannelGroup *service_chan;
   TpChannel *chan;
@@ -238,7 +254,7 @@ check_removed_unknown_error_in_invalidated (void)
 
   g_assert_no_error (error);
 
-  tp_tests_proxy_run_until_prepared (chan, NULL);
+  tp_tests_proxy_run_until_prepared (chan, features);
   DEBUG ("ready!");
 
   g_signal_connect (chan, "invalidated",
@@ -256,7 +272,7 @@ check_removed_unknown_error_in_invalidated (void)
 
   tp_clear_pointer (&details, g_hash_table_unref);
 
-  tp_tests_proxy_run_until_dbus_queue_processed (conn);
+  run_until_members_changed (chan);
 
   details = tp_asv_new (
       "message", G_TYPE_STRING, REMOVED_MESSAGE,
@@ -267,7 +283,7 @@ check_removed_unknown_error_in_invalidated (void)
   tp_group_mixin_change_members ((GObject *) service_chan, NULL,
       self_handle_singleton, NULL, NULL, details);
 
-  tp_tests_proxy_run_until_dbus_queue_processed (conn);
+  run_until_members_changed (chan);
 
   tp_cli_channel_call_close (chan, -1, NULL, NULL, NULL, NULL);
 
@@ -308,6 +324,7 @@ check_invalidated_known_error_cb (TpProxy *proxy,
 static void
 check_removed_known_error_in_invalidated (void)
 {
+  GQuark features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
   gchar *chan_path;
   TpTestsTextChannelGroup *service_chan;
   TpChannel *chan;
@@ -329,7 +346,7 @@ check_removed_known_error_in_invalidated (void)
 
   g_assert_no_error (error);
 
-  tp_tests_proxy_run_until_prepared (chan, NULL);
+  tp_tests_proxy_run_until_prepared (chan, features);
   DEBUG ("ready!");
 
   g_signal_connect (chan, "invalidated",
@@ -347,7 +364,7 @@ check_removed_known_error_in_invalidated (void)
 
   tp_clear_pointer (&details, g_hash_table_unref);
 
-  tp_tests_proxy_run_until_dbus_queue_processed (conn);
+  run_until_members_changed (chan);
 
   details = tp_asv_new (
       "message", G_TYPE_STRING, REMOVED_MESSAGE,
@@ -358,7 +375,7 @@ check_removed_known_error_in_invalidated (void)
   tp_group_mixin_change_members ((GObject *) service_chan, NULL,
       self_handle_singleton, NULL, NULL, details);
 
-  tp_tests_proxy_run_until_dbus_queue_processed (conn);
+  run_until_members_changed (chan);
 
   tp_cli_channel_call_close (chan, -1, NULL, NULL, NULL, NULL);
 

@@ -35,6 +35,32 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/util-internal.h"
 
+/**
+ * TP_ERRORS_REMOVED_FROM_GROUP:
+ *
+ * #GError domain representing the local user being removed from a channel
+ * with the Group interface. The @code in a #GError with this domain must
+ * be a member of #TpChannelGroupChangeReason.
+ *
+ * This error may be raised on non-Group channels with certain reason codes
+ * if there's no better error code to use (mainly
+ * %TP_CHANNEL_GROUP_CHANGE_REASON_NONE).
+ *
+ * This macro expands to a function call returning a #GQuark.
+ *
+ * Since: 0.7.1
+ */
+GQuark
+tp_errors_removed_from_group_quark (void)
+{
+  static GQuark q = 0;
+
+  if (q == 0)
+    q = g_quark_from_static_string ("tp_errors_removed_from_group_quark");
+
+  return q;
+}
+
 static GArray *
 dup_handle_array (const GArray *source)
 {
@@ -477,6 +503,99 @@ set_local_pending_info (TpChannel *self,
       GUINT_TO_POINTER (tp_contact_get_handle (contact)), info);
 }
 
+/*
+ * If the @group_remove_error is derived from a TpChannelGroupChangeReason,
+ * attempt to rewrite it into a TpError.
+ */
+static void
+_tp_channel_group_improve_remove_error (TpChannel *self,
+    TpContact *actor)
+{
+  GError *error = self->priv->group_remove_error;
+
+  if (error == NULL || error->domain != TP_ERRORS_REMOVED_FROM_GROUP)
+    return;
+
+  switch (error->code)
+    {
+    case TP_CHANNEL_GROUP_CHANGE_REASON_NONE:
+      if (actor == self->priv->group_self_contact ||
+          actor == tp_connection_get_self_contact (self->priv->connection))
+        {
+          error->code = TP_ERROR_CANCELLED;
+        }
+      else
+        {
+          error->code = TP_ERROR_TERMINATED;
+        }
+      break;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_OFFLINE:
+      error->code = TP_ERROR_OFFLINE;
+      break;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_KICKED:
+      error->code = TP_ERROR_CHANNEL_KICKED;
+      break;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_BUSY:
+      error->code = TP_ERROR_BUSY;
+      break;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_INVITED:
+      DEBUG ("%s: Channel_Group_Change_Reason_Invited makes no sense as a "
+          "removal reason!", tp_proxy_get_object_path (self));
+      error->domain = TP_DBUS_ERRORS;
+      error->code = TP_DBUS_ERROR_INCONSISTENT;
+      return;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_BANNED:
+      error->code = TP_ERROR_CHANNEL_BANNED;
+      break;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_ERROR:
+      /* hopefully all CMs that use this will also give us an error detail,
+       * but if they didn't, or gave us one we didn't understand... */
+      error->code = TP_ERROR_NOT_AVAILABLE;
+      break;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_INVALID_CONTACT:
+      error->code = TP_ERROR_DOES_NOT_EXIST;
+      break;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_NO_ANSWER:
+      error->code = TP_ERROR_NO_ANSWER;
+      break;
+
+    /* TP_CHANNEL_GROUP_CHANGE_REASON_RENAMED shouldn't be the last error
+     * seen in the channel - we'll get removed again with a real reason,
+     * later, so there's no point in doing anything special with this one */
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_PERMISSION_DENIED:
+      error->code = TP_ERROR_PERMISSION_DENIED;
+      break;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_SEPARATED:
+      DEBUG ("%s: Channel_Group_Change_Reason_Separated makes no sense as a "
+          "removal reason!", tp_proxy_get_object_path (self));
+      error->domain = TP_DBUS_ERRORS;
+      error->code = TP_DBUS_ERROR_INCONSISTENT;
+      return;
+
+    /* all values up to and including Separated have been checked */
+
+    default:
+      /* We don't understand this reason code, so keeping the domain and code
+       * the same (i.e. using TP_ERRORS_REMOVED_FROM_GROUP) is no worse than
+       * anything else we could do. */
+      return;
+    }
+
+  /* If we changed the code we also need to change the domain; if not, we did
+   * an early return, so we'll never reach this */
+  error->domain = TP_ERROR;
+}
+
 typedef struct
 {
   GPtrArray *added;
@@ -507,10 +626,15 @@ members_changed_prepared_cb (GObject *object,
 {
   TpChannel *self = (TpChannel *) object;
   MembersChangedData *data = user_data;
+  TpChannelGroupChangeReason reason;
+  const gchar *message;
   GPtrArray *removed;
   guint i;
 
   _tp_channel_contacts_queue_prepare_finish (self, result, NULL, NULL);
+
+  reason = tp_asv_get_uint32 (data->details, "change-reason", NULL);
+  message = tp_asv_get_string (data->details, "message");
 
   for (i = 0; i < data->added->len; i++)
     {
@@ -528,16 +652,11 @@ members_changed_prepared_cb (GObject *object,
     {
       TpContact *contact = g_ptr_array_index (data->local_pending, i);
       gpointer key = GUINT_TO_POINTER (tp_contact_get_handle (contact));
-      TpChannelGroupChangeReason reason;
-      const gchar *message;
 
       g_hash_table_remove (self->priv->group_members_contacts, key);
       g_hash_table_insert (self->priv->group_local_pending_contacts, key,
           g_object_ref (contact));
       g_hash_table_remove (self->priv->group_remote_pending_contacts, key);
-
-      reason = tp_asv_get_uint32 (data->details, "change-reason", NULL);
-      message = tp_asv_get_string (data->details, "message");
 
       /* Special-case renaming a local-pending contact, if the
        * signal is spec-compliant. Keep the old actor/reason/message in
@@ -608,6 +727,57 @@ members_changed_prepared_cb (GObject *object,
       g_hash_table_remove (self->priv->group_local_pending_contacts, key);
       g_hash_table_remove (self->priv->group_local_pending_contact_info, key);
       g_hash_table_remove (self->priv->group_remote_pending_contacts, key);
+
+      if (contact == self->priv->group_self_contact ||
+          contact == tp_connection_get_self_contact (self->priv->connection))
+        {
+          const gchar *error_detail = tp_asv_get_string (data->details,
+              "error");
+          const gchar *debug_message = tp_asv_get_string (data->details,
+              "debug-message");
+
+          if (debug_message == NULL && message[0] != '\0')
+            debug_message = message;
+
+          if (debug_message == NULL && error_detail != NULL)
+            debug_message = error_detail;
+
+          if (debug_message == NULL)
+            debug_message = "(no message provided)";
+
+          if (self->priv->group_remove_error != NULL)
+            g_clear_error (&self->priv->group_remove_error);
+
+          if (error_detail != NULL)
+            {
+              /* CM specified a D-Bus error name */
+              tp_proxy_dbus_error_to_gerror (self, error_detail,
+                  debug_message == NULL || debug_message[0] == '\0'
+                      ? error_detail
+                      : debug_message,
+                  &self->priv->group_remove_error);
+
+              /* ... but if we don't know anything about that D-Bus error
+               * name, we can still do better by using RemovedFromGroup */
+              if (g_error_matches (self->priv->group_remove_error,
+                    TP_DBUS_ERRORS, TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR))
+                {
+                  self->priv->group_remove_error->domain =
+                    TP_ERRORS_REMOVED_FROM_GROUP;
+                  self->priv->group_remove_error->code = reason;
+
+                  _tp_channel_group_improve_remove_error (self, data->actor);
+                }
+            }
+          else
+            {
+              /* Use our separate error domain */
+              g_set_error_literal (&self->priv->group_remove_error,
+                  TP_ERRORS_REMOVED_FROM_GROUP, reason, debug_message);
+
+              _tp_channel_group_improve_remove_error (self, data->actor);
+            }
+        }
     }
 
   g_signal_emit_by_name (self, "group-contacts-changed", data->added,
