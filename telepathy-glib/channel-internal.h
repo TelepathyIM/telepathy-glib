@@ -75,8 +75,11 @@ struct _TpChannelPrivate {
     GHashTable *group_members_contacts;
     GHashTable *group_local_pending_contacts;
     GHashTable *group_remote_pending_contacts;
-    /* the TpContact can be NULL if the owner is unknown */
+    /* TpHandle -> reffed TpContact or NULL */
     GHashTable *group_contact_owners;
+    /* TpHandle -> LocalPendingInfo */
+    GHashTable *group_local_pending_contact_info;
+    gboolean group_properties_retrieved;
 
     /* Queue of GSimpleAsyncResult with ContactsQueueItem payload */
     GQueue *contacts_queue;
@@ -111,14 +114,6 @@ void _tp_channel_get_group_properties (TpChannel *self);
 
 /* channel-contacts.c internals */
 
-void _tp_channel_contacts_group_init (TpChannel *self, GHashTable *identifiers);
-void _tp_channel_contacts_members_changed (TpChannel *self,
-    const GArray *added, const GArray *removed, const GArray *local_pending,
-    const GArray *remote_pending, guint actor, GHashTable *details);
-void _tp_channel_contacts_handle_owners_changed (TpChannel *self,
-    GHashTable *added, const GArray *removed, GHashTable *identifiers);
-void _tp_channel_contacts_self_contact_changed (TpChannel *self,
-    guint self_handle, const gchar *identifier);
 void _tp_channel_contacts_prepare_async (TpProxy *proxy,
     const TpProxyFeature *feature,
     GAsyncReadyCallback callback,

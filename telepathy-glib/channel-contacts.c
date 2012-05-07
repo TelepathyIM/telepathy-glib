@@ -22,9 +22,12 @@
 
 #include "telepathy-glib/channel-internal.h"
 
-#include <telepathy-glib/gtypes.h>
-#include <telepathy-glib/proxy.h>
+#include <telepathy-glib/cli-channel.h>
+#include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/client-factory.h>
+#include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/proxy.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_GROUPS
@@ -74,6 +77,8 @@ dup_contact_array (TpChannel *self,
   guint i;
 
   array = g_ptr_array_new_full (handles->len, g_object_unref);
+  if (handles == NULL)
+    return array;
 
   for (i = 0; i < handles->len; i++)
     {
@@ -89,18 +94,19 @@ dup_contact_array (TpChannel *self,
 
 static GHashTable *
 dup_contacts_table (TpChannel *self,
-    TpIntset *source,
+    const GArray *handles,
     GHashTable *identifiers)
 {
   GHashTable *target;
-  TpIntsetFastIter iter;
-  TpHandle handle;
+  guint i;
 
   target = g_hash_table_new_full (NULL, NULL, NULL, g_object_unref);
+  if (handles == NULL)
+    return target;
 
-  tp_intset_fast_iter_init (&iter, source);
-  while (tp_intset_fast_iter_next (&iter, &handle))
+  for (i = 0; i < handles->len; i++)
     {
+      TpHandle handle = g_array_index (handles, TpHandle, i);
       TpContact *contact = dup_contact (self, handle, identifiers);
 
       if (contact != NULL)
@@ -140,6 +146,8 @@ dup_owners_table (TpChannel *self,
   gpointer key, value;
 
   target = g_hash_table_new_full (NULL, NULL, NULL, safe_g_object_unref);
+  if (source == NULL)
+    return target;
 
   g_hash_table_iter_init (&iter, source);
   while (g_hash_table_iter_next (&iter, &key, &value))
@@ -151,48 +159,6 @@ dup_owners_table (TpChannel *self,
     }
 
   return target;
-}
-
-void
-_tp_channel_contacts_group_init (TpChannel *self,
-    GHashTable *identifiers)
-{
-  GHashTableIter iter;
-  gpointer value;
-
-  /* Create TpContact objects if we have them for free */
-
-  g_assert (self->priv->group_self_contact == NULL);
-  g_assert (self->priv->group_members_contacts == NULL);
-  g_assert (self->priv->group_local_pending_contacts == NULL);
-  g_assert (self->priv->group_remote_pending_contacts == NULL);
-  g_assert (self->priv->group_contact_owners == NULL);
-
-  self->priv->group_self_contact = dup_contact (self,
-      self->priv->group_self_handle, identifiers);
-
-  self->priv->group_members_contacts = dup_contacts_table (self,
-      self->priv->group_members, identifiers);
-
-  self->priv->group_local_pending_contacts = dup_contacts_table (self,
-      self->priv->group_local_pending, identifiers);
-
-  self->priv->group_remote_pending_contacts = dup_contacts_table (self,
-      self->priv->group_remote_pending, identifiers);
-
-  self->priv->group_contact_owners = dup_owners_table (self,
-      self->priv->group_handle_owners, identifiers);
-
-  if (self->priv->group_local_pending_info != NULL)
-    {
-      g_hash_table_iter_init (&iter, self->priv->group_local_pending_info);
-      while (g_hash_table_iter_next (&iter, NULL, &value))
-        {
-          LocalPendingInfo *info = value;
-
-          info->actor_contact = dup_contact (self, info->actor, identifiers);
-        }
-    }
 }
 
 struct _ContactsQueueItem
@@ -473,6 +439,44 @@ _tp_channel_contacts_queue_prepare_finish (TpChannel *self,
   return TRUE;
 }
 
+static void
+local_pending_info_free (LocalPendingInfo *info)
+{
+  g_free (info->message);
+  g_clear_object (&info->actor_contact);
+  g_slice_free (LocalPendingInfo, info);
+}
+
+static void
+set_local_pending_info (TpChannel *self,
+    TpContact *contact,
+    TpContact *actor,
+    TpChannelGroupChangeReason reason,
+    const gchar *message)
+{
+  LocalPendingInfo *info;
+
+  if (tp_str_empty (message))
+    message = NULL;
+
+  if (actor == NULL && message == NULL &&
+      reason == TP_CHANNEL_GROUP_CHANGE_REASON_NONE)
+    {
+      /* we just don't bother storing informationless local-pending */
+      g_hash_table_remove (self->priv->group_local_pending_contact_info,
+          GUINT_TO_POINTER (tp_contact_get_handle (contact)));
+      return;
+    }
+
+  info = g_slice_new0 (LocalPendingInfo);
+  info->actor_contact = safe_g_object_ref (actor);
+  info->reason = reason;
+  info->message = g_strdup (message);
+
+  g_hash_table_insert (self->priv->group_local_pending_contact_info,
+      GUINT_TO_POINTER (tp_contact_get_handle (contact)), info);
+}
+
 typedef struct
 {
   GPtrArray *added;
@@ -516,6 +520,7 @@ members_changed_prepared_cb (GObject *object,
       g_hash_table_insert (self->priv->group_members_contacts, key,
           g_object_ref (contact));
       g_hash_table_remove (self->priv->group_local_pending_contacts, key);
+      g_hash_table_remove (self->priv->group_local_pending_contact_info, key);
       g_hash_table_remove (self->priv->group_remote_pending_contacts, key);
     }
 
@@ -523,20 +528,41 @@ members_changed_prepared_cb (GObject *object,
     {
       TpContact *contact = g_ptr_array_index (data->local_pending, i);
       gpointer key = GUINT_TO_POINTER (tp_contact_get_handle (contact));
+      TpChannelGroupChangeReason reason;
+      const gchar *message;
 
       g_hash_table_remove (self->priv->group_members_contacts, key);
       g_hash_table_insert (self->priv->group_local_pending_contacts, key,
           g_object_ref (contact));
       g_hash_table_remove (self->priv->group_remote_pending_contacts, key);
 
-      if (data->actor != NULL)
-        {
-          LocalPendingInfo *info;
+      reason = tp_asv_get_uint32 (data->details, "change-reason", NULL);
+      message = tp_asv_get_string (data->details, "message");
 
-          info = g_hash_table_lookup (self->priv->group_local_pending_info, key);
+      /* Special-case renaming a local-pending contact, if the
+       * signal is spec-compliant. Keep the old actor/reason/message in
+       * this case */
+      if (reason == TP_CHANNEL_GROUP_CHANGE_REASON_RENAMED &&
+          data->added->len == 0 &&
+          data->local_pending->len == 1 &&
+          data->remote_pending->len == 0 &&
+          data->removed->len == 1)
+        {
+          TpHandle old = g_array_index (data->removed, TpHandle, 0);
+          LocalPendingInfo *info = g_hash_table_lookup (
+              self->priv->group_local_pending_contact_info,
+              GUINT_TO_POINTER (old));
+
           if (info != NULL)
-            info->actor_contact = g_object_ref (data->actor);
+            {
+              set_local_pending_info (self, contact,
+                  info->actor_contact, info->reason, info->message);
+              continue;
+            }
         }
+
+      /* not reached if the Renamed special case occurred */
+      set_local_pending_info (self, contact, data->actor, reason, message);
     }
 
   for (i = 0; i < data->remote_pending->len; i++)
@@ -546,6 +572,7 @@ members_changed_prepared_cb (GObject *object,
 
       g_hash_table_remove (self->priv->group_members_contacts, key);
       g_hash_table_remove (self->priv->group_local_pending_contacts, key);
+      g_hash_table_remove (self->priv->group_local_pending_contact_info, key);
       g_hash_table_insert (self->priv->group_remote_pending_contacts, key,
           g_object_ref (contact));
     }
@@ -579,6 +606,7 @@ members_changed_prepared_cb (GObject *object,
 
       g_hash_table_remove (self->priv->group_members_contacts, key);
       g_hash_table_remove (self->priv->group_local_pending_contacts, key);
+      g_hash_table_remove (self->priv->group_local_pending_contact_info, key);
       g_hash_table_remove (self->priv->group_remote_pending_contacts, key);
     }
 
@@ -590,18 +618,25 @@ members_changed_prepared_cb (GObject *object,
   members_changed_data_free (data);
 }
 
-void
-_tp_channel_contacts_members_changed (TpChannel *self,
+static void
+members_changed_cb (TpChannel *self,
     const GArray *added,
     const GArray *removed,
     const GArray *local_pending,
     const GArray *remote_pending,
-    guint actor,
-    GHashTable *details)
+    GHashTable *details,
+    gpointer user_data,
+    GObject *weak_object)
 {
   MembersChangedData *data;
   GPtrArray *contacts;
   GHashTable *ids;
+  TpHandle actor;
+
+  if (!self->priv->group_properties_retrieved)
+    return;
+
+  actor = tp_asv_get_uint32 (details, "actor", NULL);
 
   ids = tp_asv_get_boxed (details, "contact-ids",
       TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP);
@@ -611,10 +646,6 @@ _tp_channel_contacts_members_changed (TpChannel *self,
       DEBUG ("CM did not give identifiers, can't create TpContact");
       return;
     }
-
-  g_assert (self->priv->group_members_contacts != NULL);
-  g_assert (self->priv->group_local_pending_contacts != NULL);
-  g_assert (self->priv->group_remote_pending_contacts != NULL);
 
   /* Ensure all TpContact, and push to a queue. This is to ensure that signals
    * does not get reordered while we prepare them. */
@@ -677,16 +708,19 @@ handle_owners_changed_prepared_cb (GObject *object,
   handle_owners_changed_data_free (data);
 }
 
-void
-_tp_channel_contacts_handle_owners_changed (TpChannel *self,
+static void
+handle_owners_changed_cb (TpChannel *self,
     GHashTable *added,
     const GArray *removed,
-    GHashTable *identifiers)
+    GHashTable *identifiers,
+    gpointer user_data,
+    GObject *weak_object)
 {
   HandleOwnersChangedData *data;
   GPtrArray *contacts;
 
-  g_assert (self->priv->group_contact_owners != NULL);
+  if (!self->priv->group_properties_retrieved)
+    return;
 
   data = g_slice_new (HandleOwnersChangedData);
   data->added = dup_owners_table (self, added, identifiers);
@@ -716,13 +750,18 @@ self_contact_changed_prepared_cb (GObject *object,
   g_object_notify ((GObject *) self, "group-self-contact");
 }
 
-void
-_tp_channel_contacts_self_contact_changed (TpChannel *self,
+static void
+self_contact_changed_cb (TpChannel *self,
     guint self_handle,
-    const gchar *identifier)
+    const gchar *identifier,
+    gpointer user_data,
+    GObject *weak_object)
 {
   TpContact *contact;
   GPtrArray *contacts;
+
+  if (!self->priv->group_properties_retrieved)
+    return;
 
   contacts = g_ptr_array_new_with_free_func (g_object_unref);
   contact = tp_client_factory_ensure_contact (
@@ -734,6 +773,201 @@ _tp_channel_contacts_self_contact_changed (TpChannel *self,
       self_contact_changed_prepared_cb, contact);
 
   g_ptr_array_unref (contacts);
+}
+
+static void
+contacts_prepared_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpChannel *self = (TpChannel *) object;
+  GSimpleAsyncResult *result = user_data;
+  GError *error = NULL;
+
+  if (!_tp_channel_contacts_queue_prepare_finish (self, res, NULL, &error))
+    g_simple_async_result_take_error (result, error);
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+static void
+append_contacts (GPtrArray *contacts,
+    GHashTable *table)
+{
+  GHashTableIter iter;
+  gpointer value;
+
+  if (table == NULL)
+      return;
+
+  g_hash_table_iter_init (&iter, table);
+  while (g_hash_table_iter_next (&iter, NULL, &value))
+    {
+      if (value == NULL)
+        continue;
+
+      g_ptr_array_add (contacts, value);
+    }
+}
+
+static void
+set_local_pending (TpChannel *self,
+    const GPtrArray *info,
+    GHashTable *identifiers)
+{
+  guint i;
+
+  self->priv->group_local_pending_contacts = g_hash_table_new_full (
+      NULL, NULL, NULL, g_object_unref);
+  self->priv->group_local_pending_contact_info = g_hash_table_new_full (
+      NULL, NULL, NULL, (GDestroyNotify) local_pending_info_free);
+
+  if (info == NULL)
+    return;
+
+  for (i = 0; i < info->len; i++)
+    {
+      GValueArray *va = g_ptr_array_index (info, i);
+      TpHandle handle;
+      TpHandle actor;
+      TpChannelGroupChangeReason reason;
+      const gchar *message;
+      TpContact *contact;
+      TpContact *actor_contact;
+
+      tp_value_array_unpack (va, 4, &handle, &actor, &reason, &message);
+
+      contact = dup_contact (self, handle, identifiers);
+      if (contact == NULL)
+        continue;
+
+      g_hash_table_insert (self->priv->group_local_pending_contacts,
+          GUINT_TO_POINTER (handle), contact);
+
+      actor_contact = dup_contact (self, actor, identifiers);
+      set_local_pending_info (self, contact, actor_contact, reason, message);
+      g_clear_object (&actor_contact);
+    }
+}
+
+static void
+got_group_properties_cb (TpProxy *proxy,
+    GHashTable *asv,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  static GType au_type = 0;
+  TpChannel *self = TP_CHANNEL (proxy);
+  GSimpleAsyncResult *result = user_data;
+  GHashTable *identifiers;
+  GHashTableIter iter;
+  gpointer value;
+  GPtrArray *contacts;
+
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (result, error);
+      g_simple_async_result_complete (result);
+      return;
+    }
+
+  if (G_UNLIKELY (au_type == 0))
+    {
+      au_type = dbus_g_type_get_collection ("GArray", G_TYPE_UINT);
+    }
+
+  DEBUG ("Received %u group properties", g_hash_table_size (asv));
+  self->priv->group_properties_retrieved = TRUE;
+
+  identifiers = tp_asv_get_boxed (asv, "MemberIdentifiers",
+      TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP);
+
+  self->priv->group_self_contact = dup_contact (self,
+      tp_asv_get_uint32 (asv, "SelfHandle", NULL),
+      identifiers);
+
+  self->priv->group_members_contacts = dup_contacts_table (self,
+      tp_asv_get_boxed (asv, "Members", au_type),
+      identifiers);
+
+  set_local_pending (self,
+      tp_asv_get_boxed (asv, "LocalPendingMembers",
+          TP_ARRAY_TYPE_LOCAL_PENDING_INFO_LIST),
+      identifiers);
+
+  self->priv->group_remote_pending_contacts = dup_contacts_table (self,
+      tp_asv_get_boxed (asv, "RemotePendingMembers", au_type),
+      identifiers);
+
+  self->priv->group_contact_owners = dup_owners_table (self,
+      tp_asv_get_boxed (asv, "HandleOwners", TP_HASH_TYPE_HANDLE_OWNER_MAP),
+      identifiers);
+
+  contacts = g_ptr_array_new ();
+
+  /* Collect all the TpContacts we have for this channel */
+  if (self->priv->group_self_contact != NULL)
+    g_ptr_array_add (contacts, self->priv->group_self_contact);
+
+  append_contacts (contacts, self->priv->group_members_contacts);
+  append_contacts (contacts, self->priv->group_local_pending_contacts);
+  append_contacts (contacts, self->priv->group_remote_pending_contacts);
+  append_contacts (contacts, self->priv->group_contact_owners);
+
+  g_hash_table_iter_init (&iter, self->priv->group_local_pending_contact_info);
+  while (g_hash_table_iter_next (&iter, NULL, &value))
+    {
+      LocalPendingInfo *info = value;
+
+      if (info->actor_contact != NULL)
+        g_ptr_array_add (contacts, info->actor_contact);
+    }
+
+  _tp_channel_contacts_queue_prepare_async (self, contacts,
+      contacts_prepared_cb, g_object_ref (result));
+
+  g_ptr_array_unref (contacts);
+}
+
+void
+_tp_channel_contacts_prepare_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpChannel *self = (TpChannel *) proxy;
+  GSimpleAsyncResult *result;
+  GError *error = NULL;
+
+  if (!tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP))
+    {
+      g_simple_async_report_error_in_idle ((GObject *) self, callback,
+          user_data, TP_ERROR, TP_ERROR_NOT_CAPABLE,
+          "Channel has no GROUP interface");
+      return;
+    }
+
+  tp_cli_channel_interface_group_connect_to_self_contact_changed (self,
+      self_contact_changed_cb, NULL, NULL, NULL, &error);
+  g_assert_no_error (error);
+
+  tp_cli_channel_interface_group_connect_to_members_changed (self,
+      members_changed_cb, NULL, NULL, NULL, &error);
+  g_assert_no_error (error);
+
+  tp_cli_channel_interface_group_connect_to_handle_owners_changed (self,
+      handle_owners_changed_cb, NULL, NULL, NULL, &error);
+  g_assert_no_error (error);
+
+  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
+      _tp_channel_contacts_prepare_async);
+
+  tp_cli_dbus_properties_call_get_all (self, -1,
+      TP_IFACE_CHANNEL_INTERFACE_GROUP, got_group_properties_cb,
+      result, g_object_unref, NULL);
 }
 
 /**
@@ -838,8 +1072,7 @@ tp_channel_group_dup_remote_pending_contacts (TpChannel *self)
  * @reason: (out) (allow-none): either %NULL or a location to return the reason
  *  for the change
  * @message: (out) (allow-none) (transfer none): either %NULL or a location to
- *  return the
- *  user-supplied message
+ *  return the user-supplied message
  *
  * If @local_pending is actually a local-pending contact,
  * write additional information into @actor, @reason and @message and return
@@ -870,20 +1103,19 @@ tp_channel_group_get_local_pending_contact_info (TpChannel *self,
   g_return_val_if_fail (tp_contact_get_connection (local_pending) ==
       self->priv->connection, FALSE);
 
-  if (self->priv->group_local_pending != NULL)
+  if (self->priv->group_properties_retrieved)
     {
-      TpHandle handle = tp_contact_get_handle (local_pending);
+      gpointer key = GUINT_TO_POINTER (tp_contact_get_handle (local_pending));
 
       /* it could conceivably be someone who is local-pending */
+      ret = g_hash_table_contains (self->priv->group_local_pending_contacts,
+          key);
 
-      ret = tp_intset_is_member (self->priv->group_local_pending, handle);
-
-      if (ret && self->priv->group_local_pending_info != NULL)
+      if (ret)
         {
           /* we might even have information about them */
           LocalPendingInfo *info = g_hash_table_lookup (
-              self->priv->group_local_pending_info,
-              GUINT_TO_POINTER (handle));
+              self->priv->group_local_pending_contact_info, key);
 
           if (info != NULL)
             {
@@ -984,83 +1216,4 @@ tp_channel_group_get_contact_owner (TpChannel *self,
       /* either already globally valid, or not a member */
       return contact;
     }
-}
-
-static void
-contacts_prepared_cb (GObject *object,
-    GAsyncResult *res,
-    gpointer user_data)
-{
-  TpChannel *self = (TpChannel *) object;
-  GSimpleAsyncResult *result = user_data;
-  GError *error = NULL;
-
-  if (!_tp_channel_contacts_queue_prepare_finish (self, res, NULL, &error))
-    g_simple_async_result_take_error (result, error);
-
-  g_simple_async_result_complete (result);
-}
-
-static void
-append_contacts (GPtrArray *contacts,
-    GHashTable *table)
-{
-  GHashTableIter iter;
-  gpointer value;
-
-  if (table == NULL)
-      return;
-
-  g_hash_table_iter_init (&iter, table);
-  while (g_hash_table_iter_next (&iter, NULL, &value))
-    {
-      if (value == NULL)
-        continue;
-
-      g_ptr_array_add (contacts, value);
-    }
-}
-
-void
-_tp_channel_contacts_prepare_async (TpProxy *proxy,
-    const TpProxyFeature *feature,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
-{
-  TpChannel *self = (TpChannel *) proxy;
-  GSimpleAsyncResult *result;
-  GHashTableIter iter;
-  gpointer value;
-  GPtrArray *contacts;
-
-  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
-      _tp_channel_contacts_prepare_async);
-
-  contacts = g_ptr_array_new ();
-
-  /* Collect all the TpContacts we have for this channel */
-  if (self->priv->group_self_contact != NULL)
-    g_ptr_array_add (contacts, self->priv->group_self_contact);
-
-  append_contacts (contacts, self->priv->group_members_contacts);
-  append_contacts (contacts, self->priv->group_local_pending_contacts);
-  append_contacts (contacts, self->priv->group_remote_pending_contacts);
-  append_contacts (contacts, self->priv->group_contact_owners);
-
-  if (self->priv->group_local_pending_info != NULL)
-    {
-      g_hash_table_iter_init (&iter, self->priv->group_local_pending_info);
-      while (g_hash_table_iter_next (&iter, NULL, &value))
-        {
-          LocalPendingInfo *info = value;
-
-          if (info->actor_contact != NULL)
-            g_ptr_array_add (contacts, info->actor_contact);
-        }
-    }
-
-  _tp_channel_contacts_queue_prepare_async (self, contacts,
-      contacts_prepared_cb, result);
-
-  g_ptr_array_unref (contacts);
 }

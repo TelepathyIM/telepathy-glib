@@ -1152,6 +1152,8 @@ tp_channel_dispose (GObject *object)
       g_hash_table_unref);
   tp_clear_pointer (&self->priv->group_local_pending_contacts,
       g_hash_table_unref);
+  tp_clear_pointer (&self->priv->group_local_pending_contact_info,
+      g_hash_table_unref);
   tp_clear_pointer (&self->priv->group_remote_pending_contacts,
       g_hash_table_unref);
   tp_clear_pointer (&self->priv->group_contact_owners,

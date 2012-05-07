@@ -387,9 +387,6 @@ tp_channel_group_self_contact_changed_cb (TpChannel *self,
 {
   tp_channel_group_self_handle_changed_cb (self, self_handle, user_data,
       weak_object);
-
-  _tp_channel_contacts_self_contact_changed (self, self_handle,
-      identifier);
 }
 
 static void
@@ -613,7 +610,6 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
       table = tp_asv_get_boxed (asv, "MemberIdentifiers",
           TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP);
 
-      _tp_channel_contacts_group_init (self, table);
       _tp_channel_emit_initial_sets (self);
       _tp_channel_continue_introspection (self);
     }
@@ -880,9 +876,6 @@ handle_members_changed (TpChannel *self,
 
   g_signal_emit_by_name (self, "group-members-changed", added,
       removed, local_pending, remote_pending, details);
-
-  _tp_channel_contacts_members_changed (self, added, removed,
-      local_pending, remote_pending, actor, details);
 }
 
 static void
@@ -936,9 +929,6 @@ tp_channel_handle_owners_changed_cb (TpChannel *self,
       g_hash_table_remove (self->priv->group_handle_owners,
           GUINT_TO_POINTER (g_array_index (removed, guint, i)));
     }
-
-  _tp_channel_contacts_handle_owners_changed (self, added, removed,
-      identifiers);
 }
 
 
