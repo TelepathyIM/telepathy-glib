@@ -13,8 +13,6 @@
 #include <glib.h>
 
 #include <telepathy-glib/telepathy-glib.h>
-#include <telepathy-glib/debug.h>
-#include <telepathy-glib/simple-observer.h>
 
 static void
 chan_invalidated_cb (TpProxy *proxy,

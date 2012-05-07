@@ -77,6 +77,10 @@ check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
 
+AM_CPPFLAGS = \
+    -D_TP_COMPILATION \
+    $(NULL)
+
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \
     $(DBUS_CFLAGS) \

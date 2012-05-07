@@ -254,6 +254,7 @@ check-local: check-coding-style
 
 AM_CPPFLAGS = \
     -I${top_srcdir} -I${top_builddir} \
+    -D_TP_COMPILATION \
     -D_TP_IGNORE_DEPRECATIONS \
     $(GLIB_CFLAGS) \
     $(DBUS_CFLAGS) \

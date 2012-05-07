@@ -40,10 +40,6 @@
 
 #include <gobject/gvaluecollector.h>
 
-#include <telepathy-glib/base-connection.h>
-#include <telepathy-glib/channel-iface.h>
-#include <telepathy-glib/svc-channel.h>
-#include <telepathy-glib/svc-call.h>
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/telepathy-glib-dbus.h>
 

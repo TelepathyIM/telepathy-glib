@@ -13,7 +13,7 @@
 #define __EXAMPLE_CSH_ROOM_MANAGER_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/channel-manager.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
 

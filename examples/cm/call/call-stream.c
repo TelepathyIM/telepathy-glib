@@ -21,9 +21,8 @@
 
 #include "call-stream.h"
 
-#include <telepathy-glib/base-connection.h>
-#include <telepathy-glib/gtypes.h>
-#include <telepathy-glib/svc-call.h>
+#include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 G_DEFINE_TYPE (ExampleCallStream,
     example_call_stream,

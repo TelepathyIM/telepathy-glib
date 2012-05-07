@@ -1,5 +1,5 @@
 <SECTION>
-<INCLUDE>telepathy-glib/channel-iface.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>channel-iface</FILE>
 TpChannelFunc
 <TITLE>TpChannelIface</TITLE>
@@ -101,7 +101,7 @@ TpBaseConnectionManagerPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/channel-manager.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>channel-manager</FILE>
 TpChannelManagerChannelClassFunc
 TpChannelManagerForeachChannelClassFunc
@@ -135,7 +135,7 @@ TP_CHANNEL_MANAGER_GET_INTERFACE
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/exportable-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>exportable-channel</FILE>
 TpExportableChannelFunc
 <TITLE>TpExportableChannel</TITLE>
@@ -185,7 +185,7 @@ TpBaseChannelPrivate
 
 <SECTION>
 <FILE>handle-repo</FILE>
-<INCLUDE>telepathy-glib/handle-repo.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>handle-repo</TITLE>
 TpHandleRepoIface
 TpHandleRepoIfaceClass
@@ -238,7 +238,7 @@ tp_handle_set_dump
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/handle-repo-dynamic.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>handle-repo-dynamic</FILE>
 <TITLE>TpDynamicHandleRepo</TITLE>
 TpDynamicHandleRepo
@@ -258,7 +258,7 @@ TP_DYNAMIC_HANDLE_REPO_GET_CLASS
 
 <SECTION>
 <FILE>handle-repo-static</FILE>
-<INCLUDE>telepathy-glib/handle-repo-static.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>TpStaticHandleRepo</TITLE>
 tp_static_handle_repo_new
 TpStaticHandleRepo
@@ -275,7 +275,7 @@ TP_STATIC_HANDLE_REPO_GET_CLASS
 
 <SECTION>
 <FILE>svc-generic</FILE>
-<INCLUDE>telepathy-glib/svc-generic.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <TITLE>svc-generic</TITLE>
 TpSvcDBusIntrospectable
 TpSvcDBusIntrospectableClass
@@ -313,7 +313,7 @@ TP_TYPE_SVC_DBUS_PROPERTIES
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/svc-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <TITLE>svc-channel</TITLE>
 <FILE>svc-channel</FILE>
 TpSvcChannel
@@ -342,7 +342,7 @@ TP_TYPE_SVC_CHANNEL_INTERFACE_DESTROYABLE
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/svc-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <TITLE>svc-channel-text</TITLE>
 <FILE>svc-channel-text</FILE>
 TpSvcChannelTypeText
@@ -407,7 +407,7 @@ TP_IS_SVC_CHANNEL_INTERFACE_SMS
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/svc-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <TITLE>svc-channel-room</TITLE>
 <FILE>svc-channel-room</FILE>
 <SUBSECTION>
@@ -446,7 +446,7 @@ TP_IS_SVC_CHANNEL_INTERFACE_SUBJECT
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/svc-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <TITLE>svc-channel-file-transfer</TITLE>
 <FILE>svc-channel-file-transfer</FILE>
 TpSvcChannelTypeFileTransfer
@@ -470,7 +470,7 @@ TP_SVC_CHANNEL_TYPE_FILE_TRANSFER_GET_CLASS
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/svc-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <TITLE>svc-channel-tube</TITLE>
 <FILE>svc-channel-tube</FILE>
 TpSvcChannelInterfaceTube
@@ -517,7 +517,7 @@ TP_SVC_CHANNEL_TYPE_DBUS_TUBE_GET_CLASS
 <SECTION>
 <FILE>svc-channel-roomlist</FILE>
 <TITLE>svc-channel-roomlist</TITLE>
-<INCLUDE>telepathy-glib/svc-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 TpSvcChannelTypeRoomList
 TpSvcChannelTypeRoomListClass
 tp_svc_channel_type_room_list_get_listing_rooms_impl
@@ -542,7 +542,7 @@ TP_SVC_CHANNEL_TYPE_ROOM_LIST_GET_CLASS
 <SECTION>
 <FILE>svc-channel-group</FILE>
 <TITLE>svc-channel-group</TITLE>
-<INCLUDE>telepathy-glib/svc-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 TpSvcChannelInterfaceGroup
 TpSvcChannelInterfaceGroupClass
 tp_svc_channel_interface_group_add_members_impl
@@ -576,7 +576,7 @@ tp_svc_channel_interface_conference_get_type
 <SECTION>
 <FILE>svc-channel-call</FILE>
 <TITLE>svc-channel-call</TITLE>
-<INCLUDE>telepathy-glib/svc-call.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 TpSvcChannelTypeCall
 TpSvcChannelTypeCallClass
 tp_svc_channel_type_call_accept_impl
@@ -864,7 +864,7 @@ TP_TYPE_SVC_CALL_STREAM_ENDPOINT
 <SECTION>
 <FILE>svc-anonymity</FILE>
 <TITLE>svc-anonymity</TITLE>
-<INCLUDE>telepathy-glib/svc-channel.h,telepathy-glib/svc-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 TpSvcConnectionInterfaceAnonymity
 TpSvcConnectionInterfaceAnonymityClass
 tp_svc_connection_interface_anonymity_emit_anonymity_modes_changed
@@ -887,7 +887,7 @@ tp_svc_connection_interface_anonymity_get_type
 <SECTION>
 <FILE>svc-service-point</FILE>
 <TITLE>svc-service-point</TITLE>
-<INCLUDE>telepathy-glib/svc-channel.h,telepathy-glib/svc-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 TpSvcConnectionInterfaceServicePoint
 TpSvcConnectionInterfaceServicePointClass
 tp_svc_connection_interface_service_point_emit_service_points_changed
@@ -910,7 +910,7 @@ tp_svc_connection_interface_service_point_get_type
 
 <SECTION>
 <FILE>svc-connection</FILE>
-<INCLUDE>telepathy-glib/svc-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <TITLE>svc-connection</TITLE>
 TpSvcConnection
 TpSvcConnectionClass
@@ -1258,7 +1258,7 @@ tp_svc_connection_interface_addressing_get_type
 
 <SECTION>
 <FILE>svc-connection-manager</FILE>
-<INCLUDE>telepathy-glib/svc-connection-manager.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <TITLE>svc-connection-manager</TITLE>
 TpSvcConnectionManager
 TpSvcConnectionManagerClass
@@ -1277,7 +1277,7 @@ TP_SVC_CONNECTION_MANAGER_GET_CLASS
 <SECTION>
 <FILE>util</FILE>
 <TITLE>util</TITLE>
-<INCLUDE>telepathy-glib/util.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 tp_g_hash_table_update
 tp_g_ptr_array_contains
 tp_g_ptr_array_extend
@@ -1326,7 +1326,7 @@ tp_utf8_make_valid
 <SECTION>
 <FILE>gnio-util</FILE>
 <TITLE>gnio-util</TITLE>
-<INCLUDE>telepathy-glib/gnio-util.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 tp_g_socket_address_from_variant
 tp_address_variant_from_g_socket_address
 tp_unix_connection_receive_credentials_with_byte
@@ -1340,7 +1340,7 @@ tp_unix_connection_send_credentials_with_byte_finish
 <SECTION>
 <FILE>gtypes</FILE>
 <TITLE>gtypes</TITLE>
-<INCLUDE>telepathy-glib/gtypes.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <SUBSECTION>
 # Generic
 tp_dbus_specialized_value_slice_new
@@ -1631,14 +1631,14 @@ tp_type_dbus_struct_ussuas
 
 <SECTION>
 <TITLE>run</TITLE>
-<INCLUDE>telepathy-glib/run.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>run</FILE>
 tp_run_connection_manager
 </SECTION>
 
 <SECTION>
 <FILE>base-room-config</FILE>
-<INCLUDE>telepathy-glib/base-room-config.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>TpBaseRoomConfig</TITLE>
 TpBaseRoomConfig
 TpBaseRoomConfigClass
@@ -1669,7 +1669,7 @@ TpBaseRoomConfigPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/contacts-mixin.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>contacts-mixin</FILE>
 
 <TITLE>TpContactsMixin</TITLE>
@@ -1698,7 +1698,7 @@ TP_CONTACTS_MIXIN
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/presence-mixin.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>presence-mixin</FILE>
 TpPresenceStatusOptionalArgumentSpec
 TpPresenceStatusSpec
@@ -1737,7 +1737,7 @@ TP_PRESENCE_MIXIN
 <SECTION>
 <FILE>debug</FILE>
 <TITLE>debug</TITLE>
-<INCLUDE>telepathy-glib/debug.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 tp_debug_set_flags
 tp_debug_set_persistent
 tp_debug_divert_messages
@@ -1746,7 +1746,7 @@ tp_debug_timestamped_log_handler
 
 <SECTION>
 <FILE>handle</FILE>
-<INCLUDE>telepathy-glib/handle.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>handle</TITLE>
 TpHandle
 TP_TYPE_HANDLE
@@ -1757,7 +1757,7 @@ tp_handle_type_to_string
 
 <SECTION>
 <FILE>group-mixin</FILE>
-<INCLUDE>telepathy-glib/group-mixin.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>TpGroupMixin</TITLE>
 TP_HAS_GROUP_MIXIN
 TP_HAS_GROUP_MIXIN_CLASS
@@ -1810,7 +1810,7 @@ TP_GROUP_MIXIN
 
 <SECTION>
 <FILE>intset</FILE>
-<INCLUDE>telepathy-glib/intset.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>TpIntset</TITLE>
 TpIntset
 TP_TYPE_INTSET
@@ -1851,7 +1851,7 @@ TpIntSetFastIter
 <SECTION>
 <FILE>asv</FILE>
 <TITLE>asv</TITLE>
-<INCLUDE>telepathy-glib/dbus.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 tp_asv_size
 tp_asv_new
 tp_asv_get_boolean
@@ -1890,7 +1890,7 @@ tp_asv_dump
 <SECTION>
 <FILE>dbus</FILE>
 <TITLE>dbus</TITLE>
-<INCLUDE>telepathy-glib/dbus.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 tp_dbus_g_method_return_not_implemented
 TpDBusNameType
 TP_TYPE_DBUS_NAME_TYPE
@@ -1933,7 +1933,7 @@ TpDBusDaemonPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/dbus-properties-mixin.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>dbus-properties-mixin</FILE>
 <TITLE>dbus-properties-mixin</TITLE>
 TpDBusPropertiesMixinFlags
@@ -1965,7 +1965,7 @@ tp_dbus_properties_mixin_flags_get_type
 
 <SECTION>
 <TITLE>errors</TITLE>
-<INCLUDE>telepathy-glib/errors.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>errors</FILE>
 TP_ERROR_PREFIX
 TP_ERROR
@@ -2035,7 +2035,7 @@ tp_error_quark
 
 <SECTION>
 <TITLE>TpHeap</TITLE>
-<INCLUDE>telepathy-glib/heap.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>heap</FILE>
 TpHeap
 tp_heap_new
@@ -2050,7 +2050,7 @@ tp_heap_size
 
 <SECTION>
 <FILE>message-mixin</FILE>
-<INCLUDE>telepathy-glib/message-mixin.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>TpMessageMixin</TITLE>
 TpMessageMixin
 TpMessageMixinSendImpl
@@ -2071,7 +2071,7 @@ TpMessageMixinPrivate
 
 <SECTION>
 <FILE>message</FILE>
-<INCLUDE>telepathy-glib/message.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>TpMessage</TITLE>
 TpMessage
 tp_message_count_parts
@@ -2115,7 +2115,7 @@ tp_message_get_type
 
 <SECTION>
 <FILE>cm-message</FILE>
-<INCLUDE>telepathy-glib/cm-message.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>TpCMMessage</TITLE>
 TpCMMessage
 tp_cm_message_new
@@ -2254,7 +2254,7 @@ TP_NUM_MEDIA_STREAM_TYPES
 <SECTION>
 <FILE>interfaces</FILE>
 <TITLE>interfaces</TITLE>
-<INCLUDE>telepathy-glib/interfaces.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 TP_CM_BUS_NAME_BASE
 TP_CM_OBJECT_PATH_BASE
 TP_CONN_BUS_NAME_BASE
@@ -2856,7 +2856,7 @@ tp_iface_quark_channel_type_call
 <SECTION>
 <FILE>proxy</FILE>
 <TITLE>proxy</TITLE>
-<INCLUDE>telepathy-glib/proxy.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 TpProxy
 TpProxyPrepareAsync
 TpProxyFeature
@@ -2899,7 +2899,7 @@ TpProxyFeaturePrivate
 <SECTION>
 <FILE>proxy-dbus-core</FILE>
 <TITLE>proxy-dbus-core</TITLE>
-<INCLUDE>telepathy-glib/cli-misc.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <SUBSECTION>
 tp_cli_dbus_introspectable_call_introspect
 tp_cli_dbus_introspectable_callback_for_introspect
@@ -3071,7 +3071,7 @@ tp_cli_channel_add_signals
 <SECTION>
 <FILE>channel-group</FILE>
 <TITLE>channel-group</TITLE>
-<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_channel_interface_group_call_add_members
 tp_cli_channel_interface_group_call_remove_members
 tp_cli_channel_interface_group_callback_for_add_members
@@ -3096,7 +3096,7 @@ tp_cli_channel_interface_conference_signal_callback_channel_removed
 <SECTION>
 <FILE>channel-text</FILE>
 <TITLE>channel-text</TITLE>
-<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_channel_type_text_call_acknowledge_pending_messages
 tp_cli_channel_type_text_call_send_message
 tp_cli_channel_type_text_callback_for_acknowledge_pending_messages
@@ -3129,7 +3129,7 @@ tp_cli_channel_interface_sms_callback_for_get_sms_length
 <SECTION>
 <FILE>channel-room</FILE>
 <TITLE>channel-room</TITLE>
-<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <SUBSECTION>
 tp_cli_channel_interface_room_config_call_update_configuration
 tp_cli_channel_interface_room_config_callback_for_update_configuration
@@ -3141,7 +3141,7 @@ tp_cli_channel_interface_subject_callback_for_set_subject
 <SECTION>
 <FILE>channel-file-transfer</FILE>
 <TITLE>channel-file-transfer</TITLE>
-<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_channel_type_file_transfer_call_accept_file
 tp_cli_channel_type_file_transfer_call_provide_file
 tp_cli_channel_type_file_transfer_callback_for_accept_file
@@ -3159,7 +3159,7 @@ tp_cli_channel_type_file_transfer_signal_callback_uri_defined
 <SECTION>
 <FILE>channel-media</FILE>
 <TITLE>channel-media</TITLE>
-<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_channel_interface_dtmf_call_start_tone
 tp_cli_channel_interface_dtmf_call_stop_tone
 tp_cli_channel_interface_dtmf_callback_for_start_tone
@@ -3184,7 +3184,7 @@ tp_cli_channel_interface_hold_connect_to_hold_state_changed
 <SECTION>
 <FILE>channel-tube</FILE>
 <TITLE>channel-tube</TITLE>
-<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_channel_interface_tube_connect_to_tube_channel_state_changed
 tp_cli_channel_interface_tube_signal_callback_tube_channel_state_changed
 tp_cli_channel_type_stream_tube_call_offer
@@ -3208,7 +3208,7 @@ tp_cli_channel_type_dbus_tube_signal_callback_dbus_names_changed
 <SECTION>
 <FILE>channel-roomlist</FILE>
 <TITLE>channel-roomlist</TITLE>
-<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_channel_type_room_list_call_get_listing_rooms
 tp_cli_channel_type_room_list_call_list_rooms
 tp_cli_channel_type_room_list_call_stop_listing
@@ -3224,7 +3224,7 @@ tp_cli_channel_type_room_list_signal_callback_listing_rooms
 <SECTION>
 <FILE>cli-anonymity</FILE>
 <TITLE>cli-anonymity</TITLE>
-<INCLUDE>telepathy-glib/cli-connection.h,telepathy-glib/cli-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_connection_interface_anonymity_connect_to_anonymity_modes_changed
 tp_cli_connection_interface_anonymity_signal_callback_anonymity_modes_changed
 </SECTION>
@@ -3232,7 +3232,7 @@ tp_cli_connection_interface_anonymity_signal_callback_anonymity_modes_changed
 <SECTION>
 <FILE>cli-service-point</FILE>
 <TITLE>cli-service-point</TITLE>
-<INCLUDE>telepathy-glib/cli-connection.h,telepathy-glib/cli-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_channel_interface_service_point_connect_to_service_point_changed
 tp_cli_channel_interface_service_point_signal_callback_service_point_changed
 tp_cli_connection_interface_service_point_connect_to_service_points_changed
@@ -3409,7 +3409,7 @@ tp_cli_connection_add_signals
 <SECTION>
 <FILE>connection-aliasing</FILE>
 <TITLE>connection-aliasing</TITLE>
-<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_connection_interface_aliasing_call_get_alias_flags
 tp_cli_connection_interface_aliasing_call_request_aliases
 tp_cli_connection_interface_aliasing_call_get_aliases
@@ -3425,7 +3425,7 @@ tp_cli_connection_interface_aliasing_signal_callback_aliases_changed
 <SECTION>
 <FILE>connection-avatars</FILE>
 <TITLE>connection-avatars</TITLE>
-<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_connection_interface_avatars_call_clear_avatar
 tp_cli_connection_interface_avatars_call_get_known_avatar_tokens
 tp_cli_connection_interface_avatars_call_request_avatars
@@ -3443,7 +3443,7 @@ tp_cli_connection_interface_avatars_signal_callback_avatar_updated
 <SECTION>
 <FILE>connection-balance</FILE>
 <TITLE>connection-balance</TITLE>
-<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_connection_interface_balance_connect_to_balance_changed
 tp_cli_connection_interface_balance_signal_callback_balance_changed
 </SECTION>
@@ -3451,7 +3451,7 @@ tp_cli_connection_interface_balance_signal_callback_balance_changed
 <SECTION>
 <FILE>connection-caps</FILE>
 <TITLE>connection-caps</TITLE>
-<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_connection_interface_contact_capabilities_callback_for_get_contact_capabilities
 tp_cli_connection_interface_contact_capabilities_call_get_contact_capabilities
 tp_cli_connection_interface_contact_capabilities_callback_for_update_capabilities
@@ -3463,7 +3463,7 @@ tp_cli_connection_interface_contact_capabilities_connect_to_contact_capabilities
 <SECTION>
 <FILE>connection-contact-list</FILE>
 <TITLE>connection-contact-list</TITLE>
-<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_connection_interface_contact_blocking_call_block_contacts
 tp_cli_connection_interface_contact_blocking_call_request_blocked_contacts
 tp_cli_connection_interface_contact_blocking_call_unblock_contacts
@@ -3518,7 +3518,7 @@ tp_cli_connection_interface_contact_list_callback_for_get_contact_list_attribute
 <SECTION>
 <FILE>connection-cellular</FILE>
 <TITLE>connection-cellular</TITLE>
-<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_connection_interface_cellular_connect_to_imsi_changed
 tp_cli_connection_interface_cellular_signal_callback_imsi_changed
 </SECTION>
@@ -3526,7 +3526,7 @@ tp_cli_connection_interface_cellular_signal_callback_imsi_changed
 <SECTION>
 <FILE>connection-contacts</FILE>
 <TITLE>connection-contacts</TITLE>
-<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_connection_interface_contacts_call_get_contact_attributes
 tp_cli_connection_interface_contacts_callback_for_get_contact_attributes
 </SECTION>
@@ -3534,7 +3534,7 @@ tp_cli_connection_interface_contacts_callback_for_get_contact_attributes
 <SECTION>
 <FILE>connection-contact-info</FILE>
 <TITLE>connection-contact-info</TITLE>
-<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_connection_interface_contact_info_call_get_contact_info
 tp_cli_connection_interface_contact_info_call_refresh_contact_info
 tp_cli_connection_interface_contact_info_call_request_contact_info
@@ -3550,7 +3550,7 @@ tp_cli_connection_interface_contact_info_signal_callback_contact_info_changed
 <SECTION>
 <FILE>connection-requests</FILE>
 <TITLE>connection-requests</TITLE>
-<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_connection_interface_requests_call_create_channel
 tp_cli_connection_interface_requests_call_ensure_channel
 tp_cli_connection_interface_requests_callback_for_create_channel
@@ -3564,7 +3564,7 @@ tp_cli_connection_interface_requests_signal_callback_new_channels
 <SECTION>
 <FILE>connection-presence</FILE>
 <TITLE>connection-presence</TITLE>
-<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_connection_interface_presence_call_get_presences
 tp_cli_connection_interface_presence_call_set_presence
 tp_cli_connection_interface_presence_callback_for_get_presences
@@ -3576,7 +3576,7 @@ tp_cli_connection_interface_presence_signal_callback_presences_changed
 <SECTION>
 <FILE>connection-location</FILE>
 <TITLE>connection-location</TITLE>
-<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_connection_interface_location_connect_to_location_updated
 tp_cli_connection_interface_location_signal_callback_location_updated
 tp_cli_connection_interface_location_call_get_locations
@@ -3587,12 +3587,10 @@ tp_cli_connection_interface_location_call_set_location
 tp_cli_connection_interface_location_callback_for_set_location
 </SECTION>
 
-</SECTION>
-
 <SECTION>
 <FILE>connection-powersaving</FILE>
 <TITLE>connection-powersaving</TITLE>
-<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_connection_interface_power_saving_call_set_power_saving
 tp_cli_connection_interface_power_saving_callback_for_set_power_saving
 tp_cli_connection_interface_power_saving_connect_to_power_saving_changed
@@ -3602,7 +3600,7 @@ tp_cli_connection_interface_power_saving_signal_callback_power_saving_changed
 <SECTION>
 <FILE>connection-client-types</FILE>
 <TITLE>connection-client-types</TITLE>
-<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_connection_interface_client_types_call_get_client_types
 tp_cli_connection_interface_client_types_call_request_client_types
 tp_cli_connection_interface_client_types_callback_for_get_client_types
@@ -3614,7 +3612,7 @@ tp_cli_connection_interface_client_types_signal_callback_client_types_updated
 <SECTION>
 <FILE>connection-mail</FILE>
 <TITLE>connection-mail</TITLE>
-<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_connection_interface_mail_notification_call_request_inbox_url
 tp_cli_connection_interface_mail_notification_call_request_mail_url
 tp_cli_connection_interface_mail_notification_callback_for_request_inbox_url
@@ -3628,7 +3626,7 @@ tp_cli_connection_interface_mail_notification_signal_callback_unread_mails_chang
 <SECTION>
 <FILE>connection-addressing</FILE>
 <TITLE>connection-addressing</TITLE>
-<INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_connection_interface_addressing_call_get_contacts_by_uri
 tp_cli_connection_interface_addressing_call_get_contacts_by_vcard_field
 tp_cli_connection_interface_addressing_callback_for_get_contacts_by_uri
@@ -3638,7 +3636,7 @@ tp_cli_connection_interface_addressing_callback_for_get_contacts_by_vcard_field
 <SECTION>
 <FILE>connection-manager</FILE>
 <TITLE>connection-manager</TITLE>
-<INCLUDE>telepathy-glib/connection-manager.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 TpConnectionManagerListCb
 tp_list_connection_managers_async
 tp_list_connection_managers_finish
@@ -3782,7 +3780,6 @@ tp_contact_get_connection
 tp_contact_get_handle
 tp_contact_get_identifier
 tp_contact_has_feature
-tp_contact_is_self
 <SUBSECTION>
 TP_CONTACT_FEATURE_ALIAS
 tp_contact_get_alias
@@ -3868,7 +3865,7 @@ TpContactPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/capabilities.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>capabilities</FILE>
 <TITLE>capabilities</TITLE>
 TpCapabilities
@@ -3903,7 +3900,7 @@ TpCapabilitiesPrivate
 
 <SECTION>
 <FILE>svc-account</FILE>
-<INCLUDE>telepathy-glib/svc-account.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <TITLE>svc-account</TITLE>
 TpSvcAccount
 TpSvcAccountClass
@@ -3959,7 +3956,7 @@ tp_svc_account_interface_addressing_get_type
 
 <SECTION>
 <FILE>svc-account-manager</FILE>
-<INCLUDE>telepathy-glib/svc-account-manager.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <TITLE>svc-account-manager</TITLE>
 TpSvcAccountManager
 TpSvcAccountManagerClass
@@ -3978,7 +3975,7 @@ TP_SVC_ACCOUNT_MANAGER_GET_CLASS
 
 <SECTION>
 <FILE>account</FILE>
-<INCLUDE>telepathy-glib/account.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>account</TITLE>
 TpAccount
 TpAccountClass
@@ -4076,7 +4073,7 @@ TpAccountClassPrivate
 
 <SECTION>
 <FILE>account-manager</FILE>
-<INCLUDE>telepathy-glib/account-manager.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>account-manager</TITLE>
 TpAccountManager
 TpAccountManagerClass
@@ -4141,7 +4138,7 @@ tp_cli_account_manager_add_signals
 
 <SECTION>
 <FILE>channel-dispatcher</FILE>
-<INCLUDE>telepathy-glib/channel-dispatcher.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>channel-dispatcher</TITLE>
 TpChannelDispatcher
 TpChannelDispatcherClass
@@ -4204,7 +4201,7 @@ tp_cli_channel_request_add_signals
 
 <SECTION>
 <FILE>svc-channel-dispatcher</FILE>
-<INCLUDE>telepathy-glib/svc-channel-dispatcher.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <TITLE>svc-channel-dispatcher</TITLE>
 TpSvcChannelDispatcher
 TpSvcChannelDispatcherClass
@@ -4240,7 +4237,7 @@ TP_SVC_CHANNEL_DISPATCHER_INTERFACE_OPERATION_LIST_GET_CLASS
 
 <SECTION>
 <FILE>channel-dispatch-operation</FILE>
-<INCLUDE>telepathy-glib/channel-dispatch-operation.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>channel-dispatch-operation</TITLE>
 TpChannelDispatchOperation
 TpChannelDispatchOperationClass
@@ -4279,7 +4276,7 @@ tp_channel_dispatch_operation_get_feature_quark_core
 
 <SECTION>
 <FILE>channel-request</FILE>
-<INCLUDE>telepathy-glib/channel-request.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>channel-request</TITLE>
 TpChannelRequest
 TpChannelRequestClass
@@ -4304,7 +4301,7 @@ tp_channel_request_get_type
 
 <SECTION>
 <FILE>svc-channel-dispatch-operation</FILE>
-<INCLUDE>telepathy-glib/svc-channel-dispatch-operation.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <TITLE>svc-channel-dispatch-operation</TITLE>
 TpSvcChannelDispatchOperation
 TpSvcChannelDispatchOperationClass
@@ -4329,7 +4326,7 @@ TP_TYPE_SVC_CHANNEL_DISPATCH_OPERATION
 
 <SECTION>
 <FILE>svc-channel-request</FILE>
-<INCLUDE>telepathy-glib/svc-channel-request.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <TITLE>svc-channel-request</TITLE>
 TpSvcChannelRequest
 TpSvcChannelRequestClass
@@ -4351,7 +4348,7 @@ TP_TYPE_SVC_CHANNEL_REQUEST
 
 <SECTION>
 <FILE>client</FILE>
-<INCLUDE>telepathy-glib/client.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>client</TITLE>
 TpClient
 TpClientClass
@@ -4390,7 +4387,7 @@ tp_cli_client_add_signals
 
 <SECTION>
 <FILE>svc-client</FILE>
-<INCLUDE>telepathy-glib/svc-client.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <TITLE>svc-client</TITLE>
 TpSvcClient
 TpSvcClientClass
@@ -4449,7 +4446,7 @@ TP_TYPE_SVC_CLIENT_OBSERVER
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/svc-debug.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <TITLE>svc-debug</TITLE>
 <FILE>svc-debug</FILE>
 TpSvcDebug
@@ -4467,8 +4464,7 @@ tp_svc_debug_get_type
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/debug-sender.h</INCLUDE>
-<INCLUDE>telepathy-glib/debug-sender.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>debug-sender</FILE>
 <TITLE>debug-sender</TITLE>
 TpDebugSender
@@ -4546,7 +4542,7 @@ TpBaseClientClassPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/observe-channels-context.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>observe-channels-context</FILE>
 <TITLE>observe-channels-context</TITLE>
 TpObserveChannelsContext
@@ -4567,7 +4563,7 @@ TpObserveChannelsContextPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/simple-observer.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>simple-observer</FILE>
 <TITLE>simple-observer</TITLE>
 TpSimpleObserver
@@ -4587,7 +4583,7 @@ TpSimpleObserverPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/add-dispatch-operation-context.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>add-dispatch-operation-context</FILE>
 <TITLE>add-dispatch-operation-context</TITLE>
 TpAddDispatchOperationContext
@@ -4607,7 +4603,7 @@ TP_TYPE_ADD_DISPATCH_OPERATION_CONTEXT
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/simple-approver.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>simple-approver</FILE>
 <TITLE>simple-approver</TITLE>
 TpSimpleApprover
@@ -4627,7 +4623,7 @@ TpSimpleApproverPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/handle-channels-context.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>handle-channels-context</FILE>
 <TITLE>handle-channels-context</TITLE>
 TpHandleChannelsContext
@@ -4649,7 +4645,7 @@ TP_TYPE_HANDLE_CHANNELS_CONTEXT
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/simple-handler.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>simple-handler</FILE>
 <TITLE>simple-handler</TITLE>
 TpSimpleHandler
@@ -4669,7 +4665,7 @@ TpSimpleHandlerPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/simple-password-manager.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>simple-password-manager</FILE>
 <TITLE>simple-password-manager</TITLE>
 TpSimplePasswordManager
@@ -4693,7 +4689,7 @@ TpSimplePasswordManagerPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/base-password-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>base-password-channel</FILE>
 <TITLE>base-password-channel</TITLE>
 TpBasePasswordChannel
@@ -4753,7 +4749,7 @@ TpBaseProtocolClassPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/svc-protocol.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <FILE>svc-protocol</FILE>
 <TITLE>svc-protocol</TITLE>
 TpSvcProtocol
@@ -4807,7 +4803,7 @@ TP_TYPE_SVC_PROTOCOL_INTERFACE_AVATARS
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/protocol.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>protocol</FILE>
 <TITLE>protocol</TITLE>
 TpProtocol
@@ -4850,7 +4846,7 @@ TpProtocolClassPrivate
 <SECTION>
 <FILE>channel-contactsearch</FILE>
 <TITLE>channel-contactsearch</TITLE>
-<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_channel_type_contact_search_call_more
 tp_cli_channel_type_contact_search_call_search
 tp_cli_channel_type_contact_search_call_stop
@@ -4866,7 +4862,7 @@ tp_cli_channel_type_contact_search_signal_callback_search_state_changed
 <SECTION>
 <FILE>svc-channel-contactsearch</FILE>
 <TITLE>svc-channel-contactsearch</TITLE>
-<INCLUDE>telepathy-glib/svc-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 TpSvcChannelTypeContactSearch
 TpSvcChannelTypeContactSearchClass
 tp_svc_channel_type_contact_search_emit_search_result_received
@@ -4891,7 +4887,7 @@ tp_svc_channel_type_contact_search_get_type
 <SECTION>
 <FILE>account-channel-request</FILE>
 <TITLE>account-channel-request</TITLE>
-<INCLUDE>telepathy-glib/account-channel-request.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 TpAccountChannelRequest
 tp_account_channel_request_new
 tp_account_channel_request_get_request
@@ -4938,7 +4934,7 @@ TP_TYPE_ACCOUNT_CHANNEL_REQUEST
 <SECTION>
 <FILE>svc-tls</FILE>
 <TITLE>svc-tls</TITLE>
-<INCLUDE>telepathy-glib/svc-channel.h,telepathy-glib/svc-tls.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <SUBSECTION>
 TpSvcChannelTypeServerTLSConnection
 TpSvcChannelTypeServerTLSConnectionClass
@@ -5095,7 +5091,7 @@ tp_mutable_contact_group_list_get_type
 <SECTION>
 <FILE>stream-tube-channel</FILE>
 <TITLE>stream-tube-channel</TITLE>
-<INCLUDE>telepathy-glib/stream-tube-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <SUBSECTION>
 TpStreamTubeChannel
 TpStreamTubeChannelClass
@@ -5120,7 +5116,7 @@ TpStreamTubeChannelPrivate
 <SECTION>
 <FILE>stream-tube-connection</FILE>
 <TITLE>stream-tube-connection</TITLE>
-<INCLUDE>telepathy-glib/stream-tube-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <SUBSECTION>
 TpStreamTubeConnection
 TpStreamTubeConnectionClass
@@ -5141,7 +5137,7 @@ TpStreamTubeConnectionPrivate
 <SECTION>
 <FILE>dbus-tube-channel</FILE>
 <TITLE>dbus-tube-channel</TITLE>
-<INCLUDE>telepathy-glib/dbus-tube-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <SUBSECTION>
 TpDBusTubeChannel
 TpDBusTubeChannelClass
@@ -5188,7 +5184,7 @@ tp_dtmf_player_get_type
 <SECTION>
 <FILE>svc-channel-securable</FILE>
 <TITLE>svc-channel-securable</TITLE>
-<INCLUDE>telepathy-glib/svc-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 TpSvcChannelInterfaceSecurable
 TpSvcChannelInterfaceSecurableClass
 <SUBSECTION Standard>
@@ -5202,7 +5198,7 @@ TP_SVC_CHANNEL_INTERFACE_SECURABLE_GET_CLASS
 <SECTION>
 <FILE>svc-channel-auth</FILE>
 <TITLE>svc-channel-auth</TITLE>
-<INCLUDE>telepathy-glib/svc-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 TpSvcChannelTypeServerAuthentication
 TpSvcChannelTypeServerAuthenticationClass
 <SUBSECTION>
@@ -5263,7 +5259,7 @@ tp_svc_channel_interface_captcha_authentication_return_from_get_captchas
 <SECTION>
 <FILE>channel-auth</FILE>
 <TITLE>channel-auth</TITLE>
-<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_channel_interface_sasl_authentication_call_abort_sasl
 tp_cli_channel_interface_sasl_authentication_call_accept_sasl
 tp_cli_channel_interface_sasl_authentication_call_respond
@@ -5292,7 +5288,7 @@ tp_cli_channel_interface_captcha_authentication_callback_for_get_captchas
 
 <SECTION>
 <FILE>client-message</FILE>
-<INCLUDE>telepathy-glib/client-message.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>TpClientMessage</TITLE>
 TpClientMessage
 tp_client_message_new
@@ -5309,7 +5305,7 @@ tp_client_message_get_type
 
 <SECTION>
 <FILE>signalled-message</FILE>
-<INCLUDE>telepathy-glib/signalled-message.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>TpSignalledMessage</TITLE>
 TpSignalledMessage
 tp_signalled_message_get_sender
@@ -5406,7 +5402,7 @@ tp_file_transfer_channel_get_feature_quark_core
 <SECTION>
 <FILE>cli-call-channel</FILE>
 <TITLE>cli-call-channel</TITLE>
-<INCLUDE>telepathy-glib/cli-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <SUBSECTION>
 tp_cli_channel_type_call_call_accept
 tp_cli_channel_type_call_call_add_content
@@ -5481,7 +5477,7 @@ tp_call_channel_get_feature_quark_core
 <SECTION>
 <FILE>cli-call-content</FILE>
 <TITLE>cli-call-content</TITLE>
-<INCLUDE>telepathy-glib/cli-call.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <SUBSECTION>
 tp_cli_call_content_call_remove
 tp_cli_call_content_callback_for_remove
@@ -5576,7 +5572,7 @@ tp_call_content_get_feature_quark_core
 <SECTION>
 <FILE>cli-call-stream</FILE>
 <TITLE>cli-call-stream</TITLE>
-<INCLUDE>telepathy-glib/cli-call.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <SUBSECTION>
 tp_cli_call_stream_call_request_receiving
 tp_cli_call_stream_call_set_sending
@@ -5658,7 +5654,7 @@ tp_call_stream_get_feature_quark_core
 <SECTION>
 <FILE>cli-call-misc</FILE>
 <TITLE>cli-call-misc</TITLE>
-<INCLUDE>telepathy-glib/cli-call.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 tp_cli_call_content_media_description_call_accept
 tp_cli_call_content_media_description_call_reject
 tp_cli_call_content_media_description_callback_for_accept
@@ -5757,7 +5753,7 @@ tp_automatic_client_factory_get_type
 <SECTION>
 <FILE>svc-channel-ft-metadata</FILE>
 <TITLE>svc-channel-ft-metadata</TITLE>
-<INCLUDE>telepathy-glib/svc-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 TpSvcChannelInterfaceFileTransferMetadata
 TpSvcChannelInterfaceFileTransferMetadataClass
 <SUBSECTION Standard>

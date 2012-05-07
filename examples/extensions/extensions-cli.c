@@ -2,7 +2,9 @@
 
 #include "extensions.h"
 
-#include <telepathy-glib/connection.h>
+#include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
+
 #include <telepathy-glib/proxy-subclass.h>
 
 static void _example_ext_register_dbus_glib_marshallers (void);

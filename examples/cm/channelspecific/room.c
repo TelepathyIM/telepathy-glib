@@ -13,8 +13,6 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/telepathy-glib-dbus.h>
-#include <telepathy-glib/channel-iface.h>
-#include <telepathy-glib/svc-channel.h>
 
 G_DEFINE_TYPE_WITH_CODE (ExampleCSHRoomChannel,
     example_csh_room_channel,

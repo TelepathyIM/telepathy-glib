@@ -27,8 +27,6 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/telepathy-glib-dbus.h>
-#include <telepathy-glib/handle-repo-dynamic.h>
-#include <telepathy-glib/handle-repo-static.h>
 
 #include "call-manager.h"
 #include "protocol.h"

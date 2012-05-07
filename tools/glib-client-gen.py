@@ -75,6 +75,8 @@ class Generator(object):
 
         self.split_reentrants = opts.get('--split-reentrants', False)
 
+        self.guard = opts.get('--guard', None)
+
     def h(self, s):
         if isinstance(s, unicode):
             s = s.encode('utf-8')
@@ -1249,6 +1251,11 @@ class Generator(object):
 
     def __call__(self):
 
+        if self.guard is not None:
+            self.h('#ifndef %s' % self.guard)
+            self.h('#define %s' % self.guard)
+            self.h('')
+
         self.h('G_BEGIN_DECLS')
         self.h('')
 
@@ -1320,6 +1327,10 @@ class Generator(object):
         self.h('G_END_DECLS')
         self.h('')
 
+        if self.guard is not None:
+            self.h('#endif /* defined (%s) */' % self.guard)
+            self.h('')
+
         if self.split_reentrants:
             file_set_contents(self.basename + '-reentrant-body.h', '\n'.join(self.__reentrant_body))
             file_set_contents(self.basename + '-reentrant.h', '\n'.join(self.__reentrant_header))
@@ -1337,7 +1348,7 @@ if __name__ == '__main__':
                                ['group=', 'subclass=', 'subclass-assert=',
                                 'iface-quark-prefix=', 'tp-proxy-api=',
                                 'generate-reentrant=', 'deprecate-reentrant=',
-                                'deprecation-attribute=',
+                                'deprecation-attribute=', 'guard=',
                                 'split-reentrants='])
 
     opts = {}

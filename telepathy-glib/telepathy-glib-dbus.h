@@ -1,5 +1,5 @@
 /*
- * telepathy-glib-dbus.h - meta-header for parts of the D-Bus API
+ * telepathy-glib-dbus.h - meta-header for all generated code
  *
  * Copyright © 2009-2012 Collabora Ltd. <http://www.collabora.co.uk/>
  *
@@ -18,19 +18,51 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _TP_TELEPATHY_GLIB_DBUS_H
-#define _TP_TELEPATHY_GLIB_DBUS_H
+#ifndef TELEPATHY_GLIB_DBUS_H_INCLUDED
+#define TELEPATHY_GLIB_DBUS_H_INCLUDED
 #define _TP_IN_META_HEADER
 
-#include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/telepathy-glib.h>
+
+/* common */
 #include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
 
-#include <telepathy-glib/cli-channel.h>
-#include <telepathy-glib/cli-connection.h>
-#include <telepathy-glib/cli-misc.h>
+/* client-side */
+#include <telepathy-glib/_gen/tp-cli-account.h>
+#include <telepathy-glib/_gen/tp-cli-account-manager.h>
+#include <telepathy-glib/_gen/tp-cli-call-content.h>
+#include <telepathy-glib/_gen/tp-cli-call-content-media-description.h>
+#include <telepathy-glib/_gen/tp-cli-call-stream-endpoint.h>
+#include <telepathy-glib/_gen/tp-cli-call-stream.h>
+#include <telepathy-glib/_gen/tp-cli-channel-dispatcher.h>
+#include <telepathy-glib/_gen/tp-cli-channel-dispatch-operation.h>
+#include <telepathy-glib/_gen/tp-cli-channel.h>
+#include <telepathy-glib/_gen/tp-cli-channel-request.h>
+#include <telepathy-glib/_gen/tp-cli-client.h>
+#include <telepathy-glib/_gen/tp-cli-connection.h>
+#include <telepathy-glib/_gen/tp-cli-connection-manager.h>
+#include <telepathy-glib/_gen/tp-cli-dbus-daemon.h>
+#include <telepathy-glib/_gen/tp-cli-debug.h>
+#include <telepathy-glib/_gen/tp-cli-generic.h>
+#include <telepathy-glib/_gen/tp-cli-protocol.h>
 
-#include <telepathy-glib/svc-generic.h>
+/* service-side */
+#include <telepathy-glib/svc-account.h>
+#include <telepathy-glib/svc-account-manager.h>
+#include <telepathy-glib/svc-call.h>
+#include <telepathy-glib/svc-channel-dispatcher.h>
+#include <telepathy-glib/svc-channel-dispatch-operation.h>
+#include <telepathy-glib/svc-channel.h>
+#include <telepathy-glib/svc-channel-request.h>
 #include <telepathy-glib/svc-client.h>
+#include <telepathy-glib/svc-connection.h>
+#include <telepathy-glib/svc-connection-manager.h>
+#include <telepathy-glib/svc-debug.h>
+#include <telepathy-glib/svc-generic.h>
+#include <telepathy-glib/svc-properties-interface.h>
+#include <telepathy-glib/svc-protocol.h>
+#include <telepathy-glib/svc-tls.h>
 
-#undef  _TP_IN_META_HEADER
-#endif /* multiple-inclusion */
+#undef _TP_IN_META_HEADER
+#endif

@@ -12,10 +12,7 @@
 #ifndef EXAMPLE_CSH_ROOM_H
 #define EXAMPLE_CSH_ROOM_H
 
-#include <telepathy-glib/base-channel.h>
-#include <telepathy-glib/base-connection.h>
-#include <telepathy-glib/group-mixin.h>
-#include <telepathy-glib/message-mixin.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
 

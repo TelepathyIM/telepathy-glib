@@ -335,8 +335,12 @@ libtelepathy_glib_reentrants_la_SOURCES = \
     reentrants.c \
     reentrants.h
 
-AM_CFLAGS = \
+AM_CPPFLAGS = \
     -DG_LOG_DOMAIN=\"tp-glib\" \
+    -D_TP_COMPILATION \
+    $(NULL)
+
+AM_CFLAGS = \
     $(ERROR_CFLAGS) \
     @DBUS_CFLAGS@ \
     @GLIB_CFLAGS@ \
