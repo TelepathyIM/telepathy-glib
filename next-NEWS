@@ -32,5 +32,17 @@ API/Behaviour changes
    features must be added explicitly by the user using
    tp_client_factory_add_*_features().
 
- - TpChannel:target-contact and TpChannel:initiator-contact are now prepared
-   as part of TP_CHANNEL_FEATURE_CORE instead of TP_CHANNEL_FEATURE_CONTACTS.
+ - TP_CHANNEL_FEATURE_CONTACTS is removed:
+   * TpChannel:target-contact and TpChannel:initiator-contact are now prepared
+     as part of TP_CHANNEL_FEATURE_CORE;
+   * group TpContacts are now prepared as part of TP_CHANNEL_FEATURE_GROUP.
+
+ - TP_CHANNEL_FEATURE_GROUP is not CORE anymore, so must be request explicitly
+   to introspect Group interface.
+
+ - Some of the Group APIs of TpChannel has been renamed:
+   * tp_channel_group_dup_members_contacts -> tp_channel_group_dup_members;
+   * tp_channel_group_dup_local_pending_contacts -> tp_channel_group_dup_local_pending;
+   * tp_channel_group_get_local_pending_contact_info -> tp_channel_group_get_local_pending_info;
+   * tp_channel_group_dup_remote_pending_contacts -> tp_channel_group_dup_remote_pending;
+   * "group-contacts-changed" -> "group-members-changed".
