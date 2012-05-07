@@ -226,10 +226,7 @@ test_leave_contact_prepared_no_reason (Test *test,
 
   g_assert (tp_proxy_get_invalidated (test->channel_contact) == NULL);
 
-  tp_proxy_prepare_async (test->channel_contact, features,
-      channel_prepared_cb, test);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
+  tp_tests_proxy_run_until_prepared (test->channel_contact, features);
 
   tp_channel_leave_async (test->channel_contact,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
@@ -249,10 +246,7 @@ test_leave_contact_prepared_reason (Test *test,
 
   g_assert (tp_proxy_get_invalidated (test->channel_contact) == NULL);
 
-  tp_proxy_prepare_async (test->channel_contact, features,
-      channel_prepared_cb, test);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
+  tp_tests_proxy_run_until_prepared (test->channel_contact, features);
 
   tp_channel_leave_async (test->channel_contact,
       TP_CHANNEL_GROUP_CHANGE_REASON_BUSY,
@@ -296,8 +290,8 @@ test_leave_room_unprepared_no_reason (Test *test,
   g_assert_no_error (test->error);
 
   g_assert (tp_proxy_get_invalidated (test->channel_room) != NULL);
-  g_assert_cmpuint (test->chan_room_service->removed_handle, !=, 0);
-  g_assert_cmpstr (test->chan_room_service->removed_message, ==, "");
+  g_assert_cmpuint (test->chan_room_service->removed_handle, ==, 0);
+  g_assert_cmpstr (test->chan_room_service->removed_message, ==, NULL);
   g_assert_cmpuint (test->chan_room_service->removed_reason, ==,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 }
@@ -316,21 +310,21 @@ test_leave_room_unprepared_reason (Test *test,
   g_assert_no_error (test->error);
 
   g_assert (tp_proxy_get_invalidated (test->channel_room) != NULL);
-  check_removed (test->chan_room_service);
+  g_assert_cmpuint (test->chan_room_service->removed_handle, ==, 0);
+  g_assert_cmpstr (test->chan_room_service->removed_message, ==, NULL);
+  g_assert_cmpuint (test->chan_room_service->removed_reason, ==,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 }
 
 static void
 test_leave_room_prepared_no_reason (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GQuark features[] = { TP_CHANNEL_FEATURE_CORE, 0 };
+  GQuark features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
 
   g_assert (tp_proxy_get_invalidated (test->channel_room) == NULL);
 
-  tp_proxy_prepare_async (test->channel_room, features,
-      channel_prepared_cb, test);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
+  tp_tests_proxy_run_until_prepared (test->channel_room, features);
 
   tp_channel_leave_async (test->channel_room,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
@@ -350,14 +344,11 @@ static void
 test_leave_room_prepared_reason (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GQuark features[] = { TP_CHANNEL_FEATURE_CORE, 0 };
+  GQuark features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
 
   g_assert (tp_proxy_get_invalidated (test->channel_room) == NULL);
 
-  tp_proxy_prepare_async (test->channel_room, features,
-      channel_prepared_cb, test);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
+  tp_tests_proxy_run_until_prepared (test->channel_room, features);
 
   tp_channel_leave_async (test->channel_room,
       TP_CHANNEL_GROUP_CHANGE_REASON_BUSY,
@@ -561,12 +552,9 @@ static void
 test_join_room (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GQuark features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
+  GQuark features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
 
-  tp_proxy_prepare_async (test->channel_room, features,
-      channel_prepared_cb, test);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
+  tp_tests_proxy_run_until_prepared (test->channel_room, features);
 
   tp_channel_join_async (test->channel_room, "Hello World",
       join_cb, test);

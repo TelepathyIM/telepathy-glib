@@ -1877,10 +1877,10 @@ channel_join_cb (TpChannel *self,
  * You can then call tp_channel_join_finish() to get the result of
  * the operation.
  *
- * Note that unlike tp_channel_leave_async(), %TP_CHANNEL_FEATURE_GROUP feature
- * must be prepared before calling this function.
+ * %TP_CHANNEL_FEATURE_CONTACTS feature must be prepared before calling this
+ * function.
  *
- * Since: 0.15.5
+ * Since: 0.UNRELEASED
  */
 void
 tp_channel_join_async (TpChannel *self,
@@ -1889,16 +1889,18 @@ tp_channel_join_async (TpChannel *self,
     gpointer user_data)
 {
   GSimpleAsyncResult *result;
+  TpHandle self_handle;
   GArray *array;
 
   g_return_if_fail (TP_IS_CHANNEL (self));
-  g_return_if_fail (tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_GROUP));
+  g_return_if_fail (tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_CONTACTS));
 
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_channel_join_async);
 
   array = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 1);
-  g_array_append_val (array, self->priv->group_self_handle);
+  self_handle = tp_contact_get_handle (self->priv->group_self_contact);
+  g_array_append_val (array, self_handle);
 
   tp_cli_channel_interface_group_call_add_members (self, -1, array, message,
       channel_join_cb, result, g_object_unref, NULL);
@@ -1954,9 +1956,6 @@ channel_close_cb (TpChannel *channel,
   g_object_unref (result);
 }
 
-/* This is only called from the main loop, as a result of group_prepared_cb
- * having the same property, so it can complete LeaveCtx.result without
- * an idle. */
 static void
 channel_remove_self_cb (TpChannel *channel,
     const GError *error,
@@ -1980,82 +1979,6 @@ channel_remove_self_cb (TpChannel *channel,
   g_object_unref (result);
 }
 
-typedef struct
-{
-  GSimpleAsyncResult *result;
-  gchar *message;
-  TpChannelGroupChangeReason reason;
-} LeaveCtx;
-
-/* Takes the reference on @result */
-static LeaveCtx *
-leave_ctx_new (GSimpleAsyncResult *result,
-    const gchar *message,
-    TpChannelGroupChangeReason reason)
-{
-  LeaveCtx *ctx = g_slice_new (LeaveCtx);
-
-  ctx->result = result;
-  ctx->message = message != NULL ? g_strdup (message) : g_strdup ("");
-  ctx->reason = reason;
-
-  return ctx;
-}
-
-static void
-leave_ctx_free (LeaveCtx *ctx)
-{
-  g_object_unref (ctx->result);
-  g_free (ctx->message);
-
-  g_slice_free (LeaveCtx, ctx);
-}
-
-/* This is only called from the main loop, so it can safely complete
- * LeaveCtx.result without an idle. */
-static void
-group_prepared_cb (GObject *source,
-    GAsyncResult *res,
-    gpointer user_data)
-{
-  LeaveCtx *ctx = user_data;
-  TpChannel *self = (TpChannel *) source;
-  GError *error = NULL;
-  GArray *handles;
-
-  if (!tp_proxy_prepare_finish (source, res, &error))
-    {
-      DEBUG ("Failed to prepare Group feature; fallback to Close(): %s",
-          error->message);
-
-      g_error_free (error);
-      goto call_close;
-    }
-
-  if (self->priv->group_self_handle == 0)
-    {
-      DEBUG ("We are not in the channel, fallback to Close()");
-      goto call_close;
-    }
-
-  handles = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 1);
-  g_array_append_val (handles, self->priv->group_self_handle);
-
-  tp_cli_channel_interface_group_call_remove_members (
-      self, -1, handles, ctx->message, ctx->reason,
-      channel_remove_self_cb, g_object_ref (ctx->result), NULL, NULL);
-
-  g_array_unref (handles);
-  leave_ctx_free (ctx);
-  return;
-
-call_close:
-  tp_cli_channel_call_close (self, -1, channel_close_cb,
-      g_object_ref (ctx->result), NULL, NULL);
-
-  leave_ctx_free (ctx);
-}
-
 /**
  * tp_channel_leave_async:
  * @self: a #TpChannel
@@ -2065,18 +1988,13 @@ call_close:
  * @user_data: data to pass to @callback
  *
  * Leave channel @self with @reason as reason and @message as leave message.
- * If @self doesn't implement #TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP or if
- * for any reason we can't properly leave the channel, we close it.
+ * If %TP_CHANNEL_FEATURE_CONTACTS feature is not prepared, we close it.
  *
  * When we left the channel, @callback will be called.
  * You can then call tp_channel_leave_finish() to get the result of
  * the operation.
  *
- * Note that unlike tp_channel_join_async(), %TP_CHANNEL_FEATURE_GROUP feature
- * does not have to be prepared and will be prepared for you. But this is a
- * deprecated behaviour.
- *
- * Since: 0.13.10
+ * Since: 0.UNRELEASED
  */
 void
 tp_channel_leave_async (TpChannel *self,
@@ -2086,30 +2004,33 @@ tp_channel_leave_async (TpChannel *self,
     gpointer user_data)
 {
   GSimpleAsyncResult *result;
-  GQuark features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
-  LeaveCtx *ctx;
+  TpHandle self_handle;
+  GArray *handles;
 
   g_return_if_fail (TP_IS_CHANNEL (self));
 
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_channel_leave_async);
 
-  if (tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_CORE) &&
-      !tp_proxy_has_interface_by_id (self,
-        TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP))
+  if (!tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_CONTACTS))
     {
-      DEBUG ("Channel doesn't implement Group; fallback to Close()");
+      DEBUG ("TP_CHANNEL_FEATURE_CONTACTS is not prepared; "
+          "fallback to Close()");
 
       tp_cli_channel_call_close (self, -1, channel_close_cb, result,
           NULL, NULL);
       return;
     }
 
-  /* We need to prepare TP_CHANNEL_FEATURE_GROUP to get
-   * tp_channel_group_get_self_handle() working */
-  ctx = leave_ctx_new (result, message, reason);
+  handles = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 1);
+  self_handle = tp_contact_get_handle (self->priv->group_self_contact);
+  g_array_append_val (handles, self_handle);
 
-  tp_proxy_prepare_async (self, features, group_prepared_cb, ctx);
+  tp_cli_channel_interface_group_call_remove_members (
+      self, -1, handles, message, reason,
+      channel_remove_self_cb, result, NULL, NULL);
+
+  g_array_unref (handles);
 }
 
 /**

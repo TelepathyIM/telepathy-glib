@@ -158,17 +158,6 @@ _TP_DEPRECATED_IN_0_20_FOR (tp_channel_group_get_contact_owner)
 TpHandle tp_channel_group_get_handle_owner (TpChannel *self, TpHandle handle);
 #endif
 
-_TP_AVAILABLE_IN_0_16
-void tp_channel_join_async (TpChannel *self,
-    const gchar *message,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-
-_TP_AVAILABLE_IN_0_16
-gboolean tp_channel_join_finish (TpChannel *self,
-    GAsyncResult *result,
-    GError **error);
-
 #define TP_CHANNEL_FEATURE_CONTACTS \
   tp_channel_get_feature_quark_contacts ()
 _TP_AVAILABLE_IN_0_16
@@ -191,6 +180,17 @@ gboolean tp_channel_group_get_local_pending_contact_info (TpChannel *self,
 _TP_AVAILABLE_IN_0_16
 TpContact *tp_channel_group_get_contact_owner (TpChannel *self,
     TpContact *contact);
+
+_TP_AVAILABLE_IN_0_16
+void tp_channel_join_async (TpChannel *self,
+    const gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+_TP_AVAILABLE_IN_0_16
+gboolean tp_channel_join_finish (TpChannel *self,
+    GAsyncResult *result,
+    GError **error);
 
 #define TP_CHANNEL_FEATURE_CHAT_STATES \
   tp_channel_get_feature_quark_chat_states ()
