@@ -124,6 +124,18 @@ tpginclude_HEADERS = \
     simple-password-manager.h \
     stream-tube-channel.h \
     stream-tube-connection.h \
+    telepathy-glib.h \
+    text-channel.h \
+    util.h \
+    $(NULL)
+
+tpgdbusinclude_HEADERS = \
+    cli-call.h \
+    cli-channel.h \
+    cli-connection.h \
+    cli-misc.h \
+    gtypes.h \
+    interfaces.h \
     svc-account.h \
     svc-account-manager.h \
     svc-call.h \
@@ -139,18 +151,6 @@ tpginclude_HEADERS = \
     svc-properties-interface.h \
     svc-protocol.h \
     svc-tls.h \
-    telepathy-glib.h \
-    text-channel.h \
-    util.h \
-    $(NULL)
-
-tpgdbusinclude_HEADERS = \
-    cli-call.h \
-    cli-channel.h \
-    cli-connection.h \
-    cli-misc.h \
-    gtypes.h \
-    interfaces.h \
     telepathy-glib-dbus.h \
     $(NULL)
 
