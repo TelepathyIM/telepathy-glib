@@ -29,7 +29,6 @@
 #include <telepathy-glib/base-protocol.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/proxy.h>
-#include <telepathy-glib/svc-connection-manager.h>
 
 G_BEGIN_DECLS
 

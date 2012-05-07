@@ -20,6 +20,7 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
+#include <telepathy-glib/svc-connection.h>
 #include <telepathy-glib/util.h>
 
 #include "debug.h"

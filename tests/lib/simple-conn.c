@@ -22,6 +22,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/svc-connection.h>
 #include <telepathy-glib/util.h>
 
 #include "textchan-null.h"

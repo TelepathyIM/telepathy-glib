@@ -28,6 +28,7 @@
 #include <telepathy-glib/handle-repo-dynamic.h>
 #include <telepathy-glib/handle-repo-static.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/svc-connection.h>
 
 #include <telepathy-glib/base-connection-internal.h>
 #include <telepathy-glib/handle-repo-internal.h>
@@ -4201,7 +4202,8 @@ tp_base_contact_list_mixin_download (
 
 /**
  * tp_base_contact_list_mixin_list_iface_init:
- * @klass: the service-side D-Bus interface
+ * @klass: the service-side D-Bus interface,
+ *  a #TpSvcConnectionInterfaceContactListClass
  *
  * Use the #TpBaseContactList like a mixin, to implement the ContactList
  * D-Bus interface.
@@ -4212,8 +4214,7 @@ tp_base_contact_list_mixin_download (
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_mixin_list_iface_init (
-    TpSvcConnectionInterfaceContactListClass *klass)
+tp_base_contact_list_mixin_list_iface_init (gpointer klass)
 {
 #define IMPLEMENT(x) tp_svc_connection_interface_contact_list_implement_##x (\
   klass, tp_base_contact_list_mixin_##x)
@@ -4714,7 +4715,8 @@ tp_base_contact_list_fill_blocking_contact_attributes (GObject *obj,
 
 /**
  * tp_base_contact_list_mixin_groups_iface_init:
- * @klass: the service-side D-Bus interface
+ * @klass: the service-side D-Bus interface,
+ *  a #TpSvcConnectionInterfaceContactGroupsClass
  *
  * Use the #TpBaseContactList like a mixin, to implement the ContactGroups
  * D-Bus interface.
@@ -4725,8 +4727,7 @@ tp_base_contact_list_fill_blocking_contact_attributes (GObject *obj,
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_mixin_groups_iface_init (
-    TpSvcConnectionInterfaceContactGroupsClass *klass)
+tp_base_contact_list_mixin_groups_iface_init (gpointer klass)
 {
 #define IMPLEMENT(x) tp_svc_connection_interface_contact_groups_implement_##x (\
   klass, tp_base_contact_list_mixin_##x)
@@ -4878,7 +4879,8 @@ tp_base_contact_list_mixin_unblock_contacts (
 
 /**
  * tp_base_contact_list_mixin_blocking_iface_init:
- * @klass: the service-side D-Bus interface
+ * @klass: the service-side D-Bus interface,
+ *  a #TpSvcConnectionInterfaceContactBlockingClass
  *
  * Use the #TpBaseContactList like a mixin, to implement the ContactBlocking
  * D-Bus interface.
@@ -4889,8 +4891,7 @@ tp_base_contact_list_mixin_unblock_contacts (
  * Since: 0.15.1
  */
 void
-tp_base_contact_list_mixin_blocking_iface_init (
-    TpSvcConnectionInterfaceContactBlockingClass *klass)
+tp_base_contact_list_mixin_blocking_iface_init (gpointer klass)
 {
 #define IMPLEMENT(x) tp_svc_connection_interface_contact_blocking_implement_##x (\
   klass, tp_base_contact_list_mixin_##x)

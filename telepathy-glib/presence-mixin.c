@@ -258,6 +258,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/contacts-mixin.h>
+#include <telepathy-glib/svc-connection.h>
 
 #define DEBUG_FLAG TP_DEBUG_PRESENCE
 

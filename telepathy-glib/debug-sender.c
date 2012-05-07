@@ -26,6 +26,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/svc-debug.h>
 #include <telepathy-glib/svc-generic.h>
 
 /**

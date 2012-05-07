@@ -21,7 +21,6 @@
 #ifndef __TP_CONTACTS_MIXIN_H__
 #define __TP_CONTACTS_MIXIN_H__
 
-#include <telepathy-glib/svc-connection.h>
 #include <telepathy-glib/handle-repo.h>
 
 #include "util.h"

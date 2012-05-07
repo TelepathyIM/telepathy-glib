@@ -23,7 +23,6 @@
 
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/handle.h>
-#include <telepathy-glib/svc-connection.h>
 #include "util.h"
 
 G_BEGIN_DECLS

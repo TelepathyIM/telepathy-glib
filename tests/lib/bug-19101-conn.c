@@ -14,6 +14,7 @@
 #include "bug-19101-conn.h"
 
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/svc-connection.h>
 
 #include "debug.h"
 

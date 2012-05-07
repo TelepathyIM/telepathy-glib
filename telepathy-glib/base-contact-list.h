@@ -26,7 +26,6 @@
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/handle-repo.h>
-#include <telepathy-glib/svc-connection.h>
 
 G_BEGIN_DECLS
 
@@ -585,13 +584,10 @@ struct _TpMutableContactGroupListInterface {
 void tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls);
 void tp_base_contact_list_mixin_register_with_contacts_mixin (
     TpBaseContactList *self, TpBaseConnection *conn);
-void tp_base_contact_list_mixin_list_iface_init (
-    TpSvcConnectionInterfaceContactListClass *klass);
-void tp_base_contact_list_mixin_groups_iface_init (
-    TpSvcConnectionInterfaceContactGroupsClass *klass);
+void tp_base_contact_list_mixin_list_iface_init (gpointer klass);
+void tp_base_contact_list_mixin_groups_iface_init (gpointer klass);
 _TP_AVAILABLE_IN_0_16
-void tp_base_contact_list_mixin_blocking_iface_init (
-    TpSvcConnectionInterfaceContactBlockingClass *klass);
+void tp_base_contact_list_mixin_blocking_iface_init (gpointer klass);
 
 G_END_DECLS
 

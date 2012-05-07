@@ -14,6 +14,7 @@
 #include <telepathy-glib/cli-channel.h>
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/message-mixin.h>
+#include <telepathy-glib/svc-channel.h>
 
 #include "examples/cm/echo-message-parts/chan.h"
 

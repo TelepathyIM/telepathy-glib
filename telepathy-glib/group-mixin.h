@@ -25,7 +25,6 @@
 
 #include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/handle-repo.h>
-#include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/util.h>
 
 G_BEGIN_DECLS
