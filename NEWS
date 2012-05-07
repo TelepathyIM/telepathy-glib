@@ -7,6 +7,10 @@ Dependencies:
 
 Deprecations:
 
+• Deprecations are now versioned. telepathy-glib users can define
+  TP_VERSION_MIN_REQUIRED and/or TP_VERSION_MAX_ALLOWED, which work like the
+  corresponding macros in GLib 2.32.
+
 • All TpChannel APIs using contact TpHandle have been deprecated in favor of
   their TpContact variants. Note that replacement APIs are only guaranteed to
   work with Connection Managers implementing spec >= 0.23.4. Any CMs using
@@ -15,7 +19,23 @@ Deprecations:
 
 • TpTextMixin is (officially) deprecated, use TpMessageMixin.
 
+• TpIntsetIter is deprecated, use TpIntsetFastIter. The typedefs
+  TpIntSetIter and TpIntSetFastIter are also deprecated.
+
+• TP_ERRORS has officially been deprecated since 0.11; it now produces
+  deprecation warnings too.
+
 Enhancements:
+
+• <telepathy-glib/telepathy-glib.h> now includes all non-generated code
+  except proxy-subclass.h. Please use it instead of individual headers -
+  direct inclusion of most individual headers will become an error in
+  future versions, as was done for GLib. (Simon)
+
+• A new meta-header, <telepathy-glib/telepathy-glib-dbus.h>, now includes
+  all generated code. Please include it in any file that uses tp_svc_*,
+  tp_cli_*, TP_IFACE_*, TP_HASH_TYPE_*, TP_STRUCT_TYPE_* or TP_ARRAY_TYPE_*.
+  In telepathy-glib 1.0, it will become a separate pkg-config module.
 
 • Replace --disable-coding-style-checks and --disable-doc-checks with
   --disable-fatal-warnings. In addition to what the removed options did,
@@ -36,8 +56,9 @@ Enhancements:
 
 • Add tp_connection_dup_detailed_error_vardict(),
   tp_base_connection_disconnect_with_dbus_error_vardict(),
-  tp_connection_manager_param_dup_default_variant() which use/return GVariants
-  instead of dbus-glib parameterized types (Simon)
+  tp_connection_manager_param_dup_default_variant(),
+  tp_capabilities_dup_channel_classes_variant() which use/return GVariants
+  instead of dbus-glib parameterized types (Simon, Guillaume)
 
 • Add a simple PyGtk3 dialler to the examples, and optionally install
   the Python examples as well as the C ones (fd.o #48504, Simon)
