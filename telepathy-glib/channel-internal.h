@@ -98,7 +98,7 @@ void _tp_channel_abort_introspection (TpChannel *self,
     const gchar *debug,
     const GError *error);
 
-/* channel-contacts.c internals */
+/* channel-group.c internals */
 
 void _tp_channel_group_prepare_async (TpProxy *proxy,
     const TpProxyFeature *feature,

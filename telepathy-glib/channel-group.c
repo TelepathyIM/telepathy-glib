@@ -1,5 +1,5 @@
 /*
- * channel-contacts.c - proxy for a Telepathy channel (contacts feature)
+ * channel-group.c - proxy for a Telepathy channel (GROUP feature)
  *
  * Copyright (C) 2011 Collabora Ltd. <http://www.collabora.co.uk/>
  *

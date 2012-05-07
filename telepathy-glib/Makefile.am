@@ -244,7 +244,7 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     call-stream.c \
     call-stream-endpoint.c \
     channel.c \
-    channel-contacts.c \
+    channel-group.c \
     channel-internal.h \
     channel-dispatcher.c \
     channel-dispatch-operation.c \

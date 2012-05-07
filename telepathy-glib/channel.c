@@ -154,7 +154,7 @@ tp_channel_get_feature_quark_core (void)
  * Channel have been retrieved and are available for use, and
  * change-notification has been set up for those that can change:
  *
- * - the initial value of the #TpChannel:group-self-handle property will
+ * - the initial value of the #TpChannel:group-self-contact property will
  *   have been fetched and change notification will have been set up
  * - the initial value of the #TpChannel:group-flags property will
  *   have been fetched and change notification will have been set up
