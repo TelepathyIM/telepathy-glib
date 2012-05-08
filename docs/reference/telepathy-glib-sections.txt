@@ -4975,6 +4975,11 @@ tp_contact_get_contact_groups
 tp_contact_set_contact_groups_async
 tp_contact_set_contact_groups_finish
 tp_contact_has_feature
+
+<SUBSECTION>
+tp_connection_dup_contact_by_id_async
+tp_connection_dup_contact_by_id_finish
+
 <SUBSECTION operations>
 tp_contact_request_subscription_async
 tp_contact_request_subscription_finish

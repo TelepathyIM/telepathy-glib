@@ -169,6 +169,18 @@ void tp_connection_get_contacts_by_id (TpConnection *self,
 TpContact *tp_connection_dup_contact_if_possible (TpConnection *connection,
     TpHandle handle, const gchar *identifier);
 
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_connection_dup_contact_by_id_async (TpConnection *self,
+    const gchar *id,
+    guint n_features,
+    const TpContactFeature *features,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+_TP_AVAILABLE_IN_UNRELEASED
+TpContact *tp_connection_dup_contact_by_id_finish (TpConnection *self,
+    GAsyncResult *result,
+    GError **error);
+
 /* TP_CONTACT_FEATURE_CONTACT_BLOCKING */
 
 _TP_AVAILABLE_IN_0_18
