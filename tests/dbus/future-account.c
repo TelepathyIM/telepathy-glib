@@ -202,7 +202,6 @@ test_properties (Test *test,
   gboolean found;
   const gchar *s;
   gboolean b;
-  const gchar * const *ao;
   GVariant *v;
 
   test->account = tp_future_account_new (test->account_manager,
@@ -326,9 +325,8 @@ test_properties (Test *test,
       "/science/yeah/woo");
   g_assert (supersedes[1] == NULL);
 
-  found = g_variant_lookup (props, TP_PROP_ACCOUNT_SUPERSEDES, "^a&o", &ao);
+  found = g_variant_lookup (props, TP_PROP_ACCOUNT_SUPERSEDES, "^a&o", NULL);
   g_assert (found);
-  g_assert (ao != NULL);
 
   g_strfreev (supersedes);
   g_variant_unref (props);
