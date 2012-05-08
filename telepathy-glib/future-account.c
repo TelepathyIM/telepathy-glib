@@ -376,6 +376,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    * TpFutureAccount:account-manager:
    *
    * The #TpAccountManager to create the account on.
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_ACCOUNT_MANAGER,
       g_param_spec_object ("account-manager",
@@ -388,6 +390,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    * TpFutureAccount:connection-manager:
    *
    * The account's connection manager name.
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_CONNECTION_MANAGER,
       g_param_spec_string ("connection-manager",
@@ -402,6 +406,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    * The account's machine-readable protocol name, such as "jabber", "msn" or
    * "local-xmpp". Recommended names for most protocols can be found in the
    * Telepathy D-Bus Interface Specification.
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_PROTOCOL,
       g_param_spec_string ("protocol",
@@ -415,6 +421,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    *
    * The account's display name. To change this property use
    * tp_future_account_set_display_name().
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_DISPLAY_NAME,
       g_param_spec_string ("display-name",
@@ -428,6 +436,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    *
    * The account's connection parameters. To add a parameter, use
    * tp_future_account_set_parameter() or another convience function.
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_PARAMETERS,
       g_param_spec_variant ("parameters",
@@ -440,6 +450,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    * TpFutureAccount:properties:
    *
    * The account's properties.
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_PROPERTIES,
       g_param_spec_variant ("properties",
@@ -453,6 +465,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    *
    * The account's icon name. To change this propery, use
    * tp_future_account_set_icon_name().
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_ICON_NAME,
       g_param_spec_string ("icon-name",
@@ -466,6 +480,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    *
    * The account's nickname. To change this property use
    * tp_future_account_set_nickname().
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_NICKNAME,
       g_param_spec_string ("nickname",
@@ -480,6 +496,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    * The account's requested presence type (a
    * #TpConnectionPresenceType). To change this property use
    * tp_future_account_set_requested_presence().
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_REQUESTED_PRESENCE_TYPE,
       g_param_spec_uint ("requested-presence-type",
@@ -495,6 +513,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    *
    * The requested Status string of the account. To change this
    * property use tp_future_account_set_requested_presence().
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_REQUESTED_STATUS,
       g_param_spec_string ("requested-status",
@@ -508,6 +528,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    *
    * The requested status message message of the account. To change
    * this property use tp_future_account_set_requested_presence().
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_REQUESTED_STATUS_MESSAGE,
       g_param_spec_string ("requested-status-message",
@@ -527,6 +549,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    * make a channel request or because network connectivity becomes
    * available, the automatic presence type, status and message will
    * be copied to their "requested" counterparts.
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_AUTOMATIC_PRESENCE_TYPE,
       g_param_spec_uint ("automatic-presence-type",
@@ -543,6 +567,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    * The string status name to use in conjunction with the
    * #TpFutureAccount:automatic-presence-type. To change this property
    * use tp_future_account_set_automatic_presence().
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_AUTOMATIC_STATUS,
       g_param_spec_string ("automatic-status",
@@ -557,6 +583,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    * The user-defined message to use in conjunction with the
    * #TpAccount:automatic-presence-type. To change this property use
    * tp_future_account_set_automatic_presence().
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_AUTOMATIC_STATUS_MESSAGE,
       g_param_spec_string ("automatic-status-message",
@@ -570,6 +598,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    *
    * Whether the account is enabled or not. To change this property
    * use tp_future_account_set_enabled().
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_ENABLED,
       g_param_spec_boolean ("enabled",
@@ -583,6 +613,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    *
    * Whether the account should connect automatically or not. To change this
    * property, use tp_future_account_set_connect_automatically().
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_CONNECT_AUTOMATICALLY,
       g_param_spec_boolean ("connect-automatically",
@@ -599,6 +631,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    * account that has been migrated from one connection manager to another.
    *
    * To add to this property use tp_future_account_add_supersedes().
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_SUPERSEDES,
       g_param_spec_boxed ("supersedes",
@@ -613,6 +647,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    * The avatar set on the account. The avatar's mime type can be read
    * in the #TpFutureAccount:avatar-mime-type property. To change this
    * property, use tp_future_account_set_avatar().
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_AVATAR,
       g_param_spec_boxed ("avatar",
@@ -626,6 +662,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
    *
    * The mime type of the #TpFutureAccount:avatar property. To change
    * this property, use tp_future_account_set_avatar().
+   *
+   * Since: 0.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_AVATAR_MIME_TYPE,
       g_param_spec_string ("avatar-mime-type",
@@ -647,6 +685,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
  *
  * Returns: (transfer full): a new reference to a future account
  *   object, or %NULL if any argument is incorrect
+ *
+ * Since: 0.UNRELEASED
  */
 TpFutureAccount *
 tp_future_account_new (TpAccountManager *account_manager,
@@ -676,6 +716,8 @@ tp_future_account_new (TpAccountManager *account_manager,
  *
  * Returns: (transfer full): a new reference to a future account
  *   object, or %NULL if any argument is incorrect
+ *
+ * Since: 0.UNRELEASED
  */
 TpFutureAccount *
 tp_future_account_new_from_protocol (TpAccountManager *account_manager,
@@ -699,6 +741,8 @@ tp_future_account_new_from_protocol (TpAccountManager *account_manager,
  * Set the display name for the new account, @self, to @name. Use the
  * #TpFutureAccount:display-name property to read the current display
  * name.
+ *
+ * Since: 0.UNRELEASED
  */
 void
 tp_future_account_set_display_name (TpFutureAccount *self,
@@ -722,6 +766,8 @@ tp_future_account_set_display_name (TpFutureAccount *self,
  *
  * Set the icon name for the new account, @self, to @icon. Use the
  * #TpFutureAccount:icon-name property to read the current icon name.
+ *
+ * Since: 0.UNRELEASED
  */
 void
 tp_future_account_set_icon_name (TpFutureAccount *self,
@@ -744,6 +790,8 @@ tp_future_account_set_icon_name (TpFutureAccount *self,
  *
  * Set the nickname for the new account, @self, to @nickname. Use the
  * #TpFutureAccount:nickname property to read the current nickname.
+ *
+ * Since: 0.UNRELEASED
  */
 void
 tp_future_account_set_nickname (TpFutureAccount *self,
@@ -772,6 +820,8 @@ tp_future_account_set_nickname (TpFutureAccount *self,
  * #TpFutureAccount:requested-status, and
  * #TpFutureAccount:requested-status-message properties to read the
  * current requested presence.
+ *
+ * Since: 0.UNRELEASED
  */
 void
 tp_future_account_set_requested_presence (TpFutureAccount *self,
@@ -812,6 +862,8 @@ tp_future_account_set_requested_presence (TpFutureAccount *self,
  * #TpFutureAccount:automatic-status, and
  * #TpFutureAccount:automatic-status-message properties to read the
  * current automatic presence.
+ *
+ * Since: 0.UNRELEASED
  */
 void
 tp_future_account_set_automatic_presence (TpFutureAccount *self,
@@ -847,6 +899,8 @@ tp_future_account_set_automatic_presence (TpFutureAccount *self,
  * Set the enabled property of the account on creation to
  * @enabled. Use the #TpFutureAccount:enabled property to read the
  * current enabled value.
+ *
+ * Since: 0.UNRELEASED
  */
 void
 tp_future_account_set_enabled (TpFutureAccount *self,
@@ -871,6 +925,8 @@ tp_future_account_set_enabled (TpFutureAccount *self,
  * the automatic presence. Use the
  * #TpFutureAccount:connect-automatically property to read the current
  * connect automatically value.
+ *
+ * Since: 0.UNRELEASED
  */
 void
 tp_future_account_set_connect_automatically (TpFutureAccount *self,
@@ -897,6 +953,8 @@ tp_future_account_set_connect_automatically (TpFutureAccount *self,
  * this new account will supersede. Use the
  * #TpFutureAccount:supersedes property to read the current list of
  * superseded accounts.
+ *
+ * Since: 0.UNRELEASED
  */
 void
 tp_future_account_add_supersedes (TpFutureAccount *self,
@@ -938,6 +996,8 @@ tp_future_account_add_supersedes (TpFutureAccount *self,
  * Set the avatar of the account @self to @avatar. Use the
  * #TpFutureAccount:avatar and #TpFutureAccount:avatar-mime-type
  * properties to read the current avatar.
+ *
+ * Since: 0.UNRELEASED
  */
 void
 tp_future_account_set_avatar (TpFutureAccount *self,
@@ -983,6 +1043,8 @@ tp_future_account_set_avatar (TpFutureAccount *self,
  * set parameters.
  *
  * Parameters can be unset using tp_future_account_unset_parameter().
+ *
+ * Since: 0.UNRELEASED
  */
 void
 tp_future_account_set_parameter (TpFutureAccount *self,
@@ -1014,6 +1076,8 @@ tp_future_account_set_parameter (TpFutureAccount *self,
  * Unset the account parameter @key which has previously been set
  * using tp_future_account_set_parameter() or another convenience
  * function.
+ *
+ * Since: 0.UNRELEASED
  */
 void
 tp_future_account_unset_parameter (TpFutureAccount *self,
@@ -1037,6 +1101,8 @@ tp_future_account_unset_parameter (TpFutureAccount *self,
  *
  * Convenience function to set an account parameter string value. See
  * tp_future_account_set_parameter() for more details.
+ *
+ * Since: 0.UNRELEASED
  */
 void
 tp_future_account_set_parameter_string (TpFutureAccount *self,
@@ -1135,6 +1201,8 @@ tp_future_account_create_account_cb (TpAccountManager *proxy,
  * the %TP_ACCOUNT_FEATURE_CORE feature ready on it, so when calling
  * tp_future_account_create_account_finish(), one can guarantee this
  * feature.
+ *
+ * Since: 0.UNRELEASED
  */
 void
 tp_future_account_create_account_async (TpFutureAccount *self,
@@ -1191,8 +1259,9 @@ tp_future_account_create_account_async (TpFutureAccount *self,
  * prepared on it.
  *
  * Returns: (transfer full): a new ref to a #TpAccount, or %NULL
+ *
+ * Since: 0.UNRELEASED
  */
-
 TpAccount *
 tp_future_account_create_account_finish (TpFutureAccount *self,
     GAsyncResult *result,
