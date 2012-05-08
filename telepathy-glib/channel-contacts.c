@@ -382,6 +382,10 @@ process_contacts_queue (TpChannel *self)
   features = tp_simple_client_factory_dup_contact_features (
       tp_proxy_get_factory (self->priv->connection), self->priv->connection);
 
+  /* We can't use upgrade_contacts_async() because we need compat with older
+   * CMs. by_id and by_handle are used only by TpTextChannel and are needed for
+   * older CMs that does not give both message-sender and message-sender-id */
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   if (item->contacts != NULL && item->contacts->len > 0)
     {
       g_assert (item->ids == NULL);
@@ -426,6 +430,7 @@ process_contacts_queue (TpChannel *self)
        * without reentering mainloop first. */
       g_idle_add (contacts_queue_item_idle_cb, self);
     }
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   g_array_unref (features);
 }

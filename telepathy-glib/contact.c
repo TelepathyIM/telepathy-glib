@@ -4159,6 +4159,7 @@ contacts_context_remove_common_features (ContactsContext *context)
  * connection managers.
  *
  * Since: 0.7.18
+ * Deprecated: Use tp_simple_client_factory_ensure_contact() instead.
  */
 void
 tp_connection_get_contacts_by_handle (TpConnection *self,
@@ -4280,6 +4281,7 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
  * connection managers.
  *
  * Since: 0.7.18
+ * Deprecated: Use tp_connection_upgrade_contacts_async() instead.
  */
 void
 tp_connection_upgrade_contacts (TpConnection *self,
@@ -4496,6 +4498,7 @@ contacts_requested_handles (TpConnection *connection,
  * connection managers.
  *
  * Since: 0.7.18
+ * Deprecated: Use tp_connection_get_contact_by_id_async() instead.
  */
 void
 tp_connection_get_contacts_by_id (TpConnection *self,

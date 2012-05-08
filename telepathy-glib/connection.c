@@ -868,10 +868,12 @@ get_self_contact (TpConnection *self)
    * require immortal-handles and spec change to give the self identifier. */
   /* This relies on the special case in tp_connection_get_contacts_by_handle()
    * which makes it start working slightly early. */
+   G_GNUC_BEGIN_IGNORE_DEPRECATIONS
    tp_connection_get_contacts_by_handle (self,
        1, &self->priv->last_known_self_handle,
       features->len, (TpContactFeature *) features->data,
       tp_connection_got_self_contact_cb, NULL, NULL, NULL);
+   G_GNUC_END_IGNORE_DEPRECATIONS
 
   g_array_unref (features);
 }
