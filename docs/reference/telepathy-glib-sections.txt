@@ -4979,6 +4979,8 @@ tp_contact_has_feature
 <SUBSECTION>
 tp_connection_dup_contact_by_id_async
 tp_connection_dup_contact_by_id_finish
+tp_connection_upgrade_contacts_async
+tp_connection_upgrade_contacts_finish
 
 <SUBSECTION operations>
 tp_contact_request_subscription_async

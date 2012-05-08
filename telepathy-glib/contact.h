@@ -181,6 +181,20 @@ TpContact *tp_connection_dup_contact_by_id_finish (TpConnection *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_connection_upgrade_contacts_async (TpConnection *self,
+    guint n_contacts,
+    TpContact * const *contacts,
+    guint n_features,
+    const TpContactFeature *features,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+_TP_AVAILABLE_IN_UNRELEASED
+gboolean tp_connection_upgrade_contacts_finish (TpConnection *self,
+    GAsyncResult *result,
+    GPtrArray **contacts,
+    GError **error);
+
 /* TP_CONTACT_FEATURE_CONTACT_BLOCKING */
 
 _TP_AVAILABLE_IN_0_18
