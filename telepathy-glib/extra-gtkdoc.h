@@ -350,7 +350,7 @@
  * @title: Version information
  * @short_description: Checking the telepathy-glib version
  *
- * Since 0.UNRELEASED, telepathy-glib provides version information similar
+ * Since 0.19.0, telepathy-glib provides version information similar
  * to that used in GLib.
  *
  * Typical usage from configure.ac is similar to GLib's:
@@ -372,7 +372,7 @@
  *     ${TP_CFLAGS} ${TP_LIBS}
  * ]|
  *
- * This functionality was added in telepathy-glib 0.UNRELEASED, but it
+ * This functionality was added in telepathy-glib 0.19.0, but it
  * is safe to define the TP_VERSION_MIN_REQUIRED and TP_VERSION_MAX_ALLOWED
  * macros even for older versions of telepathy-glib, as long as you do
  * not try to expand them.

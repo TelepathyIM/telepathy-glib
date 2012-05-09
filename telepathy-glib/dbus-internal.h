@@ -40,6 +40,8 @@ GVariant * _tp_boxed_to_variant (GType gtype,
     const gchar *variant_type,
     gpointer boxed);
 
+GHashTable * _tp_asv_from_vardict (GVariant *variant);
+
 G_END_DECLS
 
 #endif /* __TP_INTERNAL_DBUS_GLIB_H__ */

@@ -42,7 +42,7 @@
  *
  * Data structure representing a #TpRoomInfo.
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 
 /**
@@ -50,7 +50,7 @@
  *
  * The class of a #TpRoomInfo.
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 
 G_DEFINE_TYPE (TpRoomInfo, tp_room_info, G_TYPE_OBJECT)
@@ -127,7 +127,7 @@ _tp_room_info_new (GValueArray *dbus_struct)
  *
  * Returns: the #TpHandle of the room
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 TpHandle
 tp_room_info_get_handle (TpRoomInfo *self)
@@ -144,7 +144,7 @@ tp_room_info_get_handle (TpRoomInfo *self)
  * Returns: a string representing the D-Bus interface name of
  * the channel type of the room
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 const gchar *
 tp_room_info_get_channel_type (TpRoomInfo *self)
@@ -161,7 +161,7 @@ tp_room_info_get_channel_type (TpRoomInfo *self)
  * Returns: the identifier of the room (as would be returned
  * by inspecting the #TpHandle returned by tp_room_info_get_handle())
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 const gchar *
 tp_room_info_get_handle_name (TpRoomInfo *self)
@@ -178,7 +178,7 @@ tp_room_info_get_handle_name (TpRoomInfo *self)
  * Returns: the human-readable name of the room if different
  * from the handle
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 const gchar *
 tp_room_info_get_name (TpRoomInfo *self)
@@ -194,7 +194,7 @@ tp_room_info_get_name (TpRoomInfo *self)
  *
  * Returns: a description of the room's overall purpose
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 const gchar *
 tp_room_info_get_description (TpRoomInfo *self)
@@ -210,7 +210,7 @@ tp_room_info_get_description (TpRoomInfo *self)
  *
  * Returns: the current subject of conversation in the room
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 const gchar *
 tp_room_info_get_subject (TpRoomInfo *self)
@@ -228,7 +228,7 @@ tp_room_info_get_subject (TpRoomInfo *self)
  *
  * Returns: the number of members in the room
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 guint
 tp_room_info_get_members_count (TpRoomInfo *self,
@@ -247,7 +247,7 @@ tp_room_info_get_members_count (TpRoomInfo *self,
  *
  * Returns: %TRUE if the room requires a password to enter
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 gboolean
 tp_room_info_get_requires_password (TpRoomInfo *self,
@@ -266,7 +266,7 @@ tp_room_info_get_requires_password (TpRoomInfo *self,
  *
  * Returns: %TRUE if you cannot join the room, but must be invited
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 gboolean
 tp_room_info_get_invite_only (TpRoomInfo *self,
@@ -283,7 +283,7 @@ tp_room_info_get_invite_only (TpRoomInfo *self,
  *
  * Returns: the human-readable identifier of the room
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 const gchar *
 tp_room_info_get_room_id (TpRoomInfo *self)
@@ -299,7 +299,7 @@ tp_room_info_get_room_id (TpRoomInfo *self)
  *
  * Returns: the DNS name of the server hosting the room
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 const gchar *
 tp_room_info_get_server (TpRoomInfo *self)

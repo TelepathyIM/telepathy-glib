@@ -227,6 +227,7 @@
 #include <telepathy-glib/contacts-mixin.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/dbus-internal.h>
 #include <telepathy-glib/exportable-channel.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
@@ -1893,29 +1894,25 @@ tp_base_connection_disconnect_with_dbus_error_vardict (TpBaseConnection *self,
     GVariant *details,
     TpConnectionStatusReason reason)
 {
-  GValue value = G_VALUE_INIT;
+  GHashTable *hash;
 
   g_return_if_fail (TP_IS_BASE_CONNECTION (self));
   g_return_if_fail (tp_dbus_check_valid_interface_name (error_name, NULL));
-  g_return_if_fail (g_variant_is_of_type (details, G_VARIANT_TYPE_VARDICT));
 
   if (details == NULL)
     {
-      g_value_init (&value, TP_HASH_TYPE_STRING_VARIANT_MAP);
-      g_value_take_boxed (&value, g_hash_table_new (g_str_hash, g_str_equal));
+      hash = g_hash_table_new (g_str_hash, g_str_equal);
     }
   else
     {
-      dbus_g_value_parse_g_variant (details, &value);
-      g_assert (G_VALUE_TYPE (&value) == TP_HASH_TYPE_STRING_VARIANT_MAP);
+      hash = _tp_asv_from_vardict (details);
     }
 
-  tp_svc_connection_emit_connection_error (self, error_name,
-      g_value_get_boxed (&value));
+  tp_svc_connection_emit_connection_error (self, error_name, hash);
   tp_base_connection_change_status (self, TP_CONNECTION_STATUS_DISCONNECTED,
       reason);
 
-  g_value_unset (&value);
+  g_hash_table_unref (hash);
 }
 
 /**

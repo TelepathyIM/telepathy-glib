@@ -477,24 +477,19 @@ tp_tests_connection_assert_disconnect_succeeds (TpConnection *connection)
 }
 
 static void
-one_contact_cb (TpConnection *connection,
-    guint n_contacts,
-    TpContact * const *contacts,
-    const gchar * const *good_ids,
-    GHashTable *bad_ids,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
+one_contact_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
 {
+  TpConnection *connection = (TpConnection *) object;
   TpContact **contact_loc = user_data;
+  GError *error = NULL;
+
+  *contact_loc = tp_connection_dup_contact_by_id_finish (connection, result,
+      &error);
 
   g_assert_no_error (error);
-  g_assert_cmpuint (g_hash_table_size (bad_ids), ==, 0);
-  g_assert_cmpuint (n_contacts, ==, 1);
-  g_assert_cmpstr (good_ids[0], !=, NULL);
-  g_assert (contacts[0] != NULL);
-
-  *contact_loc = g_object_ref (contacts[0]);
+  g_assert (TP_IS_CONTACT (*contact_loc));
 }
 
 TpContact *
@@ -504,8 +499,8 @@ tp_tests_connection_run_until_contact_by_id (TpConnection *connection,
 {
   TpContact *contact = NULL;
 
-  tp_connection_get_contacts_by_id (connection, 1, &id, features,
-      one_contact_cb, &contact, NULL, NULL);
+  tp_connection_dup_contact_by_id_async (connection, id, features,
+      one_contact_cb, &contact);
 
   while (contact == NULL)
     g_main_context_iteration (NULL, TRUE);

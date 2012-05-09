@@ -116,7 +116,7 @@ tp_contact_get_feature_quark_alias (void)
  * retrieved.  In particular, the #TpContact:avatar-token property has
  * been set.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 
 GQuark
@@ -419,7 +419,7 @@ struct _TpContactPrivate {
  *  (it must be referenced with g_object_ref if it must remain valid
  *  longer than the contact)
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 TpAccount *
 tp_contact_get_account (TpContact *self)
@@ -3606,6 +3606,7 @@ contacts_context_remove_common_features (ContactsContext *context)
  * connection managers.
  *
  * Since: 0.7.18
+ * Deprecated: Use tp_client_factory_ensure_contact() instead.
  */
 void
 tp_connection_get_contacts_by_handle (TpConnection *self,
@@ -3686,6 +3687,7 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
  * connection managers.
  *
  * Since: 0.7.18
+ * Deprecated: Use tp_connection_upgrade_contacts_async() instead.
  */
 void
 tp_connection_upgrade_contacts (TpConnection *self,
@@ -3889,6 +3891,7 @@ contacts_requested_handles (TpConnection *connection,
  * connection managers.
  *
  * Since: 0.7.18
+ * Deprecated: Use tp_connection_get_contact_by_id_async() instead.
  */
 void
 tp_connection_get_contacts_by_id (TpConnection *self,
@@ -3939,6 +3942,298 @@ tp_connection_get_contacts_by_id (TpConnection *self,
       (const gchar * const *) context->request_ids->pdata,
       contacts_requested_handles, context, contacts_context_unref,
       weak_object);
+}
+
+typedef struct
+{
+  GSimpleAsyncResult *result;
+  ContactFeatureFlags features;
+} ContactsAsyncData;
+
+static ContactsAsyncData *
+contacts_async_data_new (GSimpleAsyncResult *result,
+    ContactFeatureFlags features)
+{
+  ContactsAsyncData *data;
+
+  data = g_slice_new0 (ContactsAsyncData);
+  data->result = g_object_ref (result);
+  data->features = features;
+
+  return data;
+}
+
+static void
+contacts_async_data_free (ContactsAsyncData *data)
+{
+  g_object_unref (data->result);
+  g_slice_free (ContactsAsyncData, data);
+}
+
+static void
+got_contact_by_id_cb (TpConnection *self,
+    TpHandle handle,
+    GHashTable *attributes,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  ContactsAsyncData *data = user_data;
+  TpContact *contact;
+  GError *e = NULL;
+
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (data->result, error);
+      g_simple_async_result_complete (data->result);
+      return;
+    }
+
+  /* set up the contact with its attributes */
+  contact = tp_contact_ensure (self, handle);
+  g_simple_async_result_set_op_res_gpointer (data->result,
+      contact, g_object_unref);
+
+  if (!tp_contact_set_attributes (contact, attributes, data->features, &e))
+    g_simple_async_result_take_error (data->result, e);
+
+  g_simple_async_result_complete (data->result);
+}
+
+/**
+ * tp_connection_dup_contact_by_id_async:
+ * @self: A connection, which must have the %TP_CONNECTION_FEATURE_CONNECTED
+ *  feature prepared
+ * @id: A strings representing the desired contact by its
+ *  identifier in the IM protocol (an XMPP JID, SIP URI, MSN Passport,
+ *  AOL screen-name etc.)
+ * @features: (transfer-none) (array zero-terminated=1) (allow-none)
+ *  (element-type GLib.Quark): An array of features that must be ready for
+ * @callback: A user callback to call when the contact is ready
+ * @user_data: Data to pass to the callback
+ *
+ * Create a #TpContact object and make any asynchronous method calls necessary
+ * to ensure that all the features specified in @features are ready for use
+ * (if they are supported at all).
+ *
+ * It is not an error to put features in @features even if the connection
+ * manager doesn't support them - users of this method should have a static
+ * list of features they would like to use if possible, and use it for all
+ * connection managers.
+ *
+ * Since: 0.19.0
+ */
+void
+tp_connection_dup_contact_by_id_async (TpConnection *self,
+    const gchar *id,
+    const GQuark *features,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  ContactsAsyncData *data;
+  GSimpleAsyncResult *result;
+  ContactFeatureFlags feature_flags = 0;
+  const gchar **supported_interfaces;
+
+  g_return_if_fail (tp_proxy_is_prepared (self,
+        TP_CONNECTION_FEATURE_CONNECTED));
+  g_return_if_fail (id != NULL);
+
+  if (features == NULL)
+    features = no_quarks;
+
+  if (!get_feature_flags (features, &feature_flags))
+    return;
+
+  supported_interfaces = contacts_bind_to_signals (self, feature_flags);
+
+  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
+      tp_connection_dup_contact_by_id_async);
+
+  data = contacts_async_data_new (result, feature_flags);
+  tp_cli_connection_interface_contacts_call_get_contact_by_id (self, -1,
+      id, supported_interfaces, got_contact_by_id_cb,
+      data, (GDestroyNotify) contacts_async_data_free, NULL);
+
+  g_free (supported_interfaces);
+  g_object_unref (result);
+}
+
+/**
+ * tp_connection_dup_contact_by_id_finish:
+ * @self: a #TpConnection
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_connection_get_contact_by_id_async().
+ *
+ * Returns: (transfer full): a #TpContact or %NULL on error.
+ * Since: 0.19.0
+ */
+TpContact *
+tp_connection_dup_contact_by_id_finish (TpConnection *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_return_copy_pointer (self,
+      tp_connection_dup_contact_by_id_async, g_object_ref);
+}
+
+static void
+got_contact_attributes_cb (TpConnection *self,
+    GHashTable *attributes,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  ContactsAsyncData *data = user_data;
+  GHashTableIter iter;
+  gpointer key, value;
+
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (data->result, error);
+      g_simple_async_result_complete (data->result);
+      return;
+    }
+
+  g_hash_table_iter_init (&iter, attributes);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      TpHandle handle = GPOINTER_TO_UINT (key);
+      GHashTable *asv = value;
+      TpContact *contact;
+
+      /* set up the contact with its attributes */
+      contact = tp_contact_ensure (self, handle);
+      tp_contact_set_attributes (contact, asv, data->features, NULL);
+      g_object_unref (contact);
+    }
+
+  g_simple_async_result_complete (data->result);
+}
+
+/**
+ * tp_connection_upgrade_contacts_async:
+ * @self: A connection, which must have the %TP_CONNECTION_FEATURE_CONNECTED
+ *  feature prepared
+ * @n_contacts: The number of contacts in @contacts (must be at least 1)
+ * @contacts: (array length=n_contacts): An array of #TpContact objects
+ *  associated with @self
+ * @features: (transfer-none) (array zero-terminated=1) (allow-none)
+ *  (element-type GLib.Quark): An array of features that must be ready for
+ * @callback: A user callback to call when the contacts are ready
+ * @user_data: Data to pass to the callback
+ *
+ * Given several #TpContact objects, make asynchronous method calls
+ * ensure that all the features specified in @features are ready for use
+ * (if they are supported at all).
+ *
+ * It is not an error to put features in @features even if the connection
+ * manager doesn't support them - users of this method should have a static
+ * list of features they would like to use if possible, and use it for all
+ * connection managers.
+ *
+ * Since: 0.19.0
+ */
+void
+tp_connection_upgrade_contacts_async (TpConnection *self,
+    guint n_contacts,
+    TpContact * const *contacts,
+    const GQuark *features,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  ContactsAsyncData *data;
+  GSimpleAsyncResult *result;
+  ContactFeatureFlags feature_flags = 0;
+  guint minimal_feature_flags = G_MAXUINT;
+  const gchar **supported_interfaces;
+  GPtrArray *contacts_array;
+  GArray *handles;
+  guint i;
+
+  g_return_if_fail (tp_proxy_is_prepared (self,
+        TP_CONNECTION_FEATURE_CONNECTED));
+  g_return_if_fail (n_contacts >= 1);
+  g_return_if_fail (contacts != NULL);
+
+  for (i = 0; i < n_contacts; i++)
+    {
+      g_return_if_fail (contacts[i]->priv->connection == self);
+      g_return_if_fail (contacts[i]->priv->identifier != NULL);
+    }
+
+  if (features == NULL)
+    features = no_quarks;
+
+  if (!get_feature_flags (features, &feature_flags))
+    return;
+
+  handles = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n_contacts);
+  contacts_array = g_ptr_array_new_full (n_contacts, g_object_unref);
+  for (i = 0; i < n_contacts; i++)
+    {
+      /* feature flags that all contacts have */
+      minimal_feature_flags &= contacts[i]->priv->has_features;
+
+      /* Keep handles of contacts that does not already have all features */
+      if ((feature_flags & (~contacts[i]->priv->has_features)) != 0)
+        g_array_append_val (handles, contacts[i]->priv->handle);
+
+      /* Keep a ref on all contacts to ensure they do not disappear
+       * while upgrading them */
+      g_ptr_array_add (contacts_array, g_object_ref (contacts[i]));
+    }
+
+  /* Remove features that all contacts have */
+  feature_flags &= (~minimal_feature_flags);
+
+  supported_interfaces = contacts_bind_to_signals (self, feature_flags);
+
+  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
+      tp_connection_upgrade_contacts_async);
+  g_simple_async_result_set_op_res_gpointer (result, contacts_array,
+      (GDestroyNotify) g_ptr_array_unref);
+
+  if (handles->len > 0 && supported_interfaces[0] != NULL)
+    {
+      data = contacts_async_data_new (result, feature_flags);
+      tp_cli_connection_interface_contacts_call_get_contact_attributes (self,
+          -1, handles, supported_interfaces, got_contact_attributes_cb,
+          data, (GDestroyNotify) contacts_async_data_free, NULL);
+    }
+  else
+    {
+      g_simple_async_result_complete_in_idle (result);
+    }
+
+  g_free (supported_interfaces);
+  g_object_unref (result);
+  g_array_unref (handles);
+}
+
+/**
+ * tp_connection_upgrade_contacts_finish:
+ * @self: a #TpConnection
+ * @result: a #GAsyncResult
+ * @contacts: (element-type TelepathyGLib.Contact) (transfer container) (out) (allow-none):
+ *  a location to set a #GPtrArray of upgraded #TpContact, or %NULL.
+ * @error: a #GError to fill
+ *
+ * Finishes tp_connection_upgrade_contacts_async().
+ *
+ * Returns: %TRUE on success, %FALSE otherwise.
+ * Since: 0.19.0
+ */
+gboolean
+tp_connection_upgrade_contacts_finish (TpConnection *self,
+    GAsyncResult *result,
+    GPtrArray **contacts,
+    GError **error)
+{
+  _tp_implement_finish_copy_pointer (self,
+      tp_connection_upgrade_contacts_async, g_ptr_array_ref, contacts);
 }
 
 void

@@ -46,6 +46,15 @@
  * tp_message_mixin_implement_sending() in the constructor function. If you do
  * not, any attempt to send a message will fail with NotImplemented.
  *
+ * To support chat state, you must call
+ * tp_message_mixin_implement_send_chat_state() in the constructor function, and
+ * include the following in the fourth argument of G_DEFINE_TYPE_WITH_CODE():
+ *
+ * <informalexample><programlisting>
+ *  G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_CHAT_STATE,
+ *    tp_message_mixin_chat_state_iface_init);
+ * </programlisting></informalexample>
+ *
  * Since: 0.7.21
  */
 
@@ -97,6 +106,18 @@ struct _TpMessageMixinPrivate
   /* Receiving */
   guint recv_id;
   GQueue *pending;
+
+  /* ChatState */
+
+  /* TpHandle -> TpChannelChatState */
+  GHashTable *chat_states;
+  TpMessageMixinSendChatStateImpl send_chat_state;
+  /* FALSE unless at least one chat state notification has been sent; <gone/>
+   * will only be sent when the channel closes if this is TRUE. This prevents
+   * opening a channel and closing it immediately sending a spurious <gone/> to
+   * the peer.
+   */
+  gboolean send_gone;
 };
 
 
@@ -251,6 +272,185 @@ tp_message_mixin_implement_sending (GObject *object,
       (gchar **) supported_content_types);
 }
 
+static TpChannelChatState
+lookup_current_chat_state (TpMessageMixin *mixin,
+    TpHandle member)
+{
+  gpointer tmp;
+
+  if (g_hash_table_lookup_extended (mixin->priv->chat_states,
+          GUINT_TO_POINTER (member), NULL, &tmp))
+    {
+      return GPOINTER_TO_UINT (tmp);
+    }
+
+  return TP_CHANNEL_CHAT_STATE_INACTIVE;
+}
+
+/**
+ * tp_message_mixin_change_chat_state:
+ * @object: an instance of the implementation that uses this mixin
+ * @member: a member of this chat
+ * @state: the new state to set
+ *
+ * Change the current chat state of @member to be @state. This emits
+ * ChatStateChanged signal and update ChatStates property.
+ *
+ * Since: 0.19.0
+ */
+void
+tp_message_mixin_change_chat_state (GObject *object,
+    TpHandle member,
+    TpChannelChatState state)
+{
+  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
+
+  g_return_if_fail (state < TP_NUM_CHANNEL_CHAT_STATES);
+
+  if (state == lookup_current_chat_state (mixin, member))
+    return;
+
+  if (state == TP_CHANNEL_CHAT_STATE_INACTIVE ||
+      state == TP_CHANNEL_CHAT_STATE_GONE)
+    {
+      g_hash_table_remove (mixin->priv->chat_states,
+          GUINT_TO_POINTER (member));
+    }
+  else
+    {
+      g_hash_table_insert (mixin->priv->chat_states,
+          GUINT_TO_POINTER (member),
+          GUINT_TO_POINTER (state));
+    }
+
+  tp_svc_channel_interface_chat_state_emit_chat_state_changed (object,
+      member, state);
+}
+
+/**
+ * TpMessageMixinSendChatStateImpl:
+ * @object: an instance of the implementation that uses this mixin
+ * @state: a #TpChannelChatState to be send
+ * @error: a #GError to fill
+ *
+ * Signature of a virtual method which may be implemented to allow sending chat
+ * state.
+ *
+ * Returns: %TRUE on success, %FALSE otherwise.
+ * Since: 0.19.0
+ */
+
+/**
+ * tp_message_mixin_implement_send_chat_state:
+ * @object: an instance of the implementation that uses this mixin
+ * @send_chat_state: send our chat state
+ *
+ * Set the callback used to implement SetChatState. This must be called from the
+ * init, constructor or constructed callback, after tp_message_mixin_init(),
+ * and may only be called once per object.
+ *
+ * Since: 0.19.0
+ */
+void
+tp_message_mixin_implement_send_chat_state (GObject *object,
+    TpMessageMixinSendChatStateImpl send_chat_state)
+{
+  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
+
+  g_return_if_fail (mixin->priv->send_chat_state == NULL);
+
+  mixin->priv->send_chat_state = send_chat_state;
+}
+
+/**
+ * tp_message_mixin_maybe_send_gone:
+ * @object: An instance of the implementation that uses this mixin
+ *
+ * Send #TP_CHANNEL_CHAT_STATE_GONE if needed. This should be called on private
+ * chats when channel is closed.
+ *
+ * Since: 0.19.0
+ */
+void
+tp_message_mixin_maybe_send_gone (GObject *object)
+{
+  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
+
+  if (mixin->priv->send_gone && !TP_HAS_GROUP_MIXIN (object) &&
+      mixin->priv->send_chat_state != NULL)
+    {
+      mixin->priv->send_chat_state (object, TP_CHANNEL_CHAT_STATE_GONE, NULL);
+    }
+
+  mixin->priv->send_gone = FALSE;
+}
+
+/* FIXME: Use tp_base_channel_get_self_handle() when TpMessageMixin requires
+ * TpBaseChannel. See bug #49366 */
+static TpHandle
+get_self_handle (GObject *object)
+{
+  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
+
+  if (TP_HAS_GROUP_MIXIN (object))
+    {
+      guint ret = 0;
+
+      tp_group_mixin_get_self_handle (object, &ret, NULL);
+      if (ret != 0)
+        return ret;
+    }
+
+  return tp_base_connection_get_self_handle (mixin->priv->connection);
+}
+
+static void
+tp_message_mixin_set_chat_state_async (TpSvcChannelInterfaceChatState *iface,
+    guint state,
+    DBusGMethodInvocation *context)
+{
+  GObject *object = (GObject *) iface;
+  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
+  GError *error = NULL;
+
+  if (mixin->priv->send_chat_state == NULL)
+    {
+      tp_dbus_g_method_return_not_implemented (context);
+      return;
+    }
+
+  if (state >= TP_NUM_CHANNEL_CHAT_STATES)
+    {
+      DEBUG ("invalid chat state %u", state);
+
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+          "invalid state: %u", state);
+      goto error;
+    }
+
+  if (state == TP_CHANNEL_CHAT_STATE_GONE)
+    {
+      /* We cannot explicitly set the Gone state */
+      DEBUG ("you may not explicitly set the Gone state");
+
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+          "you may not explicitly set the Gone state");
+      goto error;
+    }
+
+  if (!mixin->priv->send_chat_state (object, state, &error))
+    goto error;
+
+  mixin->priv->send_gone = TRUE;
+  tp_message_mixin_change_chat_state (object, get_self_handle (object), state);
+
+  tp_svc_channel_interface_chat_state_return_from_set_chat_state (context);
+  return;
+
+error:
+  dbus_g_method_return_error (context, error);
+  g_clear_error (&error);
+}
 
 /**
  * tp_message_mixin_init:
@@ -293,6 +493,8 @@ tp_message_mixin_init (GObject *obj,
   mixin->priv->connection = g_object_ref (connection);
 
   mixin->priv->supported_content_types = g_new0 (gchar *, 1);
+
+  mixin->priv->chat_states = g_hash_table_new (NULL, NULL);
 }
 
 
@@ -338,6 +540,8 @@ tp_message_mixin_finalize (GObject *obj)
   g_strfreev (mixin->priv->supported_content_types);
 
   g_object_unref (mixin->priv->connection);
+
+  g_hash_table_unref (mixin->priv->chat_states);
 
   g_slice_free (TpMessageMixinPrivate, mixin->priv);
 }
@@ -560,7 +764,6 @@ struct _TpMessageMixinOutgoingMessagePrivate {
     gboolean messages:1;
 };
 
-
 /**
  * tp_message_mixin_sent:
  * @object: An object implementing the Text interface with this mixin
@@ -611,21 +814,13 @@ tp_message_mixin_sent (GObject *object,
   else
     {
       GHashTable *header = g_ptr_array_index (message->parts, 0);
-      TpHandle self_handle = 0;
+
+      mixin->priv->send_gone = TRUE;
 
       if (tp_asv_get_uint64 (header, "message-sent", NULL) == 0)
         tp_message_set_uint64 (message, 0, "message-sent", time (NULL));
 
-      if (TP_HAS_GROUP_MIXIN (object))
-        {
-          tp_group_mixin_get_self_handle (object, &self_handle, NULL);
-        }
-
-      if (self_handle == 0)
-        self_handle = tp_base_connection_get_self_handle (
-            mixin->priv->connection);
-
-      tp_cm_message_set_sender (message, self_handle);
+      tp_cm_message_set_sender (message, get_self_handle (object));
 
       /* emit Sent and MessageSent */
 
@@ -770,10 +965,18 @@ tp_message_mixin_init_dbus_properties (GObjectClass *cls)
       { "DeliveryReportingSupport", NULL, NULL },
       { NULL }
   };
+  static TpDBusPropertiesMixinPropImpl chat_state_props[] = {
+      { "ChatStates", NULL, NULL },
+      { NULL }
+  };
 
   tp_dbus_properties_mixin_implement_interface (cls,
       TP_IFACE_QUARK_CHANNEL_TYPE_TEXT,
       tp_message_mixin_get_dbus_property, NULL, props);
+
+  tp_dbus_properties_mixin_implement_interface (cls,
+      TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE,
+      tp_message_mixin_get_dbus_property, NULL, chat_state_props);
 }
 
 
@@ -804,6 +1007,7 @@ tp_message_mixin_get_dbus_property (GObject *object,
   static GQuark q_message_part_support_flags = 0;
   static GQuark q_delivery_reporting_support_flags = 0;
   static GQuark q_message_types = 0;
+  static GQuark q_chat_states = 0;
 
   if (G_UNLIKELY (q_pending_messages == 0))
     {
@@ -816,11 +1020,14 @@ tp_message_mixin_get_dbus_property (GObject *object,
           g_quark_from_static_string ("DeliveryReportingSupport");
       q_message_types =
           g_quark_from_static_string ("MessageTypes");
+      q_chat_states =
+          g_quark_from_static_string ("ChatStates");
     }
 
   mixin = TP_MESSAGE_MIXIN (object);
 
-  g_return_if_fail (interface == TP_IFACE_QUARK_CHANNEL_TYPE_TEXT);
+  g_return_if_fail (interface == TP_IFACE_QUARK_CHANNEL_TYPE_TEXT ||
+      interface == TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE);
   g_return_if_fail (object != NULL);
   g_return_if_fail (name != 0);
   g_return_if_fail (value != NULL);
@@ -861,6 +1068,10 @@ tp_message_mixin_get_dbus_property (GObject *object,
     {
       g_value_set_boxed (value, mixin->priv->msg_types);
     }
+  else if (name == q_chat_states)
+    {
+      g_value_set_boxed (value, mixin->priv->chat_states);
+    }
 }
 
 
@@ -884,5 +1095,28 @@ tp_message_mixin_iface_init (gpointer g_iface,
     tp_message_mixin_##x##_async)
   IMPLEMENT (acknowledge_pending_messages);
   IMPLEMENT (send_message);
+#undef IMPLEMENT
+}
+
+/**
+ * tp_message_mixin_chat_state_iface_init:
+ * @g_iface: A pointer to the #TpSvcChannelInterfaceChatStateClass in an object
+ *  class
+ * @iface_data: Ignored
+ *
+ * Fill in this mixin's ChatState method implementations in the given interface
+ * vtable.
+ *
+ * Since: 0.19.0
+ */
+void
+tp_message_mixin_chat_state_iface_init (gpointer g_iface,
+                                        gpointer iface_data)
+{
+  TpSvcChannelInterfaceChatStateClass *klass = g_iface;
+
+#define IMPLEMENT(x) tp_svc_channel_interface_chat_state_implement_##x (\
+    klass, tp_message_mixin_##x##_async)
+  IMPLEMENT (set_chat_state);
 #undef IMPLEMENT
 }

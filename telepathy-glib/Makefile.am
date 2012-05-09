@@ -126,6 +126,8 @@ tpginclude_HEADERS = \
     stream-tube-connection.h \
     telepathy-glib.h \
     text-channel.h \
+    tls-certificate.h \
+    tls-certificate-rejection.h \
     util.h \
     $(NULL)
 
@@ -328,6 +330,9 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     stream-tube-connection-internal.h \
     stream-tube-connection.c \
     text-channel.c \
+    tls-certificate.c \
+    tls-certificate-rejection.c \
+    tls-certificate-rejection-internal.h \
     util.c \
     util-internal.h
 

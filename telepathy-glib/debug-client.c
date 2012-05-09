@@ -44,7 +44,7 @@
  * This module provides access to the auxiliary objects used to
  * implement #TpSvcDebug.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 
 /**
@@ -52,7 +52,7 @@
  *
  * The class of a #TpDebugClient.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 struct _TpDebugClientClass {
     TpProxyClass parent_class;
@@ -65,7 +65,7 @@ struct _TpDebugClientClass {
  *
  * A proxy object for the debug interface of a Telepathy component.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 struct _TpDebugClient {
     TpProxy parent;
@@ -203,7 +203,7 @@ tp_debug_client_class_init (TpDebugClientClass *klass)
    * This property is meaningless until the
    * %TP_DEBUG_CLIENT_FEATURE_CORE feature has been prepared.
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   spec = g_param_spec_boolean ("enabled", "enabled",
       "Enabled",
@@ -219,7 +219,7 @@ tp_debug_client_class_init (TpDebugClientClass *klass)
    * Emitted when a #TpDebugMessage is generated if the TpDebugMessage:enabled
    * property is set to %TRUE.
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   signals[SIG_NEW_DEBUG_MESSAGE] = g_signal_new ("new-debug-message",
       G_OBJECT_CLASS_TYPE (klass),
@@ -328,7 +328,7 @@ tp_debug_client_list_features (TpProxyClass *klass)
  * tp_proxy_or_subclass_hook_on_interface_add() with first argument
  * %TP_TYPE_DEBUG_CLIENT.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_debug_client_init_known_interfaces (void)
@@ -360,7 +360,7 @@ tp_debug_client_init_known_interfaces (void)
  *
  * Returns: a new debug client proxy, or %NULL on invalid arguments
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 TpDebugClient *
 tp_debug_client_new (
@@ -405,7 +405,7 @@ set_enabled_cb (
  * Enable or disable publishing of debug messages on the bus by the component
  * owning @self's bus name.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_debug_client_set_enabled_async (
@@ -434,7 +434,7 @@ tp_debug_client_set_enabled_async (
  * Finishes tp_debug_client_set_enabled_async().
  *
  * Returns: %TRUE, if the operation suceeded, %FALSE otherwise
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 gboolean
 tp_debug_client_set_enabled_finish (
@@ -453,7 +453,7 @@ tp_debug_client_set_enabled_finish (
  *
  * Returns: the value of #TpDebugClient:enabled property
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 gboolean
 tp_debug_client_is_enabled (TpDebugClient *self)
@@ -512,7 +512,7 @@ out:
  * use tp_debug_client_get_messages_finish() to retrieve the #TpDebugMessage
  * objects.
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_debug_client_get_messages_async (
@@ -538,7 +538,7 @@ tp_debug_client_get_messages_async (
  * Returns: (transfer full) (type GLib.PtrArray) (element-type TelepathyGLib.DebugMessage):
  * a #GPtrArray of #TpDebugMessage
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 GPtrArray *
 tp_debug_client_get_messages_finish (TpDebugClient *self,

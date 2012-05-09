@@ -210,6 +210,7 @@ tp_channel_get_feature_quark_contacts (void)
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
  * Since: 0.11.3
+ * Deprecated: Use TP_TEXT_CHANNEL_FEATURE_CHAT_STATES instead.
  */
 
 GQuark
@@ -490,6 +491,7 @@ tp_channel_get_property (GObject *object,
  * Returns: the chat state for @contact, or %TP_CHANNEL_CHAT_STATE_INACTIVE
  *  if their chat state is not known
  * Since: 0.11.3
+ * Deprecated: Use tp_text_channel_get_chat_state() instead.
  */
 TpChannelChatState
 tp_channel_get_chat_state (TpChannel *self,
@@ -696,9 +698,11 @@ tp_channel_chat_state_changed_cb (TpChannel *self,
   g_hash_table_insert (self->priv->chat_states,
       GUINT_TO_POINTER (contact), GUINT_TO_POINTER (state));
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   /* Don't emit the signal until we've had the initial state */
   if (!tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_CHAT_STATES))
     return;
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   g_signal_emit (self, signals[SIGNAL_CHAT_STATE_CHANGED], 0, contact, state);
 }
@@ -905,19 +909,19 @@ _tp_channel_prepare_connection (TpChannel *self)
 }
 
 static void
-upgrade_contacts_cb (TpConnection *connection,
-    guint n_contacts,
-    TpContact * const *contacts,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
+upgrade_contacts_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
 {
-  TpChannel *self = (TpChannel *) weak_object;
+  TpChannel *self = user_data;
+  TpConnection *connection = (TpConnection *) object;
+  GError *error = NULL;
 
-  if (error != NULL)
+  if (!tp_connection_upgrade_contacts_finish (connection, result, NULL, &error))
     {
       _tp_channel_abort_introspection (self, "Upgrading contacts failed",
           error);
+      g_clear_error (&error);
       return;
     }
 
@@ -985,10 +989,10 @@ _tp_channel_create_contacts (TpChannel *self)
           tp_proxy_get_factory (self->priv->connection),
           self->priv->connection);
 
-      tp_connection_upgrade_contacts (self->priv->connection,
+      tp_connection_upgrade_contacts_async (self->priv->connection,
           contacts->len, (TpContact **) contacts->pdata,
           (GQuark *) features->data,
-          upgrade_contacts_cb, NULL, NULL, (GObject *) self);
+          upgrade_contacts_cb, self);
 
       g_array_unref (features);
     }
@@ -1275,11 +1279,13 @@ tp_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_CONTACTS].prepare_async =
     _tp_channel_contacts_prepare_async;
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   features[FEAT_CHAT_STATES].name = TP_CHANNEL_FEATURE_CHAT_STATES;
   features[FEAT_CHAT_STATES].prepare_async =
     tp_channel_prepare_chat_states_async;
   need_chat_states[0] = TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE;
   features[FEAT_CHAT_STATES].interfaces_needed = need_chat_states;
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   features[FEAT_PASSWORD].name = TP_CHANNEL_FEATURE_PASSWORD;
   features[FEAT_PASSWORD].prepare_async =
@@ -1526,6 +1532,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * has finished preparing the feature %TP_CHANNEL_FEATURE_CHAT_STATES.
    *
    * Since: 0.11.3
+   * Deprecated: Use #TpTextChannel::contact-chat-state-changed instead
    */
   signals[SIGNAL_CHAT_STATE_CHANGED] = g_signal_new ("chat-state-changed",
       G_OBJECT_CLASS_TYPE (klass),

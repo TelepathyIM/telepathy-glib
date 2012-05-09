@@ -31,7 +31,7 @@
  *
  * Data structure representing a #TpRoomList.
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 
 /**
@@ -39,7 +39,7 @@
  *
  * The class of a #TpRoomList.
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 
 #include <config.h>
@@ -237,7 +237,7 @@ tp_room_list_class_init (TpRoomListClass *klass)
    *
    * The #TpAccount to use for the room listing.
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   param_spec = g_param_spec_object ("account", "account",
       "TpAccount",
@@ -251,7 +251,7 @@ tp_room_list_class_init (TpRoomListClass *klass)
    * The DNS name of the server whose rooms are listed by this channel, or
    * %NULL.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.0
    */
   param_spec = g_param_spec_string ("server", "Server",
       "The server associated with the channel",
@@ -267,7 +267,7 @@ tp_room_list_class_init (TpRoomListClass *klass)
    * This property is meaningless until the
    * %TP_ROOM_LIST_FEATURE_LISTING feature has been prepared.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.0
    */
   param_spec = g_param_spec_boolean ("listing", "Listing",
       "TRUE if the channel is listing rooms",
@@ -285,7 +285,7 @@ tp_room_list_class_init (TpRoomListClass *klass)
    * User should take his own reference on @room if he plans to
    * continue using it once the signal callback has returned.
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   signals[SIG_GOT_ROOM] = g_signal_new ("got-room",
       G_OBJECT_CLASS_TYPE (klass),
@@ -302,7 +302,7 @@ tp_room_list_class_init (TpRoomListClass *klass)
    * Fired when something goes wrong while listing the channels; see @error
    * for details.
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   signals[SIG_FAILED] = g_signal_new ("failed",
       G_OBJECT_CLASS_TYPE (klass),
@@ -329,7 +329,7 @@ tp_room_list_init (TpRoomList *self)
  *
  * Returns: (transfer none): the value of #TpRoomList:account property
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 TpAccount *
 tp_room_list_get_account (TpRoomList *self)
@@ -345,7 +345,7 @@ tp_room_list_get_account (TpRoomList *self)
  *
  * Returns: the value of #TpRoomList:server property
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 const gchar *
 tp_room_list_get_server (TpRoomList *self)
@@ -361,7 +361,7 @@ tp_room_list_get_server (TpRoomList *self)
  *
  * Returns: the value of #TpRoomList:listing property
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 gboolean
 tp_room_list_is_listing (TpRoomList *self)
@@ -391,7 +391,7 @@ list_rooms_cb (TpChannel *channel,
  * signal to get the rooms found.
  * Errors will be reported using the TpRoomList::failed signal.
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_room_list_start (TpRoomList *self)
@@ -558,7 +558,7 @@ async_initable_iface_init (GAsyncInitableIface *iface)
  *
  * <!-- -->
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_room_list_new_async (TpAccount *account,
@@ -585,7 +585,7 @@ tp_room_list_new_async (TpAccount *account,
  * Returns: (transfer full): a new #TpRoomList object, or %NULL
  * in case of error.
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 TpRoomList *
 tp_room_list_new_finish (GAsyncResult *result,

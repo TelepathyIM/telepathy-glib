@@ -108,7 +108,7 @@ tp_dbus_errors_quark (void)
  *
  * 1 more than the highest valid #TpDBusError at the time of compilation
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 
 /**
@@ -1990,6 +1990,9 @@ static void
 prepare_feature (TpProxy *self,
     const TpProxyFeature *feature)
 {
+  /* If no function is set, then subclass is supposed to call
+   * _tp_proxy_set_feature_prepared() itself. This is used by features prepared
+   * from constructed. */
   if (feature->prepare_async == NULL)
     return;
 

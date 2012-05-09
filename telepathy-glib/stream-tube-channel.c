@@ -1035,12 +1035,15 @@ connection_identified (TpStreamTubeChannel *self,
       features = tp_client_factory_dup_contact_features (
           tp_proxy_get_factory (connection), connection);
 
+      /* Spec does not give the id with the handle */
+      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
       /* Pass the ref on tube_conn to the function */
       tp_connection_get_contacts_by_handle (connection,
           1, &handle,
           (const GQuark *) features->data,
           _new_remote_connection_with_contact,
           tube_conn, g_object_unref, G_OBJECT (self));
+       G_GNUC_END_IGNORE_DEPRECATIONS
 
       g_array_unref (features);
     }

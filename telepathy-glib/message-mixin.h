@@ -67,9 +67,28 @@ void tp_message_mixin_implement_sending (GObject *object,
     TpDeliveryReportingSupportFlags delivery_reporting_support_flags,
     const gchar * const * supported_content_types);
 
+/* ChatState */
+
+typedef gboolean (*TpMessageMixinSendChatStateImpl) (GObject *object,
+    TpChannelChatState state,
+    GError **error);
+
+_TP_AVAILABLE_IN_0_20
+void tp_message_mixin_change_chat_state (GObject *object,
+    TpHandle member,
+    TpChannelChatState state);
+
+_TP_AVAILABLE_IN_0_20
+void tp_message_mixin_implement_send_chat_state (GObject *object,
+    TpMessageMixinSendChatStateImpl send_chat_state);
+
+_TP_AVAILABLE_IN_0_20
+void tp_message_mixin_maybe_send_gone (GObject *object);
 
 /* Initialization */
 void tp_message_mixin_iface_init (gpointer g_iface, gpointer iface_data);
+void tp_message_mixin_chat_state_iface_init (gpointer g_iface,
+    gpointer iface_data);
 
 void tp_message_mixin_init (GObject *obj, gsize offset,
     TpBaseConnection *connection);

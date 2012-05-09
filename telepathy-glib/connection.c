@@ -855,10 +855,12 @@ get_self_contact (TpConnection *self)
    * require immortal-handles and spec change to give the self identifier. */
   /* This relies on the special case in tp_connection_get_contacts_by_handle()
    * which makes it start working slightly early. */
+   G_GNUC_BEGIN_IGNORE_DEPRECATIONS
    tp_connection_get_contacts_by_handle (self,
        1, &self->priv->last_known_self_handle,
       (GQuark *) features->data,
       tp_connection_got_self_contact_cb, NULL, NULL, NULL);
+   G_GNUC_END_IGNORE_DEPRECATIONS
 
   g_array_unref (features);
 }
@@ -1292,7 +1294,10 @@ tp_connection_constructed (GObject *object)
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CONNECTION, _tp_connection_got_properties, NULL, NULL, NULL);
 
-  g_signal_connect (self, "invalidated",
+  /* Give a chance to TpAccount to know about invalidated connection before we
+   * unref all roster contacts. This is to let applications properly remove all
+   * contacts at once instead of getting weak notify on each. */
+  g_signal_connect_after (self, "invalidated",
       G_CALLBACK (tp_connection_invalidated), NULL);
 }
 
@@ -2830,7 +2835,7 @@ tp_connection_get_detailed_error (TpConnection *self,
  *
  * Returns: (transfer full) (allow-none): a D-Bus error name, or %NULL.
  *
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 gchar *
 tp_connection_dup_detailed_error_vardict (TpConnection *self,

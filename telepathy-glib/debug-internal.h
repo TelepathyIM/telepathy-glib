@@ -35,7 +35,8 @@ typedef enum
   TP_DEBUG_ROOM_CONFIG   = 1 << 17,
   TP_DEBUG_CALL          = 1 << 18,
   /* Quis custodiet ipsos custodes? */
-  TP_DEBUG_DEBUGGER      = 1 << 19
+  TP_DEBUG_DEBUGGER      = 1 << 19,
+  TP_DEBUG_TLS           = 1 << 20
 } TpDebugFlags;
 
 gboolean _tp_debug_flag_is_set (TpDebugFlags flag);

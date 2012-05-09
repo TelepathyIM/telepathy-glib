@@ -341,6 +341,10 @@ process_contacts_queue (TpChannel *self)
   features = tp_client_factory_dup_contact_features (
       tp_proxy_get_factory (self->priv->connection), self->priv->connection);
 
+  /* We can't use upgrade_contacts_async() because we need compat with older
+   * CMs. by_id and by_handle are used only by TpTextChannel and are needed for
+   * older CMs that does not give both message-sender and message-sender-id */
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   if (item->contacts != NULL && item->contacts->len > 0)
     {
       g_assert (item->ids == NULL);
@@ -385,6 +389,7 @@ process_contacts_queue (TpChannel *self)
        * without reentering mainloop first. */
       g_idle_add (contacts_queue_item_idle_cb, self);
     }
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   g_array_unref (features);
 }
@@ -600,7 +605,8 @@ _tp_channel_contacts_members_changed (TpChannel *self,
 
   ids = tp_asv_get_boxed (details, "contact-ids",
       TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP);
-  if (ids == NULL)
+  if (ids == NULL && (added->len > 0 || local_pending->len > 0 ||
+      remote_pending->len > 0 || actor != 0 ))
     {
       DEBUG ("CM did not give identifiers, can't create TpContact");
       return;

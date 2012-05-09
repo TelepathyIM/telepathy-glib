@@ -72,6 +72,8 @@ TelepathyGLib_1_gir_FILES = \
 	$(srcdir)/channel-dispatcher.c $(srcdir)/channel-dispatcher.h \
 	$(srcdir)/debug-client.c $(srcdir)/debug-client.h \
 	$(srcdir)/debug-message.c $(srcdir)/debug-message.h \
+	$(srcdir)/tls-certificate.c $(srcdir)/tls-certificate.h \
+	$(srcdir)/tls-certificate-rejection.c $(srcdir)/tls-certificate-rejection.h \
 	$(srcdir)/errors.c $(srcdir)/errors.h \
 	$(srcdir)/room-list.c $(srcdir)/room-list.h \
 	$(srcdir)/room-info.c $(srcdir)/room-info.h \

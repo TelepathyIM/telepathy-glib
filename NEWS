@@ -1,4 +1,4 @@
-telepathy-glib 0.19.0 (UNRELEASED)
+telepathy-glib 0.19.0 (2012-05-09)
 ==================================
 
 Dependencies:
@@ -9,23 +9,40 @@ Deprecations:
 
 • Deprecations are now versioned. telepathy-glib users can define
   TP_VERSION_MIN_REQUIRED and/or TP_VERSION_MAX_ALLOWED, which work like the
-  corresponding macros in GLib 2.32.
+  corresponding macros in GLib 2.32. (Simon)
 
 • All TpChannel APIs using contact TpHandle have been deprecated in favor of
   their TpContact variants. Note that replacement APIs are only guaranteed to
   work with Connection Managers implementing spec >= 0.23.4. Any CMs using
   telepathy-glib's TpGroupMixin for implementing the channel's group iface
-  are fine.
+  are fine. (Xavier)
 
-• TpTextMixin is (officially) deprecated, use TpMessageMixin.
+• TpTextMixin is (officially) deprecated, use TpMessageMixin. (Xavier)
 
 • TpIntsetIter is deprecated, use TpIntsetFastIter. The typedefs
-  TpIntSetIter and TpIntSetFastIter are also deprecated.
+  TpIntSetIter and TpIntSetFastIter are also deprecated. (Simon)
 
 • TP_ERRORS has officially been deprecated since 0.11; it now produces
-  deprecation warnings too.
+  deprecation warnings too. (Simon)
 
-• Reimplementation of the RequestHandles method is deprecated.
+• Reimplementation of the RequestHandles method is deprecated. (Simon)
+
+• tp_connection_get_contacts_by_id is deprecated and replaced by
+  tp_connection_dup_contact_by_id_async, for proper GAsyncResult API, and is
+  now for single identifier to simplify most common use case.
+  (fd.o #27687 and #30874, Xavier)
+
+• tp_connection_get_contacts_by_handle() is deprecated with no replacement. It
+  is deprecated to create a TpContact without knowing both its id and handle.
+  (fd.o #27687 and #30874, Xavier)
+
+• tp_connection_upgrade_contacts is deprecated and replaced by
+  tp_connection_upgrade_contacts_async, for proper GAsyncResult API. Note that
+  the connection must implement the Contacts interface to use this new API.
+  (fd.o #27687 and #30874, Xavier)
+
+• TP_CHANNEL_FEATURE_CHAT_STATES and its corresponding APIs are deprecated and
+  replaced by similar API on TpTextChannel.
 
 Enhancements:
 
@@ -37,7 +54,7 @@ Enhancements:
 • A new meta-header, <telepathy-glib/telepathy-glib-dbus.h>, now includes
   all generated code. Please include it in any file that uses tp_svc_*,
   tp_cli_*, TP_IFACE_*, TP_HASH_TYPE_*, TP_STRUCT_TYPE_* or TP_ARRAY_TYPE_*.
-  In telepathy-glib 1.0, it will become a separate pkg-config module.
+  In telepathy-glib 1.0, it will become a separate pkg-config module. (Simon)
 
 • Replace --disable-coding-style-checks and --disable-doc-checks with
   --disable-fatal-warnings. In addition to what the removed options did,
@@ -72,6 +89,11 @@ Enhancements:
 • Add "clean-for-new-branch" Makefile target which is more thorough than
   clean, but less thorough than distclean (in particular, it doesn't
   forget your ./configure options) (Simon)
+
+• Add TpTLSCertificate, a TpProxy subclass representing a TLS
+  certificate (fdo #30460, Guillaume)
+
+• TpMessageMixin now has helpers to implement the ChatState interface.
 
 Fixes:
 

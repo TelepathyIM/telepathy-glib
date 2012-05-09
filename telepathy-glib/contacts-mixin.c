@@ -84,6 +84,11 @@ static TpDBusPropertiesMixinPropImpl known_contacts_props[] = {
   { NULL }
 };
 
+static const gchar *always_included_interfaces[] = {
+  TP_IFACE_CONNECTION,
+  NULL
+};
+
 static void
 tp_presence_mixin_get_contacts_dbus_property (GObject *object,
                                               GQuark interface,
@@ -365,20 +370,58 @@ tp_contacts_mixin_get_contact_attributes_impl (
 {
   TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
   GHashTable *result;
-  const gchar *assumed_interfaces[] = {
-    TP_IFACE_CONNECTION,
-    NULL
-  };
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
   result = tp_contacts_mixin_get_contact_attributes (G_OBJECT (conn),
-      handles, interfaces, assumed_interfaces);
+      handles, interfaces, always_included_interfaces);
 
   tp_svc_connection_interface_contacts_return_from_get_contact_attributes (
       context, result);
 
   g_hash_table_unref (result);
+}
+
+static void
+tp_contacts_mixin_get_contact_by_id_impl (
+  TpSvcConnectionInterfaceContacts *iface,
+  const gchar *id,
+  const gchar **interfaces,
+  DBusGMethodInvocation *context)
+{
+  TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
+      TP_HANDLE_TYPE_CONTACT);
+  TpHandle handle;
+  GArray *handles;
+  GHashTable *attributes;
+  GHashTable *result;
+  GError *error = NULL;
+
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
+
+  handle = tp_handle_ensure (contact_repo, id, NULL, &error);
+  if (handle == 0)
+    {
+      dbus_g_method_return_error (context, error);
+      g_clear_error (&error);
+      return;
+    }
+
+  handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
+  g_array_append_val (handles, handle);
+
+  attributes = tp_contacts_mixin_get_contact_attributes (G_OBJECT (conn),
+      handles, interfaces, always_included_interfaces);
+
+  result = g_hash_table_lookup (attributes, GUINT_TO_POINTER (handle));
+  g_assert (result != NULL);
+
+  tp_svc_connection_interface_contacts_return_from_get_contact_by_id (context,
+      handle, result);
+
+  g_array_unref (handles);
+  g_hash_table_unref (attributes);
 }
 
 /**
@@ -403,6 +446,7 @@ tp_contacts_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 #define IMPLEMENT(x) tp_svc_connection_interface_contacts_implement_##x ( \
     klass, tp_contacts_mixin_##x##_impl)
   IMPLEMENT(get_contact_attributes);
+  IMPLEMENT(get_contact_by_id);
 #undef IMPLEMENT
 }
 

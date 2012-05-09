@@ -161,11 +161,13 @@ void tp_contact_set_contact_groups_async (TpContact *self,
 gboolean tp_contact_set_contact_groups_finish (TpContact *self,
     GAsyncResult *result, GError **error);
 
+#ifndef TP_DISABLE_DEPRECATED
 typedef void (*TpConnectionContactsByHandleCb) (TpConnection *connection,
     guint n_contacts, TpContact * const *contacts,
     guint n_failed, const TpHandle *failed,
     const GError *error, gpointer user_data, GObject *weak_object);
 
+_TP_DEPRECATED_IN_0_20
 void tp_connection_get_contacts_by_handle (TpConnection *self,
     guint n_handles, const TpHandle *handles,
     const GQuark *features,
@@ -176,6 +178,7 @@ typedef void (*TpConnectionUpgradeContactsCb) (TpConnection *connection,
     guint n_contacts, TpContact * const *contacts,
     const GError *error, gpointer user_data, GObject *weak_object);
 
+_TP_DEPRECATED_IN_0_20_FOR(tp_connection_upgrade_contacts_async)
 void tp_connection_upgrade_contacts (TpConnection *self,
     guint n_contacts, TpContact * const *contacts,
     const GQuark *features,
@@ -187,14 +190,40 @@ typedef void (*TpConnectionContactsByIdCb) (TpConnection *connection,
     const gchar * const *requested_ids, GHashTable *failed_id_errors,
     const GError *error, gpointer user_data, GObject *weak_object);
 
+_TP_DEPRECATED_IN_0_20_FOR(tp_connection_get_contact_by_id_async)
 void tp_connection_get_contacts_by_id (TpConnection *self,
     guint n_ids, const gchar * const *ids,
     const GQuark *features,
     TpConnectionContactsByIdCb callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
+#endif
 
 TpContact *tp_connection_dup_contact_if_possible (TpConnection *connection,
     TpHandle handle, const gchar *identifier);
+
+_TP_AVAILABLE_IN_0_20
+void tp_connection_dup_contact_by_id_async (TpConnection *self,
+    const gchar *id,
+    const GQuark *features,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+_TP_AVAILABLE_IN_0_20
+TpContact *tp_connection_dup_contact_by_id_finish (TpConnection *self,
+    GAsyncResult *result,
+    GError **error);
+
+_TP_AVAILABLE_IN_0_20
+void tp_connection_upgrade_contacts_async (TpConnection *self,
+    guint n_contacts,
+    TpContact * const *contacts,
+    const GQuark *features,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+_TP_AVAILABLE_IN_0_20
+gboolean tp_connection_upgrade_contacts_finish (TpConnection *self,
+    GAsyncResult *result,
+    GPtrArray **contacts,
+    GError **error);
 
 /* TP_CONTACT_FEATURE_CONTACT_BLOCKING */
 
