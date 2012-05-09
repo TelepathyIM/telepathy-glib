@@ -997,7 +997,6 @@ test_chat_state (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GQuark features[] = {
-      TP_CHANNEL_FEATURE_CONTACTS,
       TP_TEXT_CHANNEL_FEATURE_CHAT_STATES,
       0 };
   TpContact *contact;
