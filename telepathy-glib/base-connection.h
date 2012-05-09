@@ -61,6 +61,7 @@ struct _TpBaseConnection {
     TpConnectionStatus status;
 
     TpHandle self_handle;
+    const gchar *self_id;
 
     /*<private>*/
     gpointer _future1;

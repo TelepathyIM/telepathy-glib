@@ -873,8 +873,9 @@ introspect_self_contact (TpConnection *self)
 }
 
 static void
-on_self_handle_changed (TpConnection *self,
+on_self_contact_changed (TpConnection *self,
                         guint self_handle,
+                        const gchar *self_id,
                         gpointer user_data G_GNUC_UNUSED,
                         GObject *user_object G_GNUC_UNUSED)
 {
@@ -1285,8 +1286,8 @@ tp_connection_constructed (GObject *object)
       tp_connection_status_changed_cb, NULL, NULL, NULL, NULL);
   tp_cli_connection_connect_to_connection_error (self,
       tp_connection_connection_error_cb, NULL, NULL, NULL, NULL);
-  tp_cli_connection_connect_to_self_handle_changed (self,
-      on_self_handle_changed, NULL, NULL, NULL, NULL);
+  tp_cli_connection_connect_to_self_contact_changed (self,
+      on_self_contact_changed, NULL, NULL, NULL, NULL);
 
   tp_connection_parse_object_path (self, &(self->priv->proto_name),
           &(self->priv->cm_name));

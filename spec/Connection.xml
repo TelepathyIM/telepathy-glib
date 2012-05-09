@@ -79,21 +79,27 @@ USA.</p>
       </tp:docstring>
     </property>
 
-    <signal name="SelfHandleChanged"
-        tp:name-for-bindings="Self_Handle_Changed">
+    <signal name="SelfContactChanged"
+        tp:name-for-bindings="Self_Contact_Changed">
       <tp:docstring>
-        Emitted whenever the <tp:member-ref>SelfHandle</tp:member-ref> property
+        Emitted whenever the <tp:member-ref>SelfHandle</tp:member-ref> and
+        <tp:member-ref>SelfID</tp:member-ref> property
         changes. If the connection
         is not yet in the CONNECTED state, this signal is not guaranteed
         to be emitted.
       </tp:docstring>
-      <tp:added version="0.17.10">Clients MAY assume that if the
-        SelfHandle property exists, this signal will be emitted when
+      <tp:added version="0.UNRELEASED">Clients MAY assume that if the
+        SelfHandle and SelfID property exists, this signal will be emitted when
         necessary.</tp:added>
 
       <arg type="u" tp:type="Contact_Handle" name="Self_Handle">
         <tp:docstring>
           The new value of the SelfHandle property.
+        </tp:docstring>
+      </arg>
+      <arg type="s" name="Self_ID">
+        <tp:docstring>
+          The new value of the SelfID property.
         </tp:docstring>
       </arg>
     </signal>
@@ -104,11 +110,24 @@ USA.</p>
         The handle which represents the user on this connection, which will
         remain valid for the lifetime of this connection, or until a change
         in the user's identifier is signalled by the
-        <tp:member-ref>SelfHandleChanged</tp:member-ref> signal.
+        <tp:member-ref>SelfContactChanged</tp:member-ref> signal.
         If the connection is not yet in the CONNECTED state, the value of
         this property MAY be zero.
       </tp:docstring>
       <tp:added version="0.17.10"/>
+    </property>
+
+    <property name="SelfID" tp:name-for-bindings="Self_ID"
+      type="s" access="read">
+      <tp:docstring>
+        The identifier which represents the user on this connection, which will
+        remain valid for the lifetime of this connection, or until a change
+        in the user's identifier is signalled by the
+        <tp:member-ref>SelfContactChanged</tp:member-ref> signal.
+        If the connection is not yet in the CONNECTED state, the value of
+        this property MAY be empty string.
+      </tp:docstring>
+      <tp:added version="0.UNRELEASED"/>
     </property>
 
     <property name="Status" tp:name-for-bindings="Status"
