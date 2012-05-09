@@ -663,7 +663,7 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
         G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpFutureAccount:avatar-mime-type
+   * TpFutureAccount:avatar-mime-type:
    *
    * The mime type of the #TpFutureAccount:avatar property. To change
    * this property, use tp_future_account_set_avatar().
