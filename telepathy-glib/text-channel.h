@@ -123,7 +123,10 @@ gboolean tp_text_channel_ack_all_pending_messages_finish (TpTextChannel *self,
 
 #define TP_TEXT_CHANNEL_FEATURE_CHAT_STATES \
   tp_text_channel_get_feature_quark_chat_states ()
+_TP_AVAILABLE_IN_0_20
 GQuark tp_text_channel_get_feature_quark_chat_states (void) G_GNUC_CONST;
+
+_TP_AVAILABLE_IN_0_20
 TpChannelChatState tp_text_channel_get_chat_state (TpTextChannel *self,
     TpContact *contact);
 

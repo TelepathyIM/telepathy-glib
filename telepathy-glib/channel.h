@@ -218,9 +218,12 @@ TpContact *tp_channel_group_get_contact_owner (TpChannel *self,
 
 #define TP_CHANNEL_FEATURE_CHAT_STATES \
   tp_channel_get_feature_quark_chat_states ()
+_TP_DEPRECATED_IN_0_20_FOR(tp_text_channel_get_feature_quark_chat_states)
 GQuark tp_channel_get_feature_quark_chat_states (void) G_GNUC_CONST;
+
+_TP_DEPRECATED_IN_0_20_FOR(tp_text_channel_get_chat_state)
 TpChannelChatState tp_channel_get_chat_state (TpChannel *self,
-    TpHandle contact) _TP_GNUC_DEPRECATED_FOR (tp_text_channel_get_chat_state);
+    TpHandle contact);
 
 /* Channel.Interface.Password */
 #define TP_CHANNEL_FEATURE_PASSWORD \

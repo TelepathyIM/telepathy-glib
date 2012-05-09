@@ -74,13 +74,16 @@ typedef gboolean (*TpMessageMixinSendChatStateImpl) (GObject *object,
     TpChannelChatState state,
     GError **error);
 
+_TP_AVAILABLE_IN_0_20
 void tp_message_mixin_change_chat_state (GObject *object,
     TpHandle member,
     TpChannelChatState state);
 
+_TP_AVAILABLE_IN_0_20
 void tp_message_mixin_implement_send_chat_state (GObject *object,
     TpMessageMixinSendChatStateImpl send_chat_state);
 
+_TP_AVAILABLE_IN_0_20
 void tp_message_mixin_maybe_send_gone (GObject *object);
 
 /* Initialization */
