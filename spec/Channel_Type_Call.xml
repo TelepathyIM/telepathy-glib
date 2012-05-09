@@ -908,13 +908,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           <p>The change was requested by the contact indicated by the Actor
             member of a <tp:type>Call_State_Reason</tp:type> struct.</p>
 
-          <p>If the Actor is the local user, the DBus_Reason SHOULD be the
-            empty string.</p>
-
-          <p>If the Actor is a remote user, the DBus_Reason SHOULD be the empty
-            string if the call was terminated normally, but MAY be a non-empty
-            error name to indicate error-like call termination reasons (call
-            rejected as busy, kicked from a conference by a moderator, etc.).</p>
+          <p>The DBus_Reason SHOULD be the empty string if the call
+            was terminated normally, but MAY be a non-empty error name
+            to indicate error-like call termination reasons (kicked from
+            a conference by a moderator, etc.).</p>
         </tp:docstring>
       </tp:enumvalue>
 

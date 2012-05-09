@@ -189,7 +189,7 @@
 
     <method name="GetContactByID"
       tp:name-for-bindings="Get_Contact_By_ID">
-      <tp:added version="0.UNRELEASED"/>
+      <tp:added version="0.27.0"/>
       <tp:docstring>
         Return any number of contact attributes for the given identifier.
         <tp:rationale>
