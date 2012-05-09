@@ -47,8 +47,11 @@
  * not, any attempt to send a message will fail with NotImplemented.
  *
  * To support chat state, you must call
- * tp_message_mixin_implement_send_chat_state() in the constructor function, and
- * include the following in the fourth argument of G_DEFINE_TYPE_WITH_CODE():
+ * tp_message_mixin_implement_send_chat_state() in the constructor function. In
+ * the class_init function, call
+ * tp_message_mixin_chat_state_init_dbus_properties() to hook this mixin into
+ * the D-Bus properties mixin class. Finally, include the following in the
+ * fourth argument of G_DEFINE_TYPE_WITH_CODE():
  *
  * <informalexample><programlisting>
  *  G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_CHAT_STATE,
@@ -965,20 +968,36 @@ tp_message_mixin_init_dbus_properties (GObjectClass *cls)
       { "DeliveryReportingSupport", NULL, NULL },
       { NULL }
   };
+
+  tp_dbus_properties_mixin_implement_interface (cls,
+      TP_IFACE_QUARK_CHANNEL_TYPE_TEXT,
+      tp_message_mixin_get_dbus_property, NULL, props);
+}
+
+/**
+ * tp_message_mixin_chat_state_init_dbus_properties:
+ * @cls: The class of an object with this mixin
+ *
+ * Set up a #TpDBusPropertiesMixinClass to use this mixin's implementation
+ * of the text channel interface's properties.
+ *
+ * This uses tp_message_mixin_get_dbus_property() as the property getter
+ * and sets a list of the supported properties for it.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_message_mixin_chat_state_init_dbus_properties (GObjectClass *cls)
+{
   static TpDBusPropertiesMixinPropImpl chat_state_props[] = {
       { "ChatStates", NULL, NULL },
       { NULL }
   };
 
   tp_dbus_properties_mixin_implement_interface (cls,
-      TP_IFACE_QUARK_CHANNEL_TYPE_TEXT,
-      tp_message_mixin_get_dbus_property, NULL, props);
-
-  tp_dbus_properties_mixin_implement_interface (cls,
       TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE,
       tp_message_mixin_get_dbus_property, NULL, chat_state_props);
 }
-
 
 /**
  * tp_message_mixin_get_dbus_property:
