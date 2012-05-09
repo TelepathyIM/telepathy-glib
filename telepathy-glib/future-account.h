@@ -140,7 +140,7 @@ void tp_future_account_create_account_async (TpFutureAccount *self,
 _TP_AVAILABLE_IN_0_20
 TpAccount * tp_future_account_create_account_finish (TpFutureAccount *self,
     GAsyncResult *result,
-    GError **error);
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 G_END_DECLS
 
