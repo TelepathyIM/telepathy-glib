@@ -49,7 +49,7 @@
  * #TpTLSCertificate is a #TpProxy subclass for TLSCertificate objects,
  * used in Channel.Type.ServerTLSConnection.
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 
 /**
@@ -58,7 +58,7 @@
  * A #TpProxy subclass representing a server or peer's TLS certificate
  * being presented for acceptance/rejection.
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 
 /**
@@ -66,7 +66,7 @@
  *
  * The class of a #TpTLSCertificate.
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 
 enum {
@@ -114,7 +114,7 @@ G_DEFINE_TYPE (TpTLSCertificate, tp_tls_certificate,
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 
 GQuark
@@ -448,7 +448,7 @@ tp_tls_certificate_class_init (TpTLSCertificateClass *klass)
    *
    * The type of the certificate, typically either "x509" or "pgp".
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   pspec = g_param_spec_string ("cert-type", "Certificate type",
       "The type of this certificate.",
@@ -471,7 +471,7 @@ tp_tls_certificate_class_init (TpTLSCertificateClass *klass)
    *
    * For "pgp" certificates, each certificate is a binary OpenPGP key.
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   pspec = g_param_spec_boxed ("cert-data", "Certificate chain data",
       "The raw DER-encoded certificate chain data.",
@@ -487,7 +487,7 @@ tp_tls_certificate_class_init (TpTLSCertificateClass *klass)
    *
    * #GObject::notify::state will be emitted when this changes.
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   pspec = g_param_spec_uint ("state", "State",
       "The state of this certificate.",
@@ -502,7 +502,7 @@ tp_tls_certificate_class_init (TpTLSCertificateClass *klass)
    * parent object is invalidated, the certificate is also invalidated, and
    * this property is set to %NULL.
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   pspec = g_param_spec_object ("parent", "Parent",
       "The TpConnection or TpChannel to which this belongs", TP_TYPE_PROXY,
@@ -590,7 +590,7 @@ reject_reason_get_dbus_error (TpTLSCertificateRejectReason reason)
  *
  * Returns: (transfer full): a new TLS certificate proxy. Prepare the
  *  feature %TP_TLS_CERTIFICATE_FEATURE_CORE to make it useful.
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 TpTLSCertificate *
 tp_tls_certificate_new (TpProxy *conn_or_chan,
@@ -627,7 +627,7 @@ finally:
  *
  * #GObject::notify::state will also be emitted when the connection manager
  * signals that the certificate has been accepted.
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_tls_certificate_accept_async (TpTLSCertificate *self,
@@ -658,7 +658,7 @@ tp_tls_certificate_accept_async (TpTLSCertificate *self,
  * Check the result of tp_tls_certificate_accept_async().
  *
  * Returns: %TRUE if acceptance was successful
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 gboolean
 tp_tls_certificate_accept_finish (TpTLSCertificate *self,
@@ -687,7 +687,7 @@ tp_tls_certificate_accept_finish (TpTLSCertificate *self,
  * you can pass the result of g_variant_new() or g_variant_new_parsed()
  * directly to this function without additional reference-count management.
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_tls_certificate_add_rejection (TpTLSCertificate *self,
@@ -751,7 +751,7 @@ tp_tls_certificate_add_rejection (TpTLSCertificate *self,
  *
  * #GObject::notify::state will also be emitted when the connection manager
  * signals that the certificate has been rejected.
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_tls_certificate_reject_async (TpTLSCertificate *self,
@@ -785,7 +785,7 @@ tp_tls_certificate_reject_async (TpTLSCertificate *self,
  * Check the result of tp_tls_certificate_reject_async().
  *
  * Returns: %TRUE if rejection was successful
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 gboolean
 tp_tls_certificate_reject_finish (TpTLSCertificate *self,
@@ -807,7 +807,7 @@ tp_tls_certificate_reject_finish (TpTLSCertificate *self,
  * tp_proxy_or_subclass_hook_on_interface_add() with first argument
  * %TP_TYPE_TLS_CERTIFICATE.
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_tls_certificate_init_known_interfaces (void)
@@ -842,7 +842,7 @@ tp_tls_certificate_init_known_interfaces (void)
  * it returns %NULL.
  *
  * Returns: (transfer none) (allow-none): a #TpTLSCertificateRejection, or %NULL
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 TpTLSCertificateRejection *
 tp_tls_certificate_get_rejection (TpTLSCertificate *self)
@@ -863,7 +863,7 @@ tp_tls_certificate_get_rejection (TpTLSCertificate *self)
  * With @n == 0 this is equivalent to tp_tls_certificate_get_rejection().
  *
  * Returns: (transfer none) (allow-none): a #TpTLSCertificateRejection, or %NULL
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 TpTLSCertificateRejection *
 tp_tls_certificate_get_nth_rejection (TpTLSCertificate *self,
@@ -883,7 +883,7 @@ tp_tls_certificate_get_nth_rejection (TpTLSCertificate *self,
  *
  * Returns: the value of #TpTLSCertificate:cert-type property
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 const gchar *
 tp_tls_certificate_get_cert_type (TpTLSCertificate *self)
@@ -899,7 +899,7 @@ tp_tls_certificate_get_cert_type (TpTLSCertificate *self)
  *
  * Returns: (transfer none) (type GLib.PtrArray) (element-type GLib.Bytes): the value of #TpTLSCertificate:cert-data property
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 GPtrArray *
 tp_tls_certificate_get_cert_data (TpTLSCertificate *self)
@@ -915,7 +915,7 @@ tp_tls_certificate_get_cert_data (TpTLSCertificate *self)
  *
  * Returns: the value of #TpTLSCertificate:state property
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 TpTLSCertificateState
 tp_tls_certificate_get_state (TpTLSCertificate *self)

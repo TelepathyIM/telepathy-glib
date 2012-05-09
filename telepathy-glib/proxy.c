@@ -118,7 +118,7 @@ tp_dbus_errors_quark (void)
  *
  * 1 more than the highest valid #TpDBusError at the time of compilation
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 
 /**

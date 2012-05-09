@@ -39,7 +39,7 @@
  *
  * Data structure representing a #TpTLSCertificateRejection.
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 
 /**
@@ -47,7 +47,7 @@
  *
  * The class of a #TpTLSCertificateRejection.
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 
 G_DEFINE_TYPE (TpTLSCertificateRejection, tp_tls_certificate_rejection,
@@ -169,7 +169,7 @@ tp_tls_certificate_rejection_class_init (
    *
    * #TpTLSCertificateRejectReason representing the reason of the rejection
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   spec = g_param_spec_uint ("reason", "reason",
       "TpTLSCertificateRejectReason",
@@ -184,7 +184,7 @@ tp_tls_certificate_rejection_class_init (
    *
    * The D-Bus error name of the rejection
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   spec = g_param_spec_string ("dbus-error", "dbus-error",
       "DBus error",
@@ -197,7 +197,7 @@ tp_tls_certificate_rejection_class_init (
    *
    * A #G_VARIANT_TYPE_VARDICT containing the details of the rejection
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   spec = g_param_spec_variant ("details", "details",
       "GVariant",
@@ -211,7 +211,7 @@ tp_tls_certificate_rejection_class_init (
    * a #GError (likely to be in the %TP_ERROR domain) indicating the reason
    * of the rejection
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   spec = g_param_spec_boxed ("error", "error",
       "GError",
@@ -260,7 +260,7 @@ _tp_tls_certificate_rejection_new (
  *
  * Returns: the value of #TpTLSCertificateRejection:error property
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 const GError *
 tp_tls_certificate_rejection_get_error (TpTLSCertificateRejection *self)
@@ -276,7 +276,7 @@ tp_tls_certificate_rejection_get_error (TpTLSCertificateRejection *self)
  *
  * Returns: the value of #TpTLSCertificateRejection:reason property
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 TpTLSCertificateRejectReason
 tp_tls_certificate_rejection_get_reason (TpTLSCertificateRejection *self)
@@ -292,7 +292,7 @@ tp_tls_certificate_rejection_get_reason (TpTLSCertificateRejection *self)
  *
  * Returns: the value of #TpTLSCertificateRejection:dbus-error property
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 const gchar *
 tp_tls_certificate_rejection_get_dbus_error (TpTLSCertificateRejection *self)
@@ -308,7 +308,7 @@ tp_tls_certificate_rejection_get_dbus_error (TpTLSCertificateRejection *self)
  *
  * Returns: the value of #TpTLSCertificateRejection:details property
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 GVariant *
 tp_tls_certificate_rejection_get_details (TpTLSCertificateRejection *self)
@@ -326,7 +326,7 @@ tp_tls_certificate_rejection_get_details (TpTLSCertificateRejection *self)
  *
  * Returns: %FALSE
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 gboolean
 tp_tls_certificate_rejection_raise_error (TpTLSCertificateRejection *self,

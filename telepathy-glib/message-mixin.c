@@ -339,7 +339,7 @@ lookup_current_chat_state (TpMessageMixin *mixin,
  * Change the current chat state of @member to be @state. This emits
  * ChatStateChanged signal and update ChatStates property.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_message_mixin_change_chat_state (GObject *object,
@@ -380,7 +380,7 @@ tp_message_mixin_change_chat_state (GObject *object,
  * state.
  *
  * Returns: %TRUE on success, %FALSE otherwise.
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 
 /**
@@ -392,7 +392,7 @@ tp_message_mixin_change_chat_state (GObject *object,
  * init, constructor or constructed callback, after tp_message_mixin_init(),
  * and may only be called once per object.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_message_mixin_implement_send_chat_state (GObject *object,
@@ -412,7 +412,7 @@ tp_message_mixin_implement_send_chat_state (GObject *object,
  * Send #TP_CHANNEL_CHAT_STATE_GONE if needed. This should be called on private
  * chats when channel is closed.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_message_mixin_maybe_send_gone (GObject *object)
@@ -1467,7 +1467,7 @@ tp_message_mixin_messages_iface_init (gpointer g_iface,
  * Fill in this mixin's ChatState method implementations in the given interface
  * vtable.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_message_mixin_chat_state_iface_init (gpointer g_iface,

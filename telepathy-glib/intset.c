@@ -101,7 +101,7 @@ tp_intset_get_type (void)
  * Before 0.11.16, this was the name for <type>TpIntsetIter</type>, but
  * it's now just a backwards compatibility typedef.
  *
- * Deprecated: since 0.UNRELEASED. Use #TpIntsetFastIter instead
+ * Deprecated: since 0.19.0. Use #TpIntsetFastIter instead
  */
 
 /**
@@ -120,7 +120,7 @@ tp_intset_get_type (void)
  * Before 0.11.16, this type was called <type>TpIntSetIter</type>,
  * which is now a backwards compatibility typedef.
  *
- * Deprecated: since 0.UNRELEASED. Use #TpIntsetFastIter instead
+ * Deprecated: since 0.19.0. Use #TpIntsetFastIter instead
  */
 /* (public, see header) */
 
@@ -139,7 +139,7 @@ tp_intset_get_type (void)
  * }
  * </programlisting></informalexample>
  *
- * Deprecated: since 0.UNRELEASED. Use #TpIntsetFastIter instead
+ * Deprecated: since 0.19.0. Use #TpIntsetFastIter instead
  */
 /* (macro, see header) */
 
@@ -150,7 +150,7 @@ tp_intset_get_type (void)
  *
  * Reset the iterator @iter to the beginning and make it iterate over @set.
  *
- * Deprecated: since 0.UNRELEASED. Use #TpIntsetFastIter instead
+ * Deprecated: since 0.19.0. Use #TpIntsetFastIter instead
  */
 void
 tp_intset_iter_init (
@@ -169,7 +169,7 @@ tp_intset_iter_init (
  * Reset the iterator @iter to the beginning. It must already be associated
  * with a set.
  *
- * Deprecated: since 0.UNRELEASED. Use #TpIntsetFastIter instead
+ * Deprecated: since 0.19.0. Use #TpIntsetFastIter instead
  */
 void
 tp_intset_iter_reset (TpIntsetIter *iter)
@@ -891,7 +891,7 @@ tp_intset_iter_next (TpIntsetIter *iter)
  * Before 0.11.16, this was the name for <type>TpIntsetFastIter</type>,
  * but it's now just a backwards compatibility typedef.
  *
- * Deprecated: since 0.UNRELEASED. Use #TpIntsetFastIter instead
+ * Deprecated: since 0.19.0. Use #TpIntsetFastIter instead
  */
 
 /**

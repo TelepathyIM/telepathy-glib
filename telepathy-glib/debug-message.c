@@ -42,7 +42,7 @@
  *
  * Data structure representing a #TpDebugMessage.
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 
 /**
@@ -50,7 +50,7 @@
  *
  * The class of a #TpDebugMessage.
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 
 G_DEFINE_TYPE (TpDebugMessage, tp_debug_message, G_TYPE_OBJECT)
@@ -133,7 +133,7 @@ tp_debug_message_class_init (
    *
    * Timestamp of the debug message.
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   spec = g_param_spec_boxed ("time", "time",
       "Time",
@@ -146,7 +146,7 @@ tp_debug_message_class_init (
    *
    * Domain of the debug message.
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   spec = g_param_spec_string ("domain", "domain",
       "Domain",
@@ -159,7 +159,7 @@ tp_debug_message_class_init (
    *
    * Category of the debug message, or %NULL if none was specified.
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   spec = g_param_spec_string ("category", "category",
       "Category",
@@ -172,7 +172,7 @@ tp_debug_message_class_init (
    *
    * A #GLogLevelFlags representing the level of the debug message.
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   spec = g_param_spec_uint ("level", "level",
       "Level",
@@ -185,7 +185,7 @@ tp_debug_message_class_init (
    *
    * Text of the debug message, stripped from its trailing whitespaces.
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   spec = g_param_spec_string ("message", "message",
       "Message",
@@ -271,7 +271,7 @@ _tp_debug_message_new (gdouble timestamp,
  *
  * Returns: (transfer none): the value of #TpDebugMessage:time property
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 GDateTime *
 tp_debug_message_get_time (TpDebugMessage *self)
@@ -287,7 +287,7 @@ tp_debug_message_get_time (TpDebugMessage *self)
  *
  * Returns: the value of #TpDebugMessage:domain property
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 const gchar *
 tp_debug_message_get_domain (TpDebugMessage *self)
@@ -303,7 +303,7 @@ tp_debug_message_get_domain (TpDebugMessage *self)
  *
  * Returns: the value of #TpDebugMessage:category property
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 const char *
 tp_debug_message_get_category (TpDebugMessage *self)
@@ -319,7 +319,7 @@ tp_debug_message_get_category (TpDebugMessage *self)
  *
  * Returns: the value of #TpDebugMessage:level property
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 GLogLevelFlags
 tp_debug_message_get_level (TpDebugMessage *self)
@@ -335,7 +335,7 @@ tp_debug_message_get_level (TpDebugMessage *self)
  *
  * Returns: the value of #TpDebugMessage:message property
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 const gchar *
 tp_debug_message_get_message (TpDebugMessage *self)

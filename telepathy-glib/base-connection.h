@@ -151,7 +151,7 @@ void tp_base_connection_add_interfaces (TpBaseConnection *self,
     const gchar **interfaces);
 
 #ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_UNRELEASED
+_TP_DEPRECATED_IN_0_20
 void tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
     guint handle_type, const gchar **names, DBusGMethodInvocation *context);
 #endif

@@ -1734,7 +1734,7 @@ _tp_account_channel_request_get_client (TpAccountChannelRequest *self)
  * This function can't be called once @self has been used to request a
  * channel.
  *
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_account_channel_request_set_target_contact (
@@ -1769,7 +1769,7 @@ tp_account_channel_request_set_target_contact (
  * This function can't be called once @self has been used to request a
  * channel.
  *
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_account_channel_request_set_target_id (
@@ -1810,7 +1810,7 @@ tp_account_channel_request_set_target_id (
  *
  * Returns: a new #TpAccountChannelRequest object
  *
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 TpAccountChannelRequest *
 tp_account_channel_request_new_text (
@@ -1869,7 +1869,7 @@ tp_account_channel_request_new_text (
  * This function can't be called once @self has been used to request a
  * channel.
  *
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_account_channel_request_set_request_property (
@@ -1928,7 +1928,7 @@ tp_account_channel_request_set_request_property (
  *
  * Returns: a new #TpAccountChannelRequest object
  *
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 TpAccountChannelRequest *
 tp_account_channel_request_new_audio_call (
@@ -1977,7 +1977,7 @@ tp_account_channel_request_new_audio_call (
  *
  * Returns: a new #TpAccountChannelRequest object
  *
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 TpAccountChannelRequest *
 tp_account_channel_request_new_audio_video_call (
@@ -2030,7 +2030,7 @@ tp_account_channel_request_new_audio_video_call (
  *
  * Returns: a new #TpAccountChannelRequest object
  *
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 TpAccountChannelRequest *
 tp_account_channel_request_new_file_transfer (
@@ -2084,7 +2084,7 @@ tp_account_channel_request_new_file_transfer (
  * This function can't be called once @self has been used to request a
  * channel.
  *
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_account_channel_request_set_file_transfer_description (
@@ -2132,7 +2132,7 @@ tp_account_channel_request_set_file_transfer_description (
  * This function can't be called once @self has been used to request a
  * channel.
  *
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_account_channel_request_set_file_transfer_uri (
@@ -2167,7 +2167,7 @@ tp_account_channel_request_set_file_transfer_uri (
  * This function can't be called once @self has been used to request a
  * channel.
  *
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_account_channel_request_set_file_transfer_timestamp (
@@ -2203,7 +2203,7 @@ tp_account_channel_request_set_file_transfer_timestamp (
  * This function can't be called once @self has been used to request a
  * channel.
  *
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_account_channel_request_set_file_transfer_initial_offset (

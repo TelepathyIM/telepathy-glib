@@ -3331,7 +3331,7 @@ tp_connection_get_detailed_error (TpConnection *self,
  *
  * Returns: (transfer full) (allow-none): a D-Bus error name, or %NULL.
  *
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 gchar *
 tp_connection_dup_detailed_error_vardict (TpConnection *self,

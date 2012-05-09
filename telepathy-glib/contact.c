@@ -132,7 +132,7 @@ struct _TpContact {
  * 1 higher than the highest #TpContactFeature supported by this version of
  * telepathy-glib.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 
 /**
@@ -269,7 +269,7 @@ struct _TpContactPrivate {
  *  (it must be referenced with g_object_ref if it must remain valid
  *  longer than the contact)
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 TpAccount *
 tp_contact_get_account (TpContact *self)
@@ -4708,7 +4708,7 @@ got_contact_by_id_cb (TpConnection *self,
  * list of features they would like to use if possible, and use it for all
  * connection managers.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_connection_dup_contact_by_id_async (TpConnection *self,
@@ -4758,7 +4758,7 @@ tp_connection_dup_contact_by_id_async (TpConnection *self,
  * Finishes tp_connection_get_contact_by_id_async().
  *
  * Returns: (transfer full): a #TpContact or %NULL on error.
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 TpContact *
 tp_connection_dup_contact_by_id_finish (TpConnection *self,
@@ -4825,7 +4825,7 @@ got_contact_attributes_cb (TpConnection *self,
  * list of features they would like to use if possible, and use it for all
  * connection managers.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 void
 tp_connection_upgrade_contacts_async (TpConnection *self,
@@ -4914,7 +4914,7 @@ tp_connection_upgrade_contacts_async (TpConnection *self,
  * Finishes tp_connection_upgrade_contacts_async().
  *
  * Returns: %TRUE on success, %FALSE otherwise.
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 gboolean
 tp_connection_upgrade_contacts_finish (TpConnection *self,

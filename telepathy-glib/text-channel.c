@@ -1087,7 +1087,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    * has finished preparing features %TP_TEXT_CHANNEL_FEATURE_CHAT_STATES,
    * %TP_CHANNEL_FEATURE_GROUP and %TP_CHANNEL_FEATURE_CONTACTS.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.0
    */
   signals[SIG_CONTACT_CHAT_STATE_CHANGED] = g_signal_new (
       "contact-chat-state-changed",
@@ -1577,7 +1577,7 @@ tp_text_channel_ack_message_finish (TpTextChannel *self,
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 
 GQuark
@@ -1597,7 +1597,7 @@ tp_text_channel_get_feature_quark_chat_states (void)
  *
  * Returns: the chat state for @contact, or %TP_CHANNEL_CHAT_STATE_INACTIVE
  *  if their chat state is not known
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 TpChannelChatState
 tp_text_channel_get_chat_state (TpTextChannel *self,

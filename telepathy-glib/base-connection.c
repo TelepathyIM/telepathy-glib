@@ -2536,7 +2536,7 @@ tp_base_connection_release_handles (TpSvcConnection *iface,
  * This was exported so subclasses could use it as a basis for their
  * reimplementations, but reimplementing the method is now deprecated.
  *
- * Deprecated: 0.UNRELEASED
+ * Deprecated: 0.19.0
  */
 void
 tp_base_connection_dbus_request_handles (TpSvcConnection *iface,

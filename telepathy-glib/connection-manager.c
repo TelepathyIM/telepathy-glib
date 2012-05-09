@@ -2559,7 +2559,7 @@ tp_connection_manager_param_get_default (
  * %G_VARIANT_TYPE_STRING.
  *
  * Returns: the default value, or %NULL if there is no default
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 GVariant *
 tp_connection_manager_param_dup_default_variant (

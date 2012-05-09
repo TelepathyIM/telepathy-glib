@@ -264,7 +264,7 @@ tp_capabilities_class_init (TpCapabilitiesClass *klass)
    * tp_capabilities_supports_text_chats() are likely to be more useful to
    * the majority of clients.
    *
-   * Since: UNRELEASED
+   * Since: 0.19.0
    */
   param_spec = g_param_spec_variant ("channel-classes-variant",
       "GVariant of type a(a{sv}as)",
@@ -419,7 +419,7 @@ tp_capabilities_supports_text_chatrooms (TpCapabilities *self)
  * #TP_PROP_CHANNEL_INTERFACE_SMS_SMS_CHANNEL set to %TRUE can be
  * expected to work, %FALSE otherwise.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.0
  */
 gboolean
 tp_capabilities_supports_sms (TpCapabilities *self)
@@ -727,7 +727,7 @@ tp_capabilities_supports_file_transfer (TpCapabilities *self)
  *  tp_capabilities_supports_file_transfer() can also specify the outgoing
  *  file's URI
  *
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 gboolean
 tp_capabilities_supports_file_transfer_uri (TpCapabilities *self)
@@ -745,7 +745,7 @@ tp_capabilities_supports_file_transfer_uri (TpCapabilities *self)
  *  tp_capabilities_supports_file_transfer() can also specify the outgoing
  *  file's description
  *
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 gboolean
 tp_capabilities_supports_file_transfer_description (TpCapabilities *self)
@@ -765,7 +765,7 @@ tp_capabilities_supports_file_transfer_description (TpCapabilities *self)
  *  tp_capabilities_supports_file_transfer() can also specify an
  *  initial offset greater than 0
  *
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 gboolean
 tp_capabilities_supports_file_transfer_initial_offset (TpCapabilities *self)
@@ -783,7 +783,7 @@ tp_capabilities_supports_file_transfer_initial_offset (TpCapabilities *self)
  *  tp_capabilities_supports_file_transfer() can also specify the outgoing
  *  file's timestamp
  *
- * Since: 0.19.UNRELEASED
+ * Since: 0.19.0
  */
 gboolean
 tp_capabilities_supports_file_transfer_timestamp (TpCapabilities *self)
@@ -1085,7 +1085,7 @@ tp_capabilities_supports_room_list (TpCapabilities *self,
  * Returns: (transfer full): the value of the
  * #TpCapabilities:channel-classes-variant property
  *
- * Since: UNRELEASED
+ * Since: 0.19.0
  */
 GVariant *
 tp_capabilities_dup_channel_classes_variant (TpCapabilities *self)
