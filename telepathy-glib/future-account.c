@@ -765,6 +765,8 @@ tp_future_account_set_display_name (TpFutureAccount *self,
 
   priv = self->priv;
 
+  g_return_if_fail (priv->result == NULL && !priv->created);
+
   g_free (priv->display_name);
   priv->display_name = g_strdup (name);
 }
@@ -790,6 +792,8 @@ tp_future_account_set_icon_name (TpFutureAccount *self,
 
   priv = self->priv;
 
+  g_return_if_fail (priv->result == NULL && !priv->created);
+
   tp_asv_set_string (priv->properties, TP_PROP_ACCOUNT_ICON, icon);
 }
 
@@ -813,6 +817,8 @@ tp_future_account_set_nickname (TpFutureAccount *self,
   g_return_if_fail (nickname != NULL);
 
   priv = self->priv;
+
+  g_return_if_fail (priv->result == NULL && !priv->created);
 
   tp_asv_set_string (priv->properties, TP_PROP_ACCOUNT_NICKNAME, nickname);
 }
@@ -846,6 +852,8 @@ tp_future_account_set_requested_presence (TpFutureAccount *self,
   g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
 
   priv = self->priv;
+
+  g_return_if_fail (priv->result == NULL && !priv->created);
 
   value = tp_g_value_slice_new_take_boxed (TP_STRUCT_TYPE_SIMPLE_PRESENCE,
       dbus_g_type_specialized_construct (TP_STRUCT_TYPE_SIMPLE_PRESENCE));
@@ -889,6 +897,8 @@ tp_future_account_set_automatic_presence (TpFutureAccount *self,
 
   priv = self->priv;
 
+  g_return_if_fail (priv->result == NULL && !priv->created);
+
   value = tp_g_value_slice_new_take_boxed (TP_STRUCT_TYPE_SIMPLE_PRESENCE,
       dbus_g_type_specialized_construct (TP_STRUCT_TYPE_SIMPLE_PRESENCE));
   arr = (GValueArray *) g_value_get_boxed (value);
@@ -922,6 +932,8 @@ tp_future_account_set_enabled (TpFutureAccount *self,
 
   priv = self->priv;
 
+  g_return_if_fail (priv->result == NULL && !priv->created);
+
   tp_asv_set_boolean (priv->properties, TP_PROP_ACCOUNT_ENABLED, enabled);
 }
 
@@ -947,6 +959,8 @@ tp_future_account_set_connect_automatically (TpFutureAccount *self,
   g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
 
   priv = self->priv;
+
+  g_return_if_fail (priv->result == NULL && !priv->created);
 
   tp_asv_set_boolean (priv->properties,
       TP_PROP_ACCOUNT_CONNECT_AUTOMATICALLY,
@@ -977,6 +991,8 @@ tp_future_account_add_supersedes (TpFutureAccount *self,
   g_return_if_fail (g_variant_is_object_path (superseded_path));
 
   priv = self->priv;
+
+  g_return_if_fail (priv->result == NULL && !priv->created);
 
   array = tp_asv_get_boxed (priv->properties,
       TP_PROP_ACCOUNT_SUPERSEDES,
@@ -1025,6 +1041,8 @@ tp_future_account_set_avatar (TpFutureAccount *self,
 
   priv = self->priv;
 
+  g_return_if_fail (priv->result == NULL && !priv->created);
+
   tmp = g_array_new (FALSE, FALSE, sizeof (guchar));
 
   if (len > 0)
@@ -1070,6 +1088,8 @@ tp_future_account_set_parameter (TpFutureAccount *self,
 
   priv = self->priv;
 
+  g_return_if_fail (priv->result == NULL && !priv->created);
+
   dbus_g_value_parse_g_variant (value, &one);
   two = tp_g_value_slice_dup (&one);
 
@@ -1100,6 +1120,8 @@ tp_future_account_unset_parameter (TpFutureAccount *self,
 
   priv = self->priv;
 
+  g_return_if_fail (priv->result == NULL && !priv->created);
+
   g_hash_table_remove (priv->parameters, key);
 }
 
@@ -1126,6 +1148,8 @@ tp_future_account_set_parameter_string (TpFutureAccount *self,
   g_return_if_fail (value != NULL);
 
   priv = self->priv;
+
+  g_return_if_fail (priv->result == NULL && !priv->created);
 
   g_hash_table_insert (priv->parameters, g_strdup (key),
       tp_g_value_slice_new_string (value));
@@ -1236,7 +1260,13 @@ tp_future_account_create_account_async (TpFutureAccount *self,
     }
 
   if (priv->created)
-    WARNING ("trying to create an account which has already been created");
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (self),
+          callback, user_data,
+          TP_ERROR, TP_ERROR_NOT_AVAILABLE,
+          "This account has already been created");
+      return;
+    }
 
   priv->result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
       tp_future_account_create_account_async);
