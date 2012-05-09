@@ -52,10 +52,9 @@
  *   TpAccountManager *am = tp_account_manager_dup ();
  *   TpFutureAccount *future;
  *
- *   future = tp_future_account_new (am, "gabble", "jabber");
- *   tp_future_account_set_display_name (future, "Work Jabber account");
+ *   future = tp_future_account_new (am, "gabble", "jabber", "Work Jabber account");
  *
- *   tp_future_account_set_parameter (future, "account", "walter.white@example.com");
+ *   tp_future_account_set_parameter (future, "account", "walter.white@lospollos.lit");
  *
  *   // ...
  *
@@ -168,6 +167,7 @@ tp_future_account_constructed (GObject *object)
   g_assert (priv->account_manager != NULL);
   g_assert (priv->cm_name != NULL);
   g_assert (priv->proto_name != NULL);
+  g_assert (priv->display_name != NULL);
 
   priv->parameters = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, (GDestroyNotify) tp_g_value_slice_free);
@@ -320,6 +320,10 @@ tp_future_account_set_property (GObject *object,
       g_assert (priv->proto_name == NULL);
       priv->proto_name = g_value_dup_string (value);
       break;
+    case PROP_DISPLAY_NAME:
+      g_assert (priv->display_name == NULL);
+      priv->display_name = g_value_dup_string (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -429,7 +433,7 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           "DisplayName",
           "The account's display name",
           NULL,
-          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+          G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
   /**
    * TpFutureAccount:parameters:
@@ -678,6 +682,7 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
  * @account_manager: the #TpAccountManager to create the account on
  * @manager: the name of the connection manager
  * @protocol: the name of the protocol on @manager
+ * @display_name: the user-visible name of this account
  *
  * Convenience function to create a new future account object which
  * will assist in the creation of a new account on @account_manager,
@@ -691,7 +696,8 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
 TpFutureAccount *
 tp_future_account_new (TpAccountManager *account_manager,
     const gchar *manager,
-    const gchar *protocol)
+    const gchar *protocol,
+    const gchar *display_name)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (account_manager), NULL);
   g_return_val_if_fail (manager != NULL, NULL);
@@ -701,6 +707,7 @@ tp_future_account_new (TpAccountManager *account_manager,
       "account-manager", account_manager,
       "connection-manager", manager,
       "protocol", protocol,
+      "display-name", display_name,
       NULL);
 }
 
@@ -708,6 +715,7 @@ tp_future_account_new (TpAccountManager *account_manager,
  * tp_future_account_new_from_protocol:
  * @account_manager: the #TpAccountManager to create the account on
  * @protocol: a #TpProtocol
+ * @display_name: the user-visible name of this account
  *
  * Convenience function to create a new #TpFutureAccount object using
  * a #TpProtocol instance, instead of specifying connection manager
@@ -721,7 +729,8 @@ tp_future_account_new (TpAccountManager *account_manager,
  */
 TpFutureAccount *
 tp_future_account_new_from_protocol (TpAccountManager *account_manager,
-    TpProtocol *protocol)
+    TpProtocol *protocol,
+    const gchar *display_name)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (account_manager), NULL);
   g_return_val_if_fail (TP_IS_PROTOCOL (protocol), NULL);
@@ -730,6 +739,7 @@ tp_future_account_new_from_protocol (TpAccountManager *account_manager,
       "account-manager", account_manager,
       "connection-manager", tp_protocol_get_cm_name (protocol),
       "protocol", tp_protocol_get_name (protocol),
+      "display-name", display_name,
       NULL);
 }
 
@@ -1222,15 +1232,6 @@ tp_future_account_create_account_async (TpFutureAccount *self,
           TP_ERROR, TP_ERROR_BUSY,
           "A account creation operation has already been started on this "
           "future account");
-      return;
-    }
-
-  if (priv->display_name == NULL)
-    {
-      g_simple_async_report_error_in_idle (G_OBJECT (self),
-          callback, user_data,
-          TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-          "The future account needs a display name to create the account");
       return;
     }
 

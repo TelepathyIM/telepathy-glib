@@ -90,7 +90,7 @@ test_new (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   test->account = tp_future_account_new (test->account_manager,
-      "gabble", "jabber");
+      "gabble", "jabber", "Gustavo Fring");
   g_assert (TP_IS_FUTURE_ACCOUNT (test->account));
 }
 
@@ -102,9 +102,7 @@ test_gobject_properties (Test *test,
   gchar *manager, *protocol, *display_name;
 
   test->account = tp_future_account_new (test->account_manager,
-      "gabble", "jabber");
-
-  tp_future_account_set_display_name (test->account, "Charles Dickens");
+      "gabble", "jabber", "Charles Dickens");
 
   g_object_get (test->account,
       "account-manager", &am,
@@ -136,7 +134,7 @@ test_parameters (Test *test,
   guint u;
 
   test->account = tp_future_account_new (test->account_manager,
-      "gabble", "jabber");
+      "gabble", "jabber", "Mike Ehrmantraut");
 
   v_str = g_variant_new_string ("banana");
   tp_future_account_set_parameter (test->account, "cheese", v_str);
@@ -205,7 +203,7 @@ test_properties (Test *test,
   GVariant *v;
 
   test->account = tp_future_account_new (test->account_manager,
-      "gabble", "jabber");
+      "gabble", "jabber", "Walter Jr.");
 
   g_object_get (test->account,
       "properties", &props,
@@ -369,7 +367,7 @@ test_create_succeed (Test *test,
   GArray *avatar;
 
   test->account = tp_future_account_new (test->account_manager,
-      "gabble", "jabber");
+      "gabble", "jabber", "Hank Schrader");
 
   tp_future_account_set_display_name (test->account, "Walter White");
   tp_future_account_set_icon_name (test->account, "gasmask");
@@ -474,9 +472,7 @@ test_create_fail (Test *test,
   TpAccount *account;
 
   test->account = tp_future_account_new (test->account_manager,
-      "gabble", "jabber");
-
-  tp_future_account_set_display_name (test->account, "Walter White");
+      "gabble", "jabber", "Walter White");
 
   /* this will make CreateAccount fail */
   tp_future_account_set_parameter_string (test->account,

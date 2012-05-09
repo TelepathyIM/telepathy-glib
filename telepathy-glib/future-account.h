@@ -65,12 +65,14 @@ _TP_AVAILABLE_IN_0_20
 TpFutureAccount * tp_future_account_new (
     TpAccountManager *account_manager,
     const gchar *manager,
-    const gchar *protocol) G_GNUC_WARN_UNUSED_RESULT;
+    const gchar *protocol,
+    const gchar *display_name) G_GNUC_WARN_UNUSED_RESULT;
 
 _TP_AVAILABLE_IN_0_20
 TpFutureAccount * tp_future_account_new_from_protocol (
     TpAccountManager *account_manager,
-    TpProtocol *protocol) G_GNUC_WARN_UNUSED_RESULT;
+    TpProtocol *protocol,
+    const gchar *display_name) G_GNUC_WARN_UNUSED_RESULT;
 
 _TP_AVAILABLE_IN_0_20
 void tp_future_account_set_display_name (TpFutureAccount *self,
