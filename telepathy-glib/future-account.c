@@ -143,6 +143,7 @@ enum {
   PROP_SUPERSEDES,
   PROP_AVATAR,
   PROP_AVATAR_MIME_TYPE,
+  PROP_SERVICE,
   N_PROPS
 };
 
@@ -675,6 +676,24 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           "The account's avatar's mime type",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpFutureAccount:service:
+   *
+   * A string describing the service of the account, which must
+   * consist only of ASCII letters, numbers and hyphen/minus signs,
+   * and start with a letter (matching the requirements for
+   * Protocol). To change this property, use
+   * tp_future_account_set_service().
+   *
+   * Since: 0.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_SERVICE,
+      g_param_spec_string ("service",
+          "Service",
+          "The account's service",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 }
 
 /**
@@ -1058,6 +1077,33 @@ tp_future_account_set_avatar (TpFutureAccount *self,
   tp_asv_take_boxed (priv->properties,
       TP_PROP_ACCOUNT_INTERFACE_AVATAR_AVATAR,
       TP_STRUCT_TYPE_AVATAR, arr);
+}
+
+/**
+ * tp_future_account_set_service:
+ * @self: a #TpFutureAccount
+ * @service: the service name for
+ *
+ * Set the service property of the account to @service. Use the
+ * #TpFutureAccount:service property to read the current value.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_future_account_set_service (TpFutureAccount *self,
+    const gchar *service)
+{
+  TpFutureAccountPrivate *priv;
+
+  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (service != NULL);
+
+  priv = self->priv;
+
+  g_return_if_fail (priv->result == NULL && !priv->created);
+
+  tp_asv_set_string (priv->properties,
+      TP_PROP_ACCOUNT_SERVICE, service);
 }
 
 /**

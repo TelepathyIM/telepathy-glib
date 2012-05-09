@@ -112,6 +112,10 @@ _TP_AVAILABLE_IN_0_20
 void tp_future_account_set_avatar (TpFutureAccount *self,
     const guchar *avatar, gsize len, const gchar *mime_type);
 
+_TP_AVAILABLE_IN_0_20
+void tp_future_account_set_service (TpFutureAccount *self,
+    const gchar *service);
+
 /* parameters */
 _TP_AVAILABLE_IN_0_20
 void tp_future_account_set_parameter (TpFutureAccount *self,

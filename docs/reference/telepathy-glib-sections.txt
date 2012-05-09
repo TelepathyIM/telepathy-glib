@@ -5245,6 +5245,7 @@ tp_future_account_set_enabled
 tp_future_account_set_connect_automatically
 tp_future_account_add_supersedes
 tp_future_account_set_avatar
+tp_future_account_set_service
 <SUBSECTION>
 tp_future_account_set_parameter
 tp_future_account_set_parameter_string
