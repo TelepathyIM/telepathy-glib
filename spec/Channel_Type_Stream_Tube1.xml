@@ -149,6 +149,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           The handle of the participant who opened the new connection
         </tp:docstring>
       </arg>
+      <arg name="Identifier" type="s">
+        <tp:docstring>
+          The identifier of the participant who opened the new connection
+        </tp:docstring>
+      </arg>
       <arg name="Connection_Param" type="v">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>A parameter which can be used by the listening process to identify

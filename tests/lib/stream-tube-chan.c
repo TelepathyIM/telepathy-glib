@@ -522,6 +522,10 @@ tp_tests_stream_tube_channel_peer_connected (TpTestsStreamTubeChannel *self,
     TpHandle handle)
 {
   GValue *connection_param;
+  TpBaseChannel *base = (TpBaseChannel *) self;
+  TpBaseConnection *conn = tp_base_channel_get_connection (base);
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
+      TP_HANDLE_TYPE_CONTACT);
 
   if (self->priv->state == TP_TUBE_CHANNEL_STATE_REMOTE_PENDING)
     change_state (self, TP_TUBE_CHANNEL_STATE_OPEN);
@@ -582,7 +586,8 @@ tp_tests_stream_tube_channel_peer_connected (TpTestsStreamTubeChannel *self,
     }
 
   tp_svc_channel_type_stream_tube_emit_new_remote_connection (self, handle,
-      connection_param, self->priv->connection_id);
+      tp_handle_inspect (contact_repo, handle), connection_param,
+      self->priv->connection_id);
 
   self->priv->connection_id++;
 

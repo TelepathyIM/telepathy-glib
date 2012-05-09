@@ -1086,6 +1086,7 @@ connection_rejected (TpStreamTubeChannel *self,
 static void
 _new_remote_connection (TpChannel *channel,
     guint handle,
+    const gchar *id,
     const GValue *param,
     guint connection_id,
     gpointer user_data,
