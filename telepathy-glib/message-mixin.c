@@ -466,7 +466,7 @@ tp_message_mixin_set_chat_state_async (TpSvcChannelInterfaceChatState *iface,
     {
       DEBUG ("invalid chat state %u", state);
 
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "invalid state: %u", state);
       goto error;
     }
@@ -476,7 +476,7 @@ tp_message_mixin_set_chat_state_async (TpSvcChannelInterfaceChatState *iface,
       /* We cannot explicitly set the Gone state */
       DEBUG ("you may not explicitly set the Gone state");
 
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "you may not explicitly set the Gone state");
       goto error;
     }

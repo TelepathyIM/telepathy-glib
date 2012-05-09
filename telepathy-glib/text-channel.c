@@ -870,12 +870,14 @@ tp_text_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   need_sms[0] = TP_IFACE_QUARK_CHANNEL_INTERFACE_SMS;
   features[FEAT_SMS].interfaces_needed = need_sms;
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   features[FEAT_CHAT_STATES].name =
     TP_TEXT_CHANNEL_FEATURE_CHAT_STATES;
   features[FEAT_CHAT_STATES].prepare_async =
     tp_text_channel_prepare_chat_states_async;
   depends_chat_state[0] = TP_CHANNEL_FEATURE_CHAT_STATES;
   features[FEAT_CHAT_STATES].depends_on = depends_chat_state;
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   /* assert that the terminator at the end is there */
   g_assert (features[N_FEAT].name == 0);

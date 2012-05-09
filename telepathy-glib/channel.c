@@ -724,9 +724,11 @@ tp_channel_chat_state_changed_cb (TpChannel *self,
   g_hash_table_insert (self->priv->chat_states,
       GUINT_TO_POINTER (contact), GUINT_TO_POINTER (state));
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   /* Don't emit the signal until we've had the initial state */
   if (!tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_CHAT_STATES))
     return;
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   g_signal_emit (self, signals[SIGNAL_CHAT_STATE_CHANGED], 0, contact, state);
 }
@@ -1503,11 +1505,13 @@ tp_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_CONTACTS].prepare_async =
     _tp_channel_contacts_prepare_async;
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   features[FEAT_CHAT_STATES].name = TP_CHANNEL_FEATURE_CHAT_STATES;
   features[FEAT_CHAT_STATES].prepare_async =
     tp_channel_prepare_chat_states_async;
   need_chat_states[0] = TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE;
   features[FEAT_CHAT_STATES].interfaces_needed = need_chat_states;
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   features[FEAT_PASSWORD].name = TP_CHANNEL_FEATURE_PASSWORD;
   features[FEAT_PASSWORD].prepare_async =
