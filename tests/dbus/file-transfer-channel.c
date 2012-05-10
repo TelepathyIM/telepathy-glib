@@ -228,7 +228,6 @@ create_file_transfer_channel (Test *test,
   g_hash_table_unref (metadata);
   g_hash_table_unref (props);
   g_hash_table_unref (sockets);
-  tp_handle_unref (test->contact_repo, handle);
 }
 
 static void

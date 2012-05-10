@@ -61,32 +61,7 @@ test_handles (void)
   return_jid = tp_handle_inspect (tp_repo, handle);
   g_assert (!strcmp (return_jid, jid));
 
-  /* Hold the handle on behalf of a bus name that will not go away (my own)
-   * [ref 2] */
-  g_assert (tp_handle_client_hold (tp_repo,
-        tp_dbus_daemon_get_unique_name (bus_daemon), handle, NULL) == TRUE);
-
-  /* Now unref it [ref 1] */
-  tp_handle_unref (tp_repo, handle);
-
   /* Validate it, should be all healthy because client holds it still */
-  g_assert (tp_handle_is_valid (tp_repo, handle, NULL) == TRUE);
-
-  /* Ref it again [ref 3] */
-  tp_handle_ref (tp_repo, handle);
-
-  /* Client releases it [ref 2] */
-  g_assert (tp_handle_client_release (tp_repo,
-        tp_dbus_daemon_get_unique_name (bus_daemon), handle, NULL) == TRUE);
-
-  /* Hold the handle on behalf of a bus name that does not, in fact, exist;
-   * this will be detected asynchronously [ref 4] */
-  g_assert (tp_handle_client_hold (tp_repo, ":666.666", handle, NULL) == TRUE);
-
-  /* Now unref it [ref 3] */
-  tp_handle_unref (tp_repo, handle);
-
-  /* ref 4 ensures still valid */
   g_assert (tp_handle_is_valid (tp_repo, handle, NULL) == TRUE);
 
   /* wait for D-Bus to catch up (just to detect any crashes) but don't assert

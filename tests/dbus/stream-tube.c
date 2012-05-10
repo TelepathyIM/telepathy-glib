@@ -204,11 +204,6 @@ create_tube_service (Test *test,
   g_free (chan_path);
   g_hash_table_unref (props);
   g_hash_table_unref (sockets);
-
-  if (contact)
-    tp_handle_unref (test->contact_repo, handle);
-  else
-    tp_handle_unref (test->room_repo, handle);
 }
 
 /* Test Basis */
@@ -623,8 +618,6 @@ test_offer_success (Test *test,
   g_main_loop_run (test->mainloop);
 
   g_assert_error (test->error, TP_ERROR, TP_ERROR_DISCONNECTED);
-
-  tp_handle_unref (test->contact_repo, bob_handle);
 }
 
 static void
@@ -861,7 +854,6 @@ test_offer_race (Test *test,
   use_tube_with_streams (test, alice_stream, alice_cm_stream);
   use_tube_with_streams (test, bob_stream, bob_cm_stream);
 
-  tp_handle_unref (test->contact_repo, alice_handle);
   g_object_unref (address);
   g_object_unref (alice_cm_stream);
   g_object_unref (bob_cm_stream);

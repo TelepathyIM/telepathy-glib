@@ -125,7 +125,6 @@ main (int argc,
 
   g_message ("Cleaning up");
 
-  tp_handle_unref (contact_repo, handle);
   g_object_unref (conn);
   g_assert (chan == NULL);
 

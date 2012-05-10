@@ -466,8 +466,6 @@ in_the_desert (void)
     tp_intset_destroy (service_members_intset);
   }
 
-  tp_handle_unref (contact_repo, camel);
-  tp_handle_unref (contact_repo, camel2);
   tp_intset_destroy (expected_members);
 }
 

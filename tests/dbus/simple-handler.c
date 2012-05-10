@@ -102,8 +102,6 @@ setup (Test *test,
       TP_HANDLE_TYPE_CONTACT, handle, &test->error);
   g_assert_no_error (test->error);
 
-  tp_handle_unref (contact_repo, handle);
-
   g_free (chan_path);
 }
 

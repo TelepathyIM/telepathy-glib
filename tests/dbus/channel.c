@@ -78,7 +78,6 @@ create_contact_chan (Test *test)
 
   g_free (chan_path);
 
-  tp_handle_unref (test->contact_repo, handle);
   g_hash_table_unref (props);
 }
 

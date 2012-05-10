@@ -146,11 +146,6 @@ create_tube_service (Test *test,
 
   g_free (chan_path);
   g_hash_table_unref (props);
-
-  if (contact)
-    tp_handle_unref (test->contact_repo, handle);
-  else
-    tp_handle_unref (test->room_repo, handle);
 }
 
 /* Test Basis */

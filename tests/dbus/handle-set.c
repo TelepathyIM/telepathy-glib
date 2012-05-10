@@ -122,11 +122,6 @@ main (int argc,
 
   tp_handle_set_destroy (set);
 
-  tp_handle_unref (repo, h1);
-  tp_handle_unref (repo, h2);
-  tp_handle_unref (repo, h3);
-  tp_handle_unref (repo, h4);
-
   g_object_unref (G_OBJECT (repo));
 
   return 0;

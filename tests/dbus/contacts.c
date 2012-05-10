@@ -386,7 +386,6 @@ test_contact_info (Fixture *f,
   g_assert_no_error (result.error);
 
   reset_result (&result);
-  tp_handle_unref (service_repo, handle);
 
   /* TEST 4: First set the info in the CM for an handle, then create a TpContact
    * without INFO feature, and finally refresh the contact's info. */
@@ -412,7 +411,6 @@ test_contact_info (Fixture *f,
   g_assert_no_error (result.error);
 
   reset_result (&result);
-  tp_handle_unref (service_repo, handle);
 
   /* TEST5: Create a TpContact without INFO feature, then request the contact's
    * info. */
@@ -434,7 +432,6 @@ test_contact_info (Fixture *f,
   g_assert_no_error (result.error);
 
   reset_result (&result);
-  tp_handle_unref (service_repo, handle);
 
   /* TEST6: Create a TpContact without INFO feature, then request the contact's
    * info, and cancel the request. */
@@ -461,7 +458,6 @@ test_contact_info (Fixture *f,
   g_assert_no_error (result.error);
 
   reset_result (&result);
-  tp_handle_unref (service_repo, handle);
 
   /* Cleanup */
   g_main_loop_unref (result.loop);
@@ -585,7 +581,6 @@ create_contact_with_fake_avatar (TpTestsContactsConnection *service_conn,
   reset_result (&result);
   g_main_loop_unref (result.loop);
 
-  tp_handle_unref (service_repo, handle);
   g_array_unref (array);
 
   return contact;
@@ -1127,7 +1122,6 @@ test_no_features (Fixture *f,
     {
       g_object_unref (contacts[i]);
       tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
-      tp_handle_unref (service_repo, handles[i]);
     }
 
   /* remaining cleanup */
@@ -1422,7 +1416,6 @@ test_upgrade (Fixture *f,
     {
       g_object_unref (contacts[i]);
       tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
-      tp_handle_unref (service_repo, handles[i]);
     }
 
   /* remaining cleanup */
@@ -1832,7 +1825,6 @@ test_features (Fixture *f,
     {
       g_object_unref (contacts[i]);
       tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
-      tp_handle_unref (service_repo, handles[i]);
     }
 
   /* remaining cleanup */

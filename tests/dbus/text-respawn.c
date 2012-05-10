@@ -296,7 +296,6 @@ main (int argc,
 
   tp_tests_connection_assert_disconnect_succeeds (conn);
 
-  tp_handle_unref (contact_repo, handle);
   g_object_unref (chan);
   g_object_unref (conn);
   g_object_unref (service_chan);

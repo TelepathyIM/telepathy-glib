@@ -395,13 +395,6 @@ teardown (Test *test,
   test_clear_log (test);
   g_ptr_array_unref (test->log);
 
-  tp_handle_unref (test->contact_repo, test->sjoerd);
-  tp_handle_unref (test->contact_repo, test->helen);
-  tp_handle_unref (test->contact_repo, test->wim);
-  tp_handle_unref (test->contact_repo, test->bill);
-  tp_handle_unref (test->contact_repo, test->ninja);
-  tp_handle_unref (test->contact_repo, test->canceller);
-
   /* make a new TpConnection just to disconnect the underlying Connection,
    * so we don't leak it */
   conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,

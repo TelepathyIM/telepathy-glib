@@ -445,7 +445,6 @@ main (int argc,
   g_main_loop_unref (mainloop);
   mainloop = NULL;
 
-  tp_handle_unref (contact_repo, handle);
   g_object_unref (conn);
   g_object_unref (service_props_chan);
   g_object_unref (service_props_group_chan);
