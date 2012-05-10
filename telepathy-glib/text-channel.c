@@ -169,46 +169,36 @@ tp_text_channel_get_property (GObject *object,
     }
 }
 
-static TpHandle
-get_sender (TpTextChannel *self,
-    const GPtrArray *message,
-    TpContact **contact,
-    const gchar **out_sender_id)
+static TpContact *
+dup_sender (TpTextChannel *self,
+    const GPtrArray *message)
 {
   const GHashTable *header;
   TpHandle handle;
   const gchar *sender_id = NULL;
   TpConnection *conn;
 
-  g_assert (contact != NULL);
-
   header = g_ptr_array_index (message, 0);
+
   handle = tp_asv_get_uint32 (header, "message-sender", NULL);
   if (handle == 0)
     {
       DEBUG ("Message received on Channel %s doesn't have message-sender",
           tp_proxy_get_object_path (self));
-
-      *contact = NULL;
-      goto out;
+      return NULL;
     }
 
   sender_id = tp_asv_get_string (header, "message-sender-id");
-
-  conn = tp_channel_borrow_connection ((TpChannel *) self);
-  *contact = tp_connection_dup_contact_if_possible (conn, handle, sender_id);
-
-  if (*contact == NULL)
+  if (tp_str_empty (sender_id))
     {
-      DEBUG ("Message received on %s doesn't include message-sender-id, "
-          "please fix CM", tp_proxy_get_object_path (self));
+      DEBUG ("Message received on Channel %s doesn't have message-sender-id",
+          tp_proxy_get_object_path (self));
+      return NULL;
     }
 
-out:
-  if (out_sender_id != NULL)
-    *out_sender_id = sender_id;
+  conn = tp_channel_borrow_connection ((TpChannel *) self);
 
-  return handle;
+  return tp_connection_dup_contact_if_possible (conn, handle, sender_id);
 }
 
 static void
@@ -220,10 +210,8 @@ prepare_sender_async (TpTextChannel *self,
 {
   TpChannel *channel = (TpChannel *) self;
   TpContact *contact;
-  TpHandle handle;
-  const gchar *id;
 
-  handle = get_sender (self, message, &contact, &id);
+  contact = dup_sender (self, message);
   if (contact == NULL && fallback_to_self)
     {
       TpConnection *conn;
@@ -243,29 +231,11 @@ prepare_sender_async (TpTextChannel *self,
     {
       GPtrArray *contacts = g_ptr_array_new_with_free_func (g_object_unref);
 
-      /* get_sender() refs the contact, we give that ref to the ptr-array */
+      /* Give contact ref to the array */
       g_ptr_array_add (contacts, contact);
       _tp_channel_contacts_queue_prepare_async (channel,
           contacts, callback, user_data);
       g_ptr_array_unref (contacts);
-    }
-  else if (id != NULL)
-    {
-      GPtrArray *ids = g_ptr_array_new_with_free_func (g_free);
-
-      g_ptr_array_add (ids, g_strdup (id));
-      _tp_channel_contacts_queue_prepare_by_id_async (channel,
-          ids, callback, user_data);
-      g_ptr_array_unref (ids);
-    }
-  else if (handle != 0)
-    {
-      GArray *handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
-
-      g_array_append_val (handles, handle);
-      _tp_channel_contacts_queue_prepare_by_handle_async (channel,
-          handles, callback, user_data);
-      g_array_unref (handles);
     }
   else
     {
