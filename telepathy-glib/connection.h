@@ -231,16 +231,17 @@ GQuark tp_connection_get_feature_quark_contact_info (void) G_GNUC_CONST;
 
 /* connection-handles.c */
 
+#ifndef TP_DISABLE_DEPRECATED
 typedef void (*TpConnectionHoldHandlesCb) (TpConnection *connection,
     TpHandleType handle_type, guint n_handles, const TpHandle *handles,
     const GError *error, gpointer user_data, GObject *weak_object);
 
+_TP_DEPRECATED_IN_UNRELEASED
 void tp_connection_hold_handles (TpConnection *self, gint timeout_ms,
     TpHandleType handle_type, guint n_handles, const TpHandle *handles,
     TpConnectionHoldHandlesCb callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
 
-#ifndef TP_DISABLE_DEPRECATED
 typedef void (*TpConnectionRequestHandlesCb) (TpConnection *connection,
     TpHandleType handle_type,
     guint n_handles, const TpHandle *handles, const gchar * const *ids,

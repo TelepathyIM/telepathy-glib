@@ -99,6 +99,8 @@ hold_handles_context_free (gpointer p)
  * For convenience, the handle type and handles requested by the caller are
  * passed through to this callback on success, so the caller does not have to
  * include them in @user_data.
+ *
+ * Deprecated: See tp_connection_hold_handles().
  */
 
 static void
@@ -161,6 +163,11 @@ connection_held_handles (TpConnection *self,
  * reference count of handles; you should not use the RequestHandles,
  * HoldHandles and GetContactAttributes D-Bus methods directly as well as these
  * functions.
+ *
+ * Deprecated: Holding handles is not needed with Connection Managers having
+ *  immortal handles (any Connection Manager using telepathy-glib >= 0.13.8).
+ *  Other Connection Managers are considered deprecated, clients wanting to
+ *  still support them should continue using this deprecated function.
  */
 void
 tp_connection_hold_handles (TpConnection *self,

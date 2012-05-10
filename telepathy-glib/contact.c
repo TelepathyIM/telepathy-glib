@@ -1969,11 +1969,13 @@ contacts_held_one (TpConnection *connection,
 static void
 contacts_hold_one (ContactsContext *c)
 {
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   c->refcount++;
   tp_connection_hold_handles (c->connection, -1,
       TP_HANDLE_TYPE_CONTACT, 1,
       &g_array_index (c->handles, TpHandle, c->next_index),
       contacts_held_one, c, contacts_context_unref, c->weak_object);
+  G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 
@@ -4245,10 +4247,12 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
   /* After that we'll get the features */
   contacts_context_queue_features (context);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   /* but first, we need to hold onto them */
   tp_connection_hold_handles (self, -1,
       TP_HANDLE_TYPE_CONTACT, n_handles, handles,
       contacts_held_handles, context, contacts_context_unref, weak_object);
+  G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 
