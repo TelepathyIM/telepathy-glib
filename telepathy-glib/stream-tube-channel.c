@@ -80,6 +80,7 @@ G_DEFINE_TYPE (TpStreamTubeChannel, tp_stream_tube_channel, TP_TYPE_CHANNEL)
 typedef struct
 {
   TpHandle handle;
+  gchar *id;
   GValue *param;
   guint connection_id;
   gboolean rejected;
@@ -87,6 +88,7 @@ typedef struct
 
 static SigWaitingConn *
 sig_waiting_conn_new (TpHandle handle,
+    const gchar *id,
     const GValue *param,
     guint connection_id,
     gboolean rejected)
@@ -94,6 +96,7 @@ sig_waiting_conn_new (TpHandle handle,
   SigWaitingConn *ret = g_slice_new0 (SigWaitingConn);
 
   ret->handle = handle;
+  ret->id = g_strdup (id);
   ret->param = tp_g_value_slice_dup (param);
   ret->connection_id = connection_id;
   ret->rejected = rejected;
@@ -105,6 +108,7 @@ sig_waiting_conn_free (SigWaitingConn *sig)
 {
   g_assert (sig != NULL);
 
+  g_free (sig->id);
   tp_g_value_slice_free (sig->param);
   g_slice_free (SigWaitingConn, sig);
 }
@@ -897,32 +901,25 @@ tp_stream_tube_channel_accept_finish (TpStreamTubeChannel *self,
 }
 
 static void
-_new_remote_connection_with_contact (TpConnection *conn,
-    guint n_contacts,
-    TpContact * const *contacts,
-    guint n_failed,
-    const TpHandle *failed,
-    const GError *in_error,
-    gpointer user_data,
-    GObject *obj)
+_new_remote_connection_with_contact (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
 {
-  TpStreamTubeChannel *self = (TpStreamTubeChannel *) obj;
-  TpContact *contact;
+  TpConnection *connection = (TpConnection *) object;
   TpStreamTubeConnection *tube_conn = user_data;
+  TpStreamTubeChannel *self = tp_stream_tube_connection_get_channel (tube_conn);
+  GPtrArray *contacts;
+  TpContact *contact;
+  GError *error;
 
-  if (in_error != NULL)
+  if (!tp_connection_upgrade_contacts_finish (connection, result,
+          &contacts, &error))
     {
-      DEBUG ("Failed to prepare TpContact: %s", in_error->message);
-      return;
+      DEBUG ("Failed to prepare TpContact: %s", error->message);
+      g_clear_error (&error);
     }
 
-  if (n_failed > 0)
-    {
-      DEBUG ("Failed to prepare TpContact (InvalidHandle)");
-      return;
-    }
-
-  contact = contacts[0];
+  contact = g_ptr_array_index (contacts, 0);
 
   _tp_stream_tube_connection_set_contact (tube_conn, contact);
 
@@ -932,6 +929,8 @@ _new_remote_connection_with_contact (TpConnection *conn,
   g_signal_emit (self, _signals[INCOMING], 0, tube_conn);
 
   /* anyone receiving the signal is required to hold their own reference */
+  g_object_unref (tube_conn);
+  g_ptr_array_unref (contacts);
 }
 
 static gboolean
@@ -1014,6 +1013,7 @@ static void
 connection_identified (TpStreamTubeChannel *self,
     GSocketConnection *conn,
     TpHandle handle,
+    const gchar *id,
     guint connection_id)
 {
   TpStreamTubeConnection *tube_conn;
@@ -1029,21 +1029,21 @@ connection_identified (TpStreamTubeChannel *self,
   if (can_identify_contact (self))
     {
       TpConnection *connection;
+      TpClientFactory *factory;
       GArray *features;
+      TpContact *contact;
 
       connection = tp_channel_borrow_connection (TP_CHANNEL (self));
-      features = tp_client_factory_dup_contact_features (
-          tp_proxy_get_factory (connection), connection);
+      factory = tp_proxy_get_factory (connection);
+      features = tp_client_factory_dup_contact_features (factory, connection);
 
-      /* Spec does not give the id with the handle */
-      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-      /* Pass the ref on tube_conn to the function */
-      tp_connection_get_contacts_by_handle (connection,
-          1, &handle,
+      contact = tp_client_factory_ensure_contact (factory, connection,
+          handle, id);
+
+      tp_connection_upgrade_contacts_async (connection, 1, &contact,
           (const GQuark *) features->data,
           _new_remote_connection_with_contact,
-          tube_conn, g_object_unref, G_OBJECT (self));
-       G_GNUC_END_IGNORE_DEPRECATIONS
+          tube_conn);
 
       g_array_unref (features);
     }
@@ -1111,7 +1111,7 @@ _new_remote_connection (TpChannel *channel,
       rejected = TRUE;
     }
 
-  sig = sig_waiting_conn_new (handle, param, connection_id, rejected);
+  sig = sig_waiting_conn_new (handle, id, param, connection_id, rejected);
 
   for (l = self->priv->conn_waiting_sig; l != NULL && found_conn == NULL;
       l = g_slist_next (l))
@@ -1141,7 +1141,7 @@ _new_remote_connection (TpChannel *channel,
   if (rejected)
     connection_rejected (self, found_conn->conn, handle, connection_id);
   else
-    connection_identified (self, found_conn->conn, handle, connection_id);
+    connection_identified (self, found_conn->conn, handle, id, connection_id);
 
   sig_waiting_conn_free (sig);
   conn_waiting_sig_free (found_conn);
@@ -1263,7 +1263,7 @@ credentials_received (TpStreamTubeChannel *self,
   if (sig->rejected)
     connection_rejected (self, conn, sig->handle, sig->connection_id);
   else
-    connection_identified (self, conn, sig->handle, sig->connection_id);
+    connection_identified (self, conn, sig->handle, sig->id, sig->connection_id);
 
   sig_waiting_conn_free (sig);
   conn_waiting_sig_free (c);
