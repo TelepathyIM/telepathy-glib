@@ -2,6 +2,7 @@ tests_list = \
     test-account \
     test-account-channel-request \
     test-account-manager \
+    test-account-request \
     test-base-client \
     test-call-cancellation \
     test-call-channel \
@@ -39,7 +40,6 @@ tests_list = \
     test-example-no-protocols \
     test-file-transfer-channel \
     test-finalized-in-invalidated-handler \
-    test-future-account \
     test-get-interface-after-invalidate \
     test-group-mixin \
     test-handle-repo \
@@ -99,6 +99,8 @@ test_account_channel_request_LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests-internal.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la \
     $(GLIB_LIBS)
+
+test_account_request_SOURCES = account-request.c
 
 test_account_manager_SOURCES = account-manager.c
 
@@ -180,9 +182,6 @@ test_file_transfer_channel_SOURCES = file-transfer-channel.c
 
 test_finalized_in_invalidated_handler_SOURCES = \
     finalized-in-invalidated-handler.c
-
-test_future_account_SOURCES = \
-    future-account.c
 
 test_get_interface_after_invalidate_SOURCES = \
     get-interface-after-invalidate.c

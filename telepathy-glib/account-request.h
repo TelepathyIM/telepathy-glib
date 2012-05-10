@@ -1,5 +1,5 @@
 /*
- * future-account.h - object for a currently non-existent account to create
+ * account-request.h - object for a currently non-existent account to create
  *
  * Copyright (C) 2012 Collabora Ltd. <http://www.collabora.co.uk/>
  *
@@ -18,8 +18,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef TP_FUTURE_ACCOUNT_H
-#define TP_FUTURE_ACCOUNT_H
+#ifndef TP_ACCOUNT_REQUEST_H
+#define TP_ACCOUNT_REQUEST_H
 
 #include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/defs.h>
@@ -27,118 +27,118 @@
 
 G_BEGIN_DECLS
 
-typedef struct _TpFutureAccount TpFutureAccount;
-typedef struct _TpFutureAccountClass TpFutureAccountClass;
-typedef struct _TpFutureAccountPrivate TpFutureAccountPrivate;
+typedef struct _TpAccountRequest TpAccountRequest;
+typedef struct _TpAccountRequestClass TpAccountRequestClass;
+typedef struct _TpAccountRequestPrivate TpAccountRequestPrivate;
 
-struct _TpFutureAccount {
+struct _TpAccountRequest {
     /*<private>*/
     GObject parent;
-    TpFutureAccountPrivate *priv;
+    TpAccountRequestPrivate *priv;
 };
 
-struct _TpFutureAccountClass {
+struct _TpAccountRequestClass {
     /*<private>*/
     GObjectClass parent_class;
     GCallback _padding[7];
 };
 
-GType tp_future_account_get_type (void);
+GType tp_account_request_get_type (void);
 
-#define TP_TYPE_FUTURE_ACCOUNT \
-  (tp_future_account_get_type ())
-#define TP_FUTURE_ACCOUNT(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_FUTURE_ACCOUNT, \
-                               TpFutureAccount))
-#define TP_FUTURE_ACCOUNT_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST ((klass), TP_TYPE_FUTURE_ACCOUNT, \
-                            TpFutureAccountClass))
-#define TP_IS_FUTURE_ACCOUNT(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TYPE_FUTURE_ACCOUNT))
-#define TP_IS_FUTURE_ACCOUNT_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE ((klass), TP_TYPE_FUTURE_ACCOUNT))
-#define TP_FUTURE_ACCOUNT_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_FUTURE_ACCOUNT, \
-                              TpFutureAccountClass))
+#define TP_TYPE_ACCOUNT_REQUEST \
+  (tp_account_request_get_type ())
+#define TP_ACCOUNT_REQUEST(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_ACCOUNT_REQUEST, \
+                               TpAccountRequest))
+#define TP_ACCOUNT_REQUEST_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), TP_TYPE_ACCOUNT_REQUEST, \
+                            TpAccountRequestClass))
+#define TP_IS_ACCOUNT_REQUEST(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TYPE_ACCOUNT_REQUEST))
+#define TP_IS_ACCOUNT_REQUEST_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), TP_TYPE_ACCOUNT_REQUEST))
+#define TP_ACCOUNT_REQUEST_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_ACCOUNT_REQUEST, \
+                              TpAccountRequestClass))
 
 _TP_AVAILABLE_IN_0_20
-TpFutureAccount * tp_future_account_new (
+TpAccountRequest * tp_account_request_new (
     TpAccountManager *account_manager,
     const gchar *manager,
     const gchar *protocol,
     const gchar *display_name) G_GNUC_WARN_UNUSED_RESULT;
 
 _TP_AVAILABLE_IN_0_20
-TpFutureAccount * tp_future_account_new_from_protocol (
+TpAccountRequest * tp_account_request_new_from_protocol (
     TpAccountManager *account_manager,
     TpProtocol *protocol,
     const gchar *display_name) G_GNUC_WARN_UNUSED_RESULT;
 
 _TP_AVAILABLE_IN_0_20
-void tp_future_account_set_display_name (TpFutureAccount *self,
+void tp_account_request_set_display_name (TpAccountRequest *self,
     const gchar *name);
 
 _TP_AVAILABLE_IN_0_20
-void tp_future_account_set_icon_name (TpFutureAccount *self,
+void tp_account_request_set_icon_name (TpAccountRequest *self,
     const gchar *icon);
 
 _TP_AVAILABLE_IN_0_20
-void tp_future_account_set_nickname (TpFutureAccount *self,
+void tp_account_request_set_nickname (TpAccountRequest *self,
     const gchar *nickname);
 
 _TP_AVAILABLE_IN_0_20
-void tp_future_account_set_requested_presence (TpFutureAccount *self,
+void tp_account_request_set_requested_presence (TpAccountRequest *self,
     TpConnectionPresenceType presence,
     const gchar *status, const gchar *message);
 
 _TP_AVAILABLE_IN_0_20
-void tp_future_account_set_automatic_presence (TpFutureAccount *self,
+void tp_account_request_set_automatic_presence (TpAccountRequest *self,
     TpConnectionPresenceType presence,
     const gchar *status, const gchar *message);
 
 _TP_AVAILABLE_IN_0_20
-void tp_future_account_set_enabled (TpFutureAccount *self,
+void tp_account_request_set_enabled (TpAccountRequest *self,
     gboolean enabled);
 
 _TP_AVAILABLE_IN_0_20
-void tp_future_account_set_connect_automatically (TpFutureAccount *self,
+void tp_account_request_set_connect_automatically (TpAccountRequest *self,
     gboolean connect_automatically);
 
 _TP_AVAILABLE_IN_0_20
-void tp_future_account_add_supersedes (TpFutureAccount *self,
+void tp_account_request_add_supersedes (TpAccountRequest *self,
     const gchar *superseded_path);
 
 _TP_AVAILABLE_IN_0_20
-void tp_future_account_set_avatar (TpFutureAccount *self,
+void tp_account_request_set_avatar (TpAccountRequest *self,
     const guchar *avatar, gsize len, const gchar *mime_type);
 
 _TP_AVAILABLE_IN_0_20
-void tp_future_account_set_service (TpFutureAccount *self,
+void tp_account_request_set_service (TpAccountRequest *self,
     const gchar *service);
 
 /* parameters */
 _TP_AVAILABLE_IN_0_20
-void tp_future_account_set_parameter (TpFutureAccount *self,
+void tp_account_request_set_parameter (TpAccountRequest *self,
     const gchar *key,
     GVariant *value);
 
 _TP_AVAILABLE_IN_0_20
-void tp_future_account_unset_parameter (TpFutureAccount *self,
+void tp_account_request_unset_parameter (TpAccountRequest *self,
     const gchar *key);
 
 _TP_AVAILABLE_IN_0_20
-void tp_future_account_set_parameter_string (TpFutureAccount *self,
+void tp_account_request_set_parameter_string (TpAccountRequest *self,
     const gchar *key,
     const gchar *value);
 
 /* create it */
 _TP_AVAILABLE_IN_0_20
-void tp_future_account_create_account_async (TpFutureAccount *self,
+void tp_account_request_create_account_async (TpAccountRequest *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
 _TP_AVAILABLE_IN_0_20
-TpAccount * tp_future_account_create_account_finish (TpFutureAccount *self,
+TpAccount * tp_account_request_create_account_finish (TpAccountRequest *self,
     GAsyncResult *result,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;
 

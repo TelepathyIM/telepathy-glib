@@ -1,5 +1,5 @@
 /*
- * future-account.c - object for a currently non-existent account to create
+ * account-request.c - object for a currently non-existent account to create
  *
  * Copyright © 2012 Collabora Ltd. <http://www.collabora.co.uk/>
  *
@@ -20,7 +20,7 @@
 
 #include "config.h"
 
-#include "telepathy-glib/future-account.h"
+#include "telepathy-glib/account-request.h"
 
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
@@ -33,8 +33,8 @@
 #include "telepathy-glib/util-internal.h"
 
 /**
- * SECTION:future-account
- * @title: TpFutureAccount
+ * SECTION:account-request
+ * @title: TpAccountRequest
  * @short_description: object for a currently non-existent account in
  *   order to create easily without speaking fluent D-Bus
  * @see_also: #TpAccountManager
@@ -50,16 +50,16 @@
  * create_acount (void)
  * {
  *   TpAccountManager *am = tp_account_manager_dup ();
- *   TpFutureAccount *future;
+ *   TpAccountRequest *req;
  *
- *   future = tp_future_account_new (am, "gabble", "jabber", "Work Jabber account");
+ *   req = tp_account_request_new (am, "gabble", "jabber", "Work Jabber account");
  *
- *   tp_future_account_set_parameter (future, "account", "walter.white@lospollos.lit");
+ *   tp_account_request_set_parameter (req, "account", "walter.white@lospollos.lit");
  *
  *   // ...
  *
- *   tp_future_account_create_account_async (future, created_cb, NULL);
- *   g_object_unref (future);
+ *   tp_account_request_create_account_async (req, created_cb, NULL);
+ *   g_object_unref (req);
  *   g_object_unref (am);
  * }
  *
@@ -68,11 +68,11 @@
  *     GAsyncResult *result,
  *     gpointer user_data)
  * {
- *   TpFutureAccount *future = TP_FUTURE_ACCOUNT (object);
+ *   TpAccountRequest *req = TP_ACCOUNT_REQUEST (object);
  *   TpAccount *account;
  *   GError *error = NULL;
  *
- *   account = tp_future_account_create_account_finish (future, result, &error);
+ *   account = tp_account_request_create_account_finish (req, result, &error);
  *
  *   if (account == NULL)
  *     {
@@ -92,7 +92,7 @@
  */
 
 /**
- * TpFutureAccount:
+ * TpAccountRequest:
  *
  * An object for representing a currently non-existent account which
  * is to be created on a #TpAccountManager.
@@ -101,12 +101,12 @@
  */
 
 /**
- * TpFutureAccountClass:
+ * TpAccountRequestClass:
  *
- * The class of a #TpFutureAccount.
+ * The class of a #TpAccountRequest.
  */
 
-struct _TpFutureAccountPrivate {
+struct _TpAccountRequestPrivate {
   TpAccountManager *account_manager;
 
   GSimpleAsyncResult *result;
@@ -120,7 +120,7 @@ struct _TpFutureAccountPrivate {
   GHashTable *properties;
 };
 
-G_DEFINE_TYPE (TpFutureAccount, tp_future_account, G_TYPE_OBJECT)
+G_DEFINE_TYPE (TpAccountRequest, tp_account_request, G_TYPE_OBJECT)
 
 /* properties */
 enum {
@@ -148,19 +148,19 @@ enum {
 };
 
 static void
-tp_future_account_init (TpFutureAccount *self)
+tp_account_request_init (TpAccountRequest *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_FUTURE_ACCOUNT,
-      TpFutureAccountPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_ACCOUNT_REQUEST,
+      TpAccountRequestPrivate);
 }
 
 static void
-tp_future_account_constructed (GObject *object)
+tp_account_request_constructed (GObject *object)
 {
-  TpFutureAccount *self = TP_FUTURE_ACCOUNT (object);
-  TpFutureAccountPrivate *priv = self->priv;
+  TpAccountRequest *self = TP_ACCOUNT_REQUEST (object);
+  TpAccountRequestPrivate *priv = self->priv;
   void (*chain_up) (GObject *) =
-    ((GObjectClass *) tp_future_account_parent_class)->constructed;
+    ((GObjectClass *) tp_account_request_parent_class)->constructed;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -185,12 +185,12 @@ tp_future_account_constructed (GObject *object)
   } G_STMT_END
 
 static void
-tp_future_account_get_property (GObject *object,
+tp_account_request_get_property (GObject *object,
     guint prop_id,
     GValue *value,
     GParamSpec *pspec)
 {
-  TpFutureAccount *self = TP_FUTURE_ACCOUNT (object);
+  TpAccountRequest *self = TP_ACCOUNT_REQUEST (object);
 
   switch (prop_id)
     {
@@ -299,13 +299,13 @@ tp_future_account_get_property (GObject *object,
 #undef GET_PRESENCE_VALUE
 
 static void
-tp_future_account_set_property (GObject *object,
+tp_account_request_set_property (GObject *object,
     guint property_id,
     const GValue *value,
     GParamSpec *pspec)
 {
-  TpFutureAccount *self = TP_FUTURE_ACCOUNT (object);
-  TpFutureAccountPrivate *priv = self->priv;
+  TpAccountRequest *self = TP_ACCOUNT_REQUEST (object);
+  TpAccountRequestPrivate *priv = self->priv;
 
   switch (property_id)
     {
@@ -332,10 +332,10 @@ tp_future_account_set_property (GObject *object,
 }
 
 static void
-tp_future_account_dispose (GObject *object)
+tp_account_request_dispose (GObject *object)
 {
-  TpFutureAccount *self = TP_FUTURE_ACCOUNT (object);
-  TpFutureAccountPrivate *priv = self->priv;
+  TpAccountRequest *self = TP_ACCOUNT_REQUEST (object);
+  TpAccountRequestPrivate *priv = self->priv;
 
   g_clear_object (&priv->account_manager);
 
@@ -344,15 +344,15 @@ tp_future_account_dispose (GObject *object)
 
   /* release any references held by the object here */
 
-  if (G_OBJECT_CLASS (tp_future_account_parent_class)->dispose != NULL)
-    G_OBJECT_CLASS (tp_future_account_parent_class)->dispose (object);
+  if (G_OBJECT_CLASS (tp_account_request_parent_class)->dispose != NULL)
+    G_OBJECT_CLASS (tp_account_request_parent_class)->dispose (object);
 }
 
 static void
-tp_future_account_finalize (GObject *object)
+tp_account_request_finalize (GObject *object)
 {
-  TpFutureAccount *self = TP_FUTURE_ACCOUNT (object);
-  TpFutureAccountPrivate *priv = self->priv;
+  TpAccountRequest *self = TP_ACCOUNT_REQUEST (object);
+  TpAccountRequestPrivate *priv = self->priv;
 
   tp_clear_pointer (&priv->cm_name, g_free);
   tp_clear_pointer (&priv->proto_name, g_free);
@@ -360,25 +360,25 @@ tp_future_account_finalize (GObject *object)
 
   /* free any data held directly by the object here */
 
-  if (G_OBJECT_CLASS (tp_future_account_parent_class)->finalize != NULL)
-    G_OBJECT_CLASS (tp_future_account_parent_class)->finalize (object);
+  if (G_OBJECT_CLASS (tp_account_request_parent_class)->finalize != NULL)
+    G_OBJECT_CLASS (tp_account_request_parent_class)->finalize (object);
 }
 
 static void
-tp_future_account_class_init (TpFutureAccountClass *klass)
+tp_account_request_class_init (TpAccountRequestClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *) klass;
 
-  g_type_class_add_private (klass, sizeof (TpFutureAccountPrivate));
+  g_type_class_add_private (klass, sizeof (TpAccountRequestPrivate));
 
-  object_class->constructed = tp_future_account_constructed;
-  object_class->get_property = tp_future_account_get_property;
-  object_class->set_property = tp_future_account_set_property;
-  object_class->dispose = tp_future_account_dispose;
-  object_class->finalize = tp_future_account_finalize;
+  object_class->constructed = tp_account_request_constructed;
+  object_class->get_property = tp_account_request_get_property;
+  object_class->set_property = tp_account_request_set_property;
+  object_class->dispose = tp_account_request_dispose;
+  object_class->finalize = tp_account_request_finalize;
 
   /**
-   * TpFutureAccount:account-manager:
+   * TpAccountRequest:account-manager:
    *
    * The #TpAccountManager to create the account on.
    *
@@ -387,12 +387,12 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
   g_object_class_install_property (object_class, PROP_ACCOUNT_MANAGER,
       g_param_spec_object ("account-manager",
           "Account manager",
-          "The future account's account manager",
+          "The account's account manager",
           TP_TYPE_ACCOUNT_MANAGER,
           G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
   /**
-   * TpFutureAccount:connection-manager:
+   * TpAccountRequest:connection-manager:
    *
    * The account's connection manager name.
    *
@@ -406,7 +406,7 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
   /**
-   * TpFutureAccount:protocol:
+   * TpAccountRequest:protocol:
    *
    * The account's machine-readable protocol name, such as "jabber", "msn" or
    * "local-xmpp". Recommended names for most protocols can be found in the
@@ -422,10 +422,10 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
   /**
-   * TpFutureAccount:display-name:
+   * TpAccountRequest:display-name:
    *
    * The account's display name. To change this property use
-   * tp_future_account_set_display_name().
+   * tp_account_request_set_display_name().
    *
    * Since: 0.UNRELEASED
    */
@@ -437,10 +437,10 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
   /**
-   * TpFutureAccount:parameters:
+   * TpAccountRequest:parameters:
    *
    * The account's connection parameters. To add a parameter, use
-   * tp_future_account_set_parameter() or another convience function.
+   * tp_account_request_set_parameter() or another convience function.
    *
    * Since: 0.UNRELEASED
    */
@@ -452,7 +452,7 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpFutureAccount:properties:
+   * TpAccountRequest:properties:
    *
    * The account's properties.
    *
@@ -466,10 +466,10 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpFutureAccount:icon-name:
+   * TpAccountRequest:icon-name:
    *
    * The account's icon name. To change this propery, use
-   * tp_future_account_set_icon_name().
+   * tp_account_request_set_icon_name().
    *
    * Since: 0.UNRELEASED
    */
@@ -481,10 +481,10 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpFutureAccount:nickname:
+   * TpAccountRequest:nickname:
    *
    * The account's nickname. To change this property use
-   * tp_future_account_set_nickname().
+   * tp_account_request_set_nickname().
    *
    * Since: 0.UNRELEASED
    */
@@ -496,11 +496,11 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpFutureAccount:requested-presence-type:
+   * TpAccountRequest:requested-presence-type:
    *
    * The account's requested presence type (a
    * #TpConnectionPresenceType). To change this property use
-   * tp_future_account_set_requested_presence().
+   * tp_account_request_set_requested_presence().
    *
    * Since: 0.UNRELEASED
    */
@@ -514,10 +514,10 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpFutureAccount:requested-status:
+   * TpAccountRequest:requested-status:
    *
    * The requested Status string of the account. To change this
-   * property use tp_future_account_set_requested_presence().
+   * property use tp_account_request_set_requested_presence().
    *
    * Since: 0.UNRELEASED
    */
@@ -529,10 +529,10 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpFutureAccount:requested-status-message:
+   * TpAccountRequest:requested-status-message:
    *
    * The requested status message message of the account. To change
-   * this property use tp_future_account_set_requested_presence().
+   * this property use tp_account_request_set_requested_presence().
    *
    * Since: 0.UNRELEASED
    */
@@ -544,11 +544,11 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpFutureAccount:automatic-presence-type:
+   * TpAccountRequest:automatic-presence-type:
    *
    * The account's automatic presence type (a
    * #TpConnectionPresenceType). To change this property use
-   * tp_future_account_set_automatic_presence().
+   * tp_account_request_set_automatic_presence().
    *
    * When the account is put online automatically, for instance to
    * make a channel request or because network connectivity becomes
@@ -567,11 +567,11 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpFutureAccount:automatic-status:
+   * TpAccountRequest:automatic-status:
    *
    * The string status name to use in conjunction with the
-   * #TpFutureAccount:automatic-presence-type. To change this property
-   * use tp_future_account_set_automatic_presence().
+   * #TpAccountRequest:automatic-presence-type. To change this property
+   * use tp_account_request_set_automatic_presence().
    *
    * Since: 0.UNRELEASED
    */
@@ -583,11 +583,11 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpFutureAccount:automatic-status-message:
+   * TpAccountRequest:automatic-status-message:
    *
    * The user-defined message to use in conjunction with the
    * #TpAccount:automatic-presence-type. To change this property use
-   * tp_future_account_set_automatic_presence().
+   * tp_account_request_set_automatic_presence().
    *
    * Since: 0.UNRELEASED
    */
@@ -599,10 +599,10 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpFutureAccount:enabled:
+   * TpAccountRequest:enabled:
    *
    * Whether the account is enabled or not. To change this property
-   * use tp_future_account_set_enabled().
+   * use tp_account_request_set_enabled().
    *
    * Since: 0.UNRELEASED
    */
@@ -614,10 +614,10 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpFutureAccount:connect-automatically:
+   * TpAccountRequest:connect-automatically:
    *
    * Whether the account should connect automatically or not. To change this
-   * property, use tp_future_account_set_connect_automatically().
+   * property, use tp_account_request_set_connect_automatically().
    *
    * Since: 0.UNRELEASED
    */
@@ -629,13 +629,13 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpFutureAccount:supersedes:
+   * TpAccountRequest:supersedes:
    *
    * The object paths of previously-active accounts superseded by this one.
    * For instance, this can be used in a logger to read old logs for an
    * account that has been migrated from one connection manager to another.
    *
-   * To add to this property use tp_future_account_add_supersedes().
+   * To add to this property use tp_account_request_add_supersedes().
    *
    * Since: 0.UNRELEASED
    */
@@ -647,11 +647,11 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
         G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpFutureAccount:avatar:
+   * TpAccountRequest:avatar:
    *
    * The avatar set on the account. The avatar's mime type can be read
-   * in the #TpFutureAccount:avatar-mime-type property. To change this
-   * property, use tp_future_account_set_avatar().
+   * in the #TpAccountRequest:avatar-mime-type property. To change this
+   * property, use tp_account_request_set_avatar().
    *
    * Since: 0.UNRELEASED
    */
@@ -663,10 +663,10 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
         G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpFutureAccount:avatar-mime-type:
+   * TpAccountRequest:avatar-mime-type:
    *
-   * The mime type of the #TpFutureAccount:avatar property. To change
-   * this property, use tp_future_account_set_avatar().
+   * The mime type of the #TpAccountRequest:avatar property. To change
+   * this property, use tp_account_request_set_avatar().
    *
    * Since: 0.UNRELEASED
    */
@@ -678,13 +678,13 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpFutureAccount:service:
+   * TpAccountRequest:service:
    *
    * A string describing the service of the account, which must
    * consist only of ASCII letters, numbers and hyphen/minus signs,
    * and start with a letter (matching the requirements for
    * Protocol). To change this property, use
-   * tp_future_account_set_service().
+   * tp_account_request_set_service().
    *
    * Since: 0.UNRELEASED
    */
@@ -697,23 +697,23 @@ tp_future_account_class_init (TpFutureAccountClass *klass)
 }
 
 /**
- * tp_future_account_new:
+ * tp_account_request_new:
  * @account_manager: the #TpAccountManager to create the account on
  * @manager: the name of the connection manager
  * @protocol: the name of the protocol on @manager
  * @display_name: the user-visible name of this account
  *
- * Convenience function to create a new future account object which
+ * Convenience function to create a new account request object which
  * will assist in the creation of a new account on @account_manager,
  * using connection manager @manager, and protocol @protocol.
  *
- * Returns: (transfer full): a new reference to a future account
+ * Returns: (transfer full): a new reference to an account request
  *   object, or %NULL if any argument is incorrect
  *
  * Since: 0.UNRELEASED
  */
-TpFutureAccount *
-tp_future_account_new (TpAccountManager *account_manager,
+TpAccountRequest *
+tp_account_request_new (TpAccountManager *account_manager,
     const gchar *manager,
     const gchar *protocol,
     const gchar *display_name)
@@ -722,7 +722,7 @@ tp_future_account_new (TpAccountManager *account_manager,
   g_return_val_if_fail (manager != NULL, NULL);
   g_return_val_if_fail (protocol != NULL, NULL);
 
-  return g_object_new (TP_TYPE_FUTURE_ACCOUNT,
+  return g_object_new (TP_TYPE_ACCOUNT_REQUEST,
       "account-manager", account_manager,
       "connection-manager", manager,
       "protocol", protocol,
@@ -731,30 +731,30 @@ tp_future_account_new (TpAccountManager *account_manager,
 }
 
 /**
- * tp_future_account_new_from_protocol:
+ * tp_account_request_new_from_protocol:
  * @account_manager: the #TpAccountManager to create the account on
  * @protocol: a #TpProtocol
  * @display_name: the user-visible name of this account
  *
- * Convenience function to create a new #TpFutureAccount object using
+ * Convenience function to create a new #TpAccountRequest object using
  * a #TpProtocol instance, instead of specifying connection manager
- * and protocol name specifically. See tp_future_account_new() for
+ * and protocol name specifically. See tp_account_request_new() for
  * more details.
  *
- * Returns: (transfer full): a new reference to a future account
+ * Returns: (transfer full): a new reference to an account request
  *   object, or %NULL if any argument is incorrect
  *
  * Since: 0.UNRELEASED
  */
-TpFutureAccount *
-tp_future_account_new_from_protocol (TpAccountManager *account_manager,
+TpAccountRequest *
+tp_account_request_new_from_protocol (TpAccountManager *account_manager,
     TpProtocol *protocol,
     const gchar *display_name)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (account_manager), NULL);
   g_return_val_if_fail (TP_IS_PROTOCOL (protocol), NULL);
 
-  return g_object_new (TP_TYPE_FUTURE_ACCOUNT,
+  return g_object_new (TP_TYPE_ACCOUNT_REQUEST,
       "account-manager", account_manager,
       "connection-manager", tp_protocol_get_cm_name (protocol),
       "protocol", tp_protocol_get_name (protocol),
@@ -763,23 +763,23 @@ tp_future_account_new_from_protocol (TpAccountManager *account_manager,
 }
 
 /**
- * tp_future_account_set_display_name:
- * @self: a #TpFutureAccount
+ * tp_account_request_set_display_name:
+ * @self: a #TpAccountRequest
  * @name: a display name for the account
  *
  * Set the display name for the new account, @self, to @name. Use the
- * #TpFutureAccount:display-name property to read the current display
+ * #TpAccountRequest:display-name property to read the current display
  * name.
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_future_account_set_display_name (TpFutureAccount *self,
+tp_account_request_set_display_name (TpAccountRequest *self,
     const gchar *name)
 {
-  TpFutureAccountPrivate *priv;
+  TpAccountRequestPrivate *priv;
 
-  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (TP_IS_ACCOUNT_REQUEST (self));
   g_return_if_fail (name != NULL);
 
   priv = self->priv;
@@ -791,22 +791,22 @@ tp_future_account_set_display_name (TpFutureAccount *self,
 }
 
 /**
- * tp_future_account_set_icon_name:
- * @self: a #TpFutureAccount
+ * tp_account_request_set_icon_name:
+ * @self: a #TpAccountRequest
  * @icon: an icon name for the account
  *
  * Set the icon name for the new account, @self, to @icon. Use the
- * #TpFutureAccount:icon-name property to read the current icon name.
+ * #TpAccountRequest:icon-name property to read the current icon name.
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_future_account_set_icon_name (TpFutureAccount *self,
+tp_account_request_set_icon_name (TpAccountRequest *self,
     const gchar *icon)
 {
-  TpFutureAccountPrivate *priv;
+  TpAccountRequestPrivate *priv;
 
-  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (TP_IS_ACCOUNT_REQUEST (self));
   g_return_if_fail (icon != NULL);
 
   priv = self->priv;
@@ -817,22 +817,22 @@ tp_future_account_set_icon_name (TpFutureAccount *self,
 }
 
 /**
- * tp_future_account_set_nickname:
- * @self: a #TpFutureAccount
+ * tp_account_request_set_nickname:
+ * @self: a #TpAccountRequest
  * @nickname: a nickname for the account
  *
  * Set the nickname for the new account, @self, to @nickname. Use the
- * #TpFutureAccount:nickname property to read the current nickname.
+ * #TpAccountRequest:nickname property to read the current nickname.
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_future_account_set_nickname (TpFutureAccount *self,
+tp_account_request_set_nickname (TpAccountRequest *self,
     const gchar *nickname)
 {
-  TpFutureAccountPrivate *priv;
+  TpAccountRequestPrivate *priv;
 
-  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (TP_IS_ACCOUNT_REQUEST (self));
   g_return_if_fail (nickname != NULL);
 
   priv = self->priv;
@@ -843,32 +843,32 @@ tp_future_account_set_nickname (TpFutureAccount *self,
 }
 
 /**
- * tp_future_account_set_requested_presence:
- * @self: a #TpFutureAccount
+ * tp_account_request_set_requested_presence:
+ * @self: a #TpAccountRequest
  * @presence: the requested presence type
  * @status: the requested presence status
  * @message: the requested presence message
  *
  * Set the requested presence for the new account, @self, to the type
  * (@presence, @status), with message @message. Use the
- * #TpFutureAccount:requested-presence-type,
- * #TpFutureAccount:requested-status, and
- * #TpFutureAccount:requested-status-message properties to read the
+ * #TpAccountRequest:requested-presence-type,
+ * #TpAccountRequest:requested-status, and
+ * #TpAccountRequest:requested-status-message properties to read the
  * current requested presence.
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_future_account_set_requested_presence (TpFutureAccount *self,
+tp_account_request_set_requested_presence (TpAccountRequest *self,
     TpConnectionPresenceType presence,
     const gchar *status,
     const gchar *message)
 {
-  TpFutureAccountPrivate *priv;
+  TpAccountRequestPrivate *priv;
   GValue *value;
   GValueArray *arr;
 
-  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (TP_IS_ACCOUNT_REQUEST (self));
 
   priv = self->priv;
 
@@ -887,32 +887,32 @@ tp_future_account_set_requested_presence (TpFutureAccount *self,
 }
 
 /**
- * tp_future_account_set_automatic_presence:
- * @self: a #TpFutureAccount
+ * tp_account_request_set_automatic_presence:
+ * @self: a #TpAccountRequest
  * @presence: the automatic presence type
  * @status: the automatic presence status
  * @message: the automatic presence message
  *
  * Set the automatic presence for the new account, @self, to the type
  * (@presence, @status), with message @message. Use the
- * #TpFutureAccount:automatic-presence-type,
- * #TpFutureAccount:automatic-status, and
- * #TpFutureAccount:automatic-status-message properties to read the
+ * #TpAccountRequest:automatic-presence-type,
+ * #TpAccountRequest:automatic-status, and
+ * #TpAccountRequest:automatic-status-message properties to read the
  * current automatic presence.
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_future_account_set_automatic_presence (TpFutureAccount *self,
+tp_account_request_set_automatic_presence (TpAccountRequest *self,
     TpConnectionPresenceType presence,
     const gchar *status,
     const gchar *message)
 {
-  TpFutureAccountPrivate *priv;
+  TpAccountRequestPrivate *priv;
   GValue *value;
   GValueArray *arr;
 
-  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (TP_IS_ACCOUNT_REQUEST (self));
 
   priv = self->priv;
 
@@ -931,23 +931,23 @@ tp_future_account_set_automatic_presence (TpFutureAccount *self,
 }
 
 /**
- * tp_future_account_set_enabled:
- * @self: a #TpFutureAccount
+ * tp_account_request_set_enabled:
+ * @self: a #TpAccountRequest
  * @enabled: %TRUE if the account is to be enabled
  *
  * Set the enabled property of the account on creation to
- * @enabled. Use the #TpFutureAccount:enabled property to read the
+ * @enabled. Use the #TpAccountRequest:enabled property to read the
  * current enabled value.
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_future_account_set_enabled (TpFutureAccount *self,
+tp_account_request_set_enabled (TpAccountRequest *self,
     gboolean enabled)
 {
-  TpFutureAccountPrivate *priv;
+  TpAccountRequestPrivate *priv;
 
-  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (TP_IS_ACCOUNT_REQUEST (self));
 
   priv = self->priv;
 
@@ -957,25 +957,25 @@ tp_future_account_set_enabled (TpFutureAccount *self,
 }
 
 /**
- * tp_future_account_set_connect_automatically:
- * @self: a #TpFutureAccount
+ * tp_account_request_set_connect_automatically:
+ * @self: a #TpAccountRequest
  * @connect_automatically: %TRUE if the account is to connect automatically
  *
  * Set the connect automatically property of the account on creation
  * to @connect_automatically so that the account is brought online to
  * the automatic presence. Use the
- * #TpFutureAccount:connect-automatically property to read the current
+ * #TpAccountRequest:connect-automatically property to read the current
  * connect automatically value.
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_future_account_set_connect_automatically (TpFutureAccount *self,
+tp_account_request_set_connect_automatically (TpAccountRequest *self,
     gboolean connect_automatically)
 {
-  TpFutureAccountPrivate *priv;
+  TpAccountRequestPrivate *priv;
 
-  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (TP_IS_ACCOUNT_REQUEST (self));
 
   priv = self->priv;
 
@@ -987,26 +987,26 @@ tp_future_account_set_connect_automatically (TpFutureAccount *self,
 }
 
 /**
- * tp_future_account_add_supersedes:
- * @self: a #TpFutureAccount
+ * tp_account_request_add_supersedes:
+ * @self: a #TpAccountRequest
  * @superseded_path: an account object path to add to the supersedes
  *   list
  *
  * Add an account object path to the list of superseded accounts which
  * this new account will supersede. Use the
- * #TpFutureAccount:supersedes property to read the current list of
+ * #TpAccountRequest:supersedes property to read the current list of
  * superseded accounts.
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_future_account_add_supersedes (TpFutureAccount *self,
+tp_account_request_add_supersedes (TpAccountRequest *self,
     const gchar *superseded_path)
 {
-  TpFutureAccountPrivate *priv;
+  TpAccountRequestPrivate *priv;
   GPtrArray *array;
 
-  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (TP_IS_ACCOUNT_REQUEST (self));
   g_return_if_fail (g_variant_is_object_path (superseded_path));
 
   priv = self->priv;
@@ -1030,8 +1030,8 @@ tp_future_account_add_supersedes (TpFutureAccount *self,
 }
 
 /**
- * tp_future_account_set_avatar:
- * @self: a #TpFutureAccount
+ * tp_account_request_set_avatar:
+ * @self: a #TpAccountRequest
  * @avatar: (allow-none) (array length=len) a new avatar to set; can
  *   be %NULL only if %len equals 0
  * @len: the length of the new avatar
@@ -1039,22 +1039,22 @@ tp_future_account_add_supersedes (TpFutureAccount *self,
  *  only if @len equals 0
  *
  * Set the avatar of the account @self to @avatar. Use the
- * #TpFutureAccount:avatar and #TpFutureAccount:avatar-mime-type
+ * #TpAccountRequest:avatar and #TpAccountRequest:avatar-mime-type
  * properties to read the current avatar.
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_future_account_set_avatar (TpFutureAccount *self,
+tp_account_request_set_avatar (TpAccountRequest *self,
     const guchar *avatar,
     gsize len,
     const gchar *mime_type)
 {
-  TpFutureAccountPrivate *priv;
+  TpAccountRequestPrivate *priv;
   GArray *tmp;
   GValueArray *arr;
 
-  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (TP_IS_ACCOUNT_REQUEST (self));
   g_return_if_fail (avatar != NULL || len == 0);
   g_return_if_fail (mime_type != NULL || len == 0);
 
@@ -1080,22 +1080,22 @@ tp_future_account_set_avatar (TpFutureAccount *self,
 }
 
 /**
- * tp_future_account_set_service:
- * @self: a #TpFutureAccount
+ * tp_account_request_set_service:
+ * @self: a #TpAccountRequest
  * @service: the service name for
  *
  * Set the service property of the account to @service. Use the
- * #TpFutureAccount:service property to read the current value.
+ * #TpAccountRequest:service property to read the current value.
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_future_account_set_service (TpFutureAccount *self,
+tp_account_request_set_service (TpAccountRequest *self,
     const gchar *service)
 {
-  TpFutureAccountPrivate *priv;
+  TpAccountRequestPrivate *priv;
 
-  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (TP_IS_ACCOUNT_REQUEST (self));
   g_return_if_fail (service != NULL);
 
   priv = self->priv;
@@ -1107,28 +1107,28 @@ tp_future_account_set_service (TpFutureAccount *self,
 }
 
 /**
- * tp_future_account_set_parameter:
- * @self: a #TpFutureAccount
+ * tp_account_request_set_parameter:
+ * @self: a #TpAccountRequest
  * @key: the parameter key
  * @value: (transfer none): a variant containing the parameter value
  *
  * Set an account parameter, @key, to @value. Use the
- * #TpFutureAccount:parameters property to read the current list of
+ * #TpAccountRequest:parameters property to read the current list of
  * set parameters.
  *
- * Parameters can be unset using tp_future_account_unset_parameter().
+ * Parameters can be unset using tp_account_request_unset_parameter().
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_future_account_set_parameter (TpFutureAccount *self,
+tp_account_request_set_parameter (TpAccountRequest *self,
     const gchar *key,
     GVariant *value)
 {
-  TpFutureAccountPrivate *priv;
+  TpAccountRequestPrivate *priv;
   GValue one = G_VALUE_INIT, *two;
 
-  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (TP_IS_ACCOUNT_REQUEST (self));
   g_return_if_fail (key != NULL);
   g_return_if_fail (value != NULL);
 
@@ -1145,23 +1145,23 @@ tp_future_account_set_parameter (TpFutureAccount *self,
 }
 
 /**
- * tp_future_account_unset_parameter:
- * @self: a #TpFutureAccount
+ * tp_account_request_unset_parameter:
+ * @self: a #TpAccountRequest
  * @key: the parameter key
  *
  * Unset the account parameter @key which has previously been set
- * using tp_future_account_set_parameter() or another convenience
+ * using tp_account_request_set_parameter() or another convenience
  * function.
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_future_account_unset_parameter (TpFutureAccount *self,
+tp_account_request_unset_parameter (TpAccountRequest *self,
     const gchar *key)
 {
-  TpFutureAccountPrivate *priv;
+  TpAccountRequestPrivate *priv;
 
-  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (TP_IS_ACCOUNT_REQUEST (self));
   g_return_if_fail (key != NULL);
 
   priv = self->priv;
@@ -1172,24 +1172,24 @@ tp_future_account_unset_parameter (TpFutureAccount *self,
 }
 
 /**
- * tp_future_account_set_parameter_string: (skip)
- * @self: a #TpFutureAccount
+ * tp_account_request_set_parameter_string: (skip)
+ * @self: a #TpAccountRequest
  * @key: the parameter key
  * @value: the parameter value
  *
  * Convenience function to set an account parameter string value. See
- * tp_future_account_set_parameter() for more details.
+ * tp_account_request_set_parameter() for more details.
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_future_account_set_parameter_string (TpFutureAccount *self,
+tp_account_request_set_parameter_string (TpAccountRequest *self,
     const gchar *key,
     const gchar *value)
 {
-  TpFutureAccountPrivate *priv;
+  TpAccountRequestPrivate *priv;
 
-  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (TP_IS_ACCOUNT_REQUEST (self));
   g_return_if_fail (key != NULL);
   g_return_if_fail (value != NULL);
 
@@ -1202,12 +1202,12 @@ tp_future_account_set_parameter_string (TpFutureAccount *self,
 }
 
 static void
-tp_future_account_account_prepared_cb (GObject *object,
+tp_account_request_account_prepared_cb (GObject *object,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpFutureAccount *self = user_data;
-  TpFutureAccountPrivate *priv = self->priv;
+  TpAccountRequest *self = user_data;
+  TpAccountRequestPrivate *priv = self->priv;
   GError *error = NULL;
 
   if (!tp_proxy_prepare_finish (object, result, &error))
@@ -1221,14 +1221,14 @@ tp_future_account_account_prepared_cb (GObject *object,
 }
 
 static void
-tp_future_account_create_account_cb (TpAccountManager *proxy,
+tp_account_request_create_account_cb (TpAccountManager *proxy,
     const gchar *account_path,
     const GError *error,
     gpointer user_data,
     GObject *weak_object)
 {
-  TpFutureAccount *self = TP_FUTURE_ACCOUNT (weak_object);
-  TpFutureAccountPrivate *priv = self->priv;
+  TpAccountRequest *self = TP_ACCOUNT_REQUEST (weak_object);
+  TpAccountRequestPrivate *priv = self->priv;
   GError *e = NULL;
   TpAccount *account;
   GArray *features;
@@ -1263,14 +1263,14 @@ tp_future_account_create_account_cb (TpAccountManager *proxy,
       tp_proxy_get_factory (proxy), account);
 
   tp_proxy_prepare_async (account, (GQuark *) features->data,
-      tp_future_account_account_prepared_cb, self);
+      tp_account_request_account_prepared_cb, self);
 
   g_array_unref (features);
 }
 
 /**
- * tp_future_account_create_account_async:
- * @self: a #TpFutureAccount
+ * tp_account_request_create_account_async:
+ * @self: a #TpAccountRequest
  * @callback: a function to call when the account has been created
  * @user_data: user data to @callback
  *
@@ -1279,19 +1279,19 @@ tp_future_account_create_account_cb (TpAccountManager *proxy,
  *
  * @callback will only be called when the newly created #TpAccount has
  * the %TP_ACCOUNT_FEATURE_CORE feature ready on it, so when calling
- * tp_future_account_create_account_finish(), one can guarantee this
+ * tp_account_request_create_account_finish(), one can guarantee this
  * feature.
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_future_account_create_account_async (TpFutureAccount *self,
+tp_account_request_create_account_async (TpAccountRequest *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TpFutureAccountPrivate *priv = self->priv;
+  TpAccountRequestPrivate *priv = self->priv;
 
-  g_return_if_fail (TP_IS_FUTURE_ACCOUNT (self));
+  g_return_if_fail (TP_IS_ACCOUNT_REQUEST (self));
 
   priv = self->priv;
 
@@ -1300,8 +1300,8 @@ tp_future_account_create_account_async (TpFutureAccount *self,
       g_simple_async_report_error_in_idle (G_OBJECT (self),
           callback, user_data,
           TP_ERROR, TP_ERROR_BUSY,
-          "A account creation operation has already been started on this "
-          "future account");
+          "An account creation operation has already been started on this "
+          "account request");
       return;
     }
 
@@ -1315,24 +1315,24 @@ tp_future_account_create_account_async (TpFutureAccount *self,
     }
 
   priv->result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-      tp_future_account_create_account_async);
+      tp_account_request_create_account_async);
 
   tp_cli_account_manager_call_create_account (priv->account_manager,
       -1, priv->cm_name, priv->proto_name, priv->display_name,
       priv->parameters, priv->properties,
-      tp_future_account_create_account_cb, NULL, NULL, G_OBJECT (self));
+      tp_account_request_create_account_cb, NULL, NULL, G_OBJECT (self));
 }
 
 /**
- * tp_future_account_create_account_finish:
- * @self: a #TpFutureAccount
+ * tp_account_request_create_account_finish:
+ * @self: a #TpAccountRequest
  * @result: a #GAsyncResult
  * @error: something
  *
  * Finishes an asynchronous account creation operation and returns a
  * new ref to a #TpAccount object. The returned account will have the
  * features listed in tp_simple_client_factory_dup_account_features()
- * (with the proxy factory from #TpFutureAccount:account-manager)
+ * (with the proxy factory from #TpAccountRequest:account-manager)
  * prepared on it.
  *
  * Returns: (transfer full): a new ref to a #TpAccount, or %NULL
@@ -1340,10 +1340,10 @@ tp_future_account_create_account_async (TpFutureAccount *self,
  * Since: 0.UNRELEASED
  */
 TpAccount *
-tp_future_account_create_account_finish (TpFutureAccount *self,
+tp_account_request_create_account_finish (TpAccountRequest *self,
     GAsyncResult *result,
     GError **error)
 {
   _tp_implement_finish_return_copy_pointer (self,
-      tp_future_account_create_account_async, g_object_ref);
+      tp_account_request_create_account_async, g_object_ref);
 }

@@ -26,6 +26,7 @@ our_headers = \
     account.h \
     account-channel-request.h \
     account-manager.h \
+    account-request.h \
     automatic-client-factory.h \
     automatic-proxy-factory.h \
     add-dispatch-operation-context.h \
@@ -85,7 +86,6 @@ our_headers = \
     errors.h \
     exportable-channel.h \
     file-transfer-channel.h \
-    future-account.h \
     gnio-util.h \
     group-mixin.h \
     gtypes.h \
@@ -172,6 +172,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     account-internal.h \
     account-manager.c \
     account-manager-internal.h \
+    account-request.c \
     automatic-client-factory-internal.h \
     automatic-client-factory.c \
     automatic-proxy-factory.c \
@@ -255,7 +256,6 @@ libtelepathy_glib_internal_la_SOURCES = \
     errors.c \
     exportable-channel.c \
     file-transfer-channel.c \
-    future-account.c \
     gnio-util.c \
     group-mixin.c \
     gtypes.c \
