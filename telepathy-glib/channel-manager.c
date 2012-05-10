@@ -237,6 +237,13 @@ channel_manager_base_init (gpointer klass)
        * generally emit NewChannels (and NewChannel) in response to this
        * signal, and then return from pending CreateChannel, EnsureChannel
        * and/or RequestChannel calls if appropriate.
+       *
+       * Since 0.UNRELEASED, clients should not emit more than one
+       *  channel in this signal at one time as the creation of
+       *  multiple channels together in a single signal is strongly
+       *  recommended against: it's very complicated, hard to get
+       *  right in clients, and not nearly as useful as it originally
+       *  sounded.
        */
       signals[S_NEW_CHANNELS] = g_signal_new ("new-channels",
           G_OBJECT_CLASS_TYPE (klass),
@@ -349,6 +356,13 @@ tp_channel_manager_get_type (void)
  * If @channels is non-empty, emit the #TpChannelManager::new-channels
  * signal indicating that those channels have been created.
  *
+ * Deprecated: in 0.UNRELEASED this function should not be
+ *  used. Signalling the creation of multiple channels together in a
+ *  single signal is strongly recommended against as it's very
+ *  complicated, hard to get right in clients, and not nearly as
+ *  useful as it originally sounded. Use
+ *  tp_channel_manager_emit_new_channel() instead.
+ *
  * Since: 0.7.15
  */
 void
@@ -372,8 +386,7 @@ tp_channel_manager_emit_new_channels (gpointer instance,
  *                  channel
  *
  * Emit the #TpChannelManager::new-channels signal indicating that the
- * channel has been created. (This is a convenient shortcut for calling
- * tp_channel_manager_emit_new_channels() with a one-entry hash table.)
+ * channel has been created.
  *
  * Since: 0.7.15
  */
