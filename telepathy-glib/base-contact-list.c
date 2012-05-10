@@ -3728,8 +3728,6 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
 
               tp_base_contact_list_announce_channel (self, c, NULL);
             }
-
-          tp_handle_unref (self->priv->group_repo, handle);
         }
     }
 
@@ -3934,10 +3932,7 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
   new_handle = tp_handle_ensure (self->priv->group_repo, new_name, NULL, NULL);
 
   if (new_handle == 0)
-    {
-      tp_handle_unref (self->priv->group_repo, old_handle);
-      return;
-    }
+    return;
 
   new_chan = g_hash_table_lookup (self->priv->groups,
       GUINT_TO_POINTER (new_handle));
@@ -4005,8 +4000,6 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
         }
     }
 
-  tp_handle_unref (self->priv->group_repo, new_handle);
-  tp_handle_unref (self->priv->group_repo, old_handle);
   tp_handle_set_destroy (old_members);
 }
 
@@ -5593,7 +5586,6 @@ tp_base_contact_list_mixin_set_contact_groups (
               (gchar *) tp_handle_inspect (self->priv->group_repo,
                 group_handle));
           tp_handle_set_add (group_set, group_handle);
-          tp_handle_unref (self->priv->group_repo, group_handle);
         }
       else
         {
@@ -5700,16 +5692,12 @@ tp_base_contact_list_mixin_add_to_group (
   tp_base_contact_list_add_to_group_async (self,
       tp_handle_inspect (self->priv->group_repo, group_handle),
       contacts_set, tp_base_contact_list_mixin_add_to_group_cb, context);
-  tp_handle_unref (self->priv->group_repo, group_handle);
   tp_handle_set_destroy (contacts_set);
   return;
 
 sync_exit:
   tp_base_contact_list_mixin_return_void (context, error);
   g_clear_error (&error);
-
-  if (group_handle != 0)
-    tp_handle_unref (self->priv->group_repo, group_handle);
 }
 
 static void
@@ -5863,15 +5851,11 @@ tp_base_contact_list_mixin_rename_group (
       tp_handle_inspect (self->priv->group_repo, old_handle),
       tp_handle_inspect (self->priv->group_repo, new_handle),
       tp_base_contact_list_mixin_rename_group_cb, context);
-  tp_handle_unref (self->priv->group_repo, new_handle);
   return;
 
 sync_exit:
   tp_base_contact_list_mixin_return_void (context, error);
   g_clear_error (&error);
-
-  if (new_handle != 0)
-    tp_handle_unref (self->priv->group_repo, new_handle);
 }
 
 typedef enum {

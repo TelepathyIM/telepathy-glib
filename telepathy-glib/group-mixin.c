@@ -127,7 +127,7 @@ local_pending_info_new (TpHandleRepoIface *repo,
   info->repo = repo;
 
   if (actor != 0)
-    info->actor = tp_handle_ref (repo, actor);
+    info->actor = actor;
 
   return info;
 }
@@ -136,10 +136,6 @@ static void
 local_pending_info_free (LocalPendingInfo *info)
 {
   g_free ((gchar *) info->message);
-
-  if (info->actor != 0)
-    tp_handle_unref (info->repo, info->actor);
-
   g_slice_free (LocalPendingInfo, info);
 }
 
@@ -332,7 +328,7 @@ tp_group_mixin_init (GObject *obj,
   mixin->handle_repo = handle_repo;
 
   if (self_handle != 0)
-    mixin->self_handle = tp_handle_ref (handle_repo, self_handle);
+    mixin->self_handle = self_handle;
 
   mixin->group_flags = TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED;
 
@@ -368,19 +364,6 @@ tp_group_mixin_remove_external (GObject *obj, GObject *external)
   g_ptr_array_remove_fast (mixin->priv->externals, external);
 }
 
-static void
-handle_owners_foreach_unref (gpointer key,
-                             gpointer value,
-                             gpointer user_data)
-{
-  TpGroupMixin *mixin = user_data;
-
-  tp_handle_unref (mixin->handle_repo, GPOINTER_TO_UINT (key));
-
-  if (GPOINTER_TO_UINT (value) != 0)
-    tp_handle_unref (mixin->handle_repo, GPOINTER_TO_UINT (value));
-}
-
 /**
  * tp_group_mixin_finalize: (skip)
  * @obj: An object implementing the group interface using this mixin
@@ -394,10 +377,6 @@ tp_group_mixin_finalize (GObject *obj)
 
   tp_handle_set_destroy (mixin->priv->actors);
 
-  g_hash_table_foreach (mixin->priv->handle_owners,
-                        handle_owners_foreach_unref,
-                        mixin);
-
   g_hash_table_unref (mixin->priv->handle_owners);
   g_hash_table_unref (mixin->priv->local_pending_info);
 
@@ -405,9 +384,6 @@ tp_group_mixin_finalize (GObject *obj)
     g_ptr_array_unref (mixin->priv->externals);
 
   g_slice_free (TpGroupMixinPrivate, mixin->priv);
-
-  if (mixin->self_handle != 0)
-    tp_handle_unref (mixin->handle_repo, mixin->self_handle);
 
   tp_handle_set_destroy (mixin->members);
   tp_handle_set_destroy (mixin->local_pending);
@@ -459,25 +435,17 @@ tp_group_mixin_change_self_handle (GObject *obj,
                                    TpHandle new_self_handle)
 {
   TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
-  TpHandle old_self_handle = mixin->self_handle;
   const gchar *new_self_id = tp_handle_inspect (mixin->handle_repo,
       new_self_handle);
 
   DEBUG ("%u '%s'", new_self_handle, new_self_id);
 
-  mixin->self_handle = 0;
-
-  if (new_self_handle != 0)
-    mixin->self_handle = tp_handle_ref (mixin->handle_repo,
-        new_self_handle);
+  mixin->self_handle = new_self_handle;
 
   tp_svc_channel_interface_group_emit_self_handle_changed (obj,
       new_self_handle);
   tp_svc_channel_interface_group_emit_self_contact_changed (obj,
       new_self_handle, new_self_id);
-
-  if (old_self_handle != 0)
-    tp_handle_unref (mixin->handle_repo, old_self_handle);
 }
 
 
@@ -1678,8 +1646,6 @@ change_members (GObject *obj,
                 }
             }
 
-          tp_handles_unref (mixin->handle_repo, arr_owners_removed);
-
           g_hash_table_unref (empty_hash_table);
         }
 
@@ -1948,27 +1914,9 @@ add_handle_owners_helper (gpointer key,
                           gpointer user_data)
 {
   TpHandle local_handle = GPOINTER_TO_UINT (key);
-  TpHandle owner_handle = GPOINTER_TO_UINT (value);
   TpGroupMixin *mixin = user_data;
-  gpointer orig_key, orig_value;
 
   g_return_if_fail (local_handle != 0);
-
-  tp_handle_ref (mixin->handle_repo, local_handle);
-
-  if (owner_handle != 0)
-    tp_handle_ref (mixin->handle_repo, owner_handle);
-
-  if (g_hash_table_lookup_extended (mixin->priv->handle_owners, key,
-        &orig_key, &orig_value))
-    {
-      /* no need to actually remove - we're about to overwrite them anyway */
-
-      tp_handle_unref (mixin->handle_repo, local_handle);
-
-      if (GPOINTER_TO_UINT (orig_value) != 0)
-        tp_handle_unref (mixin->handle_repo, GPOINTER_TO_UINT (orig_value));
-    }
 
   g_hash_table_insert (mixin->priv->handle_owners, key, value);
 }
@@ -2043,12 +1991,6 @@ remove_handle_owners_if_exist (GObject *obj,
         {
           g_assert (GPOINTER_TO_UINT (local_handle) == handle);
           g_array_append_val (ret, handle);
-          /* don't unref local_handle - ownership is transferred to ret */
-
-          if (GPOINTER_TO_UINT (owner_handle) != 0)
-            tp_handle_unref (mixin->handle_repo,
-                GPOINTER_TO_UINT (owner_handle));
-
           g_hash_table_remove (priv->handle_owners, GUINT_TO_POINTER (handle));
         }
     }

@@ -250,8 +250,11 @@ void tp_connection_request_handles (TpConnection *self, gint timeout_ms,
     TpConnectionRequestHandlesCb callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_UNRELEASED
 void tp_connection_unref_handles (TpConnection *self,
     TpHandleType handle_type, guint n_handles, const TpHandle *handles);
+#endif
 
 /* connection-avatars.c */
 

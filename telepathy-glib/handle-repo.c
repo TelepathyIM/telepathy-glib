@@ -141,6 +141,7 @@ tp_handles_are_valid (TpHandleRepoIface *self,
  * this function didn't return anything.
  *
  * Returns: the same @handle
+ * Deprecated: This is no-op so can be safely removed.
  */
 
 TpHandle
@@ -158,6 +159,8 @@ tp_handle_ref (TpHandleRepoIface *self G_GNUC_UNUSED,
  *
  * Do nothing. Since version 0.13.8, handles always last as long as
  * the connection; previously, this function provided refcounting for handles.
+ *
+ * Deprecated: This is no-op so can be safely removed.
  */
 void
 tp_handles_ref (TpHandleRepoIface *self G_GNUC_UNUSED,
@@ -173,6 +176,8 @@ tp_handles_ref (TpHandleRepoIface *self G_GNUC_UNUSED,
  *
  * Do nothing. Since version 0.13.8, handles always last as long as
  * the connection; previously, this function provided refcounting for handles.
+ *
+ * Deprecated: This is no-op so can be safely removed.
  */
 
 void
@@ -189,6 +194,8 @@ tp_handle_unref (TpHandleRepoIface *self G_GNUC_UNUSED,
  *
  * Do nothing. Since version 0.13.8, handles always last as long as
  * the connection; previously, this function provided refcounting for handles.
+ *
+ * Deprecated: This is no-op so can be safely removed.
  */
 void
 tp_handles_unref (TpHandleRepoIface *self G_GNUC_UNUSED,
@@ -208,6 +215,7 @@ tp_handles_unref (TpHandleRepoIface *self G_GNUC_UNUSED,
  * the connection; previously, this function provided refcounting for handles.
  *
  * Returns: %TRUE
+ * Deprecated: This is no-op so can be safely removed.
  */
 
 gboolean
@@ -234,6 +242,7 @@ typedef gboolean (*HoldReleaseFunc) (TpHandleRepoIface *, const gchar *,
  * the connection; previously, this function provided refcounting for handles.
  *
  * Returns: %TRUE
+ * Deprecated: This is no-op so can be safely removed.
  */
 gboolean
 tp_handles_client_hold (TpHandleRepoIface *self G_GNUC_UNUSED,
@@ -256,6 +265,7 @@ tp_handles_client_hold (TpHandleRepoIface *self G_GNUC_UNUSED,
  * the connection; previously, this function provided refcounting for handles.
  *
  * Returns: %TRUE
+ * Deprecated: This is no-op so can be safely removed.
  */
 gboolean
 tp_handle_client_release (TpHandleRepoIface *self G_GNUC_UNUSED,
@@ -277,6 +287,7 @@ tp_handle_client_release (TpHandleRepoIface *self G_GNUC_UNUSED,
  * the connection; previously, this function provided refcounting for handles.
  *
  * Returns: %TRUE
+ * Deprecated: This is no-op so can be safely removed.
  */
 gboolean
 tp_handles_client_release (TpHandleRepoIface *self G_GNUC_UNUSED,

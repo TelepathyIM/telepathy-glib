@@ -395,7 +395,6 @@ receive_contact_lists (gpointer p)
   d->publish = TRUE;
   d->tags = g_hash_table_new (g_str_hash, g_str_equal);
   g_hash_table_insert (d->tags, cambridge, cambridge);
-  tp_handle_unref (self->priv->contact_repo, handle);
 
   handle = tp_handle_ensure (self->priv->contact_repo, "guillaume@example.com",
       NULL, NULL);
@@ -407,7 +406,6 @@ receive_contact_lists (gpointer p)
   d->tags = g_hash_table_new (g_str_hash, g_str_equal);
   g_hash_table_insert (d->tags, cambridge, cambridge);
   g_hash_table_insert (d->tags, francophones, francophones);
-  tp_handle_unref (self->priv->contact_repo, handle);
 
   handle = tp_handle_ensure (self->priv->contact_repo, "olivier@example.com",
       NULL, NULL);
@@ -419,7 +417,6 @@ receive_contact_lists (gpointer p)
   d->tags = g_hash_table_new (g_str_hash, g_str_equal);
   g_hash_table_insert (d->tags, montreal, montreal);
   g_hash_table_insert (d->tags, francophones, francophones);
-  tp_handle_unref (self->priv->contact_repo, handle);
 
   handle = tp_handle_ensure (self->priv->contact_repo, "travis@example.com",
       NULL, NULL);
@@ -428,7 +425,6 @@ receive_contact_lists (gpointer p)
   d->alias = g_strdup ("Travis");
   d->subscribe = TRUE;
   d->publish = TRUE;
-  tp_handle_unref (self->priv->contact_repo, handle);
 
   /* Add a couple of people whose presence we've requested. They are
    * remote-pending in subscribe */
@@ -442,7 +438,6 @@ receive_contact_lists (gpointer p)
   d->tags = g_hash_table_new (g_str_hash, g_str_equal);
   g_hash_table_insert (d->tags, cambridge, cambridge);
   g_hash_table_insert (d->tags, francophones, francophones);
-  tp_handle_unref (self->priv->contact_repo, handle);
 
   handle = tp_handle_ensure (self->priv->contact_repo, "helen@example.com",
       NULL, NULL);
@@ -452,7 +447,6 @@ receive_contact_lists (gpointer p)
   d->subscribe_requested = TRUE;
   d->tags = g_hash_table_new (g_str_hash, g_str_equal);
   g_hash_table_insert (d->tags, cambridge, cambridge);
-  tp_handle_unref (self->priv->contact_repo, handle);
 
   /* Receive a couple of authorization requests too. These people are
    * local-pending in publish; they're not actually on our protocol-level
@@ -463,7 +457,6 @@ receive_contact_lists (gpointer p)
   tp_handle_set_add (self->priv->contacts, handle);
   g_hash_table_insert (self->priv->publish_requests,
       GUINT_TO_POINTER (handle), g_strdup ("I'm more metal than you!"));
-  tp_handle_unref (self->priv->contact_repo, handle);
 
   handle = tp_handle_ensure (self->priv->contact_repo, "christian@example.com",
       NULL, NULL);
@@ -471,17 +464,14 @@ receive_contact_lists (gpointer p)
   g_hash_table_insert (self->priv->publish_requests,
       GUINT_TO_POINTER (handle),
       g_strdup ("I have some fermented herring for you"));
-  tp_handle_unref (self->priv->contact_repo, handle);
 
   /* Add a couple of blocked contacts. */
   handle = tp_handle_ensure (self->priv->contact_repo, "bill@example.com",
       NULL, NULL);
   tp_handle_set_add (self->priv->blocked_contacts, handle);
-  tp_handle_unref (self->priv->contact_repo, handle);
   handle = tp_handle_ensure (self->priv->contact_repo, "steve@example.com",
       NULL, NULL);
   tp_handle_set_add (self->priv->blocked_contacts, handle);
-  tp_handle_unref (self->priv->contact_repo, handle);
 
   g_hash_table_iter_init (&iter, self->priv->contact_details);
 
@@ -782,7 +772,7 @@ self_and_contact_new (ExampleContactList *self,
   SelfAndContact *ret = g_slice_new0 (SelfAndContact);
 
   ret->self = g_object_ref (self);
-  ret->contact = tp_handle_ref (self->priv->contact_repo, contact);
+  ret->contact = contact;
   return ret;
 }
 
@@ -791,7 +781,6 @@ self_and_contact_destroy (gpointer p)
 {
   SelfAndContact *s = p;
 
-  tp_handle_unref (s->self->priv->contact_repo, s->contact);
   g_object_unref (s->self);
   g_slice_free (SelfAndContact, s);
 }

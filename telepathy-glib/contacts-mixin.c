@@ -330,13 +330,6 @@ tp_contacts_mixin_get_contact_attributes (GObject *obj,
         }
     }
 
-  if (sender != NULL)
-    tp_handles_client_hold (contact_repo, sender, valid_handles, NULL);
-
-  /* ensure the handles don't disappear while calling out to various functions
-   */
-  tp_handles_ref (contact_repo, valid_handles);
-
   for (i = 0; assumed_interfaces != NULL && assumed_interfaces[i] != NULL; i++)
     {
       func = g_hash_table_lookup (self->priv->interfaces, assumed_interfaces[i]);
@@ -359,7 +352,6 @@ tp_contacts_mixin_get_contact_attributes (GObject *obj,
         func (obj, valid_handles, result);
     }
 
-  tp_handles_unref (contact_repo, valid_handles);
   g_array_unref (valid_handles);
 
   return result;
@@ -375,20 +367,15 @@ tp_contacts_mixin_get_contact_attributes_impl (
 {
   TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
   GHashTable *result;
-  gchar *sender = NULL;
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
-  if (hold)
-    sender = dbus_g_method_get_sender (context);
-
   result = tp_contacts_mixin_get_contact_attributes (G_OBJECT (conn),
-      handles, interfaces, always_included_interfaces, sender);
+      handles, interfaces, always_included_interfaces, NULL);
 
   tp_svc_connection_interface_contacts_return_from_get_contact_attributes (
       context, result);
 
-  g_free (sender);
   g_hash_table_unref (result);
 }
 
@@ -406,7 +393,6 @@ tp_contacts_mixin_get_contact_by_id_impl (
   GArray *handles;
   GHashTable *attributes;
   GHashTable *result;
-  gchar *sender = NULL;
   GError *error = NULL;
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
@@ -419,12 +405,11 @@ tp_contacts_mixin_get_contact_by_id_impl (
       return;
     }
 
-  sender = dbus_g_method_get_sender (context);
   handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
   g_array_append_val (handles, handle);
 
   attributes = tp_contacts_mixin_get_contact_attributes (G_OBJECT (conn),
-      handles, interfaces, always_included_interfaces, sender);
+      handles, interfaces, always_included_interfaces, NULL);
 
   result = g_hash_table_lookup (attributes, GUINT_TO_POINTER (handle));
   g_assert (result != NULL);
@@ -432,7 +417,6 @@ tp_contacts_mixin_get_contact_by_id_impl (
   tp_svc_connection_interface_contacts_return_from_get_contact_by_id (context,
       handle, result);
 
-  g_free (sender);
   g_array_unref (handles);
   g_hash_table_unref (attributes);
 }

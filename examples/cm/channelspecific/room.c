@@ -149,7 +149,6 @@ complete_join (ExampleCSHRoomChannel *self)
       tp_group_mixin_change_members ((GObject *) self, "", NULL, removed, NULL,
           rp, 0, TP_CHANNEL_GROUP_CHANGE_REASON_RENAMED);
 
-      tp_handle_unref (contact_repo, new_self);
       tp_intset_destroy (removed);
       tp_intset_destroy (rp);
     }
@@ -174,15 +173,6 @@ complete_join (ExampleCSHRoomChannel *self)
 
   tp_group_mixin_change_members ((GObject *) self, "", added, NULL, NULL,
       NULL, 0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-
-  tp_handle_unref (contact_repo, alice_local);
-  tp_handle_unref (contact_repo, bob_local);
-  tp_handle_unref (contact_repo, chris_local);
-  tp_handle_unref (contact_repo, anon_local);
-
-  tp_handle_unref (contact_repo, alice_global);
-  tp_handle_unref (contact_repo, bob_global);
-  tp_handle_unref (contact_repo, chris_global);
 
   /* now that the dust has settled, we can also invite people */
   tp_group_mixin_change_flags ((GObject *) self,

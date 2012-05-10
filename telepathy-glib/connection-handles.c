@@ -37,6 +37,8 @@
  *
  * Do nothing. In versions of telepathy-glib prior to 0.13.8,
  * this released a reference to the handles in @handles.
+ *
+ * Deprecated: This is no-op so can be safely removed.
  */
 void
 tp_connection_unref_handles (TpConnection *self G_GNUC_UNUSED,
