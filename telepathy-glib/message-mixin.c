@@ -972,8 +972,6 @@ tp_message_mixin_init_dbus_properties (GObjectClass *cls)
   GType type = G_OBJECT_CLASS_TYPE (cls);
 
   g_return_if_fail (g_type_is_a (type, TP_TYPE_SVC_CHANNEL_TYPE_TEXT));
-  g_return_if_fail (g_type_is_a (type,
-        TP_TYPE_SVC_CHANNEL_INTERFACE_MESSAGES));
 
   tp_dbus_properties_mixin_implement_interface (cls,
       TP_IFACE_QUARK_CHANNEL_TYPE_TEXT,
