@@ -377,7 +377,7 @@ upgrade_cb (TpConnection *connection,
 
 static void
 test_upgrade (Fixture *f,
-    gconstpointer unused G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   TpTestsContactsConnection *service_conn = f->legacy_service_conn;
   TpConnection *client_conn = f->legacy_client_conn;
@@ -461,13 +461,29 @@ test_upgrade (Fixture *f,
   result.contacts = NULL;
   g_assert (result.error == NULL);
 
-  tp_connection_upgrade_contacts (client_conn,
-      3, contacts,
-      G_N_ELEMENTS (features), features,
-      upgrade_cb,
-      &result, finish, NULL);
+  if (!tp_strdiff (mode, "old"))
+    {
+      tp_connection_upgrade_contacts (client_conn,
+          3, contacts,
+          G_N_ELEMENTS (features), features,
+          upgrade_cb,
+          &result, finish, NULL);
 
-  g_main_loop_run (result.loop);
+      g_main_loop_run (result.loop);
+    }
+  else
+    {
+      GAsyncResult *res = NULL;
+
+      tp_connection_upgrade_contacts_async (client_conn,
+          3, contacts,
+          G_N_ELEMENTS (features), features,
+          tp_tests_result_ready_cb, &res);
+      tp_tests_run_until_result (&res);
+
+      tp_connection_upgrade_contacts_finish (client_conn, res,
+          &result.contacts, &result.error);
+    }
 
   MYASSERT (result.contacts->len == 3, ": %u", result.contacts->len);
   MYASSERT (result.invalid == NULL, "");
@@ -1243,7 +1259,9 @@ main (int argc,
       test_no_features, teardown);
   g_test_add ("/contacts-slow-path/features", Fixture, NULL, setup,
       test_features, teardown);
-  g_test_add ("/contacts-slow-path/upgrade", Fixture, NULL, setup,
+  g_test_add ("/contacts-slow-path/upgrade/old", Fixture, "old", setup,
+      test_upgrade, teardown);
+  g_test_add ("/contacts-slow-path/upgrade", Fixture, "async", setup,
       test_upgrade, teardown);
   g_test_add ("/contacts-slow-path/by-id", Fixture, NULL, setup,
       test_by_id, teardown);

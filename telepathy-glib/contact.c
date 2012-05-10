@@ -4810,6 +4810,22 @@ got_contact_attributes_cb (TpConnection *self,
   g_simple_async_result_complete (data->result);
 }
 
+static void
+upgrade_contacts_async_fallback_cb (TpConnection *self,
+    guint n_contacts,
+    TpContact * const *contacts,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    g_simple_async_result_set_from_error (result, error);
+
+  g_simple_async_result_complete (result);
+}
+
 /**
  * tp_connection_upgrade_contacts_async:
  * @self: A connection, which must have the %TP_CONNECTION_FEATURE_CONNECTED
@@ -4886,26 +4902,41 @@ tp_connection_upgrade_contacts_async (TpConnection *self,
   /* Remove features that all contacts have */
   feature_flags &= (~minimal_feature_flags);
 
-  supported_interfaces = contacts_bind_to_signals (self, feature_flags);
-
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_connection_upgrade_contacts_async);
+
   g_simple_async_result_set_op_res_gpointer (result, contacts_array,
       (GDestroyNotify) g_ptr_array_unref);
 
-  if (handles->len > 0 && supported_interfaces[0] != NULL)
+  if (tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
     {
-      data = contacts_async_data_new (result, feature_flags);
-      tp_cli_connection_interface_contacts_call_get_contact_attributes (self,
-          -1, handles, supported_interfaces, TRUE, got_contact_attributes_cb,
-          data, (GDestroyNotify) contacts_async_data_free, NULL);
+      supported_interfaces = contacts_bind_to_signals (self, feature_flags);
+
+      if (handles->len > 0 && supported_interfaces[0] != NULL)
+        {
+          data = contacts_async_data_new (result, feature_flags);
+          tp_cli_connection_interface_contacts_call_get_contact_attributes (
+              self, -1, handles, supported_interfaces, TRUE,
+              got_contact_attributes_cb, data,
+              (GDestroyNotify) contacts_async_data_free, NULL);
+        }
+      else
+        {
+          g_simple_async_result_complete_in_idle (result);
+        }
+
+      g_free (supported_interfaces);
     }
   else
     {
-      g_simple_async_result_complete_in_idle (result);
+      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+      tp_connection_upgrade_contacts (self, n_contacts, contacts, n_features,
+          features, upgrade_contacts_async_fallback_cb,
+          g_object_ref (result), g_object_unref, NULL);
+      G_GNUC_END_IGNORE_DEPRECATIONS
     }
 
-  g_free (supported_interfaces);
   g_object_unref (result);
   g_array_unref (handles);
 }
