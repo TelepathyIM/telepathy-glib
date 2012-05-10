@@ -109,14 +109,6 @@ void _tp_channel_contacts_queue_prepare_async (TpChannel *self,
     GPtrArray *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
-void _tp_channel_contacts_queue_prepare_by_id_async (TpChannel *self,
-    GPtrArray *ids,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-void _tp_channel_contacts_queue_prepare_by_handle_async (TpChannel *self,
-    GArray *handles,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
 gboolean _tp_channel_contacts_queue_prepare_finish (TpChannel *self,
     GAsyncResult *result,
     GPtrArray **contacts,

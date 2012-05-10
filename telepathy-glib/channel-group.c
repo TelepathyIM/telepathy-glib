@@ -189,6 +189,7 @@ dup_owners_table (TpChannel *self,
 
 struct _ContactsQueueItem
 {
+  TpChannel *channel;
   GPtrArray *contacts;
   GPtrArray *ids;
   GArray *handles;
@@ -197,6 +198,7 @@ struct _ContactsQueueItem
 static void
 contacts_queue_item_free (ContactsQueueItem *item)
 {
+  g_clear_object (&item->channel);
   tp_clear_pointer (&item->contacts, g_ptr_array_unref);
   tp_clear_pointer (&item->ids, g_ptr_array_unref);
   tp_clear_pointer (&item->handles, g_array_unref);
@@ -225,63 +227,17 @@ contacts_queue_head_ready (TpChannel *self,
 }
 
 static void
-contacts_queue_item_upgraded_cb (TpConnection *connection,
-    guint n_contacts,
-    TpContact * const *contacts,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
+contacts_queue_item_upgraded_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
 {
-  TpChannel *self = (TpChannel *) weak_object;
-
-  contacts_queue_head_ready (self, error);
-}
-
-static void
-contacts_queue_item_set_contacts (ContactsQueueItem *item,
-    guint n_contacts,
-    TpContact * const *contacts)
-{
-  guint i;
-
-  g_assert (item->contacts == NULL);
-  item->contacts = g_ptr_array_new_full (n_contacts, g_object_unref);
-  for (i = 0; i < n_contacts; i++)
-    g_ptr_array_add (item->contacts, g_object_ref (contacts[i]));
-}
-
-static void
-contacts_queue_item_by_id_cb (TpConnection *connection,
-    guint n_contacts,
-    TpContact * const *contacts,
-    const gchar * const *requested_ids,
-    GHashTable *failed_id_errors,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  TpChannel *self = (TpChannel *) weak_object;
+  TpConnection *connection = (TpConnection *) object;
   ContactsQueueItem *item = user_data;
+  GError *error = NULL;
 
-  contacts_queue_item_set_contacts (item, n_contacts, contacts);
-  contacts_queue_head_ready (self, error);
-}
-
-static void
-contacts_queue_item_by_handle_cb (TpConnection *connection,
-    guint n_contacts,
-    TpContact * const *contacts,
-    guint n_failed,
-    const TpHandle *failed,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  TpChannel *self = (TpChannel *) weak_object;
-  ContactsQueueItem *item = user_data;
-
-  contacts_queue_item_set_contacts (item, n_contacts, contacts);
-  contacts_queue_head_ready (self, error);
+  tp_connection_upgrade_contacts_finish (connection, result, NULL, &error);
+  contacts_queue_head_ready (item->channel, error);
+  g_clear_error (&error);
 }
 
 static gboolean
@@ -333,45 +289,16 @@ process_contacts_queue (TpChannel *self)
   features = tp_client_factory_dup_contact_features (
       tp_proxy_get_factory (self->priv->connection), self->priv->connection);
 
-  /* We can't use upgrade_contacts_async() because we need compat with older
-   * CMs. by_id and by_handle are used only by TpTextChannel and are needed for
-   * older CMs that does not give both message-sender and message-sender-id */
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   if (item->contacts != NULL && item->contacts->len > 0)
     {
       g_assert (item->ids == NULL);
       g_assert (item->handles == NULL);
 
-      tp_connection_upgrade_contacts (self->priv->connection,
+      tp_connection_upgrade_contacts_async (self->priv->connection,
           item->contacts->len, (TpContact **) item->contacts->pdata,
           (const GQuark *) features->data,
           contacts_queue_item_upgraded_cb,
-          item, NULL,
-          (GObject *) self);
-    }
-  else if (item->ids != NULL && item->ids->len > 0)
-    {
-      g_assert (item->contacts == NULL);
-      g_assert (item->handles == NULL);
-
-      tp_connection_get_contacts_by_id (self->priv->connection,
-          item->ids->len, (const gchar * const*) item->ids->pdata,
-          (const GQuark *) features->data,
-          contacts_queue_item_by_id_cb,
-          item, NULL,
-          (GObject *) self);
-    }
-  else if (item->handles != NULL && item->handles->len > 0)
-    {
-      g_assert (item->contacts == NULL);
-      g_assert (item->ids == NULL);
-
-      tp_connection_get_contacts_by_handle (self->priv->connection,
-          item->handles->len, (TpHandle *) item->handles->data,
-          (const GQuark *) features->data,
-          contacts_queue_item_by_handle_cb,
-          item, NULL,
-          (GObject *) self);
+          item);
     }
   else
     {
@@ -381,7 +308,6 @@ process_contacts_queue (TpChannel *self)
        * without reentering mainloop first. */
       g_idle_add (contacts_queue_item_idle_cb, self);
     }
-  G_GNUC_END_IGNORE_DEPRECATIONS
 
   g_array_unref (features);
 }
@@ -397,6 +323,7 @@ contacts_queue_item (TpChannel *self,
   ContactsQueueItem *item = g_slice_new (ContactsQueueItem);
   GSimpleAsyncResult *result;
 
+  item->channel = g_object_ref (self);
   item->contacts = contacts != NULL ? g_ptr_array_ref (contacts) : NULL;
   item->ids = ids != NULL ? g_ptr_array_ref (ids) : NULL;
   item->handles = handles != NULL ? g_array_ref (handles) : NULL;
@@ -417,24 +344,6 @@ _tp_channel_contacts_queue_prepare_async (TpChannel *self,
     gpointer user_data)
 {
   contacts_queue_item (self, contacts, NULL, NULL, callback, user_data);
-}
-
-void
-_tp_channel_contacts_queue_prepare_by_id_async (TpChannel *self,
-    GPtrArray *ids,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
-{
-  contacts_queue_item (self, NULL, ids, NULL, callback, user_data);
-}
-
-void
-_tp_channel_contacts_queue_prepare_by_handle_async (TpChannel *self,
-    GArray *handles,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
-{
-  contacts_queue_item (self, NULL, NULL, handles, callback, user_data);
 }
 
 gboolean
