@@ -134,34 +134,35 @@ TpContact *tp_channel_get_initiator_contact (TpChannel *self);
 
 #define TP_CHANNEL_FEATURE_GROUP \
   tp_channel_get_feature_quark_group ()
-_TP_AVAILABLE_IN_0_16
+_TP_AVAILABLE_IN_UNRELEASED
 GQuark tp_channel_get_feature_quark_group (void) G_GNUC_CONST;
 
+_TP_AVAILABLE_IN_UNRELEASED
 TpChannelGroupFlags tp_channel_group_get_flags (TpChannel *self);
 
-_TP_AVAILABLE_IN_0_16
+_TP_AVAILABLE_IN_UNRELEASED
 TpContact *tp_channel_group_get_self_contact (TpChannel *self);
-_TP_AVAILABLE_IN_0_16
+_TP_AVAILABLE_IN_UNRELEASED
 GPtrArray *tp_channel_group_dup_members (TpChannel *self);
-_TP_AVAILABLE_IN_0_16
+_TP_AVAILABLE_IN_UNRELEASED
 GPtrArray *tp_channel_group_dup_local_pending (TpChannel *self);
-_TP_AVAILABLE_IN_0_16
+_TP_AVAILABLE_IN_UNRELEASED
 GPtrArray *tp_channel_group_dup_remote_pending (TpChannel *self);
-_TP_AVAILABLE_IN_0_16
+_TP_AVAILABLE_IN_UNRELEASED
 gboolean tp_channel_group_get_local_pending_info (TpChannel *self,
     TpContact *local_pending, TpContact **actor,
     TpChannelGroupChangeReason *reason, const gchar **message);
-_TP_AVAILABLE_IN_0_16
+_TP_AVAILABLE_IN_UNRELEASED
 TpContact *tp_channel_group_get_contact_owner (TpChannel *self,
     TpContact *contact);
 
-_TP_AVAILABLE_IN_0_16
+_TP_AVAILABLE_IN_UNRELEASED
 void tp_channel_join_async (TpChannel *self,
     const gchar *message,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-_TP_AVAILABLE_IN_0_16
+_TP_AVAILABLE_IN_UNRELEASED
 gboolean tp_channel_join_finish (TpChannel *self,
     GAsyncResult *result,
     GError **error);

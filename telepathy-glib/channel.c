@@ -1821,7 +1821,7 @@ tp_channel_join_async (TpChannel *self,
  *
  * Returns: %TRUE if the channel was successfully joined; %FALSE otherwise
  *
- * Since: 0.15.5
+ * Since: 0.UNRELEASED
  */
 gboolean
 tp_channel_join_finish (TpChannel *self,
