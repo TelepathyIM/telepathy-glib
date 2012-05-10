@@ -18,14 +18,11 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-account.h>
 
+#include "tests/lib/contacts-conn.h"
 #include "tests/lib/simple-account.h"
 #include "tests/lib/util.h"
 
 #define ACCOUNT_PATH TP_ACCOUNT_OBJECT_PATH_BASE "what/ev/er"
-#define CONN1_PATH TP_CONN_OBJECT_PATH_BASE "what/ev/er"
-#define CONN2_PATH TP_CONN_OBJECT_PATH_BASE "what/ev/s"
-#define CONN1_BUS_NAME TP_CONN_BUS_NAME_BASE "what.ev.er"
-#define CONN2_BUS_NAME TP_CONN_BUS_NAME_BASE "what.ev.s"
 #define SUPERSEDED_PATH TP_ACCOUNT_OBJECT_PATH_BASE "super/seded/whatever"
 
 static void
@@ -94,7 +91,12 @@ typedef struct {
     GAsyncResult *result;
     GError *error /* initialized where needed */;
 
-    TpTestsSimpleAccount *account_service /* initialized in prepare_service */;
+    /* initialized in prepare_service */
+    TpTestsSimpleAccount *account_service;
+    TpBaseConnection *conn1_service;
+    TpBaseConnection *conn2_service;
+    TpConnection *conn1;
+    TpConnection *conn2;
 } Test;
 
 static void
@@ -121,17 +123,14 @@ setup_service (Test *test,
       TP_ACCOUNT_MANAGER_BUS_NAME, FALSE, &test->error);
   g_assert_no_error (test->error);
 
-  tp_dbus_daemon_request_name (test->dbus,
-      CONN1_BUS_NAME, FALSE, &test->error);
-  g_assert_no_error (test->error);
-
-  tp_dbus_daemon_request_name (test->dbus,
-      CONN2_BUS_NAME, FALSE, &test->error);
-  g_assert_no_error (test->error);
-
   test->account_service = g_object_new (TP_TESTS_TYPE_SIMPLE_ACCOUNT, NULL);
   tp_dbus_daemon_register_object (test->dbus, ACCOUNT_PATH,
       test->account_service);
+
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
+      "what@ever", &test->conn1_service, &test->conn1);
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
+      "what2@ever", &test->conn2_service, &test->conn2);
 }
 
 static guint
@@ -208,17 +207,17 @@ teardown_service (Test *test,
   tp_dbus_daemon_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
       &test->error);
   g_assert_no_error (test->error);
-  tp_dbus_daemon_release_name (test->dbus, CONN1_BUS_NAME,
-      &test->error);
-  g_assert_no_error (test->error);
-  tp_dbus_daemon_release_name (test->dbus, CONN2_BUS_NAME,
-      &test->error);
-  g_assert_no_error (test->error);
 
   tp_dbus_daemon_unregister_object (test->dbus, test->account_service);
+  g_clear_object (&test->account_service);
 
-  g_object_unref (test->account_service);
-  test->account_service = NULL;
+  tp_tests_connection_assert_disconnect_succeeds (test->conn1);
+  g_clear_object (&test->conn1);
+  g_clear_object (&test->conn1_service);
+
+  tp_tests_connection_assert_disconnect_succeeds (test->conn2);
+  g_clear_object (&test->conn2);
+  g_clear_object (&test->conn2_service);
 
   teardown (test, data);
 }
@@ -693,6 +692,8 @@ static void
 test_connection (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
+  const gchar *conn1_path = tp_proxy_get_object_path (test->conn1);
+  const gchar *conn2_path = tp_proxy_get_object_path (test->conn2);
   GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
   GHashTable *change = tp_asv_new (NULL, NULL);
   TpConnection *conn;
@@ -714,7 +715,7 @@ test_connection (Test *test,
   /* a connection turns up */
 
   test_set_up_account_notify (test);
-  tp_asv_set_object_path (change, "Connection", CONN1_PATH);
+  tp_asv_set_object_path (change, "Connection", conn1_path);
   tp_asv_set_uint32 (change, "ConnectionStatus",
       TP_CONNECTION_STATUS_CONNECTING);
   tp_asv_set_uint32 (change, "ConnectionStatusReason",
@@ -727,7 +728,7 @@ test_connection (Test *test,
 
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
   conn = tp_account_get_connection (test->account);
-  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, CONN1_PATH);
+  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, conn1_path);
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
 
   g_assert_cmpstr (tp_account_get_detailed_error (test->account, NULL), ==,
@@ -736,14 +737,14 @@ test_connection (Test *test,
   /* ensure the same connection - no change notification */
 
   test_set_up_account_notify (test);
-  conn = tp_account_ensure_connection (test->account, CONN1_PATH);
-  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, CONN1_PATH);
+  conn = tp_account_ensure_connection (test->account, conn1_path);
+  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, conn1_path);
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 0);
 
   /* a no-op "change" */
 
   test_set_up_account_notify (test);
-  tp_asv_set_object_path (change, "Connection", CONN1_PATH);
+  tp_asv_set_object_path (change, "Connection", conn1_path);
   tp_asv_set_uint32 (change, "ConnectionStatus",
       TP_CONNECTION_STATUS_CONNECTING);
   tp_asv_set_uint32 (change, "ConnectionStatusReason",
@@ -755,13 +756,13 @@ test_connection (Test *test,
 
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 0);
   conn = tp_account_get_connection (test->account);
-  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, CONN1_PATH);
+  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, conn1_path);
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 0);
 
   /* atomically flip from one connection to another (unlikely) */
 
   test_set_up_account_notify (test);
-  tp_asv_set_object_path (change, "Connection", CONN2_PATH);
+  tp_asv_set_object_path (change, "Connection", conn2_path);
   tp_asv_set_uint32 (change, "ConnectionStatus",
       TP_CONNECTION_STATUS_CONNECTED);
   tp_asv_set_uint32 (change, "ConnectionStatusReason",
@@ -774,7 +775,7 @@ test_connection (Test *test,
 
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
   conn = tp_account_get_connection (test->account);
-  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, CONN2_PATH);
+  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, conn2_path);
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
 
   /* no more connection for you */
@@ -801,7 +802,7 @@ test_connection (Test *test,
   /* another connection */
 
   test_set_up_account_notify (test);
-  tp_asv_set_object_path (change, "Connection", CONN1_PATH);
+  tp_asv_set_object_path (change, "Connection", conn1_path);
   tp_asv_set_uint32 (change, "ConnectionStatus",
       TP_CONNECTION_STATUS_CONNECTING);
   tp_asv_set_uint32 (change, "ConnectionStatusReason",
@@ -862,8 +863,8 @@ test_connection (Test *test,
    * about yet) */
 
   test_set_up_account_notify (test);
-  conn = tp_account_ensure_connection (test->account, CONN1_PATH);
-  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, CONN1_PATH);
+  conn = tp_account_ensure_connection (test->account, conn1_path);
+  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, conn1_path);
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
 
   g_hash_table_unref (change);
