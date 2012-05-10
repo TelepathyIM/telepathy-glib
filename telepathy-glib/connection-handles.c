@@ -401,6 +401,8 @@ tp_connection_request_handles (TpConnection *self,
  *
  * If @hold is %TRUE, the @callback is given one reference to each handle
  * that appears as a key in the callback's @attributes parameter.
+ *
+ * Deprecated: Use tp_simple_client_factory_ensure_contact() instead.
  */
 void
 tp_connection_get_contact_attributes (TpConnection *self,
@@ -472,6 +474,8 @@ tp_connection_get_contact_attributes (TpConnection *self,
  *
  * If @hold is %TRUE, the @callback is given a reference to each handle
  * that appears as a key in the callback's @attributes parameter.
+ *
+ * Deprecated: Use tp_connection_dup_contact_list() instead.
  */
 void
 tp_connection_get_contact_list_attributes (TpConnection *self,

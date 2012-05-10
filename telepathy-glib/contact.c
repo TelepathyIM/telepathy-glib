@@ -4047,9 +4047,8 @@ contacts_get_attributes (ContactsContext *context)
   /* The Hold parameter is only true if we started from handles, and we don't
    * already have all the contacts we need. */
   context->refcount++;
-  tp_connection_get_contact_attributes (context->connection, -1,
-      context->handles->len, (const TpHandle *) context->handles->data,
-      supported_interfaces,
+  tp_cli_connection_interface_contacts_call_get_contact_attributes (
+      context->connection, -1, context->handles, supported_interfaces,
       (context->signature == CB_BY_HANDLE && context->contacts->len == 0),
       contacts_got_attributes,
       context, contacts_context_unref, context->weak_object);

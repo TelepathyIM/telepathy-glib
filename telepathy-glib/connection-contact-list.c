@@ -314,8 +314,8 @@ prepare_roster (TpConnection *self,
   supported_interfaces = _tp_contacts_bind_to_signals (self, features->len,
       (TpContactFeature *) features->data);
 
-  tp_connection_get_contact_list_attributes (self, -1,
-      supported_interfaces, TRUE,
+  tp_cli_connection_interface_contact_list_call_get_contact_list_attributes (
+      self, -1, supported_interfaces, TRUE,
       got_contact_list_attributes_cb,
       features, (GDestroyNotify) g_array_unref,
       result ? g_object_ref (result) : NULL);
