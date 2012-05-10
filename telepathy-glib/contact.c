@@ -1714,364 +1714,6 @@ tp_contact_init (TpContact *self)
   self->priv->client_types = NULL;
 }
 
-
-typedef struct _ContactsContext ContactsContext;
-typedef void (*ContactsProc) (ContactsContext *self);
-typedef enum { CB_BY_HANDLE, CB_BY_ID, CB_UPGRADE } ContactsSignature;
-
-struct _ContactsContext {
-    gsize refcount;
-
-    /* owned */
-    TpConnection *connection;
-    /* array of owned TpContact; preallocated but empty until handles have
-     * been held or requested */
-    GPtrArray *contacts;
-    /* array of handles; empty until RequestHandles has returned, if we
-     * started from IDs */
-    GArray *handles;
-    /* array of handles; empty until RequestHandles has returned, if we
-     * started from IDs */
-    GArray *invalid;
-
-    /* strv of IDs; NULL unless we started from IDs */
-    GPtrArray *request_ids;
-    /* ID => GError, NULL unless we started from IDs */
-    GHashTable *request_errors;
-
-    /* features we need before this request can finish */
-    ContactFeatureFlags wanted;
-
-    /* callback for when we've finished, plus the usual misc */
-    ContactsSignature signature;
-    union {
-        TpConnectionContactsByHandleCb by_handle;
-        TpConnectionContactsByIdCb by_id;
-        TpConnectionUpgradeContactsCb upgrade;
-    } callback;
-    gpointer user_data;
-    GDestroyNotify destroy;
-    GObject *weak_object;
-
-    /* Whether or not our weak object died*/
-    gboolean no_purpose_in_life;
-
-    /* index into handles or ids, only used when the first HoldHandles call
-     * failed with InvalidHandle, or the RequestHandles call failed with
-     * NotAvailable */
-    guint next_index;
-
-    /* TRUE if all contacts already have IDs */
-    gboolean contacts_have_ids;
-};
-
-/* This code (and lots of telepathy-glib, really) won't work if this
- * assertion fails, because we put function pointers in a GQueue. If anyone
- * cares about platforms where this fails, fixing this would involve
- * slice-allocating sizeof (GCallback) bytes repeatedly, and putting *those*
- * in the queue. */
-G_STATIC_ASSERT (sizeof (GCallback) == sizeof (gpointer));
-
-static void
-contacts_context_weak_notify (gpointer data,
-  GObject *dead)
-{
-  ContactsContext *c = data;
-
-  g_assert (c->weak_object == dead);
-  c->no_purpose_in_life = TRUE;
-  c->weak_object = NULL;
-}
-
-static ContactsContext *
-contacts_context_new (TpConnection *connection,
-                      guint n_contacts,
-                      ContactFeatureFlags want_features,
-                      ContactsSignature signature,
-                      gpointer user_data,
-                      GDestroyNotify destroy,
-                      GObject *weak_object)
-{
-  ContactsContext *c = g_slice_new0 (ContactsContext);
-
-  c->refcount = 1;
-  c->connection = g_object_ref (connection);
-  c->contacts = g_ptr_array_sized_new (n_contacts);
-  c->handles = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n_contacts);
-  c->invalid = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n_contacts);
-
-  c->wanted = want_features;
-  c->signature = signature;
-  c->user_data = user_data;
-  c->destroy = destroy;
-  c->weak_object = weak_object;
-
-  if (c->weak_object != NULL)
-    g_object_weak_ref (c->weak_object, contacts_context_weak_notify, c);
-
-  return c;
-}
-
-
-static void
-contacts_context_unref (gpointer p)
-{
-  ContactsContext *c = p;
-
-  if ((--c->refcount) > 0)
-    return;
-
-  g_assert (c->connection != NULL);
-  tp_clear_object (&c->connection);
-
-  g_assert (c->contacts != NULL);
-  g_ptr_array_foreach (c->contacts, (GFunc) g_object_unref, NULL);
-  g_ptr_array_unref (c->contacts);
-  c->contacts = NULL;
-
-  g_assert (c->handles != NULL);
-  g_array_unref (c->handles);
-  c->handles = NULL;
-
-  g_assert (c->invalid != NULL);
-  g_array_unref (c->invalid);
-  c->invalid = NULL;
-
-  if (c->request_ids != NULL)
-    g_strfreev ((gchar **) g_ptr_array_free (c->request_ids, FALSE));
-
-  c->request_ids = NULL;
-
-  tp_clear_pointer (&c->request_errors, g_hash_table_unref);
-
-  if (c->destroy != NULL)
-    c->destroy (c->user_data);
-
-  c->destroy = NULL;
-  c->user_data = NULL;
-
-  if (c->weak_object != NULL)
-    g_object_weak_unref (c->weak_object, contacts_context_weak_notify, c);
-  c->weak_object = NULL;
-
-  g_slice_free (ContactsContext, c);
-}
-
-
-static void
-contacts_context_fail (ContactsContext *c,
-                       const GError *error)
-{
-  guint i;
-
-  switch (c->signature)
-    {
-    case CB_BY_HANDLE:
-      g_array_append_vals (c->invalid, c->handles->data, c->handles->len);
-
-      c->callback.by_handle (c->connection, 0, NULL,
-          c->invalid->len, (const TpHandle *) c->invalid->data,
-          error, c->user_data, c->weak_object);
-      return;
-    case CB_BY_ID:
-      /* -1 because NULL terminator is explicit */
-      for (i = 0; i < c->request_ids->len - 1; i++)
-        {
-          const gchar *id = g_ptr_array_index (c->request_ids, i);
-
-          if (!g_hash_table_lookup (c->request_errors, id))
-            {
-              g_hash_table_insert (c->request_errors,
-                  g_strdup (id), g_error_copy (error));
-            }
-        }
-
-      c->callback.by_id (c->connection, 0, NULL, NULL,
-          c->request_errors, error, c->user_data, c->weak_object);
-      return;
-    case CB_UPGRADE:
-      c->callback.upgrade (c->connection,
-          c->contacts->len, (TpContact * const *) c->contacts->pdata,
-          error, c->user_data, c->weak_object);
-      return;
-    default:
-      g_assert_not_reached ();
-    }
-}
-
-static void contact_maybe_update_avatar_data (TpContact *self);
-
-static void
-contacts_context_last_step (ContactsContext *c)
-{
-  /* As last step, request avatars if we want AVATAR_DATA feature. This is done
-   * here because there is no contact attribute for that. */
-  if ((c->wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0)
-    {
-      guint i;
-
-      for (i = 0; i < c->contacts->len; i++)
-        contact_maybe_update_avatar_data (g_ptr_array_index (c->contacts, i));
-    }
-}
-
-static gboolean
-contacts_context_complete (ContactsContext *c)
-{
-  if (c->no_purpose_in_life)
-    return FALSE;
-
-  contacts_context_last_step (c);
-
-  switch (c->signature)
-    {
-    case CB_BY_HANDLE:
-      c->callback.by_handle (c->connection,
-          c->contacts->len, (TpContact * const *) c->contacts->pdata,
-          c->invalid->len, (const TpHandle *) c->invalid->data,
-          NULL, c->user_data, c->weak_object);
-      break;
-   case CB_BY_ID:
-     c->callback.by_id (c->connection,
-         c->contacts->len, (TpContact * const *) c->contacts->pdata,
-         (const gchar * const *) c->request_ids->pdata,
-         c->request_errors, NULL, c->user_data, c->weak_object);
-      break;
-    case CB_UPGRADE:
-      c->callback.upgrade (c->connection,
-          c->contacts->len, (TpContact * const *) c->contacts->pdata,
-          NULL, c->user_data, c->weak_object);
-      break;
-    default:
-      g_assert_not_reached ();
-    }
-
-  return FALSE;
-}
-
-
-static void
-contacts_context_complete_in_idle (ContactsContext *c)
-{
-  c->refcount++;
-  g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
-      (GSourceFunc) contacts_context_complete,
-      c, contacts_context_unref);
-}
-
-
-/**
- * TpConnectionContactsByHandleCb:
- * @connection: The connection
- * @n_contacts: The number of TpContact objects successfully created
- *  (one per valid handle), or 0 on unrecoverable errors
- * @contacts: (array length=n_contacts): An array of @n_contacts TpContact
- *  objects (this callback is not given a reference to any of these objects,
- *  and must call g_object_ref() on any that it will keep), or %NULL on
- *  unrecoverable errors
- * @n_failed: The number of invalid handles that were passed to
- *  tp_connection_get_contacts_by_handle() (or on unrecoverable errors,
- *  the total number of handles that were given)
- * @failed: (array length=n_failed): An array of @n_failed handles that were
- *  passed to tp_connection_get_contacts_by_handle() but turned out to be
- *  invalid (or on unrecoverable errors, all the handles that were given)
- * @error: %NULL on success, or an unrecoverable error that caused everything
- *  to fail
- * @user_data: the @user_data that was passed to
- *  tp_connection_get_contacts_by_handle()
- * @weak_object: the @weak_object that was passed to
- *  tp_connection_get_contacts_by_handle()
- *
- * Signature of a callback used to receive the result of
- * tp_connection_get_contacts_by_handle().
- *
- * If an unrecoverable error occurs (for instance, if @connection
- * becomes disconnected) the whole operation fails, and no contacts or
- * invalid handles are returned.
- *
- * If some or even all of the @handles passed to
- * tp_connection_get_contacts_by_handle() were not valid, this is not
- * considered to be a failure. @error will be %NULL in this situation,
- * @contacts will contain contact objects for those handles that were
- * valid (possibly none of them), and @invalid will contain the handles
- * that were not valid.
- *
- * Since: 0.7.18
- */
-
-/**
- * TpConnectionContactsByIdCb:
- * @connection: The connection
- * @n_contacts: The number of TpContact objects successfully created
- *  (one per valid ID), or 0 on unrecoverable errors
- * @contacts: (array length=n_contacts): An array of @n_contacts TpContact
- *  objects (this callback is
- *  not given a reference to any of these objects, and must call
- *  g_object_ref() on any that it will keep), or %NULL on unrecoverable errors
- * @requested_ids: (array length=n_contacts): An array of @n_contacts valid IDs
- *  (JIDs, SIP URIs etc.)
- *  that were passed to tp_connection_get_contacts_by_id(), in an order
- *  corresponding to @contacts, or %NULL on unrecoverable errors
- * @failed_id_errors: (element-type utf8 GLib.Error): A hash table in which
- *  the keys are IDs and the values are errors (#GError)
- * @error: %NULL on success, or an unrecoverable error that caused everything
- *  to fail
- * @user_data: the @user_data that was passed to
- *  tp_connection_get_contacts_by_id()
- * @weak_object: the @weak_object that was passed to
- *  tp_connection_get_contacts_by_id()
- *
- * Signature of a callback used to receive the result of
- * tp_connection_get_contacts_by_id().
- *
- * @requested_ids contains the IDs that were converted to handles successfully.
- * The normalized form of requested_ids[i] is
- * tp_contact_get_identifier (contacts[i]).
- *
- * If some or even all of the @ids passed to
- * tp_connection_get_contacts_by_id() were not valid, this is not
- * considered to be a fatal error. @error will be %NULL in this situation,
- * @contacts will contain contact objects for those IDs that were
- * valid (it may be empty), and @failed_id_errors will map the IDs
- * that were not valid to a corresponding #GError (if the connection manager
- * complies with the Telepathy spec, it will have domain %TP_ERROR and code
- * %TP_ERROR_INVALID_HANDLE).
- *
- * If an unrecoverable error occurs (for instance, if @connection
- * becomes disconnected) the whole operation fails, and no contacts
- * or requested IDs are returned. @failed_id_errors will contain all the IDs
- * that were requested, mapped to a corresponding #GError (either one
- * indicating that the ID was invalid, if that was determined before the
- * fatal error occurred, or a copy of @error).
- *
- * Since: 0.7.18
- */
-
-/**
- * TpConnectionUpgradeContactsCb:
- * @connection: The connection
- * @n_contacts: The number of TpContact objects for which an upgrade was
- *  requested
- * @contacts: (array length=n_contacts): An array of @n_contacts TpContact
- *  objects (this callback is
- *  not given an extra reference to any of these objects, and must call
- *  g_object_ref() on any that it will keep)
- * @error: An unrecoverable error, or %NULL if the connection remains valid
- * @user_data: the @user_data that was passed to
- *  tp_connection_upgrade_contacts()
- * @weak_object: the @weak_object that was passed to
- *  tp_connection_upgrade_contacts()
- *
- * Signature of a callback used to receive the result of
- * tp_connection_upgrade_contacts().
- *
- * If an unrecoverable error occurs (for instance, if @connection becomes
- * disconnected) it is indicated by @error, but the contacts in @contacts
- * are still provided.
- *
- * Since: 0.7.18
- */
-
 static void
 contacts_aliases_changed (TpConnection *connection,
                           const GPtrArray *alias_structs,
@@ -3254,80 +2896,6 @@ _tp_contact_set_attributes (TpContact *contact,
   return tp_contact_set_attributes (contact, asv, feature_flags, error);
 }
 
-static void
-contacts_got_attributes (TpConnection *connection,
-                         GHashTable *attributes,
-                         const GError *error,
-                         gpointer user_data,
-                         GObject *weak_object)
-{
-  ContactsContext *c = user_data;
-  guint i;
-
-  if (error != NULL)
-    {
-      contacts_context_fail (c, error);
-      return;
-    }
-
-  i = 0;
-
-  if (c->signature == CB_BY_HANDLE && c->contacts->len == 0)
-    {
-      while (i < c->handles->len)
-        {
-          TpHandle handle = g_array_index (c->handles, guint, i);
-          GHashTable *asv = g_hash_table_lookup (attributes,
-              GUINT_TO_POINTER (handle));
-
-          if (asv == NULL)
-            {
-              /* not in the hash table => not valid */
-              g_array_append_val (c->invalid, handle);
-              g_array_remove_index_fast (c->handles, i);
-            }
-          else
-            {
-              TpContact *contact = tp_contact_ensure (connection, handle);
-
-              g_ptr_array_add (c->contacts, contact);
-              i++;
-            }
-        }
-    }
-
-  g_assert (c->contacts->len == c->handles->len);
-
-  for (i = 0; i < c->handles->len; i++)
-    {
-      TpContact *contact = g_ptr_array_index (c->contacts, i);
-      GHashTable *asv = g_hash_table_lookup (attributes,
-          GUINT_TO_POINTER (contact->priv->handle));
-      GError *e = NULL;
-
-      if (asv == NULL)
-        {
-          g_set_error (&e, TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
-              "We hold a ref to handle #%u but it appears to be invalid",
-              contact->priv->handle);
-        }
-      else
-        {
-          /* set up the contact with its attributes */
-          tp_contact_set_attributes (contact, asv, c->wanted, &e);
-        }
-
-      if (e != NULL)
-        {
-          contacts_context_fail (c, e);
-          g_error_free (e);
-          return;
-        }
-    }
-
-  contacts_context_complete (c);
-}
-
 static const gchar **
 contacts_bind_to_signals (TpConnection *connection,
     ContactFeatureFlags wanted)
@@ -3477,87 +3045,6 @@ _tp_contacts_bind_to_signals (TpConnection *connection,
   return contacts_bind_to_signals (connection, feature_flags);
 }
 
-static void
-contacts_get_attributes (ContactsContext *context)
-{
-  const gchar **supported_interfaces;
-
-  if (!tp_proxy_has_interface_by_id (context->connection,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
-    {
-      GError *error = g_error_new_literal (TP_ERROR,
-          TP_ERROR_SOFTWARE_UPGRADE_REQUIRED,
-          "Connection does not implement CONTACTS interface. Legacy CMs "
-          "are not supported anymore");
-
-      WARNING ("%s", error->message);
-      contacts_context_fail (context, error);
-      g_clear_error (&error);
-      return;
-    }
-
-  /* tp_connection_get_contact_attributes insists that you have at least one
-   * handle; skip it if we don't (can only happen if we started from IDs) */
-  if (context->handles->len == 0)
-    {
-      contacts_context_complete_in_idle (context);
-      return;
-    }
-
-  supported_interfaces = contacts_bind_to_signals (context->connection,
-      context->wanted);
-
-  if (supported_interfaces[0] == NULL &&
-      !(context->signature == CB_BY_HANDLE && context->contacts->len == 0) &&
-      context->contacts_have_ids)
-    {
-      /* We're not going to do anything useful: we're not holding/inspecting
-       * the handles, and we're not inspecting any extended interfaces
-       * either. Skip it. */
-      g_free (supported_interfaces);
-      contacts_context_complete_in_idle (context);
-      return;
-    }
-
-  /* The Hold parameter is only true if we started from handles, and we don't
-   * already have all the contacts we need. */
-  context->refcount++;
-  tp_cli_connection_interface_contacts_call_get_contact_attributes (
-      context->connection, -1, context->handles, supported_interfaces,
-      contacts_got_attributes,
-      context, contacts_context_unref, context->weak_object);
-  g_free (supported_interfaces);
-}
-
-/*
- * Returns a new GPtrArray of borrowed references to TpContacts,
- * or NULL if any contacts could not be found.
- */
-static GPtrArray *
-lookup_all_contacts (ContactsContext *context)
-{
-  GPtrArray *contacts = g_ptr_array_new ();
-  guint i;
-
-  for (i = 0; i < context->handles->len; i++)
-    {
-      TpContact *contact = _tp_connection_lookup_contact (context->connection,
-          g_array_index (context->handles, TpHandle, i));
-      if (contact != NULL)
-        {
-          g_ptr_array_add (contacts, contact);
-        }
-      else
-        {
-          g_ptr_array_unref (contacts);
-          contacts = NULL;
-          break;
-        }
-    }
-
-  return contacts;
-}
-
 static gboolean
 get_feature_flags (const GQuark *features,
     ContactFeatureFlags *flags)
@@ -3585,445 +3072,60 @@ get_feature_flags (const GQuark *features,
   return TRUE;
 }
 
-static void
-contacts_context_remove_common_features (ContactsContext *context)
+typedef struct
 {
-  ContactFeatureFlags minimal_feature_flags = 0xFFFFFFFF;
-  guint i;
+  GSimpleAsyncResult *result;
+  ContactFeatureFlags wanted;
+} ContactsAsyncData;
 
-  context->contacts_have_ids = TRUE;
-
-  for (i = 0; i < context->contacts->len; i++)
-    {
-      TpContact *contact = g_ptr_array_index (context->contacts, i);
-
-      minimal_feature_flags &= contact->priv->has_features;
-
-      if (contact->priv->identifier == NULL)
-        context->contacts_have_ids = FALSE;
-    }
-
-  context->wanted &= (~minimal_feature_flags);
-}
-
-
-/**
- * tp_connection_get_contacts_by_handle:
- * @self: A connection, which must have the %TP_CONNECTION_FEATURE_CONNECTED
- *  feature prepared
- * @n_handles: The number of handles in @handles (must be at least 1)
- * @handles: (array length=n_handles) (element-type uint): An array of handles
- *  of type %TP_HANDLE_TYPE_CONTACT representing the desired contacts
- * @features: (transfer-none) (array zero-terminated=1) (allow-none)
- *  (element-type GLib.Quark): A zero-terminated array of features that
- *  must be ready for use (if supported) before the callback is called (may
- *  be %NULL)
- * @callback: A user callback to call when the contacts are ready
- * @user_data: Data to pass to the callback
- * @destroy: Called to destroy @user_data either after @callback has been
- *  called, or if the operation is cancelled
- * @weak_object: (allow-none): An object to pass to the callback, which will be
- *  weakly referenced; if this object is destroyed, the operation will be
- *  cancelled
- *
- * Create a number of #TpContact objects and make asynchronous method calls
- * to hold their handles and ensure that all the features specified in
- * @features are ready for use (if they are supported at all).
- *
- * It is not an error to put features in @features even if the connection
- * manager doesn't support them - users of this method should have a static
- * list of features they would like to use if possible, and use it for all
- * connection managers.
- *
- * Since: 0.7.18
- * Deprecated: Use tp_client_factory_ensure_contact() instead.
- */
-void
-tp_connection_get_contacts_by_handle (TpConnection *self,
-                                      guint n_handles,
-                                      const TpHandle *handles,
-                                      const GQuark *features,
-                                      TpConnectionContactsByHandleCb callback,
-                                      gpointer user_data,
-                                      GDestroyNotify destroy,
-                                      GObject *weak_object)
+static ContactsAsyncData *
+contacts_async_data_new (GSimpleAsyncResult *result,
+    ContactFeatureFlags wanted)
 {
-  ContactFeatureFlags feature_flags = 0;
-  ContactsContext *context;
-  GPtrArray *contacts;
+  ContactsAsyncData *data;
 
-  g_return_if_fail (tp_proxy_is_prepared (self,
-        TP_CONNECTION_FEATURE_CONNECTED));
-  g_return_if_fail (tp_proxy_get_invalidated (self) == NULL);
-  g_return_if_fail (n_handles >= 1);
-  g_return_if_fail (handles != NULL);
-  g_return_if_fail (callback != NULL);
+  data = g_slice_new0 (ContactsAsyncData);
+  data->result = g_object_ref (result);
+  data->wanted = wanted;
 
-  if (features == NULL)
-    features = no_quarks;
-
-  if (!get_feature_flags (features, &feature_flags))
-    return;
-
-  context = contacts_context_new (self, n_handles, feature_flags,
-      CB_BY_HANDLE, user_data, destroy, weak_object);
-  context->callback.by_handle = callback;
-
-  g_array_append_vals (context->handles, handles, n_handles);
-
-  contacts = lookup_all_contacts (context);
-  if (contacts != NULL)
-    {
-      g_ptr_array_foreach (contacts, (GFunc) g_object_ref, NULL);
-      tp_g_ptr_array_extend (context->contacts, contacts);
-      g_ptr_array_unref (contacts);
-
-      contacts_context_remove_common_features (context);
-    }
-
-  contacts_get_attributes (context);
-  contacts_context_unref (context);
-}
-
-
-/**
- * tp_connection_upgrade_contacts:
- * @self: A connection, which must have the %TP_CONNECTION_FEATURE_CONNECTED
- *  feature prepared
- * @n_contacts: The number of contacts in @contacts (must be at least 1)
- * @contacts: (array length=n_contacts): An array of #TpContact objects
- *  associated with @self
- * @features: (transfer-none) (array zero-terminated=1)
- *  (element-type GLib.Quark): An array of features that must be
- *  ready for use (if supported) before the callback is called
- * @callback: A user callback to call when the contacts are ready
- * @user_data: Data to pass to the callback
- * @destroy: Called to destroy @user_data either after @callback has been
- *  called, or if the operation is cancelled
- * @weak_object: (allow-none): An object to pass to the callback, which will be
- *  weakly referenced; if this object is destroyed, the operation will be
- *  cancelled
- *
- * Given several #TpContact objects, make asynchronous method calls
- * ensure that all the features specified in @features are ready for use
- * (if they are supported at all).
- *
- * It is not an error to put features in @features even if the connection
- * manager doesn't support them - users of this method should have a static
- * list of features they would like to use if possible, and use it for all
- * connection managers.
- *
- * Since: 0.7.18
- * Deprecated: Use tp_connection_upgrade_contacts_async() instead.
- */
-void
-tp_connection_upgrade_contacts (TpConnection *self,
-                                guint n_contacts,
-                                TpContact * const *contacts,
-                                const GQuark *features,
-                                TpConnectionUpgradeContactsCb callback,
-                                gpointer user_data,
-                                GDestroyNotify destroy,
-                                GObject *weak_object)
-{
-  ContactFeatureFlags feature_flags = 0;
-  ContactsContext *context;
-  guint i;
-
-  /* As an implementation detail, this method actually starts working slightly
-   * before we're officially ready. We use this to get the TpContact for the
-   * SelfHandle. */
-  g_return_if_fail (self->priv->ready_enough_for_contacts);
-  g_return_if_fail (n_contacts >= 1);
-  g_return_if_fail (contacts != NULL);
-  g_return_if_fail (callback != NULL);
-
-  if (features == NULL)
-    features = no_quarks;
-
-  for (i = 0; i < n_contacts; i++)
-    {
-      g_return_if_fail (contacts[i]->priv->connection == self);
-      g_return_if_fail (contacts[i]->priv->identifier != NULL);
-    }
-
-  if (!get_feature_flags (features, &feature_flags))
-    return;
-
-  context = contacts_context_new (self, n_contacts, feature_flags,
-      CB_UPGRADE, user_data, destroy, weak_object);
-  context->callback.upgrade = callback;
-
-  for (i = 0; i < n_contacts; i++)
-    {
-      g_ptr_array_add (context->contacts, g_object_ref (contacts[i]));
-      g_array_append_val (context->handles, contacts[i]->priv->handle);
-    }
-
-  g_assert (context->handles->len == n_contacts);
-
-  contacts_context_remove_common_features (context);
-  contacts_get_attributes (context);
-  contacts_context_unref (context);
-}
-
-
-static void contacts_request_one_handle (ContactsContext *c);
-
-static void
-contacts_requested_one_handle (TpConnection *connection,
-                               TpHandleType handle_type,
-                               guint n_handles,
-                               const TpHandle *handles,
-                               const gchar * const *ids,
-                               const GError *error,
-                               gpointer user_data,
-                               GObject *weak_object)
-{
-  ContactsContext *c = user_data;
-
-  if (error == NULL)
-    {
-      TpContact *contact;
-
-      g_assert (handle_type == TP_HANDLE_TYPE_CONTACT);
-      /* -1 because NULL terminator is explicit */
-      g_assert (c->next_index < c->request_ids->len - 1);
-
-      g_assert (n_handles == 1);
-      g_assert (handles[0] != 0);
-
-      contact = tp_contact_ensure (connection, handles[0]);
-      g_array_append_val (c->handles, handles[0]);
-      g_ptr_array_add (c->contacts, contact);
-      c->next_index++;
-    }
-  else if (error->domain == TP_ERROR &&
-      (error->code == TP_ERROR_INVALID_HANDLE ||
-       error->code == TP_ERROR_NOT_AVAILABLE ||
-       error->code == TP_ERROR_INVALID_ARGUMENT))
-    {
-      g_hash_table_insert (c->request_errors,
-          g_ptr_array_index (c->request_ids, c->next_index),
-          g_error_copy (error));
-      /* shift the rest of the IDs down one and do not increment next_index */
-      g_ptr_array_remove_index (c->request_ids, c->next_index);
-    }
-  else
-    {
-      contacts_context_fail (c, error);
-      return;
-    }
-
-  /* Continue requesting handles one by one until we did them all. The -1 here
-   * is because the array is NULL-terminated. When they are all done, we can
-   * request contact attributes */
-  if (c->next_index < c->request_ids->len -1)
-    contacts_request_one_handle (c);
-  else
-    contacts_get_attributes (c);
-}
-
-
-static void
-contacts_request_one_handle (ContactsContext *c)
-{
-  const gchar *ids[] = { NULL, NULL };
-
-  ids[0] = g_ptr_array_index (c->request_ids, c->next_index);
-  g_assert (ids[0] != NULL);
-
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  c->refcount++;
-  tp_connection_request_handles (c->connection, -1,
-      TP_HANDLE_TYPE_CONTACT, ids,
-      contacts_requested_one_handle, c, contacts_context_unref,
-      c->weak_object);
-  G_GNUC_END_IGNORE_DEPRECATIONS
-}
-
-
-static void
-contacts_requested_handles (TpConnection *connection,
-                            TpHandleType handle_type,
-                            guint n_handles,
-                            const TpHandle *handles,
-                            const gchar * const *ids,
-                            const GError *error,
-                            gpointer user_data,
-                            GObject *weak_object)
-{
-  ContactsContext *c = user_data;
-
-  g_assert (handle_type == TP_HANDLE_TYPE_CONTACT);
-  g_assert (weak_object == c->weak_object);
-
-  if (error == NULL)
-    {
-      guint i;
-
-      for (i = 0; i < n_handles; i++)
-        {
-          TpContact *contact = tp_contact_ensure (connection, handles[i]);
-
-          g_array_append_val (c->handles, handles[i]);
-          g_ptr_array_add (c->contacts, contact);
-        }
-      contacts_get_attributes (c);
-    }
-  else if (error->domain == TP_ERROR &&
-      (error->code == TP_ERROR_INVALID_HANDLE ||
-       error->code == TP_ERROR_NOT_AVAILABLE ||
-       error->code == TP_ERROR_INVALID_ARGUMENT))
-    {
-      /* One of the strings is bad. We don't know which, so split them. */
-      DEBUG ("A handle was bad, trying to recover: %s %u: %s",
-          g_quark_to_string (error->domain), error->code, error->message);
-
-      g_assert (c->next_index == 0);
-      contacts_request_one_handle (c);
-    }
-  else
-    {
-      DEBUG ("RequestHandles failed: %s %u: %s",
-          g_quark_to_string (error->domain), error->code, error->message);
-      contacts_context_fail (c, error);
-    }
-}
-
-
-/**
- * tp_connection_get_contacts_by_id:
- * @self: A connection, which must have the %TP_CONNECTION_FEATURE_CONNECTED
- *  feature prepared
- * @n_ids: The number of IDs in @ids (must be at least 1)
- * @ids: (array length=n_ids) (transfer none): An array of strings representing
- *  the desired contacts by their
- *  identifiers in the IM protocol (XMPP JIDs, SIP URIs, MSN Passports,
- *  AOL screen-names etc.)
- * @features: (transfer-none) (array zero-terminated=1) (allow-none)
- *  (element-type GLib.Quark): An array of features that must be ready for
- * use (if supported) before the callback is called (may be %NULL)
- * @callback: A user callback to call when the contacts are ready
- * @user_data: Data to pass to the callback
- * @destroy: Called to destroy @user_data either after @callback has been
- *  called, or if the operation is cancelled
- * @weak_object: (allow-none): An object to pass to the callback, which will
- *  be weakly referenced; if this object is destroyed, the operation will be
- *  cancelled
- *
- * Create a number of #TpContact objects and make asynchronous method calls
- * to obtain their handles and ensure that all the features specified in
- * @features are ready for use (if they are supported at all).
- *
- * It is not an error to put features in @features even if the connection
- * manager doesn't support them - users of this method should have a static
- * list of features they would like to use if possible, and use it for all
- * connection managers.
- *
- * Since: 0.7.18
- * Deprecated: Use tp_connection_get_contact_by_id_async() instead.
- */
-void
-tp_connection_get_contacts_by_id (TpConnection *self,
-                                  guint n_ids,
-                                  const gchar * const *ids,
-                                  const GQuark *features,
-                                  TpConnectionContactsByIdCb callback,
-                                  gpointer user_data,
-                                  GDestroyNotify destroy,
-                                  GObject *weak_object)
-{
-  ContactFeatureFlags feature_flags = 0;
-  ContactsContext *context;
-  guint i;
-
-  g_return_if_fail (tp_proxy_is_prepared (self,
-        TP_CONNECTION_FEATURE_CONNECTED));
-  g_return_if_fail (n_ids >= 1);
-  g_return_if_fail (ids != NULL);
-  g_return_if_fail (ids[0] != NULL);
-  g_return_if_fail (callback != NULL);
-
-  if (features == NULL)
-    features = no_quarks;
-
-  if (!get_feature_flags (features, &feature_flags))
-    return;
-
-  context = contacts_context_new (self, n_ids, feature_flags,
-      CB_BY_ID, user_data, destroy, weak_object);
-  context->callback.by_id = callback;
-  context->request_errors = g_hash_table_new_full (g_str_hash, g_str_equal,
-      g_free, (GDestroyNotify) g_error_free);
-
-  context->request_ids = g_ptr_array_sized_new (n_ids);
-
-  for (i = 0; i < n_ids; i++)
-    {
-      g_return_if_fail (ids[i] != NULL);
-      g_ptr_array_add (context->request_ids, g_strdup (ids[i]));
-    }
-
-  g_ptr_array_add (context->request_ids, NULL);
-
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  /* but first, we need to get the handles in the first place */
-  tp_connection_request_handles (self, -1,
-      TP_HANDLE_TYPE_CONTACT,
-      (const gchar * const *) context->request_ids->pdata,
-      contacts_requested_handles, context, contacts_context_unref,
-      weak_object);
-  G_GNUC_END_IGNORE_DEPRECATIONS
+  return data;
 }
 
 static void
-got_contact_by_id_fallback_cb (TpConnection *self,
-    guint n_contacts,
-    TpContact * const *contacts,
-    const gchar * const *requested_ids,
-    GHashTable *failed_id_errors,
+contacts_async_data_free (ContactsAsyncData *data)
+{
+  g_object_unref (data->result);
+  g_slice_free (ContactsAsyncData, data);
+}
+
+static void
+got_contact_by_id_cb (TpConnection *self,
+    TpHandle handle,
+    GHashTable *attributes,
     const GError *error,
     gpointer user_data,
     GObject *weak_object)
 {
-  const gchar *id = user_data;
-  GSimpleAsyncResult *result = (GSimpleAsyncResult *) weak_object;
+  ContactsAsyncData *data = user_data;
+  TpContact *contact;
   GError *e = NULL;
 
   if (error != NULL)
     {
-      g_simple_async_result_set_from_error (result, error);
-    }
-  else if (g_hash_table_size (failed_id_errors) > 0)
-    {
-      e = g_hash_table_lookup (failed_id_errors, id);
-
-      if (e == NULL)
-        {
-          g_set_error (&e, TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
-              "We requested 1 id, and got an error for another id - Broken CM");
-          g_simple_async_result_take_error (result, e);
-        }
-      else
-        {
-          g_simple_async_result_set_from_error (result, e);
-        }
-    }
-  else if (n_contacts != 1 || contacts[0] == NULL)
-    {
-      g_set_error (&e, TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
-          "We requested 1 id, but no contacts and no error - Broken CM");
-      g_simple_async_result_take_error (result, e);
-    }
-  else
-    {
-      g_simple_async_result_set_op_res_gpointer (result,
-          g_object_ref (contacts[0]), g_object_unref);
+      g_simple_async_result_set_from_error (data->result, error);
+      g_simple_async_result_complete (data->result);
+      return;
     }
 
-  g_simple_async_result_complete (result);
-  g_object_unref (result);
+  /* set up the contact with its attributes */
+  contact = tp_contact_ensure (self, handle);
+  g_simple_async_result_set_op_res_gpointer (data->result,
+      contact, g_object_unref);
+
+  if (!tp_contact_set_attributes (contact, attributes, data->wanted, &e))
+    g_simple_async_result_take_error (data->result, e);
+
+  g_simple_async_result_complete (data->result);
 }
 
 /**
@@ -4056,18 +3158,42 @@ tp_connection_dup_contact_by_id_async (TpConnection *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
+  ContactsAsyncData *data;
   GSimpleAsyncResult *result;
+  ContactFeatureFlags feature_flags = 0;
+  const gchar **supported_interfaces;
+
+  g_return_if_fail (tp_proxy_is_prepared (self,
+        TP_CONNECTION_FEATURE_CONNECTED));
+  g_return_if_fail (id != NULL);
+
+  if (features == NULL)
+    features = no_quarks;
+
+  if (!get_feature_flags (features, &feature_flags))
+    return;
+
+  if (!tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
+    {
+      g_simple_async_report_error_in_idle ((GObject *) self,
+          callback, user_data, TP_DBUS_ERRORS, TP_DBUS_ERROR_NO_INTERFACE,
+          "Obsolete CM does not have the Contacts interface");
+      return;
+    }
 
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_connection_dup_contact_by_id_async);
 
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  tp_connection_get_contacts_by_id (self,
-      1, &id,
-      features,
-      got_contact_by_id_fallback_cb,
-      g_strdup (id), g_free, G_OBJECT (result));
-  G_GNUC_END_IGNORE_DEPRECATIONS
+  supported_interfaces = contacts_bind_to_signals (self, feature_flags);
+
+  data = contacts_async_data_new (result, feature_flags);
+  tp_cli_connection_interface_contacts_call_get_contact_by_id (self, -1,
+      id, supported_interfaces, got_contact_by_id_cb,
+      data, (GDestroyNotify) contacts_async_data_free, NULL);
+
+  g_free (supported_interfaces);
+  g_object_unref (result);
 }
 
 /**
@@ -4091,28 +3217,37 @@ tp_connection_dup_contact_by_id_finish (TpConnection *self,
 }
 
 static void
-upgrade_contacts_async_fallback_cb (TpConnection *self,
-    guint n_contacts,
-    TpContact * const *contacts,
+got_contact_attributes_cb (TpConnection *self,
+    GHashTable *attributes,
     const GError *error,
     gpointer user_data,
     GObject *weak_object)
 {
-  GSimpleAsyncResult *result = user_data;
-  GPtrArray *contacts_array;
-  guint i;
-
-  contacts_array = g_ptr_array_new_full (n_contacts, g_object_unref);
-  for (i = 0; i < n_contacts; i++)
-    g_ptr_array_add (contacts_array, g_object_ref (contacts[i]));
-
-  g_simple_async_result_set_op_res_gpointer (result, contacts_array,
-      (GDestroyNotify) g_ptr_array_unref);
+  ContactsAsyncData *data = user_data;
+  GHashTableIter iter;
+  gpointer key, value;
 
   if (error != NULL)
-    g_simple_async_result_set_from_error (result, error);
+    {
+      g_simple_async_result_set_from_error (data->result, error);
+      g_simple_async_result_complete (data->result);
+      return;
+    }
 
-  g_simple_async_result_complete (result);
+  g_hash_table_iter_init (&iter, attributes);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      TpHandle handle = GPOINTER_TO_UINT (key);
+      GHashTable *asv = value;
+      TpContact *contact;
+
+      /* set up the contact with its attributes */
+      contact = tp_contact_ensure (self, handle);
+      tp_contact_set_attributes (contact, asv, data->wanted, NULL);
+      g_object_unref (contact);
+    }
+
+  g_simple_async_result_complete (data->result);
 }
 
 /**
@@ -4146,18 +3281,94 @@ tp_connection_upgrade_contacts_async (TpConnection *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
+  ContactsAsyncData *data;
   GSimpleAsyncResult *result;
+  ContactFeatureFlags feature_flags = 0;
+  guint minimal_feature_flags = G_MAXUINT;
+  const gchar **supported_interfaces;
+  GPtrArray *contacts_array;
+  GArray *handles;
+  guint i;
+
+  /* As an implementation detail, this method actually starts working slightly
+   * before we're officially ready. We use this to get the TpContact for the
+   * SelfHandle. */
+  g_return_if_fail (self->priv->ready_enough_for_contacts);
+  g_return_if_fail (n_contacts >= 1);
+  g_return_if_fail (contacts != NULL);
+
+  for (i = 0; i < n_contacts; i++)
+    {
+      g_return_if_fail (contacts[i]->priv->connection == self);
+      g_return_if_fail (contacts[i]->priv->identifier != NULL);
+    }
+
+  if (features == NULL)
+    features = no_quarks;
+
+  if (!get_feature_flags (features, &feature_flags))
+    return;
+
+  if (!tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
+    {
+      g_simple_async_report_error_in_idle ((GObject *) self,
+          callback, user_data, TP_DBUS_ERRORS, TP_DBUS_ERROR_NO_INTERFACE,
+          "Obsolete CM does not have the Contacts interface");
+      return;
+    }
+
+  handles = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n_contacts);
+  contacts_array = g_ptr_array_new_full (n_contacts, g_object_unref);
+  for (i = 0; i < n_contacts; i++)
+    {
+      /* feature flags that all contacts have */
+      minimal_feature_flags &= contacts[i]->priv->has_features;
+
+      /* Keep handles of contacts that does not already have all features */
+      if ((feature_flags & (~contacts[i]->priv->has_features)) != 0)
+        g_array_append_val (handles, contacts[i]->priv->handle);
+
+      /* Keep a ref on all contacts to ensure they do not disappear
+       * while upgrading them */
+      g_ptr_array_add (contacts_array, g_object_ref (contacts[i]));
+    }
+
+  /* Remove features that all contacts have */
+  feature_flags &= (~minimal_feature_flags);
 
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_connection_upgrade_contacts_async);
 
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  tp_connection_upgrade_contacts (self,
-      n_contacts, contacts,
-      features,
-      upgrade_contacts_async_fallback_cb,
-      result, g_object_unref, NULL);
-  G_GNUC_END_IGNORE_DEPRECATIONS
+  g_simple_async_result_set_op_res_gpointer (result, contacts_array,
+      (GDestroyNotify) g_ptr_array_unref);
+
+  supported_interfaces = contacts_bind_to_signals (self, feature_flags);
+
+  if (handles->len > 0 && supported_interfaces[0] != NULL)
+    {
+      data = contacts_async_data_new (result, feature_flags);
+      tp_cli_connection_interface_contacts_call_get_contact_attributes (
+          self, -1, handles, supported_interfaces,
+          got_contact_attributes_cb, data,
+          (GDestroyNotify) contacts_async_data_free, NULL);
+    }
+  else
+    {
+      /* We skipped useless GetContactAttributes, but since AVATAR_DATA does not
+       * have a contact attribute, it could be that we still need to prepare
+       * that feature on contacts */
+      if (feature_flags & CONTACT_FEATURE_FLAG_AVATAR_DATA)
+        {
+          for (i = 0; i < n_contacts; i++)
+            contact_maybe_update_avatar_data (contacts[i]);
+        }
+      g_simple_async_result_complete_in_idle (result);
+    }
+
+  g_free (supported_interfaces);
+  g_object_unref (result);
+  g_array_unref (handles);
 }
 
 /**

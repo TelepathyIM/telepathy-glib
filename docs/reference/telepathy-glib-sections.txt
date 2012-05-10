@@ -3762,13 +3762,7 @@ TpContactSearchResultPrivate
 <FILE>contact</FILE>
 <TITLE>contact</TITLE>
 TpContact
-TpConnectionContactsByHandleCb
 tp_connection_dup_contact_if_possible
-tp_connection_get_contacts_by_handle
-TpConnectionContactsByIdCb
-tp_connection_get_contacts_by_id
-TpConnectionUpgradeContactsCb
-tp_connection_upgrade_contacts
 <SUBSECTION>
 tp_contact_get_account
 tp_contact_get_connection
