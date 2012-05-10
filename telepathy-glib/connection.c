@@ -788,58 +788,27 @@ tp_connection_set_self_contact (TpConnection *self,
 }
 
 static void
-tp_connection_got_self_contact_cb (TpConnection *self,
-    guint n_contacts,
-    TpContact * const *contacts,
-    guint n_failed,
-    const TpHandle *failed,
-    const GError *error,
-    gpointer unused_data G_GNUC_UNUSED,
-    GObject *unused_object G_GNUC_UNUSED)
+upgrade_self_contact_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
 {
-  if (n_contacts != 0)
-    {
-      g_assert (n_contacts == 1);
-      g_assert (n_failed == 0);
-      g_assert (error == NULL);
+  TpConnection *self = (TpConnection *) object;
+  TpContact *contact = user_data;
+  GError *error = NULL;
 
-      if (tp_contact_get_handle (contacts[0]) ==
-          self->priv->last_known_self_handle)
-        {
-          tp_connection_set_self_contact (self, contacts[0]);
-        }
-      else
-        {
-          DEBUG ("SelfHandle is now %u, ignoring contact object for %u",
-              self->priv->last_known_self_handle,
-              tp_contact_get_handle (contacts[0]));
-        }
-    }
-  else if (error != NULL)
+  if (!tp_connection_upgrade_contacts_finish (self, result, NULL, &error))
     {
-      /* Unrecoverable error: we were probably invalidated, but in case
-       * we weren't... */
-      DEBUG ("Failed to hold the handle from GetSelfHandle(): %s",
-          error->message);
-      tp_proxy_invalidate ((TpProxy *) self, error);
+      DEBUG ("Error upgrading self contact: %s", error->message);
+      g_clear_error (&error);
     }
-  else if (n_failed == 1 && failed[0] != self->priv->last_known_self_handle)
-    {
-      /* Since we tried to make the TpContact, our self-handle has changed,
-       * so it doesn't matter that we couldn't make a TpContact for the old
-       * one - carry on and make a TpContact for the new one instead. */
-      DEBUG ("Failed to hold handle %u from GetSelfHandle(), but it's "
-          "changed to %u anyway, so never mind", failed[0],
-          self->priv->last_known_self_handle);
-    }
-  else
-    {
-      GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
-          "The handle from GetSelfHandle() was considered invalid" };
 
-      DEBUG ("%s", e.message);
-      tp_proxy_invalidate ((TpProxy *) self, &e);
+  /* Self contact could have changed while we were upgrading */
+  if (tp_contact_get_handle (contact) == self->priv->last_known_self_handle)
+    {
+      tp_connection_set_self_contact (self, contact);
     }
+
+  g_object_unref (contact);
 }
 
 static void
@@ -847,20 +816,18 @@ get_self_contact (TpConnection *self)
 {
   TpClientFactory *factory;
   GArray *features;
+  TpContact *contact;
 
   factory = tp_proxy_get_factory (self);
   features = tp_client_factory_dup_contact_features (factory, self);
 
-  /* FIXME: We should use tp_client_factory_ensure_contact(), but that would
-   * require immortal-handles and spec change to give the self identifier. */
-  /* This relies on the special case in tp_connection_get_contacts_by_handle()
-   * which makes it start working slightly early. */
-   G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-   tp_connection_get_contacts_by_handle (self,
-       1, &self->priv->last_known_self_handle,
+  contact = tp_client_factory_ensure_contact (factory, self,
+      self->priv->last_known_self_handle,
+      self->priv->last_known_self_id);
+
+  tp_connection_upgrade_contacts_async (self, 1, &contact,
       (GQuark *) features->data,
-      tp_connection_got_self_contact_cb, NULL, NULL, NULL);
-   G_GNUC_END_IGNORE_DEPRECATIONS
+      upgrade_self_contact_cb, contact);
 
   g_array_unref (features);
 }
@@ -887,6 +854,7 @@ on_self_contact_changed (TpConnection *self,
 
   DEBUG ("SelfHandleChanged to %u, I wonder what that means?", self_handle);
   self->priv->last_known_self_handle = self_handle;
+  self->priv->last_known_self_id = g_strdup (self_id);
 
   if (tp_connection_get_status (self, NULL) == TP_CONNECTION_STATUS_CONNECTED)
     get_self_contact (self);
@@ -1171,6 +1139,7 @@ _tp_connection_extract_properties (TpConnection *self,
     GHashTable *asv,
     guint32 *status,
     guint32 *self_handle,
+    const gchar **self_id,
     const gchar ***interfaces)
 {
   gboolean sufficient;
@@ -1189,13 +1158,18 @@ _tp_connection_extract_properties (TpConnection *self,
   if (*status == TP_CONNECTION_STATUS_CONNECTED)
     {
       *self_handle = tp_asv_get_uint32 (asv, "SelfHandle", &sufficient);
-
       if (!sufficient || *self_handle == 0)
         return FALSE;
+
+      *self_id = tp_asv_get_string (asv, "SelfID");
+      if (tp_str_empty (*self_id))
+        return FALSE;
+
     }
   else
     {
       *self_handle = 0;
+      *self_id = NULL;
     }
 
   return TRUE;
@@ -1211,6 +1185,7 @@ _tp_connection_got_properties (TpProxy *proxy,
   TpConnection *self = TP_CONNECTION (proxy);
   guint32 status;
   guint32 self_handle;
+  const gchar *self_id;
   const gchar **interfaces;
   GError *e = NULL;
 
@@ -1236,6 +1211,7 @@ _tp_connection_got_properties (TpProxy *proxy,
         asv,
         &status,
         &self_handle,
+        &self_id,
         &interfaces))
     {
       tp_connection_add_interfaces_from_introspection (self, interfaces);
@@ -1244,6 +1220,7 @@ _tp_connection_got_properties (TpProxy *proxy,
         {
           self->priv->introspecting_after_connected = TRUE;
           self->priv->last_known_self_handle = self_handle;
+          self->priv->last_known_self_id = g_strdup (self_id);
 
           self->priv->introspect_needed = g_list_append (
               self->priv->introspect_needed, introspect_self_contact);
@@ -1378,6 +1355,8 @@ tp_connection_finalize (GObject *object)
   tp_clear_pointer (&self->priv->balance_uri, g_free);
   tp_clear_pointer (&self->priv->cm_name, g_free);
   tp_clear_pointer (&self->priv->proto_name, g_free);
+  tp_clear_pointer (&self->priv->last_known_self_id, g_free);
+
 
   ((GObjectClass *) tp_connection_parent_class)->finalize (object);
 }

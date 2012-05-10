@@ -42,6 +42,7 @@ struct _TpConnectionPrivate {
     gchar *proto_name;
 
     TpHandle last_known_self_handle;
+    gchar *last_known_self_id;
     TpContact *self_contact;
     TpConnectionStatus status;
     TpConnectionStatusReason status_reason;
