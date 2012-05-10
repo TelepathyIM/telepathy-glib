@@ -359,7 +359,6 @@ example_echo_2_channel_class_init (ExampleEcho2ChannelClass *klass)
       sms_props);
 
   tp_message_mixin_init_dbus_properties (object_class);
-  tp_message_mixin_chat_state_init_dbus_properties (object_class);
 }
 
 static void

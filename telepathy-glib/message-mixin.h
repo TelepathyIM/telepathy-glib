@@ -89,8 +89,6 @@ void tp_message_mixin_maybe_send_gone (GObject *object);
 void tp_message_mixin_iface_init (gpointer g_iface, gpointer iface_data);
 void tp_message_mixin_chat_state_iface_init (gpointer g_iface,
     gpointer iface_data);
-_TP_AVAILABLE_IN_UNRELEASED
-void tp_message_mixin_chat_state_init_dbus_properties (GObjectClass *cls);
 
 void tp_message_mixin_init (GObject *obj, gsize offset,
     TpBaseConnection *connection);
