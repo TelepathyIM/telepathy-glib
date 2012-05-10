@@ -484,15 +484,7 @@ tp_base_connection_set_property (GObject      *object,
         if (self->self_handle == new_self_handle)
           return;
 
-        if (self->self_handle != 0)
-          tp_handle_unref (priv->handles[TP_HANDLE_TYPE_CONTACT],
-              self->self_handle);
-
-        self->self_handle = 0;
-
-        if (new_self_handle != 0)
-          self->self_handle = tp_handle_ref (priv->handles[TP_HANDLE_TYPE_CONTACT],
-              new_self_handle);
+        self->self_handle = new_self_handle;
 
         tp_svc_connection_emit_self_handle_changed (self, self->self_handle);
       }
@@ -566,12 +558,6 @@ tp_base_connection_dispose (GObject *object)
 
   g_assert ((self->status == TP_CONNECTION_STATUS_DISCONNECTED) ||
             (self->status == TP_INTERNAL_CONNECTION_STATUS_NEW));
-  if (self->self_handle != 0)
-    {
-      tp_handle_unref (self->priv->handles[TP_HANDLE_TYPE_CONTACT],
-              self->self_handle);
-      self->self_handle = 0;
-    }
 
   tp_base_connection_unregister (self);
 
@@ -1697,11 +1683,7 @@ out:
       g_error_free (error);
     }
 
-  if (handles != NULL)
-    {
-      tp_handles_unref (handle_repo, handles);
-      g_array_unref (handles);
-    }
+  tp_clear_pointer (&handles, g_array_unref);
 }
 
 /**
@@ -2691,21 +2673,11 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
               target_id_value);
 
           requested_properties = altered_properties;
-
-          tp_handle_ref (handles, target_handle);
         }
     }
 
   conn_requests_offer_request (self, requested_properties, method, type,
       target_handle_type, target_handle, context);
-
-  /* If HandleType was not None, we got the relevant repo and took a reference
-   * to target_handle; release it before returning
-   */
-  if (handles != NULL)
-    {
-      tp_handle_unref (handles, target_handle);
-    }
 
   /* If we made a new table, we should destroy it, and whichever of the GValues
    * holding TargetHandle or TargetID we filled in.  The other GValues are

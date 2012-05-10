@@ -80,6 +80,8 @@ request_handles_context_free (gpointer p)
  * For convenience, the handle type and IDs requested by the caller are
  * passed through to this callback, so the caller does not have to include
  * them in @user_data.
+ *
+ * Deprecated: See tp_connection_request_handles().
  */
 
 
@@ -158,6 +160,10 @@ connection_requested_handles (TpConnection *self,
  * If they are valid, the callback will later be called with the given
  * handles; if not all of them are valid, the callback will be called with
  * an error.
+ *
+ * Deprecated: If @handle_type is TP_HANDLE_TYPE_CONTACT, use
+ *  tp_connection_dup_contact_by_id_async() instead. For channel requests,
+ *  use tp_account_channel_request_set_target_id() instead.
  */
 void
 tp_connection_request_handles (TpConnection *self,
@@ -218,6 +224,8 @@ tp_connection_request_handles (TpConnection *self,
  * @callback will later be called with the attributes of those of the given
  * handles that were valid. Invalid handles are simply omitted from the
  * parameter to the callback.
+ *
+ * Deprecated: Use tp_client_factory_ensure_contact() instead.
  */
 void
 tp_connection_get_contact_attributes (TpConnection *self,
@@ -276,6 +284,8 @@ tp_connection_get_contact_attributes (TpConnection *self,
  *
  * The #TpContact API provides a higher-level abstraction which should
  * usually be used instead.
+ *
+ * Deprecated: Use tp_connection_dup_contact_list() instead.
  */
 void
 tp_connection_get_contact_list_attributes (TpConnection *self,

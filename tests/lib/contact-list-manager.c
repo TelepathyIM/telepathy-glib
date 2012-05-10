@@ -61,7 +61,6 @@ contact_detail_destroy (gpointer p)
 
   g_free (d->publish_request);
   g_hash_table_unref (d->groups);
-  tp_handle_unref (d->contact_repo, d->handle);
 
   g_slice_free (ContactDetails, d);
 }
@@ -89,7 +88,6 @@ ensure_contact (TpTestsContactListManager *self,
       d->groups = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
       d->handle = handle;
       d->contact_repo = self->priv->contact_repo;
-      tp_handle_ref (d->contact_repo, d->handle);
 
       g_hash_table_insert (self->priv->contact_details,
           GUINT_TO_POINTER (handle), d);

@@ -329,10 +329,6 @@ tp_contacts_mixin_get_contact_attributes (GObject *obj,
         }
     }
 
-  /* ensure the handles don't disappear while calling out to various functions
-   */
-  tp_handles_ref (contact_repo, valid_handles);
-
   for (i = 0; assumed_interfaces != NULL && assumed_interfaces[i] != NULL; i++)
     {
       func = g_hash_table_lookup (self->priv->interfaces, assumed_interfaces[i]);
@@ -355,7 +351,6 @@ tp_contacts_mixin_get_contact_attributes (GObject *obj,
         func (obj, valid_handles, result);
     }
 
-  tp_handles_unref (contact_repo, valid_handles);
   g_array_unref (valid_handles);
 
   return result;

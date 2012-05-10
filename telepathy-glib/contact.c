@@ -3491,9 +3491,8 @@ contacts_get_attributes (ContactsContext *context)
   /* The Hold parameter is only true if we started from handles, and we don't
    * already have all the contacts we need. */
   context->refcount++;
-  tp_connection_get_contact_attributes (context->connection, -1,
-      context->handles->len, (const TpHandle *) context->handles->data,
-      supported_interfaces,
+  tp_cli_connection_interface_contacts_call_get_contact_attributes (
+      context->connection, -1, context->handles, supported_interfaces,
       contacts_got_attributes,
       context, contacts_context_unref, context->weak_object);
   g_free (supported_interfaces);
@@ -3804,11 +3803,13 @@ contacts_request_one_handle (ContactsContext *c)
   ids[0] = g_ptr_array_index (c->request_ids, c->next_index);
   g_assert (ids[0] != NULL);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   c->refcount++;
   tp_connection_request_handles (c->connection, -1,
       TP_HANDLE_TYPE_CONTACT, ids,
       contacts_requested_one_handle, c, contacts_context_unref,
       c->weak_object);
+  G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 
@@ -3936,12 +3937,14 @@ tp_connection_get_contacts_by_id (TpConnection *self,
 
   g_ptr_array_add (context->request_ids, NULL);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   /* but first, we need to get the handles in the first place */
   tp_connection_request_handles (self, -1,
       TP_HANDLE_TYPE_CONTACT,
       (const gchar * const *) context->request_ids->pdata,
       contacts_requested_handles, context, contacts_context_unref,
       weak_object);
+  G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 typedef struct

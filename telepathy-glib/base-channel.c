@@ -371,19 +371,7 @@ tp_base_channel_reopened (TpBaseChannel *chan, TpHandle initiator)
   g_object_ref (chan);
 
   if (priv->initiator != initiator)
-    {
-      TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
-          priv->conn, TP_HANDLE_TYPE_CONTACT);
-      TpHandle old_initiator = priv->initiator;
-
-      if (initiator != 0)
-        tp_handle_ref (contact_repo, initiator);
-
-      priv->initiator = initiator;
-
-      if (old_initiator != 0)
-        tp_handle_unref (contact_repo, old_initiator);
-    }
+    priv->initiator = initiator;
 
   chan->priv->requested = FALSE;
 
@@ -490,9 +478,7 @@ tp_base_channel_get_self_handle (TpBaseChannel *chan)
  * Returns the target handle of @chan (without a reference), which will be 0
  * if #TpBaseChannelClass.target_handle_type is #TP_HANDLE_TYPE_NONE for this
  * class, and non-zero otherwise. This is a shortcut for retrieving the
- * #TpChannelIface:handle property. The reference count of the handle
- * is not increased; you should use tp_handle_ref() if you want to keep a hold
- * of it.
+ * #TpChannelIface:handle property.
  *
  * Returns: the target handle of @chan
  *
@@ -511,9 +497,7 @@ tp_base_channel_get_target_handle (TpBaseChannel *chan)
  * @chan: a channel
  *
  * Returns the initiator handle of @chan, as a shortcut for retrieving the
- * #TpBaseChannel:initiator-handle property. The reference count of the handle
- * is not increased; you should use tp_handle_ref() if you want to keep a hold
- * of it.
+ * #TpBaseChannel:initiator-handle property.
  *
  * Returns: the initiator handle of @chan
  *
@@ -643,28 +627,12 @@ tp_base_channel_constructed (GObject *object)
   GObjectClass *parent_class = tp_base_channel_parent_class;
   TpBaseChannel *chan = TP_BASE_CHANNEL (object);
   TpBaseConnection *conn = chan->priv->conn;
-  TpHandleRepoIface *handles;
 
   if (parent_class->constructed != NULL)
     parent_class->constructed (object);
 
   g_return_if_fail (conn != NULL);
   g_return_if_fail (TP_IS_BASE_CONNECTION (conn));
-
-  if (klass->target_handle_type != TP_HANDLE_TYPE_NONE)
-    {
-      handles = tp_base_connection_get_handles (conn, klass->target_handle_type);
-      g_assert (handles != NULL);
-      g_assert (chan->priv->target != 0);
-      tp_handle_ref (handles, chan->priv->target);
-    }
-
-  if (chan->priv->initiator != 0)
-    {
-      handles = tp_base_connection_get_handles (conn, TP_HANDLE_TYPE_CONTACT);
-      g_assert (handles != NULL);
-      tp_handle_ref (handles, chan->priv->initiator);
-    }
 
   if (chan->priv->object_path == NULL)
     {
@@ -811,9 +779,7 @@ static void
 tp_base_channel_dispose (GObject *object)
 {
   TpBaseChannel *chan = TP_BASE_CHANNEL (object);
-  TpBaseChannelClass *klass = TP_BASE_CHANNEL_GET_CLASS (chan);
   TpBaseChannelPrivate *priv = chan->priv;
-  TpHandleRepoIface *handles;
 
   if (priv->dispose_has_run)
     return;
@@ -823,23 +789,6 @@ tp_base_channel_dispose (GObject *object)
   if (!priv->destroyed)
     {
       tp_base_channel_destroyed (chan);
-    }
-
-  if (klass->target_handle_type != TP_HANDLE_TYPE_NONE
-      && priv->target != 0)
-    {
-      handles = tp_base_connection_get_handles (priv->conn,
-                                                klass->target_handle_type);
-      tp_handle_unref (handles, priv->target);
-      priv->target = 0;
-    }
-
-  if (priv->initiator != 0)
-    {
-      handles = tp_base_connection_get_handles (priv->conn,
-                                                TP_HANDLE_TYPE_CONTACT);
-      tp_handle_unref (handles, priv->initiator);
-      priv->initiator = 0;
     }
 
   tp_clear_object (&priv->conn);

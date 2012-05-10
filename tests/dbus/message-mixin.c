@@ -216,30 +216,29 @@ main (int argc,
       g_hash_table_unref (properties);
     }
 
-  handle = tp_tests_connection_run_request_contact_handle (conn,
-      "them@example.com");
-
     {
       GHashTable *request = tp_asv_new (
           TP_PROP_CHANNEL_CHANNEL_TYPE,
               G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
           TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
               G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
-          TP_PROP_CHANNEL_TARGET_HANDLE, G_TYPE_UINT, handle,
+          TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, "them@example.com",
           NULL);
 
       tp_cli_connection_interface_requests_run_create_channel (conn, -1,
-          request, &chan_path, NULL, &error, NULL);
+          request, &chan_path, &parameters, &error, NULL);
       g_assert_no_error (error);
 
       g_hash_table_unref (request);
     }
 
-  chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
-      TP_HANDLE_TYPE_CONTACT, handle, &error);
+  chan = tp_channel_new_from_properties (conn, chan_path, parameters, &error);
   g_assert_no_error (error);
+  g_hash_table_unref (parameters);
 
   tp_tests_proxy_run_until_prepared (chan, NULL);
+
+  handle = tp_channel_get_handle (chan, NULL);
 
   MYASSERT (
       tp_cli_channel_type_text_connect_to_message_received (chan,

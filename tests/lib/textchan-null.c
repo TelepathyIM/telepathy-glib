@@ -103,8 +103,6 @@ constructor (GType type,
       G_OBJECT_CLASS (tp_tests_text_channel_null_parent_class)->constructor (type,
           n_props, props);
   TpTestsTextChannelNull *self = TP_TESTS_TEXT_CHANNEL_NULL (object);
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
   const TpChannelTextMessageType types[] = {
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
@@ -114,8 +112,6 @@ constructor (GType type,
       "text/plain",
       NULL
   };
-
-  tp_handle_ref (contact_repo, self->priv->handle);
 
   tp_dbus_daemon_register_object (
       tp_base_connection_get_dbus_daemon (self->priv->conn),
@@ -254,10 +250,7 @@ static void
 finalize (GObject *object)
 {
   TpTestsTextChannelNull *self = TP_TESTS_TEXT_CHANNEL_NULL (object);
-  TpHandleRepoIface *contact_handles = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
 
-  tp_handle_unref (contact_handles, self->priv->handle);
   g_free (self->priv->object_path);
 
   tp_message_mixin_finalize (object);
