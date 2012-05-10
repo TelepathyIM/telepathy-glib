@@ -32,6 +32,7 @@
 
 #include <telepathy-glib/account-channel-request.h>
 #include <telepathy-glib/account-manager.h>
+#include <telepathy-glib/account-request.h>
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/add-dispatch-operation-context.h>
 #include <telepathy-glib/automatic-client-factory.h>
