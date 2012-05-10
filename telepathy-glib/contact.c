@@ -4005,6 +4005,9 @@ contacts_bind_to_signals (TpConnection *connection,
   return (const gchar **) g_ptr_array_free (array, FALSE);
 }
 
+/*
+ * The connection must implement Contacts.
+ */
 const gchar **
 _tp_contacts_bind_to_signals (TpConnection *connection,
     guint n_features,
