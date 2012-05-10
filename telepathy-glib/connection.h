@@ -240,17 +240,18 @@ void tp_connection_hold_handles (TpConnection *self, gint timeout_ms,
     TpConnectionHoldHandlesCb callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
 
+#ifndef TP_DISABLE_DEPRECATED
 typedef void (*TpConnectionRequestHandlesCb) (TpConnection *connection,
     TpHandleType handle_type,
     guint n_handles, const TpHandle *handles, const gchar * const *ids,
     const GError *error, gpointer user_data, GObject *weak_object);
 
+_TP_DEPRECATED_IN_UNRELEASED
 void tp_connection_request_handles (TpConnection *self, gint timeout_ms,
     TpHandleType handle_type, const gchar * const *ids,
     TpConnectionRequestHandlesCb callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
 
-#ifndef TP_DISABLE_DEPRECATED
 _TP_DEPRECATED_IN_UNRELEASED
 void tp_connection_unref_handles (TpConnection *self,
     TpHandleType handle_type, guint n_handles, const TpHandle *handles);
