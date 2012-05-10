@@ -4738,8 +4738,6 @@ tp_connection_dup_contact_by_id_async (TpConnection *self,
   if (!get_feature_flags (n_features, features, &feature_flags))
     return;
 
-  supported_interfaces = contacts_bind_to_signals (self, feature_flags);
-
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_connection_dup_contact_by_id_async);
 
@@ -4748,11 +4746,33 @@ tp_connection_dup_contact_by_id_async (TpConnection *self,
   data->features_array = g_array_sized_new (FALSE, FALSE,
       sizeof (TpContactFeature), n_features);
   g_array_append_vals (data->features_array, features, n_features);
-  tp_cli_connection_interface_contacts_call_get_contact_by_id (self, -1,
-      id, supported_interfaces, got_contact_by_id_cb,
-      data, NULL, NULL);
 
-  g_free (supported_interfaces);
+  if (tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
+    {
+      supported_interfaces = contacts_bind_to_signals (self, feature_flags);
+
+      tp_cli_connection_interface_contacts_call_get_contact_by_id (self, -1,
+          id, supported_interfaces, got_contact_by_id_cb,
+          data, NULL, NULL);
+
+      g_free (supported_interfaces);
+    }
+  else
+    {
+      /* Proceed directly to the slow path, do not pass Go, do not collect
+       * £200. contacts_bind_to_signals() relies on having Contacts. */
+
+      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+      tp_connection_get_contacts_by_id (self, 1,
+          (const gchar * const *) &data->id,
+          data->features_array->len,
+          (TpContactFeature *) data->features_array->data,
+          got_contact_by_id_fallback_cb,
+          data, (GDestroyNotify) contacts_async_data_free, NULL);
+      G_GNUC_END_IGNORE_DEPRECATIONS
+    }
+
   g_object_unref (result);
 }
 

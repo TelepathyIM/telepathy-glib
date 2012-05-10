@@ -1005,6 +1005,28 @@ test_by_id (Fixture *f,
 }
 
 static void
+test_one_by_id (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  GAsyncResult *result = NULL;
+  GError *error = NULL;
+  TpContact *contact;
+
+  tp_connection_dup_contact_by_id_async (f->legacy_client_conn,
+      "Alice", 0, NULL, tp_tests_result_ready_cb, &result);
+  tp_tests_run_until_result (&result);
+  contact = tp_connection_dup_contact_by_id_finish (f->legacy_client_conn,
+      result, &error);
+
+  g_assert_no_error (error);
+  g_assert (TP_IS_CONTACT (contact));
+  g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "alice");
+
+  g_clear_object (&result);
+  g_clear_object (&contact);
+}
+
+static void
 test_by_handle_again (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
@@ -1271,6 +1293,8 @@ main (int argc,
       test_by_handle_upgrade, teardown);
   g_test_add ("/contacts-slow-path/dup-if-possible", Fixture, NULL, setup,
       test_dup_if_possible, teardown);
+  g_test_add ("/contacts-slow-path/one-by-id", Fixture, NULL, setup,
+      test_one_by_id, teardown);
 
   return g_test_run ();
 }
