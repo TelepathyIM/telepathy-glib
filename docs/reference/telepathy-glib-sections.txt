@@ -5269,6 +5269,7 @@ tp_account_request_set_service
 <SUBSECTION>
 tp_account_request_set_parameter
 tp_account_request_set_parameter_string
+tp_account_request_unset_parameter
 <SUBSECTION>
 tp_account_request_create_account_async
 tp_account_request_create_account_finish
