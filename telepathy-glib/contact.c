@@ -1899,12 +1899,39 @@ contacts_context_fail (ContactsContext *c,
     }
 }
 
+static void contact_update_avatar_data (TpContact *self);
+
+static void
+contacts_context_last_step (ContactsContext *c)
+{
+  guint i;
+
+  g_assert (c->handles->len == c->contacts->len);
+
+  /* As last step, request avatars if we want AVATAR_DATA feature. This is done
+   * here because there is no contact attribute for that. */
+  if ((c->wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) == 0)
+      return;
+
+  for (i = 0; i < c->contacts->len; i++)
+    {
+      TpContact *contact = g_ptr_array_index (c->contacts, i);
+
+      if ((contact->priv->has_features & CONTACT_FEATURE_FLAG_AVATAR_DATA) == 0)
+        {
+          contact->priv->has_features |= CONTACT_FEATURE_FLAG_AVATAR_DATA;
+          contact_update_avatar_data (contact);
+        }
+    }
+}
 
 static gboolean
 contacts_context_complete (ContactsContext *c)
 {
   if (c->no_purpose_in_life)
     return FALSE;
+
+  contacts_context_last_step (c);
 
   switch (c->signature)
     {
@@ -3099,12 +3126,6 @@ tp_contact_set_attributes (TpContact *contact,
         }
     }
 
-  /* There is no attribute for avatar data. If we want it, let's just
-   * pretend it is ready. If avatar is in cache, that will be true as
-   * soon as the token is set from attributes */
-  if (wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA)
-    contact->priv->has_features |= CONTACT_FEATURE_FLAG_AVATAR_DATA;
-
   if (wanted & CONTACT_FEATURE_FLAG_AVATAR_TOKEN)
     {
       s = tp_asv_get_string (asv,
@@ -3950,60 +3971,53 @@ tp_connection_get_contacts_by_id (TpConnection *self,
   G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
-typedef struct
-{
-  GSimpleAsyncResult *result;
-  ContactFeatureFlags features;
-} ContactsAsyncData;
-
-static ContactsAsyncData *
-contacts_async_data_new (GSimpleAsyncResult *result,
-    ContactFeatureFlags features)
-{
-  ContactsAsyncData *data;
-
-  data = g_slice_new0 (ContactsAsyncData);
-  data->result = g_object_ref (result);
-  data->features = features;
-
-  return data;
-}
-
 static void
-contacts_async_data_free (ContactsAsyncData *data)
-{
-  g_object_unref (data->result);
-  g_slice_free (ContactsAsyncData, data);
-}
-
-static void
-got_contact_by_id_cb (TpConnection *self,
-    TpHandle handle,
-    GHashTable *attributes,
+got_contact_by_id_fallback_cb (TpConnection *self,
+    guint n_contacts,
+    TpContact * const *contacts,
+    const gchar * const *requested_ids,
+    GHashTable *failed_id_errors,
     const GError *error,
     gpointer user_data,
     GObject *weak_object)
 {
-  ContactsAsyncData *data = user_data;
-  TpContact *contact;
+  const gchar *id = user_data;
+  GSimpleAsyncResult *result = (GSimpleAsyncResult *) weak_object;
   GError *e = NULL;
 
   if (error != NULL)
     {
-      g_simple_async_result_set_from_error (data->result, error);
-      g_simple_async_result_complete (data->result);
-      return;
+      g_simple_async_result_set_from_error (result, error);
+    }
+  else if (g_hash_table_size (failed_id_errors) > 0)
+    {
+      e = g_hash_table_lookup (failed_id_errors, id);
+
+      if (e == NULL)
+        {
+          g_set_error (&e, TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
+              "We requested 1 id, and got an error for another id - Broken CM");
+          g_simple_async_result_take_error (result, e);
+        }
+      else
+        {
+          g_simple_async_result_set_from_error (result, e);
+        }
+    }
+  else if (n_contacts != 1 || contacts[0] == NULL)
+    {
+      g_set_error (&e, TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
+          "We requested 1 id, but no contacts and no error - Broken CM");
+      g_simple_async_result_take_error (result, e);
+    }
+  else
+    {
+      g_simple_async_result_set_op_res_gpointer (result,
+          g_object_ref (contacts[0]), g_object_unref);
     }
 
-  /* set up the contact with its attributes */
-  contact = tp_contact_ensure (self, handle);
-  g_simple_async_result_set_op_res_gpointer (data->result,
-      contact, g_object_unref);
-
-  if (!tp_contact_set_attributes (contact, attributes, data->features, &e))
-    g_simple_async_result_take_error (data->result, e);
-
-  g_simple_async_result_complete (data->result);
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
 }
 
 /**
@@ -4036,47 +4050,18 @@ tp_connection_dup_contact_by_id_async (TpConnection *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  ContactsAsyncData *data;
   GSimpleAsyncResult *result;
-  ContactFeatureFlags feature_flags = 0;
-  const gchar **supported_interfaces;
-
-  g_return_if_fail (tp_proxy_is_prepared (self,
-        TP_CONNECTION_FEATURE_CONNECTED));
-  g_return_if_fail (id != NULL);
-
-  if (features == NULL)
-    features = no_quarks;
-
-  if (!get_feature_flags (features, &feature_flags))
-    return;
 
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_connection_dup_contact_by_id_async);
 
-  data = contacts_async_data_new (result, feature_flags);
-
-  if (tp_proxy_has_interface_by_id (self,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
-    {
-      supported_interfaces = contacts_bind_to_signals (self, feature_flags);
-
-      tp_cli_connection_interface_contacts_call_get_contact_by_id (self, -1,
-          id, supported_interfaces, got_contact_by_id_cb,
-          data, NULL, NULL);
-
-      g_free (supported_interfaces);
-    }
-  else
-    {
-      g_simple_async_result_set_error (result, TP_DBUS_ERRORS,
-          TP_DBUS_ERROR_NO_INTERFACE,
-          "Obsolete CM does not have the Contacts interface");
-      g_simple_async_result_complete_in_idle (result);
-      contacts_async_data_free (data);
-    }
-
-  g_object_unref (result);
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+  tp_connection_get_contacts_by_id (self,
+      1, &id,
+      features,
+      got_contact_by_id_fallback_cb,
+      g_strdup (id), g_free, G_OBJECT (result));
+  G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 /**
@@ -4100,40 +4085,6 @@ tp_connection_dup_contact_by_id_finish (TpConnection *self,
 }
 
 static void
-got_contact_attributes_cb (TpConnection *self,
-    GHashTable *attributes,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  ContactsAsyncData *data = user_data;
-  GHashTableIter iter;
-  gpointer key, value;
-
-  if (error != NULL)
-    {
-      g_simple_async_result_set_from_error (data->result, error);
-      g_simple_async_result_complete (data->result);
-      return;
-    }
-
-  g_hash_table_iter_init (&iter, attributes);
-  while (g_hash_table_iter_next (&iter, &key, &value))
-    {
-      TpHandle handle = GPOINTER_TO_UINT (key);
-      GHashTable *asv = value;
-      TpContact *contact;
-
-      /* set up the contact with its attributes */
-      contact = tp_contact_ensure (self, handle);
-      tp_contact_set_attributes (contact, asv, data->features, NULL);
-      g_object_unref (contact);
-    }
-
-  g_simple_async_result_complete (data->result);
-}
-
-static void
 upgrade_contacts_async_fallback_cb (TpConnection *self,
     guint n_contacts,
     TpContact * const *contacts,
@@ -4142,6 +4093,15 @@ upgrade_contacts_async_fallback_cb (TpConnection *self,
     GObject *weak_object)
 {
   GSimpleAsyncResult *result = user_data;
+  GPtrArray *contacts_array;
+  guint i;
+
+  contacts_array = g_ptr_array_new_full (n_contacts, g_object_unref);
+  for (i = 0; i < n_contacts; i++)
+    g_ptr_array_add (contacts_array, g_object_ref (contacts[i]));
+
+  g_simple_async_result_set_op_res_gpointer (result, contacts_array,
+      (GDestroyNotify) g_ptr_array_unref);
 
   if (error != NULL)
     g_simple_async_result_set_from_error (result, error);
@@ -4180,88 +4140,18 @@ tp_connection_upgrade_contacts_async (TpConnection *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  ContactsAsyncData *data;
   GSimpleAsyncResult *result;
-  ContactFeatureFlags feature_flags = 0;
-  guint minimal_feature_flags = G_MAXUINT;
-  const gchar **supported_interfaces;
-  GPtrArray *contacts_array;
-  GArray *handles;
-  guint i;
-
-  g_return_if_fail (tp_proxy_is_prepared (self,
-        TP_CONNECTION_FEATURE_CONNECTED));
-  g_return_if_fail (n_contacts >= 1);
-  g_return_if_fail (contacts != NULL);
-
-  for (i = 0; i < n_contacts; i++)
-    {
-      g_return_if_fail (contacts[i]->priv->connection == self);
-      g_return_if_fail (contacts[i]->priv->identifier != NULL);
-    }
-
-  if (features == NULL)
-    features = no_quarks;
-
-  if (!get_feature_flags (features, &feature_flags))
-    return;
-
-  handles = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n_contacts);
-  contacts_array = g_ptr_array_new_full (n_contacts, g_object_unref);
-  for (i = 0; i < n_contacts; i++)
-    {
-      /* feature flags that all contacts have */
-      minimal_feature_flags &= contacts[i]->priv->has_features;
-
-      /* Keep handles of contacts that does not already have all features */
-      if ((feature_flags & (~contacts[i]->priv->has_features)) != 0)
-        g_array_append_val (handles, contacts[i]->priv->handle);
-
-      /* Keep a ref on all contacts to ensure they do not disappear
-       * while upgrading them */
-      g_ptr_array_add (contacts_array, g_object_ref (contacts[i]));
-    }
-
-  /* Remove features that all contacts have */
-  feature_flags &= (~minimal_feature_flags);
 
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_connection_upgrade_contacts_async);
 
-  g_simple_async_result_set_op_res_gpointer (result, contacts_array,
-      (GDestroyNotify) g_ptr_array_unref);
-
-  if (tp_proxy_has_interface_by_id (self,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
-    {
-      supported_interfaces = contacts_bind_to_signals (self, feature_flags);
-
-      if (handles->len > 0 && supported_interfaces[0] != NULL)
-        {
-          data = contacts_async_data_new (result, feature_flags);
-          tp_cli_connection_interface_contacts_call_get_contact_attributes (
-              self, -1, handles, supported_interfaces,
-              got_contact_attributes_cb, data,
-              (GDestroyNotify) contacts_async_data_free, NULL);
-        }
-      else
-        {
-          g_simple_async_result_complete_in_idle (result);
-        }
-
-      g_free (supported_interfaces);
-    }
-  else
-    {
-      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-      tp_connection_upgrade_contacts (self, n_contacts, contacts,
-          features, upgrade_contacts_async_fallback_cb,
-          g_object_ref (result), g_object_unref, NULL);
-      G_GNUC_END_IGNORE_DEPRECATIONS
-    }
-
-  g_object_unref (result);
-  g_array_unref (handles);
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+  tp_connection_upgrade_contacts (self,
+      n_contacts, contacts,
+      features,
+      upgrade_contacts_async_fallback_cb,
+      result, g_object_unref, NULL);
+  G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 /**

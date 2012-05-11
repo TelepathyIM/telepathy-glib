@@ -516,10 +516,11 @@ test_avatar_requirements (Fixture *f,
   g_main_loop_unref (result.loop);
 }
 
-static GFile *
+static TpContact *
 create_contact_with_fake_avatar (TpTestsContactsConnection *service_conn,
     TpConnection *client_conn,
-    const gchar *id)
+    const gchar *id,
+    gboolean request_avatar)
 {
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
@@ -531,7 +532,6 @@ create_contact_with_fake_avatar (TpTestsContactsConnection *service_conn,
   TpContact *contact;
   TpHandle handle;
   GArray *array;
-  GFile *avatar_file;
   gchar *content = NULL;
 
   handle = tp_handle_ensure (service_repo, id, NULL, NULL);
@@ -541,6 +541,11 @@ create_contact_with_fake_avatar (TpTestsContactsConnection *service_conn,
   tp_tests_contacts_connection_change_avatar_data (service_conn, handle, array,
       avatar_mime_type, avatar_token);
 
+  if (request_avatar)
+    features[0] = TP_CONTACT_FEATURE_AVATAR_DATA;
+  else
+    features[0] = TP_CONTACT_FEATURE_AVATAR_TOKEN;
+
   tp_connection_get_contacts_by_handle (client_conn,
       1, &handle,
       features,
@@ -549,27 +554,33 @@ create_contact_with_fake_avatar (TpTestsContactsConnection *service_conn,
   g_main_loop_run (result.loop);
   g_assert_no_error (result.error);
 
-  contact = g_ptr_array_index (result.contacts, 0);
-  if (tp_contact_get_avatar_file (contact) == NULL)
-    {
-      g_signal_connect_swapped (contact, "notify::avatar-file",
-          G_CALLBACK (finish), &result);
-      g_main_loop_run (result.loop);
-    }
+  contact = g_object_ref (g_ptr_array_index (result.contacts, 0));
 
-  g_assert_cmpstr (tp_contact_get_avatar_mime_type (contact), ==,
-      avatar_mime_type);
   g_assert_cmpstr (tp_contact_get_avatar_token (contact), ==, avatar_token);
 
-  avatar_file = tp_contact_get_avatar_file (contact);
-  g_assert (avatar_file != NULL);
-  g_file_load_contents (avatar_file, NULL, &content, NULL, NULL, &result.error);
-  g_assert_no_error (result.error);
-  g_assert_cmpstr (content, ==, avatar_data);
-  g_free (content);
+  if (request_avatar)
+    {
+      GFile *avatar_file;
 
-  /* Keep avatar_file alive after contact destruction */
-  g_object_ref (avatar_file);
+      /* If we requested avatar, it could come later */
+      if (tp_contact_get_avatar_file (contact) == NULL)
+        {
+          g_signal_connect_swapped (contact, "notify::avatar-file",
+              G_CALLBACK (finish), &result);
+          g_main_loop_run (result.loop);
+        }
+
+      g_assert_cmpstr (tp_contact_get_avatar_mime_type (contact), ==,
+          avatar_mime_type);
+
+      avatar_file = tp_contact_get_avatar_file (contact);
+      g_assert (avatar_file != NULL);
+      g_file_load_contents (avatar_file, NULL, &content, NULL, NULL,
+          &result.error);
+      g_assert_no_error (result.error);
+      g_assert_cmpstr (content, ==, avatar_data);
+      g_free (content);
+    }
 
   reset_result (&result);
   g_main_loop_unref (result.loop);
@@ -577,7 +588,7 @@ create_contact_with_fake_avatar (TpTestsContactsConnection *service_conn,
   tp_handle_unref (service_repo, handle);
   g_array_unref (array);
 
-  return avatar_file;
+  return contact;
 }
 
 static void
@@ -636,28 +647,18 @@ haze_remove_directory (const gchar *path)
   return ret;
 }
 
-#define RAND_STR_LEN 6
-
 static void
 test_avatar_data (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
   TpTestsContactsConnection *service_conn = f->service_conn;
   TpConnection *client_conn = f->client_conn;
-  gchar *dir;
   gboolean avatar_retrieved_called;
   GError *error = NULL;
-  GFile *file1, *file2;
+  TpContact *contact1, *contact2;
   TpProxySignalConnection *signal_id;
 
   g_message (G_STRFUNC);
-
-  /* Make sure g_get_user_cache_dir() returns a tmp directory, to not mess up
-   * user's cache dir. */
-  dir = g_dir_make_tmp ("tp-glib-tests-XXXXXX", &error);
-  g_assert_no_error (error);
-  g_setenv ("XDG_CACHE_HOME", dir, TRUE);
-  g_assert_cmpstr (g_get_user_cache_dir (), ==, dir);
 
   /* Check if AvatarRetrieved gets called */
   signal_id = tp_cli_connection_interface_avatars_connect_to_avatar_retrieved (
@@ -668,24 +669,58 @@ test_avatar_data (Fixture *f,
   /* First time we create a contact, avatar should not be in cache, so
    * AvatarRetrived should be called */
   avatar_retrieved_called = FALSE;
-  file1 = create_contact_with_fake_avatar (service_conn, client_conn,
-      "fake-id1");
+  contact1 = create_contact_with_fake_avatar (service_conn, client_conn,
+      "fake-id1", TRUE);
   g_assert (avatar_retrieved_called);
+  g_assert (contact1 != NULL);
+  g_assert (tp_contact_get_avatar_file (contact1) != NULL);
 
   /* Second time we create a contact, avatar should be in cache now, so
    * AvatarRetrived should NOT be called */
   avatar_retrieved_called = FALSE;
-  file2 = create_contact_with_fake_avatar (service_conn, client_conn,
-      "fake-id2");
+  contact2 = create_contact_with_fake_avatar (service_conn, client_conn,
+      "fake-id2", TRUE);
   g_assert (!avatar_retrieved_called);
+  g_assert (contact2 != NULL);
+  g_assert (tp_contact_get_avatar_file (contact2) != NULL);
 
-  g_assert (g_file_equal (file1, file2));
-  g_assert (haze_remove_directory (dir));
+  g_assert (g_file_equal (
+      tp_contact_get_avatar_file (contact1),
+      tp_contact_get_avatar_file (contact2)));
 
   tp_proxy_signal_connection_disconnect (signal_id);
-  g_object_unref (file1);
-  g_object_unref (file2);
-  g_free (dir);
+  g_object_unref (contact1);
+  g_object_unref (contact2);
+}
+
+static void
+test_avatar_data_after_token (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  TpTestsContactsConnection *service_conn = f->service_conn;
+  TpConnection *client_conn = f->client_conn;
+  const gchar *id = "avatar-data-after-token";
+  TpContact *contact1, *contact2;
+
+  g_message (G_STRFUNC);
+
+  /* Create a contact with AVATAR_TOKEN feature */
+  contact1 = create_contact_with_fake_avatar (service_conn, client_conn, id,
+      FALSE);
+  g_assert (contact1 != NULL);
+  g_assert (tp_contact_get_avatar_file (contact1) == NULL);
+
+  /* Now create the same contact with AVATAR_DATA feature */
+  contact2 = create_contact_with_fake_avatar (service_conn, client_conn, id,
+      TRUE);
+  g_assert (contact2 != NULL);
+  g_assert (tp_contact_get_avatar_file (contact2) != NULL);
+
+  g_assert (contact1 == contact2);
+
+  /* Cleanup */
+  g_object_unref (contact1);
+  g_object_unref (contact2);
 }
 
 static void
@@ -2639,8 +2674,19 @@ int
 main (int argc,
       char **argv)
 {
+  gint ret;
+  gchar *dir;
+  GError *error = NULL;
+
   tp_tests_init (&argc, &argv);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
+
+  /* Make sure g_get_user_cache_dir() returns a tmp directory, to not mess up
+   * user's cache dir. */
+  dir = g_dir_make_tmp ("tp-glib-tests-XXXXXX", &error);
+  g_assert_no_error (error);
+  g_setenv ("XDG_CACHE_HOME", dir, TRUE);
+  g_assert_cmpstr (g_get_user_cache_dir (), ==, dir);
 
 #define ADD(x) \
   g_test_add ("/contacts/" #x, Fixture, NULL, setup, test_ ## x, teardown)
@@ -2655,6 +2701,7 @@ main (int argc,
   ADD (by_id);
   ADD (avatar_requirements);
   ADD (avatar_data);
+  ADD (avatar_data_after_token);
   ADD (contact_info);
   ADD (dup_if_possible);
   ADD (subscription_states);
@@ -2671,5 +2718,10 @@ main (int argc,
   g_test_add ("/contacts/self-contact", Fixture, NULL,
       setup_no_connect, test_self_contact, teardown);
 
-  return g_test_run ();
+  ret = g_test_run ();
+
+  g_assert (haze_remove_directory (dir));
+  g_free (dir);
+
+  return ret;
 }
