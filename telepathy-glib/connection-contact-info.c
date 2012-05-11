@@ -39,8 +39,6 @@
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/util-internal.h"
 
-
-
 /**
  * TpContactInfoFieldSpec:
  * @name: The name of the field; this is the lowercased name of a vCard

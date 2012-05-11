@@ -15,6 +15,7 @@ pkgconfigdir = ${libdir}/pkgconfig
 telepathy-glib.vapi: $(top_builddir)/telepathy-glib/TelepathyGLib-0.12.gir
 	$(VAPIGEN_V)$(VAPIGEN) \
 		--library telepathy-glib \
+		--metadatadir=$(top_srcdir)/telepathy-glib \
 		--pkg gio-2.0 \
 		$< \
 		$(NULL)

@@ -48,7 +48,11 @@ TpContactInfoFieldSpec *tp_contact_info_field_spec_copy (
     const TpContactInfoFieldSpec *self);
 void tp_contact_info_field_spec_free (TpContactInfoFieldSpec *self);
 
+#ifndef __GI_SCANNER__
+/* the typedef only exists for G_DEFINE_BOXED_TYPE's benefit, and
+ * g-ir-scanner 1.32.1 doesn't parse a skip annotation */
 typedef GList TpContactInfoSpecList;
+#endif
 
 #define TP_TYPE_CONTACT_INFO_SPEC_LIST (tp_contact_info_spec_list_get_type ())
 GType tp_contact_info_spec_list_get_type (void);
@@ -73,7 +77,11 @@ TpContactInfoField *tp_contact_info_field_new (const gchar *field_name,
 TpContactInfoField *tp_contact_info_field_copy (const TpContactInfoField *self);
 void tp_contact_info_field_free (TpContactInfoField *self);
 
+#ifndef __GI_SCANNER__
+/* the typedef only exists for G_DEFINE_BOXED_TYPE's benefit, and
+ * g-ir-scanner 1.32.1 doesn't parse a skip annotation */
 typedef GList TpContactInfoList;
+#endif
 
 #define TP_TYPE_CONTACT_INFO_LIST (tp_contact_info_list_get_type ())
 GType tp_contact_info_list_get_type (void);
