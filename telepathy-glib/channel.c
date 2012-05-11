@@ -887,10 +887,13 @@ upgrade_contacts_cb (GObject *object,
       _tp_channel_abort_introspection (self, "Upgrading contacts failed",
           error);
       g_clear_error (&error);
-      return;
+    }
+  else
+    {
+      _tp_channel_continue_introspection (self);
     }
 
-  _tp_channel_continue_introspection (self);
+  g_object_unref (self);
 }
 
 static void
@@ -957,7 +960,7 @@ _tp_channel_create_contacts (TpChannel *self)
       tp_connection_upgrade_contacts_async (self->priv->connection,
           contacts->len, (TpContact **) contacts->pdata,
           (GQuark *) features->data,
-          upgrade_contacts_cb, self);
+          upgrade_contacts_cb, g_object_ref (self));
 
       g_array_unref (features);
     }
