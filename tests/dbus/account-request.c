@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include <telepathy-glib/account-request.h>
+#include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 
 #include "tests/lib/simple-account.h"
@@ -429,7 +430,7 @@ test_create_succeed (Test *test,
 
   array = tp_asv_get_boxed (test->am->create_properties,
       TP_PROP_ACCOUNT_REQUESTED_PRESENCE,
-      TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+      TP_STRUCT_TYPE_PRESENCE);
   g_assert_cmpuint (g_value_get_uint (array->values), ==,
       TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
   g_assert_cmpstr (g_value_get_string (array->values + 1), ==,
@@ -439,7 +440,7 @@ test_create_succeed (Test *test,
 
   array = tp_asv_get_boxed (test->am->create_properties,
       TP_PROP_ACCOUNT_AUTOMATIC_PRESENCE,
-      TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+      TP_STRUCT_TYPE_PRESENCE);
   g_assert_cmpuint (g_value_get_uint (array->values), ==,
       TP_CONNECTION_PRESENCE_TYPE_BUSY);
   g_assert_cmpstr (g_value_get_string (array->values + 1), ==,

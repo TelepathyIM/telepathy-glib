@@ -22,10 +22,11 @@
 
 #include "telepathy-glib/account-request.h"
 
+#include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
-#include <telepathy-glib/simple-client-factory.h>
+#include <telepathy-glib/client-factory.h>
 
 #define DEBUG_FLAG TP_DEBUG_ACCOUNTS
 #include "telepathy-glib/dbus-internal.h"
@@ -179,7 +180,7 @@ tp_account_request_constructed (GObject *object)
 #define GET_PRESENCE_VALUE(key, offset, type) \
   G_STMT_START { \
   GValueArray *_arr = tp_asv_get_boxed (self->priv->properties, \
-      key, TP_STRUCT_TYPE_SIMPLE_PRESENCE); \
+      key, TP_STRUCT_TYPE_PRESENCE); \
   if (_arr != NULL) \
     g_value_set_##type (value, g_value_get_##type (_arr->values + offset)); \
   } G_STMT_END
@@ -874,8 +875,8 @@ tp_account_request_set_requested_presence (TpAccountRequest *self,
 
   g_return_if_fail (priv->result == NULL && !priv->created);
 
-  value = tp_g_value_slice_new_take_boxed (TP_STRUCT_TYPE_SIMPLE_PRESENCE,
-      dbus_g_type_specialized_construct (TP_STRUCT_TYPE_SIMPLE_PRESENCE));
+  value = tp_g_value_slice_new_take_boxed (TP_STRUCT_TYPE_PRESENCE,
+      dbus_g_type_specialized_construct (TP_STRUCT_TYPE_PRESENCE));
   arr = (GValueArray *) g_value_get_boxed (value);
 
   g_value_set_uint (arr->values, presence);
@@ -918,8 +919,8 @@ tp_account_request_set_automatic_presence (TpAccountRequest *self,
 
   g_return_if_fail (priv->result == NULL && !priv->created);
 
-  value = tp_g_value_slice_new_take_boxed (TP_STRUCT_TYPE_SIMPLE_PRESENCE,
-      dbus_g_type_specialized_construct (TP_STRUCT_TYPE_SIMPLE_PRESENCE));
+  value = tp_g_value_slice_new_take_boxed (TP_STRUCT_TYPE_PRESENCE,
+      dbus_g_type_specialized_construct (TP_STRUCT_TYPE_PRESENCE));
   arr = (GValueArray *) g_value_get_boxed (value);
 
   g_value_set_uint (arr->values, presence);
@@ -1244,7 +1245,7 @@ tp_account_request_create_account_cb (TpAccountManager *proxy,
 
   priv->created = TRUE;
 
-  account = tp_simple_client_factory_ensure_account (
+  account = tp_client_factory_ensure_account (
       tp_proxy_get_factory (proxy), account_path, NULL, &e);
 
   if (account == NULL)
@@ -1259,7 +1260,7 @@ tp_account_request_create_account_cb (TpAccountManager *proxy,
   g_simple_async_result_set_op_res_gpointer (priv->result, account,
       g_object_unref);
 
-  features = tp_simple_client_factory_dup_account_features (
+  features = tp_client_factory_dup_account_features (
       tp_proxy_get_factory (proxy), account);
 
   tp_proxy_prepare_async (account, (GQuark *) features->data,
@@ -1331,7 +1332,7 @@ tp_account_request_create_account_async (TpAccountRequest *self,
  *
  * Finishes an asynchronous account creation operation and returns a
  * new ref to a #TpAccount object. The returned account will have the
- * features listed in tp_simple_client_factory_dup_account_features()
+ * features listed in tp_client_factory_dup_account_features()
  * (with the proxy factory from #TpAccountRequest:account-manager)
  * prepared on it.
  *
