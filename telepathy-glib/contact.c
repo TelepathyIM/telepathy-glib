@@ -3560,16 +3560,21 @@ contacts_context_queue_features (ContactsContext *context)
 #endif
     }
 
-  if (!contacts_context_supports_iface (context,
+  if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0 &&
+      !contacts_context_supports_iface (context,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS) &&
       tp_proxy_has_interface_by_id (context->connection,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS))
     {
-      if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0)
-        g_queue_push_tail (&context->todo, contacts_get_avatar_tokens);
+      g_queue_push_tail (&context->todo, contacts_get_avatar_tokens);
+    }
 
-      if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0)
-        g_queue_push_tail (&context->todo, contacts_get_avatar_data);
+  /* There is no contact attribute for avatar data, always use slow path */
+  if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0 &&
+      tp_proxy_has_interface_by_id (context->connection,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS))
+    {
+      g_queue_push_tail (&context->todo, contacts_get_avatar_data);
     }
 
   if ((feature_flags & CONTACT_FEATURE_FLAG_LOCATION) != 0 &&
@@ -3668,12 +3673,6 @@ tp_contact_set_attributes (TpContact *contact,
           g_object_notify ((GObject *) contact, "alias");
         }
     }
-
-  /* There is no attribute for avatar data. If we want it, let's just
-   * pretend it is ready. If avatar is in cache, that will be true as
-   * soon as the token is set from attributes */
-  if (wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA)
-    contact->priv->has_features |= CONTACT_FEATURE_FLAG_AVATAR_DATA;
 
   if (wanted & CONTACT_FEATURE_FLAG_AVATAR_TOKEN)
     {
