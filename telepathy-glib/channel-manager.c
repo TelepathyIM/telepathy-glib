@@ -343,41 +343,6 @@ tp_channel_manager_get_type (void)
 
 /* Signal emission wrappers */
 
-
-/**
- * tp_channel_manager_emit_new_channels:
- * @instance: An object implementing #TpChannelManager
- * @channels: a #GHashTable where the keys are
- *  #TpExportableChannel instances (hashed and compared
- *  by g_direct_hash() and g_direct_equal()) and the values are
- *  linked lists (#GSList) of request tokens (opaque pointers) satisfied by
- *  these channels
- *
- * If @channels is non-empty, emit the #TpChannelManager::new-channels
- * signal indicating that those channels have been created.
- *
- * Deprecated: in 0.UNRELEASED this function should not be
- *  used. Signalling the creation of multiple channels together in a
- *  single signal is strongly recommended against as it's very
- *  complicated, hard to get right in clients, and not nearly as
- *  useful as it originally sounded. Use
- *  tp_channel_manager_emit_new_channel() instead.
- *
- * Since: 0.7.15
- */
-void
-tp_channel_manager_emit_new_channels (gpointer instance,
-                                      GHashTable *channels)
-{
-  g_return_if_fail (TP_IS_CHANNEL_MANAGER (instance));
-
-  if (g_hash_table_size (channels) == 0)
-    return;
-
-  g_signal_emit (instance, signals[S_NEW_CHANNELS], 0, channels);
-}
-
-
 /**
  * tp_channel_manager_emit_new_channel:
  * @instance: An object implementing #TpChannelManager
