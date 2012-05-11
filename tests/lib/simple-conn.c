@@ -202,8 +202,8 @@ pretend_connected (gpointer data)
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
       TP_HANDLE_TYPE_CONTACT);
 
-  conn->self_handle = tp_handle_ensure (contact_repo, self->priv->account,
-      NULL, NULL);
+  tp_base_connection_set_self_handle (conn,
+      tp_handle_ensure (contact_repo, self->priv->account, NULL, NULL));
 
   if (conn->status == TP_CONNECTION_STATUS_CONNECTING)
     {

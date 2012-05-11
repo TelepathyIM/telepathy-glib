@@ -218,8 +218,8 @@ start_connecting (TpBaseConnection *conn,
    * start connecting, then go to state CONNECTED when finished, but here
    * we can do it immediately. */
 
-  conn->self_handle = tp_handle_ensure (contact_repo, self->priv->account,
-      NULL, error);
+  tp_base_connection_set_self_handle (conn,
+      tp_handle_ensure (contact_repo, self->priv->account, NULL, error));
 
   if (conn->self_handle == 0)
     return FALSE;
