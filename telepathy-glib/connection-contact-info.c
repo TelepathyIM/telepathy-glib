@@ -37,8 +37,6 @@
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/util-internal.h"
 
-
-
 /**
  * TpContactInfoFieldSpec:
  * @name: The name of the field; this is the lowercased name of a vCard
@@ -137,6 +135,10 @@ tp_contact_info_field_spec_free (TpContactInfoFieldSpec *self)
 }
 
 /**
+ * TpContactInfoSpecList: (skip)
+ */
+
+/**
  * TP_TYPE_CONTACT_INFO_FIELD_SPEC:
  *
  * The boxed type of a #TpContactInfoFieldSpec.
@@ -185,6 +187,10 @@ tp_contact_info_spec_list_free (GList *list)
   g_list_foreach (list, (GFunc) tp_contact_info_field_spec_free, NULL);
   g_list_free (list);
 }
+
+/**
+ * TpContactInfoList: (skip)
+ */
 
 /**
  * TP_TYPE_CONTACT_INFO_SPEC_LIST:
