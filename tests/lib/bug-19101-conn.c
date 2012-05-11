@@ -36,52 +36,29 @@ tp_tests_bug19101_connection_class_init (TpTestsBug19101ConnectionClass *klass)
 {
 }
 
-/* A broken implementation of GetContactAttributes, which returns an empty dict
- * of attributes for each handle (other than the self-handle).
+/* A broken implementation of GetContactByID, which returns an empty dict
+ * of attributes for each id.
  */
 static void
-tp_tests_bug19101_connection_get_contact_attributes (
+tp_tests_bug19101_connection_get_contact_by_id (
     TpSvcConnectionInterfaceContacts *iface,
-    const GArray *handles,
+    const gchar *id,
     const char **interfaces,
     DBusGMethodInvocation *context)
 {
   TpBaseConnection *base_conn = TP_BASE_CONNECTION (iface);
-  GHashTable *result;
-  guint i;
-  const gchar *assumed_interfaces[] = {
-    TP_IFACE_CONNECTION,
-    NULL
-  };
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
+      base_conn, TP_HANDLE_TYPE_CONTACT);
+  TpHandle handle;
+  GHashTable *table;
 
-  if (handles->len == 1 &&
-      g_array_index (handles, TpHandle, 0) == base_conn->self_handle)
-    {
-      DEBUG ("called for self-handle (during preparation), not being rubbish");
-      /* strictly speaking this should hold the handles on behalf of the
-       * sending process, but handles are immortal now anyway... */
-      result = tp_contacts_mixin_get_contact_attributes ((GObject *) iface,
-          handles, interfaces, assumed_interfaces);
-      goto finally;
-    }
+  handle = tp_handle_ensure (contact_repo, id, NULL, NULL);
+  table = g_hash_table_new (NULL, NULL);
 
-  DEBUG ("called; returning rubbish");
+  tp_svc_connection_interface_contacts_return_from_get_contact_by_id (
+      context, handle, table);
 
-  result = g_hash_table_new_full (NULL, NULL, NULL,
-      (GDestroyNotify) g_hash_table_unref);
-
-  for (i = 0 ; i < handles->len ; i++)
-    {
-      TpHandle h= g_array_index (handles, TpHandle, i);
-      GHashTable *attr_hash = g_hash_table_new_full (NULL, NULL, NULL, NULL);
-
-      g_hash_table_insert (result, GUINT_TO_POINTER(h), attr_hash);
-    }
-
-finally:
-  tp_svc_connection_interface_contacts_return_from_get_contact_attributes (
-      context, result);
-  g_hash_table_unref (result);
+  g_hash_table_unref (table);
 }
 
 static void
@@ -92,6 +69,6 @@ contacts_iface_init (gpointer g_iface, gpointer iface_data)
 
 #define IMPLEMENT(x) tp_svc_connection_interface_contacts_implement_##x ( \
     klass, tp_tests_bug19101_connection_##x)
-  IMPLEMENT(get_contact_attributes);
+  IMPLEMENT(get_contact_by_id);
 #undef IMPLEMENT
 }

@@ -394,27 +394,16 @@ test_blocked_contacts (Test *test,
 }
 
 static void
-get_contacts_by_id_cb (TpConnection *connection,
-    guint n_contacts,
-    TpContact * const *contacts,
-    const gchar * const *requested_ids,
-    GHashTable *failed_id_errors,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
+dup_contact_by_id_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
 {
+  TpConnection *connection = (TpConnection *) source;
   Test *test = user_data;
 
   g_clear_object (&test->contact);
-
-  if (error != NULL)
-    {
-      test->error = g_error_copy (error);
-    }
-  else
-    {
-      test->contact = g_object_ref (contacts[0]);
-    }
+  test->contact = tp_connection_dup_contact_by_id_finish (connection, result,
+      &test->error);
 
   test->wait--;
   if (test->wait <= 0)
@@ -477,9 +466,8 @@ test_is_blocked (Test *test,
   g_assert_no_error (test->error);
 
   /* Bill is already blocked in the CM */
-  tp_connection_get_contacts_by_id (test->connection, 1, &id,
-      features, get_contacts_by_id_cb, test,
-      NULL, NULL);
+  tp_connection_dup_contact_by_id_async (test->connection, id,
+      features, dup_contact_by_id_cb, test);
 
   test->wait = 1;
   g_main_loop_run (test->mainloop);

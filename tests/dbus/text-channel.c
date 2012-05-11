@@ -803,6 +803,9 @@ test_pending_messages_with_no_sender_id (Test *test,
   /* Deliberately passing sender=0 so we can set message-sender manually; if we set
    * it here, or using tp_cm_message_set_sender(), message-sender-id will be
    * filled in, which is exactly what we don't want.
+   *
+   * We verify that we get the message but with no sender, because
+   * message-sender-id is mandatory since 1.0
    */
   cm_message = tp_cm_message_new_text (test->base_connection, 0,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, "hi mum");
@@ -823,8 +826,7 @@ test_pending_messages_with_no_sender_id (Test *test,
 
   signalled_message = messages->data;
   sender = tp_signalled_message_get_sender (signalled_message);
-  g_assert (sender != NULL);
-  g_assert_cmpstr (tp_contact_get_identifier (sender), ==, "bob");
+  g_assert (sender == NULL);
 
   text = tp_message_to_text ((TpMessage *) signalled_message);
   g_assert_cmpstr (text, ==, "hi mum");
