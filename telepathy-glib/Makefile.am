@@ -43,6 +43,7 @@ tpginclude_HEADERS = \
     account.h \
     account-channel-request.h \
     account-manager.h \
+    account-request.h \
     automatic-client-factory.h \
     add-dispatch-operation-context.h \
     base-call-channel.h \
@@ -213,6 +214,7 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     account-internal.h \
     account-manager.c \
     account-manager-internal.h \
+    account-request.c \
     automatic-client-factory-internal.h \
     automatic-client-factory.c \
     add-dispatch-operation-context-internal.h \

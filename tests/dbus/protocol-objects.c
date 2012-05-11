@@ -402,6 +402,9 @@ test_protocol_object (Test *test,
 
   g_assert_cmpstr (tp_protocol_get_name (test->protocol), ==, "example");
 
+  g_assert_cmpstr (tp_protocol_get_cm_name (test->protocol),
+      ==, "example_echo_2");
+
   g_assert (tp_proxy_has_interface_by_id (test->protocol,
       TP_IFACE_QUARK_PROTOCOL));
   g_assert (tp_proxy_has_interface_by_id (test->protocol,

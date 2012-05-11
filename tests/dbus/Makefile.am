@@ -2,6 +2,7 @@ tests_list = \
     test-account \
     test-account-channel-request \
     test-account-manager \
+    test-account-request \
     test-base-client \
     test-call-cancellation \
     test-call-channel \
@@ -99,6 +100,8 @@ test_account_channel_request_LDADD = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
     $(GLIB_LIBS)
+
+test_account_request_SOURCES = account-request.c
 
 test_account_manager_SOURCES = account-manager.c
 

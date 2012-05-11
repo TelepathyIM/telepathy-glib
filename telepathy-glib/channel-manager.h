@@ -25,6 +25,7 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/exportable-channel.h>
 
 G_BEGIN_DECLS
@@ -129,6 +130,8 @@ GType tp_channel_manager_get_type (void);
 
 void tp_channel_manager_emit_new_channel (gpointer instance,
     TpExportableChannel *channel, GSList *request_tokens);
+
+_TP_DEPRECATED_IN_UNRELEASED
 void tp_channel_manager_emit_new_channels (gpointer instance,
     GHashTable *channels);
 
