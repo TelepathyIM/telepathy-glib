@@ -11,6 +11,10 @@ include $(INTROSPECTION_MAKEFILE)
 
 INTROSPECTION_GIRS = TelepathyGLib-1.gir TelepathyGLibDBus-1.gir
 
+# Set PKG_CONFIG_PATH so we can find our own -uninstalled.pc for
+# telepathy-glib-1-dbus
+INTROSPECTION_SCANNER_ENV = PKG_CONFIG_PATH=$(builddir):$${PKG_CONFIG_PATH}
+
 TelepathyGLib-1.gir: libtelepathy-glib-1.la libtelepathy-glib-1-core.la
 # /!\ Order matters, see https://bugzilla.gnome.org/show_bug.cgi?id=660629
 TelepathyGLib_1_gir_FILES = \
@@ -110,6 +114,7 @@ TelepathyGLib_1_gir_INCLUDES = \
 TelepathyGLib_1_gir_PACKAGES = \
 	gio-2.0	\
 	dbus-glib-1 \
+	telepathy-glib-1-dbus \
 	$(NULL)
 
 TelepathyGLibDBus_1_gir_NAMESPACE = TelepathyGLibDBus
