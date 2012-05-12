@@ -3375,8 +3375,6 @@ tp_connection_can_set_contact_alias
 <FILE>cli-connection</FILE>
 <TITLE>cli-connection</TITLE>
 <INCLUDE>telepathy-glib/cli-connection.h</INCLUDE>
-tp_connection_get_contact_attributes
-tp_connection_get_contact_list_attributes
 tp_cli_connection_callback_for_connect
 tp_cli_connection_call_connect
 tp_cli_connection_callback_for_disconnect

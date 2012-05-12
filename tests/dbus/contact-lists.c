@@ -723,13 +723,17 @@ test_assert_contact_state (Test *test,
     const gchar *expected_pub_request,
     const gchar *expected_group)
 {
-  const gchar * const interfaces[] = {
+  const gchar *interfaces[] = {
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
       NULL };
+  GArray *handles;
 
-  tp_connection_get_contact_attributes (test->conn, -1,
-      1, &handle, interfaces, contact_attrs_cb,
+  handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
+  g_array_append_val (handles, handle);
+
+  tp_cli_connection_interface_contacts_call_get_contact_attributes (test->conn,
+      -1, handles, interfaces, contact_attrs_cb,
       test, test_quit_loop, NULL);
   g_main_loop_run (test->main_loop);
 
@@ -737,6 +741,8 @@ test_assert_contact_state (Test *test,
   test_assert_contact_list_attrs (test, handle, expected_sub_state,
       expected_pub_state, expected_pub_request);
   test_assert_contact_groups_attr (test, handle, expected_group);
+
+  g_array_unref (handles);
 }
 
 static void
@@ -768,12 +774,12 @@ static void
 test_contact_list_attrs (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
-  const gchar * const interfaces[] = {
+  const gchar *interfaces[] = {
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
       NULL };
 
-  tp_connection_get_contact_list_attributes (test->conn, -1,
-      interfaces, contact_attrs_cb, test, test_quit_loop, NULL);
+  tp_cli_connection_interface_contact_list_call_get_contact_list_attributes (
+      test->conn, -1, interfaces, contact_attrs_cb, test, test_quit_loop, NULL);
   g_main_loop_run (test->main_loop);
 
   test_assert_contact_list_attrs (test, test->sjoerd,
@@ -820,18 +826,23 @@ static void
 test_contact_blocking_attrs (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
-  const gchar * const interfaces[] = {
+  const gchar *interfaces[] = {
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING,
       NULL };
-  TpHandle handles[] = { test->sjoerd, test->bill };
+  GArray *handles;
 
-  tp_connection_get_contact_attributes (test->conn, -1,
-      G_N_ELEMENTS (handles), handles,
-      interfaces, contact_attrs_cb, test, test_quit_loop, NULL);
+  handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
+  g_array_append_val (handles, test->sjoerd);
+  g_array_append_val (handles, test->bill);
+
+  tp_cli_connection_interface_contacts_call_get_contact_attributes (test->conn,
+      -1, handles, interfaces, contact_attrs_cb, test, test_quit_loop, NULL);
   g_main_loop_run (test->main_loop);
 
   test_assert_contact_blocking_attrs (test, test->sjoerd, FALSE);
   test_assert_contact_blocking_attrs (test, test->bill, TRUE);
+
+  g_array_unref (handles);
 }
 
 static void

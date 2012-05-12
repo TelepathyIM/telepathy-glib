@@ -26,27 +26,5 @@
 
 #include <telepathy-glib/_gen/tp-cli-connection.h>
 
-G_BEGIN_DECLS
-
-/* connection-handles.c - this has to come after the auto-generated
- * stuff because it uses an auto-generated typedef */
-
-#ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_UNRELEASED_FOR(tp_client_factory_ensure_contact)
-void tp_connection_get_contact_attributes (TpConnection *self,
-    gint timeout_ms, guint n_handles, const TpHandle *handles,
-    const gchar * const *interfaces,
-    tp_cli_connection_interface_contacts_callback_for_get_contact_attributes callback,
-    gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
-
-_TP_DEPRECATED_IN_UNRELEASED_FOR(tp_connection_dup_contact_list)
-void tp_connection_get_contact_list_attributes (TpConnection *self,
-    gint timeout_ms, const gchar * const *interfaces,
-    tp_cli_connection_interface_contacts_callback_for_get_contact_attributes callback,
-    gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
-#endif
-
-G_END_DECLS
-
 #endif
 
