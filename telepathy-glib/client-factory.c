@@ -843,10 +843,13 @@ tp_client_factory_ensure_contact (TpClientFactory *self,
   g_return_val_if_fail (handle != 0, NULL);
   g_return_val_if_fail (identifier != NULL, NULL);
 
-  contact = tp_connection_dup_contact_if_possible (connection,
-      handle, identifier);
+  contact = _tp_connection_lookup_contact (connection, handle);
   if (contact != NULL)
-    return contact;
+    {
+      g_return_val_if_fail (!tp_strdiff (tp_contact_get_identifier (contact),
+          identifier), NULL);
+      return g_object_ref (contact);
+    }
 
   contact = TP_CLIENT_FACTORY_GET_CLASS (self)->create_contact (self,
       connection, handle, identifier);

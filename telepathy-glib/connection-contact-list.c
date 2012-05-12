@@ -256,22 +256,21 @@ got_contact_list_attributes_cb (TpConnection *self,
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       TpHandle handle = GPOINTER_TO_UINT (key);
-      const gchar *id = tp_asv_get_string (value,
-          TP_TOKEN_CONNECTION_CONTACT_ID);
       TpContact *contact;
       GError *e = NULL;
 
-      contact = tp_client_factory_ensure_contact (
-          tp_proxy_get_factory (self), self, handle, id);
-      if (!_tp_contact_set_attributes (contact, value,
-              (const GQuark *) features->data, &e))
+      contact = _tp_contact_ensure_with_attributes (self, handle, value,
+          (const GQuark *) features->data, &e);
+      if (contact == NULL)
         {
           DEBUG ("Error setting contact attributes: %s", e->message);
           g_clear_error (&e);
         }
-
-      /* Give the contact ref to the table */
-      g_hash_table_insert (self->priv->roster, key, contact);
+      else
+        {
+          /* Give the contact ref to the table */
+          g_hash_table_insert (self->priv->roster, key, contact);
+        }
     }
 
   /* emit initial set if roster is not empty */

@@ -27,6 +27,7 @@
 
 #include <telepathy-glib/capabilities-internal.h>
 #include <telepathy-glib/cli-connection.h>
+#include <telepathy-glib/client-factory.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
@@ -64,15 +65,6 @@
  * to keep track of a contact's alias would set #TP_CONTACT_FEATURE_ALIAS, and
  * then listen for the "notify::alias" signal, emitted whenever the
  * #TpContact:alias property changes.
- *
- * Note that releasing a #TpContact object might release handle references
- * held by calling tp_cli_connection_call_request_handles(),
- * tp_cli_connection_call_hold_handles() or
- * tp_cli_connection_interface_contacts_call_get_contact_attributes()
- * directly.
- * Those functions should be avoided in favour of using #TpContact,
- * tp_connection_hold_handles(), tp_connection_request_handles() and
- * tp_connection_get_contact_attributes().
  *
  * Since: 0.7.18
  */
@@ -1147,6 +1139,46 @@ tp_contact_get_property (GObject *object,
   }
 }
 
+static void
+tp_contact_set_property (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  TpContact *self = TP_CONTACT (object);
+
+  switch (property_id)
+    {
+    case PROP_CONNECTION:
+      g_assert (self->priv->connection == NULL); /* construct only */
+      self->priv->connection = g_value_dup_object (value);
+      break;
+    case PROP_HANDLE:
+      g_assert (self->priv->handle == 0); /* construct only */
+      self->priv->handle = g_value_get_uint (value);
+      break;
+    case PROP_IDENTIFIER:
+      g_assert (self->priv->identifier == NULL); /* construct only */
+      self->priv->identifier = g_value_dup_string (value);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+  }
+}
+
+static void
+tp_contact_constructed (GObject *object)
+{
+  TpContact *self = TP_CONTACT (object);
+
+  /* Sanity checks */
+  g_assert (self->priv->connection != NULL);
+  g_assert (self->priv->handle != 0);
+  g_assert (self->priv->identifier != NULL);
+
+  G_OBJECT_CLASS (tp_contact_parent_class)->constructed (object);
+}
 
 static void
 tp_contact_class_init (TpContactClass *klass)
@@ -1156,6 +1188,8 @@ tp_contact_class_init (TpContactClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpContactPrivate));
   object_class->get_property = tp_contact_get_property;
+  object_class->set_property = tp_contact_set_property;
+  object_class->constructed = tp_contact_constructed;
   object_class->dispose = tp_contact_dispose;
   object_class->finalize = tp_contact_finalize;
 
@@ -1167,7 +1201,7 @@ tp_contact_class_init (TpContactClass *klass)
   param_spec = g_param_spec_object ("connection", "TpConnection object",
       "Connection object that owns this channel",
       TP_TYPE_CONNECTION,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
 
   /**
@@ -1191,7 +1225,7 @@ tp_contact_class_init (TpContactClass *klass)
       "Handle",
       "The TP_HANDLE_TYPE_CONTACT handle for this contact",
       0, G_MAXUINT32, 0,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_HANDLE, param_spec);
 
   /**
@@ -1209,7 +1243,7 @@ tp_contact_class_init (TpContactClass *klass)
       "The contact's identifier in the instant messaging protocol (e.g. "
         "XMPP JID, SIP URI, AOL screenname or IRC nick)",
       NULL,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_IDENTIFIER, param_spec);
 
   /**
@@ -1596,40 +1630,22 @@ _tp_contact_new (TpConnection *connection,
     TpHandle handle,
     const gchar *identifier)
 {
-  TpContact *self = TP_CONTACT (g_object_new (TP_TYPE_CONTACT, NULL));
-
-  self->priv->connection = g_object_ref (connection);
-  self->priv->handle = handle;
-  self->priv->identifier = g_strdup (identifier);
-
-  return self;
+  return g_object_new (TP_TYPE_CONTACT,
+      "connection", connection,
+      "handle", handle,
+      "identifier", identifier,
+      NULL);
 }
 
-/* FIXME: Ideally this should be replaced with
- *
- * tp_client_factory_ensure_contact (tp_proxy_get_factory (connection),
- *     handle, identifier);
- *
- * but we cannot assert CM has immortal handles (yet). That means we cannot
- * guarantee that all TpContact objects are created through the factory and so
- * let it make TpContact subclasses.
- */
 static TpContact *
 tp_contact_ensure (TpConnection *connection,
-                   TpHandle handle)
+                   TpHandle handle,
+                   const gchar *id)
 {
-  TpContact *self = _tp_connection_lookup_contact (connection, handle);
+  TpClientFactory *factory;
 
-  if (self != NULL)
-    {
-      g_assert (self->priv->handle == handle);
-      return g_object_ref (self);
-    }
-
-  self = _tp_contact_new (connection, handle, NULL);
-  _tp_connection_add_contact (connection, handle, self);
-
-  return self;
+  factory = tp_proxy_get_factory (connection);
+  return tp_client_factory_ensure_contact (factory, connection, handle, id);
 }
 
 /**
@@ -1666,19 +1682,13 @@ tp_connection_dup_contact_if_possible (TpConnection *connection,
 
   ret = _tp_connection_lookup_contact (connection, handle);
 
-  if (ret != NULL && ret->priv->identifier != NULL)
+  if (ret != NULL)
     {
       g_object_ref (ret);
     }
   else if (identifier != NULL)
     {
-      ret = tp_contact_ensure (connection, handle);
-
-      if (ret->priv->identifier == NULL)
-        {
-          /* new object, I suppose we'll have to believe the caller */
-          ret->priv->identifier = g_strdup (identifier);
-        }
+      ret = tp_contact_ensure (connection, handle, identifier);
     }
   else
     {
@@ -2710,43 +2720,14 @@ contacts_bind_to_contact_groups_changed (TpConnection *connection)
     }
 }
 
-static gboolean
+static void
 tp_contact_set_attributes (TpContact *contact,
     GHashTable *asv,
-    ContactFeatureFlags wanted,
-    GError **error)
+    ContactFeatureFlags wanted)
 {
   TpConnection *connection = tp_contact_get_connection (contact);
   const gchar *s;
   gpointer boxed;
-
-  s = tp_asv_get_string (asv, TP_TOKEN_CONNECTION_CONTACT_ID);
-
-  if (s == NULL)
-    {
-       g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
-          "Connection manager %s is broken: contact #%u in the "
-          "GetContactAttributes result has no contact-id",
-          tp_proxy_get_bus_name (connection), contact->priv->handle);
-
-      return FALSE;
-    }
-
-  if (contact->priv->identifier == NULL)
-    {
-      contact->priv->identifier = g_strdup (s);
-    }
-  else if (tp_strdiff (contact->priv->identifier, s))
-    {
-      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
-          "Connection manager %s is broken: contact #%u identifier "
-          "changed from %s to %s",
-          tp_proxy_get_bus_name (connection), contact->priv->handle,
-          contact->priv->identifier, s);
-
-      return FALSE;
-    }
-
 
   if (wanted & CONTACT_FEATURE_FLAG_ALIAS)
     {
@@ -2875,15 +2856,41 @@ tp_contact_set_attributes (TpContact *contact,
       if (valid)
         _tp_contact_set_is_blocked (contact, is_blocked);
     }
+}
 
-  return TRUE;
+static TpContact *
+tp_contact_ensure_with_attributes (TpConnection *connection,
+    TpHandle handle,
+    GHashTable *asv,
+    ContactFeatureFlags wanted,
+    GError **error)
+{
+  TpContact *contact;
+  const gchar *id;
+
+  id = tp_asv_get_string (asv, TP_TOKEN_CONNECTION_CONTACT_ID);
+  if (id == NULL)
+    {
+       g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
+          "Connection manager %s is broken: contact #%u in the "
+          "GetContactAttributes result has no contact-id",
+          tp_proxy_get_bus_name (connection), handle);
+
+      return NULL;
+    }
+
+  contact = tp_contact_ensure (connection, handle, id);
+  tp_contact_set_attributes (contact, asv, wanted);
+
+  return contact;
 }
 
 static gboolean get_feature_flags (const GQuark *features,
     ContactFeatureFlags *flags);
 
-gboolean
-_tp_contact_set_attributes (TpContact *contact,
+TpContact *
+_tp_contact_ensure_with_attributes (TpConnection *connection,
+    TpHandle handle,
     GHashTable *asv,
     const GQuark *features,
     GError **error)
@@ -2891,9 +2898,10 @@ _tp_contact_set_attributes (TpContact *contact,
   ContactFeatureFlags feature_flags = 0;
 
   if (!get_feature_flags (features, &feature_flags))
-    return FALSE;
+    return NULL;
 
-  return tp_contact_set_attributes (contact, asv, feature_flags, error);
+  return tp_contact_ensure_with_attributes (connection, handle, asv,
+      feature_flags, error);
 }
 
 static const gchar **
@@ -3117,13 +3125,17 @@ got_contact_by_id_cb (TpConnection *self,
       return;
     }
 
-  /* set up the contact with its attributes */
-  contact = tp_contact_ensure (self, handle);
-  g_simple_async_result_set_op_res_gpointer (data->result,
-      contact, g_object_unref);
-
-  if (!tp_contact_set_attributes (contact, attributes, data->wanted, &e))
-    g_simple_async_result_take_error (data->result, e);
+  contact = tp_contact_ensure_with_attributes (self, handle, attributes,
+      data->wanted, &e);
+  if (contact != NULL)
+    {
+      g_simple_async_result_set_op_res_gpointer (data->result,
+          contact, g_object_unref);
+    }
+  else
+    {
+      g_simple_async_result_take_error (data->result, e);
+    }
 
   g_simple_async_result_complete (data->result);
 }
@@ -3241,10 +3253,17 @@ got_contact_attributes_cb (TpConnection *self,
       GHashTable *asv = value;
       TpContact *contact;
 
-      /* set up the contact with its attributes */
-      contact = tp_contact_ensure (self, handle);
-      tp_contact_set_attributes (contact, asv, data->wanted, NULL);
-      g_object_unref (contact);
+      contact = _tp_connection_lookup_contact (self, handle);
+      if (contact != NULL)
+        {
+          tp_contact_set_attributes (contact, asv, data->wanted);
+        }
+      else
+        {
+          /* This should never happen since we keep a ref on the TpContact
+           * we are upgrading. */
+          DEBUG ("Got unknown handle %u in GetContactAttributes reply", handle);
+        }
     }
 
   g_simple_async_result_complete (data->result);

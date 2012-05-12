@@ -29,7 +29,8 @@ TpContact *_tp_contact_new (TpConnection *connection,
     TpHandle handle,
     const gchar *identifier);
 
-gboolean _tp_contact_set_attributes (TpContact *contact,
+TpContact *_tp_contact_ensure_with_attributes (TpConnection *connection,
+    TpHandle handle,
     GHashTable *asv,
     const GQuark *features,
     GError **error);
