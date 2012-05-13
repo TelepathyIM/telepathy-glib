@@ -76,10 +76,6 @@ struct _TpChannelPrivate {
     /* Item currently being prepared, not part of contacts_queue anymore */
     GSimpleAsyncResult *current_contacts_queue_result;
 
-    /* NULL, or TpHandle => TpChannelChatState;
-     * if non-NULL, we're watching for ChatStateChanged */
-    GHashTable *chat_states;
-
     /* These are really booleans, but gboolean is signed. Thanks, GLib */
 
     /* Enough method calls have succeeded that we believe that the channel

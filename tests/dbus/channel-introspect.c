@@ -108,8 +108,6 @@ main (int argc,
   TpHandle handle;
   GHashTable *asv;
   GAsyncResult *prepare_result;
-  GQuark chat_states_features[] = { TP_CHANNEL_FEATURE_CORE,
-      TP_CHANNEL_FEATURE_CHAT_STATES, 0 };
   GQuark group_features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
 
   g_type_init ();
@@ -161,20 +159,15 @@ main (int argc,
   g_assert_no_error (error);
 
   prepare_result = NULL;
-  tp_proxy_prepare_async (chan, chat_states_features, channel_prepared_cb,
-      &prepare_result);
+  tp_proxy_prepare_async (chan, NULL, channel_prepared_cb, &prepare_result);
 
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
       FALSE);
-  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
-      ==, FALSE);
 
   tp_tests_proxy_run_until_prepared (chan, NULL);
 
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
       TRUE);
-  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
-      ==, FALSE);
 
   if (prepare_result == NULL)
     g_main_loop_run (mainloop);
@@ -189,11 +182,10 @@ main (int argc,
       tp_handle_inspect (contact_repo, service_conn_as_base->self_handle));
 
   /* no way to see what this is doing - just make sure it doesn't crash */
-  tp_proxy_prepare_async (chan, chat_states_features, NULL, NULL);
+  tp_proxy_prepare_async (chan, NULL, NULL, NULL);
 
   prepare_result = NULL;
-  tp_proxy_prepare_async (chan, chat_states_features, channel_prepared_cb,
-      &prepare_result);
+  tp_proxy_prepare_async (chan, NULL, channel_prepared_cb, &prepare_result);
 
   if (prepare_result == NULL)
     g_main_loop_run (mainloop);
@@ -396,8 +388,7 @@ main (int argc,
   g_assert_no_error (error);
 
   prepare_result = NULL;
-  tp_proxy_prepare_async (chan, chat_states_features, channel_prepared_cb,
-      &prepare_result);
+  tp_proxy_prepare_async (chan, NULL, channel_prepared_cb, &prepare_result);
   g_assert (prepare_result == NULL);
   g_main_loop_run (mainloop);
   MYASSERT (tp_proxy_prepare_finish (chan, prepare_result, &error), "");
@@ -407,20 +398,15 @@ main (int argc,
 
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
       TRUE);
-  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
-      ==, FALSE);
 
   tp_tests_connection_assert_disconnect_succeeds (conn);
 
   prepare_result = NULL;
-  tp_proxy_prepare_async (chan, chat_states_features, channel_prepared_cb,
-      &prepare_result);
+  tp_proxy_prepare_async (chan, NULL, channel_prepared_cb, &prepare_result);
 
   /* is_prepared becomes FALSE because the channel broke */
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
       FALSE);
-  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
-      ==, FALSE);
   g_assert_error (tp_proxy_get_invalidated (chan),
       TP_ERROR, TP_ERROR_CANCELLED);
 

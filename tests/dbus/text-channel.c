@@ -984,7 +984,7 @@ set_chat_state_cb (GObject *source,
 }
 
 static void
-contact_chat_state_changed_cb (TpTextChannel *channel,
+chat_state_changed_cb (TpTextChannel *channel,
     TpContact *contact,
     TpChannelChatState state,
     Test *test)
@@ -1031,8 +1031,8 @@ test_chat_state (Test *test,
   /* Now set a valid chat state and verify self contact has that state */
   tp_text_channel_set_chat_state_async (test->channel,
       TP_CHANNEL_CHAT_STATE_COMPOSING, set_chat_state_cb, test);
-  g_signal_connect (test->channel, "contact-chat-state-changed",
-      G_CALLBACK (contact_chat_state_changed_cb), test);
+  g_signal_connect (test->channel, "chat-state-changed",
+      G_CALLBACK (chat_state_changed_cb), test);
   test->wait = 2;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);

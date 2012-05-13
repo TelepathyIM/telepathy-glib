@@ -46,3 +46,5 @@ API/Behaviour changes
    * tp_channel_group_get_local_pending_contact_info -> tp_channel_group_get_local_pending_info;
    * tp_channel_group_dup_remote_pending_contacts -> tp_channel_group_dup_remote_pending;
    * "group-contacts-changed" -> "group-members-changed".
+
+ - "contact-chat-state-changed" signal has been renamed to "chat-state-changed".

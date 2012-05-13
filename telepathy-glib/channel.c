@@ -104,7 +104,6 @@ enum
 enum {
   SIGNAL_GROUP_FLAGS_CHANGED,
   SIGNAL_GROUP_MEMBERS_CHANGED,
-  SIGNAL_CHAT_STATE_CHANGED,
   N_SIGNALS
 };
 
@@ -172,28 +171,6 @@ GQuark
 tp_channel_get_feature_quark_group (void)
 {
   return g_quark_from_static_string ("tp-channel-feature-group");
-}
-
-/**
- * TP_CHANNEL_FEATURE_CHAT_STATES:
- *
- * Expands to a call to a function that returns a quark representing the
- * chat states feature on a #TpChannel.
- *
- * When this feature is prepared, tp_channel_get_chat_state() and the
- * #TpChannel::chat-state-changed signal become useful.
- *
- * One can ask for a feature to be prepared using the
- * tp_proxy_prepare_async() function, and waiting for it to callback.
- *
- * Since: 0.11.3
- * Deprecated: Use TP_TEXT_CHANNEL_FEATURE_CHAT_STATES instead.
- */
-
-GQuark
-tp_channel_get_feature_quark_chat_states (void)
-{
-  return g_quark_from_static_string ("tp-channel-feature-chat-states");
 }
 
 
@@ -450,38 +427,6 @@ tp_channel_get_property (GObject *object,
   }
 }
 
-/**
- * tp_channel_get_chat_state:
- * @self: a channel
- * @contact: a contact handle
- *
- * Return the chat state for the given contact. If tp_proxy_is_prepared()
- * would return %FALSE for the feature %TP_CHANNEL_FEATURE_CHAT_STATES,
- * the result will always be %TP_CHANNEL_CHAT_STATE_INACTIVE.
- *
- * Returns: the chat state for @contact, or %TP_CHANNEL_CHAT_STATE_INACTIVE
- *  if their chat state is not known
- * Since: 0.11.3
- * Deprecated: Use tp_text_channel_get_chat_state() instead.
- */
-TpChannelChatState
-tp_channel_get_chat_state (TpChannel *self,
-    TpHandle contact)
-{
-  gpointer value;
-
-  g_return_val_if_fail (TP_IS_CHANNEL (self), 0);
-
-  if (self->priv->chat_states != NULL &&
-      g_hash_table_lookup_extended (self->priv->chat_states,
-        GUINT_TO_POINTER (contact), NULL, &value))
-    {
-      return GPOINTER_TO_UINT (value);
-    }
-
-  return TP_CHANNEL_CHAT_STATE_INACTIVE;
-}
-
 
 /* These functions, maybe_set_whatever, ignore attempts to set a null value.
  * This means we can indiscriminately set everything from every source
@@ -657,72 +602,6 @@ _tp_channel_abort_introspection (TpChannel *self,
   g_queue_free (self->priv->introspect_needed);
   self->priv->introspect_needed = NULL;
   tp_proxy_invalidate ((TpProxy *) self, error);
-}
-
-static void
-tp_channel_chat_state_changed_cb (TpChannel *self,
-    guint contact,
-    guint state,
-    gpointer unused G_GNUC_UNUSED,
-    GObject *object G_GNUC_UNUSED)
-{
-  g_hash_table_insert (self->priv->chat_states,
-      GUINT_TO_POINTER (contact), GUINT_TO_POINTER (state));
-
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  /* Don't emit the signal until we've had the initial state */
-  if (!tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_CHAT_STATES))
-    return;
-  G_GNUC_END_IGNORE_DEPRECATIONS
-
-  g_signal_emit (self, signals[SIGNAL_CHAT_STATE_CHANGED], 0, contact, state);
-}
-
-static void
-tp_channel_get_initial_chat_states_cb (TpProxy *proxy,
-    const GValue *value,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  TpChannel *self = TP_CHANNEL (proxy);
-  GSimpleAsyncResult *result = user_data;
-
-  if (error == NULL && G_VALUE_HOLDS (value, TP_HASH_TYPE_CHAT_STATE_MAP))
-    {
-      tp_g_hash_table_update (self->priv->chat_states,
-          g_value_get_boxed (value), NULL, NULL);
-    }
-  /* else just ignore it and assume everyone was initially in the default
-   * Inactive state, unless we already saw a signal for them */
-
-  g_simple_async_result_complete (result);
-}
-
-static void
-tp_channel_prepare_chat_states_async (TpProxy *proxy,
-    const TpProxyFeature *feature,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
-{
-  TpChannel *self = (TpChannel *) proxy;
-  GSimpleAsyncResult *result;
-
-  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
-      tp_channel_prepare_chat_states_async);
-
-  g_assert (self->priv->chat_states == NULL);
-
-  /* chat states? yes please! */
-  self->priv->chat_states = g_hash_table_new (NULL, NULL);
-  tp_cli_channel_interface_chat_state_connect_to_chat_state_changed (
-      self, tp_channel_chat_state_changed_cb, NULL, NULL, NULL,
-      NULL);
-
-  tp_cli_dbus_properties_call_get (self, -1,
-      TP_IFACE_CHANNEL_INTERFACE_CHAT_STATE, "ChatStates",
-      tp_channel_get_initial_chat_states_cb,
-      result, g_object_unref, NULL);
 }
 
 void
@@ -1136,7 +1015,6 @@ tp_channel_finalize (GObject *object)
 
   g_clear_error (&self->priv->group_remove_error);
   tp_clear_pointer (&self->priv->introspect_needed, g_queue_free);
-  tp_clear_pointer (&self->priv->chat_states, g_hash_table_unref);
   tp_clear_pointer (&self->priv->channel_properties, g_hash_table_unref);
   tp_clear_pointer (&self->priv->contacts_queue, g_queue_free);
 
@@ -1215,7 +1093,6 @@ tp_channel_prepare_password_async (TpProxy *proxy,
 enum {
     FEAT_CORE,
     FEAT_GROUP,
-    FEAT_CHAT_STATES,
     FEAT_PASSWORD,
     N_FEAT
 };
@@ -1224,7 +1101,6 @@ static const TpProxyFeature *
 tp_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
 {
   static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
-  static GQuark need_chat_states[2] = {0, 0};
   static GQuark need_password[2] = {0, 0};
 
   if (G_LIKELY (features[0].name != 0))
@@ -1236,14 +1112,6 @@ tp_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_GROUP].name = TP_CHANNEL_FEATURE_GROUP;
   features[FEAT_GROUP].prepare_async =
     _tp_channel_group_prepare_async;
-
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  features[FEAT_CHAT_STATES].name = TP_CHANNEL_FEATURE_CHAT_STATES;
-  features[FEAT_CHAT_STATES].prepare_async =
-    tp_channel_prepare_chat_states_async;
-  need_chat_states[0] = TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE;
-  features[FEAT_CHAT_STATES].interfaces_needed = need_chat_states;
-  G_GNUC_END_IGNORE_DEPRECATIONS
 
   features[FEAT_PASSWORD].name = TP_CHANNEL_FEATURE_PASSWORD;
   features[FEAT_PASSWORD].prepare_async =
@@ -1424,25 +1292,6 @@ tp_channel_class_init (TpChannelClass *klass)
    * Since: 0.7.12
    */
   signals[SIGNAL_GROUP_FLAGS_CHANGED] = g_signal_new ("group-flags-changed",
-      G_OBJECT_CLASS_TYPE (klass),
-      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-      0,
-      NULL, NULL, NULL,
-      G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
-
-  /**
-   * TpChannel::chat-state-changed:
-   * @self: a channel
-   * @contact: a contact handle for the local user or another contact
-   * @state: the new #TpChannelChatState for the contact
-   *
-   * Emitted when a contact's chat state changes after tp_proxy_prepare_async()
-   * has finished preparing the feature %TP_CHANNEL_FEATURE_CHAT_STATES.
-   *
-   * Since: 0.11.3
-   * Deprecated: Use #TpTextChannel::contact-chat-state-changed instead
-   */
-  signals[SIGNAL_CHAT_STATE_CHANGED] = g_signal_new ("chat-state-changed",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
