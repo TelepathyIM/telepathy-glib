@@ -264,7 +264,6 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     connection-contact-info.c \
     connection-contact-list.c \
     connection-internal.h \
-    connection-handles.c \
     connection-manager.c \
     contact.c \
     contact-internal.h \

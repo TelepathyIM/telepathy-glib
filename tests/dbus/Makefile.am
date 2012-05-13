@@ -21,7 +21,6 @@ tests_list = \
     test-connection-balance \
     test-connection-bug-18845 \
     test-connection-error \
-    test-connection-handles \
     test-connection-interests \
     test-contact-lists \
     test-contact-list-client \
@@ -150,8 +149,6 @@ test_connection_aliasing_LDADD = \
 test_connection_balance_SOURCES = connection-balance.c
 
 test_connection_bug_18845_SOURCES = connection-bug-18845.c
-
-test_connection_handles_SOURCES = connection-handles.c
 
 test_connection_error_SOURCES = connection-error.c
 
