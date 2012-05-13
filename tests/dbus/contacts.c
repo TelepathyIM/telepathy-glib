@@ -2686,6 +2686,7 @@ test_contact_list (Fixture *f,
   factory = tp_proxy_get_factory (f->client_conn);
   tp_simple_client_factory_add_contact_features_varargs (factory,
       TP_CONTACT_FEATURE_ALIAS,
+      TP_CONTACT_FEATURE_AVATAR_DATA,
       TP_CONTACT_FEATURE_INVALID);
 
   /* Now put it online and wait for contact list state move to success */
@@ -2713,6 +2714,11 @@ test_contact_list (Fixture *f,
   /* Even if we didn't explicitely asked that feature, we should have it for free */
   g_assert (tp_contact_has_feature (contact, TP_CONTACT_FEATURE_SUBSCRIPTION_STATES));
   g_assert_cmpint (tp_contact_get_subscribe_state (contact), ==, TP_SUBSCRIPTION_STATE_ASK);
+  /* We asked for AVATAR_DATA, verify we got it. This is special because it has
+   * no contact attribute, and ContactList preparation does not go through
+   * the slow path. */
+  g_assert (tp_contact_has_feature (contact, TP_CONTACT_FEATURE_AVATAR_DATA));
+
   g_ptr_array_unref (contacts);
 }
 
