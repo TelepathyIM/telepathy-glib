@@ -3185,6 +3185,13 @@ tp_connection_dup_contact_by_id_async (TpConnection *self,
   if (!get_feature_flags (features, &feature_flags))
     return;
 
+  if (tp_proxy_get_invalidated (self) != NULL)
+    {
+      g_simple_async_report_gerror_in_idle ((GObject *) self,
+          callback, user_data, tp_proxy_get_invalidated (self));
+      return;
+    }
+
   if (!tp_proxy_has_interface_by_id (self,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
     {
@@ -3327,6 +3334,13 @@ tp_connection_upgrade_contacts_async (TpConnection *self,
 
   if (!get_feature_flags (features, &feature_flags))
     return;
+
+  if (tp_proxy_get_invalidated (self) != NULL)
+    {
+      g_simple_async_report_gerror_in_idle ((GObject *) self,
+          callback, user_data, tp_proxy_get_invalidated (self));
+      return;
+    }
 
   if (!tp_proxy_has_interface_by_id (self,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
