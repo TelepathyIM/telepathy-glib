@@ -351,10 +351,9 @@ chat_state_changed_cb (TpChannel *channel,
       GUINT_TO_POINTER (handle),
       GUINT_TO_POINTER (state));
 
-  /* We have only an handle, but since we guarantee "chat-state-changed"
-   * to be emitted only if TP_CHANNEL_FEATURE_GROUP has been prepared, we should
-   * already have its TpContact. If the TpContact does not exist, telling its
-   * chat state is useless anyway. */
+  /* We only guarantee to emit chat-state-changed for contacts that exist.
+   * In particular, for 1-1 channels, the peer TpContact already exists, and for
+   * Group channels, the GROUP feature makes all members exist. */
   conn = tp_channel_borrow_connection (channel);
   contact = tp_connection_dup_contact_if_possible (conn, handle, NULL);
   if (contact == NULL)
