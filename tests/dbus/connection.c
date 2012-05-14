@@ -394,6 +394,38 @@ test_call_when_invalid (Test *test,
   test->cwr_error = NULL;
 }
 
+static void
+test_object_path (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  const gchar *invalid_path = TP_CONN_OBJECT_PATH_BASE "invalid";
+  const gchar *invalid_name = TP_CONN_BUS_NAME_BASE "invalid";
+  TpConnection *connection;
+  GError *error = NULL;
+
+  test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
+      &error);
+  g_assert (test->conn != NULL);
+  g_assert_no_error (error);
+
+  tp_tests_proxy_run_until_prepared (test->conn, NULL);
+  g_assert_cmpstr (tp_connection_get_connection_manager_name (test->conn), ==,
+      "simple");
+  g_assert_cmpstr (tp_connection_get_protocol_name (test->conn), ==,
+      "simple-protocol");
+
+  /* Register the same connection with an invalid object path */
+  tp_dbus_daemon_register_object (test->dbus, invalid_path, test->service_conn);
+  tp_dbus_daemon_request_name (test->dbus, invalid_name, FALSE, &error);
+  g_assert_no_error (error);
+
+  /* Create a TpConnection for that path, it return invalidated connection */
+  connection = tp_connection_new (test->dbus, NULL, invalid_path, &error);
+  g_assert (connection == NULL);
+  g_assert_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_OBJECT_PATH);
+  g_clear_error (&error);
+}
+
 int
 main (int argc,
       char **argv)
@@ -411,6 +443,8 @@ main (int argc,
       test_call_when_ready, teardown);
   g_test_add ("/conn/call_when_invalid", Test, NULL, setup,
       test_call_when_invalid, teardown);
+  g_test_add ("/conn/object_path", Test, NULL, setup,
+      test_object_path, teardown);
 
   return g_test_run ();
 }

@@ -2633,18 +2633,16 @@ build_avatar_filename (TpConnection *connection,
     gchar **ret_filename,
     gchar **ret_mime_filename)
 {
-  gchar *protocol;
-  gchar *cm_name;
   gchar *dir;
   gchar *token_escaped;
   gboolean success = TRUE;
 
-  if (!tp_connection_parse_object_path (connection, &protocol, &cm_name))
-    return FALSE;
-
   token_escaped = tp_escape_as_identifier (avatar_token);
   dir = g_build_filename (g_get_user_cache_dir (),
-      "telepathy", "avatars", cm_name, protocol, NULL);
+      "telepathy", "avatars",
+      tp_connection_get_connection_manager_name (connection),
+      tp_connection_get_protocol_name (connection),
+      NULL);
 
   if (create_dir)
     {
@@ -2665,8 +2663,6 @@ build_avatar_filename (TpConnection *connection,
 
 out:
 
-  g_free (protocol);
-  g_free (cm_name);
   g_free (dir);
   g_free (token_escaped);
 

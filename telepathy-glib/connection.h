@@ -202,8 +202,11 @@ void tp_connection_init_known_interfaces (void);
 gint tp_connection_presence_type_cmp_availability (TpConnectionPresenceType p1,
   TpConnectionPresenceType p2);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_UNRELEASED_FOR(tp_connection_get_protocol_name)
 gboolean tp_connection_parse_object_path (TpConnection *self, gchar **protocol,
     gchar **cm_name);
+#endif
 
 _TP_AVAILABLE_IN_0_20
 const gchar *tp_connection_get_detailed_error (TpConnection *self,

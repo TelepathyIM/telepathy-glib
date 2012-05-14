@@ -1419,11 +1419,17 @@ _tp_connection_got_properties (TpProxy *proxy,
     }
 }
 
+static gboolean _tp_connection_parse (const gchar *path_or_bus_name,
+    char delimiter,
+    gchar **protocol,
+    gchar **cm_name);
+
 static void
 tp_connection_constructed (GObject *object)
 {
   GObjectClass *object_class = (GObjectClass *) tp_connection_parent_class;
   TpConnection *self = TP_CONNECTION (object);
+  const gchar *object_path;
 
   if (object_class->constructed != NULL)
     object_class->constructed (object);
@@ -1440,8 +1446,9 @@ tp_connection_constructed (GObject *object)
   tp_cli_connection_connect_to_connection_error (self,
       tp_connection_connection_error_cb, NULL, NULL, NULL, NULL);
 
-  tp_connection_parse_object_path (self, &(self->priv->proto_name),
-          &(self->priv->cm_name));
+  object_path = tp_proxy_get_object_path (TP_PROXY (self));
+  g_assert (_tp_connection_parse (object_path, '/',
+      &(self->priv->proto_name), &(self->priv->cm_name)));
 
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CONNECTION, _tp_connection_got_properties, NULL, NULL, NULL);
@@ -2376,6 +2383,13 @@ _tp_connection_new_with_factory (TpSimpleClientFactory *factory,
       bus_name = dup_name;
     }
 
+  if (!_tp_connection_parse (object_path, '/', NULL, NULL))
+    {
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_OBJECT_PATH,
+          "Connection object path is not in the right format");
+      goto finally;
+    }
+
   if (!tp_dbus_check_valid_bus_name (bus_name,
         TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON, error))
     goto finally;
@@ -3130,18 +3144,23 @@ tp_connection_presence_type_cmp_availability (TpConnectionPresenceType p1,
  * Returns: TRUE if the object path was correctly parsed, FALSE otherwise.
  *
  * Since: 0.7.27
+ * Deprecated: Use tp_connection_get_protocol_name() and
+ *  tp_connection_get_connection_manager_name() instead.
  */
 gboolean
 tp_connection_parse_object_path (TpConnection *self,
                                  gchar **protocol,
                                  gchar **cm_name)
 {
-  const gchar *object_path;
-
   g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
 
-  object_path = tp_proxy_get_object_path (TP_PROXY (self));
-  return _tp_connection_parse (object_path, '/', protocol, cm_name);
+  if (protocol != NULL)
+    *protocol = g_strdup (self->priv->proto_name);
+
+  if (cm_name != NULL)
+    *cm_name = g_strdup (self->priv->cm_name);
+
+  return TRUE;
 }
 
 /* Can return a contact that's not meant to be visible to library users
