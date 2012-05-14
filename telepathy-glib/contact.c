@@ -1899,29 +1899,19 @@ contacts_context_fail (ContactsContext *c,
     }
 }
 
-static void contact_update_avatar_data (TpContact *self);
+static void contact_maybe_update_avatar_data (TpContact *self);
 
 static void
 contacts_context_last_step (ContactsContext *c)
 {
-  guint i;
-
-  g_assert (c->handles->len == c->contacts->len);
-
   /* As last step, request avatars if we want AVATAR_DATA feature. This is done
    * here because there is no contact attribute for that. */
-  if ((c->wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) == 0)
-      return;
-
-  for (i = 0; i < c->contacts->len; i++)
+  if ((c->wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0)
     {
-      TpContact *contact = g_ptr_array_index (c->contacts, i);
+      guint i;
 
-      if ((contact->priv->has_features & CONTACT_FEATURE_FLAG_AVATAR_DATA) == 0)
-        {
-          contact->priv->has_features |= CONTACT_FEATURE_FLAG_AVATAR_DATA;
-          contact_update_avatar_data (contact);
-        }
+      for (i = 0; i < c->contacts->len; i++)
+        contact_maybe_update_avatar_data (g_ptr_array_index (c->contacts, i));
     }
 }
 
@@ -2545,6 +2535,17 @@ out:
 }
 
 static void
+contact_maybe_update_avatar_data (TpContact *self)
+{
+  if ((self->priv->has_features & CONTACT_FEATURE_FLAG_AVATAR_DATA) == 0 &&
+      (self->priv->has_features & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0)
+    {
+      self->priv->has_features |= CONTACT_FEATURE_FLAG_AVATAR_DATA;
+      contact_update_avatar_data (self);
+    }
+}
+
+static void
 contacts_bind_to_avatar_retrieved (TpConnection *connection)
 {
   if (!connection->priv->tracking_avatar_retrieved)
@@ -2555,7 +2556,6 @@ contacts_bind_to_avatar_retrieved (TpConnection *connection)
         (connection, contact_avatar_retrieved, NULL, NULL, NULL, NULL);
     }
 }
-
 
 static void
 contact_set_avatar_token (TpContact *self, const gchar *new_token,
@@ -3131,6 +3131,13 @@ tp_contact_set_attributes (TpContact *contact,
       s = tp_asv_get_string (asv,
           TP_TOKEN_CONNECTION_INTERFACE_AVATARS_TOKEN);
       contact_set_avatar_token (contact, s, TRUE);
+    }
+
+  if (wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA)
+    {
+      /* There is no attribute for the avatar data, this will set the avatar
+       * from cache or start the avatar request if its missing from cache. */
+      contact_maybe_update_avatar_data (contact);
     }
 
   if (wanted & CONTACT_FEATURE_FLAG_PRESENCE)
