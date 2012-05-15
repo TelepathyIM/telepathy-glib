@@ -862,6 +862,95 @@ tp_simple_client_factory_ensure_contact (TpSimpleClientFactory *self,
 }
 
 static void
+upgrade_contacts_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpConnection *connection = (TpConnection *) source;
+  GSimpleAsyncResult *my_result = user_data;
+  GPtrArray *contacts;
+  GError *error = NULL;
+
+  if (!tp_connection_upgrade_contacts_finish (connection, result,
+          &contacts, &error))
+    {
+      g_simple_async_result_take_error (my_result, error);
+    }
+  else
+    {
+      g_simple_async_result_set_op_res_gpointer (my_result, contacts,
+          (GDestroyNotify) g_ptr_array_unref);
+    }
+
+  g_simple_async_result_complete (my_result);
+  g_object_unref (my_result);
+}
+
+
+/**
+ * tp_simple_client_factory_upgrade_contacts_async:
+ * @self: a #TpSimpleClientFactory object
+ * @connection: a #TpConnection
+ * @n_contacts: The number of contacts in @contacts (must be at least 1)
+ * @contacts: (array length=n_contacts): An array of #TpContact objects
+ *  associated with @self
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
+ *
+ * Same as tp_connection_upgrade_contacts_async(), but prepare contacts with all
+ * features previously passed to
+ * tp_simple_client_factory_add_contact_features().
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_simple_client_factory_upgrade_contacts_async (
+    TpSimpleClientFactory *self,
+    TpConnection *connection,
+    guint n_contacts,
+    TpContact * const *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  GArray *features;
+
+  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
+      tp_simple_client_factory_upgrade_contacts_async);
+
+  features = tp_simple_client_factory_dup_contact_features (self, connection);
+  tp_connection_upgrade_contacts_async (connection, n_contacts, contacts,
+      features->len, (TpContactFeature *) features->data,
+      upgrade_contacts_cb, result);
+  g_array_unref (features);
+}
+
+/**
+ * tp_simple_client_factory_upgrade_contacts_finish:
+ * @self: a #TpSimpleClientFactory
+ * @result: a #GAsyncResult
+ * @contacts: (element-type TelepathyGLib.Contact) (transfer container) (out) (allow-none):
+ *  a location to set a #GPtrArray of upgraded #TpContact, or %NULL.
+ * @error: a #GError to fill
+ *
+ * Finishes tp_simple_client_factory_upgrade_contacts_async()
+ *
+ * Returns: %TRUE on success, %FALSE otherwise.
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_simple_client_factory_upgrade_contacts_finish (
+    TpSimpleClientFactory *self,
+    GAsyncResult *result,
+    GPtrArray **contacts,
+    GError **error)
+{
+  _tp_implement_finish_copy_pointer (self,
+      tp_simple_client_factory_upgrade_contacts_async,
+      g_ptr_array_ref, contacts);
+}
+
+static void
 dup_contact_by_id_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
