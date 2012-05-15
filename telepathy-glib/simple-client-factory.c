@@ -861,6 +861,88 @@ tp_simple_client_factory_ensure_contact (TpSimpleClientFactory *self,
   return contact;
 }
 
+static void
+dup_contact_by_id_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpConnection *connection = (TpConnection *) source;
+  GSimpleAsyncResult *my_result = user_data;
+  TpContact *contact;
+  GError *error = NULL;
+
+  contact = tp_connection_dup_contact_by_id_finish (connection, result, &error);
+  if (contact == NULL)
+    {
+      g_simple_async_result_take_error (my_result, error);
+    }
+  else
+    {
+      g_simple_async_result_set_op_res_gpointer (my_result, contact,
+          g_object_unref);
+    }
+
+  g_simple_async_result_complete (my_result);
+  g_object_unref (my_result);
+}
+
+
+/**
+ * tp_simple_client_factory_ensure_contact_by_id_async:
+ * @self: a #TpSimpleClientFactory object
+ * @connection: a #TpConnection
+ * @identifier: a string representing the contact's identifier
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
+ *
+ * Same as tp_connection_dup_contact_by_id_async(), but prepare the
+ * contact with all features previously passed to
+ * tp_simple_client_factory_add_contact_features().
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_simple_client_factory_ensure_contact_by_id_async (
+    TpSimpleClientFactory *self,
+    TpConnection *connection,
+    const gchar *identifier,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  GArray *features;
+
+  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
+      tp_simple_client_factory_ensure_contact_by_id_async);
+
+  features = tp_simple_client_factory_dup_contact_features (self, connection);
+  tp_connection_dup_contact_by_id_async (connection, identifier,
+      features->len, (TpContactFeature *) features->data,
+      dup_contact_by_id_cb, result);
+  g_array_unref (features);
+}
+
+/**
+ * tp_simple_client_factory_ensure_contact_by_id_finish:
+ * @self: a #TpSimpleClientFactory
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_simple_client_factory_ensure_contact_by_id_async()
+ *
+ * Returns: (transfer full): a #TpContact or %NULL on error.
+ * Since: 0.UNRELEASED
+ */
+TpContact *
+tp_simple_client_factory_ensure_contact_by_id_finish (
+    TpSimpleClientFactory *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_return_copy_pointer (self,
+      tp_simple_client_factory_ensure_contact_by_id_async, g_object_ref);
+}
+
 /**
  * tp_simple_client_factory_dup_contact_features:
  * @self: a #TpSimpleClientFactory object

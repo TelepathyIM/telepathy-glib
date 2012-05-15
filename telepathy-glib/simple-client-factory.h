@@ -175,6 +175,18 @@ TpContact *tp_simple_client_factory_ensure_contact (TpSimpleClientFactory *self,
     TpConnection *connection,
     TpHandle handle,
     const gchar *identifier);
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_simple_client_factory_ensure_contact_by_id_async (
+    TpSimpleClientFactory *self,
+    TpConnection *connection,
+    const gchar *identifier,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+_TP_AVAILABLE_IN_UNRELEASED
+TpContact *tp_simple_client_factory_ensure_contact_by_id_finish (
+    TpSimpleClientFactory *self,
+    GAsyncResult *result,
+    GError **error);
 _TP_AVAILABLE_IN_0_16
 GArray *tp_simple_client_factory_dup_contact_features (
     TpSimpleClientFactory *self,
