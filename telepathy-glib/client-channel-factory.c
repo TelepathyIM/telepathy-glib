@@ -75,6 +75,9 @@
 G_DEFINE_INTERFACE(TpClientChannelFactory, tp_client_channel_factory,
     G_TYPE_OBJECT)
 
+/* Deprecated module can use deprecated APIs */
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+
 static void
 tp_client_channel_factory_default_init (TpClientChannelFactoryInterface *iface)
 {
@@ -165,3 +168,5 @@ tp_client_channel_factory_dup_channel_features (
 
   return arr;
 }
+
+G_GNUC_END_IGNORE_DEPRECATIONS

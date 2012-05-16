@@ -115,6 +115,9 @@ G_DEFINE_TYPE_WITH_CODE(TpAutomaticProxyFactory,
     G_IMPLEMENT_INTERFACE (TP_TYPE_CLIENT_CHANNEL_FACTORY,
       client_proxy_factory_iface_init))
 
+/* Deprecated module can use deprecated APIs */
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+
 static void
 tp_automatic_proxy_factory_init (TpAutomaticProxyFactory *self)
 {
@@ -299,3 +302,5 @@ tp_automatic_proxy_factory_dup (void)
 
   return singleton;
 }
+
+G_GNUC_END_IGNORE_DEPRECATIONS

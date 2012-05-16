@@ -488,6 +488,7 @@ tp_stream_tube_channel_init (TpStreamTubeChannel *self)
  * Returns: (transfer full): a newly-created #TpStreamTubeChannel proxy
  *
  * Since: 0.13.2
+ * Deprecated: Use tp_simple_client_factory_ensure_channel() instead.
  */
 TpStreamTubeChannel *
 tp_stream_tube_channel_new (TpConnection *conn,

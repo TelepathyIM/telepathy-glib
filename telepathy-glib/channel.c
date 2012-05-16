@@ -2000,6 +2000,7 @@ tp_channel_class_init (TpChannelClass *klass)
  * Returns: a new channel proxy, or %NULL on invalid arguments
  *
  * Since: 0.7.19
+ * Deprecated: Use tp_simple_client_factory_ensure_channel() instead.
  */
 TpChannel *
 tp_channel_new_from_properties (TpConnection *conn,
@@ -2064,6 +2065,7 @@ finally:
  * Returns: a new channel proxy, or %NULL on invalid arguments.
  *
  * Since: 0.7.1
+ * Deprecated: Use tp_simple_client_factory_ensure_channel() instead.
  */
 TpChannel *
 tp_channel_new (TpConnection *conn,

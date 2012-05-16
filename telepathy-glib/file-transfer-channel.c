@@ -1058,6 +1058,7 @@ tp_file_transfer_channel_get_feature_quark_core (void)
  * Returns: (transfer full): a newly created #TpFileTransferChannel
  *
  * Since: 0.15.5
+ * Deprecated: Use tp_simple_client_factory_ensure_channel() instead.
  */
 TpFileTransferChannel *
 tp_file_transfer_channel_new (TpConnection *conn,

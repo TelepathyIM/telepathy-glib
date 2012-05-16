@@ -2364,6 +2364,7 @@ tp_connection_class_init (TpConnectionClass *klass)
  *  fails or on invalid arguments
  *
  * Since: 0.7.1
+ * Deprecated: Use tp_simple_client_factory_ensure_connection() instead.
  */
 TpConnection *
 tp_connection_new (TpDBusDaemon *dbus,

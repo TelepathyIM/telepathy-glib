@@ -2117,6 +2117,7 @@ tp_account_init_known_interfaces (void)
  *
  * Returns: a new reference to an account proxy, or %NULL if @object_path is
  *    not valid
+ * Deprecated: Use tp_simple_client_factory_ensure_account() instead.
  */
 TpAccount *
 tp_account_new (TpDBusDaemon *bus_daemon,
