@@ -312,7 +312,8 @@ tp_simple_client_factory_constructed (GObject *object)
 {
   TpSimpleClientFactory *self = (TpSimpleClientFactory *) object;
 
-  g_assert (TP_IS_DBUS_DAEMON (self->priv->dbus));
+  if (self->priv->dbus == NULL)
+    self->priv->dbus = tp_dbus_daemon_dup (NULL);
 
   G_OBJECT_CLASS (tp_simple_client_factory_parent_class)->constructed (object);
 }
@@ -398,9 +399,10 @@ tp_simple_client_factory_class_init (TpSimpleClientFactoryClass *klass)
 
 /**
  * tp_simple_client_factory_new:
- * @dbus: a #TpDBusDaemon
+ * @dbus: (allow-none): a #TpDBusDaemon, or %NULL
  *
- * Creates a new #TpSimpleClientFactory instance.
+ * Creates a new #TpSimpleClientFactory instance. If @dbus is %NULL,
+ * tp_dbus_daemon_dup() will be used.
  *
  * Returns: a new #TpSimpleClientFactory
  *

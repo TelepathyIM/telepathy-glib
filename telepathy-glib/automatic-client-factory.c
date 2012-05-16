@@ -288,9 +288,10 @@ tp_automatic_client_factory_class_init (TpAutomaticClientFactoryClass *cls)
 
 /**
  * tp_automatic_client_factory_new:
- * @dbus: a #TpDBusDaemon
+ * @dbus: (allow-none): a #TpDBusDaemon, or %NULL
  *
- * Returns a new #TpAutomaticClientFactory instance.
+ * Returns a new #TpAutomaticClientFactory instance. If @dbus is %NULL,
+ * tp_dbus_daemon_dup() will be used.
  *
  * Returns: a new #TpAutomaticClientFactory
  *
