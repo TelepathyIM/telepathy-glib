@@ -81,10 +81,9 @@ int
 main (int argc,
       char **argv)
 {
-  const gchar *bus_name, *object_path;
   TpConnection *connection = NULL;
   GMainLoop *mainloop = NULL;
-  TpDBusDaemon *dbus = NULL;
+  TpSimpleClientFactory *factory;
   GError *error = NULL;
 
   g_type_init ();
@@ -92,36 +91,17 @@ main (int argc,
 
   if (argc < 2)
     {
-      fputs ("Usage: one of\n"
-          "    telepathy-example-inspect-connection BUS_NAME\n"
-          "    telepathy-example-inspect-connection OBJECT_PATH\n"
-          "    telepathy-example-inspect-connection BUS_NAME OBJECT_PATH\n",
+      fputs ("Usage:\n"
+          "    telepathy-example-inspect-connection OBJECT_PATH\n",
           stderr);
       return 2;
     }
 
   mainloop = g_main_loop_new (NULL, FALSE);
 
-  bus_name = argv[1];
-  object_path = argv[2];    /* might be NULL */
-
-  /* Cope with the arguments being a bus name, an object path or both */
-  if (bus_name[0] == '/' && argc == 2)
-    {
-      object_path = bus_name;
-      bus_name = NULL;
-    }
-
-  dbus = tp_dbus_daemon_dup (&error);
-
-  if (dbus == NULL)
-    {
-      g_warning ("%s", error->message);
-      g_error_free (error);
-      goto out;
-    }
-
-  connection = tp_connection_new (dbus, bus_name, object_path, &error);
+  factory = tp_simple_client_factory_new (NULL);
+  connection = tp_simple_client_factory_ensure_connection (factory,
+      argv[1], NULL, &error);
 
   if (connection == NULL)
     {
@@ -145,8 +125,7 @@ out:
   if (mainloop != NULL)
     g_main_loop_unref (mainloop);
 
-  if (dbus != NULL)
-    g_object_unref (dbus);
+  g_object_unref (factory);
 
   return exit_status;
 }

@@ -205,6 +205,7 @@ cm_requested_connection (TpConnectionManager *manager,
                          gpointer user_data,
                          GObject *weak_object)
 {
+  TpSimpleClientFactory *factory;
   GError *e = NULL;
   TpConnection *conn;
 
@@ -212,8 +213,10 @@ cm_requested_connection (TpConnectionManager *manager,
     return;
 
   /* FIXME: there should be convenience API for this */
-  conn = tp_connection_new (tp_proxy_get_dbus_daemon (manager),
-      bus_name, object_path, &e);
+  factory = tp_simple_client_factory_new (NULL);
+  conn = tp_simple_client_factory_ensure_connection (factory, object_path, NULL,
+      &e);
+  g_object_unref (factory);
 
   if (conn == NULL)
     {
