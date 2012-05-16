@@ -792,15 +792,22 @@ upgrade_self_contact_cb (GObject *object,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpConnection *self = (TpConnection *) object;
-  TpContact *contact = user_data;
+  TpClientFactory *factory = (TpClientFactory *) object;
+  TpConnection *self = user_data;
+  GPtrArray *contacts;
+  TpContact *contact;
   GError *error = NULL;
 
-  if (!tp_connection_upgrade_contacts_finish (self, result, NULL, &error))
+  if (!tp_client_factory_upgrade_contacts_finish (factory, result, &contacts,
+          &error))
     {
       DEBUG ("Error upgrading self contact: %s", error->message);
       g_clear_error (&error);
+      goto out;
     }
+
+  g_assert (contacts->len == 1);
+  contact = g_ptr_array_index (contacts, 0);
 
   /* Self contact could have changed while we were upgrading */
   if (tp_contact_get_handle (contact) == self->priv->last_known_self_handle)
@@ -808,28 +815,28 @@ upgrade_self_contact_cb (GObject *object,
       tp_connection_set_self_contact (self, contact);
     }
 
-  g_object_unref (contact);
+  g_ptr_array_unref (contacts);
+
+out:
+  g_object_unref (self);
 }
 
 static void
 get_self_contact (TpConnection *self)
 {
   TpClientFactory *factory;
-  GArray *features;
   TpContact *contact;
 
   factory = tp_proxy_get_factory (self);
-  features = tp_client_factory_dup_contact_features (factory, self);
 
   contact = tp_client_factory_ensure_contact (factory, self,
       self->priv->last_known_self_handle,
       self->priv->last_known_self_id);
 
-  tp_connection_upgrade_contacts_async (self, 1, &contact,
-      (GQuark *) features->data,
-      upgrade_self_contact_cb, contact);
+  tp_client_factory_upgrade_contacts_async (factory, self,
+      1, &contact, upgrade_self_contact_cb, g_object_ref (self));
 
-  g_array_unref (features);
+  g_object_unref (contact);
 }
 
 static void

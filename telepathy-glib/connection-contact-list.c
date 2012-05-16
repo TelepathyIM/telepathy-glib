@@ -140,10 +140,12 @@ new_contacts_upgraded_cb (GObject *object,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpConnection *self = (TpConnection *) object;
+  TpClientFactory *factory = (TpClientFactory *) object;
+  TpConnection *self = user_data;
   GError *error = NULL;
 
-  if (!tp_connection_upgrade_contacts_finish (self, result, NULL, &error))
+  if (!tp_client_factory_upgrade_contacts_finish (factory, result, NULL,
+          &error))
     {
       DEBUG ("Error upgrading new roster contacts: %s", error->message);
       g_clear_error (&error);
@@ -158,7 +160,6 @@ process_queued_contacts_changed (TpConnection *self)
   ContactsChangedItem *item;
   GHashTableIter iter;
   gpointer key, value;
-  GArray *features;
 
   item = g_queue_peek_head (self->priv->contacts_changed_queue);
   if (item == NULL)
@@ -189,15 +190,9 @@ process_queued_contacts_changed (TpConnection *self)
       return;
     }
 
-  features = tp_client_factory_dup_contact_features (
-      tp_proxy_get_factory (self), self);
-
-  tp_connection_upgrade_contacts_async (self,
-      item->new_contacts->len, (TpContact **) item->new_contacts->pdata,
-      (const GQuark *) features->data,
-      new_contacts_upgraded_cb, NULL);
-
-  g_array_unref (features);
+  tp_client_factory_upgrade_contacts_async (tp_proxy_get_factory (self),
+      self, item->new_contacts->len, (TpContact **) item->new_contacts->pdata,
+      new_contacts_upgraded_cb, self);
 }
 
 static void
@@ -1675,7 +1670,8 @@ blocked_contacts_upgraded_cb (GObject *object,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpConnection *self = (TpConnection *) object;
+  TpClientFactory *factory = (TpClientFactory *) object;
+  TpConnection *self = user_data;
   BlockedChangedItem *item;
   guint i;
   GPtrArray *added, *removed;
@@ -1684,7 +1680,8 @@ blocked_contacts_upgraded_cb (GObject *object,
 
   item = g_queue_peek_head (self->priv->blocked_changed_queue);
 
-  if (!tp_connection_upgrade_contacts_finish (self, result, &contacts, &error))
+  if (!tp_client_factory_upgrade_contacts_finish (factory, result, &contacts,
+          &error))
     {
       DEBUG ("Error upgrading blocked contacts: %s", error->message);
       g_clear_error (&error);
@@ -1747,7 +1744,6 @@ process_queued_blocked_changed (TpConnection *self)
   BlockedChangedItem *item;
   GHashTableIter iter;
   gpointer key, value;
-  GArray *features;
   GPtrArray *contacts;
 
   item = g_queue_peek_head (self->priv->blocked_changed_queue);
@@ -1797,15 +1793,10 @@ process_queued_blocked_changed (TpConnection *self)
       return;
     }
 
-  features = tp_client_factory_dup_contact_features (
-      tp_proxy_get_factory (self), self);
+  tp_client_factory_upgrade_contacts_async (tp_proxy_get_factory (self),
+      self, contacts->len, (TpContact **) contacts->pdata,
+      blocked_contacts_upgraded_cb, self);
 
-  tp_connection_upgrade_contacts_async (self,
-      contacts->len, (TpContact **) contacts->pdata,
-      (const GQuark *) features->data,
-      blocked_contacts_upgraded_cb, NULL);
-
-  g_array_unref (features);
   g_ptr_array_unref (contacts);
 }
 

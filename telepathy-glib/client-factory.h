@@ -149,6 +149,28 @@ TpContact *tp_client_factory_ensure_contact (TpClientFactory *self,
     TpConnection *connection,
     TpHandle handle,
     const gchar *identifier);
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_client_factory_upgrade_contacts_async (TpClientFactory *self,
+    TpConnection *connection,
+    guint n_contacts,
+    TpContact * const *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+_TP_AVAILABLE_IN_UNRELEASED
+gboolean tp_client_factory_upgrade_contacts_finish (TpClientFactory *self,
+    GAsyncResult *result,
+    GPtrArray **contacts,
+    GError **error);
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_client_factory_ensure_contact_by_id_async (TpClientFactory *self,
+    TpConnection *connection,
+    const gchar *identifier,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+_TP_AVAILABLE_IN_UNRELEASED
+TpContact *tp_client_factory_ensure_contact_by_id_finish (TpClientFactory *self,
+    GAsyncResult *result,
+    GError **error);
 GArray *tp_client_factory_dup_contact_features (TpClientFactory *self,
     TpConnection *connection);
 void tp_client_factory_add_contact_features (TpClientFactory *self,
