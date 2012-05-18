@@ -307,8 +307,6 @@ tp_connection_get_property (GObject *object,
 {
   TpConnection *self = TP_CONNECTION (object);
 
-  /* Deprecated properties uses deprecated getters */
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   switch (property_id)
     {
     case PROP_CONNECTION_MANAGER_NAME:
@@ -372,7 +370,6 @@ tp_connection_get_property (GObject *object,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
     }
-  G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 static void
@@ -2637,41 +2634,6 @@ tp_connection_presence_type_cmp_availability (TpConnectionPresenceType p1,
     return +1;
 
   return 0;
-}
-
-
-/**
- * tp_connection_parse_object_path:
- * @self: a connection
- * @protocol: (out) (transfer full): If not NULL, used to return the protocol
- *  of the connection
- * @cm_name: (out) (transfer full): If not NULL, used to return the connection
- *  manager name of the connection
- *
- * If the object path of @connection is in the correct form, set
- * @protocol and @cm_name, return TRUE. Otherwise leave them unchanged and
- * return FALSE.
- *
- * Returns: TRUE if the object path was correctly parsed, FALSE otherwise.
- *
- * Since: 0.7.27
- * Deprecated: Use tp_connection_get_protocol_name() and
- *  tp_connection_get_connection_manager_name() instead.
- */
-gboolean
-tp_connection_parse_object_path (TpConnection *self,
-                                 gchar **protocol,
-                                 gchar **cm_name)
-{
-  g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
-
-  if (protocol != NULL)
-    *protocol = g_strdup (self->priv->proto_name);
-
-  if (cm_name != NULL)
-    *cm_name = g_strdup (self->priv->cm_name);
-
-  return TRUE;
 }
 
 /* Can return a contact that's not meant to be visible to library users
