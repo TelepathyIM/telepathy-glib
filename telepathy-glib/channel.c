@@ -757,11 +757,12 @@ upgrade_contacts_cb (GObject *object,
     GAsyncResult *result,
     gpointer user_data)
 {
+  TpClientFactory *factory = (TpClientFactory *) object;
   TpChannel *self = user_data;
-  TpConnection *connection = (TpConnection *) object;
   GError *error = NULL;
 
-  if (!tp_connection_upgrade_contacts_finish (connection, result, NULL, &error))
+  if (!tp_client_factory_upgrade_contacts_finish (factory, result, NULL,
+          &error))
     {
       _tp_channel_abort_introspection (self, "Upgrading contacts failed",
           error);
@@ -830,18 +831,11 @@ _tp_channel_create_contacts (TpChannel *self)
   /* Prepare initiator and target contacts */
   if (contacts->len > 0)
     {
-      GArray *features;
-
-      features = tp_client_factory_dup_contact_features (
+      tp_client_factory_upgrade_contacts_async (
           tp_proxy_get_factory (self->priv->connection),
-          self->priv->connection);
-
-      tp_connection_upgrade_contacts_async (self->priv->connection,
+          self->priv->connection,
           contacts->len, (TpContact **) contacts->pdata,
-          (GQuark *) features->data,
           upgrade_contacts_cb, g_object_ref (self));
-
-      g_array_unref (features);
     }
   else
     {
