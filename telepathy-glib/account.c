@@ -1041,8 +1041,10 @@ _tp_account_constructed (GObject *object)
       g_error_free (error);
     }
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   tp_account_parse_object_path (tp_proxy_get_object_path (self),
       &(priv->cm_name), &(priv->proto_name), NULL, NULL);
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   priv->icon_name = g_strdup_printf ("im-%s", priv->proto_name);
   priv->service = g_strdup (priv->proto_name);
@@ -2096,8 +2098,10 @@ _tp_account_new_with_factory (TpSimpleClientFactory *factory,
   g_return_val_if_fail (object_path != NULL, NULL);
   g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   if (!tp_account_parse_object_path (object_path, NULL, NULL, NULL, error))
     return NULL;
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   self = TP_ACCOUNT (g_object_new (TP_TYPE_ACCOUNT,
           "dbus-daemon", bus_daemon,
@@ -3571,6 +3575,8 @@ set_or_free (gchar **target,
  *          @error otherwise.
  *
  * Since: 0.9.0
+ * Deprecated: Use tp_account_get_protocol() and
+ *  tp_account_get_connection_manager() instead.
  */
 gboolean
 tp_account_parse_object_path (const gchar *object_path,
