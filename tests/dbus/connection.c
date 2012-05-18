@@ -118,7 +118,6 @@ test_prepare (Test *test,
   TpCapabilities *caps;
   GPtrArray *classes;
   gchar *cm_name, *protocol_name;
-  gboolean parsed;
 
   test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
@@ -149,14 +148,6 @@ test_prepare (Test *test,
   g_assert (tp_connection_get_self_contact (test->conn) == NULL);
   g_assert_cmpint (tp_connection_get_status (test->conn, NULL), ==,
       TP_CONNECTION_STATUS_DISCONNECTED);
-
-  parsed = tp_connection_parse_object_path (test->conn, &protocol_name,
-      &cm_name);
-  g_assert (parsed);
-  g_assert_cmpstr (protocol_name, ==, "simple-protocol");
-  g_assert_cmpstr (cm_name, ==, "simple");
-  g_free (protocol_name);
-  g_free (cm_name);
 
   g_assert_cmpstr (tp_connection_get_connection_manager_name (test->conn), ==,
           "simple");
