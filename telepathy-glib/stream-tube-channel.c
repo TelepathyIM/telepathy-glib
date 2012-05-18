@@ -905,14 +905,14 @@ _new_remote_connection_with_contact (GObject *object,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpConnection *connection = (TpConnection *) object;
+  TpClientFactory *factory = (TpClientFactory *) object;
   TpStreamTubeConnection *tube_conn = user_data;
   TpStreamTubeChannel *self = tp_stream_tube_connection_get_channel (tube_conn);
   GPtrArray *contacts;
   TpContact *contact;
   GError *error;
 
-  if (!tp_connection_upgrade_contacts_finish (connection, result,
+  if (!tp_client_factory_upgrade_contacts_finish (factory, result,
           &contacts, &error))
     {
       DEBUG ("Failed to prepare TpContact: %s", error->message);
@@ -1030,22 +1030,18 @@ connection_identified (TpStreamTubeChannel *self,
     {
       TpConnection *connection;
       TpClientFactory *factory;
-      GArray *features;
       TpContact *contact;
 
       connection = tp_channel_borrow_connection (TP_CHANNEL (self));
       factory = tp_proxy_get_factory (connection);
-      features = tp_client_factory_dup_contact_features (factory, connection);
 
       contact = tp_client_factory_ensure_contact (factory, connection,
           handle, id);
 
-      tp_connection_upgrade_contacts_async (connection, 1, &contact,
-          (const GQuark *) features->data,
+      tp_client_factory_upgrade_contacts_async (factory, connection,
+          1, &contact,
           _new_remote_connection_with_contact,
           tube_conn);
-
-      g_array_unref (features);
     }
   else
     {
