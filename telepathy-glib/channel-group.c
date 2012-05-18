@@ -187,82 +187,45 @@ dup_owners_table (TpChannel *self,
   return target;
 }
 
-struct _ContactsQueueItem
-{
-  TpChannel *channel;
-  GPtrArray *contacts;
-  GPtrArray *ids;
-  GArray *handles;
-};
-
-static void
-contacts_queue_item_free (ContactsQueueItem *item)
-{
-  g_clear_object (&item->channel);
-  tp_clear_pointer (&item->contacts, g_ptr_array_unref);
-  tp_clear_pointer (&item->ids, g_ptr_array_unref);
-  tp_clear_pointer (&item->handles, g_array_unref);
-  g_slice_free (ContactsQueueItem, item);
-}
-
 static void process_contacts_queue (TpChannel *self);
 
 static void
-contacts_queue_head_ready (TpChannel *self,
-    const GError *error)
+contacts_queue_upgraded_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
 {
-  GSimpleAsyncResult *result = self->priv->current_contacts_queue_result;
+  TpChannel *self = user_data;
+  TpClientFactory *factory = (TpClientFactory *) object;
+  GSimpleAsyncResult *my_result = self->priv->current_contacts_queue_result;
+  GError *error = NULL;
 
-  if (error != NULL)
+  if (!tp_client_factory_upgrade_contacts_finish (factory, result, NULL,
+          &error))
     {
-      DEBUG ("Error preparing channel contacts queue item: %s", error->message);
-      g_simple_async_result_set_from_error (result, error);
+      DEBUG ("Error preparing channel contacts: %s", error->message);
+      g_simple_async_result_take_error (my_result, error);
     }
-  g_simple_async_result_complete (result);
+
+  g_simple_async_result_complete (my_result);
 
   self->priv->current_contacts_queue_result = NULL;
   process_contacts_queue (self);
 
-  g_object_unref (result);
-}
-
-static void
-contacts_queue_item_upgraded_cb (GObject *object,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  TpConnection *connection = (TpConnection *) object;
-  ContactsQueueItem *item = user_data;
-  GError *error = NULL;
-
-  tp_connection_upgrade_contacts_finish (connection, result, NULL, &error);
-  contacts_queue_head_ready (item->channel, error);
-  g_clear_error (&error);
-}
-
-static gboolean
-contacts_queue_item_idle_cb (gpointer user_data)
-{
-  TpChannel *self = user_data;
-
-  contacts_queue_head_ready (self, NULL);
-
-  return FALSE;
+  g_object_unref (my_result);
 }
 
 static void
 process_contacts_queue (TpChannel *self)
 {
   GSimpleAsyncResult *result;
-  ContactsQueueItem *item;
-  GArray *features;
+  GPtrArray *contacts;
   const GError *error = NULL;
 
   if (self->priv->current_contacts_queue_result != NULL)
     return;
 
-  /* self can't die while there are queued items because item->result keeps a
-   * ref to it. But it could have been invalidated. */
+  /* self can't die while there are queued results because GSimpleAsyncResult
+   * keep a ref to it. But it could have been invalidated. */
   error = tp_proxy_get_invalidated (self);
   if (error != NULL)
     {
@@ -278,63 +241,30 @@ process_contacts_queue (TpChannel *self)
       return;
     }
 
+next:
   result = g_queue_pop_head (self->priv->contacts_queue);
-
   if (result == NULL)
     return;
 
-  self->priv->current_contacts_queue_result = result;
-  item = g_simple_async_result_get_op_res_gpointer (result);
-
-  features = tp_client_factory_dup_contact_features (
-      tp_proxy_get_factory (self->priv->connection), self->priv->connection);
-
-  if (item->contacts != NULL && item->contacts->len > 0)
-    {
-      g_assert (item->ids == NULL);
-      g_assert (item->handles == NULL);
-
-      tp_connection_upgrade_contacts_async (self->priv->connection,
-          item->contacts->len, (TpContact **) item->contacts->pdata,
-          (const GQuark *) features->data,
-          contacts_queue_item_upgraded_cb,
-          item);
-    }
-  else
+  contacts = g_simple_async_result_get_op_res_gpointer (result);
+  if (contacts == NULL || contacts->len == 0)
     {
       /* It can happen there is no contact to prepare, and can still be useful
        * in order to not reorder some events.
        * We have to use an idle though, to guarantee callback is never called
        * without reentering mainloop first. */
-      g_idle_add (contacts_queue_item_idle_cb, self);
+      g_simple_async_result_complete_in_idle (result);
+      g_object_unref (result);
+      goto next;
     }
 
-  g_array_unref (features);
-}
-
-static void
-contacts_queue_item (TpChannel *self,
-    GPtrArray *contacts,
-    GPtrArray *ids,
-    GArray *handles,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
-{
-  ContactsQueueItem *item = g_slice_new (ContactsQueueItem);
-  GSimpleAsyncResult *result;
-
-  item->channel = g_object_ref (self);
-  item->contacts = contacts != NULL ? g_ptr_array_ref (contacts) : NULL;
-  item->ids = ids != NULL ? g_ptr_array_ref (ids) : NULL;
-  item->handles = handles != NULL ? g_array_ref (handles) : NULL;
-  result = g_simple_async_result_new ((GObject *) self,
-      callback, user_data, contacts_queue_item);
-
-  g_simple_async_result_set_op_res_gpointer (result, item,
-      (GDestroyNotify) contacts_queue_item_free);
-
-  g_queue_push_tail (self->priv->contacts_queue, result);
-  process_contacts_queue (self);
+  self->priv->current_contacts_queue_result = result;
+  tp_client_factory_upgrade_contacts_async (
+      tp_proxy_get_factory (self->priv->connection),
+      self->priv->connection,
+      contacts->len, (TpContact **) contacts->pdata,
+      contacts_queue_upgraded_cb,
+      self);
 }
 
 void
@@ -343,7 +273,25 @@ _tp_channel_contacts_queue_prepare_async (TpChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  contacts_queue_item (self, contacts, NULL, NULL, callback, user_data);
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
+      _tp_channel_contacts_queue_prepare_async);
+
+  if (contacts != NULL)
+    {
+      g_simple_async_result_set_op_res_gpointer (result,
+          g_ptr_array_ref (contacts), (GDestroyNotify) g_ptr_array_unref);
+    }
+
+  g_queue_push_tail (self->priv->contacts_queue, result);
+  process_contacts_queue (self);
+}
+
+static gpointer
+safe_g_ptr_array_ref (GPtrArray *array)
+{
+  return (array != NULL) ? g_ptr_array_ref (array) : NULL;
 }
 
 gboolean
@@ -352,26 +300,9 @@ _tp_channel_contacts_queue_prepare_finish (TpChannel *self,
     GPtrArray **contacts,
     GError **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
-  ContactsQueueItem *item;
-
-  item = g_simple_async_result_get_op_res_gpointer (simple);
-
-  if (contacts != NULL)
-    {
-      if (item->contacts != NULL)
-        *contacts = g_ptr_array_ref (item->contacts);
-      else
-        *contacts = g_ptr_array_new ();
-    }
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-      G_OBJECT (self), contacts_queue_item), FALSE);
-
-  return TRUE;
+  _tp_implement_finish_copy_pointer (self,
+      _tp_channel_contacts_queue_prepare_async,
+      safe_g_ptr_array_ref, contacts);
 }
 
 static void
