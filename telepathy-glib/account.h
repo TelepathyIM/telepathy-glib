@@ -93,8 +93,11 @@ void tp_account_init_known_interfaces (void);
 
 TpConnection *tp_account_get_connection (TpAccount *account);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_UNRELEASED_FOR(tp_simple_client_factory_ensure_connection)
 TpConnection *tp_account_ensure_connection (TpAccount *account,
     const gchar *path);
+#endif
 
 const gchar *tp_account_get_display_name (TpAccount *account);
 

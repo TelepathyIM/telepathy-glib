@@ -2176,6 +2176,8 @@ tp_account_get_connection (TpAccount *account)
  *  the object path @path is invalid or it is the null-value "/"
  *
  * Since: 0.9.0
+ * Deprecated: New code should use tp_simple_client_factory_ensure_connection()
+ *  instead.
  **/
 TpConnection *
 tp_account_ensure_connection (TpAccount *account,

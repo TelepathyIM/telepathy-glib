@@ -1729,7 +1729,8 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   if (account == NULL)
     goto out;
 
-  connection = tp_account_ensure_connection (account, connection_path);
+  connection = tp_simple_client_factory_ensure_connection (self->priv->factory,
+      connection_path, NULL, NULL);
   if (connection == NULL)
     {
       g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
@@ -1949,7 +1950,8 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       goto out;
     }
 
-  connection = tp_account_ensure_connection (account, path);
+  connection = tp_simple_client_factory_ensure_connection (self->priv->factory,
+      path, NULL, NULL);
   if (connection == NULL)
     {
       DEBUG ("Failed to create TpConnection");
@@ -2312,7 +2314,8 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
   if (account == NULL)
     goto out;
 
-  connection = tp_account_ensure_connection (account, connection_path);
+  connection = tp_simple_client_factory_ensure_connection (self->priv->factory,
+      connection_path, NULL, NULL);
   if (connection == NULL)
     {
       DEBUG ("Failed to create TpConnection");
