@@ -1,3 +1,62 @@
+telepathy-glib 0.19.1 (UNRELEASED)
+==================================
+
+Deprecations:
+
+• TpHandle reference count related APIs have been deprecated.
+  - The CM-side APIs tp_handle(s)_ref/unref() and
+    tp_handle(s)_client_hold/release() were already no-op since immortal
+    handles.
+  - The Client-side APIs tp_connection_hold/unref_handles() are not needed with
+    CMs having immortal handles. Others CM are considered legacy, clients
+    wanting to keep support for them should continue using those deprecated
+    APIs (Notably Empathy already dropped support for them since version 3.4).
+  (Xavier)
+
+• Contact attributes APIs have been deprecated. It is considered an internal
+  implementation detail for TpContact that clients doesn't need to care about.
+  tp_connection_get_contact(_list)_attributes(). (Xavier)
+
+• tp_connection_request_handles() has been deprecated because higher level APIs
+  now make it useless. If handle_type is TP_HANDLE_TYPE_CONTACT, use
+  tp_connection_dup_contact_by_id_async() instead. For channel requests, use
+  tp_account_channel_request_set_target_id() instead. (Xavier)
+
+• tp_channel_manager_emit_new_channels() has been deprecated, emitting multiple
+  channels at once is discouraged because it makes client-side code more
+  complicated for no good reason. (Jonny)
+
+• tp_connection_parse_object_path() has been deprecated because the connection's
+  object-path is already parsed internaly and exposed via
+  tp_connection_get_connection_manager_name() and
+  tp_connection_get_protocol_name(). (Xavier)
+
+• tp_account_parse_object_path() has been deprecated because the account's
+  object-path is already parsed internaly and exposed via
+  tp_account_get_connection_manager() and tp_account_get_protocol(). (Xavier)
+
+• tp_account_ensure_connection() has been deprecated. Its purpose was to share
+  a common TpConnection object between TpBaseClient and TpAccount. Now proxy
+  uniqueness is guaranteed by TpSimpleClientFactory. (Xavier)
+
+Enhancements:
+
+• New TpAccountRequest object to help account creation (Jonny)
+
+• TpSimpleClientFactory gained API to prepare TpContact objects with the
+  features set on it. tp_simple_client_factory_upgrade_contacts_async() is
+  convenience API for tp_connection_upgrade_contacts_async().
+  tp_simple_client_factory_ensure_contact_by_id_async() is convenience API for
+  tp_connection_dup_contact_by_id_async(). (Xavier)
+
+• tp_simple/automatic_client_factory_new() now accept NULL TpDBusDaemon arg.
+  tp_dbus_daemon_dup() will be used internaly in that case. (Xavier)
+
+Fixes:
+
+• Fixed possible case where TP_CONTACT_FEATURE_AVATAR_DATA does not get
+  prepared. (Xavier)
+
 telepathy-glib 0.19.0 (2012-05-09)
 ==================================
 
