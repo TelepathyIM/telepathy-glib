@@ -1,3 +1,12 @@
+telepathy-glib 0.19.3 (UNRELEASED)
+==================================
+
+Deprecations:
+
+• tp_account_new(), tp_connection_new() and tp_*_channel_new() have been
+  deprecated. Those proxies should be created using corresponding
+  TpSimpleClientFactory APIs.
+
 telepathy-glib 0.19.2 (2012-06-28)
 ==================================
 
