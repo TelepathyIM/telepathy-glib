@@ -72,8 +72,10 @@ tags
 /src/telepathy-logger
 /src/test-api
 
-/telepathy-logger/telepathy-logger-0.1-uninstalled.pc
-/telepathy-logger/telepathy-logger-0.1.pc
+/telepathy-logger/telepathy-logger-0.2-uninstalled.pc
+/telepathy-logger/telepathy-logger-0.2.pc
+/telepathy-logger/TelepathyLogger-0.2.typelib
+/telepathy-logger/TelepathyLogger-0.2.gir
 /telepathy-logger/_gen/*
 /telepathy-logger/tpl-marshal.c
 /telepathy-logger/tpl-marshal.h
