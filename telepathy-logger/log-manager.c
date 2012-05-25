@@ -305,7 +305,7 @@ tpl_log_manager_init (TplLogManager *self)
 
 
 /**
- * tpl_log_manager_dup_singleton
+ * tpl_log_manager_dup_singleton:
  *
  * Returns: (transfer full): a new reference on the log manager
  */
@@ -317,7 +317,7 @@ tpl_log_manager_dup_singleton (void)
 
 
 /*
- * _tpl_log_manager_add_event
+ * _tpl_log_manager_add_event:
  * @manager: the log manager
  * @event: a TplEvent subclass's instance
  * @error: the memory location of GError, filled if an error occurs
@@ -385,7 +385,7 @@ _tpl_log_manager_add_event (TplLogManager *manager,
 
 
 /*
- * _tpl_log_manager_register_log_store
+ * _tpl_log_manager_register_log_store:
  * @self: the log manager
  * @logstore: a TplLogStore interface implementation
  *
@@ -610,7 +610,7 @@ _tpl_log_manager_get_filtered_events (TplLogManager *manager,
 
 
 /*
- * _tpl_log_manager_get_entities
+ * _tpl_log_manager_get_entities:
  * @manager: the log manager
  * @account: a TpAccount the query will return data related to
  *
@@ -723,7 +723,7 @@ _tpl_log_manager_search_hit_free (TplLogSearchHit *hit)
 
 
 /**
- * tpl_log_manager_search_free: (skip):
+ * tpl_log_manager_search_free: (skip)
  * @hits: a #GList of #TplLogSearchHit
  *
  * Free @hits and its content.
@@ -990,7 +990,7 @@ _get_events_for_date_async_thread (GSimpleAsyncResult *simple,
 
 
 /**
- * tpl_log_manager_get_events_for_date_async
+ * tpl_log_manager_get_events_for_date_async:
  * @manager: a #TplLogManager
  * @account: a #TpAccount
  * @target: a non-NULL #TplEntity
@@ -1043,7 +1043,7 @@ tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
 
 
 /**
- * tpl_log_manager_get_events_for_date_finish
+ * tpl_log_manager_get_events_for_date_finish:
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
  * @events: (out) (transfer full) (element-type TelepathyLogger.Event): a

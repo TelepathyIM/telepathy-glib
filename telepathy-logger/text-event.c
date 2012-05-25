@@ -250,7 +250,7 @@ tpl_text_event_init (TplTextEvent *self)
 
 
 /**
- * _tpl_text_event_message_type_from_str
+ * _tpl_text_event_message_type_from_str:
  * @type_str: string to transform into a #TpChannelTextMessageType
  *
  * Maps strings into enum #TpChannelTextMessageType values.
@@ -272,7 +272,7 @@ _tpl_text_event_message_type_from_str (const gchar *type_str)
 
 
 /**
- * _tpl_text_event_message_type_to_str
+ * _tpl_text_event_message_type_to_str:
  * @msg_type: message type to transform into a string
  *
  * Maps enum #TpChannelTextMessageType values into strings
@@ -290,7 +290,7 @@ _tpl_text_event_message_type_to_str (TpChannelTextMessageType msg_type)
 
 
 /**
- * tpl_text_event_get_message
+ * tpl_text_event_get_message:
  * @self: a #TplTextEvent
  *
  * Returns: the same message as the #TplTextEvent:message property
@@ -305,7 +305,7 @@ tpl_text_event_get_message (TplTextEvent *self)
 
 
 /**
- * tpl_text_event_get_message_token
+ * tpl_text_event_get_message_token:
  * @self: a #TplTextEvent
  *
  * Returns: the same message as the #TplTextEvent:message-token property
@@ -320,7 +320,7 @@ tpl_text_event_get_message_token (TplTextEvent *self)
 
 
 /**
- * tpl_text_event_get_supersedes_token
+ * tpl_text_event_get_supersedes_token:
  * @self: a #TplTextEvent
  *
  * Returns: the same message as the #TplTextEvent:supersedes-token property
@@ -335,7 +335,7 @@ tpl_text_event_get_supersedes_token (TplTextEvent *self)
 
 
 /**
- * _tpl_text_event_add_supersedes
+ * _tpl_text_event_add_supersedes:
  * @self: a #TplTextEvent
  * @old_event: (transfer none): an #TplTextEvent which this one supersedes
  *
@@ -361,7 +361,7 @@ _tpl_text_event_add_supersedes (TplTextEvent *self,
 
 
 /**
- * tpl_text_event_get_supersedes
+ * tpl_text_event_get_supersedes:
  * @self: a #TplTextEvent
  *
  * Returns: (transfer none) (element-type TelepathyLogger.TextEvent): A #GList
@@ -376,7 +376,7 @@ tpl_text_event_get_supersedes (TplTextEvent *self)
 
 
 /**
- * tpl_text_event_get_message_type
+ * tpl_text_event_get_message_type:
  * @self: a #TplTextEvent
  *
  * Returns: the same message as the #TplTextEvent:message-type property
@@ -392,7 +392,7 @@ tpl_text_event_get_message_type (TplTextEvent *self)
 
 
 /**
- * tpl_text_event_get_edit_timestamp
+ * tpl_text_event_get_edit_timestamp:
  * @self: a #TplTextEvent
  *
  * Returns: the same value as the #TplTextEvent:edit-timestamp property

@@ -34,7 +34,7 @@ _tpl_channel_default_init (TplChannelInterface *iface)
 
 
 /**
- * tpl_channel_prepare_async
+ * tpl_channel_prepare_async:
  * @self: a TplChannel instance
  * @cb: a callback
  * @user_data: user's data passed to the callback

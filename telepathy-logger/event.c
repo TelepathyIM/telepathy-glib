@@ -265,7 +265,7 @@ tpl_event_init (TplEvent *self)
 }
 
 /**
- * tpl_event_get_timestamp
+ * tpl_event_get_timestamp:
  * @self: a #TplEvent
  *
  * Returns: the same timestamp as the #TplEvent:timestamp property
@@ -280,7 +280,7 @@ tpl_event_get_timestamp (TplEvent *self)
 
 
 /**
- * tpl_event_get_sender
+ * tpl_event_get_sender:
  * @self: a #TplEvent
  *
  * Returns: (transfer none): the same #TplEntity as the #TplEvent:sender property
@@ -294,7 +294,7 @@ tpl_event_get_sender (TplEvent *self)
 }
 
 /**
- * tpl_event_get_receiver
+ * tpl_event_get_receiver:
  * @self: a #TplEvent
  *
  * Returns: (transfer none): the same #TplEntity as the #TplEvent:receiver property
@@ -342,7 +342,7 @@ _tpl_event_target_is_room (TplEvent *self)
 
 
 /**
- * tpl_event_get_account
+ * tpl_event_get_account_path:
  * @self: a #TplEvent
  *
  * <!-- no more to say -->
@@ -389,7 +389,7 @@ tpl_event_equal (TplEvent *self,
 }
 
 /**
- * tpl_event_get_account
+ * tpl_event_get_account:
  * @self: a #TplEvent
  *
  * <!-- no more to say -->

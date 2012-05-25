@@ -832,7 +832,7 @@ _tpl_text_channel_init (TplTextChannel *self)
 
 
 /**
- * _tpl_text_channel_new
+ * _tpl_text_channel_new:
  * @conn: TpConnection instance owning the channel
  * @object_path: the channel's DBus path
  * @tp_chan_props: channel's immutable properties, obtained for example by

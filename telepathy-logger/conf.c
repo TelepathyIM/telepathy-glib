@@ -182,7 +182,7 @@ _tpl_conf_init (TplConf *self)
 
 
 /**
- * _tpl_conf_dup
+ * _tpl_conf_dup:
  *
  * Convenience function to obtain a TPL Configuration object, which is a
  * singleton.
@@ -198,7 +198,7 @@ _tpl_conf_dup (void)
 
 
 /**
- * _tpl_conf_is_globally_enabled
+ * _tpl_conf_is_globally_enabled:
  * @self: a TplConf instance
  *
  * Whether TPL is globally enabled or not. If it's not globally enabled, no
@@ -221,7 +221,7 @@ _tpl_conf_is_globally_enabled (TplConf *self)
 
 
 /**
- * _tpl_conf_globally_enable
+ * _tpl_conf_globally_enable:
  * @self: a TplConf instance
  * @enable: wether to globally enable or globally disable logging.
  *

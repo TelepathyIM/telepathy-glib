@@ -599,7 +599,7 @@ _tpl_streamed_media_channel_init (TplStreamedMediaChannel *self)
 
 
 /**
- * _tpl_streamed_media_channel_new
+ * _tpl_streamed_media_channel_new:
  * @conn: TpConnection instance owning the channel
  * @object_path: the channel's DBus path
  * @tp_chan_props: channel's immutable properties, obtained for example by
