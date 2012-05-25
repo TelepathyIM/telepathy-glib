@@ -1106,9 +1106,10 @@ _get_filtered_events_async_thread (GSimpleAsyncResult *simple,
  * @target: a non-NULL #TplEntity
  * @type_mask: event type filter see #TplEventTypeMask
  * @num_events: number of maximum events to fetch
- * @filter: (scope async): an optional filter function
+ * @filter: (scope call) (allow-none): an optional filter function
  * @filter_user_data: user data to pass to @filter
- * @callback: (scope async): a callback to call when the request is satisfied
+ * @callback: (scope async) (allow-none): a callback to call when
+ * the request is satisfied
  * @user_data: data to pass to @callback
  *
  * Retrieve the most recent @num_event events exchanged with @target.
