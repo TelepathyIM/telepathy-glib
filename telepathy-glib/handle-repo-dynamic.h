@@ -37,6 +37,16 @@ typedef struct _TpDynamicHandleRepoClass TpDynamicHandleRepoClass;
 typedef gchar *(*TpDynamicHandleRepoNormalizeFunc)(TpHandleRepoIface *repo,
     const gchar *id, gpointer context, GError **error);
 
+typedef void (*TpDynamicHandleRepoNormalizeAsync) (TpHandleRepoIface *repo,
+    TpBaseConnection *connection,
+    const gchar *id,
+    gpointer context,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+typedef gchar * (*TpDynamicHandleRepoNormalizeFinish) (TpHandleRepoIface *repo,
+    GAsyncResult *result,
+    GError **error);
+
 GType tp_dynamic_handle_repo_get_type (void);
 
 #define TP_TYPE_DYNAMIC_HANDLE_REPO \
@@ -75,6 +85,11 @@ tp_dynamic_handle_repo_new (TpHandleType handle_type,
       "default-normalize-context", default_normalize_context,
       NULL);
 }
+
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_dynamic_handle_repo_set_normalize_async (TpDynamicHandleRepo *self,
+    TpDynamicHandleRepoNormalizeAsync normalize_async,
+    TpDynamicHandleRepoNormalizeFinish normalize_finish);
 
 G_END_DECLS
 
