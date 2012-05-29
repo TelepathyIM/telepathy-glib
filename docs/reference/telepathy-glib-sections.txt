@@ -257,6 +257,8 @@ tp_handle_set_qdata
 tp_handle_get_qdata
 tp_handle_ensure
 tp_handle_lookup
+tp_handle_ensure_async
+tp_handle_ensure_finish
 <SUBSECTION Standard>
 TP_HANDLE_REPO_IFACE
 TP_IS_HANDLE_REPO_IFACE

@@ -37,6 +37,7 @@
 #include <telepathy-glib/handle-repo.h>
 
 #include <telepathy-glib/handle-repo-internal.h>
+#include <telepathy-glib/util-internal.h>
 
 G_DEFINE_INTERFACE (TpHandleRepoIface, tp_handle_repo_iface, G_TYPE_OBJECT);
 
@@ -302,6 +303,54 @@ tp_handle_ensure (TpHandleRepoIface *self,
       id, context, error);
 }
 
+/**
+ * tp_handle_ensure_async: (skip)
+ * @self: A handle repository implementation
+ * @connection: the #TpBaseConnection using this handle repo
+ * @id: A string whose handle is required
+ * @context: User data to be passed to the normalization callback
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
+ *
+ * Asyncronously normalize an identifier and create an handle for it. This could
+ * involve a server round-trip. This should be used instead of
+ * tp_handle_ensure() for user provided contact identifiers, but it is not
+ * necessary for identifiers from the server.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_handle_ensure_async (TpHandleRepoIface *self,
+    TpBaseConnection *connection,
+    const gchar *id,
+    gpointer context,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  return TP_HANDLE_REPO_IFACE_GET_CLASS (self)->ensure_handle_async (self,
+      connection, id, context, callback, user_data);
+}
+
+/**
+ * tp_handle_ensure_finish: (skip)
+ * @self: A handle repository implementation
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_handle_ensure_async()
+ *
+ * Returns: non-0 #TpHandle if the operation was successful, otherwise 0.
+ *
+ * Since: 0.UNRELEASED
+ */
+TpHandle
+tp_handle_ensure_finish (TpHandleRepoIface *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  return TP_HANDLE_REPO_IFACE_GET_CLASS (self)->ensure_handle_finish (self,
+      result, error);
+}
 
 /**
  * tp_handle_lookup: (skip)
@@ -378,9 +427,59 @@ tp_handle_get_qdata (TpHandleRepoIface *repo, TpHandle handle,
 }
 
 static void
+default_ensure_handle_async (TpHandleRepoIface *self,
+    TpBaseConnection *connection,
+    const gchar *id,
+    gpointer context,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  TpHandle handle;
+  GError *error = NULL;
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
+      default_ensure_handle_async);
+
+  handle = tp_handle_ensure (self, id, context, &error);
+  if (handle == 0)
+    {
+      g_simple_async_result_take_error (result, error);
+    }
+  else
+    {
+      g_simple_async_result_set_op_res_gpointer (result,
+          GUINT_TO_POINTER (handle), NULL);
+    }
+
+  g_simple_async_result_complete_in_idle (result);
+
+  g_object_unref (result);
+}
+
+static TpHandle
+default_ensure_handle_finish (TpHandleRepoIface *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple = (GSimpleAsyncResult *) result;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+      G_OBJECT (self), NULL), 0);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return 0;
+
+  return GPOINTER_TO_UINT (g_simple_async_result_get_op_res_gpointer (simple));
+}
+
+static void
 tp_handle_repo_iface_default_init (TpHandleRepoIfaceInterface *iface)
 {
   GParamSpec *param_spec;
+
+  iface->ensure_handle_async = default_ensure_handle_async;
+  iface->ensure_handle_finish = default_ensure_handle_finish;
 
   param_spec = g_param_spec_uint ("handle-type", "Handle type",
       "The TpHandleType held in this handle repository.",

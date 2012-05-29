@@ -74,6 +74,16 @@ struct _TpHandleRepoIfaceClass {
     TpHandle (*lookup_handle) (TpHandleRepoIface *self, const char *id,
         gpointer context, GError **error);
 
+    void (*ensure_handle_async) (TpHandleRepoIface *self,
+        TpBaseConnection *connection,
+        const gchar *id,
+        gpointer context,
+        GAsyncReadyCallback callback,
+        gpointer user_data);
+    TpHandle (*ensure_handle_finish) (TpHandleRepoIface *self,
+        GAsyncResult *result,
+        GError **error);
+
     void (*set_qdata) (TpHandleRepoIface *repo, TpHandle handle,
         GQuark key_id, gpointer data, GDestroyNotify destroy);
     gpointer (*get_qdata) (TpHandleRepoIface *repo, TpHandle handle,
