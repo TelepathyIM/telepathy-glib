@@ -469,38 +469,20 @@ dynamic_lookup_handle (TpHandleRepoIface *irepo,
 }
 
 static TpHandle
-dynamic_ensure_handle (TpHandleRepoIface *irepo,
-    const char *id,
-    gpointer context,
-    GError **error)
+ensure_handle_take_normalized_id (TpDynamicHandleRepo *self,
+    gchar *normal_id)
 {
-  TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (irepo);
   TpHandle handle;
   TpHandlePriv *priv;
-  gchar *normal_id = NULL;
 
-  if (context == NULL)
-    context = self->default_normalize_context;
-
-  if (self->normalize_function)
-    {
-      normal_id = (self->normalize_function) (irepo, id, context, error);
-      if (normal_id == NULL)
-        return 0;
-
-      id = normal_id;
-    }
-
-  handle = GPOINTER_TO_UINT (g_hash_table_lookup (self->string_to_handle, id));
+  handle = GPOINTER_TO_UINT (g_hash_table_lookup (self->string_to_handle,
+      normal_id));
 
   if (handle != 0)
     {
       g_free (normal_id);
       return handle;
     }
-
-  if (normal_id == NULL)
-    normal_id = g_strdup (id);
 
   handle = self->handle_to_priv->len;
   g_array_append_val (self->handle_to_priv, empty_priv);
@@ -513,6 +495,31 @@ dynamic_ensure_handle (TpHandleRepoIface *irepo,
   return handle;
 }
 
+static TpHandle
+dynamic_ensure_handle (TpHandleRepoIface *irepo,
+    const char *id,
+    gpointer context,
+    GError **error)
+{
+  TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (irepo);
+  gchar *normal_id;
+
+  if (context == NULL)
+    context = self->default_normalize_context;
+
+  if (self->normalize_function)
+    {
+      normal_id = (self->normalize_function) (irepo, id, context, error);
+      if (normal_id == NULL)
+        return 0;
+    }
+  else
+    {
+      normal_id = g_strdup (id);
+    }
+
+  return ensure_handle_take_normalized_id (self, normal_id);
+}
 
 static void
 dynamic_set_qdata (TpHandleRepoIface *repo, TpHandle handle,
