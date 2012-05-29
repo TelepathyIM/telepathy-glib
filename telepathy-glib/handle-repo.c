@@ -38,50 +38,7 @@
 
 #include <telepathy-glib/handle-repo-internal.h>
 
-static void
-repo_base_init (gpointer klass)
-{
-  static gboolean initialized = FALSE;
-
-  if (!initialized)
-    {
-      GParamSpec *param_spec;
-
-      initialized = TRUE;
-
-      param_spec = g_param_spec_uint ("handle-type", "Handle type",
-          "The TpHandleType held in this handle repository.",
-          0, G_MAXUINT32, 0,
-          G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-      g_object_interface_install_property (klass, param_spec);
-    }
-}
-
-GType
-tp_handle_repo_iface_get_type (void)
-{
-  static GType type = 0;
-  if (G_UNLIKELY (type == 0))
-    {
-      static const GTypeInfo info = {
-        sizeof (TpHandleRepoIfaceClass),
-        repo_base_init,
-        NULL,   /* base_finalize */
-        NULL,   /* class_init */
-        NULL,   /* class_finalize */
-        NULL,   /* class_data */
-        0,
-        0,      /* n_preallocs */
-        NULL    /* instance_init */
-      };
-
-      type = g_type_register_static (G_TYPE_INTERFACE, "TpHandleRepoIface",
-          &info, 0);
-    }
-
-  return type;
-}
-
+G_DEFINE_INTERFACE (TpHandleRepoIface, tp_handle_repo_iface, G_TYPE_OBJECT);
 
 /**
  * tp_handle_is_valid: (skip)
@@ -418,4 +375,16 @@ tp_handle_get_qdata (TpHandleRepoIface *repo, TpHandle handle,
 {
   return TP_HANDLE_REPO_IFACE_GET_CLASS (repo)->get_qdata (repo,
       handle, key_id);
+}
+
+static void
+tp_handle_repo_iface_default_init (TpHandleRepoIfaceInterface *iface)
+{
+  GParamSpec *param_spec;
+
+  param_spec = g_param_spec_uint ("handle-type", "Handle type",
+      "The TpHandleType held in this handle repository.",
+      0, G_MAXUINT32, 0,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_interface_install_property (iface, param_spec);
 }

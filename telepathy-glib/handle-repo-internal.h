@@ -29,6 +29,9 @@
 
 G_BEGIN_DECLS
 
+/* G_DEFINE_INTERFACE wants that name */
+typedef struct _TpHandleRepoIfaceClass TpHandleRepoIfaceInterface;
+
 /*      <-- this is no longer a gtkdoc comment because this is not public API
  * TpHandleRepoIfaceClass:
  * @parent_class: Fields shared with GTypeInterface
