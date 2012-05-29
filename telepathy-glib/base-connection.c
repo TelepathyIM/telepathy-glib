@@ -2565,6 +2565,65 @@ tp_base_connection_release_handles (TpSvcConnection *iface,
   tp_svc_connection_return_from_release_handles (context);
 }
 
+typedef struct
+{
+  GArray *handles;
+  guint n_pending;
+  DBusGMethodInvocation *context;
+} RequestHandlesData;
+
+typedef struct
+{
+  RequestHandlesData *request;
+  guint pos;
+} EnsureHandleData;
+
+static void
+ensure_handle_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpHandleRepoIface *repo = (TpHandleRepoIface *) source;
+  EnsureHandleData *data = user_data;
+  RequestHandlesData *request = data->request;
+  TpHandle handle;
+  GError *error = NULL;
+
+  /* If another tp_handle_ensure_async() already failed, ignore others */
+  if (request->context == NULL)
+    goto out;
+
+  handle = tp_handle_ensure_finish (repo, result, &error);
+  if (handle == 0)
+    {
+      dbus_g_method_return_error (request->context, error);
+      request->context = NULL;
+      g_clear_error (&error);
+    }
+  else
+    {
+      TpHandle *handle_p;
+
+      handle_p = &g_array_index (request->handles, TpHandle, data->pos);
+      g_assert (*handle_p == 0);
+      *handle_p = handle;
+    }
+
+out:
+  request->n_pending--;
+  if (request->n_pending == 0)
+    {
+      if (request->context != NULL)
+        {
+          tp_svc_connection_return_from_request_handles (request->context,
+              request->handles);
+        }
+      g_array_unref (request->handles);
+      g_slice_free (RequestHandlesData, request);
+    }
+
+  g_slice_free (EnsureHandleData, data);
+}
 
 /**
  * tp_base_connection_dbus_request_handles: (skip)
@@ -2591,23 +2650,18 @@ tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
   TpBaseConnection *self = TP_BASE_CONNECTION (iface);
   TpHandleRepoIface *handle_repo = tp_base_connection_get_handles (self,
       handle_type);
-  guint count = 0, i;
-  const gchar **cur_name;
+  guint count, i;
   GError *error = NULL;
-  GArray *handles = NULL;
+  RequestHandlesData *request;
 
   g_return_if_fail (TP_IS_BASE_CONNECTION (self));
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
 
-  for (cur_name = names; *cur_name != NULL; cur_name++)
-    {
-      count++;
-    }
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
 
   if (!tp_handle_type_is_valid (handle_type, &error))
     {
       g_assert (error != NULL);
-      goto out;
+      goto error;
     }
 
   if (handle_repo == NULL)
@@ -2616,40 +2670,36 @@ tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
 
       error = g_error_new (TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
                           "unimplemented handle type %u", handle_type);
-      goto out;
+      goto error;
     }
 
-  handles = g_array_sized_new (FALSE, FALSE, sizeof (guint), count);
+  count = g_strv_length ((GStrv) names);
+
+  request = g_slice_new0 (RequestHandlesData);
+  request->handles = g_array_sized_new (FALSE, TRUE, sizeof (guint), count);
+  request->n_pending = count;
+  request->context = context;
+
+  /* _sized_new() just pre-allocates memory, but handles->len is still 0 */
+  g_array_set_size (request->handles, count);
 
   for (i = 0; i < count; i++)
     {
-      TpHandle handle;
-      const gchar *name = names[i];
+      EnsureHandleData *data;
 
-      handle = tp_handle_ensure (handle_repo, name, NULL, &error);
+      data = g_slice_new0 (EnsureHandleData);
+      data->request = request;
+      data->pos = i;
 
-      if (handle == 0)
-        {
-          DEBUG("RequestHandles of type %d failed because '%s' is invalid: %s",
-              handle_type, name, error->message);
-          g_assert (error != NULL);
-          goto out;
-        }
-      g_array_append_val (handles, handle);
+      tp_handle_ensure_async (handle_repo, self, names[i], NULL,
+          ensure_handle_cb, data);
     }
 
-out:
-  if (error == NULL)
-    {
-      tp_svc_connection_return_from_request_handles (context, handles);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
+  return;
 
-  tp_clear_pointer (&handles, g_array_unref);
+error:
+  dbus_g_method_return_error (context, error);
+  g_error_free (error);
 }
 
 /**
