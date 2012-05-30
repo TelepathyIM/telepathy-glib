@@ -18,11 +18,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef TELEPATHY_GLIB_DBUS_H_INCLUDED
-#define TELEPATHY_GLIB_DBUS_H_INCLUDED
-#define _TP_IN_META_HEADER
+#ifndef __TP_GLIB_DBUS_H__
+#define __TP_GLIB_DBUS_H__
 
 #include <telepathy-glib/telepathy-glib.h>
+
+#define _TP_IN_META_HEADER
 
 /* common */
 #include <telepathy-glib/gtypes.h>
@@ -68,4 +69,5 @@
 #include <telepathy-glib/svc-tls.h>
 
 #undef _TP_IN_META_HEADER
-#endif
+
+#endif /* __TP_GLIB_DBUS_H__ */
