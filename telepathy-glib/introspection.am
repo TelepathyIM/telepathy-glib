@@ -86,6 +86,7 @@ TelepathyGLib_0_12_gir_FILES = \
 TelepathyGLib_0_12_gir_NAMESPACE = TelepathyGLib
 TelepathyGLib_0_12_gir_VERSION = 0.12
 TelepathyGLib_0_12_gir_LIBS = libtelepathy-glib.la
+TelepathyGLib_0_12_gir_CFLAGS = -D_TP_COMPILATION
 TelepathyGLib_0_12_gir_EXPORT_PACKAGES = telepathy-glib
 
 TelepathyGLib_0_12_gir_SCANNERFLAGS = \
