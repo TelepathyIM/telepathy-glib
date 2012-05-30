@@ -18,9 +18,6 @@
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/telepathy-glib-dbus.h>
 
-/* FIXME: example code should not be doing this! */
-#include <telepathy-glib/message-internal.h>
-
 static void destroyable_iface_init (gpointer iface, gpointer data);
 static void sms_iface_init (gpointer iface, gpointer data);
 
@@ -416,10 +413,15 @@ sms_get_sms_length (TpSvcChannelInterfaceSMS *self,
 
   for (i = 0; i < parts->len; i++)
     {
-      tp_g_hash_table_update (g_ptr_array_index (message->parts, i),
-          g_ptr_array_index (parts, i),
-          (GBoxedCopyFunc) g_strdup,
-          (GBoxedCopyFunc) tp_g_value_slice_dup);
+      GHashTableIter iter;
+      gpointer key, value;
+
+      tp_message_append_part (message);
+      g_hash_table_iter_init (&iter, g_ptr_array_index (parts, i));
+      while (g_hash_table_iter_next (&iter, &key, &value))
+        {
+          tp_message_set (message, i, key, value);
+        }
     }
 
   txt = tp_message_to_text (message, NULL);
