@@ -3966,10 +3966,8 @@ TpAccount
 TpAccountClass
 tp_account_new
 tp_account_init_known_interfaces
-tp_account_parse_object_path
 tp_account_get_path_suffix
 tp_account_get_connection
-tp_account_ensure_connection
 tp_account_get_display_name
 tp_account_get_connection_manager
 tp_account_get_protocol

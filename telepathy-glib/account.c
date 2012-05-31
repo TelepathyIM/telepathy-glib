@@ -1014,6 +1014,13 @@ _tp_account_got_all_cb (TpProxy *proxy,
   _tp_account_update (self, properties);
 }
 
+static gboolean
+_tp_account_parse_object_path (const gchar *object_path,
+    gchar **cm,
+    gchar **protocol,
+    gchar **account_id,
+    GError **error);
+
 static void
 _tp_account_constructed (GObject *object)
 {
@@ -1040,10 +1047,8 @@ _tp_account_constructed (GObject *object)
       g_error_free (error);
     }
 
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  tp_account_parse_object_path (tp_proxy_get_object_path (self),
+  _tp_account_parse_object_path (tp_proxy_get_object_path (self),
       &(priv->cm_name), &(priv->proto_name), NULL, NULL);
-  G_GNUC_END_IGNORE_DEPRECATIONS
 
   priv->icon_name = g_strdup_printf ("im-%s", priv->proto_name);
   priv->service = g_strdup (priv->proto_name);
@@ -2097,10 +2102,8 @@ _tp_account_new_with_factory (TpClientFactory *factory,
   g_return_val_if_fail (object_path != NULL, NULL);
   g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  if (!tp_account_parse_object_path (object_path, NULL, NULL, NULL, error))
+  if (!_tp_account_parse_object_path (object_path, NULL, NULL, NULL, error))
     return NULL;
-  G_GNUC_END_IGNORE_DEPRECATIONS
 
   self = TP_ACCOUNT (g_object_new (TP_TYPE_ACCOUNT,
           "dbus-daemon", bus_daemon,
@@ -2158,49 +2161,6 @@ tp_account_get_connection (TpAccount *account)
   /* If we want to expose only prepared connection */
   if (connection_is_internal (account))
     return NULL;
-
-  return priv->connection;
-}
-
-/**
- * tp_account_ensure_connection:
- * @account: a #TpAccount
- * @path: the path to connection object for #TpAccount
- *
- * Set the connection of the account by specifying the connection object path.
- * This function does not return a new ref and it is not guaranteed that the
- * returned #TpConnection object is ready.
- *
- * The use-case for this function is in a HandleChannels callback and you
- * already know the object path for the connection, so you can let @account
- * create its #TpConnection and return it for use.
- *
- * Returns: (transfer none): the connection of the account, or %NULL if either
- *  the object path @path is invalid or it is the null-value "/"
- *
- * Since: 0.9.0
- * Deprecated: New code should use tp_client_factory_ensure_connection()
- *  instead.
- **/
-TpConnection *
-tp_account_ensure_connection (TpAccount *account,
-    const gchar *path)
-{
-  TpAccountPrivate *priv;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
-
-  priv = account->priv;
-
-  /* double-check that the object path is valid */
-  if (!tp_dbus_check_valid_object_path (path, NULL))
-    return NULL;
-
-  /* Should be a full object path, not the special "/" value */
-  if (!tp_strdiff (path, "/"))
-    return NULL;
-
-  _tp_account_set_connection (account, path);
 
   return priv->connection;
 }
@@ -3492,35 +3452,8 @@ set_or_free (gchar **target,
     g_free (source);
 }
 
-/**
- * tp_account_parse_object_path:
- * @object_path: a Telepathy Account's object path
- * @cm: (out) (transfer full): location at which to store the account's
- *  connection manager's name
- * @protocol: (out) (transfer full): location at which to store the account's
- *  protocol
- * @account_id: (out) (transfer full): location at which to store the account's
- *  unique identifier
- * @error: location at which to return an error
- *
- * Validates and parses a Telepathy Account's object path, extracting the
- * connection manager's name, the protocol, and the account's unique identifier
- * from the path. This includes replacing underscores with hyphens in the
- * protocol name, as defined in the Account specification.
- *
- * Any of the out parameters may be %NULL if not needed. If %TRUE is returned,
- * the caller is responsible for freeing the strings stored in any non-%NULL
- * out parameters, using g_free().
- *
- * Returns: %TRUE if @object_path was successfully parsed; %FALSE and sets
- *          @error otherwise.
- *
- * Since: 0.9.0
- * Deprecated: Use tp_account_get_protocol() and
- *  tp_account_get_connection_manager() instead.
- */
-gboolean
-tp_account_parse_object_path (const gchar *object_path,
+static gboolean
+_tp_account_parse_object_path (const gchar *object_path,
     gchar **cm,
     gchar **protocol,
     gchar **account_id,

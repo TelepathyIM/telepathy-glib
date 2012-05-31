@@ -28,12 +28,23 @@
 static void
 test_parse_failure (gconstpointer test_data)
 {
+  const gchar *object_path = test_data;
+  TpClientFactory *factory;
+  TpAccount *account;
   GError *error = NULL;
 
-  g_assert (!tp_account_parse_object_path (test_data, NULL, NULL, NULL,
-      &error));
+  if (!g_variant_is_object_path (object_path))
+    return;
+
+  factory = tp_client_factory_new (NULL);
+  account = tp_client_factory_ensure_account (factory, object_path, NULL,
+      &error);
+
+  g_assert (account == NULL);
   g_assert (error != NULL);
+
   g_error_free (error);
+  g_object_unref (factory);
 }
 
 typedef struct {
@@ -63,20 +74,20 @@ static void
 test_parse_success (gconstpointer test_data)
 {
   TestParseData *t = (TestParseData *) test_data;
-  gchar *cm, *protocol, *account_id;
+  TpClientFactory *factory;
+  TpAccount *account;
   GError *error = NULL;
 
-  g_assert (tp_account_parse_object_path (t->path, &cm, &protocol, &account_id,
-      &error));
+  factory = tp_client_factory_new (NULL);
+  account = tp_client_factory_ensure_account (factory, t->path, NULL, &error);
+
+  g_assert (account != NULL);
   g_assert_no_error (error);
-  g_assert_cmpstr (cm, ==, t->cm);
-  g_assert_cmpstr (protocol, ==, t->protocol);
-  g_assert_cmpstr (account_id, ==, t->account_id);
+  g_assert_cmpstr (tp_account_get_connection_manager (account), ==, t->cm);
+  g_assert_cmpstr (tp_account_get_protocol (account), ==, t->protocol);
 
-  g_free (cm);
-  g_free (protocol);
-  g_free (account_id);
-
+  g_object_unref (account);
+  g_object_unref (factory);
   g_slice_free (TestParseData, t);
 }
 
@@ -734,13 +745,6 @@ test_connection (Test *test,
   g_assert_cmpstr (tp_account_get_detailed_error (test->account, NULL), ==,
       TP_ERROR_STR_CANCELLED);
 
-  /* ensure the same connection - no change notification */
-
-  test_set_up_account_notify (test);
-  conn = tp_account_ensure_connection (test->account, conn1_path);
-  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, conn1_path);
-  g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 0);
-
   /* a no-op "change" */
 
   test_set_up_account_notify (test);
@@ -857,15 +861,6 @@ test_connection (Test *test,
   g_assert (found);
   g_assert_cmpint (u, ==, 15);
   g_variant_unref (details_v);
-
-  /* staple on a Connection (this is intended for use in e.g. observers,
-   * if they're told about a Connection that the Account hasn't told them
-   * about yet) */
-
-  test_set_up_account_notify (test);
-  conn = tp_account_ensure_connection (test->account, conn1_path);
-  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, conn1_path);
-  g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
 
   g_hash_table_unref (change);
 }
