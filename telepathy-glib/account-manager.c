@@ -98,7 +98,6 @@
 struct _TpAccountManagerPrivate {
   /* (owned) object path -> (reffed) TpAccount */
   GHashTable *accounts;
-  GHashTable *legacy_accounts;
   gboolean dispose_run;
 
   /* most available presence */
@@ -219,8 +218,6 @@ tp_account_manager_init (TpAccountManager *self)
 
   priv->accounts = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, (GDestroyNotify) g_object_unref);
-  self->priv->legacy_accounts = g_hash_table_new_full (
-      g_str_hash, g_str_equal, g_free, g_object_unref);
 }
 
 static void
@@ -552,16 +549,11 @@ _tp_account_manager_finalize (GObject *object)
   G_OBJECT_CLASS (tp_account_manager_parent_class)->finalize (object);
 }
 
-static void legacy_account_invalidated_cb (TpProxy *account, guint domain,
-    gint code, gchar *message, gpointer user_data);
-
 static void
 _tp_account_manager_dispose (GObject *object)
 {
   TpAccountManager *self = TP_ACCOUNT_MANAGER (object);
   TpAccountManagerPrivate *priv = self->priv;
-  GHashTableIter iter;
-  gpointer value;
 
   if (priv->dispose_run)
     return;
@@ -569,14 +561,6 @@ _tp_account_manager_dispose (GObject *object)
   priv->dispose_run = TRUE;
 
   g_hash_table_unref (priv->accounts);
-
-  g_hash_table_iter_init (&iter, self->priv->legacy_accounts);
-  while (g_hash_table_iter_next (&iter, NULL, &value))
-    {
-      g_signal_handlers_disconnect_by_func (value,
-          legacy_account_invalidated_cb, self);
-    }
-  tp_clear_pointer (&priv->legacy_accounts, g_hash_table_unref);
 
   tp_dbus_daemon_cancel_name_owner_watch (tp_proxy_get_dbus_daemon (self),
       TP_ACCOUNT_MANAGER_BUS_NAME, _tp_account_manager_name_owner_cb, self);
@@ -969,19 +953,6 @@ _tp_account_manager_account_invalidated_cb (TpProxy *proxy,
 
   g_signal_emit (manager, signals[ACCOUNT_REMOVED], 0, account);
   g_object_unref (account);
-}
-
-static void
-legacy_account_invalidated_cb (TpProxy *account,
-    guint domain,
-    gint code,
-    gchar *message,
-    gpointer user_data)
-{
-  TpAccountManager *self = user_data;
-
-  g_hash_table_remove (self->priv->legacy_accounts,
-      tp_proxy_get_object_path (account));
 }
 
 static void
