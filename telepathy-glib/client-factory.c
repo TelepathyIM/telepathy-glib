@@ -393,7 +393,7 @@ tp_client_factory_class_init (TpClientFactoryClass *klass)
 
 /**
  * tp_client_factory_new:
- * @dbus: a #TpDBusDaemon, or %NULL
+ * @dbus: (allow-none): a #TpDBusDaemon, or %NULL
  *
  * Creates a new #TpClientFactory instance. If @dbus is %NULL then
  * tp_dbus_daemon_dup() will be used.
