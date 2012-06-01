@@ -419,6 +419,7 @@ _tp_connection_prepare_contact_list_async (TpProxy *proxy,
   if (self->priv->contact_list_state == TP_CONTACT_LIST_STATE_SUCCESS)
     {
       prepare_roster (self, result);
+      g_object_unref (result);
       return;
     }
 
