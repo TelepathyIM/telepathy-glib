@@ -1027,19 +1027,6 @@ tp_connection_invalidated (TpConnection *self)
       tp_proxy_pending_call_cancel (self->priv->introspection_call);
       self->priv->introspection_call = NULL;
     }
-
-  /* Drop the ref we have on all roster contacts, this is to break the refcycle
-   * we have between TpConnection and TpContact, otherwise self would never
-   * run dispose.
-   * Note that invalidated is also called from dispose, so self->priv->roster
-   * could already be NULL.
-   *
-   * FIXME: When we decide to break tp-glib API/guarantees, we should stop
-   * TpContact taking a strong ref on its TpConnection and force user to keep
-   * a ref on the TpConnection to use its TpContact, this would avoid the
-   * refcycle completely. */
-  if (self->priv->roster != NULL)
-    g_hash_table_remove_all (self->priv->roster);
 }
 
 static void
@@ -1156,10 +1143,7 @@ tp_connection_constructed (GObject *object)
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CONNECTION, _tp_connection_got_properties, NULL, NULL, NULL);
 
-  /* Give a chance to TpAccount to know about invalidated connection before we
-   * unref all roster contacts. This is to let applications properly remove all
-   * contacts at once instead of getting weak notify on each. */
-  g_signal_connect_after (self, "invalidated",
+  g_signal_connect (self, "invalidated",
       G_CALLBACK (tp_connection_invalidated), NULL);
 }
 

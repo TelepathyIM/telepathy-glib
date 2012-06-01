@@ -356,7 +356,7 @@ typedef enum {
 
 struct _TpContactPrivate {
     /* basics */
-    TpConnection *connection;
+    TpConnection *connection; /* Weakref */
     TpHandle handle;
     gchar *identifier;
     ContactFeatureFlags has_features;
@@ -992,11 +992,13 @@ tp_contact_set_contact_groups_finish (TpContact *self,
 void
 _tp_contact_connection_disposed (TpContact *contact)
 {
-  /* The connection has gone away, so we no longer have a meaningful handle,
-   * and will never have one again. */
-  g_assert (contact->priv->handle != 0);
-  contact->priv->handle = 0;
-  g_object_notify ((GObject *) contact, "handle");
+  /* This is called from TpConnection::dispose. It is necessary to set
+   * priv->connection to NULL sooner than a weak-notify would do, to prevent
+   * TpContact:dispose from calling _tp_connection_remove_contact() when
+   * TpConnection will unref its roster contacts. */
+  g_assert (contact->priv->connection != NULL);
+  contact->priv->connection = NULL;
+  g_object_notify ((GObject *) contact, "connection");
 }
 
 static void
@@ -1004,17 +1006,13 @@ tp_contact_dispose (GObject *object)
 {
   TpContact *self = TP_CONTACT (object);
 
-  if (self->priv->handle != 0)
+  if (self->priv->connection != NULL)
     {
-      g_assert (self->priv->connection != NULL);
-
       _tp_connection_remove_contact (self->priv->connection,
           self->priv->handle, self);
-
-      self->priv->handle = 0;
+      self->priv->connection = NULL;
     }
 
-  tp_clear_object (&self->priv->connection);
   tp_clear_pointer (&self->priv->location, g_hash_table_unref);
   tp_clear_object (&self->priv->capabilities);
   tp_clear_object (&self->priv->avatar_file);
@@ -1150,7 +1148,7 @@ tp_contact_set_property (GObject *object,
     {
     case PROP_CONNECTION:
       g_assert (self->priv->connection == NULL); /* construct only */
-      self->priv->connection = g_value_dup_object (value);
+      self->priv->connection = g_value_get_object (value);
       break;
     case PROP_HANDLE:
       g_assert (self->priv->handle == 0); /* construct only */
