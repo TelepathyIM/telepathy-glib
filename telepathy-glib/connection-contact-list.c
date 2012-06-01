@@ -226,7 +226,6 @@ got_contact_list_attributes_cb (TpConnection *self,
     GObject *weak_object)
 {
   GSimpleAsyncResult *result = (GSimpleAsyncResult *) weak_object;
-  /* may be NULL if error != NULL, when calling directly */
   GArray *features = user_data;
   GHashTableIter iter;
   gpointer key, value;
@@ -300,19 +299,6 @@ prepare_roster (TpConnection *self,
 
   DEBUG ("CM has the roster for connection %s, fetch it now.",
       tp_proxy_get_object_path (self));
-
-  /* Pre-empt _tp_contacts_bind_to_signals, which assumes that Contacts
-   * is present and works correctly */
-  if (!tp_proxy_has_interface_by_id (self,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
-    {
-      GError error = { TP_DBUS_ERRORS, TP_DBUS_ERROR_NO_INTERFACE,
-          "Obsolete CM does not have the Contacts interface" };
-
-      got_contact_list_attributes_cb (self, NULL, &error, NULL,
-          (GObject *) result);
-      return;
-    }
 
   tp_cli_connection_interface_contact_list_connect_to_contacts_changed_with_id (
       self, contacts_changed_cb, NULL, NULL, NULL, NULL);
