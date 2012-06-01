@@ -50,6 +50,7 @@ typedef struct {
     GMainLoop *loop;
     GError *error /* initialized to 0 */;
     GPtrArray *contacts;
+    gint waiting;
 } Result;
 
 typedef struct {
@@ -66,7 +67,9 @@ finish (gpointer r)
 {
   Result *result = r;
 
-  g_main_loop_quit (result->loop);
+  result->waiting--;
+  if (result->waiting <= 0)
+    g_main_loop_quit (result->loop);
 }
 
 static void
@@ -1996,6 +1999,73 @@ test_self_contact (Fixture *f,
 }
 
 static void
+request_subscription_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpContact *contact = (TpContact *) source;
+  Result *r = user_data;
+
+  tp_contact_request_subscription_finish (contact, result, &r->error);
+
+  finish (r);
+}
+
+static void
+test_contact_refcycle (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  const GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONTACT_LIST, 0 };
+  TpContact *contact1;
+  TpContact *contact2;
+  TpHandle handle;
+
+  tp_tests_proxy_run_until_prepared (f->client_conn, conn_features);
+
+  contact1 = ensure_contact (f, "contact1", &handle);
+  contact2 = ensure_contact (f, "contact2", &handle);
+
+  /* Add both contacts to roster */
+  g_signal_connect_swapped (f->client_conn, "contact-list-changed",
+      G_CALLBACK (finish), &f->result);
+
+  tp_contact_request_subscription_async (contact1, "",
+      request_subscription_cb, &f->result);
+  tp_contact_request_subscription_async (contact2, "",
+      request_subscription_cb, &f->result);
+
+  f->result.waiting = 4;
+  g_main_loop_run (f->result.loop);
+  g_assert_no_error (f->result.error);
+
+  /* At this point we own a ref to contact1, contact2 and f->client_conn.
+   * The connection owns a ref to contact1 and contact2.
+   * But contacts owns only a weak-ref to their connection.
+   * Let's verify that's true. */
+  g_object_add_weak_pointer ((GObject *) f->client_conn,
+      (gpointer *) &f->client_conn);
+  g_object_add_weak_pointer ((GObject *) contact1,
+      (gpointer *) &contact1);
+  g_object_add_weak_pointer ((GObject *) contact2,
+      (gpointer *) &contact2);
+
+  /* Connection maintains contact1 alive */
+  g_object_unref (contact1);
+  g_assert (contact1 != NULL);
+
+  /* Killing the connection kills contact1 but not contact2 */
+  g_object_unref (f->client_conn);
+  g_assert (f->client_conn == NULL);
+  g_assert (contact1 == NULL);
+  g_assert (contact2 != NULL);
+  g_assert (tp_contact_get_connection (contact2) == NULL);
+
+  /* Nobody else owns a ref to contact2 now */
+  g_object_unref (contact2);
+  g_assert (contact2 == NULL);
+}
+
+static void
 setup_internal (Fixture *f,
     gboolean connect,
     gconstpointer user_data)
@@ -2109,6 +2179,8 @@ main (int argc,
 
   g_test_add ("/contacts/self-contact", Fixture, NULL,
       setup_no_connect, test_self_contact, teardown);
+
+  ADD (contact_refcycle);
 
   ret = g_test_run ();
 
