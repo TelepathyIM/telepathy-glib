@@ -403,7 +403,8 @@ OUT:
   g_simple_async_result_complete_in_idle (result);
 }
 
-void _tp_connection_prepare_contact_list_async (TpProxy *proxy,
+void
+_tp_connection_prepare_contact_list_async (TpProxy *proxy,
     const TpProxyFeature *feature,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -429,7 +430,8 @@ void _tp_connection_prepare_contact_list_async (TpProxy *proxy,
   g_object_unref (result);
 }
 
-void _tp_connection_prepare_contact_list_props_async (TpProxy *proxy,
+void
+_tp_connection_prepare_contact_list_props_async (TpProxy *proxy,
     const TpProxyFeature *feature,
     GAsyncReadyCallback callback,
     gpointer user_data)
