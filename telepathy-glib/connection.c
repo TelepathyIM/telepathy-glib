@@ -46,6 +46,7 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
+#include "telepathy-glib/contact-internal.h"
 #include "telepathy-glib/util-internal.h"
 
 #include "_gen/tp-cli-connection-body.h"
@@ -1541,11 +1542,11 @@ tp_connection_finalize (GObject *object)
 }
 
 static void
-contact_notify_invalidated (gpointer k G_GNUC_UNUSED,
-                            gpointer v,
-                            gpointer d G_GNUC_UNUSED)
+contact_notify_disposed (gpointer k G_GNUC_UNUSED,
+    gpointer v,
+    gpointer d G_GNUC_UNUSED)
 {
-  _tp_contact_connection_invalidated (v);
+  _tp_contact_connection_disposed (v);
 }
 
 
@@ -1572,7 +1573,7 @@ tp_connection_dispose (GObject *object)
 
   if (self->priv->contacts != NULL)
     {
-      g_hash_table_foreach (self->priv->contacts, contact_notify_invalidated,
+      g_hash_table_foreach (self->priv->contacts, contact_notify_disposed,
           NULL);
       tp_clear_pointer (&self->priv->contacts, g_hash_table_unref);
     }
