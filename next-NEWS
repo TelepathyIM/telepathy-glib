@@ -48,3 +48,9 @@ API/Behaviour changes
    * "group-contacts-changed" -> "group-members-changed".
 
  - "contact-chat-state-changed" signal has been renamed to "chat-state-changed".
+
+ - TpContact does not ref its TpConnection anymore, to fix refcycle caused by
+   TpConnection reffing its roster contacts, or TpChannel reffing its members.
+   Apps should now keep their own reference to the TpConnection in order to use
+   its TpContact. Note that keeping a reference to the TpAccountManager or
+   TpAccount is good as well.
