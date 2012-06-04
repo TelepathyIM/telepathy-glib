@@ -215,6 +215,8 @@ tp_base_channel_register
 tp_base_channel_close
 tp_base_channel_destroyed
 tp_base_channel_reopened
+tp_base_channel_disappear
+tp_base_channel_reopened_with_requested
 tp_base_channel_get_object_path
 tp_base_channel_get_connection
 tp_base_channel_get_self_handle
@@ -223,6 +225,7 @@ tp_base_channel_get_initiator
 tp_base_channel_is_requested
 tp_base_channel_is_registered
 tp_base_channel_is_destroyed
+tp_base_channel_is_respawning
 <SUBSECTION Standard>
 TP_BASE_CHANNEL
 TP_IS_BASE_CHANNEL

@@ -75,6 +75,11 @@ void tp_base_channel_register (TpBaseChannel *chan);
 void tp_base_channel_close (TpBaseChannel *chan);
 void tp_base_channel_destroyed (TpBaseChannel *chan);
 void tp_base_channel_reopened (TpBaseChannel *chan, TpHandle initiator);
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_base_channel_disappear (TpBaseChannel *chan);
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_base_channel_reopened_with_requested (TpBaseChannel *chan,
+    gboolean requested, TpHandle initiator);
 
 const gchar *tp_base_channel_get_object_path (TpBaseChannel *chan);
 TpBaseConnection *tp_base_channel_get_connection (TpBaseChannel *chan);
@@ -85,6 +90,8 @@ TpHandle tp_base_channel_get_initiator (TpBaseChannel *chan);
 gboolean tp_base_channel_is_requested (TpBaseChannel *chan);
 gboolean tp_base_channel_is_registered (TpBaseChannel *chan);
 gboolean tp_base_channel_is_destroyed (TpBaseChannel *chan);
+_TP_AVAILABLE_IN_UNRELEASED
+gboolean tp_base_channel_is_respawning (TpBaseChannel *chan);
 
 GType tp_base_channel_get_type (void);
 
