@@ -44,6 +44,8 @@ void _tp_contact_set_subscription_states (TpContact *self,
 void _tp_contact_set_is_blocked (TpContact *self,
     gboolean is_blocked);
 
+void _tp_contact_connection_disposed (TpContact *contact);
+
 G_END_DECLS
 
 #endif

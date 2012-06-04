@@ -990,7 +990,7 @@ tp_contact_set_contact_groups_finish (TpContact *self,
 }
 
 void
-_tp_contact_connection_invalidated (TpContact *contact)
+_tp_contact_connection_disposed (TpContact *contact)
 {
   /* The connection has gone away, so we no longer have a meaningful handle,
    * and will never have one again. */
@@ -998,7 +998,6 @@ _tp_contact_connection_invalidated (TpContact *contact)
   contact->priv->handle = 0;
   g_object_notify ((GObject *) contact, "handle");
 }
-
 
 static void
 tp_contact_dispose (GObject *object)
