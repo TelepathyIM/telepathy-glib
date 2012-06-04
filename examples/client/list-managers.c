@@ -19,36 +19,33 @@ typedef struct {
 } ExampleData;
 
 static void
-got_connection_managers (TpConnectionManager * const *cms,
-                         gsize n_cms,
-                         const GError *error,
-                         gpointer user_data,
-                         GObject *unused)
+got_connection_managers (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
 {
   ExampleData *data = user_data;
+  GList *cms;
+  GError *error = NULL;
 
+  cms = tp_list_connection_managers_finish (result, &error);
   if (error != NULL)
     {
       g_warning ("%s", error->message);
+      g_clear_error (&error);
       data->exit_code = 1;
     }
   else
     {
-      TpConnectionManager * const *iter = cms;
+      g_message ("Found %u connection managers:", g_list_length (cms));
 
-      g_message ("Found %" G_GSIZE_FORMAT " connection managers:", n_cms);
-
-      for (iter = cms; *iter != NULL; iter++)
+      while (cms != NULL)
         {
-          gchar *name;
+          TpConnectionManager *cm = cms->data;
 
-          g_object_get (*iter,
-              "connection-manager", &name,
-              NULL);
+          g_message ("- %s", tp_connection_manager_get_name (cm));
 
-          g_message ("- %s", name);
-
-          g_free (name);
+          g_object_unref (cm);
+          cms = g_list_delete_link (cms, cms);
         }
     }
 
@@ -76,8 +73,8 @@ main (int argc,
       goto out;
     }
 
-  tp_list_connection_managers (bus_daemon, got_connection_managers, &data,
-      NULL, NULL);
+  tp_list_connection_managers_async (bus_daemon,
+      got_connection_managers, &data);
 
   g_main_loop_run (data.mainloop);
 
