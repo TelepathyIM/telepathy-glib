@@ -2068,7 +2068,7 @@ tp_base_connection_get_status (TpBaseConnection *self)
 }
 
 /**
- * tp_base_connection_is_destroyed():
+ * tp_base_connection_is_destroyed:
  * @self: the connection
  *
  * Return whether this connection has already emitted the D-Bus signal
@@ -2094,7 +2094,7 @@ tp_base_connection_is_destroyed (TpBaseConnection *self)
 }
 
 /**
- * tp_base_connection_check_connected():
+ * tp_base_connection_check_connected:
  * @self: the connection
  * @error: used to raise %TP_ERROR_DISCONNECTED if %FALSE is returned
  *
