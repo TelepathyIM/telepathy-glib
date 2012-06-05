@@ -196,12 +196,12 @@ struct _TpConnectionManagerPrivate {
     unsigned disposed:1;
 
     /* dup'd name => referenced TpProtocol */
-    GHashTable *protocol_objects;
+    GHashTable *protocols;
 
     /* dup'd name => referenced TpProtocol
      *
      * If we're waiting for a GetParameters, protocols we found so far for
-     * the introspection that is in progress (will replace protocol_objects
+     * the introspection that is in progress (will replace protocols
      * when finished). Otherwise NULL */
     GHashTable *found_protocols;
 
@@ -444,10 +444,10 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
     }
 
 
-  /* swap found_protocols and protocol_objects, so we'll free the old
-   * protocol_objects as part of end_introspection */
-  tmp = self->priv->protocol_objects;
-  self->priv->protocol_objects = self->priv->found_protocols;
+  /* swap found_protocols and protocols, so we'll free the old
+   * protocols as part of end_introspection */
+  tmp = self->priv->protocols;
+  self->priv->protocols = self->priv->found_protocols;
   self->priv->found_protocols = tmp;
 
   old = self->info_source;
@@ -633,7 +633,7 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
 
   self->priv->manager_file_read_idle_id = 0;
 
-  if (self->priv->protocol_objects == NULL)
+  if (self->priv->protocols == NULL)
     {
       if (self->priv->manager_file != NULL &&
           self->priv->manager_file[0] != '\0')
@@ -660,7 +660,7 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
                   (const gchar * const *) interfaces);
               g_strfreev (interfaces);
 
-              self->priv->protocol_objects = protocols;
+              self->priv->protocols = protocols;
 
               DEBUG ("Got info from file");
               /* previously it must have been NONE */
@@ -787,10 +787,10 @@ tp_connection_manager_dispose (GObject *object)
       as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb,
       object);
 
-  if (self->priv->protocol_objects != NULL)
+  if (self->priv->protocols != NULL)
     {
-      g_hash_table_unref (self->priv->protocol_objects);
-      self->priv->protocol_objects = NULL;
+      g_hash_table_unref (self->priv->protocols);
+      self->priv->protocols = NULL;
     }
 
   if (self->priv->found_protocols != NULL)
@@ -1689,12 +1689,12 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
   if (self->info_source == TP_CM_INFO_SOURCE_NONE)
     return NULL;
 
-  g_assert (self->priv->protocol_objects != NULL);
+  g_assert (self->priv->protocols != NULL);
 
   ret = g_ptr_array_sized_new (
-      g_hash_table_size (self->priv->protocol_objects));
+      g_hash_table_size (self->priv->protocols));
 
-  g_hash_table_iter_init (&iter, self->priv->protocol_objects);
+  g_hash_table_iter_init (&iter, self->priv->protocols);
   while (g_hash_table_iter_next (&iter, &key, NULL))
     g_ptr_array_add (ret, g_strdup (key));
 
@@ -1729,10 +1729,10 @@ tp_connection_manager_get_protocol (TpConnectionManager *self,
   g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), NULL);
   g_return_val_if_fail (protocol != NULL, NULL);
 
-  if (self->priv->protocol_objects == NULL)
+  if (self->priv->protocols == NULL)
     return NULL;
 
-  return g_hash_table_lookup (self->priv->protocol_objects, protocol);
+  return g_hash_table_lookup (self->priv->protocols, protocol);
 }
 
 /* FIXME: in Telepathy 1.0, rename to get_protocols */
@@ -1763,10 +1763,10 @@ tp_connection_manager_dup_protocols (TpConnectionManager *self)
 
   g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), NULL);
 
-  if (self->priv->protocol_objects == NULL)
+  if (self->priv->protocols == NULL)
     return NULL;
 
-  l = g_hash_table_get_values (self->priv->protocol_objects);
+  l = g_hash_table_get_values (self->priv->protocols);
 
   g_list_foreach (l, (GFunc) g_object_ref, NULL);
   return l;
