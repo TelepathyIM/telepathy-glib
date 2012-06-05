@@ -232,6 +232,29 @@ main (int argc,
       g_boxed_free (TP_ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST, messages);
     }
 
+  g_print ("\n\n==== Disappearing channel ====\n");
+
+    {
+      TpBaseChannel *base = TP_BASE_CHANNEL (service_chan);
+      TpHandle self_handle = tp_base_connection_get_self_handle (
+          service_conn_as_base);
+
+      /* first make the channel disappear and make sure it's off the
+       * bus */
+      tp_base_channel_disappear (base);
+
+      g_assert (!tp_base_channel_is_registered (base));
+
+      /* now reopen it and make sure it's got new requested/initiator
+       * values, as well as being back on the bus. */
+      tp_base_channel_reopened_with_requested (base, TRUE, self_handle);
+
+      g_assert_cmpuint (tp_base_channel_get_initiator (base), ==, self_handle);
+      g_assert (tp_base_channel_is_requested (base));
+
+      g_assert (tp_base_channel_is_registered (base));
+    }
+
   g_print ("\n\n==== Destroying channel ====\n");
 
     {
