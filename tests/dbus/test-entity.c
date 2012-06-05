@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <telepathy-logger/entity.h>

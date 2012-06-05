@@ -8,6 +8,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include "util.h"
 
 #ifdef G_OS_UNIX
