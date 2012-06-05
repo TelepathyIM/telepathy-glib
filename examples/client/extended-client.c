@@ -208,13 +208,12 @@ cm_requested_connection (TpConnectionManager *manager,
 {
   GError *e = NULL;
   TpConnection *conn;
-  TpProxy *proxy = (TpProxy *) manager;
 
   if (die_if (error, "RequestConnection()"))
     return;
 
   /* FIXME: there should be convenience API for this */
-  conn = tp_connection_new (proxy->dbus_daemon,
+  conn = tp_connection_new (tp_proxy_get_dbus_daemon (manager),
       bus_name, object_path, &e);
 
   if (conn == NULL)

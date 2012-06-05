@@ -61,12 +61,12 @@ struct _TpProxy {
     /*<private>*/
     GObject parent;
 
-    TpDBusDaemon *dbus_daemon;
-    DBusGConnection *dbus_connection;
-    gchar *bus_name;
-    gchar *object_path;
+    TpDBusDaemon *_TP_SEAL (dbus_daemon);
+    DBusGConnection *_TP_SEAL (dbus_connection);
+    gchar *_TP_SEAL (bus_name);
+    gchar *_TP_SEAL (object_path);
 
-    GError *invalidated /* initialized to NULL by g_object_new */;
+    GError *_TP_SEAL (invalidated);
 
     TpProxyPrivate *priv;
 };

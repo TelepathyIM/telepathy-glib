@@ -66,7 +66,8 @@ suggest_room_identity (ExampleCSHRoomChannel *self)
   gchar *nick, *id;
   TpHandle ret;
 
-  nick = g_strdup (tp_handle_inspect (contact_repo, connection->self_handle));
+  nick = g_strdup (tp_handle_inspect (contact_repo,
+          tp_base_connection_get_self_handle (connection)));
   g_strdelimit (nick, "@", '\0');
   id = g_strdup_printf ("%s@%s", nick, tp_handle_inspect (room_repo,
         tp_base_channel_get_target_handle (TP_BASE_CHANNEL (self))));
@@ -141,7 +142,7 @@ complete_join (ExampleCSHRoomChannel *self)
       tp_intset_add (removed, mixin->self_handle);
 
       tp_group_mixin_add_handle_owner ((GObject *) self, new_self,
-          conn->self_handle);
+          tp_base_connection_get_self_handle (conn));
       tp_group_mixin_change_self_handle ((GObject *) self, new_self);
 
       details = tp_asv_new (
@@ -215,11 +216,11 @@ join_room (ExampleCSHRoomChannel *self)
   details = tp_asv_new (
       "message", G_TYPE_STRING, "",
       "change-reason", G_TYPE_UINT, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
-      "actor", G_TYPE_UINT, conn->self_handle,
+      "actor", G_TYPE_UINT, tp_base_connection_get_self_handle (conn),
       NULL);
 
   tp_group_mixin_add_handle_owner (object, mixin->self_handle,
-      conn->self_handle);
+      tp_base_connection_get_self_handle (conn));
   tp_group_mixin_change_members (object, NULL, NULL, NULL,
       add_remote_pending, details);
 

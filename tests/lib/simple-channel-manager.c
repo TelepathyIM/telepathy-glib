@@ -64,7 +64,8 @@ tp_tests_simple_channel_manager_request (TpChannelManager *manager,
 
   tokens = g_slist_append (NULL, request_token);
 
-  path = g_strdup_printf ("%s/Channel", self->conn->object_path);
+  path = g_strdup_printf ("%s/Channel",
+      tp_base_connection_get_object_path (self->conn));
 
   channel = tp_tests_object_new_static_class (
       TP_TESTS_TYPE_ECHO_CHANNEL,

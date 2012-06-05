@@ -190,16 +190,19 @@ start_connecting (TpBaseConnection *conn,
   ExampleCSHConnection *self = EXAMPLE_CSH_CONNECTION (conn);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
       TP_HANDLE_TYPE_CONTACT);
+  TpHandle self_handle;
 
   /* In a real connection manager we'd ask the underlying implementation to
    * start connecting, then go to state CONNECTED when finished, but here
    * we can do it immediately. */
 
-  tp_base_connection_set_self_handle (conn,
-      tp_handle_ensure (contact_repo, self->priv->account, NULL, error));
+  self_handle = tp_handle_ensure (contact_repo, self->priv->account,
+      NULL, error);
 
-  if (conn->self_handle == 0)
+  if (self_handle == 0)
     return FALSE;
+
+  tp_base_connection_set_self_handle (conn, self_handle);
 
   tp_base_connection_change_status (conn, TP_CONNECTION_STATUS_CONNECTED,
       TP_CONNECTION_STATUS_REASON_REQUESTED);

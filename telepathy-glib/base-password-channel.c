@@ -160,7 +160,8 @@ tp_base_password_channel_constructed (GObject *obj)
   priv->sasl_error_details = tp_asv_new (NULL, NULL);
 
   priv->authorization_identity = g_strdup (
-      tp_handle_inspect (contact_handles, base_conn->self_handle));
+      tp_handle_inspect (contact_handles,
+        tp_base_connection_get_self_handle (base_conn)));
   priv->default_username = g_strdup (priv->authorization_identity);
   priv->default_realm = g_strdup ("");
 }

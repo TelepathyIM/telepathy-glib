@@ -67,7 +67,7 @@ add_member (GObject *obj,
   TpTestsTextChannelGroup *self = TP_TESTS_TEXT_CHANNEL_GROUP (obj);
   TpIntset *add = tp_intset_new ();
   GHashTable *details = tp_asv_new (
-      "actor", G_TYPE_UINT, self->conn->self_handle,
+      "actor", G_TYPE_UINT, tp_base_connection_get_self_handle (self->conn),
       "change-reason", G_TYPE_UINT, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
       "message", G_TYPE_STRING, message,
       NULL);
@@ -168,7 +168,8 @@ constructor (GType type,
   flags |= TP_CHANNEL_GROUP_FLAG_CAN_ADD;
 
   tp_group_mixin_init (object, G_STRUCT_OFFSET (TpTestsTextChannelGroup, group),
-      contact_repo, self->conn->self_handle);
+      contact_repo,
+      tp_base_connection_get_self_handle (self->conn));
 
   tp_group_mixin_change_flags (object, flags, 0);
 
@@ -263,7 +264,8 @@ tp_tests_text_channel_group_join (TpTestsTextChannelGroup *self)
       NULL);
 
  /* Add ourself as a member */
-  add = tp_intset_new_containing (self->conn->self_handle);
+  add = tp_intset_new_containing (
+      tp_base_connection_get_self_handle (self->conn));
   empty = tp_intset_new ();
 
   tp_group_mixin_change_members ((GObject *) self, add, empty,

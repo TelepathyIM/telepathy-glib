@@ -232,7 +232,7 @@ new_channel (ExampleEcho2ImManager *self,
   GSList *requests = NULL;
 
   object_path = g_strdup_printf ("%s/Echo2Channel%u",
-      self->priv->conn->object_path, handle);
+      tp_base_connection_get_object_path (self->priv->conn), handle);
 
   chan = g_object_new (EXAMPLE_TYPE_ECHO_2_CHANNEL,
       "connection", self->priv->conn,
@@ -320,7 +320,8 @@ example_echo_2_im_manager_request (ExampleEcho2ImManager *self,
 
   if (chan == NULL)
     {
-      new_channel (self, handle, self->priv->conn->self_handle,
+      new_channel (self, handle,
+          tp_base_connection_get_self_handle (self->priv->conn),
           request_token);
     }
   else if (require_new)

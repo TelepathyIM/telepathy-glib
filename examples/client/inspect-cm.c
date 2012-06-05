@@ -46,8 +46,7 @@ ready (GObject *source,
     }
   else
     {
-      gchar **protocols;
-      guint i;
+      GList *protocols;
 
       g_assert (tp_proxy_is_prepared (cm,
             TP_CONNECTION_MANAGER_FEATURE_CORE));
@@ -60,39 +59,31 @@ ready (GObject *source,
           tp_connection_manager_get_info_source (cm) == TP_CM_INFO_SOURCE_LIVE
             ? "D-Bus" : ".manager file");
 
-      protocols = tp_connection_manager_dup_protocol_names (cm);
-
-      for (i = 0; protocols != NULL && protocols[i] != NULL; i++)
+      protocols = tp_connection_manager_dup_protocols (cm);
+      while (protocols)
         {
-          const TpConnectionManagerProtocol *protocol;
-          gchar **params;
-          guint j;
+          TpProtocol *protocol = protocols->data;
+          GList *params;
 
-          g_message ("Protocol: %s", protocols[i]);
-          protocol = tp_connection_manager_get_protocol (cm, protocols[i]);
-          g_assert (protocol != NULL);
-
+          g_message ("Protocol: %s", tp_protocol_get_name (protocol));
           g_message ("\tCan register accounts via Telepathy: %s",
-              tp_connection_manager_protocol_can_register (protocol) ?
-                "yes" : "no");
+              tp_protocol_can_register (protocol) ? "yes" : "no");
 
-          params = tp_connection_manager_protocol_dup_param_names (protocol);
-
-          for (j = 0; params != NULL && params[j] != NULL; j++)
+          params = tp_protocol_dup_params (protocol);
+          while (params)
             {
-              const TpConnectionManagerParam *param;
+              TpConnectionManagerParam *param = params->data;
               GValue value = { 0 };
 
-              g_message ("\tParameter: %s", params[j]);
-              param = tp_connection_manager_protocol_get_param (protocol,
-                  params[j]);
+              g_message ("\tParameter: %s",
+                  tp_connection_manager_param_get_name (param));
               g_message ("\t\tD-Bus signature: %s",
                   tp_connection_manager_param_get_dbus_signature (param));
               g_message ("\t\tIs required: %s",
                   tp_connection_manager_param_is_required (param) ?
                     "yes" : "no");
 
-              if (tp_connection_manager_protocol_can_register (protocol))
+              if (tp_protocol_can_register (protocol))
                 {
                   g_message ("\t\tIs required for registration: %s",
                     tp_connection_manager_param_is_required_for_registration (
@@ -118,12 +109,14 @@ ready (GObject *source,
                 {
                   g_message ("\t\tNo default value");
                 }
+
+              tp_connection_manager_param_free (param);
+              params = g_list_delete_link (params, params);
             }
 
-          g_strfreev (params);
+          g_object_unref (protocol);
+          protocols = g_list_delete_link (protocols, protocols);
         }
-
-      g_strfreev (protocols);
     }
 
   g_main_loop_quit (mainloop);

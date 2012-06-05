@@ -234,7 +234,7 @@ new_channel (TpTestsEchoImManager *self,
   GSList *requests = NULL;
 
   object_path = g_strdup_printf ("%s/EchoChannel%u",
-      self->priv->conn->object_path, handle);
+      tp_base_connection_get_object_path (self->priv->conn), handle);
 
   chan = g_object_new (TP_TESTS_TYPE_ECHO_CHANNEL,
       "connection", self->priv->conn,
@@ -324,7 +324,9 @@ tp_tests_echo_im_manager_request (TpTestsEchoImManager *self,
 
   if (chan == NULL)
     {
-      new_channel (self, handle, self->priv->conn->self_handle, request_token);
+      new_channel (self, handle,
+          tp_base_connection_get_self_handle (self->priv->conn),
+          request_token);
     }
   else if (require_new)
     {

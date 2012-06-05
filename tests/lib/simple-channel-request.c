@@ -214,7 +214,8 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
       props = g_hash_table_new (NULL, NULL);
 
       tp_svc_channel_request_emit_succeeded (self,
-          base_conn->object_path, props, "/chan", props);
+          tp_base_connection_get_object_path (base_conn),
+          props, "/chan", props);
 
       g_hash_table_unref (props);
       return;
@@ -255,7 +256,8 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
       NULL);
 
   tp_cli_client_handler_call_handle_channels (client, -1,
-      self->priv->account_path, base_conn->object_path, channels,
+      self->priv->account_path,
+      tp_base_connection_get_object_path (base_conn), channels,
       satisfied, self->priv->user_action_time, info, handle_channels_cb,
       g_strdup (chan_path), g_free, G_OBJECT (self));
 

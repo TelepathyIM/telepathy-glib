@@ -65,6 +65,7 @@ LDADD = \
 # AM_CPPFLAGS.
 AM_CPPFLAGS = \
     -I${top_srcdir} -I${top_builddir} \
+    -DTP_SEAL_ENABLE \
     $(GLIB_CFLAGS) \
     $(DBUS_CFLAGS) \
     $(NULL)

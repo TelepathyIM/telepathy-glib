@@ -39,6 +39,11 @@ Deprecations:
   a common TpConnection object between TpBaseClient and TpAccount. Now proxy
   uniqueness is guaranteed by TpSimpleClientFactory. (Xavier)
 
+• Struct members of TpProxy, TpConnectionManagerParam, TpConnectionManager and
+  TpBaseConnection have been sealed. In the same spirit than G_SEAL, we
+  introduced _TP_SEAL to force usage of getters and setters. Applications should
+  define TP_SEAL_ENABLE or TP_DISABLE_DEPRECATED to enable that. (Simon)
+
 Enhancements:
 
 • New TpAccountRequest object to help account creation (Jonny)
