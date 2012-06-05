@@ -1704,7 +1704,7 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
 }
 
 /**
- * tp_connection_manager_get_protocol_object:
+ * tp_connection_manager_get_protocol:
  * @self: a connection manager
  * @protocol: the name of a protocol as defined in the Telepathy D-Bus API,
  *            e.g. "jabber" or "msn"
@@ -1723,7 +1723,7 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
  * Since: 0.11.11
  */
 TpProtocol *
-tp_connection_manager_get_protocol_object (TpConnectionManager *self,
+tp_connection_manager_get_protocol (TpConnectionManager *self,
     const gchar *protocol)
 {
   g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), NULL);
@@ -1791,7 +1791,7 @@ gboolean
 tp_connection_manager_has_protocol (TpConnectionManager *self,
                                     const gchar *protocol)
 {
-  return (tp_connection_manager_get_protocol_object (self, protocol) != NULL);
+  return (tp_connection_manager_get_protocol (self, protocol) != NULL);
 }
 
 /**

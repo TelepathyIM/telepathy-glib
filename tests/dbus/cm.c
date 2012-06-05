@@ -179,7 +179,7 @@ test_file_got_info (Test *test,
   g_assert (tp_connection_manager_has_protocol (test->cm, "normal"));
   g_assert (!tp_connection_manager_has_protocol (test->cm, "not-there"));
 
-  protocol = tp_connection_manager_get_protocol_object (test->cm, "normal");
+  protocol = tp_connection_manager_get_protocol (test->cm, "normal");
 
   g_assert_cmpstr (tp_protocol_get_name (protocol), ==, "normal");
   g_assert (tp_protocol_can_register (protocol));
@@ -242,10 +242,10 @@ test_file_got_info (Test *test,
   g_assert (strv[3] == NULL);
   g_strfreev (strv);
 
-  protocol = tp_connection_manager_get_protocol_object (test->cm, "weird");
+  protocol = tp_connection_manager_get_protocol (test->cm, "weird");
 
   g_assert_cmpstr (tp_protocol_get_name (protocol), ==, "weird");
-  g_assert (protocol == tp_connection_manager_get_protocol_object (test->cm,
+  g_assert (protocol == tp_connection_manager_get_protocol (test->cm,
         "weird"));
   g_assert (!tp_protocol_can_register (protocol));
 
@@ -294,7 +294,7 @@ test_complex_file_got_info (Test *test,
   /* FIXME: it's not technically an API guarantee that params
    * come out in this order... */
 
-  protocol = tp_connection_manager_get_protocol_object (test->cm, "foo");
+  protocol = tp_connection_manager_get_protocol (test->cm, "foo");
 
   g_assert_cmpstr (tp_protocol_get_name (protocol), ==, "foo");
 
@@ -346,7 +346,7 @@ test_complex_file_got_info (Test *test,
   param = &tp_protocol_borrow_params (protocol)[6];
   g_assert (param->name == NULL);
 
-  protocol = tp_connection_manager_get_protocol_object (test->cm, "bar");
+  protocol = tp_connection_manager_get_protocol (test->cm, "bar");
   g_assert_cmpstr (tp_protocol_get_name (protocol), ==, "bar");
 
   param = &tp_protocol_borrow_params (protocol)[0];
@@ -400,7 +400,7 @@ test_complex_file_got_info (Test *test,
   param = &tp_protocol_borrow_params (protocol)[6];
   g_assert (param->name == NULL);
 
-  protocol = tp_connection_manager_get_protocol_object (test->cm,
+  protocol = tp_connection_manager_get_protocol (test->cm,
       "somewhat-pathological");
   g_assert_cmpstr (tp_protocol_get_name (protocol), ==,
       "somewhat-pathological");

@@ -54,3 +54,6 @@ API/Behaviour changes
    Apps should now keep their own reference to the TpConnection in order to use
    its TpContact. Note that keeping a reference to the TpAccountManager or
    TpAccount is good as well.
+
+ - tp_connection_manager_get_protocol_object() has been renamed to
+   tp_connection_manager_get_protocol().

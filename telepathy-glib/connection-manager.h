@@ -120,7 +120,7 @@ gchar **tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
   G_GNUC_WARN_UNUSED_RESULT;
 gboolean tp_connection_manager_has_protocol (TpConnectionManager *self,
     const gchar *protocol);
-TpProtocol *tp_connection_manager_get_protocol_object (
+TpProtocol *tp_connection_manager_get_protocol (
     TpConnectionManager *self, const gchar *protocol);
 _TP_AVAILABLE_IN_0_18
 GList *tp_connection_manager_dup_protocols (TpConnectionManager *self)

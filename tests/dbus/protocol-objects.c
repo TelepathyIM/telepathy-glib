@@ -334,7 +334,7 @@ test_protocol_object (Test *test,
       "example_echo_2");
   tp_tests_proxy_run_until_prepared (test->cm, NULL);
   test->protocol = g_object_ref (
-      tp_connection_manager_get_protocol_object (test->cm, "example"));
+      tp_connection_manager_get_protocol (test->cm, "example"));
 
   g_assert_cmpstr (tp_protocol_get_name (test->protocol), ==, "example");
 
@@ -402,7 +402,7 @@ test_protocol_object_from_file (Test *test,
       "test_manager_file");
   tp_tests_proxy_run_until_prepared (test->file_cm, NULL);
   test->file_protocol = g_object_ref (
-      tp_connection_manager_get_protocol_object (test->file_cm, "foo"));
+      tp_connection_manager_get_protocol (test->file_cm, "foo"));
 
   g_assert_cmpstr (tp_protocol_get_name (test->file_protocol), ==, "foo");
 
