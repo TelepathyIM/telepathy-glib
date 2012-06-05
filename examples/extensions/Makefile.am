@@ -10,7 +10,6 @@
 tools_dir = $(top_srcdir)/tools
 
 AM_CPPFLAGS = \
-    -DTP_SEAL_ENABLE \
     -DTP_DISABLE_SINGLE_INCLUDE \
     $(NULL)
 
