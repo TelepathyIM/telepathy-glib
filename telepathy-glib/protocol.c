@@ -137,7 +137,7 @@ tp_protocol_get_feature_quark_core (void)
 struct _TpProtocolPrivate
 {
   gchar *name;
-  TpConnectionManagerParam *params;
+  GPtrArray *params;
   GHashTable *protocol_properties;
   gchar *vcard_field;
   gchar *english_name;
@@ -164,58 +164,45 @@ enum
 };
 
 /* this is NULL-safe for @parameters, and callers rely on this */
-static TpConnectionManagerParam *
+static GPtrArray *
 tp_protocol_params_from_param_specs (const GPtrArray *parameters,
     const gchar *cm_debug_name,
     const gchar *protocol)
 {
-  GArray *output;
+  GPtrArray *output;
   guint i;
 
   DEBUG ("Protocol name: %s", protocol);
 
   if (parameters == NULL)
     {
-      return g_new0 (TpConnectionManagerParam, 1);
+      return g_ptr_array_new ();
     }
 
-  output = g_array_sized_new (TRUE, TRUE,
-      sizeof (TpConnectionManagerParam), parameters->len);
+  output = g_ptr_array_new_full (parameters->len,
+      (GDestroyNotify) tp_connection_manager_param_free);
 
   for (i = 0; i < parameters->len; i++)
     {
-      GValue structure = { 0 };
-      GValue *tmp;
-      /* Points to the zeroed entry just after the end of the array
-       * - but we're about to extend the array to make it valid */
-      TpConnectionManagerParam *param = &g_array_index (output,
-          TpConnectionManagerParam, output->len);
+      GValueArray *va = g_ptr_array_index (parameters, i);
+      TpConnectionManagerParam *param;
+      const gchar *name;
+      const gchar *dbus_signature;
+      GValue *default_value;
 
-      g_value_init (&structure, TP_STRUCT_TYPE_PARAM_SPEC);
-      g_value_set_static_boxed (&structure, g_ptr_array_index (parameters, i));
+      param = g_slice_new0 (TpConnectionManagerParam);
+      tp_value_array_unpack (va, 4,
+          &name,
+          &param->flags,
+          &dbus_signature,
+          &default_value);
 
-      g_array_set_size (output, output->len + 1);
+      param->name = g_strdup (name);
+      param->dbus_signature = g_strdup (dbus_signature);
+      g_value_init (&param->default_value, G_VALUE_TYPE (default_value));
+      g_value_copy (default_value, &param->default_value);
 
-      if (!dbus_g_type_struct_get (&structure,
-            0, &param->name,
-            1, &param->flags,
-            2, &param->dbus_signature,
-            3, &tmp,
-            G_MAXUINT))
-        {
-          DEBUG ("Unparseable parameter #%d for %s, ignoring", i, protocol);
-          /* *shrug* that one didn't work, let's skip it */
-          g_array_set_size (output, output->len - 1);
-          continue;
-        }
-
-      g_value_init (&param->default_value,
-          G_VALUE_TYPE (tmp));
-      g_value_copy (tmp, &param->default_value);
-      g_value_unset (tmp);
-      g_free (tmp);
-
-      param->priv = NULL;
+      g_ptr_array_add (output, param);
 
       DEBUG ("\tParam name: %s", param->name);
       DEBUG ("\tParam flags: 0x%x", param->flags);
@@ -241,7 +228,7 @@ tp_protocol_params_from_param_specs (const GPtrArray *parameters,
 #endif
     }
 
-  return (TpConnectionManagerParam *) g_array_free (output, FALSE);
+  return output;
 }
 
 static void
@@ -331,16 +318,6 @@ tp_protocol_set_property (GObject *object,
     }
 }
 
-void
-_tp_connection_manager_param_free_contents (TpConnectionManagerParam *param)
-{
-  g_free (param->name);
-  g_free (param->dbus_signature);
-
-  if (G_IS_VALUE (&param->default_value))
-    g_value_unset (&param->default_value);
-}
-
 static void
 tp_protocol_dispose (GObject *object)
 {
@@ -373,15 +350,7 @@ tp_protocol_finalize (GObject *object)
   GObjectFinalizeFunc finalize =
     ((GObjectClass *) tp_protocol_parent_class)->finalize;
 
-  if (self->priv->params != NULL)
-    {
-      TpConnectionManagerParam *param;
-
-      for (param = self->priv->params; param->name != NULL; param++)
-        _tp_connection_manager_param_free_contents (param);
-    }
-  g_free (self->priv->params);
-
+  g_ptr_array_unref (self->priv->params);
   g_free (self->priv->name);
   g_free (self->priv->vcard_field);
   g_free (self->priv->english_name);
@@ -910,21 +879,21 @@ const TpConnectionManagerParam *
 tp_protocol_get_param (TpProtocol *self,
     const gchar *param)
 {
-  const TpConnectionManagerParam *ret = NULL;
   guint i;
 
   g_return_val_if_fail (TP_IS_PROTOCOL (self), FALSE);
 
-  for (i = 0; self->priv->params[i].name != NULL; i++)
+  for (i = 0; i < self->priv->params->len; i++)
     {
-      if (!tp_strdiff (param, self->priv->params[i].name))
+      TpConnectionManagerParam *p = g_ptr_array_index (self->priv->params, i);
+
+      if (!tp_strdiff (param, p->name))
         {
-          ret = &self->priv->params[i];
-          break;
+          return p;
         }
     }
 
-  return ret;
+  return NULL;
 }
 
 /* FIXME: in Telepathy 1.0, rename to tp_protocol_get_param */
@@ -990,8 +959,11 @@ tp_protocol_dup_param_names (TpProtocol *self)
 
   ret = g_ptr_array_new ();
 
-  for (i = 0; self->priv->params[i].name != NULL; i++)
-    g_ptr_array_add (ret, g_strdup (self->priv->params[i].name));
+  for (i = 0; i < self->priv->params->len; i++)
+    {
+      TpConnectionManagerParam *p = g_ptr_array_index (self->priv->params, i);
+      g_ptr_array_add (ret, g_strdup (p->name));
+    }
 
   g_ptr_array_add (ret, NULL);
   return (gchar **) g_ptr_array_free (ret, FALSE);
@@ -1005,12 +977,11 @@ tp_protocol_dup_param_names (TpProtocol *self)
  * without additional memory allocations. The returned array is owned by
  * @self, and must not be used after @self has been freed.
  *
- * Returns: (transfer none): an array of #TpConnectionManagerParam structures,
- *  terminated by one whose @name is %NULL
+ * Returns: a #GPtrArray of #TpConnectionManagerParam.
  *
  * Since: 0.17.6
  */
-const TpConnectionManagerParam *
+GPtrArray *
 tp_protocol_borrow_params (TpProtocol *self)
 {
   g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
@@ -1041,10 +1012,10 @@ tp_protocol_dup_params (TpProtocol *self)
 
   g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
 
-  for (i = 0; self->priv->params[i].name != NULL; i++)
+  for (i = 0; i < self->priv->params->len; i++)
     {
-      ret = g_list_prepend (ret,
-          tp_connection_manager_param_copy (&(self->priv->params[i])));
+      TpConnectionManagerParam *p = g_ptr_array_index (self->priv->params, i);
+      ret = g_list_prepend (ret, tp_connection_manager_param_copy (p));
     }
 
   return g_list_reverse (ret);

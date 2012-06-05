@@ -153,17 +153,6 @@ enum
  *
  * Structure representing a connection manager parameter.
  *
- * Since 0.19.1, accessing the fields of this struct is deprecated,
- * and they are no longer documented here.
- * Use the accessors tp_connection_manager_param_get_name(),
- * tp_connection_manager_param_get_dbus_signature(),
- * tp_connection_manager_param_is_required(),
- * tp_connection_manager_param_is_required_for_registration(),
- * tp_connection_manager_param_is_secret(),
- * tp_connection_manager_param_is_dbus_property(),
- * tp_connection_manager_param_get_default(),
- * tp_connection_manager_param_dup_default_variant() instead.
- *
  * Since: 0.7.1
  */
 
@@ -224,23 +213,6 @@ G_DEFINE_TYPE (TpConnectionManager,
     TP_TYPE_PROXY)
 
 
-static void
-_tp_connection_manager_param_copy_contents (
-    const TpConnectionManagerParam *in,
-    TpConnectionManagerParam *out)
-{
-  out->name = g_strdup (in->name);
-  out->dbus_signature = g_strdup (in->dbus_signature);
-  out->flags = in->flags;
-
-  if (G_IS_VALUE (&in->default_value))
-    {
-      g_value_init (&out->default_value, G_VALUE_TYPE (&in->default_value));
-      g_value_copy (&in->default_value, &out->default_value);
-    }
-}
-
-
 /**
  * tp_connection_manager_param_copy:
  * @in: the #TpConnectionManagerParam to copy
@@ -257,11 +229,18 @@ tp_connection_manager_param_copy (const TpConnectionManagerParam *in)
 {
   TpConnectionManagerParam *out = g_slice_new0 (TpConnectionManagerParam);
 
-  _tp_connection_manager_param_copy_contents (in, out);
+  out->name = g_strdup (in->name);
+  out->dbus_signature = g_strdup (in->dbus_signature);
+  out->flags = in->flags;
+
+  if (G_IS_VALUE (&in->default_value))
+    {
+      g_value_init (&out->default_value, G_VALUE_TYPE (&in->default_value));
+      g_value_copy (&in->default_value, &out->default_value);
+    }
 
   return out;
 }
-
 
 /**
  * tp_connection_manager_param_free:
@@ -274,7 +253,11 @@ tp_connection_manager_param_copy (const TpConnectionManagerParam *in)
 void
 tp_connection_manager_param_free (TpConnectionManagerParam *param)
 {
-  _tp_connection_manager_param_free_contents (param);
+  g_free (param->name);
+  g_free (param->dbus_signature);
+
+  if (G_IS_VALUE (&param->default_value))
+    g_value_unset (&param->default_value);
 
   g_slice_free (TpConnectionManagerParam, param);
 }

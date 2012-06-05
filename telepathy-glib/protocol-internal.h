@@ -26,8 +26,13 @@
 
 G_BEGIN_DECLS
 
-void _tp_connection_manager_param_free_contents (
-    TpConnectionManagerParam *param);
+struct _TpConnectionManagerParam
+{
+  gchar *name;
+  gchar *dbus_signature;
+  GValue default_value;
+  guint flags;
+};
 
 GHashTable *_tp_protocol_parse_manager_file (GKeyFile *file,
     const gchar *cm_name,

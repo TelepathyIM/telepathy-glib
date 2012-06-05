@@ -35,16 +35,6 @@ G_BEGIN_DECLS
 
 typedef struct _TpConnectionManagerParam TpConnectionManagerParam;
 
-struct _TpConnectionManagerParam
-{
-  /*<private>*/
-  gchar *_TP_SEAL (name);
-  gchar *_TP_SEAL (dbus_signature);
-  GValue _TP_SEAL (default_value);
-  guint _TP_SEAL (flags);
-  gpointer _TP_SEAL (priv);
-};
-
 typedef struct _TpProtocol TpProtocol;
 typedef struct _TpProtocolClass TpProtocolClass;
 typedef struct _TpProtocolPrivate TpProtocolPrivate;
@@ -102,8 +92,7 @@ GStrv tp_protocol_dup_param_names (TpProtocol *self) G_GNUC_WARN_UNUSED_RESULT;
 _TP_AVAILABLE_IN_0_18
 GList *tp_protocol_dup_params (TpProtocol *self) G_GNUC_WARN_UNUSED_RESULT;
 _TP_AVAILABLE_IN_0_18
-const TpConnectionManagerParam *tp_protocol_borrow_params (TpProtocol *self)
-  G_GNUC_WARN_UNUSED_RESULT;
+GPtrArray *tp_protocol_borrow_params (TpProtocol *self);
 
 const gchar * const *
 /* gtk-doc sucks */
