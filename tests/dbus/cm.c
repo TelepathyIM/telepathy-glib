@@ -97,7 +97,8 @@ on_got_info_expect_none (TpConnectionManager *self,
 
   g_assert (self == test->cm);
   g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_NONE);
-  g_assert_cmpuint (info_source, ==, test->cm->info_source);
+  g_assert_cmpuint (info_source, ==,
+      tp_connection_manager_get_info_source (test->cm));
 
   g_main_loop_quit (test->mainloop);
 }
@@ -122,9 +123,11 @@ test_nothing_got_info (Test *test,
   g_main_loop_run (test->mainloop);
   g_signal_handler_disconnect (test->cm, id);
 
-  g_assert_cmpstr (test->cm->name, ==, "not_actually_there");
-  g_assert_cmpuint (test->cm->running, ==, FALSE);
-  g_assert_cmpuint (test->cm->info_source, ==, TP_CM_INFO_SOURCE_NONE);
+  g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
+      "not_actually_there");
+  g_assert (!tp_connection_manager_is_running (test->cm));
+  g_assert_cmpuint (tp_connection_manager_get_info_source (test->cm), ==,
+      TP_CM_INFO_SOURCE_NONE);
   g_assert (tp_connection_manager_dup_protocols (test->cm) == NULL);
 }
 
@@ -137,7 +140,8 @@ on_got_info_expect_file (TpConnectionManager *self,
 
   g_assert (self == test->cm);
   g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_FILE);
-  g_assert_cmpuint (info_source, ==, test->cm->info_source);
+  g_assert_cmpuint (info_source, ==,
+      tp_connection_manager_get_info_source (test->cm));
 
   g_main_loop_quit (test->mainloop);
 }
@@ -166,9 +170,10 @@ test_file_got_info (Test *test,
   g_main_loop_run (test->mainloop);
   g_signal_handler_disconnect (test->cm, id);
 
-  g_assert_cmpstr (test->cm->name, ==, "spurious");
-  g_assert_cmpuint (test->cm->running, ==, FALSE);
-  g_assert_cmpuint (test->cm->info_source, ==, TP_CM_INFO_SOURCE_FILE);
+  g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==, "spurious");
+  g_assert (!tp_connection_manager_is_running (test->cm));
+  g_assert_cmpuint (tp_connection_manager_get_info_source (test->cm), ==,
+      TP_CM_INFO_SOURCE_FILE);
 
   strv = tp_connection_manager_dup_protocol_names (test->cm);
   g_assert_cmpuint (g_strv_length (strv), ==, 2);
@@ -283,9 +288,11 @@ test_complex_file_got_info (Test *test,
   g_main_loop_run (test->mainloop);
   g_signal_handler_disconnect (test->cm, id);
 
-  g_assert_cmpstr (test->cm->name, ==, "test_manager_file");
-  g_assert_cmpuint (test->cm->running, ==, FALSE);
-  g_assert_cmpuint (test->cm->info_source, ==, TP_CM_INFO_SOURCE_FILE);
+  g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
+      "test_manager_file");
+  g_assert (!tp_connection_manager_is_running (test->cm));
+  g_assert_cmpuint (tp_connection_manager_get_info_source (test->cm), ==,
+      TP_CM_INFO_SOURCE_FILE);
 
   protocols = tp_connection_manager_dup_protocols (test->cm);
   g_assert_cmpuint (g_list_length (protocols), ==, 3);
@@ -613,7 +620,8 @@ on_got_info_expect_live (TpConnectionManager *self,
 
   g_assert (self == test->cm);
   g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_LIVE);
-  g_assert_cmpuint (info_source, ==, test->cm->info_source);
+  g_assert_cmpuint (info_source, ==,
+      tp_connection_manager_get_info_source (test->cm));
 
   g_main_loop_quit (test->mainloop);
 }

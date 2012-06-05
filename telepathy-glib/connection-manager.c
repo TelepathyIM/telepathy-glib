@@ -145,14 +145,6 @@ enum
  * %TP_CONNECTION_MANAGER_FEATURE_CORE is prepared. Use
  * tp_proxy_prepare_async() to wait for this to happen.
  *
- * Since 0.19.1, accessing the fields of this struct is deprecated,
- * and they are no longer documented here.
- * Use the accessors tp_connection_manager_get_name(),
- * tp_connection_manager_is_running(),
- * tp_connection_manager_dup_protocols(),
- * tp_connection_manager_get_info_source()
- * and the #TpConnectionManager:always-introspect property instead.
- *
  * Since: 0.7.1
  */
 
@@ -183,6 +175,12 @@ typedef enum {
 } IntrospectionStep;
 
 struct _TpConnectionManagerPrivate {
+    const gchar *name;
+
+    gboolean running;
+    gboolean always_introspect;
+    TpCMInfoSource info_source;
+
     /* absolute path to .manager file */
     gchar *manager_file;
 
@@ -296,7 +294,7 @@ static void
 tp_connection_manager_ready_or_failed (TpConnectionManager *self,
                                        const GError *error)
 {
-  if (self->info_source > TP_CM_INFO_SOURCE_NONE)
+  if (self->priv->info_source > TP_CM_INFO_SOURCE_NONE)
     {
       /* we have info already, so suppress any error and return the old info */
       error = NULL;
@@ -341,8 +339,8 @@ tp_connection_manager_end_introspection (TpConnectionManager *self,
       self->priv->found_protocols = NULL;
     }
 
-  DEBUG ("End of introspection, info source %u", self->info_source);
-  g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->info_source);
+  DEBUG ("End of introspection, info source %u", self->priv->info_source);
+  g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->priv->info_source);
   tp_connection_manager_ready_or_failed (self, error);
 }
 
@@ -391,7 +389,7 @@ tp_connection_manager_get_all_cb (TpProxy *proxy,
               if (tp_connection_manager_check_valid_protocol_name (name, NULL))
                 {
                   TpProtocol *proto_object = tp_protocol_new (
-                      tp_proxy_get_dbus_daemon (self), self->name, name,
+                      tp_proxy_get_dbus_daemon (self), self->priv->name, name,
                       protocol_properties, NULL);
 
                   /* tp_protocol_new can currently only fail because of
@@ -416,7 +414,7 @@ tp_connection_manager_get_all_cb (TpProxy *proxy,
       DEBUG ("Error getting ConnectionManager properties: %s %d: %s",
           g_quark_to_string (error->domain), error->code, error->message);
 
-      if (!self->running)
+      if (!self->priv->running)
         {
           /* GetAll failed to start it - we assume this is because
            * activation failed. */
@@ -450,8 +448,8 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
   self->priv->protocols = self->priv->found_protocols;
   self->priv->found_protocols = tmp;
 
-  old = self->info_source;
-  self->info_source = TP_CM_INFO_SOURCE_LIVE;
+  old = self->priv->info_source;
+  self->priv->info_source = TP_CM_INFO_SOURCE_LIVE;
 
   if (old != TP_CM_INFO_SOURCE_LIVE)
     g_object_notify ((GObject *) self, "info-source");
@@ -475,8 +473,8 @@ tp_connection_manager_idle_introspect (gpointer data)
 
   /* Start introspecting if we want to and we're not already */
   if (!introspection_in_progress (self) &&
-      (self->always_introspect ||
-       self->info_source == TP_CM_INFO_SOURCE_NONE))
+      (self->priv->always_introspect ||
+       self->priv->info_source == TP_CM_INFO_SOURCE_NONE))
     {
       tp_connection_manager_continue_introspection (self);
     }
@@ -504,7 +502,7 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
       GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_NAME_OWNER_LOST,
           "Connection manager process exited during introspection" };
 
-      self->running = FALSE;
+      self->priv->running = FALSE;
 
       /* cancel pending introspection, if any */
       if (introspection_in_progress (self))
@@ -521,10 +519,10 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
     {
       /* represent an atomic change of ownership as if it was an exit and
        * restart */
-      if (self->running)
+      if (self->priv->running)
         tp_connection_manager_name_owner_changed_cb (bus, name, "", self);
 
-      self->running = TRUE;
+      self->priv->running = TRUE;
       g_signal_emit (self, signals[SIGNAL_ACTIVATED], 0);
 
       if (self->priv->introspect_idle_id == 0)
@@ -646,7 +644,7 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
 
           if (!tp_connection_manager_read_file (
               tp_proxy_get_dbus_daemon (self),
-              self->name, self->priv->manager_file, &protocols, &interfaces,
+              self->priv->name, self->priv->manager_file, &protocols, &interfaces,
               &error))
             {
               DEBUG ("Failed to load %s: %s", self->priv->manager_file,
@@ -664,13 +662,13 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
 
               DEBUG ("Got info from file");
               /* previously it must have been NONE */
-              self->info_source = TP_CM_INFO_SOURCE_FILE;
+              self->priv->info_source = TP_CM_INFO_SOURCE_FILE;
 
               g_object_ref (self);
               g_object_notify ((GObject *) self, "info-source");
 
               g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0,
-                  self->info_source);
+                  self->priv->info_source);
               tp_connection_manager_ready_or_failed (self, NULL);
               g_object_unref (self);
 
@@ -753,13 +751,13 @@ tp_connection_manager_constructor (GType type,
       as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb, self,
       NULL);
 
-  self->name = strrchr (object_path, '/') + 1;
-  g_assert (self->name != NULL);
+  self->priv->name = strrchr (object_path, '/') + 1;
+  g_assert (self->priv->name != NULL);
 
   if (self->priv->manager_file == NULL)
     {
       self->priv->manager_file =
-          tp_connection_manager_find_manager_file (self->name);
+          tp_connection_manager_find_manager_file (self->priv->name);
     }
 
   return (GObject *) self;
@@ -830,11 +828,11 @@ tp_connection_manager_get_property (GObject *object,
   switch (property_id)
     {
     case PROP_CONNECTION_MANAGER:
-      g_value_set_string (value, self->name);
+      g_value_set_string (value, self->priv->name);
       break;
 
     case PROP_INFO_SOURCE:
-      g_value_set_uint (value, self->info_source);
+      g_value_set_uint (value, self->priv->info_source);
       break;
 
     case PROP_MANAGER_FILE:
@@ -842,7 +840,7 @@ tp_connection_manager_get_property (GObject *object,
       break;
 
     case PROP_ALWAYS_INTROSPECT:
-      g_value_set_boolean (value, self->always_introspect);
+      g_value_set_boolean (value, self->priv->always_introspect);
       break;
 
     default:
@@ -876,7 +874,7 @@ tp_connection_manager_set_property (GObject *object,
           if (tmp == NULL)
             {
               self->priv->manager_file =
-                  tp_connection_manager_find_manager_file (self->name);
+                  tp_connection_manager_find_manager_file (self->priv->name);
             }
           else
             {
@@ -896,11 +894,11 @@ tp_connection_manager_set_property (GObject *object,
 
     case PROP_ALWAYS_INTROSPECT:
         {
-          gboolean old = self->always_introspect;
+          gboolean old = self->priv->always_introspect;
 
-          self->always_introspect = g_value_get_boolean (value);
+          self->priv->always_introspect = g_value_get_boolean (value);
 
-          if (self->running && !old && self->always_introspect)
+          if (self->priv->running && !old && self->priv->always_introspect)
             {
               /* It's running, we weren't previously auto-introspecting,
                * but we are now. Try it when idle
@@ -1170,7 +1168,7 @@ tp_connection_manager_activate (TpConnectionManager *self)
 {
   if (self->priv->name_known)
     {
-      if (self->running)
+      if (self->priv->running)
         {
           DEBUG ("already running");
           return FALSE;
@@ -1612,7 +1610,7 @@ const gchar *
 tp_connection_manager_get_name (TpConnectionManager *self)
 {
   g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), NULL);
-  return self->name;
+  return self->priv->name;
 }
 
 /**
@@ -1631,7 +1629,7 @@ gboolean
 tp_connection_manager_is_running (TpConnectionManager *self)
 {
   g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), FALSE);
-  return self->running;
+  return self->priv->running;
 }
 
 /**
@@ -1655,7 +1653,7 @@ tp_connection_manager_get_info_source (TpConnectionManager *self)
 {
   g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self),
       TP_CM_INFO_SOURCE_NONE);
-  return self->info_source;
+  return self->priv->info_source;
 }
 
 /**
@@ -1686,7 +1684,7 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
 
   g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), NULL);
 
-  if (self->info_source == TP_CM_INFO_SOURCE_NONE)
+  if (self->priv->info_source == TP_CM_INFO_SOURCE_NONE)
     return NULL;
 
   g_assert (self->priv->protocols != NULL);

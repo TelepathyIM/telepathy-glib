@@ -73,15 +73,6 @@ struct _TpConnectionManager {
     /*<private>*/
     TpProxy parent;
 
-    const gchar *_TP_SEAL (name);
-
-    /* These are really booleans, but gboolean is signed. Thanks, GLib */
-    unsigned int _TP_SEAL (running):1;
-    unsigned int _TP_SEAL (always_introspect):1;
-    /* TpCMInfoSource, but can't rely on enums being unsigned */
-    unsigned int _TP_SEAL (info_source):2;
-    guint _TP_SEAL (reserved_flags):28;
-
     TpConnectionManagerPrivate *priv;
 };
 
