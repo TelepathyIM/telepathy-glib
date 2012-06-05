@@ -175,21 +175,6 @@ enum
  * Since: 0.7.1
  */
 
-/**
- * TpConnectionManagerProtocol:
- * @name: The name of this connection manager
- * @params: Array of #TpConnectionManagerParam structures, terminated by
- *  a structure whose @name is %NULL
- *
- * Structure representing a protocol supported by a connection manager.
- * Note that the size of this structure may change, so its size must not be
- * relied on.
- *
- * Since: 0.7.1
- *
- * Deprecated: 0.19.1, use #TpProtocol objects instead
- */
-
 typedef enum {
     INTROSPECT_IDLE,
     INTROSPECT_GETTING_PROPERTIES,
@@ -210,19 +195,8 @@ struct _TpConnectionManagerPrivate {
     /* TRUE if dispose() has run already */
     unsigned disposed:1;
 
-    /* dup'd name => referenced TpProtocol, corresponding exactly to
-     * @protocol_structs */
+    /* dup'd name => referenced TpProtocol */
     GHashTable *protocol_objects;
-
-    /* GPtrArray of TpConnectionManagerProtocol *. This is the implementation
-     * for self->protocols. Each item is borrowed from the corresponding
-     * object in protocol_objects.
-     *
-     * NULL if file_info and live_info are both FALSE
-     * Protocols from file, if file_info is TRUE but live_info is FALSE
-     * Protocols from last time introspecting the CM succeeded, if live_info
-     * is TRUE */
-    GPtrArray *protocol_structs;
 
     /* dup'd name => referenced TpProtocol
      *
@@ -307,63 +281,6 @@ tp_connection_manager_param_free (TpConnectionManagerParam *param)
   g_slice_free (TpConnectionManagerParam, param);
 }
 
-
-/**
- * tp_connection_manager_protocol_copy:
- * @in: the #TpConnectionManagerProtocol to copy
- *
- * <!-- Returns: says it all -->
- *
- * Returns: a newly (slice) allocated #TpConnectionManagerProtocol, free with
- *  tp_connection_manager_protocol_free()
- *
- * Since: 0.11.3
- *
- * Deprecated: 0.19.1, use #TpProtocol objects instead
- */
-TpConnectionManagerProtocol *
-tp_connection_manager_protocol_copy (const TpConnectionManagerProtocol *in)
-{
-  TpConnectionManagerProtocol *out = g_slice_new0 (TpConnectionManagerProtocol);
-  TpConnectionManagerParam *param;
-  GArray *params = g_array_new (TRUE, TRUE,
-      sizeof (TpConnectionManagerParam));
-
-  out->name = g_strdup (in->name);
-
-  for (param = in->params; param->name != NULL; param++)
-    {
-      TpConnectionManagerParam copy = { 0, };
-
-      _tp_connection_manager_param_copy_contents (param, &copy);
-      g_array_append_val (params, copy);
-    }
-
-  out->params = (TpConnectionManagerParam *) g_array_free (params, FALSE);
-
-  return out;
-}
-
-
-/**
- * tp_connection_manager_protocol_free:
- * @proto: the #TpConnectionManagerProtocol to free
- *
- * Frees @proto, which was copied with tp_connection_manager_protocol_copy().
- *
- * Since: 0.11.3
- *
- * Deprecated: 0.19.1, use #TpProtocol objects instead
- */
-void
-tp_connection_manager_protocol_free (TpConnectionManagerProtocol *proto)
-{
-  _tp_connection_manager_protocol_free_contents (proto);
-
-  g_slice_free (TpConnectionManagerProtocol, proto);
-}
-
-
 /**
  * TP_TYPE_CONNECTION_MANAGER_PARAM:
  *
@@ -374,22 +291,6 @@ tp_connection_manager_protocol_free (TpConnectionManagerProtocol *proto)
 
 G_DEFINE_BOXED_TYPE (TpConnectionManagerParam, tp_connection_manager_param,
     tp_connection_manager_param_copy, tp_connection_manager_param_free)
-
-/**
- * TP_TYPE_CONNECTION_MANAGER_PROTOCOL:
- *
- * The boxed type of a #TpConnectionManagerProtocol.
- *
- * Since: 0.11.3
- *
- * Deprecated: 0.19.1, use #TpProtocol objects instead
- */
-
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-G_DEFINE_BOXED_TYPE (TpConnectionManagerProtocol,
-    tp_connection_manager_protocol,
-    tp_connection_manager_protocol_copy, tp_connection_manager_protocol_free)
-G_GNUC_END_IGNORE_DEPRECATIONS
 
 static void
 tp_connection_manager_ready_or_failed (TpConnectionManager *self,
@@ -443,33 +344,6 @@ tp_connection_manager_end_introspection (TpConnectionManager *self,
   DEBUG ("End of introspection, info source %u", self->info_source);
   g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->info_source);
   tp_connection_manager_ready_or_failed (self, error);
-}
-
-static void
-tp_connection_manager_update_protocol_structs (TpConnectionManager *self)
-{
-  GHashTableIter iter;
-  gpointer protocol_object;
-
-  g_assert (self->priv->protocol_objects != NULL);
-
-  if (self->priv->protocol_structs != NULL)
-    g_ptr_array_unref (self->priv->protocol_structs);
-
-  self->priv->protocol_structs = g_ptr_array_sized_new (
-      g_hash_table_size (self->priv->protocol_objects) + 1);
-
-  g_hash_table_iter_init (&iter, self->priv->protocol_objects);
-
-  while (g_hash_table_iter_next (&iter, NULL, &protocol_object))
-    {
-      g_ptr_array_add (self->priv->protocol_structs,
-          _tp_protocol_get_struct (protocol_object));
-    }
-
-  g_ptr_array_add (self->priv->protocol_structs, NULL);
-  self->protocols = (const TpConnectionManagerProtocol * const *)
-      self->priv->protocol_structs->pdata;
 }
 
 static void
@@ -575,8 +449,6 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
   tmp = self->priv->protocol_objects;
   self->priv->protocol_objects = self->priv->found_protocols;
   self->priv->found_protocols = tmp;
-
-  tp_connection_manager_update_protocol_structs (self);
 
   old = self->info_source;
   self->info_source = TP_CM_INFO_SOURCE_LIVE;
@@ -789,7 +661,6 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
               g_strfreev (interfaces);
 
               self->priv->protocol_objects = protocols;
-              tp_connection_manager_update_protocol_structs (self);
 
               DEBUG ("Got info from file");
               /* previously it must have been NONE */
@@ -915,12 +786,6 @@ tp_connection_manager_dispose (GObject *object)
   tp_dbus_daemon_cancel_name_owner_watch (as_proxy->dbus_daemon,
       as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb,
       object);
-
-  if (self->priv->protocol_structs != NULL)
-    {
-      g_ptr_array_unref (self->priv->protocol_structs);
-      self->priv->protocol_structs = NULL;
-    }
 
   if (self->priv->protocol_objects != NULL)
     {
@@ -1816,68 +1681,26 @@ gchar **
 tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
 {
   GPtrArray *ret;
-  guint i;
+  GHashTableIter iter;
+  gpointer key;
 
   g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), NULL);
 
   if (self->info_source == TP_CM_INFO_SOURCE_NONE)
     return NULL;
 
-  g_assert (self->priv->protocol_structs != NULL);
+  g_assert (self->priv->protocol_objects != NULL);
 
-  ret = g_ptr_array_sized_new (self->priv->protocol_structs->len);
+  ret = g_ptr_array_sized_new (
+      g_hash_table_size (self->priv->protocol_objects));
 
-  for (i = 0; i < self->priv->protocol_structs->len; i++)
-    {
-      TpConnectionManagerProtocol *proto = g_ptr_array_index (
-          self->priv->protocol_structs, i);
-
-      if (proto != NULL)
-        g_ptr_array_add (ret, g_strdup (proto->name));
-    }
+  g_hash_table_iter_init (&iter, self->priv->protocol_objects);
+  while (g_hash_table_iter_next (&iter, &key, NULL))
+    g_ptr_array_add (ret, g_strdup (key));
 
   g_ptr_array_add (ret, NULL);
 
   return (gchar **) g_ptr_array_free (ret, FALSE);
-}
-
-/**
- * tp_connection_manager_get_protocol:
- * @self: a connection manager
- * @protocol: the name of a protocol as defined in the Telepathy D-Bus API,
- *            e.g. "jabber" or "msn"
- *
- * Returns a structure representing a protocol, or %NULL if this connection
- * manager does not support the specified protocol.
- *
- * Since 0.11.11, you can get a #GObject version with more
- * functionality by calling tp_connection_manager_get_protocol_object().
- *
- * If this function is called before the connection manager information has
- * been obtained, the result is always %NULL. Use
- * tp_proxy_prepare_async() to wait for this.
- *
- * The result is not necessarily valid after the main loop is re-entered.
- * Since 0.11.3, it can be copied with tp_connection_manager_protocol_copy()
- * if a permanently-valid copy is needed.
- *
- * Returns: (transfer none): a structure representing the protocol
- * Since: 0.7.26
- *
- * Deprecated: 0.19.1, use tp_connection_manager_get_protocol_object()
- */
-const TpConnectionManagerProtocol *
-tp_connection_manager_get_protocol (TpConnectionManager *self,
-    const gchar *protocol)
-{
-  TpProtocol *object;
-
-  object = tp_connection_manager_get_protocol_object (self, protocol);
-
-  if (object == NULL)
-    return NULL;
-
-  return _tp_protocol_get_struct (object);
 }
 
 /**
@@ -1969,116 +1792,6 @@ tp_connection_manager_has_protocol (TpConnectionManager *self,
                                     const gchar *protocol)
 {
   return (tp_connection_manager_get_protocol_object (self, protocol) != NULL);
-}
-
-/**
- * tp_connection_manager_protocol_has_param:
- * @protocol: structure representing a supported protocol
- * @param: a parameter name
- *
- * <!-- no more to say -->
- *
- * Returns: %TRUE if @protocol supports the parameter @param.
- * Since: 0.7.26
- *
- * Deprecated: 0.19.1, use #TpProtocol objects instead
- */
-gboolean
-tp_connection_manager_protocol_has_param (
-    const TpConnectionManagerProtocol *protocol,
-    const gchar *param)
-{
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  return (tp_connection_manager_protocol_get_param (protocol, param) != NULL);
-G_GNUC_END_IGNORE_DEPRECATIONS
-}
-
-/**
- * tp_connection_manager_protocol_get_param:
- * @protocol: structure representing a supported protocol
- * @param: a parameter name
- *
- * <!-- no more to say -->
- *
- * Returns: a structure representing the parameter @param, or %NULL if not
- *          supported
- * Since: 0.7.26
- *
- * Deprecated: 0.19.1, use #TpProtocol objects instead
- */
-const TpConnectionManagerParam *
-tp_connection_manager_protocol_get_param (
-    const TpConnectionManagerProtocol *protocol,
-    const gchar *param)
-{
-  const TpConnectionManagerParam *ret = NULL;
-  guint i;
-
-  g_return_val_if_fail (protocol != NULL, NULL);
-
-  for (i = 0; protocol->params[i].name != NULL; i++)
-    {
-      if (!tp_strdiff (param, protocol->params[i].name))
-        {
-          ret = &protocol->params[i];
-          break;
-        }
-    }
-
-  return ret;
-}
-
-/**
- * tp_connection_manager_protocol_can_register:
- * @protocol: structure representing a supported protocol
- *
- * Return whether a new account can be registered on this protocol, by setting
- * the special "register" parameter to %TRUE.
- *
- * Returns: %TRUE if @protocol supports the parameter "register"
- * Since: 0.7.26
- *
- * Deprecated: 0.19.1, use #TpProtocol objects instead
- */
-gboolean
-tp_connection_manager_protocol_can_register (
-    const TpConnectionManagerProtocol *protocol)
-{
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  return tp_connection_manager_protocol_has_param (protocol, "register");
-G_GNUC_END_IGNORE_DEPRECATIONS
-}
-
-/**
- * tp_connection_manager_protocol_dup_param_names:
- * @protocol: a protocol supported by a #TpConnectionManager
- *
- * Returns a list of parameter names supported by this connection manager
- * for this protocol.
- *
- * The result is copied and must be freed by the caller with g_strfreev().
- *
- * Returns: (array zero-terminated=1) (transfer full): a #GStrv of protocol names
- * Since: 0.7.26
- *
- * Deprecated: 0.19.1, use #TpProtocol objects instead
- */
-gchar **
-tp_connection_manager_protocol_dup_param_names (
-    const TpConnectionManagerProtocol *protocol)
-{
-  GPtrArray *ret;
-  guint i;
-
-  g_return_val_if_fail (protocol != NULL, NULL);
-
-  ret = g_ptr_array_new ();
-
-  for (i = 0; protocol->params[i].name != NULL; i++)
-    g_ptr_array_add (ret, g_strdup (protocol->params[i].name));
-
-  g_ptr_array_add (ret, NULL);
-  return (gchar **) g_ptr_array_free (ret, FALSE);
 }
 
 /**

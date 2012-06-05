@@ -28,10 +28,6 @@ G_BEGIN_DECLS
 
 void _tp_connection_manager_param_free_contents (
     TpConnectionManagerParam *param);
-void _tp_connection_manager_protocol_free_contents (
-    TpConnectionManagerProtocol *proto);
-
-TpConnectionManagerProtocol *_tp_protocol_get_struct (TpProtocol *self);
 
 GHashTable *_tp_protocol_parse_manager_file (GKeyFile *file,
     const gchar *cm_name,

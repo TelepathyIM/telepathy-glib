@@ -136,7 +136,8 @@ tp_protocol_get_feature_quark_core (void)
 
 struct _TpProtocolPrivate
 {
-  TpConnectionManagerProtocol protocol_struct;
+  gchar *name;
+  TpConnectionManagerParam *params;
   GHashTable *protocol_properties;
   gchar *vcard_field;
   gchar *english_name;
@@ -254,7 +255,7 @@ tp_protocol_get_property (GObject *object,
   switch (property_id)
     {
     case PROP_PROTOCOL_NAME:
-      g_value_set_string (value, self->priv->protocol_struct.name);
+      g_value_set_string (value, self->priv->name);
       break;
 
     case PROP_PROTOCOL_PROPERTIES:
@@ -310,8 +311,8 @@ tp_protocol_set_property (GObject *object,
   switch (property_id)
     {
     case PROP_PROTOCOL_NAME:
-      g_assert (self->priv->protocol_struct.name == NULL);
-      self->priv->protocol_struct.name = g_value_dup_string (value);
+      g_assert (self->priv->name == NULL);
+      self->priv->name = g_value_dup_string (value);
       break;
 
     case PROP_PROTOCOL_PROPERTIES:
@@ -338,23 +339,6 @@ _tp_connection_manager_param_free_contents (TpConnectionManagerParam *param)
 
   if (G_IS_VALUE (&param->default_value))
     g_value_unset (&param->default_value);
-}
-
-void
-_tp_connection_manager_protocol_free_contents (
-    TpConnectionManagerProtocol *proto)
-{
-  g_free (proto->name);
-
-  if (proto->params != NULL)
-    {
-      TpConnectionManagerParam *param;
-
-      for (param = proto->params; param->name != NULL; param++)
-        _tp_connection_manager_param_free_contents (param);
-    }
-
-  g_free (proto->params);
 }
 
 static void
@@ -389,7 +373,16 @@ tp_protocol_finalize (GObject *object)
   GObjectFinalizeFunc finalize =
     ((GObjectClass *) tp_protocol_parent_class)->finalize;
 
-  _tp_connection_manager_protocol_free_contents (&self->priv->protocol_struct);
+  if (self->priv->params != NULL)
+    {
+      TpConnectionManagerParam *param;
+
+      for (param = self->priv->params; param->name != NULL; param++)
+        _tp_connection_manager_param_free_contents (param);
+    }
+  g_free (self->priv->params);
+
+  g_free (self->priv->name);
   g_free (self->priv->vcard_field);
   g_free (self->priv->english_name);
   g_free (self->priv->icon_name);
@@ -463,7 +456,7 @@ tp_protocol_constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 
-  g_assert (self->priv->protocol_struct.name != NULL);
+  g_assert (self->priv->name != NULL);
 
   if (self->priv->protocol_properties == NULL)
     {
@@ -472,11 +465,11 @@ tp_protocol_constructed (GObject *object)
           g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free);
     }
 
-  self->priv->protocol_struct.params = tp_protocol_params_from_param_specs (
+  self->priv->params = tp_protocol_params_from_param_specs (
         tp_asv_get_boxed (self->priv->protocol_properties,
           TP_PROP_PROTOCOL_PARAMETERS,
           TP_ARRAY_TYPE_PARAM_SPEC_LIST),
-        tp_proxy_get_bus_name (self), self->priv->protocol_struct.name);
+        tp_proxy_get_bus_name (self), self->priv->name);
 
   /* force vCard field to lower case, even if the CM is spec-incompliant */
   s = tp_asv_get_string (self->priv->protocol_properties,
@@ -491,7 +484,7 @@ tp_protocol_constructed (GObject *object)
       TP_PROP_PROTOCOL_ENGLISH_NAME);
 
   if (tp_str_empty (s))
-    self->priv->english_name = title_case (self->priv->protocol_struct.name);
+    self->priv->english_name = title_case (self->priv->name);
   else
     self->priv->english_name = g_strdup (s);
 
@@ -500,7 +493,7 @@ tp_protocol_constructed (GObject *object)
 
   if (tp_str_empty (s))
     self->priv->icon_name = g_strdup_printf ("im-%s",
-        self->priv->protocol_struct.name);
+        self->priv->name);
   else
     self->priv->icon_name = g_strdup (s);
 
@@ -863,11 +856,6 @@ tp_protocol_init_known_interfaces (void)
     }
 }
 
-TpConnectionManagerProtocol *
-_tp_protocol_get_struct (TpProtocol *self)
-{
-  return &self->priv->protocol_struct;
-}
 
 /**
  * tp_protocol_get_name:
@@ -884,7 +872,7 @@ const gchar *
 tp_protocol_get_name (TpProtocol *self)
 {
   g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
-  return self->priv->protocol_struct.name;
+  return self->priv->name;
 }
 
 /**
@@ -918,14 +906,25 @@ tp_protocol_has_param (TpProtocol *self,
  *
  * Since: 0.11.11
  */
-const TpConnectionManagerParam *tp_protocol_get_param (TpProtocol *self,
+const TpConnectionManagerParam *
+tp_protocol_get_param (TpProtocol *self,
     const gchar *param)
 {
+  const TpConnectionManagerParam *ret = NULL;
+  guint i;
+
   g_return_val_if_fail (TP_IS_PROTOCOL (self), FALSE);
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  return tp_connection_manager_protocol_get_param (
-      &self->priv->protocol_struct, param);
-G_GNUC_END_IGNORE_DEPRECATIONS
+
+  for (i = 0; self->priv->params[i].name != NULL; i++)
+    {
+      if (!tp_strdiff (param, self->priv->params[i].name))
+        {
+          ret = &self->priv->params[i];
+          break;
+        }
+    }
+
+  return ret;
 }
 
 /* FIXME: in Telepathy 1.0, rename to tp_protocol_get_param */
@@ -947,11 +946,7 @@ tp_protocol_dup_param (TpProtocol *self,
 {
   g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
 
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  return tp_connection_manager_param_copy (
-      tp_connection_manager_protocol_get_param (
-        &self->priv->protocol_struct, param));
-G_GNUC_END_IGNORE_DEPRECATIONS
+  return tp_connection_manager_param_copy (tp_protocol_get_param (self, param));
 }
 
 /**
@@ -988,11 +983,18 @@ tp_protocol_can_register (TpProtocol *self)
 GStrv
 tp_protocol_dup_param_names (TpProtocol *self)
 {
+  GPtrArray *ret;
+  guint i;
+
   g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  return tp_connection_manager_protocol_dup_param_names (
-      &self->priv->protocol_struct);
-G_GNUC_END_IGNORE_DEPRECATIONS
+
+  ret = g_ptr_array_new ();
+
+  for (i = 0; self->priv->params[i].name != NULL; i++)
+    g_ptr_array_add (ret, g_strdup (self->priv->params[i].name));
+
+  g_ptr_array_add (ret, NULL);
+  return (gchar **) g_ptr_array_free (ret, FALSE);
 }
 
 /**
@@ -1013,7 +1015,7 @@ tp_protocol_borrow_params (TpProtocol *self)
 {
   g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
 
-  return self->priv->protocol_struct.params;
+  return self->priv->params;
 }
 
 /**
@@ -1039,11 +1041,10 @@ tp_protocol_dup_params (TpProtocol *self)
 
   g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
 
-  for (i = 0; self->priv->protocol_struct.params[i].name != NULL; i++)
+  for (i = 0; self->priv->params[i].name != NULL; i++)
     {
       ret = g_list_prepend (ret,
-          tp_connection_manager_param_copy (
-            &(self->priv->protocol_struct.params[i])));
+          tp_connection_manager_param_copy (&(self->priv->params[i])));
     }
 
   return g_list_reverse (ret);

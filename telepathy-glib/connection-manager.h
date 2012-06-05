@@ -41,7 +41,6 @@ typedef struct _TpConnectionManagerPrivate TpConnectionManagerPrivate;
 
 GType tp_connection_manager_get_type (void);
 GType tp_connection_manager_param_get_type (void);
-GType tp_connection_manager_protocol_get_type (void);
 
 /* TYPE MACROS */
 #define TP_TYPE_CONNECTION_MANAGER \
@@ -62,19 +61,6 @@ GType tp_connection_manager_protocol_get_type (void);
 
 #define TP_TYPE_CONNECTION_MANAGER_PARAM \
   (tp_connection_manager_param_get_type ())
-#define TP_TYPE_CONNECTION_MANAGER_PROTOCOL \
-  (tp_connection_manager_protocol_get_type ())
-
-typedef struct _TpConnectionManagerProtocol TpConnectionManagerProtocol;
-struct _TpConnectionManagerProtocol
-{
-  /*<public>*/
-  gchar *name;
-  TpConnectionManagerParam *params;
-
-  /*<private>*/
-  gpointer priv;
-};
 
 typedef enum
 {
@@ -88,7 +74,6 @@ struct _TpConnectionManager {
     TpProxy parent;
 
     const gchar *_TP_SEAL (name);
-    const TpConnectionManagerProtocol * const *_TP_SEAL (protocols);
 
     /* These are really booleans, but gboolean is signed. Thanks, GLib */
     unsigned int _TP_SEAL (running):1;
@@ -141,27 +126,6 @@ _TP_AVAILABLE_IN_0_18
 GList *tp_connection_manager_dup_protocols (TpConnectionManager *self)
   G_GNUC_WARN_UNUSED_RESULT;
 
-#ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_0_20_FOR (tp_connection_manager_get_protocol_object)
-const TpConnectionManagerProtocol *tp_connection_manager_get_protocol (
-    TpConnectionManager *self, const gchar *protocol);
-
-_TP_DEPRECATED_IN_0_20_FOR (tp_protocol_dup_param_names)
-gchar **tp_connection_manager_protocol_dup_param_names (
-    const TpConnectionManagerProtocol *protocol)
-  G_GNUC_WARN_UNUSED_RESULT;
-_TP_DEPRECATED_IN_0_20_FOR (tp_protocol_has_param)
-gboolean tp_connection_manager_protocol_has_param (
-    const TpConnectionManagerProtocol *protocol,
-    const gchar *param);
-_TP_DEPRECATED_IN_0_20_FOR (tp_protocol_dup_param)
-const TpConnectionManagerParam *tp_connection_manager_protocol_get_param (
-    const TpConnectionManagerProtocol *protocol, const gchar *param);
-_TP_DEPRECATED_IN_0_20_FOR (tp_protocol_can_register)
-gboolean tp_connection_manager_protocol_can_register (
-    const TpConnectionManagerProtocol *protocol);
-#endif
-
 const gchar *tp_connection_manager_param_get_name (
     const TpConnectionManagerParam *param);
 const gchar *tp_connection_manager_param_get_dbus_signature (
@@ -190,14 +154,6 @@ GQuark tp_connection_manager_get_feature_quark_core (void) G_GNUC_CONST;
 TpConnectionManagerParam *tp_connection_manager_param_copy (
     const TpConnectionManagerParam *in);
 void tp_connection_manager_param_free (TpConnectionManagerParam *param);
-
-#ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_0_20
-TpConnectionManagerProtocol *tp_connection_manager_protocol_copy (
-    const TpConnectionManagerProtocol *in);
-_TP_DEPRECATED_IN_0_20
-void tp_connection_manager_protocol_free (TpConnectionManagerProtocol *proto);
-#endif
 
 G_END_DECLS
 
