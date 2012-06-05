@@ -87,7 +87,7 @@ handle_channels_cb (TpClient *client,
     }
 
   tp_svc_channel_request_emit_succeeded (self,
-      base_conn->object_path, props, chan_path, props);
+      tp_base_connection_get_object_path (base_conn), props, chan_path, props);
 
   g_hash_table_unref (props);
 }

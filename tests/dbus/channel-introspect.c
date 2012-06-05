@@ -231,8 +231,10 @@ main (int argc,
   g_assert_cmpuint (g_hash_table_size (
       service_props_chan->dbus_property_interfaces_retrieved), ==, 1);
 
-  assert_chan_sane (chan, handle, TRUE, service_conn_as_base->self_handle,
-      tp_handle_inspect (contact_repo, service_conn_as_base->self_handle));
+  assert_chan_sane (chan, handle, TRUE,
+      tp_base_connection_get_self_handle (service_conn_as_base),
+      tp_handle_inspect (contact_repo,
+          tp_base_connection_get_self_handle (service_conn_as_base)));
 
   g_object_unref (chan);
   chan = NULL;
@@ -285,8 +287,10 @@ main (int argc,
       ->dbus_property_interfaces_retrieved,
       GUINT_TO_POINTER (TP_IFACE_QUARK_CHANNEL)) != NULL);
 
-  assert_chan_sane (chan, handle, TRUE, service_conn_as_base->self_handle,
-      tp_handle_inspect (contact_repo, service_conn_as_base->self_handle));
+  assert_chan_sane (chan, handle, TRUE,
+      tp_base_connection_get_self_handle (service_conn_as_base),
+      tp_handle_inspect (contact_repo,
+          tp_base_connection_get_self_handle (service_conn_as_base)));
 
   g_object_unref (chan);
   chan = NULL;

@@ -59,20 +59,6 @@ struct _TpBaseConnection {
     /*<private>*/
     GObject parent;
 
-    gchar *_TP_SEAL (bus_name);
-    gchar *_TP_SEAL (object_path);
-
-    TpConnectionStatus _TP_SEAL (status);
-
-    TpHandle _TP_SEAL (self_handle);
-    const gchar *_TP_SEAL (self_id);
-
-    /*<private>*/
-    gpointer _future1;
-    gpointer _future2;
-    gpointer _future3;
-    gpointer _future4;
-
     TpBaseConnectionPrivate *priv;
 };
 

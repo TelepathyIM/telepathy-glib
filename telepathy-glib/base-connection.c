@@ -168,10 +168,6 @@
  *
  * Data structure representing a generic #TpSvcConnection implementation.
  *
- * Since 0.19.1, accessing the fields of this structure is deprecated.
- * Use tp_base_connection_get_bus_name(), tp_base_connection_get_object_path(),
- * tp_base_connection_get_status(), tp_base_connection_get_self_handle()
- * instead.
  */
 
 /**
@@ -338,6 +334,14 @@ channel_request_cancel (gpointer data, gpointer user_data)
 
 struct _TpBaseConnectionPrivate
 {
+  gchar *bus_name;
+  gchar *object_path;
+
+  TpConnectionStatus status;
+
+  TpHandle self_handle;
+  const gchar *self_id;
+
   /* Telepathy properties */
   gchar *protocol;
 
@@ -421,11 +425,11 @@ tp_base_connection_get_property (GObject *object,
       break;
 
     case PROP_SELF_HANDLE:
-      g_value_set_uint (value, self->self_handle);
+      g_value_set_uint (value, priv->self_handle);
       break;
 
     case PROP_SELF_ID:
-      g_value_set_string (value, self->self_id);
+      g_value_set_string (value, priv->self_id);
       break;
 
     case PROP_INTERFACES:
@@ -503,8 +507,8 @@ tp_base_connection_unregister (TpBaseConnection *self)
         {
           tp_dbus_daemon_unregister_object (priv->bus_proxy, self);
 
-          if (self->bus_name != NULL)
-            tp_dbus_daemon_release_name (priv->bus_proxy, self->bus_name, NULL);
+          if (priv->bus_name != NULL)
+            tp_dbus_daemon_release_name (priv->bus_proxy, priv->bus_name, NULL);
 
           priv->been_registered = FALSE;
         }
@@ -532,8 +536,8 @@ tp_base_connection_dispose (GObject *object)
 
   priv->dispose_has_run = TRUE;
 
-  g_assert ((self->status == TP_CONNECTION_STATUS_DISCONNECTED) ||
-            (self->status == TP_INTERNAL_CONNECTION_STATUS_NEW));
+  g_assert ((priv->status == TP_CONNECTION_STATUS_DISCONNECTED) ||
+            (priv->status == TP_INTERNAL_CONNECTION_STATUS_NEW));
 
   tp_base_connection_unregister (self);
 
@@ -569,8 +573,8 @@ tp_base_connection_finalize (GObject *object)
   TpBaseConnectionPrivate *priv = self->priv;
 
   g_free (priv->protocol);
-  g_free (self->bus_name);
-  g_free (self->object_path);
+  g_free (priv->bus_name);
+  g_free (priv->object_path);
   g_hash_table_unref (priv->client_interests);
   g_hash_table_unref (priv->interested_clients);
 
@@ -928,7 +932,7 @@ tp_base_connection_add_possible_client_interest (TpBaseConnection *self,
   gpointer p = GUINT_TO_POINTER (token);
 
   g_return_if_fail (TP_IS_BASE_CONNECTION (self));
-  g_return_if_fail (self->status == TP_INTERNAL_CONNECTION_STATUS_NEW);
+  g_return_if_fail (self->priv->status == TP_INTERNAL_CONNECTION_STATUS_NEW);
 
   if (g_hash_table_lookup (self->priv->client_interests, p) == NULL)
     g_hash_table_insert (self->priv->client_interests, p,
@@ -1246,7 +1250,7 @@ tp_base_connection_init (TpBaseConnection *self)
   guint i;
 
   self->priv = priv;
-  self->status = TP_INTERNAL_CONNECTION_STATUS_NEW;
+  priv->status = TP_INTERNAL_CONNECTION_STATUS_NEW;
 
   for (i = 0; i < TP_NUM_HANDLE_TYPES; i++)
     {
@@ -1369,33 +1373,33 @@ tp_base_connection_register (TpBaseConnection *self,
       return FALSE;
     }
 
-  self->bus_name = g_strdup_printf (TP_CONN_BUS_NAME_BASE "%s.%s.%s",
+  priv->bus_name = g_strdup_printf (TP_CONN_BUS_NAME_BASE "%s.%s.%s",
       cm_name, safe_proto, unique_name);
-  g_assert (strlen (self->bus_name) <= 255);
-  self->object_path = g_strdup_printf (TP_CONN_OBJECT_PATH_BASE "%s/%s/%s",
+  g_assert (strlen (priv->bus_name) <= 255);
+  priv->object_path = g_strdup_printf (TP_CONN_OBJECT_PATH_BASE "%s/%s/%s",
       cm_name, safe_proto, unique_name);
 
   g_free (safe_proto);
   g_free (unique_name);
 
-  if (!tp_dbus_daemon_request_name (priv->bus_proxy, self->bus_name, FALSE,
+  if (!tp_dbus_daemon_request_name (priv->bus_proxy, priv->bus_name, FALSE,
         error))
     {
-      g_free (self->bus_name);
-      self->bus_name = NULL;
+      g_free (priv->bus_name);
+      priv->bus_name = NULL;
       return FALSE;
     }
 
-  DEBUG ("%p: bus name %s; object path %s", self, self->bus_name,
-      self->object_path);
-  tp_dbus_daemon_register_object (priv->bus_proxy, self->object_path, self);
+  DEBUG ("%p: bus name %s; object path %s", self, priv->bus_name,
+      priv->object_path);
+  tp_dbus_daemon_register_object (priv->bus_proxy, priv->object_path, self);
   self->priv->been_registered = TRUE;
 
   if (bus_name != NULL)
-    *bus_name = g_strdup (self->bus_name);
+    *bus_name = g_strdup (priv->bus_name);
 
   if (object_path != NULL)
-    *object_path = g_strdup (self->object_path);
+    *object_path = g_strdup (priv->object_path);
 
   return TRUE;
 }
@@ -1467,11 +1471,11 @@ tp_base_connection_connect (TpSvcConnection *iface,
 
   g_assert (TP_IS_BASE_CONNECTION (self));
 
-  if (self->status == TP_INTERNAL_CONNECTION_STATUS_NEW)
+  if (self->priv->status == TP_INTERNAL_CONNECTION_STATUS_NEW)
     {
       if (cls->start_connecting (self, &error))
         {
-          if (self->status == TP_INTERNAL_CONNECTION_STATUS_NEW)
+          if (self->priv->status == TP_INTERNAL_CONNECTION_STATUS_NEW)
             {
               tp_base_connection_change_status (self,
                 TP_CONNECTION_STATUS_CONNECTING,
@@ -1480,7 +1484,7 @@ tp_base_connection_connect (TpSvcConnection *iface,
         }
       else
         {
-          if (self->status != TP_CONNECTION_STATUS_DISCONNECTED)
+          if (self->priv->status != TP_CONNECTION_STATUS_DISCONNECTED)
             {
               tp_base_connection_change_status (self,
                 TP_CONNECTION_STATUS_DISCONNECTED,
@@ -1504,12 +1508,12 @@ tp_base_connection_disconnect (TpSvcConnection *iface,
 
   if (self->priv->disconnect_requests != NULL)
     {
-      g_assert (self->status == TP_CONNECTION_STATUS_DISCONNECTED);
+      g_assert (self->priv->status == TP_CONNECTION_STATUS_DISCONNECTED);
       g_ptr_array_add (self->priv->disconnect_requests, context);
       return;
     }
 
-  if (self->status == TP_CONNECTION_STATUS_DISCONNECTED)
+  if (self->priv->status == TP_CONNECTION_STATUS_DISCONNECTED)
     {
       /* status DISCONNECTED and disconnect_requests NULL => already dead */
       tp_svc_connection_return_from_disconnect (context);
@@ -1570,13 +1574,13 @@ tp_base_connection_get_status (TpBaseConnection *self)
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self),
       TP_CONNECTION_STATUS_DISCONNECTED);
 
-  if (self->status == TP_INTERNAL_CONNECTION_STATUS_NEW)
+  if (self->priv->status == TP_INTERNAL_CONNECTION_STATUS_NEW)
     {
       return TP_CONNECTION_STATUS_DISCONNECTED;
     }
   else
     {
-      return self->status;
+      return self->priv->status;
     }
 }
 
@@ -1603,7 +1607,7 @@ tp_base_connection_is_destroyed (TpBaseConnection *self)
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), TRUE);
 
   /* in particular return FALSE if the status is NEW */
-  return (self->status == TP_CONNECTION_STATUS_DISCONNECTED);
+  return (self->priv->status == TP_CONNECTION_STATUS_DISCONNECTED);
 }
 
 /**
@@ -1628,7 +1632,7 @@ tp_base_connection_check_connected (TpBaseConnection *self,
 {
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), FALSE);
 
-  if (self->status == TP_CONNECTION_STATUS_CONNECTED)
+  if (self->priv->status == TP_CONNECTION_STATUS_CONNECTED)
     return TRUE;
 
   g_set_error_literal (error, TP_ERROR, TP_ERROR_DISCONNECTED,
@@ -1675,7 +1679,7 @@ tp_base_connection_get_self_handle (TpBaseConnection *self)
 {
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), 0);
 
-  return self->self_handle;
+  return self->priv->self_handle;
 }
 
 /**
@@ -1692,23 +1696,23 @@ void
 tp_base_connection_set_self_handle (TpBaseConnection *self,
                                     TpHandle self_handle)
 {
-  if (self->status == TP_CONNECTION_STATUS_CONNECTED)
+  if (self->priv->status == TP_CONNECTION_STATUS_CONNECTED)
     g_return_if_fail (self_handle != 0);
 
-  if (self->self_handle == self_handle)
+  if (self->priv->self_handle == self_handle)
     return;
 
-  self->self_handle = self_handle;
-  self->self_id = NULL;
+  self->priv->self_handle = self_handle;
+  self->priv->self_id = NULL;
 
   if (self_handle != 0)
     {
-      self->self_id = tp_handle_inspect (
+      self->priv->self_id = tp_handle_inspect (
           self->priv->handles[TP_HANDLE_TYPE_CONTACT], self_handle);
     }
 
   tp_svc_connection_emit_self_contact_changed (self,
-      self->self_handle, self->self_id);
+      self->priv->self_handle, self->priv->self_id);
 
   g_object_notify ((GObject *) self, "self-handle");
   g_object_notify ((GObject *) self, "self-id");
@@ -1728,7 +1732,7 @@ void tp_base_connection_finish_shutdown (TpBaseConnection *self)
   guint i;
 
   g_return_if_fail (TP_IS_BASE_CONNECTION (self));
-  g_return_if_fail (self->status == TP_CONNECTION_STATUS_DISCONNECTED);
+  g_return_if_fail (self->priv->status == TP_CONNECTION_STATUS_DISCONNECTED);
   g_return_if_fail (self->priv->disconnect_requests != NULL);
 
   contexts = self->priv->disconnect_requests;
@@ -1929,7 +1933,7 @@ tp_base_connection_change_status (TpBaseConnection *self,
   priv = self->priv;
   klass = TP_BASE_CONNECTION_GET_CLASS (self);
 
-  if (self->status == TP_INTERNAL_CONNECTION_STATUS_NEW
+  if (priv->status == TP_INTERNAL_CONNECTION_STATUS_NEW
       && status == TP_CONNECTION_STATUS_CONNECTED)
     {
       /* going straight from NEW to CONNECTED would cause confusion, so before
@@ -1939,17 +1943,17 @@ tp_base_connection_change_status (TpBaseConnection *self,
           reason);
     }
 
-  DEBUG("was %u, now %u, for reason %u", self->status, status, reason);
+  DEBUG("was %u, now %u, for reason %u", priv->status, status, reason);
   g_return_if_fail (status != TP_INTERNAL_CONNECTION_STATUS_NEW);
 
-  if (self->status == status)
+  if (priv->status == status)
     {
       WARNING ("attempted to re-emit the current status %u, reason %u",
           status, reason);
       return;
     }
 
-  prev_status = self->status;
+  prev_status = priv->status;
 
   /* make appropriate assertions about our state */
   switch (status)
@@ -1964,7 +1968,7 @@ tp_base_connection_change_status (TpBaseConnection *self,
        * covered that by forcing a transition to CONNECTING above) */
       g_return_if_fail (prev_status == TP_CONNECTION_STATUS_CONNECTING);
       /* by the time we go CONNECTED we must have the self handle */
-      g_return_if_fail (self->self_handle != 0);
+      g_return_if_fail (priv->self_handle != 0);
       break;
     case TP_CONNECTION_STATUS_CONNECTING:
       /* you can't go CONNECTING if a connection attempt has been made
@@ -1978,7 +1982,7 @@ tp_base_connection_change_status (TpBaseConnection *self,
 
   /* now that we've finished return_if_fail'ing, we can start to make
    * the actual changes */
-  self->status = status;
+  priv->status = status;
 
   /* ref self in case user callbacks unref us */
   g_object_ref (self);
@@ -2006,9 +2010,9 @@ tp_base_connection_change_status (TpBaseConnection *self,
       /* the implementation should have ensured we have a valid self_handle
        * before changing the state to CONNECTED */
 
-      g_assert (self->self_handle != 0);
+      g_assert (priv->self_handle != 0);
       g_assert (tp_handle_is_valid (priv->handles[TP_HANDLE_TYPE_CONTACT],
-                self->self_handle, NULL));
+                priv->self_handle, NULL));
       if (klass->connected)
         (klass->connected) (self);
       break;
@@ -2067,8 +2071,8 @@ tp_base_connection_add_interfaces (TpBaseConnection *self,
   TpBaseConnectionClass *klass = TP_BASE_CONNECTION_GET_CLASS (self);
 
   g_return_if_fail (TP_IS_BASE_CONNECTION (self));
-  g_return_if_fail (self->status != TP_CONNECTION_STATUS_CONNECTED);
-  g_return_if_fail (self->status != TP_CONNECTION_STATUS_DISCONNECTED);
+  g_return_if_fail (priv->status != TP_CONNECTION_STATUS_CONNECTED);
+  g_return_if_fail (priv->status != TP_CONNECTION_STATUS_DISCONNECTED);
 
   if (interfaces == NULL || interfaces[0] == NULL)
     {
@@ -2932,7 +2936,7 @@ tp_base_connection_get_bus_name (TpBaseConnection *self)
 {
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
 
-  return self->bus_name;
+  return self->priv->bus_name;
 }
 
 /**
@@ -2958,5 +2962,5 @@ tp_base_connection_get_object_path (TpBaseConnection *self)
 {
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
 
-  return self->object_path;
+  return self->priv->object_path;
 }
