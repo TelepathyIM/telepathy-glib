@@ -213,7 +213,9 @@ gboolean tp_base_connection_channel_manager_iter_next (
     TpBaseConnection *c_ = (conn); \
     GError *e_ = NULL; \
     \
+    G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
     if (!tp_base_connection_check_connected (c_, &e_)) \
+    G_GNUC_END_IGNORE_DEPRECATIONS \
       { \
         dbus_g_method_return_error ((context), e_); \
         g_error_free (e_); \
