@@ -18,7 +18,6 @@
 
 typedef enum {
     ACTIVATE_CM = (1 << 0),
-    USE_OLD_LIST = (1 << 1)
 } TestFlags;
 
 typedef struct {
@@ -847,70 +846,34 @@ test_dbus_ready (Test *test,
 }
 
 static void
-on_listed_connection_managers (TpConnectionManager * const * cms,
-                               gsize n_cms,
-                               const GError *error,
-                               gpointer user_data,
-                               GObject *weak_object G_GNUC_UNUSED)
-{
-  Test *test = user_data;
-
-  g_assert_cmpuint ((guint) n_cms, ==, 2);
-  g_assert (cms[2] == NULL);
-
-  if (tp_connection_manager_is_running (cms[0]))
-    {
-      test->echo = g_object_ref (cms[0]);
-      test->spurious = g_object_ref (cms[1]);
-    }
-  else
-    {
-      test->spurious = g_object_ref (cms[0]);
-      test->echo = g_object_ref (cms[1]);
-    }
-
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
 test_list (Test *test,
            gconstpointer data)
 {
-  TestFlags flags = GPOINTER_TO_INT (data);
+  GAsyncResult *res = NULL;
+  GList *cms;
 
-  if (flags & USE_OLD_LIST)
+  tp_list_connection_managers_async (test->dbus, tp_tests_result_ready_cb,
+      &res);
+  tp_tests_run_until_result (&res);
+
+  cms = tp_list_connection_managers_finish (res, &test->error);
+  g_assert_no_error (test->error);
+  g_assert_cmpuint (g_list_length (cms), ==, 2);
+
+  /* transfer ownership */
+  if (tp_connection_manager_is_running (cms->data))
     {
-      tp_list_connection_managers (test->dbus, on_listed_connection_managers,
-          test, NULL, NULL);
-      g_main_loop_run (test->mainloop);
+      test->echo = cms->data;
+      test->spurious = cms->next->data;
     }
   else
     {
-      GAsyncResult *res = NULL;
-      GList *cms;
-
-      tp_list_connection_managers_async (test->dbus, tp_tests_result_ready_cb,
-          &res);
-      tp_tests_run_until_result (&res);
-      cms = tp_list_connection_managers_finish (res, &test->error);
-      g_assert_no_error (test->error);
-      g_assert_cmpuint (g_list_length (cms), ==, 2);
-
-      /* transfer ownership */
-      if (tp_connection_manager_is_running (cms->data))
-        {
-          test->echo = cms->data;
-          test->spurious = cms->next->data;
-        }
-      else
-        {
-          test->spurious = cms->data;
-          test->echo = cms->next->data;
-        }
-
-      g_object_unref (res);
-      g_list_free (cms);
+      test->spurious = cms->data;
+      test->echo = cms->next->data;
     }
+
+  g_object_unref (res);
+  g_list_free (cms);
 
   g_assert (tp_connection_manager_is_running (test->echo));
   g_assert (!tp_connection_manager_is_running (test->spurious));
@@ -960,8 +923,6 @@ main (int argc,
       test_dbus_ready, teardown);
 
   g_test_add ("/cm/list", Test, GINT_TO_POINTER (0),
-      setup, test_list, teardown);
-  g_test_add ("/cm/list", Test, GINT_TO_POINTER (USE_OLD_LIST),
       setup, test_list, teardown);
 
   return g_test_run ();

@@ -3616,10 +3616,8 @@ tp_cli_connection_interface_addressing_callback_for_get_contacts_by_vcard_field
 <FILE>connection-manager</FILE>
 <TITLE>connection-manager</TITLE>
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
-TpConnectionManagerListCb
 tp_list_connection_managers_async
 tp_list_connection_managers_finish
-tp_list_connection_managers
 TpConnectionManager
 TpConnectionManagerClass
 tp_connection_manager_new

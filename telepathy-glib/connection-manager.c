@@ -53,29 +53,6 @@
  */
 
 /**
- * TpConnectionManagerListCb:
- * @cms: (array zero-terminated=1): %NULL-terminated array of
- *   #TpConnectionManager (the objects will
- *   be unreferenced and the array will be freed after the callback returns,
- *   so the callback must reference any CMs it stores a pointer to),
- *   or %NULL on error
- * @n_cms: number of connection managers in @cms (not including the final
- *  %NULL)
- * @error: %NULL on success, or an error that occurred
- * @user_data: user-supplied data
- * @weak_object: user-supplied weakly referenced object
- *
- * Signature of the callback supplied to tp_list_connection_managers().
- *
- * Since 0.11.3, tp_list_connection_managers() will
- * wait for %TP_CONNECTION_MANAGER_FEATURE_CORE to be prepared on each
- * connection manager passed to @callback, unless an error occurred while
- * launching that connection manager.
- *
- * Since: 0.7.1
- */
-
-/**
  * TP_CONNECTION_MANAGER_FEATURE_CORE:
  *
  * Expands to a call to a function that returns a quark for the "core" feature
@@ -1361,6 +1338,12 @@ steal_into_ptr_array (gpointer key,
   return TRUE;
 }
 
+typedef void (*TpConnectionManagerListCb) (TpConnectionManager * const *cms,
+    gsize n_cms,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object);
+
 typedef struct
 {
   GHashTable *table;
@@ -1517,31 +1500,7 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
     }
 }
 
-/**
- * tp_list_connection_managers:
- * @bus_daemon: proxy for the D-Bus daemon
- * @callback: callback to be called when listing the CMs
- *  succeeds or fails; not called if the @weak_object goes away
- * @user_data: user-supplied data for the callback
- * @destroy: callback to destroy the user-supplied data, called after
- *   @callback, but also if the @weak_object goes away
- * @weak_object: (allow-none): if not %NULL, will be weakly
- *  referenced; the callback will not be called, and the call will be
- *  cancelled, if the object has vanished
- *
- * List the available (running or installed) connection managers. Call the
- * callback when done.
- *
- * Since 0.7.26, this function will wait for each #TpConnectionManager
- * to be ready, so all connection managers passed to @callback will have
- * their %TP_CONNECTION_MANAGER_FEATURE_CORE feature prepared, unless an error
- * occurred while launching that connection manager.
- *
- * Since: 0.7.1
- *
- * Deprecated: since 0.19.1, use tp_list_connection_managers_async()
- */
-void
+static void
 tp_list_connection_managers (TpDBusDaemon *bus_daemon,
                              TpConnectionManagerListCb callback,
                              gpointer user_data,
@@ -1643,10 +1602,8 @@ tp_list_connection_managers_async (TpDBusDaemon *dbus_daemon,
     }
   else
     {
-      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
       tp_list_connection_managers (dbus_daemon,
           list_connection_managers_async_cb, result, g_object_unref, NULL);
-      G_GNUC_END_IGNORE_DEPRECATIONS
       g_object_unref (dbus_daemon);
     }
 }

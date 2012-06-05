@@ -112,18 +112,6 @@ TpConnectionManager *tp_connection_manager_new (TpDBusDaemon *dbus,
 
 gboolean tp_connection_manager_activate (TpConnectionManager *self);
 
-typedef void (*TpConnectionManagerListCb) (TpConnectionManager * const *cms,
-    gsize n_cms, const GError *error, gpointer user_data,
-    GObject *weak_object);
-
-#ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_0_20_FOR (tp_list_connection_managers_async)
-void tp_list_connection_managers (TpDBusDaemon *bus_daemon,
-    TpConnectionManagerListCb callback,
-    gpointer user_data, GDestroyNotify destroy,
-    GObject *weak_object);
-#endif
-
 _TP_AVAILABLE_IN_0_18
 void tp_list_connection_managers_async (TpDBusDaemon *dbus_daemon,
     GAsyncReadyCallback callback,
