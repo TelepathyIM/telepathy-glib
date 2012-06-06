@@ -903,7 +903,7 @@ upgrade_contacts_cb (GObject *source,
  * features previously passed to
  * tp_simple_client_factory_add_contact_features().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 void
 tp_simple_client_factory_upgrade_contacts_async (
@@ -938,7 +938,7 @@ tp_simple_client_factory_upgrade_contacts_async (
  * Finishes tp_simple_client_factory_upgrade_contacts_async()
  *
  * Returns: %TRUE on success, %FALSE otherwise.
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 gboolean
 tp_simple_client_factory_upgrade_contacts_finish (
@@ -990,7 +990,7 @@ dup_contact_by_id_cb (GObject *source,
  * contact with all features previously passed to
  * tp_simple_client_factory_add_contact_features().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 void
 tp_simple_client_factory_ensure_contact_by_id_async (
@@ -1022,7 +1022,7 @@ tp_simple_client_factory_ensure_contact_by_id_async (
  * Finishes tp_simple_client_factory_ensure_contact_by_id_async()
  *
  * Returns: (transfer full): a #TpContact or %NULL on error.
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 TpContact *
 tp_simple_client_factory_ensure_contact_by_id_finish (

@@ -238,7 +238,7 @@ channel_manager_base_init (gpointer klass)
        * signal, and then return from pending CreateChannel, EnsureChannel
        * and/or RequestChannel calls if appropriate.
        *
-       * Since 0.UNRELEASED, clients should not emit more than one
+       * Since 0.19.1, clients should not emit more than one
        *  channel in this signal at one time as the creation of
        *  multiple channels together in a single signal is strongly
        *  recommended against: it's very complicated, hard to get
@@ -356,7 +356,7 @@ tp_channel_manager_get_type (void)
  * If @channels is non-empty, emit the #TpChannelManager::new-channels
  * signal indicating that those channels have been created.
  *
- * Deprecated: in 0.UNRELEASED this function should not be
+ * Deprecated: in 0.19.1 this function should not be
  *  used. Signalling the creation of multiple channels together in a
  *  single signal is strongly recommended against as it's very
  *  complicated, hard to get right in clients, and not nearly as

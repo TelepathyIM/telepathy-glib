@@ -754,7 +754,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
    *
    * The name of the connection manager this protocol is on.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_CM_NAME,
       g_param_spec_string ("cm-name",
@@ -1738,7 +1738,7 @@ tp_protocol_get_avatar_requirements (TpProtocol *self)
  *
  * Returns: the value of #TpProtocol:cm-name
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 const gchar *
 tp_protocol_get_cm_name (TpProtocol *self)

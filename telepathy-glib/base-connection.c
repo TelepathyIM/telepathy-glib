@@ -182,7 +182,7 @@
  *
  * Data structure representing a generic #TpSvcConnection implementation.
  *
- * Since 0.UNRELEASED, accessing the fields of this structure is deprecated.
+ * Since 0.19.1, accessing the fields of this structure is deprecated.
  * Use tp_base_connection_get_bus_name(), tp_base_connection_get_object_path(),
  * tp_base_connection_get_status(), tp_base_connection_get_self_handle()
  * instead.
@@ -2049,7 +2049,7 @@ tp_base_connection_dbus_get_self_handle (TpSvcConnection *iface,
  * Use tp_base_connection_is_destroyed() to distinguish between the two.
  *
  * Returns: the value of #TpBaseConnection:dbus-status
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 TpConnectionStatus
 tp_base_connection_get_status (TpBaseConnection *self)
@@ -2082,7 +2082,7 @@ tp_base_connection_get_status (TpBaseConnection *self)
  * connection has encountered an error.
  *
  * Returns: %TRUE if this connection is disappearing from D-Bus
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 gboolean
 tp_base_connection_is_destroyed (TpBaseConnection *self)
@@ -2107,7 +2107,7 @@ tp_base_connection_is_destroyed (TpBaseConnection *self)
  * #GError if it fails.
  *
  * Returns: %TRUE if this connection is connected
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 gboolean
 tp_base_connection_check_connected (TpBaseConnection *self,
@@ -3958,7 +3958,7 @@ _tp_base_connection_find_channel_manager (TpBaseConnection *self,
  *
  * Returns: (allow-none) (transfer none): the bus name of this connection,
  *  or %NULL
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 const gchar *
 tp_base_connection_get_bus_name (TpBaseConnection *self)
@@ -3984,7 +3984,7 @@ tp_base_connection_get_bus_name (TpBaseConnection *self)
  *
  * Returns: (allow-none) (transfer none): the object path of this connection,
  *  or %NULL
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 const gchar *
 tp_base_connection_get_object_path (TpBaseConnection *self)

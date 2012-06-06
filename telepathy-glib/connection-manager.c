@@ -172,7 +172,7 @@ enum
  * %TP_CONNECTION_MANAGER_FEATURE_CORE is prepared. Use
  * tp_proxy_prepare_async() to wait for this to happen.
  *
- * Since 0.UNRELEASED, accessing the fields of this struct is deprecated,
+ * Since 0.19.1, accessing the fields of this struct is deprecated,
  * and they are no longer documented here.
  * Use the accessors tp_connection_manager_get_name(),
  * tp_connection_manager_is_running(),
@@ -188,7 +188,7 @@ enum
  *
  * Structure representing a connection manager parameter.
  *
- * Since 0.UNRELEASED, accessing the fields of this struct is deprecated,
+ * Since 0.19.1, accessing the fields of this struct is deprecated,
  * and they are no longer documented here.
  * Use the accessors tp_connection_manager_param_get_name(),
  * tp_connection_manager_param_get_dbus_signature(),
@@ -214,7 +214,7 @@ enum
  *
  * Since: 0.7.1
  *
- * Deprecated: 0.UNRELEASED, use #TpProtocol objects instead
+ * Deprecated: 0.19.1, use #TpProtocol objects instead
  */
 
 typedef enum {
@@ -351,7 +351,7 @@ tp_connection_manager_param_free (TpConnectionManagerParam *param)
  *
  * Since: 0.11.3
  *
- * Deprecated: 0.UNRELEASED, use #TpProtocol objects instead
+ * Deprecated: 0.19.1, use #TpProtocol objects instead
  */
 TpConnectionManagerProtocol *
 tp_connection_manager_protocol_copy (const TpConnectionManagerProtocol *in)
@@ -385,7 +385,7 @@ tp_connection_manager_protocol_copy (const TpConnectionManagerProtocol *in)
  *
  * Since: 0.11.3
  *
- * Deprecated: 0.UNRELEASED, use #TpProtocol objects instead
+ * Deprecated: 0.19.1, use #TpProtocol objects instead
  */
 void
 tp_connection_manager_protocol_free (TpConnectionManagerProtocol *proto)
@@ -414,7 +414,7 @@ G_DEFINE_BOXED_TYPE (TpConnectionManagerParam, tp_connection_manager_param,
  *
  * Since: 0.11.3
  *
- * Deprecated: 0.UNRELEASED, use #TpProtocol objects instead
+ * Deprecated: 0.19.1, use #TpProtocol objects instead
  */
 
 G_GNUC_BEGIN_IGNORE_DEPRECATIONS
@@ -1818,7 +1818,7 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
  *
  * Since: 0.7.1
  *
- * Deprecated: since 0.UNRELEASED, use tp_list_connection_managers_async()
+ * Deprecated: since 0.19.1, use tp_list_connection_managers_async()
  */
 void
 tp_list_connection_managers (TpDBusDaemon *bus_daemon,
@@ -2211,7 +2211,7 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
  * Returns: (transfer none): a structure representing the protocol
  * Since: 0.7.26
  *
- * Deprecated: 0.UNRELEASED, use tp_connection_manager_get_protocol_object()
+ * Deprecated: 0.19.1, use tp_connection_manager_get_protocol_object()
  */
 const TpConnectionManagerProtocol *
 tp_connection_manager_get_protocol (TpConnectionManager *self,
@@ -2328,7 +2328,7 @@ tp_connection_manager_has_protocol (TpConnectionManager *self,
  * Returns: %TRUE if @protocol supports the parameter @param.
  * Since: 0.7.26
  *
- * Deprecated: 0.UNRELEASED, use #TpProtocol objects instead
+ * Deprecated: 0.19.1, use #TpProtocol objects instead
  */
 gboolean
 tp_connection_manager_protocol_has_param (
@@ -2351,7 +2351,7 @@ G_GNUC_END_IGNORE_DEPRECATIONS
  *          supported
  * Since: 0.7.26
  *
- * Deprecated: 0.UNRELEASED, use #TpProtocol objects instead
+ * Deprecated: 0.19.1, use #TpProtocol objects instead
  */
 const TpConnectionManagerParam *
 tp_connection_manager_protocol_get_param (
@@ -2385,7 +2385,7 @@ tp_connection_manager_protocol_get_param (
  * Returns: %TRUE if @protocol supports the parameter "register"
  * Since: 0.7.26
  *
- * Deprecated: 0.UNRELEASED, use #TpProtocol objects instead
+ * Deprecated: 0.19.1, use #TpProtocol objects instead
  */
 gboolean
 tp_connection_manager_protocol_can_register (
@@ -2408,7 +2408,7 @@ G_GNUC_END_IGNORE_DEPRECATIONS
  * Returns: (array zero-terminated=1) (transfer full): a #GStrv of protocol names
  * Since: 0.7.26
  *
- * Deprecated: 0.UNRELEASED, use #TpProtocol objects instead
+ * Deprecated: 0.19.1, use #TpProtocol objects instead
  */
 gchar **
 tp_connection_manager_protocol_dup_param_names (

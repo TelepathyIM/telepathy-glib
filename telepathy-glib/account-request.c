@@ -88,7 +88,7 @@
  * ]|
  *
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 
 /**
@@ -97,7 +97,7 @@
  * An object for representing a currently non-existent account which
  * is to be created on a #TpAccountManager.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 
 /**
@@ -382,7 +382,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    *
    * The #TpAccountManager to create the account on.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_ACCOUNT_MANAGER,
       g_param_spec_object ("account-manager",
@@ -396,7 +396,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    *
    * The account's connection manager name.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_CONNECTION_MANAGER,
       g_param_spec_string ("connection-manager",
@@ -412,7 +412,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * "local-xmpp". Recommended names for most protocols can be found in the
    * Telepathy D-Bus Interface Specification.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_PROTOCOL,
       g_param_spec_string ("protocol",
@@ -427,7 +427,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * The account's display name. To change this property use
    * tp_account_request_set_display_name().
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_DISPLAY_NAME,
       g_param_spec_string ("display-name",
@@ -442,7 +442,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * The account's connection parameters. To add a parameter, use
    * tp_account_request_set_parameter() or another convience function.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_PARAMETERS,
       g_param_spec_variant ("parameters",
@@ -456,7 +456,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    *
    * The account's properties.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_PROPERTIES,
       g_param_spec_variant ("properties",
@@ -471,7 +471,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * The account's icon name. To change this propery, use
    * tp_account_request_set_icon_name().
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_ICON_NAME,
       g_param_spec_string ("icon-name",
@@ -486,7 +486,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * The account's nickname. To change this property use
    * tp_account_request_set_nickname().
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_NICKNAME,
       g_param_spec_string ("nickname",
@@ -502,7 +502,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * #TpConnectionPresenceType). To change this property use
    * tp_account_request_set_requested_presence().
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_REQUESTED_PRESENCE_TYPE,
       g_param_spec_uint ("requested-presence-type",
@@ -519,7 +519,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * The requested Status string of the account. To change this
    * property use tp_account_request_set_requested_presence().
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_REQUESTED_STATUS,
       g_param_spec_string ("requested-status",
@@ -534,7 +534,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * The requested status message message of the account. To change
    * this property use tp_account_request_set_requested_presence().
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_REQUESTED_STATUS_MESSAGE,
       g_param_spec_string ("requested-status-message",
@@ -555,7 +555,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * available, the automatic presence type, status and message will
    * be copied to their "requested" counterparts.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_AUTOMATIC_PRESENCE_TYPE,
       g_param_spec_uint ("automatic-presence-type",
@@ -573,7 +573,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * #TpAccountRequest:automatic-presence-type. To change this property
    * use tp_account_request_set_automatic_presence().
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_AUTOMATIC_STATUS,
       g_param_spec_string ("automatic-status",
@@ -589,7 +589,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * #TpAccount:automatic-presence-type. To change this property use
    * tp_account_request_set_automatic_presence().
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_AUTOMATIC_STATUS_MESSAGE,
       g_param_spec_string ("automatic-status-message",
@@ -604,7 +604,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * Whether the account is enabled or not. To change this property
    * use tp_account_request_set_enabled().
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_ENABLED,
       g_param_spec_boolean ("enabled",
@@ -619,7 +619,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * Whether the account should connect automatically or not. To change this
    * property, use tp_account_request_set_connect_automatically().
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_CONNECT_AUTOMATICALLY,
       g_param_spec_boolean ("connect-automatically",
@@ -637,7 +637,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    *
    * To add to this property use tp_account_request_add_supersedes().
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_SUPERSEDES,
       g_param_spec_boxed ("supersedes",
@@ -653,7 +653,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * in the #TpAccountRequest:avatar-mime-type property. To change this
    * property, use tp_account_request_set_avatar().
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_AVATAR,
       g_param_spec_boxed ("avatar",
@@ -668,7 +668,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * The mime type of the #TpAccountRequest:avatar property. To change
    * this property, use tp_account_request_set_avatar().
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_AVATAR_MIME_TYPE,
       g_param_spec_string ("avatar-mime-type",
@@ -686,7 +686,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * Protocol). To change this property, use
    * tp_account_request_set_service().
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_SERVICE,
       g_param_spec_string ("service",
@@ -710,7 +710,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
  * Returns: (transfer full): a new reference to an account request
  *   object, or %NULL if any argument is incorrect
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 TpAccountRequest *
 tp_account_request_new (TpAccountManager *account_manager,
@@ -744,7 +744,7 @@ tp_account_request_new (TpAccountManager *account_manager,
  * Returns: (transfer full): a new reference to an account request
  *   object, or %NULL if any argument is incorrect
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 TpAccountRequest *
 tp_account_request_new_from_protocol (TpAccountManager *account_manager,
@@ -771,7 +771,7 @@ tp_account_request_new_from_protocol (TpAccountManager *account_manager,
  * #TpAccountRequest:display-name property to read the current display
  * name.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 void
 tp_account_request_set_display_name (TpAccountRequest *self,
@@ -798,7 +798,7 @@ tp_account_request_set_display_name (TpAccountRequest *self,
  * Set the icon name for the new account, @self, to @icon. Use the
  * #TpAccountRequest:icon-name property to read the current icon name.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 void
 tp_account_request_set_icon_name (TpAccountRequest *self,
@@ -824,7 +824,7 @@ tp_account_request_set_icon_name (TpAccountRequest *self,
  * Set the nickname for the new account, @self, to @nickname. Use the
  * #TpAccountRequest:nickname property to read the current nickname.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 void
 tp_account_request_set_nickname (TpAccountRequest *self,
@@ -856,7 +856,7 @@ tp_account_request_set_nickname (TpAccountRequest *self,
  * #TpAccountRequest:requested-status-message properties to read the
  * current requested presence.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 void
 tp_account_request_set_requested_presence (TpAccountRequest *self,
@@ -900,7 +900,7 @@ tp_account_request_set_requested_presence (TpAccountRequest *self,
  * #TpAccountRequest:automatic-status-message properties to read the
  * current automatic presence.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 void
 tp_account_request_set_automatic_presence (TpAccountRequest *self,
@@ -939,7 +939,7 @@ tp_account_request_set_automatic_presence (TpAccountRequest *self,
  * @enabled. Use the #TpAccountRequest:enabled property to read the
  * current enabled value.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 void
 tp_account_request_set_enabled (TpAccountRequest *self,
@@ -967,7 +967,7 @@ tp_account_request_set_enabled (TpAccountRequest *self,
  * #TpAccountRequest:connect-automatically property to read the current
  * connect automatically value.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 void
 tp_account_request_set_connect_automatically (TpAccountRequest *self,
@@ -997,7 +997,7 @@ tp_account_request_set_connect_automatically (TpAccountRequest *self,
  * #TpAccountRequest:supersedes property to read the current list of
  * superseded accounts.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 void
 tp_account_request_add_supersedes (TpAccountRequest *self,
@@ -1042,7 +1042,7 @@ tp_account_request_add_supersedes (TpAccountRequest *self,
  * #TpAccountRequest:avatar and #TpAccountRequest:avatar-mime-type
  * properties to read the current avatar.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 void
 tp_account_request_set_avatar (TpAccountRequest *self,
@@ -1087,7 +1087,7 @@ tp_account_request_set_avatar (TpAccountRequest *self,
  * Set the service property of the account to @service. Use the
  * #TpAccountRequest:service property to read the current value.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 void
 tp_account_request_set_service (TpAccountRequest *self,
@@ -1118,7 +1118,7 @@ tp_account_request_set_service (TpAccountRequest *self,
  *
  * Parameters can be unset using tp_account_request_unset_parameter().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 void
 tp_account_request_set_parameter (TpAccountRequest *self,
@@ -1153,7 +1153,7 @@ tp_account_request_set_parameter (TpAccountRequest *self,
  * using tp_account_request_set_parameter() or another convenience
  * function.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 void
 tp_account_request_unset_parameter (TpAccountRequest *self,
@@ -1180,7 +1180,7 @@ tp_account_request_unset_parameter (TpAccountRequest *self,
  * Convenience function to set an account parameter string value. See
  * tp_account_request_set_parameter() for more details.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 void
 tp_account_request_set_parameter_string (TpAccountRequest *self,
@@ -1282,7 +1282,7 @@ tp_account_request_create_account_cb (TpAccountManager *proxy,
  * tp_account_request_create_account_finish(), one can guarantee this
  * feature.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 void
 tp_account_request_create_account_async (TpAccountRequest *self,
@@ -1337,7 +1337,7 @@ tp_account_request_create_account_async (TpAccountRequest *self,
  *
  * Returns: (transfer full): a new ref to a #TpAccount, or %NULL
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.1
  */
 TpAccount *
 tp_account_request_create_account_finish (TpAccountRequest *self,

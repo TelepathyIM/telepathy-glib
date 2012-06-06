@@ -119,19 +119,19 @@ struct _TpBaseConnectionClass {
 
 GType tp_base_connection_get_type (void);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 const gchar *tp_base_connection_get_bus_name (TpBaseConnection *self);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 const gchar *tp_base_connection_get_object_path (TpBaseConnection *self);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 TpConnectionStatus tp_base_connection_get_status (TpBaseConnection *self);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 gboolean tp_base_connection_is_destroyed (TpBaseConnection *self);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 gboolean tp_base_connection_check_connected (TpBaseConnection *self,
     GError **error);
 

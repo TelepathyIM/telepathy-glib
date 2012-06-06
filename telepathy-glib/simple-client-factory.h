@@ -179,7 +179,7 @@ TpContact *tp_simple_client_factory_ensure_contact (TpSimpleClientFactory *self,
     TpConnection *connection,
     TpHandle handle,
     const gchar *identifier);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 void tp_simple_client_factory_upgrade_contacts_async (
     TpSimpleClientFactory *self,
     TpConnection *connection,
@@ -187,20 +187,20 @@ void tp_simple_client_factory_upgrade_contacts_async (
     TpContact * const *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 gboolean tp_simple_client_factory_upgrade_contacts_finish (
     TpSimpleClientFactory *self,
     GAsyncResult *result,
     GPtrArray **contacts,
     GError **error);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 void tp_simple_client_factory_ensure_contact_by_id_async (
     TpSimpleClientFactory *self,
     TpConnection *connection,
     const gchar *identifier,
     GAsyncReadyCallback callback,
     gpointer user_data);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 TpContact *tp_simple_client_factory_ensure_contact_by_id_finish (
     TpSimpleClientFactory *self,
     GAsyncResult *result,

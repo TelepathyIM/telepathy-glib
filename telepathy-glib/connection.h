@@ -207,7 +207,7 @@ gint tp_connection_presence_type_cmp_availability (TpConnectionPresenceType p1,
   TpConnectionPresenceType p2);
 
 #ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_UNRELEASED_FOR(tp_connection_get_protocol_name)
+_TP_DEPRECATED_IN_0_20_FOR(tp_connection_get_protocol_name)
 gboolean tp_connection_parse_object_path (TpConnection *self, gchar **protocol,
     gchar **cm_name);
 #endif
@@ -251,7 +251,7 @@ typedef void (*TpConnectionHoldHandlesCb) (TpConnection *connection,
     TpHandleType handle_type, guint n_handles, const TpHandle *handles,
     const GError *error, gpointer user_data, GObject *weak_object);
 
-_TP_DEPRECATED_IN_UNRELEASED
+_TP_DEPRECATED_IN_0_20
 void tp_connection_hold_handles (TpConnection *self, gint timeout_ms,
     TpHandleType handle_type, guint n_handles, const TpHandle *handles,
     TpConnectionHoldHandlesCb callback,
@@ -262,13 +262,13 @@ typedef void (*TpConnectionRequestHandlesCb) (TpConnection *connection,
     guint n_handles, const TpHandle *handles, const gchar * const *ids,
     const GError *error, gpointer user_data, GObject *weak_object);
 
-_TP_DEPRECATED_IN_UNRELEASED
+_TP_DEPRECATED_IN_0_20
 void tp_connection_request_handles (TpConnection *self, gint timeout_ms,
     TpHandleType handle_type, const gchar * const *ids,
     TpConnectionRequestHandlesCb callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
 
-_TP_DEPRECATED_IN_UNRELEASED
+_TP_DEPRECATED_IN_0_20
 void tp_connection_unref_handles (TpConnection *self,
     TpHandleType handle_type, guint n_handles, const TpHandle *handles);
 #endif
@@ -354,14 +354,14 @@ G_BEGIN_DECLS
  * stuff because it uses an auto-generated typedef */
 
 #ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_UNRELEASED_FOR(tp_simple_client_factory_ensure_contact)
+_TP_DEPRECATED_IN_0_20_FOR(tp_simple_client_factory_ensure_contact)
 void tp_connection_get_contact_attributes (TpConnection *self,
     gint timeout_ms, guint n_handles, const TpHandle *handles,
     const gchar * const *interfaces, gboolean hold,
     tp_cli_connection_interface_contacts_callback_for_get_contact_attributes callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
 
-_TP_DEPRECATED_IN_UNRELEASED_FOR(tp_connection_dup_contact_list)
+_TP_DEPRECATED_IN_0_20_FOR(tp_connection_dup_contact_list)
 void tp_connection_get_contact_list_attributes (TpConnection *self,
     gint timeout_ms, const gchar * const *interfaces, gboolean hold,
     tp_cli_connection_interface_contacts_callback_for_get_contact_attributes callback,

@@ -135,7 +135,7 @@ GType tp_channel_manager_get_type (void);
 void tp_channel_manager_emit_new_channel (gpointer instance,
     TpExportableChannel *channel, GSList *request_tokens);
 
-_TP_DEPRECATED_IN_UNRELEASED
+_TP_DEPRECATED_IN_0_20
 void tp_channel_manager_emit_new_channels (gpointer instance,
     GHashTable *channels);
 
