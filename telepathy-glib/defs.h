@@ -286,7 +286,8 @@ G_BEGIN_DECLS
 #endif
 
 /* like G_SEAL */
-#if (TP_VERSION_MIN_REQUIRED >= TP_VERSION_0_20) && !defined (_TP_COMPILATION)
+#if (defined (TP_SEAL_ENABLE) || defined (TP_DISABLE_DEPRECATED)) \
+  && !defined (_TP_COMPILATION)
 # define _TP_SEAL(ident) _tp_sealed__ ## ident
 #else
 # define _TP_SEAL(ident) ident
