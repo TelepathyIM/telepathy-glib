@@ -2107,7 +2107,7 @@ _tp_account_new_with_factory (TpClientFactory *factory,
 
   self = TP_ACCOUNT (g_object_new (TP_TYPE_ACCOUNT,
           "dbus-daemon", bus_daemon,
-          "dbus-connection", ((TpProxy *) bus_daemon)->dbus_connection,
+          "dbus-connection", tp_proxy_get_dbus_connection (bus_daemon),
           "bus-name", TP_ACCOUNT_MANAGER_BUS_NAME,
           "object-path", object_path,
           "factory", factory,

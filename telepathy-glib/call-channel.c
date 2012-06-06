@@ -1154,8 +1154,6 @@ _tp_call_channel_new_with_factory (TpClientFactory *factory,
     const GHashTable *immutable_properties,
     GError **error)
 {
-  TpProxy *conn_proxy = (TpProxy *) conn;
-
   g_return_val_if_fail (TP_IS_CONNECTION (conn), NULL);
   g_return_val_if_fail (object_path != NULL, NULL);
   g_return_val_if_fail (immutable_properties != NULL, NULL);
@@ -1165,8 +1163,8 @@ _tp_call_channel_new_with_factory (TpClientFactory *factory,
 
   return g_object_new (TP_TYPE_CALL_CHANNEL,
       "connection", conn,
-      "dbus-daemon", conn_proxy->dbus_daemon,
-      "bus-name", conn_proxy->bus_name,
+      "dbus-daemon", tp_proxy_get_dbus_daemon (conn),
+      "bus-name", tp_proxy_get_bus_name (conn),
       "object-path", object_path,
       "handle-type", (guint) TP_UNKNOWN_HANDLE_TYPE,
       "channel-properties", immutable_properties,

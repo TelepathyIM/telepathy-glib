@@ -160,7 +160,7 @@ tp_channel_dispatcher_new (TpDBusDaemon *bus_daemon)
 
   self = TP_CHANNEL_DISPATCHER (g_object_new (TP_TYPE_CHANNEL_DISPATCHER,
         "dbus-daemon", bus_daemon,
-        "dbus-connection", ((TpProxy *) bus_daemon)->dbus_connection,
+        "dbus-connection", tp_proxy_get_dbus_connection (bus_daemon),
         "bus-name", TP_CHANNEL_DISPATCHER_BUS_NAME,
         "object-path", TP_CHANNEL_DISPATCHER_OBJECT_PATH,
         NULL));

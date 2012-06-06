@@ -300,9 +300,10 @@ tp_tls_certificate_constructed (GObject *object)
 
   if (self->priv->parent != NULL)
     {
-      if (self->priv->parent->invalidated != NULL)
+      if (tp_proxy_get_invalidated (self->priv->parent) != NULL)
         {
-          GError *invalidated = self->priv->parent->invalidated;
+          const GError *invalidated =
+              tp_proxy_get_invalidated (self->priv->parent);
 
           parent_invalidated_cb (self->priv->parent, invalidated->domain,
               invalidated->code, invalidated->message, self);
@@ -606,8 +607,8 @@ tp_tls_certificate_new (TpProxy *conn_or_chan,
 
   retval = g_object_new (TP_TYPE_TLS_CERTIFICATE,
       "parent", conn_or_chan,
-      "dbus-daemon", conn_or_chan->dbus_daemon,
-      "bus-name", conn_or_chan->bus_name,
+      "dbus-daemon", tp_proxy_get_dbus_daemon (conn_or_chan),
+      "bus-name", tp_proxy_get_bus_name (conn_or_chan),
       "object-path", object_path,
       NULL);
 

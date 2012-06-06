@@ -763,7 +763,6 @@ tp_dbus_daemon_request_name (TpDBusDaemon *self,
                              gboolean idempotent,
                              GError **error)
 {
-  TpProxy *as_proxy = (TpProxy *) self;
   DBusGConnection *gconn;
   DBusConnection *dbc;
   DBusError dbus_error;
@@ -785,7 +784,7 @@ tp_dbus_daemon_request_name (TpDBusDaemon *self,
       return FALSE;
     }
 
-  gconn = as_proxy->dbus_connection;
+  gconn = tp_proxy_get_dbus_connection (self);
   dbc = dbus_g_connection_get_connection (gconn);
 
   dbus_error_init (&dbus_error);
@@ -849,7 +848,6 @@ tp_dbus_daemon_release_name (TpDBusDaemon *self,
                              const gchar *well_known_name,
                              GError **error)
 {
-  TpProxy *as_proxy = (TpProxy *) self;
   DBusGConnection *gconn;
   DBusConnection *dbc;
   DBusError dbus_error;
@@ -871,7 +869,7 @@ tp_dbus_daemon_release_name (TpDBusDaemon *self,
       return FALSE;
     }
 
-  gconn = as_proxy->dbus_connection;
+  gconn = tp_proxy_get_dbus_connection (self);
   dbc = dbus_g_connection_get_connection (gconn);
   dbus_error_init (&dbus_error);
   result = dbus_bus_release_name (dbc, well_known_name, &dbus_error);
@@ -921,13 +919,11 @@ tp_dbus_daemon_register_object (TpDBusDaemon *self,
     const gchar *object_path,
     gpointer object)
 {
-  TpProxy *as_proxy = (TpProxy *) self;
-
   g_return_if_fail (TP_IS_DBUS_DAEMON (self));
   g_return_if_fail (tp_dbus_check_valid_object_path (object_path, NULL));
   g_return_if_fail (G_IS_OBJECT (object));
 
-  dbus_g_connection_register_g_object (as_proxy->dbus_connection,
+  dbus_g_connection_register_g_object (tp_proxy_get_dbus_connection (self),
       object_path, object);
 }
 
@@ -946,12 +942,11 @@ void
 tp_dbus_daemon_unregister_object (TpDBusDaemon *self,
     gpointer object)
 {
-  TpProxy *as_proxy = (TpProxy *) self;
-
   g_return_if_fail (TP_IS_DBUS_DAEMON (self));
   g_return_if_fail (G_IS_OBJECT (object));
 
-  dbus_g_connection_unregister_g_object (as_proxy->dbus_connection, object);
+  dbus_g_connection_unregister_g_object (tp_proxy_get_dbus_connection (self),
+      object);
 }
 
 /**
@@ -1266,11 +1261,10 @@ tp_dbus_daemon_constructor (GType type,
       (GObjectClass *) tp_dbus_daemon_parent_class;
   TpDBusDaemon *self = TP_DBUS_DAEMON (object_class->constructor (type,
         n_params, params));
-  TpProxy *as_proxy = (TpProxy *) self;
   GSList **daemons;
 
-  g_assert (!tp_strdiff (as_proxy->bus_name, DBUS_SERVICE_DBUS));
-  g_assert (!tp_strdiff (as_proxy->object_path, DBUS_PATH_DBUS));
+  g_assert (!tp_strdiff (tp_proxy_get_bus_name (self), DBUS_SERVICE_DBUS));
+  g_assert (!tp_strdiff (tp_proxy_get_object_path (self), DBUS_PATH_DBUS));
 
   self->priv->libdbus = dbus_connection_ref (
       dbus_g_connection_get_connection (

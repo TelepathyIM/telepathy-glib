@@ -2579,7 +2579,7 @@ tp_connection_get_detailed_error (TpConnection *self,
 {
   TpProxy *proxy = (TpProxy *) self;
 
-  if (proxy->invalidated == NULL)
+  if (tp_proxy_get_invalidated (proxy) == NULL)
     return NULL;
 
   if (self->priv->connection_error != NULL)
@@ -2601,20 +2601,20 @@ tp_connection_get_detailed_error (TpConnection *self,
           if (self->priv->connection_error_details == NULL)
             {
               self->priv->connection_error_details = tp_asv_new (
-                  "debug-message", G_TYPE_STRING, proxy->invalidated->message,
+                  "debug-message", G_TYPE_STRING, tp_proxy_get_invalidated (proxy)->message,
                   NULL);
             }
 
           *details = self->priv->connection_error_details;
         }
 
-      if (proxy->invalidated->domain == TP_ERROR)
+      if (tp_proxy_get_invalidated (proxy)->domain == TP_ERROR)
         {
-          return tp_error_get_dbus_name (proxy->invalidated->code);
+          return tp_error_get_dbus_name (tp_proxy_get_invalidated (proxy)->code);
         }
-      else if (proxy->invalidated->domain == TP_DBUS_ERRORS)
+      else if (tp_proxy_get_invalidated (proxy)->domain == TP_DBUS_ERRORS)
         {
-          switch (proxy->invalidated->code)
+          switch (tp_proxy_get_invalidated (proxy)->code)
             {
             case TP_DBUS_ERROR_NAME_OWNER_LOST:
               /* the CM probably crashed */
@@ -2717,7 +2717,7 @@ tp_connection_add_client_interest_by_id (TpConnection *self,
   g_return_if_fail (TP_IS_CONNECTION (self));
   g_return_if_fail (interest != NULL);
 
-  if (proxy->invalidated != NULL ||
+  if (tp_proxy_get_invalidated (proxy) != NULL ||
       tp_intset_is_member (self->priv->interests, interested_in))
     return;
 

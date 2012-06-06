@@ -266,7 +266,7 @@ tp_run_connection_manager (const char *prog_name,
    * effect, we need to install it before calling
    * tp_base_connection_manager_register () */
   connection = dbus_g_connection_get_connection (
-      ((TpProxy *) bus_daemon)->dbus_connection);
+      tp_proxy_get_dbus_connection (bus_daemon));
   dbus_connection_add_filter (connection, dbus_filter_function, NULL, NULL);
   dbus_connection_set_exit_on_disconnect (connection, FALSE);
 

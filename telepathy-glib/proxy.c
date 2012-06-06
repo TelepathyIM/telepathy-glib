@@ -357,6 +357,13 @@ tp_proxy_prepare_request_finish (TpProxyPrepareRequest *req,
 }
 
 struct _TpProxyPrivate {
+    TpDBusDaemon *dbus_daemon;
+    DBusGConnection *dbus_connection;
+    gchar *bus_name;
+    gchar *object_path;
+
+    GError *invalidated;
+
     /* GQuark for interface => either a ref'd DBusGProxy *,
      * or the TpProxy itself used as a dummy value to indicate that
      * the DBusGProxy has not been needed yet */
@@ -433,10 +440,10 @@ _tp_proxy_borrow_interface_by_id (TpProxy *self,
 
   g_return_val_if_fail (TP_IS_PROXY (self), NULL);
 
-  if (self->invalidated != NULL)
+  if (self->priv->invalidated != NULL)
     {
-      g_set_error (error, self->invalidated->domain, self->invalidated->code,
-          "%s", self->invalidated->message);
+      g_set_error (error, self->priv->invalidated->domain, self->priv->invalidated->code,
+          "%s", self->priv->invalidated->message);
       return NULL;
     }
 
@@ -451,8 +458,8 @@ _tp_proxy_borrow_interface_by_id (TpProxy *self,
       /* dummy value - we've never actually needed the interface, so we
        * didn't create it, to avoid binding to all the signals */
 
-      dgproxy = dbus_g_proxy_new_for_name (self->dbus_connection,
-          self->bus_name, self->object_path, g_quark_to_string (iface));
+      dgproxy = dbus_g_proxy_new_for_name (self->priv->dbus_connection,
+          self->priv->bus_name, self->priv->object_path, g_quark_to_string (iface));
       DEBUG ("%p: %s DBusGProxy is %p", self, g_quark_to_string (iface),
           dgproxy);
 
@@ -473,7 +480,7 @@ _tp_proxy_borrow_interface_by_id (TpProxy *self,
 
   g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_NO_INTERFACE,
       "Object %s does not have interface %s",
-      self->object_path, g_quark_to_string (iface));
+      self->priv->object_path, g_quark_to_string (iface));
 
   return NULL;
 }
@@ -563,8 +570,8 @@ tp_proxy_emit_invalidated (gpointer p)
   TpProxy *self = TP_PROXY (p);
 
   g_signal_emit (self, signals[SIGNAL_INVALIDATED], 0,
-      self->invalidated->domain, self->invalidated->code,
-      self->invalidated->message);
+      self->priv->invalidated->domain, self->priv->invalidated->code,
+      self->priv->invalidated->message);
 
   /* make all pending tp_proxy_prepare_async calls fail */
   tp_proxy_poll_features (self, NULL);
@@ -575,10 +582,10 @@ tp_proxy_emit_invalidated (gpointer p)
    * to the proxies */
   tp_proxy_lose_interfaces (self);
 
-  if (self->dbus_connection != NULL)
+  if (self->priv->dbus_connection != NULL)
     {
-      dbus_g_connection_unref (self->dbus_connection);
-      self->dbus_connection = NULL;
+      dbus_g_connection_unref (self->priv->dbus_connection);
+      self->priv->dbus_connection = NULL;
     }
 
   return FALSE;
@@ -601,10 +608,10 @@ tp_proxy_invalidate (TpProxy *self, const GError *error)
   g_return_if_fail (self != NULL);
   g_return_if_fail (error != NULL);
 
-  if (self->invalidated == NULL)
+  if (self->priv->invalidated == NULL)
     {
       DEBUG ("%p: %s", self, error->message);
-      self->invalidated = g_error_copy (error);
+      self->priv->invalidated = g_error_copy (error);
 
       tp_proxy_emit_invalidated (self);
     }
@@ -623,10 +630,10 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy,
    * any queued-up method calls and signal handlers will run first, and so
    * it doesn't try to reenter libdbus.
    */
-  if (self->invalidated == NULL)
+  if (self->priv->invalidated == NULL)
     {
       DEBUG ("%p", self);
-      self->invalidated = g_error_new_literal (TP_DBUS_ERRORS,
+      self->priv->invalidated = g_error_new_literal (TP_DBUS_ERRORS,
           TP_DBUS_ERROR_NAME_OWNER_LOST, "Name owner lost (service crashed?)");
 
       g_idle_add_full (G_PRIORITY_HIGH, tp_proxy_emit_invalidated,
@@ -845,17 +852,17 @@ tp_proxy_get_property (GObject *object,
         }
       else
         {
-          g_value_set_object (value, self->dbus_daemon);
+          g_value_set_object (value, self->priv->dbus_daemon);
         }
       break;
     case PROP_DBUS_CONNECTION:
-      g_value_set_boxed (value, self->dbus_connection);
+      g_value_set_boxed (value, self->priv->dbus_connection);
       break;
     case PROP_BUS_NAME:
-      g_value_set_string (value, self->bus_name);
+      g_value_set_string (value, self->priv->bus_name);
       break;
     case PROP_OBJECT_PATH:
-      g_value_set_string (value, self->object_path);
+      g_value_set_string (value, self->priv->object_path);
       break;
     case PROP_INTERFACES:
         {
@@ -893,22 +900,21 @@ tp_proxy_set_property (GObject *object,
         }
       else
         {
-          TpProxy *daemon_as_proxy = TP_PROXY (g_value_get_object (value));
+          g_assert (self->priv->dbus_daemon == NULL);
+          self->priv->dbus_daemon = g_value_dup_object (value);
 
-          g_assert (self->dbus_daemon == NULL);
-
-          if (daemon_as_proxy != NULL)
-            self->dbus_daemon = TP_DBUS_DAEMON (g_object_ref
-                (daemon_as_proxy));
-
-          if (daemon_as_proxy != NULL)
+          if (self->priv->dbus_daemon != NULL)
             {
-              g_assert (self->dbus_connection == NULL ||
-                  self->dbus_connection == daemon_as_proxy->dbus_connection);
-
-              if (self->dbus_connection == NULL)
-                self->dbus_connection =
-                    dbus_g_connection_ref (daemon_as_proxy->dbus_connection);
+              if (self->priv->dbus_connection == NULL)
+                {
+                  self->priv->dbus_connection = dbus_g_connection_ref (
+                      tp_proxy_get_dbus_connection (self->priv->dbus_daemon));
+                }
+              else
+                {
+                  g_assert (self->priv->dbus_connection ==
+                      tp_proxy_get_dbus_connection (self->priv->dbus_daemon));
+                }
             }
         }
       break;
@@ -921,19 +927,19 @@ tp_proxy_set_property (GObject *object,
           if (conn == NULL)
             return;
 
-          if (self->dbus_connection == NULL)
-            self->dbus_connection = g_value_dup_boxed (value);
+          if (self->priv->dbus_connection == NULL)
+            self->priv->dbus_connection = g_value_dup_boxed (value);
 
-          g_assert (self->dbus_connection == g_value_get_boxed (value));
+          g_assert (self->priv->dbus_connection == g_value_get_boxed (value));
         }
       break;
     case PROP_BUS_NAME:
-      g_assert (self->bus_name == NULL);
-      self->bus_name = g_value_dup_string (value);
+      g_assert (self->priv->bus_name == NULL);
+      self->priv->bus_name = g_value_dup_string (value);
       break;
     case PROP_OBJECT_PATH:
-      g_assert (self->object_path == NULL);
-      self->object_path = g_value_dup_string (value);
+      g_assert (self->priv->object_path == NULL);
+      self->priv->object_path = g_value_dup_string (value);
       break;
     case PROP_FACTORY:
       g_assert (self->priv->factory == NULL);
@@ -1071,13 +1077,13 @@ tp_proxy_constructor (GType type,
       g_array_unref (core_features);
     }
 
-  g_return_val_if_fail (self->dbus_connection != NULL, NULL);
-  g_return_val_if_fail (self->object_path != NULL, NULL);
-  g_return_val_if_fail (self->bus_name != NULL, NULL);
+  g_return_val_if_fail (self->priv->dbus_connection != NULL, NULL);
+  g_return_val_if_fail (self->priv->object_path != NULL, NULL);
+  g_return_val_if_fail (self->priv->bus_name != NULL, NULL);
 
-  g_return_val_if_fail (tp_dbus_check_valid_object_path (self->object_path,
+  g_return_val_if_fail (tp_dbus_check_valid_object_path (self->priv->object_path,
         NULL), NULL);
-  g_return_val_if_fail (tp_dbus_check_valid_bus_name (self->bus_name,
+  g_return_val_if_fail (tp_dbus_check_valid_bus_name (self->priv->bus_name,
         TP_DBUS_NAME_TYPE_ANY, NULL), NULL);
 
   tp_proxy_add_interface_by_id (self, TP_IFACE_QUARK_DBUS_INTROSPECTABLE);
@@ -1093,7 +1099,7 @@ tp_proxy_constructor (GType type,
    * name, like in dbus_g_proxy_new_for_name_owner() */
   if (klass->must_have_unique_name)
     {
-      g_return_val_if_fail (self->bus_name[0] == ':', NULL);
+      g_return_val_if_fail (self->priv->bus_name[0] == ':', NULL);
     }
 
   return (GObject *) self;
@@ -1116,7 +1122,7 @@ tp_proxy_dispose (GObject *object)
 
   tp_proxy_invalidate (self, &e);
 
-  tp_clear_object (&self->dbus_daemon);
+  tp_clear_object (&self->priv->dbus_daemon);
   tp_clear_object (&self->priv->factory);
 
   G_OBJECT_CLASS (tp_proxy_parent_class)->dispose (object);
@@ -1132,15 +1138,15 @@ tp_proxy_finalize (GObject *object)
   if (self->priv->features != NULL)
     g_datalist_clear (&self->priv->features);
 
-  g_assert (self->invalidated != NULL);
-  g_error_free (self->invalidated);
+  g_assert (self->priv->invalidated != NULL);
+  g_error_free (self->priv->invalidated);
 
   /* invalidation ensures that these have gone away */
   g_assert_cmpuint (g_queue_get_length (self->priv->prepare_requests), ==, 0);
   tp_clear_pointer (&self->priv->prepare_requests, g_queue_free);
 
-  g_free (self->bus_name);
-  g_free (self->object_path);
+  g_free (self->priv->bus_name);
+  g_free (self->priv->object_path);
 
   G_OBJECT_CLASS (tp_proxy_parent_class)->finalize (object);
 }
@@ -1413,7 +1419,7 @@ _tp_proxy_ensure_factory (gpointer proxy,
     }
   else
     {
-      self->priv->factory = tp_automatic_client_factory_new (self->dbus_daemon);
+      self->priv->factory = tp_automatic_client_factory_new (self->priv->dbus_daemon);
     }
 
   _tp_client_factory_insert_proxy (self->priv->factory, self);
@@ -1437,7 +1443,7 @@ tp_proxy_get_dbus_daemon (gpointer self)
 {
   TpProxy *proxy = TP_PROXY (self);
 
-  return proxy->dbus_daemon;
+  return proxy->priv->dbus_daemon;
 }
 
 /**
@@ -1457,7 +1463,7 @@ tp_proxy_get_dbus_connection (gpointer self)
 {
   TpProxy *proxy = TP_PROXY (self);
 
-  return proxy->dbus_connection;
+  return proxy->priv->dbus_connection;
 }
 
 /**
@@ -1476,7 +1482,7 @@ tp_proxy_get_bus_name (gpointer self)
 {
   TpProxy *proxy = TP_PROXY (self);
 
-  return proxy->bus_name;
+  return proxy->priv->bus_name;
 }
 
 /**
@@ -1495,7 +1501,7 @@ tp_proxy_get_object_path (gpointer self)
 {
   TpProxy *proxy = TP_PROXY (self);
 
-  return proxy->object_path;
+  return proxy->priv->object_path;
 }
 
 /**
@@ -1515,7 +1521,7 @@ tp_proxy_get_invalidated (gpointer self)
 {
   TpProxy *proxy = TP_PROXY (self);
 
-  return proxy->invalidated;
+  return proxy->priv->invalidated;
 }
 
 static gpointer
@@ -1912,11 +1918,11 @@ tp_proxy_prepare_async (gpointer self,
     result = g_simple_async_result_new (self, callback, user_data,
         tp_proxy_prepare_async);
 
-  if (proxy->invalidated != NULL)
+  if (proxy->priv->invalidated != NULL)
     {
       if (result != NULL)
         {
-          g_simple_async_result_set_from_error (result, proxy->invalidated);
+          g_simple_async_result_set_from_error (result, proxy->priv->invalidated);
           g_simple_async_result_complete_in_idle (result);
         }
 
@@ -2163,7 +2169,7 @@ tp_proxy_poll_features (TpProxy *self,
       if (error == NULL)
         {
           error_source = "invalidated";
-          error = self->invalidated;
+          error = self->priv->invalidated;
         }
 
       if (error != NULL)

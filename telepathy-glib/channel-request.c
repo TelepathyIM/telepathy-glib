@@ -507,7 +507,7 @@ _tp_channel_request_new_with_factory (TpClientFactory *factory,
 
   self = TP_CHANNEL_REQUEST (g_object_new (TP_TYPE_CHANNEL_REQUEST,
         "dbus-daemon", bus_daemon,
-        "dbus-connection", ((TpProxy *) bus_daemon)->dbus_connection,
+        "dbus-connection", tp_proxy_get_dbus_connection (bus_daemon),
         "bus-name", unique_name,
         "object-path", object_path,
         "immutable-properties", immutable_properties,

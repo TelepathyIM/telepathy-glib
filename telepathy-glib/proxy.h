@@ -65,13 +65,6 @@ struct _TpProxy {
     /*<private>*/
     GObject parent;
 
-    TpDBusDaemon *_TP_SEAL (dbus_daemon);
-    DBusGConnection *_TP_SEAL (dbus_connection);
-    gchar *_TP_SEAL (bus_name);
-    gchar *_TP_SEAL (object_path);
-
-    GError *_TP_SEAL (invalidated);
-
     TpProxyPrivate *priv;
 };
 

@@ -722,19 +722,16 @@ tp_connection_manager_constructor (GType type,
   TpConnectionManager *self =
       TP_CONNECTION_MANAGER (object_class->constructor (type, n_params,
             params));
-  TpProxy *as_proxy = (TpProxy *) self;
-  const gchar *object_path = as_proxy->object_path;
-  const gchar *bus_name = as_proxy->bus_name;
 
-  g_return_val_if_fail (object_path != NULL, NULL);
-  g_return_val_if_fail (bus_name != NULL, NULL);
+  g_return_val_if_fail (tp_proxy_get_object_path (self) != NULL, NULL);
+  g_return_val_if_fail (tp_proxy_get_bus_name (self) != NULL, NULL);
 
   /* Watch my D-Bus name */
-  tp_dbus_daemon_watch_name_owner (as_proxy->dbus_daemon,
-      as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb, self,
-      NULL);
+  tp_dbus_daemon_watch_name_owner (tp_proxy_get_dbus_daemon (self),
+      tp_proxy_get_bus_name (self), tp_connection_manager_name_owner_changed_cb,
+      self, NULL);
 
-  self->priv->name = strrchr (object_path, '/') + 1;
+  self->priv->name = strrchr (tp_proxy_get_object_path (self), '/') + 1;
   g_assert (self->priv->name != NULL);
 
   if (self->priv->manager_file == NULL)
@@ -757,15 +754,14 @@ static void
 tp_connection_manager_dispose (GObject *object)
 {
   TpConnectionManager *self = TP_CONNECTION_MANAGER (object);
-  TpProxy *as_proxy = (TpProxy *) self;
 
   if (self->priv->disposed)
     goto finally;
 
   self->priv->disposed = TRUE;
 
-  tp_dbus_daemon_cancel_name_owner_watch (as_proxy->dbus_daemon,
-      as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb,
+  tp_dbus_daemon_cancel_name_owner_watch (tp_proxy_get_dbus_daemon (self),
+      tp_proxy_get_bus_name (self), tp_connection_manager_name_owner_changed_cb,
       object);
 
   if (self->priv->protocols != NULL)
@@ -1111,7 +1107,7 @@ tp_connection_manager_new (TpDBusDaemon *dbus,
 
   cm = TP_CONNECTION_MANAGER (g_object_new (TP_TYPE_CONNECTION_MANAGER,
         "dbus-daemon", dbus,
-        "dbus-connection", ((TpProxy *) dbus)->dbus_connection,
+        "dbus-connection", tp_proxy_get_dbus_connection (dbus),
         "bus-name", bus_name,
         "object-path", object_path,
         "manager-file", manager_filename,
