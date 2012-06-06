@@ -19,6 +19,10 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#if defined (TP_DISABLE_SINGLE_INCLUDE) && !defined (_TP_IN_META_HEADER) && !defined (_TP_COMPILATION)
+#error "Only <telepathy-glib/telepathy-glib.h> and <telepathy-glib/telepathy-glib-dbus.h> can be included directly."
+#endif
+
 #ifndef __TP_BASE_CONNECTION_H__
 #define __TP_BASE_CONNECTION_H__
 
@@ -201,12 +205,14 @@ gboolean tp_base_connection_channel_manager_iter_next (
     TpBaseConnection *c_ = (conn); \
     GError *e_ = NULL; \
     \
+    G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
     if (!tp_base_connection_check_connected (c_, &e_)) \
       { \
         dbus_g_method_return_error ((context), e_); \
         g_error_free (e_); \
         return; \
       } \
+    G_GNUC_END_IGNORE_DEPRECATIONS \
   } G_STMT_END
 
 TpDBusDaemon *tp_base_connection_get_dbus_daemon (TpBaseConnection *self);

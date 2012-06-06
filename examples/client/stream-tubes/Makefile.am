@@ -17,7 +17,7 @@ LDADD = \
     $(NULL)
 
 AM_CPPFLAGS = \
-    -DTP_SEAL_ENABLE \
+    -DTP_DISABLE_SINGLE_INCLUDE \
     $(NULL)
 
 AM_CFLAGS = \

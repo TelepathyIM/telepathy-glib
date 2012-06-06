@@ -23,6 +23,8 @@
 #ifndef __TP_PROXY_SUBCLASS_H__
 #define __TP_PROXY_SUBCLASS_H__
 
+#define _TP_IN_META_HEADER
+
 #include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
@@ -77,5 +79,7 @@ gboolean tp_proxy_dbus_g_proxy_claim_for_signal_adding (DBusGProxy *proxy);
 void tp_proxy_init_known_interfaces (void);
 
 G_END_DECLS
+
+#undef _TP_IN_META_HEADER
 
 #endif /* #ifndef __TP_PROXY_SUBCLASS_H__*/

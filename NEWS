@@ -41,8 +41,7 @@ Deprecations:
 
 • Struct members of TpProxy, TpConnectionManagerParam, TpConnectionManager and
   TpBaseConnection have been sealed. In the same spirit than G_SEAL, we
-  introduced _TP_SEAL to force usage of getters and setters. Applications should
-  define TP_SEAL_ENABLE or TP_DISABLE_DEPRECATED to enable that. (Simon)
+  introduced _TP_SEAL to force usage of getters and setters. (Simon)
 
 Enhancements:
 

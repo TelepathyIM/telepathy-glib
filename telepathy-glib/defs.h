@@ -19,6 +19,10 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#if defined (TP_DISABLE_SINGLE_INCLUDE) && !defined (_TP_IN_META_HEADER) && !defined (_TP_COMPILATION)
+#error "Only <telepathy-glib/telepathy-glib.h> and <telepathy-glib/telepathy-glib-dbus.h> can be included directly."
+#endif
+
 #ifndef __TP_DEFS_H__
 #define __TP_DEFS_H__
 
@@ -159,8 +163,7 @@ G_BEGIN_DECLS
 #endif
 
 /* like G_SEAL */
-#if (defined (TP_SEAL_ENABLE) || defined (TP_DISABLE_DEPRECATED)) \
-  && !defined (_TP_COMPILATION)
+#if (TP_VERSION_MIN_REQUIRED >= TP_VERSION_0_20) && !defined (_TP_COMPILATION)
 # define _TP_SEAL(ident) _tp_sealed__ ## ident
 #else
 # define _TP_SEAL(ident) ident

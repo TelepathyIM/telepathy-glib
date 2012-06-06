@@ -96,6 +96,7 @@ TelepathyGLib_1_gir_LIBS = \
     libtelepathy-glib-1-core.la \
     $(NULL)
 TelepathyGLib_1_gir_EXPORT_PACKAGES = telepathy-glib-1
+TelepathyGLib_0_12_gir_CFLAGS = -D_TP_COMPILATION
 
 TelepathyGLib_1_gir_SCANNERFLAGS = \
 	--identifier-prefix=Tp \
