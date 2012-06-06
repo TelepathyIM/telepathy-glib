@@ -43,6 +43,18 @@ Deprecations:
   TpBaseConnection have been sealed. In the same spirit than G_SEAL, we
   introduced _TP_SEAL to force usage of getters and setters. (Simon)
 
+• Including individual headers is now deprecated. Only the teleapthy-glib.h and
+  telepathy-glib-dbus.h meta headers should be included in applications. Build
+  error is disabled by default and can be turned on by defining
+  TP_DISABLE_SINGLE_INCLUDE. (Xavier)
+
+• tp_list_connection_managers() has been deprecated in favor of
+  tp_list_connection_managers_async() and tp_list_connection_managers_finish().
+  (Simon)
+
+• TpConnectionManagerProtocol and all its related functions have been deprecated
+  in favor of TpProtocol. (Simon)
+
 Enhancements:
 
 • New TpAccountRequest object to help account creation (Jonny)
