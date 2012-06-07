@@ -2520,16 +2520,16 @@ tp_connection_get_status (TpConnection *self,
 }
 
 /**
-* tp_connection_get_connection_manager_name:
-* @self: a #TpConnection
-*
-* <!-- -->
-*
-* Returns: the same as the #TpConnection:connection-manager-name property
-*
-* Since: 0.13.16
-*
-*/
+ * tp_connection_get_connection_manager_name:
+ * @self: a #TpConnection
+ *
+ * <!-- -->
+ *
+ * Returns: the same as the #TpConnection:connection-manager-name property
+ *
+ * Since: 0.13.16
+ *
+ */
 const gchar *
 tp_connection_get_connection_manager_name (TpConnection *self)
 {
@@ -2539,16 +2539,16 @@ tp_connection_get_connection_manager_name (TpConnection *self)
 }
 
 /**
-* tp_connection_get_protocol_name:
-* @self: a #TpConnection
-*
-* <!-- -->
-*
-* Returns: the same as the #TpConnection:protocol-name property
-*
-* Since: 0.13.16
-*
-*/
+ * tp_connection_get_protocol_name:
+ * @self: a #TpConnection
+ *
+ * <!-- -->
+ *
+ * Returns: the same as the #TpConnection:protocol-name property
+ *
+ * Since: 0.13.16
+ *
+ */
 const gchar *
 tp_connection_get_protocol_name (TpConnection *self)
 {
