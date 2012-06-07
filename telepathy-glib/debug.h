@@ -1,5 +1,5 @@
-#if !defined (_TP_IN_META_HEADER) && !defined (_TP_COMPILATION)
-#error "Only <telepathy-glib/telepathy-glib.h> and <telepathy-glib/telepathy-glib-dbus.h> can be included directly."
+#if !defined (_TP_GLIB_H_INSIDE) && !defined (_TP_COMPILATION)
+#error "Only <telepathy-glib/telepathy-glib.h> can be included directly."
 #endif
 
 #ifndef __TP_DEBUG_H__

@@ -21,7 +21,7 @@
 #ifndef __TP_GLIB_H__
 #define __TP_GLIB_H__
 
-#define _TP_IN_META_HEADER
+#define _TP_GLIB_H_INSIDE
 
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
@@ -111,6 +111,6 @@
 #include <telepathy-glib/text-channel.h>
 #include <telepathy-glib/tls-certificate.h>
 
-#undef _TP_IN_META_HEADER
+#undef _TP_GLIB_H_INSIDE
 
 #endif /* __TP_GLIB_H__ */

@@ -23,7 +23,7 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
-#define _TP_IN_META_HEADER
+#define _TP_GLIB_DBUS_H_INSIDE
 
 /* common */
 #include <telepathy-glib/gtypes.h>
@@ -65,6 +65,6 @@
 #include <telepathy-glib/svc-protocol.h>
 #include <telepathy-glib/svc-tls.h>
 
-#undef _TP_IN_META_HEADER
+#undef _TP_GLIB_DBUS_H_INSIDE
 
 #endif /* __TP_GLIB_DBUS_H__ */

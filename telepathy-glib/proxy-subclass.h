@@ -23,7 +23,7 @@
 #ifndef __TP_PROXY_SUBCLASS_H__
 #define __TP_PROXY_SUBCLASS_H__
 
-#define _TP_IN_META_HEADER
+#define _TP_GLIB_H_INSIDE
 
 #include <telepathy-glib/proxy.h>
 
@@ -80,6 +80,6 @@ void tp_proxy_init_known_interfaces (void);
 
 G_END_DECLS
 
-#undef _TP_IN_META_HEADER
+#undef _TP_GLIB_H_INSIDE
 
 #endif /* #ifndef __TP_PROXY_SUBCLASS_H__*/
