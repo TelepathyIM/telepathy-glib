@@ -2639,7 +2639,7 @@ build_avatar_filename (TpConnection *connection,
   token_escaped = tp_escape_as_identifier (avatar_token);
   dir = g_build_filename (g_get_user_cache_dir (),
       "telepathy", "avatars",
-      tp_connection_get_connection_manager_name (connection),
+      tp_connection_get_cm_name (connection),
       tp_connection_get_protocol_name (connection),
       NULL);
 

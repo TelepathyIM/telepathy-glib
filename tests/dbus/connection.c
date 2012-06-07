@@ -224,13 +224,13 @@ test_prepare (Test *test,
   g_assert_cmpint (tp_connection_get_status (test->conn, NULL), ==,
       TP_CONNECTION_STATUS_DISCONNECTED);
 
-  g_assert_cmpstr (tp_connection_get_connection_manager_name (test->conn), ==,
+  g_assert_cmpstr (tp_connection_get_cm_name (test->conn), ==,
           "simple");
   g_assert_cmpstr (tp_connection_get_protocol_name (test->conn), ==,
           "simple-protocol");
 
   g_object_get (test->conn,
-      "connection-manager-name", &cm_name,
+      "cm-name", &cm_name,
       "protocol-name", &protocol_name,
       NULL);
   g_assert_cmpstr (cm_name, ==, "simple");
@@ -409,7 +409,7 @@ test_object_path (Test *test,
   g_assert_no_error (error);
 
   tp_tests_proxy_run_until_prepared (test->conn, NULL);
-  g_assert_cmpstr (tp_connection_get_connection_manager_name (test->conn), ==,
+  g_assert_cmpstr (tp_connection_get_cm_name (test->conn), ==,
       "simple");
   g_assert_cmpstr (tp_connection_get_protocol_name (test->conn), ==,
       "simple-protocol");
