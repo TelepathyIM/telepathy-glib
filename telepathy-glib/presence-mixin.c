@@ -253,6 +253,7 @@
 #include <string.h>
 
 #include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>

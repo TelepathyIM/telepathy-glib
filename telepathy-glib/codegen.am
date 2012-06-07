@@ -250,7 +250,7 @@ _gen/tp-svc-%.c: _gen/tp-spec-%.xml \
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-ginterface-gen.py \
 		--filename=_gen/tp-svc-$* \
 		--signal-marshal-prefix=_tp \
-		--include='<telepathy-glib/dbus.h>' \
+		--allow-single-include \
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
 		$< Tp_Svc_
 

@@ -47,7 +47,7 @@ class Generator(object):
 
     def __init__(self, dom, prefix, basename, signal_marshal_prefix,
                  headers, end_headers, not_implemented_func,
-                 allow_havoc):
+                 allow_havoc, allow_single_include):
         self.dom = dom
         self.__header = []
         self.__body = []
@@ -83,6 +83,7 @@ class Generator(object):
         self.end_headers = end_headers
         self.not_implemented_func = not_implemented_func
         self.allow_havoc = allow_havoc
+        self.allow_single_include = allow_single_include
 
     def h(self, s):
         if isinstance(s, unicode):
@@ -741,15 +742,21 @@ class Generator(object):
         self.h('#include <glib-object.h>')
         self.h('#include <dbus/dbus-glib.h>')
 
-        if self.have_properties(nodes):
-            self.h('#include <telepathy-glib/dbus-properties-mixin.h>')
-
         self.h('')
         self.h('G_BEGIN_DECLS')
         self.h('')
 
         self.b('#include "%s.h"' % self.basename)
         self.b('')
+
+        if self.allow_single_include:
+            self.b('#include <telepathy-glib/dbus.h>')
+            if self.have_properties(nodes):
+                self.b('#include <telepathy-glib/dbus-properties-mixin.h>')
+        else:
+            self.b('#include <telepathy-glib/telepathy-glib.h>')
+        self.b('')
+
         for header in self.headers:
             self.b('#include %s' % header)
         self.b('')
@@ -802,7 +809,8 @@ if __name__ == '__main__':
                                ['filename=', 'signal-marshal-prefix=',
                                 'include=', 'include-end=',
                                 'allow-unstable',
-                                'not-implemented-func='])
+                                'not-implemented-func=',
+                                "allow-single-include"])
 
     try:
         prefix = argv[1]
@@ -815,6 +823,7 @@ if __name__ == '__main__':
     end_headers = []
     not_implemented_func = ''
     allow_havoc = False
+    allow_single_include = False
 
     for option, value in options:
         if option == '--filename':
@@ -833,6 +842,8 @@ if __name__ == '__main__':
             not_implemented_func = value
         elif option == '--allow-unstable':
             allow_havoc = True
+        elif option == '--allow-single-include':
+            allow_single_include = True
 
     try:
         dom = xml.dom.minidom.parse(argv[0])
@@ -840,4 +851,5 @@ if __name__ == '__main__':
         cmdline_error()
 
     Generator(dom, prefix, basename, signal_marshal_prefix, headers,
-              end_headers, not_implemented_func, allow_havoc)()
+              end_headers, not_implemented_func, allow_havoc,
+              allow_single_include)()
