@@ -108,9 +108,19 @@ TpConnection *tp_account_ensure_connection (TpAccount *account,
 
 const gchar *tp_account_get_display_name (TpAccount *account);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_UNRELEASED_FOR(tp_account_get_cm_name)
 const gchar *tp_account_get_connection_manager (TpAccount *account);
-
+_TP_DEPRECATED_IN_UNRELEASED_FOR(tp_account_get_protocol_name)
 const gchar *tp_account_get_protocol (TpAccount *account);
+#endif
+
+_TP_AVAILABLE_IN_UNRELEASED
+const gchar *tp_account_get_cm_name (TpAccount *account);
+
+_TP_AVAILABLE_IN_UNRELEASED
+const gchar *tp_account_get_protocol_name (TpAccount *account);
+
 const gchar *tp_account_get_service (TpAccount *self);
 
 const gchar *tp_account_get_icon_name (TpAccount *account);

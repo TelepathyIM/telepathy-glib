@@ -159,7 +159,9 @@ enum {
   PROP_CONNECTION,
   PROP_DISPLAY_NAME,
   PROP_CONNECTION_MANAGER,
+  PROP_CM_NAME,
   PROP_PROTOCOL,
+  PROP_PROTOCOL_NAME,
   PROP_ICON_NAME,
   PROP_CONNECT_AUTOMATICALLY,
   PROP_HAS_BEEN_ONLINE,
@@ -1104,7 +1106,13 @@ _tp_account_get_property (GObject *object,
     case PROP_CONNECTION_MANAGER:
       g_value_set_string (value, self->priv->cm_name);
       break;
+    case PROP_CM_NAME:
+      g_value_set_string (value, self->priv->cm_name);
+      break;
     case PROP_PROTOCOL:
+      g_value_set_string (value, self->priv->proto_name);
+      break;
+    case PROP_PROTOCOL_NAME:
       g_value_set_string (value, self->priv->proto_name);
       break;
     case PROP_ICON_NAME:
@@ -1523,6 +1531,7 @@ tp_account_class_init (TpAccountClass *klass)
    * The account's connection manager name.
    *
    * Since: 0.9.0
+   * Deprecated: Use #TpAccount:cm-name instead.
    */
   g_object_class_install_property (object_class, PROP_CONNECTION_MANAGER,
       g_param_spec_string ("connection-manager",
@@ -1539,9 +1548,40 @@ tp_account_class_init (TpAccountClass *klass)
    * Telepathy D-Bus Interface Specification.
    *
    * Since: 0.9.0
+   * Deprecated: Use #TpAccount:protocol-name instead.
    */
   g_object_class_install_property (object_class, PROP_PROTOCOL,
       g_param_spec_string ("protocol",
+          "Protocol",
+          "The account's protocol name",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:cm-name:
+   *
+   * The account's connection manager name.
+   *
+   * Since: 0.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_CM_NAME,
+      g_param_spec_string ("cm-name",
+          "Connection manager",
+          "The account's connection manager name",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:protocol-name:
+   *
+   * The account's machine-readable protocol name, such as "jabber", "msn" or
+   * "local-xmpp". Recommended names for most protocols can be found in the
+   * Telepathy D-Bus Interface Specification.
+   *
+   * Since: 0.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_PROTOCOL_NAME,
+      g_param_spec_string ("protocol-name",
           "Protocol",
           "The account's protocol name",
           NULL,
@@ -2283,6 +2323,7 @@ tp_account_is_valid (TpAccount *account)
  * Returns: the same as the #TpAccount:connection-manager property
  *
  * Since: 0.9.0
+ * Deprecated: Use tp_account_get_cm_name() instead.
  */
 const gchar *
 tp_account_get_connection_manager (TpAccount *account)
@@ -2301,9 +2342,46 @@ tp_account_get_connection_manager (TpAccount *account)
  * Returns: the same as the #TpAccount:protocol property
  *
  * Since: 0.9.0
+ * Deprecated: Use tp_account_get_cm_name() instead.
  */
 const gchar *
 tp_account_get_protocol (TpAccount *account)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+
+  return account->priv->proto_name;
+}
+
+/**
+ * tp_account_get_cm_name:
+ * @account: a #TpAccount
+ *
+ * <!-- -->
+ *
+ * Returns: the same as the #TpAccount:cm-name property
+ *
+ * Since: 0.UNRELEASED
+ */
+const gchar *
+tp_account_get_cm_name (TpAccount *account)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+
+  return account->priv->cm_name;
+}
+
+/**
+ * tp_account_get_protocol_name:
+ * @account: a #TpAccount
+ *
+ * <!-- -->
+ *
+ * Returns: the same as the #TpAccount:protocol-name property
+ *
+ * Since: 0.UNRELEASED
+ */
+const gchar *
+tp_account_get_protocol_name (TpAccount *account)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 

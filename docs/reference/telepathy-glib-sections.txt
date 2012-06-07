@@ -5154,7 +5154,9 @@ tp_account_get_connection
 tp_account_ensure_connection
 tp_account_get_display_name
 tp_account_get_connection_manager
+tp_account_get_cm_name
 tp_account_get_protocol
+tp_account_get_protocol_name
 tp_account_get_icon_name
 tp_account_get_service
 tp_account_set_enabled_async
