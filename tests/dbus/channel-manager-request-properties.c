@@ -109,28 +109,6 @@ test_wait (Test *test)
 }
 
 static void
-connection_inspect_handles_cb (TpConnection *conn,
-    const gchar **ids,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  Test *test = user_data;
-  const gchar *id;
-
-  g_assert_no_error (error);
-
-  g_assert_cmpuint (g_strv_length ((gchar **) ids), ==, 1);
-
-  id = ids[0];
-
-  g_assert_cmpstr (id, ==, "lolbags");
-
-  test->waiting--;
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
 channel_manager_request_cb (TpTestsSimpleChannelManager *channel_manager,
     GHashTable *request_properties,
     Test *test)
@@ -139,7 +117,8 @@ channel_manager_request_cb (TpTestsSimpleChannelManager *channel_manager,
       TP_PROP_CHANNEL_TARGET_ID);
   TpHandle handle = tp_asv_get_uint32 (request_properties,
       TP_PROP_CHANNEL_TARGET_HANDLE, NULL);
-  GArray *handles = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 1);
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
+      (TpBaseConnection *) test->service_conn, TP_HANDLE_TYPE_CONTACT);
 
   tp_asv_dump (request_properties);
 
@@ -147,15 +126,7 @@ channel_manager_request_cb (TpTestsSimpleChannelManager *channel_manager,
   g_assert (target_id != NULL);
 
   g_assert_cmpstr (target_id, ==, "lolbags#dingdong");
-
-  g_array_append_val (handles, handle);
-
-  tp_cli_connection_call_inspect_handles (test->conn, -1,
-      TP_HANDLE_TYPE_CONTACT, handles,
-      connection_inspect_handles_cb, test, NULL, NULL);
-  test->waiting++;
-
-  g_array_unref (handles);
+  g_assert_cmpstr (tp_handle_inspect (contact_repo, handle), ==, "lolbags");
 
   test->waiting--;
   g_main_loop_quit (test->mainloop);
