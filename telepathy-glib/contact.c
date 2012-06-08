@@ -3649,6 +3649,7 @@ tp_contact_set_attributes (TpContact *contact,
   const gchar *s;
   gpointer boxed;
 
+  /* Identifier */
   s = tp_asv_get_string (asv, TP_TOKEN_CONNECTION_CONTACT_ID);
 
   if (s == NULL)
@@ -3676,7 +3677,7 @@ tp_contact_set_attributes (TpContact *contact,
       return FALSE;
     }
 
-
+  /* Alias */
   if (wanted & CONTACT_FEATURE_FLAG_ALIAS)
     {
       s = tp_asv_get_string (asv,
@@ -3697,6 +3698,7 @@ tp_contact_set_attributes (TpContact *contact,
         }
     }
 
+  /* Avatar */
   if (wanted & CONTACT_FEATURE_FLAG_AVATAR_TOKEN)
     {
       s = tp_asv_get_string (asv,
@@ -3711,6 +3713,7 @@ tp_contact_set_attributes (TpContact *contact,
       contact_maybe_update_avatar_data (contact);
     }
 
+  /* Presence */
   if (wanted & CONTACT_FEATURE_FLAG_PRESENCE)
     {
       boxed = tp_asv_get_boxed (asv,
@@ -3764,34 +3767,38 @@ tp_contact_set_attributes (TpContact *contact,
     }
 
   /* ContactList subscription states */
-  {
-    TpSubscriptionState subscribe;
-    TpSubscriptionState publish;
-    const gchar *publish_request;
-    gboolean subscribe_valid = FALSE;
-    gboolean publish_valid = FALSE;
+  if (wanted & CONTACT_FEATURE_FLAG_STATES)
+    {
+      TpSubscriptionState subscribe;
+      TpSubscriptionState publish;
+      const gchar *publish_request;
+      gboolean subscribe_valid = FALSE;
+      gboolean publish_valid = FALSE;
 
-    subscribe = tp_asv_get_uint32 (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_SUBSCRIBE,
-          &subscribe_valid);
-    publish = tp_asv_get_uint32 (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH,
-          &publish_valid);
-    publish_request = tp_asv_get_string (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH_REQUEST);
+      subscribe = tp_asv_get_uint32 (asv,
+            TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_SUBSCRIBE,
+            &subscribe_valid);
+      publish = tp_asv_get_uint32 (asv,
+            TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH,
+            &publish_valid);
+      publish_request = tp_asv_get_string (asv,
+            TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH_REQUEST);
 
-    if (subscribe_valid && publish_valid)
-      {
-        contact_set_subscription_states (contact, subscribe, publish,
-            publish_request);
-      }
-  }
+      if (subscribe_valid && publish_valid)
+        {
+          contact_set_subscription_states (contact, subscribe, publish,
+              publish_request);
+        }
+    }
 
   /* ContactGroups */
-  boxed = tp_asv_get_boxed (asv,
-      TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS_GROUPS,
-      G_TYPE_STRV);
-  contact_maybe_set_contact_groups (contact, boxed);
+  if (wanted & CONTACT_FEATURE_FLAG_CONTACT_GROUPS)
+    {
+      boxed = tp_asv_get_boxed (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS_GROUPS,
+          G_TYPE_STRV);
+      contact_maybe_set_contact_groups (contact, boxed);
+    }
 
   /* ContactBlocking */
   if (wanted & CONTACT_FEATURE_FLAG_CONTACT_BLOCKING)
