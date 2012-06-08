@@ -667,10 +667,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       tp:name-for-bindings="Normalized_Name">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The normalized user ID of the local user on this account (i.e. the
-          string returned when the <tp:dbus-ref
-          namespace="im.telepathy1.Connection">InspectHandles</tp:dbus-ref>
-          method is called on the value of the <tp:dbus-ref
-          namespace="im.telepathy1.Connection">SelfHandle</tp:dbus-ref>
+          value of the <tp:dbus-ref
+          namespace="im.telepathy1.Connection">SelfID</tp:dbus-ref>
           property for an active connection).</p>
 
         <p>It is unspecified whether this user ID is globally unique.</p>

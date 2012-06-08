@@ -569,11 +569,11 @@
         Emitted when the value of
         <tp:member-ref>STUNServers</tp:member-ref> changes.
       </tp:docstring>
-      <arg name="Servers" type="a(sq)" tp:type="Socket_Address_IP[]" />
+      <arg name="Servers" type="a(su)" tp:type="Socket_Address_IP[]" />
     </signal>
 
     <property name="STUNServers" tp:name-for-bindings="STUN_Servers"
-      type="a(sq)" tp:type="Socket_Address_IP[]" access="read">
+      type="a(su)" tp:type="Socket_Address_IP[]" access="read">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The IP addresses of possible STUN servers to use for NAT
           traversal, as dotted-quad IPv4 address literals or RFC2373

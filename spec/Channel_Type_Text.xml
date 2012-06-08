@@ -603,11 +603,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
               who sent the message could not be determined.</dd>
 
             <dt>message-sender-id (s)</dt>
-            <dd>The identifier of the contact who sent the message,
-              i.e. the result of calling <tp:dbus-ref
-                namespace="imt1.Connection">InspectHandles</tp:dbus-ref>
-              on <code>message-sender</code>. If omitted, clients MUST
-              fall back to looking at <code>message-sender</code>.</dd>
+            <dd>The identifier of the contact who sent the message. If empty or
+              omitted, the contact who sent the message could not be
+              determined.</dd>
 
             <dt>sender-nickname (s)</dt>
             <dd>The nickname chosen by the sender of the message, which can be

@@ -109,22 +109,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           room, etc. with which this channel communicates), or the empty
           string if the TargetHandle is 0.</p>
 
-        <tp:rationale>
-          <p>The presence of this property avoids the following race
-            condition:</p>
-
-          <ul>
-            <li>New channel C is signalled with target handle T</li>
-            <li>Client calls <tp:dbus-ref
-              namespace="im.telepathy1.Connection">InspectHandles</tp:dbus-ref>(CONTACT,
-              [T])</li>
-            <li>Channel C closes, removing the last reference to handle T</li>
-            <li><tp:dbus-ref
-              namespace="im.telepathy1.Connection">InspectHandles</tp:dbus-ref>(CONTACT,
-              [T]) returns an error</li>
-          </ul>
-        </tp:rationale>
-
         <p>If this is present in a channel request,
           <tp:member-ref>TargetHandleType</tp:member-ref>
           MUST be present and not Handle_Type_None, and
@@ -132,17 +116,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           present. Properties from
           <tp:dbus-ref namespace="im.telepathy1.Channel.Interface">Addressing1</tp:dbus-ref>
           MUST NOT be present.The request MUST fail with error InvalidHandle,
-          without side-effects, if the requested TargetID would not be
-          accepted by
-          <tp:dbus-ref namespace="im.telepathy1.Connection">RequestHandles</tp:dbus-ref>.</p>
+          without side-effects, if the requested TargetID is invalid.</p>
 
         <p>The returned channel must be related to the handle corresponding
           to the given identifier, in the same way as if TargetHandle
           had been part of the request instead.</p>
 
         <tp:rationale>
-          <p>Requesting channels with a string identifier saves a round-trip
-            (the call to RequestHandles). It also allows the channel
+          <p>Requesting channels with a string identifier allows the channel
             dispatcher to accept a channel request for an account that is not
             yet connected (and thus has no valid handles), bring the account
             online, and pass on the same parameters to the new connection's
@@ -305,25 +286,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <p>The string that would result from inspecting the
           <tp:member-ref>InitiatorHandle</tp:member-ref>
           property (i.e. the initiator's identifier in the IM protocol).</p>
-
-        <tp:rationale>
-          <p>The presence of this property avoids the following race
-            condition:</p>
-
-          <ul>
-            <li>New Call channel C is signalled with initiator
-              handle I</li>
-            <li>Client calls <tp:dbus-ref
-              namespace="im.telepathy1.Connection">InspectHandles</tp:dbus-ref>(CONTACT,
-              [I])</li>
-            <li>Channel C closes, removing the last reference to handle I</li>
-            <li><tp:dbus-ref
-              namespace="im.telepathy1.Connection">InspectHandles</tp:dbus-ref>(CONTACT,
-              [I]) returns an error</li>
-            <li>Client can indicate that a call was missed, but not who
-              called!</li>
-          </ul>
-        </tp:rationale>
 
         <p>It does not make sense for this property to be in channel
           requests - the initiator will always be the local user - so it

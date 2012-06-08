@@ -614,9 +614,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:member>
       <tp:member type="s" name="Identifier">
         <tp:docstring>
-          The same string that would be returned by <tp:dbus-ref
-            namespace="im.telepathy1.Connection">InspectHandles</tp:dbus-ref>
-          for this handle.
+          The normalized contact identifier.
         </tp:docstring>
       </tp:member>
     </tp:mapping>

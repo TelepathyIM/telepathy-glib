@@ -374,23 +374,26 @@
       <tp:added version="0.17.11">(as stable API)</tp:added>
       <tp:changed version="0.17.14">Added a guarantee of ordering
         relative to the old NewChannel signal (now removed)</tp:changed>
+      <tp:changed version="0.UNRELEASED">Added recommendation against
+        announcing channels together</tp:changed>
 
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>New channels have been created. The connection manager SHOULD emit
-          a single signal for any group of closely related channels that are
-          created at the same time, so that the channel dispatcher can try to
-          dispatch them to a handler as a unit.</p>
+        <p>A new channel has been created. The connection manager
+          SHOULD emit a single signal for each channel created.</p>
 
-        <p>In particular, if additional channels are created as a side-effect
-          of a call to <tp:member-ref>CreateChannel</tp:member-ref>,
-          these channels SHOULD appear in the same NewChannels signal as
-          the channel that satisfies the request.</p>
+        <p>For example, joining a MUC Tube in XMPP requires joining the
+          corresponding MUC (chatroom). Either the connection manager
+          should announce a new <tp:dbus-ref
+          namespace="imt1.Channel.Type">Text</tp:dbus-ref> channel
+          separately, or not expose the Text channel on the bus
+          until it's actually requested (or an incoming message
+          appears).</p>
 
         <tp:rationale>
-          <p>Joining a MUC Tube in XMPP requires joining the corresponding
-            MUC (chatroom), so a <tp:dbus-ref
-              namespace="im.telepathy1.Channel.Type">Text</tp:dbus-ref>
-            channel can be created as a side-effect.</p>
+          <p>Signalling the creation of multiple channels together
+            makes writing simple clients much more complicated, can
+            result in lost messages, and isn't nearly as useful in
+            practice as it sounds.</p>
         </tp:rationale>
       </tp:docstring>
 

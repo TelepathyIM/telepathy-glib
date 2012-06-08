@@ -372,10 +372,10 @@ allowed=im.telepathy1.Channel.TargetHandle;im.telepathy1.Channel.TargetID;im.tel
       tp:name-for-bindings="Normalize_Contact">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Attempt to normalize the given contact ID. Where possible, this
-          SHOULD return the same thing that would be returned by
-          InspectHandles(RequestHandles(CONTACT, [Contact_ID])) on a connected
-          <tp:dbus-ref namespace="im.telepathy1"
-            >Connection</tp:dbus-ref>.</p>
+          SHOULD return the same thing that would be returned by <tp:dbus-ref
+          namespace="imt1.Connection.Interface.Contacts">GetContactByID</tp:dbus-ref>
+           on a connected <tp:dbus-ref namespace="im.telepathy1"
+           >Connection</tp:dbus-ref>.</p>
 
         <p>If full normalization requires network activity or is otherwise
           impossible to do without a <tp:dbus-ref

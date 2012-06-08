@@ -145,45 +145,6 @@ USA.</p>
       <tp:added version="0.19.2"/>
     </property>
 
-    <method name="InspectHandles" tp:name-for-bindings="Inspect_Handles">
-      <arg direction="in" name="Handle_Type" type="u" tp:type="Handle_Type">
-        <tp:docstring>
-          The type of handle to be inspected
-        </tp:docstring>
-      </arg>
-
-      <arg direction="in" name="Handles" type="au" tp:type="Handle[]">
-        <tp:docstring>
-          An array of integer handles of this type
-        </tp:docstring>
-      </arg>
-
-      <arg direction="out" type="as" name="Identifiers">
-        <tp:docstring>
-          An array of identifiers corresponding to the given handles, in the same order.
-        </tp:docstring>
-      </arg>
-
-      <tp:docstring>
-        Return a string representation for a number of handles of a given
-        type.
-      </tp:docstring>
-
-      <tp:possible-errors>
-        <tp:error name="im.telepathy1.Error.Disconnected"/>
-        <tp:error name="im.telepathy1.Error.InvalidArgument">
-          <tp:docstring>
-            The handle type is invalid
-          </tp:docstring>
-        </tp:error>
-        <tp:error name="im.telepathy1.Error.InvalidHandle">
-          <tp:docstring>
-            One of the given handles is not valid
-          </tp:docstring>
-        </tp:error>
-      </tp:possible-errors>
-    </method>
-
     <tp:enum name="Handle_Type" type="u">
       <tp:enumvalue suffix="None" value="0">
         <tp:docstring>
@@ -220,60 +181,6 @@ USA.</p>
       <tp:docstring>An unsigned 32-bit integer representing a handle of type
         Handle_Type_Room</tp:docstring>
     </tp:simple-type>
-
-    <method name="RequestHandles" tp:name-for-bindings="Request_Handles">
-      <arg direction="in" name="Handle_Type" type="u" tp:type="Handle_Type">
-        <tp:docstring>
-          The type of handle required
-        </tp:docstring>
-      </arg>
-
-      <arg direction="in" name="Identifiers" type="as">
-        <tp:docstring>
-          An array of identifiers of entities to request handles for
-        </tp:docstring>
-      </arg>
-
-      <arg direction="out" type="au" tp:type="Handle[]"
-        name="Handles">
-        <tp:docstring>
-          An array of integer handle numbers in the same order as the given identifiers.
-        </tp:docstring>
-      </arg>
-
-      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>Request several handles from the connection manager which represent a
-          number of contacts, rooms or server-stored lists on the service.</p>
-      </tp:docstring>
-
-      <tp:possible-errors>
-        <tp:error name="im.telepathy1.Error.Disconnected"/>
-        <tp:error name="im.telepathy1.Error.InvalidHandle">
-          <tp:docstring>
-            The given identifier does not identify a valid entity of the given
-            type.
-
-            <tp:rationale>
-              For instance, an XMPP connection would raise this error for
-              identifiers with type Handle_Type_Room that do not contain
-              exactly one '@' character, that contain spaces, and so on.
-            </tp:rationale>
-          </tp:docstring>
-        </tp:error>
-        <tp:error name="im.telepathy1.Error.NotImplemented">
-          <tp:docstring>
-            The given handle type is not valid, or is not implemented on this
-            connection.
-
-            <tp:rationale>
-              For instance, a connection to a protocol that doesn't have
-              chat rooms would raise this error for room handles, and all CMs
-              would raise this error for Handle_Type_None.
-            </tp:rationale>
-          </tp:docstring>
-        </tp:error>
-      </tp:possible-errors>
-    </method>
 
     <tp:enum name="Connection_Status" plural="Connection_Statuses" type="u">
       <tp:enumvalue suffix="Connected" value="0">
@@ -640,9 +547,10 @@ USA.</p>
 
     <tp:contact-attribute name="contact-id" type="s">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>The same string that would be returned by
-          <tp:member-ref>InspectHandles</tp:member-ref>. As a special case,
-          this is always present in the result of <tp:dbus-ref
+        <p>The normalized contact's identifier. Not necessarily the same string
+          as passed to <tp:dbus-ref
+          namespace="imt1.Connection.Interface.Contacts">GetContactByID</tp:dbus-ref>.
+          As a special case, this is always present in the result of <tp:dbus-ref
             namespace="im.telepathy1.Connection.Interface.Contacts">GetContactAttributes</tp:dbus-ref>,
           whether it was explicitly requested or not.</p>
       </tp:docstring>

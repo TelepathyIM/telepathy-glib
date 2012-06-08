@@ -67,7 +67,6 @@ EXTRA_DIST = \
     Client_Interface_Requests.xml \
     Client_Observer.xml \
     Connection.xml \
-    Connection_Future.xml \
     Connection_Interface_Addressing1.xml \
     Connection_Interface_Aliasing1.xml \
     Connection_Interface_Anonymity1.xml \

@@ -204,8 +204,7 @@
 
       <arg direction="out" name="Handle" type="u" tp:type="Contact_Handle">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-          <p>The contact's handle, as returned by <tp:dbus-ref
-          namespace="ofdT.Connection">RequestHandles</tp:dbus-ref></p>
+          <p>The contact's handle</p>
         </tp:docstring>
       </arg>
 
@@ -225,8 +224,8 @@
       </arg>
 
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle"/>
+        <tp:error name="im.telepathy1.Error.Disconnected"/>
+        <tp:error name="im.telepathy1.Error.InvalidHandle"/>
       </tp:possible-errors>
     </method>
   </interface>

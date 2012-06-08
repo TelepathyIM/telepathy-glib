@@ -227,9 +227,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
    <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
      <p>
        These interfaces are used when a <tp:dbus-ref
-       namespace='ofdT.Channel.Type'>Call1</tp:dbus-ref> channel
+       namespace='imt1.Channel.Type'>Call1</tp:dbus-ref> channel
        doesn't have <tp:dbus-ref
-       namespace="ofdT.Channel.Type.Call1">HardwareStreaming</tp:dbus-ref> to
+       namespace="imt1.Channel.Type.Call1">HardwareStreaming</tp:dbus-ref> to
        implement the media streaming aspects of a call.
      </p>
    </tp:docstring>
