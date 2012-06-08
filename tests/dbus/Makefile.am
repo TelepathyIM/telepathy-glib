@@ -19,7 +19,6 @@ tests_list = \
     test-connection \
     test-connection-aliasing \
     test-connection-balance \
-    test-connection-bug-18845 \
     test-connection-error \
     test-connection-interests \
     test-contact-lists \
@@ -147,8 +146,6 @@ test_connection_aliasing_LDADD = \
     $(top_builddir)/examples/cm/contactlist/libexample-cm-contactlist.la
 
 test_connection_balance_SOURCES = connection-balance.c
-
-test_connection_bug_18845_SOURCES = connection-bug-18845.c
 
 test_connection_error_SOURCES = connection-error.c
 
