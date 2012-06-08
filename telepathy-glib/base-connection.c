@@ -1636,123 +1636,6 @@ tp_base_connection_check_connected (TpBaseConnection *self,
   return FALSE;
 }
 
-static void
-tp_base_connection_inspect_handles (TpSvcConnection *iface,
-                                    guint handle_type,
-                                    const GArray *handles,
-                                    DBusGMethodInvocation *context)
-{
-  TpBaseConnection *self = TP_BASE_CONNECTION (iface);
-  TpBaseConnectionPrivate *priv = self->priv;
-  GError *error = NULL;
-  const gchar **ret;
-  guint i;
-
-  g_assert (TP_IS_BASE_CONNECTION (self));
-
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
-
-  if (!tp_handles_supported_and_valid (priv->handles,
-        handle_type, handles, FALSE, &error))
-    {
-      dbus_g_method_return_error (context, error);
-
-      g_error_free (error);
-
-      return;
-    }
-
-  ret = g_new (const gchar *, handles->len + 1);
-
-  for (i = 0; i < handles->len; i++)
-    {
-      TpHandle handle;
-      const gchar *tmp;
-
-      handle = g_array_index (handles, TpHandle, i);
-      tmp = tp_handle_inspect (priv->handles[handle_type], handle);
-      g_assert (tmp != NULL);
-
-      ret[i] = tmp;
-    }
-
-  ret[i] = NULL;
-
-  tp_svc_connection_return_from_inspect_handles (context, ret);
-
-  g_free (ret);
-}
-
-static void
-tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
-                                         guint handle_type,
-                                         const gchar **names,
-                                         DBusGMethodInvocation *context)
-{
-  TpBaseConnection *self = TP_BASE_CONNECTION (iface);
-  TpHandleRepoIface *handle_repo = tp_base_connection_get_handles (self,
-      handle_type);
-  guint count = 0, i;
-  const gchar **cur_name;
-  GError *error = NULL;
-  GArray *handles = NULL;
-
-  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
-
-  for (cur_name = names; *cur_name != NULL; cur_name++)
-    {
-      count++;
-    }
-
-  if (!tp_handle_type_is_valid (handle_type, &error))
-    {
-      g_assert (error != NULL);
-      goto out;
-    }
-
-  if (handle_repo == NULL)
-    {
-      DEBUG ("unimplemented handle type %u", handle_type);
-
-      error = g_error_new (TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
-                          "unimplemented handle type %u", handle_type);
-      goto out;
-    }
-
-  handles = g_array_sized_new (FALSE, FALSE, sizeof (guint), count);
-
-  for (i = 0; i < count; i++)
-    {
-      TpHandle handle;
-      const gchar *name = names[i];
-
-      handle = tp_handle_ensure (handle_repo, name, NULL, &error);
-
-      if (handle == 0)
-        {
-          DEBUG("RequestHandles of type %d failed because '%s' is invalid: %s",
-              handle_type, name, error->message);
-          g_assert (error != NULL);
-          goto out;
-        }
-      g_array_append_val (handles, handle);
-    }
-
-out:
-  if (error == NULL)
-    {
-      tp_svc_connection_return_from_request_handles (context, handles);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
-
-  tp_clear_pointer (&handles, g_array_unref);
-}
-
 /**
  * tp_base_connection_get_handles:
  * @self: A connection
@@ -2530,8 +2413,6 @@ conn_iface_init (gpointer g_iface, gpointer iface_data)
     tp_base_connection_##prefix##x)
   IMPLEMENT(,connect);
   IMPLEMENT(,disconnect);
-  IMPLEMENT(,inspect_handles);
-  IMPLEMENT(dbus_,request_handles);
   IMPLEMENT(dbus_,add_client_interest);
   IMPLEMENT(dbus_,remove_client_interest);
 #undef IMPLEMENT
