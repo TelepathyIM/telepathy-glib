@@ -37,6 +37,7 @@
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/add-dispatch-operation-context.h>
 #include <telepathy-glib/automatic-client-factory.h>
+#include <telepathy-glib/avatars-mixin.h>
 #include <telepathy-glib/base-call-channel.h>
 #include <telepathy-glib/base-call-content.h>
 #include <telepathy-glib/base-call-stream.h>

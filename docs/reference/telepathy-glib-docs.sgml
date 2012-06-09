@@ -75,6 +75,7 @@
     <xi:include href="xml/channel-manager.xml"/>
     <xi:include href="xml/base-contact-list.xml"/>
     <xi:include href="xml/contacts-mixin.xml"/>
+    <xi:include href="xml/avatars-mixin.xml"/>
     <xi:include href="xml/dbus-properties-mixin.xml"/>
     <xi:include href="xml/exportable-channel.xml"/>
     <xi:include href="xml/base-channel.xml"/>
