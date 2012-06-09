@@ -63,3 +63,7 @@ API/Behaviour changes
 
  - TpAccountRequest::connection-manager property has been renamed to ::cm-name,
    and TpAccountRequest::protocol property has been renamed to ::protocol-name.
+
+ - TP_CONTACT_FEATURE_AVATAR_DATA and TP_CONTACT_FEATURE_AVATAR_TOKEN got
+   replaced by a single feature TP_CONTACT_FEATURE_AVATAR. Avatar tokens are no
+   more exposed in the API since they are implementation details.
