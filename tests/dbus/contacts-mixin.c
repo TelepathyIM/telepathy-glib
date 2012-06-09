@@ -95,10 +95,6 @@ test_features (TpTestsContactsConnection *service_conn,
       tp_asv_get_string (attrs,
           TP_IFACE_CONNECTION_INTERFACE_ALIASING "/alias"), ==,
       "Alice in Wonderland");
-  g_assert_cmpstr (
-      tp_asv_get_string (attrs,
-          TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token"), ==,
-      "aaaaa");
 
   attrs = g_hash_table_lookup (contacts,
       GUINT_TO_POINTER (g_array_index (handles, guint, 1)));
@@ -110,10 +106,6 @@ test_features (TpTestsContactsConnection *service_conn,
       tp_asv_get_string (attrs,
           TP_IFACE_CONNECTION_INTERFACE_ALIASING "/alias"), ==,
       "Bob the Builder");
-  g_assert_cmpstr (
-      tp_asv_get_string (attrs,
-          TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token"), ==,
-      "bbbbb");
 
   attrs = g_hash_table_lookup (contacts,
       GUINT_TO_POINTER (g_array_index (handles, guint, 2)));
@@ -125,10 +117,6 @@ test_features (TpTestsContactsConnection *service_conn,
       tp_asv_get_string (attrs,
           TP_IFACE_CONNECTION_INTERFACE_ALIASING "/alias"), ==,
       "Christopher Robin");
-  g_assert_cmpstr (
-      tp_asv_get_string (attrs,
-          TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token"), ==,
-      "ccccc");
 
   g_hash_table_unref (contacts);
 }
@@ -144,7 +132,6 @@ main (int argc,
   static const gchar * const ids[] = { "alice", "bob", "chris" };
   static const gchar * const aliases[] = { "Alice in Wonderland",
       "Bob the Builder", "Christopher Robin" };
-  static const gchar * const tokens[] = { "aaaaa", "bbbbb", "ccccc" };
   static TpTestsContactsConnectionPresenceStatusIndex statuses[] = {
       TP_TESTS_CONTACTS_CONNECTION_STATUS_AVAILABLE,
       TP_TESTS_CONTACTS_CONNECTION_STATUS_BUSY,
@@ -180,8 +167,6 @@ main (int argc,
       (const TpHandle *) handles->data, aliases);
   tp_tests_contacts_connection_change_presences (service_conn, 3,
       (const TpHandle *) handles->data, statuses, messages);
-  tp_tests_contacts_connection_change_avatar_tokens (service_conn, 3,
-      (const TpHandle *) handles->data, tokens);
 
   /* Tests */
 

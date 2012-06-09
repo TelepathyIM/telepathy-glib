@@ -438,32 +438,25 @@ test_avatar_requirements (Fixture *f,
   g_main_loop_unref (result.loop);
 }
 
+static const gchar *fake_avatar_token = "fake-avatar-token";
+static const gchar *fake_avatar_data = "fake-avatar-data";
+static const gchar *fake_avatar_mime_type = "fake-avatar-mime-type";
+
 static TpContact *
 create_contact_with_fake_avatar (Fixture *f,
-    const gchar *id,
-    gboolean request_avatar)
+    const gchar *id)
 {
   Result result = { g_main_loop_new (NULL, FALSE), NULL };
-  GQuark features[] = { TP_CONTACT_FEATURE_AVATAR_DATA, 0 };
-  const gchar avatar_data[] = "fake-avatar-data";
-  const gchar avatar_token[] = "fake-avatar-token";
-  const gchar avatar_mime_type[] = "fake-avatar-mime-type";
+  GQuark features[] = { TP_CONTACT_FEATURE_AVATAR, 0 };
   TpContact *contact;
   TpHandle handle;
-  GArray *array;
   gchar *content = NULL;
+  GFile *avatar_file;
 
   contact = ensure_contact (f, id, &handle);
-  array = g_array_new (FALSE, FALSE, sizeof (gchar));
-  g_array_append_vals (array, avatar_data, strlen (avatar_data) + 1);
 
-  tp_tests_contacts_connection_change_avatar_data (f->service_conn, handle,
-      array, avatar_mime_type, avatar_token);
-
-  if (request_avatar)
-    features[0] = TP_CONTACT_FEATURE_AVATAR_DATA;
-  else
-    features[0] = TP_CONTACT_FEATURE_AVATAR_TOKEN;
+  tp_tests_contacts_connection_avatar_changed (f->service_conn, handle,
+      fake_avatar_token);
 
   tp_connection_upgrade_contacts_async (f->client_conn,
       1, &contact, features,
@@ -471,52 +464,25 @@ create_contact_with_fake_avatar (Fixture *f,
   g_main_loop_run (result.loop);
   g_assert_no_error (result.error);
 
-  g_assert_cmpstr (tp_contact_get_avatar_token (contact), ==, avatar_token);
-
-  if (request_avatar)
+  if (tp_contact_get_avatar_file (contact) == NULL)
     {
-      GFile *avatar_file;
-
-      /* If we requested avatar, it could come later */
-      if (tp_contact_get_avatar_file (contact) == NULL)
-        {
-          g_signal_connect_swapped (contact, "notify::avatar-file",
-              G_CALLBACK (finish), &result);
-          g_main_loop_run (result.loop);
-        }
-
-      g_assert_cmpstr (tp_contact_get_avatar_mime_type (contact), ==,
-          avatar_mime_type);
-
-      avatar_file = tp_contact_get_avatar_file (contact);
-      g_assert (avatar_file != NULL);
-      g_file_load_contents (avatar_file, NULL, &content, NULL, NULL,
-          &result.error);
-      g_assert_no_error (result.error);
-      g_assert_cmpstr (content, ==, avatar_data);
-      g_free (content);
+      g_signal_connect_swapped (contact, "notify::avatar-file",
+          G_CALLBACK (finish), &result);
+      g_main_loop_run (result.loop);
     }
+
+  avatar_file = tp_contact_get_avatar_file (contact);
+  g_assert (avatar_file != NULL);
+  g_file_load_contents (avatar_file, NULL, &content, NULL, NULL,
+      &result.error);
+  g_assert_no_error (result.error);
+  g_assert_cmpstr (content, ==, fake_avatar_data);
+  g_free (content);
 
   reset_result (&result);
   g_main_loop_unref (result.loop);
 
-  g_array_unref (array);
-
   return contact;
-}
-
-static void
-avatar_retrieved_cb (TpConnection *connection,
-    guint handle,
-    const gchar *token,
-    const GArray *avatar,
-    const gchar *mime_type,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  gboolean *called = user_data;
-
-  *called = TRUE;
 }
 
 /* From telepathy-haze, with permission */
@@ -562,36 +528,47 @@ haze_remove_directory (const gchar *path)
 }
 
 static void
+request_avatar_cb (TpTestsContactsConnection *conn,
+    TpHandle handle,
+    gpointer user_data)
+{
+  guint *count = user_data;
+  GArray *data;
+
+  (*count)++;
+
+  data = g_array_new (FALSE, FALSE, sizeof (gchar));
+  g_array_append_vals (data, fake_avatar_data, strlen (fake_avatar_data) + 1);
+
+  tp_tests_contacts_connection_avatar_retrieved (conn, handle,
+      fake_avatar_token, data, fake_avatar_mime_type);
+
+  g_array_unref (data);
+}
+
+static void
 test_avatar_data (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
-  TpConnection *client_conn = f->client_conn;
-  gboolean avatar_retrieved_called;
-  GError *error = NULL;
   TpContact *contact1, *contact2;
-  TpProxySignalConnection *signal_id;
+  guint request_count = 0;
 
   g_message (G_STRFUNC);
 
-  /* Check if AvatarRetrieved gets called */
-  signal_id = tp_cli_connection_interface_avatars_connect_to_avatar_retrieved (
-      client_conn, avatar_retrieved_cb, &avatar_retrieved_called, NULL, NULL,
-      &error);
-  g_assert_no_error (error);
+  g_signal_connect (f->service_conn, "request-avatar",
+      G_CALLBACK (request_avatar_cb), &request_count);
 
   /* First time we create a contact, avatar should not be in cache, so
-   * AvatarRetrived should be called */
-  avatar_retrieved_called = FALSE;
-  contact1 = create_contact_with_fake_avatar (f, "fake-id1", TRUE);
-  g_assert (avatar_retrieved_called);
+   * RequestAvatars should be called */
+  contact1 = create_contact_with_fake_avatar (f, "fake-id1");
+  g_assert_cmpuint (request_count, ==, 1);
   g_assert (contact1 != NULL);
   g_assert (tp_contact_get_avatar_file (contact1) != NULL);
 
   /* Second time we create a contact, avatar should be in cache now, so
-   * AvatarRetrived should NOT be called */
-  avatar_retrieved_called = FALSE;
-  contact2 = create_contact_with_fake_avatar (f, "fake-id2", TRUE);
-  g_assert (!avatar_retrieved_called);
+   * RequestAvatars should NOT be called */
+  contact2 = create_contact_with_fake_avatar (f, "fake-id2");
+  g_assert_cmpuint (request_count, ==, 1);
   g_assert (contact2 != NULL);
   g_assert (tp_contact_get_avatar_file (contact2) != NULL);
 
@@ -599,33 +576,6 @@ test_avatar_data (Fixture *f,
       tp_contact_get_avatar_file (contact1),
       tp_contact_get_avatar_file (contact2)));
 
-  tp_proxy_signal_connection_disconnect (signal_id);
-  g_object_unref (contact1);
-  g_object_unref (contact2);
-}
-
-static void
-test_avatar_data_after_token (Fixture *f,
-    gconstpointer unused G_GNUC_UNUSED)
-{
-  const gchar *id = "avatar-data-after-token";
-  TpContact *contact1, *contact2;
-
-  g_message (G_STRFUNC);
-
-  /* Create a contact with AVATAR_TOKEN feature */
-  contact1 = create_contact_with_fake_avatar (f, id, FALSE);
-  g_assert (contact1 != NULL);
-  g_assert (tp_contact_get_avatar_file (contact1) == NULL);
-
-  /* Now create the same contact with AVATAR_DATA feature */
-  contact2 = create_contact_with_fake_avatar (f, id, TRUE);
-  g_assert (contact2 != NULL);
-  g_assert (tp_contact_get_avatar_file (contact2) != NULL);
-
-  g_assert (contact1 == contact2);
-
-  /* Cleanup */
   g_object_unref (contact1);
   g_object_unref (contact2);
 }
@@ -736,8 +686,6 @@ test_no_features (Fixture *f,
           ids[i]);
       g_assert_cmpstr (tp_contact_get_alias (contacts[i]), ==,
           tp_contact_get_identifier (contacts[i]));
-      MYASSERT (tp_contact_get_avatar_token (contacts[i]) == NULL,
-          ": %s", tp_contact_get_avatar_token (contacts[i]));
       g_assert_cmpuint (tp_contact_get_presence_type (contacts[i]), ==,
           TP_CONNECTION_PRESENCE_TYPE_UNSET);
       g_assert_cmpstr (tp_contact_get_presence_status (contacts[i]), ==,
@@ -746,8 +694,6 @@ test_no_features (Fixture *f,
           "");
       MYASSERT (!tp_contact_has_feature (contacts[i],
             TP_CONTACT_FEATURE_ALIAS), "");
-      MYASSERT (!tp_contact_has_feature (contacts[i],
-            TP_CONTACT_FEATURE_AVATAR_TOKEN), "");
       MYASSERT (!tp_contact_has_feature (contacts[i],
             TP_CONTACT_FEATURE_PRESENCE), "");
       MYASSERT (!tp_contact_has_feature (contacts[i],
@@ -844,7 +790,6 @@ test_upgrade (Fixture *f,
   static const gchar * const ids[] = { "alice", "bob", "chris" };
   static const gchar * const aliases[] = { "Alice in Wonderland",
       "Bob the Builder", "Christopher Robin" };
-  static const gchar * const tokens[] = { "aaaaa", "bbbbb", "ccccc" };
   static TpTestsContactsConnectionPresenceStatusIndex statuses[] = {
       TP_TESTS_CONTACTS_CONNECTION_STATUS_AVAILABLE,
       TP_TESTS_CONTACTS_CONNECTION_STATUS_BUSY,
@@ -861,7 +806,7 @@ test_upgrade (Fixture *f,
   GHashTable *capabilities;
   TpContact *contacts[3];
   GQuark features[] = { TP_CONTACT_FEATURE_ALIAS,
-      TP_CONTACT_FEATURE_AVATAR_TOKEN, TP_CONTACT_FEATURE_PRESENCE,
+      TP_CONTACT_FEATURE_PRESENCE,
       TP_CONTACT_FEATURE_LOCATION, TP_CONTACT_FEATURE_CAPABILITIES, 0 };
   guint i;
 
@@ -874,8 +819,6 @@ test_upgrade (Fixture *f,
       aliases);
   tp_tests_contacts_connection_change_presences (service_conn, 3, handles,
       statuses, messages);
-  tp_tests_contacts_connection_change_avatar_tokens (service_conn, 3, handles,
-      tokens);
   tp_tests_contacts_connection_change_locations (service_conn, 3, handles,
       locations);
 
@@ -903,8 +846,6 @@ test_upgrade (Fixture *f,
           ids[i]);
       g_assert_cmpstr (tp_contact_get_alias (contacts[i]), ==,
           tp_contact_get_identifier (contacts[i]));
-      MYASSERT (tp_contact_get_avatar_token (contacts[i]) == NULL,
-          ": %s", tp_contact_get_avatar_token (contacts[i]));
       g_assert_cmpuint (tp_contact_get_presence_type (contacts[i]), ==,
           TP_CONNECTION_PRESENCE_TYPE_UNSET);
       g_assert_cmpstr (tp_contact_get_presence_status (contacts[i]), ==,
@@ -913,8 +854,6 @@ test_upgrade (Fixture *f,
           "");
       MYASSERT (!tp_contact_has_feature (contacts[i],
             TP_CONTACT_FEATURE_ALIAS), "");
-      MYASSERT (!tp_contact_has_feature (contacts[i],
-            TP_CONTACT_FEATURE_AVATAR_TOKEN), "");
       MYASSERT (!tp_contact_has_feature (contacts[i],
             TP_CONTACT_FEATURE_PRESENCE), "");
       MYASSERT (!tp_contact_has_feature (contacts[i],
@@ -951,11 +890,6 @@ test_upgrade (Fixture *f,
             TP_CONTACT_FEATURE_ALIAS), "");
       g_assert_cmpstr (tp_contact_get_alias (contacts[i]), ==,
           aliases[i]);
-
-      MYASSERT (tp_contact_has_feature (contacts[i],
-            TP_CONTACT_FEATURE_AVATAR_TOKEN), "");
-      g_assert_cmpstr (tp_contact_get_avatar_token (contacts[i]), ==,
-          tokens[i]);
 
       MYASSERT (tp_contact_has_feature (contacts[i],
             TP_CONTACT_FEATURE_PRESENCE), "");
@@ -1036,7 +970,6 @@ test_upgrade_noop (Fixture *f,
 typedef struct
 {
   gboolean alias_changed;
-  gboolean avatar_token_changed;
   gboolean presence_type_changed;
   gboolean presence_status_changed;
   gboolean presence_msg_changed;
@@ -1048,8 +981,7 @@ static void
 notify_ctx_init (notify_ctx *ctx)
 {
   ctx->alias_changed = FALSE;
-  ctx->avatar_token_changed = FALSE;
-  ctx->presence_type_changed = FALSE;
+ ctx->presence_type_changed = FALSE;
   ctx->presence_status_changed = FALSE;
   ctx->presence_msg_changed = FALSE;
   ctx->location_changed = FALSE;
@@ -1059,7 +991,7 @@ notify_ctx_init (notify_ctx *ctx)
 static gboolean
 notify_ctx_is_fully_changed (notify_ctx *ctx)
 {
-  return ctx->alias_changed && ctx->avatar_token_changed &&
+  return ctx->alias_changed &&
     ctx->presence_type_changed && ctx->presence_status_changed &&
     ctx->presence_msg_changed && ctx->location_changed &&
     ctx->capabilities_changed;
@@ -1068,7 +1000,7 @@ notify_ctx_is_fully_changed (notify_ctx *ctx)
 static gboolean
 notify_ctx_is_changed (notify_ctx *ctx)
 {
-  return ctx->alias_changed || ctx->avatar_token_changed ||
+  return ctx->alias_changed ||
     ctx->presence_type_changed || ctx->presence_status_changed ||
     ctx->presence_msg_changed || ctx->location_changed ||
     ctx->capabilities_changed;
@@ -1081,8 +1013,6 @@ contact_notify_cb (TpContact *contact,
 {
   if (!tp_strdiff (param->name, "alias"))
     ctx->alias_changed = TRUE;
-  else if (!tp_strdiff (param->name, "avatar-token"))
-    ctx->avatar_token_changed = TRUE;
   else if (!tp_strdiff (param->name, "presence-type"))
     ctx->presence_type_changed = TRUE;
   else if (!tp_strdiff (param->name, "presence-status"))
@@ -1128,7 +1058,6 @@ test_features (Fixture *f,
   static const gchar * const ids[] = { "alice", "bob", "chris" };
   static const gchar * const aliases[] = { "Alice in Wonderland",
       "Bob the Builder", "Christopher Robin" };
-  static const gchar * const tokens[] = { "aaaaa", "bbbbb", "ccccc" };
   static TpTestsContactsConnectionPresenceStatusIndex statuses[] = {
       TP_TESTS_CONTACTS_CONNECTION_STATUS_AVAILABLE,
       TP_TESTS_CONTACTS_CONNECTION_STATUS_BUSY,
@@ -1137,7 +1066,6 @@ test_features (Fixture *f,
       "GON OUT BACKSON" };
   static const gchar * const new_aliases[] = { "Alice [at a tea party]",
       "Bob the Plumber" };
-  static const gchar * const new_tokens[] = { "AAAA", "BBBB" };
   static TpTestsContactsConnectionPresenceStatusIndex new_statuses[] = {
       TP_TESTS_CONTACTS_CONNECTION_STATUS_AWAY,
       TP_TESTS_CONTACTS_CONNECTION_STATUS_AVAILABLE };
@@ -1162,7 +1090,7 @@ test_features (Fixture *f,
   gboolean new_support_text_chatrooms[] = { TRUE, FALSE };
   TpContact *contacts[3];
   GQuark features[] = { TP_CONTACT_FEATURE_ALIAS,
-      TP_CONTACT_FEATURE_AVATAR_TOKEN, TP_CONTACT_FEATURE_PRESENCE,
+      TP_CONTACT_FEATURE_PRESENCE,
       TP_CONTACT_FEATURE_LOCATION, TP_CONTACT_FEATURE_CAPABILITIES, 0 };
   guint i;
   struct {
@@ -1170,7 +1098,6 @@ test_features (Fixture *f,
       TpHandle handle;
       gchar *identifier;
       gchar *alias;
-      gchar *avatar_token;
       TpConnectionPresenceType presence_type;
       gchar *presence_status;
       gchar *presence_message;
@@ -1188,8 +1115,6 @@ test_features (Fixture *f,
       aliases);
   tp_tests_contacts_connection_change_presences (service_conn, 3, handles,
       statuses, messages);
-  tp_tests_contacts_connection_change_avatar_tokens (service_conn, 3, handles,
-      tokens);
   tp_tests_contacts_connection_change_locations (service_conn, 3, handles,
       locations);
 
@@ -1226,11 +1151,6 @@ test_features (Fixture *f,
             TP_CONTACT_FEATURE_ALIAS), "");
       g_assert_cmpstr (tp_contact_get_alias (contacts[i]), ==,
           aliases[i]);
-
-      MYASSERT (tp_contact_has_feature (contacts[i],
-            TP_CONTACT_FEATURE_AVATAR_TOKEN), "");
-      g_assert_cmpstr (tp_contact_get_avatar_token (contacts[i]), ==,
-          tokens[i]);
 
       MYASSERT (tp_contact_has_feature (contacts[i],
             TP_CONTACT_FEATURE_PRESENCE), "");
@@ -1274,7 +1194,6 @@ test_features (Fixture *f,
       "handle", &from_gobject.handle,
       "identifier", &from_gobject.identifier,
       "alias", &from_gobject.alias,
-      "avatar-token", &from_gobject.avatar_token,
       "presence-type", &from_gobject.presence_type,
       "presence-status", &from_gobject.presence_status,
       "presence-message", &from_gobject.presence_message,
@@ -1285,7 +1204,6 @@ test_features (Fixture *f,
   g_assert_cmpuint (from_gobject.handle, ==, handles[0]);
   g_assert_cmpstr (from_gobject.identifier, ==, "alice");
   g_assert_cmpstr (from_gobject.alias, ==, "Alice in Wonderland");
-  g_assert_cmpstr (from_gobject.avatar_token, ==, "aaaaa");
   g_assert_cmpuint (from_gobject.presence_type, ==,
       TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
   g_assert_cmpstr (from_gobject.presence_status, ==, "available");
@@ -1300,7 +1218,6 @@ test_features (Fixture *f,
   g_object_unref (from_gobject.connection);
   g_free (from_gobject.identifier);
   g_free (from_gobject.alias);
-  g_free (from_gobject.avatar_token);
   g_free (from_gobject.presence_status);
   g_free (from_gobject.presence_message);
   g_hash_table_unref (from_gobject.location);
@@ -1319,8 +1236,6 @@ test_features (Fixture *f,
       new_aliases);
   tp_tests_contacts_connection_change_presences (service_conn, 2, handles,
       new_statuses, new_messages);
-  tp_tests_contacts_connection_change_avatar_tokens (service_conn, 2, handles,
-      new_tokens);
   tp_tests_contacts_connection_change_locations (service_conn, 2, handles,
       new_locations);
 
@@ -1346,11 +1261,6 @@ test_features (Fixture *f,
             TP_CONTACT_FEATURE_ALIAS), "");
       g_assert_cmpstr (tp_contact_get_alias (contacts[i]), ==,
           new_aliases[i]);
-
-      MYASSERT (tp_contact_has_feature (contacts[i],
-            TP_CONTACT_FEATURE_AVATAR_TOKEN), "");
-      g_assert_cmpstr (tp_contact_get_avatar_token (contacts[i]), ==,
-          new_tokens[i]);
 
       MYASSERT (tp_contact_has_feature (contacts[i],
             TP_CONTACT_FEATURE_PRESENCE), "");
@@ -1941,7 +1851,6 @@ test_contact_list (Fixture *f,
   factory = tp_proxy_get_factory (f->client_conn);
   tp_client_factory_add_contact_features_varargs (factory,
       TP_CONTACT_FEATURE_ALIAS,
-      TP_CONTACT_FEATURE_AVATAR_DATA,
       0);
 
   /* Now put it online and wait for contact list state move to success */
@@ -1969,10 +1878,6 @@ test_contact_list (Fixture *f,
   /* Even if we didn't explicitely asked that feature, we should have it for free */
   g_assert (tp_contact_has_feature (contact, TP_CONTACT_FEATURE_SUBSCRIPTION_STATES));
   g_assert_cmpint (tp_contact_get_subscribe_state (contact), ==, TP_SUBSCRIPTION_STATE_ASK);
-  /* We asked for AVATAR_DATA, verify we got it. This is special because it has
-   * no contact attribute, and ContactList preparation does not go through
-   * the slow path. */
-  g_assert (tp_contact_has_feature (contact, TP_CONTACT_FEATURE_AVATAR_DATA));
 
   g_ptr_array_unref (contacts);
 }
@@ -2075,11 +1980,10 @@ setup_internal (Fixture *f,
  * TpContactFeature... */
   const GQuark features[] = {
     TP_CONTACT_FEATURE_ALIAS,
-    TP_CONTACT_FEATURE_AVATAR_TOKEN,
+    TP_CONTACT_FEATURE_AVATAR,
     TP_CONTACT_FEATURE_PRESENCE,
     TP_CONTACT_FEATURE_LOCATION,
     TP_CONTACT_FEATURE_CAPABILITIES,
-    TP_CONTACT_FEATURE_AVATAR_DATA,
     TP_CONTACT_FEATURE_CONTACT_INFO,
     TP_CONTACT_FEATURE_CLIENT_TYPES,
     TP_CONTACT_FEATURE_SUBSCRIPTION_STATES,
@@ -2163,7 +2067,6 @@ main (int argc,
   ADD (by_id);
   ADD (avatar_requirements);
   ADD (avatar_data);
-  ADD (avatar_data_after_token);
   ADD (contact_info);
   ADD (dup_if_possible);
   ADD (subscription_states);
