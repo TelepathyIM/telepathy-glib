@@ -3779,12 +3779,8 @@ tp_contact_has_feature
 TP_CONTACT_FEATURE_ALIAS
 tp_contact_get_alias
 <SUBSECTION>
-TP_CONTACT_FEATURE_AVATAR_TOKEN
-tp_contact_get_avatar_token
-<SUBSECTION>
-TP_CONTACT_FEATURE_AVATAR_DATA
+TP_CONTACT_FEATURE_AVATAR
 tp_contact_get_avatar_file
-tp_contact_get_avatar_mime_type
 <SUBSECTION>
 TP_CONTACT_FEATURE_CLIENT_TYPES
 tp_contact_get_client_types
@@ -3845,8 +3841,7 @@ tp_contact_remove_from_group_async
 tp_contact_remove_from_group_finish
 <SUBSECTION Standard>
 tp_contact_get_feature_quark_alias
-tp_contact_get_feature_quark_avatar_data
-tp_contact_get_feature_quark_avatar_token
+tp_contact_get_feature_quark_avatar
 tp_contact_get_feature_quark_capabilities
 tp_contact_get_feature_quark_client_types
 tp_contact_get_feature_quark_contact_blocking

@@ -22,7 +22,6 @@
 
 #include <telepathy-glib/contact.h>
 
-#include <errno.h>
 #include <string.h>
 
 #include <telepathy-glib/capabilities-internal.h>
@@ -99,25 +98,6 @@ tp_contact_get_feature_quark_alias (void)
 }
 
 /**
- * TP_CONTACT_FEATURE_AVATAR_TOKEN:
- *
- * Expands to a call to a function that returns a #GQuark representing the
- * "avatar token" feature.
- *
- * When this feature is prepared, the contact's avatar token has been
- * retrieved.  In particular, the #TpContact:avatar-token property has
- * been set.
- *
- * Since: 0.19.0
- */
-
-GQuark
-tp_contact_get_feature_quark_avatar_token (void)
-{
-  return g_quark_from_static_string ("tp-contact-feature-avatar-token");
-}
-
-/**
  * TP_CONTACT_FEATURE_PRESENCE:
  *
  * Expands to a call to a function that returns a #GQuark representing the
@@ -176,24 +156,22 @@ tp_contact_get_feature_quark_capabilities (void)
 }
 
 /**
- * TP_CONTACT_FEATURE_AVATAR_DATA:
+ * TP_CONTACT_FEATURE_AVATAR:
  *
  * Expands to a call to a function that returns a #GQuark representing
- * the "avatar data" feature.
+ * the "avatar" feature.
  *
  * When this feature is prepared, the contact's avatar has been
  * retrieved. In particular, the #TpContact:avatar-file property has
  * been set.
  *
- * This feature also implies the %TP_CONTACT_FEATURE_AVATAR_TOKEN.
- *
  * Since: 0.UNRELEASED
  */
 
 GQuark
-tp_contact_get_feature_quark_avatar_data (void)
+tp_contact_get_feature_quark_avatar (void)
 {
-  return g_quark_from_static_string ("tp-contact-feature-avatar-data");
+  return g_quark_from_static_string ("tp-contact-feature-avatar");
 }
 
 /**
@@ -309,9 +287,7 @@ enum {
     PROP_HANDLE,
     PROP_IDENTIFIER,
     PROP_ALIAS,
-    PROP_AVATAR_TOKEN,
     PROP_AVATAR_FILE,
-    PROP_AVATAR_MIME_TYPE,
     PROP_PRESENCE_TYPE,
     PROP_PRESENCE_STATUS,
     PROP_PRESENCE_MESSAGE,
@@ -342,16 +318,15 @@ static GQuark const no_quarks[] = { 0 };
  * not. We can easily expand this later. */
 typedef enum {
     CONTACT_FEATURE_FLAG_ALIAS = 1 << 1,
-    CONTACT_FEATURE_FLAG_AVATAR_TOKEN = 1 << 2,
-    CONTACT_FEATURE_FLAG_PRESENCE = 1 << 3,
-    CONTACT_FEATURE_FLAG_LOCATION = 1 << 4,
-    CONTACT_FEATURE_FLAG_CAPABILITIES = 1 << 5,
-    CONTACT_FEATURE_FLAG_AVATAR_DATA = 1 << 6,
-    CONTACT_FEATURE_FLAG_CONTACT_INFO = 1 << 7,
-    CONTACT_FEATURE_FLAG_CLIENT_TYPES = 1 << 8,
-    CONTACT_FEATURE_FLAG_STATES = 1 << 9,
-    CONTACT_FEATURE_FLAG_CONTACT_GROUPS = 1 << 10,
-    CONTACT_FEATURE_FLAG_CONTACT_BLOCKING = 1 << 11,
+    CONTACT_FEATURE_FLAG_PRESENCE = 1 << 2,
+    CONTACT_FEATURE_FLAG_LOCATION = 1 << 3,
+    CONTACT_FEATURE_FLAG_CAPABILITIES = 1 << 4,
+    CONTACT_FEATURE_FLAG_AVATAR = 1 << 5,
+    CONTACT_FEATURE_FLAG_CONTACT_INFO = 1 << 6,
+    CONTACT_FEATURE_FLAG_CLIENT_TYPES = 1 << 7,
+    CONTACT_FEATURE_FLAG_STATES = 1 << 8,
+    CONTACT_FEATURE_FLAG_CONTACT_GROUPS = 1 << 9,
+    CONTACT_FEATURE_FLAG_CONTACT_BLOCKING = 1 << 10,
 } ContactFeatureFlags;
 
 struct _TpContactPrivate {
@@ -365,9 +340,7 @@ struct _TpContactPrivate {
     gchar *alias;
 
     /* avatars */
-    gchar *avatar_token;
     GFile *avatar_file;
-    gchar *avatar_mime_type;
 
     /* presence */
     TpConnectionPresenceType presence_type;
@@ -495,16 +468,14 @@ get_feature (GQuark feature)
 {
   if (feature == TP_CONTACT_FEATURE_ALIAS)
     return CONTACT_FEATURE_FLAG_ALIAS;
-  else if (feature == TP_CONTACT_FEATURE_AVATAR_TOKEN)
-    return CONTACT_FEATURE_FLAG_AVATAR_TOKEN;
   else if (feature == TP_CONTACT_FEATURE_PRESENCE)
     return CONTACT_FEATURE_FLAG_PRESENCE;
   else if (feature == TP_CONTACT_FEATURE_LOCATION)
     return CONTACT_FEATURE_FLAG_LOCATION;
   else if (feature == TP_CONTACT_FEATURE_CAPABILITIES)
     return CONTACT_FEATURE_FLAG_CAPABILITIES;
-  else if (feature == TP_CONTACT_FEATURE_AVATAR_DATA)
-    return CONTACT_FEATURE_FLAG_AVATAR_DATA;
+  else if (feature == TP_CONTACT_FEATURE_AVATAR)
+    return CONTACT_FEATURE_FLAG_AVATAR;
   else if (feature == TP_CONTACT_FEATURE_CONTACT_INFO)
     return CONTACT_FEATURE_FLAG_CONTACT_INFO;
   else if (feature == TP_CONTACT_FEATURE_CLIENT_TYPES)
@@ -573,28 +544,6 @@ tp_contact_get_alias (TpContact *self)
   return self->priv->identifier;
 }
 
-
-/**
- * tp_contact_get_avatar_token:
- * @self: a contact
- *
- * Return the contact's avatar token. This remains valid until the main loop
- * is re-entered; if the caller requires a string that will persist for
- * longer than that, it must be copied with g_strdup().
- *
- * Returns: the same token as the #TpContact:avatar-token property
- *  (possibly %NULL)
- *
- * Since: 0.7.18
- */
-const gchar *
-tp_contact_get_avatar_token (TpContact *self)
-{
-  g_return_val_if_fail (self != NULL, NULL);
-
-  return self->priv->avatar_token;
-}
-
 /**
  * tp_contact_get_avatar_file:
  * @self: a contact
@@ -614,27 +563,6 @@ tp_contact_get_avatar_file (TpContact *self)
   g_return_val_if_fail (self != NULL, NULL);
 
   return self->priv->avatar_file;
-}
-
-/**
- * tp_contact_get_avatar_mime_type:
- * @self: a contact
- *
- * Return the contact's avatar MIME type. This remains valid until the main loop
- * is re-entered; if the caller requires a string that will persist for
- * longer than that, it must be copied with g_strdup().
- *
- * Returns: the same MIME type as the #TpContact:avatar-mime-type property
- *  (possibly %NULL)
- *
- * Since: 0.11.6
- */
-const gchar *
-tp_contact_get_avatar_mime_type (TpContact *self)
-{
-  g_return_val_if_fail (self != NULL, NULL);
-
-  return self->priv->avatar_mime_type;
 }
 
 /**
@@ -1054,8 +982,6 @@ tp_contact_finalize (GObject *object)
 
   g_free (self->priv->identifier);
   g_free (self->priv->alias);
-  g_free (self->priv->avatar_token);
-  g_free (self->priv->avatar_mime_type);
   g_free (self->priv->presence_status);
   g_free (self->priv->presence_message);
   g_strfreev (self->priv->client_types);
@@ -1095,16 +1021,8 @@ tp_contact_get_property (GObject *object,
       g_value_set_string (value, tp_contact_get_alias (self));
       break;
 
-    case PROP_AVATAR_TOKEN:
-      g_value_set_string (value, self->priv->avatar_token);
-      break;
-
     case PROP_AVATAR_FILE:
       g_value_set_object (value, self->priv->avatar_file);
-      break;
-
-    case PROP_AVATAR_MIME_TYPE:
-      g_value_set_string (value, self->priv->avatar_mime_type);
       break;
 
     case PROP_PRESENCE_TYPE:
@@ -1290,40 +1208,15 @@ tp_contact_class_init (TpContactClass *klass)
   g_object_class_install_property (object_class, PROP_ALIAS, param_spec);
 
   /**
-   * TpContact:avatar-token:
-   *
-   * An opaque string representing state of the contact's avatar (depending on
-   * the protocol, this might be a hash, a timestamp or something else), or
-   * an empty string if there is no avatar.
-   *
-   * This may be %NULL if it is not known whether this contact has an avatar
-   * or not (either for network protocol reasons, or because this #TpContact
-   * has not been set up to track %TP_CONTACT_FEATURE_AVATAR_TOKEN).
-   */
-  param_spec = g_param_spec_string ("avatar-token",
-      "Avatar token",
-      "Opaque string representing the contact's avatar, or \"\", or NULL",
-      NULL,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_AVATAR_TOKEN,
-      param_spec);
-
-  /**
    * TpContact:avatar-file:
    *
    * #GFile to the latest cached avatar image, or %NULL if this contact has
    * no avatar, or if the avatar data is not yet retrieved.
    *
-   * When #TpContact:avatar-token changes, this property is not updated
-   * immediately, but will be updated when the new avatar data is retrieved and
-   * stored in cache. Until then, the file will keep its old value of the latest
-   * cached avatar image.
+   * This is set to %NULL if %TP_CONTACT_FEATURE_AVATAR is not set on this
+   * contact.
    *
-   * This is set to %NULL if %TP_CONTACT_FEATURE_AVATAR_DATA is not set on this
-   * contact. Note that setting %TP_CONTACT_FEATURE_AVATAR_DATA will also
-   * implicitly set %TP_CONTACT_FEATURE_AVATAR_TOKEN.
-   *
-   * Since: 0.11.6
+   * Since: 0.UNRELEASED
    */
   param_spec = g_param_spec_object ("avatar-file",
       "Avatar file",
@@ -1331,24 +1224,6 @@ tp_contact_class_init (TpContactClass *klass)
       G_TYPE_FILE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_AVATAR_FILE,
-      param_spec);
-
-  /**
-   * TpContact:avatar-mime-type:
-   *
-   * MIME type of the latest cached avatar image, or %NULL if this contact has
-   * no avatar, or if the avatar data is not yet retrieved.
-   *
-   * This is always the MIME type of the image given by #TpContact:avatar-file.
-   *
-   * Since: 0.11.6
-   */
-  param_spec = g_param_spec_string ("avatar-mime-type",
-      "Avatar MIME type",
-      "MIME type of the latest cached avatar image, or %NULL",
-      NULL,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_AVATAR_MIME_TYPE,
       param_spec);
 
   /**
@@ -2002,267 +1877,46 @@ contacts_bind_to_capabilities_updated (TpConnection *connection)
     }
 }
 
-static gboolean
-build_avatar_filename (TpConnection *connection,
-    const gchar *avatar_token,
-    gboolean create_dir,
-    gchar **ret_filename,
-    gchar **ret_mime_filename)
+static void
+contact_maybe_set_avatar (TpContact *self,
+    const gchar *uri)
 {
-  gchar *dir;
-  gchar *token_escaped;
-  gboolean success = TRUE;
+  if (self == NULL)
+    return;
 
-  token_escaped = tp_escape_as_identifier (avatar_token);
-  dir = g_build_filename (g_get_user_cache_dir (),
-      "telepathy", "avatars",
-      tp_connection_get_cm_name (connection),
-      tp_connection_get_protocol_name (connection),
-      NULL);
+  self->priv->has_features |= CONTACT_FEATURE_FLAG_AVATAR;
 
-  if (create_dir)
-    {
-      if (g_mkdir_with_parents (dir, 0700) == -1)
-        {
-          DEBUG ("Error creating avatar cache dir: %s", g_strerror (errno));
-          success = FALSE;
-          goto out;
-        }
-    }
+  if (uri == NULL)
+    return;
 
-  if (ret_filename != NULL)
-    *ret_filename = g_strconcat (dir, G_DIR_SEPARATOR_S, token_escaped, NULL);
+  tp_clear_object (&self->priv->avatar_file);
 
-  if (ret_mime_filename != NULL)
-    *ret_mime_filename = g_strconcat (dir, G_DIR_SEPARATOR_S, token_escaped,
-        ".mime", NULL);
+  /* Empty string ("") means CM knows there is no avatar */
+  if (!tp_str_empty (uri))
+    self->priv->avatar_file = g_file_new_for_uri (uri);
 
-out:
-
-  g_free (dir);
-  g_free (token_escaped);
-
-  return success;
+  g_object_notify ((GObject *) self, "avatar-file");
 }
 
-static void contact_set_avatar_token (TpContact *self, const gchar *new_token,
-    gboolean request);
-
 static void
-contact_avatar_retrieved (TpConnection *connection,
-    guint handle,
-    const gchar *token,
-    const GArray *avatar,
-    const gchar *mime_type,
+contact_avatars_updated (TpConnection *connection,
+    GHashTable *table,
     gpointer user_data G_GNUC_UNUSED,
     GObject *weak_object G_GNUC_UNUSED)
 {
-  TpContact *self = _tp_connection_lookup_contact (connection, handle);
-  gchar *filename;
-  gchar *mime_filename;
-  GError *error = NULL;
+  GHashTableIter iter;
+  gpointer key, value;
 
-  if (!build_avatar_filename (connection, token, TRUE, &filename,
-      &mime_filename))
-    return;
-
-  /* Save avatar in cache, even if the contact is unknown, to avoid as much as
-   * possible future avatar requests */
-  if (!g_file_set_contents (filename, avatar->data, avatar->len, &error))
+  g_hash_table_iter_init (&iter, table);
+  while (g_hash_table_iter_next (&iter, &key, &value))
     {
-      DEBUG ("Failed to store avatar in cache (%s): %s", filename,
-          error ? error->message : "No error message");
-      g_clear_error (&error);
-      goto out;
-    }
-  if (!g_file_set_contents (mime_filename, mime_type, -1, &error))
-    {
-      DEBUG ("Failed to store MIME type in cache (%s): %s", mime_filename,
-          error ? error->message : "No error message");
-      g_clear_error (&error);
-      goto out;
-    }
+      TpHandle handle = GPOINTER_TO_UINT (key);
+      const gchar *uri = value;
+      TpContact *self = _tp_connection_lookup_contact (connection, handle);
 
-  DEBUG ("Contact#%u avatar stored in cache: %s, %s", handle, filename,
-      mime_type);
-
-  if (self == NULL)
-    goto out;
-
-  /* Update the avatar token if a newer one is given */
-  contact_set_avatar_token (self, token, FALSE);
-
-  tp_clear_object (&self->priv->avatar_file);
-  self->priv->avatar_file = g_file_new_for_path (filename);
-
-  g_free (self->priv->avatar_mime_type);
-  self->priv->avatar_mime_type = g_strdup (mime_type);
-
-  g_object_notify ((GObject *) self, "avatar-file");
-  g_object_notify ((GObject *) self, "avatar-mime-type");
-
-out:
-  g_free (filename);
-  g_free (mime_filename);
-}
-
-static gboolean
-connection_avatar_request_idle_cb (gpointer user_data)
-{
-  TpConnection *connection = user_data;
-
-  DEBUG ("Request %d avatars", connection->priv->avatar_request_queue->len);
-
-  tp_cli_connection_interface_avatars_call_request_avatars (connection, -1,
-      connection->priv->avatar_request_queue, NULL, NULL, NULL, NULL);
-
-  g_array_unref (connection->priv->avatar_request_queue);
-  connection->priv->avatar_request_queue = NULL;
-  connection->priv->avatar_request_idle_id = 0;
-
-  return FALSE;
-}
-
-static void
-contact_update_avatar_data (TpContact *self)
-{
-  TpConnection *connection;
-  gchar *filename = NULL;
-  gchar *mime_filename = NULL;
-
-  /* If token is NULL, it means that CM doesn't know the token. In that case we
-   * have to request the avatar data to get the token. This happens with XMPP
-   * for offline contacts. We don't want to bypass the avatar cache, so we won't
-   * update avatar. */
-  if (self->priv->avatar_token == NULL)
-    return;
-
-   /* If token is empty (""), it means the contact has no avatar. */
-  if (tp_str_empty (self->priv->avatar_token))
-    {
-      tp_clear_object (&self->priv->avatar_file);
-
-      g_free (self->priv->avatar_mime_type);
-      self->priv->avatar_mime_type = NULL;
-
-      DEBUG ("contact#%u has no avatar", self->priv->handle);
-
-      g_object_notify ((GObject *) self, "avatar-file");
-      g_object_notify ((GObject *) self, "avatar-mime-type");
-
-      return;
-    }
-
-  /* We have a token, search in cache... */
-  if (build_avatar_filename (self->priv->connection, self->priv->avatar_token,
-          FALSE, &filename, &mime_filename))
-    {
-      if (g_file_test (filename, G_FILE_TEST_EXISTS))
-        {
-          GError *error = NULL;
-
-          tp_clear_object (&self->priv->avatar_file);
-          self->priv->avatar_file = g_file_new_for_path (filename);
-
-          g_free (self->priv->avatar_mime_type);
-          if (!g_file_get_contents (mime_filename, &self->priv->avatar_mime_type,
-              NULL, &error))
-            {
-              DEBUG ("Error reading avatar MIME type (%s): %s", mime_filename,
-                  error ? error->message : "No error message");
-              self->priv->avatar_mime_type = NULL;
-              g_clear_error (&error);
-            }
-
-          DEBUG ("contact#%u avatar found in cache: %s, %s",
-              self->priv->handle, filename, self->priv->avatar_mime_type);
-
-          g_object_notify ((GObject *) self, "avatar-file");
-          g_object_notify ((GObject *) self, "avatar-mime_type");
-
-          goto out;
-        }
-    }
-
-  /* Not found in cache, queue this contact. We do this to group contacts
-   * for the AvatarRequest call */
-  connection = self->priv->connection;
-  if (connection->priv->avatar_request_queue == NULL)
-    connection->priv->avatar_request_queue = g_array_new (FALSE, FALSE,
-        sizeof (TpHandle));
-
-  g_array_append_val (connection->priv->avatar_request_queue,
-      self->priv->handle);
-
-  if (connection->priv->avatar_request_idle_id == 0)
-    connection->priv->avatar_request_idle_id = g_idle_add (
-        connection_avatar_request_idle_cb, connection);
-
-out:
-
-  g_free (filename);
-  g_free (mime_filename);
-}
-
-static void
-contact_maybe_update_avatar_data (TpContact *self)
-{
-  if ((self->priv->has_features & CONTACT_FEATURE_FLAG_AVATAR_DATA) == 0 &&
-      (self->priv->has_features & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0)
-    {
-      self->priv->has_features |= CONTACT_FEATURE_FLAG_AVATAR_DATA;
-      contact_update_avatar_data (self);
+      contact_maybe_set_avatar (self, uri);
     }
 }
-
-static void
-contacts_bind_to_avatar_retrieved (TpConnection *connection)
-{
-  if (!connection->priv->tracking_avatar_retrieved)
-    {
-      connection->priv->tracking_avatar_retrieved = TRUE;
-
-      tp_cli_connection_interface_avatars_connect_to_avatar_retrieved
-        (connection, contact_avatar_retrieved, NULL, NULL, NULL, NULL);
-    }
-}
-
-static void
-contact_set_avatar_token (TpContact *self, const gchar *new_token,
-    gboolean request)
-{
-  /* A no-op change (specifically from NULL to NULL) is still interesting if we
-   * don't have the AVATAR_TOKEN feature yet: it indicates that we've
-   * discovered it.
-   */
-  if ((self->priv->has_features & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) &&
-      !tp_strdiff (self->priv->avatar_token, new_token))
-    return;
-
-  DEBUG ("contact#%u token is %s", self->priv->handle, new_token);
-
-  self->priv->has_features |= CONTACT_FEATURE_FLAG_AVATAR_TOKEN;
-  g_free (self->priv->avatar_token);
-  self->priv->avatar_token = g_strdup (new_token);
-  g_object_notify ((GObject *) self, "avatar-token");
-
-  if (request && tp_contact_has_feature (self, TP_CONTACT_FEATURE_AVATAR_DATA))
-    contact_update_avatar_data (self);
-}
-
-static void
-contacts_avatar_updated (TpConnection *connection,
-                         TpHandle handle,
-                         const gchar *new_token,
-                         gpointer user_data G_GNUC_UNUSED,
-                         GObject *weak_object G_GNUC_UNUSED)
-{
-  TpContact *contact = _tp_connection_lookup_contact (connection, handle);
-
-  if (contact != NULL)
-    contact_set_avatar_token (contact, new_token, TRUE);
-}
-
 
 static void
 contacts_bind_to_avatar_updated (TpConnection *connection)
@@ -2271,8 +1925,11 @@ contacts_bind_to_avatar_updated (TpConnection *connection)
     {
       connection->priv->tracking_avatar_updated = TRUE;
 
-      tp_cli_connection_interface_avatars_connect_to_avatar_updated
-        (connection, contacts_avatar_updated, NULL, NULL, NULL, NULL);
+      tp_cli_connection_interface_avatars_connect_to_avatars_updated
+        (connection, contact_avatars_updated, NULL, NULL, NULL, NULL);
+
+      tp_connection_add_client_interest (connection,
+          TP_IFACE_CONNECTION_INTERFACE_AVATARS);
     }
 }
 
@@ -2769,18 +2426,11 @@ tp_contact_set_attributes (TpContact *contact,
     }
 
   /* Avatar */
-  if (wanted & CONTACT_FEATURE_FLAG_AVATAR_TOKEN)
+  if (wanted & CONTACT_FEATURE_FLAG_AVATAR)
     {
       s = tp_asv_get_string (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_AVATARS_TOKEN);
-      contact_set_avatar_token (contact, s, TRUE);
-    }
-
-  if (wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA)
-    {
-      /* There is no attribute for the avatar data, this will set the avatar
-       * from cache or start the avatar request if its missing from cache. */
-      contact_maybe_update_avatar_data (contact);
+          TP_TOKEN_CONNECTION_INTERFACE_AVATARS_AVATAR);
+      contact_maybe_set_avatar (contact, s);
     }
 
   /* Presence */
@@ -2949,7 +2599,7 @@ contacts_bind_to_signals (TpConnection *connection,
       contacts_bind_to_aliases_changed (connection);
     }
 
-  if ((wanted & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0 &&
+  if ((wanted & CONTACT_FEATURE_FLAG_AVATAR) != 0 &&
       tp_proxy_has_interface_by_id (connection,
           TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS))
     {
@@ -2957,14 +2607,6 @@ contacts_bind_to_signals (TpConnection *connection,
           TP_IFACE_CONNECTION_INTERFACE_AVATARS);
       contacts_bind_to_avatar_updated (connection);
     }
-
-  if ((wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0 &&
-      tp_proxy_has_interface_by_id (connection,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS))
-    {
-      contacts_bind_to_avatar_retrieved (connection);
-    }
-
 
   if ((wanted & CONTACT_FEATURE_FLAG_PRESENCE) != 0 &&
       tp_proxy_has_interface_by_id (connection,
@@ -3085,10 +2727,6 @@ get_feature_flags (const GQuark *features,
 
       feature_flags |= f;
     }
-
-  /* Force AVATAR_TOKEN if we have AVATAR_DATA */
-  if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0)
-    feature_flags |= CONTACT_FEATURE_FLAG_AVATAR_TOKEN;
 
   *flags = feature_flags;
 
@@ -3403,14 +3041,6 @@ tp_connection_upgrade_contacts_async (TpConnection *self,
     }
   else
     {
-      /* We skipped useless GetContactAttributes, but since AVATAR_DATA does not
-       * have a contact attribute, it could be that we still need to prepare
-       * that feature on contacts */
-      if (feature_flags & CONTACT_FEATURE_FLAG_AVATAR_DATA)
-        {
-          for (i = 0; i < n_contacts; i++)
-            contact_maybe_update_avatar_data (contacts[i]);
-        }
       g_simple_async_result_complete_in_idle (result);
     }
 

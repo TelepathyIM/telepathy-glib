@@ -63,10 +63,6 @@ GType tp_contact_get_type (void) G_GNUC_CONST;
   (tp_contact_get_feature_quark_alias ())
 GQuark tp_contact_get_feature_quark_alias (void) G_GNUC_CONST;
 
-#define TP_CONTACT_FEATURE_AVATAR_TOKEN \
-  (tp_contact_get_feature_quark_avatar_token ())
-GQuark tp_contact_get_feature_quark_avatar_token (void) G_GNUC_CONST;
-
 #define TP_CONTACT_FEATURE_PRESENCE \
   (tp_contact_get_feature_quark_presence ())
 GQuark tp_contact_get_feature_quark_presence (void) G_GNUC_CONST;
@@ -79,9 +75,9 @@ GQuark tp_contact_get_feature_quark_location (void) G_GNUC_CONST;
   (tp_contact_get_feature_quark_capabilities ())
 GQuark tp_contact_get_feature_quark_capabilities (void) G_GNUC_CONST;
 
-#define TP_CONTACT_FEATURE_AVATAR_DATA \
-  (tp_contact_get_feature_quark_avatar_data ())
-GQuark tp_contact_get_feature_quark_avatar_data (void) G_GNUC_CONST;
+#define TP_CONTACT_FEATURE_AVATAR \
+  (tp_contact_get_feature_quark_avatar ())
+GQuark tp_contact_get_feature_quark_avatar (void) G_GNUC_CONST;
 
 #define TP_CONTACT_FEATURE_CONTACT_INFO \
   (tp_contact_get_feature_quark_contact_info ())
@@ -114,9 +110,6 @@ gboolean tp_contact_has_feature (TpContact *self, GQuark feature);
 /* TP_CONTACT_FEATURE_ALIAS */
 const gchar *tp_contact_get_alias (TpContact *self);
 
-/* TP_CONTACT_FEATURE_AVATAR_TOKEN */
-const gchar *tp_contact_get_avatar_token (TpContact *self);
-
 /* TP_CONTACT_FEATURE_PRESENCE */
 TpConnectionPresenceType tp_contact_get_presence_type (TpContact *self);
 const gchar *tp_contact_get_presence_status (TpContact *self);
@@ -128,9 +121,8 @@ GHashTable *tp_contact_get_location (TpContact *self);
 /* TP_CONTACT_FEATURE_CAPABILITIES */
 TpCapabilities *tp_contact_get_capabilities (TpContact *self);
 
-/* TP_CONTACT_FEATURE_AVATAR_DATA */
+/* TP_CONTACT_FEATURE_AVATAR */
 GFile *tp_contact_get_avatar_file (TpContact *self);
-const gchar *tp_contact_get_avatar_mime_type (TpContact *self);
 
 /* TP_CONTACT_FEATURE_INFO */
 #ifndef TP_DISABLE_DEPRECATED
