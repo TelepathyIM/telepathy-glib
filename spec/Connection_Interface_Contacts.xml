@@ -81,16 +81,6 @@
       </tp:member>
     </tp:mapping>
 
-    <property name="ContactAttributeInterfaces" access="read" type="as"
-      tp:type="DBus_Interface[]"
-      tp:name-for-bindings="Contact_Attribute_Interfaces">
-      <tp:docstring>
-        A list of D-Bus interfaces for which
-        <tp:member-ref>GetContactAttributes</tp:member-ref> is expected to work.
-        This cannot change during the lifetime of the Connection.
-      </tp:docstring>
-    </property>
-
     <method name="GetContactAttributes"
       tp:name-for-bindings="Get_Contact_Attributes">
       <tp:docstring>
@@ -111,20 +101,6 @@
             interfaces, whose values can be obtained without additional network
             activity, will be in the reply.</p>
 
-          <p>Connection managers SHOULD ignore interfaces requested which they
-            do not support (i.e. those not mentioned in the
-            <tp:member-ref>ContactAttributeInterfaces</tp:member-ref>
-            property.)</p>
-
-          <tp:rationale>
-            <p>This simplifies client-side code. Clients which care may
-              distinguish between unsupported interfaces (e.g. this Connection
-              does not support Avatars), and interfaces on which no information
-              is known for these contacts (e.g. we don't know the avatar tokens
-              of any of the contacts, so we omitted them all) by inspecting
-              <tp:member-ref>ContactAttributeInterfaces</tp:member-ref>.</p>
-          </tp:rationale>
-
           <p>Attributes from the interface
             <tp:dbus-ref>im.telepathy1.Connection</tp:dbus-ref>
             are always returned, and need not be requested explicitly.</p>
@@ -143,12 +119,6 @@
             attributes.
           </tp:rationale>
         </tp:docstring>
-        <tp:changed version="0.19.2">
-          requesting information for interfaces not mentioned in
-          <tp:member-ref>ContactAttributeInterfaces</tp:member-ref> is no
-          longer an error. Be aware that older connection managers may still
-          consider this an error.
-        </tp:changed>
       </arg>
 
       <arg direction="out" type="a{ua{sv}}" name="Attributes"
