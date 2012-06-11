@@ -15,8 +15,6 @@
 
 #include "telepathy-glib/reentrants.h"
 
-#include "tests/lib/echo-cm.h"
-
 #include "examples/cm/echo-message-parts/connection-manager.h"
 #include "examples/cm/echo-message-parts/chan.h"
 #include "examples/cm/echo-message-parts/conn.h"
@@ -33,10 +31,6 @@ typedef struct
 
   TpConnectionManager *cm;
   TpProtocol *protocol;
-
-  TpTestsEchoConnectionManager *old_service_cm;
-  TpConnectionManager *old_cm;
-  TpProtocol *old_protocol;
 
   TpConnectionManager *file_cm;
   TpProtocol *file_protocol;
@@ -71,27 +65,13 @@ setup (Test *test,
   g_assert (test->cm != NULL);
   tp_tests_proxy_run_until_prepared (test->cm, NULL);
 
-  test->old_service_cm = TP_TESTS_ECHO_CONNECTION_MANAGER (g_object_new (
-        TP_TESTS_TYPE_ECHO_CONNECTION_MANAGER,
-        NULL));
-  g_assert (test->old_service_cm != NULL);
-  service_cm_as_base = TP_BASE_CONNECTION_MANAGER (test->old_service_cm);
-  g_assert (service_cm_as_base != NULL);
-
   ok = tp_base_connection_manager_register (service_cm_as_base);
   g_assert (ok);
-
-  test->old_cm = tp_connection_manager_new (test->dbus, "example_echo",
-      NULL, &test->error);
-  g_assert (test->old_cm != NULL);
-  tp_tests_proxy_run_until_prepared (test->old_cm, NULL);
 
   test->file_cm = tp_connection_manager_new (test->dbus, "test_manager_file",
       NULL, &test->error);
   g_assert (test->file_cm != NULL);
   tp_tests_proxy_run_until_prepared (test->file_cm, NULL);
-
-  test->old_protocol = NULL;
 }
 
 static void
@@ -101,9 +81,6 @@ teardown (Test *test,
   tp_clear_object (&test->protocol);
   tp_clear_object (&test->cm);
   tp_clear_object (&test->service_cm);
-  tp_clear_object (&test->old_service_cm);
-  tp_clear_object (&test->old_cm);
-  tp_clear_object (&test->old_protocol);
   tp_clear_object (&test->file_cm);
   tp_clear_object (&test->file_protocol);
 
@@ -323,47 +300,6 @@ test_protocols_property (Test *test,
 }
 
 static void
-test_protocols_property_old (Test *test,
-    gconstpointer data G_GNUC_UNUSED)
-{
-  GHashTable *properties = NULL;
-  GHashTable *protocols;
-  GHashTable *pp;
-  GPtrArray *arr;
-
-  tp_cli_dbus_properties_run_get_all (test->old_cm, -1,
-      TP_IFACE_CONNECTION_MANAGER, &properties, &test->error, NULL);
-  g_assert_no_error (test->error);
-
-  g_assert (tp_asv_lookup (properties, "Interfaces") != NULL);
-  test_assert_empty_strv (tp_asv_get_boxed (properties, "Interfaces",
-        G_TYPE_STRV));
-
-  protocols = tp_asv_get_boxed (properties, "Protocols",
-      TP_HASH_TYPE_PROTOCOL_PROPERTIES_MAP);
-  g_assert (protocols != NULL);
-  g_assert_cmpuint (g_hash_table_size (protocols), ==, 1);
-
-  pp = g_hash_table_lookup (protocols, "example");
-  g_assert (pp != NULL);
-
-  g_assert (tp_asv_lookup (pp, TP_PROP_PROTOCOL_INTERFACES) == NULL);
-  g_assert (tp_asv_lookup (pp, TP_PROP_PROTOCOL_ICON) == NULL);
-  g_assert (tp_asv_lookup (pp, TP_PROP_PROTOCOL_ENGLISH_NAME) == NULL);
-  g_assert (tp_asv_lookup (pp, TP_PROP_PROTOCOL_VCARD_FIELD) == NULL);
-  g_assert (tp_asv_lookup (pp,
-        TP_PROP_PROTOCOL_CONNECTION_INTERFACES) == NULL);
-  g_assert (tp_asv_lookup (pp, TP_PROP_PROTOCOL_REQUESTABLE_CHANNEL_CLASSES)
-      == NULL);
-
-  arr = tp_asv_get_boxed (pp, TP_PROP_PROTOCOL_PARAMETERS,
-      TP_ARRAY_TYPE_PARAM_SPEC_LIST);
-  g_assert (arr != NULL);
-  g_assert_cmpuint (arr->len, >=, 1);
-
-}
-
-static void
 check_avatar_requirements (TpAvatarRequirements *req)
 {
   g_assert (req != NULL);
@@ -455,40 +391,6 @@ test_protocol_object (Test *test,
 }
 
 static void
-test_protocol_object_old (Test *test,
-    gconstpointer data G_GNUC_UNUSED)
-{
-  TpAvatarRequirements *req;
-
-  g_assert_cmpstr (tp_connection_manager_get_name (test->old_cm), ==,
-      "example_echo");
-  tp_tests_proxy_run_until_prepared (test->old_cm, NULL);
-  test->old_protocol = g_object_ref (
-      tp_connection_manager_get_protocol_object (test->old_cm, "example"));
-
-  g_assert_cmpstr (tp_protocol_get_name (test->old_protocol), ==, "example");
-
-  g_assert (tp_proxy_is_prepared (test->old_protocol,
-        TP_PROTOCOL_FEATURE_PARAMETERS));
-
-  g_assert (tp_protocol_has_param (test->old_protocol, "account"));
-  g_assert (!tp_protocol_has_param (test->old_protocol, "no-way"));
-
-  g_assert (!tp_proxy_is_prepared (test->old_protocol,
-        TP_PROTOCOL_FEATURE_CORE));
-
-  g_assert_cmpstr (tp_protocol_get_icon_name (test->old_protocol), ==,
-      "im-example");
-  g_assert_cmpstr (tp_protocol_get_english_name (test->old_protocol), ==,
-      "Example");
-  g_assert_cmpstr (tp_protocol_get_vcard_field (test->old_protocol), ==, NULL);
-  g_assert (tp_protocol_get_capabilities (test->old_protocol) == NULL);
-
-  req = tp_protocol_get_avatar_requirements (test->old_protocol);
-  g_assert (req == NULL);
-}
-
-static void
 test_protocol_object_from_file (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
@@ -549,12 +451,8 @@ main (int argc,
       setup, test_protocol_addressing_properties, teardown);
   g_test_add ("/protocol-objects/protocols-property", Test, NULL, setup,
       test_protocols_property, teardown);
-  g_test_add ("/protocol-objects/protocols-property-old", Test, NULL, setup,
-      test_protocols_property_old, teardown);
   g_test_add ("/protocol-objects/object", Test, NULL, setup,
       test_protocol_object, teardown);
-  g_test_add ("/protocol-objects/object-old", Test, NULL, setup,
-      test_protocol_object_old, teardown);
   g_test_add ("/protocol-objects/object-from-file", Test, NULL, setup,
       test_protocol_object_from_file, teardown);
 

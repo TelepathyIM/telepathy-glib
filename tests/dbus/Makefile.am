@@ -41,7 +41,6 @@ tests_list = \
     test-invalidated-while-invoking-signals \
     test-long-connection-name \
     test-message-mixin \
-    test-params-cm \
     test-properties \
     test-protocol-objects \
     test-proxy-preparation \
@@ -126,6 +125,9 @@ test_client_SOURCES = client.c
 
 test_cli_group_SOURCES = cli-group.c
 
+test_cm_LDADD = \
+    $(LDADD) \
+    $(top_builddir)/examples/cm/echo-message-parts/libexample-cm-echo-2.la
 test_cm_SOURCES = cm.c
 
 test_connection_SOURCES = connection.c
@@ -208,9 +210,6 @@ test_self_presence_SOURCES = self-presence.c
 test_text_respawn_SOURCES = text-respawn.c
 
 test_unsupported_interface_SOURCES = unsupported-interface.c
-
-test_params_cm_SOURCES = \
-    params-cm.c
 
 test_simple_observer_SOURCES = simple-observer.c
 

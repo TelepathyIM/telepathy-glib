@@ -13,7 +13,7 @@
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/telepathy-glib-dbus.h>
 
-#include "tests/lib/echo-cm.h"
+#include "examples/cm/echo-message-parts/connection-manager.h"
 #include "tests/lib/util.h"
 
 typedef enum {
@@ -24,7 +24,7 @@ typedef enum {
 typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
-    TpTestsEchoConnectionManager *service_cm;
+    ExampleEcho2ConnectionManager *service_cm;
 
     TpConnectionManager *cm;
     TpConnectionManager *echo;
@@ -45,9 +45,8 @@ setup (Test *test,
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  test->service_cm = TP_TESTS_ECHO_CONNECTION_MANAGER (
-      tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_ECHO_CONNECTION_MANAGER,
+  test->service_cm = EXAMPLE_ECHO_2_CONNECTION_MANAGER (g_object_new (
+        EXAMPLE_TYPE_ECHO_2_CONNECTION_MANAGER,
         NULL));
   g_assert (test->service_cm != NULL);
   service_cm_as_base = TP_BASE_CONNECTION_MANAGER (test->service_cm);
@@ -825,7 +824,7 @@ test_dbus_ready (Test *test,
   tp_tests_proxy_run_until_prepared (test->cm, NULL);
 
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
-      "example_echo");
+      "example_echo_2");
   g_assert_cmpuint (tp_proxy_is_prepared (test->cm,
         TP_CONNECTION_MANAGER_FEATURE_CORE), ==, TRUE);
   g_assert (tp_proxy_get_invalidated (test->cm) == NULL);
@@ -837,7 +836,7 @@ test_dbus_ready (Test *test,
       "info-source", &info_source,
       "connection-manager", &name,
       NULL);
-  g_assert_cmpstr (name, ==, "example_echo");
+  g_assert_cmpstr (name, ==, "example_echo_2");
   g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_LIVE);
   g_free (name);
 

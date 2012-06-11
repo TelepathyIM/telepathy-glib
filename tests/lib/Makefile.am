@@ -28,8 +28,6 @@ libtp_glib_tests_la_SOURCES = \
     dbus-tube-chan.h \
     echo-chan.h \
     echo-chan.c \
-    echo-cm.h \
-    echo-cm.c \
     echo-conn.h \
     echo-conn.c \
     echo-im-manager.h \
@@ -39,8 +37,6 @@ libtp_glib_tests_la_SOURCES = \
     myassert.h \
     my-conn-proxy.h \
     my-conn-proxy.c \
-    params-cm.h \
-    params-cm.c \
     room-list-chan.h \
     room-list-chan.c \
     simple-account.c \
@@ -59,8 +55,6 @@ libtp_glib_tests_la_SOURCES = \
     simple-client.h \
     simple-conn.c \
     simple-conn.h \
-    simple-manager.c \
-    simple-manager.h \
     stream-tube-chan.c \
     stream-tube-chan.h \
     stub-object.c \
