@@ -16,10 +16,6 @@ LDADD = \
     @GLIB_LIBS@ \
     $(NULL)
 
-AM_CPPFLAGS = \
-    -DTP_DISABLE_SINGLE_INCLUDE \
-    $(NULL)
-
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \
     @DBUS_CFLAGS@ \
