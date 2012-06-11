@@ -1,4 +1,4 @@
-/* ContactList channel manager
+/* ContactList base class
  *
  * Copyright © 2010 Collabora Ltd.
  *
@@ -36,7 +36,7 @@
 /**
  * SECTION:base-contact-list
  * @title: TpBaseContactList
- * @short_description: channel manager for ContactList channels
+ * @short_description: base class for ContactList Connection interface
  *
  * This class represents a connection's contact list (roster, buddy list etc.)
  * inside a connection manager. It can be used to implement the ContactList
@@ -78,11 +78,6 @@
  *    #TpBaseConnectionClass.interfaces_always_present;</para>
  *  </listitem>
  *  <listitem>
- *   <para>in the #TpBaseConnectionClass.create_channel_managers
- *    implementation, create an instance of the #TpBaseContactList
- *    subclass, and include it in the returned #GPtrArray;</para>
- *  </listitem>
- *  <listitem>
  *   <para>in the <function>constructed</function> method, call
  *    tp_base_contact_list_mixin_register_with_contacts_mixin() on the
  *    <emphasis>connection</emphasis>.</para>
@@ -99,13 +94,6 @@
  * Optionally, one or more of the #TP_TYPE_MUTABLE_CONTACT_LIST,
  * #TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, and #TP_TYPE_BLOCKABLE_CONTACT_LIST
  * GObject interfaces may also be implemented, as appropriate to the protocol.
- *
- * In versions of the Telepathy D-Bus Interface Specification prior to
- * 0.21.0, this functionality was provided as a collection of
- * individual ContactList channels. As a result, this object also implements
- * the #TpChannelManager interface, so that it can provide those channels.
- * The channel objects are internal to this object, and not considered to be
- * part of the API.
  *
  * Since: 0.13.0
  */
@@ -828,14 +816,14 @@ tp_base_contact_list_class_init (TpBaseContactListClass *cls)
   /**
    * TpBaseContactList:connection:
    *
-   * The connection that owns this channel manager.
+   * The connection that owns this contact list.
    * Read-only except during construction.
    *
    * Since: 0.13.0
    */
   g_object_class_install_property (object_class, PROP_CONNECTION,
       g_param_spec_object ("connection", "Connection",
-        "The connection that owns this channel manager",
+        "The connection that owns this contact list",
         TP_TYPE_BASE_CONNECTION,
         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 
@@ -1008,8 +996,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
   /* The natural thing to do here would be to iterate over all contacts, and
    * for each contact, emit a signal adding them to their own groups. However,
    * that emits a signal per contact. Here we turn the data model inside out,
-   * to emit one signal per group - that's probably fewer (and also means we
-   * can put them in batches for legacy Group channels). */
+   * to emit one signal per group - that's probably fewer. */
   if (TP_IS_CONTACT_GROUP_LIST (self))
     {
       GStrv groups = tp_base_contact_list_dup_groups (self);
@@ -4994,9 +4981,7 @@ tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls)
  *
  * Register the ContactList interface with the Contacts interface to make it
  * inspectable. Before this function is called, the #TpContactsMixin must be
- * initialized with tp_contacts_mixin_init(), and @conn must have a
- * #TpBaseContactList in its list of channel managers (by creating it in
- * its #TpBaseConnectionClass.create_channel_managers implementation).
+ * initialized with tp_contacts_mixin_init().
  *
  * If the connection implements #TpSvcConnectionInterfaceContactGroups
  * the #TpBaseContactList implements %TP_TYPE_CONTACT_GROUP_LIST,

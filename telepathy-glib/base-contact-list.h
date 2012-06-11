@@ -1,4 +1,4 @@
-/* ContactList channel manager
+/* ContactList base class
  *
  * Copyright © 2010 Collabora Ltd.
  *
