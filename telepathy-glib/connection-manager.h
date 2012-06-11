@@ -117,7 +117,7 @@ typedef void (*TpConnectionManagerListCb) (TpConnectionManager * const *cms,
     GObject *weak_object);
 
 #ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_UNRELEASED_FOR (tp_list_connection_managers_async)
+_TP_DEPRECATED_IN_0_20_FOR (tp_list_connection_managers_async)
 void tp_list_connection_managers (TpDBusDaemon *bus_daemon,
     TpConnectionManagerListCb callback,
     gpointer user_data, GDestroyNotify destroy,
@@ -154,22 +154,22 @@ GList *tp_connection_manager_dup_protocols (TpConnectionManager *self)
   G_GNUC_WARN_UNUSED_RESULT;
 
 #ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_UNRELEASED_FOR (tp_connection_manager_get_protocol_object)
+_TP_DEPRECATED_IN_0_20_FOR (tp_connection_manager_get_protocol_object)
 const TpConnectionManagerProtocol *tp_connection_manager_get_protocol (
     TpConnectionManager *self, const gchar *protocol);
 
-_TP_DEPRECATED_IN_UNRELEASED_FOR (tp_protocol_dup_param_names)
+_TP_DEPRECATED_IN_0_20_FOR (tp_protocol_dup_param_names)
 gchar **tp_connection_manager_protocol_dup_param_names (
     const TpConnectionManagerProtocol *protocol)
   G_GNUC_WARN_UNUSED_RESULT;
-_TP_DEPRECATED_IN_UNRELEASED_FOR (tp_protocol_has_param)
+_TP_DEPRECATED_IN_0_20_FOR (tp_protocol_has_param)
 gboolean tp_connection_manager_protocol_has_param (
     const TpConnectionManagerProtocol *protocol,
     const gchar *param);
-_TP_DEPRECATED_IN_UNRELEASED_FOR (tp_protocol_dup_param)
+_TP_DEPRECATED_IN_0_20_FOR (tp_protocol_dup_param)
 const TpConnectionManagerParam *tp_connection_manager_protocol_get_param (
     const TpConnectionManagerProtocol *protocol, const gchar *param);
-_TP_DEPRECATED_IN_UNRELEASED_FOR (tp_protocol_can_register)
+_TP_DEPRECATED_IN_0_20_FOR (tp_protocol_can_register)
 gboolean tp_connection_manager_protocol_can_register (
     const TpConnectionManagerProtocol *protocol);
 #endif
@@ -204,10 +204,10 @@ TpConnectionManagerParam *tp_connection_manager_param_copy (
 void tp_connection_manager_param_free (TpConnectionManagerParam *param);
 
 #ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_UNRELEASED
+_TP_DEPRECATED_IN_0_20
 TpConnectionManagerProtocol *tp_connection_manager_protocol_copy (
     const TpConnectionManagerProtocol *in);
-_TP_DEPRECATED_IN_UNRELEASED
+_TP_DEPRECATED_IN_0_20
 void tp_connection_manager_protocol_free (TpConnectionManagerProtocol *proto);
 #endif
 

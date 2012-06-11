@@ -238,7 +238,7 @@ channel_manager_base_init (gpointer klass)
        * signal, and then return from pending CreateChannel, EnsureChannel
        * and/or RequestChannel calls if appropriate.
        *
-       * Since 0.UNRELEASED, clients should not emit more than one
+       * Since 0.19.1, clients should not emit more than one
        *  channel in this signal at one time as the creation of
        *  multiple channels together in a single signal is strongly
        *  recommended against: it's very complicated, hard to get
