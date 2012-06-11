@@ -76,129 +76,6 @@
  * future version of telepathy-glib.
  */
 
-/*
- * _TpLegacyProtocol:
- *
- * A limited implementation of TpProtocol, in terms of the ConnectionManager
- * API from telepathy-spec 0.18.
- */
-typedef struct {
-    TpBaseProtocol parent;
-    /* Really a TpBaseConnectionManager, but using that type with
-     * g_object_add_weak_pointer violates strict aliasing */
-    gpointer cm;
-    const TpCMProtocolSpec *protocol_spec;
-} _TpLegacyProtocol;
-
-typedef struct {
-    TpBaseProtocolClass parent;
-} _TpLegacyProtocolClass;
-
-#define _TP_TYPE_LEGACY_PROTOCOL (_tp_legacy_protocol_get_type ())
-GType _tp_legacy_protocol_get_type (void) G_GNUC_CONST;
-
-G_DEFINE_TYPE(_TpLegacyProtocol,
-    _tp_legacy_protocol,
-    TP_TYPE_BASE_PROTOCOL)
-
-static const TpCMParamSpec *
-_tp_legacy_protocol_get_parameters (TpBaseProtocol *protocol)
-{
-  _TpLegacyProtocol *self = (_TpLegacyProtocol *) protocol;
-
-  return self->protocol_spec->parameters;
-}
-
-static gboolean parse_parameters (const TpCMParamSpec *paramspec,
-    GHashTable *provided, TpIntset *params_present,
-    const TpCMParamSetter set_param, void *params, GError **error);
-
-static TpBaseConnection *
-_tp_legacy_protocol_new_connection (TpBaseProtocol *protocol,
-    GHashTable *asv,
-    GError **error)
-{
-  _TpLegacyProtocol *self = (_TpLegacyProtocol *) protocol;
-  const TpCMProtocolSpec *protospec = self->protocol_spec;
-  TpBaseConnectionManagerClass *cls;
-  TpBaseConnection *conn = NULL;
-  void *params = NULL;
-  TpIntset *params_present = NULL;
-  TpCMParamSetter set_param;
-
-  if (self->cm == NULL)
-    {
-      g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
-          "Connection manager no longer available");
-      return NULL;
-    }
-
-  g_object_ref (self->cm);
-
-  g_assert (protospec->parameters != NULL);
-  g_assert (protospec->params_new != NULL);
-  g_assert (protospec->params_free != NULL);
-
-  cls = TP_BASE_CONNECTION_MANAGER_GET_CLASS (self->cm);
-
-  params_present = tp_intset_new ();
-  params = protospec->params_new ();
-
-  set_param = protospec->set_param;
-
-  if (set_param == NULL)
-    set_param = tp_cm_param_setter_offset;
-
-  if (!parse_parameters (protospec->parameters, (GHashTable *) asv,
-        params_present, set_param, params, error))
-    {
-      goto finally;
-    }
-
-  conn = (cls->new_connection) (self->cm, protospec->name, params_present,
-      params, error);
-
-finally:
-  if (params_present != NULL)
-    tp_intset_destroy (params_present);
-
-  if (params != NULL)
-    protospec->params_free (params);
-
-  g_object_unref (self->cm);
-
-  return conn;
-}
-
-static void
-_tp_legacy_protocol_class_init (_TpLegacyProtocolClass *cls)
-{
-  TpBaseProtocolClass *base_class = (TpBaseProtocolClass *) cls;
-
-  base_class->is_stub = TRUE;
-  base_class->get_parameters = _tp_legacy_protocol_get_parameters;
-  base_class->new_connection = _tp_legacy_protocol_new_connection;
-}
-
-static void
-_tp_legacy_protocol_init (_TpLegacyProtocol *self)
-{
-}
-
-static TpBaseProtocol *
-_tp_legacy_protocol_new (TpBaseConnectionManager *cm,
-    const TpCMProtocolSpec *protocol_spec)
-{
-  _TpLegacyProtocol *self = g_object_new (_TP_TYPE_LEGACY_PROTOCOL,
-      "name", protocol_spec->name,
-      NULL);
-
-  self->protocol_spec = protocol_spec;
-  self->cm = cm;
-  g_object_add_weak_pointer ((GObject *) cm, &(self->cm));
-  return (TpBaseProtocol *) self;
-}
-
 /**
  * TpBaseConnectionManager:
  *
@@ -213,11 +90,6 @@ _tp_legacy_protocol_new (TpBaseConnectionManager *cm,
  *  D-Bus object paths and bus names. Must contain only letters, digits
  *  and underscores, and may not start with a digit. Must be filled in by
  *  subclasses in their class_init function.
- * @protocol_params: An array of #TpCMProtocolSpec structures representing
- *  the protocols this connection manager supports, terminated by a structure
- *  whose name member is %NULL; or %NULL if this CM uses Protocol objects.
- * @new_connection: A #TpBaseConnectionManagerNewConnFunc used to construct
- *  new connections, or %NULL if this CM uses Protocol objects.
  * @interfaces: A #GStrv of extra D-Bus interfaces implemented
  *  by instances of this class, which may be filled in by subclasses. The
  *  default is to list no additional interfaces. Since: 0.11.11
@@ -228,12 +100,7 @@ _tp_legacy_protocol_new (TpBaseConnectionManager *cm,
  * which must currently be %NULL (a meaning may be defined for these in a
  * future version of telepathy-glib).
  *
- * Changed in 0.7.1: it is a fatal error for @cm_dbus_name not to conform to
- * the specification.
- *
- * Changed in 0.11.11: protocol_params and new_connection may both be
- * %NULL. If so, this connection manager is assumed to use Protocol objects
- * instead.
+ * Since 0.UNRELEASED
  */
 
 /**
@@ -368,10 +235,6 @@ tp_base_connection_manager_constructor (GType type,
   GError *error = NULL;
 
   g_assert (tp_connection_manager_check_valid_name (cls->cm_dbus_name, NULL));
-
-  /* if one of these is NULL, the other must be too */
-  g_assert (cls->new_connection == NULL || cls->protocol_params != NULL);
-  g_assert (cls->protocol_params == NULL || cls->new_connection != NULL);
 
   if (!tp_base_connection_manager_ensure_dbus (self, &error))
     {
@@ -800,62 +663,6 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
     }
 }
 
-static gboolean
-set_param_from_value (const TpCMParamSpec *paramspec,
-                      GValue *value,
-                      const TpCMParamSetter set_param,
-                      void *params,
-                      GError **error)
-{
-  if (G_VALUE_TYPE (value) != paramspec->gtype)
-    {
-      DEBUG ("expected type %s for parameter %s, got %s",
-               g_type_name (paramspec->gtype), paramspec->name,
-               G_VALUE_TYPE_NAME (value));
-      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-          "expected type %s for account parameter %s, got %s",
-          g_type_name (paramspec->gtype), paramspec->name,
-          G_VALUE_TYPE_NAME (value));
-      return FALSE;
-    }
-
-  set_param (paramspec, value, params);
-
-  return TRUE;
-}
-
-static gboolean
-parse_parameters (const TpCMParamSpec *paramspec,
-                  GHashTable *provided,
-                  TpIntset *params_present,
-                  const TpCMParamSetter set_param,
-                  void *params,
-                  GError **error)
-{
-  int i;
-  GValue *value;
-
-  for (i = 0; paramspec[i].name; i++)
-    {
-      value = g_hash_table_lookup (provided, paramspec[i].name);
-
-      if (value != NULL)
-        {
-          if (!set_param_from_value (&paramspec[i], value, set_param, params,
-                error))
-            {
-              return FALSE;
-            }
-
-          tp_intset_add (params_present, i);
-
-          g_hash_table_remove (provided, paramspec[i].name);
-        }
-    }
-
-  return TRUE;
-}
-
 /**
  * tp_base_connection_manager_request_connection
  *
@@ -954,7 +761,6 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
   GError *error = NULL;
   TpBaseConnectionManagerClass *cls;
   GString *string = NULL;
-  guint i;
   GHashTableIter iter;
   gpointer name, protocol;
 
@@ -963,18 +769,6 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
 
   if (!tp_base_connection_manager_ensure_dbus (self, &error))
     goto except;
-
-  if (cls->protocol_params != NULL)
-    {
-      for (i = 0; cls->protocol_params[i].name != NULL; i++)
-        {
-          TpBaseProtocol *p = _tp_legacy_protocol_new (self,
-              cls->protocol_params + i);
-
-          tp_base_connection_manager_add_protocol (self, p);
-          g_object_unref (p);
-        }
-    }
 
   g_assert (self->priv->dbus_daemon != NULL);
 
