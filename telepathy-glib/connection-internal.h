@@ -50,9 +50,6 @@ struct _TpConnectionPrivate {
     /* a TP_HASH_TYPE_STRING_VARIANT_MAP */
     GHashTable *connection_error_details;
 
-    /* GArray of GQuark */
-    GArray *contact_attribute_interfaces;
-
     /* items are GQuarks that represent arguments to
      * Connection.AddClientInterests */
     TpIntset *interests;

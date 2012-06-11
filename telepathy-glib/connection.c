@@ -689,83 +689,6 @@ tp_connection_continue_introspection (TpConnection *self)
 }
 
 static void
-got_contact_attribute_interfaces (TpProxy *proxy,
-                                  const GValue *value,
-                                  const GError *error,
-                                  gpointer user_data G_GNUC_UNUSED,
-                                  GObject *weak_object G_GNUC_UNUSED)
-{
-  TpConnection *self = TP_CONNECTION (proxy);
-  GArray *arr;
-
-  g_assert (self->priv->introspection_call != NULL);
-  self->priv->introspection_call = NULL;
-
-  if (error == NULL && G_VALUE_HOLDS (value, G_TYPE_STRV))
-    {
-      gchar **interfaces = g_value_get_boxed (value);
-      gchar **iter;
-
-      arr = g_array_sized_new (FALSE, FALSE, sizeof (GQuark),
-          interfaces == NULL ? 0 : g_strv_length (interfaces));
-
-      if (interfaces != NULL)
-        {
-          for (iter = interfaces; *iter != NULL; iter++)
-            {
-              if (tp_dbus_check_valid_interface_name (*iter, NULL))
-                {
-                  GQuark q = g_quark_from_string (*iter);
-
-                  DEBUG ("%p: ContactAttributeInterfaces has %s", self,
-                      *iter);
-                  g_array_append_val (arr, q);
-                }
-              else
-                {
-                  DEBUG ("%p: ignoring invalid interface: %s", self,
-                      *iter);
-                }
-            }
-        }
-    }
-  else
-    {
-      if (error == NULL)
-        DEBUG ("%p: ContactAttributeInterfaces had wrong type %s, "
-            "ignoring", self, G_VALUE_TYPE_NAME (value));
-      else
-        DEBUG ("%p: Get(Contacts, ContactAttributeInterfaces) failed with "
-            "%s %d: %s", self, g_quark_to_string (error->domain), error->code,
-            error->message);
-
-      arr = g_array_sized_new (FALSE, FALSE, sizeof (GQuark), 0);
-    }
-
-  g_assert (self->priv->contact_attribute_interfaces == NULL);
-  self->priv->contact_attribute_interfaces = arr;
-  self->priv->ready_enough_for_contacts = TRUE;
-
-  tp_connection_continue_introspection (self);
-}
-
-static void
-introspect_contacts (TpConnection *self)
-{
-  /* "This cannot change during the lifetime of the Connection." -- tp-spec */
-  if (self->priv->contact_attribute_interfaces != NULL)
-    {
-      tp_connection_continue_introspection (self);
-      return;
-    }
-
-  g_assert (self->priv->introspection_call == NULL);
-  self->priv->introspection_call = tp_cli_dbus_properties_call_get (self, -1,
-       TP_IFACE_CONNECTION_INTERFACE_CONTACTS, "ContactAttributeInterfaces",
-       got_contact_attribute_interfaces, NULL, NULL, NULL);
-}
-
-static void
 tp_connection_set_self_contact (TpConnection *self,
     TpContact *contact)
 {
@@ -867,26 +790,6 @@ on_self_contact_changed (TpConnection *self,
 
 /* Appending callbacks to self->priv->introspect_needed relies on this */
 G_STATIC_ASSERT (sizeof (TpConnectionProc) <= sizeof (gpointer));
-
-static void
-tp_connection_add_interfaces_from_introspection (TpConnection *self,
-                                                 const gchar **interfaces)
-{
-  TpProxy *proxy = (TpProxy *) self;
-
-  tp_proxy_add_interfaces (proxy, interfaces);
-
-  if (tp_proxy_has_interface_by_id (proxy,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
-    {
-      self->priv->introspect_needed = g_list_append (
-          self->priv->introspect_needed, introspect_contacts);
-    }
-  else
-    {
-      self->priv->ready_enough_for_contacts = TRUE;
-    }
-}
 
 static void
 _tp_connection_got_properties (TpProxy *proxy,
@@ -1139,47 +1042,6 @@ tp_connection_invalidated (TpConnection *self)
     g_hash_table_remove_all (self->priv->roster);
 }
 
-static gboolean
-_tp_connection_extract_properties (TpConnection *self,
-    GHashTable *asv,
-    guint32 *status,
-    guint32 *self_handle,
-    const gchar **self_id,
-    const gchar ***interfaces)
-{
-  gboolean sufficient;
-
-  *status = tp_asv_get_uint32 (asv, "Status", &sufficient);
-
-  if (!sufficient
-      || *status > TP_CONNECTION_STATUS_DISCONNECTED)
-    return FALSE;
-
-  *interfaces = (const gchar **) tp_asv_get_strv (asv, "Interfaces");
-
-  if (*interfaces == NULL)
-    return FALSE;
-
-  if (*status == TP_CONNECTION_STATUS_CONNECTED)
-    {
-      *self_handle = tp_asv_get_uint32 (asv, "SelfHandle", &sufficient);
-      if (!sufficient || *self_handle == 0)
-        return FALSE;
-
-      *self_id = tp_asv_get_string (asv, "SelfID");
-      if (tp_str_empty (*self_id))
-        return FALSE;
-
-    }
-  else
-    {
-      *self_handle = 0;
-      *self_id = NULL;
-    }
-
-  return TRUE;
-}
-
 static void
 _tp_connection_got_properties (TpProxy *proxy,
     GHashTable *asv,
@@ -1188,10 +1050,9 @@ _tp_connection_got_properties (TpProxy *proxy,
     GObject *unused_object G_GNUC_UNUSED)
 {
   TpConnection *self = TP_CONNECTION (proxy);
-  guint32 status;
-  guint32 self_handle;
-  const gchar *self_id;
-  const gchar **interfaces;
+  TpConnectionStatus status;
+  const gchar * const *interfaces;
+  gboolean valid;
   GError *e = NULL;
 
   if (tp_proxy_get_invalidated (self) != NULL)
@@ -1211,38 +1072,49 @@ _tp_connection_got_properties (TpProxy *proxy,
   if (self->priv->introspection_call)
     self->priv->introspection_call = NULL;
 
-  if (_tp_connection_extract_properties (
-        self,
-        asv,
-        &status,
-        &self_handle,
-        &self_id,
-        &interfaces))
+  interfaces = tp_asv_get_strv (asv, "Interfaces");
+  if (interfaces == NULL)
+    goto error;
+
+  tp_proxy_add_interfaces (proxy, interfaces);
+  self->priv->ready_enough_for_contacts = TRUE;
+
+  status = tp_asv_get_uint32 (asv, "Status", &valid);
+  if (!valid || status > TP_CONNECTION_STATUS_DISCONNECTED)
+    goto error;
+
+  if (status == TP_CONNECTION_STATUS_CONNECTED)
     {
-      tp_connection_add_interfaces_from_introspection (self, interfaces);
+      TpHandle self_handle;
+      const gchar *self_id;
 
-      if (status == TP_CONNECTION_STATUS_CONNECTED)
-        {
-          self->priv->introspecting_after_connected = TRUE;
-          self->priv->last_known_self_handle = self_handle;
-          self->priv->last_known_self_id = g_strdup (self_id);
+      self_handle = tp_asv_get_uint32 (asv, "SelfHandle", &valid);
+      if (!valid || self_handle == 0)
+        goto error;
 
-          self->priv->introspect_needed = g_list_append (
-              self->priv->introspect_needed, introspect_self_contact);
-        }
-      else
-        {
-          tp_connection_status_changed (self, status,
-              TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED);
-        }
+      self_id = tp_asv_get_string (asv, "SelfID");
+      if (tp_str_empty (self_id))
+        goto error;
 
-      tp_connection_continue_introspection (self);
-      return;
+      self->priv->introspecting_after_connected = TRUE;
+      self->priv->last_known_self_handle = self_handle;
+      self->priv->last_known_self_id = g_strdup (self_id);
+
+      self->priv->introspect_needed = g_list_append (
+          self->priv->introspect_needed, introspect_self_contact);
+    }
+  else
+    {
+      tp_connection_status_changed (self, status,
+          TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED);
     }
 
+  tp_connection_continue_introspection (self);
+  return;
+
+error:
   e = g_error_new_literal (TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-      "Connection does not implement all properties, legacy CMs are not "
-      "supported anymore.");
+      "Connection does not implement all properties.");
   WARNING ("%s", e->message);
   tp_proxy_invalidate (proxy, e);
   g_clear_error (&e);
@@ -1331,12 +1203,6 @@ tp_connection_finalize (GObject *object)
     {
       g_list_free (self->priv->introspect_needed);
       self->priv->introspect_needed = NULL;
-    }
-
-  if (self->priv->contact_attribute_interfaces != NULL)
-    {
-      g_array_unref (self->priv->contact_attribute_interfaces);
-      self->priv->contact_attribute_interfaces = NULL;
     }
 
   g_free (self->priv->connection_error);

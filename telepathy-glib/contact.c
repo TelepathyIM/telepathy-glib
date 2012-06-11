@@ -2903,129 +2903,119 @@ static const gchar **
 contacts_bind_to_signals (TpConnection *connection,
     ContactFeatureFlags wanted)
 {
-  GArray *contact_attribute_interfaces =
-      connection->priv->contact_attribute_interfaces;
   GPtrArray *array;
-  guint i;
-  guint len = 0;
-
-  if (contact_attribute_interfaces != NULL)
-      len = contact_attribute_interfaces->len;
 
   g_assert (tp_proxy_has_interface_by_id (connection,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS));
 
-  array = g_ptr_array_sized_new (len);
+  array = g_ptr_array_new ();
 
-  for (i = 0; i < len; i++)
+  if ((wanted & CONTACT_FEATURE_FLAG_ALIAS) != 0 &&
+      tp_proxy_has_interface_by_id (connection,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING))
     {
-      GQuark q = g_array_index (contact_attribute_interfaces, GQuark, i);
+      g_ptr_array_add (array,
+          TP_IFACE_CONNECTION_INTERFACE_ALIASING);
+      contacts_bind_to_aliases_changed (connection);
+    }
 
-      if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING)
-        {
-          if ((wanted & CONTACT_FEATURE_FLAG_ALIAS) != 0)
-            {
-              g_ptr_array_add (array,
-                  TP_IFACE_CONNECTION_INTERFACE_ALIASING);
-              contacts_bind_to_aliases_changed (connection);
-            }
-        }
-      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS)
-        {
-          if ((wanted & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0)
-            {
-              g_ptr_array_add (array,
-                  TP_IFACE_CONNECTION_INTERFACE_AVATARS);
-              contacts_bind_to_avatar_updated (connection);
-            }
+  if ((wanted & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0 &&
+      tp_proxy_has_interface_by_id (connection,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS))
+    {
+      g_ptr_array_add (array,
+          TP_IFACE_CONNECTION_INTERFACE_AVATARS);
+      contacts_bind_to_avatar_updated (connection);
+    }
 
-          if ((wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0)
-            {
-              contacts_bind_to_avatar_retrieved (connection);
-            }
-        }
-      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_PRESENCE)
-        {
-          if ((wanted & CONTACT_FEATURE_FLAG_PRESENCE) != 0)
-            {
-              g_ptr_array_add (array,
-                  TP_IFACE_CONNECTION_INTERFACE_PRESENCE);
-              contacts_bind_to_presences_changed (connection);
-            }
-        }
-      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION)
-        {
-          if ((wanted & CONTACT_FEATURE_FLAG_LOCATION) != 0)
-            {
-              g_ptr_array_add (array,
-                  TP_IFACE_CONNECTION_INTERFACE_LOCATION);
-              contacts_bind_to_location_updated (connection);
-            }
-        }
-      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_CAPABILITIES)
-        {
-          if ((wanted & CONTACT_FEATURE_FLAG_CAPABILITIES) != 0)
-            {
-              g_ptr_array_add (array,
-                  TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES);
-              contacts_bind_to_capabilities_updated (connection);
-            }
-        }
-      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO)
-        {
-          if ((wanted & CONTACT_FEATURE_FLAG_CONTACT_INFO) != 0)
-            {
-              g_ptr_array_add (array,
-                  TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO);
-              contacts_bind_to_contact_info_changed (connection);
-            }
-        }
-      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CLIENT_TYPES)
-        {
-          if ((wanted & CONTACT_FEATURE_FLAG_CLIENT_TYPES) != 0)
-            {
-              g_ptr_array_add (array,
-                  TP_IFACE_CONNECTION_INTERFACE_CLIENT_TYPES);
-              contacts_bind_to_client_types_updated (connection);
-            }
-        }
-      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_LIST)
-        {
-          if ((wanted & CONTACT_FEATURE_FLAG_STATES) != 0)
-            {
-              g_ptr_array_add (array,
-                  TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST);
-              contacts_bind_to_contacts_changed (connection);
-            }
-        }
-      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_GROUPS)
-        {
-          if ((wanted & CONTACT_FEATURE_FLAG_CONTACT_GROUPS) != 0)
-            {
-              g_ptr_array_add (array,
-                  TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS);
-              contacts_bind_to_contact_groups_changed (connection);
-            }
-        }
-      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_BLOCKING)
-        {
-          if ((wanted & CONTACT_FEATURE_FLAG_CONTACT_BLOCKING) != 0)
-            {
-              GQuark features[] = { TP_CONNECTION_FEATURE_CONTACT_BLOCKING, 0 };
+  if ((wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0 &&
+      tp_proxy_has_interface_by_id (connection,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS))
+    {
+      contacts_bind_to_avatar_retrieved (connection);
+    }
 
-              g_ptr_array_add (array,
-                  TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING);
 
-              /* The BlockedContactsChanged signal is already handled by
-               * connection-contact-list.c so we just have to prepare
-               * TP_CONNECTION_FEATURE_CONTACT_BLOCKING to make sure it's
-               * connected. */
-              if (!tp_proxy_is_prepared (connection,
-                    TP_CONNECTION_FEATURE_CONTACT_BLOCKING))
-                {
-                  tp_proxy_prepare_async (connection, features, NULL, NULL);
-                }
-            }
+  if ((wanted & CONTACT_FEATURE_FLAG_PRESENCE) != 0 &&
+      tp_proxy_has_interface_by_id (connection,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_PRESENCE))
+    {
+      g_ptr_array_add (array,
+          TP_IFACE_CONNECTION_INTERFACE_PRESENCE);
+      contacts_bind_to_presences_changed (connection);
+    }
+
+  if ((wanted & CONTACT_FEATURE_FLAG_LOCATION) != 0 &&
+      tp_proxy_has_interface_by_id (connection,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION))
+    {
+      g_ptr_array_add (array,
+          TP_IFACE_CONNECTION_INTERFACE_LOCATION);
+      contacts_bind_to_location_updated (connection);
+    }
+
+  if ((wanted & CONTACT_FEATURE_FLAG_CAPABILITIES) != 0 &&
+      tp_proxy_has_interface_by_id (connection,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_CAPABILITIES))
+    {
+      g_ptr_array_add (array,
+          TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES);
+      contacts_bind_to_capabilities_updated (connection);
+    }
+
+  if ((wanted & CONTACT_FEATURE_FLAG_CONTACT_INFO) != 0 &&
+      tp_proxy_has_interface_by_id (connection,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO))
+    {
+      g_ptr_array_add (array,
+          TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO);
+      contacts_bind_to_contact_info_changed (connection);
+    }
+
+  if ((wanted & CONTACT_FEATURE_FLAG_CLIENT_TYPES) != 0 &&
+      tp_proxy_has_interface_by_id (connection,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CLIENT_TYPES))
+    {
+      g_ptr_array_add (array,
+          TP_IFACE_CONNECTION_INTERFACE_CLIENT_TYPES);
+      contacts_bind_to_client_types_updated (connection);
+    }
+
+  if ((wanted & CONTACT_FEATURE_FLAG_STATES) != 0 &&
+      tp_proxy_has_interface_by_id (connection,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_LIST))
+    {
+      g_ptr_array_add (array,
+          TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST);
+      contacts_bind_to_contacts_changed (connection);
+    }
+
+  if ((wanted & CONTACT_FEATURE_FLAG_CONTACT_GROUPS) != 0 &&
+      tp_proxy_has_interface_by_id (connection,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_GROUPS))
+    {
+      g_ptr_array_add (array,
+          TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS);
+      contacts_bind_to_contact_groups_changed (connection);
+    }
+
+  if ((wanted & CONTACT_FEATURE_FLAG_CONTACT_BLOCKING) != 0 &&
+      tp_proxy_has_interface_by_id (connection,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_BLOCKING))
+    {
+      GQuark features[] = { TP_CONNECTION_FEATURE_CONTACT_BLOCKING, 0 };
+
+      g_ptr_array_add (array,
+          TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING);
+
+      /* The BlockedContactsChanged signal is already handled by
+       * connection-contact-list.c so we just have to prepare
+       * TP_CONNECTION_FEATURE_CONTACT_BLOCKING to make sure it's
+       * connected. */
+      if (!tp_proxy_is_prepared (connection,
+              TP_CONNECTION_FEATURE_CONTACT_BLOCKING))
+        {
+          tp_proxy_prepare_async (connection, features, NULL, NULL);
         }
     }
 
