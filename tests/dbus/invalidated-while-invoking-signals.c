@@ -57,42 +57,19 @@ int
 main (int argc,
       char **argv)
 {
-  TpTestsSimpleConnection *service;
-  TpBaseConnection *service_as_base;
-  TpDBusDaemon *dbus;
+  TpBaseConnection *service;
   TpConnection *client;
-  GError *error = NULL;
-  gchar *name;
-  gchar *path;
 
   tp_tests_abort_after (10);
   g_type_init ();
   tp_debug_set_flags ("all");
   mainloop = g_main_loop_new (NULL, FALSE);
-  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_CONTACTS_CONNECTION,
-        "account", "me@example.com",
-        "protocol", "simple",
-        NULL));
-  service_as_base = TP_BASE_CONNECTION (service);
-  MYASSERT (service != NULL, "");
-  MYASSERT (service_as_base != NULL, "");
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
+      "me@example.com", &service, &client);
 
   g_signal_connect (service, "shutdown-finished",
       G_CALLBACK (on_shutdown_finished), NULL);
-
-  MYASSERT (tp_base_connection_register (service_as_base, "simple",
-        &name, &path, &error), "");
-  g_assert_no_error (error);
-
-  client = tp_connection_new (dbus, name, path, &error);
-  MYASSERT (client != NULL, "");
-  g_assert_no_error (error);
-
-  tp_cli_connection_call_connect (client, -1, NULL, NULL, NULL, NULL);
-  tp_tests_proxy_run_until_prepared (client, NULL);
 
   MYASSERT (tp_cli_connection_connect_to_status_changed (client,
         on_status_changed, &client, NULL, NULL, NULL), "");
@@ -102,12 +79,9 @@ main (int argc,
   g_main_loop_run (mainloop);
 
   g_message ("Cleaning up");
-  service_as_base = NULL;
   g_object_unref (service);
-  g_object_unref (dbus);
+  g_object_unref (client);
   g_main_loop_unref (mainloop);
-  g_free (name);
-  g_free (path);
 
   return 0;
 }
