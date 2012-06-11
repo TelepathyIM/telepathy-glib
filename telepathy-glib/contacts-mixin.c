@@ -57,7 +57,6 @@
 
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/dbus.h>
-#include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
@@ -74,69 +73,10 @@ struct _TpContactsMixinPrivate
   GHashTable *interfaces;
 };
 
-enum {
-  MIXIN_DP_CONTACT_ATTRIBUTE_INTERFACES,
-  NUM_MIXIN_CONTACTS_DBUS_PROPERTIES
-};
-
-static TpDBusPropertiesMixinPropImpl known_contacts_props[] = {
-  { "ContactAttributeInterfaces", NULL, NULL },
-  { NULL }
-};
-
 static const gchar *always_included_interfaces[] = {
   TP_IFACE_CONNECTION,
   NULL
 };
-
-static void
-tp_presence_mixin_get_contacts_dbus_property (GObject *object,
-                                              GQuark interface,
-                                              GQuark name,
-                                              GValue *value,
-                                              gpointer unused
-                                              G_GNUC_UNUSED)
-{
-  static GQuark q[NUM_MIXIN_CONTACTS_DBUS_PROPERTIES] = { 0, };
-  TpContactsMixin *self = TP_CONTACTS_MIXIN (object);
-
-  DEBUG ("called.");
-
-  if (G_UNLIKELY (q[0] == 0))
-    {
-      q[MIXIN_DP_CONTACT_ATTRIBUTE_INTERFACES] =
-        g_quark_from_static_string ("ContactAttributeInterfaces");
-    }
-
-  g_return_if_fail (object != NULL);
-
-  if (name == q[MIXIN_DP_CONTACT_ATTRIBUTE_INTERFACES])
-    {
-      gchar **interfaces;
-      GHashTableIter iter;
-      gpointer key;
-      int i = 0;
-
-      g_assert (G_VALUE_HOLDS(value, G_TYPE_STRV));
-
-      /* FIXME, cache this when connected ? */
-      interfaces = g_malloc0(
-        (g_hash_table_size (self->priv->interfaces) + 1) * sizeof (gchar *));
-
-      g_hash_table_iter_init (&iter, self->priv->interfaces);
-      while (g_hash_table_iter_next (&iter, &key, NULL))
-          {
-            interfaces[i] = g_strdup ((gchar *) key);
-            i++;
-          }
-      g_value_take_boxed (value, interfaces);
-    }
-  else
-    {
-      g_assert_not_reached ();
-    }
-}
-
 
 /**
  * tp_contacts_mixin_class_get_offset_quark: (skip)
@@ -208,11 +148,6 @@ tp_contacts_mixin_class_init (GObjectClass *obj_cls, glong offset)
   g_type_set_qdata (G_OBJECT_CLASS_TYPE (obj_cls),
       TP_CONTACTS_MIXIN_CLASS_OFFSET_QUARK,
       GINT_TO_POINTER (offset));
-
-  tp_dbus_properties_mixin_implement_interface (obj_cls,
-      TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS,
-      tp_presence_mixin_get_contacts_dbus_property,
-      NULL, known_contacts_props);
 }
 
 
