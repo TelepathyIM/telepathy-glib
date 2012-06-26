@@ -313,31 +313,6 @@ main (int argc,
   g_free (bad_chan_path);
   bad_chan_path = NULL;
 
-  g_message ("Channel doesn't actually implement Group (preloading immutable "
-      "properties)");
-
-  tp_tests_proxy_run_until_dbus_queue_processed (conn);
-
-  {
-    const gchar *interfaces[] = {
-        TP_IFACE_CHANNEL_INTERFACE_GROUP,
-        NULL
-    };
-
-    asv = tp_asv_new (
-        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-            TP_IFACE_CHANNEL_TYPE_TEXT,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-            TP_HANDLE_TYPE_CONTACT,
-        TP_PROP_CHANNEL_TARGET_HANDLE, G_TYPE_UINT, handle,
-        TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, IDENTIFIER,
-        TP_PROP_CHANNEL_INITIATOR_HANDLE, G_TYPE_UINT, handle,
-        TP_PROP_CHANNEL_INITIATOR_ID, G_TYPE_STRING, IDENTIFIER,
-        TP_PROP_CHANNEL_INTERFACES, G_TYPE_STRV, interfaces,
-        TP_PROP_CHANNEL_REQUESTED, G_TYPE_BOOLEAN, FALSE,
-        NULL);
-  }
-
   /* regression test for fdo#41729
    *
    * tp-glib uses to rely on its introspection queue to add the interface ID
@@ -348,6 +323,9 @@ main (int argc,
    * TpChannel isn't prepared yet, and check that the interface is added right
    * away after its construction.
    * */
+
+  g_message ("Regression test for fdo#41729");
+
   conn2 = tp_connection_new (dbus, tp_proxy_get_bus_name (conn),
       tp_proxy_get_object_path (conn),
       &error);
