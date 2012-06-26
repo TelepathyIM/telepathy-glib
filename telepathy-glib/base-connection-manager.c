@@ -229,7 +229,8 @@ _tp_legacy_protocol_new (TpBaseConnectionManager *cm,
  *
  * Changed in 0.11.11: protocol_params and new_connection may both be
  * %NULL. If so, this connection manager is assumed to use Protocol objects
- * instead.
+ * instead. Since 0.UNRELEASED those fields are deprecated and should not be
+ * used anymore.
  */
 
 /**
