@@ -458,6 +458,8 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
  * tp_presence_mixin_init ((GObject *) self,
  *                         G_STRUCT_OFFSET (SomeObject, presence_mixin));
  * </programlisting></informalexample>
+ *
+ * Since 0.UNRELEASED @obj must be a #TpBaseConnection subclass.
  */
 void
 tp_presence_mixin_init (GObject *obj,
@@ -465,7 +467,7 @@ tp_presence_mixin_init (GObject *obj,
 {
   DEBUG ("called.");
 
-  g_assert (G_IS_OBJECT (obj));
+  g_assert (TP_IS_BASE_CONNECTION (obj));
 
   g_type_set_qdata (G_OBJECT_TYPE (obj),
                     TP_PRESENCE_MIXIN_OFFSET_QUARK,

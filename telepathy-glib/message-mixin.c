@@ -66,6 +66,7 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <string.h>
 
+#include <telepathy-glib/base-channel.h>
 #include <telepathy-glib/cm-message.h>
 #include <telepathy-glib/cm-message-internal.h>
 #include <telepathy-glib/dbus.h>
@@ -467,6 +468,8 @@ error:
  *     self->connection);
  * </programlisting></informalexample>
  *
+ * Since 0.UNRELEASED @obj must be a #TpBaseChannel subclass.
+ *
  * Since: 0.7.21
  */
 void
@@ -476,7 +479,7 @@ tp_message_mixin_init (GObject *obj,
 {
   TpMessageMixin *mixin;
 
-  g_assert (G_IS_OBJECT (obj));
+  g_assert (TP_IS_BASE_CHANNEL (obj));
 
   g_type_set_qdata (G_OBJECT_TYPE (obj),
                     TP_MESSAGE_MIXIN_OFFSET_QUARK,

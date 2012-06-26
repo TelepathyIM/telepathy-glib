@@ -64,6 +64,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <telepathy-glib/base-channel.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
@@ -308,6 +309,8 @@ tp_group_mixin_class_allow_self_removal (GObjectClass *obj_cls)
  * @self_handle: The handle of the local user in this group, if any
  *
  * Initialize the mixin.
+ *
+ * Since 0.UNRELEASED @obj must be a #TpBaseChannel subclass.
  */
 void
 tp_group_mixin_init (GObject *obj,
@@ -317,7 +320,7 @@ tp_group_mixin_init (GObject *obj,
 {
   TpGroupMixin *mixin;
 
-  g_assert (G_IS_OBJECT (obj));
+  g_assert (TP_IS_BASE_CHANNEL (obj));
 
   g_type_set_qdata (G_OBJECT_TYPE (obj),
                     TP_GROUP_MIXIN_OFFSET_QUARK,
