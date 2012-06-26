@@ -21,7 +21,7 @@
 #include "tests/lib/util.h"
 #include "tests/lib/simple-account.h"
 #include "tests/lib/contacts-conn.h"
-#include "tests/lib/textchan-null.h"
+#include "tests/lib/echo-chan.h"
 
 typedef struct {
     GMainLoop *mainloop;
@@ -31,7 +31,7 @@ typedef struct {
     TpBaseClient *simple_observer;
     TpBaseConnection *base_connection;
     TpTestsSimpleAccount *account_service;
-    TpTestsTextChannelNull *text_chan_service;
+    TpTestsEchoChannel *text_chan_service;
 
     /* Client side objects */
     TpClient *client;
@@ -88,9 +88,9 @@ setup (Test *test,
   handle = tp_handle_ensure (contact_repo, "bob", NULL, &test->error);
   g_assert_no_error (test->error);
 
-  test->text_chan_service = TP_TESTS_TEXT_CHANNEL_NULL (
+  test->text_chan_service = TP_TESTS_ECHO_CHANNEL (
       tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_PROPS_TEXT_CHANNEL,
+        TP_TESTS_TYPE_ECHO_CHANNEL,
         "connection", test->base_connection,
         "object-path", chan_path,
         "handle", handle,

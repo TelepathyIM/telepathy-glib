@@ -18,7 +18,7 @@
 
 #include "tests/lib/util.h"
 #include "tests/lib/contacts-conn.h"
-#include "tests/lib/textchan-null.h"
+#include "tests/lib/echo-chan.h"
 #include "tests/lib/textchan-group.h"
 
 typedef struct {
@@ -27,7 +27,7 @@ typedef struct {
 
     /* Service side objects */
     TpBaseConnection *base_connection;
-    TpTestsTextChannelNull *chan_contact_service;
+    TpTestsEchoChannel *chan_contact_service;
     TpTestsTextChannelGroup *chan_room_service;
     TpHandleRepoIface *contact_repo;
     TpHandleRepoIface *room_repo;
@@ -64,13 +64,17 @@ create_contact_chan (Test *test)
   g_assert_no_error (test->error);
 
   test->chan_contact_service = tp_tests_object_new_static_class (
-      TP_TESTS_TYPE_PROPS_TEXT_CHANNEL,
+      TP_TESTS_TYPE_ECHO_CHANNEL,
       "connection", test->base_connection,
       "handle", handle,
       "object-path", chan_path,
+      "initiator-handle",
+          tp_base_connection_get_self_handle (test->base_connection),
       NULL);
 
-  props = tp_tests_text_channel_get_props (test->chan_contact_service);
+  g_object_get (test->chan_contact_service,
+      "channel-properties", &props,
+      NULL);
 
   test->channel_contact = tp_channel_new_from_properties (test->connection,
       chan_path, props, &test->error);

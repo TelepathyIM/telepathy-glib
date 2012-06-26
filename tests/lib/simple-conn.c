@@ -25,7 +25,7 @@
 #include <telepathy-glib/svc-connection.h>
 #include <telepathy-glib/util.h>
 
-#include "textchan-null.h"
+#include "echo-chan.h"
 #include "room-list-chan.h"
 #include "util.h"
 
@@ -327,11 +327,10 @@ tp_tests_simple_connection_ensure_text_chan (TpTestsSimpleConnection *self,
     const gchar *target_id,
     GHashTable **props)
 {
-  TpTestsTextChannelNull *chan;
+  TpTestsEchoChannel *chan;
   gchar *chan_path;
   TpHandleRepoIface *contact_repo;
   TpHandle handle;
-  static guint count = 0;
   TpBaseConnection *base_conn = (TpBaseConnection *) self;
 
   /* Get contact handle */
@@ -343,21 +342,12 @@ tp_tests_simple_connection_ensure_text_chan (TpTestsSimpleConnection *self,
 
   chan = g_hash_table_lookup (self->priv->text_channels,
       GUINT_TO_POINTER (handle));
-  if (chan != NULL)
+  if (chan == NULL)
     {
-      /* Channel already exist, reuse it */
-      g_object_get (chan, "object-path", &chan_path, NULL);
-    }
-  else
-    {
-      chan_path = g_strdup_printf ("%s/Channel%u",
-          tp_base_connection_get_object_path (base_conn), count++);
-
-       chan = TP_TESTS_TEXT_CHANNEL_NULL (
+       chan = TP_TESTS_ECHO_CHANNEL (
           tp_tests_object_new_static_class (
-            TP_TESTS_TYPE_PROPS_TEXT_CHANNEL,
+            TP_TESTS_TYPE_ECHO_CHANNEL,
             "connection", self,
-            "object-path", chan_path,
             "handle", handle,
             NULL));
 
@@ -365,8 +355,10 @@ tp_tests_simple_connection_ensure_text_chan (TpTestsSimpleConnection *self,
           chan);
     }
 
+  g_object_get (chan, "object-path", &chan_path, NULL);
+
   if (props != NULL)
-    *props = tp_tests_text_channel_get_props (chan);
+    g_object_get (chan, "channel-properties", props, NULL);
 
   return chan_path;
 }

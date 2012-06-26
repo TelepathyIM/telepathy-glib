@@ -22,7 +22,7 @@
 #include "tests/lib/util.h"
 #include "tests/lib/simple-account.h"
 #include "tests/lib/contacts-conn.h"
-#include "tests/lib/textchan-null.h"
+#include "tests/lib/echo-chan.h"
 #include "tests/lib/simple-channel-dispatcher.h"
 #include "tests/lib/simple-channel-request.h"
 

@@ -31,7 +31,7 @@
 #include "tests/lib/simple-channel-request.h"
 #include "tests/lib/simple-client.h"
 #include "tests/lib/contacts-conn.h"
-#include "tests/lib/textchan-null.h"
+#include "tests/lib/echo-chan.h"
 
 typedef struct {
     GMainLoop *mainloop;
@@ -42,8 +42,8 @@ typedef struct {
     TpTestsSimpleClient *simple_client;
     TpBaseConnection *base_connection;
     TpTestsSimpleAccount *account_service;
-    TpTestsTextChannelNull *text_chan_service;
-    TpTestsTextChannelNull *text_chan_service_2;
+    TpTestsEchoChannel *text_chan_service;
+    TpTestsEchoChannel *text_chan_service_2;
     TpTestsSimpleChannelDispatchOperation *cdo_service;
     TpTestsSimpleChannelDispatcher *cd_service;
 
@@ -132,9 +132,9 @@ setup (Test *test,
   handle = tp_handle_ensure (contact_repo, "bob", NULL, &test->error);
   g_assert_no_error (test->error);
 
-  test->text_chan_service = TP_TESTS_TEXT_CHANNEL_NULL (
+  test->text_chan_service = TP_TESTS_ECHO_CHANNEL (
       tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_PROPS_TEXT_CHANNEL,
+        TP_TESTS_TYPE_ECHO_CHANNEL,
         "connection", test->base_connection,
         "object-path", chan_path,
         "handle", handle,
@@ -154,9 +154,9 @@ setup (Test *test,
   handle = tp_handle_ensure (contact_repo, "alice", NULL, &test->error);
   g_assert_no_error (test->error);
 
-  test->text_chan_service_2 = TP_TESTS_TEXT_CHANNEL_NULL (
+  test->text_chan_service_2 = TP_TESTS_ECHO_CHANNEL (
       tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_PROPS_TEXT_CHANNEL,
+        TP_TESTS_TYPE_ECHO_CHANNEL,
         "connection", test->base_connection,
         "object-path", chan_path,
         "handle", handle,
@@ -585,7 +585,7 @@ test_observer (Test *test,
       channels, "/", requests_satisified, info,
       no_return_cb, test, NULL, NULL);
 
-  tp_tests_text_channel_null_close (test->text_chan_service);
+  tp_base_channel_close ((TpBaseChannel *) test->text_chan_service);
 
   test->wait++;
   g_main_loop_run (test->mainloop);
@@ -729,7 +729,7 @@ test_approver (Test *test,
       channels, CDO_PATH, properties,
       no_return_cb, test, NULL, NULL);
 
-  tp_tests_text_channel_null_close (test->text_chan_service_2);
+  tp_base_channel_close ((TpBaseChannel *) test->text_chan_service_2);
 
   test->wait++;
   g_object_unref (test->text_chan_service_2);
@@ -756,7 +756,7 @@ test_approver (Test *test,
       channels, CDO_PATH, properties,
       no_return_cb, test, NULL, NULL);
 
-  tp_tests_text_channel_null_close (test->text_chan_service);
+  tp_base_channel_close ((TpBaseChannel *) test->text_chan_service);
   g_object_unref (test->text_chan_service);
   test->text_chan_service = NULL;
 
@@ -923,7 +923,7 @@ test_handler (Test *test,
   /* One of the channel is closed */
   g_signal_connect (test->text_chan, "invalidated",
       G_CALLBACK (channel_invalidated_cb), test);
-  tp_tests_text_channel_null_close (test->text_chan_service);
+  tp_base_channel_close ((TpBaseChannel *) test->text_chan_service);
   g_main_loop_run (test->mainloop);
 
   chans = tp_base_client_get_handled_channels (test->base_client);

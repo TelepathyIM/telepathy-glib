@@ -18,7 +18,7 @@
 
 #include "tests/lib/myassert.h"
 #include "tests/lib/contacts-conn.h"
-#include "tests/lib/textchan-null.h"
+#include "tests/lib/echo-chan.h"
 #include "tests/lib/util.h"
 
 static GMainLoop *mainloop;
@@ -73,7 +73,7 @@ main (int argc,
   TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   TpHandleRepoIface *contact_repo;
-  TpTestsTextChannelNull *service_chan;
+  TpTestsEchoChannel *service_chan;
   TpConnection *conn;
   TpChannel *chan;
   GError *error = NULL;
@@ -103,8 +103,8 @@ main (int argc,
   chan_path = g_strdup_printf ("%s/Channel",
       tp_proxy_get_object_path (conn));
 
-  service_chan = TP_TESTS_TEXT_CHANNEL_NULL (tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_PROPS_TEXT_CHANNEL,
+  service_chan = TP_TESTS_ECHO_CHANNEL (tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_ECHO_CHANNEL,
         "connection", service_conn,
         "object-path", chan_path,
         "handle", handle,

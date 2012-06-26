@@ -22,7 +22,7 @@
 
 #include "tests/lib/simple-channel-dispatch-operation.h"
 #include "tests/lib/contacts-conn.h"
-#include "tests/lib/textchan-null.h"
+#include "tests/lib/echo-chan.h"
 #include "tests/lib/util.h"
 
 #define ACCOUNT_PATH TP_ACCOUNT_OBJECT_PATH_BASE "fake/fake/fake"
@@ -36,8 +36,8 @@ typedef struct {
     DBusGConnection *private_conn;
     TpDBusDaemon *private_dbus;
     TpTestsSimpleChannelDispatchOperation *cdo_service;
-    TpTestsTextChannelNull *text_chan_service;
-    TpTestsTextChannelNull *text_chan_service_2;
+    TpTestsEchoChannel *text_chan_service;
+    TpTestsEchoChannel *text_chan_service_2;
 
     TpChannelDispatchOperation *cdo;
     GError *error /* initialized where needed */;
@@ -108,9 +108,9 @@ setup_services (Test *test,
   handle = tp_handle_ensure (contact_repo, "bob", NULL, &test->error);
   g_assert_no_error (test->error);
 
-  test->text_chan_service = TP_TESTS_TEXT_CHANNEL_NULL (
+  test->text_chan_service = TP_TESTS_ECHO_CHANNEL (
       tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_PROPS_TEXT_CHANNEL,
+        TP_TESTS_TYPE_ECHO_CHANNEL,
         "connection", test->base_connection,
         "object-path", chan_path,
         "handle", handle,
@@ -130,9 +130,9 @@ setup_services (Test *test,
   handle = tp_handle_ensure (contact_repo, "alice", NULL, &test->error);
   g_assert_no_error (test->error);
 
-  test->text_chan_service_2 = TP_TESTS_TEXT_CHANNEL_NULL (
+  test->text_chan_service_2 = TP_TESTS_ECHO_CHANNEL (
       tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_PROPS_TEXT_CHANNEL,
+        TP_TESTS_TYPE_ECHO_CHANNEL,
         "connection", test->base_connection,
         "object-path", chan_path,
         "handle", handle,
@@ -560,7 +560,7 @@ test_channel_lost (Test *test,
       test);
 
   /* First channel disappears and so is lost */
-  tp_tests_text_channel_null_close (test->text_chan_service);
+  tp_base_channel_close ((TpBaseChannel *) test->text_chan_service);
 
   g_object_unref (test->text_chan_service);
   test->text_chan_service = NULL;
@@ -583,7 +583,7 @@ test_channel_lost (Test *test,
   g_signal_connect (test->cdo, "invalidated", G_CALLBACK (invalidated_cb),
       test);
 
-  tp_tests_text_channel_null_close (test->text_chan_service_2);
+  tp_base_channel_close ((TpBaseChannel *) test->text_chan_service_2);
 
   g_object_unref (test->text_chan_service_2);
   test->text_chan_service_2 = NULL;
@@ -645,7 +645,7 @@ test_channel_lost_preparing (Test *test,
   tp_proxy_prepare_async (test->cdo, features, features_prepared_cb, test);
 
   /* First channel disappears while preparing */
-  tp_tests_text_channel_null_close (test->text_chan_service);
+  tp_base_channel_close ((TpBaseChannel *) test->text_chan_service);
 
   g_object_unref (test->text_chan_service);
   test->text_chan_service = NULL;
@@ -696,7 +696,7 @@ test_finished_preparing (Test *test,
   tp_proxy_prepare_async (test->cdo, features, features_not_prepared_cb, test);
 
   /* The 2 channels are lost while preparing */
-  tp_tests_text_channel_null_close (test->text_chan_service);
+  tp_base_channel_close ((TpBaseChannel *) test->text_chan_service);
 
   g_object_unref (test->text_chan_service);
   test->text_chan_service = NULL;
@@ -704,7 +704,7 @@ test_finished_preparing (Test *test,
   tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan);
 
-  tp_tests_text_channel_null_close (test->text_chan_service_2);
+  tp_base_channel_close ((TpBaseChannel *) test->text_chan_service_2);
 
   g_object_unref (test->text_chan_service_2);
   test->text_chan_service_2 = NULL;
