@@ -128,14 +128,9 @@ text_send (GObject *object,
   tp_message_mixin_sent (object, message, 0, "", NULL);
 }
 
-static GObject *
-constructor (GType type,
-             guint n_props,
-             GObjectConstructParam *props)
+static void
+constructed (GObject *object)
 {
-  GObject *object =
-      G_OBJECT_CLASS (tp_tests_text_channel_group_parent_class)->constructor (type,
-          n_props, props);
   TpTestsTextChannelGroup *self = TP_TESTS_TEXT_CHANNEL_GROUP (object);
   TpHandleRepoIface *contact_repo;
   TpChannelGroupFlags flags = 0;
@@ -149,6 +144,9 @@ constructor (GType type,
       "text/plain",
       NULL
   };
+
+  G_OBJECT_CLASS (tp_tests_text_channel_group_parent_class)->constructed (
+      object);
 
   self->conn = tp_base_channel_get_connection (base);
 
@@ -172,8 +170,6 @@ constructor (GType type,
       tp_base_connection_get_self_handle (self->conn));
 
   tp_group_mixin_change_flags (object, flags, 0);
-
-  return object;
 }
 
 static void
@@ -227,7 +223,7 @@ tp_tests_text_channel_group_class_init (TpTestsTextChannelGroupClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpTestsTextChannelGroupPrivate));
 
-  object_class->constructor = constructor;
+  object_class->constructed = constructed;
   object_class->dispose = dispose;
   object_class->finalize = finalize;
 

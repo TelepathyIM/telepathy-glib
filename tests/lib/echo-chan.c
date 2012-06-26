@@ -53,14 +53,9 @@ tp_tests_echo_channel_init (TpTestsEchoChannel *self)
 static void text_send (GObject *object, TpMessage *message,
     TpMessageSendingFlags flags);
 
-static GObject *
-constructor (GType type,
-             guint n_props,
-             GObjectConstructParam *props)
+static void
+constructed (GObject *object)
 {
-  GObject *object =
-      G_OBJECT_CLASS (tp_tests_echo_channel_parent_class)->constructor (type,
-          n_props, props);
   TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (object);
   TpBaseConnection *conn = tp_base_channel_get_connection (TP_BASE_CHANNEL (self));
   const TpChannelTextMessageType types[] = {
@@ -74,6 +69,8 @@ constructor (GType type,
   };
   g_assert (conn != NULL);
 
+  G_OBJECT_CLASS (tp_tests_echo_channel_parent_class)->constructed (object);
+
   tp_base_channel_register (TP_BASE_CHANNEL (self));
 
   tp_message_mixin_init (object,
@@ -82,8 +79,6 @@ constructor (GType type,
   tp_message_mixin_implement_sending (object,
       text_send, G_N_ELEMENTS (types), types, 0, 0,
       supported_content_types);
-
-  return object;
 }
 
 static void
@@ -135,7 +130,7 @@ tp_tests_echo_channel_class_init (TpTestsEchoChannelClass *klass)
   GObjectClass *object_class = (GObjectClass *) klass;
   TpBaseChannelClass *base_class = TP_BASE_CHANNEL_CLASS (klass);
 
-  object_class->constructor = constructor;
+  object_class->constructed = constructed;
   object_class->finalize = finalize;
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_TEXT;
