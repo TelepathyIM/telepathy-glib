@@ -386,25 +386,6 @@ tp_message_mixin_maybe_send_gone (GObject *object)
   mixin->priv->send_gone = FALSE;
 }
 
-/* FIXME: Use tp_base_channel_get_self_handle() when TpMessageMixin requires
- * TpBaseChannel. See bug #49366 */
-static TpHandle
-get_self_handle (GObject *object)
-{
-  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
-
-  if (TP_HAS_GROUP_MIXIN (object))
-    {
-      guint ret = 0;
-
-      tp_group_mixin_get_self_handle (object, &ret, NULL);
-      if (ret != 0)
-        return ret;
-    }
-
-  return tp_base_connection_get_self_handle (mixin->priv->connection);
-}
-
 static void
 tp_message_mixin_set_chat_state_async (TpSvcChannelInterfaceChatState *iface,
     guint state,
@@ -443,7 +424,9 @@ tp_message_mixin_set_chat_state_async (TpSvcChannelInterfaceChatState *iface,
     goto error;
 
   mixin->priv->send_gone = TRUE;
-  tp_message_mixin_change_chat_state (object, get_self_handle (object), state);
+  tp_message_mixin_change_chat_state (object,
+      tp_base_channel_get_self_handle ((TpBaseChannel *) object),
+      state);
 
   tp_svc_channel_interface_chat_state_return_from_set_chat_state (context);
   return;
@@ -823,7 +806,8 @@ tp_message_mixin_sent (GObject *object,
       if (tp_asv_get_uint64 (header, "message-sent", NULL) == 0)
         tp_message_set_uint64 (message, 0, "message-sent", time (NULL));
 
-      tp_cm_message_set_sender (message, get_self_handle (object));
+      tp_cm_message_set_sender (message,
+          tp_base_channel_get_self_handle ((TpBaseChannel *) object));
 
       /* emit Sent and MessageSent */
 
