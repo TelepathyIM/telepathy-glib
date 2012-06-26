@@ -57,3 +57,6 @@ API/Behaviour changes
 
  - tp_connection_manager_get_protocol_object() has been renamed to
    tp_connection_manager_get_protocol().
+
+ - TpGroupMixin and TpMessageMixin now require TpBaseChannel.
+   TpPresenceMixin now require TpBaseConnection.
