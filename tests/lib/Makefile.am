@@ -59,8 +59,6 @@ libtp_glib_tests_la_SOURCES = \
     stream-tube-chan.h \
     stub-object.c \
     stub-object.h \
-    textchan-null.c \
-    textchan-null.h \
     textchan-group.c \
     textchan-group.h \
     tls-certificate.h \

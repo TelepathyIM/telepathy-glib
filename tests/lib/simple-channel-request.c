@@ -22,7 +22,6 @@
 #include <telepathy-glib/util.h>
 
 #include "tests/lib/util.h"
-#include "tests/lib/textchan-null.h"
 
 static void channel_request_iface_init (gpointer, gpointer);
 
