@@ -1660,19 +1660,82 @@ dup_features_for_channel (TpBaseClient *self,
 }
 
 static TpChannel *
-ensure_channel (TpBaseClient *self,
-    TpConnection *connection,
-    const gchar *chan_path,
-    GHashTable *chan_props,
+ensure_account_connection_channels (TpBaseClient *self,
+    const gchar *account_path,
+    const gchar *connection_path,
+    const GPtrArray *channels_arr,
+    TpAccount **account,
+    TpConnection **connection,
+    GPtrArray **channels,
     GError **error)
 {
-  /* Use legacy channel factory if one is set */
-  if (self->priv->channel_factory != NULL)
-    return tp_client_channel_factory_create_channel (
-        self->priv->channel_factory, connection, chan_path, chan_props, error);
+  TpChannel *channel = NULL;
+  guint i;
 
-  return tp_simple_client_factory_ensure_channel (self->priv->factory,
-      connection, chan_path, chan_props, error);
+  g_assert (account != NULL);
+  g_assert (connection != NULL);
+  g_assert (channels != NULL);
+
+  *account = NULL;
+  *connection = NULL;
+  *channels = NULL;
+
+  *account = tp_base_client_dup_account (self, account_path, error);
+  if (*account == NULL)
+    goto error;
+
+  *connection = tp_simple_client_factory_ensure_connection (self->priv->factory,
+      connection_path, NULL, error);
+  if (*connection == NULL)
+    goto error;
+
+  if (channels_arr->len == 0)
+    {
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+          "Channels should contain at least one channel");
+      goto error;
+    }
+
+  *channels = g_ptr_array_new_full (channels_arr->len, g_object_unref);
+  for (i = 0; i < channels_arr->len; i++)
+    {
+      const gchar *chan_path;
+      GHashTable *chan_props;
+
+      tp_value_array_unpack (g_ptr_array_index (channels_arr, i), 2,
+          &chan_path, &chan_props);
+
+      /* Use legacy channel factory if one is set */
+      if (self->priv->channel_factory != NULL)
+        {
+          channel = tp_client_channel_factory_create_channel (
+              self->priv->channel_factory, *connection, chan_path, chan_props,
+              error);
+        }
+      else
+        {
+          channel = tp_simple_client_factory_ensure_channel (
+              self->priv->factory, *connection, chan_path, chan_props, error);
+        }
+
+      if (channel == NULL)
+        goto error;
+
+      g_ptr_array_add (*channels, channel);
+    }
+
+  /* FIXME: We will consider features set only for the last channel. This is
+   * wrong in the case we receive multiple channels of different types.
+   * It has always been like that, and multiple channel dispatch is being
+   * deprecated. So let's just live with it. */
+  return channel;
+
+error:
+  g_clear_object (account);
+  g_clear_object (connection);
+  tp_clear_pointer (channels, g_ptr_array_unref);
+
+  return NULL;
 }
 
 static void
@@ -1716,49 +1779,10 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       return;
     }
 
-  if (channels_arr->len == 0)
-    {
-      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-          "Channels should contain at least one channel");
-      DEBUG ("%s", error->message);
-      goto out;
-    }
-
-  account = tp_base_client_dup_account (self, account_path, &error);
-
-  if (account == NULL)
+  channel = ensure_account_connection_channels (self, account_path,
+      connection_path, channels_arr, &account, &connection, &channels, &error);
+  if (channel == NULL)
     goto out;
-
-  connection = tp_simple_client_factory_ensure_connection (self->priv->factory,
-      connection_path, NULL, NULL);
-  if (connection == NULL)
-    {
-      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-          "Connection %s doesn't seem to exist. (Maybe the CM doesn't own "
-          "the corresponding bus name?)", connection_path);
-      DEBUG ("Failed to create TpConnection: %s", error->message);
-      goto out;
-    }
-
-  channels = g_ptr_array_new_full (channels_arr->len, g_object_unref);
-  for (i = 0; i < channels_arr->len; i++)
-    {
-      const gchar *chan_path;
-      GHashTable *chan_props;
-
-      tp_value_array_unpack (g_ptr_array_index (channels_arr, i), 2,
-          &chan_path, &chan_props);
-
-      channel = ensure_channel (self, connection, chan_path, chan_props,
-          &error);
-      if (channel == NULL)
-        {
-          DEBUG ("Failed to create TpChannel: %s", error->message);
-          goto out;
-        }
-
-      g_ptr_array_add (channels, channel);
-    }
 
   if (!tp_strdiff (dispatch_operation_path, "/"))
     {
@@ -1896,13 +1920,13 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
   TpBaseClient *self = TP_BASE_CLIENT (iface);
   TpAddDispatchOperationContext *ctx;
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+  const gchar *account_path;
+  const gchar *connection_path;
   GError *error = NULL;
   TpAccount *account = NULL;
   TpConnection *connection = NULL;
   GPtrArray *channels = NULL;
   TpChannelDispatchOperation *dispatch_operation = NULL;
-  guint i;
-  const gchar *path;
   TpChannel *channel = NULL;
   GArray *account_features;
   GArray *connection_features;
@@ -1925,9 +1949,9 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       return;
     }
 
-  path = tp_asv_get_object_path (properties,
+  account_path = tp_asv_get_object_path (properties,
       TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT);
-  if (path == NULL)
+  if (account_path == NULL)
     {
       g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Properties doesn't contain 'Account'");
@@ -1935,14 +1959,9 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       goto out;
     }
 
-  account = tp_base_client_dup_account (self, path, &error);
-
-  if (account == NULL)
-    goto out;
-
-  path = tp_asv_get_object_path (properties,
+  connection_path = tp_asv_get_object_path (properties,
       TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION);
-  if (path == NULL)
+  if (connection_path == NULL)
     {
       g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Properties doesn't contain 'Connection'");
@@ -1950,41 +1969,16 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       goto out;
     }
 
-  connection = tp_simple_client_factory_ensure_connection (self->priv->factory,
-      path, NULL, NULL);
-  if (connection == NULL)
-    {
-      DEBUG ("Failed to create TpConnection");
-      goto out;
-    }
+  channel = ensure_account_connection_channels (self, account_path,
+      connection_path, channels_arr, &account, &connection, &channels, &error);
+  if (channel == NULL)
+    goto out;
 
-  if (channels_arr->len == 0)
-    {
-      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-          "Channels should contain at least one channel");
-      DEBUG ("%s", error->message);
-      goto out;
-    }
-
-  channels = g_ptr_array_new_full (channels_arr->len, g_object_unref);
-  for (i = 0; i < channels_arr->len; i++)
-    {
-      const gchar *chan_path;
-      GHashTable *chan_props;
-
-      tp_value_array_unpack (g_ptr_array_index (channels_arr, i), 2,
-          &chan_path, &chan_props);
-
-      channel = ensure_channel (self, connection, chan_path, chan_props,
-          &error);
-      if (channel == NULL)
-        {
-          DEBUG ("Failed to create TpChannel: %s", error->message);
-          goto out;
-        }
-
-      g_ptr_array_add (channels, channel);
-    }
+  /* FIXME: We will consider features set only for the first channel. This is
+   * wrong in the case we receive multiple channels of different types.
+   * It has always been like that, and multiple channel dispatch is being
+   * deprecated. So let's just live with it. */
+  channel = g_ptr_array_index (channels, 0);
 
   dispatch_operation =
       _tp_simple_client_factory_ensure_channel_dispatch_operation (
@@ -2301,46 +2295,16 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
       return;
     }
 
-  if (channels_arr->len == 0)
-    {
-      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-          "Channels should contain at least one channel");
-      DEBUG ("%s", error->message);
-      goto out;
-    }
-
-  account = tp_base_client_dup_account (self, account_path, &error);
-
-  if (account == NULL)
+  channel = ensure_account_connection_channels (self, account_path,
+      connection_path, channels_arr, &account, &connection, &channels, &error);
+  if (channel == NULL)
     goto out;
 
-  connection = tp_simple_client_factory_ensure_connection (self->priv->factory,
-      connection_path, NULL, NULL);
-  if (connection == NULL)
-    {
-      DEBUG ("Failed to create TpConnection");
-      goto out;
-    }
-
-  channels = g_ptr_array_new_full (channels_arr->len, g_object_unref);
-  for (i = 0; i < channels_arr->len; i++)
-    {
-      const gchar *chan_path;
-      GHashTable *chan_props;
-
-      tp_value_array_unpack (g_ptr_array_index (channels_arr, i), 2,
-          &chan_path, &chan_props);
-
-      channel = ensure_channel (self, connection, chan_path, chan_props,
-          &error);
-      if (channel == NULL)
-        {
-          DEBUG ("Failed to create TpChannel: %s", error->message);
-          goto out;
-        }
-
-      g_ptr_array_add (channels, channel);
-    }
+  /* FIXME: We will consider features set only for the first channel. This is
+   * wrong in the case we receive multiple channels of different types.
+   * It has always been like that, and multiple channel dispatch is being
+   * deprecated. So let's just live with it. */
+  channel = g_ptr_array_index (channels, 0);
 
   requests = g_ptr_array_new_full (requests_arr->len, g_object_unref);
   for (i = 0; i < requests_arr->len; i++)
