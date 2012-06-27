@@ -199,6 +199,7 @@
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
+#include "telepathy-glib/connection-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/deprecated-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
@@ -1688,6 +1689,11 @@ ensure_account_connection_channels (TpBaseClient *self,
       connection_path, NULL, error);
   if (*connection == NULL)
     goto error;
+
+  /* fdo#51444: Custom TpChannel subclasses constructors may assume that the
+   * Connection already knows its Account. If we don't do it here, it will be
+   * done only when TP_ACCOUNT_FEATURE_CORE gets prepared on the Account. */
+  _tp_connection_set_account (*connection, *account);
 
   if (channels_arr->len == 0)
     {
