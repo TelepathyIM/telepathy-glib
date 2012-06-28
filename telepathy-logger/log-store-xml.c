@@ -42,6 +42,7 @@
 #include "telepathy-logger/event-internal.h"
 #include "telepathy-logger/text-event.h"
 #include "telepathy-logger/text-event-internal.h"
+#include "telepathy-logger/log-iter-xml-internal.h"
 #include "telepathy-logger/log-manager.h"
 #include "telepathy-logger/log-store-internal.h"
 #include "telepathy-logger/log-manager-internal.h"
@@ -1961,6 +1962,23 @@ log_store_xml_clear_entity (TplLogStore *store,
 }
 
 
+static TplLogIter *
+log_store_xml_create_iter (TplLogStore *store,
+    TpAccount *account,
+    TplEntity *target,
+    gint type_mask,
+    TplLogEventFilter filter,
+    gpointer filter_data)
+{
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (store), NULL);
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+  g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
+
+  return tpl_log_iter_xml_new (store, account, target, type_mask, filter,
+      filter_data);
+}
+
+
 static void
 log_store_iface_init (gpointer g_iface,
     gpointer iface_data)
@@ -1978,4 +1996,5 @@ log_store_iface_init (gpointer g_iface,
   iface->clear = log_store_xml_clear;
   iface->clear_account = log_store_xml_clear_account;
   iface->clear_entity = log_store_xml_clear_entity;
+  iface->create_iter = log_store_xml_create_iter;
 }
