@@ -69,6 +69,8 @@ libtelepathy_logger_la_SOURCES = \
 		event-internal.h		\
 		log-iter.c			\
 		log-iter-internal.h		\
+		log-iter-xml.c			\
+		log-iter-xml-internal.h		\
 		log-manager.c			\
 		log-manager-internal.h		\
 		log-store.c			\
