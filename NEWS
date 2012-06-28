@@ -1,3 +1,17 @@
+telepathy-glib 0.19.2 (2012-06-28)
+==================================
+
+Enhancements:
+
+• TpDynamicHandleRepo can now have an asynchronous ID normalization function.
+  That function can be set by Connection Manager wishing to do network rountrip
+  to normalize an ID. (Xavier)
+
+Fixes:
+
+• fdo#51250 - tp_debug_client_get_messages_async: error is not propagated
+  (Guillaume)
+
 telepathy-glib 0.19.1 (2012-06-06)
 ==================================
 

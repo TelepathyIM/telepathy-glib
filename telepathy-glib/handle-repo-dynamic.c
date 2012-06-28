@@ -86,7 +86,7 @@
  * Signature of a function to asynchronously normalize an identifier. See
  * tp_dynamic_handle_repo_set_normalize_async().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.2
  */
 
 /**
@@ -98,7 +98,7 @@
  * Signature of a function to finish the operation started with
  * #TpDynamicHandleRepoNormalizeAsync.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.2
  */
 
 /**
@@ -714,7 +714,7 @@ _tp_dynamic_handle_repo_set_normalization_data (TpHandleRepoIface *irepo,
  * Set an asynchronous normalization function. This is to be used if handle
  * normalization requires a server round-trip. See tp_handle_ensure_async().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.2
  */
 void
 tp_dynamic_handle_repo_set_normalize_async (TpDynamicHandleRepo *self,

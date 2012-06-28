@@ -86,7 +86,7 @@ tp_dynamic_handle_repo_new (TpHandleType handle_type,
       NULL);
 }
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 void tp_dynamic_handle_repo_set_normalize_async (TpDynamicHandleRepo *self,
     TpDynamicHandleRepoNormalizeAsync normalize_async,
     TpDynamicHandleRepoNormalizeFinish normalize_finish);

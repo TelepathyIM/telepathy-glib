@@ -317,7 +317,7 @@ tp_handle_ensure (TpHandleRepoIface *self,
  * tp_handle_ensure() for user provided contact identifiers, but it is not
  * necessary for identifiers from the server.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.2
  */
 void
 tp_handle_ensure_async (TpHandleRepoIface *self,
@@ -341,7 +341,7 @@ tp_handle_ensure_async (TpHandleRepoIface *self,
  *
  * Returns: non-0 #TpHandle if the operation was successful, otherwise 0.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.2
  */
 TpHandle
 tp_handle_ensure_finish (TpHandleRepoIface *self,

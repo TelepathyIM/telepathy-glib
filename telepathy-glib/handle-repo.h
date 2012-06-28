@@ -120,14 +120,14 @@ TpHandle tp_handle_ensure (TpHandleRepoIface *self,
     const gchar *id, gpointer context, GError **error)
     G_GNUC_WARN_UNUSED_RESULT;
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 void tp_handle_ensure_async (TpHandleRepoIface *self,
     TpBaseConnection *connection,
     const gchar *id,
     gpointer context,
     GAsyncReadyCallback callback,
     gpointer user_data);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 TpHandle tp_handle_ensure_finish (TpHandleRepoIface *self,
     GAsyncResult *result,
     GError **error);
