@@ -27,6 +27,7 @@
 #include <telepathy-glib/telepathy-glib.h>
 
 #include <telepathy-logger/event.h>
+#include <telepathy-logger/log-walker.h>
 
 G_BEGIN_DECLS
 #define TPL_TYPE_LOG_MANAGER  (tpl_log_manager_get_type ())
@@ -146,6 +147,13 @@ gboolean tpl_log_manager_get_filtered_events_finish (TplLogManager *self,
     GAsyncResult *result,
     GList **events,
     GError **error);
+
+TplLogWalker *tpl_log_manager_walk_filtered_events (TplLogManager *manager,
+    TpAccount *account,
+    TplEntity *target,
+    gint type_mask,
+    TplLogEventFilter filter,
+    gpointer filter_data);
 
 void tpl_log_manager_get_entities_async (TplLogManager *self,
     TpAccount *account,

@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2003-2007 Imendio AB
  * Copyright (C) 2007-2011 Collabora Ltd.
+ * Copyright (C) 2012 Red Hat, Inc.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,6 +44,7 @@
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_MANAGER
 #include <telepathy-logger/debug-internal.h>
+#include <telepathy-logger/log-walker-internal.h>
 #include <telepathy-logger/util-internal.h>
 
 /**
@@ -1190,6 +1192,53 @@ tpl_log_manager_get_filtered_events_finish (TplLogManager *self,
     *events = _take_list (g_simple_async_result_get_op_res_gpointer (simple));
 
   return TRUE;
+}
+
+
+/**
+ * tpl_log_manager_walk_filtered_events:
+ * @manager: a #TplLogManager
+ * @account: a #TpAccount
+ * @target: a non-NULL #TplEntity
+ * @type_mask: event type filter see #TplEventTypeMask
+ * @filter: (scope call) (allow-none): an optional filter function
+ * @filter_data: user data to pass to @filter
+ *
+ * Create a #TplLogWalker to traverse all the events exchanged with @target.
+
+ * Returns: (transfer full): a #TplLogWalker
+ */
+TplLogWalker *
+tpl_log_manager_walk_filtered_events (TplLogManager *manager,
+    TpAccount *account,
+    TplEntity *target,
+    gint type_mask,
+    TplLogEventFilter filter,
+    gpointer filter_data)
+{
+  TplLogManagerPriv *priv;
+  TplLogWalker *walker;
+  GList *l;
+
+  g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
+  g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
+
+  priv = manager->priv;
+  walker = tpl_log_walker_new ();
+
+  for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
+    {
+      TplLogStore *store = TPL_LOG_STORE (l->data);
+      TplLogIter *iter;
+
+      iter = _tpl_log_store_create_iter (store, account, target, type_mask,
+          filter, filter_data);
+
+      if (iter != NULL)
+        tpl_log_walker_add_iter (walker, iter);
+    }
+
+  return walker;
 }
 
 
