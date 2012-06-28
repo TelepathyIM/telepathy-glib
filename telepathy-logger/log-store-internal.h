@@ -26,6 +26,7 @@
 #include <telepathy-glib/telepathy-glib.h>
 
 #include <telepathy-logger/event.h>
+#include <telepathy-logger/log-iter-internal.h>
 #include <telepathy-logger/log-manager.h>
 
 G_BEGIN_DECLS
@@ -80,6 +81,9 @@ typedef struct
   void (*clear_account) (TplLogStore *self, TpAccount *account);
   void (*clear_entity) (TplLogStore *self, TpAccount *account,
       TplEntity *entity);
+  TplLogIter * (*create_iter) (TplLogStore *self, TpAccount *account,
+      TplEntity *target, gint type_mask, TplLogEventFilter filter,
+      gpointer filter_data);
 } TplLogStoreInterface;
 
 GType _tpl_log_store_get_type (void);
@@ -105,6 +109,9 @@ void _tpl_log_store_clear (TplLogStore *self);
 void _tpl_log_store_clear_account (TplLogStore *self, TpAccount *account);
 void _tpl_log_store_clear_entity (TplLogStore *self, TpAccount *account,
     TplEntity *entity);
+TplLogIter * _tpl_log_store_create_iter (TplLogStore *self,
+    TpAccount *account, TplEntity *target, gint type_mask,
+    TplLogEventFilter filter, gpointer filter_data);
 gboolean _tpl_log_store_is_writable (TplLogStore *self);
 gboolean _tpl_log_store_is_readable (TplLogStore *self);
 
