@@ -33,6 +33,7 @@ LIBTPL_HEADERS = \
 		entity.h			\
 		event.h				\
 		log-manager.h			\
+		log-walker.h			\
 		telepathy-logger.h 		\
 		text-event.h			\
 		call-event.h			\
@@ -80,6 +81,8 @@ libtelepathy_logger_la_SOURCES = \
 		log-store-pidgin-internal.h	\
 		log-store-factory.c		\
 		log-store-factory-internal.h	\
+		log-walker.c			\
+		log-walker-internal.h		\
 		observer.c			\
 		observer-internal.h		\
 		text-channel.c			\

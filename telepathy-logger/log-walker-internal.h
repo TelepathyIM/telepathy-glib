@@ -1,7 +1,5 @@
 /*
- * telepathy-logger.h - Headers for telepathy-logger
- *
- * Copyright (C) 2010 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2012 Red Hat, Inc.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,16 +14,23 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * Author: Debarshi Ray <debarshir@freedesktop.org>
  */
 
-#ifndef __TELEPATHY_LOGGER_H__
-#define __TELEPATHY_LOGGER_H__
+#ifndef __TPL_LOG_WALKER_INTERNAL_H__
+#define __TPL_LOG_WALKER_INTERNAL_H__
 
-#include <telepathy-logger/entity.h>
-#include <telepathy-logger/text-event.h>
-#include <telepathy-logger/call-event.h>
-#include <telepathy-logger/event.h>
-#include <telepathy-logger/log-manager.h>
-#include <telepathy-logger/log-walker.h>
+#include "log-iter-internal.h"
+#include "log-walker.h"
 
-#endif
+G_BEGIN_DECLS
+
+TplLogWalker *tpl_log_walker_new (void);
+
+void tpl_log_walker_add_iter (TplLogWalker *walker,
+    TplLogIter *iter);
+
+G_END_DECLS
+
+#endif /* __TPL_LOG_WALKER_INTERNAL_H__ */
