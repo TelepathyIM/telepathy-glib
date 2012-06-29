@@ -24,6 +24,10 @@
 
 struct _TplLogIterPidginPriv
 {
+  GList *dates;
+  GList *events;
+  GList *next_date;
+  GList *next_event;
   TpAccount *account;
   TplEntity *target;
   TplLogEventFilter filter;
@@ -46,12 +50,71 @@ enum
 G_DEFINE_TYPE (TplLogIterPidgin, tpl_log_iter_pidgin, TPL_TYPE_LOG_ITER);
 
 
+static GList *
+tpl_log_iter_pidgin_get_events (TplLogIter *iter,
+    guint num_events,
+    GError **error)
+{
+  TplLogIterPidginPriv *priv;
+  GList *events;
+  guint i;
+
+  priv = TPL_LOG_ITER_PIDGIN (iter)->priv;
+  events = NULL;
+
+  if (priv->dates == NULL)
+    {
+      priv->dates = _tpl_log_store_get_dates (priv->store, priv->account,
+          priv->target, priv->type_mask);
+      priv->next_date = g_list_last (priv->dates);
+    }
+
+  i = 0;
+  while (i < num_events)
+    {
+      TplEvent *event;
+
+      if (priv->next_event == NULL)
+        {
+          if (priv->next_date == NULL)
+            break;
+
+          g_list_free_full (priv->events, g_object_unref);
+          priv->events = _tpl_log_store_get_events_for_date (priv->store,
+              priv->account, priv->target, priv->type_mask,
+              (GDate *) priv->next_date->data);
+
+          priv->next_event = g_list_last (priv->events);
+          priv->next_date = g_list_previous (priv->next_date);
+        }
+
+      event = TPL_EVENT (priv->next_event->data);
+
+      if (priv->filter == NULL || (*priv->filter) (event, priv->filter_data))
+        {
+          events = g_list_prepend (events, g_object_ref (event));
+          i++;
+        }
+
+      priv->next_event = g_list_previous (priv->next_event);
+    }
+
+  return events;
+}
+
+
 static void
 tpl_log_iter_pidgin_dispose (GObject *object)
 {
   TplLogIterPidginPriv *priv;
 
   priv = TPL_LOG_ITER_PIDGIN (object)->priv;
+
+  g_list_free_full (priv->dates, (GDestroyNotify) g_date_free);
+  priv->dates = NULL;
+
+  g_list_free_full (priv->events, g_object_unref);
+  priv->events = NULL;
 
   g_clear_object (&priv->account);
   g_clear_object (&priv->store);
@@ -166,12 +229,14 @@ static void
 tpl_log_iter_pidgin_class_init (TplLogIterPidginClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  TplLogIterClass *log_iter_class = TPL_LOG_ITER_CLASS (klass);
   GParamSpec *param_spec;
 
   object_class->dispose = tpl_log_iter_pidgin_dispose;
   object_class->finalize = tpl_log_iter_pidgin_finalize;
   object_class->get_property = tpl_log_iter_pidgin_get_property;
   object_class->set_property = tpl_log_iter_pidgin_set_property;
+  log_iter_class->get_events = tpl_log_iter_pidgin_get_events;
 
   param_spec = g_param_spec_object ("account",
       "Account",
