@@ -22,6 +22,7 @@
 #define __TPL_LOG_WALKER_H__
 
 #include <glib-object.h>
+#include <gio/gio.h>
 
 G_BEGIN_DECLS
 
@@ -63,6 +64,16 @@ struct _TplLogWalkerClass
 };
 
 GType tpl_log_walker_get_type (void) G_GNUC_CONST;
+
+void tpl_log_walker_get_events_async (TplLogWalker *walker,
+    guint num_events,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tpl_log_walker_get_events_finish (TplLogWalker *walker,
+    GAsyncResult *result,
+    GList **events,
+    GError **error);
 
 G_END_DECLS
 
