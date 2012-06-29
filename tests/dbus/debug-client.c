@@ -294,6 +294,22 @@ test_new_debug_message (Test *test,
       "new message");
 }
 
+static void
+test_get_messages_failed (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  /* Remove debug service */
+  tp_clear_object (&test->sender);
+
+  tp_debug_client_get_messages_async (test->client, get_messages_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
+
+  g_assert (test->messages == NULL);
+}
+
 int
 main (int argc,
       char **argv)
@@ -313,6 +329,8 @@ main (int argc,
       test_get_messages, teardown);
   g_test_add ("/debug-client/new-debug-message", Test, NULL, setup,
       test_new_debug_message, teardown);
+  g_test_add ("/debug-client/get-messages-failed", Test, NULL, setup,
+      test_get_messages_failed, teardown);
 
   return g_test_run ();
 }

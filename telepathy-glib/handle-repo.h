@@ -30,10 +30,15 @@
 
 #include <glib-object.h>
 
+#include <gio/gio.h>
+
 #include <telepathy-glib/intset.h>
 #include <telepathy-glib/handle.h>
 
 G_BEGIN_DECLS
+
+/* Forward declaration to avoid circular includes */
+typedef struct _TpBaseConnection TpBaseConnection;
 
 /* Forward declaration because it's in the HandleRepo API */
 
@@ -90,6 +95,18 @@ TpHandle tp_handle_lookup (TpHandleRepoIface *self,
 TpHandle tp_handle_ensure (TpHandleRepoIface *self,
     const gchar *id, gpointer context, GError **error)
     G_GNUC_WARN_UNUSED_RESULT;
+
+_TP_AVAILABLE_IN_0_20
+void tp_handle_ensure_async (TpHandleRepoIface *self,
+    TpBaseConnection *connection,
+    const gchar *id,
+    gpointer context,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+_TP_AVAILABLE_IN_0_20
+TpHandle tp_handle_ensure_finish (TpHandleRepoIface *self,
+    GAsyncResult *result,
+    GError **error);
 
 void tp_handle_set_qdata (TpHandleRepoIface *repo, TpHandle handle,
     GQuark key_id, gpointer data, GDestroyNotify destroy);

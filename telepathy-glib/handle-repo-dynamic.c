@@ -75,6 +75,33 @@
  */
 
 /**
+ * TpDynamicHandleRepoNormalizeAsync:
+ * @repo: The repository on which tp_handle_ensure_async() was called
+ * @connection: the #TpBaseConnection using this handle repo
+ * @id: The name to be normalized
+ * @context: Arbitrary context passed to tp_handle_ensure_async()
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
+ *
+ * Signature of a function to asynchronously normalize an identifier. See
+ * tp_dynamic_handle_repo_set_normalize_async().
+ *
+ * Since: 0.19.2
+ */
+
+/**
+ * TpDynamicHandleRepoNormalizeFinish:
+ * @repo: The repository on which tp_handle_ensure_async() was called
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Signature of a function to finish the operation started with
+ * #TpDynamicHandleRepoNormalizeAsync.
+ *
+ * Since: 0.19.2
+ */
+
+/**
  * tp_dynamic_handle_repo_new:
  * @handle_type: The handle type
  * @normalize_func: The function to be used to normalize and validate handles,
@@ -160,6 +187,10 @@ struct _TpDynamicHandleRepo {
   gpointer normalization_data;
   /* Destructor for extra data */
   GDestroyNotify free_normalization_data;
+
+  /* Async normalization function */
+  TpDynamicHandleRepoNormalizeAsync normalize_async;
+  TpDynamicHandleRepoNormalizeFinish normalize_finish;
 };
 
 static void dynamic_repo_iface_init (gpointer g_iface,
@@ -469,38 +500,20 @@ dynamic_lookup_handle (TpHandleRepoIface *irepo,
 }
 
 static TpHandle
-dynamic_ensure_handle (TpHandleRepoIface *irepo,
-    const char *id,
-    gpointer context,
-    GError **error)
+ensure_handle_take_normalized_id (TpDynamicHandleRepo *self,
+    gchar *normal_id)
 {
-  TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (irepo);
   TpHandle handle;
   TpHandlePriv *priv;
-  gchar *normal_id = NULL;
 
-  if (context == NULL)
-    context = self->default_normalize_context;
-
-  if (self->normalize_function)
-    {
-      normal_id = (self->normalize_function) (irepo, id, context, error);
-      if (normal_id == NULL)
-        return 0;
-
-      id = normal_id;
-    }
-
-  handle = GPOINTER_TO_UINT (g_hash_table_lookup (self->string_to_handle, id));
+  handle = GPOINTER_TO_UINT (g_hash_table_lookup (self->string_to_handle,
+      normal_id));
 
   if (handle != 0)
     {
       g_free (normal_id);
       return handle;
     }
-
-  if (normal_id == NULL)
-    normal_id = g_strdup (id);
 
   handle = self->handle_to_priv->len;
   g_array_append_val (self->handle_to_priv, empty_priv);
@@ -513,6 +526,91 @@ dynamic_ensure_handle (TpHandleRepoIface *irepo,
   return handle;
 }
 
+static TpHandle
+dynamic_ensure_handle (TpHandleRepoIface *irepo,
+    const char *id,
+    gpointer context,
+    GError **error)
+{
+  TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (irepo);
+  gchar *normal_id;
+
+  if (context == NULL)
+    context = self->default_normalize_context;
+
+  if (self->normalize_function)
+    {
+      normal_id = (self->normalize_function) (irepo, id, context, error);
+      if (normal_id == NULL)
+        return 0;
+    }
+  else
+    {
+      normal_id = g_strdup (id);
+    }
+
+  return ensure_handle_take_normalized_id (self, normal_id);
+}
+
+static void
+normalize_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpDynamicHandleRepo *self = (TpDynamicHandleRepo *) source;
+  TpHandleRepoIface *repo = (TpHandleRepoIface *) self;
+  GSimpleAsyncResult *my_result = user_data;
+  gchar *normal_id;
+  GError *error = NULL;
+
+  normal_id = self->normalize_finish (repo, result, &error);
+  if (normal_id == NULL)
+    {
+      g_simple_async_result_take_error (my_result, error);
+    }
+  else
+    {
+      TpHandle handle;
+
+      handle = ensure_handle_take_normalized_id (self, normal_id);
+      g_simple_async_result_set_op_res_gpointer (my_result,
+          GUINT_TO_POINTER (handle), NULL);
+    }
+
+  g_simple_async_result_complete (my_result);
+  g_object_unref (my_result);
+}
+
+static void
+dynamic_ensure_handle_async (TpHandleRepoIface *repo,
+    TpBaseConnection *connection,
+    const gchar *id,
+    gpointer context,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (repo);
+  GSimpleAsyncResult *result;
+
+  if (self->normalize_async == NULL)
+    {
+      TpHandleRepoIfaceClass *klass;
+
+      /* Fallback to default implementation */
+      klass = g_type_default_interface_peek (TP_TYPE_HANDLE_REPO_IFACE);
+      klass->ensure_handle_async (repo, connection, id,
+          context, callback, user_data);
+      return;
+    }
+
+  if (context == NULL)
+    context = self->default_normalize_context;
+
+  result = g_simple_async_result_new (G_OBJECT (repo), callback, user_data,
+      dynamic_ensure_handle_async);
+
+  self->normalize_async (repo, connection, id, context, normalize_cb, result);
+}
 
 static void
 dynamic_set_qdata (TpHandleRepoIface *repo, TpHandle handle,
@@ -553,6 +651,7 @@ dynamic_repo_iface_init (gpointer g_iface,
   klass->inspect_handle = dynamic_inspect_handle;
   klass->lookup_handle = dynamic_lookup_handle;
   klass->ensure_handle = dynamic_ensure_handle;
+  klass->ensure_handle_async = dynamic_ensure_handle_async;
   klass->set_qdata = dynamic_set_qdata;
   klass->get_qdata = dynamic_get_qdata;
 }
@@ -604,4 +703,28 @@ _tp_dynamic_handle_repo_set_normalization_data (TpHandleRepoIface *irepo,
 
   self->normalization_data = data;
   self->free_normalization_data = destroy;
+}
+
+/**
+ * tp_dynamic_handle_repo_set_normalize_async:
+ * @self: A #TpDynamicHandleRepo
+ * @normalize_async: a #TpDynamicHandleRepoNormalizeAsync
+ * @normalize_finish: a #TpDynamicHandleRepoNormalizeFinish
+ *
+ * Set an asynchronous normalization function. This is to be used if handle
+ * normalization requires a server round-trip. See tp_handle_ensure_async().
+ *
+ * Since: 0.19.2
+ */
+void
+tp_dynamic_handle_repo_set_normalize_async (TpDynamicHandleRepo *self,
+    TpDynamicHandleRepoNormalizeAsync normalize_async,
+    TpDynamicHandleRepoNormalizeFinish normalize_finish)
+{
+  g_return_if_fail (TP_IS_DYNAMIC_HANDLE_REPO (self));
+  g_return_if_fail (normalize_async != NULL);
+  g_return_if_fail (normalize_finish != NULL);
+
+  self->normalize_async = normalize_async;
+  self->normalize_finish = normalize_finish;
 }

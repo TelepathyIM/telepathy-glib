@@ -475,6 +475,7 @@ get_messages_cb (TpDebugClient *self,
   if (error != NULL)
     {
       DEBUG ("GetMessages() failed: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
       goto out;
     }
 

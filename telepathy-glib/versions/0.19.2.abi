@@ -1,0 +1,7 @@
+Version: TELEPATHY_GLIB_0.19.2
+Extends: TELEPATHY_GLIB_0.19.1
+Release: 0.19.2
+
+tp_dynamic_handle_repo_set_normalize_async
+tp_handle_ensure_async
+tp_handle_ensure_finish

@@ -743,7 +743,7 @@ test_nothing_ready (Test *test,
 
   g_object_get (test->cm,
       "info-source", &info_source,
-      "connection-manager", &name,
+      "cm-name", &name,
       NULL);
   g_assert_cmpstr (name, ==, "nonexistent_cm");
   g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_NONE);
@@ -779,7 +779,7 @@ test_file_ready (Test *test,
 
   g_object_get (test->cm,
       "info-source", &info_source,
-      "connection-manager", &name,
+      "cm-name", &name,
       NULL);
   g_assert_cmpstr (name, ==, "spurious");
   g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_FILE);
@@ -820,7 +820,7 @@ test_complex_file_ready (Test *test,
 
   g_object_get (test->cm,
       "info-source", &info_source,
-      "connection-manager", &name,
+      "cm-name", &name,
       NULL);
   g_assert_cmpstr (name, ==, "test_manager_file");
   g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_FILE);
@@ -880,7 +880,7 @@ test_dbus_ready (Test *test,
 
   g_object_get (test->cm,
       "info-source", &info_source,
-      "connection-manager", &name,
+      "cm-name", &name,
       NULL);
   g_assert_cmpstr (name, ==, "example_echo_2");
   g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_LIVE);

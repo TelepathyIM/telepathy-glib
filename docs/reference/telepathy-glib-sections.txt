@@ -200,6 +200,8 @@ tp_handle_set_qdata
 tp_handle_get_qdata
 tp_handle_ensure
 tp_handle_lookup
+tp_handle_ensure_async
+tp_handle_ensure_finish
 <SUBSECTION Standard>
 TP_HANDLE_REPO_IFACE
 TP_IS_HANDLE_REPO_IFACE
@@ -240,7 +242,10 @@ TpDynamicHandleRepo
 TpDynamicHandleRepoClass
 tp_dynamic_handle_repo_lookup_exact
 tp_dynamic_handle_repo_new
+tp_dynamic_handle_repo_set_normalize_async
 TpDynamicHandleRepoNormalizeFunc
+TpDynamicHandleRepoNormalizeAsync
+TpDynamicHandleRepoNormalizeFinish
 <SUBSECTION Standard>
 TP_DYNAMIC_HANDLE_REPO
 TP_IS_DYNAMIC_HANDLE_REPO
@@ -3250,6 +3255,7 @@ tp_connection_disconnect_finish
 tp_connection_get_account
 tp_connection_get_status
 tp_connection_get_connection_manager_name
+tp_connection_get_cm_name
 tp_connection_get_protocol_name
 tp_connection_get_self_contact
 tp_connection_init_known_interfaces
@@ -3953,7 +3959,9 @@ tp_account_get_path_suffix
 tp_account_get_connection
 tp_account_get_display_name
 tp_account_get_connection_manager
+tp_account_get_cm_name
 tp_account_get_protocol
+tp_account_get_protocol_name
 tp_account_get_icon_name
 tp_account_get_service
 tp_account_set_enabled_async

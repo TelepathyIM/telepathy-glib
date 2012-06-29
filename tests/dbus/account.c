@@ -422,11 +422,11 @@ test_prepare_success (Test *test,
   g_assert_cmpuint (GPOINTER_TO_UINT (details), ==, 666);
 
   /* the CM and protocol come from the object path */
-  g_assert_cmpstr (tp_account_get_connection_manager (test->account),
+  g_assert_cmpstr (tp_account_get_cm_name (test->account),
       ==, "what");
-  assert_strprop (test->account, "connection-manager", "what");
-  g_assert_cmpstr (tp_account_get_protocol (test->account), ==, "ev");
-  assert_strprop (test->account, "protocol", "ev");
+  assert_strprop (test->account, "cm-name", "what");
+  g_assert_cmpstr (tp_account_get_protocol_name (test->account), ==, "ev");
+  assert_strprop (test->account, "protocol-name", "ev");
 
   /* the icon name in SimpleAccount is "", so we guess based on the protocol */
   g_assert_cmpstr (tp_account_get_icon_name (test->account), ==, "im-ev");

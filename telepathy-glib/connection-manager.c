@@ -127,6 +127,7 @@ enum
   PROP_MANAGER_FILE,
   PROP_ALWAYS_INTROSPECT,
   PROP_CONNECTION_MANAGER,
+  PROP_CM_NAME,
   N_PROPS
 };
 
@@ -810,6 +811,10 @@ tp_connection_manager_get_property (GObject *object,
       g_value_set_string (value, self->priv->name);
       break;
 
+    case PROP_CM_NAME:
+      g_value_set_string (value, self->priv->name);
+      break;
+
     case PROP_INFO_SOURCE:
       g_value_set_uint (value, self->priv->info_source);
       break;
@@ -991,12 +996,28 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
    * TpConnectionManager:connection-manager:
    *
    * The name of the connection manager, e.g. "gabble" (read-only).
+   *
+   * Deprecated: Use #TpConnectionManager:cm-name instead.
    */
   param_spec = g_param_spec_string ("connection-manager", "CM name",
       "The name of the connection manager, e.g. \"gabble\" (read-only)",
       NULL,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONNECTION_MANAGER,
+      param_spec);
+
+  /**
+   * TpConnectionManager:cm-name:
+   *
+   * The name of the connection manager, e.g. "gabble" (read-only).
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_string ("cm-name", "CM name",
+      "The name of the connection manager, e.g. \"gabble\" (read-only)",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CM_NAME,
       param_spec);
 
   /**
@@ -1582,7 +1603,7 @@ tp_connection_manager_check_valid_protocol_name (const gchar *name,
  * The returned string is valid as long as @self is. Copy it with g_strdup()
  * if a longer lifetime is required.
  *
- * Returns: the #TpConnectionManager:connection-manager property
+ * Returns: the #TpConnectionManager:cm-name property
  * Since: 0.7.26
  */
 const gchar *

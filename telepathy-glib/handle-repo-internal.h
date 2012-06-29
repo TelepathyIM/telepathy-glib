@@ -29,6 +29,9 @@
 
 G_BEGIN_DECLS
 
+/* G_DEFINE_INTERFACE wants that name */
+typedef struct _TpHandleRepoIfaceClass TpHandleRepoIfaceInterface;
+
 /*      <-- this is no longer a gtkdoc comment because this is not public API
  * TpHandleRepoIfaceClass:
  * @parent_class: Fields shared with GTypeInterface
@@ -70,6 +73,16 @@ struct _TpHandleRepoIfaceClass {
         gpointer context, GError **error);
     TpHandle (*lookup_handle) (TpHandleRepoIface *self, const char *id,
         gpointer context, GError **error);
+
+    void (*ensure_handle_async) (TpHandleRepoIface *self,
+        TpBaseConnection *connection,
+        const gchar *id,
+        gpointer context,
+        GAsyncReadyCallback callback,
+        gpointer user_data);
+    TpHandle (*ensure_handle_finish) (TpHandleRepoIface *self,
+        GAsyncResult *result,
+        GError **error);
 
     void (*set_qdata) (TpHandleRepoIface *repo, TpHandle handle,
         GQuark key_id, gpointer data, GDestroyNotify destroy);

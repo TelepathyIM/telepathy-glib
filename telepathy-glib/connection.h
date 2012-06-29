@@ -149,7 +149,13 @@ TpAccount *tp_connection_get_account (TpConnection *self);
 TpConnectionStatus tp_connection_get_status (TpConnection *self,
     TpConnectionStatusReason *reason);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_UNRELEASED_FOR (tp_connection_get_cm_name)
 const gchar *tp_connection_get_connection_manager_name (TpConnection *self);
+#endif
+
+_TP_AVAILABLE_IN_UNRELEASED
+const gchar *tp_connection_get_cm_name (TpConnection *self);
 
 const gchar *tp_connection_get_protocol_name (TpConnection *self);
 
