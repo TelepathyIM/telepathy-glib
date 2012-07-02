@@ -126,7 +126,6 @@ enum
   PROP_INFO_SOURCE = 1,
   PROP_MANAGER_FILE,
   PROP_ALWAYS_INTROSPECT,
-  PROP_CONNECTION_MANAGER,
   PROP_CM_NAME,
   N_PROPS
 };
@@ -807,10 +806,6 @@ tp_connection_manager_get_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_CONNECTION_MANAGER:
-      g_value_set_string (value, self->priv->name);
-      break;
-
     case PROP_CM_NAME:
       g_value_set_string (value, self->priv->name);
       break;
@@ -990,20 +985,6 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
       TP_CM_INFO_SOURCE_NONE, TP_CM_INFO_SOURCE_LIVE, TP_CM_INFO_SOURCE_NONE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_INFO_SOURCE,
-      param_spec);
-
-  /**
-   * TpConnectionManager:connection-manager:
-   *
-   * The name of the connection manager, e.g. "gabble" (read-only).
-   *
-   * Deprecated: Use #TpConnectionManager:cm-name instead.
-   */
-  param_spec = g_param_spec_string ("connection-manager", "CM name",
-      "The name of the connection manager, e.g. \"gabble\" (read-only)",
-      NULL,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CONNECTION_MANAGER,
       param_spec);
 
   /**

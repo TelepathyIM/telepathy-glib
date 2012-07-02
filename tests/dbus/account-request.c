@@ -107,8 +107,8 @@ test_gobject_properties (Test *test,
 
   g_object_get (test->account,
       "account-manager", &am,
-      "connection-manager", &manager,
-      "protocol", &protocol,
+      "cm-name", &manager,
+      "protocol-name", &protocol,
       "display-name", &display_name,
       NULL);
 

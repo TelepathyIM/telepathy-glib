@@ -3254,7 +3254,6 @@ tp_connection_disconnect_async
 tp_connection_disconnect_finish
 tp_connection_get_account
 tp_connection_get_status
-tp_connection_get_connection_manager_name
 tp_connection_get_cm_name
 tp_connection_get_protocol_name
 tp_connection_get_self_contact
@@ -3958,9 +3957,7 @@ tp_account_init_known_interfaces
 tp_account_get_path_suffix
 tp_account_get_connection
 tp_account_get_display_name
-tp_account_get_connection_manager
 tp_account_get_cm_name
-tp_account_get_protocol
 tp_account_get_protocol_name
 tp_account_get_icon_name
 tp_account_get_service

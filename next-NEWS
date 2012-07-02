@@ -60,3 +60,6 @@ API/Behaviour changes
 
  - TpGroupMixin and TpMessageMixin now require TpBaseChannel.
    TpPresenceMixin now require TpBaseConnection.
+
+ - TpAccountRequest::connection-manager property has been renamed to ::cm-name,
+   and TpAccountRequest::protocol property has been renamed to ::protocol-name.

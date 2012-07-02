@@ -83,8 +83,8 @@ test_parse_success (gconstpointer test_data)
 
   g_assert (account != NULL);
   g_assert_no_error (error);
-  g_assert_cmpstr (tp_account_get_connection_manager (account), ==, t->cm);
-  g_assert_cmpstr (tp_account_get_protocol (account), ==, t->protocol);
+  g_assert_cmpstr (tp_account_get_cm_name (account), ==, t->cm);
+  g_assert_cmpstr (tp_account_get_protocol_name (account), ==, t->protocol);
 
   g_object_unref (account);
   g_object_unref (factory);

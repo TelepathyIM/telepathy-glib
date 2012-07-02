@@ -68,8 +68,8 @@ GType tp_account_request_get_type (void);
 _TP_AVAILABLE_IN_0_20
 TpAccountRequest * tp_account_request_new (
     TpAccountManager *account_manager,
-    const gchar *manager,
-    const gchar *protocol,
+    const gchar *cm_name,
+    const gchar *protocol_name,
     const gchar *display_name) G_GNUC_WARN_UNUSED_RESULT;
 
 _TP_AVAILABLE_IN_0_20

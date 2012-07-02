@@ -126,8 +126,8 @@ G_DEFINE_TYPE (TpAccountRequest, tp_account_request, G_TYPE_OBJECT)
 /* properties */
 enum {
   PROP_ACCOUNT_MANAGER = 1,
-  PROP_CONNECTION_MANAGER,
-  PROP_PROTOCOL,
+  PROP_CM_NAME,
+  PROP_PROTOCOL_NAME,
   PROP_DISPLAY_NAME,
   PROP_PARAMETERS,
   PROP_PROPERTIES,
@@ -198,10 +198,10 @@ tp_account_request_get_property (GObject *object,
     case PROP_ACCOUNT_MANAGER:
       g_value_set_object (value, self->priv->account_manager);
       break;
-    case PROP_CONNECTION_MANAGER:
+    case PROP_CM_NAME:
       g_value_set_string (value, self->priv->cm_name);
       break;
-    case PROP_PROTOCOL:
+    case PROP_PROTOCOL_NAME:
       g_value_set_string (value, self->priv->proto_name);
       break;
     case PROP_DISPLAY_NAME:
@@ -314,11 +314,11 @@ tp_account_request_set_property (GObject *object,
       g_assert (priv->account_manager == NULL);
       priv->account_manager = g_value_dup_object (value);
       break;
-    case PROP_CONNECTION_MANAGER:
+    case PROP_CM_NAME:
       g_assert (priv->cm_name == NULL);
       priv->cm_name = g_value_dup_string (value);
       break;
-    case PROP_PROTOCOL:
+    case PROP_PROTOCOL_NAME:
       g_assert (priv->proto_name == NULL);
       priv->proto_name = g_value_dup_string (value);
       break;
@@ -399,9 +399,9 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    *
    * Since: 0.19.1
    */
-  g_object_class_install_property (object_class, PROP_CONNECTION_MANAGER,
-      g_param_spec_string ("connection-manager",
-          "Connection manager",
+  g_object_class_install_property (object_class, PROP_CM_NAME,
+      g_param_spec_string ("cm-name",
+          "Connection manager name",
           "The account's connection manager name",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
@@ -415,8 +415,8 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    *
    * Since: 0.19.1
    */
-  g_object_class_install_property (object_class, PROP_PROTOCOL,
-      g_param_spec_string ("protocol",
+  g_object_class_install_property (object_class, PROP_PROTOCOL_NAME,
+      g_param_spec_string ("protocol-name",
           "Protocol",
           "The account's protocol name",
           NULL,
@@ -700,13 +700,13 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
 /**
  * tp_account_request_new:
  * @account_manager: the #TpAccountManager to create the account on
- * @manager: the name of the connection manager
- * @protocol: the name of the protocol on @manager
+ * @cm_name: the name of the connection manager
+ * @protocol_name: the name of the protocol on @manager
  * @display_name: the user-visible name of this account
  *
  * Convenience function to create a new account request object which
  * will assist in the creation of a new account on @account_manager,
- * using connection manager @manager, and protocol @protocol.
+ * using connection manager @cm_name, and protocol @protocol_name.
  *
  * Returns: (transfer full): a new reference to an account request
  *   object, or %NULL if any argument is incorrect
@@ -715,18 +715,18 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
  */
 TpAccountRequest *
 tp_account_request_new (TpAccountManager *account_manager,
-    const gchar *manager,
-    const gchar *protocol,
+    const gchar *cm_name,
+    const gchar *protocol_name,
     const gchar *display_name)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (account_manager), NULL);
-  g_return_val_if_fail (manager != NULL, NULL);
-  g_return_val_if_fail (protocol != NULL, NULL);
+  g_return_val_if_fail (cm_name != NULL, NULL);
+  g_return_val_if_fail (protocol_name != NULL, NULL);
 
   return g_object_new (TP_TYPE_ACCOUNT_REQUEST,
       "account-manager", account_manager,
-      "connection-manager", manager,
-      "protocol", protocol,
+      "cm-name", cm_name,
+      "protocol-name", protocol_name,
       "display-name", display_name,
       NULL);
 }
