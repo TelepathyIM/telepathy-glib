@@ -90,8 +90,6 @@ libtelepathy_logger_la_SOURCES = \
 		util.c				\
 		call-channel.c                  \
 		call-channel-internal.h         \
-		streamed-media-channel.c        \
-		streamed-media-channel-internal.h \
 		$(NULL)
 
 nodist_libtelepathy_logger_la_SOURCES = \
