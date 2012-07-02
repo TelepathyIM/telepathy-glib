@@ -23,6 +23,8 @@
 #include "log-walker.h"
 #include "log-walker-internal.h"
 
+#include <telepathy-logger/event.h>
+#include <telepathy-logger/log-iter-internal.h>
 
 /**
  * SECTION:log-walker
@@ -41,12 +43,15 @@
 
 struct _TplLogWalkerPriv
 {
+  GList *caches;
   GList *iters;
 };
 
 
 G_DEFINE_TYPE (TplLogWalker, tpl_log_walker, G_TYPE_OBJECT);
 
+
+static const gsize CACHE_SIZE = 5;
 
 typedef struct
 {
@@ -84,13 +89,81 @@ tpl_log_walker_async_operation_cb (GObject *source_object,
 }
 
 
+static void
+tpl_log_walker_caches_free_func (gpointer data)
+{
+  g_list_free_full ((GList *) data, g_object_unref);
+}
+
+
 static GList *
 tpl_log_walker_get_events (TplLogWalker *walker,
     guint num_events,
     GError **error)
 {
+  TplLogWalkerPriv *priv;
+  GList *events;
+  guint i;
+
   g_return_val_if_fail (TPL_IS_LOG_WALKER (walker), NULL);
-  return NULL;
+
+  priv = walker->priv;
+  events = NULL;
+  i = 0;
+
+  while (i < num_events)
+    {
+      GList *k;
+      GList *l;
+      GList **latest_cache;
+      GList *latest_event;
+      gint64 latest_timestamp;
+
+      latest_cache = NULL;
+      latest_event = NULL;
+      latest_timestamp = 0;
+
+      for (k = priv->caches, l = priv->iters;
+           k != NULL && l != NULL;
+           k = g_list_next (k), l = g_list_next (l))
+        {
+          GList **cache;
+          GList *event;
+          TplLogIter *iter;
+          gint64 timestamp;
+
+          cache = (GList **) &k->data;
+          iter = TPL_LOG_ITER (l->data);
+
+          /* If the cache is empty, try to fill it up. */
+          if (*cache == NULL)
+            *cache = tpl_log_iter_get_events (iter, CACHE_SIZE, error);
+
+          /* If it could not be filled, then the store must be empty. */
+          if (*cache == NULL)
+            continue;
+
+          event = g_list_last (*cache);
+          timestamp = tpl_event_get_timestamp (TPL_EVENT (event->data));
+          if (timestamp > latest_timestamp)
+            {
+              latest_cache = cache;
+              latest_event = event;
+              latest_timestamp = timestamp;
+            }
+        }
+
+      if (latest_event != NULL)
+        {
+          *latest_cache = g_list_remove_link (*latest_cache, latest_event);
+          events = g_list_prepend (events, latest_event->data);
+          i++;
+        }
+      else
+        break;
+    }
+
+  return events;
 }
 
 
@@ -125,6 +198,9 @@ tpl_log_walker_dispose (GObject *object)
   TplLogWalkerPriv *priv;
 
   priv = TPL_LOG_WALKER (object)->priv;
+
+  g_list_free_full (priv->caches, tpl_log_walker_caches_free_func);
+  priv->caches = NULL;
 
   g_list_free_full (priv->iters, g_object_unref);
   priv->iters = NULL;
@@ -178,6 +254,7 @@ tpl_log_walker_add_iter (TplLogWalker *walker, TplLogIter *iter)
   priv = walker->priv;
 
   priv->iters = g_list_prepend (priv->iters, g_object_ref (iter));
+  priv->caches = g_list_prepend (priv->caches, NULL);
 }
 
 
