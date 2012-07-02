@@ -22,13 +22,8 @@
 #include "observer-internal.h"
 
 #include <glib.h>
-#include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/channel.h>
-#include <telepathy-glib/gtypes.h>
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/svc-generic.h>
-#include <telepathy-glib/svc-client.h>
-#include <telepathy-glib/account-manager.h>
+#include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include <telepathy-logger/channel-internal.h>
 #include <telepathy-logger/channel-factory-internal.h>

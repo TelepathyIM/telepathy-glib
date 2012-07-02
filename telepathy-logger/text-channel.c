@@ -23,9 +23,7 @@
 #include "text-channel-internal.h"
 
 #include <glib.h>
-#include <telepathy-glib/contact.h>
-#include <telepathy-glib/enums.h>
-#include <telepathy-glib/proxy.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "action-chain-internal.h"
 #include "channel-internal.h"

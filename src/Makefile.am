@@ -6,6 +6,7 @@ AM_CPPFLAGS =						\
 	-I$(top_srcdir)					\
 	$(ERROR_CFLAGS)					\
 	-DG_LOG_DOMAIN=\"tp-logger\"			\
+	-DTP_DISABLE_SINGLE_INCLUDE			\
 	$(TPL_CFLAGS)					\
 	$(DISABLE_DEPRECATED)				\
 	$(WARN_CFLAGS)

@@ -23,7 +23,7 @@
 #include "text-event-internal.h"
 
 #include <glib-object.h>
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include <telepathy-logger/event.h>
 #include <telepathy-logger/event-internal.h>

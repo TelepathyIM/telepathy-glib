@@ -22,7 +22,7 @@
 #define __TPL_DBUS_SERVICE_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/dbus-properties-mixin.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include <telepathy-logger/log-manager.h>
 

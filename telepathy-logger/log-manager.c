@@ -30,8 +30,7 @@
 
 #include <gio/gio.h>
 #include <glib/gstdio.h>
-#include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include <telepathy-logger/conf-internal.h>
 #include <telepathy-logger/entity-internal.h>

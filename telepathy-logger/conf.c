@@ -24,7 +24,7 @@
 
 #include <glib.h>
 #include <gio/gio.h>
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #define DEBUG_FLAG TPL_DEBUG_CONF
 #include <telepathy-logger/debug-internal.h>

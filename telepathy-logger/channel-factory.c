@@ -21,7 +21,7 @@
 #include "config.h"
 #include "channel-factory-internal.h"
 
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include <telepathy-logger/text-channel-internal.h>
 

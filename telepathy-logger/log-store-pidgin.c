@@ -26,9 +26,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <telepathy-glib/account-manager.h>
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "log-store-internal.h"
 #include "log-store-pidgin-internal.h"

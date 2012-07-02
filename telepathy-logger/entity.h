@@ -22,7 +22,7 @@
 #define __TPL_ENTITY_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/contact.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
 #define TPL_TYPE_ENTITY             (tpl_entity_get_type ())

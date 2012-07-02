@@ -33,11 +33,8 @@
 #include <glib-object.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
-#include <telepathy-glib/account.h>
-#include <telepathy-glib/account-manager.h>
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/defs.h>
-#include <telepathy-glib/util.h>
+
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "telepathy-logger/call-event.h"
 #include "telepathy-logger/call-event-internal.h"

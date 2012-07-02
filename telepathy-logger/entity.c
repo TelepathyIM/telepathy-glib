@@ -22,7 +22,7 @@
 #include "entity.h"
 #include "entity-internal.h"
 
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #define DEBUG_FLAG TPL_DEBUG_ENTITY
 #include <telepathy-logger/debug-internal.h>

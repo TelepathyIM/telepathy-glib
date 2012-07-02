@@ -24,9 +24,7 @@
 #include <gio/gio.h>
 #include <glib.h>
 #include <glib-object.h>
-#include <telepathy-glib/account.h>
-#include <telepathy-glib/connection.h>
-#include <telepathy-glib/channel.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
 

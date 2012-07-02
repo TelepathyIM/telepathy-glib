@@ -24,7 +24,7 @@
 #include <telepathy-logger/entity.h>
 
 #include <glib-object.h>
-#include <telepathy-glib/contact.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
 #define TPL_ENTITY_CLASS(klass)  (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_ENTITY, TplEntityClass))

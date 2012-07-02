@@ -26,11 +26,7 @@
  */
 
 #include <glib-object.h>
-#include <telepathy-glib/account.h>
-#include <telepathy-glib/channel.h>
-#include <telepathy-glib/connection.h>
-#include <telepathy-glib/contact.h>
-#include <telepathy-glib/text-channel.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "channel-internal.h"
 

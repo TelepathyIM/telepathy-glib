@@ -23,8 +23,7 @@
 
 #include <glib-object.h>
 
-#include <telepathy-glib/base-client.h>
-#include <telepathy-glib/dbus-properties-mixin.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include <telepathy-logger/channel-internal.h>
 #include <telepathy-logger/channel-factory-internal.h>

@@ -23,7 +23,7 @@
 #define __TPL_LOG_STORE_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/account.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include <telepathy-logger/event.h>
 #include <telepathy-logger/log-manager.h>

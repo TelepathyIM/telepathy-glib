@@ -24,7 +24,7 @@
 
 #include <gio/gio.h>
 #include <glib-object.h>
-#include <telepathy-glib/account.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include <telepathy-logger/event.h>
 

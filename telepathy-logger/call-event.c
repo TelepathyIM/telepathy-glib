@@ -23,7 +23,7 @@
 #include "call-event-internal.h"
 
 #include <glib-object.h>
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "entity.h"
 #include "event.h"

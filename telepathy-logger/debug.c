@@ -21,7 +21,7 @@
 #include "config.h"
 #include "telepathy-logger/debug-internal.h"
 
-#include <telepathy-glib/debug.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #ifdef ENABLE_DEBUG
 

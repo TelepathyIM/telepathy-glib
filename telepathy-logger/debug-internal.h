@@ -26,7 +26,7 @@
 #include <string.h>
 
 #include <glib.h>
-#include <telepathy-glib/defs.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #ifdef ENABLE_DEBUG
 
