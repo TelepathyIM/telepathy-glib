@@ -42,14 +42,14 @@ else
 	@exit 2;
 endif
 
-%.tar.bz2.asc: %.tar.bz2
+%.tar.gz.asc: %.tar.gz
 	$(AM_V_GEN)gpg --detach-sign --armor $@
 
-@PACKAGE@-@VERSION@.tar.bz2: _is-release-check check distcheck
+@PACKAGE@-@VERSION@.tar.gz: _is-release-check check distcheck
 
 maintainer-prepare-release: _is-release-check all distcheck release-mail
 	git tag -s @PACKAGE@-@VERSION@ -m @PACKAGE@' '@VERSION@
-	gpg --detach-sign --armor @PACKAGE@-@VERSION@.tar.bz2
+	gpg --detach-sign --armor @PACKAGE@-@VERSION@.tar.gz
 
 release-mail: NEWS
 	$(AM_V_GEN)(python $(top_srcdir)/tools/make-release-mail.py \
@@ -59,13 +59,13 @@ release-mail: NEWS
 maintainer-upload-release: _maintainer-upload-release
 
 _maintainer-upload-release-check: _is-release-check
-	test -f @PACKAGE@-@VERSION@.tar.bz2
-	test -f @PACKAGE@-@VERSION@.tar.bz2.asc
-	gpg --verify @PACKAGE@-@VERSION@.tar.bz2.asc
+	test -f @PACKAGE@-@VERSION@.tar.gz
+	test -f @PACKAGE@-@VERSION@.tar.gz.asc
+	gpg --verify @PACKAGE@-@VERSION@.tar.gz.asc
 
 _maintainer-upload-release: _maintainer-upload-release-check
-	rsync -vzP @PACKAGE@-@VERSION@.tar.bz2 telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/releases/@PACKAGE@/@PACKAGE@-@VERSION@.tar.bz2
-	rsync -vzP @PACKAGE@-@VERSION@.tar.bz2.asc telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/releases/@PACKAGE@/@PACKAGE@-@VERSION@.tar.bz2.asc
+	rsync -vzP @PACKAGE@-@VERSION@.tar.gz telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/releases/@PACKAGE@/@PACKAGE@-@VERSION@.tar.gz
+	rsync -vzP @PACKAGE@-@VERSION@.tar.gz.asc telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/releases/@PACKAGE@/@PACKAGE@-@VERSION@.tar.gz.asc
 
 maintainer-make-release: maintainer-prepare-release maintainer-upload-release
 	@echo "Now:"

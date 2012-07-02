@@ -199,6 +199,8 @@ AC_ARG_ENABLE(coding-style-checks,
 AC_SUBST([ENABLE_CODING_STYLE_CHECKS])
 # -----------------------------------------------------------
 
+AM_CONDITIONAL([ENABLE_INSTALLED_TESTS], false)
+
 AC_CONFIG_FILES([
    Makefile
    data/Makefile

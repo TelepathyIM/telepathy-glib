@@ -1,7 +1,7 @@
 #ifndef _TPL_EXTENSIONS_H
 #define _TPL_EXTENSIONS_H
 
-#include <telepathy-glib/proxy.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "_gen/enums.h"
 #include "_gen/cli-misc.h"

@@ -40,7 +40,8 @@ class Generator(object):
         for marshaller in all:
             rhs = self.marshallers[marshaller]
 
-            print '  dbus_g_object_register_marshaller (%s,' % marshaller
+            print '  dbus_g_object_register_marshaller ('
+            print '      g_cclosure_marshal_generic,'
             print '      G_TYPE_NONE,       /* return */'
             for type in rhs:
                 print '      G_TYPE_%s,' % type.replace('VOID', 'NONE')
