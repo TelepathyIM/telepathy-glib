@@ -63,7 +63,6 @@ GType _tpl_call_channel_get_type (void);
 TplCallChannel * _tpl_call_channel_new (TpConnection *conn,
     const gchar *object_path,
     GHashTable *tp_chan_props,
-    TpAccount *account,
     GError **error);
 
 G_END_DECLS

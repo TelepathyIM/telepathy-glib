@@ -470,7 +470,6 @@ _tpl_call_channel_init (TplCallChannel *self)
  * @object_path: the channel's DBus path
  * @tp_chan_props: channel's immutable properties, obtained for example by
  * %tp_channel_borrow_immutable_properties()
- * @account: TpAccount instance, related to the new #TplCallChannel
  * @error: location of the GError, used in case a problem is raised while
  * creating the channel
  *
@@ -493,7 +492,6 @@ TplCallChannel *
 _tpl_call_channel_new (TpConnection *conn,
     const gchar *object_path,
     GHashTable *tp_chan_props,
-    TpAccount *account,
     GError **error)
 {
   TpProxy *conn_proxy = TP_PROXY (conn);
@@ -503,7 +501,6 @@ _tpl_call_channel_new (TpConnection *conn,
    * specific properties */
 
   g_return_val_if_fail (TP_IS_CONNECTION (conn), NULL);
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (object_path), NULL);
   g_return_val_if_fail (tp_chan_props != NULL, NULL);
 
@@ -519,7 +516,7 @@ _tpl_call_channel_new (TpConnection *conn,
       "channel-properties", tp_chan_props,
       NULL);
 
-  self->priv->account = g_object_ref (account);
+  self->priv->account = g_object_ref (tp_connection_get_account (conn));
 
   return self;
 }

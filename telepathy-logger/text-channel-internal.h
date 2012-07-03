@@ -67,7 +67,7 @@ typedef struct
 GType _tpl_text_channel_get_type (void);
 
 TplTextChannel * _tpl_text_channel_new (TpConnection *conn,
-    const gchar *object_path, GHashTable *tp_chan_props, TpAccount *account,
+    const gchar *object_path, GHashTable *tp_chan_props,
     GError **error);
 
 G_END_DECLS
