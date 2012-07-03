@@ -28,6 +28,7 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
+#include "log-iter-pidgin-internal.h"
 #include "log-store-internal.h"
 #include "log-store-pidgin-internal.h"
 #include "log-manager-internal.h"
@@ -1182,6 +1183,23 @@ log_store_pidgin_get_filtered_events (TplLogStore *self,
 }
 
 
+static TplLogIter *
+log_store_pidgin_create_iter (TplLogStore *store,
+    TpAccount *account,
+    TplEntity *target,
+    gint type_mask,
+    TplLogEventFilter filter,
+    gpointer filter_data)
+{
+  g_return_val_if_fail (TPL_IS_LOG_STORE_PIDGIN (store), NULL);
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+  g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
+
+  return tpl_log_iter_pidgin_new (store, account, target, type_mask, filter,
+      filter_data);
+}
+
+
 static void
 log_store_iface_init (gpointer g_iface,
     gpointer iface_data)
@@ -1196,4 +1214,5 @@ log_store_iface_init (gpointer g_iface,
   iface->get_entities = log_store_pidgin_get_entities;
   iface->search_new = log_store_pidgin_search_new;
   iface->get_filtered_events = log_store_pidgin_get_filtered_events;
+  iface->create_iter = log_store_pidgin_create_iter;
 }
