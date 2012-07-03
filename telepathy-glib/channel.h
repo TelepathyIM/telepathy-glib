@@ -77,17 +77,6 @@ GQuark tp_errors_removed_from_group_quark (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CHANNEL, \
                               TpChannelClass))
 
-_TP_DEPRECATED_IN_0_20_FOR(tp_simple_client_factory_ensure_channel)
-TpChannel *tp_channel_new (TpConnection *conn,
-    const gchar *object_path, const gchar *optional_channel_type,
-    TpHandleType optional_handle_type, TpHandle optional_handle,
-    GError **error) G_GNUC_WARN_UNUSED_RESULT;
-
-_TP_DEPRECATED_IN_0_20_FOR(tp_simple_client_factory_ensure_channel)
-TpChannel *tp_channel_new_from_properties (TpConnection *conn,
-    const gchar *object_path, const GHashTable *immutable_properties,
-    GError **error) G_GNUC_WARN_UNUSED_RESULT;
-
 void tp_channel_init_known_interfaces (void);
 
 TpConnection *tp_channel_borrow_connection (TpChannel *self);

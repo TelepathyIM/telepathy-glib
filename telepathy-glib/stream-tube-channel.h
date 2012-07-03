@@ -59,12 +59,6 @@ struct _TpStreamTubeChannelClass
 
 GType tp_stream_tube_channel_get_type (void);
 
-_TP_DEPRECATED_IN_0_20_FOR(tp_simple_client_factory_ensure_channel)
-TpStreamTubeChannel *tp_stream_tube_channel_new (TpConnection *conn,
-    const gchar *object_path,
-    const GHashTable *immutable_properties,
-    GError **error);
-
 const gchar * tp_stream_tube_channel_get_service (TpStreamTubeChannel *self);
 
 GHashTable * tp_stream_tube_channel_get_parameters (TpStreamTubeChannel *self);

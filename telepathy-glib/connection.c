@@ -1962,36 +1962,6 @@ tp_connection_class_init (TpConnectionClass *klass)
 
 }
 
-/**
- * tp_connection_new:
- * @dbus: a D-Bus daemon; may not be %NULL
- * @bus_name: (allow-none): the well-known or unique name of the connection
- *  process; if well-known, this function will make a blocking call to the bus
- *  daemon to resolve the unique name. May be %NULL if @object_path is not, in
- *  which case a well-known name will be derived from @object_path.
- * @object_path: (allow-none): the object path of the connection process.
- *  May be %NULL if @bus_name is a well-known name, in which case the object
- *  path will be derived from @bus_name.
- * @error: used to indicate the error if %NULL is returned
- *
- * <!-- -->
- *
- * Returns: a new connection proxy, or %NULL if unique-name resolution
- *  fails or on invalid arguments
- *
- * Since: 0.7.1
- * Deprecated: Use tp_simple_client_factory_ensure_connection() instead.
- */
-TpConnection *
-tp_connection_new (TpDBusDaemon *dbus,
-                   const gchar *bus_name,
-                   const gchar *object_path,
-                   GError **error)
-{
-  return _tp_connection_new_with_factory (NULL, dbus, bus_name, object_path,
-      error);
-}
-
 TpConnection *
 _tp_connection_new_with_factory (TpClientFactory *factory,
     TpDBusDaemon *dbus,

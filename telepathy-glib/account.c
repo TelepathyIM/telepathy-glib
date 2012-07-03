@@ -2070,27 +2070,6 @@ tp_account_init_known_interfaces (void)
     }
 }
 
-/**
- * tp_account_new:
- * @bus_daemon: Proxy for the D-Bus daemon
- * @object_path: The non-NULL object path of this account
- * @error: Used to raise an error if @object_path is not valid
- *
- * Convenience function to create a new account proxy. The returned #TpAccount
- * is not guaranteed to be ready at the point of return.
- *
- * Returns: a new reference to an account proxy, or %NULL if @object_path is
- *    not valid
- * Deprecated: Use tp_simple_client_factory_ensure_account() instead.
- */
-TpAccount *
-tp_account_new (TpDBusDaemon *bus_daemon,
-    const gchar *object_path,
-    GError **error)
-{
-  return _tp_account_new_with_factory (NULL, bus_daemon, object_path, error);
-}
-
 TpAccount *
 _tp_account_new_with_factory (TpClientFactory *factory,
     TpDBusDaemon *bus_daemon,

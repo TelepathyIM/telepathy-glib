@@ -2996,8 +2996,6 @@ tp_proxy_signal_connection_v0_take_results
 <INCLUDE>telepathy-glib/channel.h</INCLUDE>
 TpChannel
 TpChannelClass
-tp_channel_new
-tp_channel_new_from_properties
 tp_channel_init_known_interfaces
 <SUBSECTION>
 TP_CHANNEL_FEATURE_CORE
@@ -3243,7 +3241,6 @@ TpConnectionNameListCb
 tp_list_connection_names
 TpConnection
 TpConnectionClass
-tp_connection_new
 TP_CONNECTION_FEATURE_CORE
 TP_CONNECTION_FEATURE_CONNECTED
 TP_CONNECTION_FEATURE_CAPABILITIES
@@ -3957,7 +3954,6 @@ TP_SVC_ACCOUNT_MANAGER_GET_CLASS
 <TITLE>account</TITLE>
 TpAccount
 TpAccountClass
-tp_account_new
 tp_account_init_known_interfaces
 tp_account_get_path_suffix
 tp_account_get_connection
@@ -5113,7 +5109,6 @@ tp_stream_tube_channel_accept_async
 tp_stream_tube_channel_accept_finish
 tp_stream_tube_channel_get_parameters
 tp_stream_tube_channel_get_service
-tp_stream_tube_channel_new
 tp_stream_tube_channel_offer_async
 tp_stream_tube_channel_offer_finish
 <SUBSECTION Standard>
@@ -5340,7 +5335,6 @@ tp_signalled_message_get_type
 <SUBSECTION>
 TpTextChannel
 TpTextChannelClass
-tp_text_channel_new
 tp_text_channel_get_supported_content_types
 tp_text_channel_get_message_part_support_flags
 tp_text_channel_get_delivery_reporting_support
@@ -5389,7 +5383,6 @@ tp_text_channel_get_feature_quark_chat_states
 <SUBSECTION>
 TpFileTransferChannel
 TpFileTransferChannelClass
-tp_file_transfer_channel_new
 TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE
 <SUBSECTION>
 tp_file_transfer_channel_get_mime_type

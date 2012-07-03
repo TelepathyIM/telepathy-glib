@@ -1404,34 +1404,6 @@ tp_channel_class_init (TpChannelClass *klass)
       TP_TYPE_CONTACT, TP_HASH_TYPE_STRING_VARIANT_MAP);
 }
 
-/**
- * tp_channel_new_from_properties:
- * @conn: a connection; may not be %NULL
- * @object_path: the object path of the channel; may not be %NULL
- * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
- *  the immutable properties of the channel,
- *  as signalled by the NewChannel D-Bus signal or returned by the
- *  CreateChannel and EnsureChannel D-Bus methods: a mapping from
- *  strings (D-Bus interface name + "." + property name) to #GValue instances
- * @error: used to indicate the error if %NULL is returned
- *
- * <!-- -->
- *
- * Returns: a new channel proxy, or %NULL on invalid arguments
- *
- * Since: 0.7.19
- * Deprecated: Use tp_simple_client_factory_ensure_channel() instead.
- */
-TpChannel *
-tp_channel_new_from_properties (TpConnection *conn,
-                                const gchar *object_path,
-                                const GHashTable *immutable_properties,
-                                GError **error)
-{
-  return _tp_channel_new_with_factory (NULL, conn, object_path,
-      immutable_properties, error);
-}
-
 TpChannel *
 _tp_channel_new_with_factory (TpClientFactory *factory,
     TpConnection *conn,
@@ -1464,81 +1436,6 @@ _tp_channel_new_with_factory (TpClientFactory *factory,
         NULL));
 
 finally:
-  return ret;
-}
-
-/**
- * tp_channel_new:
- * @conn: a connection; may not be %NULL
- * @object_path: the object path of the channel; may not be %NULL
- * @optional_channel_type: the channel type if already known, or %NULL if not
- * @optional_handle_type: the handle type if already known, or
- *  %TP_UNKNOWN_HANDLE_TYPE if not
- * @optional_handle: the handle if already known, or 0 if not
- *  (if @optional_handle_type is %TP_UNKNOWN_HANDLE_TYPE or
- *  %TP_HANDLE_TYPE_NONE, this must be 0)
- * @error: used to indicate the error if %NULL is returned
- *
- * <!-- -->
- *
- * Returns: a new channel proxy, or %NULL on invalid arguments.
- *
- * Since: 0.7.1
- * Deprecated: Use tp_simple_client_factory_ensure_channel() instead.
- */
-TpChannel *
-tp_channel_new (TpConnection *conn,
-                const gchar *object_path,
-                const gchar *optional_channel_type,
-                TpHandleType optional_handle_type,
-                TpHandle optional_handle,
-                GError **error)
-{
-  TpChannel *ret = NULL;
-
-  g_return_val_if_fail (TP_IS_CONNECTION (conn), NULL);
-  g_return_val_if_fail (object_path != NULL, NULL);
-
-  /* TpConnection always has a unique name, so we can assert this */
-  g_assert (tp_dbus_check_valid_bus_name (tp_proxy_get_bus_name (conn),
-        TP_DBUS_NAME_TYPE_UNIQUE, NULL));
-
-  if (!tp_dbus_check_valid_object_path (object_path, error))
-    goto finally;
-
-  if (optional_channel_type != NULL &&
-      !tp_dbus_check_valid_interface_name (optional_channel_type, error))
-    goto finally;
-
-  if (optional_handle_type == TP_UNKNOWN_HANDLE_TYPE ||
-      optional_handle_type == TP_HANDLE_TYPE_NONE)
-    {
-      if (optional_handle != 0)
-        {
-          /* in the properties, we do actually allow the user to give us an
-           * assumed-valid handle of unknown type - but that'd be silly */
-          g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-              "Nonzero handle of type NONE or unknown makes no sense");
-          goto finally;
-        }
-    }
-  else if (!tp_handle_type_is_valid (optional_handle_type, error))
-    {
-      goto finally;
-    }
-
-  ret = TP_CHANNEL (g_object_new (TP_TYPE_CHANNEL,
-        "connection", conn,
-        "dbus-daemon", tp_proxy_get_dbus_daemon (conn),
-        "bus-name", tp_proxy_get_bus_name (conn),
-        "object-path", object_path,
-        "channel-type", optional_channel_type,
-        "handle-type", optional_handle_type,
-        "handle", optional_handle,
-        NULL));
-
-finally:
-
   return ret;
 }
 

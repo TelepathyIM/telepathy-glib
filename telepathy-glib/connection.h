@@ -140,10 +140,6 @@ GQuark tp_errors_disconnected_quark (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CONNECTION, \
                               TpConnectionClass))
 
-_TP_DEPRECATED_IN_0_20_FOR(tp_simple_client_factory_ensure_connection)
-TpConnection *tp_connection_new (TpDBusDaemon *dbus, const gchar *bus_name,
-    const gchar *object_path, GError **error) G_GNUC_WARN_UNUSED_RESULT;
-
 _TP_AVAILABLE_IN_0_16
 TpAccount *tp_connection_get_account (TpConnection *self);
 

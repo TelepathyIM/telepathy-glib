@@ -86,10 +86,6 @@ GQuark tp_account_get_feature_quark_connection (void) G_GNUC_CONST;
 GQuark tp_account_get_feature_quark_storage (void) G_GNUC_CONST;
 GQuark tp_account_get_feature_quark_addressing (void) G_GNUC_CONST;
 
-_TP_DEPRECATED_IN_0_20_FOR(tp_simple_client_factory_ensure_account)
-TpAccount *tp_account_new (TpDBusDaemon *bus_daemon, const gchar *object_path,
-    GError **error) G_GNUC_WARN_UNUSED_RESULT;
-
 const gchar *tp_account_get_path_suffix (TpAccount *account);
 
 void tp_account_init_known_interfaces (void);

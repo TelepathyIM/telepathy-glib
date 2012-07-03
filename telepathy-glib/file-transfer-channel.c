@@ -1044,34 +1044,6 @@ tp_file_transfer_channel_get_feature_quark_core (void)
 
 /* Public methods */
 
-/**
- * tp_file_transfer_channel_new:
- * @conn: a #TpConnection; may not be %NULL
- * @object_path: the object path of the channel; may not be %NULL
- * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
- *  the immutable properties of the channel,
- *  as signalled by the NewChannel D-Bus signal or returned by the
- *  CreateChannel and EnsureChannel D-Bus methods: a mapping from
- *  strings (D-Bus interface name + "." + property name) to #GValue instances
- * @error: used to indicate the error if %NULL is returned
- *
- * Convenient function to create a new #TpFileTransferChannel
- *
- * Returns: (transfer full): a newly created #TpFileTransferChannel
- *
- * Since: 0.15.5
- * Deprecated: Use tp_simple_client_factory_ensure_channel() instead.
- */
-TpFileTransferChannel *
-tp_file_transfer_channel_new (TpConnection *conn,
-    const gchar *object_path,
-    const GHashTable *immutable_properties,
-    GError **error)
-{
-  return _tp_file_transfer_channel_new_with_factory (NULL, conn, object_path,
-      immutable_properties, error);
-}
-
 TpFileTransferChannel *
 _tp_file_transfer_channel_new_with_factory (
     TpClientFactory *factory,

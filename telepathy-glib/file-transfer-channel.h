@@ -67,13 +67,6 @@ GType tp_file_transfer_channel_get_type (void);
 
 /* Methods */
 
-_TP_AVAILABLE_IN_0_16
-_TP_DEPRECATED_IN_0_20_FOR(tp_simple_client_factory_ensure_channel)
-TpFileTransferChannel * tp_file_transfer_channel_new (TpConnection *conn,
-    const gchar *object_path,
-    const GHashTable *immutable_properties,
-    GError **error);
-
 _TP_AVAILABLE_IN_0_18
 void tp_file_transfer_channel_accept_file_async (TpFileTransferChannel *self,
     GFile *file,
