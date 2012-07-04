@@ -25,7 +25,6 @@
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/proxy-subclass.h>
 
-#include "action-chain-internal.h"
 #include "call-event.h"
 #include "call-event-internal.h"
 #include "channel-internal.h"
@@ -60,45 +59,10 @@ G_DEFINE_TYPE_WITH_CODE (TplCallChannel, _tpl_call_channel,
     G_IMPLEMENT_INTERFACE (TPL_TYPE_CHANNEL, tpl_call_channel_iface_init))
 
 
-static void
-proxy_prepared_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
+static gboolean
+get_contacts (TplCallChannel *self,
+    GError **error)
 {
-  TplActionChain *ctx = user_data;
-  GError *error = NULL;
-
-  if (!tp_proxy_prepare_finish (source, result, &error))
-    {
-      _tpl_action_chain_terminate (ctx, error);
-      g_error_free (error);
-      return;
-    }
-
-  _tpl_action_chain_continue (ctx);
-}
-
-
-static void
-pendingproc_prepare_tp_channel (TplActionChain *ctx,
-    gpointer user_data)
-{
-  TplCallChannel *chan = _tpl_action_chain_get_object (ctx);
-  GQuark chan_features[] = {
-      TP_CHANNEL_FEATURE_CORE,
-      TP_CHANNEL_FEATURE_GROUP,
-      0
-  };
-
-  tp_proxy_prepare_async (chan, chan_features, proxy_prepared_cb, ctx);
-}
-
-
-static void
-pendingproc_get_contacts (TplActionChain *ctx,
-    gpointer user_data)
-{
-  TplCallChannel *self = _tpl_action_chain_get_object (ctx);
   TplCallChannelPriv *priv = self->priv;
   TpChannel *chan = TP_CHANNEL (self);
   TpConnection *con = tp_channel_borrow_connection (chan);
@@ -136,13 +100,10 @@ pendingproc_get_contacts (TplActionChain *ctx,
 
       if (entity == NULL)
         {
-          GError *new_error = NULL;
-          new_error = g_error_new (TPL_CALL_CHANNEL_ERROR,
+          g_set_error (error, TPL_CALL_CHANNEL_ERROR,
               TPL_CALL_CHANNEL_ERROR_MISSING_TARGET_CONTACT,
               "Failed to resolve target contact");
-          _tpl_action_chain_terminate (ctx, new_error);
-          g_error_free (new_error);
-          return;
+          return FALSE;
         }
 
       if (tp_channel_get_requested (chan))
@@ -165,7 +126,7 @@ pendingproc_get_contacts (TplActionChain *ctx,
   else
     priv->receiver = g_object_ref (entity);
 
-  _tpl_action_chain_continue (ctx);
+  return TRUE;
 }
 
 
@@ -331,11 +292,8 @@ channel_invalidated_cb (TpProxy *proxy,
 
 
 static void
-pendingproc_connect_signals (TplActionChain *ctx,
-    gpointer user_data)
+connect_signals (TplCallChannel *self)
 {
-  TplCallChannel *self = _tpl_action_chain_get_object (ctx);
-
   tp_g_signal_connect_object (self, "state-changed",
       G_CALLBACK (call_state_changed_cb), self, 0);
 
@@ -344,8 +302,29 @@ pendingproc_connect_signals (TplActionChain *ctx,
 
   tp_g_signal_connect_object (TP_CHANNEL (self), "invalidated",
       G_CALLBACK (channel_invalidated_cb), self, 0);
+}
 
-  _tpl_action_chain_continue (ctx);
+
+static void
+proxy_prepared_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TplCallChannel *self = (TplCallChannel *) source;
+  GSimpleAsyncResult *my_result = user_data;
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (source, result, &error))
+    {
+      g_simple_async_result_take_error (my_result, error);
+    }
+  else if (!get_contacts (self, &error))
+    {
+      g_simple_async_result_take_error (my_result, error);
+    }
+
+  g_simple_async_result_complete (my_result);
+  g_object_unref (my_result);
 }
 
 
@@ -354,14 +333,15 @@ tpl_call_channel_prepare_async (TplChannel *chan,
     GAsyncReadyCallback cb,
     gpointer user_data)
 {
-  TplActionChain *actions;
+  TplCallChannel *self = (TplCallChannel *) chan;
+  GSimpleAsyncResult *result;
 
-  actions = _tpl_action_chain_new_async (G_OBJECT (chan), cb, user_data);
-  _tpl_action_chain_append (actions, pendingproc_connect_signals, NULL);
-  _tpl_action_chain_append (actions, pendingproc_prepare_tp_channel, NULL);
-  _tpl_action_chain_append (actions, pendingproc_get_contacts, NULL);
+  result = g_simple_async_result_new ((GObject *) self, cb, user_data,
+      tpl_call_channel_prepare_async);
 
-  _tpl_action_chain_continue (actions);
+  connect_signals (self);
+
+  tp_proxy_prepare_async (self, NULL, proxy_prepared_cb, result);
 }
 
 
@@ -370,7 +350,16 @@ tpl_call_channel_prepare_finish (TplChannel *chan,
     GAsyncResult *result,
     GError **error)
 {
-  return _tpl_action_chain_new_finish (G_OBJECT (chan), result, error);
+  g_return_val_if_fail (
+      g_simple_async_result_is_valid (result,
+          G_OBJECT (chan), tpl_call_channel_prepare_async),
+      FALSE);
+
+  if (g_simple_async_result_propagate_error (
+          G_SIMPLE_ASYNC_RESULT (result), error))
+    return FALSE;
+
+  return TRUE;
 }
 
 
