@@ -61,37 +61,6 @@ G_DEFINE_TYPE_WITH_CODE (TplTextChannel, _tpl_text_channel,
 
 
 static void
-connection_prepared_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  TplActionChain *ctx = user_data;
-  GError *error = NULL;
-
-  if (!tp_proxy_prepare_finish (source, result, &error))
-    {
-      _tpl_action_chain_terminate (ctx, error);
-      g_error_free (error);
-      return;
-    }
-
-  _tpl_action_chain_continue (ctx);
-}
-
-
-static void
-pendingproc_prepare_tp_connection (TplActionChain *ctx,
-    gpointer user_data)
-{
-  TplChannel *chan = _tpl_action_chain_get_object (ctx);
-  TpConnection *conn = tp_channel_borrow_connection (TP_CHANNEL (chan));
-  GQuark conn_features[] = { TP_CONNECTION_FEATURE_CORE, 0 };
-
-  tp_proxy_prepare_async (conn, conn_features, connection_prepared_cb, ctx);
-}
-
-
-static void
 channel_prepared_cb (GObject *source,
     GAsyncResult *result,
     gpointer ctx)
@@ -767,7 +736,6 @@ tpl_text_channel_prepare_async (TplChannel *chan,
   TplActionChain *actions;
 
   actions = _tpl_action_chain_new_async (G_OBJECT (chan), cb, user_data);
-  _tpl_action_chain_append (actions, pendingproc_prepare_tp_connection, NULL);
   _tpl_action_chain_append (actions, pendingproc_prepare_tp_text_channel, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_my_contact, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_remote_contact, NULL);

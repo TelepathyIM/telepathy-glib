@@ -80,18 +80,6 @@ proxy_prepared_cb (GObject *source,
 
 
 static void
-pendingproc_prepare_tp_connection (TplActionChain *ctx,
-    gpointer user_data)
-{
-  TplCallChannel *chan = _tpl_action_chain_get_object (ctx);
-  TpConnection *conn = tp_channel_borrow_connection (TP_CHANNEL (chan));
-  GQuark conn_features[] = { TP_CONNECTION_FEATURE_CORE, 0 };
-
-  tp_proxy_prepare_async (conn, conn_features, proxy_prepared_cb, ctx);
-}
-
-
-static void
 pendingproc_prepare_tp_channel (TplActionChain *ctx,
     gpointer user_data)
 {
@@ -370,7 +358,6 @@ tpl_call_channel_prepare_async (TplChannel *chan,
 
   actions = _tpl_action_chain_new_async (G_OBJECT (chan), cb, user_data);
   _tpl_action_chain_append (actions, pendingproc_connect_signals, NULL);
-  _tpl_action_chain_append (actions, pendingproc_prepare_tp_connection, NULL);
   _tpl_action_chain_append (actions, pendingproc_prepare_tp_channel, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_contacts, NULL);
 
