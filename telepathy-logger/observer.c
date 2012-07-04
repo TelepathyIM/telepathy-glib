@@ -411,6 +411,7 @@ _tpl_observer_dup (GError **error)
       /* Pre-select feature to be initialized. */
       tp_simple_client_factory_add_contact_features_varargs (factory,
           TP_CONTACT_FEATURE_ALIAS,
+          TP_CONTACT_FEATURE_PRESENCE,
           TP_CONTACT_FEATURE_AVATAR_TOKEN,
           TP_CONTACT_FEATURE_INVALID);
 

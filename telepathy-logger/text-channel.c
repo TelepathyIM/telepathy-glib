@@ -47,12 +47,6 @@ struct _TplTextChannelPriv
   TplEntity *remote;
 };
 
-static TpContactFeature features[3] = {
-  TP_CONTACT_FEATURE_ALIAS,
-  TP_CONTACT_FEATURE_PRESENCE,
-  TP_CONTACT_FEATURE_AVATAR_TOKEN
-};
-
 static void tpl_text_channel_iface_init (TplChannelInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (TplTextChannel, _tpl_text_channel,
@@ -97,52 +91,12 @@ pendingproc_prepare_tp_text_channel (TplActionChain *ctx,
   GQuark chan_features[] = {
       TP_CHANNEL_FEATURE_CORE,
       TP_CHANNEL_FEATURE_GROUP,
+      TP_CHANNEL_FEATURE_CONTACTS,
       TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES,
       0
   };
 
   tp_proxy_prepare_async (chan, chan_features, channel_prepared_cb, ctx);
-}
-
-
-static void
-get_self_contact_cb (TpConnection *connection,
-    guint n_contacts,
-    TpContact *const *contacts,
-    guint n_failed,
-    const TpHandle *failed,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  TplActionChain *ctx = user_data;
-  TplTextChannel *tpl_text = _tpl_action_chain_get_object (ctx);
-  TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
-  TpChannel *tp_chan = TP_CHANNEL (tpl_chan);
-
-  g_return_if_fail (TPL_IS_TEXT_CHANNEL (tpl_text));
-
-  if (n_failed > 0)
-    {
-      TpConnection *tp_conn = tp_channel_borrow_connection (tp_chan);
-      const gchar *conn_path;
-      GError *new_error = NULL;
-
-      conn_path = tp_proxy_get_object_path (TP_PROXY (tp_conn));
-
-      new_error = g_error_new (error->domain, error->code,
-          "Error resolving self handle for connection %s: %s)",
-          conn_path, error->message);
-
-      _tpl_action_chain_terminate (ctx, new_error);
-      g_error_free (new_error);
-      return;
-    }
-
-  tpl_text->priv->self = tpl_entity_new_from_tp_contact (contacts[0],
-      TPL_ENTITY_SELF);
-
-  _tpl_action_chain_continue (ctx);
 }
 
 
@@ -153,53 +107,16 @@ pendingproc_get_my_contact (TplActionChain *ctx,
   TplTextChannel *tpl_text = _tpl_action_chain_get_object (ctx);
   TpChannel *chan = TP_CHANNEL (tpl_text);
   TpConnection *tp_conn = tp_channel_borrow_connection (chan);
-  TpHandle my_handle;
+  TpContact *my_contact;
 
-  my_handle = tp_channel_group_get_self_handle (chan);
-  if (my_handle == 0)
-    my_handle = tp_connection_get_self_handle (tp_conn);
+  my_contact = tp_channel_group_get_self_contact (chan);
+  if (my_contact == 0)
+    my_contact = tp_connection_get_self_contact (tp_conn);
 
-  tp_connection_get_contacts_by_handle (tp_conn, 1, &my_handle,
-      G_N_ELEMENTS (features), features, get_self_contact_cb, ctx, NULL,
-      G_OBJECT (tpl_text));
-}
+  tpl_text->priv->self = tpl_entity_new_from_tp_contact (my_contact,
+      TPL_ENTITY_SELF);
 
-
-static void
-get_remote_contact_cb (TpConnection *connection,
-    guint n_contacts,
-    TpContact *const *contacts,
-    guint n_failed,
-    const TpHandle *failed,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  TplActionChain *ctx = user_data;
-  TplTextChannel *self = TPL_TEXT_CHANNEL (weak_object);
-
-  if (error != NULL)
-    {
-      GError *new_error = NULL;
-      new_error = g_error_new (error->domain, error->code,
-          "Failed to get remote contact: %s", error->message);
-      _tpl_action_chain_terminate (ctx, new_error);
-      g_error_free (new_error);
-    }
-  else if (n_failed > 0)
-    {
-      GError *new_error = g_error_new (TPL_TEXT_CHANNEL_ERROR,
-          TPL_TEXT_CHANNEL_ERROR_FAILED,
-          "Failed to prepare remote contact.");
-      _tpl_action_chain_terminate (ctx, new_error);
-      g_error_free (new_error);
-    }
-  else
-    {
-      self->priv->remote =
-        tpl_entity_new_from_tp_contact (contacts[0], TPL_ENTITY_CONTACT);
-      _tpl_action_chain_continue (ctx);
-    }
+  _tpl_action_chain_continue (ctx);
 }
 
 
@@ -209,12 +126,11 @@ pendingproc_get_remote_contact (TplActionChain *ctx,
 {
   TplTextChannel *self = _tpl_action_chain_get_object (ctx);
   TpChannel *chan = TP_CHANNEL (self);
-  TpHandle handle;
-  TpHandleType handle_type;
+  TpContact *contact;
 
-  handle = tp_channel_get_handle (chan, &handle_type);
+  contact = tp_channel_get_target_contact (chan);
 
-  if (handle_type == TP_HANDLE_TYPE_ROOM)
+  if (contact == NULL)
     {
       self->priv->is_chatroom = TRUE;
       self->priv->remote =
@@ -222,27 +138,14 @@ pendingproc_get_remote_contact (TplActionChain *ctx,
 
       PATH_DEBUG (self, "Chatroom id: %s",
           tpl_entity_get_identifier (self->priv->remote));
-
-      _tpl_action_chain_continue (ctx);
     }
   else
     {
-      TpConnection *tp_conn = tp_channel_borrow_connection (chan);
-      GArray *arr;
-
-      /* Get the contact of the TargetHandle */
-      arr = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 1);
-      handle = tp_channel_get_handle (chan, NULL);
-
-      g_array_append_val (arr, handle);
-
-      tp_connection_get_contacts_by_handle (tp_conn,
-          arr->len, (TpHandle *) arr->data,
-          G_N_ELEMENTS (features), features, get_remote_contact_cb, ctx, NULL,
-          G_OBJECT (self));
-
-      g_array_unref (arr);
+      self->priv->remote =
+        tpl_entity_new_from_tp_contact (contact, TPL_ENTITY_CONTACT);
     }
+
+  _tpl_action_chain_continue (ctx);
 }
 
 
