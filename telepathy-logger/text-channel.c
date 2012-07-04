@@ -759,6 +759,17 @@ _tpl_text_channel_new (TpConnection *conn,
     GHashTable *tp_chan_props,
     GError **error)
 {
+  return _tpl_text_channel_new_with_factory (NULL, conn, object_path,
+      tp_chan_props, error);
+}
+
+TplTextChannel *
+_tpl_text_channel_new_with_factory (TpSimpleClientFactory *factory,
+    TpConnection *conn,
+    const gchar *object_path,
+    const GHashTable *tp_chan_props,
+    GError **error)
+{
   TpProxy *conn_proxy = TP_PROXY (conn);
   TplTextChannel *self;
 
@@ -773,6 +784,7 @@ _tpl_text_channel_new (TpConnection *conn,
 
   self = g_object_new (TPL_TYPE_TEXT_CHANNEL,
       /* TpChannel properties */
+      "factory", factory,
       "connection", conn,
       "dbus-daemon", conn_proxy->dbus_daemon,
       "bus-name", conn_proxy->bus_name,

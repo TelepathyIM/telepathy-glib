@@ -58,6 +58,8 @@ libtelepathy_logger_la_SOURCES = \
 		channel.c			\
 		channel-factory.c		\
 		channel-factory-internal.h	\
+		client-factory.c		\
+		client-factory-internal.h	\
 		conf.c				\
 		conf-internal.h			\
 		entity.c			\

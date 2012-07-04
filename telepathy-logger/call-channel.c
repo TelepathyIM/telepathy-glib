@@ -521,6 +521,17 @@ _tpl_call_channel_new (TpConnection *conn,
     GHashTable *tp_chan_props,
     GError **error)
 {
+  return _tpl_call_channel_new_with_factory (NULL, conn, object_path,
+      tp_chan_props, error);
+}
+
+TplCallChannel *
+_tpl_call_channel_new_with_factory (TpSimpleClientFactory *factory,
+    TpConnection *conn,
+    const gchar *object_path,
+    const GHashTable *tp_chan_props,
+    GError **error)
+{
   TpProxy *conn_proxy = TP_PROXY (conn);
   TplCallChannel *self;
 
@@ -535,6 +546,7 @@ _tpl_call_channel_new (TpConnection *conn,
     return NULL;
 
   self = g_object_new (TPL_TYPE_CALL_CHANNEL,
+      "factory", factory,
       "connection", conn,
       "dbus-daemon", conn_proxy->dbus_daemon,
       "bus-name", conn_proxy->bus_name,

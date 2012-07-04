@@ -69,5 +69,12 @@ TplCallChannel * _tpl_call_channel_new (TpConnection *conn,
     GHashTable *tp_chan_props,
     GError **error);
 
+TplCallChannel * _tpl_call_channel_new_with_factory (
+    TpSimpleClientFactory *factory,
+    TpConnection *conn,
+    const gchar *object_path,
+    const GHashTable *tp_chan_props,
+    GError **error);
+
 G_END_DECLS
 #endif /* __TPL_CALL_CHANNEL_H__ */
