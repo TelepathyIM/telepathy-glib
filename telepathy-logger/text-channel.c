@@ -55,57 +55,9 @@ G_DEFINE_TYPE_WITH_CODE (TplTextChannel, _tpl_text_channel,
 
 
 static void
-channel_prepared_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer ctx)
+get_my_contact (TplTextChannel *self)
 {
-  TplChannel *chan = _tpl_action_chain_get_object (ctx);
-  GError *error = NULL;
-
-  if (!tp_proxy_prepare_finish (source, result, &error))
-    {
-      _tpl_action_chain_terminate (ctx, error);
-      g_error_free (error);
-      return;
-    }
-  else if (!tp_proxy_has_interface_by_id (TP_PROXY (chan),
-        TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES))
-    {
-      error = g_error_new (TPL_TEXT_CHANNEL_ERROR,
-          TPL_TEXT_CHANNEL_ERROR_NEED_MESSAGE_INTERFACE,
-          "The text channel does not implement Message interface.");
-      _tpl_action_chain_terminate (ctx, error);
-      g_error_free (error);
-      return;
-    }
-
-  _tpl_action_chain_continue (ctx);
-}
-
-
-static void
-pendingproc_prepare_tp_text_channel (TplActionChain *ctx,
-    gpointer user_data)
-{
-  TplChannel *chan = _tpl_action_chain_get_object (ctx);
-  GQuark chan_features[] = {
-      TP_CHANNEL_FEATURE_CORE,
-      TP_CHANNEL_FEATURE_GROUP,
-      TP_CHANNEL_FEATURE_CONTACTS,
-      TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES,
-      0
-  };
-
-  tp_proxy_prepare_async (chan, chan_features, channel_prepared_cb, ctx);
-}
-
-
-static void
-pendingproc_get_my_contact (TplActionChain *ctx,
-    gpointer user_data)
-{
-  TplTextChannel *tpl_text = _tpl_action_chain_get_object (ctx);
-  TpChannel *chan = TP_CHANNEL (tpl_text);
+  TpChannel *chan = TP_CHANNEL (self);
   TpConnection *tp_conn = tp_channel_borrow_connection (chan);
   TpContact *my_contact;
 
@@ -113,18 +65,14 @@ pendingproc_get_my_contact (TplActionChain *ctx,
   if (my_contact == 0)
     my_contact = tp_connection_get_self_contact (tp_conn);
 
-  tpl_text->priv->self = tpl_entity_new_from_tp_contact (my_contact,
+  self->priv->self = tpl_entity_new_from_tp_contact (my_contact,
       TPL_ENTITY_SELF);
-
-  _tpl_action_chain_continue (ctx);
 }
 
 
 static void
-pendingproc_get_remote_contact (TplActionChain *ctx,
-    gpointer user_data)
+get_remote_contact (TplTextChannel *self)
 {
-  TplTextChannel *self = _tpl_action_chain_get_object (ctx);
   TpChannel *chan = TP_CHANNEL (self);
   TpContact *contact;
 
@@ -144,8 +92,6 @@ pendingproc_get_remote_contact (TplActionChain *ctx,
       self->priv->remote =
         tpl_entity_new_from_tp_contact (contact, TPL_ENTITY_CONTACT);
     }
-
-  _tpl_action_chain_continue (ctx);
 }
 
 
@@ -474,10 +420,8 @@ pending_message_compare_timestamp (TpSignalledMessage *m1,
 
 
 static void
-pendingproc_store_pending_messages (TplActionChain *ctx,
-    gpointer user_data)
+store_pending_messages (TplTextChannel *self)
 {
-  TplTextChannel *self = _tpl_action_chain_get_object (ctx);
   TplLogStore *cache;
   GError *error = NULL;
   GList *cached_messages;
@@ -597,16 +541,12 @@ pendingproc_store_pending_messages (TplActionChain *ctx,
     }
 
   g_object_unref (cache);
-  _tpl_action_chain_continue (ctx);
 }
 
 
 static void
-pendingproc_connect_message_signals (TplActionChain *ctx,
-    gpointer user_data)
+connect_message_signals (TplTextChannel *self)
 {
-  TplTextChannel *self = _tpl_action_chain_get_object (ctx);
-
   tp_g_signal_connect_object (self, "invalidated",
       G_CALLBACK (on_channel_invalidated_cb), self, 0);
 
@@ -618,16 +558,36 @@ pendingproc_connect_message_signals (TplActionChain *ctx,
 
   tp_g_signal_connect_object (self, "pending-message-removed",
       G_CALLBACK (on_pending_message_removed_cb), self, 0);
-
-  _tpl_action_chain_continue (ctx);
 }
 
-static gboolean
-tpl_text_channel_prepare_finish (TplChannel *chan,
+static void
+channel_prepared_cb (GObject *source,
     GAsyncResult *result,
-    GError **error)
+    gpointer user_data)
 {
-  return _tpl_action_chain_new_finish (G_OBJECT (chan), result, error);
+  TplTextChannel *self = (TplTextChannel *) source;
+  GSimpleAsyncResult *my_result = user_data;
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (source, result, &error))
+    {
+      g_simple_async_result_take_error (my_result, error);
+    }
+  else if (!tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES))
+    {
+      g_simple_async_result_set_error (my_result, TPL_TEXT_CHANNEL_ERROR,
+          TPL_TEXT_CHANNEL_ERROR_NEED_MESSAGE_INTERFACE,
+          "The text channel does not implement Message interface.");
+    }
+
+  get_my_contact (self);
+  get_remote_contact (self);
+  store_pending_messages (self);
+  connect_message_signals (self);
+
+  g_simple_async_result_complete (my_result);
+  g_object_unref (my_result);
 }
 
 
@@ -636,16 +596,38 @@ tpl_text_channel_prepare_async (TplChannel *chan,
     GAsyncReadyCallback cb,
     gpointer user_data)
 {
-  TplActionChain *actions;
+  TplTextChannel *self = (TplTextChannel *) chan;
+  GSimpleAsyncResult *result;
+  GQuark chan_features[] = {
+      TP_CHANNEL_FEATURE_CORE,
+      TP_CHANNEL_FEATURE_GROUP,
+      TP_CHANNEL_FEATURE_CONTACTS,
+      TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES,
+      0
+  };
 
-  actions = _tpl_action_chain_new_async (G_OBJECT (chan), cb, user_data);
-  _tpl_action_chain_append (actions, pendingproc_prepare_tp_text_channel, NULL);
-  _tpl_action_chain_append (actions, pendingproc_get_my_contact, NULL);
-  _tpl_action_chain_append (actions, pendingproc_get_remote_contact, NULL);
-  _tpl_action_chain_append (actions, pendingproc_store_pending_messages, NULL);
-  _tpl_action_chain_append (actions, pendingproc_connect_message_signals, NULL);
+  result = g_simple_async_result_new ((GObject *) self, cb, user_data,
+      tpl_text_channel_prepare_async);
 
-  _tpl_action_chain_continue (actions);
+  tp_proxy_prepare_async (chan, chan_features, channel_prepared_cb, result);
+}
+
+
+static gboolean
+tpl_text_channel_prepare_finish (TplChannel *chan,
+    GAsyncResult *result,
+    GError **error)
+{
+  g_return_val_if_fail (
+      g_simple_async_result_is_valid (result,
+          G_OBJECT (chan), tpl_text_channel_prepare_async),
+      FALSE);
+
+  if (g_simple_async_result_propagate_error (
+          G_SIMPLE_ASYNC_RESULT (result), error))
+    return FALSE;
+
+  return TRUE;
 }
 
 
