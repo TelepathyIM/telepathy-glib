@@ -24,8 +24,6 @@
 #include <glib-object.h>
 #include <telepathy-glib/telepathy-glib.h>
 
-#include <telepathy-logger/channel-internal.h>
-
 G_BEGIN_DECLS
 #define TPL_TYPE_CALL_CHANNEL            (_tpl_call_channel_get_type ())
 #define TPL_CALL_CHANNEL(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_CALL_CHANNEL, TplCallChannel))

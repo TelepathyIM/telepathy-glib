@@ -28,8 +28,6 @@
 #include <glib-object.h>
 #include <telepathy-glib/telepathy-glib.h>
 
-#include "channel-internal.h"
-
 G_BEGIN_DECLS
 
 #define TPL_TYPE_TEXT_CHANNEL             (_tpl_text_channel_get_type ())

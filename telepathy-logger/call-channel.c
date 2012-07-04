@@ -27,7 +27,6 @@
 
 #include "call-event.h"
 #include "call-event-internal.h"
-#include "channel-internal.h"
 #include "entity-internal.h"
 #include "event-internal.h"
 #include "log-manager-internal.h"
@@ -52,11 +51,7 @@ struct _TplCallChannelPriv
   gchar *detailed_end_reason;
 };
 
-static void tpl_call_channel_iface_init (TplChannelInterface *iface);
-
-G_DEFINE_TYPE_WITH_CODE (TplCallChannel, _tpl_call_channel,
-    TP_TYPE_CALL_CHANNEL,
-    G_IMPLEMENT_INTERFACE (TPL_TYPE_CHANNEL, tpl_call_channel_iface_init))
+G_DEFINE_TYPE (TplCallChannel, _tpl_call_channel, TP_TYPE_CALL_CHANNEL)
 
 
 static gboolean
@@ -274,18 +269,18 @@ channel_invalidated_cb (TpProxy *proxy,
     gchar *message,
     gpointer user_data)
 {
-  TplChannel *tpl_chan = TPL_CHANNEL (user_data);
+  TpChannel *chan = TP_CHANNEL (user_data);
   TplObserver *observer = _tpl_observer_dup (NULL);
 
   g_return_if_fail (observer);
 
-  PATH_DEBUG (tpl_chan, "%s #%d %s",
+  PATH_DEBUG (chan, "%s #%d %s",
       g_quark_to_string (domain), code, message);
 
   store_call (TPL_CALL_CHANNEL (user_data));
 
-  if (!_tpl_observer_unregister_channel (observer, tpl_chan))
-    PATH_DEBUG (tpl_chan, "Channel couldn't be unregistered correctly (BUG?)");
+  if (!_tpl_observer_unregister_channel (observer, chan))
+    PATH_DEBUG (chan, "Channel couldn't be unregistered correctly (BUG?)");
 
   g_object_unref (observer);
 }
@@ -302,61 +297,6 @@ connect_signals (TplCallChannel *self)
 
   tp_g_signal_connect_object (TP_CHANNEL (self), "invalidated",
       G_CALLBACK (channel_invalidated_cb), self, 0);
-}
-
-
-static void
-proxy_prepared_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  GSimpleAsyncResult *my_result = user_data;
-  GError *error = NULL;
-
-  if (!tp_proxy_prepare_finish (source, result, &error))
-    {
-      g_simple_async_result_take_error (my_result, error);
-    }
-
-  g_simple_async_result_complete (my_result);
-  g_object_unref (my_result);
-}
-
-
-static void
-tpl_call_channel_prepare_async (TplChannel *chan,
-    GAsyncReadyCallback cb,
-    gpointer user_data)
-{
-  TplCallChannel *self = (TplCallChannel *) chan;
-  GSimpleAsyncResult *result;
-  GQuark chan_features[] = {
-      TPL_CALL_CHANNEL_FEATURE_CORE,
-      0
-  };
-
-  result = g_simple_async_result_new ((GObject *) self, cb, user_data,
-      tpl_call_channel_prepare_async);
-
-  tp_proxy_prepare_async (self, chan_features, proxy_prepared_cb, result);
-}
-
-
-static gboolean
-tpl_call_channel_prepare_finish (TplChannel *chan,
-    GAsyncResult *result,
-    GError **error)
-{
-  g_return_val_if_fail (
-      g_simple_async_result_is_valid (result,
-          G_OBJECT (chan), tpl_call_channel_prepare_async),
-      FALSE);
-
-  if (g_simple_async_result_propagate_error (
-          G_SIMPLE_ASYNC_RESULT (result), error))
-    return FALSE;
-
-  return TRUE;
 }
 
 
@@ -460,14 +400,6 @@ _tpl_call_channel_class_init (TplCallChannelClass *klass)
       G_TYPE_NONE,
       G_TYPE_BOXED, G_TYPE_BOXED,
       G_TYPE_INVALID);
-}
-
-
-static void
-tpl_call_channel_iface_init (TplChannelInterface *iface)
-{
-  iface->prepare_async = tpl_call_channel_prepare_async;
-  iface->prepare_finish = tpl_call_channel_prepare_finish;
 }
 
 

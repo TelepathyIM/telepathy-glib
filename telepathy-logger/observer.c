@@ -25,7 +25,6 @@
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/telepathy-glib-dbus.h>
 
-#include <telepathy-logger/channel-internal.h>
 #include <telepathy-logger/log-manager.h>
 
 #define DEBUG_FLAG TPL_DEBUG_OBSERVER
@@ -125,12 +124,12 @@ tpl_observer_observe_channels (TpBaseClient *client,
 
 static gboolean
 _tpl_observer_register_channel (TplObserver *self,
-    TplChannel *channel)
+    TpChannel *channel)
 {
   gchar *key;
 
   g_return_val_if_fail (TPL_IS_OBSERVER (self), FALSE);
-  g_return_val_if_fail (TPL_IS_CHANNEL (channel), FALSE);
+  g_return_val_if_fail (TP_IS_CHANNEL (channel), FALSE);
 
   key = (char *) tp_proxy_get_object_path (G_OBJECT (channel));
 
@@ -339,13 +338,13 @@ _tpl_observer_dup (GError **error)
  */
 gboolean
 _tpl_observer_unregister_channel (TplObserver *self,
-    TplChannel *channel)
+    TpChannel *channel)
 {
   gboolean retval;
   gchar *key;
 
   g_return_val_if_fail (TPL_IS_OBSERVER (self), FALSE);
-  g_return_val_if_fail (TPL_IS_CHANNEL (channel), FALSE);
+  g_return_val_if_fail (TP_IS_CHANNEL (channel), FALSE);
 
   key = (char *) tp_proxy_get_object_path (TP_PROXY (channel));
 

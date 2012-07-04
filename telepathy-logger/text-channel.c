@@ -26,7 +26,6 @@
 #include <telepathy-glib/telepathy-glib.h>
 
 #include "action-chain-internal.h"
-#include "channel-internal.h"
 #include "entity-internal.h"
 #include "event-internal.h"
 #include "log-manager-internal.h"
@@ -47,11 +46,7 @@ struct _TplTextChannelPriv
   TplEntity *remote;
 };
 
-static void tpl_text_channel_iface_init (TplChannelInterface *iface);
-
-G_DEFINE_TYPE_WITH_CODE (TplTextChannel, _tpl_text_channel,
-    TP_TYPE_TEXT_CHANNEL,
-    G_IMPLEMENT_INTERFACE (TPL_TYPE_CHANNEL, tpl_text_channel_iface_init))
+G_DEFINE_TYPE (TplTextChannel, _tpl_text_channel, TP_TYPE_TEXT_CHANNEL)
 
 
 static void
@@ -102,16 +97,16 @@ on_channel_invalidated_cb (TpProxy *proxy,
     gchar *message,
     gpointer user_data)
 {
-  TplChannel *tpl_chan = TPL_CHANNEL (user_data);
+  TpChannel *chan = TP_CHANNEL (user_data);
   TplObserver *observer = _tpl_observer_dup (NULL);
 
   g_return_if_fail (observer);
 
-  PATH_DEBUG (tpl_chan, "%s #%d %s",
+  PATH_DEBUG (chan, "%s #%d %s",
       g_quark_to_string (domain), code, message);
 
-  if (!_tpl_observer_unregister_channel (observer, tpl_chan))
-    PATH_DEBUG (tpl_chan, "Channel couldn't be unregistered correctly (BUG?)");
+  if (!_tpl_observer_unregister_channel (observer, chan))
+    PATH_DEBUG (chan, "Channel couldn't be unregistered correctly (BUG?)");
 
   g_object_unref (observer);
 }
@@ -560,60 +555,6 @@ connect_message_signals (TplTextChannel *self)
       G_CALLBACK (on_pending_message_removed_cb), self, 0);
 }
 
-static void
-channel_prepared_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  GSimpleAsyncResult *my_result = user_data;
-  GError *error = NULL;
-
-  if (!tp_proxy_prepare_finish (source, result, &error))
-    {
-      g_simple_async_result_take_error (my_result, error);
-    }
-
-  g_simple_async_result_complete (my_result);
-  g_object_unref (my_result);
-}
-
-
-static void
-tpl_text_channel_prepare_async (TplChannel *chan,
-    GAsyncReadyCallback cb,
-    gpointer user_data)
-{
-  TplTextChannel *self = (TplTextChannel *) chan;
-  GSimpleAsyncResult *result;
-  GQuark chan_features[] = {
-      TPL_TEXT_CHANNEL_FEATURE_CORE,
-      0
-  };
-
-  result = g_simple_async_result_new ((GObject *) self, cb, user_data,
-      tpl_text_channel_prepare_async);
-
-  tp_proxy_prepare_async (chan, chan_features, channel_prepared_cb, result);
-}
-
-
-static gboolean
-tpl_text_channel_prepare_finish (TplChannel *chan,
-    GAsyncResult *result,
-    GError **error)
-{
-  g_return_val_if_fail (
-      g_simple_async_result_is_valid (result,
-          G_OBJECT (chan), tpl_text_channel_prepare_async),
-      FALSE);
-
-  if (g_simple_async_result_propagate_error (
-          G_SIMPLE_ASYNC_RESULT (result), error))
-    return FALSE;
-
-  return TRUE;
-}
-
 
 static void
 _tpl_text_channel_prepare_core_async (TpProxy *proxy,
@@ -708,14 +649,6 @@ _tpl_text_channel_class_init (TplTextChannelClass *klass)
   proxy_class->list_features = tpl_text_channel_list_features;
 
   g_type_class_add_private (object_class, sizeof (TplTextChannelPriv));
-}
-
-
-static void
-tpl_text_channel_iface_init (TplChannelInterface *iface)
-{
-  iface->prepare_async = tpl_text_channel_prepare_async;
-  iface->prepare_finish = tpl_text_channel_prepare_finish;
 }
 
 

@@ -683,7 +683,7 @@ _tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
   int e;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_SQLITE (self), NULL);
-  g_return_val_if_fail (TPL_IS_CHANNEL (channel), NULL);
+  g_return_val_if_fail (TP_IS_CHANNEL (channel), NULL);
   g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
   DEBUG ("Listing pending messages for channel %s",
