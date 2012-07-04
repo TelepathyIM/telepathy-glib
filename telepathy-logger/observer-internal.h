@@ -26,7 +26,6 @@
 #include <telepathy-glib/telepathy-glib.h>
 
 #include <telepathy-logger/channel-internal.h>
-#include <telepathy-logger/channel-factory-internal.h>
 
 #define TPL_OBSERVER_WELL_KNOWN_BUS_NAME \
   "org.freedesktop.Telepathy.Client.Logger"
@@ -63,8 +62,6 @@ TplObserver * _tpl_observer_dup (GError **error);
 
 gboolean _tpl_observer_unregister_channel (TplObserver *self,
     TplChannel *channel);
-void _tpl_observer_set_channel_factory (TplObserver *self,
-    TplChannelFactory factory);
 
 
 G_END_DECLS

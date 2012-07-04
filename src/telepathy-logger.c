@@ -24,11 +24,8 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
-#include <telepathy-logger/channel-factory-internal.h>
-#include <telepathy-logger/text-channel-internal.h>
 #include <telepathy-logger/observer-internal.h>
 #include <telepathy-logger/dbus-service-internal.h>
-#include <telepathy-logger/call-channel-internal.h>
 
 #define DEBUG_FLAG TPL_DEBUG_MAIN
 #include <telepathy-logger/debug-internal.h>
@@ -153,18 +150,6 @@ main (int argc,
   g_log_set_default_handler (log_handler, NULL);
 #endif /* ENABLE_DEBUG */
 
-  _tpl_channel_factory_init ();
-
-  DEBUG ("Initialising TPL Channel Factory");
-
-  _tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Text",
-      (TplChannelConstructor) _tpl_text_channel_new);
-  DEBUG ("- TplTextChannel registered.");
-
-  _tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Call1",
-      (TplChannelConstructor) _tpl_call_channel_new);
-  DEBUG ("- TplCallChannel registered.");
-
   observer = _tpl_observer_dup (&error);
 
   if (observer == NULL) {
@@ -172,9 +157,6 @@ main (int argc,
     g_error_free (error);
     goto out;
   }
-
-  DEBUG ("Registering channel factory into TplObserver");
-  _tpl_observer_set_channel_factory (observer, _tpl_channel_factory_build);
 
   if (!tp_base_client_register (TP_BASE_CLIENT (observer), &error))
     {
@@ -193,7 +175,6 @@ out:
     g_object_unref (observer);
   if (dbus_srv != NULL)
     g_object_unref (dbus_srv);
-  _tpl_channel_factory_deinit ();
 
 #ifdef ENABLE_DEBUG
   g_log_set_default_handler (g_log_default_handler, NULL);

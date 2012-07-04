@@ -26,11 +26,11 @@
 #include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include <telepathy-logger/channel-internal.h>
-#include <telepathy-logger/channel-factory-internal.h>
 #include <telepathy-logger/log-manager.h>
 
 #define DEBUG_FLAG TPL_DEBUG_OBSERVER
 #include <telepathy-logger/action-chain-internal.h>
+#include <telepathy-logger/client-factory-internal.h>
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
 
@@ -76,22 +76,16 @@
  */
 
 static void tpl_observer_dispose (GObject * obj);
-static void channel_prepared_cb (GObject *obj,
-    GAsyncResult *result,
-    gpointer user_data);
-static TplChannelFactory tpl_observer_get_channel_factory (TplObserver *self);
+static gboolean _tpl_observer_register_channel (TplObserver *self,
+    TpChannel *channel);
 
 struct _TplObserverPriv
 {
     /* Registered channels
      * channel path borrowed from the TplChannel => reffed TplChannel */
     GHashTable *channels;
-    /* Channels that we'll register once they are registered
-     * channel path borrowed from the TplChannel => reffed TplChannel */
-    GHashTable *preparing_channels;
     TplLogManager *logmanager;
     gboolean  dbus_registered;
-    TplChannelFactory channel_factory;
 };
 
 typedef struct
@@ -100,8 +94,6 @@ typedef struct
   guint chan_n;
   TpObserveChannelsContext *ctx;
 } ObservingContext;
-
-static gboolean observing_context_try_to_return (ObservingContext *ctx);
 
 static TplObserver *observer_singleton = NULL;
 
@@ -123,84 +115,12 @@ tpl_observer_observe_channels (TpBaseClient *client,
     TpObserveChannelsContext *context)
 {
   TplObserver *self = TPL_OBSERVER (client);
-  TplChannelFactory chan_factory;
-  GError *error = NULL;
-  ObservingContext *observing_ctx = NULL;
-  const gchar *chan_type;
   GList *l;
 
-  chan_factory = tpl_observer_get_channel_factory (self);
-
-  /* Parallelize TplChannel preparations, when the last one will be ready, the
-   * counter will be 0 and tp_svc_client_observer_return_from_observe_channels
-   * can be called */
-  observing_ctx = g_slice_new0 (ObservingContext);
-  observing_ctx->self = TPL_OBSERVER (self);
-  observing_ctx->chan_n = g_list_length (channels);
-  observing_ctx->ctx = g_object_ref (context);
-
   for (l = channels; l != NULL; l = g_list_next (l))
-    {
-      TpChannel *channel = l->data;
-      TplChannel *tpl_chan;
-      GHashTable *prop_map;
-      const gchar *path;
+    _tpl_observer_register_channel (self, l->data);
 
-      path = tp_proxy_get_object_path (channel);
-
-      /* Ignore channel if we are already observing it */
-      if (g_hash_table_lookup (self->priv->channels, path) != NULL ||
-          g_hash_table_lookup (self->priv->preparing_channels, path) != NULL)
-        {
-          observing_ctx->chan_n--;
-          continue;
-        }
-
-      /* d.bus.propertyName.str/gvalue hash */
-      prop_map = tp_channel_borrow_immutable_properties (channel);
-      chan_type = tp_channel_get_channel_type (channel);
-
-      tpl_chan = chan_factory (chan_type, connection, path, prop_map, account,
-          &error);
-      if (tpl_chan == NULL)
-        {
-          DEBUG ("%s: %s", path, error->message);
-          g_clear_error (&error);
-          observing_ctx->chan_n--;
-          continue;
-        }
-      PATH_DEBUG (tpl_chan, "Starting preparation for TplChannel instance %p",
-          tpl_chan);
-
-      /* Pass the reference on the TplChannel to the hash table */
-      g_hash_table_insert (self->priv->preparing_channels,
-          (gchar *) tp_proxy_get_object_path (tpl_chan), tpl_chan);
-
-      _tpl_channel_prepare_async (tpl_chan, channel_prepared_cb,
-          observing_ctx);
-    }
-
-  /* Arguably we shouldn't claim to have accepted the channels if an error
-   * occurred above? */
-  if (!observing_context_try_to_return (observing_ctx))
-    tp_observe_channels_context_delay (context);
-}
-
-static gboolean
-observing_context_try_to_return (ObservingContext *observing_ctx)
-{
-  if (observing_ctx->chan_n == 0)
-    {
-      DEBUG ("Returning from observe channels");
-      tp_observe_channels_context_accept (observing_ctx->ctx);
-      g_object_unref (observing_ctx->ctx);
-      g_slice_free (ObservingContext, observing_ctx);
-      return TRUE;
-    }
-  else
-    {
-      return FALSE;
-    }
+  tp_observe_channels_context_accept (context);
 }
 
 static gboolean
@@ -220,33 +140,6 @@ _tpl_observer_register_channel (TplObserver *self,
   g_object_notify (G_OBJECT (self), "registered-channels");
 
   return TRUE;
-}
-
-
-static void
-channel_prepared_cb (GObject *obj,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  ObservingContext *observing_ctx = user_data;
-  GError *error = NULL;
-
-  if (_tpl_action_chain_new_finish (obj, result, &error))
-    {
-      PATH_DEBUG (obj, "channel prepared");
-      _tpl_observer_register_channel (observing_ctx->self, TPL_CHANNEL (obj));
-    }
-  else
-    {
-      PATH_DEBUG (obj, "failed to prepare channel: %s", error->message);
-      g_error_free (error);
-    }
-
-  g_hash_table_remove (observing_ctx->self->priv->preparing_channels,
-      tp_proxy_get_object_path (obj));
-
-  observing_ctx->chan_n -= 1;
-  observing_context_try_to_return (observing_ctx);
 }
 
 
@@ -327,9 +220,6 @@ _tpl_observer_init (TplObserver *self)
   priv->channels = g_hash_table_new_full (g_str_hash, g_str_equal,
       NULL, g_object_unref);
 
-  priv->preparing_channels = g_hash_table_new_full (g_str_hash, g_str_equal,
-      NULL, g_object_unref);
-
   priv->logmanager = tpl_log_manager_dup_singleton ();
 
   /* Observe contact text channels */
@@ -378,13 +268,7 @@ tpl_observer_dispose (GObject *obj)
   TplObserverPriv *priv = TPL_OBSERVER (obj)->priv;
 
   tp_clear_pointer (&priv->channels, g_hash_table_unref);
-  tp_clear_pointer (&priv->preparing_channels, g_hash_table_unref);
-
-  if (priv->logmanager != NULL)
-    {
-      g_object_unref (priv->logmanager);
-      priv->logmanager = NULL;
-    }
+  g_clear_object (&priv->logmanager);
 
   G_OBJECT_CLASS (_tpl_observer_parent_class)->dispose (obj);
 }
@@ -406,7 +290,7 @@ _tpl_observer_dup (GError **error)
           return NULL;
         }
 
-      factory = (TpSimpleClientFactory *) tp_automatic_client_factory_new (dbus);
+      factory = _tpl_client_factory_new (dbus);
 
       /* Pre-select feature to be initialized. */
       tp_simple_client_factory_add_contact_features_varargs (factory,
@@ -477,25 +361,4 @@ _tpl_observer_unregister_channel (TplObserver *self,
     g_object_notify (G_OBJECT (self), "registered-channels");
 
   return retval;
-}
-
-
-static TplChannelFactory
-tpl_observer_get_channel_factory (TplObserver *self)
-{
-  g_return_val_if_fail (TPL_IS_OBSERVER (self), NULL);
-
-  return self->priv->channel_factory;
-}
-
-
-void
-_tpl_observer_set_channel_factory (TplObserver *self,
-    TplChannelFactory factory)
-{
-  g_return_if_fail (TPL_IS_OBSERVER (self));
-  g_return_if_fail (factory != NULL);
-  g_return_if_fail (self->priv->channel_factory == NULL);
-
-  self->priv->channel_factory = factory;
 }
