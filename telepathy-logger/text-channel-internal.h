@@ -50,6 +50,10 @@ typedef enum
   TPL_TEXT_CHANNEL_ERROR_NEED_MESSAGE_INTERFACE,
 } TplTextChannelError;
 
+#define TPL_TEXT_CHANNEL_FEATURE_CORE \
+  _tpl_text_channel_get_feature_quark_core ()
+GQuark _tpl_text_channel_get_feature_quark_core (void) G_GNUC_CONST;
+
 typedef struct _TplTextChannelPriv TplTextChannelPriv;
 typedef struct
 {

@@ -44,6 +44,10 @@ typedef enum
   TPL_CALL_CHANNEL_ERROR_MISSING_TARGET_CONTACT,
 } TplCallChannelError;
 
+#define TPL_CALL_CHANNEL_FEATURE_CORE \
+  _tpl_call_channel_get_feature_quark_core ()
+GQuark _tpl_call_channel_get_feature_quark_core (void) G_GNUC_CONST;
+
 typedef struct _TplCallChannelPriv TplCallChannelPriv;
 typedef struct
 {

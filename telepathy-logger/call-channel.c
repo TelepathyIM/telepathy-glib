@@ -310,15 +310,10 @@ proxy_prepared_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TplCallChannel *self = (TplCallChannel *) source;
   GSimpleAsyncResult *my_result = user_data;
   GError *error = NULL;
 
   if (!tp_proxy_prepare_finish (source, result, &error))
-    {
-      g_simple_async_result_take_error (my_result, error);
-    }
-  else if (!get_contacts (self, &error))
     {
       g_simple_async_result_take_error (my_result, error);
     }
@@ -335,13 +330,15 @@ tpl_call_channel_prepare_async (TplChannel *chan,
 {
   TplCallChannel *self = (TplCallChannel *) chan;
   GSimpleAsyncResult *result;
+  GQuark chan_features[] = {
+      TPL_CALL_CHANNEL_FEATURE_CORE,
+      0
+  };
 
   result = g_simple_async_result_new ((GObject *) self, cb, user_data,
       tpl_call_channel_prepare_async);
 
-  connect_signals (self);
-
-  tp_proxy_prepare_async (self, NULL, proxy_prepared_cb, result);
+  tp_proxy_prepare_async (self, chan_features, proxy_prepared_cb, result);
 }
 
 
@@ -360,6 +357,57 @@ tpl_call_channel_prepare_finish (TplChannel *chan,
     return FALSE;
 
   return TRUE;
+}
+
+
+static void
+_tpl_call_channel_prepare_core_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TplCallChannel *self = (TplCallChannel *) proxy;
+  GError *error = NULL;
+
+  connect_signals (self);
+
+  if (!get_contacts (self, &error))
+    {
+      g_simple_async_report_take_gerror_in_idle ((GObject *) self, callback,
+          user_data, error);
+      return;
+    }
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback, user_data,
+      _tpl_call_channel_prepare_core_async);
+}
+
+GQuark
+_tpl_call_channel_get_feature_quark_core (void)
+{
+  return g_quark_from_static_string ("tpl-call-channel-feature-core");
+}
+
+enum {
+    FEAT_CORE,
+    N_FEAT
+};
+
+static const TpProxyFeature *
+tpl_call_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
+{
+  static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
+
+  if (G_LIKELY (features[0].name != 0))
+    return features;
+
+  features[FEAT_CORE].name = TPL_CALL_CHANNEL_FEATURE_CORE;
+  features[FEAT_CORE].prepare_async = _tpl_call_channel_prepare_core_async;
+
+  /* assert that the terminator at the end is there */
+  g_assert (features[N_FEAT].name == 0);
+
+  return features;
 }
 
 
@@ -394,9 +442,12 @@ static void
 _tpl_call_channel_class_init (TplCallChannelClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  TpProxyClass *proxy_class = (TpProxyClass *) klass;
 
   object_class->dispose = tpl_call_channel_dispose;
   object_class->finalize = tpl_call_channel_finalize;
+
+  proxy_class->list_features = tpl_call_channel_list_features;
 
   g_type_class_add_private (object_class, sizeof (TplCallChannelPriv));
 

@@ -565,7 +565,6 @@ channel_prepared_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TplTextChannel *self = (TplTextChannel *) source;
   GSimpleAsyncResult *my_result = user_data;
   GError *error = NULL;
 
@@ -573,18 +572,6 @@ channel_prepared_cb (GObject *source,
     {
       g_simple_async_result_take_error (my_result, error);
     }
-  else if (!tp_proxy_has_interface_by_id (self,
-        TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES))
-    {
-      g_simple_async_result_set_error (my_result, TPL_TEXT_CHANNEL_ERROR,
-          TPL_TEXT_CHANNEL_ERROR_NEED_MESSAGE_INTERFACE,
-          "The text channel does not implement Message interface.");
-    }
-
-  get_my_contact (self);
-  get_remote_contact (self);
-  store_pending_messages (self);
-  connect_message_signals (self);
 
   g_simple_async_result_complete (my_result);
   g_object_unref (my_result);
@@ -599,10 +586,7 @@ tpl_text_channel_prepare_async (TplChannel *chan,
   TplTextChannel *self = (TplTextChannel *) chan;
   GSimpleAsyncResult *result;
   GQuark chan_features[] = {
-      TP_CHANNEL_FEATURE_CORE,
-      TP_CHANNEL_FEATURE_GROUP,
-      TP_CHANNEL_FEATURE_CONTACTS,
-      TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES,
+      TPL_TEXT_CHANNEL_FEATURE_CORE,
       0
   };
 
@@ -632,6 +616,66 @@ tpl_text_channel_prepare_finish (TplChannel *chan,
 
 
 static void
+_tpl_text_channel_prepare_core_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TplTextChannel *self = (TplTextChannel *) proxy;
+
+  if (!tp_proxy_has_interface_by_id (self,
+          TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES))
+    {
+      g_simple_async_report_error_in_idle ((GObject *) self,
+          callback, user_data, TPL_TEXT_CHANNEL_ERROR,
+          TPL_TEXT_CHANNEL_ERROR_NEED_MESSAGE_INTERFACE,
+          "The text channel does not implement Message interface.");
+      return;
+    }
+
+  get_my_contact (self);
+  get_remote_contact (self);
+  store_pending_messages (self);
+  connect_message_signals (self);
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback, user_data,
+      _tpl_text_channel_prepare_core_async);
+}
+
+
+GQuark
+_tpl_text_channel_get_feature_quark_core (void)
+{
+  return g_quark_from_static_string ("tpl-text-channel-feature-core");
+}
+
+enum {
+    FEAT_CORE,
+    N_FEAT
+};
+
+static const TpProxyFeature *
+tpl_text_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
+{
+  static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
+  static GQuark depends_on[3] = { 0, 0, 0 };
+
+  if (G_LIKELY (features[0].name != 0))
+    return features;
+
+  features[FEAT_CORE].name = TPL_TEXT_CHANNEL_FEATURE_CORE;
+  features[FEAT_CORE].prepare_async = _tpl_text_channel_prepare_core_async;
+  depends_on[0] = TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES;
+  depends_on[1] = TP_CHANNEL_FEATURE_CONTACTS;
+  features[FEAT_CORE].depends_on = depends_on;
+
+  /* assert that the terminator at the end is there */
+  g_assert (features[N_FEAT].name == 0);
+
+  return features;
+}
+
+static void
 tpl_text_channel_dispose (GObject *obj)
 {
   TplTextChannelPriv *priv = TPL_TEXT_CHANNEL (obj)->priv;
@@ -656,9 +700,12 @@ static void
 _tpl_text_channel_class_init (TplTextChannelClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  TpProxyClass *proxy_class = (TpProxyClass *) klass;
 
   object_class->dispose = tpl_text_channel_dispose;
   object_class->finalize = tpl_text_channel_finalize;
+
+  proxy_class->list_features = tpl_text_channel_list_features;
 
   g_type_class_add_private (object_class, sizeof (TplTextChannelPriv));
 }
