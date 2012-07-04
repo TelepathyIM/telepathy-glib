@@ -54,8 +54,6 @@ libtelepathy_logger_la_SOURCES = \
 		action-chain-internal.h		\
 		call-event.c                    \
 		call-event-internal.h           \
-		channel-internal.h		\
-		channel.c			\
 		client-factory.c		\
 		client-factory-internal.h	\
 		conf.c				\
