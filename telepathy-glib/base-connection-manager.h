@@ -63,6 +63,9 @@ typedef TpBaseConnection *(*TpBaseConnectionManagerNewConnFunc)(
     TpBaseConnectionManager *self, const gchar *proto,
     TpIntset *params_present, void *parsed_params, GError **error);
 
+typedef GPtrArray * (*TpBaseConnectionManagerGetInterfacesFunc) (
+    TpBaseConnectionManager *self);
+
 struct _TpBaseConnectionManagerClass {
     GObjectClass parent_class;
 
@@ -71,9 +74,9 @@ struct _TpBaseConnectionManagerClass {
     TpBaseConnectionManagerNewConnFunc _TP_SEAL (new_connection);
 
     const gchar * const *interfaces;
+    TpBaseConnectionManagerGetInterfacesFunc get_interfaces;
 
     /*<private>*/
-    gpointer _future2;
     gpointer _future3;
     gpointer _future4;
 

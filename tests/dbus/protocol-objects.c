@@ -119,6 +119,10 @@ const gchar * const expected_protocol_interfaces[] = {
     TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING,
     NULL };
 
+const gchar * const expected_cm_interfaces[] = {
+    "im.telepathy.Tests.Example",
+    NULL };
+
 const gchar * const expected_supported_avatar_mime_types[] = {
   "image/png",
   "image/jpeg",
@@ -333,8 +337,8 @@ test_protocols_property_old (Test *test,
   g_assert_no_error (test->error);
 
   g_assert (tp_asv_lookup (properties, "Interfaces") != NULL);
-  test_assert_empty_strv (tp_asv_get_boxed (properties, "Interfaces",
-        G_TYPE_STRV));
+  tp_tests_assert_strv_equals (tp_asv_get_boxed (properties,
+          "Interfaces", G_TYPE_STRV), expected_cm_interfaces);
 
   protocols = tp_asv_get_boxed (properties, "Protocols",
       TP_HASH_TYPE_PROTOCOL_PROPERTIES_MAP);
