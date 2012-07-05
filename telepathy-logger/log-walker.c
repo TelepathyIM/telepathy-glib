@@ -45,6 +45,7 @@ struct _TplLogWalkerPriv
 {
   GList *caches;
   GList *iters;
+  GMutex mutex;
   gboolean is_begin;
   gboolean is_end;
 };
@@ -113,6 +114,8 @@ tpl_log_walker_get_events (TplLogWalker *walker,
   events = NULL;
   i = 0;
 
+  g_mutex_lock (&priv->mutex);
+
   if (priv->is_end == TRUE)
     goto out;
 
@@ -173,6 +176,8 @@ tpl_log_walker_get_events (TplLogWalker *walker,
     priv->is_begin = FALSE;
 
  out:
+  g_mutex_unlock (&priv->mutex);
+
   return events;
 }
 
@@ -222,6 +227,11 @@ tpl_log_walker_dispose (GObject *object)
 static void
 tpl_log_walker_finalize (GObject *object)
 {
+  TplLogWalkerPriv *priv;
+
+  priv = TPL_LOG_WALKER (object)->priv;
+  g_mutex_clear (&priv->mutex);
+
   G_OBJECT_CLASS (tpl_log_walker_parent_class)->finalize (object);
 }
 
@@ -234,6 +244,8 @@ tpl_log_walker_init (TplLogWalker *walker)
   walker->priv = G_TYPE_INSTANCE_GET_PRIVATE (walker, TPL_TYPE_LOG_WALKER,
       TplLogWalkerPriv);
   priv = walker->priv;
+
+  g_mutex_init (&priv->mutex);
 
   priv->is_begin = TRUE;
   priv->is_end = FALSE;
@@ -360,7 +372,16 @@ tpl_log_walker_get_events_finish (TplLogWalker *walker,
 gboolean
 tpl_log_walker_is_begin (TplLogWalker *walker)
 {
-  return walker->priv->is_begin;
+  TplLogWalkerPriv *priv;
+  gboolean retval;
+
+  priv = walker->priv;
+
+  g_mutex_lock (&priv->mutex);
+  retval = priv->is_begin;
+  g_mutex_unlock (&priv->mutex);
+
+  return retval;
 }
 
 
@@ -376,5 +397,14 @@ tpl_log_walker_is_begin (TplLogWalker *walker)
 gboolean
 tpl_log_walker_is_end (TplLogWalker *walker)
 {
-  return walker->priv->is_end;
+  TplLogWalkerPriv *priv;
+  gboolean retval;
+
+  priv = walker->priv;
+
+  g_mutex_lock (&priv->mutex);
+  retval = priv->is_end;
+  g_mutex_unlock (&priv->mutex);
+
+  return retval;
 }
