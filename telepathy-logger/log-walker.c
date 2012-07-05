@@ -45,6 +45,8 @@ struct _TplLogWalkerPriv
 {
   GList *caches;
   GList *iters;
+  gboolean is_begin;
+  gboolean is_end;
 };
 
 
@@ -111,7 +113,10 @@ tpl_log_walker_get_events (TplLogWalker *walker,
   events = NULL;
   i = 0;
 
-  while (i < num_events)
+  if (priv->is_end == TRUE)
+    goto out;
+
+  while (i < num_events && priv->is_end == FALSE)
     {
       GList *k;
       GList *l;
@@ -160,9 +165,14 @@ tpl_log_walker_get_events (TplLogWalker *walker,
           i++;
         }
       else
-        break;
+        priv->is_end = TRUE;
     }
 
+  /* We are still at the beginning if all the log stores were empty. */
+  if (priv->history != NULL)
+    priv->is_begin = FALSE;
+
+ out:
   return events;
 }
 
@@ -219,8 +229,14 @@ tpl_log_walker_finalize (GObject *object)
 static void
 tpl_log_walker_init (TplLogWalker *walker)
 {
+  TplLogWalkerPriv *priv;
+
   walker->priv = G_TYPE_INSTANCE_GET_PRIVATE (walker, TPL_TYPE_LOG_WALKER,
       TplLogWalkerPriv);
+  priv = walker->priv;
+
+  priv->is_begin = TRUE;
+  priv->is_end = FALSE;
 }
 
 
@@ -327,4 +343,38 @@ tpl_log_walker_get_events_finish (TplLogWalker *walker,
     *events = (GList *) g_simple_async_result_get_op_res_gpointer (simple);
 
   return TRUE;
+}
+
+
+/**
+ * tpl_log_walker_is_begin:
+ * @walker: a #TplLogWalker
+ *
+ * Determines whether @walker is pointing at the most recent event in
+ * the logs. This is the case when @walker has not yet returned any
+ * events or has been rewound completely.
+ *
+ * Returns: #TRUE if @walker is pointing at the most recent event,
+ * otherwise #FALSE.
+ */
+gboolean
+tpl_log_walker_is_begin (TplLogWalker *walker)
+{
+  return walker->priv->is_begin;
+}
+
+
+/**
+ * tpl_log_walker_is_end:
+ * @walker: a #TplLogWalker
+ *
+ * Determines whether @walker has run out of events. This is the case
+ * when @walker has returned all the events from the logs.
+ *
+ * Returns: #TRUE if @walker has run out of events, otherwise #FALSE.
+ */
+gboolean
+tpl_log_walker_is_end (TplLogWalker *walker)
+{
+  return walker->priv->is_end;
 }

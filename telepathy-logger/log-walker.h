@@ -75,6 +75,10 @@ gboolean tpl_log_walker_get_events_finish (TplLogWalker *walker,
     GList **events,
     GError **error);
 
+gboolean tpl_log_walker_is_begin (TplLogWalker *walker);
+
+gboolean tpl_log_walker_is_end (TplLogWalker *walker);
+
 G_END_DECLS
 
 #endif /* __TPL_LOG_WALKER_H__ */
