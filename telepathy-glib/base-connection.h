@@ -114,7 +114,6 @@ struct _TpBaseConnectionClass {
     TpBaseConnectionCreateChannelManagersImpl create_channel_managers;
 
     /*<private>*/
-    gpointer _future2;
     gpointer _future3;
     gpointer _future4;
 
