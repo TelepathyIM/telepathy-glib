@@ -1780,7 +1780,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    *
    * This connection's connection manager name.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.3
    */
   g_object_class_install_property (object_class, PROP_CM_NAME,
       g_param_spec_string ("cm-name",
@@ -2566,7 +2566,7 @@ tp_connection_get_connection_manager_name (TpConnection *self)
  *
  * Returns: the same as the #TpConnection:cm-name property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.3
  *
  */
 const gchar *

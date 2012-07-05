@@ -1,0 +1,7 @@
+Version: TELEPATHY_GLIB_0.19.3
+Extends: TELEPATHY_GLIB_0.19.2
+Release: 0.19.3
+
+tp_account_get_cm_name
+tp_account_get_protocol_name
+tp_connection_get_cm_name

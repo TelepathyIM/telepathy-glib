@@ -1562,7 +1562,7 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * The account's connection manager name.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.3
    */
   g_object_class_install_property (object_class, PROP_CM_NAME,
       g_param_spec_string ("cm-name",
@@ -1578,7 +1578,7 @@ tp_account_class_init (TpAccountClass *klass)
    * "local-xmpp". Recommended names for most protocols can be found in the
    * Telepathy D-Bus Interface Specification.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.3
    */
   g_object_class_install_property (object_class, PROP_PROTOCOL_NAME,
       g_param_spec_string ("protocol-name",
@@ -2361,7 +2361,7 @@ tp_account_get_protocol (TpAccount *account)
  *
  * Returns: the same as the #TpAccount:cm-name property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.3
  */
 const gchar *
 tp_account_get_cm_name (TpAccount *account)
@@ -2379,7 +2379,7 @@ tp_account_get_cm_name (TpAccount *account)
  *
  * Returns: the same as the #TpAccount:protocol-name property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.3
  */
 const gchar *
 tp_account_get_protocol_name (TpAccount *account)
