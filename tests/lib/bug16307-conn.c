@@ -135,18 +135,28 @@ start_connecting (TpBaseConnection *conn,
   return TRUE;
 }
 
+static GPtrArray *
+get_interfaces_always_present (TpBaseConnection *base)
+{
+  GPtrArray *interfaces;
+
+  interfaces = TP_BASE_CONNECTION_CLASS (
+      tp_tests_bug16307_connection_parent_class)->get_interfaces_always_present (base);
+
+  g_ptr_array_add (interfaces, TP_IFACE_CONNECTION_INTERFACE_ALIASING);
+  g_ptr_array_add (interfaces, TP_IFACE_CONNECTION_INTERFACE_CAPABILITIES);
+  g_ptr_array_add (interfaces, TP_IFACE_CONNECTION_INTERFACE_PRESENCE);
+  g_ptr_array_add (interfaces, TP_IFACE_CONNECTION_INTERFACE_AVATARS);
+
+  return interfaces;
+}
+
 static void
 tp_tests_bug16307_connection_class_init (TpTestsBug16307ConnectionClass *klass)
 {
   TpBaseConnectionClass *base_class =
       (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
-  static const gchar *interfaces_always_present[] = {
-      TP_IFACE_CONNECTION_INTERFACE_ALIASING,
-      TP_IFACE_CONNECTION_INTERFACE_CAPABILITIES,
-      TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
-      TP_IFACE_CONNECTION_INTERFACE_AVATARS,
-      NULL };
   static TpDBusPropertiesMixinPropImpl connection_properties[] = {
       { "Status", "dbus-status-except-i-broke-it", NULL },
       { NULL }
@@ -157,7 +167,7 @@ tp_tests_bug16307_connection_class_init (TpTestsBug16307ConnectionClass *klass)
 
   base_class->start_connecting = start_connecting;
 
-  base_class->interfaces_always_present = interfaces_always_present;
+  base_class->get_interfaces_always_present = get_interfaces_always_present;
 
   signals[SIGNAL_GET_STATUS_RECEIVED] = g_signal_new ("get-status-received",
       G_OBJECT_CLASS_TYPE (klass),
