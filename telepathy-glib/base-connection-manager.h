@@ -73,7 +73,9 @@ struct _TpBaseConnectionManagerClass {
     const TpCMProtocolSpec *_TP_SEAL (protocol_params);
     TpBaseConnectionManagerNewConnFunc _TP_SEAL (new_connection);
 
-    const gchar * const *interfaces;
+    /*<private>*/
+    const gchar * const *_TP_SEAL (interfaces);
+    /*<public>*/
     TpBaseConnectionManagerGetInterfacesFunc get_interfaces;
 
     /*<private>*/

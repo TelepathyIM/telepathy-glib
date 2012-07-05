@@ -183,8 +183,6 @@
  * @start_connecting: Asynchronously start connecting - called to implement
  *  the Connect D-Bus method. See #TpBaseConnectionStartConnectingImpl for
  *  details. May not be left as %NULL.
- * @interfaces_always_present: deprecated since 0.UNRELEASED: implement
- *  @get_interfaces_always_present instead.
  * @get_interfaces_always_present: Returns a #GPtrArray of extra D-Bus
  *  interfaces which are always implemented by instances of this class,
  *  which may be filled in by subclasses. The default is to list no

@@ -214,8 +214,6 @@ _tp_legacy_protocol_new (TpBaseConnectionManager *cm,
  *  whose name member is %NULL; or %NULL if this CM uses Protocol objects.
  * @new_connection: A #TpBaseConnectionManagerNewConnFunc used to construct
  *  new connections, or %NULL if this CM uses Protocol objects.
- * @interfaces: deprecated since 0.UNRELEASED; implement @get_interfaces
- *  instead.
  * @get_interfaces: Returns a #GPtrArray of static strings of extra
  *  D-Bus interfaces implemented by instances of this class, which may be
  *  filled in by subclasses. The default is to list no additional interfaces.

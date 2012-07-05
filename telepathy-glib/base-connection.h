@@ -106,7 +106,9 @@ struct _TpBaseConnectionClass {
 
     TpBaseConnectionStartConnectingImpl start_connecting;
 
-    const gchar **interfaces_always_present;
+    /*<private>*/
+    const gchar **_TP_SEAL (interfaces_always_present);
+    /*<public>*/
     TpBaseConnectionGetInterfacesImpl get_interfaces_always_present;
 
     TpBaseConnectionCreateChannelManagersImpl create_channel_managers;
