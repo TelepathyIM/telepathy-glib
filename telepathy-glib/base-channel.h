@@ -56,7 +56,9 @@ struct _TpBaseChannelClass
 
   const gchar *channel_type;
   TpHandleType target_handle_type;
+  /*< private >*/
   const gchar **_TP_SEAL (interfaces);
+  /*< public >*/
 
   TpBaseChannelCloseFunc close;
   TpBaseChannelFillPropertiesFunc fill_immutable_properties;

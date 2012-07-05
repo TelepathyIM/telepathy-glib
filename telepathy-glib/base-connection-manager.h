@@ -67,8 +67,10 @@ struct _TpBaseConnectionManagerClass {
     GObjectClass parent_class;
 
     const char *cm_dbus_name;
+    /*<private>*/
     const TpCMProtocolSpec *_TP_SEAL (protocol_params);
     TpBaseConnectionManagerNewConnFunc _TP_SEAL (new_connection);
+    /*< public >*/
 
     const gchar * const *interfaces;
 

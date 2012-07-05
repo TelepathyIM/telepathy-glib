@@ -61,7 +61,6 @@
  * (e.g. #TP_IFACE_CHANNEL_TYPE_TEXT)
  * @target_handle_type: The type of handle that is the target of channels of
  * this type
- * @interfaces: Deprecated. Replaced by @get_interfaces.
  * @close: A virtual function called to close the channel, which will be called
  *  by tp_base_channel_close() and by the implementation of the Closed D-Bus
  *  method.
