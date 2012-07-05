@@ -5943,6 +5943,7 @@ TpBaseProtocolIdentifyAccountFunc
 TpBaseProtocolGetInterfacesFunc
 TpBaseProtocolGetConnectionDetailsFunc
 TpBaseProtocolGetAvatarDetailsFunc
+TpBaseProtocolGetInterfacesArrayFunc
 <SUBSECTION Standard>
 tp_base_protocol_get_type
 TP_BASE_PROTOCOL
