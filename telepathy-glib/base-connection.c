@@ -122,6 +122,38 @@
  */
 
 /**
+ * TpBaseChannelGetInterfacesImpl:
+ * @chan: a channel
+ *
+ * Signature of an implementation of
+ * #TpBaseConnectionClass.get_interfaces_always_present virtual
+ * function.
+ *
+ * Implementation must first chainup on parent class implementation and then
+ * add extra interfaces into the #GPtrArray.
+ *
+ * |[
+ * static GPtrArray *
+ * my_channel_get_interfaces_always_present (TpBaseConnection *self)
+ * {
+ *   GPtrArray *interfaces;
+ *
+ *   interfaces = TP_BASE_CONNECTION_CLASS (
+ *       my_connection_parent_class)->get_interfaces_always_present (self);
+ *
+ *   g_ptr_array_add (interfaces, TP_IFACE_BADGERS);
+ *
+ *   return interfaces;
+ * }
+ * ]|
+ *
+ * Returns: (transfer container): a #GPtrArray of static strings for D-Bus
+ *   interfaces implemented by this client.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+/**
  * TpBaseConnectionClass:
  * @parent_class: The superclass' structure
  * @create_handle_repos: Fill in suitable handle repositories in the
@@ -151,12 +183,14 @@
  * @start_connecting: Asynchronously start connecting - called to implement
  *  the Connect D-Bus method. See #TpBaseConnectionStartConnectingImpl for
  *  details. May not be left as %NULL.
- * @interfaces_always_present: A strv of extra D-Bus interfaces which are
- *  always implemented by instances of this class, which may be filled in
- *  by subclasses. The default is to list no additional interfaces.
- *  Individual instances may detect which additional interfaces they support
- *  and signal them before going to state CONNECTED by calling
- *  tp_base_connection_add_interfaces().
+ * @interfaces_always_present: deprecated since 0.UNRELEASED: implement
+ *  @get_interfaces_always_present instead.
+ * @get_interfaces_always_present: Returns a #GPtrArray of extra D-Bus
+ *  interfaces which are always implemented by instances of this class,
+ *  which may be filled in by subclasses. The default is to list no
+ *  additional interfaces. Individual instances may detect which
+ *  additional interfaces they support and signal them before going
+ *  to state CONNECTED by calling tp_base_connection_add_interfaces().
  * @create_channel_managers: Create an array of channel managers for this
  *  Connection. At least one of this or @create_channel_factories must be set
  *  by subclasses to a non-%NULL value. Since: 0.7.15
@@ -371,9 +405,8 @@ struct _TpBaseConnectionPrivate
 
   TpHandleRepoIface *handles[TP_NUM_HANDLE_TYPES];
 
-  /* If not %NULL, contains strings representing our interfaces.
-   * If %NULL, we have no interfaces except those in
-   * klass->interfaces_always_present (i.e. this is lazily allocated).
+  /* Created in constructed, this is an array of static strings which
+   * represent the interfaces on this connection.
    *
    * Note that this is a GArray of gchar*, not a GPtrArray,
    * so that we can use GArray's convenient auto-null-termination. */
@@ -1249,6 +1282,29 @@ _tp_base_connection_set_handle_repo (TpBaseConnection *self,
   self->priv->handles[handle_type] = g_object_ref (handle_repo);
 }
 
+static void
+tp_base_connection_create_interfaces_array (TpBaseConnection *self)
+{
+  TpBaseConnectionPrivate *priv = self->priv;
+  TpBaseConnectionClass *klass = TP_BASE_CONNECTION_GET_CLASS (self);
+  GPtrArray *always;
+  guint i;
+
+  g_assert (priv->interfaces == NULL);
+
+  always = klass->get_interfaces_always_present (self);
+
+  priv->interfaces = g_array_sized_new (TRUE, FALSE, sizeof (gchar *),
+      always->len);
+  for (i = 0; i < always->len; i++)
+    {
+      g_array_append_val (priv->interfaces,
+          g_ptr_array_index (always, i));
+    }
+
+  g_ptr_array_unref (always);
+}
+
 static GObject *
 tp_base_connection_constructor (GType type, guint n_construct_properties,
     GObjectConstructParam *construct_params)
@@ -1308,6 +1364,8 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
       g_signal_connect (manager, "channel-closed",
           (GCallback) manager_channel_closed_cb, self);
     }
+
+  tp_base_connection_create_interfaces_array (self);
 
   priv->been_constructed = TRUE;
 
@@ -1469,6 +1527,23 @@ conn_requests_get_dbus_property (GObject *object,
     }
 }
 
+static GPtrArray *
+tp_base_connection_get_interfaces_always_present (TpBaseConnection *self)
+{
+  GPtrArray *interfaces = g_ptr_array_new ();
+  const gchar **ptr;
+
+  /* copy the klass->interfaces_always_present property for backwards
+   * compatibility */
+  for (ptr = TP_BASE_CONNECTION_GET_CLASS (self)->interfaces_always_present;
+       ptr != NULL && *ptr != NULL;
+       ptr++)
+    {
+      g_ptr_array_add (interfaces, (gchar *) *ptr);
+    }
+
+  return interfaces;
+}
 
 static void
 tp_base_connection_class_init (TpBaseConnectionClass *klass)
@@ -1494,6 +1569,9 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   object_class->constructor = tp_base_connection_constructor;
   object_class->get_property = tp_base_connection_get_property;
   object_class->set_property = tp_base_connection_set_property;
+
+  klass->get_interfaces_always_present =
+    tp_base_connection_get_interfaces_always_present;
 
   /**
    * TpBaseConnection:protocol: (skip)
@@ -1977,20 +2055,7 @@ tp_base_connection_get_interfaces (TpBaseConnection *self)
 {
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
 
-  if (self->priv->interfaces != NULL)
-    {
-      /* There are some extra interfaces for this connection */
-      return (const gchar * const *)(self->priv->interfaces->data);
-    }
-  else
-    {
-      TpBaseConnectionClass *klass = TP_BASE_CONNECTION_GET_CLASS (self);
-
-      /* We only have the interfaces that are always present.
-       * Instead of bothering to duplicate the static
-       * array into the GArray, we just use it directly */
-      return (const gchar * const *)klass->interfaces_always_present;
-    }
+  return (const gchar * const *)(self->priv->interfaces->data);
 }
 
 static void
@@ -3123,16 +3188,15 @@ tp_base_connection_change_status (TpBaseConnection *self,
  * Add some interfaces to the list supported by this Connection. If you're
  * going to call this function at all, you must do so before moving to state
  * CONNECTED (or DISCONNECTED); if you don't call it, only the set of
- * interfaces always present (@interfaces_always_present in
+ * interfaces always present (@get_interfaces_always_present in
  * #TpBaseConnectionClass) will be supported.
  */
 void
 tp_base_connection_add_interfaces (TpBaseConnection *self,
                                    const gchar **interfaces)
 {
-  guint i, n_new;
+  guint i, n_new, size;
   TpBaseConnectionPrivate *priv = self->priv;
-  TpBaseConnectionClass *klass = TP_BASE_CONNECTION_GET_CLASS (self);
 
   g_return_if_fail (TP_IS_BASE_CONNECTION (self));
   g_return_if_fail (self->status != TP_CONNECTION_STATUS_CONNECTED);
@@ -3145,39 +3209,13 @@ tp_base_connection_add_interfaces (TpBaseConnection *self,
     }
 
   n_new = g_strv_length ((gchar **) interfaces);
+  size = priv->interfaces->len;
 
-  if (priv->interfaces)
+  g_array_set_size (priv->interfaces, size + n_new);
+  for (i = 0; i < n_new; i++)
     {
-      guint size = priv->interfaces->len;
-
-      g_array_set_size (priv->interfaces, size + n_new);
-      for (i = 0; i < n_new; i++)
-        {
-          g_array_index (priv->interfaces, const gchar *, size + i) =
-            interfaces[i];
-        }
-    }
-  else
-    {
-      /* It's the first time anyone has added interfaces - create the array */
-      guint n_static = 0;
-
-      if (klass->interfaces_always_present)
-        {
-          n_static = g_strv_length (
-              (gchar **) klass->interfaces_always_present);
-        }
-      priv->interfaces = g_array_sized_new (TRUE, FALSE, sizeof (gchar *),
-          n_static + n_new);
-      for (i = 0; i < n_static; i++)
-        {
-          g_array_append_val (priv->interfaces,
-              klass->interfaces_always_present[i]);
-        }
-      for (i = 0; i < n_new; i++)
-        {
-          g_array_append_val (priv->interfaces, interfaces[i]);
-        }
+      g_array_index (priv->interfaces, const gchar *, size + i) =
+        interfaces[i];
     }
 }
 
