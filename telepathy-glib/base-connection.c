@@ -3193,28 +3193,14 @@ void
 tp_base_connection_add_interfaces (TpBaseConnection *self,
                                    const gchar **interfaces)
 {
-  guint i, n_new, size;
   TpBaseConnectionPrivate *priv = self->priv;
 
   g_return_if_fail (TP_IS_BASE_CONNECTION (self));
   g_return_if_fail (self->status != TP_CONNECTION_STATUS_CONNECTED);
   g_return_if_fail (self->status != TP_CONNECTION_STATUS_DISCONNECTED);
 
-  if (interfaces == NULL || interfaces[0] == NULL)
-    {
-      /* If user tries to add no new interfaces, ignore it */
-      return;
-    }
-
-  n_new = g_strv_length ((gchar **) interfaces);
-  size = priv->interfaces->len;
-
-  g_array_set_size (priv->interfaces, size + n_new);
-  for (i = 0; i < n_new; i++)
-    {
-      g_array_index (priv->interfaces, const gchar *, size + i) =
-        interfaces[i];
-    }
+  for (; interfaces != NULL && *interfaces != NULL; interfaces++)
+    g_array_append_val (priv->interfaces, *interfaces);
 }
 
 static void
