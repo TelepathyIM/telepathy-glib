@@ -71,8 +71,8 @@
  * ]|
  *  </listitem>
  *  <listitem>
- *   <para>include %TP_IFACE_CHANNEL_INTERFACE_ROOM_CONFIG in
- *    #TpBaseChannelClass.interfaces.</para>
+ *   <para>include %TP_IFACE_CHANNEL_INTERFACE_ROOM_CONFIG in the return of
+ *    #TpBaseChannelClass.get_interfaces.</para>
  *  </listitem>
  * </itemizedlist>
  *

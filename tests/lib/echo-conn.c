@@ -175,12 +175,22 @@ shut_down (TpBaseConnection *conn)
   tp_base_connection_finish_shutdown (conn);
 }
 
+static GPtrArray *
+get_interfaces_always_present (TpBaseConnection *base)
+{
+  GPtrArray *interfaces;
+
+  interfaces = TP_BASE_CONNECTION_CLASS (
+      tp_tests_echo_connection_parent_class)->get_interfaces_always_present (base);
+
+  g_ptr_array_add (interfaces, TP_IFACE_CONNECTION_INTERFACE_REQUESTS);
+
+  return interfaces;
+}
+
 static void
 tp_tests_echo_connection_class_init (TpTestsEchoConnectionClass *klass)
 {
-  static const gchar *interfaces_always_present[] = {
-      TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
-      NULL };
   TpBaseConnectionClass *base_class =
       (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
@@ -196,7 +206,7 @@ tp_tests_echo_connection_class_init (TpTestsEchoConnectionClass *klass)
   base_class->create_channel_managers = create_channel_managers;
   base_class->start_connecting = start_connecting;
   base_class->shut_down = shut_down;
-  base_class->interfaces_always_present = interfaces_always_present;
+  base_class->get_interfaces_always_present = get_interfaces_always_present;
 
   param_spec = g_param_spec_string ("account", "Account name",
       "The username of this user", NULL,

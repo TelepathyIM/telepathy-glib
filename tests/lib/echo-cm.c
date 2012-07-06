@@ -85,6 +85,19 @@ new_connection (TpBaseConnectionManager *self,
   return (TpBaseConnection *) conn;
 }
 
+static GPtrArray *
+get_interfaces (TpBaseConnectionManager *self)
+{
+  GPtrArray *interfaces;
+
+  interfaces = TP_BASE_CONNECTION_MANAGER_CLASS (
+      tp_tests_echo_connection_manager_parent_class)->get_interfaces (self);
+
+  g_ptr_array_add (interfaces, "im.telepathy.Tests.Example");
+
+  return interfaces;
+}
+
 static void
 tp_tests_echo_connection_manager_class_init (
     TpTestsEchoConnectionManagerClass *klass)
@@ -95,4 +108,5 @@ tp_tests_echo_connection_manager_class_init (
   base_class->new_connection = new_connection;
   base_class->cm_dbus_name = "example_echo";
   base_class->protocol_params = example_protocols;
+  base_class->get_interfaces = get_interfaces;
 }
