@@ -109,9 +109,9 @@ struct _TpBaseConnectionClass {
     /*<private>*/
     const gchar **_TP_SEAL (interfaces_always_present);
     /*<public>*/
-    TpBaseConnectionGetInterfacesImpl get_interfaces_always_present;
-
     TpBaseConnectionCreateChannelManagersImpl create_channel_managers;
+
+    TpBaseConnectionGetInterfacesImpl get_interfaces_always_present;
 
     /*<private>*/
     gpointer _future3;

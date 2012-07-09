@@ -163,8 +163,6 @@ struct _TpBaseProtocolClass
   GStrv (*_TP_SEAL (get_interfaces)) (TpBaseProtocol *self);
   /*<public>*/
 
-  TpBaseProtocolGetInterfacesArrayFunc get_interfaces_array;
-
   void (*get_connection_details) (TpBaseProtocol *self,
       GStrv *connection_interfaces,
       GType **channel_manager_types,
@@ -177,6 +175,8 @@ struct _TpBaseProtocolClass
   TpBaseProtocolGetAvatarDetailsFunc get_avatar_details;
 
   GStrv (*dup_authentication_types) (TpBaseProtocol *self);
+
+  TpBaseProtocolGetInterfacesArrayFunc get_interfaces_array;
 
   /*<private>*/
   GCallback padding[4];
