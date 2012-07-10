@@ -187,7 +187,6 @@ tp_tests_create_conn (GType conn_type,
     TpConnection **client_conn)
 {
   TpDBusDaemon *dbus;
-  TpClientFactory *factory;
   gchar *name;
   gchar *conn_path;
   GError *error = NULL;
@@ -196,7 +195,6 @@ tp_tests_create_conn (GType conn_type,
   g_assert (client_conn != NULL);
 
   dbus = tp_tests_dbus_daemon_dup_or_die ();
-  factory = (TpClientFactory *) tp_automatic_client_factory_new (dbus);
 
   *service_conn = tp_tests_object_new_static_class (
         conn_type,
@@ -209,8 +207,7 @@ tp_tests_create_conn (GType conn_type,
         &name, &conn_path, &error));
   g_assert_no_error (error);
 
-  *client_conn = tp_client_factory_ensure_connection (factory,
-      conn_path, NULL, &error);
+  *client_conn = tp_tests_connection_new (dbus, NULL, conn_path, &error);
   g_assert (*client_conn != NULL);
   g_assert_no_error (error);
 
@@ -226,7 +223,6 @@ tp_tests_create_conn (GType conn_type,
   g_free (conn_path);
 
   g_object_unref (dbus);
-  g_object_unref (factory);
 }
 
 void
@@ -490,4 +486,109 @@ tp_tests_channel_assert_expect_members (TpChannel *channel,
 
   g_ptr_array_unref (contacts);
   tp_intset_destroy (members);
+}
+
+TpConnection *
+tp_tests_connection_new (TpDBusDaemon *dbus,
+    const gchar *bus_name,
+    const gchar *object_path,
+    GError **error)
+{
+  TpClientFactory *factory;
+  gchar *dup_path = NULL;
+  TpConnection *ret = NULL;
+
+  g_return_val_if_fail (TP_IS_DBUS_DAEMON (dbus), NULL);
+  g_return_val_if_fail (object_path != NULL ||
+                        (bus_name != NULL && bus_name[0] != ':'), NULL);
+
+  if (object_path == NULL)
+    {
+      dup_path = g_strdelimit (g_strdup_printf ("/%s", bus_name), ".", '/');
+      object_path = dup_path;
+    }
+
+  if (!tp_dbus_check_valid_object_path (object_path, error))
+    goto finally;
+
+  factory = tp_automatic_client_factory_new (dbus);
+  ret = tp_client_factory_ensure_connection (factory,
+      object_path, NULL, error);
+  g_object_unref (factory);
+
+finally:
+  g_free (dup_path);
+
+  return ret;
+}
+
+TpAccount *
+tp_tests_account_new (TpDBusDaemon *dbus,
+    const gchar *object_path,
+    GError **error)
+{
+  TpClientFactory *factory;
+  TpAccount *ret;
+
+  if (!tp_dbus_check_valid_object_path (object_path, error))
+    return NULL;
+
+  factory = tp_automatic_client_factory_new (dbus);
+  ret = tp_client_factory_ensure_account (factory,
+      object_path, NULL, error);
+  g_object_unref (factory);
+
+  return ret;
+}
+
+TpChannel *
+tp_tests_channel_new (TpConnection *conn,
+    const gchar *object_path,
+    const gchar *optional_channel_type,
+    TpHandleType optional_handle_type,
+    TpHandle optional_handle,
+    GError **error)
+{
+  TpChannel *ret;
+  GHashTable *asv;
+
+  asv = tp_asv_new (NULL, NULL);
+
+  if (optional_channel_type != NULL)
+    {
+      tp_asv_set_string (asv,
+          TP_PROP_CHANNEL_CHANNEL_TYPE, optional_channel_type);
+    }
+  if (optional_handle_type != TP_HANDLE_TYPE_NONE)
+    {
+      tp_asv_set_uint32 (asv,
+          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, optional_handle_type);
+    }
+  if (optional_handle != 0)
+    {
+      tp_asv_set_uint32 (asv,
+          TP_PROP_CHANNEL_TARGET_HANDLE, optional_handle);
+    }
+
+  ret = tp_tests_channel_new_from_properties (conn, object_path, asv, error);
+
+  g_hash_table_unref (asv);
+
+  return ret;
+}
+
+TpChannel *
+tp_tests_channel_new_from_properties (TpConnection *conn,
+    const gchar *object_path,
+    const GHashTable *immutable_properties,
+    GError **error)
+{
+  TpClientFactory *factory;
+
+  if (!tp_dbus_check_valid_object_path (object_path, error))
+    return NULL;
+
+  factory = tp_proxy_get_factory (conn);
+  return tp_client_factory_ensure_channel (factory, conn,
+      object_path, immutable_properties, error);
 }

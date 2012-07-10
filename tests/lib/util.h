@@ -77,4 +77,25 @@ TpContact *tp_tests_connection_run_until_contact_by_id (
 void tp_tests_channel_assert_expect_members (TpChannel *channel,
     TpIntset *expected_members);
 
+TpConnection *tp_tests_connection_new (TpDBusDaemon *dbus,
+    const gchar *bus_name,
+    const gchar *object_path,
+    GError **error);
+
+TpAccount *tp_tests_account_new (TpDBusDaemon *dbus,
+    const gchar *object_path,
+    GError **error);
+
+TpChannel *tp_tests_channel_new (TpConnection *conn,
+    const gchar *object_path,
+    const gchar *optional_channel_type,
+    TpHandleType optional_handle_type,
+    TpHandle optional_handle,
+    GError **error);
+
+TpChannel *tp_tests_channel_new_from_properties (TpConnection *conn,
+    const gchar *object_path,
+    const GHashTable *immutable_properties,
+    GError **error);
+
 #endif /* #ifndef __TP_TESTS_LIB_UTIL_H__ */
