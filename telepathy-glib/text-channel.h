@@ -60,6 +60,7 @@ struct _TpTextChannelClass
 
 GType tp_text_channel_get_type (void);
 
+_TP_DEPRECATED_IN_0_20_FOR(tp_simple_client_factory_ensure_channel)
 TpTextChannel *tp_text_channel_new (TpConnection *conn,
     const gchar *object_path,
     const GHashTable *immutable_properties,

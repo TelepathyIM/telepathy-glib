@@ -140,6 +140,8 @@ typedef void (*TpBaseProtocolGetAvatarDetailsFunc) (TpBaseProtocol *self,
     guint *max_width,
     guint *max_bytes);
 
+typedef GPtrArray * (*TpBaseProtocolGetInterfacesArrayFunc) (TpBaseProtocol *self);
+
 struct _TpBaseProtocolClass
 {
   GObjectClass parent_class;
@@ -158,7 +160,9 @@ struct _TpBaseProtocolClass
       GHashTable *asv,
       GError **error);
 
-  GStrv (*get_interfaces) (TpBaseProtocol *self);
+  /*<private>*/
+  GStrv (*_TP_SEAL (get_interfaces)) (TpBaseProtocol *self);
+  /*<public>*/
 
   void (*get_connection_details) (TpBaseProtocol *self,
       GStrv *connection_interfaces,
@@ -173,8 +177,10 @@ struct _TpBaseProtocolClass
 
   GStrv (*dup_authentication_types) (TpBaseProtocol *self);
 
+  TpBaseProtocolGetInterfacesArrayFunc get_interfaces_array;
+
   /*<private>*/
-  GCallback padding[5];
+  GCallback padding[4];
   TpBaseProtocolClassPrivate *priv;
 };
 

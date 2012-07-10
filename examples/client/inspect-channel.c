@@ -92,6 +92,7 @@ connection_ready_cb (GObject *source,
 {
   InspectChannelData *data = user_data;
   GError *error = NULL;
+  TpClientFactory *factory;
   TpConnection *connection = TP_CONNECTION (source);
   TpChannel *channel = NULL;
 
@@ -105,8 +106,9 @@ connection_ready_cb (GObject *source,
       return;
     }
 
-  channel = tp_channel_new (connection, data->object_path, NULL,
-      TP_UNKNOWN_HANDLE_TYPE, 0, &error);
+  factory = tp_proxy_get_factory (connection);
+  channel = tp_client_factory_ensure_channel (factory, connection,
+      data->object_path, NULL, &error);
 
   if (channel == NULL)
     {
@@ -131,8 +133,7 @@ main (int argc,
       char **argv)
 {
   InspectChannelData data = { 1, NULL, NULL };
-  const gchar *conn_name;
-  TpDBusDaemon *dbus = NULL;
+  TpClientFactory *factory;
   TpConnection *connection = NULL;
   GError *error = NULL;
 
@@ -142,30 +143,15 @@ main (int argc,
   if (argc < 3)
     {
       fputs ("Usage:\n"
-          "    telepathy-example-inspect-channel CONN OBJECT_PATH\n"
-          "CONN may either be a connection's well-known bus name or object\n"
-          "path.\n",
+          "    telepathy-example-inspect-channel CONN_PATH CHANNEL_PATH\n",
           stderr);
       return 2;
     }
 
-  conn_name = argv[1];
   data.object_path = argv[2];
-
-  dbus = tp_dbus_daemon_dup (&error);
-
-  if (dbus == NULL)
-    {
-      g_warning ("%s", error->message);
-      g_error_free (error);
-      data.exit_status = 1;
-      goto out;
-    }
-
-  if (conn_name[0] == '/')
-    connection = tp_connection_new (dbus, NULL, conn_name, &error);
-  else
-    connection = tp_connection_new (dbus, conn_name, NULL, &error);
+  factory = tp_client_factory_new (NULL);
+  connection = tp_client_factory_ensure_connection (factory,
+      argv[1], NULL, &error);
 
   if (connection == NULL)
     {
@@ -186,14 +172,13 @@ main (int argc,
   g_main_loop_run (data.main_loop);
 
 out:
-  if (dbus != NULL)
-    g_object_unref (dbus);
-
   if (data.main_loop != NULL)
     g_main_loop_unref (data.main_loop);
 
   if (connection != NULL)
     g_object_unref (connection);
+
+  g_object_unref (factory);
 
   return data.exit_status;
 }

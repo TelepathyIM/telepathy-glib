@@ -55,6 +55,9 @@ typedef GPtrArray *(*TpBaseConnectionCreateChannelManagersImpl) (
 typedef gchar *(*TpBaseConnectionGetUniqueConnectionNameImpl) (
     TpBaseConnection *self);
 
+typedef GPtrArray *(*TpBaseConnectionGetInterfacesImpl) (
+    TpBaseConnection *self);
+
 struct _TpBaseConnection {
     /*<private>*/
     GObject parent;
@@ -83,12 +86,14 @@ struct _TpBaseConnectionClass {
 
     TpBaseConnectionStartConnectingImpl start_connecting;
 
-    const gchar **interfaces_always_present;
-
+    /*<private>*/
+    const gchar **_TP_SEAL (interfaces_always_present);
+    /*<public>*/
     TpBaseConnectionCreateChannelManagersImpl create_channel_managers;
 
+    TpBaseConnectionGetInterfacesImpl get_interfaces_always_present;
+
     /*<private>*/
-    gpointer _future2;
     gpointer _future3;
     gpointer _future4;
 

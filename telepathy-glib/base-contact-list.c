@@ -76,7 +76,8 @@
  * // ...
  * ]|
  *   <para>and include %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST in
- *    #TpBaseConnectionClass.interfaces_always_present;</para>
+ *    the output of
+ *    #TpBaseConnectionClass.get_interfaces_always_present;</para>
  *  </listitem>
  *  <listitem>
  *   <para>in the <function>constructed</function> method, call
@@ -87,8 +88,8 @@
  *
  * To support user-defined contact groups too, additionally implement
  * %TP_TYPE_CONTACT_GROUP_LIST in the #TpBaseContactList subclass, add the
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS interface to
- * #TpBaseConnectionClass.interfaces_always_present, and implement the
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS interface to the output of
+ * #TpBaseConnectionClass.get interfaces_always_present, and implement the
  * %TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS in the #TpBaseConnection
  * subclass using tp_base_contact_list_mixin_groups_iface_init().
  *

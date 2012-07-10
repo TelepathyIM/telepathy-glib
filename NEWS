@@ -1,3 +1,20 @@
+telepathy-glib 0.19.3 (2012-07-05)
+==================================
+
+Deprecations:
+
+• tp_account_new(), tp_connection_new() and tp_*_channel_new() have been
+  deprecated. Those proxies should be created using corresponding
+  TpSimpleClientFactory APIs. (Xavier)
+
+• TpAccount, TpConnection and TpConnectionManager: deprecate
+  "connection-manager" and "protocol" properties and replace them by "cm-name"
+  and "protocol-name" to be more consistent. Ditto for their getters. (Xavier)
+
+Fixes:
+
+• fdo#51444 - Crash in TpBaseClient (Xavier)
+
 telepathy-glib 0.19.2 (2012-06-28)
 ==================================
 

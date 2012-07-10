@@ -1123,6 +1123,7 @@ tp_text_channel_init (TpTextChannel *self)
  * Returns: (transfer full): a newly created #TpTextChannel
  *
  * Since: 0.13.10
+ * Deprecated: Use tp_simple_client_factory_ensure_channel() instead.
  */
 TpTextChannel *
 tp_text_channel_new (TpConnection *conn,

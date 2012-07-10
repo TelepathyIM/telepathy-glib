@@ -1443,7 +1443,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    *
    * This connection's connection manager name.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.3
    */
   g_object_class_install_property (object_class, PROP_CM_NAME,
       g_param_spec_string ("cm-name",
@@ -1980,6 +1980,7 @@ tp_connection_class_init (TpConnectionClass *klass)
  *  fails or on invalid arguments
  *
  * Since: 0.7.1
+ * Deprecated: Use tp_simple_client_factory_ensure_connection() instead.
  */
 TpConnection *
 tp_connection_new (TpDBusDaemon *dbus,
@@ -2131,7 +2132,7 @@ tp_connection_get_status (TpConnection *self,
  *
  * Returns: the same as the #TpConnection:cm-name property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.3
  *
  */
 const gchar *

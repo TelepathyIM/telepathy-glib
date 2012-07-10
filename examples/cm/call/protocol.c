@@ -134,12 +134,6 @@ identify_account (TpBaseProtocol *self G_GNUC_UNUSED,
   return NULL;
 }
 
-static GStrv
-get_interfaces (TpBaseProtocol *self)
-{
-  return NULL;
-}
-
 static void
 get_connection_details (TpBaseProtocol *self G_GNUC_UNUSED,
     GStrv *connection_interfaces,
@@ -183,6 +177,5 @@ example_call_protocol_class_init (
 
   base_class->normalize_contact = normalize_contact;
   base_class->identify_account = identify_account;
-  base_class->get_interfaces = get_interfaces;
   base_class->get_connection_details = get_connection_details;
 }

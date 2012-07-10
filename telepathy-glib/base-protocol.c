@@ -417,6 +417,37 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  */
 
 /**
+ * TpBaseProtocolGetInterfacesArrayFunc:
+ * @self: a #TpBaseProtocol
+ *
+ * Signature of an implementation of
+ * #TpBaseProtocolClass.get_interfaces_array virtual function.
+ *
+ * Implementation must first chainup on parent class implementation and then
+ * add extra interfaces into the #GPtrArray.
+ *
+ * |[
+ * static GPtrArray *
+ * my_protocol_get_interfaces_array (TpBaseProtocol *self)
+ * {
+ *   GPtrArray *interfaces;
+ *
+ *   interfaces = TP_BASE_PROTOCOL_CLASS (
+ *       my_protocol_parent_class)->get_interfaces_array (self);
+ *
+ *   g_ptr_array_add (interfaces, TP_IFACE_BADGERS);
+ *
+ *   return interfaces;
+ * }
+ * ]|
+ *
+ * Returns: (transfer container): a #GPtrArray of static strings for D-Bus
+ *   interfaces implemented by this client.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+/**
  * TP_TYPE_PROTOCOL_ADDRESSING:
  *
  * Interface representing a #TpBaseProtocol that implements
@@ -520,8 +551,10 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  *  and must either return a newly allocated string that represents the
  *  "identity" of the parameters in @asv (usually the "account" parameter),
  *  or %NULL with an error raised via @error
- * @get_interfaces: a callback used to implement the Interfaces D-Bus property;
- *  it must return a newly allocated #GStrv containing D-Bus interface names
+ * @get_interfaces_array: a callback used to implement the Interfaces
+ *  D-Bus property; The implementation must first chainup to parent
+ *  class implementation and then add extra interfaces to the
+ *  #GPtrArray. Replaces @get_interfaces
  * @get_connection_details: a callback used to implement the Protocol D-Bus
  *  properties that represent details of the connections provided by this
  *  protocol
@@ -636,14 +669,17 @@ tp_base_protocol_constructed (GObject *object)
   TpBaseProtocolClass *cls = TP_BASE_PROTOCOL_GET_CLASS (self);
   void (*chain_up) (GObject *) =
     ((GObjectClass *) tp_base_protocol_parent_class)->constructed;
+  GPtrArray *ifaces;
 
   if (chain_up != NULL)
     chain_up (object);
 
-  if (cls->get_interfaces != NULL)
-    {
-      self->priv->interfaces = (cls->get_interfaces) (self);
-    }
+  /* TODO: when we don't have to deal with
+   * TpBaseProtocolClass.get_interfaces, we won't have to do any of this */
+  ifaces = (cls->get_interfaces_array) (self);
+  g_ptr_array_add (ifaces, NULL);
+  self->priv->interfaces = g_strdupv ((GStrv) ifaces->pdata);
+  g_ptr_array_unref (ifaces);
 
   if (cls->get_connection_details != NULL)
     {
@@ -1115,6 +1151,32 @@ protocol_properties_getter (GObject *object,
     }
 }
 
+static GPtrArray *
+tp_base_protocol_get_interfaces_array (TpBaseProtocol *self)
+{
+  TpBaseProtocolClass *klass = TP_BASE_PROTOCOL_GET_CLASS (self);
+  GPtrArray *interfaces = g_ptr_array_new ();
+  gchar **old_ifaces = NULL, **ptr;
+
+  /* copy the klass->get_interfaces property value for backwards
+   * compatibility */
+  if (klass->get_interfaces != NULL)
+    old_ifaces = klass->get_interfaces (self);
+
+  for (ptr = old_ifaces;
+       ptr != NULL && *ptr != NULL;
+       ptr++)
+    {
+      g_ptr_array_add (interfaces, (char *) *ptr);
+    }
+
+  /* TODO: old_ifaces is leaked because get_interfaces returns a new
+   * GStrv, but we want static strings nowadays. leaking is better
+   * than crashing though. this'll be fixed soon */
+
+  return interfaces;
+}
+
 static void
 tp_base_protocol_class_init (TpBaseProtocolClass *klass)
 {
@@ -1180,6 +1242,8 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
   object_class->get_property = tp_base_protocol_get_property;
   object_class->set_property = tp_base_protocol_set_property;
   object_class->finalize = tp_base_protocol_finalize;
+
+  klass->get_interfaces_array = tp_base_protocol_get_interfaces_array;
 
   g_object_class_install_property (object_class, PROP_NAME,
       g_param_spec_string ("name",

@@ -86,6 +86,7 @@ GQuark tp_account_get_feature_quark_connection (void) G_GNUC_CONST;
 GQuark tp_account_get_feature_quark_storage (void) G_GNUC_CONST;
 GQuark tp_account_get_feature_quark_addressing (void) G_GNUC_CONST;
 
+_TP_DEPRECATED_IN_0_20_FOR(tp_simple_client_factory_ensure_account)
 TpAccount *tp_account_new (TpDBusDaemon *bus_daemon, const gchar *object_path,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
@@ -97,10 +98,10 @@ TpConnection *tp_account_get_connection (TpAccount *account);
 
 const gchar *tp_account_get_display_name (TpAccount *account);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 const gchar *tp_account_get_cm_name (TpAccount *account);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 const gchar *tp_account_get_protocol_name (TpAccount *account);
 
 const gchar *tp_account_get_service (TpAccount *self);

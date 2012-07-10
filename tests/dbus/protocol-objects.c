@@ -99,6 +99,10 @@ const gchar * const expected_protocol_interfaces[] = {
     TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING,
     NULL };
 
+const gchar * const expected_cm_interfaces[] = {
+    "im.telepathy.Tests.Example",
+    NULL };
+
 const gchar * const expected_supported_avatar_mime_types[] = {
   "image/png",
   "image/jpeg",

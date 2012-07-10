@@ -992,7 +992,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
    *
    * The name of the connection manager, e.g. "gabble" (read-only).
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.3
    */
   param_spec = g_param_spec_string ("cm-name", "CM name",
       "The name of the connection manager, e.g. \"gabble\" (read-only)",

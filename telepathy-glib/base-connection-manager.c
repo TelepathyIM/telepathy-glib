@@ -90,9 +90,12 @@
  *  D-Bus object paths and bus names. Must contain only letters, digits
  *  and underscores, and may not start with a digit. Must be filled in by
  *  subclasses in their class_init function.
- * @interfaces: A #GStrv of extra D-Bus interfaces implemented
- *  by instances of this class, which may be filled in by subclasses. The
- *  default is to list no additional interfaces. Since: 0.11.11
+ * @get_interfaces: Returns a #GPtrArray of static strings of extra
+ *  D-Bus interfaces implemented by instances of this class, which may be
+ *  filled in by subclasses. The default is to list no additional interfaces.
+ *  Implementations must first chainup on parent class implementation and then
+ *  add extra interfaces to the #GPtrArray. Replaces @interfaces. Since:
+ *  0.UNRELEASED
  *
  * The class structure for #TpBaseConnectionManager.
  *
@@ -123,6 +126,37 @@
  * connections until the connection's shutdown process finishes.
  *
  * Returns: the new connection object, or %NULL on error.
+ */
+
+/**
+ * TpBaseConnectionManagerGetInterfacesFunc:
+ * @self: a #TpBaseConnectionManager
+ *
+ * Signature of an implementation of
+ * #TpBaseConnectionManagerClass.get_interfaces virtual function.
+ *
+ * Implementation must first chainup on parent class implementation and then
+ * add extra interfaces into the #GPtrArray.
+ *
+ * |[
+ * static GPtrArray *
+ * my_connection_manager_get_interfaces (TpBaseConnectionManager *self)
+ * {
+ *   GPtrArray *interfaces;
+ *
+ *   interfaces = TP_BASE_CONNECTION_MANAGER_CLASS (
+ *       my_connection_manager_parent_class)->get_interfaces (self);
+ *
+ *   g_ptr_array_add (interfaces, TP_IFACE_BADGERS);
+ *
+ *   return interfaces;
+ * }
+ * ]|
+ *
+ * Returns: (transfer container): a #GPtrArray of static strings for D-Bus
+ *   interfaces implemented by this client.
+ *
+ * Since: 0.UNRELEASED
  */
 
 static void service_iface_init (gpointer, gpointer);
@@ -262,7 +296,15 @@ tp_base_connection_manager_get_property (GObject *object,
       break;
 
     case PROP_INTERFACES:
-      g_value_set_boxed (value, cls->interfaces);
+      {
+        GPtrArray *interfaces = cls->get_interfaces (self);
+
+        /* make sure there's a terminating NULL */
+        g_ptr_array_add (interfaces, NULL);
+        g_value_set_boxed (value, interfaces->pdata);
+
+        g_ptr_array_unref (interfaces);
+      }
       break;
 
     case PROP_PROTOCOLS:
@@ -322,6 +364,23 @@ tp_base_connection_manager_set_property (GObject *object,
   }
 }
 
+static GPtrArray *
+tp_base_connection_manager_get_interfaces (TpBaseConnectionManager *self)
+{
+  GPtrArray *interfaces = g_ptr_array_new ();
+  const char * const *ptr;
+
+  /* copy the klass->interfaces property for backwards compatibility */
+  for (ptr = TP_BASE_CONNECTION_MANAGER_GET_CLASS (self)->interfaces;
+       ptr != NULL && *ptr != NULL;
+       ptr++)
+    {
+      g_ptr_array_add (interfaces, (char *) *ptr);
+    }
+
+  return interfaces;
+}
+
 static void
 tp_base_connection_manager_class_init (TpBaseConnectionManagerClass *klass)
 {
@@ -338,6 +397,8 @@ tp_base_connection_manager_class_init (TpBaseConnectionManagerClass *klass)
   object_class->set_property = tp_base_connection_manager_set_property;
   object_class->dispose = tp_base_connection_manager_dispose;
   object_class->finalize = tp_base_connection_manager_finalize;
+
+  klass->get_interfaces = tp_base_connection_manager_get_interfaces;
 
   /**
    * TpBaseConnectionManager:dbus-daemon:

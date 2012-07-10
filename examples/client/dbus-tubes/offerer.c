@@ -180,7 +180,7 @@ int
 main (int argc,
     const char **argv)
 {
-  TpDBusDaemon *dbus;
+  TpClientFactory *factory;
   TpAccount *account;
   char *account_path;
   GError *error = NULL;
@@ -192,11 +192,11 @@ main (int argc,
   if (argc != 3)
     g_error ("Usage: offerer gabble/jabber/ladygaga t-pain@example.com");
 
-  dbus = tp_dbus_daemon_dup (&error);
-  g_assert_no_error (error);
+  factory = tp_client_factory_new (NULL);
 
   account_path = g_strconcat (TP_ACCOUNT_OBJECT_PATH_BASE, argv[1], NULL);
-  account = tp_account_new (dbus, account_path, &error);
+  account = tp_client_factory_ensure_account (factory, account_path,
+      NULL, &error);
   g_assert_no_error (error);
   g_free (account_path);
 
@@ -234,6 +234,7 @@ main (int argc,
   g_object_unref (req);
   g_hash_table_unref (request);
   g_main_loop_unref (loop);
+  g_object_unref (factory);
 
   return 0;
 }

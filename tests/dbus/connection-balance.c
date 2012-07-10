@@ -80,21 +80,26 @@ balanced_connection_get_property (GObject *self G_GNUC_UNUSED,
 static void
 balanced_connection_init (BalancedConnection *self)
 {
-  static const gchar *interfaces_always_present[] = {
-      TP_IFACE_CONNECTION_INTERFACE_BALANCE,
-      NULL
-  };
+}
 
-  /* We cannot set base_class->interfaces_always_present because that would
-   * override interfaces set in TpTestsSimpleConnection */
-  tp_base_connection_add_interfaces ((TpBaseConnection *) self,
-      interfaces_always_present);
+static GPtrArray *
+get_interfaces (TpBaseConnection *base)
+{
+  GPtrArray *interfaces;
+
+  interfaces = TP_BASE_CONNECTION_CLASS (
+      balanced_connection_parent_class)->get_interfaces_always_present (base);
+
+  g_ptr_array_add (interfaces, TP_IFACE_CONNECTION_INTERFACE_BALANCE);
+
+  return interfaces;
 }
 
 static void
 balanced_connection_class_init (BalancedConnectionClass *cls)
 {
   GObjectClass *object_class = (GObjectClass *) cls;
+  TpBaseConnectionClass *base_class = TP_BASE_CONNECTION_CLASS (cls);
 
   static TpDBusPropertiesMixinPropImpl balance_props[] = {
         { "AccountBalance", "account-balance", NULL },
@@ -103,6 +108,8 @@ balanced_connection_class_init (BalancedConnectionClass *cls)
   };
 
   object_class->get_property = balanced_connection_get_property;
+
+  base_class->get_interfaces_always_present = get_interfaces;
 
   g_object_class_install_property (object_class, PROP_ACCOUNT_BALANCE,
       g_param_spec_boxed ("account-balance", "", "",

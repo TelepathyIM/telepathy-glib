@@ -153,10 +153,9 @@ int
 main (int argc,
       char **argv)
 {
-  const gchar *bus_name, *object_path;
   TpConnection *connection = NULL;
   InspectContactData data = { NULL, 1, NULL };
-  TpDBusDaemon *dbus = NULL;
+  TpClientFactory *factory;
   GError *error = NULL;
 
   g_type_init ();
@@ -165,36 +164,16 @@ main (int argc,
   if (argc < 2)
     {
       fputs ("Usage:\n"
-          "    telepathy-example-inspect-connection OBJECT_PATH [CONTACT_ID]\n"
-          "or\n"
-          "    telepathy-example-inspect-connection BUS_NAME [CONTACT_ID]\n",
+          "    telepathy-example-inspect-connection OBJECT_PATH [CONTACT_ID]\n",
           stderr);
       return 2;
     }
 
-  /* Cope with the first argument being a bus name or an object path */
-  if (argv[1][0] == '/')
-    {
-      object_path = argv[1];
-      bus_name = NULL;
-    }
-  else
-    {
-      object_path = NULL;
-      bus_name = argv[1];
-    }
-
   data.to_inspect = argv[2];
 
-  dbus = tp_dbus_daemon_dup (&error);
-
-  if (dbus == NULL)
-    {
-      g_warning ("%s", error->message);
-      goto out;
-    }
-
-  connection = tp_connection_new (dbus, bus_name, object_path, &error);
+  factory = tp_client_factory_new (NULL);
+  connection = tp_client_factory_ensure_connection (factory,
+      argv[1], NULL, &error);
 
   if (connection == NULL)
     {
@@ -222,8 +201,7 @@ out:
   if (connection != NULL)
     g_object_unref (connection);
 
-  if (dbus != NULL)
-    g_object_unref (dbus);
+  g_object_unref (factory);
 
   return data.exit_status;
 }

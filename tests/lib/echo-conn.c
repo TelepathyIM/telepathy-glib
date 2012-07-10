@@ -44,17 +44,8 @@ struct _TpTestsEchoConnectionPrivate
 static void
 tp_tests_echo_connection_init (TpTestsEchoConnection *self)
 {
-  static const gchar *interfaces_always_present[] = {
-      TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
-      NULL };
-
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TESTS_TYPE_ECHO_CONNECTION,
       TpTestsEchoConnectionPrivate);
-
-  /* We cannot set base_class->interfaces_always_present because that would
-   * override interfaces set in TpTestsSimpleConnection */
-  tp_base_connection_add_interfaces ((TpBaseConnection *) self,
-      interfaces_always_present);
 }
 
 /* Returns the same id given in but in lowercase. If '#' is present,
