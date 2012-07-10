@@ -2738,6 +2738,14 @@ tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
 
   count = g_strv_length ((GStrv) names);
 
+  if (count == 0)
+    {
+      GArray *tmp = g_array_sized_new (FALSE, TRUE, sizeof (guint), 0);
+      tp_svc_connection_return_from_request_handles (context, tmp);
+      g_array_unref (tmp);
+      return;
+    }
+
   request = g_slice_new0 (RequestHandlesData);
   request->handles = g_array_sized_new (FALSE, TRUE, sizeof (guint), count);
   request->n_pending = count;
