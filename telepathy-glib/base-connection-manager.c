@@ -209,11 +209,6 @@ _tp_legacy_protocol_new (TpBaseConnectionManager *cm,
  *  D-Bus object paths and bus names. Must contain only letters, digits
  *  and underscores, and may not start with a digit. Must be filled in by
  *  subclasses in their class_init function.
- * @protocol_params: An array of #TpCMProtocolSpec structures representing
- *  the protocols this connection manager supports, terminated by a structure
- *  whose name member is %NULL; or %NULL if this CM uses Protocol objects.
- * @new_connection: A #TpBaseConnectionManagerNewConnFunc used to construct
- *  new connections, or %NULL if this CM uses Protocol objects.
  * @get_interfaces: Returns a #GPtrArray of static strings of extra
  *  D-Bus interfaces implemented by instances of this class, which may be
  *  filled in by subclasses. The default is to list no additional interfaces.

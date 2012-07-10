@@ -122,8 +122,8 @@
  */
 
 /**
- * TpBaseChannelGetInterfacesImpl:
- * @chan: a channel
+ * TpBaseConnectionGetInterfacesImpl:
+ * @self: a #TpBaseConnection
  *
  * Signature of an implementation of
  * #TpBaseConnectionClass.get_interfaces_always_present virtual
@@ -134,7 +134,7 @@
  *
  * |[
  * static GPtrArray *
- * my_channel_get_interfaces_always_present (TpBaseConnection *self)
+ * my_connection_get_interfaces_always_present (TpBaseConnection *self)
  * {
  *   GPtrArray *interfaces;
  *
