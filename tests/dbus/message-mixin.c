@@ -193,7 +193,7 @@ main (int argc,
 
   g_hash_table_unref (parameters);
 
-  conn = tp_connection_new (dbus, name, conn_path, &error);
+  conn = tp_tests_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
   g_assert_no_error (error);
 
@@ -232,7 +232,7 @@ main (int argc,
       g_hash_table_unref (request);
     }
 
-  chan = tp_channel_new_from_properties (conn, chan_path, parameters, &error);
+  chan = tp_tests_channel_new_from_properties (conn, chan_path, parameters, &error);
   g_assert_no_error (error);
   g_hash_table_unref (parameters);
 

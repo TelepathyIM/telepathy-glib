@@ -168,7 +168,7 @@ main (int argc,
 
   tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
-  chan = tp_channel_new (conn, props_chan_path, NULL,
+  chan = tp_tests_channel_new (conn, props_chan_path, NULL,
       TP_UNKNOWN_HANDLE_TYPE, 0, &error);
   g_assert_no_error (error);
 
@@ -232,7 +232,7 @@ main (int argc,
       TP_PROP_CHANNEL_REQUESTED, G_TYPE_BOOLEAN, FALSE,
       NULL);
 
-  chan = tp_channel_new_from_properties (conn, props_chan_path, asv, &error);
+  chan = tp_tests_channel_new_from_properties (conn, props_chan_path, asv, &error);
   g_assert_no_error (error);
 
   g_hash_table_unref (asv);
@@ -272,7 +272,7 @@ main (int argc,
         NULL);
   }
 
-  chan = tp_channel_new_from_properties (conn, props_group_chan_path, asv, &error);
+  chan = tp_tests_channel_new_from_properties (conn, props_group_chan_path, asv, &error);
   g_assert_no_error (error);
 
   g_hash_table_unref (asv);
@@ -291,7 +291,7 @@ main (int argc,
 
   bad_chan_path = g_strdup_printf ("%s/Does/Not/Actually/Exist",
       tp_proxy_get_object_path (conn));
-  chan = tp_channel_new (conn, bad_chan_path, NULL,
+  chan = tp_tests_channel_new (conn, bad_chan_path, NULL,
       TP_UNKNOWN_HANDLE_TYPE, 0, &error);
   g_assert_no_error (error);
 
@@ -318,7 +318,7 @@ main (int argc,
 
   g_message ("Regression test for fdo#41729");
 
-  conn2 = tp_connection_new (dbus, tp_proxy_get_bus_name (conn),
+  conn2 = tp_tests_connection_new (dbus, tp_proxy_get_bus_name (conn),
       tp_proxy_get_object_path (conn),
       &error);
   g_assert_no_error (error);
@@ -343,7 +343,7 @@ main (int argc,
         NULL);
   }
 
-  chan2 = tp_channel_new_from_properties (conn2, props_group_chan_path, asv,
+  chan2 = tp_tests_channel_new_from_properties (conn2, props_group_chan_path, asv,
       &error);
   g_assert_no_error (error);
 
@@ -359,7 +359,7 @@ main (int argc,
 
   g_message ("Channel already dead");
 
-  chan = tp_channel_new (conn, props_chan_path, NULL,
+  chan = tp_tests_channel_new (conn, props_chan_path, NULL,
       TP_UNKNOWN_HANDLE_TYPE, 0, &error);
   g_assert_no_error (error);
 

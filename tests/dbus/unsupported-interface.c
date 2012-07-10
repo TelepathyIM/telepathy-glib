@@ -58,7 +58,7 @@ setup (Fixture *f,
         &f->conn_name, &f->conn_path, &f->error));
   g_assert_no_error (f->error);
 
-  f->conn = tp_connection_new (f->dbus, f->conn_name, f->conn_path,
+  f->conn = tp_tests_connection_new (f->dbus, f->conn_name, f->conn_path,
       &f->error);
   g_assert_no_error (f->error);
 }
@@ -227,7 +227,7 @@ teardown (Fixture *f,
   g_clear_object (&f->conn);
 
   /* disconnect the connection so we don't leak it */
-  conn = tp_connection_new (f->dbus, f->conn_name, f->conn_path,
+  conn = tp_tests_connection_new (f->dbus, f->conn_name, f->conn_path,
       &f->error);
   g_assert (conn != NULL);
   g_assert_no_error (f->error);

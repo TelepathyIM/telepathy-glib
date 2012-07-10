@@ -181,7 +181,7 @@ setup (Test *test,
   test->cwr_ready = FALSE;
   test->cwr_error = NULL;
 
-  test->conn = tp_connection_new (test->client_bus, test->conn_name,
+  test->conn = tp_tests_connection_new (test->client_bus, test->conn_name,
       test->conn_path, &error);
   g_assert (test->conn != NULL);
   g_assert_no_error (error);
@@ -233,7 +233,7 @@ teardown (Test *test,
     }
 
   /* disconnect the connection so we don't leak it */
-  conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
+  conn = tp_tests_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
   g_assert (conn != NULL);
   g_assert_no_error (error);

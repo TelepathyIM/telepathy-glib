@@ -117,7 +117,7 @@ setup_services (Test *test,
         NULL));
 
   /* Create client-side text channel object */
-  test->text_chan = tp_channel_new (test->connection, chan_path, NULL,
+  test->text_chan = tp_tests_channel_new (test->connection, chan_path, NULL,
       TP_HANDLE_TYPE_CONTACT, handle, &test->error);
   g_assert_no_error (test->error);
 
@@ -139,7 +139,7 @@ setup_services (Test *test,
         NULL));
 
   /* Create client-side text channel object */
-  test->text_chan_2 = tp_channel_new (test->connection, chan_path, NULL,
+  test->text_chan_2 = tp_tests_channel_new (test->connection, chan_path, NULL,
       TP_HANDLE_TYPE_CONTACT, handle, &test->error);
   g_assert_no_error (test->error);
 

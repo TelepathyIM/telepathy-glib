@@ -166,7 +166,7 @@ run_membership_test (void)
       "connection", service_conn,
       "object-path", chan_path,
       NULL));
-  chan = tp_channel_new (conn, chan_path, NULL, TP_UNKNOWN_HANDLE_TYPE, 0,
+  chan = tp_tests_channel_new (conn, chan_path, NULL, TP_UNKNOWN_HANDLE_TYPE, 0,
       &error);
 
   g_assert_no_error (error);
@@ -251,7 +251,7 @@ check_removed_unknown_error_in_invalidated (void)
       "connection", service_conn,
       "object-path", chan_path,
       NULL));
-  chan = tp_channel_new (conn, chan_path, NULL, TP_UNKNOWN_HANDLE_TYPE, 0,
+  chan = tp_tests_channel_new (conn, chan_path, NULL, TP_UNKNOWN_HANDLE_TYPE, 0,
       &error);
 
   g_assert_no_error (error);
@@ -343,7 +343,7 @@ check_removed_known_error_in_invalidated (void)
       "connection", service_conn,
       "object-path", chan_path,
       NULL));
-  chan = tp_channel_new (conn, chan_path, NULL, TP_UNKNOWN_HANDLE_TYPE, 0,
+  chan = tp_tests_channel_new (conn, chan_path, NULL, TP_UNKNOWN_HANDLE_TYPE, 0,
       &error);
 
   g_assert_no_error (error);

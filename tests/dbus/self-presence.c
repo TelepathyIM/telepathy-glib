@@ -152,7 +152,7 @@ main (int argc,
         &name, &conn_path, &error), "");
   g_assert_no_error (error);
 
-  client_conn = tp_connection_new (dbus, name, conn_path, &error);
+  client_conn = tp_tests_connection_new (dbus, name, conn_path, &error);
   MYASSERT (client_conn != NULL, "");
   g_assert_no_error (error);
 

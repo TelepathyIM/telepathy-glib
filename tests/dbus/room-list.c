@@ -78,7 +78,7 @@ setup (Test *test,
 
   test->rooms = g_ptr_array_new_with_free_func (g_object_unref);
 
-  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  test->account = tp_tests_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
 
   /* Create (service and client sides) connection objects */
@@ -284,7 +284,7 @@ test_invalidated (Test *test,
   path = tp_tests_simple_connection_ensure_room_list_chan (
       TP_TESTS_SIMPLE_CONNECTION (test->base_connection), SERVER, NULL);
 
-  chan = tp_channel_new (test->connection, path,
+  chan = tp_tests_channel_new (test->connection, path,
       TP_IFACE_CHANNEL_TYPE_ROOM_LIST, TP_HANDLE_TYPE_NONE, 0,
       &test->error);
   g_assert_no_error (test->error);

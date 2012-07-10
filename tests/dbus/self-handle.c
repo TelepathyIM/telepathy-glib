@@ -60,7 +60,7 @@ setup (Fixture *f,
   g_assert_no_error (f->error);
   g_assert (ok);
 
-  f->client_conn = tp_connection_new (f->dbus, f->name, f->conn_path,
+  f->client_conn = tp_tests_connection_new (f->dbus, f->name, f->conn_path,
       &f->error);
   g_assert_no_error (f->error);
   g_assert (f->client_conn != NULL);

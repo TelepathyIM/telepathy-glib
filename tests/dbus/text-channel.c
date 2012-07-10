@@ -51,6 +51,7 @@ typedef struct {
 static void
 create_contact_chan (Test *test)
 {
+  TpClientFactory *factory;
   gchar *chan_path;
   GHashTable *props;
 
@@ -80,9 +81,11 @@ create_contact_chan (Test *test)
       "channel-properties", &props,
       NULL);
 
-  test->channel = tp_text_channel_new (test->connection, chan_path,
-      props, &test->error);
+  factory = tp_proxy_get_factory (test->connection);
+  test->channel = TP_TEXT_CHANNEL (tp_client_factory_ensure_channel (factory,
+      test->connection, chan_path, props, &test->error));
   g_assert_no_error (test->error);
+  g_assert (TP_IS_TEXT_CHANNEL (test->channel));
 
   g_free (chan_path);
   g_hash_table_unref (props);
@@ -103,9 +106,10 @@ create_contact_chan (Test *test)
       "channel-properties", &props,
       NULL);
 
-  test->sms_channel = tp_text_channel_new (test->connection, chan_path,
-      props, &test->error);
+  test->sms_channel = TP_TEXT_CHANNEL (tp_client_factory_ensure_channel (
+      factory, test->connection, chan_path, props, &test->error));
   g_assert_no_error (test->error);
+  g_assert (TP_IS_TEXT_CHANNEL (test->sms_channel));
 
   g_free (chan_path);
   g_hash_table_unref (props);

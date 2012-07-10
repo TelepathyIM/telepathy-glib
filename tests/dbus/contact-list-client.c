@@ -64,7 +64,7 @@ setup (Test *test,
         &conn_name, &conn_path, &test->error));
   g_assert_no_error (test->error);
 
-  test->connection = tp_connection_new (test->dbus, conn_name, conn_path,
+  test->connection = tp_tests_connection_new (test->dbus, conn_name, conn_path,
       &test->error);
   g_assert_no_error (test->error);
 

@@ -70,7 +70,7 @@ setup (Test *test,
       test->account_service);
 
    /* Create client-side Account object */
-  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  test->account = tp_tests_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
 
   /* Create (service and client sides) connection objects */
@@ -97,7 +97,7 @@ setup (Test *test,
         NULL));
 
   /* Create client-side text channel object */
-  test->text_chan = tp_channel_new (test->connection, chan_path, NULL,
+  test->text_chan = tp_tests_channel_new (test->connection, chan_path, NULL,
       TP_HANDLE_TYPE_CONTACT, handle, &test->error);
   g_assert_no_error (test->error);
 

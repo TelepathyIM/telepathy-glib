@@ -76,7 +76,7 @@ create_contact_chan (Test *test)
       "channel-properties", &props,
       NULL);
 
-  test->channel_contact = tp_channel_new_from_properties (test->connection,
+  test->channel_contact = tp_tests_channel_new_from_properties (test->connection,
       chan_path, props, &test->error);
   g_assert_no_error (test->error);
 
@@ -111,7 +111,7 @@ create_room_chan (Test *test)
       "channel-properties", &props,
       NULL);
 
-  test->channel_room = tp_channel_new_from_properties (test->connection,
+  test->channel_room = tp_tests_channel_new_from_properties (test->connection,
       chan_path, props, &test->error);
   g_assert_no_error (test->error);
 

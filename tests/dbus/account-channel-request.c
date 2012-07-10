@@ -78,7 +78,7 @@ setup (Test *test,
   g_assert_no_error (test->error);
 
     /* Create client-side Account object */
-  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  test->account = tp_tests_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
 
   /* Create (service and client sides) connection objects */

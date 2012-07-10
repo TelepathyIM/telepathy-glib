@@ -154,6 +154,7 @@ create_file_transfer_channel (Test *test,
     TpSocketAddressType address_type,
     TpSocketAccessControl access_control)
 {
+  TpClientFactory *factory;
   gchar *chan_path;
   TpHandle handle, alf_handle;
   GHashTable *props;
@@ -213,9 +214,11 @@ create_file_transfer_channel (Test *test,
       "channel-properties", &props,
       NULL);
 
-  test->channel = tp_file_transfer_channel_new (test->connection, chan_path,
-      props, &test->error);
+  factory = tp_proxy_get_factory (test->connection);
+  test->channel = TP_FILE_TRANSFER_CHANNEL (tp_client_factory_ensure_channel (
+      factory, test->connection, chan_path, props, &test->error));
   g_assert_no_error (test->error);
+  g_assert (TP_IS_FILE_TRANSFER_CHANNEL (test->channel));
 
   /* Prepare core feature */
   tp_proxy_prepare_async (test->channel, features, channel_prepared_cb, test);

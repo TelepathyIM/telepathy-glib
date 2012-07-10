@@ -144,6 +144,7 @@ create_tube_service (Test *test,
     TpSocketAccessControl access_control,
     gboolean contact)
 {
+  TpClientFactory *factory;
   gchar *chan_path;
   TpHandle handle, alf_handle;
   GHashTable *props;
@@ -151,7 +152,16 @@ create_tube_service (Test *test,
   GType type;
 
   tp_clear_object (&test->tube_chan_service);
-  tp_clear_object (&test->tube);
+
+  if (test->tube != NULL)
+    {
+      /* Make sure the proxy goes away, otherwise the factory will return the
+       * same TpStreamTubeChannel object instead of a new one. */
+      tp_tests_proxy_run_until_dbus_queue_processed (test->tube);
+      g_object_add_weak_pointer (G_OBJECT (test->tube), (gpointer) &test->tube);
+      g_object_unref (test->tube);
+      g_assert (test->tube == NULL);
+  }
 
   /* Create service-side tube channel object */
   chan_path = g_strdup_printf ("%s/Channel",
@@ -196,10 +206,11 @@ create_tube_service (Test *test,
   /* Create client-side tube channel object */
   g_object_get (test->tube_chan_service, "channel-properties", &props, NULL);
 
-  test->tube = tp_stream_tube_channel_new (test->connection,
-      chan_path, props, &test->error);
-
+  factory = tp_proxy_get_factory (test->connection);
+  test->tube = TP_STREAM_TUBE_CHANNEL (tp_client_factory_ensure_channel (
+      factory, test->connection, chan_path, props, &test->error));
   g_assert_no_error (test->error);
+  g_assert (TP_IS_STREAM_TUBE_CHANNEL (test->tube));
 
   g_free (chan_path);
   g_hash_table_unref (props);

@@ -237,15 +237,15 @@ static void
 test_new (Test *test,
           gconstpointer data G_GNUC_UNUSED)
 {
-  test->account = tp_account_new (test->dbus,
+  test->account = tp_tests_account_new (test->dbus,
       "/secretly/not/an/object", NULL);
   g_assert (test->account == NULL);
 
-  test->account = tp_account_new (test->dbus,
+  test->account = tp_tests_account_new (test->dbus,
       "not even syntactically valid", NULL);
   g_assert (test->account == NULL);
 
-  test->account = tp_account_new (test->dbus,
+  test->account = tp_tests_account_new (test->dbus,
       "/im/telepathy1/Account/what/ev/er", NULL);
   g_assert (test->account != NULL);
 }
@@ -254,7 +254,7 @@ static void
 test_setters (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  test->account = tp_account_new (test->dbus,
+  test->account = tp_tests_account_new (test->dbus,
       "/im/telepathy1/Account/what/ev/er", NULL);
   g_assert (test->account != NULL);
 
@@ -274,7 +274,7 @@ test_reconnect (Test *test,
   GStrv reconnect_required;
   const gchar *unset[] = { "unset", NULL };
 
-  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  test->account = tp_tests_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
 
   if (!tp_strdiff (data, "vardict"))
@@ -376,7 +376,7 @@ test_prepare_success (Test *test,
   const gchar * const *cstrv;
   GVariant *variant;
 
-  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  test->account = tp_tests_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
 
   tp_proxy_prepare_async (test->account, account_features,
@@ -516,7 +516,7 @@ test_storage (Test *test,
   guint32 u;
   const gchar *s;
 
-  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  test->account = tp_tests_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
 
   if (g_str_equal (mode, "later"))
@@ -633,7 +633,7 @@ test_addressing (Test *test,
   GQuark account_features[] = { TP_ACCOUNT_FEATURE_ADDRESSING, 0 };
   const gchar * const *schemes;
 
-  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  test->account = tp_tests_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
 
   if (g_str_equal (mode, "later"))
@@ -679,7 +679,7 @@ test_avatar (Test *test,
   const GArray *blob;
   GError *error = NULL;
 
-  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  test->account = tp_tests_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
 
   tp_proxy_prepare_async (test->account, NULL, account_prepare_cb, test);
@@ -714,7 +714,7 @@ test_connection (Test *test,
   gchar *s;
   guint32 u;
 
-  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  test->account = tp_tests_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
 
   tp_proxy_prepare_async (test->account, account_features,

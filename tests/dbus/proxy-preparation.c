@@ -316,7 +316,7 @@ recreate_connection (Test *test)
         &name, &conn_path, &test->error));
   g_assert_no_error (test->error);
 
-  test->connection = tp_connection_new (test->dbus, name, conn_path,
+  test->connection = tp_tests_connection_new (test->dbus, name, conn_path,
       &test->error);
   g_assert_no_error (test->error);
 

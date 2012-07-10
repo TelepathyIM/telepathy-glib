@@ -88,7 +88,7 @@ teardown (Test *test,
     }
 
   /* disconnect the connection so we don't leak it */
-  conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
+  conn = tp_tests_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
   g_assert (conn != NULL);
   g_assert_no_error (error);
@@ -119,7 +119,7 @@ test_prepare (Test *test,
   GPtrArray *classes;
   gchar *cm_name, *protocol_name;
 
-  test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
+  test->conn = tp_tests_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
   g_assert (test->conn != NULL);
   g_assert_no_error (error);
@@ -201,7 +201,7 @@ test_fail_to_prepare (Test *test,
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
   const GHashTable *asv;
 
-  test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
+  test->conn = tp_tests_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
   g_assert (test->conn != NULL);
   g_assert_no_error (error);
@@ -265,7 +265,7 @@ test_object_path (Test *test,
   TpConnection *connection;
   GError *error = NULL;
 
-  test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
+  test->conn = tp_tests_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
   g_assert (test->conn != NULL);
   g_assert_no_error (error);
@@ -282,7 +282,7 @@ test_object_path (Test *test,
   g_assert_no_error (error);
 
   /* Create a TpConnection for that path, it return invalidated connection */
-  connection = tp_connection_new (test->dbus, NULL, invalid_path, &error);
+  connection = tp_tests_connection_new (test->dbus, NULL, invalid_path, &error);
   g_assert (connection == NULL);
   g_assert_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_OBJECT_PATH);
   g_clear_error (&error);

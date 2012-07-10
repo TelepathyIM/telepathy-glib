@@ -171,7 +171,7 @@ main (int argc,
         "handle", handle,
         NULL));
 
-  chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
+  chan = tp_tests_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
   g_assert_no_error (error);
 
@@ -230,7 +230,7 @@ main (int argc,
 
   g_object_unref (chan);
 
-  chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
+  chan = tp_tests_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
   g_assert_no_error (error);
 
