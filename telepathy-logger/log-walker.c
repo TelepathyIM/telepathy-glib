@@ -44,6 +44,7 @@
 struct _TplLogWalkerPriv
 {
   GList *caches;
+  GList *history;
   GList *iters;
   GMutex mutex;
   gboolean is_begin;
@@ -63,6 +64,12 @@ typedef struct
   guint num_events;
 } TplLogWalkerAsyncData;
 
+typedef struct
+{
+  TplLogIter *iter;
+  guint count;
+} TplLogWalkerHistoryData;
+
 
 static TplLogWalkerAsyncData *
 tpl_log_walker_async_data_new (void)
@@ -75,6 +82,21 @@ static void
 tpl_log_walker_async_data_free (TplLogWalkerAsyncData *data)
 {
   g_slice_free (TplLogWalkerAsyncData, data);
+}
+
+
+static TplLogWalkerHistoryData *
+tpl_log_walker_history_data_new (void)
+{
+  return g_slice_new0 (TplLogWalkerHistoryData);
+}
+
+
+static void
+tpl_log_walker_history_data_free (TplLogWalkerHistoryData *data)
+{
+  g_object_unref (data->iter);
+  g_slice_free (TplLogWalkerHistoryData, data);
 }
 
 
@@ -125,10 +147,12 @@ tpl_log_walker_get_events (TplLogWalker *walker,
       GList *l;
       GList **latest_cache;
       GList *latest_event;
+      TplLogIter *latest_iter;
       gint64 latest_timestamp;
 
       latest_cache = NULL;
       latest_event = NULL;
+      latest_iter = NULL;
       latest_timestamp = 0;
 
       for (k = priv->caches, l = priv->iters;
@@ -157,15 +181,32 @@ tpl_log_walker_get_events (TplLogWalker *walker,
             {
               latest_cache = cache;
               latest_event = event;
+              latest_iter = iter;
               latest_timestamp = timestamp;
             }
         }
 
       if (latest_event != NULL)
         {
+          GList *h;
+          TplLogWalkerHistoryData *data;
+
           *latest_cache = g_list_remove_link (*latest_cache, latest_event);
           events = g_list_prepend (events, latest_event->data);
           i++;
+
+          h = priv->history;
+          if (h == NULL ||
+              ((TplLogWalkerHistoryData *) h->data)->iter != latest_iter)
+            {
+              data = tpl_log_walker_history_data_new ();
+              data->iter = g_object_ref (latest_iter);
+              priv->history = g_list_prepend (priv->history, data);
+            }
+          else
+            data = (TplLogWalkerHistoryData *) h->data;
+
+          data->count++;
         }
       else
         priv->is_end = TRUE;
@@ -216,6 +257,10 @@ tpl_log_walker_dispose (GObject *object)
 
   g_list_free_full (priv->caches, tpl_log_walker_caches_free_func);
   priv->caches = NULL;
+
+  g_list_free_full (priv->history,
+      (GDestroyNotify) tpl_log_walker_history_data_free);
+  priv->history = NULL;
 
   g_list_free_full (priv->iters, g_object_unref);
   priv->iters = NULL;
