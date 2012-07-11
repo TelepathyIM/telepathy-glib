@@ -1124,7 +1124,7 @@ tp_connection_constructed (GObject *object)
 
   DEBUG ("%s (%p) constructed", tp_proxy_get_object_path (object), object);
 
-  _tp_proxy_ensure_factory (self, NULL);
+  g_assert (tp_proxy_get_factory (self) != NULL);
 
   /* Connect to my own StatusChanged signal.
    * The connection hasn't had a chance to become invalid yet, so we can
@@ -2063,6 +2063,7 @@ _tp_connection_set_account (TpConnection *self,
 
   g_assert (self->priv->account == NULL);
   g_assert (account != NULL);
+  g_assert (tp_proxy_get_factory (self) == tp_proxy_get_factory (account));
 
   self->priv->account = account;
   g_object_add_weak_pointer ((GObject *) account,

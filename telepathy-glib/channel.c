@@ -905,6 +905,9 @@ tp_channel_constructor (GType type,
   GError *error = NULL;
   TpProxySignalConnection *sc;
 
+  g_assert (tp_proxy_get_factory (self) ==
+      tp_proxy_get_factory (self->priv->connection));
+
   /* If our TpConnection dies, so do we. */
   self->priv->conn_invalidated_id = g_signal_connect (self->priv->connection,
       "invalidated", G_CALLBACK (tp_channel_connection_invalidated_cb),
