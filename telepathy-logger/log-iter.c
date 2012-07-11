@@ -71,3 +71,21 @@ tpl_log_iter_get_events (TplLogIter *self,
 
   return log_iter_class->get_events (self, num_events, error);
 }
+
+
+void
+tpl_log_iter_rewind (TplLogIter *self,
+    guint num_events,
+    GError **error)
+{
+  TplLogIterClass *log_iter_class;
+
+  g_return_if_fail (TPL_IS_LOG_ITER (self));
+
+  log_iter_class = TPL_LOG_ITER_GET_CLASS (self);
+
+  if (log_iter_class->rewind == NULL)
+    return;
+
+  log_iter_class->rewind (self, num_events, error);
+}

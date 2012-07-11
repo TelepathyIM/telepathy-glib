@@ -61,11 +61,16 @@ struct _TplLogIterClass
   GObjectClass parent_class;
 
   GList * (*get_events) (TplLogIter *self, guint num_events, GError **error);
+  void (*rewind) (TplLogIter *self, guint num_events, GError **error);
 };
 
 GType tpl_log_iter_get_type (void) G_GNUC_CONST;
 
 GList *tpl_log_iter_get_events (TplLogIter *self,
+    guint num_events,
+    GError **error);
+
+void tpl_log_iter_rewind (TplLogIter *self,
     guint num_events,
     GError **error);
 
