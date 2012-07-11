@@ -75,6 +75,15 @@ gboolean tpl_log_walker_get_events_finish (TplLogWalker *walker,
     GList **events,
     GError **error);
 
+void tpl_log_walker_rewind_async (TplLogWalker *walker,
+    guint num_events,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tpl_log_walker_rewind_finish (TplLogWalker *walker,
+    GAsyncResult *result,
+    GError **error);
+
 gboolean tpl_log_walker_is_begin (TplLogWalker *walker);
 
 gboolean tpl_log_walker_is_end (TplLogWalker *walker);

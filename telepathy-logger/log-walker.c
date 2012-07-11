@@ -249,6 +249,37 @@ tpl_log_walker_get_events_async_thread (GSimpleAsyncResult *simple,
 
 
 static void
+tpl_log_walker_rewind (TplLogWalker *walker,
+    guint num_events,
+    GError **error)
+{
+  g_return_if_fail (TPL_IS_LOG_WALKER (walker));
+}
+
+
+static void
+tpl_log_walker_rewind_async_thread (GSimpleAsyncResult *simple,
+    GObject *object,
+    GCancellable *cancellable)
+{
+  GError *error = NULL;
+  TplLogWalkerAsyncData *async_data;
+
+  async_data = (TplLogWalkerAsyncData *) g_async_result_get_user_data (
+      G_ASYNC_RESULT (simple));
+
+  tpl_log_walker_rewind (TPL_LOG_WALKER (object),
+      async_data->num_events, &error);
+
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (simple, error);
+      g_error_free (error);
+    }
+}
+
+
+static void
 tpl_log_walker_dispose (GObject *object)
 {
   TplLogWalkerPriv *priv;
@@ -398,6 +429,73 @@ tpl_log_walker_get_events_finish (TplLogWalker *walker,
 
   if (events != NULL)
     *events = (GList *) g_simple_async_result_get_op_res_gpointer (simple);
+
+  return TRUE;
+}
+
+
+/**
+ * tpl_log_walker_rewind_async:
+ * @walker: a #TplLogWalker
+ * @num_events: number of events to move back
+ * @callback: (scope async) (allow-none): a callback to call when
+ * the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Move the @walker back by the last @num_event events that were
+ * returned by tpl_log_walker_get_events_async().
+ */
+void
+tpl_log_walker_rewind_async (TplLogWalker *walker,
+    guint num_events,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *simple;
+  TplLogWalkerAsyncData *async_data;
+
+  g_return_if_fail (TPL_IS_LOG_WALKER (walker));
+
+  async_data = tpl_log_walker_async_data_new ();
+  async_data->cb = callback;
+  async_data->user_data = user_data;
+  async_data->num_events = num_events;
+
+  simple = g_simple_async_result_new (G_OBJECT (walker),
+      tpl_log_walker_async_operation_cb, async_data,
+      tpl_log_walker_rewind_async);
+
+  g_simple_async_result_run_in_thread (simple,
+      tpl_log_walker_rewind_async_thread, G_PRIORITY_DEFAULT,
+      NULL);
+
+  g_object_unref (simple);
+}
+
+
+/**
+ * tpl_log_walker_rewind_finish:
+ * @walker: a #TplLogWalker
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Returns: #TRUE if the operation was successful, otherwise #FALSE.
+ */
+gboolean
+tpl_log_walker_rewind_finish (TplLogWalker *walker,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TPL_IS_LOG_WALKER (walker), FALSE);
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+        G_OBJECT (walker), tpl_log_walker_rewind_async), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
 
   return TRUE;
 }
