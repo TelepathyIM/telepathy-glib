@@ -74,7 +74,7 @@ typedef gboolean (*TpPresenceMixinStatusAvailableFunc) (GObject *obj,
     guint which);
 
 typedef GHashTable *(*TpPresenceMixinGetContactStatusesFunc) (GObject *obj,
-    const GArray *contacts, GError **error);
+    const GArray *contacts);
 
 typedef gboolean (*TpPresenceMixinSetOwnStatusFunc) (GObject *obj,
     const TpPresenceStatus *status, GError **error);

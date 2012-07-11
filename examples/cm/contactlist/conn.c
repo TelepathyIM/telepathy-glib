@@ -313,8 +313,7 @@ status_available (GObject *object,
 
 static GHashTable *
 get_contact_statuses (GObject *object,
-                      const GArray *contacts,
-                      GError **error)
+                      const GArray *contacts)
 {
   ExampleContactListConnection *self =
     EXAMPLE_CONTACT_LIST_CONNECTION (object);

@@ -460,8 +460,7 @@ my_status_available (GObject *object,
 
 static GHashTable *
 my_get_contact_statuses (GObject *object,
-                         const GArray *contacts,
-                         GError **error)
+                         const GArray *contacts)
 {
   TpTestsContactsConnection *self = TP_TESTS_CONTACTS_CONNECTION (object);
   GHashTable *result = g_hash_table_new_full (g_direct_hash, g_direct_equal,

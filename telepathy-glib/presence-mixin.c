@@ -150,7 +150,6 @@
  * TpPresenceMixinGetContactStatusesFunc:
  * @obj: An object with this mixin.
  * @contacts: An array of #TpHandle for the contacts to get presence status for
- * @error: Used to return a Telepathy D-Bus error if %NULL is returned
  *
  * Signature of the callback used to get the stored presence status of
  * contacts. The returned hash table should have contact handles mapped to
@@ -160,8 +159,7 @@
  * callback is responsible for ensuring that this does any cleanup that
  * may be necessary.
  *
- * Returns: (transfer full): The contact presence on success, %NULL with
- *  error set on error
+ * Returns: (transfer full): The contact presence, must not be %NULL.
  */
 
 /**
@@ -851,19 +849,6 @@ construct_presence_value_array (TpPresenceStatus *status,
   return presence;
 }
 
-static void
-construct_presence_hash_foreach (
-    GHashTable *presence_hash,
-    const TpPresenceStatusSpec *supported_statuses,
-    TpHandle handle,
-    TpPresenceStatus *status)
-{
-  GValueArray *presence;
-
-  presence = construct_presence_value_array (status, supported_statuses);
-  g_hash_table_insert (presence_hash, GUINT_TO_POINTER (handle), presence);
-}
-
 static GHashTable *
 construct_presence_hash (const TpPresenceStatusSpec *supported_statuses,
                          GHashTable *contact_statuses)
@@ -877,8 +862,12 @@ construct_presence_hash (const TpPresenceStatusSpec *supported_statuses,
 
   g_hash_table_iter_init (&iter, contact_statuses);
   while (g_hash_table_iter_next (&iter, &key, &value))
-    construct_presence_hash_foreach (presence_hash, supported_statuses,
-        GPOINTER_TO_UINT (key), value);
+    {
+      GValueArray *presence;
+
+      presence = construct_presence_value_array (value, supported_statuses);
+      g_hash_table_insert (presence_hash, key, presence);
+    }
 
   return presence_hash;
 }
@@ -928,12 +917,15 @@ tp_presence_mixin_get_presences (
       return;
     }
 
-  contact_statuses = mixin_cls->get_contact_statuses (obj, contacts, &error);
+  contact_statuses = mixin_cls->get_contact_statuses (obj, contacts);
 
   if (!contact_statuses)
     {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
+      GError e = { TP_ERROR, TP_ERROR_CONFUSED,
+          "TpPresenceMixin::get_contact_statuses returned NULL - Broken CM" };
+
+      g_warning ("%s", e.message);
+      dbus_g_method_return_error (context, &e);
       return;
     }
 
@@ -977,14 +969,11 @@ tp_presence_mixin_fill_contact_attributes (GObject *obj,
   TpPresenceMixinClass *mixin_cls =
     TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
   GHashTable *contact_statuses;
-  GError *error = NULL;
 
-  contact_statuses = mixin_cls->get_contact_statuses (obj, contacts, &error);
-
+  contact_statuses = mixin_cls->get_contact_statuses (obj, contacts);
   if (contact_statuses == NULL)
     {
-      DEBUG ("get_contact_statuses failed: %s", error->message);
-      g_error_free (error);
+      g_warning ("get_contact_statuses returned NULL");
     }
   else
     {
