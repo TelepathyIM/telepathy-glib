@@ -104,6 +104,75 @@ tpl_log_iter_xml_get_events (TplLogIter *iter,
 
 
 static void
+tpl_log_iter_xml_rewind (TplLogIter *iter,
+    guint num_events,
+    GError **error)
+{
+  GList *e;
+  TplLogIterXmlPriv *priv;
+  guint i;
+
+  priv = TPL_LOG_ITER_XML (iter)->priv;
+  e = NULL;
+
+  /* Set e to the last event that was returned */
+  if (priv->next_event == NULL)
+    e = priv->events;
+  else
+    e = g_list_next (priv->next_event);
+
+  i = 0;
+  while (i < num_events)
+    {
+      TplEvent *event;
+
+      if (e == NULL)
+        {
+          GList *d;
+
+          if (priv->next_date == NULL)
+            d = priv->dates;
+          else
+            d = g_list_next (priv->next_date);
+
+          /* This can happen if get_events was never called or called
+           * with num_events == 0
+           */
+          if (d == NULL)
+            break;
+
+          g_list_free_full (priv->events, g_object_unref);
+          priv->events = NULL;
+          priv->next_event = NULL;
+
+          /* Rollback the priv->next_date */
+          priv->next_date = d;
+
+          /* Rollback the current date (ie. d) */
+          d = g_list_next (d);
+          if (d == NULL)
+            break;
+
+          priv->events = _tpl_log_store_get_events_for_date (priv->store,
+              priv->account, priv->target, priv->type_mask,
+              (GDate *) d->data);
+          e = priv->events;
+        }
+
+      event = TPL_EVENT (e->data);
+
+      if (priv->filter == NULL || (*priv->filter) (event, priv->filter_data))
+        {
+          priv->next_event = e;
+          i++;
+        }
+
+      e = g_list_next (e);
+    }
+}
+
+
+static void
 tpl_log_iter_xml_dispose (GObject *object)
 {
   TplLogIterXmlPriv *priv;
@@ -237,6 +306,7 @@ tpl_log_iter_xml_class_init (TplLogIterXmlClass *klass)
   object_class->get_property = tpl_log_iter_xml_get_property;
   object_class->set_property = tpl_log_iter_xml_set_property;
   log_iter_class->get_events = tpl_log_iter_xml_get_events;
+  log_iter_class->rewind = tpl_log_iter_xml_rewind;
 
   param_spec = g_param_spec_object ("account",
       "Account",
