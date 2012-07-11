@@ -33,6 +33,26 @@ typedef struct {
 } Test;
 
 static void
+create_my_conn (Test *test)
+{
+  TpClientFactory *factory;
+
+  g_assert (test->my_conn == NULL);
+
+  /* HACK: This is not the proper way of creating TpConnection subclasses. We
+   * should make a TpClientFactory subclass that creates TpTestsMyConnProxy
+   * objects. But this hack is enough for this unit test and I'm lazy. */
+  factory = tp_client_factory_new (test->dbus);
+  test->my_conn = g_object_new (TP_TESTS_TYPE_MY_CONN_PROXY,
+      "factory", factory,
+      "dbus-daemon", test->dbus,
+      "bus-name", tp_proxy_get_bus_name (test->connection),
+      "object-path", tp_proxy_get_object_path (test->connection),
+      NULL);
+  g_object_unref (factory);
+}
+
+static void
 setup (Test *test,
        gconstpointer data)
 {
@@ -45,11 +65,7 @@ setup (Test *test,
   tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
       "me@test.com", &test->base_connection, &test->connection);
 
-  test->my_conn = g_object_new (TP_TESTS_TYPE_MY_CONN_PROXY,
-      "dbus-daemon", test->dbus,
-      "bus-name", tp_proxy_get_bus_name (test->connection),
-      "object-path", tp_proxy_get_object_path (test->connection),
-      NULL);
+  create_my_conn (test);
 }
 
 static void
@@ -320,11 +336,7 @@ recreate_connection (Test *test)
       &test->error);
   g_assert_no_error (test->error);
 
-  test->my_conn = g_object_new (TP_TESTS_TYPE_MY_CONN_PROXY,
-      "dbus-daemon", test->dbus,
-      "bus-name", tp_proxy_get_bus_name (test->connection),
-      "object-path", tp_proxy_get_object_path (test->connection),
-      NULL);
+  create_my_conn (test);
   g_assert (test->my_conn != NULL);
 
   g_free (name);
