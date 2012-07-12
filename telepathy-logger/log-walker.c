@@ -253,7 +253,64 @@ tpl_log_walker_rewind (TplLogWalker *walker,
     guint num_events,
     GError **error)
 {
+  TplLogWalkerPriv *priv;
+  GList *h;
+  GList *k;
+  GList *l;
+  guint i;
+
   g_return_if_fail (TPL_IS_LOG_WALKER (walker));
+
+  priv = walker->priv;
+  i = 0;
+
+  g_mutex_lock (&priv->mutex);
+
+  if (priv->is_begin == TRUE || num_events == 0)
+    goto out;
+
+  priv->is_end = FALSE;
+
+  for (k = priv->caches, l = priv->iters;
+       k != NULL && l != NULL;
+       k = g_list_next (k), l = g_list_next (l))
+    {
+      GList **cache;
+      TplLogIter *iter;
+      guint length;
+
+      cache = (GList **) &k->data;
+      iter = TPL_LOG_ITER (l->data);
+
+      /* Flush the cache. */
+      length = g_list_length (*cache);
+      tpl_log_iter_rewind (iter, length, error);
+      g_list_free_full (*cache, g_object_unref);
+      *cache = NULL;
+    }
+
+  h = priv->history;
+
+  while (i < num_events && priv->is_begin == FALSE)
+    {
+      TplLogWalkerHistoryData *data = (TplLogWalkerHistoryData *) h->data;
+
+      tpl_log_iter_rewind (data->iter, 1, error);
+      data->count--;
+      i++;
+
+      if (data->count == 0)
+        {
+          tpl_log_walker_history_data_free (data);
+          priv->history = g_list_delete_link (priv->history, h);
+          h = priv->history;
+          if (h == NULL)
+            priv->is_begin = TRUE;
+        }
+    }
+
+ out:
+  g_mutex_unlock (&priv->mutex);
 }
 
 
