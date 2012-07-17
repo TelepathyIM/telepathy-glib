@@ -290,6 +290,10 @@ tp_account_request_get_property (GObject *object,
           g_value_set_string (value, g_value_get_string (array->values + 1));
       }
       break;
+    case PROP_SERVICE:
+      g_value_set_string (value, tp_asv_get_string (self->priv->properties,
+            TP_PROP_ACCOUNT_SERVICE));
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;

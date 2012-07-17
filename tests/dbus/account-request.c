@@ -196,11 +196,11 @@ test_properties (Test *test,
   gchar **supersedes;
   GArray *avatar;
   gchar *mime_type;
-
   gboolean found;
   const gchar *s;
   gboolean b;
   GVariant *v;
+  gchar *service;
 
   test->account = tp_account_request_new (test->account_manager,
       "gabble", "jabber", "Walter Jr.");
@@ -355,6 +355,24 @@ test_properties (Test *test,
   g_variant_unref (props);
   g_array_unref (avatar);
   g_free (mime_type);
+
+  /* service */
+  tp_account_request_set_service (test->account, "Mushroom");
+
+  g_object_get (test->account,
+      "properties", &props,
+      "service", &service,
+      NULL);
+
+  v = g_variant_lookup_value (props, TP_PROP_ACCOUNT_SERVICE, NULL);
+  g_assert (v != NULL);
+  g_assert_cmpstr (g_variant_get_string (v, NULL), ==, "Mushroom");
+  g_variant_unref (v);
+
+  g_assert_cmpstr (service, ==, "Mushroom");
+
+  g_variant_unref (props);
+  g_free (service);
 }
 
 static void
