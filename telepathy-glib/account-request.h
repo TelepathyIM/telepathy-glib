@@ -120,6 +120,10 @@ _TP_AVAILABLE_IN_0_20
 void tp_account_request_set_service (TpAccountRequest *self,
     const gchar *service);
 
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_account_request_set_storage_provider (TpAccountRequest *self,
+    const gchar *provider);
+
 /* parameters */
 _TP_AVAILABLE_IN_0_20
 void tp_account_request_set_parameter (TpAccountRequest *self,

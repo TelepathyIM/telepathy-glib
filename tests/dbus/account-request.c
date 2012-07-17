@@ -200,7 +200,7 @@ test_properties (Test *test,
   const gchar *s;
   gboolean b;
   GVariant *v;
-  gchar *service;
+  gchar *service, *storage_provider;
 
   test->account = tp_account_request_new (test->account_manager,
       "gabble", "jabber", "Walter Jr.");
@@ -373,6 +373,25 @@ test_properties (Test *test,
 
   g_variant_unref (props);
   g_free (service);
+
+  /* storage provider */
+  tp_account_request_set_storage_provider (test->account, "my.provider");
+
+  g_object_get (test->account,
+      "properties", &props,
+      "storage-provider", &storage_provider,
+      NULL);
+
+  v = g_variant_lookup_value (props,
+      TP_PROP_ACCOUNT_INTERFACE_STORAGE_STORAGE_PROVIDER, NULL);
+  g_assert (v != NULL);
+  g_assert_cmpstr (g_variant_get_string (v, NULL), ==, "my.provider");
+  g_variant_unref (v);
+
+  g_assert_cmpstr (storage_provider, ==, "my.provider");
+
+  g_variant_unref (props);
+  g_free (storage_provider);
 }
 
 static void
