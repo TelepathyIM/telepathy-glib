@@ -150,7 +150,7 @@
  * Returns: (transfer container): a #GPtrArray of static strings for D-Bus
  *   interfaces implemented by this client.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.4
  */
 
 /**

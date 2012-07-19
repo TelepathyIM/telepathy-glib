@@ -214,7 +214,7 @@ _tp_legacy_protocol_new (TpBaseConnectionManager *cm,
  *  filled in by subclasses. The default is to list no additional interfaces.
  *  Implementations must first chainup on parent class implementation and then
  *  add extra interfaces to the #GPtrArray. Replaces @interfaces. Since:
- *  0.UNRELEASED
+ *  0.19.4
  *
  * The class structure for #TpBaseConnectionManager.
  *
@@ -281,7 +281,7 @@ _tp_legacy_protocol_new (TpBaseConnectionManager *cm,
  * Returns: (transfer container): a #GPtrArray of static strings for D-Bus
  *   interfaces implemented by this client.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.4
  */
 
 static void service_iface_init (gpointer, gpointer);

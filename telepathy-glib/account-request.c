@@ -710,7 +710,7 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * The account's storage provider. To change this property use
    * tp_account_request_set_storage_provider().
    *
-   * Since: UNRELEASED
+   * Since: 0.19.4
    */
   g_object_class_install_property (object_class, PROP_STORAGE_PROVIDER,
       g_param_spec_string ("storage-provider",
@@ -1138,7 +1138,7 @@ tp_account_request_set_service (TpAccountRequest *self,
  * Set the account storage to use when creating the account. Use the
  * #TpAccountRequest:storage-provider property to read the current value.
  *
- * Since: UNRELEASED
+ * Since: 0.19.4
  */
 void
 tp_account_request_set_storage_provider (TpAccountRequest *self,
