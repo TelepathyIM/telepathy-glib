@@ -1,3 +1,21 @@
+telepathy-glib 0.19.4 (2012-07-19)
+==================================
+
+The “#hellopaul” release.
+
+Enhancements:
+
+• TpBaseConnectionManager, TpBaseConnection and TpBaseProtocol: add virtual
+  methods to get interfaces. (Jonny)
+
+• Add tp_account_request_set_storage_provider(). (Guillaume)
+
+Fixes:
+
+• base-connection: return from RequestHandles if called with no names. (Jonny)
+
+• TpAccountRequest: add missing 'service' property getter. (Guillaume)
+
 telepathy-glib 0.19.3 (2012-07-05)
 ==================================
 
