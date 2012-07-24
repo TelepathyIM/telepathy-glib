@@ -989,6 +989,16 @@ insert_account (TpAccountManager *self,
       g_strdup (tp_proxy_get_object_path (account)),
       g_object_ref (account));
 
+  /* If a global presence has been requested, set in on new accounts as well */
+  if (self->priv->requested_presence != TP_CONNECTION_PRESENCE_TYPE_UNSET)
+    {
+      tp_account_request_presence_async (account,
+          self->priv->requested_presence,
+          self->priv->requested_status,
+          self->priv->requested_status_message,
+          NULL, NULL);
+    }
+
   tp_g_signal_connect_object (account, "notify::enabled",
       G_CALLBACK (_tp_account_manager_account_enabled_cb),
       G_OBJECT (self), 0);
