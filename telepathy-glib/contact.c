@@ -4186,7 +4186,7 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
 
   /* As an implementation detail, this method actually starts working slightly
    * before we're officially ready. We use this to get the TpContact for the
-   * SelfHandle. */
+   * Connection. */
   g_return_if_fail (self->priv->ready_enough_for_contacts);
 
   g_return_if_fail (tp_proxy_get_invalidated (self) == NULL);
@@ -4308,8 +4308,10 @@ tp_connection_upgrade_contacts (TpConnection *self,
   ContactsContext *context;
   guint i;
 
-  g_return_if_fail (tp_proxy_is_prepared (self,
-        TP_CONNECTION_FEATURE_CONNECTED));
+  /* As an implementation detail, this method actually starts working slightly
+   * before we're officially ready. We use this to get the TpContact for the
+   * Connection. */
+  g_return_if_fail (self->priv->ready_enough_for_contacts);
   g_return_if_fail (n_contacts >= 1);
   g_return_if_fail (contacts != NULL);
   g_return_if_fail (n_features == 0 || features != NULL);
