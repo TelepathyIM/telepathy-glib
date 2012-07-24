@@ -1,3 +1,12 @@
+telepathy-glib 0.19.5 (2012-07-24)
+==================================
+
+Fixes:
+
+• fdo#52441 - fix warning when preparing blocked contacts before
+  TP_CONNECTION_FEATURE_CONNECTED is officially prepared.
+• TpAccountManager: set the requested presence on newly created accounts
+
 telepathy-glib 0.19.4 (2012-07-19)
 ==================================
 
