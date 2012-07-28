@@ -1,4 +1,4 @@
-telepathy-glib 0.18.2 (UNRELEASED)
+telepathy-glib 0.18.2 (2012-07-28)
 ==================================
 
 Enhancements:
@@ -12,6 +12,12 @@ Fixes:
 • Retry preparation of features that depended on a missing connection
   interface after the connection connects, in the hope that the interface has
   now become available (fd.o #42981, Guillaume)
+
+• Fix warning when preparing blocked contacts before
+  TP_CONNECTION_FEATURE_CONNECTED is officially prepared. (fd.o #52441, Xavier)
+
+• Fix Vala bindings build when srcdir is different from
+  builddir. (fdo#49802, Colin)
 
 telepathy-glib 0.18.1 (2012-04-20)
 ==================================
