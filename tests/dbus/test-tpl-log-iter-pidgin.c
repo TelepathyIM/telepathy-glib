@@ -541,6 +541,272 @@ test_get_events (PidginTestCaseFixture *fixture,
 }
 
 
+static void
+test_rewind (PidginTestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  TplEntity *room;
+  TplLogIter *iter;
+  GList *events;
+  GError *error = NULL;
+  const gchar *message;
+  gint64 timestamp;
+
+  room = tpl_entity_new_from_room_id ("#telepathy");
+
+  iter = tpl_log_iter_pidgin_new (fixture->store, fixture->account, room,
+      TPL_EVENT_MASK_ANY, NULL, NULL);
+
+  tpl_log_iter_rewind (iter, 8, &error);
+  g_assert_no_error (error);
+
+  events = tpl_log_iter_get_events (iter, 0, &error);
+  g_assert_no_error (error);
+  g_assert (events == NULL);
+
+  tpl_log_iter_rewind (iter, 8, &error);
+  g_assert_no_error (error);
+
+  events = tpl_log_iter_get_events (iter, 5, &error);
+  events = events;
+  g_assert_no_error (error);
+  g_assert (events != NULL);
+  g_assert_cmpint (g_list_length (events), ==, 5);
+  timestamp = tpl_event_get_timestamp (TPL_EVENT (events->data));
+  g_assert_cmpint (timestamp, ==, 1291133254);
+  message = tpl_text_event_get_message (TPL_TEXT_EVENT (events->data));
+  g_assert_cmpstr (message,
+      ==,
+      "tbh it&apos;s not necessarily too niche to have in telepathy-spec");
+  g_list_free_full (events, g_object_unref);
+
+  tpl_log_iter_rewind (iter, 8, &error);
+  g_assert_no_error (error);
+
+  events = tpl_log_iter_get_events (iter, 5, &error);
+  events = events;
+  g_assert_no_error (error);
+  g_assert (events != NULL);
+  g_assert_cmpint (g_list_length (events), ==, 5);
+  timestamp = tpl_event_get_timestamp (TPL_EVENT (events->data));
+  g_assert_cmpint (timestamp, ==, 1291133254);
+  message = tpl_text_event_get_message (TPL_TEXT_EVENT (events->data));
+  g_assert_cmpstr (message,
+      ==,
+      "tbh it&apos;s not necessarily too niche to have in telepathy-spec");
+  g_list_free_full (events, g_object_unref);
+
+  events = tpl_log_iter_get_events (iter, 20, &error);
+  g_assert_no_error (error);
+  g_assert (events != NULL);
+  g_assert_cmpint (g_list_length (events), ==, 20);
+  timestamp = tpl_event_get_timestamp (TPL_EVENT (events->data));
+  g_assert_cmpint (timestamp, ==, 1291132137);
+  message = tpl_text_event_get_message (TPL_TEXT_EVENT (events->data));
+  g_assert_cmpstr (message,
+      ==,
+      "wjt: we should probably cope with both cases.. i wonder if jud server "
+      "correctly indicate in a disco response that they&apos;re the jud "
+      "server");
+  g_list_free_full (events, g_object_unref);
+
+  tpl_log_iter_rewind (iter, 7, &error);
+  g_assert_no_error (error);
+
+  events = tpl_log_iter_get_events (iter, 17, &error);
+  g_assert_no_error (error);
+  g_assert (events != NULL);
+  g_assert_cmpint (g_list_length (events), ==, 17);
+  timestamp = tpl_event_get_timestamp (TPL_EVENT (events->data));
+  g_assert_cmpint (timestamp, ==, 1291131655);
+  message = tpl_text_event_get_message (TPL_TEXT_EVENT (events->data));
+  g_assert_cmpstr (message,
+      ==,
+      "the primary thing to present is a D-Bus error code which UIs are "
+      "expected to localize");
+  g_list_free_full (events, g_object_unref);
+
+  tpl_log_iter_rewind (iter, 7, &error);
+  g_assert_no_error (error);
+
+  events = tpl_log_iter_get_events (iter, 13, &error);
+  g_assert_no_error (error);
+  g_assert (events != NULL);
+  g_assert_cmpint (g_list_length (events), ==, 13);
+  timestamp = tpl_event_get_timestamp (TPL_EVENT (events->data));
+  g_assert_cmpint (timestamp, ==, 1291131595);
+  message = tpl_text_event_get_message (TPL_TEXT_EVENT (events->data));
+  g_assert_cmpstr (message,
+      ==,
+      "There are vague errors like &quot;bad-request&quot; or "
+      "&quot;not-authorized&quot; where Prosody usually gives more specific "
+      "information about why the error occured");
+  g_list_free_full (events, g_object_unref);
+
+  tpl_log_iter_rewind (iter, 17, &error);
+  g_assert_no_error (error);
+
+  events = tpl_log_iter_get_events (iter, 33, &error);
+  g_assert_no_error (error);
+  g_assert (events != NULL);
+  g_assert_cmpint (g_list_length (events), ==, 33);
+  timestamp = tpl_event_get_timestamp (TPL_EVENT (events->data));
+  g_assert_cmpint (timestamp, ==, 1291131445);
+  message = tpl_text_event_get_message (TPL_TEXT_EVENT (events->data));
+  g_assert_cmpstr (message,
+      ==,
+      "dear ejabberd, why are you not showing your xep 55 in your disco "
+      "response");
+  g_list_free_full (events, g_object_unref);
+
+  tpl_log_iter_rewind (iter, 5, &error);
+  g_assert_no_error (error);
+
+  events = tpl_log_iter_get_events (iter, 10, &error);
+  g_assert_no_error (error);
+  g_assert (events != NULL);
+  g_assert_cmpint (g_list_length (events), ==, 10);
+  timestamp = tpl_event_get_timestamp (TPL_EVENT (events->data));
+  g_assert_cmpint (timestamp, ==, 1291131401);
+  message = tpl_text_event_get_message (TPL_TEXT_EVENT (events->data));
+  g_assert_cmpstr (message,
+      ==,
+      "the UI doesn&apos;t show it though");
+  g_list_free_full (events, g_object_unref);
+
+  tpl_log_iter_rewind (iter, 25, &error);
+  g_assert_no_error (error);
+
+  events = tpl_log_iter_get_events (iter, 10, &error);
+  events = events;
+  g_assert_no_error (error);
+  g_assert (events != NULL);
+  g_assert_cmpint (g_list_length (events), ==, 10);
+  timestamp = tpl_event_get_timestamp (TPL_EVENT (events->data));
+  g_assert_cmpint (timestamp, ==, 1291131537);
+  message = tpl_text_event_get_message (TPL_TEXT_EVENT (events->data));
+  g_assert_cmpstr (message,
+      ==,
+      "well, s/you/this channel/");
+  g_list_free_full (events, g_object_unref);
+
+  events = tpl_log_iter_get_events (iter, 25, &error);
+  g_assert_no_error (error);
+  g_assert (events != NULL);
+  g_assert_cmpint (g_list_length (events), ==, 25);
+  timestamp = tpl_event_get_timestamp (TPL_EVENT (events->data));
+  g_assert_cmpint (timestamp, ==, 1291131335);
+  message = tpl_text_event_get_message (TPL_TEXT_EVENT (events->data));
+  g_assert_cmpstr (message,
+      ==,
+      "\\o\\ /o/");
+  g_list_free_full (events, g_object_unref);
+
+  tpl_log_iter_rewind (iter, 3, &error);
+  g_assert_no_error (error);
+
+  events = tpl_log_iter_get_events (iter, 15, &error);
+  g_assert_no_error (error);
+  g_assert (events != NULL);
+  g_assert_cmpint (g_list_length (events), ==, 15);
+  timestamp = tpl_event_get_timestamp (TPL_EVENT (events->data));
+  g_assert_cmpint (timestamp, ==, 1291130885);
+  message = tpl_text_event_get_message (TPL_TEXT_EVENT (events->data));
+  g_assert_cmpstr (message,
+      ==,
+      "pessi: Hi, I fixed some bugs in ring: "
+      "http://git.collabora.co.uk/?p=user/jonny/telepathy-ring.git;a="
+      "shortlog;h=refs/heads/trivia");
+  g_list_free_full (events, g_object_unref);
+
+  tpl_log_iter_rewind (iter, 1, &error);
+  g_assert_no_error (error);
+
+  events = tpl_log_iter_get_events (iter, 10, &error);
+  g_assert_no_error (error);
+  g_assert (events != NULL);
+  g_assert_cmpint (g_list_length (events), ==, 10);
+  timestamp = tpl_event_get_timestamp (TPL_EVENT (events->data));
+  g_assert_cmpint (timestamp, ==, 1291130210);
+  message = tpl_text_event_get_message (TPL_TEXT_EVENT (events->data));
+  g_assert_cmpstr (message,
+      ==,
+      "wjt, how can you test if you are actually invisible? The account "
+      "presence is always sync with your real status?");
+  g_list_free_full (events, g_object_unref);
+
+  tpl_log_iter_rewind (iter, 7, &error);
+  g_assert_no_error (error);
+
+  events = tpl_log_iter_get_events (iter, 20, &error);
+  g_assert_no_error (error);
+  g_assert (events != NULL);
+  g_assert_cmpint (g_list_length (events), ==, 20);
+  timestamp = tpl_event_get_timestamp (TPL_EVENT (events->data));
+  g_assert_cmpint (timestamp, ==, 1291129805);
+  message = tpl_text_event_get_message (TPL_TEXT_EVENT (events->data));
+  g_assert_cmpstr (message,
+      ==,
+      "huh");
+  g_list_free_full (events, g_object_unref);
+
+  tpl_log_iter_rewind (iter, 23, &error);
+  g_assert_no_error (error);
+
+  events = tpl_log_iter_get_events (iter, 20, &error);
+  events = events;
+  g_assert_no_error (error);
+  g_assert (events != NULL);
+  g_assert_cmpint (g_list_length (events), ==, 20);
+  timestamp = tpl_event_get_timestamp (TPL_EVENT (events->data));
+  g_assert_cmpint (timestamp, ==, 1291129872);
+  message = tpl_text_event_get_message (TPL_TEXT_EVENT (events->data));
+  g_assert_cmpstr (message,
+      ==,
+      "Oh, i noticed that our iq request queue somethings fill up and then "
+      "doesn&apos;t seem to get unstuck");
+  g_list_free_full (events, g_object_unref);
+
+  tpl_log_iter_rewind (iter, 3, &error);
+  g_assert_no_error (error);
+
+  events = tpl_log_iter_get_events (iter, 20, &error);
+  g_assert_no_error (error);
+  g_assert (events != NULL);
+  g_assert_cmpint (g_list_length (events), ==, 20);
+  timestamp = tpl_event_get_timestamp (TPL_EVENT (events->data));
+  g_assert_cmpint (timestamp, ==, 1291126206);
+  message = tpl_text_event_get_message (TPL_TEXT_EVENT (events->data));
+  g_assert_cmpstr (message,
+      ==,
+      "invisible is a good one");
+  g_list_free_full (events, g_object_unref);
+
+  tpl_log_iter_rewind (iter, 3, &error);
+  g_assert_no_error (error);
+
+  events = tpl_log_iter_get_events (iter, 9, &error);
+  g_assert_no_error (error);
+  g_assert (events != NULL);
+  g_assert_cmpint (g_list_length (events), ==, 9);
+  timestamp = tpl_event_get_timestamp (TPL_EVENT (events->data));
+  g_assert_cmpint (timestamp, ==, 1291123078);
+  message = tpl_text_event_get_message (TPL_TEXT_EVENT (events->data));
+  g_assert_cmpstr (message,
+      ==,
+      "those who like contact lists: "
+      "https://bugs.freedesktop.org/show_bug.cgi?id=31997");
+  g_list_free_full (events, g_object_unref);
+
+  events = tpl_log_iter_get_events (iter, 3, &error);
+  g_assert_no_error (error);
+  g_assert (events == NULL);
+
+  g_object_unref (iter);
+  g_object_unref (room);
+}
+
+
 gint
 main (gint argc, gchar **argv)
 {
@@ -567,6 +833,10 @@ main (gint argc, gchar **argv)
   g_test_add ("/log-iter-xml/get-events",
       PidginTestCaseFixture, params,
       setup, test_get_events, teardown);
+
+  g_test_add ("/log-iter-xml/rewind",
+      PidginTestCaseFixture, params,
+      setup, test_rewind, teardown);
 
   retval = g_test_run ();
 
