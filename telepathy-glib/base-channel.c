@@ -686,6 +686,8 @@ tp_base_channel_get_property (GObject *object,
           TpHandleRepoIface *repo = tp_base_connection_get_handles (
               chan->priv->conn, klass->target_handle_type);
 
+          g_assert (klass->target_handle_type != TP_HANDLE_TYPE_NONE);
+          g_assert (repo != NULL);
           g_value_set_string (value, tp_handle_inspect (repo, chan->priv->target));
         }
       else
@@ -702,6 +704,7 @@ tp_base_channel_get_property (GObject *object,
           TpHandleRepoIface *repo = tp_base_connection_get_handles (
               chan->priv->conn, TP_HANDLE_TYPE_CONTACT);
 
+          g_assert (repo != NULL);
           g_assert (chan->priv->initiator != 0);
           g_value_set_string (value, tp_handle_inspect (repo, chan->priv->initiator));
         }
