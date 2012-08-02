@@ -82,6 +82,10 @@ TpAccountManager *tp_account_manager_new_with_factory (
 
 _TP_AVAILABLE_IN_0_16
 void tp_account_manager_set_default (TpAccountManager *manager);
+
+_TP_AVAILABLE_IN_UNRELEASED
+gboolean tp_account_manager_can_set_default (void);
+
 TpAccountManager *tp_account_manager_dup (void) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_account_manager_init_known_interfaces (void);

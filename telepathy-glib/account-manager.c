@@ -838,6 +838,23 @@ tp_account_manager_set_default (TpAccountManager *manager)
 }
 
 /**
+ * tp_account_manager_can_set_default:
+ *
+ * Check if tp_account_manager_set_default() has already successfully been
+ * called.
+ *
+ * Returns: %TRUE if tp_account_manager_set_default() has already successfully
+ * been called in this process, %FALSE otherwise.
+ *
+ * Since: UNRELEASED
+ */
+gboolean
+tp_account_manager_can_set_default (void)
+{
+  return starter_account_manager_proxy == NULL;
+}
+
+/**
  * tp_account_manager_dup:
  *
  * Returns an account manager proxy on the D-Bus daemon on which this
