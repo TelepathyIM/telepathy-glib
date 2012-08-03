@@ -395,7 +395,7 @@ tp_text_channel_prepare_chat_states_async (TpProxy *proxy,
 {
   TpChannel *channel = (TpChannel *) proxy;
   GSimpleAsyncResult *result;
-  GError *error;
+  GError *error = NULL;
 
   result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
       tp_text_channel_prepare_chat_states_async);
