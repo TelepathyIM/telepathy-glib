@@ -1,10 +1,16 @@
-telepathy-glib 0.19.6 (UNRELEASED)
+telepathy-glib 0.19.6 (2012-08-06)
 ==================================
+
+Enhancements:
+
+• Add tp_account_manager_can_set_default() (Guillaume)
 
 Fixes:
 
 • Fix generation of reentrant-methods.list in highly parallel builds
   (fd.o #52480, Ross Burton)
+
+• TpBaseChannel: assert that the subclass sets TargetHandleType. (Will)
 
 telepathy-glib 0.19.5 (2012-07-24)
 ==================================

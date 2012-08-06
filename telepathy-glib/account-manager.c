@@ -846,7 +846,7 @@ tp_account_manager_set_default (TpAccountManager *manager)
  * Returns: %TRUE if tp_account_manager_set_default() has already successfully
  * been called in this process, %FALSE otherwise.
  *
- * Since: UNRELEASED
+ * Since: 0.19.6
  */
 gboolean
 tp_account_manager_can_set_default (void)
