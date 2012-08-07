@@ -35,6 +35,7 @@
 #include <libxml/tree.h>
 
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include "telepathy-logger/call-event.h"
 #include "telepathy-logger/call-event-internal.h"

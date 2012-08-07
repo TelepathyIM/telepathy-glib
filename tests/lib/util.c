@@ -12,6 +12,8 @@
 
 #include "util.h"
 
+#include <telepathy-glib/telepathy-glib-dbus.h>
+
 #ifdef G_OS_UNIX
 # include <unistd.h> /* for alarm() */
 #endif

@@ -13,7 +13,7 @@
 #define __TP_TESTS_SIMPLE_ACCOUNT_MANAGER_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/dbus-properties-mixin.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 
 G_BEGIN_DECLS

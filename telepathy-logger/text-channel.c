@@ -24,6 +24,7 @@
 
 #include <glib.h>
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include "action-chain-internal.h"
 #include "entity-internal.h"

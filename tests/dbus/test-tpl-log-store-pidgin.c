@@ -10,7 +10,8 @@
 #include <telepathy-logger/log-store-pidgin-internal.h>
 #include <telepathy-logger/text-event-internal.h>
 
-#include <telepathy-glib/debug-sender.h>
+#include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 /* it was defined in telepathy-logger/log-store-pidgin.c */
 #undef DEBUG_FLAG

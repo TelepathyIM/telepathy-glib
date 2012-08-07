@@ -6,7 +6,8 @@
 #include "telepathy-logger/log-manager-internal.h"
 #include "telepathy-logger/log-store-internal.h"
 
-#include <telepathy-glib/debug-sender.h>
+#include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 #include <glib.h>
 
 /* it was defined in telepathy-logger/log-store-xml.c */

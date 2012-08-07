@@ -22,6 +22,7 @@
 #include "client-factory-internal.h"
 
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include <telepathy-logger/text-channel-internal.h>
 #include <telepathy-logger/call-channel-internal.h>
