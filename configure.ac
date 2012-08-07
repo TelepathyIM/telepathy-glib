@@ -69,10 +69,7 @@ AC_COPYRIGHT([
 GLIB_REQUIRED=2.25.11
 DBUS_REQUIRED=1.1.0
 DBUS_GLIB_REQUIRED=0.82
-
-TELEPATHY_GLIB_REQUIRED=0.19.2
-AC_DEFINE(TP_VERSION_MIN_REQUIRED, TP_VERSION_0_18, [Ignore post 0.18 deprecations])
-AC_DEFINE(TP_VERSION_MAX_ALLOWED, TP_VERSION_0_20, [Prevent post 0.20 APIs])
+TELEPATHY_GLIB_REQUIRED=0.99
 
 # Warning if GLib/GDK/GTK headers are included
 AC_DEFINE(G_DISABLE_SINGLE_INCLUDES, [], [Disable single includes for GLib])
@@ -158,7 +155,7 @@ PKG_CHECK_MODULES(TPL,
    gobject-2.0
    libxml-2.0
    sqlite3
-   telepathy-glib >= $TELEPATHY_GLIB_REQUIRED
+   telepathy-glib-1 >= $TELEPATHY_GLIB_REQUIRED
 ])
 
 
