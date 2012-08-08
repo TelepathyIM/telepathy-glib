@@ -222,6 +222,7 @@ tp_tests_create_and_connect_conn (GType conn_type,
   gchar *conn_path;
   GError *error = NULL;
   GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+  TpClientFactory *factory;
 
   g_assert (service_conn != NULL);
   g_assert (client_conn != NULL);
@@ -239,8 +240,10 @@ tp_tests_create_and_connect_conn (GType conn_type,
         &name, &conn_path, &error));
   g_assert_no_error (error);
 
-  *client_conn = tp_connection_new (dbus, name, conn_path,
-      &error);
+  factory = tp_automatic_client_factory_new (dbus);
+
+  *client_conn = tp_client_factory_ensure_connection (TP_CLIENT_FACTORY (factory),
+      conn_path, NULL, &error);
   g_assert (*client_conn != NULL);
   g_assert_no_error (error);
 
@@ -250,6 +253,7 @@ tp_tests_create_and_connect_conn (GType conn_type,
   g_free (name);
   g_free (conn_path);
 
+  g_object_unref (factory);
   g_object_unref (dbus);
 }
 
