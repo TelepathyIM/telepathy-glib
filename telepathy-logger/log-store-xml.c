@@ -1060,7 +1060,7 @@ log_store_xml_search_hit_new (TplLogStoreXml *self,
 
   /* FIXME: This assumes the account manager is prepared, but the
    * synchronous API forces this. See bug #599189. */
-  accounts = tp_account_manager_get_valid_accounts (
+  accounts = tp_account_manager_get_usable_accounts (
       self->priv->account_manager);
 
   for (l = accounts; l != NULL && account == NULL; l = g_list_next (l))

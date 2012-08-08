@@ -545,7 +545,7 @@ log_store_pidgin_dup_account (const gchar *filename)
   gboolean is_irc;
 
   account_manager = tp_account_manager_dup ();
-  accounts = tp_account_manager_get_valid_accounts (account_manager);
+  accounts = tp_account_manager_get_usable_accounts (account_manager);
 
   strv = g_strsplit (filename, G_DIR_SEPARATOR_S, -1);
   len = g_strv_length (strv);
