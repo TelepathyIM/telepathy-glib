@@ -178,7 +178,7 @@ static void tpl_call_event_class_init (TplCallEventClass *klass)
   param_spec = g_param_spec_int ("end-reason",
       "End Reason",
       "Reason for wich this call was ended",
-      0, NUM_TP_CALL_STATE_CHANGE_REASONS, TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
+      0, TP_NUM_CALL_STATE_CHANGE_REASONS, TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_END_REASON, param_spec);
 
