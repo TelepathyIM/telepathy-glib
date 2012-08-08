@@ -88,8 +88,8 @@ test_entity_instantiation_from_tp_contact (void)
   TpHandle handles[2];
   const char *alias[] = {"Alice in Wonderland", "Bob the builder"};
   const char *avatar_tokens[] = {"alice-token", NULL};
-  TpContactFeature features[] =
-      { TP_CONTACT_FEATURE_ALIAS, TP_CONTACT_FEATURE_AVATAR_TOKEN };
+  GQuark features[] =
+    { TP_CONTACT_FEATURE_ALIAS, TP_CONTACT_FEATURE_AVATAR_TOKEN, 0 };
   Result result;
   TplEntity *entity;
 

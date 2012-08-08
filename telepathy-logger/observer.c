@@ -296,7 +296,7 @@ _tpl_observer_dup (GError **error)
           TP_CONTACT_FEATURE_ALIAS,
           TP_CONTACT_FEATURE_PRESENCE,
           TP_CONTACT_FEATURE_AVATAR_TOKEN,
-          TP_CONTACT_FEATURE_INVALID);
+          0);
 
       observer_singleton = g_object_new (TPL_TYPE_OBSERVER,
           "factory", factory,
