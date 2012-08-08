@@ -1378,9 +1378,9 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
   gchar *dirname;
   gchar *tmp;
   gchar *target_id;
+  gchar **parts;
   gchar *self_id;
   GHashTable *supersedes_links;
-  GError *error = NULL;
   guint num_events = 0;
   GList *index;
 
@@ -1396,15 +1396,17 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
       return;
     }
 
-  if (!tp_account_parse_object_path (
-        tp_proxy_get_object_path (TP_PROXY (account)),
-        NULL, NULL, &self_id, &error))
+  parts = g_strsplit (tp_proxy_get_object_path (account) +
+      strlen (TP_ACCOUNT_OBJECT_PATH_BASE), "/", 3);
+  if (g_strv_length (parts) != 3)
     {
-      DEBUG ("Cannot get self identifier from account: %s",
-          error->message);
-      g_error_free (error);
+      DEBUG ("Cannot get self identifier from account");
+      g_strfreev (parts);
       return;
     }
+
+  self_id = g_strdup (parts[2]);
+  g_strfreev (parts);
 
   /* Create parser. */
   ctxt = xmlNewParserCtxt ();
