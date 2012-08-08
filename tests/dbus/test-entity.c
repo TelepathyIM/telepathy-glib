@@ -56,23 +56,21 @@ typedef struct {
 
 
 static void
-get_contacts_cb (TpConnection *connection,
-    guint n_contacts,
-    TpContact * const *contacts,
-    guint n_failed,
-    const TpHandle *failed,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
+get_contact_cb (GObject *source_object,
+    GAsyncResult *async_result,
+    gpointer user_data)
 {
+  TpConnection *conn = TP_CONNECTION (source_object);
   Result *result = user_data;
+  static guint id = 0;
+  TpContact *contact;
+  GError *error = NULL;
 
+  contact = tp_connection_dup_contact_by_id_finish (conn, async_result, &error);
   g_assert_no_error (error);
-  g_assert (n_contacts == 2);
-  g_assert (n_failed == 0);
+  g_assert (contact != NULL);
 
-  result->contacts[0] = g_object_ref (contacts[0]);
-  result->contacts[1] = g_object_ref (contacts[1]);
+  result->contacts[id++] = contact;
 
   g_main_loop_quit (result->loop);
 }
@@ -115,11 +113,12 @@ test_entity_instantiation_from_tp_contact (void)
   result.contacts[0] = result.contacts[1] = 0;
   result.loop = g_main_loop_new (NULL, FALSE);
 
-  tp_connection_get_contacts_by_handle (client_connection,
-      2, handles,
-      2, features,
-      get_contacts_cb, &result,
-      NULL, NULL);
+  tp_connection_dup_contact_by_id_async (client_connection,
+      "alice", features, get_contact_cb, &result);
+  g_main_loop_run (result.loop);
+
+  tp_connection_dup_contact_by_id_async (client_connection,
+      "bob", features, get_contact_cb, &result);
   g_main_loop_run (result.loop);
 
   entity = tpl_entity_new_from_tp_contact (result.contacts[0],
