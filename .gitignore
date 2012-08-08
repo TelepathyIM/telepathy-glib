@@ -86,6 +86,8 @@ tags
 /tests/dbus/dbus-1/session.conf
 /tests/dbus/capture-*.log
 
+/tools/telepathy-glib-env
+
 /po/Makefile.in.in
 /po/POTFILES
 /po/stamp-it
