@@ -118,6 +118,7 @@ setup_service (PidginTestCaseFixture* fixture,
   GValue *boxed_params;
   GHashTable *params = (GHashTable *) user_data;
   GError *error = NULL;
+  TpClientFactory *factory;
 
   g_assert (params != NULL);
 
@@ -146,7 +147,10 @@ setup_service (PidginTestCaseFixture* fixture,
   tp_dbus_daemon_register_object (fixture->dbus, account_path,
       fixture->account_service);
 
-  fixture->account = tp_account_new (fixture->dbus, account_path, NULL);
+  factory = tp_automatic_client_factory_new (fixture->dbus);
+
+  fixture->account = tp_client_factory_ensure_account (factory, account_path,
+      NULL, NULL);
   g_assert (fixture->account != NULL);
   tp_proxy_prepare_async (fixture->account, account_features,
       account_prepare_cb, fixture);
@@ -156,6 +160,8 @@ setup_service (PidginTestCaseFixture* fixture,
         TP_ACCOUNT_FEATURE_CORE));
 
   tp_g_value_slice_free (boxed_params);
+
+  g_object_unref (factory);
 }
 
 static void

@@ -20,6 +20,7 @@ typedef struct
   gchar *tmp_basedir;
   TplLogStore *store;
   TpDBusDaemon *bus;
+  TpClientFactory *factory;
 } XmlTestCaseFixture;
 
 
@@ -59,6 +60,9 @@ setup (XmlTestCaseFixture* fixture,
 
   fixture->bus = tp_tests_dbus_daemon_dup_or_die ();
   g_assert (fixture->bus != NULL);
+
+  fixture->factory = tp_automatic_client_factory_new (fixture->bus);
+  g_assert (fixture->factory != NULL);
 
   tp_debug_divert_messages (g_getenv ("TPL_LOGFILE"));
 
@@ -104,8 +108,9 @@ teardown (XmlTestCaseFixture *fixture,
       g_free (fixture->tmp_basedir);
     }
 
-  if (fixture->store == NULL)
-    g_object_unref (fixture->store);
+  tp_clear_object (&fixture->store);
+  tp_clear_object (&fixture->factory);
+  tp_clear_object (&fixture->bus);
 }
 
 
@@ -157,9 +162,9 @@ test_clear_account (XmlTestCaseFixture *fixture,
 
   tpl_log_manager_search_free (hits);
 
-  account = tp_account_new (fixture->bus,
+  account = tp_client_factory_ensure_account (fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/test2_40collabora_2eco_2euk0",
-      &error);
+      NULL, &error);
 
   g_assert_no_error (error);
   g_assert (account != NULL);
@@ -224,9 +229,9 @@ test_clear_entity (XmlTestCaseFixture *fixture,
 
   tpl_log_manager_search_free (hits);
 
-  account = tp_account_new (fixture->bus,
+  account = tp_client_factory_ensure_account (fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/test2_40collabora_2eco_2euk0",
-      &error);
+      NULL, &error);
 
   g_assert_no_error (error);
   g_assert (account != NULL);
@@ -312,9 +317,9 @@ test_add_text_event (XmlTestCaseFixture *fixture,
   GList *events;
   gint64 timestamp = time (NULL);
 
-  account = tp_account_new (fixture->bus,
+  account = tp_client_factory_ensure_account (fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "idle/irc/me",
-      &error);
+      NULL, &error);
   g_assert_no_error (error);
   g_assert (account != NULL);
 
@@ -483,9 +488,9 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   GList *superseded;
   gint64 timestamp = time (NULL);
 
-  account = tp_account_new (fixture->bus,
+  account = tp_client_factory_ensure_account (fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "idle/irc/me",
-      &error);
+      NULL, &error);
   g_assert_no_error (error);
   g_assert (account != NULL);
 
@@ -735,9 +740,9 @@ test_add_call_event (XmlTestCaseFixture *fixture,
   GList *events;
   gint64 timestamp = time (NULL);
 
-  account = tp_account_new (fixture->bus,
+  account = tp_client_factory_ensure_account (fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/me",
-      &error);
+      NULL, &error);
   g_assert_no_error (error);
   g_assert (account != NULL);
 
@@ -871,15 +876,15 @@ test_exists (XmlTestCaseFixture *fixture,
   TplEntity *user2, *user3;
   GError *error = NULL;
 
-  account1 = tp_account_new (fixture->bus,
+  account1 = tp_client_factory_ensure_account (fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/test2_40collabora_2eco_2euk0",
-      &error);
+      NULL, &error);
   g_assert_no_error (error);
   g_assert (account1 != NULL);
 
-  account2 = tp_account_new (fixture->bus,
+  account2 = tp_client_factory_ensure_account (fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/user_40collabora_2eco_2euk",
-      &error);
+      NULL, &error);
   g_assert_no_error (error);
   g_assert (account1 != NULL);
 
@@ -928,9 +933,9 @@ test_get_events_for_date (XmlTestCaseFixture *fixture,
   GError *error = NULL;
   gint idx;
 
-  account = tp_account_new (fixture->bus,
+  account = tp_client_factory_ensure_account (fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/user_40collabora_2eco_2euk",
-      &error);
+      NULL, &error);
   g_assert_no_error (error);
   g_assert (account != NULL);
 

@@ -32,6 +32,7 @@
 #include <telepathy-logger/text-event.h>
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/log-manager-internal.h>
+#include <telepathy-logger/observer-internal.h>
 
 #include <extensions/extensions.h>
 
@@ -753,22 +754,35 @@ tpl_dbus_service_clear_account (TplSvcLogger *logger,
     DBusGMethodInvocation *context)
 {
   TplDBusService *self = TPL_DBUS_SERVICE (logger);
-  TpDBusDaemon *bus;
+  TplObserver *observer = NULL;
+  TpClientFactory *factory = NULL;
   TpAccount *account;
   GError *error = NULL;
 
   g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
   g_return_if_fail (context != NULL);
 
-  bus = tp_dbus_daemon_dup (&error);
-  if (bus == NULL)
+  observer = _tpl_observer_dup (&error);
+  if (observer == NULL)
     {
-      DEBUG ("Unable to acquire the bus daemon: %s", error->message);
+      DEBUG ("Unable to duplicate observer: %s", error->message);
       dbus_g_method_return_error (context, error);
       goto out;
     }
 
-  account = tp_account_new (bus, account_path, &error);
+  g_object_get (observer,
+      "factory", &factory,
+      NULL);
+  if (factory == NULL)
+    {
+      error = g_error_new (TP_ERROR, TP_ERROR_NOT_AVAILABLE,
+          "Unable to get client factory from observer");
+      DEBUG ("%s", error->message);
+      dbus_g_method_return_error (context, error);
+      goto out;
+    }
+
+  account = tp_client_factory_ensure_account (factory, account_path, NULL, &error);
   if (account == NULL)
     {
       DEBUG ("Unable to acquire the account for %s: %s", account_path,
@@ -784,8 +798,8 @@ tpl_dbus_service_clear_account (TplSvcLogger *logger,
   tpl_svc_logger_return_from_clear_account (context);
 
 out:
-  if (bus != NULL)
-    g_object_unref (bus);
+  tp_clear_object (&observer);
+  tp_clear_object (&factory);
 
   g_clear_error (&error);
 }
@@ -799,7 +813,8 @@ tpl_dbus_service_clear_entity (TplSvcLogger *logger,
     DBusGMethodInvocation *context)
 {
   TplDBusService *self = TPL_DBUS_SERVICE (logger);
-  TpDBusDaemon *bus;
+  TplObserver *observer = NULL;
+  TpClientFactory *factory = NULL;
   TpAccount *account;
   TplEntity *entity;
   GError *error = NULL;
@@ -808,15 +823,27 @@ tpl_dbus_service_clear_entity (TplSvcLogger *logger,
   g_return_if_fail (context != NULL);
   g_return_if_fail (!TPL_STR_EMPTY (identifier));
 
-  bus = tp_dbus_daemon_dup (&error);
-  if (bus == NULL)
+  observer = _tpl_observer_dup (&error);
+  if (observer == NULL)
     {
-      DEBUG ("Unable to acquire the bus daemon: %s", error->message);
+      DEBUG ("Unable to duplicate observer: %s", error->message);
       dbus_g_method_return_error (context, error);
       goto out;
     }
 
-  account = tp_account_new (bus, account_path, &error);
+  g_object_get (observer,
+      "factory", &factory,
+      NULL);
+  if (factory == NULL)
+    {
+      error = g_error_new (TP_ERROR, TP_ERROR_NOT_AVAILABLE,
+          "Unable to get client factory from observer");
+      DEBUG ("%s", error->message);
+      dbus_g_method_return_error (context, error);
+      goto out;
+    }
+
+  account = tp_client_factory_ensure_account (factory, account_path, NULL, &error);
   if (account == NULL)
     {
       DEBUG ("Unable to acquire the account for %s: %s", account_path,
@@ -836,8 +863,8 @@ tpl_dbus_service_clear_entity (TplSvcLogger *logger,
   tpl_svc_logger_return_from_clear_account (context);
 
 out:
-  if (bus != NULL)
-    g_object_unref (bus);
+  tp_clear_object (&observer);
+  tp_clear_object (&factory);
 
   g_clear_error (&error);
 }
