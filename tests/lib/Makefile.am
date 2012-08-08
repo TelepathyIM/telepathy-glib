@@ -9,8 +9,6 @@ libtp_logger_tests_la_SOURCES = \
     simple-account-manager.h	\
     simple-conn.c \
     simple-conn.h \
-    textchan-null.c \
-    textchan-null.h \
     util.c \
     util.h
 
