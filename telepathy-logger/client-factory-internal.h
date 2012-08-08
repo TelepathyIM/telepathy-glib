@@ -54,6 +54,6 @@ GType _tpl_client_factory_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_CLIENT_FACTORY, \
                               TplClientFactoryClass))
 
-TpSimpleClientFactory *_tpl_client_factory_new (TpDBusDaemon *dbus);
+TpClientFactory *_tpl_client_factory_new (TpDBusDaemon *dbus);
 
 #endif /* __TPL_CLIENT_FACTORY_H__ */

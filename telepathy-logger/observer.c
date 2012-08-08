@@ -281,7 +281,7 @@ _tpl_observer_dup (GError **error)
     {
       GError *dbus_error = NULL;
       TpDBusDaemon *dbus = tp_dbus_daemon_dup (&dbus_error);
-      TpSimpleClientFactory *factory;
+      TpClientFactory *factory;
 
       if (dbus == NULL)
         {
@@ -292,7 +292,7 @@ _tpl_observer_dup (GError **error)
       factory = _tpl_client_factory_new (dbus);
 
       /* Pre-select feature to be initialized. */
-      tp_simple_client_factory_add_contact_features_varargs (factory,
+      tp_client_factory_add_contact_features_varargs (factory,
           TP_CONTACT_FEATURE_ALIAS,
           TP_CONTACT_FEATURE_PRESENCE,
           TP_CONTACT_FEATURE_AVATAR_TOKEN,
