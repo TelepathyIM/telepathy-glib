@@ -307,7 +307,7 @@ log_store_pidgin_get_dir (TplLogStore *self,
   const GHashTable *params;
 
   params = tp_account_get_parameters (account);
-  protocol = tp_account_get_protocol (account);
+  protocol = tp_account_get_protocol_name (account);
 
   if (tp_strdiff (protocol, "irc") == 0)
     {
@@ -572,7 +572,7 @@ log_store_pidgin_dup_account (const gchar *filename)
       TpAccount *acc = (TpAccount *) l->data;
       const GHashTable *params;
 
-      if (tp_strdiff (tp_account_get_protocol (acc), protocol))
+      if (tp_strdiff (tp_account_get_protocol_name (acc), protocol))
         continue;
 
       params = tp_account_get_parameters (acc);
