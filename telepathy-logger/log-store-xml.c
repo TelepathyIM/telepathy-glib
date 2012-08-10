@@ -921,6 +921,7 @@ log_store_xml_get_dates (TplLogStore *store,
 {
   TplLogStoreXml *self = (TplLogStoreXml *) store;
   GList *dates = NULL;
+  GList *l;
   gchar *directory = NULL;
   GDir *dir = NULL;
   GString *pattern = NULL;
@@ -971,6 +972,18 @@ log_store_xml_get_dates (TplLogStore *store,
             (GCompareFunc) g_date_compare);
 
       g_free (str);
+    }
+
+  /* Filter out duplicate dates in-place */
+  for (l = dates; g_list_next (l) != NULL; l = g_list_next (l))
+    {
+      GList *next = g_list_next (l);
+
+      if (g_date_compare ((GDate *) next->data, (GDate *) l->data) == 0)
+        {
+          g_date_free ((GDate *) next->data);
+          l = g_list_delete_link (l, next);
+        }
     }
 
 out:
