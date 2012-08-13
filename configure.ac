@@ -194,7 +194,7 @@ AC_ARG_ENABLE([installed-examples],
     [enable_installed_examples=$installed_tests])
 AM_CONDITIONAL([INSTALL_EXAMPLES], [test "$enable_installed_examples" = yes])
 
-if test x$installed_tests = xyes -a x$enable_installed_examples != xyes; then
+if test x$installed_tests = xyes && test x$enable_installed_examples != xyes; then
   AC_MSG_ERROR([examples must be installed when tests are installed.])
 fi
 
