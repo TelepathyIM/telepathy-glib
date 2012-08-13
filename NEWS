@@ -1,3 +1,11 @@
+telepathy-glib 0.18.3 (UNRELEASED)
+==================================
+
+Fixes:
+
+• In tp_account_dup_storage_identifier_variant, don't fail if there is no
+  storage identifier (fd.o #53201, Guillaume)
+
 telepathy-glib 0.18.2 (2012-07-28)
 ==================================
 
