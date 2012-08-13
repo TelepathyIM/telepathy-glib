@@ -1,3 +1,6 @@
+telepathy-glib 0.19.7 (UNRELEASED)
+==================================
+
 telepathy-glib 0.19.6 (2012-08-06)
 ==================================
 
@@ -148,6 +151,9 @@ Fixes:
 
 • Fixed possible case where TP_CONTACT_FEATURE_AVATAR_DATA does not get
   prepared. (Xavier)
+
+• Fix Vala bindings build when srcdir is different from
+  builddir. (fdo#49802, Colin)
 
 telepathy-glib 0.19.0 (2012-05-09)
 ==================================
