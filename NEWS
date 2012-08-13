@@ -1,6 +1,14 @@
 telepathy-glib 0.19.7 (UNRELEASED)
 ==================================
 
+Fixes:
+
+• In tp_account_dup_storage_identifier_variant, don't fail if there is no
+  storage identifier (fd.o #53201, Guillaume)
+
+• Remove duplicate TpBaseConnection typedef, fixing compilation with pre-C11
+  compilers like gcc < 4.6 (fd.o #53100, Simon)
+
 telepathy-glib 0.19.6 (2012-08-06)
 ==================================
 
