@@ -127,13 +127,11 @@ AS_IF([test "x$enable_fatal_warnings" = xyes],
 
   # --no-copy-dt-needed-entries is the new name for --no-add-needed which
   # is much more widely supported
-  case "$ERROR_LDFLAGS" in
-  (*-Wl,--no-copy-dt-needed-entries*)
-    ;;
-  (*)
-    TP_ADD_LINKER_FLAG([ERROR_LDFLAGS], [-Wl,--no-add-needed])
-    ;;
-  esac
+  AS_CASE(["$ERROR_LDFLAGS"],
+    [*-Wl,--no-copy-dt-needed-entries*],
+      [],
+    [*],
+      [TP_ADD_LINKER_FLAG([ERROR_LDFLAGS], [-Wl,--no-add-needed])])
 ])
 
 AS_IF([test "x$enable_fatal_warnings" = xyes],
