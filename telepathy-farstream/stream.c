@@ -1149,7 +1149,7 @@ async_method_callback_optional (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 {
   if (error == NULL ||
       g_error_matches (error, DBUS_GERROR, G_DBUS_ERROR_UNKNOWN_METHOD) ||
-      g_error_matches (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED))
+      g_error_matches (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED))
     return;
 
   async_method_callback (proxy, error, user_data, weak_object);

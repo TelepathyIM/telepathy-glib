@@ -358,7 +358,7 @@ channel_prepared (GObject *obj,
     }
   else
     {
-      g_simple_async_result_set_error (res, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      g_simple_async_result_set_error (res, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
           "Channel does not implement "
           TP_IFACE_CHANNEL_INTERFACE_MEDIA_SIGNALLING " or "
           TP_IFACE_CHANNEL_TYPE_CALL);
