@@ -111,8 +111,6 @@ PKG_CHECK_MODULES(FARSTREAM, [farstream-0.1 >= 0.1.0])
 AC_SUBST(FARSTREAM_CFLAGS)
 AC_SUBST(FARSTREAM_LIBS)
 
-dnl Always required to generate extensions
-AM_PATH_PYTHON([2.5])
 
 GTK_DOC_CHECK([1.17], [--flavour no-tmpl])
 
