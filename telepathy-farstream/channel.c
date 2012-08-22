@@ -504,7 +504,7 @@ tf_channel_class_init (TfChannelClass *klass)
           G_TYPE_NONE, 0);
 
   /**
-   * TfChannel::fs-conference-added
+   * TfChannel::fs-conference-added:
    * @tfchannel: the #TfChannel
    * @conf: a #FsConference
    *
@@ -519,7 +519,7 @@ tf_channel_class_init (TfChannelClass *klass)
       G_TYPE_NONE, 1, FS_TYPE_CONFERENCE);
 
   /**
-   * TfChannel::fs-conference-removed
+   * TfChannel::fs-conference-removed:
    * @tfchannel: the #TfChannel
    * @conf: a #FsConference
    *
@@ -535,7 +535,7 @@ tf_channel_class_init (TfChannelClass *klass)
 
 
   /**
-   * TfChannel::content-added
+   * TfChannel::content-added:
    * @tfchannel: the #TfChannel
    * @content: a #TfContent
    *
@@ -553,7 +553,7 @@ tf_channel_class_init (TfChannelClass *klass)
       G_TYPE_NONE, 1, TF_TYPE_CONTENT);
 
   /**
-   * TfChannel::content-removed
+   * TfChannel::content-removed:
    * @tfchannel: the #TfChannel
    * @content: a #TfContent
    *

@@ -117,7 +117,7 @@ tf_content_class_init (TfContentClass *klass)
 
 
   /**
-   * TfContent::start-sending
+   * TfContent::start-sending:
    * @content: the #TfContent
    *
    * This signal is emitted when the connection manager ask to send media.
@@ -138,7 +138,7 @@ tf_content_class_init (TfContentClass *klass)
           G_TYPE_BOOLEAN, 0);
 
   /**
-   * TfContent::stop-sending
+   * TfContent::stop-sending:
    * @content: the #TfContent
    *
    * This signal is emitted when the connection manager ask to stop
@@ -153,7 +153,7 @@ tf_content_class_init (TfContentClass *klass)
           G_TYPE_NONE, 0);
 
   /**
-   * TfContent::src-pad-added
+   * TfContent::src-pad-added:
    * @content: the #TfContent
    * @handle: the handle of the remote party producing the content on this pad
    *    or 0 if unknown
@@ -176,7 +176,7 @@ tf_content_class_init (TfContentClass *klass)
           G_TYPE_UINT, FS_TYPE_STREAM, GST_TYPE_PAD, FS_TYPE_CODEC);
 
   /**
-   * TfContent::start-receiving
+   * TfContent::start-receiving:
    * @content: the #TfContent
    * @handles: a 0-terminated array of #guint containing the handles
    * @handle_count: The number of handles in the @handles array
@@ -202,7 +202,7 @@ tf_content_class_init (TfContentClass *klass)
           G_TYPE_BOOLEAN, 2, G_TYPE_POINTER, G_TYPE_UINT);
 
   /**
-   * TfContent::stop-receiving
+   * TfContent::stop-receiving:
    * @content: the #TfContent
    * @handles: a 0-terminated array of #guint containing the handles
    * @handle_count: The number of handles in the @handles array
