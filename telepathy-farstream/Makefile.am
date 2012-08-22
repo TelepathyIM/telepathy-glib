@@ -4,14 +4,17 @@ tfinclude_HEADERS = \
 	channel.h \
 	content.h
 
+apisources = \
+	content.c \
+	channel.c
+
 libtelepathy_farstream_la_SOURCES = \
 	$(tfinclude_HEADERS) \
+	$(apisources) \
 	stream.c \
 	stream.h \
-	content.c \
 	content-priv.h \
 	session.c \
-	channel.c \
 	session-priv.h \
 	channel-priv.h \
 	media-signalling-channel.c \
@@ -34,16 +37,18 @@ lib_LTLIBRARIES = libtelepathy-farstream.la
 pkgconfigdir = ${libdir}/pkgconfig
 pkgconfig_DATA = telepathy-farstream.pc
 
-AM_CFLAGS = \
+INCLUDES = \
 	-I$(top_srcdir) \
 	-I$(top_builddir) \
-	-DG_LOG_DOMAIN=\"tp-fs\" \
-	$(ERROR_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(GST_CFLAGS) \
 	$(FARSTREAM_CFLAGS) \
 	$(TELEPATHY_CFLAGS)
+
+AM_CFLAGS = \
+	-DG_LOG_DOMAIN=\"tp-fs\" \
+	$(ERROR_CFLAGS)
 
 libtelepathy_farstream_la_LIBADD = \
 	$(GLIB_LIBS) \
@@ -55,3 +60,32 @@ libtelepathy_farstream_la_LIBADD = \
 libtelepathy_farstream_la_LDFLAGS =  -no-undefined \
 	-export-symbols-regex "^tf_(init|content_|channel_).*" \
 	-version-info "$(LT_CURRENT)":"$(LT_REVISION)":"$(LT_AGE)"
+
+-include $(INTROSPECTION_MAKEFILE)
+INTROSPECTION_GIRS =
+INTROSPECTION_SCANNER_ARGS = --add-include-path=$(srcdir)
+INTROSPECTION_COMPILER_ARGS = --includedir=$(srcdir)
+
+if HAVE_INTROSPECTION
+introspection_sources = $(tfinclude_HEADERS) $(apisources)
+
+TelepathyFarstream-0.6.gir: libtelepathy-farstream.la
+TelepathyFarstream_0_6_gir_INCLUDES = \
+	GObject-2.0 \
+	Gst-1.0 \
+	Farstream-0.1 \
+	TelepathyGLib-0.12
+TelepathyFarstream_0_6_gir_CFLAGS = $(INCLUDES) -DGST_USE_UNSTABLE_API
+TelepathyFarstream_0_6_gir_LIBS = libtelepathy-farstream.la
+TelepathyFarstream_0_6_gir_FILES = $(introspection_sources)
+TelepathyFarstream_0_6_gir_SCANNERFLAGS = --identifier-prefix=tf_ --identifier-prefix=Tf
+INTROSPECTION_GIRS += TelepathyFarstream-0.6.gir
+
+girdir = $(datadir)/gir-1.0
+gir_DATA = $(INTROSPECTION_GIRS)
+
+typelibdir = $(libdir)/girepository-1.0
+typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
+
+CLEANFILES = $(gir_DATA) $(typelib_DATA)
+endif

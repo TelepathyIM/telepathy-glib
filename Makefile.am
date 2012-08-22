@@ -1,14 +1,13 @@
 ACLOCAL_AMFLAGS = -I m4
 
 
- 
 SUBDIRS= m4 \
           tools \
           telepathy-farstream \
           doc \
           examples
 
-DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc
+DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --enable-introspection
 
 EXTRA_DIST = \
     autogen.sh \
