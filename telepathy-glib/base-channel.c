@@ -446,7 +446,7 @@ tp_base_channel_reopened (TpBaseChannel *chan, TpHandle initiator)
  * the #TpExportableChannel:channel-destroyed property will not be
  * set, and the channel will be unregistered from the bus.
  *
- * Since: UNRELEASED
+ * Since: 0.19.7
  */
 void
 tp_base_channel_disappear (TpBaseChannel *chan)
@@ -487,7 +487,7 @@ tp_base_channel_disappear (TpBaseChannel *chan)
  * and the #TpBaseChannel:requested property will be set to
  * @requested.
  *
- * Since: UNRELEASED
+ * Since: 0.19.7
  */
 void
 tp_base_channel_reopened_with_requested (TpBaseChannel *chan,
@@ -717,7 +717,7 @@ tp_base_channel_is_destroyed (TpBaseChannel *chan)
  * Returns: %TRUE if tp_base_channel_reopened() or
  *   tp_base_channel_reopened_with_requested() have been called.
  *
- * Since: UNRELEASED
+ * Since: 0.19.7
  */
 gboolean
 tp_base_channel_is_respawning (TpBaseChannel *chan)
