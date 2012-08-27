@@ -924,6 +924,15 @@ got_group_properties_cb (TpProxy *proxy,
   identifiers = tp_asv_get_boxed (asv, "MemberIdentifiers",
       TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP);
 
+  if (identifiers == NULL)
+    {
+      g_simple_async_result_set_error (result, TP_ERROR,
+          TP_ERROR_INVALID_ARGUMENT,
+          "Failed to get MemberIdentifiers property from Group interface");
+      g_simple_async_result_complete (result);
+      return;
+    }
+
   self->priv->group_self_contact = dup_contact (self,
       tp_asv_get_uint32 (asv, "SelfHandle", NULL),
       identifiers);
