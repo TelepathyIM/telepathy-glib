@@ -118,6 +118,7 @@ typedef struct
 
 
 G_DEFINE_TYPE (TplLogManager, tpl_log_manager, G_TYPE_OBJECT);
+
 G_DEFINE_BOXED_TYPE (TplLogSearchHit,
     _tpl_log_manager_search_hit,
     _tpl_log_manager_search_hit_copy,
@@ -324,7 +325,7 @@ tpl_log_manager_dup_singleton (void)
  * @error: the memory location of GError, filled if an error occurs
  *
  * It stores @event, sending it to all the registered TplLogStore which have
- * #TplLogStore:writable set to %TRUE.
+ * TplLogStore:writable set to %TRUE.
  * Every TplLogManager is guaranteed to have at least a readable
  * and a writable TplLogStore regitered.
  *
@@ -397,7 +398,7 @@ _tpl_log_manager_add_event (TplLogManager *manager,
  * #TplLogStore:writable is set to %TRUE.
  *
  * @logstore has to properly implement all the search/query methods if the
- * #TplLogStore:readable is set to %TRUE.
+ * TplLogStore:readable is set to %TRUE.
  */
 gboolean
 _tpl_log_manager_register_log_store (TplLogManager *self,
@@ -452,7 +453,7 @@ _tpl_log_manager_register_log_store (TplLogManager *self,
  *
  * Checks if logs exist for @target.
  *
- * It applies for any registered TplLogStore with the #TplLogStore:readable
+ * It applies for any registered TplLogStore with the TplLogStore:readable
  * property %TRUE.
 
  * Returns: %TRUE logs exist for @target, otherwise %FALSE
@@ -491,7 +492,7 @@ tpl_log_manager_exists (TplLogManager *manager,
  * Retrieves a list of #GDate corresponding to each day
  * at least an event exist for @target_id.
  *
- * It applies for any registered TplLogStore with the #TplLogStore:readable
+ * It applies for any registered TplLogStore with the TplLogStore:readable
  * property %TRUE.
  *
  * Returns: a GList of (GDate *), to be freed using something like
@@ -891,7 +892,7 @@ _get_dates_async_thread (GSimpleAsyncResult *simple,
  * Retrieves a list of #GDate corresponding to each day where
  * at least one event exist for @target.
  *
- * It applies for any registered TplLogStore with the #TplLogStore:readable
+ * It applies for any registered TplLogStore with the TplLogStore:readable
  * property %TRUE.
  */
 void

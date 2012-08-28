@@ -26,6 +26,8 @@
 #include <telepathy-logger/log-store-factory-internal.h>
 #include <telepathy-logger/log-store-internal.h>
 
+#define TPL_TYPE_LOG_SEARCH_HIT (_tpl_log_manager_search_hit_get_type ())
+
 gboolean _tpl_log_manager_add_event (TplLogManager *manager,
     TplEvent *event,
     GError **error);
@@ -65,6 +67,8 @@ void _tpl_log_manager_clear_account (TplLogManager *self, TpAccount *account);
 
 void _tpl_log_manager_clear_entity (TplLogManager *self, TpAccount *account,
     TplEntity *entity);
+
+GType _tpl_log_manager_search_hit_get_type (void);
 
 TplLogSearchHit * _tpl_log_manager_search_hit_new (TpAccount *account,
     TplEntity *target,

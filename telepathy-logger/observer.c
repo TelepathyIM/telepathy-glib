@@ -33,7 +33,7 @@
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
 
-/**
+/*
  * SECTION:observer
  * @title: TplObserver
  * @short_description: TPL Observer main class, used to handle received

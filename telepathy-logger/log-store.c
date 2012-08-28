@@ -26,7 +26,7 @@
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include <telepathy-logger/debug-internal.h>
 
-/**
+/*
  * SECTION:log-store
  * @title: TplLogStore
  * @short_description: LogStore interface can register into #TplLogManager as

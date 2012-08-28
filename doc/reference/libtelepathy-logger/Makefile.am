@@ -57,8 +57,11 @@ CFILE_GLOB=$(top_srcdir)/telepathy-logger/*.c
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
 IGNORE_HFILES=\
     action-chain-internal.h \
+    call-channel-internal.h \
+    call-event-internal.h \
     channel-factory-internal.h \
     channel-internal.h \
+    client-factory-internal.h \
     conf-internal.h \
     contact-internal.h \
     dbus-service-internal.h \
@@ -68,6 +71,7 @@ IGNORE_HFILES=\
     log-iter-pidgin-internal.h \
     log-iter-xml-internal.h \
     log-manager-internal.h \
+    log-store.c \
     log-store-factory-internal.h \
     log-store-internal.h \
     log-store-sqlite-internal.h \
