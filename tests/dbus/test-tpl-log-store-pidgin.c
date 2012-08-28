@@ -415,17 +415,22 @@ test_get_entities_jabber (PidginTestCaseFixture *fixture,
   l = log_store_pidgin_get_entities (TPL_LOG_STORE (fixture->store),
       fixture->account);
 
-  g_assert_cmpint (g_list_length (l), ==, 2);
+  g_assert_cmpint (g_list_length (l), ==, 3);
 
   /* sort the entities, since their ordering depends on the file order */
   l = g_list_sort (l, cmp_entities);
 
   entity = g_list_nth_data (l, 0);
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==,
-      "user2@collabora.co.uk");
+      "user5@collabora.co.uk");
   g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_CONTACT);
 
   entity = g_list_nth_data (l, 1);
+  g_assert_cmpstr (tpl_entity_get_identifier (entity), ==,
+      "user2@collabora.co.uk");
+  g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_CONTACT);
+
+  entity = g_list_nth_data (l, 2);
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==,
       "test@conference.collabora.co.uk");
   g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_ROOM);
