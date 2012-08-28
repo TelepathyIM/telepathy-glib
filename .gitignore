@@ -45,6 +45,7 @@ tags
 /telepathy-logger-*.tar.bz2.asc
 /telepathy-logger-*/
 /xmldocs.make
+/tools/telepathy-glib-env
 
 /data/*.client
 /data/*.service
