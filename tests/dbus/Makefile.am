@@ -6,6 +6,7 @@ noinst_PROGRAMS = \
 	test-tpl-log-store-sqlite	\
 	test-tpl-log-store-xml 		\
 	test-tpl-log-iter-xml		\
+	test-tpl-log-walker		\
 	test-tpl-observer		\
 	$(NULL)
 
