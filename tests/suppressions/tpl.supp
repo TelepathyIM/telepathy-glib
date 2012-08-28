@@ -184,6 +184,13 @@
    fun:g_type_add_interface_static
 }
 
+{
+   g_object_do_class_init
+   Memcheck:Leak
+   ...
+   fun:g_object_do_class_init
+}
+
 # ============================= dbus-glib =============================
 
 {
