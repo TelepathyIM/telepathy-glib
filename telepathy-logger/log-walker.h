@@ -60,6 +60,7 @@ struct _TplLogWalker
 
 struct _TplLogWalkerClass
 {
+  /*< private >*/
   GObjectClass parent_class;
 };
 
