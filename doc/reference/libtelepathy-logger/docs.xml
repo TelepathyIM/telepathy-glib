@@ -10,6 +10,7 @@
     <title>libtelepathy-logger API</title>
 
     <xi:include href="xml/log-manager.xml"/>
+    <xi:include href="xml/log-walker.xml"/>
     <xi:include href="xml/event.xml"/>
     <xi:include href="xml/text-event.xml"/>
     <xi:include href="xml/entity.xml"/>
