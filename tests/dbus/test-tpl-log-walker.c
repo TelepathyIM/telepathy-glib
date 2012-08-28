@@ -136,6 +136,33 @@ teardown (WalkerTestCaseFixture *fixture,
 
 
 static void
+rewind_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  WalkerTestCaseFixture *fixture = user_data;
+  GError *error = NULL;
+
+  tpl_log_walker_rewind_finish (TPL_LOG_WALKER (source),
+      result,
+      &error);
+  g_assert_no_error (error);
+
+  g_main_loop_quit (fixture->main_loop);
+}
+
+
+static void
+rewind (WalkerTestCaseFixture *fixture,
+    TplLogWalker *walker,
+    guint num_events)
+{
+  tpl_log_walker_rewind_async (walker, num_events, rewind_cb, fixture);
+  g_main_loop_run (fixture->main_loop);
+}
+
+
+static void
 get_events_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
@@ -260,6 +287,65 @@ test_get_events (WalkerTestCaseFixture *fixture,
 }
 
 
+static void
+test_rewind (WalkerTestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  TplEntity *user5;
+  TplLogWalker *walker;
+
+  user5 = tpl_entity_new ("user5@collabora.co.uk", TPL_ENTITY_CONTACT,
+      "User5", "");
+
+  walker = tpl_log_manager_walk_filtered_events (fixture->manager,
+      fixture->account,
+      user5,
+      TPL_EVENT_MASK_ANY,
+      NULL,
+      NULL);
+
+  rewind (fixture, walker, 8);
+  get_events (fixture, walker, 0);
+  rewind (fixture, walker, 8);
+  get_events (fixture, walker, 2);
+  rewind (fixture, walker, 8);
+  test_get_events_text (fixture, walker, 8, 1263427261, "I'''");
+  rewind (fixture, walker, 3);
+  test_get_events_text (fixture, walker, 5, 1263427261, "I'");
+  rewind (fixture, walker, 1);
+  test_get_events_text (fixture, walker, 7, 1263427202, "11");
+  rewind (fixture, walker, 2);
+  test_get_events_call (fixture, walker, 5, 1263404881, 1);
+  rewind (fixture, walker, 2);
+  get_events (fixture, walker, 0);
+  test_get_events_text (fixture, walker, 1, 1263404950, "9");
+  rewind (fixture, walker, 0);
+  test_get_events_text (fixture, walker, 5, 1263254401, "5''");
+  rewind (fixture, walker, 1);
+  test_get_events_text (fixture, walker, 8, 1263168065, "G'''");
+  rewind (fixture, walker, 7);
+  test_get_events_text (fixture, walker, 7, 1263168065, "G'''");
+  test_get_events_text (fixture, walker, 7, 1263168063, "E");
+  rewind (fixture, walker, 2);
+  test_get_events_text (fixture, walker, 6, 1263168061, "C");
+  rewind (fixture, walker, 10);
+  rewind (fixture, walker, 0);
+  rewind (fixture, walker, 5);
+  test_get_events_text (fixture, walker, 16, 1263168005, "4''");
+  rewind (fixture, walker, 3);
+  test_get_events_text (fixture, walker, 6, 1263168004, "3");
+  rewind (fixture, walker, 1);
+  test_get_events_text (fixture, walker, 6, 1263081661, "A");
+
+  tpl_log_walker_get_events_async (walker, 2, get_events_cb, fixture);
+  g_main_loop_run (fixture->main_loop);
+  g_assert (fixture->events == NULL);
+
+  g_object_unref (walker);
+  g_object_unref (user5);
+}
+
+
 gint main (gint argc, gchar **argv)
 {
   GHashTable *params;
@@ -284,6 +370,10 @@ gint main (gint argc, gchar **argv)
   g_test_add ("/log-walker/get-events",
       WalkerTestCaseFixture, params,
       setup, test_get_events, teardown);
+
+  g_test_add ("/log-walker/rewind",
+      WalkerTestCaseFixture, params,
+      setup, test_rewind, teardown);
 
   retval = g_test_run ();
 
