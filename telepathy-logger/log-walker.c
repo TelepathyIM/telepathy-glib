@@ -47,7 +47,7 @@ struct _TplLogWalkerPriv
   GList *history;
   GList *iters;
   GMutex mutex;
-  gboolean is_begin;
+  gboolean is_start;
   gboolean is_end;
 };
 
@@ -214,7 +214,7 @@ tpl_log_walker_get_events (TplLogWalker *walker,
 
   /* We are still at the beginning if all the log stores were empty. */
   if (priv->history != NULL)
-    priv->is_begin = FALSE;
+    priv->is_start = FALSE;
 
  out:
   g_mutex_unlock (&priv->mutex);
@@ -266,7 +266,7 @@ tpl_log_walker_rewind (TplLogWalker *walker,
 
   g_mutex_lock (&priv->mutex);
 
-  if (priv->is_begin == TRUE || num_events == 0)
+  if (priv->is_start == TRUE || num_events == 0)
     goto out;
 
   priv->is_end = FALSE;
@@ -291,7 +291,7 @@ tpl_log_walker_rewind (TplLogWalker *walker,
 
   h = priv->history;
 
-  while (i < num_events && priv->is_begin == FALSE)
+  while (i < num_events && priv->is_start == FALSE)
     {
       TplLogWalkerHistoryData *data = (TplLogWalkerHistoryData *) h->data;
 
@@ -305,7 +305,7 @@ tpl_log_walker_rewind (TplLogWalker *walker,
           priv->history = g_list_delete_link (priv->history, h);
           h = priv->history;
           if (h == NULL)
-            priv->is_begin = TRUE;
+            priv->is_start = TRUE;
         }
     }
 
@@ -380,7 +380,7 @@ tpl_log_walker_init (TplLogWalker *walker)
 
   g_mutex_init (&priv->mutex);
 
-  priv->is_begin = TRUE;
+  priv->is_start = TRUE;
   priv->is_end = FALSE;
 }
 
@@ -559,7 +559,7 @@ tpl_log_walker_rewind_finish (TplLogWalker *walker,
 
 
 /**
- * tpl_log_walker_is_begin:
+ * tpl_log_walker_is_start:
  * @walker: a #TplLogWalker
  *
  * Determines whether @walker is pointing at the most recent event in
@@ -570,7 +570,7 @@ tpl_log_walker_rewind_finish (TplLogWalker *walker,
  * otherwise #FALSE.
  */
 gboolean
-tpl_log_walker_is_begin (TplLogWalker *walker)
+tpl_log_walker_is_start (TplLogWalker *walker)
 {
   TplLogWalkerPriv *priv;
   gboolean retval;
@@ -578,7 +578,7 @@ tpl_log_walker_is_begin (TplLogWalker *walker)
   priv = walker->priv;
 
   g_mutex_lock (&priv->mutex);
-  retval = priv->is_begin;
+  retval = priv->is_start;
   g_mutex_unlock (&priv->mutex);
 
   return retval;

@@ -85,7 +85,7 @@ gboolean tpl_log_walker_rewind_finish (TplLogWalker *walker,
     GAsyncResult *result,
     GError **error);
 
-gboolean tpl_log_walker_is_begin (TplLogWalker *walker);
+gboolean tpl_log_walker_is_start (TplLogWalker *walker);
 
 gboolean tpl_log_walker_is_end (TplLogWalker *walker);
 
