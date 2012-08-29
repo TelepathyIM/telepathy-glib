@@ -56,6 +56,7 @@ BUILT_SOURCES = \
 
 CLEANFILES = \
     $(BUILT_SOURCES) \
+    $(gen_headers:.h=-gtk-doc.h) \
     $(pkgconfig_DATA) \
     $(NULL)
 
