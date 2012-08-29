@@ -33,6 +33,141 @@
  *
  * The #TplLogWalker object allows the user to sequentially iterate
  * over the logs.
+ *
+ * <example>
+ *   <title>Using a TplLogWalker to fetch text events from the logs.</title>
+ *   <programlisting>
+ *   #include <telepathy-glib/telepathy-glib.h>
+ *   #include <telepathy-logger/telepathy-logger.h>
+ *
+ *   static GMainLoop * loop = NULL;
+ *
+ *   static void
+ *   events_foreach (gpointer data, gpointer user_data)
+ *   {
+ *     TplEvent *event = TPL_EVENT (data);
+ *     const gchar *message;
+ *     gint64 timestamp;
+ *
+ *     timestamp = tpl_event_get_timestamp (event);
+ *     message = tpl_text_event_get_message (TPL_TEXT_EVENT (event));
+ *     g_message ("%" G_GINT64_FORMAT " %s", timestamp, message);
+ *   }
+ *
+ *   static void
+ *   log_walker_get_events_cb (GObject *source_object,
+ *       GAsyncResult *res,
+ *       gpointer user_data)
+ *   {
+ *     TplLogWalker *walker = TPL_LOG_WALKER (source_object);
+ *     GList *events;
+ *
+ *     if (!tpl_log_walker_get_events_finish (walker, res, &events, NULL))
+ *       {
+ *         g_main_loop_quit (loop);
+ *         return;
+ *       }
+ *
+ *     g_list_foreach (events, events_foreach, NULL);
+ *     g_list_free_full (events, g_object_unref);
+ *     if (tpl_log_walker_is_end (walker))
+ *       {
+ *         g_main_loop_quit (loop);
+ *         return;
+ *       }
+ *
+ *     g_message ("");
+ *     tpl_log_walker_get_events_async (walker,
+ *         5,
+ *         log_walker_get_events_cb,
+ *         NULL);
+ *   }
+ *
+ *   static void
+ *   accounts_foreach (gpointer data, gpointer user_data)
+ *   {
+ *     TpAccount **account_out = (TpAccount **) user_data;
+ *     TpAccount *account = TP_ACCOUNT (data);
+ *     const gchar *display_name;
+ *
+ *     display_name = tp_account_get_display_name (account);
+ *     if (0 != g_strcmp0 (display_name, "alice@bar.net"))
+ *       return;
+ *
+ *     g_object_ref (account);
+ *     *account_out = account;
+ *   }
+ *
+ *   static void
+ *   account_manager_prepare_cb (GObject * source_object,
+ *       GAsyncResult * res,
+ *       gpointer user_data)
+ *   {
+ *     TpAccountManager *account_manager = TP_ACCOUNT_MANAGER (source_object);
+ *     GList *accounts;
+ *     TpAccount *account = NULL;
+ *     TplLogManager *log_manager;
+ *     TplLogWalker *walker;
+ *     TplEntity *target;
+ *
+ *     if (!tp_proxy_prepare_finish (source_object, res, NULL))
+ *       return;
+ *
+ *     accounts = tp_account_manager_get_valid_accounts (account_manager);
+ *     g_list_foreach (accounts, accounts_foreach, &account);
+ *     g_list_free_full (accounts, g_object_unref);
+ *     if (account == NULL)
+ *       {
+ *         g_main_loop_quit (loop);
+ *         return;
+ *       }
+ *
+ *     log_manager = tpl_log_manager_dup_singleton ();
+ *
+ *     target = tpl_entity_new ("bob@foo.net", TPL_ENTITY_CONTACT, NULL, NULL);
+ *
+ *     walker = tpl_log_manager_walk_filtered_events (log_manager,
+ *         account,
+ *         target,
+ *         TPL_EVENT_MASK_TEXT,
+ *         NULL,
+ *         NULL);
+ *
+ *     tpl_log_walker_get_events_async (walker,
+ *         5,
+ *         log_walker_get_events_cb,
+ *         NULL);
+ *
+ *     g_object_unref (walker);
+ *     g_object_unref (target);
+ *     g_object_unref (log_manager);
+ *     g_object_unref (account);
+ *   }
+ *
+ *   int
+ *   main (int argc,
+ *       char *argv[])
+ *   {
+ *     GQuark features[] = { TP_ACCOUNT_MANAGER_FEATURE_CORE, 0 };
+ *     TpAccountManager * account_manager;
+ *
+ *     g_type_init ();
+ *     loop = g_main_loop_new (NULL, FALSE);
+ *
+ *     account_manager = tp_account_manager_dup ();
+ *     tp_proxy_prepare_async (account_manager,
+ *         features,
+ *         account_manager_prepare_cb,
+ *         NULL);
+ *
+ *     g_main_loop_run (loop);
+ *
+ *     g_object_unref (account_manager);
+ *     g_main_loop_unref (loop);
+ *     return 0;
+ *   }
+ *   </programlisting>
+ * </example>
  */
 
 /**
