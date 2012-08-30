@@ -1619,6 +1619,42 @@ tp_account_channel_request_ensure_and_observe_channel_finish (
 }
 
 /**
+ * tp_account_channel_request_set_hint:
+ * @self: a #TpAccountChannelRequest
+ * @key: the key used for the hint
+ * @value: (transfer none): a variant containting the hint value
+ *
+ * Set additional information about the channel request, which will be used
+ * in the resulting request's #TpChannelRequest:hints property.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_account_channel_request_set_hint (TpAccountChannelRequest *self,
+    const gchar *key,
+    GVariant *value)
+{
+  GValue one = G_VALUE_INIT, *two;
+
+  g_return_if_fail (!self->priv->requested);
+  g_return_if_fail (key != NULL);
+  g_return_if_fail (value != NULL);
+
+  if (self->priv->hints == NULL)
+    self->priv->hints = tp_asv_new (NULL, NULL);
+
+  dbus_g_value_parse_g_variant (value, &one);
+  two = tp_g_value_slice_dup (&one);
+
+  g_hash_table_insert (self->priv->hints, g_strdup (key), two);
+
+  g_value_unset (&one);
+}
+
+/**
  * tp_account_channel_request_set_hints:
  * @self: a #TpAccountChannelRequest
  * @hints: a #TP_HASH_TYPE_STRING_VARIANT_MAP
