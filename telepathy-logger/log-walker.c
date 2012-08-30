@@ -326,8 +326,8 @@ tpl_log_walker_get_events (TplLogWalker *walker,
           GList *h;
           TplLogWalkerHistoryData *data;
 
-          *latest_cache = g_list_remove_link (*latest_cache, latest_event);
           events = g_list_prepend (events, latest_event->data);
+          *latest_cache = g_list_delete_link (*latest_cache, latest_event);
           i++;
 
           h = priv->history;
