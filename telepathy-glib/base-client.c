@@ -1768,6 +1768,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   GArray *account_features;
   GArray *connection_features;
   GArray *channel_features;
+  GHashTable *request_props;
 
   if (!(self->priv->flags & CLIENT_IS_OBSERVER))
     {
@@ -1809,13 +1810,19 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
     }
 
   requests = g_ptr_array_new_full (requests_arr->len, g_object_unref);
+  request_props = tp_asv_get_boxed (observer_info, "request-properties",
+    TP_HASH_TYPE_OBJECT_IMMUTABLE_PROPERTIES_MAP);
   for (i = 0; i < requests_arr->len; i++)
     {
       const gchar *req_path = g_ptr_array_index (requests_arr, i);
       TpChannelRequest *request;
+      GHashTable *props = NULL;
+
+      if (request_props != NULL)
+        props = g_hash_table_lookup (request_props, req_path);
 
       request = _tp_simple_client_factory_ensure_channel_request (
-          self->priv->factory, req_path, NULL, &error);
+          self->priv->factory, req_path, props, &error);
       if (request == NULL)
         {
           DEBUG ("Failed to create TpChannelRequest: %s", error->message);
