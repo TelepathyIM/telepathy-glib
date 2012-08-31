@@ -135,25 +135,22 @@ AC_SUBST([ERROR_CFLAGS])
 
 # these aren't really error flags but they serve a similar purpose for us -
 # making the toolchain stricter
-if test "x$enable_fatal_warnings" = xyes; then
+AS_IF([test "x$enable_fatal_warnings" = xyes],
+[
   TP_ADD_LINKER_FLAG([ERROR_LDFLAGS], [-Wl,--no-copy-dt-needed-entries])
 
   # --no-copy-dt-needed-entries is the new name for --no-add-needed which
   # is much more widely supported
-  case "$ERROR_LDFLAGS" in
-  (*-Wl,--no-copy-dt-needed-entries*)
-    ;;
-  (*)
-    TP_ADD_LINKER_FLAG([ERROR_LDFLAGS], [-Wl,--no-add-needed])
-    ;;
-  esac
-fi
+  AS_CASE(["$ERROR_LDFLAGS"],
+    [*-Wl,--no-copy-dt-needed-entries*],
+      [],
+    [*],
+      [TP_ADD_LINKER_FLAG([ERROR_LDFLAGS], [-Wl,--no-add-needed])])
+])
 
-if test "x$enable_fatal_warnings" = xyes; then
-  ERROR_SCANNERFLAGS=--warn-error
-else
-  ERROR_SCANNERFLAGS=
-fi
+AS_IF([test "x$enable_fatal_warnings" = xyes],
+  [ERROR_SCANNERFLAGS=--warn-error],
+  [ERROR_SCANNERFLAGS=])
 AC_SUBST([ERROR_SCANNERFLAGS])
 
 # Only use this where we really do want things to depend on whether it's
@@ -171,22 +168,18 @@ AC_ARG_ENABLE(debug-cache,
                  [enable_debug_cache=$enableval],
                  [enable_debug_cache=yes])
 
-if test x"$enable_debug_cache" != xno
-then
-  AC_DEFINE([ENABLE_DEBUG_CACHE], [1], [Define to enable debug message cache])
-fi
+AS_IF([test x"$enable_debug_cache" != xno],
+  [AC_DEFINE([ENABLE_DEBUG_CACHE], [1], [Define to enable debug message cache])])
 
 AC_ARG_ENABLE(backtrace,
   AC_HELP_STRING([--enable-backtrace],[enable printing out the backtrace in case of crash (in most GLib connection managers)]),
     enable_backtrace=$enableval, enable_backtrace=no )
 
-if test x$enable_debug = xyes; then
-  AC_DEFINE(ENABLE_DEBUG, [], [Enable debug code])
-fi
+AS_IF([test x$enable_debug = xyes],
+  [AC_DEFINE([ENABLE_DEBUG], [], [Enable debug code])])
 
-if test x$enable_backtrace = xyes; then
-  AC_DEFINE(ENABLE_BACKTRACE, [], [Enable backtrace output on crashes])
-fi
+AS_IF([test x$enable_backtrace = xyes],
+  [AC_DEFINE([ENABLE_BACKTRACE], [], [Enable backtrace output on crashes])])
 
 AC_SUBST(COVERAGE_CFLAGS)
 
@@ -195,10 +188,8 @@ AC_ARG_ENABLE([installed-tests],
  [make tests installable]),
  [installed_tests=$enableval], [installed_tests=no])
 
-if test x$installed_tests = xyes; then
- AC_DEFINE(ENABLE_INSTALLED_TESTS, [],
- [Make tests installable])
-fi
+AS_IF([test x$installed_tests = xyes],
+  [AC_DEFINE([ENABLE_INSTALLED_TESTS], [], [Make tests installable])])
 AM_CONDITIONAL([ENABLE_INSTALLED_TESTS], [test "x$installed_tests" = xyes])
 
 AC_ARG_ENABLE([installed-examples],
@@ -208,9 +199,9 @@ AC_ARG_ENABLE([installed-examples],
     [enable_installed_examples=$installed_tests])
 AM_CONDITIONAL([INSTALL_EXAMPLES], [test "$enable_installed_examples" = yes])
 
-if test x$installed_tests = xyes -a x$enable_installed_examples != xyes; then
-  AC_MSG_ERROR([examples must be installed when tests are installed.])
-fi
+AS_IF(
+  [test x$installed_tests = xyes && test x$enable_installed_examples != xyes],
+  [AC_MSG_ERROR([examples must be installed when tests are installed.])])
 
 dnl docs/Makefile.am needs to know whether it's an out of tree build
 dnl (srcdir != builddir)
@@ -231,12 +222,12 @@ dnl Check for GIO-Unix
 PKG_CHECK_MODULES(GIO_UNIX, [gio-unix-2.0],
   have_gio_unix=yes, have_gio_unix=no)
 
-if test "x$have_gio_unix" = "xyes"; then
-  AC_DEFINE(HAVE_GIO_UNIX, [], [Define if GIO-Unix is available])
+AS_IF([test "x$have_gio_unix" = "xyes"],
+  [AC_DEFINE(HAVE_GIO_UNIX, [], [Define if GIO-Unix is available])
 
   GLIB_CFLAGS="$GLIB_CFLAGS $GIO_UNIX_CFLAGS"
   GLIB_LIBS="$GLIB_LIBS $GIO_UNIX_LIBS"
-fi
+  ])
 
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
@@ -259,10 +250,10 @@ AC_ARG_ENABLE(vala-bindings,
                   enable_vala_bindings=$enableval,
                   enable_vala_bindings=no )
 
-if test x$enable_vala_bindings = xyes; then
-  if test "x$INTROSPECTION_SCANNER" = x; then
-    AC_MSG_ERROR([GObject-Introspection must be enabled for Vala bindings])
-  fi
+AS_IF([test x$enable_vala_bindings = xyes],
+  [
+  AS_IF([test "x$INTROSPECTION_SCANNER" = x],
+    [AC_MSG_ERROR([GObject-Introspection must be enabled for Vala bindings])])
 
   AM_PROG_VALAC([0.16.0])
   have_vala=yes
@@ -273,12 +264,11 @@ if test x$enable_vala_bindings = xyes; then
 
   AC_PATH_PROG([VAPIGEN], [vapigen], [false])
 
-  if test "x$VAPIGEN" = "xfalse"; then
-    AC_MSG_ERROR([vapigen not found. Was vala compiled with --enable-vapigen?])
-  fi
+  AS_IF([test "x$VAPIGEN" = "xfalse"],
+    [AC_MSG_ERROR([vapigen not found. Was vala compiled with --enable-vapigen?])])
 
   AC_SUBST(VAPIGEN)
-fi
+  ])
 
 AM_CONDITIONAL([HAVE_VALA], [test "x$have_vala" = "xyes"])
 AC_SUBST(HAVE_VALA)
@@ -292,9 +282,8 @@ AC_SUBST(TP_GLIB_CFLAGS)
 dnl Check for code generation tools
 XSLTPROC=
 AC_CHECK_PROGS([XSLTPROC], [xsltproc])
-if test -z "$XSLTPROC"; then
-  AC_MSG_ERROR([xsltproc (from the libxslt source package) is required])
-fi
+AS_IF([test -z "$XSLTPROC"],
+  [AC_MSG_ERROR([xsltproc (from the libxslt source package) is required])])
 AM_PATH_PYTHON([2.5])
 
 dnl glibc backtrace functions
@@ -306,13 +295,9 @@ AC_CHECK_FUNCS(signal)
 AC_CHECK_HEADERS(signal.h)
 
 HAVE_LD_VERSION_SCRIPT=no
-if test -n "$VERSION_SCRIPT_ARG"; then
-	HAVE_LD_VERSION_SCRIPT=yes
-fi
+AS_IF([test -n "$VERSION_SCRIPT_ARG"], [HAVE_LD_VERSION_SCRIPT=yes])
 AC_CHECK_PROGS([NM], [nm])
-if test -z "$NM"; then
-	HAVE_LD_VERSION_SCRIPT=no
-fi
+AS_IF([test -z "$NM"], [HAVE_LD_VERSION_SCRIPT=no])
 AM_CONDITIONAL([HAVE_LD_VERSION_SCRIPT], [test $HAVE_LD_VERSION_SCRIPT = yes])
 
 dnl Check for C++ compiler, for syntax checking

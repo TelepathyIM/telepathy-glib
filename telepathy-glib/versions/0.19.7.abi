@@ -1,0 +1,7 @@
+Version: TELEPATHY_GLIB_0.19.7
+Extends: TELEPATHY_GLIB_0.19.6
+Release: 0.19.7
+
+tp_base_channel_disappear
+tp_base_channel_reopened_with_requested
+tp_base_channel_is_respawning

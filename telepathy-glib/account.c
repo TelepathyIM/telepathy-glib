@@ -3758,6 +3758,9 @@ tp_account_dup_storage_identifier_variant (TpAccount *self)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
 
+  if (self->priv->storage_identifier == NULL)
+    return NULL;
+
   return g_variant_ref_sink (dbus_g_value_build_g_variant (
         self->priv->storage_identifier));
 }

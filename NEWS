@@ -1,3 +1,69 @@
+telepathy-glib 0.19.8 (UNRELEASED)
+==================================
+
+<Cool stuff goes here.>
+
+telepathy-glib 0.19.7 (2012-07-27)
+==================================
+
+Enhancements:
+
+• Add API to TpBaseChannel to allow it to disappear and reappear from
+  the bus without disposing the object. (fd.o#48210, Jonny)
+
+Fixes:
+
+• In tp_account_dup_storage_identifier_variant, don't fail if there is no
+  storage identifier (fd.o #53201, Guillaume)
+
+• Remove duplicate TpBaseConnection typedef, fixing compilation with pre-C11
+  compilers like gcc < 4.6 (fd.o #53100, Simon)
+
+• Use AS_CASE instead of case/esac, and AS_IF instead of
+  if/then/[else/]fi in configure.ac, as they are safer and guaranteed
+  to work (fd.o#681413, Simon)
+
+telepathy-glib 0.19.6 (2012-08-06)
+==================================
+
+Enhancements:
+
+• Add tp_account_manager_can_set_default() (Guillaume)
+
+Fixes:
+
+• Fix generation of reentrant-methods.list in highly parallel builds
+  (fd.o #52480, Ross Burton)
+
+• TpBaseChannel: assert that the subclass sets TargetHandleType. (Will)
+
+telepathy-glib 0.19.5 (2012-07-24)
+==================================
+
+Fixes:
+
+• fdo#52441 - fix warning when preparing blocked contacts before
+  TP_CONNECTION_FEATURE_CONNECTED is officially prepared.
+• TpAccountManager: set the requested presence on newly created accounts
+
+telepathy-glib 0.19.4 (2012-07-19)
+==================================
+
+The “#hellopaul” release.
+
+Enhancements:
+
+• TpBaseConnectionManager, TpBaseConnection and TpBaseProtocol: add virtual
+  methods to get interfaces. (Jonny)
+
+• Add tp_account_request_set_storage_provider(). (Guillaume)
+
+Fixes:
+
+• base-connection: return from RequestHandles if called with no names. (Jonny)
+
+• TpAccountRequest: add missing 'service' property getter. (Guillaume)
+
 telepathy-glib 0.19.3 (2012-07-05)
 ==================================
 
@@ -107,6 +173,9 @@ Fixes:
 
 • Fixed possible case where TP_CONTACT_FEATURE_AVATAR_DATA does not get
   prepared. (Xavier)
+
+• Fix Vala bindings build when srcdir is different from
+  builddir. (fdo#49802, Colin)
 
 telepathy-glib 0.19.0 (2012-05-09)
 ==================================

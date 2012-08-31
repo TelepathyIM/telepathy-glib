@@ -145,6 +145,7 @@ enum {
   PROP_AVATAR,
   PROP_AVATAR_MIME_TYPE,
   PROP_SERVICE,
+  PROP_STORAGE_PROVIDER,
   N_PROPS
 };
 
@@ -290,6 +291,14 @@ tp_account_request_get_property (GObject *object,
         if (array != NULL)
           g_value_set_string (value, g_value_get_string (array->values + 1));
       }
+      break;
+    case PROP_SERVICE:
+      g_value_set_string (value, tp_asv_get_string (self->priv->properties,
+            TP_PROP_ACCOUNT_SERVICE));
+      break;
+    case PROP_STORAGE_PROVIDER:
+      g_value_set_string (value, tp_asv_get_string (self->priv->properties,
+            TP_PROP_ACCOUNT_INTERFACE_STORAGE_STORAGE_PROVIDER));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -693,6 +702,21 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
       g_param_spec_string ("service",
           "Service",
           "The account's service",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccountRequest:storage-provider:
+   *
+   * The account's storage provider. To change this property use
+   * tp_account_request_set_storage_provider().
+   *
+   * Since: 0.19.4
+   */
+  g_object_class_install_property (object_class, PROP_STORAGE_PROVIDER,
+      g_param_spec_string ("storage-provider",
+          "Storage Provider",
+          "The account's storage provider",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 }
@@ -1105,6 +1129,32 @@ tp_account_request_set_service (TpAccountRequest *self,
 
   tp_asv_set_string (priv->properties,
       TP_PROP_ACCOUNT_SERVICE, service);
+}
+
+/**
+ * tp_account_request_set_storage_provider:
+ * @self: a #TpAccountRequest
+ * @provider: the name of an account storage implementation
+ *
+ * Set the account storage to use when creating the account. Use the
+ * #TpAccountRequest:storage-provider property to read the current value.
+ *
+ * Since: 0.19.4
+ */
+void
+tp_account_request_set_storage_provider (TpAccountRequest *self,
+    const gchar *provider)
+{
+  TpAccountRequestPrivate *priv;
+
+  g_return_if_fail (TP_IS_ACCOUNT_REQUEST (self));
+
+  priv = self->priv;
+
+  g_return_if_fail (priv->result == NULL && !priv->created);
+
+  tp_asv_set_string (priv->properties,
+      TP_PROP_ACCOUNT_INTERFACE_STORAGE_STORAGE_PROVIDER, provider);
 }
 
 /**

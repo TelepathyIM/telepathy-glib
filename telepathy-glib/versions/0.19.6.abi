@@ -1,0 +1,5 @@
+Version: TELEPATHY_GLIB_0.19.6
+Extends: TELEPATHY_GLIB_0.19.4
+Release: 0.19.6
+
+tp_account_manager_can_set_default

@@ -1,0 +1,5 @@
+Version: TELEPATHY_GLIB_0.19.4
+Extends: TELEPATHY_GLIB_0.19.3
+Release: 0.19.4
+
+tp_account_request_set_storage_provider

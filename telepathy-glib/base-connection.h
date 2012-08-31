@@ -37,7 +37,7 @@
 
 G_BEGIN_DECLS
 
-typedef struct _TpBaseConnection TpBaseConnection;
+/* The TpBaseConnection typedef is forward-declared in handle-repo.h */
 typedef struct _TpBaseConnectionClass TpBaseConnectionClass;
 typedef struct _TpBaseConnectionPrivate TpBaseConnectionPrivate;
 
