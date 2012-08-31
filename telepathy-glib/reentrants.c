@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include "telepathy-glib/interfaces.h"
 #include "telepathy-glib/reentrants.h"
 
