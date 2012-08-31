@@ -1,0 +1,5 @@
+Version: TELEPATHY_GLIB_0.19.8
+Extends: TELEPATHY_GLIB_0.19.7
+Release: 0.19.8
+
+tp_account_channel_request_set_hint

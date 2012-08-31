@@ -1,9 +1,17 @@
-telepathy-glib 0.19.8 (UNRELEASED)
+telepathy-glib 0.19.8 (2012-08-31)
 ==================================
 
-<Cool stuff goes here.>
+Enhancements:
 
-telepathy-glib 0.19.7 (2012-07-27)
+• New introspectable function tp_account_channel_request_set_hint() to add hints
+  one by one. (Sjoerd)
+
+Fixes:
+
+• Set the ChannelRequests immutable properties when observing/handling channels.
+  (Sjoerd)
+
+telepathy-glib 0.19.7 (2012-08-27)
 ==================================
 
 Enhancements:

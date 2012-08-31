@@ -86,6 +86,7 @@ void tp_account_channel_request_set_channel_factory (
 TpChannelRequest * tp_account_channel_request_get_channel_request (
     TpAccountChannelRequest *self);
 
+_TP_AVAILABLE_IN_0_20
 void tp_account_channel_request_set_hint (TpAccountChannelRequest *self,
     const gchar *key,
     GVariant *value);
