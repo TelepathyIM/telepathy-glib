@@ -341,6 +341,7 @@ test_rewind (WalkerTestCaseFixture *fixture,
   user5 = tpl_entity_new ("user5@collabora.co.uk", TPL_ENTITY_CONTACT,
       "User5", "");
 
+  /* Both text and call events without a filter */
   walker = tpl_log_manager_walk_filtered_events (fixture->manager,
       fixture->account,
       user5,
@@ -380,6 +381,40 @@ test_rewind (WalkerTestCaseFixture *fixture,
   test_get_events_text (fixture, walker, 6, 1263168004, "3");
   rewind (fixture, walker, 1);
   test_get_events_text (fixture, walker, 6, 1263081661, "A");
+
+  tpl_log_walker_get_events_async (walker, 2, get_events_cb, fixture);
+  g_main_loop_run (fixture->main_loop);
+  g_assert (fixture->events == NULL);
+
+  g_object_unref (walker);
+
+  /* Only text events with a filter */
+  walker = tpl_log_manager_walk_filtered_events (fixture->manager,
+      fixture->account,
+      user5,
+      TPL_EVENT_MASK_TEXT,
+      filter_events,
+      NULL);
+
+  rewind (fixture, walker, 8);
+  get_events (fixture, walker, 0);
+  rewind (fixture, walker, 8);
+  get_events (fixture, walker, 2);
+  rewind (fixture, walker, 8);
+  test_get_events_text (fixture, walker, 8, 1263427201, "10");
+  rewind (fixture, walker, 3);
+  test_get_events_text (fixture, walker, 5, 1263254406, "8");
+  rewind (fixture, walker, 1);
+  test_get_events_text (fixture, walker, 7, 1263168064, "F");
+  rewind (fixture, walker, 2);
+  test_get_events_text (fixture, walker, 5, 1263168061, "C");
+  rewind (fixture, walker, 2);
+  get_events (fixture, walker, 0);
+  test_get_events_text (fixture, walker, 1, 1263168062, "D");
+  rewind (fixture, walker, 0);
+  test_get_events_text (fixture, walker, 5, 1263168002, "1");
+  rewind (fixture, walker, 1);
+  test_get_events_text (fixture, walker, 4, 1263081661, "A");
 
   tpl_log_walker_get_events_async (walker, 2, get_events_cb, fixture);
   g_main_loop_run (fixture->main_loop);
