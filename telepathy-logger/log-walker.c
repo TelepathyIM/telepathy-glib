@@ -434,7 +434,6 @@ tpl_log_walker_get_events (GObject *source_object,
 
       if (async_data->latest_event != NULL)
         {
-          GList *h;
           TplEvent *event;
           TplLogWalkerHistoryData *data;
           gboolean skip;
@@ -451,21 +450,20 @@ tpl_log_walker_get_events (GObject *source_object,
             }
 
           async_data->latest_cache->data = g_list_delete_link (
-              async_data->latest_cache->data, async_data->latest_event);
+                  async_data->latest_cache->data, async_data->latest_event);
 
-          h = priv->history;
-          if (h == NULL ||
-              ((TplLogWalkerHistoryData *) h->data)->iter !=
-                  async_data->latest_iter->data ||
-              ((TplLogWalkerHistoryData *) h->data)->skip != skip)
+          data = (priv->history != NULL) ?
+              (TplLogWalkerHistoryData *) priv->history->data : NULL;
+
+          if (data == NULL ||
+              data->iter != async_data->latest_iter->data ||
+              data->skip != skip)
             {
               data = tpl_log_walker_history_data_new ();
               data->iter = g_object_ref (async_data->latest_iter->data);
               data->skip = skip;
               priv->history = g_list_prepend (priv->history, data);
             }
-          else
-            data = (TplLogWalkerHistoryData *) h->data;
 
           data->count++;
 
@@ -511,7 +509,6 @@ tpl_log_walker_rewind (TplLogWalker *walker,
     GError **error)
 {
   TplLogWalkerPriv *priv;
-  GList *h;
   GList *k;
   GList *l;
   guint i;
@@ -546,12 +543,11 @@ tpl_log_walker_rewind (TplLogWalker *walker,
       *cache = NULL;
     }
 
-  h = priv->history;
-
   while (i < num_events && priv->is_start == FALSE)
     {
-      TplLogWalkerHistoryData *data = (TplLogWalkerHistoryData *) h->data;
+      TplLogWalkerHistoryData *data;
 
+      data = (TplLogWalkerHistoryData *) priv->history->data;
       tpl_log_iter_rewind (data->iter, 1, error);
       data->count--;
       if (!data->skip)
@@ -560,9 +556,8 @@ tpl_log_walker_rewind (TplLogWalker *walker,
       if (data->count == 0)
         {
           tpl_log_walker_history_data_free (data);
-          priv->history = g_list_delete_link (priv->history, h);
-          h = priv->history;
-          if (h == NULL)
+          priv->history = g_list_delete_link (priv->history, priv->history);
+          if (priv->history == NULL)
             priv->is_start = TRUE;
         }
     }
