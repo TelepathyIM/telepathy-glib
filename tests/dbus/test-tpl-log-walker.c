@@ -1,5 +1,7 @@
 #include "config.h"
 
+#include <string.h>
+
 #include "lib/simple-account.h"
 #include "lib/util.h"
 
@@ -138,6 +140,16 @@ teardown (WalkerTestCaseFixture *fixture,
 }
 
 
+static gboolean
+filter_events (TplEvent *event, gpointer user_data)
+{
+  const gchar *message;
+
+  message = tpl_text_event_get_message (TPL_TEXT_EVENT (event));
+  return strstr (message, "'") == NULL;
+}
+
+
 static void
 rewind_cb (GObject *source,
     GAsyncResult *result,
@@ -252,6 +264,7 @@ test_get_events (WalkerTestCaseFixture *fixture,
   user5 = tpl_entity_new ("user5@collabora.co.uk", TPL_ENTITY_CONTACT,
       "User5", "");
 
+  /* Both text and call events without a filter */
   walker = tpl_log_manager_walk_filtered_events (fixture->manager,
       fixture->account,
       user5,
@@ -278,6 +291,34 @@ test_get_events (WalkerTestCaseFixture *fixture,
   test_get_events_text (fixture, walker, 4, 1263168005, "4");
   test_get_events_text (fixture, walker, 2, 1263168003, "2");
   test_get_events_text (fixture, walker, 4, 1263081661, "A");
+
+  tpl_log_walker_get_events_async (walker, 2, get_events_cb, fixture);
+  g_main_loop_run (fixture->main_loop);
+
+  events = fixture->events;
+  g_assert (events == NULL);
+
+  g_object_unref (walker);
+
+  /* Only text events with a filter */
+  walker = tpl_log_manager_walk_filtered_events (fixture->manager,
+      fixture->account,
+      user5,
+      TPL_EVENT_MASK_TEXT,
+      filter_events,
+      NULL);
+
+  get_events (fixture, walker, 0);
+  test_get_events_text (fixture, walker, 2, 1263427263, "K");
+  test_get_events_text (fixture, walker, 5, 1263427202, "11");
+  test_get_events_text (fixture, walker, 1, 1263427201, "10");
+  test_get_events_text (fixture, walker, 5, 1263254401, "5");
+  test_get_events_text (fixture, walker, 2, 1263168065, "G");
+  test_get_events_text (fixture, walker, 4, 1263168061, "C");
+  test_get_events_text (fixture, walker, 2, 1263168004, "3");
+  get_events (fixture, walker, 0);
+  test_get_events_text (fixture, walker, 3, 1263168001, "0");
+  test_get_events_text (fixture, walker, 2, 1263081661, "A");
 
   tpl_log_walker_get_events_async (walker, 2, get_events_cb, fixture);
   g_main_loop_run (fixture->main_loop);
