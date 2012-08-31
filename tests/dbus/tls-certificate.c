@@ -160,7 +160,7 @@ test_core (Test *test,
   g_assert (cert_data != NULL);
   g_assert_cmpuint (cert_data->len, ==, 1);
   d = g_ptr_array_index (cert_data, 0);
-  g_assert_cmpstr (g_bytes_get_data (d, NULL), ==, "BADGER");
+  tp_tests_assert_bytes_equals (d, "BADGER", 6);
 }
 
 static void

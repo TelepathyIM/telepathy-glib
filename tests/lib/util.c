@@ -176,6 +176,26 @@ _tp_tests_assert_strv_equals (const char *file,
 }
 
 void
+_tp_tests_assert_bytes_equal (const gchar *file, int line,
+  GBytes *actual, gconstpointer expected_data,
+  gsize expected_length)
+{
+  if (expected_length != g_bytes_get_size (actual))
+    {
+      g_error ("%s:%d: assertion failed: expected %"G_GSIZE_FORMAT
+         " bytes, got %"G_GSIZE_FORMAT,
+        file, line, expected_length, g_bytes_get_size (actual));
+    }
+  else if (memcmp (g_bytes_get_data (actual, NULL),
+      expected_data, expected_length) != 0)
+    {
+      g_error (
+        "%s:%d: assertion failed: expected data didn't match the actual data",
+        file, line);
+    }
+}
+
+void
 tp_tests_create_conn (GType conn_type,
     const gchar *account,
     gboolean connect,
