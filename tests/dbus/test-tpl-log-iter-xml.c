@@ -87,7 +87,7 @@ test_get_events (XmlTestCaseFixture *fixture,
 
   /* Text events spanning multiple days */
   iter = tpl_log_iter_xml_new (fixture->store, fixture->account, user2,
-      TPL_EVENT_MASK_ANY, NULL, NULL);
+      TPL_EVENT_MASK_ANY);
 
   events = tpl_log_iter_get_events (iter, 5, &error);
   g_assert_no_error (error);
@@ -177,7 +177,7 @@ test_get_events (XmlTestCaseFixture *fixture,
 
   /* A mix of call and text events */
   iter = tpl_log_iter_xml_new (fixture->store, fixture->account, user4,
-      TPL_EVENT_MASK_ANY, NULL, NULL);
+      TPL_EVENT_MASK_ANY);
 
   events = tpl_log_iter_get_events (iter, 4, &error);
   g_assert_no_error (error);
@@ -240,7 +240,7 @@ test_rewind (XmlTestCaseFixture *fixture,
 
   /* Text events spanning multiple days */
   iter = tpl_log_iter_xml_new (fixture->store, fixture->account, user2,
-      TPL_EVENT_MASK_ANY, NULL, NULL);
+      TPL_EVENT_MASK_ANY);
 
   tpl_log_iter_rewind (iter, 8, &error);
   g_assert_no_error (error);
@@ -355,7 +355,7 @@ test_rewind (XmlTestCaseFixture *fixture,
 
   /* A mix of call and text events */
   iter = tpl_log_iter_xml_new (fixture->store, fixture->account, user4,
-      TPL_EVENT_MASK_ANY, NULL, NULL);
+      TPL_EVENT_MASK_ANY);
 
   tpl_log_iter_rewind (iter, 8, &error);
   g_assert_no_error (error);

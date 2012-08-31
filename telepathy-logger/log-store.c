@@ -342,16 +342,14 @@ TplLogIter *
 _tpl_log_store_create_iter (TplLogStore *self,
     TpAccount *account,
     TplEntity *target,
-    gint type_mask,
-    TplLogEventFilter filter,
-    gpointer filter_data)
+    gint type_mask)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   if (TPL_LOG_STORE_GET_INTERFACE (self)->create_iter == NULL)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->create_iter (self,
-      account, target, type_mask, filter, filter_data);
+      account, target, type_mask);
 }
 
 

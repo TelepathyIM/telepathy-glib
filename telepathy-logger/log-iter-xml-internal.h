@@ -72,9 +72,7 @@ GType tpl_log_iter_xml_get_type (void) G_GNUC_CONST;
 TplLogIter *tpl_log_iter_xml_new (TplLogStore *store,
     TpAccount *account,
     TplEntity *target,
-    gint type_mask,
-    TplLogEventFilter filter,
-    gpointer filter_data);
+    gint type_mask);
 
 G_END_DECLS
 

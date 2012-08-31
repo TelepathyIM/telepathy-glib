@@ -1129,16 +1129,13 @@ static TplLogIter *
 log_store_pidgin_create_iter (TplLogStore *store,
     TpAccount *account,
     TplEntity *target,
-    gint type_mask,
-    TplLogEventFilter filter,
-    gpointer filter_data)
+    gint type_mask)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE_PIDGIN (store), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
 
-  return tpl_log_iter_pidgin_new (store, account, target, type_mask, filter,
-      filter_data);
+  return tpl_log_iter_pidgin_new (store, account, target, type_mask);
 }
 
 

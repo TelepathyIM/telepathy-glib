@@ -30,17 +30,14 @@ struct _TplLogIterXmlPriv
   GList *next_event;
   TpAccount *account;
   TplEntity *target;
-  TplLogEventFilter filter;
   TplLogStore *store;
   gint type_mask;
-  gpointer filter_data;
+
 };
 
 enum
 {
   PROP_ACCOUNT = 1,
-  PROP_FILTER,
-  PROP_FILTER_DATA,
   PROP_STORE,
   PROP_TARGET,
   PROP_TYPE_MASK
@@ -89,12 +86,8 @@ tpl_log_iter_xml_get_events (TplLogIter *iter,
         }
 
       event = TPL_EVENT (priv->next_event->data);
-
-      if (priv->filter == NULL || (*priv->filter) (event, priv->filter_data))
-        {
-          events = g_list_prepend (events, g_object_ref (event));
-          i++;
-        }
+      events = g_list_prepend (events, g_object_ref (event));
+      i++;
 
       priv->next_event = g_list_previous (priv->next_event);
     }
@@ -124,8 +117,6 @@ tpl_log_iter_xml_rewind (TplLogIter *iter,
   i = 0;
   while (i < num_events)
     {
-      TplEvent *event;
-
       if (e == NULL)
         {
           GList *d;
@@ -159,15 +150,9 @@ tpl_log_iter_xml_rewind (TplLogIter *iter,
           e = priv->events;
         }
 
-      event = TPL_EVENT (e->data);
-
-      if (priv->filter == NULL || (*priv->filter) (event, priv->filter_data))
-        {
-          priv->next_event = e;
-          i++;
-        }
-
+      priv->next_event = e;
       e = g_list_next (e);
+      i++;
     }
 }
 
@@ -216,14 +201,6 @@ tpl_log_iter_xml_get_property (GObject *object,
       g_value_set_object (value, priv->account);
       break;
 
-    case PROP_FILTER:
-      g_value_set_pointer (value, priv->filter);
-      break;
-
-    case PROP_FILTER_DATA:
-      g_value_set_pointer (value, priv->filter_data);
-      break;
-
     case PROP_STORE:
       g_value_set_object (value, priv->store);
       break;
@@ -257,14 +234,6 @@ tpl_log_iter_xml_set_property (GObject *object,
     {
     case PROP_ACCOUNT:
       priv->account = g_value_dup_object (value);
-      break;
-
-    case PROP_FILTER:
-      priv->filter = g_value_get_pointer (value);
-      break;
-
-    case PROP_FILTER_DATA:
-      priv->filter_data = g_value_get_pointer (value);
       break;
 
     case PROP_STORE:
@@ -315,18 +284,6 @@ tpl_log_iter_xml_class_init (TplLogIterXmlClass *klass)
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
 
-  param_spec = g_param_spec_pointer ("filter",
-      "Filter",
-      "An optional filter function",
-      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_FILTER, param_spec);
-
-  param_spec = g_param_spec_pointer ("filter-data",
-      "Filter Data",
-      "User data to pass to the filter function",
-      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_FILTER_DATA, param_spec);
-
   param_spec = g_param_spec_object ("store",
       "Store",
       "The storage backend from which the logs are to be retrieved",
@@ -358,16 +315,12 @@ TplLogIter *
 tpl_log_iter_xml_new (TplLogStore *store,
     TpAccount *account,
     TplEntity *target,
-    gint type_mask,
-    TplLogEventFilter filter,
-    gpointer filter_data)
+    gint type_mask)
 {
   return g_object_new (TPL_TYPE_LOG_ITER_XML,
       "store", store,
       "account", account,
       "target", target,
       "type-mask", type_mask,
-      "filter", filter,
-      "filter-data", filter_data,
       NULL);
 }

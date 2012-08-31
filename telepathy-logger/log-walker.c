@@ -182,8 +182,16 @@ struct _TplLogWalkerPriv
   GList *history;
   GList *iters;
   GMutex mutex;
+  TplLogEventFilter filter;
   gboolean is_start;
   gboolean is_end;
+  gpointer filter_data;
+};
+
+enum
+{
+  PROP_FILTER = 1,
+  PROP_FILTER_DATA
 };
 
 
@@ -208,6 +216,7 @@ typedef struct
 typedef struct
 {
   TplLogIter *iter;
+  gboolean skip;
   guint count;
 } TplLogWalkerHistoryData;
 
@@ -426,20 +435,33 @@ tpl_log_walker_get_events (GObject *source_object,
       if (async_data->latest_event != NULL)
         {
           GList *h;
+          TplEvent *event;
           TplLogWalkerHistoryData *data;
+          gboolean skip;
 
-          events = g_list_prepend (events, async_data->latest_event->data);
+          event = async_data->latest_event->data;
+          skip = TRUE;
+
+          if (priv->filter == NULL ||
+              (*priv->filter) (event, priv->filter_data))
+            {
+              events = g_list_prepend (events, event);
+              i++;
+              skip = FALSE;
+            }
+
           async_data->latest_cache->data = g_list_delete_link (
               async_data->latest_cache->data, async_data->latest_event);
-          i++;
 
           h = priv->history;
           if (h == NULL ||
               ((TplLogWalkerHistoryData *) h->data)->iter !=
-                  async_data->latest_iter->data)
+                  async_data->latest_iter->data ||
+              ((TplLogWalkerHistoryData *) h->data)->skip != skip)
             {
               data = tpl_log_walker_history_data_new ();
               data->iter = g_object_ref (async_data->latest_iter->data);
+              data->skip = skip;
               priv->history = g_list_prepend (priv->history, data);
             }
           else
@@ -532,7 +554,8 @@ tpl_log_walker_rewind (TplLogWalker *walker,
 
       tpl_log_iter_rewind (data->iter, 1, error);
       data->count--;
-      i++;
+      if (!data->skip)
+        i++;
 
       if (data->count == 0)
         {
@@ -605,6 +628,60 @@ tpl_log_walker_finalize (GObject *object)
 
 
 static void
+tpl_log_walker_get_property (GObject *object,
+    guint param_id,
+    GValue *value,
+    GParamSpec *pspec)
+{
+  TplLogWalkerPriv *priv;
+
+  priv = TPL_LOG_WALKER (object)->priv;
+
+  switch (param_id)
+    {
+    case PROP_FILTER:
+      g_value_set_pointer (value, priv->filter);
+      break;
+
+    case PROP_FILTER_DATA:
+      g_value_set_pointer (value, priv->filter_data);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
+      break;
+    }
+}
+
+
+static void
+tpl_log_walker_set_property (GObject *object,
+    guint param_id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  TplLogWalkerPriv *priv;
+
+  priv = TPL_LOG_WALKER (object)->priv;
+
+  switch (param_id)
+    {
+    case PROP_FILTER:
+      priv->filter = g_value_get_pointer (value);
+      break;
+
+    case PROP_FILTER_DATA:
+      priv->filter_data = g_value_get_pointer (value);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
+      break;
+    }
+}
+
+
+static void
 tpl_log_walker_init (TplLogWalker *walker)
 {
   TplLogWalkerPriv *priv;
@@ -624,18 +701,36 @@ static void
 tpl_log_walker_class_init (TplLogWalkerClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  GParamSpec *param_spec;
 
   object_class->dispose = tpl_log_walker_dispose;
   object_class->finalize = tpl_log_walker_finalize;
+  object_class->get_property = tpl_log_walker_get_property;
+  object_class->set_property = tpl_log_walker_set_property;
+
+  param_spec = g_param_spec_pointer ("filter",
+      "Filter",
+      "An optional filter function",
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_FILTER, param_spec);
+
+  param_spec = g_param_spec_pointer ("filter-data",
+      "Filter Data",
+      "User data to pass to the filter function",
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_FILTER_DATA, param_spec);
 
   g_type_class_add_private (klass, sizeof (TplLogWalkerPriv));
 }
 
 
 TplLogWalker *
-tpl_log_walker_new (void)
+tpl_log_walker_new (TplLogEventFilter filter, gpointer filter_data)
 {
-  return g_object_new (TPL_TYPE_LOG_WALKER, NULL);
+  return g_object_new (TPL_TYPE_LOG_WALKER,
+      "filter", filter,
+      "filter-data", filter_data,
+      NULL);
 }
 
 

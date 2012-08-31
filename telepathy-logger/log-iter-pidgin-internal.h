@@ -25,7 +25,6 @@
 
 #include <telepathy-logger/entity.h>
 #include <telepathy-logger/log-iter-internal.h>
-#include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/log-store-internal.h>
 
 G_BEGIN_DECLS
@@ -72,9 +71,7 @@ GType tpl_log_iter_pidgin_get_type (void) G_GNUC_CONST;
 TplLogIter *tpl_log_iter_pidgin_new (TplLogStore *store,
     TpAccount *account,
     TplEntity *target,
-    gint type_mask,
-    TplLogEventFilter filter,
-    gpointer filter_data);
+    gint type_mask);
 
 G_END_DECLS
 

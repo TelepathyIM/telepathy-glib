@@ -22,11 +22,13 @@
 #define __TPL_LOG_WALKER_INTERNAL_H__
 
 #include "log-iter-internal.h"
+#include "log-manager.h"
 #include "log-walker.h"
 
 G_BEGIN_DECLS
 
-TplLogWalker *tpl_log_walker_new (void);
+TplLogWalker *tpl_log_walker_new (TplLogEventFilter filter,
+    gpointer filter_data);
 
 void tpl_log_walker_add_iter (TplLogWalker *walker,
     TplLogIter *iter);

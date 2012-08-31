@@ -1202,16 +1202,14 @@ tpl_log_manager_walk_filtered_events (TplLogManager *manager,
   g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
 
   priv = manager->priv;
-  walker = tpl_log_walker_new ();
+  walker = tpl_log_walker_new (filter, filter_data);
 
   for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
       TplLogIter *iter;
 
-      iter = _tpl_log_store_create_iter (store, account, target, type_mask,
-          filter, filter_data);
-
+      iter = _tpl_log_store_create_iter (store, account, target, type_mask);
       if (iter != NULL)
         tpl_log_walker_add_iter (walker, iter);
     }

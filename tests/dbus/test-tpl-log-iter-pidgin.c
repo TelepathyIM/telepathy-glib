@@ -154,7 +154,7 @@ test_get_events (PidginTestCaseFixture *fixture,
   room = tpl_entity_new_from_room_id ("#telepathy");
 
   iter = tpl_log_iter_pidgin_new (fixture->store, fixture->account, room,
-      TPL_EVENT_MASK_ANY, NULL, NULL);
+      TPL_EVENT_MASK_ANY);
 
   events = tpl_log_iter_get_events (iter, 5, &error);
   events = events;
@@ -557,7 +557,7 @@ test_rewind (PidginTestCaseFixture *fixture,
   room = tpl_entity_new_from_room_id ("#telepathy");
 
   iter = tpl_log_iter_pidgin_new (fixture->store, fixture->account, room,
-      TPL_EVENT_MASK_ANY, NULL, NULL);
+      TPL_EVENT_MASK_ANY);
 
   tpl_log_iter_rewind (iter, 8, &error);
   g_assert_no_error (error);
