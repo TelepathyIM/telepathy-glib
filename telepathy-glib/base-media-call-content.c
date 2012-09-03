@@ -683,15 +683,6 @@ tp_base_media_call_content_update_local_media_description (
   GPtrArray *codecs;
   gpointer contact;
 
-  if (self->priv->current_offer != NULL)
-    {
-      GError error = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "There is a media description offer around so "
-          "UpdateMediaDescription shouldn't be called." };
-      dbus_g_method_return_error (context, &error);
-      return;
-    }
-
   if (!g_hash_table_lookup_extended (properties,
           TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT,
           NULL, &contact))
