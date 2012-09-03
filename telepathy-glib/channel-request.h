@@ -70,9 +70,12 @@ GType tp_channel_request_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CHANNEL_REQUEST, \
                               TpChannelRequestClass))
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_20
 TpChannelRequest *tp_channel_request_new (TpDBusDaemon *bus_daemon,
     const gchar *object_path, GHashTable *immutable_properties,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;
+#endif
 
 void tp_channel_request_init_known_interfaces (void);
 

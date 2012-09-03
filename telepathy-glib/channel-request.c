@@ -567,6 +567,8 @@ tp_channel_request_init_known_interfaces (void)
  * Returns: a new reference to an channel request proxy, or %NULL if
  *    @object_path is not syntactically valid or the channel dispatcher is
  *    not running
+ * Deprecated: Since 0.UNRELEASED. New code should get #TpChannelRequest objects
+ *  from a #TpBaseClient
  */
 TpChannelRequest *
 tp_channel_request_new (TpDBusDaemon *bus_daemon,
