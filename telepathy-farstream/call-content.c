@@ -894,12 +894,12 @@ process_media_description (TfCallContent *self,
 
   fsstream = tf_call_content_get_existing_fsstream_by_handle (self,
       contact_handle);
+  self->current_md_contact_handle = contact_handle;
 
   if (!fsstream)
     {
       g_debug ("Delaying codec media_description processing");
       self->current_media_description = proxy;
-      self->current_md_contact_handle = contact_handle;
       self->current_md_fscodecs = fscodecs;
       self->current_md_rtp_hdrext = fsrtp_hdrext;
       return;
@@ -1937,11 +1937,25 @@ fscodecs_to_media_descriptions (TfCallContent *self, GList *codecs)
 }
 
 static void
+media_description_updated_cb (TpCallContent *proxy,
+  const GError *error,
+  gpointer user_data,
+  GObject *weak_object)
+{
+  if (error == NULL)
+    g_debug ("Local media description set");
+  else
+    g_debug ("Local media description error: %s", error->message);
+
+}
+
+static void
 tf_call_content_try_sending_codecs (TfCallContent *self)
 {
   GList *codecs;
   GHashTable *media_description;
   const gchar *codecs_prop = NULL;
+  guint i;
 
   if (self->current_md_fscodecs != NULL)
   {
@@ -1950,7 +1964,7 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
     return;
   }
 
-  g_debug ("updating local codecs");
+  g_debug ("updating local codecs: %d", TF_CONTENT (self)->sending_count);
 
   if (TF_CONTENT (self)->sending_count == 0)
     codecs_prop = "codecs-without-config";
@@ -1963,31 +1977,47 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
     return;
 
   media_description = fscodecs_to_media_descriptions (self, codecs);
-
-  if (self->current_media_description)
+  if (!media_description)
     {
-      g_debug ("Accepting Media Description");
-
-      tp_cli_call_content_media_description_call_accept (
-          self->current_media_description, -1, media_description,
-          NULL, NULL, NULL, NULL);
-
-      g_object_unref (self->current_media_description);
-      self->current_media_description = NULL;
+      fs_codec_list_destroy (codecs);
+      return;
     }
-  else
+
+  TF_CALL_CONTENT_LOCK (self);
+
+  for (i = 0; i < self->fsstreams->len; i++)
     {
-      if (media_description)
+      struct CallFsStream *cfs = g_ptr_array_index (self->fsstreams, i);
+
+      tp_asv_set_uint32 (media_description,
+        TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT,
+        cfs->contact_handle);
+
+      if (self->current_media_description &&
+          self->current_md_contact_handle == cfs->contact_handle)
         {
-          g_debug ("Updating local Media Description");
-          tp_cli_call_content_interface_media_call_update_local_media_description (
-              self->proxy, -1, media_description, NULL, NULL, NULL, NULL);
+          g_debug ("Accepting Media Description for contact: %u",
+          cfs->contact_handle);
+
+          tp_cli_call_content_media_description_call_accept (
+            self->current_media_description, -1, media_description,
+            NULL, NULL, NULL, NULL);
+
+          g_object_unref (self->current_media_description);
+          self->current_media_description = NULL;
         }
       else
         {
-          fs_codec_list_destroy (codecs);
+          g_debug ("Updating local Media Description for contact %u",
+            cfs->contact_handle);
+
+          tp_cli_call_content_interface_media_call_update_local_media_description (
+            self->proxy, -1, media_description,
+            media_description_updated_cb, NULL, NULL, NULL);
         }
     }
+
+  TF_CALL_CONTENT_UNLOCK (self);
 
   if (media_description)
     {
