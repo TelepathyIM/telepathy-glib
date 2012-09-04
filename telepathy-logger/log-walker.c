@@ -203,13 +203,13 @@ static const gsize CACHE_SIZE = 5;
 typedef struct
 {
   GAsyncReadyCallback cb;
+  GList *events;
   GList *fill_cache;
   GList *fill_iter;
   GList *latest_cache;
   GList *latest_event;
   GList *latest_iter;
   gint64 latest_timestamp;
-  gpointer user_data;
   guint num_events;
 } TplLogWalkerAsyncData;
 
@@ -231,6 +231,7 @@ tpl_log_walker_async_data_new (void)
 static void
 tpl_log_walker_async_data_free (TplLogWalkerAsyncData *data)
 {
+  g_list_free_full (data->events, g_object_unref);
   g_slice_free (TplLogWalkerAsyncData, data);
 }
 
@@ -255,12 +256,15 @@ tpl_log_walker_async_operation_cb (GObject *source_object,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TplLogWalkerAsyncData *async_data = (TplLogWalkerAsyncData *) user_data;
+  GSimpleAsyncResult *simple;
+  TplLogWalkerAsyncData *async_data;
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+  async_data = (TplLogWalkerAsyncData *)
+      g_simple_async_result_get_op_res_gpointer (simple);
 
   if (async_data->cb)
-    async_data->cb (source_object, result, async_data->user_data);
-
-  tpl_log_walker_async_data_free (async_data);
+    async_data->cb (source_object, result, user_data);
 }
 
 
@@ -279,8 +283,8 @@ tpl_log_walker_fill_cache_async_thread (GSimpleAsyncResult *simple,
   GError *error = NULL;
   TplLogWalkerAsyncData *async_data;
 
-  async_data = (TplLogWalkerAsyncData *) g_async_result_get_user_data (
-      G_ASYNC_RESULT (simple));
+  async_data = (TplLogWalkerAsyncData *)
+      g_simple_async_result_get_op_res_gpointer (simple);
 
   async_data->fill_cache->data = tpl_log_iter_get_events (
       TPL_LOG_ITER (async_data->fill_iter->data), CACHE_SIZE, &error);
@@ -303,14 +307,14 @@ tpl_log_walker_fill_cache_async (TplLogWalker *walker,
   g_return_if_fail (TPL_IS_LOG_WALKER (walker));
 
   async_data = tpl_log_walker_async_data_new ();
-  async_data->cb = callback;
-  async_data->user_data = user_data;
   async_data->fill_cache = cache;
   async_data->fill_iter = iter;
 
-  simple = g_simple_async_result_new (G_OBJECT (walker),
-      tpl_log_walker_async_operation_cb, async_data,
+  simple = g_simple_async_result_new (G_OBJECT (walker), callback, user_data,
       tpl_log_walker_fill_cache_async);
+
+  g_simple_async_result_set_op_res_gpointer (simple, async_data,
+      (GDestroyNotify) tpl_log_walker_async_data_free);
 
   g_simple_async_result_run_in_thread (simple,
       tpl_log_walker_fill_cache_async_thread, G_PRIORITY_DEFAULT,
@@ -348,7 +352,6 @@ tpl_log_walker_get_events (GObject *source_object,
   GSimpleAsyncResult *simple;
   TplLogWalker *walker;
   TplLogWalkerPriv *priv;
-  GList *events;
   TplLogWalkerAsyncData *async_data;
   guint i;
 
@@ -356,9 +359,8 @@ tpl_log_walker_get_events (GObject *source_object,
   priv = walker->priv;
 
   simple = G_SIMPLE_ASYNC_RESULT (user_data);
-  events = g_simple_async_result_get_op_res_gpointer (simple);
-  async_data = (TplLogWalkerAsyncData *) g_async_result_get_user_data (
-      G_ASYNC_RESULT (simple));
+  async_data = (TplLogWalkerAsyncData *)
+      g_simple_async_result_get_op_res_gpointer (simple);
 
   /* If we are returning from a prior call to
    * tpl_log_walker_fill_cache_async then finish it.
@@ -369,7 +371,7 @@ tpl_log_walker_get_events (GObject *source_object,
   if (priv->is_end == TRUE)
     goto out;
 
-  i = g_list_length (events);
+  i = g_list_length (async_data->events);
 
   while (i < async_data->num_events && priv->is_end == FALSE)
     {
@@ -403,7 +405,6 @@ tpl_log_walker_get_events (GObject *source_object,
               /* Otherwise, try to fill it up. */
               async_data->fill_cache = cache;
               async_data->fill_iter = iter;
-              g_simple_async_result_set_op_res_gpointer (simple, events, NULL);
               tpl_log_walker_fill_cache_async (walker, cache, iter,
                   tpl_log_walker_get_events, simple);
               return;
@@ -441,7 +442,7 @@ tpl_log_walker_get_events (GObject *source_object,
           if (priv->filter == NULL ||
               (*priv->filter) (event, priv->filter_data))
             {
-              events = g_list_prepend (events, event);
+              async_data->events = g_list_prepend (async_data->events, event);
               i++;
               skip = FALSE;
             }
@@ -480,7 +481,6 @@ tpl_log_walker_get_events (GObject *source_object,
  out:
   g_mutex_unlock (&priv->mutex);
 
-  g_simple_async_result_set_op_res_gpointer (simple, events, NULL);
   if (result != NULL)
     g_simple_async_result_complete (simple);
   else
@@ -562,8 +562,8 @@ tpl_log_walker_rewind_async_thread (GSimpleAsyncResult *simple,
   GError *error = NULL;
   TplLogWalkerAsyncData *async_data;
 
-  async_data = (TplLogWalkerAsyncData *) g_async_result_get_user_data (
-      G_ASYNC_RESULT (simple));
+  async_data = (TplLogWalkerAsyncData *)
+      g_simple_async_result_get_op_res_gpointer (simple);
 
   tpl_log_walker_rewind (TPL_LOG_WALKER (object),
       async_data->num_events, &error);
@@ -751,12 +751,14 @@ tpl_log_walker_get_events_async (TplLogWalker *walker,
 
   async_data = tpl_log_walker_async_data_new ();
   async_data->cb = callback;
-  async_data->user_data = user_data;
   async_data->num_events = num_events;
 
   simple = g_simple_async_result_new (G_OBJECT (walker),
-      tpl_log_walker_async_operation_cb, async_data,
+      tpl_log_walker_async_operation_cb, user_data,
       tpl_log_walker_get_events_async);
+
+  g_simple_async_result_set_op_res_gpointer (simple, async_data,
+      (GDestroyNotify) tpl_log_walker_async_data_free);
 
   g_mutex_lock (&walker->priv->mutex);
   tpl_log_walker_get_events (G_OBJECT (walker), NULL, simple);
@@ -780,18 +782,24 @@ tpl_log_walker_get_events_finish (TplLogWalker *walker,
     GError **error)
 {
   GSimpleAsyncResult *simple;
+  TplLogWalkerAsyncData *async_data;
 
   g_return_val_if_fail (TPL_IS_LOG_WALKER (walker), FALSE);
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
         G_OBJECT (walker), tpl_log_walker_get_events_async), FALSE);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
+  async_data = (TplLogWalkerAsyncData *)
+      g_simple_async_result_get_op_res_gpointer (simple);
 
   if (g_simple_async_result_propagate_error (simple, error))
     return FALSE;
 
   if (events != NULL)
-    *events = (GList *) g_simple_async_result_get_op_res_gpointer (simple);
+    {
+      *events = async_data->events;
+      async_data->events = NULL;
+    }
 
   return TRUE;
 }
@@ -821,12 +829,14 @@ tpl_log_walker_rewind_async (TplLogWalker *walker,
 
   async_data = tpl_log_walker_async_data_new ();
   async_data->cb = callback;
-  async_data->user_data = user_data;
   async_data->num_events = num_events;
 
   simple = g_simple_async_result_new (G_OBJECT (walker),
-      tpl_log_walker_async_operation_cb, async_data,
+      tpl_log_walker_async_operation_cb, user_data,
       tpl_log_walker_rewind_async);
+
+  g_simple_async_result_set_op_res_gpointer (simple, async_data,
+      (GDestroyNotify) tpl_log_walker_async_data_free);
 
   g_simple_async_result_run_in_thread (simple,
       tpl_log_walker_rewind_async_thread, G_PRIORITY_DEFAULT,
