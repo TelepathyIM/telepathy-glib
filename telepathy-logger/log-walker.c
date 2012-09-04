@@ -286,10 +286,7 @@ tpl_log_walker_fill_cache_async_thread (GSimpleAsyncResult *simple,
       TPL_LOG_ITER (async_data->fill_iter->data), CACHE_SIZE, &error);
 
   if (error != NULL)
-    {
-      g_simple_async_result_set_from_error (simple, error);
-      g_error_free (error);
-    }
+    g_simple_async_result_take_error (simple, error);
 }
 
 
@@ -572,10 +569,7 @@ tpl_log_walker_rewind_async_thread (GSimpleAsyncResult *simple,
       async_data->num_events, &error);
 
   if (error != NULL)
-    {
-      g_simple_async_result_set_from_error (simple, error);
-      g_error_free (error);
-    }
+    g_simple_async_result_take_error (simple, error);
 }
 
 
