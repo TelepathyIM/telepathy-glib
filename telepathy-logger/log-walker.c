@@ -484,22 +484,12 @@ tpl_log_walker_get_events (GObject *source_object,
   g_mutex_unlock (&priv->mutex);
 
   g_simple_async_result_set_op_res_gpointer (simple, events, NULL);
-  g_simple_async_result_complete (simple);
+  if (result != NULL)
+    g_simple_async_result_complete (simple);
+  else
+    g_simple_async_result_complete_in_idle (simple);
+
   g_object_unref (simple);
-}
-
-
-static gboolean
-tpl_log_walker_get_events_async_idle (gpointer user_data)
-{
-  GSimpleAsyncResult *simple;
-  GObject *source_object;
-
-  simple = G_SIMPLE_ASYNC_RESULT (user_data);
-  source_object = g_async_result_get_source_object (G_ASYNC_RESULT (simple));
-  tpl_log_walker_get_events (source_object, NULL, simple);
-
-  return G_SOURCE_REMOVE;
 }
 
 
@@ -775,13 +765,7 @@ tpl_log_walker_get_events_async (TplLogWalker *walker,
       tpl_log_walker_get_events_async);
 
   g_mutex_lock (&walker->priv->mutex);
-
-  /* We should return to the main loop before doing anything because
-   * otherwise in certain cases (eg., num_events == 0), we might
-   * complete  the whole operation without ever returning to the main
-   * loop.
-   */
-  g_idle_add (tpl_log_walker_get_events_async_idle, simple);
+  tpl_log_walker_get_events (G_OBJECT (walker), NULL, simple);
 }
 
 
