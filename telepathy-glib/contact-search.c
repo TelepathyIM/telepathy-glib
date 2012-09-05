@@ -30,6 +30,7 @@
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
+#include "telepathy-glib/channel-internal.h"
 #include "telepathy-glib/debug-internal.h"
 
 #include "_gen/telepathy-interfaces.h"
@@ -224,7 +225,7 @@ _create_search_channel_cb (GObject *source_object,
       goto out;
     }
 
-  properties = tp_channel_borrow_immutable_properties (self->priv->channel);
+  properties = _tp_channel_get_immutable_properties (self->priv->channel);
 
   self->priv->keys = tp_asv_get_strv (properties,
       TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH_AVAILABLE_SEARCH_KEYS);

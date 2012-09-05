@@ -95,6 +95,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 #include "telepathy-glib/automatic-client-factory-internal.h"
+#include "telepathy-glib/channel-internal.h"
 #include "telepathy-glib/debug-internal.h"
 
 #include <stdio.h>
@@ -276,7 +277,7 @@ tp_dbus_tube_channel_constructed (GObject *obj)
       return;
     }
 
-  props = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
+  props = _tp_channel_get_immutable_properties (TP_CHANNEL (self));
 
   if (tp_asv_get_string (props, TP_PROP_CHANNEL_TYPE_DBUS_TUBE_SERVICE_NAME)
       == NULL)
@@ -488,7 +489,7 @@ tp_dbus_tube_channel_get_service_name (TpDBusTubeChannel *self)
 {
   GHashTable *props;
 
-  props = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
+  props = _tp_channel_get_immutable_properties (TP_CHANNEL (self));
 
   return tp_asv_get_string (props, TP_PROP_CHANNEL_TYPE_DBUS_TUBE_SERVICE_NAME);
 }

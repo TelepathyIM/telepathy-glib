@@ -109,6 +109,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 #include "telepathy-glib/automatic-client-factory-internal.h"
+#include "telepathy-glib/channel-internal.h"
 #include "telepathy-glib/debug-internal.h"
 
 #include <stdio.h>
@@ -530,7 +531,7 @@ tp_file_transfer_channel_constructed (GObject *obj)
 
   G_OBJECT_CLASS (tp_file_transfer_channel_parent_class)->constructed (obj);
 
-  properties = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
+  properties = _tp_channel_get_immutable_properties (TP_CHANNEL (self));
 
   self->priv->mime_type = tp_asv_get_string (properties,
     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_TYPE);

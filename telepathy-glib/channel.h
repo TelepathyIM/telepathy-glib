@@ -107,8 +107,17 @@ gboolean tp_channel_is_ready (TpChannel *self);
 
 void tp_channel_init_known_interfaces (void);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_20_FOR(tp_channel_get_connection)
 TpConnection *tp_channel_borrow_connection (TpChannel *self);
+_TP_DEPRECATED_IN_0_20_FOR(tp_channel_dup_immutable_properties)
 GHashTable *tp_channel_borrow_immutable_properties (TpChannel *self);
+#endif
+
+_TP_AVAILABLE_IN_0_20
+TpConnection *tp_channel_get_connection (TpChannel *self);
+_TP_AVAILABLE_IN_0_20
+GVariant *tp_channel_dup_immutable_properties (TpChannel *self);
 
 void tp_channel_leave_async (TpChannel *self,
     TpChannelGroupChangeReason reason,

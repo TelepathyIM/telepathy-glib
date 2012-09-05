@@ -193,7 +193,7 @@ get_sender (TpTextChannel *self,
 
   sender_id = tp_asv_get_string (header, "message-sender-id");
 
-  conn = tp_channel_borrow_connection ((TpChannel *) self);
+  conn = tp_channel_get_connection ((TpChannel *) self);
   *contact = tp_connection_dup_contact_if_possible (conn, handle, sender_id);
 
   if (*contact == NULL)
@@ -230,7 +230,7 @@ prepare_sender_async (TpTextChannel *self,
     {
       TpConnection *conn;
 
-      conn = tp_channel_borrow_connection ((TpChannel *) self);
+      conn = tp_channel_get_connection ((TpChannel *) self);
 
       DEBUG ("Failed to get our self contact, please fix CM (%s)",
           tp_proxy_get_object_path (conn));
@@ -372,7 +372,7 @@ chat_state_changed_cb (TpTextChannel *self,
    * TP_CHANNEL_FEATURE_CONTACTS has been prepared, we should already have its
    * TpContact. If the TpContact does not exist, telling its chat state is
    * useless anyway. */
-  conn = tp_channel_borrow_connection ((TpChannel *) self);
+  conn = tp_channel_get_connection ((TpChannel *) self);
   contact = tp_connection_dup_contact_if_possible (conn, handle, NULL);
   if (contact == NULL)
     return;
@@ -441,7 +441,7 @@ tp_text_channel_constructed (GObject *obj)
   g_signal_connect (self, "chat-state-changed",
       G_CALLBACK (chat_state_changed_cb), NULL);
 
-  props = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
+  props = _tp_channel_get_immutable_properties (TP_CHANNEL (self));
 
   self->priv->supported_content_types = (GStrv) tp_asv_get_strv (props,
       TP_PROP_CHANNEL_INTERFACE_MESSAGES_SUPPORTED_CONTENT_TYPES);

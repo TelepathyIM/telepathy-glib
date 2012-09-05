@@ -58,7 +58,6 @@ _tube_accepted (GObject *tube,
   g_debug ("Received: %s", buf);
 
   g_object_unref (tube_conn);
-  g_object_unref (tube);
 }
 
 static void
@@ -82,7 +81,6 @@ _handle_channels (TpSimpleHandler *handler,
     TpHandleChannelsContext *context,
     gpointer user_data)
 {
-  TpStreamTubeChannel *tube;
   gboolean delay = FALSE;
   GList *l;
 
@@ -90,21 +88,12 @@ _handle_channels (TpSimpleHandler *handler,
 
   for (l = channels; l != NULL; l = l->next)
     {
-      TpChannel *channel = l->data;
-      GHashTable *props = tp_channel_borrow_immutable_properties (channel);
+      TpStreamTubeChannel *tube = l->data;
 
-      if (tp_channel_get_channel_type_id (channel) !=
-          TP_IFACE_QUARK_CHANNEL_TYPE_STREAM_TUBE)
-        continue;
-
-      if (tp_strdiff (
-            tp_asv_get_string (props, TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE),
-            "ExampleService"))
+      if (!TP_IS_STREAM_TUBE_CHANNEL (tube))
         continue;
 
       g_debug ("Accepting tube");
-
-      tube = g_object_ref (channel);
 
       g_signal_connect (tube, "invalidated",
           G_CALLBACK (tube_invalidated_cb), NULL);

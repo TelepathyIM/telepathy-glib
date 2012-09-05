@@ -51,6 +51,7 @@
 #include <telepathy-glib/util-internal.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
+#include "telepathy-glib/channel-internal.h"
 #include "telepathy-glib/debug-internal.h"
 
 #include <stdio.h>
@@ -458,7 +459,7 @@ create_channel_cb (GObject *source_object,
       goto out;
     }
 
-  properties = tp_channel_borrow_immutable_properties (self->priv->channel);
+  properties = _tp_channel_get_immutable_properties (self->priv->channel);
 
   server = tp_asv_get_string (properties,
       TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER);

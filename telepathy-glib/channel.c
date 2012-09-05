@@ -32,6 +32,7 @@
 #include <telepathy-glib/util-internal.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
+#include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
@@ -394,6 +395,8 @@ tp_channel_is_ready (TpChannel *self)
  *
  * Returns: (transfer none): the value of #TpChannel:connection
  * Since: 0.7.12
+ * Deprecated: Since 0.UNRELEASED. New code should use
+ *  tp_channel_get_connection() instead.
  */
 TpConnection *
 tp_channel_borrow_connection (TpChannel *self)
@@ -403,6 +406,23 @@ tp_channel_borrow_connection (TpChannel *self)
   return self->priv->connection;
 }
 
+/**
+ * tp_channel_get_connection:
+ * @self: a channel
+ *
+ * Returns the connection for this channel. The returned pointer is only valid
+ * while this channel is valid - reference it with g_object_ref() if needed.
+ *
+ * Returns: (transfer none): the value of #TpChannel:connection
+ * Since: 0.UNRELEASED
+ */
+TpConnection *
+tp_channel_get_connection (TpChannel *self)
+{
+  g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
+
+  return self->priv->connection;
+}
 
 /**
  * tp_channel_borrow_immutable_properties:
@@ -427,6 +447,8 @@ tp_channel_borrow_connection (TpChannel *self)
  *  where the keys are strings,
  *  D-Bus interface name + "." + property name, and the values are #GValue
  *  instances
+ * Deprecated: Since 0.UNRELEASED. New code should use
+ *  tp_channel_dup_immutable_properties() instead.
  */
 GHashTable *
 tp_channel_borrow_immutable_properties (TpChannel *self)
@@ -436,6 +458,44 @@ tp_channel_borrow_immutable_properties (TpChannel *self)
   return self->priv->channel_properties;
 }
 
+GHashTable *
+_tp_channel_get_immutable_properties (TpChannel *self)
+{
+  g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
+
+  return self->priv->channel_properties;
+}
+
+/**
+ * tp_channel_dup_immutable_properties:
+ * @self: a channel
+ *
+ * Returns the immutable D-Bus properties of this channel, in a variant of type
+ * %G_VARIANT_TYPE_VARDICT where the keys are strings,
+ * D-Bus interface name + "." + property name. Use g_variant_lookup() or
+ * g_variant_lookup_value() for convenient access to the values.
+ *
+ * If the #TpChannel:channel-properties property was not set during
+ * construction (e.g. by calling tp_channel_new_from_properties()), a
+ * reasonable but possibly incomplete version will be made up from the values
+ * of individual properties; reading this property repeatedly may yield
+ * progressively more complete values until the %TP_CHANNEL_FEATURE_CORE
+ * feature is prepared.
+ *
+ * This function should be used only by #TpChannel subclasses, otherwise it is
+ * recommended to use individual property getters instead.
+ *
+ * Returns: (transfer full): a dictionary where the keys are strings,
+ *  D-Bus interface name + "." + property name.
+ * Since: 0.UNRELEASED
+ */
+GVariant *
+tp_channel_dup_immutable_properties (TpChannel *self)
+{
+  g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
+
+  return _tp_asv_to_vardict (self->priv->channel_properties);
+}
 
 static void
 tp_channel_get_property (GObject *object,

@@ -61,6 +61,7 @@
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
+#include "telepathy-glib/channel-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/automatic-client-factory-internal.h"
 
@@ -350,7 +351,7 @@ tp_stream_tube_channel_constructed (GObject *obj)
       return;
     }
 
-  props = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
+  props = _tp_channel_get_immutable_properties (TP_CHANNEL (self));
 
   if (tp_asv_get_string (props, TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE)
       == NULL)
@@ -603,7 +604,7 @@ new_local_connection_identified (TpStreamTubeChannel *self,
   G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   initiator_handle = tp_channel_get_initiator_handle (TP_CHANNEL (self));
 
-  connection = tp_channel_borrow_connection (TP_CHANNEL (self));
+  connection = tp_channel_get_connection (TP_CHANNEL (self));
   features = tp_simple_client_factory_dup_contact_features (
       tp_proxy_get_factory (connection), connection);
 
@@ -842,7 +843,7 @@ tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
   self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_stream_tube_channel_accept_async);
 
-  properties = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
+  properties = _tp_channel_get_immutable_properties (TP_CHANNEL (self));
   supported_sockets = tp_asv_get_boxed (properties,
       TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SUPPORTED_SOCKET_TYPES,
       TP_HASH_TYPE_SUPPORTED_SOCKET_MAP);
@@ -1075,7 +1076,7 @@ connection_identified (TpStreamTubeChannel *self,
       TpConnection *connection;
       GArray *features;
 
-      connection = tp_channel_borrow_connection (TP_CHANNEL (self));
+      connection = tp_channel_get_connection (TP_CHANNEL (self));
       features = tp_simple_client_factory_dup_contact_features (
           tp_proxy_get_factory (connection), connection);
 
@@ -1411,7 +1412,7 @@ tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
   self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_stream_tube_channel_offer_async);
 
-  properties = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
+  properties = _tp_channel_get_immutable_properties (TP_CHANNEL (self));
   supported_sockets = tp_asv_get_boxed (properties,
       TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SUPPORTED_SOCKET_TYPES,
       TP_HASH_TYPE_SUPPORTED_SOCKET_MAP);
@@ -1530,7 +1531,7 @@ tp_stream_tube_channel_get_service (TpStreamTubeChannel *self)
 {
   GHashTable *props;
 
-  props = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
+  props = _tp_channel_get_immutable_properties (TP_CHANNEL (self));
 
   return tp_asv_get_string (props, TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE);
 }
