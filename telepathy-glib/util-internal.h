@@ -105,4 +105,9 @@ GPtrArray *_tp_contacts_from_values (GHashTable *table);
 GList *_tp_object_list_copy (GList *l);
 void _tp_object_list_free (GList *l);
 
+/* This can be removed once we depend on GLib 2.34 */
+GList *_tp_g_list_copy_deep (GList *list,
+    GCopyFunc func,
+    gpointer user_data);
+
 #endif /* __TP_UTIL_INTERNAL_H__ */
