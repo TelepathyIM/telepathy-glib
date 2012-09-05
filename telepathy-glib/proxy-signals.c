@@ -370,7 +370,7 @@ tp_proxy_signal_connection_v0_new (TpProxy *self,
                                    GError **error)
 {
   TpProxySignalConnection *sc;
-  DBusGProxy *iface_proxy = tp_proxy_borrow_interface_by_id (self,
+  DBusGProxy *iface_proxy = tp_proxy_get_interface_by_id (self,
       iface, error);
 
   if (iface_proxy == NULL)

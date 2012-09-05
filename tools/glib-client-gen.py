@@ -783,9 +783,11 @@ class Generator(object):
         self.b('  g_return_val_if_fail (callback != NULL || '
                'weak_object == NULL, NULL);')
         self.b('')
+        self.b('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
         self.b('  iface = tp_proxy_borrow_interface_by_id (')
         self.b('      (TpProxy *) proxy,')
         self.b('      interface, &error);')
+        self.b('  G_GNUC_END_IGNORE_DEPRECATIONS')
         self.b('')
         self.b('  if (iface == NULL)')
         self.b('    {')
@@ -1064,8 +1066,10 @@ class Generator(object):
         self.b('  g_return_val_if_fail (%s (proxy), FALSE);'
                % self.proxy_assert)
         self.b('')
+        self.b('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
         self.b('  iface = tp_proxy_borrow_interface_by_id')
         self.b('       ((TpProxy *) proxy, interface, error);')
+        self.b('  G_GNUC_END_IGNORE_DEPRECATIONS')
         self.b('')
         self.b('  if (iface == NULL)')
         self.b('    return FALSE;')

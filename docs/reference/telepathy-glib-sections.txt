@@ -3737,6 +3737,7 @@ tp_cli_dbus_properties_run_set
 tp_proxy_add_interface_by_id
 tp_proxy_add_interfaces
 tp_proxy_borrow_interface_by_id
+tp_proxy_get_interface_by_id
 tp_proxy_invalidate
 TpProxyInterfaceAddedCb
 tp_proxy_or_subclass_hook_on_interface_add
