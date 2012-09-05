@@ -29,6 +29,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/util-internal.h"
 
 #include "_gen/telepathy-interfaces.h"
 
@@ -250,6 +251,8 @@ tp_contact_search_result_get_field (TpContactSearchResult *self,
  * Returns: (transfer container) (element-type TelepathyGLib.ContactInfoField):
  *  a #GList of #TpContactInfoField for the specified contact. You should free
  *  it when you're done with g_list_free().
+ * Deprecated: Since 0.UNRELEASED. New code should use
+ *  tp_contact_search_result_dup_fields() instead.
  */
 GList *
 tp_contact_search_result_get_fields (TpContactSearchResult *self)
@@ -257,4 +260,24 @@ tp_contact_search_result_get_fields (TpContactSearchResult *self)
   g_return_val_if_fail (TP_IS_CONTACT_SEARCH_RESULT (self), NULL);
 
   return g_list_copy (self->priv->fields);
+}
+
+/**
+ * tp_contact_search_result_dup_fields:
+ * @self: a search result
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer full) (element-type TelepathyGLib.ContactInfoField):
+ *  a #GList of #TpContactInfoField for the specified contact. You should free
+ *  it when you're done with tp_contact_info_list_free().
+ * Since: 0.UNRELEASED
+ */
+GList *
+tp_contact_search_result_dup_fields (TpContactSearchResult *self)
+{
+  g_return_val_if_fail (TP_IS_CONTACT_SEARCH_RESULT (self), NULL);
+
+  return _tp_g_list_copy_deep (self->priv->fields,
+      (GCopyFunc) tp_contact_info_field_copy, NULL);
 }

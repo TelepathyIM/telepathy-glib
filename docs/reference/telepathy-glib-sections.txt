@@ -4828,6 +4828,7 @@ TpContactSearchResult
 TpContactSearchResultClass
 tp_contact_search_result_get_field
 tp_contact_search_result_get_fields
+tp_contact_search_result_dup_fields
 tp_contact_search_result_get_identifier
 <SUBSECTION Standard>
 tp_contact_search_result_get_type
