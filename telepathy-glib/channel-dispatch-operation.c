@@ -977,6 +977,8 @@ tp_channel_dispatch_operation_get_feature_quark_core (void)
  * Returns: (transfer none): the value of #TpChannelDispatchOperation:connection
  *
  * Since: 0.11.5
+ * Deprecated: Since 0.UNRELEASED. New code should use
+ *  tp_channel_dispatch_operation_get_connection() instead.
  */
 TpConnection *
 tp_channel_dispatch_operation_borrow_connection (
@@ -996,6 +998,8 @@ tp_channel_dispatch_operation_borrow_connection (
  * Returns: (transfer none): the value of #TpChannelDispatchOperation:account
  *
  * Since: 0.11.5
+ * Deprecated: Since 0.UNRELEASED. New code should use
+ *  tp_channel_dispatch_operation_get_account() instead.
  */
 TpAccount *
 tp_channel_dispatch_operation_borrow_account (
@@ -1016,6 +1020,8 @@ tp_channel_dispatch_operation_borrow_account (
  * Returns: (transfer none): the value of #TpChannelDispatchOperation:channels
  *
  * Since: 0.11.5
+ * Deprecated: Since 0.UNRELEASED. New code should use
+ *  tp_channel_dispatch_operation_get_channels() instead.
  */
 GPtrArray *
 tp_channel_dispatch_operation_borrow_channels (
@@ -1037,6 +1043,8 @@ tp_channel_dispatch_operation_borrow_channels (
  * #TpChannelDispatchOperation:possible-handlers
  *
  * Since: 0.11.5
+ * Deprecated: Since 0.UNRELEASED. New code should use
+ *  tp_channel_dispatch_operation_get_possible_handlers() instead.
  */
 GStrv
 tp_channel_dispatch_operation_borrow_possible_handlers (
@@ -1057,12 +1065,96 @@ tp_channel_dispatch_operation_borrow_possible_handlers (
  * #TpChannelDispatchOperation:cdo-properties
  *
  * Since: 0.11.5
+ * Deprecated: Since 0.UNRELEASED. New code should use individual property
+ *  getters like tp_channel_dispatch_operation_get_connection(),
+ *  tp_channel_dispatch_operation_get_account(),
+ *  tp_channel_dispatch_operation_get_channels(), or
+ *  tp_channel_dispatch_operation_get_possible_handlers() instead.
  */
 GHashTable *
 tp_channel_dispatch_operation_borrow_immutable_properties (
     TpChannelDispatchOperation *self)
 {
   return self->priv->immutable_properties;
+}
+
+/**
+ * tp_channel_dispatch_operation_get_connection: (skip)
+ * @self: a #TpChannelDispatchOperation
+ *
+ * Returns the #TpConnection of this ChannelDispatchOperation.
+ * The returned pointer is only valid while @self is valid - reference
+ * it with g_object_ref() if needed.
+ *
+ * Returns: (transfer none): the value of #TpChannelDispatchOperation:connection
+ *
+ * Since: 0.UNRELEASED
+ */
+TpConnection *
+tp_channel_dispatch_operation_get_connection (
+    TpChannelDispatchOperation *self)
+{
+  return self->priv->connection;
+}
+
+/**
+ * tp_channel_dispatch_operation_get_account: (skip)
+ * @self: a #TpChannelDispatchOperation
+ *
+ * Returns the #TpAccount of this ChannelDispatchOperation.
+ * The returned pointer is only valid while @self is valid - reference
+ * it with g_object_ref() if needed.
+ *
+ * Returns: (transfer none): the value of #TpChannelDispatchOperation:account
+ *
+ * Since: 0.UNRELEASED
+ */
+TpAccount *
+tp_channel_dispatch_operation_get_account (
+    TpChannelDispatchOperation *self)
+{
+  return self->priv->account;
+}
+
+/**
+ * tp_channel_dispatch_operation_get_channels: (skip)
+ * @self: a #TpChannelDispatchOperation
+ *
+ * Returns a #GPtrArray containing the #TpChannel of this
+ * ChannelDispatchOperation.
+ * The returned array and its #TpChannel are only valid while @self is
+ * valid - copy array and reference channels with g_object_ref() if needed.
+ *
+ * Returns: (transfer none): the value of #TpChannelDispatchOperation:channels
+ *
+ * Since: 0.UNRELEASED
+ */
+GPtrArray *
+tp_channel_dispatch_operation_get_channels (
+    TpChannelDispatchOperation *self)
+{
+  return self->priv->channels;
+}
+
+/**
+ * tp_channel_dispatch_operation_get_possible_handlers: (skip)
+ * @self: a #TpChannelDispatchOperation
+ *
+ * Returns a #GStrv containing the possible handlers of this
+ * ChannelDispatchOperation.
+ * The returned array and its strings are only valid while @self is
+ * valid - copy it with g_strdupv if needed.
+ *
+ * Returns: (transfer none): the value of
+ * #TpChannelDispatchOperation:possible-handlers
+ *
+ * Since: 0.UNRELEASED
+ */
+GStrv
+tp_channel_dispatch_operation_get_possible_handlers (
+    TpChannelDispatchOperation *self)
+{
+  return self->priv->possible_handlers;
 }
 
 static void
