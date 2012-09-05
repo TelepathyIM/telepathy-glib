@@ -56,7 +56,7 @@
  * To list the existing valid accounts, the client should first
  * prepare the %TP_ACCOUNT_MANAGER_FEATURE_CORE feature using
  * tp_proxy_prepare_async(), then call
- * tp_account_manager_get_valid_accounts().
+ * tp_account_manager_dup_valid_accounts().
  *
  * The #TpAccountManager::account-validity-changed signal is emitted
  * to notify of the validity of an account changing. New accounts are
@@ -156,7 +156,7 @@ G_DEFINE_TYPE (TpAccountManager, tp_account_manager, TP_TYPE_PROXY)
  * #TpAccount objects subsequently announced by
  * #TpAccountManager::account-validity-changed are <emphasis>not</emphasis>
  * guaranteed to have this feature prepared. In practice, this means that
- * the accounts returned by calling tp_account_manager_get_valid_accounts()
+ * the accounts returned by calling tp_account_manager_dup_valid_accounts()
  * immediately after successfully calling tp_proxy_prepare_finish() on the
  * #TpAccountManager will have #TP_ACCOUNT_FEATURE_CORE prepared, but later
  * calls to that function do not have the same guarantee.
@@ -1116,6 +1116,8 @@ tp_account_manager_ensure_account (TpAccountManager *self,
  * Returns: (element-type TelepathyGLib.Account) (transfer container): a newly allocated #GList of valid accounts in @manager
  *
  * Since: 0.9.0
+ * Deprecated: Since 0.UNRELEASED. New code should use
+ *  tp_account_manager_dup_valid_accounts() instead.
  */
 GList *
 tp_account_manager_get_valid_accounts (TpAccountManager *manager)
@@ -1123,6 +1125,41 @@ tp_account_manager_get_valid_accounts (TpAccountManager *manager)
   g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
 
   return g_hash_table_get_values (manager->priv->accounts);
+}
+
+/**
+ * tp_account_manager_dup_valid_accounts:
+ * @manager: a #TpAccountManager
+ *
+ * Returns a newly allocated #GList of reffed valid accounts in @manager.
+ * The list must be freed with g_list_free_full() and g_object_unref() after
+ * used.
+ *
+ * The returned #TpAccount<!-- -->s are guaranteed to have
+ * %TP_ACCOUNT_FEATURE_CORE prepared, along with all features previously passed
+ * to tp_simple_client_factory_add_account_features().
+ *
+ * The list of valid accounts returned is not guaranteed to have been retrieved
+ * until %TP_ACCOUNT_MANAGER_FEATURE_CORE is prepared
+ * (tp_proxy_prepare_async() has returned). Until this feature has
+ * been prepared, an empty list (%NULL) will be returned.
+ *
+ * Returns: (element-type TelepathyGLib.Account) (transfer full): a newly
+ *  allocated #GList of reffed valid accounts in @manager
+ *
+ * Since: 0.UNRELEASED
+ */
+GList *
+tp_account_manager_dup_valid_accounts (TpAccountManager *manager)
+{
+  GList *ret;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
+
+  ret = g_hash_table_get_values (manager->priv->accounts);
+  g_list_foreach (ret, (GFunc) g_object_ref, NULL);
+
+  return ret;
 }
 
 /**
