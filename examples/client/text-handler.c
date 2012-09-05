@@ -66,7 +66,7 @@ display_pending_messages (TpTextChannel *channel)
 {
   GList *messages, *l;
 
-  messages = tp_text_channel_get_pending_messages (channel);
+  messages = tp_text_channel_dup_pending_messages (channel);
 
   for (l = messages; l != NULL; l = g_list_next (l))
     {
@@ -77,7 +77,7 @@ display_pending_messages (TpTextChannel *channel)
 
   tp_text_channel_ack_messages_async (channel, messages, NULL, NULL);
 
-  g_list_free (messages);
+  g_list_free_full (messages, g_object_unref);
 }
 
 static void
