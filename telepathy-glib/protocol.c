@@ -904,7 +904,6 @@ tp_protocol_has_param (TpProtocol *self,
   return (tp_protocol_get_param (self, param) != NULL);
 }
 
-/* FIXME: in Telepathy 1.0, rename to tp_protocol_borrow_param or remove */
 /**
  * tp_protocol_get_param:
  * @self: a protocol
@@ -917,7 +916,8 @@ tp_protocol_has_param (TpProtocol *self,
  *
  * Since: 0.11.11
  */
-const TpConnectionManagerParam *tp_protocol_get_param (TpProtocol *self,
+const TpConnectionManagerParam *
+tp_protocol_get_param (TpProtocol *self,
     const gchar *param)
 {
   g_return_val_if_fail (TP_IS_PROTOCOL (self), FALSE);
@@ -927,7 +927,6 @@ G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
-/* FIXME: in Telepathy 1.0, rename to tp_protocol_get_param */
 /**
  * tp_protocol_dup_param:
  * @self: a protocol
@@ -946,11 +945,7 @@ tp_protocol_dup_param (TpProtocol *self,
 {
   g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
 
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  return tp_connection_manager_param_copy (
-      tp_connection_manager_protocol_get_param (
-        &self->priv->protocol_struct, param));
-G_GNUC_END_IGNORE_DEPRECATIONS
+  return tp_connection_manager_param_copy (tp_protocol_get_param (self, param));
 }
 
 /**
@@ -1006,6 +1001,8 @@ G_GNUC_END_IGNORE_DEPRECATIONS
  *  terminated by one whose @name is %NULL
  *
  * Since: 0.17.6
+ * Deprecated: Since 0.UNRELEASED. New code should use tp_protocol_dup_params()
+ *  instead.
  */
 const TpConnectionManagerParam *
 tp_protocol_borrow_params (TpProtocol *self)
