@@ -999,8 +999,7 @@ tp_base_client_dispose (GObject *object)
   tp_clear_object (&self->priv->only_for_account);
   tp_clear_object (&self->priv->channel_factory);
 
-  g_list_foreach (self->priv->pending_requests, (GFunc) g_object_unref, NULL);
-  g_list_free (self->priv->pending_requests);
+  g_list_free_full (self->priv->pending_requests, g_object_unref);
   self->priv->pending_requests = NULL;
 
   if (self->priv->my_chans != NULL &&

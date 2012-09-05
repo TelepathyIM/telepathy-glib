@@ -158,15 +158,8 @@ G_DEFINE_BOXED_TYPE (TpContactInfoFieldSpec, tp_contact_info_field_spec,
 GList *
 tp_contact_info_spec_list_copy (GList *list)
 {
-  GList *copy = NULL;
-
-  while (list != NULL)
-    {
-      copy = g_list_prepend (copy, tp_contact_info_field_spec_copy (list->data));
-      list = list->next;
-    }
-
-  return g_list_reverse (copy);
+  return _tp_g_list_copy_deep (list,
+      (GCopyFunc) tp_contact_info_field_spec_copy, NULL);
 }
 
 /**
@@ -180,8 +173,7 @@ tp_contact_info_spec_list_copy (GList *list)
 void
 tp_contact_info_spec_list_free (GList *list)
 {
-  g_list_foreach (list, (GFunc) tp_contact_info_field_spec_free, NULL);
-  g_list_free (list);
+  g_list_free_full (list, (GDestroyNotify) tp_contact_info_field_spec_free);
 }
 
 /**
@@ -316,15 +308,8 @@ G_DEFINE_BOXED_TYPE (TpContactInfoField, tp_contact_info_field,
 GList *
 tp_contact_info_list_copy (GList *list)
 {
-  GList *copy = NULL;
-
-  while (list != NULL)
-    {
-      copy = g_list_prepend (copy, tp_contact_info_field_copy (list->data));
-      list = list->next;
-    }
-
-  return g_list_reverse (copy);
+  return _tp_g_list_copy_deep (list,
+      (GCopyFunc) tp_contact_info_field_copy, NULL);
 }
 
 /**
@@ -338,8 +323,7 @@ tp_contact_info_list_copy (GList *list)
 void
 tp_contact_info_list_free (GList *list)
 {
-  g_list_foreach (list, (GFunc) tp_contact_info_field_free, NULL);
-  g_list_free (list);
+  g_list_free_full (list, (GDestroyNotify) tp_contact_info_field_free);
 }
 
 /**

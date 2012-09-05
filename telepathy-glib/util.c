@@ -2037,11 +2037,7 @@ _tp_contacts_from_values (GHashTable *table)
 GList *
 _tp_object_list_copy (GList *l)
 {
-  GList *new_l;
-
-  new_l = g_list_copy (l);
-  g_list_foreach (new_l, (GFunc) g_object_ref, NULL);
-  return new_l;
+  return _tp_g_list_copy_deep (l, (GCopyFunc) g_object_ref, NULL);
 }
 
 /*
