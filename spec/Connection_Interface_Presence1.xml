@@ -64,8 +64,7 @@
 
     <tp:mapping name="Contact_Presence_Map">
       <tp:docstring>
-        Mapping returned by <tp:member-ref>GetPresences</tp:member-ref>
-        and signalled by <tp:member-ref>PresencesChanged</tp:member-ref>,
+        Mapping signalled by <tp:member-ref>PresencesChanged</tp:member-ref>,
         indicating the presence of a number of contacts.
       </tp:docstring>
       <tp:member type="u" tp:type="Contact_Handle" name="Contact">
@@ -193,46 +192,6 @@
             status cannot be set on the user themselves, or a non-empty
             message was supplied for a status that does not
             accept a message.
-          </tp:docstring>
-        </tp:error>
-        <tp:error name="im.telepathy1.Error.NotAvailable"/>
-      </tp:possible-errors>
-    </method>
-
-    <method name="GetPresences" tp:name-for-bindings="Get_Presences">
-      <arg direction="in" name="Contacts" type="au" tp:type="Contact_Handle[]">
-        <tp:docstring>
-          An array of the contacts whose presence should be obtained.
-        </tp:docstring>
-      </arg>
-      <arg direction="out" name="Presence" type="a{u(uss)}"
-        tp:type="Contact_Presence_Map">
-        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-          <p>Presence information in the same format as for the
-            <tp:member-ref>PresencesChanged</tp:member-ref> signal.
-            The returned mapping MUST include an entry for each contact
-            in the method's argument.</p>
-
-          <p>The definition of the connection presence types Unknown
-            and Offline means that if a connection manager will return
-            Unknown for contacts not on the subscribe list, it MUST delay
-            the reply to this method call until it has found out which
-            contacts are, in fact, on the subscribe list.</p>
-        </tp:docstring>
-      </arg>
-      <tp:docstring>
-        Get presence previously emitted by
-        <tp:member-ref>PresencesChanged</tp:member-ref> for the given
-        contacts. Data is returned in the same structure as the
-        PresencesChanged signal; no additional network requests are made.
-      </tp:docstring>
-      <tp:possible-errors>
-        <tp:error name="im.telepathy1.Error.Disconnected"/>
-        <tp:error name="im.telepathy1.Error.InvalidHandle"/>
-        <tp:error name="im.telepathy1.Error.NetworkError">
-          <tp:docstring>
-            While discovering the subscribe list in order to distinguish
-            between Unknown and Offline statuses, a network error occurred.
           </tp:docstring>
         </tp:error>
         <tp:error name="im.telepathy1.Error.NotAvailable"/>
@@ -491,10 +450,17 @@
     <tp:contact-attribute name="presence"
       type="(uss)" tp:type="Presence">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>The same struct that would be returned by
-          <tp:member-ref>GetPresences</tp:member-ref>
-          (always present with some value if information from the
-          Presence interface was requested)</p>
+        <p>The contact's presence.</p>
+
+        <p>The presence is likely to be (Unknown, "unknown", "") unless
+          <tp:token-ref
+            namespace="im.telepathy1.Connection.Interface.ContactList1">subscribe</tp:token-ref>
+          contact attribute is Yes, or the local user can temporarily see their
+          presence for some other reason (for instance, on XMPP, contacts seen
+          in chatrooms will temporarily have available presence).</p>
+
+        <p>Always present with some value if information if the
+          Presence interface was requested</p>
       </tp:docstring>
     </tp:contact-attribute>
 

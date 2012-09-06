@@ -254,12 +254,11 @@
         </tp:rationale>
 
         <p>If this attribute is not Yes, the local user cannot generally
-          expect to receive presence from this contact. Their presence status
-          as returned by <tp:dbus-ref
-            namespace="im.telepathy1.Connection.Interface.Presence1">GetPresences</tp:dbus-ref>
-          is likely to be (Unknown, "unknown", ""), unless the local user
-          can temporarily see their presence for some other reason (for
-          instance, on XMPP, contacts seen in chatrooms will temporarily
+          expect to receive presence from this contact. Their <tp:token-ref
+            namespace="im.telepathy1.Connection.Interface.Presence1">presence</tp:token-ref>
+          contact attribute is likely to be (Unknown, "unknown", ""), unless the
+          local user can temporarily see their presence for some other reason
+          (for instance, on XMPP, contacts seen in chatrooms will temporarily
           have available presence).</p>
 
         <p>If this attribute is Ask, this indicates that the local user has
@@ -665,8 +664,8 @@
 
         <p>Before calling this method on a connection where <tp:dbus-ref
             namespace="im.telepathy1.Connection.Interface.Aliasing1"
-            >GetAliasFlags</tp:dbus-ref> returns the <code>User_Set</code> flag,
-          user interfaces SHOULD obtain, from the user, an alias to
+            >AliasFlags</tp:dbus-ref> property has the <code>User_Set</code>
+          flag, user interfaces SHOULD obtain, from the user, an alias to
           identify the contact in future, and store it using <tp:dbus-ref
             namespace="im.telepathy1.Connection.Interface.Aliasing1"
             >SetAliases</tp:dbus-ref>.</p>

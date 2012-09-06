@@ -191,28 +191,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
 
-    <method name="GetContactInfo"
-      tp:name-for-bindings="Get_Contact_Info">
-      <arg direction="in" name="Contacts" type="au" tp:type="Contact_Handle[]">
-        <tp:docstring>
-          An array of handles representing contacts.
-        </tp:docstring>
-      </arg>
-      <arg direction="out" name="ContactInfo" type="a{ua(sasas)}"
-        tp:type="Contact_Info_Map">
-        <tp:docstring>
-          A dictionary mapping contact handles to information, whose keys are
-          the subset of the requested list of handles for which information was
-          cached.
-        </tp:docstring>
-      </arg>
-      <tp:docstring>
-        Request information on several contacts at once.  This SHOULD only
-        return cached information, omitting handles for which no information is
-        cached from the returned map.
-      </tp:docstring>
-    </method>
-
     <method name="RefreshContactInfo"
       tp:name-for-bindings="Refresh_Contact_Info">
       <arg direction="in" name="Contacts" type="au" tp:type="Contact_Handle[]">
@@ -517,8 +495,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         the Push flag.</p>
 
       <p>On protocols with the Push flag set, UIs can connect to
-        <tp:member-ref>ContactInfoChanged</tp:member-ref>, call
-        <tp:member-ref>GetContactInfo</tp:member-ref> once at login for the set
+        <tp:member-ref>ContactInfoChanged</tp:member-ref>, get
+        <tp:token-ref>info</tp:token-ref> attributes once at login for the set
         of contacts they are interested in, and then be sure they will receive
         the latest contact info. On protocols like XMPP, clients can do the
         same, but will receive (at most) opportunistic updates if the info is
@@ -538,10 +516,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     <tp:contact-attribute name="info"
       type="a(sasas)" tp:type="Contact_Info_Field[]">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>The same value that would be returned by
-          <tp:member-ref>GetContactInfo</tp:member-ref> for this contact.
-          Omitted from the result if the contact's info
-          is not known.</p>
+        <p>The contact's information. Omitted from the result if the contact's
+        info is not known.</p>
       </tp:docstring>
     </tp:contact-attribute>
 

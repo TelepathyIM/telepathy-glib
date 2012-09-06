@@ -159,43 +159,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
 
-    <method name="GetContactCapabilities"
-            tp:name-for-bindings="Get_Contact_Capabilities">
-      <arg direction="in" name="Handles" type="au" tp:type="Contact_Handle[]">
-        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-          <p>An array of contact handles for this connection.</p>
-
-          <p>The handle zero MUST NOT be included in the request.</p>
-        </tp:docstring>
-      </arg>
-      <arg direction="out" type="a{ua(a{sv}as)}"
-           tp:type="Contact_Capabilities_Map" name="Contact_Capabilities">
-        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-          <p>A map from contact handles to lists of requestable channel
-            classes, representing the channel requests that are expected
-            to succeed for that contact.</p>
-
-          <p>Contacts listed among Handles whose capabilities are unknown
-            SHOULD be omitted from this map; contacts known to have an empty
-            set of capabilities SHOULD be included in the keys of this map,
-            with an empty array as the corresponding value.</p>
-        </tp:docstring>
-      </arg>
-      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>Returns an array of requestable channel classes for the given
-          contact handles, representing the channel requests that are
-          expected to succeed.</p>
-      </tp:docstring>
-      <tp:possible-errors>
-        <tp:error name="im.telepathy1.Error.Disconnected"/>
-        <tp:error name="im.telepathy1.Error.InvalidHandle">
-          <tp:docstring>
-            The handle does not represent a contact. Zero is always invalid.
-          </tp:docstring>
-        </tp:error>
-      </tp:possible-errors>
-    </method>
-
     <signal name="ContactCapabilitiesChanged"
             tp:name-for-bindings="Contact_Capabilities_Changed">
       <arg name="caps" type="a{ua(a{sv}as)}"
@@ -293,9 +256,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     <tp:contact-attribute name="capabilities"
       type="a(a{sv}as)" tp:type="Requestable_Channel_Class[]">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>The same structs that would be returned by
-          <tp:member-ref>GetContactCapabilities</tp:member-ref>.
-          Omitted from the result if the contact's capabilities
+        <p>Returns an array of requestable channel classes for the given
+          contact, representing the channel requests that are
+          expected to succeed.</p>
+
+        <p>Omitted from the result if the contact's capabilities
           are not known; present in the result as an empty array if the
           contact is known to have no capabilities at all.</p>
       </tp:docstring>

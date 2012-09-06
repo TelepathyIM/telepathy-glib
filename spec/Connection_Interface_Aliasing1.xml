@@ -28,24 +28,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:member type="s" name="Alias"/>
     </tp:mapping>
 
-    <tp:struct name="Alias_Pair" array-name="Alias_Pair_List">
-      <tp:docstring>
-        A pair (contact handle, alias) as seen in the
-        <tp:member-ref>AliasesChanged</tp:member-ref> signal.
-      </tp:docstring>
-      <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
-      <tp:member type="s" name="Alias"/>
-    </tp:struct>
-
     <signal name="AliasesChanged" tp:name-for-bindings="Aliases_Changed">
-      <arg name="Aliases" type="a(us)" tp:type="Alias_Pair[]">
-        <!-- FIXME: if we break API, this could be an Alias_Map, a{us} -->
+      <arg name="Aliases" type="a{us}" tp:type="Alias_Map">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-          An array containing structs of:
-          <ul>
-            <li>the handle representing the contact</li>
-            <li>the new alias</li>
-          </ul>
+          A mapping from the handle representing the contact to the new alias
         </tp:docstring>
       </arg>
       <tp:docstring>
@@ -70,21 +56,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:flag>
     </tp:flags>
-    <method name="GetAliasFlags" tp:name-for-bindings="Get_Alias_Flags">
-      <arg direction="out" type="u" tp:type="Connection_Alias_Flags"
-        name="Alias_Flags">
-        <tp:docstring>
-          An integer with a bitwise OR of flags from ConnectionAliasFlags
-        </tp:docstring>
-      </arg>
+    <property name="AliasFlags"
+      tp:name-for-bindings="Alias_Flags" type="u" access="read"
+      tp:immutable="yes">
+      <tp:added version="0.UNRELEASED"/>
       <tp:docstring>
-        Return a bitwise OR of flags detailing the behaviour of aliases on this
-        connection.
+        A bitwise OR of flags from ConnectionAliasFlags detailing the behaviour
+        of aliases on this connection.
       </tp:docstring>
-      <tp:possible-errors>
-        <tp:error name="im.telepathy1.Error.Disconnected"/>
-      </tp:possible-errors>
-    </method>
+    </property>
     <method name="RequestAliases" tp:name-for-bindings="Request_Aliases">
       <arg direction="in" name="Contacts" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
@@ -103,30 +83,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="im.telepathy1.Error.Disconnected"/>
         <tp:error name="im.telepathy1.Error.NetworkError"/>
         <tp:error name="im.telepathy1.Error.NotAvailable"/>
-        <tp:error name="im.telepathy1.Error.InvalidHandle"/>
-      </tp:possible-errors>
-    </method>
-    <method name="GetAliases" tp:name-for-bindings="Get_Aliases">
-      <arg direction="in" name="Contacts" type="au" tp:type="Contact_Handle[]">
-        <tp:docstring>
-          An array of handles representing contacts
-        </tp:docstring>
-      </arg>
-      <arg direction="out" type="a{us}" tp:type="Alias_Map" name="Aliases">
-        <tp:docstring>
-          A dictionary mapping contact handles to aliases
-        </tp:docstring>
-      </arg>
-      <tp:docstring>
-        Request the value of several contacts' aliases at once. This SHOULD
-        only return cached aliases, falling back on the contact identifier
-        (i.e. the string corresponding to the handle) if none is present. Also
-        if there was no cached alias, a request SHOULD be started of which the
-        result is later signalled by
-        <tp:member-ref>AliasesChanged</tp:member-ref>.
-      </tp:docstring>
-      <tp:possible-errors>
-        <tp:error name="im.telepathy1.Error.Disconnected"/>
         <tp:error name="im.telepathy1.Error.InvalidHandle"/>
       </tp:possible-errors>
     </method>
@@ -157,12 +113,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
     <tp:contact-attribute name="alias" type="s">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>The same string that would be returned by
-          <tp:member-ref>GetAliases</tp:member-ref>
-          (always present with some value, possibly the
-          same as Connection/contact-id, if information from the
-          Aliasing interface was requested)
-        </p>
+        <p>The contact's alias. This SHOULD only return cached aliases, falling
+        back on the contact identifier (i.e. the string corresponding to the
+        handle) if none is present. Also if there was no cached alias, a request
+        SHOULD be started of which the result is later signalled by
+        <tp:member-ref>AliasesChanged</tp:member-ref>.</p>
       </tp:docstring>
     </tp:contact-attribute>
 
@@ -173,8 +128,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     alias is changed or first discovered.</p>
 
     <p>On connections where the user is allowed to set aliases for contacts and
-    store them on the server, the <tp:member-ref>GetAliasFlags</tp:member-ref>
-    method will have the CONNECTION_ALIAS_FLAG_USER_SET flag set, and the
+    store them on the server, the <tp:member-ref>AliasFlags</tp:member-ref>
+    property will have the CONNECTION_ALIAS_FLAG_USER_SET flag set, and the
     <tp:member-ref>SetAliases</tp:member-ref> method may be called on contact
     handles other than the user themselves.</p>
 

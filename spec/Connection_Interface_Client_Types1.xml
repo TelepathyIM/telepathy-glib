@@ -98,46 +98,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:member>
     </tp:mapping>
 
-    <method name="GetClientTypes" tp:name-for-bindings="Get_Client_Types">
-      <tp:docstring>
-        Return the client types of the given contacts, if they are
-        already known. If any of the given contacts' client types are
-        not known, request their current client types, but return
-        immediately without waiting for a reply; if a reply with a
-        non-empty client type array is later received for those
-        contacts, the
-        <tp:member-ref>ClientTypesUpdated</tp:member-ref> signal will
-        be emitted for them.
-
-        <tp:rationale>
-          This method is appropriate for "lazy" client type finding, for instance
-          displaying the client types (if available) of everyone in your contact
-          list.
-        </tp:rationale>
-      </tp:docstring>
-
-      <arg direction="in" name="Contacts" type="au" tp:type="Contact_Handle[]">
-        <tp:docstring>
-          The contacts whose client types should be returned or signalled.
-        </tp:docstring>
-      </arg>
-
-      <arg direction="out" name="Client_Types" type="a{uas}"
-        tp:type="Contact_Client_Types">
-        <tp:docstring>
-          The contacts' client types, if already known. Contacts whose client
-          types are not already known are omitted from the mapping; contacts known
-          to have no client type information appear in the mapping with an empty
-          list.
-        </tp:docstring>
-      </arg>
-
-      <tp:possible-errors>
-        <tp:error name="im.telepathy1.Error.Disconnected"/>
-        <tp:error name="im.telepathy1.Error.InvalidHandle"/>
-      </tp:possible-errors>
-    </method>
-
     <method name="RequestClientTypes" tp:name-for-bindings="Request_Client_Types">
       <tp:docstring>
         Return the current client types of the given contact. If necessary, make
@@ -200,10 +160,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     <tp:contact-attribute name="client-types" type="as"
       tp:type="Contact_Client_Type[]">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>The same mapping that would be returned by
-          <tp:member-ref>GetClientTypes</tp:member-ref> for this contact.
-          Omitted from the result if the contact's client types are not
-          known.</p>
+        <p>The client types of the contact, if they are already known. If the
+        contact's client types are not known, request their current client
+        types, but omit this attribute from the result; if a reply with a
+        non-empty client type array is later received for the contact, the
+        <tp:member-ref>ClientTypesUpdated</tp:member-ref> signal will
+        be emitted.</p>
+
+        <tp:rationale>
+          This attribute is appropriate for "lazy" client type finding, for
+          instance displaying the client types (if available) of everyone in
+          your contact list.
+        </tp:rationale>
       </tp:docstring>
     </tp:contact-attribute>
 

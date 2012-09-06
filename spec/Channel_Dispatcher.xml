@@ -260,6 +260,13 @@
         </tp:docstring>
       </arg>
 
+      <arg name="Properties" direction="out" type="a{sv}"
+        tp:type="Qualified_Property_Value_Map">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>Immutable properties of the channel request object.</p>
+        </tp:docstring>
+      </arg>
+
       <tp:possible-errors>
         <tp:error name="im.telepathy1.Error.InvalidArgument">
           <tp:docstring>
@@ -392,6 +399,13 @@
           A
           <tp:dbus-ref namespace="im.telepathy1">ChannelRequest</tp:dbus-ref>
           object.
+        </tp:docstring>
+      </arg>
+
+      <arg name="Properties" direction="out" type="a{sv}"
+        tp:type="Qualified_Property_Value_Map">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>Immutable properties of the channel request object.</p>
         </tp:docstring>
       </arg>
 

@@ -72,13 +72,6 @@ USA.</p>
       <tp:added version="0.19.2"/>
     </property>
 
-    <property name="Protocol" tp:name-for-bindings="Protocol"
-      access="read" type="s" tp:type="Protocol_Name">
-      <tp:docstring>
-        A string identifier for the protocol.
-      </tp:docstring>
-    </property>
-
     <signal name="SelfContactChanged"
         tp:name-for-bindings="Self_Contact_Changed">
       <tp:docstring>

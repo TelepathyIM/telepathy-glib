@@ -258,54 +258,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:member>
     </tp:mapping>
 
-    <method name="GetLocations" tp:name-for-bindings="Get_Locations">
-      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>Return the current locations of the given contacts, if they are
-          already known. If any of the given contacts' locations are not known,
-          request their current locations, but return immediately without waiting
-          for a reply; if a reply with a non-empty location is later received
-          for those contacts, the <tp:member-ref>LocationUpdated</tp:member-ref>
-          signal will be emitted for them.</p>
-
-        <tp:rationale>
-          <p>This method is appropriate for "lazy" location finding, for instance
-            displaying the location (if available) of everyone in your contact
-            list.</p>
-        </tp:rationale>
-
-        <p>For backwards compatibility, if this method is called by a client
-          whose "interest count" for this interface, as defined by <tp:dbus-ref
-            namespace="im.telepathy1"
-            >Connection.AddClientInterest</tp:dbus-ref>, is zero, the
-          Connection SHOULD behave as if AddClientInterest had been called for
-          this interface just before that method call. Clients that do not
-          explicitly call AddClientInterest SHOULD NOT call <tp:dbus-ref
-            namespace="im.telepathy1"
-            >Connection.RemoveClientInterest</tp:dbus-ref> either.</p>
-      </tp:docstring>
-
-      <arg direction="in" name="Contacts" type="au" tp:type="Contact_Handle[]">
-        <tp:docstring>
-          The contacts whose locations should be returned or signalled.
-        </tp:docstring>
-      </arg>
-
-      <arg direction="out" name="Locations" type="a{ua{sv}}"
-        tp:type="Contact_Locations">
-        <tp:docstring>
-          The contacts' locations, if already known. Contacts whose locations
-          are not already known are omitted from the mapping; contacts known
-          to have no location information appear in the mapping with an empty
-          Location dictionary.
-        </tp:docstring>
-      </arg>
-
-      <tp:possible-errors>
-        <tp:error name="im.telepathy1.Error.Disconnected"/>
-        <tp:error name="im.telepathy1.Error.InvalidHandle"/>
-      </tp:possible-errors>
-    </method>
-
     <method name="RequestLocation" tp:name-for-bindings="Request_Location">
       <tp:docstring>
         Return the current location of the given contact. If necessary, make
@@ -441,21 +393,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     <tp:contact-attribute name="location"
       type="a{sv}" tp:type="Location">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>The same mapping that would be returned by
-          <tp:member-ref>GetLocations</tp:member-ref> for this contact.
-          Omitted from the result if the contact's location
-          is not known.</p>
+        <p>The contact's current location, if already known. If contact's
+          location is not known, request their current locations, but return
+          immediately without waiting for a reply; if a reply with a non-empty
+          location is later received, the <tp:member-ref>LocationUpdated</tp:member-ref>
+          signal will be emitted.</p>
 
-        <p>For backwards compatibility, if contact attributes that include
-          this interface are requested
-          by a client whose "interest count" for this interface, as defined by
-          <tp:dbus-ref namespace="im.telepathy1"
-            >Connection.AddClientInterest</tp:dbus-ref>, is zero, the
-          Connection SHOULD behave as if AddClientInterest was called for this
-          interface just before that request. Clients that do not explicitly
-          call AddClientInterest SHOULD NOT call <tp:dbus-ref
-            namespace="im.telepathy1"
-            >Connection.RemoveClientInterest</tp:dbus-ref> either.</p>
+        <tp:rationale>
+          <p>This method is appropriate for "lazy" location finding, for instance
+            displaying the location (if available) of everyone in your contact
+            list.</p>
+        </tp:rationale>
+
       </tp:docstring>
     </tp:contact-attribute>
 
