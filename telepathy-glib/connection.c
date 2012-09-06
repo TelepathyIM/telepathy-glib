@@ -1063,6 +1063,13 @@ _tp_connection_got_properties (TpProxy *proxy,
   if (interfaces == NULL)
     goto error;
 
+  if (!tp_strv_contains (interfaces, TP_IFACE_CONNECTION_INTERFACE_REQUESTS) ||
+      !tp_strv_contains (interfaces, TP_IFACE_CONNECTION_INTERFACE_CONTACTS))
+    {
+      DEBUG ("Connection does not have Requests/Contacts interface - Broken CM");
+      goto error;
+    }
+
   tp_proxy_add_interfaces (proxy, interfaces);
   self->priv->ready_enough_for_contacts = TRUE;
 
