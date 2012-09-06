@@ -27,6 +27,7 @@ struct _ExampleContactListConnectionClass {
     TpBaseConnectionClass parent_class;
     TpPresenceMixinClass presence_mixin;
     TpContactsMixinClass contacts_mixin;
+    TpDBusPropertiesMixinClass properties_mixin;
 };
 
 struct _ExampleContactListConnection {

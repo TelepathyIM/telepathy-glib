@@ -26,6 +26,8 @@ static void init_aliasing (gpointer, gpointer);
 G_DEFINE_TYPE_WITH_CODE (ExampleContactListConnection,
     example_contact_list_connection,
     TP_TYPE_BASE_CONNECTION,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
+       tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING,
       init_aliasing);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
@@ -159,25 +161,15 @@ alias_updated_cb (ExampleContactList *contact_list,
                   TpHandle contact,
                   ExampleContactListConnection *self)
 {
-  GPtrArray *aliases;
-  GValueArray *pair;
+  GHashTable *aliases;
 
-  pair = g_value_array_new (2);
-  g_value_array_append (pair, NULL);
-  g_value_array_append (pair, NULL);
-  g_value_init (pair->values + 0, G_TYPE_UINT);
-  g_value_init (pair->values + 1, G_TYPE_STRING);
-  g_value_set_uint (pair->values + 0, contact);
-  g_value_set_string (pair->values + 1,
-      example_contact_list_get_alias (contact_list, contact));
-
-  aliases = g_ptr_array_sized_new (1);
-  g_ptr_array_add (aliases, pair);
+  aliases = g_hash_table_new (NULL, NULL);
+  g_hash_table_insert (aliases, GUINT_TO_POINTER (contact),
+      (gpointer) example_contact_list_get_alias (contact_list, contact));
 
   tp_svc_connection_interface_aliasing_emit_aliases_changed (self, aliases);
 
-  g_ptr_array_unref (aliases);
-  g_value_array_free (pair);
+  g_hash_table_unref (aliases);
 }
 
 static void
@@ -420,6 +412,29 @@ get_interfaces_always_present (TpBaseConnection *base)
   return interfaces;
 }
 
+enum
+{
+  ALIASING_DP_ALIAS_FLAGS,
+};
+
+static void
+aliasing_get_dbus_property (GObject *object,
+    GQuark interface,
+    GQuark name,
+    GValue *value,
+    gpointer user_data)
+{
+  switch (GPOINTER_TO_UINT (user_data))
+    {
+    case ALIASING_DP_ALIAS_FLAGS:
+      g_value_set_uint (value, TP_CONNECTION_ALIAS_FLAG_USER_SET);
+      break;
+
+    default:
+      g_assert_not_reached ();
+    }
+}
+
 static void
 example_contact_list_connection_class_init (
     ExampleContactListConnectionClass *klass)
@@ -427,6 +442,18 @@ example_contact_list_connection_class_init (
   TpBaseConnectionClass *base_class = (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
+  static TpDBusPropertiesMixinPropImpl aliasing_props[] = {
+    { "AliasFlags", GUINT_TO_POINTER (ALIASING_DP_ALIAS_FLAGS), NULL },
+    { NULL }
+  };
+  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
+        { TP_IFACE_CONNECTION_INTERFACE_ALIASING,
+          aliasing_get_dbus_property,
+          NULL,
+          aliasing_props,
+        },
+        { NULL }
+  };
 
   object_class->get_property = get_property;
   object_class->set_property = set_property;
@@ -464,57 +491,10 @@ example_contact_list_connection_class_init (
   tp_presence_mixin_init_dbus_properties (object_class);
 
   tp_base_contact_list_mixin_class_init (base_class);
-}
 
-static void
-get_alias_flags (TpSvcConnectionInterfaceAliasing *aliasing,
-                 DBusGMethodInvocation *context)
-{
-  TpBaseConnection *base = TP_BASE_CONNECTION (aliasing);
-
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (base, context);
-  tp_svc_connection_interface_aliasing_return_from_get_alias_flags (context,
-      TP_CONNECTION_ALIAS_FLAG_USER_SET);
-}
-
-static void
-get_aliases (TpSvcConnectionInterfaceAliasing *aliasing,
-             const GArray *contacts,
-             DBusGMethodInvocation *context)
-{
-  ExampleContactListConnection *self =
-    EXAMPLE_CONTACT_LIST_CONNECTION (aliasing);
-  TpBaseConnection *base = TP_BASE_CONNECTION (aliasing);
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (base,
-      TP_HANDLE_TYPE_CONTACT);
-  GHashTable *result;
-  GError *error = NULL;
-  guint i;
-
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (base, context);
-
-  if (!tp_handles_are_valid (contact_repo, contacts, FALSE, &error))
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-      return;
-    }
-
-  result = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, NULL);
-
-  for (i = 0; i < contacts->len; i++)
-    {
-      TpHandle contact = g_array_index (contacts, TpHandle, i);
-      const gchar *alias = example_contact_list_get_alias (
-          self->priv->contact_list, contact);
-
-      g_hash_table_insert (result, GUINT_TO_POINTER (contact),
-          (gchar *) alias);
-    }
-
-  tp_svc_connection_interface_aliasing_return_from_get_aliases (context,
-      result);
-  g_hash_table_unref (result);
+  klass->properties_mixin.interfaces = prop_interfaces;
+  tp_dbus_properties_mixin_class_init (object_class,
+      G_STRUCT_OFFSET (ExampleContactListConnectionClass, properties_mixin));
 }
 
 static void
@@ -606,9 +586,7 @@ init_aliasing (gpointer iface,
 
 #define IMPLEMENT(x) tp_svc_connection_interface_aliasing_implement_##x (\
     klass, x)
-  IMPLEMENT(get_alias_flags);
   IMPLEMENT(request_aliases);
-  IMPLEMENT(get_aliases);
   IMPLEMENT(set_aliases);
 #undef IMPLEMENT
 }

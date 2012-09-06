@@ -1623,17 +1623,18 @@ tp_contact_init (TpContact *self)
 
 static void
 contacts_aliases_changed (TpConnection *connection,
-                          const GPtrArray *alias_structs,
+                          GHashTable *aliases,
                           gpointer user_data G_GNUC_UNUSED,
                           GObject *weak_object G_GNUC_UNUSED)
 {
-  guint i;
+  GHashTableIter iter;
+  gpointer key, value;
 
-  for (i = 0; i < alias_structs->len; i++)
+  g_hash_table_iter_init (&iter, aliases);
+  while (g_hash_table_iter_next (&iter, &key, &value))
     {
-      GValueArray *pair = g_ptr_array_index (alias_structs, i);
-      TpHandle handle = g_value_get_uint (pair->values + 0);
-      const gchar *alias = g_value_get_string (pair->values + 1);
+      TpHandle handle = GPOINTER_TO_UINT (key);
+      const gchar *alias = value;
       TpContact *contact = _tp_connection_lookup_contact (connection, handle);
 
       if (contact != NULL)

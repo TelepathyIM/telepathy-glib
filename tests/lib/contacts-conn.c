@@ -532,6 +532,29 @@ tp_tests_contacts_get_interfaces_always_present (TpBaseConnection *base)
   return interfaces;
 }
 
+enum
+{
+  ALIASING_DP_ALIAS_FLAGS,
+};
+
+static void
+aliasing_get_dbus_property (GObject *object,
+    GQuark interface,
+    GQuark name,
+    GValue *value,
+    gpointer user_data)
+{
+  switch (GPOINTER_TO_UINT (user_data))
+    {
+    case ALIASING_DP_ALIAS_FLAGS:
+      g_value_set_uint (value, TP_CONNECTION_ALIAS_FLAG_USER_SET);
+      break;
+
+    default:
+      g_assert_not_reached ();
+    }
+}
+
 static void
 tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
 {
@@ -539,11 +562,20 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
       (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
   TpPresenceMixinClass *mixin_class;
+  static TpDBusPropertiesMixinPropImpl aliasing_props[] = {
+    { "AliasFlags", GUINT_TO_POINTER (ALIASING_DP_ALIAS_FLAGS), NULL },
+    { NULL }
+  };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
         { TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO,
           conn_contact_info_properties_getter,
           NULL,
           conn_contact_info_properties,
+        },
+        { TP_IFACE_CONNECTION_INTERFACE_ALIASING,
+          aliasing_get_dbus_property,
+          NULL,
+          aliasing_props,
         },
         { NULL }
   };
@@ -606,34 +638,23 @@ tp_tests_contacts_connection_change_aliases (TpTestsContactsConnection *self,
                                     const TpHandle *handles,
                                     const gchar * const *aliases)
 {
-  GPtrArray *structs = g_ptr_array_sized_new (n);
+  GHashTable *changes = g_hash_table_new (NULL, NULL);
   guint i;
 
   for (i = 0; i < n; i++)
     {
-      GValueArray *pair = g_value_array_new (2);
-
       DEBUG ("contact#%u -> %s", handles[i], aliases[i]);
 
       g_hash_table_insert (self->priv->aliases,
           GUINT_TO_POINTER (handles[i]), g_strdup (aliases[i]));
 
-      g_value_array_append (pair, NULL);
-      g_value_init (pair->values + 0, G_TYPE_UINT);
-      g_value_set_uint (pair->values + 0, handles[i]);
-
-      g_value_array_append (pair, NULL);
-      g_value_init (pair->values + 1, G_TYPE_STRING);
-      g_value_set_string (pair->values + 1, aliases[i]);
-
-      g_ptr_array_add (structs, pair);
+      g_hash_table_insert (changes,
+          GUINT_TO_POINTER (handles[i]), (gchar *) aliases[i]);
     }
 
-  tp_svc_connection_interface_aliasing_emit_aliases_changed (self,
-      structs);
+  tp_svc_connection_interface_aliasing_emit_aliases_changed (self, changes);
 
-  g_ptr_array_foreach (structs, (GFunc) g_value_array_free, NULL);
-  g_ptr_array_unref (structs);
+  g_hash_table_unref (changes);
 }
 
 void
@@ -762,17 +783,6 @@ tp_tests_contacts_connection_set_default_contact_info (
 }
 
 static void
-my_get_alias_flags (TpSvcConnectionInterfaceAliasing *aliasing,
-                    DBusGMethodInvocation *context)
-{
-  TpBaseConnection *base = TP_BASE_CONNECTION (aliasing);
-
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (base, context);
-  tp_svc_connection_interface_aliasing_return_from_get_alias_flags (context,
-      TP_CONNECTION_ALIAS_FLAG_USER_SET);
-}
-
-static void
 my_request_aliases (TpSvcConnectionInterfaceAliasing *aliasing,
                     const GArray *contacts,
                     DBusGMethodInvocation *context)
@@ -876,7 +886,6 @@ init_aliasing (gpointer g_iface,
 
 #define IMPLEMENT(x) tp_svc_connection_interface_aliasing_implement_##x (\
     klass, my_##x)
-  IMPLEMENT(get_alias_flags);
   IMPLEMENT(request_aliases);
   IMPLEMENT(set_aliases);
 #undef IMPLEMENT
