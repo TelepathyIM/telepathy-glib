@@ -1136,19 +1136,11 @@ _tp_client_factory_ensure_channel_request (TpClientFactory *self,
 
   g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (g_variant_is_object_path (object_path), NULL);
+  g_return_val_if_fail (immutable_properties != NULL, NULL);
 
   request = lookup_proxy (self, object_path);
   if (request != NULL)
-    {
-      /* A common usage is request_and_handle, in that case EnsureChannel
-       * returns only the object-path of the ChannelRequest but not properties.
-       * The TpChannelRequest will be created with no properties, then when
-       * handling we get the properties and we reuse the same TpChannelRequest
-       * object, and we can give it the immutable-properties. */
-      _tp_channel_request_ensure_immutable_properties (request,
-          immutable_properties);
-      return g_object_ref (request);
-    }
+    return g_object_ref (request);
 
   request = _tp_channel_request_new_with_factory (self, self->priv->dbus,
       object_path, immutable_properties, error);

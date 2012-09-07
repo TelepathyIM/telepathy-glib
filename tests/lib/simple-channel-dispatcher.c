@@ -74,7 +74,8 @@ create_channel_request (TpTestsSimpleChannelDispatcher *self,
     GHashTable *request,
     gint64 user_action_time,
     const gchar *preferred_handler,
-    GHashTable *hints_)
+    GHashTable *hints_,
+    GHashTable **out_immutable_properties)
 {
   TpTestsSimpleChannelRequest *chan_request;
   GPtrArray *requests;
@@ -112,6 +113,9 @@ create_channel_request (TpTestsSimpleChannelDispatcher *self,
 
   g_signal_emit (self, signals[CHANNEL_REQUEST_CREATED], 0, chan_request);
 
+  *out_immutable_properties =
+      tp_tests_simple_channel_request_dup_immutable_props (chan_request);
+
   return path;
 }
 
@@ -127,6 +131,7 @@ tp_tests_simple_channel_dispatcher_create_channel (
 {
   TpTestsSimpleChannelDispatcher *self = SIMPLE_CHANNEL_DISPATCHER (dispatcher);
   gchar *path;
+  GHashTable *immutable_properties;
 
   tp_clear_pointer (&self->last_request, g_hash_table_unref);
   self->last_request = g_boxed_copy (TP_HASH_TYPE_STRING_VARIANT_MAP, request);
@@ -149,15 +154,16 @@ tp_tests_simple_channel_dispatcher_create_channel (
     }
 
   path = create_channel_request (self, account, request, user_action_time,
-      preferred_handler, hints);
+      preferred_handler, hints, &immutable_properties);
 
   if (path == NULL)
     return;
 
   tp_svc_channel_dispatcher_return_from_create_channel (context,
-      path);
+      path, immutable_properties);
 
   g_free (path);
+  g_hash_table_unref (immutable_properties);
 }
 
 static void
@@ -172,6 +178,7 @@ tp_tests_simple_channel_dispatcher_ensure_channel (
 {
   TpTestsSimpleChannelDispatcher *self = SIMPLE_CHANNEL_DISPATCHER (dispatcher);
   gchar *path;
+  GHashTable *immutable_properties;
 
   tp_clear_pointer (&self->last_request, g_hash_table_unref);
   self->last_request = g_boxed_copy (TP_HASH_TYPE_STRING_VARIANT_MAP, request);
@@ -187,20 +194,21 @@ tp_tests_simple_channel_dispatcher_ensure_channel (
     {
       /* Pretend that the channel already exists */
       path = create_channel_request (self, account, request, user_action_time,
-          self->priv->old_handler, hints);
+          self->priv->old_handler, hints, &immutable_properties);
     }
   else
     {
       self->priv->old_handler = g_strdup (preferred_handler);
 
       path = create_channel_request (self, account, request, user_action_time,
-          preferred_handler, hints);
+          preferred_handler, hints, &immutable_properties);
     }
 
   tp_svc_channel_dispatcher_return_from_ensure_channel (context,
-      path);
+      path, immutable_properties);
 
   g_free (path);
+  g_hash_table_unref (immutable_properties);
 }
 
 static void

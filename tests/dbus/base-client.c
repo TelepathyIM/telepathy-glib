@@ -1026,6 +1026,7 @@ test_handler_requests (Test *test,
   GHashTable *info;
   TpChannelRequest *request;
   GList *requests;
+  GHashTable *request_props;
 
   tp_base_client_take_handler_filter (test->base_client, tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
@@ -1090,7 +1091,12 @@ test_handler_requests (Test *test,
   requests_satisified = g_ptr_array_sized_new (1);
   g_ptr_array_add (requests_satisified, "/Request");
 
-  info = g_hash_table_new (NULL, NULL);
+  request_props = g_hash_table_new (g_str_hash, g_str_equal);
+  g_hash_table_insert (request_props, "/Request", properties);
+  info = tp_asv_new (
+      "request-properties", TP_HASH_TYPE_OBJECT_IMMUTABLE_PROPERTIES_MAP,
+          request_props,
+      NULL);
 
   tp_proxy_add_interface_by_id (TP_PROXY (test->client),
       TP_IFACE_QUARK_CLIENT_HANDLER);
@@ -1133,6 +1139,7 @@ test_handler_requests (Test *test,
   g_ptr_array_unref (channels);
   g_ptr_array_unref (requests_satisified);
   g_hash_table_unref (info);
+  g_hash_table_unref (request_props);
 }
 
 static void

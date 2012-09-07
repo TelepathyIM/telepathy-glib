@@ -64,8 +64,6 @@ TpChannelRequest *_tp_channel_request_new_with_factory (
     const gchar *object_path,
     GHashTable *immutable_properties,
     GError **error);
-void _tp_channel_request_ensure_immutable_properties (TpChannelRequest *self,
-    GHashTable *immutable_properties);
 
 TpChannelDispatchOperation *_tp_channel_dispatch_operation_new_with_factory (
     TpClientFactory *factory,

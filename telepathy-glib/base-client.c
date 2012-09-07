@@ -2216,21 +2216,13 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
       if (request_props != NULL)
         props = g_hash_table_lookup (request_props, req_path);
 
-      request = find_request_by_path (self, req_path);
-      if (request != NULL)
+      request = _tp_client_factory_ensure_channel_request (
+          self->priv->factory, req_path, props, &error);
+
+      if (request == NULL)
         {
-          g_object_ref (request);
-          _tp_channel_request_ensure_immutable_properties (request, props);
-        }
-      else
-        {
-          request = _tp_client_factory_ensure_channel_request (
-              self->priv->factory, req_path, props, &error);
-          if (request == NULL)
-            {
-              DEBUG ("Failed to create TpChannelRequest: %s", error->message);
-              goto out;
-            }
+          DEBUG ("Failed to create TpChannelRequest: %s", error->message);
+          goto out;
         }
 
       g_ptr_array_add (requests, request);

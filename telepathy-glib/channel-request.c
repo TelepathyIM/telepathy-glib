@@ -540,17 +540,6 @@ tp_channel_request_get_immutable_properties (TpChannelRequest *self)
   return self->priv->immutable_properties;
 }
 
-void
-_tp_channel_request_ensure_immutable_properties (TpChannelRequest *self,
-    GHashTable *immutable_properties)
-{
-  if (self->priv->immutable_properties == NULL && immutable_properties != NULL)
-    {
-      self->priv->immutable_properties = g_hash_table_ref (immutable_properties);
-      g_object_notify ((GObject *) self, "immutable-properties");
-    }
-}
-
 /**
  * tp_channel_request_get_account:
  * @self: a #tpchannelrequest

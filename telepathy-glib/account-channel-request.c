@@ -788,6 +788,7 @@ acr_operation_cancelled_cb (GCancellable *cancellable,
 static void
 acr_request_cb (TpChannelDispatcher *cd,
     const gchar *channel_request_path,
+    GHashTable *properties,
     const GError *error,
     gpointer user_data,
     GObject *weak_object)
@@ -808,8 +809,8 @@ acr_request_cb (TpChannelDispatcher *cd,
   DEBUG ("Got ChannelRequest: %s", channel_request_path);
 
   self->priv->chan_request = _tp_client_factory_ensure_channel_request (
-      tp_proxy_get_factory (self->priv->account), channel_request_path, NULL,
-      &err);
+      tp_proxy_get_factory (self->priv->account), channel_request_path,
+      properties, &err);
   if (self->priv->chan_request == NULL)
     {
       DEBUG ("Failed to create ChannelRequest: %s", err->message);
