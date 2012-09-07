@@ -36,6 +36,12 @@ void _tp_tests_assert_strv_equals (const char *file, int line,
   const char *actual_desc, gconstpointer actual_strv,
   const char *expected_desc, gconstpointer expected_strv);
 
+#define tp_tests_assert_bytes_equals(actual, expected, expected_length) \
+  _tp_tests_assert_bytes_equal (__FILE__, __LINE__, \
+      actual, expected, expected_length)
+void _tp_tests_assert_bytes_equal (const gchar *file, int line,
+  GBytes *actual, gconstpointer expected_data, gsize expected_length);
+
 void tp_tests_create_conn (GType conn_type,
     const gchar *account,
     gboolean connect,

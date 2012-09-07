@@ -87,19 +87,42 @@ void tp_channel_dispatch_operation_init_known_interfaces (void);
 
 GQuark tp_channel_dispatch_operation_get_feature_quark_core (void) G_GNUC_CONST;
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_20_FOR(tp_channel_dispatch_operation_get_connection)
 TpConnection * tp_channel_dispatch_operation_borrow_connection (
     TpChannelDispatchOperation *self);
 
+_TP_DEPRECATED_IN_0_20_FOR(tp_channel_dispatch_operation_get_account)
 TpAccount * tp_channel_dispatch_operation_borrow_account (
     TpChannelDispatchOperation *self);
 
+_TP_DEPRECATED_IN_0_20_FOR(tp_channel_dispatch_operation_get_channels)
 GPtrArray * tp_channel_dispatch_operation_borrow_channels (
     TpChannelDispatchOperation *self);
 
+_TP_DEPRECATED_IN_0_20_FOR(tp_channel_dispatch_operation_get_possible_handlers)
 GStrv tp_channel_dispatch_operation_borrow_possible_handlers (
     TpChannelDispatchOperation *self);
 
+_TP_DEPRECATED_IN_0_20
 GHashTable * tp_channel_dispatch_operation_borrow_immutable_properties (
+    TpChannelDispatchOperation *self);
+#endif
+
+_TP_AVAILABLE_IN_0_20
+TpConnection * tp_channel_dispatch_operation_get_connection (
+    TpChannelDispatchOperation *self);
+
+_TP_AVAILABLE_IN_0_20
+TpAccount * tp_channel_dispatch_operation_get_account (
+    TpChannelDispatchOperation *self);
+
+_TP_AVAILABLE_IN_0_20
+GPtrArray * tp_channel_dispatch_operation_get_channels (
+    TpChannelDispatchOperation *self);
+
+_TP_AVAILABLE_IN_0_20
+GStrv tp_channel_dispatch_operation_get_possible_handlers (
     TpChannelDispatchOperation *self);
 
 void tp_channel_dispatch_operation_handle_with_async (

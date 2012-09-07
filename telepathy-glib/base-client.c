@@ -892,6 +892,8 @@ tp_base_client_register (TpBaseClient *self,
  * #GList of #TpChannelRequest
  *
  * Since: 0.11.6
+ * Deprecated: Since 0.UNRELEASED. New code should use
+ *  tp_base_client_dup_pending_requests() instead.
  */
 GList *
 tp_base_client_get_pending_requests (TpBaseClient *self)
@@ -912,6 +914,8 @@ tp_base_client_get_pending_requests (TpBaseClient *self)
  * handled channels
  *
  * Since: 0.11.6
+ * Deprecated: Since 0.UNRELEASED. New code should use
+ *  tp_base_client_dup_handled_channels() instead.
  */
 GList *
 tp_base_client_get_handled_channels (TpBaseClient *self)
@@ -943,6 +947,53 @@ tp_base_client_get_handled_channels (TpBaseClient *self)
   g_hash_table_unref (set);
 
   return result;
+}
+
+/**
+ * tp_base_client_dup_pending_requests:
+ * @self: a #TpBaseClient
+ *
+ * Only works if tp_base_client_set_handler_request_notification() has been
+ * called.
+ * Returns the list of requests @self is likely be asked to handle.
+ *
+ * Returns: (transfer full) (element-type TelepathyGLib.ChannelRequest): a
+ * #GList of #TpChannelRequest
+ *
+ * Since: 0.UNRELEASED
+ */
+GList *
+tp_base_client_dup_pending_requests (TpBaseClient *self)
+{
+  g_return_val_if_fail (self->priv->flags & CLIENT_IS_HANDLER, NULL);
+
+  return _tp_g_list_copy_deep (self->priv->pending_requests,
+      (GCopyFunc) g_object_ref, NULL);
+}
+
+/**
+ * tp_base_client_dup_handled_channels:
+ * @self: a #TpBaseClient
+ *
+ * Returns the set of channels currently handled by this base client or by any
+ * other #TpBaseClient with which it shares a unique name.
+ *
+ * Returns: (transfer full) (element-type TelepathyGLib.Channel): the
+ * handled channels
+ *
+ * Since: 0.UNRELEASED
+ */
+GList *
+tp_base_client_dup_handled_channels (TpBaseClient *self)
+{
+  GList *ret;
+
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+  ret = tp_base_client_get_handled_channels (self);
+  G_GNUC_END_IGNORE_DEPRECATIONS
+  g_list_foreach (ret, (GFunc) g_object_ref, NULL);
+
+  return ret;
 }
 
 static void
@@ -978,8 +1029,7 @@ tp_base_client_dispose (GObject *object)
   tp_clear_object (&self->priv->factory);
   tp_clear_object (&self->priv->only_for_account);
 
-  g_list_foreach (self->priv->pending_requests, (GFunc) g_object_unref, NULL);
-  g_list_free (self->priv->pending_requests);
+  g_list_free_full (self->priv->pending_requests, g_object_unref);
   self->priv->pending_requests = NULL;
 
   if (self->priv->my_chans != NULL &&
@@ -1209,7 +1259,7 @@ tp_base_client_get_dbus_properties (GObject *object,
 
     case DP_HANDLED_CHANNELS:
         {
-          GList *channels = tp_base_client_get_handled_channels (self);
+          GList *channels = tp_base_client_dup_handled_channels (self);
           GList *iter;
           GPtrArray *arr = g_ptr_array_sized_new (g_list_length (channels));
 
@@ -1218,7 +1268,7 @@ tp_base_client_get_dbus_properties (GObject *object,
                 g_strdup (tp_proxy_get_object_path (iter->data)));
 
           g_value_take_boxed (value, arr);
-          g_list_free (channels);
+          g_list_free_full (channels, g_object_unref);
         }
       break;
 
@@ -2611,7 +2661,7 @@ tp_base_client_is_handling_channel (TpBaseClient *self,
   g_return_val_if_fail (TP_IS_BASE_CLIENT (self), FALSE);
   g_return_val_if_fail (self->priv->flags & CLIENT_IS_HANDLER, FALSE);
 
-  channels = tp_base_client_get_handled_channels (self);
+  channels = tp_base_client_dup_handled_channels (self);
   for (l = channels; l != NULL && !found; l = g_list_next (l))
     {
       TpChannel *chan = l->data;
@@ -2621,7 +2671,7 @@ tp_base_client_is_handling_channel (TpBaseClient *self,
         found = TRUE;
     }
 
-  g_list_free (channels);
+  g_list_free_full (channels, g_object_unref);
   return found;
 }
 

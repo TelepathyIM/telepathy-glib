@@ -31,6 +31,7 @@
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
+#include "telepathy-glib/channel-internal.h"
 #include "telepathy-glib/debug-internal.h"
 
 #include "_gen/telepathy-interfaces.h"
@@ -184,8 +185,7 @@ _search_results_received (TpChannel *channel,
   DEBUG ("SearchResultsReceived (%i results)", g_hash_table_size (result));
   g_signal_emit (object, _signals[SEARCH_RESULTS_RECEIVED], 0, results);
 
-  g_list_foreach (results, (GFunc) g_object_unref, NULL);
-  g_list_free (results);
+  g_list_free_full (results, g_object_unref);
 }
 
 static void
@@ -226,7 +226,7 @@ _create_search_channel_cb (GObject *source_object,
       goto out;
     }
 
-  properties = tp_channel_borrow_immutable_properties (self->priv->channel);
+  properties = _tp_channel_get_immutable_properties (self->priv->channel);
 
   self->priv->keys = tp_asv_get_strv (properties,
       TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH_AVAILABLE_SEARCH_KEYS);

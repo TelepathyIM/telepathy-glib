@@ -93,6 +93,7 @@ void _tp_channel_continue_introspection (TpChannel *self);
 void _tp_channel_abort_introspection (TpChannel *self,
     const gchar *debug,
     const GError *error);
+GHashTable *_tp_channel_get_immutable_properties (TpChannel *self);
 
 /* channel-group.c internals */
 

@@ -1,9 +1,49 @@
-telepathy-glib 0.19.8 (UNRELEASED)
+telepathy-glib 0.19.9 (UNRELEASED)
 ==================================
 
-<Cool stuff goes here.>
+Deprecations:
 
-telepathy-glib 0.19.7 (2012-07-27)
+• Various functions whose names include _borrow_, such as
+  tp_proxy_borrow_interface_by_id() and
+  tp_channel_borrow_immutable_properties(),
+  are deprecated. Use the corresponding function with _get_ or _dup_ in its
+  name, such as tp_proxy_get_interface_by_id() or
+  tp_channel_dup_immutable_properties(), instead. (Xavier)
+
+• Various functions returning a (transfer container) list, such as
+  tp_text_channel_get_pending_messages(), are deprecated. Use the
+  corresponding function with _dup_ in its name, such as
+  tp_text_channel_dup_pending_messages(), instead. (Xavier)
+
+Enhancements:
+
+• Some functions from util.h, such as tp_utf8_make_valid(),
+  tp_escape_as_identifier() and user-action-time functions are now
+  available via gobject-introspection (fd.o #54543, Simon)
+
+Fixes:
+
+• Get the remote contact from a MediaDescription correctly (fd.o #54425,
+  Sjoerd)
+
+• Fix an incorrect error on UpdateLocalMediaDescription (Sjoerd)
+
+• Fix use of an unterminated string in the tls-certificates test (Sjoerd)
+
+telepathy-glib 0.19.8 (2012-08-31)
+==================================
+
+Enhancements:
+
+• New introspectable function tp_account_channel_request_set_hint() to add hints
+  one by one. (Sjoerd)
+
+Fixes:
+
+• Set the ChannelRequests immutable properties when observing/handling channels.
+  (Sjoerd)
+
+telepathy-glib 0.19.7 (2012-08-27)
 ==================================
 
 Enhancements:

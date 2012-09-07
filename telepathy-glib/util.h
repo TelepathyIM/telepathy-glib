@@ -34,6 +34,10 @@ G_BEGIN_DECLS
 gboolean tp_g_ptr_array_contains (GPtrArray *haystack, gpointer needle);
 void tp_g_ptr_array_extend (GPtrArray *target, GPtrArray *source);
 
+#ifndef __GI_SCANNER__
+/* Functions with _new in their names confuse the g-i scanner, but these
+ * are all (skip)'d anyway. */
+
 GValue *tp_g_value_slice_new (GType type) G_GNUC_WARN_UNUSED_RESULT;
 
 GValue *tp_g_value_slice_new_boolean (gboolean b) G_GNUC_WARN_UNUSED_RESULT;
@@ -57,6 +61,8 @@ GValue *tp_g_value_slice_new_static_boxed (GType type, gconstpointer p)
   G_GNUC_WARN_UNUSED_RESULT;
 GValue *tp_g_value_slice_new_take_boxed (GType type, gpointer p)
   G_GNUC_WARN_UNUSED_RESULT;
+
+#endif
 
 void tp_g_value_slice_free (GValue *value);
 

@@ -133,7 +133,13 @@ GFile *tp_contact_get_avatar_file (TpContact *self);
 const gchar *tp_contact_get_avatar_mime_type (TpContact *self);
 
 /* TP_CONTACT_FEATURE_INFO */
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_20_FOR (tp_contact_dup_contact_info)
 GList *tp_contact_get_contact_info (TpContact *self);
+#endif
+
+_TP_AVAILABLE_IN_0_20
+GList *tp_contact_dup_contact_info (TpContact *self);
 
 void tp_contact_request_contact_info_async (TpContact *self,
     GCancellable *cancellable, GAsyncReadyCallback callback,

@@ -862,7 +862,6 @@ tp_protocol_has_param (TpProtocol *self,
   return (tp_protocol_get_param (self, param) != NULL);
 }
 
-/* FIXME: in Telepathy 1.0, rename to tp_protocol_borrow_param or remove */
 /**
  * tp_protocol_get_param:
  * @self: a protocol
@@ -896,7 +895,6 @@ tp_protocol_get_param (TpProtocol *self,
   return NULL;
 }
 
-/* FIXME: in Telepathy 1.0, rename to tp_protocol_get_param */
 /**
  * tp_protocol_dup_param:
  * @self: a protocol
@@ -980,6 +978,8 @@ tp_protocol_dup_param_names (TpProtocol *self)
  * Returns: a #GPtrArray of #TpConnectionManagerParam.
  *
  * Since: 0.17.6
+ * Deprecated: Since 0.UNRELEASED. New code should use tp_protocol_dup_params()
+ *  instead.
  */
 GPtrArray *
 tp_protocol_borrow_params (TpProtocol *self)

@@ -90,7 +90,14 @@ TpAccountManager *tp_account_manager_dup (void) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_account_manager_init_known_interfaces (void);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_20_FOR (tp_account_manager_dup_valid_accounts)
 GList *tp_account_manager_get_usable_accounts (TpAccountManager *manager)
+  G_GNUC_WARN_UNUSED_RESULT;
+#endif
+
+_TP_AVAILABLE_IN_0_20
+GList *tp_account_manager_dup_usable_accounts (TpAccountManager *manager)
   G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_account_manager_set_all_requested_presences (TpAccountManager *manager,

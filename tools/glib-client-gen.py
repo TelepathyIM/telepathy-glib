@@ -823,7 +823,7 @@ class Generator(object):
         self.b('  g_return_val_if_fail (callback != NULL || '
                'weak_object == NULL, NULL);')
         self.b('')
-        self.b('  iface = tp_proxy_borrow_interface_by_id (')
+        self.b('  iface = tp_proxy_get_interface_by_id (')
         self.b('      (TpProxy *) proxy,')
         self.b('      interface, (callback == NULL ? NULL : &error));')
         self.b('')
@@ -1139,7 +1139,7 @@ class Generator(object):
         b('  g_return_val_if_fail (%s (proxy), FALSE);'
                % self.proxy_assert)
         b('')
-        b('  iface = tp_proxy_borrow_interface_by_id')
+        b('  iface = tp_proxy_get_interface_by_id')
         b('       ((TpProxy *) proxy, interface, error);')
         b('')
         b('  if (iface == NULL)')

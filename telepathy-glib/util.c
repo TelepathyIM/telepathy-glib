@@ -51,7 +51,7 @@
 #include "client-factory-internal.h"
 
 /**
- * tp_g_ptr_array_contains:
+ * tp_g_ptr_array_contains: (skip)
  * @haystack: The pointer array to be searched
  * @needle: The pointer to look for
  *
@@ -84,7 +84,7 @@ add_to_array (gpointer data,
 }
 
 /**
- * tp_g_ptr_array_extend:
+ * tp_g_ptr_array_extend: (skip)
  * @target: a #GPtrArray to copy items to
  * @source: a #GPtrArray to copy items from
  *
@@ -110,7 +110,7 @@ tp_g_ptr_array_extend (GPtrArray *target,
 }
 
 /**
- * tp_g_value_slice_new:
+ * tp_g_value_slice_new: (skip)
  * @type: The type desired for the new GValue
  *
  * Slice-allocate an empty #GValue. tp_g_value_slice_new_boolean() and similar
@@ -130,7 +130,7 @@ tp_g_value_slice_new (GType type)
 }
 
 /**
- * tp_g_value_slice_new_boolean:
+ * tp_g_value_slice_new_boolean: (skip)
  * @b: a boolean value
  *
  * Slice-allocate and initialize a #GValue. This function is convenient to
@@ -151,7 +151,7 @@ tp_g_value_slice_new_boolean (gboolean b)
 }
 
 /**
- * tp_g_value_slice_new_int:
+ * tp_g_value_slice_new_int: (skip)
  * @n: an integer
  *
  * Slice-allocate and initialize a #GValue. This function is convenient to
@@ -172,7 +172,7 @@ tp_g_value_slice_new_int (gint n)
 }
 
 /**
- * tp_g_value_slice_new_int64:
+ * tp_g_value_slice_new_int64: (skip)
  * @n: a 64-bit integer
  *
  * Slice-allocate and initialize a #GValue. This function is convenient to
@@ -193,7 +193,7 @@ tp_g_value_slice_new_int64 (gint64 n)
 }
 
 /**
- * tp_g_value_slice_new_byte:
+ * tp_g_value_slice_new_byte: (skip)
  * @n: an unsigned integer
  *
  * Slice-allocate and initialize a #GValue. This function is convenient to
@@ -214,7 +214,7 @@ tp_g_value_slice_new_byte (guchar n)
 }
 
 /**
- * tp_g_value_slice_new_uint:
+ * tp_g_value_slice_new_uint: (skip)
  * @n: an unsigned integer
  *
  * Slice-allocate and initialize a #GValue. This function is convenient to
@@ -235,7 +235,7 @@ tp_g_value_slice_new_uint (guint n)
 }
 
 /**
- * tp_g_value_slice_new_uint64:
+ * tp_g_value_slice_new_uint64: (skip)
  * @n: a 64-bit unsigned integer
  *
  * Slice-allocate and initialize a #GValue. This function is convenient to
@@ -256,7 +256,7 @@ tp_g_value_slice_new_uint64 (guint64 n)
 }
 
 /**
- * tp_g_value_slice_new_double:
+ * tp_g_value_slice_new_double: (skip)
  * @d: a number
  *
  * Slice-allocate and initialize a #GValue. This function is convenient to
@@ -277,7 +277,7 @@ tp_g_value_slice_new_double (double n)
 }
 
 /**
- * tp_g_value_slice_new_string:
+ * tp_g_value_slice_new_string: (skip)
  * @string: a string to be copied into the value
  *
  * Slice-allocate and initialize a #GValue. This function is convenient to
@@ -298,7 +298,7 @@ tp_g_value_slice_new_string (const gchar *string)
 }
 
 /**
- * tp_g_value_slice_new_static_string:
+ * tp_g_value_slice_new_static_string: (skip)
  * @string: a static string which must remain valid forever, to be pointed to
  *  by the value
  *
@@ -320,7 +320,7 @@ tp_g_value_slice_new_static_string (const gchar *string)
 }
 
 /**
- * tp_g_value_slice_new_take_string:
+ * tp_g_value_slice_new_take_string: (skip)
  * @string: a string which will be freed with g_free() by the returned #GValue
  *  (the caller must own it before calling this function, but no longer owns
  *  it after this function returns)
@@ -343,7 +343,7 @@ tp_g_value_slice_new_take_string (gchar *string)
 }
 
 /**
- * tp_g_value_slice_new_boxed:
+ * tp_g_value_slice_new_boxed: (skip)
  * @type: a boxed type
  * @p: a pointer of type @type, which will be copied
  *
@@ -368,7 +368,7 @@ tp_g_value_slice_new_boxed (GType type,
 }
 
 /**
- * tp_g_value_slice_new_static_boxed:
+ * tp_g_value_slice_new_static_boxed: (skip)
  * @type: a boxed type
  * @p: a pointer of type @type, which must remain valid forever
  *
@@ -393,7 +393,7 @@ tp_g_value_slice_new_static_boxed (GType type,
 }
 
 /**
- * tp_g_value_slice_new_take_boxed:
+ * tp_g_value_slice_new_take_boxed: (skip)
  * @type: a boxed type
  * @p: a pointer of type @type which will be freed with g_boxed_free() by the
  *  returned #GValue (the caller must own it before calling this function, but
@@ -420,7 +420,7 @@ tp_g_value_slice_new_take_boxed (GType type,
 }
 
 /**
- * tp_g_value_slice_free:
+ * tp_g_value_slice_free: (skip)
  * @value: A GValue which was allocated with the g_slice API
  *
  * Unset and free a slice-allocated GValue.
@@ -438,7 +438,7 @@ tp_g_value_slice_free (GValue *value)
 
 
 /**
- * tp_g_value_slice_dup:
+ * tp_g_value_slice_dup: (skip)
  * @value: A GValue
  *
  * <!-- 'Returns' says it all -->
@@ -477,7 +477,7 @@ _tp_g_hash_table_update_helper (gpointer key,
 }
 
 /**
- * tp_g_hash_table_update:
+ * tp_g_hash_table_update: (skip)
  * @target: The hash table to be updated
  * @source: The hash table to update it with (read-only)
  * @key_dup: function to duplicate a key from @source so it can be be stored
@@ -508,7 +508,7 @@ tp_g_hash_table_update (GHashTable *target,
 }
 
 /**
- * tp_str_empty:
+ * tp_str_empty: (skip)
  * @s: (type utf8) (transfer none): a string
  *
  * Return %TRUE if @s is empty, counting %NULL as empty.
@@ -520,7 +520,7 @@ tp_g_hash_table_update (GHashTable *target,
 /* no definition here - it's inlined */
 
 /**
- * tp_strdiff:
+ * tp_strdiff: (skip)
  * @left: The first string to compare (may be NULL)
  * @right: The second string to compare (may be NULL)
  *
@@ -541,7 +541,7 @@ tp_strdiff (const gchar *left, const gchar *right)
 
 
 /**
- * tp_mixin_offset_cast:
+ * tp_mixin_offset_cast: (skip)
  * @instance: A pointer to a structure
  * @offset: The offset of a structure member in bytes, which must not be 0
  *
@@ -561,7 +561,7 @@ tp_mixin_offset_cast (gpointer instance, guint offset)
 
 
 /**
- * tp_mixin_instance_get_offset:
+ * tp_mixin_instance_get_offset: (skip)
  * @instance: A pointer to a GObject-derived instance structure
  * @quark: A quark that was used to store the offset with g_type_set_qdata()
  *
@@ -598,7 +598,7 @@ tp_mixin_instance_get_offset (gpointer instance,
 
 
 /**
- * tp_mixin_class_get_offset:
+ * tp_mixin_class_get_offset: (skip)
  * @klass: A pointer to a GObjectClass-derived class structure
  * @quark: A quark that was used to store the offset with g_type_set_qdata()
  *
@@ -664,7 +664,8 @@ _esc_ident_bad (gchar c, gboolean is_first)
  * smaller allowed set. As a special case, "" is escaped to "_" (just for
  * completeness, really).
  *
- * Returns: the escaped string, which must be freed by the caller with #g_free
+ * Returns: (transfer full): the escaped string, which must be freed by
+ *  the caller with #g_free
  */
 gchar *
 tp_escape_as_identifier (const gchar *name)
@@ -724,7 +725,7 @@ tp_escape_as_identifier (const gchar *name)
 
 
 /**
- * tp_strv_contains:
+ * tp_strv_contains: (skip)
  * @strv: a NULL-terminated array of strings, or %NULL (which is treated as an
  *        empty strv)
  * @str: a non-NULL string
@@ -754,7 +755,7 @@ tp_strv_contains (const gchar * const *strv,
 }
 
 /**
- * tp_g_key_file_get_int64:
+ * tp_g_key_file_get_int64: (skip)
  * @key_file: a non-%NULL #GKeyFile
  * @group_name: a non-%NULL group name
  * @key: a non-%NULL key
@@ -802,7 +803,7 @@ tp_g_key_file_get_int64 (GKeyFile *key_file,
 }
 
 /**
- * tp_g_key_file_get_uint64:
+ * tp_g_key_file_get_uint64: (skip)
  * @key_file: a non-%NULL #GKeyFile
  * @group_name: a non-%NULL group name
  * @key: a non-%NULL key
@@ -921,7 +922,7 @@ closure_invalidated_cb (gpointer ctx_,
 }
 
 /**
- * tp_g_signal_connect_object:
+ * tp_g_signal_connect_object: (skip)
  * @instance: the instance to connect to.
  * @detailed_signal: a string of the form "signal-name::detail".
  * @c_handler: the #GCallback to connect.
@@ -1012,7 +1013,7 @@ _tp_quark_array_copy (const GQuark *quarks)
 }
 
 /**
- * tp_value_array_build:
+ * tp_value_array_build: (skip)
  * @length: The number of elements that should be in the array
  * @type: The type of the first argument.
  * @...: The value of the first item in the struct followed by a list of type,
@@ -1078,7 +1079,7 @@ tp_value_array_build (gsize length,
 }
 
 /**
- * tp_value_array_unpack:
+ * tp_value_array_unpack: (skip)
  * @array: the array to unpack
  * @len: The number of elements that should be in the array
  * @...: a list of correctly typed pointers to store the values in
@@ -1162,7 +1163,7 @@ struct _TpWeakRef {
 };
 
 /**
- * tp_weak_ref_new:
+ * tp_weak_ref_new: (skip)
  * @object: (type GObject.Object): an object to which to take a weak reference
  * @user_data: optional additional data to store alongside the weak ref
  * @destroy: destructor for @user_data, called when the weak ref
@@ -1170,7 +1171,7 @@ struct _TpWeakRef {
  *
  * Return a new weak reference wrapper for @object.
  *
- * Returns: a new weak-reference wrapper
+ * Returns: (transfer full): a new weak-reference wrapper
  *
  * Free-function: tp_weak_ref_destroy()
  *
@@ -1194,7 +1195,7 @@ tp_weak_ref_new (gpointer object,
 }
 
 /**
- * tp_weak_ref_get_user_data:
+ * tp_weak_ref_get_user_data: (skip)
  * @self: a weak reference
  *
  * Return the additional data that was passed to tp_weak_ref_new().
@@ -1211,7 +1212,7 @@ tp_weak_ref_get_user_data (TpWeakRef *self)
 }
 
 /**
- * tp_weak_ref_dup_object:
+ * tp_weak_ref_dup_object: (skip)
  * @self: a weak reference
  *
  * If the weakly referenced object still exists, return a new reference to
@@ -1231,8 +1232,8 @@ tp_weak_ref_dup_object (TpWeakRef *self)
 }
 
 /**
- * tp_weak_ref_destroy:
- * @self: a weak reference
+ * tp_weak_ref_destroy: (skip)
+ * @self: (transfer full): a weak reference
  *
  * Free a weak reference wrapper. This drops the weak reference to the
  * object (if it still exists), and frees the user data with the user-supplied
@@ -1323,9 +1324,9 @@ tp_weak_ref_destroy (TpWeakRef *self)
 
 /**
  * tp_simple_async_report_success_in_idle:
- * @source: the source object
- * @callback: the callback
- * @user_data: user data for @callback
+ * @source: (allow-none): the source object
+ * @callback: (scope async): the callback
+ * @user_data: (closure): user data for @callback
  * @source_tag: the source tag for the #GSimpleAsyncResult
  *
  * Create a new #GSimpleAsyncResult with no operation result, and call
@@ -1572,7 +1573,7 @@ _tp_create_channel_request_list (TpClientFactory *factory,
  * _g_utf8_make_valid<!-- -->() function, and will be deprecated as
  * soon as the glib one becomes public.
  *
- * Returns: a new valid UTF8 string
+ * Returns: (transfer full): a new valid UTF8 string
  *
  * Since: 0.13.15
  */
@@ -1977,11 +1978,7 @@ _tp_contacts_from_values (GHashTable *table)
 GList *
 _tp_object_list_copy (GList *l)
 {
-  GList *new_l;
-
-  new_l = g_list_copy (l);
-  g_list_foreach (new_l, (GFunc) g_object_ref, NULL);
-  return new_l;
+  return _tp_g_list_copy_deep (l, (GCopyFunc) g_object_ref, NULL);
 }
 
 /*
@@ -1996,4 +1993,23 @@ void
 _tp_object_list_free (GList *l)
 {
   g_list_free_full (l, g_object_unref);
+}
+
+GList *
+_tp_g_list_copy_deep (GList *list,
+    GCopyFunc func,
+    gpointer user_data)
+{
+  GList *ret = NULL;
+  GList *l;
+
+  ret = g_list_copy (list);
+
+  if (func != NULL)
+    {
+      for (l = ret; l != NULL; l = l->next)
+        l->data = func (l->data, user_data);
+    }
+
+  return ret;
 }

@@ -78,6 +78,7 @@ gint64 tp_account_channel_request_get_user_action_time (
 TpChannelRequest * tp_account_channel_request_get_channel_request (
     TpAccountChannelRequest *self);
 
+_TP_AVAILABLE_IN_0_20
 void tp_account_channel_request_set_hint (TpAccountChannelRequest *self,
     const gchar *key,
     GVariant *value);

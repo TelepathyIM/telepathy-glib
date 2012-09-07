@@ -681,20 +681,13 @@ tp_base_media_call_content_update_local_media_description (
   TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (iface);
   GHashTable *current_properties;
   GPtrArray *codecs;
-  gpointer contact;
+  TpHandle contact;
+  gboolean valid;
 
-  if (self->priv->current_offer != NULL)
-    {
-      GError error = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
-          "There is a media description offer around so "
-          "UpdateMediaDescription shouldn't be called." };
-      dbus_g_method_return_error (context, &error);
-      return;
-    }
+  contact = tp_asv_get_uint32 (properties,
+      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT, &valid);
 
-  if (!g_hash_table_lookup_extended (properties,
-          TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT,
-          NULL, &contact))
+  if (!valid)
     {
       GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "The media description is missing the RemoteContact key." };
@@ -704,7 +697,7 @@ tp_base_media_call_content_update_local_media_description (
 
   current_properties = g_hash_table_lookup (
       self->priv->local_media_descriptions,
-      contact);
+      GUINT_TO_POINTER (contact));
 
   if (current_properties == NULL)
     {
@@ -727,7 +720,7 @@ tp_base_media_call_content_update_local_media_description (
     }
 
   if (self->priv->current_offer != NULL &&
-      tp_call_content_media_description_get_remote_contact (self->priv->current_offer) == GPOINTER_TO_UINT (contact))
+      tp_call_content_media_description_get_remote_contact (self->priv->current_offer) == contact)
     {
       GError error = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
                        "Can not update the media description while there is"
@@ -736,7 +729,7 @@ tp_base_media_call_content_update_local_media_description (
       return;
     }
 
-  set_local_properties (self, GPOINTER_TO_UINT (contact), properties);
+  set_local_properties (self, contact, properties);
 
   tp_svc_call_content_interface_media_return_from_update_local_media_description
       (context);

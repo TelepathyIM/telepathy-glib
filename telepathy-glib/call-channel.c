@@ -132,7 +132,7 @@ _tp_call_content_new (TpCallChannel *self,
       "dbus-daemon", tp_proxy_get_dbus_daemon (self),
       "dbus-connection", tp_proxy_get_dbus_connection (self),
       "object-path", object_path,
-      "connection", tp_channel_borrow_connection ((TpChannel *) self),
+      "connection", tp_channel_get_connection ((TpChannel *) self),
       "channel", self,
       NULL);
 }
@@ -546,7 +546,7 @@ call_members_changed_cb (TpChannel *channel,
   DEBUG ("Call members: %d changed, %d removed",
       g_hash_table_size (updates), removed->len);
 
-  connection = tp_channel_borrow_connection (channel);
+  connection = tp_channel_get_connection (channel);
   updates_contacts = _tp_call_members_convert_table (connection,
       updates, identifiers);
   removed_contacts = _tp_call_members_convert_array (connection,
@@ -584,7 +584,7 @@ got_all_properties_cb (TpProxy *proxy,
       return;
     }
 
-  connection = tp_channel_borrow_connection ((TpChannel *) self);
+  connection = tp_channel_get_connection ((TpChannel *) self);
 
   self->priv->properties_retrieved = TRUE;
 
@@ -702,7 +702,7 @@ static void
 tp_call_channel_constructed (GObject *obj)
 {
   TpCallChannel *self = (TpCallChannel *) obj;
-  GHashTable *properties = tp_channel_borrow_immutable_properties (
+  GHashTable *properties = _tp_channel_get_immutable_properties (
       (TpChannel *) self);
 
   G_OBJECT_CLASS (tp_call_channel_parent_class)->constructed (obj);
