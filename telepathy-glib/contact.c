@@ -2892,15 +2892,6 @@ tp_connection_dup_contact_by_id_async (TpConnection *self,
       return;
     }
 
-  if (!tp_proxy_has_interface_by_id (self,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
-    {
-      g_simple_async_report_error_in_idle ((GObject *) self,
-          callback, user_data, TP_DBUS_ERRORS, TP_DBUS_ERROR_NO_INTERFACE,
-          "Obsolete CM does not have the Contacts interface");
-      return;
-    }
-
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_connection_dup_contact_by_id_async);
 
@@ -3036,15 +3027,6 @@ tp_connection_upgrade_contacts_async (TpConnection *self,
     {
       g_simple_async_report_gerror_in_idle ((GObject *) self,
           callback, user_data, tp_proxy_get_invalidated (self));
-      return;
-    }
-
-  if (!tp_proxy_has_interface_by_id (self,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
-    {
-      g_simple_async_report_error_in_idle ((GObject *) self,
-          callback, user_data, TP_DBUS_ERRORS, TP_DBUS_ERROR_NO_INTERFACE,
-          "Obsolete CM does not have the Contacts interface");
       return;
     }
 
