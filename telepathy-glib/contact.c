@@ -458,9 +458,6 @@ const gchar *
 tp_contact_get_identifier (TpContact *self)
 {
   g_return_val_if_fail (self != NULL, NULL);
-  /* identifier must be non-NULL by the time we're visible to library-user
-   * code */
-  g_return_val_if_fail (self->priv->identifier != NULL, NULL);
 
   return self->priv->identifier;
 }
@@ -536,9 +533,6 @@ const gchar *
 tp_contact_get_alias (TpContact *self)
 {
   g_return_val_if_fail (self != NULL, NULL);
-  /* identifier must be non-NULL by the time we're visible to library-user
-   * code */
-  g_return_val_if_fail (self->priv->identifier != NULL, NULL);
 
   if (self->priv->alias != NULL)
     return self->priv->alias;
@@ -1206,9 +1200,6 @@ tp_contact_class_init (TpContactClass *klass)
    * The contact's identifier in the instant messaging protocol (e.g.
    * XMPP JID, SIP URI, AOL screenname or IRC nick - whatever the underlying
    * protocol uses to identify a user).
-   *
-   * This is never %NULL for contact objects that are visible to library-user
-   * code.
    */
   param_spec = g_param_spec_string ("identifier",
       "IM protocol identifier",
@@ -1228,9 +1219,6 @@ tp_contact_class_init (TpContactClass *klass)
    * This alias may have been supplied by the contact themselves, or by the
    * local user, so it does not necessarily unambiguously identify the contact.
    * However, it is suitable for use as a main "display name" for the contact.
-   *
-   * This is never %NULL for contact objects that are visible to library-user
-   * code.
    */
   param_spec = g_param_spec_string ("alias",
       "Alias",
@@ -3036,10 +3024,7 @@ tp_connection_upgrade_contacts_async (TpConnection *self,
   g_return_if_fail (contacts != NULL);
 
   for (i = 0; i < n_contacts; i++)
-    {
-      g_return_if_fail (contacts[i]->priv->connection == self);
-      g_return_if_fail (contacts[i]->priv->identifier != NULL);
-    }
+    g_return_if_fail (contacts[i]->priv->connection == self);
 
   if (features == NULL)
     features = no_quarks;
