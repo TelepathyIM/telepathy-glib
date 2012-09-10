@@ -26,6 +26,8 @@
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 
+#define _TP_IN_META_HEADER
+
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/intset.h>
