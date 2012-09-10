@@ -738,17 +738,15 @@ class Generator(object):
         self.h('#include <glib-object.h>')
         self.h('#include <dbus/dbus-glib.h>')
 
-        if self.have_properties(nodes):
-            self.h('#include <telepathy-glib/dbus-properties-mixin.h>')
+        for header in self.headers:
+            self.h('#include %s' % header)
+        self.h('')
 
         self.h('')
         self.h('G_BEGIN_DECLS')
         self.h('')
 
         self.b('#include "%s.h"' % self.basename)
-        self.b('')
-        for header in self.headers:
-            self.b('#include %s' % header)
         self.b('')
 
         for node in nodes:

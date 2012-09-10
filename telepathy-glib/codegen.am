@@ -219,6 +219,7 @@ _gen/tp-svc-%.c: _gen/tp-spec-%.xml \
 		--filename=_gen/tp-svc-$* \
 		--signal-marshal-prefix=_tp \
 		--include='<telepathy-glib/dbus.h>' \
+		--include='<telepathy-glib/dbus-properties-mixin.h>' \
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
 		$< Tp_Svc_
 
