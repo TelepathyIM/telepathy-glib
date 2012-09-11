@@ -609,7 +609,7 @@ tp_contact_get_capabilities (TpContact *self)
  *  a #GList of #TpContactInfoField, or %NULL if the feature is not yet
  *  prepared.
  * Since: 0.11.7
- * Deprecated: Since 0.UNRELEASED. New code should use
+ * Deprecated: Since 0.19.9. New code should use
  *  tp_contact_dup_contact_info() instead.
  */
 GList *
@@ -632,7 +632,7 @@ tp_contact_get_contact_info (TpContact *self)
  * Returns: (element-type TelepathyGLib.ContactInfoField) (transfer full):
  *  a #GList of #TpContactInfoField, or %NULL if the feature is not yet
  *  prepared.
- * Since: 0.UNRELEASED
+ * Since: 0.19.9
  */
 GList *
 tp_contact_dup_contact_info (TpContact *self)

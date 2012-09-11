@@ -1261,7 +1261,7 @@ tp_text_channel_get_feature_quark_incoming_messages (void)
  * a #GList of borrowed #TpSignalledMessage
  *
  * Since: 0.13.10
- * Deprecated: Since 0.UNRELEASED. New code should use
+ * Deprecated: Since 0.19.9. New code should use
  *  tp_text_channel_dup_pending_messages() instead.
  */
 GList *
@@ -1284,7 +1284,7 @@ tp_text_channel_get_pending_messages (TpTextChannel *self)
  * Returns: (transfer full) (element-type TelepathyGLib.SignalledMessage):
  * a #GList of reffed #TpSignalledMessage
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.9
  */
 GList *
 tp_text_channel_dup_pending_messages (TpTextChannel *self)

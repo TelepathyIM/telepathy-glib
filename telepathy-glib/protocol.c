@@ -1001,7 +1001,7 @@ G_GNUC_END_IGNORE_DEPRECATIONS
  *  terminated by one whose @name is %NULL
  *
  * Since: 0.17.6
- * Deprecated: Since 0.UNRELEASED. New code should use tp_protocol_dup_params()
+ * Deprecated: Since 0.19.9. New code should use tp_protocol_dup_params()
  *  instead.
  */
 const TpConnectionManagerParam *

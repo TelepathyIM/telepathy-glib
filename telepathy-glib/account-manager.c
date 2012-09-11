@@ -1116,7 +1116,7 @@ tp_account_manager_ensure_account (TpAccountManager *self,
  * Returns: (element-type TelepathyGLib.Account) (transfer container): a newly allocated #GList of valid accounts in @manager
  *
  * Since: 0.9.0
- * Deprecated: Since 0.UNRELEASED. New code should use
+ * Deprecated: Since 0.19.9. New code should use
  *  tp_account_manager_dup_valid_accounts() instead.
  */
 GList *
@@ -1147,7 +1147,7 @@ tp_account_manager_get_valid_accounts (TpAccountManager *manager)
  * Returns: (element-type TelepathyGLib.Account) (transfer full): a newly
  *  allocated #GList of reffed valid accounts in @manager
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.9
  */
 GList *
 tp_account_manager_dup_valid_accounts (TpAccountManager *manager)

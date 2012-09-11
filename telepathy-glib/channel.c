@@ -395,7 +395,7 @@ tp_channel_is_ready (TpChannel *self)
  *
  * Returns: (transfer none): the value of #TpChannel:connection
  * Since: 0.7.12
- * Deprecated: Since 0.UNRELEASED. New code should use
+ * Deprecated: Since 0.19.9. New code should use
  *  tp_channel_get_connection() instead.
  */
 TpConnection *
@@ -414,7 +414,7 @@ tp_channel_borrow_connection (TpChannel *self)
  * while this channel is valid - reference it with g_object_ref() if needed.
  *
  * Returns: (transfer none): the value of #TpChannel:connection
- * Since: 0.UNRELEASED
+ * Since: 0.19.9
  */
 TpConnection *
 tp_channel_get_connection (TpChannel *self)
@@ -447,7 +447,7 @@ tp_channel_get_connection (TpChannel *self)
  *  where the keys are strings,
  *  D-Bus interface name + "." + property name, and the values are #GValue
  *  instances
- * Deprecated: Since 0.UNRELEASED. New code should use
+ * Deprecated: Since 0.19.9. New code should use
  *  tp_channel_dup_immutable_properties() instead.
  */
 GHashTable *
@@ -487,7 +487,7 @@ _tp_channel_get_immutable_properties (TpChannel *self)
  *
  * Returns: (transfer full): a dictionary where the keys are strings,
  *  D-Bus interface name + "." + property name.
- * Since: 0.UNRELEASED
+ * Since: 0.19.9
  */
 GVariant *
 tp_channel_dup_immutable_properties (TpChannel *self)
