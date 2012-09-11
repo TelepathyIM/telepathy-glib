@@ -73,7 +73,7 @@ TelepathyFarstream-0.6.gir: libtelepathy-farstream.la
 TelepathyFarstream_0_6_gir_INCLUDES = \
 	GObject-2.0 \
 	Gst-1.0 \
-	Farstream-0.1 \
+	Farstream-0.2 \
 	TelepathyGLib-0.12
 TelepathyFarstream_0_6_gir_CFLAGS = $(INCLUDES) -DGST_USE_UNSTABLE_API
 TelepathyFarstream_0_6_gir_LIBS = libtelepathy-farstream.la
