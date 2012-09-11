@@ -1,4 +1,4 @@
-telepathy-glib 0.19.9 (UNRELEASED)
+telepathy-glib 0.19.9 (2012-09-11)
 ==================================
 
 Deprecations:
@@ -15,6 +15,13 @@ Deprecations:
   corresponding function with _dup_ in its name, such as
   tp_text_channel_dup_pending_messages(), instead. (Xavier)
 
+• tp_handle_set/get_qdata() are now deprecated. Handles are immortal so using
+  them would leak the data until Connection gets disconnected.
+
+• tp_channel_request_new() and tp_channel_dispatch_operation_new() constructors
+  are now deprecated. Applications should not need them since they are created
+  internaly in TpBaseClient.
+
 Enhancements:
 
 • Some functions from util.h, such as tp_utf8_make_valid(),
@@ -29,6 +36,9 @@ Fixes:
 • Fix an incorrect error on UpdateLocalMediaDescription (Sjoerd)
 
 • Fix use of an unterminated string in the tls-certificates test (Sjoerd)
+
+• Fix service-side codegen using single includes, which prevents extensions to
+  build with TP_DISABLE_SINGLE_INCLUDE.
 
 telepathy-glib 0.19.8 (2012-08-31)
 ==================================

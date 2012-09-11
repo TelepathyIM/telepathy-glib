@@ -478,7 +478,7 @@ tp_connection_get_contact_info_flags (TpConnection *self)
  *  a #GList of #TpContactInfoFieldSpec struct, or %NULL if the feature is not
  *  yet prepared or the connection doesn't have the necessary properties.
  * Since: 0.11.7
- * Deprecated: Since 0.UNRELEASED. New code should use
+ * Deprecated: Since 0.19.9. New code should use
  *  tp_connection_dup_contact_info_supported_fields() instead.
  */
 GList *
@@ -504,7 +504,7 @@ tp_connection_get_contact_info_supported_fields (TpConnection *self)
  * Returns: (element-type TelepathyGLib.ContactInfoFieldSpec) (transfer full):
  *  a #GList of #TpContactInfoFieldSpec struct, or %NULL if the feature is not
  *  yet prepared or the connection doesn't have the necessary properties.
- * Since: 0.UNRELEASED
+ * Since: 0.19.9
  */
 GList *
 tp_connection_dup_contact_info_supported_fields (TpConnection *self)

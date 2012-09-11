@@ -427,7 +427,7 @@ static void tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy, TpProxy *self);
  * The reference is only valid as long as @self is.
  *
  * Since: 0.7.1
- * Deprecated: Since 0.UNRELEASED. New code should use
+ * Deprecated: Since 0.19.9. New code should use
  *  tp_proxy_get_interface_by_id() instead.
  */
 
@@ -456,7 +456,7 @@ _tp_proxy_borrow_interface_by_id (TpProxy *self,
  * interface is as given (or %NULL if an @error is raised).
  * The reference is only valid as long as @self is.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.9
  */
 DBusGProxy *
 tp_proxy_get_interface_by_id (TpProxy *self,

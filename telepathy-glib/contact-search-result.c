@@ -251,7 +251,7 @@ tp_contact_search_result_get_field (TpContactSearchResult *self,
  * Returns: (transfer container) (element-type TelepathyGLib.ContactInfoField):
  *  a #GList of #TpContactInfoField for the specified contact. You should free
  *  it when you're done with g_list_free().
- * Deprecated: Since 0.UNRELEASED. New code should use
+ * Deprecated: Since 0.19.9. New code should use
  *  tp_contact_search_result_dup_fields() instead.
  */
 GList *
@@ -271,7 +271,7 @@ tp_contact_search_result_get_fields (TpContactSearchResult *self)
  * Returns: (transfer full) (element-type TelepathyGLib.ContactInfoField):
  *  a #GList of #TpContactInfoField for the specified contact. You should free
  *  it when you're done with tp_contact_info_list_free().
- * Since: 0.UNRELEASED
+ * Since: 0.19.9
  */
 GList *
 tp_contact_search_result_dup_fields (TpContactSearchResult *self)

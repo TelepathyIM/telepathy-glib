@@ -295,6 +295,7 @@ static void
 prepare_roster (TpConnection *self,
     GSimpleAsyncResult *result)
 {
+  GQuark feature_states = TP_CONTACT_FEATURE_SUBSCRIPTION_STATES;
   GArray *features;
   const gchar **supported_interfaces;
 
@@ -306,6 +307,10 @@ prepare_roster (TpConnection *self,
 
   features = tp_client_factory_dup_contact_features (
       tp_proxy_get_factory (self), self);
+
+  /* We'll get subscription states for free, but we still need to tell
+   * TpContact to bind to change notification. */
+  g_array_append_val (features, feature_states);
 
   supported_interfaces = _tp_contacts_bind_to_signals (self,
       (const GQuark *) features->data);

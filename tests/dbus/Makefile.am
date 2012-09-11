@@ -358,6 +358,7 @@ _gen/svc.c: with-properties.xml \
 	$(AM_V_GEN)$(PYTHON) $(top_srcdir)/tools/glib-ginterface-gen.py \
 		--filename=_gen/svc \
 		--signal-marshal-prefix=NOT_NEEDED \
+		--include='<telepathy-glib/dbus-properties-mixin.h>' \
 		$< Test_Svc_
 
 _gen/errors-check.h: $(top_srcdir)/spec/errors.xml \

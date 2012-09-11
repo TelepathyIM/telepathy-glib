@@ -978,7 +978,7 @@ tp_protocol_dup_param_names (TpProtocol *self)
  * Returns: a #GPtrArray of #TpConnectionManagerParam.
  *
  * Since: 0.17.6
- * Deprecated: Since 0.UNRELEASED. New code should use tp_protocol_dup_params()
+ * Deprecated: Since 0.19.9. New code should use tp_protocol_dup_params()
  *  instead.
  */
 GPtrArray *

@@ -884,6 +884,8 @@ tp_channel_dispatch_operation_init_known_interfaces (void)
  * Returns: a new reference to an channel dispatch operation proxy, or %NULL if
  *    @object_path is not syntactically valid or the channel dispatcher is not
  *    running
+ * Deprecated: Since 0.19.9. New code should get
+ *  #TpChannelDispatchOperation objects from a #TpBaseClient
  */
 TpChannelDispatchOperation *
 tp_channel_dispatch_operation_new (TpDBusDaemon *bus_daemon,
@@ -975,7 +977,7 @@ tp_channel_dispatch_operation_get_feature_quark_core (void)
  * Returns: (transfer none): the value of #TpChannelDispatchOperation:connection
  *
  * Since: 0.11.5
- * Deprecated: Since 0.UNRELEASED. New code should use
+ * Deprecated: Since 0.19.9. New code should use
  *  tp_channel_dispatch_operation_get_connection() instead.
  */
 TpConnection *
@@ -996,7 +998,7 @@ tp_channel_dispatch_operation_borrow_connection (
  * Returns: (transfer none): the value of #TpChannelDispatchOperation:account
  *
  * Since: 0.11.5
- * Deprecated: Since 0.UNRELEASED. New code should use
+ * Deprecated: Since 0.19.9. New code should use
  *  tp_channel_dispatch_operation_get_account() instead.
  */
 TpAccount *
@@ -1018,7 +1020,7 @@ tp_channel_dispatch_operation_borrow_account (
  * Returns: (transfer none): the value of #TpChannelDispatchOperation:channels
  *
  * Since: 0.11.5
- * Deprecated: Since 0.UNRELEASED. New code should use
+ * Deprecated: Since 0.19.9. New code should use
  *  tp_channel_dispatch_operation_get_channels() instead.
  */
 GPtrArray *
@@ -1041,7 +1043,7 @@ tp_channel_dispatch_operation_borrow_channels (
  * #TpChannelDispatchOperation:possible-handlers
  *
  * Since: 0.11.5
- * Deprecated: Since 0.UNRELEASED. New code should use
+ * Deprecated: Since 0.19.9. New code should use
  *  tp_channel_dispatch_operation_get_possible_handlers() instead.
  */
 GStrv
@@ -1063,7 +1065,7 @@ tp_channel_dispatch_operation_borrow_possible_handlers (
  * #TpChannelDispatchOperation:cdo-properties
  *
  * Since: 0.11.5
- * Deprecated: Since 0.UNRELEASED. New code should use individual property
+ * Deprecated: Since 0.19.9. New code should use individual property
  *  getters like tp_channel_dispatch_operation_get_connection(),
  *  tp_channel_dispatch_operation_get_account(),
  *  tp_channel_dispatch_operation_get_channels(), or
@@ -1086,7 +1088,7 @@ tp_channel_dispatch_operation_borrow_immutable_properties (
  *
  * Returns: (transfer none): the value of #TpChannelDispatchOperation:connection
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.9
  */
 TpConnection *
 tp_channel_dispatch_operation_get_connection (
@@ -1105,7 +1107,7 @@ tp_channel_dispatch_operation_get_connection (
  *
  * Returns: (transfer none): the value of #TpChannelDispatchOperation:account
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.9
  */
 TpAccount *
 tp_channel_dispatch_operation_get_account (
@@ -1125,7 +1127,7 @@ tp_channel_dispatch_operation_get_account (
  *
  * Returns: (transfer none): the value of #TpChannelDispatchOperation:channels
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.9
  */
 GPtrArray *
 tp_channel_dispatch_operation_get_channels (
@@ -1146,7 +1148,7 @@ tp_channel_dispatch_operation_get_channels (
  * Returns: (transfer none): the value of
  * #TpChannelDispatchOperation:possible-handlers
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.9
  */
 GStrv
 tp_channel_dispatch_operation_get_possible_handlers (

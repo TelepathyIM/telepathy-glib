@@ -224,6 +224,9 @@ tp_handle_lookup (TpHandleRepoIface *self,
  * Since version 0.13.8, handles always last as long as the
  * connection, so @destroy will not be called until the connection
  * disconnects.
+ *
+ * Deprecated: Since 0.19.9. It is not recommended to use this function
+ *  because the associated data won't be freed until the connection disconnects.
  */
 
 void
@@ -247,6 +250,8 @@ tp_handle_set_qdata (TpHandleRepoIface *repo,
  *
  * Returns: the data associated with a given key on a given handle; %NULL
  * if there is no associated data.
+ * Deprecated: Since 0.19.9. It is not recommended to use this function
+ *  because the associated data won't be freed until the connection disconnects.
  */
 gpointer
 tp_handle_get_qdata (TpHandleRepoIface *repo, TpHandle handle,

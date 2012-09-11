@@ -892,7 +892,7 @@ tp_base_client_register (TpBaseClient *self,
  * #GList of #TpChannelRequest
  *
  * Since: 0.11.6
- * Deprecated: Since 0.UNRELEASED. New code should use
+ * Deprecated: Since 0.19.9. New code should use
  *  tp_base_client_dup_pending_requests() instead.
  */
 GList *
@@ -914,7 +914,7 @@ tp_base_client_get_pending_requests (TpBaseClient *self)
  * handled channels
  *
  * Since: 0.11.6
- * Deprecated: Since 0.UNRELEASED. New code should use
+ * Deprecated: Since 0.19.9. New code should use
  *  tp_base_client_dup_handled_channels() instead.
  */
 GList *
@@ -960,7 +960,7 @@ tp_base_client_get_handled_channels (TpBaseClient *self)
  * Returns: (transfer full) (element-type TelepathyGLib.ChannelRequest): a
  * #GList of #TpChannelRequest
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.9
  */
 GList *
 tp_base_client_dup_pending_requests (TpBaseClient *self)
@@ -981,7 +981,7 @@ tp_base_client_dup_pending_requests (TpBaseClient *self)
  * Returns: (transfer full) (element-type TelepathyGLib.Channel): the
  * handled channels
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.9
  */
 GList *
 tp_base_client_dup_handled_channels (TpBaseClient *self)

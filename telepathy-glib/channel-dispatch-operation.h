@@ -75,10 +75,13 @@ GType tp_channel_dispatch_operation_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CHANNEL_DISPATCH_OPERATION, \
                               TpChannelDispatchOperationClass))
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_20
 TpChannelDispatchOperation *tp_channel_dispatch_operation_new (
     TpDBusDaemon *bus_daemon, const gchar *object_path,
     GHashTable *immutable_properties, GError **error)
   G_GNUC_WARN_UNUSED_RESULT;
+#endif
 
 void tp_channel_dispatch_operation_init_known_interfaces (void);
 
