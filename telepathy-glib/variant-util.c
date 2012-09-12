@@ -27,10 +27,10 @@
  */
 
 /**
- * SECTION:vardic
+ * SECTION:vardict
  * @title: Manipulating a{sv} mappings
  * @short_description: Functions to manipulate mappings from string to
- *  variant, as represented in GDBus by a %G_VARIANT_TYPE_VARDICT
+ *  variant, as represented in GVariant by a %G_VARIANT_TYPE_VARDICT
  *
  * These functions provide convenient access to the values in such
  * a mapping.
@@ -106,3 +106,506 @@ _tp_asv_from_vardict (GVariant *variant)
   g_value_unset (&v);
   return result;
 }
+
+/**
+ * tp_variant_type_classify:
+ * @type: a #GVariantType
+ *
+ * Classifies @type according to its top-level type.
+ *
+ * Returns: the #GVariantClass of @type
+ * Since: 0.UNRELEASED
+ **/
+GVariantClass
+tp_variant_type_classify (const GVariantType *type)
+{
+  /* Same as g_variant_classify() but for a GVariantType. This returns the first
+   * letter of the dbus type and cast it to an enum where elements have the
+   * ascii value of the type letters. */
+  return g_variant_type_peek_string (type)[0];
+}
+
+static gdouble
+_tp_variant_convert_double (GVariant *variant,
+    gboolean *valid)
+{
+  *valid = TRUE;
+
+  switch (g_variant_classify (variant))
+    {
+      case G_VARIANT_CLASS_DOUBLE:
+        return g_variant_get_double (variant);
+
+      case G_VARIANT_CLASS_BYTE:
+        return g_variant_get_byte (variant);
+
+      case G_VARIANT_CLASS_UINT32:
+        return g_variant_get_uint32 (variant);
+
+      case G_VARIANT_CLASS_INT32:
+        return g_variant_get_int32 (variant);
+
+      case G_VARIANT_CLASS_INT64:
+        return g_variant_get_int64 (variant);
+
+      case G_VARIANT_CLASS_UINT64:
+        return g_variant_get_uint64 (variant);
+
+      default:
+        break;
+    }
+
+  *valid = FALSE;
+  return 0.0;
+}
+
+static gint32
+_tp_variant_convert_int32 (GVariant *variant,
+    gboolean *valid)
+{
+  gint64 i;
+  guint64 u;
+
+  *valid = TRUE;
+
+  switch (g_variant_classify (variant))
+    {
+      case G_VARIANT_CLASS_BYTE:
+        return g_variant_get_byte (variant);
+
+      case G_VARIANT_CLASS_UINT32:
+        u = g_variant_get_uint32 (variant);
+        if (G_LIKELY (u <= G_MAXINT32))
+          return u;
+        break;
+
+      case G_VARIANT_CLASS_INT32:
+        return g_variant_get_int32 (variant);
+
+      case G_VARIANT_CLASS_INT64:
+        i = g_variant_get_int64 (variant);
+        if (G_LIKELY (i >= G_MININT32 && i <= G_MAXINT32))
+          return i;
+        break;
+
+      case G_VARIANT_CLASS_UINT64:
+        u = g_variant_get_uint64 (variant);
+        if (G_LIKELY (u <= G_MAXINT32))
+          return u;
+        break;
+
+      default:
+        break;
+    }
+
+  *valid = FALSE;
+  return 0;
+}
+
+static gint64
+_tp_variant_convert_int64 (GVariant *variant,
+    gboolean *valid)
+{
+  guint64 u;
+
+  *valid = TRUE;
+
+  switch (g_variant_classify (variant))
+    {
+      case G_VARIANT_CLASS_BYTE:
+        return g_variant_get_byte (variant);
+
+      case G_VARIANT_CLASS_UINT32:
+        return g_variant_get_uint32 (variant);
+
+      case G_VARIANT_CLASS_INT32:
+        return g_variant_get_int32 (variant);
+
+      case G_VARIANT_CLASS_INT64:
+        return g_variant_get_int64 (variant);
+
+      case G_VARIANT_CLASS_UINT64:
+        u = g_variant_get_uint64 (variant);
+        if (G_LIKELY (u <= G_MAXINT64))
+          return u;
+        break;
+
+      default:
+        break;
+    }
+
+  *valid = FALSE;
+  return 0;
+}
+
+static guint32
+_tp_variant_convert_uint32 (GVariant *variant,
+    gboolean *valid)
+{
+  gint64 i;
+  guint64 u;
+
+  *valid = TRUE;
+
+  switch (g_variant_classify (variant))
+    {
+      case G_VARIANT_CLASS_BYTE:
+        return g_variant_get_byte (variant);
+
+      case G_VARIANT_CLASS_UINT32:
+        return g_variant_get_uint32 (variant);
+
+      case G_VARIANT_CLASS_INT32:
+        i = g_variant_get_int32 (variant);
+        if (G_LIKELY (i >= 0))
+          return i;
+        break;
+
+      case G_VARIANT_CLASS_INT64:
+        i = g_variant_get_int64 (variant);
+        if (G_LIKELY (i >= 0 && i <= G_MAXUINT32))
+          return i;
+        break;
+
+      case G_VARIANT_CLASS_UINT64:
+        u = g_variant_get_uint64 (variant);
+        if (G_LIKELY (u <= G_MAXUINT32))
+          return u;
+        break;
+
+      default:
+        break;
+    }
+
+  *valid = FALSE;
+  return 0;
+}
+
+static guint64
+_tp_variant_convert_uint64 (GVariant *variant,
+    gboolean *valid)
+{
+  gint64 tmp;
+
+  *valid = TRUE;
+
+  switch (g_variant_classify (variant))
+    {
+      case G_VARIANT_CLASS_BYTE:
+        return g_variant_get_byte (variant);
+
+      case G_VARIANT_CLASS_UINT32:
+        return g_variant_get_uint32 (variant);
+
+      case G_VARIANT_CLASS_INT32:
+        tmp = g_variant_get_int32 (variant);
+        if (G_LIKELY (tmp >= 0))
+          return tmp;
+        break;
+
+      case G_VARIANT_CLASS_INT64:
+        tmp = g_variant_get_int64 (variant);
+        if (G_LIKELY (tmp >= 0))
+          return tmp;
+        break;
+
+      case G_VARIANT_CLASS_UINT64:
+        return g_variant_get_uint64 (variant);
+
+      default:
+        break;
+    }
+
+  *valid = FALSE;
+  return 0;
+}
+
+/**
+ * tp_variant_convert:
+ * @variant: (transfer full): a #GVariant to convert
+ * @type: a #GVariantType @variant must be converted to
+ *
+ * Convert the type of @variant to @type if possible. This takes ownership of
+ * @variant. If no conversion is needed, simply return @variant. If conversion
+ * is not possible, %NULL is returned.
+ *
+ * Returns: (transfer full): a new #GVariant owned by the caller.
+ * Since: 0.UNRELEASED
+ **/
+GVariant *
+tp_variant_convert (GVariant *variant,
+    const GVariantType *type)
+{
+  GVariant *ret = NULL;
+  gboolean valid;
+
+  if (variant == NULL)
+    return NULL;
+
+  g_variant_ref_sink (variant);
+
+  if (g_variant_is_of_type (variant, type))
+    return variant;
+
+  switch (tp_variant_type_classify (type))
+    {
+      #define CASE(type) \
+        { \
+          g##type tmp = _tp_variant_convert_##type (variant, &valid); \
+          if (valid) \
+            ret = g_variant_new_##type (tmp); \
+        }
+      case G_VARIANT_CLASS_DOUBLE:
+        CASE (double);
+        break;
+
+      case G_VARIANT_CLASS_INT32:
+        CASE (int32);
+        break;
+
+      case G_VARIANT_CLASS_INT64:
+        CASE (int64);
+        break;
+
+      case G_VARIANT_CLASS_UINT32:
+        CASE (uint32);
+        break;
+
+      case G_VARIANT_CLASS_UINT64:
+        CASE (uint64);
+        break;
+
+      default:
+        break;
+      #undef CASE
+    }
+
+  g_variant_unref (variant);
+
+  return (ret != NULL) ? g_variant_ref_sink (ret) : NULL;
+}
+
+/**
+ * tp_vardict_get_string:
+ * @variant: a #GVariant of type %G_VARIANT_TYPE_VARDICT
+ * @key: The key to look up
+ *
+ * If a value for @key in @variant is present and is a string, return it.
+ *
+ * Otherwise return %NULL.
+ *
+ * The returned value is not copied, and is only valid as long as @variant is
+ * kept. Copy it with g_strdup() if you need to keep it for longer.
+ *
+ * Returns: (transfer none) (allow-none): the string value of @key, or %NULL
+ * Since: 0.UNRELEASED
+ */
+const gchar *
+tp_vardict_get_string (GVariant *variant,
+    const gchar *key)
+{
+  const gchar *ret;
+
+  g_return_val_if_fail (variant != NULL, NULL);
+  g_return_val_if_fail (key != NULL, NULL);
+  g_return_val_if_fail (g_variant_is_of_type (variant, G_VARIANT_TYPE_VARDICT), NULL);
+
+  if (!g_variant_lookup (variant, key, "&s", &ret))
+    return NULL;
+
+  return ret;
+}
+
+/**
+ * tp_vardict_get_object_path:
+ * @variant: a #GVariant of type %G_VARIANT_TYPE_VARDICT
+ * @key: The key to look up
+ *
+ * If a value for @key in @variant is present and is an object path, return it.
+ *
+ * Otherwise return %NULL.
+ *
+ * The returned value is not copied, and is only valid as long as @variant is
+ * kept. Copy it with g_strdup() if you need to keep it for longer.
+ *
+ * Returns: (transfer none) (allow-none): the object path value of @key, or
+ *  %NULL
+ * Since: 0.UNRELEASED
+ */
+const gchar *
+tp_vardict_get_object_path (GVariant *variant,
+    const gchar *key)
+{
+  const gchar *ret;
+
+  g_return_val_if_fail (variant != NULL, NULL);
+  g_return_val_if_fail (key != NULL, NULL);
+  g_return_val_if_fail (g_variant_is_of_type (variant, G_VARIANT_TYPE_VARDICT), NULL);
+
+  if (!g_variant_lookup (variant, key, "&o", &ret))
+    return NULL;
+
+  return ret;
+}
+
+/**
+ * tp_vardict_get_boolean:
+ * @variant: a #GVariant of type %G_VARIANT_TYPE_VARDICT
+ * @key: The key to look up
+ * @valid: (out): Either %NULL, or a location to store %TRUE if the key actually
+ *  exists and has a boolean value
+ *
+ * If a value for @key in @variant is present and boolean, return it,
+ * and set *@valid to %TRUE if @valid is not %NULL.
+ *
+ * Otherwise return %FALSE, and set *@valid to %FALSE if @valid is not %NULL.
+ *
+ * Returns: a boolean value for @key
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_vardict_get_boolean (GVariant *variant,
+    const gchar *key,
+    gboolean *valid)
+{
+  gboolean ret;
+
+  g_return_val_if_fail (variant != NULL, FALSE);
+  g_return_val_if_fail (key != NULL, FALSE);
+  g_return_val_if_fail (g_variant_is_of_type (variant, G_VARIANT_TYPE_VARDICT), FALSE);
+
+  if (!g_variant_lookup (variant, key, "b", &ret))
+    {
+      if (valid != NULL)
+        *valid = FALSE;
+
+      return FALSE;
+    }
+
+  if (valid != NULL)
+    *valid = TRUE;
+
+  return ret;
+}
+
+#define IMPLEMENT(type) \
+  g##type \
+  tp_vardict_get_##type (GVariant *variant, \
+      const gchar *key, \
+      gboolean *valid) \
+  { \
+    g##type ret = 0; \
+    gboolean ret_valid = FALSE; \
+    GVariant *value; \
+    \
+    g_return_val_if_fail (variant != NULL, 0); \
+    g_return_val_if_fail (key != NULL, 0); \
+    g_return_val_if_fail (g_variant_is_of_type (variant, G_VARIANT_TYPE_VARDICT), 0); \
+    \
+    value = g_variant_lookup_value (variant, key, NULL); \
+    if (value != NULL) \
+      { \
+        ret = _tp_variant_convert_##type (value, &ret_valid); \
+        g_variant_unref (value); \
+      } \
+    \
+    if (valid != NULL) \
+      *valid = ret_valid; \
+    \
+    return ret; \
+  }
+
+/**
+ * tp_vardict_get_double:
+ * @variant: a #GVariant of type %G_VARIANT_TYPE_VARDICT
+ * @key: The key to look up
+ * @valid: (out): Either %NULL, or a location in which to store %TRUE on success
+ * or %FALSE on failure
+ *
+ * If a value for @key in @variant is present and has any numeric type used by
+ * GVariant (gint32, guint32, gint64, guint64 or gdouble),
+ * return it as a double, and if @valid is not %NULL, set *@valid to %TRUE.
+ *
+ * Otherwise, return 0.0, and if @valid is not %NULL, set *@valid to %FALSE.
+ *
+ * Returns: the double precision floating-point value of @key, or 0.0
+ * Since: 0.UNRELEASED
+ */
+IMPLEMENT (double)
+
+/**
+ * tp_vardict_get_int32:
+ * @variant: a #GVariant of type %G_VARIANT_TYPE_VARDICT
+ * @key: The key to look up
+ * @valid: (out): Either %NULL, or a location in which to store %TRUE on success
+ * or %FALSE on failure
+ *
+ * If a value for @key in @variant is present, has an integer type used by
+ * GVariant (gint32, guint32, gint64 or guint64) and fits in the
+ * range of a gint32, return it, and if @valid is not %NULL, set *@valid to
+ * %TRUE.
+ *
+ * Otherwise, return 0, and if @valid is not %NULL, set *@valid to %FALSE.
+ *
+ * Returns: the 32-bit signed integer value of @key, or 0
+ * Since: 0.UNRELEASED
+ */
+IMPLEMENT (int32)
+
+/**
+ * tp_vardict_get_int64:
+ * @variant: a #GVariant of type %G_VARIANT_TYPE_VARDICT
+ * @key: The key to look up
+ * @valid: (out): Either %NULL, or a location in which to store %TRUE on success
+ * or %FALSE on failure
+ *
+ * If a value for @key in @variant is present, has an integer type used by
+ * GVariant (gint32, guint32, gint64 or guint64) and fits in the
+ * range of a gint64, return it, and if @valid is not %NULL, set *@valid to
+ * %TRUE.
+ *
+ * Otherwise, return 0, and if @valid is not %NULL, set *@valid to %FALSE.
+ *
+ * Returns: the 64-bit signed integer value of @key, or 0
+ * Since: 0.UNRELEASED
+ */
+IMPLEMENT (int64)
+
+/**
+ * tp_vardict_get_uint32:
+ * @variant: a #GVariant of type %G_VARIANT_TYPE_VARDICT
+ * @key: The key to look up
+ * @valid: (out): Either %NULL, or a location in which to store %TRUE on success
+ * or %FALSE on failure
+ *
+ * If a value for @key in @variant is present, has an integer type used by
+ * GVariant (gint32, guint32, gint64 or guint64) and fits in the
+ * range of a guint32, return it, and if @valid is not %NULL, set *@valid to
+ * %TRUE.
+ *
+ * Otherwise, return 0, and if @valid is not %NULL, set *@valid to %FALSE.
+ *
+ * Returns: the 32-bit unsigned integer value of @key, or 0
+ * Since: 0.UNRELEASED
+ */
+IMPLEMENT (uint32)
+
+/**
+ * tp_vardict_get_uint64:
+ * @variant: a #GVariant of type %G_VARIANT_TYPE_VARDICT
+ * @key: The key to look up
+ * @valid: (out): Either %NULL, or a location in which to store %TRUE on success
+ * or %FALSE on failure
+ *
+ * If a value for @key in @variant is present, has an integer type used by
+ * GVariant (gint32, guint32, gint64 or guint64) and is non-negative,
+ * return it, and if @valid is not %NULL, set *@valid to %TRUE.
+ *
+ * Otherwise, return 0, and if @valid is not %NULL, set *@valid to %FALSE.
+ *
+ * Returns: the 64-bit unsigned integer value of @key, or 0
+ * Since: 0.UNRELEASED
+ */
+IMPLEMENT (uint64)
+
+#undef IMPLEMENT

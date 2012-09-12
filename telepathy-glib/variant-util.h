@@ -30,6 +30,33 @@
 
 G_BEGIN_DECLS
 
+GVariantClass tp_variant_type_classify (const GVariantType *type);
+
+GVariant *tp_variant_convert (GVariant *variant,
+    const GVariantType *type);
+
+const gchar *tp_vardict_get_string (GVariant *variant,
+    const gchar *key);
+const gchar *tp_vardict_get_object_path (GVariant *variant,
+    const gchar *key);
+gboolean tp_vardict_get_boolean (GVariant *variant,
+    const gchar *key,
+    gboolean *valid);
+gdouble tp_vardict_get_double (GVariant *variant,
+    const gchar *key,
+    gboolean *valid);
+gint32 tp_vardict_get_int32 (GVariant *variant,
+    const gchar *key,
+    gboolean *valid);
+gint64 tp_vardict_get_int64 (GVariant *variant,
+    const gchar *key,
+    gboolean *valid);
+guint32 tp_vardict_get_uint32 (GVariant *variant,
+    const gchar *key,
+    gboolean *valid);
+guint64 tp_vardict_get_uint64 (GVariant *variant,
+    const gchar *key,
+    gboolean *valid);
 
 G_END_DECLS
 
