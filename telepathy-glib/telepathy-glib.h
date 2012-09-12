@@ -111,6 +111,7 @@
 #include <telepathy-glib/stream-tube-connection.h>
 #include <telepathy-glib/text-channel.h>
 #include <telepathy-glib/tls-certificate.h>
+#include <telepathy-glib/variant-util.h>
 
 /* deprecated, gone in 1.0 */
 #include <telepathy-glib/automatic-proxy-factory.h>

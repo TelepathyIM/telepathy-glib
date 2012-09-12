@@ -139,7 +139,8 @@ our_headers = \
     text-mixin.h \
     tls-certificate.h \
     tls-certificate-rejection.h \
-    util.h
+    util.h \
+    variant-util.h
 
 tpginclude_HEADERS = \
     $(our_headers) \
@@ -309,7 +310,9 @@ libtelepathy_glib_internal_la_SOURCES = \
     tls-certificate-rejection.c \
     tls-certificate-rejection-internal.h \
     util.c \
-    util-internal.h
+    util-internal.h \
+    variant-util.c \
+    variant-util-internal.h
 
 AM_CPPFLAGS = \
     -DG_LOG_DOMAIN=\"tp-glib\" \

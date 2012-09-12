@@ -40,7 +40,8 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
-#include <telepathy-glib/util-internal.h>
+#include "telepathy-glib/util-internal.h"
+#include "telepathy-glib/variant-util-internal.h"
 
 #include "telepathy-glib/_gen/tp-cli-account-body.h"
 

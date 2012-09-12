@@ -48,6 +48,7 @@
 #include "telepathy-glib/simple-client-factory-internal.h"
 #include "telepathy-glib/contact-internal.h"
 #include "telepathy-glib/util-internal.h"
+#include "telepathy-glib/variant-util-internal.h"
 
 #include "_gen/tp-cli-connection-body.h"
 

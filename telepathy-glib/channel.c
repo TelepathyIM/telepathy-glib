@@ -36,6 +36,7 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
+#include "telepathy-glib/variant-util-internal.h"
 
 #include "_gen/tp-cli-channel-body.h"
 
