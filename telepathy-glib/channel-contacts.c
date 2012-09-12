@@ -1090,6 +1090,7 @@ contacts_prepared_cb (GObject *object,
     g_simple_async_result_take_error (result, error);
 
   g_simple_async_result_complete (result);
+  g_object_unref (result);
 }
 
 static void
