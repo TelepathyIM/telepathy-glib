@@ -4,14 +4,34 @@
 
 #include <glib.h>
 
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include "tests/lib/myassert.h"
+#include "telepathy-glib/variant-util-internal.h"
+
+#define asv_assert(type, key, expected_value, expected_valid) \
+    valid = (gboolean) 123; \
+    g_assert (tp_asv_get_##type (hash, key, NULL) == expected_value); \
+    g_assert (tp_asv_get_##type (hash, key, &valid) == expected_value); \
+    g_assert (valid == expected_valid); \
+\
+    valid = (gboolean) 123; \
+    g_assert (tp_vardict_get_##type (vardict, key, NULL) == expected_value); \
+    g_assert (tp_vardict_get_##type (vardict, key, &valid) == expected_value); \
+    g_assert (valid == expected_valid)
+
+#define asv_assert_string(key, expected_value) \
+    g_assert_cmpstr (tp_asv_get_string (hash, key), ==, expected_value); \
+    g_assert_cmpstr (tp_vardict_get_string (vardict, key), ==, expected_value); \
+
+#define asv_assert_object_path(key, expected_value) \
+    g_assert_cmpstr (tp_asv_get_object_path (hash, key), ==, expected_value); \
+    g_assert_cmpstr (tp_vardict_get_object_path (vardict, key), ==, expected_value); \
 
 int main (int argc, char **argv)
 {
   GHashTable *hash;
+  GVariant *vardict;
   gboolean valid;
   static const char * const strv[] = { "Foo", "Bar", NULL };
 
@@ -95,578 +115,147 @@ int main (int argc, char **argv)
 
   tp_asv_dump (hash);
 
+  vardict = _tp_asv_to_vardict (hash);
+
   /* Tests: tp_asv_get_boolean */
 
-  valid = (gboolean) 123;
-  MYASSERT (!tp_asv_get_boolean (hash, "b:FALSE", NULL), "");
-  MYASSERT (!tp_asv_get_boolean (hash, "b:FALSE", &valid), "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_boolean (hash, "b:TRUE", NULL), "");
-  MYASSERT (tp_asv_get_boolean (hash, "b:TRUE", &valid), "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (!tp_asv_get_boolean (hash, "s", NULL), "");
-  MYASSERT (!tp_asv_get_boolean (hash, "s", &valid), "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (!tp_asv_get_boolean (hash, "not-there", NULL), "");
-  MYASSERT (!tp_asv_get_boolean (hash, "not-there", &valid), "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (!tp_asv_get_boolean (hash, "i32:2**16", NULL), "");
-  MYASSERT (!tp_asv_get_boolean (hash, "i32:2**16", &valid), "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (!tp_asv_get_boolean (hash, "d:0", NULL), "");
-  MYASSERT (!tp_asv_get_boolean (hash, "d:0", &valid), "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (!tp_asv_get_boolean (hash, "d:-123", NULL), "");
-  MYASSERT (!tp_asv_get_boolean (hash, "d:-123", &valid), "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (!tp_asv_get_boolean (hash, "d:123.2", NULL), "");
-  MYASSERT (!tp_asv_get_boolean (hash, "d:123.2", &valid), "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
+  asv_assert (boolean, "b:FALSE", FALSE, TRUE);
+  asv_assert (boolean, "b:TRUE", TRUE, TRUE);
+  asv_assert (boolean, "s", FALSE, FALSE);
+  asv_assert (boolean, "not-there", FALSE, FALSE);
+  asv_assert (boolean, "i32:2**16", FALSE, FALSE);
+  asv_assert (boolean, "d:0", FALSE, FALSE);
+  asv_assert (boolean, "d:-123", FALSE, FALSE);
+  asv_assert (boolean, "d:123.2", FALSE, FALSE);
 
   /* Tests: tp_asv_get_double */
 
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_double (hash, "s", NULL) == 0, "");
-  MYASSERT (tp_asv_get_double (hash, "s", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_double (hash, "b:TRUE", NULL) == 0, "");
-  MYASSERT (tp_asv_get_double (hash, "b:TRUE", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_double (hash, "not-there", NULL) == 0.0, "");
-  MYASSERT (tp_asv_get_double (hash, "not-there", &valid) == 0.0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_double (hash, "i32:0", NULL) == 0.0, "");
-  MYASSERT (tp_asv_get_double (hash, "i32:0", &valid) == 0.0, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_double (hash, "u32:0", NULL) == 0.0, "");
-  MYASSERT (tp_asv_get_double (hash, "u32:0", &valid) == 0.0, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_double (hash, "u32:2**16", NULL)
-      == (double) 0x10000, "");
-  MYASSERT (tp_asv_get_double (hash, "u32:2**16", &valid)
-      == (double) 0x10000, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_double (hash, "i32:-2**16", NULL) ==
-      (double) -0x10000, "");
-  MYASSERT (tp_asv_get_double (hash, "i32:-2**16", &valid) ==
-      (double) -0x10000, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_double (hash, "u64:0", NULL) == 0.0, "");
-  MYASSERT (tp_asv_get_double (hash, "u64:0", &valid) == 0.0, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_double (hash, "d:0", NULL) == 0.0, "");
-  MYASSERT (tp_asv_get_double (hash, "d:0", &valid) == 0.0, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_double (hash, "d:-123", NULL) == -123.0, "");
-  MYASSERT (tp_asv_get_double (hash, "d:-123", &valid) == -123.0, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_double (hash, "d:123.2", NULL) == 123.2, "");
-  MYASSERT (tp_asv_get_double (hash, "d:123.2", &valid) == 123.2, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
+  asv_assert (double, "s", 0.0, FALSE);
+  asv_assert (double, "b:TRUE", 0.0, FALSE);
+  asv_assert (double, "not-there", 0.0, FALSE);
+  asv_assert (double, "i32:0", 0.0, TRUE);
+  asv_assert (double, "u32:0", 0.0, TRUE);
+  asv_assert (double, "u32:2**16", (double) 0x10000, TRUE);
+  asv_assert (double, "i32:-2**16", (double) -0x10000, TRUE);
+  asv_assert (double, "u64:0", 0.0, TRUE);
+  asv_assert (double, "d:0", 0.0, TRUE);
+  asv_assert (double, "d:-123", -123.0, TRUE);
+  asv_assert (double, "d:123.2", 123.2, TRUE);
 
   /* Tests: tp_asv_get_int32 */
 
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "s", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int32 (hash, "s", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "b:TRUE", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int32 (hash, "b:TRUE", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "d:0", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int32 (hash, "d:0", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "not-there", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int32 (hash, "not-there", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "i32:0", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int32 (hash, "i32:0", &valid) == 0, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "u32:0", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int32 (hash, "u32:0", &valid) == 0, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "i32:2**16", NULL) == 0x10000, "");
-  MYASSERT (tp_asv_get_int32 (hash, "i32:2**16", &valid) == 0x10000, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "u32:2**16", NULL) == 0x10000, "");
-  MYASSERT (tp_asv_get_int32 (hash, "u32:2**16", &valid) == 0x10000, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "i32:-2**16", NULL) == -0x10000, "");
-  MYASSERT (tp_asv_get_int32 (hash, "i32:-2**16", &valid) == -0x10000, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "i32:-2**31", NULL) == 0x10000 * -0x8000,
-      "");
-  MYASSERT (tp_asv_get_int32 (hash, "i32:-2**31", &valid) == 0x10000 * -0x8000,
-      "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "i32:2**31-1", NULL) == 0x7FFFFFFF, "");
-  MYASSERT (tp_asv_get_int32 (hash, "i32:2**31-1", &valid) == 0x7FFFFFFF, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "u32:2**31-1", NULL) == 0x7FFFFFFF, "");
-  MYASSERT (tp_asv_get_int32 (hash, "u32:2**31-1", &valid) == 0x7FFFFFFF, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "u32:2**31", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int32 (hash, "u32:2**31", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "u32:2**32-1", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int32 (hash, "u32:2**32-1", &valid) == 0,
-      "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "u64:2**32-1", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int32 (hash, "u64:2**32-1", &valid) == 0,
-      "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "u64:2**32", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int32 (hash, "u64:2**32", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "u64:2**64-1", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int32 (hash, "u64:2**64-1", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "i64:-2**63", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int32 (hash, "i64:-2**63", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "i64:2**63-1", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int32 (hash, "i64:2**63-1", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int32 (hash, "u64:2**63-1", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int32 (hash, "u64:2**63-1", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
+  asv_assert (int32, "s", 0, FALSE);
+  asv_assert (int32, "b:TRUE", 0, FALSE);
+  asv_assert (int32, "d:0", 0, FALSE);
+  asv_assert (int32, "not-there", 0, FALSE);
+  asv_assert (int32, "i32:0", 0, TRUE);
+  asv_assert (int32, "u32:0", 0, TRUE);
+  asv_assert (int32, "i32:2**16", 0x10000, TRUE);
+  asv_assert (int32, "u32:2**16", 0x10000, TRUE);
+  asv_assert (int32, "i32:-2**16", -0x10000, TRUE);
+  asv_assert (int32, "i32:-2**31", 0x10000 * -0x8000, TRUE);
+  asv_assert (int32, "i32:2**31-1", 0x7FFFFFFF, TRUE);
+  asv_assert (int32, "u32:2**31-1", 0x7FFFFFFF, TRUE);
+  asv_assert (int32, "u32:2**31", 0, FALSE);
+  asv_assert (int32, "u32:2**32-1", 0, FALSE);
+  asv_assert (int32, "u64:2**32-1", 0, FALSE);
+  asv_assert (int32, "u64:2**32", 0, FALSE);
+  asv_assert (int32, "u64:2**64-1", 0, FALSE);
+  asv_assert (int32, "i64:-2**63", 0, FALSE);
+  asv_assert (int32, "i64:2**63-1", 0, FALSE);
+  asv_assert (int32, "u64:2**63-1", 0, FALSE);
 
   /* Tests: tp_asv_get_uint32 */
 
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "s", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "s", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "b:TRUE", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "b:TRUE", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "d:0", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "d:0", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "not-there", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "not-there", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "i32:0", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "i32:0", &valid) == 0, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "u32:0", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "u32:0", &valid) == 0, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "i32:2**16", NULL) == 0x10000, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "i32:2**16", &valid) == 0x10000, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "u32:2**16", NULL) == 0x10000, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "u32:2**16", &valid) == 0x10000, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "i32:-2**16", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "i32:-2**16", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "i32:-2**31", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "i32:-2**31", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "i32:2**31-1", NULL) == 0x7FFFFFFF, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "i32:2**31-1", &valid) == 0x7FFFFFFF, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "u32:2**31-1", NULL) == 0x7FFFFFFF, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "u32:2**31-1", &valid) == 0x7FFFFFFF, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "u32:2**31", NULL) == 0x80000000U, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "u32:2**31", &valid) == 0x80000000U, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "u32:2**32-1", NULL) == 0xFFFFFFFFU, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "u32:2**32-1", &valid) == 0xFFFFFFFFU,
-      "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "u64:2**32-1", NULL) == 0xFFFFFFFFU, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "u64:2**32-1", &valid) == 0xFFFFFFFFU,
-      "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "u64:2**32", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "u64:2**32", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "u64:2**64-1", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "u64:2**64-1", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "i64:-2**63", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "i64:-2**63", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "i64:2**63-1", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "i64:2**63-1", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint32 (hash, "u64:2**63-1", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint32 (hash, "u64:2**63-1", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
+  asv_assert (uint32, "s", 0, FALSE);
+  asv_assert (uint32, "b:TRUE", 0, FALSE);
+  asv_assert (uint32, "d:0", 0, FALSE);
+  asv_assert (uint32, "not-there", 0, FALSE);
+  asv_assert (uint32, "i32:0", 0, TRUE);
+  asv_assert (uint32, "u32:0", 0, TRUE);
+  asv_assert (uint32, "i32:2**16", 0x10000, TRUE);
+  asv_assert (uint32, "u32:2**16", 0x10000, TRUE);
+  asv_assert (uint32, "i32:-2**16", 0, FALSE);
+  asv_assert (uint32, "i32:-2**31", 0, FALSE);
+  asv_assert (uint32, "i32:2**31-1", 0x7FFFFFFF, TRUE);
+  asv_assert (uint32, "u32:2**31-1", 0x7FFFFFFF, TRUE);
+  asv_assert (uint32, "u32:2**31", 0x80000000U, TRUE);
+  asv_assert (uint32, "u32:2**32-1", 0xFFFFFFFFU, TRUE);
+  asv_assert (uint32, "u64:2**32-1", 0xFFFFFFFFU, TRUE);
+  asv_assert (uint32, "u64:2**32", 0, FALSE);
+  asv_assert (uint32, "u64:2**64-1", 0, FALSE);
+  asv_assert (uint32, "i64:-2**63", 0, FALSE);
+  asv_assert (uint32, "i64:2**63-1", 0, FALSE);
+  asv_assert (uint32, "u64:2**63-1", 0, FALSE);
 
   /* Tests: tp_asv_get_int64 */
 
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "s", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int64 (hash, "s", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "b:TRUE", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int64 (hash, "b:TRUE", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "d:0", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int64 (hash, "d:0", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "not-there", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int64 (hash, "not-there", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "i32:0", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int64 (hash, "i32:0", &valid) == 0, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "u32:0", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int64 (hash, "u32:0", &valid) == 0, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "i32:2**16", NULL) == 0x10000, "");
-  MYASSERT (tp_asv_get_int64 (hash, "i32:2**16", &valid) == 0x10000, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "u32:2**16", NULL) == 0x10000, "");
-  MYASSERT (tp_asv_get_int64 (hash, "u32:2**16", &valid) == 0x10000, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "i32:-2**16", NULL) == -0x10000, "");
-  MYASSERT (tp_asv_get_int64 (hash, "i32:-2**16", &valid) == -0x10000, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "i32:-2**31", NULL) == 0x10000 * -0x8000,
-      "");
-  MYASSERT (tp_asv_get_int64 (hash, "i32:-2**31", &valid) == 0x10000 * -0x8000,
-      "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "i32:2**31-1", NULL) == 0x7FFFFFFF, "");
-  MYASSERT (tp_asv_get_int64 (hash, "i32:2**31-1", &valid) == 0x7FFFFFFF, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "u32:2**31-1", NULL) == 0x7FFFFFFF, "");
-  MYASSERT (tp_asv_get_int64 (hash, "u32:2**31-1", &valid) == 0x7FFFFFFF, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "u32:2**31", NULL) ==
-      G_GINT64_CONSTANT (0x80000000), "");
-  MYASSERT (tp_asv_get_int64 (hash, "u32:2**31", &valid) ==
-      G_GINT64_CONSTANT (0x80000000), "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "u32:2**32-1", NULL) ==
-      G_GINT64_CONSTANT (0xFFFFFFFF), "");
-  MYASSERT (tp_asv_get_int64 (hash, "u32:2**32-1", &valid) ==
-      G_GINT64_CONSTANT (0xFFFFFFFF), "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "u64:2**32-1", NULL) ==
-      G_GINT64_CONSTANT (0xFFFFFFFF), "");
-  MYASSERT (tp_asv_get_int64 (hash, "u64:2**32-1", &valid) ==
-      G_GINT64_CONSTANT (0xFFFFFFFF), "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "u64:2**32", NULL) ==
-      G_GINT64_CONSTANT (0x100000000), "");
-  MYASSERT (tp_asv_get_int64 (hash, "u64:2**32", &valid) ==
-      G_GINT64_CONSTANT (0x100000000), "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "u64:2**64-1", NULL) == 0, "");
-  MYASSERT (tp_asv_get_int64 (hash, "u64:2**64-1", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "i64:-2**63", NULL) ==
-      G_GINT64_CONSTANT (-0x80000000) * G_GINT64_CONSTANT (0x100000000), "");
-  MYASSERT (tp_asv_get_int64 (hash, "i64:-2**63", &valid) ==
-      G_GINT64_CONSTANT (-0x80000000) * G_GINT64_CONSTANT (0x100000000), "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "i64:2**63-1", NULL) ==
-      G_GINT64_CONSTANT (0x7FFFFFFFFFFFFFFF), "");
-  MYASSERT (tp_asv_get_int64 (hash, "i64:2**63-1", &valid) ==
-      G_GINT64_CONSTANT (0x7FFFFFFFFFFFFFFF), "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_int64 (hash, "u64:2**63-1", NULL) ==
-      G_GINT64_CONSTANT (0x7FFFFFFFFFFFFFFF), "");
-  MYASSERT (tp_asv_get_int64 (hash, "u64:2**63-1", &valid) ==
-      G_GINT64_CONSTANT (0x7FFFFFFFFFFFFFFF), "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
+  asv_assert (int64, "s", 0, FALSE);
+  asv_assert (int64, "b:TRUE", 0, FALSE);
+  asv_assert (int64, "d:0", 0, FALSE);
+  asv_assert (int64, "not-there", 0, FALSE);
+  asv_assert (int64, "i32:0", 0, TRUE);
+  asv_assert (int64, "u32:0", 0, TRUE);
+  asv_assert (int64, "i32:2**16", 0x10000, TRUE);
+  asv_assert (int64, "u32:2**16", 0x10000, TRUE);
+  asv_assert (int64, "i32:-2**16", -0x10000, TRUE);
+  asv_assert (int64, "i32:-2**31", 0x10000 * -0x8000, TRUE);
+  asv_assert (int64, "i32:2**31-1", 0x7FFFFFFF, TRUE);
+  asv_assert (int64, "u32:2**31-1", 0x7FFFFFFF, TRUE);
+  asv_assert (int64, "u32:2**31", G_GINT64_CONSTANT (0x80000000), TRUE);
+  asv_assert (int64, "u32:2**32-1", G_GINT64_CONSTANT (0xFFFFFFFF), TRUE);
+  asv_assert (int64, "u64:2**32-1", G_GINT64_CONSTANT (0xFFFFFFFF), TRUE);
+  asv_assert (int64, "u64:2**32", G_GINT64_CONSTANT (0x100000000), TRUE);
+  asv_assert (int64, "u64:2**64-1", 0, FALSE);
+  asv_assert (int64, "i64:-2**63", G_GINT64_CONSTANT (-0x80000000) * G_GINT64_CONSTANT (0x100000000), TRUE);
+  asv_assert (int64, "i64:2**63-1", G_GINT64_CONSTANT (0x7FFFFFFFFFFFFFFF), TRUE);
+  asv_assert (int64, "u64:2**63-1", G_GINT64_CONSTANT (0x7FFFFFFFFFFFFFFF), TRUE);
 
   /* Tests: tp_asv_get_uint64 */
 
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "s", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint64 (hash, "s", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "b:TRUE", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint64 (hash, "b:TRUE", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "d:0", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint64 (hash, "d:0", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "not-there", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint64 (hash, "not-there", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "i32:0", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint64 (hash, "i32:0", &valid) == 0, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "u32:0", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint64 (hash, "u32:0", &valid) == 0, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "i32:2**16", NULL) == 0x10000, "");
-  MYASSERT (tp_asv_get_uint64 (hash, "i32:2**16", &valid) == 0x10000, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "u32:2**16", NULL) == 0x10000, "");
-  MYASSERT (tp_asv_get_uint64 (hash, "u32:2**16", &valid) == 0x10000, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "i32:-2**16", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint64 (hash, "i32:-2**16", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "i32:-2**31", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint64 (hash, "i32:-2**31", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "i32:2**31-1", NULL) == 0x7FFFFFFF, "");
-  MYASSERT (tp_asv_get_uint64 (hash, "i32:2**31-1", &valid) == 0x7FFFFFFF, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "u32:2**31-1", NULL) == 0x7FFFFFFF, "");
-  MYASSERT (tp_asv_get_uint64 (hash, "u32:2**31-1", &valid) == 0x7FFFFFFF, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "u32:2**31", NULL) == 0x80000000U, "");
-  MYASSERT (tp_asv_get_uint64 (hash, "u32:2**31", &valid) == 0x80000000U, "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "u32:2**32-1", NULL) == 0xFFFFFFFFU, "");
-  MYASSERT (tp_asv_get_uint64 (hash, "u32:2**32-1", &valid) == 0xFFFFFFFFU,
-      "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "u64:2**32-1", NULL) == 0xFFFFFFFFU, "");
-  MYASSERT (tp_asv_get_uint64 (hash, "u64:2**32-1", &valid) == 0xFFFFFFFFU,
-      "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "u64:2**32", NULL) ==
-      G_GUINT64_CONSTANT (0x100000000), "");
-  MYASSERT (tp_asv_get_uint64 (hash, "u64:2**32", &valid) ==
-      G_GUINT64_CONSTANT (0x100000000), "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "u64:2**64-1", NULL) ==
-      G_GUINT64_CONSTANT (0xFFFFffffFFFFffff), "");
-  MYASSERT (tp_asv_get_uint64 (hash, "u64:2**64-1", &valid) ==
-      G_GUINT64_CONSTANT (0xFFFFffffFFFFffff), "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "i64:-2**63", NULL) == 0, "");
-  MYASSERT (tp_asv_get_uint64 (hash, "i64:-2**63", &valid) == 0, "");
-  MYASSERT (valid == FALSE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "i64:2**63-1", NULL) ==
-      G_GUINT64_CONSTANT (0x7FFFffffFFFFffff), "");
-  MYASSERT (tp_asv_get_uint64 (hash, "i64:2**63-1", &valid) ==
-      G_GUINT64_CONSTANT (0x7FFFffffFFFFffff), "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
-
-  valid = (gboolean) 123;
-  MYASSERT (tp_asv_get_uint64 (hash, "u64:2**63-1", NULL) ==
-      G_GUINT64_CONSTANT (0x7FFFffffFFFFffff), "");
-  MYASSERT (tp_asv_get_uint64 (hash, "u64:2**63-1", &valid) ==
-      G_GUINT64_CONSTANT (0x7FFFffffFFFFffff), "");
-  MYASSERT (valid == TRUE, ": %u", (guint) valid);
+  asv_assert (uint64, "s", 0, FALSE);
+  asv_assert (uint64, "b:TRUE", 0, FALSE);
+  asv_assert (uint64, "d:0", 0, FALSE);
+  asv_assert (uint64, "not-there", 0, FALSE);
+  asv_assert (uint64, "i32:0", 0, TRUE);
+  asv_assert (uint64, "u32:0", 0, TRUE);
+  asv_assert (uint64, "i32:2**16", 0x10000, TRUE);
+  asv_assert (uint64, "u32:2**16", 0x10000, TRUE);
+  asv_assert (uint64, "i32:-2**16", 0, FALSE);
+  asv_assert (uint64, "i32:-2**31", 0, FALSE);
+  asv_assert (uint64, "i32:2**31-1", 0x7FFFFFFF, TRUE);
+  asv_assert (uint64, "u32:2**31-1", 0x7FFFFFFF, TRUE);
+  asv_assert (uint64, "u32:2**31", 0x80000000U, TRUE);
+  asv_assert (uint64, "u32:2**32-1", 0xFFFFFFFFU, TRUE);
+  asv_assert (uint64, "u64:2**32-1", 0xFFFFFFFFU, TRUE);
+  asv_assert (uint64, "u64:2**32", G_GUINT64_CONSTANT (0x100000000), TRUE);
+  asv_assert (uint64, "u64:2**64-1", G_GUINT64_CONSTANT (0xFFFFffffFFFFffff), TRUE);
+  asv_assert (uint64, "i64:-2**63", 0, FALSE);
+  asv_assert (uint64, "i64:2**63-1", G_GUINT64_CONSTANT (0x7FFFffffFFFFffff), TRUE);
+  asv_assert (uint64, "u64:2**63-1", G_GUINT64_CONSTANT (0x7FFFffffFFFFffff), TRUE);
 
   /* Tests: tp_asv_get_string */
 
-  MYASSERT (tp_asv_get_string (hash, "s") != NULL, "");
-  MYASSERT (g_str_equal (tp_asv_get_string (hash, "s"), "hello, world!"), "");
-
-  MYASSERT (tp_asv_get_string (hash, "s0") != NULL, "");
-  MYASSERT (g_str_equal (tp_asv_get_string (hash, "s0"), ""), "");
-
-  MYASSERT (tp_asv_get_string (hash, "b:TRUE") == NULL, "");
-  MYASSERT (tp_asv_get_string (hash, "b:FALSE") == NULL, "");
-  MYASSERT (tp_asv_get_string (hash, "not-there") == NULL, "");
-  MYASSERT (tp_asv_get_string (hash, "i32:0") == NULL, "");
-  MYASSERT (tp_asv_get_string (hash, "u32:0") == NULL, "");
-  MYASSERT (tp_asv_get_string (hash, "d:0") == NULL, "");
+  asv_assert_string ("s", "hello, world!");
+  asv_assert_string ("s0", "");
+  asv_assert_string ("b:TRUE", NULL);
+  asv_assert_string ("b:FALSE", NULL);
+  asv_assert_string ("not-there", NULL);
+  asv_assert_string ("i32:0", NULL);
+  asv_assert_string ("u32:0", NULL);
+  asv_assert_string ("d:0", NULL);
 
   /* Tests: tp_asv_get_object_path */
 
-  MYASSERT (tp_asv_get_object_path (hash, "o") != NULL, "");
-  MYASSERT (g_str_equal (tp_asv_get_object_path (hash, "o"),
-        "/com/example/Object"), "");
-
-  MYASSERT (tp_asv_get_object_path (hash, "s") == NULL, "");
-  MYASSERT (tp_asv_get_object_path (hash, "s0") == NULL, "");
-  MYASSERT (tp_asv_get_object_path (hash, "b:TRUE") == NULL, "");
-  MYASSERT (tp_asv_get_object_path (hash, "b:FALSE") == NULL, "");
-  MYASSERT (tp_asv_get_object_path (hash, "not-there") == NULL, "");
-  MYASSERT (tp_asv_get_object_path (hash, "i32:0") == NULL, "");
-  MYASSERT (tp_asv_get_object_path (hash, "u32:0") == NULL, "");
-  MYASSERT (tp_asv_get_object_path (hash, "d:0") == NULL, "");
+  asv_assert_object_path ("o", "/com/example/Object");
+  asv_assert_object_path ("s", NULL);
+  asv_assert_object_path ("s0", NULL);
+  asv_assert_object_path ("b:TRUE", NULL);
+  asv_assert_object_path ("b:FALSE", NULL);
+  asv_assert_object_path ("not-there", NULL);
+  asv_assert_object_path ("i32:0", NULL);
+  asv_assert_object_path ("u32:0", NULL);
+  asv_assert_object_path ("d:0", NULL);
 
   /* Tests: tp_asv_get_strv */
 
@@ -690,6 +279,7 @@ int main (int argc, char **argv)
   /* Teardown */
 
   g_hash_table_unref (hash);
+  g_variant_unref (vardict);
 
   return 0;
 }
