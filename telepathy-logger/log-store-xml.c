@@ -1443,6 +1443,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
   DEBUG ("Parsed %u events", num_events);
 
   g_free (target_id);
+  g_free (self_id);
   xmlFreeDoc (doc);
   xmlFreeParserCtxt (ctxt);
   g_hash_table_unref (supersedes_links);
