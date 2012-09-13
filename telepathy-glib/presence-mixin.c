@@ -872,71 +872,6 @@ construct_presence_hash (const TpPresenceStatusSpec *supported_statuses,
   return presence_hash;
 }
 
-/*
- * tp_presence_mixin_get_presence:
- *
- * Implements D-Bus method GetPresence
- * on interface im.telepathy1.Connection.Interface.Presence
- *
- * @context: The D-Bus invocation context to use to return values
- *           or throw an error.
- */
-static void
-tp_presence_mixin_get_presences (
-    TpSvcConnectionInterfacePresence *iface,
-    const GArray *contacts,
-    DBusGMethodInvocation *context)
-{
-  GObject *obj = (GObject *) iface;
-  TpBaseConnection *conn = TP_BASE_CONNECTION (obj);
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
-      TP_HANDLE_TYPE_CONTACT);
-  TpPresenceMixinClass *mixin_cls =
-    TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
-  GHashTable *contact_statuses;
-  GHashTable *presence_hash;
-  GError *error = NULL;
-
-  DEBUG ("called.");
-
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
-
-  if (contacts->len == 0)
-    {
-      presence_hash = g_hash_table_new (g_direct_hash, g_direct_equal);
-      tp_svc_connection_interface_presence_return_from_get_presences (
-        context, presence_hash);
-      g_hash_table_unref (presence_hash);
-      return;
-    }
-
-  if (!tp_handles_are_valid (contact_repo, contacts, FALSE, &error))
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-      return;
-    }
-
-  contact_statuses = mixin_cls->get_contact_statuses (obj, contacts);
-
-  if (!contact_statuses)
-    {
-      GError e = { TP_ERROR, TP_ERROR_CONFUSED,
-          "TpPresenceMixin::get_contact_statuses returned NULL - Broken CM" };
-
-      g_warning ("%s", e.message);
-      dbus_g_method_return_error (context, &e);
-      return;
-    }
-
-  presence_hash = construct_presence_hash (mixin_cls->statuses,
-      contact_statuses);
-  tp_svc_connection_interface_presence_return_from_get_presences (
-      context, presence_hash);
-  g_hash_table_unref (presence_hash);
-  g_hash_table_unref (contact_statuses);
-}
-
 /**
  * tp_presence_mixin_iface_init: (skip)
  * @g_iface: A pointer to the #TpSvcConnectionInterfacePresenceClass in
@@ -958,7 +893,6 @@ tp_presence_mixin_iface_init (gpointer g_iface,
 #define IMPLEMENT(x) tp_svc_connection_interface_presence_implement_##x\
  (klass, tp_presence_mixin_##x)
   IMPLEMENT(set_presence);
-  IMPLEMENT(get_presences);
 #undef IMPLEMENT
 }
 
