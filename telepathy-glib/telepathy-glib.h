@@ -111,6 +111,7 @@
 #include <telepathy-glib/stream-tube-connection.h>
 #include <telepathy-glib/text-channel.h>
 #include <telepathy-glib/tls-certificate.h>
+#include <telepathy-glib/variant-util.h>
 
 #undef _TP_GLIB_H_INSIDE
 

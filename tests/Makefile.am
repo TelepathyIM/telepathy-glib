@@ -69,8 +69,15 @@ EXTRA_DIST = README \
     all-errors-documented.py \
     tests.supp
 
+# this one uses internal ABI
 test_asv_SOURCES = \
     asv.c
+test_asv_LDADD = \
+    $(top_builddir)/tests/lib/libtp-glib-tests-internal.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-main-internal.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
+    $(GLIB_LIBS)
 
 # this one uses internal ABI
 test_capabilities_SOURCES = \

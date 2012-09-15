@@ -31,6 +31,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/variant-util-internal.h"
 
 /**
  * SECTION:capabilities

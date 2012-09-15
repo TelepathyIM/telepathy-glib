@@ -42,6 +42,7 @@
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/client-factory-internal.h"
 #include <telepathy-glib/util-internal.h>
+#include "telepathy-glib/variant-util-internal.h"
 
 /**
  * SECTION:account

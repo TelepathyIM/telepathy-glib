@@ -247,6 +247,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/variant-util-internal.h"
 
 static void conn_iface_init (gpointer, gpointer);
 static void requests_iface_init (gpointer, gpointer);

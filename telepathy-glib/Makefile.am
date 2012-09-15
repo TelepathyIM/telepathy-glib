@@ -131,6 +131,7 @@ tpginclude_HEADERS = \
     tls-certificate.h \
     tls-certificate-rejection.h \
     util.h \
+    variant-util.h \
     $(NULL)
 
 tpgdbusinclude_HEADERS = \
@@ -336,7 +337,9 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     tls-certificate-rejection.c \
     tls-certificate-rejection-internal.h \
     util.c \
-    util-internal.h
+    util-internal.h \
+    variant-util.c \
+    variant-util-internal.h
 
 libtelepathy_glib_reentrants_la_SOURCES = \
     reentrants.c \

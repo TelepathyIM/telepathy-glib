@@ -50,6 +50,7 @@
 #include "telepathy-glib/client-factory-internal.h"
 #include "telepathy-glib/contact-internal.h"
 #include "telepathy-glib/util-internal.h"
+#include "telepathy-glib/variant-util-internal.h"
 
 /**
  * SECTION:connection
