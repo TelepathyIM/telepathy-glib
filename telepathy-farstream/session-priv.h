@@ -2,7 +2,8 @@
 #define __TF_SESSION_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/media-interfaces.h>
+#include <gst/gst.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
 

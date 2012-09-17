@@ -24,7 +24,7 @@
 #include <glib-object.h>
 
 #include <gst/gst.h>
-#include <telepathy-glib/channel.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "media-signalling-channel.h"
 #include "content.h"

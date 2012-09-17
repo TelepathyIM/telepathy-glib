@@ -2,8 +2,7 @@
 #define __TF_STREAM_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/enums.h>
-#include <telepathy-glib/media-interfaces.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include <farstream/fs-conference.h>
 

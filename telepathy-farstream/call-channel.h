@@ -24,7 +24,7 @@
 
 #include <gst/gst.h>
 #include <farstream/fs-conference.h>
-#include <telepathy-glib/channel.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
 

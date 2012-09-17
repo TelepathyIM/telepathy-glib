@@ -30,8 +30,7 @@
 
 #include "call-channel.h"
 
-#include <telepathy-glib/util.h>
-#include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/telepathy-glib.h>
 #include <farstream/fs-conference.h>
 
 #include "call-content.h"

@@ -747,7 +747,7 @@ tf_call_stream_add_remote_candidates (TfCallStream *self,
       cand->username = g_strdup (username);
       cand->password = g_strdup (password);
       cand->ttl = ttl;
-      cand->base_ip = base_ip;
+      cand->base_ip = g_strdup (base_ip);
       cand->base_port = base_port;
 
       fscandidates = g_list_append (fscandidates, cand);

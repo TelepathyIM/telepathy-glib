@@ -33,8 +33,8 @@
 #include <farstream/fs-conference.h>
 #include <farstream/fs-utils.h>
 
+#include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/proxy-subclass.h>
-#include <telepathy-glib/util.h>
 
 #include <stdarg.h>
 #include <string.h>

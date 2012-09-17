@@ -24,7 +24,7 @@
 
 #include <glib-object.h>
 
-#include <telepathy-glib/channel.h>
+#include <telepathy-glib/telepathy-glib.h>
 #include "stream.h"
 #include "session-priv.h"
 

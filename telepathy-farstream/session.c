@@ -18,13 +18,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/errors.h>
-#include <telepathy-glib/interfaces.h>
+#include "config.h"
+
+#include "session-priv.h"
 
 #include <farstream/fs-conference.h>
 
-#include "session-priv.h"
 
 G_DEFINE_TYPE (TfSession, _tf_session, G_TYPE_OBJECT);
 
