@@ -1,3 +1,14 @@
+telepathy-glib 0.19.10 (UNRELEASED)
+===================================
+
+Enhancements:
+
+• Add tp_vardict_get_uint32() etc., analogous to tp_asv_get_uint32() etc.
+  (Xavier)
+
+• Add tp_dbus_tube_channel_dup_parameters_vardict() (fd.o #55024,
+  Chandni Verma)
+
 telepathy-glib 0.19.9 (2012-09-11)
 ==================================
 
