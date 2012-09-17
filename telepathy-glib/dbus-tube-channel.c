@@ -97,6 +97,7 @@
 #include "telepathy-glib/automatic-client-factory-internal.h"
 #include "telepathy-glib/channel-internal.h"
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/variant-util-internal.h"
 
 #include <stdio.h>
 #include <glib/gstdio.h>
@@ -509,6 +510,36 @@ GHashTable *
 tp_dbus_tube_channel_get_parameters (TpDBusTubeChannel *self)
 {
   return self->priv->parameters;
+}
+
+/**
+ * tp_dbus_tube_channel_dup_parameters_vardict
+ * @self: a #TpDBusTubeChannel
+ *
+ * Return the parameters of the dbus-tube channel in a variant of
+ * type %G_VARIANT_TYPE_VARDICT whose keys are strings representing
+ * parameter names and values are variants representing corresponding
+ * parameter values set by the offerer when offering this channel.
+ *
+ * The GVariant returned is %NULL if this is an outgoing tube that has not
+ * yet been offered or the parameters property has not been set.
+ *
+ * Use g_variant_lookup(), g_variant_lookup_value(), or tp_vardict_get_uint32()
+ * and similar functions for convenient access to the values.
+ *
+ * Returns: (transfer full): a new reference to a #GVariant
+ *
+ * Since: 0.UNRELEASED
+ */
+GVariant *
+tp_dbus_tube_channel_dup_parameters_vardict (TpDBusTubeChannel *self)
+{
+  g_return_val_if_fail (TP_IS_DBUS_TUBE_CHANNEL (self), NULL);
+
+  if (self->priv->parameters == NULL)
+      return NULL;
+
+  return _tp_asv_to_vardict (self->priv->parameters);
 }
 
 /**

@@ -69,6 +69,9 @@ const gchar * tp_dbus_tube_channel_get_service_name (TpDBusTubeChannel *self);
 _TP_AVAILABLE_IN_0_18
 GHashTable * tp_dbus_tube_channel_get_parameters (TpDBusTubeChannel *self);
 
+_TP_AVAILABLE_IN_UNRELEASED
+GVariant * tp_dbus_tube_channel_dup_parameters_vardict (TpDBusTubeChannel *self);
+
 /* Outgoing tube methods */
 
 _TP_AVAILABLE_IN_0_18
