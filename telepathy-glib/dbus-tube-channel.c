@@ -513,7 +513,7 @@ tp_dbus_tube_channel_get_parameters (TpDBusTubeChannel *self)
 }
 
 /**
- * tp_dbus_tube_channel_dup_parameters_vardict
+ * tp_dbus_tube_channel_dup_parameters_vardict:
  * @self: a #TpDBusTubeChannel
  *
  * Return the parameters of the dbus-tube channel in a variant of
