@@ -88,6 +88,9 @@ void tp_channel_request_set_channel_factory (TpChannelRequest *self,
 const GHashTable * tp_channel_request_get_immutable_properties (
     TpChannelRequest *self);
 
+_TP_AVAILABLE_IN_UNRELEASED
+GVariant *tp_channel_request_dup_immutable_properties (TpChannelRequest *self);
+
 TpAccount * tp_channel_request_get_account (TpChannelRequest *self);
 
 gint64 tp_channel_request_get_user_action_time (TpChannelRequest *self);

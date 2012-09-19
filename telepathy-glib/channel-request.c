@@ -106,6 +106,7 @@ enum {
 enum {
   PROP_CHANNEL_FACTORY = 1,
   PROP_IMMUTABLE_PROPERTIES,
+  PROP_IMMUTABLE_PROPERTIES_VARDICT,
   PROP_ACCOUNT,
   PROP_USER_ACTION_TIME,
   PROP_PREFERRED_HANDLER,
@@ -174,6 +175,11 @@ tp_channel_request_get_property (GObject *object,
 
       case PROP_IMMUTABLE_PROPERTIES:
         g_value_set_boxed (value, self->priv->immutable_properties);
+        break;
+
+      case PROP_IMMUTABLE_PROPERTIES_VARDICT:
+        g_value_take_variant (value,
+            tp_channel_request_dup_immutable_properties (self));
         break;
 
       case PROP_ACCOUNT:
@@ -412,6 +418,28 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_IMMUTABLE_PROPERTIES,
       param_spec);
+
+  /**
+   * TpChannelRequest:immutable-properties-vardict:
+   *
+   * The immutable D-Bus properties of this channel request, represented by a
+   * %G_VARIANT_TYPE_VARDICT where the keys are
+   * D-Bus interface name + "." + property name.
+   *
+   * Note that this property is set only if the immutable properties have been
+   * set during the construction of the #TpChannelRequest.
+   *
+   * Read-only except during construction.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_variant ("immutable-properties-vardict",
+      "Immutable D-Bus properties",
+      "A map D-Bus interface + \".\" + property name => variant",
+      G_VARIANT_TYPE_VARDICT, NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class,
+      PROP_IMMUTABLE_PROPERTIES_VARDICT, param_spec);
 
   /**
    * TpChannelRequest:account:
@@ -684,6 +712,28 @@ tp_channel_request_get_immutable_properties (TpChannelRequest *self)
   g_return_val_if_fail (TP_IS_CHANNEL_REQUEST (self), NULL);
 
   return self->priv->immutable_properties;
+}
+
+/**
+ * tp_channel_request_dup_immutable_properties:
+ * @self: a #TpChannelRequest
+ *
+ * Return the #TpChannelRequest:immutable-properties-vardict property.
+ *
+ * Returns: (transfer full): the value of
+ * #TpChannelRequest:immutable-properties-vardict
+ *
+ * Since: 0.UNRELEASED
+ */
+GVariant *
+tp_channel_request_dup_immutable_properties (TpChannelRequest *self)
+{
+  g_return_val_if_fail (TP_IS_CHANNEL_REQUEST (self), NULL);
+
+  if (self->priv->immutable_properties == NULL)
+    return NULL;
+
+  return _tp_asv_to_vardict (self->priv->immutable_properties);
 }
 
 void

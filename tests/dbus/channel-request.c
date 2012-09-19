@@ -317,6 +317,7 @@ test_immutable_properties (Test *test,
 {
   gboolean ok;
   GHashTable *props;
+  GVariant *vardict;
 
   props = tp_asv_new ("badger", G_TYPE_UINT, 42,
       NULL);
@@ -337,6 +338,15 @@ test_immutable_properties (Test *test,
   g_assert_cmpuint (tp_asv_get_uint32 (props, "badger", NULL), ==, 42);
 
   g_hash_table_unref (props);
+
+  vardict = tp_channel_request_dup_immutable_properties (test->cr);
+  g_assert_cmpuint (tp_vardict_get_uint32 (vardict, "badger", NULL), ==, 42);
+  g_variant_unref (vardict);
+
+  g_object_get (test->cr,
+      "immutable-properties-vardict", &vardict, NULL);
+  g_assert_cmpuint (tp_vardict_get_uint32 (vardict, "badger", NULL), ==, 42);
+  g_variant_unref (vardict);
 }
 
 #define ACCOUNT_PATH TP_ACCOUNT_OBJECT_PATH_BASE "a/b/c"
