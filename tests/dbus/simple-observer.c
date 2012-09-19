@@ -266,16 +266,14 @@ test_properties (Test *test,
 {
   create_simple_observer (test, TRUE, observe_channels_success);
 
-  tp_base_client_take_observer_filter (test->simple_observer, tp_asv_new (
-        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
-        NULL));
+  tp_base_client_add_observer_filter_vardict (test->simple_observer,
+      g_variant_new_parsed ("{ %s: <%s> }",
+        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT));
 
-  tp_base_client_take_observer_filter (test->simple_observer, tp_asv_new (
-        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_STREAM_TUBE,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-          TP_HANDLE_TYPE_CONTACT,
-        NULL));
+  tp_base_client_add_observer_filter_vardict (test->simple_observer,
+      g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
+        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE,
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, (guint32) TP_HANDLE_TYPE_CONTACT));
 
   tp_base_client_register (test->simple_observer, &test->error);
   g_assert_no_error (test->error);
@@ -378,8 +376,8 @@ test_success (Test *test,
 {
   create_simple_observer (test, TRUE, observe_channels_success);
 
-  tp_base_client_take_observer_filter (test->simple_observer,
-      g_hash_table_new (NULL, NULL));
+  tp_base_client_add_observer_filter_vardict (test->simple_observer,
+      g_variant_new_parsed ("@a{sv} {}"));
 
   tp_base_client_register (test->simple_observer, &test->error);
   g_assert_no_error (test->error);
@@ -421,8 +419,8 @@ test_delayed (Test *test,
 {
   create_simple_observer (test, TRUE, observe_channels_async);
 
-  tp_base_client_take_observer_filter (test->simple_observer,
-      g_hash_table_new (NULL, NULL));
+  tp_base_client_add_observer_filter_vardict (test->simple_observer,
+      g_variant_new_parsed ("@a{sv} {}"));
 
   tp_base_client_register (test->simple_observer, &test->error);
   g_assert_no_error (test->error);
@@ -455,8 +453,8 @@ test_fail (Test *test,
 {
   create_simple_observer (test, TRUE, observe_channels_fail);
 
-  tp_base_client_take_observer_filter (test->simple_observer,
-      g_hash_table_new (NULL, NULL));
+  tp_base_client_add_observer_filter_vardict (test->simple_observer,
+      g_variant_new_parsed ("@a{sv} {}"));
 
   tp_base_client_register (test->simple_observer, &test->error);
   g_assert_no_error (test->error);
