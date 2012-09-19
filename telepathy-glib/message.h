@@ -46,6 +46,8 @@ GType tp_message_get_type (void);
 void tp_message_destroy (TpMessage *self);
 guint tp_message_count_parts (TpMessage *self);
 const GHashTable *tp_message_peek (TpMessage *self, guint part);
+_TP_AVAILABLE_IN_UNRELEASED
+GVariant *tp_message_dup_part (TpMessage *self, guint part);
 guint tp_message_append_part (TpMessage *self);
 void tp_message_delete_part (TpMessage *self, guint part);
 

@@ -39,6 +39,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/variant-util-internal.h>
 
 #define DEBUG_FLAG TP_DEBUG_MISC
 #include "telepathy-glib/debug-internal.h"
@@ -197,6 +198,29 @@ tp_message_peek (TpMessage *self,
     return NULL;
 
   return g_ptr_array_index (self->parts, part);
+}
+
+/**
+ * tp_message_dup_part:
+ * @self: a message
+ * @part: a part number
+ *
+ * <!-- nothing more to say -->
+ *
+ * Returns: (transfer full):
+ *  the current contents of the given part, or %NULL if the part number is
+ *  out of range
+ *
+ * Since: 0.UNRELEASED
+ */
+GVariant *
+tp_message_dup_part (TpMessage *self,
+    guint part)
+{
+  if (part >= self->parts->len)
+    return NULL;
+
+  return _tp_asv_to_vardict (g_ptr_array_index (self->parts, part));
 }
 
 
