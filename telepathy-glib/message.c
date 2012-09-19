@@ -614,12 +614,14 @@ tp_message_set_bytes (TpMessage *self,
  * @part: a part number, which must be strictly less than the number
  *  returned by tp_message_count_parts()
  * @key: a key in the mapping representing the part
- * @source: a value
+ * @source: a value, encoded as dbus-glib would
  *
  * Set @key in part @part of @self to have a copy of @source as its value.
  *
  * If @source represents a data structure containing handles, they should
  * all be referenced with tp_message_ref_handle() first.
+ *
+ * In high-level language bindings, use tp_message_set_variant() instead.
  *
  * Since: 0.7.21
  */
@@ -636,6 +638,43 @@ tp_message_set (TpMessage *self,
 
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
       g_strdup (key), tp_g_value_slice_dup (source));
+}
+
+/**
+ * tp_message_set_variant:
+ * @self: a message
+ * @part: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @key: a key in the mapping representing the part
+ * @value: a value
+ *
+ * Set @key in part @part of @self to have @value as its value.
+ *
+ * If @value is a floating reference (see g_variant_ref_sink()), then this
+ * function will take ownership of it.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_message_set_variant (TpMessage *self,
+    guint part,
+    const gchar *key,
+    GVariant *value)
+{
+  GValue *gvalue;
+
+  g_return_if_fail (part < self->parts->len);
+  g_return_if_fail (key != NULL);
+  g_return_if_fail (value != NULL);
+  g_return_if_fail (self->priv->mutable);
+
+  g_variant_ref_sink (value);
+  gvalue = g_slice_new0 (GValue);
+  dbus_g_value_parse_g_variant (value, gvalue);
+  g_variant_unref (value);
+
+  g_hash_table_insert (g_ptr_array_index (self->parts, part),
+      g_strdup (key), gvalue);
 }
 
 /**

@@ -295,8 +295,8 @@ test_take_message (Test *test,
 
   tp_message_set_uint32 (msg, 0, "message-type",
       TP_CHANNEL_TEXT_MESSAGE_TYPE_DELIVERY_REPORT);
-  tp_message_set_uint32 (msg, 0, "delivery-status",
-      TP_DELIVERY_STATUS_DELIVERED);
+  tp_message_set_variant (msg, 0, "delivery-status",
+      g_variant_new_uint32 (TP_DELIVERY_STATUS_DELIVERED));
   tp_cm_message_take_message (msg, 0, "delivery-echo", echo);
 
   /* ensure the message was destroyed */

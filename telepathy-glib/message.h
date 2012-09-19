@@ -74,6 +74,9 @@ void tp_message_set_bytes (TpMessage *self, guint part, const gchar *key,
     guint len, gconstpointer bytes);
 void tp_message_set (TpMessage *self, guint part, const gchar *key,
     const GValue *source);
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_message_set_variant (TpMessage *self, guint part, const gchar *key,
+    GVariant *value);
 
 gchar * tp_message_to_text (TpMessage *message,
     TpChannelTextMessageFlags *out_flags) G_GNUC_WARN_UNUSED_RESULT;

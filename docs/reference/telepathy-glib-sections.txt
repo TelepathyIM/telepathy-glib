@@ -2765,6 +2765,7 @@ tp_message_append_part
 tp_message_delete_key
 tp_message_delete_part
 tp_message_set
+tp_message_set_variant
 tp_message_set_boolean
 tp_message_set_bytes
 tp_message_set_int16
