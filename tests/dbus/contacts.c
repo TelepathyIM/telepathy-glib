@@ -1206,8 +1206,8 @@ upgrade_cb (TpConnection *connection,
   G_STMT_START {\
     g_assert_cmpuint (g_hash_table_size (left), ==, \
         g_hash_table_size (right));\
-    g_assert_cmpstr (g_hash_table_lookup (left, "country"), ==,\
-        g_hash_table_lookup (right, "country"));\
+    g_assert_cmpstr (tp_asv_get_string (left, "country"), ==,\
+        tp_asv_get_string (right, "country"));\
   } G_STMT_END
 
 static void
