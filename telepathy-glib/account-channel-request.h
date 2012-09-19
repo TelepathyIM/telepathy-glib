@@ -77,6 +77,9 @@ TpAccount * tp_account_channel_request_get_account (
 
 GHashTable * tp_account_channel_request_get_request (
     TpAccountChannelRequest *self);
+_TP_AVAILABLE_IN_UNRELEASED
+GVariant *tp_account_channel_request_dup_request (
+    TpAccountChannelRequest *self);
 
 gint64 tp_account_channel_request_get_user_action_time (
     TpAccountChannelRequest *self);

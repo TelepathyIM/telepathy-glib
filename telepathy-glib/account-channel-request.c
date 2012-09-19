@@ -110,6 +110,7 @@ G_DEFINE_TYPE(TpAccountChannelRequest,
 enum {
     PROP_ACCOUNT = 1,
     PROP_REQUEST,
+    PROP_REQUEST_VARDICT,
     PROP_USER_ACTION_TIME,
     PROP_CHANNEL_REQUEST,
     N_PROPS
@@ -244,6 +245,11 @@ tp_account_channel_request_get_property (GObject *object,
         g_value_set_boxed (value, self->priv->request);
         break;
 
+      case PROP_REQUEST_VARDICT:
+        g_value_take_variant (value,
+            tp_account_channel_request_dup_request (self));
+        break;
+
       case PROP_USER_ACTION_TIME:
         g_value_set_int64 (value, self->priv->user_action_time);
         break;
@@ -274,6 +280,14 @@ tp_account_channel_request_set_property (GObject *object,
         break;
 
       case PROP_REQUEST:
+        /* If this property remains unset, GObject will set it to a NULL
+         * value. Ignore that, so request-vardict can be set instead. */
+        if (g_value_get_boxed (value) == NULL)
+          return;
+
+        /* Construct-only and mutually exclusive with request-vardict */
+        g_return_if_fail (self->priv->request == NULL);
+
         /* We do not use tp_asv_new() and friends, because in principle,
          * the request can contain user-defined keys. */
         self->priv->request = g_hash_table_new_full (g_str_hash, g_str_equal,
@@ -282,6 +296,29 @@ tp_account_channel_request_set_property (GObject *object,
             g_value_get_boxed (value),
             (GBoxedCopyFunc) g_strdup,
             (GBoxedCopyFunc) tp_g_value_slice_dup);
+        break;
+
+      case PROP_REQUEST_VARDICT:
+          {
+            GHashTable *hash;
+
+            /* If this property remains unset, GObject will set it to a NULL
+             * value. Ignore that, so request can be set instead. */
+            if (g_value_get_variant (value) == NULL)
+              return;
+
+            /* Construct-only and mutually exclusive with request */
+            g_return_if_fail (self->priv->request == NULL);
+
+            hash = _tp_asv_from_vardict (g_value_get_variant (value));
+            self->priv->request = g_hash_table_new_full (g_str_hash,
+                g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free);
+
+            tp_g_hash_table_update (self->priv->request,
+                hash, (GBoxedCopyFunc) g_strdup,
+                (GBoxedCopyFunc) tp_g_value_slice_dup);
+            g_hash_table_unref (hash);
+          }
         break;
 
       case PROP_USER_ACTION_TIME:
@@ -350,7 +387,10 @@ tp_account_channel_request_class_init (
    * The desired D-Bus properties for the channel, represented as a
    * #GHashTable where the keys are strings and the values are #GValue.
    *
-   * This property can't be %NULL.
+   * When constructing a new object, one of
+   * #TpAccountChannelRequest:request or
+   * #TpAccountChannelRequest:request-vardict must be set to a non-%NULL
+   * value, and the other must remain unspecified.
    *
    * Since: 0.11.12
    */
@@ -359,6 +399,25 @@ tp_account_channel_request_class_init (
       TP_HASH_TYPE_STRING_VARIANT_MAP,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_REQUEST,
+      param_spec);
+
+  /**
+   * TpAccountChannelRequest:request-vardict:
+   *
+   * The desired D-Bus properties for the channel.
+   *
+   * When constructing a new object, one of
+   * #TpAccountChannelRequest:request or
+   * #TpAccountChannelRequest:request-vardict must be set to a non-%NULL
+   * value, and the other must remain unspecified.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_variant ("request-vardict", "Request",
+      "A dictionary containing desirable properties for the channel",
+      G_VARIANT_TYPE_VARDICT, NULL,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_REQUEST_VARDICT,
       param_spec);
 
   /**
@@ -519,7 +578,6 @@ tp_account_channel_request_new_vardict (
     GVariant *request,
     gint64 user_action_time)
 {
-  GHashTable *hash;
   TpAccountChannelRequest *ret;
 
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
@@ -528,15 +586,13 @@ tp_account_channel_request_new_vardict (
       NULL);
 
   g_variant_ref_sink (request);
-  hash = _tp_asv_from_vardict (request);
-  g_variant_unref (request);
 
   ret = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
       "account", account,
-      "request", hash,
+      "request-vardict", request,
       "user-action-time", user_action_time,
       NULL);
-  g_hash_table_unref (hash);
+  g_variant_unref (request);
   return ret;
 }
 
@@ -572,6 +628,27 @@ tp_account_channel_request_get_request (
     TpAccountChannelRequest *self)
 {
   return self->priv->request;
+}
+
+/**
+ * tp_account_channel_request_dup_request:
+ * @self: a #TpAccountChannelRequest
+ *
+ * Return the #TpAccountChannelRequest:request-vardict construct-only
+ * property.
+ *
+ * Returns: (transfer full): the value of
+ *  #TpAccountChannelRequest:request-vardict
+ *
+ * Since: 0.11.UNRELEASED
+ */
+GVariant *
+tp_account_channel_request_dup_request (
+    TpAccountChannelRequest *self)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self), NULL);
+
+  return _tp_asv_to_vardict (self->priv->request);
 }
 
 /**
