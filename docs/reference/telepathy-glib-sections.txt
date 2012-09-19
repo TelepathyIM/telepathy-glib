@@ -5012,6 +5012,7 @@ tp_contact_get_presence_message
 tp_contact_get_presence_status
 tp_contact_get_presence_type
 tp_contact_get_location
+tp_contact_dup_location
 tp_contact_get_capabilities
 tp_contact_get_contact_info
 tp_contact_dup_contact_info
