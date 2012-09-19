@@ -96,6 +96,9 @@ const gchar * tp_channel_request_get_preferred_handler (TpChannelRequest *self);
 
 const GHashTable * tp_channel_request_get_hints (TpChannelRequest *self);
 
+_TP_AVAILABLE_IN_UNRELEASED
+GVariant *tp_channel_request_dup_hints (TpChannelRequest *self);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-channel-request.h>

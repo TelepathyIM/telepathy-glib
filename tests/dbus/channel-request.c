@@ -350,6 +350,7 @@ test_properties (Test *test,
   TpAccount *account;
   gint64 user_action_time;
   const gchar *handler;
+  GVariant *vardict;
 
   hints = tp_asv_new ("test", G_TYPE_STRING, "hi", NULL);
 
@@ -402,6 +403,16 @@ test_properties (Test *test,
   g_assert_cmpstr (tp_asv_get_string (hints, "test"), ==, "hi");
 
   g_hash_table_unref (hints);
+
+  vardict = tp_channel_request_dup_hints (test->cr);
+  g_assert_cmpstr (tp_vardict_get_string (vardict, "test"), ==, "hi");
+  g_variant_unref (vardict);
+
+  g_object_get (test->cr,
+      "hints-vardict", &vardict,
+      NULL);
+  g_assert_cmpstr (tp_vardict_get_string (vardict, "test"), ==, "hi");
+  g_variant_unref (vardict);
 }
 
 int
