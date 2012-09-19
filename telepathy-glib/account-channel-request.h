@@ -66,6 +66,11 @@ TpAccountChannelRequest * tp_account_channel_request_new (
     TpAccount *account,
     GHashTable *request,
     gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
+_TP_AVAILABLE_IN_UNRELEASED
+TpAccountChannelRequest * tp_account_channel_request_new_vardict (
+    TpAccount *account,
+    GVariant *request,
+    gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
 
 TpAccount * tp_account_channel_request_get_account (
     TpAccountChannelRequest *self);

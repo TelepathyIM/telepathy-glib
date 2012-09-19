@@ -86,6 +86,7 @@
 #include <telepathy-glib/simple-handler.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/util-internal.h>
+#include <telepathy-glib/variant-util-internal.h>
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
@@ -489,6 +490,54 @@ tp_account_channel_request_new (
       "request", request,
       "user-action-time", user_action_time,
       NULL);
+}
+
+/**
+ * tp_account_channel_request_new_vardict:
+ * @account: a #TpAccount
+ * @request: the requested
+ *  properties of the channel (see #TpAccountChannelRequest:request)
+ *  as a %G_VARIANT_TYPE_VARDICT
+ * @user_action_time: the time of the user action that caused this request,
+ *  or one of the special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME (see
+ *  #TpAccountChannelRequest:user-action-time)
+ *
+ * Convenience function to create a new #TpAccountChannelRequest object.
+ *
+ * If @request is a floating reference, this function will
+ * take ownership of it, much like g_variant_ref_sink(). See documentation of
+ * that function for details.
+ *
+ * Returns: a new #TpAccountChannelRequest object
+ *
+ * Since: 0.UNRELEASED
+ */
+TpAccountChannelRequest *
+tp_account_channel_request_new_vardict (
+    TpAccount *account,
+    GVariant *request,
+    gint64 user_action_time)
+{
+  GHashTable *hash;
+  TpAccountChannelRequest *ret;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+  g_return_val_if_fail (request != NULL, NULL);
+  g_return_val_if_fail (g_variant_is_of_type (request, G_VARIANT_TYPE_VARDICT),
+      NULL);
+
+  g_variant_ref_sink (request);
+  hash = _tp_asv_from_vardict (request);
+  g_variant_unref (request);
+
+  ret = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
+      "account", account,
+      "request", hash,
+      "user-action-time", user_action_time,
+      NULL);
+  g_hash_table_unref (hash);
+  return ret;
 }
 
 /**
