@@ -1665,6 +1665,9 @@ tp_account_channel_request_set_hint (TpAccountChannelRequest *self,
  * This function can't be called once @self has been used to request a
  * channel.
  *
+ * In high-level language bindings, use tp_account_channel_request_set_hint()
+ * instead.
+ *
  * Since: 0.13.14
  */
 void
