@@ -11,6 +11,7 @@
 Makefile
 Makefile.in
 tags
+cscope.out
 
 # Autotools and other top-level cruft
 /ChangeLog
