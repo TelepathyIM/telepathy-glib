@@ -51,7 +51,6 @@ enum /* properties */
   PROP_0,
   PROP_NAME,
   PROP_READABLE,
-  PROP_WRITABLE
 };
 
 struct _TplLogStoreSqlitePrivate
@@ -113,10 +112,6 @@ tpl_log_store_sqlite_get_property (GObject *self,
         g_value_set_boolean (value, FALSE);
         break;
 
-      case PROP_WRITABLE:
-        g_value_set_boolean (value, TRUE);
-        break;
-
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (self, id, pspec);
         break;
@@ -134,7 +129,6 @@ tpl_log_store_sqlite_set_property (GObject *self,
     {
       case PROP_NAME:
       case PROP_READABLE:
-      case PROP_WRITABLE:
         break;
 
       default:
@@ -325,7 +319,6 @@ _tpl_log_store_sqlite_class_init (TplLogStoreSqliteClass *klass)
 
   g_object_class_override_property (gobject_class, PROP_NAME, "name");
   g_object_class_override_property (gobject_class, PROP_READABLE, "readable");
-  g_object_class_override_property (gobject_class, PROP_WRITABLE, "writable");
 
   g_type_class_add_private (gobject_class, sizeof (TplLogStoreSqlitePrivate));
 }

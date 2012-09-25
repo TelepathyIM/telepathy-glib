@@ -190,8 +190,7 @@ static TplLogStore *
 add_log_store (TplLogManager *self,
     GType type,
     const char *name,
-    gboolean readable,
-    gboolean writable)
+    gboolean readable)
 {
   TplLogStore *store;
 
@@ -200,7 +199,6 @@ add_log_store (TplLogManager *self,
   store = g_object_new (type,
       "name", name,
       "readable", readable,
-      "writable", writable,
       NULL);
 
   /* set the log store in "testmode" if it supports it and the environment is
@@ -290,17 +288,17 @@ tpl_log_manager_init (TplLogManager *self)
       G_CALLBACK (_globally_enabled_changed), NULL);
 
   /* The TPL's default read-write logstore */
-  add_log_store (self, TPL_TYPE_LOG_STORE_XML, "TpLogger", TRUE, TRUE);
+  add_log_store (self, TPL_TYPE_LOG_STORE_XML, "TpLogger", TRUE);
 
   /* Load by default the Empathy's legacy 'past coversations' LogStore */
-  store = add_log_store (self, TPL_TYPE_LOG_STORE_XML, "Empathy", TRUE, FALSE);
+  store = add_log_store (self, TPL_TYPE_LOG_STORE_XML, "Empathy", TRUE);
   if (store != NULL)
     g_object_set (store, "empathy-legacy", TRUE, NULL);
 
-  add_log_store (self, TPL_TYPE_LOG_STORE_PIDGIN, "Pidgin", TRUE, FALSE);
+  add_log_store (self, TPL_TYPE_LOG_STORE_PIDGIN, "Pidgin", TRUE);
 
   /* Load the event counting cache */
-  add_log_store (self, TPL_TYPE_LOG_STORE_SQLITE, "Sqlite", FALSE, TRUE);
+  add_log_store (self, TPL_TYPE_LOG_STORE_SQLITE, "Sqlite", FALSE);
 
   DEBUG ("Log Manager initialised");
 }
@@ -324,13 +322,8 @@ tpl_log_manager_dup_singleton (void)
  * @event: a TplEvent subclass's instance
  * @error: the memory location of GError, filled if an error occurs
  *
- * It stores @event, sending it to all the registered TplLogStore which have
- * TplLogStore:writable set to %TRUE.
- * Every TplLogManager is guaranteed to have at least a readable
- * and a writable TplLogStore regitered.
- *
- * It applies for any registered TplLogStore with #TplLogstore:writable property
- * %TRUE
+ * It stores @event, sending it to all the writable registered #TplLogStore objects.
+ * (Every TplLogManager is guaranteed to have at least one writable log store.)
  *
  * Returns: %TRUE if the event has been successfully added, otherwise %FALSE.
  */
@@ -393,9 +386,6 @@ _tpl_log_manager_add_event (TplLogManager *manager,
  *
  * It registers @logstore into @manager, the log store has to be an
  * implementation of the TplLogStore interface.
- *
- * @logstore has to properly implement the add_event method if the
- * #TplLogStore:writable is set to %TRUE.
  *
  * @logstore has to properly implement all the search/query methods if the
  * TplLogStore:readable is set to %TRUE.

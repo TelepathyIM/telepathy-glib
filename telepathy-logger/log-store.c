@@ -30,7 +30,7 @@
  * SECTION:log-store
  * @title: TplLogStore
  * @short_description: LogStore interface can register into #TplLogManager as
- * #TplLogStore:writable or #TplLogStore:readable log stores.
+ * readable and/or writable log stores.
  * @see_also: #text-event:#TplTextEvent and other subclasses when they'll exist
  *
  * The #TplLogStore defines all the public methods that a TPL Log Store has to
@@ -89,22 +89,6 @@ _tpl_log_store_init (gpointer g_iface)
         "Whether this log store is readable",
         TRUE,
         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
-
-  /**
-   * TplLogStore:writable:
-   *
-   * Defines whether the object is writable for a #TplLogManager.
-   *
-   * If an TplLogStore implementation is writable, the #TplLogManager will call
-   * its tpl_log_store_add_event() method every time a loggable even occurs,
-   * i.e., every time _tpl_log_manager_add_event() is called.
-   */
-  g_object_interface_install_property (g_iface,
-      g_param_spec_boolean ("writable",
-        "Writable",
-        "Whether this log store is writable",
-        TRUE,
-        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 }
 
 const gchar *
@@ -150,11 +134,12 @@ _tpl_log_store_add_event (TplLogStore *self,
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
   if (TPL_LOG_STORE_GET_INTERFACE (self)->add_event == NULL)
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_ADD_EVENT,
-          "%s: add_event not implemented, but writable set to TRUE : %s",
+          "%s: %s is not writable",
           G_STRFUNC, G_OBJECT_CLASS_NAME (self));
       return FALSE;
     }
@@ -380,15 +365,9 @@ _tpl_log_store_create_iter (TplLogStore *self,
 gboolean
 _tpl_log_store_is_writable (TplLogStore *self)
 {
-  gboolean writable;
-
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
 
-  g_object_get (self,
-      "writable", &writable,
-      NULL);
-
-  return writable;
+  return (TPL_LOG_STORE_GET_INTERFACE (self)->add_event != NULL);
 }
 
 

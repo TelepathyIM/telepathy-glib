@@ -81,7 +81,6 @@ struct _TplLogStoreXmlPriv
   gchar *basedir;
   gchar *name;
   gboolean readable;
-  gboolean writable;
   gboolean empathy_legacy;
   gboolean test_mode;
   TpAccountManager *account_manager;
@@ -91,7 +90,6 @@ enum {
     PROP_0,
     PROP_NAME,
     PROP_READABLE,
-    PROP_WRITABLE,
     PROP_BASEDIR,
     PROP_EMPATHY_LEGACY,
     PROP_TESTMODE
@@ -107,7 +105,6 @@ static void log_store_xml_set_name (TplLogStoreXml *self, const gchar *data);
 static const gchar *log_store_xml_get_basedir (TplLogStoreXml *self);
 static void log_store_xml_set_basedir (TplLogStoreXml *self,
     const gchar *data);
-static void log_store_xml_set_writable (TplLogStoreXml *self, gboolean data);
 static void log_store_xml_set_readable (TplLogStoreXml *self, gboolean data);
 
 
@@ -170,9 +167,6 @@ tpl_log_store_xml_get_property (GObject *object,
       case PROP_NAME:
         g_value_set_string (value, priv->name);
         break;
-      case PROP_WRITABLE:
-        g_value_set_boolean (value, priv->writable);
-        break;
       case PROP_READABLE:
         g_value_set_boolean (value, priv->readable);
         break;
@@ -208,9 +202,6 @@ tpl_log_store_xml_set_property (GObject *object,
       case PROP_READABLE:
         log_store_xml_set_readable (self, g_value_get_boolean (value));
         break;
-      case PROP_WRITABLE:
-        log_store_xml_set_writable (self, g_value_get_boolean (value));
-        break;
       case PROP_EMPATHY_LEGACY:
         self->priv->empathy_legacy = g_value_get_boolean (value);
         break;
@@ -240,7 +231,6 @@ _tpl_log_store_xml_class_init (TplLogStoreXmlClass *klass)
 
   g_object_class_override_property (object_class, PROP_NAME, "name");
   g_object_class_override_property (object_class, PROP_READABLE, "readable");
-  g_object_class_override_property (object_class, PROP_WRITABLE, "writable");
 
   /**
    * TplLogStoreXml:basedir:
@@ -1850,16 +1840,6 @@ log_store_xml_set_readable (TplLogStoreXml *self,
   g_return_if_fail (TPL_IS_LOG_STORE_XML (self));
 
   self->priv->readable = data;
-}
-
-
-static void
-log_store_xml_set_writable (TplLogStoreXml *self,
-    gboolean data)
-{
-  g_return_if_fail (TPL_IS_LOG_STORE_XML (self));
-
-  self->priv->writable = data;
 }
 
 

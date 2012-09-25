@@ -49,14 +49,12 @@ struct _TplLogStorePidginPriv
   gchar *basedir;
   gchar *name;
   gboolean readable;
-  gboolean writable;
 };
 
 enum {
     PROP_0,
     PROP_NAME,
     PROP_READABLE,
-    PROP_WRITABLE,
     PROP_BASEDIR,
     PROP_TESTMODE,
 };
@@ -73,7 +71,6 @@ static void log_store_pidgin_set_name (TplLogStorePidgin *self, const gchar *dat
 static const gchar *log_store_pidgin_get_basedir (TplLogStorePidgin *self);
 static void log_store_pidgin_set_basedir (TplLogStorePidgin *self,
     const gchar *data);
-static void log_store_pidgin_set_writable (TplLogStorePidgin *self, gboolean data);
 static void log_store_pidgin_set_readable (TplLogStorePidgin *self, gboolean data);
 
 
@@ -93,9 +90,6 @@ tpl_log_store_pidgin_get_property (GObject *object,
     {
       case PROP_NAME:
         g_value_set_string (value, priv->name);
-        break;
-      case PROP_WRITABLE:
-        g_value_set_boolean (value, priv->writable);
         break;
       case PROP_READABLE:
         g_value_set_boolean (value, priv->readable);
@@ -128,9 +122,6 @@ tpl_log_store_pidgin_set_property (GObject *object,
         break;
       case PROP_READABLE:
         log_store_pidgin_set_readable (self, g_value_get_boolean (value));
-        break;
-      case PROP_WRITABLE:
-        log_store_pidgin_set_writable (self, g_value_get_boolean (value));
         break;
       case PROP_BASEDIR:
         log_store_pidgin_set_basedir (self, g_value_get_string (value));
@@ -172,7 +163,6 @@ tpl_log_store_pidgin_class_init (TplLogStorePidginClass *klass)
 
   g_object_class_override_property (object_class, PROP_NAME, "name");
   g_object_class_override_property (object_class, PROP_READABLE, "readable");
-  g_object_class_override_property (object_class, PROP_WRITABLE, "writable");
 
   /**
    * TplLogStorePidgin:basedir:
@@ -280,16 +270,6 @@ log_store_pidgin_set_readable (TplLogStorePidgin *self,
   g_return_if_fail (TPL_IS_LOG_STORE_PIDGIN (self));
 
   self->priv->readable = data;
-}
-
-
-static void
-log_store_pidgin_set_writable (TplLogStorePidgin *self,
-    gboolean data)
-{
-  g_return_if_fail (TPL_IS_LOG_STORE_PIDGIN (self));
-
-  self->priv->writable = data;
 }
 
 
