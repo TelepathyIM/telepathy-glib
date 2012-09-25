@@ -943,9 +943,7 @@ get_all_properties_cb (TpProxy *proxy,
 
   if (dbus_relay_info && dbus_relay_info->len)
     {
-      GValueArray *fs_relay_info = g_value_array_new (0);
-      GValue val = {0};
-      g_value_init (&val, GST_TYPE_STRUCTURE);
+      GPtrArray *fs_relay_info = NULL;
 
       for (i = 0; i < dbus_relay_info->len; i++)
         {
@@ -968,6 +966,10 @@ get_all_properties_cb (TpProxy *proxy,
           if (!ip || !port || !username || !password)
               continue;
 
+          if (!fs_relay_info)
+            fs_relay_info = g_ptr_array_new_with_free_func (
+              (GDestroyNotify) gst_structure_free);
+
           s = gst_structure_new ("relay-info",
               "ip", G_TYPE_STRING, ip,
               "port", G_TYPE_UINT, port,
@@ -987,21 +989,16 @@ get_all_properties_cb (TpProxy *proxy,
           DEBUG (stream, "Adding relay (%s) %s:%u %s:%s %u",
               type, ip, port, username, password, component);
 
-          g_value_take_boxed (&val, s);
-
-          g_value_array_append (fs_relay_info, &val);
-          g_value_reset (&val);
+          g_ptr_array_add (fs_relay_info, s);
         }
 
-      if (fs_relay_info->n_values)
+      if (fs_relay_info)
         {
           params[n_args].name = "relay-info";
-          g_value_init (&params[n_args].value, G_TYPE_VALUE_ARRAY);
-          g_value_set_boxed (&params[n_args].value, fs_relay_info);
+          g_value_init (&params[n_args].value, G_TYPE_PTR_ARRAY);
+          g_value_take_boxed (&params[n_args].value, fs_relay_info);
           n_args++;
         }
-
-      g_value_array_free (fs_relay_info);
     }
 
   if (out_Properties && do_controlling)

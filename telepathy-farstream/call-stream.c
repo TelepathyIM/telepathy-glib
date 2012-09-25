@@ -467,9 +467,7 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
 
   if (self->relay_info->len)
     {
-      GValueArray *fs_relay_info = g_value_array_new (0);
-      GValue val = {0};
-      g_value_init (&val, GST_TYPE_STRUCTURE);
+      GPtrArray *fs_relay_info = NULL;
 
       for (i = 0; i < self->relay_info->len; i++)
         {
@@ -507,21 +505,20 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
             gst_structure_set (s, "component", G_TYPE_UINT, component, NULL);
 
 
-          g_value_take_boxed (&val, s);
+          if (!fs_relay_info)
+            fs_relay_info = g_ptr_array_new_with_free_func (
+              (GDestroyNotify)gst_structure_free);
 
-          g_value_array_append (fs_relay_info, &val);
-          g_value_reset (&val);
+          g_ptr_array_add (fs_relay_info, s);
         }
 
-      if (fs_relay_info->n_values)
+      if (fs_relay_info)
         {
           params[n_params].name = "relay-info";
-          g_value_init (&params[n_params].value, G_TYPE_VALUE_ARRAY);
-          g_value_set_boxed (&params[n_params].value, fs_relay_info);
+          g_value_init (&params[n_params].value, G_TYPE_PTR_ARRAY);
+          g_value_take_boxed (&params[n_params].value, fs_relay_info);
           n_params++;
         }
-
-      g_value_array_free (fs_relay_info);
     }
 
   if (self->receiving_state == TP_STREAM_FLOW_STATE_PENDING_START)
