@@ -186,18 +186,11 @@ tpl_log_manager_class_init (TplLogManagerClass *klass)
 }
 
 
-static TplLogStore *
+static void
 add_log_store (TplLogManager *self,
-    GType type,
-    const char *name)
+    TplLogStore *store)
 {
-  TplLogStore *store;
-
-  g_return_val_if_fail (g_type_is_a (type, TPL_TYPE_LOG_STORE), NULL);
-
-  store = g_object_new (type,
-      "name", name,
-      NULL);
+  g_return_if_fail (TPL_IS_LOG_STORE (store));
 
   /* set the log store in "testmode" if it supports it and the environment is
    * currently in test mode */
@@ -206,16 +199,12 @@ add_log_store (TplLogManager *self,
           "testmode", (g_getenv ("TPL_TEST_MODE") != NULL),
           NULL);
 
-  if (store == NULL)
-    CRITICAL ("Error creating %s (name=%s)", g_type_name (type), name);
-  else if (!_tpl_log_manager_register_log_store (self, store))
-    CRITICAL ("Failed to register store name=%s", name);
+  if (!_tpl_log_manager_register_log_store (self, store))
+    CRITICAL ("Failed to register store name=%s",
+        _tpl_log_store_get_name (store));
 
-  if (store != NULL)
-    /* drop the initial ref */
-    g_object_unref (store);
-
-  return store;
+  /* drop the initial ref */
+  g_object_unref (store);
 }
 
 
@@ -272,7 +261,6 @@ _list_of_date_free (gpointer data)
 static void
 tpl_log_manager_init (TplLogManager *self)
 {
-  TplLogStore *store;
   TplLogManagerPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_LOG_MANAGER, TplLogManagerPriv);
 
@@ -286,17 +274,28 @@ tpl_log_manager_init (TplLogManager *self)
       G_CALLBACK (_globally_enabled_changed), NULL);
 
   /* The TPL's default read-write logstore */
-  add_log_store (self, TPL_TYPE_LOG_STORE_XML, "TpLogger");
+  add_log_store (self,
+      g_object_new (TPL_TYPE_LOG_STORE_XML,
+          "name", "TpLogger",
+          NULL));
 
   /* Load by default the Empathy's legacy 'past coversations' LogStore */
-  store = add_log_store (self, TPL_TYPE_LOG_STORE_XML, "Empathy");
-  if (store != NULL)
-    g_object_set (store, "empathy-legacy", TRUE, NULL);
+  add_log_store (self,
+      g_object_new (TPL_TYPE_LOG_STORE_XML,
+          "name", "Empathy",
+          "empathy-legacy", TRUE,
+          NULL));
 
-  add_log_store (self, TPL_TYPE_LOG_STORE_PIDGIN, "Pidgin");
+  add_log_store (self,
+      g_object_new (TPL_TYPE_LOG_STORE_PIDGIN,
+          "name", "Pidgin",
+          NULL));
 
   /* Load the event counting cache */
-  add_log_store (self, TPL_TYPE_LOG_STORE_SQLITE, "Sqlite");
+  add_log_store (self,
+      g_object_new (TPL_TYPE_LOG_STORE_SQLITE,
+          "name", "Sqlite",
+          NULL));
 
   DEBUG ("Log Manager initialised");
 }
