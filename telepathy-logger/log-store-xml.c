@@ -79,7 +79,6 @@
 struct _TplLogStoreXmlPriv
 {
   gchar *basedir;
-  gchar *name;
   gboolean empathy_legacy;
   gboolean test_mode;
   TpAccountManager *account_manager;
@@ -100,7 +99,6 @@ static void tpl_log_store_xml_get_property (GObject *object, guint param_id, GVa
 static void tpl_log_store_xml_set_property (GObject *object, guint param_id, const GValue *value,
     GParamSpec *pspec);
 static const gchar *log_store_xml_get_name (TplLogStore *store);
-static void log_store_xml_set_name (TplLogStoreXml *self, const gchar *data);
 static const gchar *log_store_xml_get_basedir (TplLogStoreXml *self);
 static void log_store_xml_set_basedir (TplLogStoreXml *self,
     const gchar *data);
@@ -144,11 +142,6 @@ log_store_xml_finalize (GObject *object)
       g_free (priv->basedir);
       priv->basedir = NULL;
     }
-  if (priv->name != NULL)
-    {
-      g_free (priv->name);
-      priv->name = NULL;
-    }
 }
 
 
@@ -163,7 +156,8 @@ tpl_log_store_xml_get_property (GObject *object,
   switch (param_id)
     {
       case PROP_NAME:
-        g_value_set_string (value, priv->name);
+        g_value_set_string (value,
+            log_store_xml_get_name ((TplLogStore *) object));
         break;
       case PROP_READABLE:
         g_value_set_boolean (value, TRUE);
@@ -194,9 +188,6 @@ tpl_log_store_xml_set_property (GObject *object,
 
   switch (param_id)
     {
-      case PROP_NAME:
-        log_store_xml_set_name (self, g_value_get_string (value));
-        break;
       case PROP_EMPATHY_LEGACY:
         self->priv->empathy_legacy = g_value_get_boolean (value);
         break;
@@ -1761,7 +1752,10 @@ log_store_xml_get_name (TplLogStore *store)
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
 
-  return self->priv->name;
+  if (self->priv->empathy_legacy)
+    return "Empathy";
+  else
+    return "TpLogger";
 }
 
 
@@ -1799,17 +1793,6 @@ log_store_xml_get_basedir (TplLogStoreXml *self)
   return self->priv->basedir;
 }
 
-
-static void
-log_store_xml_set_name (TplLogStoreXml *self,
-    const gchar *data)
-{
-  g_return_if_fail (TPL_IS_LOG_STORE_XML (self));
-  g_return_if_fail (!TPL_STR_EMPTY (data));
-  g_return_if_fail (self->priv->name == NULL);
-
-  self->priv->name = g_strdup (data);
-}
 
 static void
 log_store_xml_set_basedir (TplLogStoreXml *self,

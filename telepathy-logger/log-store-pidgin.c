@@ -39,6 +39,8 @@
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include "debug-internal.h"
 
+#define TPL_LOG_STORE_PIDGIN_NAME "Pidgin"
+
 #define TXT_LOG_FILENAME_SUFFIX ".txt"
 #define HTML_LOG_FILENAME_SUFFIX ".html"
 
@@ -47,7 +49,6 @@ struct _TplLogStorePidginPriv
   gboolean test_mode;
 
   gchar *basedir;
-  gchar *name;
 };
 
 enum {
@@ -66,7 +67,6 @@ static void tpl_log_store_pidgin_get_property (GObject *object, guint param_id, 
 static void tpl_log_store_pidgin_set_property (GObject *object, guint param_id, const GValue *value,
     GParamSpec *pspec);
 static const gchar *log_store_pidgin_get_name (TplLogStore *store);
-static void log_store_pidgin_set_name (TplLogStorePidgin *self, const gchar *data);
 static const gchar *log_store_pidgin_get_basedir (TplLogStorePidgin *self);
 static void log_store_pidgin_set_basedir (TplLogStorePidgin *self,
     const gchar *data);
@@ -87,7 +87,7 @@ tpl_log_store_pidgin_get_property (GObject *object,
   switch (param_id)
     {
       case PROP_NAME:
-        g_value_set_string (value, priv->name);
+        g_value_set_string (value, TPL_LOG_STORE_PIDGIN_NAME);
         break;
       case PROP_READABLE:
         g_value_set_boolean (value, TRUE);
@@ -115,9 +115,6 @@ tpl_log_store_pidgin_set_property (GObject *object,
 
   switch (param_id)
     {
-      case PROP_NAME:
-        log_store_pidgin_set_name (self, g_value_get_string (value));
-        break;
       case PROP_BASEDIR:
         log_store_pidgin_set_basedir (self, g_value_get_string (value));
         break;
@@ -138,9 +135,6 @@ tpl_log_store_pidgin_dispose (GObject *self)
 
   g_free (priv->basedir);
   priv->basedir = NULL;
-
-  g_free (priv->name);
-  priv->name = NULL;
 
   G_OBJECT_CLASS (tpl_log_store_pidgin_parent_class)->dispose (self);
 }
@@ -198,7 +192,7 @@ log_store_pidgin_get_name (TplLogStore *store)
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_PIDGIN (self), NULL);
 
-  return self->priv->name;
+  return TPL_LOG_STORE_PIDGIN_NAME;
 }
 
 
@@ -226,18 +220,6 @@ log_store_pidgin_get_basedir (TplLogStorePidgin *self)
     }
 
   return self->priv->basedir;
-}
-
-
-static void
-log_store_pidgin_set_name (TplLogStorePidgin *self,
-    const gchar *data)
-{
-  g_return_if_fail (TPL_IS_LOG_STORE_PIDGIN (self));
-  g_return_if_fail (!TPL_STR_EMPTY (data));
-  g_return_if_fail (self->priv->name == NULL);
-
-  self->priv->name = g_strdup (data);
 }
 
 

@@ -276,25 +276,21 @@ tpl_log_manager_init (TplLogManager *self)
   /* The TPL's default read-write logstore */
   add_log_store (self,
       g_object_new (TPL_TYPE_LOG_STORE_XML,
-          "name", "TpLogger",
           NULL));
 
   /* Load by default the Empathy's legacy 'past coversations' LogStore */
   add_log_store (self,
       g_object_new (TPL_TYPE_LOG_STORE_XML,
-          "name", "Empathy",
           "empathy-legacy", TRUE,
           NULL));
 
   add_log_store (self,
       g_object_new (TPL_TYPE_LOG_STORE_PIDGIN,
-          "name", "Pidgin",
           NULL));
 
   /* Load the event counting cache */
   add_log_store (self,
       g_object_new (TPL_TYPE_LOG_STORE_SQLITE,
-          "name", "Sqlite",
           NULL));
 
   DEBUG ("Log Manager initialised");

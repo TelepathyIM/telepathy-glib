@@ -71,7 +71,7 @@ _tpl_log_store_init (gpointer g_iface)
         "Name",
         "The TplLogStore implementation's name",
         NULL,
-        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   /**
    * TplLogStore:readable:

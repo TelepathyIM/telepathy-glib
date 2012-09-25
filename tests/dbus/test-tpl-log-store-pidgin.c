@@ -171,7 +171,6 @@ setup (PidginTestCaseFixture* fixture,
   DEBUG ("basedir is %s", fixture->basedir);
 
   fixture->store = g_object_new (TPL_TYPE_LOG_STORE_PIDGIN,
-      "name", "testcase",
       "testmode", TRUE,
       NULL);
 
@@ -251,9 +250,7 @@ test_basedir (PidginTestCaseFixture *fixture,
 
   /* try to instantiate the default store, without passing basedir, it has to
    * match the real libpurple basedir */
-  store = g_object_new (TPL_TYPE_LOG_STORE_PIDGIN,
-      "name", "testcase",
-      NULL);
+  store = g_object_new (TPL_TYPE_LOG_STORE_PIDGIN, NULL);
   dir = g_build_path (G_DIR_SEPARATOR_S, g_get_home_dir (), ".purple",
       "logs", NULL);
   g_assert_cmpstr (log_store_pidgin_get_basedir (store), ==, dir);
@@ -345,9 +342,9 @@ test_get_name (PidginTestCaseFixture *fixture,
 {
   const gchar *name;
 
-  name = log_store_pidgin_get_name (TPL_LOG_STORE (fixture->store));
+  name = _tpl_log_store_get_name (TPL_LOG_STORE (fixture->store));
 
-  g_assert_cmpstr (name, ==, "testcase");
+  g_assert_cmpstr (name, ==, "Pidgin");
 }
 
 static void
