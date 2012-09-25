@@ -393,8 +393,8 @@ _tpl_log_manager_register_log_store (TplLogManager *self,
     TplLogStore *logstore)
 {
   TplLogManagerPriv *priv = self->priv;
+  const gchar *name = _tpl_log_store_get_name (logstore);
   GList *l;
-  gboolean found = FALSE;
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
   g_return_val_if_fail (TPL_IS_LOG_STORE (logstore), FALSE);
@@ -403,18 +403,12 @@ _tpl_log_manager_register_log_store (TplLogManager *self,
   for (l = priv->stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = l->data;
-      const gchar *name = _tpl_log_store_get_name (logstore);
 
       if (!tp_strdiff (name, _tpl_log_store_get_name (store)))
         {
-          found = TRUE;
-          break;
+          DEBUG ("name=%s: already registered", name);
+          return FALSE;
         }
-    }
-  if (found)
-    {
-      DEBUG ("name=%s: already registered", _tpl_log_store_get_name (logstore));
-      return FALSE;
     }
 
   if (_tpl_log_store_is_readable (logstore))
