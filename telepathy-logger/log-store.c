@@ -76,11 +76,11 @@ _tpl_log_store_init (gpointer g_iface)
   /**
    * TplLogStore:writable:
    *
-   * Defines wether the object is writable for a #TplLogManager.
+   * Defines whether the object is writable for a #TplLogManager.
    *
    * If an TplLogStore implementation is writable, the #TplLogManager will call
-   * it's tpl_log_store_add_event() method every time a loggable even occurs,
-   * i.e., everytime _tpl_log_manager_add_event() is called.
+   * its tpl_log_store_add_event() method every time a loggable even occurs,
+   * i.e., every time _tpl_log_manager_add_event() is called.
    */
   g_object_interface_install_property (g_iface,
       g_param_spec_boolean ("readable",
@@ -92,7 +92,7 @@ _tpl_log_store_init (gpointer g_iface)
   /**
    * TplLogStore:readable:
    *
-   * Defines wether the object is readable for a #TplLogManager.
+   * Defines whether the object is readable for a #TplLogManager.
    *
    * If an TplLogStore implementation is readable, the #TplLogManager will
    * use the query methods against the instance (i.e. tpl_log_store_get_dates())
