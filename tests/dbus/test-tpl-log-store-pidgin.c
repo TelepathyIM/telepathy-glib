@@ -253,7 +253,6 @@ test_basedir (PidginTestCaseFixture *fixture,
    * match the real libpurple basedir */
   store = g_object_new (TPL_TYPE_LOG_STORE_PIDGIN,
       "name", "testcase",
-      "readable", FALSE,
       NULL);
   dir = g_build_path (G_DIR_SEPARATOR_S, g_get_home_dir (), ".purple",
       "logs", NULL);

@@ -128,7 +128,6 @@ tpl_log_store_sqlite_set_property (GObject *self,
   switch (id)
     {
       case PROP_NAME:
-      case PROP_READABLE:
         break;
 
       default:

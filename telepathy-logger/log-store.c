@@ -79,16 +79,16 @@ _tpl_log_store_init (gpointer g_iface)
    * Defines whether the object is readable for a #TplLogManager.
    *
    * If an TplLogStore implementation is readable, the #TplLogManager will
-   * use the query methods against the instance (i.e. tpl_log_store_get_dates())
-   * every time a #TplLogManager instance is queried (i.e.,
-   * tpl_log_manager_get_date()).
+   * use the query methods against the instance (e.g. _tpl_log_store_get_dates())
+   * every time a #TplLogManager instance is queried (e.g.
+   * _tpl_log_manager_get_dates()).
    */
   g_object_interface_install_property (g_iface,
       g_param_spec_boolean ("readable",
         "Readable",
         "Whether this log store is readable",
         TRUE,
-        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 }
 
 const gchar *

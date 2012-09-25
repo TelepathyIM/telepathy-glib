@@ -80,7 +80,6 @@ struct _TplLogStoreXmlPriv
 {
   gchar *basedir;
   gchar *name;
-  gboolean readable;
   gboolean empathy_legacy;
   gboolean test_mode;
   TpAccountManager *account_manager;
@@ -105,7 +104,6 @@ static void log_store_xml_set_name (TplLogStoreXml *self, const gchar *data);
 static const gchar *log_store_xml_get_basedir (TplLogStoreXml *self);
 static void log_store_xml_set_basedir (TplLogStoreXml *self,
     const gchar *data);
-static void log_store_xml_set_readable (TplLogStoreXml *self, gboolean data);
 
 
 G_DEFINE_TYPE_WITH_CODE (TplLogStoreXml, _tpl_log_store_xml,
@@ -168,7 +166,7 @@ tpl_log_store_xml_get_property (GObject *object,
         g_value_set_string (value, priv->name);
         break;
       case PROP_READABLE:
-        g_value_set_boolean (value, priv->readable);
+        g_value_set_boolean (value, TRUE);
         break;
       case PROP_BASEDIR:
         g_value_set_string (value, priv->basedir);
@@ -198,9 +196,6 @@ tpl_log_store_xml_set_property (GObject *object,
     {
       case PROP_NAME:
         log_store_xml_set_name (self, g_value_get_string (value));
-        break;
-      case PROP_READABLE:
-        log_store_xml_set_readable (self, g_value_get_boolean (value));
         break;
       case PROP_EMPATHY_LEGACY:
         self->priv->empathy_legacy = g_value_get_boolean (value);
@@ -1830,16 +1825,6 @@ log_store_xml_set_basedir (TplLogStoreXml *self,
   /* at install_spec time, default value is set to NULL, ignore it */
   if (self->priv->basedir != NULL)
     DEBUG ("logstore set to dir: %s", data);
-}
-
-
-static void
-log_store_xml_set_readable (TplLogStoreXml *self,
-    gboolean data)
-{
-  g_return_if_fail (TPL_IS_LOG_STORE_XML (self));
-
-  self->priv->readable = data;
 }
 
 

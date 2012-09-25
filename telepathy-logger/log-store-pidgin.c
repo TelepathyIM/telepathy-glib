@@ -48,7 +48,6 @@ struct _TplLogStorePidginPriv
 
   gchar *basedir;
   gchar *name;
-  gboolean readable;
 };
 
 enum {
@@ -71,7 +70,6 @@ static void log_store_pidgin_set_name (TplLogStorePidgin *self, const gchar *dat
 static const gchar *log_store_pidgin_get_basedir (TplLogStorePidgin *self);
 static void log_store_pidgin_set_basedir (TplLogStorePidgin *self,
     const gchar *data);
-static void log_store_pidgin_set_readable (TplLogStorePidgin *self, gboolean data);
 
 
 G_DEFINE_TYPE_WITH_CODE (TplLogStorePidgin, tpl_log_store_pidgin,
@@ -92,7 +90,7 @@ tpl_log_store_pidgin_get_property (GObject *object,
         g_value_set_string (value, priv->name);
         break;
       case PROP_READABLE:
-        g_value_set_boolean (value, priv->readable);
+        g_value_set_boolean (value, TRUE);
         break;
       case PROP_BASEDIR:
         g_value_set_string (value, priv->basedir);
@@ -119,9 +117,6 @@ tpl_log_store_pidgin_set_property (GObject *object,
     {
       case PROP_NAME:
         log_store_pidgin_set_name (self, g_value_get_string (value));
-        break;
-      case PROP_READABLE:
-        log_store_pidgin_set_readable (self, g_value_get_boolean (value));
         break;
       case PROP_BASEDIR:
         log_store_pidgin_set_basedir (self, g_value_get_string (value));
@@ -260,16 +255,6 @@ log_store_pidgin_set_basedir (TplLogStorePidgin *self,
   /* at install_spec time, default value is set to NULL, ignore it */
   if (self->priv->basedir != NULL)
     DEBUG ("logstore set to dir: %s", data);
-}
-
-
-static void
-log_store_pidgin_set_readable (TplLogStorePidgin *self,
-    gboolean data)
-{
-  g_return_if_fail (TPL_IS_LOG_STORE_PIDGIN (self));
-
-  self->priv->readable = data;
 }
 
 

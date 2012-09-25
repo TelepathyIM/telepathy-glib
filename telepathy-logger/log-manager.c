@@ -189,8 +189,7 @@ tpl_log_manager_class_init (TplLogManagerClass *klass)
 static TplLogStore *
 add_log_store (TplLogManager *self,
     GType type,
-    const char *name,
-    gboolean readable)
+    const char *name)
 {
   TplLogStore *store;
 
@@ -198,7 +197,6 @@ add_log_store (TplLogManager *self,
 
   store = g_object_new (type,
       "name", name,
-      "readable", readable,
       NULL);
 
   /* set the log store in "testmode" if it supports it and the environment is
@@ -288,17 +286,17 @@ tpl_log_manager_init (TplLogManager *self)
       G_CALLBACK (_globally_enabled_changed), NULL);
 
   /* The TPL's default read-write logstore */
-  add_log_store (self, TPL_TYPE_LOG_STORE_XML, "TpLogger", TRUE);
+  add_log_store (self, TPL_TYPE_LOG_STORE_XML, "TpLogger");
 
   /* Load by default the Empathy's legacy 'past coversations' LogStore */
-  store = add_log_store (self, TPL_TYPE_LOG_STORE_XML, "Empathy", TRUE);
+  store = add_log_store (self, TPL_TYPE_LOG_STORE_XML, "Empathy");
   if (store != NULL)
     g_object_set (store, "empathy-legacy", TRUE, NULL);
 
-  add_log_store (self, TPL_TYPE_LOG_STORE_PIDGIN, "Pidgin", TRUE);
+  add_log_store (self, TPL_TYPE_LOG_STORE_PIDGIN, "Pidgin");
 
   /* Load the event counting cache */
-  add_log_store (self, TPL_TYPE_LOG_STORE_SQLITE, "Sqlite", FALSE);
+  add_log_store (self, TPL_TYPE_LOG_STORE_SQLITE, "Sqlite");
 
   DEBUG ("Log Manager initialised");
 }
