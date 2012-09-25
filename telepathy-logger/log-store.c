@@ -66,13 +66,6 @@ _tpl_log_store_get_type (void)
 static void
 _tpl_log_store_init (gpointer g_iface)
 {
-  g_object_interface_install_property (g_iface,
-      g_param_spec_string ("name",
-        "Name",
-        "The TplLogStore implementation's name",
-        NULL,
-        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
-
   /**
    * TplLogStore:readable:
    *

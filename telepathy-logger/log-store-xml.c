@@ -86,7 +86,6 @@ struct _TplLogStoreXmlPriv
 
 enum {
     PROP_0,
-    PROP_NAME,
     PROP_READABLE,
     PROP_BASEDIR,
     PROP_EMPATHY_LEGACY,
@@ -155,10 +154,6 @@ tpl_log_store_xml_get_property (GObject *object,
 
   switch (param_id)
     {
-      case PROP_NAME:
-        g_value_set_string (value,
-            log_store_xml_get_name ((TplLogStore *) object));
-        break;
       case PROP_READABLE:
         g_value_set_boolean (value, TRUE);
         break;
@@ -215,7 +210,6 @@ _tpl_log_store_xml_class_init (TplLogStoreXmlClass *klass)
   object_class->get_property = tpl_log_store_xml_get_property;
   object_class->set_property = tpl_log_store_xml_set_property;
 
-  g_object_class_override_property (object_class, PROP_NAME, "name");
   g_object_class_override_property (object_class, PROP_READABLE, "readable");
 
   /**

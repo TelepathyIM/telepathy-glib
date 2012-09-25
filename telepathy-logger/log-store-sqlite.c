@@ -49,7 +49,6 @@ G_DEFINE_TYPE_WITH_CODE (TplLogStoreSqlite, _tpl_log_store_sqlite,
 enum /* properties */
 {
   PROP_0,
-  PROP_NAME,
   PROP_READABLE,
 };
 
@@ -103,31 +102,9 @@ tpl_log_store_sqlite_get_property (GObject *self,
 {
   switch (id)
     {
-      case PROP_NAME:
-        g_value_set_string (value, TPL_LOG_STORE_SQLITE_NAME);
-        break;
-
       case PROP_READABLE:
         /* this store should never be queried by the LogManager */
         g_value_set_boolean (value, FALSE);
-        break;
-
-      default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID (self, id, pspec);
-        break;
-    }
-}
-
-
-static void
-tpl_log_store_sqlite_set_property (GObject *self,
-    guint id,
-    const GValue *value,
-    GParamSpec *pspec)
-{
-  switch (id)
-    {
-      case PROP_NAME:
         break;
 
       default:
@@ -313,10 +290,8 @@ _tpl_log_store_sqlite_class_init (TplLogStoreSqliteClass *klass)
 
   gobject_class->constructor = tpl_log_store_sqlite_constructor;
   gobject_class->get_property = tpl_log_store_sqlite_get_property;
-  gobject_class->set_property = tpl_log_store_sqlite_set_property;
   gobject_class->dispose = tpl_log_store_sqlite_dispose;
 
-  g_object_class_override_property (gobject_class, PROP_NAME, "name");
   g_object_class_override_property (gobject_class, PROP_READABLE, "readable");
 
   g_type_class_add_private (gobject_class, sizeof (TplLogStoreSqlitePrivate));

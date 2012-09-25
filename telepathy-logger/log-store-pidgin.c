@@ -53,7 +53,6 @@ struct _TplLogStorePidginPriv
 
 enum {
     PROP_0,
-    PROP_NAME,
     PROP_READABLE,
     PROP_BASEDIR,
     PROP_TESTMODE,
@@ -86,9 +85,6 @@ tpl_log_store_pidgin_get_property (GObject *object,
 
   switch (param_id)
     {
-      case PROP_NAME:
-        g_value_set_string (value, TPL_LOG_STORE_PIDGIN_NAME);
-        break;
       case PROP_READABLE:
         g_value_set_boolean (value, TRUE);
         break;
@@ -150,7 +146,6 @@ tpl_log_store_pidgin_class_init (TplLogStorePidginClass *klass)
   object_class->set_property = tpl_log_store_pidgin_set_property;
   object_class->dispose = tpl_log_store_pidgin_dispose;
 
-  g_object_class_override_property (object_class, PROP_NAME, "name");
   g_object_class_override_property (object_class, PROP_READABLE, "readable");
 
   /**
