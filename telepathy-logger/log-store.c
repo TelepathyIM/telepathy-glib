@@ -74,13 +74,14 @@ _tpl_log_store_init (gpointer g_iface)
         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 
   /**
-   * TplLogStore:writable:
+   * TplLogStore:readable:
    *
-   * Defines whether the object is writable for a #TplLogManager.
+   * Defines whether the object is readable for a #TplLogManager.
    *
-   * If an TplLogStore implementation is writable, the #TplLogManager will call
-   * its tpl_log_store_add_event() method every time a loggable even occurs,
-   * i.e., every time _tpl_log_manager_add_event() is called.
+   * If an TplLogStore implementation is readable, the #TplLogManager will
+   * use the query methods against the instance (i.e. tpl_log_store_get_dates())
+   * every time a #TplLogManager instance is queried (i.e.,
+   * tpl_log_manager_get_date()).
    */
   g_object_interface_install_property (g_iface,
       g_param_spec_boolean ("readable",
@@ -90,14 +91,13 @@ _tpl_log_store_init (gpointer g_iface)
         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 
   /**
-   * TplLogStore:readable:
+   * TplLogStore:writable:
    *
-   * Defines whether the object is readable for a #TplLogManager.
+   * Defines whether the object is writable for a #TplLogManager.
    *
-   * If an TplLogStore implementation is readable, the #TplLogManager will
-   * use the query methods against the instance (i.e. tpl_log_store_get_dates())
-   * every time a #TplLogManager instance is queried (i.e.,
-   * tpl_log_manager_get_date()).
+   * If an TplLogStore implementation is writable, the #TplLogManager will call
+   * its tpl_log_store_add_event() method every time a loggable even occurs,
+   * i.e., every time _tpl_log_manager_add_event() is called.
    */
   g_object_interface_install_property (g_iface,
       g_param_spec_boolean ("writable",
