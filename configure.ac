@@ -83,7 +83,7 @@ if test "x$enable_coverage" = "xyes"; then
        CFLAGS="$CFLAGS -g -fprofile-arcs -ftest-coverage"
 fi
 
-CFLAGS="$CFLAGS -DGST_USE_UNSTABLE_API"
+CFLAGS="$CFLAGS"
 
 dnl Check for Glib
 PKG_CHECK_MODULES(GLIB, gobject-2.0 >= 2.32 glib-2.0 >= 2.32 gio-2.0)
