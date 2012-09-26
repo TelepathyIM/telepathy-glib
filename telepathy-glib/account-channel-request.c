@@ -411,7 +411,7 @@ tp_account_channel_request_class_init (
    * #TpAccountChannelRequest:request-vardict must be set to a non-%NULL
    * value, and the other must remain unspecified.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.10
    */
   param_spec = g_param_spec_variant ("request-vardict", "Request",
       "A dictionary containing desirable properties for the channel",
@@ -570,7 +570,7 @@ tp_account_channel_request_new (
  *
  * Returns: a new #TpAccountChannelRequest object
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 TpAccountChannelRequest *
 tp_account_channel_request_new_vardict (
@@ -640,7 +640,7 @@ tp_account_channel_request_get_request (
  * Returns: (transfer full): the value of
  *  #TpAccountChannelRequest:request-vardict
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.19.10
  */
 GVariant *
 tp_account_channel_request_dup_request (

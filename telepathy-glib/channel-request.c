@@ -431,7 +431,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    *
    * Read-only except during construction.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.10
    */
   param_spec = g_param_spec_variant ("immutable-properties-vardict",
       "Immutable D-Bus properties",
@@ -517,7 +517,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    *
    * Read-only.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.10
    */
   param_spec = g_param_spec_variant ("hints-vardict", "Hints", "Hints",
       G_VARIANT_TYPE_VARDICT, NULL,
@@ -723,7 +723,7 @@ tp_channel_request_get_immutable_properties (TpChannelRequest *self)
  * Returns: (transfer full): the value of
  * #TpChannelRequest:immutable-properties-vardict
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 GVariant *
 tp_channel_request_dup_immutable_properties (TpChannelRequest *self)
@@ -857,7 +857,7 @@ tp_channel_request_get_hints (TpChannelRequest *self)
  *
  * Returns: (transfer full): the value of #TpChannelRequest:hints-vardict
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 GVariant *
 tp_channel_request_dup_hints (TpChannelRequest *self)

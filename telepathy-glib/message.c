@@ -211,7 +211,7 @@ tp_message_peek (TpMessage *self,
  *  the current contents of the given part, or %NULL if the part number is
  *  out of range
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 GVariant *
 tp_message_dup_part (TpMessage *self,
@@ -653,7 +653,7 @@ tp_message_set (TpMessage *self,
  * If @value is a floating reference (see g_variant_ref_sink()), then this
  * function will take ownership of it.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 void
 tp_message_set_variant (TpMessage *self,

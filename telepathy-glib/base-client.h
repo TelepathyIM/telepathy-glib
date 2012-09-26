@@ -111,7 +111,7 @@ void tp_base_client_implement_handle_channels (TpBaseClientClass *klass,
 
 void tp_base_client_add_observer_filter (TpBaseClient *self,
     GHashTable *filter);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 void tp_base_client_add_observer_filter_vardict (TpBaseClient *self,
     GVariant *filter);
 void tp_base_client_take_observer_filter (TpBaseClient *self,
@@ -126,7 +126,7 @@ void tp_base_client_add_approver_filter (TpBaseClient *self,
     GHashTable *filter);
 void tp_base_client_take_approver_filter (TpBaseClient *self,
     GHashTable *filter);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 void tp_base_client_add_approver_filter_vardict (TpBaseClient *self,
     GVariant *filter);
 
@@ -136,7 +136,7 @@ void tp_base_client_add_handler_filter (TpBaseClient *self,
     GHashTable *filter);
 void tp_base_client_take_handler_filter (TpBaseClient *self,
     GHashTable *filter);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 void tp_base_client_add_handler_filter_vardict (TpBaseClient *self,
     GVariant *filter);
 void tp_base_client_set_handler_bypass_approval (TpBaseClient *self,

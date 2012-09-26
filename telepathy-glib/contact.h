@@ -97,7 +97,7 @@ const gchar *tp_contact_get_presence_message (TpContact *self);
 
 /* TP_CONTACT_FEATURE_LOCATION */
 GHashTable *tp_contact_get_location (TpContact *self);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_20
 GVariant *tp_contact_dup_location (TpContact *self);
 
 /* TP_CONTACT_FEATURE_CAPABILITIES */

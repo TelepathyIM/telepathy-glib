@@ -458,7 +458,7 @@ tp_stream_tube_channel_class_init (TpStreamTubeChannelClass *klass)
    *
    * Will be %NULL for outgoing tubes until the tube has been offered.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.10
    */
   param_spec = g_param_spec_variant ("parameters-vardict", "Parameters",
       "The parameters of the stream tube",
@@ -1599,7 +1599,7 @@ tp_stream_tube_channel_get_parameters (TpStreamTubeChannel *self)
  *
  * Returns: (transfer full): a new reference to a #GVariant
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 GVariant *
 tp_stream_tube_channel_dup_parameters_vardict (TpStreamTubeChannel *self)

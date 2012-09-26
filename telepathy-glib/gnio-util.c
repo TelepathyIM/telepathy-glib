@@ -297,7 +297,7 @@ tp_address_variant_from_g_socket_address (GSocketAddress *address,
  * Returns: a newly allocated #GSocketAddress for the given variant, or %NULL
  * on error
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 GSocketAddress *
 tp_g_socket_address_from_g_variant (TpSocketAddressType type,
@@ -326,7 +326,7 @@ tp_g_socket_address_from_g_variant (TpSocketAddressType type,
  *
  * Returns: (transfer none): a new variant with a floating reference, or %NULL
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 GVariant *
 tp_address_g_variant_from_g_socket_address (GSocketAddress *address,

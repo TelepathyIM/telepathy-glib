@@ -433,7 +433,7 @@ tp_base_client_take_observer_filter (TpBaseClient *self,
  *        ...));
  * ]|
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 void
 tp_base_client_add_observer_filter_vardict (TpBaseClient *self,
@@ -609,7 +609,7 @@ tp_base_client_take_approver_filter (TpBaseClient *self,
  * will be taken. See tp_base_client_add_observer_filter_vardict() for
  * more details.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 void
 tp_base_client_add_approver_filter_vardict (TpBaseClient *self,
@@ -726,7 +726,7 @@ tp_base_client_take_handler_filter (TpBaseClient *self,
  * will be taken. See tp_base_client_add_observer_filter_vardict() for
  * more details.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 void
 tp_base_client_add_handler_filter_vardict (TpBaseClient *self,

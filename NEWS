@@ -1,5 +1,9 @@
-telepathy-glib 0.19.10 (UNRELEASED)
+telepathy-glib 0.19.10 (2012-09-26)
 ===================================
+
+The “Why not 0.20.0?” release.
+
+This is the release candidate for the future 0.20.0 stable release.
 
 Enhancements:
 

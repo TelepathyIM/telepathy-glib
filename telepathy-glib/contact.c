@@ -97,7 +97,7 @@ struct _TpContact {
  * @TP_CONTACT_FEATURE_PRESENCE: #TpContact:presence-type,
  *  #TpContact:presence-status and #TpContact:presence-message
  * @TP_CONTACT_FEATURE_LOCATION: #TpContact:location (available since 0.11.1)
- *  and #TpContact:location-vardict (since 0.UNRELEASED)
+ *  and #TpContact:location-vardict (since 0.19.10)
  * @TP_CONTACT_FEATURE_CAPABILITIES: #TpContact:capabilities
  *  (available since 0.11.3)
  * @TP_CONTACT_FEATURE_AVATAR_DATA: #TpContact:avatar-file and
@@ -569,7 +569,7 @@ tp_contact_get_location (TpContact *self)
  * Returns: a variant of type %G_VARIANT_TYPE_VARDICT, the same as
  *  the #TpContact:location-vardict property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 GVariant *
 tp_contact_dup_location (TpContact *self)
@@ -1263,7 +1263,7 @@ tp_contact_class_init (TpContactClass *klass)
    * This property contains the same information as #TpContact:location,
    * in a different format.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.19.10
    */
   param_spec = g_param_spec_variant ("location-vardict",
       "Location",
