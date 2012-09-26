@@ -6,8 +6,24 @@ Enhancements:
 • Add tp_vardict_get_uint32() etc., analogous to tp_asv_get_uint32() etc.
   (Xavier)
 
-• Add tp_dbus_tube_channel_dup_parameters_vardict() (fd.o #55024,
-  Chandni Verma)
+• tp_channel_dispatch_operation_get_channels() is now introspected (fd.o #55102, Simon)
+
+A bunch of GVariant oriented API have been added as an alternative of their
+GValue equivalent:
+• tp_dbus_tube_channel_dup_parameters_vardict() (fd.o #55024, Chandni Verma)
+• tp_message_set_variant() and tp_message_dup_part() (fd.o #55096, Simon)
+• tp_account_channel_request_dup_request(),
+• tp_account_channel_request_new_vardict(),
+  tp_channel_request_dup_immutable_properties(), tp_channel_request_dup_hints(),
+  tp_account_channel_request_set_hints() and
+  TpAccountChannelRequest:request-vardict property (fd.o #55099, Simon)
+• tp_g_socket_address_from_g_variant() and
+  tp_address_g_variant_from_g_socket_address() (fd.o #55101, Simon)
+• TpDBusTubeChannel:parameters-vardict and
+  TpStreamTubeCha:parameters-vardict properties (fd.o #55024, Simon)
+• tp_contact_dup_location() and TpContact:location-vardict
+  property (fd.o#55095, Simon)
+• tp_base_client_add_{observer,approver,handler}_filter_vardict (fd.o #55100, Simon)
 
 telepathy-glib 0.19.9 (2012-09-11)
 ==================================
