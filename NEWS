@@ -8,9 +8,15 @@ Enhancements:
 
 • tp_channel_dispatch_operation_get_channels() is now introspected (fd.o #55102, Simon)
 
+• Add tp_vardict_get_*() helper functions to lookup values in a GVariant of
+  type %G_VARIANT_TYPE_VARDICT (Xavier)
+
+• Add tp_variant_convert() and tp_variant_type_classify() to manipulate and
+  convert GVariant (Xavier)
+
 A bunch of GVariant oriented API have been added as an alternative of their
 GValue equivalent:
-• tp_dbus_tube_channel_dup_parameters_vardict() (fd.o #55024, Chandni Verma)
+• tp_{dbus,stream}_tube_channel_dup_parameters_vardict() (fd.o #55024, Chandni Verma)
 • tp_message_set_variant() and tp_message_dup_part() (fd.o #55096, Simon)
 • tp_account_channel_request_dup_request(),
 • tp_account_channel_request_new_vardict(),
