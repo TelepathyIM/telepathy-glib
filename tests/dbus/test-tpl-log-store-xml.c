@@ -48,7 +48,6 @@ setup (XmlTestCaseFixture* fixture,
     gconstpointer user_data)
 {
   fixture->store = g_object_new (TPL_TYPE_LOG_STORE_XML,
-      "name", "testcase",
       "testmode", TRUE,
       NULL);
 

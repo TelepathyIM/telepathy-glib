@@ -52,7 +52,6 @@ setup (PidginTestCaseFixture* fixture,
   g_assert (fixture->main_loop != NULL);
 
   fixture->store = g_object_new (TPL_TYPE_LOG_STORE_PIDGIN,
-      "name", "testcase",
       "testmode", TRUE,
       NULL);
 

@@ -186,22 +186,11 @@ tpl_log_manager_class_init (TplLogManagerClass *klass)
 }
 
 
-static TplLogStore *
+static void
 add_log_store (TplLogManager *self,
-    GType type,
-    const char *name,
-    gboolean readable,
-    gboolean writable)
+    TplLogStore *store)
 {
-  TplLogStore *store;
-
-  g_return_val_if_fail (g_type_is_a (type, TPL_TYPE_LOG_STORE), NULL);
-
-  store = g_object_new (type,
-      "name", name,
-      "readable", readable,
-      "writable", writable,
-      NULL);
+  g_return_if_fail (TPL_IS_LOG_STORE (store));
 
   /* set the log store in "testmode" if it supports it and the environment is
    * currently in test mode */
@@ -210,16 +199,12 @@ add_log_store (TplLogManager *self,
           "testmode", (g_getenv ("TPL_TEST_MODE") != NULL),
           NULL);
 
-  if (store == NULL)
-    CRITICAL ("Error creating %s (name=%s)", g_type_name (type), name);
-  else if (!_tpl_log_manager_register_log_store (self, store))
-    CRITICAL ("Failed to register store name=%s", name);
+  if (!_tpl_log_manager_register_log_store (self, store))
+    CRITICAL ("Failed to register store name=%s",
+        _tpl_log_store_get_name (store));
 
-  if (store != NULL)
-    /* drop the initial ref */
-    g_object_unref (store);
-
-  return store;
+  /* drop the initial ref */
+  g_object_unref (store);
 }
 
 
@@ -276,7 +261,6 @@ _list_of_date_free (gpointer data)
 static void
 tpl_log_manager_init (TplLogManager *self)
 {
-  TplLogStore *store;
   TplLogManagerPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_LOG_MANAGER, TplLogManagerPriv);
 
@@ -290,17 +274,24 @@ tpl_log_manager_init (TplLogManager *self)
       G_CALLBACK (_globally_enabled_changed), NULL);
 
   /* The TPL's default read-write logstore */
-  add_log_store (self, TPL_TYPE_LOG_STORE_XML, "TpLogger", TRUE, TRUE);
+  add_log_store (self,
+      g_object_new (TPL_TYPE_LOG_STORE_XML,
+          NULL));
 
   /* Load by default the Empathy's legacy 'past coversations' LogStore */
-  store = add_log_store (self, TPL_TYPE_LOG_STORE_XML, "Empathy", TRUE, FALSE);
-  if (store != NULL)
-    g_object_set (store, "empathy-legacy", TRUE, NULL);
+  add_log_store (self,
+      g_object_new (TPL_TYPE_LOG_STORE_XML,
+          "empathy-legacy", TRUE,
+          NULL));
 
-  add_log_store (self, TPL_TYPE_LOG_STORE_PIDGIN, "Pidgin", TRUE, FALSE);
+  add_log_store (self,
+      g_object_new (TPL_TYPE_LOG_STORE_PIDGIN,
+          NULL));
 
   /* Load the event counting cache */
-  add_log_store (self, TPL_TYPE_LOG_STORE_SQLITE, "Sqlite", FALSE, TRUE);
+  add_log_store (self,
+      g_object_new (TPL_TYPE_LOG_STORE_SQLITE,
+          NULL));
 
   DEBUG ("Log Manager initialised");
 }
@@ -324,13 +315,8 @@ tpl_log_manager_dup_singleton (void)
  * @event: a TplEvent subclass's instance
  * @error: the memory location of GError, filled if an error occurs
  *
- * It stores @event, sending it to all the registered TplLogStore which have
- * TplLogStore:writable set to %TRUE.
- * Every TplLogManager is guaranteed to have at least a readable
- * and a writable TplLogStore regitered.
- *
- * It applies for any registered TplLogStore with #TplLogstore:writable property
- * %TRUE
+ * It stores @event, sending it to all the writable registered #TplLogStore objects.
+ * (Every TplLogManager is guaranteed to have at least one writable log store.)
  *
  * Returns: %TRUE if the event has been successfully added, otherwise %FALSE.
  */
@@ -394,9 +380,6 @@ _tpl_log_manager_add_event (TplLogManager *manager,
  * It registers @logstore into @manager, the log store has to be an
  * implementation of the TplLogStore interface.
  *
- * @logstore has to properly implement the add_event method if the
- * #TplLogStore:writable is set to %TRUE.
- *
  * @logstore has to properly implement all the search/query methods if the
  * TplLogStore:readable is set to %TRUE.
  */
@@ -405,8 +388,8 @@ _tpl_log_manager_register_log_store (TplLogManager *self,
     TplLogStore *logstore)
 {
   TplLogManagerPriv *priv = self->priv;
+  const gchar *name = _tpl_log_store_get_name (logstore);
   GList *l;
-  gboolean found = FALSE;
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
   g_return_val_if_fail (TPL_IS_LOG_STORE (logstore), FALSE);
@@ -415,18 +398,12 @@ _tpl_log_manager_register_log_store (TplLogManager *self,
   for (l = priv->stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = l->data;
-      const gchar *name = _tpl_log_store_get_name (logstore);
 
       if (!tp_strdiff (name, _tpl_log_store_get_name (store)))
         {
-          found = TRUE;
-          break;
+          DEBUG ("name=%s: already registered", name);
+          return FALSE;
         }
-    }
-  if (found)
-    {
-      DEBUG ("name=%s: already registered", _tpl_log_store_get_name (logstore));
-      return FALSE;
     }
 
   if (_tpl_log_store_is_readable (logstore))

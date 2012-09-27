@@ -30,7 +30,7 @@
  * SECTION:log-store
  * @title: TplLogStore
  * @short_description: LogStore interface can register into #TplLogManager as
- * #TplLogStore:writable or #TplLogStore:readable log stores.
+ * readable and/or writable log stores.
  * @see_also: #text-event:#TplTextEvent and other subclasses when they'll exist
  *
  * The #TplLogStore defines all the public methods that a TPL Log Store has to
@@ -66,45 +66,22 @@ _tpl_log_store_get_type (void)
 static void
 _tpl_log_store_init (gpointer g_iface)
 {
-  g_object_interface_install_property (g_iface,
-      g_param_spec_string ("name",
-        "Name",
-        "The TplLogStore implementation's name",
-        NULL,
-        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
-
   /**
-   * TplLogStore:writable:
+   * TplLogStore:readable:
    *
-   * Defines wether the object is writable for a #TplLogManager.
+   * Defines whether the object is readable for a #TplLogManager.
    *
-   * If an TplLogStore implementation is writable, the #TplLogManager will call
-   * it's tpl_log_store_add_event() method every time a loggable even occurs,
-   * i.e., everytime _tpl_log_manager_add_event() is called.
+   * If an TplLogStore implementation is readable, the #TplLogManager will
+   * use the query methods against the instance (e.g. _tpl_log_store_get_dates())
+   * every time a #TplLogManager instance is queried (e.g.
+   * _tpl_log_manager_get_dates()).
    */
   g_object_interface_install_property (g_iface,
       g_param_spec_boolean ("readable",
         "Readable",
         "Whether this log store is readable",
         TRUE,
-        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
-
-  /**
-   * TplLogStore:readable:
-   *
-   * Defines wether the object is readable for a #TplLogManager.
-   *
-   * If an TplLogStore implementation is readable, the #TplLogManager will
-   * use the query methods against the instance (i.e. tpl_log_store_get_dates())
-   * every time a #TplLogManager instance is queried (i.e.,
-   * tpl_log_manager_get_date()).
-   */
-  g_object_interface_install_property (g_iface,
-      g_param_spec_boolean ("writable",
-        "Writable",
-        "Whether this log store is writable",
-        TRUE,
-        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 }
 
 const gchar *
@@ -150,11 +127,12 @@ _tpl_log_store_add_event (TplLogStore *self,
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
   if (TPL_LOG_STORE_GET_INTERFACE (self)->add_event == NULL)
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_ADD_EVENT,
-          "%s: add_event not implemented, but writable set to TRUE : %s",
+          "%s: %s is not writable",
           G_STRFUNC, G_OBJECT_CLASS_NAME (self));
       return FALSE;
     }
@@ -380,15 +358,9 @@ _tpl_log_store_create_iter (TplLogStore *self,
 gboolean
 _tpl_log_store_is_writable (TplLogStore *self)
 {
-  gboolean writable;
-
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
 
-  g_object_get (self,
-      "writable", &writable,
-      NULL);
-
-  return writable;
+  return (TPL_LOG_STORE_GET_INTERFACE (self)->add_event != NULL);
 }
 
 
