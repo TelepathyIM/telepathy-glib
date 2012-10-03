@@ -1,3 +1,48 @@
+telepathy-glib 0.20.0 (2012-10-03)
+==================================
+
+The "why not indeed" release.
+
+This starts a new stable branch, recommended for use with GNOME 3.6.
+
+Summary of changes since the last stable branch, 0.18:
+
+• GLib 2.32 or later is required.
+
+• Many old things are now deprecated. New TP_VERSION_MIN_REQUIRED and
+  TP_VERSION_MAX_ALLOWED macros are provided for deprecation control:
+  they work like the ones in GLib 2.32.
+
+• Many functions that expected or returned dbus-glib parameterized types
+  are now deprecated, and have an equivalent GVariant-based function which
+  should be used instead.
+
+• The only headers you should #include are <telepathy-glib/telepathy-glib.h>,
+  <telepathy-glib/telepathy-glib-dbus.h> and <telepathy-glib/proxy-subclass.h>.
+  Including anything else is deprecated.
+
+• All TpChannel APIs using contact TpHandle have been deprecated in favor of
+  their TpContact variants.
+
+• TpRoomList and TpRoomInfo: high level API to list rooms on a server.
+
+• TpDebugClient: high level API to retrieve logs from Telepathy components.
+
+• TpTLSCertificate: TpProxy subclass representing a TLS certificate
+
+• TpAccountRequest: object to help account creation
+
+• TpSimpleClientFactory gained API to prepare TpContact objects with the
+  features set on it.
+
+• Add tp_vardict_get_uint32() etc., analogous to tp_asv_get_uint32() etc.
+
+• The configure flags --disable-coding-style-checks, --disable-doc-checks
+  and part of --disable-Werror have been superseded
+  by --disable-fatal-warning
+
+There were no code changes since 0.19.10.
+
 telepathy-glib 0.19.10 (2012-09-26)
 ===================================
 
