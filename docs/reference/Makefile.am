@@ -142,14 +142,6 @@ check-local:
 			echo "$$file missing from telepathy-glib-docs.sgml"; \
 			err=1; \
 		fi; \
-	done; \
-	case $(enable_fatal_warnings)/$$err in \
-		(yes/1) \
-			echo "Documentation check failed" >&2; \
-			exit $$err; \
-			;; \
-		(*) \
-			exit 0; \
-			;; \
-	esac
+	done
 endif
+# ... but don't fail on incomplete documentation, this is a stable branch
