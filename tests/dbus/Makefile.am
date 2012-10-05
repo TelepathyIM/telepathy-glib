@@ -286,6 +286,7 @@ TESTS_ENVIRONMENT = \
     XDG_DATA_DIRS=@abs_srcdir@:$${XDG_DATA_DIRS:=/usr/local/share:/usr/share} \
     G_SLICE=debug-blocks \
     G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly) \
+    G_MESSAGES_DEBUG=all \
     $(top_srcdir)/tools/test-wrapper.sh \
     sh $(top_srcdir)/tools/with-session-bus.sh \
         --config-file=dbus-uninstalled/session.conf -- \
