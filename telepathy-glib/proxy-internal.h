@@ -28,7 +28,7 @@ typedef struct {
     const gchar *version;
     gsize size;
 
-    DBusGProxy *(*borrow_interface_by_id) (TpProxy *,
+    DBusGProxy *(*get_interface_by_id) (TpProxy *,
         GQuark,
         GError **);
 
@@ -66,7 +66,7 @@ typedef struct {
     GType type;
 } TpProxyImplementation;
 
-DBusGProxy *_tp_proxy_borrow_interface_by_id (TpProxy *self,
+DBusGProxy *_tp_proxy_get_interface_by_id (TpProxy *self,
     GQuark iface,
     GError **error);
 

@@ -204,6 +204,13 @@ test_protocol_objects_LDADD = \
 test_protocol_objects_SOURCES = protocol-objects.c
 
 test_self_handle_SOURCES = self-handle.c
+test_self_handle_LDADD = \
+    $(top_builddir)/tests/lib/libtp-glib-tests-internal.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-main-internal.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
+    $(GLIB_LIBS) \
+    $(NULL)
 
 test_self_presence_SOURCES = self-presence.c
 
@@ -270,6 +277,7 @@ TESTS_ENVIRONMENT = \
     XDG_DATA_DIRS=@abs_srcdir@:$${XDG_DATA_DIRS:=/usr/local/share:/usr/share} \
     G_SLICE=debug-blocks \
     G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly) \
+    G_MESSAGES_DEBUG=all \
     $(top_srcdir)/tools/test-wrapper.sh \
     sh $(top_srcdir)/tools/with-session-bus.sh \
         --config-file=dbus-uninstalled/session.conf -- \

@@ -1,3 +1,93 @@
+telepathy-glib 0.21.0 (UNRELEASED)
+==================================
+
+Fixes:
+
+• Process the SelfHandleChanged signal for non-obsolete connection managers
+  (fd.o #55666, Simon)
+
+telepathy-glib 0.20.0 (2012-10-03)
+==================================
+
+The "why not indeed" release.
+
+This starts a new stable branch, recommended for use with GNOME 3.6.
+
+Summary of changes since the last stable branch, 0.18:
+
+• GLib 2.32 or later is required.
+
+• Many old things are now deprecated. New TP_VERSION_MIN_REQUIRED and
+  TP_VERSION_MAX_ALLOWED macros are provided for deprecation control:
+  they work like the ones in GLib 2.32.
+
+• Many functions that expected or returned dbus-glib parameterized types
+  are now deprecated, and have an equivalent GVariant-based function which
+  should be used instead.
+
+• The only headers you should #include are <telepathy-glib/telepathy-glib.h>,
+  <telepathy-glib/telepathy-glib-dbus.h> and <telepathy-glib/proxy-subclass.h>.
+  Including anything else is deprecated.
+
+• All TpChannel APIs using contact TpHandle have been deprecated in favor of
+  their TpContact variants.
+
+• TpRoomList and TpRoomInfo: high level API to list rooms on a server.
+
+• TpDebugClient: high level API to retrieve logs from Telepathy components.
+
+• TpTLSCertificate: TpProxy subclass representing a TLS certificate
+
+• TpAccountRequest: object to help account creation
+
+• TpSimpleClientFactory gained API to prepare TpContact objects with the
+  features set on it.
+
+• Add tp_vardict_get_uint32() etc., analogous to tp_asv_get_uint32() etc.
+
+• The configure flags --disable-coding-style-checks, --disable-doc-checks
+  and part of --disable-Werror have been superseded
+  by --disable-fatal-warning
+
+There were no code changes since 0.19.10.
+
+telepathy-glib 0.19.10 (2012-09-26)
+===================================
+
+The “Why not 0.20.0?” release.
+
+This is the release candidate for the future 0.20.0 stable release.
+
+Enhancements:
+
+• Add tp_vardict_get_uint32() etc., analogous to tp_asv_get_uint32() etc.
+  (Xavier)
+
+• tp_channel_dispatch_operation_get_channels() is now introspected (fd.o #55102, Simon)
+
+• Add tp_vardict_get_*() helper functions to lookup values in a GVariant of
+  type %G_VARIANT_TYPE_VARDICT (Xavier)
+
+• Add tp_variant_convert() and tp_variant_type_classify() to manipulate and
+  convert GVariant (Xavier)
+
+A bunch of GVariant oriented API have been added as an alternative of their
+GValue equivalent:
+• tp_{dbus,stream}_tube_channel_dup_parameters_vardict() (fd.o #55024, Chandni Verma)
+• tp_message_set_variant() and tp_message_dup_part() (fd.o #55096, Simon)
+• tp_account_channel_request_dup_request(),
+• tp_account_channel_request_new_vardict(),
+  tp_channel_request_dup_immutable_properties(), tp_channel_request_dup_hints(),
+  tp_account_channel_request_set_hints() and
+  TpAccountChannelRequest:request-vardict property (fd.o #55099, Simon)
+• tp_g_socket_address_from_g_variant() and
+  tp_address_g_variant_from_g_socket_address() (fd.o #55101, Simon)
+• TpDBusTubeChannel:parameters-vardict and
+  TpStreamTubeCha:parameters-vardict properties (fd.o #55024, Simon)
+• tp_contact_dup_location() and TpContact:location-vardict
+  property (fd.o#55095, Simon)
+• tp_base_client_add_{observer,approver,handler}_filter_vardict (fd.o #55100, Simon)
+
 telepathy-glib 0.19.9 (2012-09-11)
 ==================================
 

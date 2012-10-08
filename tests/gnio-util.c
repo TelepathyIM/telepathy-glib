@@ -26,8 +26,6 @@
 static void
 test_variant_to_sockaddr_ipv4 (void)
 {
-  GValueArray *array;
-  GValue value = { 0, };
   GSocketAddress *sockaddr;
   GInetSocketAddress *inetaddr;
   GInetAddress *hostaddr;
@@ -35,19 +33,8 @@ test_variant_to_sockaddr_ipv4 (void)
   guint16 port;
   GError *error = NULL;
 
-  /* set up an address variant */
-  array = tp_value_array_build (2,
-      G_TYPE_STRING, IPV4_ADDR,
-      G_TYPE_UINT, PORT,
-      G_TYPE_INVALID);
-
-  g_value_init (&value, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4);
-  g_value_take_boxed (&value, array);
-
-  /* convert to a GSocketAddress */
-  sockaddr = tp_g_socket_address_from_variant (TP_SOCKET_ADDRESS_TYPE_IPV4,
-                                               &value, &error);
-  g_value_unset (&value);
+  sockaddr = tp_g_socket_address_from_g_variant (TP_SOCKET_ADDRESS_TYPE_IPV4,
+      g_variant_new_parsed ("(%s, %u)", IPV4_ADDR, (guint32) PORT), &error);
 
   /* check the socket address */
   g_assert_no_error (error);
@@ -70,8 +57,6 @@ test_variant_to_sockaddr_ipv4 (void)
 static void
 test_variant_to_sockaddr_ipv6 (void)
 {
-  GValueArray *array;
-  GValue value = { 0, };
   GSocketAddress *sockaddr;
   GInetSocketAddress *inetaddr;
   GInetAddress *hostaddr;
@@ -79,19 +64,8 @@ test_variant_to_sockaddr_ipv6 (void)
   guint16 port;
   GError *error = NULL;
 
-  /* set up an address variant */
-  array = tp_value_array_build (2,
-      G_TYPE_STRING, IPV6_ADDR,
-      G_TYPE_UINT, PORT,
-      G_TYPE_INVALID);
-
-  g_value_init (&value, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV6);
-  g_value_take_boxed (&value, array);
-
-  /* convert to a GSocketAddress */
-  sockaddr = tp_g_socket_address_from_variant (TP_SOCKET_ADDRESS_TYPE_IPV6,
-                                               &value, &error);
-  g_value_unset (&value);
+  sockaddr = tp_g_socket_address_from_g_variant (TP_SOCKET_ADDRESS_TYPE_IPV6,
+      g_variant_new_parsed ("(%s, %u)", IPV6_ADDR, (guint32) PORT), &error);
 
   /* check the socket address */
   g_assert_no_error (error);
@@ -117,6 +91,7 @@ test_sockaddr_to_variant_ipv4 (void)
   GInetAddress *hostaddr = g_inet_address_new_from_string (IPV4_ADDR);
   GSocketAddress *sockaddr = g_inet_socket_address_new (hostaddr, PORT);
   GValue *variant, *value;
+  GVariant *gvariant, *other;
   GValueArray *array;
   TpSocketAddressType type;
   GError *error = NULL;
@@ -124,6 +99,9 @@ test_sockaddr_to_variant_ipv4 (void)
   g_object_unref (hostaddr);
 
   variant = tp_address_variant_from_g_socket_address (sockaddr, &type, &error);
+  g_assert_no_error (error);
+  gvariant = tp_address_g_variant_from_g_socket_address (sockaddr, &type,
+      &error);
   g_object_unref (sockaddr);
 
   g_assert_no_error (error);
@@ -142,6 +120,12 @@ test_sockaddr_to_variant_ipv4 (void)
   g_assert_cmpuint (g_value_get_uint (value), ==, PORT);
 
   tp_g_value_slice_free (variant);
+
+  g_assert (g_variant_is_floating (gvariant));
+  other = g_variant_new_parsed ("(%s, %u)", IPV4_ADDR, (guint32) PORT);
+  g_assert (g_variant_equal (gvariant, other));
+  g_variant_unref (gvariant);
+  g_variant_unref (other);
 }
 
 static void
@@ -151,12 +135,16 @@ test_sockaddr_to_variant_ipv6 (void)
   GSocketAddress *sockaddr = g_inet_socket_address_new (hostaddr, PORT);
   GValue *variant, *value;
   GValueArray *array;
+  GVariant *gvariant, *other;
   TpSocketAddressType type;
   GError *error = NULL;
 
   g_object_unref (hostaddr);
 
   variant = tp_address_variant_from_g_socket_address (sockaddr, &type, &error);
+  g_assert_no_error (error);
+  gvariant = tp_address_g_variant_from_g_socket_address (sockaddr, &type,
+      &error);
   g_object_unref (sockaddr);
 
   g_assert_no_error (error);
@@ -175,6 +163,12 @@ test_sockaddr_to_variant_ipv6 (void)
   g_assert_cmpuint (g_value_get_uint (value), ==, PORT);
 
   tp_g_value_slice_free (variant);
+
+  g_assert (g_variant_is_floating (gvariant));
+  other = g_variant_new_parsed ("(%s, %u)", IPV6_ADDR, (guint32) PORT);
+  g_assert (g_variant_equal (gvariant, other));
+  g_variant_unref (gvariant);
+  g_variant_unref (other);
 }
 
 #ifdef HAVE_GIO_UNIX

@@ -63,12 +63,6 @@ typedef void (*TpProxyInterfaceAddedCb) (TpProxy *self,
 void tp_proxy_or_subclass_hook_on_interface_add (GType proxy_or_subclass,
     TpProxyInterfaceAddedCb callback);
 
-#ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_0_20_FOR(tp_proxy_get_interface_by_id)
-DBusGProxy *tp_proxy_borrow_interface_by_id (TpProxy *self, GQuark iface,
-    GError **error);
-#endif
-
 _TP_AVAILABLE_IN_0_20
 DBusGProxy *tp_proxy_get_interface_by_id (TpProxy *self, GQuark iface,
     GError **error);

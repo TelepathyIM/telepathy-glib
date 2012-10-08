@@ -60,6 +60,7 @@
 #include <telepathy-glib/stream-tube-connection-internal.h>
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/variant-util-internal.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 #include "telepathy-glib/channel-internal.h"
@@ -182,7 +183,8 @@ struct _TpStreamTubeChannelPrivate
 enum
 {
   PROP_SERVICE = 1,
-  PROP_PARAMETERS
+  PROP_PARAMETERS,
+  PROP_PARAMETERS_VARDICT
 };
 
 enum /* signals */
@@ -292,6 +294,11 @@ tp_stream_tube_channel_get_property (GObject *object,
 
       case PROP_PARAMETERS:
         g_value_set_boxed (value, self->priv->parameters);
+        break;
+
+      case PROP_PARAMETERS_VARDICT:
+        g_value_take_variant (value,
+            tp_stream_tube_channel_dup_parameters_vardict (self));
         break;
 
       default:
@@ -436,6 +443,11 @@ tp_stream_tube_channel_class_init (TpStreamTubeChannelClass *klass)
    *
    * Will be %NULL for outgoing tubes until the tube has been offered.
    *
+   * In high-level language bindings, use
+   * #TpStreamTubeChannel:parameters-vardict or
+   * tp_stream_tube_channel_dup_parameters_vardict() to get the same
+   * information in a more convenient format.
+   *
    * Since: 0.13.2
    */
   param_spec = g_param_spec_boxed ("parameters", "Parameters",
@@ -443,6 +455,22 @@ tp_stream_tube_channel_class_init (TpStreamTubeChannelClass *klass)
       TP_HASH_TYPE_STRING_VARIANT_MAP,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (gobject_class, PROP_PARAMETERS, param_spec);
+
+  /**
+   * TpStreamTubeChannel:parameters-vardict:
+   *
+   * A %G_VARIANT_TYPE_VARDICT representing the parameters of the tube.
+   *
+   * Will be %NULL for outgoing tubes until the tube has been offered.
+   *
+   * Since: 0.19.10
+   */
+  param_spec = g_param_spec_variant ("parameters-vardict", "Parameters",
+      "The parameters of the stream tube",
+      G_VARIANT_TYPE_VARDICT, NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (gobject_class, PROP_PARAMETERS_VARDICT,
+      param_spec);
 
   /**
    * TpStreamTubeChannel::incoming:
@@ -1170,6 +1198,7 @@ _offer_with_address (TpStreamTubeChannel *self,
     self->priv->parameters = tp_asv_new (NULL, NULL);
 
   g_object_notify (G_OBJECT (self), "parameters");
+  g_object_notify (G_OBJECT (self), "parameters-vardict");
 
   /* Call Offer */
   tp_cli_channel_type_stream_tube_call_offer (TP_CHANNEL (self), -1,
@@ -1471,4 +1500,34 @@ GHashTable *
 tp_stream_tube_channel_get_parameters (TpStreamTubeChannel *self)
 {
   return self->priv->parameters;
+}
+
+/**
+ * tp_stream_tube_channel_dup_parameters_vardict:
+ * @self: a #TpStreamTubeChannel
+ *
+ * Return the parameters of the dbus-tube channel in a variant of
+ * type %G_VARIANT_TYPE_VARDICT whose keys are strings representing
+ * parameter names and values are variants representing corresponding
+ * parameter values set by the offerer when offering this channel.
+ *
+ * The GVariant returned is %NULL if this is an outgoing tube that has not
+ * yet been offered or the parameters property has not been set.
+ *
+ * Use g_variant_lookup(), g_variant_lookup_value(), or tp_vardict_get_uint32()
+ * and similar functions for convenient access to the values.
+ *
+ * Returns: (transfer full): a new reference to a #GVariant
+ *
+ * Since: 0.19.10
+ */
+GVariant *
+tp_stream_tube_channel_dup_parameters_vardict (TpStreamTubeChannel *self)
+{
+  g_return_val_if_fail (TP_IS_STREAM_TUBE_CHANNEL (self), NULL);
+
+  if (self->priv->parameters == NULL)
+      return NULL;
+
+  return _tp_asv_to_vardict (self->priv->parameters);
 }

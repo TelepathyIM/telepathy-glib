@@ -51,7 +51,9 @@ test_new_from_parts (Test *test,
   TpHandle sender;
   TpMessage *msg;
   const GHashTable *part;
+  GVariant *part_vardict;
   gboolean valid;
+  const gchar *s;
 
   parts = g_ptr_array_new_full (2, (GDestroyNotify) g_hash_table_unref);
 
@@ -93,6 +95,16 @@ test_new_from_parts (Test *test,
       "text/plain");
   g_assert_cmpstr (tp_asv_get_string (part, "content"), ==,
       "Badger");
+
+  part_vardict = tp_message_dup_part (msg, 1);
+  g_assert_cmpstr (g_variant_get_type_string (part_vardict), ==, "a{sv}");
+  valid = g_variant_lookup (part_vardict, "content-type", "&s", &s);
+  g_assert (valid);
+  g_assert_cmpstr (s, ==, "text/plain");
+  valid = g_variant_lookup (part_vardict, "content", "&s", &s);
+  g_assert (valid);
+  g_assert_cmpstr (s, ==, "Badger");
+  g_variant_unref (part_vardict);
 
   g_assert_cmpuint (tp_message_get_message_type (msg), ==,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE);
@@ -284,8 +296,8 @@ test_take_message (Test *test,
 
   tp_message_set_uint32 (msg, 0, "message-type",
       TP_CHANNEL_TEXT_MESSAGE_TYPE_DELIVERY_REPORT);
-  tp_message_set_uint32 (msg, 0, "delivery-status",
-      TP_DELIVERY_STATUS_DELIVERED);
+  tp_message_set_variant (msg, 0, "delivery-status",
+      g_variant_new_uint32 (TP_DELIVERY_STATUS_DELIVERED));
   tp_cm_message_take_message (msg, 0, "delivery-echo", echo);
 
   /* ensure the message was destroyed */

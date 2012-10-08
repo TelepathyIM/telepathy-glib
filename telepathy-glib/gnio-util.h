@@ -41,6 +41,15 @@ GValue *tp_address_variant_from_g_socket_address (GSocketAddress *address,
     TpSocketAddressType *type,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
+_TP_AVAILABLE_IN_0_20
+GSocketAddress *tp_g_socket_address_from_g_variant (TpSocketAddressType type,
+    GVariant *variant,
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
+_TP_AVAILABLE_IN_0_20
+GVariant *tp_address_g_variant_from_g_socket_address (GSocketAddress *address,
+    TpSocketAddressType *type,
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
+
 gboolean tp_unix_connection_send_credentials_with_byte (
     GSocketConnection *connection,
     guchar byte,

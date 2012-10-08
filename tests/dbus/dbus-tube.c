@@ -175,11 +175,24 @@ check_parameters (GHashTable *parameters)
 }
 
 static void
+check_parameters_vardict (GVariant *parameters_vardict)
+{
+  guint32 badger_value;
+
+  g_assert (parameters_vardict != NULL);
+
+  g_assert (g_variant_lookup (parameters_vardict, "badger",
+      "u", &badger_value));
+  g_assert_cmpuint (badger_value, ==, 42);
+}
+
+static void
 test_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   gchar *service;
   GHashTable *parameters;
+  GVariant *parameters_vardict;
 
   /* Outgoing tube */
   create_tube_service (test, TRUE, TRUE);
@@ -193,10 +206,13 @@ test_properties (Test *test,
 
   /* Parameters */
   parameters = tp_dbus_tube_channel_get_parameters (test->tube);
+  parameters_vardict = tp_dbus_tube_channel_dup_parameters_vardict (
+      test->tube);
   /* NULL as the tube has not be offered yet */
   g_assert (parameters == NULL);
   g_object_get (test->tube, "parameters", &parameters, NULL);
   g_assert (parameters == NULL);
+  g_assert (parameters_vardict == NULL);
 
   /* Incoming tube */
   create_tube_service (test, FALSE, FALSE);
@@ -206,7 +222,19 @@ test_properties (Test *test,
   check_parameters (parameters);
   g_object_get (test->tube, "parameters", &parameters, NULL);
   check_parameters (parameters);
+
+  parameters_vardict = tp_dbus_tube_channel_dup_parameters_vardict (
+      test->tube);
+  check_parameters_vardict (parameters_vardict);
+
   g_hash_table_unref (parameters);
+  g_variant_unref (parameters_vardict);
+
+  g_object_get (test->tube,
+      "parameters-vardict", &parameters_vardict,
+      NULL);
+  check_parameters_vardict (parameters_vardict);
+  g_variant_unref (parameters_vardict);
 }
 
 static void

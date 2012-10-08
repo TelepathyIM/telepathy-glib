@@ -1117,7 +1117,7 @@ tp_channel_dispatch_operation_get_account (
 }
 
 /**
- * tp_channel_dispatch_operation_get_channels: (skip)
+ * tp_channel_dispatch_operation_get_channels:
  * @self: a #TpChannelDispatchOperation
  *
  * Returns a #GPtrArray containing the #TpChannel of this
@@ -1125,7 +1125,8 @@ tp_channel_dispatch_operation_get_account (
  * The returned array and its #TpChannel are only valid while @self is
  * valid - copy array and reference channels with g_object_ref() if needed.
  *
- * Returns: (transfer none): the value of #TpChannelDispatchOperation:channels
+ * Returns: (transfer none) (element-type TelepathyGLib.Channel): the value
+ *  of #TpChannelDispatchOperation:channels
  *
  * Since: 0.19.9
  */

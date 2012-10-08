@@ -781,6 +781,15 @@ on_self_contact_changed (TpConnection *self,
       return;
     }
 
+  if (self->priv->last_known_self_handle == 0)
+    {
+      /* We're going to call GetAll(Connection) anyway, or if the CM
+       * is sufficiently deficient, GetSelfHandle(). */
+      DEBUG ("Ignoring early self-handle change to %u, we'll pick it up later",
+          self_handle);
+      return;
+    }
+
   DEBUG ("SelfHandleChanged to %u, I wonder what that means?", self_handle);
   self->priv->last_known_self_handle = self_handle;
   self->priv->last_known_self_id = g_strdup (self_id);

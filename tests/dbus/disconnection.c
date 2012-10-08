@@ -258,7 +258,7 @@ main (int argc,
   g_assert_no_error (error_out);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_F), "");
   g_message ("Forcibly disposing f's DBusGProxy to simulate name owner loss");
-  tmp_obj = tp_proxy_borrow_interface_by_id ((TpProxy *) f,
+  tmp_obj = tp_proxy_get_interface_by_id ((TpProxy *) f,
       TP_IFACE_QUARK_DBUS_DAEMON, NULL);
   MYASSERT (tmp_obj != NULL, "");
   g_object_run_dispose (tmp_obj);

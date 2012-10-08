@@ -193,6 +193,16 @@ create_request (void)
       NULL);
 }
 
+static GVariant *
+floating_request (void)
+{
+  return g_variant_new_parsed (
+      "{ %s: <%s>, %s: <%u>, %s: <%s> }",
+      TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT,
+      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, (guint32) TP_HANDLE_TYPE_CONTACT,
+      TP_PROP_CHANNEL_TARGET_ID, "alice");
+}
+
 static void
 test_handle_create_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
@@ -441,12 +451,33 @@ test_handle_ensure_success (Test *test,
 {
   TpAccountChannelRequest *req;
   TpContact *alice;
+  GHashTable *asv;
+  GVariant *vardict;
 
   alice = tp_tests_connection_run_until_contact_by_id (test->connection,
       "alice", NULL);
 
   req = tp_account_channel_request_new_text (test->account, 0);
   tp_account_channel_request_set_target_contact (req, alice);
+
+  asv = (GHashTable *) tp_account_channel_request_get_request (req);
+  vardict = tp_account_channel_request_dup_request (req);
+  g_assert_cmpstr (tp_asv_get_string (asv,
+      TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
+  g_assert_cmpstr (tp_vardict_get_string (vardict,
+      TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
+  g_variant_unref (vardict);
+
+  g_object_get (req,
+      "request", &asv,
+      "request-vardict", &vardict,
+      NULL);
+  g_assert_cmpstr (tp_asv_get_string (asv,
+      TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
+  g_assert_cmpstr (tp_vardict_get_string (vardict,
+      TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
+  g_hash_table_unref (asv);
+  g_variant_unref (vardict);
 
   tp_account_channel_request_ensure_and_handle_channel_async (req,
       NULL, ensure_and_handle_cb, test);
@@ -485,18 +516,16 @@ static void
 test_handle_cancel_before (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *request;
   TpAccountChannelRequest *req;
 
-  request = create_request ();
-  req = tp_account_channel_request_new (test->account, request, 0);
+  req = tp_account_channel_request_new_vardict (test->account,
+      floating_request (), 0);
 
   g_cancellable_cancel (test->cancellable);
 
   tp_account_channel_request_ensure_and_handle_channel_async (req,
       test->cancellable, create_and_handle_cb, test);
 
-  g_hash_table_unref (request);
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
@@ -516,11 +545,10 @@ static void
 test_handle_cancel_after_create (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *request;
   TpAccountChannelRequest *req;
 
-  request = create_request ();
-  req = tp_account_channel_request_new (test->account, request, 0);
+  req = tp_account_channel_request_new_vardict (test->account,
+      floating_request (), 0);
 
   tp_account_channel_request_ensure_and_handle_channel_async (req,
       test->cancellable, create_and_handle_cb, test);
@@ -528,7 +556,6 @@ test_handle_cancel_after_create (Test *test,
   g_signal_connect (test->cd_service, "channel-request-created",
       G_CALLBACK (channel_request_created_cb), test);
 
-  g_hash_table_unref (request);
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
@@ -557,11 +584,10 @@ static void
 test_handle_re_handle (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *request;
   TpAccountChannelRequest *req, *req2;
 
-  request = create_request ();
-  req = tp_account_channel_request_new (test->account, request, 0);
+  req = tp_account_channel_request_new_vardict (test->account,
+      floating_request (), 0);
 
   tp_account_channel_request_ensure_and_handle_channel_async (req,
       NULL, ensure_and_handle_cb, test);
@@ -573,7 +599,8 @@ test_handle_re_handle (Test *test,
       G_CALLBACK (re_handled_cb), test);
 
   /* Ensure the same channel to re-handle it */
-  req2 = tp_account_channel_request_new (test->account, request, 666);
+  req2 = tp_account_channel_request_new_vardict (test->account,
+      floating_request (), 666);
 
   tp_account_channel_request_ensure_and_handle_channel_async (req2,
       NULL, ensure_and_handle_cb, test);
@@ -582,7 +609,6 @@ test_handle_re_handle (Test *test,
   test->count = 2;
   g_main_loop_run (test->mainloop);
 
-  g_hash_table_unref (request);
   g_object_unref (req);
   g_object_unref (req2);
 }
@@ -640,12 +666,11 @@ static void
 test_handle_create_success_hints (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *request;
   TpAccountChannelRequest *req;
   GHashTable *hints;
 
-  request = create_request ();
-  req = tp_account_channel_request_new (test->account, request, 0);
+  req = tp_account_channel_request_new_vardict (test->account,
+      floating_request (), 0);
 
   hints = create_hints ();
   tp_account_channel_request_set_hints (req, hints);
@@ -654,7 +679,6 @@ test_handle_create_success_hints (Test *test,
   tp_account_channel_request_create_and_handle_channel_async (req,
       NULL, create_and_handle_hints_cb, test);
 
-  g_hash_table_unref (request);
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
@@ -725,7 +749,6 @@ static void
 test_handle_delegated (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *request;
   TpAccountChannelRequest *req;
   GPtrArray *requests, *requests_satisified, *channels;
   GHashTable *hints, *request_props, *info;
@@ -733,8 +756,8 @@ test_handle_delegated (Test *test,
   TpBaseClient *base_client;
   TpClient *client;
 
-  request = create_request ();
-  req = tp_account_channel_request_new (test->account, request, 0);
+  req = tp_account_channel_request_new_vardict (test->account,
+      floating_request (), 0);
 
   /* Allow other clients to preempt the channel */
   tp_account_channel_request_set_delegated_channel_callback (req,
@@ -743,7 +766,6 @@ test_handle_delegated (Test *test,
   tp_account_channel_request_create_and_handle_channel_async (req,
       NULL, create_and_handle_cb, test);
 
-  g_hash_table_unref (request);
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
@@ -836,16 +858,14 @@ static void
 test_observe_create_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *request;
   TpAccountChannelRequest *req;
 
-  request = create_request ();
-  req = tp_account_channel_request_new (test->account, request, 0);
+  req = tp_account_channel_request_new_vardict (test->account,
+      floating_request (), 0);
 
   tp_account_channel_request_create_channel_async (req, "Fake",
       NULL, create_cb, test);
 
-  g_hash_table_unref (request);
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
@@ -954,16 +974,14 @@ static void
 test_observe_ensure_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *request;
   TpAccountChannelRequest *req;
 
-  request = create_request ();
-  req = tp_account_channel_request_new (test->account, request, 0);
+  req = tp_account_channel_request_new_vardict (test->account,
+      floating_request (), 0);
 
   tp_account_channel_request_ensure_channel_async (req, "Fake",
       NULL, ensure_cb, test);
 
-  g_hash_table_unref (request);
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
@@ -975,18 +993,16 @@ static void
 test_observe_cancel_before (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *request;
   TpAccountChannelRequest *req;
 
-  request = create_request ();
-  req = tp_account_channel_request_new (test->account, request, 0);
+  req = tp_account_channel_request_new_vardict (test->account,
+      floating_request (), 0);
 
   g_cancellable_cancel (test->cancellable);
 
   tp_account_channel_request_create_channel_async (req, "Fake",
       test->cancellable, create_cb, test);
 
-  g_hash_table_unref (request);
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
@@ -997,11 +1013,10 @@ static void
 test_observe_cancel_after_create (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *request;
   TpAccountChannelRequest *req;
 
-  request = create_request ();
-  req = tp_account_channel_request_new (test->account, request, 0);
+  req = tp_account_channel_request_new_vardict (test->account,
+      floating_request (), 0);
 
   tp_account_channel_request_create_channel_async (req, "Fake",
       test->cancellable, create_cb, test);
@@ -1009,7 +1024,6 @@ test_observe_cancel_after_create (Test *test,
   g_signal_connect (test->cd_service, "channel-request-created",
       G_CALLBACK (channel_request_created_cb), test);
 
-  g_hash_table_unref (request);
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);

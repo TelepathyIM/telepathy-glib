@@ -35,7 +35,7 @@
  * These functions provide convenient access to the values in such
  * a mapping.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 
 #include "config.h"
@@ -114,7 +114,7 @@ _tp_asv_from_vardict (GVariant *variant)
  * Classifies @type according to its top-level type.
  *
  * Returns: the #GVariantClass of @type
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  **/
 GVariantClass
 tp_variant_type_classify (const GVariantType *type)
@@ -330,7 +330,7 @@ _tp_variant_convert_uint64 (GVariant *variant,
  * is not possible, %NULL is returned.
  *
  * Returns: (transfer full): a new #GVariant owned by the caller.
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  **/
 GVariant *
 tp_variant_convert (GVariant *variant,
@@ -398,7 +398,7 @@ tp_variant_convert (GVariant *variant,
  * kept. Copy it with g_strdup() if you need to keep it for longer.
  *
  * Returns: (transfer none) (allow-none): the string value of @key, or %NULL
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 const gchar *
 tp_vardict_get_string (GVariant *variant,
@@ -430,7 +430,7 @@ tp_vardict_get_string (GVariant *variant,
  *
  * Returns: (transfer none) (allow-none): the object path value of @key, or
  *  %NULL
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 const gchar *
 tp_vardict_get_object_path (GVariant *variant,
@@ -461,7 +461,7 @@ tp_vardict_get_object_path (GVariant *variant,
  * Otherwise return %FALSE, and set *@valid to %FALSE if @valid is not %NULL.
  *
  * Returns: a boolean value for @key
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 gboolean
 tp_vardict_get_boolean (GVariant *variant,
@@ -529,7 +529,7 @@ tp_vardict_get_boolean (GVariant *variant,
  * Otherwise, return 0.0, and if @valid is not %NULL, set *@valid to %FALSE.
  *
  * Returns: the double precision floating-point value of @key, or 0.0
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 IMPLEMENT (double)
 
@@ -548,7 +548,7 @@ IMPLEMENT (double)
  * Otherwise, return 0, and if @valid is not %NULL, set *@valid to %FALSE.
  *
  * Returns: the 32-bit signed integer value of @key, or 0
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 IMPLEMENT (int32)
 
@@ -567,7 +567,7 @@ IMPLEMENT (int32)
  * Otherwise, return 0, and if @valid is not %NULL, set *@valid to %FALSE.
  *
  * Returns: the 64-bit signed integer value of @key, or 0
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 IMPLEMENT (int64)
 
@@ -586,7 +586,7 @@ IMPLEMENT (int64)
  * Otherwise, return 0, and if @valid is not %NULL, set *@valid to %FALSE.
  *
  * Returns: the 32-bit unsigned integer value of @key, or 0
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 IMPLEMENT (uint32)
 
@@ -604,7 +604,7 @@ IMPLEMENT (uint32)
  * Otherwise, return 0, and if @valid is not %NULL, set *@valid to %FALSE.
  *
  * Returns: the 64-bit unsigned integer value of @key, or 0
- * Since: 0.UNRELEASED
+ * Since: 0.19.10
  */
 IMPLEMENT (uint64)
 

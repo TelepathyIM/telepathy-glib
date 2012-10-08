@@ -99,6 +99,7 @@
 #include "telepathy-glib/automatic-client-factory-internal.h"
 #include "telepathy-glib/channel-internal.h"
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/variant-util-internal.h"
 
 #include <stdio.h>
 #include <glib/gstdio.h>
@@ -117,7 +118,8 @@ struct _TpDBusTubeChannelPrivate
 enum
 {
   PROP_SERVICE_NAME = 1,
-  PROP_PARAMETERS
+  PROP_PARAMETERS,
+  PROP_PARAMETERS_VARDICT
 };
 
 static void
@@ -150,6 +152,11 @@ tp_dbus_tube_channel_get_property (GObject *object,
 
       case PROP_PARAMETERS:
         g_value_set_boxed (value, self->priv->parameters);
+        break;
+
+      case PROP_PARAMETERS_VARDICT:
+        g_value_take_variant (value,
+            tp_dbus_tube_channel_dup_parameters_vardict (self));
         break;
 
       default:
@@ -430,6 +437,10 @@ tp_dbus_tube_channel_class_init (TpDBusTubeChannelClass *klass)
    *
    * Will be %NULL for outgoing tubes until the tube has been offered.
    *
+   * In high-level language bindings, use
+   * tp_dbus_tube_channel_dup_parameters_vardict() to get the same information
+   * in a more convenient format.
+   *
    * Since: 0.18.0
    */
   param_spec = g_param_spec_boxed ("parameters", "Parameters",
@@ -437,6 +448,22 @@ tp_dbus_tube_channel_class_init (TpDBusTubeChannelClass *klass)
       TP_HASH_TYPE_STRING_VARIANT_MAP,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (gobject_class, PROP_PARAMETERS, param_spec);
+
+  /**
+   * TpDBusTubeChannel:parameters-vardict:
+   *
+   * A %G_VARIANT_TYPE_VARDICT representing the parameters of the tube.
+   *
+   * Will be %NULL for outgoing tubes until the tube has been offered.
+   *
+   * Since: 0.19.10
+   */
+  param_spec = g_param_spec_variant ("parameters-vardict", "Parameters",
+      "The parameters of the D-Bus tube",
+      G_VARIANT_TYPE_VARDICT, NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (gobject_class, PROP_PARAMETERS_VARDICT,
+      param_spec);
 
   g_type_class_add_private (gobject_class, sizeof (TpDBusTubeChannelPrivate));
 }
@@ -512,6 +539,36 @@ tp_dbus_tube_channel_get_parameters (TpDBusTubeChannel *self)
 }
 
 /**
+ * tp_dbus_tube_channel_dup_parameters_vardict:
+ * @self: a #TpDBusTubeChannel
+ *
+ * Return the parameters of the dbus-tube channel in a variant of
+ * type %G_VARIANT_TYPE_VARDICT whose keys are strings representing
+ * parameter names and values are variants representing corresponding
+ * parameter values set by the offerer when offering this channel.
+ *
+ * The GVariant returned is %NULL if this is an outgoing tube that has not
+ * yet been offered or the parameters property has not been set.
+ *
+ * Use g_variant_lookup(), g_variant_lookup_value(), or tp_vardict_get_uint32()
+ * and similar functions for convenient access to the values.
+ *
+ * Returns: (transfer full): a new reference to a #GVariant
+ *
+ * Since: 0.19.10
+ */
+GVariant *
+tp_dbus_tube_channel_dup_parameters_vardict (TpDBusTubeChannel *self)
+{
+  g_return_val_if_fail (TP_IS_DBUS_TUBE_CHANNEL (self), NULL);
+
+  if (self->priv->parameters == NULL)
+      return NULL;
+
+  return _tp_asv_to_vardict (self->priv->parameters);
+}
+
+/**
  * TP_DBUS_TUBE_CHANNEL_FEATURE_CORE:
  *
  * Expands to a call to a function that returns a quark representing the
@@ -583,6 +640,7 @@ proxy_prepare_offer_cb (GObject *source,
     self->priv->parameters = tp_asv_new (NULL, NULL);
 
   g_object_notify (G_OBJECT (self), "parameters");
+  g_object_notify (G_OBJECT (self), "parameters-vardict");
 
   /* TODO: provide a way to use TP_SOCKET_ACCESS_CONTROL_LOCALHOST if you're in
    * an environment where you need to disable authentication. tp-glib can't

@@ -18,7 +18,7 @@ test_get_interface_after_invalidate (void)
   bus_daemon = tp_tests_dbus_daemon_dup_or_die ();
   tp_proxy_invalidate ((TpProxy *) bus_daemon, &invalidation_reason);
 
-  props = tp_proxy_borrow_interface_by_id ((TpProxy *) bus_daemon,
+  props = tp_proxy_get_interface_by_id ((TpProxy *) bus_daemon,
       TP_IFACE_QUARK_DBUS_DAEMON, &error);
 
   /* Borrowing the interface should fail because the proxy is invalidated. */

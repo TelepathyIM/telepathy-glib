@@ -65,7 +65,8 @@
 /**
  * tp_g_socket_address_from_variant:
  * @type: a Telepathy socket address type
- * @variant: an initialised #GValue containing an address variant
+ * @variant: an initialised #GValue containing an address variant,
+ *  as encoded by dbus-glib
  * @error: return location for a #GError (or NULL)
  *
  * Converts an address variant stored in a #GValue into a #GSocketAddress that
@@ -184,7 +185,7 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
  * @error: return location for a #GError (or NULL)
  *
  * Converts a #GSocketAddress to a #GValue address variant that can be used
- * with Telepathy.
+ * with Telepathy and dbus-glib.
  *
  * Returns: a newly allocated #GValue, free with tp_g_value_slice_free()
  */
@@ -279,6 +280,69 @@ tp_address_variant_from_g_socket_address (GSocketAddress *address,
     *ret_type = type;
 
   return variant;
+}
+
+/**
+ * tp_g_socket_address_from_g_variant:
+ * @type: a Telepathy socket address type
+ * @variant: a socket address as encoded by Telepathy according to @type
+ * @error: return location for a #GError (or %NULL)
+ *
+ * Converts an address variant stored in a #GVariant into a #GSocketAddress
+ * that can be used to make a socket connection with GIO.
+ *
+ * If @variant is a floating reference, this function takes ownership
+ * of it.
+ *
+ * Returns: a newly allocated #GSocketAddress for the given variant, or %NULL
+ * on error
+ *
+ * Since: 0.19.10
+ */
+GSocketAddress *
+tp_g_socket_address_from_g_variant (TpSocketAddressType type,
+    GVariant *variant,
+    GError **error)
+{
+  GValue value = G_VALUE_INIT;
+  GSocketAddress *ret;
+
+  g_variant_ref_sink (variant);
+  dbus_g_value_parse_g_variant (variant, &value);
+  g_variant_unref (variant);
+  ret = tp_g_socket_address_from_variant (type, &value, error);
+  g_value_unset (&value);
+  return ret;
+}
+
+/**
+ * tp_address_g_variant_from_g_socket_address:
+ * @address: a #GSocketAddress to convert
+ * @type: optional return of the Telepathy socket type (or NULL)
+ * @error: return location for a #GError (or NULL)
+ *
+ * Converts a #GSocketAddress to a #GVariant address variant that can be used
+ * with Telepathy.
+ *
+ * Returns: (transfer none): a new variant with a floating reference, or %NULL
+ *
+ * Since: 0.19.10
+ */
+GVariant *
+tp_address_g_variant_from_g_socket_address (GSocketAddress *address,
+    TpSocketAddressType *type,
+    GError **error)
+{
+  GValue *value = tp_address_variant_from_g_socket_address (address,
+      type, error);
+  GVariant *ret;
+
+  if (value == NULL)
+    return NULL;
+
+  ret = dbus_g_value_build_g_variant (value);
+  tp_g_value_slice_free (value);
+  return ret;
 }
 
 #ifdef HAVE_GIO_UNIX

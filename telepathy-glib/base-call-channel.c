@@ -1341,6 +1341,22 @@ tp_base_call_channel_set_queued (TpSvcChannelTypeCall *iface,
 }
 
 static void
+raise_accept_state_error (TpBaseCallChannel *self,
+    TpCallState expected,
+    DBusGMethodInvocation *context)
+{
+  GError *e = NULL;
+
+  e = g_error_new (TP_ERROR, TP_ERROR_NOT_AVAILABLE,
+      "Invalid state for Accept (expected: %s, current: %s)",
+      call_state_to_string (expected),
+      call_state_to_string (self->priv->state));
+
+  dbus_g_method_return_error (context, e);
+  g_error_free (e);
+}
+
+static void
 tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
     DBusGMethodInvocation *context)
 {
@@ -1364,9 +1380,8 @@ tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
         }
       else
         {
-          GError e = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
-              "Invalid state for Accept" };
-          dbus_g_method_return_error (context, &e);
+          raise_accept_state_error (self, TP_CALL_STATE_PENDING_INITIATOR,
+              context);
           return;
         }
     }
@@ -1382,9 +1397,8 @@ tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
         }
       else
         {
-          GError e = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
-              "Invalid state for Accept" };
-          dbus_g_method_return_error (context, &e);
+          raise_accept_state_error (self, TP_CALL_STATE_INITIALISED,
+              context);
           return;
         }
       self->priv->accepted = TRUE;

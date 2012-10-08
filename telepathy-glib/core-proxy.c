@@ -75,12 +75,12 @@ tp_proxy_dbus_g_proxy_claim_for_signal_adding (DBusGProxy *proxy)
 static TpProxyImplementation _tp_proxy_implementation = { NULL };
 
 DBusGProxy *
-tp_proxy_borrow_interface_by_id (TpProxy *proxy,
+tp_proxy_get_interface_by_id (TpProxy *proxy,
     GQuark iface,
     GError **error)
 {
   g_assert (_tp_proxy_implementation.version != NULL);
-  return _tp_proxy_implementation.borrow_interface_by_id (proxy, iface, error);
+  return _tp_proxy_implementation.get_interface_by_id (proxy, iface, error);
 }
 
 TpProxyPendingCall *
@@ -160,7 +160,7 @@ tp_private_proxy_set_implementation (TpProxyImplementation *impl)
   g_assert_cmpstr (g_type_name (impl->type), ==, "TpProxy");
   g_assert (_tp_proxy_implementation.version == NULL);
 
-  g_assert (impl->borrow_interface_by_id != NULL);
+  g_assert (impl->get_interface_by_id != NULL);
   g_assert (impl->pending_call_new != NULL);
   g_assert (impl->pending_call_take_pending_call != NULL);
   g_assert (impl->pending_call_take_results != NULL);

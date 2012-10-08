@@ -86,6 +86,7 @@
 #include <telepathy-glib/simple-handler.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/util-internal.h>
+#include <telepathy-glib/variant-util-internal.h>
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
@@ -108,6 +109,7 @@ G_DEFINE_TYPE(TpAccountChannelRequest,
 enum {
     PROP_ACCOUNT = 1,
     PROP_REQUEST,
+    PROP_REQUEST_VARDICT,
     PROP_USER_ACTION_TIME,
     PROP_CHANNEL_REQUEST,
     N_PROPS
@@ -240,6 +242,11 @@ tp_account_channel_request_get_property (GObject *object,
         g_value_set_boxed (value, self->priv->request);
         break;
 
+      case PROP_REQUEST_VARDICT:
+        g_value_take_variant (value,
+            tp_account_channel_request_dup_request (self));
+        break;
+
       case PROP_USER_ACTION_TIME:
         g_value_set_int64 (value, self->priv->user_action_time);
         break;
@@ -270,6 +277,14 @@ tp_account_channel_request_set_property (GObject *object,
         break;
 
       case PROP_REQUEST:
+        /* If this property remains unset, GObject will set it to a NULL
+         * value. Ignore that, so request-vardict can be set instead. */
+        if (g_value_get_boxed (value) == NULL)
+          return;
+
+        /* Construct-only and mutually exclusive with request-vardict */
+        g_return_if_fail (self->priv->request == NULL);
+
         /* We do not use tp_asv_new() and friends, because in principle,
          * the request can contain user-defined keys. */
         self->priv->request = g_hash_table_new_full (g_str_hash, g_str_equal,
@@ -278,6 +293,29 @@ tp_account_channel_request_set_property (GObject *object,
             g_value_get_boxed (value),
             (GBoxedCopyFunc) g_strdup,
             (GBoxedCopyFunc) tp_g_value_slice_dup);
+        break;
+
+      case PROP_REQUEST_VARDICT:
+          {
+            GHashTable *hash;
+
+            /* If this property remains unset, GObject will set it to a NULL
+             * value. Ignore that, so request can be set instead. */
+            if (g_value_get_variant (value) == NULL)
+              return;
+
+            /* Construct-only and mutually exclusive with request */
+            g_return_if_fail (self->priv->request == NULL);
+
+            hash = _tp_asv_from_vardict (g_value_get_variant (value));
+            self->priv->request = g_hash_table_new_full (g_str_hash,
+                g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free);
+
+            tp_g_hash_table_update (self->priv->request,
+                hash, (GBoxedCopyFunc) g_strdup,
+                (GBoxedCopyFunc) tp_g_value_slice_dup);
+            g_hash_table_unref (hash);
+          }
         break;
 
       case PROP_USER_ACTION_TIME:
@@ -348,7 +386,10 @@ tp_account_channel_request_class_init (
    * The desired D-Bus properties for the channel, represented as a
    * #GHashTable where the keys are strings and the values are #GValue.
    *
-   * This property can't be %NULL.
+   * When constructing a new object, one of
+   * #TpAccountChannelRequest:request or
+   * #TpAccountChannelRequest:request-vardict must be set to a non-%NULL
+   * value, and the other must remain unspecified.
    *
    * Since: 0.11.12
    */
@@ -357,6 +398,25 @@ tp_account_channel_request_class_init (
       TP_HASH_TYPE_STRING_VARIANT_MAP,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_REQUEST,
+      param_spec);
+
+  /**
+   * TpAccountChannelRequest:request-vardict:
+   *
+   * The desired D-Bus properties for the channel.
+   *
+   * When constructing a new object, one of
+   * #TpAccountChannelRequest:request or
+   * #TpAccountChannelRequest:request-vardict must be set to a non-%NULL
+   * value, and the other must remain unspecified.
+   *
+   * Since: 0.19.10
+   */
+  param_spec = g_param_spec_variant ("request-vardict", "Request",
+      "A dictionary containing desirable properties for the channel",
+      G_VARIANT_TYPE_VARDICT, NULL,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_REQUEST_VARDICT,
       param_spec);
 
   /**
@@ -491,6 +551,51 @@ tp_account_channel_request_new (
 }
 
 /**
+ * tp_account_channel_request_new_vardict:
+ * @account: a #TpAccount
+ * @request: the requested
+ *  properties of the channel (see #TpAccountChannelRequest:request)
+ *  as a %G_VARIANT_TYPE_VARDICT
+ * @user_action_time: the time of the user action that caused this request,
+ *  or one of the special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME (see
+ *  #TpAccountChannelRequest:user-action-time)
+ *
+ * Convenience function to create a new #TpAccountChannelRequest object.
+ *
+ * If @request is a floating reference, this function will
+ * take ownership of it, much like g_variant_ref_sink(). See documentation of
+ * that function for details.
+ *
+ * Returns: a new #TpAccountChannelRequest object
+ *
+ * Since: 0.19.10
+ */
+TpAccountChannelRequest *
+tp_account_channel_request_new_vardict (
+    TpAccount *account,
+    GVariant *request,
+    gint64 user_action_time)
+{
+  TpAccountChannelRequest *ret;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+  g_return_val_if_fail (request != NULL, NULL);
+  g_return_val_if_fail (g_variant_is_of_type (request, G_VARIANT_TYPE_VARDICT),
+      NULL);
+
+  g_variant_ref_sink (request);
+
+  ret = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
+      "account", account,
+      "request-vardict", request,
+      "user-action-time", user_action_time,
+      NULL);
+  g_variant_unref (request);
+  return ret;
+}
+
+/**
  * tp_account_channel_request_get_account:
  * @self: a #TpAccountChannelRequest
  *
@@ -522,6 +627,27 @@ tp_account_channel_request_get_request (
     TpAccountChannelRequest *self)
 {
   return self->priv->request;
+}
+
+/**
+ * tp_account_channel_request_dup_request:
+ * @self: a #TpAccountChannelRequest
+ *
+ * Return the #TpAccountChannelRequest:request-vardict construct-only
+ * property.
+ *
+ * Returns: (transfer full): the value of
+ *  #TpAccountChannelRequest:request-vardict
+ *
+ * Since: 0.19.10
+ */
+GVariant *
+tp_account_channel_request_dup_request (
+    TpAccountChannelRequest *self)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self), NULL);
+
+  return _tp_asv_to_vardict (self->priv->request);
 }
 
 /**
@@ -1376,6 +1502,9 @@ tp_account_channel_request_set_hint (TpAccountChannelRequest *self,
  *
  * This function can't be called once @self has been used to request a
  * channel.
+ *
+ * In high-level language bindings, use tp_account_channel_request_set_hint()
+ * instead.
  *
  * Since: 0.13.14
  */

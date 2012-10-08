@@ -199,6 +199,7 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/client-factory-internal.h"
 #include "telepathy-glib/util-internal.h"
+#include "telepathy-glib/variant-util-internal.h"
 
 static void observer_iface_init (gpointer, gpointer);
 static void approver_iface_init (gpointer, gpointer);
@@ -394,6 +395,43 @@ tp_base_client_take_observer_filter (TpBaseClient *self,
 }
 
 /**
+ * tp_base_client_add_observer_filter_vardict:
+ * @self: a client
+ * @filter: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
+ *
+ * Register a new channel class as Observer.ObserverChannelFilter.
+ * The #TpBaseClientClass.observe_channels virtual method will be called
+ * whenever a new channel's properties match the ones in @filter.
+ *
+ * This method may only be called before tp_base_client_register() is
+ * called, and may only be called on objects whose class implements
+ * #TpBaseClientClass.observe_channels.
+ *
+ * If the variant is floating (see g_variant_ref_sink()), ownership
+ * will be taken, allowing for uses like this:
+ *
+ * |[
+ * tp_base_client_add_observer_filter_vardict (client,
+ *    g_variant_new_parsed ("{ %s: <%s>, %s: <%u>, ... }",
+ *        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT,
+ *        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, (guint32) TP_HANDLE_TYPE_CONTACT,
+ *        ...));
+ * ]|
+ *
+ * Since: 0.19.10
+ */
+void
+tp_base_client_add_observer_filter_vardict (TpBaseClient *self,
+    GVariant *filter)
+{
+  g_return_if_fail (g_variant_is_of_type (filter, G_VARIANT_TYPE_VARDICT));
+
+  g_variant_ref_sink (filter);
+  tp_base_client_take_observer_filter (self, _tp_asv_from_vardict (filter));
+  g_variant_unref (filter);
+}
+
+/**
  * tp_base_client_set_observer_recover:
  * @self: a #TpBaseClient
  * @recover: the value of the Observer.Recover property
@@ -540,6 +578,36 @@ tp_base_client_take_approver_filter (TpBaseClient *self,
 }
 
 /**
+ * tp_base_client_add_approver_filter_vardict:
+ * @self: a client
+ * @filter: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
+ *
+ * Register a new channel class as Approver.ApproverChannelFilter.
+ * The #TpBaseClientClass.add_dispatch_operation virtual method will be called
+ * whenever a new channel's properties match the ones in @filter.
+ *
+ * This method may only be called before tp_base_client_register() is
+ * called, and may only be called on objects whose class implements
+ * #TpBaseClientClass.add_dispatch_operation.
+ *
+ * If the variant is floating (see g_variant_ref_sink()), ownership
+ * will be taken. See tp_base_client_add_observer_filter_vardict() for
+ * more details.
+ *
+ * Since: 0.19.10
+ */
+void
+tp_base_client_add_approver_filter_vardict (TpBaseClient *self,
+    GVariant *filter)
+{
+  g_return_if_fail (g_variant_is_of_type (filter, G_VARIANT_TYPE_VARDICT));
+
+  g_variant_ref_sink (filter);
+  tp_base_client_take_approver_filter (self, _tp_asv_from_vardict (filter));
+  g_variant_unref (filter);
+}
+
+/**
  * tp_base_client_be_a_handler:
  * @self: a #TpBaseClient
  *
@@ -624,6 +692,36 @@ tp_base_client_take_handler_filter (TpBaseClient *self,
 
   self->priv->flags |= CLIENT_IS_HANDLER;
   g_ptr_array_add (self->priv->handler_filters, filter);
+}
+
+/**
+ * tp_base_client_add_handler_filter_vardict:
+ * @self: a client
+ * @filter: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
+ *
+ * Register a new channel class as Handler.HandlerChannelFilter.
+ * The #TpBaseClientClass.handle_channels virtual method will be called
+ * whenever a new channel's properties match the ones in @filter.
+ *
+ * This method may only be called before tp_base_client_register() is
+ * called, and may only be called on objects whose class implements
+ * #TpBaseClientClass.handle_channels.
+ *
+ * If the variant is floating (see g_variant_ref_sink()), ownership
+ * will be taken. See tp_base_client_add_observer_filter_vardict() for
+ * more details.
+ *
+ * Since: 0.19.10
+ */
+void
+tp_base_client_add_handler_filter_vardict (TpBaseClient *self,
+    GVariant *filter)
+{
+  g_return_if_fail (g_variant_is_of_type (filter, G_VARIANT_TYPE_VARDICT));
+
+  g_variant_ref_sink (filter);
+  tp_base_client_take_handler_filter (self, _tp_asv_from_vardict (filter));
+  g_variant_unref (filter);
 }
 
 /**

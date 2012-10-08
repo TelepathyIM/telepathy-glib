@@ -412,36 +412,6 @@ static guint signals[N_SIGNALS] = {0};
 static void tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy, TpProxy *self);
 
 /**
- * tp_proxy_borrow_interface_by_id: (skip)
- * @self: the TpProxy
- * @iface: quark representing the interface required
- * @error: used to raise an error in the #TP_DBUS_ERRORS domain if @iface
- *         is invalid, @self has been invalidated or @self does not implement
- *         @iface
- *
- * <!-- -->
- *
- * Returns: a borrowed reference to a #DBusGProxy
- * for which the bus name and object path are the same as for @self, but the
- * interface is as given (or %NULL if an @error is raised).
- * The reference is only valid as long as @self is.
- *
- * Since: 0.7.1
- * Deprecated: Since 0.19.9. New code should use
- *  tp_proxy_get_interface_by_id() instead.
- */
-
-/* that's implemented in the core library, but it calls this: */
-
-DBusGProxy *
-_tp_proxy_borrow_interface_by_id (TpProxy *self,
-    GQuark iface,
-    GError **error)
-{
-  return tp_proxy_get_interface_by_id (self, iface, error);
-}
-
-/**
  * tp_proxy_get_interface_by_id: (skip)
  * @self: the TpProxy
  * @iface: quark representing the interface required
@@ -458,10 +428,13 @@ _tp_proxy_borrow_interface_by_id (TpProxy *self,
  *
  * Since: 0.19.9
  */
+
+/* that's implemented in the core library, but it calls this: */
+
 DBusGProxy *
-tp_proxy_get_interface_by_id (TpProxy *self,
-                              GQuark iface,
-                              GError **error)
+_tp_proxy_get_interface_by_id (TpProxy *self,
+    GQuark iface,
+    GError **error)
 {
   gpointer dgproxy;
 
@@ -1557,7 +1530,7 @@ tp_proxy_once (gpointer data G_GNUC_UNUSED)
   TpProxyImplementation impl = {
       VERSION,
       sizeof (TpProxyImplementation),
-      _tp_proxy_borrow_interface_by_id,
+      _tp_proxy_get_interface_by_id,
       _tp_proxy_pending_call_new,
       _tp_proxy_pending_call_take_pending_call,
       _tp_proxy_pending_call_take_results,

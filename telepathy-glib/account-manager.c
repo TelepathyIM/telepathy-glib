@@ -1288,6 +1288,9 @@ _tp_account_manager_created_cb (TpAccountManager *proxy,
  * tp_account_manager_create_account_finish(), one can guarantee this feature
  * will be ready.
  *
+ * It is usually better to use #TpAccountRequest instead, particularly when
+ * using high-level language bindings.
+ *
  * Since: 0.9.0
  */
 void

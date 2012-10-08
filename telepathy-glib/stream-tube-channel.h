@@ -63,6 +63,10 @@ const gchar * tp_stream_tube_channel_get_service (TpStreamTubeChannel *self);
 
 GHashTable * tp_stream_tube_channel_get_parameters (TpStreamTubeChannel *self);
 
+_TP_AVAILABLE_IN_0_20
+GVariant *tp_stream_tube_channel_dup_parameters_vardict (
+    TpStreamTubeChannel *self);
+
 /* Incoming tube methods */
 
 void tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
