@@ -795,7 +795,8 @@ on_self_contact_changed (TpConnection *self,
   g_free (self->priv->last_known_self_id);
   self->priv->last_known_self_id = g_strdup (self_id);
 
-  if (tp_connection_get_status (self, NULL) == TP_CONNECTION_STATUS_CONNECTED)
+  if (self->priv->introspecting_after_connected ||
+      tp_connection_get_status (self, NULL) == TP_CONNECTION_STATUS_CONNECTED)
     get_self_contact (self);
 }
 
