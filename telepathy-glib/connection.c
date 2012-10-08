@@ -792,6 +792,7 @@ on_self_contact_changed (TpConnection *self,
 
   DEBUG ("SelfHandleChanged to %u, I wonder what that means?", self_handle);
   self->priv->last_known_self_handle = self_handle;
+  g_free (self->priv->last_known_self_id);
   self->priv->last_known_self_id = g_strdup (self_id);
 
   if (tp_connection_get_status (self, NULL) == TP_CONNECTION_STATUS_CONNECTED)
@@ -1102,6 +1103,7 @@ _tp_connection_got_properties (TpProxy *proxy,
 
       self->priv->introspecting_after_connected = TRUE;
       self->priv->last_known_self_handle = self_handle;
+      g_free (self->priv->last_known_self_id);
       self->priv->last_known_self_id = g_strdup (self_id);
 
       self->priv->introspect_needed = g_list_append (
