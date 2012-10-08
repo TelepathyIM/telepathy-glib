@@ -21,6 +21,7 @@
 #include "config.h"
 
 #include <telepathy-glib/dbus-properties-mixin.h>
+#include "telepathy-glib/dbus-properties-mixin-internal.h"
 
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/svc-generic.h>
@@ -1147,12 +1148,22 @@ _tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,
     }
 }
 
-static void
-_tp_dbus_properties_mixin_get_all (TpSvcDBusProperties *iface,
-                                   const gchar *interface_name,
-                                   DBusGMethodInvocation *context)
+/*
+ * _tp_dbus_properties_mixin_get_all:
+ * @self: an object with this mixin
+ * @interface_name: a D-Bus interface name
+ *
+ * Get all the properties of a particular interface. This implementation
+ * never returns an error: it will return an empty map if the interface
+ * is unknown.
+ *
+ * Returns: (transfer container) (element-type utf8 GObject.Value): a map
+ *  from property name (without the interface name) to value
+ */
+GHashTable *
+_tp_dbus_properties_mixin_get_all (GObject *self,
+    const gchar *interface_name)
 {
-  GObject *self = G_OBJECT (iface);
   TpDBusPropertiesMixinIfaceImpl *iface_impl;
   TpDBusPropertiesMixinIfaceInfo *iface_info;
   TpDBusPropertiesMixinPropImpl *prop_impl;
@@ -1164,7 +1175,7 @@ _tp_dbus_properties_mixin_get_all (TpSvcDBusProperties *iface,
       interface_name);
 
   if (iface_impl == NULL || iface_impl->getter == NULL)
-    goto out;   /* no properties, but we need to return that */
+    return values;
 
   iface_info = iface_impl->mixin_priv;
 
@@ -1184,7 +1195,17 @@ _tp_dbus_properties_mixin_get_all (TpSvcDBusProperties *iface,
       g_hash_table_insert (values, (gchar *) prop_impl->name, value);
     }
 
-out:
+  return values;
+}
+
+static void
+_tp_dbus_properties_mixin_get_all_dbus (TpSvcDBusProperties *iface,
+    const gchar *interface_name,
+    DBusGMethodInvocation *context)
+{
+  GHashTable *values = _tp_dbus_properties_mixin_get_all (G_OBJECT (iface),
+      interface_name);
+
   tp_svc_dbus_properties_return_from_get_all (context, values);
   g_hash_table_unref (values);
 }
@@ -1329,10 +1350,11 @@ tp_dbus_properties_mixin_iface_init (gpointer g_iface,
 {
   TpSvcDBusPropertiesClass *cls = g_iface;
 
-#define IMPLEMENT(x) \
-    tp_svc_dbus_properties_implement_##x (cls, _tp_dbus_properties_mixin_##x)
-  IMPLEMENT (get);
-  IMPLEMENT (get_all);
-  IMPLEMENT (set);
+#define IMPLEMENT(x, suffix) \
+    tp_svc_dbus_properties_implement_##x (cls, \
+        _tp_dbus_properties_mixin_##x##suffix)
+  IMPLEMENT (get,);
+  IMPLEMENT (get_all,_dbus);
+  IMPLEMENT (set,);
 #undef IMPLEMENT
 }

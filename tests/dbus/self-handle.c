@@ -35,7 +35,7 @@ typedef struct {
 
 static void
 setup (Fixture *f,
-    gconstpointer unused G_GNUC_UNUSED)
+    gconstpointer arg)
 {
   gboolean ok;
 
@@ -45,7 +45,7 @@ setup (Fixture *f,
       tp_tests_object_new_static_class (TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
-        "break-0192-properties", TRUE,
+        "break-0192-properties", (!tp_strdiff (arg, "archaic")),
         NULL));
   f->service_conn_as_base = TP_BASE_CONNECTION (f->service_conn);
   g_object_ref (f->service_conn_as_base);
@@ -220,11 +220,12 @@ test_change_early (Fixture *f,
 
 static void
 test_change_inconveniently (Fixture *f,
-    gconstpointer unused G_GNUC_UNUSED)
+    gconstpointer arg)
 {
   TpHandle handle;
   TpContact *after;
   guint handle_times = 0, contact_times = 0, got_self_handle_times = 0;
+  guint got_all_times = 0;
   gboolean ok;
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
@@ -232,8 +233,18 @@ test_change_inconveniently (Fixture *f,
       G_CALLBACK (swapped_counter_cb), &handle_times);
   g_signal_connect_swapped (f->client_conn, "notify::self-contact",
       G_CALLBACK (swapped_counter_cb), &contact_times);
-  g_signal_connect_swapped (f->service_conn, "got-self-handle",
-      G_CALLBACK (swapped_counter_cb), &got_self_handle_times);
+
+  if (!tp_strdiff (arg, "archaic"))
+    {
+      g_signal_connect_swapped (f->service_conn, "got-self-handle",
+          G_CALLBACK (swapped_counter_cb), &got_self_handle_times);
+    }
+  else
+    {
+      g_signal_connect_swapped (f->service_conn,
+          "got-all::" TP_IFACE_CONNECTION,
+          G_CALLBACK (swapped_counter_cb), &got_all_times);
+    }
 
   tp_proxy_prepare_async (f->client_conn, features, tp_tests_result_ready_cb,
       &f->result);
@@ -252,11 +263,12 @@ test_change_inconveniently (Fixture *f,
       TP_CONNECTION_STATUS_CONNECTED,
       TP_CONNECTION_STATUS_REASON_REQUESTED);
 
-  /* run the main loop until just after GetSelfHandle is processed, to make
-   * sure the client first saw the old self handle */
-  while (got_self_handle_times == 0)
+  /* run the main loop until just after GetSelfHandle or GetAll(Connection)
+   * is processed, to make sure the client first saw the old self handle */
+  while (got_self_handle_times == 0 && got_all_times == 0)
     g_main_context_iteration (NULL, TRUE);
 
+  DEBUG ("changing my own identifier to something else");
   tp_tests_simple_connection_set_identifier (f->service_conn,
       "myself@example.org");
   g_assert_cmpstr (tp_handle_inspect (f->contact_repo,
@@ -291,10 +303,13 @@ test_change_inconveniently (Fixture *f,
 
 static void
 test_self_handle_fails (Fixture *f,
-    gconstpointer unused G_GNUC_UNUSED)
+    gconstpointer arg)
 {
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
   gboolean ok;
+
+  /* This test assumes that spec 0.19.2 properties are unsupported. */
+  g_assert_cmpstr (arg, ==, "archaic");
 
   tp_proxy_prepare_async (f->client_conn, features, tp_tests_result_ready_cb,
       &f->result);
@@ -351,11 +366,17 @@ main (int argc,
 
   g_test_add ("/self-handle", Fixture, NULL, setup_and_connect,
       test_self_handle, teardown);
+  g_test_add ("/self-handle/archaic", Fixture, "archaic", setup_and_connect,
+      test_self_handle, teardown);
   g_test_add ("/self-handle/change-early", Fixture, NULL, setup,
       test_change_early, teardown);
-  g_test_add ("/self-handle/change-inconveniently", Fixture, NULL, setup,
-      test_change_inconveniently, teardown);
-  g_test_add ("/self-handle/fails", Fixture, NULL, setup,
+  g_test_add ("/self-handle/change-early/archaic", Fixture, "archaic", setup,
+      test_change_early, teardown);
+  g_test_add ("/self-handle/change-inconveniently", Fixture, NULL,
+      setup, test_change_inconveniently, teardown);
+  g_test_add ("/self-handle/change-inconveniently/archaic", Fixture,
+      "archaic", setup, test_change_inconveniently, teardown);
+  g_test_add ("/self-handle/fails", Fixture, "archaic", setup,
       test_self_handle_fails, teardown);
 
   return g_test_run ();

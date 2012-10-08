@@ -935,6 +935,15 @@ on_self_handle_changed (TpConnection *self,
       return;
     }
 
+  if (self->priv->last_known_self_handle == 0)
+    {
+      /* We're going to call GetAll(Connection) anyway, or if the CM
+       * is sufficiently deficient, GetSelfHandle(). */
+      DEBUG ("Ignoring early self-handle change to %u, we'll pick it up later",
+          self_handle);
+      return;
+    }
+
   DEBUG ("SelfHandleChanged to %u, I wonder what that means?", self_handle);
   self->priv->last_known_self_handle = self_handle;
   get_self_contact (self);
@@ -948,11 +957,6 @@ introspect_self_handle (TpConnection *self)
       tp_connection_continue_introspection (self);
       return;
     }
-
-  /* this only happens when we introspect after CONNECTED, so there's no need
-   * to track whether this is the first time */
-  tp_cli_connection_connect_to_self_handle_changed (self,
-      on_self_handle_changed, NULL, NULL, NULL, NULL);
 
   g_assert (self->priv->introspection_call == NULL);
   self->priv->introspection_call = tp_cli_connection_call_get_self_handle (
@@ -1451,6 +1455,11 @@ tp_connection_constructed (GObject *object)
       tp_connection_status_changed_cb, NULL, NULL, NULL, NULL);
   tp_cli_connection_connect_to_connection_error (self,
       tp_connection_connection_error_cb, NULL, NULL, NULL, NULL);
+
+  /* We need to connect to SelfHandleChanged early, too, so that we're
+   * already connected before we GetAll */
+  tp_cli_connection_connect_to_self_handle_changed (self,
+      on_self_handle_changed, NULL, NULL, NULL, NULL);
 
   object_path = tp_proxy_get_object_path (TP_PROXY (self));
   g_assert (_tp_connection_parse (object_path, '/',

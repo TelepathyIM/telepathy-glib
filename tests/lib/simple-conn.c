@@ -24,14 +24,20 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
+#ifdef TP_GLIB_TESTS_INTERNAL
+# include "telepathy-glib/dbus-properties-mixin-internal.h"
+#endif
+
 #include "textchan-null.h"
 #include "room-list-chan.h"
 #include "util.h"
 
+static void props_iface_init (TpSvcDBusPropertiesClass *);
 static void conn_iface_init (TpSvcConnectionClass *);
 
 G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleConnection, tp_tests_simple_connection,
     TP_TYPE_BASE_CONNECTION,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES, props_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION, conn_iface_init))
 
 /* type definition stuff */
@@ -47,6 +53,7 @@ enum
 enum
 {
   SIGNAL_GOT_SELF_HANDLE,
+  SIGNAL_GOT_ALL,
   N_SIGNALS
 };
 
@@ -344,6 +351,13 @@ tp_tests_simple_connection_class_init (TpTestsSimpleConnectionClass *klass)
       0,
       NULL, NULL, NULL,
       G_TYPE_NONE, 0);
+
+  signals[SIGNAL_GOT_ALL] = g_signal_new ("got-all",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL, NULL,
+      G_TYPE_NONE, 0);
 }
 
 void
@@ -506,4 +520,33 @@ conn_iface_init (TpSvcConnectionClass *iface)
   tp_svc_connection_implement_##x (iface, prefix##x)
   IMPLEMENT(,get_self_handle);
 #undef IMPLEMENT
+}
+
+#ifdef TP_GLIB_TESTS_INTERNAL
+static void
+get_all (TpSvcDBusProperties *iface,
+    const gchar *interface_name,
+    DBusGMethodInvocation *context)
+{
+  GHashTable *values = _tp_dbus_properties_mixin_get_all (G_OBJECT (iface),
+      interface_name);
+
+  tp_svc_dbus_properties_return_from_get_all (context, values);
+  g_hash_table_unref (values);
+  g_signal_emit (iface, signals[SIGNAL_GOT_ALL],
+      g_quark_from_string (interface_name));
+}
+#endif /* TP_GLIB_TESTS_INTERNAL */
+
+static void
+props_iface_init (TpSvcDBusPropertiesClass *iface)
+{
+#ifdef TP_GLIB_TESTS_INTERNAL
+
+#define IMPLEMENT(x) \
+  tp_svc_dbus_properties_implement_##x (iface, x)
+  IMPLEMENT (get_all);
+#undef IMPLEMENT
+
+#endif /* TP_GLIB_TESTS_INTERNAL */
 }

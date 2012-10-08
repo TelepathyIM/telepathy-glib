@@ -1,6 +1,11 @@
 telepathy-glib 0.21.0 (UNRELEASED)
 ==================================
 
+Fixes:
+
+• Process the SelfHandleChanged signal for non-obsolete connection managers
+  (fd.o #55666, Simon)
+
 telepathy-glib 0.20.0 (2012-10-03)
 ==================================
 
