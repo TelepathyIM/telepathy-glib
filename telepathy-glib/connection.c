@@ -790,6 +790,14 @@ on_self_contact_changed (TpConnection *self,
       return;
     }
 
+  if (self->priv->last_known_self_handle == self_handle &&
+      !tp_strdiff (self_id, self->priv->last_known_self_id))
+    {
+      DEBUG ("Ignoring no-op self-handle change to %u '%s'",
+          self_handle, self_id);
+      return;
+    }
+
   DEBUG ("SelfHandleChanged to %u '%s'", self_handle, self_id);
   self->priv->last_known_self_handle = self_handle;
   g_free (self->priv->last_known_self_id);
