@@ -36,7 +36,7 @@ typedef struct {
 
 static void
 setup (Fixture *f,
-    gconstpointer unused G_GNUC_UNUSED)
+    gconstpointer arg)
 {
   gboolean ok;
 
@@ -64,6 +64,16 @@ setup (Fixture *f,
       &f->error);
   g_assert_no_error (f->error);
   g_assert (f->client_conn != NULL);
+
+  if (!tp_strdiff (arg, "round-trip"))
+    {
+      /* Make sure preparing the self-contact requires a round-trip */
+      TpClientFactory *factory = tp_proxy_get_factory (f->client_conn);
+
+      tp_client_factory_add_contact_features_varargs (factory,
+          TP_CONTACT_FEATURE_CAPABILITIES,
+          0);
+    }
 }
 
 static void
@@ -194,6 +204,81 @@ test_change_early (Fixture *f,
 }
 
 static void
+test_change_inconveniently (Fixture *f,
+    gconstpointer arg)
+{
+  TpContact *after;
+  guint contact_times = 0, got_all_times = 0;
+  gboolean ok;
+  GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+
+  /* This test exercises what happens if the self-contact changes
+   * between obtaining its handle for the first time and having the
+   * TpContact fully prepared. In Telepathy 1.0, that can only happen
+   * if you are preparing non-core features, because we get the self-handle
+   * and the self-ID at the same time. */
+  g_assert_cmpstr (arg, ==, "round-trip");
+
+  g_signal_connect_swapped (f->client_conn, "notify::self-contact",
+      G_CALLBACK (swapped_counter_cb), &contact_times);
+  g_signal_connect_swapped (f->service_conn,
+      "got-all::" TP_IFACE_CONNECTION,
+      G_CALLBACK (swapped_counter_cb), &got_all_times);
+
+  tp_proxy_prepare_async (f->client_conn, features, tp_tests_result_ready_cb,
+      &f->result);
+  g_assert (f->result == NULL);
+
+  /* act as though someone else called Connect */
+  tp_base_connection_change_status (f->service_conn_as_base,
+      TP_CONNECTION_STATUS_CONNECTING,
+      TP_CONNECTION_STATUS_REASON_REQUESTED);
+  tp_tests_simple_connection_set_identifier (f->service_conn,
+      "me@example.com");
+  g_assert_cmpstr (tp_handle_inspect (f->contact_repo,
+        tp_base_connection_get_self_handle (f->service_conn_as_base)), ==,
+      "me@example.com");
+  tp_base_connection_change_status (f->service_conn_as_base,
+      TP_CONNECTION_STATUS_CONNECTED,
+      TP_CONNECTION_STATUS_REASON_REQUESTED);
+
+  /* run the main loop until just after GetAll(Connection)
+   * is processed, to make sure the client first saw the old self handle */
+  while (got_all_times == 0)
+    g_main_context_iteration (NULL, TRUE);
+
+  DEBUG ("changing my own identifier to something else");
+  tp_tests_simple_connection_set_identifier (f->service_conn,
+      "myself@example.org");
+  g_assert_cmpstr (tp_handle_inspect (f->contact_repo,
+        tp_base_connection_get_self_handle (f->service_conn_as_base)), ==,
+      "myself@example.org");
+
+  /* now run the main loop and let the client catch up */
+  tp_tests_run_until_result (&f->result);
+  ok = tp_proxy_prepare_finish (f->client_conn, f->result, &f->error);
+  g_assert_no_error (f->error);
+  g_assert (ok);
+
+  /* the self-contact changes once during connection */
+  g_assert_cmpuint (contact_times, ==, 1);
+
+  g_assert_cmpuint (
+      tp_contact_get_handle (tp_connection_get_self_contact (f->client_conn)),
+      ==, tp_base_connection_get_self_handle (f->service_conn_as_base));
+
+  g_object_get (f->client_conn,
+      "self-contact", &after,
+      NULL);
+  g_assert_cmpuint (tp_contact_get_handle (after), ==,
+      tp_base_connection_get_self_handle (f->service_conn_as_base));
+  g_assert_cmpstr (tp_contact_get_identifier (after), ==,
+      "myself@example.org");
+
+  g_object_unref (after);
+}
+
+static void
 teardown (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
@@ -221,8 +306,14 @@ main (int argc,
 
   g_test_add ("/self-handle", Fixture, NULL, setup_and_connect,
       test_self_handle, teardown);
+  g_test_add ("/self-handle/round-trip", Fixture, "round-trip",
+      setup_and_connect, test_self_handle, teardown);
   g_test_add ("/self-handle/change-early", Fixture, NULL, setup,
       test_change_early, teardown);
+  g_test_add ("/self-handle/change-early/round-trip", Fixture, "round-trip",
+      setup, test_change_early, teardown);
+  g_test_add ("/self-handle/change-inconveniently", Fixture,
+      "round-trip", setup, test_change_inconveniently, teardown);
 
   return g_test_run ();
 }
