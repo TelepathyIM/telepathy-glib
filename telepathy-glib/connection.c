@@ -790,7 +790,7 @@ on_self_contact_changed (TpConnection *self,
       return;
     }
 
-  DEBUG ("SelfHandleChanged to %u, I wonder what that means?", self_handle);
+  DEBUG ("SelfHandleChanged to %u '%s'", self_handle, self_id);
   self->priv->last_known_self_handle = self_handle;
   g_free (self->priv->last_known_self_id);
   self->priv->last_known_self_id = g_strdup (self_id);
