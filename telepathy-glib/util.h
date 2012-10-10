@@ -75,12 +75,14 @@ GValue *tp_g_value_slice_dup (const GValue *value) G_GNUC_WARN_UNUSED_RESULT;
 void tp_g_hash_table_update (GHashTable *target, GHashTable *source,
     GBoxedCopyFunc key_dup, GBoxedCopyFunc value_dup);
 
+/* See https://bugzilla.gnome.org/show_bug.cgi?id=399880 for glib inclusion */
 static inline gboolean
 tp_str_empty (const gchar *s)
 {
   return (s == NULL || s[0] == '\0');
 }
 
+/* See https://bugzilla.gnome.org/show_bug.cgi?id=685878 for glib inclusion */
 gboolean tp_strdiff (const gchar *left, const gchar *right);
 
 gpointer tp_mixin_offset_cast (gpointer instance, guint offset);
@@ -89,6 +91,7 @@ guint tp_mixin_class_get_offset (gpointer klass, GQuark quark);
 
 gchar *tp_escape_as_identifier (const gchar *name) G_GNUC_WARN_UNUSED_RESULT;
 
+/* See https://bugzilla.gnome.org/show_bug.cgi?id=685880 for glib inclusion */
 gboolean tp_strv_contains (const gchar * const *strv, const gchar *str);
 
 #ifndef TP_DISABLE_DEPRECATED
@@ -100,6 +103,8 @@ guint64 tp_g_key_file_get_uint64 (GKeyFile *key_file, const gchar *group_name,
     const gchar *key, GError **error);
 #endif
 
+/* g_signal_connect_object() has been fixed in GLib 2.36, we can deprecate this
+ * once we depend on that version. */
 gulong tp_g_signal_connect_object (gpointer instance,
     const gchar *detailed_signal, GCallback c_handler, gpointer gobject,
     GConnectFlags connect_flags);
@@ -111,6 +116,7 @@ void tp_value_array_unpack (GValueArray *array,
     gsize len,
     ...);
 
+/* See https://bugzilla.gnome.org/show_bug.cgi?id=680813 for glib inclusion */
 typedef struct _TpWeakRef TpWeakRef;
 TpWeakRef *tp_weak_ref_new (gpointer object,
     gpointer user_data,
@@ -154,6 +160,7 @@ gint64 tp_user_action_time_from_x11 (guint32 x11_time);
 gboolean tp_user_action_time_should_present (gint64 user_action_time,
     guint32 *x11_time);
 
+/* See https://bugzilla.gnome.org/show_bug.cgi?id=610969 for glib inclusion */
 gchar *tp_utf8_make_valid (const gchar *name);
 
 G_END_DECLS
