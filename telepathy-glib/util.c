@@ -829,6 +829,7 @@ tp_strv_contains (const gchar * const *strv,
  * 0 if the key was not found or could not be parsed.
  *
  * Since: 0.7.31
+ * Deprecated: Since 0.UNRELEASED. Use g_key_file_get_int64() instead.
  */
 gint64
 tp_g_key_file_get_int64 (GKeyFile *key_file,
@@ -877,6 +878,7 @@ tp_g_key_file_get_int64 (GKeyFile *key_file,
  * or 0 if the key was not found or could not be parsed.
  *
  * Since: 0.7.31
+ * Deprecated: Since 0.UNRELEASED. Use g_key_file_get_uint64() instead.
  */
 guint64
 tp_g_key_file_get_uint64 (GKeyFile *key_file,

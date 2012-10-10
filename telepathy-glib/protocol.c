@@ -1267,7 +1267,7 @@ parse_default_value (GValue *value,
     case 'u':
     case 't':
         {
-          guint64 v = tp_g_key_file_get_uint64 (file, group, key, &error);
+          guint64 v = g_key_file_get_uint64 (file, group, key, &error);
 
           if (error != NULL)
             {
@@ -1308,7 +1308,7 @@ parse_default_value (GValue *value,
         }
       else
         {
-          gint64 v = tp_g_key_file_get_int64 (file, group, key, &error);
+          gint64 v = g_key_file_get_int64 (file, group, key, &error);
 
           if (error != NULL)
             {
