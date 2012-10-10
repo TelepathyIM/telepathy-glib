@@ -29,6 +29,7 @@
 
 #include <gio/gio.h>
 
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/verify.h>
 
 #define tp_verify_statement(R) ((void) tp_verify_true (R))
