@@ -791,6 +791,9 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
   self->priv->reason = _tp_base_call_state_reason_new (actor_handle, reason,
       dbus_reason, message);
 
+  if (old_state == state)
+    return;
+
   if (self->priv->state != TP_CALL_STATE_INITIALISED)
     self->priv->flags &= ~TP_CALL_FLAG_LOCALLY_RINGING;
 
@@ -809,8 +812,7 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
       call_state_to_string (self->priv->state));
 
   /* Move from INITIALISING to INITIALISED if we are already connected */
-  if (self->priv->state != old_state &&
-      self->priv->state == TP_CALL_STATE_INITIALISING &&
+  if (self->priv->state == TP_CALL_STATE_INITIALISING &&
       _tp_base_call_channel_is_connected (self))
     {
       self->priv->state = TP_CALL_STATE_INITIALISED;
@@ -827,8 +829,7 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
     }
 
   /* Move from ACCEPTED to ACTIVE if we are already connected */
-  if (self->priv->state != old_state &&
-      self->priv->state == TP_CALL_STATE_ACCEPTED &&
+  if (self->priv->state == TP_CALL_STATE_ACCEPTED &&
       _tp_base_call_channel_is_connected (self))
     {
       self->priv->state = TP_CALL_STATE_ACTIVE;
