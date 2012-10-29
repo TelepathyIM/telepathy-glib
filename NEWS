@@ -1,7 +1,18 @@
-telepathy-logger 0.5.0 (UNRELEASED)
+telepathy-logger 0.6.0 (UNRELEASED)
 ===================================
 
-...
+This is the start of a new stable branch.
+
+There was never a development release in the 0.5 series so there are
+no changes there. Here is the summary of particularly noteworthy
+changes since 0.4:
+
+• telepathy-glib 0.19.2 is now required and deprecated telepathy-glib
+  usage has been removed.
+
+• Multiple introspection problems have been fixed. (fd.o#50361)
+
+• Streamed Media channel support has been removed.
 
 telepathy-logger 0.4.0 (2012-04-03)
 ===================================
