@@ -1,7 +1,12 @@
-telepathy-glib 0.20.1 (UNRELEASED)
+telepathy-glib 0.20.1 (2012-11-09)
 ==================================
 
+The "world's slowest ticket machines" release.
+
 Fixes:
+
+• In Call channels, ignore state transitions where the state did not
+  actually change (fd.o #56044, Debarshi Ray)
 
 • Process the SelfHandleChanged signal for non-obsolete connection managers
   (fd.o #55666, Simon)
