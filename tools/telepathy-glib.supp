@@ -341,7 +341,7 @@
    ...
    fun:g_object_new
    ...
-   fun:tp_proxy_borrow_interface_by_id
+   fun:tp_proxy_get_interface_by_id
 }
 
 {
