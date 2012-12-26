@@ -968,21 +968,20 @@ tp_protocol_dup_param_names (TpProtocol *self)
 }
 
 /**
- * tp_protocol_borrow_params: (skip)
+ * tp_protocol_get_params:
  * @self: a protocol
  *
  * Returns an array of parameters supported by this connection manager,
  * without additional memory allocations. The returned array is owned by
  * @self, and must not be used after @self has been freed.
  *
- * Returns: a #GPtrArray of #TpConnectionManagerParam.
+ * Returns: (transfer none) (type GLib.PtrArray) (element-type TelepathyGLib.ConnectionManagerParam):
+ *  a #GPtrArray of #TpConnectionManagerParam.
  *
- * Since: 0.17.6
- * Deprecated: Since 0.19.9. New code should use tp_protocol_dup_params()
- *  instead.
+ * Since: 0.UNRELEASED
  */
 GPtrArray *
-tp_protocol_borrow_params (TpProtocol *self)
+tp_protocol_get_params (TpProtocol *self)
 {
   g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
 

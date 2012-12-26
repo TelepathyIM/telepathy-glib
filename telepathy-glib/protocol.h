@@ -91,12 +91,8 @@ gboolean tp_protocol_can_register (TpProtocol *self);
 GStrv tp_protocol_dup_param_names (TpProtocol *self) G_GNUC_WARN_UNUSED_RESULT;
 _TP_AVAILABLE_IN_0_18
 GList *tp_protocol_dup_params (TpProtocol *self) G_GNUC_WARN_UNUSED_RESULT;
-
-#ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_0_20_FOR(tp_protocol_dup_params)
-_TP_AVAILABLE_IN_0_18
-GPtrArray *tp_protocol_borrow_params (TpProtocol *self);
-#endif
+_TP_AVAILABLE_IN_UNRELEASED
+GPtrArray *tp_protocol_get_params (TpProtocol *self);
 
 const gchar * const *
 /* gtk-doc sucks */

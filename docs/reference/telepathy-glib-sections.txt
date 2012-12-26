@@ -4834,7 +4834,7 @@ tp_protocol_get_cm_name
 tp_protocol_init_known_interfaces
 <SUBSECTION>
 TP_PROTOCOL_FEATURE_PARAMETERS
-tp_protocol_borrow_params
+tp_protocol_get_params
 tp_protocol_dup_params
 tp_protocol_dup_param_names
 tp_protocol_get_param
