@@ -507,36 +507,6 @@ tp_channel_request_init_known_interfaces (void)
     }
 }
 
-/**
- * tp_channel_request_new:
- * @bus_daemon: Proxy for the D-Bus daemon
- * @object_path: The non-NULL object path of this channel request
- * @immutable_properties: As many as are known of the immutable D-Bus
- *  properties of this channel request, or %NULL if none are known
- * @error: Used to raise an error if %NULL is returned
- *
- * Convenience function to create a new channel request proxy.
- *
- * If the channel request was newly created, the client making the request
- * is responsible for calling tp_cli_channel_request_call_proceed() when it
- * is ready for the channel request to proceed.
- *
- * Returns: a new reference to an channel request proxy, or %NULL if
- *    @object_path is not syntactically valid or the channel dispatcher is
- *    not running
- * Deprecated: Since 0.19.9. New code should get #TpChannelRequest objects
- *  from a #TpBaseClient
- */
-TpChannelRequest *
-tp_channel_request_new (TpDBusDaemon *bus_daemon,
-    const gchar *object_path,
-    GHashTable *immutable_properties,
-    GError **error)
-{
-  return _tp_channel_request_new_with_factory (NULL, bus_daemon, object_path,
-      immutable_properties, error);
-}
-
 TpChannelRequest *
 _tp_channel_request_new_with_factory (TpClientFactory *factory,
     TpDBusDaemon *bus_daemon,

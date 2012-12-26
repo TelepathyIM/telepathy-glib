@@ -292,26 +292,6 @@ tp_channel_get_identifier (TpChannel *self)
 }
 
 /**
- * tp_channel_borrow_connection:
- * @self: a channel
- *
- * Returns the connection for this channel. The returned pointer is only valid
- * while this channel is valid - reference it with g_object_ref() if needed.
- *
- * Returns: (transfer none): the value of #TpChannel:connection
- * Since: 0.7.12
- * Deprecated: Since 0.19.9. New code should use
- *  tp_channel_get_connection() instead.
- */
-TpConnection *
-tp_channel_borrow_connection (TpChannel *self)
-{
-  g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
-
-  return self->priv->connection;
-}
-
-/**
  * tp_channel_get_connection:
  * @self: a channel
  *
@@ -327,40 +307,6 @@ tp_channel_get_connection (TpChannel *self)
   g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
 
   return self->priv->connection;
-}
-
-/**
- * tp_channel_borrow_immutable_properties:
- * @self: a channel
- *
- * Returns the immutable D-Bus properties of this channel, the same as
- * #TpChannel:channel-properties.
- *
- * The returned hash table should not be altered, and is not necessarily
- * valid after the main loop is next re-entered. Copy it with
- * g_boxed_copy() (its type is %TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP)
- * if a copy that remains valid must be kept.
- *
- * If the #TpChannel:channel-properties property was not set during
- * construction (e.g. by calling tp_channel_new_from_properties()), a
- * reasonable but possibly incomplete version will be made up from the values
- * of individual properties; reading this property repeatedly may yield
- * progressively more complete values until the %TP_CHANNEL_FEATURE_CORE
- * feature is prepared.
- *
- * Returns: (transfer none) (element-type utf8 GObject.Value): a #GHashTable
- *  where the keys are strings,
- *  D-Bus interface name + "." + property name, and the values are #GValue
- *  instances
- * Deprecated: Since 0.19.9. New code should use
- *  tp_channel_dup_immutable_properties() instead.
- */
-GHashTable *
-tp_channel_borrow_immutable_properties (TpChannel *self)
-{
-  g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
-
-  return self->priv->channel_properties;
 }
 
 GHashTable *

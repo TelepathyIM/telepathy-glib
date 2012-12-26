@@ -71,11 +71,6 @@ const gchar *tp_contact_search_result_get_identifier (TpContactSearchResult *sel
 TpContactInfoField *tp_contact_search_result_get_field (TpContactSearchResult *self,
     const gchar *field);
 
-#ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_0_20_FOR (tp_contact_search_result_dup_fields)
-GList *tp_contact_search_result_get_fields (TpContactSearchResult *self);
-#endif
-
 _TP_AVAILABLE_IN_0_20
 GList *tp_contact_search_result_dup_fields (TpContactSearchResult *self);
 

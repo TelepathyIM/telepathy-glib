@@ -108,15 +108,6 @@ TpHandle tp_handle_ensure_finish (TpHandleRepoIface *self,
     GAsyncResult *result,
     GError **error);
 
-#ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_0_20
-void tp_handle_set_qdata (TpHandleRepoIface *repo, TpHandle handle,
-    GQuark key_id, gpointer data, GDestroyNotify destroy);
-_TP_DEPRECATED_IN_0_20
-gpointer tp_handle_get_qdata (TpHandleRepoIface *repo, TpHandle handle,
-    GQuark key_id);
-#endif
-
 /* Handle set helper class */
 
 typedef void (*TpHandleSetMemberFunc)(TpHandleSet *set, TpHandle handle,

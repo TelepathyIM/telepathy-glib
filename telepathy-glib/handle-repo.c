@@ -208,59 +208,6 @@ tp_handle_lookup (TpHandleRepoIface *self,
 }
 
 
-/**
- * tp_handle_set_qdata: (skip)
- * @repo: A handle repository implementation
- * @handle: A handle to set data on
- * @key_id: Key id to associate data with
- * @data: data to associate with handle
- * @destroy: A #GDestroyNotify to call to destroy the data,
- *           or NULL if not needed.
- *
- * Associates a blob of data with a given handle and a given key
- *
- * If @destroy is set, then the data is freed when the handle is freed.
- *
- * Since version 0.13.8, handles always last as long as the
- * connection, so @destroy will not be called until the connection
- * disconnects.
- *
- * Deprecated: Since 0.19.9. It is not recommended to use this function
- *  because the associated data won't be freed until the connection disconnects.
- */
-
-void
-tp_handle_set_qdata (TpHandleRepoIface *repo,
-                     TpHandle handle,
-                     GQuark key_id,
-                     gpointer data,
-                     GDestroyNotify destroy)
-{
-  TP_HANDLE_REPO_IFACE_GET_CLASS (repo)->set_qdata (repo,
-      handle, key_id, data, destroy);
-}
-
-/**
- * tp_handle_get_qdata: (skip)
- * @repo: A handle repository implementation
- * @handle: A handle to get data from
- * @key_id: Key id of data to fetch
- *
- * <!--Returns: says it all-->
- *
- * Returns: the data associated with a given key on a given handle; %NULL
- * if there is no associated data.
- * Deprecated: Since 0.19.9. It is not recommended to use this function
- *  because the associated data won't be freed until the connection disconnects.
- */
-gpointer
-tp_handle_get_qdata (TpHandleRepoIface *repo, TpHandle handle,
-                     GQuark key_id)
-{
-  return TP_HANDLE_REPO_IFACE_GET_CLASS (repo)->get_qdata (repo,
-      handle, key_id);
-}
-
 static void
 default_ensure_handle_async (TpHandleRepoIface *self,
     TpBaseConnection *connection,

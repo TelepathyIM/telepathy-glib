@@ -127,11 +127,6 @@ TpCapabilities *tp_contact_get_capabilities (TpContact *self);
 GFile *tp_contact_get_avatar_file (TpContact *self);
 
 /* TP_CONTACT_FEATURE_INFO */
-#ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_0_20_FOR (tp_contact_dup_contact_info)
-GList *tp_contact_get_contact_info (TpContact *self);
-#endif
-
 _TP_AVAILABLE_IN_0_20
 GList *tp_contact_dup_contact_info (TpContact *self);
 

@@ -1004,46 +1004,6 @@ insert_account (TpAccountManager *self,
 }
 
 /**
- * tp_account_manager_get_usable_accounts:
- * @manager: a #TpAccountManager
- *
- * Returns a newly allocated #GList of usable accounts in @manager. The list
- * must be freed with g_list_free() after used. None of the accounts in the
- * returned list are guaranteed to be ready.
- *
- * Note that the #TpAccount<!-- -->s in the returned #GList are not reffed
- * before returning from this function. One could ref every item in the list
- * like the following example:
- * |[
- * GList *accounts;
- * account = tp_account_manager_get_usable_accounts (manager);
- * g_list_foreach (accounts, (GFunc) g_object_ref, NULL);
- * ]|
- *
- * The returned #TpAccount<!-- -->s are guaranteed to have
- * %TP_ACCOUNT_FEATURE_CORE prepared, along with all features previously passed
- * to tp_client_factory_add_account_features().
- *
- * The list of usable accounts returned is not guaranteed to have been retrieved
- * until %TP_ACCOUNT_MANAGER_FEATURE_CORE is prepared
- * (tp_proxy_prepare_async() has returned). Until this feature has
- * been prepared, an empty list (%NULL) will be returned.
- *
- * Returns: (element-type TelepathyGLib.Account) (transfer container): a newly allocated #GList of usable accounts in @manager
- *
- * Since: 0.9.0
- * Deprecated: Since 0.19.9. New code should use
- *  tp_account_manager_dup_usable_accounts() instead.
- */
-GList *
-tp_account_manager_get_usable_accounts (TpAccountManager *manager)
-{
-  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
-
-  return g_hash_table_get_values (manager->priv->accounts);
-}
-
-/**
  * tp_account_manager_dup_usable_accounts:
  * @manager: a #TpAccountManager
  *

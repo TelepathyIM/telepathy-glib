@@ -79,11 +79,6 @@ gboolean tp_text_channel_supports_message_type (TpTextChannel *self,
   tp_text_channel_get_feature_quark_incoming_messages ()
 GQuark tp_text_channel_get_feature_quark_incoming_messages (void) G_GNUC_CONST;
 
-#ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_0_20_FOR (tp_text_channel_dup_pending_messages)
-GList * tp_text_channel_get_pending_messages (TpTextChannel *self);
-#endif
-
 _TP_AVAILABLE_IN_0_20
 GList * tp_text_channel_dup_pending_messages (TpTextChannel *self);
 

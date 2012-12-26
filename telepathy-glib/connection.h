@@ -157,11 +157,6 @@ TpCapabilities * tp_connection_get_capabilities (TpConnection *self);
 
 TpContactInfoFlags tp_connection_get_contact_info_flags (TpConnection *self);
 
-#ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_0_20_FOR (tp_connection_dup_contact_info_supported_fields)
-GList *tp_connection_get_contact_info_supported_fields (TpConnection *self);
-#endif
-
 _TP_AVAILABLE_IN_0_20
 GList *tp_connection_dup_contact_info_supported_fields (TpConnection *self);
 

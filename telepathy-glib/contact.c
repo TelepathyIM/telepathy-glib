@@ -720,34 +720,6 @@ tp_contact_get_capabilities (TpContact *self)
 }
 
 /**
- * tp_contact_get_contact_info:
- * @self: a #TpContact
- *
- * Returns a newly allocated #GList of contact's vCard fields. The list must be
- * freed with g_list_free() after used.
- *
- * Note that the #TpContactInfoField<!-- -->s in the returned #GList are not
- * dupped before returning from this function. One could copy every item in the
- * list using tp_contact_info_field_copy().
- *
- * Same as the #TpContact:contact-info property.
- *
- * Returns: (element-type TelepathyGLib.ContactInfoField) (transfer container):
- *  a #GList of #TpContactInfoField, or %NULL if the feature is not yet
- *  prepared.
- * Since: 0.11.7
- * Deprecated: Since 0.19.9. New code should use
- *  tp_contact_dup_contact_info() instead.
- */
-GList *
-tp_contact_get_contact_info (TpContact *self)
-{
-  g_return_val_if_fail (TP_IS_CONTACT (self), NULL);
-
-  return g_list_copy (self->priv->contact_info);
-}
-
-/**
  * tp_contact_dup_contact_info:
  * @self: a #TpContact
  *

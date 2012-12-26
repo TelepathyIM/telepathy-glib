@@ -1213,30 +1213,6 @@ tp_text_channel_get_feature_quark_incoming_messages (void)
 }
 
 /**
- * tp_text_channel_get_pending_messages:
- * @self: a #TpTextChannel
- *
- * Return a newly allocated list of unacknowledged #TpSignalledMessage
- * objects.
- *
- * It is guaranteed that the #TpSignalledMessage:sender of each
- * #TpSignalledMessage has all of the features previously passed to
- * tp_client_factory_add_contact_features() prepared.
- *
- * Returns: (transfer container) (element-type TelepathyGLib.SignalledMessage):
- * a #GList of borrowed #TpSignalledMessage
- *
- * Since: 0.13.10
- * Deprecated: Since 0.19.9. New code should use
- *  tp_text_channel_dup_pending_messages() instead.
- */
-GList *
-tp_text_channel_get_pending_messages (TpTextChannel *self)
-{
-  return g_list_copy (g_queue_peek_head_link (self->priv->pending_messages));
-}
-
-/**
  * tp_text_channel_dup_pending_messages:
  * @self: a #TpTextChannel
  *

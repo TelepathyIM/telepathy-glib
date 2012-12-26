@@ -171,13 +171,6 @@ gboolean tp_base_client_register (TpBaseClient *self,
 
 /* Normal methods, can be called at any time */
 
-#ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_0_20_FOR (tp_base_client_dup_pending_requests)
-GList *tp_base_client_get_pending_requests (TpBaseClient *self);
-_TP_DEPRECATED_IN_0_20_FOR (tp_base_client_dup_handled_channels)
-GList *tp_base_client_get_handled_channels (TpBaseClient *self);
-#endif
-
 _TP_AVAILABLE_IN_0_20
 GList *tp_base_client_dup_pending_requests (TpBaseClient *self);
 _TP_AVAILABLE_IN_0_20

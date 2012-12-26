@@ -459,37 +459,6 @@ tp_connection_get_contact_info_flags (TpConnection *self)
 }
 
 /**
- * tp_connection_get_contact_info_supported_fields:
- * @self: a connection
- *
- * Returns a newly allocated #GList of supported contact info fields for this
- * connection. The list must be freed with g_list_free() after used.
- *
- * Note that the #TpContactInfoFieldSpec<!-- -->s in the returned #GList are not
- * dupped before returning from this function. One could copy every item in the
- * list using tp_contact_info_field_spec_copy().
- *
- * To wait for valid supported fields, call tp_proxy_prepare_async() with the
- * feature %TP_CONNECTION_FEATURE_CONTACT_INFO.
- *
- * This property cannot change after @self goes to the Connected state.
- *
- * Returns: (element-type TelepathyGLib.ContactInfoFieldSpec) (transfer container):
- *  a #GList of #TpContactInfoFieldSpec struct, or %NULL if the feature is not
- *  yet prepared or the connection doesn't have the necessary properties.
- * Since: 0.11.7
- * Deprecated: Since 0.19.9. New code should use
- *  tp_connection_dup_contact_info_supported_fields() instead.
- */
-GList *
-tp_connection_get_contact_info_supported_fields (TpConnection *self)
-{
-  g_return_val_if_fail (TP_IS_CONNECTION (self), NULL);
-
-  return g_list_copy (self->priv->contact_info_supported_fields);
-}
-
-/**
  * tp_connection_dup_contact_info_supported_fields:
  * @self: a connection
  *

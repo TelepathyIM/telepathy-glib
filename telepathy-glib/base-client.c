@@ -979,75 +979,6 @@ tp_base_client_register (TpBaseClient *self,
 }
 
 /**
- * tp_base_client_get_pending_requests:
- * @self: a #TpBaseClient
- *
- * Only works if tp_base_client_set_handler_request_notification() has been
- * called.
- * Returns the list of requests @self is likely be asked to handle.
- *
- * Returns: (transfer container) (element-type TelepathyGLib.ChannelRequest): a
- * #GList of #TpChannelRequest
- *
- * Since: 0.11.6
- * Deprecated: Since 0.19.9. New code should use
- *  tp_base_client_dup_pending_requests() instead.
- */
-GList *
-tp_base_client_get_pending_requests (TpBaseClient *self)
-{
-  g_return_val_if_fail (self->priv->flags & CLIENT_IS_HANDLER, NULL);
-
-  return g_list_copy (self->priv->pending_requests);
-}
-
-/**
- * tp_base_client_get_handled_channels:
- * @self: a #TpBaseClient
- *
- * Returns the set of channels currently handled by this base client or by any
- * other #TpBaseClient with which it shares a unique name.
- *
- * Returns: (transfer container) (element-type TelepathyGLib.Channel): the
- * handled channels
- *
- * Since: 0.11.6
- * Deprecated: Since 0.19.9. New code should use
- *  tp_base_client_dup_handled_channels() instead.
- */
-GList *
-tp_base_client_get_handled_channels (TpBaseClient *self)
-{
-  GList *result = NULL;
-  GHashTable *clients;
-  GHashTableIter iter;
-  gpointer value;
-  GHashTable *set;
-
-  g_return_val_if_fail (self->priv->flags & CLIENT_IS_HANDLER, NULL);
-
-  if (clients_slot == -1)
-    return NULL;
-
-  set = g_hash_table_new (g_str_hash, g_str_equal);
-
-  clients = dbus_connection_get_data (self->priv->libdbus, clients_slot);
-
-  g_hash_table_iter_init (&iter, clients);
-  while (g_hash_table_iter_next (&iter, NULL, &value))
-    {
-      GHashTable *chans = value;
-
-      tp_g_hash_table_update (set, chans, NULL, NULL);
-    }
-
-  result = g_hash_table_get_values (set);
-  g_hash_table_unref (set);
-
-  return result;
-}
-
-/**
  * tp_base_client_dup_pending_requests:
  * @self: a #TpBaseClient
  *
@@ -1084,14 +1015,34 @@ tp_base_client_dup_pending_requests (TpBaseClient *self)
 GList *
 tp_base_client_dup_handled_channels (TpBaseClient *self)
 {
-  GList *ret;
+  GList *result = NULL;
+  GHashTable *clients;
+  GHashTableIter iter;
+  gpointer value;
+  GHashTable *set;
 
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  ret = tp_base_client_get_handled_channels (self);
-  G_GNUC_END_IGNORE_DEPRECATIONS
-  g_list_foreach (ret, (GFunc) g_object_ref, NULL);
+  g_return_val_if_fail (self->priv->flags & CLIENT_IS_HANDLER, NULL);
 
-  return ret;
+  if (clients_slot == -1)
+    return NULL;
+
+  set = g_hash_table_new (g_str_hash, g_str_equal);
+
+  clients = dbus_connection_get_data (self->priv->libdbus, clients_slot);
+
+  g_hash_table_iter_init (&iter, clients);
+  while (g_hash_table_iter_next (&iter, NULL, &value))
+    {
+      GHashTable *chans = value;
+
+      tp_g_hash_table_update (set, chans, NULL, NULL);
+    }
+
+  result = g_hash_table_get_values (set);
+  g_list_foreach (result, (GFunc) g_object_ref, NULL);
+  g_hash_table_unref (set);
+
+  return result;
 }
 
 static void
