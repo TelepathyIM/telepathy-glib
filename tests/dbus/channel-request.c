@@ -11,6 +11,7 @@
 #include "config.h"
 
 #include <telepathy-glib/channel-request.h>
+#include <telepathy-glib/client-factory-internal.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/gtypes.h>
@@ -152,6 +153,33 @@ teardown (Test *test,
   test->mainloop = NULL;
 }
 
+static TpChannelRequest *
+channel_request_new (TpDBusDaemon *bus_daemon,
+    const gchar *object_path,
+    GHashTable *immutable_properties,
+    GError **error)
+{
+  TpChannelRequest *self;
+  TpClientFactory *factory;
+
+  if (!tp_dbus_check_valid_object_path (object_path, error))
+    return NULL;
+
+  if (immutable_properties == NULL)
+    immutable_properties = tp_asv_new (NULL, NULL);
+  else
+    g_hash_table_ref (immutable_properties);
+
+  factory = tp_client_factory_new (bus_daemon);
+  self = _tp_client_factory_ensure_channel_request (factory, object_path,
+      immutable_properties, error);
+
+  g_object_unref (factory);
+  g_hash_table_unref (immutable_properties);
+
+  return self;
+}
+
 static void
 test_new (Test *test,
           gconstpointer data G_GNUC_UNUSED)
@@ -159,7 +187,7 @@ test_new (Test *test,
   gboolean ok;
 
   /* CD not running */
-  test->cr = tp_channel_request_new (test->dbus,
+  test->cr = channel_request_new (test->dbus,
       "/whatever", NULL, NULL);
   g_assert (test->cr == NULL);
 
@@ -167,11 +195,11 @@ test_new (Test *test,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 
-  test->cr = tp_channel_request_new (test->dbus,
+  test->cr = channel_request_new (test->dbus,
       "not even syntactically valid", NULL, NULL);
   g_assert (test->cr == NULL);
 
-  test->cr = tp_channel_request_new (test->dbus, "/whatever", NULL, NULL);
+  test->cr = channel_request_new (test->dbus, "/whatever", NULL, NULL);
   g_assert (test->cr != NULL);
 }
 
@@ -185,7 +213,7 @@ test_crash (Test *test,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 
-  test->cr = tp_channel_request_new (test->dbus, "/whatever", NULL, NULL);
+  test->cr = channel_request_new (test->dbus, "/whatever", NULL, NULL);
   g_assert (test->cr != NULL);
   g_assert (tp_proxy_get_invalidated (test->cr) == NULL);
 
@@ -237,7 +265,7 @@ test_succeeded (Test *test,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 
-  test->cr = tp_channel_request_new (test->dbus, "/whatever", NULL, NULL);
+  test->cr = channel_request_new (test->dbus, "/whatever", NULL, NULL);
   g_assert (test->cr != NULL);
   g_assert (tp_proxy_get_invalidated (test->cr) == NULL);
 
@@ -277,7 +305,7 @@ test_failed (Test *test,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 
-  test->cr = tp_channel_request_new (test->dbus, "/whatever", NULL, NULL);
+  test->cr = channel_request_new (test->dbus, "/whatever", NULL, NULL);
   g_assert (test->cr != NULL);
   g_assert (tp_proxy_get_invalidated (test->cr) == NULL);
 
@@ -318,7 +346,7 @@ test_immutable_properties (Test *test,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 
-  test->cr = tp_channel_request_new (test->dbus, "/whatever", props, NULL);
+  test->cr = channel_request_new (test->dbus, "/whatever", props, NULL);
   g_assert (test->cr != NULL);
 
   g_hash_table_unref (props);
@@ -367,7 +395,7 @@ test_properties (Test *test,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 
-  test->cr = tp_channel_request_new (test->dbus, "/whatever", props, NULL);
+  test->cr = channel_request_new (test->dbus, "/whatever", props, NULL);
   g_assert (test->cr != NULL);
 
   g_hash_table_unref (props);

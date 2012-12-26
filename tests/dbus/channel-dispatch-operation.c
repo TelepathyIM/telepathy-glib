@@ -11,6 +11,7 @@
 #include "config.h"
 
 #include <telepathy-glib/channel-dispatch-operation.h>
+#include <telepathy-glib/client-factory-internal.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/interfaces.h>
@@ -226,6 +227,33 @@ teardown_services (Test *test,
   teardown (test, data);
 }
 
+static TpChannelDispatchOperation *
+dispatch_operation_new (TpDBusDaemon *bus_daemon,
+    const gchar *object_path,
+    GHashTable *immutable_properties,
+    GError **error)
+{
+  TpChannelDispatchOperation *self;
+  TpClientFactory *factory;
+
+  if (!tp_dbus_check_valid_object_path (object_path, error))
+    return NULL;
+
+  if (immutable_properties == NULL)
+    immutable_properties = tp_asv_new (NULL, NULL);
+  else
+    g_hash_table_ref (immutable_properties);
+
+  factory = tp_client_factory_new (bus_daemon);
+  self = _tp_client_factory_ensure_channel_dispatch_operation (factory,
+      object_path, immutable_properties, error);
+
+  g_object_unref (factory);
+  g_hash_table_unref (immutable_properties);
+
+  return self;
+}
+
 static void
 test_new (Test *test,
           gconstpointer data G_GNUC_UNUSED)
@@ -233,7 +261,7 @@ test_new (Test *test,
   gboolean ok;
 
   /* CD not running */
-  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+  test->cdo = dispatch_operation_new (test->dbus,
       "/whatever", NULL, NULL);
   g_assert (test->cdo == NULL);
 
@@ -241,11 +269,11 @@ test_new (Test *test,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 
-  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+  test->cdo = dispatch_operation_new (test->dbus,
       "not even syntactically valid", NULL, NULL);
   g_assert (test->cdo == NULL);
 
-  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+  test->cdo = dispatch_operation_new (test->dbus,
       "/whatever", NULL, NULL);
   g_assert (test->cdo != NULL);
 }
@@ -260,7 +288,7 @@ test_crash (Test *test,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 
-  test->cdo = tp_channel_dispatch_operation_new (test->dbus, "/whatever",
+  test->cdo = dispatch_operation_new (test->dbus, "/whatever",
       NULL, NULL);
   g_assert (test->cdo != NULL);
   g_assert (tp_proxy_get_invalidated (test->cdo) == NULL);
@@ -295,7 +323,7 @@ test_finished (Test *test,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 
-  test->cdo = tp_channel_dispatch_operation_new (test->dbus, "/whatever",
+  test->cdo = dispatch_operation_new (test->dbus, "/whatever",
       NULL, NULL);
   g_assert (test->cdo != NULL);
   g_assert (tp_proxy_get_invalidated (test->cdo) == NULL);
@@ -324,7 +352,7 @@ features_prepared_cb (GObject *source,
 }
 
 /* Test properties when passing the immutable properties to
- * tp_channel_dispatch_operation_new() */
+ * dispatch_operation_new() */
 static void
 check_immutable_properties (Test *test)
 {
@@ -425,7 +453,7 @@ test_properties_passed (Test *test,
         G_TYPE_STRV, POSSIBLE_HANDLERS,
       NULL);
 
-  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+  test->cdo = dispatch_operation_new (test->dbus,
       "/whatever", props, &test->error);
   g_assert_no_error (test->error);
 
@@ -452,7 +480,7 @@ test_properties_passed (Test *test,
   check_channels (test);
 }
 
-/* Don't pass immutable properties to tp_channel_dispatch_operation_new so
+/* Don't pass immutable properties to dispatch_operation_new so
  * properties are fetched when preparing the core feature. */
 static void
 test_properties_fetched (Test *test,
@@ -460,7 +488,7 @@ test_properties_fetched (Test *test,
 {
   GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
 
-  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+  test->cdo = dispatch_operation_new (test->dbus,
       "/whatever", NULL, &test->error);
   g_assert_no_error (test->error);
 
@@ -536,7 +564,7 @@ test_channel_lost (Test *test,
   GPtrArray *channels;
   TpChannel *channel;
 
-  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+  test->cdo = dispatch_operation_new (test->dbus,
       "/whatever", NULL, &test->error);
   g_assert_no_error (test->error);
 
@@ -605,7 +633,7 @@ static void
 test_handle_with (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+  test->cdo = dispatch_operation_new (test->dbus,
       "/whatever", NULL, &test->error);
   g_assert_no_error (test->error);
 
@@ -631,7 +659,7 @@ test_channel_lost_preparing (Test *test,
   GPtrArray *channels;
   TpChannel *channel;
 
-  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+  test->cdo = dispatch_operation_new (test->dbus,
       "/whatever", NULL, &test->error);
   g_assert_no_error (test->error);
 
@@ -682,7 +710,7 @@ test_finished_preparing (Test *test,
   GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
   GPtrArray *channels;
 
-  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+  test->cdo = dispatch_operation_new (test->dbus,
       "/whatever", NULL, &test->error);
   g_assert_no_error (test->error);
 
@@ -731,7 +759,7 @@ static void
 test_handle_with_time (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+  test->cdo = dispatch_operation_new (test->dbus,
       "/whatever", NULL, &test->error);
   g_assert_no_error (test->error);
 
@@ -775,7 +803,7 @@ static void
 test_close_channels (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+  test->cdo = dispatch_operation_new (test->dbus,
       "/whatever", NULL, &test->error);
   g_assert_no_error (test->error);
 
@@ -814,7 +842,7 @@ static void
 test_leave_channels (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+  test->cdo = dispatch_operation_new (test->dbus,
       "/whatever", NULL, &test->error);
   g_assert_no_error (test->error);
 
@@ -854,7 +882,7 @@ static void
 test_destroy_channels (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+  test->cdo = dispatch_operation_new (test->dbus,
       "/whatever", NULL, &test->error);
   g_assert_no_error (test->error);
 

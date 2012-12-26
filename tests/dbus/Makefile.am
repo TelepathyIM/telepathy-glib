@@ -110,11 +110,25 @@ test_channel_SOURCES = channel.c
 
 test_channel_dispatcher_SOURCES = channel-dispatcher.c
 
+# this one uses internal ABI
 test_channel_dispatch_operation_SOURCES = channel-dispatch-operation.c
+test_channel_dispatch_operation_LDADD = \
+    $(top_builddir)/tests/lib/libtp-glib-tests-internal.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-main-internal.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
+    $(GLIB_LIBS)
 
 test_channel_introspect_SOURCES = channel-introspect.c
 
+# this one uses internal ABI
 test_channel_request_SOURCES = channel-request.c
+test_channel_request_LDADD = \
+    $(top_builddir)/tests/lib/libtp-glib-tests-internal.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-main-internal.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
+    $(GLIB_LIBS)
 
 test_call_channel_SOURCES = call-channel.c
 test_call_channel_LDADD = \
