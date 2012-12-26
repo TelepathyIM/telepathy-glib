@@ -464,24 +464,6 @@ out:
 }
 
 static void
-add_channel_to_ptr_array (GPtrArray *arr,
-    TpChannel *channel)
-{
-  GValueArray *tmp;
-
-  g_assert (arr != NULL);
-  g_assert (channel != NULL);
-
-  tmp = tp_value_array_build (2,
-      DBUS_TYPE_G_OBJECT_PATH, tp_proxy_get_object_path (channel),
-      TP_HASH_TYPE_STRING_VARIANT_MAP, tp_channel_borrow_immutable_properties (
-        channel),
-      G_TYPE_INVALID);
-
-  g_ptr_array_add (arr, tmp);
-}
-
-static void
 free_channel_details (gpointer data,
     gpointer user_data)
 {
@@ -536,7 +518,7 @@ test_observer (Test *test,
 
   /* Call ObserveChannels */
   channels = g_ptr_array_sized_new (1);
-  add_channel_to_ptr_array (channels, test->text_chan);
+  tp_tests_add_channel_to_ptr_array (channels, test->text_chan);
 
   requests_satisified = g_ptr_array_sized_new (0);
   info = tp_asv_new (
@@ -675,8 +657,8 @@ test_approver (Test *test,
 
   /* Call AddDispatchOperation */
   channels = g_ptr_array_sized_new (2);
-  add_channel_to_ptr_array (channels, test->text_chan);
-  add_channel_to_ptr_array (channels, test->text_chan_2);
+  tp_tests_add_channel_to_ptr_array (channels, test->text_chan);
+  tp_tests_add_channel_to_ptr_array (channels, test->text_chan_2);
 
   properties = tp_asv_new (
       TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,
@@ -889,8 +871,8 @@ test_handler (Test *test,
 
   /* Call HandleChannels */
   channels = g_ptr_array_sized_new (2);
-  add_channel_to_ptr_array (channels, test->text_chan);
-  add_channel_to_ptr_array (channels, test->text_chan_2);
+  tp_tests_add_channel_to_ptr_array (channels, test->text_chan);
+  tp_tests_add_channel_to_ptr_array (channels, test->text_chan_2);
 
   requests_satisified = g_ptr_array_sized_new (0);
   info = g_hash_table_new (NULL, NULL);
@@ -1086,7 +1068,7 @@ test_handler_requests (Test *test,
 
   /* Call HandleChannels */
   channels = g_ptr_array_sized_new (2);
-  add_channel_to_ptr_array (channels, test->text_chan);
+  tp_tests_add_channel_to_ptr_array (channels, test->text_chan);
 
   requests_satisified = g_ptr_array_sized_new (1);
   g_ptr_array_add (requests_satisified, "/Request");
@@ -1192,8 +1174,8 @@ test_channel_dispatch_operation_claim_with_async (Test *test,
 
   /* Call AddDispatchOperation */
   channels = g_ptr_array_sized_new (2);
-  add_channel_to_ptr_array (channels, test->text_chan);
-  add_channel_to_ptr_array (channels, test->text_chan_2);
+  tp_tests_add_channel_to_ptr_array (channels, test->text_chan);
+  tp_tests_add_channel_to_ptr_array (channels, test->text_chan_2);
 
   properties = tp_asv_new (
       TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,
@@ -1284,8 +1266,8 @@ test_delegate_channels (Test *test,
 
   /* Call HandleChannels */
   channels = g_ptr_array_sized_new (2);
-  add_channel_to_ptr_array (channels, test->text_chan);
-  add_channel_to_ptr_array (channels, test->text_chan_2);
+  tp_tests_add_channel_to_ptr_array (channels, test->text_chan);
+  tp_tests_add_channel_to_ptr_array (channels, test->text_chan_2);
 
   requests_satisified = g_ptr_array_sized_new (0);
   info = g_hash_table_new (NULL, NULL);
@@ -1471,8 +1453,8 @@ delegate_to_preferred_handler (Test *test,
 
   /* Call HandleChannels */
   channels = g_ptr_array_sized_new (2);
-  add_channel_to_ptr_array (channels, test->text_chan);
-  add_channel_to_ptr_array (channels, test->text_chan_2);
+  tp_tests_add_channel_to_ptr_array (channels, test->text_chan);
+  tp_tests_add_channel_to_ptr_array (channels, test->text_chan_2);
 
   requests_satisified = g_ptr_array_sized_new (0);
   info = g_hash_table_new (NULL, NULL);

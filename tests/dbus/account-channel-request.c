@@ -704,24 +704,6 @@ channel_delegated_cb (TpAccountChannelRequest *req,
 }
 
 static void
-add_channel_to_ptr_array (GPtrArray *arr,
-    TpChannel *channel)
-{
-  GValueArray *tmp;
-
-  g_assert (arr != NULL);
-  g_assert (channel != NULL);
-
-  tmp = tp_value_array_build (2,
-      DBUS_TYPE_G_OBJECT_PATH, tp_proxy_get_object_path (channel),
-      TP_HASH_TYPE_STRING_VARIANT_MAP, tp_channel_borrow_immutable_properties (
-        channel),
-      G_TYPE_INVALID);
-
-  g_ptr_array_add (arr, tmp);
-}
-
-static void
 no_return_cb (TpClient *proxy,
     const GError *error,
     gpointer user_data,
@@ -799,7 +781,7 @@ test_handle_delegated (Test *test,
         request_props, NULL);
 
   channels = g_ptr_array_sized_new (1);
-  add_channel_to_ptr_array (channels, test->channel);
+  tp_tests_add_channel_to_ptr_array (channels, test->channel);
 
   base_client = _tp_account_channel_request_get_client (req);
   g_assert (TP_IS_BASE_CLIENT (base_client));

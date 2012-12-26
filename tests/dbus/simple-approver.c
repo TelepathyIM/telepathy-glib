@@ -327,24 +327,6 @@ out:
 }
 
 static void
-add_channel_to_ptr_array (GPtrArray *arr,
-    TpChannel *channel)
-{
-  GValueArray *tmp;
-
-  g_assert (arr != NULL);
-  g_assert (channel != NULL);
-
-  tmp = tp_value_array_build (2,
-      DBUS_TYPE_G_OBJECT_PATH, tp_proxy_get_object_path (channel),
-      TP_HASH_TYPE_STRING_VARIANT_MAP, tp_channel_borrow_immutable_properties (
-        channel),
-      G_TYPE_INVALID);
-
-  g_ptr_array_add (arr, tmp);
-}
-
-static void
 free_channel_details (gpointer data,
     gpointer user_data)
 {
@@ -361,7 +343,7 @@ call_add_dispatch (Test *test)
     TP_CLIENT_BUS_NAME_BASE ".Badger", NULL, };
 
   channels = g_ptr_array_sized_new (1);
-  add_channel_to_ptr_array (channels, test->text_chan);
+  tp_tests_add_channel_to_ptr_array (channels, test->text_chan);
 
   properties = tp_asv_new (
       TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,

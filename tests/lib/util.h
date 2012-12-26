@@ -104,4 +104,7 @@ TpChannel *tp_tests_channel_new_from_properties (TpConnection *conn,
     const GHashTable *immutable_properties,
     GError **error);
 
+void tp_tests_add_channel_to_ptr_array (GPtrArray *arr,
+    TpChannel *channel);
+
 #endif /* #ifndef __TP_TESTS_LIB_UTIL_H__ */
