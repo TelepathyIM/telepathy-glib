@@ -29,6 +29,8 @@
 
 #include <gio/gio.h>
 
+#include <telepathy-glib/defs.h>
+
 G_BEGIN_DECLS
 
 gboolean tp_g_ptr_array_contains (GPtrArray *haystack, gpointer needle);
