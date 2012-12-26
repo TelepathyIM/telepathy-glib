@@ -382,9 +382,6 @@ check_immutable_properties (Test *test)
         TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES) != NULL);
   g_assert_cmpuint (g_hash_table_size (immutable_props), ==, 4);
   g_hash_table_unref (immutable_props);
-  immutable_props = tp_channel_dispatch_operation_borrow_immutable_properties (
-      test->cdo);
-  g_assert_cmpuint (g_hash_table_size (immutable_props), ==, 4);
 }
 
 static void
@@ -461,7 +458,6 @@ static void
 test_properties_fetched (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *props;
   GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
 
   test->cdo = tp_channel_dispatch_operation_new (test->dbus,
@@ -477,9 +473,6 @@ test_properties_fetched (Test *test,
       == NULL);
   g_assert (tp_channel_dispatch_operation_get_possible_handlers (test->cdo)
       == NULL);
-  props = tp_channel_dispatch_operation_borrow_immutable_properties (
-        test->cdo);
-  g_assert_cmpuint (g_hash_table_size (props), ==, 0);
 
   tp_proxy_prepare_async (test->cdo, features, features_prepared_cb, test);
   g_main_loop_run (test->mainloop);
