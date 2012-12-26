@@ -329,9 +329,9 @@ test_pending_messages (Test *test,
   g_assert_no_error (test->error);
 
   /* We didn't prepare the feature yet so there is no pending msg */
-  messages = tp_text_channel_get_pending_messages (test->channel);
+  messages = tp_text_channel_dup_pending_messages (test->channel);
   g_assert_cmpuint (g_list_length (messages), ==, 0);
-  g_list_free (messages);
+  g_list_free_full (messages, g_object_unref);
 
   tp_proxy_prepare_async (test->channel, features,
       proxy_prepare_cb, test);
@@ -343,7 +343,7 @@ test_pending_messages (Test *test,
         TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES));
 
   /* We have the pending messages now */
-  messages = tp_text_channel_get_pending_messages (test->channel);
+  messages = tp_text_channel_dup_pending_messages (test->channel);
   g_assert_cmpuint (g_list_length (messages), ==, 2);
 
   /* Check first message */
@@ -368,7 +368,7 @@ test_pending_messages (Test *test,
   g_assert (sender != NULL);
   g_assert_cmpstr (tp_contact_get_identifier (sender), ==, "bob");
 
-  g_list_free (messages);
+  g_list_free_full (messages, g_object_unref);
 }
 
 static void
@@ -477,7 +477,7 @@ test_ack_messages (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  messages = tp_text_channel_get_pending_messages (test->channel);
+  messages = tp_text_channel_dup_pending_messages (test->channel);
   g_assert_cmpuint (g_list_length (messages), ==, 2);
 
   tp_text_channel_ack_messages_async (test->channel, messages,
@@ -486,10 +486,10 @@ test_ack_messages (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  g_list_free (messages);
+  g_list_free_full (messages, g_object_unref);
 
   /* Messages have been acked so there is no pending messages */
-  messages = tp_text_channel_get_pending_messages (test->channel);
+  messages = tp_text_channel_dup_pending_messages (test->channel);
   g_assert_cmpuint (g_list_length (messages), ==, 0);
 }
 
@@ -567,7 +567,7 @@ test_ack_message (Test *test,
   g_assert (test->received_msg == test->removed_msg);
 
   /* Messages has been acked so there is no pending messages */
-  messages = tp_text_channel_get_pending_messages (test->channel);
+  messages = tp_text_channel_dup_pending_messages (test->channel);
   g_assert_cmpuint (g_list_length (messages), ==, 0);
 }
 
@@ -775,7 +775,7 @@ test_ack_all_pending_messages (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  messages = tp_text_channel_get_pending_messages (test->channel);
+  messages = tp_text_channel_dup_pending_messages (test->channel);
   g_assert_cmpuint (g_list_length (messages), ==, 2);
 
   tp_text_channel_ack_all_pending_messages_async (test->channel,
@@ -784,10 +784,10 @@ test_ack_all_pending_messages (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  g_list_free (messages);
+  g_list_free_full (messages, g_object_unref);
 
   /* Messages have been acked so there is no pending messages */
-  messages = tp_text_channel_get_pending_messages (test->channel);
+  messages = tp_text_channel_dup_pending_messages (test->channel);
   g_assert_cmpuint (g_list_length (messages), ==, 0);
 }
 
@@ -824,7 +824,7 @@ test_pending_messages_with_no_sender_id (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  messages = tp_text_channel_get_pending_messages (test->channel);
+  messages = tp_text_channel_dup_pending_messages (test->channel);
   g_assert (messages != NULL);
   g_assert_cmpuint (g_list_length (messages), ==, 1);
 
@@ -836,7 +836,7 @@ test_pending_messages_with_no_sender_id (Test *test,
   g_assert_cmpstr (text, ==, "hi mum");
   g_free (text);
 
-  g_list_free (messages);
+  g_list_free_full (messages, g_object_unref);
 }
 
 static void

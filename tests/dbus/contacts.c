@@ -103,7 +103,7 @@ contact_info_verify (TpContact *contact)
 
   g_assert (tp_contact_has_feature (contact, TP_CONTACT_FEATURE_CONTACT_INFO));
 
-  info = tp_contact_get_contact_info (contact);
+  info = tp_contact_dup_contact_info (contact);
   g_assert (info != NULL);
   g_assert (info->data != NULL);
   g_assert (info->next == NULL);
@@ -116,7 +116,7 @@ contact_info_verify (TpContact *contact)
   g_assert_cmpstr (field->field_value[0], ==, "Foo");
   g_assert (field->field_value[1] == NULL);
 
-  g_list_free (info);
+  tp_contact_info_list_free (info);
 }
 
 static void
@@ -145,7 +145,7 @@ contact_info_prepare_cb (GObject *object,
       g_assert_cmpint (flags, ==, TP_CONTACT_INFO_FLAG_PUSH |
           TP_CONTACT_INFO_FLAG_CAN_SET);
 
-      specs = tp_connection_get_contact_info_supported_fields (connection);
+      specs = tp_connection_dup_contact_info_supported_fields (connection);
       g_assert_cmpuint (g_list_length (specs), ==, 5);
 
       for (l = specs; l != NULL; l = l->next)
@@ -175,7 +175,7 @@ contact_info_prepare_cb (GObject *object,
             }
         }
 
-      g_list_free (specs);
+      tp_contact_info_spec_list_free (specs);
     }
 
   finish (result);
@@ -331,7 +331,7 @@ test_contact_info (Fixture *f,
   g_main_loop_run (result.loop);
   g_assert_no_error (result.error);
 
-  g_assert (tp_contact_get_contact_info (contact) == NULL);
+  g_assert (tp_contact_dup_contact_info (contact) == NULL);
 
   g_signal_connect (contact, "notify::contact-info",
       G_CALLBACK (contact_info_notify_cb), &result);
@@ -351,7 +351,7 @@ test_contact_info (Fixture *f,
   g_main_loop_run (result.loop);
   g_assert_no_error (result.error);
 
-  g_assert (tp_contact_get_contact_info (contact) == NULL);
+  g_assert (tp_contact_dup_contact_info (contact) == NULL);
 
   tp_contact_request_contact_info_async (contact, NULL, contact_info_request_cb,
       &result);
@@ -370,7 +370,7 @@ test_contact_info (Fixture *f,
   g_main_loop_run (result.loop);
   g_assert_no_error (result.error);
 
-  g_assert (tp_contact_get_contact_info (contact) == NULL);
+  g_assert (tp_contact_dup_contact_info (contact) == NULL);
 
   cancellable = g_cancellable_new ();
   tp_contact_request_contact_info_async (contact, cancellable,

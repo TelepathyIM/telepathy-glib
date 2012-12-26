@@ -48,7 +48,7 @@ assert_chan_sane (TpChannel *chan,
     TpHandle initiator_handle,
     const gchar *initiator_id)
 {
-  GHashTable *asv;
+  GVariant *variant;
   TpHandleType type;
   TpContact *contact;
 
@@ -62,7 +62,7 @@ assert_chan_sane (TpChannel *chan,
       TP_IFACE_CHANNEL_TYPE_TEXT);
   g_assert_cmpuint (tp_channel_get_channel_type_id (chan), ==,
       TP_IFACE_QUARK_CHANNEL_TYPE_TEXT);
-  g_assert (TP_IS_CONNECTION (tp_channel_borrow_connection (chan)));
+  g_assert (TP_IS_CONNECTION (tp_channel_get_connection (chan)));
   g_assert_cmpstr (tp_channel_get_identifier (chan), ==, IDENTIFIER);
   g_assert (tp_channel_get_requested (chan) == requested);
 
@@ -82,19 +82,19 @@ assert_chan_sane (TpChannel *chan,
       g_assert (contact == NULL);
     }
 
-  asv = tp_channel_borrow_immutable_properties (chan);
-  g_assert (asv != NULL);
+  variant = tp_channel_dup_immutable_properties (chan);
+  g_assert (variant != NULL);
   g_assert_cmpstr (
-      tp_asv_get_string (asv, TP_PROP_CHANNEL_CHANNEL_TYPE), ==,
+      tp_vardict_get_string (variant, TP_PROP_CHANNEL_CHANNEL_TYPE), ==,
       TP_IFACE_CHANNEL_TYPE_TEXT);
   g_assert_cmpuint (
-      tp_asv_get_uint32 (asv, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL), ==,
+      tp_vardict_get_uint32 (variant, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL), ==,
       handle == 0 ? TP_HANDLE_TYPE_NONE : TP_HANDLE_TYPE_CONTACT);
   g_assert_cmpuint (
-      tp_asv_get_uint32 (asv, TP_PROP_CHANNEL_TARGET_HANDLE, NULL), ==,
+      tp_vardict_get_uint32 (variant, TP_PROP_CHANNEL_TARGET_HANDLE, NULL), ==,
       handle);
   g_assert_cmpstr (
-      tp_asv_get_string (asv, TP_PROP_CHANNEL_TARGET_ID), ==,
+      tp_vardict_get_string (variant, TP_PROP_CHANNEL_TARGET_ID), ==,
       IDENTIFIER);
 }
 

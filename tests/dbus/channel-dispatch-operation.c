@@ -343,7 +343,7 @@ check_immutable_properties (Test *test)
   /* connection */
   g_assert (conn != NULL);
   g_assert (TP_IS_CONNECTION (conn));
-  g_assert (tp_channel_dispatch_operation_borrow_connection (test->cdo)
+  g_assert (tp_channel_dispatch_operation_get_connection (test->cdo)
       == conn);
   g_assert_cmpstr (tp_proxy_get_object_path (conn), ==,
         tp_proxy_get_object_path (test->connection));
@@ -352,7 +352,7 @@ check_immutable_properties (Test *test)
   /* account */
   g_assert (account != NULL);
   g_assert (TP_IS_ACCOUNT (account));
-  g_assert (tp_channel_dispatch_operation_borrow_account (test->cdo)
+  g_assert (tp_channel_dispatch_operation_get_account (test->cdo)
       == account);
   g_assert_cmpstr (tp_proxy_get_object_path (account), ==,
         ACCOUNT_PATH);
@@ -365,7 +365,7 @@ check_immutable_properties (Test *test)
         POSSIBLE_HANDLERS[0]));
   g_strfreev (possible_handlers);
 
-  possible_handlers = tp_channel_dispatch_operation_borrow_possible_handlers (
+  possible_handlers = tp_channel_dispatch_operation_get_possible_handlers (
       test->cdo);
   g_assert_cmpuint (g_strv_length (possible_handlers), ==, 1);
   g_assert (tp_strv_contains ((const gchar * const *) possible_handlers,
@@ -393,7 +393,7 @@ check_channels (Test *test)
   GPtrArray *channels;
   TpChannel *channel;
 
-  channels = tp_channel_dispatch_operation_borrow_channels (test->cdo);
+  channels = tp_channel_dispatch_operation_get_channels (test->cdo);
   g_assert (channels != NULL);
   g_assert_cmpuint (channels->len, ==, 2);
 
@@ -439,7 +439,7 @@ test_properties_passed (Test *test,
   /* Channels is not an immutable property so have to be fetched when
    * preparing the TpChannelDispatchOperation */
   g_assert (channels == NULL);
-  g_assert (tp_channel_dispatch_operation_borrow_channels (test->cdo) == NULL);
+  g_assert (tp_channel_dispatch_operation_get_channels (test->cdo) == NULL);
 
   g_hash_table_unref (props);
 
@@ -469,13 +469,13 @@ test_properties_fetched (Test *test,
   g_assert_no_error (test->error);
 
   /* Properties are not defined yet */
-  g_assert (tp_channel_dispatch_operation_borrow_connection (test->cdo)
+  g_assert (tp_channel_dispatch_operation_get_connection (test->cdo)
       == NULL);
-  g_assert (tp_channel_dispatch_operation_borrow_account (test->cdo)
+  g_assert (tp_channel_dispatch_operation_get_account (test->cdo)
       == NULL);
-  g_assert (tp_channel_dispatch_operation_borrow_channels (test->cdo)
+  g_assert (tp_channel_dispatch_operation_get_channels (test->cdo)
       == NULL);
-  g_assert (tp_channel_dispatch_operation_borrow_possible_handlers (test->cdo)
+  g_assert (tp_channel_dispatch_operation_get_possible_handlers (test->cdo)
       == NULL);
   props = tp_channel_dispatch_operation_borrow_immutable_properties (
         test->cdo);
@@ -569,7 +569,7 @@ test_channel_lost (Test *test,
       test->text_chan);
   g_main_loop_run (test->mainloop);
 
-  channels = tp_channel_dispatch_operation_borrow_channels (test->cdo);
+  channels = tp_channel_dispatch_operation_get_channels (test->cdo);
   g_assert (channels != NULL);
   /* Channel has  been removed */
   g_assert_cmpuint (channels->len, ==, 1);
@@ -658,7 +658,7 @@ test_channel_lost_preparing (Test *test,
   g_assert (tp_proxy_is_prepared (test->cdo,
         TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE));
 
-  channels = tp_channel_dispatch_operation_borrow_channels (test->cdo);
+  channels = tp_channel_dispatch_operation_get_channels (test->cdo);
   g_assert (channels != NULL);
   /* Channel has  been removed */
   g_assert_cmpuint (channels->len, ==, 1);
@@ -717,7 +717,7 @@ test_finished_preparing (Test *test,
   g_assert (!tp_proxy_is_prepared (test->cdo,
         TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE));
 
-  channels = tp_channel_dispatch_operation_borrow_channels (test->cdo);
+  channels = tp_channel_dispatch_operation_get_channels (test->cdo);
   g_assert (channels == NULL);
 }
 

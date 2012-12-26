@@ -37,7 +37,7 @@ test_contact_search_result (void)
   identifier = tp_contact_search_result_get_identifier (result);
   g_assert_cmpstr (identifier, ==, "id");
 
-  fields = tp_contact_search_result_get_fields (result);
+  fields = tp_contact_search_result_dup_fields (result);
   g_assert (fields == NULL);
 
   field = tp_contact_search_result_get_field (result, "fn");
@@ -47,9 +47,9 @@ test_contact_search_result (void)
   g_assert (field != NULL);
 
   _tp_contact_search_result_insert_field (result, field);
-  fields = tp_contact_search_result_get_fields (result);
+  fields = tp_contact_search_result_dup_fields (result);
   g_assert (fields != NULL);
-  g_list_free (fields);
+  tp_contact_info_list_free (fields);
 
   field = tp_contact_search_result_get_field (result, "fn");
   g_assert (field != NULL);

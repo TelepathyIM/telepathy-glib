@@ -701,17 +701,17 @@ test_approver (Test *test,
   g_assert_no_error (test->error);
 
   g_assert (test->simple_client->add_dispatch_ctx != NULL);
-  chans = tp_channel_dispatch_operation_borrow_channels (
+  chans = tp_channel_dispatch_operation_get_channels (
       test->simple_client->add_dispatch_ctx->dispatch_operation);
   g_assert_cmpuint (chans->len, ==, 2);
 
   /* Check that we reuse existing proxies rather than creating new ones */
   g_assert (test->simple_client->add_dispatch_ctx->account == test->account);
-  g_assert (tp_channel_dispatch_operation_borrow_account (
+  g_assert (tp_channel_dispatch_operation_get_account (
         test->simple_client->add_dispatch_ctx->dispatch_operation) ==
       test->account);
 
-  g_assert (tp_channel_dispatch_operation_borrow_connection (
+  g_assert (tp_channel_dispatch_operation_get_connection (
         test->simple_client->add_dispatch_ctx->dispatch_operation) ==
       test->simple_client->add_dispatch_ctx->connection);
 
@@ -743,7 +743,7 @@ test_approver (Test *test,
 
   g_assert (test->simple_client->add_dispatch_ctx != NULL);
   /* The CDO only contain valid channels */
-  chans = tp_channel_dispatch_operation_borrow_channels (
+  chans = tp_channel_dispatch_operation_get_channels (
       test->simple_client->add_dispatch_ctx->dispatch_operation);
   g_assert_cmpuint (chans->len, ==, 1);
   /* But the context contains both */
@@ -911,9 +911,9 @@ test_handler (Test *test,
   g_assert (test->simple_client->handle_channels_ctx != NULL);
   g_assert (test->simple_client->handle_channels_ctx->account == test->account);
 
-  chans = tp_base_client_get_handled_channels (test->base_client);
+  chans = tp_base_client_dup_handled_channels (test->base_client);
   g_assert_cmpuint (g_list_length (chans), ==, 2);
-  g_list_free (chans);
+  g_list_free_full (chans, g_object_unref);
 
   g_assert (tp_base_client_is_handling_channel (test->base_client,
         test->text_chan));
@@ -926,9 +926,9 @@ test_handler (Test *test,
   tp_base_channel_close ((TpBaseChannel *) test->text_chan_service);
   g_main_loop_run (test->mainloop);
 
-  chans = tp_base_client_get_handled_channels (test->base_client);
+  chans = tp_base_client_dup_handled_channels (test->base_client);
   g_assert_cmpuint (g_list_length (chans), ==, 1);
-  g_list_free (chans);
+  g_list_free_full (chans, g_object_unref);
 
   g_assert (!tp_base_client_is_handling_channel (test->base_client,
         test->text_chan));
@@ -941,9 +941,9 @@ test_handler (Test *test,
   tp_base_client_register (TP_BASE_CLIENT (client_2), &test->error);
   g_assert_no_error (test->error);
 
-  chans = tp_base_client_get_handled_channels (TP_BASE_CLIENT (client_2));
+  chans = tp_base_client_dup_handled_channels (TP_BASE_CLIENT (client_2));
   g_assert_cmpuint (g_list_length (chans), ==, 1);
-  g_list_free (chans);
+  g_list_free_full (chans, g_object_unref);
 
   g_assert (!tp_base_client_is_handling_channel (TP_BASE_CLIENT (client_2),
         test->text_chan));
@@ -992,10 +992,10 @@ request_added_cb (TpBaseClient *client,
   g_assert (TP_IS_ACCOUNT (account));
   g_assert (tp_proxy_is_prepared (account, TP_ACCOUNT_FEATURE_CORE));
 
-  requests = tp_base_client_get_pending_requests (test->base_client);
+  requests = tp_base_client_dup_pending_requests (test->base_client);
   g_assert_cmpuint (g_list_length ((GList *) requests), ==, 1);
   g_assert (requests->data == request);
-  g_list_free (requests);
+  g_list_free_full (requests, g_object_unref);
 
   test->wait--;
   if (test->wait == 0)
@@ -1059,7 +1059,7 @@ test_handler_requests (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  g_assert (tp_base_client_get_pending_requests (test->base_client) == NULL);
+  g_assert (tp_base_client_dup_pending_requests (test->base_client) == NULL);
 
   /* Call AddRequest */
   properties = tp_asv_new (
@@ -1080,9 +1080,9 @@ test_handler_requests (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  requests = tp_base_client_get_pending_requests (test->base_client);
+  requests = tp_base_client_dup_pending_requests (test->base_client);
   g_assert (requests != NULL);
-  g_list_free (requests);
+  g_list_free_full (requests, g_object_unref);
 
   /* Call HandleChannels */
   channels = g_ptr_array_sized_new (2);
@@ -1116,9 +1116,9 @@ test_handler_requests (Test *test,
       test->simple_client->handle_channels_ctx->requests_satisfied->len, ==, 1);
   request = g_ptr_array_index (
       test->simple_client->handle_channels_ctx->requests_satisfied, 0);
-  requests = tp_base_client_get_pending_requests (test->base_client);
+  requests = tp_base_client_dup_pending_requests (test->base_client);
   g_assert (requests->data == request);
-  g_list_free (requests);
+  g_list_free_full (requests, g_object_unref);
 
   /* Call RemoveRequest */
   g_signal_connect (test->base_client, "request-removed",
@@ -1132,7 +1132,7 @@ test_handler_requests (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  g_assert (tp_base_client_get_pending_requests (test->base_client) == NULL);
+  g_assert (tp_base_client_dup_pending_requests (test->base_client) == NULL);
 
   g_hash_table_unref (properties);
   g_ptr_array_foreach (channels, free_channel_details, NULL);
@@ -1220,7 +1220,7 @@ test_channel_dispatch_operation_claim_with_async (Test *test,
   cdo = test->simple_client->add_dispatch_ctx->dispatch_operation;
   g_assert (TP_IS_CHANNEL_DISPATCH_OPERATION (cdo));
 
-  handled = tp_base_client_get_handled_channels (test->base_client);
+  handled = tp_base_client_dup_handled_channels (test->base_client);
   g_assert (handled == NULL);
 
   /* Connect to CDO's Finished signal so we can remove it from the bus when
@@ -1237,9 +1237,9 @@ test_channel_dispatch_operation_claim_with_async (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  handled = tp_base_client_get_handled_channels (test->base_client);
+  handled = tp_base_client_dup_handled_channels (test->base_client);
   g_assert_cmpuint (g_list_length (handled), ==, 2);
-  g_list_free (handled);
+  g_list_free_full (handled, g_object_unref);
 
   g_assert (tp_base_client_is_handling_channel (test->base_client,
         test->text_chan));
@@ -1304,9 +1304,9 @@ test_delegate_channels (Test *test,
   g_assert_no_error (test->error);
 
   /* The client is handling the 2 channels */
-  chans = tp_base_client_get_handled_channels (test->base_client);
+  chans = tp_base_client_dup_handled_channels (test->base_client);
   g_assert_cmpuint (g_list_length (chans), ==, 2);
-  g_list_free (chans);
+  g_list_free_full (chans, g_object_unref);
 
   g_assert (tp_base_client_is_handling_channel (test->base_client,
         test->text_chan));
@@ -1331,9 +1331,9 @@ test_delegate_channels (Test *test,
   g_assert_cmpuint (g_hash_table_size (test->not_delegated), ==, 0);
 
   /* Client is not handling the channel any more */
-  chans = tp_base_client_get_handled_channels (test->base_client);
+  chans = tp_base_client_dup_handled_channels (test->base_client);
   g_assert_cmpuint (g_list_length (chans), ==, 1);
-  g_list_free (chans);
+  g_list_free_full (chans, g_object_unref);
 
   g_assert (!tp_base_client_is_handling_channel (test->base_client,
         test->text_chan));
@@ -1361,9 +1361,9 @@ test_delegate_channels (Test *test,
   g_assert_error (error, TP_ERROR, TP_ERROR_BUSY);
 
   /* Client is still handling the channel */
-  chans = tp_base_client_get_handled_channels (test->base_client);
+  chans = tp_base_client_dup_handled_channels (test->base_client);
   g_assert_cmpuint (g_list_length (chans), ==, 1);
-  g_list_free (chans);
+  g_list_free_full (chans, g_object_unref);
 
   g_assert (!tp_base_client_is_handling_channel (test->base_client,
         test->text_chan));
