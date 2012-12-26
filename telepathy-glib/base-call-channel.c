@@ -754,6 +754,25 @@ call_state_to_string (TpCallState state)
   return state_str;
 }
 
+static void
+tp_base_call_channel_flags_changed (TpBaseCallChannel *self,
+    guint actor_handle,
+    TpCallStateChangeReason reason,
+    const gchar *dbus_reason,
+    const gchar *message)
+{
+  g_value_array_free (self->priv->reason);
+  self->priv->reason = _tp_base_call_state_reason_new (actor_handle, reason,
+      dbus_reason, message);
+
+  if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
+    {
+      tp_svc_channel_type_call_emit_call_state_changed (self,
+          self->priv->state, self->priv->flags, self->priv->reason,
+          self->priv->details);
+    }
+}
+
 /**
  * tp_base_call_channel_set_state:
  * @self: a #TpBaseCallChannel
@@ -791,6 +810,9 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
   self->priv->reason = _tp_base_call_state_reason_new (actor_handle, reason,
       dbus_reason, message);
 
+  if (old_state == state)
+    return;
+
   if (self->priv->state != TP_CALL_STATE_INITIALISED)
     self->priv->flags &= ~TP_CALL_FLAG_LOCALLY_RINGING;
 
@@ -809,8 +831,7 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
       call_state_to_string (self->priv->state));
 
   /* Move from INITIALISING to INITIALISED if we are already connected */
-  if (self->priv->state != old_state &&
-      self->priv->state == TP_CALL_STATE_INITIALISING &&
+  if (self->priv->state == TP_CALL_STATE_INITIALISING &&
       _tp_base_call_channel_is_connected (self))
     {
       self->priv->state = TP_CALL_STATE_INITIALISED;
@@ -827,8 +848,7 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
     }
 
   /* Move from ACCEPTED to ACTIVE if we are already connected */
-  if (self->priv->state != old_state &&
-      self->priv->state == TP_CALL_STATE_ACCEPTED &&
+  if (self->priv->state == TP_CALL_STATE_ACCEPTED &&
       _tp_base_call_channel_is_connected (self))
     {
       self->priv->state = TP_CALL_STATE_ACTIVE;
@@ -1289,7 +1309,7 @@ tp_base_call_channel_set_ringing (TpSvcChannelTypeCall *iface,
 
           self->priv->flags |= TP_CALL_FLAG_LOCALLY_RINGING;
           self->priv->flags &= ~TP_CALL_FLAG_LOCALLY_QUEUED;
-          tp_base_call_channel_set_state (self, self->priv->state,
+          tp_base_call_channel_flags_changed (self,
               tp_base_channel_get_self_handle ((TpBaseChannel *) self),
               TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "",
               "Local client has started ringing");
@@ -1330,7 +1350,7 @@ tp_base_call_channel_set_queued (TpSvcChannelTypeCall *iface,
             klass->set_queued (self);
 
           self->priv->flags |= TP_CALL_FLAG_LOCALLY_QUEUED;
-          tp_base_call_channel_set_state (self, self->priv->state,
+          tp_base_call_channel_flags_changed (self,
               tp_base_channel_get_self_handle ((TpBaseChannel *) self),
               TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "",
               "Local client has queued the call");
