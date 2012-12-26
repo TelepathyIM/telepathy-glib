@@ -399,7 +399,7 @@ tp_channel_dispatch_operation_constructed (GObject *object)
 
   g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
 
-  _tp_proxy_ensure_factory (self, NULL);
+  g_assert (tp_proxy_get_factory (self) != NULL);
 
   maybe_set_connection (self,
       tp_asv_get_boxed (self->priv->immutable_properties,

@@ -264,7 +264,7 @@ tp_channel_request_constructed (GObject *object)
 
   g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
 
-  _tp_proxy_ensure_factory (self, NULL);
+  g_assert (tp_proxy_get_factory (self) != NULL);
 
   sc = tp_cli_channel_request_connect_to_failed (self,
       tp_channel_request_failed_cb, NULL, NULL, NULL, &error);
