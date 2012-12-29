@@ -62,8 +62,8 @@ def main(package, version, news_path):
     print """
 %(release_name)s
 
-tarball: %(base_url)s/%(package)s/%(package)s-%(version)s.tar.gz
-signature: %(base_url)s/%(package)s/%(package)s-%(version)s.tar.gz.asc
+tarball: %(base_url)s/%(package)s/%(package)s-%(version)s.tar.bz2
+signature: %(base_url)s/%(package)s/%(package)s-%(version)s.tar.bz2.asc
 git: %(git_url)s/%(package)s
 
 %(details)s""".strip().rstrip() % {
