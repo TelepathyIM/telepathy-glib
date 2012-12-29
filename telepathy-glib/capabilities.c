@@ -84,8 +84,8 @@ struct _TpCapabilitiesPrivate {
  *
  * <!-- -->
  *
- * Returns: (transfer none): the same #GPtrArray as the
- * #TpCapabilities:channel-classes property
+ * Returns: (transfer none) (element-type GHashTable): the same #GPtrArray as
+ * the #TpCapabilities:channel-classes property
  *
  * Since: 0.11.3
  */

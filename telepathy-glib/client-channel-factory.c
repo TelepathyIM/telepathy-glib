@@ -139,7 +139,7 @@ tp_client_channel_factory_create_channel (TpClientChannelFactory *self,
  * it expected an object instance as its first parameter, but the type of the
  * parameter was the type of the interface vtable.
  *
- * Returns: (transfer full): a newly allocated #GArray
+ * Returns: (transfer full) (element-type GQuark): a newly allocated #GArray
  *
  * Since: 0.13.3
  */
