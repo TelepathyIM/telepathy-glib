@@ -720,7 +720,7 @@ get_pending_messages_cb (TpProxy *proxy,
 }
 
 static void
-tp_text_channel_prepare_pending_messages_async (TpProxy *proxy,
+tp_text_channel_prepare_incoming_messages_async (TpProxy *proxy,
     const TpProxyFeature *feature,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -751,7 +751,7 @@ tp_text_channel_prepare_pending_messages_async (TpProxy *proxy,
   g_assert (self->priv->pending_messages_result == NULL);
   self->priv->pending_messages_result = g_simple_async_result_new (
       (GObject *) proxy, callback, user_data,
-      tp_text_channel_prepare_pending_messages_async);
+      tp_text_channel_prepare_incoming_messages_async);
 
 
   tp_cli_dbus_properties_call_get (proxy, -1,
@@ -842,7 +842,7 @@ tp_text_channel_prepare_sms_async (TpProxy *proxy,
 }
 
 enum {
-    FEAT_PENDING_MESSAGES,
+    FEAT_INCOMING_MESSAGES,
     FEAT_SMS,
     FEAT_CHAT_STATES,
     N_FEAT
@@ -858,10 +858,10 @@ tp_text_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   if (G_LIKELY (features[0].name != 0))
     return features;
 
-  features[FEAT_PENDING_MESSAGES].name =
+  features[FEAT_INCOMING_MESSAGES].name =
     TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES;
-  features[FEAT_PENDING_MESSAGES].prepare_async =
-    tp_text_channel_prepare_pending_messages_async;
+  features[FEAT_INCOMING_MESSAGES].prepare_async =
+    tp_text_channel_prepare_incoming_messages_async;
 
   features[FEAT_SMS].name =
     TP_TEXT_CHANNEL_FEATURE_SMS;
