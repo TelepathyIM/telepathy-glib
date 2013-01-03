@@ -13,6 +13,7 @@
 #include <telepathy-glib/connection.h>
 
 #include "examples/cm/contactlist/conn.h"
+#include "tests/lib/debug.h"
 #include "tests/lib/util.h"
 
 typedef enum {
@@ -96,6 +97,7 @@ typedef struct {
     GHashTable *contact_attributes;
 
     GMainLoop *main_loop;
+    GError *error /* = NULL */;
 } Test;
 
 static void
@@ -364,12 +366,9 @@ setup_pre_connect (
 }
 
 static void
-setup (Test *test,
-    gconstpointer data)
+test_connect_and_finish_setup (Test *test)
 {
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
-
-  setup_pre_connect (test, data);
 
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
   tp_tests_proxy_run_until_prepared (test->conn, features);
@@ -425,6 +424,14 @@ setup (Test *test,
 }
 
 static void
+setup (Test *test,
+    gconstpointer data)
+{
+  setup_pre_connect (test, data);
+  test_connect_and_finish_setup (test);
+}
+
+static void
 test_clear_log (Test *test)
 {
   g_ptr_array_foreach (test->log, (GFunc) log_entry_free, NULL);
@@ -443,6 +450,7 @@ teardown_pre_connect (
   tp_clear_object (&test->conn);
   tp_clear_object (&test->dbus);
   tp_clear_pointer (&test->main_loop, g_main_loop_unref);
+  g_clear_error (&test->error);
 }
 
 static void
@@ -677,9 +685,58 @@ test_nothing (Test *test,
 }
 
 static void
+expect_cambridge_once_cb (TpConnection *conn,
+    const GPtrArray *channels,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  GValueArray *va;
+  const gchar *object_path;
+  GHashTable *properties;
+
+  g_assert_cmpuint (channels->len, ==, 1);
+  va = g_ptr_array_index (channels, 0);
+  object_path = g_value_get_boxed (va->values + 0);
+  properties = g_value_get_boxed (va->values + 1);
+
+  if (tp_asv_get_uint32 (properties, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL)
+      != TP_HANDLE_TYPE_GROUP ||
+      tp_strdiff (tp_asv_get_string (properties, TP_PROP_CHANNEL_CHANNEL_TYPE),
+        TP_IFACE_CHANNEL_TYPE_CONTACT_LIST) ||
+      tp_strdiff (tp_asv_get_string (properties, TP_PROP_CHANNEL_TARGET_ID),
+        "Cambridge"))
+    {
+      /* either this is not a ContactList, or it's a LIST ContactList,
+       * or it's one of the other groups - Montreal or Francophones.
+       * Either way, it's not interesting right now. */
+      DEBUG ("NewChannels not for Cambridge group, ignoring");
+      return;
+    }
+
+  DEBUG ("NewChannels for Cambridge group");
+  /* the Cambridge group should only be created once (fd.o #52011) */
+  g_assert (test->group == NULL);
+
+  test->group = tp_simple_client_factory_ensure_channel (
+      tp_proxy_get_factory (conn),
+      conn, object_path, properties, &test->error);
+  g_assert_no_error (test->error);
+}
+
+static void
 test_initial_channels (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
+  TpProxySignalConnection *new_channels_sig;
+
+  /* legacy interface for the Group channels */
+  new_channels_sig = tp_cli_connection_interface_requests_connect_to_new_channels (
+      test->conn, expect_cambridge_once_cb, test, NULL, NULL, &test->error);
+  g_assert_no_error (test->error);
+
+  test_connect_and_finish_setup (test);
+
   test->publish = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "publish");
   test->subscribe = test_ensure_channel (test, TP_HANDLE_TYPE_LIST,
       "subscribe");
@@ -744,6 +801,11 @@ test_initial_channels (Test *test,
       ==, 0);
   g_assert (tp_intset_is_member (tp_channel_group_get_members (test->deny),
         test->bill));
+
+  /* the Cambridge group was announced (fd.o #52011) */
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
+  tp_proxy_signal_connection_disconnect (new_channels_sig);
+  g_assert (TP_IS_CHANNEL (test->group));
 }
 
 static void
@@ -2688,7 +2750,7 @@ main (int argc,
       Test, NULL, setup, test_nothing, teardown);
 
   g_test_add ("/contact-lists/initial-channels",
-      Test, NULL, setup, test_initial_channels, teardown);
+      Test, NULL, setup_pre_connect, test_initial_channels, teardown);
   g_test_add ("/contact-lists/properties",
       Test, NULL, setup, test_properties, teardown);
   g_test_add ("/contact-lists/contacts",
