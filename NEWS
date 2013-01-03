@@ -3,6 +3,20 @@ telepathy-glib 0.21.0 (UNRELEASED)
 
 Fixes:
 
+• Add missing (element-type) introspection annotations to
+  tp_capabilities_get_channel_classes, tp_asv_get_bytes and
+  tp_client_channel_factory_dup_channel_features (fd.o #58851, Philip Withnall)
+
+telepathy-glib 0.20.1 (2012-11-09)
+==================================
+
+The "world's slowest ticket machines" release.
+
+Fixes:
+
+• In Call channels, ignore state transitions where the state did not
+  actually change (fd.o #56044, Debarshi Ray)
+
 • Process the SelfHandleChanged signal for non-obsolete connection managers
   (fd.o #55666, Simon)
 
