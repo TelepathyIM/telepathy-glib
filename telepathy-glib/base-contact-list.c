@@ -2008,8 +2008,6 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
   if (TP_IS_CONTACT_GROUP_LIST (self))
     {
       GStrv groups = tp_base_contact_list_dup_groups (self);
-      GHashTableIter h_iter;
-      gpointer channel;
 
       tp_base_contact_list_groups_created (self,
           (const gchar * const *) groups, -1);
@@ -2023,11 +2021,6 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
               (const gchar * const *) groups + i, 1, NULL, 0);
           tp_handle_set_destroy (members);
         }
-
-      g_hash_table_iter_init (&h_iter, self->priv->groups);
-
-      while (g_hash_table_iter_next (&h_iter, NULL, &channel))
-        tp_base_contact_list_announce_channel (self, channel, NULL);
 
       g_strfreev (groups);
     }
