@@ -783,7 +783,8 @@ tp_asv_set_boolean (GHashTable *asv,
  * g_boxed_copy (DBUS_TYPE_G_UCHAR_ARRAY, ...) if you need to keep
  * it for longer.
  *
- * Returns: (transfer none) (allow-none): the string value of @key, or %NULL
+ * Returns: (transfer none) (allow-none) (element-type guint8): the string value
+ * of @key, or %NULL
  * Since: 0.7.9
  */
 const GArray *

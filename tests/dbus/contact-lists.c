@@ -94,6 +94,7 @@ typedef struct {
     GHashTable *contact_attributes;
 
     GMainLoop *main_loop;
+    GError *error /* = NULL */;
 } Test;
 
 static void
@@ -305,12 +306,9 @@ setup_pre_connect (
 }
 
 static void
-setup (Test *test,
-    gconstpointer data)
+test_connect_and_finish_setup (Test *test)
 {
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
-
-  setup_pre_connect (test, data);
 
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
   tp_tests_proxy_run_until_prepared (test->conn, features);
@@ -363,6 +361,14 @@ setup (Test *test,
 }
 
 static void
+setup (Test *test,
+    gconstpointer data)
+{
+  setup_pre_connect (test, data);
+  test_connect_and_finish_setup (test);
+}
+
+static void
 test_clear_log (Test *test)
 {
   g_ptr_array_foreach (test->log, (GFunc) log_entry_free, NULL);
@@ -381,6 +387,7 @@ teardown_pre_connect (
   tp_clear_object (&test->conn);
   tp_clear_object (&test->dbus);
   tp_clear_pointer (&test->main_loop, g_main_loop_unref);
+  g_clear_error (&test->error);
 }
 
 static void

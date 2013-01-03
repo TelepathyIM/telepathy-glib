@@ -1,7 +1,40 @@
 telepathy-glib 0.21.0 (UNRELEASED)
 ==================================
 
+This starts a new development branch.
+
+Enhancements:
+
+• Code-generation now copes with ${PYTHON} being set to Python 3
+  (e.g. "./configure PYTHON=python3" on Debian); Python 2 remains
+  fully supported (fd.o #56758, Simon)
+
 Fixes:
+
+• Remove the pkg-config dependency from .pc files (Will)
+
+• Add missing (element-type) introspection annotations to
+  tp_capabilities_get_channel_classes, tp_asv_get_bytes and
+  tp_client_channel_factory_dup_channel_features (fd.o #58851, Philip Withnall)
+
+• Don't emit the NewChannels signal twice for the obsolete ContactList GROUP
+  channels (fd.o #52011, Simon)
+
+Deprecations:
+
+• tp_g_key_file_get_int64, tp_g_key_file_get_uint64 (use the corresponding
+  functions from GLib ≥ 2.26)
+
+
+telepathy-glib 0.20.1 (2012-11-09)
+==================================
+
+The "world's slowest ticket machines" release.
+
+Fixes:
+
+• In Call channels, ignore state transitions where the state did not
+  actually change (fd.o #56044, Debarshi Ray)
 
 • Process the SelfHandleChanged signal for non-obsolete connection managers
   (fd.o #55666, Simon)
