@@ -1,7 +1,11 @@
 telepathy-glib 0.20.2 (UNRELEASED)
 ==================================
 
-...
+Fixes:
+
+• Add missing (element-type) introspection annotations to
+  tp_capabilities_get_channel_classes, tp_asv_get_bytes and
+  tp_client_channel_factory_dup_channel_features (fd.o #58851, Philip Withnall)
 
 telepathy-glib 0.20.1 (2012-11-09)
 ==================================
