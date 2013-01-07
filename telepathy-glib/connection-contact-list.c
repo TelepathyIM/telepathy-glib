@@ -255,6 +255,12 @@ got_contact_list_attributes_cb (TpConnection *self,
 
       contact = tp_simple_client_factory_ensure_contact (
           tp_proxy_get_factory (self), self, handle, id);
+
+      /* ensure_contact() can fail for obsolete CMs that don't have
+       * ImmortalHandles */
+      if (contact == NULL)
+         continue;
+
       if (!_tp_contact_set_attributes (contact, value,
               features->len, (TpContactFeature *) features->data, &e))
         {
