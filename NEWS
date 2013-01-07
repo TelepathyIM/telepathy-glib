@@ -3,8 +3,21 @@ telepathy-glib 0.18.3 (UNRELEASED)
 
 Fixes:
 
+• Get the remote contact from an updated MediaDescription correctly,
+  fixing Theora video calling (Debian #686563, Sjoerd)
+
+• Raise an error from UpdateLocalMediaDescription if there is an
+  outstanding offer for the updated contact, but not if there is an
+  offer for some other contact (Debian #686563, Sjoerd)
+
 • In tp_account_dup_storage_identifier_variant, don't fail if there is no
   storage identifier (fd.o #53201, Guillaume)
+
+• When preparing group members, don't leak the result (Guillaume)
+
+• In TpSimpleClientFactory, don't crash when ensuring a contact for an
+  obsolete connection manager without "immortal handles" fails
+  (Maksim Melnikau)
 
 telepathy-glib 0.18.2 (2012-07-28)
 ==================================
