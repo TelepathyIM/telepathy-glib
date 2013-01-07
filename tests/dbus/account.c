@@ -678,6 +678,15 @@ test_addressing (Test *test,
         "telnet"));
   g_assert (!tp_account_associated_with_uri_scheme (test->account,
         "xmpp"));
+
+  g_signal_connect (test->account, "notify::uri-schemes",
+      G_CALLBACK (notify_cb), test);
+
+  tp_tests_simple_account_add_uri_scheme (test->account_service, "xmpp");
+  g_main_loop_run (test->mainloop);
+
+  g_assert (tp_account_associated_with_uri_scheme (test->account,
+        "xmpp"));
 }
 
 static void

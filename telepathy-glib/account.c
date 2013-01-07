@@ -1020,6 +1020,42 @@ _tp_account_got_all_cb (TpProxy *proxy,
 }
 
 static void
+addressing_props_changed (TpAccount *self,
+    GHashTable *changed_properties)
+{
+  const gchar * const * v;
+
+  if (self->priv->uri_schemes == NULL)
+    /* We did not fetch the initial value yet, ignoring */
+    return;
+
+  v = tp_asv_get_strv (changed_properties, "URISchemes");
+  if (v == NULL)
+    return;
+
+  g_strfreev (self->priv->uri_schemes);
+  self->priv->uri_schemes = g_strdupv ((GStrv) v);
+
+  g_object_notify (G_OBJECT (self), "uri-schemes");
+}
+
+static void
+dbus_properties_changed_cb (TpProxy *proxy,
+    const gchar *interface_name,
+    GHashTable *changed_properties,
+    const gchar **invalidated_properties,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpAccount *self = TP_ACCOUNT (weak_object);
+
+  if (!tp_strdiff (interface_name, TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING))
+    {
+      addressing_props_changed (self, changed_properties);
+    }
+}
+
+static void
 _tp_account_constructed (GObject *object)
 {
   TpAccount *self = TP_ACCOUNT (object);
@@ -1058,6 +1094,9 @@ _tp_account_constructed (GObject *object)
 
   tp_cli_account_connect_to_account_property_changed (self,
       _tp_account_properties_changed, NULL, NULL, object, NULL);
+
+  tp_cli_dbus_properties_connect_to_properties_changed (self,
+      dbus_properties_changed_cb, NULL, NULL, object, NULL);
 
   tp_cli_dbus_properties_call_get_all (self, -1, TP_IFACE_ACCOUNT,
       _tp_account_got_all_cb, NULL, NULL, G_OBJECT (self));
@@ -2046,6 +2085,9 @@ tp_account_class_init (TpAccountClass *klass)
    * This list should not contain the primary URI scheme(s) for the account's
    * protocol (for instance, "xmpp" for XMPP, or "sip" or "sips" for SIP),
    * since it should be assumed to be useful for those schemes in any case.
+   *
+   * The notify::uri-schemes signal cannot be relied on if the Account Manager
+   * is Mission Control version 5.14.0 or older.
    *
    * Since: UNRELEASED
    */
