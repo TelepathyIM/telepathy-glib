@@ -181,6 +181,7 @@ enum {
   PROP_STORAGE_IDENTIFIER_VARIANT,
   PROP_STORAGE_RESTRICTIONS,
   PROP_SUPERSEDES,
+  PROP_URI_SCHEMES,
   N_PROPS
 };
 
@@ -1149,6 +1150,9 @@ _tp_account_get_property (GObject *object,
     case PROP_SUPERSEDES:
       g_value_set_boxed (value, self->priv->supersedes);
       break;
+    case PROP_URI_SCHEMES:
+      g_value_set_boxed (value, self->priv->uri_schemes);
+      break;
     case PROP_AUTOMATIC_PRESENCE_TYPE:
       g_value_set_uint (value, self->priv->auto_presence);
       break;
@@ -2026,6 +2030,29 @@ tp_account_class_init (TpAccountClass *klass)
       g_param_spec_boxed ("supersedes",
         "Supersedes",
         "Accounts superseded by this one",
+        G_TYPE_STRV,
+        G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:uri-schemes:
+   *
+   * If the %TP_ACCOUNT_FEATURE_ADDRESSING feature has been prepared
+   * successfully, a list of additional URI schemes for which this
+   * account should be used if possible. Otherwise %NULL.
+   *
+   * For instance, a SIP or Skype account might have "tel" in this list if the
+   * user would like to use that account to call phone numbers.
+   *
+   * This list should not contain the primary URI scheme(s) for the account's
+   * protocol (for instance, "xmpp" for XMPP, or "sip" or "sips" for SIP),
+   * since it should be assumed to be useful for those schemes in any case.
+   *
+   * Since: UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_URI_SCHEMES,
+      g_param_spec_boxed ("uri-schemes",
+        "URISchemes",
+        "URISchemes",
         G_TYPE_STRV,
         G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
@@ -4225,18 +4252,9 @@ tp_account_prepare_addressing_async (TpProxy *proxy,
  * tp_account_get_uri_schemes:
  * @self: a #TpAccount
  *
- * If the %TP_ACCOUNT_FEATURE_ADDRESSING feature has been prepared
- * successfully, return a list of additional URI schemes for which this
- * account should be used if possible. Otherwise return %NULL.
+ * Return the #TpAccount:uri-schemes property
  *
- * For instance, a SIP or Skype account might have "tel" in this list if the
- * user would like to use that account to call phone numbers.
- *
- * This list should not contain the primary URI scheme(s) for the account's
- * protocol (for instance, "xmpp" for XMPP, or "sip" or "sips" for SIP),
- * since it should be assumed to be useful for those schemes in any case.
- *
- * Returns: (transfer none): a list of URI schemes, or %NULL
+ * Returns: (transfer none): the value of #TpAccount:uri_schemes property
  *
  * Since: 0.13.8
  */
