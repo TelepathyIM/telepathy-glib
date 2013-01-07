@@ -80,6 +80,7 @@ struct _TpTestsSimpleAccountPrivate
   gchar *presence_msg;
   gchar *connection_path;
   gboolean enabled;
+  GPtrArray *uri_schemes;
 };
 
 static void
@@ -122,10 +123,14 @@ account_iface_init (gpointer klass,
 #undef IMPLEMENT
 }
 
+/* you may have noticed this is not entirely realistic */
+static const gchar * const uri_schemes[] = { "about", "telnet", NULL };
 
 static void
 tp_tests_simple_account_init (TpTestsSimpleAccount *self)
 {
+  guint i;
+
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TESTS_TYPE_SIMPLE_ACCOUNT,
       TpTestsSimpleAccountPrivate);
 
@@ -134,10 +139,11 @@ tp_tests_simple_account_init (TpTestsSimpleAccount *self)
   self->priv->presence_msg = g_strdup ("this is my CurrentPresence");
   self->priv->connection_path = g_strdup ("/");
   self->priv->enabled = TRUE;
-}
 
-/* you may have noticed this is not entirely realistic */
-static const gchar * const uri_schemes[] = { "about", "telnet", NULL };
+  self->priv->uri_schemes = g_ptr_array_new_with_free_func (g_free);
+  for (i = 0; uri_schemes[i] != NULL; i++)
+    g_ptr_array_add (self->priv->uri_schemes, g_strdup (uri_schemes[i]));
+}
 
 static void
 tp_tests_simple_account_get_property (GObject *object,
@@ -231,7 +237,19 @@ tp_tests_simple_account_get_property (GObject *object,
           TP_STORAGE_RESTRICTION_FLAG_CANNOT_SET_PARAMETERS);
       break;
     case PROP_URI_SCHEMES:
-      g_value_set_boxed (value, uri_schemes);
+        {
+          GPtrArray *arr;
+          guint i;
+
+          arr = g_ptr_array_sized_new (self->priv->uri_schemes->len + 1);
+          for (i = 0; i < self->priv->uri_schemes->len; i++)
+              g_ptr_array_add (arr,
+                  g_ptr_array_index (self->priv->uri_schemes, i));
+            g_ptr_array_add (arr, NULL);
+
+          g_value_set_boxed (value, arr->pdata);
+          g_ptr_array_unref (arr);
+        }
       break;
     case PROP_AVATAR:
         {
@@ -273,6 +291,8 @@ tp_tests_simple_account_finalize (GObject *object)
   g_free (self->priv->presence_status);
   g_free (self->priv->presence_msg);
   g_free (self->priv->connection_path);
+
+  g_ptr_array_unref (self->priv->uri_schemes);
 
   G_OBJECT_CLASS (tp_tests_simple_account_parent_class)->finalize (object);
 }
@@ -577,4 +597,11 @@ tp_tests_simple_account_set_enabled (TpTestsSimpleAccount *self,
   tp_asv_set_boolean (change, "Enabled", enabled);
   tp_svc_account_emit_account_property_changed (self, change);
   g_hash_table_unref (change);
+}
+
+void
+tp_tests_simple_account_add_uri_scheme (TpTestsSimpleAccount *self,
+    const gchar *uri_scheme)
+{
+  g_ptr_array_add (self->priv->uri_schemes, g_strdup (uri_scheme));
 }
