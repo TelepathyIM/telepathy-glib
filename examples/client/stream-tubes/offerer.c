@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <telepathy-glib/telepathy-glib.h>
 
 static GMainLoop *loop = NULL;
