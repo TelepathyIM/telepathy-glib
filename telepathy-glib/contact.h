@@ -175,7 +175,7 @@ typedef void (*TpConnectionContactsByIdCb) (TpConnection *connection,
     const gchar * const *requested_ids, GHashTable *failed_id_errors,
     const GError *error, gpointer user_data, GObject *weak_object);
 
-_TP_DEPRECATED_IN_0_20_FOR(tp_connection_get_contact_by_id_async)
+_TP_DEPRECATED_IN_0_20_FOR(tp_connection_dup_contact_by_id_async)
 void tp_connection_get_contacts_by_id (TpConnection *self,
     guint n_ids, const gchar * const *ids,
     guint n_features, const TpContactFeature *features,

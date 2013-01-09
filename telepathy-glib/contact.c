@@ -4603,7 +4603,7 @@ contacts_requested_handles (TpConnection *connection,
  * connection managers.
  *
  * Since: 0.7.18
- * Deprecated: Use tp_connection_get_contact_by_id_async() instead.
+ * Deprecated: Use tp_connection_dup_contact_by_id_async() instead.
  */
 void
 tp_connection_get_contacts_by_id (TpConnection *self,
@@ -4773,7 +4773,7 @@ tp_connection_dup_contact_by_id_async (TpConnection *self,
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
- * Finishes tp_connection_get_contact_by_id_async().
+ * Finishes tp_connection_dup_contact_by_id_async().
  *
  * Returns: (transfer full): a #TpContact or %NULL on error.
  * Since: 0.19.0
