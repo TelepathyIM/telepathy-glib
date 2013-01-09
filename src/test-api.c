@@ -19,6 +19,8 @@
  */
 
 
+#include "config.h"
+
 #include <glib.h>
 
 #include <telepathy-glib/telepathy-glib.h>

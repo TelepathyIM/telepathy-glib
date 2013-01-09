@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include "telepathy-logger/log-store-xml.c"
 
 #include "lib/util.h"

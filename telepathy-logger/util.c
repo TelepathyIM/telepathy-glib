@@ -20,6 +20,8 @@
  *          Richard Hult <richard@imendio.com>
  */
 
+#include "config.h"
+
 #include "util-internal.h"
 
 #include <errno.h>

@@ -1,3 +1,5 @@
+#include "config.h"
+
 /* FIXME: hugly kludge: we need to include all the declarations which are used
  * by the GInterface and thus not in the -internal.h */
 #include "telepathy-logger/log-store-pidgin.c"

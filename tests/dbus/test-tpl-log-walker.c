@@ -1,7 +1,10 @@
+#include "config.h"
+
 #include "lib/simple-account.h"
 #include "lib/util.h"
 
 #include "telepathy-logger/call-event.h"
+#include "telepathy-logger/debug-internal.h"
 #include "telepathy-logger/log-manager.h"
 #include "telepathy-logger/text-event.h"
 

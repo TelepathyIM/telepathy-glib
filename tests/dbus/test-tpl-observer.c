@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <telepathy-logger/observer-internal.h>
 
 int

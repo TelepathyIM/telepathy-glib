@@ -1,6 +1,9 @@
+#include "config.h"
+
 #include "lib/util.h"
 
 #include "telepathy-logger/call-event.h"
+#include "telepathy-logger/debug-internal.h"
 #include "telepathy-logger/log-iter-internal.h"
 #include "telepathy-logger/log-iter-xml-internal.h"
 #include "telepathy-logger/log-store-xml-internal.h"
