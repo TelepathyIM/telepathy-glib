@@ -38,6 +38,7 @@
 #include <telepathy-logger/event.h>
 #include <telepathy-logger/event-internal.h>
 #include <telepathy-logger/log-store-internal.h>
+#include <telepathy-logger/log-store-empathy-internal.h>
 #include <telepathy-logger/log-store-xml-internal.h>
 #include <telepathy-logger/log-store-pidgin-internal.h>
 #include <telepathy-logger/log-store-sqlite-internal.h>
@@ -280,8 +281,7 @@ tpl_log_manager_init (TplLogManager *self)
 
   /* Load by default the Empathy's legacy 'past coversations' LogStore */
   add_log_store (self,
-      g_object_new (TPL_TYPE_LOG_STORE_XML,
-          "empathy-legacy", TRUE,
+      g_object_new (TPL_TYPE_LOG_STORE_EMPATHY,
           NULL));
 
   add_log_store (self,

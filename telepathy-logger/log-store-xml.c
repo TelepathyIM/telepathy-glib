@@ -79,7 +79,6 @@
 struct _TplLogStoreXmlPriv
 {
   gchar *basedir;
-  gboolean empathy_legacy;
   gboolean test_mode;
   TpAccountManager *account_manager;
 };
@@ -88,7 +87,6 @@ enum {
     PROP_0,
     PROP_READABLE,
     PROP_BASEDIR,
-    PROP_EMPATHY_LEGACY,
     PROP_TESTMODE
 };
 
@@ -159,9 +157,6 @@ tpl_log_store_xml_get_property (GObject *object,
       case PROP_BASEDIR:
         g_value_set_string (value, priv->basedir);
         break;
-      case PROP_EMPATHY_LEGACY:
-        g_value_set_boolean (value, priv->empathy_legacy);
-        break;
       case PROP_TESTMODE:
         g_value_set_boolean (value, priv->test_mode);
         break;
@@ -182,9 +177,6 @@ tpl_log_store_xml_set_property (GObject *object,
 
   switch (param_id)
     {
-      case PROP_EMPATHY_LEGACY:
-        self->priv->empathy_legacy = g_value_get_boolean (value);
-        break;
       case PROP_BASEDIR:
         log_store_xml_set_basedir (self, g_value_get_string (value));
         break;
@@ -222,20 +214,6 @@ _tpl_log_store_xml_class_init (TplLogStoreXmlClass *klass)
       NULL, G_PARAM_READABLE | G_PARAM_WRITABLE |
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_BASEDIR, param_spec);
-
-  /**
-   * TplLogStoreXml:empathy-legacy:
-   *
-   * If %TRUE, the logstore pointed by TplLogStoreXml::base-dir will be
-   * considered formatted as an Empathy's LogStore (pre telepathy-logger).
-   * Xml: %FALSE.
-   */
-  param_spec = g_param_spec_boolean ("empathy-legacy",
-      "EmpathyLegacy",
-      "Enables compatibility with old Empathy's logs",
-      FALSE, G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_EMPATHY_LEGACY,
-      param_spec);
 
   param_spec = g_param_spec_boolean ("testmode",
       "TestMode",
@@ -1745,10 +1723,7 @@ log_store_xml_get_name (TplLogStore *store)
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
 
-  if (self->priv->empathy_legacy)
-    return "Empathy";
-  else
-    return "TpLogger";
+  return "TpLogger";
 }
 
 
