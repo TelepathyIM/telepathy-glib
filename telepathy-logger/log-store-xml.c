@@ -97,7 +97,6 @@ static void tpl_log_store_xml_get_property (GObject *object, guint param_id, GVa
     GParamSpec *pspec);
 static void tpl_log_store_xml_set_property (GObject *object, guint param_id, const GValue *value,
     GParamSpec *pspec);
-static const gchar *log_store_xml_get_name (TplLogStore *store);
 static const gchar *log_store_xml_get_basedir (TplLogStoreXml *self);
 static void log_store_xml_set_basedir (TplLogStoreXml *self,
     const gchar *data);
@@ -704,7 +703,7 @@ log_store_xml_add_event (TplLogStore *store,
     return add_call_event (self, TPL_CALL_EVENT (event), error);
 
   DEBUG ("TplEntry not handled by this LogStore (%s). "
-      "Ignoring Event", log_store_xml_get_name (store));
+      "Ignoring Event", _tpl_log_store_get_name (store));
   /* do not consider it an error, this LogStore simply do not want/need
    * this Event */
   return TRUE;
@@ -1776,7 +1775,7 @@ log_store_xml_get_basedir (TplLogStoreXml *self)
           user_data_dir = g_get_user_data_dir ();
         }
 
-      name = log_store_xml_get_name ((TplLogStore *) self);
+      name = _tpl_log_store_get_name ((TplLogStore *) self);
       dir = g_build_path (G_DIR_SEPARATOR_S, user_data_dir, name, "logs",
           NULL);
       log_store_xml_set_basedir (self, dir);
