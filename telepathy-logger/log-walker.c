@@ -168,12 +168,16 @@
  *   }
  *   </programlisting>
  * </example>
+ *
+ * Since: UNRELEASED
  */
 
 /**
  * TplLogWalker:
  *
  * An object used to iterate over the logs
+ *
+ * Since: UNRELEASED
  */
 
 struct _TplLogWalkerPriv
@@ -771,6 +775,8 @@ tpl_log_walker_add_iter (TplLogWalker *walker, TplLogIter *iter)
  * @user_data: data to pass to @callback
  *
  * Walk the logs to retrieve the next most recent @num_event events.
+ *
+ * Since: UNRELEASED
  */
 void
 tpl_log_walker_get_events_async (TplLogWalker *walker,
@@ -815,6 +821,8 @@ tpl_log_walker_get_events_async (TplLogWalker *walker,
  * @error: a #GError to fill
  *
  * Returns: #TRUE if the operation was successful, otherwise #FALSE.
+ *
+ * Since: UNRELEASED
  */
 gboolean
 tpl_log_walker_get_events_finish (TplLogWalker *walker,
@@ -856,6 +864,8 @@ tpl_log_walker_get_events_finish (TplLogWalker *walker,
  *
  * Move the @walker back by the last @num_event events that were
  * returned by tpl_log_walker_get_events_async().
+ *
+ * Since: UNRELEASED
  */
 void
 tpl_log_walker_rewind_async (TplLogWalker *walker,
@@ -898,6 +908,8 @@ tpl_log_walker_rewind_async (TplLogWalker *walker,
  * @error: a #GError to fill
  *
  * Returns: #TRUE if the operation was successful, otherwise #FALSE.
+ *
+ * Since: UNRELEASED
  */
 gboolean
 tpl_log_walker_rewind_finish (TplLogWalker *walker,
@@ -929,6 +941,8 @@ tpl_log_walker_rewind_finish (TplLogWalker *walker,
  *
  * Returns: #TRUE if @walker is pointing at the most recent event,
  * otherwise #FALSE.
+ *
+ * Since: UNRELEASED
  */
 gboolean
 tpl_log_walker_is_start (TplLogWalker *walker)
@@ -948,6 +962,8 @@ tpl_log_walker_is_start (TplLogWalker *walker)
  * when @walker has returned all the events from the logs.
  *
  * Returns: #TRUE if @walker has run out of events, otherwise #FALSE.
+ *
+ * Since: UNRELEASED
  */
 gboolean
 tpl_log_walker_is_end (TplLogWalker *walker)
