@@ -25,6 +25,7 @@ typedef struct _TplLogStoreEmpathy TplLogStoreEmpathy;
 typedef struct _TplLogStoreEmpathyClass TplLogStoreEmpathyClass;
 
 struct _TplLogStoreEmpathyClass {
+    /*< private >*/
     TplLogStoreXmlClass parent_class;
 };
 
