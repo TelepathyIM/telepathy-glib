@@ -24,11 +24,12 @@ Fixes:
 • Don't emit the NewChannels signal twice for the obsolete ContactList GROUP
   channels (fd.o #52011, Simon)
 
+• Fix builds with Automake 1.13 (fd.o #59604, Nuno Araujo)
+
 Deprecations:
 
 • tp_g_key_file_get_int64, tp_g_key_file_get_uint64 (use the corresponding
   functions from GLib ≥ 2.26)
-
 
 telepathy-glib 0.20.1 (2012-11-09)
 ==================================
