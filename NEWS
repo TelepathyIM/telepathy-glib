@@ -11,6 +11,8 @@ Fixes:
   tp_capabilities_get_channel_classes, tp_asv_get_bytes and
   tp_client_channel_factory_dup_channel_features (fd.o #58851, Philip Withnall)
 
+• Fix builds with Automake 1.13 (fd.o #59604, Nuno Araujo)
+
 telepathy-glib 0.20.1 (2012-11-09)
 ==================================
 
