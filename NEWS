@@ -19,6 +19,8 @@ Fixes:
   obsolete connection manager without "immortal handles" fails
   (Maksim Melnikau)
 
+• Fix builds with Automake 1.13 (fd.o #59604, Nuno Araujo)
+
 telepathy-glib 0.18.2 (2012-07-28)
 ==================================
 
