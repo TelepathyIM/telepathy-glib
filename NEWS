@@ -9,6 +9,10 @@ Enhancements:
   (e.g. "./configure PYTHON=python3" on Debian); Python 2 remains
   fully supported (fd.o #56758, Simon)
 
+• Add uri-schemes property on TpAccount, with notify::uri-schemes
+  emitted if using a recent AcountManager like Mission Control 5.15 or
+  later (Guillaume)
+
 Fixes:
 
 • Remove the pkg-config dependency from .pc files (Will)
