@@ -2758,7 +2758,7 @@ tp_account_update_parameters_vardict_async (TpAccount *account,
  * tp_account_update_parameters_vardict_finish:
  * @account: a #TpAccount
  * @result: a #GAsyncResult
- * @reconnect_required: (out) (type GObject.Strv) (transfer full): a #GStrv to
+ * @reconnect_required: (out) (type GStrv) (transfer full): a #GStrv to
  *  fill with properties that need a reconnect to take effect
  * @error: a #GError to fill
  *
