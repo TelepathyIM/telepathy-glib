@@ -1675,7 +1675,7 @@ tp_file_transfer_channel_get_service_name (TpFileTransferChannel *self)
  *
  * Return the #TpFileTransferChannel:metadata property
  *
- * Returns: (transfer none) (element-type utf8 GObject.Strv): the
+ * Returns: (transfer none) (element-type utf8 GStrv): the
  *   value of the #TpFileTransferChannel:metadata property
  *
  * Since: 0.17.1
