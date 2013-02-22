@@ -750,9 +750,11 @@ tp_message_to_text (TpMessage *message,
   if (tp_asv_get_boolean (header, "rescued", NULL))
     flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED;
 
-  /* If the message is on an extended interface or only contains headers,
-   * definitely set the "your client is too old" flag. */
+  /* If the message is on an extended interface, is a delivery report, or only
+   * contains headers, definitely set the "your client is too old" flag. */
   if (message->parts->len <= 1 ||
+      tp_asv_get_uint32 (header, "message-type", NULL)
+          == TP_CHANNEL_TEXT_MESSAGE_TYPE_DELIVERY_REPORT ||
       g_hash_table_lookup (header, "interface") != NULL)
     {
       flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT;
