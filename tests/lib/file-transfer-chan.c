@@ -83,6 +83,8 @@ struct _TpTestsFileTransferChannelPrivate {
     gchar *unix_tmpdir;
     guint connection_id;
     TpSocketAccessControl access_control;
+
+    guint timer_id;
 };
 
 static void
@@ -136,6 +138,12 @@ static void
 dispose (GObject *object)
 {
   TpTestsFileTransferChannel *self = TP_TESTS_FILE_TRANSFER_CHANNEL (object);
+
+  if (self->priv->timer_id != 0)
+    {
+      g_source_remove (self->priv->timer_id);
+      self->priv->timer_id = 0;
+    }
 
   g_free (self->priv->content_hash);
   g_free (self->priv->content_type);
@@ -493,7 +501,7 @@ file_transfer_provide_file (TpSvcChannelTypeFileTransfer *iface,
   self->priv->access_control = access_control;
 
   DEBUG ("Waiting 500ms and setting state to OPEN");
-  g_timeout_add (500, start_file_transfer, self);
+  self->priv->timer_id = g_timeout_add (500, start_file_transfer, self);
 
   // connect to self->priv->service incoming signal
   // when the signal returns, add x bytes per n seconds using timeout
@@ -561,7 +569,7 @@ file_transfer_accept_file (TpSvcChannelTypeFileTransfer *iface,
       TP_FILE_TRANSFER_STATE_CHANGE_REASON_REQUESTED);
 
   DEBUG ("Waiting 500ms and setting state to OPEN");
-  g_timeout_add (500, start_file_transfer, self);
+  self->priv->timer_id = g_timeout_add (500, start_file_transfer, self);
 
   tp_svc_channel_type_file_transfer_return_from_accept_file (context,
       address);
