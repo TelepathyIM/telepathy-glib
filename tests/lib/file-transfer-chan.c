@@ -379,6 +379,7 @@ start_file_transfer (gpointer data)
 //  g_signal_connect (self->priv->service, "incoming", G_CALLBACK
 //      (incoming_file_transfer_cb));
 
+  self->priv->timer_id = 0;
   return FALSE;
 }
 
