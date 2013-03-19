@@ -1247,11 +1247,11 @@ tp_group_mixin_change_flags (GObject *obj,
           str_removed = group_flags_to_string (removed);
           str_flags = group_flags_to_string (mixin->group_flags);
 
-          DEBUG ("%s: emitting group flags changed\n"
+          DEBUG ("emitting group flags changed\n"
                   "  added    : %s\n"
                   "  removed  : %s\n"
                   "  flags now: %s\n",
-                  G_STRFUNC, str_added, str_removed, str_flags);
+                  str_added, str_removed, str_flags);
 
           g_free (str_added);
           g_free (str_removed);
@@ -1452,7 +1452,7 @@ emit_members_changed_signals (GObject *channel,
       local_str = member_array_to_string (mixin->handle_repo, local_pending);
       remote_str = member_array_to_string (mixin->handle_repo, remote_pending);
 
-      DEBUG ("%s: emitting members changed\n"
+      DEBUG ("emitting members changed\n"
               "  message       : \"%s\"\n"
               "  added         : %s\n"
               "  removed       : %s\n"
@@ -1460,7 +1460,7 @@ emit_members_changed_signals (GObject *channel,
               "  remote_pending: %s\n"
               "  actor         : %u\n"
               "  reason        : %u: %s\n",
-              G_STRFUNC, message, add_str, rem_str, local_str, remote_str,
+              message, add_str, rem_str, local_str, remote_str,
               actor, reason, group_change_reason_str (reason));
 
       g_free (add_str);

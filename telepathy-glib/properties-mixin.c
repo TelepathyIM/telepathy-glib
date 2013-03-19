@@ -891,9 +891,8 @@ tp_properties_mixin_emit_changed (GObject *obj, const TpIntset *props)
 
   prop_arr = g_ptr_array_sized_new (len);
 
-  if (DEBUGGING)
-    printf ("%s: emitting properties changed for propert%s:\n",
-            G_STRFUNC, (len > 1) ? "ies" : "y");
+  DEBUG ("emitting properties changed for propert%s:\n",
+      (len > 1) ? "ies" : "y");
 
   tp_intset_fast_iter_init (&iter, props);
 
@@ -912,13 +911,7 @@ tp_properties_mixin_emit_changed (GObject *obj, const TpIntset *props)
 
       g_ptr_array_add (prop_arr, g_value_get_boxed (&prop_val));
 
-      if (DEBUGGING)
-        printf ("  %s\n", mixin_cls->signatures[prop_id].name);
-    }
-
-  if (DEBUGGING)
-    {
-      fflush (stdout);
+      DEBUG ("  %s\n", mixin_cls->signatures[prop_id].name);
     }
 
   tp_svc_properties_interface_emit_properties_changed (
@@ -958,9 +951,8 @@ tp_properties_mixin_emit_flags (GObject *obj, const TpIntset *props)
 
   prop_arr = g_ptr_array_sized_new (len);
 
-  if (DEBUGGING)
-    printf ("%s: emitting properties flags changed for propert%s:\n",
-            G_STRFUNC, (len > 1) ? "ies" : "y");
+  DEBUG ("emitting properties flags changed for propert%s:\n",
+      (len > 1) ? "ies" : "y");
 
   tp_intset_fast_iter_init (&iter, props);
 
@@ -987,16 +979,11 @@ tp_properties_mixin_emit_flags (GObject *obj, const TpIntset *props)
         {
           gchar *str_flags = property_flags_to_string (prop_flags);
 
-          printf ("  %s's flags now: %s\n",
+          DEBUG ("  %s's flags now: %s\n",
                   mixin_cls->signatures[prop_id].name, str_flags);
 
           g_free (str_flags);
         }
-    }
-
-  if (DEBUGGING)
-    {
-      fflush (stdout);
     }
 
   tp_svc_properties_interface_emit_property_flags_changed (
