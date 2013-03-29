@@ -359,7 +359,6 @@ test_contact_info (Fixture *f,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
   g_assert_no_error (result.error);
-  g_object_ref (g_ptr_array_index (result.contacts, 0));
   reset_result (&result);
 
   tp_connection_set_contact_info_async (client_conn, info_list,
@@ -1500,7 +1499,7 @@ test_upgrade_noop (Fixture *f,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
   g_assert_no_error (result.error);
-  reset_result (&f->result);
+  reset_result (&result);
 
   put_the_connection_back (f);
 
@@ -2244,6 +2243,8 @@ test_dup_if_possible (Fixture *f,
   g_assert (contact != alice);
   g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "bob");
   g_assert_cmpuint (tp_contact_get_handle (contact), ==, bob_handle);
+  g_object_unref (contact);
+  g_object_unref (alice);
 }
 
 typedef struct
@@ -2692,6 +2693,7 @@ test_contact_list (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
   const GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONTACT_LIST, 0 };
+  const GQuark feature_connected[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpTestsContactListManager *manager;
   TpSimpleClientFactory *factory;
@@ -2733,8 +2735,7 @@ test_contact_list (Fixture *f,
   g_signal_connect_swapped (f->client_conn, "notify::contact-list-state",
       G_CALLBACK (finish), &result);
   tp_cli_connection_call_connect (f->client_conn, -1, NULL, NULL, NULL, NULL);
-  g_main_loop_run (result.loop);
-  g_assert_no_error (result.error);
+  tp_tests_proxy_run_until_prepared (f->client_conn, feature_connected);
 
   g_assert_cmpint (tp_connection_get_contact_list_state (f->client_conn), ==,
       TP_CONTACT_LIST_STATE_SUCCESS);
@@ -2832,6 +2833,7 @@ message_filter (DBusConnection *connection,
           dbus_message_get_path (msg), TP_IFACE_CHANNEL_INTERFACE_GROUP,
           TP_HANDLE_TYPE_LIST, 0, NULL);
       tp_proxy_prepare_async (channel, NULL, channel_prepared_cb, closure);
+      g_object_unref (channel);
 
       /* Extract the number of added handles */
       dbus_message_iter_init (msg, &iter);
@@ -2855,6 +2857,7 @@ test_initial_contact_list (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
   const GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONTACT_LIST, 0 };
+  const GQuark feature_connected[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
   TpTestsContactListManager *manager;
   MembersChangedClosure closure;
   DBusConnection *dbus_connection;
@@ -2902,7 +2905,7 @@ test_initial_contact_list (Fixture *f,
   tp_cli_connection_call_connect (f->client_conn, -1,
       NULL, NULL, NULL, NULL);
 
-  g_main_loop_run (closure.loop);
+  tp_tests_proxy_run_until_prepared (f->client_conn, feature_connected);
 
   dbus_bus_remove_match (dbus_connection, MEMBERS_CHANGED_MATCH_RULE, NULL);
   dbus_connection_remove_filter (dbus_connection, message_filter, &closure);
@@ -2974,9 +2977,16 @@ teardown (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
   if (f->client_conn != NULL)
-    tp_tests_connection_assert_disconnect_succeeds (f->client_conn);
+    {
+      TpConnection *conn = f->client_conn;
 
-  tp_clear_object (&f->client_conn);
+      g_object_add_weak_pointer ((GObject *) conn, (gpointer *) &conn);
+      tp_tests_connection_assert_disconnect_succeeds (conn);
+      g_object_unref (conn);
+      g_assert (conn == NULL);
+      f->client_conn = NULL;
+    }
+
   f->service_repo = NULL;
   tp_clear_object (&f->service_conn);
   tp_clear_object (&f->base_connection);
