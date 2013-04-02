@@ -31,7 +31,7 @@ account_manager_prepared_cb (GObject *object,
   accounts = tp_account_manager_dup_valid_accounts (manager);
   for (l = accounts; l != NULL; l = l->next)
     {
-      TpAccount *account = accounts->data;
+      TpAccount *account = l->data;
       TpConnection *connection = tp_account_get_connection (account);
       GPtrArray *contacts;
       guint i;
