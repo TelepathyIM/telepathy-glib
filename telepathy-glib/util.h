@@ -96,10 +96,10 @@ gchar *tp_escape_as_identifier (const gchar *name) G_GNUC_WARN_UNUSED_RESULT;
 gboolean tp_strv_contains (const gchar * const *strv, const gchar *str);
 
 #ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_UNRELEASED_FOR(g_key_file_get_int64)
+_TP_DEPRECATED_IN_0_22_FOR(g_key_file_get_int64)
 gint64 tp_g_key_file_get_int64 (GKeyFile *key_file, const gchar *group_name,
     const gchar *key, GError **error);
-_TP_DEPRECATED_IN_UNRELEASED_FOR(g_key_file_get_uint64)
+_TP_DEPRECATED_IN_0_22_FOR(g_key_file_get_uint64)
 guint64 tp_g_key_file_get_uint64 (GKeyFile *key_file, const gchar *group_name,
     const gchar *key, GError **error);
 #endif

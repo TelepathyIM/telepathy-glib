@@ -1,4 +1,4 @@
-telepathy-glib 0.21.0 (UNRELEASED)
+telepathy-glib 0.21.0 (2013-04-03)
 ==================================
 
 This starts a new development branch.
@@ -29,6 +29,12 @@ Fixes:
   channels (fd.o #52011, Simon)
 
 • Fix builds with Automake 1.13 (fd.o #59604, Nuno Araujo)
+
+• Fix unit tests when running with glib >=2.36 (fd.o #63069, Xavier)
+
+• Fix refcycle preventing TpConnection objects to be freed. This theoretically
+  introduce a behaviour change of tp_connection_get_self_contact() that now
+  returns NULL when the connection as been invalidated. (fd.o #63027, Xavier)
 
 Deprecations:
 
