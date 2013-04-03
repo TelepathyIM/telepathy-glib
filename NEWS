@@ -1,4 +1,4 @@
-telepathy-glib 0.20.2 (UNRELEASED)
+telepathy-glib 0.20.2 (2013-04-03)
 ==================================
 
 Fixes:
@@ -12,6 +12,8 @@ Fixes:
   tp_client_channel_factory_dup_channel_features (fd.o #58851, Philip Withnall)
 
 • Fix builds with Automake 1.13 (fd.o #59604, Nuno Araujo)
+
+• Fix unit tests when running with glib >=2.36 (fd.o #63069, Xavier)
 
 telepathy-glib 0.20.1 (2012-11-09)
 ==================================
