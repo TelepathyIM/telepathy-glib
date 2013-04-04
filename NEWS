@@ -1,5 +1,14 @@
+telepathy-glib 0.21.1 (UNRELEASED)
+==================================
+
+Fixes:
+
+• Isolate regression tests better (fd.o #63119, Simon)
+
 telepathy-glib 0.21.0 (2013-04-03)
 ==================================
+
+The "if only it was JS code" release.
 
 This starts a new development branch.
 
