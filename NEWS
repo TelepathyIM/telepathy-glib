@@ -1,5 +1,14 @@
+telepathy-glib 0.20.3 (UNRELEASED)
+==================================
+
+Fixes:
+
+• Isolate regression tests better (fd.o #63119, Simon)
+
 telepathy-glib 0.20.2 (2013-04-03)
 ==================================
+
+The "nominally prohibits such interchange" release.
 
 Fixes:
 
