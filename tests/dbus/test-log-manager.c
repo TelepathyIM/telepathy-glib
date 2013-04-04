@@ -9,6 +9,7 @@
 #include "telepathy-logger/debug-internal.h"
 #include "telepathy-logger/log-manager-internal.h"
 #include "telepathy-logger/log-store-internal.h"
+#include <telepathy-logger/text-event.h>
 
 #include <telepathy-glib/debug-sender.h>
 
@@ -512,6 +513,150 @@ test_search (TestCaseFixture *fixture,
   fixture->ret = NULL;
 }
 
+static gboolean
+check_ignored_messages (TestCaseFixture *fixture,
+    TplTextEvent *event,
+    gboolean should_exist)
+{
+  TplEntity *entity;
+  GList *iter;
+  GDate *date;
+
+  g_object_get (event, "sender", &entity, NULL);
+  date = g_date_new_dmy (1, 1, 1970);
+  tpl_log_manager_get_events_for_date_async (
+      fixture->manager,
+      fixture->account,
+      entity,
+      TPL_EVENT_MASK_ANY,
+      date,
+      get_events_for_date_cb,
+      fixture);
+  g_main_loop_run (fixture->main_loop);
+
+  for (iter = fixture->ret; iter; iter = g_list_next (iter)) {
+      TplEvent *found_event = iter->data;
+      gchar *result_token, *ref_token;
+      gboolean exists;
+
+      g_object_get (G_OBJECT (found_event), "message-token", &result_token, NULL);
+      g_object_get (G_OBJECT (event), "message-token", &ref_token, NULL);
+      exists = (g_strcmp0 (result_token, ref_token) == 0);
+
+      if (should_exist != exists) {
+        g_list_free_full (fixture->ret, g_object_unref);
+        return FALSE;
+      }
+  }
+
+  g_list_free_full (fixture->ret, g_object_unref);
+
+  return TRUE;
+}
+
+static void
+test_ignorelist (TestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  TplTextEvent *event1, *event2;
+  TplEntity *receiver, *sender;
+  TplConf *conf;
+  gboolean passed;
+
+  receiver = tpl_entity_new ("ignoreduser1@collabora.co.uk", TPL_ENTITY_CONTACT, "Me", "no-avatar");
+  sender = tpl_entity_new ("ignoreduser2@collabora.co.uk", TPL_ENTITY_CONTACT, "Someone Else", "no-avatar");
+
+  event1 = g_object_new (TPL_TYPE_TEXT_EVENT,
+    "account", fixture->account,
+    "channel-path", "org.freedesktop.Telepathy.channel.path",
+    "receiver", receiver,
+    "sender", sender,
+    "timestamp", 1,
+    "message-token", "1234",
+    "supersedes-token", "5678",
+    "edit-timestamp", 0,
+    "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+    "message", "Test 1",
+    NULL);
+
+  event2 = g_object_new (TPL_TYPE_TEXT_EVENT,
+    "account", fixture->account,
+    "channel-path", "org.freedesktop.Telepathy.channel.path",
+    "receiver", sender,
+    "sender", receiver,
+    "timestamp", 2,
+    "message-token", "5678",
+    "supersedes-token", "9012",
+    "edit-timestamp", 0,
+    "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+    "message", "Test 2",
+    NULL);
+
+  conf = _tpl_conf_dup ();
+
+  /* Ignore messages from both */
+  tpl_log_manager_disable_for_entity (fixture->manager, fixture->account, receiver);
+  tpl_log_manager_disable_for_entity (fixture->manager, fixture->account, sender);
+  g_assert (tpl_log_manager_is_disabled_for_entity (fixture->manager, fixture->account, receiver));
+  g_assert (tpl_log_manager_is_disabled_for_entity (fixture->manager, fixture->account, sender));
+
+  _tpl_log_manager_add_event (fixture->manager, TPL_EVENT (event1), NULL);
+  _tpl_log_manager_add_event (fixture->manager, TPL_EVENT (event2), NULL);
+
+  passed = check_ignored_messages (fixture, event1, FALSE);
+  if (!passed) {
+    _tpl_log_manager_clear_entity (fixture->manager, fixture->account, sender);
+    _tpl_log_manager_clear_entity (fixture->manager, fixture->account, receiver);
+    g_assert (passed);
+  }
+
+  passed = check_ignored_messages (fixture, event2, FALSE);
+  _tpl_log_manager_clear_entity (fixture->manager, fixture->account, sender);
+  _tpl_log_manager_clear_entity (fixture->manager, fixture->account, receiver);
+  if (!passed) {
+    g_assert (passed);
+  }
+
+  /* Ignore message only from ignoreduser1 */
+  tpl_log_manager_enable_for_entity (fixture->manager, fixture->account, sender);
+  g_assert (!tpl_log_manager_is_disabled_for_entity (fixture->manager, fixture->account, sender));
+  g_assert (tpl_log_manager_is_disabled_for_entity (fixture->manager, fixture->account, receiver));
+  _tpl_log_manager_add_event (fixture->manager, TPL_EVENT (event1), NULL);
+  _tpl_log_manager_add_event (fixture->manager, TPL_EVENT (event2), NULL);
+
+  passed = check_ignored_messages (fixture, event1, FALSE);
+  if (!passed) {
+    _tpl_log_manager_clear_entity (fixture->manager, fixture->account, sender);
+    _tpl_log_manager_clear_entity (fixture->manager, fixture->account, receiver);
+    g_assert (passed);
+  }
+
+  passed = check_ignored_messages (fixture, event2, TRUE);
+  _tpl_log_manager_clear_entity (fixture->manager, fixture->account, sender);
+  _tpl_log_manager_clear_entity (fixture->manager, fixture->account, receiver);
+  if (!passed) {
+    g_assert (passed);
+  }
+
+  /* Don't ignore any message */
+  tpl_log_manager_enable_for_entity (fixture->manager, fixture->account, receiver);
+  g_assert (!tpl_log_manager_is_disabled_for_entity (fixture->manager, fixture->account, sender));
+  g_assert (!tpl_log_manager_is_disabled_for_entity (fixture->manager, fixture->account, receiver));
+  _tpl_log_manager_add_event (fixture->manager, TPL_EVENT (event1), NULL);
+
+  passed = check_ignored_messages (fixture, event1, TRUE);
+  _tpl_log_manager_clear_entity (fixture->manager, fixture->account, sender);
+  _tpl_log_manager_clear_entity (fixture->manager, fixture->account, receiver);
+  if (!passed) {
+    g_assert (passed);
+  }
+
+  g_object_unref (conf);
+  g_object_unref (event1);
+  g_object_unref (event2);
+  g_object_unref (sender);
+  g_object_unref (receiver);
+}
 
 int
 main (int argc, char **argv)
@@ -563,6 +708,10 @@ main (int argc, char **argv)
   g_test_add ("/log-manager/search",
       TestCaseFixture, params,
       setup, test_search, teardown);
+
+  g_test_add ("/log-manager/ignorelist",
+      TestCaseFixture, params,
+      setup, test_ignorelist, teardown);
 
   retval = g_test_run ();
 

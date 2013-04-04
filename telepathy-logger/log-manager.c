@@ -308,7 +308,6 @@ tpl_log_manager_dup_singleton (void)
   return g_object_new (TPL_TYPE_LOG_MANAGER, NULL);
 }
 
-
 /*
  * _tpl_log_manager_add_event:
  * @manager: the log manager
@@ -329,6 +328,9 @@ _tpl_log_manager_add_event (TplLogManager *manager,
   GList *l;
   gboolean retval = FALSE;
 
+  TplEntity *target;
+  TpAccount *account;
+
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), FALSE);
   g_return_val_if_fail (TPL_IS_EVENT (event), FALSE);
@@ -340,6 +342,18 @@ _tpl_log_manager_add_event (TplLogManager *manager,
       /* ignore event, logging is globally disabled */
       return FALSE;
     }
+
+  account = tpl_event_get_account (event);
+
+  /* check whether receiver is in the list of contacts to ignore */
+  target = tpl_event_get_receiver (event);
+  if (tpl_log_manager_is_disabled_for_entity (manager, account, target))
+    return FALSE;
+
+  /* check whether sender is in the list of contacts to ignore */
+  target = tpl_event_get_sender (event);
+  if (tpl_log_manager_is_disabled_for_entity (manager, account, target))
+    return FALSE;
 
   /* send the event to any writable log store */
   for (l = priv->writable_stores; l != NULL; l = g_list_next (l))
@@ -1440,4 +1454,166 @@ _tpl_log_manager_search_hit_copy (TplLogSearchHit *hit)
 {
   return _tpl_log_manager_search_hit_new (hit->account, hit->target,
       hit->date);
+}
+
+static gchar *
+_tpl_log_manager_build_identifier (TpAccount *account,
+    TplEntity *entity)
+{
+    gchar *identifier;
+    const gchar *acc_name = tp_proxy_get_object_path (account);
+    if (g_str_has_prefix (acc_name, TP_ACCOUNT_OBJECT_PATH_BASE))
+        acc_name += strlen (TP_ACCOUNT_OBJECT_PATH_BASE);
+
+    identifier = g_strconcat (acc_name, "/", tpl_entity_get_identifier (entity), NULL);
+
+    return identifier;
+}
+
+static gboolean
+_tpl_log_manager_is_disabled_for_entity (TplLogManager *self,
+    const gchar *identifier)
+{
+    gint i;
+    TplLogManagerPriv *priv = self->priv;
+    const gchar **ignorelist;
+
+    priv = self->priv;
+    ignorelist = _tpl_conf_get_ignorelist (priv->conf);
+
+    for (i = 0; ignorelist && ignorelist[i]; i++)
+      {
+        if (g_strcmp0 (ignorelist[i], identifier) == 0)
+        {
+            return TRUE;
+        }
+      }
+
+    return FALSE;
+}
+
+/**
+ * tpl_log_manager_disable_for_entity:
+ * @self: the log manager
+ * @entity a TplEntity
+ *
+ * Disables logging of events for given entity. By default logging is enabled
+ * for all entities.
+ */
+void
+tpl_log_manager_disable_for_entity (TplLogManager *self,
+    TpAccount *account,
+    TplEntity *entity)
+{
+    TplLogManagerPriv *priv;
+    gchar *identifier;
+
+    g_return_if_fail (TPL_IS_LOG_MANAGER (self));
+    g_return_if_fail (TP_IS_ACCOUNT (account));
+    g_return_if_fail (TPL_IS_ENTITY (entity));
+
+    priv = self->priv;
+    identifier = _tpl_log_manager_build_identifier (account, entity);
+    if (!_tpl_log_manager_is_disabled_for_entity (self, identifier))
+      {
+        const gchar **ignorelist = _tpl_conf_get_ignorelist (priv->conf);
+        gchar **newlist;
+        if (ignorelist)
+          {
+            gint newlen;
+            newlist = g_strdupv ((gchar **) ignorelist);
+            newlen = g_strv_length (newlist) + 1;
+            newlist = g_realloc (newlist, sizeof (gchar*) * newlen );
+            newlist[newlen - 1] = g_strdup (identifier);
+          }
+        else
+          {
+            newlist = g_malloc0_n (2, sizeof (gchar*));
+            newlist[0] = g_strdup (identifier);
+          }
+
+        _tpl_conf_set_ignorelist (priv->conf, (const gchar **) newlist);
+        g_strfreev (newlist);
+      }
+
+    g_free (identifier);
+}
+
+/**
+ * tpl_log_manager_enable_for_entity:
+ * @self: the log manager
+ * @entity: a TplEntity
+ *
+ * Re-enables logging of events for entity previously disabled by
+ * tpl_log_manager_disable_for_entity(). By default logging is enabled for all
+ * entities.
+ */
+void
+tpl_log_manager_enable_for_entity (TplLogManager *self,
+    TpAccount *account,
+    TplEntity *entity)
+{
+    TplLogManagerPriv *priv;
+    gchar *identifier;
+
+    g_return_if_fail (TPL_IS_LOG_MANAGER (self));
+    g_return_if_fail (TP_IS_ACCOUNT (account));
+    g_return_if_fail (TPL_IS_ENTITY (entity));
+
+    priv = self->priv;
+    identifier = _tpl_log_manager_build_identifier (account, entity);
+    if (_tpl_log_manager_is_disabled_for_entity (self, identifier))
+      {
+        gint i, j;
+        const gchar **ignorelist = _tpl_conf_get_ignorelist (priv->conf);
+        gchar **newlist;
+
+        if (!ignorelist)
+            return;
+
+        newlist = g_malloc0_n (g_strv_length ((gchar **) ignorelist) - 1, sizeof (gchar*));
+        j = 0;
+        for (i = 0; ignorelist && ignorelist[i]; i++)
+          {
+            if (g_strcmp0 (ignorelist[i], identifier) != 0)
+              {
+                newlist[j] = g_strdup (ignorelist[i]);
+                j++;
+              }
+          }
+
+        _tpl_conf_set_ignorelist (priv->conf, (const gchar **) newlist);
+        g_strfreev (newlist);
+      }
+
+      g_free (identifier);
+}
+
+/**
+ * tpl_log_manager_is_disabled_for_entity:
+ * @self: the log manager
+ * @entity: a TplEntity
+ *
+ * Checks, whether logging is disabled for given entity. By default, logging
+ * is enabled for all entities.
+ *
+ * Returns: %TRUE if logging for the entity has been disabled, %FALSE otherwise.
+ */
+gboolean
+tpl_log_manager_is_disabled_for_entity (TplLogManager *self,
+    TpAccount *account,
+    TplEntity *entity)
+{
+    gboolean is_disabled;
+    gchar *identifier;
+
+    g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
+    g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
+    g_return_val_if_fail (TPL_IS_ENTITY (entity), FALSE);
+
+    identifier = _tpl_log_manager_build_identifier (account, entity);
+    is_disabled = _tpl_log_manager_is_disabled_for_entity (self, identifier);
+    g_free (identifier);
+
+    return is_disabled;
 }

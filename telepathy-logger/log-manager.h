@@ -175,6 +175,18 @@ gboolean tpl_log_manager_search_finish (TplLogManager *self,
     GList **hits,
     GError **error);
 
+void tpl_log_manager_disable_for_entity (TplLogManager *self,
+    TpAccount *account,
+    TplEntity *entity);
+
+void tpl_log_manager_enable_for_entity (TplLogManager *self,
+    TpAccount *account,
+    TplEntity *entity);
+
+gboolean tpl_log_manager_is_disabled_for_entity (TplLogManager *self,
+    TpAccount *account,
+    TplEntity *entity);
+
 void tpl_log_manager_search_free (GList *hits);
 
 G_END_DECLS

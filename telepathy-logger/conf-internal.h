@@ -49,12 +49,10 @@ GType _tpl_conf_get_type (void);
 TplConf *_tpl_conf_dup (void);
 
 gboolean  _tpl_conf_is_globally_enabled (TplConf *self);
-gboolean _tpl_conf_is_account_ignored (TplConf *self,
-    const gchar *account_path);
-// GSList *_tpl_conf_get_accounts_ignorelist (TplConf *self);
+const gchar **_tpl_conf_get_ignorelist (TplConf *self);
 
 void _tpl_conf_globally_enable (TplConf *self, gboolean enable);
-// void _tpl_conf_set_accounts_ignorelist (TplConf *self, GSList *newlist);
+void _tpl_conf_set_ignorelist (TplConf *self, const gchar **newlist);
 G_END_DECLS
 
 #endif // __TPL_CONF_H__

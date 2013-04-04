@@ -42,6 +42,7 @@ static TplConf *conf_singleton = NULL;
 typedef struct
 {
   gboolean test_mode;
+  gchar **ignore_list;
   GSettings *gsettings;
 } TplConfPriv;
 
@@ -49,7 +50,8 @@ typedef struct
 enum /* properties */
 {
   PROP_0,
-  PROP_GLOBALLY_ENABLED
+  PROP_GLOBALLY_ENABLED,
+  PROP_IGNORE_LIST,
 };
 
 
@@ -108,6 +110,9 @@ tpl_conf_finalize (GObject *obj)
 
   priv = GET_PRIV (obj);
 
+  g_strfreev (priv->ignore_list);
+  priv->ignore_list = NULL;
+
   if (priv->gsettings != NULL)
     {
       g_object_unref (priv->gsettings);
@@ -157,6 +162,12 @@ _tpl_conf_class_init (TplConfClass *klass)
         TRUE,
         G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE));
 
+  g_object_class_install_property (object_class, PROP_IGNORE_LIST,
+      g_param_spec_pointer ("ignore-list",
+        "Ignore List",
+        "List of TplEntities with which not to log conversations.",
+        G_PARAM_READWRITE));
+
   g_type_class_add_private (object_class, sizeof (TplConfPriv));
 }
 
@@ -178,6 +189,8 @@ _tpl_conf_init (TplConf *self)
       g_signal_connect (priv->gsettings, "changed::" KEY_ENABLED,
           G_CALLBACK (_notify_globally_enable), self);
     }
+
+  priv->ignore_list = NULL;
 }
 
 
@@ -242,4 +255,55 @@ _tpl_conf_globally_enable (TplConf *self,
 
   g_settings_set_boolean (GET_PRIV (self)->gsettings,
       KEY_ENABLED, enable);
+}
+
+/**
+ * _tpl_conf_set_accounts_ignorelist:
+ * @self: a TplConf instance
+ * @newlist: a NULL-terminated list of account/entity IDs that should not be logged
+ */
+void
+_tpl_conf_set_ignorelist (TplConf *self,
+    const gchar **newlist)
+{
+  TplConfPriv *priv;
+
+  g_return_if_fail (TPL_IS_CONF (self));
+
+  priv = GET_PRIV (self);
+
+  if (!priv->test_mode) {
+    g_settings_set_strv (GET_PRIV (self)->gsettings, "ignorelist", newlist);
+  }
+
+  g_strfreev (priv->ignore_list);
+  priv->ignore_list = g_strdupv ((gchar **) newlist);
+
+  g_object_notify (G_OBJECT (self), "ignore-list");
+}
+
+/**
+ * _tpl_conf_get_accounts_ignorelist:
+ * @self: a TplConf instance
+ *
+ * Provides list of IDs in "account_id/entity_id" format. Events from or to
+ * this entities should not be logged.
+ *
+ * Return value: (transfer-full) a newly allocated NULL-terminated list of contact IDs.
+ * The list is owned by the @self and should not be freed.
+ */
+const gchar**
+_tpl_conf_get_ignorelist (TplConf *self)
+{
+  TplConfPriv *priv;
+
+  g_return_val_if_fail (TPL_IS_CONF (self), NULL);
+
+  priv = GET_PRIV (self);
+
+  if ((priv->ignore_list == NULL) && (!priv->test_mode)) {
+    priv->ignore_list = g_settings_get_strv (priv->gsettings, "ignorelist");
+  }
+
+  return (const gchar **) priv->ignore_list;
 }

@@ -8,5 +8,10 @@
         "false" will completely disable all logging.
       </_description>
     </key>
+    <key name="ignorelist" type="as">
+      <default>[]</default>
+      <_summary>Ignore list</_summary>
+      <_description>Conversations with entities with ID listed here will not be logged.</_description>
+    </key>
   </schema>
 </schemalist>
