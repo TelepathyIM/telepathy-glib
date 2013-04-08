@@ -1523,12 +1523,12 @@ tpl_log_manager_disable_for_entity (TplLogManager *self,
             gint newlen;
             newlist = g_strdupv ((gchar **) ignorelist);
             newlen = g_strv_length (newlist) + 1;
-            newlist = g_realloc (newlist, sizeof (gchar*) * newlen );
+            newlist = g_realloc (newlist, sizeof (gchar *) * newlen );
             newlist[newlen - 1] = g_strdup (identifier);
           }
         else
           {
-            newlist = g_malloc0_n (2, sizeof (gchar*));
+            newlist = g_malloc0_n (2, sizeof (gchar *));
             newlist[0] = g_strdup (identifier);
           }
 
@@ -1571,7 +1571,8 @@ tpl_log_manager_enable_for_entity (TplLogManager *self,
         if (!ignorelist)
             return;
 
-        newlist = g_malloc0_n (g_strv_length ((gchar **) ignorelist) - 1, sizeof (gchar*));
+        newlist = g_malloc0_n (g_strv_length ((gchar **) ignorelist) - 1,
+            sizeof (gchar *));
         j = 0;
         for (i = 0; ignorelist && ignorelist[i]; i++)
           {

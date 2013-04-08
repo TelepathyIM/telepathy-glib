@@ -292,7 +292,7 @@ _tpl_conf_set_ignorelist (TplConf *self,
  * Return value: (transfer-full) a newly allocated NULL-terminated list of contact IDs.
  * The list is owned by the @self and should not be freed.
  */
-const gchar**
+const gchar **
 _tpl_conf_get_ignorelist (TplConf *self)
 {
   TplConfPriv *priv;
