@@ -25,27 +25,6 @@ typedef struct
 
 
 static void
-copy_dir (const gchar *from_dir, const gchar *to_dir)
-{
-  gchar *command;
-
-  // If destination directory exist erase it
-  command = g_strdup_printf ("rm -rf %s", to_dir);
-  g_assert (system (command) == 0);
-  g_free (command);
-
-  command = g_strdup_printf ("cp -r %s %s", from_dir, to_dir);
-  g_assert (system (command) == 0);
-  g_free (command);
-
-  // In distcheck mode the files and directory are read-only, fix that
-  command = g_strdup_printf ("chmod -R +w %s", to_dir);
-  g_assert (system (command) == 0);
-  g_free (command);
-}
-
-
-static void
 setup (XmlTestCaseFixture* fixture,
     gconstpointer user_data)
 {
@@ -81,7 +60,7 @@ setup_for_writing (XmlTestCaseFixture *fixture,
   writable_dir = g_build_path (G_DIR_SEPARATOR_S,
       g_get_tmp_dir (), "logger-test-logs", NULL);
 
-  copy_dir (readonly_dir, writable_dir);
+  tp_tests_copy_dir (readonly_dir, writable_dir);
   fixture->tmp_basedir = writable_dir;
   g_free (readonly_dir);
 

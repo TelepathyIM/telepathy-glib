@@ -54,4 +54,6 @@ void tp_tests_result_ready_cb (GObject *object,
 
 void tp_tests_abort_after (guint sec);
 
+void tp_tests_copy_dir (const gchar *from_dir, const gchar *to_dir);
+
 #endif /* #ifndef __TP_TESTS_LIB_UTIL_H__ */

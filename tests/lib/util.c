@@ -12,6 +12,7 @@
 
 #include "util.h"
 
+#include <stdlib.h>
 #ifdef G_OS_UNIX
 # include <unistd.h> /* for alarm() */
 #endif
@@ -207,6 +208,26 @@ _tp_tests_assert_strv_equals (const char *file,
               actual_desc, i, expected[i], actual[i]);
         }
     }
+}
+
+void
+tp_tests_copy_dir (const gchar *from_dir, const gchar *to_dir)
+{
+  gchar *command;
+
+  // If destination directory exist erase it
+  command = g_strdup_printf ("rm -rf %s", to_dir);
+  g_assert (system (command) == 0);
+  g_free (command);
+
+  command = g_strdup_printf ("cp -r %s %s", from_dir, to_dir);
+  g_assert (system (command) == 0);
+  g_free (command);
+
+  // In distcheck mode the files and directory are read-only, fix that
+  command = g_strdup_printf ("chmod -R +w %s", to_dir);
+  g_assert (system (command) == 0);
+  g_free (command);
 }
 
 void

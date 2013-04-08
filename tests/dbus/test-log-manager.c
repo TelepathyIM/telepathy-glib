@@ -31,6 +31,8 @@ typedef struct
 
   GList *ret;
 
+  gchar *tmp_basedir;
+
   TplLogManager *manager;
 } TestCaseFixture;
 
@@ -123,6 +125,17 @@ static void
 teardown (TestCaseFixture* fixture,
     gconstpointer user_data)
 {
+  if (fixture->tmp_basedir != NULL)
+    {
+      gchar *command = g_strdup_printf ("rm -rf %s", fixture->tmp_basedir);
+
+      if (system (command) == -1)
+          g_warning ("Failed to cleanup tempory test log dir: %s",
+                  fixture->tmp_basedir);
+
+      g_free (fixture->tmp_basedir);
+    }
+
   g_object_unref (fixture->manager);
   fixture->manager = NULL;
 
@@ -216,6 +229,26 @@ setup (TestCaseFixture* fixture,
   DEBUG ("set up finished");
 }
 
+static void
+setup_for_writing (TestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  gchar *readonly_dir;
+  gchar *writable_dir;
+
+  readonly_dir = g_build_path (G_DIR_SEPARATOR_S,
+      g_getenv ("TPL_TEST_LOG_DIR"), "TpLogger", "logs", NULL);
+
+  writable_dir = g_build_path (G_DIR_SEPARATOR_S,
+      g_get_tmp_dir (), "logger-test-logs", NULL);
+
+  tp_tests_copy_dir (readonly_dir, writable_dir);
+  fixture->tmp_basedir = writable_dir;
+  g_setenv ("TPL_TEST_LOG_DIR", writable_dir, TRUE);
+  g_free (readonly_dir);
+
+  setup (fixture, user_data);
+}
 
 static void
 setup_debug (void)
@@ -711,7 +744,7 @@ main (int argc, char **argv)
 
   g_test_add ("/log-manager/ignorelist",
       TestCaseFixture, params,
-      setup, test_ignorelist, teardown);
+      setup_for_writing, test_ignorelist, teardown);
 
   retval = g_test_run ();
 
