@@ -289,8 +289,7 @@ _tpl_conf_set_ignorelist (TplConf *self,
  * Provides list of IDs in "account_id/entity_id" format. Events from or to
  * this entities should not be logged.
  *
- * Return value: (transfer-full) a newly allocated NULL-terminated list of contact IDs.
- * The list is owned by the @self and should not be freed.
+ * Returns: (transfer none) NULL-terminated list of contact IDs.
  */
 const gchar **
 _tpl_conf_get_ignorelist (TplConf *self)
