@@ -14,6 +14,7 @@ programs_list = \
     test-heap \
     test-internal-debug \
     test-intset \
+    test-message \
     test-signal-connect-object \
     test-util \
     test-debug-domain \
@@ -122,6 +123,12 @@ test_debug_domain_SOURCES = \
 
 test_internal_debug_SOURCES = \
     internal-debug.c
+
+test_message_SOURCES = \
+    message.c
+test_message_LDADD = \
+    $(top_builddir)/tests/lib/libtp-glib-tests.la \
+    $(LDADD)
 
 test_signal_connect_object_SOURCES = \
     signal-connect-object.c

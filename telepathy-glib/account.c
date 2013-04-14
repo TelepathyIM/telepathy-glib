@@ -2929,7 +2929,7 @@ tp_account_update_parameters_finish (TpAccount *account,
  * @account: a #TpAccount
  * @parameters: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
  *  containing new parameters to set on @account
- * @unset_parameters: list of parameters to unset on @account
+ * @unset_parameters: (array zero-terminated=1): list of parameters to unset on @account
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *

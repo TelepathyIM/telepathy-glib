@@ -5,6 +5,12 @@ Fixes:
 
 • Isolate regression tests better (fd.o #63119, Simon)
 
+• Explicitly annotate tp_account_update_parameters_finish()'s
+  'unset_parameters' argument to be a NULL-terminated string array. It was
+  previously incorrectly inferred to be a string, for some reason. (wjt)
+
+• Always flag delivery reports with Non_Text_Content. (fd.o #61254, wjt)
+
 telepathy-glib 0.21.0 (2013-04-03)
 ==================================
 
