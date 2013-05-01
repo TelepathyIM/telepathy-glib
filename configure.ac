@@ -1,7 +1,7 @@
 m4_define([tpl_major_version], [0])
 m4_define([tpl_minor_version], [9])
 m4_define([tpl_micro_version], [0])
-m4_define([tpl_nano_version], [0])
+m4_define([tpl_nano_version], [1])
 
 # If Tpl library source has changed since last release, increment revision
 # If interfaces have been added, removed or changed since last release,
