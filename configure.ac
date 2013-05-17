@@ -58,7 +58,13 @@ AC_PROG_MKDIR_P
 # pkg-config 0.21 adds CFLAGS from Requires.private, which we need
 PKG_PROG_PKG_CONFIG([0.21])
 
+AM_CONDITIONAL(ENABLE_GTK_DOC, test "x$enable_gtk_doc" = xyes)
+AM_CONDITIONAL(DISABLE_GTK_DOC, test "x$disable_gtk_doc" = xno)
+# Check for GTK_DOC_CHECK availability. The GTK_DOC_CHECK invocation
+# must be on its own line, gtkdocize relies on it
+m4_ifdef([GTK_DOC_CHECK], [
 GTK_DOC_CHECK([1.17],[--flavour no-tmpl])
+])
 
 GOBJECT_INTROSPECTION_CHECK([1.30])
 
