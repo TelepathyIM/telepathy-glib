@@ -136,7 +136,7 @@ tools_dir = $(top_srcdir)/tools
 # Bootstrapping
 
 _gen/spec-stamp: $(wildcard $(top_srcdir)/spec/*.xml)
-	$(mkdir_p) _gen
+	$(MKDIR_P) _gen
 	touch $@
 
 _gen/stable-stamp: $(wildcard $(abs_srcdir)/*.xml) _gen/spec-stamp

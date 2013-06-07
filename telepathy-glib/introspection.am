@@ -110,7 +110,7 @@ TelepathyGLib_0_12_gir_PACKAGES = \
 	$(NULL)
 
 _gen/proxy-introspectable.h: proxy.h introspection.am
-	@$(mkdir_p) _gen
+	@$(MKDIR_P) _gen
 	$(AM_V_GEN)sed -e 's/gpointer self/TpProxy *self/' < $< > $@
 
 girdir = $(datadir)/gir-1.0

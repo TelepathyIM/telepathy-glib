@@ -38,7 +38,7 @@ servicedir = ${datadir}/dbus-1/services
 if INSTALL_EXAMPLES
 service_DATA = _gen/org.freedesktop.Telepathy.ConnectionManager.example_call.service
 $(service_DATA): %: Makefile
-	$(mkdir_p) _gen
+	$(MKDIR_P) _gen
 	{ echo "[D-BUS Service]" && \
 	echo "Name=org.freedesktop.Telepathy.ConnectionManager.example_call" && \
 	echo "Exec=${libexecdir}/telepathy-example-cm-call"; } > $@
