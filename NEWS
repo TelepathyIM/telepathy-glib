@@ -3,6 +3,9 @@ telepathy-glib 0.20.3 (UNRELEASED)
 
 Fixes:
 
+• Fix a wrong introspection annotation on tp_debug_client_get_messages_finish()
+  that would lead to use-after-free (fd.o #65518, Simon)
+
 • Isolate regression tests better (fd.o #63119, Simon)
 
 • Explicitly annotate tp_account_update_parameters_finish()'s
