@@ -14,6 +14,12 @@ Fixes:
 
 • Always flag delivery reports with Non_Text_Content. (fd.o #61254, wjt)
 
+• Don't announce legacy Group channels twice (fd.o #52011; Jonny, Simon)
+
+• Don't crash if a broken connection manager signals a TLSCertificate
+  with no CertificateChainData, just invalidate the channel
+  (fd.o #61616, Guillaume)
+
 telepathy-glib 0.21.0 (2013-04-03)
 ==================================
 
