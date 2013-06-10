@@ -536,8 +536,8 @@ tp_debug_client_get_messages_async (
  *
  * Finishes tp_debug_client_set_enabled_async().
  *
- * Returns: (transfer full) (type GLib.PtrArray) (element-type TelepathyGLib.DebugMessage):
- * a #GPtrArray of #TpDebugMessage
+ * Returns: (transfer container) (type GLib.PtrArray) (element-type TelepathyGLib.DebugMessage):
+ * a #GPtrArray of #TpDebugMessage, free with g_ptr_array_unref()
  *
  * Since: 0.19.0
  */
