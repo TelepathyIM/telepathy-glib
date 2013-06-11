@@ -20,6 +20,9 @@ Fixes:
   with no CertificateChainData, just invalidate the channel
   (fd.o #61616, Guillaume)
 
+• Adjust regression tests so we can distcheck under Automake 1.13
+  (fd.o #65517, Simon)
+
 telepathy-glib 0.20.2 (2013-04-03)
 ==================================
 
