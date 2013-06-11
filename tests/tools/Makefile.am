@@ -16,7 +16,7 @@ TESTS_ENVIRONMENT = \
     PYTHON=$(PYTHON) \
     srcdir=$(srcdir) \
     top_srcdir=$(top_srcdir) \
-    sh
+    $(NULL)
 
 CLEANFILES = \
 	actual.h \
