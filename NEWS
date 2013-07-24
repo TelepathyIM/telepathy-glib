@@ -1,7 +1,14 @@
-telepathy-glib 0.20.4 (UNRELEASED)
+telepathy-glib 0.20.4 (2013-07-24)
 ==================================
 
-...
+The “air-conditioned” release.
+
+Fixes:
+
+• Don't crash if GetContactInfo() fails (fd.o #46430, Guillaume)
+
+• Fix a race condition that could result in telepathy-haze protocol support
+  not being detected (fd.o #67183, Simon)
 
 telepathy-glib 0.20.3 (2013-06-20)
 ==================================
