@@ -2513,7 +2513,7 @@ _tp_connection_set_account (TpConnection *self,
  * Returns: the value of the TpConnection:self-handle property
  *
  * Since: 0.7.26
- * Deprecated: Use tp_connection_get_self_handle() instead.
+ * Deprecated: Use tp_connection_get_self_contact() instead.
  */
 TpHandle
 tp_connection_get_self_handle (TpConnection *self)
