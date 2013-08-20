@@ -18,7 +18,9 @@
 typedef enum {
     ACTIVATE_CM = (1 << 0),
     USE_CWR = (1 << 1),
-    USE_OLD_LIST = (1 << 2)
+    USE_OLD_LIST = (1 << 2),
+    DROP_NAME_ON_GET = (1 << 3),
+    DROP_NAME_ON_GET_TWICE = (1 << 4)
 } TestFlags;
 
 typedef struct {
@@ -32,7 +34,10 @@ typedef struct {
     GError *error /* initialized where needed */;
 } Test;
 
-typedef TpTestsEchoConnectionManager PropertylessConnectionManager;
+typedef struct {
+    TpTestsEchoConnectionManager parent;
+    guint drop_name_on_get;
+} PropertylessConnectionManager;
 typedef TpTestsEchoConnectionManagerClass PropertylessConnectionManagerClass;
 
 static void stub_properties_iface_init (gpointer iface);
@@ -65,10 +70,30 @@ stub_get (TpSvcDBusProperties *iface G_GNUC_UNUSED,
 }
 
 static void
-stub_get_all (TpSvcDBusProperties *iface G_GNUC_UNUSED,
+stub_get_all (TpSvcDBusProperties *iface,
     const gchar *i G_GNUC_UNUSED,
     DBusGMethodInvocation *context)
 {
+  PropertylessConnectionManager *cm = (PropertylessConnectionManager *) iface;
+
+  /* Emulate the CM exiting and coming back. */
+  if (cm->drop_name_on_get)
+    {
+      TpDBusDaemon *dbus = tp_base_connection_manager_get_dbus_daemon (
+          TP_BASE_CONNECTION_MANAGER (cm));
+      GString *string = g_string_new (TP_CM_BUS_NAME_BASE);
+      GError *error = NULL;
+
+      g_string_append (string, "example_echo");
+
+      cm->drop_name_on_get--;
+
+      tp_dbus_daemon_release_name (dbus, string->str, &error);
+      g_assert_no_error (error);
+      tp_dbus_daemon_request_name (dbus, string->str, FALSE, &error);
+      g_assert_no_error (error);
+    }
+
   tp_dbus_g_method_return_not_implemented (context);
 }
 
@@ -980,6 +1005,7 @@ test_dbus_fallback (Test *test,
   gchar *name;
   guint info_source;
   const TestFlags flags = GPOINTER_TO_INT (data);
+  PropertylessConnectionManager *service_cm;
   TpBaseConnectionManager *service_cm_as_base;
   gboolean ok;
 
@@ -987,9 +1013,10 @@ test_dbus_fallback (Test *test,
    * exercise the fallback path */
   g_object_unref (test->service_cm);
   test->service_cm = NULL;
-  test->service_cm = TP_TESTS_ECHO_CONNECTION_MANAGER (tp_tests_object_new_static_class (
-        propertyless_connection_manager_get_type (),
-        NULL));
+  service_cm = tp_tests_object_new_static_class (
+      propertyless_connection_manager_get_type (),
+      NULL);
+  test->service_cm = TP_TESTS_ECHO_CONNECTION_MANAGER (service_cm);
   g_assert (test->service_cm != NULL);
   service_cm_as_base = TP_BASE_CONNECTION_MANAGER (test->service_cm);
   g_assert (service_cm_as_base != NULL);
@@ -1002,6 +1029,15 @@ test_dbus_fallback (Test *test,
       NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (test->error);
+
+  if (flags & DROP_NAME_ON_GET_TWICE)
+    {
+      service_cm->drop_name_on_get = 2;
+    }
+  else if (flags & DROP_NAME_ON_GET)
+    {
+      service_cm->drop_name_on_get = 1;
+    }
 
   if (flags & ACTIVATE_CM)
     {
@@ -1029,11 +1065,30 @@ test_dbus_fallback (Test *test,
     }
   else
     {
-      tp_tests_proxy_run_until_prepared (test->cm, NULL);
+      tp_tests_proxy_run_until_prepared_or_failed (test->cm, NULL,
+          &test->error);
     }
 
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "example_echo");
+
+  if (flags & DROP_NAME_ON_GET_TWICE)
+    {
+      /* If it dies during introspection *twice*, we assume it has crashed
+       * or something. */
+      g_assert_error (test->error, TP_DBUS_ERRORS,
+          TP_DBUS_ERROR_NAME_OWNER_LOST);
+      g_clear_error (&test->error);
+
+      g_assert_cmpuint (tp_proxy_is_prepared (test->cm,
+            TP_CONNECTION_MANAGER_FEATURE_CORE), ==, FALSE);
+      g_assert_cmpuint (tp_connection_manager_is_ready (test->cm), ==, FALSE);
+      g_assert_cmpuint (tp_connection_manager_get_info_source (test->cm), ==,
+          TP_CM_INFO_SOURCE_NONE);
+      return;
+    }
+
+  g_assert_no_error (test->error);
   g_assert_cmpuint (tp_proxy_is_prepared (test->cm,
         TP_CONNECTION_MANAGER_FEATURE_CORE), ==, TRUE);
   g_assert (tp_proxy_get_invalidated (test->cm) == NULL);
@@ -1188,6 +1243,13 @@ main (int argc,
       setup, test_dbus_fallback, teardown);
   g_test_add ("/cm/dbus-fallback/activate/cwr", Test,
       GINT_TO_POINTER (ACTIVATE_CM | USE_CWR),
+      setup, test_dbus_fallback, teardown);
+
+  g_test_add ("/cm/dbus-fallback/dies", Test,
+      GINT_TO_POINTER (DROP_NAME_ON_GET), setup, test_dbus_fallback, teardown);
+
+  g_test_add ("/cm/dbus-fallback/dies-twice", Test,
+      GINT_TO_POINTER (DROP_NAME_ON_GET_TWICE),
       setup, test_dbus_fallback, teardown);
 
   g_test_add ("/cm/list", Test, GINT_TO_POINTER (0),

@@ -1,7 +1,12 @@
 telepathy-glib 0.21.2 (UNRELEASED)
 ==================================
 
-...
+Fixes:
+
+• Don't crash if GetContactInfo() fails (fd.o #46430, Guillaume)
+
+• Fix a race condition that could result in telepathy-haze protocol support
+  not being detected (fd.o #67183, Simon)
 
 telepathy-glib 0.21.1 (2013-06-20)
 ==================================
