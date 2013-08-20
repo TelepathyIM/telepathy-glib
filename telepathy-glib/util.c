@@ -1764,6 +1764,32 @@ _tp_enum_to_nick (
     return NULL;
 }
 
+/*
+ * _tp_enum_to_nick_nonnull:
+ *
+ * The same as _tp_enum_to_nick, but always returns non-NULL.
+ */
+const gchar *
+_tp_enum_to_nick_nonnull (
+    GType enum_type,
+    gint value)
+{
+  GEnumClass *klass = g_type_class_ref (enum_type);
+  GEnumValue *enum_value;
+
+  g_return_val_if_fail (klass != NULL, "(incorrect class)");
+
+  enum_value = g_enum_get_value (klass, value);
+  g_type_class_unref (klass);
+
+  if (enum_value == NULL)
+    return "(out-of-range value)";
+  else if (enum_value->value_nick == NULL)
+    return "(value with no nickname)";
+  else
+    return enum_value->value_nick;
+}
+
 gboolean
 _tp_bind_connection_status_to_boolean (GBinding *binding,
     const GValue *src_value,
