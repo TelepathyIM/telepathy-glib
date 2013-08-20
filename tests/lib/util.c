@@ -338,6 +338,7 @@ _tp_create_local_socket (TpSocketAddressType address_type,
     TpSocketAccessControl access_control,
     GSocketService **service,
     gchar **unix_address,
+    gchar **unix_tmpdir,
     GError **error)
 {
   gboolean success;
@@ -363,7 +364,20 @@ _tp_create_local_socket (TpSocketAddressType address_type,
 #ifdef HAVE_GIO_UNIX
       case TP_SOCKET_ADDRESS_TYPE_UNIX:
         {
-          address = g_unix_socket_address_new (tmpnam (NULL));
+          GError *e = NULL;
+          gchar *dir = g_dir_make_tmp ("tp-glib-tests.XXXXXX", &e);
+          gchar *name;
+
+          g_assert_no_error (e);
+
+          name = g_build_filename (dir, "s", NULL);
+          address = g_unix_socket_address_new (name);
+          g_free (name);
+
+          if (unix_tmpdir != NULL)
+            *unix_tmpdir = dir;
+          else
+            g_free (dir);
           break;
         }
 #endif
