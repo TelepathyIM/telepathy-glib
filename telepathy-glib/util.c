@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include <glib/gstdio.h>
 #include <gobject/gvaluecollector.h>
 
 #ifdef HAVE_GIO_UNIX
@@ -43,6 +44,7 @@
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
 
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -1405,32 +1407,47 @@ _tp_quark_array_merge_valist (GArray *array,
 #ifdef HAVE_GIO_UNIX
 GSocketAddress *
 _tp_create_temp_unix_socket (GSocketService *service,
+    gchar **tmpdir,
     GError **error)
 {
-  guint i;
   GSocketAddress *address;
+  gchar *dir = g_dir_make_tmp ("tp-glib-socket.XXXXXX", error);
+  gchar *name;
 
-  /* why doesn't GIO provide a method to create a socket we don't
-   * care about? Iterate until we find a valid temporary name.
-   *
-   * Try a maximum of 10 times to get a socket */
-  for (i = 0; i < 10; i++)
+  if (dir == NULL)
+    return NULL;
+
+  if (g_chmod (dir, 0700) != 0)
     {
-      address = g_unix_socket_address_new (tmpnam (NULL));
+      int e = errno;
 
-      g_clear_error (error);
-
-      if (g_socket_listener_add_address (
-            G_SOCKET_LISTENER (service),
-            address, G_SOCKET_TYPE_STREAM,
-            G_SOCKET_PROTOCOL_DEFAULT,
-            NULL, NULL, error))
-        return address;
-      else
-        g_object_unref (address);
+      g_set_error (error, G_IO_ERROR, g_io_error_from_errno (e),
+          "unable to set permissions of %s to 0700: %s", dir,
+          g_strerror (e));
+      g_free (dir);
+      return NULL;
     }
 
-  return NULL;
+  name = g_build_filename (dir, "s", NULL);
+  address = g_unix_socket_address_new (name);
+  g_free (name);
+
+  if (!g_socket_listener_add_address (G_SOCKET_LISTENER (service),
+        address, G_SOCKET_TYPE_STREAM,
+        G_SOCKET_PROTOCOL_DEFAULT,
+        NULL, NULL, error))
+    {
+      g_object_unref (address);
+      g_free (dir);
+      return NULL;
+    }
+
+  if (tmpdir != NULL)
+    *tmpdir = dir;
+  else
+    g_free (dir);
+
+  return address;
 }
 #endif /* HAVE_GIO_UNIX */
 

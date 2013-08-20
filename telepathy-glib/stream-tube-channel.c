@@ -150,6 +150,7 @@ struct _TpStreamTubeChannelPrivate
   /* Offering side */
   GSocketService *service;
   GSocketAddress *address;
+  gchar *unix_tmpdir;
   /* GSocketConnection we have accepted but are still waiting a
    * NewRemoteConnection to identify them. Owned ConnWaitingSig. */
   GSList *conn_waiting_sig;
@@ -270,6 +271,13 @@ tp_stream_tube_channel_dispose (GObject *obj)
       g_object_unref (self->priv->address);
       self->priv->address = NULL;
     }
+
+    if (self->priv->unix_tmpdir != NULL)
+      {
+        g_rmdir (self->priv->unix_tmpdir);
+        g_free (self->priv->unix_tmpdir);
+        self->priv->unix_tmpdir = NULL;
+      }
 
   tp_clear_pointer (&self->priv->access_control_param, tp_g_value_slice_free);
   tp_clear_object (&self->priv->local_conn_waiting_id);
@@ -1386,7 +1394,7 @@ tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
       case TP_SOCKET_ADDRESS_TYPE_UNIX:
         {
           self->priv->address = _tp_create_temp_unix_socket (
-              self->priv->service, &error);
+              self->priv->service, &self->priv->unix_tmpdir, &error);
 
           /* check there wasn't an error on the final attempt */
           if (self->priv->address == NULL)
