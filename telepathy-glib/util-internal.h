@@ -39,6 +39,7 @@ void _tp_quark_array_merge_valist (GArray *array,
 
 #ifdef HAVE_GIO_UNIX
 GSocketAddress * _tp_create_temp_unix_socket (GSocketService *service,
+    gchar **tmpdir,
     GError **error);
 #endif /* HAVE_GIO_UNIX */
 
