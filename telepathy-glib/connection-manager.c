@@ -1789,19 +1789,35 @@ list_context_unref (_ListContext *list_context)
 }
 
 static void
-tp_list_connection_managers_cm_prepared (GObject *source G_GNUC_UNUSED,
-    GAsyncResult *result G_GNUC_UNUSED,
+tp_list_connection_managers_cm_prepared (GObject *source,
+    GAsyncResult *result,
     gpointer user_data)
 {
   _ListContext *list_context = user_data;
+  GError *error = NULL;
+  TpConnectionManager *cm = TP_CONNECTION_MANAGER (source);
 
-  /* ignore the result here - all we guarantee is that the CM is ready
-   * *if possible* */
+  if (tp_proxy_prepare_finish (source, result, &error))
+    {
+      DEBUG ("%s: prepared", cm->name);
+    }
+  else
+    {
+      DEBUG ("%s: failed to prepare, continuing: %s #%d: %s", cm->name,
+          g_quark_to_string (error->domain), error->code, error->message);
+      g_clear_error (&error);
+      /* other than that, ignore it - all we guarantee is that
+       * the CM is ready *if possible* */
+    }
 
-  if ((--list_context->cms_to_ready) == 0)
+  list_context->cms_to_ready--;
+
+  if (list_context->cms_to_ready == 0)
     {
       TpConnectionManager **cms;
       guint n_cms = list_context->arr->len;
+
+      DEBUG ("We've prepared as many as possible of %u CMs", n_cms);
 
       g_assert (list_context->callback != NULL);
 
@@ -1819,6 +1835,11 @@ tp_list_connection_managers_cm_prepared (GObject *source G_GNUC_UNUSED,
 
       list_context->callback = NULL;
     }
+  else
+    {
+      DEBUG ("We still need to prepare %" G_GSIZE_FORMAT " CM(s)",
+          list_context->cms_to_ready);
+    }
 
   list_context_unref (list_context);
 }
@@ -1832,16 +1853,26 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
 {
   _ListContext *list_context = user_data;
   const gchar * const *name_iter;
+  const gchar *method;
+
+  if (list_context->getting_names)
+    method = "ListNames";
+  else
+    method = "ListActivatableNames";
 
   /* The TpProxy APIs we use guarantee this */
   g_assert (weak_object != NULL || !list_context->had_weak_object);
 
   if (error != NULL)
     {
+      DEBUG ("%s failed: %s #%d: %s", method,
+          g_quark_to_string (error->domain), error->code, error->message);
       list_context->callback (NULL, 0, error, list_context->user_data,
           weak_object);
       return;
     }
+
+  DEBUG ("%s succeeded", method);
 
   for (name_iter = names; name_iter != NULL && *name_iter != NULL; name_iter++)
     {
@@ -1853,6 +1884,7 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
         continue;
 
       name = *name_iter + list_context->base_len;
+      DEBUG ("  found CM: %s", name);
 
       if (g_hash_table_lookup (list_context->table, name) == NULL)
         {
@@ -1877,16 +1909,21 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
       list_context->cms_to_ready = list_context->arr->len;
       list_context->refcount += list_context->cms_to_ready;
 
+      DEBUG ("Total of %" G_GSIZE_FORMAT " CMs to be prepared",
+          list_context->cms_to_ready);
+
       for (i = 0; i < list_context->cms_to_ready; i++)
         {
           TpConnectionManager *cm = g_ptr_array_index (list_context->arr, i);
 
+          DEBUG ("  preparing %s", cm->name);
           tp_proxy_prepare_async (cm, NULL,
               tp_list_connection_managers_cm_prepared, list_context);
         }
     }
   else
     {
+      DEBUG ("Calling ListNames");
       list_context->getting_names = TRUE;
       list_context->refcount++;
       tp_dbus_daemon_list_names (bus_daemon, 2000,
@@ -1947,6 +1984,7 @@ tp_list_connection_managers (TpDBusDaemon *bus_daemon,
       g_object_add_weak_pointer (weak_object, &list_context->weak_object);
     }
 
+  DEBUG ("Calling ListActivatableNames");
   tp_dbus_daemon_list_activatable_names (bus_daemon, 2000,
       tp_list_connection_managers_got_names, list_context,
       (GDestroyNotify) list_context_unref, weak_object);
