@@ -1,7 +1,10 @@
 telepathy-glib 0.20.5 (UNRELEASED)
 ==================================
 
-…
+Fixes:
+
+• Make TpHeap work correctly with GComparator functions that return
+  values outside {-1, 0, 1} (fd.o #68932, Debarshi Ray)
 
 telepathy-glib 0.20.4 (2013-07-24)
 ==================================
