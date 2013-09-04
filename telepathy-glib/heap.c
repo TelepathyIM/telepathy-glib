@@ -143,7 +143,7 @@ tp_heap_add (TpHeap *heap, gpointer element)
     {
       gpointer parent = HEAP_INDEX (heap, m / 2);
 
-      if (heap->comparator (element, parent) == -1)
+      if (heap->comparator (element, parent) < 0)
         {
           HEAP_INDEX (heap, m / 2) = element;
           HEAP_INDEX (heap, m) = parent;
@@ -204,13 +204,13 @@ extract_element (TpHeap * heap, int index)
           if ((i * 2 + 1 <= m)
               && (heap->
                   comparator (HEAP_INDEX (heap, i * 2),
-                              HEAP_INDEX (heap, i * 2 + 1)) == 1))
+                              HEAP_INDEX (heap, i * 2 + 1)) > 0))
             j = i * 2 + 1;
           else
             j = i * 2;
 
-          if (heap->comparator (HEAP_INDEX (heap, i), HEAP_INDEX (heap, j)) ==
-              1)
+          if (heap->comparator (HEAP_INDEX (heap, i), HEAP_INDEX (heap, j)) >
+              0)
             {
               gpointer tmp = HEAP_INDEX (heap, i);
               HEAP_INDEX (heap, i) = HEAP_INDEX (heap, j);

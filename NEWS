@@ -10,6 +10,9 @@ Fixes:
 
 • Fix documentation for tp_connection_get_self_handle (Emilio)
 
+• Make TpHeap work correctly with GComparator functions that return
+  values outside {-1, 0, 1} (fd.o #68932, Debarshi Ray)
+
 telepathy-glib 0.21.1 (2013-06-20)
 ==================================
 
