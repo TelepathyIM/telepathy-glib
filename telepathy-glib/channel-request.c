@@ -79,15 +79,6 @@
  * signal will be emitted with the domain %TP_DBUS_ERRORS and the error code
  * %TP_DBUS_ERROR_NAME_OWNER_LOST.
  *
- * This proxy is usable but incomplete: accessors for the Account,
- * UserActionTime, PreferredHandler, Requests and Interfaces properties will
- * be added in a later version of telepathy-glib, along with a mechanism
- * similar to tp_connection_call_when_ready().
- *
- * Until suitable convenience methods are implemented, the generic
- * tp_cli_dbus_properties_call_get_all() method can be used to get those
- * properties.
- *
  * Since: 0.7.32
  */
 
