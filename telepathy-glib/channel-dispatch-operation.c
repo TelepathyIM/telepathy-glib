@@ -102,6 +102,10 @@
  * Creating a #TpChannelDispatchOperation directly is deprecated: it
  * should only be created via a #TpBaseClient.
  *
+ * Since 0.16, #TpChannelDispatchOperation always has a non-%NULL
+ * #TpProxy:factory, which will be propagated to the #TpAccount,
+ * #TpConnection and #TpChannel.
+ *
  * Since: 0.7.32
  */
 

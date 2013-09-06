@@ -83,6 +83,10 @@
  * should only be created via a #TpAccountChannelRequest
  * or a #TpBaseClient.
  *
+ * Since 0.16, #TpChannelRequest always has a non-%NULL #TpProxy:factory,
+ * and its #TpProxy:factory will be propagated to the #TpAccount,
+ * #TpConnection and #TpChannel.
+ *
  * Since: 0.7.32
  */
 
