@@ -193,7 +193,7 @@ main (int argc,
   if (argc != 3)
     g_error ("Usage: offerer gabble/jabber/ladygaga t-pain@example.com");
 
-  factory = tp_simple_client_factory_new (NULL);
+  factory = TP_SIMPLE_CLIENT_FACTORY (tp_automatic_client_factory_new (NULL));
 
   account_path = g_strconcat (TP_ACCOUNT_OBJECT_PATH_BASE, argv[1], NULL);
   account = tp_simple_client_factory_ensure_account (factory, account_path,
