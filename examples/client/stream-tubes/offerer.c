@@ -140,7 +140,11 @@ main (int argc,
   TpAccountChannelRequest *req;
   GHashTable *request;
 
-  g_assert (argc == 3);
+  if (argc != 3)
+    {
+      g_printerr ("Usage: offerer gabble/jabber/ladygaga t-pain@example.com\n");
+      return 2;
+    }
 
   g_type_init ();
 

@@ -191,7 +191,10 @@ main (int argc,
   g_type_init ();
 
   if (argc != 3)
-    g_error ("Usage: offerer gabble/jabber/ladygaga t-pain@example.com");
+    {
+      g_printerr ("Usage: offerer gabble/jabber/ladygaga t-pain@example.com\n");
+      return 2;
+    }
 
   factory = TP_SIMPLE_CLIENT_FACTORY (tp_automatic_client_factory_new (NULL));
 
