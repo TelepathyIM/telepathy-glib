@@ -21,7 +21,7 @@ connection_closed_cb (
     }
   else
     {
-      g_debug ("Connection closed.");
+      g_message ("Connection closed.");
     }
 
   tp_channel_close_async (TP_CHANNEL (user_data), NULL, NULL);
@@ -126,13 +126,13 @@ tube_offered (GObject *tube,
       &error);
   if (conn == NULL)
     {
-      g_debug ("Failed to offer tube: %s", error->message);
+      g_message ("Failed to offer tube: %s", error->message);
       g_error_free (error);
       tp_channel_close_async (TP_CHANNEL (tube), NULL, NULL);
       return;
     }
 
-  g_debug ("Tube opened");
+  g_message ("Tube opened");
   register_object (conn, TP_DBUS_TUBE_CHANNEL (tube));
 }
 
@@ -143,7 +143,7 @@ tube_invalidated_cb (TpStreamTubeChannel *tube,
     gchar *message,
     gpointer user_data)
 {
-  g_debug ("Tube has been invalidated: %s", message);
+  g_message ("Tube has been invalidated: %s", message);
   g_main_loop_quit (loop);
   g_object_unref (tube);
 }
@@ -161,13 +161,13 @@ channel_created (GObject *source,
       TP_ACCOUNT_CHANNEL_REQUEST (source), result, NULL, &error);
   if (channel == NULL)
     {
-      g_debug ("Failed to create channel: %s", error->message);
+      g_message ("Failed to create channel: %s", error->message);
       g_error_free (error);
       g_main_loop_quit (loop);
       return;
     }
 
-  g_debug ("Channel created: %s", tp_proxy_get_object_path (channel));
+  g_message ("Channel created: %s", tp_proxy_get_object_path (channel));
 
   tube = TP_DBUS_TUBE_CHANNEL (channel);
 
@@ -223,7 +223,7 @@ main (int argc,
 
       NULL);
 
-  g_debug ("Offer channel to %s", argv[2]);
+  g_message ("Offer channel to %s", argv[2]);
 
   req = tp_account_channel_request_new (account, request,
       TP_USER_ACTION_TIME_CURRENT_TIME);
