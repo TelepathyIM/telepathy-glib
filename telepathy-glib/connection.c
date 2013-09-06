@@ -65,6 +65,14 @@
  * are implementing a lower-level Telepathy component (such as the account
  * manager service itself).
  *
+ * Since 0.16, #TpConnection always has a non-%NULL #TpProxy:factory, and its
+ * #TpProxy:factory will be propagated to its #TpChannel objects
+ * (if any). Similarly, the #TpProxy:factory<!-- -->'s features
+ * will be used for #TpContact objects.
+ * If a #TpConnection is created without going via the
+ * #TpAccount or specifying a #TpProxy:factory, the default
+ * is to use a new #TpAutomaticClientFactory.
+ *
  * Since: 0.7.1
  */
 
