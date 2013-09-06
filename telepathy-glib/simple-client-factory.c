@@ -1158,8 +1158,8 @@ tp_simple_client_factory_add_contact_features_varargs (
   va_end (var_args);
 }
 
-/**
- * tp_simple_client_factory_ensure_channel_request:
+/*
+ * _tp_simple_client_factory_ensure_channel_request:
  * @self: a #TpSimpleClientFactory object
  * @object_path: the object path of a channel request
  * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
@@ -1210,8 +1210,8 @@ _tp_simple_client_factory_ensure_channel_request (TpSimpleClientFactory *self,
   return request;
 }
 
-/**
- * tp_simple_client_factory_ensure_channel_dispatch_operation:
+/*
+ * _tp_simple_client_factory_ensure_channel_dispatch_operation:
  * @self: a #TpSimpleClientFactory object
  * @object_path: the object path of a channel dispatch operation
  * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
