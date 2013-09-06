@@ -144,8 +144,12 @@ tp_connection_get_feature_quark_core (void)
  *   <title>Someone still has to call Connect()</title>
  *   <para>Requesting this feature via tp_proxy_prepare_async() means that
  *     you want to wait for the connection to connect, but it doesn't actually
- *     start the process of connecting: to do that, call
- *     tp_cli_connection_call_connect() separately.</para>
+ *     start the process of connecting. For connections associated with
+ *     a #TpAccount, the account manager service is responsible for
+ *     doing that, but if you are constructing connections directly
+ *     (e.g. if you are implementing an account manager), you must
+ *     tp_cli_connection_call_connect() separately.
+ *     </para>
  * </note>
  *
  * One can ask for a feature to be prepared using the
