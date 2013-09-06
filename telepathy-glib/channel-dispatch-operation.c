@@ -99,6 +99,9 @@
  * channel dispatch operations for any undispatched channels, and the approver
  * will be notified again.
  *
+ * Creating a #TpChannelDispatchOperation directly is deprecated: it
+ * should only be created via a #TpBaseClient.
+ *
  * Since: 0.7.32
  */
 

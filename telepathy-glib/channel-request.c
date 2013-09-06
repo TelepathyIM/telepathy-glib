@@ -79,6 +79,10 @@
  * signal will be emitted with the domain %TP_DBUS_ERRORS and the error code
  * %TP_DBUS_ERROR_NAME_OWNER_LOST.
  *
+ * Creating a #TpChannelRequest directly is deprecated: it
+ * should only be created via a #TpAccountChannelRequest
+ * or a #TpBaseClient.
+ *
  * Since: 0.7.32
  */
 
