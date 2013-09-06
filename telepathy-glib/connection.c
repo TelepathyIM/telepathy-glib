@@ -61,6 +61,10 @@
  * #TpConnection objects represent Telepathy instant messaging connections
  * accessed via D-Bus.
  *
+ * #TpConnection objects should be obtained from a #TpAccount, unless you
+ * are implementing a lower-level Telepathy component (such as the account
+ * manager service itself).
+ *
  * Since: 0.7.1
  */
 
