@@ -151,15 +151,10 @@ G_DEFINE_TYPE (TpAccountManager, tp_account_manager, TP_TYPE_PROXY)
  *
  * When this feature is prepared, the list of accounts have been retrieved and
  * are available for use, and change-notification has been set up.
- * Additionally, the #TpAccount objects for accounts which existed at the time
- * this feature was prepared will have #TP_ACCOUNT_FEATURE_CORE prepared, but
- * #TpAccount objects subsequently announced by
- * #TpAccountManager::account-validity-changed are <emphasis>not</emphasis>
- * guaranteed to have this feature prepared. In practice, this means that
- * the accounts returned by calling tp_account_manager_dup_valid_accounts()
- * immediately after successfully calling tp_proxy_prepare_finish() on the
- * #TpAccountManager will have #TP_ACCOUNT_FEATURE_CORE prepared, but later
- * calls to that function do not have the same guarantee.
+ * Additionally, since 0.16 the #TpAccount objects returned by
+ * tp_account_manager_dup_valid_accounts() have their
+ * features prepared as configured by the #TpProxy:factory; in particular,
+ * they will all have %TP_ACCOUNT_FEATURE_CORE.
  *
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
