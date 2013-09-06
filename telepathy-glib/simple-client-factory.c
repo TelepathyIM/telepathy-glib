@@ -695,7 +695,7 @@ tp_simple_client_factory_add_connection_features_varargs (
 /**
  * tp_simple_client_factory_ensure_channel:
  * @self: a #TpSimpleClientFactory object
- * @connection: a #TpConnection
+ * @connection: a #TpConnection whose #TpProxy:factory is this object
  * @object_path: the object path of a channel on @connection
  * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
  *  the immutable properties of the channel
@@ -828,7 +828,7 @@ tp_simple_client_factory_add_channel_features_varargs (
 /**
  * tp_simple_client_factory_ensure_contact:
  * @self: a #TpSimpleClientFactory object
- * @connection: a #TpConnection
+ * @connection: a #TpConnection whose #TpProxy:factory is this object
  * @handle: a #TpHandle
  * @identifier: a string representing the contact's identifier
  *
@@ -904,7 +904,7 @@ upgrade_contacts_cb (GObject *source,
 /**
  * tp_simple_client_factory_upgrade_contacts_async:
  * @self: a #TpSimpleClientFactory object
- * @connection: a #TpConnection
+ * @connection: a #TpConnection whose #TpProxy:factory is this object
  * @n_contacts: The number of contacts in @contacts (must be at least 1)
  * @contacts: (array length=n_contacts): An array of #TpContact objects
  *  associated with @self
@@ -928,6 +928,10 @@ tp_simple_client_factory_upgrade_contacts_async (
 {
   GSimpleAsyncResult *result;
   GArray *features;
+
+  /* no real reason this shouldn't work, but it's really confusing
+   * and probably indicates an error */
+  g_warn_if_fail (tp_proxy_get_factory (connection) == self);
 
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_simple_client_factory_upgrade_contacts_async);
