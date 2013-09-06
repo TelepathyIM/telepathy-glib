@@ -36,7 +36,8 @@
  *
  * Currently supported classes are #TpAccount, #TpConnection,
  * #TpChannel and #TpContact. Those objects should always be acquired through a
- * factory, rather than being constructed directly.
+ * factory or a "larger" object (e.g. getting the #TpConnection from
+ * a #TpAccount), rather than being constructed directly.
  *
  * One can subclass #TpSimpleClientFactory and override some of its virtual
  * methods to construct more specialized objects. See #TpAutomaticClientFactory
@@ -451,6 +452,10 @@ tp_simple_client_factory_get_dbus_daemon (TpSimpleClientFactory *self)
  * is responsible for calling tp_proxy_prepare_async() with the desired
  * features (as given by tp_simple_client_factory_dup_account_features()).
  *
+ * This function is rather low-level. tp_account_manager_dup_valid_accounts()
+ * and #TpAccountManager::validity-changed are more appropriate for most
+ * applications.
+ *
  * Returns: (transfer full): a reference to a #TpAccount;
  *  see tp_account_new().
  *
@@ -575,6 +580,9 @@ tp_simple_client_factory_add_account_features_varargs (
  * Note that the returned #TpConnection is not guaranteed to be ready; the
  * caller is responsible for calling tp_proxy_prepare_async() with the desired
  * features (as given by tp_simple_client_factory_dup_connection_features()).
+ *
+ * This function is rather low-level. #TpAccount:connection is more
+ * appropriate for most applications.
  *
  * Returns: (transfer full): a reference to a #TpConnection;
  *  see tp_connection_new().
@@ -701,6 +709,10 @@ tp_simple_client_factory_add_connection_features_varargs (
  * Note that the returned #TpChannel is not guaranteed to be ready; the
  * caller is responsible for calling tp_proxy_prepare_async() with the desired
  * features (as given by tp_simple_client_factory_dup_channel_features()).
+ *
+ * This function is rather low-level.
+ * #TpAccountChannelRequest and #TpBaseClient are more appropriate ways
+ * to obtain channels for most applications.
  *
  * Returns: (transfer full): a reference to a #TpChannel;
  *  see tp_channel_new_from_properties().
