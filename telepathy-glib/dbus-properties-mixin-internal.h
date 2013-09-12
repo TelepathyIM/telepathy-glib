@@ -26,9 +26,6 @@
 
 G_BEGIN_DECLS
 
-GHashTable *_tp_dbus_properties_mixin_get_all (GObject *self,
-    const gchar *interface_name);
-
 #define TP_SVC_INTERFACE_DBUS_PROPERTIES_MIXIN_QUARK_NAME \
   "tp_svc_interface_get_dbus_properties_info"
 

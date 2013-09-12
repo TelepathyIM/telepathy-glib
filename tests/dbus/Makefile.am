@@ -218,13 +218,6 @@ test_protocol_objects_LDADD = \
 test_protocol_objects_SOURCES = protocol-objects.c
 
 test_self_handle_SOURCES = self-handle.c
-test_self_handle_LDADD = \
-    $(top_builddir)/tests/lib/libtp-glib-tests-internal.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-main-internal.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
-    $(GLIB_LIBS) \
-    $(NULL)
 
 test_self_presence_SOURCES = self-presence.c
 
