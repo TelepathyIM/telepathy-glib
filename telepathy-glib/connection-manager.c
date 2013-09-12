@@ -206,6 +206,9 @@ struct _TpConnectionManagerPrivate {
     /* TRUE if someone asked us to activate but we're putting it off until
      * name_known */
     gboolean want_activation;
+    /* TRUE if the CM exited (crashed?) during introspection.
+     * We'll retry, but only once. */
+    gboolean retried_introspection;
 };
 
 G_DEFINE_TYPE (TpConnectionManager,
@@ -305,8 +308,7 @@ static void tp_connection_manager_ready_or_failed (TpConnectionManager *self,
                                        const GError *error);
 
 static void
-tp_connection_manager_end_introspection (TpConnectionManager *self,
-                                         const GError *error)
+tp_connection_manager_reset_introspection (TpConnectionManager *self)
 {
   self->priv->introspection_step = INTROSPECT_IDLE;
 
@@ -321,6 +323,13 @@ tp_connection_manager_end_introspection (TpConnectionManager *self,
       g_hash_table_unref (self->priv->found_protocols);
       self->priv->found_protocols = NULL;
     }
+}
+
+static void
+tp_connection_manager_end_introspection (TpConnectionManager *self,
+                                         const GError *error)
+{
+  tp_connection_manager_reset_introspection (self);
 
   DEBUG ("End of introspection, info source %u", self->priv->info_source);
   g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->priv->info_source);
@@ -489,7 +498,20 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
 
       /* cancel pending introspection, if any */
       if (introspection_in_progress (self))
-        tp_connection_manager_end_introspection (self, &e);
+        {
+          if (self->priv->retried_introspection)
+            {
+              DEBUG ("%s, twice: assuming fatal and not retrying", e.message);
+              tp_connection_manager_end_introspection (self, &e);
+            }
+          else
+            {
+              self->priv->retried_introspection = TRUE;
+              DEBUG ("%s: retrying", e.message);
+              tp_connection_manager_reset_introspection (self);
+              tp_connection_manager_continue_introspection (self);
+            }
+        }
 
       /* If our name wasn't known already, a change to "" is just the initial
        * state, so we didn't *exit* as such. */

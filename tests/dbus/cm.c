@@ -18,18 +18,99 @@
 
 typedef enum {
     ACTIVATE_CM = (1 << 0),
+    DROP_NAME_ON_GET = (1 << 3),
+    DROP_NAME_ON_GET_TWICE = (1 << 4)
 } TestFlags;
+
+typedef struct {
+    ExampleEcho2ConnectionManager parent;
+    guint drop_name_on_get;
+} MyConnectionManager;
+typedef ExampleEcho2ConnectionManagerClass MyConnectionManagerClass;
 
 typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
-    ExampleEcho2ConnectionManager *service_cm;
+    MyConnectionManager *service_cm;
 
     TpConnectionManager *cm;
     TpConnectionManager *echo;
     TpConnectionManager *spurious;
     GError *error /* initialized where needed */;
 } Test;
+
+static void my_properties_iface_init (gpointer iface);
+static GType my_connection_manager_get_type (void);
+
+G_DEFINE_TYPE_WITH_CODE (MyConnectionManager,
+    my_connection_manager,
+    EXAMPLE_TYPE_ECHO_2_CONNECTION_MANAGER,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
+      my_properties_iface_init))
+
+static void
+my_connection_manager_class_init (MyConnectionManagerClass *cls)
+{
+}
+
+static void
+my_connection_manager_init (MyConnectionManager *self)
+{
+}
+
+static void
+my_get (TpSvcDBusProperties *iface G_GNUC_UNUSED,
+    const gchar *i G_GNUC_UNUSED,
+    const gchar *p G_GNUC_UNUSED,
+    DBusGMethodInvocation *context)
+{
+  /* The telepathy-glib client side should never call this:
+   * GetAll() is better. */
+  g_assert_not_reached ();
+}
+
+static void
+my_get_all (TpSvcDBusProperties *iface,
+    const gchar *i,
+    DBusGMethodInvocation *context)
+{
+  MyConnectionManager *cm = (MyConnectionManager *) iface;
+  GHashTable *ht;
+
+  /* If necessary, emulate the CM exiting and coming back. */
+  if (cm->drop_name_on_get)
+    {
+      TpDBusDaemon *dbus = tp_base_connection_manager_get_dbus_daemon (
+          TP_BASE_CONNECTION_MANAGER (cm));
+      GString *string = g_string_new (TP_CM_BUS_NAME_BASE);
+      GError *error = NULL;
+
+      g_string_append (string, "example_echo_2");
+
+      cm->drop_name_on_get--;
+
+      tp_dbus_daemon_release_name (dbus, string->str, &error);
+      g_assert_no_error (error);
+      tp_dbus_daemon_request_name (dbus, string->str, FALSE, &error);
+      g_assert_no_error (error);
+    }
+
+  ht = tp_dbus_properties_mixin_dup_all ((GObject *) cm, i);
+  tp_svc_dbus_properties_return_from_get_all (context, ht);
+  g_hash_table_unref (ht);
+}
+
+static void
+my_properties_iface_init (gpointer iface)
+{
+  TpSvcDBusPropertiesClass *cls = iface;
+
+#define IMPLEMENT(x) \
+    tp_svc_dbus_properties_implement_##x (cls, my_##x)
+  IMPLEMENT (get);
+  IMPLEMENT (get_all);
+#undef IMPLEMENT
+}
 
 static void
 setup (Test *test,
@@ -44,9 +125,9 @@ setup (Test *test,
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  test->service_cm = EXAMPLE_ECHO_2_CONNECTION_MANAGER (g_object_new (
-        EXAMPLE_TYPE_ECHO_2_CONNECTION_MANAGER,
-        NULL));
+  test->service_cm = tp_tests_object_new_static_class (
+      my_connection_manager_get_type (),
+      NULL);
   g_assert (test->service_cm != NULL);
   service_cm_as_base = TP_BASE_CONNECTION_MANAGER (test->service_cm);
   g_assert (service_cm_as_base != NULL);
@@ -197,9 +278,19 @@ test_file_got_info (Test *test,
       TP_CM_INFO_SOURCE_FILE);
 
   strv = tp_connection_manager_dup_protocol_names (test->cm);
-  g_assert_cmpuint (g_strv_length (strv), ==, 2);
-  g_assert (tp_strv_contains ((const gchar * const *) strv, "normal"));
-  g_assert (tp_strv_contains ((const gchar * const *)strv, "weird"));
+
+  if (tp_strdiff (strv[0], "normal"))
+    {
+      g_assert_cmpstr (strv[0], ==, "weird");
+      g_assert_cmpstr (strv[1], ==, "normal");
+    }
+  else
+    {
+      g_assert_cmpstr (strv[0], ==, "normal");
+      g_assert_cmpstr (strv[1], ==, "weird");
+    }
+
+  g_assert (strv[2] == NULL);
   g_strfreev (strv);
 
   g_assert (tp_connection_manager_has_protocol (test->cm, "normal"));
@@ -850,6 +941,15 @@ test_dbus_ready (Test *test,
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (test->error);
 
+  if (flags & DROP_NAME_ON_GET_TWICE)
+    {
+      test->service_cm->drop_name_on_get = 2;
+    }
+  else if (flags & DROP_NAME_ON_GET)
+    {
+      test->service_cm->drop_name_on_get = 1;
+    }
+
   if (flags & ACTIVATE_CM)
     {
       g_test_bug ("23524");
@@ -867,10 +967,28 @@ test_dbus_ready (Test *test,
       g_test_bug ("18291");
     }
 
-  tp_tests_proxy_run_until_prepared (test->cm, NULL);
+  tp_tests_proxy_run_until_prepared_or_failed (test->cm, NULL,
+      &test->error);
 
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "example_echo_2");
+
+  if (flags & DROP_NAME_ON_GET_TWICE)
+    {
+      /* If it dies during introspection *twice*, we assume it has crashed
+       * or something. */
+      g_assert_error (test->error, TP_DBUS_ERRORS,
+          TP_DBUS_ERROR_NAME_OWNER_LOST);
+      g_clear_error (&test->error);
+
+      g_assert_cmpuint (tp_proxy_is_prepared (test->cm,
+            TP_CONNECTION_MANAGER_FEATURE_CORE), ==, FALSE);
+      g_assert_cmpuint (tp_connection_manager_get_info_source (test->cm), ==,
+          TP_CM_INFO_SOURCE_NONE);
+      return;
+    }
+
+  g_assert_no_error (test->error);
   g_assert_cmpuint (tp_proxy_is_prepared (test->cm,
         TP_CONNECTION_MANAGER_FEATURE_CORE), ==, TRUE);
   g_assert (tp_proxy_get_invalidated (test->cm) == NULL);
@@ -968,6 +1086,16 @@ main (int argc,
       test_complex_file_ready, teardown);
   g_test_add ("/cm/dbus", Test, GINT_TO_POINTER (0), setup,
       test_dbus_ready, teardown);
+  g_test_add ("/cm/dbus/activate", Test, GINT_TO_POINTER (ACTIVATE_CM),
+      setup, test_dbus_ready, teardown);
+
+  g_test_add ("/cm/dbus/dies", Test,
+      GINT_TO_POINTER (DROP_NAME_ON_GET),
+      setup, test_dbus_ready, teardown);
+
+  g_test_add ("/cm/dbus/dies-twice", Test,
+      GINT_TO_POINTER (DROP_NAME_ON_GET_TWICE),
+      setup, test_dbus_ready, teardown);
 
   g_test_add ("/cm/list", Test, GINT_TO_POINTER (0),
       setup, test_list, teardown);
