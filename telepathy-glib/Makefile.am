@@ -247,7 +247,6 @@ libtelepathy_glib_internal_la_SOURCES = \
     dbus-daemon.c \
     dbus-internal.h \
     dbus-properties-mixin.c \
-    dbus-properties-mixin-internal.h \
     dbus-tube-channel.c \
     debug.c \
     debug-client.c \

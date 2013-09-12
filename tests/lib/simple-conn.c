@@ -18,15 +18,12 @@
 #include <dbus/dbus-glib.h>
 
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
-
-#ifdef TP_GLIB_TESTS_INTERNAL
-# include "telepathy-glib/dbus-properties-mixin-internal.h"
-#endif
 
 #include "textchan-null.h"
 #include "room-list-chan.h"
@@ -522,13 +519,12 @@ conn_iface_init (TpSvcConnectionClass *iface)
 #undef IMPLEMENT
 }
 
-#ifdef TP_GLIB_TESTS_INTERNAL
 static void
 get_all (TpSvcDBusProperties *iface,
     const gchar *interface_name,
     DBusGMethodInvocation *context)
 {
-  GHashTable *values = _tp_dbus_properties_mixin_get_all (G_OBJECT (iface),
+  GHashTable *values = tp_dbus_properties_mixin_dup_all (G_OBJECT (iface),
       interface_name);
 
   tp_svc_dbus_properties_return_from_get_all (context, values);
@@ -536,17 +532,12 @@ get_all (TpSvcDBusProperties *iface,
   g_signal_emit (iface, signals[SIGNAL_GOT_ALL],
       g_quark_from_string (interface_name));
 }
-#endif /* TP_GLIB_TESTS_INTERNAL */
 
 static void
 props_iface_init (TpSvcDBusPropertiesClass *iface)
 {
-#ifdef TP_GLIB_TESTS_INTERNAL
-
 #define IMPLEMENT(x) \
   tp_svc_dbus_properties_implement_##x (iface, x)
   IMPLEMENT (get_all);
 #undef IMPLEMENT
-
-#endif /* TP_GLIB_TESTS_INTERNAL */
 }

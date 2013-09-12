@@ -21,7 +21,6 @@
 #include "config.h"
 
 #include <telepathy-glib/dbus-properties-mixin.h>
-#include "telepathy-glib/dbus-properties-mixin-internal.h"
 
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/svc-generic.h>
@@ -1148,8 +1147,8 @@ _tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,
     }
 }
 
-/*
- * _tp_dbus_properties_mixin_get_all:
+/**
+ * tp_dbus_properties_mixin_dup_all:
  * @self: an object with this mixin
  * @interface_name: a D-Bus interface name
  *
@@ -1159,9 +1158,10 @@ _tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,
  *
  * Returns: (transfer container) (element-type utf8 GObject.Value): a map
  *  from property name (without the interface name) to value
+ * Since: 0.UNRELEASED
  */
 GHashTable *
-_tp_dbus_properties_mixin_get_all (GObject *self,
+tp_dbus_properties_mixin_dup_all (GObject *self,
     const gchar *interface_name)
 {
   TpDBusPropertiesMixinIfaceImpl *iface_impl;
@@ -1203,7 +1203,7 @@ _tp_dbus_properties_mixin_get_all_dbus (TpSvcDBusProperties *iface,
     const gchar *interface_name,
     DBusGMethodInvocation *context)
 {
-  GHashTable *values = _tp_dbus_properties_mixin_get_all (G_OBJECT (iface),
+  GHashTable *values = tp_dbus_properties_mixin_dup_all (G_OBJECT (iface),
       interface_name);
 
   tp_svc_dbus_properties_return_from_get_all (context, values);

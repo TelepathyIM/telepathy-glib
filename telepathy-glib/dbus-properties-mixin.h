@@ -138,6 +138,10 @@ gboolean tp_dbus_properties_mixin_set (
     const GValue *value,
     GError **error);
 
+_TP_AVAILABLE_IN_UNRELEASED
+GHashTable *tp_dbus_properties_mixin_dup_all (GObject *self,
+    const gchar *interface_name);
+
 GHashTable *tp_dbus_properties_mixin_make_properties_hash (
     GObject *object, const gchar *first_interface,
     const gchar *first_property, ...)
