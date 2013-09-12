@@ -20,13 +20,21 @@ typedef enum {
     USE_CWR = (1 << 1),
     USE_OLD_LIST = (1 << 2),
     DROP_NAME_ON_GET = (1 << 3),
-    DROP_NAME_ON_GET_TWICE = (1 << 4)
+    DROP_NAME_ON_GET_TWICE = (1 << 4),
+    NO_PROPERTIES = (1 << 5)
 } TestFlags;
+
+typedef struct {
+    TpTestsEchoConnectionManager parent;
+    guint drop_name_on_get;
+    gboolean implement_properties;
+} MyConnectionManager;
+typedef TpTestsEchoConnectionManagerClass MyConnectionManagerClass;
 
 typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
-    TpTestsEchoConnectionManager *service_cm;
+    MyConnectionManager *service_cm;
 
     TpConnectionManager *cm;
     TpConnectionManager *echo;
@@ -34,49 +42,45 @@ typedef struct {
     GError *error /* initialized where needed */;
 } Test;
 
-typedef struct {
-    TpTestsEchoConnectionManager parent;
-    guint drop_name_on_get;
-} PropertylessConnectionManager;
-typedef TpTestsEchoConnectionManagerClass PropertylessConnectionManagerClass;
+static void my_properties_iface_init (gpointer iface);
+static GType my_connection_manager_get_type (void);
 
-static void stub_properties_iface_init (gpointer iface);
-static GType propertyless_connection_manager_get_type (void);
-
-G_DEFINE_TYPE_WITH_CODE (PropertylessConnectionManager,
-    propertyless_connection_manager,
+G_DEFINE_TYPE_WITH_CODE (MyConnectionManager,
+    my_connection_manager,
     TP_TESTS_TYPE_ECHO_CONNECTION_MANAGER,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
-      stub_properties_iface_init))
+      my_properties_iface_init))
 
 static void
-propertyless_connection_manager_class_init (
-    PropertylessConnectionManagerClass *cls)
+my_connection_manager_class_init (MyConnectionManagerClass *cls)
 {
 }
 
 static void
-propertyless_connection_manager_init (PropertylessConnectionManager *self)
+my_connection_manager_init (MyConnectionManager *self)
 {
+  self->implement_properties = TRUE;
 }
 
 static void
-stub_get (TpSvcDBusProperties *iface G_GNUC_UNUSED,
+my_get (TpSvcDBusProperties *iface G_GNUC_UNUSED,
     const gchar *i G_GNUC_UNUSED,
     const gchar *p G_GNUC_UNUSED,
     DBusGMethodInvocation *context)
 {
-  tp_dbus_g_method_return_not_implemented (context);
+  /* The telepathy-glib client side should never call this:
+   * GetAll() is better. */
+  g_assert_not_reached ();
 }
 
 static void
-stub_get_all (TpSvcDBusProperties *iface,
-    const gchar *i G_GNUC_UNUSED,
+my_get_all (TpSvcDBusProperties *iface,
+    const gchar *i,
     DBusGMethodInvocation *context)
 {
-  PropertylessConnectionManager *cm = (PropertylessConnectionManager *) iface;
+  MyConnectionManager *cm = (MyConnectionManager *) iface;
 
-  /* Emulate the CM exiting and coming back. */
+  /* If necessary, emulate the CM exiting and coming back. */
   if (cm->drop_name_on_get)
     {
       TpDBusDaemon *dbus = tp_base_connection_manager_get_dbus_daemon (
@@ -94,29 +98,29 @@ stub_get_all (TpSvcDBusProperties *iface,
       g_assert_no_error (error);
     }
 
-  tp_dbus_g_method_return_not_implemented (context);
+  /* Do we implement properties? */
+  if (cm->implement_properties)
+    {
+      GHashTable *ht = tp_dbus_properties_mixin_dup_all ((GObject *) cm, i);
+
+      tp_svc_dbus_properties_return_from_get_all (context, ht);
+      g_hash_table_unref (ht);
+    }
+  else
+    {
+      tp_dbus_g_method_return_not_implemented (context);
+    }
 }
 
 static void
-stub_set (TpSvcDBusProperties *iface G_GNUC_UNUSED,
-    const gchar *i G_GNUC_UNUSED,
-    const gchar *p G_GNUC_UNUSED,
-    const GValue *v G_GNUC_UNUSED,
-    DBusGMethodInvocation *context)
-{
-  tp_dbus_g_method_return_not_implemented (context);
-}
-
-static void
-stub_properties_iface_init (gpointer iface)
+my_properties_iface_init (gpointer iface)
 {
   TpSvcDBusPropertiesClass *cls = iface;
 
 #define IMPLEMENT(x) \
-    tp_svc_dbus_properties_implement_##x (cls, stub_##x)
+    tp_svc_dbus_properties_implement_##x (cls, my_##x)
   IMPLEMENT (get);
   IMPLEMENT (get_all);
-  IMPLEMENT (set);
 #undef IMPLEMENT
 }
 
@@ -133,10 +137,9 @@ setup (Test *test,
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  test->service_cm = TP_TESTS_ECHO_CONNECTION_MANAGER (
-      tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_ECHO_CONNECTION_MANAGER,
-        NULL));
+  test->service_cm = tp_tests_object_new_static_class (
+      my_connection_manager_get_type (),
+      NULL);
   g_assert (test->service_cm != NULL);
   service_cm_as_base = TP_BASE_CONNECTION_MANAGER (test->service_cm);
   g_assert (service_cm_as_base != NULL);
@@ -945,98 +948,16 @@ test_dbus_ready (Test *test,
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (test->error);
 
-  if (flags & ACTIVATE_CM)
-    {
-      g_test_bug ("23524");
-
-      /* The bug being tested here was caused by ListProtocols being called
-       * twice on the same CM; this can be triggered by _activate()ing at
-       * exactly the wrong moment. But the wrong moment involves racing an
-       * idle. This triggered the assertion about 1/3 of the time on my laptop.
-       * --wjt
-       */
-      g_idle_add (idle_activate, test->cm);
-    }
-  else
-    {
-      g_test_bug ("18291");
-    }
-
-  if (flags & USE_CWR)
-    {
-      tp_connection_manager_call_when_ready (test->cm, ready_or_not,
-          test, NULL, NULL);
-      g_main_loop_run (test->mainloop);
-      g_assert_no_error (test->error);
-    }
-  else
-    {
-      tp_tests_proxy_run_until_prepared (test->cm, NULL);
-    }
-
-  g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
-      "example_echo");
-  g_assert_cmpuint (tp_proxy_is_prepared (test->cm,
-        TP_CONNECTION_MANAGER_FEATURE_CORE), ==, TRUE);
-  g_assert (tp_proxy_get_invalidated (test->cm) == NULL);
-  g_assert_cmpuint (tp_connection_manager_is_ready (test->cm), ==, TRUE);
-  g_assert_cmpuint (tp_connection_manager_is_running (test->cm), ==, TRUE);
-  g_assert_cmpuint (tp_connection_manager_get_info_source (test->cm), ==,
-      TP_CM_INFO_SOURCE_LIVE);
-
-  g_object_get (test->cm,
-      "info-source", &info_source,
-      "cm-name", &name,
-      NULL);
-  g_assert_cmpstr (name, ==, "example_echo");
-  g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_LIVE);
-  g_free (name);
-
-  l = tp_connection_manager_dup_protocols (test->cm);
-  g_assert_cmpuint (g_list_length (l), ==, 1);
-  g_assert_cmpstr (tp_protocol_get_name (l->data), ==, "example");
-  g_list_free_full (l, g_object_unref);
-}
-
-static void
-test_dbus_fallback (Test *test,
-    gconstpointer data)
-{
-  gchar *name;
-  guint info_source;
-  const TestFlags flags = GPOINTER_TO_INT (data);
-  PropertylessConnectionManager *service_cm;
-  TpBaseConnectionManager *service_cm_as_base;
-  gboolean ok;
-
-  /* Register a stub version of the CM that doesn't have Properties, to
-   * exercise the fallback path */
-  g_object_unref (test->service_cm);
-  test->service_cm = NULL;
-  service_cm = tp_tests_object_new_static_class (
-      propertyless_connection_manager_get_type (),
-      NULL);
-  test->service_cm = TP_TESTS_ECHO_CONNECTION_MANAGER (service_cm);
-  g_assert (test->service_cm != NULL);
-  service_cm_as_base = TP_BASE_CONNECTION_MANAGER (test->service_cm);
-  g_assert (service_cm_as_base != NULL);
-  ok = tp_base_connection_manager_register (service_cm_as_base);
-  g_assert (ok);
-
-  test->error = NULL;
-  test->cm = tp_connection_manager_new (test->dbus,
-      TP_BASE_CONNECTION_MANAGER_GET_CLASS (test->service_cm)->cm_dbus_name,
-      NULL, &test->error);
-  g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
-  g_assert_no_error (test->error);
+  if (flags & NO_PROPERTIES)
+    test->service_cm->implement_properties = FALSE;
 
   if (flags & DROP_NAME_ON_GET_TWICE)
     {
-      service_cm->drop_name_on_get = 2;
+      test->service_cm->drop_name_on_get = 2;
     }
   else if (flags & DROP_NAME_ON_GET)
     {
-      service_cm->drop_name_on_get = 1;
+      test->service_cm->drop_name_on_get = 1;
     }
 
   if (flags & ACTIVATE_CM)
@@ -1104,6 +1025,11 @@ test_dbus_fallback (Test *test,
   g_assert_cmpstr (name, ==, "example_echo");
   g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_LIVE);
   g_free (name);
+
+  l = tp_connection_manager_dup_protocols (test->cm);
+  g_assert_cmpuint (g_list_length (l), ==, 1);
+  g_assert_cmpstr (tp_protocol_get_name (l->data), ==, "example");
+  g_list_free_full (l, g_object_unref);
 }
 
 static void
@@ -1234,23 +1160,31 @@ main (int argc,
   g_test_add ("/cm/dbus/activate/cwr", Test,
       GINT_TO_POINTER (USE_CWR|ACTIVATE_CM),
       setup, test_dbus_ready, teardown);
-  g_test_add ("/cm/dbus-fallback", Test, GINT_TO_POINTER (0), setup,
-      test_dbus_fallback, teardown);
-  g_test_add ("/cm/dbus-fallback/cwr", Test, GINT_TO_POINTER (USE_CWR), setup,
-      test_dbus_fallback, teardown);
+  g_test_add ("/cm/dbus-fallback", Test, GINT_TO_POINTER (NO_PROPERTIES), setup,
+      test_dbus_ready, teardown);
+  g_test_add ("/cm/dbus-fallback/cwr", Test,
+      GINT_TO_POINTER (NO_PROPERTIES | USE_CWR),
+      setup, test_dbus_ready, teardown);
   g_test_add ("/cm/dbus-fallback/activate", Test,
-      GINT_TO_POINTER (ACTIVATE_CM),
-      setup, test_dbus_fallback, teardown);
+      GINT_TO_POINTER (NO_PROPERTIES | ACTIVATE_CM),
+      setup, test_dbus_ready, teardown);
   g_test_add ("/cm/dbus-fallback/activate/cwr", Test,
-      GINT_TO_POINTER (ACTIVATE_CM | USE_CWR),
-      setup, test_dbus_fallback, teardown);
+      GINT_TO_POINTER (NO_PROPERTIES | ACTIVATE_CM | USE_CWR),
+      setup, test_dbus_ready, teardown);
 
+  g_test_add ("/cm/dbus/dies", Test,
+      GINT_TO_POINTER (DROP_NAME_ON_GET),
+      setup, test_dbus_ready, teardown);
   g_test_add ("/cm/dbus-fallback/dies", Test,
-      GINT_TO_POINTER (DROP_NAME_ON_GET), setup, test_dbus_fallback, teardown);
+      GINT_TO_POINTER (NO_PROPERTIES | DROP_NAME_ON_GET),
+      setup, test_dbus_ready, teardown);
 
-  g_test_add ("/cm/dbus-fallback/dies-twice", Test,
+  g_test_add ("/cm/dbus/dies-twice", Test,
       GINT_TO_POINTER (DROP_NAME_ON_GET_TWICE),
-      setup, test_dbus_fallback, teardown);
+      setup, test_dbus_ready, teardown);
+  g_test_add ("/cm/dbus-fallback/dies-twice", Test,
+      GINT_TO_POINTER (NO_PROPERTIES | DROP_NAME_ON_GET_TWICE),
+      setup, test_dbus_ready, teardown);
 
   g_test_add ("/cm/list", Test, GINT_TO_POINTER (0),
       setup, test_list, teardown);
