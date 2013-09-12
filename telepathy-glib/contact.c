@@ -2884,7 +2884,7 @@ tp_connection_dup_contact_by_id_async (TpConnection *self,
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
- * Finishes tp_connection_get_contact_by_id_async().
+ * Finishes tp_connection_dup_contact_by_id_async().
  *
  * Returns: (transfer full): a #TpContact or %NULL on error.
  * Since: 0.19.0

@@ -178,6 +178,7 @@ enum {
   PROP_STORAGE_IDENTIFIER_VARIANT,
   PROP_STORAGE_RESTRICTIONS,
   PROP_SUPERSEDES,
+  PROP_URI_SCHEMES,
   N_PROPS
 };
 
@@ -1023,6 +1024,42 @@ _tp_account_parse_object_path (const gchar *object_path,
     GError **error);
 
 static void
+addressing_props_changed (TpAccount *self,
+    GHashTable *changed_properties)
+{
+  const gchar * const * v;
+
+  if (self->priv->uri_schemes == NULL)
+    /* We did not fetch the initial value yet, ignoring */
+    return;
+
+  v = tp_asv_get_strv (changed_properties, "URISchemes");
+  if (v == NULL)
+    return;
+
+  g_strfreev (self->priv->uri_schemes);
+  self->priv->uri_schemes = g_strdupv ((GStrv) v);
+
+  g_object_notify (G_OBJECT (self), "uri-schemes");
+}
+
+static void
+dbus_properties_changed_cb (TpProxy *proxy,
+    const gchar *interface_name,
+    GHashTable *changed_properties,
+    const gchar **invalidated_properties,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpAccount *self = TP_ACCOUNT (weak_object);
+
+  if (!tp_strdiff (interface_name, TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING))
+    {
+      addressing_props_changed (self, changed_properties);
+    }
+}
+
+static void
 _tp_account_constructed (GObject *object)
 {
   TpAccount *self = TP_ACCOUNT (object);
@@ -1059,6 +1096,9 @@ _tp_account_constructed (GObject *object)
 
   tp_cli_account_connect_to_account_property_changed (self,
       _tp_account_properties_changed, NULL, NULL, object, NULL);
+
+  tp_cli_dbus_properties_connect_to_properties_changed (self,
+      dbus_properties_changed_cb, NULL, NULL, object, NULL);
 
   tp_cli_dbus_properties_call_get_all (self, -1, TP_IFACE_ACCOUNT,
       _tp_account_got_all_cb, NULL, NULL, G_OBJECT (self));
@@ -1144,6 +1184,9 @@ _tp_account_get_property (GObject *object,
       break;
     case PROP_SUPERSEDES:
       g_value_set_boxed (value, self->priv->supersedes);
+      break;
+    case PROP_URI_SCHEMES:
+      g_value_set_boxed (value, self->priv->uri_schemes);
       break;
     case PROP_AUTOMATIC_PRESENCE_TYPE:
       g_value_set_uint (value, self->priv->auto_presence);
@@ -1990,6 +2033,32 @@ tp_account_class_init (TpAccountClass *klass)
       g_param_spec_boxed ("supersedes",
         "Supersedes",
         "Accounts superseded by this one",
+        G_TYPE_STRV,
+        G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:uri-schemes:
+   *
+   * If the %TP_ACCOUNT_FEATURE_ADDRESSING feature has been prepared
+   * successfully, a list of additional URI schemes for which this
+   * account should be used if possible. Otherwise %NULL.
+   *
+   * For instance, a SIP or Skype account might have "tel" in this list if the
+   * user would like to use that account to call phone numbers.
+   *
+   * This list should not contain the primary URI scheme(s) for the account's
+   * protocol (for instance, "xmpp" for XMPP, or "sip" or "sips" for SIP),
+   * since it should be assumed to be useful for those schemes in any case.
+   *
+   * The notify::uri-schemes signal cannot be relied on if the Account Manager
+   * is Mission Control version 5.14.0 or older.
+   *
+   * Since: UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_URI_SCHEMES,
+      g_param_spec_boxed ("uri-schemes",
+        "URISchemes",
+        "URISchemes",
         G_TYPE_STRV,
         G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
@@ -4000,18 +4069,9 @@ tp_account_prepare_addressing_async (TpProxy *proxy,
  * tp_account_get_uri_schemes:
  * @self: a #TpAccount
  *
- * If the %TP_ACCOUNT_FEATURE_ADDRESSING feature has been prepared
- * successfully, return a list of additional URI schemes for which this
- * account should be used if possible. Otherwise return %NULL.
+ * Return the #TpAccount:uri-schemes property
  *
- * For instance, a SIP or Skype account might have "tel" in this list if the
- * user would like to use that account to call phone numbers.
- *
- * This list should not contain the primary URI scheme(s) for the account's
- * protocol (for instance, "xmpp" for XMPP, or "sip" or "sips" for SIP),
- * since it should be assumed to be useful for those schemes in any case.
- *
- * Returns: (transfer none): a list of URI schemes, or %NULL
+ * Returns: (transfer none): the value of #TpAccount:uri_schemes property
  *
  * Since: 0.13.8
  */

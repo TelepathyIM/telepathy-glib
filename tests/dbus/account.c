@@ -627,11 +627,29 @@ test_storage (Test *test,
 }
 
 static void
+check_uri_schemes (const gchar * const * schemes)
+{
+  g_assert (schemes != NULL);
+  g_assert (tp_strv_contains (schemes, "about"));
+  g_assert (tp_strv_contains (schemes, "telnet"));
+  g_assert (schemes[2] == NULL);
+}
+
+static void
+notify_cb (GObject *object,
+    GParamSpec *spec,
+    Test *test)
+{
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
 test_addressing (Test *test,
     gconstpointer mode)
 {
   GQuark account_features[] = { TP_ACCOUNT_FEATURE_ADDRESSING, 0 };
   const gchar * const *schemes;
+  GStrv tmp;
 
   test->account = tp_tests_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
@@ -658,10 +676,14 @@ test_addressing (Test *test,
   g_main_loop_run (test->mainloop);
 
   schemes = tp_account_get_uri_schemes (test->account);
-  g_assert (schemes != NULL);
-  g_assert (tp_strv_contains (schemes, "about"));
-  g_assert (tp_strv_contains (schemes, "telnet"));
-  g_assert (schemes[2] == NULL);
+  check_uri_schemes (schemes);
+
+  g_object_get (test->account,
+      "uri-schemes", &tmp,
+      NULL);
+
+  check_uri_schemes ((const gchar * const *) tmp);
+  g_strfreev (tmp);
 
   g_assert (tp_account_associated_with_uri_scheme (test->account,
         "about"));
@@ -670,6 +692,14 @@ test_addressing (Test *test,
   g_assert (!tp_account_associated_with_uri_scheme (test->account,
         "xmpp"));
 
+  g_signal_connect (test->account, "notify::uri-schemes",
+      G_CALLBACK (notify_cb), test);
+
+  tp_tests_simple_account_add_uri_scheme (test->account_service, "xmpp");
+  g_main_loop_run (test->mainloop);
+
+  g_assert (tp_account_associated_with_uri_scheme (test->account,
+        "xmpp"));
 }
 
 static void

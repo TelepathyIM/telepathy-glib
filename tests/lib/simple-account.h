@@ -64,6 +64,9 @@ void tp_tests_simple_account_removed (TpTestsSimpleAccount *self);
 void tp_tests_simple_account_set_enabled (TpTestsSimpleAccount *self,
     gboolean enabled);
 
+void tp_tests_simple_account_add_uri_scheme (TpTestsSimpleAccount *self,
+    const gchar * uri_scheme);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_TESTS_SIMPLE_ACCOUNT_H__ */
