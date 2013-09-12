@@ -2053,7 +2053,7 @@ tp_account_class_init (TpAccountClass *klass)
    * The notify::uri-schemes signal cannot be relied on if the Account Manager
    * is Mission Control version 5.14.0 or older.
    *
-   * Since: UNRELEASED
+   * Since: 0.21.0
    */
   g_object_class_install_property (object_class, PROP_URI_SCHEMES,
       g_param_spec_boxed ("uri-schemes",

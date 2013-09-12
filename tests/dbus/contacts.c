@@ -978,7 +978,7 @@ test_upgrade_noop (Fixture *f,
       upgrade_cb, &result);
   g_main_loop_run (result.loop);
   g_assert_no_error (result.error);
-  reset_result (&f->result);
+  reset_result (&result);
 
   put_the_connection_back (f);
 
@@ -1455,6 +1455,8 @@ test_dup_if_possible (Fixture *f,
   g_assert (contact != alice);
   g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "bob");
   g_assert_cmpuint (tp_contact_get_handle (contact), ==, bob_handle);
+  g_object_unref (contact);
+  g_object_unref (alice);
 }
 
 typedef struct
@@ -1856,6 +1858,7 @@ test_contact_list (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
   const GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONTACT_LIST, 0 };
+  const GQuark feature_connected[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
   Result result = { g_main_loop_new (NULL, FALSE), NULL };
   TpTestsContactListManager *manager;
   TpClientFactory *factory;
@@ -1896,8 +1899,7 @@ test_contact_list (Fixture *f,
   g_signal_connect_swapped (f->client_conn, "notify::contact-list-state",
       G_CALLBACK (finish), &result);
   tp_cli_connection_call_connect (f->client_conn, -1, NULL, NULL, NULL, NULL);
-  g_main_loop_run (result.loop);
-  g_assert_no_error (result.error);
+  tp_tests_proxy_run_until_prepared (f->client_conn, feature_connected);
 
   g_assert_cmpint (tp_connection_get_contact_list_state (f->client_conn), ==,
       TP_CONTACT_LIST_STATE_SUCCESS);
@@ -2062,12 +2064,19 @@ teardown (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
   if (f->client_conn != NULL)
-    tp_tests_connection_assert_disconnect_succeeds (f->client_conn);
+    {
+      TpConnection *conn = f->client_conn;
+
+      g_object_add_weak_pointer ((GObject *) conn, (gpointer *) &conn);
+      tp_tests_connection_assert_disconnect_succeeds (conn);
+      g_object_unref (conn);
+      g_assert (conn == NULL);
+      f->client_conn = NULL;
+    }
 
   if (f->all_contact_features != NULL)
     g_array_unref (f->all_contact_features);
 
-  tp_clear_object (&f->client_conn);
   f->service_repo = NULL;
   tp_clear_object (&f->service_conn);
   tp_clear_object (&f->base_connection);
