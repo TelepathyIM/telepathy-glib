@@ -249,7 +249,18 @@ tls_certificate_got_all_cb (TpProxy *proxy,
 
   cert_data = tp_asv_get_boxed (properties, "CertificateChainData",
       TP_ARRAY_TYPE_UCHAR_ARRAY_LIST);
-  g_assert (cert_data != NULL);
+
+  if (cert_data == NULL)
+    {
+      GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
+          "Missing CertificateChainData property" };
+
+      DEBUG ("Missing CertificateChainData property on %s",
+          tp_proxy_get_object_path (self));
+
+      tp_proxy_invalidate (proxy, &e);
+      return;
+    }
 
   self->priv->cert_data = g_ptr_array_new_with_free_func (
       (GDestroyNotify) g_bytes_unref);

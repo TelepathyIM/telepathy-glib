@@ -1,2 +1,4 @@
 EXTRA_DIST = \
-  contact-list.js
+  contact-list.js \
+  debug-client.js \
+  $(NULL)

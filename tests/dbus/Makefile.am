@@ -348,14 +348,14 @@ run-test.sh: run-test.sh.in
 	@chmod +x $@
 
 dbus-uninstalled/%.conf: $(srcdir)/dbus-uninstalled/%.conf.in
-	$(AM_V_at)$(mkdir_p) dbus-uninstalled
+	$(AM_V_at)$(MKDIR_P) dbus-uninstalled
 	$(AM_V_GEN)sed \
 		-e "s|[@]abs_top_builddir[@]|@abs_top_builddir@|g" \
 		-e "s|[@]abs_top_srcdir[@]|@abs_top_srcdir@|g" \
 		$< > $@
 
 dbus-installed/%.conf: $(srcdir)/dbus-installed/%.conf.in
-	$(AM_V_at)$(mkdir_p) dbus-installed
+	$(AM_V_at)$(MKDIR_P) dbus-installed
 	$(AM_V_GEN)sed -e "s|[@]tpglibtestsdir[@]|@tpglibtestsdir@|g" $< > $@
 
 service_files = dbus-installed/services/spurious.service

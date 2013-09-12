@@ -1,5 +1,34 @@
+telepathy-glib 0.21.1 (2013-06-20)
+==================================
+
+The “imperative tense” release.
+
+Fixes:
+
+• Fix a wrong introspection annotation on tp_debug_client_get_messages_finish()
+  that would lead to use-after-free (fd.o #65518, Simon)
+
+• Isolate regression tests better (fd.o #63119, Simon)
+
+• Explicitly annotate tp_account_update_parameters_finish()'s
+  'unset_parameters' argument to be a NULL-terminated string array. It was
+  previously incorrectly inferred to be a string, for some reason. (wjt)
+
+• Always flag delivery reports with Non_Text_Content. (fd.o #61254, wjt)
+
+• Don't announce legacy Group channels twice (fd.o #52011; Jonny, Simon)
+
+• Don't crash if a broken connection manager signals a TLSCertificate
+  with no CertificateChainData, just invalidate the channel
+  (fd.o #61616, Guillaume)
+
+• Adjust regression tests so we can distcheck under Automake 1.13,
+  and various other build-system updates (fd.o #65517, Simon)
+
 telepathy-glib 0.21.0 (2013-04-03)
 ==================================
+
+The "if only it was JS code" release.
 
 This starts a new development branch.
 

@@ -71,7 +71,7 @@ XSLTPROCFLAGS = --nonet --novalid
 # Generated files which can be generated for all categories simultaneously
 
 _gen/all.xml: all.xml $(wildcard *.xml) $(tools_dir)/xincludator.py
-	$(mkdir_p) _gen
+	$(MKDIR_P) _gen
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@
 
 extensions.html: _gen/all.xml $(tools_dir)/doc-generator.xsl
@@ -113,7 +113,7 @@ _gen/interfaces.h: _gen/all.xml \
 # although you can subdivide further if you want.
 
 _gen/connection.xml: connection.xml $(wildcard *.xml) $(tools_dir)/xincludator.py
-	$(mkdir_p) _gen
+	$(MKDIR_P) _gen
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@
 
 # do nothing, output as a side-effect

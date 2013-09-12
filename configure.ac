@@ -1,4 +1,4 @@
-AC_PREREQ([2.59])
+AC_PREREQ([2.60])
 
 # Making releases:
 #   set the new version number:
@@ -60,7 +60,7 @@ AC_PROG_CC_STDC
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AM_PROG_LIBTOOL
-AM_PROG_MKDIR_P
+AC_PROG_MKDIR_P
 # pkg-config 0.21 adds CFLAGS from Requires.private, which we need
 PKG_PROG_PKG_CONFIG([0.21])
 

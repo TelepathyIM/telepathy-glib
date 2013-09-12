@@ -80,6 +80,7 @@ tags
 /telepathy-glib-0.*
 /telepathy-glib/tmp-introspect*/
 telepathy-glib/version.h
+/test-driver
 tests/dbus/dbus-installed/session.conf
 tests/dbus/dbus-uninstalled/session.conf
 tests/dbus/run-test.sh

@@ -421,8 +421,7 @@ tp_call_stream_class_init (TpCallStreamClass *klass)
       G_SIGNAL_RUN_LAST,
       0, NULL, NULL, NULL,
       G_TYPE_NONE,
-      4, G_TYPE_UINT, G_TYPE_UINT, TP_TYPE_CALL_STATE_REASON,
-      G_TYPE_HASH_TABLE);
+      2, G_TYPE_UINT, TP_TYPE_CALL_STATE_REASON);
 
   /**
    * TpCallStream::remote-members-changed:
