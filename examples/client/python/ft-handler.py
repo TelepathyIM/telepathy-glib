@@ -7,8 +7,6 @@ GObject.threads_init()
 from gi.repository import Gio
 from gi.repository import TelepathyGLib
 
-import magic
-
 def usage():
     print "%s FILE" % sys.argv[0]
     print "FILE is a path to the location you want the file saved to"
