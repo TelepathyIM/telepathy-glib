@@ -119,5 +119,8 @@ variable:
   GI_TYPELIB_PATH=`pwd`/telepathy-glib
   export GI_TYPELIB_PATH
 
+  LD_LIBRARY_PATH=`pwd`/telepathy-glib/.libs
+  export LD_LIBRARY_PATH
+
 In Python you can access the API using;
   from gi.repository import TelepathyGLib
