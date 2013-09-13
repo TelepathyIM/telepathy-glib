@@ -98,8 +98,12 @@
  * channel dispatch operations for any undispatched channels, and the approver
  * will be notified again.
  *
- * This proxy is usable but incomplete: accessors for the D-Bus properties will
- * be added in a later version of telepathy-glib.
+ * Creating a #TpChannelDispatchOperation directly is deprecated: it
+ * should only be created via a #TpBaseClient.
+ *
+ * Since 0.16, #TpChannelDispatchOperation always has a non-%NULL
+ * #TpProxy:factory, which will be propagated to the #TpAccount,
+ * #TpConnection and #TpChannel.
  *
  * Since: 0.7.32
  */

@@ -61,13 +61,17 @@
  * #TpConnection objects represent Telepathy instant messaging connections
  * accessed via D-Bus.
  *
- * Compared with a simple proxy for method calls, they add the following
- * features:
+ * #TpConnection objects should be obtained from a #TpAccount, unless you
+ * are implementing a lower-level Telepathy component (such as the account
+ * manager service itself).
  *
- * <itemizedlist>
- * <listitem>connection status tracking</listitem>
- * <listitem>calling GetInterfaces() automatically</listitem>
- * </itemizedlist>
+ * Since 0.16, #TpConnection always has a non-%NULL #TpProxy:factory, and its
+ * #TpProxy:factory will be propagated to its #TpChannel objects
+ * (if any). Similarly, the #TpProxy:factory<!-- -->'s features
+ * will be used for #TpContact objects.
+ * If a #TpConnection is created without going via the
+ * #TpAccount or specifying a #TpProxy:factory, the default
+ * is to use a new #TpAutomaticClientFactory.
  *
  * Since: 0.7.1
  */
@@ -138,8 +142,12 @@ tp_connection_get_feature_quark_core (void)
  *   <title>Someone still has to call Connect()</title>
  *   <para>Requesting this feature via tp_proxy_prepare_async() means that
  *     you want to wait for the connection to connect, but it doesn't actually
- *     start the process of connecting: to do that, call
- *     tp_cli_connection_call_connect() separately.</para>
+ *     start the process of connecting. For connections associated with
+ *     a #TpAccount, the account manager service is responsible for
+ *     doing that, but if you are constructing connections directly
+ *     (e.g. if you are implementing an account manager), you must
+ *     tp_cli_connection_call_connect() separately.
+ *     </para>
  * </note>
  *
  * One can ask for a feature to be prepared using the

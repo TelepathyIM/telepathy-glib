@@ -213,7 +213,7 @@ cm_requested_connection (TpConnectionManager *manager,
   if (die_if (error, "RequestConnection()"))
     return;
 
-  /* FIXME: there should be convenience API for this */
+  /* Because we don't have an AccountManager, we have to do more work here. */
   factory = tp_client_factory_new (NULL);
   conn = tp_client_factory_ensure_connection (factory, object_path, NULL,
       &e);
@@ -258,6 +258,9 @@ connection_manager_got_info (TpConnectionManager *cm,
       g_value_set_static_string (&value, "myself@server");
       g_hash_table_insert (params, "account", &value);
 
+      /* This example is rather lower-level than most: it's
+       * "going behind the account manager's back". This is not recommended
+       * in real applications. */
       tp_cli_connection_manager_call_request_connection (cm,
           -1, "example", params, cm_requested_connection, NULL, NULL, NULL);
 

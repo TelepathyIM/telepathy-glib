@@ -72,6 +72,14 @@
  * for many of the properties on this object. Refer to each property's
  * documentation for whether it can be used in this way.
  *
+ * #TpAccount objects should normally be obtained from the #TpAccountManager.
+ *
+ * Since 0.16, #TpAccount always has a non-%NULL #TpProxy:factory, and its
+ * #TpProxy:factory will be propagated to its #TpConnection
+ * (if any). If a #TpAccount is created without going via the
+ * #TpAccountManager or specifying a #TpProxy:factory, the default
+ * is to use a new #TpAutomaticClientFactory.
+ *
  * Since: 0.7.32
  */
 
@@ -229,9 +237,9 @@ connection_is_internal (TpAccount *self)
  * feature on a #TpAccount.
  *
  * When this feature is prepared, it is guaranteed that #TpAccount:connection
- * will always be either %NULL or prepared. If the account was created using a
- * #TpClientFactory, the same factory will be used to create #TpConnection
- * object and to determine desired connection features. Change notification of
+ * will always be either %NULL or prepared. The account's #TpProxy:factory
+ * will be used to create the #TpConnection object and to determine its
+ * desired connection features. Change notification of the
  * #TpAccount:connection property will be delayed until all features (at least
  * %TP_CONNECTION_FEATURE_CORE) are prepared. See
  * tp_client_factory_add_account_features() to define which features

@@ -14,11 +14,11 @@ dbus_connection_closed_cb (
     gpointer user_data)
 {
   if (remote_peer_vanished)
-    g_debug ("remote peer disconnected: %s", error->message);
+    g_message ("remote peer disconnected: %s", error->message);
   else if (error != NULL)
-    g_debug ("remote peer sent broken data: %s", error->message);
+    g_message ("remote peer sent broken data: %s", error->message);
   else
-    g_debug ("supposedly we closed the connection locally?!");
+    g_message ("supposedly we closed the connection locally?!");
 
   g_object_unref (connection);
 }
@@ -38,7 +38,7 @@ lucky_number_cb (
       guint32 x;
 
       g_variant_get (parameters, "(u)", &x);
-      g_debug ("My lucky number is: %u", x);
+      g_message ("My lucky number is: %u", x);
     }
   else
     {
@@ -64,7 +64,7 @@ add_cb (
       gint32 value;
 
       g_variant_get (ret, "(i)", &value);
-      g_debug ("Adding my numbers together gave: %i", value);
+      g_message ("Adding my numbers together gave: %i", value);
       g_variant_unref (ret);
     }
   else
@@ -86,13 +86,13 @@ tube_accepted (GObject *tube,
       TP_DBUS_TUBE_CHANNEL (tube), res, &error);
   if (conn == NULL)
     {
-      g_debug ("Failed to accept tube: %s", error->message);
+      g_message ("Failed to accept tube: %s", error->message);
       g_error_free (error);
       tp_channel_close_async (TP_CHANNEL (tube), NULL, NULL);
       return;
     }
 
-  g_debug ("tube accepted");
+  g_message ("tube accepted");
   g_signal_connect (conn, "closed",
       G_CALLBACK (dbus_connection_closed_cb), NULL);
 
@@ -127,7 +127,7 @@ tube_invalidated_cb (TpStreamTubeChannel *tube,
     gchar *message,
     gpointer user_data)
 {
-  g_debug ("Tube has been invalidated: %s", message);
+  g_message ("Tube has been invalidated: %s", message);
   g_main_loop_quit (loop);
   g_object_unref (tube);
 }
@@ -147,7 +147,7 @@ handle_channels (TpSimpleHandler *handler,
   GError error = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
       "No channel to be handled" };
 
-  g_debug ("Handling channels");
+  g_message ("Handling channels");
 
   for (l = channels; l != NULL; l = l->next)
     {
@@ -160,7 +160,7 @@ handle_channels (TpSimpleHandler *handler,
             EXAMPLE_SERVICE_NAME))
         continue;
 
-      g_debug ("Accepting tube");
+      g_message ("Accepting tube");
 
       tube = g_object_ref (channel);
 
@@ -173,7 +173,7 @@ handle_channels (TpSimpleHandler *handler,
       return;
     }
 
-  g_debug ("Rejecting channels");
+  g_message ("Rejecting channels");
   tp_handle_channels_context_fail (context, &error);
 }
 
@@ -210,7 +210,7 @@ main (int argc,
   tp_base_client_register (handler, &error);
   g_assert_no_error (error);
 
-  g_debug ("Waiting for tube offer");
+  g_message ("Waiting for tube offer");
 
   loop = g_main_loop_new (NULL, FALSE);
   g_main_loop_run (loop);

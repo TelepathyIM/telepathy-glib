@@ -77,13 +77,13 @@
  * signal will be emitted with the domain %TP_DBUS_ERRORS and the error code
  * %TP_DBUS_ERROR_NAME_OWNER_LOST.
  *
- * This proxy is usable but incomplete: accessors for the Account,
- * UserActionTime, PreferredHandler, Requests and Interfaces properties will
- * be added in a later version of telepathy-glib.
+ * Creating a #TpChannelRequest directly is deprecated: it
+ * should only be created via a #TpAccountChannelRequest
+ * or a #TpBaseClient.
  *
- * Until suitable convenience methods are implemented, the generic
- * tp_cli_dbus_properties_call_get_all() method can be used to get those
- * properties.
+ * Since 0.16, #TpChannelRequest always has a non-%NULL #TpProxy:factory,
+ * and its #TpProxy:factory will be propagated to the #TpAccount,
+ * #TpConnection and #TpChannel.
  *
  * Since: 0.7.32
  */

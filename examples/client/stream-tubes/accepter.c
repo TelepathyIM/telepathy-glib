@@ -10,7 +10,7 @@ tube_conn_closed_cb (TpStreamTubeConnection *conn,
     const GError *error,
     gpointer user_data)
 {
-  g_debug ("Tube connection has been closed: %s", error->message);
+  g_message ("Tube connection has been closed: %s", error->message);
 }
 
 static void
@@ -34,7 +34,7 @@ _tube_accepted (GObject *tube,
 
   if (error != NULL)
     {
-      g_debug ("Can't accept the tube: %s", error->message);
+      g_message ("Can't accept the tube: %s", error->message);
       tp_handle_channels_context_fail (context, error);
       g_error_free (error);
       return;
@@ -43,7 +43,7 @@ _tube_accepted (GObject *tube,
   tp_handle_channels_context_accept (context);
   g_object_unref (context);
 
-  g_debug ("Tube open, have IOStream");
+  g_message ("Tube open, have IOStream");
 
   conn = tp_stream_tube_connection_get_socket_connection (tube_conn);
 
@@ -51,14 +51,14 @@ _tube_accepted (GObject *tube,
   out = g_io_stream_get_output_stream (G_IO_STREAM (conn));
 
   /* this bit is not a good example */
-  g_debug ("Sending: Ping");
+  g_message ("Sending: Ping");
   g_output_stream_write (out, "Ping\n", 5, NULL, &error);
   g_assert_no_error (error);
 
   g_input_stream_read (in, &buf, sizeof (buf), NULL, &error);
   g_assert_no_error (error);
 
-  g_debug ("Received: %s", buf);
+  g_message ("Received: %s", buf);
 
   g_object_unref (tube_conn);
 }
@@ -70,7 +70,7 @@ tube_invalidated_cb (TpStreamTubeChannel *tube,
     gchar *message,
     gpointer user_data)
 {
-  g_debug ("Tube has been invalidated: %s", message);
+  g_message ("Tube has been invalidated: %s", message);
   g_main_loop_quit (loop);
 }
 
@@ -87,7 +87,7 @@ _handle_channels (TpSimpleHandler *handler,
   gboolean delay = FALSE;
   GList *l;
 
-  g_debug ("Handling channels");
+  g_message ("Handling channels");
 
   for (l = channels; l != NULL; l = l->next)
     {
@@ -96,7 +96,7 @@ _handle_channels (TpSimpleHandler *handler,
       if (!TP_IS_STREAM_TUBE_CHANNEL (tube))
         continue;
 
-      g_debug ("Accepting tube");
+      g_message ("Accepting tube");
 
       g_signal_connect (tube, "invalidated",
           G_CALLBACK (tube_invalidated_cb), NULL);
@@ -108,7 +108,7 @@ _handle_channels (TpSimpleHandler *handler,
 
   if (delay)
     {
-      g_debug ("Delaying channel acceptance");
+      g_message ("Delaying channel acceptance");
 
       tp_handle_channels_context_delay (context);
       g_object_ref (context);
@@ -117,7 +117,7 @@ _handle_channels (TpSimpleHandler *handler,
     {
       GError *error;
 
-      g_debug ("Rejecting channels");
+      g_message ("Rejecting channels");
 
       error = g_error_new (TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "No channels to be handled");
@@ -160,7 +160,7 @@ main (int argc,
   tp_base_client_register (handler, &error);
   g_assert_no_error (error);
 
-  g_debug ("Waiting for tube offer");
+  g_message ("Waiting for tube offer");
 
   loop = g_main_loop_new (NULL, FALSE);
   g_main_loop_run (loop);

@@ -15,12 +15,12 @@ channel_closed_cb (GObject *object,
 
   if (!tp_channel_close_finish (channel, result, &error))
     {
-      g_debug ("Failed to close tube channel: %s", error->message);
+      g_message ("Failed to close tube channel: %s", error->message);
       g_error_free (error);
       return;
     }
 
-  g_debug ("Tube channel closed");
+  g_message ("Tube channel closed");
 }
 
 static void
@@ -28,7 +28,7 @@ tube_conn_closed_cb (TpStreamTubeConnection *conn,
     const GError *error,
     gpointer user_data)
 {
-  g_debug ("Tube connection has been closed: %s", error->message);
+  g_message ("Tube connection has been closed: %s", error->message);
 }
 
 static void
@@ -48,7 +48,7 @@ _incoming_iostream (TpStreamTubeChannel *tube,
 
   contact = tp_stream_tube_connection_get_contact (tube_conn);
 
-  g_debug ("Got IOStream from %s",
+  g_message ("Got IOStream from %s",
       tp_contact_get_identifier (contact));
 
   conn = tp_stream_tube_connection_get_socket_connection (tube_conn);
@@ -59,9 +59,9 @@ _incoming_iostream (TpStreamTubeChannel *tube,
   /* this bit is not a good example */
   g_input_stream_read (in, &buf, sizeof (buf), NULL, &error);
   g_assert_no_error (error);
-  g_debug ("Received: %s", buf);
+  g_message ("Received: %s", buf);
 
-  g_debug ("Sending: Pong");
+  g_message ("Sending: Pong");
   g_output_stream_write (out, "Pong\n", 5, NULL, &error);
   g_assert_no_error (error);
 
@@ -79,13 +79,13 @@ _tube_offered (GObject *tube,
 
   if (!tp_stream_tube_channel_offer_finish (TP_STREAM_TUBE_CHANNEL (tube), res, &error))
     {
-      g_debug ("Failed to offer tube: %s", error->message);
+      g_message ("Failed to offer tube: %s", error->message);
 
       g_error_free (error);
       return;
     }
 
-  g_debug ("Tube offered");
+  g_message ("Tube offered");
 }
 
 static void
@@ -95,7 +95,7 @@ tube_invalidated_cb (TpStreamTubeChannel *tube,
     gchar *message,
     gpointer user_data)
 {
-  g_debug ("Tube has been invalidated: %s", message);
+  g_message ("Tube has been invalidated: %s", message);
   g_main_loop_quit (loop);
 }
 
@@ -112,13 +112,13 @@ _channel_created (GObject *source,
       TP_ACCOUNT_CHANNEL_REQUEST (source), result, NULL, &error);
   if (channel == NULL)
     {
-      g_debug ("Failed to create channel: %s", error->message);
+      g_message ("Failed to create channel: %s", error->message);
 
       g_error_free (error);
       return;
     }
 
-  g_debug ("Channel created: %s", tp_proxy_get_object_path (channel));
+  g_message ("Channel created: %s", tp_proxy_get_object_path (channel));
 
   tube = TP_STREAM_TUBE_CHANNEL (channel);
 
@@ -141,11 +141,15 @@ main (int argc,
   TpAccountChannelRequest *req;
   GHashTable *request;
 
-  g_assert (argc == 3);
+  if (argc != 3)
+    {
+      g_printerr ("Usage: offerer gabble/jabber/ladygaga t-pain@example.com\n");
+      return 2;
+    }
 
   g_type_init ();
 
-  factory = tp_client_factory_new (NULL);
+  factory = tp_automatic_client_factory_new (NULL);
 
   account_path = g_strconcat (TP_ACCOUNT_OBJECT_PATH_BASE, argv[1], NULL);
   account = tp_client_factory_ensure_account (factory, account_path,
@@ -172,7 +176,7 @@ main (int argc,
 
       NULL);
 
-  g_debug ("Offer channel to %s", argv[2]);
+  g_message ("Offer channel to %s", argv[2]);
 
   req = tp_account_channel_request_new (account, request,
       TP_USER_ACTION_TIME_CURRENT_TIME);

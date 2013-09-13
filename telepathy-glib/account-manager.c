@@ -79,10 +79,13 @@
  * their configuration, places accounts online on request, and manipulates
  * accounts' presence, nicknames and avatars.
  *
- * #TpAccountManager is the "top level" object, its #TpProxy:factory will be
+ * #TpAccountManager is the "top level" object. Since 0.16 it always has a
+ * non-%NULL #TpProxy:factory, and its #TpProxy:factory will be
  * propagated to all other objects like #TpAccountManager -> #TpAccount ->
  * #TpConnection -> #TpContact and #TpChannel. This means that desired features
  * set on that factory will be prepared on all those objects.
+ * If a #TpProxy:factory is not specified when the #TpAccountManager is
+ * constructed, it will use a #TpAutomaticClientFactory.
  *
  * <example id="account-manager"><title>TpAccountManager example</title><programlisting><xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="text" href="../../../examples/client/contact-list.c"><xi:fallback>FIXME: MISSING XINCLUDE CONTENT</xi:fallback></xi:include></programlisting></example>
  *
@@ -149,15 +152,10 @@ G_DEFINE_TYPE (TpAccountManager, tp_account_manager, TP_TYPE_PROXY)
  *
  * When this feature is prepared, the list of accounts have been retrieved and
  * are available for use, and change-notification has been set up.
- * Additionally, the #TpAccount objects for accounts which existed at the time
- * this feature was prepared will have #TP_ACCOUNT_FEATURE_CORE prepared, but
- * #TpAccount objects subsequently announced by
- * #TpAccountManager::account-usability-changed are <emphasis>not</emphasis>
- * guaranteed to have this feature prepared. In practice, this means that
- * the accounts returned by calling tp_account_manager_dup_usable_accounts()
- * immediately after successfully calling tp_proxy_prepare_finish() on the
- * #TpAccountManager will have #TP_ACCOUNT_FEATURE_CORE prepared, but later
- * calls to that function do not have the same guarantee.
+ * Additionally, since 0.16 the #TpAccount objects returned by
+ * tp_account_manager_dup_usable_accounts() have their
+ * features prepared as configured by the #TpProxy:factory; in particular,
+ * they will all have %TP_ACCOUNT_FEATURE_CORE.
  *
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
@@ -593,10 +591,11 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    * Emitted when the usability on @account changes.
    *
    * This signal is also used to indicate a new account that did not
-   * previously exist has been added (with @valid set to %TRUE).
+   * previously exist has been added (with @usable set to %TRUE).
    *
+   * If @usable is %TRUE,
    * @account is guaranteed to have %TP_ACCOUNT_FEATURE_CORE prepared, along
-   * with all features previously passed to
+   * with all the features previously passed to the #TpProxy:factory<!-- -->'s
    * tp_client_factory_add_account_features().
    *
    * Since: 0.9.0
@@ -634,7 +633,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    * Emitted when an account from @manager is enabled.
    *
    * @account is guaranteed to have %TP_ACCOUNT_FEATURE_CORE prepared, along
-   * with all features previously passed to
+   * with all the features previously passed to the #TpProxy:factory<!-- -->'s
    * tp_client_factory_add_account_features().
    *
    * Since: 0.9.0
@@ -736,7 +735,9 @@ _tp_account_manager_new_internal (TpClientFactory *factory,
  * @bus_daemon: Proxy for the D-Bus daemon
  *
  * Convenience function to create a new account manager proxy. The returned
- * #TpAccountManager is not guaranteed to be ready on return.
+ * #TpAccountManager is not guaranteed to be prepared on return.
+ * Its #TpProxy:factory will be a new #TpAutomaticClientFactory for
+ * @bus_daemon.
  *
  * Use tp_account_manager_dup() instead if you want an account manager proxy
  * on the starter or session bus (which is almost always the right thing for
@@ -846,12 +847,18 @@ tp_account_manager_can_set_default (void)
  *
  * Returns an account manager proxy on the D-Bus daemon on which this
  * process was activated (if it was launched by D-Bus service activation), or
- * the session bus (otherwise).
+ * the session bus (otherwise). This account manager will always have
+ * the result of tp_dbus_daemon_dup() as its #TpProxy:dbus-daemon.
  *
  * The returned #TpAccountManager is cached; the same #TpAccountManager object
  * will be returned by this function repeatedly, as long as at least one
  * reference exists. Note that the returned #TpAccountManager is not guaranteed
  * to be ready on return.
+ *
+ * If tp_account_manager_set_default() has been called successfully,
+ * that #TpAccountManager will be returned. Otherwise, a new #TpAccountManager
+ * will be created the first time this function is called, using a new
+ * #TpAutomaticClientFactory as its #TpProxy:factory.
  *
  * Returns: (transfer full): an account manager proxy on the starter or session
  *          bus, or %NULL if it wasn't possible to get a dbus daemon proxy for
@@ -1013,7 +1020,8 @@ insert_account (TpAccountManager *self,
  *
  * The returned #TpAccount<!-- -->s are guaranteed to have
  * %TP_ACCOUNT_FEATURE_CORE prepared, along with all features previously passed
- * to tp_simple_client_factory_add_account_features().
+ * to tp_simple_client_factory_add_account_features() for the account
+ * manager's #TpProxy:factory.
  *
  * The list of valid accounts returned is not guaranteed to have been retrieved
  * until %TP_ACCOUNT_MANAGER_FEATURE_CORE is prepared
@@ -1243,10 +1251,11 @@ _tp_account_manager_created_cb (TpAccountManager *proxy,
  * then call tp_account_manager_create_account_finish() to get the result of
  * the operation.
  *
- * @callback will only be called when the newly created #TpAccount has the
- * %TP_ACCOUNT_FEATURE_CORE feature ready on it, so when calling
- * tp_account_manager_create_account_finish(), one can guarantee this feature
- * will be ready.
+ * The #TpAccount returned by tp_account_manager_create_account_finish()
+ * will already have %TP_ACCOUNT_FEATURE_CORE prepared, along with all
+ * features previously passed to
+ * tp_simple_client_factory_add_account_features() for the account
+ * manager's #TpProxy:factory.
  *
  * It is usually better to use #TpAccountRequest instead, particularly when
  * using high-level language bindings.
@@ -1289,7 +1298,10 @@ tp_account_manager_create_account_async (TpAccountManager *manager,
  * @error: a #GError to be filled
  *
  * Finishes an async create account operation, and returns a new #TpAccount
- * object, with the %TP_ACCOUNT_FEATURE_CORE feature ready on it.
+ * object. It has %TP_ACCOUNT_FEATURE_CORE prepared, along with all
+ * features previously passed to
+ * tp_simple_client_factory_add_account_features() for the account
+ * manager's #TpProxy:factory.
  *
  * The caller must keep a ref to the returned object using g_object_ref() if
  * it is to be kept beyond the lifetime of @result.

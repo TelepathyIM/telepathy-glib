@@ -36,7 +36,8 @@
  *
  * Currently supported classes are #TpAccount, #TpConnection,
  * #TpChannel and #TpContact. Those objects should always be acquired through a
- * factory, rather than being constructed directly.
+ * factory or a "larger" object (e.g. getting the #TpConnection from
+ * a #TpAccount), rather than being constructed directly.
  *
  * One can subclass #TpClientFactory and override some of its virtual
  * methods to construct more specialized objects. See #TpAutomaticClientFactory
@@ -447,6 +448,10 @@ tp_client_factory_get_dbus_daemon (TpClientFactory *self)
  * is responsible for calling tp_proxy_prepare_async() with the desired
  * features (as given by tp_client_factory_dup_account_features()).
  *
+ * This function is rather low-level. tp_account_manager_dup_usable_accounts()
+ * and #TpAccountManager::usability-changed are more appropriate for most
+ * applications.
+ *
  * Returns: (transfer full): a reference to a #TpAccount;
  *  see tp_account_new().
  *
@@ -572,6 +577,9 @@ tp_client_factory_add_account_features_varargs (
  * caller is responsible for calling tp_proxy_prepare_async() with the desired
  * features (as given by tp_client_factory_dup_connection_features()).
  *
+ * This function is rather low-level. #TpAccount:connection is more
+ * appropriate for most applications.
+ *
  * Returns: (transfer full): a reference to a #TpConnection;
  *  see tp_connection_new().
  *
@@ -682,8 +690,8 @@ tp_client_factory_add_connection_features_varargs (
 
 /**
  * tp_client_factory_ensure_channel:
- * @self: a #TpClientFactory object
- * @connection: a #TpConnection
+ * @self: a #TpClientFactory
+ * @connection: a #TpConnection whose #TpProxy:factory is this object
  * @object_path: the object path of a channel on @connection
  * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
  *  the immutable properties of the channel
@@ -697,6 +705,10 @@ tp_client_factory_add_connection_features_varargs (
  * Note that the returned #TpChannel is not guaranteed to be ready; the
  * caller is responsible for calling tp_proxy_prepare_async() with the desired
  * features (as given by tp_client_factory_dup_channel_features()).
+ *
+ * This function is rather low-level.
+ * #TpAccountChannelRequest and #TpBaseClient are more appropriate ways
+ * to obtain channels for most applications.
  *
  * Returns: (transfer full): a reference to a #TpChannel;
  *  see tp_channel_new_from_properties().
@@ -812,7 +824,7 @@ tp_client_factory_add_channel_features_varargs (
 /**
  * tp_client_factory_ensure_contact:
  * @self: a #TpClientFactory object
- * @connection: a #TpConnection
+ * @connection: a #TpConnection whose #TpProxy:factory is this object
  * @handle: a #TpHandle
  * @identifier: a string representing the contact's identifier
  *
@@ -887,7 +899,7 @@ upgrade_contacts_cb (GObject *source,
 /**
  * tp_client_factory_upgrade_contacts_async:
  * @self: a #TpClientFactory object
- * @connection: a #TpConnection
+ * @connection: a #TpConnection whose #TpProxy:factory is this object
  * @n_contacts: The number of contacts in @contacts (must be at least 1)
  * @contacts: (array length=n_contacts): An array of #TpContact objects
  *  associated with @self
@@ -911,6 +923,10 @@ tp_client_factory_upgrade_contacts_async (
 {
   GSimpleAsyncResult *result;
   GArray *features;
+
+  /* no real reason this shouldn't work, but it's really confusing
+   * and probably indicates an error */
+  g_warn_if_fail (tp_proxy_get_factory (connection) == self);
 
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_client_factory_upgrade_contacts_async);
@@ -1105,8 +1121,8 @@ tp_client_factory_add_contact_features_varargs (
   va_end (var_args);
 }
 
-/**
- * tp_client_factory_ensure_channel_request:
+/*
+ * _tp_client_factory_ensure_channel_request:
  * @self: a #TpClientFactory object
  * @object_path: the object path of a channel request
  * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
@@ -1149,8 +1165,8 @@ _tp_client_factory_ensure_channel_request (TpClientFactory *self,
   return request;
 }
 
-/**
- * tp_client_factory_ensure_channel_dispatch_operation:
+/*
+ * _tp_client_factory_ensure_channel_dispatch_operation:
  * @self: a #TpClientFactory object
  * @object_path: the object path of a channel dispatch operation
  * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
