@@ -97,7 +97,7 @@ TelepathyGLib_1_gir_LIBS = \
     libtelepathy-glib-1-core.la \
     $(NULL)
 TelepathyGLib_1_gir_EXPORT_PACKAGES = telepathy-glib-1
-TelepathyGLib_1_gir_CFLAGS = -D_TP_COMPILATION
+TelepathyGLib_1_gir_CFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS)
 
 TelepathyGLib_1_gir_SCANNERFLAGS = \
 	--identifier-prefix=Tp \
@@ -142,6 +142,7 @@ TelepathyGLibDBus_1_gir_PACKAGES = \
 	gio-2.0	\
 	dbus-glib-1 \
 	$(NULL)
+TelepathyGLibDBus_1_gir_CFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS)
 
 _gen/proxy-introspectable.h: proxy.h introspection.am
 	@$(MKDIR_P) _gen
