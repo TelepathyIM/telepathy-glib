@@ -269,7 +269,7 @@ test_interested_client (Test *test,
   tp_connection_add_client_interest_by_id (test->conn,
       TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION);
   tp_connection_add_client_interest_by_id (test->conn,
-      TP_IFACE_QUARK_CONNECTION_INTERFACE_PRESENCE);
+      TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS);
 
   /* run until (after) the AddClientInterest calls have gone out */
   tp_tests_proxy_run_until_dbus_queue_processed (test->client_bus);
@@ -316,7 +316,7 @@ test_interest (Test *test,
 {
   static const gchar * telepathy[] = {
       TP_IFACE_CONNECTION_INTERFACE_LOCATION,
-      TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
+      TP_IFACE_CONNECTION_INTERFACE_AVATARS,
       NULL
   };
   static const gchar * hansard[] = {

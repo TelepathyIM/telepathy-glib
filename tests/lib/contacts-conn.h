@@ -13,7 +13,6 @@
 #define __TP_TESTS_CONTACTS_CONN_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/avatars-mixin.h>
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/contacts-mixin.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
@@ -43,7 +42,6 @@ struct _TpTestsContactsConnection {
 
     TpPresenceMixin presence_mixin;
     TpContactsMixin contacts_mixin;
-    TpAvatarsMixin avatars_mixin;
 
     TpTestsContactsConnectionPrivate *priv;
 };
@@ -89,16 +87,15 @@ void tp_tests_contacts_connection_change_presences (
     const TpTestsContactsConnectionPresenceStatusIndex *indexes,
     const gchar * const *messages);
 
-void tp_tests_contacts_connection_avatar_retrieved (
-    TpTestsContactsConnection *self,
-    TpHandle handle,
-    const gchar *token,
-    GArray *data,
-    const gchar *mime_type);
+void tp_tests_contacts_connection_change_avatar_tokens (
+    TpTestsContactsConnection *self, guint n, const TpHandle *handles,
+    const gchar * const *tokens);
 
-void tp_tests_contacts_connection_avatar_changed (
+void tp_tests_contacts_connection_change_avatar_data (
     TpTestsContactsConnection *self,
     TpHandle handle,
+    GArray *data,
+    const gchar *mime_type,
     const gchar *token);
 
 void tp_tests_contacts_connection_change_locations (

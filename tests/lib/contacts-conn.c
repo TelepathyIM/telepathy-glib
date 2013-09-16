@@ -15,7 +15,6 @@
 
 #include <dbus/dbus-glib.h>
 
-#include <telepathy-glib/avatars-mixin.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>
@@ -27,7 +26,10 @@
 #include "debug.h"
 
 static void init_aliasing (gpointer, gpointer);
+static void init_avatars (gpointer, gpointer);
 static void init_contact_info (gpointer, gpointer);
+static void conn_avatars_properties_getter (GObject *object, GQuark interface,
+    GQuark name, GValue *value, gpointer getter_data);
 
 G_DEFINE_TYPE_WITH_CODE (TpTestsContactsConnection,
     tp_tests_contacts_connection,
@@ -35,7 +37,7 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsContactsConnection,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING,
       init_aliasing);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_AVATARS,
-      tp_avatars_mixin_iface_init);
+      init_avatars);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE,
       tp_presence_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_LOCATION, NULL)
@@ -55,18 +57,31 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsContactsConnection,
 
 /* type definition stuff */
 
-enum
-{
-  REQUEST_AVATAR,
-  N_SIGNALS
+static const char *mime_types[] = { "image/png", NULL };
+static TpDBusPropertiesMixinPropImpl conn_avatars_properties[] = {
+      { "MinimumAvatarWidth", GUINT_TO_POINTER (1), NULL },
+      { "MinimumAvatarHeight", GUINT_TO_POINTER (2), NULL },
+      { "RecommendedAvatarWidth", GUINT_TO_POINTER (3), NULL },
+      { "RecommendedAvatarHeight", GUINT_TO_POINTER (4), NULL },
+      { "MaximumAvatarWidth", GUINT_TO_POINTER (5), NULL },
+      { "MaximumAvatarHeight", GUINT_TO_POINTER (6), NULL },
+      { "MaximumAvatarBytes", GUINT_TO_POINTER (7), NULL },
+      /* special-cased - it's the only one with a non-guint value */
+      { "SupportedAvatarMIMETypes", NULL, NULL },
+      { NULL }
 };
 
-static guint signals[N_SIGNALS] = {0};
+enum
+{
+  N_SIGNALS
+};
 
 struct _TpTestsContactsConnectionPrivate
 {
   /* TpHandle => gchar * */
   GHashTable *aliases;
+  /* TpHandle => AvatarData */
+  GHashTable *avatars;
   /* TpHandle => ContactsConnectionPresenceStatusIndex */
   GHashTable *presence_statuses;
   /* TpHandle => gchar * */
@@ -82,6 +97,42 @@ struct _TpTestsContactsConnectionPrivate
   TpTestsContactListManager *list_manager;
 };
 
+typedef struct
+{
+  GArray *data;
+  gchar *mime_type;
+  gchar *token;
+} AvatarData;
+
+static AvatarData *
+avatar_data_new (GArray *data,
+    const gchar *mime_type,
+    const gchar *token)
+{
+  AvatarData *a;
+
+  a = g_slice_new (AvatarData);
+  a->data = data ? g_array_ref (data) : NULL;
+  a->mime_type = g_strdup (mime_type);
+  a->token = g_strdup (token);
+
+  return a;
+}
+
+static void
+avatar_data_free (gpointer data)
+{
+  AvatarData *a = data;
+
+  if (a != NULL)
+    {
+      if (a->data != NULL)
+        g_array_unref (a->data);
+      g_free (a->mime_type);
+      g_free (a->token);
+      g_slice_free (AvatarData, a);
+    }
+}
 
 static void
 free_rcc_list (GPtrArray *rccs)
@@ -96,6 +147,8 @@ tp_tests_contacts_connection_init (TpTestsContactsConnection *self)
       TpTestsContactsConnectionPrivate);
   self->priv->aliases = g_hash_table_new_full (g_direct_hash, g_direct_equal,
       NULL, g_free);
+  self->priv->avatars = g_hash_table_new_full (g_direct_hash,
+      g_direct_equal, NULL, avatar_data_free);
   self->priv->presence_statuses = g_hash_table_new_full (g_direct_hash,
       g_direct_equal, NULL, NULL);
   self->priv->presence_messages = g_hash_table_new_full (g_direct_hash,
@@ -114,8 +167,8 @@ finalize (GObject *object)
   TpTestsContactsConnection *self = TP_TESTS_CONTACTS_CONNECTION (object);
 
   tp_contacts_mixin_finalize (object);
-  tp_avatars_mixin_finalize (object);
   g_hash_table_unref (self->priv->aliases);
+  g_hash_table_unref (self->priv->avatars);
   g_hash_table_unref (self->priv->presence_statuses);
   g_hash_table_unref (self->priv->presence_messages);
   g_hash_table_unref (self->priv->locations);
@@ -156,6 +209,28 @@ aliasing_fill_contact_attributes (GObject *object,
     }
 }
 
+static void
+avatars_fill_contact_attributes (GObject *object,
+                                 const GArray *contacts,
+                                 GHashTable *attributes)
+{
+  guint i;
+  TpTestsContactsConnection *self = TP_TESTS_CONTACTS_CONNECTION (object);
+
+  for (i = 0; i < contacts->len; i++)
+    {
+      TpHandle handle = g_array_index (contacts, guint, i);
+      AvatarData *a = g_hash_table_lookup (self->priv->avatars,
+          GUINT_TO_POINTER (handle));
+
+      if (a != NULL && a->token != NULL)
+        {
+          tp_contacts_mixin_set_contact_attribute (attributes, handle,
+              TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token",
+              tp_g_value_slice_new_string (a->token));
+        }
+    }
+}
 
 static void
 location_fill_contact_attributes (GObject *object,
@@ -311,44 +386,6 @@ client_types_fill_contact_attributes (
    */
 }
 
-static gboolean
-set_avatar_impl (GObject *obj,
-    const GArray *avatar,
-    const gchar *mime_type,
-    GError **error)
-{
-  g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
-      "SetAvatar is not implemented on the test CM");
-
-  return FALSE;
-}
-
-static gboolean
-clear_avatar_impl (GObject *obj,
-    GError **error)
-{
-  g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
-      "ClearAvatar is not implemented on the test CM");
-
-  return FALSE;
-}
-
-static gboolean
-request_avatars_impl (GObject *obj,
-    const GArray *handles,
-    GError **error)
-{
-  guint i;
-
-  for (i = 0; i < handles->len; i++)
-    {
-      g_signal_emit (obj, signals[REQUEST_AVATAR], 0,
-          g_array_index (handles, TpHandle, i));
-    }
-
-  return TRUE;
-}
-
 static void
 constructed (GObject *object)
 {
@@ -356,8 +393,6 @@ constructed (GObject *object)
   TpBaseConnection *base = TP_BASE_CONNECTION (object);
   void (*parent_impl) (GObject *) =
     G_OBJECT_CLASS (tp_tests_contacts_connection_parent_class)->constructed;
-  gchar *mime_types[] = { "image/png", NULL };
-  TpAvatarRequirements *req;
 
   if (parent_impl != NULL)
     parent_impl (object);
@@ -377,6 +412,9 @@ constructed (GObject *object)
       TP_IFACE_CONNECTION_INTERFACE_ALIASING,
       aliasing_fill_contact_attributes);
   tp_contacts_mixin_add_contact_attributes_iface (object,
+      TP_IFACE_CONNECTION_INTERFACE_AVATARS,
+      avatars_fill_contact_attributes);
+  tp_contacts_mixin_add_contact_attributes_iface (object,
       TP_IFACE_CONNECTION_INTERFACE_LOCATION,
       location_fill_contact_attributes);
   tp_contacts_mixin_add_contact_attributes_iface (object,
@@ -392,17 +430,6 @@ constructed (GObject *object)
   tp_presence_mixin_init (object,
       G_STRUCT_OFFSET (TpTestsContactsConnection, presence_mixin));
   tp_presence_mixin_register_with_contacts_mixin (object);
-
-  req = tp_avatar_requirements_new (mime_types, 1, 2, 3, 4, 5, 6, 7);
-  tp_avatars_mixin_init (object,
-      G_STRUCT_OFFSET (TpTestsContactsConnection, avatars_mixin),
-      set_avatar_impl,
-      clear_avatar_impl,
-      request_avatars_impl,
-      TRUE, req);
-  tp_avatar_requirements_destroy (req);
-
-  tp_avatars_mixin_register_with_contacts_mixin (object);
 }
 
 static const TpPresenceStatusOptionalArgumentSpec can_have_message[] = {
@@ -567,6 +594,11 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
     { NULL }
   };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
+        { TP_IFACE_CONNECTION_INTERFACE_AVATARS,
+          conn_avatars_properties_getter,
+          NULL,
+          conn_avatars_properties,
+        },
         { TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO,
           conn_contact_info_properties_getter,
           NULL,
@@ -587,14 +619,6 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
   base_class->get_interfaces_always_present = tp_tests_contacts_get_interfaces_always_present;
   base_class->create_channel_managers = create_channel_managers;
 
-  signals[REQUEST_AVATAR] =
-      g_signal_new ("request-avatar",
-          G_OBJECT_CLASS_TYPE (klass),
-          G_SIGNAL_RUN_LAST,
-          0,
-          NULL, NULL, NULL,
-          G_TYPE_NONE, 1, G_TYPE_UINT);
-
   tp_contacts_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpTestsContactsConnectionClass, contacts_mixin));
 
@@ -613,8 +637,6 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
       G_STRUCT_OFFSET (TpTestsContactsConnectionClass, properties_class));
 
   tp_base_contact_list_mixin_class_init (base_class);
-
-  tp_avatars_mixin_init_dbus_properties (object_class);
 }
 
 TpTestsContactListManager *
@@ -700,22 +722,36 @@ tp_tests_contacts_connection_change_presences (
 }
 
 void
-tp_tests_contacts_connection_avatar_retrieved (TpTestsContactsConnection *self,
-    TpHandle handle,
-    const gchar *token,
-    GArray *data,
-    const gchar *mime_type)
+tp_tests_contacts_connection_change_avatar_tokens (TpTestsContactsConnection *self,
+                                          guint n,
+                                          const TpHandle *handles,
+                                          const gchar * const *tokens)
 {
-  tp_avatars_mixin_avatar_retrieved ((GObject *) self, handle,
-      token, data, mime_type);
+  guint i;
+
+  for (i = 0; i < n; i++)
+    {
+      DEBUG ("contact#%u -> %s", handles[i], tokens[i]);
+      g_hash_table_insert (self->priv->avatars,
+          GUINT_TO_POINTER (handles[i]), avatar_data_new (NULL, NULL, tokens[i]));
+      tp_svc_connection_interface_avatars_emit_avatar_updated (self,
+          handles[i], tokens[i]);
+    }
 }
 
 void
-tp_tests_contacts_connection_avatar_changed (TpTestsContactsConnection *self,
+tp_tests_contacts_connection_change_avatar_data (
+    TpTestsContactsConnection *self,
     TpHandle handle,
+    GArray *data,
+    const gchar *mime_type,
     const gchar *token)
 {
-  tp_avatars_mixin_avatar_changed ((GObject *) self, handle, token);
+  g_hash_table_insert (self->priv->avatars,
+      GUINT_TO_POINTER (handle), avatar_data_new (data, mime_type, token));
+
+  tp_svc_connection_interface_avatars_emit_avatar_updated (self,
+      handle, token);
 }
 
 void
@@ -888,6 +924,77 @@ init_aliasing (gpointer g_iface,
     klass, my_##x)
   IMPLEMENT(request_aliases);
   IMPLEMENT(set_aliases);
+#undef IMPLEMENT
+}
+
+static void
+my_request_avatars (TpSvcConnectionInterfaceAvatars *avatars,
+    const GArray *contacts,
+    DBusGMethodInvocation *context)
+{
+  TpTestsContactsConnection *self = TP_TESTS_CONTACTS_CONNECTION (avatars);
+  TpBaseConnection *base = TP_BASE_CONNECTION (avatars);
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (base,
+      TP_HANDLE_TYPE_CONTACT);
+  GError *error = NULL;
+  guint i;
+
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (base, context);
+
+  if (!tp_handles_are_valid (contact_repo, contacts, FALSE, &error))
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
+    }
+
+  for (i = 0; i < contacts->len; i++)
+    {
+      TpHandle handle = g_array_index (contacts, TpHandle, i);
+      AvatarData *a = g_hash_table_lookup (self->priv->avatars,
+          GUINT_TO_POINTER (handle));
+
+      if (a != NULL)
+        tp_svc_connection_interface_avatars_emit_avatar_retrieved (self, handle,
+            a->token, a->data, a->mime_type);
+    }
+
+  tp_svc_connection_interface_avatars_return_from_request_avatars (context);
+}
+
+static void
+conn_avatars_properties_getter (GObject *object,
+                                GQuark interface,
+                                GQuark name,
+                                GValue *value,
+                                gpointer getter_data)
+{
+  GQuark q_mime_types = g_quark_from_static_string (
+      "SupportedAvatarMIMETypes");
+
+  if (name == q_mime_types)
+    {
+      g_value_set_static_boxed (value, mime_types);
+    }
+  else
+    {
+      g_value_set_uint (value, GPOINTER_TO_UINT (getter_data));
+    }
+}
+
+static void
+init_avatars (gpointer g_iface,
+              gpointer iface_data)
+{
+  TpSvcConnectionInterfaceAvatarsClass *klass = g_iface;
+
+#define IMPLEMENT(x) tp_svc_connection_interface_avatars_implement_##x (\
+    klass, my_##x)
+  /* IMPLEMENT(get_avatar_requirements); */
+  /* IMPLEMENT(request_avatar); */
+  IMPLEMENT(request_avatars);
+  /* IMPLEMENT(set_avatar); */
+  /* IMPLEMENT(clear_avatar); */
 #undef IMPLEMENT
 }
 
