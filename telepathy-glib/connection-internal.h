@@ -63,6 +63,8 @@ struct _TpConnectionPrivate {
     GQueue capabilities_queue;
 
     TpAvatarRequirements *avatar_requirements;
+    GArray *avatar_request_queue;
+    guint avatar_request_idle_id;
 
     TpContactInfoFlags contact_info_flags;
     GList *contact_info_supported_fields;

@@ -1234,6 +1234,18 @@ tp_connection_finalize (GObject *object)
       self->priv->connection_error_details = NULL;
     }
 
+  if (self->priv->avatar_request_queue != NULL)
+    {
+      g_array_unref (self->priv->avatar_request_queue);
+      self->priv->avatar_request_queue = NULL;
+    }
+
+  if (self->priv->avatar_request_idle_id != 0)
+    {
+      g_source_remove (self->priv->avatar_request_idle_id);
+      self->priv->avatar_request_idle_id = 0;
+    }
+
   tp_contact_info_spec_list_free (self->priv->contact_info_supported_fields);
   self->priv->contact_info_supported_fields = NULL;
 

@@ -46,7 +46,6 @@ tpginclude_HEADERS = \
     account-request.h \
     automatic-client-factory.h \
     add-dispatch-operation-context.h \
-    avatars-mixin.h \
     base-call-channel.h \
     base-call-content.h \
     base-call-stream.h \
@@ -221,7 +220,6 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     automatic-client-factory.c \
     add-dispatch-operation-context-internal.h \
     add-dispatch-operation-context.c \
-    avatars-mixin.c \
     base-call-channel.c \
     base-call-content.c \
     base-call-stream.c \

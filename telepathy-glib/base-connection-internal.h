@@ -33,12 +33,6 @@ void _tp_base_connection_set_handle_repo (TpBaseConnection *self,
 gpointer _tp_base_connection_find_channel_manager (TpBaseConnection *self,
     GType type);
 
-gboolean _tp_base_connection_has_client_interest (TpBaseConnection *self,
-    GQuark token);
-
-const gchar *_tp_base_connection_get_cm_name (TpBaseConnection *self);
-const gchar *_tp_base_connection_get_protocol_name (TpBaseConnection *self);
-
 G_END_DECLS
 
 #endif

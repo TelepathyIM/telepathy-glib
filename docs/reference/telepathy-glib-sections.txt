@@ -1664,27 +1664,6 @@ TP_CONTACTS_MIXIN
 
 <SECTION>
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
-<FILE>avatars-mixin</FILE>
-TpAvatarsMixin
-TpAvatarsMixinClearAvatarFunc
-TpAvatarsMixinRequestAvatarsFunc
-TpAvatarsMixinSetAvatarFunc
-tp_avatars_mixin_avatar_changed
-tp_avatars_mixin_avatar_retrieved
-tp_avatars_mixin_drop_avatar
-tp_avatars_mixin_finalize
-tp_avatars_mixin_iface_init
-tp_avatars_mixin_init
-tp_avatars_mixin_init_dbus_properties
-tp_avatars_mixin_register_with_contacts_mixin
-<SUBSECTION Private>
-TpAvatarsMixinPrivate
-<SUBSECTION Standard>
-TP_AVATARS_MIXIN
-</SECTION>
-
-<SECTION>
-<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>presence-mixin</FILE>
 TpPresenceStatusOptionalArgumentSpec
 TpPresenceStatusSpec

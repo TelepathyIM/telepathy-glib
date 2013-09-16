@@ -419,8 +419,6 @@ struct _TpBaseConnectionPrivate
   /* GQuark iface => GHashTable {
    *    unique name borrowed from interested_clients => gsize count } */
   GHashTable *client_interests;
-
-  gchar *cm_name;
 };
 
 static const gchar * const *tp_base_connection_get_interfaces (
@@ -604,7 +602,6 @@ tp_base_connection_finalize (GObject *object)
   TpBaseConnection *self = TP_BASE_CONNECTION (object);
   TpBaseConnectionPrivate *priv = self->priv;
 
-  g_free (priv->cm_name);
   g_free (priv->protocol);
   g_free (priv->bus_name);
   g_free (priv->object_path);
@@ -1016,14 +1013,6 @@ tp_base_connection_add_possible_client_interest (TpBaseConnection *self,
   if (g_hash_table_lookup (self->priv->client_interests, p) == NULL)
     g_hash_table_insert (self->priv->client_interests, p,
         g_hash_table_new (g_str_hash, g_str_equal));
-}
-
-gboolean
-_tp_base_connection_has_client_interest (TpBaseConnection *self,
-    GQuark token)
-{
-  return g_hash_table_contains (self->priv->client_interests,
-      GUINT_TO_POINTER (token));
 }
 
 /* D-Bus properties for the Requests interface */
@@ -1480,7 +1469,6 @@ tp_base_connection_register (TpBaseConnection *self,
       return FALSE;
     }
 
-  priv->cm_name = g_strdup (cm_name);
   priv->bus_name = g_strdup_printf (TP_CONN_BUS_NAME_BASE "%s.%s.%s",
       cm_name, safe_proto, unique_name);
   g_assert (strlen (priv->bus_name) <= 255);
@@ -3017,16 +3005,4 @@ tp_base_connection_get_object_path (TpBaseConnection *self)
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
 
   return self->priv->object_path;
-}
-
-const gchar *
-_tp_base_connection_get_cm_name (TpBaseConnection *self)
-{
-  return self->priv->cm_name;
-}
-
-const gchar *
-_tp_base_connection_get_protocol_name (TpBaseConnection *self)
-{
-  return self->priv->protocol;
 }
