@@ -24,18 +24,18 @@ typedef struct {
 static void
 display_contact (TpContact *contact)
 {
-  GFile *avatar_file;
+  const gchar *avatar_token;
 
   g_message ("Handle %u, \"%s\":", tp_contact_get_handle (contact),
       tp_contact_get_identifier (contact));
   g_message ("\tAlias: \"%s\"", tp_contact_get_alias (contact));
 
-  avatar_file = tp_contact_get_avatar_file (contact);
+  avatar_token = tp_contact_get_avatar_token (contact);
 
-  if (avatar_file == NULL)
+  if (avatar_token == NULL)
     g_message ("\tAvatar token not known");
   else
-    g_message ("\tAvatar file: \"%s\"", g_file_get_path (avatar_file));
+    g_message ("\tAvatar token: \"%s\"", avatar_token);
 
   g_message ("\tPresence: type #%i \"%s\": \"%s\"",
       tp_contact_get_presence_type (contact),
@@ -112,7 +112,7 @@ connection_ready_cb (GObject *source,
 {
   GQuark features[] = {
       TP_CONTACT_FEATURE_ALIAS,
-      TP_CONTACT_FEATURE_AVATAR,
+      TP_CONTACT_FEATURE_AVATAR_TOKEN,
       TP_CONTACT_FEATURE_PRESENCE,
       0
   };
