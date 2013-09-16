@@ -20,110 +20,268 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </tp:license>
   <interface name="im.telepathy1.Connection.Interface.Avatars1">
     <tp:requires interface="im.telepathy1.Connection"/>
+    <tp:changed version="UNRELEASED">The deprecated method,
+      GetAvatarRequirements, has been removed in favour of using the
+      D-Bus properties instead.</tp:changed>
 
-    <tp:client-interest>
-      <tp:docstring>
-        <p>Clients wanting to get up to date avatars SHOULD claim its interest in
-        this interface using <tp:dbus-ref namespace="imt1.Connection"
-          >AddClientInterest</tp:dbus-ref>.</p>
-
-        <p>When at least one client claimed interest in avatars, the Connection
-          Manager MUST request avatars missing from its disk cache, but only
-          if the Connection Manager has a useful token to lookup into its cache
-          first.</p>
-        <tp:rationale>
-          Offline XMPP contacts does not send their avatar token, so the
-          Connection Manager would have to request the avatar image even if the
-          image could already be in cache.
-        </tp:rationale>
-      </tp:docstring>
-    </tp:client-interest>
-
-    <tp:simple-type name="Avatar_URI" type="s">
-      <tp:docstring>
-        <p>The URI of the cached image data, or empty if the contact has no
-        avatar.</p>
-
-        <p>When not empty, the URI MUST be starting with <em>file:///</em> as
-        defined by RFC 1738.</p>
+    <tp:simple-type name="Avatar_Token" type="s"
+      array-name="Avatar_Token_List">
+      <tp:changed version="0.17.16">strengthened uniqueness requirements
+        so (CM name, protocol, token) is unique; previously only
+        (our Account, remote contact identifier, token) was required to be
+        unique</tp:changed>
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>An opaque token chosen by the connection manager, representing
+          a particular avatar.</p>
 
         <tp:rationale>
-          <p>Rationale for not just using filenames: on Unix systems, local
-          filenames are arbitrary byte sequences which are not necessarily
-          UTF-8, or even any consistent encoding at all.</p>
-          <p>Rationale for <em>file:///</em>: If we allowed other URI schemes
-          (such as HTTP) we'd have to specify which schemes clients were
-          expected to support, and for decent performance those clients would
-          have to do their own caching anyway.</p>
+          <p>Because avatars can be relatively large images, most protocols
+            provide a way to detect whether an old avatar is still valid,
+            or whether an avatar has changed, without pushing the actual
+            avatar data to all clients.</p>
         </tp:rationale>
+
+        <p>The connection manager MUST choose these tokens in a way that
+          makes it highly unlikely that two different avatars with the same
+          connection manager and protocol will have the same token.</p>
+
+        <tp:rationale>
+          <p>This means that clients MAY use the triple
+            (<tp:type>Connection_Manager_Name</tp:type>,
+            <tp:type>Protocol_Name</tp:type>, avatar token) as a key for
+            their avatar cache. For instance, an avatar for a
+            telepathy-gabble Jabber contact might be stored in a file
+            .../gabble/jabber/4e199b4a1c40b497a95fcd1cd896351733849949.png.</p>
+        </tp:rationale>
+
+        <p>For instance, some protocols (like XMPP) identify avatars by a
+          hash of the avatar data; in this case, the hash can be used as the
+          avatar token.</p>
+
+        <p>Some protocols identify avatars by the timestamp of the last
+          change to the avatar; in these protocols it would be necessary for
+          the connection manager to encode both the timestamp and the
+          contact's identifier into the avatar token in order to ensure
+          uniqueness.</p>
+
+        <p>This token SHOULD be kept short and reasonably suitable for use
+          in a filename, but MAY contain any UTF-8 character (so clients using
+          avatar tokens in filenames MUST be prepared to escape characters
+          that are not valid in filenames). Connection managers for protocols
+          where tokens would otherwise become inconveniently large or contain
+          many unsuitable characters SHOULD hash the identifying data to
+          generate the token.</p>
       </tp:docstring>
     </tp:simple-type>
 
-    <tp:mapping name="Avatar_URI_Map">
-      <tp:docstring>
-        Mapping signalled by <tp:member-ref>AvatarsUpdated</tp:member-ref>,
-        indicating the avatar of a number of contacts has changed.
-      </tp:docstring>
-      <tp:member type="u" tp:type="Contact_Handle" name="Contact">
-        <tp:docstring>
-          A contact
-        </tp:docstring>
-      </tp:member>
-      <tp:member type="s" tp:type="Avatar_URI" name="avatar">
-        <tp:docstring>
-          The contact's avatar URI
-        </tp:docstring>
-      </tp:member>
+    <tp:mapping name="Avatar_Token_Map">
+      <tp:docstring>A dictionary whose keys are contact handles and whose
+        values are avatar tokens.</tp:docstring>
+      <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
+      <tp:member type="s" tp:type="Avatar_Token" name="Token"/>
     </tp:mapping>
 
-    <tp:contact-attribute name="avatar" type="s" tp:type="Avatar_URI">
-      <tp:docstring>
-        <p>URI of cached avatar image if the known by the Connection Manager.
-        An empty string if the Connection Manager knows that the contact has no
-        avatar set.</p>
-
-        <p>If the avatar image is not known, this attribute is omited.
-        This happens if the client did not claimed interest in this interface,
-        or if the Connection Manager did not yet receive the missing image but
-        started the request. In that later case,
-        <tp:member-ref>AvatarsUpdated</tp:member-ref> will be emitted once the
-        avatar is retrieved.</p>
-      </tp:docstring>
-    </tp:contact-attribute>
-
-    <signal name="AvatarsUpdated" tp:name-for-bindings="Avatars_Updated">
-      <arg name="Avatars" type="a{us}" tp:type="Avatar_URI_Map">
+    <signal name="AvatarUpdated" tp:name-for-bindings="Avatar_Updated">
+      <arg name="Contact" type="u" tp:type="Contact_Handle">
         <tp:docstring>
-          A dictionary of contact handles mapped to their avatar URI.
+          An integer handle for the contact whose avatar has changed
+        </tp:docstring>
+      </arg>
+      <arg name="New_Avatar_Token" tp:type="Avatar_Token" type="s">
+        <tp:docstring>
+          Unique token for their new avatar
         </tp:docstring>
       </arg>
       <tp:docstring>
-        This signal should be emitted when any contact's avatar changed.
+        Emitted when the avatar for a contact has been updated, or first
+        discovered on this connection. If the token differs from the token
+        associated with the client's cached avatar for this contact, the new
+        avatar should be requested with
+        <tp:member-ref>RequestAvatars</tp:member-ref>.
       </tp:docstring>
     </signal>
 
-    <method name="RefreshAvatars" tp:name-for-bindings="Refresh_Avatars">
+    <signal name="AvatarRetrieved" tp:name-for-bindings="Avatar_Retrieved">
+      <arg name="Contact" type="u" tp:type="Contact_Handle">
+        <tp:docstring>
+          The contact whose avatar has been retrieved
+        </tp:docstring>
+      </arg>
+      <arg name="Token" tp:type="Avatar_Token" type="s">
+        <tp:docstring>
+          The token corresponding to the avatar
+        </tp:docstring>
+      </arg>
+      <arg name="Avatar" type="ay">
+        <tp:docstring>
+          An array of bytes containing the image data
+        </tp:docstring>
+      </arg>
+      <arg name="Type" type="s">
+        <tp:docstring>
+          A string containing the image MIME type (eg image/jpeg), or empty if
+          unknown
+        </tp:docstring>
+      </arg>
+      <tp:docstring>
+        Emitted when the avatar for a contact has been retrieved.
+      </tp:docstring>
+    </signal>
+
+    <property name="SupportedAvatarMIMETypes"
+      tp:name-for-bindings="Supported_Avatar_MIME_Types"
+      type="as" access="read">
+      <tp:added version="0.17.22"/>
+      <tp:docstring>
+        An array of supported MIME types (e.g. "image/jpeg").
+        Clients MAY assume that the first type in this array is preferred.
+        This property cannot change after the Connection goes to the Connected
+        state.
+      </tp:docstring>
+    </property>
+
+    <property name="MinimumAvatarHeight"
+      tp:name-for-bindings="Minimum_Avatar_Height"
+      type="u" access="read">
+      <tp:added version="0.17.22"/>
+      <tp:docstring>
+        The minimum height in pixels of an avatar on this protocol, which MAY
+        be 0.
+        This property cannot change after the Connection goes to the Connected
+        state.
+      </tp:docstring>
+    </property>
+
+    <property name="MinimumAvatarWidth"
+      tp:name-for-bindings="Minimum_Avatar_Width"
+      type="u" access="read">
+      <tp:added version="0.17.22"/>
+      <tp:docstring>
+        The minimum width in pixels of an avatar on this protocol, which MAY
+        be 0.
+        This property cannot change after the Connection goes to the Connected
+        state.
+      </tp:docstring>
+    </property>
+
+    <property name="RecommendedAvatarHeight"
+      tp:name-for-bindings="Recommended_Avatar_Height"
+      type="u" access="read">
+      <tp:added version="0.17.22"/>
+      <tp:docstring>
+        The recommended height in pixels of an avatar on this protocol, or 0 if
+        there is no preferred height.
+        This property cannot change after the Connection goes to the Connected
+        state.
+
+        <tp:rationale>
+          In XMPP a recommended width is given by the protocol specification;
+          in proprietary protocols, using the same avatar size as the
+          proprietary client is likely to lead to the best display to other
+          users.
+        </tp:rationale>
+      </tp:docstring>
+    </property>
+
+    <property name="RecommendedAvatarWidth"
+      tp:name-for-bindings="Recommended_Avatar_Width"
+      type="u" access="read">
+      <tp:added version="0.17.22"/>
+      <tp:docstring>
+        The recommended width in pixels of an avatar on this protocol, or 0 if
+        there is no preferred width.
+        This property cannot change after the Connection goes to the Connected
+        state.
+
+        <tp:rationale>
+          The rationale is the same as for
+          <tp:member-ref>RecommendedAvatarHeight</tp:member-ref>.
+        </tp:rationale>
+      </tp:docstring>
+    </property>
+
+    <property name="MaximumAvatarHeight"
+      tp:name-for-bindings="Maximum_Avatar_Height"
+      type="u" access="read">
+      <tp:added version="0.17.22"/>
+      <tp:docstring>
+        The maximum height in pixels of an avatar on this protocol, or 0 if
+        there is no limit.
+        This property cannot change after the Connection goes to the Connected
+        state.
+      </tp:docstring>
+    </property>
+
+    <property name="MaximumAvatarWidth"
+      tp:name-for-bindings="Maximum_Avatar_Width"
+      type="u" access="read">
+      <tp:added version="0.17.22"/>
+      <tp:docstring>
+        The maximum width in pixels of an avatar on this protocol, or 0 if
+        there is no limit.
+        This property cannot change after the Connection goes to the Connected
+        state.
+      </tp:docstring>
+    </property>
+
+    <property name="MaximumAvatarBytes"
+      tp:name-for-bindings="Maximum_Avatar_Bytes"
+      type="u" access="read">
+      <tp:added version="0.17.22"/>
+      <tp:docstring>
+        The maximum size in bytes of an avatar on this protocol, or 0 if
+        there is no limit.
+        This property cannot change after the Connection goes to the Connected
+        state.
+      </tp:docstring>
+    </property>
+
+    <method name="GetKnownAvatarTokens"
+      tp:name-for-bindings="Get_Known_Avatar_Tokens">
       <arg direction="in" name="Contacts" type="au" tp:type="Contact_Handle[]">
+        <tp:docstring>
+        An array of handles representing contacts
+        </tp:docstring>
+      </arg>
+      <arg direction="out" type="a{us}" name="Tokens" tp:type="Avatar_Token_Map">
+        <tp:docstring>
+          A dictionary of handles mapped to avatar tokens, containing only
+          the known avatar tokens.
+        </tp:docstring>
+      </arg>
+      <tp:docstring>
+        Get the unique tokens for the given contacts' avatars. These tokens
+        can be persisted across connections, and should be used by the client
+        to check whether the avatars have been updated.  For handles other than
+        the self handle, only tokens that are already known are returned; an
+        empty token means the given contact has no avatar.  However, a CM must
+        always have the tokens for the self handle if one is set (even if it is
+        set to no avatar).  On protocols where the avatar does not persist
+        between connections, a CM should omit the self handle from the returned
+        map until an avatar is explicitly set or cleared.
+      </tp:docstring>
+      <tp:possible-errors>
+        <tp:error name="im.telepathy1.Error.Disconnected"/>
+        <tp:error name="im.telepathy1.Error.NetworkError"/>
+        <tp:error name="im.telepathy1.Error.InvalidArgument"/>
+        <tp:error name="im.telepathy1.Error.PermissionDenied"/>
+        <tp:error name="im.telepathy1.Error.NotAvailable"/>
+      </tp:possible-errors>
+    </method>
+
+    <method name="RequestAvatars" tp:name-for-bindings="Request_Avatars">
+      <arg direction="in" name="Contacts" type="au"
+        tp:type="Contact_Handle[]">
         <tp:docstring>
           The contacts to retrieve avatars for
         </tp:docstring>
       </arg>
       <tp:docstring>
-        <p>Refresh avatars for a number of contacts.</p>
-
-        <p><tp:member-ref>AvatarsUpdated</tp:member-ref> signal is emitted when
-        avatars are retrieved, if it changed. It is not mandatory to wait for
-        all avatars to be retrieved before emitting this signal, avatars could
-        be signaled in multiple batches, or even for each contact separately.
-        </p>
-
-        <p>If the handles are valid but retrieving an
+        Request avatars for a number of contacts. The
+        <tp:member-ref>AvatarRetrieved</tp:member-ref> signal is emitted for
+        each avatar retrieved. If the handles are valid but retrieving an
         avatar fails (for any reason, including the contact not having an
-        avatar) signal is not emitted for that contact.</p>
-
-        <p>This MAY be called by clients wanting to get the avatar image when
-        <tp:token-ref>avatar</tp:token-ref> as been omited from the
-        contact attributes.</p>
+        avatar) the AvatarRetrieved signal is not emitted for that contact.
       </tp:docstring>
       <tp:possible-errors>
         <tp:error name="im.telepathy1.Error.Disconnected"/>
@@ -140,6 +298,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <arg direction="in" name="MIME_Type" type="s">
         <tp:docstring>
           A string representing the image MIME type
+        </tp:docstring>
+      </arg>
+      <arg direction="out" type="s" name="Token" tp:type="Avatar_Token">
+        <tp:docstring>
+          The string token of the new avatar
         </tp:docstring>
       </arg>
       <tp:docstring>
@@ -167,167 +330,66 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
 
-    <property name="AvatarPersists"
-      tp:name-for-bindings="Avatar_Persists"
-      type="b" access="read" tp:immutable="yes">
-      <tp:added version="0.UNRELEASED"/>
-      <tp:docstring>
-        Whether or not the server stores the self contact's avatar.
-        <tp:rationale>
-          <p>Mission Control needs to know if the avatar must be re-set on the
-          Connection each time the account goes online.</p>
-        </tp:rationale>
+    <tp:contact-attribute name="token" type="s" tp:type="Avatar_Token">
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>The same string that would be returned by
+          <tp:member-ref>GetKnownAvatarTokens</tp:member-ref>
+          (omitted from the result if the contact's avatar token is not known,
+          present as an empty string if the contact is known not to have
+          an avatar). Unlike in the
+          <tp:member-ref>GetKnownAvatarTokens</tp:member-ref>
+          method, the avatar tokens for the self handle aren't required to be
+          present. This attribute should not be used to determine whether or
+          not the Avatar needs to be set.
+        </p>
       </tp:docstring>
-    </property>
-
-    <property name="SupportedAvatarMIMETypes"
-      tp:name-for-bindings="Supported_Avatar_MIME_Types"
-      type="as" access="read" tp:immutable="yes">
-      <tp:added version="0.17.22"/>
-      <tp:docstring>
-        An array of supported MIME types (e.g. "image/jpeg").
-        Clients MAY assume that the first type in this array is preferred.
-        This property cannot change after the Connection goes to the Connected
-        state.
-      </tp:docstring>
-    </property>
-
-    <property name="MinimumAvatarHeight"
-      tp:name-for-bindings="Minimum_Avatar_Height"
-      type="u" access="read" tp:immutable="yes">
-      <tp:added version="0.17.22"/>
-      <tp:docstring>
-        The minimum height in pixels of an avatar on this protocol, which MAY
-        be 0.
-        This property cannot change after the Connection goes to the Connected
-        state.
-      </tp:docstring>
-    </property>
-
-    <property name="MinimumAvatarWidth"
-      tp:name-for-bindings="Minimum_Avatar_Width"
-      type="u" access="read" tp:immutable="yes">
-      <tp:added version="0.17.22"/>
-      <tp:docstring>
-        The minimum width in pixels of an avatar on this protocol, which MAY
-        be 0.
-        This property cannot change after the Connection goes to the Connected
-        state.
-      </tp:docstring>
-    </property>
-
-    <property name="RecommendedAvatarHeight"
-      tp:name-for-bindings="Recommended_Avatar_Height"
-      type="u" access="read" tp:immutable="yes">
-      <tp:added version="0.17.22"/>
-      <tp:docstring>
-        The recommended height in pixels of an avatar on this protocol, or 0 if
-        there is no preferred height.
-        This property cannot change after the Connection goes to the Connected
-        state.
-
-        <tp:rationale>
-          In XMPP a recommended width is given by the protocol specification;
-          in proprietary protocols, using the same avatar size as the
-          proprietary client is likely to lead to the best display to other
-          users.
-        </tp:rationale>
-      </tp:docstring>
-    </property>
-
-    <property name="RecommendedAvatarWidth"
-      tp:name-for-bindings="Recommended_Avatar_Width"
-      type="u" access="read" tp:immutable="yes">
-      <tp:added version="0.17.22"/>
-      <tp:docstring>
-        The recommended width in pixels of an avatar on this protocol, or 0 if
-        there is no preferred width.
-        This property cannot change after the Connection goes to the Connected
-        state.
-
-        <tp:rationale>
-          The rationale is the same as for
-          <tp:member-ref>RecommendedAvatarHeight</tp:member-ref>.
-        </tp:rationale>
-      </tp:docstring>
-    </property>
-
-    <property name="MaximumAvatarHeight"
-      tp:name-for-bindings="Maximum_Avatar_Height"
-      type="u" access="read" tp:immutable="yes">
-      <tp:added version="0.17.22"/>
-      <tp:docstring>
-        The maximum height in pixels of an avatar on this protocol, or 0 if
-        there is no limit.
-        This property cannot change after the Connection goes to the Connected
-        state.
-      </tp:docstring>
-    </property>
-
-    <property name="MaximumAvatarWidth"
-      tp:name-for-bindings="Maximum_Avatar_Width"
-      type="u" access="read" tp:immutable="yes">
-      <tp:added version="0.17.22"/>
-      <tp:docstring>
-        The maximum width in pixels of an avatar on this protocol, or 0 if
-        there is no limit.
-        This property cannot change after the Connection goes to the Connected
-        state.
-      </tp:docstring>
-    </property>
-
-    <property name="MaximumAvatarBytes"
-      tp:name-for-bindings="Maximum_Avatar_Bytes"
-      type="u" access="read" tp:immutable="yes">
-      <tp:added version="0.17.22"/>
-      <tp:docstring>
-        The maximum size in bytes of an avatar on this protocol, or 0 if
-        there is no limit.
-        This property cannot change after the Connection goes to the Connected
-        state.
-      </tp:docstring>
-    </property>
+    </tp:contact-attribute>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>An interface for requesting avatars for contacts on a given connection,
-      receiving notification when avatars are changed, and publishing your own
-      avatar.</p>
+    receiving notification when avatars are changed, and publishing your own
+    avatar.</p>
 
-      <p>Connection Managers SHOULD store avatar images on disk in
-      <em>XDG_CACHE_HOME</em>/telepathy/avatars/<em>cm</em> where <em>cm</em>
-      is choosen by the Connection Manager in a way that an avatar
-      update always result in a different URI. For example using the image
-      sha1 is a good idea, but not using the contact's ID.</p>
+    <p>Avatars are identified by a string, the <tp:type>Avatar_Token</tp:type>,
+    which represents a particular avatar. Tokens MUST be chosen by the
+    connection manager in such a way that the triple
+    (<tp:type>Connection_Manager_Name</tp:type>,
+    <tp:type>Protocol_Name</tp:type>,
+    <tp:type>Avatar_Token</tp:type>) uniquely identifies an avatar.
+    An empty token means that an avatar has not been set for this contact, and
+    a changed token implies the contact's avatar has changed, but the strings
+    should otherwise be considered opaque by clients.</p>
 
-      <p>Example 1: on XMPP with XEP-0084 (PEP avatars) or XEP-0153
-      (vCard avatars), avatars are announced by their SHA-1, so CM
-      implementations could base their filenames in the cache on that SHA-1.
-      Similarly, in AIM/ICQ, avatars are announced by their MD5.</p>
+    <p>A client should use <tp:member-ref>GetKnownAvatarTokens</tp:member-ref>
+    to request the tokens for the
+    avatars of all the contacts it is interested in when it connects. The
+    avatars can then be requested using
+    <tp:member-ref>RequestAvatars</tp:member-ref> for the contacts.  Clients
+    should bind to the <tp:member-ref>AvatarUpdated</tp:member-ref> signal and
+    request a new copy of
+    the avatar when a contacts' avatar token changes. Clients should cache the
+    token and data of each contact's avatar between connections, to avoid
+    repeatedly retrieving the same avatar.</p>
 
-      <p>Example 2: in protocols where a change to a contact's avatar is
-      announced by a "last updated" timestamp, CM implementations could base
-      their filenames in the cache on the pair (contact ID, timestamp).</p>
+    <p>To publish an avatar, a client should use
+    <tp:member-ref>SetAvatar</tp:member-ref> to provide an image which meets
+    the requirements returned by the the properties on the interface.
+    On some protocols the avatar is stored on the server, so setting
+    the avatar is persistent, but on others it is transferred via a peer to
+    peer mechanism, so needs to be set every connection. Hence, on every
+    connection, clients should inspect the avatar token of the connection's
+    self handle using <tp:member-ref>GetKnownAvatarTokens</tp:member-ref>; if
+    the self handle is not in the
+    returned map, the client should re-set the avatar. If the self handle's
+    avatar token is known, but the avatar has been changed locally since the
+    last connection, the client should upload the new avatar; if the avatar has
+    not changed locally, then the client should download the avatar from the
+    server if its token differs from the that of the local avatar.</p>
 
-      <p>For each avatar for which the MIME type is known, Connection Manager
-      MUST store that in the file with the same name + ".mime"</p>
-
-      <p>If an avatar is missing from the cache, Connection Manager will only
-      request it from server if at least one client claimed interest in this
-      interface. However the self contact's avatar will always be requested even
-      if no client explicitely claimed its interest.</p>
-
-      <p>The avatar cache is maintained by the Connection Manager. It is its
-      responsability to eventually remove outdated avatars from the storage.</p>
-
-      <p>Clients can then get the URI of the avatar using the
-      <tp:token-ref>avatar</tp:token-ref> contact attribute, and listening
-      to the <tp:member-ref>AvatarsUpdated</tp:member-ref> signal for change
-      notification.</p>
-
-      <p>To remove the published avatar on protocols which have persistent
-      avatars, a client should use the
-      <tp:member-ref>ClearAvatar</tp:member-ref> method. This method can
-      safely be used even if there is no avatar for this connection.</p>
+    <p>To remove the published avatar on protocols which have persistent avatars,
+    a client should use the <tp:member-ref>ClearAvatar</tp:member-ref> method.
+    This method can safely be used even if there is no avatar for this
+    connection.</p>
     </tp:docstring>
   </interface>
 </node>
