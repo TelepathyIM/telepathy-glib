@@ -103,7 +103,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
       <tp:changed version="0.17.1">Prior to version 0.17.1, the allowed
         characters were not specified</tp:changed>
-      <tp:changed version="UNRELEASED">
+      <tp:changed version="0.99.1">
         In Telepathy 0.x, protocol names could contain hyphen/minus signs,
         but not underscores.
       </tp:changed>
@@ -589,7 +589,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     <tp:changed version="0.25.2">Prior to version 0.25.2 the
       serialization of object-path arrays (signature 'ao') was not
       defined</tp:changed>
-    <tp:changed version="0.UNRELEASED">GetParameters and ListProtocols
+    <tp:changed version="0.99.1">GetParameters and ListProtocols
       have been removed in favour of the
       <tp:member-ref>Protocols</tp:member-ref> property.</tp:changed>
   </interface>

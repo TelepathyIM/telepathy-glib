@@ -21,7 +21,7 @@
   <interface name="im.telepathy1.Connection.Interface.ContactList1">
     <tp:requires interface="im.telepathy1.Connection"/>
     <tp:added version="0.21.0">(as stable API)</tp:added>
-    <tp:changed version="UNRELEASED">The deprecated ContactsChanged
+    <tp:changed version="0.99.1">The deprecated ContactsChanged
       signal has been replaced with the ContactsChangedWithID
       version.</tp:changed>
 

@@ -374,7 +374,7 @@
       <tp:added version="0.17.11">(as stable API)</tp:added>
       <tp:changed version="0.17.14">Added a guarantee of ordering
         relative to the old NewChannel signal (now removed)</tp:changed>
-      <tp:changed version="0.UNRELEASED">Added recommendation against
+      <tp:changed version="0.27.1">Added recommendation against
         announcing channels together</tp:changed>
 
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">

@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       namespace='imt1.Channel.Interface'>Subject1</tp:dbus-ref> and
       <tp:dbus-ref namespace='imt1.Channel.Interface'>RoomConfig1</tp:dbus-ref>
       interfaces.</tp:changed>
-    <tp:changed version="UNRELEASED">Deprecated methods and types have
+    <tp:changed version="0.99.1">Deprecated methods and types have
       removed from this interface. Additionally, this interface has
       been merged with the old, now-removed, Messages interface as it
       was a requirement since version 0.21.5.</tp:changed>

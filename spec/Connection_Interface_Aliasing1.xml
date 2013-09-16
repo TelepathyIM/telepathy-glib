@@ -59,7 +59,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     <property name="AliasFlags"
       tp:name-for-bindings="Alias_Flags" type="u" access="read"
       tp:immutable="yes">
-      <tp:added version="0.UNRELEASED"/>
+      <tp:added version="0.99.1"/>
       <tp:docstring>
         A bitwise OR of flags from ConnectionAliasFlags detailing the behaviour
         of aliases on this connection.

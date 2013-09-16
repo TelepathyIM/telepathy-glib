@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </tp:license>
   <interface name="im.telepathy1.Connection.Interface.Avatars1">
     <tp:requires interface="im.telepathy1.Connection"/>
-    <tp:changed version="UNRELEASED">The deprecated method,
+    <tp:changed version="0.99.1">The deprecated method,
       GetAvatarRequirements, has been removed in favour of using the
       D-Bus properties instead.</tp:changed>
 

@@ -397,7 +397,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       as a prefix.
     </tp:changed>
 
-    <tp:changed version="UNRELEASED">Deprecated methods
+    <tp:changed version="0.99.1">Deprecated methods
       (GetChannelType, GetHandle, and GetInterfaces) have been removed
       from this interface.</tp:changed>
   </interface>

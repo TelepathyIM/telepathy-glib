@@ -81,9 +81,6 @@ USA.</p>
         is not yet in the CONNECTED state, this signal is not guaranteed
         to be emitted.
       </tp:docstring>
-      <tp:added version="0.UNRELEASED">Clients MAY assume that if the
-        SelfHandle and SelfID property exists, this signal will be emitted when
-        necessary.</tp:added>
 
       <arg type="u" tp:type="Contact_Handle" name="Self_Handle">
         <tp:docstring>
@@ -120,7 +117,7 @@ USA.</p>
         If the connection is not yet in the CONNECTED state, the value of
         this property MAY be empty string.
       </tp:docstring>
-      <tp:added version="0.UNRELEASED"/>
+      <tp:added version="0.99.1"/>
     </property>
 
     <property name="Status" tp:name-for-bindings="Status"
@@ -743,7 +740,7 @@ USA.</p>
       are now mandatory. Their functionality will be merged into the main
       Connection interface at some point in future.</tp:changed>
 
-    <tp:changed version="UNRELEASED">All deprecated types, methods,
+    <tp:changed version="0.99.1">All deprecated types, methods,
       and signals have been removed from this interface including
       anything to do with handle reference counting.</tp:changed>
 

@@ -182,7 +182,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
     <tp:enum name="Socket_Access_Control" type="u"
       array-name="Socket_Access_Control_List">
-      <tp:changed version="UNRELEASED">The deprecated Netmask enum
+      <tp:changed version="0.99.1">The deprecated Netmask enum
         value has been removed.</tp:changed>
       <tp:enumvalue suffix="Localhost" value="0">
         <tp:docstring>

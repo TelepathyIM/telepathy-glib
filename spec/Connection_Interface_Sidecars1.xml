@@ -22,7 +22,7 @@
 
   <interface name="im.telepathy1.Connection.Interface.Sidecars1">
     <tp:requires interface="im.telepathy1.Connection"/>
-    <tp:added version="0.UNRELEASED">from Connection.FUTURE</tp:added>
+    <tp:added version="0.99.1">from Connection.FUTURE</tp:added>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>A <a href="http://en.wikipedia.org/wiki/Sidecar">sidecar</a>

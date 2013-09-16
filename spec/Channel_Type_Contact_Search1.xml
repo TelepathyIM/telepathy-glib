@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       rather than handles; consequently, the values need not include
       <tt>x-telepathy-identifier</tt>.
     </tp:added>
-    <tp:changed version="UNRELEASED">
+    <tp:changed version="0.99.1">
       The requestable channel class now fixes TargetHandleType=NONE.
     </tp:changed>
 

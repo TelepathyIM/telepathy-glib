@@ -76,7 +76,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
         <dl>
           <dt>handle-name (s)</dt>
-          <dd>The identifier of the room</dd>
+          <dd>The identifier of the room.
+            This property is mandatory.</dd>
 
           <dt>name (s)</dt>
           <dd>The human-readable name of the room if different from the handle</dd>
