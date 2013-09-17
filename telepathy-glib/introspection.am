@@ -129,7 +129,7 @@ TelepathyGLibDBus_1_gir_SCANNERFLAGS = \
 	--identifier-prefix=Tp \
 	-I$(top_builddir) \
 	-I$(top_srcdir) \
-	--c-include="telepathy-glib/telepathy-glib.h" \
+	--c-include="telepathy-glib/telepathy-glib-dbus.h" \
 	--warn-all \
 	$(ERROR_SCANNERFLAGS) \
 	--include-uninstalled=TelepathyGLib-1.gir \
@@ -143,6 +143,9 @@ TelepathyGLibDBus_1_gir_PACKAGES = \
 	dbus-glib-1 \
 	$(NULL)
 TelepathyGLibDBus_1_gir_CFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS)
+TelepathyGLibDBus_1_gir_LDFLAGS = \
+	-ltelepathy-glib-1-core \
+	$(NULL)
 
 _gen/proxy-introspectable.h: proxy.h introspection.am
 	@$(MKDIR_P) _gen
