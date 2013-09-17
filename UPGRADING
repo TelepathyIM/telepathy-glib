@@ -10,7 +10,7 @@ API/Behaviour changes
 
  - TpSimpleClientFactory got renamed to TpClientFactory
 
- - tp_automatic_client_factory_new() now returns a TpSimpleClientFactory*
+ - tp_automatic_client_factory_new() now returns a TpClientFactory*
    for less boring casting.
 
  - Tp{Basic,Automatic}ProxyFactory and TpClientChannelFactory, as well as all
@@ -37,7 +37,7 @@ API/Behaviour changes
      as part of TP_CHANNEL_FEATURE_CORE;
    * group TpContacts are now prepared as part of TP_CHANNEL_FEATURE_GROUP.
 
- - TP_CHANNEL_FEATURE_GROUP is not CORE anymore, so must be request explicitly
+ - TP_CHANNEL_FEATURE_GROUP is not CORE anymore, so must be requested explicitly
    to introspect Group interface.
 
  - Some of the Group APIs of TpChannel has been renamed:
@@ -64,6 +64,34 @@ API/Behaviour changes
  - TpAccountRequest::connection-manager property has been renamed to ::cm-name,
    and TpAccountRequest::protocol property has been renamed to ::protocol-name.
 
- - TP_CONTACT_FEATURE_AVATAR_DATA and TP_CONTACT_FEATURE_AVATAR_TOKEN got
-   replaced by a single feature TP_CONTACT_FEATURE_AVATAR. Avatar tokens are no
-   more exposed in the API since they are implementation details.
+ - tp_group_mixin_change_members() now has the signature of
+   tp_group_mixin_change_members_detailed(). To help transition this function
+   can be added internally:
+
+        static void
+        change_members (GObject *obj,
+            const gchar *message,
+            const TpIntset *add,
+            const TpIntset *del,
+            const TpIntset *add_local_pending,
+            const TpIntset *add_remote_pending,
+            TpHandle actor,
+            TpChannelGroupChangeReason reason)
+        {
+          GHashTable *details;
+
+          details = tp_asv_new (
+              "actor", G_TYPE_UINT, actor,
+              "change-reason", G_TYPE_UINT, reason,
+              "message", G_TYPE_STRING, message,
+              NULL);
+
+          tp_group_mixin_change_members (obj,
+              add, del, add_local_pending, add_remote_pending, details);
+
+          g_hash_table_unref (details);
+        }
+
+ - TpBaseContactList is not a channel manager anymore. An instance should be
+   created in TpBaseConnection::constructed instead of
+   TpBaseConnection::create_channel_factories.
