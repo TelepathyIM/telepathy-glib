@@ -85,11 +85,6 @@ TelepathyGLib_1_gir_FILES = \
 	_gen/telepathy-enums.h _gen/telepathy-enums-gtk-doc.h \
 	$(NULL)
 
-TelepathyGLibDBus-1.gir: libtelepathy-glib-1-dbus.la TelepathyGLib-1.gir
-TelepathyGLibDBus_1_gir_FILES = \
-	_gen/telepathy-interfaces.h \
-	$(NULL)
-
 TelepathyGLib_1_gir_NAMESPACE = TelepathyGLib
 TelepathyGLib_1_gir_VERSION = 1
 TelepathyGLib_1_gir_LIBS = \
@@ -119,12 +114,20 @@ TelepathyGLib_1_gir_PACKAGES = \
 	telepathy-glib-1-dbus \
 	$(NULL)
 
+TelepathyGLibDBus-1.gir: libtelepathy-glib-1-dbus.la TelepathyGLib-1.gir
+TelepathyGLibDBus_1_gir_FILES = \
+	_gen/telepathy-interfaces.h \
+	$(NULL)
+
 TelepathyGLibDBus_1_gir_NAMESPACE = TelepathyGLibDBus
 TelepathyGLibDBus_1_gir_VERSION = 1
 TelepathyGLibDBus_1_gir_LIBS = \
     libtelepathy-glib-1-dbus.la \
+    libtelepathy-glib-1-core.la \
     $(NULL)
 TelepathyGLibDBus_1_gir_EXPORT_PACKAGES = telepathy-glib-1-dbus
+TelepathyGLibDBus_1_gir_CFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS)
+
 TelepathyGLibDBus_1_gir_SCANNERFLAGS = \
 	--identifier-prefix=Tp \
 	-I$(top_builddir) \
@@ -134,17 +137,15 @@ TelepathyGLibDBus_1_gir_SCANNERFLAGS = \
 	$(ERROR_SCANNERFLAGS) \
 	--include-uninstalled=TelepathyGLib-1.gir \
 	$(NULL)
+
 TelepathyGLibDBus_1_gir_INCLUDES = \
 	GLib-2.0 \
 	Gio-2.0 \
 	$(NULL)
+
 TelepathyGLibDBus_1_gir_PACKAGES = \
 	gio-2.0	\
 	dbus-glib-1 \
-	$(NULL)
-TelepathyGLibDBus_1_gir_CFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS)
-TelepathyGLibDBus_1_gir_LDFLAGS = \
-	-ltelepathy-glib-1-core \
 	$(NULL)
 
 _gen/proxy-introspectable.h: proxy.h introspection.am
