@@ -1198,7 +1198,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    * The identifier representing the local user. This is the result of
    * inspecting #TpBaseConnection:self-handle.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.99.1
    */
   param_spec = g_param_spec_string ("self-id",
       "Connection.SelfID",

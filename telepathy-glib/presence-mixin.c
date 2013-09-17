@@ -457,7 +457,7 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
  *                         G_STRUCT_OFFSET (SomeObject, presence_mixin));
  * </programlisting></informalexample>
  *
- * Since 0.UNRELEASED @obj must be a #TpBaseConnection subclass.
+ * Since 0.99.1 @obj must be a #TpBaseConnection subclass.
  */
 void
 tp_presence_mixin_init (GObject *obj,

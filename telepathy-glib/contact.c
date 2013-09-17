@@ -90,7 +90,7 @@ struct _TpContact {
  * When this feature is prepared, the contact's alias has been retrieved.
  * In particular, the #TpContact:alias property has been set.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 
 GQuark
@@ -129,7 +129,7 @@ tp_contact_get_feature_quark_avatar_token (void)
  * #TpContact:presence-status, and #TpContact:presence-message
  * properties have been set.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 
 GQuark
@@ -148,7 +148,7 @@ tp_contact_get_feature_quark_presence (void)
  * retrieved.  In particular, the #TpContact:location and
  * #TpContact:location-vardict properties have been set.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 
 GQuark
@@ -167,7 +167,7 @@ tp_contact_get_feature_quark_location (void)
  * retrieved. In particular, the #TpContact:capabilities property has
  * been set.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 
 GQuark
@@ -188,7 +188,7 @@ tp_contact_get_feature_quark_capabilities (void)
  *
  * This feature also implies the %TP_CONTACT_FEATURE_AVATAR_TOKEN.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 
 GQuark
@@ -207,7 +207,7 @@ tp_contact_get_feature_quark_avatar_data (void)
  * retrieved. In particular, the #TpContact:contact-info property has
  * been set.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 
 GQuark
@@ -226,7 +226,7 @@ tp_contact_get_feature_quark_contact_info (void)
  * retrieved. In particular, the #TpContact:client-types property has
  * been set.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 
 GQuark
@@ -249,7 +249,7 @@ tp_contact_get_feature_quark_client_types (void)
  * This feature requires a Connection implementing the
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST interface.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 
 GQuark
@@ -271,7 +271,7 @@ tp_contact_get_feature_quark_subscription_states (void)
  * This feature requires a Connection implementing the
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS interface.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 
 GQuark
@@ -293,7 +293,7 @@ tp_contact_get_feature_quark_contact_groups (void)
  * This feature requires a Connection implementing the
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING interface.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 
 GQuark
@@ -527,7 +527,7 @@ get_feature (GQuark feature)
  *
  * Returns: %TRUE if @self has been set up to track the feature @feature
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 gboolean
 tp_contact_has_feature (TpContact *self,

@@ -103,7 +103,7 @@
  * which must currently be %NULL (a meaning may be defined for these in a
  * future version of telepathy-glib).
  *
- * Since 0.UNRELEASED
+ * Since 0.99.1
  */
 
 /**

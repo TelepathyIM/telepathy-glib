@@ -1086,7 +1086,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    * members, until %TP_CHANNEL_FEATURE_GROUP has ben prepared using
    * tp_proxy_prepare_async().
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.99.1
    */
   signals[SIG_CHAT_STATE_CHANGED] = g_signal_new (
       "chat-state-changed",

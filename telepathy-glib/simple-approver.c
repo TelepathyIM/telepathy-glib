@@ -276,7 +276,7 @@ tp_simple_approver_class_init (TpSimpleApproverClass *cls)
  *
  * Returns: (type TelepathyGLib.SimpleApprover): a new #TpSimpleApprover
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 TpBaseClient *
 tp_simple_approver_new (TpClientFactory *factory,

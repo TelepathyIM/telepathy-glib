@@ -978,7 +978,7 @@ tp_protocol_dup_param_names (TpProtocol *self)
  * Returns: (transfer none) (type GLib.PtrArray) (element-type TelepathyGLib.ConnectionManagerParam):
  *  a #GPtrArray of #TpConnectionManagerParam.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 GPtrArray *
 tp_protocol_get_params (TpProtocol *self)

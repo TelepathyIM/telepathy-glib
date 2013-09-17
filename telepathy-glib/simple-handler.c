@@ -330,7 +330,7 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
  *
  * Returns: (type TelepathyGLib.SimpleHandler): a new #TpSimpleHandler
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 TpBaseClient *
 tp_simple_handler_new (TpClientFactory *factory,

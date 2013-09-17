@@ -1106,7 +1106,7 @@ _tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,
  *
  * Returns: (transfer container) (element-type utf8 GObject.Value): a map
  *  from property name (without the interface name) to value
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 GHashTable *
 tp_dbus_properties_mixin_dup_all (GObject *self,

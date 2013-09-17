@@ -166,7 +166,7 @@ tp_channel_get_feature_quark_core (void)
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 
 GQuark
@@ -1228,7 +1228,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * Change notification is via notify::group-flags or
    * TpChannel::group-flags-changed.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.99.1
    */
   param_spec = g_param_spec_uint ("group-flags", "Group.GroupFlags",
       "0 if not a group", 0, G_MAXUINT32, 0,
@@ -1371,7 +1371,7 @@ tp_channel_class_init (TpChannelClass *klass)
    *
    * Change notification is via notify::group-self-contact.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.99.1
    */
   param_spec = g_param_spec_object ("group-self-contact", "Group.SelfHandle",
       "Undefined if not a group", TP_TYPE_CONTACT,
@@ -1403,7 +1403,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * finished preparing %TP_CHANNEL_FEATURE_GROUP; until then, it may be
    * omitted.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.99.1
    */
   signals[SIGNAL_GROUP_MEMBERS_CHANGED] = g_signal_new (
       "group-members-changed", G_OBJECT_CLASS_TYPE (klass),
@@ -1537,7 +1537,7 @@ channel_join_cb (TpChannel *self,
  * %TP_CHANNEL_FEATURE_GROUP feature must be prepared before calling this
  * function.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 void
 tp_channel_join_async (TpChannel *self,
@@ -1575,7 +1575,7 @@ tp_channel_join_async (TpChannel *self,
  *
  * Returns: %TRUE if the channel was successfully joined; %FALSE otherwise
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 gboolean
 tp_channel_join_finish (TpChannel *self,
@@ -1651,7 +1651,7 @@ channel_remove_self_cb (TpChannel *channel,
  * You can then call tp_channel_leave_finish() to get the result of
  * the operation.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 void
 tp_channel_leave_async (TpChannel *self,

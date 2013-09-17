@@ -451,7 +451,7 @@ error:
  *     self->connection);
  * </programlisting></informalexample>
  *
- * Since 0.UNRELEASED @obj must be a #TpBaseChannel subclass.
+ * Since 0.99.1 @obj must be a #TpBaseChannel subclass.
  *
  * Since: 0.7.21
  */

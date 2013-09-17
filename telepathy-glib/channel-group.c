@@ -1030,7 +1030,7 @@ _tp_channel_group_prepare_async (TpProxy *proxy,
  * <!-- -->
  *
  * Returns: the value of #TpChannel:group-flags
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 TpChannelGroupFlags
 tp_channel_group_get_flags (TpChannel *self)
@@ -1047,7 +1047,7 @@ tp_channel_group_get_flags (TpChannel *self)
  * <!-- -->
  *
  * Returns: (transfer none): the value of #TpChannel:group-self-contact
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 TpContact *
 tp_channel_group_get_self_contact (TpChannel *self)
@@ -1072,7 +1072,7 @@ tp_channel_group_get_self_contact (TpChannel *self)
  * Returns: (transfer container) (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
  *  a new #GPtrArray of #TpContact, free it with g_ptr_array_unref(), or %NULL.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 GPtrArray *
 tp_channel_group_dup_members (TpChannel *self)
@@ -1097,7 +1097,7 @@ tp_channel_group_dup_members (TpChannel *self)
  * Returns: (transfer container) (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
  *  a new #GPtrArray of #TpContact, free it with g_ptr_array_unref(), or %NULL.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 GPtrArray *
 tp_channel_group_dup_local_pending (TpChannel *self)
@@ -1122,7 +1122,7 @@ tp_channel_group_dup_local_pending (TpChannel *self)
  * Returns: (transfer container) (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
  *  a new #GPtrArray of #TpContact, free it with g_ptr_array_unref(), or %NULL.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 GPtrArray *
 tp_channel_group_dup_remote_pending (TpChannel *self)
@@ -1154,7 +1154,7 @@ tp_channel_group_dup_remote_pending (TpChannel *self)
  * and "" into @message, and return %FALSE.
  *
  * Returns: %TRUE if the contact is in fact local-pending
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 gboolean
 tp_channel_group_get_local_pending_info (TpChannel *self,
@@ -1252,7 +1252,7 @@ tp_channel_group_get_local_pending_info (TpChannel *self,
  *
  * Returns: (transfer none): the global contact that owns the given contact,
  *  or %NULL.
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 TpContact *
 tp_channel_group_get_contact_owner (TpChannel *self,

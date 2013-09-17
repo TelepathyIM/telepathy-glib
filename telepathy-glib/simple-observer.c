@@ -302,7 +302,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
  *
  * Returns: (type TelepathyGLib.SimpleObserver): a new #TpSimpleObserver
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 TpBaseClient *
 tp_simple_observer_new (TpClientFactory *factory,

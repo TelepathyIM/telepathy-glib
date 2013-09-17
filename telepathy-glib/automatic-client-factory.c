@@ -82,7 +82,7 @@
  *   </listitem>
  * </itemizedlist>
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 
 /**
@@ -263,7 +263,7 @@ tp_automatic_client_factory_class_init (TpAutomaticClientFactoryClass *klass)
  *
  * Returns: a new #TpAutomaticClientFactory
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.1
  */
 TpClientFactory *
 tp_automatic_client_factory_new (TpDBusDaemon *dbus)

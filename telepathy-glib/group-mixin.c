@@ -310,7 +310,7 @@ tp_group_mixin_class_allow_self_removal (GObjectClass *obj_cls)
  *
  * Initialize the mixin.
  *
- * Since 0.UNRELEASED @obj must be a #TpBaseChannel subclass.
+ * Since 0.99.1 @obj must be a #TpBaseChannel subclass.
  */
 void
 tp_group_mixin_init (GObject *obj,
