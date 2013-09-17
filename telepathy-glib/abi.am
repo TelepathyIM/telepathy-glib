@@ -72,7 +72,9 @@ libtelepathy_glib_1_core_la_DEPENDENCIES += \
     _gen/core-abi.txt \
     $(NULL)
 
-if OFFICIAL_RELEASE
+# Always allow undocumented ABI for now
+# will be "if OFFICIAL_RELEASE" eventually
+if FALSE
 # don't allow undocumented ABI
 MAKE_VERSION_SCRIPT_FLAGS =
 else
