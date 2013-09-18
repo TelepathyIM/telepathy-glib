@@ -283,7 +283,7 @@ setup_pre_connect (
         EXAMPLE_TYPE_CONTACT_LIST_CONNECTION,
         "account", account,
         "simulation-delay", 0,
-        "protocol", "example-contact-list",
+        "protocol", "example_contact_list",
         NULL);
   test->service_conn_as_base = TP_BASE_CONNECTION (test->service_conn);
   g_assert (test->service_conn != NULL);

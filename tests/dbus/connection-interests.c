@@ -168,7 +168,7 @@ setup (Test *test,
   test->service_conn = tp_tests_object_new_static_class (
         interested_connection_get_type (),
         "account", "me@example.com",
-        "protocol", "simple-protocol",
+        "protocol", "simple_protocol",
         NULL);
   test->service_conn_as_base = TP_BASE_CONNECTION (test->service_conn);
   g_assert (test->service_conn != NULL);
@@ -183,8 +183,8 @@ setup (Test *test,
 
   test->conn = tp_tests_connection_new (test->client_bus, test->conn_name,
       test->conn_path, &error);
-  g_assert (test->conn != NULL);
   g_assert_no_error (error);
+  g_assert (test->conn != NULL);
 
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
 

@@ -2243,21 +2243,6 @@ _tp_connection_parse (const gchar *path_or_bus_name,
     }
 
   dup_protocol = g_strndup (protocol_start, account_start - protocol_start - 1);
-  if (!tp_strdiff (dup_protocol, "local_2dxmpp"))
-    {
-      /* the CM's telepathy-glib is older than 0.7.x, work around it.
-       * FIXME: Remove this workaround in 0.9.x */
-      g_free (dup_protocol);
-      dup_protocol = g_strdup ("local-xmpp");
-    }
-  else
-    {
-      /* the real protocol name may have "-" in; bus names may not, but
-       * they may have "_", so the Telepathy spec specifies replacement.
-       * Here we need to undo that replacement */
-      g_strdelimit (dup_protocol, "_", '-');
-    }
-
   if (!tp_connection_manager_check_valid_protocol_name (dup_protocol, NULL))
     {
       g_free (dup_protocol);

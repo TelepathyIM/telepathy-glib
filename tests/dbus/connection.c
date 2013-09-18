@@ -63,7 +63,7 @@ setup (Test *test,
     tp_tests_object_new_static_class (
         TP_TESTS_TYPE_CONTACTS_CONNECTION,
         "account", "me@example.com",
-        "protocol", "simple-protocol",
+        "protocol", "simple_protocol",
         NULL));
   test->service_conn_as_base = TP_BASE_CONNECTION (test->service_conn);
   g_assert (test->service_conn != NULL);
@@ -152,14 +152,14 @@ test_prepare (Test *test,
   g_assert_cmpstr (tp_connection_get_cm_name (test->conn), ==,
           "simple");
   g_assert_cmpstr (tp_connection_get_protocol_name (test->conn), ==,
-          "simple-protocol");
+          "simple_protocol");
 
   g_object_get (test->conn,
       "cm-name", &cm_name,
       "protocol-name", &protocol_name,
       NULL);
   g_assert_cmpstr (cm_name, ==, "simple");
-  g_assert_cmpstr (protocol_name, ==, "simple-protocol");
+  g_assert_cmpstr (protocol_name, ==, "simple_protocol");
   g_free (cm_name);
   g_free (protocol_name);
 
@@ -274,7 +274,7 @@ test_object_path (Test *test,
   g_assert_cmpstr (tp_connection_get_cm_name (test->conn), ==,
       "simple");
   g_assert_cmpstr (tp_connection_get_protocol_name (test->conn), ==,
-      "simple-protocol");
+      "simple_protocol");
 
   /* Register the same connection with an invalid object path */
   tp_dbus_daemon_register_object (test->dbus, invalid_path, test->service_conn);

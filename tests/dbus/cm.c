@@ -525,9 +525,9 @@ test_complex_file_got_info (Test *test,
   g_assert_cmpuint (tp_protocol_get_params (protocol)->len, ==, 6);
 
   protocol = tp_connection_manager_get_protocol (test->cm,
-      "somewhat-pathological");
+      "somewhat_pathological");
   g_assert_cmpstr (tp_protocol_get_name (protocol), ==,
-      "somewhat-pathological");
+      "somewhat_pathological");
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 0);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "foo");

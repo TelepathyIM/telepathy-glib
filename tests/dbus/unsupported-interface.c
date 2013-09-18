@@ -48,7 +48,7 @@ setup (Fixture *f,
     tp_tests_object_new_static_class (
         TP_TESTS_TYPE_CONTACTS_CONNECTION,
         "account", "me@example.com",
-        "protocol", "simple-protocol",
+        "protocol", "simple_protocol",
         NULL));
   f->service_conn_as_base = TP_BASE_CONNECTION (f->service_conn);
   g_assert (f->service_conn != NULL);

@@ -42,7 +42,7 @@ default-account = bar@default
 default-port = 4321
 default-server-list = bar;foo;
 
-[Protocol somewhat-pathological]
+[Protocol somewhat_pathological]
 # the value is "hello world"
 param-foo = s required
 default-foo =    hello world

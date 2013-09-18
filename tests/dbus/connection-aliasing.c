@@ -69,7 +69,7 @@ setup (Test *test,
   test->service_conn = tp_tests_object_new_static_class (
         EXAMPLE_TYPE_CONTACT_LIST_CONNECTION,
         "account", "me@example.com",
-        "protocol", "simple-protocol",
+        "protocol", "simple_protocol",
         NULL);
   test->service_conn_as_base = TP_BASE_CONNECTION (test->service_conn);
   g_assert (test->service_conn != NULL);

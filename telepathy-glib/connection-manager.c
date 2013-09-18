@@ -1582,11 +1582,11 @@ tp_connection_manager_check_valid_protocol_name (const gchar *name,
 
   for (name_char = name; *name_char != '\0'; name_char++)
     {
-      if (!g_ascii_isalnum (*name_char) && *name_char != '-')
+      if (!g_ascii_isalnum (*name_char) && *name_char != '_')
         {
           g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
               "Not a valid protocol name because character '%c' "
-              "is not an ASCII letter, digit or hyphen/minus: %s",
+              "is not an ASCII letter, digit or underscore: %s",
               *name_char, name);
           return FALSE;
         }
