@@ -832,7 +832,11 @@ tp_base_protocol_get_immutable_properties (TpBaseProtocol *self)
         TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING, "AddressableURISchemes",
         NULL);
 
-  /* FIXME: we should add Presence properties as well */
+  if (tp_strv_contains ((const gchar * const *) self->priv->interfaces,
+          TP_IFACE_PROTOCOL_INTERFACE_PRESENCE))
+    tp_dbus_properties_mixin_fill_properties_hash ((GObject *) self, table,
+        TP_IFACE_PROTOCOL_INTERFACE_PRESENCE, "Statuses",
+        NULL);
 
   return table;
 }
