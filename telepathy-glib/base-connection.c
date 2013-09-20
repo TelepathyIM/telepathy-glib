@@ -286,6 +286,7 @@ enum
 {
     PROP_PROTOCOL = 1,
     PROP_SELF_HANDLE,
+    PROP_SELF_ID,
     PROP_INTERFACES,
     PROP_DBUS_STATUS,
     PROP_DBUS_DAEMON,
@@ -390,6 +391,8 @@ channel_request_cancel (gpointer data, gpointer user_data)
 
 struct _TpBaseConnectionPrivate
 {
+  const gchar *self_id;
+
   /* Telepathy properties */
   gchar *protocol;
 
@@ -477,6 +480,10 @@ tp_base_connection_get_property (GObject *object,
       g_value_set_uint (value, self->self_handle);
       break;
 
+    case PROP_SELF_ID:
+      g_value_set_string (value, self->priv->self_id);
+      break;
+
     case PROP_INTERFACES:
       g_value_set_boxed (value, tp_base_connection_get_interfaces (self));
       break;
@@ -516,19 +523,7 @@ tp_base_connection_set_property (GObject      *object,
       break;
 
     case PROP_SELF_HANDLE:
-      {
-        TpHandle new_self_handle = g_value_get_uint (value);
-
-        if (self->status == TP_CONNECTION_STATUS_CONNECTED)
-          g_return_if_fail (new_self_handle != 0);
-
-        if (self->self_handle == new_self_handle)
-          return;
-
-        self->self_handle = new_self_handle;
-
-        tp_svc_connection_emit_self_handle_changed (self, self->self_handle);
-      }
+      tp_base_connection_set_self_handle (self, g_value_get_uint (value));
       break;
 
     case PROP_DBUS_DAEMON:
@@ -1549,6 +1544,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
 {
   static TpDBusPropertiesMixinPropImpl connection_properties[] = {
       { "SelfHandle", "self-handle", NULL },
+      { "SelfID", "self-id", NULL },
       { "Status", "dbus-status", NULL },
       { "Interfaces", "interfaces", NULL },
       { "HasImmortalHandles", "has-immortal-handles", NULL },
@@ -1599,6 +1595,21 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
       0, G_MAXUINT, 0,
       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SELF_HANDLE, param_spec);
+
+  /**
+   * TpBaseConnection:self-id: (skip)
+   *
+   * The identifier representing the local user. This is the result of
+   * inspecting #TpBaseConnection:self-handle.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_string ("self-id",
+      "Connection.SelfID",
+      "The identifier representing the local user.",
+      "",
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_SELF_ID, param_spec);
 
   /**
    * TpBaseConnection:interfaces: (skip)
@@ -2830,7 +2841,28 @@ void
 tp_base_connection_set_self_handle (TpBaseConnection *self,
                                     TpHandle self_handle)
 {
-  g_object_set (self, "self-handle", self_handle, NULL);
+  if (self->status == TP_CONNECTION_STATUS_CONNECTED)
+    g_return_if_fail (self_handle != 0);
+
+  if (self->self_handle == self_handle)
+    return;
+
+  self->self_handle = self_handle;
+  self->priv->self_id = NULL;
+
+  if (self_handle != 0)
+    {
+      self->priv->self_id = tp_handle_inspect (
+          self->priv->handles[TP_HANDLE_TYPE_CONTACT], self_handle);
+    }
+
+  tp_svc_connection_emit_self_handle_changed (self, self->self_handle);
+
+  tp_svc_connection_emit_self_contact_changed (self,
+      self->self_handle, self->priv->self_id);
+
+  g_object_notify ((GObject *) self, "self-handle");
+  g_object_notify ((GObject *) self, "self-id");
 }
 
 
