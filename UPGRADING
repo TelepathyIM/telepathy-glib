@@ -83,8 +83,10 @@ API/Behaviour changes
           details = tp_asv_new (
               "actor", G_TYPE_UINT, actor,
               "change-reason", G_TYPE_UINT, reason,
-              "message", G_TYPE_STRING, message,
               NULL);
+
+          if (message != NULL)
+            tp_asv_set_string (details, "message", message);
 
           tp_group_mixin_change_members (obj,
               add, del, add_local_pending, add_remote_pending, details);
