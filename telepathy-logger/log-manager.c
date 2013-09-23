@@ -1397,7 +1397,7 @@ tpl_log_manager_search_async (TplLogManager *manager,
  * tpl_log_manager_search_finish:
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @hits: (out) (transfer full) (element-type TelepathyLogger.SearchHit): a
+ * @hits: (out) (transfer full) (element-type TelepathyLogger.LogSearchHit): a
  *  pointer to a #GList used to return the list of #TplLogSearchHit
  * @error: a #GError to fill
  *
