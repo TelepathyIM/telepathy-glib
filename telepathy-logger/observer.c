@@ -289,7 +289,7 @@ _tpl_observer_dup (GError **error)
           return NULL;
         }
 
-      factory = _tpl_client_factory_new (dbus);
+      factory = _tpl_client_factory_dup (dbus);
 
       /* Pre-select feature to be initialized. */
       tp_simple_client_factory_add_contact_features_varargs (factory,

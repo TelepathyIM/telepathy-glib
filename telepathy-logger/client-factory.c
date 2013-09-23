@@ -94,10 +94,26 @@ _tpl_client_factory_class_init (TplClientFactoryClass *cls)
   simple_class->dup_channel_features = dup_channel_features_impl;
 }
 
-TpSimpleClientFactory *
+
+static TpSimpleClientFactory *
 _tpl_client_factory_new (TpDBusDaemon *dbus)
 {
   return g_object_new (TPL_TYPE_CLIENT_FACTORY,
       "dbus-daemon", dbus,
       NULL);
+}
+
+TpSimpleClientFactory *
+_tpl_client_factory_dup (TpDBusDaemon *dbus)
+{
+  static TpSimpleClientFactory *singleton = NULL;
+
+  if (singleton != NULL)
+    return g_object_ref (singleton);
+
+  singleton = _tpl_client_factory_new (dbus);
+
+  g_object_add_weak_pointer (G_OBJECT (singleton), (gpointer) &singleton);
+
+  return singleton;
 }
