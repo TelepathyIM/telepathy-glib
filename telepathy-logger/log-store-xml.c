@@ -1020,7 +1020,7 @@ log_store_xml_search_hit_new (TplLogStoreXml *self,
 
   /* FIXME: This assumes the account manager is prepared, but the
    * synchronous API forces this. See bug #599189. */
-  accounts = tp_account_manager_get_valid_accounts (
+  accounts = tp_account_manager_dup_valid_accounts (
       self->priv->account_manager);
 
   for (l = accounts; l != NULL && account == NULL; l = g_list_next (l))
@@ -1033,7 +1033,7 @@ log_store_xml_search_hit_new (TplLogStoreXml *self,
         account = acc;
       g_free (name);
     }
-  g_list_free (accounts);
+  g_list_free_full (accounts, g_object_unref);
 
   if (is_chatroom)
     target = tpl_entity_new_from_room_id (chat_id);
