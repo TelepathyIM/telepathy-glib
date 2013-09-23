@@ -53,7 +53,7 @@ static void
 get_my_contact (TplTextChannel *self)
 {
   TpChannel *chan = TP_CHANNEL (self);
-  TpConnection *tp_conn = tp_channel_borrow_connection (chan);
+  TpConnection *tp_conn = tp_channel_get_connection (chan);
   TpContact *my_contact;
 
   my_contact = tp_channel_group_get_self_contact (chan);

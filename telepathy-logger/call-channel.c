@@ -60,7 +60,7 @@ get_contacts (TplCallChannel *self,
 {
   TplCallChannelPriv *priv = self->priv;
   TpChannel *chan = TP_CHANNEL (self);
-  TpConnection *con = tp_channel_borrow_connection (chan);
+  TpConnection *con = tp_channel_get_connection (chan);
   GHashTable *members;
   GHashTableIter iter;
   TpHandle handle;
