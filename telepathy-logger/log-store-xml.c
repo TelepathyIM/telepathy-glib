@@ -1356,6 +1356,8 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
       return;
     }
 
+  /* FIXME: fdo#69814 ideally we shouldn't use the account_id as self_id */
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   if (!tp_account_parse_object_path (
         tp_proxy_get_object_path (TP_PROXY (account)),
         NULL, NULL, &self_id, &error))
@@ -1365,6 +1367,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
       g_error_free (error);
       return;
     }
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   /* Create parser. */
   ctxt = xmlNewParserCtxt ();
