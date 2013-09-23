@@ -461,8 +461,8 @@ tp_protocol_constructed (GObject *object)
       TP_PROP_PROTOCOL_ICON);
 
   if (tp_str_empty (s))
-    self->priv->icon_name = g_strdup_printf ("im-%s",
-        self->priv->name);
+    self->priv->icon_name = g_strdelimit (g_strdup_printf ("im-%s",
+        self->priv->name), "_", '-');
   else
     self->priv->icon_name = g_strdup (s);
 
