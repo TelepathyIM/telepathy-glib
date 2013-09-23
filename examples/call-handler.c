@@ -359,12 +359,14 @@ start_sending_cb (TfContent *content, gpointer user_data)
           goto out;
 
         element = setup_audio_source (context, content);
+        context->has_audio_src = TRUE;
         break;
       case FS_MEDIA_TYPE_VIDEO:
         if (context->has_video_src)
           goto out;
 
         element = setup_video_source (context, content);
+        content->has_video_src = TRUE;
         break;
       default:
         g_warning ("Unknown media type");
