@@ -437,7 +437,7 @@ store_pending_messages (TplTextChannel *self)
     }
 
   pending_messages =
-    tp_text_channel_get_pending_messages (TP_TEXT_CHANNEL (self));
+    tp_text_channel_dup_pending_messages (TP_TEXT_CHANNEL (self));
 
   pending_messages = g_list_sort (pending_messages,
       (GCompareFunc) pending_message_compare_id);
@@ -506,7 +506,7 @@ store_pending_messages (TplTextChannel *self)
 
   g_list_foreach (cached_messages, (GFunc) g_free, NULL);
   g_list_free (cached_messages);
-  g_list_free (pending_messages);
+  g_list_free_full (pending_messages, g_object_unref);
 
 
   /* We need to remove before we log to avoid collisions */
