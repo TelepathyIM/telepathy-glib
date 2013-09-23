@@ -329,6 +329,7 @@ get_date (TplEvent *event)
   gchar *date;
 
   ts = g_date_time_new_from_unix_utc (tpl_event_get_timestamp (event));
+  g_return_val_if_fail (ts != NULL, NULL);
   date = g_date_time_format (ts, "%Y-%m-%d");
 
   g_date_time_unref (ts);
