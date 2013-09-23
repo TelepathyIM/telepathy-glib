@@ -78,7 +78,7 @@ on_audio_output_volume_changed (TfContent *content,
 {
   guint output_volume = 0;
 
-  g_object_get (content, "output-volume", &output_volume, NULL);
+  g_object_get (content, "requested-output-volume", &output_volume, NULL);
 
   if (output_volume == 0)
     return;
@@ -234,7 +234,7 @@ on_audio_input_volume_changed (TfContent *content,
   GstElement *volume;
   guint input_volume = 0;
 
-  g_object_get (content, "request-input-volume", &input_volume, NULL);
+  g_object_get (content, "requested-input-volume", &input_volume, NULL);
 
   if (input_volume == 0)
     return;
@@ -271,7 +271,7 @@ setup_audio_source (ChannelContext *context, TfContent *content)
       gst_object_unref (volume);
     }
 
-  g_signal_connect (content, "notify::request-input-volume",
+  g_signal_connect (content, "notify::requested-input-volume",
       G_CALLBACK (on_audio_input_volume_changed),
       context);
 
