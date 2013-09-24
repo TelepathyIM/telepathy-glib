@@ -66,7 +66,6 @@ AC_COPYRIGHT([
 ])
 
 # Minimal version required
-GLIB_REQUIRED=2.28
 DBUS_REQUIRED=1.1.0
 DBUS_GLIB_REQUIRED=0.82
 
@@ -74,13 +73,10 @@ TELEPATHY_GLIB_REQUIRED=0.19.2
 AC_DEFINE(TP_VERSION_MIN_REQUIRED, TP_VERSION_0_18, [Ignore post 0.18 deprecations])
 AC_DEFINE(TP_VERSION_MAX_ALLOWED, TP_VERSION_0_20, [Prevent post 0.20 APIs])
 
-# Warning if GLib/GDK/GTK headers are included
-AC_DEFINE(G_DISABLE_SINGLE_INCLUDES, [], [Disable single includes for GLib])
-AC_DEFINE(GDK_PIXBUF_DISABLE_SINGLE_INCLUDES, [], [Disable single includes for GDK pixbuf])
-
-# Disable GLib deprecation warnings for now; GValueArray is deprecated but we
-# need it for dbus-glib.
-AC_DEFINE(GLIB_DISABLE_DEPRECATION_WARNINGS, 1, [Build with GLib deprecated])
+GLIB_REQUIRED=2.32
+dnl MIN_REQUIRED must stay to 2.30 because of GValueArray
+AC_DEFINE([GLIB_VERSION_MIN_REQUIRED], [GLIB_VERSION_2_30], [Ignore post 2.30 deprecations])
+AC_DEFINE([GLIB_VERSION_MAX_ALLOWED], [GLIB_VERSION_2_32], [Prevent post 2.32 APIs])
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config.h])
