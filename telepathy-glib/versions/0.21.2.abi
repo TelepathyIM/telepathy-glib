@@ -1,0 +1,7 @@
+Version: TELEPATHY_GLIB_0.21.2
+Extends: TELEPATHY_GLIB_0.19.10
+Release: 0.21.2
+
+tp_cli_connection_connect_to_self_contact_changed
+tp_dbus_properties_mixin_dup_all
+tp_svc_connection_emit_self_contact_changed
