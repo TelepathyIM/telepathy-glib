@@ -66,3 +66,24 @@ AM_CFLAGS = $(ERROR_CFLAGS)
 AM_LDFLAGS = \
     $(ERROR_LDFLAGS) \
     $(NULL)
+
+# These files are copied into the ${builddir}, if different, because
+# the documentation includes them via XInclude, and gtk-doc looks
+# in the builddir for such files.
+copy_to_builddir = \
+    contact-list.c \
+    $(NULL)
+
+# the chmod here is to avoid the copy in the builddir picking up the
+# read-only status of the original in the srcdir, during distcheck
+all-local:
+	${AM_V_at}set -e && \
+	if test -n "${srcdir}" && test "x${srcdir}" != x.; then \
+		for x in ${copy_to_builddir}; do \
+			rm -f "$$x"; \
+			cp "${srcdir}/$$x" "$$x"; \
+			chmod 0644 "$$x"; \
+		done; \
+	fi
+
+CLEANFILES = ${copy_to_builddir}
