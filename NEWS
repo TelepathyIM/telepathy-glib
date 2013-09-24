@@ -1,10 +1,26 @@
-telepathy-glib 0.21.2 (UNRELEASED)
+telepathy-glib 0.21.2 (2013-09-24)
 ==================================
+
+The “always another thing” release.
 
 Enhancements:
 
 • Writing avatars into cache now uses asynchronous I/O. (fd.o #63402;
   Luca Versari, Chandni Verma, Simon McVittie)
+
+• telepathy-spec 0.27.2
+  · add SelfID, SelfContactChanged
+
+• tp_dbus_properties_mixin_dup_all() is now public (fd.o #69283, Simon)
+
+• TpBaseProtocol now lists Presence.Statuses as an immutable
+  property. (fd.o #69520, Guillaume)
+
+• TpBaseConnection: Implement SelfID and SelfContactChanged as defined in
+  spec 0.27.2. (Xavier)
+
+• The inspect-cm example now inspects all CMs if run without arguments
+  (fd.o #68390, Simon)
 
 Fixes:
 
@@ -18,8 +34,9 @@ Fixes:
 • Make TpHeap work correctly with GComparator functions that return
   values outside {-1, 0, 1} (fd.o #68932, Debarshi Ray)
 
-• Avoid "FIXME: MISSING XINCLUDE CONTENT" in documentation built
-  out-of-tree (fd.o #69753, Simon)
+• Examples have been updated to use more recent API (Simon)
+
+• Better debug-logging (fd.o #68390, Simon)
 
 telepathy-glib 0.21.1 (2013-06-20)
 ==================================
