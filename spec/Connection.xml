@@ -145,7 +145,7 @@ USA.</p>
       <tp:added version="0.17.10">Clients MAY assume that if the
         SelfHandle property exists, this signal will be emitted when
         necessary.</tp:added>
-      <tp:deprecated version="0.UNRELEASED">Use SelfContactChanged to get the
+      <tp:deprecated version="0.27.2">Use SelfContactChanged to get the
       new SelfID at the same time</tp:deprecated>
 
       <arg type="u" tp:type="Contact_Handle" name="Self_Handle">
@@ -164,7 +164,7 @@ USA.</p>
         is not yet in the CONNECTED state, this signal is not guaranteed
         to be emitted.
       </tp:docstring>
-      <tp:added version="0.UNRELEASED">Clients MAY assume that if the
+      <tp:added version="0.27.2">Clients MAY assume that if the
         SelfHandle and SelfID property exists, this signal will be emitted when
         necessary.</tp:added>
 
@@ -206,7 +206,7 @@ USA.</p>
         If the connection is not yet in the CONNECTED state, the value of
         this property MAY be empty string.
       </tp:docstring>
-      <tp:added version="0.UNRELEASED"/>
+      <tp:added version="0.27.2"/>
     </property>
 
     <method name="GetSelfHandle" tp:name-for-bindings="Get_Self_Handle">
