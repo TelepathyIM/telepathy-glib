@@ -7,6 +7,7 @@
 #include "telepathy-logger/debug-internal.h"
 #include "telepathy-logger/log-manager-internal.h"
 #include "telepathy-logger/log-store-internal.h"
+#include <telepathy-logger/client-factory-internal.h>
 
 #include <telepathy-glib/debug-sender.h>
 #include <glib.h>
@@ -21,6 +22,7 @@ typedef struct
   gchar *tmp_basedir;
   TplLogStore *store;
   TpDBusDaemon *bus;
+  TpSimpleClientFactory *factory;
 } XmlTestCaseFixture;
 
 
@@ -38,6 +40,8 @@ setup (XmlTestCaseFixture* fixture,
 
   fixture->bus = tp_tests_dbus_daemon_dup_or_die ();
   g_assert (fixture->bus != NULL);
+
+  fixture->factory = _tpl_client_factory_dup (fixture->bus);
 
   tp_debug_divert_messages (g_getenv ("TPL_LOGFILE"));
 
@@ -85,6 +89,8 @@ teardown (XmlTestCaseFixture *fixture,
 
   if (fixture->store == NULL)
     g_object_unref (fixture->store);
+
+  g_clear_object (&fixture->factory);
 }
 
 
@@ -136,9 +142,9 @@ test_clear_account (XmlTestCaseFixture *fixture,
 
   tpl_log_manager_search_free (hits);
 
-  account = tp_account_new (fixture->bus,
+  account = tp_simple_client_factory_ensure_account (fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/test2_40collabora_2eco_2euk0",
-      &error);
+      NULL, &error);
 
   g_assert_no_error (error);
   g_assert (account != NULL);
@@ -203,9 +209,9 @@ test_clear_entity (XmlTestCaseFixture *fixture,
 
   tpl_log_manager_search_free (hits);
 
-  account = tp_account_new (fixture->bus,
+  account = tp_simple_client_factory_ensure_account (fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/test2_40collabora_2eco_2euk0",
-      &error);
+      NULL, &error);
 
   g_assert_no_error (error);
   g_assert (account != NULL);
@@ -291,9 +297,8 @@ test_add_text_event (XmlTestCaseFixture *fixture,
   GList *events;
   gint64 timestamp = time (NULL);
 
-  account = tp_account_new (fixture->bus,
-      TP_ACCOUNT_OBJECT_PATH_BASE "idle/irc/me",
-      &error);
+  account = tp_simple_client_factory_ensure_account (fixture->factory,
+      TP_ACCOUNT_OBJECT_PATH_BASE "idle/irc/me", NULL, &error);
   g_assert_no_error (error);
   g_assert (account != NULL);
 
@@ -462,9 +467,8 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   GList *superseded;
   gint64 timestamp = time (NULL);
 
-  account = tp_account_new (fixture->bus,
-      TP_ACCOUNT_OBJECT_PATH_BASE "idle/irc/me",
-      &error);
+  account = tp_simple_client_factory_ensure_account (fixture->factory,
+      TP_ACCOUNT_OBJECT_PATH_BASE "idle/irc/me", NULL, &error);
   g_assert_no_error (error);
   g_assert (account != NULL);
 
@@ -714,9 +718,8 @@ test_add_call_event (XmlTestCaseFixture *fixture,
   GList *events;
   gint64 timestamp = time (NULL);
 
-  account = tp_account_new (fixture->bus,
-      TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/me",
-      &error);
+  account = tp_simple_client_factory_ensure_account (fixture->factory,
+      TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/me", NULL, &error);
   g_assert_no_error (error);
   g_assert (account != NULL);
 
@@ -850,15 +853,15 @@ test_exists (XmlTestCaseFixture *fixture,
   TplEntity *user2, *user3;
   GError *error = NULL;
 
-  account1 = tp_account_new (fixture->bus,
+  account1 = tp_simple_client_factory_ensure_account (fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/test2_40collabora_2eco_2euk0",
-      &error);
+      NULL, &error);
   g_assert_no_error (error);
   g_assert (account1 != NULL);
 
-  account2 = tp_account_new (fixture->bus,
+  account2 = tp_simple_client_factory_ensure_account (fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/user_40collabora_2eco_2euk",
-      &error);
+      NULL, &error);
   g_assert_no_error (error);
   g_assert (account1 != NULL);
 
@@ -907,9 +910,9 @@ test_get_events_for_date (XmlTestCaseFixture *fixture,
   GError *error = NULL;
   gint idx;
 
-  account = tp_account_new (fixture->bus,
+  account = tp_simple_client_factory_ensure_account (fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/user_40collabora_2eco_2euk",
-      &error);
+      NULL, &error);
   g_assert_no_error (error);
   g_assert (account != NULL);
 

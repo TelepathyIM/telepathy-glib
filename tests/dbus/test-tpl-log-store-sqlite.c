@@ -2,6 +2,7 @@
 
 #include <telepathy-logger/log-store-sqlite-internal.h>
 #include <telepathy-logger/debug-internal.h>
+#include <telepathy-logger/client-factory-internal.h>
 
 int
 main (int argc, char **argv)
@@ -10,6 +11,7 @@ main (int argc, char **argv)
   TpDBusDaemon *bus;
   TpAccount *account;
   GError *error = NULL;
+  TpSimpleClientFactory* factory;
 
   g_type_init ();
 
@@ -18,9 +20,11 @@ main (int argc, char **argv)
   bus = tp_dbus_daemon_dup (&error);
   g_assert_no_error (error);
 
-  account = tp_account_new (bus,
+  factory = _tpl_client_factory_dup (bus);
+
+  account =  tp_simple_client_factory_ensure_account (factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/danielle_2emadeley_40collabora_2eco_2euk0",
-      &error);
+      NULL, &error);
   g_assert_no_error (error);
 
   store = _tpl_log_store_sqlite_dup ();
@@ -32,4 +36,5 @@ main (int argc, char **argv)
   g_object_unref (store);
   g_object_unref (account);
   g_object_unref (bus);
+  g_object_unref (factory);
 }

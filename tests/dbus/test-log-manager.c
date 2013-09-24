@@ -10,6 +10,7 @@
 #include "telepathy-logger/log-manager-internal.h"
 #include "telepathy-logger/log-store-internal.h"
 #include <telepathy-logger/text-event.h>
+#include <telepathy-logger/client-factory-internal.h>
 
 #include <telepathy-glib/debug-sender.h>
 
@@ -28,6 +29,7 @@ typedef struct
   TpDBusDaemon *dbus;
   TpAccount *account;
   TpTestsSimpleAccount *account_service;
+  TpSimpleClientFactory *factory;
 
   GList *ret;
 
@@ -119,6 +121,8 @@ teardown_service (TestCaseFixture* fixture,
 
   g_object_unref (fixture->dbus);
   fixture->dbus = NULL;
+
+  g_clear_object (&fixture->factory);
 }
 
 static void
@@ -199,8 +203,12 @@ setup_service (TestCaseFixture* fixture,
   tp_dbus_daemon_register_object (fixture->dbus, account_path,
       fixture->account_service);
 
-  fixture->account = tp_account_new (fixture->dbus, account_path, NULL);
+  fixture->factory = _tpl_client_factory_dup (fixture->dbus);
+
+  fixture->account = tp_simple_client_factory_ensure_account (fixture->factory,
+      account_path, NULL, NULL);
   g_assert (fixture->account != NULL);
+
   tp_proxy_prepare_async (fixture->account, account_features,
       account_prepare_cb, fixture);
   g_main_loop_run (fixture->main_loop);

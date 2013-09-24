@@ -32,6 +32,7 @@
 #include <telepathy-logger/text-event.h>
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/log-manager-internal.h>
+#include <telepathy-logger/client-factory-internal.h>
 
 #include <extensions/extensions.h>
 
@@ -756,6 +757,7 @@ tpl_dbus_service_clear_account (TplSvcLogger *logger,
   TpDBusDaemon *bus;
   TpAccount *account;
   GError *error = NULL;
+  TpSimpleClientFactory *factory = NULL;
 
   g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
   g_return_if_fail (context != NULL);
@@ -768,7 +770,10 @@ tpl_dbus_service_clear_account (TplSvcLogger *logger,
       goto out;
     }
 
-  account = tp_account_new (bus, account_path, &error);
+  factory = _tpl_client_factory_dup (bus);
+
+  account = tp_simple_client_factory_ensure_account (factory, account_path,
+      NULL, &error);
   if (account == NULL)
     {
       DEBUG ("Unable to acquire the account for %s: %s", account_path,
@@ -788,6 +793,7 @@ out:
     g_object_unref (bus);
 
   g_clear_error (&error);
+  g_clear_object (&factory);
 }
 
 
@@ -803,6 +809,7 @@ tpl_dbus_service_clear_entity (TplSvcLogger *logger,
   TpAccount *account;
   TplEntity *entity;
   GError *error = NULL;
+  TpSimpleClientFactory *factory = NULL;
 
   g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
   g_return_if_fail (context != NULL);
@@ -816,7 +823,10 @@ tpl_dbus_service_clear_entity (TplSvcLogger *logger,
       goto out;
     }
 
-  account = tp_account_new (bus, account_path, &error);
+  factory = _tpl_client_factory_dup (bus);
+
+  account = tp_simple_client_factory_ensure_account (factory, account_path,
+      NULL, &error);
   if (account == NULL)
     {
       DEBUG ("Unable to acquire the account for %s: %s", account_path,
@@ -832,6 +842,7 @@ tpl_dbus_service_clear_entity (TplSvcLogger *logger,
 
   g_object_unref (account);
   g_object_unref (entity);
+  g_clear_object (&factory);
 
   tpl_svc_logger_return_from_clear_account (context);
 
