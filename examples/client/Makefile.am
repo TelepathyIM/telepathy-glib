@@ -66,3 +66,19 @@ AM_CFLAGS = $(ERROR_CFLAGS)
 AM_LDFLAGS = \
     $(ERROR_LDFLAGS) \
     $(NULL)
+
+# These files are copied into the ${builddir}, if different, because
+# the documentation includes them via XInclude, and gtk-doc looks
+# in the builddir for such files.
+copy_to_builddir = \
+    contact-list.c \
+    $(NULL)
+
+all-local:
+	${AM_V_at}if test -n "${srcdir}" && test "x${srcdir}" != x.; then \
+		for x in ${copy_to_builddir}; do \
+			cp "${srcdir}/$$x" "$$x" || exit $$?; \
+		done; \
+	fi
+
+CLEANFILES = ${copy_to_builddir}
