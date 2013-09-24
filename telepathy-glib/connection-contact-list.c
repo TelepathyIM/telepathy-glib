@@ -614,7 +614,7 @@ prepare_contact_groups_cb (TpProxy *proxy,
       self->priv->contact_groups->len - 1);
 
   groups = tp_asv_get_boxed (properties, "Groups", G_TYPE_STRV);
-  for (iter = groups; *iter != NULL; iter++)
+  for (iter = groups; iter != NULL && *iter != NULL; iter++)
     {
       DEBUG ("  %s", *iter);
       g_ptr_array_add (self->priv->contact_groups, g_strdup (*iter));
