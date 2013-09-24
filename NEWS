@@ -1,6 +1,11 @@
 telepathy-glib 0.21.2 (UNRELEASED)
 ==================================
 
+Enhancements:
+
+• Writing avatars into cache now uses asynchronous I/O. (fd.o #63402;
+  Luca Versari, Chandni Verma, Simon McVittie)
+
 Fixes:
 
 • Don't crash if GetContactInfo() fails (fd.o #46430, Guillaume)
@@ -12,6 +17,9 @@ Fixes:
 
 • Make TpHeap work correctly with GComparator functions that return
   values outside {-1, 0, 1} (fd.o #68932, Debarshi Ray)
+
+• Avoid "FIXME: MISSING XINCLUDE CONTENT" in documentation built
+  out-of-tree (fd.o #69753, Simon)
 
 telepathy-glib 0.21.1 (2013-06-20)
 ==================================
