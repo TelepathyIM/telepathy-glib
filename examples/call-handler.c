@@ -130,7 +130,7 @@ src_pad_added_cb (TfContent *content,
         }
       case FS_MEDIA_TYPE_VIDEO:
         element = gst_parse_bin_from_description (
-          "ffmpegcolorspace ! videoscale ! autovideosink",
+          "videoconvert ! videoscale ! autovideosink",
           TRUE, NULL);
         break;
       default:
