@@ -2755,6 +2755,109 @@ out:
 static void contact_set_avatar_token (TpContact *self, const gchar *new_token,
     gboolean request);
 
+typedef struct {
+    GWeakRef contact;
+    TpConnection *connection;
+    gchar *token;
+    GFile *file;
+    GBytes *data;
+    GFile *mime_file;
+    gchar *mime_type;
+} WriteAvatarData;
+
+static void
+write_avatar_data_free (WriteAvatarData *avatar_data)
+{
+  g_weak_ref_clear (&avatar_data->contact);
+  g_clear_object (&avatar_data->connection);
+  tp_clear_pointer (&avatar_data->token, g_free);
+  g_clear_object (&avatar_data->file);
+  tp_clear_pointer (&avatar_data->data, g_bytes_unref);
+  g_clear_object (&avatar_data->mime_file);
+  tp_clear_pointer (&avatar_data->mime_type, g_free);
+
+  g_slice_free (WriteAvatarData, avatar_data);
+}
+
+static void
+mime_file_written (GObject *source_object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  GError *error = NULL;
+  WriteAvatarData *avatar_data = user_data;
+  GFile *file = G_FILE (source_object);
+  TpContact *self;
+
+  g_assert (file == avatar_data->mime_file);
+
+  if (!g_file_replace_contents_finish (file, res, NULL, &error))
+    {
+      DEBUG ("Failed to store MIME type in cache (%s): %s",
+          g_file_get_path (file), error->message);
+      g_clear_error (&error);
+    }
+  else
+    {
+      DEBUG ("Contact avatar MIME type stored in cache: %s",
+          g_file_get_path (file));
+    }
+
+  self = g_weak_ref_get (&avatar_data->contact);
+
+  if (self != NULL)
+    {
+      g_clear_object (&self->priv->avatar_file);
+      self->priv->avatar_file = g_object_ref (avatar_data->file);
+
+      g_free (self->priv->avatar_mime_type);
+      self->priv->avatar_mime_type = g_strdup (avatar_data->mime_type);
+
+      /* Update the avatar token if a newer one is given
+       * (this emits notify::avatar-token if needed) */
+      contact_set_avatar_token (self, avatar_data->token, FALSE);
+
+      /* Notify both property changes together once both files have been
+       * written */
+      g_object_notify ((GObject *) self, "avatar-mime-type");
+      g_object_notify ((GObject *) self, "avatar-file");
+
+      g_object_unref (self);
+    }
+
+  write_avatar_data_free (avatar_data);
+}
+
+static void
+avatar_file_written (GObject *source_object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  GError *error = NULL;
+  WriteAvatarData *avatar_data = user_data;
+  GFile *file = G_FILE (source_object);
+
+  g_assert (file == avatar_data->file);
+
+  if (!g_file_replace_contents_finish (file, res, NULL, &error))
+    {
+      DEBUG ("Failed to store avatar in cache (%s): %s",
+          g_file_get_path (file), error->message);
+      DEBUG ("Storing the MIME type anyway");
+      g_clear_error (&error);
+    }
+  else
+    {
+      DEBUG ("Contact avatar stored in cache: %s",
+          g_file_get_path (file));
+    }
+
+  g_file_replace_contents_async (avatar_data->mime_file,
+      avatar_data->mime_type, strlen (avatar_data->mime_type),
+      NULL, FALSE, G_FILE_CREATE_PRIVATE|G_FILE_CREATE_REPLACE_DESTINATION,
+      NULL, mime_file_written, avatar_data);
+}
+
 static void
 contact_avatar_retrieved (TpConnection *connection,
     guint handle,
@@ -2767,7 +2870,7 @@ contact_avatar_retrieved (TpConnection *connection,
   TpContact *self = _tp_connection_lookup_contact (connection, handle);
   gchar *filename;
   gchar *mime_filename;
-  GError *error = NULL;
+  WriteAvatarData *avatar_data;
 
   if (!build_avatar_filename (connection, token, TRUE, &filename,
       &mime_filename))
@@ -2775,40 +2878,23 @@ contact_avatar_retrieved (TpConnection *connection,
 
   /* Save avatar in cache, even if the contact is unknown, to avoid as much as
    * possible future avatar requests */
-  if (!g_file_set_contents (filename, avatar->data, avatar->len, &error))
-    {
-      DEBUG ("Failed to store avatar in cache (%s): %s", filename,
-          error ? error->message : "No error message");
-      g_clear_error (&error);
-      goto out;
-    }
-  if (!g_file_set_contents (mime_filename, mime_type, -1, &error))
-    {
-      DEBUG ("Failed to store MIME type in cache (%s): %s", mime_filename,
-          error ? error->message : "No error message");
-      g_clear_error (&error);
-      goto out;
-    }
+  avatar_data = g_slice_new0 (WriteAvatarData);
+  avatar_data->connection = g_object_ref (connection);
+  g_weak_ref_set (&avatar_data->contact, self);
+  avatar_data->token = g_strdup (token);
+  avatar_data->file = g_file_new_for_path (filename);
+  /* g_file_replace_contents_async() doesn't copy its argument, see
+   * <https://bugzilla.gnome.org/show_bug.cgi?id=690525>, so we have
+   * to keep a copy around */
+  avatar_data->data = g_bytes_new (avatar->data, avatar->len);
+  avatar_data->mime_file = g_file_new_for_path (mime_filename);
+  avatar_data->mime_type = g_strdup (mime_type);
 
-  DEBUG ("Contact#%u avatar stored in cache: %s, %s", handle, filename,
-      mime_type);
+  g_file_replace_contents_async (avatar_data->file,
+      g_bytes_get_data (avatar_data->data, NULL), avatar->len,
+      NULL, FALSE, G_FILE_CREATE_PRIVATE|G_FILE_CREATE_REPLACE_DESTINATION,
+      NULL, avatar_file_written, avatar_data);
 
-  if (self == NULL)
-    goto out;
-
-  /* Update the avatar token if a newer one is given */
-  contact_set_avatar_token (self, token, FALSE);
-
-  tp_clear_object (&self->priv->avatar_file);
-  self->priv->avatar_file = g_file_new_for_path (filename);
-
-  g_free (self->priv->avatar_mime_type);
-  self->priv->avatar_mime_type = g_strdup (mime_type);
-
-  g_object_notify ((GObject *) self, "avatar-file");
-  g_object_notify ((GObject *) self, "avatar-mime-type");
-
-out:
   g_free (filename);
   g_free (mime_filename);
 }
