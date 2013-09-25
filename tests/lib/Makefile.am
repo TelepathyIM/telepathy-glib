@@ -72,7 +72,7 @@ include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
 
 AM_CPPFLAGS = \
-    -D_TP_COMPILATION \
+    -DTP_DISABLE_SINGLE_INCLUDE \
     $(NULL)
 
 AM_CFLAGS = \

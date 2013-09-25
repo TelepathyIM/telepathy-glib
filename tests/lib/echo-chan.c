@@ -17,8 +17,6 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/telepathy-glib-dbus.h>
-#include <telepathy-glib/channel-iface.h>
-#include <telepathy-glib/svc-channel.h>
 
 static void destroyable_iface_init (gpointer iface, gpointer data);
 

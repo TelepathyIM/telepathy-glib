@@ -13,8 +13,8 @@
 
 #include "bug-19101-conn.h"
 
-#include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/svc-connection.h>
+#include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include "debug.h"
 

@@ -17,15 +17,8 @@
 
 #include <dbus/dbus-glib.h>
 
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/dbus-properties-mixin.h>
-#include <telepathy-glib/errors.h>
-#include <telepathy-glib/gtypes.h>
-#include <telepathy-glib/handle-repo-dynamic.h>
-#include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/svc-connection.h>
-#include <telepathy-glib/svc-generic.h>
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include "echo-chan.h"
 #include "room-list-chan.h"

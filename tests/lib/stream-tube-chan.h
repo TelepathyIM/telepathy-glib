@@ -12,8 +12,7 @@
 #define __TP_STREAM_TUBE_CHAN_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/base-channel.h>
-#include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
 
