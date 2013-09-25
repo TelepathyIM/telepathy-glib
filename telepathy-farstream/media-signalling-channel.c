@@ -425,12 +425,12 @@ new_stream_cb (TfSession *session,
   TfStream *stream;
   FsConference *fs_conference;
   FsParticipant *fs_participant;
-  TpProxy *channel_as_proxy = (TpProxy *) self->channel_proxy;
   TpMediaStreamHandler *proxy;
   GList *local_codec_config = NULL;
 
-  proxy = tp_media_stream_handler_new (channel_as_proxy->dbus_daemon,
-      channel_as_proxy->bus_name, object_path, NULL);
+  proxy = tp_media_stream_handler_new (
+      tp_proxy_get_dbus_daemon (self->channel_proxy),
+      tp_proxy_get_bus_name (self->channel_proxy), object_path, NULL);
 
   if (proxy == NULL)
     {
@@ -503,7 +503,6 @@ add_session (TfMediaSignallingChannel *self,
     const gchar *session_type)
 {
   GError *error = NULL;
-  TpProxy *channel_as_proxy = (TpProxy *) self->channel_proxy;
   TpMediaSessionHandler *proxy;
   FsConference *conf = NULL;
 
@@ -511,8 +510,9 @@ add_session (TfMediaSignallingChannel *self,
 
   g_assert (self->session == NULL);
 
-  proxy = tp_media_session_handler_new (channel_as_proxy->dbus_daemon,
-      channel_as_proxy->bus_name, object_path, &error);
+  proxy = tp_media_session_handler_new (
+      tp_proxy_get_dbus_daemon (self->channel_proxy),
+      tp_proxy_get_bus_name (self->channel_proxy), object_path, &error);
 
   if (proxy == NULL)
     {

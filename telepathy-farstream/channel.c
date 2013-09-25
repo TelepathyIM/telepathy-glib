@@ -139,11 +139,8 @@ tf_channel_get_property (GObject    *object,
       g_value_set_object (value, self->priv->channel_proxy);
       break;
     case PROP_OBJECT_PATH:
-        {
-          TpProxy *as_proxy = (TpProxy *) self->priv->channel_proxy;
-
-          g_value_set_string (value, as_proxy->object_path);
-        }
+      g_value_set_string (value,
+          tp_proxy_get_object_path (self->priv->channel_proxy));
       break;
     case PROP_FS_CONFERENCES:
       if (self->priv->call_channel)
