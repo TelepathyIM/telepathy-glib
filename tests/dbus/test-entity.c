@@ -48,35 +48,27 @@ test_entity_instantiation_from_room_id (void)
   g_object_unref (entity);
 }
 
-
 typedef struct {
-  TpContact *contacts[2];
+  TpContact *contact;
   GMainLoop *loop;
 } Result;
 
-
 static void
-get_contacts_cb (TpConnection *connection,
-    guint n_contacts,
-    TpContact * const *contacts,
-    guint n_failed,
-    const TpHandle *failed,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
+ensure_contact_cb (GObject *source,
+    GAsyncResult *op_result,
+    gpointer user_data)
 {
   Result *result = user_data;
+  GError *error = NULL;
+
+  result->contact = tp_simple_client_factory_ensure_contact_by_id_finish (
+      TP_SIMPLE_CLIENT_FACTORY (source), op_result, &error);
 
   g_assert_no_error (error);
-  g_assert (n_contacts == 2);
-  g_assert (n_failed == 0);
-
-  result->contacts[0] = g_object_ref (contacts[0]);
-  result->contacts[1] = g_object_ref (contacts[1]);
+  g_assert (TP_IS_CONTACT (result->contact));
 
   g_main_loop_quit (result->loop);
 }
-
 
 static void
 test_entity_instantiation_from_tp_contact (void)
@@ -88,10 +80,10 @@ test_entity_instantiation_from_tp_contact (void)
   TpHandle handles[2];
   const char *alias[] = {"Alice in Wonderland", "Bob the builder"};
   const char *avatar_tokens[] = {"alice-token", NULL};
-  TpContactFeature features[] =
-      { TP_CONTACT_FEATURE_ALIAS, TP_CONTACT_FEATURE_AVATAR_TOKEN };
   Result result;
   TplEntity *entity;
+  TpContact *alice, *bob;
+  TpSimpleClientFactory *factory;
 
   tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
       "me@test.com", &base_connection, &client_connection);
@@ -112,18 +104,25 @@ test_entity_instantiation_from_tp_contact (void)
   tp_tests_contacts_connection_change_avatar_tokens (connection, 2, handles,
       avatar_tokens);
 
-  result.contacts[0] = result.contacts[1] = 0;
+  factory = tp_proxy_get_factory (client_connection);
+  tp_simple_client_factory_add_contact_features_varargs (factory,
+      TP_CONTACT_FEATURE_ALIAS,
+      TP_CONTACT_FEATURE_AVATAR_TOKEN,
+      TP_CONTACT_FEATURE_INVALID);
+
   result.loop = g_main_loop_new (NULL, FALSE);
 
-  tp_connection_get_contacts_by_handle (client_connection,
-      2, handles,
-      2, features,
-      get_contacts_cb, &result,
-      NULL, NULL);
+  tp_simple_client_factory_ensure_contact_by_id_async (factory,
+      client_connection, "alice", ensure_contact_cb, &result);
   g_main_loop_run (result.loop);
+  alice = result.contact;
 
-  entity = tpl_entity_new_from_tp_contact (result.contacts[0],
-      TPL_ENTITY_SELF);
+  tp_simple_client_factory_ensure_contact_by_id_async (factory,
+      client_connection, "bob", ensure_contact_cb, &result);
+  g_main_loop_run (result.loop);
+  bob = result.contact;
+
+  entity = tpl_entity_new_from_tp_contact (alice, TPL_ENTITY_SELF);
 
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==, "alice");
   g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_SELF);
@@ -131,8 +130,7 @@ test_entity_instantiation_from_tp_contact (void)
   g_assert_cmpstr (tpl_entity_get_avatar_token (entity), ==, avatar_tokens[0]);
   g_object_unref (entity);
 
-  entity = tpl_entity_new_from_tp_contact (result.contacts[1],
-      TPL_ENTITY_CONTACT);
+  entity = tpl_entity_new_from_tp_contact (bob, TPL_ENTITY_CONTACT);
 
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==, "bob");
   g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_CONTACT);
@@ -140,8 +138,8 @@ test_entity_instantiation_from_tp_contact (void)
   g_assert_cmpstr (tpl_entity_get_avatar_token (entity), ==, "");
   g_object_unref (entity);
 
-  g_object_unref (result.contacts[0]);
-  g_object_unref (result.contacts[1]);
+  g_object_unref (alice);
+  g_object_unref (bob);
   g_main_loop_unref (result.loop);
 
   tp_base_connection_change_status (base_connection,
