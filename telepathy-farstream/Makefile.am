@@ -11,16 +11,8 @@ apisources = \
 libtelepathy_farstream_la_SOURCES = \
 	$(tfinclude_HEADERS) \
 	$(apisources) \
-	stream.c \
-	stream.h \
 	content-priv.h \
-	session.c \
-	session-priv.h \
 	channel-priv.h \
-	media-signalling-channel.c \
-	media-signalling-channel.h \
-	media-signalling-content.c \
-	media-signalling-content.h \
 	call-channel.c \
 	call-channel.h \
 	call-content.h \

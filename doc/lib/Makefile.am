@@ -44,9 +44,8 @@ CFILE_GLOB=$(top_srcdir)/telepathy-farstream/channel.c $(top_srcdir)/telepathy-f
 
 # Header files to ignore when scanning.
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
-IGNORE_HFILES=channel-priv.h content-priv.h session-priv.h stream-priv.h \
-  stream.h call-channel.h call-content.h call-stream.h \
-  media-signalling-channel.h media-signalling-content.h utils.h
+IGNORE_HFILES=channel-priv.h content-priv.h stream-priv.h \
+  call-channel.h call-content.h call-stream.h utils.h
 
 # Images to copy into HTML directory.
 # e.g. HTML_IMAGES=$(top_srcdir)/gtk/stock-icons/stock_about_24.png
