@@ -16,17 +16,9 @@ BUILT_SOURCES =
 libexec_PROGRAMS = \
 	telepathy-logger
 
-noinst_PROGRAMS = \
-	test-api
-
 telepathy_logger_LDADD = \
 	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
 	$(TPL_LIBS)
-
-test_api_LDADD = \
-	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
-	$(TPL_LIBS)
-
 
 check_c_sources = \
 	$(telepathy_logger_SOURCES)
