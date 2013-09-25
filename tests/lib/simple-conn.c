@@ -18,6 +18,7 @@
 #include <dbus/dbus-glib.h>
 
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
@@ -25,12 +26,15 @@
 #include <telepathy-glib/util.h>
 
 #include "textchan-null.h"
+#include "room-list-chan.h"
 #include "util.h"
 
+static void props_iface_init (TpSvcDBusPropertiesClass *);
 static void conn_iface_init (TpSvcConnectionClass *);
 
 G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleConnection, tp_tests_simple_connection,
     TP_TYPE_BASE_CONNECTION,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES, props_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION, conn_iface_init))
 
 /* type definition stuff */
@@ -38,12 +42,15 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleConnection, tp_tests_simple_connection,
 enum
 {
   PROP_ACCOUNT = 1,
+  PROP_BREAK_PROPS = 2,
+  PROP_DBUS_STATUS = 3,
   N_PROPS
 };
 
 enum
 {
   SIGNAL_GOT_SELF_HANDLE,
+  SIGNAL_GOT_ALL,
   N_SIGNALS
 };
 
@@ -54,9 +61,11 @@ struct _TpTestsSimpleConnectionPrivate
   gchar *account;
   guint connect_source;
   guint disconnect_source;
+  gboolean break_fastpath_props;
 
   /* TpHandle => reffed TpTestsTextChannelNull */
-  GHashTable *channels;
+  GHashTable *text_channels;
+  TpTestsRoomListChan *room_list_chan;
 
   GError *get_self_handle_error /* initially NULL */ ;
 };
@@ -67,7 +76,7 @@ tp_tests_simple_connection_init (TpTestsSimpleConnection *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TESTS_TYPE_SIMPLE_CONNECTION, TpTestsSimpleConnectionPrivate);
 
-  self->priv->channels = g_hash_table_new_full (NULL, NULL, NULL,
+  self->priv->text_channels = g_hash_table_new_full (NULL, NULL, NULL,
       (GDestroyNotify) g_object_unref);
 }
 
@@ -82,6 +91,21 @@ get_property (GObject *object,
   switch (property_id) {
     case PROP_ACCOUNT:
       g_value_set_string (value, self->priv->account);
+      break;
+    case PROP_BREAK_PROPS:
+      g_value_set_boolean (value, self->priv->break_fastpath_props);
+      break;
+    case PROP_DBUS_STATUS:
+      if (self->priv->break_fastpath_props)
+        {
+          g_debug ("returning broken value for Connection.Status");
+          g_value_set_uint (value, 0xdeadbeefU);
+        }
+      else
+        {
+          g_value_set_uint (value,
+              tp_base_connection_get_status (TP_BASE_CONNECTION (self)));
+        }
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
@@ -101,6 +125,9 @@ set_property (GObject *object,
       g_free (self->priv->account);
       self->priv->account = g_utf8_strdown (g_value_get_string (value), -1);
       break;
+    case PROP_BREAK_PROPS:
+      self->priv->break_fastpath_props = g_value_get_boolean (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
   }
@@ -111,7 +138,8 @@ dispose (GObject *object)
 {
   TpTestsSimpleConnection *self = TP_TESTS_SIMPLE_CONNECTION (object);
 
-  g_hash_table_unref (self->priv->channels);
+  g_hash_table_unref (self->priv->text_channels);
+  g_clear_object (&self->priv->room_list_chan);
 
   G_OBJECT_CLASS (tp_tests_simple_connection_parent_class)->dispose (object);
 }
@@ -170,7 +198,7 @@ tp_tests_simple_normalize_contact (TpHandleRepoIface *repo,
 
 static void
 create_handle_repos (TpBaseConnection *conn,
-                     TpHandleRepoIface *repos[NUM_TP_HANDLE_TYPES])
+                     TpHandleRepoIface *repos[TP_NUM_HANDLE_TYPES])
 {
   repos[TP_HANDLE_TYPE_CONTACT] = tp_dynamic_handle_repo_new
       (TP_HANDLE_TYPE_CONTACT, tp_tests_simple_normalize_contact, NULL);
@@ -199,11 +227,13 @@ pretend_connected (gpointer data)
   TpBaseConnection *conn = (TpBaseConnection *) self;
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
       TP_HANDLE_TYPE_CONTACT);
+  TpHandle self_handle;
 
-  conn->self_handle = tp_handle_ensure (contact_repo, self->priv->account,
+  self_handle = tp_handle_ensure (contact_repo, self->priv->account,
       NULL, NULL);
+  tp_base_connection_set_self_handle (conn, self_handle);
 
-  if (conn->status == TP_CONNECTION_STATUS_CONNECTING)
+  if (tp_base_connection_get_status (conn) == TP_CONNECTION_STATUS_CONNECTING)
     {
       tp_base_connection_change_status (conn, TP_CONNECTION_STATUS_CONNECTED,
           TP_CONNECTION_STATUS_REASON_REQUESTED);
@@ -237,7 +267,8 @@ pretend_disconnected (gpointer data)
   TpTestsSimpleConnection *self = TP_TESTS_SIMPLE_CONNECTION (data);
 
   /* We are disconnected, all our channels are invalidated */
-  g_hash_table_remove_all (self->priv->channels);
+  g_hash_table_remove_all (self->priv->text_channels);
+  g_clear_object (&self->priv->room_list_chan);
 
   tp_base_connection_finish_shutdown (TP_BASE_CONNECTION (data));
   self->priv->disconnect_source = 0;
@@ -257,6 +288,19 @@ shut_down (TpBaseConnection *conn)
       conn);
 }
 
+static GPtrArray *
+get_interfaces_always_present (TpBaseConnection *base)
+{
+  GPtrArray *interfaces;
+
+  interfaces = TP_BASE_CONNECTION_CLASS (
+      tp_tests_simple_connection_parent_class)->get_interfaces_always_present (base);
+
+  g_ptr_array_add (interfaces, TP_IFACE_CONNECTION_INTERFACE_REQUESTS);
+
+  return interfaces;
+}
+
 static void
 tp_tests_simple_connection_class_init (TpTestsSimpleConnectionClass *klass)
 {
@@ -264,8 +308,6 @@ tp_tests_simple_connection_class_init (TpTestsSimpleConnectionClass *klass)
       (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
-  static const gchar *interfaces_always_present[] = {
-      TP_IFACE_CONNECTION_INTERFACE_REQUESTS, NULL };
 
   object_class->get_property = get_property;
   object_class->set_property = set_property;
@@ -279,20 +321,39 @@ tp_tests_simple_connection_class_init (TpTestsSimpleConnectionClass *klass)
   base_class->start_connecting = start_connecting;
   base_class->shut_down = shut_down;
 
-  base_class->interfaces_always_present = interfaces_always_present;
+  base_class->get_interfaces_always_present = get_interfaces_always_present;
 
   param_spec = g_param_spec_string ("account", "Account name",
       "The username of this user", NULL,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
+
+  param_spec = g_param_spec_boolean ("break-0192-properties",
+      "Break 0.19.2 properties",
+      "Break Connection D-Bus properties introduced in spec 0.19.2", FALSE,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_BREAK_PROPS, param_spec);
+
+  param_spec = g_param_spec_uint ("dbus-status",
+      "Connection.Status",
+      "The connection status as visible on D-Bus (overridden so can break it)",
+      TP_CONNECTION_STATUS_CONNECTED, G_MAXUINT,
+      TP_CONNECTION_STATUS_DISCONNECTED,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_DBUS_STATUS, param_spec);
 
   signals[SIGNAL_GOT_SELF_HANDLE] = g_signal_new ("got-self-handle",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
-      NULL, NULL,
-      g_cclosure_marshal_VOID__VOID,
+      NULL, NULL, NULL,
+      G_TYPE_NONE, 0);
+
+  signals[SIGNAL_GOT_ALL] = g_signal_new ("got-all",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL, NULL,
       G_TYPE_NONE, 0);
 }
 
@@ -309,7 +370,6 @@ tp_tests_simple_connection_set_identifier (TpTestsSimpleConnection *self,
   g_return_if_fail (handle != 0);
 
   tp_base_connection_set_self_handle (conn, handle);
-  tp_handle_unref (contact_repo, handle);
 }
 
 TpTestsSimpleConnection *
@@ -342,7 +402,8 @@ tp_tests_simple_connection_ensure_text_chan (TpTestsSimpleConnection *self,
 
   handle = tp_handle_ensure (contact_repo, target_id, NULL, NULL);
 
-  chan = g_hash_table_lookup (self->priv->channels, GUINT_TO_POINTER (handle));
+  chan = g_hash_table_lookup (self->priv->text_channels,
+      GUINT_TO_POINTER (handle));
   if (chan != NULL)
     {
       /* Channel already exist, reuse it */
@@ -350,8 +411,8 @@ tp_tests_simple_connection_ensure_text_chan (TpTestsSimpleConnection *self,
     }
   else
     {
-      chan_path = g_strdup_printf ("%s/Channel%u", base_conn->object_path,
-          count++);
+      chan_path = g_strdup_printf ("%s/Channel%u",
+          tp_base_connection_get_object_path (base_conn), count++);
 
        chan = TP_TESTS_TEXT_CHANNEL_NULL (
           tp_tests_object_new_static_class (
@@ -361,14 +422,57 @@ tp_tests_simple_connection_ensure_text_chan (TpTestsSimpleConnection *self,
             "handle", handle,
             NULL));
 
-      g_hash_table_insert (self->priv->channels, GUINT_TO_POINTER (handle),
+      g_hash_table_insert (self->priv->text_channels, GUINT_TO_POINTER (handle),
           chan);
     }
 
-  tp_handle_unref (contact_repo, handle);
-
   if (props != NULL)
     *props = tp_tests_text_channel_get_props (chan);
+
+  return chan_path;
+}
+
+static void
+room_list_chan_closed_cb (TpBaseChannel *channel,
+    TpTestsSimpleConnection *self)
+{
+  g_clear_object (&self->priv->room_list_chan);
+}
+
+gchar *
+tp_tests_simple_connection_ensure_room_list_chan (TpTestsSimpleConnection *self,
+    const gchar *server,
+    GHashTable **props)
+{
+  gchar *chan_path;
+  TpBaseConnection *base_conn = (TpBaseConnection *) self;
+
+  if (self->priv->room_list_chan != NULL)
+    {
+      /* Channel already exist, reuse it */
+      g_object_get (self->priv->room_list_chan,
+          "object-path", &chan_path, NULL);
+    }
+  else
+    {
+      chan_path = g_strdup_printf ("%s/RoomListChannel",
+          tp_base_connection_get_object_path (base_conn));
+
+      self->priv->room_list_chan = TP_TESTS_ROOM_LIST_CHAN (
+          tp_tests_object_new_static_class (
+            TP_TESTS_TYPE_ROOM_LIST_CHAN,
+            "connection", self,
+            "object-path", chan_path,
+            "server", server ? server : "",
+            NULL));
+
+      g_signal_connect (self->priv->room_list_chan, "closed",
+          G_CALLBACK (room_list_chan_closed_cb), self);
+    }
+
+  if (props != NULL)
+    g_object_get (self->priv->room_list_chan,
+        "channel-properties", props, NULL);
 
   return chan_path;
 }
@@ -401,7 +505,8 @@ get_self_handle (TpSvcConnection *iface,
       return;
     }
 
-  tp_svc_connection_return_from_get_self_handle (context, base->self_handle);
+  tp_svc_connection_return_from_get_self_handle (context,
+      tp_base_connection_get_self_handle (base));
   g_signal_emit (self, signals[SIGNAL_GOT_SELF_HANDLE], 0);
 }
 
@@ -411,5 +516,28 @@ conn_iface_init (TpSvcConnectionClass *iface)
 #define IMPLEMENT(prefix,x) \
   tp_svc_connection_implement_##x (iface, prefix##x)
   IMPLEMENT(,get_self_handle);
+#undef IMPLEMENT
+}
+
+static void
+get_all (TpSvcDBusProperties *iface,
+    const gchar *interface_name,
+    DBusGMethodInvocation *context)
+{
+  GHashTable *values = tp_dbus_properties_mixin_dup_all (G_OBJECT (iface),
+      interface_name);
+
+  tp_svc_dbus_properties_return_from_get_all (context, values);
+  g_hash_table_unref (values);
+  g_signal_emit (iface, signals[SIGNAL_GOT_ALL],
+      g_quark_from_string (interface_name));
+}
+
+static void
+props_iface_init (TpSvcDBusPropertiesClass *iface)
+{
+#define IMPLEMENT(x) \
+  tp_svc_dbus_properties_implement_##x (iface, x)
+  IMPLEMENT (get_all);
 #undef IMPLEMENT
 }

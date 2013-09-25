@@ -21,6 +21,10 @@
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/svc-generic.h>
 
+/* This is for text-mixin unit tests, others should be using ExampleEcho2Channel
+ * which uses newer TpMessageMixin */
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+
 static void text_iface_init (gpointer iface, gpointer data);
 static void channel_iface_init (gpointer iface, gpointer data);
 
@@ -150,7 +154,8 @@ get_property (GObject *object,
       g_value_set_boolean (value, TRUE);
       break;
     case PROP_INITIATOR_HANDLE:
-      g_value_set_uint (value, self->priv->conn->self_handle);
+      g_value_set_uint (value, tp_base_connection_get_self_handle (
+            self->priv->conn));
       break;
     case PROP_INITIATOR_ID:
         {
@@ -158,7 +163,8 @@ get_property (GObject *object,
               self->priv->conn, TP_HANDLE_TYPE_CONTACT);
 
           g_value_set_string (value,
-              tp_handle_inspect (contact_repo, self->priv->conn->self_handle));
+              tp_handle_inspect (contact_repo,
+                tp_base_connection_get_self_handle (self->priv->conn)));
         }
       break;
     case PROP_INTERFACES:
@@ -273,8 +279,7 @@ tp_tests_text_channel_null_class_init (TpTestsTextChannelNullClass *klass)
   param_spec = g_param_spec_object ("connection", "TpBaseConnection object",
       "Connection object that owns this channel",
       TP_TYPE_BASE_CONNECTION,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-      G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
 
   param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
@@ -570,3 +575,5 @@ tp_tests_text_channel_get_props (TpTestsTextChannelNull *self)
   g_strfreev (interfaces);
   return props;
 }
+
+G_GNUC_END_IGNORE_DEPRECATIONS
