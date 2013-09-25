@@ -23,7 +23,6 @@
 
 #include <glib.h>
 #include <telepathy-glib/telepathy-glib.h>
-#include <telepathy-glib/proxy-subclass.h>
 
 #include "call-event.h"
 #include "call-event-internal.h"

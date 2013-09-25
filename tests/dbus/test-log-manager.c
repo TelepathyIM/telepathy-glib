@@ -12,7 +12,7 @@
 #include <telepathy-logger/text-event.h>
 #include <telepathy-logger/client-factory-internal.h>
 
-#include <telepathy-glib/debug-sender.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 /* it was defined in telepathy-logger/log-manager.c */
 #undef DEBUG_FLAG
