@@ -81,6 +81,9 @@ USA.</p>
         is not yet in the CONNECTED state, this signal is not guaranteed
         to be emitted.
       </tp:docstring>
+      <tp:added version="0.UNRELEASED">Clients MAY assume that if the
+        SelfHandle and SelfID property exists, this signal will be emitted when
+        necessary.</tp:added>
 
       <arg type="u" tp:type="Contact_Handle" name="Self_Handle">
         <tp:docstring>
@@ -117,7 +120,7 @@ USA.</p>
         If the connection is not yet in the CONNECTED state, the value of
         this property MAY be empty string.
       </tp:docstring>
-      <tp:added version="0.99.1"/>
+      <tp:added version="0.UNRELEASED"/>
     </property>
 
     <property name="Status" tp:name-for-bindings="Status"
