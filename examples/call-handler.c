@@ -21,6 +21,7 @@
 
 #include <gst/gst.h>
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 #include <farstream/fs-element-added-notifier.h>
 #include <farstream/fs-utils.h>
 #include <telepathy-farstream/telepathy-farstream.h>
