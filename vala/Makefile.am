@@ -1,9 +1,9 @@
 vapidir = $(datarootdir)/vala/vapi
 vapi_DATA = \
-	telepathy-glib.vapi \
+	telepathy-glib-1.vapi \
 	$(NULL)
 dist_vapi_DATA = \
-	telepathy-glib.deps \
+	telepathy-glib-1.deps \
 	$(NULL)
 
 BUILT_SOURCES = \
@@ -12,9 +12,9 @@ BUILT_SOURCES = \
 
 pkgconfigdir = ${libdir}/pkgconfig
 
-telepathy-glib.vapi: $(top_builddir)/telepathy-glib/TelepathyGLib-1.gir
+telepathy-glib-1.vapi: $(top_builddir)/telepathy-glib/TelepathyGLib-1.gir
 	$(VAPIGEN_V)$(VAPIGEN) \
-		--library telepathy-glib \
+		--library telepathy-glib-1 \
 		--metadatadir=$(top_srcdir)/telepathy-glib \
 		--pkg gio-2.0 \
 		$< \
