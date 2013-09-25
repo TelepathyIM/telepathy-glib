@@ -110,6 +110,7 @@
 #include <telepathy-glib/stream-tube-channel.h>
 #include <telepathy-glib/stream-tube-connection.h>
 #include <telepathy-glib/text-channel.h>
+#include <telepathy-glib/text-mixin.h>
 #include <telepathy-glib/tls-certificate.h>
 #include <telepathy-glib/variant-util.h>
 
