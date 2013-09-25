@@ -25,8 +25,7 @@
 
 #include <dbus/dbus-glib.h>
 
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/errors.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 G_DEFINE_TYPE (TpTestsParamConnectionManager,
     tp_tests_param_connection_manager,

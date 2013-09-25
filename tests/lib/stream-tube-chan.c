@@ -16,9 +16,6 @@
 #include "util.h"
 
 #include <telepathy-glib/telepathy-glib.h>
-#include <telepathy-glib/channel-iface.h>
-#include <telepathy-glib/svc-channel.h>
-#include <telepathy-glib/gnio-util.h>
 
 #ifdef HAVE_GIO_UNIX
 #include <gio/gunixsocketaddress.h>

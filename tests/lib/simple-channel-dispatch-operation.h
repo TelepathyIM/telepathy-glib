@@ -14,8 +14,7 @@
 
 #include <glib-object.h>
 
-#include <telepathy-glib/channel.h>
-#include <telepathy-glib/dbus-properties-mixin.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
 

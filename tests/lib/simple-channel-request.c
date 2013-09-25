@@ -12,13 +12,9 @@
 
 #include "simple-channel-request.h"
 
-#include <telepathy-glib/client.h>
-#include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/proxy-subclass.h>
-#include <telepathy-glib/svc-channel-request.h>
-#include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/telepathy-glib.h>
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
+#include <telepathy-glib/proxy-subclass.h>
 
 #include "tests/lib/util.h"
 #include "tests/lib/textchan-null.h"

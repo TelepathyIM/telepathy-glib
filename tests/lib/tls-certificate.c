@@ -22,7 +22,7 @@
 #include "tls-certificate.h"
 
 #include <telepathy-glib/telepathy-glib.h>
-#include <telepathy-glib/svc-tls.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #define DEBUG_FLAG TP_TESTS_DEBUG_TLS
 #include "debug.h"

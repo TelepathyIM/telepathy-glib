@@ -12,7 +12,7 @@
 
 #include "util.h"
 
-#include <telepathy-glib/connection.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include <glib/gstdio.h>
 #include <string.h>

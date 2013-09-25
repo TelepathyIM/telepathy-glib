@@ -13,7 +13,8 @@
 
 #include "broken-client-types-conn.h"
 
-#include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 G_DEFINE_TYPE_WITH_CODE (TpTestsBrokenClientTypesConnection,
     tp_tests_broken_client_types_connection,

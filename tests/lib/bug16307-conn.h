@@ -13,7 +13,7 @@
 #define __TP_TESTS_BUG16307_CONN_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "simple-conn.h"
 

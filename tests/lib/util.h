@@ -12,7 +12,6 @@
 #define __TP_TESTS_LIB_UTIL_H__
 
 #include <telepathy-glib/telepathy-glib.h>
-#include <telepathy-glib/base-connection.h>
 
 TpDBusDaemon *tp_tests_dbus_daemon_dup_or_die (void);
 

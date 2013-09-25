@@ -10,7 +10,7 @@
 
 #include "config.h"
 
-#include <telepathy-glib/channel-manager.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "simple-channel-manager.h"
 #include "util.h"

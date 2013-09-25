@@ -13,9 +13,6 @@
 #include "dbus-tube-chan.h"
 
 #include <telepathy-glib/telepathy-glib.h>
-#include <telepathy-glib/channel-iface.h>
-#include <telepathy-glib/svc-channel.h>
-#include <telepathy-glib/gnio-util.h>
 #include <glib/gstdio.h>
 
 #if defined(G_OS_UNIX)

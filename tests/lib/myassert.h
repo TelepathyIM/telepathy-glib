@@ -2,7 +2,7 @@
 #define TP_TESTS_MYASSERT_H
 
 #include <glib.h>
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #define MYASSERT(assertion, extra_format, ...)\
   G_STMT_START {\

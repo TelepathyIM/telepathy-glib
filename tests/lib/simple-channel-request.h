@@ -13,8 +13,7 @@
 
 #include <glib-object.h>
 
-#include <telepathy-glib/base-connection.h>
-#include <telepathy-glib/dbus-properties-mixin.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "simple-conn.h"
 
