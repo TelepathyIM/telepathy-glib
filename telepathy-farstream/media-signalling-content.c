@@ -28,6 +28,8 @@
  * channel using Farstream.
  */
 
+#include "config.h"
+
 #include "media-signalling-content.h"
 
 #include <farstream/fs-conference.h>

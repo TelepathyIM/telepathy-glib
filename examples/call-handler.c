@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "config.h"
+
 #include <gst/gst.h>
 #include <telepathy-glib/telepathy-glib.h>
 #include <farstream/fs-element-added-notifier.h>

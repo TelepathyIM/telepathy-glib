@@ -27,6 +27,7 @@
  * channel using Farstream.
  */
 
+#include "config.h"
 
 #include "call-channel.h"
 

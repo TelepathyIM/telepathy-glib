@@ -29,6 +29,8 @@
  * org.freedesktop.Telepathy.Channel.Type.Call that has HardwareStreaming=FALSE
  */
 
+#include "config.h"
+
 #include <stdlib.h>
 
 #include <telepathy-glib/telepathy-glib.h>

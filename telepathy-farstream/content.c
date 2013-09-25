@@ -1,3 +1,4 @@
+#include "config.h"
 
 #include "content.h"
 #include "content-priv.h"
