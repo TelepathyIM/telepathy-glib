@@ -61,17 +61,17 @@ INTROSPECTION_COMPILER_ARGS = --includedir=$(srcdir)
 if HAVE_INTROSPECTION
 introspection_sources = $(tfinclude_HEADERS) $(apisources)
 
-TelepathyFarstream-0.6.gir: libtelepathy-farstream-1.la
-TelepathyFarstream_0_6_gir_INCLUDES = \
+TelepathyFarstream-1.gir: libtelepathy-farstream-1.la
+TelepathyFarstream_1_gir_INCLUDES = \
 	GObject-2.0 \
 	Gst-1.0 \
 	Farstream-0.2 \
 	TelepathyGLib-0.12
-TelepathyFarstream_0_6_gir_CFLAGS = $(AM_CPPFLAGS)
-TelepathyFarstream_0_6_gir_LIBS = libtelepathy-farstream-1.la
-TelepathyFarstream_0_6_gir_FILES = $(introspection_sources)
-TelepathyFarstream_0_6_gir_SCANNERFLAGS = --identifier-prefix=tf_ --identifier-prefix=Tf
-INTROSPECTION_GIRS += TelepathyFarstream-0.6.gir
+TelepathyFarstream_1_gir_CFLAGS = $(AM_CPPFLAGS)
+TelepathyFarstream_1_gir_LIBS = libtelepathy-farstream-1.la
+TelepathyFarstream_1_gir_FILES = $(introspection_sources)
+TelepathyFarstream_1_gir_SCANNERFLAGS = --identifier-prefix=tf_ --identifier-prefix=Tf
+INTROSPECTION_GIRS += TelepathyFarstream-1.gir
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
