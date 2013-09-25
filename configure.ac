@@ -97,7 +97,7 @@ AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 
 dnl Check for Telepathy libraries
-PKG_CHECK_MODULES([TELEPATHY], [telepathy-glib >= 0.21])
+PKG_CHECK_MODULES([TELEPATHY], [telepathy-glib-1 >= 0.99.1, telepathy-glib-1-dbus >= 0.99.1])
 AC_DEFINE(TP_VERSION_MIN_REQUIRED, TP_VERSION_0_22, [Ignore post 0.22 deprecations])
 AC_DEFINE(TP_VERSION_MAX_ALLOWED, TP_VERSION_0_22, [Prevent post 0.22 APIs])
 AC_DEFINE(TP_SEAL_ENABLE, 1, [Prevent to use sealed variables])
