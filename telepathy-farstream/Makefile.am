@@ -1,4 +1,4 @@
-tfincludedir = $(includedir)/telepathy-1.0/telepathy-farstream
+tfincludedir = $(includedir)/telepathy-farstream-1/telepathy-farstream
 tfinclude_HEADERS = \
 	telepathy-farstream.h \
 	channel.h \

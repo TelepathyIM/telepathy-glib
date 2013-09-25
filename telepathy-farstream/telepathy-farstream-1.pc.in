@@ -9,4 +9,4 @@ Version: @VERSION@
 Requires.private: dbus-glib-1 >= 0.73, glib-2.0 >= 2.10, gobject-2.0 >= 2.10,
 farstream-0.2, telepathy-glib-1 >= 0.99.1, telepathy-glib-1-dbus >= 0.99.1, gstreamer-1.0
 Libs: -L${libdir} -ltelepathy-farstream
-Cflags: -I${includedir}/telepathy-1.0
+Cflags: -I${includedir}/telepathy-farstream-1
