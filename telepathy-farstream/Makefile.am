@@ -27,7 +27,7 @@ nodist_libtelepathy_farstream_la_SOURCES = $(BUILT_SOURCES)
 lib_LTLIBRARIES = libtelepathy-farstream.la
 
 pkgconfigdir = ${libdir}/pkgconfig
-pkgconfig_DATA = telepathy-farstream.pc
+pkgconfig_DATA = telepathy-farstream-1.pc
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir) \

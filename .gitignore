@@ -12,8 +12,8 @@ Makefile.in
 .#*
 *.stamp
 
-telepathy-farstream/telepathy-farstream.pc
-telepathy-farstream/telepathy-farstream-uninstalled.pc
+telepathy-farstream/telepathy-farstream-1.pc
+telepathy-farstream/telepathy-farstream-uninstalled-1.pc
 
 doc/lib/*.bak
 doc/lib/html/
