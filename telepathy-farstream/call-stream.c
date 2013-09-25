@@ -1531,7 +1531,7 @@ static void
 cb_fs_component_state_changed (TfCallStream *stream, guint component,
     FsStreamState fsstate)
 {
-  TpMediaStreamState state;
+  TpStreamEndpointState state;
 
   if (!stream->endpoint)
     return;
