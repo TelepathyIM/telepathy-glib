@@ -103,6 +103,8 @@ dnl Check for Telepathy libraries
 PKG_CHECK_MODULES([TELEPATHY], [telepathy-glib >= 0.21])
 AC_DEFINE(TP_VERSION_MIN_REQUIRED, TP_VERSION_0_22, [Ignore post 0.22 deprecations])
 AC_DEFINE(TP_VERSION_MAX_ALLOWED, TP_VERSION_0_22, [Prevent post 0.22 APIs])
+AC_DEFINE(TP_SEAL_ENABLE, 1, [Prevent to use sealed variables])
+AC_DEFINE(TP_DISABLE_SINGLE_INCLUDE, 1, [Disable single include header])
 
 AC_SUBST(TELEPATHY_CFLAGS)
 AC_SUBST(TELEPATHY_LIBS)
