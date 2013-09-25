@@ -374,15 +374,22 @@ tp_protocol_check_for_core (TpProtocol *self)
   value = tp_asv_lookup (props, TP_PROP_PROTOCOL_CONNECTION_INTERFACES);
 
   if (value == NULL || !G_VALUE_HOLDS (value, G_TYPE_STRV))
-    return FALSE;
+    {
+      DEBUG ("Interfaces not found");
+      return FALSE;
+    }
 
   if (tp_asv_get_boxed (props, TP_PROP_PROTOCOL_REQUESTABLE_CHANNEL_CLASSES,
         TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST) == NULL)
-    return FALSE;
+    {
+      DEBUG ("Requestable channel classes not found");
+      return FALSE;
+    }
 
   /* Interfaces has a sensible default, the empty list.
    * VCardField, EnglishName and Icon have a sensible default, "". */
 
+  DEBUG ("Core feature ready");
   return TRUE;
 }
 
@@ -427,11 +434,19 @@ tp_protocol_constructed (GObject *object)
 
   g_assert (self->priv->name != NULL);
 
+  DEBUG ("%s/%s: new Protocol", self->priv->cm_name,
+      self->priv->name);
+
   if (self->priv->protocol_properties == NULL)
     {
+      DEBUG ("immutable properties not supplied");
       had_immutables = FALSE;
       self->priv->protocol_properties = g_hash_table_new_full (g_str_hash,
           g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free);
+    }
+  else
+    {
+      DEBUG ("immutable properties already supplied");
     }
 
   self->priv->params = tp_protocol_params_from_param_specs (
@@ -1504,9 +1519,11 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
 
   if (!tp_connection_manager_check_valid_protocol_name (name, NULL))
     {
-      DEBUG ("Protocol '%s' has an invalid name", name);
+      DEBUG ("%s: protocol '%s' has an invalid name", cm_debug_name, name);
       return NULL;
     }
+
+  DEBUG ("%s: reading protocol '%s' from manager file", cm_debug_name, name);
 
   keys = g_key_file_get_keys (file, group, NULL, NULL);
 

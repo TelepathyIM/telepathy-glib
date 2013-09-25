@@ -331,7 +331,10 @@ tp_connection_manager_end_introspection (TpConnectionManager *self,
 {
   tp_connection_manager_reset_introspection (self);
 
-  DEBUG ("End of introspection, info source %u", self->priv->info_source);
+  DEBUG ("%s: end of introspection, info source %s (%d)",
+      self->priv->name,
+      _tp_enum_to_nick_nonnull (TP_TYPE_CM_INFO_SOURCE, self->priv->info_source),
+      self->priv->info_source);
   g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->priv->info_source);
   tp_connection_manager_ready_or_failed (self, error);
 }
@@ -365,7 +368,8 @@ tp_connection_manager_get_all_cb (TpProxy *proxy,
           GHashTableIter iter;
           gpointer k, v;
 
-          DEBUG ("%u Protocols from D-Bus", g_hash_table_size (protocols));
+          DEBUG ("%s: %u Protocols from GetAll()",
+              self->priv->name, g_hash_table_size (protocols));
 
           g_assert (self->priv->found_protocols == NULL);
           self->priv->found_protocols = g_hash_table_new_full (g_str_hash,
@@ -398,12 +402,18 @@ tp_connection_manager_get_all_cb (TpProxy *proxy,
                 }
             }
         }
+      else
+        {
+          DEBUG ("%s: no Protocols property in GetAll() (old CM?)",
+              self->priv->name);
+        }
 
       tp_connection_manager_continue_introspection (self);
     }
   else
     {
-      DEBUG ("Error getting ConnectionManager properties: %s %d: %s",
+      DEBUG ("%s: Error getting ConnectionManager properties: %s %d: %s",
+          self->priv->name,
           g_quark_to_string (error->domain), error->code, error->message);
 
       if (!self->priv->running)
@@ -423,16 +433,17 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
   GHashTable *tmp;
   guint old;
 
+  DEBUG ("%s", self->priv->name);
+
   if (self->priv->introspection_step == INTROSPECT_IDLE)
     {
-      DEBUG ("calling GetAll on CM");
+      DEBUG ("%s: calling GetAll on CM", self->priv->name);
       self->priv->introspection_step = INTROSPECT_GETTING_PROPERTIES;
       self->priv->introspection_call = tp_cli_dbus_properties_call_get_all (
           self, -1, TP_IFACE_CONNECTION_MANAGER,
           tp_connection_manager_get_all_cb, NULL, NULL, NULL);
       return;
     }
-
 
   /* swap found_protocols and protocols, so we'll free the old
    * protocols as part of end_introspection */
@@ -501,13 +512,14 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
         {
           if (self->priv->retried_introspection)
             {
-              DEBUG ("%s, twice: assuming fatal and not retrying", e.message);
+              DEBUG ("%s: %s, twice: assuming fatal and not retrying",
+                  self->priv->name, e.message);
               tp_connection_manager_end_introspection (self, &e);
             }
           else
             {
               self->priv->retried_introspection = TRUE;
-              DEBUG ("%s: retrying", e.message);
+              DEBUG ("%s: %s: retrying", self->priv->name, e.message);
               tp_connection_manager_reset_introspection (self);
               tp_connection_manager_continue_introspection (self);
             }
@@ -517,6 +529,7 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
        * state, so we didn't *exit* as such. */
       if (self->priv->name_known)
         {
+          DEBUG ("%s: exited", self->priv->name);
           g_signal_emit (self, signals[SIGNAL_EXITED], 0);
         }
     }
@@ -525,8 +538,14 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
       /* represent an atomic change of ownership as if it was an exit and
        * restart */
       if (self->priv->running)
-        tp_connection_manager_name_owner_changed_cb (bus, name, "", self);
+        {
+          DEBUG ("%s: atomic name owner change, behaving as if it exited",
+              self->priv->name);
+          tp_connection_manager_name_owner_changed_cb (bus, name, "", self);
+          DEBUG ("%s: back to normal handling", self->priv->name);
+        }
 
+      DEBUG ("%s: is now running", self->priv->name);
       self->priv->running = TRUE;
       g_signal_emit (self, signals[SIGNAL_ACTIVATED], 0);
 
@@ -538,6 +557,9 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
   /* if we haven't started introspecting yet, now would be a good time */
   if (!self->priv->name_known)
     {
+      DEBUG ("%s: starting introspection now we know the name owner",
+          self->priv->name);
+
       g_assert (self->priv->manager_file_read_idle_id == 0);
 
       /* now we know whether we're running or not, we can try reading the
@@ -547,6 +569,9 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
 
       if (self->priv->want_activation && self->priv->introspect_idle_id == 0)
         {
+          DEBUG ("%s: forcing introspection for its side-effect of "
+              "activation",
+              self->priv->name);
           /* ... but if activation was requested, we should also do that */
           self->priv->introspect_idle_id = g_idle_add (
               tp_connection_manager_idle_introspect, self);
@@ -645,14 +670,16 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
           GHashTable *protocols;
           GStrv interfaces = NULL;
 
-          DEBUG ("Reading %s", self->priv->manager_file);
+          DEBUG ("%s: reading %s", self->priv->name, self->priv->manager_file);
 
           if (!tp_connection_manager_read_file (
               tp_proxy_get_dbus_daemon (self),
               self->priv->name, self->priv->manager_file, &protocols, &interfaces,
               &error))
             {
-              DEBUG ("Failed to load %s: %s", self->priv->manager_file,
+              DEBUG ("%s: failed to load %s: %s #%d: %s",
+                  self->priv->name, self->priv->manager_file,
+                  g_quark_to_string (error->domain), error->code,
                   error->message);
               g_error_free (error);
               error = NULL;
@@ -665,7 +692,7 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
 
               self->priv->protocols = protocols;
 
-              DEBUG ("Got info from file");
+              DEBUG ("%s: got info from file", self->priv->name);
               /* previously it must have been NONE */
               self->priv->info_source = TP_CM_INFO_SOURCE_FILE;
 
@@ -683,15 +710,21 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
 
       if (self->priv->introspect_idle_id == 0)
         {
-          DEBUG ("no .manager file or failed to parse it, trying to activate "
-              "CM instead");
+          DEBUG ("%s: no .manager file or failed to parse it, trying to "
+              "activate CM instead",
+              self->priv->name);
           tp_connection_manager_idle_introspect (self);
         }
       else
         {
-          DEBUG ("no .manager file, but will activate CM soon anyway");
+          DEBUG ("%s: no .manager file, but will activate CM soon anyway",
+              self->priv->name);
         }
-      /* else we're going to introspect soon anyway */
+    }
+  else
+    {
+      DEBUG ("%s: not reading manager file, %u protocols already discovered",
+          self->priv->name, g_hash_table_size (self->priv->protocols));
     }
 
 out:
@@ -1173,18 +1206,26 @@ tp_connection_manager_activate (TpConnectionManager *self)
     {
       if (self->priv->running)
         {
-          DEBUG ("already running");
+          DEBUG ("%s: already running", self->priv->name);
           return FALSE;
         }
 
       if (self->priv->introspect_idle_id == 0)
-        self->priv->introspect_idle_id = g_idle_add (
-            tp_connection_manager_idle_introspect, self);
+        {
+          DEBUG ("%s: adding idle introspection", self->priv->name);
+          self->priv->introspect_idle_id = g_idle_add (
+              tp_connection_manager_idle_introspect, self);
+        }
+      else
+        {
+          DEBUG ("%s: idle introspection already added", self->priv->name);
+        }
     }
   else
     {
       /* we'll activate later, when we know properly whether we're running */
-      DEBUG ("queueing activation for when we know what's going on");
+      DEBUG ("%s: queueing activation for when we know what's going on",
+          self->priv->name);
       self->priv->want_activation = TRUE;
     }
 

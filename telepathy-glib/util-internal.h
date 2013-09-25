@@ -50,6 +50,7 @@ GList * _tp_create_channel_request_list (TpClientFactory *factory,
 
 gboolean _tp_enum_from_nick (GType enum_type, const gchar *nick, gint *value);
 const gchar *_tp_enum_to_nick (GType enum_type, gint value);
+const gchar *_tp_enum_to_nick_nonnull (GType enum_type, gint value);
 
 #define _tp_implement_finish_void(source, tag) \
     if (g_simple_async_result_propagate_error (\
