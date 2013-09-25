@@ -82,7 +82,7 @@ GTKDOC_LIBS= \
 	$(GST_INTERFACES_LIBS) \
 	$(TELEPATHY_LIBS) \
 	$(FARSTREAM_LIBS) \
-	$(top_builddir)/telepathy-farstream/libtelepathy-farstream.la
+	$(top_builddir)/telepathy-farstream/libtelepathy-farstream-1.la
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make
