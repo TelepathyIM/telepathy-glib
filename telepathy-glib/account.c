@@ -1622,7 +1622,7 @@ tp_account_class_init (TpAccountClass *klass)
    * Interface Specification.
    *
    * For instance, accounts for the "jabber" protocol should have the service
-   * names "google-talk", "ovi-chat", "facebook" and "lj-talk" for accounts
+   * names "google_talk", "ovi_chat", "facebook" and "lj_talk" for accounts
    * that connect to Google Talk, Ovi Chat, Facebook and Livejournal,
    * respectively, and this property will be "jabber" for accounts that
    * connect to a generic Jabber server.
