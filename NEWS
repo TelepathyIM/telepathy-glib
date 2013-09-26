@@ -3,6 +3,9 @@ telepathy-glib 0.20.5 (UNRELEASED)
 
 Fixes:
 
+• Don't crash if the AccountManager returns an incorrect type for the
+  Avatar (fd.o #69849, Simon)
+
 • Make TpHeap work correctly with GComparator functions that return
   values outside {-1, 0, 1} (fd.o #68932, Debarshi Ray)
 
