@@ -1055,7 +1055,6 @@ parse_text_node (TplLogStoreXml *self,
     xmlNodePtr node,
     gboolean is_room,
     const gchar *target_id,
-    const gchar *self_id,
     TpAccount *account)
 {
   TplEvent *event;
@@ -1109,8 +1108,8 @@ parse_text_node (TplLogStoreXml *self,
   else if (is_user)
     receiver = tpl_entity_new (target_id, TPL_ENTITY_CONTACT, NULL, NULL);
   else
-    receiver = tpl_entity_new (self_id, TPL_ENTITY_SELF,
-        tp_account_get_nickname (account), NULL);
+    receiver = tpl_entity_new (tp_account_get_normalized_name (account),
+        TPL_ENTITY_SELF, tp_account_get_nickname (account), NULL);
 
   sender = tpl_entity_new (sender_id,
       is_user ? TPL_ENTITY_SELF : TPL_ENTITY_CONTACT,
@@ -1153,7 +1152,6 @@ parse_call_node (TplLogStoreXml *self,
     xmlNodePtr node,
     gboolean is_room,
     const gchar *target_id,
-    const gchar *self_id,
     TpAccount *account)
 {
   TplEvent *event;
@@ -1205,8 +1203,8 @@ parse_call_node (TplLogStoreXml *self,
   else if (is_user)
     receiver = tpl_entity_new (target_id, TPL_ENTITY_CONTACT, NULL, NULL);
   else
-    receiver = tpl_entity_new (self_id, TPL_ENTITY_SELF,
-        tp_account_get_nickname (account), NULL);
+    receiver = tpl_entity_new (tp_account_get_normalized_name (account),
+        TPL_ENTITY_SELF, tp_account_get_nickname (account), NULL);
 
   sender = tpl_entity_new (sender_id,
       is_user ? TPL_ENTITY_SELF : TPL_ENTITY_CONTACT,
@@ -1322,7 +1320,12 @@ event_queue_add_text_event (GQueue *events,
 }
 
 
-/* returns a Glist of TplEvent instances */
+/* returns a Glist of TplEvent instances.
+ *
+ * @account needs to have TP_ACCOUNT_FEATURE_CORE prepared (we use
+ * tp_account_get_nickname() and tp_account_get_normalized_name() which rely
+ * on CORE being prepared).
+ * */
 static void
 log_store_xml_get_events_for_file (TplLogStoreXml *self,
     TpAccount *account,
@@ -1338,15 +1341,14 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
   gchar *dirname;
   gchar *tmp;
   gchar *target_id;
-  gchar *self_id;
   GHashTable *supersedes_links;
-  GError *error = NULL;
   guint num_events = 0;
   GList *index;
 
   g_return_if_fail (TPL_IS_LOG_STORE_XML (self));
   g_return_if_fail (TP_IS_ACCOUNT (account));
   g_return_if_fail (!TPL_STR_EMPTY (filename));
+  g_return_if_fail (tp_proxy_is_prepared (account, TP_ACCOUNT_FEATURE_CORE));
 
   DEBUG ("Attempting to parse filename:'%s'...", filename);
 
@@ -1355,19 +1357,6 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
       DEBUG ("Filename:'%s' does not exist", filename);
       return;
     }
-
-  /* FIXME: fdo#69814 ideally we shouldn't use the account_id as self_id */
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  if (!tp_account_parse_object_path (
-        tp_proxy_get_object_path (TP_PROXY (account)),
-        NULL, NULL, &self_id, &error))
-    {
-      DEBUG ("Cannot get self identifier from account: %s",
-          error->message);
-      g_error_free (error);
-      return;
-    }
-  G_GNUC_END_IGNORE_DEPRECATIONS
 
   /* Create parser. */
   ctxt = xmlNewParserCtxt ();
@@ -1378,7 +1367,6 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
     {
       g_warning ("Failed to parse file:'%s'", filename);
       xmlFreeParserCtxt (ctxt);
-      g_free (self_id);
       return;
     }
 
@@ -1388,7 +1376,6 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
     {
       xmlFreeDoc (doc);
       xmlFreeParserCtxt (ctxt);
-      g_free (self_id);
       return;
     }
 
@@ -1419,8 +1406,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
       if (type == TPL_TYPE_TEXT_EVENT
           && strcmp ((const gchar *) node->name, "message") == 0)
         {
-          event = parse_text_node (self, node, is_room, target_id, self_id,
-              account);
+          event = parse_text_node (self, node, is_room, target_id, account);
 
           if (event == NULL)
             continue;
@@ -1432,8 +1418,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
       else if (type == TPL_TYPE_CALL_EVENT
           && strcmp ((const char*) node->name, "call") == 0)
         {
-          event = parse_call_node (self, node, is_room, target_id, self_id,
-              account);
+          event = parse_call_node (self, node, is_room, target_id, account);
 
           if (event == NULL)
             continue;
@@ -1446,7 +1431,6 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
   DEBUG ("Parsed %u events", num_events);
 
   g_free (target_id);
-  g_free (self_id);
   xmlFreeDoc (doc);
   xmlFreeParserCtxt (ctxt);
   g_hash_table_unref (supersedes_links);

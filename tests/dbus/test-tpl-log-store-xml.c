@@ -320,7 +320,8 @@ test_add_text_event (XmlTestCaseFixture *fixture,
       TP_ACCOUNT_OBJECT_PATH_BASE "idle/irc/me",
       &account, &account_service);
 
-  me = tpl_entity_new ("me", TPL_ENTITY_SELF, "my-alias", "my-avatar");
+  me = tpl_entity_new ("bob.mcbadgers@example.com", TPL_ENTITY_SELF,
+      "my-alias", "my-avatar");
   contact = tpl_entity_new ("contact", TPL_ENTITY_CONTACT, "contact-alias",
       "contact-token");
   room = tpl_entity_new_from_room_id ("room");
@@ -744,7 +745,8 @@ test_add_call_event (XmlTestCaseFixture *fixture,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/me",
       &account, &account_service);
 
-  me = tpl_entity_new ("me", TPL_ENTITY_SELF, "my-alias", "my-avatar");
+  me = tpl_entity_new ("bob.mcbadgers@example.com", TPL_ENTITY_SELF,
+      "my-alias", "my-avatar");
   contact = tpl_entity_new ("contact", TPL_ENTITY_CONTACT, "contact-alias",
       "contact-token");
   room = tpl_entity_new_from_room_id ("room");
