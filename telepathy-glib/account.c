@@ -3482,6 +3482,12 @@ _tp_account_got_avatar_cb (TpProxy *proxy,
       DEBUG ("Failed to get avatar: %s", error->message);
       g_simple_async_result_set_from_error (result, error);
     }
+  else if (!G_VALUE_HOLDS (out_Value, TP_STRUCT_TYPE_AVATAR))
+    {
+      DEBUG ("Avatar had wrong type: %s", G_VALUE_TYPE_NAME (out_Value));
+      g_simple_async_result_set_error (result, TP_ERROR, TP_ERROR_CONFUSED,
+          "Incorrect type for Avatar property");
+    }
   else
     {
       avatar = g_value_get_boxed (out_Value);
