@@ -1,7 +1,7 @@
 /*
  * simple-account.c - a simple account service.
  *
- * Copyright (C) 2010 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2010-2012 Collabora Ltd. <http://www.collabora.co.uk/>
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright
@@ -12,14 +12,8 @@
 
 #include "simple-account.h"
 
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/defs.h>
-#include <telepathy-glib/enums.h>
-#include <telepathy-glib/gtypes.h>
-#include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/util.h>
-#include <telepathy-glib/svc-generic.h>
-#include <telepathy-glib/svc-account.h>
+#include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 static void account_iface_init (gpointer, gpointer);
 
@@ -28,6 +22,10 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleAccount,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT,
         account_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_INTERFACE_AVATAR,
+        NULL);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_INTERFACE_ADDRESSING,
+        NULL);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_INTERFACE_STORAGE,
         NULL);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
@@ -36,6 +34,7 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleAccount,
 
 /* TP_IFACE_ACCOUNT is implied */
 static const char *ACCOUNT_INTERFACES[] = {
+    TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING,
     TP_IFACE_ACCOUNT_INTERFACE_STORAGE,
     NULL };
 
@@ -58,17 +57,56 @@ enum
   PROP_REQUESTED_PRESENCE,
   PROP_NORMALIZED_NAME,
   PROP_HAS_BEEN_ONLINE,
+  PROP_URI_SCHEMES,
   PROP_STORAGE_PROVIDER,
   PROP_STORAGE_IDENTIFIER,
   PROP_STORAGE_SPECIFIC_INFORMATION,
-  PROP_STORAGE_RESTRICTIONS
+  PROP_STORAGE_RESTRICTIONS,
+  PROP_AVATAR,
+  PROP_SUPERSEDES,
+  N_PROPS
 };
 
 struct _TpTestsSimpleAccountPrivate
 {
-  gpointer unused;
+  TpConnectionPresenceType presence;
+  gchar *presence_status;
+  gchar *presence_msg;
+  gchar *connection_path;
+  gboolean enabled;
+  GPtrArray *uri_schemes;
   GHashTable *parameters;
 };
+
+static void
+tp_tests_simple_account_update_parameters (TpSvcAccount *svc,
+    GHashTable *parameters,
+    const gchar **unset_parameters,
+    DBusGMethodInvocation *context)
+{
+  GPtrArray *reconnect_required = g_ptr_array_new ();
+  GHashTableIter iter;
+  gpointer k;
+  guint i;
+
+  /* We don't actually store any parameters, but for the purposes
+   * of this method we pretend that every parameter provided is
+   * valid and requires reconnection. */
+
+  g_hash_table_iter_init (&iter, parameters);
+
+  while (g_hash_table_iter_next (&iter, &k, NULL))
+    g_ptr_array_add (reconnect_required, k);
+
+  for (i = 0; unset_parameters != NULL && unset_parameters[i] != NULL; i++)
+    g_ptr_array_add (reconnect_required, (gchar *) unset_parameters[i]);
+
+  g_ptr_array_add (reconnect_required, NULL);
+
+  tp_svc_account_return_from_update_parameters (context,
+      (const gchar **) reconnect_required->pdata);
+  g_ptr_array_unref (reconnect_required);
+}
 
 static void
 account_iface_init (gpointer klass,
@@ -76,72 +114,42 @@ account_iface_init (gpointer klass,
 {
 #define IMPLEMENT(x) tp_svc_account_implement_##x (\
   klass, tp_tests_simple_account_##x)
-  /* TODO */
+  IMPLEMENT (update_parameters);
 #undef IMPLEMENT
 }
 
+/* you may have noticed this is not entirely realistic */
+static const gchar * const uri_schemes[] = { "about", "telnet", NULL };
 
 static void
 tp_tests_simple_account_init (TpTestsSimpleAccount *self)
 {
+  guint i;
+
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TESTS_TYPE_SIMPLE_ACCOUNT,
       TpTestsSimpleAccountPrivate);
-  self->priv->parameters = g_hash_table_new_full (g_str_hash, g_str_equal,
-      (GDestroyNotify) g_free, (GDestroyNotify) tp_g_value_slice_free);
+
+  self->priv->presence = TP_CONNECTION_PRESENCE_TYPE_AWAY;
+  self->priv->presence_status = g_strdup ("currently-away");
+  self->priv->presence_msg = g_strdup ("this is my CurrentPresence");
+  self->priv->connection_path = g_strdup ("/");
+  self->priv->enabled = TRUE;
+
+  self->priv->uri_schemes = g_ptr_array_new_with_free_func (g_free);
+  for (i = 0; uri_schemes[i] != NULL; i++)
+    g_ptr_array_add (self->priv->uri_schemes, g_strdup (uri_schemes[i]));
+
+  self->priv->parameters = g_hash_table_new (NULL, NULL);
 }
-
-static gpointer
-_parameters_hash_copy_key (gpointer boxed)
-{
-  return g_strdup (boxed);
-}
-
-static gpointer
-_parameters_hash_copy_value (gpointer boxed)
-{
-  GValue *ret = tp_g_value_slice_new (G_TYPE_STRING);
-
-  g_value_copy (boxed, ret);
-  return ret;
-}
-
-
-static void
-tp_tests_simple_account_set_property (GObject *object,
-    guint param_id,
-    const GValue *value,
-    GParamSpec *pspec)
-{
-  TpTestsSimpleAccount *self = TP_TESTS_SIMPLE_ACCOUNT (object);
-
-  switch (param_id) {
-      case PROP_PARAMETERS:
-        tp_g_hash_table_update (self->priv->parameters,
-            g_value_get_boxed (value), _parameters_hash_copy_key,
-            _parameters_hash_copy_value);
-        break;
-      default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
-        break;
-  }
-}
-
 
 static void
 tp_tests_simple_account_get_property (GObject *object,
-    guint property_id,
-    GValue *value,
-    GParamSpec *spec)
+              guint property_id,
+              GValue *value,
+              GParamSpec *spec)
 {
   TpTestsSimpleAccount *self = TP_TESTS_SIMPLE_ACCOUNT (object);
-  GValueArray *presence;
   GValue identifier = { 0, };
-
-  presence = tp_value_array_build (3,
-      G_TYPE_UINT, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE,
-      G_TYPE_STRING, "available",
-      G_TYPE_STRING, "",
-      G_TYPE_INVALID);
 
   g_value_init (&identifier, G_TYPE_STRING);
   g_value_set_string (&identifier, "unique-identifier");
@@ -160,7 +168,7 @@ tp_tests_simple_account_get_property (GObject *object,
       g_value_set_boolean (value, TRUE);
       break;
     case PROP_ENABLED:
-      g_value_set_boolean (value, TRUE);
+      g_value_set_boolean (value, self->priv->enabled);
       break;
     case PROP_NICKNAME:
       g_value_set_string (value, "badger");
@@ -169,13 +177,17 @@ tp_tests_simple_account_get_property (GObject *object,
       g_value_set_boxed (value, self->priv->parameters);
       break;
     case PROP_AUTOMATIC_PRESENCE:
-      g_value_set_boxed (value, presence);
+      g_value_take_boxed (value, tp_value_array_build (3,
+            G_TYPE_UINT, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE,
+            G_TYPE_STRING, "automatically-available",
+            G_TYPE_STRING, "this is my AutomaticPresence",
+            G_TYPE_INVALID));
       break;
     case PROP_CONNECT_AUTO:
       g_value_set_boolean (value, FALSE);
       break;
     case PROP_CONNECTION:
-      g_value_set_boxed (value, "/");
+      g_value_set_boxed (value, self->priv->connection_path);
       break;
     case PROP_CONNECTION_STATUS:
       g_value_set_uint (value, TP_CONNECTION_STATUS_CONNECTED);
@@ -184,13 +196,21 @@ tp_tests_simple_account_get_property (GObject *object,
       g_value_set_uint (value, TP_CONNECTION_STATUS_REASON_REQUESTED);
       break;
     case PROP_CURRENT_PRESENCE:
-      g_value_set_boxed (value, presence);
+      g_value_take_boxed (value, tp_value_array_build (3,
+            G_TYPE_UINT, self->priv->presence,
+            G_TYPE_STRING, self->priv->presence_status,
+            G_TYPE_STRING, self->priv->presence_msg,
+            G_TYPE_INVALID));
       break;
     case PROP_REQUESTED_PRESENCE:
-      g_value_set_boxed (value, presence);
+      g_value_take_boxed (value, tp_value_array_build (3,
+            G_TYPE_UINT, TP_CONNECTION_PRESENCE_TYPE_BUSY,
+            G_TYPE_STRING, "requesting",
+            G_TYPE_STRING, "this is my RequestedPresence",
+            G_TYPE_INVALID));
       break;
     case PROP_NORMALIZED_NAME:
-      g_value_set_string (value, "");
+      g_value_set_string (value, "bob.mcbadgers@example.com");
       break;
     case PROP_HAS_BEEN_ONLINE:
       g_value_set_boolean (value, TRUE);
@@ -213,13 +233,86 @@ tp_tests_simple_account_get_property (GObject *object,
           TP_STORAGE_RESTRICTION_FLAG_CANNOT_SET_ENABLED |
           TP_STORAGE_RESTRICTION_FLAG_CANNOT_SET_PARAMETERS);
       break;
+    case PROP_URI_SCHEMES:
+        {
+          GPtrArray *arr;
+          guint i;
+
+          arr = g_ptr_array_sized_new (self->priv->uri_schemes->len + 1);
+          for (i = 0; i < self->priv->uri_schemes->len; i++)
+              g_ptr_array_add (arr,
+                  g_ptr_array_index (self->priv->uri_schemes, i));
+            g_ptr_array_add (arr, NULL);
+
+          g_value_set_boxed (value, arr->pdata);
+          g_ptr_array_unref (arr);
+        }
+      break;
+    case PROP_AVATAR:
+        {
+          GArray *arr = g_array_new (FALSE, FALSE, sizeof (char));
+
+          /* includes NUL for simplicity */
+          g_array_append_vals (arr, ":-)", 4);
+
+          g_value_take_boxed (value,
+              tp_value_array_build (2,
+                TP_TYPE_UCHAR_ARRAY, arr,
+                G_TYPE_STRING, "text/plain",
+                G_TYPE_INVALID));
+          g_array_unref (arr);
+        }
+      break;
+    case PROP_SUPERSEDES:
+        {
+          GPtrArray *arr = g_ptr_array_new ();
+
+          g_ptr_array_add (arr,
+              g_strdup (TP_ACCOUNT_OBJECT_PATH_BASE "super/seded/whatever"));
+          g_value_take_boxed (value, arr);
+        }
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
       break;
   }
 
-  g_boxed_free (TP_STRUCT_TYPE_SIMPLE_PRESENCE, presence);
   g_value_unset (&identifier);
+}
+
+static void
+tp_tests_simple_account_set_property (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *spec)
+{
+  TpTestsSimpleAccount *self = TP_TESTS_SIMPLE_ACCOUNT (object);
+
+  switch (property_id)
+    {
+      case PROP_PARAMETERS:
+        self->priv->parameters = g_value_dup_boxed (value);
+        /* In principle we should be emitting AccountPropertyChanged here */
+        break;
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
+        break;
+    }
+}
+
+static void
+tp_tests_simple_account_finalize (GObject *object)
+{
+  TpTestsSimpleAccount *self = TP_TESTS_SIMPLE_ACCOUNT (object);
+
+  g_free (self->priv->presence_status);
+  g_free (self->priv->presence_msg);
+  g_free (self->priv->connection_path);
+
+  g_ptr_array_unref (self->priv->uri_schemes);
+  g_hash_table_unref (self->priv->parameters);
+
+  G_OBJECT_CLASS (tp_tests_simple_account_parent_class)->finalize (object);
 }
 
 /**
@@ -250,6 +343,7 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
         { "RequestedPresence", "requested-presence", NULL },
         { "NormalizedName", "normalized-name", NULL },
         { "HasBeenOnline", "has-been-online", NULL },
+        { "Supersedes", "supersedes", NULL },
         { NULL }
   };
 
@@ -258,6 +352,16 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
         { "StorageIdentifier", "storage-identifier", NULL },
         { "StorageSpecificInformation", "storage-specific-information", NULL },
         { "StorageRestrictions", "storage-restrictions", NULL },
+        { NULL },
+  };
+
+  static TpDBusPropertiesMixinPropImpl aia_props[] = {
+        { "URISchemes", "uri-schemes", NULL },
+        { NULL },
+  };
+
+  static TpDBusPropertiesMixinPropImpl avatar_props[] = {
+        { "Avatar", "avatar", NULL },
         { NULL },
   };
 
@@ -273,12 +377,24 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
           NULL,
           ais_props
         },
+        {
+          TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING,
+          tp_dbus_properties_mixin_getter_gobject_properties,
+          NULL,
+          aia_props
+        },
+        { TP_IFACE_ACCOUNT_INTERFACE_AVATAR,
+          tp_dbus_properties_mixin_getter_gobject_properties,
+          NULL,
+          avatar_props
+        },
         { NULL },
   };
 
   g_type_class_add_private (klass, sizeof (TpTestsSimpleAccountPrivate));
   object_class->get_property = tp_tests_simple_account_get_property;
   object_class->set_property = tp_tests_simple_account_set_property;
+  object_class->finalize = tp_tests_simple_account_finalize;
 
   param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
       "In this case we only implement Account, so none.",
@@ -319,7 +435,7 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
   param_spec = g_param_spec_boxed ("parameters", "parameters",
       "Parameters property",
       TP_HASH_TYPE_STRING_VARIANT_MAP,
-      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_PARAMETERS, param_spec);
 
   param_spec = g_param_spec_boxed ("automatic-presence", "automatic presence",
@@ -343,14 +459,14 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
 
   param_spec = g_param_spec_uint ("connection-status", "connection status",
       "ConnectionStatus property",
-      0, NUM_TP_CONNECTION_STATUSES, TP_CONNECTION_STATUS_DISCONNECTED,
+      0, TP_NUM_CONNECTION_STATUSES, TP_CONNECTION_STATUS_DISCONNECTED,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONNECTION_STATUS,
       param_spec);
 
   param_spec = g_param_spec_uint ("connection-status-reason",
       "connection status reason", "ConnectionStatusReason property",
-      0, NUM_TP_CONNECTION_STATUS_REASONS,
+      0, TP_NUM_CONNECTION_STATUS_REASONS,
       TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONNECTION_STATUS_REASON,
@@ -412,7 +528,114 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
   g_object_class_install_property (object_class, PROP_STORAGE_RESTRICTIONS,
       param_spec);
 
+  param_spec = g_param_spec_boxed ("uri-schemes", "URI schemes",
+      "Some URI schemes",
+      G_TYPE_STRV,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_URI_SCHEMES, param_spec);
+
+  param_spec = g_param_spec_boxed ("avatar",
+      "Avatar", "Avatar",
+      TP_STRUCT_TYPE_AVATAR,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class,
+      PROP_AVATAR, param_spec);
+
+  param_spec = g_param_spec_boxed ("supersedes",
+      "Supersedes", "List of superseded accounts",
+      TP_ARRAY_TYPE_OBJECT_PATH_LIST,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class,
+      PROP_SUPERSEDES, param_spec);
+
   klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpTestsSimpleAccountClass, dbus_props_class));
+}
+
+void
+tp_tests_simple_account_set_presence (TpTestsSimpleAccount *self,
+    TpConnectionPresenceType presence,
+    const gchar *status,
+    const gchar *message)
+{
+  GHashTable *props;
+  GValueArray *v;
+
+  g_free (self->priv->presence_status);
+  g_free (self->priv->presence_msg);
+
+  self->priv->presence = presence;
+  self->priv->presence_status = g_strdup (status);
+  self->priv->presence_msg = g_strdup (message);
+
+  g_object_get (self, "current-presence", &v, NULL);
+
+  props = tp_asv_new (
+      "CurrentPresence", TP_STRUCT_TYPE_SIMPLE_PRESENCE, v,
+      NULL);
+
+  tp_svc_account_emit_account_property_changed (self, props);
+
+  g_boxed_free (TP_STRUCT_TYPE_SIMPLE_PRESENCE, v);
+}
+
+void
+tp_tests_simple_account_set_connection (TpTestsSimpleAccount *self,
+    const gchar *object_path)
+{
+  GHashTable *change;
+
+  if (object_path == NULL)
+    object_path = "/";
+
+  g_free (self->priv->connection_path);
+  self->priv->connection_path = g_strdup (object_path);
+
+  change = tp_asv_new (NULL, NULL);
+  tp_asv_set_string (change, "Connection", object_path);
+  tp_svc_account_emit_account_property_changed (self, change);
+  g_hash_table_unref (change);
+}
+
+void
+tp_tests_simple_account_removed (TpTestsSimpleAccount *self)
+{
+  tp_svc_account_emit_removed (self);
+}
+
+void
+tp_tests_simple_account_set_enabled (TpTestsSimpleAccount *self,
+    gboolean enabled)
+{
+  GHashTable *change;
+
+  self->priv->enabled = enabled;
+
+  change = tp_asv_new (NULL, NULL);
+  tp_asv_set_boolean (change, "Enabled", enabled);
+  tp_svc_account_emit_account_property_changed (self, change);
+  g_hash_table_unref (change);
+}
+
+void
+tp_tests_simple_account_add_uri_scheme (TpTestsSimpleAccount *self,
+    const gchar *uri_scheme)
+{
+  GHashTable *changed;
+  GStrv schemes;
+
+  g_ptr_array_add (self->priv->uri_schemes, g_strdup (uri_scheme));
+
+  g_object_get (self, "uri-schemes", &schemes, NULL);
+
+  changed = tp_asv_new (
+      "URISchemes", G_TYPE_STRV, schemes,
+      NULL);
+
+  tp_svc_dbus_properties_emit_properties_changed (self,
+      TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING, changed, NULL);
+
+  g_strfreev (schemes);
+  g_hash_table_unref (changed);
 }

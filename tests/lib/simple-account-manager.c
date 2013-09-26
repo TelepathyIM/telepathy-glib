@@ -1,7 +1,7 @@
 /*
  * simple-account-manager.c - a simple account manager service.
  *
- * Copyright (C) 2007-2009 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2007-2012 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2007-2008 Nokia Corporation
  *
  * Copying and distribution of this file, with or without modification,
@@ -13,10 +13,8 @@
 
 #include "simple-account-manager.h"
 
-#include <telepathy-glib/gtypes.h>
-#include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/svc-generic.h>
-#include <telepathy-glib/svc-account-manager.h>
+#include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 static void account_manager_iface_init (gpointer, gpointer);
 
@@ -33,14 +31,6 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleAccountManager,
 /* TP_IFACE_ACCOUNT_MANAGER is implied */
 static const char *ACCOUNT_MANAGER_INTERFACES[] = { NULL };
 
-static gchar *VALID_ACCOUNTS[] = {
-  "/org/freedesktop/Telepathy/Account/fakecm/fakeproto/validaccount",
-  NULL };
-
-static gchar *INVALID_ACCOUNTS[] = {
-  "/org/freedesktop/Telepathy/Account/fakecm/fakeproto/invalidaccount",
-  NULL };
-
 enum
 {
   PROP_0,
@@ -51,11 +41,12 @@ enum
 
 struct _TpTestsSimpleAccountManagerPrivate
 {
-  int dummy;
+  GPtrArray *valid_accounts;
+  GPtrArray *invalid_accounts;
 };
 
 static void
-tp_tests_simple_account_manager_create_account (TpSvcAccountManager *self,
+tp_tests_simple_account_manager_create_account (TpSvcAccountManager *svc,
     const gchar *in_Connection_Manager,
     const gchar *in_Protocol,
     const gchar *in_Display_Name,
@@ -63,9 +54,24 @@ tp_tests_simple_account_manager_create_account (TpSvcAccountManager *self,
     GHashTable *in_Properties,
     DBusGMethodInvocation *context)
 {
-  const gchar *out_Account = "/some/fake/account/i/think";
+  TpTestsSimpleAccountManager *self = (TpTestsSimpleAccountManager *) svc;
+  const gchar *out = TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/lospolloshermanos";
 
-  tp_svc_account_manager_return_from_create_account (context, out_Account);
+  /* if we have fail=yes as a parameter, make the call fail */
+  if (!tp_strdiff (tp_asv_get_string (in_Parameters, "fail"), "yes"))
+    {
+      GError e = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT, "loldongs" };
+      dbus_g_method_return_error (context, &e);
+      return;
+    }
+
+  self->create_cm = g_strdup (in_Connection_Manager);
+  self->create_protocol = g_strdup (in_Protocol);
+  self->create_display_name = g_strdup (in_Display_Name);
+  self->create_parameters = g_hash_table_ref (in_Parameters);
+  self->create_properties = g_hash_table_ref (in_Properties);
+
+  tp_svc_account_manager_return_from_create_account (context, out);
 }
 
 static void
@@ -84,6 +90,9 @@ tp_tests_simple_account_manager_init (TpTestsSimpleAccountManager *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER, TpTestsSimpleAccountManagerPrivate);
+
+  self->priv->valid_accounts = g_ptr_array_new_with_free_func (g_free);
+  self->priv->invalid_accounts = g_ptr_array_new_with_free_func (g_free);
 }
 
 static void
@@ -92,8 +101,7 @@ tp_tests_simple_account_manager_get_property (GObject *object,
               GValue *value,
               GParamSpec *spec)
 {
-  GPtrArray *accounts;
-  guint i = 0;
+  TpTestsSimpleAccountManager *self = SIMPLE_ACCOUNT_MANAGER (object);
 
   switch (property_id) {
     case PROP_INTERFACES:
@@ -101,27 +109,35 @@ tp_tests_simple_account_manager_get_property (GObject *object,
       break;
 
     case PROP_VALID_ACCOUNTS:
-      accounts = g_ptr_array_new ();
-
-      for (i=0; VALID_ACCOUNTS[i] != NULL; i++)
-        g_ptr_array_add (accounts, g_strdup (VALID_ACCOUNTS[i]));
-
-      g_value_take_boxed (value, accounts);
+      g_value_set_boxed (value, self->priv->valid_accounts);
       break;
 
     case PROP_INVALID_ACCOUNTS:
-      accounts = g_ptr_array_new ();
-
-      for (i=0; INVALID_ACCOUNTS[i] != NULL; i++)
-        g_ptr_array_add (accounts, g_strdup (VALID_ACCOUNTS[i]));
-
-      g_value_take_boxed (value, accounts);
+      g_value_set_boxed (value, self->priv->invalid_accounts);
       break;
 
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
       break;
   }
+}
+
+static void
+tp_tests_simple_account_manager_finalize (GObject *object)
+{
+  TpTestsSimpleAccountManager *self = SIMPLE_ACCOUNT_MANAGER (object);
+
+  g_ptr_array_unref (self->priv->valid_accounts);
+  g_ptr_array_unref (self->priv->invalid_accounts);
+
+  tp_clear_pointer (&self->create_cm, g_free);
+  tp_clear_pointer (&self->create_protocol, g_free);
+  tp_clear_pointer (&self->create_display_name, g_free);
+  tp_clear_pointer (&self->create_parameters, g_hash_table_unref);
+  tp_clear_pointer (&self->create_properties, g_hash_table_unref);
+
+  G_OBJECT_CLASS (tp_tests_simple_account_manager_parent_class)->finalize (
+      object);
 }
 
 /**
@@ -158,6 +174,7 @@ tp_tests_simple_account_manager_class_init (
   };
 
   g_type_class_add_private (klass, sizeof (TpTestsSimpleAccountManagerPrivate));
+  object_class->finalize = tp_tests_simple_account_manager_finalize;
   object_class->get_property = tp_tests_simple_account_manager_get_property;
 
   param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
@@ -179,4 +196,45 @@ tp_tests_simple_account_manager_class_init (
   klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpTestsSimpleAccountManagerClass, dbus_props_class));
+}
+
+static void
+remove_from_array (GPtrArray *array, const gchar *str)
+{
+  guint i;
+
+  for (i = 0; i < array->len; i++)
+    if (!tp_strdiff (str, g_ptr_array_index (array, i)))
+      {
+        g_ptr_array_remove_index_fast (array, i);
+        return;
+      }
+}
+
+void
+tp_tests_simple_account_manager_add_account (
+    TpTestsSimpleAccountManager *self,
+    const gchar *object_path,
+    gboolean valid)
+{
+  remove_from_array (self->priv->valid_accounts, object_path);
+  remove_from_array (self->priv->valid_accounts, object_path);
+
+  if (valid)
+    g_ptr_array_add (self->priv->valid_accounts, g_strdup (object_path));
+  else
+    g_ptr_array_add (self->priv->invalid_accounts, g_strdup (object_path));
+
+  tp_svc_account_manager_emit_account_validity_changed (self, object_path, valid);
+}
+
+void
+tp_tests_simple_account_manager_remove_account (
+    TpTestsSimpleAccountManager *self,
+    const gchar *object_path)
+{
+  remove_from_array (self->priv->valid_accounts, object_path);
+  remove_from_array (self->priv->valid_accounts, object_path);
+
+  tp_svc_account_manager_emit_account_removed (self, object_path);
 }

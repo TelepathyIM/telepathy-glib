@@ -1,7 +1,7 @@
 /*
  * simple-account.h - header for a simple account service.
  *
- * Copyright (C) 2010 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2010-2012 Collabora Ltd. <http://www.collabora.co.uk/>
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright
@@ -12,8 +12,8 @@
 #define __TP_TESTS_SIMPLE_ACCOUNT_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/dbus-properties-mixin.h>
 
+#include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
 
@@ -50,6 +50,21 @@ GType tp_tests_simple_account_get_type (void);
 #define TP_TESTS_SIMPLE_ACCOUNT_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_SIMPLE_ACCOUNT, \
                               TpTestsSimpleAccountClass))
+
+void tp_tests_simple_account_set_presence (TpTestsSimpleAccount *self,
+    TpConnectionPresenceType presence,
+    const gchar *status,
+    const gchar *message);
+
+void tp_tests_simple_account_set_connection (TpTestsSimpleAccount *self,
+    const gchar *object_path);
+
+void tp_tests_simple_account_removed (TpTestsSimpleAccount *self);
+void tp_tests_simple_account_set_enabled (TpTestsSimpleAccount *self,
+    gboolean enabled);
+
+void tp_tests_simple_account_add_uri_scheme (TpTestsSimpleAccount *self,
+    const gchar * uri_scheme);
 
 G_END_DECLS
 

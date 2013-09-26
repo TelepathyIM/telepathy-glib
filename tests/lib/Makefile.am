@@ -3,6 +3,8 @@ noinst_LTLIBRARIES = libtp-logger-tests.la
 libtp_logger_tests_la_SOURCES = \
     contacts-conn.c \
     contacts-conn.h \
+    contact-list-manager.c \
+    contact-list-manager.h \
     room-list-chan.c \
     room-list-chan.h \
     simple-account.c		\

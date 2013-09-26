@@ -13,11 +13,10 @@
 #define __TP_TESTS_CONTACTS_CONN_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/base-connection.h>
-#include <telepathy-glib/contacts-mixin.h>
-#include <telepathy-glib/presence-mixin.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "simple-conn.h"
+#include "contact-list-manager.h"
 
 G_BEGIN_DECLS
 
@@ -31,6 +30,8 @@ struct _TpTestsContactsConnectionClass {
     TpPresenceMixinClass presence_mixin;
     TpContactsMixinClass contacts_mixin;
     TpDBusPropertiesMixinClass properties_class;
+
+    TpContactsMixinFillContactAttributesFunc fill_client_types;
 };
 
 struct _TpTestsContactsConnection {
@@ -70,6 +71,9 @@ typedef enum {
 #define TP_TESTS_CONTACTS_CONNECTION_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_CONTACTS_CONNECTION, \
                               TpTestsContactsConnectionClass))
+
+TpTestsContactListManager *tp_tests_contacts_connection_get_contact_list_manager (
+    TpTestsContactsConnection *self);
 
 void tp_tests_contacts_connection_change_aliases (
     TpTestsContactsConnection *self, guint n,
