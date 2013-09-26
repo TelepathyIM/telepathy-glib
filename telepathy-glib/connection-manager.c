@@ -1564,11 +1564,11 @@ tp_connection_manager_check_valid_name (const gchar *name,
       return FALSE;
     }
 
-  if (!g_ascii_isalpha (name[0]))
+  if (!g_ascii_isalpha (name[0]) && *name_char != '_')
     {
       g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Not a valid connection manager name because first character "
-          "is not an ASCII letter: %s", name);
+          "is not an ASCII letter or underscore: %s", name);
       return FALSE;
     }
 
