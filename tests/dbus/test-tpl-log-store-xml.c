@@ -2,6 +2,7 @@
 
 #include "telepathy-logger/log-store-xml.c"
 
+#include "lib/logger-test-helper.h"
 #include "lib/util.h"
 
 #include "telepathy-logger/debug-internal.h"
@@ -19,6 +20,7 @@
 
 typedef struct
 {
+  GMainLoop *main_loop;
   gchar *tmp_basedir;
   TplLogStore *store;
   TpDBusDaemon *bus;
@@ -30,6 +32,10 @@ static void
 setup (XmlTestCaseFixture* fixture,
     gconstpointer user_data)
 {
+  GError *error = NULL;
+
+  fixture->main_loop = g_main_loop_new (NULL, FALSE);
+
   fixture->store = g_object_new (TPL_TYPE_LOG_STORE_XML,
       "testmode", TRUE,
       NULL);
@@ -40,6 +46,12 @@ setup (XmlTestCaseFixture* fixture,
 
   fixture->bus = tp_tests_dbus_daemon_dup_or_die ();
   g_assert (fixture->bus != NULL);
+
+  tp_dbus_daemon_request_name (fixture->bus,
+      TP_ACCOUNT_MANAGER_BUS_NAME,
+      FALSE,
+      &error);
+  g_assert_no_error (error);
 
   fixture->factory = _tpl_client_factory_dup (fixture->bus);
 
@@ -76,6 +88,12 @@ static void
 teardown (XmlTestCaseFixture *fixture,
     gconstpointer user_data)
 {
+  GError *error = NULL;
+
+  tp_dbus_daemon_release_name (fixture->bus, TP_ACCOUNT_MANAGER_BUS_NAME,
+      &error);
+  g_assert_no_error (error);
+
   if (fixture->tmp_basedir != NULL)
     {
       gchar *command = g_strdup_printf ("rm -rf %s", fixture->tmp_basedir);
@@ -296,11 +314,11 @@ test_add_text_event (XmlTestCaseFixture *fixture,
   GError *error = NULL;
   GList *events;
   gint64 timestamp = time (NULL);
+  TpTestsSimpleAccount *account_service;
 
-  account = tp_simple_client_factory_ensure_account (fixture->factory,
-      TP_ACCOUNT_OBJECT_PATH_BASE "idle/irc/me", NULL, &error);
-  g_assert_no_error (error);
-  g_assert (account != NULL);
+  tpl_test_create_and_prepare_account (fixture->bus, fixture->factory,
+      TP_ACCOUNT_OBJECT_PATH_BASE "idle/irc/me",
+      &account, &account_service);
 
   me = tpl_entity_new ("me", TPL_ENTITY_SELF, "my-alias", "my-avatar");
   contact = tpl_entity_new ("contact", TPL_ENTITY_CONTACT, "contact-alias",
@@ -446,6 +464,7 @@ test_add_text_event (XmlTestCaseFixture *fixture,
    * this assertion, as long as you don't break message edits). */
   assert_cmp_text_event (event, events->data);
 
+  tpl_test_release_account  (fixture->bus, account, account_service);
   g_object_unref (event);
   g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
@@ -466,11 +485,11 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   GList *events;
   GList *superseded;
   gint64 timestamp = time (NULL);
+  TpTestsSimpleAccount *account_service;
 
-  account = tp_simple_client_factory_ensure_account (fixture->factory,
-      TP_ACCOUNT_OBJECT_PATH_BASE "idle/irc/me", NULL, &error);
-  g_assert_no_error (error);
-  g_assert (account != NULL);
+  tpl_test_create_and_prepare_account (fixture->bus, fixture->factory,
+      TP_ACCOUNT_OBJECT_PATH_BASE "idle/irc/me",
+      &account, &account_service);
 
   me = tpl_entity_new ("me", TPL_ENTITY_SELF, "my-alias", "my-avatar");
   contact = tpl_entity_new ("contact", TPL_ENTITY_CONTACT, "contact-alias",
@@ -648,6 +667,8 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   assert_cmp_text_event (TPL_EVENT (new_new_event), events->next->data);
   assert_cmp_text_event (TPL_EVENT (late_event), g_list_last (events)->data);
 
+  tpl_test_release_account (fixture->bus, account, account_service);
+
   g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 
@@ -717,11 +738,11 @@ test_add_call_event (XmlTestCaseFixture *fixture,
   GError *error = NULL;
   GList *events;
   gint64 timestamp = time (NULL);
+  TpTestsSimpleAccount *account_service;
 
-  account = tp_simple_client_factory_ensure_account (fixture->factory,
-      TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/me", NULL, &error);
-  g_assert_no_error (error);
-  g_assert (account != NULL);
+  tpl_test_create_and_prepare_account (fixture->bus, fixture->factory,
+      TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/me",
+      &account, &account_service);
 
   me = tpl_entity_new ("me", TPL_ENTITY_SELF, "my-alias", "my-avatar");
   contact = tpl_entity_new ("contact", TPL_ENTITY_CONTACT, "contact-alias",
@@ -840,6 +861,7 @@ test_add_call_event (XmlTestCaseFixture *fixture,
 
   assert_cmp_call_event (event, events->data);
 
+  tpl_test_release_account (fixture->bus, account, account_service);
   g_object_unref (event);
   g_object_unref (events->data);
   g_list_free (events);
@@ -907,14 +929,12 @@ test_get_events_for_date (XmlTestCaseFixture *fixture,
   TplEntity *user2, *user3, *user4, *user5;
   GList *events;
   GDate *date;
-  GError *error = NULL;
   gint idx;
+  TpTestsSimpleAccount *account_service;
 
-  account = tp_simple_client_factory_ensure_account (fixture->factory,
+  tpl_test_create_and_prepare_account (fixture->bus, fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/user_40collabora_2eco_2euk",
-      NULL, &error);
-  g_assert_no_error (error);
-  g_assert (account != NULL);
+      &account, &account_service);
 
   date = g_date_new_dmy (13, 1, 2010);
 
@@ -1027,7 +1047,7 @@ test_get_events_for_date (XmlTestCaseFixture *fixture,
       TPL_EVENT_MASK_TEXT, date);
   g_assert_cmpint (g_list_length (events), ==, 0);
 
-  g_object_unref (account);
+  tpl_test_release_account (fixture->bus, account, account_service);
   g_object_unref (user2);
   g_object_unref (user3);
   g_object_unref (user4);
