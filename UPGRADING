@@ -97,3 +97,7 @@ API/Behaviour changes
  - TpBaseContactList is not a channel manager anymore. An instance should be
    created in TpBaseConnection::constructed instead of
    TpBaseConnection::create_channel_factories.
+
+ - Protocol and service names contain "_" where they used to contain "-"
+   (in real life, this mostly affects Salut and Haze for local_xmpp,
+   and Haze for skype_dbus and skype_x11).

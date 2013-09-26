@@ -1,7 +1,26 @@
 telepathy-glib 0.99.2 (UNRELEASED)
 ==================================
 
-…
+The “forgotten tea” release.
+
+This is another snapshot, so that the 'next' branch of telepathy-salut
+can work.
+
+Dependencies:
+
+• GLib ≥ 2.34 is required
+
+API changes:
+
+• Protocol names may now contain underscores, but not hyphen/minus
+  (telepathy-spec 0.99.1 says this is OK).
+
+• Connection manager names may now start with underscores
+  (telepathy-spec 0.99.1 does not allow this, but the next snapshot will).
+
+Fixes:
+
+• Merged from telepathy-glib master, see NEWS-0.x
 
 telepathy-glib 0.99.1 (2013-09-17)
 ==================================
