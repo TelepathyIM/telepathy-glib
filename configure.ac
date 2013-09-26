@@ -73,6 +73,7 @@ TELEPATHY_GLIB_REQUIRED=0.21.2
 AC_DEFINE(TP_VERSION_MIN_REQUIRED, TP_VERSION_0_22, [Ignore post 0.22 deprecations])
 AC_DEFINE(TP_VERSION_MAX_ALLOWED, TP_VERSION_0_22, [Prevent post 0.22 APIs])
 AC_DEFINE(TP_SEAL_ENABLE, 1, [Prevent to use sealed variables])
+AC_DEFINE(TP_DISABLE_SINGLE_INCLUDE, 1, [Disable single include header])
 
 GLIB_REQUIRED=2.32
 dnl MIN_REQUIRED must stay to 2.30 because of GValueArray
