@@ -16,7 +16,9 @@ libtp_logger_tests_la_SOURCES = \
     textchan-null.c \
     textchan-null.h \
     util.c \
-    util.h
+    util.h \
+    logger-test-helper.c \
+    logger-test-helper.h
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
