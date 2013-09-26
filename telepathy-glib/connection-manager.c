@@ -1594,7 +1594,7 @@ tp_connection_manager_check_valid_name (const gchar *name,
  *
  * Check that the given string is a valid protocol name, i.e. that
  * it consists entirely of ASCII letters, digits and hyphen/minus, and starts
- * with a letter.
+ * with a letter or underscore.
  *
  * Returns: %TRUE if @name is valid
  *
@@ -1613,11 +1613,11 @@ tp_connection_manager_check_valid_protocol_name (const gchar *name,
       return FALSE;
     }
 
-  if (!g_ascii_isalpha (name[0]))
+  if (!g_ascii_isalpha (name[0]) && name[0] != '_')
     {
       g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Not a valid protocol name because first character "
-          "is not an ASCII letter: %s", name);
+          "is not an ASCII letter or underscore: %s", name);
       return FALSE;
     }
 
