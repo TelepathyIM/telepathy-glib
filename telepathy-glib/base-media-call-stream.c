@@ -1439,8 +1439,10 @@ tp_base_media_call_stream_add_candidates (TpSvcCallStreamInterfaceMedia *iface,
     {
       GValueArray *c = g_ptr_array_index (accepted_candidates, i);
 
+      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
       g_ptr_array_add (self->priv->local_candidates,
           g_value_array_copy (c));
+      G_GNUC_END_IGNORE_DEPRECATIONS
     }
 
   tp_svc_call_stream_interface_media_emit_local_candidates_added (self,

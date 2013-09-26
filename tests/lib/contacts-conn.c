@@ -1330,9 +1330,11 @@ my_set_contact_info (TpSvcConnectionInterfaceContactInfo *obj,
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (base, context);
 
   /* Deep copy info */
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   copy = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
   for (i = 0; i < info->len; i++)
     g_ptr_array_add (copy, g_value_array_copy (g_ptr_array_index (info, i)));
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   self_handle = tp_base_connection_get_self_handle (base);
   tp_tests_contacts_connection_change_contact_info (self, self_handle, copy);

@@ -37,10 +37,12 @@ test_value_array_build (void)
     G_TYPE_UINT, port,
     G_TYPE_INVALID);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   g_assert_cmpstr (g_value_get_string (g_value_array_get_nth (arr, 0)), ==,
       host);
   g_assert_cmpuint (g_value_get_uint (g_value_array_get_nth (arr, 1)), ==,
       port);
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   tp_value_array_unpack (arr, 2,
       &host_out,

@@ -118,8 +118,10 @@ test_basics (Test *test,
   arr = g_ptr_array_index (classes, 0);
   g_assert_cmpuint (arr->n_values, ==, 2);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   fixed = g_value_get_boxed (g_value_array_get_nth (arr, 0));
   allowed = g_value_get_boxed (g_value_array_get_nth (arr, 1));
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 
   g_assert_cmpuint (g_hash_table_size (fixed), ==, 2);
 
@@ -137,8 +139,10 @@ test_basics (Test *test,
   arr = g_ptr_array_index (classes, 1);
   g_assert_cmpuint (arr->n_values, ==, 2);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   fixed = g_value_get_boxed (g_value_array_get_nth (arr, 0));
   allowed = g_value_get_boxed (g_value_array_get_nth (arr, 1));
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   g_assert_cmpuint (g_hash_table_size (fixed), ==, 2);
 
