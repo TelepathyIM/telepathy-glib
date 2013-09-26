@@ -163,14 +163,10 @@ alias_updated_cb (ExampleContactList *contact_list,
   GPtrArray *aliases;
   GValueArray *pair;
 
-  pair = g_value_array_new (2);
-  g_value_array_append (pair, NULL);
-  g_value_array_append (pair, NULL);
-  g_value_init (pair->values + 0, G_TYPE_UINT);
-  g_value_init (pair->values + 1, G_TYPE_STRING);
-  g_value_set_uint (pair->values + 0, contact);
-  g_value_set_string (pair->values + 1,
-      example_contact_list_get_alias (contact_list, contact));
+  pair = tp_value_array_build (2,
+      G_TYPE_UINT, contact,
+      G_TYPE_STRING, example_contact_list_get_alias (contact_list, contact),
+      G_TYPE_INVALID);
 
   aliases = g_ptr_array_sized_new (1);
   g_ptr_array_add (aliases, pair);

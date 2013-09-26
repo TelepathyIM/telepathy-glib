@@ -322,11 +322,14 @@ supports_simple_channel (TpCapabilities *self,
     {
       GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
       GHashTable *fixed;
+      const gchar * const *allowed;
       const gchar *chan_type;
       TpHandleType handle_type;
       gboolean valid;
 
-      fixed =  g_value_get_boxed (g_value_array_get_nth (arr, 0));
+      tp_value_array_unpack (arr, 2,
+          &fixed,
+          &allowed);
 
       if (g_hash_table_size (fixed) != 2)
         continue;
@@ -439,8 +442,9 @@ tp_capabilities_supports_sms (TpCapabilities *self)
       gboolean valid;
       guint nb_fixed_props;
 
-      fixed =  g_value_get_boxed (g_value_array_get_nth (arr, 0));
-      allowed = g_value_get_boxed (g_value_array_get_nth (arr, 1));
+      tp_value_array_unpack (arr, 2,
+          &fixed,
+          &allowed);
 
       handle_type = tp_asv_get_uint32 (fixed,
           TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
@@ -809,12 +813,15 @@ tp_capabilities_supports_tubes_common (TpCapabilities *self,
     {
       GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
       GHashTable *fixed;
+      const gchar * const *allowed;
       const gchar *chan_type;
       TpHandleType handle_type;
       gboolean valid;
       guint nb_fixed_props = 2;
 
-      fixed =  g_value_get_boxed (g_value_array_get_nth (arr, 0));
+      tp_value_array_unpack (arr, 2,
+          &fixed,
+          &allowed);
 
       chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
       if (tp_strdiff (chan_type, expected_channel_type))

@@ -728,7 +728,7 @@ exportable_channel_get_old_info (TpExportableChannel *channel,
 static GValueArray *
 get_channel_details (GObject *obj)
 {
-  GValueArray *structure = g_value_array_new (2);
+  GValueArray *structure;
   GHashTable *table;
   GValue *value;
   gchar *object_path;
@@ -736,12 +736,6 @@ get_channel_details (GObject *obj)
   g_object_get (obj,
       "object-path", &object_path,
       NULL);
-
-  g_value_array_append (structure, NULL);
-  value = g_value_array_get_nth (structure, 0);
-  g_value_init (value, DBUS_TYPE_G_OBJECT_PATH);
-  g_value_take_boxed (value, object_path);
-  object_path = NULL;
 
   g_assert (TP_IS_EXPORTABLE_CHANNEL (obj) || TP_IS_CHANNEL_IFACE (obj));
 
@@ -769,10 +763,13 @@ get_channel_details (GObject *obj)
       g_hash_table_insert (table, TP_PROP_CHANNEL_CHANNEL_TYPE, value);
     }
 
-  g_value_array_append (structure, NULL);
-  value = g_value_array_get_nth (structure, 1);
-  g_value_init (value, TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP);
-  g_value_take_boxed (value, table);
+  structure = tp_value_array_build (2,
+      DBUS_TYPE_G_OBJECT_PATH, object_path,
+      TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP, table,
+      G_TYPE_INVALID);
+
+  g_free (object_path);
+  g_hash_table_unref (table);
 
   return structure;
 }
@@ -1458,20 +1455,11 @@ get_requestables_foreach (TpChannelManager *manager,
                           gpointer user_data)
 {
   GPtrArray *details = user_data;
-  GValueArray *requestable = g_value_array_new (2);
-  GValue *value;
 
-  g_value_array_append (requestable, NULL);
-  value = g_value_array_get_nth (requestable, 0);
-  g_value_init (value, TP_HASH_TYPE_CHANNEL_CLASS);
-  g_value_set_boxed (value, fixed_properties);
-
-  g_value_array_append (requestable, NULL);
-  value = g_value_array_get_nth (requestable, 1);
-  g_value_init (value, G_TYPE_STRV);
-  g_value_set_boxed (value, allowed_properties);
-
-  g_ptr_array_add (details, requestable);
+  g_ptr_array_add (details, tp_value_array_build (2,
+        TP_HASH_TYPE_CHANNEL_CLASS, fixed_properties,
+        G_TYPE_STRV, allowed_properties,
+        G_TYPE_INVALID));
 }
 
 

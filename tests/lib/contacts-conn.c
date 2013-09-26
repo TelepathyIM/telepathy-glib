@@ -638,21 +638,15 @@ tp_tests_contacts_connection_change_aliases (TpTestsContactsConnection *self,
 
   for (i = 0; i < n; i++)
     {
-      GValueArray *pair = g_value_array_new (2);
+      GValueArray *pair = tp_value_array_build (2,
+          G_TYPE_UINT, handles[i],
+          G_TYPE_STRING, aliases[i],
+          G_TYPE_INVALID);
 
       DEBUG ("contact#%u -> %s", handles[i], aliases[i]);
 
       g_hash_table_insert (self->priv->aliases,
           GUINT_TO_POINTER (handles[i]), g_strdup (aliases[i]));
-
-      g_value_array_append (pair, NULL);
-      g_value_init (pair->values + 0, G_TYPE_UINT);
-      g_value_set_uint (pair->values + 0, handles[i]);
-
-      g_value_array_append (pair, NULL);
-      g_value_init (pair->values + 1, G_TYPE_STRING);
-      g_value_set_string (pair->values + 1, aliases[i]);
-
       g_ptr_array_add (structs, pair);
     }
 
