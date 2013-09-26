@@ -862,9 +862,14 @@ _tp_account_update (TpAccount *account,
       icon_name = tp_asv_get_string (properties, "Icon");
 
       if (tp_str_empty (icon_name))
-        priv->icon_name = g_strdup_printf ("im-%s", priv->proto_name);
+        {
+          priv->icon_name = g_strdup_printf ("im-%s", priv->proto_name);
+          g_strdelimit (priv->icon_name, "_", "-");
+        }
       else
-        priv->icon_name = g_strdup (icon_name);
+        {
+          priv->icon_name = g_strdup (icon_name);
+        }
 
       if (tp_strdiff (old, priv->icon_name))
         g_object_notify (G_OBJECT (account), "icon-name");
@@ -1099,6 +1104,7 @@ _tp_account_constructed (GObject *object)
       &(priv->cm_name), &(priv->proto_name), NULL, NULL);
 
   priv->icon_name = g_strdup_printf ("im-%s", priv->proto_name);
+  g_strdelimit (priv->icon_name, "_", "-");
   priv->service = g_strdup (priv->proto_name);
 
   g_signal_connect (self, "invalidated",
