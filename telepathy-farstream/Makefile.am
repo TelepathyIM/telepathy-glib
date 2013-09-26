@@ -37,7 +37,7 @@ lib_LTLIBRARIES = libtelepathy-farstream.la
 pkgconfigdir = ${libdir}/pkgconfig
 pkgconfig_DATA = telepathy-farstream.pc
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir) \
 	-I$(top_builddir) \
 	$(GLIB_CFLAGS) \
@@ -75,7 +75,7 @@ TelepathyFarstream_0_6_gir_INCLUDES = \
 	Gst-1.0 \
 	Farstream-0.2 \
 	TelepathyGLib-0.12
-TelepathyFarstream_0_6_gir_CFLAGS = $(INCLUDES)
+TelepathyFarstream_0_6_gir_CFLAGS = $(AM_CPPFLAGS)
 TelepathyFarstream_0_6_gir_LIBS = libtelepathy-farstream.la
 TelepathyFarstream_0_6_gir_FILES = $(introspection_sources)
 TelepathyFarstream_0_6_gir_SCANNERFLAGS = --identifier-prefix=tf_ --identifier-prefix=Tf
