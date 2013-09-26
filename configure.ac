@@ -66,22 +66,19 @@ AS_COMPILER_FLAG(-Wno-unused-parameter,
 
 ifelse(tp_farstream_nano_version, 0, [],
     [
-        if test x$werror = xyes; then
-            ERROR_CFLAGS="$ERROR_CFLAGS -Werror -Wno-error=deprecated-declarations"
-        fi
-        if test x$wextra = xyes -a \
+        AS_IF([test x$werror = xyes],
+            [ERROR_CFLAGS="$ERROR_CFLAGS -Werror -Wno-error=deprecated-declarations"])
+	AS_IF([test x$wextra = xyes -a \
             x$wno_missing_field_initializers = xyes -a \
-            x$wno_unused_parameter = xyes; then
-            ERROR_CFLAGS="$ERROR_CFLAGS -Wextra -Wno-missing-field-initializers -Wno-unused-parameter"
-        fi
+            x$wno_unused_parameter = xyes].
+            [ERROR_CFLAGS="$ERROR_CFLAGS -Wextra -Wno-missing-field-initializers -Wno-unused-parameter"])
     ])
 
 AC_SUBST(ERROR_CFLAGS)
 
 AC_ARG_ENABLE(coverage,       [  --enable-coverage         compile with coverage info],[enable_coverage=${enableval}],enable_coverage=no)
-if test "x$enable_coverage" = "xyes"; then
-       CFLAGS="$CFLAGS -g -fprofile-arcs -ftest-coverage"
-fi
+AS_IF([test "x$enable_coverage" = "xyes"],
+	    [CFLAGS="$CFLAGS -g -fprofile-arcs -ftest-coverage"])
 
 CFLAGS="$CFLAGS"
 
