@@ -326,7 +326,7 @@ test_contact_info (Fixture *f,
   GCancellable *cancellable;
 
   /* Create fake info fields */
-  info = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
+  info = g_ptr_array_new_with_free_func ((GDestroyNotify) tp_value_array_free);
   g_ptr_array_add (info, tp_value_array_build (3,
       G_TYPE_STRING, "n",
       G_TYPE_STRV, NULL,

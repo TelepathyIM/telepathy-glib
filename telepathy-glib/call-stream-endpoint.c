@@ -134,9 +134,9 @@ tp_call_stream_endpoint_init (TpCallStreamEndpoint *self)
   self->priv->username = g_strdup ("");
   self->priv->password = g_strdup ("");
   self->priv->remote_candidates = g_ptr_array_new_with_free_func (
-      (GDestroyNotify) g_value_array_free);
+      (GDestroyNotify) tp_value_array_free);
   self->priv->selected_candidate_pairs = g_ptr_array_new_with_free_func (
-      (GDestroyNotify) g_value_array_free);
+      (GDestroyNotify) tp_value_array_free);
   self->priv->endpoint_state = g_hash_table_new (NULL, NULL);
 }
 

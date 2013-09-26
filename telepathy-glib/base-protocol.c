@@ -964,7 +964,7 @@ protocol_prop_presence_getter (GObject *object,
             tp_base_protocol_get_statuses (self);
           GHashTable *ret = g_hash_table_new_full (
               g_str_hash, g_str_equal,
-              g_free, (GDestroyNotify) g_value_array_free);
+              g_free, (GDestroyNotify) tp_value_array_free);
 
           for (; status->name != NULL; status++)
             {

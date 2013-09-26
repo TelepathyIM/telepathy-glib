@@ -938,7 +938,7 @@ factory_satisfy_requests (TpBaseConnection *conn,
 
       g_ptr_array_add (array, get_channel_details (G_OBJECT (chan)));
       tp_svc_connection_interface_requests_emit_new_channels (conn, array);
-      g_value_array_free (g_ptr_array_index (array, 0));
+      tp_value_array_free (g_ptr_array_index (array, 0));
       g_ptr_array_unref (array);
 
       tp_svc_connection_emit_new_channel (conn, object_path, channel_type,
@@ -1173,7 +1173,7 @@ manager_new_channels_cb (TpChannelManager *manager,
   tp_svc_connection_interface_requests_emit_new_channels (self,
       array);
 
-  g_ptr_array_foreach (array, (GFunc) g_value_array_free, NULL);
+  g_ptr_array_foreach (array, (GFunc) tp_value_array_free, NULL);
   g_ptr_array_unref (array);
 
   /* Emit NewChannel */

@@ -735,7 +735,7 @@ tp_message_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
       messages);
 
   for (i = 0; i < messages->len; i++)
-    g_value_array_free (g_ptr_array_index (messages, i));
+    tp_value_array_free (g_ptr_array_index (messages, i));
 
   g_ptr_array_unref (messages);
 }

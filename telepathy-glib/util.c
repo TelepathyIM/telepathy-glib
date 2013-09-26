@@ -1130,7 +1130,7 @@ tp_value_array_build (gsize length,
           CRITICAL ("%s", error);
           g_free (error);
 
-          g_value_array_free (arr);
+          tp_value_array_free (arr);
           va_end (var_args);
           return NULL;
         }

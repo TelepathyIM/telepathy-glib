@@ -956,7 +956,7 @@ tp_base_connection_manager_get_parameters (TpSvcConnectionManager *iface,
 
   for (i = 0; i < ret->len; i++)
     {
-      g_value_array_free (g_ptr_array_index (ret, i));
+      tp_value_array_free (g_ptr_array_index (ret, i));
     }
 
   g_ptr_array_unref (ret);

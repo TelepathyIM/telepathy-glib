@@ -49,7 +49,7 @@ test_value_array_build (void)
   g_assert_cmpstr (host_out, ==, host);
   g_assert_cmpuint (port_out, ==, port);
 
-  g_value_array_free (arr);
+  tp_value_array_free (arr);
 }
 
 static void

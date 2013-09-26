@@ -956,7 +956,7 @@ tp_group_mixin_get_local_pending_members_with_info_async (
       tp_svc_channel_interface_group_return_from_get_local_pending_members_with_info (
           context, ret);
       for (i = 0 ; i < ret->len; i++) {
-        g_value_array_free (g_ptr_array_index (ret,i));
+        tp_value_array_free (g_ptr_array_index (ret,i));
       }
       g_ptr_array_unref (ret);
     }

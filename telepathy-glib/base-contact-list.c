@@ -2129,7 +2129,7 @@ tp_base_contact_list_contacts_changed_internal (TpBaseContactList *self,
   store = tp_intset_new ();
 
   changes = g_hash_table_new_full (NULL, NULL, NULL,
-      (GDestroyNotify) g_value_array_free);
+      (GDestroyNotify) tp_value_array_free);
   change_ids = g_hash_table_new (NULL, NULL);
 
   if (changed != NULL)

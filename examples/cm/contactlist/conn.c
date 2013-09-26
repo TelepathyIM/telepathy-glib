@@ -174,7 +174,7 @@ alias_updated_cb (ExampleContactList *contact_list,
   tp_svc_connection_interface_aliasing_emit_aliases_changed (self, aliases);
 
   g_ptr_array_unref (aliases);
-  g_value_array_free (pair);
+  tp_value_array_free (pair);
 }
 
 static void

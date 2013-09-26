@@ -287,7 +287,7 @@ tp_base_call_channel_finalize (GObject *object)
   TpBaseCallChannel *self = TP_BASE_CALL_CHANNEL (object);
 
   g_hash_table_unref (self->priv->details);
-  g_value_array_free (self->priv->reason);
+  tp_value_array_free (self->priv->reason);
   g_free (self->priv->initial_audio_name);
   g_free (self->priv->initial_video_name);
   g_free (self->priv->initial_tones);
@@ -761,7 +761,7 @@ tp_base_call_channel_flags_changed (TpBaseCallChannel *self,
     const gchar *dbus_reason,
     const gchar *message)
 {
-  g_value_array_free (self->priv->reason);
+  tp_value_array_free (self->priv->reason);
   self->priv->reason = _tp_base_call_state_reason_new (actor_handle, reason,
       dbus_reason, message);
 
@@ -806,7 +806,7 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
   old_state = self->priv->state;
 
   self->priv->state = state;
-  g_value_array_free (self->priv->reason);
+  tp_value_array_free (self->priv->reason);
   self->priv->reason = _tp_base_call_state_reason_new (actor_handle, reason,
       dbus_reason, message);
 
@@ -1021,7 +1021,7 @@ tp_base_call_channel_remove_content (TpBaseCallChannel *self,
 
   _tp_base_call_channel_remove_content_internal (self, content, reason_array);
 
-  g_value_array_free (reason_array);
+  tp_value_array_free (reason_array);
 }
 
 /**
@@ -1151,7 +1151,7 @@ tp_base_call_channel_update_member_flags (TpBaseCallChannel *self,
   g_hash_table_unref (updates);
   g_hash_table_unref (identifiers);
   g_array_unref (empty_array);
-  g_value_array_free (reason_array);
+  tp_value_array_free (reason_array);
 }
 
 /**
@@ -1203,7 +1203,7 @@ tp_base_call_channel_remove_member (TpBaseCallChannel *self,
 
   g_hash_table_unref (empty_table);
   g_array_unref (removed);
-  g_value_array_free (reason_array);
+  tp_value_array_free (reason_array);
 }
 
 /**

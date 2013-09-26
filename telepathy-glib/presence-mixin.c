@@ -556,7 +556,7 @@ construct_presence_hash (const TpPresenceStatusSpec *supported_statuses,
                          GHashTable *contact_statuses)
 {
   GHashTable *presence_hash = g_hash_table_new_full (NULL, NULL, NULL,
-      (GDestroyNotify) g_value_array_free);
+      (GDestroyNotify) tp_value_array_free);
   GHashTableIter iter;
   gpointer key, value;
 
@@ -840,7 +840,7 @@ tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
   ret = g_hash_table_new_full (g_str_hash, g_str_equal,
-                               NULL, (GDestroyNotify) g_value_array_free);
+                               NULL, (GDestroyNotify) tp_value_array_free);
 
   for (i=0; mixin_cls->statuses[i].name != NULL; i++)
     {
@@ -1241,7 +1241,7 @@ tp_presence_mixin_get_simple_presence_dbus_property (GObject *object,
       g_return_if_fail (G_VALUE_HOLDS_BOXED (value));
 
       ret = g_hash_table_new_full (g_str_hash, g_str_equal,
-                               NULL, (GDestroyNotify) g_value_array_free);
+                               NULL, (GDestroyNotify) tp_value_array_free);
 
       for (i=0; mixin_cls->statuses[i].name != NULL; i++)
         {
@@ -1423,7 +1423,7 @@ construct_simple_presence_hash (const TpPresenceStatusSpec *supported_statuses,
                          GHashTable *contact_statuses)
 {
   GHashTable *presence_hash = g_hash_table_new_full (NULL, NULL, NULL,
-      (GDestroyNotify) g_value_array_free);
+      (GDestroyNotify) tp_value_array_free);
   GHashTableIter iter;
   gpointer key, value;
 
@@ -1541,6 +1541,9 @@ tp_presence_mixin_simple_presence_fill_contact_attributes (GObject *obj,
     {
       GHashTableIter iter;
       gpointer key, value;
+      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+      GType type = G_TYPE_VALUE_ARRAY;
+      G_GNUC_END_IGNORE_DEPRECATIONS
 
       g_hash_table_iter_init (&iter, contact_statuses);
       while (g_hash_table_iter_next (&iter, &key, &value))
@@ -1552,7 +1555,7 @@ tp_presence_mixin_simple_presence_fill_contact_attributes (GObject *obj,
 
           tp_contacts_mixin_set_contact_attribute (attributes_hash, handle,
               TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE,
-              tp_g_value_slice_new_take_boxed (G_TYPE_VALUE_ARRAY, presence));
+              tp_g_value_slice_new_take_boxed (type, presence));
         }
 
       g_hash_table_unref (contact_statuses);

@@ -157,12 +157,12 @@ tp_call_content_media_description_init (TpCallContentMediaDescription *self)
   self->priv->ssrcs = g_hash_table_new_full (NULL, NULL, NULL,
       (GDestroyNotify) g_array_unref);
   self->priv->codecs = g_ptr_array_new_with_free_func (
-      (GDestroyNotify) g_value_array_free);
+      (GDestroyNotify) tp_value_array_free);
 
   self->priv->header_extensions = g_ptr_array_new_with_free_func (
-      (GDestroyNotify) g_value_array_free);
+      (GDestroyNotify) tp_value_array_free);
   self->priv->feedback_messages = g_hash_table_new_full (NULL, NULL, NULL,
-      (GDestroyNotify) g_value_array_free);
+      (GDestroyNotify) tp_value_array_free);
 }
 
 static void
@@ -922,7 +922,7 @@ ensure_rtcp_feedback_properties (TpCallContentMediaDescription *self,
   if (properties == NULL)
     {
       messages_array = g_ptr_array_new_with_free_func (
-          (GDestroyNotify) g_value_array_free);
+          (GDestroyNotify) tp_value_array_free);
       properties = tp_value_array_build (2,
           G_TYPE_UINT, G_MAXUINT,
           G_TYPE_PTR_ARRAY, messages_array,

@@ -235,7 +235,7 @@ tp_base_media_call_stream_init (TpBaseMediaCallStream *self)
       TP_TYPE_BASE_MEDIA_CALL_STREAM, TpBaseMediaCallStreamPrivate);
 
   self->priv->local_candidates = g_ptr_array_new_with_free_func (
-      (GDestroyNotify) g_value_array_free);
+      (GDestroyNotify) tp_value_array_free);
   self->priv->username = g_strdup ("");
   self->priv->password = g_strdup ("");
   self->priv->receiving_requests = tp_intset_new ();
@@ -1392,7 +1392,7 @@ tp_base_media_call_stream_set_credentials (TpSvcCallStreamInterfaceMedia *iface,
 
   tp_clear_pointer (&self->priv->local_candidates, g_ptr_array_unref);
   self->priv->local_candidates = g_ptr_array_new_with_free_func (
-      (GDestroyNotify) g_value_array_free);
+      (GDestroyNotify) tp_value_array_free);
 
   g_object_notify (G_OBJECT (self), "local-candidates");
   g_object_notify (G_OBJECT (self), "local-credentials");
