@@ -1,5 +1,6 @@
 #include "config.h"
 
+#include "lib/logger-test-helper.h"
 #include "lib/util.h"
 
 #include "telepathy-logger/call-event.h"
@@ -17,10 +18,12 @@
 
 typedef struct
 {
+  GMainLoop *main_loop;
   TplLogStore *store;
   TpAccount *account;
   TpDBusDaemon *bus;
   TpSimpleClientFactory *factory;
+  TpTestsSimpleAccount *account_service;
 } XmlTestCaseFixture;
 
 
@@ -30,6 +33,8 @@ setup (XmlTestCaseFixture* fixture,
 {
   GError *error = NULL;
 
+  fixture->main_loop = g_main_loop_new (NULL, FALSE);
+
   fixture->store = g_object_new (TPL_TYPE_LOG_STORE_XML,
       "testmode", TRUE,
       NULL);
@@ -37,16 +42,18 @@ setup (XmlTestCaseFixture* fixture,
   fixture->bus = tp_tests_dbus_daemon_dup_or_die ();
   g_assert (fixture->bus != NULL);
 
+  tp_dbus_daemon_request_name (fixture->bus,
+      TP_ACCOUNT_MANAGER_BUS_NAME,
+      FALSE,
+      &error);
+  g_assert_no_error (error);
+
   fixture->factory = tp_simple_client_factory_new (fixture->bus);
   g_assert (fixture->factory != NULL);
 
-  /* We can get away without preparing the account */
-  fixture->account = tp_simple_client_factory_ensure_account (fixture->factory,
+  tpl_test_create_and_prepare_account (fixture->bus, fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/user_40collabora_2eco_2euk",
-      NULL,
-      &error);
-  g_assert_no_error (error);
-  g_assert (fixture->account != NULL);
+      &fixture->account, &fixture->account_service);
 
   tp_debug_divert_messages (g_getenv ("TPL_LOGFILE"));
 
@@ -60,7 +67,15 @@ static void
 teardown (XmlTestCaseFixture *fixture,
     gconstpointer user_data)
 {
-  g_clear_object (&fixture->account);
+  GError *error = NULL;
+
+  tp_dbus_daemon_release_name (fixture->bus, TP_ACCOUNT_MANAGER_BUS_NAME,
+      &error);
+  g_assert_no_error (error);
+
+  tpl_test_release_account  (fixture->bus, fixture->account,
+      fixture->account_service);
+
   g_clear_object (&fixture->factory);
   g_clear_object (&fixture->bus);
   g_clear_object (&fixture->store);
