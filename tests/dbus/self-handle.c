@@ -315,5 +315,5 @@ main (int argc,
   g_test_add ("/self-handle/change-inconveniently", Fixture,
       "round-trip", setup, test_change_inconveniently, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

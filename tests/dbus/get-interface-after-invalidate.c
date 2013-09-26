@@ -41,5 +41,5 @@ main (int argc,
   g_test_add_func ("/test-get-interface-after-invalidate",
       test_get_interface_after_invalidate);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

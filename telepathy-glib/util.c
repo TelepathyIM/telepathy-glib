@@ -939,7 +939,7 @@ _tp_quark_array_copy (const GQuark *quarks)
  *    </programlisting>
  * </example>
  *
- * Returns: a newly created #GValueArray, free with g_value_array_free.
+ * Returns: a newly created #GValueArray, free with tp_value_array_free()
  *
  * Since: 0.9.2
  */
@@ -953,7 +953,9 @@ tp_value_array_build (gsize length,
   va_list var_args;
   char *error = NULL;
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   arr = g_value_array_new (length);
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   va_start (var_args, type);
 
@@ -961,7 +963,9 @@ tp_value_array_build (gsize length,
     {
       GValue *v = arr->values + arr->n_values;
 
+      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
       g_value_array_append (arr, NULL);
+      G_GNUC_END_IGNORE_DEPRECATIONS
 
       g_value_init (v, t);
 
@@ -972,7 +976,7 @@ tp_value_array_build (gsize length,
           CRITICAL ("%s", error);
           g_free (error);
 
-          g_value_array_free (arr);
+          tp_value_array_free (arr);
           va_end (var_args);
           return NULL;
         }
@@ -1030,7 +1034,9 @@ tp_value_array_unpack (GValueArray *array,
           break;
         }
 
+      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
       value = g_value_array_get_nth (array, i);
+      G_GNUC_END_IGNORE_DEPRECATIONS
 
       G_VALUE_LCOPY (value, var_args, G_VALUE_NOCOPY_CONTENTS, &error);
       if (error != NULL)
@@ -1959,4 +1965,20 @@ _tp_g_list_copy_deep (GList *list,
     }
 
   return ret;
+}
+
+/**
+ * tp_value_array_free:
+ * @va: a #GValueArray
+ *
+ * Free @va. This is exactly the same as g_value_array_free(), but does not
+ * provoke deprecation warnings from GLib when used in conjunction with
+ * tp_value_array_build() and tp_value_array_unpack().
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+(tp_value_array_free) (GValueArray *va)
+{
+  _tp_value_array_free_inline (va);
 }

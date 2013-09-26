@@ -29,6 +29,7 @@ TP_VERSION_0_16
 TP_VERSION_0_18
 TP_VERSION_0_20
 TP_VERSION_0_22
+TP_VERSION_0_24
 </SECTION>
 
 <SECTION>
@@ -1280,6 +1281,7 @@ tp_strv_contains
 tp_g_signal_connect_object
 tp_value_array_build
 tp_value_array_unpack
+tp_value_array_free
 TpWeakRef
 tp_weak_ref_new
 tp_weak_ref_dup_object

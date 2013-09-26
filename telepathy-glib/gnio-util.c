@@ -148,8 +148,10 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
         else
           {
             GValueArray *array = g_value_get_boxed (variant);
+            G_GNUC_BEGIN_IGNORE_DEPRECATIONS
             GValue *hostv = g_value_array_get_nth (array, 0);
             GValue *portv = g_value_array_get_nth (array, 1);
+            G_GNUC_END_IGNORE_DEPRECATIONS
             GInetAddress *address;
             const char *host;
             guint16 port;

@@ -134,9 +134,9 @@ tp_call_stream_endpoint_init (TpCallStreamEndpoint *self)
   self->priv->username = g_strdup ("");
   self->priv->password = g_strdup ("");
   self->priv->remote_candidates = g_ptr_array_new_with_free_func (
-      (GDestroyNotify) g_value_array_free);
+      (GDestroyNotify) tp_value_array_free);
   self->priv->selected_candidate_pairs = g_ptr_array_new_with_free_func (
-      (GDestroyNotify) g_value_array_free);
+      (GDestroyNotify) tp_value_array_free);
   self->priv->endpoint_state = g_hash_table_new (NULL, NULL);
 }
 
@@ -583,8 +583,10 @@ tp_call_stream_endpoint_add_new_candidates (TpCallStreamEndpoint *self,
     {
       GValueArray *c = g_ptr_array_index (candidates, i);
 
+      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
       g_ptr_array_add (self->priv->remote_candidates,
           g_value_array_copy (c));
+      G_GNUC_END_IGNORE_DEPRECATIONS
     }
 
   tp_svc_call_stream_endpoint_emit_remote_candidates_added (self,
@@ -681,7 +683,10 @@ validate_candidate (const GValueArray *candidate,
       return FALSE;
     }
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   value = g_value_array_get_nth ((GValueArray *) candidate, 0);
+  G_GNUC_END_IGNORE_DEPRECATIONS
+
   if (g_value_get_uint (value) >= TP_NUM_STREAM_COMPONENTS)
     {
       g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
@@ -689,7 +694,10 @@ validate_candidate (const GValueArray *candidate,
       return FALSE;
     }
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   value = g_value_array_get_nth ((GValueArray *) candidate, 1);
+  G_GNUC_END_IGNORE_DEPRECATIONS
+
   if (tp_str_empty (g_value_get_string (value)))
     {
       g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
@@ -697,7 +705,10 @@ validate_candidate (const GValueArray *candidate,
       return FALSE;
     }
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   value = g_value_array_get_nth ((GValueArray *) candidate, 2);
+  G_GNUC_END_IGNORE_DEPRECATIONS
+
   if (g_value_get_uint (value) > 65535)
     {
       g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
@@ -713,7 +724,9 @@ get_candidate_component (const GValueArray *candidate)
 {
   GValue *component_value;
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   component_value = g_value_array_get_nth ((GValueArray *) candidate, 0);
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   return g_value_get_uint (component_value);
 }
@@ -778,8 +791,10 @@ call_stream_endpoint_set_selected_candidate_pair (TpSvcCallStreamEndpoint *iface
       TpStreamComponent this_component;
 
       this_pair = g_ptr_array_index (self->priv->selected_candidate_pairs, i);
+      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
       this_component = get_candidate_component (
           g_value_get_boxed (g_value_array_get_nth (this_pair, 0)));
+      G_GNUC_END_IGNORE_DEPRECATIONS
 
       if (this_component == component)
         {

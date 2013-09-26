@@ -1100,5 +1100,5 @@ main (int argc,
   g_test_add ("/cm/list", Test, GINT_TO_POINTER (0),
       setup, test_list, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

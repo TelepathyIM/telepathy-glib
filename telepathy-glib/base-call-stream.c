@@ -573,7 +573,7 @@ tp_base_call_stream_update_local_sending_state (TpBaseCallStream *self,
   tp_svc_call_stream_emit_local_sending_state_changed (
       TP_SVC_CALL_STREAM (self), new_state, reason_array);
 
-  g_value_array_free (reason_array);
+  tp_value_array_free (reason_array);
 
   return TRUE;
 }
@@ -677,7 +677,7 @@ tp_base_call_stream_update_remote_sending_state (TpBaseCallStream *self,
       removed_empty, reason_array);
 
   g_array_unref (removed_empty);
-  g_value_array_free (reason_array);
+  tp_value_array_free (reason_array);
   g_hash_table_unref (updates);
   g_hash_table_unref (identifiers);
 
@@ -732,7 +732,7 @@ tp_base_call_stream_remove_member (TpBaseCallStream *self,
   tp_svc_call_stream_emit_remote_members_changed (self, empty_table,
       empty_table, removed_array, reason_array);
 
-  g_value_array_free (reason_array);
+  tp_value_array_free (reason_array);
   g_hash_table_unref (empty_table);
   g_array_unref (removed_array);
 

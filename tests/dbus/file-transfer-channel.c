@@ -616,5 +616,5 @@ main (int argc,
   g_test_add ("/file-transfer-channel/provide/cancel", Test, NULL, setup,
       test_cancel_transfer, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

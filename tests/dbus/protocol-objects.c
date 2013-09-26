@@ -462,5 +462,5 @@ main (int argc,
   g_test_add ("/protocol-objects/object-from-file", Test, NULL, setup,
       test_protocol_object_from_file, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

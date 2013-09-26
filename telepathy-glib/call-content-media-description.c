@@ -157,12 +157,12 @@ tp_call_content_media_description_init (TpCallContentMediaDescription *self)
   self->priv->ssrcs = g_hash_table_new_full (NULL, NULL, NULL,
       (GDestroyNotify) g_array_unref);
   self->priv->codecs = g_ptr_array_new_with_free_func (
-      (GDestroyNotify) g_value_array_free);
+      (GDestroyNotify) tp_value_array_free);
 
   self->priv->header_extensions = g_ptr_array_new_with_free_func (
-      (GDestroyNotify) g_value_array_free);
+      (GDestroyNotify) tp_value_array_free);
   self->priv->feedback_messages = g_hash_table_new_full (NULL, NULL, NULL,
-      (GDestroyNotify) g_value_array_free);
+      (GDestroyNotify) tp_value_array_free);
 }
 
 static void
@@ -922,7 +922,7 @@ ensure_rtcp_feedback_properties (TpCallContentMediaDescription *self,
   if (properties == NULL)
     {
       messages_array = g_ptr_array_new_with_free_func (
-          (GDestroyNotify) g_value_array_free);
+          (GDestroyNotify) tp_value_array_free);
       properties = tp_value_array_build (2,
           G_TYPE_UINT, G_MAXUINT,
           G_TYPE_PTR_ARRAY, messages_array,
@@ -975,7 +975,9 @@ tp_call_content_media_description_add_rtcp_feedback_message (
   g_return_if_fail (TP_IS_CALL_CONTENT_MEDIA_DESCRIPTION (self));
 
   properties = ensure_rtcp_feedback_properties (self, codec_identifier);
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   value = g_value_array_get_nth (properties, 1);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   messages_array = g_value_get_boxed (value);
 
   g_ptr_array_add (messages_array, tp_value_array_build (3,
@@ -1022,7 +1024,9 @@ tp_call_content_media_description_set_rtcp_feedback_minimum_interval (
   g_return_if_fail (TP_IS_CALL_CONTENT_MEDIA_DESCRIPTION (self));
 
   properties = ensure_rtcp_feedback_properties (self, codec_identifier);
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   value = g_value_array_get_nth (properties, 0);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_value_set_uint (value, rtcp_minimum_interval);
 
   tp_call_content_media_description_add_rtcp_feedback_interface (self);

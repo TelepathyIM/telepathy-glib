@@ -261,7 +261,7 @@ test_contact_info (Fixture *f,
   GCancellable *cancellable;
 
   /* Create fake info fields */
-  info = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
+  info = g_ptr_array_new_with_free_func ((GDestroyNotify) tp_value_array_free);
   g_ptr_array_add (info, tp_value_array_build (3,
       G_TYPE_STRING, "n",
       G_TYPE_STRV, NULL,
@@ -2228,7 +2228,7 @@ main (int argc,
 
   ADD (contact_refcycle);
 
-  ret = g_test_run ();
+  ret = tp_tests_run_with_bus ();
 
   g_assert (haze_remove_directory (dir));
   g_free (dir);

@@ -24,6 +24,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_PROXY
 #include "telepathy-glib/debug-internal.h"
+#include <telepathy-glib/util.h>
 
 #if 0
 #define MORE_DEBUG DEBUG
@@ -250,7 +251,7 @@ tp_proxy_signal_invocation_free (gpointer p)
   g_assert (invocation->proxy == NULL);
 
   if (invocation->args != NULL)
-    g_value_array_free (invocation->args);
+    tp_value_array_free (invocation->args);
 
   g_slice_free (TpProxySignalInvocation, invocation);
 }

@@ -751,7 +751,7 @@ tp_base_call_content_remove_stream (TpBaseCallContent *self,
 
   _tp_base_call_content_remove_stream_internal (self, stream, reason_array);
 
-  g_value_array_free (reason_array);
+  tp_value_array_free (reason_array);
 }
 
 static void

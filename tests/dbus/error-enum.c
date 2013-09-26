@@ -2,6 +2,8 @@
 
 #include <telepathy-glib/errors.h>
 
+#include "tests/lib/util.h"
+
 static void
 test_tp_errors (void)
 {
@@ -16,5 +18,5 @@ main (int argc,
 
   g_test_add_func ("/test-error-enum/TP_ERROR", test_tp_errors);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

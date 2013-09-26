@@ -821,5 +821,5 @@ main (int argc,
               test_most_available_one_unset, teardown_service);
   g_test_add ("/am/most-available/two-unset", Test, NULL, setup_service,
               test_most_available_two_unset, teardown_service);
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

@@ -399,5 +399,5 @@ main (int argc,
   g_test_add ("/conn/interested-client", Test, NULL, setup,
       test_interested_client, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

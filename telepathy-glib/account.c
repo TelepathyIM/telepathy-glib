@@ -628,6 +628,8 @@ _tp_account_update (TpAccount *account,
   TpConnectionStatus old_s = priv->connection_status;
   gboolean status_changed = FALSE;
   gboolean presence_changed = FALSE;
+  const gchar *status;
+  const gchar *message;
 
   tp_proxy_add_interfaces (proxy, tp_asv_get_strv (properties, "Interfaces"));
 
@@ -718,29 +720,30 @@ _tp_account_update (TpAccount *account,
       presence_changed = TRUE;
       arr = tp_asv_get_boxed (properties, "CurrentPresence",
           TP_STRUCT_TYPE_PRESENCE);
-      priv->cur_presence = g_value_get_uint (g_value_array_get_nth (arr, 0));
 
+      tp_value_array_unpack (arr, 3,
+          &priv->cur_presence,
+          &status,
+          &message);
       g_free (priv->cur_status);
-      priv->cur_status = g_value_dup_string (g_value_array_get_nth (arr, 1));
-
+      priv->cur_status = g_strdup (status);
       g_free (priv->cur_message);
-      priv->cur_message = g_value_dup_string (g_value_array_get_nth (arr, 2));
+      priv->cur_message = g_strdup (message);
     }
 
   if (g_hash_table_lookup (properties, "RequestedPresence") != NULL)
     {
       arr = tp_asv_get_boxed (properties, "RequestedPresence",
           TP_STRUCT_TYPE_PRESENCE);
-      priv->requested_presence =
-        g_value_get_uint (g_value_array_get_nth (arr, 0));
 
+      tp_value_array_unpack (arr, 3,
+          &priv->requested_presence,
+          &status,
+          &message);
       g_free (priv->requested_status);
-      priv->requested_status =
-        g_value_dup_string (g_value_array_get_nth (arr, 1));
-
+      priv->requested_status = g_strdup (status);
       g_free (priv->requested_message);
-      priv->requested_message =
-        g_value_dup_string (g_value_array_get_nth (arr, 2));
+      priv->requested_message = g_strdup (message);
 
       g_object_notify (G_OBJECT (account), "requested-presence-type");
       g_object_notify (G_OBJECT (account), "requested-status");
@@ -751,16 +754,15 @@ _tp_account_update (TpAccount *account,
     {
       arr = tp_asv_get_boxed (properties, "AutomaticPresence",
           TP_STRUCT_TYPE_PRESENCE);
-      priv->auto_presence =
-        g_value_get_uint (g_value_array_get_nth (arr, 0));
 
+      tp_value_array_unpack (arr, 3,
+          &priv->auto_presence,
+          &status,
+          &message);
       g_free (priv->auto_status);
-      priv->auto_status =
-        g_value_dup_string (g_value_array_get_nth (arr, 1));
-
+      priv->auto_status = g_strdup (status);
       g_free (priv->auto_message);
-      priv->auto_message =
-        g_value_dup_string (g_value_array_get_nth (arr, 2));
+      priv->auto_message = g_strdup (message);
 
       g_object_notify (G_OBJECT (account), "automatic-presence-type");
       g_object_notify (G_OBJECT (account), "automatic-status");
@@ -3426,18 +3428,32 @@ _tp_account_got_avatar_cb (TpProxy *proxy,
     GObject *weak_object)
 {
   GSimpleAsyncResult *result = G_SIMPLE_ASYNC_RESULT (user_data);
-  GValueArray *avatar;
-  GArray *res;
 
   if (error != NULL)
     {
       DEBUG ("Failed to get avatar: %s", error->message);
       g_simple_async_result_set_from_error (result, error);
     }
+  else if (!G_VALUE_HOLDS (out_Value, TP_STRUCT_TYPE_AVATAR))
+    {
+      DEBUG ("Avatar had wrong type: %s", G_VALUE_TYPE_NAME (out_Value));
+      g_simple_async_result_set_error (result, TP_ERROR, TP_ERROR_CONFUSED,
+          "Incorrect type for Avatar property");
+    }
   else
     {
+      GValueArray *avatar;
+      GArray *res;
+      const GArray *tmp;
+      const gchar *mime_type;
+
       avatar = g_value_get_boxed (out_Value);
-      res = g_value_dup_boxed (g_value_array_get_nth (avatar, 0));
+      tp_value_array_unpack (avatar, 2,
+          &tmp,
+          &mime_type);
+
+      res = g_array_sized_new (FALSE, FALSE, 1, tmp->len);
+      g_array_append_vals (res, tmp->data, tmp->len);
       g_simple_async_result_set_op_res_gpointer (result, res,
           (GDestroyNotify) g_array_unref);
     }

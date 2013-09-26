@@ -567,5 +567,5 @@ main (int argc,
   g_test_add ("/account-request/create-fail", Test, NULL, setup,
       test_create_fail, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

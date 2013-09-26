@@ -196,6 +196,7 @@ class Generator(object):
 
             self.b('    TpProxySignalConnection *sc)')
             self.b('{')
+            self.b('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
             self.b('  GValueArray *args = g_value_array_new (%d);' % len(args))
             self.b('  GValue blank = { 0 };')
             self.b('  guint i;')
@@ -204,6 +205,7 @@ class Generator(object):
             self.b('')
             self.b('  for (i = 0; i < %d; i++)' % len(args))
             self.b('    g_value_array_append (args, &blank);')
+            self.b('  G_GNUC_END_IGNORE_DEPRECATIONS')
             self.b('')
 
             for i, arg in enumerate(args):
@@ -292,12 +294,14 @@ class Generator(object):
         self.b('      weak_object);')
         self.b('')
 
+        self.b('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
         if len(args) > 0:
             self.b('  g_value_array_free (args);')
         else:
             self.b('  if (args != NULL)')
             self.b('    g_value_array_free (args);')
             self.b('')
+        self.b('  G_GNUC_END_IGNORE_DEPRECATIONS')
 
         self.b('  g_object_unref (tpproxy);')
         self.b('}')
@@ -588,11 +592,15 @@ class Generator(object):
             collector('      return;')
             collector('    }')
             collector('')
+            collector('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
+            collector('')
             collector('  args = g_value_array_new (%d);' % len(out_args))
             collector('  g_value_init (&blank, G_TYPE_INT);')
             collector('')
             collector('  for (i = 0; i < %d; i++)' % len(out_args))
             collector('    g_value_array_append (args, &blank);')
+            collector('')
+            collector('  G_GNUC_END_IGNORE_DEPRECATIONS')
 
             for i, arg in enumerate(out_args):
                 name, info, tp_type, elt = arg
@@ -701,11 +709,13 @@ class Generator(object):
         self.b('      error, user_data, weak_object);')
         self.b('')
 
+        self.b('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
         if len(out_args) > 0:
             self.b('  g_value_array_free (args);')
         else:
             self.b('  if (args != NULL)')
             self.b('    g_value_array_free (args);')
+        self.b('  G_GNUC_END_IGNORE_DEPRECATIONS')
 
         self.b('}')
         self.b('')
@@ -1011,11 +1021,13 @@ class Generator(object):
 
             b('')
 
+        b('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
         if len(out_args) > 0:
             b('  g_value_array_free (args);')
         else:
             b('  if (args != NULL)')
             b('    g_value_array_free (args);')
+        b('  G_GNUC_END_IGNORE_DEPRECATIONS')
 
         b('}')
         b('')

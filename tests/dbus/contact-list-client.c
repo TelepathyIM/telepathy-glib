@@ -569,5 +569,5 @@ main (int argc,
   g_test_add ("/contact-list-client/contact-list/properties", Test,
       GUINT_TO_POINTER (TRUE), setup, test_contact_list_properties, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

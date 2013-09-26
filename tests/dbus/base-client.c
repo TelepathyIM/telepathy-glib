@@ -1592,5 +1592,5 @@ main (int argc,
   g_test_add ("/cd/delegate-to-preferred-handler/supported", Test, NULL,
       setup, test_delegate_to_preferred_handler_supported, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

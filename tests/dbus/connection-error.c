@@ -368,5 +368,5 @@ main (int argc,
   g_test_add ("/connection/detailed-error-vardict", Test, "variant", setup,
       test_detailed_error, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

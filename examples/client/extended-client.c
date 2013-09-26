@@ -72,14 +72,15 @@ got_hats_cb (TpConnection *conn,
   for (i = 0; i < hats->len; i++)
     {
       GValueArray *vals = g_ptr_array_index (hats, i);
+      guint handle;
+      const gchar *color;
+      guint style;
+      GHashTable *details;
 
+      tp_value_array_unpack (vals, 4,
+          &handle, &color, &style, &details);
       g_message ("Contact #%u has hat style %u, color \"%s\", with %u "
-          "properties",
-          g_value_get_uint (g_value_array_get_nth (vals, 0)),
-          g_value_get_uint (g_value_array_get_nth (vals, 2)),
-          g_value_get_string (g_value_array_get_nth (vals, 1)),
-          g_hash_table_size (g_value_get_boxed (g_value_array_get_nth (vals,
-                3))));
+          "properties", handle, style, color, g_hash_table_size (details));
     }
 
   tp_cli_connection_call_disconnect (conn, -1, disconnect_cb,

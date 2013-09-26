@@ -109,12 +109,16 @@ test_sockaddr_to_variant_ipv4 (void)
   g_assert (G_VALUE_HOLDS (variant, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4));
 
   array = g_value_get_boxed (variant);
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   value = g_value_array_get_nth (array, 0);
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   g_assert (G_VALUE_HOLDS_STRING (value));
   g_assert_cmpstr (g_value_get_string (value), ==, IPV4_ADDR);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   value = g_value_array_get_nth (array, 1);
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   g_assert (G_VALUE_HOLDS_UINT (value));
   g_assert_cmpuint (g_value_get_uint (value), ==, PORT);
@@ -152,12 +156,16 @@ test_sockaddr_to_variant_ipv6 (void)
   g_assert (G_VALUE_HOLDS (variant, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV6));
 
   array = g_value_get_boxed (variant);
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   value = g_value_array_get_nth (array, 0);
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   g_assert (G_VALUE_HOLDS_STRING (value));
   g_assert_cmpstr (g_value_get_string (value), ==, IPV6_ADDR);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   value = g_value_array_get_nth (array, 1);
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   g_assert (G_VALUE_HOLDS_UINT (value));
   g_assert_cmpuint (g_value_get_uint (value), ==, PORT);

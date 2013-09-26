@@ -24,6 +24,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_PROXY
 #include "telepathy-glib/debug-internal.h"
+#include <telepathy-glib/util.h>
 
 #if 0
 #define MORE_DEBUG DEBUG
@@ -323,7 +324,7 @@ tp_proxy_pending_call_cancel (TpProxyPendingCall *pc)
 
       if (pc->args != NULL)
         {
-          g_value_array_free (pc->args);
+          tp_value_array_free (pc->args);
           pc->args = NULL;
         }
     }
@@ -372,7 +373,7 @@ tp_proxy_pending_call_free (TpProxyPendingCall *pc)
   pc->error = NULL;
 
   if (pc->args != NULL)
-    g_value_array_free (pc->args);
+    tp_value_array_free (pc->args);
 
   pc->args = NULL;
 

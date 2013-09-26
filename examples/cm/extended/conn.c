@@ -275,40 +275,30 @@ my_get_hats (ExampleSvcConnectionInterfaceHats *iface,
   for (i = 0; i < contacts->len; i++)
     {
       TpHandle handle = g_array_index (contacts, guint, i);
-      GValueArray *vals = g_value_array_new (4);
-
-      g_value_array_append (vals, NULL);
-      g_value_init (g_value_array_get_nth (vals, 0), G_TYPE_UINT);
-      g_value_set_uint (g_value_array_get_nth (vals, 0), handle);
-
-      g_value_array_append (vals, NULL);
-      g_value_init (g_value_array_get_nth (vals, 1), G_TYPE_STRING);
-
-      g_value_array_append (vals, NULL);
-      g_value_init (g_value_array_get_nth (vals, 2), G_TYPE_UINT);
-
-      g_value_array_append (vals, NULL);
-      g_value_init (g_value_array_get_nth (vals, 3),
-          TP_HASH_TYPE_STRING_VARIANT_MAP);
+      GValueArray *vals;
 
       /* for the sake of a simple example, let's assume nobody except me
        * has any hats */
       if (handle == tp_base_connection_get_self_handle (base))
         {
-          g_value_set_string (g_value_array_get_nth (vals, 1),
-              self->priv->hat_color);
-          g_value_set_uint (g_value_array_get_nth (vals, 2),
-              self->priv->hat_style);
-          g_value_set_boxed (g_value_array_get_nth (vals, 3),
-              self->priv->hat_properties);
+          vals = tp_value_array_build (4,
+              G_TYPE_UINT, handle,
+              G_TYPE_STRING, self->priv->hat_color,
+              G_TYPE_UINT, self->priv->hat_style,
+              TP_HASH_TYPE_STRING_VARIANT_MAP, self->priv->hat_properties,
+              G_TYPE_INVALID);
         }
       else
         {
-          g_value_set_static_string (g_value_array_get_nth (vals, 1), "");
-          g_value_set_uint (g_value_array_get_nth (vals, 2),
-              EXAMPLE_HAT_STYLE_NONE);
-          g_value_take_boxed (g_value_array_get_nth (vals, 3),
-              g_hash_table_new (NULL, NULL));
+          GHashTable *empty = g_hash_table_new (g_str_hash, g_str_equal);
+
+          vals = tp_value_array_build (4,
+              G_TYPE_UINT, handle,
+              G_TYPE_STRING, "",
+              G_TYPE_UINT, EXAMPLE_HAT_STYLE_NONE,
+              TP_HASH_TYPE_STRING_VARIANT_MAP, empty,
+              G_TYPE_INVALID);
+          g_hash_table_unref (empty);
         }
 
       g_ptr_array_add (ret, vals);

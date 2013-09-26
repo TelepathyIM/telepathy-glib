@@ -343,5 +343,5 @@ main (int argc,
   g_test_add_func ("/dbus-daemon/cancel-watch-during-dispatch",
       cancel_watch_during_dispatch);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

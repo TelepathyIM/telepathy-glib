@@ -74,5 +74,5 @@ main (int argc,
   /* tp_channel_dispatcher_present_channel_async() is tested in
    * test-base-client */
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

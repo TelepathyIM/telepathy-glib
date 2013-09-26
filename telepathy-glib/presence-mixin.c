@@ -665,7 +665,7 @@ tp_presence_mixin_get_dbus_property (GObject *object,
       g_return_if_fail (G_VALUE_HOLDS_BOXED (value));
 
       ret = g_hash_table_new_full (g_str_hash, g_str_equal,
-                               NULL, (GDestroyNotify) g_value_array_free);
+                               NULL, (GDestroyNotify) tp_value_array_free);
 
       for (i=0; mixin_cls->statuses[i].name != NULL; i++)
         {
@@ -689,21 +689,11 @@ tp_presence_mixin_get_dbus_property (GObject *object,
                 }
             }
 
-         status = g_value_array_new (3);
-
-         g_value_array_append (status, NULL);
-         g_value_init (g_value_array_get_nth (status, 0), G_TYPE_UINT);
-         g_value_set_uint (g_value_array_get_nth (status, 0),
-             mixin_cls->statuses[i].presence_type);
-
-         g_value_array_append (status, NULL);
-         g_value_init (g_value_array_get_nth (status, 1), G_TYPE_BOOLEAN);
-         g_value_set_boolean (g_value_array_get_nth (status, 1),
-             mixin_cls->statuses[i].self);
-
-         g_value_array_append (status, NULL);
-         g_value_init (g_value_array_get_nth (status, 2), G_TYPE_BOOLEAN);
-         g_value_set_boolean (g_value_array_get_nth (status, 2), message);
+         status = tp_value_array_build (3,
+             G_TYPE_UINT, (guint) mixin_cls->statuses[i].presence_type,
+             G_TYPE_BOOLEAN, mixin_cls->statuses[i].self,
+             G_TYPE_BOOLEAN, message,
+             G_TYPE_INVALID);
 
          g_hash_table_insert (ret, (gchar *) mixin_cls->statuses[i].name,
              status);
@@ -832,19 +822,11 @@ construct_presence_value_array (TpPresenceStatus *status,
   if (message == NULL)
     message = "";
 
-  presence = g_value_array_new (3);
-
-  g_value_array_append (presence, NULL);
-  g_value_init (g_value_array_get_nth (presence, 0), G_TYPE_UINT);
-  g_value_set_uint (g_value_array_get_nth (presence, 0), status_type);
-
-  g_value_array_append (presence, NULL);
-  g_value_init (g_value_array_get_nth (presence, 1), G_TYPE_STRING);
-  g_value_set_string (g_value_array_get_nth (presence, 1), status_name);
-
-  g_value_array_append (presence, NULL);
-  g_value_init (g_value_array_get_nth (presence, 2), G_TYPE_STRING);
-  g_value_set_string (g_value_array_get_nth (presence, 2), message);
+  presence = tp_value_array_build (3,
+      G_TYPE_UINT, status_type,
+      G_TYPE_STRING, status_name,
+      G_TYPE_STRING, message,
+      G_TYPE_INVALID);
 
   return presence;
 }
@@ -854,7 +836,7 @@ construct_presence_hash (const TpPresenceStatusSpec *supported_statuses,
                          GHashTable *contact_statuses)
 {
   GHashTable *presence_hash = g_hash_table_new_full (NULL, NULL, NULL,
-      (GDestroyNotify) g_value_array_free);
+      (GDestroyNotify) tp_value_array_free);
   GHashTableIter iter;
   gpointer key, value;
 
@@ -913,6 +895,9 @@ tp_presence_mixin_fill_contact_attributes (GObject *obj,
     {
       GHashTableIter iter;
       gpointer key, value;
+      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+      GType type = G_TYPE_VALUE_ARRAY;
+      G_GNUC_END_IGNORE_DEPRECATIONS
 
       g_hash_table_iter_init (&iter, contact_statuses);
       while (g_hash_table_iter_next (&iter, &key, &value))
@@ -924,7 +909,7 @@ tp_presence_mixin_fill_contact_attributes (GObject *obj,
 
           tp_contacts_mixin_set_contact_attribute (attributes_hash, handle,
               TP_TOKEN_CONNECTION_INTERFACE_PRESENCE_PRESENCE,
-              tp_g_value_slice_new_take_boxed (G_TYPE_VALUE_ARRAY, presence));
+              tp_g_value_slice_new_take_boxed (type, presence));
         }
 
       g_hash_table_unref (contact_statuses);

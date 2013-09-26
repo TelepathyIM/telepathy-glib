@@ -509,5 +509,5 @@ main (int argc,
   g_test_add ("/dbus-tube/accept-invalidated-before-open", Test, NULL,
       setup, test_accept_invalidated_before_open, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

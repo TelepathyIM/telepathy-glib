@@ -936,5 +936,5 @@ main (int argc,
   /* tp_channel_dispatch_operation_claim_with_async() is tested in
    * tests/dbus/base-client.c */
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

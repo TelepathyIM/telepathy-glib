@@ -36,6 +36,9 @@ broken_fill_client_types (
     GHashTable *attributes)
 {
   guint i;
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+  GType type = G_TYPE_VALUE_ARRAY;
+  G_GNUC_END_IGNORE_DEPRECATIONS
 
   for (i = 0; i < contacts->len; i++)
     {
@@ -50,7 +53,7 @@ broken_fill_client_types (
       tp_contacts_mixin_set_contact_attribute (attributes,
           handle,
           TP_TOKEN_CONNECTION_INTERFACE_PRESENCE_PRESENCE,
-          tp_g_value_slice_new_take_boxed (G_TYPE_VALUE_ARRAY, presence));
+          tp_g_value_slice_new_take_boxed (type, presence));
     }
 }
 

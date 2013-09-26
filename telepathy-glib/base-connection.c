@@ -622,31 +622,24 @@ tp_base_connection_finalize (GObject *object)
 static GValueArray *
 get_channel_details (GObject *obj)
 {
-  GValueArray *structure = g_value_array_new (2);
+  GValueArray *structure;
   GHashTable *table;
-  GValue *value;
   gchar *object_path;
-
-  g_object_get (obj,
-      "object-path", &object_path,
-      NULL);
-
-  g_value_array_append (structure, NULL);
-  value = g_value_array_get_nth (structure, 0);
-  g_value_init (value, DBUS_TYPE_G_OBJECT_PATH);
-  g_value_take_boxed (value, object_path);
-  object_path = NULL;
 
   g_assert (TP_IS_EXPORTABLE_CHANNEL (obj));
 
   g_object_get (obj,
+      "object-path", &object_path,
       "channel-properties", &table,
       NULL);
 
-  g_value_array_append (structure, NULL);
-  value = g_value_array_get_nth (structure, 1);
-  g_value_init (value, TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP);
-  g_value_take_boxed (value, table);
+  structure = tp_value_array_build (2,
+      DBUS_TYPE_G_OBJECT_PATH, object_path,
+      TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP, table,
+      G_TYPE_INVALID);
+
+  g_free (object_path);
+  g_hash_table_unref (table);
 
   return structure;
 }
@@ -812,7 +805,7 @@ manager_new_channels_cb (TpChannelManager *manager,
   tp_svc_connection_interface_requests_emit_new_channels (self,
       array);
 
-  g_ptr_array_foreach (array, (GFunc) g_value_array_free, NULL);
+  g_ptr_array_foreach (array, (GFunc) tp_value_array_free, NULL);
   g_ptr_array_unref (array);
 }
 
@@ -1055,20 +1048,11 @@ get_requestables_foreach (TpChannelManager *manager,
                           gpointer user_data)
 {
   GPtrArray *details = user_data;
-  GValueArray *requestable = g_value_array_new (2);
-  GValue *value;
 
-  g_value_array_append (requestable, NULL);
-  value = g_value_array_get_nth (requestable, 0);
-  g_value_init (value, TP_HASH_TYPE_CHANNEL_CLASS);
-  g_value_set_boxed (value, fixed_properties);
-
-  g_value_array_append (requestable, NULL);
-  value = g_value_array_get_nth (requestable, 1);
-  g_value_init (value, G_TYPE_STRV);
-  g_value_set_boxed (value, allowed_properties);
-
-  g_ptr_array_add (details, requestable);
+  g_ptr_array_add (details, tp_value_array_build (2,
+        TP_HASH_TYPE_CHANNEL_CLASS, fixed_properties,
+        G_TYPE_STRV, allowed_properties,
+        G_TYPE_INVALID));
 }
 
 

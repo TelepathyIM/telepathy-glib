@@ -25,6 +25,7 @@
 
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/util.h>
 
 /**
  * SECTION: room-info
@@ -97,7 +98,8 @@ TpRoomInfo *
 _tp_room_info_new (GValueArray *dbus_struct)
 {
   TpRoomInfo *room;
-  GValue *v;
+  const gchar *channel_type;
+  GHashTable *info;
 
   g_return_val_if_fail (dbus_struct != NULL, NULL);
   g_return_val_if_fail (dbus_struct->n_values == 3, NULL);
@@ -107,14 +109,16 @@ _tp_room_info_new (GValueArray *dbus_struct)
   room = g_object_new (TP_TYPE_ROOM_INFO,
       NULL);
 
-  v = g_value_array_get_nth (dbus_struct, 0);
-  room->priv->handle = g_value_get_uint (v);
-
-  v = g_value_array_get_nth (dbus_struct, 1);
-  room->priv->channel_type = g_value_dup_string (v);
-
-  v = g_value_array_get_nth (dbus_struct, 2);
-  room->priv->info = g_value_dup_boxed (v);
+  tp_value_array_unpack (dbus_struct, 3,
+      &room->priv->handle,
+      &channel_type,
+      &info);
+  room->priv->channel_type = g_strdup (channel_type);
+  room->priv->info = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, (GDestroyNotify) tp_g_value_slice_free);
+  tp_g_hash_table_update (room->priv->info, info,
+      (GBoxedCopyFunc) g_strdup,
+      (GBoxedCopyFunc) tp_g_value_slice_dup);
 
   return room;
 }
