@@ -1755,6 +1755,7 @@ tp_g_key_file_get_uint64
 tp_g_signal_connect_object
 tp_value_array_build
 tp_value_array_unpack
+tp_value_array_free
 TpWeakRef
 tp_weak_ref_new
 tp_weak_ref_dup_object

@@ -117,6 +117,23 @@ void tp_value_array_unpack (GValueArray *array,
     gsize len,
     ...);
 
+/* Work around GLib having deprecated something that is part of our API. */
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_value_array_free (GValueArray *va);
+/* this is effectively _TP_AVAILABLE_IN_UNRELEASED too */
+#if TP_VERSION_MAX_ALLOWED >= _TP_VERSION_CUR_STABLE
+#define tp_value_array_free(va) _tp_value_array_free_inline (va)
+#ifndef __GTK_DOC_IGNORE__ /* gtk-doc can't parse this */
+static inline void
+_tp_value_array_free_inline (GValueArray *va)
+{
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+  g_value_array_free (va);
+  G_GNUC_END_IGNORE_DEPRECATIONS
+}
+#endif
+#endif
+
 /* See https://bugzilla.gnome.org/show_bug.cgi?id=680813 for glib inclusion */
 typedef struct _TpWeakRef TpWeakRef;
 TpWeakRef *tp_weak_ref_new (gpointer object,

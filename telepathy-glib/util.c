@@ -1097,7 +1097,7 @@ _tp_quark_array_copy (const GQuark *quarks)
  *    </programlisting>
  * </example>
  *
- * Returns: a newly created #GValueArray, free with g_value_array_free.
+ * Returns: a newly created #GValueArray, free with tp_value_array_free()
  *
  * Since: 0.9.2
  */
@@ -2117,4 +2117,20 @@ _tp_g_list_copy_deep (GList *list,
     }
 
   return ret;
+}
+
+/**
+ * tp_value_array_free:
+ * @va: a #GValueArray
+ *
+ * Free @va. This is exactly the same as g_value_array_free(), but does not
+ * provoke deprecation warnings from GLib when used in conjunction with
+ * tp_value_array_build() and tp_value_array_unpack().
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+(tp_value_array_free) (GValueArray *va)
+{
+  _tp_value_array_free_inline (va);
 }
