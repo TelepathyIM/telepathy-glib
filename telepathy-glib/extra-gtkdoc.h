@@ -471,6 +471,13 @@
  */
 
 /**
+ * TP_VERSION_0_24: (skip)
+ *
+ * A constant representing the telepathy-glib 0.24 stable branch,
+ * and the 0.23 development branch that led to it.
+ */
+
+/**
  * TP_VERSION_1_0: (skip)
  *
  * A constant representing the telepathy-glib 1.0 stable branch,
