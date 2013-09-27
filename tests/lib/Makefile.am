@@ -5,6 +5,8 @@ libtp_logger_tests_la_SOURCES = \
     contacts-conn.h \
     contact-list-manager.c \
     contact-list-manager.h \
+    echo-chan.c \
+    echo-chan.h \
     room-list-chan.c \
     room-list-chan.h \
     simple-account.c		\
@@ -13,8 +15,6 @@ libtp_logger_tests_la_SOURCES = \
     simple-account-manager.h	\
     simple-conn.c \
     simple-conn.h \
-    textchan-null.c \
-    textchan-null.h \
     util.c \
     util.h \
     logger-test-helper.c \
