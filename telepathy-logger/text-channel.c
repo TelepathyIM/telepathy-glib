@@ -565,16 +565,6 @@ _tpl_text_channel_prepare_core_async (TpProxy *proxy,
 {
   TplTextChannel *self = (TplTextChannel *) proxy;
 
-  if (!tp_proxy_has_interface_by_id (self,
-          TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES))
-    {
-      g_simple_async_report_error_in_idle ((GObject *) self,
-          callback, user_data, TPL_TEXT_CHANNEL_ERROR,
-          TPL_TEXT_CHANNEL_ERROR_NEED_MESSAGE_INTERFACE,
-          "The text channel does not implement Message interface.");
-      return;
-    }
-
   get_my_contact (self);
   get_remote_contact (self);
   store_pending_messages (self);
