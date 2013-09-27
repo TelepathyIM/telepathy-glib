@@ -213,8 +213,7 @@ setup_service (TestCaseFixture* fixture,
       account_prepare_cb, fixture);
   g_main_loop_run (fixture->main_loop);
 
-  g_assert (tp_account_is_prepared (fixture->account,
-        TP_ACCOUNT_FEATURE_CORE));
+  g_assert (tp_proxy_is_prepared (fixture->account, TP_ACCOUNT_FEATURE_CORE));
 
   tp_g_value_slice_free (boxed_params);
 }
