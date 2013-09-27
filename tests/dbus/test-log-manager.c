@@ -387,6 +387,47 @@ test_get_events_for_date (TestCaseFixture *fixture,
   g_list_free (fixture->ret);
 }
 
+static void
+test_get_events_for_date_account_unprepared (TestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  GHashTable *params = (GHashTable *) user_data;
+  TplEntity *entity;
+  GDate *date;
+  TpAccount *account;
+  const gchar *account_path;
+
+  g_clear_object (&fixture->account);
+
+  account_path = g_value_get_string (
+      (const GValue *) g_hash_table_lookup (params, "account-path"));
+
+  account = tp_simple_client_factory_ensure_account (fixture->factory,
+      account_path, NULL, NULL);
+  g_assert (!tp_proxy_is_prepared (account, TP_ACCOUNT_FEATURE_CORE));
+
+  entity = tpl_entity_new (ID, TPL_ENTITY_CONTACT, NULL, NULL);
+  date = g_date_new_dmy (13, 1, 2010);
+
+  tpl_log_manager_get_events_for_date_async (fixture->manager,
+      account,
+      entity,
+      TPL_EVENT_MASK_TEXT,
+      date,
+      get_events_for_date_cb,
+      fixture);
+  g_main_loop_run (fixture->main_loop);
+
+  g_object_unref (entity);
+  g_date_free (date);
+
+  /* We got 6 events in old Empathy and 6 in new TpLogger storage */
+  g_assert_cmpint (g_list_length (fixture->ret), ==, 12);
+
+  g_list_foreach (fixture->ret, (GFunc) g_object_unref, NULL);
+  g_list_free (fixture->ret);
+  g_object_unref (account);
+}
 
 static void
 get_filtered_events_cb (GObject *object,
@@ -737,6 +778,10 @@ main (int argc, char **argv)
   g_test_add ("/log-manager/get-events-for-date",
       TestCaseFixture, params,
       setup, test_get_events_for_date, teardown);
+
+  g_test_add ("/log-manager/get-events-for-date-account-unprepared",
+      TestCaseFixture, params,
+      setup, test_get_events_for_date_account_unprepared, teardown);
 
   g_test_add ("/log-manager/get-filtered-events",
       TestCaseFixture, params,

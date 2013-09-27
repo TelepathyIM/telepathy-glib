@@ -870,13 +870,71 @@ _get_dates_async_thread (GSimpleAsyncResult *simple,
       _list_of_date_free);
 }
 
+typedef struct
+{
+  GSimpleAsyncResult *result;
+  GSimpleAsyncThreadFunc func;
+} AsyncOpData;
+
+static AsyncOpData *
+async_op_data_new (GSimpleAsyncResult *result,
+    GSimpleAsyncThreadFunc func)
+{
+  AsyncOpData *data = g_slice_new (AsyncOpData);
+
+  data->result = g_object_ref (result);
+  data->func = func;
+  return data;
+}
+
+static void
+async_op_data_free (AsyncOpData *data)
+{
+  g_object_unref (data->result);
+  g_slice_free (AsyncOpData, data);
+}
+
+static void
+account_prepared_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  AsyncOpData *data = user_data;
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (source, result, &error))
+    {
+      g_simple_async_result_take_error (data->result, error);
+      g_simple_async_result_complete (data->result);
+    }
+  else
+    {
+      g_simple_async_result_run_in_thread (data->result, data->func, 0, NULL);
+    }
+
+  async_op_data_free (data);
+}
 
 static void
 start_async_op_in_thread (TpAccount *account,
     GSimpleAsyncResult *result,
     GSimpleAsyncThreadFunc func)
 {
-  g_simple_async_result_run_in_thread (result, func, 0, NULL);
+  if (account != NULL)
+    {
+      GQuark features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
+
+      /* Most APIs rely on TpAccount being prepared, so make sure
+       * it is. telepathy-glib is not thread-safe, so we must do
+       * this in the main thread, before starting the actual
+       * operation in the other thread. */
+      tp_proxy_prepare_async (account, features, account_prepared_cb,
+          async_op_data_new (result, func));
+    }
+  else
+    {
+      g_simple_async_result_run_in_thread (result, func, 0, NULL);
+    }
 }
 
 /**
