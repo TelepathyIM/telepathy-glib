@@ -233,7 +233,7 @@ tpl_text_channel_store_message (TplTextChannel *self,
   /* Ensure timestamp */
   timestamp = get_message_timestamp (message);
 
-  text = tp_message_to_text (message, NULL);
+  text = tp_message_to_text (message);
 
   if (text == NULL)
     {
