@@ -322,7 +322,7 @@ distclean-local:
 	rm -rf _gen
 
 EXTRA_DIST = \
-    services/dbus-1/spurious.service \
+    dbus-1/services/spurious.service \
     telepathy/managers/spurious.manager \
     telepathy/managers/test_manager_file.manager \
     telepathy/managers/test_manager_file_invalid.manager \
@@ -337,7 +337,7 @@ run-test.sh: run-test.sh.in
 		$< > $@
 	@chmod +x $@
 
-service_files = services/dbus-1/spurious.service
+service_files = dbus-1/services/spurious.service
 
 if ENABLE_INSTALLED_TESTS
 dbusservicedir = @tpglibtestsdir@/dbus-1/services
