@@ -757,7 +757,7 @@ tpl_dbus_service_clear_account (TplSvcLogger *logger,
   TpDBusDaemon *bus;
   TpAccount *account;
   GError *error = NULL;
-  TpSimpleClientFactory *factory = NULL;
+  TpClientFactory *factory = NULL;
 
   g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
   g_return_if_fail (context != NULL);
@@ -772,7 +772,7 @@ tpl_dbus_service_clear_account (TplSvcLogger *logger,
 
   factory = _tpl_client_factory_dup (bus);
 
-  account = tp_simple_client_factory_ensure_account (factory, account_path,
+  account = tp_client_factory_ensure_account (factory, account_path,
       NULL, &error);
   if (account == NULL)
     {
@@ -809,7 +809,7 @@ tpl_dbus_service_clear_entity (TplSvcLogger *logger,
   TpAccount *account;
   TplEntity *entity;
   GError *error = NULL;
-  TpSimpleClientFactory *factory = NULL;
+  TpClientFactory *factory = NULL;
 
   g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
   g_return_if_fail (context != NULL);
@@ -825,7 +825,7 @@ tpl_dbus_service_clear_entity (TplSvcLogger *logger,
 
   factory = _tpl_client_factory_dup (bus);
 
-  account = tp_simple_client_factory_ensure_account (factory, account_path,
+  account = tp_client_factory_ensure_account (factory, account_path,
       NULL, &error);
   if (account == NULL)
     {

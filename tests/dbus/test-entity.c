@@ -61,8 +61,8 @@ ensure_contact_cb (GObject *source,
   Result *result = user_data;
   GError *error = NULL;
 
-  result->contact = tp_simple_client_factory_ensure_contact_by_id_finish (
-      TP_SIMPLE_CLIENT_FACTORY (source), op_result, &error);
+  result->contact = tp_client_factory_ensure_contact_by_id_finish (
+      TP_CLIENT_FACTORY (source), op_result, &error);
 
   g_assert_no_error (error);
   g_assert (TP_IS_CONTACT (result->contact));
@@ -83,7 +83,7 @@ test_entity_instantiation_from_tp_contact (void)
   Result result;
   TplEntity *entity;
   TpContact *alice, *bob;
-  TpSimpleClientFactory *factory;
+  TpClientFactory *factory;
 
   tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
       "me@test.com", &base_connection, &client_connection);
@@ -105,19 +105,19 @@ test_entity_instantiation_from_tp_contact (void)
       avatar_tokens);
 
   factory = tp_proxy_get_factory (client_connection);
-  tp_simple_client_factory_add_contact_features_varargs (factory,
+  tp_client_factory_add_contact_features_varargs (factory,
       TP_CONTACT_FEATURE_ALIAS,
       TP_CONTACT_FEATURE_AVATAR_TOKEN,
       TP_CONTACT_FEATURE_INVALID);
 
   result.loop = g_main_loop_new (NULL, FALSE);
 
-  tp_simple_client_factory_ensure_contact_by_id_async (factory,
+  tp_client_factory_ensure_contact_by_id_async (factory,
       client_connection, "alice", ensure_contact_cb, &result);
   g_main_loop_run (result.loop);
   alice = result.contact;
 
-  tp_simple_client_factory_ensure_contact_by_id_async (factory,
+  tp_client_factory_ensure_contact_by_id_async (factory,
       client_connection, "bob", ensure_contact_cb, &result);
   g_main_loop_run (result.loop);
   bob = result.contact;

@@ -30,7 +30,7 @@ typedef struct
   TpDBusDaemon *dbus;
   TpAccount *account;
   TpTestsSimpleAccount *account_service;
-  TpSimpleClientFactory *factory;
+  TpClientFactory *factory;
 
   GList *ret;
 
@@ -206,7 +206,7 @@ setup_service (TestCaseFixture* fixture,
 
   fixture->factory = _tpl_client_factory_dup (fixture->dbus);
 
-  fixture->account = tp_simple_client_factory_ensure_account (fixture->factory,
+  fixture->account = tp_client_factory_ensure_account (fixture->factory,
       account_path, NULL, NULL);
   g_assert (fixture->account != NULL);
 
@@ -402,7 +402,7 @@ test_get_events_for_date_account_unprepared (TestCaseFixture *fixture,
   account_path = g_value_get_string (
       (const GValue *) g_hash_table_lookup (params, "account-path"));
 
-  account = tp_simple_client_factory_ensure_account (fixture->factory,
+  account = tp_client_factory_ensure_account (fixture->factory,
       account_path, NULL, NULL);
   g_assert (!tp_proxy_is_prepared (account, TP_ACCOUNT_FEATURE_CORE));
 

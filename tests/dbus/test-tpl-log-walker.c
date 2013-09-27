@@ -24,7 +24,7 @@ typedef struct
   TplLogManager *manager;
   TpAccount *account;
   TpDBusDaemon *bus;
-  TpSimpleClientFactory *factory;
+  TpClientFactory *factory;
   TpTestsSimpleAccount *account_service;
 } WalkerTestCaseFixture;
 
@@ -88,17 +88,17 @@ setup (WalkerTestCaseFixture* fixture,
       account_path,
       fixture->account_service);
 
-  fixture->factory = tp_simple_client_factory_new (fixture->bus);
+  fixture->factory = tp_client_factory_new (fixture->bus);
   g_assert (fixture->factory != NULL);
 
-  fixture->account = tp_simple_client_factory_ensure_account (fixture->factory,
+  fixture->account = tp_client_factory_ensure_account (fixture->factory,
       tp_asv_get_string (params, "account-path"),
       params,
       &error);
   g_assert_no_error (error);
   g_assert (fixture->account != NULL);
 
-  features = tp_simple_client_factory_dup_account_features (fixture->factory,
+  features = tp_client_factory_dup_account_features (fixture->factory,
       fixture->account);
 
   tp_proxy_prepare_async (fixture->account,

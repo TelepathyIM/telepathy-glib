@@ -26,7 +26,7 @@
 #include "simple-account.h"
 
 void tpl_test_create_and_prepare_account (TpDBusDaemon *dbus,
-    TpSimpleClientFactory *factory,
+    TpClientFactory *factory,
     const gchar *path,
     TpAccount **account,
     TpTestsSimpleAccount **account_service);

@@ -24,7 +24,7 @@ typedef struct
   gchar *tmp_basedir;
   TplLogStore *store;
   TpDBusDaemon *bus;
-  TpSimpleClientFactory *factory;
+  TpClientFactory *factory;
 } XmlTestCaseFixture;
 
 
@@ -160,7 +160,7 @@ test_clear_account (XmlTestCaseFixture *fixture,
 
   tpl_log_manager_search_free (hits);
 
-  account = tp_simple_client_factory_ensure_account (fixture->factory,
+  account = tp_client_factory_ensure_account (fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/test2_40collabora_2eco_2euk0",
       NULL, &error);
 
@@ -227,7 +227,7 @@ test_clear_entity (XmlTestCaseFixture *fixture,
 
   tpl_log_manager_search_free (hits);
 
-  account = tp_simple_client_factory_ensure_account (fixture->factory,
+  account = tp_client_factory_ensure_account (fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/test2_40collabora_2eco_2euk0",
       NULL, &error);
 
@@ -877,13 +877,13 @@ test_exists (XmlTestCaseFixture *fixture,
   TplEntity *user2, *user3;
   GError *error = NULL;
 
-  account1 = tp_simple_client_factory_ensure_account (fixture->factory,
+  account1 = tp_client_factory_ensure_account (fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/test2_40collabora_2eco_2euk0",
       NULL, &error);
   g_assert_no_error (error);
   g_assert (account1 != NULL);
 
-  account2 = tp_simple_client_factory_ensure_account (fixture->factory,
+  account2 = tp_client_factory_ensure_account (fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/user_40collabora_2eco_2euk",
       NULL, &error);
   g_assert_no_error (error);

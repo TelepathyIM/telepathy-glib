@@ -29,11 +29,11 @@
 G_DEFINE_TYPE (TplClientFactory, _tpl_client_factory,
     TP_TYPE_AUTOMATIC_CLIENT_FACTORY)
 
-#define chainup ((TpSimpleClientFactoryClass *) \
+#define chainup ((TpClientFactoryClass *) \
     _tpl_client_factory_parent_class)
 
 static TpChannel *
-create_channel_impl (TpSimpleClientFactory *self,
+create_channel_impl (TpClientFactory *self,
     TpConnection *conn,
     const gchar *object_path,
     const GHashTable *properties,
@@ -58,7 +58,7 @@ create_channel_impl (TpSimpleClientFactory *self,
 }
 
 static GArray *
-dup_channel_features_impl (TpSimpleClientFactory *self,
+dup_channel_features_impl (TpClientFactory *self,
     TpChannel *channel)
 {
   GArray *features;
@@ -88,14 +88,14 @@ _tpl_client_factory_init (TplClientFactory *self)
 static void
 _tpl_client_factory_class_init (TplClientFactoryClass *cls)
 {
-  TpSimpleClientFactoryClass *simple_class = (TpSimpleClientFactoryClass *) cls;
+  TpClientFactoryClass *simple_class = (TpClientFactoryClass *) cls;
 
   simple_class->create_channel = create_channel_impl;
   simple_class->dup_channel_features = dup_channel_features_impl;
 }
 
 
-static TpSimpleClientFactory *
+static TpClientFactory *
 _tpl_client_factory_new (TpDBusDaemon *dbus)
 {
   return g_object_new (TPL_TYPE_CLIENT_FACTORY,
@@ -103,10 +103,10 @@ _tpl_client_factory_new (TpDBusDaemon *dbus)
       NULL);
 }
 
-TpSimpleClientFactory *
+TpClientFactory *
 _tpl_client_factory_dup (TpDBusDaemon *dbus)
 {
-  static TpSimpleClientFactory *singleton = NULL;
+  static TpClientFactory *singleton = NULL;
 
   if (singleton != NULL)
     return g_object_ref (singleton);

@@ -28,7 +28,7 @@
 
 void
 tpl_test_create_and_prepare_account (TpDBusDaemon *dbus,
-    TpSimpleClientFactory *factory,
+    TpClientFactory *factory,
     const gchar *path,
     TpAccount **account,
     TpTestsSimpleAccount **account_service)
@@ -43,12 +43,12 @@ tpl_test_create_and_prepare_account (TpDBusDaemon *dbus,
 
   tp_dbus_daemon_register_object (dbus, path, *account_service);
 
-  *account = tp_simple_client_factory_ensure_account (factory, path, NULL,
+  *account = tp_client_factory_ensure_account (factory, path, NULL,
       &error);
   g_assert_no_error (error);
   g_assert (*account != NULL);
 
-  features = tp_simple_client_factory_dup_account_features (factory, *account);
+  features = tp_client_factory_dup_account_features (factory, *account);
   g_array_append_val (features, zero);
 
   tp_tests_proxy_run_until_prepared (*account, (GQuark *) features->data);

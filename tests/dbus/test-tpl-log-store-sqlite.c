@@ -11,7 +11,7 @@ main (int argc, char **argv)
   TpDBusDaemon *bus;
   TpAccount *account;
   GError *error = NULL;
-  TpSimpleClientFactory* factory;
+  TpClientFactory* factory;
 
   g_type_init ();
 
@@ -22,7 +22,7 @@ main (int argc, char **argv)
 
   factory = _tpl_client_factory_dup (bus);
 
-  account =  tp_simple_client_factory_ensure_account (factory,
+  account =  tp_client_factory_ensure_account (factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/danielle_2emadeley_40collabora_2eco_2euk0",
       NULL, &error);
   g_assert_no_error (error);

@@ -35,7 +35,7 @@ typedef struct
   TpDBusDaemon *dbus;
   TpAccount *account;
   TpTestsSimpleAccount *account_service;
-  TpSimpleClientFactory *factory;
+  TpClientFactory *factory;
 
   TplLogStorePidgin *store;
   TplEntity *room;
@@ -151,7 +151,7 @@ setup_service (PidginTestCaseFixture* fixture,
 
   fixture->factory = _tpl_client_factory_dup (fixture->dbus);
 
-  fixture->account = tp_simple_client_factory_ensure_account (fixture->factory,
+  fixture->account = tp_client_factory_ensure_account (fixture->factory,
       account_path, NULL, NULL);
   g_assert (fixture->account != NULL);
 

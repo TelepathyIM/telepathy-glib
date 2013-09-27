@@ -23,7 +23,7 @@ typedef struct
   TplLogStore *store;
   TpAccount *account;
   TpDBusDaemon *bus;
-  TpSimpleClientFactory *factory;
+  TpClientFactory *factory;
   TpTestsSimpleAccount *account_service;
 } XmlTestCaseFixture;
 
@@ -49,7 +49,7 @@ setup (XmlTestCaseFixture* fixture,
       &error);
   g_assert_no_error (error);
 
-  fixture->factory = tp_simple_client_factory_new (fixture->bus);
+  fixture->factory = tp_client_factory_new (fixture->bus);
   g_assert (fixture->factory != NULL);
 
   tpl_test_create_and_prepare_account (fixture->bus, fixture->factory,
