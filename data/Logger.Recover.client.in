@@ -1,2 +1,2 @@
-[org.freedesktop.Telepathy.Client.Observer]
+[im.telepathy1.Client.Observer]
 Recover=true

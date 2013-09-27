@@ -1,8 +1,8 @@
-[org.freedesktop.Telepathy.Client.Observer.ObserverChannelFilter 3]
-org.freedesktop.Telepathy.Channel.ChannelType s=org.freedesktop.Telepathy.Channel.Type.Call1
-org.freedesktop.Telepathy.Channel.TargetHandleType u=1
+[im.telepathy1.Client.Observer.ObserverChannelFilter 3]
+im.telepathy1.Channel.ChannelType s=im.telepathy1.Channel.Type.Call1
+im.telepathy1.Channel.TargetHandleType u=1
 
-[org.freedesktop.Telepathy.Client.Observer.ObserverChannelFilter 4]
-org.freedesktop.Telepathy.Channel.ChannelType s=org.freedesktop.Telepathy.Channel.Type.Call1
-org.freedesktop.Telepathy.Channel.TargetHandleType u=2
+[im.telepathy1.Client.Observer.ObserverChannelFilter 4]
+im.telepathy1.Channel.ChannelType s=im.telepathy1.Channel.Type.Call1
+im.telepathy1.Channel.TargetHandleType u=2
 

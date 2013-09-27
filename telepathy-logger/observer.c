@@ -41,7 +41,7 @@
  * @see_also: #TpSvcClientObserver
  *
  * The Telepathy Logger's Observer implements
- * org.freedesktop.Telepathy.Client.Observer DBus interface and is called by
+ * im.telepathy1.Client.Observer DBus interface and is called by
  * the Channel Dispatcher when a new channel is created, in order to log
  * received signals.
  *
@@ -52,7 +52,7 @@
  * TplObserver:
  *
  * The Telepathy Logger's Observer implements
- * org.freedesktop.Telepathy.Client.Observer DBus interface and is called by
+ * im.telepathy1.Client.Observer DBus interface and is called by
  * the Channel Dispatcher when a new channel is created, in order to log
  * received signals using its #LogManager.
  *
@@ -243,7 +243,7 @@ _tpl_observer_init (TplObserver *self)
   tp_base_client_take_observer_filter (TP_BASE_CLIENT (self),
       tp_asv_new (
        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-           "org.freedesktop.Telepathy.Channel.Type.Call1",
+           "im.telepathy1.Channel.Type.Call1",
        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
            TP_HANDLE_TYPE_CONTACT,
       NULL));
@@ -252,7 +252,7 @@ _tpl_observer_init (TplObserver *self)
   tp_base_client_take_observer_filter (TP_BASE_CLIENT (self),
       tp_asv_new (
        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-           "org.freedesktop.Telepathy.Channel.Type.Call1",
+           "im.telepathy1.Channel.Type.Call1",
        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
            TP_HANDLE_TYPE_ROOM,
       NULL));
