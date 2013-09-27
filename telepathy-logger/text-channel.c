@@ -598,7 +598,7 @@ tpl_text_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_CORE].name = TPL_TEXT_CHANNEL_FEATURE_CORE;
   features[FEAT_CORE].prepare_async = _tpl_text_channel_prepare_core_async;
   depends_on[0] = TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES;
-  depends_on[1] = TP_CHANNEL_FEATURE_CONTACTS;
+  depends_on[1] = TP_CHANNEL_FEATURE_GROUP;
   features[FEAT_CORE].depends_on = depends_on;
 
   /* assert that the terminator at the end is there */
