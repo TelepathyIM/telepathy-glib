@@ -871,6 +871,14 @@ _get_dates_async_thread (GSimpleAsyncResult *simple,
 }
 
 
+static void
+start_async_op_in_thread (TpAccount *account,
+    GSimpleAsyncResult *result,
+    GSimpleAsyncThreadFunc func)
+{
+  g_simple_async_result_run_in_thread (result, func, 0, NULL);
+}
+
 /**
  * tpl_log_manager_get_dates_async:
  * @manager: a #TplLogManager
@@ -917,8 +925,7 @@ tpl_log_manager_get_dates_async (TplLogManager *manager,
       _tpl_log_manager_async_operation_cb, async_data,
       tpl_log_manager_get_dates_async);
 
-  g_simple_async_result_run_in_thread (simple, _get_dates_async_thread, 0,
-      NULL);
+  start_async_op_in_thread (account, simple, _get_dates_async_thread);
 
   g_object_unref (simple);
 }
@@ -1028,8 +1035,7 @@ tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
       _tpl_log_manager_async_operation_cb, async_data,
       tpl_log_manager_get_events_for_date_async);
 
-  g_simple_async_result_run_in_thread (simple,
-      _get_events_for_date_async_thread, 0, NULL);
+  start_async_op_in_thread (account, simple, _get_events_for_date_async_thread);
 
   g_object_unref (simple);
 }
@@ -1145,8 +1151,7 @@ tpl_log_manager_get_filtered_events_async (TplLogManager *manager,
       _tpl_log_manager_async_operation_cb, async_data,
       tpl_log_manager_get_filtered_events_async);
 
-  g_simple_async_result_run_in_thread (simple,
-      _get_filtered_events_async_thread, 0, NULL);
+  start_async_op_in_thread (account, simple, _get_filtered_events_async_thread);
 
   g_object_unref (simple);
 }
@@ -1286,8 +1291,7 @@ tpl_log_manager_get_entities_async (TplLogManager *self,
       _tpl_log_manager_async_operation_cb, async_data,
       tpl_log_manager_get_entities_async);
 
-  g_simple_async_result_run_in_thread (simple, _get_entities_async_thread, 0,
-      NULL);
+  start_async_op_in_thread (account, simple, _get_entities_async_thread);
 
   g_object_unref (simple);
 }
@@ -1386,8 +1390,7 @@ tpl_log_manager_search_async (TplLogManager *manager,
       _tpl_log_manager_async_operation_cb, async_data,
       tpl_log_manager_search_async);
 
-  g_simple_async_result_run_in_thread (simple, _search_async_thread, 0,
-      NULL);
+  start_async_op_in_thread (NULL, simple, _search_async_thread);
 
   g_object_unref (simple);
 }
