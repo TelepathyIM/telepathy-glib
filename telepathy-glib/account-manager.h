@@ -122,7 +122,7 @@ TpAccount * tp_account_manager_create_account_finish (
   G_GNUC_WARN_UNUSED_RESULT;
 
 #ifndef TP_DISABLE_DEPRECATED
-_TP_DEPRECATED_IN_0_22_FOR(tp_proxy_is_prepared)
+_TP_DEPRECATED_IN_0_24_FOR(tp_proxy_is_prepared)
 gboolean tp_account_manager_is_prepared (TpAccountManager *manager,
     GQuark feature);
 
