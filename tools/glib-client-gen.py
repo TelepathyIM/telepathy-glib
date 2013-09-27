@@ -41,6 +41,8 @@ class Generator(object):
         self.__header = []
         self.__body = []
         self.__docs = []
+        self.__reentrant_header = []
+        self.__reentrant_body = []
 
         self.prefix_lc = prefix.lower()
         self.prefix_uc = prefix.upper()
@@ -71,6 +73,8 @@ class Generator(object):
         self.deprecation_attribute = opts.get('--deprecation-attribute',
                 'G_GNUC_DEPRECATED')
 
+        self.split_reentrants = opts.get('--split-reentrants', False)
+
         self.guard = opts.get('--guard', None)
 
     def h(self, s):
@@ -78,6 +82,12 @@ class Generator(object):
 
     def b(self, s):
         self.__body.append(s)
+
+    def rh(self, s):
+        self.__reentrant_header.append(s)
+
+    def rb(self, s):
+        self.__reentrant_body.append(s)
 
     def d(self, s):
         self.__docs.append(s)
@@ -186,6 +196,7 @@ class Generator(object):
 
             self.b('    TpProxySignalConnection *sc)')
             self.b('{')
+            self.b('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
             self.b('  GValueArray *args = g_value_array_new (%d);' % len(args))
             self.b('  GValue blank = { 0 };')
             self.b('  guint i;')
@@ -194,6 +205,7 @@ class Generator(object):
             self.b('')
             self.b('  for (i = 0; i < %d; i++)' % len(args))
             self.b('    g_value_array_append (args, &blank);')
+            self.b('  G_GNUC_END_IGNORE_DEPRECATIONS')
             self.b('')
 
             for i, arg in enumerate(args):
@@ -282,12 +294,14 @@ class Generator(object):
         self.b('      weak_object);')
         self.b('')
 
+        self.b('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
         if len(args) > 0:
             self.b('  g_value_array_free (args);')
         else:
             self.b('  if (args != NULL)')
             self.b('    g_value_array_free (args);')
             self.b('')
+        self.b('  G_GNUC_END_IGNORE_DEPRECATIONS')
 
         self.b('  g_object_unref (tpproxy);')
         self.b('}')
@@ -307,9 +321,11 @@ class Generator(object):
         # emitted the 'invalidated' signal, or because the weakly referenced
         # object has gone away.
 
-        self.d('/**')
-        self.d(' * %s_%s_connect_to_%s:'
+        connect_to = ('%s_%s_connect_to_%s'
                % (self.prefix_lc, iface_lc, member_lc))
+
+        self.d('/**')
+        self.d(' * %s:' % connect_to)
         self.d(' * @proxy: %s' % self.proxy_doc)
         self.d(' * @callback: Callback to be called when the signal is')
         self.d(' *   received')
@@ -334,8 +350,8 @@ class Generator(object):
         self.d(' */')
         self.d('')
 
-        self.h('TpProxySignalConnection *%s_%s_connect_to_%s (%sproxy,'
-               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
+        self.h('TpProxySignalConnection *%s (%sproxy,'
+               % (connect_to, self.proxy_arg))
         self.h('    %s callback,' % callback_name)
         self.h('    gpointer user_data,')
         self.h('    GDestroyNotify destroy,')
@@ -344,8 +360,7 @@ class Generator(object):
         self.h('')
 
         self.b('TpProxySignalConnection *')
-        self.b('%s_%s_connect_to_%s (%sproxy,'
-               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
+        self.b('(%s) (%sproxy,' % (connect_to, self.proxy_arg))
         self.b('    %s callback,' % callback_name)
         self.b('    gpointer user_data,')
         self.b('    GDestroyNotify destroy,')
@@ -362,8 +377,6 @@ class Generator(object):
 
         self.b('      G_TYPE_INVALID };')
         self.b('')
-        self.b('  g_return_val_if_fail (%s (proxy), NULL);'
-               % self.proxy_assert)
         self.b('  g_return_val_if_fail (callback != NULL, NULL);')
         self.b('')
         self.b('  return tp_proxy_signal_connection_v0_new ((TpProxy *) proxy,')
@@ -380,6 +393,26 @@ class Generator(object):
         self.b('      weak_object, error);')
         self.b('}')
         self.b('')
+
+        # Inline the type-check into the header file, so the object code
+        # doesn't depend on tp_channel_get_type() or whatever
+        self.h('#ifndef __GTK_DOC_IGNORE__')
+        self.h('static inline TpProxySignalConnection *')
+        self.h('_%s (%sproxy,' % (connect_to, self.proxy_arg))
+        self.h('    %s callback,' % callback_name)
+        self.h('    gpointer user_data,')
+        self.h('    GDestroyNotify destroy,')
+        self.h('    GObject *weak_object,')
+        self.h('    GError **error)')
+        self.h('{')
+        self.h('  g_return_val_if_fail (%s (proxy), NULL);'
+               % self.proxy_assert)
+        self.h('  return %s (proxy, callback, user_data,' % connect_to)
+        self.h('      destroy, weak_object, error);')
+        self.h('}')
+        self.h('#define %s(...) _%s (__VA_ARGS__)'
+                % (connect_to, connect_to))
+        self.h('#endif /* __GTK_DOC_IGNORE__ */')
 
     def do_method(self, iface, method):
         iface_lc = iface.lower()
@@ -494,19 +527,25 @@ class Generator(object):
                                                            iface_lc,
                                                            member_lc)
 
+        # This is needed by both reentrant and non-reentrant calls
+        if self.split_reentrants:
+            collector = lambda x: (self.b(x), self.rb(x))
+        else:
+            collector = self.b
+
         # The callback called by dbus-glib; this ends the call and collects
         # the results into a GValueArray.
-        self.b('static void')
-        self.b('%s (DBusGProxy *proxy,' % collect_callback)
-        self.b('    DBusGProxyCall *call,')
-        self.b('    gpointer user_data)')
-        self.b('{')
-        self.b('  GError *error = NULL;')
+        collector('static void')
+        collector('%s (DBusGProxy *proxy,' % collect_callback)
+        collector('    DBusGProxyCall *call,')
+        collector('    gpointer user_data)')
+        collector('{')
+        collector('  GError *error = NULL;')
 
         if len(out_args) > 0:
-            self.b('  GValueArray *args;')
-            self.b('  GValue blank = { 0 };')
-            self.b('  guint i;')
+            collector('  GValueArray *args;')
+            collector('  GValue blank = { 0 };')
+            collector('  guint i;')
 
             for arg in out_args:
                 name, info, tp_type, elt = arg
@@ -516,92 +555,97 @@ class Generator(object):
                 # have already allocated storage for them". Thanks,
                 # dbus-glib...
                 if gtype == 'G_TYPE_VALUE':
-                    self.b('  GValue *%s = g_new0 (GValue, 1);' % name)
+                    collector('  GValue *%s = g_new0 (GValue, 1);' % name)
                 else:
-                    self.b('  %s%s;' % (ctype, name))
+                    collector('  %s%s;' % (ctype, name))
 
-        self.b('')
-        self.b('  dbus_g_proxy_end_call (proxy, call, &error,')
+        collector('')
+        collector('  dbus_g_proxy_end_call (proxy, call, &error,')
 
         for arg in out_args:
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             if gtype == 'G_TYPE_VALUE':
-                self.b('      %s, %s,' % (gtype, name))
+                collector('      %s, %s,' % (gtype, name))
             else:
-                self.b('      %s, &%s,' % (gtype, name))
+                collector('      %s, &%s,' % (gtype, name))
 
-        self.b('      G_TYPE_INVALID);')
+        collector('      G_TYPE_INVALID);')
 
         if len(out_args) == 0:
-            self.b('  tp_proxy_pending_call_v0_take_results (user_data, error,'
+            collector('  tp_proxy_pending_call_v0_take_results (user_data, error,'
                    'NULL);')
         else:
-            self.b('')
-            self.b('  if (error != NULL)')
-            self.b('    {')
-            self.b('      tp_proxy_pending_call_v0_take_results (user_data, error,')
-            self.b('          NULL);')
+            collector('')
+            collector('  if (error != NULL)')
+            collector('    {')
+            collector('      tp_proxy_pending_call_v0_take_results (user_data, error,')
+            collector('          NULL);')
 
             for arg in out_args:
                 name, info, tp_type, elt = arg
                 ctype, gtype, marshaller, pointer = info
                 if gtype == 'G_TYPE_VALUE':
-                    self.b('      g_free (%s);' % name)
+                    collector('      g_free (%s);' % name)
 
-            self.b('      return;')
-            self.b('    }')
-            self.b('')
-            self.b('  args = g_value_array_new (%d);' % len(out_args))
-            self.b('  g_value_init (&blank, G_TYPE_INT);')
-            self.b('')
-            self.b('  for (i = 0; i < %d; i++)' % len(out_args))
-            self.b('    g_value_array_append (args, &blank);')
+            collector('      return;')
+            collector('    }')
+            collector('')
+            collector('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
+            collector('')
+            collector('  args = g_value_array_new (%d);' % len(out_args))
+            collector('  g_value_init (&blank, G_TYPE_INT);')
+            collector('')
+            collector('  for (i = 0; i < %d; i++)' % len(out_args))
+            collector('    g_value_array_append (args, &blank);')
+            collector('')
+            collector('  G_GNUC_END_IGNORE_DEPRECATIONS')
 
             for i, arg in enumerate(out_args):
                 name, info, tp_type, elt = arg
                 ctype, gtype, marshaller, pointer = info
 
-                self.b('')
-                self.b('  g_value_unset (args->values + %d);' % i)
-                self.b('  g_value_init (args->values + %d, %s);' % (i, gtype))
+                collector('')
+                collector('  g_value_unset (args->values + %d);' % i)
+                collector('  g_value_init (args->values + %d, %s);'
+                          % (i, gtype))
 
                 if gtype == 'G_TYPE_STRING':
-                    self.b('  g_value_take_string (args->values + %d, %s);'
-                           % (i, name))
+                    collector('  g_value_take_string (args->values + %d, %s);'
+                              % (i, name))
                 elif marshaller == 'BOXED':
-                    self.b('  g_value_take_boxed (args->values + %d, %s);'
-                            % (i, name))
+                    collector('  g_value_take_boxed (args->values + %d, %s);'
+                              % (i, name))
                 elif gtype == 'G_TYPE_UCHAR':
-                    self.b('  g_value_set_uchar (args->values + %d, %s);'
-                            % (i, name))
+                    collector('  g_value_set_uchar (args->values + %d, %s);'
+                              % (i, name))
                 elif gtype == 'G_TYPE_BOOLEAN':
-                    self.b('  g_value_set_boolean (args->values + %d, %s);'
-                            % (i, name))
+                    collector('  g_value_set_boolean (args->values + %d, %s);'
+                              % (i, name))
                 elif gtype == 'G_TYPE_INT':
-                    self.b('  g_value_set_int (args->values + %d, %s);'
-                            % (i, name))
+                    collector('  g_value_set_int (args->values + %d, %s);'
+                              % (i, name))
                 elif gtype == 'G_TYPE_UINT':
-                    self.b('  g_value_set_uint (args->values + %d, %s);'
-                            % (i, name))
+                    collector('  g_value_set_uint (args->values + %d, %s);'
+                              % (i, name))
                 elif gtype == 'G_TYPE_INT64':
-                    self.b('  g_value_set_int (args->values + %d, %s);'
-                            % (i, name))
+                    collector('  g_value_set_int (args->values + %d, %s);'
+                              % (i, name))
                 elif gtype == 'G_TYPE_UINT64':
-                    self.b('  g_value_set_uint (args->values + %d, %s);'
-                            % (i, name))
+                    collector('  g_value_set_uint (args->values + %d, %s);'
+                              % (i, name))
                 elif gtype == 'G_TYPE_DOUBLE':
-                    self.b('  g_value_set_double (args->values + %d, %s);'
-                            % (i, name))
+                    collector('  g_value_set_double (args->values + %d, %s);'
+                              % (i, name))
                 else:
                     assert False, ("Don't know how to put %s in a GValue"
                                    % gtype)
 
-            self.b('  tp_proxy_pending_call_v0_take_results (user_data, '
-                   'NULL, args);')
+            collector('  tp_proxy_pending_call_v0_take_results (user_data, '
+                      'NULL, args);')
 
-        self.b('}')
+        collector('}')
 
         self.b('static void')
         self.b('%s (TpProxy *self,' % invoke_callback)
@@ -665,11 +709,13 @@ class Generator(object):
         self.b('      error, user_data, weak_object);')
         self.b('')
 
+        self.b('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
         if len(out_args) > 0:
             self.b('  g_value_array_free (args);')
         else:
             self.b('  if (args != NULL)')
             self.b('    g_value_array_free (args);')
+        self.b('  G_GNUC_END_IGNORE_DEPRECATIONS')
 
         self.b('}')
         self.b('')
@@ -686,13 +732,15 @@ class Generator(object):
         #   gpointer user_data,
         #   GDestroyNotify *destructor);
 
-        self.h('TpProxyPendingCall *%s_%s_call_%s (%sproxy,'
-               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
+        caller_name = ('%s_%s_call_%s'
+               % (self.prefix_lc, iface_lc, member_lc))
+
+        self.h('TpProxyPendingCall *%s (%sproxy,'
+               % (caller_name, self.proxy_arg))
         self.h('    gint timeout_ms,')
 
         self.d('/**')
-        self.d(' * %s_%s_call_%s:'
-               % (self.prefix_lc, iface_lc, member_lc))
+        self.d(' * %s:' % caller_name)
         self.d(' * @proxy: the #TpProxy')
         self.d(' * @timeout_ms: the timeout in milliseconds, or -1 to use the')
         self.d(' *   default')
@@ -740,8 +788,8 @@ class Generator(object):
         self.d(' */')
         self.d('')
 
-        self.b('TpProxyPendingCall *\n%s_%s_call_%s (%sproxy,'
-               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
+        self.b('TpProxyPendingCall *\n(%s) (%sproxy,'
+               % (caller_name, self.proxy_arg))
         self.b('    gint timeout_ms,')
 
         for arg in in_args:
@@ -768,8 +816,6 @@ class Generator(object):
         self.b('  GQuark interface = %s;' % self.get_iface_quark())
         self.b('  DBusGProxy *iface;')
         self.b('')
-        self.b('  g_return_val_if_fail (%s (proxy), NULL);'
-               % self.proxy_assert)
         self.b('  g_return_val_if_fail (callback != NULL || '
                'user_data == NULL, NULL);')
         self.b('  g_return_val_if_fail (callback != NULL || '
@@ -777,37 +823,15 @@ class Generator(object):
         self.b('  g_return_val_if_fail (callback != NULL || '
                'weak_object == NULL, NULL);')
         self.b('')
-        self.b('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
-        self.b('  iface = tp_proxy_borrow_interface_by_id (')
+        self.b('  iface = tp_proxy_get_interface_by_id (')
         self.b('      (TpProxy *) proxy,')
-        self.b('      interface, &error);')
-        self.b('  G_GNUC_END_IGNORE_DEPRECATIONS')
-        self.b('')
-        self.b('  if (iface == NULL)')
-        self.b('    {')
-        self.b('      if (callback != NULL)')
-        self.b('        callback (proxy,')
-
-        for arg in out_args:
-            name, info, tp_type, elt = arg
-            ctype, gtype, marshaller, pointer = info
-
-            if pointer:
-                self.b('            NULL,')
-            else:
-                self.b('            0,')
-
-        self.b('            error, user_data, weak_object);')
-        self.b('')
-        self.b('      if (destroy != NULL)')
-        self.b('        destroy (user_data);')
-        self.b('')
-        self.b('      g_error_free (error);')
-        self.b('      return NULL;')
-        self.b('    }')
+        self.b('      interface, (callback == NULL ? NULL : &error));')
         self.b('')
         self.b('  if (callback == NULL)')
         self.b('    {')
+        self.b('      if (iface == NULL)')
+        self.b('        return NULL;')
+        self.b('')
         self.b('      dbus_g_proxy_call_no_reply (iface, "%s",' % member)
 
         for arg in in_args:
@@ -830,6 +854,18 @@ class Generator(object):
         self.b('          %s,' % invoke_callback)
         self.b('          G_CALLBACK (callback), user_data, destroy,')
         self.b('          weak_object, FALSE);')
+        self.b('')
+        # If iface is NULL then the only valid thing we can do is to
+        # terminate the call with an error. Go through the machinery
+        # we'd use for dbus-glib anyway, to stop it being re-entrant.
+        self.b('      if (iface == NULL)')
+        self.b('        {')
+        self.b('          tp_proxy_pending_call_v0_take_results (data,')
+        self.b('              error, NULL);')
+        self.b('          tp_proxy_pending_call_v0_completed (data);')
+        self.b('          return data;')
+        self.b('        }')
+        self.b('')
         self.b('      tp_proxy_pending_call_v0_take_pending_call (data,')
         self.b('          dbus_g_proxy_begin_call_with_timeout (iface,')
         self.b('              "%s",' % member)
@@ -853,6 +889,38 @@ class Generator(object):
         self.b('}')
         self.b('')
 
+        # Inline the type-check into the header file, so the object code
+        # doesn't depend on tp_channel_get_type() or whatever
+        self.h('#ifndef __GTK_DOC_IGNORE__')
+        self.h('static inline TpProxyPendingCall *')
+        self.h('_%s (%sproxy,' % (caller_name, self.proxy_arg))
+        self.h('    gint timeout_ms,')
+
+        for arg in in_args:
+            name, info, tp_type, elt = arg
+            ctype, gtype, marshaller, pointer = info
+            const = pointer and 'const ' or ''
+            self.h('    %s%s%s,' % (const, ctype, name))
+
+        self.h('    %s callback,' % callback_name)
+        self.h('    gpointer user_data,')
+        self.h('    GDestroyNotify destroy,')
+        self.h('    GObject *weak_object)')
+        self.h('{')
+        self.h('  g_return_val_if_fail (%s (proxy), NULL);'
+               % self.proxy_assert)
+        self.h('  return %s (proxy, timeout_ms,' % caller_name)
+
+        for arg in in_args:
+            name, info, tp_type, elt = arg
+            self.h('    %s,' % name)
+
+        self.h('      callback, user_data, destroy, weak_object);')
+        self.h('}')
+        self.h('#define %s(...) _%s (__VA_ARGS__)'
+                % (caller_name, caller_name))
+        self.h('#endif /* __GTK_DOC_IGNORE__ */')
+
         self.do_method_reentrant(method, iface_lc, member, member_lc,
                                  in_args, out_args, collect_callback)
 
@@ -874,94 +942,107 @@ class Generator(object):
         #       GMainLoop **loop);
 
         run_method_name = '%s_%s_run_%s' % (self.prefix_lc, iface_lc, member_lc)
-        if run_method_name not in self.reentrant_symbols:
+
+        b = h = d = None
+
+        if run_method_name in self.reentrant_symbols:
+            b = self.b
+            h = self.h
+            d = self.d
+        elif self.split_reentrants:
+            b = self.rb
+            h = self.rh
+            d = self.rb
+        else:
             return
 
-        self.b('typedef struct {')
-        self.b('    GMainLoop *loop;')
-        self.b('    GError **error;')
+        b('typedef struct {')
+        b('    GMainLoop *loop;')
+        b('    GError **error;')
 
         for arg in out_args:
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.b('    %s*%s;' % (ctype, name))
+            b('    %s*%s;' % (ctype, name))
 
-        self.b('    unsigned success:1;')
-        self.b('    unsigned completed:1;')
-        self.b('} _%s_%s_run_state_%s;'
+        b('    unsigned success:1;')
+        b('    unsigned completed:1;')
+        b('} _%s_%s_run_state_%s;'
                % (self.prefix_lc, iface_lc, member_lc))
 
         reentrant_invoke = '_%s_%s_finish_running_%s' % (self.prefix_lc,
                                                          iface_lc,
                                                          member_lc)
 
-        self.b('static void')
-        self.b('%s (TpProxy *self G_GNUC_UNUSED,' % reentrant_invoke)
-        self.b('    GError *error,')
-        self.b('    GValueArray *args,')
-        self.b('    GCallback unused G_GNUC_UNUSED,')
-        self.b('    gpointer user_data G_GNUC_UNUSED,')
-        self.b('    GObject *unused2 G_GNUC_UNUSED)')
-        self.b('{')
-        self.b('  _%s_%s_run_state_%s *state = user_data;'
+        b('static void')
+        b('%s (TpProxy *self G_GNUC_UNUSED,' % reentrant_invoke)
+        b('    GError *error,')
+        b('    GValueArray *args,')
+        b('    GCallback unused G_GNUC_UNUSED,')
+        b('    gpointer user_data G_GNUC_UNUSED,')
+        b('    GObject *unused2 G_GNUC_UNUSED)')
+        b('{')
+        b('  _%s_%s_run_state_%s *state = user_data;'
                % (self.prefix_lc, iface_lc, member_lc))
-        self.b('')
-        self.b('  state->success = (error == NULL);')
-        self.b('  state->completed = TRUE;')
-        self.b('  g_main_loop_quit (state->loop);')
-        self.b('')
-        self.b('  if (error != NULL)')
-        self.b('    {')
-        self.b('      if (state->error != NULL)')
-        self.b('        *state->error = error;')
-        self.b('      else')
-        self.b('        g_error_free (error);')
-        self.b('')
-        self.b('      return;')
-        self.b('    }')
-        self.b('')
+        b('')
+        b('  state->success = (error == NULL);')
+        b('  state->completed = TRUE;')
+        b('  g_main_loop_quit (state->loop);')
+        b('')
+        b('  if (error != NULL)')
+        b('    {')
+        b('      if (state->error != NULL)')
+        b('        *state->error = error;')
+        b('      else')
+        b('        g_error_free (error);')
+        b('')
+        b('      return;')
+        b('    }')
+        b('')
 
         for i, arg in enumerate(out_args):
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.b('  if (state->%s != NULL)' % name)
+            b('  if (state->%s != NULL)' % name)
             if marshaller == 'BOXED':
-                self.b('    *state->%s = g_value_dup_boxed ('
+                b('    *state->%s = g_value_dup_boxed ('
                        'args->values + %d);' % (name, i))
             elif marshaller == 'STRING':
-                self.b('    *state->%s = g_value_dup_string '
+                b('    *state->%s = g_value_dup_string '
                        '(args->values + %d);' % (name, i))
             elif marshaller in ('UCHAR', 'BOOLEAN', 'INT', 'UINT',
                     'INT64', 'UINT64', 'DOUBLE'):
-                self.b('    *state->%s = g_value_get_%s (args->values + %d);'
+                b('    *state->%s = g_value_get_%s (args->values + %d);'
                        % (name, marshaller.lower(), i))
             else:
                 assert False, "Don't know how to copy %s" % gtype
 
-            self.b('')
+            b('')
 
+        b('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
         if len(out_args) > 0:
-            self.b('  g_value_array_free (args);')
+            b('  g_value_array_free (args);')
         else:
-            self.b('  if (args != NULL)')
-            self.b('    g_value_array_free (args);')
+            b('  if (args != NULL)')
+            b('    g_value_array_free (args);')
+        b('  G_GNUC_END_IGNORE_DEPRECATIONS')
 
-        self.b('}')
-        self.b('')
+        b('}')
+        b('')
 
         if self.deprecate_reentrant:
-            self.h('#ifndef %s' % self.deprecate_reentrant)
+            h('#ifndef %s' % self.deprecate_reentrant)
 
-        self.h('gboolean %s (%sproxy,'
+        h('gboolean %s (%sproxy,'
                % (run_method_name, self.proxy_arg))
-        self.h('    gint timeout_ms,')
+        h('    gint timeout_ms,')
 
-        self.d('/**')
-        self.d(' * %s:' % run_method_name)
-        self.d(' * @proxy: %s' % self.proxy_doc)
-        self.d(' * @timeout_ms: Timeout in milliseconds, or -1 for default')
+        d('/**')
+        d(' * %s:' % run_method_name)
+        d(' * @proxy: %s' % self.proxy_doc)
+        d(' * @timeout_ms: Timeout in milliseconds, or -1 for default')
 
         for arg in in_args:
             name, info, tp_type, elt = arg
@@ -972,47 +1053,47 @@ class Generator(object):
             if ctype == 'guint ' and tp_type != '':
                 docs +=  ' (#%s)' % ('Tp' + tp_type.replace('_', ''))
 
-            self.d(' * @%s: Used to pass an \'in\' argument: %s'
+            d(' * @%s: Used to pass an \'in\' argument: %s'
                    % (name, docs))
 
         for arg in out_args:
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.d(' * @%s: Used to return an \'out\' argument if %%TRUE is '
+            d(' * @%s: Used to return an \'out\' argument if %%TRUE is '
                    'returned: %s'
                    % (name, xml_escape(get_docstring(elt) or '(Undocumented)')))
 
-        self.d(' * @error: If not %NULL, used to return errors if %FALSE ')
-        self.d(' *  is returned')
-        self.d(' * @loop: If not %NULL, set before re-entering ')
-        self.d(' *  the main loop, to point to a #GMainLoop ')
-        self.d(' *  which can be used to cancel this call with ')
-        self.d(' *  g_main_loop_quit(), causing a return of ')
-        self.d(' *  %FALSE with @error set to %TP_DBUS_ERROR_CANCELLED')
-        self.d(' *')
-        self.d(' * Call the method %s and run the main loop' % member)
-        self.d(' * until it returns. Before calling this method, you must')
-        self.d(' * add a reference to any borrowed objects you need to keep,')
-        self.d(' * and generally ensure that everything is in a consistent')
-        self.d(' * state.')
-        self.d(' *')
-        self.d(' * %s' % xml_escape(get_docstring(method) or '(Undocumented)'))
-        self.d(' *')
-        self.d(' * Returns: TRUE on success, FALSE and sets @error on error')
+        d(' * @error: If not %NULL, used to return errors if %FALSE ')
+        d(' *  is returned')
+        d(' * @loop: If not %NULL, set before re-entering ')
+        d(' *  the main loop, to point to a #GMainLoop ')
+        d(' *  which can be used to cancel this call with ')
+        d(' *  g_main_loop_quit(), causing a return of ')
+        d(' *  %FALSE with @error set to %TP_DBUS_ERROR_CANCELLED')
+        d(' *')
+        d(' * Call the method %s and run the main loop' % member)
+        d(' * until it returns. Before calling this method, you must')
+        d(' * add a reference to any borrowed objects you need to keep,')
+        d(' * and generally ensure that everything is in a consistent')
+        d(' * state.')
+        d(' *')
+        d(' * %s' % xml_escape(get_docstring(method) or '(Undocumented)'))
+        d(' *')
+        d(' * Returns: TRUE on success, FALSE and sets @error on error')
 
         deprecated = method.getElementsByTagName('tp:deprecated')
         if deprecated:
             d = deprecated[0]
-            self.d(' *')
-            self.d(' * Deprecated: %s' % xml_escape(get_deprecated(d)))
+            d(' *')
+            d(' * Deprecated: %s' % xml_escape(get_deprecated(d)))
 
-        self.d(' */')
-        self.d('')
+        d(' */')
+        d('')
 
-        self.b('gboolean\n%s (%sproxy,'
+        b('gboolean\n%s (%sproxy,'
                % (run_method_name, self.proxy_arg))
-        self.b('    gint timeout_ms,')
+        b('    gint timeout_ms,')
 
         for arg in in_args:
             name, info, tp_type, elt = arg
@@ -1020,71 +1101,69 @@ class Generator(object):
 
             const = pointer and 'const ' or ''
 
-            self.h('    %s%s%s,' % (const, ctype, name))
-            self.b('    %s%s%s,' % (const, ctype, name))
+            h('    %s%s%s,' % (const, ctype, name))
+            b('    %s%s%s,' % (const, ctype, name))
 
         for arg in out_args:
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.h('    %s*%s,' % (ctype, name))
-            self.b('    %s*%s,' % (ctype, name))
+            h('    %s*%s,' % (ctype, name))
+            b('    %s*%s,' % (ctype, name))
 
-        self.h('    GError **error,')
+        h('    GError **error,')
 
         if self.deprecate_reentrant:
-            self.h('    GMainLoop **loop) %s;' % self.deprecation_attribute)
-            self.h('#endif /* not %s */' % self.deprecate_reentrant)
+            h('    GMainLoop **loop) %s;' % self.deprecation_attribute)
+            h('#endif /* not %s */' % self.deprecate_reentrant)
         else:
-            self.h('    GMainLoop **loop);')
+            h('    GMainLoop **loop);')
 
-        self.h('')
+        h('')
 
-        self.b('    GError **error,')
-        self.b('    GMainLoop **loop)')
-        self.b('{')
-        self.b('  DBusGProxy *iface;')
-        self.b('  GQuark interface = %s;' % self.get_iface_quark())
-        self.b('  TpProxyPendingCall *pc;')
-        self.b('  _%s_%s_run_state_%s state = {'
+        b('    GError **error,')
+        b('    GMainLoop **loop)')
+        b('{')
+        b('  DBusGProxy *iface;')
+        b('  GQuark interface = %s;' % self.get_iface_quark())
+        b('  TpProxyPendingCall *pc;')
+        b('  _%s_%s_run_state_%s state = {'
                % (self.prefix_lc, iface_lc, member_lc))
-        self.b('      NULL /* loop */, error,')
+        b('      NULL /* loop */, error,')
 
         for arg in out_args:
             name, info, tp_type, elt = arg
 
-            self.b('    %s,' % name)
+            b('    %s,' % name)
 
-        self.b('      FALSE /* completed */, FALSE /* success */ };')
-        self.b('')
-        self.b('  g_return_val_if_fail (%s (proxy), FALSE);'
+        b('      FALSE /* completed */, FALSE /* success */ };')
+        b('')
+        b('  g_return_val_if_fail (%s (proxy), FALSE);'
                % self.proxy_assert)
-        self.b('')
-        self.b('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
-        self.b('  iface = tp_proxy_borrow_interface_by_id')
-        self.b('       ((TpProxy *) proxy, interface, error);')
-        self.b('  G_GNUC_END_IGNORE_DEPRECATIONS')
-        self.b('')
-        self.b('  if (iface == NULL)')
-        self.b('    return FALSE;')
-        self.b('')
-        self.b('  state.loop = g_main_loop_new (NULL, FALSE);')
-        self.b('')
-        self.b('  pc = tp_proxy_pending_call_v0_new ((TpProxy *) proxy,')
-        self.b('      interface, "%s", iface,' % member)
-        self.b('      %s,' % reentrant_invoke)
-        self.b('      NULL, &state, NULL, NULL, TRUE);')
-        self.b('')
-        self.b('  if (loop != NULL)')
-        self.b('    *loop = state.loop;')
-        self.b('')
-        self.b('  tp_proxy_pending_call_v0_take_pending_call (pc,')
-        self.b('      dbus_g_proxy_begin_call_with_timeout (iface,')
-        self.b('          "%s",' % member)
-        self.b('          %s,' % collect_callback)
-        self.b('          pc,')
-        self.b('          tp_proxy_pending_call_v0_completed,')
-        self.b('          timeout_ms,')
+        b('')
+        b('  iface = tp_proxy_get_interface_by_id')
+        b('       ((TpProxy *) proxy, interface, error);')
+        b('')
+        b('  if (iface == NULL)')
+        b('    return FALSE;')
+        b('')
+        b('  state.loop = g_main_loop_new (NULL, FALSE);')
+        b('')
+        b('  pc = tp_proxy_pending_call_v0_new ((TpProxy *) proxy,')
+        b('      interface, "%s", iface,' % member)
+        b('      %s,' % reentrant_invoke)
+        b('      NULL, &state, NULL, NULL, TRUE);')
+        b('')
+        b('  if (loop != NULL)')
+        b('    *loop = state.loop;')
+        b('')
+        b('  tp_proxy_pending_call_v0_take_pending_call (pc,')
+        b('      dbus_g_proxy_begin_call_with_timeout (iface,')
+        b('          "%s",' % member)
+        b('          %s,' % collect_callback)
+        b('          pc,')
+        b('          tp_proxy_pending_call_v0_completed,')
+        b('          timeout_ms,')
 
         for arg in in_args:
             name, info, tp_type, elt = arg
@@ -1092,24 +1171,24 @@ class Generator(object):
 
             const = pointer and 'const ' or ''
 
-            self.b('              %s, %s,' % (gtype, name))
+            b('              %s, %s,' % (gtype, name))
 
-        self.b('          G_TYPE_INVALID));')
-        self.b('')
-        self.b('  if (!state.completed)')
-        self.b('    g_main_loop_run (state.loop);')
-        self.b('')
-        self.b('  if (!state.completed)')
-        self.b('    tp_proxy_pending_call_cancel (pc);')
-        self.b('')
-        self.b('  if (loop != NULL)')
-        self.b('    *loop = NULL;')
-        self.b('')
-        self.b('  g_main_loop_unref (state.loop);')
-        self.b('')
-        self.b('  return state.success;')
-        self.b('}')
-        self.b('')
+        b('          G_TYPE_INVALID));')
+        b('')
+        b('  if (!state.completed)')
+        b('    g_main_loop_run (state.loop);')
+        b('')
+        b('  if (!state.completed)')
+        b('    tp_proxy_pending_call_cancel (pc);')
+        b('')
+        b('  if (loop != NULL)')
+        b('    *loop = NULL;')
+        b('')
+        b('  g_main_loop_unref (state.loop);')
+        b('')
+        b('  return state.success;')
+        b('}')
+        b('')
 
     def do_signal_add(self, signal):
         marshaller_items = []
@@ -1133,6 +1212,9 @@ class Generator(object):
         assert len(ifaces) == 1
         iface = ifaces[0]
         name = node.getAttribute('name').replace('/', '')
+        # This is a hack to get rid of interface version numbers
+        # until we migrate to generating version-numbered code
+        name = name.replace('Call1_', 'Call_').rstrip('1')
 
         self.iface = name
         self.iface_lc = name.lower()
@@ -1183,6 +1265,10 @@ class Generator(object):
         self.b(' * confused by seeing function definitions, so mark it as: */')
         self.b('/*<private_header>*/')
         self.b('')
+        # if we're splitting out re-entrant things, we want them marked
+        # private too
+        self.rh('/*<private_header>*/')
+        self.rb('/*<private_header>*/')
 
         nodes = self.dom.getElementsByTagName('node')
         nodes.sort(key=key_by_name)
@@ -1191,6 +1277,12 @@ class Generator(object):
             self.do_interface(node)
 
         if self.group is not None:
+            self.h('void %s_%s_add_signals (TpProxy *self,'
+                    % (self.prefix_lc, self.group))
+            self.h('    guint quark,')
+            self.h('    DBusGProxy *proxy,')
+            self.h('    gpointer unused);')
+            self.h('')
 
             self.b('/*')
             self.b(' * %s_%s_add_signals:' % (self.prefix_lc, self.group))
@@ -1207,7 +1299,7 @@ class Generator(object):
             self.b(' * This function should be used as a signal handler for')
             self.b(' * #TpProxy::interface-added.')
             self.b(' */')
-            self.b('static void')
+            self.b('void')
             self.b('%s_%s_add_signals (TpProxy *self G_GNUC_UNUSED,'
                     % (self.prefix_lc, self.group))
             self.b('    guint quark,')
@@ -1223,6 +1315,9 @@ class Generator(object):
                 if not signals:
                     continue
                 name = node.getAttribute('name').replace('/', '').lower()
+                # This is a hack to get rid of interface version numbers
+                # until we migrate to generating version-numbered code
+                name = name.replace('call1_', 'call_').rstrip('1')
                 self.iface_uc = name.upper()
                 self.b('  if (quark == %s)' % self.get_iface_quark())
                 self.b('    %s_add_signals_for_%s (proxy);'
@@ -1238,6 +1333,10 @@ class Generator(object):
             self.h('#endif /* defined (%s) */' % self.guard)
             self.h('')
 
+        if self.split_reentrants:
+            file_set_contents(self.basename + '-reentrant-body.h', u('\n').join(self.__reentrant_body).encode('utf-8'))
+            file_set_contents(self.basename + '-reentrant.h', u('\n').join(self.__reentrant_header).encode('utf-8'))
+
         file_set_contents(self.basename + '.h', u('\n').join(self.__header).encode('utf-8'))
         file_set_contents(self.basename + '-body.h', u('\n').join(self.__body).encode('utf-8'))
         file_set_contents(self.basename + '-gtk-doc.h', u('\n').join(self.__docs).encode('utf-8'))
@@ -1251,7 +1350,8 @@ if __name__ == '__main__':
                                ['group=', 'subclass=', 'subclass-assert=',
                                 'iface-quark-prefix=', 'tp-proxy-api=',
                                 'generate-reentrant=', 'deprecate-reentrant=',
-                                'deprecation-attribute=', 'guard='])
+                                'deprecation-attribute=', 'guard=',
+                                'split-reentrants='])
 
     opts = {}
 

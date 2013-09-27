@@ -75,14 +75,14 @@ class Generator(object):
  * The interface name "%(name)s"
  */
 """ % {'IFACE_DEFINE' : (self.prefix + 'IFACE_' + \
-            parent_name).upper().replace('/', ''),
+            parent_name).upper().replace('/', '').replace('CALL1_', 'CALL_').rstrip('1'),
        'name' : iface.getAttribute('name')})
 
         self.h("""
 #define %(IFACE_DEFINE)s \\
 "%(name)s"
 """ % {'IFACE_DEFINE' : (self.prefix + 'IFACE_' + \
-            parent_name).upper().replace('/', ''),
+            parent_name).upper().replace('/', '').replace('CALL1_', 'CALL_').rstrip('1'),
        'name' : iface.getAttribute('name')})
 
         self.d("""
@@ -93,9 +93,9 @@ class Generator(object):
 name "%(name)s"
  */
 """ % {'IFACE_QUARK_DEFINE' : (self.prefix + 'IFACE_QUARK_' + \
-            parent_name).upper().replace('/', ''),
+            parent_name).upper().replace('/', '').replace('CALL1_', 'CALL_').rstrip('1'),
        'iface_quark_func' : (self.prefix + 'iface_quark_' + \
-            parent_name).lower().replace('/', ''),
+            parent_name).lower().replace('/', '').replace('call1_', 'call_').rstrip('1'),
        'name' : iface.getAttribute('name')})
 
         self.h("""
@@ -105,9 +105,9 @@ name "%(name)s"
 GQuark %(iface_quark_func)s (void);
 
 """ % {'IFACE_QUARK_DEFINE' : (self.prefix + 'IFACE_QUARK_' + \
-            parent_name).upper().replace('/', ''),
+            parent_name).upper().replace('/', '').replace('CALL1_', 'CALL_').rstrip('1'),
        'iface_quark_func' : (self.prefix + 'iface_quark_' + \
-            parent_name).lower().replace('/', ''),
+            parent_name).lower().replace('/', '').replace('call1_', 'call_').rstrip('1'),
        'name' : iface.getAttribute('name')})
 
         self.c("""\
@@ -125,7 +125,7 @@ GQuark
 }
 
 """ % {'iface_quark_func' : (self.prefix + 'iface_quark_' + \
-            parent_name).lower().replace('/', ''),
+            parent_name).lower().replace('/', '').replace('call1_', 'call_').rstrip('1'),
        'name' : iface.getAttribute('name')})
 
         for prop in iface.getElementsByTagNameNS(None, 'property'):
@@ -136,7 +136,7 @@ GQuark
  * The fully-qualified property name "%(name)s.%(prop)s"
  */
 """ % {'IFACE_PREFIX' : (self.prefix + 'PROP_' + \
-                parent_name).upper().replace('/', ''),
+                parent_name).upper().replace('/', '').replace('CALL1_', 'CALL_').rstrip('1'),
            'PROP_UC': prop.getAttributeNS(NS_TP, "name-for-bindings").upper(),
            'name' : iface.getAttribute('name'),
            'prop' : prop.getAttribute('name'),
@@ -146,7 +146,7 @@ GQuark
 #define %(IFACE_PREFIX)s_%(PROP_UC)s \\
 "%(name)s.%(prop)s"
 """ % {'IFACE_PREFIX' : (self.prefix + 'PROP_' + \
-                parent_name).upper().replace('/', ''),
+                parent_name).upper().replace('/', '').replace('CALL1_', 'CALL_').rstrip('1'),
            'PROP_UC': prop.getAttributeNS(NS_TP, "name-for-bindings").upper(),
            'name' : iface.getAttribute('name'),
            'prop' : prop.getAttribute('name'),
@@ -161,7 +161,7 @@ GQuark
  * The fully-qualified contact attribute token name "%(name)s/%(prop)s"
  */
 """ % {'TOKEN_PREFIX' : (self.prefix + 'TOKEN_' + \
-                parent_name).upper().replace('/', ''),
+                parent_name).upper().replace('/', '').replace('CALL1_', 'CALL_').rstrip('1'),
            'TOKEN_UC': prop.getAttributeNS(None, "name").upper().replace("-", "_").replace(".", "_"),
            'name' : iface.getAttribute('name'),
            'prop' : prop.getAttribute('name'),
@@ -171,7 +171,7 @@ GQuark
 #define %(TOKEN_PREFIX)s_%(TOKEN_UC)s \\
 "%(name)s/%(prop)s"
 """ % {'TOKEN_PREFIX' : (self.prefix + 'TOKEN_' + \
-                parent_name).upper().replace('/', ''),
+                parent_name).upper().replace('/', '').replace('CALL1_', 'CALL_').rstrip('1'),
            'TOKEN_UC': prop.getAttributeNS(None, "name").upper().replace("-", "_").replace(".", "_"),
            'name' : iface.getAttribute('name'),
            'prop' : prop.getAttribute('name'),
@@ -186,7 +186,7 @@ GQuark
  * The fully-qualified capability token name "%(name)s/%(prop)s"
  */
 """ % {'TOKEN_PREFIX' : (self.prefix + 'TOKEN_' + \
-                parent_name).upper().replace('/', ''),
+                parent_name).upper().replace('/', '').replace('CALL1_', 'CALL_').rstrip('1'),
            'TOKEN_UC': prop.getAttributeNS(None, "name").upper().replace("-", "_").replace(".", "_"),
            'name' : iface.getAttribute('name'),
            'prop' : prop.getAttribute('name'),
@@ -196,7 +196,7 @@ GQuark
 #define %(TOKEN_PREFIX)s_%(TOKEN_UC)s \\
 "%(name)s/%(prop)s"
 """ % {'TOKEN_PREFIX' : (self.prefix + 'TOKEN_' + \
-                parent_name).upper().replace('/', ''),
+                parent_name).upper().replace('/', '').replace('CALL1_', 'CALL_').rstrip('1'),
            'TOKEN_UC': prop.getAttributeNS(None, "name").upper().replace("-", "_").replace(".", "_"),
            'name' : iface.getAttribute('name'),
            'prop' : prop.getAttribute('name'),
