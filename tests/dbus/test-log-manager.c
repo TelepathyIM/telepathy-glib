@@ -5,6 +5,7 @@
 #include "lib/util.h"
 #include "lib/simple-account.h"
 #include "lib/simple-account-manager.h"
+#include "lib/logger-test-helper.h"
 
 #include "telepathy-logger/debug-internal.h"
 #include "telepathy-logger/log-manager-internal.h"

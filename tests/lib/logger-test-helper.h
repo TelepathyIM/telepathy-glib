@@ -35,4 +35,6 @@ void tpl_test_release_account (TpDBusDaemon *dbus,
     TpAccount *account,
     TpTestsSimpleAccount *account_service);
 
+void tp_tests_copy_dir (const gchar *from_dir, const gchar *to_dir);
+
 #endif

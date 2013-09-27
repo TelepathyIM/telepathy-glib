@@ -22,6 +22,8 @@
 
 #include "logger-test-helper.h"
 
+#include <stdlib.h>
+
 #include "util.h"
 
 void
@@ -61,4 +63,24 @@ tpl_test_release_account (TpDBusDaemon *dbus,
   tp_dbus_daemon_unregister_object (dbus, account_service);
   g_object_unref (account_service);
   g_object_unref (account);
+}
+
+void
+tp_tests_copy_dir (const gchar *from_dir, const gchar *to_dir)
+{
+  gchar *command;
+
+  // If destination directory exist erase it
+  command = g_strdup_printf ("rm -rf %s", to_dir);
+  g_assert (system (command) == 0);
+  g_free (command);
+
+  command = g_strdup_printf ("cp -r %s %s", from_dir, to_dir);
+  g_assert (system (command) == 0);
+  g_free (command);
+
+  // In distcheck mode the files and directory are read-only, fix that
+  command = g_strdup_printf ("chmod -R +w %s", to_dir);
+  g_assert (system (command) == 0);
+  g_free (command);
 }

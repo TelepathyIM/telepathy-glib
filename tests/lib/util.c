@@ -498,23 +498,3 @@ tp_tests_connection_run_until_contact_by_id (TpConnection *connection,
 
   return contact;
 }
-
-void
-tp_tests_copy_dir (const gchar *from_dir, const gchar *to_dir)
-{
-  gchar *command;
-
-  // If destination directory exist erase it
-  command = g_strdup_printf ("rm -rf %s", to_dir);
-  g_assert (system (command) == 0);
-  g_free (command);
-
-  command = g_strdup_printf ("cp -r %s %s", from_dir, to_dir);
-  g_assert (system (command) == 0);
-  g_free (command);
-
-  // In distcheck mode the files and directory are read-only, fix that
-  command = g_strdup_printf ("chmod -R +w %s", to_dir);
-  g_assert (system (command) == 0);
-  g_free (command);
-}
