@@ -13,10 +13,10 @@
 #include "util.h"
 
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include <glib/gstdio.h>
 #include <string.h>
-#include <stdlib.h>
 
 #ifdef G_OS_UNIX
 # include <unistd.h> /* for alarm() */
@@ -78,10 +78,70 @@ tp_tests_proxy_run_until_prepared_or_failed (gpointer proxy,
   return r;
 }
 
+static GTestDBus *test_dbus = NULL;
+
+static void
+start_dbus_session (void)
+{
+  g_assert (test_dbus == NULL);
+
+  g_type_init ();
+
+  /* Make sure we won't be using user's bus. This unsets more than
+   * g_test_dbus_unset() currently does (glib 2.36) */
+  g_unsetenv ("DISPLAY");
+  g_unsetenv ("DBUS_STARTER_ADDRESS");
+  g_unsetenv ("DBUS_STARTER_BUS_TYPE");
+  g_unsetenv ("DBUS_SESSION_BUS_ADDRESS");
+
+  test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
+  g_test_dbus_add_service_dir (test_dbus, g_getenv ("TP_TESTS_SERVICES_DIR"));
+  g_test_dbus_up (test_dbus);
+}
+
+static void
+stop_dbus_session (void)
+{
+  g_assert (test_dbus != NULL);
+  g_test_dbus_down (test_dbus);
+  g_clear_object (&test_dbus);
+}
+
+gint
+tp_tests_run_with_bus (void)
+{
+  gint ret;
+
+  if (test_dbus != NULL)
+    return g_test_run ();
+
+  start_dbus_session ();
+  ret = g_test_run ();
+  stop_dbus_session ();
+
+  return ret;
+}
+
 TpDBusDaemon *
 tp_tests_dbus_daemon_dup_or_die (void)
 {
-  TpDBusDaemon *d = tp_dbus_daemon_dup (NULL);
+  TpDBusDaemon *d;
+
+  if (test_dbus == NULL)
+    {
+      /* HACK: Some tests are not yet ported to GTest and thus are not using
+       * tp_tests_run_with_bus(). In that case we make sure to start the dbus
+       * session before aquiring the TpDBusDaemon and we stop the session when
+       * the daemon is disposed. In a perfect world this should not be needed.
+       */
+      start_dbus_session ();
+      d = tp_dbus_daemon_dup (NULL);
+      g_object_weak_ref ((GObject *) d, (GWeakNotify) stop_dbus_session, NULL);
+    }
+  else
+    {
+       d = tp_dbus_daemon_dup (NULL);
+    }
 
   /* In a shared library, this would be very bad (see fd.o #18832), but in a
    * regression test that's going to be run under a temporary session bus,
@@ -204,7 +264,6 @@ tp_tests_create_conn (GType conn_type,
     TpConnection **client_conn)
 {
   TpDBusDaemon *dbus;
-  TpClientFactory *factory;
   gchar *name;
   gchar *conn_path;
   GError *error = NULL;
@@ -213,7 +272,6 @@ tp_tests_create_conn (GType conn_type,
   g_assert (client_conn != NULL);
 
   dbus = tp_tests_dbus_daemon_dup_or_die ();
-  factory = (TpClientFactory *) tp_automatic_client_factory_new (dbus);
 
   *service_conn = tp_tests_object_new_static_class (
         conn_type,
@@ -226,8 +284,7 @@ tp_tests_create_conn (GType conn_type,
         &name, &conn_path, &error));
   g_assert_no_error (error);
 
-  *client_conn = tp_client_factory_ensure_connection (factory,
-      conn_path, NULL, &error);
+  *client_conn = tp_tests_connection_new (dbus, NULL, conn_path, &error);
   g_assert (*client_conn != NULL);
   g_assert_no_error (error);
 
@@ -243,7 +300,6 @@ tp_tests_create_conn (GType conn_type,
   g_free (conn_path);
 
   g_object_unref (dbus);
-  g_object_unref (factory);
 }
 
 void
@@ -485,12 +541,11 @@ one_contact_cb (GObject *object,
 TpContact *
 tp_tests_connection_run_until_contact_by_id (TpConnection *connection,
     const gchar *id,
-    guint n_features,
-    const TpContactFeature *features)
+    const GQuark *features)
 {
   TpContact *contact = NULL;
 
-  tp_connection_dup_contact_by_id_async (connection, id, n_features, features,
+  tp_connection_dup_contact_by_id_async (connection, id, features,
       one_contact_cb, &contact);
 
   while (contact == NULL)
@@ -498,3 +553,160 @@ tp_tests_connection_run_until_contact_by_id (TpConnection *connection,
 
   return contact;
 }
+
+void
+tp_tests_channel_assert_expect_members (TpChannel *channel,
+    TpIntset *expected_members)
+{
+  GPtrArray *contacts;
+  TpIntset *members;
+  guint i;
+
+  members = tp_intset_new ();
+  contacts = tp_channel_group_dup_members (channel);
+  if (contacts != NULL)
+    {
+      for (i = 0; i < contacts->len; i++)
+        {
+          TpContact *contact = g_ptr_array_index (contacts, i);
+          tp_intset_add (members, tp_contact_get_handle (contact));
+        }
+    }
+
+  g_assert (tp_intset_is_equal (members, expected_members));
+
+  g_ptr_array_unref (contacts);
+  tp_intset_destroy (members);
+}
+
+TpConnection *
+tp_tests_connection_new (TpDBusDaemon *dbus,
+    const gchar *bus_name,
+    const gchar *object_path,
+    GError **error)
+{
+  TpClientFactory *factory;
+  gchar *dup_path = NULL;
+  TpConnection *ret = NULL;
+
+  g_return_val_if_fail (TP_IS_DBUS_DAEMON (dbus), NULL);
+  g_return_val_if_fail (object_path != NULL ||
+                        (bus_name != NULL && bus_name[0] != ':'), NULL);
+
+  if (object_path == NULL)
+    {
+      dup_path = g_strdelimit (g_strdup_printf ("/%s", bus_name), ".", '/');
+      object_path = dup_path;
+    }
+
+  if (!tp_dbus_check_valid_object_path (object_path, error))
+    goto finally;
+
+  factory = tp_automatic_client_factory_new (dbus);
+  ret = tp_client_factory_ensure_connection (factory,
+      object_path, NULL, error);
+  g_object_unref (factory);
+
+finally:
+  g_free (dup_path);
+
+  return ret;
+}
+
+TpAccount *
+tp_tests_account_new (TpDBusDaemon *dbus,
+    const gchar *object_path,
+    GError **error)
+{
+  TpClientFactory *factory;
+  TpAccount *ret;
+
+  if (!tp_dbus_check_valid_object_path (object_path, error))
+    return NULL;
+
+  factory = tp_automatic_client_factory_new (dbus);
+  ret = tp_client_factory_ensure_account (factory,
+      object_path, NULL, error);
+  g_object_unref (factory);
+
+  return ret;
+}
+
+TpChannel *
+tp_tests_channel_new (TpConnection *conn,
+    const gchar *object_path,
+    const gchar *optional_channel_type,
+    TpHandleType optional_handle_type,
+    TpHandle optional_handle,
+    GError **error)
+{
+  TpChannel *ret;
+  GHashTable *asv;
+
+  asv = tp_asv_new (NULL, NULL);
+
+  if (optional_channel_type != NULL)
+    {
+      tp_asv_set_string (asv,
+          TP_PROP_CHANNEL_CHANNEL_TYPE, optional_channel_type);
+    }
+  if (optional_handle_type != TP_HANDLE_TYPE_NONE)
+    {
+      tp_asv_set_uint32 (asv,
+          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, optional_handle_type);
+    }
+  if (optional_handle != 0)
+    {
+      tp_asv_set_uint32 (asv,
+          TP_PROP_CHANNEL_TARGET_HANDLE, optional_handle);
+    }
+
+  ret = tp_tests_channel_new_from_properties (conn, object_path, asv, error);
+
+  g_hash_table_unref (asv);
+
+  return ret;
+}
+
+TpChannel *
+tp_tests_channel_new_from_properties (TpConnection *conn,
+    const gchar *object_path,
+    const GHashTable *immutable_properties,
+    GError **error)
+{
+  TpClientFactory *factory;
+
+  if (!tp_dbus_check_valid_object_path (object_path, error))
+    return NULL;
+
+  factory = tp_proxy_get_factory (conn);
+  return tp_client_factory_ensure_channel (factory, conn,
+      object_path, immutable_properties, error);
+}
+
+void
+tp_tests_add_channel_to_ptr_array (GPtrArray *arr,
+    TpChannel *channel)
+{
+  GValueArray *tmp;
+  GVariant *variant;
+  GValue v = G_VALUE_INIT;
+  GHashTable *asv;
+
+  g_assert (arr != NULL);
+  g_assert (channel != NULL);
+
+  variant = tp_channel_dup_immutable_properties (channel);
+  dbus_g_value_parse_g_variant (variant, &v);
+  asv = g_value_get_boxed (&v);
+
+  tmp = tp_value_array_build (2,
+      DBUS_TYPE_G_OBJECT_PATH, tp_proxy_get_object_path (channel),
+      TP_HASH_TYPE_STRING_VARIANT_MAP, asv,
+      G_TYPE_INVALID);
+
+  g_ptr_array_add (arr, tmp);
+  g_variant_unref (variant);
+  g_value_unset (&v);
+}
+

@@ -61,7 +61,7 @@ GType tp_tests_simple_account_manager_get_type (void);
 void tp_tests_simple_account_manager_add_account (
     TpTestsSimpleAccountManager *self,
     const gchar *object_path,
-    gboolean valid);
+    gboolean usable);
 
 void tp_tests_simple_account_manager_remove_account (
     TpTestsSimpleAccountManager *self,
