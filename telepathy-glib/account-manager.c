@@ -1221,7 +1221,7 @@ tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
     {
       TpAccount *account = TP_ACCOUNT (value);
 
-      if (tp_account_is_prepared (account, TP_ACCOUNT_FEATURE_CORE))
+      if (tp_proxy_is_prepared (account, TP_ACCOUNT_FEATURE_CORE))
         tp_account_request_presence_async (account, type, status, message,
             NULL, NULL);
     }

@@ -437,7 +437,7 @@ finish_account_prepare_action (GObject *source_object,
 
   g_assert (test->account == account);
   test->prepared = tp_account_prepare_finish (account, res, &test->error);
-  g_assert (test->prepared == tp_account_is_prepared (account, TP_ACCOUNT_FEATURE_CORE));
+  g_assert (test->prepared == tp_proxy_is_prepared (account, TP_ACCOUNT_FEATURE_CORE));
 
   script_continue (test);
 }
