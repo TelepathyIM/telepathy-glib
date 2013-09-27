@@ -1463,6 +1463,7 @@ tp_account_manager_create_account_finish (TpAccountManager *manager,
  * Returns: the same thing as tp_proxy_is_prepared()
  *
  * Since: 0.9.0
+ * Deprecated: since 0.UNRELEASED, use tp_proxy_is_prepared() instead.
  */
 gboolean
 tp_account_manager_is_prepared (TpAccountManager *manager,
