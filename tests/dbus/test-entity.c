@@ -108,7 +108,7 @@ test_entity_instantiation_from_tp_contact (void)
   tp_client_factory_add_contact_features_varargs (factory,
       TP_CONTACT_FEATURE_ALIAS,
       TP_CONTACT_FEATURE_AVATAR_TOKEN,
-      TP_CONTACT_FEATURE_INVALID);
+      0);
 
   result.loop = g_main_loop_new (NULL, FALSE);
 
