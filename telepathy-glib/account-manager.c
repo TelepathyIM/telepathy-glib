@@ -55,7 +55,7 @@
  * To list the existing valid accounts, the client should first
  * prepare the %TP_ACCOUNT_MANAGER_FEATURE_CORE feature using
  * tp_proxy_prepare_async(), then call
- * tp_account_manager_dup_valid_accounts().
+ * tp_account_manager_dup_usable_accounts().
  *
  * The #TpAccountManager::account-validity-changed signal is emitted
  * to notify of the validity of an account changing. New accounts are
