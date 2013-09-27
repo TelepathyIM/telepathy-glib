@@ -1,10 +1,10 @@
 telepathy-glib 0.99.2 (UNRELEASED)
 ==================================
 
-The “forgotten tea” release.
+The “no surprises” release.
 
-This is another snapshot, so that the 'next' branch of telepathy-salut
-can work.
+This is another snapshot, so that the 'next' branches of telepathy-salut
+and telepathy-haze can work.
 
 Dependencies:
 
@@ -16,7 +16,7 @@ API changes:
   (telepathy-spec 0.99.1 says this is OK).
 
 • Connection manager names may now start with underscores
-  (telepathy-spec 0.99.1 does not allow this, but the next snapshot will).
+  (telepathy-spec 0.99.2 says this is OK)
 
 Fixes:
 

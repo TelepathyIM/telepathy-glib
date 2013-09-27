@@ -24,7 +24,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The name of a connection manager, found in its well-known
           bus name and object path. This must be a non-empty string of
-          ASCII letters, digits and underscores, starting with a letter.
+          ASCII letters, digits and underscores, starting with a letter
+          or underscore.
           This is typically the name of the executable with any "telepathy-"
           prefix removed, and any hyphen/minus signs replaced by
           underscores.</p>
