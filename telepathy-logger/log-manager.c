@@ -32,6 +32,7 @@
 #include <gio/gio.h>
 #include <glib/gstdio.h>
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include <telepathy-logger/conf-internal.h>
 #include <telepathy-logger/entity-internal.h>

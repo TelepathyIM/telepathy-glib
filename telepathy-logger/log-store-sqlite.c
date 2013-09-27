@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 #include <sqlite3.h>
 
 #include "event-internal.h"

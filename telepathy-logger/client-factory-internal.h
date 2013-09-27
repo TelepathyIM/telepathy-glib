@@ -22,6 +22,7 @@
 #define __TPL_CLIENT_FACTORY_H__
 
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 typedef struct _TplClientFactory TplClientFactory;
 typedef struct _TplClientFactoryClass TplClientFactoryClass;

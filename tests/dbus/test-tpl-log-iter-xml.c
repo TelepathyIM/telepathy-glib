@@ -11,6 +11,7 @@
 #include "telepathy-logger/text-event.h"
 
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 #include <glib.h>
 
 #define DEBUG_FLAG TPL_DEBUG_TESTSUITE

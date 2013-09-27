@@ -23,6 +23,7 @@
 
 #include <glib.h>
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include "call-event.h"
 #include "call-event-internal.h"
