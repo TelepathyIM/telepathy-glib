@@ -88,6 +88,8 @@ tpl_text_event_dispose (GObject *obj)
   g_list_foreach (priv->supersedes.head, (GFunc) g_object_unref, NULL);
   g_list_free (priv->supersedes.head);
   g_queue_init (&priv->supersedes);
+
+  G_OBJECT_CLASS (tpl_text_event_parent_class)->dispose (obj);
 }
 
 
