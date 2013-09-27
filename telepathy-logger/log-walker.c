@@ -113,7 +113,7 @@
  *     if (!tp_proxy_prepare_finish (source_object, res, NULL))
  *       return;
  *
- *     accounts = tp_account_manager_dup_valid_accounts (account_manager);
+ *     accounts = tp_account_manager_dup_usable_accounts (account_manager);
  *     g_list_foreach (accounts, accounts_foreach, &account);
  *     g_list_free_full (accounts, g_object_unref);
  *     if (account == NULL)

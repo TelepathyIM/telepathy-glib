@@ -491,7 +491,7 @@ log_store_pidgin_dup_account (TplLogStorePidgin *self,
   gchar *protocol, *username, *server = NULL, *tmp;
   gboolean is_irc;
 
-  accounts = tp_account_manager_dup_valid_accounts (
+  accounts = tp_account_manager_dup_usable_accounts (
       self->priv->account_manager);
 
   strv = g_strsplit (filename, G_DIR_SEPARATOR_S, -1);
