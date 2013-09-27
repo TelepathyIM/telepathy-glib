@@ -1975,7 +1975,7 @@ _tp_g_list_copy_deep (GList *list,
  * provoke deprecation warnings from GLib when used in conjunction with
  * tp_value_array_build() and tp_value_array_unpack().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.2
  */
 void
 (tp_value_array_free) (GValueArray *va)
