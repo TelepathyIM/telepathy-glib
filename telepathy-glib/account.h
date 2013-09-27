@@ -250,7 +250,10 @@ void tp_account_get_avatar_async (TpAccount *account,
 const GArray *tp_account_get_avatar_finish (TpAccount *account,
     GAsyncResult *result, GError **error);
 
+#ifndef TP_DISABLE_DEPRECATED
+_TP_DEPRECATED_IN_0_22_FOR(tp_proxy_is_prepared)
 gboolean tp_account_is_prepared (TpAccount *account, GQuark feature);
+#endif
 
 #ifndef TP_DISABLE_DEPRECATED
 _TP_DEPRECATED_IN_0_16_FOR (tp_proxy_prepare_async)

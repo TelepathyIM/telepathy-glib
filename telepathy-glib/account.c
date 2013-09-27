@@ -3651,6 +3651,7 @@ tp_account_get_avatar_finish (TpAccount *account,
  * Returns: the same thing as tp_proxy_is_prepared()
  *
  * Since: 0.9.0
+ * Deprecated: since 0.UNRELEASED, use tp_proxy_is_prepared() instead.
  */
 gboolean
 tp_account_is_prepared (TpAccount *account,
