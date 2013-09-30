@@ -1147,6 +1147,29 @@ parse_text_node (TplLogStoreXml *self,
   return event;
 }
 
+static gchar *
+dup_detailed_reason (xmlNodePtr node)
+{
+  gchar *d, *result;
+  const gchar *old_tp_prefix = "org.freedesktop.Telepathy.Error";
+
+  d = (char *) xmlGetProp (node, (const xmlChar *) "detail");
+
+  /* Ensure log backward compatiblity if the reason is using the old (pre 1.0)
+   * Telepathy prefix. */
+  if (!g_str_has_prefix (d, old_tp_prefix))
+    {
+      result = g_strdup (d);
+      xmlFree (d);
+      return result;
+    }
+
+  result = g_strdup_printf ("%s.%s", TP_ERROR_PREFIX,
+      d + strlen (old_tp_prefix) + 1);
+
+  xmlFree (d);
+  return result;
+}
 
 static TplEvent *
 parse_call_node (TplLogStoreXml *self,
@@ -1189,7 +1212,7 @@ parse_call_node (TplLogStoreXml *self,
   actor_avatar_token = (char *) xmlGetProp (node,
       (const xmlChar *) "actortoken");
   reason_str = (char *) xmlGetProp (node, (const xmlChar *) "reason");
-  detailed_reason = (char *) xmlGetProp (node, (const xmlChar *) "detail");
+  detailed_reason = dup_detailed_reason (node);
 
   if (is_user_str != NULL)
     is_user = (!tp_strdiff (is_user_str, "true"));
@@ -1246,7 +1269,7 @@ parse_call_node (TplLogStoreXml *self,
   xmlFree (actor_avatar_token);
   xmlFree (duration_str);
   xmlFree (reason_str);
-  xmlFree (detailed_reason);
+  g_free (detailed_reason);
 
   return event;
 }
