@@ -118,14 +118,14 @@ CLEANFILES = $(BUILT_SOURCES)
 if HAVE_INTROSPECTION
 introspection_sources = $(libtelepathy_logger_1_la_SOURCES) $(LIBTPL_HEADERS)
 
-TelepathyLogger-0.2.gir: libtelepathy-logger-1.la
-TelepathyLogger_0_2_gir_SCANNERFLAGS = --identifier-prefix=Tpl --warn-all
-TelepathyLogger_0_2_gir_INCLUDES = GObject-2.0 TelepathyGLib-0.12
-TelepathyLogger_0_2_gir_CFLAGS = $(INCLUDES)
-TelepathyLogger_0_2_gir_LIBS = libtelepathy-logger-1.la
-TelepathyLogger_0_2_gir_FILES = $(filter-out %-internal.h, $(introspection_sources))
+TelepathyLogger1-1.gir: libtelepathy-logger-1.la
+TelepathyLogger1_1_gir_SCANNERFLAGS = --identifier-prefix=Tpl --warn-all
+TelepathyLogger1_1_gir_INCLUDES = GObject-2.0 TelepathyGLib-0.12
+TelepathyLogger1_1_gir_CFLAGS = $(INCLUDES)
+TelepathyLogger1_1_gir_LIBS = libtelepathy-logger-1.la
+TelepathyLogger1_1_gir_FILES = $(filter-out %-internal.h, $(introspection_sources))
 
-INTROSPECTION_GIRS += TelepathyLogger-0.2.gir
+INTROSPECTION_GIRS += TelepathyLogger1-1.gir
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
