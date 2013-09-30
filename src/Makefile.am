@@ -17,7 +17,7 @@ libexec_PROGRAMS = \
 	telepathy-logger
 
 telepathy_logger_LDADD = \
-	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
+	$(top_builddir)/telepathy-logger/libtelepathy-logger-1.la \
 	$(TPL_LIBS)
 
 check_c_sources = \

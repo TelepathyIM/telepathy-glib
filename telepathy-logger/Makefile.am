@@ -22,7 +22,7 @@ AM_CPPFLAGS =						\
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = telepathy-logger-0.2.pc
 
-lib_LTLIBRARIES = libtelepathy-logger.la
+lib_LTLIBRARIES = libtelepathy-logger-1.la
 
 EXTRA_DIST = \
 	tpl-marshal.list \
@@ -50,7 +50,7 @@ BUILT_SOURCES = \
 	tpl-marshal.c tpl-marshal.h \
 	$(NULL)
 
-libtelepathy_logger_la_SOURCES = \
+libtelepathy_logger_1_la_SOURCES = \
 		action-chain.c			\
 		action-chain-internal.h		\
 		call-event.c                    \
@@ -101,14 +101,14 @@ libtelepathy_logger_la_SOURCES = \
 		call-channel-internal.h         \
 		$(NULL)
 
-nodist_libtelepathy_logger_la_SOURCES = \
+nodist_libtelepathy_logger_1_la_SOURCES = \
 		$(BUILT_SOURCES)
 
-libtelepathy_logger_la_LIBADD = \
+libtelepathy_logger_1_la_LIBADD = \
 	$(top_builddir)/extensions/libtpl-extensions-convenience.la
 
 check_c_sources = \
-	$(libtelepathy_logger_la_SOURCES)	\
+	$(libtelepathy_logger_1_la_SOURCES)	\
 	$(LIBTPL_HEADERS)
 include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
@@ -116,13 +116,13 @@ check-local: check-coding-style
 CLEANFILES = $(BUILT_SOURCES)
 
 if HAVE_INTROSPECTION
-introspection_sources = $(libtelepathy_logger_la_SOURCES) $(LIBTPL_HEADERS)
+introspection_sources = $(libtelepathy_logger_1_la_SOURCES) $(LIBTPL_HEADERS)
 
-TelepathyLogger-0.2.gir: libtelepathy-logger.la
+TelepathyLogger-0.2.gir: libtelepathy-logger-1.la
 TelepathyLogger_0_2_gir_SCANNERFLAGS = --identifier-prefix=Tpl --warn-all
 TelepathyLogger_0_2_gir_INCLUDES = GObject-2.0 TelepathyGLib-0.12
 TelepathyLogger_0_2_gir_CFLAGS = $(INCLUDES)
-TelepathyLogger_0_2_gir_LIBS = libtelepathy-logger.la
+TelepathyLogger_0_2_gir_LIBS = libtelepathy-logger-1.la
 TelepathyLogger_0_2_gir_FILES = $(filter-out %-internal.h, $(introspection_sources))
 
 INTROSPECTION_GIRS += TelepathyLogger-0.2.gir

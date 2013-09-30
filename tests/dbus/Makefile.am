@@ -14,7 +14,7 @@ TESTS = $(noinst_PROGRAMS)
 
 LDADD = \
 	$(top_builddir)/tests/lib/libtp-logger-tests.la		\
-	$(top_builddir)/telepathy-logger/libtelepathy-logger.la	\
+	$(top_builddir)/telepathy-logger/libtelepathy-logger-1.la	\
 	$(TPL_LIBS) 						\
 	$(NULL)
 

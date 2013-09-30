@@ -105,7 +105,7 @@ INCLUDES= \
 	$(TPL_CFLAGS)
 GTKDOC_LIBS= \
 	$(TPL_LIBS) \
-	$(top_builddir)/telepathy-logger/libtelepathy-logger.la
+	$(top_builddir)/telepathy-logger/libtelepathy-logger-1.la
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make

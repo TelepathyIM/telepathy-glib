@@ -8,12 +8,12 @@ m4_define([tpl_nano_version], [1])
 #  increment current and set revision to 0
 # If interfaces have been added since last release, increment age
 # If interfaces have been removed since last release, set age to 0
-m4_define([tpl_lt_current], [6])
+m4_define([tpl_lt_current], [0])
 m4_define([tpl_lt_revision], [0])
-m4_define([tpl_lt_age], [3])
+m4_define([tpl_lt_age], [0])
 
 # The same for the extensions library produced by --enable-public-extensions
-m4_define([tpl_ext_lt_current], [3])
+m4_define([tpl_ext_lt_current], [0])
 m4_define([tpl_ext_lt_revision], [0])
 m4_define([tpl_ext_lt_age], [0])
 
