@@ -974,16 +974,31 @@ test_get_events_for_date (XmlTestCaseFixture *fixture,
   g_assert_cmpint (
       tpl_call_event_get_duration (TPL_CALL_EVENT (g_list_nth_data (events, idx))),
       ==, 1);
+  g_assert_cmpint (
+      tpl_call_event_get_end_reason (TPL_CALL_EVENT (g_list_nth_data (events, idx))),
+      ==, TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED);
+  g_assert_cmpstr (tpl_call_event_get_detailed_end_reason (TPL_CALL_EVENT (g_list_nth_data (events, idx))),
+      ==, TP_ERROR_STR_CANCELLED);
 
   g_assert (TPL_IS_CALL_EVENT (g_list_nth_data (events, ++idx)));
   g_assert_cmpint (
       tpl_call_event_get_duration (TPL_CALL_EVENT (g_list_nth_data (events, idx))),
       ==, 2);
+  g_assert_cmpint (
+      tpl_call_event_get_end_reason (TPL_CALL_EVENT (g_list_nth_data (events, idx))),
+      ==, TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED);
+  g_assert_cmpstr (tpl_call_event_get_detailed_end_reason (TPL_CALL_EVENT (g_list_nth_data (events, idx))),
+      ==, TP_ERROR_STR_CANCELLED);
 
   g_assert (TPL_IS_CALL_EVENT (g_list_nth_data (events, ++idx)));
   g_assert_cmpint (
       tpl_call_event_get_duration (TPL_CALL_EVENT (g_list_nth_data (events, idx))),
       ==, 3);
+  g_assert_cmpint (
+      tpl_call_event_get_end_reason (TPL_CALL_EVENT (g_list_nth_data (events, idx))),
+      ==, TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED);
+  g_assert_cmpstr (tpl_call_event_get_detailed_end_reason (TPL_CALL_EVENT (g_list_nth_data (events, idx))),
+      ==, TP_ERROR_STR_CANCELLED);
 
   g_assert (TPL_IS_TEXT_EVENT (g_list_nth_data (events, ++idx)));
   g_assert_cmpstr (
