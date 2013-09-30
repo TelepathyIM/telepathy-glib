@@ -55,10 +55,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </arg>
 
       <tp:docstring>
-        Add a contact's designation as a favourite. This method may not be
-        called until the service is ready. See the <tp:dbus-ref
-        namespace="im.telepathy1.Logger1">FavouriteContactsReady</tp:dbus-ref> signal and <tp:dbus-ref
-        namespace="im.telepathy1.Logger1">FavouriteContactsIsReady</tp:dbus-ref> property.
+        Add a contact's designation as a favourite.
       </tp:docstring>
     </method>
 
@@ -77,10 +74,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </arg>
 
       <tp:docstring>
-        Remove a contact's designation as a favourite. This method may not be
-        called until the service is ready. See the <tp:dbus-ref
-        namespace="im.telepathy1.Logger1">FavouriteContactsReady</tp:dbus-ref> signal and <tp:dbus-ref
-        namespace="im.telepathy1.Logger1">FavouriteContactsIsReady</tp:dbus-ref> property.
+        Remove a contact's designation as a favourite.
       </tp:docstring>
     </method>
 
