@@ -28,7 +28,7 @@ EXTRA_DIST = \
 	tpl-marshal.list \
 	$(NULL)
 
-LIBTPLdir = $(includedir)/telepathy-logger-0.2/telepathy-logger
+LIBTPLdir = $(includedir)/telepathy-logger-1/telepathy-logger
 LIBTPL_HEADERS = \
 		entity.h			\
 		event.h				\

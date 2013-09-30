@@ -1,7 +1,7 @@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
-includedir=@includedir@/telepathy-logger-0.2
+includedir=@includedir@/telepathy-logger-1
 
 Name: Telepathy Logger library
 Description: Access to Telepathy logs
