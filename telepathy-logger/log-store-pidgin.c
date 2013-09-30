@@ -47,6 +47,7 @@
 struct _TplLogStorePidginPriv
 {
   gboolean test_mode;
+  TpAccountManager *account_manager;
 
   gchar *basedir;
 };
@@ -129,6 +130,7 @@ tpl_log_store_pidgin_dispose (GObject *self)
 {
   TplLogStorePidginPriv *priv = TPL_LOG_STORE_PIDGIN (self)->priv;
 
+  g_clear_object (&priv->account_manager);
   g_free (priv->basedir);
   priv->basedir = NULL;
 
@@ -177,6 +179,8 @@ tpl_log_store_pidgin_init (TplLogStorePidgin *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_LOG_STORE_PIDGIN, TplLogStorePidginPriv);
+
+  self->priv->account_manager = tp_account_manager_dup ();
 }
 
 
@@ -477,18 +481,18 @@ log_store_pidgin_get_filenames_for_date (TplLogStore *self,
 
 
 static TpAccount *
-log_store_pidgin_dup_account (const gchar *filename)
+log_store_pidgin_dup_account (TplLogStorePidgin *self,
+    const gchar *filename)
 {
   GList *accounts, *l;
   TpAccount *account = NULL;
-  TpAccountManager *account_manager;
   gchar **strv;
   guint len;
   gchar *protocol, *username, *server = NULL, *tmp;
   gboolean is_irc;
 
-  account_manager = tp_account_manager_dup ();
-  accounts = tp_account_manager_dup_valid_accounts (account_manager);
+  accounts = tp_account_manager_dup_valid_accounts (
+      self->priv->account_manager);
 
   strv = g_strsplit (filename, G_DIR_SEPARATOR_S, -1);
   len = g_strv_length (strv);
@@ -534,7 +538,6 @@ log_store_pidgin_dup_account (const gchar *filename)
   g_free (server);
   g_list_free_full (accounts, g_object_unref);
   g_strfreev (strv);
-  g_object_unref (account_manager);
 
   return account;
 }
@@ -573,7 +576,8 @@ log_store_pidgin_search_hit_new (TplLogStore *self,
 
   g_free (id);
 
-  hit->account = log_store_pidgin_dup_account (filename);
+  hit->account = log_store_pidgin_dup_account (TPL_LOG_STORE_PIDGIN (self),
+      filename);
 
   g_strfreev (strv);
 
