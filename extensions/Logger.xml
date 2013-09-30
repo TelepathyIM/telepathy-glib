@@ -17,7 +17,7 @@ Lesser General Public License for more details.</p>
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
-  <interface name="im.telepathy1.Logger.DRAFT"
+  <interface name="im.telepathy1.Logger1"
     tp:causes-havoc="experimental">
     <tp:added version="0.3">(as a draft)</tp:added>
 
@@ -57,8 +57,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring>
         Add a contact's designation as a favourite. This method may not be
         called until the service is ready. See the <tp:dbus-ref
-        namespace="im.telepathy1.Logger.DRAFT">FavouriteContactsReady</tp:dbus-ref> signal and <tp:dbus-ref
-        namespace="im.telepathy1.Logger.DRAFT">FavouriteContactsIsReady</tp:dbus-ref> property.
+        namespace="im.telepathy1.Logger1">FavouriteContactsReady</tp:dbus-ref> signal and <tp:dbus-ref
+        namespace="im.telepathy1.Logger1">FavouriteContactsIsReady</tp:dbus-ref> property.
       </tp:docstring>
     </method>
 
@@ -79,8 +79,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring>
         Remove a contact's designation as a favourite. This method may not be
         called until the service is ready. See the <tp:dbus-ref
-        namespace="im.telepathy1.Logger.DRAFT">FavouriteContactsReady</tp:dbus-ref> signal and <tp:dbus-ref
-        namespace="im.telepathy1.Logger.DRAFT">FavouriteContactsIsReady</tp:dbus-ref> property.
+        namespace="im.telepathy1.Logger1">FavouriteContactsReady</tp:dbus-ref> signal and <tp:dbus-ref
+        namespace="im.telepathy1.Logger1">FavouriteContactsIsReady</tp:dbus-ref> property.
       </tp:docstring>
     </method>
 
