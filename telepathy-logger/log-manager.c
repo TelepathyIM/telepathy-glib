@@ -1104,7 +1104,7 @@ tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
  * tpl_log_manager_get_events_for_date_finish:
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @events: (out) (transfer full) (element-type TelepathyLogger.Event): a
+ * @events: (out) (transfer full) (element-type TelepathyLogger1.Event): a
  *  pointer to a #GList used to return the list of #TplEvent
  * @error: a #GError to fill
  *
@@ -1220,7 +1220,7 @@ tpl_log_manager_get_filtered_events_async (TplLogManager *manager,
  * tpl_log_manager_get_filtered_events_finish:
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @events: (out) (transfer full) (element-type TelepathyLogger.Event):
+ * @events: (out) (transfer full) (element-type TelepathyLogger1.Event):
  *  a pointer to a #GList used to return the list #TplEvent
  * @error: a #GError to fill
  *
@@ -1360,7 +1360,7 @@ tpl_log_manager_get_entities_async (TplLogManager *self,
  * tpl_log_manager_get_entities_finish:
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @entities: (out) (transfer full) (element-type TelepathyLogger.Entity): a
+ * @entities: (out) (transfer full) (element-type TelepathyLogger1.Entity): a
  *  pointer to a #GList used to return the list of #TplEntity, to be freed
  *  using something like g_list_free_full (lst, g_object_unref)
  * @error: a #GError to fill
@@ -1459,7 +1459,7 @@ tpl_log_manager_search_async (TplLogManager *manager,
  * tpl_log_manager_search_finish:
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @hits: (out) (transfer full) (element-type TelepathyLogger.LogSearchHit): a
+ * @hits: (out) (transfer full) (element-type TelepathyLogger1.LogSearchHit): a
  *  pointer to a #GList used to return the list of #TplLogSearchHit
  * @error: a #GError to fill
  *
