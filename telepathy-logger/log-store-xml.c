@@ -1245,6 +1245,8 @@ parse_call_node (TplLogStoreXml *self,
   xmlFree (actor_type);
   xmlFree (actor_avatar_token);
   xmlFree (duration_str);
+  xmlFree (reason_str);
+  xmlFree (detailed_reason);
 
   return event;
 }
