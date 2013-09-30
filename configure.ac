@@ -211,8 +211,8 @@ AC_CONFIG_FILES([
    po/Makefile.in
    src/Makefile
    telepathy-logger/Makefile
-   telepathy-logger/telepathy-logger-0.2.pc
-   telepathy-logger/telepathy-logger-0.2-uninstalled.pc
+   telepathy-logger/telepathy-logger-1.pc
+   telepathy-logger/telepathy-logger-1-uninstalled.pc
    tools/Makefile
    tests/Makefile
    tests/dbus/Makefile
