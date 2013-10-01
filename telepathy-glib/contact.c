@@ -1653,8 +1653,12 @@ struct _ContactsContext {
     /* ID => GError, NULL unless we started from IDs */
     GHashTable *request_errors;
 
-    /* features we need before this request can finish */
+    /* features we need to get, if possible, before this request can finish */
     ContactFeatureFlags wanted;
+
+    /* features we can expect to get from GetContactAttributes
+     * (subset of wanted) */
+    ContactFeatureFlags getting;
 
     /* callback for when we've finished, plus the usual misc */
     ContactsSignature signature;
@@ -3814,6 +3818,7 @@ static gboolean
 tp_contact_set_attributes (TpContact *contact,
     GHashTable *asv,
     ContactFeatureFlags wanted,
+    ContactFeatureFlags getting,
     GError **error)
 {
   TpConnection *connection = tp_contact_get_connection (contact);
@@ -3856,9 +3861,12 @@ tp_contact_set_attributes (TpContact *contact,
 
       if (s == NULL)
         {
-          WARNING ("%s supposedly implements Contacts and Aliasing, but "
-              "omitted " TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS,
-              tp_proxy_get_object_path (connection));
+          if (getting & CONTACT_FEATURE_FLAG_ALIAS)
+            {
+              WARNING ("%s supposedly implements Contacts and Aliasing, but "
+                  "omitted " TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS,
+                  tp_proxy_get_object_path (connection));
+            }
         }
       else
         {
@@ -3892,13 +3900,20 @@ tp_contact_set_attributes (TpContact *contact,
           TP_STRUCT_TYPE_SIMPLE_PRESENCE);
 
       if (boxed == NULL)
-        WARNING ("%s supposedly implements Contacts and SimplePresence, "
-            "but omitted the mandatory "
-            TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE
-            " attribute",
-            tp_proxy_get_object_path (connection));
+        {
+          if (getting & CONTACT_FEATURE_FLAG_PRESENCE)
+            {
+              WARNING ("%s supposedly implements Contacts and SimplePresence, "
+                  "but omitted the mandatory "
+                  TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE
+                  " attribute",
+                  tp_proxy_get_object_path (connection));
+            }
+        }
       else
-        contact_maybe_set_simple_presence (contact, boxed);
+        {
+          contact_maybe_set_simple_presence (contact, boxed);
+        }
     }
 
   /* Location */
@@ -4001,7 +4016,8 @@ _tp_contact_set_attributes (TpContact *contact,
   if (!get_feature_flags (n_features, features, &feature_flags))
     return FALSE;
 
-  return tp_contact_set_attributes (contact, asv, feature_flags, error);
+  return tp_contact_set_attributes (contact, asv, feature_flags,
+      0 /* can't know what we expected to get */, error);
 }
 
 static void
@@ -4064,7 +4080,7 @@ contacts_got_attributes (TpConnection *connection,
       else
         {
           /* set up the contact with its attributes */
-          tp_contact_set_attributes (contact, asv, c->wanted, &e);
+          tp_contact_set_attributes (contact, asv, c->wanted, c->getting, &e);
         }
 
       if (e != NULL)
@@ -4080,13 +4096,17 @@ contacts_got_attributes (TpConnection *connection,
 
 static const gchar **
 contacts_bind_to_signals (TpConnection *connection,
-    ContactFeatureFlags wanted)
+    ContactFeatureFlags wanted,
+    ContactFeatureFlags *getting)
 {
   GArray *contact_attribute_interfaces =
       connection->priv->contact_attribute_interfaces;
   GPtrArray *array;
   guint i;
   guint len = 0;
+
+  if (getting != NULL)
+    *getting = 0;
 
   if (contact_attribute_interfaces != NULL)
       len = contact_attribute_interfaces->len;
@@ -4107,6 +4127,9 @@ contacts_bind_to_signals (TpConnection *connection,
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_ALIASING);
               contacts_bind_to_aliases_changed (connection);
+
+              if (getting != NULL)
+                *getting |= CONTACT_FEATURE_FLAG_ALIAS;
             }
         }
       else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS)
@@ -4116,6 +4139,9 @@ contacts_bind_to_signals (TpConnection *connection,
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_AVATARS);
               contacts_bind_to_avatar_updated (connection);
+
+              if (getting != NULL)
+                *getting |= CONTACT_FEATURE_FLAG_AVATAR_TOKEN;
             }
 
           if ((wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0)
@@ -4130,6 +4156,9 @@ contacts_bind_to_signals (TpConnection *connection,
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE);
               contacts_bind_to_presences_changed (connection);
+
+              if (getting != NULL)
+                *getting |= CONTACT_FEATURE_FLAG_PRESENCE;
             }
         }
       else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION)
@@ -4139,6 +4168,9 @@ contacts_bind_to_signals (TpConnection *connection,
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_LOCATION);
               contacts_bind_to_location_updated (connection);
+
+              if (getting != NULL)
+                *getting |= CONTACT_FEATURE_FLAG_LOCATION;
             }
         }
       else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_CAPABILITIES)
@@ -4148,6 +4180,9 @@ contacts_bind_to_signals (TpConnection *connection,
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES);
               contacts_bind_to_capabilities_updated (connection);
+
+              if (getting != NULL)
+                *getting |= CONTACT_FEATURE_FLAG_CAPABILITIES;
             }
         }
       else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO)
@@ -4157,6 +4192,9 @@ contacts_bind_to_signals (TpConnection *connection,
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO);
               contacts_bind_to_contact_info_changed (connection);
+
+              if (getting != NULL)
+                *getting |= CONTACT_FEATURE_FLAG_CONTACT_INFO;
             }
         }
       else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CLIENT_TYPES)
@@ -4166,6 +4204,9 @@ contacts_bind_to_signals (TpConnection *connection,
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_CLIENT_TYPES);
               contacts_bind_to_client_types_updated (connection);
+
+              if (getting != NULL)
+                *getting |= CONTACT_FEATURE_FLAG_CLIENT_TYPES;
             }
         }
       else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_LIST)
@@ -4175,6 +4216,9 @@ contacts_bind_to_signals (TpConnection *connection,
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST);
               contacts_bind_to_contacts_changed (connection);
+
+              if (getting != NULL)
+                *getting |= CONTACT_FEATURE_FLAG_STATES;
             }
         }
       else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_GROUPS)
@@ -4184,6 +4228,9 @@ contacts_bind_to_signals (TpConnection *connection,
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS);
               contacts_bind_to_contact_groups_changed (connection);
+
+              if (getting != NULL)
+                *getting |= CONTACT_FEATURE_FLAG_CONTACT_GROUPS;
             }
         }
       else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_BLOCKING)
@@ -4204,6 +4251,9 @@ contacts_bind_to_signals (TpConnection *connection,
                 {
                   tp_proxy_prepare_async (connection, features, NULL, NULL);
                 }
+
+              if (getting != NULL)
+                *getting |= CONTACT_FEATURE_FLAG_CONTACT_BLOCKING;
             }
         }
     }
@@ -4225,7 +4275,7 @@ _tp_contacts_bind_to_signals (TpConnection *connection,
   if (!get_feature_flags (n_features, features, &feature_flags))
     return NULL;
 
-  return contacts_bind_to_signals (connection, feature_flags);
+  return contacts_bind_to_signals (connection, feature_flags, NULL);
 }
 
 static void
@@ -4242,7 +4292,7 @@ contacts_get_attributes (ContactsContext *context)
     }
 
   supported_interfaces = contacts_bind_to_signals (context->connection,
-      context->wanted);
+      context->wanted, &context->getting);
 
   if (supported_interfaces[0] == NULL &&
       !(context->signature == CB_BY_HANDLE && context->contacts->len == 0) &&
