@@ -1633,6 +1633,22 @@ typedef struct _ContactsContext ContactsContext;
 typedef void (*ContactsProc) (ContactsContext *self);
 typedef enum { CB_BY_HANDLE, CB_BY_ID, CB_UPGRADE } ContactsSignature;
 
+static const gchar *
+contacts_signature_to_string (ContactsSignature sig)
+{
+  switch (sig)
+    {
+      case CB_BY_HANDLE:
+        return "by handle";
+      case CB_BY_ID:
+        return "by ID";
+      case CB_UPGRADE:
+        return "upgrade";
+      default:
+        return "???";
+    }
+}
+
 struct _ContactsContext {
     gsize refcount;
 
@@ -1715,6 +1731,32 @@ contacts_context_new (TpConnection *connection,
 {
   ContactsContext *c = g_slice_new0 (ContactsContext);
 
+  DEBUG ("%p, for %u contacts, %s", c, n_contacts,
+      contacts_signature_to_string (signature));
+
+  DEBUG ("want alias: %s",
+      (want_features & CONTACT_FEATURE_FLAG_ALIAS) ? "yes" : "no");
+  DEBUG ("want avatar token: %s",
+      (want_features & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) ? "yes" : "no");
+  DEBUG ("want presence: %s",
+      (want_features & CONTACT_FEATURE_FLAG_PRESENCE) ? "yes" : "no");
+  DEBUG ("want location: %s",
+      (want_features & CONTACT_FEATURE_FLAG_LOCATION) ? "yes" : "no");
+  DEBUG ("want caps: %s",
+      (want_features & CONTACT_FEATURE_FLAG_CAPABILITIES) ? "yes" : "no");
+  DEBUG ("want avatar data: %s",
+      (want_features & CONTACT_FEATURE_FLAG_AVATAR_DATA) ? "yes" : "no");
+  DEBUG ("want contact info: %s",
+      (want_features & CONTACT_FEATURE_FLAG_CONTACT_INFO) ? "yes" : "no");
+  DEBUG ("want client types: %s",
+      (want_features & CONTACT_FEATURE_FLAG_CLIENT_TYPES) ? "yes" : "no");
+  DEBUG ("want states: %s",
+      (want_features & CONTACT_FEATURE_FLAG_STATES) ? "yes" : "no");
+  DEBUG ("want contact groups: %s",
+      (want_features & CONTACT_FEATURE_FLAG_CONTACT_GROUPS) ? "yes" : "no");
+  DEBUG ("want contact blocking: %s",
+      (want_features & CONTACT_FEATURE_FLAG_CONTACT_BLOCKING) ? "yes" : "no");
+
   c->refcount = 1;
   c->connection = g_object_ref (connection);
   c->contacts = g_ptr_array_sized_new (n_contacts);
@@ -1743,6 +1785,8 @@ contacts_context_unref (gpointer p)
 
   if ((--c->refcount) > 0)
     return;
+
+  DEBUG ("last-unref (%p)", c);
 
   g_assert (c->connection != NULL);
   tp_clear_object (&c->connection);
@@ -1942,13 +1986,18 @@ static void
 contacts_context_continue (ContactsContext *c)
 {
   if (c->no_purpose_in_life)
-    return;
+    {
+      DEBUG ("%p: no purpose in life", c);
+      return;
+    }
 
   if (g_queue_is_empty (&c->todo))
     {
       /* do some final sanity checking then hand over the contacts to the
        * library user */
       guint i;
+
+      DEBUG ("%p: nothing more to do", c);
 
       g_assert (c->contacts != NULL);
       g_assert (c->invalid != NULL);
@@ -1991,12 +2040,13 @@ contacts_context_continue (ContactsContext *c)
 
       if (G_UNLIKELY (tp_proxy_get_invalidated (c->connection) != NULL))
         {
-          DEBUG ("failing due to connection having been invalidated: %s",
-              tp_proxy_get_invalidated (c->connection)->message);
+          DEBUG ("%p: failing due to connection having been invalidated: %s",
+              c, tp_proxy_get_invalidated (c->connection)->message);
           contacts_context_fail (c, tp_proxy_get_invalidated (c->connection));
         }
       else
         {
+          DEBUG ("%p: on to the next thing", c);
           next (c);
         }
     }
@@ -2164,11 +2214,15 @@ contacts_inspected (TpConnection *connection,
     {
       guint i;
 
+      DEBUG ("%p: inspected %u handles", c, c->contacts->len);
+
       for (i = 0; i < c->contacts->len; i++)
         {
           TpContact *contact = g_ptr_array_index (c->contacts, i);
 
           g_assert (ids[i] != NULL);
+
+          DEBUG ("- #%u: \"%s\"", contact->priv->handle, ids[i]);
 
           if (contact->priv->identifier == NULL)
             {
@@ -3850,6 +3904,23 @@ tp_contact_set_attributes (TpContact *contact,
       return FALSE;
     }
 
+  DEBUG ("#%u: \"%s\"", contact->priv->handle, s);
+
+  {
+    GHashTableIter iter;
+    gpointer k, v;
+
+    g_hash_table_iter_init (&iter, asv);
+
+    while (g_hash_table_iter_next (&iter, &k, &v))
+      {
+        gchar *str = g_strdup_value_contents (v);
+
+        DEBUG ("- %s => %s", (const gchar *) k, str);
+        g_free (str);
+      }
+  }
+
   if (contact->priv->identifier == NULL)
     {
       contact->priv->identifier = g_strdup (s);
@@ -4041,6 +4112,9 @@ contacts_got_attributes (TpConnection *connection,
 {
   ContactsContext *c = user_data;
   guint i;
+
+  DEBUG ("%p: reply from GetContactAttributes: %s",
+      c, (error == NULL ? "OK" : error->message));
 
   if (error != NULL)
     {
@@ -4294,6 +4368,7 @@ static void
 contacts_get_attributes (ContactsContext *context)
 {
   const gchar **supported_interfaces;
+  guint i;
 
   /* tp_connection_get_contact_attributes insists that you have at least one
    * handle; skip it if we don't (can only happen if we started from IDs) */
@@ -4321,6 +4396,11 @@ contacts_get_attributes (ContactsContext *context)
   /* The Hold parameter is only true if we started from handles, and we don't
    * already have all the contacts we need. */
   context->refcount++;
+  DEBUG ("calling GetContactAttributes");
+
+  for (i = 0; supported_interfaces[i] != NULL; i++)
+    DEBUG ("- %s", supported_interfaces[i]);
+
   tp_cli_connection_interface_contacts_call_get_contact_attributes (
       context->connection, -1, context->handles, supported_interfaces,
       (context->signature == CB_BY_HANDLE && context->contacts->len == 0),
@@ -4512,6 +4592,7 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
     }
 
   /* if we haven't already returned, we're on the slow path */
+  DEBUG ("slow path");
 
   /* Before we return anything we'll want to inspect the handles */
   g_queue_push_head (&context->todo, contacts_inspect);
