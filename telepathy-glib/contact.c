@@ -2895,6 +2895,15 @@ contact_avatar_retrieved (TpConnection *connection,
   gchar *mime_filename;
   WriteAvatarData *avatar_data;
 
+  DEBUG ("token '%s', %u bytes, MIME type '%s'",
+      token, avatar->len, mime_type);
+
+  if (self == NULL)
+    DEBUG ("handle #%u is not associated with any TpContact", handle);
+  else
+    DEBUG ("used by contact #%u '%s'", handle,
+        tp_contact_get_identifier (self));
+
   if (self != NULL)
     {
       /* Update the avatar token if a newer one is given
@@ -2904,7 +2913,10 @@ contact_avatar_retrieved (TpConnection *connection,
 
   if (!build_avatar_filename (connection, token, TRUE, &filename,
       &mime_filename))
-    return;
+    {
+      DEBUG ("failed to set up cache");
+      return;
+    }
 
   /* Save avatar in cache, even if the contact is unknown, to avoid as much as
    * possible future avatar requests */
