@@ -42,6 +42,15 @@
 #include "telepathy-glib/util-internal.h"
 #include "telepathy-glib/variant-util-internal.h"
 
+static const gchar *
+nonnull (const gchar *s)
+{
+  if (s == NULL)
+    return "(null)";
+
+  return s;
+}
+
 /**
  * SECTION:contact
  * @title: TpContact
@@ -2117,17 +2126,27 @@ mime_file_written (GObject *source_object,
 
   self = g_weak_ref_get (&avatar_data->contact);
 
-  if (self != NULL)
+  if (self == NULL)
     {
+      DEBUG ("No relevant TpContact");
+    }
+  else if (tp_strdiff (avatar_data->token, self->priv->avatar_token))
+    {
+      DEBUG ("Contact's avatar token has changed from %s to %s, "
+          "this avatar is no longer relevant",
+          avatar_data->token, nonnull (self->priv->avatar_token));
+    }
+  else
+    {
+      DEBUG ("Saved avatar '%s' of MIME type '%s' still used by '%s' to '%s'",
+          avatar_data->token, avatar_data->mime_type,
+          self->priv->identifier,
+          g_file_get_path (avatar_data->file));
       g_clear_object (&self->priv->avatar_file);
       self->priv->avatar_file = g_object_ref (avatar_data->file);
 
       g_free (self->priv->avatar_mime_type);
       self->priv->avatar_mime_type = g_strdup (avatar_data->mime_type);
-
-      /* Update the avatar token if a newer one is given
-       * (this emits notify::avatar-token if needed) */
-      contact_set_avatar_token (self, avatar_data->token, FALSE);
 
       /* Notify both property changes together once both files have been
        * written */
@@ -2183,6 +2202,13 @@ contact_avatar_retrieved (TpConnection *connection,
   gchar *filename;
   gchar *mime_filename;
   WriteAvatarData *avatar_data;
+
+  if (self != NULL)
+    {
+      /* Update the avatar token if a newer one is given
+       * (this emits notify::avatar-token if needed) */
+      contact_set_avatar_token (self, token, FALSE);
+    }
 
   if (!build_avatar_filename (connection, token, TRUE, &filename,
       &mime_filename))
