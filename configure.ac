@@ -41,6 +41,7 @@ AC_INIT([Telepathy-GLib], [tp_glib_version],
         [https://bugs.freedesktop.org/enter_bug.cgi?product=Telepathy&component=tp-glib])
 
 AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_AUX_DIR([build-aux])
 
 AM_INIT_AUTOMAKE([1.11 -Wno-portability subdir-objects])
 AC_CONFIG_HEADERS(config.h)
