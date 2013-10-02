@@ -42,7 +42,7 @@ AC_INIT([Telepathy-GLib], [tp_glib_version],
 
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE([1.11 -Wno-portability])
+AM_INIT_AUTOMAKE([1.11 -Wno-portability subdir-objects])
 AC_CONFIG_HEADERS(config.h)
 
 AM_SILENT_RULES
