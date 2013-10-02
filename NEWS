@@ -1,10 +1,37 @@
 telepathy-glib 0.23.0 (UNRELEASED)
 ==================================
 
-Fixes:
+…
+
+telepathy-glib 0.22.0 (2013-10-02)
+==================================
+
+The “don't starve” release.
+
+This is a new stable branch, recommended for use with GNOME 3.10.
+
+Fixes since 0.21.2:
+
+• When an avatar is downloaded, announce the change to the avatar token
+  immediately; if the avatar changes from A to B while we're still doing the
+  asynchronous file saving, don't set A as the new avatar when it has been
+  saved. Regression in 0.21.2. (fd.o #70010, Simon)
 
 • Don't crash if the AccountManager returns an incorrect type for the
   Avatar (fd.o #69849, Simon)
+
+Significant changes since the previous stable branch, 0.20.x:
+
+• tp_connection_get_self_contact() now returns NULL if the contact's
+  connection has been invalidated, in order to break a reference cycle
+
+• Avatars are saved to the cache asynchronously
+
+• TpBaseConnection implements SelfID, SelfContactChanged according to
+  telepathy-spec 0.27.2
+
+• TpAccount:uri-schemes property, with change notification requiring
+  Mission Control 5.15+
 
 telepathy-glib 0.21.2 (2013-09-24)
 ==================================
