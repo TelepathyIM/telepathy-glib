@@ -53,7 +53,7 @@ static void hold_iface_init (gpointer iface, gpointer data);
 G_DEFINE_TYPE_WITH_CODE (ExampleCallChannel,
     example_call_channel,
     TP_TYPE_BASE_MEDIA_CALL_CHANNEL,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_HOLD,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_HOLD1,
       hold_iface_init))
 
 enum
@@ -84,7 +84,7 @@ example_call_channel_get_interfaces (TpBaseChannel *self)
   interfaces = TP_BASE_CHANNEL_CLASS (
       example_call_channel_parent_class)->get_interfaces (self);
 
-  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_HOLD);
+  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_HOLD1);
   return interfaces;
 }
 
@@ -701,7 +701,7 @@ simulate_hold (gpointer p)
 
   self->priv->hold_state = TP_LOCAL_HOLD_STATE_HELD;
   g_message ("SIGNALLING: hold state changed to held");
-  tp_svc_channel_interface_hold_emit_hold_state_changed (self,
+  tp_svc_channel_interface_hold1_emit_hold_state_changed (self,
       self->priv->hold_state, self->priv->hold_state_reason);
 
   example_call_channel_set_state (self, call_state,
@@ -722,7 +722,7 @@ simulate_unhold (gpointer p)
 
   self->priv->hold_state = TP_LOCAL_HOLD_STATE_UNHELD;
   g_message ("SIGNALLING: hold state changed to unheld");
-  tp_svc_channel_interface_hold_emit_hold_state_changed (self,
+  tp_svc_channel_interface_hold1_emit_hold_state_changed (self,
       self->priv->hold_state, self->priv->hold_state_reason);
 
   example_call_channel_set_state (self, call_state,
@@ -741,7 +741,7 @@ simulate_inability_to_unhold (gpointer p)
   self->priv->hold_state = TP_LOCAL_HOLD_STATE_PENDING_HOLD;
   g_message ("SIGNALLING: unable to unhold - hold state changed to "
       "pending hold");
-  tp_svc_channel_interface_hold_emit_hold_state_changed (self,
+  tp_svc_channel_interface_hold1_emit_hold_state_changed (self,
       self->priv->hold_state, self->priv->hold_state_reason);
   /* hold again */
   g_timeout_add_full (G_PRIORITY_DEFAULT,
@@ -752,17 +752,17 @@ simulate_inability_to_unhold (gpointer p)
 }
 
 static void
-hold_get_hold_state (TpSvcChannelInterfaceHold *iface,
+hold_get_hold_state (TpSvcChannelInterfaceHold1 *iface,
     DBusGMethodInvocation *context)
 {
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
 
-  tp_svc_channel_interface_hold_return_from_get_hold_state (context,
+  tp_svc_channel_interface_hold1_return_from_get_hold_state (context,
       self->priv->hold_state, self->priv->hold_state_reason);
 }
 
 static void
-hold_request_hold (TpSvcChannelInterfaceHold *iface,
+hold_request_hold (TpSvcChannelInterfaceHold1 *iface,
     gboolean hold,
     DBusGMethodInvocation *context)
 {
@@ -776,7 +776,7 @@ hold_request_hold (TpSvcChannelInterfaceHold *iface,
   if ((hold && self->priv->hold_state == TP_LOCAL_HOLD_STATE_HELD) ||
       (!hold && self->priv->hold_state == TP_LOCAL_HOLD_STATE_UNHELD))
     {
-      tp_svc_channel_interface_hold_return_from_request_hold (context);
+      tp_svc_channel_interface_hold1_return_from_request_hold (context);
       return;
     }
 
@@ -814,7 +814,7 @@ hold_request_hold (TpSvcChannelInterfaceHold *iface,
 
   g_message ("SIGNALLING: hold state changed to pending %s",
              (hold ? "hold" : "unhold"));
-  tp_svc_channel_interface_hold_emit_hold_state_changed (iface,
+  tp_svc_channel_interface_hold1_emit_hold_state_changed (iface,
     self->priv->hold_state, self->priv->hold_state_reason);
   /* No need to change the call flags - we never change the actual hold state
    * here, only the pending hold state */
@@ -824,7 +824,7 @@ hold_request_hold (TpSvcChannelInterfaceHold *iface,
       callback, g_object_ref (self),
       g_object_unref);
 
-  tp_svc_channel_interface_hold_return_from_request_hold (context);
+  tp_svc_channel_interface_hold1_return_from_request_hold (context);
   return;
 
 error:
@@ -837,10 +837,10 @@ void
 hold_iface_init (gpointer iface,
     gpointer data)
 {
-  TpSvcChannelInterfaceHoldClass *klass = iface;
+  TpSvcChannelInterfaceHold1Class *klass = iface;
 
 #define IMPLEMENT(x) \
-  tp_svc_channel_interface_hold_implement_##x (klass, hold_##x)
+  tp_svc_channel_interface_hold1_implement_##x (klass, hold_##x)
   IMPLEMENT (get_hold_state);
   IMPLEMENT (request_hold);
 #undef IMPLEMENT

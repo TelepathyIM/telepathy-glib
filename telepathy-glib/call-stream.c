@@ -229,13 +229,13 @@ tp_call_stream_constructed (GObject *obj)
   ((GObjectClass *) tp_call_stream_parent_class)->constructed (obj);
 
   /* Connect signals for mutable properties */
-  tp_cli_call_stream_connect_to_remote_members_changed (self,
+  tp_cli_call1_stream_connect_to_remote_members_changed (self,
       remote_members_changed_cb, NULL, NULL, G_OBJECT (self), NULL);
-  tp_cli_call_stream_connect_to_local_sending_state_changed (self,
+  tp_cli_call1_stream_connect_to_local_sending_state_changed (self,
       local_sending_state_changed_cb, NULL, NULL, G_OBJECT (self), NULL);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
-      TP_IFACE_CALL_STREAM,
+      TP_IFACE_CALL1_STREAM,
       got_all_properties_cb, NULL, NULL, G_OBJECT (self));
 }
 
@@ -340,7 +340,7 @@ tp_call_stream_class_init (TpCallStreamClass *klass)
   gobject_class->dispose = tp_call_stream_dispose;
 
   proxy_class->list_features = tp_call_stream_list_features;
-  proxy_class->interface = TP_IFACE_QUARK_CALL_STREAM;
+  proxy_class->interface = TP_IFACE_QUARK_CALL1_STREAM;
 
   g_type_class_add_private (gobject_class, sizeof (TpCallStreamPrivate));
   tp_call_stream_init_known_interfaces ();
@@ -605,7 +605,7 @@ tp_call_stream_set_sending_async (TpCallStream *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_call_stream_set_sending_async);
 
-  tp_cli_call_stream_call_set_sending (self, -1, send,
+  tp_cli_call1_stream_call_set_sending (self, -1, send,
       generic_async_cb, result, g_object_unref, G_OBJECT (self));
 }
 
@@ -662,7 +662,7 @@ tp_call_stream_request_receiving_async (TpCallStream *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_call_stream_set_sending_async);
 
-  tp_cli_call_stream_call_request_receiving (self, -1,
+  tp_cli_call1_stream_call_request_receiving (self, -1,
       tp_contact_get_handle (contact), receive,
       generic_async_cb, result, g_object_unref, G_OBJECT (self));
 }

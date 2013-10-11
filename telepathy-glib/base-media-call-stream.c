@@ -23,12 +23,12 @@
 /**
  * SECTION:base-media-call-stream
  * @title: TpBaseMediaCallStream
- * @short_description: base class for #TpSvcCallStreamInterfaceMedia
+ * @short_description: base class for #TpSvcCall1StreamInterfaceMedia
  *  implementations
- * @see_also: #TpSvcCallStreamInterfaceMedia, #TpBaseCallChannel,
+ * @see_also: #TpSvcCall1StreamInterfaceMedia, #TpBaseCallChannel,
  *  #TpBaseCallStream and #TpBaseCallContent
  *
- * This base class makes it easier to write #TpSvcCallStreamInterfaceMedia
+ * This base class makes it easier to write #TpSvcCall1StreamInterfaceMedia
  * implementations by implementing some of its properties and methods.
  *
  * Subclasses must still implement #TpBaseCallStream's virtual methods plus
@@ -170,7 +170,7 @@ static void call_stream_media_iface_init (gpointer, gpointer);
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseMediaCallStream,
     tp_base_media_call_stream, TP_TYPE_BASE_CALL_STREAM,
 
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_STREAM_INTERFACE_MEDIA,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL1_STREAM_INTERFACE_MEDIA,
       call_stream_media_iface_init)
     )
 
@@ -551,7 +551,7 @@ tp_base_media_call_stream_class_init (TpBaseMediaCallStreamClass *klass)
       param_spec);
 
   tp_dbus_properties_mixin_implement_interface (object_class,
-      TP_IFACE_QUARK_CALL_STREAM_INTERFACE_MEDIA,
+      TP_IFACE_QUARK_CALL1_STREAM_INTERFACE_MEDIA,
       tp_dbus_properties_mixin_getter_gobject_properties,
       NULL,
       stream_media_props);
@@ -603,7 +603,7 @@ maybe_got_server_info (TpBaseMediaCallStream *self)
       tp_base_call_stream_get_object_path ((TpBaseCallStream *) self));
 
   self->priv->has_server_info = TRUE;
-  tp_svc_call_stream_interface_media_emit_server_info_retrieved (self);
+  tp_svc_call1_stream_interface_media_emit_server_info_retrieved (self);
 }
 
 /**
@@ -664,7 +664,7 @@ tp_base_media_call_stream_set_stun_servers (TpBaseMediaCallStream *self,
 
   self->priv->stun_servers = g_ptr_array_ref (stun_servers);
 
-  tp_svc_call_stream_interface_media_emit_stun_servers_changed (self,
+  tp_svc_call1_stream_interface_media_emit_stun_servers_changed (self,
       self->priv->stun_servers);
 
   maybe_got_server_info (self);
@@ -693,7 +693,7 @@ tp_base_media_call_stream_set_relay_info (TpBaseMediaCallStream *self,
   tp_clear_pointer (&self->priv->relay_info, g_ptr_array_unref);
   self->priv->relay_info = g_ptr_array_ref (relays);
 
-  tp_svc_call_stream_interface_media_emit_relay_info_changed (self,
+  tp_svc_call1_stream_interface_media_emit_relay_info_changed (self,
       self->priv->relay_info);
 
   maybe_got_server_info (self);
@@ -733,7 +733,7 @@ tp_base_media_call_stream_add_endpoint (TpBaseMediaCallStream *self,
   removed = g_ptr_array_new ();
   g_ptr_array_add (added, (gpointer) object_path);
 
-  tp_svc_call_stream_interface_media_emit_endpoints_changed (self,
+  tp_svc_call1_stream_interface_media_emit_endpoints_changed (self,
       added, removed);
 
   g_ptr_array_unref (added);
@@ -774,7 +774,7 @@ tp_base_media_call_stream_remove_endpoint (TpBaseMediaCallStream *self,
   removed = g_ptr_array_new ();
   g_ptr_array_add (removed, (gpointer) object_path);
 
-  tp_svc_call_stream_interface_media_emit_endpoints_changed (self,
+  tp_svc_call1_stream_interface_media_emit_endpoints_changed (self,
       added, removed);
 
   g_ptr_array_unref (added);
@@ -853,7 +853,7 @@ set_sending_state (TpBaseMediaCallStream *self,
   self->priv->sending_state = state;
   g_object_notify (G_OBJECT (self), "sending-state");
 
-  tp_svc_call_stream_interface_media_emit_sending_state_changed (self, state);
+  tp_svc_call1_stream_interface_media_emit_sending_state_changed (self, state);
 }
 
 /**
@@ -988,7 +988,7 @@ set_receiving_state (TpBaseMediaCallStream *self,
   self->priv->receiving_state = state;
   g_object_notify (G_OBJECT (self), "receiving-state");
 
-  tp_svc_call_stream_interface_media_emit_receiving_state_changed (self, state);
+  tp_svc_call1_stream_interface_media_emit_receiving_state_changed (self, state);
 }
 
 /**
@@ -1128,7 +1128,7 @@ tp_base_media_call_stream_get_interfaces (TpBaseCallStream *bcs)
   interfaces = TP_BASE_CALL_STREAM_CLASS (
       tp_base_media_call_stream_parent_class)->get_interfaces (bcs);
 
-  g_ptr_array_add (interfaces, TP_IFACE_CALL_STREAM_INTERFACE_MEDIA);
+  g_ptr_array_add (interfaces, TP_IFACE_CALL1_STREAM_INTERFACE_MEDIA);
 
   return interfaces;
 }
@@ -1201,7 +1201,7 @@ correct_state_transition (TpStreamFlowState old_state,
 
 static void
 tp_base_media_call_stream_complete_sending_state_change (
-    TpSvcCallStreamInterfaceMedia *iface,
+    TpSvcCall1StreamInterfaceMedia *iface,
     TpStreamFlowState state,
     DBusGMethodInvocation *context)
 {
@@ -1232,14 +1232,14 @@ tp_base_media_call_stream_complete_sending_state_change (
 
   self->priv->sending_stop_requested = FALSE;
 
-  tp_svc_call_stream_interface_media_emit_sending_state_changed (self, state);
-  tp_svc_call_stream_interface_media_return_from_complete_sending_state_change
+  tp_svc_call1_stream_interface_media_emit_sending_state_changed (self, state);
+  tp_svc_call1_stream_interface_media_return_from_complete_sending_state_change
       (context);
 }
 
 static void
 tp_base_media_call_stream_report_sending_failure (
-    TpSvcCallStreamInterfaceMedia *iface,
+    TpSvcCall1StreamInterfaceMedia *iface,
     TpCallStateChangeReason reason,
     const gchar *dbus_reason,
     const gchar *message,
@@ -1275,19 +1275,19 @@ tp_base_media_call_stream_report_sending_failure (
     }
 
   g_object_notify (G_OBJECT (self), "sending-state");
-  tp_svc_call_stream_interface_media_emit_sending_state_changed (self,
+  tp_svc_call1_stream_interface_media_emit_sending_state_changed (self,
       self->priv->sending_state);
 
   self->priv->sending_failure = FALSE;
 
 done:
-  tp_svc_call_stream_interface_media_return_from_report_sending_failure (
+  tp_svc_call1_stream_interface_media_return_from_report_sending_failure (
       context);
 }
 
 static void
 tp_base_media_call_stream_complete_receiving_state_change (
-    TpSvcCallStreamInterfaceMedia *iface,
+    TpSvcCall1StreamInterfaceMedia *iface,
     TpStreamFlowState state,
     DBusGMethodInvocation *context)
 {
@@ -1327,14 +1327,14 @@ tp_base_media_call_stream_complete_receiving_state_change (
       tp_intset_clear (self->priv->receiving_requests);
     }
 
-  tp_svc_call_stream_interface_media_emit_receiving_state_changed (self, state);
-  tp_svc_call_stream_interface_media_return_from_complete_receiving_state_change
+  tp_svc_call1_stream_interface_media_emit_receiving_state_changed (self, state);
+  tp_svc_call1_stream_interface_media_return_from_complete_receiving_state_change
       (context);
 }
 
 static void
 tp_base_media_call_stream_report_receiving_failure (
-    TpSvcCallStreamInterfaceMedia *iface,
+    TpSvcCall1StreamInterfaceMedia *iface,
     TpCallStateChangeReason reason,
     const gchar *dbus_reason,
     const gchar *message,
@@ -1367,18 +1367,18 @@ tp_base_media_call_stream_report_receiving_failure (
     klass->report_receiving_failure (self, old_state,
         reason, dbus_reason, message);
 
-  tp_svc_call_stream_interface_media_emit_receiving_state_changed (self,
+  tp_svc_call1_stream_interface_media_emit_receiving_state_changed (self,
       self->priv->receiving_state);
 
   self->priv->receiving_failure = FALSE;
 
 done:
-  tp_svc_call_stream_interface_media_return_from_report_receiving_failure (
+  tp_svc_call1_stream_interface_media_return_from_report_receiving_failure (
       context);
 }
 
 static void
-tp_base_media_call_stream_set_credentials (TpSvcCallStreamInterfaceMedia *iface,
+tp_base_media_call_stream_set_credentials (TpSvcCall1StreamInterfaceMedia *iface,
     const gchar *username,
     const gchar *password,
     DBusGMethodInvocation *context)
@@ -1397,14 +1397,14 @@ tp_base_media_call_stream_set_credentials (TpSvcCallStreamInterfaceMedia *iface,
   g_object_notify (G_OBJECT (self), "local-candidates");
   g_object_notify (G_OBJECT (self), "local-credentials");
 
-  tp_svc_call_stream_interface_media_emit_local_credentials_changed (self,
+  tp_svc_call1_stream_interface_media_emit_local_credentials_changed (self,
       username, password);
 
-  tp_svc_call_stream_interface_media_return_from_set_credentials (context);
+  tp_svc_call1_stream_interface_media_return_from_set_credentials (context);
 }
 
 static void
-tp_base_media_call_stream_add_candidates (TpSvcCallStreamInterfaceMedia *iface,
+tp_base_media_call_stream_add_candidates (TpSvcCall1StreamInterfaceMedia *iface,
     const GPtrArray *candidates,
     DBusGMethodInvocation *context)
 {
@@ -1445,16 +1445,16 @@ tp_base_media_call_stream_add_candidates (TpSvcCallStreamInterfaceMedia *iface,
       G_GNUC_END_IGNORE_DEPRECATIONS
     }
 
-  tp_svc_call_stream_interface_media_emit_local_candidates_added (self,
+  tp_svc_call1_stream_interface_media_emit_local_candidates_added (self,
       accepted_candidates);
-  tp_svc_call_stream_interface_media_return_from_add_candidates (context);
+  tp_svc_call1_stream_interface_media_return_from_add_candidates (context);
 
   g_ptr_array_unref (accepted_candidates);
 }
 
 static void
 tp_base_media_call_stream_finish_initial_candidates (
-    TpSvcCallStreamInterfaceMedia *iface,
+    TpSvcCall1StreamInterfaceMedia *iface,
     DBusGMethodInvocation *context)
 {
   TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (iface);
@@ -1470,12 +1470,12 @@ tp_base_media_call_stream_finish_initial_candidates (
         return;
       }
 
-  tp_svc_call_stream_interface_media_return_from_finish_initial_candidates (
+  tp_svc_call1_stream_interface_media_return_from_finish_initial_candidates (
       context);
 }
 
 static void
-tp_base_media_call_stream_fail (TpSvcCallStreamInterfaceMedia *iface,
+tp_base_media_call_stream_fail (TpSvcCall1StreamInterfaceMedia *iface,
     const GValueArray *reason_array,
     DBusGMethodInvocation *context)
 {
@@ -1496,16 +1496,15 @@ tp_base_media_call_stream_fail (TpSvcCallStreamInterfaceMedia *iface,
           reason_array);
     }
 
-  tp_svc_call_stream_interface_media_return_from_fail (context);
+  tp_svc_call1_stream_interface_media_return_from_fail (context);
 }
 
 static void
 call_stream_media_iface_init (gpointer g_iface, gpointer iface_data)
 {
-  TpSvcCallStreamInterfaceMediaClass *klass =
-      (TpSvcCallStreamInterfaceMediaClass *) g_iface;
+  TpSvcCall1StreamInterfaceMediaClass *klass = g_iface;
 
-#define IMPLEMENT(x) tp_svc_call_stream_interface_media_implement_##x (\
+#define IMPLEMENT(x) tp_svc_call1_stream_interface_media_implement_##x (\
     klass, tp_base_media_call_stream_##x)
   IMPLEMENT(complete_sending_state_change);
   IMPLEMENT(report_sending_failure);

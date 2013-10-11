@@ -23,10 +23,10 @@
 /**
  * SECTION:base-call-content
  * @title: TpBaseCallContent
- * @short_description: base class for #TpSvcCallContent implementations
- * @see_also: #TpSvcCallContent, #TpBaseCallChannel and #TpBaseCallStream
+ * @short_description: base class for #TpSvcCall1Content implementations
+ * @see_also: #TpSvcCall1Content, #TpBaseCallChannel and #TpBaseCallStream
  *
- * This base class makes it easier to write #TpSvcCallContent
+ * This base class makes it easier to write #TpSvcCall1Content
  * implementations by implementing its properties, and some of its methods.
  *
  * Subclasses should fill in #TpBaseCallContentClass.get_interfaces,
@@ -150,9 +150,9 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseCallContent, tp_base_call_content,
 
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
         tp_dbus_properties_mixin_iface_init)
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_CONTENT,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL1_CONTENT,
         call_content_iface_init)
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_CONTENT_INTERFACE_DTMF,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL1_CONTENT_INTERFACE_DTMF1,
         call_content_dtmf_iface_init)
     )
 
@@ -384,12 +384,12 @@ tp_base_call_content_class_init (TpBaseCallContentClass *klass)
     { NULL }
   };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-      { TP_IFACE_CALL_CONTENT,
+      { TP_IFACE_CALL1_CONTENT,
         tp_dbus_properties_mixin_getter_gobject_properties,
         NULL,
         content_props,
       },
-      { TP_IFACE_CALL_CONTENT_INTERFACE_DTMF,
+      { TP_IFACE_CALL1_CONTENT_INTERFACE_DTMF1,
         tp_dbus_properties_mixin_getter_gobject_properties,
         NULL,
         content_dtmf_props,
@@ -686,7 +686,7 @@ tp_base_call_content_add_stream (TpBaseCallContent *self,
   g_ptr_array_add (paths, g_strdup (
      tp_base_call_stream_get_object_path (
          TP_BASE_CALL_STREAM (stream))));
-  tp_svc_call_content_emit_streams_added (self, paths);
+  tp_svc_call1_content_emit_streams_added (self, paths);
   g_ptr_array_unref (paths);
 }
 
@@ -708,7 +708,7 @@ _tp_base_call_content_remove_stream_internal (TpBaseCallContent *self,
   g_ptr_array_add (paths, (gpointer)
       tp_base_call_stream_get_object_path (stream));
 
-  tp_svc_call_content_emit_streams_removed (self, paths, reason_array);
+  tp_svc_call1_content_emit_streams_removed (self, paths, reason_array);
 
   g_ptr_array_unref (paths);
   g_object_unref (stream);
@@ -755,7 +755,7 @@ tp_base_call_content_remove_stream (TpBaseCallContent *self,
 }
 
 static void
-tp_call_content_remove (TpSvcCallContent *content,
+tp_call_content_remove (TpSvcCall1Content *content,
     DBusGMethodInvocation *context)
 {
   TpBaseCallContent *self = TP_BASE_CALL_CONTENT (content);
@@ -773,16 +773,16 @@ tp_call_content_remove (TpSvcCallContent *content,
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       "User has removed the content");
 
-  tp_svc_call_content_return_from_remove (context);
+  tp_svc_call1_content_return_from_remove (context);
 }
 
 static void
 call_content_iface_init (gpointer g_iface, gpointer iface_data)
 {
-  TpSvcCallContentClass *klass =
-    (TpSvcCallContentClass *) g_iface;
+  TpSvcCall1ContentClass *klass =
+    (TpSvcCall1ContentClass *) g_iface;
 
-#define IMPLEMENT(x) tp_svc_call_content_implement_##x (\
+#define IMPLEMENT(x) tp_svc_call1_content_implement_##x (\
     klass, tp_call_content_##x)
   IMPLEMENT(remove);
 #undef IMPLEMENT
@@ -862,7 +862,7 @@ _tp_base_call_content_accepted (TpBaseCallContent *self,
 }
 
 static void
-tp_call_content_start_tone (TpSvcCallContentInterfaceDTMF *dtmf,
+tp_call_content_start_tone (TpSvcCall1ContentInterfaceDTMF1 *dtmf,
     guchar event,
     DBusGMethodInvocation *context)
 {
@@ -885,11 +885,11 @@ tp_call_content_start_tone (TpSvcCallContentInterfaceDTMF *dtmf,
       return;
     }
 
-  tp_svc_call_content_interface_dtmf_return_from_start_tone (context);
+  tp_svc_call1_content_interface_dtmf1_return_from_start_tone (context);
 }
 
 static void
-tp_call_content_stop_tone (TpSvcCallContentInterfaceDTMF *dtmf,
+tp_call_content_stop_tone (TpSvcCall1ContentInterfaceDTMF1 *dtmf,
    DBusGMethodInvocation *context)
 {
   TpBaseCallContent *self = TP_BASE_CALL_CONTENT (dtmf);
@@ -911,11 +911,11 @@ tp_call_content_stop_tone (TpSvcCallContentInterfaceDTMF *dtmf,
       return;
     }
 
-  tp_svc_call_content_interface_dtmf_return_from_stop_tone (context);
+  tp_svc_call1_content_interface_dtmf1_return_from_stop_tone (context);
 }
 
 static void
-tp_call_content_multiple_tones (TpSvcCallContentInterfaceDTMF *dtmf,
+tp_call_content_multiple_tones (TpSvcCall1ContentInterfaceDTMF1 *dtmf,
     const gchar *tones,
     DBusGMethodInvocation *context)
 {
@@ -938,16 +938,16 @@ tp_call_content_multiple_tones (TpSvcCallContentInterfaceDTMF *dtmf,
       return;
     }
 
-  tp_svc_call_content_interface_dtmf_return_from_multiple_tones (context);
+  tp_svc_call1_content_interface_dtmf1_return_from_multiple_tones (context);
 }
 
 static void
 call_content_dtmf_iface_init (gpointer g_iface, gpointer iface_data)
 {
-  TpSvcCallContentInterfaceDTMFClass *klass =
-      (TpSvcCallContentInterfaceDTMFClass *) g_iface;
+  TpSvcCall1ContentInterfaceDTMF1Class *klass =
+      (TpSvcCall1ContentInterfaceDTMF1Class *) g_iface;
 
-#define IMPLEMENT(x) tp_svc_call_content_interface_dtmf_implement_##x (\
+#define IMPLEMENT(x) tp_svc_call1_content_interface_dtmf1_implement_##x (\
     klass, tp_call_content_##x)
   IMPLEMENT(start_tone);
   IMPLEMENT(stop_tone);

@@ -58,8 +58,8 @@ add_ft_class (GPtrArray *classes,
 {
   GHashTable *fixed;
   const gchar * const default_allowed[] = {
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE,
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_FILENAME,
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_SIZE,
       NULL };
   GValueArray *arr;
 
@@ -68,7 +68,7 @@ add_ft_class (GPtrArray *classes,
 
   fixed = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
+          TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
           TP_HANDLE_TYPE_CONTACT,
       NULL);
@@ -147,7 +147,7 @@ test_basics (Test *test,
   g_assert_cmpuint (g_hash_table_size (fixed), ==, 2);
 
   chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
-  g_assert_cmpstr (chan_type, ==, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER);
+  g_assert_cmpstr (chan_type, ==, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1);
 
   handle_type = tp_asv_get_uint32 (fixed, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
       &valid);
@@ -156,9 +156,9 @@ test_basics (Test *test,
 
   g_assert_cmpuint (g_strv_length (allowed), ==, 2);
   g_assert (tp_strv_contains ((const gchar * const * ) allowed,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME));
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_FILENAME));
   g_assert (tp_strv_contains ((const gchar * const * ) allowed,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE));
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_SIZE));
 
   g_object_unref (caps);
 }
@@ -253,14 +253,14 @@ add_stream_tube_class (GPtrArray *classes,
 
   fixed = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_STREAM_TUBE,
+          TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
           handle_type,
       NULL);
 
   if (service != NULL)
     {
-      tp_asv_set_string (fixed, TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE,
+      tp_asv_set_string (fixed, TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SERVICE,
           service);
     }
 
@@ -286,14 +286,14 @@ add_dbus_tube_class (GPtrArray *classes,
 
   fixed = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_DBUS_TUBE,
+          TP_IFACE_CHANNEL_TYPE_DBUS_TUBE1,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
           handle_type,
       NULL);
 
   if (service_name != NULL)
     {
-      tp_asv_set_string (fixed, TP_PROP_CHANNEL_TYPE_DBUS_TUBE_SERVICE_NAME,
+      tp_asv_set_string (fixed, TP_PROP_CHANNEL_TYPE_DBUS_TUBE1_SERVICE_NAME,
           service_name);
     }
 
@@ -604,14 +604,14 @@ add_room_list_class (GPtrArray *classes,
 {
   GHashTable *fixed;
   const gchar * const allowed[] = {
-      TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER,
+      TP_PROP_CHANNEL_TYPE_ROOM_LIST1_SERVER,
       NULL };
   const gchar * const no_allowed[] = { NULL };
   GValueArray *arr;
 
   fixed = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_ROOM_LIST,
+          TP_IFACE_CHANNEL_TYPE_ROOM_LIST1,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
           TP_HANDLE_TYPE_NONE,
       NULL);
@@ -727,11 +727,11 @@ add_sms_class (GPtrArray *classes,
 
   if (use_allowed)
     {
-      g_ptr_array_add (allowed, TP_PROP_CHANNEL_INTERFACE_SMS_SMS_CHANNEL);
+      g_ptr_array_add (allowed, TP_PROP_CHANNEL_INTERFACE_SMS1_SMS_CHANNEL);
     }
   else
     {
-      tp_asv_set_boolean (fixed, TP_PROP_CHANNEL_INTERFACE_SMS_SMS_CHANNEL,
+      tp_asv_set_boolean (fixed, TP_PROP_CHANNEL_INTERFACE_SMS1_SMS_CHANNEL,
           TRUE);
     }
 
@@ -820,7 +820,7 @@ add_call_class (GPtrArray *classes,
 
   fixed = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_CALL,
+          TP_IFACE_CHANNEL_TYPE_CALL1,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
           handle_type,
       NULL);
@@ -831,11 +831,11 @@ add_call_class (GPtrArray *classes,
     {
       if (use_allowed)
         {
-          g_ptr_array_add (allowed, TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO);
+          g_ptr_array_add (allowed, TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO);
         }
       else
         {
-          tp_asv_set_boolean (fixed, TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
+          tp_asv_set_boolean (fixed, TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO,
               TRUE);
         }
     }
@@ -844,11 +844,11 @@ add_call_class (GPtrArray *classes,
     {
       if (use_allowed)
         {
-          g_ptr_array_add (allowed, TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO);
+          g_ptr_array_add (allowed, TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO);
         }
       else
         {
-          tp_asv_set_boolean (fixed, TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
+          tp_asv_set_boolean (fixed, TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO,
               TRUE);
         }
     }
@@ -978,14 +978,14 @@ test_supports_ft_props (Test *test,
 {
   TpCapabilities *caps;
   GPtrArray *classes;
-  const gchar * const allow_uri[] = { TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_URI,
+  const gchar * const allow_uri[] = { TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_URI,
       NULL };
   const gchar * const allow_desc[] = {
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DESCRIPTION, NULL };
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_DESCRIPTION, NULL };
   const gchar * const allow_date[] = {
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DATE, NULL };
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_DATE, NULL };
   const gchar * const allow_initial_offset[] = {
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET, NULL };
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_INITIAL_OFFSET, NULL };
 
   /* TpCapabilities containing no caps */
   caps = _tp_capabilities_new (NULL, TRUE);
@@ -1161,7 +1161,7 @@ test_classes_variant (Test *test,
 
   g_assert (g_variant_lookup (fixed,
       TP_PROP_CHANNEL_CHANNEL_TYPE, "&s", &chan_type));
-  g_assert_cmpstr (chan_type, ==, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER);
+  g_assert_cmpstr (chan_type, ==, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1);
 
   g_assert (g_variant_lookup (fixed,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, "u", &handle_type));
@@ -1170,9 +1170,9 @@ test_classes_variant (Test *test,
   g_assert_cmpuint (g_variant_n_children (allowed), ==, 2);
   strv = g_variant_get_strv (allowed, NULL);
   g_assert (tp_strv_contains ((const gchar * const * ) strv,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME));
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_FILENAME));
   g_assert (tp_strv_contains ((const gchar * const * ) strv,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE));
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_SIZE));
   g_free (strv);
 
   g_variant_unref (class);

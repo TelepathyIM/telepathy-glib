@@ -233,7 +233,7 @@ check_filters (GPtrArray *filters)
   filter = g_ptr_array_index (filters, 1);
   g_assert_cmpuint (g_hash_table_size (filter), ==, 2);
   g_assert_cmpstr (tp_asv_get_string (filter, TP_PROP_CHANNEL_CHANNEL_TYPE), ==,
-      TP_IFACE_CHANNEL_TYPE_STREAM_TUBE);
+      TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1);
   g_assert_cmpuint (tp_asv_get_uint32 (filter,
         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL), ==, TP_HANDLE_TYPE_CONTACT);
 }
@@ -306,7 +306,7 @@ test_properties (Test *test,
 
   tp_base_client_add_handler_filter_vardict (test->simple_handler,
       g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
-        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE,
+        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, (guint32) TP_HANDLE_TYPE_CONTACT));
 
   tp_base_client_register (test->simple_handler, &test->error);

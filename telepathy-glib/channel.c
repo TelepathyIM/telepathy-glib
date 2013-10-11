@@ -1087,10 +1087,10 @@ tp_channel_prepare_password_async (TpProxy *proxy,
   result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
       tp_channel_prepare_password_async);
 
-  tp_cli_channel_interface_password_connect_to_password_flags_changed (self,
+  tp_cli_channel_interface_password1_connect_to_password_flags_changed (self,
       password_flags_changed_cb, self, NULL, G_OBJECT (self), NULL);
 
-  tp_cli_channel_interface_password_call_get_password_flags (self, -1,
+  tp_cli_channel_interface_password1_call_get_password_flags (self, -1,
       got_password_flags_cb, result, g_object_unref, G_OBJECT (self));
 }
 
@@ -1121,7 +1121,7 @@ tp_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_PASSWORD].name = TP_CHANNEL_FEATURE_PASSWORD;
   features[FEAT_PASSWORD].prepare_async =
     tp_channel_prepare_password_async;
-  need_password[0] = TP_IFACE_QUARK_CHANNEL_INTERFACE_PASSWORD;
+  need_password[0] = TP_IFACE_QUARK_CHANNEL_INTERFACE_PASSWORD1;
   features[FEAT_PASSWORD].interfaces_needed = need_password;
 
   /* assert that the terminator at the end is there */
@@ -1559,7 +1559,7 @@ tp_channel_join_async (TpChannel *self,
   self_handle = tp_contact_get_handle (self->priv->group_self_contact);
   g_array_append_val (array, self_handle);
 
-  tp_cli_channel_interface_group_call_add_members (self, -1, array, message,
+  tp_cli_channel_interface_group1_call_add_members (self, -1, array, message,
       channel_join_cb, result, g_object_unref, NULL);
 
   g_array_unref (array);
@@ -1683,7 +1683,7 @@ tp_channel_leave_async (TpChannel *self,
   self_handle = tp_contact_get_handle (self->priv->group_self_contact);
   g_array_append_val (handles, self_handle);
 
-  tp_cli_channel_interface_group_call_remove_members (
+  tp_cli_channel_interface_group1_call_remove_members (
       self, -1, handles, message, reason,
       channel_remove_self_cb, result, NULL, NULL);
 
@@ -1819,7 +1819,7 @@ tp_channel_destroy_async (TpChannel *self,
 
   if (tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_CORE) &&
       !tp_proxy_has_interface_by_id (self,
-        TP_IFACE_QUARK_CHANNEL_INTERFACE_DESTROYABLE))
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_DESTROYABLE1))
     {
       DEBUG ("Channel doesn't implement Destroy; fallback to Close()");
 
@@ -1828,7 +1828,7 @@ tp_channel_destroy_async (TpChannel *self,
       return;
     }
 
-  tp_cli_channel_interface_destroyable_call_destroy (self, -1,
+  tp_cli_channel_interface_destroyable1_call_destroy (self, -1,
       channel_destroy_cb, result, NULL, NULL);
 }
 
@@ -1944,7 +1944,7 @@ tp_channel_provide_password_async (TpChannel *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_channel_provide_password_async);
 
-  tp_cli_channel_interface_password_call_provide_password (self, -1, password,
+  tp_cli_channel_interface_password1_call_provide_password (self, -1, password,
       provide_password_cb, result, g_object_unref, G_OBJECT (self));
 }
 

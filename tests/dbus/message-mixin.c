@@ -751,7 +751,7 @@ main (int argc,
       GValue *value = NULL;
       GPtrArray *channels;
 
-      MYASSERT (tp_cli_channel_interface_destroyable_run_destroy (chan,
+      MYASSERT (tp_cli_channel_interface_destroyable1_run_destroy (chan,
               -1, &error, NULL), "");
       g_assert_no_error (error);
       MYASSERT (tp_proxy_get_invalidated (chan) != NULL, "");

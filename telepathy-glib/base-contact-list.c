@@ -52,13 +52,13 @@
  * <itemizedlist>
  *  <listitem>
  *   <para>in #G_DEFINE_TYPE_WITH_CODE, implement
- *   #TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST using
+ *   #TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST1 using
  *   tp_base_contact_list_mixin_list_iface_init():</para>
  * |[
  * G_DEFINE_TYPE_WITH_CODE (MyConnection, my_connection,
  *     TP_TYPE_BASE_CONNECTION,
  *     // ...
- *     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST,
+ *     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST1,
  *         tp_base_contact_list_mixin_list_iface_init);
  *     // ...
  *     )
@@ -75,7 +75,7 @@
  * tp_base_contact_list_mixin_class_init (base_connection_class);
  * // ...
  * ]|
- *   <para>and include %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST in
+ *   <para>and include %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1 in
  *    the output of
  *    #TpBaseConnectionClass.get_interfaces_always_present;</para>
  *  </listitem>
@@ -88,9 +88,9 @@
  *
  * To support user-defined contact groups too, additionally implement
  * %TP_TYPE_CONTACT_GROUP_LIST in the #TpBaseContactList subclass, add the
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS interface to the output of
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1 interface to the output of
  * #TpBaseConnectionClass.get interfaces_always_present, and implement the
- * %TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS in the #TpBaseConnection
+ * %TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1 in the #TpBaseConnection
  * subclass using tp_base_contact_list_mixin_groups_iface_init().
  *
  * Optionally, one or more of the #TP_TYPE_MUTABLE_CONTACT_LIST,
@@ -646,11 +646,11 @@ tp_base_contact_list_constructed (GObject *object)
   g_return_if_fail (cls->download_async != NULL);
 
   self->priv->svc_contact_list =
-    TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_LIST (self->priv->conn);
+    TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_LIST1 (self->priv->conn);
   self->priv->svc_contact_groups =
-    TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS (self->priv->conn);
+    TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1 (self->priv->conn);
   self->priv->svc_contact_blocking =
-    TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING (self->priv->conn);
+    TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING1 (self->priv->conn);
 
   if (TP_IS_MUTABLE_CONTACT_LIST (self))
     {
@@ -866,7 +866,7 @@ tp_base_contact_list_set_list_pending (TpBaseContactList *self)
     return;
 
   self->priv->state = TP_CONTACT_LIST_STATE_WAITING;
-  tp_svc_connection_interface_contact_list_emit_contact_list_state_changed (
+  tp_svc_connection_interface_contact_list1_emit_contact_list_state_changed (
       self->priv->conn, self->priv->state);
 }
 
@@ -899,7 +899,7 @@ tp_base_contact_list_set_list_failed (TpBaseContactList *self,
   self->priv->state = TP_CONTACT_LIST_STATE_FAILURE;
   g_clear_error (&self->priv->failure);
   self->priv->failure = g_error_new_literal (domain, code, message);
-  tp_svc_connection_interface_contact_list_emit_contact_list_state_changed (
+  tp_svc_connection_interface_contact_list1_emit_contact_list_state_changed (
       self->priv->conn, self->priv->state);
 
   tp_base_contact_list_fail_blocked_contact_requests (self,
@@ -987,7 +987,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
 
           while ((context = g_queue_pop_head (
                       &self->priv->blocked_contact_requests)) != NULL)
-            tp_svc_connection_interface_contact_blocking_return_from_request_blocked_contacts (context, map);
+            tp_svc_connection_interface_contact_blocking1_return_from_request_blocked_contacts (context, map);
 
           g_hash_table_unref (map);
         }
@@ -1023,7 +1023,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
 
   /* emit this last, so people can distinguish between the initial state
    * and subsequent changes */
-  tp_svc_connection_interface_contact_list_emit_contact_list_state_changed (
+  tp_svc_connection_interface_contact_list1_emit_contact_list_state_changed (
       self->priv->conn, self->priv->state);
 }
 
@@ -1160,7 +1160,7 @@ tp_base_contact_list_contacts_changed_internal (TpBaseContactList *self,
 
       if (self->priv->svc_contact_list)
         {
-          tp_svc_connection_interface_contact_list_emit_contacts_changed (
+          tp_svc_connection_interface_contact_list1_emit_contacts_changed (
               self->priv->conn, changes, change_ids, removal_ids);
         }
     }
@@ -1292,7 +1292,7 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
   if (self->priv->svc_contact_blocking &&
       (g_hash_table_size (blocked_contacts) > 0 ||
        g_hash_table_size (unblocked_contacts) > 0))
-    tp_svc_connection_interface_contact_blocking_emit_blocked_contacts_changed (
+    tp_svc_connection_interface_contact_blocking1_emit_blocked_contacts_changed (
         self->priv->conn, blocked_contacts, unblocked_contacts);
 
   g_hash_table_unref (blocked_contacts);
@@ -2532,7 +2532,7 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
       if (self->priv->svc_contact_groups)
       {
         g_ptr_array_add (actually_created, NULL);
-        tp_svc_connection_interface_contact_groups_emit_groups_created (
+        tp_svc_connection_interface_contact_groups1_emit_groups_created (
             self->priv->conn, (const gchar **) actually_created->pdata);
       }
     }
@@ -2632,7 +2632,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
       g_ptr_array_add (actually_removed, NULL);
 
       if (self->priv->svc_contact_groups)
-        tp_svc_connection_interface_contact_groups_emit_groups_removed (
+        tp_svc_connection_interface_contact_groups1_emit_groups_removed (
             self->priv->conn, (const gchar **) actually_removed->pdata);
 
       if (members_arr->len > 0)
@@ -2643,7 +2643,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
               members_arr->len, actually_removed->len - 1);
 
           if (self->priv->svc_contact_groups)
-            tp_svc_connection_interface_contact_groups_emit_groups_changed (
+            tp_svc_connection_interface_contact_groups1_emit_groups_changed (
                 self->priv->conn, members_arr, NULL,
                 (const gchar **) actually_removed->pdata);
         }
@@ -2693,13 +2693,13 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
 
   if (self->priv->svc_contact_groups)
     {
-      tp_svc_connection_interface_contact_groups_emit_group_renamed (
+      tp_svc_connection_interface_contact_groups1_emit_group_renamed (
           self->priv->conn, old_names[0], new_names[0]);
 
-      tp_svc_connection_interface_contact_groups_emit_groups_created (
+      tp_svc_connection_interface_contact_groups1_emit_groups_created (
           self->priv->conn, new_names);
 
-      tp_svc_connection_interface_contact_groups_emit_groups_removed (
+      tp_svc_connection_interface_contact_groups1_emit_groups_removed (
           self->priv->conn, old_names);
     }
 
@@ -2715,7 +2715,7 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
         {
           GArray *arr = tp_intset_to_array (set);
 
-          tp_svc_connection_interface_contact_groups_emit_groups_changed (
+          tp_svc_connection_interface_contact_groups1_emit_groups_changed (
               self->priv->conn, arr, new_names, old_names);
           g_array_unref (arr);
         }
@@ -2913,7 +2913,7 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
         {
           GArray *members_arr = tp_handle_set_to_array (contacts);
 
-          tp_svc_connection_interface_contact_groups_emit_groups_changed (
+          tp_svc_connection_interface_contact_groups1_emit_groups_changed (
               self->priv->conn, members_arr,
               (const gchar **) really_added->pdata,
               (const gchar **) really_removed->pdata);
@@ -3572,7 +3572,7 @@ tp_base_contact_list_remove_group_finish (TpBaseContactList *self,
 
 static void
 tp_base_contact_list_mixin_get_contact_list_attributes (
-    TpSvcConnectionInterfaceContactList *svc,
+    TpSvcConnectionInterfaceContactList1 *svc,
     const gchar **interfaces,
     DBusGMethodInvocation *context)
 {
@@ -3595,14 +3595,14 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
       TpHandleSet *set;
       GArray *contacts;
       const gchar *assumed[] = { TP_IFACE_CONNECTION,
-          TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST, NULL };
+          TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1, NULL };
       GHashTable *result;
 
       set = tp_base_contact_list_dup_contacts (self);
       contacts = tp_handle_set_to_array (set);
       result = tp_contacts_mixin_get_contact_attributes (
           (GObject *) self->priv->conn, contacts, interfaces, assumed);
-      tp_svc_connection_interface_contact_list_return_from_get_contact_list_attributes (
+      tp_svc_connection_interface_contact_list1_return_from_get_contact_list_attributes (
           context, result);
 
       g_array_unref (contacts);
@@ -3868,7 +3868,7 @@ tp_base_contact_list_mixin_request_subscription_cb (GObject *source,
 
 static void
 tp_base_contact_list_mixin_request_subscription (
-    TpSvcConnectionInterfaceContactList *svc,
+    TpSvcConnectionInterfaceContactList1 *svc,
     const GArray *contacts,
     const gchar *message,
     DBusGMethodInvocation *context)
@@ -3908,7 +3908,7 @@ tp_base_contact_list_mixin_authorize_publication_cb (GObject *source,
 
 static void
 tp_base_contact_list_mixin_authorize_publication (
-    TpSvcConnectionInterfaceContactList *svc,
+    TpSvcConnectionInterfaceContactList1 *svc,
     const GArray *contacts,
     DBusGMethodInvocation *context)
 {
@@ -3947,7 +3947,7 @@ tp_base_contact_list_mixin_remove_contacts_cb (GObject *source,
 
 static void
 tp_base_contact_list_mixin_remove_contacts (
-    TpSvcConnectionInterfaceContactList *svc,
+    TpSvcConnectionInterfaceContactList1 *svc,
     const GArray *contacts,
     DBusGMethodInvocation *context)
 {
@@ -3986,7 +3986,7 @@ tp_base_contact_list_mixin_unsubscribe_cb (GObject *source,
 
 static void
 tp_base_contact_list_mixin_unsubscribe (
-    TpSvcConnectionInterfaceContactList *svc,
+    TpSvcConnectionInterfaceContactList1 *svc,
     const GArray *contacts,
     DBusGMethodInvocation *context)
 {
@@ -4025,7 +4025,7 @@ tp_base_contact_list_mixin_unpublish_cb (GObject *source,
 
 static void
 tp_base_contact_list_mixin_unpublish (
-    TpSvcConnectionInterfaceContactList *svc,
+    TpSvcConnectionInterfaceContactList1 *svc,
     const GArray *contacts,
     DBusGMethodInvocation *context)
 {
@@ -4143,11 +4143,11 @@ tp_base_contact_list_fill_list_contact_attributes (GObject *obj,
           &subscribe, &publish, &publish_request);
 
       tp_contacts_mixin_set_contact_attribute (attributes_hash,
-          handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH,
+          handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_PUBLISH,
           tp_g_value_slice_new_uint (publish));
 
       tp_contacts_mixin_set_contact_attribute (attributes_hash,
-          handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_SUBSCRIBE,
+          handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_SUBSCRIBE,
           tp_g_value_slice_new_uint (subscribe));
 
       if (tp_str_empty (publish_request) ||
@@ -4158,7 +4158,7 @@ tp_base_contact_list_fill_list_contact_attributes (GObject *obj,
       else
         {
           tp_contacts_mixin_set_contact_attribute (attributes_hash,
-              handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH_REQUEST,
+              handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_PUBLISH_REQUEST,
               tp_g_value_slice_new_take_string (publish_request));
         }
     }
@@ -4179,7 +4179,7 @@ tp_base_contact_list_mixin_download_cb (GObject *source,
 
 static void
 tp_base_contact_list_mixin_download (
-    TpSvcConnectionInterfaceContactList *svc,
+    TpSvcConnectionInterfaceContactList1 *svc,
     DBusGMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
@@ -4192,20 +4192,20 @@ tp_base_contact_list_mixin_download (
 /**
  * tp_base_contact_list_mixin_list_iface_init:
  * @klass: the service-side D-Bus interface,
- *  a #TpSvcConnectionInterfaceContactListClass
+ *  a #TpSvcConnectionInterfaceContactList1Class
  *
  * Use the #TpBaseContactList like a mixin, to implement the ContactList
  * D-Bus interface.
  *
  * This function should be passed to G_IMPLEMENT_INTERFACE() for
- * #TpSvcConnectionInterfaceContactList.
+ * #TpSvcConnectionInterfaceContactList1.
  *
  * Since: 0.13.0
  */
 void
 tp_base_contact_list_mixin_list_iface_init (gpointer klass)
 {
-#define IMPLEMENT(x) tp_svc_connection_interface_contact_list_implement_##x (\
+#define IMPLEMENT(x) tp_svc_connection_interface_contact_list1_implement_##x (\
   klass, tp_base_contact_list_mixin_##x)
   IMPLEMENT (get_contact_list_attributes);
   IMPLEMENT (request_subscription);
@@ -4288,7 +4288,7 @@ tp_base_contact_list_mixin_set_contact_groups_cb (GObject *source,
 
 static void
 tp_base_contact_list_mixin_set_contact_groups (
-    TpSvcConnectionInterfaceContactGroups *svc,
+    TpSvcConnectionInterfaceContactGroups1 *svc,
     guint contact,
     const gchar **groups,
     DBusGMethodInvocation *context)
@@ -4352,7 +4352,7 @@ tp_base_contact_list_mixin_set_group_members_cb (GObject *source,
 
 static void
 tp_base_contact_list_mixin_set_group_members (
-    TpSvcConnectionInterfaceContactGroups *svc,
+    TpSvcConnectionInterfaceContactGroups1 *svc,
     const gchar *group,
     const GArray *contacts,
     DBusGMethodInvocation *context)
@@ -4393,7 +4393,7 @@ tp_base_contact_list_mixin_add_to_group_cb (GObject *source,
 
 static void
 tp_base_contact_list_mixin_add_to_group (
-    TpSvcConnectionInterfaceContactGroups *svc,
+    TpSvcConnectionInterfaceContactGroups1 *svc,
     const gchar *group,
     const GArray *contacts,
     DBusGMethodInvocation *context)
@@ -4440,7 +4440,7 @@ tp_base_contact_list_mixin_remove_from_group_cb (GObject *source,
 
 static void
 tp_base_contact_list_mixin_remove_from_group (
-    TpSvcConnectionInterfaceContactGroups *svc,
+    TpSvcConnectionInterfaceContactGroups1 *svc,
     const gchar *group,
     const GArray *contacts,
     DBusGMethodInvocation *context)
@@ -4490,7 +4490,7 @@ tp_base_contact_list_mixin_remove_group_cb (GObject *source,
 
 static void
 tp_base_contact_list_mixin_remove_group (
-    TpSvcConnectionInterfaceContactGroups *svc,
+    TpSvcConnectionInterfaceContactGroups1 *svc,
     const gchar *group,
     DBusGMethodInvocation *context)
 {
@@ -4535,7 +4535,7 @@ tp_base_contact_list_mixin_rename_group_cb (GObject *source,
 
 static void
 tp_base_contact_list_mixin_rename_group (
-    TpSvcConnectionInterfaceContactGroups *svc,
+    TpSvcConnectionInterfaceContactGroups1 *svc,
     const gchar *before,
     const gchar *after,
     DBusGMethodInvocation *context)
@@ -4660,7 +4660,7 @@ tp_base_contact_list_fill_groups_contact_attributes (GObject *obj,
       handle = g_array_index (contacts, TpHandle, i);
 
       tp_contacts_mixin_set_contact_attribute (attributes_hash,
-          handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS_GROUPS,
+          handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS1_GROUPS,
           tp_g_value_slice_new_take_boxed (G_TYPE_STRV,
             tp_base_contact_list_dup_contact_groups (self, handle)));
     }
@@ -4695,7 +4695,7 @@ tp_base_contact_list_fill_blocking_contact_attributes (GObject *obj,
       is_blocked = tp_handle_set_is_member (blocked, handle);
 
       tp_contacts_mixin_set_contact_attribute (attributes_hash,
-          handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_BLOCKING_BLOCKED,
+          handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_BLOCKING1_BLOCKED,
           tp_g_value_slice_new_boolean (is_blocked));
     }
 
@@ -4705,20 +4705,20 @@ tp_base_contact_list_fill_blocking_contact_attributes (GObject *obj,
 /**
  * tp_base_contact_list_mixin_groups_iface_init:
  * @klass: the service-side D-Bus interface,
- *  a #TpSvcConnectionInterfaceContactGroupsClass
+ *  a #TpSvcConnectionInterfaceContactGroups1Class
  *
  * Use the #TpBaseContactList like a mixin, to implement the ContactGroups
  * D-Bus interface.
  *
  * This function should be passed to G_IMPLEMENT_INTERFACE() for
- * #TpSvcConnectionInterfaceContactGroups.
+ * #TpSvcConnectionInterfaceContactGroups1.
  *
  * Since: 0.13.0
  */
 void
 tp_base_contact_list_mixin_groups_iface_init (gpointer klass)
 {
-#define IMPLEMENT(x) tp_svc_connection_interface_contact_groups_implement_##x (\
+#define IMPLEMENT(x) tp_svc_connection_interface_contact_groups1_implement_##x (\
   klass, tp_base_contact_list_mixin_##x)
   IMPLEMENT (set_contact_groups);
   IMPLEMENT (set_group_members);
@@ -4740,7 +4740,7 @@ tp_base_contact_list_mixin_groups_iface_init (gpointer klass)
 
 static void
 tp_base_contact_list_mixin_request_blocked_contacts (
-    TpSvcConnectionInterfaceContactBlocking *svc,
+    TpSvcConnectionInterfaceContactBlocking1 *svc,
     DBusGMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
@@ -4765,7 +4765,7 @@ tp_base_contact_list_mixin_request_blocked_contacts (
         TpHandleSet *blocked = tp_base_contact_list_dup_blocked_contacts (self);
         GHashTable *map = tp_handle_set_to_identifier_map (blocked);
 
-        tp_svc_connection_interface_contact_blocking_return_from_request_blocked_contacts (context, map);
+        tp_svc_connection_interface_contact_blocking1_return_from_request_blocked_contacts (context, map);
 
         g_hash_table_unref (map);
         tp_handle_set_destroy (blocked);
@@ -4796,7 +4796,7 @@ blocked_cb (
   if (tp_base_contact_list_block_contacts_with_abuse_finish (self, result,
           &error))
     {
-      tp_svc_connection_interface_contact_blocking_return_from_block_contacts (
+      tp_svc_connection_interface_contact_blocking1_return_from_block_contacts (
           context);
     }
   else
@@ -4808,7 +4808,7 @@ blocked_cb (
 
 static void
 tp_base_contact_list_mixin_block_contacts (
-    TpSvcConnectionInterfaceContactBlocking *svc,
+    TpSvcConnectionInterfaceContactBlocking1 *svc,
     const GArray *contacts_arr,
     gboolean report_abusive,
     DBusGMethodInvocation *context)
@@ -4838,7 +4838,7 @@ unblocked_cb (
 
   if (tp_base_contact_list_unblock_contacts_finish (self, result, &error))
     {
-      tp_svc_connection_interface_contact_blocking_return_from_unblock_contacts (context);
+      tp_svc_connection_interface_contact_blocking1_return_from_unblock_contacts (context);
     }
   else
     {
@@ -4849,7 +4849,7 @@ unblocked_cb (
 
 static void
 tp_base_contact_list_mixin_unblock_contacts (
-    TpSvcConnectionInterfaceContactBlocking *svc,
+    TpSvcConnectionInterfaceContactBlocking1 *svc,
     const GArray *contacts_arr,
     DBusGMethodInvocation *context)
 {
@@ -4869,20 +4869,20 @@ tp_base_contact_list_mixin_unblock_contacts (
 /**
  * tp_base_contact_list_mixin_blocking_iface_init:
  * @klass: the service-side D-Bus interface,
- *  a #TpSvcConnectionInterfaceContactBlockingClass
+ *  a #TpSvcConnectionInterfaceContactBlocking1Class
  *
  * Use the #TpBaseContactList like a mixin, to implement the ContactBlocking
  * D-Bus interface.
  *
  * This function should be passed to G_IMPLEMENT_INTERFACE() for
- * #TpSvcConnectionInterfaceContactBlocking
+ * #TpSvcConnectionInterfaceContactBlocking1
  *
  * Since: 0.15.1
  */
 void
 tp_base_contact_list_mixin_blocking_iface_init (gpointer klass)
 {
-#define IMPLEMENT(x) tp_svc_connection_interface_contact_blocking_implement_##x (\
+#define IMPLEMENT(x) tp_svc_connection_interface_contact_blocking1_implement_##x (\
   klass, tp_base_contact_list_mixin_##x)
   IMPLEMENT (block_contacts);
   IMPLEMENT (unblock_contacts);
@@ -4927,14 +4927,14 @@ tp_base_contact_list_get_blocking_dbus_property (GObject *conn,
 /**
  * tp_base_contact_list_mixin_class_init:
  * @cls: A subclass of #TpBaseConnection that has a #TpContactsMixinClass,
- *  and implements #TpSvcConnectionInterfaceContactList using
+ *  and implements #TpSvcConnectionInterfaceContactList1 using
  *  #TpBaseContactList
  *
  * Register the #TpBaseContactList to be used like a mixin in @cls.
  * Before this function is called, the #TpContactsMixin must be initialized
  * with tp_contacts_mixin_class_init().
  *
- * If the connection implements #TpSvcConnectionInterfaceContactGroups, this
+ * If the connection implements #TpSvcConnectionInterfaceContactGroups1, this
  * function automatically sets up that interface as well as ContactList.
  * In this case, when the #TpBaseContactList is created later, it must
  * implement %TP_TYPE_CONTACT_GROUP_LIST.
@@ -4950,25 +4950,25 @@ tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls)
   g_return_if_fail (TP_IS_BASE_CONNECTION_CLASS (cls));
   g_return_if_fail (TP_CONTACTS_MIXIN_CLASS (cls) != NULL);
   g_return_if_fail (g_type_is_a (type,
-        TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST));
+        TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST1));
 
   tp_dbus_properties_mixin_implement_interface (obj_cls,
-      TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_LIST,
+      TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_LIST1,
       tp_base_contact_list_get_list_dbus_property,
       NULL, known_list_props);
 
-  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS))
+  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1))
     {
       tp_dbus_properties_mixin_implement_interface (obj_cls,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_GROUPS,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_GROUPS1,
           tp_base_contact_list_get_group_dbus_property,
           NULL, known_group_props);
     }
 
-  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING))
+  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING1))
     {
       tp_dbus_properties_mixin_implement_interface (obj_cls,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_BLOCKING,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_BLOCKING1,
           tp_base_contact_list_get_blocking_dbus_property,
           NULL, known_blocking_props);
     }
@@ -4978,14 +4978,14 @@ tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls)
  * tp_base_contact_list_mixin_register_with_contacts_mixin:
  * @self: a contact list
  * @conn: An instance of #TpBaseConnection that uses a #TpContactsMixin,
- *  and implements #TpSvcConnectionInterfaceContactList using
+ *  and implements #TpSvcConnectionInterfaceContactList1 using
  *  #TpBaseContactList
  *
  * Register the ContactList interface with the Contacts interface to make it
  * inspectable. Before this function is called, the #TpContactsMixin must be
  * initialized with tp_contacts_mixin_init().
  *
- * If the connection implements #TpSvcConnectionInterfaceContactGroups
+ * If the connection implements #TpSvcConnectionInterfaceContactGroups1
  * the #TpBaseContactList implements %TP_TYPE_CONTACT_GROUP_LIST,
  * this function automatically also registers the ContactGroups interface
  * with the contacts mixin.
@@ -5004,25 +5004,25 @@ tp_base_contact_list_mixin_register_with_contacts_mixin (
   g_return_if_fail (TP_IS_BASE_CONNECTION (conn));
   g_return_if_fail (self != NULL);
   g_return_if_fail (g_type_is_a (type,
-        TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST));
+        TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST1));
 
   tp_contacts_mixin_add_contact_attributes_iface (object,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1,
       tp_base_contact_list_fill_list_contact_attributes);
 
-  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS)
+  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1)
       && TP_IS_CONTACT_GROUP_LIST (self))
     {
       tp_contacts_mixin_add_contact_attributes_iface (object,
-          TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
+          TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1,
           tp_base_contact_list_fill_groups_contact_attributes);
     }
 
-  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING)
+  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING1)
       && TP_IS_BLOCKABLE_CONTACT_LIST (self))
     {
       tp_contacts_mixin_add_contact_attributes_iface (object,
-          TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING,
+          TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING1,
           tp_base_contact_list_fill_blocking_contact_attributes);
     }
 }

@@ -104,7 +104,7 @@ _tp_connection_prepare_avatar_requirements_async (TpProxy *proxy,
       _tp_connection_prepare_avatar_requirements_async);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
-      TP_IFACE_CONNECTION_INTERFACE_AVATARS,
+      TP_IFACE_CONNECTION_INTERFACE_AVATARS1,
       tp_connection_get_avatar_requirements_cb, result, g_object_unref, NULL);
 }
 

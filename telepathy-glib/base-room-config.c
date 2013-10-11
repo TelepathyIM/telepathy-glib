@@ -719,7 +719,7 @@ tp_base_room_config_register_class (
   GObjectClass *cls = G_OBJECT_CLASS (base_channel_class);
 
   tp_dbus_properties_mixin_implement_interface (cls,
-      TP_IFACE_QUARK_CHANNEL_INTERFACE_ROOM_CONFIG,
+      TP_IFACE_QUARK_CHANNEL_INTERFACE_ROOM_CONFIG1,
       room_config_getter, NULL, room_config_properties);
 }
 
@@ -759,7 +759,7 @@ validate_property_type (
 
   if (G_UNLIKELY (iface_info == NULL))
     iface_info = tp_svc_interface_get_dbus_properties_info (
-          TP_TYPE_SVC_CHANNEL_INTERFACE_ROOM_CONFIG);
+          TP_TYPE_SVC_CHANNEL_INTERFACE_ROOM_CONFIG1);
 
   g_return_val_if_fail (iface_info != NULL, FALSE);
 
@@ -893,7 +893,7 @@ update_cb (
         }
 
       tp_base_room_config_emit_properties_changed (self);
-      tp_svc_channel_interface_room_config_return_from_update_configuration (
+      tp_svc_channel_interface_room_config1_return_from_update_configuration (
           priv->update_configuration_ctx);
     }
   else
@@ -920,7 +920,7 @@ tp_base_room_config_update_finish (
 
 static void
 tp_base_room_config_update_configuration (
-    TpSvcChannelInterfaceRoomConfig *iface,
+    TpSvcChannelInterfaceRoomConfig1 *iface,
     GHashTable *properties,
     DBusGMethodInvocation *context)
 {
@@ -974,7 +974,7 @@ tp_base_room_config_update_configuration (
 
   if (g_hash_table_size (properties) == 0)
     {
-      tp_svc_channel_interface_room_config_return_from_update_configuration (
+      tp_svc_channel_interface_room_config1_return_from_update_configuration (
           context);
       return;
     }
@@ -1020,7 +1020,7 @@ tp_base_room_config_iface_init (
     gpointer g_iface,
     gpointer iface_data)
 {
-#define IMPLEMENT(x) tp_svc_channel_interface_room_config_implement_##x (\
+#define IMPLEMENT(x) tp_svc_channel_interface_room_config1_implement_##x (\
     g_iface, tp_base_room_config_##x)
   IMPLEMENT (update_configuration);
 #undef IMPLEMENT
@@ -1176,7 +1176,7 @@ tp_base_room_config_emit_properties_changed (
               g_strjoinv (", ", (gchar **) changed->pdata));
           tp_dbus_properties_mixin_emit_properties_changed (
               G_OBJECT (priv->channel),
-              TP_IFACE_CHANNEL_INTERFACE_ROOM_CONFIG,
+              TP_IFACE_CHANNEL_INTERFACE_ROOM_CONFIG1,
               (const gchar * const *) changed->pdata);
         }
 
@@ -1219,7 +1219,7 @@ tp_base_room_config_set_retrieved (
       priv->configuration_retrieved = TRUE;
       tp_dbus_properties_mixin_emit_properties_changed_varargs (
           G_OBJECT (priv->channel),
-          TP_IFACE_CHANNEL_INTERFACE_ROOM_CONFIG,
+          TP_IFACE_CHANNEL_INTERFACE_ROOM_CONFIG1,
           "ConfigurationRetrieved", NULL);
     }
 }

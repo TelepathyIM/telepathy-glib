@@ -64,7 +64,7 @@ interested_connection_constructed (GObject *object)
     chain_up (object);
 
   tp_base_connection_add_possible_client_interest (base,
-      TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION);
+      TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION1);
   tp_base_connection_add_possible_client_interest (base,
       g_quark_from_static_string (SUPPORTED_TOKEN));
 }
@@ -121,7 +121,7 @@ location_interested_cb (TpBaseConnection *unused G_GNUC_UNUSED,
     const gchar *iface,
     Test *test)
 {
-  g_assert_cmpstr (iface, ==, TP_IFACE_CONNECTION_INTERFACE_LOCATION);
+  g_assert_cmpstr (iface, ==, TP_IFACE_CONNECTION_INTERFACE_LOCATION1);
 
   g_ptr_array_add (test->log, g_strdup ("Location interested"));
 }
@@ -139,7 +139,7 @@ location_uninterested_cb (TpBaseConnection *unused G_GNUC_UNUSED,
     const gchar *iface,
     Test *test)
 {
-  g_assert_cmpstr (iface, ==, TP_IFACE_CONNECTION_INTERFACE_LOCATION);
+  g_assert_cmpstr (iface, ==, TP_IFACE_CONNECTION_INTERFACE_LOCATION1);
 
   g_ptr_array_add (test->log, g_strdup ("Location uninterested"));
 }
@@ -209,13 +209,13 @@ setup (Test *test,
   g_signal_connect (test->service_conn,
       "clients-interested", G_CALLBACK (interested_cb), test);
   g_signal_connect (test->service_conn,
-      "clients-interested::" TP_IFACE_CONNECTION_INTERFACE_LOCATION,
+      "clients-interested::" TP_IFACE_CONNECTION_INTERFACE_LOCATION1,
       G_CALLBACK (location_interested_cb), test);
 
   g_signal_connect (test->service_conn,
       "clients-uninterested", G_CALLBACK (uninterested_cb), test);
   g_signal_connect (test->service_conn,
-      "clients-uninterested::" TP_IFACE_CONNECTION_INTERFACE_LOCATION,
+      "clients-uninterested::" TP_IFACE_CONNECTION_INTERFACE_LOCATION1,
       G_CALLBACK (location_uninterested_cb), test);
 }
 
@@ -267,9 +267,9 @@ test_interested_client (Test *test,
   guint i;
 
   tp_connection_add_client_interest_by_id (test->conn,
-      TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION);
+      TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION1);
   tp_connection_add_client_interest_by_id (test->conn,
-      TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS);
+      TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS1);
 
   /* run until (after) the AddClientInterest calls have gone out */
   tp_tests_proxy_run_until_dbus_queue_processed (test->client_bus);
@@ -289,7 +289,7 @@ test_interested_client (Test *test,
   i = 0;
   g_assert_cmpuint (test->log->len, >, i);
   g_assert_cmpstr (g_ptr_array_index (test->log, i), ==,
-      "interested in " TP_IFACE_CONNECTION_INTERFACE_LOCATION);
+      "interested in " TP_IFACE_CONNECTION_INTERFACE_LOCATION1);
 
   i++;
   g_assert_cmpuint (test->log->len, >, i);
@@ -299,7 +299,7 @@ test_interested_client (Test *test,
   i++;
   g_assert_cmpuint (test->log->len, >, i);
   g_assert_cmpstr (g_ptr_array_index (test->log, i), ==,
-      "uninterested in " TP_IFACE_CONNECTION_INTERFACE_LOCATION);
+      "uninterested in " TP_IFACE_CONNECTION_INTERFACE_LOCATION1);
 
   i++;
   g_assert_cmpuint (test->log->len, >, i);
@@ -315,8 +315,8 @@ test_interest (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
   static const gchar * telepathy[] = {
-      TP_IFACE_CONNECTION_INTERFACE_LOCATION,
-      TP_IFACE_CONNECTION_INTERFACE_AVATARS,
+      TP_IFACE_CONNECTION_INTERFACE_LOCATION1,
+      TP_IFACE_CONNECTION_INTERFACE_AVATARS1,
       NULL
   };
   static const gchar * hansard[] = {
@@ -358,7 +358,7 @@ test_interest (Test *test,
   i = 0;
   g_assert_cmpuint (test->log->len, >, i);
   g_assert_cmpstr (g_ptr_array_index (test->log, i), ==,
-      "interested in " TP_IFACE_CONNECTION_INTERFACE_LOCATION);
+      "interested in " TP_IFACE_CONNECTION_INTERFACE_LOCATION1);
 
   i++;
   g_assert_cmpuint (test->log->len, >, i);
@@ -378,7 +378,7 @@ test_interest (Test *test,
   i++;
   g_assert_cmpuint (test->log->len, >, i);
   g_assert_cmpstr (g_ptr_array_index (test->log, i), ==,
-      "uninterested in " TP_IFACE_CONNECTION_INTERFACE_LOCATION);
+      "uninterested in " TP_IFACE_CONNECTION_INTERFACE_LOCATION1);
 
   i++;
   g_assert_cmpuint (test->log->len, >, i);

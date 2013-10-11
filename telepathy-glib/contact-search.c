@@ -215,10 +215,10 @@ _create_search_channel_cb (GObject *source_object,
 
   DEBUG ("Got channel: %s", tp_proxy_get_object_path (self->priv->channel));
 
-  if (tp_cli_channel_type_contact_search_connect_to_search_result_received (
+  if (tp_cli_channel_type_contact_search1_connect_to_search_result_received (
           self->priv->channel, _search_results_received,
           NULL, NULL, G_OBJECT (self), &error) == NULL ||
-      tp_cli_channel_type_contact_search_connect_to_search_state_changed (
+      tp_cli_channel_type_contact_search1_connect_to_search_state_changed (
           self->priv->channel, _search_state_changed,
           NULL, NULL, G_OBJECT (self), &error) == NULL)
     {
@@ -229,9 +229,9 @@ _create_search_channel_cb (GObject *source_object,
   properties = _tp_channel_get_immutable_properties (self->priv->channel);
 
   self->priv->keys = tp_asv_get_strv (properties,
-      TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH_AVAILABLE_SEARCH_KEYS);
+      TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH1_AVAILABLE_SEARCH_KEYS);
   server = tp_asv_get_string (properties,
-      TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH_SERVER);
+      TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH1_SERVER);
   if (g_strcmp0 (server, self->priv->server) != 0)
     {
       g_free (self->priv->server);
@@ -239,7 +239,7 @@ _create_search_channel_cb (GObject *source_object,
       g_object_notify (G_OBJECT (self), "server");
     }
   limit = tp_asv_get_uint32 (properties,
-      TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH_LIMIT, &valid);
+      TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH1_LIMIT, &valid);
   if (valid && limit != self->priv->limit)
     {
       self->priv->limit = limit;
@@ -275,17 +275,17 @@ tp_contact_search_open_new_channel (TpContactSearch *self)
   request = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE,
       G_TYPE_STRING,
-      TP_IFACE_CHANNEL_TYPE_CONTACT_SEARCH,
+      TP_IFACE_CHANNEL_TYPE_CONTACT_SEARCH1,
       NULL);
 
   if (self->priv->server != NULL)
     tp_asv_set_string (request,
-        TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH_SERVER,
+        TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH1_SERVER,
         self->priv->server);
 
   if (self->priv->limit != 0)
     tp_asv_set_uint32 (request,
-      TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH_LIMIT,
+      TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH1_LIMIT,
       self->priv->limit);
 
   channel_request = tp_account_channel_request_new (self->priv->account,
@@ -663,7 +663,7 @@ tp_contact_search_start (TpContactSearch *self,
   g_return_if_fail (self->priv->state ==
       TP_CHANNEL_CONTACT_SEARCH_STATE_NOT_STARTED);
 
-  tp_cli_channel_type_contact_search_call_search (self->priv->channel,
+  tp_cli_channel_type_contact_search1_call_search (self->priv->channel,
       -1, criteria, NULL, NULL, NULL, NULL);
 }
 

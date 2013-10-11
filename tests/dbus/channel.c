@@ -638,7 +638,7 @@ test_contacts (Test *test,
 
   handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
   g_array_append_val (handles, handle);
-  tp_cli_channel_interface_group_call_add_members (test->channel_room, -1,
+  tp_cli_channel_interface_group1_call_add_members (test->channel_room, -1,
       handles, "hello", NULL, NULL, NULL, NULL);
   g_array_unref (handles);
 

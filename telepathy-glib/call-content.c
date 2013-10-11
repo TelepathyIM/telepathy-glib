@@ -254,9 +254,9 @@ got_all_properties_cb (TpProxy *proxy,
     }
 
   if (tp_proxy_has_interface_by_id (self,
-          TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_DTMF))
+          TP_IFACE_QUARK_CALL1_CONTENT_INTERFACE_DTMF1))
     {
-      tp_cli_call_content_interface_dtmf_connect_to_stopped_tones (self,
+      tp_cli_call1_content_interface_dtmf1_connect_to_stopped_tones (self,
           tones_stopped_cb, NULL, NULL, NULL, NULL);
     }
 
@@ -327,7 +327,7 @@ send_tones_cancelled_idle_cb (gpointer user_data)
    * turn in the queue to preserve order. */
   if (self->priv->current_tones == data)
     {
-      tp_cli_call_content_interface_dtmf_call_stop_tone (self, -1,
+      tp_cli_call1_content_interface_dtmf1_call_stop_tone (self, -1,
           NULL, NULL, NULL, NULL);
     }
 
@@ -411,7 +411,7 @@ maybe_send_tones (TpCallContent *self)
     }
 
   DEBUG ("Emitting multiple tones: %s", self->priv->current_tones->tones);
-  tp_cli_call_content_interface_dtmf_call_multiple_tones (self, -1,
+  tp_cli_call1_content_interface_dtmf1_call_multiple_tones (self, -1,
       self->priv->current_tones->tones, multiple_tones_cb, NULL, NULL, NULL);
 }
 
@@ -423,13 +423,13 @@ tp_call_content_constructed (GObject *obj)
   ((GObjectClass *) tp_call_content_parent_class)->constructed (obj);
 
   /* Connect signals for mutable properties */
-  tp_cli_call_content_connect_to_streams_added (self,
+  tp_cli_call1_content_connect_to_streams_added (self,
       streams_added_cb, NULL, NULL, G_OBJECT (self), NULL);
-  tp_cli_call_content_connect_to_streams_removed (self,
+  tp_cli_call1_content_connect_to_streams_removed (self,
       streams_removed_cb, NULL, NULL, G_OBJECT (self), NULL);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
-      TP_IFACE_CALL_CONTENT,
+      TP_IFACE_CALL1_CONTENT,
       got_all_properties_cb, NULL, NULL, G_OBJECT (self));
 }
 
@@ -553,7 +553,7 @@ tp_call_content_class_init (TpCallContentClass *klass)
   gobject_class->finalize = tp_call_content_finalize;
 
   proxy_class->list_features = tp_call_content_list_features;
-  proxy_class->interface = TP_IFACE_QUARK_CALL_CONTENT;
+  proxy_class->interface = TP_IFACE_QUARK_CALL1_CONTENT;
 
   g_type_class_add_private (gobject_class, sizeof (TpCallContentPrivate));
   tp_call_content_init_known_interfaces ();
@@ -878,7 +878,7 @@ tp_call_content_remove_async (TpCallContent *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_call_content_remove_async);
 
-  tp_cli_call_content_call_remove (self, -1,
+  tp_cli_call1_content_call_remove (self, -1,
       generic_async_cb, result, g_object_unref, G_OBJECT (self));
 }
 
@@ -928,7 +928,7 @@ tp_call_content_send_tones_async (TpCallContent *self,
   g_return_if_fail (TP_IS_CALL_CONTENT (self));
 
   if (!tp_proxy_has_interface_by_id (self,
-          TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_DTMF))
+          TP_IFACE_QUARK_CALL1_CONTENT_INTERFACE_DTMF1))
     {
       g_simple_async_report_error_in_idle (G_OBJECT (self),
           callback, user_data, TP_ERROR, TP_ERROR_NOT_CAPABLE,

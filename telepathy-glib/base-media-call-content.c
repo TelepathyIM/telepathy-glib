@@ -22,12 +22,12 @@
 /**
  * SECTION:base-media-call-content
  * @title: TpBaseMediaCallContent
- * @short_description: base class for #TpSvcCallContentInterfaceMedia
+ * @short_description: base class for #TpSvcCall1ContentInterfaceMedia
  *  implementations
- * @see_also: #TpSvcCallContentInterfaceMedia, #TpBaseCallChannel,
+ * @see_also: #TpSvcCall1ContentInterfaceMedia, #TpBaseCallChannel,
  *  #TpBaseCallContent and #TpBaseCallStream
  *
- * This base class makes it easier to write #TpSvcCallContentInterfaceMedia
+ * This base class makes it easier to write #TpSvcCall1ContentInterfaceMedia
  * implementations by implementing its properties and methods.
  *
  * Subclasses must still implement #TpBaseCallContent's virtual methods.
@@ -80,7 +80,7 @@ static void call_content_media_iface_init (gpointer, gpointer);
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseMediaCallContent,
     tp_base_media_call_content, TP_TYPE_BASE_CALL_CONTENT,
 
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_CONTENT_INTERFACE_MEDIA,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL1_CONTENT_INTERFACE_MEDIA,
       call_content_media_iface_init)
     )
 
@@ -457,7 +457,7 @@ tp_base_media_call_content_class_init (TpBaseMediaCallContentClass *klass)
       2, G_TYPE_UINT, G_TYPE_HASH_TABLE);
 
   tp_dbus_properties_mixin_implement_interface (object_class,
-      TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_MEDIA,
+      TP_IFACE_QUARK_CALL1_CONTENT_INTERFACE_MEDIA,
       tp_dbus_properties_mixin_getter_gobject_properties,
       NULL,
       content_media_props);
@@ -477,7 +477,7 @@ set_local_properties (TpBaseMediaCallContent *self,
   g_signal_emit (self, _signals[LOCAL_MEDIA_DESCRIPTION_UPDATED], 0,
       contact, properties);
 
-  tp_svc_call_content_interface_media_emit_local_media_description_changed (
+  tp_svc_call1_content_interface_media_emit_local_media_description_changed (
       self, properties);
 }
 
@@ -499,7 +499,7 @@ set_remote_properties (TpBaseMediaCallContent *self,
       GUINT_TO_POINTER (contact),
       properties);
 
-  tp_svc_call_content_interface_media_emit_remote_media_descriptions_changed (
+  tp_svc_call1_content_interface_media_emit_remote_media_descriptions_changed (
       self, update);
 
   g_hash_table_unref (update);
@@ -544,7 +544,7 @@ out:
   g_clear_object (&self->priv->current_offer);
   g_clear_object (&self->priv->current_offer_result);
   g_clear_object (&self->priv->current_offer_cancellable);
-  tp_svc_call_content_interface_media_emit_media_description_offer_done (self);
+  tp_svc_call1_content_interface_media_emit_media_description_offer_done (self);
 
   next_offer (self);
 
@@ -593,7 +593,7 @@ next_offer (TpBaseMediaCallContent *self)
       self->priv->current_offer);
 
   DEBUG ("emitting NewMediaDescriptionOffer: %s", object_path);
-  tp_svc_call_content_interface_media_emit_new_media_description_offer (self,
+  tp_svc_call1_content_interface_media_emit_new_media_description_offer (self,
       object_path, properties);
   g_hash_table_unref (properties);
 }
@@ -674,7 +674,7 @@ tp_base_media_call_content_offer_media_description_finish (
 
 static void
 tp_base_media_call_content_update_local_media_description (
-    TpSvcCallContentInterfaceMedia *iface,
+    TpSvcCall1ContentInterfaceMedia *iface,
     GHashTable *properties,
     DBusGMethodInvocation *context)
 {
@@ -685,7 +685,7 @@ tp_base_media_call_content_update_local_media_description (
   gboolean valid;
 
   contact = tp_asv_get_uint32 (properties,
-      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT, &valid);
+      TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT, &valid);
 
   if (!valid)
     {
@@ -709,7 +709,7 @@ tp_base_media_call_content_update_local_media_description (
 
 
   codecs = tp_asv_get_boxed (properties,
-      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_CODECS,
+      TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_CODECS,
       TP_ARRAY_TYPE_CODEC_LIST);
   if (!codecs || codecs->len == 0)
     {
@@ -731,12 +731,12 @@ tp_base_media_call_content_update_local_media_description (
 
   set_local_properties (self, contact, properties);
 
-  tp_svc_call_content_interface_media_return_from_update_local_media_description
+  tp_svc_call1_content_interface_media_return_from_update_local_media_description
       (context);
 }
 
 static void
-tp_base_media_call_content_fail (TpSvcCallContentInterfaceMedia *iface,
+tp_base_media_call_content_fail (TpSvcCall1ContentInterfaceMedia *iface,
     const GValueArray *reason_array,
     DBusGMethodInvocation *context)
 {
@@ -748,12 +748,12 @@ tp_base_media_call_content_fail (TpSvcCallContentInterfaceMedia *iface,
   _tp_base_call_channel_remove_content_internal (channel, content,
       reason_array);
 
-  tp_svc_call_content_interface_media_return_from_fail (context);
+  tp_svc_call1_content_interface_media_return_from_fail (context);
 }
 
 static void
 tp_base_media_call_content_acknowledge_dtmf_change (
-    TpSvcCallContentInterfaceMedia *iface,
+    TpSvcCall1ContentInterfaceMedia *iface,
     guchar in_Event,
     guint in_State,
     DBusGMethodInvocation *context)
@@ -803,7 +803,7 @@ tp_base_media_call_content_acknowledge_dtmf_change (
 
   /* Only tell the UI we are sending if we are actually sending */
   if (in_State == TP_SENDING_STATE_SENDING)
-    tp_svc_call_content_interface_dtmf_emit_sending_tones (self,
+    tp_svc_call1_content_interface_dtmf1_emit_sending_tones (self,
         self->priv->currently_sending_tones);
   else if (in_State == TP_SENDING_STATE_NONE &&
       self->priv->currently_sending_tones &&
@@ -816,7 +816,7 @@ tp_base_media_call_content_acknowledge_dtmf_change (
 
 out:
 
-  tp_svc_call_content_interface_media_return_from_acknowledge_dtmf_change (
+  tp_svc_call1_content_interface_media_return_from_acknowledge_dtmf_change (
       context);
 }
 
@@ -824,10 +824,9 @@ out:
 static void
 call_content_media_iface_init (gpointer g_iface, gpointer iface_data)
 {
-  TpSvcCallContentInterfaceMediaClass *klass =
-    (TpSvcCallContentInterfaceMediaClass *) g_iface;
+  TpSvcCall1ContentInterfaceMediaClass *klass = g_iface;
 
-#define IMPLEMENT(x) tp_svc_call_content_interface_media_implement_##x (\
+#define IMPLEMENT(x) tp_svc_call1_content_interface_media_implement_##x (\
     klass, tp_base_media_call_content_##x)
   IMPLEMENT(update_local_media_description);
   IMPLEMENT(acknowledge_dtmf_change);
@@ -1068,7 +1067,7 @@ tp_base_media_call_content_dtmf_next (TpBaseMediaCallContent *self)
         {
           self->priv->current_dtmf_state =
               TP_SENDING_STATE_PENDING_STOP_SENDING;
-          tp_svc_call_content_interface_media_emit_dtmf_change_requested (self,
+          tp_svc_call1_content_interface_media_emit_dtmf_change_requested (self,
               self->priv->current_dtmf_event,
               self->priv->current_dtmf_state);
           return;
@@ -1083,7 +1082,7 @@ tp_base_media_call_content_dtmf_next (TpBaseMediaCallContent *self)
           self->priv->current_dtmf_state =
               TP_SENDING_STATE_PENDING_STOP_SENDING;
 
-          tp_svc_call_content_interface_media_emit_dtmf_change_requested (self,
+          tp_svc_call1_content_interface_media_emit_dtmf_change_requested (self,
               self->priv->current_dtmf_event,
               self->priv->current_dtmf_state);
         }
@@ -1118,21 +1117,21 @@ tp_base_media_call_content_dtmf_next (TpBaseMediaCallContent *self)
                 self->priv->current_dtmf_event = _tp_dtmf_char_to_event (next);
                 self->priv->current_dtmf_state = TP_SENDING_STATE_PENDING_SEND;
 
-                tp_svc_call_content_interface_media_emit_dtmf_change_requested (
+                tp_svc_call1_content_interface_media_emit_dtmf_change_requested (
                     self, self->priv->current_dtmf_event,
                     self->priv->current_dtmf_state);
                 break;
               case DTMF_CHAR_CLASS_PAUSE:
                 self->priv->tones_pause_timeout_id = g_timeout_add (
                     DTMF_PAUSE_MS, dtmf_pause_timeout_func, self);
-                tp_svc_call_content_interface_dtmf_emit_sending_tones (self,
+                tp_svc_call1_content_interface_dtmf1_emit_sending_tones (self,
                     self->priv->currently_sending_tones);
                 break;
               case DTMF_CHAR_CLASS_WAIT_FOR_USER:
                 self->priv->deferred_tones =
                     g_strdup (self->priv->currently_sending_tones + 1);
                 self->priv->currently_sending_tones = "";
-                tp_svc_call_content_interface_dtmf_emit_tones_deferred (self,
+                tp_svc_call1_content_interface_dtmf1_emit_tones_deferred (self,
                     self->priv->deferred_tones);
 
                 /* Let's stop here ! */
@@ -1145,7 +1144,7 @@ tp_base_media_call_content_dtmf_next (TpBaseMediaCallContent *self)
         else
           {
           done:
-            tp_svc_call_content_interface_dtmf_emit_stopped_tones (self,
+            tp_svc_call1_content_interface_dtmf1_emit_stopped_tones (self,
                 self->priv->tones_cancelled && self->priv->multiple_tones);
             self->priv->tones_cancelled = FALSE;
             g_free (self->priv->requested_tones);
@@ -1167,10 +1166,10 @@ tp_base_media_call_content_get_interfaces (TpBaseCallContent *bcc)
   interfaces = TP_BASE_CALL_CONTENT_CLASS (
       tp_base_media_call_content_parent_class)->get_interfaces (bcc);
 
-  g_ptr_array_add (interfaces, TP_IFACE_CALL_CONTENT_INTERFACE_MEDIA);
+  g_ptr_array_add (interfaces, TP_IFACE_CALL1_CONTENT_INTERFACE_MEDIA);
 
   if (tp_base_call_content_get_media_type (bcc) == TP_MEDIA_STREAM_TYPE_AUDIO)
-    g_ptr_array_add (interfaces, TP_IFACE_CALL_CONTENT_INTERFACE_DTMF);
+    g_ptr_array_add (interfaces, TP_IFACE_CALL1_CONTENT_INTERFACE_DTMF1);
 
   return interfaces;
 }

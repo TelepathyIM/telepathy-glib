@@ -574,7 +574,7 @@ test_avatar_data (Fixture *f,
   g_message (G_STRFUNC);
 
   /* Check if AvatarRetrieved gets called */
-  signal_id = tp_cli_connection_interface_avatars_connect_to_avatar_retrieved (
+  signal_id = tp_cli_connection_interface_avatars1_connect_to_avatar_retrieved (
       client_conn, avatar_retrieved_cb, &avatar_retrieved_called, NULL, NULL,
       &error);
   g_assert_no_error (error);

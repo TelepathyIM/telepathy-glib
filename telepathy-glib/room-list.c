@@ -399,7 +399,7 @@ tp_room_list_start (TpRoomList *self)
 {
   g_return_if_fail (self->priv->channel != NULL);
 
-  tp_cli_channel_type_room_list_call_list_rooms (self->priv->channel, -1,
+  tp_cli_channel_type_room_list1_call_list_rooms (self->priv->channel, -1,
       list_rooms_cb, NULL, NULL, G_OBJECT (self));
 }
 
@@ -446,14 +446,14 @@ create_channel_cb (GObject *source_object,
   self->priv->invalidated_id = tp_g_signal_connect_object (self->priv->channel,
       "invalidated", G_CALLBACK (chan_invalidated_cb), self, 0);
 
-  if (tp_cli_channel_type_room_list_connect_to_got_rooms (self->priv->channel,
+  if (tp_cli_channel_type_room_list1_connect_to_got_rooms (self->priv->channel,
         got_rooms_cb, NULL, NULL, G_OBJECT (self), &error) == NULL)
     {
       DEBUG ("Failed to connect GotRooms signal: %s", error->message);
       goto out;
     }
 
-  tp_cli_channel_type_room_list_connect_to_listing_rooms (self->priv->channel,
+  tp_cli_channel_type_room_list1_connect_to_listing_rooms (self->priv->channel,
       listing_rooms_cb, NULL, NULL, G_OBJECT (self), &error);
   if (error != NULL)
     {
@@ -464,7 +464,7 @@ create_channel_cb (GObject *source_object,
   properties = _tp_channel_get_immutable_properties (self->priv->channel);
 
   server = tp_asv_get_string (properties,
-      TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER);
+      TP_PROP_CHANNEL_TYPE_ROOM_LIST1_SERVER);
   if (tp_strdiff (server, self->priv->server))
     {
       if (tp_str_empty (server) && self->priv->server != NULL)
@@ -498,11 +498,11 @@ open_new_channel (TpRoomList *self)
 
   request = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-        TP_IFACE_CHANNEL_TYPE_ROOM_LIST,
+        TP_IFACE_CHANNEL_TYPE_ROOM_LIST1,
       NULL);
 
   if (self->priv->server != NULL)
-    tp_asv_set_string (request, TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER,
+    tp_asv_set_string (request, TP_PROP_CHANNEL_TYPE_ROOM_LIST1_SERVER,
         self->priv->server);
 
   channel_request = tp_account_channel_request_new (self->priv->account,

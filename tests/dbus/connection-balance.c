@@ -41,7 +41,7 @@ G_DEFINE_TYPE_WITH_CODE (BalancedConnection,
     balanced_connection,
     TP_TESTS_TYPE_CONTACTS_CONNECTION,
 
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_BALANCE, NULL))
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_BALANCE1, NULL))
 
 enum
 {
@@ -90,7 +90,7 @@ get_interfaces (TpBaseConnection *base)
   interfaces = TP_BASE_CONNECTION_CLASS (
       balanced_connection_parent_class)->get_interfaces_always_present (base);
 
-  g_ptr_array_add (interfaces, TP_IFACE_CONNECTION_INTERFACE_BALANCE);
+  g_ptr_array_add (interfaces, TP_IFACE_CONNECTION_INTERFACE_BALANCE1);
 
   return interfaces;
 }
@@ -122,7 +122,7 @@ balanced_connection_class_init (BalancedConnectionClass *cls)
         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   tp_dbus_properties_mixin_implement_interface (object_class,
-      TP_IFACE_QUARK_CONNECTION_INTERFACE_BALANCE,
+      TP_IFACE_QUARK_CONNECTION_INTERFACE_BALANCE1,
       tp_dbus_properties_mixin_getter_gobject_properties, NULL,
       balance_props);
 }
@@ -352,7 +352,7 @@ test_balance (Test *test,
               G_TYPE_STRING, BALANCE_CURRENCY,
               G_TYPE_INVALID);
 
-  tp_svc_connection_interface_balance_emit_balance_changed (
+  tp_svc_connection_interface_balance1_emit_balance_changed (
       test->service_conn_as_base, v);
 
   g_signal_connect (test->conn, "balance-changed",

@@ -461,7 +461,7 @@ tp_capabilities_supports_sms (TpCapabilities *self)
         continue;
 
       /* SMSChannel be either in fixed or allowed properties */
-      if (tp_asv_get_boolean (fixed, TP_PROP_CHANNEL_INTERFACE_SMS_SMS_CHANNEL,
+      if (tp_asv_get_boolean (fixed, TP_PROP_CHANNEL_INTERFACE_SMS1_SMS_CHANNEL,
             NULL))
         {
           /* In fixed, succeed if there is no more fixed properties required */
@@ -471,7 +471,7 @@ tp_capabilities_supports_sms (TpCapabilities *self)
         {
           /* Not in fixed; check allowed */
           if (!tp_strv_contains (allowed,
-                TP_PROP_CHANNEL_INTERFACE_SMS_SMS_CHANNEL))
+                TP_PROP_CHANNEL_INTERFACE_SMS1_SMS_CHANNEL))
             continue;
 
           nb_fixed_props = 2;
@@ -510,7 +510,7 @@ supports_call_full (TpCapabilities *self,
           &allowed_prop);
 
       chan_type = tp_asv_get_string (fixed_prop, TP_PROP_CHANNEL_CHANNEL_TYPE);
-      if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_CALL))
+      if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_CALL1))
         continue;
 
       handle_type = tp_asv_get_uint32 (fixed_prop,
@@ -522,12 +522,12 @@ supports_call_full (TpCapabilities *self,
         {
           /* We want audio, INITIAL_AUDIO must be in either fixed or allowed */
           if (tp_asv_get_boolean (fixed_prop,
-                  TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, NULL))
+                  TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO, NULL))
             {
               nb_fixed_props++;
             }
           else if (!tp_strv_contains (allowed_prop,
-                  TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO))
+                  TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO))
             {
               continue;
             }
@@ -537,12 +537,12 @@ supports_call_full (TpCapabilities *self,
         {
           /* We want video, INITIAL_VIDEO must be in either fixed or allowed */
           if (tp_asv_get_boolean (fixed_prop,
-                  TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, NULL))
+                  TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO, NULL))
             {
               nb_fixed_props++;
             }
           else if (!tp_strv_contains (allowed_prop,
-                  TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO))
+                  TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO))
             {
               continue;
             }
@@ -644,7 +644,7 @@ supports_file_transfer (TpCapabilities *self,
 
       chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
 
-      if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER))
+      if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1))
         continue;
 
       handle_type = tp_asv_get_uint32 (fixed,
@@ -666,7 +666,7 @@ supports_file_transfer (TpCapabilities *self,
           /* Description makes no sense as a fixed property so we assume
            * the CM won't be ridiculous */
           if (!tp_strv_contains (allowed,
-                TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DESCRIPTION))
+                TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_DESCRIPTION))
             continue;
         }
 
@@ -674,7 +674,7 @@ supports_file_transfer (TpCapabilities *self,
         {
           /* makes no sense as a fixed property */
           if (!tp_strv_contains (allowed,
-                TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DATE))
+                TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_DATE))
             continue;
         }
 
@@ -682,7 +682,7 @@ supports_file_transfer (TpCapabilities *self,
         {
           /* makes no sense as a fixed property */
           if (!tp_strv_contains (allowed,
-                TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_URI))
+                TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_URI))
             continue;
         }
 
@@ -690,7 +690,7 @@ supports_file_transfer (TpCapabilities *self,
         {
           /* makes no sense as a fixed property */
           if (!tp_strv_contains (allowed,
-                TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET))
+                TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_INITIAL_OFFSET))
             continue;
         }
 
@@ -877,8 +877,8 @@ tp_capabilities_supports_stream_tubes (TpCapabilities *self,
     const gchar *service)
 {
   return tp_capabilities_supports_tubes_common (self,
-      TP_IFACE_CHANNEL_TYPE_STREAM_TUBE, handle_type,
-      TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE, service);
+      TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1, handle_type,
+      TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SERVICE, service);
 }
 
 /**
@@ -910,8 +910,8 @@ tp_capabilities_supports_dbus_tubes (TpCapabilities *self,
     const gchar *service_name)
 {
   return tp_capabilities_supports_tubes_common (self,
-      TP_IFACE_CHANNEL_TYPE_DBUS_TUBE, handle_type,
-      TP_PROP_CHANNEL_TYPE_DBUS_TUBE_SERVICE_NAME, service_name);
+      TP_IFACE_CHANNEL_TYPE_DBUS_TUBE1, handle_type,
+      TP_PROP_CHANNEL_TYPE_DBUS_TUBE1_SERVICE_NAME, service_name);
 }
 
 /**
@@ -965,7 +965,7 @@ tp_capabilities_supports_contact_search (TpCapabilities *self,
         continue;
 
       chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
-      if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_CONTACT_SEARCH))
+      if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_CONTACT_SEARCH1))
         continue;
 
       ret = TRUE;
@@ -975,14 +975,14 @@ tp_capabilities_supports_contact_search (TpCapabilities *self,
           if (with_limit)
             {
               if (!tp_strdiff (allowed_properties[j],
-                       TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH_LIMIT))
+                       TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH1_LIMIT))
                 *with_limit = TRUE;
             }
 
           if (with_server)
             {
               if (!tp_strdiff (allowed_properties[j],
-                       TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH_SERVER))
+                       TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH1_SERVER))
                 *with_server = TRUE;
             }
         }
@@ -1063,7 +1063,7 @@ tp_capabilities_supports_room_list (TpCapabilities *self,
         continue;
 
       chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
-      if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_ROOM_LIST))
+      if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_ROOM_LIST1))
         continue;
 
       handle_type = tp_asv_get_uint32 (fixed,
@@ -1074,7 +1074,7 @@ tp_capabilities_supports_room_list (TpCapabilities *self,
       result = TRUE;
 
       server = tp_strv_contains (allowed_properties,
-          TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER);
+          TP_PROP_CHANNEL_TYPE_ROOM_LIST1_SERVER);
       break;
     }
 

@@ -22,11 +22,11 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleAccount,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT,
         account_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_INTERFACE_AVATAR,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_INTERFACE_AVATAR1,
         NULL);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_INTERFACE_ADDRESSING,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_INTERFACE_ADDRESSING1,
         NULL);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_INTERFACE_STORAGE,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_INTERFACE_STORAGE1,
         NULL);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
         tp_dbus_properties_mixin_iface_init)
@@ -34,8 +34,8 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleAccount,
 
 /* TP_IFACE_ACCOUNT is implied */
 static const char *ACCOUNT_INTERFACES[] = {
-    TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING,
-    TP_IFACE_ACCOUNT_INTERFACE_STORAGE,
+    TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING1,
+    TP_IFACE_ACCOUNT_INTERFACE_STORAGE1,
     NULL };
 
 enum
@@ -372,18 +372,18 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
           a_props
         },
         {
-          TP_IFACE_ACCOUNT_INTERFACE_STORAGE,
+          TP_IFACE_ACCOUNT_INTERFACE_STORAGE1,
           tp_dbus_properties_mixin_getter_gobject_properties,
           NULL,
           ais_props
         },
         {
-          TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING,
+          TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING1,
           tp_dbus_properties_mixin_getter_gobject_properties,
           NULL,
           aia_props
         },
-        { TP_IFACE_ACCOUNT_INTERFACE_AVATAR,
+        { TP_IFACE_ACCOUNT_INTERFACE_AVATAR1,
           tp_dbus_properties_mixin_getter_gobject_properties,
           NULL,
           avatar_props
@@ -634,7 +634,7 @@ tp_tests_simple_account_add_uri_scheme (TpTestsSimpleAccount *self,
       NULL);
 
   tp_svc_dbus_properties_emit_properties_changed (self,
-      TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING, changed, NULL);
+      TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING1, changed, NULL);
 
   g_strfreev (schemes);
   g_hash_table_unref (changed);

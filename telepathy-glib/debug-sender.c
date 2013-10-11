@@ -95,7 +95,7 @@ typedef struct {
 G_DEFINE_TYPE_WITH_CODE (TpDebugSender, tp_debug_sender, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
         tp_dbus_properties_mixin_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DEBUG, debug_iface_init))
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DEBUG1, debug_iface_init))
 
 /* properties */
 enum
@@ -247,7 +247,7 @@ tp_debug_sender_class_init (TpDebugSenderClass *klass)
       { NULL }
   };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-      { TP_IFACE_DEBUG,
+      { TP_IFACE_DEBUG1,
         tp_dbus_properties_mixin_getter_gobject_properties,
         tp_dbus_properties_mixin_setter_gobject_properties,
         debug_props,
@@ -281,7 +281,7 @@ tp_debug_sender_class_init (TpDebugSenderClass *klass)
 }
 
 static void
-get_messages (TpSvcDebug *self,
+get_messages (TpSvcDebug1 *self,
     DBusGMethodInvocation *context)
 {
   TpDebugSender *dbg = TP_DEBUG_SENDER (self);
@@ -308,7 +308,7 @@ get_messages (TpSvcDebug *self,
       g_ptr_array_add (messages, g_value_get_boxed (&gvalue));
     }
 
-  tp_svc_debug_return_from_get_messages (context, messages);
+  tp_svc_debug1_return_from_get_messages (context, messages);
 
   for (j = 0; j < messages->len; j++)
     g_boxed_free (TP_STRUCT_TYPE_DEBUG_MESSAGE, messages->pdata[j]);
@@ -320,9 +320,9 @@ static void
 debug_iface_init (gpointer g_iface,
     gpointer iface_data)
 {
-  TpSvcDebugClass *klass = (TpSvcDebugClass *) g_iface;
+  TpSvcDebug1Class *klass = (TpSvcDebug1Class *) g_iface;
 
-  tp_svc_debug_implement_get_messages (klass, get_messages);
+  tp_svc_debug1_implement_get_messages (klass, get_messages);
 }
 
 static void
@@ -374,7 +374,7 @@ _tp_debug_sender_take (TpDebugSender *self,
 
   if (self->priv->enabled)
     {
-      tp_svc_debug_emit_new_debug_message (self, new_msg->timestamp,
+      tp_svc_debug1_emit_new_debug_message (self, new_msg->timestamp,
           new_msg->domain, new_msg->level, new_msg->string);
     }
 

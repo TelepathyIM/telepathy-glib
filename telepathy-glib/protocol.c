@@ -508,25 +508,25 @@ tp_protocol_constructed (GObject *object)
   tp_proxy_add_interfaces (proxy, interfaces);
 
   if (tp_proxy_has_interface_by_id (self,
-        TP_IFACE_QUARK_PROTOCOL_INTERFACE_AVATARS))
+        TP_IFACE_QUARK_PROTOCOL_INTERFACE_AVATARS1))
     {
       self->priv->avatar_req = tp_avatar_requirements_new (
           (GStrv) tp_asv_get_strv (self->priv->protocol_properties,
-            TP_PROP_PROTOCOL_INTERFACE_AVATARS_SUPPORTED_AVATAR_MIME_TYPES),
+            TP_PROP_PROTOCOL_INTERFACE_AVATARS1_SUPPORTED_AVATAR_MIME_TYPES),
           tp_asv_get_uint32 (self->priv->protocol_properties,
-            TP_PROP_PROTOCOL_INTERFACE_AVATARS_MINIMUM_AVATAR_WIDTH, NULL),
+            TP_PROP_PROTOCOL_INTERFACE_AVATARS1_MINIMUM_AVATAR_WIDTH, NULL),
           tp_asv_get_uint32 (self->priv->protocol_properties,
-            TP_PROP_PROTOCOL_INTERFACE_AVATARS_MINIMUM_AVATAR_HEIGHT, NULL),
+            TP_PROP_PROTOCOL_INTERFACE_AVATARS1_MINIMUM_AVATAR_HEIGHT, NULL),
           tp_asv_get_uint32 (self->priv->protocol_properties,
-            TP_PROP_PROTOCOL_INTERFACE_AVATARS_RECOMMENDED_AVATAR_WIDTH, NULL),
+            TP_PROP_PROTOCOL_INTERFACE_AVATARS1_RECOMMENDED_AVATAR_WIDTH, NULL),
           tp_asv_get_uint32 (self->priv->protocol_properties,
-            TP_PROP_PROTOCOL_INTERFACE_AVATARS_RECOMMENDED_AVATAR_HEIGHT, NULL),
+            TP_PROP_PROTOCOL_INTERFACE_AVATARS1_RECOMMENDED_AVATAR_HEIGHT, NULL),
           tp_asv_get_uint32 (self->priv->protocol_properties,
-            TP_PROP_PROTOCOL_INTERFACE_AVATARS_MAXIMUM_AVATAR_WIDTH, NULL),
+            TP_PROP_PROTOCOL_INTERFACE_AVATARS1_MAXIMUM_AVATAR_WIDTH, NULL),
           tp_asv_get_uint32 (self->priv->protocol_properties,
-            TP_PROP_PROTOCOL_INTERFACE_AVATARS_MAXIMUM_AVATAR_HEIGHT, NULL),
+            TP_PROP_PROTOCOL_INTERFACE_AVATARS1_MAXIMUM_AVATAR_HEIGHT, NULL),
           tp_asv_get_uint32 (self->priv->protocol_properties,
-            TP_PROP_PROTOCOL_INTERFACE_AVATARS_MAXIMUM_AVATAR_BYTES, NULL));
+            TP_PROP_PROTOCOL_INTERFACE_AVATARS1_MAXIMUM_AVATAR_BYTES, NULL));
     }
 
   /* become ready immediately */
@@ -1653,30 +1653,30 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
 
   /* Avatars */
   tp_asv_take_boxed (immutables,
-      TP_PROP_PROTOCOL_INTERFACE_AVATARS_SUPPORTED_AVATAR_MIME_TYPES,
+      TP_PROP_PROTOCOL_INTERFACE_AVATARS1_SUPPORTED_AVATAR_MIME_TYPES,
       G_TYPE_STRV,
       g_key_file_get_string_list (file, group, "SupportedAvatarMIMETypes",
         NULL, NULL));
   tp_asv_set_uint32 (immutables,
-      TP_PROP_PROTOCOL_INTERFACE_AVATARS_MINIMUM_AVATAR_HEIGHT,
+      TP_PROP_PROTOCOL_INTERFACE_AVATARS1_MINIMUM_AVATAR_HEIGHT,
       g_key_file_get_uint64 (file, group, "MinimumAvatarHeight", NULL));
   tp_asv_set_uint32 (immutables,
-      TP_PROP_PROTOCOL_INTERFACE_AVATARS_MINIMUM_AVATAR_WIDTH,
+      TP_PROP_PROTOCOL_INTERFACE_AVATARS1_MINIMUM_AVATAR_WIDTH,
       g_key_file_get_uint64 (file, group, "MinimumAvatarWidth", NULL));
   tp_asv_set_uint32 (immutables,
-      TP_PROP_PROTOCOL_INTERFACE_AVATARS_RECOMMENDED_AVATAR_HEIGHT,
+      TP_PROP_PROTOCOL_INTERFACE_AVATARS1_RECOMMENDED_AVATAR_HEIGHT,
       g_key_file_get_uint64 (file, group, "RecommendedAvatarHeight", NULL));
   tp_asv_set_uint32 (immutables,
-      TP_PROP_PROTOCOL_INTERFACE_AVATARS_RECOMMENDED_AVATAR_WIDTH,
+      TP_PROP_PROTOCOL_INTERFACE_AVATARS1_RECOMMENDED_AVATAR_WIDTH,
       g_key_file_get_uint64 (file, group, "RecommendedAvatarWidth", NULL));
   tp_asv_set_uint32 (immutables,
-      TP_PROP_PROTOCOL_INTERFACE_AVATARS_MAXIMUM_AVATAR_HEIGHT,
+      TP_PROP_PROTOCOL_INTERFACE_AVATARS1_MAXIMUM_AVATAR_HEIGHT,
       g_key_file_get_uint64 (file, group, "MaximumAvatarHeight", NULL));
   tp_asv_set_uint32 (immutables,
-      TP_PROP_PROTOCOL_INTERFACE_AVATARS_MAXIMUM_AVATAR_WIDTH,
+      TP_PROP_PROTOCOL_INTERFACE_AVATARS1_MAXIMUM_AVATAR_WIDTH,
       g_key_file_get_uint64 (file, group, "MaximumAvatarWidth", NULL));
   tp_asv_set_uint32 (immutables,
-      TP_PROP_PROTOCOL_INTERFACE_AVATARS_MAXIMUM_AVATAR_BYTES,
+      TP_PROP_PROTOCOL_INTERFACE_AVATARS1_MAXIMUM_AVATAR_BYTES,
       g_key_file_get_uint64 (file, group, "MaximumAvatarBytes", NULL));
 
   rccs = g_ptr_array_new ();

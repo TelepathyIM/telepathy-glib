@@ -302,7 +302,7 @@ prepare_roster (TpConnection *self,
   DEBUG ("CM has the roster for connection %s, fetch it now.",
       tp_proxy_get_object_path (self));
 
-  tp_cli_connection_interface_contact_list_connect_to_contacts_changed (
+  tp_cli_connection_interface_contact_list1_connect_to_contacts_changed (
       self, contacts_changed_cb, NULL, NULL, NULL, NULL);
 
   features = tp_client_factory_dup_contact_features (
@@ -315,7 +315,7 @@ prepare_roster (TpConnection *self,
   supported_interfaces = _tp_contacts_bind_to_signals (self,
       (const GQuark *) features->data);
 
-  tp_cli_connection_interface_contact_list_call_get_contact_list_attributes (
+  tp_cli_connection_interface_contact_list1_call_get_contact_list_attributes (
       self, -1, supported_interfaces,
       got_contact_list_attributes_cb,
       features, (GDestroyNotify) g_array_unref,
@@ -446,14 +446,14 @@ _tp_connection_prepare_contact_list_props_async (TpProxy *proxy,
   TpConnection *self = (TpConnection *) proxy;
   GSimpleAsyncResult *result;
 
-  tp_cli_connection_interface_contact_list_connect_to_contact_list_state_changed
+  tp_cli_connection_interface_contact_list1_connect_to_contact_list_state_changed
       (self, contact_list_state_changed_cb, NULL, NULL, NULL, NULL);
 
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       _tp_connection_prepare_contact_list_props_async);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1,
       prepare_contact_list_props_cb, result, g_object_unref, NULL);
 }
 
@@ -631,18 +631,18 @@ _tp_connection_prepare_contact_groups_async (TpProxy *proxy,
   TpConnection *self = (TpConnection *) proxy;
   GSimpleAsyncResult *result;
 
-  tp_cli_connection_interface_contact_groups_connect_to_groups_created (
+  tp_cli_connection_interface_contact_groups1_connect_to_groups_created (
       self, contact_groups_created_cb, NULL, NULL, NULL, NULL);
-  tp_cli_connection_interface_contact_groups_connect_to_groups_removed (
+  tp_cli_connection_interface_contact_groups1_connect_to_groups_removed (
       self, contact_groups_removed_cb, NULL, NULL, NULL, NULL);
-  tp_cli_connection_interface_contact_groups_connect_to_group_renamed (
+  tp_cli_connection_interface_contact_groups1_connect_to_group_renamed (
       self, contact_group_renamed_cb, NULL, NULL, NULL, NULL);
 
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       _tp_connection_prepare_contact_groups_async);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1,
       prepare_contact_groups_cb, result, g_object_unref, NULL);
 }
 
@@ -810,7 +810,7 @@ generic_callback (TpConnection *self,
     result = g_simple_async_result_new ((GObject *) self, callback, user_data, \
         tp_connection_##method##_async); \
     \
-    tp_cli_connection_interface_contact_list_call_##method (self, -1, handles, \
+    tp_cli_connection_interface_contact_list1_call_##method (self, -1, handles, \
         ##__VA_ARGS__, generic_callback, result, g_object_unref, NULL); \
     g_array_unref (handles); \
   } G_STMT_END
@@ -834,7 +834,7 @@ generic_callback (TpConnection *self,
  * %TP_SUBSCRIPTION_STATE_YES.
  *
  * For this to work properly @self must have interface
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1.
  *
  * Since: 0.15.5
  */
@@ -883,7 +883,7 @@ tp_connection_request_subscription_finish (TpConnection *self,
  * becomes %TP_SUBSCRIPTION_STATE_YES.
  *
  * For this to work properly @self must have interface
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1.
  *
  * Since: 0.15.5
  */
@@ -930,7 +930,7 @@ tp_connection_authorize_publication_finish (TpConnection *self,
  * protocol-dependent whether this works, and under which circumstances.
  *
  * For this to work properly @self must have interface
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1.
  *
  * Since: 0.15.5
  */
@@ -977,7 +977,7 @@ tp_connection_remove_contacts_finish (TpConnection *self,
  * %TP_SUBSCRIPTION_STATE_NO, i.e. stop receiving their presence.
  *
  * For this to work properly @self must have interface
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1.
  *
  * Since: 0.15.5
  */
@@ -1024,7 +1024,7 @@ tp_connection_unsubscribe_finish (TpConnection *self,
  * %TP_SUBSCRIPTION_STATE_NO, i.e. stop sending presence to them.
  *
  * For this to work properly @self must have interface
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1.
  *
  * Since: 0.15.5
  */
@@ -1155,7 +1155,7 @@ tp_connection_get_contact_groups (TpConnection *self)
     result = g_simple_async_result_new ((GObject *) self, callback, user_data, \
         tp_connection_##method##_async); \
     \
-    tp_cli_connection_interface_contact_groups_call_##method (self, -1, \
+    tp_cli_connection_interface_contact_groups1_call_##method (self, -1, \
         group, handles, generic_callback, result, g_object_unref, NULL); \
     g_array_unref (handles); \
   } G_STMT_END
@@ -1174,7 +1174,7 @@ tp_connection_get_contact_groups (TpConnection *self)
  * remove all other members.
  *
  * For this to work properly @self must have interface
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1.
  *
  * Since: 0.15.5
  */
@@ -1222,7 +1222,7 @@ tp_connection_set_group_members_finish (TpConnection *self,
  * Add the given @contacts to the given @group, creating it if necessary.
  *
  * For this to work properly @self must have interface
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1.
  *
  * Since: 0.15.5
  */
@@ -1271,7 +1271,7 @@ tp_connection_add_to_group_finish (TpConnection *self,
  * left in the group afterwards, the group MAY itself be removed.
  *
  * For this to work properly @self must have interface
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1.
  *
  * Since: 0.15.5
  */
@@ -1316,7 +1316,7 @@ tp_connection_remove_from_group_finish (TpConnection *self,
  * Remove all members from the given group, then remove the group itself.
  *
  * For this to work properly @self must have interface
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1.
  *
  * Since: 0.15.5
  */
@@ -1334,7 +1334,7 @@ tp_connection_remove_group_async (TpConnection *self,
     result = g_simple_async_result_new ((GObject *) self, callback, user_data,
         tp_connection_remove_group_async);
 
-    tp_cli_connection_interface_contact_groups_call_remove_group (self, -1,
+    tp_cli_connection_interface_contact_groups1_call_remove_group (self, -1,
         group, generic_callback, result, g_object_unref, NULL);
 }
 
@@ -1373,7 +1373,7 @@ tp_connection_remove_group_finish (TpConnection *self,
  * the old group.
  *
  * For this to work properly @self must have interface
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1.
  *
  * Since: 0.15.5
  */
@@ -1393,7 +1393,7 @@ tp_connection_rename_group_async (TpConnection *self,
     result = g_simple_async_result_new ((GObject *) self, callback, user_data,
         tp_connection_rename_group_async);
 
-    tp_cli_connection_interface_contact_groups_call_rename_group (self, -1,
+    tp_cli_connection_interface_contact_groups1_call_rename_group (self, -1,
         old_name, new_name, generic_callback, result, g_object_unref, NULL);
 }
 
@@ -1459,7 +1459,7 @@ tp_connection_block_contacts_async (TpConnection *self,
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_connection_block_contacts_async);
 
-  tp_cli_connection_interface_contact_blocking_call_block_contacts (self, -1,
+  tp_cli_connection_interface_contact_blocking1_call_block_contacts (self, -1,
       handles, report_abusive, generic_callback, result, g_object_unref, NULL);
   g_array_unref (handles);
 }
@@ -1518,7 +1518,7 @@ tp_connection_unblock_contacts_async (TpConnection *self,
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_connection_unblock_contacts_async);
 
-  tp_cli_connection_interface_contact_blocking_call_unblock_contacts (self, -1,
+  tp_cli_connection_interface_contact_blocking1_call_unblock_contacts (self, -1,
       handles, generic_callback, result, g_object_unref, NULL);
   g_array_unref (handles);
 }
@@ -1861,7 +1861,7 @@ prepare_contact_blocking_cb (TpProxy *proxy,
         }
     }
 
-  tp_cli_connection_interface_contact_blocking_call_request_blocked_contacts (
+  tp_cli_connection_interface_contact_blocking1_call_request_blocked_contacts (
       self, -1, request_blocked_contacts_cb, g_object_ref (result),
       g_object_unref, G_OBJECT (self));
 }
@@ -1893,10 +1893,10 @@ _tp_connection_prepare_contact_blocking_async (TpProxy *proxy,
       _tp_connection_prepare_contact_blocking_async);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING1,
       prepare_contact_blocking_cb, result, g_object_unref, NULL);
 
-  if (tp_cli_connection_interface_contact_blocking_connect_to_blocked_contacts_changed (self,
+  if (tp_cli_connection_interface_contact_blocking1_connect_to_blocked_contacts_changed (self,
         blocked_contacts_changed_cb, NULL, NULL, NULL, &error) == NULL)
     {
       DEBUG ("Failed to connect to BlockedContactsChanged: %s", error->message);

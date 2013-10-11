@@ -80,7 +80,7 @@ test_unsupported_run (Fixture *f,
 {
   gboolean ok;
 
-  ok = tp_cli_connection_interface_mail_notification_run_request_inbox_url (
+  ok = tp_cli_connection_interface_mail_notification1_run_request_inbox_url (
       f->conn, -1, NULL /* "out" arg */, &f->error, NULL);
   g_assert_error (f->error, TP_DBUS_ERRORS, TP_DBUS_ERROR_NO_INTERFACE);
   g_assert (!ok);
@@ -162,7 +162,7 @@ test_unsupported_async (Fixture *f,
 
   f->reentrant = TRUE;
   f->wait = 1;
-  call = tp_cli_connection_interface_mail_notification_call_request_inbox_url (
+  call = tp_cli_connection_interface_mail_notification1_call_request_inbox_url (
       f->conn, -1, inbox_url_cb, f, pretend_to_free, NULL);
   f->reentrant = FALSE;
 
@@ -206,7 +206,7 @@ test_unsupported_signal (Fixture *f,
 {
   TpProxySignalConnection *sc;
 
-  sc = tp_cli_connection_interface_mail_notification_connect_to_mails_received (
+  sc = tp_cli_connection_interface_mail_notification1_connect_to_mails_received (
       f->conn,
       (void (*)(TpConnection *, const GPtrArray *, gpointer, GObject *)) do_nothing,
       f, pretend_to_free, NULL, &f->error);

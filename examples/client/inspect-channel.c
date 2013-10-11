@@ -63,7 +63,7 @@ channel_ready_cb (GObject *source,
   g_strfreev (interfaces);
 
   if (tp_proxy_has_interface_by_id (channel,
-        TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP))
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP1))
     {
       GPtrArray *members = tp_channel_group_dup_members (channel);
       guint i;

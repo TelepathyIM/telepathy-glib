@@ -23,10 +23,10 @@
 /**
  * SECTION:base-call-stream
  * @title: TpBaseCallStream
- * @short_description: base class for #TpSvcCallStream implementations
- * @see_also: #TpSvcCallStream, #TpBaseCallChannel and #TpBaseCallContent
+ * @short_description: base class for #TpSvcCall1Stream implementations
+ * @see_also: #TpSvcCall1Stream, #TpBaseCallChannel and #TpBaseCallContent
  *
- * This base class makes it easier to write #TpSvcCallStream
+ * This base class makes it easier to write #TpSvcCall1Stream
  * implementations by implementing its properties, and some of its methods.
  *
  * Subclasses should fill in #TpBaseCallStreamClass.get_interfaces,
@@ -118,7 +118,7 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseCallStream, tp_base_call_stream,
 
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
         tp_dbus_properties_mixin_iface_init)
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_STREAM, call_stream_iface_init)
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL1_STREAM, call_stream_iface_init)
     )
 
 enum
@@ -319,7 +319,7 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *klass)
     { NULL }
   };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-      { TP_IFACE_CALL_STREAM,
+      { TP_IFACE_CALL1_STREAM,
         tp_dbus_properties_mixin_getter_gobject_properties,
         NULL,
         stream_props,
@@ -570,8 +570,8 @@ tp_base_call_stream_update_local_sending_state (TpBaseCallStream *self,
   reason_array = _tp_base_call_state_reason_new (actor_handle, reason,
       dbus_reason, message);
 
-  tp_svc_call_stream_emit_local_sending_state_changed (
-      TP_SVC_CALL_STREAM (self), new_state, reason_array);
+  tp_svc_call1_stream_emit_local_sending_state_changed (
+      TP_SVC_CALL1_STREAM (self), new_state, reason_array);
 
   tp_value_array_free (reason_array);
 
@@ -673,7 +673,7 @@ tp_base_call_stream_update_remote_sending_state (TpBaseCallStream *self,
   reason_array = _tp_base_call_state_reason_new (actor_handle, reason,
       dbus_reason, message);
 
-  tp_svc_call_stream_emit_remote_members_changed (self, updates, identifiers,
+  tp_svc_call1_stream_emit_remote_members_changed (self, updates, identifiers,
       removed_empty, reason_array);
 
   g_array_unref (removed_empty);
@@ -729,7 +729,7 @@ tp_base_call_stream_remove_member (TpBaseCallStream *self,
   reason_array = _tp_base_call_state_reason_new (actor_handle, reason,
       dbus_reason, message);
 
-  tp_svc_call_stream_emit_remote_members_changed (self, empty_table,
+  tp_svc_call1_stream_emit_remote_members_changed (self, empty_table,
       empty_table, removed_array, reason_array);
 
   tp_value_array_free (reason_array);
@@ -740,7 +740,7 @@ tp_base_call_stream_remove_member (TpBaseCallStream *self,
 }
 
 static void
-tp_base_call_stream_set_sending_dbus (TpSvcCallStream *iface,
+tp_base_call_stream_set_sending_dbus (TpSvcCall1Stream *iface,
     gboolean sending,
     DBusGMethodInvocation *context)
 {
@@ -752,7 +752,7 @@ tp_base_call_stream_set_sending_dbus (TpSvcCallStream *iface,
           TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
           "User changed the sending state", &error))
     {
-      tp_svc_call_stream_return_from_set_sending (context);
+      tp_svc_call1_stream_return_from_set_sending (context);
     }
   else
     {
@@ -763,7 +763,7 @@ tp_base_call_stream_set_sending_dbus (TpSvcCallStream *iface,
 }
 
 static void
-tp_base_call_stream_request_receiving (TpSvcCallStream *iface,
+tp_base_call_stream_request_receiving (TpSvcCall1Stream *iface,
     TpHandle contact,
     gboolean receiving,
     DBusGMethodInvocation *context)
@@ -821,7 +821,7 @@ tp_base_call_stream_request_receiving (TpSvcCallStream *iface,
     goto error;
 
 out:
-  tp_svc_call_stream_return_from_request_receiving (context);
+  tp_svc_call1_stream_return_from_request_receiving (context);
   return;
 
 error:
@@ -832,10 +832,10 @@ error:
 static void
 call_stream_iface_init (gpointer g_iface, gpointer iface_data)
 {
-  TpSvcCallStreamClass *klass =
-    (TpSvcCallStreamClass *) g_iface;
+  TpSvcCall1StreamClass *klass =
+    (TpSvcCall1StreamClass *) g_iface;
 
-#define IMPLEMENT(x, suffix) tp_svc_call_stream_implement_##x (\
+#define IMPLEMENT(x, suffix) tp_svc_call1_stream_implement_##x (\
     klass, tp_base_call_stream_##x##suffix)
   IMPLEMENT(set_sending, _dbus);
   IMPLEMENT(request_receiving,);

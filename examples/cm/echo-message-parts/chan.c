@@ -26,11 +26,11 @@ G_DEFINE_TYPE_WITH_CODE (ExampleEcho2Channel,
     TP_TYPE_BASE_CHANNEL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT,
       tp_message_mixin_iface_init)
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_CHAT_STATE,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_CHAT_STATE1,
       tp_message_mixin_chat_state_iface_init)
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_DESTROYABLE,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_DESTROYABLE1,
       destroyable_iface_init)
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_SMS, sms_iface_init)
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_SMS1, sms_iface_init)
     )
 
 /* type definition stuff */
@@ -43,9 +43,9 @@ example_echo_2_channel_get_interfaces (TpBaseChannel *self)
   interfaces = TP_BASE_CHANNEL_CLASS (example_echo_2_channel_parent_class)->
     get_interfaces (self);
 
-  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_DESTROYABLE);
-  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_SMS);
-  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_CHAT_STATE);
+  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_DESTROYABLE1);
+  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_SMS1);
+  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_CHAT_STATE1);
 
   return interfaces;
 };
@@ -267,7 +267,7 @@ example_echo_2_channel_fill_immutable_properties (TpBaseChannel *chan,
       TP_IFACE_CHANNEL_TYPE_TEXT, "DeliveryReportingSupport",
       TP_IFACE_CHANNEL_TYPE_TEXT, "SupportedContentTypes",
       TP_IFACE_CHANNEL_TYPE_TEXT, "MessageTypes",
-      TP_IFACE_CHANNEL_INTERFACE_SMS, "Flash",
+      TP_IFACE_CHANNEL_INTERFACE_SMS1, "Flash",
       NULL);
 }
 
@@ -339,19 +339,19 @@ example_echo_2_channel_class_init (ExampleEcho2ChannelClass *klass)
     example_echo_2_channel_fill_immutable_properties;
 
   param_spec = g_param_spec_boolean ("sms", "SMS",
-      "SMS.SMSChannel",
+      "SMS1.SMSChannel",
       FALSE,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SMS, param_spec);
 
   param_spec = g_param_spec_boolean ("sms-flash", "SMS Flash",
-      "SMS.Flash",
+      "SMS1.Flash",
       FALSE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SMS_FLASH, param_spec);
 
   tp_dbus_properties_mixin_implement_interface (object_class,
-      TP_IFACE_QUARK_CHANNEL_INTERFACE_SMS,
+      TP_IFACE_QUARK_CHANNEL_INTERFACE_SMS1,
       tp_dbus_properties_mixin_getter_gobject_properties, NULL,
       sms_props);
 
@@ -359,7 +359,7 @@ example_echo_2_channel_class_init (ExampleEcho2ChannelClass *klass)
 }
 
 static void
-destroyable_destroy (TpSvcChannelInterfaceDestroyable *iface,
+destroyable_destroy (TpSvcChannelInterfaceDestroyable1 *iface,
     DBusGMethodInvocation *context)
 {
   TpBaseChannel *self = TP_BASE_CHANNEL (iface);
@@ -367,17 +367,17 @@ destroyable_destroy (TpSvcChannelInterfaceDestroyable *iface,
   tp_message_mixin_clear ((GObject *) self);
   example_echo_2_channel_close (self);
   g_assert (tp_base_channel_is_destroyed (self));
-  tp_svc_channel_interface_destroyable_return_from_destroy (context);
+  tp_svc_channel_interface_destroyable1_return_from_destroy (context);
 }
 
 static void
 destroyable_iface_init (gpointer iface,
     gpointer data)
 {
-  TpSvcChannelInterfaceDestroyableClass *klass = iface;
+  TpSvcChannelInterfaceDestroyable1Class *klass = iface;
 
 #define IMPLEMENT(x) \
-  tp_svc_channel_interface_destroyable_implement_##x (klass, destroyable_##x)
+  tp_svc_channel_interface_destroyable1_implement_##x (klass, destroyable_##x)
   IMPLEMENT (destroy);
 #undef IMPLEMENT
 }
@@ -392,11 +392,11 @@ example_echo_2_channel_set_sms (ExampleEcho2Channel *self,
 
   self->priv->sms = sms;
 
-  tp_svc_channel_interface_sms_emit_sms_channel_changed (self, sms);
+  tp_svc_channel_interface_sms1_emit_sms_channel_changed (self, sms);
 }
 
 static void
-sms_get_sms_length (TpSvcChannelInterfaceSMS *self,
+sms_get_sms_length (TpSvcChannelInterfaceSMS1 *self,
     const GPtrArray *parts,
     DBusGMethodInvocation *context)
 {
@@ -424,7 +424,7 @@ sms_get_sms_length (TpSvcChannelInterfaceSMS *self,
   txt = tp_message_to_text (message);
   len = strlen (txt);
 
-  tp_svc_channel_interface_sms_return_from_get_sms_length (context, len,
+  tp_svc_channel_interface_sms1_return_from_get_sms_length (context, len,
       EXAMPLE_ECHO_2_CHANNEL_MAX_SMS_LENGTH - len, -1);
 
   g_object_unref (message);
@@ -435,10 +435,10 @@ static void
 sms_iface_init (gpointer iface,
     gpointer data)
 {
-  TpSvcChannelInterfaceSMSClass *klass = iface;
+  TpSvcChannelInterfaceSMS1Class *klass = iface;
 
 #define IMPLEMENT(x) \
-  tp_svc_channel_interface_sms_implement_##x (klass, sms_##x)
+  tp_svc_channel_interface_sms1_implement_##x (klass, sms_##x)
   IMPLEMENT (get_sms_length);
 #undef IMPLEMENT
 }

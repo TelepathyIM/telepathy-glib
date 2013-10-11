@@ -44,15 +44,15 @@
  *
  * |[
  * GHashTable *request = tp_asv_new (
- *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
+ *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1,
  *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
  *     TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, "foo@bar.com",
- *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_TYPE, G_TYPE_STRING, "text/plain",
- *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DATE, G_TYPE_INT64, 1320925992,
- *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DESCRIPTION, G_TYPE_STRING, "",
- *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME, G_TYPE_STRING, "test.pdf",
- *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET, G_TYPE_UINT64, 0,
- *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE, G_TYPE_UINT64, 165710,
+ *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_CONTENT_TYPE, G_TYPE_STRING, "text/plain",
+ *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_DATE, G_TYPE_INT64, 1320925992,
+ *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_DESCRIPTION, G_TYPE_STRING, "",
+ *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_FILENAME, G_TYPE_STRING, "test.pdf",
+ *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_INITIAL_OFFSET, G_TYPE_UINT64, 0,
+ *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_SIZE, G_TYPE_UINT64, 165710,
  *     NULL);
  *
  * TpAccountChannelRequest *channel_request = tp_account_channel_request_new (
@@ -472,7 +472,7 @@ tp_file_transfer_channel_prepare_core_async (TpProxy *proxy,
   GSimpleAsyncResult *result;
   GError *error = NULL;
 
-  tp_cli_channel_type_file_transfer_connect_to_file_transfer_state_changed (
+  tp_cli_channel_type_file_transfer1_connect_to_file_transfer_state_changed (
       channel, tp_file_transfer_channel_state_changed_cb,
       NULL, NULL, NULL, &error);
   if (error != NULL)
@@ -482,7 +482,7 @@ tp_file_transfer_channel_prepare_core_async (TpProxy *proxy,
       g_error_free (error);
     }
 
-  tp_cli_channel_type_file_transfer_connect_to_initial_offset_defined (
+  tp_cli_channel_type_file_transfer1_connect_to_initial_offset_defined (
       channel, tp_file_transfer_channel_initial_offset_defined_cb,
       NULL, NULL, NULL, &error);
   if (error != NULL)
@@ -492,7 +492,7 @@ tp_file_transfer_channel_prepare_core_async (TpProxy *proxy,
       g_error_free (error);
     }
 
-  tp_cli_channel_type_file_transfer_connect_to_transferred_bytes_changed (
+  tp_cli_channel_type_file_transfer1_connect_to_transferred_bytes_changed (
       channel, tp_file_transfer_channel_transferred_bytes_changed_cb,
       NULL, NULL, NULL, &error);
   if (error != NULL)
@@ -502,7 +502,7 @@ tp_file_transfer_channel_prepare_core_async (TpProxy *proxy,
       g_error_free (error);
     }
 
-  tp_cli_channel_type_file_transfer_connect_to_uri_defined (
+  tp_cli_channel_type_file_transfer1_connect_to_uri_defined (
       channel, tp_file_transfer_channel_uri_defined_cb,
       NULL, NULL, NULL, &error);
   if (error != NULL)
@@ -516,7 +516,7 @@ tp_file_transfer_channel_prepare_core_async (TpProxy *proxy,
       tp_file_transfer_channel_prepare_core_async);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
-      TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
+      TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1,
       tp_file_transfer_channel_prepare_core_cb,
       result, g_object_unref,
       NULL);
@@ -536,7 +536,7 @@ tp_file_transfer_channel_constructed (GObject *obj)
   properties = _tp_channel_get_immutable_properties (TP_CHANNEL (self));
 
   self->priv->mime_type = tp_asv_get_string (properties,
-    TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_TYPE);
+    TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_CONTENT_TYPE);
   if (self->priv->mime_type == NULL)
     {
       DEBUG ("Channel %s doesn't have FileTransfer.ContentType in its "
@@ -544,7 +544,7 @@ tp_file_transfer_channel_constructed (GObject *obj)
     }
 
   self->priv->filename = tp_asv_get_string (properties,
-    TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME);
+    TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_FILENAME);
   if (self->priv->filename == NULL)
     {
       DEBUG ("Channel %s doesn't have FileTransfer.Filename in its "
@@ -552,7 +552,7 @@ tp_file_transfer_channel_constructed (GObject *obj)
     }
 
   self->priv->size = tp_asv_get_uint64 (properties,
-    TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE, &valid);
+    TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_SIZE, &valid);
   if (!valid)
     {
       DEBUG ("Channel %s doesn't have FileTransfer.Size in its "
@@ -560,7 +560,7 @@ tp_file_transfer_channel_constructed (GObject *obj)
     }
 
   self->priv->content_hash_type = tp_asv_get_uint32 (properties,
-    TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_HASH_TYPE, &valid);
+    TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_CONTENT_HASH_TYPE, &valid);
   if (!valid)
     {
       DEBUG ("Channel %s doesn't have FileTransfer.ContentHashType in its "
@@ -568,7 +568,7 @@ tp_file_transfer_channel_constructed (GObject *obj)
     }
 
   self->priv->content_hash = tp_asv_get_string (properties,
-    TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_HASH);
+    TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_CONTENT_HASH);
   if (self->priv->content_hash == NULL)
     {
       DEBUG ("Channel %s doesn't have FileTransfer.ContentHash in its "
@@ -576,14 +576,14 @@ tp_file_transfer_channel_constructed (GObject *obj)
     }
 
   self->priv->description = tp_asv_get_string (properties,
-    TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DESCRIPTION);
+    TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_DESCRIPTION);
   if (self->priv->description == NULL)
     {
       DEBUG ("Channel %s doesn't have FileTransfer.Description in its "
           "immutable properties", tp_proxy_get_object_path (self));
     }
 
-  date = tp_asv_get_int64 (properties, TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DATE,
+  date = tp_asv_get_int64 (properties, TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_DATE,
       &valid);
 
   if (!valid)
@@ -597,7 +597,7 @@ tp_file_transfer_channel_constructed (GObject *obj)
     }
 
   self->priv->available_socket_types = tp_asv_get_boxed (properties,
-     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_AVAILABLE_SOCKET_TYPES,
+     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_AVAILABLE_SOCKET_TYPES,
      TP_HASH_TYPE_SUPPORTED_SOCKET_MAP);
   if (self->priv->available_socket_types == NULL)
     {
@@ -606,15 +606,15 @@ tp_file_transfer_channel_constructed (GObject *obj)
     }
 
   /* URI might be immutable */
-  uri = tp_asv_get_string (properties, TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_URI);
+  uri = tp_asv_get_string (properties, TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_URI);
   if (uri != NULL)
     self->priv->file = g_file_new_for_uri (uri);
 
   self->priv->service_name = tp_asv_get_string (properties,
-      TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_SERVICE_NAME);
+      TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA1_SERVICE_NAME);
 
   self->priv->metadata = tp_asv_get_boxed (properties,
-     TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_METADATA,
+     TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA1_METADATA,
      TP_HASH_TYPE_METADATA);
 
   if (self->priv->metadata == NULL)
@@ -943,7 +943,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    *
    * |[
    * tp_base_client_take_handler_filter (handler, tp_asv_new (
-   *               TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
+   *               TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1,
    *               TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
    *               TP_PROP_CHANNEL_REQUESTED, G_TYPE_BOOLEAN, FALSE,
    *               TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_SERVICE_NAME, G_TYPE_STRING, "service.name",
@@ -982,15 +982,15 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    * g_hash_table_insert (metadata, "best buds", values);
    *
    * request = tp_asv_new (
-   *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
+   *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1,
    *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
    *     TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, "foo@bar.com",
-   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_TYPE, G_TYPE_STRING, "text/plain",
-   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DATE, G_TYPE_INT64, 1320925992,
-   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DESCRIPTION, G_TYPE_STRING, "",
-   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME, G_TYPE_STRING, "test.pdf",
-   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET, G_TYPE_UINT64, 0,
-   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE, G_TYPE_UINT64, 165710,
+   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_CONTENT_TYPE, G_TYPE_STRING, "text/plain",
+   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_DATE, G_TYPE_INT64, 1320925992,
+   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_DESCRIPTION, G_TYPE_STRING, "",
+   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_FILENAME, G_TYPE_STRING, "test.pdf",
+   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_INITIAL_OFFSET, G_TYPE_UINT64, 0,
+   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_SIZE, G_TYPE_UINT64, 165710,
    *     TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_METADATA, TP_TYPE_METADATA, metadata,
    *     NULL);
    *
@@ -1225,7 +1225,7 @@ file_transfer_set_uri_cb (TpProxy *proxy,
     return;
 
   /* Call accept */
-  tp_cli_channel_type_file_transfer_call_accept_file (TP_CHANNEL (self), -1,
+  tp_cli_channel_type_file_transfer1_call_accept_file (TP_CHANNEL (self), -1,
       self->priv->socket_type,
       self->priv->access_control,
       self->priv->access_control_param,
@@ -1267,7 +1267,7 @@ file_replace_async_cb (GObject *source,
   value = tp_g_value_slice_new_take_string (uri);
 
   tp_cli_dbus_properties_call_set (self, -1,
-      TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER, "URI", value,
+      TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1, "URI", value,
       file_transfer_set_uri_cb, NULL, NULL, G_OBJECT (self));
 
   tp_g_value_slice_free (value);
@@ -1382,7 +1382,7 @@ file_read_async_cb (GObject *source,
     return;
 
   /* Call Provide */
-  tp_cli_channel_type_file_transfer_call_provide_file (TP_CHANNEL (self), -1,
+  tp_cli_channel_type_file_transfer1_call_provide_file (TP_CHANNEL (self), -1,
       self->priv->socket_type,
       self->priv->access_control,
       self->priv->access_control_param,

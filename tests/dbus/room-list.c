@@ -285,7 +285,7 @@ test_invalidated (Test *test,
       TP_TESTS_SIMPLE_CONNECTION (test->base_connection), SERVER, NULL);
 
   chan = tp_tests_channel_new (test->connection, path,
-      TP_IFACE_CHANNEL_TYPE_ROOM_LIST, TP_HANDLE_TYPE_NONE, 0,
+      TP_IFACE_CHANNEL_TYPE_ROOM_LIST1, TP_HANDLE_TYPE_NONE, 0,
       &test->error);
   g_assert_no_error (test->error);
 

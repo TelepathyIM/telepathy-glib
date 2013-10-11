@@ -670,13 +670,13 @@ _tp_call_channel_prepare_core_async (TpProxy *proxy,
   TpCallChannel *self = (TpCallChannel *) proxy;
   TpChannel *channel = (TpChannel *) self;
 
-  tp_cli_channel_type_call_connect_to_content_added (channel,
+  tp_cli_channel_type_call1_connect_to_content_added (channel,
       content_added_cb, NULL, NULL, NULL, NULL);
-  tp_cli_channel_type_call_connect_to_content_removed (channel,
+  tp_cli_channel_type_call1_connect_to_content_removed (channel,
       content_removed_cb, NULL, NULL, NULL, NULL);
-  tp_cli_channel_type_call_connect_to_call_state_changed (channel,
+  tp_cli_channel_type_call1_connect_to_call_state_changed (channel,
       call_state_changed_cb, NULL, NULL, NULL, NULL);
-  tp_cli_channel_type_call_connect_to_call_members_changed (channel,
+  tp_cli_channel_type_call1_connect_to_call_members_changed (channel,
       call_members_changed_cb, NULL, NULL, NULL, NULL);
 
   g_assert (self->priv->core_result == NULL);
@@ -684,16 +684,16 @@ _tp_call_channel_prepare_core_async (TpProxy *proxy,
       callback, user_data, _tp_call_channel_prepare_core_async);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
-      TP_IFACE_CHANNEL_TYPE_CALL,
+      TP_IFACE_CHANNEL_TYPE_CALL1,
       got_all_properties_cb, NULL, NULL, NULL);
 
   if (tp_proxy_has_interface_by_id (proxy,
-          TP_IFACE_QUARK_CHANNEL_INTERFACE_HOLD))
+          TP_IFACE_QUARK_CHANNEL_INTERFACE_HOLD1))
     {
-      tp_cli_channel_interface_hold_connect_to_hold_state_changed (channel,
+      tp_cli_channel_interface_hold1_connect_to_hold_state_changed (channel,
           hold_state_changed_cb, NULL, NULL, NULL, NULL);
 
-      tp_cli_channel_interface_hold_call_get_hold_state (channel, -1,
+      tp_cli_channel_interface_hold1_call_get_hold_state (channel, -1,
           got_hold_state_cb, NULL, NULL, NULL);
     }
 }
@@ -709,17 +709,17 @@ tp_call_channel_constructed (GObject *obj)
 
   /* We can already set immutable properties */
   self->priv->hardware_streaming = tp_asv_get_boolean (properties,
-        TP_PROP_CHANNEL_TYPE_CALL_HARDWARE_STREAMING, NULL);
+        TP_PROP_CHANNEL_TYPE_CALL1_HARDWARE_STREAMING, NULL);
   self->priv->initial_audio = tp_asv_get_boolean (properties,
-        TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, NULL);
+        TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO, NULL);
   self->priv->initial_video = tp_asv_get_boolean (properties,
-        TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, NULL);
+        TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO, NULL);
   self->priv->initial_audio_name = g_strdup (tp_asv_get_string (properties,
-        TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO_NAME));
+        TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO_NAME));
   self->priv->initial_video_name = g_strdup (tp_asv_get_string (properties,
-        TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO_NAME));
+        TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO_NAME));
   self->priv->mutable_contents = tp_asv_get_boolean (properties,
-        TP_PROP_CHANNEL_TYPE_CALL_MUTABLE_CONTENTS, NULL);
+        TP_PROP_CHANNEL_TYPE_CALL1_MUTABLE_CONTENTS, NULL);
 
   if (!self->priv->initial_audio)
     tp_clear_pointer (&self->priv->initial_audio_name, g_free);
@@ -1364,7 +1364,7 @@ tp_call_channel_has_dtmf (TpCallChannel *self)
       TpCallContent *content = g_ptr_array_index (self->priv->contents, i);
 
       if (tp_proxy_has_interface_by_id (content,
-              TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_DTMF))
+              TP_IFACE_QUARK_CALL1_CONTENT_INTERFACE_DTMF1))
         return TRUE;
     }
 
@@ -1390,7 +1390,7 @@ tp_call_channel_has_hold (TpCallChannel *self)
       tp_proxy_is_prepared (self, TP_CALL_CHANNEL_FEATURE_CORE), FALSE);
 
   return tp_proxy_has_interface_by_id (self,
-      TP_IFACE_QUARK_CHANNEL_INTERFACE_HOLD);
+      TP_IFACE_QUARK_CHANNEL_INTERFACE_HOLD1);
 }
 
 static void
@@ -1432,7 +1432,7 @@ tp_call_channel_set_ringing_async (TpCallChannel *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_call_channel_set_ringing_async);
 
-  tp_cli_channel_type_call_call_set_ringing (TP_CHANNEL (self), -1,
+  tp_cli_channel_type_call1_call_set_ringing (TP_CHANNEL (self), -1,
       generic_async_cb, result, g_object_unref, G_OBJECT (self));
 }
 
@@ -1477,7 +1477,7 @@ tp_call_channel_set_queued_async (TpCallChannel *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_call_channel_set_queued_async);
 
-  tp_cli_channel_type_call_call_set_queued (TP_CHANNEL (self), -1,
+  tp_cli_channel_type_call1_call_set_queued (TP_CHANNEL (self), -1,
       generic_async_cb, result, g_object_unref, G_OBJECT (self));
 }
 
@@ -1528,7 +1528,7 @@ tp_call_channel_accept_async (TpCallChannel *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_call_channel_accept_async);
 
-  tp_cli_channel_type_call_call_accept (TP_CHANNEL (self), -1,
+  tp_cli_channel_type_call1_call_accept (TP_CHANNEL (self), -1,
       generic_async_cb, result, g_object_unref, G_OBJECT (self));
 }
 
@@ -1580,7 +1580,7 @@ tp_call_channel_hangup_async (TpCallChannel *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_call_channel_hangup_async);
 
-  tp_cli_channel_type_call_call_hangup (TP_CHANNEL (self), -1,
+  tp_cli_channel_type_call1_call_hangup (TP_CHANNEL (self), -1,
       reason, detailed_reason, message,
       generic_async_cb, result, g_object_unref, G_OBJECT (self));
 }
@@ -1659,7 +1659,7 @@ tp_call_channel_add_content_async (TpCallChannel *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_call_channel_add_content_async);
 
-  tp_cli_channel_type_call_call_add_content (TP_CHANNEL (self), -1,
+  tp_cli_channel_type_call1_call_add_content (TP_CHANNEL (self), -1,
       name, type, initial_direction,
       add_content_cb, result, g_object_unref, G_OBJECT (self));
 }
@@ -1748,7 +1748,7 @@ tp_call_channel_send_tones_async (TpCallChannel *self,
       TpCallContent *content = g_ptr_array_index (self->priv->contents, i);
 
       if (!tp_proxy_has_interface_by_id (content,
-              TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_DTMF))
+              TP_IFACE_QUARK_CALL1_CONTENT_INTERFACE_DTMF1))
         continue;
 
       count++;
@@ -1812,7 +1812,7 @@ tp_call_channel_request_hold_async (TpCallChannel *self,
 
     if (tp_call_channel_has_hold (self))
       {
-        tp_cli_channel_interface_hold_call_request_hold (TP_CHANNEL (self), -1,
+        tp_cli_channel_interface_hold1_call_request_hold (TP_CHANNEL (self), -1,
             hold, generic_async_cb, g_object_ref (result), g_object_unref,
             G_OBJECT (self));
       }

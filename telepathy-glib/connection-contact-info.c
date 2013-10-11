@@ -432,7 +432,7 @@ _tp_connection_prepare_contact_info_async (TpProxy *proxy,
       _tp_connection_prepare_contact_info_async);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO1,
       tp_connection_get_contact_info_cb, result, g_object_unref, NULL);
 }
 
@@ -549,7 +549,7 @@ tp_connection_set_contact_info_async (TpConnection *self,
       info = info->next;
     }
 
-  tp_cli_connection_interface_contact_info_call_set_contact_info (self, -1,
+  tp_cli_connection_interface_contact_info1_call_set_contact_info (self, -1,
       contact_info, set_info_cb, result, g_object_unref, NULL);
 
   g_ptr_array_foreach (contact_info, (GFunc) tp_value_array_free, NULL);

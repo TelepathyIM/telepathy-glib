@@ -25,7 +25,7 @@
  * SECTION:group-mixin
  * @title: TpGroupMixin
  * @short_description: a mixin implementation of the groups interface
- * @see_also: #TpSvcChannelInterfaceGroup
+ * @see_also: #TpSvcChannelInterfaceGroup1
  *
  * This mixin can be added to a channel GObject class to implement the
  * groups interface in a general way.
@@ -37,8 +37,8 @@
  * tp_group_mixin_finalize() from your dispose or finalize function.
  *
  * To use the group mixin as the implementation of
- * #TpSvcChannelInterfaceGroup, call
- * <literal>G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP,
+ * #TpSvcChannelInterfaceGroup1, call
+ * <literal>G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP1,
  * tp_group_mixin_iface_init)</literal> in the fourth argument to
  * <literal>G_DEFINE_TYPE_WITH_CODE</literal>.
  *
@@ -47,7 +47,7 @@
  * for old Tubes channels). To do this, call tp_external_group_mixin_init()
  * in the constructor after the associated object has been set,
  * tp_external_group_mixin_finalize() in the dispose or finalize function, and
- * <literal>G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP,
+ * <literal>G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP1,
  * tp_external_group_mixin_iface_init)</literal> in the fourth argument to
  * <literal>G_DEFINE_TYPE_WITH_CODE</literal>.
  *
@@ -443,7 +443,7 @@ tp_group_mixin_change_self_handle (GObject *obj,
 
   mixin->self_handle = new_self_handle;
 
-  tp_svc_channel_interface_group_emit_self_contact_changed (obj,
+  tp_svc_channel_interface_group1_emit_self_contact_changed (obj,
       new_self_handle, new_self_id);
 }
 
@@ -549,7 +549,7 @@ tp_group_mixin_add_members (GObject *obj,
 }
 
 static void
-tp_group_mixin_add_members_async (TpSvcChannelInterfaceGroup *obj,
+tp_group_mixin_add_members_async (TpSvcChannelInterfaceGroup1 *obj,
                                   const GArray *contacts,
                                   const gchar *message,
                                   DBusGMethodInvocation *context)
@@ -558,7 +558,7 @@ tp_group_mixin_add_members_async (TpSvcChannelInterfaceGroup *obj,
 
   if (tp_group_mixin_add_members ((GObject *) obj, contacts, message, &error))
     {
-      tp_svc_channel_interface_group_return_from_add_members (context);
+      tp_svc_channel_interface_group1_return_from_add_members (context);
     }
   else
     {
@@ -688,7 +688,7 @@ tp_group_mixin_remove_members (GObject *obj,
 
 static void
 tp_group_mixin_remove_members_async
-    (TpSvcChannelInterfaceGroup *obj,
+    (TpSvcChannelInterfaceGroup1 *obj,
      const GArray *contacts,
      const gchar *message,
      guint reason,
@@ -699,7 +699,7 @@ tp_group_mixin_remove_members_async
   if (tp_group_mixin_remove_members ((GObject *) obj, contacts,
         message, reason, &error))
     {
-      tp_svc_channel_interface_group_return_from_remove_members
+      tp_svc_channel_interface_group1_return_from_remove_members
         (context);
     }
   else
@@ -1039,7 +1039,7 @@ tp_group_mixin_change_flags (GObject *obj,
           g_free (str_flags);
         }
 
-      tp_svc_channel_interface_group_emit_group_flags_changed (obj, added,
+      tp_svc_channel_interface_group1_emit_group_flags_changed (obj, added,
           removed);
       if (mixin->priv->externals != NULL)
         {
@@ -1047,7 +1047,7 @@ tp_group_mixin_change_flags (GObject *obj,
 
           for (i = 0; i < mixin->priv->externals->len; i++)
             {
-              tp_svc_channel_interface_group_emit_group_flags_changed
+              tp_svc_channel_interface_group1_emit_group_flags_changed
                 ((GObject *) g_ptr_array_index (mixin->priv->externals, i),
                  added, removed);
             }
@@ -1253,7 +1253,7 @@ emit_members_changed_signals (GObject *channel,
   added_contact_ids = maybe_add_contact_ids (mixin, add, local_pending,
       remote_pending, actor, details_);
 
-  tp_svc_channel_interface_group_emit_members_changed (channel,
+  tp_svc_channel_interface_group1_emit_members_changed (channel,
       add, del, local_pending, remote_pending, details_);
 
   if (mixin->priv->externals != NULL)
@@ -1264,7 +1264,7 @@ emit_members_changed_signals (GObject *channel,
         {
           GObject *external = g_ptr_array_index (mixin->priv->externals, i);
 
-          tp_svc_channel_interface_group_emit_members_changed (
+          tp_svc_channel_interface_group1_emit_members_changed (
               external, add, del, local_pending, remote_pending, details_);
         }
     }
@@ -1399,7 +1399,7 @@ change_members (GObject *obj,
         {
           GHashTable *empty_hash_table = g_hash_table_new (NULL, NULL);
 
-          tp_svc_channel_interface_group_emit_handle_owners_changed (
+          tp_svc_channel_interface_group1_emit_handle_owners_changed (
               obj, empty_hash_table, arr_owners_removed, empty_hash_table);
 
           if (mixin->priv->externals != NULL)
@@ -1408,7 +1408,7 @@ change_members (GObject *obj,
 
               for (i = 0; i < mixin->priv->externals->len; i++)
                 {
-                  tp_svc_channel_interface_group_emit_handle_owners_changed (
+                  tp_svc_channel_interface_group1_emit_handle_owners_changed (
                       g_ptr_array_index (mixin->priv->externals, i),
                       empty_hash_table, arr_owners_removed, empty_hash_table);
                 }
@@ -1640,7 +1640,7 @@ tp_group_mixin_add_handle_owners (GObject *obj,
       mixin);
 
   add_us_mapping_for_owners_map (ids, mixin->handle_repo, local_to_owner_handle);
-  tp_svc_channel_interface_group_emit_handle_owners_changed (obj,
+  tp_svc_channel_interface_group1_emit_handle_owners_changed (obj,
       local_to_owner_handle, empty_array, ids);
 
   g_array_unref (empty_array);
@@ -1702,7 +1702,7 @@ dup_member_identifiers (GObject *obj)
 
 /**
  * tp_group_mixin_iface_init: (skip)
- * @g_iface: A #TpSvcChannelInterfaceGroupClass
+ * @g_iface: A #TpSvcChannelInterfaceGroup1Class
  * @iface_data: Unused
  *
  * Fill in the vtable entries needed to implement the group interface using
@@ -1712,9 +1712,9 @@ dup_member_identifiers (GObject *obj)
 void
 tp_group_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 {
-  TpSvcChannelInterfaceGroupClass *klass = g_iface;
+  TpSvcChannelInterfaceGroup1Class *klass = g_iface;
 
-#define IMPLEMENT(x) tp_svc_channel_interface_group_implement_##x (klass,\
+#define IMPLEMENT(x) tp_svc_channel_interface_group1_implement_##x (klass,\
     tp_group_mixin_##x##_async)
   IMPLEMENT(add_members);
   IMPLEMENT(remove_members);
@@ -1737,7 +1737,7 @@ enum {
 /**
  * tp_group_mixin_get_dbus_property: (skip)
  * @object: An object with this mixin
- * @interface: Must be %TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP
+ * @interface: Must be %TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP1
  * @name: A quark representing the D-Bus property name, either
  *  "GroupFlags", "HandleOwners", "LocalPendingMembers", "Members",
  *  "RemotePendingMembers" or "SelfHandle"
@@ -1776,7 +1776,7 @@ tp_group_mixin_get_dbus_property (GObject *object,
   g_return_if_fail (object != NULL);
   mixin = TP_GROUP_MIXIN (object);
   g_return_if_fail (mixin != NULL);
-  g_return_if_fail (interface == TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP);
+  g_return_if_fail (interface == TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP1);
   g_return_if_fail (name != 0);
   g_return_if_fail (value != NULL);
 
@@ -1869,7 +1869,7 @@ tp_group_mixin_init_dbus_properties (GObjectClass *cls)
 {
 
   tp_dbus_properties_mixin_implement_interface (cls,
-      TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP, tp_group_mixin_get_dbus_property,
+      TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP1, tp_group_mixin_get_dbus_property,
       NULL, known_group_props);
 }
 
@@ -1949,7 +1949,7 @@ tp_external_group_mixin_init_dbus_properties (GObjectClass *cls)
 {
 
   tp_dbus_properties_mixin_implement_interface (cls,
-      TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP,
+      TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP1,
       tp_external_group_mixin_get_dbus_property,
       NULL, known_group_props);
 }
@@ -1957,7 +1957,7 @@ tp_external_group_mixin_init_dbus_properties (GObjectClass *cls)
 /**
  * tp_external_group_mixin_get_dbus_property: (skip)
  * @object: An object with this mixin
- * @interface: Must be %TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP
+ * @interface: Must be %TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP1
  * @name: A quark representing the D-Bus property name, either
  *  "GroupFlags", "HandleOwners", "LocalPendingMembers", "Members",
  *  "RemotePendingMembers" or "SelfHandle"
@@ -2013,19 +2013,19 @@ tp_external_group_mixin_get_dbus_property (GObject *object,
       } \
 
 static void
-tp_external_group_mixin_add_members_async (TpSvcChannelInterfaceGroup *obj,
+tp_external_group_mixin_add_members_async (TpSvcChannelInterfaceGroup1 *obj,
                                            const GArray *contacts,
                                            const gchar *message,
                                            DBusGMethodInvocation *context)
 {
   EXTERNAL_OR_DIE (group)
-  tp_group_mixin_add_members_async ((TpSvcChannelInterfaceGroup *) group,
+  tp_group_mixin_add_members_async ((TpSvcChannelInterfaceGroup1 *) group,
       contacts, message, context);
 }
 
 static void
 tp_external_group_mixin_remove_members_async
-    (TpSvcChannelInterfaceGroup *obj,
+    (TpSvcChannelInterfaceGroup1 *obj,
      const GArray *contacts,
      const gchar *message,
      guint reason,
@@ -2033,12 +2033,12 @@ tp_external_group_mixin_remove_members_async
 {
   EXTERNAL_OR_DIE (group)
   tp_group_mixin_remove_members_async
-      ((TpSvcChannelInterfaceGroup *) group, contacts, message, reason,
+      ((TpSvcChannelInterfaceGroup1 *) group, contacts, message, reason,
        context);
 }
 /**
  * tp_external_group_mixin_iface_init: (skip)
- * @g_iface: A #TpSvcChannelInterfaceGroupClass
+ * @g_iface: A #TpSvcChannelInterfaceGroup1Class
  * @iface_data: Unused
  *
  * Fill in the vtable entries needed to implement the group interface using
@@ -2051,9 +2051,9 @@ void
 tp_external_group_mixin_iface_init (gpointer g_iface,
                                     gpointer iface_data)
 {
-  TpSvcChannelInterfaceGroupClass *klass = g_iface;
+  TpSvcChannelInterfaceGroup1Class *klass = g_iface;
 
-#define IMPLEMENT(x) tp_svc_channel_interface_group_implement_##x (klass,\
+#define IMPLEMENT(x) tp_svc_channel_interface_group1_implement_##x (klass,\
     tp_external_group_mixin_##x##_async)
   IMPLEMENT(add_members);
   IMPLEMENT(remove_members);

@@ -66,7 +66,7 @@ generic_callback (TpConnection *self,
     result = g_simple_async_result_new ((GObject *) self, callback, user_data, \
         tp_contact_##method##_async); \
     \
-    tp_cli_connection_interface_contact_list_call_##method ( \
+    tp_cli_connection_interface_contact_list1_call_##method ( \
         tp_contact_get_connection (self), -1, handles, ##__VA_ARGS__, \
         generic_callback, result, g_object_unref, NULL); \
     g_array_unref (handles); \
@@ -287,7 +287,7 @@ tp_contact_unpublish_finish (TpContact *self,
     result = g_simple_async_result_new ((GObject *) self, callback, user_data, \
         tp_contact_##method##_async); \
     \
-    tp_cli_connection_interface_contact_groups_call_##method ( \
+    tp_cli_connection_interface_contact_groups1_call_##method ( \
         tp_contact_get_connection (self), -1, group, handles, \
         generic_callback, result, g_object_unref, NULL); \
     g_array_unref (handles); \
@@ -413,7 +413,7 @@ tp_contact_block_async (TpContact *self,
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_contact_block_async);
 
-  tp_cli_connection_interface_contact_blocking_call_block_contacts (
+  tp_cli_connection_interface_contact_blocking1_call_block_contacts (
       tp_contact_get_connection (self), -1,
       handles, report_abusive, generic_callback, result, g_object_unref, NULL);
 
@@ -469,7 +469,7 @@ tp_contact_unblock_async (TpContact *self,
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_contact_unblock_async);
 
-  tp_cli_connection_interface_contact_blocking_call_unblock_contacts (
+  tp_cli_connection_interface_contact_blocking1_call_unblock_contacts (
       tp_contact_get_connection (self), -1,
       handles, generic_callback, result, g_object_unref, NULL);
 

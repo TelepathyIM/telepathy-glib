@@ -320,22 +320,22 @@ test_connect_and_finish_setup (Test *test)
   test->log = g_ptr_array_new ();
 
   maybe_queue_disconnect (
-      tp_cli_connection_interface_contact_list_connect_to_contacts_changed (
+      tp_cli_connection_interface_contact_list1_connect_to_contacts_changed (
         test->conn, contacts_changed_cb, test, NULL, NULL, NULL));
   maybe_queue_disconnect (
-      tp_cli_connection_interface_contact_groups_connect_to_groups_changed (
+      tp_cli_connection_interface_contact_groups1_connect_to_groups_changed (
         test->conn, groups_changed_cb, test, NULL, NULL, NULL));
   maybe_queue_disconnect (
-      tp_cli_connection_interface_contact_groups_connect_to_groups_created (
+      tp_cli_connection_interface_contact_groups1_connect_to_groups_created (
         test->conn, groups_created_cb, test, NULL, NULL, NULL));
   maybe_queue_disconnect (
-      tp_cli_connection_interface_contact_groups_connect_to_groups_removed (
+      tp_cli_connection_interface_contact_groups1_connect_to_groups_removed (
         test->conn, groups_removed_cb, test, NULL, NULL, NULL));
   maybe_queue_disconnect (
-      tp_cli_connection_interface_contact_groups_connect_to_group_renamed (
+      tp_cli_connection_interface_contact_groups1_connect_to_group_renamed (
         test->conn, group_renamed_cb, test, NULL, NULL, NULL));
   maybe_queue_disconnect (
-      tp_cli_connection_interface_contact_blocking_connect_to_blocked_contacts_changed (
+      tp_cli_connection_interface_contact_blocking1_connect_to_blocked_contacts_changed (
         test->conn, blocked_contacts_changed_cb, test, NULL, NULL, NULL));
 
   test->sjoerd = tp_handle_ensure (test->contact_repo, "sjoerd@example.com",
@@ -586,7 +586,7 @@ test_properties (Test *test,
   gboolean valid;
 
   tp_cli_dbus_properties_run_get_all (test->conn, -1,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST, &asv, &error, NULL);
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1, &asv, &error, NULL);
   g_assert_no_error (error);
   g_assert_cmpuint (g_hash_table_size (asv), >=, 3);
   g_assert (tp_asv_get_boolean (asv, "ContactListPersists", NULL));
@@ -595,7 +595,7 @@ test_properties (Test *test,
   g_hash_table_unref (asv);
 
   tp_cli_dbus_properties_run_get_all (test->conn, -1,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS, &asv, &error, NULL);
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1, &asv, &error, NULL);
   g_assert_no_error (error);
   g_assert_cmpuint (g_hash_table_size (asv), >=, 3);
   g_assert (G_VALUE_HOLDS_BOOLEAN (tp_asv_lookup (asv, "DisjointGroups")));
@@ -609,7 +609,7 @@ test_properties (Test *test,
   g_hash_table_unref (asv);
 
   tp_cli_dbus_properties_run_get_all (test->conn, -1,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST, &asv, &error, NULL);
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1, &asv, &error, NULL);
   g_assert_no_error (error);
   g_assert_cmpuint (g_hash_table_size (asv), >=, 3);
   g_assert (tp_asv_get_boolean (asv, "ContactListPersists", NULL));
@@ -618,7 +618,7 @@ test_properties (Test *test,
   g_hash_table_unref (asv);
 
   tp_cli_dbus_properties_run_get_all (test->conn, -1,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS, &asv, &error, NULL);
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1, &asv, &error, NULL);
   g_assert_no_error (error);
   g_assert_cmpuint (g_hash_table_size (asv), >=, 3);
   g_assert (G_VALUE_HOLDS_BOOLEAN (tp_asv_lookup (asv, "DisjointGroups")));
@@ -631,7 +631,7 @@ test_properties (Test *test,
   g_hash_table_unref (asv);
 
   tp_cli_dbus_properties_run_get_all (test->conn, -1,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING, &asv, &error, NULL);
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING1, &asv, &error, NULL);
   g_assert_no_error (error);
   g_assert_cmpuint (g_hash_table_size (asv), ==, 1);
   blocking_caps = tp_asv_get_uint32 (asv, "ContactBlockingCapabilities",
@@ -674,15 +674,15 @@ test_assert_contact_list_attrs (Test *test,
       GUINT_TO_POINTER (handle));
   g_assert (asv != NULL);
   g_assert_cmpuint (tp_asv_get_uint32 (asv,
-        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_SUBSCRIBE, &valid), ==,
+        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_SUBSCRIBE, &valid), ==,
       expected_sub_state);
   g_assert (valid);
   g_assert_cmpuint (tp_asv_get_uint32 (asv,
-        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH, &valid), ==,
+        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_PUBLISH, &valid), ==,
       expected_pub_state);
   g_assert (valid);
   g_assert_cmpstr (tp_asv_get_string (asv,
-        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH_REQUEST), ==,
+        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_PUBLISH_REQUEST), ==,
       expected_pub_request);
   g_assert (valid);
 }
@@ -703,11 +703,11 @@ test_assert_contact_groups_attr (Test *test,
   g_assert (asv != NULL);
   tp_asv_dump (asv);
   g_assert (tp_asv_lookup (asv,
-        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS_GROUPS) != NULL);
+        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS1_GROUPS) != NULL);
   g_assert (G_VALUE_HOLDS (tp_asv_lookup (asv,
-        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS_GROUPS), G_TYPE_STRV));
+        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS1_GROUPS), G_TYPE_STRV));
   strv = tp_asv_get_strv (asv,
-        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS_GROUPS);
+        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS1_GROUPS);
 
   if (group == NULL)
     {
@@ -731,8 +731,8 @@ test_assert_contact_state (Test *test,
     const gchar *expected_group)
 {
   const gchar *interfaces[] = {
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1,
       NULL };
   GArray *handles;
 
@@ -760,7 +760,7 @@ test_contacts (Test *test,
 
   /* ensure the contact list has been received */
   tp_cli_dbus_properties_run_get (test->conn, -1,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST, "ContactListState",
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1, "ContactListState",
       &state, NULL, NULL);
   g_assert_cmpuint (g_value_get_uint (state), ==, TP_CONTACT_LIST_STATE_SUCCESS);
 
@@ -782,10 +782,10 @@ test_contact_list_attrs (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
   const gchar *interfaces[] = {
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1,
       NULL };
 
-  tp_cli_connection_interface_contact_list_call_get_contact_list_attributes (
+  tp_cli_connection_interface_contact_list1_call_get_contact_list_attributes (
       test->conn, -1, interfaces, contact_attrs_cb, test, test_quit_loop, NULL);
   g_main_loop_run (test->main_loop);
 
@@ -824,7 +824,7 @@ test_assert_contact_blocking_attrs (Test *test,
   tp_asv_dump (asv);
 
   blocked = tp_asv_get_boolean (asv,
-      TP_TOKEN_CONNECTION_INTERFACE_CONTACT_BLOCKING_BLOCKED, &valid);
+      TP_TOKEN_CONNECTION_INTERFACE_CONTACT_BLOCKING1_BLOCKED, &valid);
   g_assert (valid);
   g_assert (blocked == expected_blocked);
 }
@@ -834,7 +834,7 @@ test_contact_blocking_attrs (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
   const gchar *interfaces[] = {
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING1,
       NULL };
   GArray *handles;
 
@@ -864,7 +864,7 @@ test_accept_publish_request (Test *test,
 
   g_array_append_val (test->arr, test->wim);
 
-  tp_cli_connection_interface_contact_list_run_authorize_publication (
+  tp_cli_connection_interface_contact_list1_run_authorize_publication (
       test->conn, -1, test->arr, &error, NULL);
   g_assert_no_error (error);
 
@@ -893,14 +893,14 @@ test_reject_publish_request (Test *test,
   if (!tp_strdiff (mode, "unpublish"))
     {
       /* directly equivalent, but in practice people won't do this */
-      tp_cli_connection_interface_contact_list_run_unpublish (
+      tp_cli_connection_interface_contact_list1_run_unpublish (
           test->conn, -1, test->arr, &error, NULL);
     }
   else
     {
       /* this isn't directly equivalent, but in practice it's what people
        * will do */
-      tp_cli_connection_interface_contact_list_run_remove_contacts (
+      tp_cli_connection_interface_contact_list1_run_remove_contacts (
           test->conn, -1, test->arr, &error, NULL);
     }
 
@@ -935,7 +935,7 @@ test_add_to_publish_pre_approve (Test *test,
       TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO,
       NULL, NULL);
 
-  tp_cli_connection_interface_contact_list_run_authorize_publication (
+  tp_cli_connection_interface_contact_list1_run_authorize_publication (
       test->conn, -1, test->arr, &error, NULL);
   g_assert_no_error (error);
 
@@ -944,7 +944,7 @@ test_add_to_publish_pre_approve (Test *test,
       NULL, NULL);
 
   /* the example CM's fake contacts accept requests that contain "please" */
-  tp_cli_connection_interface_contact_list_run_request_subscription (
+  tp_cli_connection_interface_contact_list1_run_request_subscription (
       test->conn, -1, test->arr, "Please may I see your presence?", &error,
       NULL);
   g_assert_no_error (error);
@@ -990,7 +990,7 @@ test_add_to_publish_no_op (Test *test,
 
   g_array_append_val (test->arr, test->sjoerd);
 
-  tp_cli_connection_interface_contact_list_run_authorize_publication (
+  tp_cli_connection_interface_contact_list1_run_authorize_publication (
       test->conn, -1, test->arr, &error, NULL);
   g_assert_no_error (error);
 
@@ -1011,7 +1011,7 @@ test_remove_from_publish (Test *test,
 
   g_array_append_val (test->arr, test->sjoerd);
 
-  tp_cli_connection_interface_contact_list_run_unpublish (
+  tp_cli_connection_interface_contact_list1_run_unpublish (
       test->conn, -1, test->arr, &error, NULL);
   g_assert_no_error (error);
 
@@ -1043,7 +1043,7 @@ test_remove_from_publish_no_op (Test *test,
 
   g_array_append_val (test->arr, test->ninja);
 
-  tp_cli_connection_interface_contact_list_run_unpublish (
+  tp_cli_connection_interface_contact_list1_run_unpublish (
       test->conn, -1, test->arr, &error, NULL);
   g_assert_no_error (error);
 
@@ -1065,7 +1065,7 @@ test_cancelled_publish_request (Test *test,
   /* the example CM's fake contacts accept requests that contain "please" */
   g_array_append_val (test->arr, test->canceller);
 
-  tp_cli_connection_interface_contact_list_run_request_subscription (
+  tp_cli_connection_interface_contact_list1_run_request_subscription (
       test->conn, -1, test->arr, "Please may I see your presence?",
       &error, NULL);
 
@@ -1094,10 +1094,10 @@ test_cancelled_publish_request (Test *test,
   /* We can acknowledge the cancellation with Unpublish() or
    * RemoveContacts(). */
   if (!tp_strdiff (mode, "remove-after"))
-    tp_cli_connection_interface_contact_list_run_remove_contacts (test->conn,
+    tp_cli_connection_interface_contact_list1_run_remove_contacts (test->conn,
         -1, test->arr, &error, NULL);
   else
-    tp_cli_connection_interface_contact_list_run_unpublish (
+    tp_cli_connection_interface_contact_list1_run_unpublish (
         test->conn, -1, test->arr, &error, NULL);
 
   while (test->log->len < 1)
@@ -1124,7 +1124,7 @@ test_add_to_stored (Test *test,
    * side-effect */
   g_hash_table_insert (table, GUINT_TO_POINTER (test->ninja),
       "The Wee Ninja");
-  tp_cli_connection_interface_aliasing_run_set_aliases (test->conn,
+  tp_cli_connection_interface_aliasing1_run_set_aliases (test->conn,
       -1, table, &error, NULL);
   g_hash_table_unref (table);
 
@@ -1154,7 +1154,7 @@ test_add_to_stored_no_op (Test *test,
 
   g_hash_table_insert (table, GUINT_TO_POINTER (test->sjoerd),
       "Sjoerd");
-  tp_cli_connection_interface_aliasing_run_set_aliases (test->conn,
+  tp_cli_connection_interface_aliasing1_run_set_aliases (test->conn,
       -1, table, &error, NULL);
   g_hash_table_unref (table);
 
@@ -1173,7 +1173,7 @@ test_remove_from_stored (Test *test,
 
   g_array_append_val (test->arr, test->sjoerd);
 
-  tp_cli_connection_interface_contact_list_run_remove_contacts (test->conn,
+  tp_cli_connection_interface_contact_list1_run_remove_contacts (test->conn,
       -1, test->arr, &error, NULL);
 
   g_assert_no_error (error);
@@ -1195,7 +1195,7 @@ test_remove_from_stored_no_op (Test *test,
 
   g_array_append_val (test->arr, test->ninja);
 
-  tp_cli_connection_interface_contact_list_run_remove_contacts (test->conn,
+  tp_cli_connection_interface_contact_list1_run_remove_contacts (test->conn,
       -1, test->arr, &error, NULL);
 
   g_assert_no_error (error);
@@ -1217,7 +1217,7 @@ test_accept_subscribe_request (Test *test,
   /* the example CM's fake contacts accept requests that contain "please" */
   g_array_append_val (test->arr, test->ninja);
 
-  tp_cli_connection_interface_contact_list_run_request_subscription (
+  tp_cli_connection_interface_contact_list1_run_request_subscription (
       test->conn, -1, test->arr, "Please may I see your presence?",
       &error, NULL);
   g_assert_no_error (error);
@@ -1263,7 +1263,7 @@ test_reject_subscribe_request (Test *test,
    * "please" */
   g_array_append_val (test->arr, test->ninja);
 
-  tp_cli_connection_interface_contact_list_run_request_subscription (
+  tp_cli_connection_interface_contact_list1_run_request_subscription (
       test->conn, -1, test->arr, "I demand to see your presence?",
       &error, NULL);
   g_assert_no_error (error);
@@ -1291,10 +1291,10 @@ test_reject_subscribe_request (Test *test,
   /* We can acknowledge the failure to subscribe with Unsubscribe() or
    * RemoveContacts(). */
   if (!tp_strdiff (mode, "remove-after"))
-    tp_cli_connection_interface_contact_list_run_remove_contacts (test->conn,
+    tp_cli_connection_interface_contact_list1_run_remove_contacts (test->conn,
         -1, test->arr, &error, NULL);
   else
-    tp_cli_connection_interface_contact_list_run_unsubscribe (
+    tp_cli_connection_interface_contact_list1_run_unsubscribe (
         test->conn, -1, test->arr, &error, NULL);
 
   /* the ninja falls off our subscribe list */
@@ -1321,7 +1321,7 @@ test_remove_from_subscribe (Test *test,
 
   g_array_append_val (test->arr, test->sjoerd);
 
-  tp_cli_connection_interface_contact_list_run_unsubscribe (
+  tp_cli_connection_interface_contact_list1_run_unsubscribe (
       test->conn, -1, test->arr, &error, NULL);
   g_assert_no_error (error);
 
@@ -1346,7 +1346,7 @@ test_remove_from_subscribe_pending (Test *test,
 
   g_array_append_val (test->arr, test->helen);
 
-  tp_cli_connection_interface_contact_list_run_unsubscribe (
+  tp_cli_connection_interface_contact_list1_run_unsubscribe (
       test->conn, -1, test->arr, &error, NULL);
   g_assert_no_error (error);
 
@@ -1371,7 +1371,7 @@ test_remove_from_subscribe_no_op (Test *test,
 
   g_array_append_val (test->arr, test->ninja);
 
-  tp_cli_connection_interface_contact_list_run_unsubscribe (
+  tp_cli_connection_interface_contact_list1_run_unsubscribe (
       test->conn, -1, test->arr, &error, NULL);
   g_assert_no_error (error);
 
@@ -1393,7 +1393,7 @@ test_add_to_group (Test *test,
 
   g_array_append_val (test->arr, test->ninja);
 
-  tp_cli_connection_interface_contact_groups_run_add_to_group (test->conn,
+  tp_cli_connection_interface_contact_groups1_run_add_to_group (test->conn,
       -1, "Cambridge", test->arr, &error, NULL);
   g_assert_no_error (error);
 
@@ -1434,7 +1434,7 @@ test_add_to_group_no_op (Test *test,
 
   g_array_append_val (test->arr, test->sjoerd);
 
-  tp_cli_connection_interface_contact_groups_run_add_to_group (test->conn,
+  tp_cli_connection_interface_contact_groups1_run_add_to_group (test->conn,
       -1, "Cambridge", test->arr, &error, NULL);
   g_assert_no_error (error);
 
@@ -1454,7 +1454,7 @@ test_remove_from_group (Test *test,
 
   g_array_append_val (test->arr, test->sjoerd);
 
-  tp_cli_connection_interface_contact_groups_run_remove_from_group (
+  tp_cli_connection_interface_contact_groups1_run_remove_from_group (
       test->conn, -1, "Cambridge", test->arr, &error, NULL);
 
   g_assert_no_error (error);
@@ -1479,7 +1479,7 @@ test_remove_from_group_no_op (Test *test,
 
   g_array_append_val (test->arr, test->ninja);
 
-  tp_cli_connection_interface_contact_groups_run_remove_from_group (
+  tp_cli_connection_interface_contact_groups1_run_remove_from_group (
       test->conn, -1, "Cambridge", test->arr, &error, NULL);
 
   g_assert_no_error (error);
@@ -1496,7 +1496,7 @@ test_remove_group (Test *test,
   GError *error = NULL;
   LogEntry *le;
 
-  tp_cli_connection_interface_contact_groups_run_remove_group (test->conn,
+  tp_cli_connection_interface_contact_groups1_run_remove_group (test->conn,
       -1, "Cambridge", &error, NULL);
   g_assert_no_error (error);
 
@@ -1526,7 +1526,7 @@ test_set_contact_groups (Test *test,
   g_array_append_val (test->arr, test->sjoerd);
   g_array_append_val (test->arr, test->wim);
 
-  tp_cli_connection_interface_contact_groups_run_set_contact_groups (
+  tp_cli_connection_interface_contact_groups1_run_set_contact_groups (
       test->conn, -1, test->sjoerd, montreal_strv, &error, NULL);
   g_assert_no_error (error);
 
@@ -1556,7 +1556,7 @@ test_set_contact_groups_no_op (Test *test,
   test_assert_contact_state (test, test->sjoerd,
       TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_YES, NULL, "Cambridge");
 
-  tp_cli_connection_interface_contact_groups_run_set_contact_groups (
+  tp_cli_connection_interface_contact_groups1_run_set_contact_groups (
       test->conn, -1, test->sjoerd, cambridge_strv, &error, NULL);
   g_assert_no_error (error);
 
@@ -1584,7 +1584,7 @@ test_set_group_members (Test *test,
   g_array_append_val (test->arr, test->sjoerd);
   g_array_append_val (test->arr, test->wim);
 
-  tp_cli_connection_interface_contact_groups_run_set_group_members (test->conn,
+  tp_cli_connection_interface_contact_groups1_run_set_group_members (test->conn,
       -1, "Cambridge", test->arr, &error, NULL);
 
   g_assert_no_error (error);
@@ -1613,7 +1613,7 @@ test_rename_group (Test *test,
   LogEntry *le;
   GError *error = NULL;
 
-  tp_cli_connection_interface_contact_groups_run_rename_group (test->conn,
+  tp_cli_connection_interface_contact_groups1_run_rename_group (test->conn,
       -1, "Cambridge", "Grantabrugge", &error, NULL);
   g_assert_no_error (error);
 
@@ -1648,7 +1648,7 @@ test_rename_group_overwrite (Test *test,
 {
   GError *error = NULL;
 
-  tp_cli_connection_interface_contact_groups_run_rename_group (test->conn,
+  tp_cli_connection_interface_contact_groups1_run_rename_group (test->conn,
       -1, "Cambridge", "Montreal", &error, NULL);
   g_assert_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE);
   g_assert_cmpuint (test->log->len, ==, 0);
@@ -1661,7 +1661,7 @@ test_rename_group_absent (Test *test,
 {
   GError *error = NULL;
 
-  tp_cli_connection_interface_contact_groups_run_rename_group (test->conn,
+  tp_cli_connection_interface_contact_groups1_run_rename_group (test->conn,
       -1, "Badgers", "Mushrooms", &error, NULL);
   g_assert_error (error, TP_ERROR, TP_ERROR_DOES_NOT_EXIST);
   g_assert_cmpuint (test->log->len, ==, 0);
@@ -1773,7 +1773,7 @@ test_request_blocked_contacts (Test *test,
   GHashTable *blocked_contacts;
   GError *error = NULL;
 
-  tp_cli_connection_interface_contact_blocking_run_request_blocked_contacts (
+  tp_cli_connection_interface_contact_blocking1_run_request_blocked_contacts (
       test->conn, -1, &blocked_contacts, &error, NULL);
   g_assert_no_error (error);
   g_assert (blocked_contacts != NULL);
@@ -1808,7 +1808,7 @@ test_request_blocked_contacts_pre_connect (Test *test,
   /* This verifies that calling RequestBlockedContacts()
    * before Connect(), when Connect() ultimately succeeds, returns correctly.
    */
-  tp_cli_connection_interface_contact_blocking_call_request_blocked_contacts (
+  tp_cli_connection_interface_contact_blocking1_call_request_blocked_contacts (
       test->conn, -1, request_blocked_contacts_succeeded_cb,
       test, test_quit_loop, NULL);
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
@@ -1836,10 +1836,10 @@ test_request_blocked_contacts_connect_failed (Test *test,
    * before Connect(), when Connect() ultimately fails, returns an appropriate
    * error.
    */
-  tp_cli_connection_interface_contact_blocking_call_request_blocked_contacts (
+  tp_cli_connection_interface_contact_blocking1_call_request_blocked_contacts (
       test->conn, -1, request_blocked_contacts_failed_cb,
       test, test_quit_loop, NULL);
-  tp_cli_connection_interface_contact_blocking_call_request_blocked_contacts (
+  tp_cli_connection_interface_contact_blocking1_call_request_blocked_contacts (
       test->conn, -1, request_blocked_contacts_failed_cb,
       test, test_quit_loop, NULL);
 
@@ -1856,7 +1856,7 @@ static void
 call_block_contacts (Test *test,
     GError **error)
 {
-  tp_cli_connection_interface_contact_blocking_run_block_contacts (test->conn,
+  tp_cli_connection_interface_contact_blocking1_run_block_contacts (test->conn,
       -1, test->arr, FALSE, error, NULL);
 }
 
@@ -1878,7 +1878,7 @@ static void
 call_unblock_contacts (Test *test,
     GError **error)
 {
-  tp_cli_connection_interface_contact_blocking_run_unblock_contacts (
+  tp_cli_connection_interface_contact_blocking1_run_unblock_contacts (
       test->conn, -1, test->arr, error, NULL);
 }
 
@@ -1909,7 +1909,7 @@ static void
 test_download_contacts (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
-  tp_cli_connection_interface_contact_list_call_download (
+  tp_cli_connection_interface_contact_list1_call_download (
     test->conn, -1, download_contacts_cb, test, test_quit_loop, NULL);
 
   g_main_loop_run (test->main_loop);

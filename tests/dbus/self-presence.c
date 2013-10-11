@@ -34,7 +34,7 @@ test_presence (TpTestsContactsConnection *service_conn,
   GValueArray *spec;
 
   MYASSERT (tp_cli_dbus_properties_run_get (client_conn, -1,
-        TP_IFACE_CONNECTION_INTERFACE_PRESENCE, "Statuses",
+        TP_IFACE_CONNECTION_INTERFACE_PRESENCE1, "Statuses",
         &value, &error, NULL), "");
   g_assert_no_error (error);
 
@@ -86,21 +86,21 @@ test_presence (TpTestsContactsConnection *service_conn,
   g_value_unset (value);
   g_free (value);
 
-  MYASSERT (!tp_cli_connection_interface_presence_run_set_presence (
+  MYASSERT (!tp_cli_connection_interface_presence1_run_set_presence (
         client_conn, -1, "offline", "", &error, NULL), "");
   g_assert_cmpstr (g_quark_to_string (error->domain), ==,
       g_quark_to_string (TP_ERROR));
   g_error_free (error);
   error = NULL;
 
-  MYASSERT (tp_cli_connection_interface_presence_run_set_presence (
+  MYASSERT (tp_cli_connection_interface_presence1_run_set_presence (
         client_conn, -1, "available", "Here I am", &error, NULL), "");
   g_assert_no_error (error);
 
   value = NULL;
 
   MYASSERT (tp_cli_dbus_properties_run_get (client_conn, -1,
-        TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
+        TP_IFACE_CONNECTION_INTERFACE_PRESENCE1,
         "MaximumStatusMessageLength",
         &value, &error, NULL), "");
   g_assert_no_error (error);
@@ -162,15 +162,15 @@ main (int argc,
   g_assert_no_error (error);
   interfaces = g_value_get_boxed (value);
   MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
-      TP_IFACE_CONNECTION_INTERFACE_ALIASING), "");
+      TP_IFACE_CONNECTION_INTERFACE_ALIASING1), "");
   MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
-      TP_IFACE_CONNECTION_INTERFACE_AVATARS), "");
+      TP_IFACE_CONNECTION_INTERFACE_AVATARS1), "");
   MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
       TP_IFACE_CONNECTION_INTERFACE_CONTACTS), "");
   MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
-      TP_IFACE_CONNECTION_INTERFACE_PRESENCE), "");
+      TP_IFACE_CONNECTION_INTERFACE_PRESENCE1), "");
   MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
-      TP_IFACE_CONNECTION_INTERFACE_PRESENCE), "");
+      TP_IFACE_CONNECTION_INTERFACE_PRESENCE1), "");
   g_value_unset (value);
   tp_clear_pointer (&value, g_free);
 

@@ -51,7 +51,7 @@
  * include the following in the fourth argument of G_DEFINE_TYPE_WITH_CODE():
  *
  * <informalexample><programlisting>
- *  G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_CHAT_STATE,
+ *  G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_CHAT_STATE1,
  *    tp_message_mixin_chat_state_iface_init);
  * </programlisting></informalexample>
  *
@@ -324,7 +324,7 @@ tp_message_mixin_change_chat_state (GObject *object,
           GUINT_TO_POINTER (state));
     }
 
-  tp_svc_channel_interface_chat_state_emit_chat_state_changed (object,
+  tp_svc_channel_interface_chat_state1_emit_chat_state_changed (object,
       member, state);
 }
 
@@ -387,7 +387,7 @@ tp_message_mixin_maybe_send_gone (GObject *object)
 }
 
 static void
-tp_message_mixin_set_chat_state_async (TpSvcChannelInterfaceChatState *iface,
+tp_message_mixin_set_chat_state_async (TpSvcChannelInterfaceChatState1 *iface,
     guint state,
     DBusGMethodInvocation *context)
 {
@@ -428,7 +428,7 @@ tp_message_mixin_set_chat_state_async (TpSvcChannelInterfaceChatState *iface,
       tp_base_channel_get_self_handle ((TpBaseChannel *) object),
       state);
 
-  tp_svc_channel_interface_chat_state_return_from_set_chat_state (context);
+  tp_svc_channel_interface_chat_state1_return_from_set_chat_state (context);
   return;
 
 error:
@@ -964,10 +964,10 @@ tp_message_mixin_init_dbus_properties (GObjectClass *cls)
       TP_IFACE_QUARK_CHANNEL_TYPE_TEXT,
       tp_message_mixin_get_dbus_property, NULL, props);
 
-  if (g_type_is_a (type, TP_TYPE_SVC_CHANNEL_INTERFACE_CHAT_STATE))
+  if (g_type_is_a (type, TP_TYPE_SVC_CHANNEL_INTERFACE_CHAT_STATE1))
     {
       tp_dbus_properties_mixin_implement_interface (cls,
-          TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE,
+          TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE1,
           tp_message_mixin_get_dbus_property, NULL, chat_state_props);
     }
 }
@@ -1020,7 +1020,7 @@ tp_message_mixin_get_dbus_property (GObject *object,
   mixin = TP_MESSAGE_MIXIN (object);
 
   g_return_if_fail (interface == TP_IFACE_QUARK_CHANNEL_TYPE_TEXT ||
-      interface == TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE);
+      interface == TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE1);
   g_return_if_fail (object != NULL);
   g_return_if_fail (name != 0);
   g_return_if_fail (value != NULL);
@@ -1093,7 +1093,7 @@ tp_message_mixin_iface_init (gpointer g_iface,
 
 /**
  * tp_message_mixin_chat_state_iface_init:
- * @g_iface: A pointer to the #TpSvcChannelInterfaceChatStateClass in an object
+ * @g_iface: A pointer to the #TpSvcChannelInterfaceChatState1Class in an object
  *  class
  * @iface_data: Ignored
  *
@@ -1106,9 +1106,9 @@ void
 tp_message_mixin_chat_state_iface_init (gpointer g_iface,
                                         gpointer iface_data)
 {
-  TpSvcChannelInterfaceChatStateClass *klass = g_iface;
+  TpSvcChannelInterfaceChatState1Class *klass = g_iface;
 
-#define IMPLEMENT(x) tp_svc_channel_interface_chat_state_implement_##x (\
+#define IMPLEMENT(x) tp_svc_channel_interface_chat_state1_implement_##x (\
     klass, tp_message_mixin_##x##_async)
   IMPLEMENT (set_chat_state);
 #undef IMPLEMENT

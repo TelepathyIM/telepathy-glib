@@ -69,9 +69,9 @@ test_features (TpTestsContactsConnection *service_conn,
                GArray *handles)
 {
   const gchar *interfaces[] = { TP_IFACE_CONNECTION,
-      TP_IFACE_CONNECTION_INTERFACE_ALIASING,
-      TP_IFACE_CONNECTION_INTERFACE_AVATARS,
-      TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
+      TP_IFACE_CONNECTION_INTERFACE_ALIASING1,
+      TP_IFACE_CONNECTION_INTERFACE_AVATARS1,
+      TP_IFACE_CONNECTION_INTERFACE_PRESENCE1,
       NULL };
   GError *error = NULL;
   GHashTable *contacts;
@@ -93,11 +93,11 @@ test_features (TpTestsContactsConnection *service_conn,
       "alice");
   g_assert_cmpstr (
       tp_asv_get_string (attrs,
-          TP_IFACE_CONNECTION_INTERFACE_ALIASING "/alias"), ==,
+          TP_IFACE_CONNECTION_INTERFACE_ALIASING1 "/alias"), ==,
       "Alice in Wonderland");
   g_assert_cmpstr (
       tp_asv_get_string (attrs,
-          TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token"), ==,
+          TP_IFACE_CONNECTION_INTERFACE_AVATARS1 "/token"), ==,
       "aaaaa");
 
   attrs = g_hash_table_lookup (contacts,
@@ -108,11 +108,11 @@ test_features (TpTestsContactsConnection *service_conn,
       "bob");
   g_assert_cmpstr (
       tp_asv_get_string (attrs,
-          TP_IFACE_CONNECTION_INTERFACE_ALIASING "/alias"), ==,
+          TP_IFACE_CONNECTION_INTERFACE_ALIASING1 "/alias"), ==,
       "Bob the Builder");
   g_assert_cmpstr (
       tp_asv_get_string (attrs,
-          TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token"), ==,
+          TP_IFACE_CONNECTION_INTERFACE_AVATARS1 "/token"), ==,
       "bbbbb");
 
   attrs = g_hash_table_lookup (contacts,
@@ -123,11 +123,11 @@ test_features (TpTestsContactsConnection *service_conn,
       "chris");
   g_assert_cmpstr (
       tp_asv_get_string (attrs,
-          TP_IFACE_CONNECTION_INTERFACE_ALIASING "/alias"), ==,
+          TP_IFACE_CONNECTION_INTERFACE_ALIASING1 "/alias"), ==,
       "Christopher Robin");
   g_assert_cmpstr (
       tp_asv_get_string (attrs,
-          TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token"), ==,
+          TP_IFACE_CONNECTION_INTERFACE_AVATARS1 "/token"), ==,
       "ccccc");
 
   g_hash_table_unref (contacts);

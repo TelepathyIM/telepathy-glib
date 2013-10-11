@@ -348,7 +348,7 @@ test_properties (Test *test,
   g_assert_cmpuint (avatar->len, ==, strlen ("hello world") + 1);
   g_assert_cmpstr (mime_type, ==, "image/lolz");
 
-  v = g_variant_lookup_value (props, TP_PROP_ACCOUNT_INTERFACE_AVATAR_AVATAR,
+  v = g_variant_lookup_value (props, TP_PROP_ACCOUNT_INTERFACE_AVATAR1_AVATAR,
       NULL);
   g_assert (v != NULL);
   g_variant_unref (v);
@@ -384,7 +384,7 @@ test_properties (Test *test,
       NULL);
 
   v = g_variant_lookup_value (props,
-      TP_PROP_ACCOUNT_INTERFACE_STORAGE_STORAGE_PROVIDER, NULL);
+      TP_PROP_ACCOUNT_INTERFACE_STORAGE1_STORAGE_PROVIDER, NULL);
   g_assert (v != NULL);
   g_assert_cmpstr (g_variant_get_string (v, NULL), ==, "my.provider");
   g_variant_unref (v);
@@ -493,7 +493,7 @@ test_create_succeed (Test *test,
       "/some/silly/account");
 
   array = tp_asv_get_boxed (test->am->create_properties,
-      TP_PROP_ACCOUNT_INTERFACE_AVATAR_AVATAR,
+      TP_PROP_ACCOUNT_INTERFACE_AVATAR1_AVATAR,
       TP_STRUCT_TYPE_AVATAR);
   avatar = g_value_get_boxed (array->values);
   g_assert_cmpstr (avatar->data, ==, "blue meth");

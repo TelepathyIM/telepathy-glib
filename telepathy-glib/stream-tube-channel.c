@@ -359,7 +359,7 @@ tp_stream_tube_channel_constructed (GObject *obj)
     chain_up (obj);
 
   if (tp_channel_get_channel_type_id (chan) !=
-      TP_IFACE_QUARK_CHANNEL_TYPE_STREAM_TUBE)
+      TP_IFACE_QUARK_CHANNEL_TYPE_STREAM_TUBE1)
     {
       GError error = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
           "Channel is not a stream tube" };
@@ -373,7 +373,7 @@ tp_stream_tube_channel_constructed (GObject *obj)
 
   props = _tp_channel_get_immutable_properties (TP_CHANNEL (self));
 
-  if (tp_asv_get_string (props, TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE)
+  if (tp_asv_get_string (props, TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SERVICE)
       == NULL)
     {
       GError error = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
@@ -392,7 +392,7 @@ tp_stream_tube_channel_constructed (GObject *obj)
       GHashTable *params;
 
       params = tp_asv_get_boxed (props,
-          TP_PROP_CHANNEL_INTERFACE_TUBE_PARAMETERS,
+          TP_PROP_CHANNEL_INTERFACE_TUBE1_PARAMETERS,
           TP_HASH_TYPE_STRING_VARIANT_MAP);
 
       if (params == NULL)
@@ -408,7 +408,7 @@ tp_stream_tube_channel_constructed (GObject *obj)
         }
     }
 
-  tp_cli_channel_type_stream_tube_connect_to_connection_closed (
+  tp_cli_channel_type_stream_tube1_connect_to_connection_closed (
       TP_CHANNEL (self), connection_closed_cb, NULL, NULL,
       G_OBJECT (self), &err);
 
@@ -707,7 +707,7 @@ _channel_accepted (TpChannel *channel,
       return;
     }
 
-  tp_cli_channel_type_stream_tube_connect_to_new_local_connection (
+  tp_cli_channel_type_stream_tube1_connect_to_new_local_connection (
       TP_CHANNEL (self), new_local_connection_cb, NULL, NULL,
       G_OBJECT (self), &error);
 
@@ -808,7 +808,7 @@ tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
 
   properties = _tp_channel_get_immutable_properties (TP_CHANNEL (self));
   supported_sockets = tp_asv_get_boxed (properties,
-      TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SUPPORTED_SOCKET_TYPES,
+      TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SUPPORTED_SOCKET_TYPES,
       TP_HASH_TYPE_SUPPORTED_SOCKET_MAP);
 
   if (!_tp_set_socket_address_type_and_access_control_type (supported_sockets,
@@ -875,7 +875,7 @@ tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
     }
 
   /* Call Accept */
-  tp_cli_channel_type_stream_tube_call_accept (TP_CHANNEL (self), -1,
+  tp_cli_channel_type_stream_tube1_call_accept (TP_CHANNEL (self), -1,
       self->priv->socket_type, self->priv->access_control,
       self->priv->access_control_param, _channel_accepted,
       NULL, NULL, G_OBJECT (self));
@@ -1188,7 +1188,7 @@ _offer_with_address (TpStreamTubeChannel *self,
     }
 
   /* Connect the NewRemoteConnection signal */
-  tp_cli_channel_type_stream_tube_connect_to_new_remote_connection (
+  tp_cli_channel_type_stream_tube1_connect_to_new_remote_connection (
       TP_CHANNEL (self), _new_remote_connection,
       NULL, NULL, G_OBJECT (self), &error);
   if (error != NULL)
@@ -1209,7 +1209,7 @@ _offer_with_address (TpStreamTubeChannel *self,
   g_object_notify (G_OBJECT (self), "parameters-vardict");
 
   /* Call Offer */
-  tp_cli_channel_type_stream_tube_call_offer (TP_CHANNEL (self), -1,
+  tp_cli_channel_type_stream_tube1_call_offer (TP_CHANNEL (self), -1,
       self->priv->socket_type, addressv, self->priv->access_control,
       self->priv->parameters, _channel_offered, NULL, NULL, G_OBJECT (self));
 
@@ -1371,7 +1371,7 @@ tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
 
   properties = _tp_channel_get_immutable_properties (TP_CHANNEL (self));
   supported_sockets = tp_asv_get_boxed (properties,
-      TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SUPPORTED_SOCKET_TYPES,
+      TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SUPPORTED_SOCKET_TYPES,
       TP_HASH_TYPE_SUPPORTED_SOCKET_MAP);
 
   if (!_tp_set_socket_address_type_and_access_control_type (supported_sockets,
@@ -1490,7 +1490,7 @@ tp_stream_tube_channel_get_service (TpStreamTubeChannel *self)
 
   props = _tp_channel_get_immutable_properties (TP_CHANNEL (self));
 
-  return tp_asv_get_string (props, TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE);
+  return tp_asv_get_string (props, TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SERVICE);
 }
 
 /**

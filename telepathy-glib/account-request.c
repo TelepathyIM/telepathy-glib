@@ -276,7 +276,7 @@ tp_account_request_get_property (GObject *object,
     case PROP_AVATAR:
       {
         GValueArray *array = tp_asv_get_boxed (self->priv->properties,
-            TP_PROP_ACCOUNT_INTERFACE_AVATAR_AVATAR,
+            TP_PROP_ACCOUNT_INTERFACE_AVATAR1_AVATAR,
             TP_STRUCT_TYPE_AVATAR);
 
         if (array != NULL)
@@ -286,7 +286,7 @@ tp_account_request_get_property (GObject *object,
     case PROP_AVATAR_MIME_TYPE:
       {
         GValueArray *array = tp_asv_get_boxed (self->priv->properties,
-            TP_PROP_ACCOUNT_INTERFACE_AVATAR_AVATAR,
+            TP_PROP_ACCOUNT_INTERFACE_AVATAR1_AVATAR,
             TP_STRUCT_TYPE_AVATAR);
 
         if (array != NULL)
@@ -299,7 +299,7 @@ tp_account_request_get_property (GObject *object,
       break;
     case PROP_STORAGE_PROVIDER:
       g_value_set_string (value, tp_asv_get_string (self->priv->properties,
-            TP_PROP_ACCOUNT_INTERFACE_STORAGE_STORAGE_PROVIDER));
+            TP_PROP_ACCOUNT_INTERFACE_STORAGE1_STORAGE_PROVIDER));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1101,7 +1101,7 @@ tp_account_request_set_avatar (TpAccountRequest *self,
   g_array_unref (tmp);
 
   tp_asv_take_boxed (priv->properties,
-      TP_PROP_ACCOUNT_INTERFACE_AVATAR_AVATAR,
+      TP_PROP_ACCOUNT_INTERFACE_AVATAR1_AVATAR,
       TP_STRUCT_TYPE_AVATAR, arr);
 }
 
@@ -1155,7 +1155,7 @@ tp_account_request_set_storage_provider (TpAccountRequest *self,
   g_return_if_fail (priv->result == NULL && !priv->created);
 
   tp_asv_set_string (priv->properties,
-      TP_PROP_ACCOUNT_INTERFACE_STORAGE_STORAGE_PROVIDER, provider);
+      TP_PROP_ACCOUNT_INTERFACE_STORAGE1_STORAGE_PROVIDER, provider);
 }
 
 /**

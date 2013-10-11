@@ -28,17 +28,17 @@ G_DEFINE_TYPE_WITH_CODE (ExampleContactListConnection,
     TP_TYPE_BASE_CONNECTION,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
        tp_dbus_properties_mixin_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING1,
       init_aliasing);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
       tp_contacts_mixin_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST1,
       tp_base_contact_list_mixin_list_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1,
       tp_base_contact_list_mixin_groups_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING1,
       tp_base_contact_list_mixin_blocking_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE1,
         tp_presence_mixin_iface_init))
 
 enum
@@ -167,7 +167,7 @@ alias_updated_cb (ExampleContactList *contact_list,
   g_hash_table_insert (aliases, GUINT_TO_POINTER (contact),
       (gpointer) example_contact_list_get_alias (contact_list, contact));
 
-  tp_svc_connection_interface_aliasing_emit_aliases_changed (self, aliases);
+  tp_svc_connection_interface_aliasing1_emit_aliases_changed (self, aliases);
 
   g_hash_table_unref (aliases);
 }
@@ -248,7 +248,7 @@ aliasing_fill_contact_attributes (GObject *object,
       TpHandle contact = g_array_index (contacts, guint, i);
 
       tp_contacts_mixin_set_contact_attribute (attributes, contact,
-          TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS,
+          TP_TOKEN_CONNECTION_INTERFACE_ALIASING1_ALIAS,
           tp_g_value_slice_new_string (
             example_contact_list_get_alias (self->priv->contact_list,
               contact)));
@@ -286,7 +286,7 @@ constructed (GObject *object)
       TP_BASE_CONTACT_LIST (self->priv->contact_list), base);
 
   tp_contacts_mixin_add_contact_attributes_iface (object,
-      TP_IFACE_CONNECTION_INTERFACE_ALIASING,
+      TP_IFACE_CONNECTION_INTERFACE_ALIASING1,
       aliasing_fill_contact_attributes);
 
   tp_presence_mixin_init (object,
@@ -379,12 +379,12 @@ set_own_status (GObject *object,
 }
 
 static const gchar *interfaces_always_present[] = {
-    TP_IFACE_CONNECTION_INTERFACE_ALIASING,
+    TP_IFACE_CONNECTION_INTERFACE_ALIASING1,
     TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
-    TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
-    TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
-    TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING,
-    TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
+    TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1,
+    TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1,
+    TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING1,
+    TP_IFACE_CONNECTION_INTERFACE_PRESENCE1,
     TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
     NULL };
 
@@ -447,7 +447,7 @@ example_contact_list_connection_class_init (
     { NULL }
   };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-        { TP_IFACE_CONNECTION_INTERFACE_ALIASING,
+        { TP_IFACE_CONNECTION_INTERFACE_ALIASING1,
           aliasing_get_dbus_property,
           NULL,
           aliasing_props,
@@ -498,7 +498,7 @@ example_contact_list_connection_class_init (
 }
 
 static void
-request_aliases (TpSvcConnectionInterfaceAliasing *aliasing,
+request_aliases (TpSvcConnectionInterfaceAliasing1 *aliasing,
                  const GArray *contacts,
                  DBusGMethodInvocation *context)
 {
@@ -534,13 +534,13 @@ request_aliases (TpSvcConnectionInterfaceAliasing *aliasing,
 
   g_ptr_array_add (result, NULL);
   strings = (gchar **) g_ptr_array_free (result, FALSE);
-  tp_svc_connection_interface_aliasing_return_from_request_aliases (context,
+  tp_svc_connection_interface_aliasing1_return_from_request_aliases (context,
       (const gchar **) strings);
   g_free (strings);
 }
 
 static void
-set_aliases (TpSvcConnectionInterfaceAliasing *aliasing,
+set_aliases (TpSvcConnectionInterfaceAliasing1 *aliasing,
              GHashTable *aliases,
              DBusGMethodInvocation *context)
 {
@@ -575,16 +575,16 @@ set_aliases (TpSvcConnectionInterfaceAliasing *aliasing,
           GPOINTER_TO_UINT (key), value);
     }
 
-  tp_svc_connection_interface_aliasing_return_from_set_aliases (context);
+  tp_svc_connection_interface_aliasing1_return_from_set_aliases (context);
 }
 
 static void
 init_aliasing (gpointer iface,
                gpointer iface_data G_GNUC_UNUSED)
 {
-  TpSvcConnectionInterfaceAliasingClass *klass = iface;
+  TpSvcConnectionInterfaceAliasing1Class *klass = iface;
 
-#define IMPLEMENT(x) tp_svc_connection_interface_aliasing_implement_##x (\
+#define IMPLEMENT(x) tp_svc_connection_interface_aliasing1_implement_##x (\
     klass, x)
   IMPLEMENT(request_aliases);
   IMPLEMENT(set_aliases);

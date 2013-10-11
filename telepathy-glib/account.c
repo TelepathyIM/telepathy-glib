@@ -614,7 +614,7 @@ tp_account_prepare_storage_async (TpProxy *proxy,
   g_assert (self->priv->storage_provider == NULL);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
-      TP_IFACE_ACCOUNT_INTERFACE_STORAGE,
+      TP_IFACE_ACCOUNT_INTERFACE_STORAGE1,
       _tp_account_got_all_storage_cb, result, g_object_unref, G_OBJECT (self));
 }
 
@@ -1068,7 +1068,7 @@ dbus_properties_changed_cb (TpProxy *proxy,
 {
   TpAccount *self = TP_ACCOUNT (weak_object);
 
-  if (!tp_strdiff (interface_name, TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING))
+  if (!tp_strdiff (interface_name, TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING1))
     {
       addressing_props_changed (self, changed_properties);
     }
@@ -3491,7 +3491,7 @@ tp_account_get_avatar_async (TpAccount *account,
       callback, user_data, tp_account_get_avatar_finish);
 
   tp_cli_dbus_properties_call_get (account, -1,
-      TP_IFACE_ACCOUNT_INTERFACE_AVATAR, "Avatar", _tp_account_got_avatar_cb,
+      TP_IFACE_ACCOUNT_INTERFACE_AVATAR1, "Avatar", _tp_account_got_avatar_cb,
       result, NULL, G_OBJECT (account));
 }
 
@@ -3693,7 +3693,7 @@ tp_account_set_avatar_async (TpAccount *self,
   g_value_take_boxed (&value, arr);
 
   tp_cli_dbus_properties_call_set (self, -1,
-      TP_IFACE_ACCOUNT_INTERFACE_AVATAR, "Avatar", &value,
+      TP_IFACE_ACCOUNT_INTERFACE_AVATAR1, "Avatar", &value,
       _tp_account_property_set_cb, result, NULL, NULL);
 
   g_value_unset (&value);
@@ -3915,7 +3915,7 @@ tp_account_get_storage_specific_information_async (TpAccount *self,
       callback, user_data, tp_account_get_storage_specific_information_async);
 
   tp_cli_dbus_properties_call_get (self, -1,
-      TP_IFACE_ACCOUNT_INTERFACE_STORAGE, "StorageSpecificInformation",
+      TP_IFACE_ACCOUNT_INTERFACE_STORAGE1, "StorageSpecificInformation",
       _tp_account_get_storage_specific_information_cb, result, NULL, NULL);
 }
 
@@ -4089,7 +4089,7 @@ tp_account_prepare_addressing_async (TpProxy *proxy,
   g_assert (self->priv->uri_schemes == NULL);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
-      TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING,
+      TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING1,
       _tp_account_got_all_addressing_cb, result, g_object_unref, NULL);
 }
 
@@ -4168,7 +4168,7 @@ tp_account_set_uri_scheme_association_async (TpAccount *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_account_set_uri_scheme_association_async);
 
-  tp_cli_account_interface_addressing_call_set_uri_scheme_association (
+  tp_cli_account_interface_addressing1_call_set_uri_scheme_association (
       self, -1, scheme, associate,
       _tp_account_void_cb, result, NULL, NULL);
 }

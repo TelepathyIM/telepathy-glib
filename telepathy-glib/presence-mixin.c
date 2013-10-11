@@ -37,7 +37,7 @@
  * <title>Implementing Presence</title>
  * <para>
  *   Since 0.7.13 this mixin supports the entire Presence interface.
- *   You can implement #TpSvcConnectionInterfacePresence as follows:
+ *   You can implement #TpSvcConnectionInterfacePresence1 as follows:
  *   <itemizedlist>
  *     <listitem>
  *       <para>use the #TpContactsMixin and
@@ -51,7 +51,7 @@
  *       G_DEFINE_TYPE_WITH_CODE (MyConnection, my_connection,
  *           TP_TYPE_BASE_CONNECTION,
  *           // ...
- *           G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE,
+ *           G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE1,
  *               tp_presence_mixin_iface_init);
  *           // ...
  *           )
@@ -508,7 +508,7 @@ tp_presence_mixin_emit_presence_update (GObject *obj,
 
   presence_hash = construct_presence_hash (mixin_cls->statuses,
       contact_statuses);
-  tp_svc_connection_interface_presence_emit_presences_changed (obj,
+  tp_svc_connection_interface_presence1_emit_presences_changed (obj,
       presence_hash);
 
   g_hash_table_unref (presence_hash);
@@ -735,7 +735,7 @@ void
 tp_presence_mixin_init_dbus_properties (GObjectClass *cls)
 {
   tp_dbus_properties_mixin_implement_interface (cls,
-      TP_IFACE_QUARK_CONNECTION_INTERFACE_PRESENCE,
+      TP_IFACE_QUARK_CONNECTION_INTERFACE_PRESENCE1,
       tp_presence_mixin_get_dbus_property,
       NULL, known_presence_props);
 }
@@ -751,7 +751,7 @@ tp_presence_mixin_init_dbus_properties (GObjectClass *cls)
  */
 static void
 tp_presence_mixin_set_presence (
-    TpSvcConnectionInterfacePresence *iface,
+    TpSvcConnectionInterfacePresence1 *iface,
     const gchar *status,
     const gchar *message,
     DBusGMethodInvocation *context)
@@ -786,7 +786,7 @@ tp_presence_mixin_set_presence (
 out:
   if (error == NULL)
     {
-      tp_svc_connection_interface_presence_return_from_set_presence (
+      tp_svc_connection_interface_presence1_return_from_set_presence (
           context);
     }
   else
@@ -856,7 +856,7 @@ construct_presence_hash (const TpPresenceStatusSpec *supported_statuses,
 
 /**
  * tp_presence_mixin_iface_init: (skip)
- * @g_iface: A pointer to the #TpSvcConnectionInterfacePresenceClass in
+ * @g_iface: A pointer to the #TpSvcConnectionInterfacePresence1Class in
  * an object class
  * @iface_data: Ignored
  *
@@ -870,9 +870,9 @@ void
 tp_presence_mixin_iface_init (gpointer g_iface,
                                        gpointer iface_data)
 {
-  TpSvcConnectionInterfacePresenceClass *klass = g_iface;
+  TpSvcConnectionInterfacePresence1Class *klass = g_iface;
 
-#define IMPLEMENT(x) tp_svc_connection_interface_presence_implement_##x\
+#define IMPLEMENT(x) tp_svc_connection_interface_presence1_implement_##x\
  (klass, tp_presence_mixin_##x)
   IMPLEMENT(set_presence);
 #undef IMPLEMENT
@@ -908,7 +908,7 @@ tp_presence_mixin_fill_contact_attributes (GObject *obj,
               status, mixin_cls->statuses);
 
           tp_contacts_mixin_set_contact_attribute (attributes_hash, handle,
-              TP_TOKEN_CONNECTION_INTERFACE_PRESENCE_PRESENCE,
+              TP_TOKEN_CONNECTION_INTERFACE_PRESENCE1_PRESENCE,
               tp_g_value_slice_new_take_boxed (type, presence));
         }
 
@@ -929,7 +929,7 @@ void
 tp_presence_mixin_register_with_contacts_mixin (GObject *obj)
 {
   tp_contacts_mixin_add_contact_attributes_iface (obj,
-      TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
+      TP_IFACE_CONNECTION_INTERFACE_PRESENCE1,
       tp_presence_mixin_fill_contact_attributes);
 }
 

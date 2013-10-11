@@ -119,6 +119,6 @@ _tp_connection_prepare_aliasing_async (TpProxy *proxy,
       _tp_connection_prepare_aliasing_async);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
-      TP_IFACE_CONNECTION_INTERFACE_ALIASING,
+      TP_IFACE_CONNECTION_INTERFACE_ALIASING1,
       get_all_cb, result, g_object_unref, G_OBJECT (self));
 }

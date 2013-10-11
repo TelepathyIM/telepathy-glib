@@ -96,7 +96,7 @@ static void hold_iface_init (gpointer g_iface, gpointer iface_data);
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseMediaCallChannel,
     tp_base_media_call_channel, TP_TYPE_BASE_CALL_CHANNEL,
 
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_HOLD,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_HOLD1,
         hold_iface_init)
 )
 
@@ -123,8 +123,8 @@ tp_base_media_call_channel_get_interfaces (TpBaseChannel *base)
   interfaces = TP_BASE_CHANNEL_CLASS (
       tp_base_media_call_channel_parent_class)->get_interfaces (base);
 
-  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_HOLD);
-  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_DTMF);
+  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_HOLD1);
+  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_DTMF1);
 
   return interfaces;
 }
@@ -349,7 +349,7 @@ set_hold_state (TpBaseMediaCallChannel *self,
       if (klass->hold_state_changed != NULL)
         klass->hold_state_changed (self, hold_state, hold_state_reason);
 
-      tp_svc_channel_interface_hold_emit_hold_state_changed (self, hold_state,
+      tp_svc_channel_interface_hold1_emit_hold_state_changed (self, hold_state,
           hold_state_reason);
 
       update_hold_state (self);
@@ -461,18 +461,18 @@ hold_change_failed (TpBaseMediaCallChannel *self)
 
 static void
 tp_base_media_call_channel_get_hold_state (
-    TpSvcChannelInterfaceHold *hold_iface,
+    TpSvcChannelInterfaceHold1 *hold_iface,
     DBusGMethodInvocation *context)
 {
   TpBaseMediaCallChannel *self = TP_BASE_MEDIA_CALL_CHANNEL (hold_iface);
 
-  tp_svc_channel_interface_hold_return_from_get_hold_state (context,
+  tp_svc_channel_interface_hold1_return_from_get_hold_state (context,
       self->priv->hold_state, self->priv->hold_state_reason);
 }
 
 static void
 tp_base_media_call_channel_request_hold (
-    TpSvcChannelInterfaceHold *hold_iface,
+    TpSvcChannelInterfaceHold1 *hold_iface,
     gboolean hold,
     DBusGMethodInvocation *context)
 {
@@ -499,16 +499,15 @@ tp_base_media_call_channel_request_hold (
     }
 
  out:
-  tp_svc_channel_interface_hold_return_from_request_hold (context);
+  tp_svc_channel_interface_hold1_return_from_request_hold (context);
 }
 
 static void
 hold_iface_init (gpointer g_iface, gpointer iface_data)
 {
-  TpSvcChannelInterfaceHoldClass *klass =
-      (TpSvcChannelInterfaceHoldClass *) g_iface;
+  TpSvcChannelInterfaceHold1Class *klass = g_iface;
 
-#define IMPLEMENT(x, suffix) tp_svc_channel_interface_hold_implement_##x (\
+#define IMPLEMENT(x, suffix) tp_svc_channel_interface_hold1_implement_##x (\
     klass, tp_base_media_call_channel_##x##suffix)
   IMPLEMENT(get_hold_state,);
   IMPLEMENT(request_hold,);

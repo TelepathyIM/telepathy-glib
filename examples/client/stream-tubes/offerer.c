@@ -160,7 +160,7 @@ main (int argc,
   request = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE,
       G_TYPE_STRING,
-      TP_IFACE_CHANNEL_TYPE_STREAM_TUBE,
+      TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
 
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
       G_TYPE_UINT,
@@ -170,7 +170,7 @@ main (int argc,
       G_TYPE_STRING,
       argv[2],
 
-      TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE,
+      TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SERVICE,
       G_TYPE_STRING,
       "ExampleService",
 

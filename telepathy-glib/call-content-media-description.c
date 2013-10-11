@@ -72,15 +72,15 @@ static void call_content_media_description_extra_iface_init (gpointer iface,
 G_DEFINE_TYPE_WITH_CODE(TpCallContentMediaDescription,
     tp_call_content_media_description,
     G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_CONTENT_MEDIA_DESCRIPTION,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL1_CONTENT_MEDIA_DESCRIPTION,
         call_content_media_description_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
         tp_dbus_properties_mixin_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS1,
         call_content_media_description_extra_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK1,
         call_content_media_description_extra_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_EXTENDED_REPORTS,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_EXTENDED_REPORTS1,
         call_content_media_description_extra_iface_init);
   );
 
@@ -335,22 +335,22 @@ tp_call_content_media_description_class_init (
     { NULL }
   };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-      { TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION,
+      { TP_IFACE_CALL1_CONTENT_MEDIA_DESCRIPTION,
         tp_dbus_properties_mixin_getter_gobject_properties,
         NULL,
         media_description_props,
       },
-      { TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS,
+      { TP_IFACE_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS1,
         tp_dbus_properties_mixin_getter_gobject_properties,
         NULL,
         rtp_header_extensions_props,
       },
-      { TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK,
+      { TP_IFACE_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK1,
         tp_dbus_properties_mixin_getter_gobject_properties,
         NULL,
         rtcp_feedback_props,
       },
-      { TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_EXTENDED_REPORTS,
+      { TP_IFACE_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_EXTENDED_REPORTS1,
         tp_dbus_properties_mixin_getter_gobject_properties,
         NULL,
         rtcp_extended_reports_props,
@@ -830,7 +830,7 @@ tp_call_content_media_description_add_rtp_header_extensions_interface (
     TpCallContentMediaDescription *self)
 {
   add_interface (self,
-      TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS);
+      TP_IFACE_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS1);
 }
 
 
@@ -848,7 +848,7 @@ tp_call_content_media_description_add_rtcp_feedback_interface (
     TpCallContentMediaDescription *self)
 {
   add_interface (self,
-      TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK);
+      TP_IFACE_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK1);
 }
 
 
@@ -866,7 +866,7 @@ tp_call_content_media_description_add_rtcp_extended_reports_interface (
     TpCallContentMediaDescription *self)
 {
   add_interface (self,
-      TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_EXTENDED_REPORTS);
+      TP_IFACE_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_EXTENDED_REPORTS1);
 }
 
 
@@ -1167,23 +1167,23 @@ _tp_call_content_media_description_dup_properties (
   g_return_val_if_fail (TP_IS_CALL_CONTENT_MEDIA_DESCRIPTION (self), NULL);
 
   return tp_asv_new (
-      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACES,
+      TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACES,
           G_TYPE_STRV, self->priv->interfaces->pdata,
-      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_FURTHER_NEGOTIATION_REQUIRED,
+      TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_FURTHER_NEGOTIATION_REQUIRED,
           G_TYPE_BOOLEAN, self->priv->further_negotiation_required,
-      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_HAS_REMOTE_INFORMATION,
+      TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_HAS_REMOTE_INFORMATION,
           G_TYPE_BOOLEAN, self->priv->has_remote_information,
-      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_CODECS,
+      TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_CODECS,
           TP_ARRAY_TYPE_CODEC_LIST, self->priv->codecs,
-      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT,
+      TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT,
           G_TYPE_UINT, self->priv->remote_contact,
-      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_SSRCS,
+      TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_SSRCS,
           TP_HASH_TYPE_CONTACT_SSRCS_MAP, self->priv->ssrcs,
       NULL);
 }
 
 static void
-tp_call_content_media_description_accept (TpSvcCallContentMediaDescription *iface,
+tp_call_content_media_description_accept (TpSvcCall1ContentMediaDescription *iface,
     GHashTable *properties,
     DBusGMethodInvocation *context)
 {
@@ -1202,7 +1202,7 @@ tp_call_content_media_description_accept (TpSvcCallContentMediaDescription *ifac
     }
 
   codecs = tp_asv_get_boxed (properties,
-      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_CODECS,
+      TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_CODECS,
       TP_ARRAY_TYPE_CODEC_LIST);
   if (!codecs || codecs->len == 0)
     {
@@ -1213,7 +1213,7 @@ tp_call_content_media_description_accept (TpSvcCallContentMediaDescription *ifac
     }
 
   remote_contact = tp_asv_get_uint32 (properties,
-      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT,
+      TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT,
       &valid);
   if (valid && remote_contact != self->priv->remote_contact)
     {
@@ -1228,13 +1228,13 @@ tp_call_content_media_description_accept (TpSvcCallContentMediaDescription *ifac
   g_simple_async_result_complete (self->priv->result);
   g_clear_object (&self->priv->result);
 
-  tp_svc_call_content_media_description_return_from_accept (context);
+  tp_svc_call1_content_media_description_return_from_accept (context);
 
   tp_dbus_daemon_unregister_object (self->priv->dbus_daemon, G_OBJECT (self));
 }
 
 static void
-tp_call_content_media_description_reject (TpSvcCallContentMediaDescription *iface,
+tp_call_content_media_description_reject (TpSvcCall1ContentMediaDescription *iface,
     const GValueArray *reason_array,
     DBusGMethodInvocation *context)
 {
@@ -1264,7 +1264,7 @@ tp_call_content_media_description_reject (TpSvcCallContentMediaDescription *ifac
   g_simple_async_result_complete (self->priv->result);
   g_clear_object (&self->priv->result);
 
-  tp_svc_call_content_media_description_return_from_reject (context);
+  tp_svc_call1_content_media_description_return_from_reject (context);
 
   tp_dbus_daemon_unregister_object (self->priv->dbus_daemon, G_OBJECT (self));
 }
@@ -1272,10 +1272,9 @@ tp_call_content_media_description_reject (TpSvcCallContentMediaDescription *ifac
 static void
 call_content_media_description_iface_init (gpointer iface, gpointer data)
 {
-  TpSvcCallContentMediaDescriptionClass *klass =
-      (TpSvcCallContentMediaDescriptionClass *) iface;
+  TpSvcCall1ContentMediaDescriptionClass *klass = iface;
 
-#define IMPLEMENT(x) tp_svc_call_content_media_description_implement_##x (\
+#define IMPLEMENT(x) tp_svc_call1_content_media_description_implement_##x (\
     klass, tp_call_content_media_description_##x)
   IMPLEMENT(accept);
   IMPLEMENT(reject);

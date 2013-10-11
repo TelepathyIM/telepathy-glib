@@ -400,12 +400,12 @@ tp_text_channel_prepare_chat_states_async (TpProxy *proxy,
   result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
       tp_text_channel_prepare_chat_states_async);
 
-  tp_cli_channel_interface_chat_state_connect_to_chat_state_changed (channel,
+  tp_cli_channel_interface_chat_state1_connect_to_chat_state_changed (channel,
       chat_state_changed_cb, NULL, NULL, NULL, &error);
   g_assert_no_error (error);
 
   tp_cli_dbus_properties_call_get (channel, -1,
-      TP_IFACE_CHANNEL_INTERFACE_CHAT_STATE, "ChatStates",
+      TP_IFACE_CHANNEL_INTERFACE_CHAT_STATE1, "ChatStates",
       got_chat_states_cb,
       result, g_object_unref, NULL);
 }
@@ -500,7 +500,7 @@ tp_text_channel_constructed (GObject *obj)
 
   /* SMS */
   self->priv->sms_flash = tp_asv_get_boolean (props,
-      TP_PROP_CHANNEL_INTERFACE_SMS_FLASH, NULL);
+      TP_PROP_CHANNEL_INTERFACE_SMS1_FLASH, NULL);
 }
 
 static void
@@ -822,7 +822,7 @@ tp_text_channel_prepare_sms_async (TpProxy *proxy,
   result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
       tp_text_channel_prepare_sms_async);
 
-  tp_cli_channel_interface_sms_connect_to_sms_channel_changed (
+  tp_cli_channel_interface_sms1_connect_to_sms_channel_changed (
       (TpChannel *) proxy, sms_channel_changed_cb, NULL, NULL,
       G_OBJECT (proxy), &error);
   if (error != NULL)
@@ -833,7 +833,7 @@ tp_text_channel_prepare_sms_async (TpProxy *proxy,
     }
 
   tp_cli_dbus_properties_call_get (proxy, -1,
-      TP_IFACE_CHANNEL_INTERFACE_SMS, "SMSChannel",
+      TP_IFACE_CHANNEL_INTERFACE_SMS1, "SMSChannel",
       get_sms_channel_cb, result, NULL, G_OBJECT (proxy));
 }
 
@@ -863,14 +863,14 @@ tp_text_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
     TP_TEXT_CHANNEL_FEATURE_SMS;
   features[FEAT_SMS].prepare_async =
     tp_text_channel_prepare_sms_async;
-  need_sms[0] = TP_IFACE_QUARK_CHANNEL_INTERFACE_SMS;
+  need_sms[0] = TP_IFACE_QUARK_CHANNEL_INTERFACE_SMS1;
   features[FEAT_SMS].interfaces_needed = need_sms;
 
   features[FEAT_CHAT_STATES].name =
     TP_TEXT_CHANNEL_FEATURE_CHAT_STATES;
   features[FEAT_CHAT_STATES].prepare_async =
     tp_text_channel_prepare_chat_states_async;
-  need_chat_states[0] = TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE;
+  need_chat_states[0] = TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE1;
   features[FEAT_CHAT_STATES].interfaces_needed = need_chat_states;
 
   /* assert that the terminator at the end is there */
@@ -1635,7 +1635,7 @@ tp_text_channel_set_chat_state_async (TpTextChannel *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_text_channel_set_chat_state_async);
 
-  tp_cli_channel_interface_chat_state_call_set_chat_state (TP_CHANNEL (self),
+  tp_cli_channel_interface_chat_state1_call_set_chat_state (TP_CHANNEL (self),
       -1, state, set_chat_state_cb, result, NULL, G_OBJECT (self));
 }
 
@@ -1850,7 +1850,7 @@ tp_text_channel_get_sms_length_async (TpTextChannel *self,
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_text_channel_get_sms_length_async);
 
-  tp_cli_channel_interface_sms_call_get_sms_length ((TpChannel *) self, -1,
+  tp_cli_channel_interface_sms1_call_get_sms_length ((TpChannel *) self, -1,
       message->parts, get_sms_length_cb, result, g_object_unref,
       G_OBJECT (self));
 }

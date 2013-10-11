@@ -131,8 +131,8 @@ get_interfaces_array (TpBaseProtocol *self)
   interfaces = TP_BASE_PROTOCOL_CLASS (
       example_echo_2_protocol_parent_class)->get_interfaces_array (self);
 
-  g_ptr_array_add (interfaces, TP_IFACE_PROTOCOL_INTERFACE_AVATARS);
-  g_ptr_array_add (interfaces, TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING);
+  g_ptr_array_add (interfaces, TP_IFACE_PROTOCOL_INTERFACE_AVATARS1);
+  g_ptr_array_add (interfaces, TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING1);
 
   return interfaces;
 }

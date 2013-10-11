@@ -95,8 +95,8 @@ const gchar * const expected_interfaces[] = {
     NULL };
 
 const gchar * const expected_protocol_interfaces[] = {
-    TP_IFACE_PROTOCOL_INTERFACE_AVATARS,
-    TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING,
+    TP_IFACE_PROTOCOL_INTERFACE_AVATARS1,
+    TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING1,
     NULL };
 
 const gchar * const expected_cm_interfaces[] = {
@@ -183,7 +183,7 @@ test_protocol_avatar_properties (Test *test,
   g_assert (test->protocol != NULL);
 
   tp_cli_dbus_properties_run_get_all (test->protocol, -1,
-      TP_IFACE_PROTOCOL_INTERFACE_AVATARS, &properties, &test->error, NULL);
+      TP_IFACE_PROTOCOL_INTERFACE_AVATARS1, &properties, &test->error, NULL);
   g_assert_no_error (test->error);
 
   tp_tests_assert_strv_equals (
@@ -230,7 +230,7 @@ test_protocol_addressing_properties (Test *test,
   g_assert (test->protocol != NULL);
 
   tp_cli_dbus_properties_run_get_all (test->protocol, -1,
-      TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING, &properties, &test->error, NULL);
+      TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING1, &properties, &test->error, NULL);
   g_assert_no_error (test->error);
 
   tp_tests_assert_strv_equals (
@@ -349,7 +349,7 @@ test_protocol_object (Test *test,
   g_assert (tp_proxy_has_interface_by_id (test->protocol,
       TP_IFACE_QUARK_PROTOCOL));
   g_assert (tp_proxy_has_interface_by_id (test->protocol,
-      TP_IFACE_QUARK_PROTOCOL_INTERFACE_AVATARS));
+      TP_IFACE_QUARK_PROTOCOL_INTERFACE_AVATARS1));
 
   g_assert (tp_proxy_is_prepared (test->protocol,
         TP_PROTOCOL_FEATURE_PARAMETERS));

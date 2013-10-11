@@ -30,10 +30,10 @@
  *
  * |[
  * GHashTable *request_properties = tp_asv_new (
- *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_DBUS_TUBE,
+ *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_DBUS_TUBE1,
  *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
  *     TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, tp_contact_get_identifier (contact),
- *     TP_PROP_CHANNEL_TYPE_DBUS_TUBE_SERVICE_NAME, G_TYPE_STRING, "com.example.walrus",
+ *     TP_PROP_CHANNEL_TYPE_DBUS_TUBE1_SERVICE_NAME, G_TYPE_STRING, "com.example.walrus",
  *     NULL);
  * TpAccountChannelRequest *req = tp_account_channel_request_new (account,
  *     request_properties, TP_USER_ACTION_TIME_NOT_USER_ACTION);
@@ -274,7 +274,7 @@ tp_dbus_tube_channel_constructed (GObject *obj)
     chain_up (obj);
 
   if (tp_channel_get_channel_type_id (chan) !=
-      TP_IFACE_QUARK_CHANNEL_TYPE_DBUS_TUBE)
+      TP_IFACE_QUARK_CHANNEL_TYPE_DBUS_TUBE1)
     {
       GError error = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
           "Channel is not a D-Bus tube" };
@@ -288,7 +288,7 @@ tp_dbus_tube_channel_constructed (GObject *obj)
 
   props = _tp_channel_get_immutable_properties (TP_CHANNEL (self));
 
-  if (tp_asv_get_string (props, TP_PROP_CHANNEL_TYPE_DBUS_TUBE_SERVICE_NAME)
+  if (tp_asv_get_string (props, TP_PROP_CHANNEL_TYPE_DBUS_TUBE1_SERVICE_NAME)
       == NULL)
     {
       GError error = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
@@ -307,7 +307,7 @@ tp_dbus_tube_channel_constructed (GObject *obj)
       GHashTable *params;
 
       params = tp_asv_get_boxed (props,
-          TP_PROP_CHANNEL_INTERFACE_TUBE_PARAMETERS,
+          TP_PROP_CHANNEL_INTERFACE_TUBE1_PARAMETERS,
           TP_HASH_TYPE_STRING_VARIANT_MAP);
 
       if (params == NULL)
@@ -365,7 +365,7 @@ tp_dbus_tube_channel_prepare_core_feature_async (TpProxy *proxy,
   result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
       tp_dbus_tube_channel_prepare_core_feature_async);
 
-  if (tp_cli_channel_interface_tube_connect_to_tube_channel_state_changed (chan,
+  if (tp_cli_channel_interface_tube1_connect_to_tube_channel_state_changed (chan,
         tube_state_changed_cb, proxy, NULL, NULL, &error) == NULL)
     {
       WARNING ("Failed to connect to TubeChannelStateChanged on %s: %s",
@@ -374,7 +374,7 @@ tp_dbus_tube_channel_prepare_core_feature_async (TpProxy *proxy,
     }
 
   tp_cli_dbus_properties_call_get (proxy, -1,
-      TP_IFACE_CHANNEL_INTERFACE_TUBE, "State",
+      TP_IFACE_CHANNEL_INTERFACE_TUBE1, "State",
       get_state_cb, result, g_object_unref, G_OBJECT (proxy));
 }
 
@@ -518,7 +518,7 @@ tp_dbus_tube_channel_get_service_name (TpDBusTubeChannel *self)
 
   props = _tp_channel_get_immutable_properties (TP_CHANNEL (self));
 
-  return tp_asv_get_string (props, TP_PROP_CHANNEL_TYPE_DBUS_TUBE_SERVICE_NAME);
+  return tp_asv_get_string (props, TP_PROP_CHANNEL_TYPE_DBUS_TUBE1_SERVICE_NAME);
 }
 
 /**
@@ -646,7 +646,7 @@ proxy_prepare_offer_cb (GObject *source,
    * an environment where you need to disable authentication. tp-glib can't
    * guess this for you.
    */
-  tp_cli_channel_type_dbus_tube_call_offer (TP_CHANNEL (self), -1,
+  tp_cli_channel_type_dbus_tube1_call_offer (TP_CHANNEL (self), -1,
       self->priv->parameters, TP_SOCKET_ACCESS_CONTROL_CREDENTIALS,
       dbus_tube_offer_cb, NULL, NULL, G_OBJECT (self));
 
@@ -763,7 +763,7 @@ proxy_prepare_accept_cb (GObject *source,
    * an environment where you need to disable authentication. tp-glib can't
    * guess this for you.
    */
-  tp_cli_channel_type_dbus_tube_call_accept (TP_CHANNEL (self), -1,
+  tp_cli_channel_type_dbus_tube1_call_accept (TP_CHANNEL (self), -1,
       TP_SOCKET_ACCESS_CONTROL_CREDENTIALS, dbus_tube_accept_cb,
       NULL, NULL, G_OBJECT (self));
 }

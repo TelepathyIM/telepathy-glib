@@ -22,10 +22,10 @@
 /**
  * SECTION:base-call-channel
  * @title: TpBaseCallChannel
- * @short_description: base class for #TpSvcChannelTypeCall implementations
- * @see_also: #TpSvcChannelTypeCall, #TpBaseCallContent and #TpBaseCallStream
+ * @short_description: base class for #TpSvcChannelTypeCall1 implementations
+ * @see_also: #TpSvcChannelTypeCall1, #TpBaseCallContent and #TpBaseCallStream
  *
- * This base class makes it easier to write #TpSvcChannelTypeCall
+ * This base class makes it easier to write #TpSvcChannelTypeCall1
  * implementations by implementing its properties, and some of its methods.
  *
  * Subclasses should fill in #TpBaseCallChannelClass.accept,
@@ -126,9 +126,9 @@ static void dtmf_iface_init (gpointer, gpointer);
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseCallChannel, tp_base_call_channel,
   TP_TYPE_BASE_CHANNEL,
 
-  G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_CALL,
+  G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_CALL1,
         call_iface_init)
-  G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_DTMF,
+  G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_DTMF1,
         dtmf_iface_init)
   )
 
@@ -435,14 +435,14 @@ tp_base_call_channel_fill_immutable_properties (
 
   tp_dbus_properties_mixin_fill_properties_hash (
       G_OBJECT (chan), properties,
-      TP_IFACE_CHANNEL_TYPE_CALL, "InitialTransport",
-      TP_IFACE_CHANNEL_TYPE_CALL, "InitialAudio",
-      TP_IFACE_CHANNEL_TYPE_CALL, "InitialVideo",
-      TP_IFACE_CHANNEL_TYPE_CALL, "InitialAudioName",
-      TP_IFACE_CHANNEL_TYPE_CALL, "InitialVideoName",
-      TP_IFACE_CHANNEL_TYPE_CALL, "MutableContents",
-      TP_IFACE_CHANNEL_TYPE_CALL, "HardwareStreaming",
-      TP_IFACE_CHANNEL_INTERFACE_DTMF, "InitialTones",
+      TP_IFACE_CHANNEL_TYPE_CALL1, "InitialTransport",
+      TP_IFACE_CHANNEL_TYPE_CALL1, "InitialAudio",
+      TP_IFACE_CHANNEL_TYPE_CALL1, "InitialVideo",
+      TP_IFACE_CHANNEL_TYPE_CALL1, "InitialAudioName",
+      TP_IFACE_CHANNEL_TYPE_CALL1, "InitialVideoName",
+      TP_IFACE_CHANNEL_TYPE_CALL1, "MutableContents",
+      TP_IFACE_CHANNEL_TYPE_CALL1, "HardwareStreaming",
+      TP_IFACE_CHANNEL_INTERFACE_DTMF1, "InitialTones",
       NULL);
 }
 
@@ -484,7 +484,7 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
   object_class->dispose = tp_base_call_channel_dispose;
   object_class->finalize = tp_base_call_channel_finalize;
 
-  base_channel_class->channel_type = TP_IFACE_CHANNEL_TYPE_CALL;
+  base_channel_class->channel_type = TP_IFACE_CHANNEL_TYPE_CALL1;
   base_channel_class->fill_immutable_properties =
       tp_base_call_channel_fill_immutable_properties;
   base_channel_class->close = tp_base_call_channel_close;
@@ -710,13 +710,13 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
       param_spec);
 
   tp_dbus_properties_mixin_implement_interface (object_class,
-      TP_IFACE_QUARK_CHANNEL_TYPE_CALL,
+      TP_IFACE_QUARK_CHANNEL_TYPE_CALL1,
       tp_dbus_properties_mixin_getter_gobject_properties,
       NULL,
       call_props);
 
   tp_dbus_properties_mixin_implement_interface (object_class,
-      TP_IFACE_QUARK_CHANNEL_INTERFACE_DTMF,
+      TP_IFACE_QUARK_CHANNEL_INTERFACE_DTMF1,
       tp_dbus_properties_mixin_getter_gobject_properties,
       NULL,
       dtmf_props);
@@ -767,7 +767,7 @@ tp_base_call_channel_flags_changed (TpBaseCallChannel *self,
 
   if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
     {
-      tp_svc_channel_type_call_emit_call_state_changed (self,
+      tp_svc_channel_type_call1_emit_call_state_changed (self,
           self->priv->state, self->priv->flags, self->priv->reason,
           self->priv->details);
     }
@@ -822,7 +822,7 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
 
   if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
     {
-      tp_svc_channel_type_call_emit_call_state_changed (self, self->priv->state,
+      tp_svc_channel_type_call1_emit_call_state_changed (self, self->priv->state,
           self->priv->flags, self->priv->reason, self->priv->details);
     }
 
@@ -837,7 +837,7 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
       self->priv->state = TP_CALL_STATE_INITIALISED;
       if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
         {
-          tp_svc_channel_type_call_emit_call_state_changed (self,
+          tp_svc_channel_type_call1_emit_call_state_changed (self,
               self->priv->state, self->priv->flags, self->priv->reason,
               self->priv->details);
         }
@@ -854,7 +854,7 @@ tp_base_call_channel_set_state (TpBaseCallChannel *self,
       self->priv->state = TP_CALL_STATE_ACTIVE;
       if (tp_base_channel_is_registered (TP_BASE_CHANNEL (self)))
         {
-          tp_svc_channel_type_call_emit_call_state_changed (self,
+          tp_svc_channel_type_call1_emit_call_state_changed (self,
               self->priv->state, self->priv->flags, self->priv->reason,
               self->priv->details);
         }
@@ -979,7 +979,7 @@ _tp_base_call_channel_remove_content_internal (TpBaseCallChannel *self,
 
   path = tp_base_call_content_get_object_path (
       TP_BASE_CALL_CONTENT (content));
-  tp_svc_channel_type_call_emit_content_removed (self, path, reason_array);
+  tp_svc_channel_type_call1_emit_content_removed (self, path, reason_array);
 
   _tp_base_call_content_deinit (TP_BASE_CALL_CONTENT (content));
   g_object_unref (content);
@@ -1081,7 +1081,7 @@ tp_base_call_channel_add_content (TpBaseCallChannel *self,
         }
     }
 
-  tp_svc_channel_type_call_emit_content_added (self,
+  tp_svc_channel_type_call1_emit_content_added (self,
      tp_base_call_content_get_object_path (content));
 }
 
@@ -1145,7 +1145,7 @@ tp_base_call_channel_update_member_flags (TpBaseCallChannel *self,
   reason_array = _tp_base_call_state_reason_new (actor_handle, reason,
       dbus_reason, message);
 
-  tp_svc_channel_type_call_emit_call_members_changed (self,
+  tp_svc_channel_type_call1_emit_call_members_changed (self,
       updates, identifiers, empty_array, reason_array);
 
   g_hash_table_unref (updates);
@@ -1198,7 +1198,7 @@ tp_base_call_channel_remove_member (TpBaseCallChannel *self,
   removed = g_array_new (FALSE, FALSE, sizeof (TpHandle));
   g_array_append_val (removed, contact);
 
-  tp_svc_channel_type_call_emit_call_members_changed (self,
+  tp_svc_channel_type_call1_emit_call_members_changed (self,
       empty_table, empty_table, removed, reason_array);
 
   g_hash_table_unref (empty_table);
@@ -1279,7 +1279,7 @@ tp_base_call_channel_is_accepted (TpBaseCallChannel *self)
 /* DBus method implementation */
 
 static void
-tp_base_call_channel_set_ringing (TpSvcChannelTypeCall *iface,
+tp_base_call_channel_set_ringing (TpSvcChannelTypeCall1 *iface,
     DBusGMethodInvocation *context)
 {
   TpBaseCallChannel *self = TP_BASE_CALL_CHANNEL (iface);
@@ -1315,12 +1315,12 @@ tp_base_call_channel_set_ringing (TpSvcChannelTypeCall *iface,
               "Local client has started ringing");
         }
 
-      tp_svc_channel_type_call_return_from_set_ringing (context);
+      tp_svc_channel_type_call1_return_from_set_ringing (context);
     }
 }
 
 static void
-tp_base_call_channel_set_queued (TpSvcChannelTypeCall *iface,
+tp_base_call_channel_set_queued (TpSvcChannelTypeCall1 *iface,
     DBusGMethodInvocation *context)
 {
   TpBaseCallChannel *self = TP_BASE_CALL_CHANNEL (iface);
@@ -1356,7 +1356,7 @@ tp_base_call_channel_set_queued (TpSvcChannelTypeCall *iface,
               "Local client has queued the call");
         }
 
-      tp_svc_channel_type_call_return_from_set_queued (context);
+      tp_svc_channel_type_call1_return_from_set_queued (context);
     }
 }
 
@@ -1377,7 +1377,7 @@ raise_accept_state_error (TpBaseCallChannel *self,
 }
 
 static void
-tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
+tp_base_call_channel_accept (TpSvcChannelTypeCall1 *iface,
     DBusGMethodInvocation *context)
 {
   TpBaseCallChannel *self = TP_BASE_CALL_CHANNEL (iface);
@@ -1426,7 +1426,7 @@ tp_base_call_channel_accept (TpSvcChannelTypeCall *iface,
 
   klass->accept (self);
 
-  tp_svc_channel_type_call_return_from_accept (context);
+  tp_svc_channel_type_call1_return_from_accept (context);
 }
 
 static void
@@ -1437,7 +1437,7 @@ tp_base_call_channel_accept_real (TpBaseCallChannel *self)
 }
 
 static void
-tp_base_call_channel_hangup (TpSvcChannelTypeCall *iface,
+tp_base_call_channel_hangup (TpSvcChannelTypeCall1 *iface,
   guint reason,
   const gchar *detailed_reason,
   const gchar *message,
@@ -1462,11 +1462,11 @@ tp_base_call_channel_hangup (TpSvcChannelTypeCall *iface,
       tp_base_channel_get_self_handle (tp_base),
       reason, detailed_reason, message);
 
-  tp_svc_channel_type_call_return_from_hangup (context);
+  tp_svc_channel_type_call1_return_from_hangup (context);
 }
 
 static void
-tp_base_call_channel_add_content_dbus (TpSvcChannelTypeCall *iface,
+tp_base_call_channel_add_content_dbus (TpSvcChannelTypeCall1 *iface,
   const gchar *name,
   TpMediaStreamType mtype,
   TpMediaStreamDirection initial_direction,
@@ -1516,7 +1516,7 @@ tp_base_call_channel_add_content_dbus (TpSvcChannelTypeCall *iface,
           "should have called tp_base_call_channel_add_content()");
     }
 
-  tp_svc_channel_type_call_return_from_add_content (context,
+  tp_svc_channel_type_call1_return_from_add_content (context,
       tp_base_call_content_get_object_path (content));
   return;
 
@@ -1528,10 +1528,10 @@ error:
 static void
 call_iface_init (gpointer g_iface, gpointer iface_data)
 {
-  TpSvcChannelTypeCallClass *klass =
-    (TpSvcChannelTypeCallClass *) g_iface;
+  TpSvcChannelTypeCall1Class *klass =
+    (TpSvcChannelTypeCall1Class *) g_iface;
 
-#define IMPLEMENT(x, suffix) tp_svc_channel_type_call_implement_##x (\
+#define IMPLEMENT(x, suffix) tp_svc_channel_type_call1_implement_##x (\
     klass, tp_base_call_channel_##x##suffix)
   IMPLEMENT(set_ringing,);
   IMPLEMENT(set_queued,);

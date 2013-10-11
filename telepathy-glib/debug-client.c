@@ -158,7 +158,7 @@ tp_debug_client_constructed (GObject *object)
       name_owner_changed_cb, object, NULL);
   tp_debug_client_prepare_core (self);
 
-  if (!tp_cli_debug_connect_to_new_debug_message (self, new_debug_message_cb,
+  if (!tp_cli_debug1_connect_to_new_debug_message (self, new_debug_message_cb,
         NULL, NULL, NULL, &error))
     {
       WARNING ("Failed to connect to NewDebugMessage: %s", error->message);
@@ -192,7 +192,7 @@ tp_debug_client_class_init (TpDebugClientClass *klass)
   object_class->dispose = tp_debug_client_dispose;
 
   proxy_class->must_have_unique_name = TRUE;
-  proxy_class->interface = TP_IFACE_QUARK_DEBUG;
+  proxy_class->interface = TP_IFACE_QUARK_DEBUG1;
   proxy_class->list_features = tp_debug_client_list_features;
 
   /**
@@ -296,7 +296,7 @@ got_enabled_cb (
 static void
 tp_debug_client_prepare_core (TpDebugClient *self)
 {
-  tp_cli_dbus_properties_call_get (self, -1, TP_IFACE_DEBUG, "Enabled",
+  tp_cli_dbus_properties_call_get (self, -1, TP_IFACE_DEBUG1, "Enabled",
       got_enabled_cb, NULL, NULL, NULL);
 }
 
@@ -420,7 +420,7 @@ tp_debug_client_set_enabled_async (
 
   g_value_init (&v, G_TYPE_BOOLEAN);
   g_value_set_boolean (&v, enabled);
-  tp_cli_dbus_properties_call_set (self, -1, TP_IFACE_DEBUG, "Enabled", &v,
+  tp_cli_dbus_properties_call_set (self, -1, TP_IFACE_DEBUG1, "Enabled", &v,
       set_enabled_cb, result, g_object_unref, NULL);
   g_value_unset (&v);
 }
@@ -524,7 +524,7 @@ tp_debug_client_get_messages_async (
   GSimpleAsyncResult *result = g_simple_async_result_new (G_OBJECT (self),
       callback, user_data, tp_debug_client_set_enabled_async);
 
-  tp_cli_debug_call_get_messages (self, -1, get_messages_cb,
+  tp_cli_debug1_call_get_messages (self, -1, get_messages_cb,
       result, g_object_unref, NULL);
 }
 

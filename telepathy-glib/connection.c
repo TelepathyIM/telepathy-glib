@@ -494,10 +494,10 @@ tp_connection_prepare_balance_async (TpProxy *proxy,
   g_assert (self->priv->balance_currency == NULL);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
-      TP_IFACE_CONNECTION_INTERFACE_BALANCE,
+      TP_IFACE_CONNECTION_INTERFACE_BALANCE1,
       tp_connection_get_balance_cb, result, g_object_unref, NULL);
 
-  tp_cli_connection_interface_balance_connect_to_balance_changed (self,
+  tp_cli_connection_interface_balance1_connect_to_balance_changed (self,
       tp_connection_balance_changed_cb,
       NULL, NULL, NULL, NULL);
 }
@@ -1386,23 +1386,23 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_AVATAR_REQUIREMENTS].name = TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS;
   features[FEAT_AVATAR_REQUIREMENTS].prepare_async =
     _tp_connection_prepare_avatar_requirements_async;
-  need_avatars[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS;
+  need_avatars[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS1;
   features[FEAT_AVATAR_REQUIREMENTS].interfaces_needed = need_avatars;
 
   features[FEAT_CONTACT_INFO].name = TP_CONNECTION_FEATURE_CONTACT_INFO;
   features[FEAT_CONTACT_INFO].prepare_async =
     _tp_connection_prepare_contact_info_async;
-  need_contact_info[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO;
+  need_contact_info[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO1;
   features[FEAT_CONTACT_INFO].interfaces_needed = need_contact_info;
 
   features[FEAT_BALANCE].name = TP_CONNECTION_FEATURE_BALANCE;
   features[FEAT_BALANCE].prepare_async = tp_connection_prepare_balance_async;
-  need_balance[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_BALANCE;
+  need_balance[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_BALANCE1;
   features[FEAT_BALANCE].interfaces_needed = need_balance;
 
   features[FEAT_CONTACT_LIST].name = TP_CONNECTION_FEATURE_CONTACT_LIST;
   features[FEAT_CONTACT_LIST].prepare_async = _tp_connection_prepare_contact_list_async;
-  need_contact_list[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_LIST;
+  need_contact_list[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_LIST1;
   need_contact_list[1] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS;
   features[FEAT_CONTACT_LIST].interfaces_needed = need_contact_list;
   depends_contact_list[0] = TP_CONNECTION_FEATURE_CONTACT_LIST_PROPERTIES;
@@ -1414,17 +1414,17 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
 
   features[FEAT_CONTACT_GROUPS].name = TP_CONNECTION_FEATURE_CONTACT_GROUPS;
   features[FEAT_CONTACT_GROUPS].prepare_async = _tp_connection_prepare_contact_groups_async;
-  need_contact_groups[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_GROUPS;
+  need_contact_groups[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_GROUPS1;
   features[FEAT_CONTACT_GROUPS].interfaces_needed = need_contact_groups;
 
   features[FEAT_CONTACT_BLOCKING].name = TP_CONNECTION_FEATURE_CONTACT_BLOCKING;
   features[FEAT_CONTACT_BLOCKING].prepare_async = _tp_connection_prepare_contact_blocking_async;
-  need_contact_blocking[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_BLOCKING;
+  need_contact_blocking[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_BLOCKING1;
   features[FEAT_CONTACT_BLOCKING].interfaces_needed = need_contact_blocking;
 
   features[FEAT_ALIASING].name = TP_CONNECTION_FEATURE_ALIASING;
   features[FEAT_ALIASING].prepare_async = _tp_connection_prepare_aliasing_async;
-  need_aliasing[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING;
+  need_aliasing[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING1;
   features[FEAT_ALIASING].interfaces_needed = need_aliasing;
 
   /* assert that the terminator at the end is there */

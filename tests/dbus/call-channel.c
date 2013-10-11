@@ -174,12 +174,12 @@ outgoing_call (Test *test,
 {
   GHashTable *request = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE,
-          G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CALL,
+          G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CALL1,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
       TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, id,
-      TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
+      TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO,
           G_TYPE_BOOLEAN, initial_audio,
-      TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
+      TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO,
           G_TYPE_BOOLEAN, initial_video,
       NULL);
 
@@ -389,9 +389,9 @@ run_until_active_get_all_cb (TpProxy *proxy,
           "object-path", object_path,
           NULL);
       tp_proxy_add_interface_by_id (endpoint,
-          TP_IFACE_QUARK_CALL_STREAM_ENDPOINT);
+          TP_IFACE_QUARK_CALL1_STREAM_ENDPOINT);
 
-      tp_cli_call_stream_endpoint_call_set_endpoint_state (endpoint,
+      tp_cli_call1_stream_endpoint_call_set_endpoint_state (endpoint,
           -1, TP_STREAM_COMPONENT_DATA,
           TP_STREAM_ENDPOINT_STATE_FULLY_CONNECTED,
           NULL, NULL, NULL, NULL);
@@ -413,10 +413,10 @@ run_until_active_stream_prepared_cb (GObject *stream,
     }
 
   g_assert (tp_proxy_has_interface_by_id (stream,
-          TP_IFACE_QUARK_CALL_STREAM_INTERFACE_MEDIA));
+          TP_IFACE_QUARK_CALL1_STREAM_INTERFACE_MEDIA));
 
   tp_cli_dbus_properties_call_get_all (stream, -1,
-      TP_IFACE_CALL_STREAM_INTERFACE_MEDIA,
+      TP_IFACE_CALL1_STREAM_INTERFACE_MEDIA,
       run_until_active_get_all_cb, test, NULL,
       NULL);
 }
@@ -897,7 +897,7 @@ trigger_incoming_call (Test *test,
 {
   TpProxySignalConnection *new_channels_sig;
 
-  tp_cli_connection_interface_presence_run_set_presence (test->conn, -1,
+  tp_cli_connection_interface_presence1_run_set_presence (test->conn, -1,
       "away", "preparing for a test", &test->error, NULL);
   g_assert_no_error (test->error);
 
@@ -906,7 +906,7 @@ trigger_incoming_call (Test *test,
         expect_incoming_call_cb, test, NULL, NULL, &test->error);
   g_assert_no_error (test->error);
 
-  tp_cli_connection_interface_presence_run_set_presence (test->conn, -1,
+  tp_cli_connection_interface_presence1_run_set_presence (test->conn, -1,
       "available", message, &test->error, NULL);
   g_assert_no_error (test->error);
 
@@ -1005,12 +1005,12 @@ dtmf_change_requested_cb (TpCallContent *content,
 
   if (state == TP_SENDING_STATE_PENDING_SEND)
     {
-      tp_cli_call_content_interface_media_call_acknowledge_dtmf_change (content,
+      tp_cli_call1_content_interface_media_call_acknowledge_dtmf_change (content,
           -1, event, TP_SENDING_STATE_SENDING, NULL, NULL, NULL, NULL);
     }
   else if (state == TP_SENDING_STATE_PENDING_STOP_SENDING)
     {
-      tp_cli_call_content_interface_media_call_acknowledge_dtmf_change (content,
+      tp_cli_call1_content_interface_media_call_acknowledge_dtmf_change (content,
           -1, event, TP_SENDING_STATE_NONE, NULL, NULL, NULL, NULL);
     }
 }
@@ -1030,7 +1030,7 @@ test_dtmf (Test *test,
   g_assert (contents->len == 1);
   content = g_ptr_array_index (contents, 0);
 
-  tp_cli_call_content_interface_media_connect_to_dtmf_change_requested (content,
+  tp_cli_call1_content_interface_media_connect_to_dtmf_change_requested (content,
       dtmf_change_requested_cb, test, NULL, NULL, NULL);
 
   tp_call_channel_send_tones_async (test->call_chan, "123456789", NULL,

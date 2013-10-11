@@ -1815,8 +1815,8 @@ tp_account_channel_request_new_audio_call (
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
   request = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CALL,
-      TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, G_TYPE_BOOLEAN, TRUE,
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CALL1,
+      TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO, G_TYPE_BOOLEAN, TRUE,
       NULL);
 
   self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
@@ -1864,9 +1864,9 @@ tp_account_channel_request_new_audio_video_call (
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
   request = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CALL,
-      TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, G_TYPE_BOOLEAN, TRUE,
-      TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, G_TYPE_BOOLEAN, TRUE,
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CALL1,
+      TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO, G_TYPE_BOOLEAN, TRUE,
+      TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO, G_TYPE_BOOLEAN, TRUE,
       NULL);
 
   self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
@@ -1926,10 +1926,10 @@ tp_account_channel_request_new_file_transfer (
 
   request = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME, G_TYPE_STRING, filename,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_TYPE, G_TYPE_STRING, mime_type,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE, G_TYPE_UINT64, size,
+          TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1,
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_FILENAME, G_TYPE_STRING, filename,
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_CONTENT_TYPE, G_TYPE_STRING, mime_type,
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_SIZE, G_TYPE_UINT64, size,
       NULL);
 
   self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
@@ -1970,7 +1970,7 @@ tp_account_channel_request_set_file_transfer_description (
   g_return_if_fail (description != NULL);
 
   g_hash_table_insert (self->priv->request,
-      g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DESCRIPTION),
+      g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_DESCRIPTION),
       tp_g_value_slice_new_string (description));
 }
 
@@ -2018,7 +2018,7 @@ tp_account_channel_request_set_file_transfer_uri (
   g_return_if_fail (uri != NULL);
 
   g_hash_table_insert (self->priv->request,
-      g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_URI),
+      g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_URI),
       tp_g_value_slice_new_string (uri));
 }
 
@@ -2052,7 +2052,7 @@ tp_account_channel_request_set_file_transfer_timestamp (
   g_return_if_fail (!self->priv->requested);
 
   g_hash_table_insert (self->priv->request,
-      g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DATE),
+      g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_DATE),
       tp_g_value_slice_new_uint64 (timestamp));
 }
 
@@ -2090,12 +2090,12 @@ tp_account_channel_request_set_file_transfer_initial_offset (
   if (offset == 0)
     {
       g_hash_table_remove (self->priv->request,
-          TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET);
+          TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_INITIAL_OFFSET);
     }
   else
     {
       g_hash_table_insert (self->priv->request,
-          g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET),
+          g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_INITIAL_OFFSET),
           tp_g_value_slice_new_uint64 (offset));
     }
 }

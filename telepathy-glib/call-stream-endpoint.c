@@ -21,10 +21,10 @@
 /**
  * SECTION:call-stream-endpoint
  * @title: TpCallStreamEndpoint
- * @short_description: class for #TpSvcCallStreamEndpoint implementations
+ * @short_description: class for #TpSvcCall1StreamEndpoint implementations
  * @see_also: #TpBaseMediaCallStream
  *
- * This class makes it easier to write #TpSvcCallStreamEndpoint
+ * This class makes it easier to write #TpSvcCall1StreamEndpoint
  * implementations by implementing its properties and methods.
  *
  * Since: 0.17.5
@@ -73,7 +73,7 @@ static void call_stream_endpoint_iface_init (gpointer, gpointer);
 G_DEFINE_TYPE_WITH_CODE(TpCallStreamEndpoint,
   tp_call_stream_endpoint,
   G_TYPE_OBJECT,
-  G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_STREAM_ENDPOINT,
+  G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL1_STREAM_ENDPOINT,
       call_stream_endpoint_iface_init);
    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
       tp_dbus_properties_mixin_iface_init);
@@ -279,7 +279,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
     { NULL }
   };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-      { TP_IFACE_CALL_STREAM_ENDPOINT,
+      { TP_IFACE_CALL1_STREAM_ENDPOINT,
         tp_dbus_properties_mixin_getter_gobject_properties,
         NULL,
         endpoint_props,
@@ -589,7 +589,7 @@ tp_call_stream_endpoint_add_new_candidates (TpCallStreamEndpoint *self,
       G_GNUC_END_IGNORE_DEPRECATIONS
     }
 
-  tp_svc_call_stream_endpoint_emit_remote_candidates_added (self,
+  tp_svc_call1_stream_endpoint_emit_remote_candidates_added (self,
       candidates);
 }
 
@@ -634,7 +634,7 @@ tp_call_stream_endpoint_add_new_candidate (TpCallStreamEndpoint *self,
 
   candidates = g_ptr_array_new ();
   g_ptr_array_add (candidates, c);
-  tp_svc_call_stream_endpoint_emit_remote_candidates_added (self,
+  tp_svc_call1_stream_endpoint_emit_remote_candidates_added (self,
       candidates);
   g_ptr_array_unref (candidates);
 }
@@ -666,7 +666,7 @@ tp_call_stream_endpoint_set_remote_credentials (TpCallStreamEndpoint *self,
   self->priv->username = g_strdup (username);
   self->priv->password = g_strdup (password);
 
-  tp_svc_call_stream_endpoint_emit_remote_credentials_set (self, username,
+  tp_svc_call1_stream_endpoint_emit_remote_credentials_set (self, username,
       password);
 }
 
@@ -761,7 +761,7 @@ common_checks (TpCallStreamEndpoint *self,
 }
 
 static void
-call_stream_endpoint_set_selected_candidate_pair (TpSvcCallStreamEndpoint *iface,
+call_stream_endpoint_set_selected_candidate_pair (TpSvcCall1StreamEndpoint *iface,
     const GValueArray *local_candidate,
     const GValueArray *remote_candidate,
     DBusGMethodInvocation *context)
@@ -809,17 +809,17 @@ call_stream_endpoint_set_selected_candidate_pair (TpSvcCallStreamEndpoint *iface
       G_TYPE_INVALID);
   g_ptr_array_add (self->priv->selected_candidate_pairs, pair);
 
-  tp_svc_call_stream_endpoint_emit_candidate_pair_selected (self,
+  tp_svc_call1_stream_endpoint_emit_candidate_pair_selected (self,
       local_candidate, remote_candidate);
 
   g_signal_emit (self, _signals[CANDIDATE_SELECTED], 0,
       local_candidate, remote_candidate);
 
-  tp_svc_call_stream_endpoint_return_from_set_selected_candidate_pair (context);
+  tp_svc_call1_stream_endpoint_return_from_set_selected_candidate_pair (context);
 }
 
 static void
-call_stream_endpoint_set_endpoint_state (TpSvcCallStreamEndpoint *iface,
+call_stream_endpoint_set_endpoint_state (TpSvcCall1StreamEndpoint *iface,
     TpStreamComponent component,
     TpStreamEndpointState state,
     DBusGMethodInvocation *context)
@@ -852,7 +852,7 @@ call_stream_endpoint_set_endpoint_state (TpSvcCallStreamEndpoint *iface,
       GUINT_TO_POINTER (state));
   g_object_notify (G_OBJECT (self), "endpoint-state");
 
-  tp_svc_call_stream_endpoint_emit_endpoint_state_changed (self,
+  tp_svc_call1_stream_endpoint_emit_endpoint_state_changed (self,
       component, state);
 
   if (component == TP_STREAM_COMPONENT_DATA)
@@ -865,12 +865,12 @@ call_stream_endpoint_set_endpoint_state (TpSvcCallStreamEndpoint *iface,
             TP_BASE_MEDIA_CALL_CHANNEL (chan));
     }
 
-  tp_svc_call_stream_endpoint_return_from_set_endpoint_state (context);
+  tp_svc_call1_stream_endpoint_return_from_set_endpoint_state (context);
 }
 
 static void
 call_stream_endpoint_accept_selected_candidate_pair (
-    TpSvcCallStreamEndpoint *iface,
+    TpSvcCall1StreamEndpoint *iface,
     const GValueArray *local_candidate,
     const GValueArray *remote_candidate,
     DBusGMethodInvocation *context)
@@ -891,13 +891,13 @@ call_stream_endpoint_accept_selected_candidate_pair (
   g_signal_emit (self, _signals[CANDIDATE_ACCEPTED], 0,
       local_candidate, remote_candidate);
 
-  tp_svc_call_stream_endpoint_return_from_accept_selected_candidate_pair (
+  tp_svc_call1_stream_endpoint_return_from_accept_selected_candidate_pair (
       context);
 }
 
 static void
 call_stream_endpoint_reject_selected_candidate_pair (
-    TpSvcCallStreamEndpoint *iface,
+    TpSvcCall1StreamEndpoint *iface,
     const GValueArray *local_candidate,
     const GValueArray *remote_candidate,
     DBusGMethodInvocation *context)
@@ -918,12 +918,12 @@ call_stream_endpoint_reject_selected_candidate_pair (
   g_signal_emit (self, _signals[CANDIDATE_REJECTED], 0,
       local_candidate, remote_candidate);
 
-  tp_svc_call_stream_endpoint_return_from_reject_selected_candidate_pair (
+  tp_svc_call1_stream_endpoint_return_from_reject_selected_candidate_pair (
       context);
 }
 
 static void
-call_stream_endpoint_set_controlling (TpSvcCallStreamEndpoint *iface,
+call_stream_endpoint_set_controlling (TpSvcCall1StreamEndpoint *iface,
     gboolean controlling,
     DBusGMethodInvocation *context)
 {
@@ -931,17 +931,17 @@ call_stream_endpoint_set_controlling (TpSvcCallStreamEndpoint *iface,
 
   self->priv->controlling = controlling;
 
-  tp_svc_call_stream_endpoint_emit_controlling_changed (self, controlling);
-  tp_svc_call_stream_endpoint_return_from_set_controlling (context);
+  tp_svc_call1_stream_endpoint_emit_controlling_changed (self, controlling);
+  tp_svc_call1_stream_endpoint_return_from_set_controlling (context);
 }
 
 static void
 call_stream_endpoint_iface_init (gpointer iface, gpointer data)
 {
-  TpSvcCallStreamEndpointClass *klass =
-    (TpSvcCallStreamEndpointClass *) iface;
+  TpSvcCall1StreamEndpointClass *klass =
+    (TpSvcCall1StreamEndpointClass *) iface;
 
-#define IMPLEMENT(x) tp_svc_call_stream_endpoint_implement_##x (\
+#define IMPLEMENT(x) tp_svc_call1_stream_endpoint_implement_##x (\
     klass, call_stream_endpoint_##x)
   IMPLEMENT(set_selected_candidate_pair);
   IMPLEMENT(set_endpoint_state);

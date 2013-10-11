@@ -272,13 +272,13 @@ test_handle_create_fail (Test *test,
 
   /* The request had the properties we wanted */
   g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
-        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_CALL);
+        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_CALL1);
   g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
         TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
   g_assert_cmpuint (tp_asv_get_uint32 (test->cd_service->last_request,
         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL), ==, TP_HANDLE_TYPE_CONTACT);
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
-        TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, NULL), ==, TRUE);
+        TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO, NULL), ==, TRUE);
   g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
         "com.example.String"), ==, "ferret");
   g_assert_cmpuint (tp_asv_get_int32 (test->cd_service->last_request,
@@ -312,11 +312,11 @@ test_handle_proceed_fail (Test *test,
 
   /* The request had the properties we wanted */
   g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
-        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_CALL);
+        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_CALL1);
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
-        TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, NULL), ==, TRUE);
+        TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO, NULL), ==, TRUE);
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
-        TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, NULL), ==, TRUE);
+        TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO, NULL), ==, TRUE);
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
         "ProceedFail", NULL), ==, TRUE);
   g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 4);
@@ -347,14 +347,14 @@ test_handle_cr_failed (Test *test,
 
   /* The request had the properties we wanted */
   g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
-        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER);
+        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1);
   g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
-        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME), ==, "warez.rar");
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_FILENAME), ==, "warez.rar");
   g_assert_cmpuint (tp_asv_get_uint64 (test->cd_service->last_request,
-        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE, NULL), ==,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_SIZE, NULL), ==,
       G_GUINT64_CONSTANT (1234567890123));
   g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
-        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_TYPE), ==,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_CONTENT_TYPE), ==,
       "application/x-rar");
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
         "FireFailed", NULL), ==, TRUE);
@@ -394,26 +394,26 @@ test_ft_props (Test *test,
 
   /* The request had the properties we wanted */
   g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
-        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER);
+        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1);
   g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
-        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME), ==, "warez.rar");
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_FILENAME), ==, "warez.rar");
   g_assert_cmpuint (tp_asv_get_uint64 (test->cd_service->last_request,
-        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE, NULL), ==,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_SIZE, NULL), ==,
       G_GUINT64_CONSTANT (1234567890123));
   g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
-        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_TYPE), ==,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_CONTENT_TYPE), ==,
       "application/x-rar");
   g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
-        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DESCRIPTION), ==,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_DESCRIPTION), ==,
       "A collection of l33t warez");
   g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
-        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_URI), ==,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_URI), ==,
       "file:///home/Downloads/warez.rar");
   g_assert_cmpuint (tp_asv_get_uint64 (test->cd_service->last_request,
-        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET, NULL), ==,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_INITIAL_OFFSET, NULL), ==,
       1024 * 1024);
   g_assert_cmpuint (tp_asv_get_uint64 (test->cd_service->last_request,
-        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DATE, NULL), ==,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_DATE, NULL), ==,
       1111222233);
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
         "FireFailed", NULL), ==, TRUE);

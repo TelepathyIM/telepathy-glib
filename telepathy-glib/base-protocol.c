@@ -572,19 +572,19 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  */
 
 static void protocol_iface_init (TpSvcProtocolClass *cls);
-static void presence_iface_init (TpSvcProtocolInterfacePresenceClass *cls);
-static void addressing_iface_init (TpSvcProtocolInterfaceAddressingClass *cls);
+static void presence_iface_init (TpSvcProtocolInterfacePresence1Class *cls);
+static void addressing_iface_init (TpSvcProtocolInterfaceAddressing1Class *cls);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseProtocol, tp_base_protocol,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
       tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL, protocol_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL_INTERFACE_PRESENCE,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL_INTERFACE_PRESENCE1,
       presence_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL_INTERFACE_AVATARS,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL_INTERFACE_AVATARS1,
       NULL);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL_INTERFACE_ADDRESSING,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL_INTERFACE_ADDRESSING1,
       addressing_iface_init))
 
 G_DEFINE_INTERFACE (TpProtocolAddressing, tp_protocol_addressing,
@@ -817,28 +817,28 @@ tp_base_protocol_get_immutable_properties (TpBaseProtocol *self)
   if (cls->get_avatar_details != NULL)
     {
       tp_dbus_properties_mixin_fill_properties_hash ((GObject *) self, table,
-          TP_IFACE_PROTOCOL_INTERFACE_AVATARS, "SupportedAvatarMIMETypes",
-          TP_IFACE_PROTOCOL_INTERFACE_AVATARS, "MinimumAvatarHeight",
-          TP_IFACE_PROTOCOL_INTERFACE_AVATARS, "MinimumAvatarWidth",
-          TP_IFACE_PROTOCOL_INTERFACE_AVATARS, "RecommendedAvatarHeight",
-          TP_IFACE_PROTOCOL_INTERFACE_AVATARS, "RecommendedAvatarWidth",
-          TP_IFACE_PROTOCOL_INTERFACE_AVATARS, "MaximumAvatarHeight",
-          TP_IFACE_PROTOCOL_INTERFACE_AVATARS, "MaximumAvatarWidth",
-          TP_IFACE_PROTOCOL_INTERFACE_AVATARS, "MaximumAvatarBytes",
+          TP_IFACE_PROTOCOL_INTERFACE_AVATARS1, "SupportedAvatarMIMETypes",
+          TP_IFACE_PROTOCOL_INTERFACE_AVATARS1, "MinimumAvatarHeight",
+          TP_IFACE_PROTOCOL_INTERFACE_AVATARS1, "MinimumAvatarWidth",
+          TP_IFACE_PROTOCOL_INTERFACE_AVATARS1, "RecommendedAvatarHeight",
+          TP_IFACE_PROTOCOL_INTERFACE_AVATARS1, "RecommendedAvatarWidth",
+          TP_IFACE_PROTOCOL_INTERFACE_AVATARS1, "MaximumAvatarHeight",
+          TP_IFACE_PROTOCOL_INTERFACE_AVATARS1, "MaximumAvatarWidth",
+          TP_IFACE_PROTOCOL_INTERFACE_AVATARS1, "MaximumAvatarBytes",
           NULL);
     }
 
   if (tp_strv_contains ((const gchar * const *) self->priv->interfaces,
-          TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING))
+          TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING1))
     tp_dbus_properties_mixin_fill_properties_hash ((GObject *) self, table,
-        TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING, "AddressableVCardFields",
-        TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING, "AddressableURISchemes",
+        TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING1, "AddressableVCardFields",
+        TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING1, "AddressableURISchemes",
         NULL);
 
   if (tp_strv_contains ((const gchar * const *) self->priv->interfaces,
-          TP_IFACE_PROTOCOL_INTERFACE_PRESENCE))
+          TP_IFACE_PROTOCOL_INTERFACE_PRESENCE1))
     tp_dbus_properties_mixin_fill_properties_hash ((GObject *) self, table,
-        TP_IFACE_PROTOCOL_INTERFACE_PRESENCE, "Statuses",
+        TP_IFACE_PROTOCOL_INTERFACE_PRESENCE1, "Statuses",
         NULL);
 
   return table;
@@ -1229,11 +1229,11 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
 
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
       { TP_IFACE_PROTOCOL, protocol_properties_getter, NULL, channel_props },
-      { TP_IFACE_PROTOCOL_INTERFACE_PRESENCE, protocol_prop_presence_getter,
+      { TP_IFACE_PROTOCOL_INTERFACE_PRESENCE1, protocol_prop_presence_getter,
         NULL, presence_props },
-      { TP_IFACE_PROTOCOL_INTERFACE_AVATARS, protocol_prop_avatar_getter,
+      { TP_IFACE_PROTOCOL_INTERFACE_AVATARS1, protocol_prop_avatar_getter,
         NULL, avatar_props },
-      { TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING,
+      { TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING1,
         protocol_prop_addressing_getter, NULL, addressing_props },
       { NULL }
   };
@@ -1798,7 +1798,7 @@ protocol_identify_account (TpSvcProtocol *protocol,
 }
 
 static void
-addressing_normalize_contact_uri (TpSvcProtocolInterfaceAddressing *protocol,
+addressing_normalize_contact_uri (TpSvcProtocolInterfaceAddressing1 *protocol,
     const gchar *uri,
     DBusGMethodInvocation *context)
 {
@@ -1824,7 +1824,7 @@ addressing_normalize_contact_uri (TpSvcProtocolInterfaceAddressing *protocol,
       return;
     }
 
-  tp_svc_protocol_interface_addressing_return_from_normalize_contact_uri (context,
+  tp_svc_protocol_interface_addressing1_return_from_normalize_contact_uri (context,
       ret);
 
   g_free (ret);
@@ -1836,7 +1836,7 @@ addressing_normalize_contact_uri (TpSvcProtocolInterfaceAddressing *protocol,
 }
 
 static void
-addressing_normalize_vcard_address (TpSvcProtocolInterfaceAddressing *protocol,
+addressing_normalize_vcard_address (TpSvcProtocolInterfaceAddressing1 *protocol,
     const gchar *vcard_field,
     const gchar *vcard_address,
     DBusGMethodInvocation *context)
@@ -1864,7 +1864,7 @@ addressing_normalize_vcard_address (TpSvcProtocolInterfaceAddressing *protocol,
       return;
     }
 
-  tp_svc_protocol_interface_addressing_return_from_normalize_vcard_address (
+  tp_svc_protocol_interface_addressing1_return_from_normalize_vcard_address (
       context,
       ret);
 
@@ -1887,14 +1887,14 @@ protocol_iface_init (TpSvcProtocolClass *cls)
 }
 
 static void
-presence_iface_init (TpSvcProtocolInterfacePresenceClass *cls)
+presence_iface_init (TpSvcProtocolInterfacePresence1Class *cls)
 {
 }
 
 static void
-addressing_iface_init (TpSvcProtocolInterfaceAddressingClass *cls)
+addressing_iface_init (TpSvcProtocolInterfaceAddressing1Class *cls)
 {
-#define IMPLEMENT(x) tp_svc_protocol_interface_addressing_implement_##x (cls, addressing_##x)
+#define IMPLEMENT(x) tp_svc_protocol_interface_addressing1_implement_##x (cls, addressing_##x)
   IMPLEMENT (normalize_contact_uri);
   IMPLEMENT (normalize_vcard_address);
 #undef IMPLEMENT

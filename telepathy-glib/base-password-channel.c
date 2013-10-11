@@ -69,9 +69,9 @@ static void sasl_auth_iface_init (gpointer g_iface, gpointer iface_data);
 
 G_DEFINE_TYPE_WITH_CODE (TpBasePasswordChannel, tp_base_password_channel,
     TP_TYPE_BASE_CHANNEL,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_SERVER_AUTHENTICATION,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_SERVER_AUTHENTICATION1,
         NULL);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_SASL_AUTHENTICATION,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_SASL_AUTHENTICATION1,
         sasl_auth_iface_init));
 
 static const gchar *tp_base_password_channel_available_mechanisms[] = {
@@ -131,7 +131,7 @@ tp_base_password_channel_get_interfaces (TpBaseChannel *base)
   interfaces = TP_BASE_CHANNEL_CLASS (
       tp_base_password_channel_parent_class)->get_interfaces (base);
 
-  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION);
+  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION1);
 
   return interfaces;
 }
@@ -199,7 +199,7 @@ tp_base_password_channel_get_property (GObject *object,
     {
     case PROP_AUTHENTICATION_METHOD:
       g_value_set_static_string (value,
-          TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION);
+          TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION1);
       break;
     case PROP_AVAILABLE_MECHANISMS:
       g_value_set_boxed (value,
@@ -267,12 +267,12 @@ tp_base_password_channel_class_init (TpBasePasswordChannelClass *tp_base_passwor
     { NULL }
   };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-    { TP_IFACE_CHANNEL_TYPE_SERVER_AUTHENTICATION,
+    { TP_IFACE_CHANNEL_TYPE_SERVER_AUTHENTICATION1,
       tp_dbus_properties_mixin_getter_gobject_properties,
       NULL,
       server_base_password_props,
     },
-    { TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION,
+    { TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION1,
       tp_dbus_properties_mixin_getter_gobject_properties,
       NULL,
       sasl_auth_props,
@@ -290,7 +290,7 @@ tp_base_password_channel_class_init (TpBasePasswordChannelClass *tp_base_passwor
   object_class->get_property = tp_base_password_channel_get_property;
   object_class->finalize = tp_base_password_channel_finalize;
 
-  chan_class->channel_type = TP_IFACE_CHANNEL_TYPE_SERVER_AUTHENTICATION;
+  chan_class->channel_type = TP_IFACE_CHANNEL_TYPE_SERVER_AUTHENTICATION1;
   chan_class->target_handle_type = TP_HANDLE_TYPE_NONE;
   chan_class->get_interfaces = tp_base_password_channel_get_interfaces;
   chan_class->close = tp_base_password_channel_close;
@@ -447,7 +447,7 @@ tp_base_password_channel_change_status (TpBasePasswordChannel *channel,
   g_free (priv->sasl_error);
   priv->sasl_error = g_strdup (new_sasl_error);
 
-  tp_svc_channel_interface_sasl_authentication_emit_sasl_status_changed (
+  tp_svc_channel_interface_sasl_authentication1_emit_sasl_status_changed (
       channel, priv->sasl_status, priv->sasl_error, priv->sasl_error_details);
 }
 
@@ -488,20 +488,20 @@ tp_base_password_channel_fill_immutable_properties (TpBaseChannel *chan,
 
   tp_dbus_properties_mixin_fill_properties_hash (
       G_OBJECT (chan), properties,
-      TP_IFACE_CHANNEL_TYPE_SERVER_AUTHENTICATION, "AuthenticationMethod",
-      TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION, "AvailableMechanisms",
-      TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION, "HasInitialData",
-      TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION, "CanTryAgain",
-      TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION, "AuthorizationIdentity",
-      TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION, "DefaultUsername",
-      TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION, "DefaultRealm",
-      TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION, "MaySaveResponse",
+      TP_IFACE_CHANNEL_TYPE_SERVER_AUTHENTICATION1, "AuthenticationMethod",
+      TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION1, "AvailableMechanisms",
+      TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION1, "HasInitialData",
+      TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION1, "CanTryAgain",
+      TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION1, "AuthorizationIdentity",
+      TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION1, "DefaultUsername",
+      TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION1, "DefaultRealm",
+      TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION1, "MaySaveResponse",
       NULL);
 }
 
 static void
 tp_base_password_channel_start_mechanism_with_data (
-    TpSvcChannelInterfaceSASLAuthentication *self,
+    TpSvcChannelInterfaceSASLAuthentication1 *self,
     const gchar *mechanism,
     const GArray *initial_data,
     DBusGMethodInvocation *context)
@@ -542,7 +542,7 @@ tp_base_password_channel_start_mechanism_with_data (
   tp_base_password_channel_change_status (channel,
       TP_SASL_STATUS_SERVER_SUCCEEDED, "");
 
-  tp_svc_channel_interface_sasl_authentication_return_from_start_mechanism_with_data (
+  tp_svc_channel_interface_sasl_authentication1_return_from_start_mechanism_with_data (
       context);
 
   return;
@@ -555,7 +555,7 @@ error:
 
 static void
 tp_base_password_channel_accept_sasl (
-    TpSvcChannelInterfaceSASLAuthentication *self,
+    TpSvcChannelInterfaceSASLAuthentication1 *self,
     DBusGMethodInvocation *context)
 {
   TpBasePasswordChannel *channel = TP_BASE_PASSWORD_CHANNEL (self);
@@ -575,13 +575,13 @@ tp_base_password_channel_accept_sasl (
 
   g_signal_emit (channel, signals[FINISHED], 0, priv->password, 0, 0, NULL);
 
-  tp_svc_channel_interface_sasl_authentication_return_from_accept_sasl (
+  tp_svc_channel_interface_sasl_authentication1_return_from_accept_sasl (
       context);
 }
 
 static void
 tp_base_password_channel_abort_sasl (
-    TpSvcChannelInterfaceSASLAuthentication *self,
+    TpSvcChannelInterfaceSASLAuthentication1 *self,
     TpSASLAbortReason reason,
     const gchar *debug_message,
     DBusGMethodInvocation *context)
@@ -616,7 +616,7 @@ tp_base_password_channel_abort_sasl (
           TP_ERROR_CANCELLED, "AbortSASL was called");
     }
 
-  tp_svc_channel_interface_sasl_authentication_return_from_abort_sasl (
+  tp_svc_channel_interface_sasl_authentication1_return_from_abort_sasl (
       context);
 }
 
@@ -624,7 +624,7 @@ static void
 sasl_auth_iface_init (gpointer g_iface,
     gpointer iface_data)
 {
-#define IMPLEMENT(x) tp_svc_channel_interface_sasl_authentication_implement_##x (\
+#define IMPLEMENT(x) tp_svc_channel_interface_sasl_authentication1_implement_##x (\
     g_iface, tp_base_password_channel_##x)
   IMPLEMENT(start_mechanism_with_data);
   IMPLEMENT(accept_sasl);

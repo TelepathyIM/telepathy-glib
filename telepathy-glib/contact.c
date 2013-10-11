@@ -256,7 +256,7 @@ tp_contact_get_feature_quark_client_types (void)
  * have been set.
  *
  * This feature requires a Connection implementing the
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST interface.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1 interface.
  *
  * Since: 0.99.1
  */
@@ -278,7 +278,7 @@ tp_contact_get_feature_quark_subscription_states (void)
  * property has been set.
  *
  * This feature requires a Connection implementing the
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS interface.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1 interface.
  *
  * Since: 0.99.1
  */
@@ -300,7 +300,7 @@ tp_contact_get_feature_quark_contact_groups (void)
  * has been set.
  *
  * This feature requires a Connection implementing the
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING interface.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING1 interface.
  *
  * Since: 0.99.1
  */
@@ -990,7 +990,7 @@ tp_contact_set_contact_groups_async (TpContact *self,
   result = g_simple_async_result_new (G_OBJECT (self),
       callback, user_data, tp_contact_set_contact_groups_finish);
 
-  tp_cli_connection_interface_contact_groups_call_set_contact_groups (
+  tp_cli_connection_interface_contact_groups1_call_set_contact_groups (
       self->priv->connection, -1, self->priv->handle, (const gchar **) groups,
       set_contact_groups_cb, result, NULL, G_OBJECT (self));
 
@@ -1808,7 +1808,7 @@ contacts_bind_to_aliases_changed (TpConnection *connection)
     {
       connection->priv->tracking_aliases_changed = TRUE;
 
-      tp_cli_connection_interface_aliasing_connect_to_aliases_changed (
+      tp_cli_connection_interface_aliasing1_connect_to_aliases_changed (
           connection, contacts_aliases_changed, NULL, NULL, NULL, NULL);
     }
 }
@@ -1926,7 +1926,7 @@ contacts_bind_to_presences_changed (TpConnection *connection)
     {
       connection->priv->tracking_presences_changed = TRUE;
 
-      tp_cli_connection_interface_presence_connect_to_presences_changed
+      tp_cli_connection_interface_presence1_connect_to_presences_changed
         (connection, contacts_presences_changed, NULL, NULL, NULL, NULL);
     }
 }
@@ -1951,11 +1951,11 @@ contacts_bind_to_location_updated (TpConnection *connection)
     {
       connection->priv->tracking_location_changed = TRUE;
 
-      tp_cli_connection_interface_location_connect_to_location_updated
+      tp_cli_connection_interface_location1_connect_to_location_updated
         (connection, contacts_location_updated, NULL, NULL, NULL, NULL);
 
       tp_connection_add_client_interest (connection,
-          TP_IFACE_CONNECTION_INTERFACE_LOCATION);
+          TP_IFACE_CONNECTION_INTERFACE_LOCATION1);
     }
 }
 
@@ -1994,7 +1994,7 @@ contacts_bind_to_client_types_updated (TpConnection *connection)
     {
       connection->priv->tracking_client_types_updated = TRUE;
 
-      tp_cli_connection_interface_client_types_connect_to_client_types_updated
+      tp_cli_connection_interface_client_types1_connect_to_client_types_updated
         (connection, contacts_client_types_updated, NULL, NULL, NULL, NULL);
     }
 }
@@ -2025,7 +2025,7 @@ contacts_bind_to_capabilities_updated (TpConnection *connection)
     {
       connection->priv->tracking_contact_caps_changed = TRUE;
 
-      tp_cli_connection_interface_contact_capabilities_connect_to_contact_capabilities_changed
+      tp_cli_connection_interface_contact_capabilities1_connect_to_contact_capabilities_changed
         (connection, contacts_capabilities_updated, NULL, NULL, NULL, NULL);
     }
 }
@@ -2244,7 +2244,7 @@ connection_avatar_request_idle_cb (gpointer user_data)
 
   DEBUG ("Request %d avatars", connection->priv->avatar_request_queue->len);
 
-  tp_cli_connection_interface_avatars_call_request_avatars (connection, -1,
+  tp_cli_connection_interface_avatars1_call_request_avatars (connection, -1,
       connection->priv->avatar_request_queue, NULL, NULL, NULL, NULL);
 
   g_array_unref (connection->priv->avatar_request_queue);
@@ -2353,7 +2353,7 @@ contacts_bind_to_avatar_retrieved (TpConnection *connection)
     {
       connection->priv->tracking_avatar_retrieved = TRUE;
 
-      tp_cli_connection_interface_avatars_connect_to_avatar_retrieved
+      tp_cli_connection_interface_avatars1_connect_to_avatar_retrieved
         (connection, contact_avatar_retrieved, NULL, NULL, NULL, NULL);
     }
 }
@@ -2402,7 +2402,7 @@ contacts_bind_to_avatar_updated (TpConnection *connection)
     {
       connection->priv->tracking_avatar_updated = TRUE;
 
-      tp_cli_connection_interface_avatars_connect_to_avatar_updated
+      tp_cli_connection_interface_avatars1_connect_to_avatar_updated
         (connection, contacts_avatar_updated, NULL, NULL, NULL, NULL);
     }
 }
@@ -2460,7 +2460,7 @@ contacts_bind_to_contact_info_changed (TpConnection *connection)
     {
       connection->priv->tracking_contact_info_changed = TRUE;
 
-      tp_cli_connection_interface_contact_info_connect_to_contact_info_changed (
+      tp_cli_connection_interface_contact_info1_connect_to_contact_info_changed (
           connection, contact_info_changed, NULL, NULL, NULL, NULL);
     }
 }
@@ -2615,7 +2615,7 @@ tp_contact_request_contact_info_async (TpContact *self,
         return;
     }
 
-  data->call = tp_cli_connection_interface_contact_info_call_request_contact_info (
+  data->call = tp_cli_connection_interface_contact_info1_call_request_contact_info (
       self->priv->connection, 60*60*1000, self->priv->handle,
       contact_info_request_cb,
       data, (GDestroyNotify) contact_info_request_data_free,
@@ -2684,7 +2684,7 @@ tp_connection_refresh_contact_info (TpConnection *self,
   for (i = 0; i < n_contacts; i++)
     g_array_append_val (handles, contacts[i]->priv->handle);
 
-  tp_cli_connection_interface_contact_info_call_refresh_contact_info (self, -1,
+  tp_cli_connection_interface_contact_info1_call_refresh_contact_info (self, -1,
       handles, NULL, NULL, NULL, NULL);
 
   g_array_unref (handles);
@@ -2777,7 +2777,7 @@ contacts_bind_to_contacts_changed (TpConnection *connection)
     {
       connection->priv->tracking_contacts_changed = TRUE;
 
-      tp_cli_connection_interface_contact_list_connect_to_contacts_changed
+      tp_cli_connection_interface_contact_list1_connect_to_contacts_changed
         (connection, contacts_changed_cb, NULL, NULL, NULL, NULL);
     }
 }
@@ -2864,7 +2864,7 @@ contacts_bind_to_contact_groups_changed (TpConnection *connection)
     {
       connection->priv->tracking_contact_groups_changed = TRUE;
 
-      tp_cli_connection_interface_contact_groups_connect_to_groups_changed
+      tp_cli_connection_interface_contact_groups1_connect_to_groups_changed
         (connection, contact_groups_changed_cb, NULL, NULL, NULL, NULL);
     }
 }
@@ -2882,12 +2882,12 @@ tp_contact_set_attributes (TpContact *contact,
   if (wanted & CONTACT_FEATURE_FLAG_ALIAS)
     {
       s = tp_asv_get_string (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS);
+          TP_TOKEN_CONNECTION_INTERFACE_ALIASING1_ALIAS);
 
       if (s == NULL)
         {
           WARNING ("%s supposedly implements Contacts and Aliasing, but "
-              "omitted " TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS,
+              "omitted " TP_TOKEN_CONNECTION_INTERFACE_ALIASING1_ALIAS,
               tp_proxy_get_object_path (connection));
         }
       else
@@ -2903,7 +2903,7 @@ tp_contact_set_attributes (TpContact *contact,
   if (wanted & CONTACT_FEATURE_FLAG_AVATAR_TOKEN)
     {
       s = tp_asv_get_string (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_AVATARS_TOKEN);
+          TP_TOKEN_CONNECTION_INTERFACE_AVATARS1_TOKEN);
       contact_set_avatar_token (contact, s, TRUE);
     }
 
@@ -2918,13 +2918,13 @@ tp_contact_set_attributes (TpContact *contact,
   if (wanted & CONTACT_FEATURE_FLAG_PRESENCE)
     {
       boxed = tp_asv_get_boxed (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_PRESENCE_PRESENCE,
+          TP_TOKEN_CONNECTION_INTERFACE_PRESENCE1_PRESENCE,
           TP_STRUCT_TYPE_PRESENCE);
 
       if (boxed == NULL)
         WARNING ("%s supposedly implements Contacts and Presence, "
             "but omitted the mandatory "
-            TP_TOKEN_CONNECTION_INTERFACE_PRESENCE_PRESENCE
+            TP_TOKEN_CONNECTION_INTERFACE_PRESENCE1_PRESENCE
             " attribute",
             tp_proxy_get_object_path (connection));
       else
@@ -2935,7 +2935,7 @@ tp_contact_set_attributes (TpContact *contact,
   if (wanted & CONTACT_FEATURE_FLAG_LOCATION)
     {
       boxed = tp_asv_get_boxed (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_LOCATION_LOCATION,
+          TP_TOKEN_CONNECTION_INTERFACE_LOCATION1_LOCATION,
           TP_HASH_TYPE_LOCATION);
       contact_maybe_set_location (contact, boxed);
     }
@@ -2944,7 +2944,7 @@ tp_contact_set_attributes (TpContact *contact,
   if (wanted & CONTACT_FEATURE_FLAG_CAPABILITIES)
     {
       boxed = tp_asv_get_boxed (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_CAPABILITIES_CAPABILITIES,
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_CAPABILITIES1_CAPABILITIES,
           TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
       contact_maybe_set_capabilities (contact, boxed);
     }
@@ -2953,7 +2953,7 @@ tp_contact_set_attributes (TpContact *contact,
   if (wanted & CONTACT_FEATURE_FLAG_CONTACT_INFO)
     {
       boxed = tp_asv_get_boxed (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_INFO_INFO,
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_INFO1_INFO,
           TP_ARRAY_TYPE_CONTACT_INFO_FIELD_LIST);
       contact_maybe_set_info (contact, boxed);
     }
@@ -2962,7 +2962,7 @@ tp_contact_set_attributes (TpContact *contact,
   if (wanted & CONTACT_FEATURE_FLAG_CLIENT_TYPES)
     {
       boxed = tp_asv_get_boxed (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_CLIENT_TYPES_CLIENT_TYPES,
+          TP_TOKEN_CONNECTION_INTERFACE_CLIENT_TYPES1_CLIENT_TYPES,
           G_TYPE_STRV);
       contact_maybe_set_client_types (contact, boxed);
     }
@@ -2977,13 +2977,13 @@ tp_contact_set_attributes (TpContact *contact,
       gboolean publish_valid = FALSE;
 
       subscribe = tp_asv_get_uint32 (asv,
-            TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_SUBSCRIBE,
+            TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_SUBSCRIBE,
             &subscribe_valid);
       publish = tp_asv_get_uint32 (asv,
-            TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH,
+            TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_PUBLISH,
             &publish_valid);
       publish_request = tp_asv_get_string (asv,
-            TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH_REQUEST);
+            TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_PUBLISH_REQUEST);
 
       if (subscribe_valid && publish_valid)
         {
@@ -2996,7 +2996,7 @@ tp_contact_set_attributes (TpContact *contact,
   if (wanted & CONTACT_FEATURE_FLAG_CONTACT_GROUPS)
     {
       boxed = tp_asv_get_boxed (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS_GROUPS,
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS1_GROUPS,
           G_TYPE_STRV);
       contact_maybe_set_contact_groups (contact, boxed);
     }
@@ -3007,7 +3007,7 @@ tp_contact_set_attributes (TpContact *contact,
       gboolean is_blocked, valid;
 
       is_blocked = tp_asv_get_boolean (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_BLOCKING_BLOCKED, &valid);
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_BLOCKING1_BLOCKED, &valid);
 
       if (valid)
         _tp_contact_set_is_blocked (contact, is_blocked);
@@ -3073,25 +3073,25 @@ contacts_bind_to_signals (TpConnection *connection,
 
   if ((wanted & CONTACT_FEATURE_FLAG_ALIAS) != 0 &&
       tp_proxy_has_interface_by_id (connection,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING))
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING1))
     {
       g_ptr_array_add (array,
-          TP_IFACE_CONNECTION_INTERFACE_ALIASING);
+          TP_IFACE_CONNECTION_INTERFACE_ALIASING1);
       contacts_bind_to_aliases_changed (connection);
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0 &&
       tp_proxy_has_interface_by_id (connection,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS))
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS1))
     {
       g_ptr_array_add (array,
-          TP_IFACE_CONNECTION_INTERFACE_AVATARS);
+          TP_IFACE_CONNECTION_INTERFACE_AVATARS1);
       contacts_bind_to_avatar_updated (connection);
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0 &&
       tp_proxy_has_interface_by_id (connection,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS))
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS1))
     {
       contacts_bind_to_avatar_retrieved (connection);
     }
@@ -3099,75 +3099,75 @@ contacts_bind_to_signals (TpConnection *connection,
 
   if ((wanted & CONTACT_FEATURE_FLAG_PRESENCE) != 0 &&
       tp_proxy_has_interface_by_id (connection,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_PRESENCE))
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_PRESENCE1))
     {
       g_ptr_array_add (array,
-          TP_IFACE_CONNECTION_INTERFACE_PRESENCE);
+          TP_IFACE_CONNECTION_INTERFACE_PRESENCE1);
       contacts_bind_to_presences_changed (connection);
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_LOCATION) != 0 &&
       tp_proxy_has_interface_by_id (connection,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION))
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION1))
     {
       g_ptr_array_add (array,
-          TP_IFACE_CONNECTION_INTERFACE_LOCATION);
+          TP_IFACE_CONNECTION_INTERFACE_LOCATION1);
       contacts_bind_to_location_updated (connection);
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_CAPABILITIES) != 0 &&
       tp_proxy_has_interface_by_id (connection,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_CAPABILITIES))
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_CAPABILITIES1))
     {
       g_ptr_array_add (array,
-          TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES);
+          TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES1);
       contacts_bind_to_capabilities_updated (connection);
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_CONTACT_INFO) != 0 &&
       tp_proxy_has_interface_by_id (connection,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO))
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO1))
     {
       g_ptr_array_add (array,
-          TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO);
+          TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO1);
       contacts_bind_to_contact_info_changed (connection);
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_CLIENT_TYPES) != 0 &&
       tp_proxy_has_interface_by_id (connection,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_CLIENT_TYPES))
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CLIENT_TYPES1))
     {
       g_ptr_array_add (array,
-          TP_IFACE_CONNECTION_INTERFACE_CLIENT_TYPES);
+          TP_IFACE_CONNECTION_INTERFACE_CLIENT_TYPES1);
       contacts_bind_to_client_types_updated (connection);
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_STATES) != 0 &&
       tp_proxy_has_interface_by_id (connection,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_LIST))
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_LIST1))
     {
       g_ptr_array_add (array,
-          TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST);
+          TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1);
       contacts_bind_to_contacts_changed (connection);
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_CONTACT_GROUPS) != 0 &&
       tp_proxy_has_interface_by_id (connection,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_GROUPS))
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_GROUPS1))
     {
       g_ptr_array_add (array,
-          TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS);
+          TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1);
       contacts_bind_to_contact_groups_changed (connection);
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_CONTACT_BLOCKING) != 0 &&
       tp_proxy_has_interface_by_id (connection,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_BLOCKING))
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_BLOCKING1))
     {
       GQuark features[] = { TP_CONNECTION_FEATURE_CONTACT_BLOCKING, 0 };
 
       g_ptr_array_add (array,
-          TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING);
+          TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING1);
 
       /* The BlockedContactsChanged signal is already handled by
        * connection-contact-list.c so we just have to prepare

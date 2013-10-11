@@ -136,7 +136,7 @@ check_initial_properties (void)
   TpChannelGroupFlags flags;
 
   MYASSERT (tp_cli_dbus_properties_run_get_all (chan, -1,
-      TP_IFACE_CHANNEL_INTERFACE_GROUP, &props, &error, NULL), "");
+      TP_IFACE_CHANNEL_INTERFACE_GROUP1, &props, &error, NULL), "");
   g_assert_no_error (error);
 
   members = tp_asv_get_boxed (props, "Members", DBUS_TYPE_G_UINT_ARRAY);
@@ -271,7 +271,7 @@ check_incoming_invitation (void)
 
     expect_signals ("", self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
         self_added_to_members);
-    MYASSERT (tp_cli_channel_interface_group_run_add_members (chan, -1,
+    MYASSERT (tp_cli_channel_interface_group1_run_add_members (chan, -1,
         contacts, "", &error, NULL), "");
     g_assert_no_error (error);
     wait_for_outstanding_signals ();
@@ -475,7 +475,7 @@ test_group_mixin (void)
   GQuark features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
   tp_tests_proxy_run_until_prepared (chan, features);
 
-  MYASSERT (tp_proxy_has_interface (chan, TP_IFACE_CHANNEL_INTERFACE_GROUP),
+  MYASSERT (tp_proxy_has_interface (chan, TP_IFACE_CHANNEL_INTERFACE_GROUP1),
       "");
 
   g_signal_connect (chan, "group-members-changed",

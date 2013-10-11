@@ -254,7 +254,7 @@ main (int argc,
 
   {
     const gchar *interfaces[] = {
-        TP_IFACE_CHANNEL_INTERFACE_GROUP,
+        TP_IFACE_CHANNEL_INTERFACE_GROUP1,
         NULL
     };
 
@@ -325,7 +325,7 @@ main (int argc,
 
   {
     const gchar *interfaces[] = {
-        TP_IFACE_CHANNEL_INTERFACE_GROUP,
+        TP_IFACE_CHANNEL_INTERFACE_GROUP1,
         NULL
     };
 
@@ -350,7 +350,7 @@ main (int argc,
   g_assert (tp_proxy_has_interface_by_id (chan2,
         TP_IFACE_QUARK_CHANNEL_TYPE_TEXT));
   g_assert (tp_proxy_has_interface_by_id (chan2,
-        TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP));
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP1));
 
   g_hash_table_unref (asv);
 

@@ -991,7 +991,7 @@ _tp_channel_group_prepare_async (TpProxy *proxy,
   GError *error = NULL;
 
   if (!tp_proxy_has_interface_by_id (self,
-        TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP))
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP1))
     {
       g_simple_async_report_error_in_idle ((GObject *) self, callback,
           user_data, TP_ERROR, TP_ERROR_NOT_CAPABLE,
@@ -999,19 +999,19 @@ _tp_channel_group_prepare_async (TpProxy *proxy,
       return;
     }
 
-  tp_cli_channel_interface_group_connect_to_group_flags_changed (self,
+  tp_cli_channel_interface_group1_connect_to_group_flags_changed (self,
       group_flags_changed_cb, NULL, NULL, NULL, &error);
   g_assert_no_error (error);
 
-  tp_cli_channel_interface_group_connect_to_self_contact_changed (self,
+  tp_cli_channel_interface_group1_connect_to_self_contact_changed (self,
       self_contact_changed_cb, NULL, NULL, NULL, &error);
   g_assert_no_error (error);
 
-  tp_cli_channel_interface_group_connect_to_members_changed (self,
+  tp_cli_channel_interface_group1_connect_to_members_changed (self,
       members_changed_cb, NULL, NULL, NULL, &error);
   g_assert_no_error (error);
 
-  tp_cli_channel_interface_group_connect_to_handle_owners_changed (self,
+  tp_cli_channel_interface_group1_connect_to_handle_owners_changed (self,
       handle_owners_changed_cb, NULL, NULL, NULL, &error);
   g_assert_no_error (error);
 
@@ -1019,7 +1019,7 @@ _tp_channel_group_prepare_async (TpProxy *proxy,
       _tp_channel_group_prepare_async);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
-      TP_IFACE_CHANNEL_INTERFACE_GROUP, got_group_properties_cb,
+      TP_IFACE_CHANNEL_INTERFACE_GROUP1, got_group_properties_cb,
       result, g_object_unref, NULL);
 }
 
