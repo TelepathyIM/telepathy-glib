@@ -95,7 +95,7 @@ tools/telepathy-glib-env
 /vala/telepathy-glib-generated.gi
 /vala/telepathy-glib.files
 /vala/telepathy-glib.gi
-/vala/telepathy-glib.vapi
+/vala/telepathy-glib-1.vapi
 /valgrind.log
 capture-*.log
 .\#*
