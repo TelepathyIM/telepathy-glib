@@ -19,6 +19,8 @@
 <xi:include href="../spec/Connection_Interface_Contact_Groups.xml"/>
 <xi:include href="../spec/Connection_Interface_Contact_Info.xml"/>
 <xi:include href="../spec/Connection_Interface_Contact_List.xml"/>
+<xi:include href="../spec/Connection_Interface_Renaming.xml"/>
+<xi:include href="../spec/Connection_Interface_Sidecars1.xml"/>
 <xi:include href="../spec/Connection_Interface_Simple_Presence.xml"/>
 <xi:include href="../spec/Connection_Interface_Presence.xml"/>
 <xi:include href="../spec/Connection_Interface_Contacts.xml"/>

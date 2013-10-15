@@ -5,6 +5,7 @@
 <tp:title>Channel Dispatcher interfaces</tp:title>
 
 <xi:include href="../spec/Channel_Dispatcher.xml"/>
+<xi:include href="../spec/Channel_Dispatcher_Interface_Messages1.xml"/>
 <xi:include href="../spec/Channel_Dispatcher_Interface_Operation_List.xml"/>
 
 </tp:spec>
