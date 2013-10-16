@@ -60,24 +60,24 @@ branches have y odd.
 In a stable (even) branch, we will not make incompatible API or ABI changes
 between one release tarball and the next.
 
-In a development (odd) branch, if we make incompatible ABI changes
-between one release tarball and the next, we will change the SONAME of the
-library; we will attempt to avoid incompatible API or ABI changes.
+In a development (odd) branch, we will attempt to avoid incompatible API
+or ABI changes. If we break ABI relative to the previous stable (even)
+release, we will increase the library SONAME to avoid breaking existing
+code. If we break ABI relative to a previous development (odd) release,
+we will not necessarily increase the library SONAME: in other words,
+API/ABI added by a development release is not guaranteed until it appears
+in a stable release. (This is basically the same policy as GLib - in
+versions 0.22 and earlier, we had a more restrictive policy.)
 
-The GObject-Introspection and Vala bindings are not currently considered to
-be stable, so they have no API/ABI guarantees yet.
+The GObject-Introspection and Vala bindings are more or less stable,
+but might break compatibility between one development branch and the next.
 
 Unreleased builds straight from git identify themselves as version
-"x.y.z.1". We DO NOT make any API guarantees about unreleased builds:
-any binary relying on new functionality from an unreleased build is not
-guaranteed to work with any subsequent release or unreleased build, and on
-platforms with versioned symbols (mainly Linux) it definitely won't work with
-subsequent releases (you'll have to at least relink the binary).
-We do not increment SONAMEs on the basis of unreleased changes.
+"x.y.z.1". We DO NOT make any API guarantees about unreleased builds.
 
 Unreleased builds are compiled with -Werror, so they might stop working
 if your gcc version issues more warnings than ours. If this is a problem
-for you, use a release tarball.
+for you, use a release tarball or configure with --disable-fatal-warnings.
 
 Contact info
 ============
