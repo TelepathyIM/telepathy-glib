@@ -28,9 +28,11 @@ def describe(cm):
                 print("\t\tNo default")
 
 def manager_prepared_cb(cm, result, loop):
-    cm.prepare_finish(result)
-    describe(cm)
-    loop.quit()
+    try:
+        cm.prepare_finish(result)
+        describe(cm)
+    finally:
+        loop.quit()
 
 def inspect(name):
     cm = Tp.ConnectionManager(
@@ -41,13 +43,14 @@ def inspect(name):
     cm.prepare_async(None, cm, loop)
 
 def cms_cb(source, result, loop):
-    cms = Tp.list_connection_managers_finish(result)
+    try:
+        cms = Tp.list_connection_managers_finish(result)
 
-    for cm in cms:
-        describe(cm)
-        print("")
-
-    loop.quit()
+        for cm in cms:
+            describe(cm)
+            print("")
+    finally:
+        loop.quit()
 
 if __name__ == '__main__':
     loop = GObject.MainLoop()
