@@ -1096,7 +1096,7 @@ handle_members_changed (TpChannel *self,
           const gchar *debug_message = tp_asv_get_string (details,
               "debug-message");
 
-          if (debug_message == NULL && message[0] != '\0')
+          if (debug_message == NULL && !tp_str_empty (message))
             debug_message = message;
 
           if (debug_message == NULL && error_detail != NULL)
