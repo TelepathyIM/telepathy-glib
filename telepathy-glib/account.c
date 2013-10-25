@@ -2200,8 +2200,6 @@ unescape_protocol (gchar *protocol)
       protocol = new;
     }
 
-  g_strdelimit (protocol, "_", '-');
-
   return protocol;
 }
 
