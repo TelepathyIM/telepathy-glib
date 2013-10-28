@@ -1221,7 +1221,7 @@ init_gvalue_from_dbus_sig (const gchar *sig,
 static gboolean
 parse_default_value (GValue *value,
                      const gchar *sig,
-                     gchar *string,
+                     gchar *raw_value,
                      GKeyFile *file,
                      const gchar *group,
                      const gchar *key)
@@ -1244,31 +1244,28 @@ parse_default_value (GValue *value,
        * So, on error, let's fall back to more lenient parsing that explicitly
        * allows everything we historically allowed. */
       g_error_free (error);
-      s = g_key_file_get_value (file, group, key, NULL);
 
-      if (s == NULL)
+      if (raw_value == NULL)
         return FALSE;
 
-      for (p = s; *p != '\0'; p++)
+      for (p = raw_value; *p != '\0'; p++)
         {
           *p = g_ascii_tolower (*p);
         }
 
-      if (!tp_strdiff (s, "1") || !tp_strdiff (s, "true"))
+      if (!tp_strdiff (raw_value, "1") || !tp_strdiff (raw_value, "true"))
         {
           g_value_set_boolean (value, TRUE);
         }
-      else if (!tp_strdiff (s, "0") || !tp_strdiff (s, "false"))
+      else if (!tp_strdiff (raw_value, "0") || !tp_strdiff (raw_value, "false"))
         {
           g_value_set_boolean (value, TRUE);
         }
       else
         {
-          g_free (s);
           return FALSE;
         }
 
-      g_free (s);
       return TRUE;
 
     case 's':
@@ -1317,7 +1314,7 @@ parse_default_value (GValue *value,
     case 'n':
     case 'i':
     case 'x':
-      if (string[0] == '\0')
+      if (raw_value[0] == '\0')
         {
           return FALSE;
         }
@@ -1464,7 +1461,7 @@ _tp_protocol_parse_channel_class (GKeyFile *file,
       const gchar *dbus_type;
       GValue *v = g_slice_new0 (GValue);
 
-      value = g_key_file_get_string (file, group, *key, NULL);
+      value = g_key_file_get_value (file, group, *key, NULL);
 
       /* keys without a space are reserved */
       if (space == NULL)
@@ -1607,7 +1604,7 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
             }
 
           def = g_strdup_printf ("default-%s", param.name);
-          value = g_key_file_get_string (file, group, def, NULL);
+          value = g_key_file_get_value (file, group, def, NULL);
 
           init_gvalue_from_dbus_sig (param.dbus_signature,
               &param.default_value);
