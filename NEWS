@@ -1,7 +1,13 @@
-telepathy-glib 0.99.3 (UNRELEASED)
+telepathy-glib 0.99.3 (2013-10-28)
 ==================================
 
-…
+Enhancements:
+
+• Don't strip ABI versions from generated code (Simon)
+
+Fixes:
+
+• unescape_protocol: stop replacing '_' with '-' (Guillaume)
 
 telepathy-glib 0.99.2 (2013-09-27)
 ==================================
