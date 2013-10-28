@@ -35,6 +35,7 @@ G_BEGIN_DECLS
 typedef struct _TpPresenceStatusOptionalArgumentSpec
     TpPresenceStatusOptionalArgumentSpec;
 typedef struct _TpPresenceStatusSpec TpPresenceStatusSpec;
+typedef struct _TpPresenceStatusSpecPrivate TpPresenceStatusSpecPrivate;
 
 struct _TpPresenceStatusOptionalArgumentSpec {
     const gchar *name;
@@ -53,7 +54,7 @@ struct _TpPresenceStatusSpec {
 
     /*<private>*/
     gpointer _future1;
-    gpointer _future2;
+    TpPresenceStatusSpecPrivate *priv;
 };
 
 _TP_AVAILABLE_IN_UNRELEASED
@@ -71,6 +72,22 @@ gboolean tp_presence_status_spec_can_set_on_self (
 _TP_AVAILABLE_IN_UNRELEASED
 gboolean tp_presence_status_spec_has_message (
     const TpPresenceStatusSpec *self);
+
+_TP_AVAILABLE_IN_UNRELEASED
+GType tp_presence_status_spec_get_type (void);
+
+_TP_AVAILABLE_IN_UNRELEASED
+TpPresenceStatusSpec *tp_presence_status_spec_new (const gchar *name,
+    TpConnectionPresenceType type,
+    gboolean can_set_on_self,
+    gboolean has_message);
+
+_TP_AVAILABLE_IN_UNRELEASED
+TpPresenceStatusSpec *tp_presence_status_spec_copy (
+    const TpPresenceStatusSpec *self);
+
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_presence_status_spec_free (TpPresenceStatusSpec *self);
 
 typedef struct _TpPresenceStatus TpPresenceStatus;
 

@@ -2305,6 +2305,9 @@ tp_presence_status_spec_can_set_on_self
 tp_presence_status_spec_get_name
 tp_presence_status_spec_get_presence_type
 tp_presence_status_spec_has_message
+tp_presence_status_spec_new
+tp_presence_status_spec_copy
+tp_presence_status_spec_free
 TpPresenceMixinStatusAvailableFunc
 TpPresenceMixinGetContactStatusesFunc
 TpPresenceMixinSetOwnStatusFunc
@@ -2333,9 +2336,11 @@ tp_presence_mixin_class_get_offset_quark
 tp_presence_mixin_get_offset_quark
 TpPresenceMixinPrivate
 TpPresenceMixinClassPrivate
+TpPresenceStatusSpecPrivate
 <SUBSECTION Standard>
 TP_PRESENCE_MIXIN_CLASS
 TP_PRESENCE_MIXIN
+tp_presence_status_spec_get_type
 </SECTION>
 
 <SECTION>

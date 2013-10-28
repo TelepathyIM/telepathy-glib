@@ -1581,6 +1581,13 @@ tp_presence_mixin_simple_presence_register_with_contacts_mixin (GObject *obj)
       tp_presence_mixin_simple_presence_fill_contact_attributes);
 }
 
+/* For now, self->priv is just self if heap-allocated, NULL if not. */
+static gboolean
+_tp_presence_status_spec_is_heap_allocated (const TpPresenceStatusSpec *self)
+{
+  return (self->priv == (TpPresenceStatusSpecPrivate *) self);
+}
+
 /**
  * tp_presence_status_spec_get_presence_type:
  * @self: a presence status specification
@@ -1666,3 +1673,96 @@ tp_presence_status_spec_has_message (const TpPresenceStatusSpec *self)
 
   return FALSE;
 }
+
+/**
+ * tp_presence_status_spec_new:
+ * @name: the name of the new presence status
+ * @type: the category into which this presence status falls
+ * @can_set_on_self: %TRUE if the user can set this presence status
+ *  on themselves
+ * @has_message: %TRUE if this presence status is accompanied by an
+ *  optional human-readable message
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer full): a new #TpPresenceStatusSpec
+ * Since: 0.UNRELEASED
+ */
+TpPresenceStatusSpec *
+tp_presence_status_spec_new (const gchar *name,
+    TpConnectionPresenceType type,
+    gboolean can_set_on_self,
+    gboolean has_message)
+{
+  TpPresenceStatusSpec *ret;
+  static const TpPresenceStatusOptionalArgumentSpec yes_it_has_a_message[] = {
+        { "message", "s" },
+        { NULL }
+  };
+
+  g_return_val_if_fail (!tp_str_empty (name), NULL);
+  g_return_val_if_fail (type >= 0 && type < TP_NUM_CONNECTION_PRESENCE_TYPES,
+      NULL);
+
+  ret = g_slice_new0 (TpPresenceStatusSpec);
+
+  ret->name = g_strdup (name);
+  ret->presence_type = type;
+  ret->self = can_set_on_self;
+
+  if (has_message)
+    ret->optional_arguments = yes_it_has_a_message;
+  else
+    ret->optional_arguments = NULL;
+
+  /* dummy marker for "this is on the heap" rather than a real struct */
+  ret->priv = (TpPresenceStatusSpecPrivate *) ret;
+
+  return ret;
+}
+
+/**
+ * tp_presence_status_spec_copy:
+ * @self: a presence status specification
+ *
+ * Copy a presence status specification.
+ *
+ * If @self has optional arguments other than a string named "message",
+ * they are not copied. Optional arguments with other names or types
+ * are deprecated.
+ *
+ * Returns: (transfer full): a new #TpPresenceStatusSpec resembling @self
+ * Since: 0.UNRELEASED
+ */
+TpPresenceStatusSpec *
+tp_presence_status_spec_copy (const TpPresenceStatusSpec *self)
+{
+  g_return_val_if_fail (self != NULL, NULL);
+
+  return tp_presence_status_spec_new (self->name, self->presence_type,
+      self->self, tp_presence_status_spec_has_message (self));
+}
+
+/**
+ * tp_presence_status_spec_free:
+ * @self: (transfer full): a presence status specification
+ *
+ * Free a presence status specification produced by
+ * tp_presence_status_spec_new() or tp_presence_status_spec_copy().
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_presence_status_spec_free (TpPresenceStatusSpec *self)
+{
+  g_return_if_fail (_tp_presence_status_spec_is_heap_allocated (self));
+
+  /* This struct was designed to always be on the stack, so freeing this
+   * needs a non-const-correct cast */
+  g_free ((gchar *) self->name);
+
+  g_slice_free (TpPresenceStatusSpec, self);
+}
+
+G_DEFINE_BOXED_TYPE (TpPresenceStatusSpec, tp_presence_status_spec,
+    tp_presence_status_spec_copy, tp_presence_status_spec_free)
