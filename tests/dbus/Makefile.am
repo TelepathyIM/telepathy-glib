@@ -324,7 +324,7 @@ distclean-local:
 	rm -rf _gen
 
 EXTRA_DIST = \
-    services/dbus-1/spurious.service \
+    dbus-1/services/spurious.service \
     telepathy/managers/spurious.manager \
     telepathy/managers/test_manager_file.manager \
     telepathy/managers/test_manager_file_invalid.manager \
