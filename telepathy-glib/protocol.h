@@ -125,6 +125,18 @@ TpCapabilities *tp_protocol_get_capabilities (TpProtocol *self);
 _TP_AVAILABLE_IN_0_16
 TpAvatarRequirements * tp_protocol_get_avatar_requirements (TpProtocol *self);
 
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_protocol_normalize_contact_async (TpProtocol *self,
+    const gchar *contact,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+_TP_AVAILABLE_IN_UNRELEASED
+gchar *tp_protocol_normalize_contact_finish (TpProtocol *self,
+    GAsyncResult *result,
+    GError **error);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-protocol.h>

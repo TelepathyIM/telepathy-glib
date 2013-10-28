@@ -44,6 +44,7 @@
 #include "telepathy-glib/capabilities-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
+#include "telepathy-glib/util-internal.h"
 
 #include "telepathy-glib/_gen/tp-cli-protocol-body.h"
 
@@ -1783,4 +1784,81 @@ tp_protocol_get_cm_name (TpProtocol *self)
   g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
 
   return self->priv->cm_name;
+}
+
+/*
+ * Handle the result from a tp_cli_protocol_* function that
+ * returns one string. user_data is a #GTask.
+ */
+static void
+tp_protocol_async_string_cb (TpProxy *proxy,
+    const gchar *normalized,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  if (error == NULL)
+    g_task_return_pointer (user_data, g_strdup (normalized), g_free);
+  else
+    g_task_return_error (user_data, g_error_copy (error));
+}
+
+/**
+ * tp_protocol_normalize_contact_async:
+ * @self: a protocol
+ * @contact: a contact identifier, possibly invalid
+ * @cancellable: (allow-none): may be used to cancel the async request
+ * @callback: (scope async): a callback to call when
+ *  the request is satisfied
+ * @user_data: (closure) (allow-none): data to pass to @callback
+ *
+ * Perform best-effort offline contact normalization. This does syntactic
+ * normalization (e.g. transforming case-insensitive text to lower-case),
+ * but does not query servers or anything similar.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_protocol_normalize_contact_async (TpProtocol *self,
+    const gchar *contact,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GTask *task;
+
+  g_return_if_fail (TP_IS_PROTOCOL (self));
+  g_return_if_fail (contact != NULL);
+  /* this makes no sense to call for its side-effects */
+  g_return_if_fail (callback != NULL);
+
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_source_tag (task, tp_protocol_normalize_contact_async);
+
+  tp_cli_protocol_call_normalize_contact (self, -1, contact,
+      tp_protocol_async_string_cb, task, g_object_unref, NULL);
+}
+
+/**
+ * tp_protocol_normalize_contact_finish:
+ * @self: a protocol
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Interpret the result of tp_protocol_normalize_contact_async().
+ *
+ * Returns: (transfer full): the normalized form of @contact,
+ *  or %NULL on error
+ * Since: 0.UNRELEASED
+ */
+gchar *
+tp_protocol_normalize_contact_finish (TpProtocol *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  g_return_val_if_fail (g_task_is_valid (result, self), NULL);
+  g_return_val_if_fail (g_async_result_is_tagged (result,
+        tp_protocol_normalize_contact_async), NULL);
+
+  return g_task_propagate_pointer (G_TASK (result), error);
 }

@@ -535,6 +535,38 @@ test_protocol_object_from_file (Test *test,
   check_avatar_requirements (req);
 }
 
+static void
+test_normalize (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GAsyncResult *result = NULL;
+  gchar *s;
+
+  tp_tests_proxy_run_until_prepared (test->cm, NULL);
+  test->protocol = g_object_ref (
+      tp_connection_manager_get_protocol_object (test->cm, "example"));
+
+  tp_protocol_normalize_contact_async (test->protocol,
+      "MiXeDcAsE", NULL, tp_tests_result_ready_cb, &result);
+  tp_tests_run_until_result (&result);
+  s = tp_protocol_normalize_contact_finish (test->protocol, result,
+      &test->error);
+  g_assert_no_error (test->error);
+  g_assert_cmpstr (s, ==, "mixedcase");
+  g_clear_object (&result);
+  g_free (s);
+
+  tp_protocol_normalize_contact_async (test->protocol,
+      "", NULL, tp_tests_result_ready_cb, &result);
+  tp_tests_run_until_result (&result);
+  s = tp_protocol_normalize_contact_finish (test->protocol, result,
+      &test->error);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_HANDLE);
+  g_assert_cmpstr (s, ==, NULL);
+  g_clear_object (&result);
+  g_clear_error (&test->error);
+}
+
 int
 main (int argc,
       char **argv)
@@ -558,6 +590,8 @@ main (int argc,
       test_protocol_object_old, teardown);
   g_test_add ("/protocol-objects/object-from-file", Test, NULL, setup,
       test_protocol_object_from_file, teardown);
+  g_test_add ("/protocol-objects/normalize", Test, NULL, setup,
+      test_normalize, teardown);
 
   return tp_tests_run_with_bus ();
 }
