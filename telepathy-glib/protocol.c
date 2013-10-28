@@ -512,7 +512,21 @@ tp_protocol_constructed (GObject *object)
     }
   else
     {
+      GHashTableIter iter;
+      gpointer k, v;
+
       DEBUG ("immutable properties already supplied");
+
+      g_hash_table_iter_init (&iter, self->priv->protocol_properties);
+
+      while (g_hash_table_iter_next (&iter, &k, &v))
+        {
+          gchar *printed;
+
+          printed = g_strdup_value_contents (v);
+          DEBUG ("%s = %s", (const gchar *) k, printed);
+          g_free (printed);
+        }
     }
 
   self->priv->protocol_struct.params = tp_protocol_params_from_param_specs (
