@@ -1,7 +1,35 @@
-telepathy-glib 0.23.0 (UNRELEASED)
+telepathy-glib 0.23.0 (2013-10-28)
 ==================================
 
-…
+We no longer guarantee compatible upgrades within a development (odd) branch,
+see README for details.
+
+Dependencies:
+
+• GLib 2.34 or later is required.
+
+Enhancements:
+
+• Spec 0.27.3
+  · added Conn.I.Sidecars1
+  · added Conn.I.Renaming
+  · added CD.I.Messages1
+
+• TpAccount::avatar-changed signal (fd.o #52938, Guillaume)
+
+• tp_value_array_free: equivalent of g_value_array_free but does not provoke
+  deprecation warnings from GLib (fd.o #69849, Simon)
+
+• tp_account_is_prepared and tp_account_manager_is_prepared are now deprecated
+  (Guillaume)
+
+Fixes:
+
+• tp_contact_set_attributes: don't warn on genuinely absent interfaces
+  (fd.o #68149, Simon)
+
+• channel-group: don't crash if no message has been provided (Guillaume)
+
 
 telepathy-glib 0.22.0 (2013-10-02)
 ==================================

@@ -2171,7 +2171,7 @@ tp_account_class_init (TpAccountClass *klass)
    * Emitted when the avatar changes. Call tp_account_get_avatar_async()
    * to get the new avatar data.
    *
-   * Since: UNRELEASED
+   * Since: 0.23.0
    */
   signals[AVATAR_CHANGED] = g_signal_new ("avatar-changed",
       G_OBJECT_CLASS_TYPE (klass),
@@ -3681,7 +3681,7 @@ tp_account_get_avatar_finish (TpAccount *account,
  * Returns: the same thing as tp_proxy_is_prepared()
  *
  * Since: 0.9.0
- * Deprecated: since 0.UNRELEASED, use tp_proxy_is_prepared() instead.
+ * Deprecated: since 0.23.0, use tp_proxy_is_prepared() instead.
  */
 gboolean
 tp_account_is_prepared (TpAccount *account,
