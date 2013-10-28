@@ -578,7 +578,7 @@ new_call_channel_cb (TpSimpleHandler *handler,
 
   tp_handle_channels_context_accept (handler_context);
 
-  tp_cli_channel_type_call_call_accept (proxy, -1,
+  tp_cli_channel_type_call1_call_accept (proxy, -1,
       NULL, NULL, NULL, NULL);
 
   context->proxy = g_object_ref (proxy);
@@ -612,28 +612,28 @@ main (int argc, char **argv)
   tp_base_client_take_handler_filter (client,
     tp_asv_new (
        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_CALL,
+          TP_IFACE_CHANNEL_TYPE_CALL1,
        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
           TP_HANDLE_TYPE_CONTACT,
-        TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, G_TYPE_BOOLEAN,
+        TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO, G_TYPE_BOOLEAN,
           TRUE,
        NULL));
 
   tp_base_client_take_handler_filter (client,
     tp_asv_new (
        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_CALL,
+          TP_IFACE_CHANNEL_TYPE_CALL1,
        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
           TP_HANDLE_TYPE_CONTACT,
-        TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, G_TYPE_BOOLEAN,
+        TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO, G_TYPE_BOOLEAN,
           TRUE,
        NULL));
 
   tp_base_client_add_handler_capabilities_varargs (client,
-    TP_IFACE_CHANNEL_TYPE_CALL "/video/h264",
-    TP_IFACE_CHANNEL_TYPE_CALL "/shm",
-    TP_IFACE_CHANNEL_TYPE_CALL "/ice",
-    TP_IFACE_CHANNEL_TYPE_CALL "/gtalk-p2p",
+    TP_IFACE_CHANNEL_TYPE_CALL1 "/video/h264",
+    TP_IFACE_CHANNEL_TYPE_CALL1 "/shm",
+    TP_IFACE_CHANNEL_TYPE_CALL1 "/ice",
+    TP_IFACE_CHANNEL_TYPE_CALL1 "/gtalk-p2p",
     NULL);
 
   tp_base_client_register (client, NULL);

@@ -240,7 +240,7 @@ channel_prepared (GObject *obj,
     }
 
   if (tp_proxy_has_interface_by_id (as_proxy,
-          TP_IFACE_QUARK_CHANNEL_TYPE_CALL))
+          TP_IFACE_QUARK_CHANNEL_TYPE_CALL1))
     {
       if (!TP_IS_CALL_CHANNEL (channel_proxy))
         {
@@ -262,7 +262,7 @@ channel_prepared (GObject *obj,
   else
     {
       g_simple_async_result_set_error (res, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
-          "Channel does not implement " TP_IFACE_CHANNEL_TYPE_CALL);
+          "Channel does not implement " TP_IFACE_CHANNEL_TYPE_CALL1);
       goto error;
     }
 

@@ -485,7 +485,7 @@ tf_call_content_set_property (GObject    *object,
         break;
 
       self->reported_input_volume = g_value_get_int (value);
-      tp_cli_call_content_interface_audio_control_call_report_input_volume (
+      tp_cli_call1_content_interface_audio_control1_call_report_input_volume (
           self->proxy, -1, self->reported_input_volume,
           NULL, NULL, NULL, NULL);
 
@@ -496,7 +496,7 @@ tf_call_content_set_property (GObject    *object,
         break;
 
       self->reported_output_volume = g_value_get_int (value);
-      tp_cli_call_content_interface_audio_control_call_report_output_volume (
+      tp_cli_call1_content_interface_audio_control1_call_report_output_volume (
           self->proxy, -1, self->reported_output_volume,
           NULL, NULL, NULL, NULL);
       break;
@@ -684,7 +684,7 @@ on_content_dtmf_change_requested (TpCallContent *proxy,
               TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
               TP_ERROR_STR_MEDIA_STREAMING_ERROR,
               "Could not stop DTMF event %d", arg_Event);
-          tp_cli_call_content_interface_media_call_acknowledge_dtmf_change (
+          tp_cli_call1_content_interface_media_call_acknowledge_dtmf_change (
               self->proxy, -1, arg_Event, TP_SENDING_STATE_SENDING,
               NULL, NULL, NULL, NULL);
         }
@@ -712,7 +712,7 @@ on_content_dtmf_change_requested (TpCallContent *proxy,
               TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
               TP_ERROR_STR_MEDIA_STREAMING_ERROR,
               "Could not start DTMF event %d", arg_Event);
-          tp_cli_call_content_interface_media_call_acknowledge_dtmf_change (
+          tp_cli_call1_content_interface_media_call_acknowledge_dtmf_change (
               self->proxy, -1, arg_Event, TP_SENDING_STATE_NONE,
               NULL, NULL, NULL, NULL);
         }
@@ -782,7 +782,7 @@ process_media_description_try_codecs (TfCallContent *self, FsStream *fsstream,
           G_TYPE_INVALID);
 
       g_debug ("Rejecting Media Description");
-      tp_cli_call_content_media_description_call_reject (media_description,
+      tp_cli_call1_content_media_description_call_reject (media_description,
           -1, reason, NULL, NULL, NULL, NULL);
       g_value_array_free (reason);
       g_object_unref (media_description);
@@ -823,7 +823,7 @@ process_media_description (TfCallContent *self,
     }
 
   contact_handle = tp_asv_get_uint32 (properties,
-      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT, &valid);
+      TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT, &valid);
   if (!valid)
     {
       tf_call_content_error_literal (self,
@@ -834,7 +834,7 @@ process_media_description (TfCallContent *self,
     }
 
   codecs = tp_asv_get_boxed (properties,
-      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_CODECS, TP_ARRAY_TYPE_CODEC_LIST);
+      TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_CODECS, TP_ARRAY_TYPE_CODEC_LIST);
 
   if (!codecs)
     {
@@ -852,10 +852,10 @@ process_media_description (TfCallContent *self,
       "object-path", media_description_objpath,
       NULL);
   tp_proxy_add_interface_by_id (TP_PROXY (proxy),
-      TP_IFACE_QUARK_CALL_CONTENT_MEDIA_DESCRIPTION);
+      TP_IFACE_QUARK_CALL1_CONTENT_MEDIA_DESCRIPTION);
 
   interfaces = tp_asv_get_strv (properties,
-      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACES);
+      TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACES);
 
 
   self->current_has_rtcp_fb = FALSE;
@@ -863,25 +863,25 @@ process_media_description (TfCallContent *self,
   for (i = 0; interfaces[i]; i++)
     {
       if (!strcmp (interfaces[i],
-              TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK))
+              TP_IFACE_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK1))
         {
           gboolean valid;
 
           self->current_has_rtcp_fb = TRUE;
           rtcp_fb = tp_asv_get_boxed (properties,
-              TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK_FEEDBACK_MESSAGES,
+              TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK1_FEEDBACK_MESSAGES,
               TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP);
           does_avpf = tp_asv_get_boolean (properties,
-              TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK_DOES_AVPF, &valid);
+              TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK1_DOES_AVPF, &valid);
           if (!valid)
             does_avpf = FALSE;
         }
       else if (!strcmp (interfaces[i],
-              TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS))
+              TP_IFACE_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS1))
         {
           self->current_has_rtp_hdrext = TRUE;
           rtp_hdrext = tp_asv_get_boxed (properties,
-              TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS_HEADER_EXTENSIONS,
+              TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS1_HEADER_EXTENSIONS,
               TP_ARRAY_TYPE_RTP_HEADER_EXTENSIONS_LIST);
         }
     }
@@ -1271,13 +1271,13 @@ setup_content_media_properties (TfCallContent *self, GSimpleAsyncResult *res)
   GError *error = NULL;
 
 
-  if (tp_cli_call_content_interface_media_connect_to_dtmf_change_requested (
+  if (tp_cli_call1_content_interface_media_connect_to_dtmf_change_requested (
           self->proxy, on_content_dtmf_change_requested,
           NULL, NULL, G_OBJECT (self), &error) == NULL)
     goto connect_failed;
 
   tp_cli_dbus_properties_call_get_all (TP_PROXY (self->proxy), -1,
-      TP_IFACE_CALL_CONTENT_INTERFACE_MEDIA,
+      TP_IFACE_CALL1_CONTENT_INTERFACE_MEDIA,
       got_content_media_properties, res, NULL, G_OBJECT (self));
 
   return;
@@ -1325,7 +1325,7 @@ on_content_audio_control_properties_changed (TpProxy *proxy,
   TfCallContent *self = TF_CALL_CONTENT (weak_object);
 
   if (tp_strdiff (interface_name,
-      TP_IFACE_CALL_CONTENT_INTERFACE_AUDIO_CONTROL))
+      TP_IFACE_CALL1_CONTENT_INTERFACE_AUDIO_CONTROL1))
     return;
 
   /* Guard against early disposal */
@@ -1397,7 +1397,7 @@ setup_content_audio_control (TfCallContent *self,
     goto connect_failed;
 
   tp_cli_dbus_properties_call_get_all (self->proxy, -1,
-      TP_IFACE_CALL_CONTENT_INTERFACE_AUDIO_CONTROL,
+      TP_IFACE_CALL1_CONTENT_INTERFACE_AUDIO_CONTROL1,
       got_content_audio_control_properties, res, NULL, G_OBJECT (self));
 
   return;
@@ -1530,33 +1530,33 @@ setup_content_video_control (TfCallContent *self, GSimpleAsyncResult *res)
 {
   GError *error = NULL;
 
-  if (tp_cli_call_content_interface_video_control_connect_to_key_frame_requested (
+  if (tp_cli_call1_content_interface_video_control1_connect_to_key_frame_requested (
       self->proxy, on_content_video_keyframe_requested,
       NULL, NULL, G_OBJECT (self), &error) == NULL)
     goto connect_failed;
 
-  if (tp_cli_call_content_interface_video_control_connect_to_video_resolution_changed (
+  if (tp_cli_call1_content_interface_video_control1_connect_to_video_resolution_changed (
       self->proxy, on_content_video_resolution_changed,
       NULL, NULL, G_OBJECT (self), &error) == NULL)
     goto connect_failed;
 
-  if (tp_cli_call_content_interface_video_control_connect_to_bitrate_changed (
+  if (tp_cli_call1_content_interface_video_control1_connect_to_bitrate_changed (
       self->proxy, on_content_video_bitrate_changed,
       NULL, NULL, G_OBJECT (self), NULL) == NULL)
     goto connect_failed;
 
-  if (tp_cli_call_content_interface_video_control_connect_to_framerate_changed (
+  if (tp_cli_call1_content_interface_video_control1_connect_to_framerate_changed (
       self->proxy, on_content_video_framerate_changed,
       NULL, NULL, G_OBJECT (self), NULL) == NULL)
     goto connect_failed;
 
-  if (tp_cli_call_content_interface_video_control_connect_to_mtu_changed (
+  if (tp_cli_call1_content_interface_video_control1_connect_to_mtu_changed (
       self->proxy, on_content_video_mtu_changed,
       NULL, NULL, G_OBJECT (self), NULL) == NULL)
     goto connect_failed;
 
   tp_cli_dbus_properties_call_get_all (TP_PROXY (self->proxy), -1,
-      TP_IFACE_CALL_CONTENT_INTERFACE_VIDEO_CONTROL,
+      TP_IFACE_CALL1_CONTENT_INTERFACE_VIDEO_CONTROL1,
       got_content_video_control_properties, res, NULL, G_OBJECT (self));
 
   return;
@@ -1645,7 +1645,7 @@ content_prepared (GObject *src, GAsyncResult *prepare_res,
     }
 
   if (!tp_proxy_has_interface_by_id (proxy,
-          TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_MEDIA))
+          TP_IFACE_QUARK_CALL1_CONTENT_INTERFACE_MEDIA))
     {
       tf_call_content_error_literal (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
@@ -1662,7 +1662,7 @@ content_prepared (GObject *src, GAsyncResult *prepare_res,
 
   self->streams = g_ptr_array_new_with_free_func (free_stream);
 
-  tp_cli_call_content_interface_media_connect_to_new_media_description_offer (
+  tp_cli_call1_content_interface_media_connect_to_new_media_description_offer (
       self->proxy, new_media_description_offer, NULL, NULL,
       G_OBJECT (self), &error);
 
@@ -1681,10 +1681,10 @@ content_prepared (GObject *src, GAsyncResult *prepare_res,
     }
 
   if (tp_proxy_has_interface_by_id (proxy,
-          TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_AUDIO_CONTROL))
+          TP_IFACE_QUARK_CALL1_CONTENT_INTERFACE_AUDIO_CONTROL1))
     setup_content_audio_control (self, res);
   else if (tp_proxy_has_interface_by_id (proxy,
-          TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_VIDEO_CONTROL))
+          TP_IFACE_QUARK_CALL1_CONTENT_INTERFACE_VIDEO_CONTROL1))
     setup_content_video_control (self, res);
   else
     setup_content_media_properties (self, res);
@@ -1903,9 +1903,9 @@ fscodecs_to_media_descriptions (TfCallContent *self, GList *codecs)
     }
 
   retval = tp_asv_new (
-      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_CODECS,
+      TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_CODECS,
       TP_ARRAY_TYPE_CODEC_LIST, tpcodecs,
-      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_FURTHER_NEGOTIATION_REQUIRED,
+      TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_FURTHER_NEGOTIATION_REQUIRED,
       G_TYPE_BOOLEAN, !!resend_codecs,
       NULL);
 
@@ -1913,24 +1913,24 @@ fscodecs_to_media_descriptions (TfCallContent *self, GList *codecs)
 
   if (rtp_hdrext)
     {
-      tp_asv_take_boxed (retval, TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS_HEADER_EXTENSIONS,
+      tp_asv_take_boxed (retval, TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS1_HEADER_EXTENSIONS,
           TP_ARRAY_TYPE_RTP_HEADER_EXTENSIONS_LIST,
           rtp_hdrext);
       g_ptr_array_add (interfaces,
-          g_strdup (TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS));
+          g_strdup (TP_IFACE_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS1));
     }
 
   if (rtcp_fb)
     {
-      tp_asv_set_boolean (retval, TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK_DOES_AVPF, g_hash_table_size (rtcp_fb));
-      tp_asv_take_boxed (retval, TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK_FEEDBACK_MESSAGES,
+      tp_asv_set_boolean (retval, TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK1_DOES_AVPF, g_hash_table_size (rtcp_fb));
+      tp_asv_take_boxed (retval, TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK1_FEEDBACK_MESSAGES,
           TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP, rtcp_fb);
       g_ptr_array_add (interfaces,
-          g_strdup (TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS));
+          g_strdup (TP_IFACE_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS1));
     }
 
   g_ptr_array_add (interfaces, NULL);
-  tp_asv_take_boxed (retval, TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACES,
+  tp_asv_take_boxed (retval, TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACES,
       G_TYPE_STRV, interfaces->pdata);
   g_ptr_array_free (interfaces, FALSE);
 
@@ -1991,7 +1991,7 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
       struct CallFsStream *cfs = g_ptr_array_index (self->fsstreams, i);
 
       tp_asv_set_uint32 (media_description,
-        TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT,
+        TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_REMOTE_CONTACT,
         cfs->contact_handle);
 
       if (self->current_media_description &&
@@ -2000,7 +2000,7 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
           g_debug ("Accepting Media Description for contact: %u",
           cfs->contact_handle);
 
-          tp_cli_call_content_media_description_call_accept (
+          tp_cli_call1_content_media_description_call_accept (
             self->current_media_description, -1, media_description,
             NULL, NULL, NULL, NULL);
 
@@ -2012,7 +2012,7 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
           g_debug ("Updating local Media Description for contact %u",
             cfs->contact_handle);
 
-          tp_cli_call_content_interface_media_call_update_local_media_description (
+          tp_cli_call1_content_interface_media_call_update_local_media_description (
             self->proxy, -1, media_description,
             media_description_updated_cb, NULL, NULL, NULL);
         }
@@ -2064,7 +2064,7 @@ tf_call_content_dtmf_started (TfCallContent *self, FsDTMFMethod method,
       return;
     }
 
-  tp_cli_call_content_interface_media_call_acknowledge_dtmf_change (
+  tp_cli_call1_content_interface_media_call_acknowledge_dtmf_change (
       self->proxy, -1, event, TP_SENDING_STATE_SENDING,
       NULL, NULL, NULL, NULL);
   self->dtmf_sending_state = TP_SENDING_STATE_SENDING;
@@ -2083,7 +2083,7 @@ tf_call_content_dtmf_stopped (TfCallContent *self, FsDTMFMethod method)
       return;
     }
 
-  tp_cli_call_content_interface_media_call_acknowledge_dtmf_change (
+  tp_cli_call1_content_interface_media_call_acknowledge_dtmf_change (
       self->proxy, -1, self->current_dtmf_event, TP_SENDING_STATE_NONE,
       NULL, NULL, NULL, NULL);
   self->dtmf_sending_state = TP_SENDING_STATE_NONE;
@@ -2211,7 +2211,7 @@ tf_call_content_error_literal (TfCallContent *self,
     const gchar *message)
 {
   g_debug ("Content error: %s", message);
-  tp_cli_call_content_interface_media_call_fail (
+  tp_cli_call1_content_interface_media_call_fail (
       self->proxy, -1,
       tp_value_array_build (4,
           G_TYPE_UINT, 0,

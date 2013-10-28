@@ -206,14 +206,14 @@ sending_state_changed (TpCallStream *proxy,
         {
           self->has_send_resource = TRUE;
 
-          tp_cli_call_stream_interface_media_call_complete_sending_state_change (
+          tp_cli_call1_stream_interface_media_call_complete_sending_state_change (
               proxy, -1, TP_STREAM_FLOW_STATE_STARTED,
               NULL, NULL, NULL, NULL);
           tf_call_stream_update_sending_state (self);
         }
       else
         {
-          tp_cli_call_stream_interface_media_call_report_sending_failure (
+          tp_cli_call1_stream_interface_media_call_report_sending_failure (
               proxy, -1, TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
               TP_ERROR_STR_MEDIA_STREAMING_ERROR,
               "Could not start sending", NULL, NULL, NULL, NULL);
@@ -228,7 +228,7 @@ sending_state_changed (TpCallStream *proxy,
 
           self->has_send_resource = FALSE;
         }
-      tp_cli_call_stream_interface_media_call_complete_sending_state_change (
+      tp_cli_call1_stream_interface_media_call_complete_sending_state_change (
           proxy, -1, TP_STREAM_FLOW_STATE_STOPPED, NULL, NULL, NULL, NULL);
       break;
     default:
@@ -247,14 +247,14 @@ tf_call_stream_start_receiving (TfCallStream *self, FsStreamDirection dir)
       if (self->fsstream)
         g_object_set (self->fsstream,
             "direction", dir | FS_DIRECTION_RECV, NULL);
-      tp_cli_call_stream_interface_media_call_complete_receiving_state_change (
+      tp_cli_call1_stream_interface_media_call_complete_receiving_state_change (
           self->proxy, -1, TP_STREAM_FLOW_STATE_STARTED,
           NULL, NULL, NULL, NULL);
       return TRUE;
     }
   else
     {
-      tp_cli_call_stream_interface_media_call_report_receiving_failure (
+      tp_cli_call1_stream_interface_media_call_report_receiving_failure (
           self->proxy, -1, TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_MEDIA_STREAMING_ERROR,
           "Could not start receiving", NULL, NULL, NULL, NULL);
@@ -292,7 +292,7 @@ receiving_state_changed (TpCallStream *proxy,
 
           self->has_receive_resource = FALSE;
         }
-      tp_cli_call_stream_interface_media_call_complete_receiving_state_change (
+      tp_cli_call1_stream_interface_media_call_complete_receiving_state_change (
           proxy, -1, TP_STREAM_FLOW_STATE_STOPPED, NULL, NULL, NULL, NULL);
       break;
     default:
@@ -917,9 +917,9 @@ tf_call_stream_add_endpoint (TfCallStream *self, const gchar *obj_path)
       "object-path", self->endpoint_objpath,
       NULL);
   tp_proxy_add_interface_by_id (TP_PROXY (self->endpoint),
-      TP_IFACE_QUARK_CALL_STREAM_ENDPOINT);
+      TP_IFACE_QUARK_CALL1_STREAM_ENDPOINT);
 
-  tp_cli_call_stream_endpoint_connect_to_remote_credentials_set (
+  tp_cli_call1_stream_endpoint_connect_to_remote_credentials_set (
       TP_PROXY (self->endpoint), remote_credentials_set, NULL, NULL,
       G_OBJECT (self), &error);
   if (error)
@@ -933,7 +933,7 @@ tf_call_stream_add_endpoint (TfCallStream *self, const gchar *obj_path)
       return;
     }
 
-  tp_cli_call_stream_endpoint_connect_to_remote_candidates_added (
+  tp_cli_call1_stream_endpoint_connect_to_remote_candidates_added (
       TP_PROXY (self->endpoint), remote_candidates_added, NULL, NULL,
       G_OBJECT (self), &error);
   if (error)
@@ -948,7 +948,7 @@ tf_call_stream_add_endpoint (TfCallStream *self, const gchar *obj_path)
     }
 
   tp_cli_dbus_properties_call_get_all (self->endpoint, -1,
-      TP_IFACE_CALL_STREAM_ENDPOINT,
+      TP_IFACE_CALL1_STREAM_ENDPOINT,
       got_endpoint_properties, NULL, NULL, G_OBJECT (self));
 }
 
@@ -1233,7 +1233,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
     }
 
  if (!tp_proxy_has_interface_by_id (proxy,
-         TP_IFACE_QUARK_CALL_STREAM_INTERFACE_MEDIA))
+         TP_IFACE_QUARK_CALL1_STREAM_INTERFACE_MEDIA))
    {
      tf_call_stream_fail_literal (self,
          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
@@ -1262,7 +1262,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
       self->contact_handle = tp_contact_get_handle (key);
     }
 
-  tp_cli_call_stream_interface_media_connect_to_sending_state_changed (
+  tp_cli_call1_stream_interface_media_connect_to_sending_state_changed (
       TP_CALL_STREAM (proxy), sending_state_changed, NULL, NULL,
       G_OBJECT (self), &error);
   if (error)
@@ -1276,7 +1276,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
     }
 
 
-  tp_cli_call_stream_interface_media_connect_to_receiving_state_changed (
+  tp_cli_call1_stream_interface_media_connect_to_receiving_state_changed (
       TP_CALL_STREAM (proxy), receiving_state_changed, NULL, NULL,
       G_OBJECT (self), &error);
   if (error)
@@ -1289,7 +1289,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
       return;
     }
 
-  tp_cli_call_stream_interface_media_connect_to_server_info_retrieved (
+  tp_cli_call1_stream_interface_media_connect_to_server_info_retrieved (
       TP_CALL_STREAM (proxy), server_info_retrieved, NULL, NULL,
       G_OBJECT (self), &error);
   if (error)
@@ -1302,7 +1302,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
       return;
     }
 
-  tp_cli_call_stream_interface_media_connect_to_stun_servers_changed (
+  tp_cli_call1_stream_interface_media_connect_to_stun_servers_changed (
       TP_CALL_STREAM (proxy), stun_servers_changed, NULL, NULL,
       G_OBJECT (self), &error);
   if (error)
@@ -1316,7 +1316,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
     }
 
 
-  tp_cli_call_stream_interface_media_connect_to_relay_info_changed (
+  tp_cli_call1_stream_interface_media_connect_to_relay_info_changed (
       TP_CALL_STREAM (proxy), relay_info_changed, NULL, NULL,
       G_OBJECT (self), &error);
   if (error)
@@ -1330,7 +1330,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
     }
 
 
-  tp_cli_call_stream_interface_media_connect_to_endpoints_changed (
+  tp_cli_call1_stream_interface_media_connect_to_endpoints_changed (
       TP_CALL_STREAM (proxy), endpoints_changed, NULL, NULL,
       G_OBJECT (self), &error);
   if (error)
@@ -1344,7 +1344,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
     }
 
 
-  tp_cli_call_stream_interface_media_connect_to_ice_restart_requested (
+  tp_cli_call1_stream_interface_media_connect_to_ice_restart_requested (
       TP_CALL_STREAM (proxy), ice_restart_requested, NULL, NULL,
       G_OBJECT (self), &error);
   if (error)
@@ -1358,7 +1358,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
     }
 
   tp_cli_dbus_properties_call_get_all (TP_PROXY (self->proxy), -1,
-      TP_IFACE_CALL_STREAM_INTERFACE_MEDIA,
+      TP_IFACE_CALL1_STREAM_INTERFACE_MEDIA,
       got_stream_media_properties, NULL, NULL, G_OBJECT (self));
 
   return;
@@ -1493,7 +1493,7 @@ cb_fs_new_local_candidate (TfCallStream *stream, FsCandidate *candidate)
             stream->last_local_password = g_strdup ("");
 
           /* Add a callback to kill Call on errors */
-          tp_cli_call_stream_interface_media_call_set_credentials (
+          tp_cli_call1_stream_interface_media_call_set_credentials (
               stream->proxy, -1, stream->last_local_username,
               stream->last_local_password, NULL, NULL, NULL, NULL);
 
@@ -1512,7 +1512,7 @@ cb_fs_new_local_candidate (TfCallStream *stream, FsCandidate *candidate)
       fscandidate_to_tpcandidate (stream, candidate));
 
   /* Should also check for errors */
-  tp_cli_call_stream_interface_media_call_add_candidates (stream->proxy,
+  tp_cli_call1_stream_interface_media_call_add_candidates (stream->proxy,
       -1, candidate_list, NULL, NULL, NULL, NULL);
 
 
@@ -1524,7 +1524,7 @@ cb_fs_local_candidates_prepared (TfCallStream *stream)
 {
   g_debug ("Local candidates prepared");
 
-  tp_cli_call_stream_interface_media_call_finish_initial_candidates (
+  tp_cli_call1_stream_interface_media_call_finish_initial_candidates (
       stream->proxy, -1, NULL, NULL, NULL, NULL);
 }
 
@@ -1560,7 +1560,7 @@ cb_fs_component_state_changed (TfCallStream *stream, guint component,
   g_debug ("Endpoint state for component %u changed to %d (fs: %d)",
       component, state, fsstate);
 
-  tp_cli_call_stream_endpoint_call_set_endpoint_state (stream->endpoint,
+  tp_cli_call1_stream_endpoint_call_set_endpoint_state (stream->endpoint,
       -1, component, state, NULL, NULL, NULL, NULL);
 }
 
@@ -1582,7 +1582,7 @@ cb_fs_new_active_candidate_pair (TfCallStream *stream,
   local_tp_candidate = fscandidate_to_tpcandidate (stream, local_candidate);
   remote_tp_candidate = fscandidate_to_tpcandidate (stream, remote_candidate);
 
-  tp_cli_call_stream_endpoint_call_set_selected_candidate_pair (
+  tp_cli_call1_stream_endpoint_call_set_selected_candidate_pair (
       stream->endpoint, -1, local_tp_candidate, remote_tp_candidate,
       NULL, NULL, NULL, NULL);
 
@@ -1659,7 +1659,7 @@ tf_call_stream_fail_literal (TfCallStream *self,
   if (self->proxy == NULL)
     return;
 
-  tp_cli_call_stream_interface_media_call_fail (
+  tp_cli_call1_stream_interface_media_call_fail (
       self->proxy, -1,
       tp_value_array_build (4,
           G_TYPE_UINT, 0,
@@ -1697,7 +1697,7 @@ tf_call_stream_sending_failed (TfCallStream *self, const gchar *message)
   if (self->proxy == NULL)
     return;
 
-  tp_cli_call_stream_interface_media_call_report_sending_failure (
+  tp_cli_call1_stream_interface_media_call_report_sending_failure (
       self->proxy, -1, TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
       TP_ERROR_STR_MEDIA_STREAMING_ERROR,
       message, NULL, NULL, NULL, NULL);
@@ -1725,7 +1725,7 @@ tf_call_stream_receiving_failed (TfCallStream *self,
 
   g_warning ("Reporting receiving failure: %s", message);
 
-  tp_cli_call_stream_interface_media_call_report_receiving_failure (
+  tp_cli_call1_stream_interface_media_call_report_receiving_failure (
       self->proxy, -1, TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
       TP_ERROR_STR_MEDIA_STREAMING_ERROR,
       message, NULL, NULL, NULL, NULL);
