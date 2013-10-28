@@ -146,6 +146,8 @@ struct _TpProtocolPrivate
   TpCapabilities *capabilities;
   TpAvatarRequirements *avatar_req;
   gchar *cm_name;
+  GStrv addressable_vcard_fields;
+  GStrv addressable_uri_schemes;
 };
 
 enum
@@ -160,6 +162,8 @@ enum
     PROP_AUTHENTICATION_TYPES,
     PROP_AVATAR_REQUIREMENTS,
     PROP_CM_NAME,
+    PROP_ADDRESSABLE_VCARD_FIELDS,
+    PROP_ADDRESSABLE_URI_SCHEMES,
     N_PROPS
 };
 
@@ -294,6 +298,15 @@ tp_protocol_get_property (GObject *object,
       g_value_set_string (value, tp_protocol_get_cm_name (self));
       break;
 
+    case PROP_ADDRESSABLE_VCARD_FIELDS:
+      g_value_set_boxed (value, tp_protocol_get_addressable_vcard_fields (
+            self));
+      break;
+
+    case PROP_ADDRESSABLE_URI_SCHEMES:
+      g_value_set_boxed (value, tp_protocol_get_addressable_uri_schemes (self));
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -395,6 +408,8 @@ tp_protocol_finalize (GObject *object)
   g_free (self->priv->english_name);
   g_free (self->priv->icon_name);
   g_free (self->priv->cm_name);
+  g_strfreev (self->priv->addressable_vcard_fields);
+  g_strfreev (self->priv->addressable_uri_schemes);
 
   if (self->priv->protocol_properties != NULL)
     g_hash_table_unref (self->priv->protocol_properties);
@@ -455,6 +470,19 @@ title_case (const gchar *s)
   return g_strdup_printf ("%s%s", buf, g_utf8_next_char (s));
 }
 
+static GStrv
+asv_strdupv_or_empty (const GHashTable *asv,
+    const gchar *key)
+{
+  const gchar * const *strings = tp_asv_get_boxed (asv, key, G_TYPE_STRV);
+  static const gchar * const no_strings[] = { NULL };
+
+  if (strings != NULL)
+    return g_strdupv ((GStrv) strings);
+  else
+    return g_strdupv ((GStrv) no_strings);
+}
+
 static void
 tp_protocol_constructed (GObject *object)
 {
@@ -465,7 +493,6 @@ tp_protocol_constructed (GObject *object)
   const gchar *s;
   const GPtrArray *rccs;
   gboolean had_immutables = TRUE;
-  const gchar * const *auth_types = NULL;
   const gchar * const *interfaces;
 
   if (chain_up != NULL)
@@ -527,19 +554,9 @@ tp_protocol_constructed (GObject *object)
   if (rccs != NULL)
     self->priv->capabilities = _tp_capabilities_new (rccs, FALSE);
 
-  auth_types = tp_asv_get_boxed (
+  self->priv->authentication_types = asv_strdupv_or_empty (
       self->priv->protocol_properties,
-      TP_PROP_PROTOCOL_AUTHENTICATION_TYPES, G_TYPE_STRV);
-
-  if (auth_types != NULL)
-    {
-      self->priv->authentication_types = g_strdupv ((GStrv) auth_types);
-    }
-  else
-    {
-      gchar *tmp[] = { NULL };
-      self->priv->authentication_types = g_strdupv (tmp);
-    }
+      TP_PROP_PROTOCOL_AUTHENTICATION_TYPES);
 
   interfaces = tp_asv_get_strv (self->priv->protocol_properties,
       TP_PROP_PROTOCOL_INTERFACES);
@@ -566,6 +583,17 @@ tp_protocol_constructed (GObject *object)
             TP_PROP_PROTOCOL_INTERFACE_AVATARS_MAXIMUM_AVATAR_HEIGHT, NULL),
           tp_asv_get_uint32 (self->priv->protocol_properties,
             TP_PROP_PROTOCOL_INTERFACE_AVATARS_MAXIMUM_AVATAR_BYTES, NULL));
+    }
+
+  if (tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_PROTOCOL_INTERFACE_ADDRESSING))
+    {
+      self->priv->addressable_vcard_fields = asv_strdupv_or_empty (
+          self->priv->protocol_properties,
+          TP_PROP_PROTOCOL_INTERFACE_ADDRESSING_ADDRESSABLE_VCARD_FIELDS);
+      self->priv->addressable_uri_schemes = asv_strdupv_or_empty (
+          self->priv->protocol_properties,
+          TP_PROP_PROTOCOL_INTERFACE_ADDRESSING_ADDRESSABLE_URI_SCHEMES);
     }
 
   /* become ready immediately */
@@ -779,6 +807,45 @@ tp_protocol_class_init (TpProtocolClass *klass)
         "Name of the CM this protocol is on",
         NULL,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TpProtocol:addressable-vcard-fields:
+   *
+   * A non-%NULL #GStrv of vCard fields supported by this protocol.
+   * If this protocol does not support addressing contacts by a vCard field,
+   * the list is empty.
+   *
+   * For instance, a SIP connection manager that supports calling contacts
+   * by SIP URI (vCard field SIP) or telephone number (vCard field TEL)
+   * might have { "sip", "tel", NULL }.
+   *
+   * Since: 0.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_ADDRESSABLE_VCARD_FIELDS,
+      g_param_spec_boxed ("addressable-vcard-fields",
+        "AddressableVCardFields",
+        "A list of vCard fields",
+        G_TYPE_STRV, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TpProtocol:addressable-uri-schemes:
+   *
+   * A non-%NULL #GStrv of URI schemes supported by this protocol.
+   * If this protocol does not support addressing contacts by URI,
+   * the list is empty.
+   *
+   * For instance, a SIP connection manager that supports calling contacts
+   * by SIP URI (sip:alice&commat;example.com, sips:bob&commat;example.com)
+   * or telephone number (tel:+1-555-0123) might have
+   * { "sip", "sips", "tel", NULL }.
+   *
+   * Since: 0.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_ADDRESSABLE_URI_SCHEMES,
+      g_param_spec_boxed ("addressable-uri-schemes",
+        "AddressableURISchemes",
+        "A list of URI schemes",
+        G_TYPE_STRV, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   proxy_class->list_features = tp_protocol_list_features;
   proxy_class->must_have_unique_name = FALSE;
@@ -1931,4 +1998,157 @@ tp_protocol_identify_account_finish (TpProtocol *self,
         tp_protocol_identify_account_async), NULL);
 
   return g_task_propagate_pointer (G_TASK (result), error);
+}
+
+/**
+ * tp_protocol_normalize_contact_uri_async:
+ * @self: a protocol
+ * @uri: a contact URI, possibly invalid
+ * @cancellable: (allow-none): may be used to cancel the async request
+ * @callback: (scope async): a callback to call when the request is satisfied
+ * @user_data: (closure) (allow-none): data to pass to @callback
+ *
+ * Perform best-effort offline contact normalization, for a contact in
+ * the form of a URI. This method will fail if the URI is not in a
+ * scheme supported by this protocol or connection manager.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_protocol_normalize_contact_uri_async (TpProtocol *self,
+    const gchar *uri,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GTask *task;
+
+  g_return_if_fail (TP_IS_PROTOCOL (self));
+  g_return_if_fail (uri != NULL);
+  /* this makes no sense to call for its side-effects */
+  g_return_if_fail (callback != NULL);
+
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_source_tag (task, tp_protocol_normalize_contact_uri_async);
+
+  tp_cli_protocol_interface_addressing_call_normalize_contact_uri (self, -1,
+      uri, tp_protocol_async_string_cb, task, g_object_unref, NULL);
+}
+
+/**
+ * tp_protocol_normalize_contact_uri_finish:
+ * @self: a protocol
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Interpret the result of tp_protocol_normalize_contact_uri_async().
+ *
+ * Returns: (transfer full): the normalized form of @uri,
+ *  or %NULL on error
+ * Since: 0.UNRELEASED
+ */
+gchar *
+tp_protocol_normalize_contact_uri_finish (TpProtocol *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  g_return_val_if_fail (g_task_is_valid (result, self), NULL);
+  g_return_val_if_fail (g_async_result_is_tagged (result,
+        tp_protocol_normalize_contact_uri_async), NULL);
+
+  return g_task_propagate_pointer (G_TASK (result), error);
+}
+
+/**
+ * tp_protocol_normalize_vcard_address_async:
+ * @self: a protocol
+ * @field: a vCard field
+ * @value: an address that is a value of @field
+ * @cancellable: (allow-none): may be used to cancel the async request
+ * @callback: (scope async): a callback to call when the request is satisfied
+ * @user_data: (closure) (allow-none): data to pass to @callback
+ *
+ * Perform best-effort offline contact normalization, for a contact in
+ * the form of a vCard field. This method will fail if the vCard field
+ * is not supported by this protocol or connection manager.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_protocol_normalize_vcard_address_async (TpProtocol *self,
+    const gchar *field,
+    const gchar *value,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GTask *task;
+
+  g_return_if_fail (TP_IS_PROTOCOL (self));
+  g_return_if_fail (!tp_str_empty (field));
+  g_return_if_fail (value != NULL);
+  /* this makes no sense to call for its side-effects */
+  g_return_if_fail (callback != NULL);
+
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_source_tag (task, tp_protocol_normalize_vcard_address_async);
+
+  tp_cli_protocol_interface_addressing_call_normalize_vcard_address (self, -1,
+      field, value, tp_protocol_async_string_cb, task, g_object_unref, NULL);
+}
+
+/**
+ * tp_protocol_normalize_vcard_address_finish:
+ * @self: a protocol
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Interpret the result of tp_protocol_normalize_vcard_address_async().
+ *
+ * Returns: (transfer full): the normalized form of @value,
+ *  or %NULL on error
+ * Since: 0.UNRELEASED
+ */
+gchar *
+tp_protocol_normalize_vcard_address_finish (TpProtocol *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  g_return_val_if_fail (g_task_is_valid (result, self), NULL);
+  g_return_val_if_fail (g_async_result_is_tagged (result,
+        tp_protocol_normalize_vcard_address_async), NULL);
+
+  return g_task_propagate_pointer (G_TASK (result), error);
+}
+
+/**
+ * tp_protocol_get_addressable_vcard_fields:
+ * @self: a protocol object
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer none): the value of #TpProtocol:addressable-vcard-fields
+ * Since: 0.UNRELEASED
+ */
+const gchar * const *
+tp_protocol_get_addressable_vcard_fields (TpProtocol *self)
+{
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
+  return (const gchar * const *) self->priv->addressable_vcard_fields;
+}
+
+/**
+ * tp_protocol_get_addressable_uri_schemes:
+ * @self: a protocol object
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer none): the value of #TpProtocol:addressable-uri-schemes
+ * Since: 0.UNRELEASED
+ */
+const gchar * const *
+tp_protocol_get_addressable_uri_schemes (TpProtocol *self)
+{
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
+  return (const gchar * const *) self->priv->addressable_uri_schemes;
 }

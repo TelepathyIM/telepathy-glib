@@ -113,6 +113,16 @@ const gchar * const *
 /* gtk-doc sucks */
 tp_protocol_get_authentication_types (TpProtocol *self);
 
+_TP_AVAILABLE_IN_UNRELEASED
+const gchar * const *
+/* ... */
+tp_protocol_get_addressable_vcard_fields (TpProtocol *self);
+
+_TP_AVAILABLE_IN_UNRELEASED
+const gchar * const *
+/* ... */
+tp_protocol_get_addressable_uri_schemes (TpProtocol *self);
+
 #define TP_PROTOCOL_FEATURE_CORE \
   (tp_protocol_get_feature_quark_core ())
 GQuark tp_protocol_get_feature_quark_core (void) G_GNUC_CONST;
@@ -146,6 +156,31 @@ void tp_protocol_identify_account_async (TpProtocol *self,
 
 _TP_AVAILABLE_IN_UNRELEASED
 gchar *tp_protocol_identify_account_finish (TpProtocol *self,
+    GAsyncResult *result,
+    GError **error);
+
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_protocol_normalize_contact_uri_async (TpProtocol *self,
+    const gchar *uri,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+_TP_AVAILABLE_IN_UNRELEASED
+gchar *tp_protocol_normalize_contact_uri_finish (TpProtocol *self,
+    GAsyncResult *result,
+    GError **error);
+
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_protocol_normalize_vcard_address_async (TpProtocol *self,
+    const gchar *field,
+    const gchar *value,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+_TP_AVAILABLE_IN_UNRELEASED
+gchar *tp_protocol_normalize_vcard_address_finish (TpProtocol *self,
     GAsyncResult *result,
     GError **error);
 

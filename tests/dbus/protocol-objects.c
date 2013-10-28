@@ -565,6 +565,66 @@ test_normalize (Test *test,
   g_assert_cmpstr (s, ==, NULL);
   g_clear_object (&result);
   g_clear_error (&test->error);
+
+  tp_protocol_normalize_contact_uri_async (test->protocol,
+      "xmpp:MiXeDcAsE", NULL, tp_tests_result_ready_cb, &result);
+  tp_tests_run_until_result (&result);
+  s = tp_protocol_normalize_contact_uri_finish (test->protocol, result,
+      &test->error);
+  g_assert_no_error (test->error);
+  g_assert_cmpstr (s, ==, "xmpp:mixedcase");
+  g_clear_object (&result);
+  g_free (s);
+
+  tp_protocol_normalize_contact_uri_async (test->protocol,
+      "xmpp:", NULL, tp_tests_result_ready_cb, &result);
+  tp_tests_run_until_result (&result);
+  s = tp_protocol_normalize_contact_uri_finish (test->protocol, result,
+      &test->error);
+  g_assert_cmpstr (s, ==, NULL);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
+  g_clear_object (&result);
+  g_clear_error (&test->error);
+
+  tp_protocol_normalize_contact_uri_async (test->protocol,
+      "http://example.com", NULL, tp_tests_result_ready_cb, &result);
+  tp_tests_run_until_result (&result);
+  s = tp_protocol_normalize_contact_uri_finish (test->protocol, result,
+      &test->error);
+  g_assert_cmpstr (s, ==, NULL);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED);
+  g_clear_object (&result);
+  g_clear_error (&test->error);
+
+  tp_protocol_normalize_vcard_address_async (test->protocol,
+      "x-jabber", "MiXeDcAsE", NULL, tp_tests_result_ready_cb, &result);
+  tp_tests_run_until_result (&result);
+  s = tp_protocol_normalize_vcard_address_finish (test->protocol, result,
+      &test->error);
+  g_assert_no_error (test->error);
+  g_assert_cmpstr (s, ==, "mixedcase");
+  g_clear_object (&result);
+  g_free (s);
+
+  tp_protocol_normalize_vcard_address_async (test->protocol,
+      "x-jabber", "", NULL, tp_tests_result_ready_cb, &result);
+  tp_tests_run_until_result (&result);
+  s = tp_protocol_normalize_vcard_address_finish (test->protocol, result,
+      &test->error);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
+  g_assert_cmpstr (s, ==, NULL);
+  g_clear_object (&result);
+  g_clear_error (&test->error);
+
+  tp_protocol_normalize_vcard_address_async (test->protocol,
+      "x-skype", "", NULL, tp_tests_result_ready_cb, &result);
+  tp_tests_run_until_result (&result);
+  s = tp_protocol_normalize_vcard_address_finish (test->protocol, result,
+      &test->error);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED);
+  g_assert_cmpstr (s, ==, NULL);
+  g_clear_object (&result);
+  g_clear_error (&test->error);
 }
 
 static void
