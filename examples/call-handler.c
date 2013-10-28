@@ -631,9 +631,9 @@ main (int argc, char **argv)
 
   tp_base_client_add_handler_capabilities_varargs (client,
     TP_IFACE_CHANNEL_TYPE_CALL1 "/video/h264",
-    TP_IFACE_CHANNEL_TYPE_CALL1 "/shm",
-    TP_IFACE_CHANNEL_TYPE_CALL1 "/ice",
-    TP_IFACE_CHANNEL_TYPE_CALL1 "/gtalk-p2p",
+    TP_TOKEN_CHANNEL_TYPE_CALL1_SHM,
+    TP_TOKEN_CHANNEL_TYPE_CALL1_ICE,
+    TP_TOKEN_CHANNEL_TYPE_CALL1_GTALK_P2P,
     NULL);
 
   tp_base_client_register (client, NULL);
