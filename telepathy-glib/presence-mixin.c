@@ -1277,7 +1277,7 @@ tp_presence_mixin_get_simple_presence_dbus_property (GObject *object,
                 }
             }
 
-         status = tp_value_array_build (3,
+          status = tp_value_array_build (3,
              G_TYPE_UINT, (guint) mixin_cls->statuses[i].presence_type,
              G_TYPE_BOOLEAN, mixin_cls->statuses[i].self,
              G_TYPE_BOOLEAN, message,
