@@ -131,7 +131,10 @@
  * @optional_arguments: An array of #TpPresenceStatusOptionalArgumentSpec
  *  structures representing the optional arguments for this status, terminated
  *  by a NULL name. If there are no optional arguments for a status, this can
- *  be NULL.
+ *  be NULL. In modern Telepathy connection managers, the only optional
+ *  argument should be a string (type "s") named "message" on statuses
+ *  that have an optional human-readable message. All other optional arguments
+ *  are deprecated.
  *
  * Structure specifying a supported presence status.
  *
@@ -153,8 +156,12 @@
  * In addition to the fields documented here, there are two gpointer fields
  * which must currently be %NULL. A meaning may be defined for these in a
  * future version of telepathy-glib.
+ *
+ * In modern Telepathy connection managers, the only optional
+ * argument should be a %G_TYPE_STRING named "message", on statuses
+ * that have an optional human-readable message. All other optional arguments
+ * are deprecated.
  */
-
 
 /**
  * TpPresenceMixinStatusAvailableFunc:
@@ -332,6 +339,11 @@ deep_copy_hashtable (GHashTable *hash_table)
  *
  * Construct a presence status structure. You should free the returned
  * structure with #tp_presence_status_free.
+ *
+ * In modern Telepathy connection managers, the only optional
+ * argument should be a %G_TYPE_STRING named "message", on statuses
+ * that have an optional human-readable message. All other optional arguments
+ * are deprecated.
  *
  * Returns: A pointer to the newly allocated presence status structure.
  */
