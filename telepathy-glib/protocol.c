@@ -1636,6 +1636,7 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
     gchar **protocol_name)
 {
   GHashTable *immutables;
+  GHashTable *status_specs;
   GPtrArray *param_specs, *rccs;
   const gchar *name;
   gchar **rcc_groups, **rcc_group;
@@ -1756,8 +1757,6 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
         }
     }
 
-  g_strfreev (keys);
-
   immutables = tp_asv_new (
       TP_PROP_PROTOCOL_PARAMETERS, TP_ARRAY_TYPE_PARAM_SPEC_LIST, param_specs,
       NULL);
@@ -1822,6 +1821,83 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
     }
 
   g_strfreev (rcc_groups);
+
+  /* Statuses */
+  status_specs = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
+      (GDestroyNotify) tp_value_array_free);
+
+  for (key = keys; key != NULL && *key != NULL; key++)
+    {
+      if (g_str_has_prefix (*key, "status-"))
+        {
+          GValueArray *ubb;
+          gint64 type;
+          gboolean on_self = FALSE, has_message = FALSE;
+          gchar *value, *endptr;
+          gchar **strv, **iter;
+
+          if (!tp_strdiff (*key, "status-"))
+            {
+              DEBUG ("'status-' is not a valid status");
+              continue;
+            }
+
+          value = g_key_file_get_value (file, group, *key, NULL);
+          strv = g_strsplit (value, " ", 0);
+          g_free (value);
+
+          type = g_ascii_strtoll (strv[0], &endptr, 10);
+
+          if (endptr <= strv[0] || *endptr != '\0')
+            {
+              DEBUG ("invalid (non-numeric?) status type %s", strv[0]);
+              goto next_status;
+            }
+
+          if (type == TP_CONNECTION_PRESENCE_TYPE_UNSET ||
+              type < 0 || type >= TP_NUM_CONNECTION_PRESENCE_TYPES)
+            {
+              DEBUG ("presence type out of range: %" G_GINT64_FORMAT,
+                  type);
+              goto next_status;
+            }
+
+          for (iter = strv + 1; *iter != NULL; iter++)
+            {
+              if (!tp_strdiff (*iter, "settable"))
+                on_self = TRUE;
+              else if (!tp_strdiff (*iter, "message"))
+                has_message = TRUE;
+              else
+                DEBUG ("unknown status modifier '%s'", *iter);
+            }
+
+          ubb = tp_value_array_build (3,
+              G_TYPE_UINT, (guint) type,
+              G_TYPE_BOOLEAN, on_self,
+              G_TYPE_BOOLEAN, has_message,
+              G_TYPE_INVALID);
+
+          /* strlen ("status-") == 7 */
+          g_hash_table_insert (status_specs, g_strdup (*key + 7),
+              ubb);
+          DEBUG ("Status '%s': type %u%s%s", *key + 7, (guint) type,
+              on_self ? ", can set on self" : "",
+              has_message ? ", has message" : "");
+
+next_status:
+          g_strfreev (strv);
+        }
+    }
+
+  if (g_hash_table_size (status_specs) > 0)
+    tp_asv_take_boxed (immutables,
+        TP_PROP_PROTOCOL_INTERFACE_PRESENCE_STATUSES,
+        TP_HASH_TYPE_SIMPLE_STATUS_SPEC_MAP, status_specs);
+  else
+    g_hash_table_unref (status_specs);
+
+  g_strfreev (keys);
 
   tp_asv_take_boxed (immutables, TP_PROP_PROTOCOL_REQUESTABLE_CHANNEL_CLASSES,
       TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST, rccs);
