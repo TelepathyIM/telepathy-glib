@@ -578,8 +578,7 @@ new_call_channel_cb (TpSimpleHandler *handler,
 
   tp_handle_channels_context_accept (handler_context);
 
-  tp_cli_channel_type_call1_call_accept (proxy, -1,
-      NULL, NULL, NULL, NULL);
+  tp_call_channel_accept_async (TP_CALL_CHANNEL (proxy), NULL, NULL);
 
   context->proxy = g_object_ref (proxy);
   g_signal_connect (proxy, "invalidated",
