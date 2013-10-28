@@ -1257,25 +1257,15 @@ tp_presence_mixin_get_simple_presence_dbus_property (GObject *object,
 
       for (i=0; mixin_cls->statuses[i].name != NULL; i++)
         {
-          const TpPresenceStatusOptionalArgumentSpec *specs;
-          int j;
-          gboolean message = FALSE;
+          gboolean message;
 
           /* we include statuses here even if they're not available
            * to set on yourself */
           if (!check_status_available (object, mixin_cls, i, NULL, FALSE))
             continue;
 
-          specs = mixin_cls->statuses[i].optional_arguments;
-
-          for (j = 0; specs != NULL && specs[j].name != NULL; j++)
-            {
-              if (!tp_strdiff (specs[j].name, "message"))
-                {
-                  message = TRUE;
-                  break;
-                }
-            }
+          message = tp_presence_status_spec_has_message (
+              &mixin_cls->statuses[i]);
 
           status = tp_value_array_build (3,
              G_TYPE_UINT, (guint) mixin_cls->statuses[i].presence_type,
@@ -1591,3 +1581,88 @@ tp_presence_mixin_simple_presence_register_with_contacts_mixin (GObject *obj)
       tp_presence_mixin_simple_presence_fill_contact_attributes);
 }
 
+/**
+ * tp_presence_status_spec_get_presence_type:
+ * @self: a presence status specification
+ *
+ * Return the category into which this presence type falls. For instance,
+ * for XMPP's "" (do not disturb) status, this would return
+ * %TP_CONNECTION_PRESENCE_TYPE_BUSY.
+ *
+ * Returns: a #TpConnectionPresenceType
+ * Since: 0.UNRELEASED
+ */
+TpConnectionPresenceType
+tp_presence_status_spec_get_presence_type (const TpPresenceStatusSpec *self)
+{
+  g_return_val_if_fail (self != NULL, TP_CONNECTION_PRESENCE_TYPE_UNSET);
+
+  return self->presence_type;
+}
+
+/**
+ * tp_presence_status_spec_get_name:
+ * @self: a presence status specification
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer none): the name of this presence status,
+ *  such as "available" or "out-to-lunch".
+ * Since: 0.UNRELEASED
+ */
+const gchar *
+tp_presence_status_spec_get_name (const TpPresenceStatusSpec *self)
+{
+  g_return_val_if_fail (self != NULL, NULL);
+
+  return self->name;
+}
+
+/**
+ * tp_presence_status_spec_can_set_on_self:
+ * @self: a presence status specification
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if the user can set this presence status on themselves (most
+ *  statuses), or %FALSE if they cannot directly set it on
+ *  themselves (typically used for %TP_CONNECTION_PRESENCE_TYPE_OFFLINE
+ *  and %TP_CONNECTION_PRESENCE_TYPE_ERROR)
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_presence_status_spec_can_set_on_self (const TpPresenceStatusSpec *self)
+{
+  g_return_val_if_fail (self != NULL, FALSE);
+
+  return self->self;
+}
+
+/**
+ * tp_presence_status_spec_has_message:
+ * @self: a presence status specification
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if this presence status is accompanied by an optional
+ *  human-readable message
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_presence_status_spec_has_message (const TpPresenceStatusSpec *self)
+{
+  const TpPresenceStatusOptionalArgumentSpec *arg;
+
+  g_return_val_if_fail (self != NULL, FALSE);
+
+  if (self->optional_arguments == NULL)
+    return FALSE;
+
+  for (arg = self->optional_arguments; arg->name != NULL; arg++)
+    {
+      if (!tp_strdiff (arg->name, "message") && !tp_strdiff (arg->dtype, "s"))
+        return TRUE;
+    }
+
+  return FALSE;
+}

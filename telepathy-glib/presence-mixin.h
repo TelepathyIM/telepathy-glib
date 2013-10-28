@@ -56,6 +56,22 @@ struct _TpPresenceStatusSpec {
     gpointer _future2;
 };
 
+_TP_AVAILABLE_IN_UNRELEASED
+TpConnectionPresenceType tp_presence_status_spec_get_presence_type (
+    const TpPresenceStatusSpec *self);
+
+_TP_AVAILABLE_IN_UNRELEASED
+const gchar *tp_presence_status_spec_get_name (
+    const TpPresenceStatusSpec *self);
+
+_TP_AVAILABLE_IN_UNRELEASED
+gboolean tp_presence_status_spec_can_set_on_self (
+    const TpPresenceStatusSpec *self);
+
+_TP_AVAILABLE_IN_UNRELEASED
+gboolean tp_presence_status_spec_has_message (
+    const TpPresenceStatusSpec *self);
+
 typedef struct _TpPresenceStatus TpPresenceStatus;
 
 struct _TpPresenceStatus {
