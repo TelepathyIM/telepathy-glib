@@ -48,7 +48,7 @@ create_channel_impl (TpClientFactory *self,
       return (TpChannel *) _tpl_text_channel_new_with_factory (self, conn,
           object_path, properties, error);
     }
-  else if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_CALL))
+  else if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_CALL1))
     {
       return (TpChannel *) _tpl_call_channel_new_with_factory (self, conn,
           object_path, properties, error);
