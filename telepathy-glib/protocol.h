@@ -137,6 +137,18 @@ gchar *tp_protocol_normalize_contact_finish (TpProtocol *self,
     GAsyncResult *result,
     GError **error);
 
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_protocol_identify_account_async (TpProtocol *self,
+    GVariant *vardict,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+_TP_AVAILABLE_IN_UNRELEASED
+gchar *tp_protocol_identify_account_finish (TpProtocol *self,
+    GAsyncResult *result,
+    GError **error);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-protocol.h>

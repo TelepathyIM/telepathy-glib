@@ -6173,6 +6173,8 @@ tp_protocol_get_english_name
 tp_protocol_get_icon_name
 tp_protocol_get_vcard_field
 tp_protocol_get_authentication_types
+tp_protocol_identify_account_async
+tp_protocol_identify_account_finish
 tp_protocol_normalize_contact_async
 tp_protocol_normalize_contact_finish
 <SUBSECTION>

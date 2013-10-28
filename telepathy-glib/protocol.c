@@ -45,6 +45,7 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/util-internal.h"
+#include "telepathy-glib/variant-util-internal.h"
 
 #include "telepathy-glib/_gen/tp-cli-protocol-body.h"
 
@@ -1859,6 +1860,75 @@ tp_protocol_normalize_contact_finish (TpProtocol *self,
   g_return_val_if_fail (g_task_is_valid (result, self), NULL);
   g_return_val_if_fail (g_async_result_is_tagged (result,
         tp_protocol_normalize_contact_async), NULL);
+
+  return g_task_propagate_pointer (G_TASK (result), error);
+}
+
+/**
+ * tp_protocol_identify_account_async:
+ * @self: a protocol
+ * @vardict: the account parameters as a #GVariant of
+ *  type %G_VARIANT_TYPE_VARDICT. If it is floating, ownership will
+ *  be taken, as if via g_variant_ref_sink().
+ * @cancellable: (allow-none): may be used to cancel the async request
+ * @callback: (scope async): a callback to call when
+ *  the request is satisfied
+ * @user_data: (closure) (allow-none): data to pass to @callback
+ *
+ * Return a string that could identify the account with the given
+ * parameters. In most protocols that string is a normalized 'account'
+ * parameter, but some protocols have more complex requirements;
+ * for instance, on IRC, the 'account' (nickname) is insufficient,
+ * and must be combined with a server or network name.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_protocol_identify_account_async (TpProtocol *self,
+    GVariant *vardict,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GTask *task;
+  GHashTable *asv;
+
+  g_return_if_fail (TP_IS_PROTOCOL (self));
+  g_return_if_fail (vardict != NULL);
+  g_return_if_fail (g_variant_is_of_type (vardict, G_VARIANT_TYPE_VARDICT));
+  /* this makes no sense to call for its side-effects */
+  g_return_if_fail (callback != NULL);
+
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_source_tag (task, tp_protocol_identify_account_async);
+  g_variant_ref_sink (vardict);
+  asv = _tp_asv_from_vardict (vardict);
+  tp_cli_protocol_call_identify_account (self, -1, asv,
+      tp_protocol_async_string_cb, task, g_object_unref, NULL);
+  g_hash_table_unref (asv);
+  g_variant_unref (vardict);
+}
+
+/**
+ * tp_protocol_identify_account_finish:
+ * @self: a protocol
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Interpret the result of tp_protocol_identify_account_async().
+ *
+ * Returns: (transfer full): a string identifying the account,
+ *  or %NULL on error
+ * Since: 0.UNRELEASED
+ */
+gchar *
+tp_protocol_identify_account_finish (TpProtocol *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  g_return_val_if_fail (g_task_is_valid (result, self), NULL);
+  g_return_val_if_fail (g_async_result_is_tagged (result,
+        tp_protocol_identify_account_async), NULL);
 
   return g_task_propagate_pointer (G_TASK (result), error);
 }
