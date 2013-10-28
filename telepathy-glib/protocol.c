@@ -585,6 +585,9 @@ tp_protocol_constructed (GObject *object)
   if (tp_proxy_has_interface_by_id (self,
         TP_IFACE_QUARK_PROTOCOL_INTERFACE_AVATARS))
     {
+      DEBUG ("%s/%s implements Avatars", self->priv->cm_name,
+          self->priv->protocol_struct.name);
+
       self->priv->avatar_req = tp_avatar_requirements_new (
           (GStrv) tp_asv_get_strv (self->priv->protocol_properties,
             TP_PROP_PROTOCOL_INTERFACE_AVATARS_SUPPORTED_AVATAR_MIME_TYPES),
@@ -607,6 +610,9 @@ tp_protocol_constructed (GObject *object)
   if (tp_proxy_has_interface_by_id (self,
         TP_IFACE_QUARK_PROTOCOL_INTERFACE_ADDRESSING))
     {
+      DEBUG ("%s/%s implements Addressing", self->priv->cm_name,
+          self->priv->protocol_struct.name);
+
       self->priv->addressable_vcard_fields = asv_strdupv_or_empty (
           self->priv->protocol_properties,
           TP_PROP_PROTOCOL_INTERFACE_ADDRESSING_ADDRESSABLE_VCARD_FIELDS);
@@ -618,13 +624,39 @@ tp_protocol_constructed (GObject *object)
   if (tp_proxy_has_interface_by_id (self,
         TP_IFACE_QUARK_PROTOCOL_INTERFACE_PRESENCE))
     {
+      DEBUG ("%s/%s implements Presence", self->priv->cm_name,
+          self->priv->protocol_struct.name);
+
       self->priv->presence_statuses = tp_asv_get_boxed (
           self->priv->protocol_properties,
           TP_PROP_PROTOCOL_INTERFACE_PRESENCE_STATUSES,
           TP_HASH_TYPE_SIMPLE_STATUS_SPEC_MAP);
 
       if (self->priv->presence_statuses != NULL)
-        g_hash_table_ref (self->priv->presence_statuses);
+        {
+          GHashTableIter iter;
+          gpointer k, v;
+
+          g_hash_table_ref (self->priv->presence_statuses);
+
+          DEBUG ("%s/%s presence statuses:", self->priv->cm_name,
+              self->priv->protocol_struct.name);
+          g_hash_table_iter_init (&iter, self->priv->presence_statuses);
+
+          while (g_hash_table_iter_next (&iter, &k, &v))
+            {
+              guint type;
+              gboolean on_self, message;
+
+              tp_value_array_unpack (v, 3,
+                  &type,
+                  &on_self,
+                  &message);
+              DEBUG ("\tstatus '%s': type %u%s%s",
+                  (const gchar *) k, type, on_self ? ", can set on self" : "",
+                  message ? ", has message" : "");
+            }
+        }
     }
 
   /* become ready immediately */
