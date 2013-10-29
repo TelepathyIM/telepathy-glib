@@ -13,7 +13,7 @@ servicefile_DATA = $(servicefile_in_files:.service.in=.service)
 %.service: %.service.in Makefile
 	$(AM_V_GEN)sed -e "s|[@]libexecdir[@]|$(libexecdir)|" $< > $@
 
-clientfiledir = $(datarootdir)/telepathy/clients
+clientfiledir = $(datarootdir)/telepathy-1/clients
 
 clientfile_parts = $(top_srcdir)/data/Logger.Observer.client.in \
 	       	   $(top_srcdir)/data/Logger.Text.client.in \
