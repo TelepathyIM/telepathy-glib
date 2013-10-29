@@ -25,6 +25,7 @@ EXTRA_DIST = \
     Channel.xml \
     Channel_Dispatch_Operation.xml \
     Channel_Dispatcher.xml \
+    Channel_Dispatcher_Interface_Messages1.xml \
     Channel_Dispatcher_Interface_Operation_List1.xml \
     Channel_Interface_Addressing1.xml \
     Channel_Interface_Anonymity1.xml \
@@ -82,6 +83,7 @@ EXTRA_DIST = \
     Connection_Interface_Contact_List1.xml \
     Connection_Interface_Contacts.xml \
     Connection_Interface_Forwarding1.xml \
+    Connection_Interface_IRC_Command1.xml \
     Connection_Interface_Keepalive1.xml \
     Connection_Interface_Location1.xml \
     Connection_Interface_Mail_Notification1.xml \
