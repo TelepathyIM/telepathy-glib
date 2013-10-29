@@ -703,6 +703,13 @@ test_addressing (Test *test,
 }
 
 static void
+avatar_changed_cb (TpAccount *account,
+    Test *test)
+{
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
 test_avatar (Test *test,
     gconstpointer mode)
 {
@@ -725,6 +732,27 @@ test_avatar (Test *test,
 
   g_assert_cmpuint (blob->len, ==, 4);
   g_assert_cmpstr (((char *) blob->data), ==, ":-)");
+
+  tp_clear_object (&test->result);
+
+  /* change the avatar */
+  g_signal_connect (test->account, "avatar-changed",
+      G_CALLBACK (avatar_changed_cb), test);
+
+  tp_tests_simple_account_set_avatar (test->account_service, ":-(");
+  g_main_loop_run (test->mainloop);
+
+  tp_account_get_avatar_async (test->account,
+      tp_tests_result_ready_cb, &test->result);
+  tp_tests_run_until_result (&test->result);
+
+  blob = tp_account_get_avatar_finish (
+      test->account, test->result, &error);
+  g_assert_no_error (error);
+
+  g_assert (blob != NULL);
+  g_assert_cmpuint (blob->len, ==, 4);
+  g_assert_cmpstr (((char *) blob->data), ==, ":-(");
 
   tp_clear_object (&test->result);
 }

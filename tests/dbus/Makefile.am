@@ -350,7 +350,7 @@ _gen/svc.h: _gen/svc.c
 _gen/svc.c: with-properties.xml \
 	$(top_srcdir)/tools/glib-ginterface-gen.py \
 	Makefile.am
-	$(AM_V_at)$(mkdir_p) _gen
+	$(AM_V_at)$(MKDIR_P) _gen
 	$(AM_V_GEN)$(PYTHON) $(top_srcdir)/tools/glib-ginterface-gen.py \
 		--filename=_gen/svc \
 		--signal-marshal-prefix=NOT_NEEDED \
@@ -359,5 +359,5 @@ _gen/svc.c: with-properties.xml \
 
 _gen/errors-check.h: $(top_srcdir)/spec/errors.xml \
 	$(top_srcdir)/tools/glib-errors-check-gen.py
-	$(AM_V_at)$(mkdir_p) _gen
+	$(AM_V_at)$(MKDIR_P) _gen
 	$(AM_V_GEN)$(PYTHON) $(top_srcdir)/tools/glib-errors-check-gen.py $< > $@

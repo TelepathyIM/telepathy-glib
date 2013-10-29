@@ -10,6 +10,8 @@
 
 #include "config.h"
 
+#include <string.h>
+
 #include "simple-account.h"
 
 #include <telepathy-glib/telepathy-glib.h>
@@ -36,6 +38,7 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleAccount,
 static const char *ACCOUNT_INTERFACES[] = {
     TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING1,
     TP_IFACE_ACCOUNT_INTERFACE_STORAGE1,
+    TP_IFACE_ACCOUNT_INTERFACE_AVATAR1,
     NULL };
 
 enum
@@ -76,6 +79,7 @@ struct _TpTestsSimpleAccountPrivate
   gboolean enabled;
   GPtrArray *uri_schemes;
   GHashTable *parameters;
+  GArray *avatar;
 };
 
 static void
@@ -140,6 +144,10 @@ tp_tests_simple_account_init (TpTestsSimpleAccount *self)
     g_ptr_array_add (self->priv->uri_schemes, g_strdup (uri_schemes[i]));
 
   self->priv->parameters = g_hash_table_new (NULL, NULL);
+
+  self->priv->avatar = g_array_new (FALSE, FALSE, sizeof (char));
+
+  tp_tests_simple_account_set_avatar (self, ":-)");
 }
 
 static void
@@ -250,17 +258,11 @@ tp_tests_simple_account_get_property (GObject *object,
       break;
     case PROP_AVATAR:
         {
-          GArray *arr = g_array_new (FALSE, FALSE, sizeof (char));
-
-          /* includes NUL for simplicity */
-          g_array_append_vals (arr, ":-)", 4);
-
           g_value_take_boxed (value,
               tp_value_array_build (2,
-                TP_TYPE_UCHAR_ARRAY, arr,
+                TP_TYPE_UCHAR_ARRAY, self->priv->avatar,
                 G_TYPE_STRING, "text/plain",
                 G_TYPE_INVALID));
-          g_array_unref (arr);
         }
       break;
     case PROP_SUPERSEDES:
@@ -311,6 +313,7 @@ tp_tests_simple_account_finalize (GObject *object)
 
   g_ptr_array_unref (self->priv->uri_schemes);
   g_hash_table_unref (self->priv->parameters);
+  g_array_unref (self->priv->avatar);
 
   G_OBJECT_CLASS (tp_tests_simple_account_parent_class)->finalize (object);
 }
@@ -638,4 +641,17 @@ tp_tests_simple_account_add_uri_scheme (TpTestsSimpleAccount *self,
 
   g_strfreev (schemes);
   g_hash_table_unref (changed);
+}
+
+void
+tp_tests_simple_account_set_avatar (TpTestsSimpleAccount *self,
+    const gchar *avatar)
+{
+  g_return_if_fail (avatar != NULL);
+
+  g_array_set_size (self->priv->avatar, 0);
+  /* includes NULL for simplicity */
+  g_array_append_vals (self->priv->avatar, avatar, strlen (avatar) +1);
+
+  tp_svc_account_interface_avatar1_emit_avatar_changed (self);
 }

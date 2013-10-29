@@ -155,6 +155,12 @@ G_BEGIN_DECLS
 # define _TP_AVAILABLE_IN_0_22 /* nothing */
 #endif
 
+#if TP_VERSION_MAX_ALLOWED < TP_VERSION_0_24
+# define _TP_AVAILABLE_IN_0_24 _TP_UNAVAILABLE(0, 24)
+#else
+# define _TP_AVAILABLE_IN_0_24 /* nothing */
+#endif
+
 #if TP_VERSION_MAX_ALLOWED < TP_VERSION_1_0
 # define _TP_AVAILABLE_IN_1_0 _TP_UNAVAILABLE(1, 0)
 #else

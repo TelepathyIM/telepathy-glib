@@ -576,7 +576,7 @@ members_changed_prepared_cb (GObject *object,
           const gchar *debug_message = tp_asv_get_string (data->details,
               "debug-message");
 
-          if (debug_message == NULL && message[0] != '\0')
+          if (debug_message == NULL && !tp_str_empty (message))
             debug_message = message;
 
           if (debug_message == NULL && error_detail != NULL)
