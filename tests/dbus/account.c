@@ -925,17 +925,17 @@ main (int argc,
   g_test_add_data_func ("/account/parse/hyphenated-protocol",
       test_parse_data_new (
           TP_ACCOUNT_OBJECT_PATH_BASE "salut/local_xmpp/badgers",
-          "salut", "local-xmpp", "badgers"),
+          "salut", "local_xmpp", "badgers"),
       test_parse_success);
   g_test_add_data_func ("/account/parse/wrongly-escaped-protocol",
       test_parse_data_new (
           TP_ACCOUNT_OBJECT_PATH_BASE "salut/local_2dxmpp/badgers",
-          "salut", "local-xmpp", "badgers"),
+          "salut", "local_xmpp", "badgers"),
       test_parse_success);
   g_test_add_data_func ("/account/parse/wrongly-escaped-corner-case",
       test_parse_data_new (
           TP_ACCOUNT_OBJECT_PATH_BASE "salut/local_2d/badgers",
-          "salut", "local-", "badgers"),
+          "salut", "local_", "badgers"),
       test_parse_success);
   g_test_add_data_func ("/account/parse/underscored-account",
       test_parse_data_new (

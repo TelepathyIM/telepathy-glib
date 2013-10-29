@@ -2193,7 +2193,7 @@ unescape_protocol (gchar *protocol)
        * forever.
        */
       gchar **chunks = g_strsplit (protocol, "_2d", 0);
-      gchar *new = g_strjoinv ("-", chunks);
+      gchar *new = g_strjoinv ("_", chunks);
 
       g_strfreev (chunks);
       g_free (protocol);
