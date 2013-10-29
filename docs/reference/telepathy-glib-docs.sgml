@@ -162,6 +162,8 @@
     <xi:include href="xml/connection-mail.xml"/>
     <xi:include href="xml/connection-powersaving.xml"/>
     <xi:include href="xml/connection-addressing.xml"/>
+    <xi:include href="xml/connection-renaming.xml"/>
+    <xi:include href="xml/connection-sidecars.xml"/>
 
     <xi:include href="xml/proxy-dbus-core.xml"/>
     <xi:include href="xml/cli-account-manager.xml"/>

@@ -106,9 +106,9 @@ void tp_value_array_unpack (GValueArray *array,
     ...);
 
 /* Work around GLib having deprecated something that is part of our API. */
-_TP_AVAILABLE_IN_1_0
+_TP_AVAILABLE_IN_0_24
 void tp_value_array_free (GValueArray *va);
-#if TP_VERSION_MAX_ALLOWED >= _TP_VERSION_1_0
+#if TP_VERSION_MAX_ALLOWED >= TP_VERSION_0_24
 #define tp_value_array_free(va) _tp_value_array_free_inline (va)
 #ifndef __GTK_DOC_IGNORE__ /* gtk-doc can't parse this */
 static inline void

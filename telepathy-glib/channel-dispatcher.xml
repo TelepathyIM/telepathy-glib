@@ -6,5 +6,6 @@
 
 <xi:include href="../spec/Channel_Dispatcher.xml"/>
 <xi:include href="../spec/Channel_Dispatcher_Interface_Operation_List1.xml"/>
+<xi:include href="../spec/Channel_Dispatcher_Interface_Messages1.xml"/>
 
 </tp:spec>

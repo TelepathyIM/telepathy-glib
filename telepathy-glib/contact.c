@@ -2203,6 +2203,15 @@ contact_avatar_retrieved (TpConnection *connection,
   gchar *mime_filename;
   WriteAvatarData *avatar_data;
 
+  DEBUG ("token '%s', %u bytes, MIME type '%s'",
+      token, avatar->len, mime_type);
+
+  if (self == NULL)
+    DEBUG ("handle #%u is not associated with any TpContact", handle);
+  else
+    DEBUG ("used by contact #%u '%s'", handle,
+        tp_contact_get_identifier (self));
+
   if (self != NULL)
     {
       /* Update the avatar token if a newer one is given
@@ -2212,7 +2221,10 @@ contact_avatar_retrieved (TpConnection *connection,
 
   if (!build_avatar_filename (connection, token, TRUE, &filename,
       &mime_filename))
-    return;
+    {
+      DEBUG ("failed to set up cache");
+      return;
+    }
 
   /* Save avatar in cache, even if the contact is unknown, to avoid as much as
    * possible future avatar requests */
@@ -2872,11 +2884,30 @@ contacts_bind_to_contact_groups_changed (TpConnection *connection)
 static void
 tp_contact_set_attributes (TpContact *contact,
     GHashTable *asv,
-    ContactFeatureFlags wanted)
+    ContactFeatureFlags wanted,
+    ContactFeatureFlags getting)
 {
   TpConnection *connection = tp_contact_get_connection (contact);
   const gchar *s;
   gpointer boxed;
+
+  DEBUG ("#%u: \"%s\"", contact->priv->handle,
+      tp_asv_get_string (asv, TP_TOKEN_CONNECTION_CONTACT_ID));
+
+  {
+    GHashTableIter iter;
+    gpointer k, v;
+
+    g_hash_table_iter_init (&iter, asv);
+
+    while (g_hash_table_iter_next (&iter, &k, &v))
+      {
+        gchar *str = g_strdup_value_contents (v);
+
+        DEBUG ("- %s => %s", (const gchar *) k, str);
+        g_free (str);
+      }
+  }
 
   /* Alias */
   if (wanted & CONTACT_FEATURE_FLAG_ALIAS)
@@ -2886,9 +2917,12 @@ tp_contact_set_attributes (TpContact *contact,
 
       if (s == NULL)
         {
-          WARNING ("%s supposedly implements Contacts and Aliasing, but "
-              "omitted " TP_TOKEN_CONNECTION_INTERFACE_ALIASING1_ALIAS,
-              tp_proxy_get_object_path (connection));
+          if (getting & CONTACT_FEATURE_FLAG_ALIAS)
+            {
+              WARNING ("%s supposedly implements Contacts and Aliasing, but "
+                  "omitted " TP_TOKEN_CONNECTION_INTERFACE_ALIASING1_ALIAS,
+                  tp_proxy_get_object_path (connection));
+            }
         }
       else
         {
@@ -2922,13 +2956,20 @@ tp_contact_set_attributes (TpContact *contact,
           TP_STRUCT_TYPE_PRESENCE);
 
       if (boxed == NULL)
-        WARNING ("%s supposedly implements Contacts and Presence, "
-            "but omitted the mandatory "
-            TP_TOKEN_CONNECTION_INTERFACE_PRESENCE1_PRESENCE
-            " attribute",
-            tp_proxy_get_object_path (connection));
+        {
+          if (getting & CONTACT_FEATURE_FLAG_PRESENCE)
+            {
+              WARNING ("%s supposedly implements Contacts and Presence, "
+                  "but omitted the mandatory "
+                  TP_TOKEN_CONNECTION_INTERFACE_PRESENCE1_PRESENCE
+                  " attribute",
+                  tp_proxy_get_object_path (connection));
+            }
+        }
       else
-        contact_maybe_set_presence (contact, boxed);
+        {
+          contact_maybe_set_presence (contact, boxed);
+        }
     }
 
   /* Location */
@@ -3019,6 +3060,7 @@ tp_contact_ensure_with_attributes (TpConnection *connection,
     TpHandle handle,
     GHashTable *asv,
     ContactFeatureFlags wanted,
+    ContactFeatureFlags getting,
     GError **error)
 {
   TpContact *contact;
@@ -3036,7 +3078,7 @@ tp_contact_ensure_with_attributes (TpConnection *connection,
     }
 
   contact = tp_contact_ensure (connection, handle, id);
-  tp_contact_set_attributes (contact, asv, wanted);
+  tp_contact_set_attributes (contact, asv, wanted, getting);
 
   return contact;
 }
@@ -3057,14 +3099,18 @@ _tp_contact_ensure_with_attributes (TpConnection *connection,
     return NULL;
 
   return tp_contact_ensure_with_attributes (connection, handle, asv,
-      feature_flags, error);
+      feature_flags, 0, error);
 }
 
 static const gchar **
 contacts_bind_to_signals (TpConnection *connection,
-    ContactFeatureFlags wanted)
+    ContactFeatureFlags wanted,
+    ContactFeatureFlags *getting)
 {
   GPtrArray *array;
+
+  if (getting != NULL)
+    *getting = 0;
 
   g_assert (tp_proxy_has_interface_by_id (connection,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS));
@@ -3078,6 +3124,9 @@ contacts_bind_to_signals (TpConnection *connection,
       g_ptr_array_add (array,
           TP_IFACE_CONNECTION_INTERFACE_ALIASING1);
       contacts_bind_to_aliases_changed (connection);
+
+      if (getting != NULL)
+        *getting |= CONTACT_FEATURE_FLAG_ALIAS;
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0 &&
@@ -3087,6 +3136,9 @@ contacts_bind_to_signals (TpConnection *connection,
       g_ptr_array_add (array,
           TP_IFACE_CONNECTION_INTERFACE_AVATARS1);
       contacts_bind_to_avatar_updated (connection);
+
+      if (getting != NULL)
+        *getting |= CONTACT_FEATURE_FLAG_AVATAR_TOKEN;
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0 &&
@@ -3094,8 +3146,10 @@ contacts_bind_to_signals (TpConnection *connection,
           TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS1))
     {
       contacts_bind_to_avatar_retrieved (connection);
-    }
 
+      if (getting != NULL)
+        *getting |= CONTACT_FEATURE_FLAG_AVATAR_DATA;
+    }
 
   if ((wanted & CONTACT_FEATURE_FLAG_PRESENCE) != 0 &&
       tp_proxy_has_interface_by_id (connection,
@@ -3104,6 +3158,9 @@ contacts_bind_to_signals (TpConnection *connection,
       g_ptr_array_add (array,
           TP_IFACE_CONNECTION_INTERFACE_PRESENCE1);
       contacts_bind_to_presences_changed (connection);
+
+      if (getting != NULL)
+        *getting |= CONTACT_FEATURE_FLAG_PRESENCE;
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_LOCATION) != 0 &&
@@ -3113,6 +3170,9 @@ contacts_bind_to_signals (TpConnection *connection,
       g_ptr_array_add (array,
           TP_IFACE_CONNECTION_INTERFACE_LOCATION1);
       contacts_bind_to_location_updated (connection);
+
+      if (getting != NULL)
+        *getting |= CONTACT_FEATURE_FLAG_LOCATION;
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_CAPABILITIES) != 0 &&
@@ -3122,6 +3182,9 @@ contacts_bind_to_signals (TpConnection *connection,
       g_ptr_array_add (array,
           TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES1);
       contacts_bind_to_capabilities_updated (connection);
+
+      if (getting != NULL)
+        *getting |= CONTACT_FEATURE_FLAG_CAPABILITIES;
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_CONTACT_INFO) != 0 &&
@@ -3131,6 +3194,9 @@ contacts_bind_to_signals (TpConnection *connection,
       g_ptr_array_add (array,
           TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO1);
       contacts_bind_to_contact_info_changed (connection);
+
+      if (getting != NULL)
+        *getting |= CONTACT_FEATURE_FLAG_CONTACT_INFO;
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_CLIENT_TYPES) != 0 &&
@@ -3140,6 +3206,9 @@ contacts_bind_to_signals (TpConnection *connection,
       g_ptr_array_add (array,
           TP_IFACE_CONNECTION_INTERFACE_CLIENT_TYPES1);
       contacts_bind_to_client_types_updated (connection);
+
+      if (getting != NULL)
+        *getting |= CONTACT_FEATURE_FLAG_CLIENT_TYPES;
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_STATES) != 0 &&
@@ -3149,6 +3218,9 @@ contacts_bind_to_signals (TpConnection *connection,
       g_ptr_array_add (array,
           TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1);
       contacts_bind_to_contacts_changed (connection);
+
+      if (getting != NULL)
+        *getting |= CONTACT_FEATURE_FLAG_STATES;
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_CONTACT_GROUPS) != 0 &&
@@ -3158,6 +3230,9 @@ contacts_bind_to_signals (TpConnection *connection,
       g_ptr_array_add (array,
           TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1);
       contacts_bind_to_contact_groups_changed (connection);
+
+      if (getting != NULL)
+        *getting |= CONTACT_FEATURE_FLAG_CONTACT_GROUPS;
     }
 
   if ((wanted & CONTACT_FEATURE_FLAG_CONTACT_BLOCKING) != 0 &&
@@ -3178,6 +3253,9 @@ contacts_bind_to_signals (TpConnection *connection,
         {
           tp_proxy_prepare_async (connection, features, NULL, NULL);
         }
+
+      if (getting != NULL)
+        *getting |= CONTACT_FEATURE_FLAG_CONTACT_BLOCKING;
     }
 
   g_ptr_array_add (array, NULL);
@@ -3196,7 +3274,7 @@ _tp_contacts_bind_to_signals (TpConnection *connection,
   if (!get_feature_flags (features, &feature_flags))
     return NULL;
 
-  return contacts_bind_to_signals (connection, feature_flags);
+  return contacts_bind_to_signals (connection, feature_flags, NULL);
 }
 
 static gboolean
@@ -3229,18 +3307,24 @@ get_feature_flags (const GQuark *features,
 typedef struct
 {
   GSimpleAsyncResult *result;
+  /* features we need to get, if possible, before this request can finish */
   ContactFeatureFlags wanted;
+  /* features we can expect to get from GetContactAttributes
+   * (subset of wanted) */
+  ContactFeatureFlags getting;
 } ContactsAsyncData;
 
 static ContactsAsyncData *
 contacts_async_data_new (GSimpleAsyncResult *result,
-    ContactFeatureFlags wanted)
+    ContactFeatureFlags wanted,
+    ContactFeatureFlags getting)
 {
   ContactsAsyncData *data;
 
   data = g_slice_new0 (ContactsAsyncData);
   data->result = g_object_ref (result);
   data->wanted = wanted;
+  data->getting = getting;
 
   return data;
 }
@@ -3272,7 +3356,7 @@ got_contact_by_id_cb (TpConnection *self,
     }
 
   contact = tp_contact_ensure_with_attributes (self, handle, attributes,
-      data->wanted, &e);
+      data->wanted, data->getting, &e);
   if (contact != NULL)
     {
       g_simple_async_result_set_op_res_gpointer (data->result,
@@ -3319,6 +3403,7 @@ tp_connection_dup_contact_by_id_async (TpConnection *self,
   ContactsAsyncData *data;
   GSimpleAsyncResult *result;
   ContactFeatureFlags feature_flags = 0;
+  ContactFeatureFlags getting = 0;
   const gchar **supported_interfaces;
 
   g_return_if_fail (tp_proxy_is_prepared (self,
@@ -3341,9 +3426,10 @@ tp_connection_dup_contact_by_id_async (TpConnection *self,
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_connection_dup_contact_by_id_async);
 
-  supported_interfaces = contacts_bind_to_signals (self, feature_flags);
+  supported_interfaces = contacts_bind_to_signals (self, feature_flags,
+      &getting);
 
-  data = contacts_async_data_new (result, feature_flags);
+  data = contacts_async_data_new (result, feature_flags, getting);
   tp_cli_connection_interface_contacts_call_get_contact_by_id (self, -1,
       id, supported_interfaces, got_contact_by_id_cb,
       data, (GDestroyNotify) contacts_async_data_free, NULL);
@@ -3400,7 +3486,7 @@ got_contact_attributes_cb (TpConnection *self,
       contact = _tp_connection_lookup_contact (self, handle);
       if (contact != NULL)
         {
-          tp_contact_set_attributes (contact, asv, data->wanted);
+          tp_contact_set_attributes (contact, asv, data->wanted, data->getting);
         }
       else
         {
@@ -3446,7 +3532,7 @@ tp_connection_upgrade_contacts_async (TpConnection *self,
 {
   ContactsAsyncData *data;
   GSimpleAsyncResult *result;
-  ContactFeatureFlags feature_flags = 0;
+  ContactFeatureFlags feature_flags = 0, getting = 0;
   guint minimal_feature_flags = G_MAXUINT;
   const gchar **supported_interfaces;
   GPtrArray *contacts_array;
@@ -3501,11 +3587,12 @@ tp_connection_upgrade_contacts_async (TpConnection *self,
   g_simple_async_result_set_op_res_gpointer (result, contacts_array,
       (GDestroyNotify) g_ptr_array_unref);
 
-  supported_interfaces = contacts_bind_to_signals (self, feature_flags);
+  supported_interfaces = contacts_bind_to_signals (self, feature_flags,
+      &getting);
 
   if (handles->len > 0 && supported_interfaces[0] != NULL)
     {
-      data = contacts_async_data_new (result, feature_flags);
+      data = contacts_async_data_new (result, feature_flags, getting);
       tp_cli_connection_interface_contacts_call_get_contact_attributes (
           self, -1, handles, supported_interfaces,
           got_contact_attributes_cb, data,

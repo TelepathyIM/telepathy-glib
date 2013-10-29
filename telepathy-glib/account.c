@@ -148,6 +148,7 @@ G_DEFINE_TYPE (TpAccount, tp_account, TP_TYPE_PROXY)
 enum {
   STATUS_CHANGED,
   PRESENCE_CHANGED,
+  AVATAR_CHANGED,
   LAST_SIGNAL
 };
 
@@ -1009,6 +1010,14 @@ _tp_account_properties_changed (TpAccount *proxy,
 }
 
 static void
+avatar_changed_cb (TpAccount *self,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  g_signal_emit (self, signals[AVATAR_CHANGED], 0);
+}
+
+static void
 _tp_account_got_all_cb (TpProxy *proxy,
     GHashTable *properties,
     const GError *error,
@@ -1029,6 +1038,11 @@ _tp_account_got_all_cb (TpProxy *proxy,
     }
 
   _tp_account_update (self, properties);
+
+  /* We can't try connecting this signal earlier as tp_proxy_add_interfaces()
+   * has to be called first if we support the Avatar interface. */
+  tp_cli_account_interface_avatar1_connect_to_avatar_changed (self,
+      avatar_changed_cb, NULL, NULL, G_OBJECT (self), NULL);
 }
 
 static gboolean
@@ -2119,6 +2133,22 @@ tp_account_class_init (TpAccountClass *klass)
       G_SIGNAL_RUN_LAST,
       0, NULL, NULL, NULL,
       G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_STRING, G_TYPE_STRING);
+
+  /**
+   * TpAccount::avatar-changed:
+   * @self: a #TpAccount
+   *
+   * Emitted when the avatar changes. Call tp_account_get_avatar_async()
+   * to get the new avatar data.
+   *
+   * Since: 0.23.0
+   */
+  signals[AVATAR_CHANGED] = g_signal_new ("avatar-changed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL, NULL,
+      G_TYPE_NONE,
+      0);
 
   proxy_class->interface = TP_IFACE_QUARK_ACCOUNT;
   proxy_class->list_features = _tp_account_list_features;
