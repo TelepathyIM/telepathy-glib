@@ -739,7 +739,7 @@ tp_connection_manager_find_manager_file (const gchar *name)
 
   g_assert (name != NULL);
 
-  filename = g_strdup_printf ("%s/telepathy/managers/%s.manager",
+  filename = g_strdup_printf ("%s/telepathy-1/managers/%s.manager",
       g_get_user_data_dir (), name);
 
   DEBUG ("in XDG_DATA_HOME: trying %s", filename);
@@ -753,7 +753,7 @@ tp_connection_manager_find_manager_file (const gchar *name)
        *data_dirs != NULL;
        data_dirs++)
     {
-      filename = g_strdup_printf ("%s/telepathy/managers/%s.manager",
+      filename = g_strdup_printf ("%s/telepathy-1/managers/%s.manager",
           *data_dirs, name);
 
       DEBUG ("in XDG_DATA_DIRS: trying %s", filename);

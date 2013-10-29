@@ -57,11 +57,11 @@ tests_list = \
     test-unsupported-interface
 
 if ENABLE_INSTALLED_TESTS
-managersdir = @tpglibtestsdir@/telepathy/managers/
+managersdir = @tpglibtestsdir@/telepathy-1/managers/
 managers_DATA = \
-	telepathy/managers/spurious.manager \
-	telepathy/managers/test_manager_file_invalid.manager \
-	telepathy/managers/test_manager_file.manager \
+	telepathy-1/managers/spurious.manager \
+	telepathy-1/managers/test_manager_file_invalid.manager \
+	telepathy-1/managers/test_manager_file.manager \
 	$(NULL)
 
 testsdir = @tpglibtestsdir@
@@ -323,9 +323,9 @@ distclean-local:
 
 EXTRA_DIST = \
     dbus-1/services/spurious.service \
-    telepathy/managers/spurious.manager \
-    telepathy/managers/test_manager_file.manager \
-    telepathy/managers/test_manager_file_invalid.manager \
+    telepathy-1/managers/spurious.manager \
+    telepathy-1/managers/test_manager_file.manager \
+    telepathy-1/managers/test_manager_file_invalid.manager \
     with-properties.xml \
     run-test.sh.in \
     $(NULL)
