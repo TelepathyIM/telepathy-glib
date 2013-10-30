@@ -12,7 +12,7 @@ EXTRA_DIST = \
 
 TESTS = $(dist_noinst_SCRIPTS)
 
-TESTS_ENVIRONMENT = \
+AM_TESTS_ENVIRONMENT = \
     PYTHON=$(PYTHON) \
     srcdir=$(srcdir) \
     top_srcdir=$(top_srcdir) \
