@@ -148,6 +148,8 @@ struct _TpProtocolPrivate
   gchar *cm_name;
   GStrv addressable_vcard_fields;
   GStrv addressable_uri_schemes;
+  /* (transfer container) (element-type utf8 Simple_Status_Spec) */
+  GHashTable *presence_statuses;
 };
 
 enum
@@ -411,6 +413,9 @@ tp_protocol_finalize (GObject *object)
   g_strfreev (self->priv->addressable_vcard_fields);
   g_strfreev (self->priv->addressable_uri_schemes);
 
+  if (self->priv->presence_statuses != NULL)
+    g_hash_table_unref (self->priv->presence_statuses);
+
   if (self->priv->protocol_properties != NULL)
     g_hash_table_unref (self->priv->protocol_properties);
 
@@ -608,6 +613,18 @@ tp_protocol_constructed (GObject *object)
       self->priv->addressable_uri_schemes = asv_strdupv_or_empty (
           self->priv->protocol_properties,
           TP_PROP_PROTOCOL_INTERFACE_ADDRESSING_ADDRESSABLE_URI_SCHEMES);
+    }
+
+  if (tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_PROTOCOL_INTERFACE_PRESENCE))
+    {
+      self->priv->presence_statuses = tp_asv_get_boxed (
+          self->priv->protocol_properties,
+          TP_PROP_PROTOCOL_INTERFACE_PRESENCE_STATUSES,
+          TP_HASH_TYPE_SIMPLE_STATUS_SPEC_MAP);
+
+      if (self->priv->presence_statuses != NULL)
+        g_hash_table_ref (self->priv->presence_statuses);
     }
 
   /* become ready immediately */
@@ -2241,4 +2258,50 @@ tp_protocol_get_addressable_uri_schemes (TpProtocol *self)
 {
   g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
   return (const gchar * const *) self->priv->addressable_uri_schemes;
+}
+
+/**
+ * tp_protocol_dup_presence_statuses:
+ * @self: a protocol object
+ *
+ * Return the presence statuses that might be supported by connections
+ * to this protocol.
+ *
+ * It is possible that some of these statuses will not actually be supported
+ * by a connection: for instance, an XMPP connection manager would
+ * include "hidden" in this list, even though not all XMPP servers allow
+ * users to be online-but-hidden.
+ *
+ * Returns: (transfer full) (element-type TelepathyGLib.PresenceStatusSpec): a
+ *  list of statuses, or %NULL if unknown
+ */
+GList *
+tp_protocol_dup_presence_statuses (TpProtocol *self)
+{
+  GHashTableIter iter;
+  gpointer k, v;
+  GList *l = NULL;
+
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
+
+  if (self->priv->presence_statuses == NULL)
+    return NULL;
+
+  g_hash_table_iter_init (&iter, self->priv->presence_statuses);
+
+  while (g_hash_table_iter_next (&iter, &k, &v))
+    {
+      guint type;
+      gboolean on_self, message;
+
+      tp_value_array_unpack (v, 3,
+          &type,
+          &on_self,
+          &message);
+
+      l = g_list_prepend (l, tp_presence_status_spec_new (k, type,
+            on_self, message));
+    }
+
+  return g_list_reverse (l);
 }

@@ -123,6 +123,10 @@ const gchar * const *
 /* ... */
 tp_protocol_get_addressable_uri_schemes (TpProtocol *self);
 
+_TP_AVAILABLE_IN_UNRELEASED
+GList *tp_protocol_dup_presence_statuses (TpProtocol *self)
+  G_GNUC_WARN_UNUSED_RESULT;
+
 #define TP_PROTOCOL_FEATURE_CORE \
   (tp_protocol_get_feature_quark_core ())
 GQuark tp_protocol_get_feature_quark_core (void) G_GNUC_CONST;

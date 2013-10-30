@@ -6189,6 +6189,8 @@ tp_protocol_normalize_contact_finish
 <SUBSECTION>
 tp_protocol_get_avatar_requirements
 <SUBSECTION>
+tp_protocol_dup_presence_statuses
+<SUBSECTION>
 tp_protocol_get_addressable_uri_schemes
 tp_protocol_get_addressable_vcard_fields
 tp_protocol_normalize_contact_uri_async
