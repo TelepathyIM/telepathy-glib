@@ -1465,16 +1465,30 @@ _tp_protocol_parse_channel_class (GKeyFile *file,
 
       /* keys without a space are reserved */
       if (space == NULL)
-        goto cleanup;
+        {
+          DEBUG ("\t'%s' isn't a fixed property", *key);
+          goto cleanup;
+        }
 
       property = g_strndup (*key, space - *key);
       dbus_type = space + 1;
 
       if (!init_gvalue_from_dbus_sig (dbus_type, v))
-        goto cleanup;
+        {
+          DEBUG ("\tunable to parse D-Bus type '%s' for '%s' in a "
+              ".manager file", dbus_type, property);
+          goto cleanup;
+        }
 
       if (!parse_default_value (v, dbus_type, value, file, group, *key))
-        goto cleanup;
+        {
+          DEBUG ("\tunable to parse '%s' as a value of type '%s' for '%s'",
+              value, dbus_type, property);
+          goto cleanup;
+        }
+
+      DEBUG ("\tfixed: '%s' of type '%s' = '%s'",
+          property, dbus_type, value);
 
       /* transfer ownership to @ret */
       g_hash_table_insert (ret, property, v);
@@ -1500,15 +1514,26 @@ cleanup:
 }
 
 static GValueArray *
-_tp_protocol_parse_rcc (GKeyFile *file,
+_tp_protocol_parse_rcc (const gchar *cm_debug_name,
+    const gchar *protocol_debug_name,
+    GKeyFile *file,
     const gchar *group)
 {
   GHashTable *fixed;
   GStrv allowed;
   GValueArray *ret;
+  guint i;
+
+  DEBUG ("%s/%s: parsing requestable channel class '%s'", cm_debug_name,
+      protocol_debug_name, group);
 
   fixed = _tp_protocol_parse_channel_class (file, group);
   allowed = g_key_file_get_string_list (file, group, "allowed", NULL, NULL);
+
+  for (i = 0; allowed != NULL && allowed[i] != NULL; i++)
+    {
+      DEBUG ("\tallowed: '%s'", allowed[i]);
+    }
 
   ret = tp_value_array_build (2,
       TP_HASH_TYPE_CHANNEL_CLASS, fixed,
@@ -1709,7 +1734,8 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
   if (rcc_groups != NULL)
     {
       for (rcc_group = rcc_groups; *rcc_group != NULL; rcc_group++)
-        g_ptr_array_add (rccs, _tp_protocol_parse_rcc (file, *rcc_group));
+        g_ptr_array_add (rccs,
+            _tp_protocol_parse_rcc (cm_debug_name, name, file, *rcc_group));
     }
 
   g_strfreev (rcc_groups);
