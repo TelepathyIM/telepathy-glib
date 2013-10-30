@@ -36,14 +36,14 @@ check-valgrind:
 
 maintainer-upload-release: _maintainer-upload-release-local
 _maintainer-upload-release-local: _maintainer-upload-release-check
-	rsync -rvzPp --chmod=Dg+s,ug+rwX,o=rX $(builddir)/docs/reference/html/ \
+	rsync -rvzPp --chmod=Dg+s,ug+rwX,o=rX $(builddir)/docs/reference/telepathy-glib/html/ \
 	telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/doc/telepathy-glib-1/
 
 BRANCH = $(shell sh tools/git-which-branch.sh misc | tr -d '\n' | tr -C "[:alnum:]" _)
 UPLOAD_BRANCH_TO = people.freedesktop.org:public_html/telepathy-glib
 
 upload-branch-docs: all
-	rsync -rtzvPp --chmod=a+rX docs/reference/html/ \
+	rsync -rtzvPp --chmod=a+rX docs/reference/telepathy-glib/html/ \
 		$(UPLOAD_BRANCH_TO)-$(BRANCH)/
 
 include tools/lcov.am

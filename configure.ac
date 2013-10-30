@@ -321,7 +321,8 @@ AM_CONDITIONAL([HAVE_CXX], [test $tp_cxx_works = yes])
 AC_OUTPUT( Makefile \
 	   docs/Makefile \
 	   docs/reference/Makefile \
-	   docs/reference/version.xml \
+	   docs/reference/telepathy-glib/Makefile \
+	   docs/reference/telepathy-glib/version.xml \
 	   examples/Makefile \
 	   examples/client/Makefile \
 	   examples/client/js/Makefile \
