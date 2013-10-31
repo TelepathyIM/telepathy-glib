@@ -412,7 +412,7 @@ pendingproc_get_favourite_contacts (TplActionChain *action_chain,
 
   priv = closure->service->priv;
 
-  packed = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
+  packed = g_ptr_array_new_with_free_func ((GDestroyNotify) tp_value_array_free);
 
   g_hash_table_foreach (priv->accounts_contacts_map,
       (GHFunc) append_favourite_contacts_account_and_contacts, packed);
