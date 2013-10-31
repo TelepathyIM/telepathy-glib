@@ -1557,7 +1557,8 @@ _tpl_log_manager_is_disabled_for_entity (TplLogManager *self,
 /**
  * tpl_log_manager_disable_for_entity:
  * @self: the log manager
- * @entity a TplEntity
+ * @account: an account
+ * @entity: a TplEntity
  *
  * Disables logging of events for given entity. By default logging is enabled
  * for all entities.
@@ -1604,6 +1605,7 @@ tpl_log_manager_disable_for_entity (TplLogManager *self,
 /**
  * tpl_log_manager_enable_for_entity:
  * @self: the log manager
+ * @account: an account
  * @entity: a TplEntity
  *
  * Re-enables logging of events for entity previously disabled by
@@ -1655,6 +1657,7 @@ tpl_log_manager_enable_for_entity (TplLogManager *self,
 /**
  * tpl_log_manager_is_disabled_for_entity:
  * @self: the log manager
+ * @account: an account
  * @entity: a TplEntity
  *
  * Checks, whether logging is disabled for given entity. By default, logging
