@@ -9,6 +9,7 @@ telepathy-glib-env: telepathy-glib-env.in Makefile
 if ENABLE_INSTALLED_TESTS
 toolsdir = @tpglibtestsdir@/tools
 tools_SCRIPTS = \
+	with-session-bus.sh \
 	test-wrapper.sh \
 	libglibcodegen.py \
 	libtpcodegen.py \
@@ -43,6 +44,7 @@ EXTRA_DIST = \
     telepathy-glib.supp \
     telepathy-glib-env.in \
     test-wrapper.sh \
+    with-session-bus.sh \
     xincludator.py
 
 CLEANFILES = libtpcodegen.pyc libtpcodegen.pyo libglibcodegen.pyc libglibcodegen.pyo $(noinst_SCRIPTS)
