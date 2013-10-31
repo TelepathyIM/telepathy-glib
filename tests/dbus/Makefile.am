@@ -1,3 +1,7 @@
+# These tests aren't ready for parallel invocation yet: they all use
+# the same log directory.
+.NOTPARALLEL:
+
 noinst_PROGRAMS = \
 	test-entity 			\
 	test-log-manager		\
@@ -35,7 +39,7 @@ AM_CFLAGS = \
 	-I$(top_srcdir)/tests
 	$(NULL)
 
-TESTS_ENVIRONMENT = \
+AM_TESTS_ENVIRONMENT = \
     abs_top_builddir=@abs_top_builddir@				\
     TPL_TEST_MODE=true						\
     TPL_TEST_LOG_DIR=@abs_top_srcdir@/tests/logs		\
@@ -45,25 +49,26 @@ TESTS_ENVIRONMENT = \
     G_SLICE=debug-blocks					\
     TPL_DEBUG=all						\
     G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly)	\
-    $(top_srcdir)/tools/test-wrapper.sh				\
+    $(NULL)
+
+LOG_COMPILER = \
     sh $(top_srcdir)/tools/with-session-bus.sh			\
         --config-file=dbus-1/session.conf --			\
-    $(EXTRA_TESTS_ENVIRONMENT)
-
-EXTRA_TESTS_ENVIRONMENT =
+    $(NULL)
 
 check-valgrind:
 	$(MAKE) check-TESTS \
 		maybe_gc_friendly=,gc-friendly \
-		TESTS_ENVIRONMENT="$(VALGRIND_TESTS_ENVIRONMENT)"
+		LOG_COMPILER="$(VALGRIND_LOG_COMPILER)"
 
 include $(top_srcdir)/tools/valgrind.mk
 
-VALGRIND_TESTS_ENVIRONMENT = \
-    $(TESTS_ENVIRONMENT)			\
+VALGRIND_LOG_COMPILER = \
+    $(LOG_COMPILER)				\
     env G_SLICE=always-malloc CHECK_VERBOSE=1	\
     $(top_builddir)/libtool --mode=execute	\
-    $(VALGRIND) --suppressions=$(top_srcdir)/tests/suppressions/tpl.supp $(VALGRIND_FLAGS)
+    $(VALGRIND) --suppressions=$(top_srcdir)/tests/suppressions/tpl.supp $(VALGRIND_FLAGS) \
+    $(NULL)
 
 BUILT_SOURCES = \
 	dbus-1/session.conf \

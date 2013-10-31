@@ -1,3 +1,7 @@
+# These tests aren't ready for parallel invocation yet: they all use
+# the same log directory.
+.NOTPARALLEL:
+
 SUBDIRS = $(CHECKTWISTED) suppressions lib dbus
 
 EXTRA_DIST = logs
@@ -19,19 +23,17 @@ AM_CFLAGS = \
 	-I$(top_builddir) \
 	$(NULL)
 
-TESTS_ENVIRONMENT = \
+AM_TESTS_ENVIRONMENT = \
 	G_DEBUG=fatal-warnings,fatal-criticals		\
 	TPL_TEST_MODE=true 				\
 	TEST_LOG_DIR=@abs_top_srcdir@/tests/logs	\
-	$(top_srcdir)/tools/test-wrapper.sh		\
 	$(NULL)
 
 check-valgrind: $(TESTS)
 	G_SLICE=always-malloc \
 	G_DEBUG=gc-friendly \
 	$(MAKE) \
-		TESTS_ENVIRONMENT="$(TESTS_ENVIRONMENT) \
-		libtool --mode=execute valgrind \
+		LOG_COMPILER="libtool --mode=execute valgrind \
 			--leak-check=full \
 			--show-reachable=no \
 			--gen-suppressions=all \
