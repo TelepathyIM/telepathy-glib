@@ -4,7 +4,9 @@ SUBDIRS = \
     m4 \
     tools \
     spec \
+    data \
     telepathy-glib \
+    po \
     $(NULL)
 
 if HAVE_INTROSPECTION
@@ -13,13 +15,26 @@ SUBDIRS += vala
 endif
 endif
 
+if ENABLE_LOGGER
+SUBDIRS += telepathy-logger
+endif
+
+# build examples and tests after all the things under test!
 SUBDIRS += \
     examples \
     tests \
-    docs \
     $(NULL)
 
-DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --disable-debug
+# do this last, because it's slow - in a compile/test/fix cycle, we don't
+# want to bother building the docs until the tests have passed
+SUBDIRS += docs
+
+DISTCHECK_CONFIGURE_FLAGS = \
+    --enable-gtk-doc \
+    --disable-debug \
+    --disable-scrollkeeper \
+    --disable-schemas-install \
+    $(NULL)
 
 EXTRA_DIST = \
     autogen.sh \
@@ -68,3 +83,7 @@ clean-for-new-branch:
 	$(MAKE) -C telepathy-glib distclean
 	$(SHELL) ./config.status --recheck
 	$(SHELL) ./config.status
+
+# Workaround broken scrollkeeper that doesn't remove its files on
+# uninstall.
+distuninstallcheck_listfiles = find . -type f -print | grep -v '^\./var/scrollkeeper'

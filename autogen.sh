@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
+intltoolize --force --copy --automake
 gtkdocize
-
 autoreconf -i -f
 
 # Honor NOCONFIGURE for compatibility with gnome-autogen.sh

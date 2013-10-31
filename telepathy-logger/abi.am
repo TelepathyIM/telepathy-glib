@@ -1,0 +1,16 @@
+# To be included by Makefile.am.
+
+# The quoting here is unnecessary but harmless, and has the useful side-effect
+# that vim quickfix mode (:make) doesn't interpret the libtool --mode=link
+# command as an error message in a bizarrely named file
+libtelepathy_logger_1_la_LDFLAGS = \
+    -version-info "$(TPL_LT_CURRENT)":"$(TPL_LT_REVISION)":"$(TPL_LT_AGE)"
+
+_gen/abi.txt: libtelepathy-logger-1.la abi.am
+	$(NM) .libs/libtelepathy-logger.a > _gen/abi.nm
+	grep " [DT] " < _gen/abi.nm > _gen/abi.funcs
+	cut -d" " -f3 < _gen/abi.funcs > _gen/abi.funcnames
+	grep "^tpl" < _gen/abi.funcnames > _gen/abi.tpfuncnames
+	$(AM_V_GEN)sort -u < _gen/abi.tpfuncnames > $@
+
+# vim:ft=automake:

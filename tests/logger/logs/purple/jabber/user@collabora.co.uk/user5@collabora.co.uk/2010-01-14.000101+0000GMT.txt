@@ -1,0 +1,12 @@
+Conversation with user5@collabora.co.uk at Thu 14 Jan 2010 00:01:01 GMT on user@test.collabora.co.uk/TEST (jabber)
+(00:01:01) User5: I
+(00:01:01) User5: I'
+(00:01:01) User5: I''
+(00:01:01) User5: I'''
+(00:01:02) user@test.collabora.co.uk/TEST: J
+(00:01:02) user@test.collabora.co.uk/TEST: J'
+(00:01:03) User5: K
+(00:01:04) User5: L
+(00:01:04) User5: L'
+(00:01:04) User5: L''
+(00:01:04) User5: L'''

@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<?xml-stylesheet type="text/xsl" href="empathy-log.xsl"?>
+<log>
+<message time='20100218T14:32:14' cm_id='0' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='false' type='normal'>now</message>
+<message time='20100218T14:35:11' cm_id='0' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='false' type='normal'>1</message>
+</log>

@@ -1,0 +1,452 @@
+telepathy-logger 0.8.0 (2013-01-21)
+===================================
+
+The "chicken legs" release.
+
+This is the start of a new stable branch.
+
+Here is the summary of particularly noteworthy changes since 0.6.0:
+
+• GLib 2.28 is now required.
+
+• New TplLogWalker API for iterating over logs. (fd.o#41772)
+
+• Filter out duplicate dates in get_dates. (fd.o#53345)
+
+telepathy-logger 0.6.0 (2012-10-29)
+===================================
+
+This is the start of a new stable branch.
+
+There was never a development release in the 0.5 series so there are
+no changes there. Here is the summary of particularly noteworthy
+changes since 0.4:
+
+• telepathy-glib 0.19.2 is now required and deprecated telepathy-glib
+  usage has been removed.
+
+• Multiple introspection problems have been fixed. (fd.o#50361)
+
+• Streamed Media channel support has been removed.
+
+telepathy-logger 0.4.0 (2012-04-03)
+===================================
+
+This is the start of a new stable branch.
+
+There are no changes since 0.2.13.
+
+For details of the changes since the last stable branch, please look
+at the git log, the list is just too long.
+
+telepathy-logger 0.2.13 (2012-04-03)
+===================================
+
+The "Empathy really, really needs this" release
+
+This release ports the Call support in the logger to Call1. Since Call1 is in
+telepathy-glib, this is no longer a build option, and something we always
+support.
+
+Major changes:
+
+* Support Call1 (Nicolas Dufresne)
+
+telepathy-logger 0.2.12 (2011-11-01)
+===================================
+
+The "Oops" release
+
+This bug fix release correct the accidental so-name bump. Distributions
+should use this release instead of 0.2.11.
+
+
+telepathy-logger 0.2.11 (2011-10-31)
+===================================
+
+The "Halloween" release
+
+This is a bug fix release. Distributions are encouraged to update.
+
+Fixes:
+
+* Fix crash caused by used after free (Nicolas Dufresne)
+* Fix crash wen call sender or actor is not set (Vincent Penquerc'h)
+* Fix missing alias feature when receiving messages (Nicolas Dufresne)
+* Remove use of deprecated g_thread_init() (Nicolas Dufresne)
+* Improve silent build rulesa (Nicolas Dufresne)
+* Improve introspection annotation (Nicolas Dufresne)
+
+
+telepathy-logger 0.2.10 (2011-05-26)
+===================================
+
+The "Malade!" release
+
+This release add support for text edits along with bug fixes. Distributions
+are encouraged to update.
+
+Fixes:
+
+* Add support for text message edits (David Laban)
+* Fix events ordering and merging speed (Nicolas Dufresne)
+* Fix destroy function for get_entities_async (Emilio Pozuelo Monfort)
+* Fix crash in pidgin log store (Guillaume Desmottes)
+
+
+telepathy-logger 0.2.9 (2011-05-06)
+===================================
+
+The "Vendredi au soleil" release
+
+This bug fix release most importantly fixes performance issues. This has been
+possible through the rework of Call logs storage method. Note that older Call
+logs will not be retrieved from store. We tolerate this breakage for two
+reasons, Call support is still experimental and a bug in the .client file was
+causing call logs not to be forwarded to the observer. Distributions are
+encourage to update as this release improves performance when opening chat
+windows in Empathy.
+
+Fixes:
+
+* Work around GLib TimeZone cache bug (Gnome bug #646435)
+* Fix client file to effectively observe Call.DRAFT channels
+* Downgraded autotools requirement to 2.65
+* Fix SQL syntax error and pending message order
+* Store Calls log in seperate file (e.g 20110505.call.log)
+* Make Pidgin store robust to empty file
+* And more unit tests
+
+
+telepathy-logger 0.2.8 (2011-03-31)
+===================================
+
+The "Piquez moi quelqu'un" release
+
+This release fixes wrong libtelepathy-logger shared object version. This
+error was introduced in version 0.2.7, where age has been incremented but
+not the current. Distribution should update to this version to avoid
+libtelepathy-logger shared object version to go backward.
+
+Fixes:
+
+* Fixed wrong shared object version.
+
+
+telepathy-logger 0.2.7 (2011-03-25)
+===================================
+
+The "TGIF" release
+
+This release adds experimental support for call logging, bug fixes and
+optimisations. We suggest distributions to update to this version. Note
+that compilation option '--enable-call' is required to use experimental
+call support.
+
+Fixes:
+
+* Readd AM_PATH_PYTHON back to configure.ac, required for codegen
+* Add support for call logging
+* Search using GRegex to prevent matching XML tags
+* Improve test coverage
+* Avoid using g_list_append() for performance reason
+* Fixed infinit loop in pending message cache logic
+
+
+telepathy-logger 0.2.6 (2011-03-22)
+===================================
+
+The "Slimmer" release
+
+This rework release reimplement text observer on top of Telepathy GLib class
+and reimplement pending message cache. The deprecated Channel.Type.Text API
+support are no longer used. Distributions are encourage to update as this
+release fixes issues with handling of delivery reports.
+
+Fixes:
+
+* Ported all internal time manipulation to GDateTime
+* Observers now cache TplEntity object instead of TpContact to reduce number
+  memory allocations
+* Removed generated log_id
+* Removed unused twisted test framework
+* Port observer to TpTextChannel
+* Reimplemnent pending message cache
+* Update Telepathy GLib requirement to 0.14.0
+
+telepathy-logger 0.2.5 (2011-03-03)
+===================================
+
+The "One liner" release
+
+This bug fix release fixes another crash found on 32bit machines. We strongly
+suggest distributions to update to this version.
+
+Fixes:
+
+* Fix another 32 vs 64bits bug (Emilio)
+
+
+telepathy-logger 0.2.4 (2011-03-01)
+===================================
+
+The "small" release
+
+This bug fix release fixes minor issues. We suggest distributions to update to
+this version as it fixes compilation and unit tests on some configurations.
+
+Fixes:
+
+* Add output annotations in TplLogManager (Jasper)
+* Make the introspection files be 0.2 instead of 1.0 (Emilio)
+* Fix use of uninitialised variable (Nicolas)
+* Remove reference to Gnome in configure.ac (Nicolas)
+* Remove GPL warning in README, Logger is now fully LGPL (Nicolas)
+* Move observer and SQlite tests with dbus enabled tests (Nicolas)
+* Update valgrind suppressions. (Nicolas)
+* Fix XML store test crash on 32bit computer. (Nicolas)
+
+
+telepathy-logger 0.2.3 (2011-02-28)
+===================================
+
+The "I hate mondays" release
+
+This bug fix release fixes potential crash on 32bit machines. We
+strongly suggest distributions to update to this version.
+
+Fixes:
+
+* Convert timestamp from uint to int64 on sent message (Nicolas)
+* Set an error if text event body is empty or NULL (fd.o#31121, Emilio)
+
+
+telepathy-logger 0.2.2 (2011-02-28)
+===================================
+
+The "Monday morning" release
+
+This bug fix release fixes issues around TplEvent with room target.
+It also contains initial work for GIntrospection.
+
+Fixes:
+
+* Start work on introspection support (Jasper and Emilio)
+* Fix TplEvent::get_target() logic so room event are stored correctly (Nicolas)
+* Fix room check when XML log store reads events (Nicolas)
+* Free GDate with g_date_free() instead of g_free ()
+* Fix log_store_xml_get_filtered_events() to return no more than num_events (Nicolas)
+* Add an XML log store test for log_store_xml_add_event() (Nicolas)
+
+
+telepathy-logger 0.2.1 (2011-02-23)
+===================================
+
+The "We are human!" release
+
+This bug fix release fixes memory corruption in GList manipulation. We
+strongly suggest distributions using 0.2.0 version to update to this
+version.
+
+Fixes:
+
+* Use g_list_alloc() instead of g_new0() to allocate list (Sjoerd)
+* Use _async() TplLogManager methods in unit tests (Nicolas)
+* Do not ignore system() return value in unit tests (Guillaume)
+
+
+telepathy-logger 0.2.0 (2011-02-23)
+===================================
+
+This version is a large API refactoring that enables abstraction of
+the logged event type and clarifies the methods. Alongside this large refactoring
+some new features like ability to clear logs (see D-Bus API) and read-only
+Pidgin log store can be found. While it remains compatible on the storage
+side, the API is not.A version of Empathy compatible with this release will be
+released shortly; watch the Telepathy mailing list for details.
+
+Enhancement:
+
+* Read-only support for Pidgin log store.
+* Ability to clear logs (see D-Bus API).
+* Largely reworked API:
+  - TplEntry is now TplEvent.
+  - Sub-class naming is now more natural (e.g. TplTextEvent instead of
+    TplEventText).
+  - D-Bus API has been reduced to the minimum required function.
+  - chat-id is now commonly called target-id to abstract text chat.
+  - TplSearchHit has been cleanup and usage reduced.
+  - TplEntityDirection has been remove from TplEntity.
+  - TplEntity and TplEvent class was cleaned from useless setters and unused getters.
+  - ROOM is now used instead of GROUP to follow Telepathy naming.
+  - _get_chats() method is now replaced by _get_entities().
+  - Unused method _search_in_identitifer() is removed.
+  - TplTextEvent exposes message-type to let client know if it's a /me message.
+  - TplLogManager API now takes TplEntity to identify target.
+  - TplEventTypeMask can be used to filter event type (for future use).
+* A fair amount of test has been added.
+
+
+telepathy-logger 0.1.7 (2010-11-29)
+===================================
+
+This bug fix release fixes a crash and remove a lot of memory leaks. We
+strongly suggest to distributions to update to this version.
+
+Fixes:
+
+• Stop using tp_get_bus(). (smcv)
+• Loads of memory leaks fixed. (cassidy)
+• Don't crash by trying to use the sqlite log store after it has been
+  disposed. (cassidy)
+
+telepathy-logger 0.1.6 (2010-10-13)
+===================================
+
+The “maths lesson” release.
+
+Fixes:
+
+• Running the test suite no longer accesses your session's GSettings.
+  (Danni)
+• Out-of-tree builds now work. (Nicolas)
+• A CM crashing with open text channels no longer causes conversations
+  not to be logged, and to take 25 seconds to be displayed.
+  (fd.o#30824, Will)
+
+telepathy-logger 0.1.5 (2010-08-11)
+===================================
+
+Dependencies:
+
+* GLib ≥ 2.25.11
+* No more dependency on GConf
+
+Enhancements:
+
+* The logger uses GSettings instead of GConf for preferences (fdo #28602). The
+  ignore-accounts key has been removed for now as it was unused and broken.
+
+Fix:
+
+* Make sure that TplLogSearchHit always contains the account if
+  known (fdo #29058).
+
+telepathy-logger 0.1.4 (2010-07-08)
+===================================
+
+Fix:
+
+* Don't crash if the logger is asked to observe the same channel twice. This
+  appens with telepathy-idle because of bug fdo #28918.
+
+telepathy-logger 0.1.3 (2010-06-28)
+===================================
+
+Dependencies:
+
+* telepathy-glib ≥ 0.11.7
+
+Enhancements:
+
+* Properly support the Debug interface.
+
+* Reuse existing TpAccount objects instead of creating new ones. This reduce
+  the D-Bus traffic when logging messages as we don't need to fetch the
+  account properties any more (fdo #28682).
+
+* Cache all the participants of the room when logging group text channels
+  (fdo #28680).
+
+Fixes:
+
+* Correctly set the 'isuser' flag when logging text channels.
+
+* Correctly set the sender ID when logging group text channels.
+
+* Properly sort dates in the list returned by
+  tpl_log_manager_get_filtered_messages_finish.
+
+* Fix a race when logging text messages.
+
+* Correctly set the default value of the ignorelist gconf key.
+
+* Install the logger to $libexec.
+
+* Set the Recover flag in the logger's client file so MissionControl will
+  make it observe existing channels when (re)starting.
+
+* Return earlier from ObserveChannels() to avoid blocking channels dispatching
+  too long (fdo #28787).
+
+
+telepathy-logger 0.1.2 (2010-06-18)
+===================================
+
+The API of libtelepathy-logger has been cleaned up and now only includes:
+- TplEntity (previously TplContact)
+- TplEntry (previously TplLogEntry)
+- TplEntryText (previously TplLogTextEntry)
+- TplLogManager
+
+This API should stay stable in the 0.1.x cycle.
+
+The library has been licensed more permissively and is now available under the
+GNU Lesser General Public License, version 2.1 or (at your option) any
+later version.
+
+Dependencies:
+
+* telepathy-glib ≥ 0.11.5
+* telepathy-mission-control ≥ 5.4.0 is recommended
+
+
+telepathy-logger 0.1.1 (2010-02-26)
+===================================
+
+The ``brick by brick'' release.
+
+This is the second previous release of the telepathy-logger. You should be aware
+that this is a piece of software that is still very much in development,
+everything is subject to change.
+
+The idea behind tp-logger is that it will become a generic logging daemon usable
+anywhere in Telepathy, with any Telepathy client.
+
+Changes in this release:
+ - libtelepathy-logger.pc is now just telepathy-logger.pc
+ - asynchronous API has _finish() methods.
+ - Fix a crasher in handling MUCs
+ - Logger now observes channels that are open when it starts
+ - API now includes support for storing favourite contacts in a way that can
+   be shared between Telepathy clients
+
+telepathy-logger 0.1.0 (2010-02-24)
+===================================
+
+The ``Calamity Ensues'' release
+
+This is the first preview release of the telepathy-logger. You should be aware
+that this is a piece of software that is still very much in development,
+everything is subject to change.
+
+The idea behind tp-logger is that it will become a generic logging daemon usable
+anywhere in Telepathy, with any Telepathy client.
+
+Things that mostly work:
+
+ - logging of text channels into an Empathy style log format using a Telepathy
+   Observer client
+ - Telepathy-style D-Bus API to retrieve logs (will be extended soon with more
+   functionality)
+ - libtelepathy-logger API to allow clients to access logs en-masse
+ - GConf preferences to control what accounts to log
+
+Things that don't work:
+
+ - existing channels won't be logged when the logger starts
+ - preference changes aren't noticed asynchronously
+
+Note that tp-logger won't import your existing logs from Empathy, for the time
+being, if you're running it, you are going to end up with two sets of logs,
+one from Empathy and one from tp-logger.

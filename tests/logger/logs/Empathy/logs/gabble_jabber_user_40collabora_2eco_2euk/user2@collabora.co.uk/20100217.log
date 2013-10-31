@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8'?>
+<?xml-stylesheet type="text/xsl" href="empathy-log.xsl"?>
+<log>
+<message time='20100217T13:47:31' cm_id='1266414451' id='user@collabora.co.uk' name='User1' token='b42b37774fe34e9891ab1ecd1f187062b7135e6a' isuser='true' type='normal'>1</message>
+<message time='20100217T15:49:41' cm_id='0' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='true' type='normal'>123</message>
+<message time='20100217T15:49:57' cm_id='1266421797' id='user@collabora.co.uk' name='User1' token='b42b37774fe34e9891ab1ecd1f187062b7135e6a' isuser='true' type='normal'>321</message>
+<message time='20100217T16:52:45' cm_id='0' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='true' type='normal'>1</message>
+<message time='20100217T16:52:46' cm_id='1' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='true' type='normal'>2</message>
+<message time='20100217T16:52:46' cm_id='2' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='true' type='normal'>3</message>
+<message time='20100217T16:52:46' cm_id='3' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='true' type='normal'>4</message>
+<message time='20100217T16:52:46' cm_id='4' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='true' type='normal'>5</message>
+<message time='20100217T16:52:51' cm_id='1266425571' id='user@collabora.co.uk' name='User1' token='b42b37774fe34e9891ab1ecd1f187062b7135e6a' isuser='true' type='normal'>1</message>
+<message time='20100217T16:52:52' cm_id='1266425572' id='user@collabora.co.uk' name='User1' token='b42b37774fe34e9891ab1ecd1f187062b7135e6a' isuser='true' type='normal'>3</message>
+<message time='20100217T16:52:46' cm_id='1' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='true' type='normal'>2</message>
+<message time='20100217T16:52:46' cm_id='2' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='true' type='normal'>3</message>
+<message time='20100217T16:52:46' cm_id='3' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='true' type='normal'>4</message>
+<message time='20100217T16:52:46' cm_id='4' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='true' type='normal'>5</message>
+<message time='20100217T16:53:06' cm_id='0' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='true' type='normal'>3</message>
+</log>

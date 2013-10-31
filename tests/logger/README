@@ -1,0 +1,48 @@
+To run all tests:
+
+  make check
+
+or with coverage info:
+
+  ./configure --enable-compiler-coverage
+  make lcov-check
+
+== C tests ==
+
+To run all C tests (assuming the current directory is $top_srcdir):
+
+  make -C tests check-TESTS
+
+To run an individual test:
+
+  make -C tests check-TESTS TESTS=test-handles
+
+To run tests under Valgrind:
+
+  make -C tests check-valgrind
+
+To run an individual test under Valgrind:
+
+  make -C tests check-valgrind TESTS=test-handles
+
+To debug an individual test you can set one of the following env variable:
+
+  * TPL_TEST_VALGRIND : to run Gabble inside valgrind. The report is
+    added to tools/tpl-testing.log.
+        export TPL_TEST_VALGRIND=1
+
+  * TPL_TEST_REFDBG : to run Gabble inside refdbg. The report is written
+    to tools/refdbg.log. You can change TPL_WRAPPER to use an alternative
+    refdbg and change REFDBG_OPTIONS to set your own parameters. Example:
+        export TPL_TEST_REFDBG=1
+        export TPL_WRAPPER="/path/to/refdbg"
+        export REFDBG_OPTIONS="btnum=16"
+
+  * TPL_WRAPPER="nemiver" : to run Gabble inside the graphical debugger
+    nemiver. You'll be able to set up breakpoints; then hit the "continue"
+    button to launch Gabble.
+
+  * TPL_TEST_STRACE : to run Gabble inside strace. The report is written
+    to tools/strace.log.
+        export TPL_TEST_STRACE=1
+

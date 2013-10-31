@@ -1,0 +1,20 @@
+Telepathy-Logger
+================
+
+tp-logger is a headless Observer client that logs information received by the
+Telepathy framework. It features pluggable backends to log different sorts of
+messages, in different formats.
+
+tp-logger features a Telepathy-style D-Bus API to expose logs and interesting
+information related to logging (most frequent contacts, etc.). It also provides
+a GLib-compatible client API for making bulk log requests (e.g. for display
+logs in applications without having to provide lots of information over D-Bus).
+
+TPL is currently under development, please refer to
+http://telepathy.freedesktop.org/wiki/Logger for more information.
+
+Bugs should be filed at http://bugs.freedesktop.org/ under the product
+`Telepathy' and the category `logger'.
+
+Telepathy discussion takes place on the Telepathy mailing list
+<telepathy@lists.freedesktop.org> or on irc.freenode.net/#telepathy

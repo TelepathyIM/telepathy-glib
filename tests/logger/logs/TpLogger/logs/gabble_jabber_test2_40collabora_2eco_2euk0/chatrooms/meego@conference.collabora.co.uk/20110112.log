@@ -1,0 +1,5 @@
+<?xml version='1.0' encoding='utf-8'?>
+<?xml-stylesheet type="text/xsl" href="log-store-xml.xsl"?>
+<log>
+<message time='20110112T22:11:04' cm_id='8957fb4064049e7a1f9d8f84234d3bf09fb6778c' id='meego@conference.collabora.co.uk/test2@collabora.co.uk' name='test2@collabora.co.uk' token='' isuser='true' type='normal'>test</message>
+</log>

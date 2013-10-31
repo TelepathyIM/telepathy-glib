@@ -1,0 +1,17 @@
+<schemalist>
+  <schema id="org.freedesktop.Telepathy.Logger" path="/apps/telepathy-logger/">
+    <key name="enabled" type="b">
+      <default>true</default>
+      <_summary>Enable logging</_summary>
+      <_description>
+        Globally enable or disable the Telepathy logger system. Setting it to
+        "false" will completely disable all logging.
+      </_description>
+    </key>
+    <key name="ignorelist" type="as">
+      <default>[]</default>
+      <_summary>Ignore list</_summary>
+      <_description>Conversations with entities with ID listed here will not be logged.</_description>
+    </key>
+  </schema>
+</schemalist>

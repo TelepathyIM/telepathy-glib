@@ -2,7 +2,12 @@ SUBDIRS = \
     lib \
     . \
     dbus \
+    suppressions \
     tools
+
+if ENABLE_LOGGER
+SUBDIRS += logger
+endif
 
 programs_list = \
     test-asv \

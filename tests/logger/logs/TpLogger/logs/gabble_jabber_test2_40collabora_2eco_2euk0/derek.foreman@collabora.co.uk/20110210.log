@@ -1,0 +1,5 @@
+<?xml version='1.0' encoding='utf-8'?>
+<?xml-stylesheet type="text/xsl" href="log-store-xml.xsl"?>
+<log>
+<message time='20110210T11:21:01' cm_id='f95e605a3ae97c463b626a3538567bc90fc58730' id='test2@test.collabora.co.uk' name='test2@test.collabora.co.uk' token='' isuser='true' type='normal'>Hey, Just generating logs, don&apos;t bother replying ;)</message>
+</log>
