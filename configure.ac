@@ -207,7 +207,6 @@ AC_CONFIG_FILES([
    extensions/Makefile
    extensions/tpl-extensions.pc
    po/Makefile.in
-   src/Makefile
    telepathy-logger/Makefile
    telepathy-logger/telepathy-logger-1.pc
    telepathy-logger/telepathy-logger-1-uninstalled.pc

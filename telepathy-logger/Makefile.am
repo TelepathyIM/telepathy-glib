@@ -19,6 +19,13 @@ AM_CPPFLAGS =						\
 	$(DISABLE_DEPRECATED)				\
 	$(WARN_CFLAGS)
 
+libexec_PROGRAMS = \
+	telepathy-logger
+
+telepathy_logger_LDADD = \
+	libtelepathy-logger-1.la \
+	$(TPL_LIBS)
+
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = telepathy-logger-1.pc
 
@@ -109,6 +116,7 @@ libtelepathy_logger_1_la_LIBADD = \
 
 check_c_sources = \
 	$(libtelepathy_logger_1_la_SOURCES)	\
+	$(telepathy_logger_SOURCES)		\
 	$(LIBTPL_HEADERS)
 include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
