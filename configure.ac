@@ -203,9 +203,9 @@ AM_CONDITIONAL([ENABLE_INSTALLED_TESTS], false)
 AC_CONFIG_FILES([
    Makefile
    data/Makefile
-   doc/Makefile
-   doc/reference/Makefile
-   doc/reference/libtelepathy-logger/Makefile
+   docs/Makefile
+   docs/reference/Makefile
+   docs/reference/libtelepathy-logger/Makefile
    extensions/Makefile
    extensions/tpl-extensions.pc
    po/Makefile.in

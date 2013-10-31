@@ -54,19 +54,19 @@ cscope.out
 /data/org.freedesktop.Telepathy.Logger.gschema.valid
 /data/org.freedesktop.Telepathy.Logger.gschema.xml
 
-/doc/reference/libtelepathy-logger/*.stamp
-/doc/reference/libtelepathy-logger/*.bak
-/doc/reference/libtelepathy-logger/html/
-/doc/reference/libtelepathy-logger/telepathy-logger-*.bak
-/doc/reference/libtelepathy-logger/telepathy-logger-*.txt
-/doc/reference/libtelepathy-logger/telepathy-logger.args
-/doc/reference/libtelepathy-logger/telepathy-logger.hierarchy
-/doc/reference/libtelepathy-logger/telepathy-logger.interfaces
-/doc/reference/libtelepathy-logger/telepathy-logger.prerequisites
-/doc/reference/libtelepathy-logger/telepathy-logger.signals
-/doc/reference/libtelepathy-logger/telepathy-logger.types
-/doc/reference/libtelepathy-logger/tmpl/
-/doc/reference/libtelepathy-logger/xml/
+/docs/reference/libtelepathy-logger/*.stamp
+/docs/reference/libtelepathy-logger/*.bak
+/docs/reference/libtelepathy-logger/html/
+/docs/reference/libtelepathy-logger/telepathy-logger-*.bak
+/docs/reference/libtelepathy-logger/telepathy-logger-*.txt
+/docs/reference/libtelepathy-logger/telepathy-logger.args
+/docs/reference/libtelepathy-logger/telepathy-logger.hierarchy
+/docs/reference/libtelepathy-logger/telepathy-logger.interfaces
+/docs/reference/libtelepathy-logger/telepathy-logger.prerequisites
+/docs/reference/libtelepathy-logger/telepathy-logger.signals
+/docs/reference/libtelepathy-logger/telepathy-logger.types
+/docs/reference/libtelepathy-logger/tmpl/
+/docs/reference/libtelepathy-logger/xml/
 
 /extensions/tpl-extensions.pc
 /extensions/_gen/
