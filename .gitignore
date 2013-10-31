@@ -68,9 +68,9 @@ cscope.out
 /docs/reference/libtelepathy-logger/tmpl/
 /docs/reference/libtelepathy-logger/xml/
 
-/extensions/tpl-extensions.pc
-/extensions/_gen/
-/extensions/doc/
+/telepathy-logger/extensions/tpl-extensions.pc
+/telepathy-logger/extensions/_gen/
+/telepathy-logger/extensions/doc/
 
 /src/telepathy-logger
 /src/test-api

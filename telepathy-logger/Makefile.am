@@ -1,5 +1,7 @@
 include $(top_srcdir)/tools/flymake.mk
 
+SUBDIRS = extensions .
+
 if HAVE_INTROSPECTION
 include $(INTROSPECTION_MAKEFILE)
 endif
@@ -9,7 +11,6 @@ INTROSPECTION_COMPILER_ARGS = --includedir=$(srcdir) --includedir=$(top_srcdir)
 
 AM_CPPFLAGS =						\
 	-I$(top_builddir)				\
-	-I$(top_builddir)/extensions			\
 	-I$(top_srcdir)					\
 	$(ERROR_CFLAGS)					\
 	-DG_LOG_DOMAIN=\"tp-logger\"			\
@@ -112,7 +113,7 @@ nodist_libtelepathy_logger_1_la_SOURCES = \
 		$(BUILT_SOURCES)
 
 libtelepathy_logger_1_la_LIBADD = \
-	$(top_builddir)/extensions/libtpl-extensions-convenience.la
+	extensions/libtpl-extensions-convenience.la
 
 check_c_sources = \
 	$(libtelepathy_logger_1_la_SOURCES)	\

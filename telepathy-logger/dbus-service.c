@@ -34,7 +34,7 @@
 #include <telepathy-logger/log-manager-internal.h>
 #include <telepathy-logger/client-factory-internal.h>
 
-#include <extensions/extensions.h>
+#include "telepathy-logger/extensions/extensions.h"
 
 #define DEBUG_FLAG TPL_DEBUG_DBUS_SERVICE
 #include <telepathy-logger/action-chain-internal.h>

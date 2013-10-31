@@ -1,6 +1,6 @@
 #include "config.h"
 
-#include "extensions.h"
+#include "telepathy-logger/extensions/extensions.h"
 
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/proxy-subclass.h>

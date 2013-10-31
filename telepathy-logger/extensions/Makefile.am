@@ -2,6 +2,11 @@ tools_dir = $(top_srcdir)/tools
 
 pkgconfigdir = $(libdir)/pkgconfig
 
+AM_CPPFLAGS = \
+	-I$(top_srcdir) \
+	-I$(top_builddir) \
+	$(NULL)
+
 pkgconfig_DATA =
 if ENABLE_PUBLIC_EXTENSIONS
 pkgconfig_DATA += tpl-extensions.pc

@@ -204,10 +204,10 @@ AC_CONFIG_FILES([
    docs/Makefile
    docs/reference/Makefile
    docs/reference/libtelepathy-logger/Makefile
-   extensions/Makefile
-   extensions/tpl-extensions.pc
    po/Makefile.in
    telepathy-logger/Makefile
+   telepathy-logger/extensions/Makefile
+   telepathy-logger/extensions/tpl-extensions.pc
    telepathy-logger/telepathy-logger-1.pc
    telepathy-logger/telepathy-logger-1-uninstalled.pc
    tools/Makefile
