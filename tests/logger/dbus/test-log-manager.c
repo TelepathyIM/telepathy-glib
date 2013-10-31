@@ -41,7 +41,6 @@ typedef struct
 
 
 
-#ifdef ENABLE_DEBUG
 static TpDebugSender *debug_sender = NULL;
 static gboolean stamp_logs = FALSE;
 
@@ -92,7 +91,6 @@ log_handler (const gchar *log_domain,
 
   log_to_debug_sender (log_domain, log_level, message);
 }
-#endif /* ENABLE_DEBUG */
 
 
 static void
@@ -263,14 +261,12 @@ setup_debug (void)
 {
   tp_debug_divert_messages (g_getenv ("TPL_LOGFILE"));
 
-#ifdef ENABLE_DEBUG
   _tpl_debug_set_flags_from_env ();
 
   stamp_logs = (g_getenv ("TPL_TIMING") != NULL);
   debug_sender = tp_debug_sender_dup ();
 
   g_log_set_default_handler (log_handler, NULL);
-#endif /* ENABLE_DEBUG */
 }
 
 

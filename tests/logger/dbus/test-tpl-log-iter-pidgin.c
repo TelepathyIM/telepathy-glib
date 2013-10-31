@@ -112,9 +112,7 @@ setup (PidginTestCaseFixture* fixture,
 
   tp_debug_divert_messages (g_getenv ("TPL_LOGFILE"));
 
-#ifdef ENABLE_DEBUG
   _tpl_debug_set_flags_from_env ();
-#endif /* ENABLE_DEBUG */
 }
 
 

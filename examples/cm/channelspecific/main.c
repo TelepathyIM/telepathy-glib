@@ -27,7 +27,6 @@ int
 main (int argc,
       char **argv)
 {
-#ifdef ENABLE_DEBUG
   tp_debug_divert_messages (g_getenv ("EXAMPLE_CM_LOGFILE"));
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
@@ -36,7 +35,6 @@ main (int argc,
 
   if (g_getenv ("EXAMPLE_PERSIST") != NULL)
     tp_debug_set_persistent (TRUE);
-#endif
 
   return tp_run_connection_manager ("telepathy-example-cm-csh",
       VERSION, construct_cm, argc, argv);

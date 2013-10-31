@@ -21,11 +21,7 @@ test_debugging (void)
 #error internal-debug.h should always define DEBUGGING
 #endif
 
-#ifdef ENABLE_DEBUG
   g_assert (DEBUGGING == 1);
-#else
-  g_assert (DEBUGGING == 0);
-#endif
 }
 
 #undef DEBUG_FLAG
@@ -59,11 +55,7 @@ test_debugging_again (void)
 #error internal-debug.h should always define DEBUGGING
 #endif
 
-#ifdef ENABLE_DEBUG
   g_assert (DEBUGGING == 1);
-#else
-  g_assert (DEBUGGING == 0);
-#endif
 }
 
 int

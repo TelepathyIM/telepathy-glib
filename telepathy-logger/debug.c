@@ -88,7 +88,6 @@ void _tpl_debug (TplDebugFlags flag,
     const gchar *format,
     ...)
 {
-#ifdef ENABLE_DEBUG
   gchar *message;
   va_list args;
 
@@ -100,7 +99,6 @@ void _tpl_debug (TplDebugFlags flag,
     g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "%s", message);
 
   g_free (message);
-#endif
 }
 
 /* The following function has to be always define or CRITICAL messages won't

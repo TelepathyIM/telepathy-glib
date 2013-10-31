@@ -217,7 +217,6 @@ tp_protocol_params_from_param_specs (const GPtrArray *parameters,
           param->flags |= TP_CONN_MGR_PARAM_FLAG_SECRET;
         }
 
-#ifdef ENABLE_DEBUG
         {
           gchar *repr = g_strdup_value_contents (&(param->default_value));
 
@@ -225,7 +224,6 @@ tp_protocol_params_from_param_specs (const GPtrArray *parameters,
               G_VALUE_TYPE_NAME (&(param->default_value)));
           g_free (repr);
         }
-#endif
     }
 
   return output;
@@ -1595,7 +1593,6 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
           DEBUG ("\tParam flags: 0x%x", param.flags);
           DEBUG ("\tParam sig: %s", param.dbus_signature);
 
-#ifdef ENABLE_DEBUG
           if (G_IS_VALUE (&param.default_value))
             {
               gchar *repr = g_strdup_value_contents (&(param.default_value));
@@ -1608,7 +1605,6 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
             {
               DEBUG ("\tParam default value: not set");
             }
-#endif
 
           g_ptr_array_add (param_specs, tp_value_array_build (4,
                 G_TYPE_STRING, param.name,

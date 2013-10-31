@@ -31,7 +31,6 @@ SUBDIRS += docs
 
 DISTCHECK_CONFIGURE_FLAGS = \
     --enable-gtk-doc \
-    --disable-debug \
     --disable-scrollkeeper \
     --disable-schemas-install \
     $(NULL)

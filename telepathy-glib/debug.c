@@ -370,7 +370,6 @@ tp_debug_timestamped_log_handler (const gchar *log_domain,
                                   const gchar *message,
                                   gpointer ignored)
 {
-#ifdef ENABLE_DEBUG
   GTimeVal now;
   gchar *tmp, *now_str;
 
@@ -379,11 +378,8 @@ tp_debug_timestamped_log_handler (const gchar *log_domain,
   tmp = g_strdup_printf ("%s: %s", now_str, message);
   g_free (now_str);
   message = tmp;
-#endif
 
   g_log_default_handler (log_domain, log_level, message, NULL);
 
-#ifdef ENABLE_DEBUG
   g_free (tmp);
-#endif
 }

@@ -101,23 +101,9 @@ G_END_DECLS
 #undef DEBUG
 #undef DEBUGGING
 
-#ifdef ENABLE_DEBUG
-#   define DEBUG(format, ...) \
+#define DEBUG(format, ...) \
       _tp_log (G_LOG_LEVEL_DEBUG, DEBUG_FLAG, "%s: " format, \
           G_STRFUNC, ##__VA_ARGS__)
-#   define DEBUGGING _tp_debug_flag_is_set (DEBUG_FLAG)
-#else /* !defined (ENABLE_DEBUG) */
-#   ifndef DEBUG_STUB_DEFINED
-static inline void
-DEBUG (
-    const gchar *format,
-    ...)
-{
-}
-#   define DEBUG_STUB_DEFINED 1
-#   endif // ifndef DEBUG_STUB_DEFINED
-
-#   define DEBUGGING 0
-#endif /* !defined (ENABLE_DEBUG) */
+#define DEBUGGING _tp_debug_flag_is_set (DEBUG_FLAG)
 
 #endif /* defined (DEBUG_FLAG) */

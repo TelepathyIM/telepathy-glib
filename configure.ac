@@ -191,10 +191,6 @@ AC_SUBST([ERROR_SCANNERFLAGS])
 # use ${enable_fatal_warnings} instead.
 AM_CONDITIONAL([OFFICIAL_RELEASE], [test "x$official_release" = xyes])
 
-AC_ARG_ENABLE(debug,
-  AC_HELP_STRING([--disable-debug],[compile without debug code (note that this will disable much of the debug code in all GLib connection managers)]),
-    enable_debug=$enableval, enable_debug=yes )
-
 AC_ARG_ENABLE(debug-cache,
   AS_HELP_STRING([--enable-debug-cache],
                  [compile with code to unconditionally cache all debug messages whether or not they are actually emitted]),
@@ -207,9 +203,6 @@ AS_IF([test x"$enable_debug_cache" != xno],
 AC_ARG_ENABLE(backtrace,
   AC_HELP_STRING([--enable-backtrace],[enable printing out the backtrace in case of crash (in most GLib connection managers)]),
     enable_backtrace=$enableval, enable_backtrace=no )
-
-AS_IF([test x$enable_debug = xyes],
-  [AC_DEFINE([ENABLE_DEBUG], [], [Enable debug code])])
 
 AS_IF([test x$enable_backtrace = xyes],
   [AC_DEFINE([ENABLE_BACKTRACE], [], [Enable backtrace output on crashes])])
