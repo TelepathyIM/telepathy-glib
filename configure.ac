@@ -212,8 +212,9 @@ AC_CONFIG_FILES([
    telepathy-logger/telepathy-logger-1-uninstalled.pc
    tools/Makefile
    tests/Makefile
-   tests/dbus/Makefile
    tests/lib/Makefile
+   tests/logger/Makefile
+   tests/logger/dbus/Makefile
    tests/suppressions/Makefile
 ])
 AC_OUTPUT
