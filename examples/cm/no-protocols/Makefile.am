@@ -24,7 +24,7 @@ managerdir = ${datadir}/telepathy/managers
 dist_manager_DATA = example_no_protocols.manager
 endif
 
-clean-local:
+distclean-local:
 	rm -rf _gen
 
 # In an external project you'd use $(TP_GLIB_LIBS) (obtained from

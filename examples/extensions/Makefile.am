@@ -63,7 +63,7 @@ BUILT_SOURCES = \
 
 CLEANFILES = $(BUILT_SOURCES)
 
-clean-local:
+distclean-local:
 	rm -rf _gen
 
 XSLTPROCFLAGS = --nonet --novalid
