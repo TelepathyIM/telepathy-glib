@@ -665,12 +665,13 @@ pendingproc_remove_favourite_contact (TplActionChain *action_chain,
   GHashTable *contacts;
   gboolean removed = FALSE;
   GError *error = NULL;
+  TplDBusServicePriv *priv;
 
   g_return_if_fail (closure != NULL);
   g_return_if_fail (TPL_IS_DBUS_SERVICE (closure->service));
   g_return_if_fail (closure->context != NULL);
 
-  TplDBusServicePriv *priv = closure->service->priv;
+  priv = closure->service->priv;
 
   if (!tp_dbus_check_valid_object_path (closure->account, &error))
     {

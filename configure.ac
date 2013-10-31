@@ -120,6 +120,7 @@ AM_PATH_PYTHON([2.5])
 TP_COMPILER_WARNINGS([ERROR_CFLAGS], [test "x$official_release" = xno],
   [all \
    extra \
+   declaration-after-statement \
    format-security \
    init-self \
    missing-prototypes \
@@ -130,8 +131,6 @@ TP_COMPILER_WARNINGS([ERROR_CFLAGS], [test "x$official_release" = xno],
    strict-prototypes],
   [missing-field-initializers \
    unused-parameter])
-
-# declaration-after-statement is deliberately not used here
 
 AC_ARG_ENABLE(Werror,
   AS_HELP_STRING([--disable-Werror],[compile without -Werror (normally enabled in development builds)]),

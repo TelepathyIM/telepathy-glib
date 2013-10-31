@@ -884,7 +884,7 @@ _tpl_log_store_sqlite_get_most_recent (TplLogStoreSqlite *self,
   TplLogStoreSqlitePrivate *priv = TPL_LOG_STORE_SQLITE (self)->priv;
   sqlite3_stmt *sql = NULL;
   int e;
-  gint64 date = -1;;
+  gint64 date = -1;
   const char *account_name;
 
   account_name = get_account_name (account);
