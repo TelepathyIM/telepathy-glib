@@ -19,6 +19,7 @@ cscope.out
 /TAGS
 /aclocal.m4
 /autom4te.cache/
+/build-aux/
 /config.guess
 /config.h
 /config.h.in

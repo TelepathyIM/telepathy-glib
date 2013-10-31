@@ -83,7 +83,7 @@ AC_DEFINE([GLIB_VERSION_MAX_ALLOWED], [GLIB_VERSION_2_34], [Prevent post 2.32 AP
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([configure.ac])
-AC_CONFIG_AUX_DIR(.)
+AC_CONFIG_AUX_DIR([build-aux])
 
 AM_INIT_AUTOMAKE(1.12 dist-bzip2 no-define no-dist-gzip tar-ustar -Wno-portability parallel-tests)
 AC_SEARCH_LIBS([strerror],[cposix])
