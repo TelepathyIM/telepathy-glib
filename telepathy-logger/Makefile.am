@@ -6,8 +6,17 @@ if HAVE_INTROSPECTION
 include $(INTROSPECTION_MAKEFILE)
 endif
 INTROSPECTION_GIRS =
-INTROSPECTION_SCANNER_ARGS = --add-include-path=$(srcdir) --add-include-path=$(top_srcdir) -I$(top_srcdir)
-INTROSPECTION_COMPILER_ARGS = --includedir=$(srcdir) --includedir=$(top_srcdir)
+INTROSPECTION_SCANNER_ARGS = \
+	--add-include-path=$(srcdir) \
+	--add-include-path=$(top_builddir)/telepathy-glib \
+	--add-include-path=$(top_srcdir) \
+	-I$(top_srcdir) \
+	$(NULL)
+INTROSPECTION_COMPILER_ARGS = \
+	--includedir=$(srcdir) \
+	--includedir=$(top_builddir)/telepathy-glib \
+	--includedir=$(top_srcdir) \
+	$(NULL)
 
 AM_CPPFLAGS =						\
 	-I$(top_builddir)				\
@@ -137,12 +146,24 @@ introspection_sources = $(libtelepathy_logger_1_la_SOURCES) $(LIBTPL_HEADERS)
 
 TelepathyLogger1-1.gir: libtelepathy-logger-1.la
 TelepathyLogger1_1_gir_SCANNERFLAGS = --identifier-prefix=Tpl --warn-all
-TelepathyLogger1_1_gir_INCLUDES = GObject-2.0 TelepathyGLib-0.12
+TelepathyLogger1_1_gir_INCLUDES = GObject-2.0 TelepathyGLib-1
 TelepathyLogger1_1_gir_CFLAGS = $(INCLUDES)
 TelepathyLogger1_1_gir_LIBS = libtelepathy-logger-1.la
 TelepathyLogger1_1_gir_FILES = $(filter-out %-internal.h, $(introspection_sources))
+TelepathyLogger1_1_gir_PACKAGES = \
+	glib-2.0 \
+	gobject-2.0 \
+	gio-2.0 \
+	telepathy-glib-1 \
+	$(NULL)
+TelepathyLogger1_1_gir_EXPORT_PACKAGES = \
+	telepathy-logger-1 \
+	$(NULL)
 
 INTROSPECTION_GIRS += TelepathyLogger1-1.gir
+
+INTROSPECTION_SCANNER_ENV = \
+	PKG_CONFIG_PATH=$(builddir):$(top_builddir)/telepathy-glib:$${PKG_CONFIG_PATH}
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
