@@ -85,5 +85,5 @@ EXTRA_DIST = \
     $(NULL)
 
 dbus-1/%.conf: $(srcdir)/dbus-1/%.conf.in
-	$(AM_V_at)$(mkdir_p) dbus-1
+	$(AM_V_at)$(MKDIR_P) dbus-1
 	$(AM_V_GEN)sed -e "s|[@]abs_top_builddir[@]|@abs_top_builddir@|g" $< > $@
