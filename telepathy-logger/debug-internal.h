@@ -28,8 +28,6 @@
 #include <glib.h>
 #include <telepathy-glib/telepathy-glib.h>
 
-#ifdef ENABLE_DEBUG
-
 G_BEGIN_DECLS
 
 typedef enum
@@ -96,19 +94,5 @@ G_STMT_START { \
 } G_STMT_END
 
 #endif /* DEBUG_FLAG */
-
-#else /* ENABLE_DEBUG */
-
-#ifdef DEBUG_FLAG
-
-#define DEBUG(format, ...) G_STMT_START { } G_STMT_END
-#define DEBUGGING 0
-#define PATH_DEBUG(chan, format, ...) G_STMT_START { } G_STMT_END
-
-#endif /* DEBUG_FLAG */
-
-#define _tpl_debug_free() G_STMT_START { } G_STMT_END
-
-#endif /* ENABLE_DEBUG */
 
 #endif /* __TPL_DEBUG_H__ */

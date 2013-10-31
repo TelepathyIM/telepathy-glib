@@ -23,8 +23,6 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
-#ifdef ENABLE_DEBUG
-
 static TplDebugFlags flags = 0;
 
 static GDebugKey keys[] = {
@@ -90,6 +88,7 @@ void _tpl_debug (TplDebugFlags flag,
     const gchar *format,
     ...)
 {
+#ifdef ENABLE_DEBUG
   gchar *message;
   va_list args;
 
@@ -101,9 +100,8 @@ void _tpl_debug (TplDebugFlags flag,
     g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "%s", message);
 
   g_free (message);
+#endif
 }
-
-#endif /* ENABLE_DEBUG */
 
 /* The following function has to be always define or CRITICAL messages won't
  * be shown */
