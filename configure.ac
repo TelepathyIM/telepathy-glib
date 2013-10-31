@@ -85,7 +85,7 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([build-aux])
 
-AM_INIT_AUTOMAKE(1.12 dist-bzip2 no-define no-dist-gzip tar-ustar -Wno-portability parallel-tests)
+AM_INIT_AUTOMAKE(1.12 dist-bzip2 no-define no-dist-gzip tar-ustar -Wno-portability parallel-tests subdir-objects)
 AC_SEARCH_LIBS([strerror],[cposix])
 AC_PROG_CC
 AC_HEADER_STDC
