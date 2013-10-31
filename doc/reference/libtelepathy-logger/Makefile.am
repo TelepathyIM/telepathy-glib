@@ -20,7 +20,7 @@ DOC_MAIN_SGML_FILE=docs.xml
 # gtk-doc will search all .c & .h files beneath here for inline comments
 # documenting the functions and macros.
 # e.g. DOC_SOURCE_DIR=../../../gtk
-DOC_SOURCE_DIR=../../../telepathy-logger
+DOC_SOURCE_DIR=${abs_top_srcdir}/telepathy-logger
 
 # Extra options to pass to gtkdoc-scangobj. Not normally needed.
 SCANGOBJ_OPTIONS=
