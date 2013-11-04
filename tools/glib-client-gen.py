@@ -28,8 +28,8 @@ import xml.dom.minidom
 from getopt import gnu_getopt
 
 from libtpcodegen import file_set_contents, key_by_name, u
-from libglibcodegen import Signature, type_to_gtype, \
-        get_docstring, xml_escape, get_deprecated
+from libglibcodegen import (Signature, type_to_gtype,
+        get_docstring, xml_escape, get_deprecated, copy_into_gvalue)
 
 
 NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
@@ -215,36 +215,8 @@ class Generator(object):
                 self.b('  g_value_unset (args->values + %d);' % i)
                 self.b('  g_value_init (args->values + %d, %s);' % (i, gtype))
 
-                if gtype == 'G_TYPE_STRING':
-                    self.b('  g_value_set_string (args->values + %d, %s);'
-                           % (i, name))
-                elif marshaller == 'BOXED':
-                    self.b('  g_value_set_boxed (args->values + %d, %s);'
-                           % (i, name))
-                elif gtype == 'G_TYPE_UCHAR':
-                    self.b('  g_value_set_uchar (args->values + %d, %s);'
-                           % (i, name))
-                elif gtype == 'G_TYPE_BOOLEAN':
-                    self.b('  g_value_set_boolean (args->values + %d, %s);'
-                           % (i, name))
-                elif gtype == 'G_TYPE_INT':
-                    self.b('  g_value_set_int (args->values + %d, %s);'
-                           % (i, name))
-                elif gtype == 'G_TYPE_UINT':
-                    self.b('  g_value_set_uint (args->values + %d, %s);'
-                           % (i, name))
-                elif gtype == 'G_TYPE_INT64':
-                    self.b('  g_value_set_int (args->values + %d, %s);'
-                           % (i, name))
-                elif gtype == 'G_TYPE_UINT64':
-                    self.b('  g_value_set_uint64 (args->values + %d, %s);'
-                           % (i, name))
-                elif gtype == 'G_TYPE_DOUBLE':
-                    self.b('  g_value_set_double (args->values + %d, %s);'
-                           % (i, name))
-                else:
-                    assert False, ("Don't know how to put %s in a GValue"
-                                   % gtype)
+                self.b('  ' + copy_into_gvalue('args->values + %d' % i,
+                    gtype, marshaller, name))
                 self.b('')
 
             self.b('  tp_proxy_signal_connection_v0_take_results (sc, args);')
@@ -610,37 +582,8 @@ class Generator(object):
                 collector('  g_value_unset (args->values + %d);' % i)
                 collector('  g_value_init (args->values + %d, %s);'
                           % (i, gtype))
-
-                if gtype == 'G_TYPE_STRING':
-                    collector('  g_value_take_string (args->values + %d, %s);'
-                              % (i, name))
-                elif marshaller == 'BOXED':
-                    collector('  g_value_take_boxed (args->values + %d, %s);'
-                              % (i, name))
-                elif gtype == 'G_TYPE_UCHAR':
-                    collector('  g_value_set_uchar (args->values + %d, %s);'
-                              % (i, name))
-                elif gtype == 'G_TYPE_BOOLEAN':
-                    collector('  g_value_set_boolean (args->values + %d, %s);'
-                              % (i, name))
-                elif gtype == 'G_TYPE_INT':
-                    collector('  g_value_set_int (args->values + %d, %s);'
-                              % (i, name))
-                elif gtype == 'G_TYPE_UINT':
-                    collector('  g_value_set_uint (args->values + %d, %s);'
-                              % (i, name))
-                elif gtype == 'G_TYPE_INT64':
-                    collector('  g_value_set_int (args->values + %d, %s);'
-                              % (i, name))
-                elif gtype == 'G_TYPE_UINT64':
-                    collector('  g_value_set_uint (args->values + %d, %s);'
-                              % (i, name))
-                elif gtype == 'G_TYPE_DOUBLE':
-                    collector('  g_value_set_double (args->values + %d, %s);'
-                              % (i, name))
-                else:
-                    assert False, ("Don't know how to put %s in a GValue"
-                                   % gtype)
+                collector('  ' + copy_into_gvalue('args->values + %d' % i,
+                    gtype, marshaller, name))
 
             collector('  tp_proxy_pending_call_v0_take_results (user_data, '
                       'NULL, args);')
