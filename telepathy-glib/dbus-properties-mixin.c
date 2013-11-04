@@ -456,7 +456,6 @@ tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
     {
       TpDBusPropertiesMixinIfaceImpl *next = g_type_get_qdata (type,
           extras_quark);
-#ifdef ENABLE_DEBUG
       GQuark offset_quark = _prop_mixin_offset_quark ();
       gpointer offset_qdata = g_type_get_qdata (type, offset_quark);
       TpDBusPropertiesMixinClass *mixin = NULL;
@@ -505,16 +504,13 @@ tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
                 }
             }
         }
-#endif
 
       /* form a linked list */
       iface_impl->mixin_next = next;
       g_type_set_qdata (type, extras_quark, iface_impl);
     }
 
-#ifdef ENABLE_DEBUG
 out:
-#endif
   g_free (interfaces);
 }
 
@@ -581,15 +577,12 @@ tp_dbus_properties_mixin_class_init (GObjectClass *cls,
        iface_impl++)
     {
       GQuark iface_quark = g_quark_try_string (iface_impl->name);
-#ifdef ENABLE_DEBUG
       TpDBusPropertiesMixinIfaceImpl *other_impl;
-#endif
 
       if (G_UNLIKELY (!link_interface (type, interfaces, iface_quark,
               iface_impl)))
         goto out;
 
-#ifdef ENABLE_DEBUG
       for (other_impl = mixin->interfaces;
            other_impl != iface_impl;
            other_impl++)
@@ -603,7 +596,6 @@ tp_dbus_properties_mixin_class_init (GObjectClass *cls,
               goto out;
             }
         }
-#endif
     }
 
 out:

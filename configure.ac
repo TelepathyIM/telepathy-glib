@@ -1,4 +1,8 @@
-AC_PREREQ([2.60])
+AC_PREREQ([2.65])
+AC_COPYRIGHT([
+  Copyright (C) 2003-2007 Imendio AB
+  Copyright (C) 2007-2013 Collabora Ltd.
+])
 
 # Making releases:
 #   set the new version number:
@@ -37,6 +41,16 @@ m4_define([tp_glib_lt_dbus_current], [0])
 m4_define([tp_glib_lt_dbus_revision], [0])
 m4_define([tp_glib_lt_dbus_age], [0])
 
+# The same for the telepathy-logger library
+m4_define([tpl_lt_current], [0])
+m4_define([tpl_lt_revision], [0])
+m4_define([tpl_lt_age], [0])
+
+# The same for the extensions library produced by --enable-public-extensions
+m4_define([tpl_ext_lt_current], [0])
+m4_define([tpl_ext_lt_revision], [0])
+m4_define([tpl_ext_lt_age], [0])
+
 # Some magic
 m4_define([tp_glib_base_version],
           [tp_glib_major_version.tp_glib_minor_version.tp_glib_micro_version])
@@ -48,8 +62,9 @@ AC_INIT([Telepathy-GLib], [tp_glib_version],
         [https://bugs.freedesktop.org/enter_bug.cgi?product=Telepathy&component=tp-glib])
 
 AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_AUX_DIR([build-aux])
 
-AM_INIT_AUTOMAKE([1.11 -Wno-portability])
+AM_INIT_AUTOMAKE([1.12 -Wno-portability subdir-objects parallel-tests tar-ustar])
 AC_CONFIG_HEADERS(config.h)
 
 AM_SILENT_RULES
@@ -88,6 +103,24 @@ LT_DBUS_AGE=tp_glib_lt_dbus_age
 AC_SUBST([LT_DBUS_CURRENT])
 AC_SUBST([LT_DBUS_REVISION])
 AC_SUBST([LT_DBUS_AGE])
+
+TPL_LT_CURRENT=tpl_lt_current
+TPL_LT_REVISION=tpl_lt_revision
+TPL_LT_AGE=tpl_lt_age
+AC_SUBST([TPL_LT_CURRENT])
+AC_SUBST([TPL_LT_REVISION])
+AC_SUBST([TPL_LT_AGE])
+# The ABI version is the end of the SONAME on Linux, and would appear in the
+# name of a plugin directory, for instance
+TPL_ABI_VERSION=`expr ${TPL_LT_CURRENT} - ${TPL_LT_AGE}`
+AC_SUBST([TPL_ABI_VERSION])
+
+TPL_EXT_LT_CURRENT=tpl_ext_lt_current
+TPL_EXT_LT_REVISION=tpl_ext_lt_revision
+TPL_EXT_LT_AGE=tpl_ext_lt_age
+AC_SUBST([TPL_EXT_LT_CURRENT])
+AC_SUBST([TPL_EXT_LT_REVISION])
+AC_SUBST([TPL_EXT_LT_AGE])
 
 dnl optimizations, etc.
 COMPILER_OPTIMISATIONS
@@ -158,10 +191,6 @@ AC_SUBST([ERROR_SCANNERFLAGS])
 # use ${enable_fatal_warnings} instead.
 AM_CONDITIONAL([OFFICIAL_RELEASE], [test "x$official_release" = xyes])
 
-AC_ARG_ENABLE(debug,
-  AC_HELP_STRING([--disable-debug],[compile without debug code (note that this will disable much of the debug code in all GLib connection managers)]),
-    enable_debug=$enableval, enable_debug=yes )
-
 AC_ARG_ENABLE(debug-cache,
   AS_HELP_STRING([--enable-debug-cache],
                  [compile with code to unconditionally cache all debug messages whether or not they are actually emitted]),
@@ -174,9 +203,6 @@ AS_IF([test x"$enable_debug_cache" != xno],
 AC_ARG_ENABLE(backtrace,
   AC_HELP_STRING([--enable-backtrace],[enable printing out the backtrace in case of crash (in most GLib connection managers)]),
     enable_backtrace=$enableval, enable_backtrace=no )
-
-AS_IF([test x$enable_debug = xyes],
-  [AC_DEFINE([ENABLE_DEBUG], [], [Enable debug code])])
 
 AS_IF([test x$enable_backtrace = xyes],
   [AC_DEFINE([ENABLE_BACKTRACE], [], [Enable backtrace output on crashes])])
@@ -237,8 +263,10 @@ AC_SUBST(GLIB_GENMARSHAL)
 GLIB_MKENUMS=`$PKG_CONFIG --variable=glib_mkenums glib-2.0`
 AC_SUBST(GLIB_MKENUMS)
 
+GLIB_GSETTINGS
+
 dnl Check for D-Bus
-PKG_CHECK_MODULES(DBUS, [dbus-1 >= 0.95, dbus-glib-1 >= 0.90])
+PKG_CHECK_MODULES(DBUS, [dbus-1 >= 1.1, dbus-glib-1 >= 0.90])
 
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
@@ -318,10 +346,54 @@ CXXFLAGS="$_TP_OLD_CXXFLAGS"
 AC_LANG_POP([C++])
 AM_CONDITIONAL([HAVE_CXX], [test $tp_cxx_works = yes])
 
-AC_OUTPUT( Makefile \
+IT_PROG_INTLTOOL([0.35.0])
+
+AC_ARG_ENABLE([logger],
+  [AS_HELP_STRING([--enable-logger],
+    [build the Telepathy Logger (default=auto)])],
+  [],
+  [enable_logger=auto])
+
+AS_IF([test "x$enable_logger" = xauto],
+  [
+    PKG_CHECK_MODULES([LOGGER_DEPENDENCIES],
+      [sqlite3, libxml-2.0],
+      [enable_logger=yes],
+      [enable_logger=no])
+  ])
+
+AS_IF([test "x$enable_logger" = xyes],
+  [
+    PKG_CHECK_MODULES([LIBXML], [libxml-2.0])
+    PKG_CHECK_MODULES([SQLITE], [sqlite3])
+
+    TPL_CFLAGS="$DBUS_CFLAGS $GLIB_CFLAGS $LIBXML_CFLAGS $SQLITE_CFLAGS"
+    TPL_LIBS="$DBUS_LIBS $GLIB_LIBS $LIBXML_LIBS $SQLITE_LIBS"
+    AC_SUBST([TPL_CFLAGS])
+    AC_SUBST([TPL_LIBS])
+  ])
+
+AM_CONDITIONAL([ENABLE_LOGGER], [test "x$enable_logger" = xyes])
+
+AC_ARG_ENABLE([public_extensions],
+  AS_HELP_STRING([--enable-public-extensions],
+    [build a public wrapper for the Telepathy Logger extensions library]),
+    [],
+    [enable_public_extensions=no])
+
+AS_IF([test x$enable_public_extensions = xyes],
+  [AC_DEFINE(ENABLE_PUBLIC_EXTENSIONS, [], [Enable Public Extensions])])
+AM_CONDITIONAL([ENABLE_PUBLIC_EXTENSIONS],
+  [test "x$enable_public_extensions" = xyes])
+
+AC_CONFIG_FILES([
+	   Makefile \
+	   data/Makefile \
 	   docs/Makefile \
 	   docs/reference/Makefile \
-	   docs/reference/version.xml \
+	   docs/reference/libtelepathy-logger/Makefile \
+	   docs/reference/telepathy-glib/Makefile \
+	   docs/reference/telepathy-glib/version.xml \
 	   examples/Makefile \
 	   examples/client/Makefile \
 	   examples/client/js/Makefile \
@@ -336,6 +408,7 @@ AC_OUTPUT( Makefile \
 	   examples/cm/extended/Makefile \
 	   examples/cm/no-protocols/Makefile \
 	   examples/extensions/Makefile \
+	   po/Makefile.in \
 	   spec/Makefile \
 	   telepathy-glib/Makefile \
 	   telepathy-glib/telepathy-glib-1-dbus.pc \
@@ -343,11 +416,32 @@ AC_OUTPUT( Makefile \
 	   telepathy-glib/telepathy-glib-1.pc \
 	   telepathy-glib/telepathy-glib-1-uninstalled.pc \
 	   telepathy-glib/version.h \
+	   telepathy-logger/Makefile \
+	   telepathy-logger/extensions/Makefile \
+	   telepathy-logger/extensions/tpl-extensions.pc \
+	   telepathy-logger/telepathy-logger-1.pc \
+	   telepathy-logger/telepathy-logger-1-uninstalled.pc \
 	   tests/Makefile \
 	   tests/lib/Makefile \
 	   tests/dbus/Makefile \
+	   tests/logger/Makefile \
+	   tests/logger/dbus/Makefile \
+	   tests/suppressions/Makefile \
 	   tests/tools/Makefile \
 	   tools/Makefile \
 	   m4/Makefile \
 	   vala/Makefile
-)
+])
+AC_OUTPUT
+
+echo "
+Configure summary:
+
+	Compiler....................:  ${CC}
+	Compiler Flags..............:  ${CFLAGS} ${ERROR_CFLAGS}
+	Prefix......................:  ${prefix}
+	Coding style checks.........:  ${ENABLE_CODING_STYLE_CHECKS}
+	Bugreporting URL............:  ${PACKAGE_BUGREPORT}
+	Public extensions library...:  ${enable_public_extensions}
+	Introspection support.......:  ${found_introspection}
+"

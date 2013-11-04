@@ -278,7 +278,7 @@ AM_LDFLAGS = \
 
 AM_CFLAGS = $(ERROR_CFLAGS)
 
-TESTS_ENVIRONMENT = \
+AM_TESTS_ENVIRONMENT = \
     abs_top_builddir=@abs_top_builddir@ \
     XDG_DATA_HOME=@abs_builddir@ \
     XDG_DATA_DIRS=@abs_srcdir@:$${XDG_DATA_DIRS:=/usr/local/share:/usr/share} \
@@ -289,20 +289,17 @@ TESTS_ENVIRONMENT = \
     GSETTINGS_BACKEND=memory \
     TP_TESTS_SERVICES_DIR=@abs_srcdir@/dbus-1/services \
     DBUS_SESSION_BUS_ADDRESS=this-is-clearly-not-valid \
-    $(top_srcdir)/tools/test-wrapper.sh \
-    $(EXTRA_TESTS_ENVIRONMENT)
-
-EXTRA_TESTS_ENVIRONMENT =
+    $(NULL)
+LOG_COMPILER =
 
 check-valgrind:
 	$(MAKE) check-TESTS \
 		maybe_gc_friendly=,gc-friendly \
-		TESTS_ENVIRONMENT="$(VALGRIND_TESTS_ENVIRONMENT)"
+		LOG_COMPILER="$(VALGRIND_LOG_COMPILER)"
 
 include $(top_srcdir)/tools/valgrind.mk
 
-VALGRIND_TESTS_ENVIRONMENT = \
-    $(TESTS_ENVIRONMENT) \
+VALGRIND_LOG_COMPILER = \
     env G_SLICE=always-malloc CHECK_VERBOSE=1 \
     $(top_builddir)/libtool --mode=execute \
     $(VALGRIND) --suppressions=$(top_srcdir)/tests/tests.supp $(VALGRIND_FLAGS)

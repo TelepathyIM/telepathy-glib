@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+               "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+<book id="index" xmlns:xi="http://www.w3.org/2003/XInclude">
+  <bookinfo>
+    <title>telepathy-logger Reference Manual</title>
+  </bookinfo>
+
+  <chapter id="ch-public">
+    <title>libtelepathy-logger API</title>
+
+    <xi:include href="xml/annotation-glossary.xml"><xi:fallback /></xi:include>
+    <xi:include href="xml/log-manager.xml"/>
+    <xi:include href="xml/log-walker.xml"/>
+    <xi:include href="xml/event.xml"/>
+    <xi:include href="xml/text-event.xml"/>
+    <xi:include href="xml/call-event.xml"/>
+    <xi:include href="xml/entity.xml"/>
+  </chapter>
+
+</book>
+<!-- set sts=2 sw=2 et -->

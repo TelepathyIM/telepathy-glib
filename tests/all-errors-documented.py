@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # Check if all the errors have been added to
-# docs/reference/telepathy-glib-sections.txt
+# docs/reference/telepathy-glib/telepathy-glib-sections.txt
 
 import os
 import sys
@@ -12,7 +12,7 @@ from libglibcodegen import NS_TP
 def check_all_errors_documented(abs_top_srcdir):
     error_path = os.path.join(abs_top_srcdir, 'spec', 'errors.xml')
     sections_path = os.path.join(abs_top_srcdir, 'docs', 'reference',
-        'telepathy-glib-sections.txt')
+        'telepathy-glib', 'telepathy-glib-sections.txt')
     sections = open(sections_path).readlines()
 
     dom = xml.dom.minidom.parse(error_path)

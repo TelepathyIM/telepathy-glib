@@ -104,3 +104,17 @@ libtp_glib_tests_la_LIBADD = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
     $(NULL)
+
+if ENABLE_LOGGER
+
+noinst_LTLIBRARIES += libtp-logger-tests.la
+
+libtp_logger_tests_la_SOURCES = \
+    logger-test-helper.c \
+    logger-test-helper.h
+
+libtp_logger_tests_la_LIBADD = \
+    libtp-glib-tests.la \
+    $(NULL)
+
+endif

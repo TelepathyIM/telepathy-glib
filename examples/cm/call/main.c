@@ -39,7 +39,6 @@ int
 main (int argc,
       char **argv)
 {
-#ifdef ENABLE_DEBUG
   tp_debug_divert_messages (g_getenv ("EXAMPLE_CM_LOGFILE"));
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
@@ -48,7 +47,6 @@ main (int argc,
 
   if (g_getenv ("EXAMPLE_PERSIST") != NULL)
     tp_debug_set_persistent (TRUE);
-#endif
 
   /* strictly speaking, this is only necessary for client code, but it's
    * harmless here */

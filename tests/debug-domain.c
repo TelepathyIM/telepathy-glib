@@ -6,10 +6,6 @@
 
 #include "telepathy-glib/debug-internal.h"
 
-/* Only run test if ENABLE_DEBUG is defined, otherwise we won't have
- * _tp_log and the TpDebugFlags enum. */
-#ifdef ENABLE_DEBUG
-
 typedef struct
 {
   guint flag;
@@ -47,11 +43,9 @@ handler (const gchar *log_domain,
 
   g_strfreev (parts);
 }
-#endif
 
 int main (int argc, char **argv)
 {
-#ifdef ENABLE_DEBUG
   TestItem i;
 
   g_type_init ();
@@ -66,8 +60,5 @@ int main (int argc, char **argv)
       _tp_log (G_LOG_LEVEL_DEBUG, i.flag, "foo");
     }
 
-#else
-  g_print ("Not running test-debug-domain test as ENABLE_DEBUG is undefined\n");
-#endif
   return 0;
 }

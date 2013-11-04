@@ -4,7 +4,9 @@ SUBDIRS = \
     m4 \
     tools \
     spec \
+    data \
     telepathy-glib \
+    po \
     $(NULL)
 
 if HAVE_INTROSPECTION
@@ -13,13 +15,25 @@ SUBDIRS += vala
 endif
 endif
 
+if ENABLE_LOGGER
+SUBDIRS += telepathy-logger
+endif
+
+# build examples and tests after all the things under test!
 SUBDIRS += \
     examples \
     tests \
-    docs \
     $(NULL)
 
-DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --disable-debug
+# do this last, because it's slow - in a compile/test/fix cycle, we don't
+# want to bother building the docs until the tests have passed
+SUBDIRS += docs
+
+DISTCHECK_CONFIGURE_FLAGS = \
+    --enable-gtk-doc \
+    --disable-scrollkeeper \
+    --disable-schemas-install \
+    $(NULL)
 
 EXTRA_DIST = \
     autogen.sh \
@@ -36,14 +50,14 @@ check-valgrind:
 
 maintainer-upload-release: _maintainer-upload-release-local
 _maintainer-upload-release-local: _maintainer-upload-release-check
-	rsync -rvzPp --chmod=Dg+s,ug+rwX,o=rX $(builddir)/docs/reference/html/ \
+	rsync -rvzPp --chmod=Dg+s,ug+rwX,o=rX $(builddir)/docs/reference/telepathy-glib/html/ \
 	telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/doc/telepathy-glib-1/
 
 BRANCH = $(shell sh tools/git-which-branch.sh misc | tr -d '\n' | tr -C "[:alnum:]" _)
 UPLOAD_BRANCH_TO = people.freedesktop.org:public_html/telepathy-glib
 
 upload-branch-docs: all
-	rsync -rtzvPp --chmod=a+rX docs/reference/html/ \
+	rsync -rtzvPp --chmod=a+rX docs/reference/telepathy-glib/html/ \
 		$(UPLOAD_BRANCH_TO)-$(BRANCH)/
 
 include tools/lcov.am
@@ -68,3 +82,7 @@ clean-for-new-branch:
 	$(MAKE) -C telepathy-glib distclean
 	$(SHELL) ./config.status --recheck
 	$(SHELL) ./config.status
+
+# Workaround broken scrollkeeper that doesn't remove its files on
+# uninstall.
+distuninstallcheck_listfiles = find . -type f -print | grep -v '^\./var/scrollkeeper'

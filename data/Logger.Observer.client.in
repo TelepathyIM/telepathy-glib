@@ -1,0 +1,3 @@
+[im.telepathy1.Client]
+Interfaces=im.telepathy1.Client.Observer
+

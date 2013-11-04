@@ -2,7 +2,12 @@ SUBDIRS = \
     lib \
     . \
     dbus \
+    suppressions \
     tools
+
+if ENABLE_LOGGER
+SUBDIRS += logger
+endif
 
 programs_list = \
     test-asv \
@@ -40,22 +45,19 @@ tpglib-tests.list:
 TESTS = $(programs_list) \
     all-errors-documented.py
 
-TESTS_ENVIRONMENT = \
+AM_TESTS_ENVIRONMENT = \
     abs_top_builddir=@abs_top_builddir@ \
     abs_top_srcdir=@abs_top_srcdir@ \
     G_SLICE=debug-blocks \
     G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly) \
     G_MESSAGES_DEBUG=all \
     PYTHONPATH=@abs_top_srcdir@/tools \
-    $(top_srcdir)/tools/test-wrapper.sh \
-    $(EXTRA_TESTS_ENVIRONMENT)
-
-EXTRA_TESTS_ENVIRONMENT =
+    $(NULL)
+LOG_COMPILER =
 
 include $(top_srcdir)/tools/valgrind.mk
 
-VALGRIND_TESTS_ENVIRONMENT = \
-    $(TESTS_ENVIRONMENT) \
+VALGRIND_LOG_COMPILER = \
     env G_SLICE=always-malloc CHECK_VERBOSE=1 \
     $(top_builddir)/libtool --mode=execute \
     $(VALGRIND) --suppressions=$(top_srcdir)/tests/tests.supp $(VALGRIND_FLAGS)
@@ -64,7 +66,7 @@ check-valgrind:
 	$(MAKE) check-TESTS \
 		maybe_gc_friendly=,gc-friendly \
 		TESTS='$$(programs_list)' \
-		TESTS_ENVIRONMENT="$(VALGRIND_TESTS_ENVIRONMENT)"
+		LOG_COMPILER="$(VALGRIND_LOG_COMPILER)"
 	$(MAKE) -C dbus check-valgrind
 
 EXTRA_DIST = README \

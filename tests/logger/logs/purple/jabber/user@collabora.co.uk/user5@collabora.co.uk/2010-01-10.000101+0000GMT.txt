@@ -1,0 +1,3 @@
+Conversation with user5@collabora.co.uk at Sun 10 Jan 2010 00:01:01 GMT on user@test.collabora.co.uk/TEST (jabber)
+(00:01:01) User5: A
+(00:01:02) user@test.collabora.co.uk/TEST: B

@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<?xml-stylesheet type="text/xsl" href="empathy-log.xsl"?>
+<log>
+<message time='20100216T13:43:12' cm_id='0' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='false' type='normal'>fooooo</message>
+<message time='20100216T13:43:24' cm_id='0' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='false' type='normal'>123123</message>
+<message time='20100216T13:43:31' cm_id='0' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='false' type='normal'>123</message>
+<message time='20100216T13:45:44' cm_id='0' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='false' type='normal'>gna2</message>
+<message time='20100216T14:10:59' cm_id='0' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='false' type='normal'>prova 3</message>
+<message time='20100216T14:13:48' cm_id='0' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='false' type='normal'>123</message>
+<message time='20100216T15:51:28' cm_id='1266335488' id='user@collabora.co.uk' name='User1' token='b42b37774fe34e9891ab1ecd1f187062b7135e6a' isuser='true' type='normal'>1</message>
+<message time='20100216T15:52:36' cm_id='0' id='user2@collabora.co.uk' name='User2' token='863d261bd11170b87b67ccb9c7ec90a5bd17e990' isuser='false' type='normal'>1</message>
+<message time='20100216T15:56:43' cm_id='1266335803' id='user@collabora.co.uk' name='User1' token='b42b37774fe34e9891ab1ecd1f187062b7135e6a' isuser='true' type='normal'>a</message>
+<message time='20100216T15:57:30' cm_id='0' id='user2@collabora.co.uk' name='User2' token='' isuser='false' type='normal'>bar</message>
+</log>
