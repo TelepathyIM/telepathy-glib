@@ -2443,7 +2443,7 @@ tp_account_get_parameters (TpAccount *account)
  * via tp_connection_manager_get_protocol() and
  * tp_connection_manager_protocol_get_param(). Well-known parameters are
  * listed
- * <ulink url="http://telepathy.freedesktop.org/spec/org.freedesktop.Telepathy.ConnectionManager.html#org.freedesktop.Telepathy.ConnectionManager.RequestConnection">in
+ * <ulink url="http://telepathy.freedesktop.org/spec/Connection_Manager.html#im.telepathy.v1.ConnectionManager.RequestConnection">in
  * the Telepathy D-Bus Interface Specification</ulink>.
  *
  * Returns: (transfer full): the dictionary of

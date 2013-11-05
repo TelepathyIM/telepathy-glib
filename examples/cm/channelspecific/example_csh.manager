@@ -3,7 +3,7 @@ Interfaces=
 
 [Protocol example]
 Interfaces=
-ConnectionInterfaces=org.freedesktop.Telepathy.Connection.Interface.Requests;org.freedesktop.Telepathy.Connection.Interface.Contacts;
+ConnectionInterfaces=im.telepathy.v1.Connection.Interface.Requests;im.telepathy.v1.Connection.Interface.Contacts;
 param-account=s required register
 param-simulation-delay=u
 default-simulation-delay=500
@@ -13,6 +13,6 @@ EnglishName=Example with channel-specific handles
 Icon=face-smile
 
 [room]
-org.freedesktop.Telepathy.Channel.ChannelType s=org.freedesktop.Telepathy.Channel.Type.Text
-org.freedesktop.Telepathy.Channel.TargetHandleType u=2
-allowed=org.freedesktop.Telepathy.Channel.TargetHandle;org.freedesktop.Telepathy.Channel.TargetID;
+im.telepathy.v1.Channel.ChannelType s=im.telepathy.v1.Channel.Type.Text
+im.telepathy.v1.Channel.TargetHandleType u=2
+allowed=im.telepathy.v1.Channel.TargetHandle;im.telepathy.v1.Channel.TargetID;

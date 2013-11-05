@@ -194,7 +194,7 @@ DebugClient = new Lang.Class({
 
     _isInteresting: function(wellKnownName) {
         return (GLib.str_has_prefix(wellKnownName,
-                    'org.freedesktop.Telepathy'));
+                    'im.telepathy.v1'));
 
     },
 

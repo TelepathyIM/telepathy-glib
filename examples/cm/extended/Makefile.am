@@ -17,11 +17,11 @@ telepathy_example_cm_extended_SOURCES = \
 
 if INSTALL_EXAMPLES
 servicedir = ${datadir}/dbus-1/services
-service_DATA = _gen/org.freedesktop.Telepathy.ConnectionManager.example_extended.service
+service_DATA = _gen/im.telepathy.v1.ConnectionManager.example_extended.service
 $(service_DATA): %: Makefile
 	$(MKDIR_P) _gen
 	{ echo "[D-BUS Service]" && \
-	echo "Name=org.freedesktop.Telepathy.ConnectionManager.example_extended" && \
+	echo "Name=im.telepathy.v1.ConnectionManager.example_extended" && \
 	echo "Exec=${libexecdir}/telepathy-example-cm-extended"; } > $@
 
 managerdir = ${datadir}/telepathy/managers

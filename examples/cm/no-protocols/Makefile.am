@@ -13,11 +13,11 @@ telepathy_example_no_protocols_SOURCES = \
 
 if INSTALL_EXAMPLES
 servicedir = ${datadir}/dbus-1/services
-service_DATA = _gen/org.freedesktop.Telepathy.ConnectionManager.example_no_protocols.service
+service_DATA = _gen/im.telepathy.v1.ConnectionManager.example_no_protocols.service
 $(service_DATA): %: Makefile
 	$(MKDIR_P) _gen
 	{ echo "[D-BUS Service]" && \
-	echo "Name=org.freedesktop.Telepathy.ConnectionManager.example_no_protocols" && \
+	echo "Name=im.telepathy.v1.ConnectionManager.example_no_protocols" && \
 	echo "Exec=${libexecdir}/telepathy-example-cm-no-protocols"; } > $@
 
 managerdir = ${datadir}/telepathy/managers

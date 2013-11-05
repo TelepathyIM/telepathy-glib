@@ -110,7 +110,7 @@ GQuark tp_tests_my_conn_proxy_get_feature_quark_retry_dep (void) G_GNUC_CONST;
   (tp_tests_my_conn_proxy_get_feature_quark_before_connected ())
 GQuark tp_tests_my_conn_proxy_get_feature_quark_before_connected (void) G_GNUC_CONST;
 
-#define TP_TESTS_MY_CONN_PROXY_IFACE_LATER "org.freedesktop.Telepathy.Conncetion.Interface.Test.Later"
+#define TP_TESTS_MY_CONN_PROXY_IFACE_LATER "im.telepathy.v1.Tests.Connection.Interface.Later"
 
 /* Need the interface TP_TESTS_MY_CONN_PROXY_IFACE_LATER to be prepared but
  * this interface is not in the initial set of interfaces of the connection.
