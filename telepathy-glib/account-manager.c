@@ -129,8 +129,6 @@ typedef struct {
   GArray *features;
 } TpAccountManagerFeatureCallback;
 
-#define MC5_BUS_NAME "im.telepathy1.MissionControl5"
-
 enum {
   ACCOUNT_USABILITY_CHANGED,
   ACCOUNT_REMOVED,
@@ -219,21 +217,9 @@ tp_account_manager_init (TpAccountManager *self)
 }
 
 static void
-_tp_account_manager_start_mc5 (TpDBusDaemon *bus)
+_tp_account_manager_start (TpAccountManager *self)
 {
-  TpProxy *mc5_proxy;
-
-  /* trigger MC5 starting */
-  mc5_proxy = g_object_new (TP_TYPE_PROXY,
-      "dbus-daemon", bus,
-      "dbus-connection", tp_proxy_get_dbus_connection (TP_PROXY (bus)),
-      "bus-name", MC5_BUS_NAME,
-      "object-path", "/",
-      NULL);
-
-  tp_cli_dbus_peer_call_ping (mc5_proxy, -1, NULL, NULL, NULL, NULL);
-
-  g_object_unref (mc5_proxy);
+  tp_cli_dbus_peer_call_ping (self, -1, NULL, NULL, NULL, NULL);
 }
 
 static void
@@ -246,9 +232,8 @@ _tp_account_manager_name_owner_cb (TpDBusDaemon *proxy,
 
   if (tp_str_empty (new_owner))
     {
-      /* MC5 quit or crashed for some reason, let's start it again */
-      _tp_account_manager_start_mc5 (proxy);
-      return;
+      /* AM quit or crashed for some reason, let's start it again */
+      _tp_account_manager_start (user_data);
     }
 }
 
@@ -1337,5 +1322,5 @@ tp_account_manager_enable_restart (TpAccountManager *manager)
       TP_ACCOUNT_MANAGER_BUS_NAME, _tp_account_manager_name_owner_cb,
       manager, NULL);
 
-  _tp_account_manager_start_mc5 (tp_proxy_get_dbus_daemon (manager));
+  _tp_account_manager_start (manager);
 }
