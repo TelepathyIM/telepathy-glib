@@ -318,7 +318,7 @@ finish_assert_am_not_activatable_action (TpDBusDaemon *proxy,
   for (i=0; names[i] != NULL; i++)
     {
       g_assert_cmpstr (names[i], !=, TP_ACCOUNT_MANAGER_BUS_NAME);
-      g_assert_cmpstr (names[i], !=, "im.telepathy1.MissionControl5");
+      g_assert_cmpstr (names[i], !=, "im.telepathy.v1.MissionControl5");
     }
 
   script_continue (user_data);

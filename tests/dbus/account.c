@@ -246,7 +246,7 @@ test_new (Test *test,
   g_assert (test->account == NULL);
 
   test->account = tp_tests_account_new (test->dbus,
-      "/im/telepathy1/Account/what/ev/er", NULL);
+      "/im/telepathy/v1/Account/what/ev/er", NULL);
   g_assert (test->account != NULL);
 }
 
@@ -255,7 +255,7 @@ test_setters (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   test->account = tp_tests_account_new (test->dbus,
-      "/im/telepathy1/Account/what/ev/er", NULL);
+      "/im/telepathy/v1/Account/what/ev/er", NULL);
   g_assert (test->account != NULL);
 
   tp_account_set_enabled_async (test->account, TRUE, tp_tests_result_ready_cb,
@@ -550,9 +550,9 @@ test_storage (Test *test,
   g_main_loop_run (test->mainloop);
 
   g_assert_cmpstr (tp_account_get_storage_provider (test->account), ==,
-      "im.telepathy1.glib.test");
+      "im.telepathy.v1.glib.test");
   assert_strprop (test->account, "storage-provider",
-      "im.telepathy1.glib.test");
+      "im.telepathy.v1.glib.test");
 
   g_assert_cmpstr (
       g_value_get_string (tp_account_get_storage_identifier (test->account)),
@@ -939,11 +939,11 @@ main (int argc,
   g_test_add_data_func ("/account/parse/no-prefix",
       "/this/is/not/an/account/path", test_parse_failure);
   g_test_add_data_func ("/account/parse/too-few-components",
-      "/im/telepathy1/Account/wrong", test_parse_failure);
+      "/im/telepathy/v1/Account/wrong", test_parse_failure);
   g_test_add_data_func ("/account/parse/too-many-components",
-      "/im/telepathy1/Account/a/b/c/d", test_parse_failure);
+      "/im/telepathy/v1/Account/a/b/c/d", test_parse_failure);
   g_test_add_data_func ("/account/parse/illegal-components",
-      "/im/telepathy1/Account/1/2/3", test_parse_failure);
+      "/im/telepathy/v1/Account/1/2/3", test_parse_failure);
 
   g_test_add_data_func ("/account/parse/legal",
       test_parse_data_new (

@@ -11,8 +11,8 @@ param-server-list = as
 default-account = foo@default
 default-port = 1234
 default-server-list = foo;bar;
-Interfaces=im.telepathy1.Protocol.Interface.Avatars1;
-ConnectionInterfaces=im.telepathy1.Connection.Interface.Requests;im.telepathy1.Connection.Interface.Contacts;
+Interfaces=im.telepathy.v1.Protocol.Interface.Avatars1;
+ConnectionInterfaces=im.telepathy.v1.Connection.Interface.Requests;im.telepathy.v1.Connection.Interface.Contacts;
 RequestableChannelClasses=1-1-text;
 VCardField=x-telepathy-tests
 EnglishName=Regression tests
@@ -27,9 +27,9 @@ MaximumAvatarWidth=96
 MaximumAvatarBytes=37748736
 
 [1-1-text]
-im.telepathy1.Channel.ChannelType s=im.telepathy1.Channel.Type.Text
-im.telepathy1.Channel.TargetHandleType u=1
-allowed=im.telepathy1.Channel.TargetHandle;im.telepathy1.Channel.TargetID;
+im.telepathy.v1.Channel.ChannelType s=im.telepathy.v1.Channel.Type.Text
+im.telepathy.v1.Channel.TargetHandleType u=1
+allowed=im.telepathy.v1.Channel.TargetHandle;im.telepathy.v1.Channel.TargetID;
 
 [Protocol bar]
 param-account = s required

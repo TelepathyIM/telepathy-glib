@@ -728,7 +728,7 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
  * tp_base_connection_manager_request_connection
  *
  * Implements D-Bus method RequestConnection
- * on interface im.telepathy1.ConnectionManager
+ * on interface im.telepathy.v1.ConnectionManager
  *
  * @error: Used to return a pointer to a GError detailing any error
  *         that occurred, D-Bus will throw the error only if this

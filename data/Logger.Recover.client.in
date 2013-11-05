@@ -1,2 +1,2 @@
-[im.telepathy1.Client.Observer]
+[im.telepathy.v1.Client.Observer]
 Recover=true

@@ -9,8 +9,9 @@ gsettings_SCHEMAS = $(gsettings_files:.xml.in=.xml)
 
 servicefiledir = $(datadir)/dbus-1/services
 servicefile_in_files = \
-	im.telepathy1.Client.Logger.service.in	\
-	im.telepathy1.Logger.service.in
+	im.telepathy.v1.Client.Logger.service.in \
+	im.telepathy.v1.Logger.service.in \
+	$(NULL)
 servicefile_DATA = $(servicefile_in_files:.service.in=.service)
 %.service: %.service.in Makefile
 	$(AM_V_GEN)sed -e "s|[@]libexecdir[@]|$(libexecdir)|" $< > $@

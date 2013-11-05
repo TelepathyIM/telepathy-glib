@@ -36,7 +36,7 @@ G_BEGIN_DECLS
 
 GQuark tp_error_quark (void);
 
-#define TP_ERROR_PREFIX "im.telepathy1.Error"
+#define TP_ERROR_PREFIX "im.telepathy.v1.Error"
 
 #define TP_ERROR (tp_error_quark ())
 

@@ -27,9 +27,9 @@
 #include <telepathy-logger/log-manager.h>
 
 #define TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME \
-  "im.telepathy1.Logger"
+  "im.telepathy.v1.Logger"
 #define TPL_DBUS_SRV_OBJECT_PATH \
-  "/im.telepathy1/Logger"
+  "/im/telepathy/v1/Logger"
 
 G_BEGIN_DECLS
 

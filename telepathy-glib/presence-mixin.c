@@ -744,7 +744,7 @@ tp_presence_mixin_init_dbus_properties (GObjectClass *cls)
  * tp_presence_mixin_set_presence:
  *
  * Implements D-Bus method SetPresence
- * on interface im.telepathy1.Connection.Interface.Presence
+ * on interface im.telepathy.v1.Connection.Interface.Presence
  *
  * @context: The D-Bus invocation context to use to return values
  *           or throw an error.

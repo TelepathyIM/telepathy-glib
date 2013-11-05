@@ -44,15 +44,15 @@
  * Since 0.9.2 it also provides cpp defines like
  * %TP_PROP_CHANNEL_INTERFACE_GROUP_GROUP_FLAGS, which expand to string
  * constants representing fully-qualified D-Bus property names, like
- * <literal>im.telepathy1.Channel.Interface.Group.GroupFlags</literal>.
+ * <literal>im.telepathy.v1.Channel.Interface.Group.GroupFlags</literal>.
  *
  * Since 0.11.5 it also provides cpp defines like
  * %TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS for contact attributes like
- * "im.telepathy1.Connection.Interface.Aliasing/alias",
+ * "im.telepathy.v1.Connection.Interface.Aliasing/alias",
  * and defines like
  * %TP_TOKEN_CHANNEL_INTERFACE_MEDIA_SIGNALLING_ICE_UDP
  * for handler capability tokens like
- * "im.telepathy1.Channel.Interface.MediaSignalling/gtalk-p2p".
+ * "im.telepathy.v1.Channel.Interface.MediaSignalling/gtalk-p2p".
  * (These were present in an incorrect form since 0.11.3.)
  */
 

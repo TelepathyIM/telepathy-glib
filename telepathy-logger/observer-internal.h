@@ -26,9 +26,9 @@
 #include <telepathy-glib/telepathy-glib.h>
 
 #define TPL_OBSERVER_WELL_KNOWN_BUS_NAME \
-  "im.telepathy1.Client.Logger"
+  "im.telepathy.v1.Client.Logger"
 #define TPL_OBSERVER_OBJECT_PATH \
-  "/im.telepathy1/Client/Logger"
+  "/im/telepathy/v1/Client/Logger"
 
 
 G_BEGIN_DECLS

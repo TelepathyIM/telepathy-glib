@@ -1276,7 +1276,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    * The "signal detail" is a GQuark representing @token. Modules implementing
    * an interface (Location, say) should typically connect to a detailed signal
    * like
-   * "clients-interested::im.telepathy1.Connection.Interface.Location"
+   * "clients-interested::im.telepathy.v1.Connection.Interface.Location"
    * rather than receiving all emissions of this signal.
    */
   signals[CLIENTS_INTERESTED] =
@@ -1300,7 +1300,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    * As with #TpBaseConnection::clients-interested, the "signal detail" is a
    * GQuark representing @token. Modules implementing an interface (Location,
    * say) should typically connect to a detailed signal like
-   * "clients-uninterested::im.telepathy1.Connection.Interface.Location"
+   * "clients-uninterested::im.telepathy.v1.Connection.Interface.Location"
    * rather than receiving all emissions of this signal.
    */
   signals[CLIENTS_UNINTERESTED] =

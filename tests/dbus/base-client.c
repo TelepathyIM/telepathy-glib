@@ -1482,7 +1482,7 @@ delegate_to_preferred_handler (Test *test,
   requests = g_ptr_array_new ();
 
   hints = tp_asv_new (
-      "im.telepathy1.ChannelRequest.DelegateToPreferredHandler",
+      "im.telepathy.v1.ChannelRequest.DelegateToPreferredHandler",
         G_TYPE_BOOLEAN, TRUE,
       NULL);
 

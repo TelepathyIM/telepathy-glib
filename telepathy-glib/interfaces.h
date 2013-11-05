@@ -9,18 +9,18 @@
 
 G_BEGIN_DECLS
 
-#define TP_CM_BUS_NAME_BASE    "im.telepathy1.ConnectionManager."
-#define TP_CM_OBJECT_PATH_BASE "/im/telepathy1/ConnectionManager/"
-#define TP_CONN_BUS_NAME_BASE "im.telepathy1.Connection."
-#define TP_CONN_OBJECT_PATH_BASE "/im/telepathy1/Connection/"
-#define TP_ACCOUNT_MANAGER_BUS_NAME "im.telepathy1.AccountManager"
-#define TP_ACCOUNT_MANAGER_OBJECT_PATH "/im/telepathy1/AccountManager"
-#define TP_ACCOUNT_OBJECT_PATH_BASE "/im/telepathy1/Account/"
-#define TP_CHANNEL_DISPATCHER_BUS_NAME "im.telepathy1.ChannelDispatcher"
-#define TP_CHANNEL_DISPATCHER_OBJECT_PATH "/im/telepathy1/ChannelDispatcher"
-#define TP_CLIENT_BUS_NAME_BASE "im.telepathy1.Client."
-#define TP_CLIENT_OBJECT_PATH_BASE "/im/telepathy1/Client/"
-#define TP_DEBUG_OBJECT_PATH "/im/telepathy1/debug"
+#define TP_CM_BUS_NAME_BASE    "im.telepathy.v1.ConnectionManager."
+#define TP_CM_OBJECT_PATH_BASE "/im/telepathy/v1/ConnectionManager/"
+#define TP_CONN_BUS_NAME_BASE "im.telepathy.v1.Connection."
+#define TP_CONN_OBJECT_PATH_BASE "/im/telepathy/v1/Connection/"
+#define TP_ACCOUNT_MANAGER_BUS_NAME "im.telepathy.v1.AccountManager"
+#define TP_ACCOUNT_MANAGER_OBJECT_PATH "/im/telepathy/v1/AccountManager"
+#define TP_ACCOUNT_OBJECT_PATH_BASE "/im/telepathy/v1/Account/"
+#define TP_CHANNEL_DISPATCHER_BUS_NAME "im.telepathy.v1.ChannelDispatcher"
+#define TP_CHANNEL_DISPATCHER_OBJECT_PATH "/im/telepathy/v1/ChannelDispatcher"
+#define TP_CLIENT_BUS_NAME_BASE "im.telepathy.v1.Client."
+#define TP_CLIENT_OBJECT_PATH_BASE "/im/telepathy/v1/Client/"
+#define TP_DEBUG_OBJECT_PATH "/im/telepathy/v1/debug"
 
 #include <telepathy-glib/_gen/telepathy-interfaces.h>
 

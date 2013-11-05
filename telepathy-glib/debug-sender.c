@@ -36,7 +36,7 @@
  *
  * A #TpDebugSender object is an object exposing the Telepathy debug interface.
  * There should be one object per process as it registers the object path
- * /im/telepathy1/debug. Once the object exists and has the object
+ * /im/telepathy/v1/debug. Once the object exists and has the object
  * path, messages can be passed to it using tp_debug_sender_add_message and
  * signals will automatically be fired.
  *

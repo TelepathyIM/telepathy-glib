@@ -224,7 +224,7 @@ tp_tests_simple_account_get_property (GObject *object,
       g_value_set_boolean (value, TRUE);
       break;
     case PROP_STORAGE_PROVIDER:
-      g_value_set_string (value, "im.telepathy1.glib.test");
+      g_value_set_string (value, "im.telepathy.v1.glib.test");
       break;
     case PROP_STORAGE_IDENTIFIER:
       g_value_set_boxed (value, &identifier);
