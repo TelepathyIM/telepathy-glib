@@ -352,7 +352,6 @@ static const TpPresenceStatusSpec presence_statuses[] = {
 };
 
 static const gchar *interfaces_always_present[] = {
-    TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
     TP_IFACE_CONNECTION_INTERFACE_PRESENCE1,
     TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
     NULL };

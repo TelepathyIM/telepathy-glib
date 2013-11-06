@@ -254,9 +254,8 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/variant-util-internal.h"
 
-static void conn_iface_init (gpointer, gpointer);
+static void conn_iface_init (TpSvcConnectionClass *);
 static void requests_iface_init (gpointer, gpointer);
-static void contacts_iface_init (TpSvcConnectionInterfaceContactsClass *);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseConnection,
     tp_base_connection,
@@ -265,8 +264,6 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseConnection,
       conn_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
       tp_dbus_properties_mixin_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
-      contacts_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_REQUESTS,
       requests_iface_init))
 
@@ -898,7 +895,6 @@ tp_base_connection_create_interfaces_array (TpBaseConnection *self)
   TpBaseConnectionClass *klass = TP_BASE_CONNECTION_GET_CLASS (self);
   GPtrArray *always;
   gboolean has_requests = FALSE;
-  gboolean has_contacts = FALSE;
   guint i;
 
   g_assert (priv->interfaces == NULL);
@@ -913,16 +909,12 @@ tp_base_connection_create_interfaces_array (TpBaseConnection *self)
 
       if (!tp_strdiff (iface, TP_IFACE_CONNECTION_INTERFACE_REQUESTS))
         has_requests = TRUE;
-      else if (!tp_strdiff (iface, TP_IFACE_CONNECTION_INTERFACE_CONTACTS))
-        has_contacts = TRUE;
 
       g_array_append_val (priv->interfaces, iface);
     }
 
-  if (!has_requests || !has_contacts)
-    {
-      g_critical ("Requests and Contacts interfaces must always be present");
-    }
+  if (!has_requests)
+    g_critical ("Requests interface must always be present");
 
   g_ptr_array_unref (always);
 }
@@ -943,11 +935,9 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
   g_assert (cls->shut_down != NULL);
   g_assert (cls->start_connecting != NULL);
 
-  if (!TP_IS_SVC_CONNECTION_INTERFACE_CONTACTS (self) ||
-      !TP_IS_SVC_CONNECTION_INTERFACE_REQUESTS (self))
+  if (!TP_IS_SVC_CONNECTION_INTERFACE_REQUESTS (self))
     {
       g_critical ("Connection must always implement "
-          "TpSvcConnectionInterfaceContacts and "
           "TpSvcConnectionInterfaceRequests");
     }
 
@@ -2484,21 +2474,6 @@ finally:
   g_free (unique_name);
 }
 
-static void
-conn_iface_init (gpointer g_iface, gpointer iface_data)
-{
-  TpSvcConnectionClass *klass = g_iface;
-
-#define IMPLEMENT(prefix,x) tp_svc_connection_implement_##x (klass, \
-    tp_base_connection_##prefix##x)
-  IMPLEMENT(,connect);
-  IMPLEMENT(,disconnect);
-  IMPLEMENT(dbus_,add_client_interest);
-  IMPLEMENT(dbus_,remove_client_interest);
-#undef IMPLEMENT
-}
-
-
 /* The handling of calls to Connection.Interface.Requests.CreateChannel is
  * split into three chained functions, which each call the next function in
  * the chain unless an error has occured.
@@ -3189,7 +3164,7 @@ tp_base_connection_dup_contact_attributes_hash (TpBaseConnection *self,
 }
 
 static void
-contacts_get_contact_attributes_impl (TpSvcConnectionInterfaceContacts *iface,
+contacts_get_contact_attributes_impl (TpSvcConnection *iface,
   const GArray *handles,
   const char **interfaces,
   DBusGMethodInvocation *context)
@@ -3204,7 +3179,7 @@ contacts_get_contact_attributes_impl (TpSvcConnectionInterfaceContacts *iface,
       (const gchar * const *) interfaces,
       contacts_always_included_interfaces);
 
-  tp_svc_connection_interface_contacts_return_from_get_contact_attributes (
+  tp_svc_connection_return_from_get_contact_attributes (
       context, result);
 
   g_hash_table_unref (result);
@@ -3249,7 +3224,7 @@ ensure_handle_cb (GObject *source,
   ret = g_hash_table_lookup (attributes, GUINT_TO_POINTER (handle));
   g_assert (ret != NULL);
 
-  tp_svc_connection_interface_contacts_return_from_get_contact_by_id (
+  tp_svc_connection_return_from_get_contact_by_id (
       data->context, handle, ret);
 
   g_array_unref (handles);
@@ -3262,7 +3237,7 @@ out:
 }
 
 static void
-contacts_get_contact_by_id_impl (TpSvcConnectionInterfaceContacts *iface,
+contacts_get_contact_by_id_impl (TpSvcConnection *iface,
   const gchar *id,
   const gchar **interfaces,
   DBusGMethodInvocation *context)
@@ -3287,9 +3262,17 @@ contacts_get_contact_by_id_impl (TpSvcConnectionInterfaceContacts *iface,
 }
 
 static void
-contacts_iface_init (TpSvcConnectionInterfaceContactsClass *klass)
+conn_iface_init (TpSvcConnectionClass *klass)
 {
-#define IMPLEMENT(x) tp_svc_connection_interface_contacts_implement_##x ( \
+#define IMPLEMENT(prefix,x) tp_svc_connection_implement_##x (klass, \
+    tp_base_connection_##prefix##x)
+  IMPLEMENT(,connect);
+  IMPLEMENT(,disconnect);
+  IMPLEMENT(dbus_,add_client_interest);
+  IMPLEMENT(dbus_,remove_client_interest);
+#undef IMPLEMENT
+
+#define IMPLEMENT(x) tp_svc_connection_implement_##x ( \
     klass, contacts_##x##_impl)
   IMPLEMENT (get_contact_attributes);
   IMPLEMENT (get_contact_by_id);

@@ -18,13 +18,11 @@
 
 #include "debug.h"
 
-static void contacts_iface_init (gpointer g_iface, gpointer iface_data);
+static void conn_iface_init (TpSvcConnectionClass *klass);
 
 G_DEFINE_TYPE_WITH_CODE (TpTestsBug19101Connection,
     tp_tests_bug19101_connection, TP_TESTS_TYPE_CONTACTS_CONNECTION,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
-        contacts_iface_init);
-    )
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION, conn_iface_init))
 
 static void
 tp_tests_bug19101_connection_init (TpTestsBug19101Connection *self)
@@ -41,7 +39,7 @@ tp_tests_bug19101_connection_class_init (TpTestsBug19101ConnectionClass *klass)
  */
 static void
 tp_tests_bug19101_connection_get_contact_by_id (
-    TpSvcConnectionInterfaceContacts *iface,
+    TpSvcConnection *iface,
     const gchar *id,
     const char **interfaces,
     DBusGMethodInvocation *context)
@@ -55,19 +53,15 @@ tp_tests_bug19101_connection_get_contact_by_id (
   handle = tp_handle_ensure (contact_repo, id, NULL, NULL);
   table = g_hash_table_new (NULL, NULL);
 
-  tp_svc_connection_interface_contacts_return_from_get_contact_by_id (
-      context, handle, table);
+  tp_svc_connection_return_from_get_contact_by_id (context, handle, table);
 
   g_hash_table_unref (table);
 }
 
 static void
-contacts_iface_init (gpointer g_iface, gpointer iface_data)
+conn_iface_init (TpSvcConnectionClass *klass)
 {
-  TpSvcConnectionInterfaceContactsClass *klass =
-    (TpSvcConnectionInterfaceContactsClass *) g_iface;
-
-#define IMPLEMENT(x) tp_svc_connection_interface_contacts_implement_##x ( \
+#define IMPLEMENT(x) tp_svc_connection_implement_##x ( \
     klass, tp_tests_bug19101_connection_##x)
   IMPLEMENT(get_contact_by_id);
 #undef IMPLEMENT

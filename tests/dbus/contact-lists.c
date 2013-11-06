@@ -738,7 +738,7 @@ test_assert_contact_state (Test *test,
   handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
   g_array_append_val (handles, handle);
 
-  tp_cli_connection_interface_contacts_call_get_contact_attributes (test->conn,
+  tp_cli_connection_call_get_contact_attributes (test->conn,
       -1, handles, interfaces, contact_attrs_cb,
       test, test_quit_loop, NULL);
   g_main_loop_run (test->main_loop);
@@ -841,7 +841,7 @@ test_contact_blocking_attrs (Test *test,
   g_array_append_val (handles, test->sjoerd);
   g_array_append_val (handles, test->bill);
 
-  tp_cli_connection_interface_contacts_call_get_contact_attributes (test->conn,
+  tp_cli_connection_call_get_contact_attributes (test->conn,
       -1, handles, interfaces, contact_attrs_cb, test, test_quit_loop, NULL);
   g_main_loop_run (test->main_loop);
 

@@ -5,7 +5,6 @@
 <tp:title>Connection interfaces</tp:title>
 
 <xi:include href="../spec/Connection.xml"/>
-<xi:include href="../spec/Connection_Interface_Contacts.xml"/>
 <xi:include href="../spec/Connection_Interface_Requests.xml"/>
 
 <xi:include href="../spec/Connection_Interface_Addressing1.xml"/>

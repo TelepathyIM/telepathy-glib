@@ -3112,9 +3112,6 @@ contacts_bind_to_signals (TpConnection *connection,
   if (getting != NULL)
     *getting = 0;
 
-  g_assert (tp_proxy_has_interface_by_id (connection,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS));
-
   array = g_ptr_array_new ();
 
   if ((wanted & CONTACT_FEATURE_FLAG_ALIAS) != 0 &&
@@ -3430,7 +3427,7 @@ tp_connection_dup_contact_by_id_async (TpConnection *self,
       &getting);
 
   data = contacts_async_data_new (result, feature_flags, getting);
-  tp_cli_connection_interface_contacts_call_get_contact_by_id (self, -1,
+  tp_cli_connection_call_get_contact_by_id (self, -1,
       id, supported_interfaces, got_contact_by_id_cb,
       data, (GDestroyNotify) contacts_async_data_free, NULL);
 
@@ -3593,7 +3590,7 @@ tp_connection_upgrade_contacts_async (TpConnection *self,
   if (handles->len > 0 && supported_interfaces[0] != NULL)
     {
       data = contacts_async_data_new (result, feature_flags, getting);
-      tp_cli_connection_interface_contacts_call_get_contact_attributes (
+      tp_cli_connection_call_get_contact_attributes (
           self, -1, handles, supported_interfaces,
           got_contact_attributes_cb, data,
           (GDestroyNotify) contacts_async_data_free, NULL);

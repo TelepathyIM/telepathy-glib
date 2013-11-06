@@ -81,7 +81,6 @@ EXTRA_DIST = \
     Connection_Interface_Contact_Groups1.xml \
     Connection_Interface_Contact_Info1.xml \
     Connection_Interface_Contact_List1.xml \
-    Connection_Interface_Contacts.xml \
     Connection_Interface_Forwarding1.xml \
     Connection_Interface_IRC_Command1.xml \
     Connection_Interface_Keepalive1.xml \

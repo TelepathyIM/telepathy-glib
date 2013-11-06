@@ -90,7 +90,6 @@ teardown (Test *test,
 
 const gchar * const expected_interfaces[] = {
     TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
-    TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
     NULL };
 
 const gchar * const expected_protocol_interfaces[] = {

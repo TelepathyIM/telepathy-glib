@@ -165,8 +165,6 @@ main (int argc,
   MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
       TP_IFACE_CONNECTION_INTERFACE_AVATARS1), "");
   MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACTS), "");
-  MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
       TP_IFACE_CONNECTION_INTERFACE_PRESENCE1), "");
   MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
       TP_IFACE_CONNECTION_INTERFACE_PRESENCE1), "");

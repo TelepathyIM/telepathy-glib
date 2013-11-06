@@ -725,19 +725,6 @@
  */
 
 /**
- * SECTION:connection-contacts
- * @title: Connection Contacts interface
- * @short_description: client-side wrappers for the Contacts interface
- * @see_also: #TpConnection
- *
- * This interface allows a client to get information from various connection
- * interfaces in one dbus call.
- *
- * This section documents the auto-generated C wrappers for the
- * Contacts interface, used with #TpConnection objects.
- */
-
-/**
  * SECTION:connection-contact-list
  * @title: Connection ContactList, ContactGroups and ContactBlocking interfaces
  * @short_description: client-side wrappers for the ContactList,

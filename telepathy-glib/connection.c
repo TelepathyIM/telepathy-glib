@@ -1091,8 +1091,7 @@ _tp_connection_got_properties (TpProxy *proxy,
   if (interfaces == NULL)
     goto error;
 
-  if (!tp_strv_contains (interfaces, TP_IFACE_CONNECTION_INTERFACE_REQUESTS) ||
-      !tp_strv_contains (interfaces, TP_IFACE_CONNECTION_INTERFACE_CONTACTS))
+  if (!tp_strv_contains (interfaces, TP_IFACE_CONNECTION_INTERFACE_REQUESTS))
     {
       DEBUG ("Connection does not have Requests/Contacts interface - Broken CM");
       goto error;
@@ -1363,7 +1362,7 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   static GQuark need_avatars[2] = {0, 0};
   static GQuark need_contact_info[2] = {0, 0};
   static GQuark need_balance[2] = {0, 0};
-  static GQuark need_contact_list[3] = {0, 0, 0};
+  static GQuark need_contact_list[2] = {0, 0};
   static GQuark need_contact_groups[2] = {0, 0};
   static GQuark need_contact_blocking[2] = {0, 0};
   static GQuark depends_contact_list[2] = {0, 0};
@@ -1403,7 +1402,6 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_CONTACT_LIST].name = TP_CONNECTION_FEATURE_CONTACT_LIST;
   features[FEAT_CONTACT_LIST].prepare_async = _tp_connection_prepare_contact_list_async;
   need_contact_list[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_LIST1;
-  need_contact_list[1] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS;
   features[FEAT_CONTACT_LIST].interfaces_needed = need_contact_list;
   depends_contact_list[0] = TP_CONNECTION_FEATURE_CONTACT_LIST_PROPERTIES;
   features[FEAT_CONTACT_LIST].depends_on = depends_contact_list;
