@@ -173,7 +173,6 @@ shut_down (TpBaseConnection *conn)
 }
 
 static const gchar *interfaces_always_present[] = {
-    TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
     EXAMPLE_IFACE_CONNECTION_INTERFACE_HATS,
     NULL };
 

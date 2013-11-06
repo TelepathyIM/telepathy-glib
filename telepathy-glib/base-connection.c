@@ -894,7 +894,6 @@ tp_base_connection_create_interfaces_array (TpBaseConnection *self)
   TpBaseConnectionPrivate *priv = self->priv;
   TpBaseConnectionClass *klass = TP_BASE_CONNECTION_GET_CLASS (self);
   GPtrArray *always;
-  gboolean has_requests = FALSE;
   guint i;
 
   g_assert (priv->interfaces == NULL);
@@ -903,18 +902,9 @@ tp_base_connection_create_interfaces_array (TpBaseConnection *self)
 
   priv->interfaces = g_array_sized_new (TRUE, FALSE, sizeof (gchar *),
       always->len);
+
   for (i = 0; i < always->len; i++)
-    {
-      const gchar *iface = g_ptr_array_index (always, i);
-
-      if (!tp_strdiff (iface, TP_IFACE_CONNECTION_INTERFACE_REQUESTS))
-        has_requests = TRUE;
-
-      g_array_append_val (priv->interfaces, iface);
-    }
-
-  if (!has_requests)
-    g_critical ("Requests interface must always be present");
+    g_array_append_val (priv->interfaces, g_ptr_array_index (always, i));
 
   g_ptr_array_unref (always);
 }
@@ -934,12 +924,6 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
   g_assert (cls->create_channel_managers  != NULL);
   g_assert (cls->shut_down != NULL);
   g_assert (cls->start_connecting != NULL);
-
-  if (!TP_IS_SVC_CONNECTION_INTERFACE_REQUESTS (self))
-    {
-      g_critical ("Connection must always implement "
-          "TpSvcConnectionInterfaceRequests");
-    }
 
   /* if we fail to connect to D-Bus here, we'll return an error from
    * register */

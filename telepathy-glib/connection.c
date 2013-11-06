@@ -567,11 +567,8 @@ _tp_connection_do_get_capabilities_async (TpConnection *self,
           DEBUG ("%s: Retrieving capabilities",
             tp_proxy_get_object_path (self));
 
-          /* We don't check whether we actually have this interface here. The
-           * quark is dbus properties quark is guaranteed to be on every
-           * TpProxy and only very very old CMs won't have Requests, in case
-           * someone still has such a relic we'll we'll just handle it when
-           * they reply to us with an error */
+          /* We don't check whether we actually have this interface here.
+           * The Requests interface is mandatory, and we assume we have it. */
           tp_cli_dbus_properties_call_get (self, -1,
             TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
               "RequestableChannelClasses",
@@ -1091,12 +1088,6 @@ _tp_connection_got_properties (TpProxy *proxy,
   if (interfaces == NULL)
     goto error;
 
-  if (!tp_strv_contains (interfaces, TP_IFACE_CONNECTION_INTERFACE_REQUESTS))
-    {
-      DEBUG ("Connection does not have Requests/Contacts interface - Broken CM");
-      goto error;
-    }
-
   tp_proxy_add_interfaces (proxy, interfaces);
   self->priv->ready_enough_for_contacts = TRUE;
 
@@ -1187,6 +1178,13 @@ tp_connection_init (TpConnection *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_CONNECTION,
       TpConnectionPrivate);
+
+  /* This is conceptually part of Connection core now. The only reason
+   * it's kept separate is to reduce D-Bus traffic, since the
+   * ChannelDispatcher implementation is normally the only thing
+   * that needs to see its properties or signals. */
+  tp_proxy_add_interface_by_id ((TpProxy *) self,
+      TP_IFACE_QUARK_CONNECTION_INTERFACE_REQUESTS);
 
   self->priv->status = TP_UNKNOWN_CONNECTION_STATUS;
   self->priv->status_reason = TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED;
@@ -1358,7 +1356,6 @@ static const TpProxyFeature *
 tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
 {
   static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
-  static GQuark need_requests[2] = {0, 0};
   static GQuark need_avatars[2] = {0, 0};
   static GQuark need_contact_info[2] = {0, 0};
   static GQuark need_balance[2] = {0, 0};
@@ -1379,8 +1376,6 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_CAPABILITIES].name = TP_CONNECTION_FEATURE_CAPABILITIES;
   features[FEAT_CAPABILITIES].prepare_async =
       tp_connection_prepare_capabilities_async;
-  need_requests[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_REQUESTS;
-  features[FEAT_CAPABILITIES].interfaces_needed = need_requests;
 
   features[FEAT_AVATAR_REQUIREMENTS].name = TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS;
   features[FEAT_AVATAR_REQUIREMENTS].prepare_async =
