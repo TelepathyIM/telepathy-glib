@@ -96,13 +96,12 @@ struct _TpBaseConnectionClass {
     TpBaseConnectionGetInterfacesImpl get_interfaces_always_present;
 
     void (*fill_contact_attributes) (TpBaseConnection *self,
-    const gchar *dbus_interface,
-    TpHandle contact,
-    TpContactAttributeMap *attributes);
+        const gchar *dbus_interface,
+        TpHandle contact,
+        TpContactAttributeMap *attributes);
 
     /*<private>*/
-    gpointer _future3;
-    gpointer _future4;
+    GCallback _future[16];
 
     gpointer priv;
 };
