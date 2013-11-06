@@ -1439,6 +1439,15 @@ example_contact_list_unpublish_async (TpBaseContactList *contact_list,
       user_data, example_contact_list_unpublish_async);
 }
 
+static gboolean
+example_contact_list_is_blocked (TpBaseContactList *contact_list,
+    TpHandle contact)
+{
+  ExampleContactList *self = EXAMPLE_CONTACT_LIST (contact_list);
+
+  return tp_handle_set_is_member (self->priv->blocked_contacts, contact);
+}
+
 static TpHandleSet *
 example_contact_list_dup_blocked_contacts (TpBaseContactList *contact_list)
 {
@@ -1692,6 +1701,7 @@ static void
 blockable_contact_list_iface_init (TpBlockableContactListInterface *iface)
 {
   iface->can_block = tp_base_contact_list_true_func;
+  iface->is_blocked = example_contact_list_is_blocked;
   iface->dup_blocked_contacts = example_contact_list_dup_blocked_contacts;
   iface->block_contacts_with_abuse_async =
     example_contact_list_block_contacts_with_abuse_async;

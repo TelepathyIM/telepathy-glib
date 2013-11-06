@@ -299,6 +299,9 @@ void tp_base_contact_list_contact_blocking_changed (
 
 gboolean tp_base_contact_list_can_block (TpBaseContactList *self);
 
+_TP_AVAILABLE_IN_UNRELEASED
+gboolean tp_base_contact_list_is_blocked (TpBaseContactList *self,
+    TpHandle contact);
 TpHandleSet *tp_base_contact_list_dup_blocked_contacts (
     TpBaseContactList *self);
 
@@ -345,6 +348,8 @@ struct _TpBlockableContactListInterface {
 
     /* mandatory to implement */
 
+    gboolean (*is_blocked) (TpBaseContactList *self,
+        TpHandle contact);
     TpBaseContactListDupContactsFunc dup_blocked_contacts;
 
     /* unblock_contacts_async is mandatory to implement; either

@@ -378,6 +378,8 @@ G_DEFINE_INTERFACE (TpMutableContactList, tp_mutable_contact_list,
 /**
  * TpBlockableContactListInterface:
  * @parent: the parent interface
+ * @is_blocked: the implementation of
+ *  tp_base_contact_list_is_blocked(); must always be provided
  * @dup_blocked_contacts: the implementation of
  *  tp_base_contact_list_dup_blocked_contacts(); must always be provided
  * @block_contacts_async: the implementation of
@@ -687,6 +689,7 @@ tp_base_contact_list_constructed (GObject *object)
         TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
 
       g_return_if_fail (iface->can_block != NULL);
+      g_return_if_fail (iface->is_blocked != NULL);
       g_return_if_fail (iface->dup_blocked_contacts != NULL);
       g_return_if_fail ((iface->block_contacts_async != NULL) ^
           (iface->block_contacts_with_abuse_async != NULL));
@@ -2140,6 +2143,45 @@ tp_base_contact_list_can_block (TpBaseContactList *self)
   g_return_val_if_fail (iface->can_block != NULL, FALSE);
 
   return iface->can_block (self);
+}
+
+/**
+ * tp_base_contact_list_is_blocked:
+ * @self: a contact list manager
+ * @contact: a contact
+ *
+ * Return whether @contact is blocked. It is incorrect to call this method
+ * before tp_base_contact_list_set_list_received() has been called, after
+ * the connection has disconnected, or on a #TpBaseContactList that does
+ * not implement %TP_TYPE_BLOCKABLE_CONTACT_LIST.
+ *
+ * For implementations of %TP_TYPE_BLOCKABLE_CONTACT_LIST, this is a virtual
+ * method, implemented using
+ * #TpBlockableContactListInterface.dup_blocked_contacts.
+ * It must always be implemented.
+ *
+ * The result of this method must always be consistent with the result
+ * of tp_base_contact_list_dup_blocked_contacts(). It can usually
+ * use a more efficient implementation that does not require copying
+ * a handle-set.
+ *
+ * Returns: %TRUE if @contact would be in
+ *  tp_base_contact_list_dup_blocked_contacts()
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_base_contact_list_is_blocked (TpBaseContactList *self,
+    TpHandle contact)
+{
+  TpBlockableContactListInterface *iface =
+    TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
+
+  g_return_val_if_fail (iface != NULL, FALSE);
+  g_return_val_if_fail (iface->is_blocked != NULL, FALSE);
+  g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
+      TP_CONTACT_LIST_STATE_SUCCESS, FALSE);
+
+  return iface->is_blocked (self, contact);
 }
 
 /**
@@ -4201,18 +4243,10 @@ tp_base_contact_list_fill_contact_attributes (TpBaseContactList *self,
     {
       if (self->priv->state == TP_CONTACT_LIST_STATE_SUCCESS)
         {
-          /* FIXME: this would be more efficient if we had a
-           * contact_is_blocked() vfunc */
-          TpHandleSet *blocked = tp_base_contact_list_dup_blocked_contacts (self);
-          gboolean is_blocked;
-
-          is_blocked = tp_handle_set_is_member (blocked, contact);
-
           tp_contact_attribute_map_take_sliced_gvalue (attributes,
               contact, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_BLOCKING1_BLOCKED,
-              tp_g_value_slice_new_boolean (is_blocked));
-
-          tp_handle_set_destroy (blocked);
+              tp_g_value_slice_new_boolean (
+                tp_base_contact_list_is_blocked (self, contact)));
         }
       /* else just omit the attributes */
 
