@@ -23,13 +23,13 @@
 
 #include <dbus/dbus-glib-lowlevel.h>
 
-#include <telepathy-glib/contacts-mixin.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
 #include <telepathy-glib/handle-repo-static.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-connection.h>
+#include <telepathy-glib/util.h>
 
 #include <telepathy-glib/base-connection-internal.h>
 #include <telepathy-glib/handle-repo-internal.h>
@@ -65,24 +65,32 @@
  * ]|
  *  </listitem>
  *  <listitem>
- *   <para>in the <function>class_init</function> method, call
- *    tp_base_contact_list_mixin_class_init() after
- *    tp_contacts_mixin_class_init():</para>
+ *   <para>in the #TpBaseConnectionClass.fill_contact_attributes
+ *    implementation, call tp_base_contact_list_fill_contact_attributes()
+ *    and do not chain up if it returns %TRUE:
+ *    </para>
  * |[
  * // ...
- * tp_contacts_mixin_class_init (object_class,
- *     G_STRUCT_OFFSET (MyConnectionClass, contacts_mixin));
- * tp_base_contact_list_mixin_class_init (base_connection_class);
- * // ...
+ * if (!tp_strdiff (dbus_interface, MY_IFACE_CONNECTION_INTERFACE_HATS))
+ *   {
+ *     // ... fill in Hats attributes ...
+ *     return;
+ *   }
+ *
+ * if (tp_base_contact_list_fill_contact_attributes (self->priv->contact_list,
+ *         dbus_interface, contact, attributes))
+ *   {
+ *     return;
+ *   }
+ *
+ * ((TpBaseConnectionClass *) my_connection_parent_class)->
+ *     fill_contact_attributes (self, dbus_interface, contact, attributes);
  * ]|
- *   <para>and include %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1 in
- *    the output of
- *    #TpBaseConnectionClass.get_interfaces_always_present;</para>
  *  </listitem>
  *  <listitem>
- *   <para>in the <function>constructed</function> method, call
- *    tp_base_contact_list_mixin_register_with_contacts_mixin() on the
- *    <emphasis>connection</emphasis>.</para>
+ *   <para>include %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1 in
+ *    the output of
+ *    #TpBaseConnectionClass.get_interfaces_always_present</para>
  *  </listitem>
  * </itemizedlist>
  *
@@ -3578,11 +3586,9 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
       BASE_CONTACT_LIST);
-  TpContactsMixin *contacts_mixin = TP_CONTACTS_MIXIN (svc);
   GError *error = NULL;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
-  g_return_if_fail (contacts_mixin != NULL);
 
   if (tp_base_contact_list_get_state (self, &error)
       != TP_CONTACT_LIST_STATE_SUCCESS)
@@ -3600,8 +3606,8 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
 
       set = tp_base_contact_list_dup_contacts (self);
       contacts = tp_handle_set_to_array (set);
-      result = tp_contacts_mixin_get_contact_attributes (
-          (GObject *) self->priv->conn, contacts, interfaces, assumed);
+      result = tp_base_connection_dup_contact_attributes_hash (
+          self->priv->conn, contacts, interfaces, assumed);
       tp_svc_connection_interface_contact_list1_return_from_get_contact_list_attributes (
           context, result);
 
@@ -4115,39 +4121,47 @@ tp_base_contact_list_get_list_dbus_property (GObject *conn,
     }
 }
 
-static void
-tp_base_contact_list_fill_list_contact_attributes (GObject *obj,
-  const GArray *contacts,
-  GHashTable *attributes_hash)
+/**
+ * tp_base_contact_list_fill_contact_attributes:
+ * @self: a contact list
+ * @dbus_interface: a D-Bus interface
+ * @contact: a contact
+ * @attributes: used to return attributes
+ *
+ * If @dbus_interface is an interface that is relevant for this
+ * object, fill @attributes with the attributes for @contact
+ * and return %TRUE.
+ *
+ * Returns: %TRUE if @dbus_interface was recognised
+ */
+gboolean
+tp_base_contact_list_fill_contact_attributes (TpBaseContactList *self,
+  const gchar *dbus_interface,
+  TpHandle contact,
+  TpContactAttributeMap *attributes)
 {
-  TpBaseContactList *self = g_object_get_qdata (obj, BASE_CONTACT_LIST);
-  guint i;
+  g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), FALSE);
+  g_return_val_if_fail (self->priv->conn != NULL, FALSE);
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
-  g_return_if_fail (self->priv->conn != NULL);
-
-  /* just omit the attributes if the contact list hasn't come in yet */
-  if (self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS)
-    return;
-
-  for (i = 0; i < contacts->len; i++)
+  if (!tp_strdiff (dbus_interface, TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1))
     {
       TpSubscriptionState subscribe = TP_SUBSCRIPTION_STATE_NO;
       TpSubscriptionState publish = TP_SUBSCRIPTION_STATE_NO;
       gchar *publish_request = NULL;
-      TpHandle handle;
 
-      handle = g_array_index (contacts, TpHandle, i);
+      /* just omit the attributes if the contact list hasn't come in yet */
+      if (self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS)
+        return TRUE;
 
-      tp_base_contact_list_dup_states (self, handle,
+      tp_base_contact_list_dup_states (self, contact,
           &subscribe, &publish, &publish_request);
 
-      tp_contacts_mixin_set_contact_attribute (attributes_hash,
-          handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_PUBLISH,
+      tp_contact_attribute_map_take_sliced_gvalue (attributes,
+          contact, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_PUBLISH,
           tp_g_value_slice_new_uint (publish));
 
-      tp_contacts_mixin_set_contact_attribute (attributes_hash,
-          handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_SUBSCRIBE,
+      tp_contact_attribute_map_take_sliced_gvalue (attributes,
+          contact, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_SUBSCRIBE,
           tp_g_value_slice_new_uint (subscribe));
 
       if (tp_str_empty (publish_request) ||
@@ -4157,11 +4171,56 @@ tp_base_contact_list_fill_list_contact_attributes (GObject *obj,
         }
       else
         {
-          tp_contacts_mixin_set_contact_attribute (attributes_hash,
-              handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_PUBLISH_REQUEST,
+          tp_contact_attribute_map_take_sliced_gvalue (attributes,
+              contact, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_PUBLISH_REQUEST,
               tp_g_value_slice_new_take_string (publish_request));
         }
+
+      return TRUE;
     }
+
+  if (!tp_strdiff (dbus_interface,
+        TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1) &&
+      TP_IS_CONTACT_GROUP_LIST (self))
+    {
+      if (self->priv->state == TP_CONTACT_LIST_STATE_SUCCESS)
+        {
+          tp_contact_attribute_map_take_sliced_gvalue (attributes,
+              contact, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS1_GROUPS,
+              tp_g_value_slice_new_take_boxed (G_TYPE_STRV,
+                tp_base_contact_list_dup_contact_groups (self, contact)));
+        }
+      /* else just omit the attributes */
+
+      return TRUE;
+    }
+
+  if (!tp_strdiff (dbus_interface,
+        TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING1) &&
+      TP_IS_BLOCKABLE_CONTACT_LIST (self))
+    {
+      if (self->priv->state == TP_CONTACT_LIST_STATE_SUCCESS)
+        {
+          /* FIXME: this would be more efficient if we had a
+           * contact_is_blocked() vfunc */
+          TpHandleSet *blocked = tp_base_contact_list_dup_blocked_contacts (self);
+          gboolean is_blocked;
+
+          is_blocked = tp_handle_set_is_member (blocked, contact);
+
+          tp_contact_attribute_map_take_sliced_gvalue (attributes,
+              contact, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_BLOCKING1_BLOCKED,
+              tp_g_value_slice_new_boolean (is_blocked));
+
+          tp_handle_set_destroy (blocked);
+        }
+      /* else just omit the attributes */
+
+      return TRUE;
+    }
+
+  /* not our interface */
+  return FALSE;
 }
 
 static void
@@ -4637,71 +4696,6 @@ tp_base_contact_list_get_group_dbus_property (GObject *conn,
     }
 }
 
-static void
-tp_base_contact_list_fill_groups_contact_attributes (GObject *obj,
-  const GArray *contacts,
-  GHashTable *attributes_hash)
-{
-  TpBaseContactList *self = g_object_get_qdata (obj, BASE_CONTACT_LIST);
-  guint i;
-
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
-  g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
-  g_return_if_fail (self->priv->conn != NULL);
-
-  /* just omit the attributes if the contact list hasn't come in yet */
-  if (self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS)
-    return;
-
-  for (i = 0; i < contacts->len; i++)
-    {
-      TpHandle handle;
-
-      handle = g_array_index (contacts, TpHandle, i);
-
-      tp_contacts_mixin_set_contact_attribute (attributes_hash,
-          handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS1_GROUPS,
-          tp_g_value_slice_new_take_boxed (G_TYPE_STRV,
-            tp_base_contact_list_dup_contact_groups (self, handle)));
-    }
-}
-
-static void
-tp_base_contact_list_fill_blocking_contact_attributes (GObject *obj,
-  const GArray *contacts,
-  GHashTable *attributes_hash)
-{
-  TpBaseContactList *self = g_object_get_qdata (obj, BASE_CONTACT_LIST);
-  guint i;
-  TpHandleSet *blocked;
-
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
-  g_return_if_fail (TP_IS_BLOCKABLE_CONTACT_LIST (self));
-  g_return_if_fail (self->priv->conn != NULL);
-
-  /* just omit the attributes if the contact list hasn't come in yet */
-  if (self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS)
-    return;
-
-  blocked = tp_base_contact_list_dup_blocked_contacts (self);
-
-  for (i = 0; i < contacts->len; i++)
-    {
-      TpHandle handle;
-      gboolean is_blocked;
-
-      handle = g_array_index (contacts, TpHandle, i);
-
-      is_blocked = tp_handle_set_is_member (blocked, handle);
-
-      tp_contacts_mixin_set_contact_attribute (attributes_hash,
-          handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_BLOCKING1_BLOCKED,
-          tp_g_value_slice_new_boolean (is_blocked));
-    }
-
-  tp_handle_set_destroy (blocked);
-}
-
 /**
  * tp_base_contact_list_mixin_groups_iface_init:
  * @klass: the service-side D-Bus interface,
@@ -4948,7 +4942,6 @@ tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls)
   GObjectClass *obj_cls = (GObjectClass *) cls;
 
   g_return_if_fail (TP_IS_BASE_CONNECTION_CLASS (cls));
-  g_return_if_fail (TP_CONTACTS_MIXIN_CLASS (cls) != NULL);
   g_return_if_fail (g_type_is_a (type,
         TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST1));
 
@@ -4971,59 +4964,6 @@ tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls)
           TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_BLOCKING1,
           tp_base_contact_list_get_blocking_dbus_property,
           NULL, known_blocking_props);
-    }
-}
-
-/**
- * tp_base_contact_list_mixin_register_with_contacts_mixin:
- * @self: a contact list
- * @conn: An instance of #TpBaseConnection that uses a #TpContactsMixin,
- *  and implements #TpSvcConnectionInterfaceContactList1 using
- *  #TpBaseContactList
- *
- * Register the ContactList interface with the Contacts interface to make it
- * inspectable. Before this function is called, the #TpContactsMixin must be
- * initialized with tp_contacts_mixin_init().
- *
- * If the connection implements #TpSvcConnectionInterfaceContactGroups1
- * the #TpBaseContactList implements %TP_TYPE_CONTACT_GROUP_LIST,
- * this function automatically also registers the ContactGroups interface
- * with the contacts mixin.
- *
- * Since: 0.13.0
- */
-void
-tp_base_contact_list_mixin_register_with_contacts_mixin (
-    TpBaseContactList *self,
-    TpBaseConnection *conn)
-{
-  GType type = G_OBJECT_TYPE (conn);
-  GObject *object = (GObject *) conn;
-
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
-  g_return_if_fail (TP_IS_BASE_CONNECTION (conn));
-  g_return_if_fail (self != NULL);
-  g_return_if_fail (g_type_is_a (type,
-        TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST1));
-
-  tp_contacts_mixin_add_contact_attributes_iface (object,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1,
-      tp_base_contact_list_fill_list_contact_attributes);
-
-  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1)
-      && TP_IS_CONTACT_GROUP_LIST (self))
-    {
-      tp_contacts_mixin_add_contact_attributes_iface (object,
-          TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1,
-          tp_base_contact_list_fill_groups_contact_attributes);
-    }
-
-  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING1)
-      && TP_IS_BLOCKABLE_CONTACT_LIST (self))
-    {
-      tp_contacts_mixin_add_contact_attributes_iface (object,
-          TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING1,
-          tp_base_contact_list_fill_blocking_contact_attributes);
     }
 }
 

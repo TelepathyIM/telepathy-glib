@@ -51,7 +51,6 @@ TelepathyGLib_1_gir_FILES = \
 	$(srcdir)/simple-handler.c $(srcdir)/simple-handler.h \
 	$(srcdir)/simple-observer.c $(srcdir)/simple-observer.h \
 	$(srcdir)/dbus-properties-mixin.c $(srcdir)/dbus-properties-mixin.h \
-	$(srcdir)/contacts-mixin.c $(srcdir)/contacts-mixin.h \
 	$(srcdir)/group-mixin.c $(srcdir)/group-mixin.h \
 	$(srcdir)/presence-mixin.c $(srcdir)/presence-mixin.h \
 	$(srcdir)/channel-dispatch-operation.c $(srcdir)/channel-dispatch-operation.h \

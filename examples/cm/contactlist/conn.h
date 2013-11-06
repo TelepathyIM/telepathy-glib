@@ -26,14 +26,12 @@ typedef struct _ExampleContactListConnectionPrivate
 struct _ExampleContactListConnectionClass {
     TpBaseConnectionClass parent_class;
     TpPresenceMixinClass presence_mixin;
-    TpContactsMixinClass contacts_mixin;
     TpDBusPropertiesMixinClass properties_mixin;
 };
 
 struct _ExampleContactListConnection {
     TpBaseConnection parent;
     TpPresenceMixin presence_mixin;
-    TpContactsMixin contacts_mixin;
 
     ExampleContactListConnectionPrivate *priv;
 };

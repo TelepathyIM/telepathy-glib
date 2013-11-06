@@ -27,6 +27,7 @@
 
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/handle.h>
+#include <telepathy-glib/base-connection.h>
 #include "util.h"
 
 G_BEGIN_DECLS
@@ -179,8 +180,11 @@ void tp_presence_mixin_emit_one_presence_update (GObject *obj,
 void tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data);
 void tp_presence_mixin_init_dbus_properties (GObjectClass *cls);
 
-void tp_presence_mixin_register_with_contacts_mixin (
-    GObject *obj);
+_TP_AVAILABLE_IN_UNRELEASED
+gboolean tp_presence_mixin_fill_contact_attributes (GObject *obj,
+  const gchar *dbus_interface,
+  TpHandle contact,
+  TpContactAttributeMap *attributes);
 
 G_END_DECLS
 

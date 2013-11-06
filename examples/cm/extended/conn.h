@@ -23,12 +23,10 @@ typedef struct _ExampleExtendedConnectionPrivate ExampleExtendedConnectionPrivat
 
 struct _ExampleExtendedConnectionClass {
     TpBaseConnectionClass parent_class;
-    TpContactsMixinClass contacts_mixin;
 };
 
 struct _ExampleExtendedConnection {
     TpBaseConnection parent;
-    TpContactsMixin contacts_mixin;
 
     ExampleExtendedConnectionPrivate *priv;
 };

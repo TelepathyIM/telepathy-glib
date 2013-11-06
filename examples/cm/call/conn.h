@@ -28,7 +28,6 @@ typedef struct _ExampleCallConnectionClassPrivate
 struct _ExampleCallConnectionClass {
     TpBaseConnectionClass parent_class;
     TpPresenceMixinClass presence_mixin;
-    TpContactsMixinClass contacts_mixin;
 
     ExampleCallConnectionClassPrivate *priv;
 };
@@ -36,7 +35,6 @@ struct _ExampleCallConnectionClass {
 struct _ExampleCallConnection {
     TpBaseConnection parent;
     TpPresenceMixin presence_mixin;
-    TpContactsMixin contacts_mixin;
 
     ExampleCallConnectionPrivate *priv;
 };

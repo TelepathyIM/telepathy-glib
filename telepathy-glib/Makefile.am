@@ -84,7 +84,6 @@ tpginclude_HEADERS = \
     contact.h \
     contact-operations.h \
     base-contact-list.h \
-    contacts-mixin.h \
     dbus.h \
     dbus-daemon.h \
     dbus-properties-mixin.h \
@@ -276,7 +275,6 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     base-contact-list.c \
     cm-message.c \
     cm-message-internal.h \
-    contacts-mixin.c \
     dbus.c \
     dbus-daemon.c \
     dbus-internal.h \

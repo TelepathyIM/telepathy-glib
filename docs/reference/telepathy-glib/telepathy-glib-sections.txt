@@ -61,9 +61,13 @@ tp_base_connection_disconnect_with_dbus_error_vardict
 tp_base_connection_finish_shutdown
 tp_base_connection_add_interfaces
 TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED
-tp_base_connection_register_with_contacts_mixin
 tp_base_connection_add_possible_client_interest
 tp_base_connection_add_client_interest
+tp_base_connection_dup_contact_attributes_hash
+<SUBSECTION>
+TpContactAttributeMap
+tp_contact_attribute_map_set
+tp_contact_attribute_map_take_sliced_gvalue
 <SUBSECTION>
 TpChannelManagerIter
 tp_base_connection_channel_manager_iter_init
@@ -1680,35 +1684,6 @@ TpBaseRoomConfigPrivate
 
 <SECTION>
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
-<FILE>contacts-mixin</FILE>
-
-<TITLE>TpContactsMixin</TITLE>
-TpContactsMixin
-TpContactsMixinClass
-tp_contacts_mixin_add_contact_attributes_iface
-tp_contacts_mixin_class_init
-tp_contacts_mixin_finalize
-tp_contacts_mixin_iface_init
-tp_contacts_mixin_init
-tp_contacts_mixin_set_contact_attribute
-tp_contacts_mixin_get_contact_attributes
-TpContactsMixinFillContactAttributesFunc
-<SUBSECTION Private>
-TP_CONTACTS_MIXIN_CLASS_OFFSET
-TP_CONTACTS_MIXIN_CLASS_OFFSET_QUARK
-TP_CONTACTS_MIXIN_OFFSET
-TP_CONTACTS_MIXIN_OFFSET_QUARK
-tp_contacts_mixin_class_get_offset_quark
-tp_contacts_mixin_get_offset_quark
-TpContactsMixinClassPrivate
-TpContactsMixinPrivate
-<SUBSECTION Standard>
-TP_CONTACTS_MIXIN_CLASS
-TP_CONTACTS_MIXIN
-</SECTION>
-
-<SECTION>
-<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>presence-mixin</FILE>
 TpPresenceStatusOptionalArgumentSpec
 TpPresenceStatusSpec
@@ -1736,7 +1711,7 @@ tp_presence_mixin_emit_presence_update
 tp_presence_mixin_emit_one_presence_update
 tp_presence_mixin_iface_init
 tp_presence_mixin_init_dbus_properties
-tp_presence_mixin_register_with_contacts_mixin
+tp_presence_mixin_fill_contact_attributes
 <SUBSECTION Private>
 TP_PRESENCE_MIXIN_CLASS_OFFSET_QUARK
 TP_PRESENCE_MIXIN_CLASS_OFFSET
@@ -5090,7 +5065,6 @@ tp_svc_channel_type_server_tls_connection1_get_type
 TpBaseContactList
 TpBaseContactListClass
 tp_base_contact_list_mixin_class_init
-tp_base_contact_list_mixin_register_with_contacts_mixin
 tp_base_contact_list_mixin_list_iface_init
 tp_base_contact_list_mixin_groups_iface_init
 tp_base_contact_list_mixin_blocking_iface_init
@@ -5116,6 +5090,7 @@ TpBaseContactListAsyncFinishFunc
 tp_base_contact_list_download_async
 tp_base_contact_list_download_finish
 tp_base_contact_list_get_download_at_connection
+tp_base_contact_list_fill_contact_attributes
 <SUBSECTION changes>
 TP_TYPE_MUTABLE_CONTACT_LIST
 TpMutableContactListInterface

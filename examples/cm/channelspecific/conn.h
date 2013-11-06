@@ -23,12 +23,10 @@ typedef struct _ExampleCSHConnectionPrivate ExampleCSHConnectionPrivate;
 
 struct _ExampleCSHConnectionClass {
     TpBaseConnectionClass parent_class;
-    TpContactsMixinClass contacts_mixin;
 };
 
 struct _ExampleCSHConnection {
     TpBaseConnection parent;
-    TpContactsMixin contacts_mixin;
 
     ExampleCSHConnectionPrivate *priv;
 };

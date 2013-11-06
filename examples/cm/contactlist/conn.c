@@ -30,8 +30,6 @@ G_DEFINE_TYPE_WITH_CODE (ExampleContactListConnection,
        tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING1,
       init_aliasing);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
-      tp_contacts_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST1,
       tp_base_contact_list_mixin_list_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1,
@@ -119,7 +117,6 @@ finalize (GObject *object)
   ExampleContactListConnection *self =
     EXAMPLE_CONTACT_LIST_CONNECTION (object);
 
-  tp_contacts_mixin_finalize (object);
   g_free (self->priv->account);
 
   G_OBJECT_CLASS (example_contact_list_connection_parent_class)->finalize (
@@ -235,41 +232,46 @@ shut_down (TpBaseConnection *conn)
 }
 
 static void
-aliasing_fill_contact_attributes (GObject *object,
-                                  const GArray *contacts,
-                                  GHashTable *attributes)
+example_contact_list_connection_fill_contact_attributes (TpBaseConnection *conn,
+    const gchar *dbus_interface,
+    TpHandle contact,
+    TpContactAttributeMap *attributes)
 {
   ExampleContactListConnection *self =
-    EXAMPLE_CONTACT_LIST_CONNECTION (object);
-  guint i;
+    EXAMPLE_CONTACT_LIST_CONNECTION (conn);
 
-  for (i = 0; i < contacts->len; i++)
+  if (!tp_strdiff (dbus_interface, TP_IFACE_CONNECTION_INTERFACE_ALIASING1))
     {
-      TpHandle contact = g_array_index (contacts, guint, i);
-
-      tp_contacts_mixin_set_contact_attribute (attributes, contact,
+      tp_contact_attribute_map_set (attributes, contact,
           TP_TOKEN_CONNECTION_INTERFACE_ALIASING1_ALIAS,
-          tp_g_value_slice_new_string (
+          g_variant_new_string (
             example_contact_list_get_alias (self->priv->contact_list,
               contact)));
+      return;
     }
+
+  if (tp_base_contact_list_fill_contact_attributes (
+        TP_BASE_CONTACT_LIST (self->priv->contact_list),
+        dbus_interface, contact, attributes))
+    return;
+
+  if (tp_presence_mixin_fill_contact_attributes (G_OBJECT (conn),
+        dbus_interface, contact, attributes))
+    return;
+
+  ((TpBaseConnectionClass *) example_contact_list_connection_parent_class)->
+    fill_contact_attributes (conn, dbus_interface, contact, attributes);
 }
 
 static void
 constructed (GObject *object)
 {
   ExampleContactListConnection *self = EXAMPLE_CONTACT_LIST_CONNECTION (object);
-  TpBaseConnection *base = TP_BASE_CONNECTION (object);
   void (*chain_up) (GObject *) =
     G_OBJECT_CLASS (example_contact_list_connection_parent_class)->constructed;
 
   if (chain_up != NULL)
     chain_up (object);
-
-  tp_contacts_mixin_init (object,
-      G_STRUCT_OFFSET (ExampleContactListConnection, contacts_mixin));
-
-  tp_base_connection_register_with_contacts_mixin (base);
 
   self->priv->contact_list = EXAMPLE_CONTACT_LIST (g_object_new (
           EXAMPLE_TYPE_CONTACT_LIST,
@@ -282,16 +284,8 @@ constructed (GObject *object)
   g_signal_connect (self->priv->contact_list, "presence-updated",
       G_CALLBACK (presence_updated_cb), self);
 
-  tp_base_contact_list_mixin_register_with_contacts_mixin (
-      TP_BASE_CONTACT_LIST (self->priv->contact_list), base);
-
-  tp_contacts_mixin_add_contact_attributes_iface (object,
-      TP_IFACE_CONNECTION_INTERFACE_ALIASING1,
-      aliasing_fill_contact_attributes);
-
   tp_presence_mixin_init (object,
       G_STRUCT_OFFSET (ExampleContactListConnection, presence_mixin));
-  tp_presence_mixin_register_with_contacts_mixin (object);
 }
 
 static gboolean
@@ -468,6 +462,8 @@ example_contact_list_connection_class_init (
   base_class->start_connecting = start_connecting;
   base_class->shut_down = shut_down;
   base_class->get_interfaces_always_present = get_interfaces_always_present;
+  base_class->fill_contact_attributes =
+    example_contact_list_connection_fill_contact_attributes;
 
   param_spec = g_param_spec_string ("account", "Account name",
       "The username of this user", NULL,
@@ -480,9 +476,6 @@ example_contact_list_connection_class_init (
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
       param_spec);
-
-  tp_contacts_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleContactListConnectionClass, contacts_mixin));
 
   tp_presence_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleContactListConnectionClass, presence_mixin),

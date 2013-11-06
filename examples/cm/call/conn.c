@@ -34,8 +34,6 @@
 G_DEFINE_TYPE_WITH_CODE (ExampleCallConnection,
     example_call_connection,
     TP_TYPE_BASE_CONNECTION,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
-      tp_contacts_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE1,
       tp_presence_mixin_iface_init))
 
@@ -124,7 +122,6 @@ finalize (GObject *object)
 {
   ExampleCallConnection *self = EXAMPLE_CALL_CONNECTION (object);
 
-  tp_contacts_mixin_finalize (object);
   g_free (self->priv->account);
   g_free (self->priv->presence_message);
 
@@ -215,20 +212,14 @@ shut_down (TpBaseConnection *conn)
 static void
 constructed (GObject *object)
 {
-  TpBaseConnection *base = TP_BASE_CONNECTION (object);
   void (*chain_up) (GObject *) =
     G_OBJECT_CLASS (example_call_connection_parent_class)->constructed;
 
   if (chain_up != NULL)
     chain_up (object);
 
-  tp_contacts_mixin_init (object,
-      G_STRUCT_OFFSET (ExampleCallConnection, contacts_mixin));
-  tp_base_connection_register_with_contacts_mixin (base);
-
   tp_presence_mixin_init (object,
       G_STRUCT_OFFSET (ExampleCallConnection, presence_mixin));
-  tp_presence_mixin_register_with_contacts_mixin (object);
 }
 
 static gboolean
@@ -390,6 +381,20 @@ get_interfaces_always_present (TpBaseConnection *base)
 }
 
 static void
+example_call_connection_fill_contact_attributes (TpBaseConnection *conn,
+    const gchar *dbus_interface,
+    TpHandle contact,
+    TpContactAttributeMap *attributes)
+{
+  if (tp_presence_mixin_fill_contact_attributes (G_OBJECT (conn),
+        dbus_interface, contact, attributes))
+    return;
+
+  ((TpBaseConnectionClass *) example_call_connection_parent_class)->
+    fill_contact_attributes (conn, dbus_interface, contact, attributes);
+}
+
+static void
 example_call_connection_class_init (
     ExampleCallConnectionClass *klass)
 {
@@ -410,6 +415,8 @@ example_call_connection_class_init (
   base_class->start_connecting = start_connecting;
   base_class->shut_down = shut_down;
   base_class->get_interfaces_always_present = get_interfaces_always_present;
+  base_class->fill_contact_attributes =
+    example_call_connection_fill_contact_attributes;
 
   param_spec = g_param_spec_string ("account", "Account name",
       "The username of this user", NULL,
@@ -429,8 +436,6 @@ example_call_connection_class_init (
       G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
       NULL, G_TYPE_NONE, 1, G_TYPE_STRING);
 
-  tp_contacts_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleCallConnectionClass, contacts_mixin));
   tp_presence_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleCallConnectionClass, presence_mixin),
       status_available, get_contact_statuses, set_own_status,

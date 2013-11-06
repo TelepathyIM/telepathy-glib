@@ -74,7 +74,6 @@
 #include <telepathy-glib/contact-search-result.h>
 #include <telepathy-glib/contact-search.h>
 #include <telepathy-glib/contact.h>
-#include <telepathy-glib/contacts-mixin.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/dbus-tube-channel.h>

@@ -23,12 +23,10 @@ typedef struct _ExampleEcho2ConnectionPrivate ExampleEcho2ConnectionPrivate;
 
 struct _ExampleEcho2ConnectionClass {
     TpBaseConnectionClass parent_class;
-    TpContactsMixinClass contacts_mixin;
 };
 
 struct _ExampleEcho2Connection {
     TpBaseConnection parent;
-    TpContactsMixin contacts_mixin;
 
     ExampleEcho2ConnectionPrivate *priv;
 };

@@ -21,11 +21,9 @@
 #include "protocol.h"
 #include "room-manager.h"
 
-G_DEFINE_TYPE_WITH_CODE (ExampleCSHConnection,
+G_DEFINE_TYPE (ExampleCSHConnection,
     example_csh_connection,
-    TP_TYPE_BASE_CONNECTION,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
-      tp_contacts_mixin_iface_init))
+    TP_TYPE_BASE_CONNECTION)
 
 /* type definition stuff */
 
@@ -99,7 +97,6 @@ finalize (GObject *object)
 {
   ExampleCSHConnection *self = EXAMPLE_CSH_CONNECTION (object);
 
-  tp_contacts_mixin_finalize (object);
   g_free (self->priv->account);
 
   G_OBJECT_CLASS (example_csh_connection_parent_class)->finalize (object);
@@ -219,21 +216,6 @@ shut_down (TpBaseConnection *conn)
   tp_base_connection_finish_shutdown (conn);
 }
 
-static void
-constructed (GObject *object)
-{
-  TpBaseConnection *base = TP_BASE_CONNECTION (object);
-  void (*chain_up) (GObject *) =
-    G_OBJECT_CLASS (example_csh_connection_parent_class)->constructed;
-
-  if (chain_up != NULL)
-    chain_up (object);
-
-  tp_contacts_mixin_init (object,
-      G_STRUCT_OFFSET (ExampleCSHConnection, contacts_mixin));
-  tp_base_connection_register_with_contacts_mixin (base);
-}
-
 static const gchar *interfaces_always_present[] = {
     TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
     TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
@@ -270,7 +252,6 @@ example_csh_connection_class_init (ExampleCSHConnectionClass *klass)
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
 
-  object_class->constructed = constructed;
   object_class->get_property = get_property;
   object_class->set_property = set_property;
   object_class->finalize = finalize;
@@ -294,7 +275,4 @@ example_csh_connection_class_init (ExampleCSHConnectionClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
       param_spec);
-
-  tp_contacts_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleCSHConnectionClass, contacts_mixin));
 }

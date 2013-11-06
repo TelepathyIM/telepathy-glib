@@ -64,13 +64,30 @@
  *       </para>
  *     </listitem>
  *     <listitem>
- *       <para>
- *         call tp_presence_mixin_register_with_contacts_mixin()
- *         in the #GObjectClass constructed function.
+ *       <para>in the #TpBaseConnectionClass.fill_contact_attributes
+ *       implementation, call tp_presence_mixin_fill_contact_attributes()
+ *       and do not chain up if it returns %TRUE:
  *       </para>
- *     </listitem>
- *   </itemizedlist>
- * </para>
+ * |[
+ * // ...
+ * if (!tp_strdiff (dbus_interface, MY_IFACE_CONNECTION_INTERFACE_HATS))
+ *   {
+ *     // ... fill in Hats attributes ...
+ *     return;
+ *   }
+ *
+ * if (tp_presence_mixin_fill_contact_attributes (G_OBJECT (self),
+ *         dbus_interface, contact, attributes))
+ *   {
+ *     return;
+ *   }
+ *
+ * ((TpBaseConnectionClass *) my_connection_parent_class)->
+ *     fill_contact_attributes (self, dbus_interface, contact, attributes);
+ * ]|
+ *      </listitem>
+ *      </itemizedlist>
+ *    </para>
  * </section>
  *
  * Since: 0.5.13
@@ -263,7 +280,6 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/contacts-mixin.h>
 #include <telepathy-glib/svc-connection.h>
 
 #define DEBUG_FLAG TP_DEBUG_PRESENCE
@@ -880,15 +896,38 @@ tp_presence_mixin_iface_init (gpointer g_iface,
 #undef IMPLEMENT
 }
 
-static void
+/**
+ * tp_presence_mixin_fill_contact_attributes:
+ * @obj: an object with a #TpPresenceMixin
+ * @dbus_interface: a D-Bus interface
+ * @contact: a contact
+ * @attributes: used to return attributes
+ *
+ * If @dbus_interface is an interface that is relevant for this
+ * object, fill @attributes with the attributes for @contact
+ * and return %TRUE.
+ *
+ * Returns: %TRUE if @dbus_interface was recognised
+ */
+gboolean
 tp_presence_mixin_fill_contact_attributes (GObject *obj,
-  const GArray *contacts, GHashTable *attributes_hash)
+  const gchar *dbus_interface,
+  TpHandle contact,
+  TpContactAttributeMap *attributes)
 {
   TpPresenceMixinClass *mixin_cls =
     TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
   GHashTable *contact_statuses;
+  GArray *handles;
 
-  contact_statuses = mixin_cls->get_contact_statuses (obj, contacts);
+  if (tp_strdiff (dbus_interface, TP_IFACE_CONNECTION_INTERFACE_PRESENCE1))
+    return FALSE;
+
+  handles = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
+  g_array_append_val (handles, contact);
+
+  /* FIXME: this would now be more efficient if it was singular */
+  contact_statuses = mixin_cls->get_contact_statuses (obj, handles);
   if (contact_statuses == NULL)
     {
       g_warning ("get_contact_statuses returned NULL");
@@ -906,33 +945,24 @@ tp_presence_mixin_fill_contact_attributes (GObject *obj,
         {
           TpHandle handle = GPOINTER_TO_UINT (key);
           TpPresenceStatus *status = value;
-          GValueArray *presence = construct_presence_value_array (
+          GValueArray *presence;
+
+          if (handle != contact)
+            g_warning ("get_contact_statuses returned someone else's status");
+
+          presence = construct_presence_value_array (
               status, mixin_cls->statuses);
 
-          tp_contacts_mixin_set_contact_attribute (attributes_hash, handle,
+          tp_contact_attribute_map_take_sliced_gvalue (attributes, contact,
               TP_TOKEN_CONNECTION_INTERFACE_PRESENCE1_PRESENCE,
               tp_g_value_slice_new_take_boxed (type, presence));
         }
 
       g_hash_table_unref (contact_statuses);
     }
-}
 
-/**
- * tp_presence_mixin_register_with_contacts_mixin: (skip)
- * @obj: An instance that of the implementation that uses both the Contacts
- * mixin and this mixin
- *
- * Register the Presence interface with the Contacts interface to make it
- * inspectable. The Contacts mixin should be initialized before this function
- * is called
- */
-void
-tp_presence_mixin_register_with_contacts_mixin (GObject *obj)
-{
-  tp_contacts_mixin_add_contact_attributes_iface (obj,
-      TP_IFACE_CONNECTION_INTERFACE_PRESENCE1,
-      tp_presence_mixin_fill_contact_attributes);
+  g_array_unref (handles);
+  return TRUE;
 }
 
 /* For now, self->priv is just self if heap-allocated, NULL if not. */

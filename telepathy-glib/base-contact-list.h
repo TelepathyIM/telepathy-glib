@@ -586,12 +586,16 @@ struct _TpMutableContactGroupListInterface {
 /* ---- Mixin-like functionality for our parent TpBaseConnection ---- */
 
 void tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls);
-void tp_base_contact_list_mixin_register_with_contacts_mixin (
-    TpBaseContactList *self, TpBaseConnection *conn);
 void tp_base_contact_list_mixin_list_iface_init (gpointer klass);
 void tp_base_contact_list_mixin_groups_iface_init (gpointer klass);
 _TP_AVAILABLE_IN_0_16
 void tp_base_contact_list_mixin_blocking_iface_init (gpointer klass);
+
+_TP_AVAILABLE_IN_UNRELEASED
+gboolean tp_base_contact_list_fill_contact_attributes (TpBaseContactList *self,
+  const gchar *dbus_interface,
+  TpHandle contact,
+  TpContactAttributeMap *attributes);
 
 G_END_DECLS
 

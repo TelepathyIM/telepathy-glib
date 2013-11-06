@@ -176,6 +176,12 @@
  * @create_channel_managers: Create an array of channel managers for this
  *  Connection. This must be set by subclasses to a non-%NULL
  *  value. Since: 0.7.15
+ * @fill_contact_attributes: If @dbus_interface is recognised by this
+ *  object, fill in any contact attribute tokens for @contact in @attributes
+ *  by using tp_contact_attribute_map_set()
+ *  or tp_contact_attribute_map_take_sliced_gvalue, and return. Otherwise,
+ *  chain up to the superclass' implementation.
+ *  Since: 0.UNRELEASED
  *
  * The class of a #TpBaseConnection. Many members are virtual methods etc.
  * to be filled in in the subclass' class_init function.
@@ -234,7 +240,6 @@
 
 #include <telepathy-glib/channel-manager.h>
 #include <telepathy-glib/connection-manager.h>
-#include <telepathy-glib/contacts-mixin.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/dbus-internal.h>
@@ -251,6 +256,7 @@
 
 static void conn_iface_init (gpointer, gpointer);
 static void requests_iface_init (gpointer, gpointer);
+static void contacts_iface_init (TpSvcConnectionInterfaceContactsClass *);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseConnection,
     tp_base_connection,
@@ -259,6 +265,8 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseConnection,
       conn_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
       tp_dbus_properties_mixin_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
+      contacts_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_REQUESTS,
       requests_iface_init))
 
@@ -1120,6 +1128,47 @@ tp_base_connection_get_interfaces_always_present (TpBaseConnection *self)
   return interfaces;
 }
 
+/* this is not really gtk-doc - it's for gobject-introspection */
+/**
+ * TpBaseConnectionClass::fill_contact_attributes:
+ * @self: a connection
+ * @dbus_interface: a D-Bus interface
+ * @contact: a contact
+ * @attributes: used to return the attributes
+ *
+ * If @dbus_interface is recognised by this object, fill in any contact
+ * attribute tokens for @contact in @attributes by using
+ * tp_contact_attribute_map_set() or
+ * tp_contact_attribute_map_take_sliced_gvalue, and return. Otherwise,
+ * chain up to the superclass' implementation.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+static void
+_tp_base_connection_fill_contact_attributes (TpBaseConnection *self,
+    const gchar *dbus_interface,
+    TpHandle contact,
+    TpContactAttributeMap *attributes)
+{
+  const gchar *tmp;
+
+  if (tp_strdiff (dbus_interface, TP_IFACE_CONNECTION))
+    {
+      DEBUG ("contact #%u: interface '%s' unhandled", contact, dbus_interface);
+      return;
+    }
+
+  tmp = tp_handle_inspect (self->priv->handles[TP_HANDLE_TYPE_CONTACT],
+      contact);
+  g_assert (tmp != NULL);
+
+  /* this is always included */
+  tp_contact_attribute_map_take_sliced_gvalue (attributes,
+      contact, TP_TOKEN_CONNECTION_CONTACT_ID,
+      tp_g_value_slice_new_string (tmp));
+}
+
 static void
 tp_base_connection_class_init (TpBaseConnectionClass *klass)
 {
@@ -1147,6 +1196,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
 
   klass->get_interfaces_always_present =
     tp_base_connection_get_interfaces_always_present;
+  klass->fill_contact_attributes = _tp_base_connection_fill_contact_attributes;
 
   /**
    * TpBaseConnection:protocol: (skip)
@@ -2855,49 +2905,6 @@ tp_base_connection_channel_manager_iter_next (TpChannelManagerIter *iter,
   return TRUE;
 }
 
-
-static void
-tp_base_connection_fill_contact_attributes (GObject *obj,
-  const GArray *contacts, GHashTable *attributes_hash)
-{
-  TpBaseConnection *self = TP_BASE_CONNECTION (obj);
-  TpBaseConnectionPrivate *priv = self->priv;
-  guint i;
-
-  for (i = 0; i < contacts->len; i++)
-    {
-      TpHandle handle;
-      const gchar *tmp;
-
-      handle = g_array_index (contacts, TpHandle, i);
-      tmp = tp_handle_inspect (priv->handles[TP_HANDLE_TYPE_CONTACT], handle);
-      g_assert (tmp != NULL);
-
-      tp_contacts_mixin_set_contact_attribute (attributes_hash,
-          handle, TP_TOKEN_CONNECTION_CONTACT_ID,
-          tp_g_value_slice_new_string (tmp));
-    }
-}
-
-/**
- * tp_base_connection_register_with_contacts_mixin: (skip)
- * @self: An instance of the #TpBaseConnections that uses the Contacts
- * mixin
- *
- * Register the Connection interface with the Contacts interface to make it
- * inspectable. The Contacts mixin should be initialized before this function
- * is called
- */
-void
-tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self)
-{
-  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
-
-  tp_contacts_mixin_add_contact_attributes_iface (G_OBJECT (self),
-      TP_IFACE_CONNECTION,
-      tp_base_connection_fill_contact_attributes);
-}
-
 /**
  * tp_base_connection_get_dbus_daemon: (skip)
  * @self: the connection manager
@@ -2989,4 +2996,302 @@ tp_base_connection_get_object_path (TpBaseConnection *self)
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
 
   return self->priv->object_path;
+}
+
+/**
+ * TpContactAttributeMap:
+ *
+ * Opaque structure representing a map from #TpHandle to
+ * maps from contact attribute tokens to variants.
+ *
+ * This structure cannot currently be copied, freed or read via
+ * public API.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+/* Implementation detail: there is no such thing as a TpContactAttributeMap,
+ * it's just a GHashTable<TpHandle, GHashTable<gchar *, sliced GValue *>>. */
+
+/**
+ * tp_contact_attribute_map_set:
+ * @map: an opaque map from contacts to their attributes
+ * @contact: a contact
+ * @token: a contact attribute
+ * @value: the value of the attribute. If it is floating, ownership
+ *  will be taken, as if via g_variant_ref_sink().
+ *
+ * Put a contact attribute in @self. It is an error to use this function
+ * for a @contact that was not requested.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_contact_attribute_map_set (TpContactAttributeMap *map,
+    TpHandle contact,
+    const gchar *token,
+    GVariant *value)
+{
+  GValue *gv = g_slice_new0 (GValue);
+
+  g_variant_ref_sink (value);
+  dbus_g_value_parse_g_variant (value, gv);
+  tp_contact_attribute_map_take_sliced_gvalue (map, contact, token, gv);
+  g_variant_unref (value);
+}
+
+/**
+ * tp_contact_attribute_map_take_sliced_gvalue: (skip)
+ * @map: an opaque map from contacts to their attributes
+ * @contact: a contact
+ * @token: a contact attribute
+ * @value: (transfer full): a slice-allocated #GValue, for instance
+ *  from tp_g_value_slice_new(). Ownership is taken by @self.
+ *
+ * Put a contact attribute in @self. It is an error to use this function
+ * for a @contact that was not requested.
+ *
+ * This version of tp_contact_attribute_map_set() isn't
+ * introspectable, but is close to the API that "Telepathy 0"
+ * connection managers used.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_contact_attribute_map_take_sliced_gvalue (TpContactAttributeMap *map,
+    TpHandle contact,
+    const gchar *token,
+    GValue *value)
+{
+  GHashTable *auasv = (GHashTable *) map;
+  GHashTable *asv;
+
+  g_return_if_fail (map != NULL);
+
+  asv = g_hash_table_lookup (auasv, GUINT_TO_POINTER (contact));
+
+  if (G_UNLIKELY (asv == NULL))
+    {
+      /* This is a programmer error; I'm not using g_return_if_fail
+       * to give a better diagnostic */
+      CRITICAL ("contact %u not in TpContactAttributeMap", contact);
+      return;
+    }
+
+  g_return_if_fail (G_IS_VALUE (value));
+
+  g_hash_table_insert (asv, g_strdup (token), value);
+}
+
+static const gchar * const contacts_always_included_interfaces[] = {
+    TP_IFACE_CONNECTION,
+    NULL
+};
+
+/**
+ * tp_base_connection_dup_contact_attributes_hash: (skip)
+ * @self: A connection instance that uses this mixin. The connection must
+ *  be connected.
+ * @handles: List of handles to retrieve contacts for. Any invalid handles
+ *  will be dropped from the returned mapping.
+ * @interfaces: (allow-none) (array zero-terminated=1) (element-type utf8): an
+ *  array of user-requested interfaces
+ * @assumed_interfaces: (allow-none) (array zero-terminated=1) (element-type utf8):
+ *  A list of additional interfaces to retrieve attributes
+ *  from. This can be used for interfaces documented as automatically included,
+ *  like %TP_IFACE_CONNECTION for GetContactAttributes,
+ *  or %TP_IFACE_CONNECTION and %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST for
+ *  GetContactListAttributes.
+ *
+ * Get contact attributes for the given contacts. Provide attributes for
+ * all requested interfaces. If contact attributes are not immediately known,
+ * the behaviour is defined by the interface; the attribute should either
+ * be omitted from the result or replaced with a default value.
+ *
+ * Returns: (element-type guint GLib.HashTable): a map from #TpHandle
+ *  to #GHashTable, where the values are maps from string to #GValue
+ * Since: 0.UNRELEASED
+ */
+GHashTable *
+tp_base_connection_dup_contact_attributes_hash (TpBaseConnection *self,
+    const GArray *handles,
+    const gchar * const *interfaces,
+    const gchar * const *assumed_interfaces)
+{
+  GHashTable *result;
+  guint i;
+  TpHandleRepoIface *contact_repo;
+  GArray *valid_handles;
+  TpBaseConnectionClass *klass;
+
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
+  g_return_val_if_fail (tp_base_connection_check_connected (self, NULL), NULL);
+
+  contact_repo = tp_base_connection_get_handles (self, TP_HANDLE_TYPE_CONTACT);
+  klass = TP_BASE_CONNECTION_GET_CLASS (self);
+  g_return_val_if_fail (klass->fill_contact_attributes != NULL, NULL);
+
+  /* Setup handle array and hash with valid handles */
+  valid_handles = g_array_sized_new (TRUE, TRUE, sizeof (TpHandle),
+      handles->len);
+  result = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL,
+      (GDestroyNotify) g_hash_table_unref);
+
+  DEBUG ("%u contact(s)", handles->len);
+
+  for (i = 0; assumed_interfaces != NULL && assumed_interfaces[i] != NULL; i++)
+    {
+      DEBUG ("\tassumed interface : '%s'", assumed_interfaces[i]);
+    }
+
+  for (i = 0; interfaces != NULL && interfaces[i] != NULL; i++)
+    {
+      DEBUG ("\tselected interface: '%s'", interfaces[i]);
+    }
+
+  for (i = 0; i < handles->len; i++)
+    {
+      TpHandle h;
+      GHashTable *attr_hash;
+      guint j;
+
+      h = g_array_index (handles, TpHandle, i);
+
+      DEBUG ("\tcontact #%u", h);
+
+      if (!tp_handle_is_valid (contact_repo, h, NULL))
+        {
+          DEBUG ("\t\tinvalid");
+          continue;
+        }
+
+      attr_hash = g_hash_table_new_full (g_str_hash,
+          g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free);
+      g_array_append_val (valid_handles, h);
+      g_hash_table_insert (result, GUINT_TO_POINTER (h), attr_hash);
+
+      for (j = 0; assumed_interfaces != NULL && assumed_interfaces[j] != NULL; j++)
+        {
+          klass->fill_contact_attributes (self, assumed_interfaces[j], h,
+              (TpContactAttributeMap *) result);
+        }
+
+      for (j = 0; interfaces != NULL && interfaces[j] != NULL; j++)
+        {
+          klass->fill_contact_attributes (self, interfaces[j], h,
+              (TpContactAttributeMap *) result);
+        }
+    }
+
+  g_array_unref (valid_handles);
+
+  return result;
+}
+
+static void
+contacts_get_contact_attributes_impl (TpSvcConnectionInterfaceContacts *iface,
+  const GArray *handles,
+  const char **interfaces,
+  DBusGMethodInvocation *context)
+{
+  TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
+  GHashTable *result;
+
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
+
+  result = tp_base_connection_dup_contact_attributes_hash (conn,
+      handles,
+      (const gchar * const *) interfaces,
+      contacts_always_included_interfaces);
+
+  tp_svc_connection_interface_contacts_return_from_get_contact_attributes (
+      context, result);
+
+  g_hash_table_unref (result);
+}
+
+typedef struct
+{
+  TpBaseConnection *conn;
+  GStrv interfaces;
+  DBusGMethodInvocation *context;
+} GetContactByIdData;
+
+static void
+ensure_handle_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpHandleRepoIface *contact_repo = (TpHandleRepoIface *) source;
+  GetContactByIdData *data = user_data;
+  TpHandle handle;
+  GArray *handles;
+  GHashTable *attributes;
+  GHashTable *ret;
+  GError *error = NULL;
+
+  handle = tp_handle_ensure_finish (contact_repo, result, &error);
+
+  if (handle == 0)
+    {
+      dbus_g_method_return_error (data->context, error);
+      g_clear_error (&error);
+      goto out;
+    }
+
+  handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
+  g_array_append_val (handles, handle);
+
+  attributes = tp_base_connection_dup_contact_attributes_hash (data->conn,
+      handles, (const gchar * const *) data->interfaces,
+      contacts_always_included_interfaces);
+
+  ret = g_hash_table_lookup (attributes, GUINT_TO_POINTER (handle));
+  g_assert (ret != NULL);
+
+  tp_svc_connection_interface_contacts_return_from_get_contact_by_id (
+      data->context, handle, ret);
+
+  g_array_unref (handles);
+  g_hash_table_unref (attributes);
+
+out:
+  g_object_unref (data->conn);
+  g_strfreev (data->interfaces);
+  g_slice_free (GetContactByIdData, data);
+}
+
+static void
+contacts_get_contact_by_id_impl (TpSvcConnectionInterfaceContacts *iface,
+  const gchar *id,
+  const gchar **interfaces,
+  DBusGMethodInvocation *context)
+{
+  TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
+      TP_HANDLE_TYPE_CONTACT);
+  GetContactByIdData *data;
+
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
+
+  DEBUG ("%s: '%s', %u interfaces", conn->priv->object_path, id,
+      (interfaces == NULL ? 0 : g_strv_length ((GStrv) interfaces)));
+
+  data = g_slice_new0 (GetContactByIdData);
+  data->conn = g_object_ref (conn);
+  data->interfaces = g_strdupv ((gchar **) interfaces);
+  data->context = context;
+
+  tp_handle_ensure_async (contact_repo, conn, id, NULL,
+      ensure_handle_cb, data);
+}
+
+static void
+contacts_iface_init (TpSvcConnectionInterfaceContactsClass *klass)
+{
+#define IMPLEMENT(x) tp_svc_connection_interface_contacts_implement_##x ( \
+    klass, contacts_##x##_impl)
+  IMPLEMENT (get_contact_attributes);
+  IMPLEMENT (get_contact_by_id);
+#undef IMPLEMENT
 }

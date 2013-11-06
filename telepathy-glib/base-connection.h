@@ -41,6 +41,8 @@ G_BEGIN_DECLS
 typedef struct _TpBaseConnectionClass TpBaseConnectionClass;
 typedef struct _TpBaseConnectionPrivate TpBaseConnectionPrivate;
 
+typedef struct _TpContactAttributeMap TpContactAttributeMap;
+
 typedef void (*TpBaseConnectionProc) (TpBaseConnection *self);
 
 typedef gboolean (*TpBaseConnectionStartConnectingImpl) (
@@ -92,6 +94,11 @@ struct _TpBaseConnectionClass {
     TpBaseConnectionCreateChannelManagersImpl create_channel_managers;
 
     TpBaseConnectionGetInterfacesImpl get_interfaces_always_present;
+
+    void (*fill_contact_attributes) (TpBaseConnection *self,
+    const gchar *dbus_interface,
+    TpHandle contact,
+    TpContactAttributeMap *attributes);
 
     /*<private>*/
     gpointer _future3;
@@ -155,9 +162,6 @@ void tp_base_connection_finish_shutdown (TpBaseConnection *self);
 void tp_base_connection_add_interfaces (TpBaseConnection *self,
     const gchar **interfaces);
 
-void tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self);
-
-
 typedef struct _TpChannelManagerIter TpChannelManagerIter;
 
 struct _TpChannelManagerIter {
@@ -212,6 +216,25 @@ void tp_base_connection_add_client_interest (TpBaseConnection *self,
 
 void tp_base_connection_add_possible_client_interest (TpBaseConnection *self,
     GQuark token);
+
+_TP_AVAILABLE_IN_UNRELEASED
+GHashTable *tp_base_connection_dup_contact_attributes_hash (
+    TpBaseConnection *self,
+    const GArray *handles,
+    const gchar * const *interfaces,
+    const gchar * const *assumed_interfaces);
+
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_contact_attribute_map_set (TpContactAttributeMap *map,
+    TpHandle contact,
+    const gchar *token,
+    GVariant *value);
+
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_contact_attribute_map_take_sliced_gvalue (TpContactAttributeMap *map,
+    TpHandle contact,
+    const gchar *token,
+    GValue *value);
 
 G_END_DECLS
 
