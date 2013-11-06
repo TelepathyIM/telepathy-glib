@@ -297,42 +297,34 @@ status_available (GObject *object,
   return tp_base_connection_check_connected (base, NULL);
 }
 
-static GHashTable *
-get_contact_statuses (GObject *object,
-                      const GArray *contacts)
+static TpPresenceStatus *
+get_contact_status (GObject *object,
+    TpHandle contact)
 {
   ExampleContactListConnection *self =
     EXAMPLE_CONTACT_LIST_CONNECTION (object);
   TpBaseConnection *base = TP_BASE_CONNECTION (object);
-  guint i;
-  GHashTable *result = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-      NULL, (GDestroyNotify) tp_presence_status_free);
+  ExampleContactListPresence presence;
+  GHashTable *parameters;
+  TpPresenceStatus *result;
 
-  for (i = 0; i < contacts->len; i++)
+  /* we get our own status from the connection, and everyone else's status
+   * from the contact lists */
+  if (contact == tp_base_connection_get_self_handle (base))
     {
-      TpHandle contact = g_array_index (contacts, guint, i);
-      ExampleContactListPresence presence;
-      GHashTable *parameters;
-
-      /* we get our own status from the connection, and everyone else's status
-       * from the contact lists */
-      if (contact == tp_base_connection_get_self_handle (base))
-        {
-          presence = (self->priv->away ? EXAMPLE_CONTACT_LIST_PRESENCE_AWAY
-              : EXAMPLE_CONTACT_LIST_PRESENCE_AVAILABLE);
-        }
-      else
-        {
-          presence = example_contact_list_get_presence (
-              self->priv->contact_list, contact);
-        }
-
-      parameters = g_hash_table_new_full (g_str_hash,
-          g_str_equal, NULL, (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (result, GUINT_TO_POINTER (contact),
-          tp_presence_status_new (presence, parameters));
-      g_hash_table_unref (parameters);
+      presence = (self->priv->away ? EXAMPLE_CONTACT_LIST_PRESENCE_AWAY
+          : EXAMPLE_CONTACT_LIST_PRESENCE_AVAILABLE);
     }
+  else
+    {
+      presence = example_contact_list_get_presence (
+          self->priv->contact_list, contact);
+    }
+
+  parameters = g_hash_table_new_full (g_str_hash,
+      g_str_equal, NULL, (GDestroyNotify) tp_g_value_slice_free);
+  result = tp_presence_status_new (presence, parameters);
+  g_hash_table_unref (parameters);
 
   return result;
 }
@@ -477,7 +469,7 @@ example_contact_list_connection_class_init (
 
   tp_presence_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleContactListConnectionClass, presence_mixin),
-      status_available, get_contact_statuses, set_own_status,
+      status_available, get_contact_status, set_own_status,
       example_contact_list_presence_statuses ());
   tp_presence_mixin_init_dbus_properties (object_class);
 

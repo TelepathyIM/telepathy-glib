@@ -107,8 +107,8 @@ void tp_presence_status_free (TpPresenceStatus *status);
 typedef gboolean (*TpPresenceMixinStatusAvailableFunc) (GObject *obj,
     guint which);
 
-typedef GHashTable *(*TpPresenceMixinGetContactStatusesFunc) (GObject *obj,
-    const GArray *contacts);
+typedef TpPresenceStatus *(*TpPresenceMixinGetContactStatusFunc) (GObject *obj,
+    TpHandle contact);
 
 typedef gboolean (*TpPresenceMixinSetOwnStatusFunc) (GObject *obj,
     const TpPresenceStatus *status, GError **error);
@@ -123,7 +123,7 @@ typedef struct _TpPresenceMixinPrivate TpPresenceMixinPrivate;
 
 struct _TpPresenceMixinClass {
     TpPresenceMixinStatusAvailableFunc status_available;
-    TpPresenceMixinGetContactStatusesFunc get_contact_statuses;
+    TpPresenceMixinGetContactStatusFunc get_contact_status;
     TpPresenceMixinSetOwnStatusFunc set_own_status;
 
     const TpPresenceStatusSpec *statuses;
@@ -165,7 +165,7 @@ GQuark tp_presence_mixin_get_offset_quark (void);
 
 void tp_presence_mixin_class_init (GObjectClass *obj_cls, glong offset,
     TpPresenceMixinStatusAvailableFunc status_available,
-    TpPresenceMixinGetContactStatusesFunc get_contact_statuses,
+    TpPresenceMixinGetContactStatusFunc get_contact_status,
     TpPresenceMixinSetOwnStatusFunc set_own_status,
     const TpPresenceStatusSpec *statuses);
 

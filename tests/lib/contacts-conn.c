@@ -389,39 +389,31 @@ my_status_available (GObject *object,
   return tp_base_connection_check_connected (base, NULL);
 }
 
-static GHashTable *
-my_get_contact_statuses (GObject *object,
-                         const GArray *contacts)
+static TpPresenceStatus *
+my_get_contact_status (GObject *object,
+    TpHandle contact)
 {
   TpTestsContactsConnection *self = TP_TESTS_CONTACTS_CONNECTION (object);
-  GHashTable *result = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-      NULL, (GDestroyNotify) tp_presence_status_free);
-  guint i;
+  TpPresenceStatus *result;
+  gpointer key = GUINT_TO_POINTER (contact);
+  TpTestsContactsConnectionPresenceStatusIndex index;
+  const gchar *presence_message;
+  GHashTable *parameters;
 
-  for (i = 0; i < contacts->len; i++)
-    {
-      TpHandle handle = g_array_index (contacts, TpHandle, i);
-      gpointer key = GUINT_TO_POINTER (handle);
-      TpTestsContactsConnectionPresenceStatusIndex index;
-      const gchar *presence_message;
-      GHashTable *parameters;
+  index = GPOINTER_TO_UINT (g_hash_table_lookup (
+        self->priv->presence_statuses, key));
+  presence_message = g_hash_table_lookup (
+      self->priv->presence_messages, key);
 
-      index = GPOINTER_TO_UINT (g_hash_table_lookup (
-            self->priv->presence_statuses, key));
-      presence_message = g_hash_table_lookup (
-          self->priv->presence_messages, key);
+  parameters = g_hash_table_new_full (g_str_hash,
+      g_str_equal, NULL, (GDestroyNotify) tp_g_value_slice_free);
 
-      parameters = g_hash_table_new_full (g_str_hash,
-          g_str_equal, NULL, (GDestroyNotify) tp_g_value_slice_free);
+  if (presence_message != NULL)
+    g_hash_table_insert (parameters, (gpointer) "message",
+        tp_g_value_slice_new_string (presence_message));
 
-      if (presence_message != NULL)
-        g_hash_table_insert (parameters, (gpointer) "message",
-            tp_g_value_slice_new_string (presence_message));
-
-      g_hash_table_insert (result, key,
-          tp_presence_status_new (index, parameters));
-      g_hash_table_unref (parameters);
-    }
+  result = tp_presence_status_new (index, parameters);
+  g_hash_table_unref (parameters);
 
   return result;
 }
@@ -553,7 +545,7 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
 
   tp_presence_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpTestsContactsConnectionClass, presence_mixin),
-      my_status_available, my_get_contact_statuses,
+      my_status_available, my_get_contact_status,
       my_set_own_status, my_statuses);
   mixin_class = TP_PRESENCE_MIXIN_CLASS(klass);
   mixin_class->get_maximum_status_message_length =

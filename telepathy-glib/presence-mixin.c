@@ -171,19 +171,13 @@
  */
 
 /**
- * TpPresenceMixinGetContactStatusesFunc:
+ * TpPresenceMixinGetContactStatusFunc:
  * @obj: An object with this mixin.
- * @contacts: An array of #TpHandle for the contacts to get presence status for
+ * @contact: A #TpHandle of type %TP_HANDLE_TYPE_CONTACT
  *
- * Signature of the callback used to get the stored presence status of
- * contacts. The returned hash table should have contact handles mapped to
- * their respective presence statuses in #TpPresenceStatus structs.
+ * Return the contact's status
  *
- * The returned hash table will be freed with g_hash_table_unref. The
- * callback is responsible for ensuring that this does any cleanup that
- * may be necessary.
- *
- * Returns: (transfer full): The contact presence, must not be %NULL.
+ * Returns: (transfer full): The contact's presence status
  */
 
 /**
@@ -228,7 +222,7 @@
  * TpPresenceMixinClass:
  * @status_available: The status-available function that was passed to
  *  tp_presence_mixin_class_init()
- * @get_contact_statuses: The get-contact-statuses function that was passed to
+ * @get_contact_status: The get-contact-status function that was passed to
  *  tp_presence_mixin_class_init()
  * @set_own_status: The set-own-status function that was passed to
  *  tp_presence_mixin_class_init()
@@ -401,7 +395,7 @@ tp_presence_mixin_get_offset_quark ()
  *  status can be set on a particular connection. Should usually be %NULL, to
  *  consider all statuses with #TpPresenceStatusSpec.self set to %TRUE to be
  *  settable.
- * @get_contact_statuses: A callback to be used get the current presence status
+ * @get_contact_status: A callback to be used get the current presence status
  *  for contacts. This is used in implementations of various D-Bus methods and
  *  hence must be provided.
  * @set_own_status: A callback to be used to commit changes to the user's own
@@ -424,7 +418,7 @@ void
 tp_presence_mixin_class_init (GObjectClass *obj_cls,
                               glong offset,
                               TpPresenceMixinStatusAvailableFunc status_available,
-                              TpPresenceMixinGetContactStatusesFunc get_contact_statuses,
+                              TpPresenceMixinGetContactStatusFunc get_contact_status,
                               TpPresenceMixinSetOwnStatusFunc set_own_status,
                               const TpPresenceStatusSpec *statuses)
 {
@@ -433,7 +427,7 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
 
   DEBUG ("called.");
 
-  g_assert (get_contact_statuses != NULL);
+  g_assert (get_contact_status != NULL);
   g_assert (set_own_status != NULL);
   g_assert (statuses != NULL);
 
@@ -446,7 +440,7 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
   mixin_cls = TP_PRESENCE_MIXIN_CLASS (obj_cls);
 
   mixin_cls->status_available = status_available;
-  mixin_cls->get_contact_statuses = get_contact_statuses;
+  mixin_cls->get_contact_status = get_contact_status;
   mixin_cls->set_own_status = set_own_status;
   mixin_cls->statuses = statuses;
   mixin_cls->get_maximum_status_message_length = NULL;
@@ -917,51 +911,30 @@ tp_presence_mixin_fill_contact_attributes (GObject *obj,
 {
   TpPresenceMixinClass *mixin_cls =
     TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
-  GHashTable *contact_statuses;
-  GArray *handles;
+  TpPresenceStatus *status;
+  GValueArray *presence;
 
   if (tp_strdiff (dbus_interface, TP_IFACE_CONNECTION_INTERFACE_PRESENCE1))
     return FALSE;
 
-  handles = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
-  g_array_append_val (handles, contact);
+  status = mixin_cls->get_contact_status (obj, contact);
 
-  /* FIXME: this would now be more efficient if it was singular */
-  contact_statuses = mixin_cls->get_contact_statuses (obj, handles);
-  if (contact_statuses == NULL)
+  if (status == NULL)
     {
-      g_warning ("get_contact_statuses returned NULL");
+      CRITICAL ("get_contact_status returned NULL");
     }
   else
     {
-      GHashTableIter iter;
-      gpointer key, value;
       G_GNUC_BEGIN_IGNORE_DEPRECATIONS
       GType type = G_TYPE_VALUE_ARRAY;
       G_GNUC_END_IGNORE_DEPRECATIONS
 
-      g_hash_table_iter_init (&iter, contact_statuses);
-      while (g_hash_table_iter_next (&iter, &key, &value))
-        {
-          TpHandle handle = GPOINTER_TO_UINT (key);
-          TpPresenceStatus *status = value;
-          GValueArray *presence;
-
-          if (handle != contact)
-            g_warning ("get_contact_statuses returned someone else's status");
-
-          presence = construct_presence_value_array (
-              status, mixin_cls->statuses);
-
-          tp_contact_attribute_map_take_sliced_gvalue (attributes, contact,
-              TP_TOKEN_CONNECTION_INTERFACE_PRESENCE1_PRESENCE,
-              tp_g_value_slice_new_take_boxed (type, presence));
-        }
-
-      g_hash_table_unref (contact_statuses);
+      presence = construct_presence_value_array (status, mixin_cls->statuses);
+      tp_presence_status_free (status);
+      tp_contact_attribute_map_take_sliced_gvalue (attributes, contact,
+          TP_TOKEN_CONNECTION_INTERFACE_PRESENCE1_PRESENCE,
+          tp_g_value_slice_new_take_boxed (type, presence));
     }
-
-  g_array_unref (handles);
   return TRUE;
 }
 
