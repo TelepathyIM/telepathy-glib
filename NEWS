@@ -13,6 +13,11 @@ API breaks:
 
 • IRCCommand1 is marked as stable
 
+Major functionality changes:
+
+• telepathy-logger is now part of the telepathy-glib module.
+  Configure with --disable-logger if you don't want it.
+
 There was no 0.99.4 release for this module.
 
 telepathy-glib 0.99.3 (2013-10-28)
