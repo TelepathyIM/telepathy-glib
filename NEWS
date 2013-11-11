@@ -1,3 +1,20 @@
+telepathy-glib 0.99.5 (2013-11-11)
+==================================
+
+The “high and dry” release.
+
+API breaks:
+
+• Spec 0.99.5
+  · All D-Bus namespaces have changed from im.telepathy1 to im.telepathy.v1
+  · The Renaming1.Renamed signal carries the identifier, not just the handle
+  · .manager and .client files go in $XDG_DATA_DIRS/telepathy-1 instead
+    of $XDG_DATA_DIRS/telepathy, to be parallel-installable with Telepathy 0
+
+• IRCCommand1 is marked as stable
+
+There was no 0.99.4 release for this module.
+
 telepathy-glib 0.99.3 (2013-10-28)
 ==================================
 
