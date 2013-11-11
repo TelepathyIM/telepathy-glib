@@ -164,7 +164,6 @@ main (int argc,
   gboolean freed = FALSE;
 
   tp_tests_abort_after (10);
-  g_type_init ();
   tp_debug_set_flags ("all");
 
   freed_user_data = tp_intset_sized_new (N_DAEMONS);

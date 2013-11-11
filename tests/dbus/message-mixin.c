@@ -219,7 +219,6 @@ main (int argc,
   GHashTable *parameters;
 
   tp_tests_abort_after (10);
-  g_type_init ();
   tp_debug_set_flags ("all");
   dbus = tp_tests_dbus_daemon_dup_or_die ();
 

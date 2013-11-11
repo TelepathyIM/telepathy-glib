@@ -219,8 +219,6 @@ tp_run_connection_manager (const char *prog_name,
 
   add_signal_handlers ();
 
-  g_type_init ();
-
   g_set_prgname (prog_name);
 
 #ifdef ENABLE_BACKTRACE

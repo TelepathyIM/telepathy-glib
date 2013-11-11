@@ -76,7 +76,6 @@ main (int argc,
   GError *error = NULL;
   TpBaseClient *observer;
 
-  g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
   manager = tp_account_manager_dup ();

@@ -296,7 +296,7 @@ CXXFLAGS="$GLIB_CFLAGS"
 AC_LINK_IFELSE(
   [AC_LANG_PROGRAM(
      [[#include <gio/gio.h>]],
-     [[g_type_init (); g_object_unref (g_file_new_for_path ("/"));]])
+     [[g_object_unref (g_file_new_for_path ("/"));]])
   ],
   [tp_cxx_works=yes],
   [tp_cxx_works=no])

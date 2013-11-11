@@ -84,8 +84,6 @@ start_dbus_session (void)
 {
   g_assert (test_dbus == NULL);
 
-  g_type_init ();
-
   g_test_dbus_unset ();
 
   /* GLib 2.36 does not unset STARTER env variables but tp-glib are using them.
@@ -379,7 +377,6 @@ void
 tp_tests_init (int *argc,
     char ***argv)
 {
-  g_type_init ();
   tp_tests_abort_after (10);
   tp_debug_set_flags ("all");
 

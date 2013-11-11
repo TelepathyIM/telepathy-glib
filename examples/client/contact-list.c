@@ -74,7 +74,6 @@ main (int argc,
   TpSimpleClientFactory *factory;
   GMainLoop *loop;
 
-  g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
   loop = g_main_loop_new (NULL, FALSE);

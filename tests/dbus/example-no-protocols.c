@@ -97,7 +97,6 @@ main (int argc,
   gboolean saw_exited;
 
   tp_tests_abort_after (5);
-  g_type_init ();
 
   tp_debug_set_flags ("all");
 

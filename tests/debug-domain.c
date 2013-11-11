@@ -54,8 +54,6 @@ int main (int argc, char **argv)
 #ifdef ENABLE_DEBUG
   TestItem i;
 
-  g_type_init ();
-
   tp_debug_set_flags ("all");
 
   g_log_set_default_handler (handler, NULL);

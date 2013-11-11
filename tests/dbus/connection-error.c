@@ -87,7 +87,6 @@ example_com_error_quark (void)
 
       g_assert (sizeof (GQuark) <= sizeof (gsize));
 
-      g_type_init ();
       dbus_g_error_domain_register (domain, "com.example",
           example_com_error_get_type ());
       g_once_init_leave (&quark, domain);
@@ -116,7 +115,6 @@ global_setup (void)
 
   done = TRUE;
 
-  g_type_init ();
   tp_debug_set_flags ("all");
 
   tp_proxy_subclass_add_error_mapping (TP_TYPE_CONNECTION,

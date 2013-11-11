@@ -101,7 +101,6 @@ test_handles (void)
 int main (int argc, char **argv)
 {
   tp_tests_abort_after (10);
-  g_type_init ();
 
   test_handles ();
 

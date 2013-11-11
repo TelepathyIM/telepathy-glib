@@ -22,8 +22,6 @@ test_tp_contact_feature (void)
 {
   GEnumClass *klass;
 
-  g_type_init ();
-
   klass = g_type_class_ref (TP_TYPE_CONTACT_FEATURE);
 
   g_assert (klass != NULL);
@@ -39,8 +37,6 @@ static void
 test_tp_dbus_error (void)
 {
   GEnumClass *klass;
-
-  g_type_init ();
 
   klass = g_type_class_ref (TP_TYPE_DBUS_ERROR);
 

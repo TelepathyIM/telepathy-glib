@@ -302,7 +302,6 @@ test_sockaddr_to_variant_abstract_unix (void)
 int
 main (int argc, char **argv)
 {
-  g_type_init ();
   dbus_g_type_specialized_init ();
 
   test_variant_to_sockaddr_ipv4 ();

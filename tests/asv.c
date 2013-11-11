@@ -37,8 +37,6 @@ int main (int argc, char **argv)
 
   /* Setup */
 
-  g_type_init ();
-
   hash = tp_asv_new (
       "d:123.2", G_TYPE_DOUBLE, 123.2,
       "s:test", G_TYPE_STRING, "test",

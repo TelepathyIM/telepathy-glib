@@ -137,7 +137,6 @@ main (int argc,
   GQuark some_features[] = { TP_CHANNEL_FEATURE_CORE,
       TP_CHANNEL_FEATURE_CHAT_STATES, 0 };
 
-  g_type_init ();
   tp_tests_abort_after (10);
   dbus = tp_tests_dbus_daemon_dup_or_die ();
 

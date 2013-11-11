@@ -326,7 +326,6 @@ setup_pre_connect (
   GError *error = NULL;
   const gchar *account;
 
-  g_type_init ();
   tp_debug_set_flags ("all");
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
   test->main_loop = g_main_loop_new (NULL, FALSE);
@@ -2740,7 +2739,6 @@ int
 main (int argc,
       char **argv)
 {
-  g_type_init ();
   tp_tests_abort_after (30);
   tp_debug_set_flags ("all");
 

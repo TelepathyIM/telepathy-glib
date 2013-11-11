@@ -22,7 +22,6 @@ static void
 setup (Test *test,
     gconstpointer data)
 {
-  g_type_init ();
   tp_debug_set_flags ("all");
 
   tp_tests_create_and_connect_conn (TP_TESTS_TYPE_SIMPLE_CONNECTION,

@@ -86,7 +86,6 @@ main (int argc,
   TpSimpleClientFactory *factory;
   GError *error = NULL;
 
-  g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
   if (argc < 2)

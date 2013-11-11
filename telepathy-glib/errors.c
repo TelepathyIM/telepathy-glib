@@ -335,7 +335,6 @@ tp_error_quark (void)
        * "tp-error-quark" */
       GQuark domain = g_quark_from_static_string ("tp_errors");
 
-      g_type_init ();
       dbus_g_error_domain_register (domain, TP_ERROR_PREFIX,
           TP_TYPE_ERROR);
       g_once_init_leave (&quark, domain);

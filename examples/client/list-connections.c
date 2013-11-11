@@ -62,7 +62,6 @@ main (int argc,
   TpDBusDaemon *bus_daemon;
   GError *error = NULL;
 
-  g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
   bus_daemon = tp_dbus_daemon_dup (&error);
