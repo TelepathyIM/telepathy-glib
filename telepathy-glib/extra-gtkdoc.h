@@ -1211,3 +1211,13 @@
  * Avatars etc. to a Connection. The Sidecars1 interface provides an
  * alternative, by attaching plugin-provided interfaces to a secondary object.
  */
+
+/**
+ * SECTION:cli-connection-protocol-specifics
+ * @title: Protocol-specific Connection interfaces
+ * @short_description: client-side wrappers for IRCCommand1
+ * @see_also: #TpConnection
+ *
+ * In IRC, it is sometimes necessary to send arbitrary strings to the server.
+ * The IRCCommand interface provides this functionality.
+ */
