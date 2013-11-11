@@ -98,17 +98,17 @@ const gchar * const *
 /* gtk-doc sucks */
 tp_protocol_get_authentication_types (TpProtocol *self);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 const gchar * const *
 /* ... */
 tp_protocol_get_addressable_vcard_fields (TpProtocol *self);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 const gchar * const *
 /* ... */
 tp_protocol_get_addressable_uri_schemes (TpProtocol *self);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 GList *tp_protocol_dup_presence_statuses (TpProtocol *self)
   G_GNUC_WARN_UNUSED_RESULT;
 
@@ -124,43 +124,43 @@ TpCapabilities *tp_protocol_get_capabilities (TpProtocol *self);
 _TP_AVAILABLE_IN_0_16
 TpAvatarRequirements * tp_protocol_get_avatar_requirements (TpProtocol *self);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_protocol_normalize_contact_async (TpProtocol *self,
     const gchar *contact,
     GCancellable *cancellable,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 gchar *tp_protocol_normalize_contact_finish (TpProtocol *self,
     GAsyncResult *result,
     GError **error);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_protocol_identify_account_async (TpProtocol *self,
     GVariant *vardict,
     GCancellable *cancellable,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 gchar *tp_protocol_identify_account_finish (TpProtocol *self,
     GAsyncResult *result,
     GError **error);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_protocol_normalize_contact_uri_async (TpProtocol *self,
     const gchar *uri,
     GCancellable *cancellable,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 gchar *tp_protocol_normalize_contact_uri_finish (TpProtocol *self,
     GAsyncResult *result,
     GError **error);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_protocol_normalize_vcard_address_async (TpProtocol *self,
     const gchar *field,
     const gchar *value,
@@ -168,7 +168,7 @@ void tp_protocol_normalize_vcard_address_async (TpProtocol *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 gchar *tp_protocol_normalize_vcard_address_finish (TpProtocol *self,
     GAsyncResult *result,
     GError **error);
