@@ -201,7 +201,7 @@ dnl Check for Glib
 PKG_CHECK_MODULES(GLIB,
   [glib-2.0 >= 2.36, gobject-2.0 >= 2.36, gio-2.0 >= 2.36])
 
-AC_DEFINE([GLIB_VERSION_MIN_REQUIRED], [GLIB_VERSION_2_34], [Ignore post 2.34 deprecations])
+AC_DEFINE([GLIB_VERSION_MIN_REQUIRED], [GLIB_VERSION_2_36], [Ignore post 2.36 deprecations])
 AC_DEFINE([GLIB_VERSION_MAX_ALLOWED], [GLIB_VERSION_2_36], [Prevent post 2.36 APIs])
 
 dnl Check for GIO-Unix
