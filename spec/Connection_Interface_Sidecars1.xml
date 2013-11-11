@@ -20,8 +20,8 @@
       02110-1301, USA.</p>
   </tp:license>
 
-  <interface name="im.telepathy1.Connection.Interface.Sidecars1">
-    <tp:requires interface="im.telepathy1.Connection"/>
+  <interface name="im.telepathy.v1.Connection.Interface.Sidecars1">
+    <tp:requires interface="im.telepathy.v1.Connection"/>
     <tp:added version="0.27.3"/>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
@@ -82,19 +82,19 @@
             in a dictionary, build a proxy object from the value). More
             “plural” plugins are likely to want to implement new types of
             <tp:dbus-ref
-              namespace="im.telepathy1">Channel</tp:dbus-ref>
+              namespace="im.telepathy.v1">Channel</tp:dbus-ref>
             instead.</p>
         </tp:rationale>
       </tp:docstring>
 
-      <tp:error name="im.telepathy1.Error.NotImplemented">
+      <tp:error name="im.telepathy.v1.Error.NotImplemented">
         <tp:docstring>
           The requested sidecar is not implemented by this connection manager,
           or a necessary server-side component does not exist.
         </tp:docstring>
       </tp:error>
 
-      <tp:error name="im.telepathy1.Error.ServiceBusy">
+      <tp:error name="im.telepathy.v1.Error.ServiceBusy">
         <tp:docstring>
           A server-side component needed by the requested sidecar reported it
           is currently too busy, or did not respond for some
@@ -102,7 +102,7 @@
         </tp:docstring>
       </tp:error>
 
-      <tp:error name="im.telepathy1.Error.Cancelled">
+      <tp:error name="im.telepathy.v1.Error.Cancelled">
         <tp:docstring>
           The connection was disconnected while the sidecar was being set up.
         </tp:docstring>

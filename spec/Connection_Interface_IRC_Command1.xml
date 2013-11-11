@@ -16,9 +16,8 @@ Lesser General Public License for more details.</p>
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
-  <interface name="im.telepathy1.Connection.Interface.IRCCommand1"
-    tp:causes-havoc='not well-tested'>
-    <tp:requires interface="im.telepathy1.Connection"/>
+  <interface name="im.telepathy.v1.Connection.Interface.IRCCommand1">
+    <tp:requires interface="im.telepathy.v1.Connection"/>
     <tp:added version="0.27.3"/>
 
     <method name="Send" tp:name-for-bindings="Send">
@@ -37,9 +36,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
            character set, if different, before sending to the server.</p>
       </tp:docstring>
       <tp:possible-errors>
-        <tp:error name="im.telepathy1.Error.Disconnected"/>
-        <tp:error name="im.telepathy1.Error.NetworkError"/>
-        <tp:error name="im.telepathy1.Error.InvalidArgument">
+        <tp:error name="im.telepathy.v1.Error.Disconnected"/>
+        <tp:error name="im.telepathy.v1.Error.NetworkError"/>
+        <tp:error name="im.telepathy.v1.Error.InvalidArgument">
           <tp:docstring>
             The connection manager MAY raise this error for commands that
             have a more appropriate D-Bus API.

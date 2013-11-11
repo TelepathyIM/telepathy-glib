@@ -22,8 +22,8 @@
   </tp:license>
 
   <interface
-    name="im.telepathy1.ChannelDispatcher.Interface.Messages1">
-    <tp:requires interface="im.telepathy1.ChannelDispatcher"/>
+    name="im.telepathy.v1.ChannelDispatcher.Interface.Messages1">
+    <tp:requires interface="im.telepathy.v1.ChannelDispatcher"/>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>
@@ -135,38 +135,38 @@
       </tp:docstring>
 
       <tp:possible-errors>
-        <tp:error name="im.telepathy1.Error.Disconnected"/>
-        <tp:error name="im.telepathy1.Error.NetworkError"/>
-        <tp:error name="im.telepathy1.Error.NotImplemented">
+        <tp:error name="im.telepathy.v1.Error.Disconnected"/>
+        <tp:error name="im.telepathy.v1.Error.NetworkError"/>
+        <tp:error name="im.telepathy.v1.Error.NotImplemented">
           <tp:docstring>
             The connection manager does not implement Text channels
             that communicate with a named contact.
           </tp:docstring>
         </tp:error>
-        <tp:error name="im.telepathy1.Error.InvalidHandle">
+        <tp:error name="im.telepathy.v1.Error.InvalidHandle">
           <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
             The <var>Target_ID</var> was not syntactically valid for the
             <var>Account</var>'s protocol.
           </tp:docstring>
         </tp:error>
-        <tp:error name="im.telepathy1.Error.InvalidHandle">
+        <tp:error name="im.telepathy.v1.Error.InvalidHandle">
           <tp:docstring>
             The requested message is malformed and cannot be sent.
           </tp:docstring>
         </tp:error>
-        <tp:error name="im.telepathy1.Error.Offline">
+        <tp:error name="im.telepathy.v1.Error.Offline">
           <tp:docstring>
             The requested channel cannot be created because the target is
             offline.
           </tp:docstring>
         </tp:error>
-        <tp:error name="im.telepathy1.Error.NotAvailable">
+        <tp:error name="im.telepathy.v1.Error.NotAvailable">
           <tp:docstring>
             The requested channel cannot be created, but in
             principle, a similar request might succeed in future.
           </tp:docstring>
         </tp:error>
-        <tp:error name="im.telepathy1.Error.PermissionDenied"/>
+        <tp:error name="im.telepathy.v1.Error.PermissionDenied"/>
       </tp:possible-errors>
     </method>
 
