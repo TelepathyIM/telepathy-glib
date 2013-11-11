@@ -116,7 +116,7 @@ identify_account (TpBaseProtocol *self G_GNUC_UNUSED,
   const gchar *account = tp_asv_get_string (asv, "account");
 
   if (account != NULL)
-    return g_strdup (account);
+    return g_utf8_strdown (account, -1);
 
   g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
       "'account' parameter not given");
@@ -227,6 +227,72 @@ dup_supported_vcard_fields (TpBaseProtocol *self)
   return g_strdupv ((GStrv) addressing_vcard_fields);
 }
 
+static gchar *
+normalize_vcard_address (TpBaseProtocol *self,
+    const gchar *vcard_field,
+    const gchar *vcard_address,
+    GError **error)
+{
+  if (g_ascii_strcasecmp (vcard_field, "x-jabber") == 0)
+    {
+      /* This is not really how you normalize a JID but it's good enough
+       * for an example. In real life you'd do syntax-checking beyond
+       * "is it empty?", stringprep, and so on. Here, we just assume
+       * non-empty means valid, and lower-case means normalized. */
+
+      if (tp_str_empty (vcard_address))
+        {
+          g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+              "The empty string is not a valid JID");
+          return NULL;
+        }
+
+      return g_utf8_strdown (vcard_address, -1);
+    }
+  else
+    {
+      g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
+          "Don't know how to normalize vCard field: %s", vcard_field);
+      return NULL;
+    }
+}
+
+static gchar *
+normalize_contact_uri (TpBaseProtocol *self,
+    const gchar *uri,
+    GError **error)
+{
+  gchar *scheme = g_uri_parse_scheme (uri);
+
+  if (g_ascii_strcasecmp (scheme, "xmpp") == 0)
+    {
+      gchar *ret = NULL;
+      gchar *id;
+
+      id = normalize_vcard_address (self, "x-jabber", uri + 5, error);
+
+      if (id != NULL)
+        ret = g_strdup_printf ("%s:%s", scheme, id);
+
+      g_free (scheme);
+      g_free (id);
+      return ret;
+    }
+  else if (scheme == NULL)
+    {
+      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+          "Not a valid URI: %s", uri);
+      return NULL;
+    }
+  else
+    {
+      g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
+          "Don't know how to normalize URIs of that scheme: %s", scheme);
+      g_free (scheme);
+      return NULL;
+    }
+}
+
 static void
 example_echo_2_protocol_class_init (
     ExampleEcho2ProtocolClass *klass)
@@ -249,4 +315,6 @@ addressing_iface_init (TpProtocolAddressingInterface *iface)
 {
   iface->dup_supported_vcard_fields = dup_supported_vcard_fields;
   iface->dup_supported_uri_schemes = dup_supported_uri_schemes;
+  iface->normalize_vcard_address = normalize_vcard_address;
+  iface->normalize_contact_uri = normalize_contact_uri;
 }

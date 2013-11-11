@@ -96,7 +96,10 @@
  * @optional_arguments: An array of #TpPresenceStatusOptionalArgumentSpec
  *  structures representing the optional arguments for this status, terminated
  *  by a NULL name. If there are no optional arguments for a status, this can
- *  be NULL.
+ *  be NULL. In modern Telepathy connection managers, the only optional
+ *  argument should be a string (type "s") named "message" on statuses
+ *  that have an optional human-readable message. All other optional arguments
+ *  are deprecated.
  *
  * Structure specifying a supported presence status.
  *
@@ -118,8 +121,12 @@
  * In addition to the fields documented here, there are two gpointer fields
  * which must currently be %NULL. A meaning may be defined for these in a
  * future version of telepathy-glib.
+ *
+ * In modern Telepathy connection managers, the only optional
+ * argument should be a %G_TYPE_STRING named "message", on statuses
+ * that have an optional human-readable message. All other optional arguments
+ * are deprecated.
  */
-
 
 /**
  * TpPresenceMixinStatusAvailableFunc:
@@ -297,6 +304,11 @@ deep_copy_hashtable (GHashTable *hash_table)
  *
  * Construct a presence status structure. You should free the returned
  * structure with #tp_presence_status_free.
+ *
+ * In modern Telepathy connection managers, the only optional
+ * argument should be a %G_TYPE_STRING named "message", on statuses
+ * that have an optional human-readable message. All other optional arguments
+ * are deprecated.
  *
  * Returns: A pointer to the newly allocated presence status structure.
  */
@@ -669,27 +681,17 @@ tp_presence_mixin_get_dbus_property (GObject *object,
 
       for (i=0; mixin_cls->statuses[i].name != NULL; i++)
         {
-          const TpPresenceStatusOptionalArgumentSpec *specs;
-          int j;
-          gboolean message = FALSE;
+          gboolean message;
 
           /* we include statuses here even if they're not available
            * to set on yourself */
           if (!check_status_available (object, mixin_cls, i, NULL, FALSE))
             continue;
 
-          specs = mixin_cls->statuses[i].optional_arguments;
+          message = tp_presence_status_spec_has_message (
+              &mixin_cls->statuses[i]);
 
-          for (j = 0; specs != NULL && specs[j].name != NULL; j++)
-            {
-              if (!tp_strdiff (specs[j].name, "message"))
-                {
-                  message = TRUE;
-                  break;
-                }
-            }
-
-         status = tp_value_array_build (3,
+          status = tp_value_array_build (3,
              G_TYPE_UINT, (guint) mixin_cls->statuses[i].presence_type,
              G_TYPE_BOOLEAN, mixin_cls->statuses[i].self,
              G_TYPE_BOOLEAN, message,
@@ -933,3 +935,188 @@ tp_presence_mixin_register_with_contacts_mixin (GObject *obj)
       tp_presence_mixin_fill_contact_attributes);
 }
 
+/* For now, self->priv is just self if heap-allocated, NULL if not. */
+static gboolean
+_tp_presence_status_spec_is_heap_allocated (const TpPresenceStatusSpec *self)
+{
+  return (self->priv == (TpPresenceStatusSpecPrivate *) self);
+}
+
+/**
+ * tp_presence_status_spec_get_presence_type:
+ * @self: a presence status specification
+ *
+ * Return the category into which this presence type falls. For instance,
+ * for XMPP's "" (do not disturb) status, this would return
+ * %TP_CONNECTION_PRESENCE_TYPE_BUSY.
+ *
+ * Returns: a #TpConnectionPresenceType
+ * Since: 0.UNRELEASED
+ */
+TpConnectionPresenceType
+tp_presence_status_spec_get_presence_type (const TpPresenceStatusSpec *self)
+{
+  g_return_val_if_fail (self != NULL, TP_CONNECTION_PRESENCE_TYPE_UNSET);
+
+  return self->presence_type;
+}
+
+/**
+ * tp_presence_status_spec_get_name:
+ * @self: a presence status specification
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer none): the name of this presence status,
+ *  such as "available" or "out-to-lunch".
+ * Since: 0.UNRELEASED
+ */
+const gchar *
+tp_presence_status_spec_get_name (const TpPresenceStatusSpec *self)
+{
+  g_return_val_if_fail (self != NULL, NULL);
+
+  return self->name;
+}
+
+/**
+ * tp_presence_status_spec_can_set_on_self:
+ * @self: a presence status specification
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if the user can set this presence status on themselves (most
+ *  statuses), or %FALSE if they cannot directly set it on
+ *  themselves (typically used for %TP_CONNECTION_PRESENCE_TYPE_OFFLINE
+ *  and %TP_CONNECTION_PRESENCE_TYPE_ERROR)
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_presence_status_spec_can_set_on_self (const TpPresenceStatusSpec *self)
+{
+  g_return_val_if_fail (self != NULL, FALSE);
+
+  return self->self;
+}
+
+/**
+ * tp_presence_status_spec_has_message:
+ * @self: a presence status specification
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if this presence status is accompanied by an optional
+ *  human-readable message
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_presence_status_spec_has_message (const TpPresenceStatusSpec *self)
+{
+  const TpPresenceStatusOptionalArgumentSpec *arg;
+
+  g_return_val_if_fail (self != NULL, FALSE);
+
+  if (self->optional_arguments == NULL)
+    return FALSE;
+
+  for (arg = self->optional_arguments; arg->name != NULL; arg++)
+    {
+      if (!tp_strdiff (arg->name, "message") && !tp_strdiff (arg->dtype, "s"))
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
+/**
+ * tp_presence_status_spec_new:
+ * @name: the name of the new presence status
+ * @type: the category into which this presence status falls
+ * @can_set_on_self: %TRUE if the user can set this presence status
+ *  on themselves
+ * @has_message: %TRUE if this presence status is accompanied by an
+ *  optional human-readable message
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer full): a new #TpPresenceStatusSpec
+ * Since: 0.UNRELEASED
+ */
+TpPresenceStatusSpec *
+tp_presence_status_spec_new (const gchar *name,
+    TpConnectionPresenceType type,
+    gboolean can_set_on_self,
+    gboolean has_message)
+{
+  TpPresenceStatusSpec *ret;
+  static const TpPresenceStatusOptionalArgumentSpec yes_it_has_a_message[] = {
+        { "message", "s" },
+        { NULL }
+  };
+
+  g_return_val_if_fail (!tp_str_empty (name), NULL);
+  g_return_val_if_fail (type >= 0 && type < TP_NUM_CONNECTION_PRESENCE_TYPES,
+      NULL);
+
+  ret = g_slice_new0 (TpPresenceStatusSpec);
+
+  ret->name = g_strdup (name);
+  ret->presence_type = type;
+  ret->self = can_set_on_self;
+
+  if (has_message)
+    ret->optional_arguments = yes_it_has_a_message;
+  else
+    ret->optional_arguments = NULL;
+
+  /* dummy marker for "this is on the heap" rather than a real struct */
+  ret->priv = (TpPresenceStatusSpecPrivate *) ret;
+
+  return ret;
+}
+
+/**
+ * tp_presence_status_spec_copy:
+ * @self: a presence status specification
+ *
+ * Copy a presence status specification.
+ *
+ * If @self has optional arguments other than a string named "message",
+ * they are not copied. Optional arguments with other names or types
+ * are deprecated.
+ *
+ * Returns: (transfer full): a new #TpPresenceStatusSpec resembling @self
+ * Since: 0.UNRELEASED
+ */
+TpPresenceStatusSpec *
+tp_presence_status_spec_copy (const TpPresenceStatusSpec *self)
+{
+  g_return_val_if_fail (self != NULL, NULL);
+
+  return tp_presence_status_spec_new (self->name, self->presence_type,
+      self->self, tp_presence_status_spec_has_message (self));
+}
+
+/**
+ * tp_presence_status_spec_free:
+ * @self: (transfer full): a presence status specification
+ *
+ * Free a presence status specification produced by
+ * tp_presence_status_spec_new() or tp_presence_status_spec_copy().
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_presence_status_spec_free (TpPresenceStatusSpec *self)
+{
+  g_return_if_fail (_tp_presence_status_spec_is_heap_allocated (self));
+
+  /* This struct was designed to always be on the stack, so freeing this
+   * needs a non-const-correct cast */
+  g_free ((gchar *) self->name);
+
+  g_slice_free (TpPresenceStatusSpec, self);
+}
+
+G_DEFINE_BOXED_TYPE (TpPresenceStatusSpec, tp_presence_status_spec,
+    tp_presence_status_spec_copy, tp_presence_status_spec_free)

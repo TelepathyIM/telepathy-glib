@@ -1701,6 +1701,13 @@ TP_CONTACTS_MIXIN
 <FILE>presence-mixin</FILE>
 TpPresenceStatusOptionalArgumentSpec
 TpPresenceStatusSpec
+tp_presence_status_spec_can_set_on_self
+tp_presence_status_spec_get_name
+tp_presence_status_spec_get_presence_type
+tp_presence_status_spec_has_message
+tp_presence_status_spec_new
+tp_presence_status_spec_copy
+tp_presence_status_spec_free
 TpPresenceMixinStatusAvailableFunc
 TpPresenceMixinGetContactStatusesFunc
 TpPresenceMixinSetOwnStatusFunc
@@ -1731,6 +1738,8 @@ TpPresenceMixinClassPrivate
 <SUBSECTION Standard>
 TP_PRESENCE_MIXIN_CLASS
 TP_PRESENCE_MIXIN
+TpPresenceStatusSpecPrivate
+tp_presence_status_spec_get_type
 </SECTION>
 
 <SECTION>
@@ -4904,7 +4913,21 @@ tp_protocol_get_english_name
 tp_protocol_get_icon_name
 tp_protocol_get_vcard_field
 tp_protocol_get_authentication_types
+tp_protocol_identify_account_async
+tp_protocol_identify_account_finish
+tp_protocol_normalize_contact_async
+tp_protocol_normalize_contact_finish
+<SUBSECTION>
 tp_protocol_get_avatar_requirements
+<SUBSECTION>
+tp_protocol_dup_presence_statuses
+<SUBSECTION>
+tp_protocol_get_addressable_uri_schemes
+tp_protocol_get_addressable_vcard_fields
+tp_protocol_normalize_contact_uri_async
+tp_protocol_normalize_contact_uri_finish
+tp_protocol_normalize_vcard_address_async
+tp_protocol_normalize_vcard_address_finish
 <SUBSECTION Standard>
 tp_protocol_get_type
 TP_PROTOCOL

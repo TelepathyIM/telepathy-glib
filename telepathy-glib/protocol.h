@@ -98,6 +98,20 @@ const gchar * const *
 /* gtk-doc sucks */
 tp_protocol_get_authentication_types (TpProtocol *self);
 
+_TP_AVAILABLE_IN_UNRELEASED
+const gchar * const *
+/* ... */
+tp_protocol_get_addressable_vcard_fields (TpProtocol *self);
+
+_TP_AVAILABLE_IN_UNRELEASED
+const gchar * const *
+/* ... */
+tp_protocol_get_addressable_uri_schemes (TpProtocol *self);
+
+_TP_AVAILABLE_IN_UNRELEASED
+GList *tp_protocol_dup_presence_statuses (TpProtocol *self)
+  G_GNUC_WARN_UNUSED_RESULT;
+
 #define TP_PROTOCOL_FEATURE_CORE \
   (tp_protocol_get_feature_quark_core ())
 GQuark tp_protocol_get_feature_quark_core (void) G_GNUC_CONST;
@@ -109,6 +123,55 @@ TpCapabilities *tp_protocol_get_capabilities (TpProtocol *self);
 
 _TP_AVAILABLE_IN_0_16
 TpAvatarRequirements * tp_protocol_get_avatar_requirements (TpProtocol *self);
+
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_protocol_normalize_contact_async (TpProtocol *self,
+    const gchar *contact,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+_TP_AVAILABLE_IN_UNRELEASED
+gchar *tp_protocol_normalize_contact_finish (TpProtocol *self,
+    GAsyncResult *result,
+    GError **error);
+
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_protocol_identify_account_async (TpProtocol *self,
+    GVariant *vardict,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+_TP_AVAILABLE_IN_UNRELEASED
+gchar *tp_protocol_identify_account_finish (TpProtocol *self,
+    GAsyncResult *result,
+    GError **error);
+
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_protocol_normalize_contact_uri_async (TpProtocol *self,
+    const gchar *uri,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+_TP_AVAILABLE_IN_UNRELEASED
+gchar *tp_protocol_normalize_contact_uri_finish (TpProtocol *self,
+    GAsyncResult *result,
+    GError **error);
+
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_protocol_normalize_vcard_address_async (TpProtocol *self,
+    const gchar *field,
+    const gchar *value,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+_TP_AVAILABLE_IN_UNRELEASED
+gchar *tp_protocol_normalize_vcard_address_finish (TpProtocol *self,
+    GAsyncResult *result,
+    GError **error);
 
 G_END_DECLS
 

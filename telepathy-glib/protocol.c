@@ -47,6 +47,8 @@
 #include "telepathy-glib/cli-misc.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
+#include "telepathy-glib/util-internal.h"
+#include "telepathy-glib/variant-util-internal.h"
 
 #include <string.h>
 
@@ -146,6 +148,10 @@ struct _TpProtocolPrivate
   TpCapabilities *capabilities;
   TpAvatarRequirements *avatar_req;
   gchar *cm_name;
+  GStrv addressable_vcard_fields;
+  GStrv addressable_uri_schemes;
+  /* (transfer container) (element-type utf8 Simple_Status_Spec) */
+  GHashTable *presence_statuses;
 };
 
 enum
@@ -160,6 +166,8 @@ enum
     PROP_AUTHENTICATION_TYPES,
     PROP_AVATAR_REQUIREMENTS,
     PROP_CM_NAME,
+    PROP_ADDRESSABLE_VCARD_FIELDS,
+    PROP_ADDRESSABLE_URI_SCHEMES,
     N_PROPS
 };
 
@@ -279,6 +287,15 @@ tp_protocol_get_property (GObject *object,
       g_value_set_string (value, tp_protocol_get_cm_name (self));
       break;
 
+    case PROP_ADDRESSABLE_VCARD_FIELDS:
+      g_value_set_boxed (value, tp_protocol_get_addressable_vcard_fields (
+            self));
+      break;
+
+    case PROP_ADDRESSABLE_URI_SCHEMES:
+      g_value_set_boxed (value, tp_protocol_get_addressable_uri_schemes (self));
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -354,6 +371,11 @@ tp_protocol_finalize (GObject *object)
   g_free (self->priv->english_name);
   g_free (self->priv->icon_name);
   g_free (self->priv->cm_name);
+  g_strfreev (self->priv->addressable_vcard_fields);
+  g_strfreev (self->priv->addressable_uri_schemes);
+
+  if (self->priv->presence_statuses != NULL)
+    g_hash_table_unref (self->priv->presence_statuses);
 
   if (self->priv->protocol_properties != NULL)
     g_hash_table_unref (self->priv->protocol_properties);
@@ -414,6 +436,19 @@ title_case (const gchar *s)
   return g_strdup_printf ("%s%s", buf, g_utf8_next_char (s));
 }
 
+static GStrv
+asv_strdupv_or_empty (const GHashTable *asv,
+    const gchar *key)
+{
+  const gchar * const *strings = tp_asv_get_boxed (asv, key, G_TYPE_STRV);
+  static const gchar * const no_strings[] = { NULL };
+
+  if (strings != NULL)
+    return g_strdupv ((GStrv) strings);
+  else
+    return g_strdupv ((GStrv) no_strings);
+}
+
 static void
 tp_protocol_constructed (GObject *object)
 {
@@ -424,7 +459,6 @@ tp_protocol_constructed (GObject *object)
   const gchar *s;
   const GPtrArray *rccs;
   gboolean had_immutables = TRUE;
-  const gchar * const *auth_types = NULL;
   const gchar * const *interfaces;
 
   if (chain_up != NULL)
@@ -444,7 +478,21 @@ tp_protocol_constructed (GObject *object)
     }
   else
     {
+      GHashTableIter iter;
+      gpointer k, v;
+
       DEBUG ("immutable properties already supplied");
+
+      g_hash_table_iter_init (&iter, self->priv->protocol_properties);
+
+      while (g_hash_table_iter_next (&iter, &k, &v))
+        {
+          gchar *printed;
+
+          printed = g_strdup_value_contents (v);
+          DEBUG ("%s = %s", (const gchar *) k, printed);
+          g_free (printed);
+        }
     }
 
   self->priv->params = tp_protocol_params_from_param_specs (
@@ -486,19 +534,9 @@ tp_protocol_constructed (GObject *object)
   if (rccs != NULL)
     self->priv->capabilities = _tp_capabilities_new (rccs, FALSE);
 
-  auth_types = tp_asv_get_boxed (
+  self->priv->authentication_types = asv_strdupv_or_empty (
       self->priv->protocol_properties,
-      TP_PROP_PROTOCOL_AUTHENTICATION_TYPES, G_TYPE_STRV);
-
-  if (auth_types != NULL)
-    {
-      self->priv->authentication_types = g_strdupv ((GStrv) auth_types);
-    }
-  else
-    {
-      gchar *tmp[] = { NULL };
-      self->priv->authentication_types = g_strdupv (tmp);
-    }
+      TP_PROP_PROTOCOL_AUTHENTICATION_TYPES);
 
   interfaces = tp_asv_get_strv (self->priv->protocol_properties,
       TP_PROP_PROTOCOL_INTERFACES);
@@ -508,6 +546,9 @@ tp_protocol_constructed (GObject *object)
   if (tp_proxy_has_interface_by_id (self,
         TP_IFACE_QUARK_PROTOCOL_INTERFACE_AVATARS1))
     {
+      DEBUG ("%s/%s implements Avatars", self->priv->cm_name,
+          self->priv->name);
+
       self->priv->avatar_req = tp_avatar_requirements_new (
           (GStrv) tp_asv_get_strv (self->priv->protocol_properties,
             TP_PROP_PROTOCOL_INTERFACE_AVATARS1_SUPPORTED_AVATAR_MIME_TYPES),
@@ -525,6 +566,58 @@ tp_protocol_constructed (GObject *object)
             TP_PROP_PROTOCOL_INTERFACE_AVATARS1_MAXIMUM_AVATAR_HEIGHT, NULL),
           tp_asv_get_uint32 (self->priv->protocol_properties,
             TP_PROP_PROTOCOL_INTERFACE_AVATARS1_MAXIMUM_AVATAR_BYTES, NULL));
+    }
+
+  if (tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_PROTOCOL_INTERFACE_ADDRESSING1))
+    {
+      DEBUG ("%s/%s implements Addressing", self->priv->cm_name,
+          self->priv->name);
+
+      self->priv->addressable_vcard_fields = asv_strdupv_or_empty (
+          self->priv->protocol_properties,
+          TP_PROP_PROTOCOL_INTERFACE_ADDRESSING1_ADDRESSABLE_VCARD_FIELDS);
+      self->priv->addressable_uri_schemes = asv_strdupv_or_empty (
+          self->priv->protocol_properties,
+          TP_PROP_PROTOCOL_INTERFACE_ADDRESSING1_ADDRESSABLE_URI_SCHEMES);
+    }
+
+  if (tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_PROTOCOL_INTERFACE_PRESENCE1))
+    {
+      DEBUG ("%s/%s implements Presence", self->priv->cm_name,
+          self->priv->name);
+
+      self->priv->presence_statuses = tp_asv_get_boxed (
+          self->priv->protocol_properties,
+          TP_PROP_PROTOCOL_INTERFACE_PRESENCE1_STATUSES,
+          TP_HASH_TYPE_STATUS_SPEC_MAP);
+
+      if (self->priv->presence_statuses != NULL)
+        {
+          GHashTableIter iter;
+          gpointer k, v;
+
+          g_hash_table_ref (self->priv->presence_statuses);
+
+          DEBUG ("%s/%s presence statuses:", self->priv->cm_name,
+              self->priv->name);
+          g_hash_table_iter_init (&iter, self->priv->presence_statuses);
+
+          while (g_hash_table_iter_next (&iter, &k, &v))
+            {
+              guint type;
+              gboolean on_self, message;
+
+              tp_value_array_unpack (v, 3,
+                  &type,
+                  &on_self,
+                  &message);
+              DEBUG ("\tstatus '%s': type %u%s%s",
+                  (const gchar *) k, type, on_self ? ", can set on self" : "",
+                  message ? ", has message" : "");
+            }
+        }
     }
 
   /* become ready immediately */
@@ -738,6 +831,45 @@ tp_protocol_class_init (TpProtocolClass *klass)
         "Name of the CM this protocol is on",
         NULL,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TpProtocol:addressable-vcard-fields:
+   *
+   * A non-%NULL #GStrv of vCard fields supported by this protocol.
+   * If this protocol does not support addressing contacts by a vCard field,
+   * the list is empty.
+   *
+   * For instance, a SIP connection manager that supports calling contacts
+   * by SIP URI (vCard field SIP) or telephone number (vCard field TEL)
+   * might have { "sip", "tel", NULL }.
+   *
+   * Since: 0.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_ADDRESSABLE_VCARD_FIELDS,
+      g_param_spec_boxed ("addressable-vcard-fields",
+        "AddressableVCardFields",
+        "A list of vCard fields",
+        G_TYPE_STRV, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TpProtocol:addressable-uri-schemes:
+   *
+   * A non-%NULL #GStrv of URI schemes supported by this protocol.
+   * If this protocol does not support addressing contacts by URI,
+   * the list is empty.
+   *
+   * For instance, a SIP connection manager that supports calling contacts
+   * by SIP URI (sip:alice&commat;example.com, sips:bob&commat;example.com)
+   * or telephone number (tel:+1-555-0123) might have
+   * { "sip", "sips", "tel", NULL }.
+   *
+   * Since: 0.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_ADDRESSABLE_URI_SCHEMES,
+      g_param_spec_boxed ("addressable-uri-schemes",
+        "AddressableURISchemes",
+        "A list of URI schemes",
+        G_TYPE_STRV, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   proxy_class->list_features = tp_protocol_list_features;
   proxy_class->must_have_unique_name = FALSE;
@@ -1194,7 +1326,7 @@ init_gvalue_from_dbus_sig (const gchar *sig,
 static gboolean
 parse_default_value (GValue *value,
                      const gchar *sig,
-                     gchar *string,
+                     gchar *raw_value,
                      GKeyFile *file,
                      const gchar *group,
                      const gchar *key)
@@ -1217,31 +1349,28 @@ parse_default_value (GValue *value,
        * So, on error, let's fall back to more lenient parsing that explicitly
        * allows everything we historically allowed. */
       g_error_free (error);
-      s = g_key_file_get_value (file, group, key, NULL);
 
-      if (s == NULL)
+      if (raw_value == NULL)
         return FALSE;
 
-      for (p = s; *p != '\0'; p++)
+      for (p = raw_value; *p != '\0'; p++)
         {
           *p = g_ascii_tolower (*p);
         }
 
-      if (!tp_strdiff (s, "1") || !tp_strdiff (s, "true"))
+      if (!tp_strdiff (raw_value, "1") || !tp_strdiff (raw_value, "true"))
         {
           g_value_set_boolean (value, TRUE);
         }
-      else if (!tp_strdiff (s, "0") || !tp_strdiff (s, "false"))
+      else if (!tp_strdiff (raw_value, "0") || !tp_strdiff (raw_value, "false"))
         {
           g_value_set_boolean (value, TRUE);
         }
       else
         {
-          g_free (s);
           return FALSE;
         }
 
-      g_free (s);
       return TRUE;
 
     case 's':
@@ -1290,7 +1419,7 @@ parse_default_value (GValue *value,
     case 'n':
     case 'i':
     case 'x':
-      if (string[0] == '\0')
+      if (raw_value[0] == '\0')
         {
           return FALSE;
         }
@@ -1437,20 +1566,34 @@ _tp_protocol_parse_channel_class (GKeyFile *file,
       const gchar *dbus_type;
       GValue *v = g_slice_new0 (GValue);
 
-      value = g_key_file_get_string (file, group, *key, NULL);
+      value = g_key_file_get_value (file, group, *key, NULL);
 
       /* keys without a space are reserved */
       if (space == NULL)
-        goto cleanup;
+        {
+          DEBUG ("\t'%s' isn't a fixed property", *key);
+          goto cleanup;
+        }
 
       property = g_strndup (*key, space - *key);
       dbus_type = space + 1;
 
       if (!init_gvalue_from_dbus_sig (dbus_type, v))
-        goto cleanup;
+        {
+          DEBUG ("\tunable to parse D-Bus type '%s' for '%s' in a "
+              ".manager file", dbus_type, property);
+          goto cleanup;
+        }
 
       if (!parse_default_value (v, dbus_type, value, file, group, *key))
-        goto cleanup;
+        {
+          DEBUG ("\tunable to parse '%s' as a value of type '%s' for '%s'",
+              value, dbus_type, property);
+          goto cleanup;
+        }
+
+      DEBUG ("\tfixed: '%s' of type '%s' = '%s'",
+          property, dbus_type, value);
 
       /* transfer ownership to @ret */
       g_hash_table_insert (ret, property, v);
@@ -1476,15 +1619,26 @@ cleanup:
 }
 
 static GValueArray *
-_tp_protocol_parse_rcc (GKeyFile *file,
+_tp_protocol_parse_rcc (const gchar *cm_debug_name,
+    const gchar *protocol_debug_name,
+    GKeyFile *file,
     const gchar *group)
 {
   GHashTable *fixed;
   GStrv allowed;
   GValueArray *ret;
+  guint i;
+
+  DEBUG ("%s/%s: parsing requestable channel class '%s'", cm_debug_name,
+      protocol_debug_name, group);
 
   fixed = _tp_protocol_parse_channel_class (file, group);
   allowed = g_key_file_get_string_list (file, group, "allowed", NULL, NULL);
+
+  for (i = 0; allowed != NULL && allowed[i] != NULL; i++)
+    {
+      DEBUG ("\tallowed: '%s'", allowed[i]);
+    }
 
   ret = tp_value_array_build (2,
       TP_HASH_TYPE_CHANNEL_CLASS, fixed,
@@ -1504,6 +1658,7 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
     gchar **protocol_name)
 {
   GHashTable *immutables;
+  GHashTable *status_specs;
   GPtrArray *param_specs, *rccs;
   const gchar *name;
   gchar **rcc_groups, **rcc_group;
@@ -1580,7 +1735,7 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
             }
 
           def = g_strdup_printf ("default-%s", param.name);
-          value = g_key_file_get_string (file, group, def, NULL);
+          value = g_key_file_get_value (file, group, def, NULL);
 
           init_gvalue_from_dbus_sig (param.dbus_signature,
               &param.default_value);
@@ -1621,8 +1776,6 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
           g_strfreev (strv);
         }
     }
-
-  g_strfreev (keys);
 
   immutables = tp_asv_new (
       TP_PROP_PROTOCOL_PARAMETERS, TP_ARRAY_TYPE_PARAM_SPEC_LIST, param_specs,
@@ -1683,10 +1836,88 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
   if (rcc_groups != NULL)
     {
       for (rcc_group = rcc_groups; *rcc_group != NULL; rcc_group++)
-        g_ptr_array_add (rccs, _tp_protocol_parse_rcc (file, *rcc_group));
+        g_ptr_array_add (rccs,
+            _tp_protocol_parse_rcc (cm_debug_name, name, file, *rcc_group));
     }
 
   g_strfreev (rcc_groups);
+
+  /* Statuses */
+  status_specs = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
+      (GDestroyNotify) tp_value_array_free);
+
+  for (key = keys; key != NULL && *key != NULL; key++)
+    {
+      if (g_str_has_prefix (*key, "status-"))
+        {
+          GValueArray *ubb;
+          gint64 type;
+          gboolean on_self = FALSE, has_message = FALSE;
+          gchar *value, *endptr;
+          gchar **strv, **iter;
+
+          if (!tp_strdiff (*key, "status-"))
+            {
+              DEBUG ("'status-' is not a valid status");
+              continue;
+            }
+
+          value = g_key_file_get_value (file, group, *key, NULL);
+          strv = g_strsplit (value, " ", 0);
+          g_free (value);
+
+          type = g_ascii_strtoll (strv[0], &endptr, 10);
+
+          if (endptr <= strv[0] || *endptr != '\0')
+            {
+              DEBUG ("invalid (non-numeric?) status type %s", strv[0]);
+              goto next_status;
+            }
+
+          if (type == TP_CONNECTION_PRESENCE_TYPE_UNSET ||
+              type < 0 || type >= TP_NUM_CONNECTION_PRESENCE_TYPES)
+            {
+              DEBUG ("presence type out of range: %" G_GINT64_FORMAT,
+                  type);
+              goto next_status;
+            }
+
+          for (iter = strv + 1; *iter != NULL; iter++)
+            {
+              if (!tp_strdiff (*iter, "settable"))
+                on_self = TRUE;
+              else if (!tp_strdiff (*iter, "message"))
+                has_message = TRUE;
+              else
+                DEBUG ("unknown status modifier '%s'", *iter);
+            }
+
+          ubb = tp_value_array_build (3,
+              G_TYPE_UINT, (guint) type,
+              G_TYPE_BOOLEAN, on_self,
+              G_TYPE_BOOLEAN, has_message,
+              G_TYPE_INVALID);
+
+          /* strlen ("status-") == 7 */
+          g_hash_table_insert (status_specs, g_strdup (*key + 7),
+              ubb);
+          DEBUG ("Status '%s': type %u%s%s", *key + 7, (guint) type,
+              on_self ? ", can set on self" : "",
+              has_message ? ", has message" : "");
+
+next_status:
+          g_strfreev (strv);
+        }
+    }
+
+  if (g_hash_table_size (status_specs) > 0)
+    tp_asv_take_boxed (immutables,
+        TP_PROP_PROTOCOL_INTERFACE_PRESENCE1_STATUSES,
+        TP_HASH_TYPE_STATUS_SPEC_MAP, status_specs);
+  else
+    g_hash_table_unref (status_specs);
+
+  g_strfreev (keys);
 
   tp_asv_take_boxed (immutables, TP_PROP_PROTOCOL_REQUESTABLE_CHANNEL_CLASSES,
       TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST, rccs);
@@ -1731,4 +1962,349 @@ tp_protocol_get_cm_name (TpProtocol *self)
   g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
 
   return self->priv->cm_name;
+}
+
+/*
+ * Handle the result from a tp_cli_protocol_* function that
+ * returns one string. user_data is a #GTask.
+ */
+static void
+tp_protocol_async_string_cb (TpProxy *proxy,
+    const gchar *normalized,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  if (error == NULL)
+    g_task_return_pointer (user_data, g_strdup (normalized), g_free);
+  else
+    g_task_return_error (user_data, g_error_copy (error));
+}
+
+/**
+ * tp_protocol_normalize_contact_async:
+ * @self: a protocol
+ * @contact: a contact identifier, possibly invalid
+ * @cancellable: (allow-none): may be used to cancel the async request
+ * @callback: (scope async): a callback to call when
+ *  the request is satisfied
+ * @user_data: (closure) (allow-none): data to pass to @callback
+ *
+ * Perform best-effort offline contact normalization. This does syntactic
+ * normalization (e.g. transforming case-insensitive text to lower-case),
+ * but does not query servers or anything similar.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_protocol_normalize_contact_async (TpProtocol *self,
+    const gchar *contact,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GTask *task;
+
+  g_return_if_fail (TP_IS_PROTOCOL (self));
+  g_return_if_fail (contact != NULL);
+  /* this makes no sense to call for its side-effects */
+  g_return_if_fail (callback != NULL);
+
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_source_tag (task, tp_protocol_normalize_contact_async);
+
+  tp_cli_protocol_call_normalize_contact (self, -1, contact,
+      tp_protocol_async_string_cb, task, g_object_unref, NULL);
+}
+
+/**
+ * tp_protocol_normalize_contact_finish:
+ * @self: a protocol
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Interpret the result of tp_protocol_normalize_contact_async().
+ *
+ * Returns: (transfer full): the normalized form of @contact,
+ *  or %NULL on error
+ * Since: 0.UNRELEASED
+ */
+gchar *
+tp_protocol_normalize_contact_finish (TpProtocol *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  g_return_val_if_fail (g_task_is_valid (result, self), NULL);
+  g_return_val_if_fail (g_async_result_is_tagged (result,
+        tp_protocol_normalize_contact_async), NULL);
+
+  return g_task_propagate_pointer (G_TASK (result), error);
+}
+
+/**
+ * tp_protocol_identify_account_async:
+ * @self: a protocol
+ * @vardict: the account parameters as a #GVariant of
+ *  type %G_VARIANT_TYPE_VARDICT. If it is floating, ownership will
+ *  be taken, as if via g_variant_ref_sink().
+ * @cancellable: (allow-none): may be used to cancel the async request
+ * @callback: (scope async): a callback to call when
+ *  the request is satisfied
+ * @user_data: (closure) (allow-none): data to pass to @callback
+ *
+ * Return a string that could identify the account with the given
+ * parameters. In most protocols that string is a normalized 'account'
+ * parameter, but some protocols have more complex requirements;
+ * for instance, on IRC, the 'account' (nickname) is insufficient,
+ * and must be combined with a server or network name.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_protocol_identify_account_async (TpProtocol *self,
+    GVariant *vardict,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GTask *task;
+  GHashTable *asv;
+
+  g_return_if_fail (TP_IS_PROTOCOL (self));
+  g_return_if_fail (vardict != NULL);
+  g_return_if_fail (g_variant_is_of_type (vardict, G_VARIANT_TYPE_VARDICT));
+  /* this makes no sense to call for its side-effects */
+  g_return_if_fail (callback != NULL);
+
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_source_tag (task, tp_protocol_identify_account_async);
+  g_variant_ref_sink (vardict);
+  asv = _tp_asv_from_vardict (vardict);
+  tp_cli_protocol_call_identify_account (self, -1, asv,
+      tp_protocol_async_string_cb, task, g_object_unref, NULL);
+  g_hash_table_unref (asv);
+  g_variant_unref (vardict);
+}
+
+/**
+ * tp_protocol_identify_account_finish:
+ * @self: a protocol
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Interpret the result of tp_protocol_identify_account_async().
+ *
+ * Returns: (transfer full): a string identifying the account,
+ *  or %NULL on error
+ * Since: 0.UNRELEASED
+ */
+gchar *
+tp_protocol_identify_account_finish (TpProtocol *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  g_return_val_if_fail (g_task_is_valid (result, self), NULL);
+  g_return_val_if_fail (g_async_result_is_tagged (result,
+        tp_protocol_identify_account_async), NULL);
+
+  return g_task_propagate_pointer (G_TASK (result), error);
+}
+
+/**
+ * tp_protocol_normalize_contact_uri_async:
+ * @self: a protocol
+ * @uri: a contact URI, possibly invalid
+ * @cancellable: (allow-none): may be used to cancel the async request
+ * @callback: (scope async): a callback to call when the request is satisfied
+ * @user_data: (closure) (allow-none): data to pass to @callback
+ *
+ * Perform best-effort offline contact normalization, for a contact in
+ * the form of a URI. This method will fail if the URI is not in a
+ * scheme supported by this protocol or connection manager.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_protocol_normalize_contact_uri_async (TpProtocol *self,
+    const gchar *uri,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GTask *task;
+
+  g_return_if_fail (TP_IS_PROTOCOL (self));
+  g_return_if_fail (uri != NULL);
+  /* this makes no sense to call for its side-effects */
+  g_return_if_fail (callback != NULL);
+
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_source_tag (task, tp_protocol_normalize_contact_uri_async);
+
+  tp_cli_protocol_interface_addressing1_call_normalize_contact_uri (self, -1,
+      uri, tp_protocol_async_string_cb, task, g_object_unref, NULL);
+}
+
+/**
+ * tp_protocol_normalize_contact_uri_finish:
+ * @self: a protocol
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Interpret the result of tp_protocol_normalize_contact_uri_async().
+ *
+ * Returns: (transfer full): the normalized form of @uri,
+ *  or %NULL on error
+ * Since: 0.UNRELEASED
+ */
+gchar *
+tp_protocol_normalize_contact_uri_finish (TpProtocol *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  g_return_val_if_fail (g_task_is_valid (result, self), NULL);
+  g_return_val_if_fail (g_async_result_is_tagged (result,
+        tp_protocol_normalize_contact_uri_async), NULL);
+
+  return g_task_propagate_pointer (G_TASK (result), error);
+}
+
+/**
+ * tp_protocol_normalize_vcard_address_async:
+ * @self: a protocol
+ * @field: a vCard field
+ * @value: an address that is a value of @field
+ * @cancellable: (allow-none): may be used to cancel the async request
+ * @callback: (scope async): a callback to call when the request is satisfied
+ * @user_data: (closure) (allow-none): data to pass to @callback
+ *
+ * Perform best-effort offline contact normalization, for a contact in
+ * the form of a vCard field. This method will fail if the vCard field
+ * is not supported by this protocol or connection manager.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_protocol_normalize_vcard_address_async (TpProtocol *self,
+    const gchar *field,
+    const gchar *value,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GTask *task;
+
+  g_return_if_fail (TP_IS_PROTOCOL (self));
+  g_return_if_fail (!tp_str_empty (field));
+  g_return_if_fail (value != NULL);
+  /* this makes no sense to call for its side-effects */
+  g_return_if_fail (callback != NULL);
+
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_source_tag (task, tp_protocol_normalize_vcard_address_async);
+
+  tp_cli_protocol_interface_addressing1_call_normalize_vcard_address (self, -1,
+      field, value, tp_protocol_async_string_cb, task, g_object_unref, NULL);
+}
+
+/**
+ * tp_protocol_normalize_vcard_address_finish:
+ * @self: a protocol
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Interpret the result of tp_protocol_normalize_vcard_address_async().
+ *
+ * Returns: (transfer full): the normalized form of @value,
+ *  or %NULL on error
+ * Since: 0.UNRELEASED
+ */
+gchar *
+tp_protocol_normalize_vcard_address_finish (TpProtocol *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  g_return_val_if_fail (g_task_is_valid (result, self), NULL);
+  g_return_val_if_fail (g_async_result_is_tagged (result,
+        tp_protocol_normalize_vcard_address_async), NULL);
+
+  return g_task_propagate_pointer (G_TASK (result), error);
+}
+
+/**
+ * tp_protocol_get_addressable_vcard_fields:
+ * @self: a protocol object
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer none): the value of #TpProtocol:addressable-vcard-fields
+ * Since: 0.UNRELEASED
+ */
+const gchar * const *
+tp_protocol_get_addressable_vcard_fields (TpProtocol *self)
+{
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
+  return (const gchar * const *) self->priv->addressable_vcard_fields;
+}
+
+/**
+ * tp_protocol_get_addressable_uri_schemes:
+ * @self: a protocol object
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer none): the value of #TpProtocol:addressable-uri-schemes
+ * Since: 0.UNRELEASED
+ */
+const gchar * const *
+tp_protocol_get_addressable_uri_schemes (TpProtocol *self)
+{
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
+  return (const gchar * const *) self->priv->addressable_uri_schemes;
+}
+
+/**
+ * tp_protocol_dup_presence_statuses:
+ * @self: a protocol object
+ *
+ * Return the presence statuses that might be supported by connections
+ * to this protocol.
+ *
+ * It is possible that some of these statuses will not actually be supported
+ * by a connection: for instance, an XMPP connection manager would
+ * include "hidden" in this list, even though not all XMPP servers allow
+ * users to be online-but-hidden.
+ *
+ * Returns: (transfer full) (element-type TelepathyGLib.PresenceStatusSpec): a
+ *  list of statuses, or %NULL if unknown
+ */
+GList *
+tp_protocol_dup_presence_statuses (TpProtocol *self)
+{
+  GHashTableIter iter;
+  gpointer k, v;
+  GList *l = NULL;
+
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
+
+  if (self->priv->presence_statuses == NULL)
+    return NULL;
+
+  g_hash_table_iter_init (&iter, self->priv->presence_statuses);
+
+  while (g_hash_table_iter_next (&iter, &k, &v))
+    {
+      guint type;
+      gboolean on_self, message;
+
+      tp_value_array_unpack (v, 3,
+          &type,
+          &on_self,
+          &message);
+
+      l = g_list_prepend (l, tp_presence_status_spec_new (k, type,
+            on_self, message));
+    }
+
+  return g_list_reverse (l);
 }
