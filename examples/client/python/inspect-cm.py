@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import sys
+import gi
 from gi.repository import GObject
+gi.require_version('TelepathyGLib', '0.12')
 from gi.repository import TelepathyGLib as Tp
 
 def describe(cm):
