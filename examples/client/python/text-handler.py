@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 
+import gi
+
 from gi.repository import GObject
 GObject.threads_init()
 
+gi.require_version('TelepathyGLib', '0.12')
 from gi.repository import TelepathyGLib
 
 def echo_message(channel, msg, pending):

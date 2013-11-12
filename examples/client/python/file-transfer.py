@@ -3,10 +3,13 @@ import sys
 import os
 import mimetypes
 
+import gi
+
 from gi.repository import GObject
 GObject.threads_init()
 
 from gi.repository import Gio
+gi.require_version('TelepathyGLib', '0.12')
 from gi.repository import TelepathyGLib
 
 def usage():

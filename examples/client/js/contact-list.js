@@ -1,5 +1,8 @@
 #! /usr/bin/gjs
 
+const Gi = imports.gi;
+Gi.versions.TelepathyGLib = '0.12';
+
 const Tp = imports.gi.TelepathyGLib;
 const Mainloop = imports.mainloop;
 
