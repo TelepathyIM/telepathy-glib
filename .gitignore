@@ -116,8 +116,8 @@ telepathy-glib/version.h
 /telepathy-logger/test-api
 /telepathy-logger/telepathy-logger-1-uninstalled.pc
 /telepathy-logger/telepathy-logger-1.pc
-/telepathy-logger/TelepathyLogger1-1.typelib
-/telepathy-logger/TelepathyLogger1-1.gir
+/telepathy-logger/TelepathyLogger-1.typelib
+/telepathy-logger/TelepathyLogger-1.gir
 /telepathy-logger/_gen/
 /telepathy-logger/tpl-marshal.[ch]
 /test-driver

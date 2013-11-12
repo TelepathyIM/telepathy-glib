@@ -816,7 +816,7 @@ tpl_log_walker_get_events_async (TplLogWalker *walker,
  * tpl_log_walker_get_events_finish:
  * @walker: a #TplLogWalker
  * @result: a #GAsyncResult
- * @events: (out) (transfer full) (element-type TelepathyLogger1.Event):
+ * @events: (out) (transfer full) (element-type TelepathyLogger.Event):
  *  a pointer to a #GList used to return the list #TplEvent
  * @error: a #GError to fill
  *
