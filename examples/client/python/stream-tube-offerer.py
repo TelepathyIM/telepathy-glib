@@ -3,7 +3,9 @@
 import sys
 import os
 
+import gi
 from gi.repository import GObject, Gio
+gi.require_version('TelepathyGLib', '1')
 from gi.repository import TelepathyGLib as Tp
 
 def usage():

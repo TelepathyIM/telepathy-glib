@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 import os
+import gi
 from gi.repository import GObject
 GObject.threads_init()
 
+gi.require_version('TelepathyGLib', '1')
 from gi.repository import TelepathyGLib as Tp
 
 def manager_prepared_cb(manager, result, loop):

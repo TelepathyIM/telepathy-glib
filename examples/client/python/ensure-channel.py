@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 import sys
 
+import gi
+
 from gi.repository import GObject
 GObject.threads_init()
 
+gi.require_version('TelepathyGLib', '1')
 from gi.repository import TelepathyGLib
 
 def usage():
