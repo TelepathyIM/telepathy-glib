@@ -184,6 +184,7 @@ static void
 operation_failed (TpFileTransferChannel *self,
     GError *error)
 {
+  g_assert (self->priv->result != NULL);
   g_simple_async_result_take_error (self->priv->result, error);
   g_simple_async_result_complete_in_idle (self->priv->result);
   tp_clear_object (&self->priv->result);
@@ -202,12 +203,11 @@ stream_close_cb (GObject *source,
     {
       DEBUG ("Failed to close stream: %s\n", error->message);
       g_clear_error (&error);
-      /* Don't fail the accept/provide operation as this is just a
-       * close operation. */
     }
 
   /* Now that this is closed in both ways, let's just remove it. */
   g_clear_object (&self->priv->stream);
+  g_object_unref (self);
 }
 
 static void
@@ -222,13 +222,13 @@ splice_stream_ready_cb (GObject *output,
       &error);
 
   if (error != NULL && !g_cancellable_is_cancelled (self->priv->cancellable))
-    {
-      DEBUG ("splice operation failed: %s", error->message);
-      operation_failed (self, error);
-    }
+    DEBUG ("splice operation failed: %s", error->message);
+  g_clear_error (&error);
 
   g_io_stream_close_async (self->priv->stream, G_PRIORITY_DEFAULT,
-      NULL, stream_close_cb, self);
+      NULL, stream_close_cb, g_object_ref (self));
+
+  g_object_unref (self);
 }
 
 static void
@@ -241,10 +241,7 @@ client_socket_connected (TpFileTransferChannel *self)
       self->priv->client_socket);
   if (conn == NULL)
     {
-      error = g_error_new (G_IO_ERROR, G_IO_ERROR_FAILED,
-          "Failed to create client connection");
-      DEBUG ("%s", error->message);
-      operation_failed (self, error);
+      DEBUG ("Failed to create client connection");
       return;
     }
 
@@ -262,9 +259,8 @@ client_socket_connected (TpFileTransferChannel *self)
               conn, byte, NULL, &error))
         {
           DEBUG ("Failed to send credentials: %s", error->message);
-
-          operation_failed (self, error);
           g_object_unref (conn);
+          g_clear_error (&error);
           return;
         }
     }
@@ -282,7 +278,7 @@ client_socket_connected (TpFileTransferChannel *self)
           G_OUTPUT_STREAM_SPLICE_CLOSE_SOURCE |
           G_OUTPUT_STREAM_SPLICE_CLOSE_TARGET,
           G_PRIORITY_DEFAULT, self->priv->cancellable,
-          splice_stream_ready_cb, self);
+          splice_stream_ready_cb, g_object_ref (self));
     }
   else
     {
@@ -294,7 +290,7 @@ client_socket_connected (TpFileTransferChannel *self)
           G_OUTPUT_STREAM_SPLICE_CLOSE_SOURCE |
           G_OUTPUT_STREAM_SPLICE_CLOSE_TARGET,
           G_PRIORITY_DEFAULT, self->priv->cancellable,
-          splice_stream_ready_cb, self);
+          splice_stream_ready_cb, g_object_ref (self));
     }
 }
 
@@ -308,8 +304,7 @@ client_socket_cb (GSocket *socket,
   if (!g_socket_check_connect_result (socket, &error))
     {
       DEBUG ("Failed to connect to socket: %s", error->message);
-
-      operation_failed (self, error);
+      g_clear_error (&error);
       return FALSE;
     }
 
@@ -1122,8 +1117,8 @@ start_transfer (TpFileTransferChannel *self)
           NULL);
 
       g_source_attach (source, g_main_context_get_thread_default ());
-      g_source_set_callback (source, (GSourceFunc) client_socket_cb, self,
-          NULL);
+      g_source_set_callback (source, (GSourceFunc) client_socket_cb,
+          g_object_ref (self), g_object_unref);
 
       g_error_free (error);
       g_source_unref (source);
@@ -1131,8 +1126,7 @@ start_transfer (TpFileTransferChannel *self)
   else
     {
       DEBUG ("Failed to connect to socket: %s:", error->message);
-
-      operation_failed (self, error);
+      g_clear_error (&error);
     }
 }
 
@@ -1171,6 +1165,7 @@ accept_or_provide_file_cb (TpChannel *proxy,
     }
 
   g_simple_async_result_complete_in_idle (self->priv->result);
+  g_clear_object (&self->priv->result);
 }
 
 static gboolean
