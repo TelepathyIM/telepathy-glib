@@ -28,8 +28,6 @@ int main (int argc, char **argv)
   GObject *o;
   GHashTable *h;
 
-  g_type_init ();
-
   o = (GObject *) g_file_new_for_path ("/");
   tp_clear_object (&o);
 

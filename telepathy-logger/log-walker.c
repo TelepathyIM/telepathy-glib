@@ -151,7 +151,6 @@
  *     GQuark features[] = { TP_ACCOUNT_MANAGER_FEATURE_CORE, 0 };
  *     TpAccountManager * account_manager;
  *
- *     g_type_init ();
  *     loop = g_main_loop_new (NULL, FALSE);
  *
  *     account_manager = tp_account_manager_dup ();

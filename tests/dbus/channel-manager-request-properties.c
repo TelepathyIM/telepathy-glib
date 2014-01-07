@@ -44,7 +44,6 @@ setup (Test *test,
   gchar *name, *conn_path;
   GQuark connected_feature[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
-  g_type_init ();
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);

@@ -7,8 +7,6 @@ main (int argc, char **argv)
 {
   TplConf *conf, *conf2;
 
-  g_type_init ();
-
   conf = _tpl_conf_dup ();
 
   /* TplConf is a singleton, be sure both point to the same memory */

@@ -285,7 +285,6 @@ main (int argc,
   GError *error = NULL;
   TpDBusDaemon *dbus = NULL;
 
-  g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
   example_cli_init ();

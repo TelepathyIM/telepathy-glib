@@ -119,7 +119,6 @@ main (int argc,
   GAsyncResult *prepare_result;
   GQuark group_features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
 
-  g_type_init ();
   tp_tests_abort_after (10);
   dbus = tp_tests_dbus_daemon_dup_or_die ();
 

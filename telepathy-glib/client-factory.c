@@ -51,8 +51,6 @@
  *   TpClientFactory *factory;
  *   TpAccountManager *manager;
  *
- *   g_type_init ();
- *
  *   factory = my_factory_new ();
  *   manager = tp_account_manager_new_with_factory (factory);
  *   tp_account_manager_set_default (manager);

@@ -132,8 +132,6 @@ main (int argc,
   TplObserver *observer = NULL;
   GError *error = NULL;
 
-  g_type_init ();
-
   g_set_prgname (PACKAGE_NAME);
 
   tp_debug_divert_messages (g_getenv ("TPL_LOGFILE"));

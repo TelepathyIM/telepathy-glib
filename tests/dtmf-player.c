@@ -96,8 +96,6 @@ static void
 setup (Fixture *f,
     gconstpointer nil G_GNUC_UNUSED)
 {
-  g_type_init ();
-
   f->dtmf_player = tp_dtmf_player_new ();
   g_assert (f->dtmf_player != NULL);
 

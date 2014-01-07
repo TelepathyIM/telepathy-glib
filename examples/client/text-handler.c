@@ -118,7 +118,6 @@ main (int argc,
   GError *error = NULL;
   TpBaseClient *handler;
 
-  g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
   handler = tp_simple_handler_new (NULL, FALSE, FALSE,

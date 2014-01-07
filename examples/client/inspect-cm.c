@@ -233,7 +233,6 @@ main (int argc,
   TpDBusDaemon *dbus = NULL;
   int ret = 1;
 
-  g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
   if (g_getenv ("EXAMPLE_TIMING") != NULL)

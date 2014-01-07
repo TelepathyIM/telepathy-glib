@@ -48,10 +48,6 @@ main (int argc,
   if (g_getenv ("EXAMPLE_PERSIST") != NULL)
     tp_debug_set_persistent (TRUE);
 
-  /* strictly speaking, this is only necessary for client code, but it's
-   * harmless here */
-  g_type_init ();
-
   return tp_run_connection_manager ("telepathy-example-cm-call",
       VERSION, construct_cm, argc, argv);
 }

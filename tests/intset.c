@@ -39,8 +39,6 @@ int main (int argc, char **argv)
   TpIntset *ab_symmdiff, *ab_expected_symmdiff;
   GValue *value;
 
-  g_type_init ();
-
   g_assert (tp_intset_is_empty (set1));
   g_assert_cmpuint (tp_intset_size (set1), ==, 0);
 

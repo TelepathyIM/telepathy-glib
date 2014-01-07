@@ -79,7 +79,6 @@ setup (Test *test,
   guint not_a_media_type = 31337;
   GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
-  g_type_init ();
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);

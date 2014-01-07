@@ -27,7 +27,6 @@ main (int argc,
   TpHandle h1, h2, h3, h4;
 
   tp_tests_abort_after (10);
-  g_type_init ();
 
   repo = tp_tests_object_new_static_class (TP_TYPE_DYNAMIC_HANDLE_REPO,
       "handle-type", TP_HANDLE_TYPE_CONTACT,

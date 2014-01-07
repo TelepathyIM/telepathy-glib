@@ -7,8 +7,6 @@ main (int argc, char **argv)
 {
   TplObserver *obs, *obs2;
 
-  g_type_init ();
-
   obs = _tpl_observer_dup (NULL);
 
   /* TplObserver is a singleton, be sure both references point to the same

@@ -156,8 +156,6 @@ int main (int argc,
 {
   g_test_init (&argc, &argv, NULL);
 
-  g_type_init ();
-
   g_test_add_func ("/entity/instantiation",
       test_entity_instantiation);
 

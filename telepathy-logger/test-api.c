@@ -40,7 +40,6 @@ main (int argc, char *argv[])
   GError *error = NULL;
   char *account;
 
-  g_type_init ();
   mainloop = g_main_loop_new (NULL, FALSE);
 
   if (argc != 3)

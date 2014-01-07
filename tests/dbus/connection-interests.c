@@ -151,7 +151,6 @@ setup (Test *test,
   GError *error = NULL;
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
-  g_type_init ();
   tp_debug_set_flags ("all");
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 

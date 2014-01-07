@@ -297,8 +297,6 @@ int main (int argc, char **argv)
   GPtrArray *ptrarray;
   gchar *string;
 
-  g_type_init ();
-
   g_assert (!tp_strdiff (NULL, NULL));
   g_assert (tp_strdiff ("badger", NULL));
   g_assert (tp_strdiff (NULL, "badger"));

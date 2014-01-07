@@ -84,7 +84,7 @@ kill_connection_manager (gpointer data)
     }
 
   timeout_id = 0;
-  return FALSE;
+  return G_SOURCE_REMOVE;
 }
 
 static void
@@ -98,6 +98,7 @@ new_connection (TpBaseConnectionManager *conn,
   if (0 != timeout_id)
     {
       g_source_remove (timeout_id);
+      timeout_id = 0;
     }
 }
 
@@ -217,8 +218,6 @@ tp_run_connection_manager (const char *prog_name,
   int ret = 1;
 
   add_signal_handlers ();
-
-  g_type_init ();
 
   g_set_prgname (prog_name);
 

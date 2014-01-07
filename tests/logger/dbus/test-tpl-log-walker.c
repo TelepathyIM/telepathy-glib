@@ -429,8 +429,6 @@ gint main (gint argc, gchar **argv)
   GHashTable *params;
   gint retval;
 
-  g_type_init ();
-
   g_test_init (&argc, &argv, NULL);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 

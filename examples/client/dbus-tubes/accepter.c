@@ -186,8 +186,6 @@ main (int argc,
   TpBaseClient *handler;
   GError *error = NULL;
 
-  g_type_init ();
-
   manager = tp_account_manager_dup ();
   handler = tp_simple_handler_new_with_am (manager, FALSE, FALSE,
       "ExampleServiceHandler", FALSE, handle_channels, NULL, NULL);

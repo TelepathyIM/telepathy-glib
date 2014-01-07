@@ -145,7 +145,6 @@ main (int argc,
   GPtrArray *message;
 
   tp_tests_abort_after (10);
-  g_type_init ();
   /* tp_debug_set_flags ("all"); */
 
   tp_tests_create_conn (TP_TESTS_TYPE_ECHO_CONNECTION, "me@example.com",

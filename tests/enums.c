@@ -22,8 +22,6 @@ test_tp_dbus_error (void)
 {
   GEnumClass *klass;
 
-  g_type_init ();
-
   klass = g_type_class_ref (TP_TYPE_DBUS_ERROR);
 
   g_assert (klass != NULL);

@@ -527,8 +527,6 @@ main (int argc, char **argv)
   GList *l = NULL;
   int retval;
 
-  g_type_init ();
-
   setup_debug ();
 
   /* no account tests */

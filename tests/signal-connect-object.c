@@ -60,7 +60,6 @@ static void
 setup (Test *test,
     gconstpointer data)
 {
-  g_type_init ();
   tp_debug_set_flags ("all");
 
   test->caught = 0;

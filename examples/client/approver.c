@@ -143,7 +143,6 @@ main (int argc,
   GError *error = NULL;
   TpBaseClient *approver;
 
-  g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
   approver = tp_simple_approver_new (NULL, "ExampleApprover",

@@ -63,7 +63,6 @@ int
 main (int argc,
     char **argv)
 {
-  g_type_init ();
   tp_debug_set_flags ("all");
 
   g_test_init (&argc, &argv, NULL);

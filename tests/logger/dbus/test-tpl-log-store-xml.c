@@ -1073,8 +1073,6 @@ test_get_events_for_date (XmlTestCaseFixture *fixture,
 
 gint main (gint argc, gchar **argv)
 {
-  g_type_init ();
-
   g_test_init (&argc, &argv, NULL);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 

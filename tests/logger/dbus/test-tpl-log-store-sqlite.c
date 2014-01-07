@@ -13,8 +13,6 @@ main (int argc, char **argv)
   GError *error = NULL;
   TpClientFactory* factory;
 
-  g_type_init ();
-
   _tpl_debug_set_flags_from_env ();
 
   bus = tp_dbus_daemon_dup (&error);
