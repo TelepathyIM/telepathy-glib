@@ -66,7 +66,8 @@ TelepathyFarstream_1_gir_INCLUDES = \
 	GObject-2.0 \
 	Gst-1.0 \
 	Farstream-0.2 \
-	TelepathyGLib-0.12
+	TelepathyGLib-1 \
+	$(NULL)
 TelepathyFarstream_1_gir_CFLAGS = $(AM_CPPFLAGS)
 TelepathyFarstream_1_gir_LIBS = libtelepathy-farstream-1.la
 TelepathyFarstream_1_gir_FILES = $(introspection_sources)
