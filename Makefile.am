@@ -5,7 +5,7 @@ SUBDIRS= m4 \
           tools \
           telepathy-farstream \
           docs \
-          examples
+          $(NULL)
 
 DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --enable-introspection
 

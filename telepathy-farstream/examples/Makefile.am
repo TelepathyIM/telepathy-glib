@@ -3,7 +3,7 @@ SUBDIRS=python
 noinst_PROGRAMS = call-handler
 
 LDADD =  \
-   ../telepathy-farstream/libtelepathy-farstream-1.la \
+   $(top_builddir)/telepathy-farstream/libtelepathy-farstream-1.la \
    $(GLIB_LIBS) \
    $(DBUS_LIBS) \
    $(GST_LIBS) \

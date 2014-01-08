@@ -12,6 +12,7 @@ Makefile.in
 .#*
 *.stamp
 
+/telepathy-farstream/examples/call-handler
 telepathy-farstream/telepathy-farstream-1.pc
 telepathy-farstream/telepathy-farstream-uninstalled-1.pc
 
@@ -54,7 +55,6 @@ stamp-h1
 gtk-doc.make
 m4/gtk-doc.m4
 python/pytpfarstream.c
-examples/call-handler
 extensions/_gen/
 
 m4/libtool.m4

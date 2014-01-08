@@ -129,8 +129,8 @@ AC_OUTPUT( Makefile \
           docs/reference/Makefile \
           docs/reference/telepathy-farstream/Makefile \
           m4/Makefile \
-          examples/Makefile \
-          examples/python/Makefile \
+          telepathy-farstream/examples/Makefile \
+          telepathy-farstream/examples/python/Makefile \
           telepathy-farstream/Makefile  \
           telepathy-farstream/telepathy-farstream-1.pc \
           telepathy-farstream/telepathy-farstream-uninstalled-1.pc
