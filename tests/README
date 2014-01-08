@@ -1,14 +1,16 @@
 Where to put new tests:
 
-/tests/ if they're simple regression tests that don't touch the session bus
+/tests/ and /tests/logger if they're simple regression tests that don't touch
+the session bus
 
-/tests/dbus/ if they touch the session bus
+/tests/dbus/ and /tests/logger/dbus if they touch the session bus
 (a temporary session bus will be used)
 
 /tests/tools/ if they're shell scripts that test the code generation tools
 
 To run a single test:
   make -C tests/dbus check TESTS=test-contacts
+  make -C tests/logger/dbus check TESTS=test-tpl-log-walker
 
 If you're running a test under a debugger, export TP_TESTS_NO_TIMEOUT=1 to
 avoid it being killed for taking too long.
