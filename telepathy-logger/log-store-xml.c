@@ -87,7 +87,6 @@ struct _TplLogStoreXmlPriv
 enum {
     PROP_0,
     PROP_READABLE,
-    PROP_BASEDIR,
     PROP_TESTMODE
 };
 
@@ -155,9 +154,6 @@ tpl_log_store_xml_get_property (GObject *object,
       case PROP_READABLE:
         g_value_set_boolean (value, TRUE);
         break;
-      case PROP_BASEDIR:
-        g_value_set_string (value, priv->basedir);
-        break;
       case PROP_TESTMODE:
         g_value_set_boolean (value, priv->test_mode);
         break;
@@ -178,9 +174,6 @@ tpl_log_store_xml_set_property (GObject *object,
 
   switch (param_id)
     {
-      case PROP_BASEDIR:
-        log_store_xml_set_basedir (self, g_value_get_string (value));
-        break;
       case PROP_TESTMODE:
         self->priv->test_mode = g_value_get_boolean (value);
         break;
@@ -203,18 +196,6 @@ _tpl_log_store_xml_class_init (TplLogStoreXmlClass *klass)
   object_class->set_property = tpl_log_store_xml_set_property;
 
   g_object_class_override_property (object_class, PROP_READABLE, "readable");
-
-  /**
-   * TplLogStoreXml:basedir:
-   *
-   * The log store's basedir.
-   */
-  param_spec = g_param_spec_string ("basedir",
-      "Basedir",
-      "The TplLogStore implementation's name",
-      NULL, G_PARAM_READABLE | G_PARAM_WRITABLE |
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_BASEDIR, param_spec);
 
   param_spec = g_param_spec_boolean ("testmode",
       "TestMode",
