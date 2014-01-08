@@ -2,12 +2,24 @@
 telepathy-glib
 ==============
 
-This is a library for GLib-based Telepathy components.
-
 Telepathy is a D-Bus framework for unifying real time communication,
 including instant messaging, voice calls and video calls. It abstracts
 differences between protocols to provide a unified interface for
 applications.
+
+telepathy-glib is a C library using GLib, for use in Telepathy clients,
+connection managers (protocol backends) and other components. It can
+also be used from C++ via extern "C" linkage, and from higher-level
+languages including Python and JavaScript via GObject-Introspection.
+
+Optional components:
+
+• telepathy-farstream implements the actual streaming for Telepathy
+  Call channels using Farstream and GStreamer, and should be used in
+  VoIP client user interfaces
+
+• telepathy-logger provides a logging daemon and a log-access library,
+  see telepathy-logger/README for more details
 
 Telepathy specification
 =======================
@@ -36,6 +48,19 @@ and can also make use of:
 See configure.ac for full details, including versions required.
 Of the packages listed above, only GLib, GObject, libdbus and dbus-glib are
 required at runtime.
+
+The optional components additionally require:
+
+  Farstream <http://farsight.freedesktop.org/releases/farstream/>
+  GStreamer base plugins <http://gstreamer.freedesktop.org/>
+  sqlite <https://www.sqlite.org/download.html>
+  libxml2 <http://xmlsoft.org/>
+
+Configure with --enable-farstream, --enable-logger to make the build
+fail if suitable versions are not found, or --disable-farstream etc. to
+disable an optional component even if its dependencies are present.
+The default is to compile all optional components whose dependencies are
+satisfied.
 
 Building from git also requires the GNU build system (Autoconf, Automake,
 libtool).
