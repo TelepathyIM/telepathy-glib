@@ -1752,21 +1752,11 @@ log_store_xml_get_basedir (TplLogStoreXml *self)
   if (self->priv->basedir == NULL)
     {
       gchar *dir;
-      const char *user_data_dir;
       const char *name;
 
-      if (self->priv->test_mode && g_getenv ("TPL_TEST_LOG_DIR") != NULL)
-        {
-          user_data_dir = g_getenv ("TPL_TEST_LOG_DIR");
-        }
-      else
-        {
-          user_data_dir = g_get_user_data_dir ();
-        }
-
       name = _tpl_log_store_get_name ((TplLogStore *) self);
-      dir = g_build_path (G_DIR_SEPARATOR_S, user_data_dir, name, "logs",
-          NULL);
+      dir = g_build_path (G_DIR_SEPARATOR_S, g_get_user_data_dir (), name,
+          "logs", NULL);
       log_store_xml_set_basedir (self, dir);
       g_free (dir);
     }
