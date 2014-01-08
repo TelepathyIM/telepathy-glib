@@ -865,16 +865,12 @@ process_media_description (TfCallContent *self,
       if (!strcmp (interfaces[i],
               TP_IFACE_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK1))
         {
-          gboolean valid;
-
           self->current_has_rtcp_fb = TRUE;
           rtcp_fb = tp_asv_get_boxed (properties,
               TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK1_FEEDBACK_MESSAGES,
               TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP);
           does_avpf = tp_asv_get_boolean (properties,
-              TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK1_DOES_AVPF, &valid);
-          if (!valid)
-            does_avpf = FALSE;
+              TP_PROP_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK1_DOES_AVPF, NULL);
         }
       else if (!strcmp (interfaces[i],
               TP_IFACE_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS1))
@@ -2157,7 +2153,7 @@ tf_call_content_bus_message (TfCallContent *content,
           &codec, &secondary_codecs))
     {
       gchar *tmp;
-      guint i = 1;
+      guint j = 1;
 
       tmp = fs_codec_to_string (codec);
       g_debug ("Send codec changed: %s", tmp);
@@ -2166,7 +2162,7 @@ tf_call_content_bus_message (TfCallContent *content,
       while (secondary_codecs)
         {
           tmp = fs_codec_to_string (secondary_codecs->data);
-          g_debug ("Secondary send codec %u changed: %s", i++, tmp);
+          g_debug ("Secondary send codec %u changed: %s", j++, tmp);
           g_free (tmp);
           secondary_codecs = secondary_codecs->next;
         }
