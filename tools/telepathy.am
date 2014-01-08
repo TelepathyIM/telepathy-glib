@@ -3,7 +3,7 @@
 dist-hook:
 	chmod u+w ${distdir}/ChangeLog
 	if test -d ${top_srcdir}/.git; then \
-		git log --date=iso $(CHANGELOG_RANGE) > ${distdir}/ChangeLog; \
+		( cd ${top_srcdir} && git log --date=iso $(CHANGELOG_RANGE) ) > ${distdir}/ChangeLog; \
 	fi
 
 distcheck-hook:
@@ -26,11 +26,13 @@ _is-release-check:
 			exit 2; \
 			;; \
 	esac
-	@if ! git diff --no-ext-diff --quiet --exit-code; then \
+	@cd ${top_srcdir} && \
+	if ! git diff --no-ext-diff --quiet --exit-code; then \
 		echo "Hey! Your tree is dirty! No release for you." >&2; \
 		exit 2; \
 	fi
-	@if ! git diff --cached --no-ext-diff --quiet --exit-code; then \
+	@cd ${top_srcdir} && \
+	if ! git diff --cached --no-ext-diff --quiet --exit-code; then \
 		echo "Hey! You have changes staged! No release for you." >&2; \
 		exit 2; \
 	fi
@@ -43,9 +45,16 @@ endif
 %.tar.gz.asc: %.tar.gz
 	$(AM_V_GEN)gpg --detach-sign --armor $@
 
-@PACKAGE@-@VERSION@.tar.gz: _is-release-check check distcheck
+@PACKAGE@-@VERSION@.tar.gz:
+	$(MAKE) _is-release-check
+	$(MAKE) check
+	$(MAKE) distcheck
 
-maintainer-prepare-release: _is-release-check all distcheck release-mail
+maintainer-prepare-release:
+	$(MAKE) _is-release-check
+	$(MAKE) all
+	$(MAKE) distcheck
+	$(MAKE) release-mail
 	git tag -s @PACKAGE@-@VERSION@ -m @PACKAGE@' '@VERSION@
 	gpg --detach-sign --armor @PACKAGE@-@VERSION@.tar.gz
 
@@ -65,7 +74,9 @@ _maintainer-upload-release: _maintainer-upload-release-check
 	rsync -vzP @PACKAGE@-@VERSION@.tar.gz telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/releases/@PACKAGE@/@PACKAGE@-@VERSION@.tar.gz
 	rsync -vzP @PACKAGE@-@VERSION@.tar.gz.asc telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/releases/@PACKAGE@/@PACKAGE@-@VERSION@.tar.gz.asc
 
-maintainer-make-release: maintainer-prepare-release maintainer-upload-release
+maintainer-make-release:
+	$(MAKE) maintainer-prepare-release
+	$(MAKE) maintainer-upload-release
 	@echo "Now:"
 	@echo " • bump the nano-version;"
 	@echo " • push the branch and tags upstream; and"

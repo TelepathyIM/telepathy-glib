@@ -26,18 +26,28 @@ import sys
 import os.path
 import xml.dom.minidom
 
-from libglibcodegen import Signature, type_to_gtype, cmp_by_name, \
-        NS_TP, dbus_gutils_wincaps_to_uscore, \
-        signal_to_marshal_name, method_to_glue_marshal_name
+from libtpcodegen import file_set_contents, key_by_name, u
+from libglibcodegen import Signature, type_to_gtype, \
+        NS_TP, dbus_gutils_wincaps_to_uscore
 
 
 NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
+
+def get_emits_changed(node):
+    try:
+        return [
+            annotation.getAttribute('value')
+            for annotation in node.getElementsByTagName('annotation')
+            if annotation.getAttribute('name') == 'org.freedesktop.DBus.Property.EmitsChangedSignal'
+            ][0]
+    except IndexError:
+        return None
 
 class Generator(object):
 
     def __init__(self, dom, prefix, basename, signal_marshal_prefix,
                  headers, end_headers, not_implemented_func,
-                 allow_havoc):
+                 allow_havoc, allow_single_include):
         self.dom = dom
         self.__header = []
         self.__body = []
@@ -73,20 +83,15 @@ class Generator(object):
         self.end_headers = end_headers
         self.not_implemented_func = not_implemented_func
         self.allow_havoc = allow_havoc
+        self.allow_single_include = allow_single_include
 
     def h(self, s):
-        if isinstance(s, unicode):
-            s = s.encode('utf-8')
         self.__header.append(s)
 
     def b(self, s):
-        if isinstance(s, unicode):
-            s = s.encode('utf-8')
         self.__body.append(s)
 
     def d(self, s):
-        if isinstance(s, unicode):
-            s = s.encode('utf-8')
         self.__docs.append(s)
 
     def do_node(self, node):
@@ -107,6 +112,8 @@ class Generator(object):
         tmp = interface.getAttribute('tp:causes-havoc')
         if tmp and not self.allow_havoc:
             raise AssertionError('%s is %s' % (self.iface_name, tmp))
+
+        iface_emits_changed = get_emits_changed(interface)
 
         self.b('static const DBusGObjectInfo _%s%s_object_info;'
                % (self.prefix_, node_name_lc))
@@ -270,6 +277,16 @@ class Generator(object):
                     flags = ('TP_DBUS_PROPERTIES_MIXIN_FLAG_READ | '
                              'TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE')
 
+                prop_emits_changed = get_emits_changed(m)
+
+                if prop_emits_changed is None:
+                    prop_emits_changed = iface_emits_changed
+
+                if prop_emits_changed == 'true':
+                    flags += ' | TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_CHANGED'
+                elif prop_emits_changed == 'invalidates':
+                    flags += ' | TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_INVALIDATED'
+
                 self.b('      { 0, %s, "%s", 0, NULL, NULL }, /* %s */'
                        % (flags, m.getAttribute('type'), m.getAttribute('name')))
 
@@ -399,8 +416,7 @@ class Generator(object):
                     'not match' % (method.getAttribute('name'), lc_name))
         lc_name = lc_name.lower()
 
-        marshaller = method_to_glue_marshal_name(method,
-                self.signal_marshal_prefix)
+        marshaller = 'g_cclosure_marshal_generic'
         wrapper = self.prefix_ + self.node_name_lc + '_' + lc_name
 
         self.b("  { (GCallback) %s, %s, %d }," % (wrapper, marshaller, offset))
@@ -678,6 +694,7 @@ class Generator(object):
         self.d('/**')
         self.d(' * %s%s::%s:'
                 % (self.Prefix, self.node_name_mixed, signal_name))
+        self.d(' * @self: an object')
         for (ctype, name, gtype) in args:
             self.d(' * @%s: %s (FIXME, generate documentation)'
                    % (name, ctype))
@@ -694,8 +711,7 @@ class Generator(object):
         in_base_init.append('      G_SIGNAL_RUN_LAST|G_SIGNAL_DETAILED,')
         in_base_init.append('      0,')
         in_base_init.append('      NULL, NULL,')
-        in_base_init.append('      %s,'
-                % signal_to_marshal_name(signal, self.signal_marshal_prefix))
+        in_base_init.append('      g_cclosure_marshal_generic,')
         in_base_init.append('      G_TYPE_NONE,')
         tmp = ['%d' % len(args)] + [gtype for (ctype, name, gtype) in args]
         in_base_init.append('      %s);' % ',\n      '.join(tmp))
@@ -712,13 +728,10 @@ class Generator(object):
 
     def __call__(self):
         nodes = self.dom.getElementsByTagName('node')
-        nodes.sort(cmp_by_name)
+        nodes.sort(key=key_by_name)
 
         self.h('#include <glib-object.h>')
         self.h('#include <dbus/dbus-glib.h>')
-
-        if self.have_properties(nodes):
-            self.h('#include <telepathy-glib/dbus-properties-mixin.h>')
 
         self.h('')
         self.h('G_BEGIN_DECLS')
@@ -726,6 +739,15 @@ class Generator(object):
 
         self.b('#include "%s.h"' % self.basename)
         self.b('')
+
+        if self.allow_single_include:
+            self.b('#include <telepathy-glib/dbus.h>')
+            if self.have_properties(nodes):
+                self.b('#include <telepathy-glib/dbus-properties-mixin.h>')
+        else:
+            self.b('#include <telepathy-glib/telepathy-glib.h>')
+        self.b('')
+
         for header in self.headers:
             self.b('#include %s' % header)
         self.b('')
@@ -742,13 +764,12 @@ class Generator(object):
 
         self.h('')
         self.b('')
-        open(self.basename + '.h', 'w').write('\n'.join(self.__header))
-        open(self.basename + '.c', 'w').write('\n'.join(self.__body))
-        open(self.basename + '-gtk-doc.h', 'w').write('\n'.join(self.__docs))
-
+        file_set_contents(self.basename + '.h', u('\n').join(self.__header).encode('utf-8'))
+        file_set_contents(self.basename + '.c', u('\n').join(self.__body).encode('utf-8'))
+        file_set_contents(self.basename + '-gtk-doc.h', u('\n').join(self.__docs).encode('utf-8'))
 
 def cmdline_error():
-    print """\
+    print("""\
 usage:
     gen-ginterface [OPTIONS] xmlfile Prefix_
 options:
@@ -768,7 +789,7 @@ options:
             void symbol (DBusGMethodInvocation *context)
         and return some sort of "not implemented" error via
             dbus_g_method_return_error (context, ...)
-"""
+""")
     sys.exit(1)
 
 
@@ -779,7 +800,8 @@ if __name__ == '__main__':
                                ['filename=', 'signal-marshal-prefix=',
                                 'include=', 'include-end=',
                                 'allow-unstable',
-                                'not-implemented-func='])
+                                'not-implemented-func=',
+                                "allow-single-include"])
 
     try:
         prefix = argv[1]
@@ -792,6 +814,7 @@ if __name__ == '__main__':
     end_headers = []
     not_implemented_func = ''
     allow_havoc = False
+    allow_single_include = False
 
     for option, value in options:
         if option == '--filename':
@@ -810,6 +833,8 @@ if __name__ == '__main__':
             not_implemented_func = value
         elif option == '--allow-unstable':
             allow_havoc = True
+        elif option == '--allow-single-include':
+            allow_single_include = True
 
     try:
         dom = xml.dom.minidom.parse(argv[0])
@@ -817,4 +842,5 @@ if __name__ == '__main__':
         cmdline_error()
 
     Generator(dom, prefix, basename, signal_marshal_prefix, headers,
-              end_headers, not_implemented_func, allow_havoc)()
+              end_headers, not_implemented_func, allow_havoc,
+              allow_single_include)()

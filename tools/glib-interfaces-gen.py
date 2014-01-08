@@ -3,6 +3,7 @@
 from sys import argv, stdout, stderr
 import xml.dom.minidom
 
+from libtpcodegen import file_set_contents, u
 from libglibcodegen import NS_TP, get_docstring, \
         get_descendant_text, get_by_path
 
@@ -13,24 +14,32 @@ class Generator(object):
         assert declfile.endswith('.h')
         docfile = declfile[:-2] + '-gtk-doc.h'
 
-        self.impls = open(implfile, 'w')
-        self.decls = open(declfile, 'w')
-        self.docs = open(docfile, 'w')
+        self.implfile = implfile
+        self.declfile = declfile
+        self.docfile = docfile
+
+        self.impls = []
+        self.decls = []
+        self.docs = []
         self.spec = get_by_path(dom, "spec")[0]
 
     def h(self, code):
-        self.decls.write(code.encode('utf-8'))
+        self.decls.append(code)
 
     def c(self, code):
-        self.impls.write(code.encode('utf-8'))
+        self.impls.append(code)
 
     def d(self, code):
-        self.docs.write(code.encode('utf-8'))
+        self.docs.append(code)
 
     def __call__(self):
         for f in self.h, self.c:
             self.do_header(f)
         self.do_body()
+
+        file_set_contents(self.implfile, u('').join(self.impls).encode('utf-8'))
+        file_set_contents(self.declfile, u('').join(self.decls).encode('utf-8'))
+        file_set_contents(self.docfile, u('').join(self.docs).encode('utf-8'))
 
     # Header
     def do_header(self, f):
@@ -49,6 +58,7 @@ class Generator(object):
         f("""
  */
 
+#include <glib.h>
 """)
 
     # Body
