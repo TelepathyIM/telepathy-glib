@@ -125,8 +125,9 @@ AC_SUBST([LT_AGE])
 
 
 AC_OUTPUT( Makefile \
-          doc/Makefile \
-          doc/lib/Makefile \
+          docs/Makefile \
+          docs/reference/Makefile \
+          docs/reference/telepathy-farstream/Makefile \
           m4/Makefile \
           examples/Makefile \
           examples/python/Makefile \

@@ -4,7 +4,7 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS= m4 \
           tools \
           telepathy-farstream \
-          doc \
+          docs \
           examples
 
 DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --enable-introspection
@@ -15,14 +15,14 @@ EXTRA_DIST = \
 
 maintainer-upload-release: _maintainer-upload-release-local
 _maintainer-upload-release-local: _maintainer-upload-release-check
-	rsync -rvzPp --chmod=Dg+s,ug+rwX,o=rX doc/lib/html/ \
-	telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/doc/telepathy-farstream/
+	rsync -rvzPp --chmod=Dg+s,ug+rwX,o=rX docs/reference/telepathy-farstream/html/ \
+	telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/doc/telepathy-farstream-1/
 
 BRANCH = misc
 UPLOAD_BRANCH_TO = people.freedesktop.org:public_html/telepathy-farstream
 
 upload-branch-docs: all
-	rsync -rzvPp --chmod=a+rX doc/lib/html/ \
+	rsync -rzvPp --chmod=a+rX docs/reference/telepathy-farstream/html/ \
 		$(UPLOAD_BRANCH_TO)-$(BRANCH)/
 
 include tools/telepathy.am

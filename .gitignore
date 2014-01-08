@@ -15,21 +15,21 @@ Makefile.in
 telepathy-farstream/telepathy-farstream-1.pc
 telepathy-farstream/telepathy-farstream-uninstalled-1.pc
 
-doc/lib/*.bak
-doc/lib/html/
-doc/lib/telepathy-farstream.args
-doc/lib/telepathy-farstream-decl-list.txt
-doc/lib/telepathy-farstream-decl.txt
-doc/lib/telepathy-farstream.hierarchy
-doc/lib/telepathy-farstream.interfaces
-doc/lib/telepathy-farstream-overrides.txt
-doc/lib/telepathy-farstream.prerequisites
-doc/lib/telepathy-farstream.signals
-doc/lib/telepathy-farstream-undeclared.txt
-doc/lib/telepathy-farstream-undocumented.txt
-doc/lib/telepathy-farstream-unused.txt
-doc/lib/tmpl/
-doc/lib/xml/
+/docs/reference/telepathy-farstream/*.bak
+/docs/reference/telepathy-farstream/html/
+/docs/reference/telepathy-farstream/telepathy-farstream.args
+/docs/reference/telepathy-farstream/telepathy-farstream-decl-list.txt
+/docs/reference/telepathy-farstream/telepathy-farstream-decl.txt
+/docs/reference/telepathy-farstream/telepathy-farstream.hierarchy
+/docs/reference/telepathy-farstream/telepathy-farstream.interfaces
+/docs/reference/telepathy-farstream/telepathy-farstream-overrides.txt
+/docs/reference/telepathy-farstream/telepathy-farstream.prerequisites
+/docs/reference/telepathy-farstream/telepathy-farstream.signals
+/docs/reference/telepathy-farstream/telepathy-farstream-undeclared.txt
+/docs/reference/telepathy-farstream/telepathy-farstream-undocumented.txt
+/docs/reference/telepathy-farstream/telepathy-farstream-unused.txt
+/docs/reference/telepathy-farstream/tmpl/
+/docs/reference/telepathy-farstream/xml/
 
 INSTALL
 aclocal.m4

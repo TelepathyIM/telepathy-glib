@@ -90,16 +90,16 @@ include $(top_srcdir)/gtk-doc.make
 if ENABLE_GTK_DOC
 check-local:
 	@if grep '^0 symbols incomplete' \
-		$(top_builddir)/doc/lib/telepathy-farstream-undocumented.txt; then\
+		$(builddir)/$(DOC_MODULE)-undocumented.txt; then\
 		:; else \
-		cat $(top_builddir)/doc/lib/telepathy-farstream-undocumented.txt; exit 1; fi
+		cat $(builddir)/$(DOC_MODULE)-undocumented.txt; exit 1; fi
 	@if grep '^0 not documented' \
-		$(top_builddir)/doc/lib/telepathy-farstream-undocumented.txt; then\
+		$(builddir)/$(DOC_MODULE)-undocumented.txt; then\
 		:; else \
-		cat $(top_builddir)/doc/lib/telepathy-farstream-undocumented.txt; exit 1; fi
-	@if grep . $(top_builddir)/doc/lib/telepathy-farstream-unused.txt; then\
+		cat $(builddir)/$(DOC_MODULE)-undocumented.txt; exit 1; fi
+	@if grep . $(builddir)/$(DOC_MODULE)-unused.txt; then\
 		echo "^^^ Unused symbols" >&2; exit 1; fi
-	@if test -e $(top_builddir)/doc/lib/telepathy-farstream-undeclared.txt &&\
-		grep . $(top_builddir)/doc/lib/telepathy-farstream-undeclared.txt; then\
+	@if test -e $(builddir)/$(DOC_MODULE)-undeclared.txt &&\
+		grep . $(builddir)/$(DOC_MODULE)-undeclared.txt; then\
 		echo "^^^ Undeclared symbols" >&2; exit 1; fi
 endif
