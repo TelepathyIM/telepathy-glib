@@ -85,7 +85,7 @@ struct _TfCallContent {
   /* Streams for which we don't have a session yet*/
   GList *outstanding_streams;
 
-  GMutex *mutex;
+  GMutex mutex;
 
   gboolean remote_codecs_set;
 
@@ -127,8 +127,8 @@ G_DEFINE_TYPE_WITH_CODE (TfCallContent, tf_call_content, TF_TYPE_CONTENT,
                          G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE,
                              call_content_async_initable_init))
 
-#define TF_CALL_CONTENT_LOCK(self)   g_mutex_lock ((self)->mutex)
-#define TF_CALL_CONTENT_UNLOCK(self) g_mutex_unlock ((self)->mutex)
+#define TF_CALL_CONTENT_LOCK(self)   g_mutex_lock (&(self)->mutex)
+#define TF_CALL_CONTENT_UNLOCK(self) g_mutex_unlock (&(self)->mutex)
 
 
 enum
@@ -330,7 +330,7 @@ tf_call_content_init (TfCallContent *self)
   self->fsstreams = g_ptr_array_new ();
   self->dtmf_sending_state = TP_SENDING_STATE_NONE;
 
-  self->mutex = g_mutex_new ();
+  g_mutex_init (&self->mutex);
   self->requested_input_volume = -1;
   self->requested_output_volume = -1;
 
@@ -403,7 +403,7 @@ tf_call_content_finalize (GObject *object)
   fs_codec_list_destroy (self->last_sent_codecs);
   self->last_sent_codecs = NULL;
 
-  g_mutex_free (self->mutex);
+  g_mutex_clear (&self->mutex);
 
   if (G_OBJECT_CLASS (tf_call_content_parent_class)->finalize)
     G_OBJECT_CLASS (tf_call_content_parent_class)->finalize (object);
@@ -784,7 +784,7 @@ process_media_description_try_codecs (TfCallContent *self, FsStream *fsstream,
       g_debug ("Rejecting Media Description");
       tp_cli_call1_content_media_description_call_reject (media_description,
           -1, reason, NULL, NULL, NULL, NULL);
-      g_value_array_free (reason);
+      tp_value_array_free (reason);
       g_object_unref (media_description);
     }
   g_clear_error (&error);
@@ -2492,7 +2492,7 @@ tf_call_content_iterate_src_pads (TfContent *content, guint *handles,
 
   iter = (struct StreamSrcPadIterator *) gst_iterator_new (
       sizeof (struct StreamSrcPadIterator), GST_TYPE_PAD,
-      self->mutex, &self->fsstreams_cookie,
+      &self->mutex, &self->fsstreams_cookie,
       streams_src_pads_iter_copy,
       streams_src_pads_iter_next,
       streams_src_pads_iter_item,

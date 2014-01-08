@@ -592,7 +592,6 @@ main (int argc, char **argv)
   TpBaseClient *client;
   TpAccountManager *am;
 
-  g_type_init ();
   gst_init (&argc, &argv);
 
   loop = g_main_loop_new (NULL, FALSE);
