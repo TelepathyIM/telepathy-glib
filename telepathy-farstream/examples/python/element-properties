@@ -1,0 +1,62 @@
+# Put the desired properties in the style of
+#
+# [element name]
+# prop1=val1
+
+[gstrtpbin]
+latency=100
+
+[x264enc]
+byte-stream=1
+bframes=0
+b-adapt=0
+cabac=0
+dct8x8=0
+bitrate=256
+# tuned for zero latency
+tune=0x4
+profile=1
+speed-preset=3
+sliced-threads=false
+
+[ffenc_h263]
+rtp-payload-size=1
+
+[theoraenc]
+bitrate=256
+
+[vp8enc]
+bitrate=256000
+max-latency=1
+speed=2
+error-resilient=true
+
+# Work around bug in the re-timestamp slaving method in
+# GStreamer (2 is skew)
+[alsasrc]
+slave-method=2
+
+[osssrc]
+slave-method=2
+
+[oss4src]
+slave-method=2
+
+[sunaudiosrc]
+slave-method=2
+
+[rtph264pay]
+config-interval=5
+
+[rtppcmupay]
+ptime-multiple=20000000
+
+[rtppcmapay]
+ptime-multiple=20000000
+
+[gstrtpjitterbuffer]
+do-lost=1
+
+[ewh264enc]
+profile=baseline
+quality=5

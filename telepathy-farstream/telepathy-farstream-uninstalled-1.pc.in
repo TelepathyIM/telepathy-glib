@@ -1,0 +1,11 @@
+prefix=
+exec_prefix=
+abs_top_srcdir=@abs_top_srcdir@
+abs_top_builddir=@abs_top_builddir@
+
+Name: Telepathy-Farstream-1
+Description: Library implementing the Telepathy Call API using Farstream
+Version: @VERSION@
+Requires.private: dbus-glib-1 >= 0.73, glib-2.0 >= 2.10, gobject-2.0 >= 2.10, farstream-0.2
+Libs: ${abs_top_builddir}/telepathy-farstream/libtelepathy-farstream-1.la
+Cflags: -I${abs_top_srcdir} -I${abs_top_builddir}
