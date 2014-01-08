@@ -1927,3 +1927,10 @@ log_store_iface_init (gpointer g_iface,
   iface->clear_entity = log_store_xml_clear_entity;
   iface->create_iter = log_store_xml_create_iter;
 }
+
+TplLogStore *
+_tpl_log_store_xml_new (void)
+{
+  return g_object_new (TPL_TYPE_LOG_STORE_XML,
+      NULL);
+}

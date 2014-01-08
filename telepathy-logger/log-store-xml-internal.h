@@ -26,6 +26,8 @@
 #include <glib.h>
 #include <glib-object.h>
 
+#include "telepathy-logger/log-store-internal.h"
+
 G_BEGIN_DECLS
 #define TPL_TYPE_LOG_STORE_XML \
   (_tpl_log_store_xml_get_type ())
@@ -57,6 +59,8 @@ typedef struct
 } TplLogStoreXmlClass;
 
 GType _tpl_log_store_xml_get_type (void);
+
+TplLogStore * _tpl_log_store_xml_new (void);
 
 G_END_DECLS
 #endif /* __TPL_LOG_STORE_XML_H__ */

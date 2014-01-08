@@ -1158,3 +1158,10 @@ log_store_iface_init (gpointer g_iface,
   iface->get_filtered_events = log_store_pidgin_get_filtered_events;
   iface->create_iter = log_store_pidgin_create_iter;
 }
+
+TplLogStore *
+_tpl_log_store_pidgin_new (void)
+{
+  return g_object_new (TPL_TYPE_LOG_STORE_PIDGIN,
+      NULL);
+}

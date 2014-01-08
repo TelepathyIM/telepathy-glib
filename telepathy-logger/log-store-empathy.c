@@ -65,3 +65,10 @@ log_store_iface_init (gpointer g_iface,
    * ones. */
   iface->add_event = NULL;
 }
+
+TplLogStore *
+_tpl_log_store_empathy_new (void)
+{
+  return g_object_new (TPL_TYPE_LOG_STORE_EMPATHY,
+      NULL);
+}

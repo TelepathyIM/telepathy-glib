@@ -35,6 +35,8 @@ struct _TplLogStoreEmpathy {
 
 GType _tpl_log_store_empathy_get_type (void);
 
+TplLogStore * _tpl_log_store_empathy_new (void);
+
 /* TYPE MACROS */
 #define TPL_TYPE_LOG_STORE_EMPATHY \
   (_tpl_log_store_empathy_get_type ())
