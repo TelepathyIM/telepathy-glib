@@ -171,8 +171,8 @@ setup (PidginTestCaseFixture* fixture,
   fixture->main_loop = g_main_loop_new (NULL, FALSE);
   g_assert (fixture->main_loop != NULL);
 
-  fixture->basedir = g_build_path (G_DIR_SEPARATOR_S,
-      g_getenv ("TPL_TEST_LOG_DIR"), "purple", NULL);
+  fixture->basedir = g_build_path (G_DIR_SEPARATOR_S, g_get_home_dir (),
+      ".purple", "logs", NULL);
   DEBUG ("basedir is %s", fixture->basedir);
 
   fixture->store = g_object_new (TPL_TYPE_LOG_STORE_PIDGIN,

@@ -207,12 +207,11 @@ log_store_pidgin_get_basedir (TplLogStorePidgin *self)
     {
       gchar *dir;
 
-      if (self->priv->test_mode && g_getenv ("TPL_TEST_LOG_DIR") != NULL)
-        dir = g_build_path (G_DIR_SEPARATOR_S, g_getenv ("TPL_TEST_LOG_DIR"),
-            "purple", NULL);
-      else
-        dir = g_build_path (G_DIR_SEPARATOR_S, g_get_home_dir (), ".purple",
-            "logs", NULL);
+      /* This is fine with tests as we depend on GLib 2.36 which is now using
+       * $HOME to find the home dir. */
+      dir = g_build_path (G_DIR_SEPARATOR_S, g_get_home_dir (), ".purple",
+          "logs", NULL);
+
       log_store_pidgin_set_basedir (self, dir);
 
       g_free (dir);
