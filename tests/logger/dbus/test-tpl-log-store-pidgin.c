@@ -346,11 +346,12 @@ static void
 test_get_name (PidginTestCaseFixture *fixture,
     gconstpointer user_data)
 {
-  const gchar *name;
+  gchar *name;
 
-  name = _tpl_log_store_get_name (TPL_LOG_STORE (fixture->store));
+  name = _tpl_log_store_dup_name (TPL_LOG_STORE (fixture->store));
 
   g_assert_cmpstr (name, ==, "Pidgin");
+  g_free (name);
 }
 
 static void

@@ -192,11 +192,15 @@ static void
 add_log_store (TplLogManager *self,
     TplLogStore *store)
 {
+  gchar *name;
+
   g_return_if_fail (TPL_IS_LOG_STORE (store));
 
+  name = _tpl_log_store_dup_name (store);
+
   if (!_tpl_log_manager_register_log_store (self, store))
-    CRITICAL ("Failed to register store name=%s",
-        _tpl_log_store_get_name (store));
+    CRITICAL ("Failed to register store name=%s", name);
+  g_free (name);
 
   /* drop the initial ref */
   g_object_unref (store);
@@ -351,10 +355,14 @@ _tpl_log_manager_add_event (TplLogManager *manager,
       result = _tpl_log_store_add_event (store, event, &loc_error);
       if (!result)
         {
+          gchar *name = _tpl_log_store_dup_name (store);
+
           CRITICAL ("logstore name=%s: %s. "
               "Event may not be logged properly.",
-              _tpl_log_store_get_name (store),
+              name,
               loc_error != NULL ? loc_error->message : "no error message");
+
+          g_free (name);
           g_clear_error (&loc_error);
         }
       /* TRUE if at least one LogStore succeeds */
@@ -388,7 +396,7 @@ _tpl_log_manager_register_log_store (TplLogManager *self,
     TplLogStore *logstore)
 {
   TplLogManagerPriv *priv = self->priv;
-  const gchar *name = _tpl_log_store_get_name (logstore);
+  gchar *name = _tpl_log_store_dup_name (logstore);
   GList *l;
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
@@ -398,12 +406,17 @@ _tpl_log_manager_register_log_store (TplLogManager *self,
   for (l = priv->stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = l->data;
+      gchar *n = _tpl_log_store_dup_name (store);
 
-      if (!tp_strdiff (name, _tpl_log_store_get_name (store)))
+      if (!tp_strdiff (name, n))
         {
           DEBUG ("name=%s: already registered", name);
+          g_free (n);
+          g_free (name);
           return FALSE;
         }
+
+      g_free (n);
     }
 
   if (_tpl_log_store_is_readable (logstore))
@@ -415,8 +428,9 @@ _tpl_log_manager_register_log_store (TplLogManager *self,
   /* reference just once, writable/readable lists are kept in sync with the
    * general list and never written separately */
   priv->stores = g_list_prepend (priv->stores, g_object_ref (logstore));
-  DEBUG ("LogStore name=%s registered", _tpl_log_store_get_name (logstore));
+  DEBUG ("LogStore name=%s registered", name);
 
+  g_free (name);
   return TRUE;
 }
 

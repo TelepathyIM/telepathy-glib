@@ -46,13 +46,15 @@
 
 struct _TplLogStorePidginPriv
 {
-  TpAccountManager *account_manager;
+  gchar *name;
 
+  TpAccountManager *account_manager;
   gchar *basedir;
 };
 
 enum {
     PROP_0,
+    PROP_NAME,
     PROP_READABLE,
 };
 
@@ -63,7 +65,6 @@ static void tpl_log_store_pidgin_get_property (GObject *object, guint param_id, 
     GParamSpec *pspec);
 static void tpl_log_store_pidgin_set_property (GObject *object, guint param_id, const GValue *value,
     GParamSpec *pspec);
-static const gchar *log_store_pidgin_get_name (TplLogStore *store);
 static const gchar *log_store_pidgin_get_basedir (TplLogStorePidgin *self);
 static void log_store_pidgin_set_basedir (TplLogStorePidgin *self,
     const gchar *data);
@@ -79,8 +80,13 @@ tpl_log_store_pidgin_get_property (GObject *object,
     GValue *value,
     GParamSpec *pspec)
 {
+  TplLogStorePidgin *self = TPL_LOG_STORE_PIDGIN (object);
+
   switch (param_id)
     {
+      case PROP_NAME:
+        g_value_set_string (value, self->priv->name);
+        break;
       case PROP_READABLE:
         g_value_set_boolean (value, TRUE);
         break;
@@ -97,8 +103,13 @@ tpl_log_store_pidgin_set_property (GObject *object,
     const GValue *value,
     GParamSpec *pspec)
 {
+  TplLogStorePidgin *self = TPL_LOG_STORE_PIDGIN (object);
+
   switch (param_id)
     {
+      case PROP_NAME:
+        self->priv->name = g_value_dup_string (value);
+        break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
         break;
@@ -112,12 +123,20 @@ tpl_log_store_pidgin_dispose (GObject *self)
   TplLogStorePidginPriv *priv = TPL_LOG_STORE_PIDGIN (self)->priv;
 
   g_clear_object (&priv->account_manager);
-  g_free (priv->basedir);
-  priv->basedir = NULL;
 
   G_OBJECT_CLASS (tpl_log_store_pidgin_parent_class)->dispose (self);
 }
 
+static void
+tpl_log_store_pidgin_finalize (GObject *self)
+{
+  TplLogStorePidginPriv *priv = TPL_LOG_STORE_PIDGIN (self)->priv;
+
+  g_free (priv->basedir);
+  g_free (priv->name);
+
+  G_OBJECT_CLASS (tpl_log_store_pidgin_parent_class)->finalize (self);
+}
 
 static void
 tpl_log_store_pidgin_class_init (TplLogStorePidginClass *klass)
@@ -127,7 +146,9 @@ tpl_log_store_pidgin_class_init (TplLogStorePidginClass *klass)
   object_class->get_property = tpl_log_store_pidgin_get_property;
   object_class->set_property = tpl_log_store_pidgin_set_property;
   object_class->dispose = tpl_log_store_pidgin_dispose;
+  object_class->finalize = tpl_log_store_pidgin_finalize;
 
+  g_object_class_override_property (object_class, PROP_NAME, "name");
   g_object_class_override_property (object_class, PROP_READABLE, "readable");
 
   g_type_class_add_private (object_class, sizeof (TplLogStorePidginPriv));
@@ -142,18 +163,6 @@ tpl_log_store_pidgin_init (TplLogStorePidgin *self)
 
   self->priv->account_manager = tp_account_manager_dup ();
 }
-
-
-static const gchar *
-log_store_pidgin_get_name (TplLogStore *store)
-{
-  TplLogStorePidgin *self = (TplLogStorePidgin *) store;
-
-  g_return_val_if_fail (TPL_IS_LOG_STORE_PIDGIN (self), NULL);
-
-  return TPL_LOG_STORE_PIDGIN_NAME;
-}
-
 
 /* returns an absolute path for the base directory of LogStore */
 static const gchar *
@@ -1108,7 +1117,6 @@ log_store_iface_init (gpointer g_iface,
 {
   TplLogStoreInterface *iface = (TplLogStoreInterface *) g_iface;
 
-  iface->get_name = log_store_pidgin_get_name;
   iface->exists = log_store_pidgin_exists;
   iface->add_event = NULL;
   iface->get_dates = log_store_pidgin_get_dates;
@@ -1123,5 +1131,6 @@ TplLogStore *
 _tpl_log_store_pidgin_new (void)
 {
   return g_object_new (TPL_TYPE_LOG_STORE_PIDGIN,
+      "name", TPL_LOG_STORE_PIDGIN_NAME,
       NULL);
 }

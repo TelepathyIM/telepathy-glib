@@ -42,24 +42,11 @@ _tpl_log_store_empathy_class_init (TplLogStoreEmpathyClass *klass)
 {
 }
 
-
-static const gchar *
-log_store_empathy_get_name (TplLogStore *store)
-{
-  TplLogStoreXml *self = (TplLogStoreXml *) store;
-
-  g_return_val_if_fail (TPL_IS_LOG_STORE_EMPATHY (self), NULL);
-
-  return "Empathy";
-}
-
 static void
 log_store_iface_init (gpointer g_iface,
     gpointer iface_data)
 {
   TplLogStoreInterface *iface = (TplLogStoreInterface *) g_iface;
-
-  iface->get_name = log_store_empathy_get_name;
 
   /* We don't want to store new logs in Empathy's directory, just read the old
    * ones. */
@@ -70,5 +57,6 @@ TplLogStore *
 _tpl_log_store_empathy_new (void)
 {
   return g_object_new (TPL_TYPE_LOG_STORE_EMPATHY,
+      "name", "Empathy",
       NULL);
 }

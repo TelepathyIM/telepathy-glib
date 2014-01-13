@@ -61,7 +61,6 @@ typedef struct
 {
   GTypeInterface parent;
 
-  const gchar * (*get_name) (TplLogStore *self);
   gboolean (*exists) (TplLogStore *self, TpAccount *account,
       TplEntity *target, gint type_mask);
   gboolean (*add_event) (TplLogStore *self, TplEvent *event,
@@ -87,7 +86,8 @@ typedef struct
 
 GType _tpl_log_store_get_type (void);
 
-const gchar * _tpl_log_store_get_name (TplLogStore *self);
+gchar * _tpl_log_store_dup_name (TplLogStore *self)
+  G_GNUC_WARN_UNUSED_RESULT;
 gboolean _tpl_log_store_exists (TplLogStore *self, TpAccount *account,
     TplEntity *target, gint type_mask);
 gboolean _tpl_log_store_add_event (TplLogStore *self, TplEvent *event,

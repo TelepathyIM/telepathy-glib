@@ -37,6 +37,11 @@
  * implement in order to be used into a #TplLogManager.
  */
 
+enum
+{
+  PROP_NAME = 1
+};
+
 static void _tpl_log_store_init (gpointer g_iface);
 
 GType
@@ -66,6 +71,14 @@ _tpl_log_store_get_type (void)
 static void
 _tpl_log_store_init (gpointer g_iface)
 {
+  g_object_interface_install_property (g_iface,
+      g_param_spec_string ("name",
+        "Name",
+        "The name of the log store",
+        NULL,
+        G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+        G_PARAM_STATIC_STRINGS));
+
   /**
    * TplLogStore:readable:
    *
@@ -84,14 +97,16 @@ _tpl_log_store_init (gpointer g_iface)
         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 }
 
-const gchar *
-_tpl_log_store_get_name (TplLogStore *self)
+gchar *
+_tpl_log_store_dup_name (TplLogStore *self)
 {
-  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
-  if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_name)
-    return NULL;
+  gchar *name;
 
-  return TPL_LOG_STORE_GET_INTERFACE (self)->get_name (self);
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+
+  g_object_get (self, "name", &name, NULL);
+
+  return name;
 }
 
 
