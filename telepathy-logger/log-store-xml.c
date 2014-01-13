@@ -1922,3 +1922,12 @@ _tpl_log_store_empathy_new (void)
       "writable", FALSE,
       NULL);
 }
+
+TplLogStore *
+_tpl_log_store_xml_legacy_new (void)
+{
+  return g_object_new (TPL_TYPE_LOG_STORE_XML,
+      "name", "TpLogger",
+      "writable", FALSE,
+      NULL);
+}

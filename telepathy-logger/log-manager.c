@@ -274,6 +274,9 @@ tpl_log_manager_init (TplLogManager *self)
   /* The TPL's default read-write logstore */
   add_log_store (self, _tpl_log_store_xml_new ());
 
+  /* Old (pre 1.0) TPL logs, read only */
+  add_log_store (self, _tpl_log_store_xml_legacy_new ());
+
   /* Load by default the Empathy's legacy 'past coversations' LogStore */
   add_log_store (self, _tpl_log_store_empathy_new ());
 

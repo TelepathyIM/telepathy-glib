@@ -62,6 +62,7 @@ GType _tpl_log_store_xml_get_type (void);
 
 TplLogStore * _tpl_log_store_xml_new (void);
 TplLogStore * _tpl_log_store_empathy_new (void);
+TplLogStore * _tpl_log_store_xml_legacy_new (void);
 
 G_END_DECLS
 #endif /* __TPL_LOG_STORE_XML_H__ */
