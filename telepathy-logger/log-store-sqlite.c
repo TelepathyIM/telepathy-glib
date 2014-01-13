@@ -58,6 +58,7 @@ enum /* properties */
 struct _TplLogStoreSqlitePrivate
 {
   gchar *name;
+  gchar writable;
 
   sqlite3 *db;
 };
@@ -118,7 +119,7 @@ tpl_log_store_sqlite_get_property (GObject *self,
         break;
 
       case PROP_WRITABLE:
-        g_value_set_boolean (value, TRUE);
+        g_value_set_boolean (value, priv->writable);
         break;
 
       default:
@@ -139,6 +140,9 @@ tpl_log_store_sqlite_set_property (GObject *self,
     {
       case PROP_NAME:
         priv->name = g_value_dup_string (value);
+        break;
+      case PROP_WRITABLE:
+        priv->writable = g_value_get_boolean (value);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (self, id, pspec);
@@ -654,6 +658,7 @@ _tpl_log_store_sqlite_dup (void)
 {
   return g_object_new (TPL_TYPE_LOG_STORE_SQLITE,
       "name", TPL_LOG_STORE_SQLITE_NAME,
+      "writable", TRUE,
       NULL);
 }
 

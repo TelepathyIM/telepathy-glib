@@ -39,7 +39,6 @@
 #include <telepathy-logger/event.h>
 #include <telepathy-logger/event-internal.h>
 #include <telepathy-logger/log-store-internal.h>
-#include <telepathy-logger/log-store-empathy-internal.h>
 #include <telepathy-logger/log-store-xml-internal.h>
 #include <telepathy-logger/log-store-pidgin-internal.h>
 #include <telepathy-logger/log-store-sqlite-internal.h>

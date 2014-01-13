@@ -110,7 +110,8 @@ _tpl_log_store_init (gpointer g_iface)
         "Writable",
         "Whether this log store is writable",
         FALSE,
-        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+        G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+        G_PARAM_STATIC_STRINGS));
 }
 
 gchar *

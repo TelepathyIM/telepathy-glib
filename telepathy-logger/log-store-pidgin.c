@@ -47,6 +47,7 @@
 struct _TplLogStorePidginPriv
 {
   gchar *name;
+  gboolean writable;
 
   TpAccountManager *account_manager;
   gchar *basedir;
@@ -92,7 +93,7 @@ tpl_log_store_pidgin_get_property (GObject *object,
         g_value_set_boolean (value, TRUE);
         break;
       case PROP_WRITABLE:
-        g_value_set_boolean (value, FALSE);
+        g_value_set_boolean (value, self->priv->writable);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);

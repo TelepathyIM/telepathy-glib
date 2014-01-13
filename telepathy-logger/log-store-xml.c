@@ -80,6 +80,7 @@
 struct _TplLogStoreXmlPriv
 {
   gchar *name;
+  gboolean writable;
   gchar *basedir;
   TpAccountManager *account_manager;
 };
@@ -161,7 +162,7 @@ tpl_log_store_xml_get_property (GObject *object,
         g_value_set_boolean (value, TRUE);
         break;
       case PROP_WRITABLE:
-        g_value_set_boolean (value, TRUE);
+        g_value_set_boolean (value, self->priv->writable);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -182,6 +183,9 @@ tpl_log_store_xml_set_property (GObject *object,
     {
       case PROP_NAME:
         self->priv->name = g_value_dup_string (value);
+        break;
+      case PROP_WRITABLE:
+        self->priv->writable = g_value_get_boolean (value);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -1907,5 +1911,14 @@ _tpl_log_store_xml_new (void)
 {
   return g_object_new (TPL_TYPE_LOG_STORE_XML,
       "name", "TpLogger",
+      NULL);
+}
+
+TplLogStore *
+_tpl_log_store_empathy_new (void)
+{
+  return g_object_new (TPL_TYPE_LOG_STORE_XML,
+      "name", "Empathy",
+      "writable", FALSE,
       NULL);
 }
