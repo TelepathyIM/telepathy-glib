@@ -181,7 +181,7 @@
  *  by using tp_contact_attribute_map_set()
  *  or tp_contact_attribute_map_take_sliced_gvalue, and return. Otherwise,
  *  chain up to the superclass' implementation.
- *  Since: 0.UNRELEASED
+ *  Since: 0.99.6
  *
  * The class of a #TpBaseConnection. Many members are virtual methods etc.
  * to be filled in in the subclass' class_init function.
@@ -1116,7 +1116,7 @@ tp_base_connection_get_interfaces_always_present (TpBaseConnection *self)
  * tp_contact_attribute_map_take_sliced_gvalue, and return. Otherwise,
  * chain up to the superclass' implementation.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.6
  */
 
 static void
@@ -2966,7 +2966,7 @@ tp_base_connection_get_object_path (TpBaseConnection *self)
  * This structure cannot currently be copied, freed or read via
  * public API.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.6
  */
 
 /* Implementation detail: there is no such thing as a TpContactAttributeMap,
@@ -2983,7 +2983,7 @@ tp_base_connection_get_object_path (TpBaseConnection *self)
  * Put a contact attribute in @self. It is an error to use this function
  * for a @contact that was not requested.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.6
  */
 void
 tp_contact_attribute_map_set (TpContactAttributeMap *map,
@@ -3014,7 +3014,7 @@ tp_contact_attribute_map_set (TpContactAttributeMap *map,
  * introspectable, but is close to the API that "Telepathy 0"
  * connection managers used.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.6
  */
 void
 tp_contact_attribute_map_take_sliced_gvalue (TpContactAttributeMap *map,
@@ -3069,7 +3069,7 @@ static const gchar * const contacts_always_included_interfaces[] = {
  *
  * Returns: (element-type guint GLib.HashTable): a map from #TpHandle
  *  to #GHashTable, where the values are maps from string to #GValue
- * Since: 0.UNRELEASED
+ * Since: 0.99.6
  */
 GHashTable *
 tp_base_connection_dup_contact_attributes_hash (TpBaseConnection *self,

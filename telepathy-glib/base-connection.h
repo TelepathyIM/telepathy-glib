@@ -216,20 +216,20 @@ void tp_base_connection_add_client_interest (TpBaseConnection *self,
 void tp_base_connection_add_possible_client_interest (TpBaseConnection *self,
     GQuark token);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 GHashTable *tp_base_connection_dup_contact_attributes_hash (
     TpBaseConnection *self,
     const GArray *handles,
     const gchar * const *interfaces,
     const gchar * const *assumed_interfaces);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_contact_attribute_map_set (TpContactAttributeMap *map,
     TpHandle contact,
     const gchar *token,
     GVariant *value);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_contact_attribute_map_take_sliced_gvalue (TpContactAttributeMap *map,
     TpHandle contact,
     const gchar *token,

@@ -180,7 +180,7 @@ void tp_presence_mixin_emit_one_presence_update (GObject *obj,
 void tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data);
 void tp_presence_mixin_init_dbus_properties (GObjectClass *cls);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 gboolean tp_presence_mixin_fill_contact_attributes (GObject *obj,
   const gchar *dbus_interface,
   TpHandle contact,

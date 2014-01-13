@@ -299,7 +299,7 @@ void tp_base_contact_list_contact_blocking_changed (
 
 gboolean tp_base_contact_list_can_block (TpBaseContactList *self);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 gboolean tp_base_contact_list_is_blocked (TpBaseContactList *self,
     TpHandle contact);
 TpHandleSet *tp_base_contact_list_dup_blocked_contacts (
@@ -596,7 +596,7 @@ void tp_base_contact_list_mixin_groups_iface_init (gpointer klass);
 _TP_AVAILABLE_IN_0_16
 void tp_base_contact_list_mixin_blocking_iface_init (gpointer klass);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 gboolean tp_base_contact_list_fill_contact_attributes (TpBaseContactList *self,
   const gchar *dbus_interface,
   TpHandle contact,

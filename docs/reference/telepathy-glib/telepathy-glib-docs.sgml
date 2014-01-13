@@ -150,7 +150,6 @@
     <xi:include href="xml/connection-avatars.xml"/>
     <xi:include href="xml/connection-balance.xml"/>
     <xi:include href="xml/connection-client-types.xml"/>
-    <xi:include href="xml/connection-contacts.xml"/>
     <xi:include href="xml/connection-contact-info.xml"/>
     <xi:include href="xml/connection-contact-list.xml"/>
     <xi:include href="xml/connection-caps.xml"/>

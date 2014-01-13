@@ -1,7 +1,41 @@
-telepathy-glib 0.99.6 (UNRELEASED)
+telepathy-glib 0.99.6 (2014-01-13)
 ==================================
 
-...
+The “little by little” release.
+
+API breaks:
+
+• Spec 0.99.6
+  · merge Conn.I.Contacts into Connection
+  · do not include Conn.I.Requests in Connection.Interfaces
+
+• Better parallel-installability (fd.o #49737, Simon):
+  · rename Logger's GIR to TelepathyLogger-1
+  · explicitly ask for TelepathyGLib-1 in examples
+
+• TpContactsMixin no longer exists: instead, TpBaseConnection has a
+  fill_contacts_attribute() virtual method (fd.o #50093, Simon)
+
+• Replace TpPresenceMixinClass.get_contact_statuses (multiple contacts)
+  with a simpler TpPresenceMixinClass.get_contact_status (one contact)
+  (fd.o #50093, Simon)
+
+• TpBaseConnection has more ABI padding (fd.o #50093, Simon)
+
+• New mandatory method TpBlockableContactListInterface.is_blocked
+  (fd.o #50093, Simon)
+
+Other changes:
+
+• Include telepathy-farstream in telepathy-glib source releases
+  (fd.o #73409, Simon)
+
+• Enable GLib 2.36 deprecation warnings (fd.o #71048, Simon)
+
+• TpFileTransferChannel: fix possible crashes (fd.o #72319, Xavier)
+
+• Improve debug output for tp_list_connection_managers (fd.o #68390;
+  Simon, Guillaume)
 
 telepathy-glib 0.99.5 (2013-11-11)
 ==================================

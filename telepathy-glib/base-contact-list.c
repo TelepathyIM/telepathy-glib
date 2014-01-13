@@ -2167,7 +2167,7 @@ tp_base_contact_list_can_block (TpBaseContactList *self)
  *
  * Returns: %TRUE if @contact would be in
  *  tp_base_contact_list_dup_blocked_contacts()
- * Since: 0.UNRELEASED
+ * Since: 0.99.6
  */
 gboolean
 tp_base_contact_list_is_blocked (TpBaseContactList *self,
