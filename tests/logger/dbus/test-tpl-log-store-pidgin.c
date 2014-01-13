@@ -176,7 +176,6 @@ setup (PidginTestCaseFixture* fixture,
   DEBUG ("basedir is %s", fixture->basedir);
 
   fixture->store = g_object_new (TPL_TYPE_LOG_STORE_PIDGIN,
-      "testmode", TRUE,
       NULL);
 
   fixture->room = tpl_entity_new_from_room_id (

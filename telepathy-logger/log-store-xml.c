@@ -80,14 +80,12 @@
 struct _TplLogStoreXmlPriv
 {
   gchar *basedir;
-  gboolean test_mode;
   TpAccountManager *account_manager;
 };
 
 enum {
     PROP_0,
     PROP_READABLE,
-    PROP_TESTMODE
 };
 
 static void log_store_iface_init (gpointer g_iface, gpointer iface_data);
@@ -147,15 +145,10 @@ tpl_log_store_xml_get_property (GObject *object,
     GValue *value,
     GParamSpec *pspec)
 {
-  TplLogStoreXmlPriv *priv = TPL_LOG_STORE_XML (object)->priv;
-
   switch (param_id)
     {
       case PROP_READABLE:
         g_value_set_boolean (value, TRUE);
-        break;
-      case PROP_TESTMODE:
-        g_value_set_boolean (value, priv->test_mode);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -170,13 +163,8 @@ tpl_log_store_xml_set_property (GObject *object,
     const GValue *value,
     GParamSpec *pspec)
 {
-  TplLogStoreXml *self = TPL_LOG_STORE_XML (object);
-
   switch (param_id)
     {
-      case PROP_TESTMODE:
-        self->priv->test_mode = g_value_get_boolean (value);
-        break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
         break;
@@ -188,7 +176,6 @@ static void
 _tpl_log_store_xml_class_init (TplLogStoreXmlClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  GParamSpec *param_spec;
 
   object_class->finalize = log_store_xml_finalize;
   object_class->dispose = log_store_xml_dispose;
@@ -196,12 +183,6 @@ _tpl_log_store_xml_class_init (TplLogStoreXmlClass *klass)
   object_class->set_property = tpl_log_store_xml_set_property;
 
   g_object_class_override_property (object_class, PROP_READABLE, "readable");
-
-  param_spec = g_param_spec_boolean ("testmode",
-      "TestMode",
-      "Whether the logstore is in testmode, for testsuite use only",
-      FALSE, G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_TESTMODE, param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplLogStoreXmlPriv));
 }

@@ -194,13 +194,6 @@ add_log_store (TplLogManager *self,
 {
   g_return_if_fail (TPL_IS_LOG_STORE (store));
 
-  /* set the log store in "testmode" if it supports it and the environment is
-   * currently in test mode */
-  if (g_object_class_find_property (G_OBJECT_GET_CLASS (store), "testmode"))
-      g_object_set (store,
-          "testmode", (g_getenv ("TPL_TEST_MODE") != NULL),
-          NULL);
-
   if (!_tpl_log_manager_register_log_store (self, store))
     CRITICAL ("Failed to register store name=%s",
         _tpl_log_store_get_name (store));

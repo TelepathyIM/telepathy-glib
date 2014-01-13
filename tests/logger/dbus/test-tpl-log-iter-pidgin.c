@@ -56,7 +56,6 @@ setup (PidginTestCaseFixture* fixture,
   g_assert (fixture->main_loop != NULL);
 
   fixture->store = g_object_new (TPL_TYPE_LOG_STORE_PIDGIN,
-      "testmode", TRUE,
       NULL);
 
   fixture->bus = tp_tests_dbus_daemon_dup_or_die ();

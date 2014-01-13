@@ -46,7 +46,6 @@
 
 struct _TplLogStorePidginPriv
 {
-  gboolean test_mode;
   TpAccountManager *account_manager;
 
   gchar *basedir;
@@ -55,7 +54,6 @@ struct _TplLogStorePidginPriv
 enum {
     PROP_0,
     PROP_READABLE,
-    PROP_TESTMODE,
 };
 
 
@@ -81,15 +79,10 @@ tpl_log_store_pidgin_get_property (GObject *object,
     GValue *value,
     GParamSpec *pspec)
 {
-  TplLogStorePidginPriv *priv = TPL_LOG_STORE_PIDGIN (object)->priv;
-
   switch (param_id)
     {
       case PROP_READABLE:
         g_value_set_boolean (value, TRUE);
-        break;
-      case PROP_TESTMODE:
-        g_value_set_boolean (value, priv->test_mode);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -104,13 +97,8 @@ tpl_log_store_pidgin_set_property (GObject *object,
     const GValue *value,
     GParamSpec *pspec)
 {
-  TplLogStorePidgin *self = TPL_LOG_STORE_PIDGIN (object);
-
   switch (param_id)
     {
-      case PROP_TESTMODE:
-        self->priv->test_mode = g_value_get_boolean (value);
-        break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
         break;
@@ -135,20 +123,12 @@ static void
 tpl_log_store_pidgin_class_init (TplLogStorePidginClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  GParamSpec *param_spec;
 
   object_class->get_property = tpl_log_store_pidgin_get_property;
   object_class->set_property = tpl_log_store_pidgin_set_property;
   object_class->dispose = tpl_log_store_pidgin_dispose;
 
   g_object_class_override_property (object_class, PROP_READABLE, "readable");
-
-  param_spec = g_param_spec_boolean ("testmode",
-      "TestMode",
-      "Whether the logstore is in testmode, for testsuite use only",
-      FALSE, G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_TESTMODE, param_spec);
-
 
   g_type_class_add_private (object_class, sizeof (TplLogStorePidginPriv));
 }
