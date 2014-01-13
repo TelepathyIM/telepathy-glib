@@ -1910,7 +1910,7 @@ TplLogStore *
 _tpl_log_store_xml_new (void)
 {
   return g_object_new (TPL_TYPE_LOG_STORE_XML,
-      "name", "TpLogger",
+      "name", "telepathy-1",
       NULL);
 }
 

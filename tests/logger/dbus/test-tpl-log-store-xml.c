@@ -66,7 +66,7 @@ setup_for_writing (XmlTestCaseFixture *fixture,
   gchar *writable_dir;
 
   readonly_dir = g_build_path (G_DIR_SEPARATOR_S,
-      g_getenv ("TPL_TEST_LOG_DIR"), "TpLogger", "logs", NULL);
+      g_getenv ("TPL_TEST_LOG_DIR"), "telepathy-1", "logs", NULL);
 
   writable_dir = g_build_path (G_DIR_SEPARATOR_S,
       g_get_tmp_dir (), "logger-test-logs", NULL);
