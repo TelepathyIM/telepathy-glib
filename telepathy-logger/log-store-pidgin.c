@@ -56,6 +56,7 @@ enum {
     PROP_0,
     PROP_NAME,
     PROP_READABLE,
+    PROP_WRITABLE,
 };
 
 
@@ -90,6 +91,9 @@ tpl_log_store_pidgin_get_property (GObject *object,
       case PROP_READABLE:
         g_value_set_boolean (value, TRUE);
         break;
+      case PROP_WRITABLE:
+        g_value_set_boolean (value, FALSE);
+        break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
         break;
@@ -109,6 +113,10 @@ tpl_log_store_pidgin_set_property (GObject *object,
     {
       case PROP_NAME:
         self->priv->name = g_value_dup_string (value);
+        break;
+      case PROP_WRITABLE:
+        /* we don't support writing to Pidgin logs atm */
+        g_return_if_fail (!g_value_get_boolean (value));
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -150,6 +158,7 @@ tpl_log_store_pidgin_class_init (TplLogStorePidginClass *klass)
 
   g_object_class_override_property (object_class, PROP_NAME, "name");
   g_object_class_override_property (object_class, PROP_READABLE, "readable");
+  g_object_class_override_property (object_class, PROP_WRITABLE, "writable");
 
   g_type_class_add_private (object_class, sizeof (TplLogStorePidginPriv));
 }

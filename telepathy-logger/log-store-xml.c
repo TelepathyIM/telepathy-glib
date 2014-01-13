@@ -88,6 +88,7 @@ enum {
     PROP_0,
     PROP_NAME,
     PROP_READABLE,
+    PROP_WRITABLE,
 };
 
 static void log_store_iface_init (gpointer g_iface, gpointer iface_data);
@@ -159,6 +160,9 @@ tpl_log_store_xml_get_property (GObject *object,
       case PROP_READABLE:
         g_value_set_boolean (value, TRUE);
         break;
+      case PROP_WRITABLE:
+        g_value_set_boolean (value, TRUE);
+        break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
         break;
@@ -198,6 +202,7 @@ _tpl_log_store_xml_class_init (TplLogStoreXmlClass *klass)
 
   g_object_class_override_property (object_class, PROP_NAME, "name");
   g_object_class_override_property (object_class, PROP_READABLE, "readable");
+  g_object_class_override_property (object_class, PROP_WRITABLE, "writable");
 
   g_type_class_add_private (object_class, sizeof (TplLogStoreXmlPriv));
 }

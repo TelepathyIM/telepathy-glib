@@ -95,6 +95,22 @@ _tpl_log_store_init (gpointer g_iface)
         "Whether this log store is readable",
         TRUE,
         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TplLogStore:writable:
+   *
+   * Defines whether the object is writable for a #TplLogManager.
+   *
+   * If an TplLogStore implementation is writable, the #TplLogManager will
+   * use the _tpl_log_store_add_event method against the instance
+   * every time a event needs to be logged.
+   */
+  g_object_interface_install_property (g_iface,
+      g_param_spec_boolean ("writable",
+        "Writable",
+        "Whether this log store is writable",
+        FALSE,
+        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 }
 
 gchar *
@@ -371,11 +387,23 @@ _tpl_log_store_create_iter (TplLogStore *self,
 gboolean
 _tpl_log_store_is_writable (TplLogStore *self)
 {
+  gboolean writable;
+
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
 
-  return (TPL_LOG_STORE_GET_INTERFACE (self)->add_event != NULL);
-}
+  g_object_get (self,
+      "writable", &writable,
+      NULL);
 
+  if (!writable)
+    return FALSE;
+
+  /* If the store claims to be writable it MUST implement add_event */
+  g_return_val_if_fail (TPL_LOG_STORE_GET_INTERFACE (self)->add_event != NULL,
+      FALSE);
+
+  return TRUE;
+}
 
 gboolean
 _tpl_log_store_is_readable (TplLogStore *self)
