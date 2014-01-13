@@ -1,0 +1,5 @@
+Simple python example using telepathy-farstream in most minimal way possible.
+Two programs are included:
+
+callui.py: Doesn't do anything with tp-fs, but allows the start of a Call call
+callhandler.py: Simple handler that handles calls and handles the media

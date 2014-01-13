@@ -1,0 +1,157 @@
+See the top-level NEWS file for changes that took place after
+telepathy-farstream was merged into telepathy-glib.
+
+telepathy-farstream 0.6.0 (25 Sep 2012)
+=======================================
+
+- Port to the final Farstream 0.2 API
+
+telepathy-farstream 0.5.0 (13 Sep 2012)
+=======================================
+
+- Port to GStreamer 1.0 and Farstream 0.2
+- Set RemoteContact when accepting & updating media descriptions
+
+telepathy-farstream 0.4.0 (4 Apr 2012)
+======================================
+
+This is the start of a new stable branch.
+
+There have (basically) been no changes since 0.2.3.
+
+There are too many changes since the last stable release. For more
+details, look at the git log.
+
+telepathy-farstream 0.2.3 (20 Mar 2012)
+=======================================
+- Fix various bugs
+- Improve debug messages
+- Improve GI annotations
+- Use the generic marshallers
+
+telepathy-farstream 0.2.2 (08 Mar 2012)
+=======================================
+
+- Allow an Endpoint to be removed so as it work with Rakia call transfers
+- Ignore port 2.26 deprecations
+- Added a tf_channel_new_finish() function
+- Misc bug fixes
+
+telepathy-farstream 0.2.1 (20 Feb 2012)
+=======================================
+
+- Now use Call1 as well as Streamed Media
+- Now requires Farstream and telepathy-glib 0.17.5
+
+telepathy-farstream 0.1.2 (18 Nov 2011)
+=======================================
+
+- Fix linking with ld --as-needed (bigon)
+- Add AudioControl support (mike, sjoerd)
+- respond to farsight-negotiate events (olivier)
+
+telepathy-farstream 0.1.1 (14 Jul 2011)
+=======================================
+- Fix the python bindings
+- Make the VideoControl interface actually work
+
+telepathy-farstream 0.1.0 (27 Jun 2011)
+=======================================
+- Rename from telepathy-farsight to telepathy-farstream 
+- Implement Call API
+- Also implement Streamed Media API under the same C api
+
+telepathy-farsight 0.0.16 (22 Dec 2010)
+=======================================
+- Emit the NewActiveTransportPair signal
+- Emit CodecsUpdated more often
+- Various bug fixes
+
+telepathy-farsight 0.0.15 (30 Sep 2010)
+=======================================
+- Release sending resource when SetStreamSending(False) is called
+
+telepathy-farsight 0.0.14 (26 May 2010)
+=======================================
+- Add properties to get the Farsight2 session and stream
+- Recognize the shm transmitter
+- Ignore invalidly empty strings in tp properties
+- Fix -Wshadow warnings
+- Use silent rules if automake >= 1.11
+
+telepathy-farsight 0.0.13 (5 Jan 2010)
+======================================
+- Export held resource in a property
+- Transfer the ptime/maxptime
+
+telepathy-farsight 0.0.12 (15 Oct 2009)
+=======================================
+- Fix mixup between GSlice and malloc
+- Fix potential race between src-pad-added and dispose
+- The connected state in farsight is a lie, ignore it
+
+telepathy-farsight 0.0.11 (10 Sep 2009)
+=======================================
+- Fix double free
+- Fix more leaks
+
+telepathy-farsight 0.0.10 (08 Sep 2009)
+======================================
+- Fix some leaks
+- Fix possible deadlocks
+- Emit different error codes depending on the error
+- Emit stream state changes when the stream state changes according to ICE
+
+telepathy-farsight 0.0.9 (03 Aug 2009)
+======================================
+- Emit session-invalidated on channel dispose (prevents leak)
+- Fix ICE priority mangling (so not all candidates get 0)
+- Use new error numbers from the the 0.17.27 spec
+
+telepathy-farsight 0.0.8 (03 Aug 2009)
+======================================
+- Set ToS property on streams
+- Set ICE controlling according to the CreatedLocally property
+- Work around bug in the dbus-glib 0.80 of dbus properties
+- Fix bugs
+
+telepathy-farsight 0.0.7 (06 May 2009)
+======================================
+- Remove pygtk requirement
+- Print errors in its own domain
+- Update tp-glib dependency to 0.7.26 and fs2 dependency to 0.0.7
+- Make it more resilient in case of errors from other layers
+
+telepathy-farsight 0.0.6 (17 March 2009)
+========================================
+- Add support of the RelayInfo property
+
+telepathy-farsight 0.0.5 (16 March 2009)
+========================================
+- Recognize ice-udp
+- Improve error handling
+- Support the new CodecsUpdated method
+
+telepathy-farsight 0.0.4 (14 January 2009)
+==========================================
+- Add python bindings for tpfarsight
+- Fix hold
+- Make the "request-resource" signal optional, assumes
+  the resource is always there if there is no handler.
+
+telepathy-farsight 0.0.3 (21 November 2008)
+===========================================
+- Fix small brown-paper bug in last release
+- Rename tf_channel_new_from_proxy to tf_channel_new,
+  and leave the proxy creation to the client
+
+telepathy-farsight 0.0.2 (21 November 2008)
+===========================================
+
+- Added various makefile niceties from telepathy-glib
+
+telepathy-farsight 0.0.1 (21 November 2008)
+===========================================
+
+- Initial version
+- Split from stream-engine after 0.5.3

@@ -51,6 +51,11 @@ m4_define([tpl_ext_lt_current], [0])
 m4_define([tpl_ext_lt_revision], [0])
 m4_define([tpl_ext_lt_age], [0])
 
+# The same for telepathy-farstream
+m4_define([tp_farstream_lt_current], [0])
+m4_define([tp_farstream_lt_revision], [0])
+m4_define([tp_farstream_lt_age], [0])
+
 # Some magic
 m4_define([tp_glib_base_version],
           [tp_glib_major_version.tp_glib_minor_version.tp_glib_micro_version])
@@ -121,6 +126,13 @@ TPL_EXT_LT_AGE=tpl_ext_lt_age
 AC_SUBST([TPL_EXT_LT_CURRENT])
 AC_SUBST([TPL_EXT_LT_REVISION])
 AC_SUBST([TPL_EXT_LT_AGE])
+
+TPFS_LT_CURRENT=tp_farstream_lt_current
+TPFS_LT_REVISION=tp_farstream_lt_revision
+TPFS_LT_AGE=tp_farstream_lt_age
+AC_SUBST([TPFS_LT_CURRENT])
+AC_SUBST([TPFS_LT_REVISION])
+AC_SUBST([TPFS_LT_AGE])
 
 dnl optimizations, etc.
 COMPILER_OPTIMISATIONS
@@ -386,12 +398,32 @@ AS_IF([test x$enable_public_extensions = xyes],
 AM_CONDITIONAL([ENABLE_PUBLIC_EXTENSIONS],
   [test "x$enable_public_extensions" = xyes])
 
+AC_ARG_ENABLE([farstream],
+  [AS_HELP_STRING([--enable-farstream],
+    [build the Telepathy-Farstream VoIP library (default=auto)])],
+  [],
+  [enable_farstream=auto])
+
+AS_CASE([$enable_farstream],
+  [yes],
+    [PKG_CHECK_MODULES([FARSTREAM], [farstream-0.2])],
+  [auto],
+    [
+      PKG_CHECK_MODULES([FARSTREAM],
+        [farstream-0.2],
+        [enable_farstream=yes],
+        [enable_farstream=no])
+    ])
+
+AM_CONDITIONAL([ENABLE_FARSTREAM], [test "x$enable_farstream" = xyes])
+
 AC_CONFIG_FILES([
 	   Makefile \
 	   data/Makefile \
 	   docs/Makefile \
 	   docs/reference/Makefile \
 	   docs/reference/libtelepathy-logger/Makefile \
+	   docs/reference/telepathy-farstream/Makefile \
 	   docs/reference/telepathy-glib/Makefile \
 	   docs/reference/telepathy-glib/version.xml \
 	   examples/Makefile \
@@ -410,6 +442,11 @@ AC_CONFIG_FILES([
 	   examples/extensions/Makefile \
 	   po/Makefile.in \
 	   spec/Makefile \
+	   telepathy-farstream/Makefile \
+	   telepathy-farstream/examples/Makefile \
+	   telepathy-farstream/examples/python/Makefile \
+	   telepathy-farstream/telepathy-farstream-1.pc \
+	   telepathy-farstream/telepathy-farstream-uninstalled-1.pc \
 	   telepathy-glib/Makefile \
 	   telepathy-glib/telepathy-glib-1-dbus.pc \
 	   telepathy-glib/telepathy-glib-1-dbus-uninstalled.pc \
