@@ -35,9 +35,7 @@ setup (XmlTestCaseFixture* fixture,
   GError *error = NULL;
 
   fixture->main_loop = g_main_loop_new (NULL, FALSE);
-
-  fixture->store = g_object_new (TPL_TYPE_LOG_STORE_XML,
-      NULL);
+  fixture->store = _tpl_log_store_xml_new ();
 
   if (fixture->tmp_basedir != NULL)
     log_store_xml_set_basedir (TPL_LOG_STORE_XML (fixture->store),

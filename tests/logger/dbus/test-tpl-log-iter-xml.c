@@ -35,9 +35,7 @@ setup (XmlTestCaseFixture* fixture,
   GError *error = NULL;
 
   fixture->main_loop = g_main_loop_new (NULL, FALSE);
-
-  fixture->store = g_object_new (TPL_TYPE_LOG_STORE_XML,
-      NULL);
+  fixture->store = _tpl_log_store_xml_new ();
 
   fixture->bus = tp_tests_dbus_daemon_dup_or_die ();
   g_assert (fixture->bus != NULL);
