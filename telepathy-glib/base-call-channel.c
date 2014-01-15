@@ -121,15 +121,12 @@
 #include "telepathy-glib/util.h"
 
 static void call_iface_init (gpointer, gpointer);
-static void dtmf_iface_init (gpointer, gpointer);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseCallChannel, tp_base_call_channel,
   TP_TYPE_BASE_CHANNEL,
 
   G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_CALL1,
         call_iface_init)
-  G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_DTMF1,
-        dtmf_iface_init)
   )
 
 /* properties */
@@ -442,7 +439,7 @@ tp_base_call_channel_fill_immutable_properties (
       TP_IFACE_CHANNEL_TYPE_CALL1, "InitialVideoName",
       TP_IFACE_CHANNEL_TYPE_CALL1, "MutableContents",
       TP_IFACE_CHANNEL_TYPE_CALL1, "HardwareStreaming",
-      TP_IFACE_CHANNEL_INTERFACE_DTMF1, "InitialTones",
+      TP_IFACE_CHANNEL_TYPE_CALL1, "InitialTones",
       NULL);
 }
 
@@ -467,9 +464,6 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
       { "InitialAudioName", "initial-audio-name", NULL },
       { "InitialVideoName", "initial-video-name", NULL },
       { "MutableContents", "mutable-contents", NULL },
-      { NULL },
-  };
-  static TpDBusPropertiesMixinPropImpl dtmf_props[] = {
       { "InitialTones", "initial-tones", NULL },
       { NULL },
   };
@@ -714,12 +708,6 @@ tp_base_call_channel_class_init (TpBaseCallChannelClass *klass)
       tp_dbus_properties_mixin_getter_gobject_properties,
       NULL,
       call_props);
-
-  tp_dbus_properties_mixin_implement_interface (object_class,
-      TP_IFACE_QUARK_CHANNEL_INTERFACE_DTMF1,
-      tp_dbus_properties_mixin_getter_gobject_properties,
-      NULL,
-      dtmf_props);
 }
 
 static const char *
@@ -1539,12 +1527,6 @@ call_iface_init (gpointer g_iface, gpointer iface_data)
   IMPLEMENT(hangup,);
   IMPLEMENT(add_content, _dbus);
 #undef IMPLEMENT
-}
-
-/* Interface has no methods, only has a requestable property */
-static void
-dtmf_iface_init (gpointer g_iface, gpointer iface_data)
-{
 }
 
 /* Internal functions */

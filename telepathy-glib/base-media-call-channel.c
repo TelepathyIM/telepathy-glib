@@ -124,7 +124,6 @@ tp_base_media_call_channel_get_interfaces (TpBaseChannel *base)
       tp_base_media_call_channel_parent_class)->get_interfaces (base);
 
   g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_HOLD1);
-  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_DTMF1);
 
   return interfaces;
 }
