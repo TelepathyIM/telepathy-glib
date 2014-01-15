@@ -1707,10 +1707,11 @@ error:
 }
 
 static void
-_tp_base_client_observe_channels (TpSvcClientObserver *iface,
+_tp_base_client_observe_channel (TpSvcClientObserver *iface,
     const gchar *account_path,
     const gchar *connection_path,
-    const GPtrArray *channels_arr,
+    const gchar *channel_path,
+    GHashTable *channel_props,
     const gchar *dispatch_operation_path,
     const GPtrArray *requests_arr,
     GHashTable *observer_info,
@@ -1730,6 +1731,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   GArray *connection_features;
   GArray *channel_features;
   GHashTable *request_props;
+  GPtrArray *channels_arr;
 
   if (!(self->priv->flags & CLIENT_IS_OBSERVER))
     {
@@ -1747,6 +1749,8 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       tp_dbus_g_method_return_not_implemented (context);
       return;
     }
+
+  channels_arr = build_channels_array (channel_path, channel_props);
 
   channel = ensure_account_connection_channels (self, account_path,
       connection_path, channels_arr, &account, &connection, &channels, &error);
@@ -1824,6 +1828,9 @@ out:
   if (requests != NULL)
     g_ptr_array_unref (requests);
 
+  if (channels_arr != NULL)
+    g_ptr_array_unref (channels_arr);
+
   if (error == NULL)
     return;
 
@@ -1837,7 +1844,7 @@ observer_iface_init (gpointer g_iface,
 {
 #define IMPLEMENT(x) tp_svc_client_observer_implement_##x (\
   g_iface, _tp_base_client_##x)
-  IMPLEMENT (observe_channels);
+  IMPLEMENT (observe_channel);
 #undef IMPLEMENT
 }
 

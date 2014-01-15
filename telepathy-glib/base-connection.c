@@ -783,12 +783,12 @@ break_loop_early:
 }
 
 
+/* FIXME: make the API channel singular */
 static void
 manager_new_channels_cb (TpChannelManager *manager,
                          GHashTable *channels,
                          TpBaseConnection *self)
 {
-  GPtrArray *array;
   GHashTableIter iter;
   gpointer key, value;
 
@@ -798,20 +798,25 @@ manager_new_channels_cb (TpChannelManager *manager,
   /* satisfy the RequestChannel/CreateChannel/EnsureChannel calls */
   g_hash_table_foreach (channels, manager_new_channel, self);
 
-  /* Emit NewChannels */
-  array = g_ptr_array_sized_new (g_hash_table_size (channels));
+  /* Emit NewChannel */
   g_hash_table_iter_init (&iter, channels);
 
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
-      g_ptr_array_add (array, get_channel_details (G_OBJECT (key)));
+      gchar *path;
+      GHashTable *props;
+
+      g_object_get (key,
+          "object-path", &path,
+          "channel-properties", &props,
+          NULL);
+
+      tp_svc_connection_interface_requests_emit_new_channel (self,
+          path, props);
+
+      g_free (path);
+      g_hash_table_unref (props);
     }
-
-  tp_svc_connection_interface_requests_emit_new_channels (self,
-      array);
-
-  g_ptr_array_foreach (array, (GFunc) tp_value_array_free, NULL);
-  g_ptr_array_unref (array);
 }
 
 

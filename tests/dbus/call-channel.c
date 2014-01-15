@@ -859,32 +859,25 @@ test_terminate_via_close (Test *test,
 
 static void
 expect_incoming_call_cb (TpConnection *conn,
-                         const GPtrArray *channels,
-                         gpointer user_data,
-                         GObject *weak_object G_GNUC_UNUSED)
+    const gchar *object_path,
+    GHashTable *properties,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
 {
   Test *test = user_data;
-  guint i;
+  GError *error = NULL;
 
-  for (i = 0; i < channels->len; i++)
-    {
-      GValueArray *va = g_ptr_array_index (channels, i);
-      const gchar *object_path = g_value_get_boxed (va->values + 0);
-      GHashTable *properties = g_value_get_boxed (va->values + 1);
-      GError *error = NULL;
+  /* we only expect to receive one call */
+  g_assert (test->chan == NULL);
 
-      /* we only expect to receive one call */
-      g_assert (test->chan == NULL);
+  test->chan = tp_client_factory_ensure_channel (test->factory,
+      conn, object_path, properties, &error);
+  g_assert_no_error (error);
 
-      test->chan = tp_client_factory_ensure_channel (test->factory,
-          conn, object_path, properties, &error);
-      g_assert_no_error (error);
+  g_assert (TP_IS_CALL_CHANNEL (test->chan));
+  test->call_chan = (TpCallChannel *) test->chan;
 
-      g_assert (TP_IS_CALL_CHANNEL (test->chan));
-      test->call_chan = (TpCallChannel *) test->chan;
-
-      g_assert_cmpint (tp_channel_get_requested (test->chan), ==, FALSE);
-    }
+  g_assert_cmpint (tp_channel_get_requested (test->chan), ==, FALSE);
 }
 
 /* In this example connection manager, every time the presence status changes
@@ -894,14 +887,14 @@ trigger_incoming_call (Test *test,
                        const gchar *message,
                        const gchar *expected_caller)
 {
-  TpProxySignalConnection *new_channels_sig;
+  TpProxySignalConnection *new_channel_sig;
 
   tp_cli_connection_interface_presence1_run_set_presence (test->conn, -1,
       "away", "preparing for a test", &test->error, NULL);
   g_assert_no_error (test->error);
 
-  new_channels_sig =
-    tp_cli_connection_interface_requests_connect_to_new_channels (test->conn,
+  new_channel_sig =
+    tp_cli_connection_interface_requests_connect_to_new_channel (test->conn,
         expect_incoming_call_cb, test, NULL, NULL, &test->error);
   g_assert_no_error (test->error);
 
@@ -919,7 +912,7 @@ trigger_incoming_call (Test *test,
       expected_caller);
   test->peer_handle = tp_channel_get_handle (test->chan, NULL);
 
-  tp_proxy_signal_connection_disconnect (new_channels_sig);
+  tp_proxy_signal_connection_disconnect (new_channel_sig);
 
   tp_tests_proxy_run_until_prepared (test->chan, NULL);
 }

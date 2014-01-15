@@ -464,18 +464,11 @@ out:
 }
 
 static void
-free_channel_details (gpointer data,
-    gpointer user_data)
-{
-  g_boxed_free (TP_STRUCT_TYPE_CHANNEL_DETAILS, data);
-}
-
-static void
 test_observer (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *filter;
-  GPtrArray *channels, *requests_satisified;
+  GHashTable *filter, *chan_props;
+  GPtrArray *requests_satisified;
   GHashTable *info;
   TpChannel *chan;
 
@@ -517,8 +510,7 @@ test_observer (Test *test,
   g_assert_no_error (test->error);
 
   /* Call ObserveChannels */
-  channels = g_ptr_array_sized_new (1);
-  tp_tests_add_channel_to_ptr_array (channels, test->text_chan);
+  chan_props = tp_tests_dup_channel_props_asv (test->text_chan);
 
   requests_satisified = g_ptr_array_sized_new (0);
   info = tp_asv_new (
@@ -528,10 +520,11 @@ test_observer (Test *test,
   tp_proxy_add_interface_by_id (TP_PROXY (test->client),
       TP_IFACE_QUARK_CLIENT_OBSERVER);
 
-  tp_cli_client_observer_call_observe_channels (test->client, -1,
+  tp_cli_client_observer_call_observe_channel (test->client, -1,
       tp_proxy_get_object_path (test->account),
       tp_proxy_get_object_path (test->connection),
-      channels, "/", requests_satisified, info,
+      tp_proxy_get_object_path (test->text_chan), chan_props,
+      "/", requests_satisified, info,
       no_return_cb, test, NULL, NULL);
 
   test->wait++;
@@ -547,10 +540,11 @@ test_observer (Test *test,
   /* Now call it with an invalid argument */
   tp_asv_set_boolean (info, "FAIL", TRUE);
 
-  tp_cli_client_observer_call_observe_channels (test->client, -1,
+  tp_cli_client_observer_call_observe_channel (test->client, -1,
       tp_proxy_get_object_path (test->account),
       tp_proxy_get_object_path (test->connection),
-      channels, "/", requests_satisified, info,
+      tp_proxy_get_object_path (test->text_chan), chan_props,
+      "/", requests_satisified, info,
       no_return_cb, test, NULL, NULL);
 
   test->wait++;
@@ -561,10 +555,11 @@ test_observer (Test *test,
   /* The channel being observed is invalidated while preparing */
   g_hash_table_remove (info, "FAIL");
 
-  tp_cli_client_observer_call_observe_channels (test->client, -1,
+  tp_cli_client_observer_call_observe_channel (test->client, -1,
       tp_proxy_get_object_path (test->account),
       tp_proxy_get_object_path (test->connection),
-      channels, "/", requests_satisified, info,
+      tp_proxy_get_object_path (test->text_chan), chan_props,
+      "/", requests_satisified, info,
       no_return_cb, test, NULL, NULL);
 
   tp_base_channel_close ((TpBaseChannel *) test->text_chan_service);
@@ -577,10 +572,9 @@ test_observer (Test *test,
   g_assert (TP_IS_CHANNEL (chan));
   g_assert (tp_proxy_get_invalidated (chan) != NULL);
 
-  g_ptr_array_foreach (channels, free_channel_details, NULL);
-  g_ptr_array_unref (channels);
   g_ptr_array_unref (requests_satisified);
   g_hash_table_unref (info);
+  g_hash_table_unref (chan_props);
 }
 
 /* Test Approver */
