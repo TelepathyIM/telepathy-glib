@@ -276,7 +276,7 @@ Recover=true
             to avoid the following race: text channel logger (observer) gets
             ObserveChannels, text channel handler gets
             <tp:dbus-ref
-              namespace="im.telepathy.v1.Client.Handler">HandleChannels</tp:dbus-ref>
+              namespace="im.telepathy.v1.Client.Handler">HandleChannel</tp:dbus-ref>
             channel handler starts up faster and acknowledges messages,
             logger never sees those messages.</p>
         </tp:rationale>
@@ -360,7 +360,7 @@ Recover=true
             If the same process is an Observer and a Handler, it can be useful
             to be given this information as soon as possible (it will also
             be passed to <tp:dbus-ref
-              namespace="im.telepathy.v1.Client">Handler.HandleChannels</tp:dbus-ref>).
+              namespace="im.telepathy.v1.Client">Handler.HandleChannel</tp:dbus-ref>).
           </tp:rationale>
         </tp:docstring>
       </arg>

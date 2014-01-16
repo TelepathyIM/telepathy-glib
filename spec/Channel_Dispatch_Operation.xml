@@ -76,7 +76,7 @@
           namespace="im.telepathy.v1.Client.Handler">BypassApproval</tp:dbus-ref>
         <code>= True</code> could handle all of the channels in the dispatch
         operation, then the channel dispatcher SHOULD call <tp:dbus-ref
-          namespace="im.telepathy.v1.Client.Handler">HandleChannels</tp:dbus-ref>
+          namespace="im.telepathy.v1.Client.Handler">HandleChannel</tp:dbus-ref>
         on that handler, and (assuming the call succeeds) emit
         <tp:member-ref>Finished</tp:member-ref> and stop processing those
         channels without involving any approvers.</p>
@@ -244,7 +244,7 @@
         <p>(FIXME: list some possible errors)</p>
 
         <p>If the channel handler raises an error from <tp:dbus-ref
-            namespace="im.telepathy.v1.Client.Handler">HandleChannels</tp:dbus-ref>,
+            namespace="im.telepathy.v1.Client.Handler">HandleChannel</tp:dbus-ref>,
           this method
           MAY respond by raising that same error, even if it is not
           specifically documented here.</p>
@@ -277,7 +277,7 @@
           <tp:docstring>
             The selected handler is syntactically correct, but will never
             be able to handle these channels (for instance because the channels
-            do not match its HandlerChannelFilter, or because HandleChannels
+            do not match its HandlerChannelFilter, or because HandleChannel
             raised NotImplemented).
           </tp:docstring>
         </tp:error>
@@ -289,7 +289,7 @@
             now responsible for the channels. In this situation, the second
             call to HandleWith MUST NOT return until the first one has
             returned successfully or unsuccessfully, and if the first call
-            to HandleChannels fails, the channel dispatcher SHOULD try to obey
+            to HandleChannel fails, the channel dispatcher SHOULD try to obey
             the choice of Handler made by the second call to HandleWith.
           </tp:docstring>
         </tp:error>
@@ -302,7 +302,7 @@
           internally. If this method is called successfully, the process
           calling this method becomes the handler for the channel, but
           <em>does not</em> have the <tp:dbus-ref
-            namespace="im.telepathy.v1.Client.Handler">HandleChannels</tp:dbus-ref>
+            namespace="im.telepathy.v1.Client.Handler">HandleChannel</tp:dbus-ref>
           method called on it.</p>
 
         <p>Clients that call Claim on channels but do not immediately
@@ -369,7 +369,7 @@
         <p>A variant of <tp:member-ref>HandleWith</tp:member-ref> allowing the
           approver to pass an user action time. This timestamp will be passed
           to the Handler when <tp:dbus-ref
-          namespace="im.telepathy.v1.Client.Handler">HandleChannels</tp:dbus-ref>
+          namespace="im.telepathy.v1.Client.Handler">HandleChannel</tp:dbus-ref>
           is called.</p>
       </tp:docstring>
 
@@ -406,7 +406,7 @@
           <tp:docstring>
             The selected handler is syntactically correct, but will never
             be able to handle these channels (for instance because the channels
-            do not match its HandlerChannelFilter, or because HandleChannels
+            do not match its HandlerChannelFilter, or because HandleChannel
             raised NotImplemented).
           </tp:docstring>
         </tp:error>
@@ -418,7 +418,7 @@
             now responsible for the channels. In this situation, the second
             call to HandleWith MUST NOT return until the first one has
             returned successfully or unsuccessfully, and if the first call
-            to HandleChannels fails, the channel dispatcher SHOULD try to obey
+            to HandleChannel fails, the channel dispatcher SHOULD try to obey
             the choice of Handler made by the second call to HandleWith.
           </tp:docstring>
         </tp:error>
