@@ -681,21 +681,36 @@ tp_tests_channel_new_from_properties (TpConnection *conn,
       object_path, immutable_properties, error);
 }
 
+GHashTable *
+tp_tests_dup_channel_props_asv (TpChannel *channel)
+{
+  GVariant *variant;
+  GHashTable *asv;
+  GValue v = G_VALUE_INIT;
+
+  g_assert (channel != NULL);
+
+  variant = tp_channel_dup_immutable_properties (channel);
+  dbus_g_value_parse_g_variant (variant, &v);
+  asv = g_value_dup_boxed (&v);
+
+  g_variant_unref (variant);
+  g_value_unset (&v);
+
+  return asv;
+}
+
 void
 tp_tests_add_channel_to_ptr_array (GPtrArray *arr,
     TpChannel *channel)
 {
   GValueArray *tmp;
-  GVariant *variant;
-  GValue v = G_VALUE_INIT;
   GHashTable *asv;
 
   g_assert (arr != NULL);
   g_assert (channel != NULL);
 
-  variant = tp_channel_dup_immutable_properties (channel);
-  dbus_g_value_parse_g_variant (variant, &v);
-  asv = g_value_get_boxed (&v);
+  asv = tp_tests_dup_channel_props_asv (channel);
 
   tmp = tp_value_array_build (2,
       DBUS_TYPE_G_OBJECT_PATH, tp_proxy_get_object_path (channel),
@@ -703,7 +718,6 @@ tp_tests_add_channel_to_ptr_array (GPtrArray *arr,
       G_TYPE_INVALID);
 
   g_ptr_array_add (arr, tmp);
-  g_variant_unref (variant);
-  g_value_unset (&v);
-}
 
+  g_hash_table_unref (asv);
+}
