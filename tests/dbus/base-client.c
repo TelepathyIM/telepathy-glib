@@ -61,6 +61,7 @@ typedef struct {
 
     GPtrArray *delegated;
     GHashTable *not_delegated;
+    guint nb_delegate_cb;
 } Test;
 
 #define ACCOUNT_PATH TP_ACCOUNT_OBJECT_PATH_BASE "what/ev/er"
@@ -80,6 +81,7 @@ setup (Test *test,
 
   test->error = NULL;
   test->interfaces = NULL;
+  test->nb_delegate_cb = 0;
 
   test->factory = tp_client_factory_new (test->dbus);
   g_assert (test->factory != NULL);
@@ -813,14 +815,50 @@ channel_invalidated_cb (TpChannel *channel,
 }
 
 static void
+call_handle_channel (Test *test,
+    TpChannel *channel,
+    GPtrArray *requests_satisified,
+    GHashTable *info)
+{
+  GHashTable *chan_props;
+
+  if (requests_satisified == NULL)
+    requests_satisified = g_ptr_array_sized_new (0);
+  else
+    g_ptr_array_ref (requests_satisified);
+
+  if (info == NULL)
+    info = g_hash_table_new (NULL, NULL);
+  else
+    g_hash_table_ref (info);
+
+  chan_props = tp_tests_dup_channel_props_asv (channel);
+
+  tp_proxy_add_interface_by_id (TP_PROXY (test->client),
+      TP_IFACE_QUARK_CLIENT_HANDLER);
+
+  tp_cli_client_handler_call_handle_channel (test->client, -1,
+      tp_proxy_get_object_path (test->account),
+      tp_proxy_get_object_path (test->connection),
+      tp_proxy_get_object_path (channel), chan_props,
+      requests_satisified, 0, info,
+      no_return_cb, test, NULL, NULL);
+
+  test->wait++;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_ptr_array_unref (requests_satisified);
+  g_hash_table_unref (info);
+  g_hash_table_unref (chan_props);
+}
+
+static void
 test_handler (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *filter;
   const gchar *caps[] = { "mushroom", "snake", NULL };
-  GPtrArray *channels;
-  GPtrArray *requests_satisified;
-  GHashTable *info;
   GList *chans;
   TpTestsSimpleClient *client_2;
 
@@ -869,26 +907,8 @@ test_handler (Test *test,
   g_assert (!tp_base_client_is_handling_channel (test->base_client,
         test->text_chan_2));
 
-  /* Call HandleChannels */
-  channels = g_ptr_array_sized_new (2);
-  tp_tests_add_channel_to_ptr_array (channels, test->text_chan);
-  tp_tests_add_channel_to_ptr_array (channels, test->text_chan_2);
-
-  requests_satisified = g_ptr_array_sized_new (0);
-  info = g_hash_table_new (NULL, NULL);
-
-  tp_proxy_add_interface_by_id (TP_PROXY (test->client),
-      TP_IFACE_QUARK_CLIENT_HANDLER);
-
-  tp_cli_client_handler_call_handle_channels (test->client, -1,
-      tp_proxy_get_object_path (test->account),
-      tp_proxy_get_object_path (test->connection),
-      channels, requests_satisified, 0, info,
-      no_return_cb, test, NULL, NULL);
-
-  test->wait++;
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
+  call_handle_channel (test, test->text_chan, NULL, NULL);
+  call_handle_channel (test, test->text_chan_2, NULL, NULL);
 
   g_assert (test->simple_client->handle_channels_ctx != NULL);
   g_assert (test->simple_client->handle_channels_ctx->account == test->account);
@@ -933,11 +953,6 @@ test_handler (Test *test,
         test->text_chan_2));
 
   g_object_unref (client_2);
-
-  g_ptr_array_foreach (channels, free_channel_details, NULL);
-  g_ptr_array_unref (channels);
-  g_ptr_array_unref (requests_satisified);
-  g_hash_table_unref (info);
 }
 
 /* Test Requests interface on Handler */
@@ -1003,12 +1018,11 @@ test_handler_requests (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *properties;
-  GPtrArray *channels;
   GPtrArray *requests_satisified;
+  GHashTable *request_props;
   GHashTable *info;
   TpChannelRequest *request;
   GList *requests;
-  GHashTable *request_props;
 
   tp_base_client_take_handler_filter (test->base_client, tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
@@ -1067,9 +1081,6 @@ test_handler_requests (Test *test,
   g_list_free_full (requests, g_object_unref);
 
   /* Call HandleChannels */
-  channels = g_ptr_array_sized_new (2);
-  tp_tests_add_channel_to_ptr_array (channels, test->text_chan);
-
   requests_satisified = g_ptr_array_sized_new (1);
   g_ptr_array_add (requests_satisified, "/Request");
 
@@ -1080,18 +1091,7 @@ test_handler_requests (Test *test,
           request_props,
       NULL);
 
-  tp_proxy_add_interface_by_id (TP_PROXY (test->client),
-      TP_IFACE_QUARK_CLIENT_HANDLER);
-
-  tp_cli_client_handler_call_handle_channels (test->client, -1,
-      tp_proxy_get_object_path (test->account),
-      tp_proxy_get_object_path (test->connection),
-      channels, requests_satisified, 0, info,
-      no_return_cb, test, NULL, NULL);
-
-  test->wait++;
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
+  call_handle_channel (test, test->text_chan, requests_satisified, info);
 
   g_assert (test->simple_client->handle_channels_ctx != NULL);
   g_assert_cmpint (
@@ -1116,9 +1116,6 @@ test_handler_requests (Test *test,
 
   g_assert (tp_base_client_dup_pending_requests (test->base_client) == NULL);
 
-  g_hash_table_unref (properties);
-  g_ptr_array_foreach (channels, free_channel_details, NULL);
-  g_ptr_array_unref (channels);
   g_ptr_array_unref (requests_satisified);
   g_hash_table_unref (info);
   g_hash_table_unref (request_props);
@@ -1253,9 +1250,6 @@ static void
 test_delegate_channels (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GPtrArray *channels;
-  GPtrArray *requests_satisified;
-  GHashTable *info;
   GList *chans;
   GError *error = NULL;
 
@@ -1264,26 +1258,8 @@ test_delegate_channels (Test *test,
   tp_base_client_register (test->base_client, &test->error);
   g_assert_no_error (test->error);
 
-  /* Call HandleChannels */
-  channels = g_ptr_array_sized_new (2);
-  tp_tests_add_channel_to_ptr_array (channels, test->text_chan);
-  tp_tests_add_channel_to_ptr_array (channels, test->text_chan_2);
-
-  requests_satisified = g_ptr_array_sized_new (0);
-  info = g_hash_table_new (NULL, NULL);
-
-  tp_proxy_add_interface_by_id (TP_PROXY (test->client),
-      TP_IFACE_QUARK_CLIENT_HANDLER);
-
-  tp_cli_client_handler_call_handle_channels (test->client, -1,
-      tp_proxy_get_object_path (test->account),
-      tp_proxy_get_object_path (test->connection),
-      channels, requests_satisified, 0, info,
-      no_return_cb, test, NULL, NULL);
-
-  test->wait++;
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
+  call_handle_channel (test, test->text_chan, NULL, NULL);
+  call_handle_channel (test, test->text_chan_2, NULL, NULL);
 
   /* The client is handling the 2 channels */
   chans = tp_base_client_dup_handled_channels (test->base_client);
@@ -1351,11 +1327,6 @@ test_delegate_channels (Test *test,
         test->text_chan));
   g_assert (tp_base_client_is_handling_channel (test->base_client,
         test->text_chan_2));
-
-  g_ptr_array_foreach (channels, free_channel_details, NULL);
-  g_ptr_array_unref (channels);
-  g_ptr_array_unref (requests_satisified);
-  g_hash_table_unref (info);
 }
 
 static void
@@ -1418,10 +1389,16 @@ delegated_channels_cb (TpBaseClient *client,
 {
   Test *test = user_data;
 
-  g_assert_cmpuint (channels->len, ==, 2);
+  g_assert_cmpuint (channels->len, ==, 1);
 
-  g_assert (channel_in_array (channels, test->text_chan));
-  g_assert (channel_in_array (channels, test->text_chan_2));
+  if (test->nb_delegate_cb == 0)
+    g_assert (channel_in_array (channels, test->text_chan));
+  else if (test->nb_delegate_cb == 1)
+    g_assert (channel_in_array (channels, test->text_chan_2));
+  else
+    g_assert_not_reached ();
+
+  test->nb_delegate_cb++;
 
   test->wait--;
   if (test->wait == 0)
@@ -1432,8 +1409,7 @@ static void
 delegate_to_preferred_handler (Test *test,
     gboolean supported)
 {
-  GPtrArray *channels;
-  GPtrArray *requests_satisified;
+  GPtrArray *requests_satisfied;
   GPtrArray *requests;
   GHashTable *request_props;
   GHashTable *info;
@@ -1451,26 +1427,8 @@ delegate_to_preferred_handler (Test *test,
   tp_base_client_register (test->base_client, &test->error);
   g_assert_no_error (test->error);
 
-  /* Call HandleChannels */
-  channels = g_ptr_array_sized_new (2);
-  tp_tests_add_channel_to_ptr_array (channels, test->text_chan);
-  tp_tests_add_channel_to_ptr_array (channels, test->text_chan_2);
-
-  requests_satisified = g_ptr_array_sized_new (0);
-  info = g_hash_table_new (NULL, NULL);
-
-  tp_proxy_add_interface_by_id (TP_PROXY (test->client),
-      TP_IFACE_QUARK_CLIENT_HANDLER);
-
-  tp_cli_client_handler_call_handle_channels (test->client, -1,
-      tp_proxy_get_object_path (test->account),
-      tp_proxy_get_object_path (test->connection),
-      channels, requests_satisified, 0, info,
-      no_return_cb, test, NULL, NULL);
-
-  test->wait++;
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
+  call_handle_channel (test, test->text_chan, NULL, NULL);
+  call_handle_channel (test, test->text_chan_2, NULL, NULL);
 
   /* The client is handling the 2 channels */
   g_assert (tp_base_client_is_handling_channel (test->base_client,
@@ -1491,7 +1449,8 @@ delegate_to_preferred_handler (Test *test,
       TP_USER_ACTION_TIME_CURRENT_TIME, PREFERRED_HANDLER_NAME,
       requests, hints);
 
-  g_ptr_array_add (requests_satisified, "/CR");
+  requests_satisfied = g_ptr_array_sized_new (0);
+  g_ptr_array_add (requests_satisfied, "/CR");
 
   request_props = g_hash_table_new_full (g_str_hash, g_str_equal,
       NULL, (GDestroyNotify) g_hash_table_unref);
@@ -1499,24 +1458,21 @@ delegate_to_preferred_handler (Test *test,
   g_hash_table_insert (request_props, "/CR",
       tp_tests_simple_channel_request_dup_immutable_props (cr));
 
+  info = g_hash_table_new (NULL, NULL);
   tp_asv_set_boxed (info,
       "request-properties", TP_HASH_TYPE_OBJECT_IMMUTABLE_PROPERTIES_MAP,
       request_props);
-
-  tp_cli_client_handler_call_handle_channels (test->client, -1,
-      tp_proxy_get_object_path (test->account),
-      tp_proxy_get_object_path (test->connection),
-      channels, requests_satisified, 0, info,
-      no_return_cb, test, NULL, NULL);
-
-  test->wait = 1;
 
   /* If we support the DelegateToPreferredHandler hint, we wait for
    * delegated_channels_cb to be called */
   if (supported)
     test->wait++;
+  call_handle_channel (test, test->text_chan, requests_satisfied, info);
 
-  g_main_loop_run (test->mainloop);
+  if (supported)
+    test->wait++;
+  call_handle_channel (test, test->text_chan_2, requests_satisfied, info);
+
   g_assert_no_error (test->error);
 
   if (supported)
@@ -1539,11 +1495,8 @@ delegate_to_preferred_handler (Test *test,
   tp_base_client_unregister (test->base_client);
 
   g_object_unref (cr);
-  g_ptr_array_foreach (channels, free_channel_details, NULL);
-  g_ptr_array_unref (channels);
-  g_ptr_array_unref (requests_satisified);
+  g_ptr_array_unref (requests_satisfied);
   g_ptr_array_unref (requests);
-  g_hash_table_unref (info);
   g_hash_table_unref (hints);
   g_hash_table_unref (request_props);
 }

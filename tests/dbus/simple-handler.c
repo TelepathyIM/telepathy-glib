@@ -348,43 +348,34 @@ out:
 }
 
 static void
-free_channel_details (gpointer data,
-    gpointer user_data)
-{
-  g_boxed_free (TP_STRUCT_TYPE_CHANNEL_DETAILS, data);
-}
-
-static void
 call_handle_channels (Test *test)
 {
-  GPtrArray *channels, *requests_satisified;
-  GHashTable *info;
+  GPtrArray *requests_satisified;
+  GHashTable *info,* chan_props;
   int i;
-
-  channels = g_ptr_array_sized_new (1);
-  tp_tests_add_channel_to_ptr_array (channels, test->text_chan);
 
   requests_satisified = g_ptr_array_sized_new (0);
   info = g_hash_table_new (NULL, NULL);
+  chan_props = tp_tests_dup_channel_props_asv (test->text_chan);
 
   tp_proxy_add_interface_by_id (TP_PROXY (test->client),
       TP_IFACE_QUARK_CLIENT_HANDLER);
 
   for (i = 0 ; i < 10 ; i ++)
     {
-      tp_cli_client_handler_call_handle_channels (test->client, -1,
+      tp_cli_client_handler_call_handle_channel (test->client, -1,
           tp_proxy_get_object_path (test->account),
           tp_proxy_get_object_path (test->connection),
-          channels, requests_satisified, 0, info,
+          tp_proxy_get_object_path (test->text_chan), chan_props,
+          requests_satisified, 0, info,
           no_return_cb, test, NULL, NULL);
 
       g_main_loop_run (test->mainloop);
     }
 
-  g_ptr_array_foreach (channels, free_channel_details, NULL);
-  g_ptr_array_unref (channels);
   g_ptr_array_unref (requests_satisified);
   g_hash_table_unref (info);
+  g_hash_table_unref (chan_props);
 }
 
 /* HandleChannels returns immediately */

@@ -1603,6 +1603,36 @@ dup_features_for_channel (TpBaseClient *self,
   return features;
 }
 
+static void
+free_channel_details (gpointer data)
+{
+  g_boxed_free (TP_STRUCT_TYPE_CHANNEL_DETAILS, data);
+}
+
+/* FIXME: remove once ensure_account_connection_channels has been changed to
+ * take only one channel. */
+static GPtrArray *
+build_channels_array (const gchar *channel_path,
+    GHashTable *channel_props)
+{
+  GPtrArray *channels_arr;
+  GValueArray *v;
+
+  channels_arr = g_ptr_array_new_with_free_func (free_channel_details);
+
+  v = tp_value_array_build (2,
+      DBUS_TYPE_G_OBJECT_PATH, channel_path,
+      TP_HASH_TYPE_STRING_VARIANT_MAP, channel_props,
+      G_TYPE_INVALID);
+
+  g_ptr_array_add (channels_arr, v);
+
+  return channels_arr;
+}
+
+/* FIXME: remove all this and give direclty the channel path and props to
+ * ensure_account_connection_channels() once all the API have been made
+ * singular. */
 static TpChannel *
 ensure_account_connection_channels (TpBaseClient *self,
     const gchar *account_path,
@@ -2204,10 +2234,11 @@ find_request_by_path (TpBaseClient *self,
 }
 
 static void
-_tp_base_client_handle_channels (TpSvcClientHandler *iface,
+_tp_base_client_handle_channel (TpSvcClientHandler *iface,
     const gchar *account_path,
     const gchar *connection_path,
-    const GPtrArray *channels_arr,
+    const gchar *channel_path,
+    GHashTable *channel_props,
     const GPtrArray *requests_arr,
     guint64 user_action_time,
     GHashTable *handler_info,
@@ -2226,6 +2257,7 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
   GArray *connection_features;
   GArray *channel_features;
   GHashTable *request_props;
+  GPtrArray *channels_arr = NULL;
 
   if (!(self->priv->flags & CLIENT_IS_HANDLER))
     {
@@ -2243,6 +2275,8 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
       tp_dbus_g_method_return_not_implemented (context);
       return;
     }
+
+  channels_arr = build_channels_array (channel_path, channel_props);
 
   channel = ensure_account_connection_channels (self, account_path,
       connection_path, channels_arr, &account, &connection, &channels, &error);
@@ -2307,6 +2341,9 @@ out:
   if (requests != NULL)
     g_ptr_array_unref (requests);
 
+  if (channels_arr != NULL)
+    g_ptr_array_unref (channels_arr);
+
   if (error == NULL)
     return;
 
@@ -2320,7 +2357,7 @@ handler_iface_init (gpointer g_iface,
 {
 #define IMPLEMENT(x) tp_svc_client_handler_implement_##x (\
   g_iface, _tp_base_client_##x)
-  IMPLEMENT (handle_channels);
+  IMPLEMENT (handle_channel);
 #undef IMPLEMENT
 }
 

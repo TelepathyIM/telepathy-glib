@@ -732,8 +732,8 @@ test_handle_delegated (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpAccountChannelRequest *req;
-  GPtrArray *requests, *requests_satisified, *channels;
-  GHashTable *hints, *request_props, *info;
+  GPtrArray *requests, *requests_satisified;
+  GHashTable *hints, *request_props, *info, *chan_props;
   TpTestsSimpleChannelRequest *cr;
   TpBaseClient *base_client;
   TpClient *client;
@@ -780,8 +780,7 @@ test_handle_delegated (Test *test,
       "request-properties", TP_HASH_TYPE_OBJECT_IMMUTABLE_PROPERTIES_MAP,
         request_props, NULL);
 
-  channels = g_ptr_array_sized_new (1);
-  tp_tests_add_channel_to_ptr_array (channels, test->channel);
+  chan_props = tp_tests_dup_channel_props_asv (test->channel);
 
   base_client = _tp_account_channel_request_get_client (req);
   g_assert (TP_IS_BASE_CLIENT (base_client));
@@ -795,10 +794,11 @@ test_handle_delegated (Test *test,
   tp_proxy_add_interface_by_id (TP_PROXY (client),
       TP_IFACE_QUARK_CLIENT_HANDLER);
 
-  tp_cli_client_handler_call_handle_channels (client, -1,
+  tp_cli_client_handler_call_handle_channel (client, -1,
       tp_proxy_get_object_path (test->account),
       tp_proxy_get_object_path (test->connection),
-      channels, requests_satisified, 0, info,
+      tp_proxy_get_object_path (test->channel), chan_props,
+      requests_satisified, 0, info,
       no_return_cb, test, NULL, NULL);
 
   test->count = 2;
@@ -809,9 +809,9 @@ test_handle_delegated (Test *test,
   g_hash_table_unref (hints);
   g_object_unref (cr);
   g_ptr_array_unref (requests_satisified);
-  g_ptr_array_unref (channels);
   g_hash_table_unref (request_props);
   g_hash_table_unref (info);
+  g_hash_table_unref (chan_props);
   g_object_unref (client);
 }
 

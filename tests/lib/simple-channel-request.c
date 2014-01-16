@@ -87,13 +87,12 @@ handle_channels_cb (TpClient *client,
 }
 
 static gchar *
-add_channel (TpTestsSimpleChannelRequest *self,
-    GPtrArray *channels)
+dup_channel_props (TpTestsSimpleChannelRequest *self,
+    GHashTable **chan_props)
 {
   const gchar *target_id;
   gchar *chan_path;
   GHashTable *request;
-  GHashTable *props;
   const char *chan_type;
 
   request = g_ptr_array_index (self->priv->requests, 0);
@@ -105,34 +104,20 @@ add_channel (TpTestsSimpleChannelRequest *self,
       g_assert (target_id != NULL);
 
       chan_path = tp_tests_simple_connection_ensure_text_chan (self->priv->conn,
-          target_id, &props);
+          target_id, chan_props);
     }
   else if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_ROOM_LIST1))
     {
       chan_path = tp_tests_simple_connection_ensure_room_list_chan (
           self->priv->conn, tp_asv_get_string (request,
-            TP_PROP_CHANNEL_TYPE_ROOM_LIST1_SERVER), &props);
+            TP_PROP_CHANNEL_TYPE_ROOM_LIST1_SERVER), chan_props);
     }
   else
     {
       g_assert_not_reached ();
     }
 
-  g_ptr_array_add (channels, tp_value_array_build (2,
-      DBUS_TYPE_G_OBJECT_PATH, chan_path,
-      TP_HASH_TYPE_STRING_VARIANT_MAP, props,
-      G_TYPE_INVALID));
-
-  g_hash_table_unref (props);
-
   return chan_path;
-}
-
-static void
-free_channel_details (gpointer data,
-    gpointer user_data)
-{
-  g_boxed_free (TP_STRUCT_TYPE_CHANNEL_DETAILS, data);
 }
 
 GHashTable *
@@ -162,13 +147,13 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
   TpClient *client;
   TpDBusDaemon *dbus;
   gchar *client_path;
-  GPtrArray *channels;
   GPtrArray *satisfied;
   GHashTable *info;
   TpBaseConnection *base_conn = (TpBaseConnection *) self->priv->conn;
   GHashTable *req;
   GHashTable *request_props;
   gchar *chan_path;
+  GHashTable *chan_props;
 
   req = g_ptr_array_index (self->priv->requests, 0);
   g_assert (req != NULL);
@@ -232,8 +217,7 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
   tp_proxy_add_interface_by_id (TP_PROXY (client),
       TP_IFACE_QUARK_CLIENT_HANDLER);
 
-  channels = g_ptr_array_sized_new (1);
-  chan_path = add_channel (self, channels);
+  chan_path = dup_channel_props (self, &chan_props);
 
   satisfied = g_ptr_array_sized_new (1);
   g_ptr_array_add (satisfied, self->priv->path);
@@ -249,19 +233,19 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
         request_props,
       NULL);
 
-  tp_cli_client_handler_call_handle_channels (client, -1,
+  tp_cli_client_handler_call_handle_channel (client, -1,
       self->priv->account_path,
-      tp_base_connection_get_object_path (base_conn), channels,
+      tp_base_connection_get_object_path (base_conn),
+      chan_path, chan_props,
       satisfied, self->priv->user_action_time, info, handle_channels_cb,
       g_strdup (chan_path), g_free, G_OBJECT (self));
 
   g_free (chan_path);
   g_free (client_path);
-  g_ptr_array_foreach (channels, free_channel_details, NULL);
-  g_ptr_array_unref (channels);
   g_ptr_array_unref (satisfied);
   g_hash_table_unref (info);
   g_hash_table_unref (request_props);
+  g_hash_table_unref (chan_props);
   g_object_unref (dbus);
   g_object_unref (client);
 }
