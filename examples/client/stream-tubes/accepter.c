@@ -18,7 +18,7 @@ _tube_accepted (GObject *tube,
     GAsyncResult *res,
     gpointer user_data)
 {
-  TpHandleChannelsContext *context = user_data;
+  TpHandleChannelContext *context = user_data;
   TpStreamTubeConnection *tube_conn;
   GSocketConnection *conn;
   GInputStream *in;
@@ -35,12 +35,12 @@ _tube_accepted (GObject *tube,
   if (error != NULL)
     {
       g_message ("Can't accept the tube: %s", error->message);
-      tp_handle_channels_context_fail (context, error);
+      tp_handle_channel_context_fail (context, error);
       g_error_free (error);
       return;
     }
 
-  tp_handle_channels_context_accept (context);
+  tp_handle_channel_context_accept (context);
   g_object_unref (context);
 
   g_message ("Tube open, have IOStream");
@@ -81,7 +81,7 @@ _handle_channels (TpSimpleHandler *handler,
     GList *channels,
     GList *requests,
     gint64 action_time,
-    TpHandleChannelsContext *context,
+    TpHandleChannelContext *context,
     gpointer user_data)
 {
   gboolean delay = FALSE;
@@ -110,7 +110,7 @@ _handle_channels (TpSimpleHandler *handler,
     {
       g_message ("Delaying channel acceptance");
 
-      tp_handle_channels_context_delay (context);
+      tp_handle_channel_context_delay (context);
       g_object_ref (context);
     }
   else
@@ -121,7 +121,7 @@ _handle_channels (TpSimpleHandler *handler,
 
       error = g_error_new (TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "No channels to be handled");
-      tp_handle_channels_context_fail (context, error);
+      tp_handle_channel_context_fail (context, error);
 
       g_error_free (error);
     }

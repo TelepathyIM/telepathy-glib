@@ -19,28 +19,28 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __TP_HANDLE_CHANNELS_CONTEXT_INTERNAL_H__
-#define __TP_HANDLE_CHANNELS_CONTEXT_INTERNAL_H__
+#ifndef __TP_HANDLE_CHANNEL_CONTEXT_INTERNAL_H__
+#define __TP_HANDLE_CHANNEL_CONTEXT_INTERNAL_H__
 
 #include <dbus/dbus-glib.h>
 
 #include <telepathy-glib/account.h>
-#include <telepathy-glib/handle-channels-context.h>
+#include <telepathy-glib/handle-channel-context.h>
 
 G_BEGIN_DECLS
 
 typedef enum
 {
-  TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE,
-  TP_HANDLE_CHANNELS_CONTEXT_STATE_DONE,
-  TP_HANDLE_CHANNELS_CONTEXT_STATE_FAILED,
-  TP_HANDLE_CHANNELS_CONTEXT_STATE_DELAYED,
-} TpHandleChannelsContextState;
+  TP_HANDLE_CHANNEL_CONTEXT_STATE_NONE,
+  TP_HANDLE_CHANNEL_CONTEXT_STATE_DONE,
+  TP_HANDLE_CHANNEL_CONTEXT_STATE_FAILED,
+  TP_HANDLE_CHANNEL_CONTEXT_STATE_DELAYED,
+} TpHandleChannelContextState;
 
-struct _TpHandleChannelsContext {
+struct _TpHandleChannelContext {
   /*<private>*/
   GObject parent;
-  TpHandleChannelsContextPrivate *priv;
+  TpHandleChannelContextPrivate *priv;
 
   TpAccount *account;
   TpConnection *connection;
@@ -52,7 +52,7 @@ struct _TpHandleChannelsContext {
   GHashTable *handler_info;
 };
 
-TpHandleChannelsContext * _tp_handle_channels_context_new (
+TpHandleChannelContext * _tp_handle_channel_context_new (
     TpAccount *account,
     TpConnection *connection,
     GPtrArray *channels,
@@ -61,19 +61,19 @@ TpHandleChannelsContext * _tp_handle_channels_context_new (
     GHashTable *handler_info,
     DBusGMethodInvocation *dbus_context);
 
-TpHandleChannelsContextState _tp_handle_channels_context_get_state
-    (TpHandleChannelsContext *self);
+TpHandleChannelContextState _tp_handle_channel_context_get_state
+    (TpHandleChannelContext *self);
 
-void _tp_handle_channels_context_prepare_async (
-    TpHandleChannelsContext *self,
+void _tp_handle_channel_context_prepare_async (
+    TpHandleChannelContext *self,
     const GQuark *account_features,
     const GQuark *connection_features,
     const GQuark *channel_features,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean _tp_handle_channels_context_prepare_finish (
-    TpHandleChannelsContext *self,
+gboolean _tp_handle_channel_context_prepare_finish (
+    TpHandleChannelContext *self,
     GAsyncResult *result,
     GError **error);
 

@@ -37,12 +37,12 @@
  *    GList *requests_satisfied,
  *    gint64 user_action_time,
  *    GList *requests,
- *    TpHandleChannelsContext *context,
+ *    TpHandleChannelContext *context,
  *    gpointer user_data)
  * {
  *  /<!-- -->* start handling the channels here *<!-- -->/
  *
- *  tp_handle_channels_context_accept (context);
+ *  tp_handle_channel_context_accept (context);
  * }
  *
  * client = tp_simple_handler_new (NULL, FALSE, FALSE,
@@ -92,14 +92,14 @@
  *  special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
  *  %TP_USER_ACTION_TIME_CURRENT_TIME
  *  (see #TpAccountChannelRequest:user-action-time for details)
- * @context: a #TpHandleChannelsContext representing the context of this
+ * @context: a #TpHandleChannelContext representing the context of this
  *  D-Bus call
  * @user_data: arbitrary user-supplied data passed to tp_simple_handler_new()
  *
  * Signature of the implementation of the HandleChannels method.
  *
- * This function must call either tp_handle_channels_context_accept(),
- * tp_handle_channels_context_delay() or tp_handle_channels_context_fail()
+ * This function must call either tp_handle_channel_context_accept(),
+ * tp_handle_channel_context_delay() or tp_handle_channel_context_fail()
  * on @context before it returns.
  *
  * Since: 0.11.6
@@ -214,7 +214,7 @@ handle_channels (
     GList *channels,
     GList *requests_satisfied,
     gint64 user_action_time,
-    TpHandleChannelsContext *context)
+    TpHandleChannelContext *context)
 {
   TpSimpleHandler *self = TP_SIMPLE_HANDLER (client);
 

@@ -82,7 +82,7 @@ handle_channels_cb (TpSimpleHandler *self,
     GList *channels,
     GList *requests,
     gint64 user_action_time,
-    TpHandleChannelsContext *context,
+    TpHandleChannelContext *context,
     gpointer user_data)
 {
   GList *l;
@@ -107,7 +107,7 @@ handle_channels_cb (TpSimpleHandler *self,
       display_pending_messages (text_chan);
     }
 
-  tp_handle_channels_context_accept (context);
+  tp_handle_channel_context_accept (context);
 }
 
 int

@@ -163,7 +163,7 @@ create_and_handle_cb (GObject *source,
 
 {
   Test *test = user_data;
-  TpHandleChannelsContext *context = NULL;
+  TpHandleChannelContext *context = NULL;
   TpChannel *channel;
 
   channel = tp_account_channel_request_create_and_handle_channel_finish (
@@ -568,7 +568,7 @@ static void
 re_handled_cb (TpAccountChannelRequest *req,
     TpChannel *channel,
     gint64 timestamp,
-    TpHandleChannelsContext *context,
+    TpHandleChannelContext *context,
     Test *test)
 {
   g_assert (TP_IS_CHANNEL (channel));
@@ -620,7 +620,7 @@ create_and_handle_hints_cb (GObject *source,
 
 {
   Test *test = user_data;
-  TpHandleChannelsContext *context = NULL;
+  TpHandleChannelContext *context = NULL;
   GList *reqs;
   const GHashTable *hints;
   TpChannelRequest *req;
@@ -635,7 +635,7 @@ create_and_handle_hints_cb (GObject *source,
 
   g_assert (TP_IS_HANDLE_CHANNELS_CONTEXT (context));
 
-  reqs = tp_handle_channels_context_get_requests (context);
+  reqs = tp_handle_channel_context_get_requests (context);
   g_assert_cmpuint (g_list_length (reqs), ==, 1);
 
   req = reqs->data;

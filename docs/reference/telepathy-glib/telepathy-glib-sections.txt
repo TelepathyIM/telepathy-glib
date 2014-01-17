@@ -4648,23 +4648,23 @@ TpSimpleApproverPrivate
 
 <SECTION>
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
-<FILE>handle-channels-context</FILE>
-<TITLE>handle-channels-context</TITLE>
-TpHandleChannelsContext
-tp_handle_channels_context_accept
-tp_handle_channels_context_delay
-tp_handle_channels_context_fail
-tp_handle_channels_context_get_handler_info
-tp_handle_channels_context_get_requests
+<FILE>handle-channel-context</FILE>
+<TITLE>handle-channel-context</TITLE>
+TpHandleChannelContext
+tp_handle_channel_context_accept
+tp_handle_channel_context_delay
+tp_handle_channel_context_fail
+tp_handle_channel_context_get_handler_info
+tp_handle_channel_context_get_requests
 <SUBSECTION Standard>
-tp_handle_channels_context_get_type
-TP_HANDLE_CHANNELS_CONTEXT
-TP_HANDLE_CHANNELS_CONTEXT_CLASS
-TP_HANDLE_CHANNELS_CONTEXT_GET_CLASS
+tp_handle_channel_context_get_type
+TP_HANDLE_CHANNEL_CONTEXT
+TP_HANDLE_CHANNEL_CONTEXT_CLASS
+TP_HANDLE_CHANNEL_CONTEXT_GET_CLASS
 TP_IS_HANDLE_CHANNELS_CONTEXT
 TP_IS_HANDLE_CHANNELS_CONTEXT_CLASS
-TpHandleChannelsContextClass
-TpHandleChannelsContextPrivate
+TpHandleChannelContextClass
+TpHandleChannelContextPrivate
 TP_TYPE_HANDLE_CHANNELS_CONTEXT
 </SECTION>
 

@@ -139,7 +139,7 @@ handle_channels (TpSimpleHandler *handler,
     GList *channels,
     GList *requests,
     gint64 action_time,
-    TpHandleChannelsContext *context,
+    TpHandleChannelContext *context,
     gpointer user_data)
 {
   TpDBusTubeChannel *tube;
@@ -169,12 +169,12 @@ handle_channels (TpSimpleHandler *handler,
 
       tp_dbus_tube_channel_accept_async (tube, tube_accepted, context);
 
-      tp_handle_channels_context_accept (context);
+      tp_handle_channel_context_accept (context);
       return;
     }
 
   g_message ("Rejecting channels");
-  tp_handle_channels_context_fail (context, &error);
+  tp_handle_channel_context_fail (context, &error);
 }
 
 

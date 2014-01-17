@@ -22,53 +22,53 @@
 #error "Only <telepathy-glib/telepathy-glib.h> can be included directly."
 #endif
 
-#ifndef __TP_HANDLE_CHANNELS_CONTEXT_H__
-#define __TP_HANDLE_CHANNELS_CONTEXT_H__
+#ifndef __TP_HANDLE_CHANNEL_CONTEXT_H__
+#define __TP_HANDLE_CHANNEL_CONTEXT_H__
 
 #include <gio/gio.h>
 #include <glib-object.h>
 
 G_BEGIN_DECLS
 
-typedef struct _TpHandleChannelsContext TpHandleChannelsContext;
-typedef struct _TpHandleChannelsContextClass \
-          TpHandleChannelsContextClass;
-typedef struct _TpHandleChannelsContextPrivate \
-          TpHandleChannelsContextPrivate;
+typedef struct _TpHandleChannelContext TpHandleChannelContext;
+typedef struct _TpHandleChannelContextClass \
+          TpHandleChannelContextClass;
+typedef struct _TpHandleChannelContextPrivate \
+          TpHandleChannelContextPrivate;
 
-GType tp_handle_channels_context_get_type (void);
+GType tp_handle_channel_context_get_type (void);
 
 #define TP_TYPE_HANDLE_CHANNELS_CONTEXT \
-  (tp_handle_channels_context_get_type ())
-#define TP_HANDLE_CHANNELS_CONTEXT(obj) \
+  (tp_handle_channel_context_get_type ())
+#define TP_HANDLE_CHANNEL_CONTEXT(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_HANDLE_CHANNELS_CONTEXT, \
-                               TpHandleChannelsContext))
-#define TP_HANDLE_CHANNELS_CONTEXT_CLASS(klass) \
+                               TpHandleChannelContext))
+#define TP_HANDLE_CHANNEL_CONTEXT_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_CAST ((klass), TP_TYPE_HANDLE_CHANNELS_CONTEXT, \
-                            TpHandleChannelsContextClass))
+                            TpHandleChannelContextClass))
 #define TP_IS_HANDLE_CHANNELS_CONTEXT(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TYPE_HANDLE_CHANNELS_CONTEXT))
 #define TP_IS_HANDLE_CHANNELS_CONTEXT_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_TYPE ((klass), TP_TYPE_HANDLE_CHANNELS_CONTEXT))
-#define TP_HANDLE_CHANNELS_CONTEXT_GET_CLASS(obj) \
+#define TP_HANDLE_CHANNEL_CONTEXT_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_HANDLE_CHANNELS_CONTEXT, \
-                              TpHandleChannelsContextClass))
+                              TpHandleChannelContextClass))
 
-void tp_handle_channels_context_accept (
-    TpHandleChannelsContext *self);
+void tp_handle_channel_context_accept (
+    TpHandleChannelContext *self);
 
-void tp_handle_channels_context_fail (
-    TpHandleChannelsContext *self,
+void tp_handle_channel_context_fail (
+    TpHandleChannelContext *self,
     const GError *error);
 
-void tp_handle_channels_context_delay (
-    TpHandleChannelsContext *self);
+void tp_handle_channel_context_delay (
+    TpHandleChannelContext *self);
 
-const GHashTable *tp_handle_channels_context_get_handler_info (
-    TpHandleChannelsContext *self);
+const GHashTable *tp_handle_channel_context_get_handler_info (
+    TpHandleChannelContext *self);
 
-GList * tp_handle_channels_context_get_requests (
-    TpHandleChannelsContext *self);
+GList * tp_handle_channel_context_get_requests (
+    TpHandleChannelContext *self);
 
 G_END_DECLS
 

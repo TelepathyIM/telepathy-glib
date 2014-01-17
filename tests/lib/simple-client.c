@@ -132,7 +132,7 @@ simple_handle_channels (TpBaseClient *client,
     GList *channels,
     GList *requests_satisfied,
     gint64 user_action_time,
-    TpHandleChannelsContext *context)
+    TpHandleChannelContext *context)
 {
   TpTestsSimpleClient *self = TP_TESTS_SIMPLE_CLIENT (client);
   GList *l;
@@ -167,7 +167,7 @@ simple_handle_channels (TpBaseClient *client,
     }
 
   self->handle_channels_ctx = g_object_ref (context);
-  tp_handle_channels_context_accept (context);
+  tp_handle_channel_context_accept (context);
 }
 
 static void

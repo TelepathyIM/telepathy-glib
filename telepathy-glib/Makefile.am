@@ -101,7 +101,7 @@ tpginclude_HEADERS = \
     gnio-util.h \
     group-mixin.h \
     handle.h \
-    handle-channels-context.h \
+    handle-channel-context.h \
     handle-repo.h \
     handle-repo-static.h \
     handle-repo-dynamic.h \
@@ -292,8 +292,8 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     gnio-util.c \
     group-mixin.c \
     handle.c \
-    handle-channels-context-internal.h \
-    handle-channels-context.c \
+    handle-channel-context-internal.h \
+    handle-channel-context.c \
     handle-repo.c \
     handle-repo-dynamic.c \
     handle-repo-internal.h \

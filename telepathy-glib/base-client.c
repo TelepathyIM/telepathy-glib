@@ -139,13 +139,13 @@
  *  special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
  *  %TP_USER_ACTION_TIME_CURRENT_TIME
  *  (see #TpAccountChannelRequest:user-action-time for details)
- * @context: a #TpHandleChannelsContext representing the context of this
+ * @context: a #TpHandleChannelContext representing the context of this
  *  D-Bus call
  *
  * Signature of the implementation of the HandleChannels method.
  *
- * This function must call either tp_handle_channels_context_accept(),
- * tp_handle_channels_context_delay() or tp_handle_channels_context_fail()
+ * This function must call either tp_handle_channel_context_accept(),
+ * tp_handle_channel_context_delay() or tp_handle_channel_context_fail()
  * on @context before it returns.
  *
  * Since: 0.11.6
@@ -183,7 +183,7 @@
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/dbus-internal.h>
 #include <telepathy-glib/gtypes.h>
-#include <telepathy-glib/handle-channels-context-internal.h>
+#include <telepathy-glib/handle-channel-context-internal.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/observe-channel-context-internal.h>
 #include <telepathy-glib/svc-client.h>
@@ -2091,7 +2091,7 @@ add_handled_channels (TpBaseClient *self,
 }
 
 static void
-ctx_done_cb (TpHandleChannelsContext *context,
+ctx_done_cb (TpHandleChannelContext *context,
     TpBaseClient *self)
 {
   add_handled_channels (self, context->channels);
@@ -2124,7 +2124,7 @@ delegate_to_preferred_handler_delegate_cb (GObject *source,
 
 static gboolean
 delegate_channels_if_needed (TpBaseClient *self,
-    TpHandleChannelsContext *ctx)
+    TpHandleChannelContext *ctx)
 {
   GList *requests, *l;
   const gchar *handler_to_delegate = NULL;
@@ -2137,7 +2137,7 @@ delegate_channels_if_needed (TpBaseClient *self,
   if (self->priv->delegated_channels_cb == NULL)
     return FALSE;
 
-  requests = tp_handle_channels_context_get_requests (ctx);
+  requests = tp_handle_channel_context_get_requests (ctx);
   for (l = requests; l != NULL; l = g_list_next (l))
     {
       TpChannelRequest *cr = l->data;
@@ -2195,7 +2195,7 @@ delegate_channels_if_needed (TpBaseClient *self,
 
   g_list_free (chans);
 
-  tp_handle_channels_context_accept (ctx);
+  tp_handle_channel_context_accept (ctx);
 
 out:
   g_list_free_full (requests, g_object_unref);
@@ -2209,14 +2209,14 @@ handle_channels_context_prepare_cb (GObject *source,
 {
   TpBaseClient *self = user_data;
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
-  TpHandleChannelsContext *ctx = TP_HANDLE_CHANNELS_CONTEXT (source);
+  TpHandleChannelContext *ctx = TP_HANDLE_CHANNEL_CONTEXT (source);
   GError *error = NULL;
   GList *channels_list, *requests_list;
 
-  if (!_tp_handle_channels_context_prepare_finish (ctx, result, &error))
+  if (!_tp_handle_channel_context_prepare_finish (ctx, result, &error))
     {
-      DEBUG ("Failed to prepare TpHandleChannelsContext: %s", error->message);
-      tp_handle_channels_context_fail (ctx, error);
+      DEBUG ("Failed to prepare TpHandleChannelContext: %s", error->message);
+      tp_handle_channel_context_fail (ctx, error);
       g_error_free (error);
       return;
     }
@@ -2236,17 +2236,17 @@ handle_channels_context_prepare_cb (GObject *source,
   g_list_free (channels_list);
   g_list_free (requests_list);
 
-  if (_tp_handle_channels_context_get_state (ctx) ==
-      TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE)
+  if (_tp_handle_channel_context_get_state (ctx) ==
+      TP_HANDLE_CHANNEL_CONTEXT_STATE_NONE)
     {
       error = g_error_new (TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
           "Implementation of HandledChannels in %s didn't call "
-          "tp_handle_channels_context_{accept,fail,delay}",
+          "tp_handle_channel_context_{accept,fail,delay}",
           G_OBJECT_TYPE_NAME (self));
 
       CRITICAL ("%s", error->message);
 
-      tp_handle_channels_context_fail (ctx, error);
+      tp_handle_channel_context_fail (ctx, error);
       g_error_free (error);
     }
 }
@@ -2280,7 +2280,7 @@ _tp_base_client_handle_channel (TpSvcClientHandler *iface,
     DBusGMethodInvocation *context)
 {
   TpBaseClient *self = TP_BASE_CLIENT (iface);
-  TpHandleChannelsContext *ctx;
+  TpHandleChannelContext *ctx;
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
   GError *error = NULL;
   TpAccount *account = NULL;
@@ -2348,14 +2348,14 @@ _tp_base_client_handle_channel (TpSvcClientHandler *iface,
       g_ptr_array_add (requests, request);
     }
 
-  ctx = _tp_handle_channels_context_new (account, connection, channels,
+  ctx = _tp_handle_channel_context_new (account, connection, channels,
       requests, user_action_time, handler_info, context);
 
   account_features = dup_features_for_account (self, account);
   connection_features = dup_features_for_connection (self, connection);
   channel_features = dup_features_for_channel (self, channel);
 
-  _tp_handle_channels_context_prepare_async (ctx,
+  _tp_handle_channel_context_prepare_async (ctx,
       (GQuark *) account_features->data,
       (GQuark *) connection_features->data,
       (GQuark *) channel_features->data,

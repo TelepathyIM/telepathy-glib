@@ -85,7 +85,7 @@
 #include <telepathy-glib/exportable-channel.h>
 #include <telepathy-glib/file-transfer-channel.h>
 #include <telepathy-glib/group-mixin.h>
-#include <telepathy-glib/handle-channels-context.h>
+#include <telepathy-glib/handle-channel-context.h>
 #include <telepathy-glib/handle-repo.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
 #include <telepathy-glib/handle-repo-static.h>

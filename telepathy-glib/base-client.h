@@ -31,7 +31,7 @@
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/add-dispatch-operation-context.h>
 #include <telepathy-glib/channel.h>
-#include <telepathy-glib/handle-channels-context.h>
+#include <telepathy-glib/handle-channel-context.h>
 #include <telepathy-glib/observe-channel-context.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/dbus.h>
@@ -73,7 +73,7 @@ typedef void (*TpBaseClientClassHandleChannelsImpl) (
     GList *channels,
     GList *requests_satisfied,
     gint64 user_action_time,
-    TpHandleChannelsContext *context);
+    TpHandleChannelContext *context);
 
 struct _TpBaseClientClass {
     /*<public>*/

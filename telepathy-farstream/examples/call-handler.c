@@ -542,7 +542,7 @@ new_call_channel_cb (TpSimpleHandler *handler,
     GList *channels,
     GList *requests_satisfied,
     gint64 user_action_time,
-    TpHandleChannelsContext *handler_context,
+    TpHandleChannelContext *handler_context,
     gpointer user_data)
 {
   ChannelContext *context;
@@ -576,7 +576,7 @@ new_call_channel_cb (TpSimpleHandler *handler,
 
   tf_channel_new_async (proxy, new_tf_channel_cb, context);
 
-  tp_handle_channels_context_accept (handler_context);
+  tp_handle_channel_context_accept (handler_context);
 
   tp_call_channel_accept_async (TP_CALL_CHANNEL (proxy), NULL, NULL);
 

@@ -19,8 +19,8 @@
  */
 
 /**
- * SECTION: handle-channels-context
- * @title: TpHandleChannelsContext
+ * SECTION: handle-channel-context
+ * @title: TpHandleChannelContext
  * @short_description: context of a Handler.HandleChannels() call
  *
  * Object used to represent the context of a Handler.HandleChannels()
@@ -30,7 +30,7 @@
  */
 
 /**
- * TpHandleChannelsContext:
+ * TpHandleChannelContext:
  *
  * Data structure representing the context of a Handler.HandleChannels()
  * call.
@@ -39,17 +39,17 @@
  */
 
 /**
- * TpHandleChannelsContextClass:
+ * TpHandleChannelContextClass:
  *
- * The class of a #TpHandleChannelsContext.
+ * The class of a #TpHandleChannelContext.
  *
  * Since: 0.11.6
  */
 
 #include "config.h"
 
-#include "telepathy-glib/handle-channels-context.h"
-#include "telepathy-glib/handle-channels-context-internal.h"
+#include "telepathy-glib/handle-channel-context.h"
+#include "telepathy-glib/handle-channel-context-internal.h"
 
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/channel-request.h>
@@ -61,13 +61,13 @@
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
 
-struct _TpHandleChannelsContextClass {
+struct _TpHandleChannelContextClass {
     /*<private>*/
     GObjectClass parent_class;
 };
 
-G_DEFINE_TYPE(TpHandleChannelsContext,
-    tp_handle_channels_context, G_TYPE_OBJECT)
+G_DEFINE_TYPE(TpHandleChannelContext,
+    tp_handle_channel_context, G_TYPE_OBJECT)
 
 enum {
     PROP_ACCOUNT = 1,
@@ -87,9 +87,9 @@ enum {
 
 static guint signals[N_SIGNALS] = { 0 };
 
-struct _TpHandleChannelsContextPrivate
+struct _TpHandleChannelContextPrivate
 {
-  TpHandleChannelsContextState state;
+  TpHandleChannelContextState state;
   GSimpleAsyncResult *result;
   DBusGMethodInvocation *dbus_context;
 
@@ -99,34 +99,34 @@ struct _TpHandleChannelsContextPrivate
 };
 
 static void
-tp_handle_channels_context_init (TpHandleChannelsContext *self)
+tp_handle_channel_context_init (TpHandleChannelContext *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TYPE_HANDLE_CHANNELS_CONTEXT,
-      TpHandleChannelsContextPrivate);
+      TpHandleChannelContextPrivate);
 
-  self->priv->state = TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE;
+  self->priv->state = TP_HANDLE_CHANNEL_CONTEXT_STATE_NONE;
 }
 
 static void
-tp_handle_channels_context_dispose (GObject *object)
+tp_handle_channel_context_dispose (GObject *object)
 {
-  TpHandleChannelsContext *self = TP_HANDLE_CHANNELS_CONTEXT (
+  TpHandleChannelContext *self = TP_HANDLE_CHANNEL_CONTEXT (
       object);
   void (*dispose) (GObject *) =
-    G_OBJECT_CLASS (tp_handle_channels_context_parent_class)->dispose;
+    G_OBJECT_CLASS (tp_handle_channel_context_parent_class)->dispose;
 
-  if (self->priv->state == TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE ||
-      self->priv->state == TP_HANDLE_CHANNELS_CONTEXT_STATE_DELAYED)
+  if (self->priv->state == TP_HANDLE_CHANNEL_CONTEXT_STATE_NONE ||
+      self->priv->state == TP_HANDLE_CHANNEL_CONTEXT_STATE_DELAYED)
     {
       GError error = { TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
-          "Disposing the TpHandleChannelsContext" };
+          "Disposing the TpHandleChannelContext" };
 
       WARNING ("Disposing a context in the %s state",
-          self->priv->state == TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE ?
+          self->priv->state == TP_HANDLE_CHANNEL_CONTEXT_STATE_NONE ?
           "none": "delayed");
 
-      tp_handle_channels_context_fail (self, &error);
+      tp_handle_channel_context_fail (self, &error);
     }
 
   if (self->account != NULL)
@@ -172,12 +172,12 @@ tp_handle_channels_context_dispose (GObject *object)
 }
 
 static void
-tp_handle_channels_context_get_property (GObject *object,
+tp_handle_channel_context_get_property (GObject *object,
     guint property_id,
     GValue *value,
     GParamSpec *pspec)
 {
-  TpHandleChannelsContext *self = TP_HANDLE_CHANNELS_CONTEXT (
+  TpHandleChannelContext *self = TP_HANDLE_CHANNEL_CONTEXT (
       object);
 
   switch (property_id)
@@ -213,12 +213,12 @@ tp_handle_channels_context_get_property (GObject *object,
 }
 
 static void
-tp_handle_channels_context_set_property (GObject *object,
+tp_handle_channel_context_set_property (GObject *object,
     guint property_id,
     const GValue *value,
     GParamSpec *pspec)
 {
-  TpHandleChannelsContext *self = TP_HANDLE_CHANNELS_CONTEXT (
+  TpHandleChannelContext *self = TP_HANDLE_CHANNEL_CONTEXT (
       object);
 
   switch (property_id)
@@ -260,13 +260,13 @@ tp_handle_channels_context_set_property (GObject *object,
 }
 
 static void
-tp_handle_channels_context_constructed (GObject *object)
+tp_handle_channel_context_constructed (GObject *object)
 {
-  TpHandleChannelsContext *self = TP_HANDLE_CHANNELS_CONTEXT (
+  TpHandleChannelContext *self = TP_HANDLE_CHANNEL_CONTEXT (
       object);
   void (*chain_up) (GObject *) =
     ((GObjectClass *)
-      tp_handle_channels_context_parent_class)->constructed;
+      tp_handle_channel_context_parent_class)->constructed;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -280,21 +280,21 @@ tp_handle_channels_context_constructed (GObject *object)
 }
 
 static void
-tp_handle_channels_context_class_init (
-    TpHandleChannelsContextClass *cls)
+tp_handle_channel_context_class_init (
+    TpHandleChannelContextClass *cls)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (cls);
   GParamSpec *param_spec;
 
-  g_type_class_add_private (cls, sizeof (TpHandleChannelsContextPrivate));
+  g_type_class_add_private (cls, sizeof (TpHandleChannelContextPrivate));
 
-  object_class->get_property = tp_handle_channels_context_get_property;
-  object_class->set_property = tp_handle_channels_context_set_property;
-  object_class->constructed = tp_handle_channels_context_constructed;
-  object_class->dispose = tp_handle_channels_context_dispose;
+  object_class->get_property = tp_handle_channel_context_get_property;
+  object_class->set_property = tp_handle_channel_context_set_property;
+  object_class->constructed = tp_handle_channel_context_constructed;
+  object_class->dispose = tp_handle_channel_context_dispose;
 
  /**
-   * TpHandleChannelsContext:account:
+   * TpHandleChannelContext:account:
    *
    * A #TpAccount object representing the Account of the DispatchOperation
    * that has been passed to HandleChannels.
@@ -312,7 +312,7 @@ tp_handle_channels_context_class_init (
       param_spec);
 
   /**
-   * TpHandleChannelsContext:connection:
+   * TpHandleChannelContext:connection:
    *
    * A #TpConnection object representing the Connection of the DispatchOperation
    * that has been passed to HandleChannels.
@@ -330,7 +330,7 @@ tp_handle_channels_context_class_init (
       param_spec);
 
   /**
-   * TpHandleChannelsContext:channels:
+   * TpHandleChannelContext:channels:
    *
    * A #GPtrArray containing #TpChannel objects representing the channels
    * that have been passed to HandleChannels.
@@ -348,7 +348,7 @@ tp_handle_channels_context_class_init (
       param_spec);
 
   /**
-   * TpHandleChannelsContext:requests-satisfied:
+   * TpHandleChannelContext:requests-satisfied:
    *
    * A #GPtrArray containing #TpChannelRequest objects representing the
    * requests that have been passed to HandleChannels.
@@ -368,7 +368,7 @@ tp_handle_channels_context_class_init (
       param_spec);
 
   /**
-   * TpHandleChannelsContext:user-action-time:
+   * TpHandleChannelContext:user-action-time:
    *
    * The time at which user action occurred, or one of the
    * special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
@@ -388,7 +388,7 @@ tp_handle_channels_context_class_init (
       param_spec);
 
   /**
-   * TpHandleChannelsContext:handler-info:
+   * TpHandleChannelContext:handler-info:
    *
    * A #GHashTable where the keys are string and values are GValue instances.
    * It represents the Handler_info hash table that has been passed to
@@ -406,7 +406,7 @@ tp_handle_channels_context_class_init (
       param_spec);
 
   /**
-   * TpHandleChannelsContext:dbus-context: (skip)
+   * TpHandleChannelContext:dbus-context: (skip)
    *
    * The #DBusGMethodInvocation representing the D-Bus context of the
    * HandleChannels call.
@@ -421,10 +421,10 @@ tp_handle_channels_context_class_init (
       param_spec);
 
  /**
-   * TpHandleChannelsContext::done:
-   * @self: a #TpHandleChannelsContext
+   * TpHandleChannelContext::done:
+   * @self: a #TpHandleChannelContext
    *
-   * Emitted when tp_handle_channels_context_accept has been called on @self.
+   * Emitted when tp_handle_channel_context_accept has been called on @self.
    *
    * Since: 0.11.6
    */
@@ -437,7 +437,7 @@ tp_handle_channels_context_class_init (
 
 }
 
-TpHandleChannelsContext * _tp_handle_channels_context_new (
+TpHandleChannelContext * _tp_handle_channel_context_new (
     TpAccount *account,
     TpConnection *connection,
     GPtrArray *channels,
@@ -458,8 +458,8 @@ TpHandleChannelsContext * _tp_handle_channels_context_new (
 }
 
 /**
- * tp_handle_channels_context_accept:
- * @self: a #TpHandleChannelsContext
+ * tp_handle_channel_context_accept:
+ * @self: a #TpHandleChannelContext
  *
  * Called by #TpBaseClientClassAddDispatchOperationImpl when it's done so
  * the D-Bus method can return.
@@ -470,14 +470,14 @@ TpHandleChannelsContext * _tp_handle_channels_context_new (
  * Since: 0.11.6
  */
 void
-tp_handle_channels_context_accept (TpHandleChannelsContext *self)
+tp_handle_channel_context_accept (TpHandleChannelContext *self)
 {
   g_return_if_fail (self->priv->state ==
-      TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE
-      || self->priv->state == TP_HANDLE_CHANNELS_CONTEXT_STATE_DELAYED);
+      TP_HANDLE_CHANNEL_CONTEXT_STATE_NONE
+      || self->priv->state == TP_HANDLE_CHANNEL_CONTEXT_STATE_DELAYED);
   g_return_if_fail (self->priv->dbus_context != NULL);
 
-  self->priv->state = TP_HANDLE_CHANNELS_CONTEXT_STATE_DONE;
+  self->priv->state = TP_HANDLE_CHANNEL_CONTEXT_STATE_DONE;
   dbus_g_method_return (self->priv->dbus_context);
 
   self->priv->dbus_context = NULL;
@@ -486,8 +486,8 @@ tp_handle_channels_context_accept (TpHandleChannelsContext *self)
 }
 
 /**
- * tp_handle_channels_context_fail:
- * @self: a #TpHandleChannelsContext
+ * tp_handle_channel_context_fail:
+ * @self: a #TpHandleChannelContext
  * @error: the error to return from the method
  *
  * Called by #TpBaseClientClassAddDispatchOperationImpl to raise a D-Bus error.
@@ -495,57 +495,57 @@ tp_handle_channels_context_accept (TpHandleChannelsContext *self)
  * Since: 0.11.6
  */
 void
-tp_handle_channels_context_fail (TpHandleChannelsContext *self,
+tp_handle_channel_context_fail (TpHandleChannelContext *self,
     const GError *error)
 {
   g_return_if_fail (self->priv->state ==
-      TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE
-      || self->priv->state == TP_HANDLE_CHANNELS_CONTEXT_STATE_DELAYED);
+      TP_HANDLE_CHANNEL_CONTEXT_STATE_NONE
+      || self->priv->state == TP_HANDLE_CHANNEL_CONTEXT_STATE_DELAYED);
   g_return_if_fail (self->priv->dbus_context != NULL);
 
-  self->priv->state = TP_HANDLE_CHANNELS_CONTEXT_STATE_FAILED;
+  self->priv->state = TP_HANDLE_CHANNEL_CONTEXT_STATE_FAILED;
   dbus_g_method_return_error (self->priv->dbus_context, error);
 
   self->priv->dbus_context = NULL;
 }
 
 /**
- * tp_handle_channels_context_delay:
- * @self: a #TpHandleChannelsContext
+ * tp_handle_channel_context_delay:
+ * @self: a #TpHandleChannelContext
  *
  * Called by #TpBaseClientClassAddDispatchOperationImpl to indicate that it
  * implements the method in an async way. The caller must take a reference
- * to the #TpHandleChannelsContext before calling this function, and
+ * to the #TpHandleChannelContext before calling this function, and
  * is responsible for calling either
- * tp_handle_channels_context_accept() or
- * tp_handle_channels_context_fail() later.
+ * tp_handle_channel_context_accept() or
+ * tp_handle_channel_context_fail() later.
  *
  * Since: 0.11.6
  */
 void
-tp_handle_channels_context_delay (TpHandleChannelsContext *self)
+tp_handle_channel_context_delay (TpHandleChannelContext *self)
 {
   g_return_if_fail (self->priv->state ==
-      TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE);
+      TP_HANDLE_CHANNEL_CONTEXT_STATE_NONE);
 
-  self->priv->state = TP_HANDLE_CHANNELS_CONTEXT_STATE_DELAYED;
+  self->priv->state = TP_HANDLE_CHANNEL_CONTEXT_STATE_DELAYED;
 }
 
-TpHandleChannelsContextState
-_tp_handle_channels_context_get_state (
-    TpHandleChannelsContext *self)
+TpHandleChannelContextState
+_tp_handle_channel_context_get_state (
+    TpHandleChannelContext *self)
 {
   return self->priv->state;
 }
 
 static gboolean
-context_is_prepared (TpHandleChannelsContext *self)
+context_is_prepared (TpHandleChannelContext *self)
 {
   return self->priv->num_pending == 0;
 }
 
 static void
-context_check_prepare (TpHandleChannelsContext *self)
+context_check_prepare (TpHandleChannelContext *self)
 {
   if (!context_is_prepared (self))
     return;
@@ -562,7 +562,7 @@ account_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpHandleChannelsContext *self = user_data;
+  TpHandleChannelContext *self = user_data;
   GError *error = NULL;
 
   if (self->priv->result == NULL)
@@ -586,7 +586,7 @@ conn_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpHandleChannelsContext *self = user_data;
+  TpHandleChannelContext *self = user_data;
   GError *error = NULL;
 
   if (self->priv->result == NULL)
@@ -610,7 +610,7 @@ hcc_channel_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpHandleChannelsContext *self = user_data;
+  TpHandleChannelContext *self = user_data;
   GError *error = NULL;
 
   if (self->priv->result == NULL)
@@ -631,7 +631,7 @@ out:
 }
 
 static void
-context_prepare (TpHandleChannelsContext *self,
+context_prepare (TpHandleChannelContext *self,
     const GQuark *account_features,
     const GQuark *connection_features,
     const GQuark *channel_features)
@@ -658,8 +658,8 @@ context_prepare (TpHandleChannelsContext *self,
 }
 
 void
-_tp_handle_channels_context_prepare_async (
-    TpHandleChannelsContext *self,
+_tp_handle_channel_context_prepare_async (
+    TpHandleChannelContext *self,
     const GQuark *account_features,
     const GQuark *connection_features,
     const GQuark *channel_features,
@@ -672,23 +672,23 @@ _tp_handle_channels_context_prepare_async (
   g_return_if_fail (self->priv->result == NULL);
 
   self->priv->result = g_simple_async_result_new (G_OBJECT (self),
-      callback, user_data, _tp_handle_channels_context_prepare_async);
+      callback, user_data, _tp_handle_channel_context_prepare_async);
 
   context_prepare (self, account_features, connection_features,
       channel_features);
 }
 
 gboolean
-_tp_handle_channels_context_prepare_finish (
-    TpHandleChannelsContext *self,
+_tp_handle_channel_context_prepare_finish (
+    TpHandleChannelContext *self,
     GAsyncResult *result,
     GError **error)
 {
-  _tp_implement_finish_void (self, _tp_handle_channels_context_prepare_async);
+  _tp_implement_finish_void (self, _tp_handle_channel_context_prepare_async);
 }
 
 /**
- * tp_handle_channels_context_get_handler_info:
+ * tp_handle_channel_context_get_handler_info:
  * @self: a channel-handling context
  *
  * Return any extra information that accompanied this request to handle
@@ -705,14 +705,14 @@ _tp_handle_channels_context_prepare_finish (
  * Since: 0.11.14
  */
 const GHashTable *
-tp_handle_channels_context_get_handler_info (TpHandleChannelsContext *self)
+tp_handle_channel_context_get_handler_info (TpHandleChannelContext *self)
 {
   g_return_val_if_fail (TP_IS_HANDLE_CHANNELS_CONTEXT (self), NULL);
   return self->handler_info;
 }
 
 /**
- * tp_handle_channels_context_get_requests:
+ * tp_handle_channel_context_get_requests:
  * @self: a channel-handling context
  *
  * Return a list of the #TpChannelRequest which have been satisfied by the
@@ -724,8 +724,8 @@ tp_handle_channels_context_get_handler_info (TpHandleChannelsContext *self)
  * Since: 0.13.14
  */
 GList *
-tp_handle_channels_context_get_requests (
-    TpHandleChannelsContext *self)
+tp_handle_channel_context_get_requests (
+    TpHandleChannelContext *self)
 {
   GHashTable *request_props;
 

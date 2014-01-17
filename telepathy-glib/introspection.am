@@ -33,7 +33,7 @@ TelepathyGLib_1_gir_FILES = \
 	$(srcdir)/channel.c $(srcdir)/channel.h \
 	$(srcdir)/channel-group.c \
 	$(srcdir)/handle.c $(srcdir)/handle.h \
-	$(srcdir)/handle-channels-context.c $(srcdir)/handle-channels-context.h \
+	$(srcdir)/handle-channel-context.c $(srcdir)/handle-channel-context.h \
 	$(srcdir)/dbus-daemon.c $(srcdir)/dbus-daemon.h \
 	$(srcdir)/interfaces.c \
 	$(srcdir)/intset.c $(srcdir)/intset.h \

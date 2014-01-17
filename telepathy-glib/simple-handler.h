@@ -75,7 +75,7 @@ typedef void (*TpSimpleHandlerHandleChannelsImpl) (
     GList *channels,
     GList *requests_satisfied,
     gint64 user_action_time,
-    TpHandleChannelsContext *context,
+    TpHandleChannelContext *context,
     gpointer user_data);
 
 TpBaseClient *tp_simple_handler_new (TpClientFactory *factory,

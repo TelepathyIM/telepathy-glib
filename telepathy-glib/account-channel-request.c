@@ -148,7 +148,7 @@ struct _TpAccountChannelRequestPrivate
   gulong succeeded_chan_sig;
   gulong cancel_id;
   TpChannel *channel;
-  TpHandleChannelsContext *handle_context;
+  TpHandleChannelContext *handle_context;
   TpDBusDaemon *dbus;
   GHashTable *hints;
 
@@ -487,7 +487,7 @@ tp_account_channel_request_class_init (
    *  special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
    *  %TP_USER_ACTION_TIME_CURRENT_TIME; see
    *  #TpAccountChannelRequest:user-action-time
-   * @context: a #TpHandleChannelsContext representing the context of
+   * @context: a #TpHandleChannelContext representing the context of
    * the HandleChannels() call.
    *
    * Emitted when the channel created using @self has been "re-handled".
@@ -502,10 +502,10 @@ tp_account_channel_request_class_init (
    * @user_action_time, and if appropriate, moving to the foreground.
    *
    * @context can be used to obtain extensible information about the channel
-   * via tp_handle_channels_context_get_handler_info(), and any similar methods
+   * via tp_handle_channel_context_get_handler_info(), and any similar methods
    * that are added in future. It is not valid for the receiver of this signal
-   * to call tp_handle_channels_context_accept(),
-   * tp_handle_channels_context_delay() or tp_handle_channels_context_fail().
+   * to call tp_handle_channel_context_accept(),
+   * tp_handle_channel_context_delay() or tp_handle_channel_context_fail().
    *
    * Since: 0.11.12
    */
@@ -690,7 +690,7 @@ request_fail (TpAccountChannelRequest *self,
 static void
 handle_request_complete (TpAccountChannelRequest *self,
     TpChannel *channel,
-    TpHandleChannelsContext *handle_context)
+    TpHandleChannelContext *handle_context)
 {
   self->priv->channel = g_object_ref (channel);
   self->priv->handle_context = g_object_ref (handle_context);
@@ -717,7 +717,7 @@ handle_channels (TpSimpleHandler *handler,
     GList *channels,
     GList *requests_satisfied,
     gint64 user_action_time,
-    TpHandleChannelsContext *context,
+    TpHandleChannelContext *context,
     gpointer user_data)
 {
   TpAccountChannelRequest *self = user_data;
@@ -728,13 +728,13 @@ handle_channels (TpSimpleHandler *handler,
       GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "We are supposed to handle only one channel" };
 
-      tp_handle_channels_context_fail (context, &error);
+      tp_handle_channel_context_fail (context, &error);
 
       request_fail (self, &error);
       return;
     }
 
-  tp_handle_channels_context_accept (context);
+  tp_handle_channel_context_accept (context);
 
   if (self->priv->result == NULL)
     {
@@ -1081,7 +1081,7 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
 static TpChannel *
 request_and_handle_channel_finish (TpAccountChannelRequest *self,
     GAsyncResult *result,
-    TpHandleChannelsContext **context,
+    TpHandleChannelContext **context,
     gpointer source_tag,
     GError **error)
 {
@@ -1165,7 +1165,7 @@ TpChannel *
 tp_account_channel_request_create_and_handle_channel_finish (
     TpAccountChannelRequest *self,
     GAsyncResult *result,
-    TpHandleChannelsContext **context,
+    TpHandleChannelContext **context,
     GError **error)
 {
   return request_and_handle_channel_finish (self, result, context,
@@ -1227,10 +1227,10 @@ tp_account_channel_request_ensure_and_handle_channel_async (
  * will fail with the error %TP_ERROR_NOT_YOURS.
  *
  * @context can be used to obtain extensible information about the channel
- * via tp_handle_channels_context_get_handler_info(), and any similar methods
+ * via tp_handle_channel_context_get_handler_info(), and any similar methods
  * that are added in future. It is not valid for the caller of this method
- * to call tp_handle_channels_context_accept(),
- * tp_handle_channels_context_delay() or tp_handle_channels_context_fail().
+ * to call tp_handle_channel_context_accept(),
+ * tp_handle_channel_context_delay() or tp_handle_channel_context_fail().
  *
  * Returns: (transfer full) (allow-none): a new reference on a #TpChannel if the
  * channel was successfully created and you are handling it, otherwise %NULL.
@@ -1241,7 +1241,7 @@ TpChannel *
 tp_account_channel_request_ensure_and_handle_channel_finish (
     TpAccountChannelRequest *self,
     GAsyncResult *result,
-    TpHandleChannelsContext **context,
+    TpHandleChannelContext **context,
     GError **error)
 {
   return request_and_handle_channel_finish (self, result, context,

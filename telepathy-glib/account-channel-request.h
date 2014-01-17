@@ -33,7 +33,7 @@
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/defs.h>
-#include <telepathy-glib/handle-channels-context.h>
+#include <telepathy-glib/handle-channel-context.h>
 
 G_BEGIN_DECLS
 
@@ -174,7 +174,7 @@ void tp_account_channel_request_create_and_handle_channel_async (
 TpChannel * tp_account_channel_request_create_and_handle_channel_finish (
     TpAccountChannelRequest *self,
     GAsyncResult *result,
-    TpHandleChannelsContext **context,
+    TpHandleChannelContext **context,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_account_channel_request_ensure_and_handle_channel_async (
@@ -186,7 +186,7 @@ void tp_account_channel_request_ensure_and_handle_channel_async (
 TpChannel * tp_account_channel_request_ensure_and_handle_channel_finish (
     TpAccountChannelRequest *self,
     GAsyncResult *result,
-    TpHandleChannelsContext **context,
+    TpHandleChannelContext **context,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 typedef void (*TpAccountChannelRequestDelegatedChannelCb) (

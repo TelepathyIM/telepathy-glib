@@ -288,10 +288,10 @@ handle_channels_success (
     GList *channels,
     GList *requests_satisified,
     gint64 user_action_time,
-    TpHandleChannelsContext *context,
+    TpHandleChannelContext *context,
     gpointer user_data)
 {
-  tp_handle_channels_context_accept (context);
+  tp_handle_channel_context_accept (context);
 }
 
 static void
@@ -399,9 +399,9 @@ test_success (Test *test,
 static gboolean
 accept_idle_cb (gpointer data)
 {
-  TpHandleChannelsContext *context = data;
+  TpHandleChannelContext *context = data;
 
-  tp_handle_channels_context_accept (context);
+  tp_handle_channel_context_accept (context);
   g_object_unref (context);
   return FALSE;
 }
@@ -414,12 +414,12 @@ handle_channels_async (
     GList *channels,
     GList *requests_satisified,
     gint64 user_action_time,
-    TpHandleChannelsContext *context,
+    TpHandleChannelContext *context,
     gpointer user_data)
 {
   g_idle_add (accept_idle_cb, g_object_ref (context));
 
-  tp_handle_channels_context_delay (context);
+  tp_handle_channel_context_delay (context);
 }
 
 static void
@@ -447,13 +447,13 @@ handle_channels_fail (
     GList *channels,
     GList *requests_satisified,
     gint64 user_action_time,
-    TpHandleChannelsContext *context,
+    TpHandleChannelContext *context,
     gpointer user_data)
 {
   GError error = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
       "No HandleChannels for you!" };
 
-  tp_handle_channels_context_fail (context, &error);
+  tp_handle_channel_context_fail (context, &error);
 }
 
 static void
