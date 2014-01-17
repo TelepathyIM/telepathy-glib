@@ -1573,6 +1573,33 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </tp:docstring>
     </tp:hct>
 
+    <property name="InitialTones" tp:name-for-bindings="Initial_Tones"
+        type="s" access="read" tp:immutable="yes" tp:requestable="sometimes">
+      <tp:added version="0.99.UNRELEASED" />
+      <tp:docstring>
+        <p>If non-empty in a channel request that will create a new channel,
+          the connection manager should send the tones immediately after
+          at least one eligible audio stream has been created in the
+          channel. Its semantics are equivalent to calling the <tp:dbus-ref
+            namespace="imt1.Call1">Content.Interface.DTMF1.MultipleTones</tp:dbus-ref>
+          method as soon as there is a suitable stream.</p>
+
+        <tp:rationale>
+          <p>We could have added a whole separate interface for this, but it
+            seemed like a waste of time; in protocols not supporting DTMF,
+            this property is easy to implement as non-requestable, immutable
+            and readable with value "".</p>
+        </tp:rationale>
+
+        <p>This should only be used with InitialAudio=true,
+          and should only be requestable on protocols whose Call1
+          channels will implement <tp:dbus-ref
+            namespace="imt1.Call1">Content.Interface.DTMF1</tp:dbus-ref>.</p>
+
+        <p>This property is immutable (cannot change).</p>
+      </tp:docstring>
+    </property>
+
   </interface>
 </node>
 <!-- vim:set sw=2 sts=2 et ft=xml: -->

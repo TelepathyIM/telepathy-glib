@@ -33,7 +33,6 @@ EXTRA_DIST = \
     Channel_Interface_Chat_State1.xml \
     Channel_Interface_Conference1.xml \
     Channel_Interface_Credentials_Storage1.xml \
-    Channel_Interface_DTMF1.xml \
     Channel_Interface_Destroyable1.xml \
     Channel_Interface_File_Transfer_Metadata1.xml \
     Channel_Interface_Group1.xml \
