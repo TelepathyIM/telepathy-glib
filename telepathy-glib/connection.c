@@ -570,8 +570,7 @@ _tp_connection_do_get_capabilities_async (TpConnection *self,
           /* We don't check whether we actually have this interface here.
            * The Requests interface is mandatory, and we assume we have it. */
           tp_cli_dbus_properties_call_get (self, -1,
-            TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
-              "RequestableChannelClasses",
+            TP_IFACE_CONNECTION, "RequestableChannelClasses",
             tp_connection_get_rcc_cb, NULL, NULL, NULL);
         }
     }

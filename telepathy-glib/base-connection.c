@@ -273,6 +273,7 @@ enum
     PROP_SELF_HANDLE,
     PROP_SELF_ID,
     PROP_INTERFACES,
+    PROP_REQUESTABLE_CHANNEL_CLASSES,
     PROP_DBUS_STATUS,
     PROP_DBUS_DAEMON,
     N_PROPS
@@ -444,6 +445,8 @@ tp_base_connection_ensure_dbus (TpBaseConnection *self,
   return TRUE;
 }
 
+static GPtrArray * conn_requests_get_requestables (TpBaseConnection *self);
+
 static void
 tp_base_connection_get_property (GObject *object,
                                  guint property_id,
@@ -469,6 +472,10 @@ tp_base_connection_get_property (GObject *object,
 
     case PROP_INTERFACES:
       g_value_set_boxed (value, tp_base_connection_get_interfaces (self));
+      break;
+
+    case PROP_REQUESTABLE_CHANNEL_CLASSES:
+      g_value_take_boxed (value, conn_requests_get_requestables (self));
       break;
 
     case PROP_DBUS_STATUS:
@@ -1079,10 +1086,6 @@ conn_requests_get_dbus_property (GObject *object,
     {
       g_value_take_boxed (value, conn_requests_get_channel_details (self));
     }
-  else if (name == g_quark_from_static_string ("RequestableChannelClasses"))
-    {
-      g_value_take_boxed (value, conn_requests_get_requestables (self));
-    }
   else
     {
       g_return_if_reached ();
@@ -1156,11 +1159,11 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
       { "SelfID", "self-id", NULL },
       { "Status", "dbus-status", NULL },
       { "Interfaces", "interfaces", NULL },
+      { "RequestableChannelClasses", "requestable-channel-classes", NULL },
       { NULL }
   };
   static TpDBusPropertiesMixinPropImpl requests_properties[] = {
         { "Channels", NULL, NULL },
-        { "RequestableChannelClasses", NULL, NULL },
         { NULL }
   };
   GParamSpec *param_spec;
@@ -1235,6 +1238,19 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
       G_TYPE_STRV,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_INTERFACES, param_spec);
+
+  /**
+   * TpBaseConnection:requestable-channel-classes: (skip)
+   *
+   * The classes of channel that are expected to be available on this connection
+   */
+  param_spec = g_param_spec_boxed ("requestable-channel-classes",
+      "Connection.RequestableChannelClasses",
+      "Connection.RequestableChannelClasses",
+      TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class,
+      PROP_REQUESTABLE_CHANNEL_CLASSES, param_spec);
 
   /**
    * TpBaseConnection:dbus-status: (skip)

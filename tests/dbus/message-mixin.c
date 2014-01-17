@@ -205,7 +205,7 @@ main (int argc,
 
       /* check that it has the requestable channel class */
       tp_cli_dbus_properties_run_get_all (conn, -1,
-          TP_IFACE_CONNECTION_INTERFACE_REQUESTS, &properties, &error, NULL);
+          TP_IFACE_CONNECTION, &properties, &error, NULL);
       g_assert_no_error (error);
 
       arr = tp_asv_get_boxed (properties, "RequestableChannelClasses",
