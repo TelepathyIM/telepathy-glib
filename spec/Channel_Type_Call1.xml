@@ -155,12 +155,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
       <p>When an incoming call occurs, something like the following
         <tp:dbus-ref
-        namespace="imt1.Connection.Interface.Requests">NewChannels</tp:dbus-ref>
+        namespace="imt1.Connection.Interface.Requests">NewChannel</tp:dbus-ref>
         signal will occur:</p>
 
       <blockquote>
         <pre>
-<tp:dbus-ref namespace="imt1.Connection.Interface.Requests">NewChannels</tp:dbus-ref>([
+<tp:dbus-ref namespace="imt1.Connection.Interface.Requests">NewChannel</tp:dbus-ref>(
   /im/telepathy/v1/Connection/foo/bar/foo_40bar_2ecom/CallChannel,
   {
     ...<tp:dbus-ref namespace="imt1.Channel">ChannelType</tp:dbus-ref>: ...<tp:dbus-ref
@@ -174,7 +174,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
     ...<tp:member-ref>InitialAudioName</tp:member-ref>: "audio",
     ...<tp:member-ref>InitialVideoName</tp:member-ref>: "video",
     ...<tp:member-ref>MutableContents</tp:member-ref>: True,
-  }])</pre></blockquote>
+  })</pre></blockquote>
 
       <p>The <tp:member-ref>InitialAudio</tp:member-ref> and
         <tp:member-ref>InitialVideo</tp:member-ref> properties show that

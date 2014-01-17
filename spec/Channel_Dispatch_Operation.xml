@@ -36,50 +36,29 @@
         from outgoing requests for channels.</p>
 
       <p>More specifically, whenever the <tp:dbus-ref
-        namespace="im.telepathy.v1">Connection.Interface.Requests.NewChannels</tp:dbus-ref>
-        signal contains channels whose <tp:dbus-ref
+        namespace="im.telepathy.v1">Connection.Interface.Requests.NewChannel</tp:dbus-ref>
+        signal contains a channel whose <tp:dbus-ref
         namespace="im.telepathy.v1.Channel">Requested</tp:dbus-ref>
-        property is false, one or more ChannelDispatchOperation
-        objects are created for those channels.</p>
-
-      <p>(If some channels in a NewChannels signal are in different bundles,
-        this is an error. The channel dispatcher SHOULD recover by treating
-        the NewChannels signal as if it had been several NewChannels signals
-        each containing one channel.)</p>
-
-      <p>First, the channel dispatcher SHOULD construct a list of all the
-        <tp:dbus-ref
-          namespace="im.telepathy.v1.Client">Handler</tp:dbus-ref>s
-        that could handle all the channels (based on their <tp:dbus-ref
-          namespace="im.telepathy.v1.Client.Handler">HandlerChannelFilter</tp:dbus-ref>
-        property), ordered by
-        priority in some implementation-dependent way. If there are handlers
-        which could handle all the channels, one channel dispatch operation
-        SHOULD be created for all the channels. If there are not, one channel
-        dispatch operation SHOULD be created for each channel, each with
-        a list of channel handlers that could handle that channel.</p>
+        property is false, a ChannelDispatchOperation
+        object is created for that channel.</p>
 
       <p>If no handler at all can handle a channel, the channel dispatcher
         SHOULD terminate that channel instead of creating a channel dispatcher
         for it. It is RECOMMENDED that the channel dispatcher closes
-        the channels using <tp:dbus-ref
+        the channel using <tp:dbus-ref
           namespace="im.telepathy.v1">Channel.Interface.Destroyable1.Destroy</tp:dbus-ref>
         if supported, or <tp:dbus-ref
           namespace="im.telepathy.v1">Channel.Close</tp:dbus-ref>
         otherwise.</p>
 
-      <p>When listing channel handlers, priority SHOULD be given to
-        channel handlers that are already handling channels from the same
-        bundle.</p>
-
       <p>If a handler with <tp:dbus-ref
           namespace="im.telepathy.v1.Client.Handler">BypassApproval</tp:dbus-ref>
-        <code>= True</code> could handle all of the channels in the dispatch
+        <code>= True</code> could handle the channel in the dispatch
         operation, then the channel dispatcher SHOULD call <tp:dbus-ref
           namespace="im.telepathy.v1.Client.Handler">HandleChannel</tp:dbus-ref>
         on that handler, and (assuming the call succeeds) emit
-        <tp:member-ref>Finished</tp:member-ref> and stop processing those
-        channels without involving any approvers.</p>
+        <tp:member-ref>Finished</tp:member-ref> and stop processing that
+        channel without involving any approvers.</p>
 
       <tp:rationale>
         <p>Some channel types can be picked up "quietly" by an existing
@@ -95,14 +74,14 @@
 
       <p>Otherwise, the channel dispatcher SHOULD send the channel dispatch
         operation to all relevant approvers (in parallel) and wait for an
-        approver to claim the channels or request that they are handled.
+        approver to claim the channel or request that it is handled.
         See
         <tp:dbus-ref
           namespace="im.telepathy.v1.Client.Approver">AddDispatchOperation</tp:dbus-ref>
         for more details on this.</p>
 
       <p>Finally, if the approver requested it, the channel dispatcher SHOULD
-        send the channels to a handler.</p>
+        send the channel to a handler.</p>
     </tp:docstring>
 
     <property name="Interfaces" tp:name-for-bindings="Interfaces"

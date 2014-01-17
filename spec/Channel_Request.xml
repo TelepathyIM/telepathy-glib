@@ -323,7 +323,7 @@
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>The same immutable properties of the Channel that would appear
             in a <tp:dbus-ref namespace="imt1.Connection.Interface.Requests"
-              >NewChannels</tp:dbus-ref> signal.</p>
+              >NewChannel</tp:dbus-ref> signal.</p>
         </tp:docstring>
       </arg>
 

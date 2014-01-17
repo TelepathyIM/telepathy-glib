@@ -296,7 +296,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
         <tp:rationale>
           It can be in the <tp:dbus-ref
-            namespace="im.telepathy.v1.Connection.Interface.Requests">NewChannels</tp:dbus-ref>
+            namespace="im.telepathy.v1.Connection.Interface.Requests">NewChannel</tp:dbus-ref>
           signal for round-trip reduction.
         </tp:rationale>
       </tp:docstring>

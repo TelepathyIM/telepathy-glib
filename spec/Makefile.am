@@ -3,10 +3,8 @@ EXTRA_DIST = \
     Account_Interface_Addressing1.xml \
     Account_Interface_Avatar1.xml \
     Account_Interface_External_Password_Storage1.xml \
-    Account_Interface_Hidden1.xml \
     Account_Interface_Storage1.xml \
     Account_Manager.xml \
-    Account_Manager_Interface_Hidden1.xml \
     Authentication_TLS_Certificate.xml \
     Call1_Content.xml \
     Call1_Content_Interface_Audio_Control1.xml \

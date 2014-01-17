@@ -259,11 +259,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </p>
  </tp:docstring>
  <xi:include href="Account_Manager.xml"/>
- <xi:include href="Account_Manager_Interface_Hidden1.xml"/>
  <xi:include href="Account.xml"/>
  <xi:include href="Account_Interface_Addressing1.xml"/>
  <xi:include href="Account_Interface_Avatar1.xml"/>
- <xi:include href="Account_Interface_Hidden1.xml"/>
  <xi:include href="Account_Interface_Storage1.xml"/>
  <xi:include href="Account_Interface_External_Password_Storage1.xml"/>
 </tp:section>

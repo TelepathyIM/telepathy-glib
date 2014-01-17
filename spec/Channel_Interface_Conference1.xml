@@ -478,12 +478,12 @@
           to the InitialInviteeIDs, and the target handles of the
           InitialChannels, with any duplicate handles removed. Because this
           property is immutable, its value SHOULD be computed before the
-          channel is announced via the NewChannels signal.</p>
+          channel is announced via the NewChannel signal.</p>
 
         <tp:rationale>
           <p>This simplifies identification of new channels in clients - they
             only have to look at one of the properties, not both. For example,
-            after either of the requests mentioned above, the NewChannels
+            after either of the requests mentioned above, the NewChannel
             signal would announce the channel with InitialChannels=[C1],
             InitialInviteeHandles=[rob, sjoerd], and
             InitialInviteeIDs=["rob@example.net", "sjoerd.example.com"].</p>
