@@ -32,7 +32,7 @@
 #include <telepathy-glib/add-dispatch-operation-context.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/handle-channels-context.h>
-#include <telepathy-glib/observe-channels-context.h>
+#include <telepathy-glib/observe-channel-context.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
@@ -56,7 +56,7 @@ typedef void (*TpBaseClientClassObserveChannelsImpl) (
     GList *channels,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
-    TpObserveChannelsContext *context);
+    TpObserveChannelContext *context);
 
 typedef void (*TpBaseClientClassAddDispatchOperationImpl) (
     TpBaseClient *client,

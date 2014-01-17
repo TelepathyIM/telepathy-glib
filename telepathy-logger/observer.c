@@ -91,7 +91,7 @@ typedef struct
 {
   TplObserver *self;
   guint chan_n;
-  TpObserveChannelsContext *ctx;
+  TpObserveChannelContext *ctx;
 } ObservingContext;
 
 static TplObserver *observer_singleton = NULL;
@@ -111,7 +111,7 @@ tpl_observer_observe_channels (TpBaseClient *client,
     GList *channels,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
-    TpObserveChannelsContext *context)
+    TpObserveChannelContext *context)
 {
   TplObserver *self = TPL_OBSERVER (client);
   GList *l;
@@ -119,7 +119,7 @@ tpl_observer_observe_channels (TpBaseClient *client,
   for (l = channels; l != NULL; l = g_list_next (l))
     _tpl_observer_register_channel (self, l->data);
 
-  tp_observe_channels_context_accept (context);
+  tp_observe_channel_context_accept (context);
 }
 
 static gboolean

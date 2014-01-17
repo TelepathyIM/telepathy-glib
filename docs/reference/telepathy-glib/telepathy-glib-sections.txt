@@ -4567,23 +4567,23 @@ TpBaseClientClassPrivate
 
 <SECTION>
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
-<FILE>observe-channels-context</FILE>
-<TITLE>observe-channels-context</TITLE>
-TpObserveChannelsContext
-tp_observe_channels_context_accept
-tp_observe_channels_context_delay
-tp_observe_channels_context_fail
-tp_observe_channels_context_is_recovering
-tp_observe_channels_context_get_requests
+<FILE>observe-channel-context</FILE>
+<TITLE>observe-channel-context</TITLE>
+TpObserveChannelContext
+tp_observe_channel_context_accept
+tp_observe_channel_context_delay
+tp_observe_channel_context_fail
+tp_observe_channel_context_is_recovering
+tp_observe_channel_context_get_requests
 <SUBSECTION Standard>
-tp_observe_channels_context_get_type
-TP_OBSERVE_CHANNELS_CONTEXT
-TP_OBSERVE_CHANNELS_CONTEXT_CLASS
-TP_OBSERVE_CHANNELS_CONTEXT_GET_CLASS
+tp_observe_channel_context_get_type
+TP_OBSERVE_CHANNEL_CONTEXT
+TP_OBSERVE_CHANNEL_CONTEXT_CLASS
+TP_OBSERVE_CHANNEL_CONTEXT_GET_CLASS
 TP_IS_OBSERVE_CHANNELS_CONTEXT
 TP_IS_OBSERVE_CHANNELS_CONTEXT_CLASS
-TpObserveChannelsContextClass
-TpObserveChannelsContextPrivate
+TpObserveChannelContextClass
+TpObserveChannelContextPrivate
 </SECTION>
 
 <SECTION>

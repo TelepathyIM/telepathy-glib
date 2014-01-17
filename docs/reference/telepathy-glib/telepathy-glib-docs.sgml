@@ -88,7 +88,7 @@
     <xi:include href="xml/base-password-channel.xml"/>
     <xi:include href="xml/simple-password-manager.xml"/>
     <xi:include href="xml/base-client.xml"/>
-    <xi:include href="xml/observe-channels-context.xml"/>
+    <xi:include href="xml/observe-channel-context.xml"/>
     <xi:include href="xml/add-dispatch-operation-context.xml"/>
     <xi:include href="xml/handle-channels-context.xml"/>
     <xi:include href="xml/simple-observer.xml"/>

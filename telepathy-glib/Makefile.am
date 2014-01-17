@@ -109,7 +109,7 @@ tpginclude_HEADERS = \
     intset.h \
     message.h \
     message-mixin.h \
-    observe-channels-context.h \
+    observe-channel-context.h \
     presence-mixin.h \
     protocol.h \
     proxy.h \
@@ -305,8 +305,8 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     message.c \
     message-internal.h \
     message-mixin.c \
-    observe-channels-context-internal.h \
-    observe-channels-context.c \
+    observe-channel-context-internal.h \
+    observe-channel-context.c \
     presence-mixin.c \
     protocol.c \
     protocol-internal.h \

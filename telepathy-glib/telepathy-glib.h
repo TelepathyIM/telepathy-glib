@@ -92,7 +92,7 @@
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/message.h>
 #include <telepathy-glib/message-mixin.h>
-#include <telepathy-glib/observe-channels-context.h>
+#include <telepathy-glib/observe-channel-context.h>
 #include <telepathy-glib/presence-mixin.h>
 #include <telepathy-glib/protocol.h>
 #include <telepathy-glib/proxy.h>

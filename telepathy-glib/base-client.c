@@ -80,13 +80,13 @@
  * @requests: (element-type TelepathyGLib.ChannelRequest): a #GList of
  *  #TpChannelRequest having their object-path defined but are not guaranteed
  *  to be prepared.
- * @context: a #TpObserveChannelsContext representing the context of this
+ * @context: a #TpObserveChannelContext representing the context of this
  *  D-Bus call
  *
  * Signature of the implementation of the ObserveChannels method.
  *
- * This function must call either tp_observe_channels_context_accept(),
- * tp_observe_channels_context_delay() or tp_observe_channels_context_fail()
+ * This function must call either tp_observe_channel_context_accept(),
+ * tp_observe_channel_context_delay() or tp_observe_channel_context_fail()
  * on @context before it returns.
  *
  * Since: 0.11.5
@@ -106,7 +106,7 @@
  *  tp_client_factory_add_channel_features(), prepared if possible
  * @dispatch_operation: a #TpChannelDispatchOperation having
  * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE prepared if possible
- * @context: a #TpObserveChannelsContext representing the context of this
+ * @context: a #TpObserveChannelContext representing the context of this
  *  D-Bus call
  *
  * Signature of the implementation of the AddDispatchOperation method.
@@ -188,7 +188,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/handle-channels-context-internal.h>
 #include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/observe-channels-context-internal.h>
+#include <telepathy-glib/observe-channel-context-internal.h>
 #include <telepathy-glib/svc-client.h>
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/util.h>
@@ -481,7 +481,7 @@ tp_base_client_set_observer_recover (TpBaseClient *self,
  * @delay: the value of the Observer.DelayApprovers property
  *
  * Set whether the channel dispatcher should wait for
- * tp_observe_channels_context_accept() or tp_observe_channels_context_fail()
+ * tp_observe_channel_context_accept() or tp_observe_channel_context_fail()
  * to be called before calling
  * #TpBaseClientClass.add_dispatch_operation on appropriate Approvers.
  *
@@ -1524,14 +1524,14 @@ context_prepare_cb (GObject *source,
 {
   TpBaseClient *self = user_data;
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
-  TpObserveChannelsContext *ctx = TP_OBSERVE_CHANNELS_CONTEXT (source);
+  TpObserveChannelContext *ctx = TP_OBSERVE_CHANNEL_CONTEXT (source);
   GError *error = NULL;
   GList *channels_list, *requests_list;
 
-  if (!_tp_observe_channels_context_prepare_finish (ctx, result, &error))
+  if (!_tp_observe_channel_context_prepare_finish (ctx, result, &error))
     {
-      DEBUG ("Failed to prepare TpObserveChannelsContext: %s", error->message);
-      tp_observe_channels_context_fail (ctx, error);
+      DEBUG ("Failed to prepare TpObserveChannelContext: %s", error->message);
+      tp_observe_channel_context_fail (ctx, error);
       g_error_free (error);
       return;
     }
@@ -1545,17 +1545,17 @@ context_prepare_cb (GObject *source,
   g_list_free (channels_list);
   g_list_free (requests_list);
 
-  if (_tp_observe_channels_context_get_state (ctx) ==
-      TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE)
+  if (_tp_observe_channel_context_get_state (ctx) ==
+      TP_OBSERVE_CHANNEL_CONTEXT_STATE_NONE)
     {
       error = g_error_new (TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
           "Implementation of ObserveChannels in %s didn't call "
-          "tp_observe_channels_context_{accept,fail,delay}",
+          "tp_observe_channel_context_{accept,fail,delay}",
           G_OBJECT_TYPE_NAME (self));
 
       CRITICAL ("%s", error->message);
 
-      tp_observe_channels_context_fail (ctx, error);
+      tp_observe_channel_context_fail (ctx, error);
       g_error_free (error);
     }
 }
@@ -1718,7 +1718,7 @@ _tp_base_client_observe_channel (TpSvcClientObserver *iface,
     DBusGMethodInvocation *context)
 {
   TpBaseClient *self = TP_BASE_CLIENT (iface);
-  TpObserveChannelsContext *ctx;
+  TpObserveChannelContext *ctx;
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
   GError *error = NULL;
   TpAccount *account = NULL;
@@ -1797,14 +1797,14 @@ _tp_base_client_observe_channel (TpSvcClientObserver *iface,
       g_ptr_array_add (requests, request);
     }
 
-  ctx = _tp_observe_channels_context_new (account, connection, channels,
+  ctx = _tp_observe_channel_context_new (account, connection, channels,
       dispatch_operation, requests, observer_info, context);
 
   account_features = dup_features_for_account (self, account);
   connection_features = dup_features_for_connection (self, connection);
   channel_features = dup_features_for_channel (self, channel);
 
-  _tp_observe_channels_context_prepare_async (ctx,
+  _tp_observe_channel_context_prepare_async (ctx,
       (GQuark *) account_features->data,
       (GQuark *) connection_features->data,
       (GQuark *) channel_features->data,

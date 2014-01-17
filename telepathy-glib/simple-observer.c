@@ -36,12 +36,12 @@
  *    GList *channels,
  *    TpChannelDispatchOperation *dispatch_operation,
  *    GList *requests,
- *    TpObserveChannelsContext *context,
+ *    TpObserveChannelContext *context,
  *    gpointer user_data)
  * {
  *  /<!-- -->* do something useful with the channels here *<!-- -->/
  *
- *  tp_observe_channels_context_accept (context);
+ *  tp_observe_channel_context_accept (context);
  * }
  *
  * client = tp_simple_observer_new (NULL, TRUE, "MyObserver",
@@ -87,14 +87,14 @@
  * @requests: (element-type TelepathyGLib.ChannelRequest): a #GList of
  *  #TpChannelRequest, all having their object-path defined but are not
  *  guaranteed to be prepared.
- * @context: a #TpObserveChannelsContext representing the context of this
+ * @context: a #TpObserveChannelContext representing the context of this
  *  D-Bus call
  * @user_data: arbitrary user-supplied data passed to tp_simple_observer_new()
  *
  * Signature of the implementation of the ObserveChannels method.
  *
- * This function must call either tp_observe_channels_context_accept(),
- * tp_observe_channels_context_delay() or tp_observe_channels_context_fail()
+ * This function must call either tp_observe_channel_context_accept(),
+ * tp_observe_channel_context_delay() or tp_observe_channel_context_fail()
  * on @context before it returns.
  *
  * Since: 0.11.5
@@ -202,7 +202,7 @@ observe_channels (
     GList *channels,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
-    TpObserveChannelsContext *context)
+    TpObserveChannelContext *context)
 {
   TpSimpleObserver *self = TP_SIMPLE_OBSERVER (client);
 

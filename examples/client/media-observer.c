@@ -35,13 +35,13 @@ observe_channels_cb (TpSimpleObserver *self,
     GList *channels,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
-    TpObserveChannelsContext *context,
+    TpObserveChannelContext *context,
     gpointer user_data)
 {
   GList *l;
   gboolean recovering;
 
-  recovering = tp_observe_channels_context_is_recovering (context);
+  recovering = tp_observe_channel_context_is_recovering (context);
 
   for (l = channels; l != NULL; l = g_list_next (l))
     {
@@ -66,7 +66,7 @@ observe_channels_cb (TpSimpleObserver *self,
           G_CALLBACK (chan_invalidated_cb), NULL);
     }
 
-  tp_observe_channels_context_accept (context);
+  tp_observe_channel_context_accept (context);
 }
 
 int

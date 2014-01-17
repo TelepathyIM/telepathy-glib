@@ -22,48 +22,48 @@
 #error "Only <telepathy-glib/telepathy-glib.h> can be included directly."
 #endif
 
-#ifndef __TP_OBSERVE_CHANNELS_CONTEXT_H__
-#define __TP_OBSERVE_CHANNELS_CONTEXT_H__
+#ifndef __TP_OBSERVE_CHANNEL_CONTEXT_H__
+#define __TP_OBSERVE_CHANNEL_CONTEXT_H__
 
 #include <gio/gio.h>
 #include <glib-object.h>
 
 G_BEGIN_DECLS
 
-typedef struct _TpObserveChannelsContext TpObserveChannelsContext;
-typedef struct _TpObserveChannelsContextClass TpObserveChannelsContextClass;
-typedef struct _TpObserveChannelsContextPrivate TpObserveChannelsContextPrivate;
+typedef struct _TpObserveChannelContext TpObserveChannelContext;
+typedef struct _TpObserveChannelContextClass TpObserveChannelContextClass;
+typedef struct _TpObserveChannelContextPrivate TpObserveChannelContextPrivate;
 
-GType tp_observe_channels_context_get_type (void);
+GType tp_observe_channel_context_get_type (void);
 
 #define TP_TYPE_OBSERVE_CHANNELS_CONTEXT \
-  (tp_observe_channels_context_get_type ())
-#define TP_OBSERVE_CHANNELS_CONTEXT(obj) \
+  (tp_observe_channel_context_get_type ())
+#define TP_OBSERVE_CHANNEL_CONTEXT(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_OBSERVE_CHANNELS_CONTEXT, \
-                               TpObserveChannelsContext))
-#define TP_OBSERVE_CHANNELS_CONTEXT_CLASS(klass) \
+                               TpObserveChannelContext))
+#define TP_OBSERVE_CHANNEL_CONTEXT_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_CAST ((klass), TP_TYPE_OBSERVE_CHANNELS_CONTEXT, \
-                            TpObserveChannelsContextClass))
+                            TpObserveChannelContextClass))
 #define TP_IS_OBSERVE_CHANNELS_CONTEXT(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TYPE_OBSERVE_CHANNELS_CONTEXT))
 #define TP_IS_OBSERVE_CHANNELS_CONTEXT_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_TYPE ((klass), TP_TYPE_OBSERVE_CHANNELS_CONTEXT))
-#define TP_OBSERVE_CHANNELS_CONTEXT_GET_CLASS(obj) \
+#define TP_OBSERVE_CHANNEL_CONTEXT_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_OBSERVE_CHANNELS_CONTEXT, \
-                              TpObserveChannelsContextClass))
+                              TpObserveChannelContextClass))
 
-void tp_observe_channels_context_accept (TpObserveChannelsContext *self);
+void tp_observe_channel_context_accept (TpObserveChannelContext *self);
 
-void tp_observe_channels_context_fail (TpObserveChannelsContext *self,
+void tp_observe_channel_context_fail (TpObserveChannelContext *self,
     const GError *error);
 
-void tp_observe_channels_context_delay (TpObserveChannelsContext *self);
+void tp_observe_channel_context_delay (TpObserveChannelContext *self);
 
-gboolean tp_observe_channels_context_is_recovering (
-    TpObserveChannelsContext *self);
+gboolean tp_observe_channel_context_is_recovering (
+    TpObserveChannelContext *self);
 
-GList * tp_observe_channels_context_get_requests (
-    TpObserveChannelsContext *self);
+GList * tp_observe_channel_context_get_requests (
+    TpObserveChannelContext *self);
 
 G_END_DECLS
 

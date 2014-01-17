@@ -55,7 +55,7 @@ TelepathyGLib_1_gir_FILES = \
 	$(srcdir)/presence-mixin.c $(srcdir)/presence-mixin.h \
 	$(srcdir)/channel-dispatch-operation.c $(srcdir)/channel-dispatch-operation.h \
 	$(srcdir)/channel-request.c $(srcdir)/channel-request.h \
-	$(srcdir)/observe-channels-context.c $(srcdir)/observe-channels-context.h \
+	$(srcdir)/observe-channel-context.c $(srcdir)/observe-channel-context.h \
 	$(srcdir)/add-dispatch-operation-context.c $(srcdir)/add-dispatch-operation-context.h \
 	$(srcdir)/protocol.c $(srcdir)/protocol.h \
 	$(srcdir)/base-connection.c $(srcdir)/base-connection.h \

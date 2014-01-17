@@ -21,7 +21,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/handle-channels-context-internal.h>
 #include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/observe-channels-context-internal.h>
+#include <telepathy-glib/observe-channel-context-internal.h>
 #include <telepathy-glib/proxy-subclass.h>
 
 #include "tests/lib/util.h"
@@ -532,7 +532,7 @@ test_observer (Test *test,
   g_assert_no_error (test->error);
 
   g_assert (test->simple_client->observe_ctx != NULL);
-  g_assert (tp_observe_channels_context_is_recovering (
+  g_assert (tp_observe_channel_context_is_recovering (
         test->simple_client->observe_ctx));
 
   g_assert (test->simple_client->observe_ctx->account == test->account);

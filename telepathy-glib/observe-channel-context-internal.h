@@ -19,29 +19,29 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __TP_OBSERVE_CHANNELS_CONTEXT_INTERNAL_H__
-#define __TP_OBSERVE_CHANNELS_CONTEXT_INTERNAL_H__
+#ifndef __TP_OBSERVE_CHANNEL_CONTEXT_INTERNAL_H__
+#define __TP_OBSERVE_CHANNEL_CONTEXT_INTERNAL_H__
 
 #include <dbus/dbus-glib.h>
 
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/channel-dispatch-operation.h>
-#include <telepathy-glib/observe-channels-context.h>
+#include <telepathy-glib/observe-channel-context.h>
 
 G_BEGIN_DECLS
 
 typedef enum
 {
-  TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE,
-  TP_OBSERVE_CHANNELS_CONTEXT_STATE_DONE,
-  TP_OBSERVE_CHANNELS_CONTEXT_STATE_FAILED,
-  TP_OBSERVE_CHANNELS_CONTEXT_STATE_DELAYED,
-} TpObserveChannelsContextState;
+  TP_OBSERVE_CHANNEL_CONTEXT_STATE_NONE,
+  TP_OBSERVE_CHANNEL_CONTEXT_STATE_DONE,
+  TP_OBSERVE_CHANNEL_CONTEXT_STATE_FAILED,
+  TP_OBSERVE_CHANNEL_CONTEXT_STATE_DELAYED,
+} TpObserveChannelContextState;
 
-struct _TpObserveChannelsContext {
+struct _TpObserveChannelContext {
   /*<private>*/
   GObject parent;
-  TpObserveChannelsContextPrivate *priv;
+  TpObserveChannelContextPrivate *priv;
 
   TpAccount *account;
   TpConnection *connection;
@@ -54,7 +54,7 @@ struct _TpObserveChannelsContext {
   GHashTable *observer_info;
 };
 
-TpObserveChannelsContext * _tp_observe_channels_context_new (
+TpObserveChannelContext * _tp_observe_channel_context_new (
     TpAccount *account,
     TpConnection *connection,
     GPtrArray *channels,
@@ -63,18 +63,18 @@ TpObserveChannelsContext * _tp_observe_channels_context_new (
     GHashTable *observer_info,
     DBusGMethodInvocation *dbus_context);
 
-TpObserveChannelsContextState _tp_observe_channels_context_get_state (
-    TpObserveChannelsContext *self);
+TpObserveChannelContextState _tp_observe_channel_context_get_state (
+    TpObserveChannelContext *self);
 
-void _tp_observe_channels_context_prepare_async (TpObserveChannelsContext *self,
+void _tp_observe_channel_context_prepare_async (TpObserveChannelContext *self,
     const GQuark *account_features,
     const GQuark *connection_features,
     const GQuark *channel_features,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean _tp_observe_channels_context_prepare_finish (
-    TpObserveChannelsContext *self,
+gboolean _tp_observe_channel_context_prepare_finish (
+    TpObserveChannelContext *self,
     GAsyncResult *result,
     GError **error);
 

@@ -255,10 +255,10 @@ observe_channels_success (
     GList *channels,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
-    TpObserveChannelsContext *context,
+    TpObserveChannelContext *context,
     gpointer user_data)
 {
-  tp_observe_channels_context_accept (context);
+  tp_observe_channel_context_accept (context);
 }
 
 static void
@@ -365,9 +365,9 @@ test_success (Test *test,
 static gboolean
 accept_idle_cb (gpointer data)
 {
-  TpObserveChannelsContext *context = data;
+  TpObserveChannelContext *context = data;
 
-  tp_observe_channels_context_accept (context);
+  tp_observe_channel_context_accept (context);
   g_object_unref (context);
   return FALSE;
 }
@@ -380,12 +380,12 @@ observe_channels_async (
     GList *channels,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
-    TpObserveChannelsContext *context,
+    TpObserveChannelContext *context,
     gpointer user_data)
 {
   g_idle_add (accept_idle_cb, g_object_ref (context));
 
-  tp_observe_channels_context_delay (context);
+  tp_observe_channel_context_delay (context);
 }
 
 static void
@@ -413,13 +413,13 @@ observe_channels_fail (
     GList *channels,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
-    TpObserveChannelsContext *context,
+    TpObserveChannelContext *context,
     gpointer user_data)
 {
   GError error = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
       "No ObserveChannels for you!" };
 
-  tp_observe_channels_context_fail (context, &error);
+  tp_observe_channel_context_fail (context, &error);
 }
 
 static void

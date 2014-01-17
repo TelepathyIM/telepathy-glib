@@ -26,7 +26,7 @@ struct _TpTestsSimpleClientClass {
 struct _TpTestsSimpleClient {
     TpBaseClient parent;
 
-    TpObserveChannelsContext *observe_ctx;
+    TpObserveChannelContext *observe_ctx;
     TpAddDispatchOperationContext *add_dispatch_ctx;
     TpHandleChannelsContext *handle_channels_ctx;
 };

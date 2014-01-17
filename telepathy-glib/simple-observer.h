@@ -75,7 +75,7 @@ typedef void (*TpSimpleObserverObserveChannelsImpl) (
     GList *channels,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
-    TpObserveChannelsContext *context,
+    TpObserveChannelContext *context,
     gpointer user_data);
 
 TpBaseClient * tp_simple_observer_new (TpClientFactory *factory,

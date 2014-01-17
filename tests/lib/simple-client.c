@@ -31,7 +31,7 @@ simple_observe_channels (
     GList *channels,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
-    TpObserveChannelsContext *context)
+    TpObserveChannelContext *context)
 {
   TpTestsSimpleClient *self = TP_TESTS_SIMPLE_CLIENT (client);
   GHashTable *info;
@@ -54,7 +54,7 @@ simple_observe_channels (
       GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "No observation for you!" };
 
-      tp_observe_channels_context_fail (context, &error);
+      tp_observe_channel_context_fail (context, &error);
       return;
     }
 
@@ -85,7 +85,7 @@ simple_observe_channels (
     }
 
   self->observe_ctx = g_object_ref (context);
-  tp_observe_channels_context_accept (context);
+  tp_observe_channel_context_accept (context);
 }
 
 static void

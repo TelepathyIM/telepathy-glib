@@ -19,8 +19,8 @@
  */
 
 /**
- * SECTION:observe-channels-context
- * @title: TpObserveChannelsContext
+ * SECTION:observe-channel-context
+ * @title: TpObserveChannelContext
  * @short_description: context of a Observer.ObserveChannels() call
  *
  * Object used to represent the context of a Observer.ObserveChannels()
@@ -28,7 +28,7 @@
  */
 
 /**
- * TpObserveChannelsContext:
+ * TpObserveChannelContext:
  *
  * Data structure representing the context of a Observer.ObserveChannels()
  * call.
@@ -37,17 +37,17 @@
  */
 
 /**
- * TpObserveChannelsContextClass:
+ * TpObserveChannelContextClass:
  *
- * The class of a #TpObserveChannelsContext.
+ * The class of a #TpObserveChannelContext.
  *
  * Since: 0.11.5
  */
 
 #include "config.h"
 
-#include "telepathy-glib/observe-channels-context-internal.h"
-#include "telepathy-glib/observe-channels-context.h"
+#include "telepathy-glib/observe-channel-context-internal.h"
+#include "telepathy-glib/observe-channel-context.h"
 
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/channel-request.h>
@@ -58,12 +58,12 @@
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
 
-struct _TpObserveChannelsContextClass {
+struct _TpObserveChannelContextClass {
     /*<private>*/
     GObjectClass parent_class;
 };
 
-G_DEFINE_TYPE(TpObserveChannelsContext, tp_observe_channels_context,
+G_DEFINE_TYPE(TpObserveChannelContext, tp_observe_channel_context,
     G_TYPE_OBJECT)
 
 enum {
@@ -77,9 +77,9 @@ enum {
     N_PROPS
 };
 
-struct _TpObserveChannelsContextPrivate
+struct _TpObserveChannelContextPrivate
 {
-  TpObserveChannelsContextState state;
+  TpObserveChannelContextState state;
   GSimpleAsyncResult *result;
   DBusGMethodInvocation *dbus_context;
 
@@ -89,32 +89,32 @@ struct _TpObserveChannelsContextPrivate
 };
 
 static void
-tp_observe_channels_context_init (TpObserveChannelsContext *self)
+tp_observe_channel_context_init (TpObserveChannelContext *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TP_TYPE_OBSERVE_CHANNELS_CONTEXT, TpObserveChannelsContextPrivate);
+      TP_TYPE_OBSERVE_CHANNELS_CONTEXT, TpObserveChannelContextPrivate);
 
-  self->priv->state = TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE;
+  self->priv->state = TP_OBSERVE_CHANNEL_CONTEXT_STATE_NONE;
 }
 
 static void
-tp_observe_channels_context_dispose (GObject *object)
+tp_observe_channel_context_dispose (GObject *object)
 {
-  TpObserveChannelsContext *self = TP_OBSERVE_CHANNELS_CONTEXT (object);
+  TpObserveChannelContext *self = TP_OBSERVE_CHANNEL_CONTEXT (object);
   void (*dispose) (GObject *) =
-    G_OBJECT_CLASS (tp_observe_channels_context_parent_class)->dispose;
+    G_OBJECT_CLASS (tp_observe_channel_context_parent_class)->dispose;
 
-  if (self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE ||
-      self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_DELAYED)
+  if (self->priv->state == TP_OBSERVE_CHANNEL_CONTEXT_STATE_NONE ||
+      self->priv->state == TP_OBSERVE_CHANNEL_CONTEXT_STATE_DELAYED)
     {
       GError error = { TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
-          "Disposing the TpObserveChannelsContext" };
+          "Disposing the TpObserveChannelContext" };
 
       WARNING ("Disposing a context in the %s state",
-          self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE ?
+          self->priv->state == TP_OBSERVE_CHANNEL_CONTEXT_STATE_NONE ?
           "none": "delayed");
 
-      tp_observe_channels_context_fail (self, &error);
+      tp_observe_channel_context_fail (self, &error);
     }
 
   if (self->account != NULL)
@@ -165,12 +165,12 @@ tp_observe_channels_context_dispose (GObject *object)
 }
 
 static void
-tp_observe_channels_context_get_property (GObject *object,
+tp_observe_channel_context_get_property (GObject *object,
     guint property_id,
     GValue *value,
     GParamSpec *pspec)
 {
-  TpObserveChannelsContext *self = TP_OBSERVE_CHANNELS_CONTEXT (object);
+  TpObserveChannelContext *self = TP_OBSERVE_CHANNEL_CONTEXT (object);
 
   switch (property_id)
     {
@@ -199,12 +199,12 @@ tp_observe_channels_context_get_property (GObject *object,
 }
 
 static void
-tp_observe_channels_context_set_property (GObject *object,
+tp_observe_channel_context_set_property (GObject *object,
     guint property_id,
     const GValue *value,
     GParamSpec *pspec)
 {
-  TpObserveChannelsContext *self = TP_OBSERVE_CHANNELS_CONTEXT (object);
+  TpObserveChannelContext *self = TP_OBSERVE_CHANNEL_CONTEXT (object);
 
   switch (property_id)
     {
@@ -237,11 +237,11 @@ tp_observe_channels_context_set_property (GObject *object,
 }
 
 static void
-tp_observe_channels_context_constructed (GObject *object)
+tp_observe_channel_context_constructed (GObject *object)
 {
-  TpObserveChannelsContext *self = TP_OBSERVE_CHANNELS_CONTEXT (object);
+  TpObserveChannelContext *self = TP_OBSERVE_CHANNEL_CONTEXT (object);
   void (*chain_up) (GObject *) =
-    ((GObjectClass *) tp_observe_channels_context_parent_class)->constructed;
+    ((GObjectClass *) tp_observe_channel_context_parent_class)->constructed;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -257,20 +257,20 @@ tp_observe_channels_context_constructed (GObject *object)
 }
 
 static void
-tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
+tp_observe_channel_context_class_init (TpObserveChannelContextClass *cls)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (cls);
   GParamSpec *param_spec;
 
-  g_type_class_add_private (cls, sizeof (TpObserveChannelsContextPrivate));
+  g_type_class_add_private (cls, sizeof (TpObserveChannelContextPrivate));
 
-  object_class->get_property = tp_observe_channels_context_get_property;
-  object_class->set_property = tp_observe_channels_context_set_property;
-  object_class->constructed = tp_observe_channels_context_constructed;
-  object_class->dispose = tp_observe_channels_context_dispose;
+  object_class->get_property = tp_observe_channel_context_get_property;
+  object_class->set_property = tp_observe_channel_context_set_property;
+  object_class->constructed = tp_observe_channel_context_constructed;
+  object_class->dispose = tp_observe_channel_context_dispose;
 
   /**
-   * TpObserveChannelsContext:account:
+   * TpObserveChannelContext:account:
    *
    * A #TpAccount object representing the Account that has been passed to
    * ObserveChannels.
@@ -288,7 +288,7 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
       param_spec);
 
   /**
-   * TpObserveChannelsContext:connection:
+   * TpObserveChannelContext:connection:
    *
    * A #TpConnection object representing the Connection that has been passed
    * to ObserveChannels.
@@ -306,7 +306,7 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
       param_spec);
 
   /**
-   * TpObserveChannelsContext:channels:
+   * TpObserveChannelContext:channels:
    *
    * A #GPtrArray containing #TpChannel objects representing the channels
    * that have been passed to ObserveChannels.
@@ -324,7 +324,7 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
       param_spec);
 
   /**
-   * TpObserveChannelsContext:dispatch-operation:
+   * TpObserveChannelContext:dispatch-operation:
    *
    * A #TpChannelDispatchOperation object representing the
    * ChannelDispatchOperation that has been passed to ObserveChannels,
@@ -342,7 +342,7 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
       param_spec);
 
   /**
-   * TpObserveChannelsContext:requests:
+   * TpObserveChannelContext:requests:
    *
    * A #GPtrArray containing #TpChannelRequest objects representing the
    * requests that have been passed to ObserveChannels.
@@ -360,7 +360,7 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
       param_spec);
 
   /**
-   * TpObserveChannelsContext:dbus-context: (skip)
+   * TpObserveChannelContext:dbus-context: (skip)
    *
    * The #DBusGMethodInvocation representing the D-Bus context of the
    * ObserveChannels call.
@@ -375,13 +375,13 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
       param_spec);
 
   /**
-   * TpObserveChannelsContext:observer-info:
+   * TpObserveChannelContext:observer-info:
    *
    * A #GHashTable where the keys are string and values are GValue instances.
    * It represents the Observer_Info hash table that has been passed to
    * ObserveChannels.
    * It's recommended to use high-level method such as
-   * tp_observe_channels_context_is_recovering() to access to its content.
+   * tp_observe_channel_context_is_recovering() to access to its content.
    *
    * This property can't be %NULL.
    *
@@ -395,8 +395,8 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
       param_spec);
 }
 
-TpObserveChannelsContext *
-_tp_observe_channels_context_new (
+TpObserveChannelContext *
+_tp_observe_channel_context_new (
     TpAccount *account,
     TpConnection *connection,
     GPtrArray *channels,
@@ -417,8 +417,8 @@ _tp_observe_channels_context_new (
 }
 
 /**
- * tp_observe_channels_context_accept:
- * @self: a #TpObserveChannelsContext
+ * tp_observe_channel_context_accept:
+ * @self: a #TpObserveChannelContext
  *
  * Called by #TpBaseClientClassObserveChannelsImpl when it's done so the D-Bus
  * method can return.
@@ -426,21 +426,21 @@ _tp_observe_channels_context_new (
  * Since: 0.11.5
  */
 void
-tp_observe_channels_context_accept (TpObserveChannelsContext *self)
+tp_observe_channel_context_accept (TpObserveChannelContext *self)
 {
-  g_return_if_fail (self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE
-      || self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_DELAYED);
+  g_return_if_fail (self->priv->state == TP_OBSERVE_CHANNEL_CONTEXT_STATE_NONE
+      || self->priv->state == TP_OBSERVE_CHANNEL_CONTEXT_STATE_DELAYED);
   g_return_if_fail (self->priv->dbus_context != NULL);
 
-  self->priv->state = TP_OBSERVE_CHANNELS_CONTEXT_STATE_DONE;
+  self->priv->state = TP_OBSERVE_CHANNEL_CONTEXT_STATE_DONE;
   dbus_g_method_return (self->priv->dbus_context);
 
   self->priv->dbus_context = NULL;
 }
 
 /**
- * tp_observe_channels_context_fail:
- * @self: a #TpObserveChannelsContext
+ * tp_observe_channel_context_fail:
+ * @self: a #TpObserveChannelContext
  * @error: the error to return from the method
  *
  * Called by #TpBaseClientClassObserveChannelsImpl to raise a D-Bus error.
@@ -448,43 +448,43 @@ tp_observe_channels_context_accept (TpObserveChannelsContext *self)
  * Since: 0.11.5
  */
 void
-tp_observe_channels_context_fail (TpObserveChannelsContext *self,
+tp_observe_channel_context_fail (TpObserveChannelContext *self,
     const GError *error)
 {
-  g_return_if_fail (self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE
-      || self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_DELAYED);
+  g_return_if_fail (self->priv->state == TP_OBSERVE_CHANNEL_CONTEXT_STATE_NONE
+      || self->priv->state == TP_OBSERVE_CHANNEL_CONTEXT_STATE_DELAYED);
   g_return_if_fail (self->priv->dbus_context != NULL);
 
-  self->priv->state = TP_OBSERVE_CHANNELS_CONTEXT_STATE_FAILED;
+  self->priv->state = TP_OBSERVE_CHANNEL_CONTEXT_STATE_FAILED;
   dbus_g_method_return_error (self->priv->dbus_context, error);
 
   self->priv->dbus_context = NULL;
 }
 
 /**
- * tp_observe_channels_context_delay:
- * @self: a #TpObserveChannelsContext
+ * tp_observe_channel_context_delay:
+ * @self: a #TpObserveChannelContext
  *
  * Called by #TpBaseClientClassObserveChannelsImpl to indicate that it
  * implements the method in an async way. The caller must take a reference
- * to the #TpObserveChannelsContext before calling this function, and
- * is responsible for calling either tp_observe_channels_context_accept() or
- * tp_observe_channels_context_fail() later.
+ * to the #TpObserveChannelContext before calling this function, and
+ * is responsible for calling either tp_observe_channel_context_accept() or
+ * tp_observe_channel_context_fail() later.
  *
  * Since: 0.11.5
  */
 void
-tp_observe_channels_context_delay (TpObserveChannelsContext *self)
+tp_observe_channel_context_delay (TpObserveChannelContext *self)
 {
   g_return_if_fail (self->priv->state ==
-      TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE);
+      TP_OBSERVE_CHANNEL_CONTEXT_STATE_NONE);
 
-  self->priv->state = TP_OBSERVE_CHANNELS_CONTEXT_STATE_DELAYED;
+  self->priv->state = TP_OBSERVE_CHANNEL_CONTEXT_STATE_DELAYED;
 }
 
 /**
- * tp_observe_channels_context_is_recovering:
- * @self: a #TpObserveChannelsContext
+ * tp_observe_channel_context_is_recovering:
+ * @self: a #TpObserveChannelContext
  *
  * If this call to ObserveChannels is for channels that already
  * existed before this observer started (because the observer used
@@ -497,28 +497,28 @@ tp_observe_channels_context_delay (TpObserveChannelsContext *self)
  * Since: 0.11.5
  */
 gboolean
-tp_observe_channels_context_is_recovering (TpObserveChannelsContext *self)
+tp_observe_channel_context_is_recovering (TpObserveChannelContext *self)
 {
   /* tp_asv_get_boolean returns FALSE if the key is not set which is what we
    * want */
   return tp_asv_get_boolean (self->observer_info, "recovering", NULL);
 }
 
-TpObserveChannelsContextState
-_tp_observe_channels_context_get_state (
-    TpObserveChannelsContext *self)
+TpObserveChannelContextState
+_tp_observe_channel_context_get_state (
+    TpObserveChannelContext *self)
 {
   return self->priv->state;
 }
 
 static gboolean
-context_is_prepared (TpObserveChannelsContext *self)
+context_is_prepared (TpObserveChannelContext *self)
 {
   return self->priv->num_pending == 0;
 }
 
 static void
-context_check_prepare (TpObserveChannelsContext *self)
+context_check_prepare (TpObserveChannelContext *self)
 {
   if (!context_is_prepared (self))
     return;
@@ -535,7 +535,7 @@ cdo_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpObserveChannelsContext *self = user_data;
+  TpObserveChannelContext *self = user_data;
   GError *error = NULL;
 
   if (self->priv->result == NULL)
@@ -560,7 +560,7 @@ account_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpObserveChannelsContext *self = user_data;
+  TpObserveChannelContext *self = user_data;
   GError *error = NULL;
 
   if (self->priv->result == NULL)
@@ -584,7 +584,7 @@ conn_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpObserveChannelsContext *self = user_data;
+  TpObserveChannelContext *self = user_data;
   GError *error = NULL;
 
   if (self->priv->result == NULL)
@@ -608,7 +608,7 @@ occ_channel_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpObserveChannelsContext *self = user_data;
+  TpObserveChannelContext *self = user_data;
   GError *error = NULL;
 
   if (self->priv->result == NULL)
@@ -628,7 +628,7 @@ out:
 }
 
 static void
-context_prepare (TpObserveChannelsContext *self,
+context_prepare (TpObserveChannelContext *self,
     const GQuark *account_features,
     const GQuark *connection_features,
     const GQuark *channel_features)
@@ -663,7 +663,7 @@ context_prepare (TpObserveChannelsContext *self,
 }
 
 void
-_tp_observe_channels_context_prepare_async (TpObserveChannelsContext *self,
+_tp_observe_channel_context_prepare_async (TpObserveChannelContext *self,
     const GQuark *account_features,
     const GQuark *connection_features,
     const GQuark *channel_features,
@@ -676,24 +676,24 @@ _tp_observe_channels_context_prepare_async (TpObserveChannelsContext *self,
   g_return_if_fail (self->priv->result == NULL);
 
   self->priv->result = g_simple_async_result_new (G_OBJECT (self),
-      callback, user_data, _tp_observe_channels_context_prepare_async);
+      callback, user_data, _tp_observe_channel_context_prepare_async);
 
   context_prepare (self, account_features, connection_features,
       channel_features);
 }
 
 gboolean
-_tp_observe_channels_context_prepare_finish (
-    TpObserveChannelsContext *self,
+_tp_observe_channel_context_prepare_finish (
+    TpObserveChannelContext *self,
     GAsyncResult *result,
     GError **error)
 {
-  _tp_implement_finish_void (self, _tp_observe_channels_context_prepare_async);
+  _tp_implement_finish_void (self, _tp_observe_channel_context_prepare_async);
 }
 
 /**
- * tp_observe_channels_context_get_requests:
- * @self: a #TpObserveChannelsContext
+ * tp_observe_channel_context_get_requests:
+ * @self: a #TpObserveChannelContext
  *
  * Return a list of the #TpChannelRequest which have been satisfied by the
  * channels associated with #self.
@@ -704,7 +704,7 @@ _tp_observe_channels_context_prepare_finish (
  * Since: 0.13.14
  */
 GList *
-tp_observe_channels_context_get_requests (TpObserveChannelsContext *self)
+tp_observe_channel_context_get_requests (TpObserveChannelContext *self)
 {
   GHashTable *request_props;
 
