@@ -100,22 +100,11 @@ GStrv tp_channel_dispatch_operation_get_possible_handlers (
 void tp_channel_dispatch_operation_handle_with_async (
     TpChannelDispatchOperation *self,
     const gchar *handler,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-
-gboolean tp_channel_dispatch_operation_handle_with_finish (
-    TpChannelDispatchOperation *self,
-    GAsyncResult *result,
-    GError **error);
-
-void tp_channel_dispatch_operation_handle_with_time_async (
-    TpChannelDispatchOperation *self,
-    const gchar *handler,
     gint64 user_action_time,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_channel_dispatch_operation_handle_with_time_finish (
+gboolean tp_channel_dispatch_operation_handle_with_finish (
     TpChannelDispatchOperation *self,
     GAsyncResult *result,
     GError **error);

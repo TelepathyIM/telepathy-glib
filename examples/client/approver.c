@@ -122,7 +122,7 @@ add_dispatch_operation_cb (TpSimpleApprover *self,
       g_print ("Approve channel\n");
 
       tp_channel_dispatch_operation_handle_with_async (cdo, NULL,
-          handle_with_cb, NULL);
+          TP_USER_ACTION_TIME_CURRENT_TIME, handle_with_cb, NULL);
     }
   else if (c == 'n' || c == 'N')
     {

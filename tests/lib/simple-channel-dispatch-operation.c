@@ -57,6 +57,7 @@ static void
 tp_tests_simple_channel_dispatch_operation_handle_with (
     TpSvcChannelDispatchOperation *iface,
     const gchar *handler,
+    gint64 user_action_timestamp,
     DBusGMethodInvocation *context)
 {
   if (!tp_strdiff (handler, "FAIL"))
@@ -81,16 +82,6 @@ tp_tests_simple_channel_dispatch_operation_claim (
 }
 
 static void
-tp_tests_simple_channel_dispatch_operation_handle_with_time (
-    TpSvcChannelDispatchOperation *iface,
-    const gchar *handler,
-    gint64 user_action_timestamp,
-    DBusGMethodInvocation *context)
-{
-  dbus_g_method_return (context);
-}
-
-static void
 channel_dispatch_operation_iface_init (gpointer klass,
     gpointer unused G_GNUC_UNUSED)
 {
@@ -98,7 +89,6 @@ channel_dispatch_operation_iface_init (gpointer klass,
   klass, tp_tests_simple_channel_dispatch_operation_##x)
   IMPLEMENT(handle_with);
   IMPLEMENT(claim);
-  IMPLEMENT(handle_with_time);
 #undef IMPLEMENT
 }
 

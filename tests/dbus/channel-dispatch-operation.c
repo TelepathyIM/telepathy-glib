@@ -503,45 +503,17 @@ test_handle_with (Test *test,
   g_assert_no_error (test->error);
 
   tp_channel_dispatch_operation_handle_with_async (test->cdo,
-      NULL, handle_with_cb, test);
+      NULL, TP_USER_ACTION_TIME_CURRENT_TIME, handle_with_cb, test);
   g_main_loop_run (test->mainloop);
 
   g_assert_no_error (test->error);
 
   tp_channel_dispatch_operation_handle_with_async (test->cdo,
-      "FAIL", handle_with_cb, test);
+      "FAIL", TP_USER_ACTION_TIME_CURRENT_TIME, handle_with_cb, test);
   g_main_loop_run (test->mainloop);
 
   g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
   g_clear_error (&test->error);
-}
-
-static void
-handle_with_time_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  Test *test = user_data;
-
-  tp_channel_dispatch_operation_handle_with_time_finish (
-      TP_CHANNEL_DISPATCH_OPERATION (source), result, &test->error);
-
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
-test_handle_with_time (Test *test,
-    gconstpointer data G_GNUC_UNUSED)
-{
-  test->cdo = dispatch_operation_new (test->dbus,
-      "/whatever", NULL, &test->error);
-  g_assert_no_error (test->error);
-
-  tp_channel_dispatch_operation_handle_with_time_async (test->cdo,
-      NULL, 666, handle_with_time_cb, test);
-  g_main_loop_run (test->mainloop);
-
-  g_assert_no_error (test->error);
 }
 
 static void
@@ -686,8 +658,6 @@ main (int argc,
       test_properties_fetched, teardown_services);
   g_test_add ("/cdo/handle-with", Test, NULL, setup_services,
       test_handle_with, teardown_services);
-  g_test_add ("/cdo/handle-with-time", Test, NULL, setup_services,
-      test_handle_with_time, teardown_services);
   g_test_add ("/cdo/close-channel", Test, NULL, setup_services,
       test_close_channel, teardown_services);
   g_test_add ("/cdo/leave-channel", Test, NULL, setup_services,

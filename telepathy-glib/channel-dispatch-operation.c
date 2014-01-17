@@ -937,76 +937,6 @@ handle_with_cb (TpChannelDispatchOperation *self,
  * @handler: (allow-none): The well-known bus name (starting with
  * #TP_CLIENT_BUS_NAME_BASE) of the channel handler that should handle the
  * channel, or %NULL if the client has no preferred channel handler
- * @callback: a callback to call when the call returns
- * @user_data: data to pass to @callback
- *
- * Called by an approver to accept a channel bundle and request that the
- * given handler be used to handle it.
- *
- * If successful, this method will cause the #TpProxy::invalidated signal
- * to be emitted with the TP_DBUS_ERROR_OBJECT_REMOVED error code.
- *
- * However, this method may fail because the dispatch has already been
- * completed and the object has already gone. If this occurs, it indicates
- * that another approver has asked for the bundle to be handled by a
- * particular handler. The approver MUST NOT attempt to interact with
- * the channel further in this case, unless it is separately
- * invoked as the handler.
- *
- * Approvers which are also channel handlers SHOULD use
- * tp_channel_dispatch_operation_claim_with_async() instead
- * of tp_channel_dispatch_operation_handle_with_async() to request
- * that they can handle a channel bundle themselves.
- *
- * Since: 0.11.5
- */
-void
-tp_channel_dispatch_operation_handle_with_async (
-    TpChannelDispatchOperation *self,
-    const gchar *handler,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
-{
-  GSimpleAsyncResult *result;
-
-  g_return_if_fail (TP_IS_CHANNEL_DISPATCH_OPERATION (self));
-
-  result = g_simple_async_result_new (G_OBJECT (self),
-      callback, user_data, tp_channel_dispatch_operation_handle_with_async);
-
-  tp_cli_channel_dispatch_operation_call_handle_with (self, -1,
-      handler != NULL ? handler: "",
-      handle_with_cb, result, NULL, G_OBJECT (self));
-}
-
-/**
- * tp_channel_dispatch_operation_handle_with_finish:
- * @self: a #TpChannelDispatchOperation
- * @result: a #GAsyncResult
- * @error: a #GError to fill
- *
- * Finishes an async call to HandleWith().
- *
- * Returns: %TRUE if the HandleWith() call was successful, otherwise %FALSE
- *
- * Since: 0.11.5
- */
-gboolean
-tp_channel_dispatch_operation_handle_with_finish (
-    TpChannelDispatchOperation *self,
-    GAsyncResult *result,
-    GError **error)
-{
-  _tp_implement_finish_void (self,
-      tp_channel_dispatch_operation_handle_with_async);
-}
-
-/**
- * tp_channel_dispatch_operation_handle_with_time_async:
- * @self: a #TpChannelDispatchOperation
- * @handler: (allow-none): The well-known bus name (starting with
- * #TP_CLIENT_BUS_NAME_BASE) of the channel handler that should handle the
- * channel, or %NULL if the client has no preferred channel handler
  * @user_action_time: the time at which user action occurred, or one of the
  *  special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
  *  %TP_USER_ACTION_TIME_CURRENT_TIME
@@ -1027,11 +957,9 @@ tp_channel_dispatch_operation_handle_with_finish (
  * %GDK_CURRENT_TIME).
  *
  * This method has been introduced in telepathy-mission-control 5.5.0.
- *
- * Since: 0.11.7
  */
 void
-tp_channel_dispatch_operation_handle_with_time_async (
+tp_channel_dispatch_operation_handle_with_async (
     TpChannelDispatchOperation *self,
     const gchar *handler,
     gint64 user_action_time,
@@ -1044,15 +972,15 @@ tp_channel_dispatch_operation_handle_with_time_async (
 
   result = g_simple_async_result_new (G_OBJECT (self),
       callback, user_data,
-      tp_channel_dispatch_operation_handle_with_time_async);
+      tp_channel_dispatch_operation_handle_with_async);
 
-  tp_cli_channel_dispatch_operation_call_handle_with_time (self, -1,
+  tp_cli_channel_dispatch_operation_call_handle_with (self, -1,
       handler != NULL ? handler: "", user_action_time,
       handle_with_cb, result, NULL, G_OBJECT (self));
 }
 
 /**
- * tp_channel_dispatch_operation_handle_with_time_finish:
+ * tp_channel_dispatch_operation_handle_with_finish:
  * @self: a #TpChannelDispatchOperation
  * @result: a #GAsyncResult
  * @error: a #GError to fill
@@ -1060,17 +988,15 @@ tp_channel_dispatch_operation_handle_with_time_async (
  * Finishes an async call to HandleWithTime().
  *
  * Returns: %TRUE if the HandleWithTime() call was successful, otherwise %FALSE
- *
- * Since: 0.11.7
  */
 gboolean
-  tp_channel_dispatch_operation_handle_with_time_finish (
+  tp_channel_dispatch_operation_handle_with_finish (
     TpChannelDispatchOperation *self,
     GAsyncResult *result,
     GError **error)
 {
   _tp_implement_finish_void (self,
-      tp_channel_dispatch_operation_handle_with_time_async);
+      tp_channel_dispatch_operation_handle_with_async);
 }
 
 static void
