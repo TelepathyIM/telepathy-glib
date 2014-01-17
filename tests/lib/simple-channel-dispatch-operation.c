@@ -12,6 +12,7 @@
 #include "config.h"
 
 #include "simple-channel-dispatch-operation.h"
+#include "util.h"
 
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/telepathy-glib-dbus.h>
@@ -39,7 +40,8 @@ enum
   PROP_INTERFACES,
   PROP_CONNECTION,
   PROP_ACCOUNT,
-  PROP_CHANNELS,
+  PROP_CHANNEL,
+  PROP_CHANNEL_PROPERTIES,
   PROP_POSSIBLE_HANDLERS,
 };
 
@@ -47,8 +49,8 @@ struct _SimpleChannelDispatchOperationPrivate
 {
   gchar *conn_path;
   gchar *account_path;
-  /* Array of TpChannel */
-  GPtrArray *channels;
+  gchar *chan_path;
+  GHashTable *chan_props;
 };
 
 static void
@@ -73,7 +75,7 @@ tp_tests_simple_channel_dispatch_operation_claim (
     TpSvcChannelDispatchOperation *iface,
     DBusGMethodInvocation *context)
 {
-  tp_svc_channel_dispatch_operation_emit_finished (iface);
+  tp_svc_channel_dispatch_operation_emit_finished (iface, "", "");
 
   dbus_g_method_return (context);
 }
@@ -107,9 +109,6 @@ tp_tests_simple_channel_dispatch_operation_init (TpTestsSimpleChannelDispatchOpe
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TESTS_TYPE_SIMPLE_CHANNEL_DISPATCH_OPERATION,
       TpTestsSimpleChannelDispatchOperationPrivate);
-
-  self->priv->channels = g_ptr_array_new_with_free_func (
-      (GDestroyNotify) g_object_unref);
 }
 
 static void
@@ -134,34 +133,12 @@ tp_tests_simple_channel_dispatch_operation_get_property (GObject *object,
       g_value_set_boxed (value, self->priv->conn_path);
       break;
 
-    case PROP_CHANNELS:
-      {
-        GPtrArray *arr = g_ptr_array_new ();
-        guint i;
+    case PROP_CHANNEL:
+      g_value_set_boxed (value, self->priv->chan_path);
+      break;
 
-        for (i = 0; i < self->priv->channels->len; i++)
-          {
-            TpChannel *channel = g_ptr_array_index (self->priv->channels, i);
-            GValue props_value = G_VALUE_INIT;
-            GVariant *props_variant;
-
-            /* Yay, double conversion! But this is for tests corner case */
-            props_variant = tp_channel_dup_immutable_properties (channel);
-            dbus_g_value_parse_g_variant (props_variant, &props_value);
-
-            g_ptr_array_add (arr,
-                tp_value_array_build (2,
-                  DBUS_TYPE_G_OBJECT_PATH, tp_proxy_get_object_path (channel),
-                  TP_HASH_TYPE_STRING_VARIANT_MAP,
-                      g_value_get_boxed (&props_value),
-                  G_TYPE_INVALID));
-
-            g_variant_unref (props_variant);
-            g_value_unset (&props_value);
-          }
-
-        g_value_take_boxed (value, arr);
-      }
+    case PROP_CHANNEL_PROPERTIES:
+      g_value_set_boxed (value, self->priv->chan_props);
       break;
 
     case PROP_POSSIBLE_HANDLERS:
@@ -184,7 +161,8 @@ tp_tests_simple_channel_dispatch_operation_finalize (GObject *object)
 
   g_free (self->priv->conn_path);
   g_free (self->priv->account_path);
-  g_ptr_array_unref (self->priv->channels);
+  g_free (self->priv->chan_path);
+  tp_clear_pointer (&self->priv->chan_props, g_hash_table_unref);
 
   if (finalize != NULL)
     finalize (object);
@@ -205,7 +183,8 @@ tp_tests_simple_channel_dispatch_operation_class_init (TpTestsSimpleChannelDispa
         { "Interfaces", "interfaces", NULL },
         { "Connection", "connection", NULL },
         { "Account", "account", NULL },
-        { "Channels", "channels", NULL },
+        { "Channel", "channel", NULL },
+        { "ChannelProperties", "channel-properties", NULL },
         { "PossibleHandlers", "possible-handlers", NULL },
         { NULL }
   };
@@ -241,11 +220,18 @@ tp_tests_simple_channel_dispatch_operation_class_init (TpTestsSimpleChannelDispa
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
 
-  param_spec = g_param_spec_boxed ("channels", "channel paths",
-      "Channel paths",
-      TP_ARRAY_TYPE_CHANNEL_DETAILS_LIST,
+  param_spec = g_param_spec_boxed ("channel", "channel path",
+      "Channel path",
+      DBUS_TYPE_G_OBJECT_PATH,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CHANNELS, param_spec);
+  g_object_class_install_property (object_class, PROP_CHANNEL, param_spec);
+
+  param_spec = g_param_spec_boxed ("channel-properties", "channel properties",
+      "Channel properties",
+      TP_HASH_TYPE_STRING_VARIANT_MAP,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CHANNEL_PROPERTIES,
+      param_spec);
 
   param_spec = g_param_spec_boxed ("possible-handlers", "possible handlers",
       "possible handles",
@@ -268,30 +254,15 @@ tp_tests_simple_channel_dispatch_operation_set_conn_path (
 }
 
 void
-tp_tests_simple_channel_dispatch_operation_add_channel (
+tp_tests_simple_channel_dispatch_operation_set_channel (
     TpTestsSimpleChannelDispatchOperation *self,
     TpChannel *chan)
 {
-  g_ptr_array_add (self->priv->channels, g_object_ref (chan));
-}
+  g_assert (self->priv->chan_path == NULL);
+  g_assert (self->priv->chan_props == NULL);
 
-void
-tp_tests_simple_channel_dispatch_operation_lost_channel (
-    TpTestsSimpleChannelDispatchOperation *self,
-    TpChannel *chan)
-{
-  const gchar *path = tp_proxy_get_object_path (chan);
-
-  g_ptr_array_remove (self->priv->channels, chan);
-
-  tp_svc_channel_dispatch_operation_emit_channel_lost (self, path,
-      TP_ERROR_STR_NOT_AVAILABLE, "Badger");
-
-  if (self->priv->channels->len == 0)
-    {
-      /* We removed the last channel; fire Finished */
-      tp_svc_channel_dispatch_operation_emit_finished (self);
-    }
+  self->priv->chan_path = g_strdup (tp_proxy_get_object_path (chan));
+  self->priv->chan_props = tp_tests_dup_channel_props_asv (chan);
 }
 
 void

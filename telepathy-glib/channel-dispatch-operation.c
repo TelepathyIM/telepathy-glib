@@ -1,5 +1,5 @@
 /*
- * channel-dispatch-operation.c - proxy for incoming channels seeking approval
+ * channel-dispatch-operation.c - proxy for incoming channel seeking approval
  *
  * Copyright (C) 2009 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2009 Nokia Corporation
@@ -22,7 +22,6 @@
 #include "config.h"
 
 #include "telepathy-glib/channel-dispatch-operation.h"
-#include "telepathy-glib/channel-dispatch-operation-internal.h"
 
 #include <telepathy-glib/base-client-internal.h>
 #include <telepathy-glib/channel.h>
@@ -48,7 +47,7 @@
  *  dispatcher
  * @see_also: #TpChannelDispatcher
  *
- * One of the channel dispatcher's functions is to offer incoming channels to
+ * One of the channel dispatcher's functions is to offer incoming channel to
  * Approver clients for approval. Approvers respond to the channel dispatcher
  * via a #TpChannelDispatchOperation object.
  */
@@ -56,23 +55,23 @@
 /**
  * TpChannelDispatchOperation:
  *
- * One of the channel dispatcher's functions is to offer incoming channels to
+ * One of the channel dispatcher's functions is to offer incoming channel to
  * Approver clients for approval. An approver should generally ask the user
- * whether they want to participate in the requested communication channels
+ * whether they want to participate in the requested communication channel
  * (join the chat or chatroom, answer the call, accept the file transfer, or
- * whatever is appropriate). A collection of channels offered in this way
+ * whatever is appropriate). A channel offered in this way
  * is represented by a ChannelDispatchOperation object.
  *
- * If the user wishes to accept the communication channels, the approver
+ * If the user wishes to accept the communication channel, the approver
  * should call tp_cli_channel_dispatch_operation_call_handle_with() to
- * indicate the user's or approver's preferred handler for the channels (the
+ * indicate the user's or approver's preferred handler for the channel (the
  * empty string indicates no particular preference, and will cause any
  * suitable handler to be used).
  *
- * If the user wishes to reject the communication channels, or if the user
- * accepts the channels and the approver will handle them itself, the approver
+ * If the user wishes to reject the communication channel, or if the user
+ * accepts the channel and the approver will handle them itself, the approver
  * should call tp_channel_dispatch_operation_claim_with_async(). If this method
- * succeeds, the approver immediately has control over the channels as their
+ * succeeds, the approver immediately has control over the channel as their
  * primary handler, and may do anything with them (in particular, it may close
  * them in whatever way seems most appropriate).
  *
@@ -85,8 +84,7 @@
  * will be emitted with the domain %TP_DBUS_ERRORS and the error code
  * %TP_DBUS_ERROR_OBJECT_REMOVED.
  *
- * If a channel closes, the #TpChannelDispatchOperation::channel-lost signal
- * is emitted. If all channels
+ * If all the channel
  * close, there is nothing more to dispatch, so the #TpProxy::invalidated
  * signal will be emitted with the domain %TP_DBUS_ERRORS and the error code
  * %TP_DBUS_ERROR_OBJECT_REMOVED.
@@ -95,7 +93,7 @@
  * signal will be emitted with the domain %TP_DBUS_ERRORS and the error code
  * %TP_DBUS_ERROR_NAME_OWNER_LOST. In a high-quality implementation, the
  * dispatcher should be restarted, at which point it will create new
- * channel dispatch operations for any undispatched channels, and the approver
+ * channel dispatch operations for any undispatched channel, and the approver
  * will be notified again.
  *
  * Creating a #TpChannelDispatchOperation directly is deprecated: it
@@ -117,7 +115,7 @@
 struct _TpChannelDispatchOperationPrivate {
   TpConnection *connection;
   TpAccount *account;
-  GPtrArray *channels;
+  TpChannel *channel;
   GStrv possible_handlers;
   GHashTable *immutable_properties;
 };
@@ -126,18 +124,11 @@ enum
 {
   PROP_CONNECTION = 1,
   PROP_ACCOUNT,
-  PROP_CHANNELS,
+  PROP_CHANNEL,
   PROP_POSSIBLE_HANDLERS,
   PROP_CDO_PROPERTIES,
   N_PROPS
 };
-
-enum {
-  SIGNAL_CHANNEL_LOST,
-  N_SIGNALS
-};
-
-static guint signals[N_SIGNALS] = { 0 };
 
 G_DEFINE_TYPE (TpChannelDispatchOperation, tp_channel_dispatch_operation,
     TP_TYPE_PROXY)
@@ -154,57 +145,25 @@ tp_channel_dispatch_operation_init (TpChannelDispatchOperation *self)
 
 static void
 tp_channel_dispatch_operation_finished_cb (TpChannelDispatchOperation *self,
-    gpointer unused G_GNUC_UNUSED,
-    GObject *object G_GNUC_UNUSED)
-{
-  GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED,
-      "ChannelDispatchOperation finished and was removed" };
-
-  tp_proxy_invalidate ((TpProxy *) self, &e);
-}
-
-static void
-tp_channel_dispatch_operation_channel_lost_cb (TpChannelDispatchOperation *self,
-    const gchar *path,
     const gchar *dbus_error,
     const gchar *message,
     gpointer unused G_GNUC_UNUSED,
     GObject *object G_GNUC_UNUSED)
 {
-  guint i;
+  GError *error = NULL;
 
-  if (self->priv->channels == NULL)
-    /* We didn't fetch channels yet */
-    return;
-
-  for (i = 0; i < self->priv->channels->len; i++)
+  if (tp_str_empty (dbus_error))
     {
-      TpChannel *channel = g_ptr_array_index (self->priv->channels, i);
-
-      if (!tp_strdiff (tp_proxy_get_object_path (channel), path))
-        {
-          GError *error = NULL;
-
-          /* Removing the channel from the array will unref it, add an extra
-           * ref as we'll need it to fire the signal */
-          g_object_ref (channel);
-
-          g_ptr_array_remove (self->priv->channels, channel);
-
-          tp_proxy_dbus_error_to_gerror (self, dbus_error, message, &error);
-
-          g_signal_emit (self, signals[SIGNAL_CHANNEL_LOST], 0, channel,
-              error->domain, error->code, error->message);
-
-          g_object_notify ((GObject *) self, "channels");
-
-          g_object_unref (channel);
-          g_error_free (error);
-          return;
-        }
+      g_set_error_literal (&error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED,
+          "ChannelDispatchOperation finished and was removed");
+    }
+  else
+    {
+      tp_proxy_dbus_error_to_gerror (self, dbus_error, message, &error);
     }
 
-  DEBUG ("Don't know this channel: %s", path);
+  tp_proxy_invalidate ((TpProxy *) self, error);
+  g_error_free (error);
 }
 
 static void
@@ -225,8 +184,8 @@ tp_channel_dispatch_operation_get_property (GObject *object,
       g_value_set_object (value, self->priv->account);
       break;
 
-    case PROP_CHANNELS:
-      g_value_set_boxed (value, self->priv->channels);
+    case PROP_CHANNEL:
+      g_value_set_object (value, self->priv->channel);
       break;
 
     case PROP_POSSIBLE_HANDLERS:
@@ -308,6 +267,49 @@ maybe_set_account (TpChannelDispatchOperation *self,
 }
 
 static void
+maybe_set_channel (TpChannelDispatchOperation *self,
+    const gchar *path,
+    GHashTable *properties)
+{
+  GError *error = NULL;
+
+  if (self->priv->channel != NULL)
+    return;
+
+  if (path == NULL)
+    return;
+
+  self->priv->channel = tp_client_factory_ensure_channel (
+      tp_proxy_get_factory (self), self->priv->connection, path, properties,
+      &error);
+  if (self->priv->channel == NULL)
+    {
+      DEBUG ("Failed to create channel %s: %s", path, error->message);
+      g_error_free (error);
+      return;
+    }
+
+  g_object_notify ((GObject *) self, "channel");
+
+  if (g_hash_table_lookup (self->priv->immutable_properties,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL) == NULL)
+    {
+      g_hash_table_insert (self->priv->immutable_properties,
+          g_strdup (TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL),
+          tp_g_value_slice_new_boxed (DBUS_TYPE_G_OBJECT_PATH, path));
+    }
+
+  if (g_hash_table_lookup (self->priv->immutable_properties,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL_PROPERTIES) == NULL)
+    {
+      g_hash_table_insert (self->priv->immutable_properties,
+          g_strdup (TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL_PROPERTIES),
+          tp_g_value_slice_new_boxed (
+            TP_HASH_TYPE_STRING_VARIANT_MAP, properties));
+    }
+}
+
+static void
 maybe_set_possible_handlers (TpChannelDispatchOperation *self,
     GStrv handlers)
 {
@@ -364,10 +366,9 @@ tp_channel_dispatch_operation_set_property (GObject *object,
         self->priv->connection = g_value_dup_object (value);
         break;
 
-      case PROP_CHANNELS:
-        g_assert (self->priv->channels == NULL);  /* construct-only */
-        _tp_channel_dispatch_operation_ensure_channels (self,
-            g_value_get_boxed (value));
+      case PROP_CHANNEL:
+        g_assert (self->priv->channel == NULL);  /* construct-only */
+        self->priv->channel = g_value_dup_object (value);
         break;
 
       case PROP_CDO_PROPERTIES:
@@ -415,6 +416,14 @@ tp_channel_dispatch_operation_constructed (GObject *object)
         TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT,
         DBUS_TYPE_G_OBJECT_PATH));
 
+  maybe_set_channel (self,
+      tp_asv_get_boxed (self->priv->immutable_properties,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL,
+        DBUS_TYPE_G_OBJECT_PATH),
+      tp_asv_get_boxed (self->priv->immutable_properties,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL_PROPERTIES,
+        TP_HASH_TYPE_STRING_VARIANT_MAP));
+
   maybe_set_possible_handlers (self,
       tp_asv_get_boxed (self->priv->immutable_properties,
         TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS,
@@ -431,17 +440,6 @@ tp_channel_dispatch_operation_constructed (GObject *object)
   if (sc == NULL)
     {
       CRITICAL ("Couldn't connect to Finished: %s", error->message);
-      g_error_free (error);
-      g_assert_not_reached ();
-      return;
-    }
-
-  sc = tp_cli_channel_dispatch_operation_connect_to_channel_lost (self,
-      tp_channel_dispatch_operation_channel_lost_cb, NULL, NULL, NULL, &error);
-
-  if (sc == NULL)
-    {
-      g_critical ("Couldn't connect to ChannelLost: %s", error->message);
       g_error_free (error);
       g_assert_not_reached ();
       return;
@@ -467,12 +465,7 @@ tp_channel_dispatch_operation_dispose (GObject *object)
       self->priv->account = NULL;
     }
 
-  if (self->priv->channels != NULL)
-    {
-      /* channels array has 'g_object_unref' has free_func */
-      g_ptr_array_unref (self->priv->channels);
-      self->priv->channels = NULL;
-    }
+  g_clear_object (&self->priv->channel);
 
   g_strfreev (self->priv->possible_handlers);
   self->priv->possible_handlers = NULL;
@@ -487,80 +480,6 @@ tp_channel_dispatch_operation_dispose (GObject *object)
     dispose (object);
 }
 
-static TpChannel *
-look_for_channel_having_path (GPtrArray *array,
-    const gchar *path)
-{
-  guint i;
-
-  for (i = 0; i < array->len; i++)
-    {
-      TpChannel *channel = g_ptr_array_index (array, i);
-
-      if (!tp_strdiff (tp_proxy_get_object_path (channel), path))
-        return channel;
-    }
-
-  return NULL;
-}
-
-static void
-update_channels_array (TpChannelDispatchOperation *self,
-    GPtrArray *channels)
-{
-  guint i;
-  GPtrArray *old = NULL;
-
-  if (self->priv->channels != NULL)
-    {
-      /* We received an initial list of channels during creation. Remove those
-       * which are not in the Channels property any more. */
-      old = self->priv->channels;
-    }
-
-  self->priv->channels = g_ptr_array_new_full (channels->len,
-      g_object_unref);
-
-  for (i = 0; i < channels->len; i++)
-    {
-      const gchar *path;
-      GHashTable *chan_props;
-      TpChannel *channel = NULL;
-      GError *err = NULL;
-
-      tp_value_array_unpack (g_ptr_array_index (channels, i), 2,
-            &path, &chan_props);
-
-      if (old != NULL)
-        channel = look_for_channel_having_path (old, path);
-
-      if (channel != NULL)
-        {
-          g_object_ref (channel);
-        }
-      else
-        {
-          channel = tp_client_factory_ensure_channel (
-              tp_proxy_get_factory (self), self->priv->connection,
-              path, chan_props, &err);
-
-          if (channel == NULL)
-            {
-              DEBUG ("Failed to create channel %s: %s", path, err->message);
-              g_error_free (err);
-              continue;
-            }
-        }
-
-      g_ptr_array_add (self->priv->channels, channel);
-    }
-
-  if (old != NULL)
-    {
-      g_ptr_array_unref (old);
-    }
-}
-
 static void
 get_dispatch_operation_prop_cb (TpProxy *proxy,
     GHashTable *props,
@@ -571,7 +490,6 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
   TpChannelDispatchOperation *self = (TpChannelDispatchOperation *) proxy;
   GSimpleAsyncResult *result = user_data;
   gboolean prepared = TRUE;
-  GPtrArray *channels;
   GError *e = NULL;
 
   if (error != NULL)
@@ -612,6 +530,23 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
       goto out;
     }
 
+  /* Channel */
+  maybe_set_channel (self,
+      tp_asv_get_boxed (props, "Channel", DBUS_TYPE_G_OBJECT_PATH),
+      tp_asv_get_boxed (props, "ChannelProperties",
+        TP_HASH_TYPE_STRING_VARIANT_MAP));
+
+  if (self->priv->channel == NULL)
+    {
+      e = g_error_new_literal (TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+          "Mandatory 'Channel' or 'ChannelProperties' property is missing");
+      DEBUG ("%s", e->message);
+
+      prepared = FALSE;
+      goto out;
+    }
+
+
   /* PossibleHandlers */
   maybe_set_possible_handlers (self, tp_asv_get_boxed (props,
         "PossibleHandlers", G_TYPE_STRV));
@@ -629,22 +564,6 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
   maybe_set_interfaces (self, tp_asv_get_boxed (props,
         "Interfaces", G_TYPE_STRV));
 
-  /* set channels (not an immutable property) */
-  channels = tp_asv_get_boxed (props, "Channels",
-      TP_ARRAY_TYPE_CHANNEL_DETAILS_LIST);
-  if (channels == NULL)
-    {
-      e = g_error_new_literal (TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-          "Mandatory 'Channels' property is missing");
-      DEBUG ("%s", e->message);
-
-      prepared = FALSE;
-      goto out;
-    }
-
-  update_channels_array (self, channels);
-
-  g_object_notify ((GObject *) self, "channels");
   g_object_notify ((GObject *) self, "cdo-properties");
 
 out:
@@ -718,7 +637,7 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
   /**
    * TpChannelDispatchOperation:connection:
    *
-   * The #TpConnection with which the channels are associated.
+   * The #TpConnection with which the channel is associated.
    *
    * Read-only except during construction.
    *
@@ -737,7 +656,7 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
   /**
    * TpChannelDispatchOperation:account:
    *
-   * The #TpAccount with which the connection and channels are associated.
+   * The #TpAccount with which the connection and channel are associated.
    *
    * Read-only except during construction.
    *
@@ -754,22 +673,20 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
       param_spec);
 
   /**
-   * TpChannelDispatchOperation:channels:
+   * TpChannelDispatchOperation:channel:
    *
-   * A #GPtrArray containing the #TpChannel to be dispatched.
+   * The #TpChannel to be dispatched.
    *
    * Read-only.
    *
    * This is not guaranteed to be set until tp_proxy_prepare_async() has
    * finished preparing %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE.
-   *
-   * Since: 0.11.5
    */
-  param_spec = g_param_spec_boxed ("channels", "GPtrArray of TpChannel",
+  param_spec = g_param_spec_object ("channel", "TpChannel",
       "The TpChannel to be dispatched",
-      G_TYPE_PTR_ARRAY,
+      TP_TYPE_CHANNEL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CHANNELS,
+  g_object_class_install_property (object_class, PROP_CHANNEL,
       param_spec);
 
   /**
@@ -777,7 +694,7 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
    *
    * A #GStrv containing the well known bus names (starting
    * with TP_CLIENT_BUS_NAME_BASE) of the possible Handlers for
-   * the channels
+   * the channel.
    *
    * Read-only except during construction.
    *
@@ -787,7 +704,7 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
    * Since: 0.11.5
    */
   param_spec = g_param_spec_boxed ("possible-handlers", "Possible handlers",
-      "Possible handlers for the channels",
+      "Possible handlers for the channel",
       G_TYPE_STRV,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_POSSIBLE_HANDLERS,
@@ -814,26 +731,6 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class,
       PROP_CDO_PROPERTIES, param_spec);
-
- /**
-   * TpChannelDispatchOperation::channel-lost:
-   * @self: a #TpChannelDispatchOperation
-   * @channel: the #TpChannel that closed
-   * @domain: domain of a #GError indicating why the channel has been closed
-   * @code: error code of a #GError indicating why the channel has been closed
-   * @message: a message associated with the error
-   *
-   * Emitted when a channel has closed before it could be claimed or handled.
-   *
-   * Since: 0.11.5
-   */
-  signals[SIGNAL_CHANNEL_LOST] = g_signal_new (
-      "channel-lost", G_OBJECT_CLASS_TYPE (klass),
-      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-      0,
-      NULL, NULL, NULL,
-      G_TYPE_NONE, 4,
-      TP_TYPE_CHANNEL, G_TYPE_UINT, G_TYPE_INT, G_TYPE_STRING);
 
   proxy_class->interface = TP_IFACE_QUARK_CHANNEL_DISPATCH_OPERATION;
   proxy_class->must_have_unique_name = TRUE;
@@ -923,7 +820,7 @@ _tp_channel_dispatch_operation_new_with_factory (TpClientFactory *factory,
  *   TP_CONNECTION_FEATURE_CORE is not necessarily prepared)
  * - #TpChannelDispatchOperation:account is set (but
  *   TP_ACCOUNT_FEATURE_CORE is not necessarily prepared)
- * - #TpChannelDispatchOperation:channels is set (but
+ * - #TpChannelDispatchOperation:channel is set (but
  *   TP_CHANNEL_FEATURE_CORE is not necessarily prepared)
  * - #TpChannelDispatchOperation:possible-handlers is set
  * - any extra interfaces will have been set up in TpProxy (i.e.
@@ -981,24 +878,18 @@ tp_channel_dispatch_operation_get_account (
 }
 
 /**
- * tp_channel_dispatch_operation_get_channels:
+ * tp_channel_dispatch_operation_get_channel:
  * @self: a #TpChannelDispatchOperation
  *
- * Returns a #GPtrArray containing the #TpChannel of this
- * ChannelDispatchOperation.
- * The returned array and its #TpChannel are only valid while @self is
- * valid - copy array and reference channels with g_object_ref() if needed.
+ * Returns the #TpChannel of this ChannelDispatchOperation.
  *
- * Returns: (transfer none) (element-type TelepathyGLib.Channel): the value
- *  of #TpChannelDispatchOperation:channels
- *
- * Since: 0.19.9
+ * Returns: (transfer none): the value of #TpChannelDispatchOperation:channel
  */
-GPtrArray *
-tp_channel_dispatch_operation_get_channels (
+TpChannel *
+tp_channel_dispatch_operation_get_channel (
     TpChannelDispatchOperation *self)
 {
-  return self->priv->channels;
+  return self->priv->channel;
 }
 
 /**
@@ -1059,7 +950,7 @@ handle_with_cb (TpChannelDispatchOperation *self,
  * completed and the object has already gone. If this occurs, it indicates
  * that another approver has asked for the bundle to be handled by a
  * particular handler. The approver MUST NOT attempt to interact with
- * the channels further in this case, unless it is separately
+ * the channel further in this case, unless it is separately
  * invoked as the handler.
  *
  * Approvers which are also channel handlers SHOULD use
@@ -1108,26 +999,6 @@ tp_channel_dispatch_operation_handle_with_finish (
 {
   _tp_implement_finish_void (self,
       tp_channel_dispatch_operation_handle_with_async);
-}
-
-/* FIXME: This is temporary solution to share TpChannel objects until
- * TpClientFactory can be used for that */
-void
-_tp_channel_dispatch_operation_ensure_channels (TpChannelDispatchOperation *self,
-    GPtrArray *channels)
-{
-  guint i;
-
-  if (self->priv->channels != NULL || channels == NULL)
-    return;
-
-  /* Do not just ref the GPtrArray because we'll modify its content */
-  self->priv->channels = g_ptr_array_new_full (channels->len,
-      g_object_unref);
-
-  for (i = 0; i < channels->len; i++)
-    g_ptr_array_add (self->priv->channels,
-        g_object_ref (g_ptr_array_index (channels, i)));
 }
 
 /**
@@ -1213,7 +1084,7 @@ claim_with_cb (TpChannelDispatchOperation *self,
 
   client = g_simple_async_result_get_op_res_gpointer (result);
 
-  _tp_base_client_now_handling_channels (client, self->priv->channels);
+  _tp_base_client_now_handling_channel (client, self->priv->channel);
 
   g_simple_async_result_complete (result);
   g_object_unref (result);
@@ -1226,7 +1097,7 @@ claim_with_cb (TpChannelDispatchOperation *self,
  * @callback: a callback to call when the call returns
  * @user_data: data to pass to @callback
  *
- * Called by an approver to claim channels for handling internally.
+ * Called by an approver to claim channel for handling internally.
  * If this method is called successfully, the process calling this
  * method becomes the handler for the channel.
  *
@@ -1237,7 +1108,7 @@ claim_with_cb (TpChannelDispatchOperation *self,
  * This method may fail because the dispatch operation has already
  * been completed. Again, see tp_channel_dispatch_operation_handle_with_async()
  * for more details. The approver MUST NOT attempt to interact with
- * the channels further in this case.
+ * the channel further in this case.
  *
  * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE feature must be prepared before
  * calling this function.
@@ -1308,34 +1179,28 @@ channel_close_cb (GObject *source,
 }
 
 static void
-claim_close_channels_cb (TpChannelDispatchOperation *self,
+claim_close_channel_cb (TpChannelDispatchOperation *self,
     const GError *error,
     gpointer user_data,
     GObject *weak_object)
 {
   GSimpleAsyncResult *result = user_data;
-  guint i;
 
-  for (i = 0; i < self->priv->channels->len; i++)
-    {
-      TpChannel *channel = g_ptr_array_index (self->priv->channels, i);
-
-      tp_channel_close_async (channel, channel_close_cb, NULL);
-    }
+  tp_channel_close_async (self->priv->channel, channel_close_cb, NULL);
 
   g_simple_async_result_complete (result);
   g_object_unref (result);
 }
 
 /**
- * tp_channel_dispatch_operation_close_channels_async:
+ * tp_channel_dispatch_operation_close_channel_async:
  * @self: a #TpChannelDispatchOperation
  * @callback: a callback to call when the request has been satisfied
  * @user_data: data to pass to @callback
  *
- * Called by an approver to claim channels and close them all right away.
+ * Called by an approver to claim channel and close it right away.
  * If this method is called successfully, @self has been claimed and
- * tp_channel_close_async() has been called on all of its channels.
+ * tp_channel_close_async() has been called on the channel.
  *
  * If successful, this method will cause the #TpProxy::invalidated signal
  * to be emitted, in the same way as for
@@ -1347,11 +1212,9 @@ claim_close_channels_cb (TpChannelDispatchOperation *self,
  *
  * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE feature must be prepared before
  * calling this function.
- *
- * Since: 0.15.1
  */
 void
-tp_channel_dispatch_operation_close_channels_async (
+tp_channel_dispatch_operation_close_channel_async (
     TpChannelDispatchOperation *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1363,47 +1226,45 @@ tp_channel_dispatch_operation_close_channels_async (
       TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE));
 
   result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-      tp_channel_dispatch_operation_close_channels_async);
+      tp_channel_dispatch_operation_close_channel_async);
 
   tp_cli_channel_dispatch_operation_call_claim (self, -1,
-      claim_close_channels_cb, result, NULL, G_OBJECT (self));
+      claim_close_channel_cb, result, NULL, G_OBJECT (self));
 }
 
 /**
- * tp_channel_dispatch_operation_close_channels_finish:
+ * tp_channel_dispatch_operation_close_channel_finish:
  * @self: a #TpChannelDispatchOperation
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
  * Finishes an async operation initiated using
- * tp_channel_dispatch_operation_close_channels_async().
+ * tp_channel_dispatch_operation_close_channel_async().
  *
  * Returns: %TRUE if the Claim() call was successful and
- * Close() has at least been attempted on all the channels, otherwise %FALSE
- *
- * Since: 0.15.1
+ * Close() has at least been attempted on the channel, otherwise %FALSE
  */
 gboolean
-tp_channel_dispatch_operation_close_channels_finish (
+tp_channel_dispatch_operation_close_channel_finish (
     TpChannelDispatchOperation *self,
     GAsyncResult *result,
     GError **error)
 {
   _tp_implement_finish_void (self, \
-      tp_channel_dispatch_operation_close_channels_async)
+      tp_channel_dispatch_operation_close_channel_async)
 }
 
 typedef struct
 {
   TpChannelGroupChangeReason reason;
   gchar *message;
-} LeaveChannelsCtx;
+} LeaveChannelCtx;
 
-static LeaveChannelsCtx *
-leave_channels_ctx_new (TpChannelGroupChangeReason reason,
+static LeaveChannelCtx *
+leave_channel_ctx_new (TpChannelGroupChangeReason reason,
     const gchar *message)
 {
-  LeaveChannelsCtx *ctx = g_slice_new (LeaveChannelsCtx);
+  LeaveChannelCtx *ctx = g_slice_new (LeaveChannelCtx);
 
   ctx->reason = reason;
   ctx->message = g_strdup (message);
@@ -1411,10 +1272,10 @@ leave_channels_ctx_new (TpChannelGroupChangeReason reason,
 }
 
 static void
-leave_channels_ctx_free (LeaveChannelsCtx *ctx)
+leave_channel_ctx_free (LeaveChannelCtx *ctx)
 {
   g_free (ctx->message);
-  g_slice_free (LeaveChannelsCtx, ctx);
+  g_slice_free (LeaveChannelCtx, ctx);
 }
 
 static void
@@ -1434,40 +1295,34 @@ channel_leave_cb (GObject *source,
 }
 
 static void
-claim_leave_channels_cb (TpChannelDispatchOperation *self,
+claim_leave_channel_cb (TpChannelDispatchOperation *self,
     const GError *error,
     gpointer user_data,
     GObject *weak_object)
 {
   GSimpleAsyncResult *result = user_data;
-  guint i;
-  LeaveChannelsCtx *ctx;
+  LeaveChannelCtx *ctx;
 
   ctx = g_simple_async_result_get_op_res_gpointer (result);
 
-  for (i = 0; i < self->priv->channels->len; i++)
-    {
-      TpChannel *channel = g_ptr_array_index (self->priv->channels, i);
-
-      tp_channel_leave_async (channel, ctx->reason, ctx->message,
-          channel_leave_cb, NULL);
-    }
+  tp_channel_leave_async (self->priv->channel, ctx->reason, ctx->message,
+      channel_leave_cb, NULL);
 
   g_simple_async_result_complete (result);
   g_object_unref (result);
 }
 
 /**
- * tp_channel_dispatch_operation_leave_channels_async:
+ * tp_channel_dispatch_operation_leave_channel_async:
  * @self: a #TpChannelDispatchOperation
  * @reason: the leave reason
  * @message: the leave message
  * @callback: a callback to call when the request has been satisfied
  * @user_data: data to pass to @callback
  *
- * Called by an approver to claim channels and leave them all right away.
+ * Called by an approver to claim channel and leave it right away.
  * If this method is called successfully, @self has been claimed and
- * tp_channel_leave_async() has been called on all of its channels.
+ * tp_channel_leave_async() has been called on the channel.
  *
  * If successful, this method will cause the #TpProxy::invalidated signal
  * to be emitted, in the same way as for
@@ -1479,11 +1334,9 @@ claim_leave_channels_cb (TpChannelDispatchOperation *self,
  *
  * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE feature must be prepared before
  * calling this function.
- *
- * Since: 0.15.2
  */
 void
-tp_channel_dispatch_operation_leave_channels_async (
+tp_channel_dispatch_operation_leave_channel_async (
     TpChannelDispatchOperation *self,
     TpChannelGroupChangeReason reason,
     const gchar *message,
@@ -1497,39 +1350,36 @@ tp_channel_dispatch_operation_leave_channels_async (
       TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE));
 
   result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-      tp_channel_dispatch_operation_leave_channels_async);
+      tp_channel_dispatch_operation_leave_channel_async);
 
   g_simple_async_result_set_op_res_gpointer (result,
-      leave_channels_ctx_new (reason, message),
-      (GDestroyNotify) leave_channels_ctx_free);
+      leave_channel_ctx_new (reason, message),
+      (GDestroyNotify) leave_channel_ctx_free);
 
   tp_cli_channel_dispatch_operation_call_claim (self, -1,
-      claim_leave_channels_cb, result, NULL, G_OBJECT (self));
+      claim_leave_channel_cb, result, NULL, G_OBJECT (self));
 }
 
 /**
- * tp_channel_dispatch_operation_leave_channels_finish:
+ * tp_channel_dispatch_operation_leave_channel_finish:
  * @self: a #TpChannelDispatchOperation
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
  * Finishes an async operation initiated using
- * tp_channel_dispatch_operation_leave_channels_async().
+ * tp_channel_dispatch_operation_leave_channel_async().
  *
  * Returns: %TRUE if the Claim() call was successful and
- * tp_channel_leave_async() has at least been attempted on all the
- * channels, otherwise %FALSE
- *
- * Since: 0.15.2
+ * tp_channel_leave_async() has been attempted on the channel, otherwise %FALSE
  */
 gboolean
-tp_channel_dispatch_operation_leave_channels_finish (
+tp_channel_dispatch_operation_leave_channel_finish (
     TpChannelDispatchOperation *self,
     GAsyncResult *result,
     GError **error)
 {
   _tp_implement_finish_void (self, \
-      tp_channel_dispatch_operation_leave_channels_async)
+      tp_channel_dispatch_operation_leave_channel_async)
 }
 
 static void
@@ -1549,34 +1399,28 @@ channel_destroy_cb (GObject *source,
 }
 
 static void
-claim_destroy_channels_cb (TpChannelDispatchOperation *self,
+claim_destroy_channel_cb (TpChannelDispatchOperation *self,
     const GError *error,
     gpointer user_data,
     GObject *weak_object)
 {
   GSimpleAsyncResult *result = user_data;
-  guint i;
 
-  for (i = 0; i < self->priv->channels->len; i++)
-    {
-      TpChannel *channel = g_ptr_array_index (self->priv->channels, i);
-
-      tp_channel_destroy_async (channel, channel_destroy_cb, NULL);
-    }
+  tp_channel_destroy_async (self->priv->channel, channel_destroy_cb, NULL);
 
   g_simple_async_result_complete (result);
   g_object_unref (result);
 }
 
 /**
- * tp_channel_dispatch_operation_destroy_channels_async:
+ * tp_channel_dispatch_operation_destroy_channel_async:
  * @self: a #TpChannelDispatchOperation
  * @callback: a callback to call when the request has been satisfied
  * @user_data: data to pass to @callback
  *
- * Called by an approver to claim channels and destroy them all right away.
+ * Called by an approver to claim channel and destroy it right away.
  * If this method is called successfully, @self has been claimed and
- * tp_channel_destroy_async() has been called on all of its channels.
+ * tp_channel_destroy_async() has been called on the channel.
  *
  * If successful, this method will cause the #TpProxy::invalidated signal
  * to be emitted, in the same way as for
@@ -1588,11 +1432,9 @@ claim_destroy_channels_cb (TpChannelDispatchOperation *self,
  *
  * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE feature must be prepared before
  * calling this function.
- *
- * Since: 0.15.2
  */
 void
-tp_channel_dispatch_operation_destroy_channels_async (
+tp_channel_dispatch_operation_destroy_channel_async (
     TpChannelDispatchOperation *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1604,33 +1446,31 @@ tp_channel_dispatch_operation_destroy_channels_async (
       TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE));
 
   result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-      tp_channel_dispatch_operation_destroy_channels_async);
+      tp_channel_dispatch_operation_destroy_channel_async);
 
   tp_cli_channel_dispatch_operation_call_claim (self, -1,
-      claim_destroy_channels_cb, result, NULL, G_OBJECT (self));
+      claim_destroy_channel_cb, result, NULL, G_OBJECT (self));
 }
 
 /**
- * tp_channel_dispatch_operation_destroy_channels_finish:
+ * tp_channel_dispatch_operation_destroy_channel_finish:
  * @self: a #TpChannelDispatchOperation
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
  * Finishes an async operation initiated using
- * tp_channel_dispatch_operation_destroy_channels_async().
+ * tp_channel_dispatch_operation_destroy_channel_async().
  *
  * Returns: %TRUE if the Claim() call was successful and
- * tp_channel_destroy_async() has at least been attempted on all the
- * channels, otherwise %FALSE
- *
- * Since: 0.15.2
+ * tp_channel_destroy_async() has at least been attempted on the channel,
+ * otherwise %FALSE
  */
 gboolean
-tp_channel_dispatch_operation_destroy_channels_finish (
+tp_channel_dispatch_operation_destroy_channel_finish (
     TpChannelDispatchOperation *self,
     GAsyncResult *result,
     GError **error)
 {
   _tp_implement_finish_void (self, \
-      tp_channel_dispatch_operation_destroy_channels_async)
+      tp_channel_dispatch_operation_destroy_channel_async)
 }

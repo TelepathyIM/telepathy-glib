@@ -180,7 +180,6 @@
 
 #include <telepathy-glib/add-dispatch-operation-context-internal.h>
 #include <telepathy-glib/automatic-client-factory.h>
-#include <telepathy-glib/channel-dispatch-operation-internal.h>
 #include <telepathy-glib/channel-dispatcher.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/channel.h>
@@ -1889,7 +1888,6 @@ add_dispatch_context_prepare_cb (GObject *source,
 
 static void
 _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
-    const GPtrArray *channels_arr,
     const gchar *dispatch_operation_path,
     GHashTable *properties,
     DBusGMethodInvocation *context)
@@ -1899,6 +1897,8 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
   const gchar *account_path;
   const gchar *connection_path;
+  const gchar *chan_path;
+  GHashTable *chan_props;
   GError *error = NULL;
   TpAccount *account = NULL;
   TpConnection *connection = NULL;
@@ -1908,6 +1908,7 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
   GArray *account_features;
   GArray *connection_features;
   GArray *channel_features;
+  GPtrArray *channels_arr;
 
   if (!(self->priv->flags & CLIENT_IS_APPROVER))
     {
@@ -1946,6 +1947,30 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       goto out;
     }
 
+  chan_path = tp_asv_get_object_path (properties,
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL);
+  if (chan_path == NULL)
+    {
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+          "Properties doesn't contain 'Channel'");
+      DEBUG ("%s", error->message);
+      g_assert (FALSE);
+      goto out;
+    }
+
+  chan_props = tp_asv_get_boxed (properties,
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL_PROPERTIES,
+      TP_HASH_TYPE_STRING_VARIANT_MAP);
+  if (chan_props == NULL)
+    {
+      g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+          "Properties doesn't contain 'ChannelProperties'");
+      DEBUG ("%s", error->message);
+      goto out;
+    }
+
+  channels_arr = build_channels_array (chan_path, chan_props);
+
   channel = ensure_account_connection_channels (self, account_path,
       connection_path, channels_arr, &account, &connection, &channels, &error);
   if (channel == NULL)
@@ -1965,8 +1990,6 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       DEBUG ("Failed to create TpChannelDispatchOperation: %s", error->message);
       goto out;
     }
-
-  _tp_channel_dispatch_operation_ensure_channels (dispatch_operation, channels);
 
   ctx = _tp_add_dispatch_operation_context_new (account, connection, channels,
       dispatch_operation, context);
@@ -1995,6 +2018,9 @@ out:
 
   if (dispatch_operation != NULL)
     g_object_unref (dispatch_operation);
+
+  if (channels_arr != NULL)
+    g_ptr_array_unref (channels_arr);
 
   if (error == NULL)
     return;
@@ -2032,6 +2058,23 @@ chan_invalidated_cb (TpChannel *channel,
 }
 
 static void
+add_handled_channel (TpBaseClient *self,
+    TpChannel *channel)
+{
+  if (tp_proxy_get_invalidated (channel) == NULL)
+    {
+      DEBUG ("Inserting Channel (%p) %s",
+        channel, tp_proxy_get_object_path (channel));
+      g_hash_table_replace (self->priv->my_chans,
+          (gchar *) tp_proxy_get_object_path (channel),
+          g_object_ref (channel));
+
+      tp_g_signal_connect_object (channel, "invalidated",
+          G_CALLBACK (chan_invalidated_cb), self, 0);
+    }
+}
+
+static void
 add_handled_channels (TpBaseClient *self,
     GPtrArray *channels)
 {
@@ -2041,17 +2084,7 @@ add_handled_channels (TpBaseClient *self,
     {
       TpChannel *channel = g_ptr_array_index (channels, i);
 
-      if (tp_proxy_get_invalidated (channel) == NULL)
-        {
-          DEBUG ("Inserting Channel (%p) %s",
-            channel, tp_proxy_get_object_path (channel));
-          g_hash_table_replace (self->priv->my_chans,
-              (gchar *) tp_proxy_get_object_path (channel),
-              g_object_ref (channel));
-
-          tp_g_signal_connect_object (channel, "invalidated",
-              G_CALLBACK (chan_invalidated_cb), self, 0);
-        }
+      add_handled_channel (self, channel);
     }
 }
 
@@ -2757,16 +2790,16 @@ tp_base_client_is_handling_channel (TpBaseClient *self,
 }
 
 void
-_tp_base_client_now_handling_channels (TpBaseClient *self,
-    GPtrArray *channels)
+_tp_base_client_now_handling_channel (TpBaseClient *self,
+    TpChannel *channel)
 {
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
-  g_return_if_fail (channels != NULL);
+  g_return_if_fail (TP_IS_CHANNEL (channel));
 
   /* It only makes sense to update HandledChannels if the client is
    * a Handler */
   if (self->priv->flags & CLIENT_IS_HANDLER)
-    add_handled_channels (self, channels);
+    add_handled_channel (self, channel);
 }
 
 typedef struct

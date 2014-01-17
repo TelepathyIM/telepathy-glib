@@ -56,11 +56,7 @@ void tp_tests_simple_channel_dispatch_operation_set_conn_path (
     TpTestsSimpleChannelDispatchOperation *self,
     const gchar *conn_path);
 
-void tp_tests_simple_channel_dispatch_operation_add_channel (
-    TpTestsSimpleChannelDispatchOperation *self,
-    TpChannel *chan);
-
-void tp_tests_simple_channel_dispatch_operation_lost_channel (
+void tp_tests_simple_channel_dispatch_operation_set_channel (
     TpTestsSimpleChannelDispatchOperation *self,
     TpChannel *chan);
 

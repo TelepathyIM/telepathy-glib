@@ -1,5 +1,5 @@
 /*
- * channel-dispatch-operation.h - proxy for channels awaiting approval
+ * channel-dispatch-operation.h - proxy for channel awaiting approval
  *
  * Copyright (C) 2009 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2009 Nokia Corporation
@@ -90,8 +90,7 @@ _TP_AVAILABLE_IN_0_20
 TpAccount * tp_channel_dispatch_operation_get_account (
     TpChannelDispatchOperation *self);
 
-_TP_AVAILABLE_IN_0_20
-GPtrArray * tp_channel_dispatch_operation_get_channels (
+TpChannel * tp_channel_dispatch_operation_get_channel (
     TpChannelDispatchOperation *self);
 
 _TP_AVAILABLE_IN_0_20
@@ -136,40 +135,34 @@ gboolean tp_channel_dispatch_operation_claim_with_finish (
 
 /* Reject API */
 
-_TP_AVAILABLE_IN_0_16
-void tp_channel_dispatch_operation_close_channels_async (
+void tp_channel_dispatch_operation_close_channel_async (
     TpChannelDispatchOperation *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-_TP_AVAILABLE_IN_0_16
-gboolean tp_channel_dispatch_operation_close_channels_finish (
+gboolean tp_channel_dispatch_operation_close_channel_finish (
     TpChannelDispatchOperation *self,
     GAsyncResult *result,
     GError **error);
 
-_TP_AVAILABLE_IN_0_16
-void tp_channel_dispatch_operation_leave_channels_async (
+void tp_channel_dispatch_operation_leave_channel_async (
     TpChannelDispatchOperation *self,
     TpChannelGroupChangeReason reason,
     const gchar *message,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-_TP_AVAILABLE_IN_0_16
-gboolean tp_channel_dispatch_operation_leave_channels_finish (
+gboolean tp_channel_dispatch_operation_leave_channel_finish (
     TpChannelDispatchOperation *self,
     GAsyncResult *result,
     GError **error);
 
-_TP_AVAILABLE_IN_0_16
-void tp_channel_dispatch_operation_destroy_channels_async (
+void tp_channel_dispatch_operation_destroy_channel_async (
     TpChannelDispatchOperation *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-_TP_AVAILABLE_IN_0_16
-gboolean tp_channel_dispatch_operation_destroy_channels_finish (
+gboolean tp_channel_dispatch_operation_destroy_channel_finish (
     TpChannelDispatchOperation *self,
     GAsyncResult *result,
     GError **error);

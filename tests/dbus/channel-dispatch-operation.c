@@ -16,6 +16,7 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-channel-dispatch-operation.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
@@ -38,7 +39,6 @@ typedef struct {
     TpDBusDaemon *private_dbus;
     TpTestsSimpleChannelDispatchOperation *cdo_service;
     TpTestsEchoChannel *text_chan_service;
-    TpTestsEchoChannel *text_chan_service_2;
 
     TpChannelDispatchOperation *cdo;
     GError *error /* initialized where needed */;
@@ -46,7 +46,6 @@ typedef struct {
     TpBaseConnection *base_connection;
     TpConnection *connection;
     TpChannel *text_chan;
-    TpChannel *text_chan_2;
 
     guint sig;
 } Test;
@@ -123,38 +122,12 @@ setup_services (Test *test,
 
   g_free (chan_path);
 
-  /* Create a second channel */
-  chan_path = g_strdup_printf ("%s/Channel2",
-      tp_proxy_get_object_path (test->connection));
-
-  handle = tp_handle_ensure (contact_repo, "alice", NULL, &test->error);
-  g_assert_no_error (test->error);
-
-  test->text_chan_service_2 = TP_TESTS_ECHO_CHANNEL (
-      tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_ECHO_CHANNEL,
-        "connection", test->base_connection,
-        "object-path", chan_path,
-        "handle", handle,
-        NULL));
-
-  /* Create client-side text channel object */
-  test->text_chan_2 = tp_tests_channel_new (test->connection, chan_path, NULL,
-      TP_HANDLE_TYPE_CONTACT, handle, &test->error);
-  g_assert_no_error (test->error);
-
-  g_free (chan_path);
-
-
   /* Configure fake ChannelDispatchOperation service */
   tp_tests_simple_channel_dispatch_operation_set_conn_path (test->cdo_service,
       tp_proxy_get_object_path (test->connection));
 
-  tp_tests_simple_channel_dispatch_operation_add_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_set_channel (test->cdo_service,
       test->text_chan);
-
-  tp_tests_simple_channel_dispatch_operation_add_channel (test->cdo_service,
-      test->text_chan_2);
 
   tp_tests_simple_channel_dispatch_operation_set_account_path (test->cdo_service,
        ACCOUNT_PATH);
@@ -213,10 +186,6 @@ teardown_services (Test *test,
   g_object_unref (test->text_chan);
   if (test->text_chan_service != NULL)
     g_object_unref (test->text_chan_service);
-
-  g_object_unref (test->text_chan_2);
-  if (test->text_chan_service_2 != NULL)
-    g_object_unref (test->text_chan_service_2);
 
   tp_tests_connection_assert_disconnect_succeeds (test->connection);
 
@@ -327,7 +296,7 @@ test_finished (Test *test,
   g_assert (test->cdo != NULL);
   g_assert (tp_proxy_get_invalidated (test->cdo) == NULL);
 
-  tp_svc_channel_dispatch_operation_emit_finished (test->cdo_service);
+  tp_svc_channel_dispatch_operation_emit_finished (test->cdo_service, "", "");
 
   tp_tests_proxy_run_until_dbus_queue_processed (test->cdo);
 
@@ -407,29 +376,19 @@ check_immutable_properties (Test *test)
         TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS) != NULL);
   g_assert (tp_asv_get_strv (immutable_props,
         TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES) != NULL);
-  g_assert_cmpuint (g_hash_table_size (immutable_props), ==, 4);
+  g_assert_cmpuint (g_hash_table_size (immutable_props), ==, 6);
   g_hash_table_unref (immutable_props);
 }
 
 static void
-check_channels (Test *test)
+check_channel (Test *test)
 {
-  GPtrArray *channels;
   TpChannel *channel;
 
-  channels = tp_channel_dispatch_operation_get_channels (test->cdo);
-  g_assert (channels != NULL);
-  g_assert_cmpuint (channels->len, ==, 2);
-
-  channel = g_ptr_array_index (channels, 0);
+  channel = tp_channel_dispatch_operation_get_channel (test->cdo);
   g_assert (TP_IS_CHANNEL (channel));
   g_assert_cmpstr (tp_proxy_get_object_path (channel), ==,
         tp_proxy_get_object_path (test->text_chan));
-
-  channel = g_ptr_array_index (channels, 1);
-  g_assert (TP_IS_CHANNEL (channel));
-  g_assert_cmpstr (tp_proxy_get_object_path (channel), ==,
-        tp_proxy_get_object_path (test->text_chan_2));
 }
 
 static void
@@ -438,8 +397,11 @@ test_properties_passed (Test *test,
 {
   static const char *interfaces[] = { NULL };
   GHashTable *props;
-  GPtrArray *channels;
+  TpChannel *channel;
   GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
+  GHashTable *chan_props;
+
+  chan_props = tp_tests_dup_channel_props_asv (test->text_chan);
 
   props = tp_asv_new (
       TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,
@@ -450,7 +412,13 @@ test_properties_passed (Test *test,
         DBUS_TYPE_G_OBJECT_PATH, ACCOUNT_PATH,
       TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS,
         G_TYPE_STRV, POSSIBLE_HANDLERS,
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL,
+        DBUS_TYPE_G_OBJECT_PATH, tp_proxy_get_object_path (test->text_chan),
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL_PROPERTIES,
+        TP_HASH_TYPE_STRING_VARIANT_MAP, chan_props,
       NULL);
+
+  g_hash_table_unref (chan_props);
 
   test->cdo = dispatch_operation_new (test->dbus,
       "/whatever", props, &test->error);
@@ -458,12 +426,13 @@ test_properties_passed (Test *test,
 
   check_immutable_properties (test);
 
-  g_object_get (test->cdo, "channels", &channels, NULL);
+  g_object_get (test->cdo, "channel", &channel, NULL);
 
-  /* Channels is not an immutable property so have to be fetched when
-   * preparing the TpChannelDispatchOperation */
-  g_assert (channels == NULL);
-  g_assert (tp_channel_dispatch_operation_get_channels (test->cdo) == NULL);
+  g_assert (TP_IS_CHANNEL (test->text_chan));
+  g_assert_cmpstr (tp_proxy_get_object_path (channel), ==,
+      tp_proxy_get_object_path (test->text_chan));
+  g_assert (tp_channel_dispatch_operation_get_channel (test->cdo) == channel);
+  g_object_unref (channel);
 
   g_hash_table_unref (props);
 
@@ -476,7 +445,7 @@ test_properties_passed (Test *test,
 
   /* Channels are now defined */
   check_immutable_properties (test);
-  check_channels (test);
+  check_channel (test);
 }
 
 /* Don't pass immutable properties to dispatch_operation_new so
@@ -496,7 +465,7 @@ test_properties_fetched (Test *test,
       == NULL);
   g_assert (tp_channel_dispatch_operation_get_account (test->cdo)
       == NULL);
-  g_assert (tp_channel_dispatch_operation_get_channels (test->cdo)
+  g_assert (tp_channel_dispatch_operation_get_channel (test->cdo)
       == NULL);
   g_assert (tp_channel_dispatch_operation_get_possible_handlers (test->cdo)
       == NULL);
@@ -509,110 +478,7 @@ test_properties_fetched (Test *test,
 
   /* Immutable properties and Channels are now defined */
   check_immutable_properties (test);
-  check_channels (test);
-}
-
-static void
-channe_lost_cb (TpChannelDispatchOperation *cdo,
-    TpChannel *channel,
-    guint domain,
-    gint code,
-    gchar *message,
-    Test *test)
-{
-  GError *error = g_error_new_literal (domain, code, message);
-
-  if (test->text_chan_service_2 != NULL)
-    {
-      /* The second channel is still there so we removed the first one */
-      g_assert_cmpstr (tp_proxy_get_object_path (channel), ==,
-            tp_proxy_get_object_path (test->text_chan));
-    }
-  else
-    {
-      g_assert_cmpstr (tp_proxy_get_object_path (channel), ==,
-            tp_proxy_get_object_path (test->text_chan_2));
-    }
-
-  g_assert_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE);
-
-  g_error_free (error);
-
-  test->sig--;
-  if (test->sig == 0)
-    g_main_loop_quit (test->mainloop);
-}
-
-static void
-invalidated_cb (TpProxy *self,
-    guint domain,
-    gint code,
-    gchar *message,
-    Test *test)
-{
-  test->sig--;
-  if (test->sig == 0)
-    g_main_loop_quit (test->mainloop);
-}
-
-static void
-test_channel_lost (Test *test,
-    gconstpointer data G_GNUC_UNUSED)
-{
-  GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
-  GPtrArray *channels;
-  TpChannel *channel;
-
-  test->cdo = dispatch_operation_new (test->dbus,
-      "/whatever", NULL, &test->error);
-  g_assert_no_error (test->error);
-
-  tp_proxy_prepare_async (test->cdo, features, features_prepared_cb, test);
-  g_main_loop_run (test->mainloop);
-
-  g_assert (tp_proxy_is_prepared (test->cdo,
-        TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE));
-
-  check_channels (test);
-
-  test->sig = 1;
-  g_signal_connect (test->cdo, "channel-lost", G_CALLBACK (channe_lost_cb),
-      test);
-
-  /* First channel disappears and so is lost */
-  tp_base_channel_close ((TpBaseChannel *) test->text_chan_service);
-
-  g_object_unref (test->text_chan_service);
-  test->text_chan_service = NULL;
-
-  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
-      test->text_chan);
-  g_main_loop_run (test->mainloop);
-
-  channels = tp_channel_dispatch_operation_get_channels (test->cdo);
-  g_assert (channels != NULL);
-  /* Channel has  been removed */
-  g_assert_cmpuint (channels->len, ==, 1);
-
-  channel = g_ptr_array_index (channels, 0);
-  g_assert_cmpstr (tp_proxy_get_object_path (channel), ==,
-        tp_proxy_get_object_path (test->text_chan_2));
-  /* Second channel disappears, Finished is emited and so the CDO is
-   * invalidated */
-  test->sig = 2;
-  g_signal_connect (test->cdo, "invalidated", G_CALLBACK (invalidated_cb),
-      test);
-
-  tp_base_channel_close ((TpBaseChannel *) test->text_chan_service_2);
-
-  g_object_unref (test->text_chan_service_2);
-  test->text_chan_service_2 = NULL;
-
-  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
-      test->text_chan_2);
-  g_main_loop_run (test->mainloop);
-
-  g_assert_cmpuint (channels->len, ==, 0);
+  check_channel (test);
 }
 
 static void
@@ -651,97 +517,6 @@ test_handle_with (Test *test,
 }
 
 static void
-test_channel_lost_preparing (Test *test,
-    gconstpointer data G_GNUC_UNUSED)
-{
-  GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
-  GPtrArray *channels;
-  TpChannel *channel;
-
-  test->cdo = dispatch_operation_new (test->dbus,
-      "/whatever", NULL, &test->error);
-  g_assert_no_error (test->error);
-
-  tp_proxy_prepare_async (test->cdo, features, features_prepared_cb, test);
-
-  /* First channel disappears while preparing */
-  tp_base_channel_close ((TpBaseChannel *) test->text_chan_service);
-
-  g_object_unref (test->text_chan_service);
-  test->text_chan_service = NULL;
-
-  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
-      test->text_chan);
-
-  g_main_loop_run (test->mainloop);
-
-  g_assert (tp_proxy_is_prepared (test->cdo,
-        TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE));
-
-  channels = tp_channel_dispatch_operation_get_channels (test->cdo);
-  g_assert (channels != NULL);
-  /* Channel has  been removed */
-  g_assert_cmpuint (channels->len, ==, 1);
-
-  channel = g_ptr_array_index (channels, 0);
-  g_assert_cmpstr (tp_proxy_get_object_path (channel), ==,
-      tp_proxy_get_object_path (test->text_chan_2));
-}
-
-static void
-features_not_prepared_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  Test *test = user_data;
-
-  tp_proxy_prepare_finish (source, result, &test->error);
-  g_assert_error (test->error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED);
-  g_clear_error (&test->error);
-
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
-test_finished_preparing (Test *test,
-    gconstpointer data G_GNUC_UNUSED)
-{
-  GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
-  GPtrArray *channels;
-
-  test->cdo = dispatch_operation_new (test->dbus,
-      "/whatever", NULL, &test->error);
-  g_assert_no_error (test->error);
-
-  tp_proxy_prepare_async (test->cdo, features, features_not_prepared_cb, test);
-
-  /* The 2 channels are lost while preparing */
-  tp_base_channel_close ((TpBaseChannel *) test->text_chan_service);
-
-  g_object_unref (test->text_chan_service);
-  test->text_chan_service = NULL;
-
-  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
-      test->text_chan);
-
-  tp_base_channel_close ((TpBaseChannel *) test->text_chan_service_2);
-
-  g_object_unref (test->text_chan_service_2);
-  test->text_chan_service_2 = NULL;
-
-  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
-      test->text_chan_2);
-
-  g_main_loop_run (test->mainloop);
-
-  g_assert (!tp_proxy_is_prepared (test->cdo,
-        TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE));
-
-  channels = tp_channel_dispatch_operation_get_channels (test->cdo);
-  g_assert (channels == NULL);
-}
-
-static void
 handle_with_time_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
@@ -776,7 +551,7 @@ close_channels_cb (GObject *source,
 {
   Test *test = user_data;
 
-  tp_channel_dispatch_operation_close_channels_finish (
+  tp_channel_dispatch_operation_close_channel_finish (
       TP_CHANNEL_DISPATCH_OPERATION (source), result, &test->error);
 
   test->sig--;
@@ -799,7 +574,7 @@ channel_invalidated_cb (TpProxy *proxy,
 }
 
 static void
-test_close_channels (Test *test,
+test_close_channel (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   test->cdo = dispatch_operation_new (test->dbus,
@@ -810,26 +585,24 @@ test_close_channels (Test *test,
 
   g_signal_connect (test->text_chan, "invalidated",
       G_CALLBACK (channel_invalidated_cb), test);
-  g_signal_connect (test->text_chan_2, "invalidated",
-      G_CALLBACK (channel_invalidated_cb), test);
 
-  tp_channel_dispatch_operation_close_channels_async (test->cdo,
+  tp_channel_dispatch_operation_close_channel_async (test->cdo,
       close_channels_cb, test);
 
-  test->sig = 3;
+  test->sig = 2;
   g_main_loop_run (test->mainloop);
 
   g_assert_no_error (test->error);
 }
 
 static void
-leave_channels_cb (GObject *source,
+leave_channel_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
   Test *test = user_data;
 
-  tp_channel_dispatch_operation_leave_channels_finish (
+  tp_channel_dispatch_operation_leave_channel_finish (
       TP_CHANNEL_DISPATCH_OPERATION (source), result, &test->error);
 
   test->sig--;
@@ -838,7 +611,7 @@ leave_channels_cb (GObject *source,
 }
 
 static void
-test_leave_channels (Test *test,
+test_leave_channel (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   test->cdo = dispatch_operation_new (test->dbus,
@@ -849,27 +622,25 @@ test_leave_channels (Test *test,
 
   g_signal_connect (test->text_chan, "invalidated",
       G_CALLBACK (channel_invalidated_cb), test);
-  g_signal_connect (test->text_chan_2, "invalidated",
-      G_CALLBACK (channel_invalidated_cb), test);
 
-  tp_channel_dispatch_operation_leave_channels_async (test->cdo,
+  tp_channel_dispatch_operation_leave_channel_async (test->cdo,
       TP_CHANNEL_GROUP_CHANGE_REASON_BUSY, "Busy right now",
-      leave_channels_cb, test);
+      leave_channel_cb, test);
 
-  test->sig = 3;
+  test->sig = 2;
   g_main_loop_run (test->mainloop);
 
   g_assert_no_error (test->error);
 }
 
 static void
-destroy_channels_cb (GObject *source,
+destroy_channel_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
   Test *test = user_data;
 
-  tp_channel_dispatch_operation_destroy_channels_finish (
+  tp_channel_dispatch_operation_destroy_channel_finish (
       TP_CHANNEL_DISPATCH_OPERATION (source), result, &test->error);
 
   test->sig--;
@@ -878,7 +649,7 @@ destroy_channels_cb (GObject *source,
 }
 
 static void
-test_destroy_channels (Test *test,
+test_destroy_channel (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   test->cdo = dispatch_operation_new (test->dbus,
@@ -889,13 +660,11 @@ test_destroy_channels (Test *test,
 
   g_signal_connect (test->text_chan, "invalidated",
       G_CALLBACK (channel_invalidated_cb), test);
-  g_signal_connect (test->text_chan_2, "invalidated",
-      G_CALLBACK (channel_invalidated_cb), test);
 
-  tp_channel_dispatch_operation_destroy_channels_async (test->cdo,
-      destroy_channels_cb, test);
+  tp_channel_dispatch_operation_destroy_channel_async (test->cdo,
+      destroy_channel_cb, test);
 
-  test->sig = 3;
+  test->sig = 2;
   g_main_loop_run (test->mainloop);
 
   g_assert_no_error (test->error);
@@ -915,22 +684,16 @@ main (int argc,
       test_properties_passed, teardown_services);
   g_test_add ("/cdo/properties-fetched", Test, NULL, setup_services,
       test_properties_fetched, teardown_services);
-  g_test_add ("/cdo/channel-lost", Test, NULL, setup_services,
-      test_channel_lost, teardown_services);
   g_test_add ("/cdo/handle-with", Test, NULL, setup_services,
       test_handle_with, teardown_services);
-  g_test_add ("/cdo/channel-lost-preparing", Test, NULL, setup_services,
-      test_channel_lost_preparing, teardown_services);
-  g_test_add ("/cdo/finished--preparing", Test, NULL, setup_services,
-      test_finished_preparing, teardown_services);
   g_test_add ("/cdo/handle-with-time", Test, NULL, setup_services,
       test_handle_with_time, teardown_services);
-  g_test_add ("/cdo/close-channels", Test, NULL, setup_services,
-      test_close_channels, teardown_services);
-  g_test_add ("/cdo/leave-channels", Test, NULL, setup_services,
-      test_leave_channels, teardown_services);
-  g_test_add ("/cdo/destroy-channels", Test, NULL, setup_services,
-      test_destroy_channels, teardown_services);
+  g_test_add ("/cdo/close-channel", Test, NULL, setup_services,
+      test_close_channel, teardown_services);
+  g_test_add ("/cdo/leave-channel", Test, NULL, setup_services,
+      test_leave_channel, teardown_services);
+  g_test_add ("/cdo/destroy-channel", Test, NULL, setup_services,
+      test_destroy_channel, teardown_services);
 
   /* tp_channel_dispatch_operation_claim_with_async() is tested in
    * tests/dbus/base-client.c */

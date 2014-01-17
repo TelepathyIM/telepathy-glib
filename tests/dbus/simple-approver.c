@@ -125,7 +125,7 @@ setup (Test *test,
   tp_tests_simple_channel_dispatch_operation_set_account_path (
       test->cdo_service, tp_proxy_get_object_path (test->account));
 
-  tp_tests_simple_channel_dispatch_operation_add_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_set_channel (test->cdo_service,
       test->text_chan);
 
   g_assert (tp_dbus_daemon_request_name (test->dbus,
@@ -327,23 +327,14 @@ out:
 }
 
 static void
-free_channel_details (gpointer data,
-    gpointer user_data)
-{
-  g_boxed_free (TP_STRUCT_TYPE_CHANNEL_DETAILS, data);
-}
-
-static void
 call_add_dispatch (Test *test)
 {
-  GPtrArray *channels;
-  GHashTable *properties;
+  GHashTable *properties, *chan_props;
   static const char *interfaces[] = { NULL };
   static const gchar *possible_handlers[] = {
     TP_CLIENT_BUS_NAME_BASE ".Badger", NULL, };
 
-  channels = g_ptr_array_sized_new (1);
-  tp_tests_add_channel_to_ptr_array (channels, test->text_chan);
+  chan_props = tp_tests_dup_channel_props_asv (test->text_chan);
 
   properties = tp_asv_new (
       TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,
@@ -354,19 +345,22 @@ call_add_dispatch (Test *test)
         DBUS_TYPE_G_OBJECT_PATH, tp_proxy_get_object_path (test->account),
       TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS,
         G_TYPE_STRV, possible_handlers,
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL,
+        DBUS_TYPE_G_OBJECT_PATH, tp_proxy_get_object_path (test->text_chan),
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL_PROPERTIES,
+        TP_HASH_TYPE_STRING_VARIANT_MAP, chan_props,
       NULL);
 
   tp_proxy_add_interface_by_id (TP_PROXY (test->client),
       TP_IFACE_QUARK_CLIENT_APPROVER);
 
   tp_cli_client_approver_call_add_dispatch_operation (test->client, -1,
-      channels, CDO_PATH, properties, no_return_cb, test, NULL, NULL);
+      CDO_PATH, properties, no_return_cb, test, NULL, NULL);
 
   g_main_loop_run (test->mainloop);
 
-  g_ptr_array_foreach (channels, free_channel_details, NULL);
-  g_ptr_array_unref (channels);
   g_hash_table_unref (properties);
+  g_hash_table_unref (chan_props);
 }
 
 /* AddDispatchOperation returns immediately */

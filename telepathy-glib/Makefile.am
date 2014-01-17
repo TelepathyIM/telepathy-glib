@@ -250,7 +250,6 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     channel-internal.h \
     channel-dispatcher.c \
     channel-dispatch-operation.c \
-    channel-dispatch-operation-internal.h \
     channel-manager.c \
     channel-request.c \
     client.c \

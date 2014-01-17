@@ -58,7 +58,7 @@ close_cb (GObject *source,
   TpChannelDispatchOperation *cdo = TP_CHANNEL_DISPATCH_OPERATION (source);
   GError *error;
 
-  if (!tp_channel_dispatch_operation_close_channels_finish (cdo, result, &error))
+  if (!tp_channel_dispatch_operation_close_channel_finish (cdo, result, &error))
     {
       g_print ("Rejecting channels failed: %s\n", error->message);
       g_error_free (error);
@@ -119,20 +119,20 @@ add_dispatch_operation_cb (TpSimpleApprover *self,
 
   if (c == 'y' || c == 'Y')
     {
-      g_print ("Approve channels\n");
+      g_print ("Approve channel\n");
 
       tp_channel_dispatch_operation_handle_with_async (cdo, NULL,
           handle_with_cb, NULL);
     }
   else if (c == 'n' || c == 'N')
     {
-      g_print ("Reject channels\n");
+      g_print ("Reject channel\n");
 
-      tp_channel_dispatch_operation_close_channels_async (cdo, close_cb, NULL);
+      tp_channel_dispatch_operation_close_channel_async (cdo, close_cb, NULL);
     }
   else
     {
-      g_print ("Ignore channels\n");
+      g_print ("Ignore channel\n");
     }
 }
 
