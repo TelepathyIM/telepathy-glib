@@ -252,14 +252,13 @@ im.telepathy.v1.Channel.Interface.MediaSignalling/video/h264=true
         </tp:docstring>
       </arg>
 
-      <arg name="User_Action_Time" type="t" direction="in">
+      <arg name="User_Action_Time" type="x" direction="in"
+        tp:type="User_Action_Timestamp">
         <tp:docstring>
           The time at which user action occurred, or 0 if this channel
           is to be handled for some reason not involving user action.
           Handlers SHOULD use this for focus-stealing prevention,
           if applicable.
-          This property has the same semantic as <tp:type>User_Action_Timestamp</tp:type>
-          but is unsigned for historical reasons.
         </tp:docstring>
       </arg>
 
