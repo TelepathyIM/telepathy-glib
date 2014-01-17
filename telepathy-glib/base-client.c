@@ -2273,7 +2273,7 @@ _tp_base_client_handle_channel (TpSvcClientHandler *iface,
     const gchar *channel_path,
     GHashTable *channel_props,
     const GPtrArray *requests_arr,
-    guint64 user_action_time,
+    gint64 user_action_time,
     GHashTable *handler_info,
     DBusGMethodInvocation *context)
 {
