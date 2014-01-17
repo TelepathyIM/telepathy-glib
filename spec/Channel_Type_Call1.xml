@@ -267,7 +267,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       <h4>Requestable channel classes</h4>
 
       <p>The <tp:dbus-ref
-        namespace="imt1.Connection.Interface.Requests">RequestableChannelClasses</tp:dbus-ref>
+        namespace="imt1.Connection">RequestableChannelClasses</tp:dbus-ref>
         for <tp:dbus-ref
         namespace="imt1.Channel.Type">Call1</tp:dbus-ref> channels
         can be:</p>

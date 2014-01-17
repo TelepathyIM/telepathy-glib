@@ -55,7 +55,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:rationale>
           <p>While this seems redundant, since the scheme is included in
             <tp:member-ref>TargetURI</tp:member-ref>, it exists for constructing
-            <tp:dbus-ref namespace="im.telepathy.v1.Connection.Interface.Requests">RequestableChannelClasses</tp:dbus-ref>
+            <tp:dbus-ref namespace="imt1.Connection">RequestableChannelClasses</tp:dbus-ref>
             that support a limited set of URI schemes.</p>
         </tp:rationale>
 
