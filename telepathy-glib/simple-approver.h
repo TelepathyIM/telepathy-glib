@@ -72,7 +72,7 @@ typedef void (*TpSimpleApproverAddDispatchOperationImpl) (
     TpSimpleApprover *approver,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     TpAddDispatchOperationContext *context,
     gpointer user_data);

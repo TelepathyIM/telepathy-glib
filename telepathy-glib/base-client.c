@@ -98,9 +98,8 @@
  * @connection: a #TpConnection with %TP_CONNECTION_FEATURE_CORE,
  *  and any other features added via
  *  tp_client_factory_add_connection_features(), prepared if possible
- * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
- *  each with %TP_CHANNEL_FEATURE_CORE, and any other features added via
- *  tp_client_factory_add_channel_features(), prepared if possible
+ * @channel: a #TpChannel with %TP_CHANNEL_FEATURE_CORE, and any other features
+ *  added via tp_client_factory_add_channel_features(), prepared if possible
  * @dispatch_operation: a #TpChannelDispatchOperation having
  * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE prepared if possible
  * @context: a #TpObserveChannelContext representing the context of this
@@ -1853,7 +1852,6 @@ add_dispatch_context_prepare_cb (GObject *source,
   TpAddDispatchOperationContext *ctx = TP_ADD_DISPATCH_OPERATION_CONTEXT (
       source);
   GError *error = NULL;
-  GList *channels_list;
 
   if (!_tp_add_dispatch_operation_context_prepare_finish (ctx, result, &error))
     {
@@ -1866,12 +1864,8 @@ add_dispatch_context_prepare_cb (GObject *source,
       return;
     }
 
-  channels_list = ptr_array_to_list (ctx->channels);
-
   cls->add_dispatch_operation (self, ctx->account, ctx->connection,
-      channels_list, ctx->dispatch_operation, ctx);
-
-  g_list_free (channels_list);
+      ctx->channel, ctx->dispatch_operation, ctx);
 
   if (_tp_add_dispatch_operation_context_get_state (ctx) ==
       TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_NONE)
@@ -1993,7 +1987,7 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       goto out;
     }
 
-  ctx = _tp_add_dispatch_operation_context_new (account, connection, channels,
+  ctx = _tp_add_dispatch_operation_context_new (account, connection, channel,
       dispatch_operation, context);
 
   account_features = dup_features_for_account (self, account);

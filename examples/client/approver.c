@@ -73,26 +73,19 @@ static void
 add_dispatch_operation_cb (TpSimpleApprover *self,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *cdo,
     TpAddDispatchOperationContext *context,
     gpointer user_data)
 {
-  GList *l;
   GStrv possible_handlers;
   gchar c;
 
-  g_print ("Approving this batch of channels:\n");
+  g_print ("Approving channel %s with %s\n",
+      tp_channel_get_channel_type (channel),
+      tp_channel_get_identifier (channel));
 
   g_signal_connect (cdo, "invalidated", G_CALLBACK (cdo_finished_cb), NULL);
-
-  for (l = channels; l != NULL; l = g_list_next (l))
-    {
-      TpChannel *channel = l->data;
-
-      g_print ("%s channel with %s\n", tp_channel_get_channel_type (channel),
-          tp_channel_get_identifier (channel));
-    }
 
   possible_handlers = tp_channel_dispatch_operation_get_possible_handlers (
       cdo);

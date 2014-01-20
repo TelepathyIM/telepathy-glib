@@ -33,7 +33,7 @@
  * my_add_dispatch_operation (TpSimpleApprover *approver,
  *    TpAccount *account,
  *    TpConnection *connection,
- *    GList *channels,
+ *    TpChannel *channel,
  *    TpChannelDispatchOperation *dispatch_operation,
  *    TpAddDispatchOperationContext *context,
  *    gpointer user_data)
@@ -80,8 +80,7 @@
  * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared if possible
  * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
  * if possible
- * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
- *  all having %TP_CHANNEL_FEATURE_CORE prepared
+ * @channel: a #TpChannel having %TP_CHANNEL_FEATURE_CORE prepared
  * @dispatch_operation: (allow-none): a #TpChannelDispatchOperation or %NULL;
  *  the dispatch_operation is not guaranteed to be prepared
  * @context: a #TpAddDispatchOperationContext representing the context of this
@@ -190,13 +189,13 @@ add_dispatch_operation (
     TpBaseClient *client,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     TpAddDispatchOperationContext *context)
 {
   TpSimpleApprover *self = TP_SIMPLE_APPROVER (client);
 
-  self->priv->callback (self, account, connection, channels, dispatch_operation,
+  self->priv->callback (self, account, connection, channel, dispatch_operation,
       context, self->priv->user_data);
 }
 

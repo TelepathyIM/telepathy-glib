@@ -68,7 +68,7 @@ G_DEFINE_TYPE(TpAddDispatchOperationContext,
 enum {
     PROP_ACCOUNT = 1,
     PROP_CONNECTION,
-    PROP_CHANNELS,
+    PROP_CHANNEL,
     PROP_DISPATCH_OPERATION,
     PROP_DBUS_CONTEXT,
     N_PROPS
@@ -128,11 +128,7 @@ tp_add_dispatch_operation_context_dispose (GObject *object)
       self->connection = NULL;
     }
 
-  if (self->channels != NULL)
-    {
-      g_ptr_array_unref (self->channels);
-      self->channels = NULL;
-    }
+  g_clear_object (&self->channel);
 
   if (self->dispatch_operation != NULL)
     {
@@ -169,8 +165,8 @@ tp_add_dispatch_operation_context_get_property (GObject *object,
         g_value_set_object (value, self->connection);
         break;
 
-      case PROP_CHANNELS:
-        g_value_set_boxed (value, self->channels);
+      case PROP_CHANNEL:
+        g_value_set_object (value, self->channel);
         break;
 
       case PROP_DISPATCH_OPERATION:
@@ -202,8 +198,8 @@ tp_add_dispatch_operation_context_set_property (GObject *object,
         self->connection = g_value_dup_object (value);
         break;
 
-      case PROP_CHANNELS:
-        self->channels = g_value_dup_boxed (value);
+      case PROP_CHANNEL:
+        self->channel = g_value_dup_object (value);
         break;
 
       case PROP_DISPATCH_OPERATION:
@@ -234,7 +230,7 @@ tp_add_dispatch_operation_context_constructed (GObject *object)
 
   g_assert (self->account != NULL);
   g_assert (self->connection != NULL);
-  g_assert (self->channels != NULL);
+  g_assert (self->channel != NULL);
   g_assert (self->dispatch_operation != NULL);
   g_assert (self->priv->dbus_context != NULL);
 }
@@ -290,21 +286,19 @@ tp_add_dispatch_operation_context_class_init (
       param_spec);
 
   /**
-   * TpAddDispatchOperationContext:channels:
+   * TpAddDispatchOperationContext:channel:
    *
-   * A #GPtrArray containing #TpChannel objects representing the channels
-   * that have been passed to AddDispatchOperation.
+   * A #TpChannel object representing the channel
+   * that has been passed to AddDispatchOperation.
    * Read-only except during construction.
    *
    * This property can't be %NULL.
-   *
-   * Since: 0.11.5
    */
-  param_spec = g_param_spec_boxed ("channels", "GPtrArray of TpChannel",
-      "The TpChannels that have been passed to AddDispatchOperation",
-      G_TYPE_PTR_ARRAY,
+  param_spec = g_param_spec_object ("channel", "TpChannel",
+      "The TpChannel that has been passed to AddDispatchOperation",
+      TP_TYPE_CHANNEL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CHANNELS,
+  g_object_class_install_property (object_class, PROP_CHANNEL,
       param_spec);
 
   /**
@@ -347,14 +341,14 @@ TpAddDispatchOperationContext *
 _tp_add_dispatch_operation_context_new (
     TpAccount *account,
     TpConnection *connection,
-    GPtrArray *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     DBusGMethodInvocation *dbus_context)
 {
   return g_object_new (TP_TYPE_ADD_DISPATCH_OPERATION_CONTEXT,
       "account", account,
       "connection", connection,
-      "channels", channels,
+      "channel", channel,
       "dispatch-operation", dispatch_operation,
       "dbus-context", dbus_context,
       NULL);
@@ -560,9 +554,8 @@ context_prepare (TpAddDispatchOperationContext *self,
     const GQuark *channel_features)
 {
   GQuark cdo_features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
-  guint i;
 
-  self->priv->num_pending = 3;
+  self->priv->num_pending = 4;
 
   tp_proxy_prepare_async (self->account, account_features,
       account_prepare_cb, g_object_ref (self));
@@ -573,15 +566,8 @@ context_prepare (TpAddDispatchOperationContext *self,
   tp_proxy_prepare_async (self->dispatch_operation, cdo_features,
       cdo_prepare_cb, g_object_ref (self));
 
-  for (i = 0; i < self->channels->len; i++)
-    {
-      TpChannel *channel = g_ptr_array_index (self->channels, i);
-
-      self->priv->num_pending++;
-
-      tp_proxy_prepare_async (channel, channel_features,
-          adoc_channel_prepare_cb, g_object_ref (self));
-    }
+  tp_proxy_prepare_async (self->channel, channel_features,
+      adoc_channel_prepare_cb, g_object_ref (self));
 }
 
 void

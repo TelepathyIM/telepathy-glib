@@ -45,8 +45,7 @@ struct _TpAddDispatchOperationContext {
 
   TpAccount *account;
   TpConnection *connection;
-  /* array of reffed TpChannel */
-  GPtrArray *channels;
+  TpChannel *channel;
   /* Reffed TpChannelDispatchOperation */
   TpChannelDispatchOperation *dispatch_operation;
 };
@@ -54,7 +53,7 @@ struct _TpAddDispatchOperationContext {
 TpAddDispatchOperationContext * _tp_add_dispatch_operation_context_new (
     TpAccount *account,
     TpConnection *connection,
-    GPtrArray *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     DBusGMethodInvocation *dbus_context);
 

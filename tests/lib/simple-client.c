@@ -87,12 +87,11 @@ simple_add_dispatch_operation (
     TpBaseClient *client,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     TpAddDispatchOperationContext *context)
 {
   TpTestsSimpleClient *self = TP_TESTS_SIMPLE_CLIENT (client);
-  GList *l;
 
   g_assert (TP_IS_ACCOUNT (account));
   g_assert (tp_proxy_is_prepared (account, TP_ACCOUNT_FEATURE_CORE));
@@ -111,15 +110,9 @@ simple_add_dispatch_operation (
       self->add_dispatch_ctx = NULL;
     }
 
-  g_assert_cmpuint (g_list_length (channels), >, 0);
-  for (l = channels; l != NULL; l = g_list_next (l))
-    {
-      TpChannel *channel = l->data;
-
-      g_assert (TP_IS_CHANNEL (channel));
-      g_assert (tp_proxy_is_prepared (channel, TP_CHANNEL_FEATURE_CORE) ||
-          tp_proxy_get_invalidated (channel) != NULL);
-    }
+  g_assert (TP_IS_CHANNEL (channel));
+  g_assert (tp_proxy_is_prepared (channel, TP_CHANNEL_FEATURE_CORE) ||
+      tp_proxy_get_invalidated (channel) != NULL);
 
   self->add_dispatch_ctx = g_object_ref (context);
   tp_add_dispatch_operation_context_accept (context);

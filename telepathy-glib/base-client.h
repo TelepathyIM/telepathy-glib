@@ -62,7 +62,7 @@ typedef void (*TpBaseClientClassAddDispatchOperationImpl) (
     TpBaseClient *client,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     TpAddDispatchOperationContext *context);
 

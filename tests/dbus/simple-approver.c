@@ -265,7 +265,7 @@ add_dispatch_success (
     TpSimpleApprover *approver,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     TpAddDispatchOperationContext *context,
     gpointer user_data)
@@ -396,7 +396,7 @@ add_dispatch_async (
     TpSimpleApprover *approver,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     TpAddDispatchOperationContext *context,
     gpointer user_data)
@@ -432,7 +432,7 @@ add_dispatch_fail (
     TpSimpleApprover *approver,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     TpAddDispatchOperationContext *context,
     gpointer user_data)
