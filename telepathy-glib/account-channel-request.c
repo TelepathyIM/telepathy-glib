@@ -711,28 +711,16 @@ acr_channel_invalidated_cb (TpProxy *chan,
 }
 
 static void
-handle_channels (TpSimpleHandler *handler,
+handle_channel (TpSimpleHandler *handler,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     GList *requests_satisfied,
     gint64 user_action_time,
     TpHandleChannelContext *context,
     gpointer user_data)
 {
   TpAccountChannelRequest *self = user_data;
-  TpChannel *channel;
-
-  if (G_UNLIKELY (g_list_length (channels) != 1))
-    {
-      GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-          "We are supposed to handle only one channel" };
-
-      tp_handle_channel_context_fail (context, &error);
-
-      request_fail (self, &error);
-      return;
-    }
 
   tp_handle_channel_context_accept (context);
 
@@ -744,9 +732,6 @@ handle_channels (TpSimpleHandler *handler,
 
       return;
     }
-
-  /* Request succeeded */
-  channel = channels->data;
 
   if (tp_proxy_get_invalidated (channel) == NULL)
     {
@@ -1024,7 +1009,7 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
   /* Create a temp handler */
   self->priv->handler = tp_simple_handler_new (
       tp_proxy_get_factory (self->priv->account), TRUE, FALSE,
-      "TpGLibRequestAndHandle", TRUE, handle_channels, self, NULL);
+      "TpGLibRequestAndHandle", TRUE, handle_channel, self, NULL);
   _tp_base_client_set_only_for_account (self->priv->handler,
       self->priv->account);
 

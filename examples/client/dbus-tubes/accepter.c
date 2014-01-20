@@ -133,48 +133,27 @@ tube_invalidated_cb (TpStreamTubeChannel *tube,
 }
 
 static void
-handle_channels (TpSimpleHandler *handler,
+handle_channel (TpSimpleHandler *handler,
     TpAccount *account,
     TpConnection *conn,
-    GList *channels,
+    TpChannel *channel,
     GList *requests,
     gint64 action_time,
     TpHandleChannelContext *context,
     gpointer user_data)
 {
   TpDBusTubeChannel *tube;
-  GList *l;
-  GError error = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
-      "No channel to be handled" };
 
-  g_message ("Handling channels");
+  g_message ("Handling channel; accepting tube");
 
-  for (l = channels; l != NULL; l = l->next)
-    {
-      TpDBusTubeChannel *channel = l->data;
+  tube = g_object_ref (channel);
 
-      if (!TP_IS_DBUS_TUBE_CHANNEL (channel))
-        continue;
+  g_signal_connect (tube, "invalidated",
+      G_CALLBACK (tube_invalidated_cb), NULL);
 
-      if (tp_strdiff (tp_dbus_tube_channel_get_service_name (channel),
-            EXAMPLE_SERVICE_NAME))
-        continue;
+  tp_dbus_tube_channel_accept_async (tube, tube_accepted, context);
 
-      g_message ("Accepting tube");
-
-      tube = g_object_ref (channel);
-
-      g_signal_connect (tube, "invalidated",
-          G_CALLBACK (tube_invalidated_cb), NULL);
-
-      tp_dbus_tube_channel_accept_async (tube, tube_accepted, context);
-
-      tp_handle_channel_context_accept (context);
-      return;
-    }
-
-  g_message ("Rejecting channels");
-  tp_handle_channel_context_fail (context, &error);
+  tp_handle_channel_context_accept (context);
 }
 
 
@@ -188,7 +167,7 @@ main (int argc,
 
   manager = tp_account_manager_dup ();
   handler = tp_simple_handler_new_with_am (manager, FALSE, FALSE,
-      "ExampleServiceHandler", FALSE, handle_channels, NULL, NULL);
+      "ExampleServiceHandler", FALSE, handle_channel, NULL, NULL);
 
   tp_base_client_take_handler_filter (handler, tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE,

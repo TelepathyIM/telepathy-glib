@@ -28,7 +28,7 @@ struct _TpTestsSimpleClient {
 
     TpObserveChannelContext *observe_ctx;
     TpAddDispatchOperationContext *add_dispatch_ctx;
-    TpHandleChannelContext *handle_channels_ctx;
+    TpHandleChannelContext *handle_channel_ctx;
 };
 
 GType tp_tests_simple_client_get_type (void);

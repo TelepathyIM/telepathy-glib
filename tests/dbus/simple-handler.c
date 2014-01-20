@@ -164,7 +164,7 @@ static void
 create_simple_handler (Test *test,
     gboolean bypass_approval,
     gboolean requests,
-    TpSimpleHandlerHandleChannelsImpl impl)
+    TpSimpleHandlerHandleChannelImpl impl)
 {
   /* Create service-side Client object */
   test->simple_handler = tp_tests_object_new_static_class (
@@ -281,11 +281,11 @@ out:
 }
 
 static void
-handle_channels_success (
+handle_channel_success (
     TpSimpleHandler *handler,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     GList *requests_satisified,
     gint64 user_action_time,
     TpHandleChannelContext *context,
@@ -298,7 +298,7 @@ static void
 test_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  create_simple_handler (test, FALSE, TRUE, handle_channels_success);
+  create_simple_handler (test, FALSE, TRUE, handle_channel_success);
 
   tp_base_client_add_handler_filter_vardict (test->simple_handler,
       g_variant_new_parsed ("{ %s: <%s> }",
@@ -348,7 +348,7 @@ out:
 }
 
 static void
-call_handle_channels (Test *test)
+call_handle_channel (Test *test)
 {
   GPtrArray *requests_satisified;
   GHashTable *info,* chan_props;
@@ -378,12 +378,12 @@ call_handle_channels (Test *test)
   g_hash_table_unref (chan_props);
 }
 
-/* HandleChannels returns immediately */
+/* HandleChannel returns immediately */
 static void
 test_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  create_simple_handler (test, FALSE, FALSE, handle_channels_success);
+  create_simple_handler (test, FALSE, FALSE, handle_channel_success);
 
   tp_base_client_add_handler_filter_vardict (test->simple_handler,
       g_variant_new_parsed ("@a{sv} {}"));
@@ -391,11 +391,11 @@ test_success (Test *test,
   tp_base_client_register (test->simple_handler, &test->error);
   g_assert_no_error (test->error);
 
-  call_handle_channels (test);
+  call_handle_channel (test);
   g_assert_no_error (test->error);
 }
 
-/* HandleChannels returns in an async way */
+/* HandleChannel returns in an async way */
 static gboolean
 accept_idle_cb (gpointer data)
 {
@@ -407,11 +407,11 @@ accept_idle_cb (gpointer data)
 }
 
 static void
-handle_channels_async (
+handle_channel_async (
     TpSimpleHandler *handler,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     GList *requests_satisified,
     gint64 user_action_time,
     TpHandleChannelContext *context,
@@ -426,7 +426,7 @@ static void
 test_delayed (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  create_simple_handler (test, FALSE, FALSE, handle_channels_async);
+  create_simple_handler (test, FALSE, FALSE, handle_channel_async);
 
   tp_base_client_add_handler_filter_vardict (test->simple_handler,
       g_variant_new_parsed ("@a{sv} {}"));
@@ -434,24 +434,24 @@ test_delayed (Test *test,
   tp_base_client_register (test->simple_handler, &test->error);
   g_assert_no_error (test->error);
 
-  call_handle_channels (test);
+  call_handle_channel (test);
   g_assert_no_error (test->error);
 }
 
-/* HandleChannels fails */
+/* HandleChannel fails */
 static void
-handle_channels_fail (
+handle_channel_fail (
     TpSimpleHandler *handler,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     GList *requests_satisified,
     gint64 user_action_time,
     TpHandleChannelContext *context,
     gpointer user_data)
 {
   GError error = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
-      "No HandleChannels for you!" };
+      "No HandleChannel for you!" };
 
   tp_handle_channel_context_fail (context, &error);
 }
@@ -460,7 +460,7 @@ static void
 test_fail (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  create_simple_handler (test, FALSE, FALSE, handle_channels_fail);
+  create_simple_handler (test, FALSE, FALSE, handle_channel_fail);
 
   tp_base_client_add_handler_filter_vardict (test->simple_handler,
       g_variant_new_parsed ("@a{sv} {}"));
@@ -468,7 +468,7 @@ test_fail (Test *test,
   tp_base_client_register (test->simple_handler, &test->error);
   g_assert_no_error (test->error);
 
-  call_handle_channels (test);
+  call_handle_channel (test);
   g_assert_error (test->error, TP_ERROR, TP_ERROR_NOT_AVAILABLE);
 }
 

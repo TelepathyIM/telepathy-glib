@@ -4532,8 +4532,8 @@ tp_base_client_add_handler_filter
 tp_base_client_add_handler_filter_vardict
 tp_base_client_take_handler_filter
 tp_base_client_be_a_handler
-TpBaseClientClassHandleChannelsImpl
-tp_base_client_implement_handle_channels
+TpBaseClientClassHandleChannelImpl
+tp_base_client_implement_handle_channel
 tp_base_client_dup_handled_channels
 tp_base_client_is_handling_channel
 tp_base_client_delegate_channels_async
@@ -4673,7 +4673,7 @@ TP_TYPE_HANDLE_CHANNELS_CONTEXT
 <FILE>simple-handler</FILE>
 <TITLE>simple-handler</TITLE>
 TpSimpleHandler
-TpSimpleHandlerHandleChannelsImpl
+TpSimpleHandlerHandleChannelImpl
 tp_simple_handler_new
 tp_simple_handler_new_with_am
 <SUBSECTION Standard>

@@ -761,7 +761,7 @@ channel_invalidated_cb (TpChannel *channel,
 }
 
 static void
-call_handle_channel (Test *test,
+call_handle_channels (Test *test,
     TpChannel *channel,
     GPtrArray *requests_satisified,
     GHashTable *info)
@@ -853,11 +853,11 @@ test_handler (Test *test,
   g_assert (!tp_base_client_is_handling_channel (test->base_client,
         test->text_chan_2));
 
-  call_handle_channel (test, test->text_chan, NULL, NULL);
-  call_handle_channel (test, test->text_chan_2, NULL, NULL);
+  call_handle_channels (test, test->text_chan, NULL, NULL);
+  call_handle_channels (test, test->text_chan_2, NULL, NULL);
 
-  g_assert (test->simple_client->handle_channels_ctx != NULL);
-  g_assert (test->simple_client->handle_channels_ctx->account == test->account);
+  g_assert (test->simple_client->handle_channel_ctx != NULL);
+  g_assert (test->simple_client->handle_channel_ctx->account == test->account);
 
   chans = tp_base_client_dup_handled_channels (test->base_client);
   g_assert_cmpuint (g_list_length (chans), ==, 2);
@@ -1026,7 +1026,7 @@ test_handler_requests (Test *test,
   g_assert (requests != NULL);
   g_list_free_full (requests, g_object_unref);
 
-  /* Call HandleChannels */
+  /* Call HandleChannel */
   requests_satisified = g_ptr_array_sized_new (1);
   g_ptr_array_add (requests_satisified, "/Request");
 
@@ -1037,13 +1037,13 @@ test_handler_requests (Test *test,
           request_props,
       NULL);
 
-  call_handle_channel (test, test->text_chan, requests_satisified, info);
+  call_handle_channels (test, test->text_chan, requests_satisified, info);
 
-  g_assert (test->simple_client->handle_channels_ctx != NULL);
+  g_assert (test->simple_client->handle_channel_ctx != NULL);
   g_assert_cmpint (
-      test->simple_client->handle_channels_ctx->requests_satisfied->len, ==, 1);
+      test->simple_client->handle_channel_ctx->requests_satisfied->len, ==, 1);
   request = g_ptr_array_index (
-      test->simple_client->handle_channels_ctx->requests_satisfied, 0);
+      test->simple_client->handle_channel_ctx->requests_satisfied, 0);
   requests = tp_base_client_dup_pending_requests (test->base_client);
   g_assert (requests->data == request);
   g_list_free_full (requests, g_object_unref);
@@ -1206,8 +1206,8 @@ test_delegate_channels (Test *test,
   tp_base_client_register (test->base_client, &test->error);
   g_assert_no_error (test->error);
 
-  call_handle_channel (test, test->text_chan, NULL, NULL);
-  call_handle_channel (test, test->text_chan_2, NULL, NULL);
+  call_handle_channels (test, test->text_chan, NULL, NULL);
+  call_handle_channels (test, test->text_chan_2, NULL, NULL);
 
   /* The client is handling the 2 channels */
   chans = tp_base_client_dup_handled_channels (test->base_client);
@@ -1375,8 +1375,8 @@ delegate_to_preferred_handler (Test *test,
   tp_base_client_register (test->base_client, &test->error);
   g_assert_no_error (test->error);
 
-  call_handle_channel (test, test->text_chan, NULL, NULL);
-  call_handle_channel (test, test->text_chan_2, NULL, NULL);
+  call_handle_channels (test, test->text_chan, NULL, NULL);
+  call_handle_channels (test, test->text_chan_2, NULL, NULL);
 
   /* The client is handling the 2 channels */
   g_assert (tp_base_client_is_handling_channel (test->base_client,
@@ -1415,11 +1415,11 @@ delegate_to_preferred_handler (Test *test,
    * delegated_channels_cb to be called */
   if (supported)
     test->wait++;
-  call_handle_channel (test, test->text_chan, requests_satisfied, info);
+  call_handle_channels (test, test->text_chan, requests_satisfied, info);
 
   if (supported)
     test->wait++;
-  call_handle_channel (test, test->text_chan_2, requests_satisfied, info);
+  call_handle_channels (test, test->text_chan_2, requests_satisfied, info);
 
   g_assert_no_error (test->error);
 

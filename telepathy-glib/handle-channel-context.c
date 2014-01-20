@@ -72,7 +72,7 @@ G_DEFINE_TYPE(TpHandleChannelContext,
 enum {
     PROP_ACCOUNT = 1,
     PROP_CONNECTION,
-    PROP_CHANNELS,
+    PROP_CHANNEL,
     PROP_REQUESTS_SATISFIED,
     PROP_USER_ACTION_TIME,
     PROP_HANDLER_INFO,
@@ -141,11 +141,7 @@ tp_handle_channel_context_dispose (GObject *object)
       self->connection = NULL;
     }
 
-  if (self->channels != NULL)
-    {
-      g_ptr_array_unref (self->channels);
-      self->channels = NULL;
-    }
+  g_clear_object (&self->channel);
 
   if (self->requests_satisfied != NULL)
     {
@@ -190,8 +186,8 @@ tp_handle_channel_context_get_property (GObject *object,
         g_value_set_object (value, self->connection);
         break;
 
-      case PROP_CHANNELS:
-        g_value_set_boxed (value, self->channels);
+      case PROP_CHANNEL:
+        g_value_set_object (value, self->channel);
         break;
 
       case PROP_REQUESTS_SATISFIED:
@@ -231,8 +227,8 @@ tp_handle_channel_context_set_property (GObject *object,
         self->connection = g_value_dup_object (value);
         break;
 
-      case PROP_CHANNELS:
-        self->channels = g_value_dup_boxed (value);
+      case PROP_CHANNEL:
+        self->channel = g_value_dup_object (value);
         break;
 
       case PROP_REQUESTS_SATISFIED:
@@ -273,7 +269,7 @@ tp_handle_channel_context_constructed (GObject *object)
 
   g_assert (self->account != NULL);
   g_assert (self->connection != NULL);
-  g_assert (self->channels != NULL);
+  g_assert (self->channel != NULL);
   g_assert (self->requests_satisfied != NULL);
   g_assert (self->handler_info != NULL);
   g_assert (self->priv->dbus_context != NULL);
@@ -330,21 +326,19 @@ tp_handle_channel_context_class_init (
       param_spec);
 
   /**
-   * TpHandleChannelContext:channels:
+   * TpHandleChannelContext:channel:
    *
-   * A #GPtrArray containing #TpChannel objects representing the channels
-   * that have been passed to HandleChannels.
+   * A #TpChannel object representing the channel
+   * that has been passed to HandleChannel.
    * Read-only except during construction.
    *
    * This property can't be %NULL.
-   *
-   * Since: 0.11.6
    */
-  param_spec = g_param_spec_boxed ("channels", "GPtrArray of TpChannel",
-      "The TpChannels that have been passed to HandleChannels",
-      G_TYPE_PTR_ARRAY,
+  param_spec = g_param_spec_object ("channel", "TpChannel",
+      "The TpChannel that has been passed to HandleChannel",
+      TP_TYPE_CHANNEL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CHANNELS,
+  g_object_class_install_property (object_class, PROP_CHANNEL,
       param_spec);
 
   /**
@@ -440,7 +434,7 @@ tp_handle_channel_context_class_init (
 TpHandleChannelContext * _tp_handle_channel_context_new (
     TpAccount *account,
     TpConnection *connection,
-    GPtrArray *channels,
+    TpChannel *channel,
     GPtrArray *requests_satisfied,
     guint64 user_action_time,
     GHashTable *handler_info,
@@ -449,7 +443,7 @@ TpHandleChannelContext * _tp_handle_channel_context_new (
   return g_object_new (TP_TYPE_HANDLE_CHANNELS_CONTEXT,
       "account", account,
       "connection", connection,
-      "channels", channels,
+      "channel", channel,
       "requests-satisfied", requests_satisfied,
       "user-action-time", user_action_time,
       "handler-info", handler_info,
@@ -636,9 +630,7 @@ context_prepare (TpHandleChannelContext *self,
     const GQuark *connection_features,
     const GQuark *channel_features)
 {
-  guint i;
-
-  self->priv->num_pending = 2;
+  self->priv->num_pending = 3;
 
   tp_proxy_prepare_async (self->account, account_features,
       account_prepare_cb, g_object_ref (self));
@@ -646,15 +638,8 @@ context_prepare (TpHandleChannelContext *self,
   tp_proxy_prepare_async (self->connection, connection_features,
       conn_prepare_cb, g_object_ref (self));
 
-  for (i = 0; i < self->channels->len; i++)
-    {
-      TpChannel *channel = g_ptr_array_index (self->channels, i);
-
-      self->priv->num_pending++;
-
-      tp_proxy_prepare_async (channel, channel_features,
-          hcc_channel_prepare_cb, g_object_ref (self));
-    }
+  tp_proxy_prepare_async (self->channel, channel_features,
+      hcc_channel_prepare_cb, g_object_ref (self));
 }
 
 void

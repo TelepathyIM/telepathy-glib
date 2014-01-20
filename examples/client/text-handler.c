@@ -76,36 +76,25 @@ display_pending_messages (TpTextChannel *channel)
 }
 
 static void
-handle_channels_cb (TpSimpleHandler *self,
+handle_channel_cb (TpSimpleHandler *self,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     GList *requests,
     gint64 user_action_time,
     TpHandleChannelContext *context,
     gpointer user_data)
 {
-  GList *l;
+  g_print ("Handling text channel with %s\n",
+      tp_channel_get_identifier (channel));
 
-  for (l = channels; l != NULL; l = g_list_next (l))
-    {
-      TpChannel *channel = l->data;
-      TpTextChannel *text_chan = l->data;
+  g_signal_connect (channel, "message-received",
+      G_CALLBACK (message_received_cb), NULL);
 
-      if (!TP_IS_TEXT_CHANNEL (channel))
-        continue;
-
-      g_print ("Handling text channel with %s\n",
-          tp_channel_get_identifier (channel));
-
-      g_signal_connect (channel, "message-received",
-          G_CALLBACK (message_received_cb), NULL);
-
-      /* The default TpAutomaticClientFactory used by
-       * tp_account_manager_dup() has already prepared
-       * TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, if possible. */
-      display_pending_messages (text_chan);
-    }
+  /* The default TpAutomaticClientFactory used by
+   * tp_account_manager_dup() has already prepared
+   * TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, if possible. */
+  display_pending_messages (TP_TEXT_CHANNEL (channel));
 
   tp_handle_channel_context_accept (context);
 }
@@ -121,7 +110,7 @@ main (int argc,
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
   handler = tp_simple_handler_new (NULL, FALSE, FALSE,
-      "ExampleHandler", FALSE, handle_channels_cb, NULL, NULL);
+      "ExampleHandler", FALSE, handle_channel_cb, NULL, NULL);
 
   tp_base_client_take_handler_filter (handler, tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,

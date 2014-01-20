@@ -66,11 +66,11 @@ typedef void (*TpBaseClientClassAddDispatchOperationImpl) (
     TpChannelDispatchOperation *dispatch_operation,
     TpAddDispatchOperationContext *context);
 
-typedef void (*TpBaseClientClassHandleChannelsImpl) (
+typedef void (*TpBaseClientClassHandleChannelImpl) (
     TpBaseClient *client,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     GList *requests_satisfied,
     gint64 user_action_time,
     TpHandleChannelContext *context);
@@ -80,7 +80,7 @@ struct _TpBaseClientClass {
     GObjectClass parent_class;
     TpBaseClientClassObserveChannelImpl observe_channel;
     TpBaseClientClassAddDispatchOperationImpl add_dispatch_operation;
-    TpBaseClientClassHandleChannelsImpl handle_channels;
+    TpBaseClientClassHandleChannelImpl handle_channel;
     /*<private>*/
     GCallback _padding[4];
     TpDBusPropertiesMixinClass dbus_properties_class;
@@ -103,8 +103,8 @@ void tp_base_client_implement_observe_channel (TpBaseClientClass *klass,
 void tp_base_client_implement_add_dispatch_operation (TpBaseClientClass *klass,
     TpBaseClientClassAddDispatchOperationImpl impl);
 
-void tp_base_client_implement_handle_channels (TpBaseClientClass *klass,
-    TpBaseClientClassHandleChannelsImpl impl);
+void tp_base_client_implement_handle_channel (TpBaseClientClass *klass,
+    TpBaseClientClassHandleChannelImpl impl);
 
 /* setup functions which can only be called before register() */
 

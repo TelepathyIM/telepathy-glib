@@ -68,11 +68,11 @@ GType tp_simple_handler_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_SIMPLE_HANDLER, \
                               TpSimpleHandlerClass))
 
-typedef void (*TpSimpleHandlerHandleChannelsImpl) (
+typedef void (*TpSimpleHandlerHandleChannelImpl) (
     TpSimpleHandler *handler,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     GList *requests_satisfied,
     gint64 user_action_time,
     TpHandleChannelContext *context,
@@ -83,7 +83,7 @@ TpBaseClient *tp_simple_handler_new (TpClientFactory *factory,
     gboolean requests,
     const gchar *name,
     gboolean uniquify,
-    TpSimpleHandlerHandleChannelsImpl callback,
+    TpSimpleHandlerHandleChannelImpl callback,
     gpointer user_data,
     GDestroyNotify destroy);
 
@@ -92,7 +92,7 @@ TpBaseClient *tp_simple_handler_new_with_am (TpAccountManager *account_manager,
     gboolean requests,
     const gchar *name,
     gboolean uniquify,
-    TpSimpleHandlerHandleChannelsImpl callback,
+    TpSimpleHandlerHandleChannelImpl callback,
     gpointer user_data,
     GDestroyNotify destroy);
 

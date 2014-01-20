@@ -539,21 +539,18 @@ static void
 new_call_channel_cb (TpSimpleHandler *handler,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     GList *requests_satisfied,
     gint64 user_action_time,
     TpHandleChannelContext *handler_context,
     gpointer user_data)
 {
   ChannelContext *context;
-  TpChannel *proxy;
   GstBus *bus;
   GstElement *pipeline;
   GstStateChangeReturn ret;
 
   g_debug ("New channel");
-
-  proxy = channels->data;
 
   pipeline = gst_pipeline_new (NULL);
 
@@ -561,7 +558,7 @@ new_call_channel_cb (TpSimpleHandler *handler,
 
   if (ret == GST_STATE_CHANGE_FAILURE)
     {
-      tp_channel_close_async (TP_CHANNEL (proxy), NULL, NULL);
+      tp_channel_close_async (channel, NULL, NULL);
       g_object_unref (pipeline);
       g_warning ("Failed to start an empty pipeline !?");
       return;
@@ -574,14 +571,14 @@ new_call_channel_cb (TpSimpleHandler *handler,
   context->buswatch = gst_bus_add_watch (bus, bus_watch_cb, context);
   g_object_unref (bus);
 
-  tf_channel_new_async (proxy, new_tf_channel_cb, context);
+  tf_channel_new_async (channel, new_tf_channel_cb, context);
 
   tp_handle_channel_context_accept (handler_context);
 
-  tp_call_channel_accept_async (TP_CALL_CHANNEL (proxy), NULL, NULL);
+  tp_call_channel_accept_async (TP_CALL_CHANNEL (channel), NULL, NULL);
 
-  context->proxy = g_object_ref (proxy);
-  g_signal_connect (proxy, "invalidated",
+  context->proxy = g_object_ref (channel);
+  g_signal_connect (channel, "invalidated",
     G_CALLBACK (proxy_invalidated_cb),
     context);
 }

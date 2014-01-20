@@ -75,56 +75,27 @@ tube_invalidated_cb (TpStreamTubeChannel *tube,
 }
 
 static void
-_handle_channels (TpSimpleHandler *handler,
+_handle_channel (TpSimpleHandler *handler,
     TpAccount *account,
     TpConnection *conn,
-    GList *channels,
+    TpChannel *channel,
     GList *requests,
     gint64 action_time,
     TpHandleChannelContext *context,
     gpointer user_data)
 {
-  gboolean delay = FALSE;
-  GList *l;
+  g_message ("Handling channel; accepting tube");
 
-  g_message ("Handling channels");
+  g_signal_connect (channel, "invalidated",
+      G_CALLBACK (tube_invalidated_cb), NULL);
 
-  for (l = channels; l != NULL; l = l->next)
-    {
-      TpStreamTubeChannel *tube = l->data;
+  tp_stream_tube_channel_accept_async (TP_STREAM_TUBE_CHANNEL (channel),
+      _tube_accepted, context);
 
-      if (!TP_IS_STREAM_TUBE_CHANNEL (tube))
-        continue;
+  g_message ("Delaying channel acceptance");
 
-      g_message ("Accepting tube");
-
-      g_signal_connect (tube, "invalidated",
-          G_CALLBACK (tube_invalidated_cb), NULL);
-
-      tp_stream_tube_channel_accept_async (tube, _tube_accepted, context);
-
-      delay = TRUE;
-    }
-
-  if (delay)
-    {
-      g_message ("Delaying channel acceptance");
-
-      tp_handle_channel_context_delay (context);
-      g_object_ref (context);
-    }
-  else
-    {
-      GError *error;
-
-      g_message ("Rejecting channels");
-
-      error = g_error_new (TP_ERROR, TP_ERROR_NOT_AVAILABLE,
-          "No channels to be handled");
-      tp_handle_channel_context_fail (context, error);
-
-      g_error_free (error);
-    }
+  tp_handle_channel_context_delay (context);
+  g_object_ref (context);
 }
 
 
@@ -138,7 +109,7 @@ main (int argc,
 
   manager = tp_account_manager_dup ();
   handler = tp_simple_handler_new_with_am (manager, FALSE, FALSE,
-      "ExampleServiceHandler", FALSE, _handle_channels, NULL, NULL);
+      "ExampleServiceHandler", FALSE, _handle_channel, NULL, NULL);
 
   tp_base_client_take_handler_filter (handler, tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE,

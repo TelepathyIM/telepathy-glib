@@ -25,6 +25,7 @@
 #include <dbus/dbus-glib.h>
 
 #include <telepathy-glib/account.h>
+#include <telepathy-glib/channel.h>
 #include <telepathy-glib/handle-channel-context.h>
 
 G_BEGIN_DECLS
@@ -44,8 +45,7 @@ struct _TpHandleChannelContext {
 
   TpAccount *account;
   TpConnection *connection;
-  /* array of reffed TpChannel */
-  GPtrArray *channels;
+  TpChannel *channel;
   /* array of reffed TpChannelRequest */
   GPtrArray *requests_satisfied;
   guint64 user_action_time;
@@ -55,7 +55,7 @@ struct _TpHandleChannelContext {
 TpHandleChannelContext * _tp_handle_channel_context_new (
     TpAccount *account,
     TpConnection *connection,
-    GPtrArray *channels,
+    TpChannel *channel,
     GPtrArray *requests_satisfied,
     guint64 user_action_time,
     GHashTable *handler_info,
