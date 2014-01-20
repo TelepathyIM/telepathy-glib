@@ -29,42 +29,29 @@ chan_invalidated_cb (TpProxy *proxy,
 }
 
 static void
-observe_channels_cb (TpSimpleObserver *self,
+observe_channel_cb (TpSimpleObserver *self,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
     TpObserveChannelContext *context,
     gpointer user_data)
 {
-  GList *l;
   gboolean recovering;
+  gboolean requested;
 
   recovering = tp_observe_channel_context_is_recovering (context);
+  requested = tp_channel_get_requested (channel);
 
-  for (l = channels; l != NULL; l = g_list_next (l))
-    {
-      TpChannel *channel = l->data;
-      gboolean requested;
+  g_print ("Observing %s %s call %s %s\n",
+      recovering? "existing": "new",
+      requested? "outgoing": "incoming",
+      requested? "to": "from",
+      tp_channel_get_identifier (channel));
 
-      /*
-      if (tp_strdiff (tp_channel_get_channel_type (channel),
-            TP_IFACE_CHANNEL_TYPE_CALL))
-        continue;
-      */
-
-      requested = tp_channel_get_requested (channel);
-
-      g_print ("Observing %s %s call %s %s\n",
-          recovering? "existing": "new",
-          requested? "outgoing": "incoming",
-          requested? "to": "from",
-          tp_channel_get_identifier (channel));
-
-      g_signal_connect (g_object_ref (channel), "invalidated",
-          G_CALLBACK (chan_invalidated_cb), NULL);
-    }
+  g_signal_connect (g_object_ref (channel), "invalidated",
+      G_CALLBACK (chan_invalidated_cb), NULL);
 
   tp_observe_channel_context_accept (context);
 }
@@ -82,7 +69,7 @@ main (int argc,
 
   manager = tp_account_manager_dup ();
   observer = tp_simple_observer_new_with_am (manager, FALSE,
-      "ExampleMediaObserver", FALSE, observe_channels_cb, NULL, NULL);
+      "ExampleMediaObserver", FALSE, observe_channel_cb, NULL, NULL);
 
   /*
   tp_base_client_take_observer_filter (observer, tp_asv_new (

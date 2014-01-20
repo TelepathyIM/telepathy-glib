@@ -568,7 +568,7 @@ test_observer (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  chan = g_ptr_array_index (test->simple_client->observe_ctx->channels, 0);
+  chan = test->simple_client->observe_ctx->channel;
   g_assert (TP_IS_CHANNEL (chan));
   g_assert (tp_proxy_get_invalidated (chan) != NULL);
 

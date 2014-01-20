@@ -24,11 +24,11 @@
 G_DEFINE_TYPE (TpTestsSimpleClient, tp_tests_simple_client, TP_TYPE_BASE_CLIENT)
 
 static void
-simple_observe_channels (
+simple_observe_channel (
     TpBaseClient *client,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
     TpObserveChannelContext *context)
@@ -64,15 +64,9 @@ simple_observe_channels (
   g_assert (TP_IS_CONNECTION (connection));
   g_assert (tp_proxy_is_prepared (connection, TP_CONNECTION_FEATURE_CORE));
 
-  g_assert_cmpuint (g_list_length (channels), >, 0);
-  for (l = channels; l != NULL; l = g_list_next (l))
-    {
-      TpChannel *channel = l->data;
-
-      g_assert (TP_IS_CHANNEL (channel));
-      g_assert (tp_proxy_is_prepared (channel, TP_CHANNEL_FEATURE_CORE) ||
-          tp_proxy_get_invalidated (channel) != NULL);
-    }
+  g_assert (TP_IS_CHANNEL (channel));
+  g_assert (tp_proxy_is_prepared (channel, TP_CHANNEL_FEATURE_CORE) ||
+      tp_proxy_get_invalidated (channel) != NULL);
 
   if (dispatch_operation != NULL)
     g_assert (TP_IS_CHANNEL_DISPATCH_OPERATION (dispatch_operation));
@@ -218,8 +212,8 @@ tp_tests_simple_client_class_init (TpTestsSimpleClientClass *klass)
 
   object_class->dispose = tp_tests_simple_client_dispose;
 
-  tp_base_client_implement_observe_channels (base_class,
-      simple_observe_channels);
+  tp_base_client_implement_observe_channel (base_class,
+      simple_observe_channel);
 
   tp_base_client_implement_add_dispatch_operation (base_class,
       simple_add_dispatch_operation);

@@ -49,11 +49,11 @@ typedef struct _TpBaseClientClass TpBaseClientClass;
 typedef struct _TpBaseClientPrivate TpBaseClientPrivate;
 typedef struct _TpBaseClientClassPrivate TpBaseClientClassPrivate;
 
-typedef void (*TpBaseClientClassObserveChannelsImpl) (
+typedef void (*TpBaseClientClassObserveChannelImpl) (
     TpBaseClient *client,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
     TpObserveChannelContext *context);
@@ -78,7 +78,7 @@ typedef void (*TpBaseClientClassHandleChannelsImpl) (
 struct _TpBaseClientClass {
     /*<public>*/
     GObjectClass parent_class;
-    TpBaseClientClassObserveChannelsImpl observe_channels;
+    TpBaseClientClassObserveChannelImpl observe_channel;
     TpBaseClientClassAddDispatchOperationImpl add_dispatch_operation;
     TpBaseClientClassHandleChannelsImpl handle_channels;
     /*<private>*/
@@ -97,8 +97,8 @@ GType tp_base_client_get_type (void);
 
 /* Protected methods; should be called only by subclasses */
 
-void tp_base_client_implement_observe_channels (TpBaseClientClass *klass,
-    TpBaseClientClassObserveChannelsImpl impl);
+void tp_base_client_implement_observe_channel (TpBaseClientClass *klass,
+    TpBaseClientClassObserveChannelImpl impl);
 
 void tp_base_client_implement_add_dispatch_operation (TpBaseClientClass *klass,
     TpBaseClientClassAddDispatchOperationImpl impl);

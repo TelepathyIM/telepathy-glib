@@ -105,20 +105,17 @@ enum
 G_DEFINE_TYPE (TplObserver, _tpl_observer, TP_TYPE_BASE_CLIENT)
 
 static void
-tpl_observer_observe_channels (TpBaseClient *client,
+tpl_observer_observe_channel (TpBaseClient *client,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
     TpObserveChannelContext *context)
 {
   TplObserver *self = TPL_OBSERVER (client);
-  GList *l;
 
-  for (l = channels; l != NULL; l = g_list_next (l))
-    _tpl_observer_register_channel (self, l->data);
-
+  _tpl_observer_register_channel (self, channel);
   tp_observe_channel_context_accept (context);
 }
 
@@ -205,8 +202,8 @@ _tpl_observer_class_init (TplObserverClass *klass)
 
   g_type_class_add_private (object_class, sizeof (TplObserverPriv));
 
-  tp_base_client_implement_observe_channels (base_clt_cls,
-      tpl_observer_observe_channels);
+  tp_base_client_implement_observe_channel (base_clt_cls,
+      tpl_observer_observe_channel);
 }
 
 static void

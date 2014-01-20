@@ -4518,8 +4518,8 @@ tp_base_client_add_observer_filter_vardict
 tp_base_client_take_observer_filter
 tp_base_client_set_observer_recover
 tp_base_client_set_observer_delay_approvers
-TpBaseClientClassObserveChannelsImpl
-tp_base_client_implement_observe_channels
+TpBaseClientClassObserveChannelImpl
+tp_base_client_implement_observe_channel
 tp_base_client_add_approver_filter
 tp_base_client_add_approver_filter_vardict
 tp_base_client_take_approver_filter
@@ -4591,7 +4591,7 @@ TpObserveChannelContextPrivate
 <FILE>simple-observer</FILE>
 <TITLE>simple-observer</TITLE>
 TpSimpleObserver
-TpSimpleObserverObserveChannelsImpl
+TpSimpleObserverObserveChannelImpl
 tp_simple_observer_new
 tp_simple_observer_new_with_am
 <SUBSECTION Standard>

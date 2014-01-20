@@ -45,8 +45,7 @@ struct _TpObserveChannelContext {
 
   TpAccount *account;
   TpConnection *connection;
-  /* array of reffed TpChannel */
-  GPtrArray *channels;
+  TpChannel *channel;
   /* Reffed TpChannelDispatchOperation, or NULL */
   TpChannelDispatchOperation *dispatch_operation;
   /* Array of reffed TpChannelRequest */
@@ -57,7 +56,7 @@ struct _TpObserveChannelContext {
 TpObserveChannelContext * _tp_observe_channel_context_new (
     TpAccount *account,
     TpConnection *connection,
-    GPtrArray *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     GPtrArray *requests,
     GHashTable *observer_info,

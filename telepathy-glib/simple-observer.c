@@ -30,22 +30,22 @@
  * A typical simple observer would look liks this:
  * |[
  * static void
- * my_observe_channels (TpSimpleObserver *observer,
+ * my_observe_channel (TpSimpleObserver *observer,
  *    TpAccount *account,
  *    TpConnection *connection,
- *    GList *channels,
+ *    TpChannel *channel,
  *    TpChannelDispatchOperation *dispatch_operation,
  *    GList *requests,
  *    TpObserveChannelContext *context,
  *    gpointer user_data)
  * {
- *  /<!-- -->* do something useful with the channels here *<!-- -->/
+ *  /<!-- -->* do something useful with the channel here *<!-- -->/
  *
  *  tp_observe_channel_context_accept (context);
  * }
  *
  * client = tp_simple_observer_new (NULL, TRUE, "MyObserver",
- *     FALSE, my_observe_channels, user_data);
+ *     FALSE, my_observe_channel, user_data);
  *
  * tp_base_client_take_observer_filter (client, tp_asv_new (
  *      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
@@ -75,13 +75,12 @@
  */
 
 /**
- * TpSimpleObserverObserveChannelsImpl:
+ * TpSimpleObserverObserveChannelImpl:
  * @observer: a #TpSimpleObserver instance
  * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared if possible
  * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
  * if possible
- * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
- *  all having %TP_CHANNEL_FEATURE_CORE prepared if possible
+ * @channel: a #TpChannel, having %TP_CHANNEL_FEATURE_CORE prepared if possible
  * @dispatch_operation: (allow-none): a #TpChannelDispatchOperation or %NULL;
  *  the dispatch_operation is not guaranteed to be prepared
  * @requests: (element-type TelepathyGLib.ChannelRequest): a #GList of
@@ -91,13 +90,11 @@
  *  D-Bus call
  * @user_data: arbitrary user-supplied data passed to tp_simple_observer_new()
  *
- * Signature of the implementation of the ObserveChannels method.
+ * Signature of the implementation of the ObserveChannel method.
  *
  * This function must call either tp_observe_channel_context_accept(),
  * tp_observe_channel_context_delay() or tp_observe_channel_context_fail()
  * on @context before it returns.
- *
- * Since: 0.11.5
  */
 
 #include "config.h"
@@ -119,7 +116,7 @@ enum {
 
 struct _TpSimpleObserverPrivate
 {
-  TpSimpleObserverObserveChannelsImpl callback;
+  TpSimpleObserverObserveChannelImpl callback;
   gpointer user_data;
   GDestroyNotify destroy;
 };
@@ -195,18 +192,18 @@ tp_simple_observer_dispose (GObject *object)
 }
 
 static void
-observe_channels (
+observe_channel (
     TpBaseClient *client,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
     TpObserveChannelContext *context)
 {
   TpSimpleObserver *self = TP_SIMPLE_OBSERVER (client);
 
-  self->priv->callback (self, account, connection, channels,
+  self->priv->callback (self, account, connection, channel,
       dispatch_operation, requests, context, self->priv->user_data);
 }
 
@@ -240,8 +237,8 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
   /**
    * TpSimpleObserver:callback:
    *
-   * The TpSimpleObserverObserveChannelsImpl callback implementing the
-   * ObserveChannels D-Bus method.
+   * The TpSimpleObserverObserveChannelImpl callback implementing the
+   * ObserveChannel D-Bus method.
    *
    * This property can't be %NULL.
    *
@@ -249,7 +246,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
    */
   param_spec = g_param_spec_pointer ("callback",
       "Callback",
-      "Function called when ObserveChannels is called",
+      "Function called when ObserveChannel is called",
       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CALLBACK,
       param_spec);
@@ -258,12 +255,12 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
    * TpSimpleObserver:user-data:
    *
    * The user-data pointer passed to the callback implementing the
-   * ObserveChannels D-Bus method.
+   * ObserveChannel D-Bus method.
    *
    * Since: 0.11.5
    */
   param_spec = g_param_spec_pointer ("user-data", "user data",
-      "pointer passed as user-data when ObserveChannels is called",
+      "pointer passed as user-data when ObserveChannel is called",
       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_USER_DATA,
       param_spec);
@@ -282,7 +279,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
   g_object_class_install_property (object_class, PROP_DESTROY,
       param_spec);
 
-  base_clt_cls->observe_channels = observe_channels;
+  base_clt_cls->observe_channel = observe_channel;
 }
 
 /**
@@ -291,7 +288,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
  * @recover: the value of the Observer.Recover D-Bus property
  * @name: the name of the Observer (see #TpBaseClient:name: for details)
  * @uniquify: the value of the #TpBaseClient:uniquify-name: property
- * @callback: the function called when ObserveChannels is called
+ * @callback: the function called when ObserveChannel is called
  * @user_data: arbitrary user-supplied data passed to @callback
  * @destroy: called with the user_data as argument, when the #TpSimpleObserver
  * is destroyed
@@ -309,7 +306,7 @@ tp_simple_observer_new (TpClientFactory *factory,
     gboolean recover,
     const gchar *name,
     gboolean uniquify,
-    TpSimpleObserverObserveChannelsImpl callback,
+    TpSimpleObserverObserveChannelImpl callback,
     gpointer user_data,
     GDestroyNotify destroy)
 {
@@ -330,7 +327,7 @@ tp_simple_observer_new (TpClientFactory *factory,
  * @recover: the value of the Observer.Recover D-Bus property
  * @name: the name of the Observer (see #TpBaseClient:name: for details)
  * @uniquify: the value of the #TpBaseClient:uniquify-name: property
- * @callback: the function called when ObserveChannels is called
+ * @callback: the function called when ObserveChannel is called
  * @user_data: arbitrary user-supplied data passed to @callback
  * @destroy: called with the user_data as argument, when the #TpSimpleObserver
  * is destroyed
@@ -350,7 +347,7 @@ tp_simple_observer_new_with_am (TpAccountManager *account_manager,
     gboolean recover,
     const gchar *name,
     gboolean uniquify,
-    TpSimpleObserverObserveChannelsImpl callback,
+    TpSimpleObserverObserveChannelImpl callback,
     gpointer user_data,
     GDestroyNotify destroy)
 {

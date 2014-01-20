@@ -68,11 +68,11 @@ GType tp_simple_observer_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_SIMPLE_OBSERVER, \
                               TpSimpleObserverClass))
 
-typedef void (*TpSimpleObserverObserveChannelsImpl) (
+typedef void (*TpSimpleObserverObserveChannelImpl) (
     TpSimpleObserver *observer,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
     TpObserveChannelContext *context,
@@ -82,7 +82,7 @@ TpBaseClient * tp_simple_observer_new (TpClientFactory *factory,
     gboolean recover,
     const gchar *name,
     gboolean uniquify,
-    TpSimpleObserverObserveChannelsImpl callback,
+    TpSimpleObserverObserveChannelImpl callback,
     gpointer user_data,
     GDestroyNotify destroy);
 
@@ -91,7 +91,7 @@ TpBaseClient *tp_simple_observer_new_with_am (
     gboolean recover,
     const gchar *name,
     gboolean uniquify,
-    TpSimpleObserverObserveChannelsImpl callback,
+    TpSimpleObserverObserveChannelImpl callback,
     gpointer user_data,
     GDestroyNotify destroy);
 

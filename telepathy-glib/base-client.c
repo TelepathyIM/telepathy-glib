@@ -43,8 +43,8 @@
 /**
  * TpBaseClientClass:
  * @parent_class: the parent class
- * @observe_channels: the function called to observe newly-created channels
- *  matching this client's observer filter (since 0.11.13)
+ * @observe_channel: the function called to observe newly-created channels
+ *  matching this client's observer filter
  * @add_dispatch_operation: the function called to request user approval of
  *  unrequested (incoming) channels matching this client's approver filter
  *  (since 0.11.13)
@@ -53,9 +53,9 @@
  *
  * The class of a #TpBaseClient.
  *
- * The virtual methods @observe_channels, @add_dispatch_operation and
+ * The virtual methods @observe_channel, @add_dispatch_operation and
  * @handle_channels can be also implemented by calling
- * tp_base_client_implement_observe_channels(),
+ * tp_base_client_implement_observe_channel(),
  * tp_base_client_implement_add_dispatch_operation() and
  * tp_base_client_implement_handle_channels(). This is compatible with
  * telepathy-glib versions older than 0.11.13.
@@ -64,7 +64,7 @@
  */
 
 /**
- * TpBaseClientClassObserveChannelsImpl:
+ * TpBaseClientClassObserveChannelImpl:
  * @client: a #TpBaseClient instance
  * @account: a #TpAccount with %TP_ACCOUNT_FEATURE_CORE, and any other
  *  features added via tp_client_factory_add_account_features(), prepared if
@@ -72,9 +72,8 @@
  * @connection: a #TpConnection with %TP_CONNECTION_FEATURE_CORE,
  *  and any other features added via
  *  tp_client_factory_add_connection_features(), prepared if possible
- * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
- *  each with %TP_CHANNEL_FEATURE_CORE, and any other features added via
- *  tp_client_factory_add_channel_features(), prepared if possible
+ * @channel: a #TpChannel, with %TP_CHANNEL_FEATURE_CORE, and any other features
+ *  added via tp_client_factory_add_channel_features(), prepared if possible
  * @dispatch_operation: (allow-none): a #TpChannelDispatchOperation or %NULL;
  *  the dispatch_operation is not guaranteed to be prepared
  * @requests: (element-type TelepathyGLib.ChannelRequest): a #GList of
@@ -83,13 +82,11 @@
  * @context: a #TpObserveChannelContext representing the context of this
  *  D-Bus call
  *
- * Signature of the implementation of the ObserveChannels method.
+ * Signature of the implementation of the ObserveChannel method.
  *
  * This function must call either tp_observe_channel_context_accept(),
  * tp_observe_channel_context_delay() or tp_observe_channel_context_fail()
  * on @context before it returns.
- *
- * Since: 0.11.5
  */
 
 /**
@@ -340,12 +337,12 @@ _tp_base_client_copy_filter (GHashTable *filter)
  * a %TP_HASH_TYPE_CHANNEL_CLASS
  *
  * Register a new channel class as Observer.ObserverChannelFilter.
- * The #TpBaseClientClass.observe_channels virtual method will be called
+ * The #TpBaseClientClass.observe_channel virtual method will be called
  * whenever a new channel's properties match the ones in @filter.
  *
  * This method may only be called before tp_base_client_register() is
  * called, and may only be called on objects whose class implements
- * #TpBaseClientClass.observe_channels.
+ * #TpBaseClientClass.observe_channel.
  *
  * Since: 0.11.5
  */
@@ -387,7 +384,7 @@ tp_base_client_take_observer_filter (TpBaseClient *self,
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
-  g_return_if_fail (cls->observe_channels != NULL);
+  g_return_if_fail (cls->observe_channel != NULL);
 
   self->priv->flags |= CLIENT_IS_OBSERVER;
   g_ptr_array_add (self->priv->observer_filters, filter);
@@ -399,12 +396,12 @@ tp_base_client_take_observer_filter (TpBaseClient *self,
  * @filter: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
  *
  * Register a new channel class as Observer.ObserverChannelFilter.
- * The #TpBaseClientClass.observe_channels virtual method will be called
+ * The #TpBaseClientClass.observe_channel virtual method will be called
  * whenever a new channel's properties match the ones in @filter.
  *
  * This method may only be called before tp_base_client_register() is
  * called, and may only be called on objects whose class implements
- * #TpBaseClientClass.observe_channels.
+ * #TpBaseClientClass.observe_channel.
  *
  * If the variant is floating (see g_variant_ref_sink()), ownership
  * will be taken, allowing for uses like this:
@@ -450,7 +447,7 @@ tp_base_client_add_observer_filter_vardict (TpBaseClient *self,
  *
  * This method may only be called before tp_base_client_register() is
  * called, and may only be called on objects whose class implements
- * #TpBaseClientClass.observe_channels.
+ * #TpBaseClientClass.observe_channel.
  *
  * Since: 0.11.5
  */
@@ -462,7 +459,7 @@ tp_base_client_set_observer_recover (TpBaseClient *self,
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
-  g_return_if_fail (cls->observe_channels != NULL);
+  g_return_if_fail (cls->observe_channel != NULL);
 
   if (recover)
     {
@@ -490,7 +487,7 @@ tp_base_client_set_observer_recover (TpBaseClient *self,
  *
  * This method may only be called before tp_base_client_register() is
  * called, and may only be called on objects whose class implements
- * #TpBaseClientClass.observe_channels.
+ * #TpBaseClientClass.observe_channel.
  *
  * Since: 0.13.16
  */
@@ -502,7 +499,7 @@ tp_base_client_set_observer_delay_approvers (TpBaseClient *self,
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
-  g_return_if_fail (cls->observe_channels != NULL);
+  g_return_if_fail (cls->observe_channel != NULL);
 
   if (delay)
     {
@@ -1526,7 +1523,7 @@ context_prepare_cb (GObject *source,
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
   TpObserveChannelContext *ctx = TP_OBSERVE_CHANNEL_CONTEXT (source);
   GError *error = NULL;
-  GList *channels_list, *requests_list;
+  GList *requests_list;
 
   if (!_tp_observe_channel_context_prepare_finish (ctx, result, &error))
     {
@@ -1536,20 +1533,18 @@ context_prepare_cb (GObject *source,
       return;
     }
 
-  channels_list = ptr_array_to_list (ctx->channels);
   requests_list = ptr_array_to_list (ctx->requests);
 
-  cls->observe_channels (self, ctx->account, ctx->connection,
-      channels_list, ctx->dispatch_operation, requests_list, ctx);
+  cls->observe_channel (self, ctx->account, ctx->connection,
+      ctx->channel, ctx->dispatch_operation, requests_list, ctx);
 
-  g_list_free (channels_list);
   g_list_free (requests_list);
 
   if (_tp_observe_channel_context_get_state (ctx) ==
       TP_OBSERVE_CHANNEL_CONTEXT_STATE_NONE)
     {
       error = g_error_new (TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
-          "Implementation of ObserveChannels in %s didn't call "
+          "Implementation of ObserveChannel in %s didn't call "
           "tp_observe_channel_context_{accept,fail,delay}",
           G_OBJECT_TYPE_NAME (self));
 
@@ -1741,9 +1736,9 @@ _tp_base_client_observe_channel (TpSvcClientObserver *iface,
       return;
     }
 
-  if (cls->observe_channels == NULL)
+  if (cls->observe_channel == NULL)
     {
-      WARNING ("class %s does not implement ObserveChannels",
+      WARNING ("class %s does not implement ObserveChannel",
           G_OBJECT_TYPE_NAME (self));
 
       tp_dbus_g_method_return_not_implemented (context);
@@ -1797,7 +1792,7 @@ _tp_base_client_observe_channel (TpSvcClientObserver *iface,
       g_ptr_array_add (requests, request);
     }
 
-  ctx = _tp_observe_channel_context_new (account, connection, channels,
+  ctx = _tp_observe_channel_context_new (account, connection, channel,
       dispatch_operation, requests, observer_info, context);
 
   account_features = dup_features_for_account (self, account);
@@ -2549,24 +2544,24 @@ requests_iface_init (gpointer g_iface,
 }
 
 /**
- * tp_base_client_implement_observe_channels: (skip)
+ * tp_base_client_implement_observe_channel: (skip)
  * @klass: the #TpBaseClientClass of the object
- * @impl: the #TpBaseClientClassObserveChannelsImpl function implementing
- * ObserveChannels()
+ * @impl: the #TpBaseClientClassObserveChannelImpl function implementing
+ * ObserveChannel()
  *
  * Called by subclasses to define the actual implementation of the
- * ObserveChannels() D-Bus method.
+ * ObserveChannel() D-Bus method.
  *
- * Since 0.11.13 this is exactly equivalent to setting the
- * #TpBaseClientClass.observe_channels function pointer.
+ * This is exactly equivalent to setting the
+ * #TpBaseClientClass.observe_channel function pointer.
  *
  * Since: 0.11.5
  */
 void
-tp_base_client_implement_observe_channels (TpBaseClientClass *cls,
-    TpBaseClientClassObserveChannelsImpl impl)
+tp_base_client_implement_observe_channel (TpBaseClientClass *cls,
+    TpBaseClientClassObserveChannelImpl impl)
 {
-  cls->observe_channels = impl;
+  cls->observe_channel = impl;
 }
 
 /**

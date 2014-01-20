@@ -138,7 +138,7 @@ teardown (Test *test,
 static void
 create_simple_observer (Test *test,
     gboolean recover,
-    TpSimpleObserverObserveChannelsImpl impl)
+    TpSimpleObserverObserveChannelImpl impl)
 {
   /* Create service-side Client object */
   test->simple_observer = tp_tests_object_new_static_class (
@@ -248,11 +248,11 @@ out:
 }
 
 static void
-observe_channels_success (
+observe_channel_success (
     TpSimpleObserver *observer,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
     TpObserveChannelContext *context,
@@ -265,7 +265,7 @@ static void
 test_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  create_simple_observer (test, TRUE, observe_channels_success);
+  create_simple_observer (test, TRUE, observe_channel_success);
 
   tp_base_client_add_observer_filter_vardict (test->simple_observer,
       g_variant_new_parsed ("{ %s: <%s> }",
@@ -315,7 +315,7 @@ out:
 }
 
 static void
-call_observe_channels (Test *test)
+call_observe_channel (Test *test)
 {
   GPtrArray *requests_satisified;
   GHashTable *info, *chan_props;
@@ -344,12 +344,12 @@ call_observe_channels (Test *test)
   g_hash_table_unref (chan_props);
 }
 
-/* ObserveChannels returns immediately */
+/* ObserveChannel returns immediately */
 static void
 test_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  create_simple_observer (test, TRUE, observe_channels_success);
+  create_simple_observer (test, TRUE, observe_channel_success);
 
   tp_base_client_add_observer_filter_vardict (test->simple_observer,
       g_variant_new_parsed ("@a{sv} {}"));
@@ -357,11 +357,11 @@ test_success (Test *test,
   tp_base_client_register (test->simple_observer, &test->error);
   g_assert_no_error (test->error);
 
-  call_observe_channels (test);
+  call_observe_channel (test);
   g_assert_no_error (test->error);
 }
 
-/* ObserveChannels returns in an async way */
+/* ObserveChannel returns in an async way */
 static gboolean
 accept_idle_cb (gpointer data)
 {
@@ -373,11 +373,11 @@ accept_idle_cb (gpointer data)
 }
 
 static void
-observe_channels_async (
+observe_channel_async (
     TpSimpleObserver *observer,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
     TpObserveChannelContext *context,
@@ -392,7 +392,7 @@ static void
 test_delayed (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  create_simple_observer (test, TRUE, observe_channels_async);
+  create_simple_observer (test, TRUE, observe_channel_async);
 
   tp_base_client_add_observer_filter_vardict (test->simple_observer,
       g_variant_new_parsed ("@a{sv} {}"));
@@ -400,24 +400,24 @@ test_delayed (Test *test,
   tp_base_client_register (test->simple_observer, &test->error);
   g_assert_no_error (test->error);
 
-  call_observe_channels (test);
+  call_observe_channel (test);
   g_assert_no_error (test->error);
 }
 
-/* ObserveChannels fails */
+/* ObserveChannel fails */
 static void
-observe_channels_fail (
+observe_channel_fail (
     TpSimpleObserver *observer,
     TpAccount *account,
     TpConnection *connection,
-    GList *channels,
+    TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     GList *requests,
     TpObserveChannelContext *context,
     gpointer user_data)
 {
   GError error = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
-      "No ObserveChannels for you!" };
+      "No ObserveChannel for you!" };
 
   tp_observe_channel_context_fail (context, &error);
 }
@@ -426,7 +426,7 @@ static void
 test_fail (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  create_simple_observer (test, TRUE, observe_channels_fail);
+  create_simple_observer (test, TRUE, observe_channel_fail);
 
   tp_base_client_add_observer_filter_vardict (test->simple_observer,
       g_variant_new_parsed ("@a{sv} {}"));
@@ -434,7 +434,7 @@ test_fail (Test *test,
   tp_base_client_register (test->simple_observer, &test->error);
   g_assert_no_error (test->error);
 
-  call_observe_channels (test);
+  call_observe_channel (test);
   g_assert_error (test->error, TP_ERROR, TP_ERROR_NOT_AVAILABLE);
 }
 
