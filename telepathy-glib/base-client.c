@@ -1596,56 +1596,24 @@ dup_features_for_channel (TpBaseClient *self,
   return features;
 }
 
-static void
-free_channel_details (gpointer data)
-{
-  g_boxed_free (TP_STRUCT_TYPE_CHANNEL_DETAILS, data);
-}
-
-/* FIXME: remove once ensure_account_connection_channels has been changed to
- * take only one channel. */
-static GPtrArray *
-build_channels_array (const gchar *channel_path,
-    GHashTable *channel_props)
-{
-  GPtrArray *channels_arr;
-  GValueArray *v;
-
-  channels_arr = g_ptr_array_new_with_free_func (free_channel_details);
-
-  v = tp_value_array_build (2,
-      DBUS_TYPE_G_OBJECT_PATH, channel_path,
-      TP_HASH_TYPE_STRING_VARIANT_MAP, channel_props,
-      G_TYPE_INVALID);
-
-  g_ptr_array_add (channels_arr, v);
-
-  return channels_arr;
-}
-
-/* FIXME: remove all this and give direclty the channel path and props to
- * ensure_account_connection_channels() once all the API have been made
- * singular. */
-static TpChannel *
-ensure_account_connection_channels (TpBaseClient *self,
+static gboolean
+ensure_account_connection_channel (TpBaseClient *self,
     const gchar *account_path,
     const gchar *connection_path,
-    const GPtrArray *channels_arr,
+    const gchar *chan_path,
+    GHashTable *chan_props,
     TpAccount **account,
     TpConnection **connection,
-    GPtrArray **channels,
+    TpChannel **channel,
     GError **error)
 {
-  TpChannel *channel = NULL;
-  guint i;
-
   g_assert (account != NULL);
   g_assert (connection != NULL);
-  g_assert (channels != NULL);
+  g_assert (channel != NULL);
 
   *account = NULL;
   *connection = NULL;
-  *channels = NULL;
+  *channel = NULL;
 
   *account = tp_base_client_dup_account (self, account_path, error);
   if (*account == NULL)
@@ -1661,43 +1629,19 @@ ensure_account_connection_channels (TpBaseClient *self,
    * done only when TP_ACCOUNT_FEATURE_CORE gets prepared on the Account. */
   _tp_connection_set_account (*connection, *account);
 
-  if (channels_arr->len == 0)
-    {
-      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-          "Channels should contain at least one channel");
-      goto error;
-    }
+  *channel = tp_client_factory_ensure_channel (self->priv->factory,
+      *connection, chan_path, chan_props, error);
+  if (*channel == NULL)
+    goto error;
 
-  *channels = g_ptr_array_new_full (channels_arr->len, g_object_unref);
-  for (i = 0; i < channels_arr->len; i++)
-    {
-      const gchar *chan_path;
-      GHashTable *chan_props;
-
-      tp_value_array_unpack (g_ptr_array_index (channels_arr, i), 2,
-          &chan_path, &chan_props);
-
-      channel = tp_client_factory_ensure_channel (self->priv->factory,
-          *connection, chan_path, chan_props, error);
-
-      if (channel == NULL)
-        goto error;
-
-      g_ptr_array_add (*channels, channel);
-    }
-
-  /* FIXME: We will consider features set only for the last channel. This is
-   * wrong in the case we receive multiple channels of different types.
-   * It has always been like that, and multiple channel dispatch is being
-   * deprecated. So let's just live with it. */
-  return channel;
+  return TRUE;
 
 error:
   g_clear_object (account);
   g_clear_object (connection);
-  tp_clear_pointer (channels, g_ptr_array_unref);
+  g_clear_object (channel);
 
-  return NULL;
+  return FALSE;
 }
 
 static void
@@ -1717,7 +1661,7 @@ _tp_base_client_observe_channel (TpSvcClientObserver *iface,
   GError *error = NULL;
   TpAccount *account = NULL;
   TpConnection *connection = NULL;
-  GPtrArray *channels = NULL, *requests = NULL;
+  GPtrArray *requests = NULL;
   TpChannelDispatchOperation *dispatch_operation = NULL;
   guint i;
   TpChannel *channel = NULL;
@@ -1725,7 +1669,6 @@ _tp_base_client_observe_channel (TpSvcClientObserver *iface,
   GArray *connection_features;
   GArray *channel_features;
   GHashTable *request_props;
-  GPtrArray *channels_arr;
 
   if (!(self->priv->flags & CLIENT_IS_OBSERVER))
     {
@@ -1744,11 +1687,9 @@ _tp_base_client_observe_channel (TpSvcClientObserver *iface,
       return;
     }
 
-  channels_arr = build_channels_array (channel_path, channel_props);
-
-  channel = ensure_account_connection_channels (self, account_path,
-      connection_path, channels_arr, &account, &connection, &channels, &error);
-  if (channel == NULL)
+  if (!ensure_account_connection_channel (self, account_path,
+      connection_path, channel_path, channel_props, &account, &connection,
+      &channel, &error))
     goto out;
 
   if (!tp_strdiff (dispatch_operation_path, "/"))
@@ -1812,18 +1753,13 @@ _tp_base_client_observe_channel (TpSvcClientObserver *iface,
 out:
   g_clear_object (&account);
   g_clear_object (&connection);
-
-  if (channels != NULL)
-    g_ptr_array_unref (channels);
+  g_clear_object (&channel);
 
   if (dispatch_operation != NULL)
     g_object_unref (dispatch_operation);
 
   if (requests != NULL)
     g_ptr_array_unref (requests);
-
-  if (channels_arr != NULL)
-    g_ptr_array_unref (channels_arr);
 
   if (error == NULL)
     return;
@@ -1898,13 +1834,11 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
   GError *error = NULL;
   TpAccount *account = NULL;
   TpConnection *connection = NULL;
-  GPtrArray *channels = NULL;
   TpChannelDispatchOperation *dispatch_operation = NULL;
   TpChannel *channel = NULL;
   GArray *account_features;
   GArray *connection_features;
   GArray *channel_features;
-  GPtrArray *channels_arr;
 
   if (!(self->priv->flags & CLIENT_IS_APPROVER))
     {
@@ -1965,18 +1899,10 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       goto out;
     }
 
-  channels_arr = build_channels_array (chan_path, chan_props);
-
-  channel = ensure_account_connection_channels (self, account_path,
-      connection_path, channels_arr, &account, &connection, &channels, &error);
-  if (channel == NULL)
+  if (!ensure_account_connection_channel (self, account_path,
+      connection_path, chan_path, chan_props, &account, &connection, &channel,
+      &error))
     goto out;
-
-  /* FIXME: We will consider features set only for the first channel. This is
-   * wrong in the case we receive multiple channels of different types.
-   * It has always been like that, and multiple channel dispatch is being
-   * deprecated. So let's just live with it. */
-  channel = g_ptr_array_index (channels, 0);
 
   dispatch_operation =
       _tp_client_factory_ensure_channel_dispatch_operation (
@@ -2008,15 +1934,10 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
 out:
   g_clear_object (&account);
   g_clear_object (&connection);
-
-  if (channels != NULL)
-    g_ptr_array_unref (channels);
+  g_clear_object (&channel);
 
   if (dispatch_operation != NULL)
     g_object_unref (dispatch_operation);
-
-  if (channels_arr != NULL)
-    g_ptr_array_unref (channels_arr);
 
   if (error == NULL)
     return;
@@ -2256,14 +2177,13 @@ _tp_base_client_handle_channel (TpSvcClientHandler *iface,
   GError *error = NULL;
   TpAccount *account = NULL;
   TpConnection *connection = NULL;
-  GPtrArray *channels = NULL, *requests = NULL;
+  GPtrArray *requests = NULL;
   guint i;
   TpChannel *channel = NULL;
   GArray *account_features;
   GArray *connection_features;
   GArray *channel_features;
   GHashTable *request_props;
-  GPtrArray *channels_arr = NULL;
 
   if (!(self->priv->flags & CLIENT_IS_HANDLER))
     {
@@ -2282,18 +2202,11 @@ _tp_base_client_handle_channel (TpSvcClientHandler *iface,
       return;
     }
 
-  channels_arr = build_channels_array (channel_path, channel_props);
-
-  channel = ensure_account_connection_channels (self, account_path,
-      connection_path, channels_arr, &account, &connection, &channels, &error);
+  if (!ensure_account_connection_channel (self, account_path,
+      connection_path, channel_path, channel_props, &account, &connection,
+      &channel, &error))
   if (channel == NULL)
     goto out;
-
-  /* FIXME: We will consider features set only for the first channel. This is
-   * wrong in the case we receive multiple channels of different types.
-   * It has always been like that, and multiple channel dispatch is being
-   * deprecated. So let's just live with it. */
-  channel = g_ptr_array_index (channels, 0);
 
   requests = g_ptr_array_new_full (requests_arr->len, g_object_unref);
   request_props = tp_asv_get_boxed (handler_info, "request-properties",
@@ -2340,15 +2253,10 @@ _tp_base_client_handle_channel (TpSvcClientHandler *iface,
 out:
   g_clear_object (&account);
   g_clear_object (&connection);
-
-  if (channels != NULL)
-    g_ptr_array_unref (channels);
+  g_clear_object (&channel);
 
   if (requests != NULL)
     g_ptr_array_unref (requests);
-
-  if (channels_arr != NULL)
-    g_ptr_array_unref (channels_arr);
 
   if (error == NULL)
     return;
