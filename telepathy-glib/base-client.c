@@ -2000,6 +2000,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
 
 out:
   g_clear_object (&account);
+  g_clear_object (&connection);
 
   if (channels != NULL)
     g_ptr_array_unref (channels);
@@ -2173,6 +2174,7 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
 
 out:
   g_clear_object (&account);
+  g_clear_object (&connection);
 
   if (channels != NULL)
     g_ptr_array_unref (channels);
@@ -2521,6 +2523,7 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
 
 out:
   g_clear_object (&account);
+  g_clear_object (&connection);
 
   if (channels != NULL)
     g_ptr_array_unref (channels);
