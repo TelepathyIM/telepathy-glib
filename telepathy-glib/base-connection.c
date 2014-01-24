@@ -239,6 +239,7 @@
 #include <dbus/dbus-glib-lowlevel.h>
 
 #include <telepathy-glib/channel-manager.h>
+#include <telepathy-glib/channel-manager-request-internal.h>
 #include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/dbus.h>
@@ -291,82 +292,13 @@ enum
 
 static guint signals[N_SIGNALS] = {0};
 
-typedef struct _ChannelRequest ChannelRequest;
-
-typedef enum {
-    METHOD_CREATE_CHANNEL,
-    METHOD_ENSURE_CHANNEL,
-    NUM_METHODS
-} ChannelRequestMethod;
-
-struct _ChannelRequest
-{
-  DBusGMethodInvocation *context;
-  ChannelRequestMethod method;
-
-  gchar *channel_type;
-  guint handle_type;
-  guint handle;
-
-  /* only meaningful for METHOD_ENSURE_CHANNEL; only true if this is the first
-   * request to be satisfied with a particular channel, and no other request
-   * satisfied by that channel has a different method.
-   */
-  unsigned yours : 1;
-};
-
-static ChannelRequest *
-channel_request_new (DBusGMethodInvocation *context,
-                     ChannelRequestMethod method,
-                     const char *channel_type,
-                     guint handle_type,
-                     guint handle)
-{
-  ChannelRequest *ret;
-
-  g_assert (NULL != context);
-  g_assert (NULL != channel_type);
-  g_assert (method < NUM_METHODS);
-
-  ret = g_slice_new0 (ChannelRequest);
-  ret->context = context;
-  ret->method = method;
-  ret->channel_type = g_strdup (channel_type);
-  ret->handle_type = handle_type;
-  ret->handle = handle;
-  ret->yours = FALSE;
-
-  DEBUG("New channel request at %p: ctype=%s htype=%d handle=%d",
-        ret, channel_type, handle_type, handle);
-
-  return ret;
-}
-
 static void
-channel_request_free (ChannelRequest *request)
+channel_request_cancel (gpointer data,
+    gpointer user_data)
 {
-  g_assert (NULL == request->context);
-  DEBUG("Freeing channel request at %p: ctype=%s htype=%d handle=%d",
-        request, request->channel_type, request->handle_type,
-        request->handle);
-  g_free (request->channel_type);
-  g_slice_free (ChannelRequest, request);
-}
+  TpChannelManagerRequest *request = (TpChannelManagerRequest *) data;
 
-static void
-channel_request_cancel (gpointer data, gpointer user_data)
-{
-  ChannelRequest *request = (ChannelRequest *) data;
-  GError error = { TP_ERROR, TP_ERROR_DISCONNECTED,
-      "unable to service this channel request, we're disconnecting!" };
-
-  DEBUG ("cancelling request at %p for %s/%u/%u", request,
-      request->channel_type, request->handle_type, request->handle);
-
-  dbus_g_method_return_error (request->context, &error);
-  request->context = NULL;
-
-  channel_request_free (request);
+  _tp_channel_manager_request_cancel (request);
 }
 
 struct _TpBaseConnectionPrivate
@@ -386,7 +318,7 @@ struct _TpBaseConnectionPrivate
   gboolean dispose_has_run;
   /* array of (TpChannelManager *) */
   GPtrArray *channel_managers;
-  /* array of (ChannelRequest *) */
+  /* array of reffed (TpChannelManagerRequest *) */
   GPtrArray *channel_requests;
 
   TpHandleRepoIface *handles[TP_NUM_HANDLE_TYPES];
@@ -658,75 +590,24 @@ get_channel_details (GObject *obj)
 
 static void
 satisfy_request (TpBaseConnection *conn,
-                 ChannelRequest *request,
-                 GObject *channel,
-                 const gchar *object_path)
+    TpChannelManagerRequest *request,
+    TpExportableChannel *channel)
 {
   TpBaseConnectionPrivate *priv = conn->priv;
 
-  DEBUG ("completing queued request %p with success, "
-      "channel_type=%s, handle_type=%u, "
-      "handle=%u", request, request->channel_type,
-      request->handle_type, request->handle);
-
-  switch (request->method)
-    {
-    case METHOD_CREATE_CHANNEL:
-        {
-          GHashTable *properties;
-
-          g_assert (TP_IS_EXPORTABLE_CHANNEL (channel));
-          g_object_get (channel,
-              "channel-properties", &properties,
-              NULL);
-          tp_svc_connection_interface_requests_return_from_create_channel (
-              request->context, object_path, properties);
-          g_hash_table_unref (properties);
-        }
-        break;
-
-    case METHOD_ENSURE_CHANNEL:
-        {
-          GHashTable *properties;
-
-          g_assert (TP_IS_EXPORTABLE_CHANNEL (channel));
-          g_object_get (channel,
-              "channel-properties", &properties,
-              NULL);
-          tp_svc_connection_interface_requests_return_from_ensure_channel (
-              request->context, request->yours, object_path, properties);
-          g_hash_table_unref (properties);
-        }
-        break;
-
-    default:
-      g_assert_not_reached ();
-    }
-  request->context = NULL;
-
+  _tp_channel_manager_request_satisfy (request, channel);
   g_ptr_array_remove (priv->channel_requests, request);
-
-  channel_request_free (request);
 }
 
 static void
 fail_channel_request (TpBaseConnection *conn,
-                      ChannelRequest *request,
-                      GError *error)
+    TpChannelManagerRequest *request,
+    GError *error)
 {
   TpBaseConnectionPrivate *priv = conn->priv;
 
-  DEBUG ("completing queued request %p with error, channel_type=%s, "
-      "handle_type=%u, handle=%u",
-      request, request->channel_type,
-      request->handle_type, request->handle);
-
-  dbus_g_method_return_error (request->context, error);
-  request->context = NULL;
-
+  _tp_channel_manager_request_fail (request, error);
   g_ptr_array_remove (priv->channel_requests, request);
-
-  channel_request_free (request);
 }
 
 /* Channel manager signal handlers */
@@ -742,7 +623,7 @@ manager_new_channel (gpointer key,
   gchar *object_path;
   GSList *iter;
   gboolean satisfies_create_channel = FALSE;
-  ChannelRequest *first_ensure = NULL;
+  TpChannelManagerRequest *first_ensure = NULL;
 
   g_object_get (channel,
       "object-path", &object_path,
@@ -750,21 +631,21 @@ manager_new_channel (gpointer key,
 
   for (iter = request_tokens; iter != NULL; iter = iter->next)
     {
-      ChannelRequest *request = iter->data;
+      TpChannelManagerRequest *request = iter->data;
 
       switch (request->method)
         {
-          case METHOD_CREATE_CHANNEL:
+          case TP_CHANNEL_MANAGER_REQUEST_METHOD_CREATE_CHANNEL:
             satisfies_create_channel = TRUE;
             goto break_loop_early;
             break;
 
-          case METHOD_ENSURE_CHANNEL:
+          case TP_CHANNEL_MANAGER_REQUEST_METHOD_ENSURE_CHANNEL:
             if (first_ensure == NULL)
               first_ensure = request;
             break;
 
-          case NUM_METHODS:
+          case TP_NUM_CHANNEL_MANAGER_REQUEST_METHODS:
             g_assert_not_reached ();
         }
 
@@ -782,8 +663,7 @@ break_loop_early:
 
   for (iter = request_tokens; iter != NULL; iter = iter->next)
     {
-      satisfy_request (self, iter->data, G_OBJECT (channel),
-          object_path);
+      satisfy_request (self, iter->data, TP_EXPORTABLE_CHANNEL (channel));
     }
 
   g_free (object_path);
@@ -843,7 +723,7 @@ manager_request_already_satisfied_cb (TpChannelManager *manager,
       "object-path", &object_path,
       NULL);
 
-  satisfy_request (self, request_token, G_OBJECT (channel), object_path);
+  satisfy_request (self, request_token, TP_EXPORTABLE_CHANNEL (channel));
   g_free (object_path);
 }
 
@@ -1382,7 +1262,7 @@ tp_base_connection_init (TpBaseConnection *self)
       priv->handles[i] = NULL;
     }
 
-  priv->channel_requests = g_ptr_array_new ();
+  priv->channel_requests = g_ptr_array_new_with_free_func (g_object_unref);
   priv->client_interests = g_hash_table_new_full (NULL, NULL, NULL,
       (GDestroyNotify) g_hash_table_unref);
   priv->interested_clients = g_hash_table_new_full (g_str_hash, g_str_equal,
@@ -2484,18 +2364,18 @@ finally:
  * the chain unless an error has occured.
  */
 static void conn_requests_check_basic_properties (TpBaseConnection *self,
-    GHashTable *requested_properties, ChannelRequestMethod method,
+    GHashTable *requested_properties, TpChannelManagerRequestMethod method,
     DBusGMethodInvocation *context);
 
 static void
 conn_requests_requestotron_validate_handle (TpBaseConnection *self,
-    GHashTable *requested_properties, ChannelRequestMethod method,
+    GHashTable *requested_properties, TpChannelManagerRequestMethod method,
     const gchar *type, TpHandleType target_handle_type,
     TpHandle target_handle, const gchar *target_id,
     DBusGMethodInvocation *context);
 
 static void conn_requests_offer_request (TpBaseConnection *self,
-    GHashTable *requested_properties, ChannelRequestMethod method,
+    GHashTable *requested_properties, TpChannelManagerRequestMethod method,
     const gchar *type, TpHandleType target_handle_type,
     TpHandle target_handle, DBusGMethodInvocation *context);
 
@@ -2511,7 +2391,7 @@ static void conn_requests_offer_request (TpBaseConnection *self,
 static void
 conn_requests_requestotron (TpBaseConnection *self,
                             GHashTable *requested_properties,
-                            ChannelRequestMethod method,
+                            TpChannelManagerRequestMethod method,
                             DBusGMethodInvocation *context)
 {
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
@@ -2527,7 +2407,7 @@ conn_requests_requestotron (TpBaseConnection *self,
 static void
 conn_requests_check_basic_properties (TpBaseConnection *self,
                                       GHashTable *requested_properties,
-                                      ChannelRequestMethod method,
+                                      TpChannelManagerRequestMethod method,
                                       DBusGMethodInvocation *context)
 {
   /* Step 1:
@@ -2602,7 +2482,7 @@ conn_requests_check_basic_properties (TpBaseConnection *self,
 static void
 conn_requests_requestotron_validate_handle (TpBaseConnection *self,
                                             GHashTable *requested_properties,
-                                            ChannelRequestMethod method,
+                                            TpChannelManagerRequestMethod method,
                                             const gchar *type,
                                             TpHandleType target_handle_type,
                                             TpHandle target_handle,
@@ -2726,7 +2606,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
 static void
 conn_requests_offer_request (TpBaseConnection *self,
                              GHashTable *requested_properties,
-                             ChannelRequestMethod method,
+                             TpChannelManagerRequestMethod method,
                              const gchar *type,
                              TpHandleType target_handle_type,
                              TpHandle target_handle,
@@ -2737,16 +2617,16 @@ conn_requests_offer_request (TpBaseConnection *self,
    */
   TpBaseConnectionPrivate *priv = self->priv;
   TpChannelManagerRequestFunc func;
-  ChannelRequest *request;
+  TpChannelManagerRequest *request;
   guint i;
 
   switch (method)
     {
-    case METHOD_CREATE_CHANNEL:
+    case TP_CHANNEL_MANAGER_REQUEST_METHOD_CREATE_CHANNEL:
       func = tp_channel_manager_create_channel;
       break;
 
-    case METHOD_ENSURE_CHANNEL:
+    case TP_CHANNEL_MANAGER_REQUEST_METHOD_ENSURE_CHANNEL:
       func = tp_channel_manager_ensure_channel;
       break;
 
@@ -2754,7 +2634,7 @@ conn_requests_offer_request (TpBaseConnection *self,
       g_assert_not_reached ();
     }
 
-  request = channel_request_new (context, method,
+  request = _tp_channel_manager_request_new (context, method,
       type, target_handle_type, target_handle);
   g_ptr_array_add (priv->channel_requests, request);
 
@@ -2772,7 +2652,6 @@ conn_requests_offer_request (TpBaseConnection *self,
   request->context = NULL;
 
   g_ptr_array_remove (priv->channel_requests, request);
-  channel_request_free (request);
 }
 
 
@@ -2784,7 +2663,7 @@ conn_requests_create_channel (TpSvcConnectionInterfaceRequests *svc,
   TpBaseConnection *self = TP_BASE_CONNECTION (svc);
 
   conn_requests_requestotron (self, requested_properties,
-      METHOD_CREATE_CHANNEL, context);
+      TP_CHANNEL_MANAGER_REQUEST_METHOD_CREATE_CHANNEL, context);
 }
 
 
@@ -2796,7 +2675,7 @@ conn_requests_ensure_channel (TpSvcConnectionInterfaceRequests *svc,
   TpBaseConnection *self = TP_BASE_CONNECTION (svc);
 
   conn_requests_requestotron (self, requested_properties,
-      METHOD_ENSURE_CHANNEL, context);
+      TP_CHANNEL_MANAGER_REQUEST_METHOD_ENSURE_CHANNEL, context);
 }
 
 

@@ -147,6 +147,25 @@ TP_CHANNEL_MANAGER_GET_INTERFACE
 
 <SECTION>
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
+<FILE>channel-manager-request</FILE>
+<TITLE>TpChannelManagerRequest</TITLE>
+TpChannelManagerRequest
+TpChannelManagerRequestClass
+TpChannelManagerRequestMethod
+<SUBSECTION Standard>
+TP_CHANNEL_MANAGER_REQUEST
+TP_CHANNEL_MANAGER_REQUEST_CLASS
+TP_CHANNEL_MANAGER_REQUEST_GET_CLASS
+TP_IS_CHANNEL_MANAGER_REQUEST
+TP_IS_CHANNEL_MANAGER_REQUEST_CLASS
+TP_TYPE_CHANNEL_MANAGER_REQUEST
+tp_channel_manager_request_get_type
+<SUBSECTION Private>
+TpChannelManagerRequestPriv
+</SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>exportable-channel</FILE>
 TpExportableChannelFunc
 <TITLE>TpExportableChannel</TITLE>

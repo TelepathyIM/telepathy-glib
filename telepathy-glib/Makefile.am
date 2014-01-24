@@ -70,6 +70,7 @@ tpginclude_HEADERS = \
     channel-dispatcher.h \
     channel-dispatch-operation.h \
     channel-manager.h \
+    channel-manager-request.h \
     channel-request.h \
     client.h \
     client-factory.h \
@@ -251,6 +252,7 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     channel-dispatcher.c \
     channel-dispatch-operation.c \
     channel-manager.c \
+    channel-manager-request.c \
     channel-request.c \
     client.c \
     client-factory.c \
