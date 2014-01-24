@@ -576,25 +576,6 @@ _tp_connection_do_get_capabilities_async (TpConnection *self,
     }
 }
 
-void
-_tp_connection_get_capabilities_async (TpConnection *self,
-  GAsyncReadyCallback callback,
-  gpointer user_data)
-{
-  GSimpleAsyncResult *result;
-
-  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
-      _tp_connection_get_capabilities_async);
-  _tp_connection_do_get_capabilities_async (self, result);
-}
-
-gboolean
-_tp_connection_get_capabilities_finish (TpConnection *self,
-  GAsyncResult *result, GError **error)
-{
-  _tp_implement_finish_void (self, _tp_connection_get_capabilities_async);
-}
-
 static void
 tp_connection_prepare_capabilities_async (TpProxy *proxy,
     const TpProxyFeature *feature,
