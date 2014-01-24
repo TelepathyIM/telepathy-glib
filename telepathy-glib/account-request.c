@@ -1057,7 +1057,7 @@ tp_account_request_add_supersedes (TpAccountRequest *self,
 /**
  * tp_account_request_set_avatar:
  * @self: a #TpAccountRequest
- * @avatar: (allow-none) (array length=len) a new avatar to set; can
+ * @avatar: (allow-none) (array length=len): a new avatar to set; can
  *   be %NULL only if %len equals 0
  * @len: the length of the new avatar
  * @mime_type: (allow-none): the MIME type of the new avatar; can be %NULL
