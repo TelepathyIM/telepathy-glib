@@ -699,25 +699,3 @@ tp_tests_dup_channel_props_asv (TpChannel *channel)
 
   return asv;
 }
-
-void
-tp_tests_add_channel_to_ptr_array (GPtrArray *arr,
-    TpChannel *channel)
-{
-  GValueArray *tmp;
-  GHashTable *asv;
-
-  g_assert (arr != NULL);
-  g_assert (channel != NULL);
-
-  asv = tp_tests_dup_channel_props_asv (channel);
-
-  tmp = tp_value_array_build (2,
-      DBUS_TYPE_G_OBJECT_PATH, tp_proxy_get_object_path (channel),
-      TP_HASH_TYPE_STRING_VARIANT_MAP, asv,
-      G_TYPE_INVALID);
-
-  g_ptr_array_add (arr, tmp);
-
-  g_hash_table_unref (asv);
-}
