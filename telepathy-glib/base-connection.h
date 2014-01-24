@@ -241,6 +241,10 @@ void tp_base_connection_add_client_interest (TpBaseConnection *self,
 void tp_base_connection_add_possible_client_interest (TpBaseConnection *self,
     GQuark token);
 
+_TP_AVAILABLE_IN_UNRELEASED
+const gchar *tp_base_connection_get_account_path_suffix (
+    TpBaseConnection *self);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_BASE_CONNECTION_H__*/
