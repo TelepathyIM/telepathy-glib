@@ -143,6 +143,9 @@ main (int argc,
   gchar *chan_path;
   TpHandle handle;
   GPtrArray *message;
+  TpCapabilities *caps;
+  GPtrArray *classes;
+  GQuark conn_features[] = { TP_CONNECTION_FEATURE_CAPABILITIES, 0 };
 
   tp_tests_abort_after (10);
   /* tp_debug_set_flags ("all"); */
@@ -175,6 +178,16 @@ main (int argc,
   g_assert_no_error (error);
 
   tp_tests_proxy_run_until_prepared (chan, NULL);
+
+  /* check connection requestable channels */
+  tp_tests_proxy_run_until_prepared (conn, conn_features);
+
+  caps = tp_connection_get_capabilities (conn);
+  g_assert (caps != NULL);
+  classes = tp_capabilities_get_channel_classes (caps);
+  g_assert (classes != NULL);
+  g_assert_cmpint (classes->len, ==, 1);
+  g_assert (tp_capabilities_supports_text_chats (caps));
 
   MYASSERT (tp_cli_channel_type_text_connect_to_message_received (chan, on_received,
       g_object_ref (contact_repo), g_object_unref, NULL, NULL) != NULL, "");
