@@ -223,15 +223,13 @@ maybe_set_connection (TpChannelDispatchOperation *self,
       return;
     }
 
-  g_object_notify ((GObject *) self, "connection");
-
   if (g_hash_table_lookup (self->priv->immutable_properties,
-        TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION) != NULL)
-    return;
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION) == NULL)
+    g_hash_table_insert (self->priv->immutable_properties,
+        g_strdup (TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION),
+        tp_g_value_slice_new_boxed (DBUS_TYPE_G_OBJECT_PATH, path));
 
-  g_hash_table_insert (self->priv->immutable_properties,
-      g_strdup (TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION),
-      tp_g_value_slice_new_boxed (DBUS_TYPE_G_OBJECT_PATH, path));
+  g_object_notify ((GObject *) self, "connection");
 }
 
 static void
@@ -255,15 +253,13 @@ maybe_set_account (TpChannelDispatchOperation *self,
       return;
     }
 
-  g_object_notify ((GObject *) self, "account");
-
   if (g_hash_table_lookup (self->priv->immutable_properties,
-        TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT) != NULL)
-    return;
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT) == NULL)
+    g_hash_table_insert (self->priv->immutable_properties,
+        g_strdup (TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT),
+        tp_g_value_slice_new_boxed (DBUS_TYPE_G_OBJECT_PATH, path));
 
-  g_hash_table_insert (self->priv->immutable_properties,
-      g_strdup (TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT),
-      tp_g_value_slice_new_boxed (DBUS_TYPE_G_OBJECT_PATH, path));
+  g_object_notify ((GObject *) self, "account");
 }
 
 static void
@@ -289,8 +285,6 @@ maybe_set_channel (TpChannelDispatchOperation *self,
       return;
     }
 
-  g_object_notify ((GObject *) self, "channel");
-
   if (g_hash_table_lookup (self->priv->immutable_properties,
         TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL) == NULL)
     {
@@ -307,6 +301,8 @@ maybe_set_channel (TpChannelDispatchOperation *self,
           tp_g_value_slice_new_boxed (
             TP_HASH_TYPE_STRING_VARIANT_MAP, properties));
     }
+
+  g_object_notify ((GObject *) self, "channel");
 }
 
 static void
