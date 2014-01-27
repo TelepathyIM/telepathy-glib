@@ -98,10 +98,6 @@ gboolean tp_channel_manager_create_channel (TpChannelManager *manager,
     TpChannelManagerRequest *request,
     GHashTable *request_properties);
 
-gboolean tp_channel_manager_request_channel (TpChannelManager *manager,
-    TpChannelManagerRequest *request,
-    GHashTable *request_properties);
-
 gboolean tp_channel_manager_ensure_channel (TpChannelManager *manager,
     TpChannelManagerRequest *request,
     GHashTable *request_properties);
@@ -115,7 +111,6 @@ struct _TpChannelManagerIface {
     TpChannelManagerForeachChannelClassFunc foreach_channel_class;
 
     TpChannelManagerRequestFunc create_channel;
-    TpChannelManagerRequestFunc request_channel;
     TpChannelManagerRequestFunc ensure_channel;
 
     TpChannelManagerTypeForeachChannelClassFunc type_foreach_channel_class;

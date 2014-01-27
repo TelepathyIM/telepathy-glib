@@ -122,8 +122,7 @@
  *  Telepathy client. The hash table will be freed after the function returns;
  *  if the channel manager wants to keep it around, it must copy it.
  *
- * Signature of an implementation of #TpChannelManagerIface.create_channel and
- * #TpChannelManagerIface.request_channel.
+ * Signature of an implementation of #TpChannelManagerIface.create_channel.
  *
  * Implementations should inspect the contents of @request_properties to see if
  * it matches a channel class handled by this manager.  If so, they should
@@ -175,9 +174,6 @@
  * @create_channel: Respond to a request for a new channel made with the
  *  Connection.Interface.Requests.CreateChannel method. See
  *  #TpChannelManagerRequestFunc for details.
- * @request_channel: Respond to a request for a (new or existing) channel made
- *  with the Connection.RequestChannel method. See #TpChannelManagerRequestFunc
- *  for details.
  * @ensure_channel: Respond to a request for a (new or existing) channel made
  *  with the Connection.Interface.Requests.EnsureChannel method. See
  *  #TpChannelManagerRequestFunc for details.
@@ -642,38 +638,6 @@ tp_channel_manager_create_channel (TpChannelManager *manager,
   TpChannelManagerIface *iface = TP_CHANNEL_MANAGER_GET_INTERFACE (
       manager);
   TpChannelManagerRequestFunc method = iface->create_channel;
-
-  /* A missing implementation is equivalent to one that always returns FALSE,
-   * meaning "can't do that, ask someone else" */
-  if (method != NULL)
-    return method (manager, request, request_properties);
-  else
-    return FALSE;
-}
-
-
-/**
- * tp_channel_manager_request_channel:
- * @manager: An object implementing #TpChannelManager
- * @request: A #TpChannelManagerRequest representing this pending request.
- * @request_properties: A table mapping (const gchar *) property names to
- *  GValue, representing the desired properties of a channel requested by a
- *  Telepathy client.
- *
- * Offers an incoming RequestChannel call to @manager.
- *
- * Returns: %TRUE if this request will be handled by @manager; else %FALSE.
- *
- * Since: 0.7.15
- */
-gboolean
-tp_channel_manager_request_channel (TpChannelManager *manager,
-    TpChannelManagerRequest *request,
-    GHashTable *request_properties)
-{
-  TpChannelManagerIface *iface = TP_CHANNEL_MANAGER_GET_INTERFACE (
-      manager);
-  TpChannelManagerRequestFunc method = iface->request_channel;
 
   /* A missing implementation is equivalent to one that always returns FALSE,
    * meaning "can't do that, ask someone else" */

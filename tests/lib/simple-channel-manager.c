@@ -91,5 +91,4 @@ channel_manager_iface_init (gpointer g_iface,
 
   iface->create_channel = tp_tests_simple_channel_manager_request;
   iface->ensure_channel = tp_tests_simple_channel_manager_request;
-  iface->request_channel = tp_tests_simple_channel_manager_request;
 }

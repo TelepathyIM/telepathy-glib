@@ -372,6 +372,4 @@ channel_manager_iface_init (gpointer g_iface,
   iface->type_foreach_channel_class = example_echo_2_im_manager_type_foreach_channel_class;
   iface->create_channel = example_echo_2_im_manager_create_channel;
   iface->ensure_channel = example_echo_2_im_manager_ensure_channel;
-  /* In this channel manager, Request has the same semantics as Ensure */
-  iface->request_channel = example_echo_2_im_manager_ensure_channel;
 }

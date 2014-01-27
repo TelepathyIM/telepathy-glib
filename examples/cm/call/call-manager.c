@@ -535,7 +535,4 @@ channel_manager_iface_init (gpointer g_iface,
     example_call_manager_type_foreach_channel_class;
   iface->create_channel = example_call_manager_create_channel;
   iface->ensure_channel = example_call_manager_ensure_channel;
-  /* In this channel manager, RequestChannel is not supported; Call is not
-   * designed to work with the old RequestChannel API. */
-  iface->request_channel = NULL;
 }

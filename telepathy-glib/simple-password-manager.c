@@ -273,7 +273,6 @@ channel_manager_iface_init (gpointer g_iface,
 
   /* these channels are not requestable */
   iface->foreach_channel_class = NULL;
-  iface->request_channel = NULL;
   iface->create_channel = NULL;
   iface->ensure_channel = NULL;
 }

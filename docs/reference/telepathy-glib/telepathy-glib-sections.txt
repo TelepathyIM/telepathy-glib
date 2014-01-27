@@ -136,7 +136,6 @@ tp_channel_manager_ensure_channel
 tp_channel_manager_foreach_channel
 tp_channel_manager_foreach_channel_class
 tp_channel_manager_type_foreach_channel_class
-tp_channel_manager_request_channel
 <SUBSECTION Standard>
 TP_CHANNEL_MANAGER
 TP_IS_CHANNEL_MANAGER
