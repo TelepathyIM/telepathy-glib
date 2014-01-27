@@ -347,8 +347,8 @@ tp_channel_manager_get_type (void)
  * tp_channel_manager_emit_new_channel:
  * @instance: An object implementing #TpChannelManager
  * @channel: A #TpExportableChannel
- * @request_tokens: the request tokens (opaque pointers) satisfied by this
- *                  channel
+ * @requests: (element-type TelepathyGLib.ChannelManagerRequest)
+ * the #TpChannelManagerRequest objects satisfied by this channel
  *
  * Emit the #TpChannelManager::new-channels signal indicating that the
  * channel has been created.
@@ -358,7 +358,7 @@ tp_channel_manager_get_type (void)
 void
 tp_channel_manager_emit_new_channel (gpointer instance,
                                      TpExportableChannel *channel,
-                                     GSList *request_tokens)
+                                     GSList *requests)
 {
   GHashTable *channels;
 
@@ -367,7 +367,7 @@ tp_channel_manager_emit_new_channel (gpointer instance,
 
   channels = g_hash_table_new_full (g_direct_hash, g_direct_equal,
       NULL, NULL);
-  g_hash_table_insert (channels, channel, request_tokens);
+  g_hash_table_insert (channels, channel, requests);
   g_signal_emit (instance, signals[S_NEW_CHANNELS], 0, channels);
   g_hash_table_unref (channels);
 }
@@ -424,51 +424,46 @@ tp_channel_manager_emit_channel_closed_for_object (gpointer instance,
 /**
  * tp_channel_manager_emit_request_already_satisfied:
  * @instance: An object implementing #TpChannelManager
- * @request_token: An opaque pointer representing the request that
- *  succeeded
+ * @request: An #TpChannelManagerRequest representing the request that succeeded
  * @channel: The channel that satisfies the request
  *
  * Emit the #TpChannelManager::request-already-satisfied signal indicating
- * that the pre-existing channel @channel satisfies @request_token.
- *
- * Since: 0.7.15
+ * that the pre-existing channel @channel satisfies @request.
  */
 void
 tp_channel_manager_emit_request_already_satisfied (gpointer instance,
-    gpointer request_token,
+    TpChannelManagerRequest *request,
     TpExportableChannel *channel)
 {
   g_return_if_fail (TP_IS_EXPORTABLE_CHANNEL (channel));
   g_return_if_fail (TP_IS_CHANNEL_MANAGER (instance));
 
   g_signal_emit (instance, signals[S_REQUEST_ALREADY_SATISFIED], 0,
-      request_token, channel);
+      request, channel);
 }
 
 
 /**
  * tp_channel_manager_emit_request_failed:
  * @instance: An object implementing #TpChannelManager
- * @request_token: An opaque pointer representing the request that failed
+ * @request: An #TpChannelManagerRequest representing the request that failed
  * @domain: a #GError domain
  * @code: a #GError code appropriate for @domain
  * @message: the error message
  *
  * Emit the #TpChannelManager::request-failed signal indicating that
- * the request @request_token failed for the given reason.
- *
- * Since: 0.7.15
+ * the request @request failed for the given reason.
  */
 void
 tp_channel_manager_emit_request_failed (gpointer instance,
-                                        gpointer request_token,
-                                        GQuark domain,
-                                        gint code,
-                                        const gchar *message)
+    TpChannelManagerRequest *request,
+    GQuark domain,
+    gint code,
+    const gchar *message)
 {
   g_return_if_fail (TP_IS_CHANNEL_MANAGER (instance));
 
-  g_signal_emit (instance, signals[S_REQUEST_FAILED], 0, request_token,
+  g_signal_emit (instance, signals[S_REQUEST_FAILED], 0, request,
       domain, code, message);
 }
 
@@ -476,24 +471,24 @@ tp_channel_manager_emit_request_failed (gpointer instance,
 /**
  * tp_channel_manager_emit_request_failed_printf:
  * @instance: An object implementing #TpChannelManager
- * @request_token: An opaque pointer representing the request that failed
+ * @request: A #TpChannelManagerRequest representing the request that failed
  * @domain: a #GError domain
  * @code: a #GError code appropriate for @domain
  * @format: a printf-style format string for the error message
  * @...: arguments for the format string
  *
  * Emit the #TpChannelManager::request-failed signal indicating that
- * the request @request_token failed for the given reason.
+ * the request @request failed for the given reason.
  *
  * Since: 0.7.15
  */
 void
 tp_channel_manager_emit_request_failed_printf (gpointer instance,
-                                               gpointer request_token,
-                                               GQuark domain,
-                                               gint code,
-                                               const gchar *format,
-                                               ...)
+    TpChannelManagerRequest *request,
+    GQuark domain,
+    gint code,
+    const gchar *format,
+    ...)
 {
   va_list ap;
   gchar *message;
@@ -502,7 +497,7 @@ tp_channel_manager_emit_request_failed_printf (gpointer instance,
   message = g_strdup_vprintf (format, ap);
   va_end (ap);
 
-  tp_channel_manager_emit_request_failed (instance, request_token,
+  tp_channel_manager_emit_request_failed (instance, request,
       domain, code, message);
 
   g_free (message);

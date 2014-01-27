@@ -137,21 +137,27 @@ GType tp_channel_manager_get_type (void);
 /* signal emission */
 
 void tp_channel_manager_emit_new_channel (gpointer instance,
-    TpExportableChannel *channel, GSList *request_tokens);
+    TpExportableChannel *channel, GSList *requests);
 
 void tp_channel_manager_emit_channel_closed (gpointer instance,
     const gchar *path);
 void tp_channel_manager_emit_channel_closed_for_object (gpointer instance,
     TpExportableChannel *channel);
 
-void tp_channel_manager_emit_request_already_satisfied (
-    gpointer instance, gpointer request_token,
+void tp_channel_manager_emit_request_already_satisfied (gpointer instance,
+    TpChannelManagerRequest *request,
     TpExportableChannel *channel);
 
 void tp_channel_manager_emit_request_failed (gpointer instance,
-    gpointer request_token, GQuark domain, gint code, const gchar *message);
+    TpChannelManagerRequest *request,
+    GQuark domain,
+    gint code,
+    const gchar *message);
 void tp_channel_manager_emit_request_failed_printf (gpointer instance,
-    gpointer request_token, GQuark domain, gint code, const gchar *format,
+    TpChannelManagerRequest *request,
+    GQuark domain,
+    gint code,
+    const gchar *format,
     ...) G_GNUC_PRINTF (5, 6);
 
 
