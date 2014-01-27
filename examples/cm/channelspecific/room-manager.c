@@ -227,9 +227,9 @@ channel_closed_cb (ExampleCSHRoomChannel *chan,
 
 static void
 new_channel (ExampleCSHRoomManager *self,
-             TpHandle handle,
-             TpHandle initiator,
-             gpointer request_token)
+    TpHandle handle,
+    TpHandle initiator,
+    TpChannelManagerRequest *request)
 {
   ExampleCSHRoomChannel *chan;
   gchar *object_path;
@@ -251,8 +251,8 @@ new_channel (ExampleCSHRoomManager *self,
 
   g_hash_table_insert (self->priv->channels, GUINT_TO_POINTER (handle), chan);
 
-  if (request_token != NULL)
-    requests = g_slist_prepend (requests, request_token);
+  if (request != NULL)
+    requests = g_slist_prepend (requests, request);
 
   tp_channel_manager_emit_new_channel (self, TP_EXPORTABLE_CHANNEL (chan),
       requests);
@@ -289,9 +289,9 @@ example_csh_room_manager_type_foreach_channel_class (GType type,
 
 static gboolean
 example_csh_room_manager_request (ExampleCSHRoomManager *self,
-                                  gpointer request_token,
-                                  GHashTable *request_properties,
-                                  gboolean require_new)
+    TpChannelManagerRequest *request,
+    GHashTable *request_properties,
+    gboolean require_new)
 {
   TpHandle handle;
   ExampleCSHRoomChannel *chan;
@@ -326,7 +326,7 @@ example_csh_room_manager_request (ExampleCSHRoomManager *self,
     {
       new_channel (self, handle,
           tp_base_connection_get_self_handle (self->priv->conn),
-          request_token);
+          request);
     }
   else if (require_new)
     {
@@ -337,13 +337,13 @@ example_csh_room_manager_request (ExampleCSHRoomManager *self,
   else
     {
       tp_channel_manager_emit_request_already_satisfied (self,
-          request_token, TP_EXPORTABLE_CHANNEL (chan));
+          request, TP_EXPORTABLE_CHANNEL (chan));
     }
 
   return TRUE;
 
 error:
-  tp_channel_manager_emit_request_failed (self, request_token,
+  tp_channel_manager_emit_request_failed (self, request,
       error->domain, error->code, error->message);
   g_error_free (error);
   return TRUE;
@@ -351,21 +351,21 @@ error:
 
 static gboolean
 example_csh_room_manager_create_channel (TpChannelManager *manager,
-                                         gpointer request_token,
-                                         GHashTable *request_properties)
+    TpChannelManagerRequest *request,
+    GHashTable *request_properties)
 {
     return example_csh_room_manager_request (
-        EXAMPLE_CSH_ROOM_MANAGER (manager), request_token,
+        EXAMPLE_CSH_ROOM_MANAGER (manager), request,
         request_properties, TRUE);
 }
 
 static gboolean
 example_csh_room_manager_ensure_channel (TpChannelManager *manager,
-                                         gpointer request_token,
-                                         GHashTable *request_properties)
+    TpChannelManagerRequest *request,
+    GHashTable *request_properties)
 {
     return example_csh_room_manager_request (
-        EXAMPLE_CSH_ROOM_MANAGER (manager), request_token,
+        EXAMPLE_CSH_ROOM_MANAGER (manager), request,
         request_properties, FALSE);
 }
 

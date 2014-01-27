@@ -51,6 +51,14 @@
  * Since: UNRELEASED
  */
 
+/**
+ * TpChannelManagerRequestMethod:
+ * @TP_CHANNEL_MANAGER_REQUEST_METHOD_CREATE_CHANNEL: a CreateChannel() call
+ * @TP_CHANNEL_MANAGER_REQUEST_METHOD_ENSURE_CHANNEL: a EnsureChannel() call
+ *
+ * The method associated with a #TpChannelManagerRequest
+ */
+
 G_DEFINE_TYPE (TpChannelManagerRequest, tp_channel_manager_request, G_TYPE_OBJECT)
 
 enum

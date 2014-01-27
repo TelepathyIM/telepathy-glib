@@ -49,7 +49,7 @@ tp_tests_simple_channel_manager_init (TpTestsSimpleChannelManager *self)
 
 static gboolean
 tp_tests_simple_channel_manager_request (TpChannelManager *manager,
-    gpointer request_token,
+    TpChannelManagerRequest *request,
     GHashTable *request_properties)
 {
   TpTestsSimpleChannelManager *self =
@@ -62,7 +62,7 @@ tp_tests_simple_channel_manager_request (TpChannelManager *manager,
 
   g_signal_emit (manager, signals[REQUEST], 0, request_properties);
 
-  tokens = g_slist_append (NULL, request_token);
+  tokens = g_slist_append (NULL, request);
 
   path = g_strdup_printf ("%s/Channel",
       tp_base_connection_get_object_path (self->conn));

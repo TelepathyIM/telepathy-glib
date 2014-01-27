@@ -31,6 +31,7 @@
 
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/exportable-channel.h>
+#include <telepathy-glib/channel-manager-request.h>
 
 G_BEGIN_DECLS
 
@@ -90,17 +91,20 @@ void tp_channel_manager_type_foreach_channel_class (GType type,
 
 
 typedef gboolean (*TpChannelManagerRequestFunc) (
-    TpChannelManager *manager, gpointer request_token,
+    TpChannelManager *manager, TpChannelManagerRequest *request,
     GHashTable *request_properties);
 
 gboolean tp_channel_manager_create_channel (TpChannelManager *manager,
-    gpointer request_token, GHashTable *request_properties);
+    TpChannelManagerRequest *request,
+    GHashTable *request_properties);
 
 gboolean tp_channel_manager_request_channel (TpChannelManager *manager,
-    gpointer request_token, GHashTable *request_properties);
+    TpChannelManagerRequest *request,
+    GHashTable *request_properties);
 
 gboolean tp_channel_manager_ensure_channel (TpChannelManager *manager,
-    gpointer request_token, GHashTable *request_properties);
+    TpChannelManagerRequest *request,
+    GHashTable *request_properties);
 
 
 struct _TpChannelManagerIface {

@@ -225,9 +225,9 @@ channel_closed_cb (TpTestsEchoChannel *chan,
 
 static void
 new_channel (TpTestsEchoImManager *self,
-             TpHandle handle,
-             TpHandle initiator,
-             gpointer request_token)
+    TpHandle handle,
+    TpHandle initiator,
+    TpChannelManagerRequest *request)
 {
   TpTestsEchoChannel *chan;
   gchar *object_path;
@@ -250,8 +250,8 @@ new_channel (TpTestsEchoImManager *self,
   /* self->priv->channels takes ownership of 'chan' */
   g_hash_table_insert (self->priv->channels, GUINT_TO_POINTER (handle), chan);
 
-  if (request_token != NULL)
-    requests = g_slist_prepend (requests, request_token);
+  if (request != NULL)
+    requests = g_slist_prepend (requests, request);
 
   tp_channel_manager_emit_new_channel (self, TP_EXPORTABLE_CHANNEL (chan),
       requests);
@@ -289,9 +289,9 @@ tp_tests_echo_im_manager_foreach_channel_class (TpChannelManager *manager,
 
 static gboolean
 tp_tests_echo_im_manager_request (TpTestsEchoImManager *self,
-                                 gpointer request_token,
-                                 GHashTable *request_properties,
-                                 gboolean require_new)
+    TpChannelManagerRequest *request,
+    GHashTable *request_properties,
+    gboolean require_new)
 {
   TpHandle handle;
   TpTestsEchoChannel *chan;
@@ -326,7 +326,7 @@ tp_tests_echo_im_manager_request (TpTestsEchoImManager *self,
     {
       new_channel (self, handle,
           tp_base_connection_get_self_handle (self->priv->conn),
-          request_token);
+          request);
     }
   else if (require_new)
     {
@@ -337,13 +337,13 @@ tp_tests_echo_im_manager_request (TpTestsEchoImManager *self,
   else
     {
       tp_channel_manager_emit_request_already_satisfied (self,
-          request_token, TP_EXPORTABLE_CHANNEL (chan));
+          request, TP_EXPORTABLE_CHANNEL (chan));
     }
 
   return TRUE;
 
 error:
-  tp_channel_manager_emit_request_failed (self, request_token,
+  tp_channel_manager_emit_request_failed (self, request,
       error->domain, error->code, error->message);
   g_error_free (error);
   return TRUE;
@@ -351,20 +351,20 @@ error:
 
 static gboolean
 tp_tests_echo_im_manager_create_channel (TpChannelManager *manager,
-                                        gpointer request_token,
-                                        GHashTable *request_properties)
+    TpChannelManagerRequest *request,
+    GHashTable *request_properties)
 {
     return tp_tests_echo_im_manager_request (TP_TESTS_ECHO_IM_MANAGER (manager),
-        request_token, request_properties, TRUE);
+        request, request_properties, TRUE);
 }
 
 static gboolean
 tp_tests_echo_im_manager_ensure_channel (TpChannelManager *manager,
-                                        gpointer request_token,
-                                        GHashTable *request_properties)
+    TpChannelManagerRequest *request,
+    GHashTable *request_properties)
 {
     return tp_tests_echo_im_manager_request (TP_TESTS_ECHO_IM_MANAGER (manager),
-        request_token, request_properties, FALSE);
+        request, request_properties, FALSE);
 }
 
 static void

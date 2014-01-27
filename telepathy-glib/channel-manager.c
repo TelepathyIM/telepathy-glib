@@ -116,7 +116,7 @@
 /**
  * TpChannelManagerRequestFunc:
  * @manager: An object implementing #TpChannelManager
- * @request_token: An opaque pointer representing this pending request.
+ * @request: A #TpChannelManagerRequest representing this pending request.
  * @request_properties: A table mapping (const gchar *) property names to
  *  GValue, representing the desired properties of a channel requested by a
  *  Telepathy client. The hash table will be freed after the function returns;
@@ -630,7 +630,7 @@ tp_channel_manager_type_foreach_channel_class (GType type,
 /**
  * tp_channel_manager_create_channel:
  * @manager: An object implementing #TpChannelManager
- * @request_token: An opaque pointer representing this pending request.
+ * @request: A #TpChannelManagerRequest representing this pending request.
  * @request_properties: A table mapping (const gchar *) property names to
  *  GValue, representing the desired properties of a channel requested by a
  *  Telepathy client.
@@ -638,13 +638,11 @@ tp_channel_manager_type_foreach_channel_class (GType type,
  * Offers an incoming CreateChannel call to @manager.
  *
  * Returns: %TRUE if this request will be handled by @manager; else %FALSE.
- *
- * Since: 0.7.15
  */
 gboolean
 tp_channel_manager_create_channel (TpChannelManager *manager,
-                                   gpointer request_token,
-                                   GHashTable *request_properties)
+    TpChannelManagerRequest *request,
+    GHashTable *request_properties)
 {
   TpChannelManagerIface *iface = TP_CHANNEL_MANAGER_GET_INTERFACE (
       manager);
@@ -653,7 +651,7 @@ tp_channel_manager_create_channel (TpChannelManager *manager,
   /* A missing implementation is equivalent to one that always returns FALSE,
    * meaning "can't do that, ask someone else" */
   if (method != NULL)
-    return method (manager, request_token, request_properties);
+    return method (manager, request, request_properties);
   else
     return FALSE;
 }
@@ -662,7 +660,7 @@ tp_channel_manager_create_channel (TpChannelManager *manager,
 /**
  * tp_channel_manager_request_channel:
  * @manager: An object implementing #TpChannelManager
- * @request_token: An opaque pointer representing this pending request.
+ * @request: A #TpChannelManagerRequest representing this pending request.
  * @request_properties: A table mapping (const gchar *) property names to
  *  GValue, representing the desired properties of a channel requested by a
  *  Telepathy client.
@@ -675,8 +673,8 @@ tp_channel_manager_create_channel (TpChannelManager *manager,
  */
 gboolean
 tp_channel_manager_request_channel (TpChannelManager *manager,
-                                    gpointer request_token,
-                                    GHashTable *request_properties)
+    TpChannelManagerRequest *request,
+    GHashTable *request_properties)
 {
   TpChannelManagerIface *iface = TP_CHANNEL_MANAGER_GET_INTERFACE (
       manager);
@@ -685,7 +683,7 @@ tp_channel_manager_request_channel (TpChannelManager *manager,
   /* A missing implementation is equivalent to one that always returns FALSE,
    * meaning "can't do that, ask someone else" */
   if (method != NULL)
-    return method (manager, request_token, request_properties);
+    return method (manager, request, request_properties);
   else
     return FALSE;
 }
@@ -694,7 +692,7 @@ tp_channel_manager_request_channel (TpChannelManager *manager,
 /**
  * tp_channel_manager_ensure_channel:
  * @manager: An object implementing #TpChannelManager
- * @request_token: An opaque pointer representing this pending request.
+ * @request: A #TpChannelManagerRequest representing this pending request.
  * @request_properties: A table mapping (const gchar *) property names to
  *  GValue, representing the desired properties of a channel requested by a
  *  Telepathy client.
@@ -707,8 +705,8 @@ tp_channel_manager_request_channel (TpChannelManager *manager,
  */
 gboolean
 tp_channel_manager_ensure_channel (TpChannelManager *manager,
-                                   gpointer request_token,
-                                   GHashTable *request_properties)
+    TpChannelManagerRequest *request,
+    GHashTable *request_properties)
 {
   TpChannelManagerIface *iface = TP_CHANNEL_MANAGER_GET_INTERFACE (
       manager);
@@ -717,7 +715,7 @@ tp_channel_manager_ensure_channel (TpChannelManager *manager,
   /* A missing implementation is equivalent to one that always returns FALSE,
    * meaning "can't do that, ask someone else" */
   if (method != NULL)
-    return method (manager, request_token, request_properties);
+    return method (manager, request, request_properties);
   else
     return FALSE;
 }

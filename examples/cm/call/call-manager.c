@@ -196,8 +196,11 @@ status_changed_cb (TpBaseConnection *conn,
 }
 
 static ExampleCallChannel *new_channel (ExampleCallManager *self,
-    TpHandle handle, TpHandle initiator, gpointer request_token,
-    gboolean initial_audio, gboolean initial_video);
+    TpHandle handle,
+    TpHandle initiator,
+    TpChannelManagerRequest *request,
+    gboolean initial_audio,
+    gboolean initial_video);
 
 static gboolean
 simulate_incoming_call_cb (gpointer p)
@@ -310,7 +313,7 @@ static ExampleCallChannel *
 new_channel (ExampleCallManager *self,
     TpHandle handle,
     TpHandle initiator,
-    gpointer request_token,
+    TpChannelManagerRequest *request,
     gboolean initial_audio,
     gboolean initial_video)
 {
@@ -343,8 +346,8 @@ new_channel (ExampleCallManager *self,
 
   g_hash_table_insert (self->priv->channels, chan, chan);
 
-  if (request_token != NULL)
-    requests = g_slist_prepend (requests, request_token);
+  if (request != NULL)
+    requests = g_slist_prepend (requests, request);
 
   tp_channel_manager_emit_new_channel (self, TP_EXPORTABLE_CHANNEL (chan),
       requests);
@@ -406,7 +409,7 @@ example_call_manager_type_foreach_channel_class (GType type,
 
 static gboolean
 example_call_manager_request (ExampleCallManager *self,
-    gpointer request_token,
+    TpChannelManagerRequest *request,
     GHashTable *request_properties,
     gboolean require_new)
 {
@@ -483,7 +486,7 @@ example_call_manager_request (ExampleCallManager *self,
           if (its_handle == handle)
             {
               tp_channel_manager_emit_request_already_satisfied (self,
-                  request_token, TP_EXPORTABLE_CHANNEL (chan));
+                  request, TP_EXPORTABLE_CHANNEL (chan));
               return TRUE;
             }
         }
@@ -491,11 +494,11 @@ example_call_manager_request (ExampleCallManager *self,
 
   new_channel (self, handle,
       tp_base_connection_get_self_handle (self->priv->conn),
-      request_token, initial_audio, initial_video);
+      request, initial_audio, initial_video);
   return TRUE;
 
 error:
-  tp_channel_manager_emit_request_failed (self, request_token,
+  tp_channel_manager_emit_request_failed (self, request,
       error->domain, error->code, error->message);
   g_error_free (error);
   return TRUE;
@@ -503,22 +506,22 @@ error:
 
 static gboolean
 example_call_manager_create_channel (TpChannelManager *manager,
-    gpointer request_token,
+    TpChannelManagerRequest *request,
     GHashTable *request_properties)
 {
     return example_call_manager_request (
         EXAMPLE_CALL_MANAGER (manager),
-        request_token, request_properties, TRUE);
+        request, request_properties, TRUE);
 }
 
 static gboolean
 example_call_manager_ensure_channel (TpChannelManager *manager,
-    gpointer request_token,
+    TpChannelManagerRequest *request,
     GHashTable *request_properties)
 {
     return example_call_manager_request (
         EXAMPLE_CALL_MANAGER (manager),
-        request_token, request_properties, FALSE);
+        request, request_properties, FALSE);
 }
 
 static void
