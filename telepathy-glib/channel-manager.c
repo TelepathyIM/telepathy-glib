@@ -127,7 +127,7 @@
  * Implementations should inspect the contents of @request_properties to see if
  * it matches a channel class handled by this manager.  If so, they should
  * return %TRUE to accept responsibility for the request, and ultimately emit
- * exactly one of the #TpChannelManager::new-channels,
+ * exactly one of the #TpChannelManager::new-channel,
  * #TpChannelManager::request-already-satisfied and
  * #TpChannelManager::request-failed signals (including @request_token in
  * the appropriate argument).
@@ -195,13 +195,14 @@
 #include "config.h"
 #include "channel-manager.h"
 
+#include <telepathy-glib/channel-manager-request-internal.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/exportable-channel.h>
 #include <telepathy-glib/util.h>
 
 enum {
-    S_NEW_CHANNELS,
+    S_NEW_CHANNEL,
     S_REQUEST_ALREADY_SATISFIED,
     S_REQUEST_FAILED,
     S_CHANNEL_CLOSED,
@@ -221,32 +222,23 @@ channel_manager_base_init (gpointer klass)
       initialized = TRUE;
 
       /**
-       * TpChannelManager::new-channels:
+       * TpChannelManager::new-channel:
        * @self: the channel manager
-       * @channels: a #GHashTable where the keys are
-       *  #TpExportableChannel instances (hashed and compared
-       *  by g_direct_hash() and g_direct_equal()) and the values are
-       *  linked lists (#GSList) of request tokens (opaque pointers) satisfied
-       *  by these channels
+       * @channel: a object implementing #TpExportableChannel
+       * @channels: (type GLib.SList) (element-type TelepathyGLib.ChannelManagerRequest):
+       * a #GSList of #TpChannelManagerRequest satisfied by @channel
        *
-       * Emitted when new channels have been created. The Connection should
-       * generally emit NewChannels (and NewChannel) in response to this
+       * Emitted when a new channel has been created. The Connection should
+       * generally emit NewChannel in response to this
        * signal, and then return from pending CreateChannel, EnsureChannel
-       * and/or RequestChannel calls if appropriate.
-       *
-       * Since 0.19.1, clients should not emit more than one
-       *  channel in this signal at one time as the creation of
-       *  multiple channels together in a single signal is strongly
-       *  recommended against: it's very complicated, hard to get
-       *  right in clients, and not nearly as useful as it originally
-       *  sounded.
+       * calls if appropriate.
        */
-      signals[S_NEW_CHANNELS] = g_signal_new ("new-channels",
+      signals[S_NEW_CHANNEL] = g_signal_new ("new-channel",
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
           0,
           NULL, NULL, NULL,
-          G_TYPE_NONE, 1, G_TYPE_POINTER);
+          G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_POINTER);
 
       /**
        * TpChannelManager::request-already-satisfied:
@@ -346,7 +338,7 @@ tp_channel_manager_get_type (void)
  * @requests: (element-type TelepathyGLib.ChannelManagerRequest)
  * the #TpChannelManagerRequest objects satisfied by this channel
  *
- * Emit the #TpChannelManager::new-channels signal indicating that the
+ * Emit the #TpChannelManager::new-channel signal indicating that the
  * channel has been created.
  *
  * Since: 0.7.15
@@ -356,16 +348,10 @@ tp_channel_manager_emit_new_channel (gpointer instance,
                                      TpExportableChannel *channel,
                                      GSList *requests)
 {
-  GHashTable *channels;
-
   g_return_if_fail (TP_IS_CHANNEL_MANAGER (instance));
   g_return_if_fail (TP_IS_EXPORTABLE_CHANNEL (channel));
 
-  channels = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-      NULL, NULL);
-  g_hash_table_insert (channels, channel, requests);
-  g_signal_emit (instance, signals[S_NEW_CHANNELS], 0, channels);
-  g_hash_table_unref (channels);
+  g_signal_emit (instance, signals[S_NEW_CHANNEL], 0, channel, requests);
 }
 
 

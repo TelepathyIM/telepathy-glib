@@ -613,13 +613,10 @@ fail_channel_request (TpBaseConnection *conn,
 /* Channel manager signal handlers */
 
 static void
-manager_new_channel (gpointer key,
-                     gpointer value,
-                     gpointer data)
+manager_new_channel (TpBaseConnection *self,
+    TpExportableChannel *channel,
+    GSList *request_tokens)
 {
-  TpExportableChannel *channel = TP_EXPORTABLE_CHANNEL (key);
-  GSList *request_tokens = value;
-  TpBaseConnection *self = TP_BASE_CONNECTION (data);
   gchar *object_path;
   GSList *iter;
   gboolean satisfies_create_channel = FALSE;
@@ -670,40 +667,31 @@ break_loop_early:
 }
 
 
-/* FIXME: make the API channel singular */
 static void
-manager_new_channels_cb (TpChannelManager *manager,
-                         GHashTable *channels,
-                         TpBaseConnection *self)
+manager_new_channel_cb (TpChannelManager *manager,
+    TpExportableChannel *channel,
+    GSList *requests,
+    TpBaseConnection *self)
 {
-  GHashTableIter iter;
-  gpointer key, value;
+  gchar *path;
+  GHashTable *props;
 
   g_assert (TP_IS_CHANNEL_MANAGER (manager));
   g_assert (TP_IS_BASE_CONNECTION (self));
 
   /* satisfy the RequestChannel/CreateChannel/EnsureChannel calls */
-  g_hash_table_foreach (channels, manager_new_channel, self);
+  manager_new_channel (self, channel, requests);
 
-  /* Emit NewChannel */
-  g_hash_table_iter_init (&iter, channels);
+  g_object_get (channel,
+      "object-path", &path,
+      "channel-properties", &props,
+      NULL);
 
-  while (g_hash_table_iter_next (&iter, &key, &value))
-    {
-      gchar *path;
-      GHashTable *props;
+  tp_svc_connection_interface_requests_emit_new_channel (self,
+      path, props);
 
-      g_object_get (key,
-          "object-path", &path,
-          "channel-properties", &props,
-          NULL);
-
-      tp_svc_connection_interface_requests_emit_new_channel (self,
-          path, props);
-
-      g_free (path);
-      g_hash_table_unref (props);
-    }
+  g_free (path);
+  g_hash_table_unref (props);
 }
 
 
@@ -836,8 +824,8 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
       TpChannelManager *manager = TP_CHANNEL_MANAGER (
           g_ptr_array_index (priv->channel_managers, i));
 
-      g_signal_connect (manager, "new-channels",
-          (GCallback) manager_new_channels_cb, self);
+      g_signal_connect (manager, "new-channel",
+          (GCallback) manager_new_channel_cb, self);
       g_signal_connect (manager, "request-already-satisfied",
           (GCallback) manager_request_already_satisfied_cb, self);
       g_signal_connect (manager, "request-failed",
