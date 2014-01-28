@@ -492,7 +492,7 @@ tp_channel_manager_emit_request_failed_printf (gpointer instance,
 /**
  * tp_channel_manager_foreach_channel:
  * @manager: an object implementing #TpChannelManager
- * @func: A function
+ * @func: (scope call): A function
  * @user_data: Arbitrary data to be passed as the second argument of @func
  *
  * Calls func(channel, user_data) for each channel managed by @manager.
@@ -536,7 +536,7 @@ foreach_adaptor (GType type G_GNUC_UNUSED,
 /**
  * tp_channel_manager_foreach_channel_class:
  * @manager: An object implementing #TpChannelManager
- * @func: A function
+ * @func: (scope call): A function
  * @user_data: Arbitrary data to be passed as the final argument of @func
  *
  * Calls func(manager, fixed, allowed, user_data) for each channel class
@@ -571,7 +571,7 @@ tp_channel_manager_foreach_channel_class (TpChannelManager *manager,
 /**
  * tp_channel_manager_type_foreach_channel_class:
  * @type: A type whose instances implement #TpChannelManager
- * @func: A function
+ * @func: (scope call): A function
  * @user_data: Arbitrary data to be passed as the final argument of @func
  *
  * Calls func(type, fixed, allowed, user_data) for each channel class
