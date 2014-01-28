@@ -1,3 +1,42 @@
+telepathy-glib 0.23.1 (UNRELEASED)
+==================================
+
+Dependencies:
+
+• GLib 2.36 or later is required
+
+Deprecations:
+
+• TpPresenceMixin: optional arguments are deprecated, apart from a
+  string named "message". This matches our current D-Bus API.
+
+Enhancements:
+
+• tp_protocol_normalize_contact_async(),
+  tp_protocol_identify_account_async(), and high-level API for
+  the Protocol Addressing and Presence interfaces (fd.o #71048, Simon)
+
+• More accessors for TpPresenceStatusSpec, which is now a boxed type
+  (fd.o #71048, Simon)
+
+• Better debug output (fd.o #68390, #71048; Simon)
+
+Fixes:
+
+• In the examples, specifically ask for "TelepathyGlib-0.12" (this API
+  version), not Telepathy 1.0 (fd.o #49737, Simon)
+
+• Improve tests' isolation from the real session bus (Xavier)
+
+• Fix a critical warning for each new connection under GLib 2.39 (Xavier)
+
+• Fix some possible crashes in file transfer channels, particularly
+  under GLib 2.39 (fd.o #72319, Xavier)
+
+• Correct tp_account_request_set_avatar documentation (Xavier)
+
+• Fix a TpConnection reference-leak in TpBaseClient (Guillaume)
+
 telepathy-glib 0.23.0 (2013-10-28)
 ==================================
 
