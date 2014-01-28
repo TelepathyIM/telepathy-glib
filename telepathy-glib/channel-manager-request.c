@@ -129,6 +129,8 @@ _tp_channel_manager_request_cancel (TpChannelManagerRequest *self)
   GError error = { TP_ERROR, TP_ERROR_DISCONNECTED,
       "unable to service this channel request, we're disconnecting!" };
 
+  g_return_if_fail (self->context != NULL);
+
   DEBUG ("cancelling request at %p for %s/%u/%u", self,
       self->channel_type, self->handle_type, self->handle);
 
@@ -144,6 +146,7 @@ _tp_channel_manager_request_satisfy (TpChannelManagerRequest *self,
   GHashTable *properties;
 
   g_return_if_fail (TP_IS_EXPORTABLE_CHANNEL (channel));
+  g_return_if_fail (self->context != NULL);
 
   DEBUG ("completing queued request %p with success, "
       "channel_type=%s, handle_type=%u, "
@@ -180,6 +183,8 @@ void
 _tp_channel_manager_request_fail (TpChannelManagerRequest *self,
     GError *error)
 {
+  g_return_if_fail (self->context != NULL);
+
   DEBUG ("completing queued request %p with error, channel_type=%s, "
       "handle_type=%u, handle=%u",
       self, self->channel_type, self->handle_type, self->handle);
