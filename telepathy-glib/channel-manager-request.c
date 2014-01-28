@@ -61,78 +61,6 @@
 
 G_DEFINE_TYPE (TpChannelManagerRequest, tp_channel_manager_request, G_TYPE_OBJECT)
 
-enum
-{
-  PROP_FIRST_PROP = 1,
-  N_PROPS
-};
-
-/*
-enum
-{
-  LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL];
-*/
-
-struct _TpChannelManagerRequestPriv
-{
-  gpointer badger;
-};
-
-static void
-tp_channel_manager_request_get_property (GObject *object,
-    guint property_id,
-    GValue *value,
-    GParamSpec *pspec)
-{
-  //TpChannelManagerRequest *self = TP_CHANNEL_MANAGER_REQUEST (object);
-
-  switch (property_id)
-    {
-      default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-        break;
-    }
-}
-
-static void
-tp_channel_manager_request_set_property (GObject *object,
-    guint property_id,
-    const GValue *value,
-    GParamSpec *pspec)
-{
-  //TpChannelManagerRequest *self = TP_CHANNEL_MANAGER_REQUEST (object);
-
-  switch (property_id)
-    {
-      default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-        break;
-    }
-}
-
-static void
-tp_channel_manager_request_constructed (GObject *object)
-{
-  //TpChannelManagerRequest *self = TP_CHANNEL_MANAGER_REQUEST (object);
-  void (*chain_up) (GObject *) =
-      ((GObjectClass *) tp_channel_manager_request_parent_class)->constructed;
-
-  chain_up (object);
-}
-
-static void
-tp_channel_manager_request_dispose (GObject *object)
-{
-  //TpChannelManagerRequest *self = TP_CHANNEL_MANAGER_REQUEST (object);
-  void (*chain_up) (GObject *) =
-      ((GObjectClass *) tp_channel_manager_request_parent_class)->dispose;
-
-  chain_up (object);
-}
-
 static void
 tp_channel_manager_request_finalize (GObject *object)
 {
@@ -156,12 +84,7 @@ tp_channel_manager_request_class_init (
     TpChannelManagerRequestClass *klass)
 {
   GObjectClass *oclass = G_OBJECT_CLASS (klass);
-  //GParamSpec *spec;
 
-  oclass->get_property = tp_channel_manager_request_get_property;
-  oclass->set_property = tp_channel_manager_request_set_property;
-  oclass->constructed = tp_channel_manager_request_constructed;
-  oclass->dispose = tp_channel_manager_request_dispose;
   oclass->finalize = tp_channel_manager_request_finalize;
 }
 
