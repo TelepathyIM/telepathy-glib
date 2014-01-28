@@ -333,7 +333,7 @@ tp_channel_manager_get_type (void)
 
 /**
  * tp_channel_manager_emit_new_channel:
- * @instance: An object implementing #TpChannelManager
+ * @self: An object implementing #TpChannelManager
  * @channel: A #TpExportableChannel
  * @requests: (element-type TelepathyGLib.ChannelManagerRequest)
  * the #TpChannelManagerRequest objects satisfied by this channel
@@ -344,20 +344,20 @@ tp_channel_manager_get_type (void)
  * Since: 0.7.15
  */
 void
-tp_channel_manager_emit_new_channel (gpointer instance,
-                                     TpExportableChannel *channel,
-                                     GSList *requests)
+tp_channel_manager_emit_new_channel (TpChannelManager *self,
+    TpExportableChannel *channel,
+    GSList *requests)
 {
-  g_return_if_fail (TP_IS_CHANNEL_MANAGER (instance));
+  g_return_if_fail (TP_IS_CHANNEL_MANAGER (self));
   g_return_if_fail (TP_IS_EXPORTABLE_CHANNEL (channel));
 
-  g_signal_emit (instance, signals[S_NEW_CHANNEL], 0, channel, requests);
+  g_signal_emit (self, signals[S_NEW_CHANNEL], 0, channel, requests);
 }
 
 
 /**
  * tp_channel_manager_emit_channel_closed:
- * @instance: An object implementing #TpChannelManager
+ * @self: An object implementing #TpChannelManager
  * @path: A channel's object-path
  *
  * Emit the #TpChannelManager::channel-closed signal indicating that
@@ -366,19 +366,19 @@ tp_channel_manager_emit_new_channel (gpointer instance,
  * Since: 0.7.15
  */
 void
-tp_channel_manager_emit_channel_closed (gpointer instance,
-                                        const gchar *path)
+tp_channel_manager_emit_channel_closed (TpChannelManager *self,
+    const gchar *path)
 {
-  g_return_if_fail (TP_IS_CHANNEL_MANAGER (instance));
+  g_return_if_fail (TP_IS_CHANNEL_MANAGER (self));
   g_return_if_fail (tp_dbus_check_valid_object_path (path, NULL));
 
-  g_signal_emit (instance, signals[S_CHANNEL_CLOSED], 0, path);
+  g_signal_emit (self, signals[S_CHANNEL_CLOSED], 0, path);
 }
 
 
 /**
  * tp_channel_manager_emit_channel_closed_for_object:
- * @instance: An object implementing #TpChannelManager
+ * @self: An object implementing #TpChannelManager
  * @channel: A #TpExportableChannel
  *
  * Emit the #TpChannelManager::channel-closed signal indicating that
@@ -389,7 +389,7 @@ tp_channel_manager_emit_channel_closed (gpointer instance,
  * Since: 0.7.15
  */
 void
-tp_channel_manager_emit_channel_closed_for_object (gpointer instance,
+tp_channel_manager_emit_channel_closed_for_object (TpChannelManager *self,
     TpExportableChannel *channel)
 {
   gchar *path;
@@ -398,14 +398,14 @@ tp_channel_manager_emit_channel_closed_for_object (gpointer instance,
   g_object_get (channel,
       "object-path", &path,
       NULL);
-  tp_channel_manager_emit_channel_closed (instance, path);
+  tp_channel_manager_emit_channel_closed (self, path);
   g_free (path);
 }
 
 
 /**
  * tp_channel_manager_emit_request_already_satisfied:
- * @instance: An object implementing #TpChannelManager
+ * @self: An object implementing #TpChannelManager
  * @request: An #TpChannelManagerRequest representing the request that succeeded
  * @channel: The channel that satisfies the request
  *
@@ -413,21 +413,21 @@ tp_channel_manager_emit_channel_closed_for_object (gpointer instance,
  * that the pre-existing channel @channel satisfies @request.
  */
 void
-tp_channel_manager_emit_request_already_satisfied (gpointer instance,
+tp_channel_manager_emit_request_already_satisfied (TpChannelManager *self,
     TpChannelManagerRequest *request,
     TpExportableChannel *channel)
 {
   g_return_if_fail (TP_IS_EXPORTABLE_CHANNEL (channel));
-  g_return_if_fail (TP_IS_CHANNEL_MANAGER (instance));
+  g_return_if_fail (TP_IS_CHANNEL_MANAGER (self));
 
-  g_signal_emit (instance, signals[S_REQUEST_ALREADY_SATISFIED], 0,
+  g_signal_emit (self, signals[S_REQUEST_ALREADY_SATISFIED], 0,
       request, channel);
 }
 
 
 /**
  * tp_channel_manager_emit_request_failed:
- * @instance: An object implementing #TpChannelManager
+ * @self: An object implementing #TpChannelManager
  * @request: An #TpChannelManagerRequest representing the request that failed
  * @domain: a #GError domain
  * @code: a #GError code appropriate for @domain
@@ -437,22 +437,22 @@ tp_channel_manager_emit_request_already_satisfied (gpointer instance,
  * the request @request failed for the given reason.
  */
 void
-tp_channel_manager_emit_request_failed (gpointer instance,
+tp_channel_manager_emit_request_failed (TpChannelManager *self,
     TpChannelManagerRequest *request,
     GQuark domain,
     gint code,
     const gchar *message)
 {
-  g_return_if_fail (TP_IS_CHANNEL_MANAGER (instance));
+  g_return_if_fail (TP_IS_CHANNEL_MANAGER (self));
 
-  g_signal_emit (instance, signals[S_REQUEST_FAILED], 0, request,
+  g_signal_emit (self, signals[S_REQUEST_FAILED], 0, request,
       domain, code, message);
 }
 
 
 /**
  * tp_channel_manager_emit_request_failed_printf:
- * @instance: An object implementing #TpChannelManager
+ * @self: An object implementing #TpChannelManager
  * @request: A #TpChannelManagerRequest representing the request that failed
  * @domain: a #GError domain
  * @code: a #GError code appropriate for @domain
@@ -465,7 +465,7 @@ tp_channel_manager_emit_request_failed (gpointer instance,
  * Since: 0.7.15
  */
 void
-tp_channel_manager_emit_request_failed_printf (gpointer instance,
+tp_channel_manager_emit_request_failed_printf (TpChannelManager *self,
     TpChannelManagerRequest *request,
     GQuark domain,
     gint code,
@@ -479,7 +479,7 @@ tp_channel_manager_emit_request_failed_printf (gpointer instance,
   message = g_strdup_vprintf (format, ap);
   va_end (ap);
 
-  tp_channel_manager_emit_request_failed (instance, request,
+  tp_channel_manager_emit_request_failed (self, request,
       domain, code, message);
 
   g_free (message);

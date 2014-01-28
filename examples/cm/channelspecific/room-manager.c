@@ -210,7 +210,7 @@ static void
 channel_closed_cb (ExampleCSHRoomChannel *chan,
                    ExampleCSHRoomManager *self)
 {
-  tp_channel_manager_emit_channel_closed_for_object (self,
+  tp_channel_manager_emit_channel_closed_for_object (TP_CHANNEL_MANAGER (self),
       TP_EXPORTABLE_CHANNEL (chan));
 
   if (self->priv->channels != NULL)
@@ -254,8 +254,8 @@ new_channel (ExampleCSHRoomManager *self,
   if (request != NULL)
     requests = g_slist_prepend (requests, request);
 
-  tp_channel_manager_emit_new_channel (self, TP_EXPORTABLE_CHANNEL (chan),
-      requests);
+  tp_channel_manager_emit_new_channel (TP_CHANNEL_MANAGER (self),
+      TP_EXPORTABLE_CHANNEL (chan), requests);
   g_slist_free (requests);
 }
 
@@ -336,14 +336,14 @@ example_csh_room_manager_request (ExampleCSHRoomManager *self,
     }
   else
     {
-      tp_channel_manager_emit_request_already_satisfied (self,
-          request, TP_EXPORTABLE_CHANNEL (chan));
+      tp_channel_manager_emit_request_already_satisfied (
+          TP_CHANNEL_MANAGER (self), request, TP_EXPORTABLE_CHANNEL (chan));
     }
 
   return TRUE;
 
 error:
-  tp_channel_manager_emit_request_failed (self, request,
+  tp_channel_manager_emit_request_failed (TP_CHANNEL_MANAGER (self), request,
       error->domain, error->code, error->message);
   g_error_free (error);
   return TRUE;
