@@ -129,7 +129,7 @@
  * return %TRUE to accept responsibility for the request, and ultimately emit
  * exactly one of the #TpChannelManager::new-channel,
  * #TpChannelManager::request-already-satisfied and
- * #TpChannelManager::request-failed signals (including @request_token in
+ * #TpChannelManager::request-failed signals (including @request in
  * the appropriate argument).
  *
  * If the implementation does not want to handle the request, it should return
@@ -243,7 +243,7 @@ channel_manager_base_init (gpointer klass)
       /**
        * TpChannelManager::request-already-satisfied:
        * @self: the channel manager
-       * @request_token: opaque pointer supplied by the requester,
+       * @request: a #TpChannelManagerRequest supplied by the requester,
        *  representing a request
        * @channel: the existing #TpExportableChannel that satisfies the
        *  request
@@ -258,12 +258,12 @@ channel_manager_base_init (gpointer klass)
           G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
           0,
           NULL, NULL, NULL,
-          G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_OBJECT);
+          G_TYPE_NONE, 2, TP_TYPE_CHANNEL_MANAGER_REQUEST, G_TYPE_OBJECT);
 
       /**
        * TpChannelManager::request-failed:
        * @self: the channel manager
-       * @request_token: opaque pointer supplied by the requester,
+       * @request: a #TpChannelManagerRequest supplied by the requester,
        *  representing a request
        * @domain: the domain of a #GError indicating why the request
        *  failed
@@ -281,8 +281,8 @@ channel_manager_base_init (gpointer klass)
           G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
           0,
           NULL, NULL, NULL,
-          G_TYPE_NONE, 4, G_TYPE_POINTER, G_TYPE_UINT, G_TYPE_INT,
-          G_TYPE_STRING);
+          G_TYPE_NONE, 4, TP_TYPE_CHANNEL_MANAGER_REQUEST, G_TYPE_UINT,
+          G_TYPE_INT, G_TYPE_STRING);
 
       /**
        * TpChannelManager::channel-closed:
