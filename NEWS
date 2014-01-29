@@ -1,7 +1,14 @@
 telepathy-glib 0.22.1 (UNRELEASED)
 ==================================
 
-…
+Fixes:
+
+• Fix a critical warning for each new connection under GLib 2.39
+  (fd.o #72303, Xavier)
+
+• Fix a TpConnection reference-leak in TpBaseClient (Guillaume)
+
+• channel-group: don't crash if no message has been provided (Guillaume)
 
 telepathy-glib 0.22.0 (2013-10-02)
 ==================================
