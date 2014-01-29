@@ -40,7 +40,7 @@
  *
  * Data structure representing a #TpChannelManagerRequest.
  *
- * Since: UNRELEASED
+ * Since: 0.99.7
  */
 
 /**
@@ -48,7 +48,7 @@
  *
  * The class of a #TpChannelManagerRequest.
  *
- * Since: UNRELEASED
+ * Since: 0.99.7
  */
 
 /**

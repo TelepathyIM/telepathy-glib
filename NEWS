@@ -1,7 +1,24 @@
-telepathy-glib 0.99.7 (UNRELEASED)
+telepathy-glib 0.99.7 (2014-01-29)
 ==================================
 
-…
+The “jigsaw falling into place” release.
+
+API breaks:
+
+• Spec 0.99.7
+  · Client API (Observer, ChannelDispatchOperation and Handler) are now channel
+    singular.
+  · Connection.NewChannels has been replaced by NewChannel
+  · Connection.Requests.RequestableChannelClasses has been moved to Connection
+  · ChannelDispatchOperation.HandleWithTime() has been merged into
+     HandleWith()
+  · Handler.HandleWith::User_Action_Time: use a signed type
+  · Channel.I.DTMF has been removed and re-implemented into Content.I.DTMF and
+    Channel.T.Call.
+  · Account.I.Hidden, AccountManager.I.Hidden have been removed
+
+• TpChannelManager now uses a TpChannelManagerRequest object instead of an
+  opaque pointer to represent a specific channel request. (fd.o #69430, Guillaume)
 
 telepathy-glib 0.99.6 (2014-01-13)
 ==================================
