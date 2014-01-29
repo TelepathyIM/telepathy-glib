@@ -28,7 +28,8 @@ Fixes:
 
 • Improve tests' isolation from the real session bus (Xavier)
 
-• Fix a critical warning for each new connection under GLib 2.39 (Xavier)
+• Fix a critical warning for each new connection under GLib 2.39
+  (fd.o #72303, Xavier)
 
 • Fix some possible crashes in file transfer channels, particularly
   under GLib 2.39 (fd.o #72319, Xavier)
