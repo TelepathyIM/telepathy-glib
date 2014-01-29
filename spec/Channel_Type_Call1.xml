@@ -1575,7 +1575,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
     <property name="InitialTones" tp:name-for-bindings="Initial_Tones"
         type="s" access="read" tp:immutable="yes" tp:requestable="sometimes">
-      <tp:added version="0.99.UNRELEASED" />
+      <tp:added version="0.99.7" />
       <tp:docstring>
         <p>If non-empty in a channel request that will create a new channel,
           the connection manager should send the tones immediately after

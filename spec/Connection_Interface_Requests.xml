@@ -379,7 +379,7 @@
     </method>
 
     <signal name="NewChannel" tp:name-for-bindings="New_Channel">
-      <tp:added version="0.99.UNRELEASED"/>
+      <tp:added version="0.99.7"/>
 
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>A new channel has been created.</p>
