@@ -253,6 +253,7 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     channel-dispatch-operation.c \
     channel-manager.c \
     channel-manager-request.c \
+    channel-manager-request-internal.h \
     channel-request.c \
     client.c \
     client-factory.c \
