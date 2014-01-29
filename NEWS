@@ -70,7 +70,6 @@ Fixes:
 
 • channel-group: don't crash if no message has been provided (Guillaume)
 
-
 telepathy-glib 0.22.0 (2013-10-02)
 ==================================
 
