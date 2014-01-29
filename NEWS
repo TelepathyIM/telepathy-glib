@@ -3,6 +3,9 @@ telepathy-glib 0.22.1 (UNRELEASED)
 
 Fixes:
 
+• In the examples, specifically ask for "TelepathyGlib-0.12" (this API
+  version), not Telepathy 1.0 (fd.o #49737, Simon)
+
 • Fix a critical warning for each new connection under GLib 2.39
   (fd.o #72303, Xavier)
 
