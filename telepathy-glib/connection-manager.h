@@ -204,7 +204,7 @@ gboolean tp_connection_manager_param_get_default (
 _TP_AVAILABLE_IN_0_20
 GVariant *tp_connection_manager_param_dup_default_variant (
     const TpConnectionManagerParam *param);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_24
 GVariantType *tp_connection_manager_param_dup_variant_type (
     const TpConnectionManagerParam *param);
 

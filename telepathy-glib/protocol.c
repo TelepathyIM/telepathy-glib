@@ -891,7 +891,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
    * by SIP URI (vCard field SIP) or telephone number (vCard field TEL)
    * might have { "sip", "tel", NULL }.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.23.1
    */
   g_object_class_install_property (object_class, PROP_ADDRESSABLE_VCARD_FIELDS,
       g_param_spec_boxed ("addressable-vcard-fields",
@@ -911,7 +911,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
    * or telephone number (tel:+1-555-0123) might have
    * { "sip", "sips", "tel", NULL }.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.23.1
    */
   g_object_class_install_property (object_class, PROP_ADDRESSABLE_URI_SCHEMES,
       g_param_spec_boxed ("addressable-uri-schemes",
@@ -2032,7 +2032,7 @@ tp_protocol_async_string_cb (TpProxy *proxy,
  * normalization (e.g. transforming case-insensitive text to lower-case),
  * but does not query servers or anything similar.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 void
 tp_protocol_normalize_contact_async (TpProtocol *self,
@@ -2065,7 +2065,7 @@ tp_protocol_normalize_contact_async (TpProtocol *self,
  *
  * Returns: (transfer full): the normalized form of @contact,
  *  or %NULL on error
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 gchar *
 tp_protocol_normalize_contact_finish (TpProtocol *self,
@@ -2096,7 +2096,7 @@ tp_protocol_normalize_contact_finish (TpProtocol *self,
  * for instance, on IRC, the 'account' (nickname) is insufficient,
  * and must be combined with a server or network name.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 void
 tp_protocol_identify_account_async (TpProtocol *self,
@@ -2134,7 +2134,7 @@ tp_protocol_identify_account_async (TpProtocol *self,
  *
  * Returns: (transfer full): a string identifying the account,
  *  or %NULL on error
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 gchar *
 tp_protocol_identify_account_finish (TpProtocol *self,
@@ -2160,7 +2160,7 @@ tp_protocol_identify_account_finish (TpProtocol *self,
  * the form of a URI. This method will fail if the URI is not in a
  * scheme supported by this protocol or connection manager.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 void
 tp_protocol_normalize_contact_uri_async (TpProtocol *self,
@@ -2193,7 +2193,7 @@ tp_protocol_normalize_contact_uri_async (TpProtocol *self,
  *
  * Returns: (transfer full): the normalized form of @uri,
  *  or %NULL on error
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 gchar *
 tp_protocol_normalize_contact_uri_finish (TpProtocol *self,
@@ -2220,7 +2220,7 @@ tp_protocol_normalize_contact_uri_finish (TpProtocol *self,
  * the form of a vCard field. This method will fail if the vCard field
  * is not supported by this protocol or connection manager.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 void
 tp_protocol_normalize_vcard_address_async (TpProtocol *self,
@@ -2255,7 +2255,7 @@ tp_protocol_normalize_vcard_address_async (TpProtocol *self,
  *
  * Returns: (transfer full): the normalized form of @value,
  *  or %NULL on error
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 gchar *
 tp_protocol_normalize_vcard_address_finish (TpProtocol *self,
@@ -2276,7 +2276,7 @@ tp_protocol_normalize_vcard_address_finish (TpProtocol *self,
  * <!-- -->
  *
  * Returns: (transfer none): the value of #TpProtocol:addressable-vcard-fields
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 const gchar * const *
 tp_protocol_get_addressable_vcard_fields (TpProtocol *self)
@@ -2292,7 +2292,7 @@ tp_protocol_get_addressable_vcard_fields (TpProtocol *self)
  * <!-- -->
  *
  * Returns: (transfer none): the value of #TpProtocol:addressable-uri-schemes
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 const gchar * const *
 tp_protocol_get_addressable_uri_schemes (TpProtocol *self)

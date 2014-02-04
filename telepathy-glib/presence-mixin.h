@@ -57,36 +57,36 @@ struct _TpPresenceStatusSpec {
     TpPresenceStatusSpecPrivate *priv;
 };
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_24
 TpConnectionPresenceType tp_presence_status_spec_get_presence_type (
     const TpPresenceStatusSpec *self);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_24
 const gchar *tp_presence_status_spec_get_name (
     const TpPresenceStatusSpec *self);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_24
 gboolean tp_presence_status_spec_can_set_on_self (
     const TpPresenceStatusSpec *self);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_24
 gboolean tp_presence_status_spec_has_message (
     const TpPresenceStatusSpec *self);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_24
 GType tp_presence_status_spec_get_type (void);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_24
 TpPresenceStatusSpec *tp_presence_status_spec_new (const gchar *name,
     TpConnectionPresenceType type,
     gboolean can_set_on_self,
     gboolean has_message);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_24
 TpPresenceStatusSpec *tp_presence_status_spec_copy (
     const TpPresenceStatusSpec *self);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_0_24
 void tp_presence_status_spec_free (TpPresenceStatusSpec *self);
 
 typedef struct _TpPresenceStatus TpPresenceStatus;

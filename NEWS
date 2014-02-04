@@ -1,5 +1,7 @@
-telepathy-glib 0.23.1 (UNRELEASED)
+telepathy-glib 0.23.1 (2014-02-04)
 ==================================
+
+The “undead space elves” release.
 
 Dependencies:
 
@@ -18,6 +20,8 @@ Enhancements:
 
 • More accessors for TpPresenceStatusSpec, which is now a boxed type
   (fd.o #71048, Simon)
+
+• tp_connection_manager_param_dup_variant_type() (fd.o #71093, Simon)
 
 • Better debug output (fd.o #68390, #71048; Simon)
 

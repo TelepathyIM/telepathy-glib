@@ -2607,7 +2607,7 @@ tp_connection_manager_param_get_dbus_signature (
  * <!-- -->
  *
  * Returns: (transfer full): the #GVariantType of the parameter
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 GVariantType *
 tp_connection_manager_param_dup_variant_type (

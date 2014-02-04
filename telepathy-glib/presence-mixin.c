@@ -1597,7 +1597,7 @@ _tp_presence_status_spec_is_heap_allocated (const TpPresenceStatusSpec *self)
  * %TP_CONNECTION_PRESENCE_TYPE_BUSY.
  *
  * Returns: a #TpConnectionPresenceType
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 TpConnectionPresenceType
 tp_presence_status_spec_get_presence_type (const TpPresenceStatusSpec *self)
@@ -1615,7 +1615,7 @@ tp_presence_status_spec_get_presence_type (const TpPresenceStatusSpec *self)
  *
  * Returns: (transfer none): the name of this presence status,
  *  such as "available" or "out-to-lunch".
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 const gchar *
 tp_presence_status_spec_get_name (const TpPresenceStatusSpec *self)
@@ -1635,7 +1635,7 @@ tp_presence_status_spec_get_name (const TpPresenceStatusSpec *self)
  *  statuses), or %FALSE if they cannot directly set it on
  *  themselves (typically used for %TP_CONNECTION_PRESENCE_TYPE_OFFLINE
  *  and %TP_CONNECTION_PRESENCE_TYPE_ERROR)
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 gboolean
 tp_presence_status_spec_can_set_on_self (const TpPresenceStatusSpec *self)
@@ -1653,7 +1653,7 @@ tp_presence_status_spec_can_set_on_self (const TpPresenceStatusSpec *self)
  *
  * Returns: %TRUE if this presence status is accompanied by an optional
  *  human-readable message
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 gboolean
 tp_presence_status_spec_has_message (const TpPresenceStatusSpec *self)
@@ -1686,7 +1686,7 @@ tp_presence_status_spec_has_message (const TpPresenceStatusSpec *self)
  * <!-- -->
  *
  * Returns: (transfer full): a new #TpPresenceStatusSpec
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 TpPresenceStatusSpec *
 tp_presence_status_spec_new (const gchar *name,
@@ -1732,7 +1732,7 @@ tp_presence_status_spec_new (const gchar *name,
  * are deprecated.
  *
  * Returns: (transfer full): a new #TpPresenceStatusSpec resembling @self
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 TpPresenceStatusSpec *
 tp_presence_status_spec_copy (const TpPresenceStatusSpec *self)
@@ -1750,7 +1750,7 @@ tp_presence_status_spec_copy (const TpPresenceStatusSpec *self)
  * Free a presence status specification produced by
  * tp_presence_status_spec_new() or tp_presence_status_spec_copy().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.23.1
  */
 void
 tp_presence_status_spec_free (TpPresenceStatusSpec *self)
