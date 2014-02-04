@@ -215,6 +215,15 @@ tp_protocol_params_from_param_specs (const GPtrArray *parameters,
           continue;
         }
 
+      if (!g_variant_type_string_is_valid (param->dbus_signature))
+        {
+          DEBUG ("Parameter #%d for %s has type '%s' which is not a "
+              "single complete type, ignoring", i, protocol,
+              param->dbus_signature);
+          g_array_set_size (output, output->len - 1);
+          continue;
+        }
+
       g_value_init (&param->default_value,
           G_VALUE_TYPE (tmp));
       g_value_copy (tmp, &param->default_value);

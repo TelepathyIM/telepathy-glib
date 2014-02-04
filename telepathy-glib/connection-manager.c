@@ -2601,6 +2601,28 @@ tp_connection_manager_param_get_dbus_signature (
 }
 
 /**
+ * tp_connection_manager_param_dup_variant_type:
+ * @param: a parameter supported by a #TpConnectionManager
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer full): the #GVariantType of the parameter
+ * Since: 0.UNRELEASED
+ */
+GVariantType *
+tp_connection_manager_param_dup_variant_type (
+    const TpConnectionManagerParam *param)
+{
+  g_return_val_if_fail (param != NULL, NULL);
+
+  /* this should have been checked when we created it */
+  g_return_val_if_fail (g_variant_type_string_is_valid (param->dbus_signature),
+      NULL);
+
+  return g_variant_type_new (param->dbus_signature);
+}
+
+/**
  * tp_connection_manager_param_is_required:
  * @param: a parameter supported by a #TpConnectionManager
  *
