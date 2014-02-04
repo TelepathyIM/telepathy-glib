@@ -1526,6 +1526,10 @@ TP_STRUCT_TYPE_CODEC
 TP_STRUCT_TYPE_MEDIA_DESCRIPTION_OFFER
 TP_STRUCT_TYPE_STREAM_CREDENTIALS
 TP_STRUCT_TYPE_VIDEO_RESOLUTION
+<SUBSECTION>
+# Logger
+TP_ARRAY_TYPE_FAVORITES_LIST
+TP_STRUCT_TYPE_FAVORITES
 <SUBSECTION Private>
 tp_type_dbus_array__28us_29as
 tp_type_dbus_array__28usua_7bsv_7d_29_28usua_7bsv_7d_29
@@ -1636,6 +1640,8 @@ tp_type_dbus_struct_uv
 tp_type_dbus_array_ussuas
 tp_type_dbus_hash_su
 tp_type_dbus_struct_ussuas
+tp_type_dbus_array_oas
+tp_type_dbus_struct_oas
 </SECTION>
 
 <SECTION>
@@ -2461,6 +2467,8 @@ TP_IFACE_CALL1_STREAM_ENDPOINT
 TP_IFACE_QUARK_CALL1_STREAM_ENDPOINT
 TP_IFACE_CALL1_STREAM_INTERFACE_MEDIA
 TP_IFACE_QUARK_CALL1_STREAM_INTERFACE_MEDIA
+TP_IFACE_LOGGER
+TP_IFACE_QUARK_LOGGER
 TP_PROP_ACCOUNT_AUTOMATIC_PRESENCE
 TP_PROP_ACCOUNT_CHANGING_PRESENCE
 TP_PROP_ACCOUNT_CONNECTION
@@ -2878,6 +2886,7 @@ tp_iface_quark_call1_stream
 tp_iface_quark_call1_stream_endpoint
 tp_iface_quark_call1_stream_interface_media
 tp_iface_quark_channel_type_call1
+tp_iface_quark_logger
 </SECTION>
 
 <SECTION>
