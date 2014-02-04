@@ -296,6 +296,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
  <xi:include href="Client_Interface_Requests.xml"/>
 </tp:section>
 
+<tp:section name="Logger">
+  <xi:include href="Logger1.xml"/>
+</tp:section>
+
 <xi:include href="errors.xml"/>
 <xi:include href="generic-types.xml"/>
 
