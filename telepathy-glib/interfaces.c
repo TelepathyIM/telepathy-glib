@@ -134,3 +134,15 @@
  * The standard path for objects implementing the Telepathy Debug interface
  * (#TpSvcDebug).
  */
+
+/**
+ * TP_LOGGER_BUS_NAME:
+ *
+ * The logger's well-known bus name
+ */
+
+/**
+ * TP_LOGGER_OBJECT_PATH:
+ *
+ * The logger's standard object path
+ */

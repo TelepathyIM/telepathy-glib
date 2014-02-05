@@ -21,6 +21,8 @@ G_BEGIN_DECLS
 #define TP_CLIENT_BUS_NAME_BASE "im.telepathy.v1.Client."
 #define TP_CLIENT_OBJECT_PATH_BASE "/im/telepathy/v1/Client/"
 #define TP_DEBUG_OBJECT_PATH "/im/telepathy/v1/debug"
+#define TP_LOGGER_BUS_NAME "im.telepathy.v1.Logger"
+#define TP_LOGGER_OBJECT_PATH "/im/telepathy/v1/Logger"
 
 #include <telepathy-glib/_gen/telepathy-interfaces.h>
 
