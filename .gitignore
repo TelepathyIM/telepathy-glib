@@ -133,9 +133,6 @@ tags
 /telepathy-glib/tmp-introspect*/
 telepathy-glib/version.h
 
-/telepathy-logger/extensions/tpl-extensions.pc
-/telepathy-logger/extensions/_gen/
-/telepathy-logger/extensions/doc/
 /telepathy-logger/telepathy-logger
 /telepathy-logger/test-api
 /telepathy-logger/telepathy-logger-1-uninstalled.pc

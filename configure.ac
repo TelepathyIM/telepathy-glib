@@ -454,8 +454,6 @@ AC_CONFIG_FILES([
 	   telepathy-glib/telepathy-glib-1-uninstalled.pc \
 	   telepathy-glib/version.h \
 	   telepathy-logger/Makefile \
-	   telepathy-logger/extensions/Makefile \
-	   telepathy-logger/extensions/tpl-extensions.pc \
 	   telepathy-logger/telepathy-logger-1.pc \
 	   telepathy-logger/telepathy-logger-1-uninstalled.pc \
 	   tests/Makefile \

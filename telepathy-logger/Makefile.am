@@ -1,7 +1,5 @@
 include $(top_srcdir)/tools/flymake.mk
 
-SUBDIRS = extensions .
-
 if HAVE_INTROSPECTION
 include $(INTROSPECTION_MAKEFILE)
 endif
@@ -126,10 +124,10 @@ nodist_libtelepathy_logger_1_la_SOURCES = \
 		$(BUILT_SOURCES)
 
 libtelepathy_logger_1_la_LIBADD = \
-	extensions/libtpl-extensions-convenience.la \
 	$(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
 	$(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
 	$(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
+	$(TPL_LIBS) \
 	$(NULL)
 
 check_c_sources = \
