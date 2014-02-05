@@ -85,6 +85,7 @@ nodist_gendbusinclude_HEADERS += \
     _gen/tp-svc-generic.h \
     _gen/tp-svc-protocol.h \
     _gen/tp-svc-tls-cert.h \
+    _gen/tp-svc-logger.h \
     $(NULL)
 
 nodist_libtelepathy_glib_core_internal_la_SOURCES = \
@@ -137,6 +138,7 @@ nodist_libtelepathy_glib_dbus_internal_la_SOURCES += \
     _gen/tp-svc-generic.c \
     _gen/tp-svc-protocol.c \
     _gen/tp-svc-tls-cert.c \
+    _gen/tp-svc-logger.c \
     $(NULL)
 
 nodist_libtelepathy_glib_reentrants_la_SOURCES = \

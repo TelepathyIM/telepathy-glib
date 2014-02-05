@@ -6252,3 +6252,37 @@ tp_tls_certificate_rejection_get_type
 <SUBSECTION Private>
 TpTLSCertificateRejectionPriv
 </SECTION>
+
+<SECTION>
+<FILE>svc-logger</FILE>
+<TITLE>svc-logger</TITLE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
+<SUBSECTION>
+TpSvcLogger
+TpSvcLoggerClass
+tp_svc_logger_add_favourite_contact_impl
+tp_svc_logger_clear_account_impl
+tp_svc_logger_clear_entity_impl
+tp_svc_logger_clear_impl
+tp_svc_logger_emit_favourite_contacts_changed
+tp_svc_logger_get_favourite_contacts_impl
+tp_svc_logger_implement_add_favourite_contact
+tp_svc_logger_implement_clear
+tp_svc_logger_implement_clear_account
+tp_svc_logger_implement_clear_entity
+tp_svc_logger_implement_get_favourite_contacts
+tp_svc_logger_implement_remove_favourite_contact
+tp_svc_logger_remove_favourite_contact_impl
+tp_svc_logger_return_from_add_favourite_contact
+tp_svc_logger_return_from_clear
+tp_svc_logger_return_from_clear_account
+tp_svc_logger_return_from_clear_entity
+tp_svc_logger_return_from_get_favourite_contacts
+tp_svc_logger_return_from_remove_favourite_contact
+<SUBSECTION Standard>
+TP_IS_SVC_LOGGER
+TP_SVC_LOGGER
+TP_SVC_LOGGER_GET_CLASS
+TP_TYPE_SVC_LOGGER
+tp_svc_logger_get_type
+</SECTION>

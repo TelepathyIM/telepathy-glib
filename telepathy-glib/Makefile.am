@@ -155,6 +155,7 @@ tpgdbusinclude_HEADERS = \
     svc-properties-interface.h \
     svc-protocol.h \
     svc-tls.h \
+    svc-logger.h \
     telepathy-glib-dbus.h \
     $(NULL)
 

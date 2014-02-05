@@ -64,6 +64,7 @@
 #include <telepathy-glib/svc-properties-interface.h>
 #include <telepathy-glib/svc-protocol.h>
 #include <telepathy-glib/svc-tls.h>
+#include <telepathy-glib/svc-logger.h>
 
 #undef _TP_GLIB_DBUS_H_INSIDE
 

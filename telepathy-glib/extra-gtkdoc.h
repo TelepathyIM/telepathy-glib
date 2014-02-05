@@ -1092,6 +1092,17 @@
  */
 
 /**
+ * SECTION:svc-logger
+ * @title: Service-side Channel Logger interface
+ * @short_description: GInterface to implement logger API
+ *
+ * This interface (auto-generated from the Telepathy spec) makes it easier
+ * to export objects implementing the Telepathy Logger interface.
+ *
+ * Since: UNRELEASED
+ */
+
+/**
  * SECTION:cli-call-channel
  * @title: Channel Call interfaces
  * @short_description: client-side wrappers for call channels
