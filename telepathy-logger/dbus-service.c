@@ -34,8 +34,6 @@
 #include <telepathy-logger/log-manager-internal.h>
 #include <telepathy-logger/client-factory-internal.h>
 
-#include "telepathy-logger/extensions/extensions.h"
-
 #define DEBUG_FLAG TPL_DEBUG_DBUS_SERVICE
 #include <telepathy-logger/action-chain-internal.h>
 #include <telepathy-logger/debug-internal.h>
@@ -55,7 +53,7 @@ struct _TplDBusServicePriv
 };
 
 G_DEFINE_TYPE_WITH_CODE (TplDBusService, _tpl_dbus_service, G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE (TPL_TYPE_SVC_LOGGER, tpl_logger_iface_init));
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_LOGGER, tpl_logger_iface_init));
 
 typedef struct _FavouriteContactClosure FavouriteContactClosure;
 typedef void (*FavouriteContactCallback) (gboolean success,
@@ -417,7 +415,7 @@ pendingproc_get_favourite_contacts (TplActionChain *action_chain,
   g_hash_table_foreach (priv->accounts_contacts_map,
       (GHFunc) append_favourite_contacts_account_and_contacts, packed);
 
-  tpl_svc_logger_return_from_get_favourite_contacts (closure->context, packed);
+  tp_svc_logger_return_from_get_favourite_contacts (closure->context, packed);
 
   g_ptr_array_unref (packed);
   favourite_contact_closure_free (closure);
@@ -428,7 +426,7 @@ pendingproc_get_favourite_contacts (TplActionChain *action_chain,
 
 
 static void
-tpl_dbus_service_get_favourite_contacts (TplSvcLogger *logger,
+tpl_dbus_service_get_favourite_contacts (TpSvcLogger *logger,
     DBusGMethodInvocation *context)
 {
   TplDBusService *self;
@@ -552,11 +550,11 @@ add_favourite_contact_file_save_cb (gboolean added_favourite,
 
       added[0] = closure->contact_id;
 
-      tpl_svc_logger_emit_favourite_contacts_changed (closure->service,
+      tp_svc_logger_emit_favourite_contacts_changed (closure->service,
           closure->account, added, removed);
     }
 
-  tpl_svc_logger_return_from_add_favourite_contact (closure->context);
+  tp_svc_logger_return_from_add_favourite_contact (closure->context);
 
   favourite_contact_closure_free (closure);
   if (action_chain != NULL)
@@ -604,7 +602,7 @@ pendingproc_add_favourite_contact_ERROR:
 
 
 static void
-tpl_dbus_service_add_favourite_contact (TplSvcLogger *logger,
+tpl_dbus_service_add_favourite_contact (TpSvcLogger *logger,
     const gchar *account,
     const gchar *contact_id,
     DBusGMethodInvocation *context)
@@ -645,11 +643,11 @@ remove_favourite_contact_file_save_cb (gboolean removed_favourite,
 
       removed[0] = closure->contact_id;
 
-      tpl_svc_logger_emit_favourite_contacts_changed (closure->service,
+      tp_svc_logger_emit_favourite_contacts_changed (closure->service,
           closure->account, added, removed);
     }
 
-  tpl_svc_logger_return_from_remove_favourite_contact (closure->context);
+  tp_svc_logger_return_from_remove_favourite_contact (closure->context);
 
   favourite_contact_closure_free (closure);
   if (action_chain != NULL)
@@ -705,7 +703,7 @@ pendingproc_remove_favourite_contact_ERROR:
 }
 
 static void
-tpl_dbus_service_remove_favourite_contact (TplSvcLogger *logger,
+tpl_dbus_service_remove_favourite_contact (TpSvcLogger *logger,
     const gchar *account,
     const gchar *contact_id,
     DBusGMethodInvocation *context)
@@ -734,7 +732,7 @@ tpl_dbus_service_remove_favourite_contact (TplSvcLogger *logger,
 
 
 static void
-tpl_dbus_service_clear (TplSvcLogger *logger,
+tpl_dbus_service_clear (TpSvcLogger *logger,
     DBusGMethodInvocation *context)
 {
   TplDBusService *self = TPL_DBUS_SERVICE (logger);
@@ -745,12 +743,12 @@ tpl_dbus_service_clear (TplSvcLogger *logger,
   /* We want to clear synchronously to avoid concurent write */
   _tpl_log_manager_clear (self->priv->manager);
 
-  tpl_svc_logger_return_from_clear (context);
+  tp_svc_logger_return_from_clear (context);
 }
 
 
 static void
-tpl_dbus_service_clear_account (TplSvcLogger *logger,
+tpl_dbus_service_clear_account (TpSvcLogger *logger,
     const gchar *account_path,
     DBusGMethodInvocation *context)
 {
@@ -787,7 +785,7 @@ tpl_dbus_service_clear_account (TplSvcLogger *logger,
   _tpl_log_manager_clear_account (self->priv->manager, account);
   g_object_unref (account);
 
-  tpl_svc_logger_return_from_clear_account (context);
+  tp_svc_logger_return_from_clear_account (context);
 
 out:
   if (bus != NULL)
@@ -799,7 +797,7 @@ out:
 
 
 static void
-tpl_dbus_service_clear_entity (TplSvcLogger *logger,
+tpl_dbus_service_clear_entity (TpSvcLogger *logger,
     const gchar *account_path,
     const gchar *identifier,
     gint type,
@@ -845,7 +843,7 @@ tpl_dbus_service_clear_entity (TplSvcLogger *logger,
   g_object_unref (entity);
   g_clear_object (&factory);
 
-  tpl_svc_logger_return_from_clear_account (context);
+  tp_svc_logger_return_from_clear_account (context);
 
 out:
   if (bus != NULL)
@@ -858,9 +856,9 @@ static void
 tpl_logger_iface_init (gpointer iface,
     gpointer iface_data)
 {
-  TplSvcLoggerClass *klass = (TplSvcLoggerClass *) iface;
+  TpSvcLoggerClass *klass = (TpSvcLoggerClass *) iface;
 
-#define IMPLEMENT(x) tpl_svc_logger_implement_##x (klass, tpl_dbus_service_##x)
+#define IMPLEMENT(x) tp_svc_logger_implement_##x (klass, tpl_dbus_service_##x)
   IMPLEMENT (get_favourite_contacts);
   IMPLEMENT (add_favourite_contact);
   IMPLEMENT (remove_favourite_contact);
