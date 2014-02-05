@@ -47,6 +47,7 @@
 #include <telepathy-glib/_gen/tp-cli-debug.h>
 #include <telepathy-glib/_gen/tp-cli-generic.h>
 #include <telepathy-glib/_gen/tp-cli-protocol.h>
+#include <telepathy-glib/_gen/tp-cli-logger.h>
 
 /* service-side */
 #include <telepathy-glib/svc-account.h>

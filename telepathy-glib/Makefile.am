@@ -108,6 +108,7 @@ tpginclude_HEADERS = \
     handle-repo-dynamic.h \
     heap.h \
     intset.h \
+    logger.h \
     message.h \
     message-mixin.h \
     observe-channel-context.h \
@@ -306,6 +307,7 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     heap.c \
     intset.c \
     channel-iface.c \
+    logger.c \
     message.c \
     message-internal.h \
     message-mixin.c \

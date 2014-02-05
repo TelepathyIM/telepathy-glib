@@ -90,6 +90,7 @@
 #include <telepathy-glib/handle-repo-dynamic.h>
 #include <telepathy-glib/handle-repo-static.h>
 #include <telepathy-glib/handle.h>
+#include <telepathy-glib/logger.h>
 #include <telepathy-glib/message.h>
 #include <telepathy-glib/message-mixin.h>
 #include <telepathy-glib/observe-channel-context.h>

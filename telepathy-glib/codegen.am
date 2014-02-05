@@ -68,6 +68,7 @@ nodist_gendbusinclude_HEADERS += \
     _gen/tp-cli-generic.h \
     _gen/tp-cli-protocol.h \
     _gen/tp-cli-tls-cert.h \
+    _gen/tp-cli-logger.h \
     _gen/tp-svc-account.h \
     _gen/tp-svc-account-manager.h \
     _gen/tp-svc-call-content.h \
@@ -121,6 +122,7 @@ nodist_libtelepathy_glib_dbus_internal_la_SOURCES += \
     _gen/tp-cli-generic-body.h \
     _gen/tp-cli-protocol-body.h \
     _gen/tp-cli-tls-cert-body.h \
+    _gen/tp-cli-logger-body.h \
     _gen/tp-svc-account.c \
     _gen/tp-svc-account-manager.c \
     _gen/tp-svc-call-content.c \
@@ -327,6 +329,10 @@ _gen/tp-cli-%-body.h: _gen/tp-spec-%.xml \
 		tls-cert) \
 			subclass=--subclass=TpTLSCertificate; \
 			subclass_assert=--subclass-assert=TP_IS_TLS_CERTIFICATE; \
+			;; \
+		logger) \
+			subclass=--subclass=TpLogger; \
+			subclass_assert=--subclass-assert=TP_IS_LOGGER; \
 			;; \
 	esac; \
 	$(PYTHON) $(tools_dir)/glib-client-gen.py \

@@ -33,6 +33,7 @@
 #include <telepathy-glib/protocol.h>
 #include <telepathy-glib/proxy.h>
 #include <telepathy-glib/tls-certificate.h>
+#include <telepathy-glib/logger.h>
 
 #include <telepathy-glib/_gen/tp-cli-account.h>
 #include <telepathy-glib/_gen/tp-cli-account-manager.h>
@@ -46,6 +47,7 @@
 #include <telepathy-glib/_gen/tp-cli-generic.h>
 #include <telepathy-glib/_gen/tp-cli-protocol.h>
 #include <telepathy-glib/_gen/tp-cli-tls-cert.h>
+#include <telepathy-glib/_gen/tp-cli-logger.h>
 
 #endif
 

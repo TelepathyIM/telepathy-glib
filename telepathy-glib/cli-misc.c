@@ -42,3 +42,4 @@
 #include "telepathy-glib/_gen/tp-cli-debug-body.h"
 #include "telepathy-glib/_gen/tp-cli-generic-body.h"
 #include "telepathy-glib/_gen/tp-cli-protocol-body.h"
+#include "telepathy-glib/_gen/tp-cli-logger-body.h"
