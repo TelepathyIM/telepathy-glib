@@ -556,6 +556,34 @@ connect_message_signals (TplTextChannel *self)
       G_CALLBACK (on_pending_message_removed_cb), self, 0);
 }
 
+static void
+continue_preparing (TplTextChannel *self,
+    GSimpleAsyncResult *result,
+    gboolean in_idle)
+{
+  get_my_contact (self);
+  get_remote_contact (self);
+  store_pending_messages (self);
+  connect_message_signals (self);
+
+  if (in_idle)
+    g_simple_async_result_complete_in_idle (result);
+  else
+    g_simple_async_result_complete (result);
+
+  g_object_unref (result);
+}
+
+static void
+channel_group_prepared_cb (GObject *source,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TplTextChannel *self = (TplTextChannel *) source;
+  GSimpleAsyncResult *result = user_data;
+
+  continue_preparing (self, result, FALSE);
+}
 
 static void
 _tpl_text_channel_prepare_core_async (TpProxy *proxy,
@@ -564,14 +592,26 @@ _tpl_text_channel_prepare_core_async (TpProxy *proxy,
     gpointer user_data)
 {
   TplTextChannel *self = (TplTextChannel *) proxy;
+  GSimpleAsyncResult *result;
 
-  get_my_contact (self);
-  get_remote_contact (self);
-  store_pending_messages (self);
-  connect_message_signals (self);
-
-  tp_simple_async_report_success_in_idle ((GObject *) self, callback, user_data,
+  result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
       _tpl_text_channel_prepare_core_async);
+
+  if (tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP1))
+    {
+      /* If the channel is implementing Group, we need its feature prepared.
+       * We can't list it as a dependency on TPL_TEXT_CHANNEL_FEATURE_CORE as
+       * we still want to prepare the feature on channel not
+       * implementing GROUP. */
+      GQuark features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
+
+      tp_proxy_prepare_async (self, features, channel_group_prepared_cb, self);
+    }
+  else
+    {
+      continue_preparing (self, result, TRUE);
+    }
 }
 
 
@@ -590,7 +630,7 @@ static const TpProxyFeature *
 tpl_text_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
 {
   static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
-  static GQuark depends_on[3] = { 0, 0, 0 };
+  static GQuark depends_on[] = { 0, 0 };
 
   if (G_LIKELY (features[0].name != 0))
     return features;
@@ -598,7 +638,6 @@ tpl_text_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_CORE].name = TPL_TEXT_CHANNEL_FEATURE_CORE;
   features[FEAT_CORE].prepare_async = _tpl_text_channel_prepare_core_async;
   depends_on[0] = TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES;
-  depends_on[1] = TP_CHANNEL_FEATURE_GROUP;
   features[FEAT_CORE].depends_on = depends_on;
 
   /* assert that the terminator at the end is there */
