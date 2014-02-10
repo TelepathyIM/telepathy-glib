@@ -508,7 +508,6 @@ test_storage (Test *test,
 {
   GQuark account_features[] = { TP_ACCOUNT_FEATURE_STORAGE, 0 };
   GVariant *gvariant;
-  GHashTable *info;
   GError *error = NULL;
   gboolean found;
   gint32 i;
@@ -571,28 +570,11 @@ test_storage (Test *test,
       TP_STORAGE_RESTRICTION_FLAG_CANNOT_SET_PARAMETERS);
 
   /* request the StorageSpecificProperties hash */
-  tp_account_get_storage_specific_information_async (test->account,
+  tp_account_dup_storage_specific_information_async (test->account,
       tp_tests_result_ready_cb, &test->result);
   tp_tests_run_until_result (&test->result);
 
-  info = tp_account_get_storage_specific_information_finish (
-      test->account, test->result, &error);
-  g_assert_no_error (error);
-
-  g_assert_cmpuint (g_hash_table_size (info), ==, 3);
-
-  g_assert_cmpint (tp_asv_get_int32 (info, "one", NULL), ==, 1);
-  g_assert_cmpuint (tp_asv_get_uint32 (info, "two", NULL), ==, 2);
-  g_assert_cmpstr (tp_asv_get_string (info, "marco"), ==, "polo");
-
-  tp_clear_object (&test->result);
-
-  /* the same, but with 100% more GVariant */
-  tp_account_dup_storage_specific_information_vardict_async (test->account,
-      tp_tests_result_ready_cb, &test->result);
-  tp_tests_run_until_result (&test->result);
-
-  gvariant = tp_account_dup_storage_specific_information_vardict_finish (
+  gvariant = tp_account_dup_storage_specific_information_finish (
       test->account, test->result, &error);
   g_assert_no_error (error);
 

@@ -3848,18 +3848,18 @@ _tp_account_get_storage_specific_information_cb (TpProxy *self,
     }
   else
     {
+      GHashTable *asv = g_value_get_boxed (value);
+
       g_simple_async_result_set_op_res_gpointer (result,
-          g_value_dup_boxed (value),
-          (GDestroyNotify) g_hash_table_unref);
+          _tp_asv_to_vardict (asv), (GDestroyNotify) g_variant_unref);
     }
 
   g_simple_async_result_complete (result);
   g_object_unref (result);
 }
 
-/* FIXME: in Telepathy 1.0, remove this */
 /**
- * tp_account_get_storage_specific_information_async:
+ * tp_account_dup_storage_specific_information_async:
  * @self: a #TpAccount
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
@@ -3868,13 +3868,11 @@ _tp_account_get_storage_specific_information_cb (TpProxy *self,
  * property (part of the Account.Interface.Storage interface).
  *
  * When the operation is finished, @callback will be called. You must then
- * call tp_account_get_storage_specific_information_finish() to get the
+ * call tp_account_dup_storage_specific_information_finish() to get the
  * result of the request.
- *
- * Since: 0.13.2
  */
 void
-tp_account_get_storage_specific_information_async (TpAccount *self,
+tp_account_dup_storage_specific_information_async (TpAccount *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -3883,89 +3881,32 @@ tp_account_get_storage_specific_information_async (TpAccount *self,
   g_return_if_fail (TP_IS_ACCOUNT (self));
 
   result = g_simple_async_result_new (G_OBJECT (self),
-      callback, user_data, tp_account_get_storage_specific_information_async);
+      callback, user_data, tp_account_dup_storage_specific_information_async);
 
   tp_cli_dbus_properties_call_get (self, -1,
       TP_IFACE_ACCOUNT_INTERFACE_STORAGE1, "StorageSpecificInformation",
       _tp_account_get_storage_specific_information_cb, result, NULL, NULL);
 }
 
-/* FIXME: in Telepathy 1.0, rename to ...get_storage_specific_information... */
 /**
- * tp_account_dup_storage_specific_information_vardict_async:
- * @self: a #TpAccount
- * @callback: a callback to call when the request is satisfied
- * @user_data: data to pass to @callback
- *
- * Makes an asynchronous request of @self's StorageSpecificInformation
- * property (part of the Account.Interface.Storage interface).
- *
- * When the operation is finished, @callback will be called. You must then
- * call tp_account_dup_storage_specific_information_vardict_finish() to get the
- * result of the request.
- *
- * Since: 0.17.6
- */
-void
-tp_account_dup_storage_specific_information_vardict_async (TpAccount *self,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
-{
-  /* we share an implementation */
-  tp_account_get_storage_specific_information_async (self, callback,
-      user_data);
-}
-
-/* FIXME: in Telepathy 1.0, remove this */
-/**
- * tp_account_get_storage_specific_information_finish:
+ * tp_account_dup_storage_specific_information_finish:
  * @self: a #TpAccount
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
  * Retrieve the value of the request begun with
- * tp_account_get_storage_specific_information_async().
- *
- * Beware that the returned value is only valid until @result is freed.
- * Copy it with g_hash_table_ref() if you need to keep it for longer.
- *
- * Returns: (element-type utf8 GObject.Value) (transfer none): a #GHashTable
- *  of strings to GValues representing the D-Bus type a{sv}.
- *
- * Since: 0.13.2
- */
-GHashTable *
-tp_account_get_storage_specific_information_finish (TpAccount *self,
-    GAsyncResult *result,
-    GError **error)
-{
-  _tp_implement_finish_return_copy_pointer (self,
-      tp_account_get_storage_specific_information_async, /* do not copy */);
-}
-
-/* FIXME: in Telepathy 1.0, rename to ...get_storage_specific_information... */
-/**
- * tp_account_dup_storage_specific_information_vardict_finish:
- * @self: a #TpAccount
- * @result: a #GAsyncResult
- * @error: a #GError to fill
- *
- * Retrieve the value of the request begun with
- * tp_account_dup_storage_specific_information_vardict_async().
+ * tp_account_dup_storage_specific_information_async().
  *
  * Returns: (transfer full): a map from strings to variants,
  *  of type %G_VARIANT_TYPE_VARDICT
- *
- * Since: 0.17.6
  */
 GVariant *
-tp_account_dup_storage_specific_information_vardict_finish (TpAccount *self,
+tp_account_dup_storage_specific_information_finish (TpAccount *self,
     GAsyncResult *result,
     GError **error)
 {
-  /* we share the source tag with the non-vardict version */
   _tp_implement_finish_return_copy_pointer (self,
-      tp_account_get_storage_specific_information_async, _tp_asv_to_vardict);
+      tp_account_dup_storage_specific_information_async, g_variant_ref);
 }
 
 static void
