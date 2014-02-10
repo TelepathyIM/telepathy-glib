@@ -2,7 +2,6 @@ EXTRA_DIST = \
     Account.xml \
     Account_Interface_Addressing1.xml \
     Account_Interface_Avatar1.xml \
-    Account_Interface_External_Password_Storage1.xml \
     Account_Interface_Storage1.xml \
     Account_Manager.xml \
     Authentication_TLS_Certificate.xml \
@@ -30,7 +29,6 @@ EXTRA_DIST = \
     Channel_Interface_Captcha_Authentication1.xml \
     Channel_Interface_Chat_State1.xml \
     Channel_Interface_Conference1.xml \
-    Channel_Interface_Credentials_Storage1.xml \
     Channel_Interface_Destroyable1.xml \
     Channel_Interface_File_Transfer_Metadata1.xml \
     Channel_Interface_Group1.xml \
@@ -91,7 +89,6 @@ EXTRA_DIST = \
     Connection_Interface_Service_Point1.xml \
     Connection_Interface_Sidecars1.xml \
     Connection_Manager.xml \
-    Connection_Manager_Interface_Account_Storage1.xml \
     Debug1.xml \
     Logger1.xml \
     Protocol.xml \
