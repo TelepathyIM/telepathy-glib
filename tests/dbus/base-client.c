@@ -762,20 +762,16 @@ channel_invalidated_cb (TpChannel *channel,
 static void
 call_handle_channels (Test *test,
     TpChannel *channel,
-    GPtrArray *requests_satisified,
-    GHashTable *info)
+    GHashTable *requests_satisified)
 {
-  GHashTable *chan_props;
+  GHashTable *chan_props, *info;
 
   if (requests_satisified == NULL)
-    requests_satisified = g_ptr_array_sized_new (0);
+    requests_satisified = g_hash_table_new (NULL, NULL);
   else
-    g_ptr_array_ref (requests_satisified);
+    g_hash_table_ref (requests_satisified);
 
-  if (info == NULL)
-    info = g_hash_table_new (NULL, NULL);
-  else
-    g_hash_table_ref (info);
+  info = g_hash_table_new (NULL, NULL);
 
   chan_props = tp_tests_dup_channel_props_asv (channel);
 
@@ -793,7 +789,7 @@ call_handle_channels (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  g_ptr_array_unref (requests_satisified);
+  g_hash_table_unref (requests_satisified);
   g_hash_table_unref (info);
   g_hash_table_unref (chan_props);
 }
@@ -852,8 +848,8 @@ test_handler (Test *test,
   g_assert (!tp_base_client_is_handling_channel (test->base_client,
         test->text_chan_2));
 
-  call_handle_channels (test, test->text_chan, NULL, NULL);
-  call_handle_channels (test, test->text_chan_2, NULL, NULL);
+  call_handle_channels (test, test->text_chan, NULL);
+  call_handle_channels (test, test->text_chan_2, NULL);
 
   g_assert (test->simple_client->handle_channel_ctx != NULL);
   g_assert (test->simple_client->handle_channel_ctx->account == test->account);
@@ -962,10 +958,7 @@ static void
 test_handler_requests (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *properties;
-  GPtrArray *requests_satisified;
-  GHashTable *request_props;
-  GHashTable *info;
+  GHashTable *properties, *requests_satisfied;
   TpChannelRequest *request;
   GList *requests;
 
@@ -1026,17 +1019,10 @@ test_handler_requests (Test *test,
   g_list_free_full (requests, g_object_unref);
 
   /* Call HandleChannel */
-  requests_satisified = g_ptr_array_sized_new (1);
-  g_ptr_array_add (requests_satisified, "/Request");
+  requests_satisfied = g_hash_table_new (NULL, NULL);
+  g_hash_table_insert (requests_satisfied, "/Request", properties);
 
-  request_props = g_hash_table_new (g_str_hash, g_str_equal);
-  g_hash_table_insert (request_props, "/Request", properties);
-  info = tp_asv_new (
-      "request-properties", TP_HASH_TYPE_OBJECT_IMMUTABLE_PROPERTIES_MAP,
-          request_props,
-      NULL);
-
-  call_handle_channels (test, test->text_chan, requests_satisified, info);
+  call_handle_channels (test, test->text_chan, requests_satisfied);
 
   g_assert (test->simple_client->handle_channel_ctx != NULL);
   g_assert_cmpint (
@@ -1061,9 +1047,7 @@ test_handler_requests (Test *test,
 
   g_assert (tp_base_client_dup_pending_requests (test->base_client) == NULL);
 
-  g_ptr_array_unref (requests_satisified);
-  g_hash_table_unref (info);
-  g_hash_table_unref (request_props);
+  g_hash_table_unref (requests_satisfied);
 }
 
 static void
@@ -1205,8 +1189,8 @@ test_delegate_channels (Test *test,
   tp_base_client_register (test->base_client, &test->error);
   g_assert_no_error (test->error);
 
-  call_handle_channels (test, test->text_chan, NULL, NULL);
-  call_handle_channels (test, test->text_chan_2, NULL, NULL);
+  call_handle_channels (test, test->text_chan, NULL);
+  call_handle_channels (test, test->text_chan_2, NULL);
 
   /* The client is handling the 2 channels */
   chans = tp_base_client_dup_handled_channels (test->base_client);
@@ -1356,12 +1340,10 @@ static void
 delegate_to_preferred_handler (Test *test,
     gboolean supported)
 {
-  GPtrArray *requests_satisfied;
+  GHashTable *requests_satisfied;
   GPtrArray *requests;
-  GHashTable *request_props;
-  GHashTable *info;
   TpTestsSimpleChannelRequest *cr;
-  GHashTable *hints;
+  GHashTable *hints, *props;
 
   tp_base_client_be_a_handler (test->base_client);
 
@@ -1374,8 +1356,8 @@ delegate_to_preferred_handler (Test *test,
   tp_base_client_register (test->base_client, &test->error);
   g_assert_no_error (test->error);
 
-  call_handle_channels (test, test->text_chan, NULL, NULL);
-  call_handle_channels (test, test->text_chan_2, NULL, NULL);
+  call_handle_channels (test, test->text_chan, NULL);
+  call_handle_channels (test, test->text_chan_2, NULL);
 
   /* The client is handling the 2 channels */
   g_assert (tp_base_client_is_handling_channel (test->base_client,
@@ -1396,29 +1378,20 @@ delegate_to_preferred_handler (Test *test,
       TP_USER_ACTION_TIME_CURRENT_TIME, PREFERRED_HANDLER_NAME,
       requests, hints);
 
-  requests_satisfied = g_ptr_array_sized_new (0);
-  g_ptr_array_add (requests_satisfied, "/CR");
+  props = tp_tests_simple_channel_request_dup_immutable_props (cr);
 
-  request_props = g_hash_table_new_full (g_str_hash, g_str_equal,
-      NULL, (GDestroyNotify) g_hash_table_unref);
-
-  g_hash_table_insert (request_props, "/CR",
-      tp_tests_simple_channel_request_dup_immutable_props (cr));
-
-  info = g_hash_table_new (NULL, NULL);
-  tp_asv_set_boxed (info,
-      "request-properties", TP_HASH_TYPE_OBJECT_IMMUTABLE_PROPERTIES_MAP,
-      request_props);
+  requests_satisfied = g_hash_table_new (NULL, NULL);
+  g_hash_table_insert (requests_satisfied, "/CR", props);
 
   /* If we support the DelegateToPreferredHandler hint, we wait for
    * delegated_channels_cb to be called */
   if (supported)
     test->wait++;
-  call_handle_channels (test, test->text_chan, requests_satisfied, info);
+  call_handle_channels (test, test->text_chan, requests_satisfied);
 
   if (supported)
     test->wait++;
-  call_handle_channels (test, test->text_chan_2, requests_satisfied, info);
+  call_handle_channels (test, test->text_chan_2, requests_satisfied);
 
   g_assert_no_error (test->error);
 
@@ -1442,10 +1415,10 @@ delegate_to_preferred_handler (Test *test,
   tp_base_client_unregister (test->base_client);
 
   g_object_unref (cr);
-  g_ptr_array_unref (requests_satisfied);
+  g_hash_table_unref (requests_satisfied);
   g_ptr_array_unref (requests);
   g_hash_table_unref (hints);
-  g_hash_table_unref (request_props);
+  g_hash_table_unref (props);
 }
 
 static void

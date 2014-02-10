@@ -732,8 +732,8 @@ test_handle_delegated (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpAccountChannelRequest *req;
-  GPtrArray *requests, *requests_satisified;
-  GHashTable *hints, *request_props, *info, *chan_props;
+  GPtrArray *requests;
+  GHashTable *hints, *props, *info, *chan_props, *requests_satisfied;
   TpTestsSimpleChannelRequest *cr;
   TpBaseClient *base_client;
   TpClient *client;
@@ -767,18 +767,12 @@ test_handle_delegated (Test *test,
       TP_USER_ACTION_TIME_CURRENT_TIME, PREFERRED_HANDLER_NAME,
       requests, hints);
 
-  requests_satisified = g_ptr_array_sized_new (1);
-  g_ptr_array_add (requests_satisified, "/CR");
+  props = tp_tests_simple_channel_request_dup_immutable_props (cr);
 
-  request_props = g_hash_table_new_full (g_str_hash, g_str_equal,
-      NULL, (GDestroyNotify) g_hash_table_unref);
+  requests_satisfied = g_hash_table_new (NULL, NULL);
+  g_hash_table_insert (requests_satisfied, "/CR", props);
 
-  g_hash_table_insert (request_props, "/CR",
-      tp_tests_simple_channel_request_dup_immutable_props (cr));
-
-  info = tp_asv_new (
-      "request-properties", TP_HASH_TYPE_OBJECT_IMMUTABLE_PROPERTIES_MAP,
-        request_props, NULL);
+  info = tp_asv_new (NULL, NULL);
 
   chan_props = tp_tests_dup_channel_props_asv (test->channel);
 
@@ -798,7 +792,7 @@ test_handle_delegated (Test *test,
       tp_proxy_get_object_path (test->account),
       tp_proxy_get_object_path (test->connection),
       tp_proxy_get_object_path (test->channel), chan_props,
-      requests_satisified, 0, info,
+      requests_satisfied, 0, info,
       no_return_cb, test, NULL, NULL);
 
   test->count = 2;
@@ -808,8 +802,8 @@ test_handle_delegated (Test *test,
   g_ptr_array_unref (requests);
   g_hash_table_unref (hints);
   g_object_unref (cr);
-  g_ptr_array_unref (requests_satisified);
-  g_hash_table_unref (request_props);
+  g_hash_table_unref (requests_satisfied);
+  g_hash_table_unref (props);
   g_hash_table_unref (info);
   g_hash_table_unref (chan_props);
   g_object_unref (client);

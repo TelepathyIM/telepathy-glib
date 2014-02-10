@@ -350,11 +350,10 @@ out:
 static void
 call_handle_channel (Test *test)
 {
-  GPtrArray *requests_satisified;
-  GHashTable *info,* chan_props;
+  GHashTable *requests_satisfied, *info,* chan_props;
   int i;
 
-  requests_satisified = g_ptr_array_sized_new (0);
+  requests_satisfied = g_hash_table_new (NULL, NULL);
   info = g_hash_table_new (NULL, NULL);
   chan_props = tp_tests_dup_channel_props_asv (test->text_chan);
 
@@ -367,13 +366,13 @@ call_handle_channel (Test *test)
           tp_proxy_get_object_path (test->account),
           tp_proxy_get_object_path (test->connection),
           tp_proxy_get_object_path (test->text_chan), chan_props,
-          requests_satisified, 0, info,
+          requests_satisfied, 0, info,
           no_return_cb, test, NULL, NULL);
 
       g_main_loop_run (test->mainloop);
     }
 
-  g_ptr_array_unref (requests_satisified);
+  g_hash_table_unref (requests_satisfied);
   g_hash_table_unref (info);
   g_hash_table_unref (chan_props);
 }

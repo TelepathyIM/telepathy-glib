@@ -2164,7 +2164,7 @@ _tp_base_client_handle_channel (TpSvcClientHandler *iface,
     const gchar *connection_path,
     const gchar *channel_path,
     GHashTable *channel_props,
-    const GPtrArray *requests_arr,
+    GHashTable *requests_hash,
     gint64 user_action_time,
     GHashTable *handler_info,
     DBusGMethodInvocation *context)
@@ -2176,12 +2176,12 @@ _tp_base_client_handle_channel (TpSvcClientHandler *iface,
   TpAccount *account = NULL;
   TpConnection *connection = NULL;
   GPtrArray *requests = NULL;
-  guint i;
   TpChannel *channel = NULL;
   GArray *account_features;
   GArray *connection_features;
   GArray *channel_features;
-  GHashTable *request_props;
+  GHashTableIter iter;
+  gpointer k, v;
 
   if (!(self->priv->flags & CLIENT_IS_HANDLER))
     {
@@ -2206,17 +2206,15 @@ _tp_base_client_handle_channel (TpSvcClientHandler *iface,
   if (channel == NULL)
     goto out;
 
-  requests = g_ptr_array_new_full (requests_arr->len, g_object_unref);
-  request_props = tp_asv_get_boxed (handler_info, "request-properties",
-    TP_HASH_TYPE_OBJECT_IMMUTABLE_PROPERTIES_MAP);
-  for (i = 0; i < requests_arr->len; i++)
-    {
-      const gchar *req_path = g_ptr_array_index (requests_arr, i);
-      TpChannelRequest *request;
-      GHashTable *props = NULL;
+  requests = g_ptr_array_new_full (g_hash_table_size (requests_hash),
+      g_object_unref);
 
-      if (request_props != NULL)
-        props = g_hash_table_lookup (request_props, req_path);
+  g_hash_table_iter_init (&iter, requests_hash);
+  while (g_hash_table_iter_next (&iter, &k, &v))
+    {
+      const gchar *req_path = k;
+      GHashTable *props = v;
+      TpChannelRequest *request;
 
       request = _tp_client_factory_ensure_channel_request (
           self->priv->factory, req_path, props, &error);

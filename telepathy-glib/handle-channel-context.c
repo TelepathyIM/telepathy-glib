@@ -712,13 +712,14 @@ GList *
 tp_handle_channel_context_get_requests (
     TpHandleChannelContext *self)
 {
-  GHashTable *request_props;
+  GList *list = NULL;
+  guint i;
 
-  request_props = tp_asv_get_boxed (self->handler_info, "request-properties",
-      TP_HASH_TYPE_OBJECT_IMMUTABLE_PROPERTIES_MAP);
-  if (request_props == NULL)
-    return NULL;
+  for (i = 0; i < self->requests_satisfied->len; i++)
+    {
+      list = g_list_prepend (list, g_object_ref (g_ptr_array_index (
+              self->requests_satisfied, i)));
+    }
 
-  return _tp_create_channel_request_list (
-      tp_proxy_get_factory (self->account), request_props);
+  return list;
 }

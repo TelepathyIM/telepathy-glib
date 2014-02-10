@@ -147,11 +147,9 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
   TpClient *client;
   TpDBusDaemon *dbus;
   gchar *client_path;
-  GPtrArray *satisfied;
-  GHashTable *info;
+  GHashTable *satisfied, *info;
   TpBaseConnection *base_conn = (TpBaseConnection *) self->priv->conn;
   GHashTable *req;
-  GHashTable *request_props;
   gchar *chan_path;
   GHashTable *chan_props;
 
@@ -219,19 +217,13 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
 
   chan_path = dup_channel_props (self, &chan_props);
 
-  satisfied = g_ptr_array_sized_new (1);
-  g_ptr_array_add (satisfied, self->priv->path);
-
-  request_props = g_hash_table_new_full (g_str_hash, g_str_equal,
+  satisfied = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, (GDestroyNotify) g_hash_table_unref);
 
-  g_hash_table_insert (request_props, g_strdup (self->priv->path),
+  g_hash_table_insert (satisfied, g_strdup (self->priv->path),
       tp_tests_simple_channel_request_dup_immutable_props (self));
 
-  info = tp_asv_new (
-      "request-properties", TP_HASH_TYPE_OBJECT_IMMUTABLE_PROPERTIES_MAP,
-        request_props,
-      NULL);
+  info = tp_asv_new (NULL, NULL);
 
   tp_cli_client_handler_call_handle_channel (client, -1,
       self->priv->account_path,
@@ -242,9 +234,8 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
 
   g_free (chan_path);
   g_free (client_path);
-  g_ptr_array_unref (satisfied);
+  g_hash_table_unref (satisfied);
   g_hash_table_unref (info);
-  g_hash_table_unref (request_props);
   g_hash_table_unref (chan_props);
   g_object_unref (dbus);
   g_object_unref (client);
