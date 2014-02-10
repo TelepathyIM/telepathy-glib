@@ -317,12 +317,11 @@ out:
 static void
 call_observe_channel (Test *test)
 {
-  GPtrArray *requests_satisified;
-  GHashTable *info, *chan_props;
+  GHashTable *requests_satisified, *info, *chan_props;
 
   chan_props = tp_tests_dup_channel_props_asv (test->text_chan);
 
-  requests_satisified = g_ptr_array_sized_new (0);
+  requests_satisified = g_hash_table_new (NULL, NULL);
   info = tp_asv_new (
       "recovering", G_TYPE_BOOLEAN, TRUE,
       NULL);
@@ -339,7 +338,7 @@ call_observe_channel (Test *test)
 
   g_main_loop_run (test->mainloop);
 
-  g_ptr_array_unref (requests_satisified);
+  g_hash_table_unref (requests_satisified);
   g_hash_table_unref (info);
   g_hash_table_unref (chan_props);
 }

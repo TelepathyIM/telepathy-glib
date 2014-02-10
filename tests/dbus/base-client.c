@@ -467,8 +467,7 @@ static void
 test_observer (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *filter, *chan_props;
-  GPtrArray *requests_satisified;
+  GHashTable *requests_satisfied, *filter, *chan_props;
   GHashTable *info;
   TpChannel *chan;
 
@@ -512,7 +511,7 @@ test_observer (Test *test,
   /* Call ObserveChannels */
   chan_props = tp_tests_dup_channel_props_asv (test->text_chan);
 
-  requests_satisified = g_ptr_array_sized_new (0);
+  requests_satisfied = g_hash_table_new (NULL, NULL);
   info = tp_asv_new (
       "recovering", G_TYPE_BOOLEAN, TRUE,
       NULL);
@@ -524,7 +523,7 @@ test_observer (Test *test,
       tp_proxy_get_object_path (test->account),
       tp_proxy_get_object_path (test->connection),
       tp_proxy_get_object_path (test->text_chan), chan_props,
-      "/", requests_satisified, info,
+      "/", requests_satisfied, info,
       no_return_cb, test, NULL, NULL);
 
   test->wait++;
@@ -544,7 +543,7 @@ test_observer (Test *test,
       tp_proxy_get_object_path (test->account),
       tp_proxy_get_object_path (test->connection),
       tp_proxy_get_object_path (test->text_chan), chan_props,
-      "/", requests_satisified, info,
+      "/", requests_satisfied, info,
       no_return_cb, test, NULL, NULL);
 
   test->wait++;
@@ -559,7 +558,7 @@ test_observer (Test *test,
       tp_proxy_get_object_path (test->account),
       tp_proxy_get_object_path (test->connection),
       tp_proxy_get_object_path (test->text_chan), chan_props,
-      "/", requests_satisified, info,
+      "/", requests_satisfied, info,
       no_return_cb, test, NULL, NULL);
 
   tp_base_channel_close ((TpBaseChannel *) test->text_chan_service);
@@ -572,7 +571,7 @@ test_observer (Test *test,
   g_assert (TP_IS_CHANNEL (chan));
   g_assert (tp_proxy_get_invalidated (chan) != NULL);
 
-  g_ptr_array_unref (requests_satisified);
+  g_hash_table_unref (requests_satisfied);
   g_hash_table_unref (info);
   g_hash_table_unref (chan_props);
 }
