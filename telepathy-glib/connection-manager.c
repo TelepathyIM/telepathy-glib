@@ -1815,7 +1815,6 @@ tp_connection_manager_get_protocol (TpConnectionManager *self,
   return g_hash_table_lookup (self->priv->protocols, protocol);
 }
 
-/* FIXME: in Telepathy 1.0, rename to get_protocols */
 /**
  * tp_connection_manager_dup_protocols:
  * @self: a connection manager
