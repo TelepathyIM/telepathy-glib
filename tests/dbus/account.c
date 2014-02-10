@@ -507,7 +507,6 @@ test_storage (Test *test,
     gconstpointer mode)
 {
   GQuark account_features[] = { TP_ACCOUNT_FEATURE_STORAGE, 0 };
-  GValue *gvalue;
   GVariant *gvariant;
   GHashTable *info;
   GError *error = NULL;
@@ -531,9 +530,9 @@ test_storage (Test *test,
       assert_strprop (test->account, "storage-provider", NULL);
       g_assert (tp_account_get_storage_identifier (test->account) == NULL);
       g_object_get (test->account,
-          "storage-identifier", &gvalue,
+          "storage-identifier", &gvariant,
           NULL);
-      g_assert (gvalue == NULL);
+      g_assert (gvariant == NULL);
       g_assert (tp_account_get_storage_identifier (test->account) == NULL);
       g_object_get (test->account,
           "storage-identifier", &gvariant,
@@ -555,23 +554,11 @@ test_storage (Test *test,
       "im.telepathy.v1.glib.test");
 
   g_assert_cmpstr (
-      g_value_get_string (tp_account_get_storage_identifier (test->account)),
-      ==, "unique-identifier");
+      g_variant_get_string ((GVariant *) tp_account_get_storage_identifier (
+          test->account), NULL), ==, "unique-identifier");
   g_object_get (test->account,
-      "storage-identifier", &gvalue,
+      "storage-identifier", &gvariant,
       NULL);
-  g_assert_cmpstr (g_value_get_string (gvalue), ==, "unique-identifier");
-  g_boxed_free (G_TYPE_VALUE, gvalue);
-
-  gvariant = tp_account_dup_storage_identifier_variant (test->account);
-  g_assert_cmpstr (g_variant_get_type_string (gvariant), ==, "s");
-  g_assert_cmpstr (g_variant_get_string (gvariant, NULL), ==,
-      "unique-identifier");
-  g_variant_unref (gvariant);
-  g_object_get (test->account,
-      "storage-identifier-variant", &gvariant,
-      NULL);
-  g_assert_cmpstr (g_variant_get_type_string (gvariant), ==, "s");
   g_assert_cmpstr (g_variant_get_string (gvariant, NULL), ==,
       "unique-identifier");
   g_variant_unref (gvariant);
