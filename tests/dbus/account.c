@@ -764,9 +764,8 @@ test_connection (Test *test,
   const gchar *conn1_path = tp_proxy_get_object_path (test->conn1);
   const gchar *conn2_path = tp_proxy_get_object_path (test->conn2);
   GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
-  GHashTable *change = tp_asv_new (NULL, NULL);
   TpConnection *conn;
-  const GHashTable *details;
+  GHashTable *details;
   GVariant *details_v;
   gboolean found;
   gchar *s;
@@ -784,13 +783,10 @@ test_connection (Test *test,
   /* a connection turns up */
 
   test_set_up_account_notify (test);
-  tp_asv_set_object_path (change, "Connection", conn1_path);
-  tp_asv_set_uint32 (change, "ConnectionStatus",
-      TP_CONNECTION_STATUS_CONNECTING);
-  tp_asv_set_uint32 (change, "ConnectionStatusReason",
+
+  tp_tests_simple_account_set_connection_with_status (test->account_service,
+      conn1_path, TP_CONNECTION_STATUS_CONNECTING,
       TP_CONNECTION_STATUS_REASON_REQUESTED);
-  tp_svc_account_emit_account_property_changed (test->account_service, change);
-  g_hash_table_remove_all (change);
 
   while (test_get_times_notified (test, "connection") < 1)
     g_main_context_iteration (NULL, TRUE);
@@ -806,13 +802,10 @@ test_connection (Test *test,
   /* a no-op "change" */
 
   test_set_up_account_notify (test);
-  tp_asv_set_object_path (change, "Connection", conn1_path);
-  tp_asv_set_uint32 (change, "ConnectionStatus",
-      TP_CONNECTION_STATUS_CONNECTING);
-  tp_asv_set_uint32 (change, "ConnectionStatusReason",
+
+  tp_tests_simple_account_set_connection_with_status (test->account_service,
+      conn1_path, TP_CONNECTION_STATUS_CONNECTING,
       TP_CONNECTION_STATUS_REASON_REQUESTED);
-  tp_svc_account_emit_account_property_changed (test->account_service, change);
-  g_hash_table_remove_all (change);
 
   tp_tests_proxy_run_until_dbus_queue_processed (test->account);
 
@@ -824,13 +817,10 @@ test_connection (Test *test,
   /* atomically flip from one connection to another (unlikely) */
 
   test_set_up_account_notify (test);
-  tp_asv_set_object_path (change, "Connection", conn2_path);
-  tp_asv_set_uint32 (change, "ConnectionStatus",
-      TP_CONNECTION_STATUS_CONNECTED);
-  tp_asv_set_uint32 (change, "ConnectionStatusReason",
+
+  tp_tests_simple_account_set_connection_with_status (test->account_service,
+      conn2_path, TP_CONNECTION_STATUS_CONNECTED,
       TP_CONNECTION_STATUS_REASON_REQUESTED);
-  tp_svc_account_emit_account_property_changed (test->account_service, change);
-  g_hash_table_remove_all (change);
 
   while (test_get_times_notified (test, "connection") < 1)
     g_main_context_iteration (NULL, TRUE);
@@ -843,13 +833,10 @@ test_connection (Test *test,
   /* no more connection for you */
 
   test_set_up_account_notify (test);
-  tp_asv_set_object_path (change, "Connection", "/");
-  tp_asv_set_uint32 (change, "ConnectionStatus",
-      TP_CONNECTION_STATUS_DISCONNECTED);
-  tp_asv_set_uint32 (change, "ConnectionStatusReason",
+
+  tp_tests_simple_account_set_connection_with_status (test->account_service,
+      "/", TP_CONNECTION_STATUS_DISCONNECTED,
       TP_CONNECTION_STATUS_REASON_ENCRYPTION_ERROR);
-  tp_svc_account_emit_account_property_changed (test->account_service, change);
-  g_hash_table_remove_all (change);
 
   while (test_get_times_notified (test, "connection") < 1)
     g_main_context_iteration (NULL, TRUE);
@@ -864,13 +851,10 @@ test_connection (Test *test,
   /* another connection */
 
   test_set_up_account_notify (test);
-  tp_asv_set_object_path (change, "Connection", conn1_path);
-  tp_asv_set_uint32 (change, "ConnectionStatus",
-      TP_CONNECTION_STATUS_CONNECTING);
-  tp_asv_set_uint32 (change, "ConnectionStatusReason",
+
+  tp_tests_simple_account_set_connection_with_status (test->account_service,
+      conn1_path, TP_CONNECTION_STATUS_CONNECTING,
       TP_CONNECTION_STATUS_REASON_REQUESTED);
-  tp_svc_account_emit_account_property_changed (test->account_service, change);
-  g_hash_table_remove_all (change);
 
   tp_tests_proxy_run_until_dbus_queue_processed (test->account);
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
@@ -878,27 +862,25 @@ test_connection (Test *test,
   /* lose the connection again */
 
   test_set_up_account_notify (test);
-  tp_asv_set_object_path (change, "Connection", "/");
-  tp_asv_set_uint32 (change, "ConnectionStatus",
-      TP_CONNECTION_STATUS_DISCONNECTED);
-  tp_asv_set_uint32 (change, "ConnectionStatusReason",
-      TP_CONNECTION_STATUS_REASON_ENCRYPTION_ERROR);
-  tp_asv_set_static_string (change, "ConnectionError",
-      "org.debian.packages.OpenSSL.NotRandomEnough");
-  tp_asv_take_boxed (change, "ConnectionErrorDetails",
-      TP_HASH_TYPE_STRING_VARIANT_MAP,
-      tp_asv_new (
+
+  details = tp_asv_new (
         "bits-of-entropy", G_TYPE_UINT, 15,
         "debug-message", G_TYPE_STRING, "shiiiiii-",
-        NULL));
-  tp_svc_account_emit_account_property_changed (test->account_service, change);
-  g_hash_table_remove_all (change);
+        NULL);
+
+  tp_tests_simple_account_set_connection_with_status_and_details (
+      test->account_service, "/", TP_CONNECTION_STATUS_DISCONNECTED,
+      TP_CONNECTION_STATUS_REASON_ENCRYPTION_ERROR,
+      "org.debian.packages.OpenSSL.NotRandomEnough", details);
+
+  g_hash_table_unref (details);
 
   tp_tests_proxy_run_until_dbus_queue_processed (test->account);
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
   g_assert_cmpuint (test_get_times_notified (test, "connection-error"), ==, 1);
 
-  g_assert_cmpstr (tp_account_get_detailed_error (test->account, &details), ==,
+  g_assert_cmpstr (tp_account_get_detailed_error (test->account,
+      (const GHashTable **) &details), ==,
       "org.debian.packages.OpenSSL.NotRandomEnough");
   g_assert_cmpuint (tp_asv_size (details), >=, 2);
   g_assert_cmpstr (tp_asv_get_string (details, "debug-message"), ==,
@@ -919,8 +901,6 @@ test_connection (Test *test,
   g_assert (found);
   g_assert_cmpint (u, ==, 15);
   g_variant_unref (details_v);
-
-  g_hash_table_unref (change);
 }
 
 int
