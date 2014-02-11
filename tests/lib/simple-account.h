@@ -59,6 +59,20 @@ void tp_tests_simple_account_set_presence (TpTestsSimpleAccount *self,
 void tp_tests_simple_account_set_connection (TpTestsSimpleAccount *self,
     const gchar *object_path);
 
+void tp_tests_simple_account_set_connection_with_status (
+    TpTestsSimpleAccount *self,
+    const gchar *object_path,
+    TpConnectionStatus status,
+    TpConnectionStatusReason reason);
+
+void tp_tests_simple_account_set_connection_with_status_and_details (
+    TpTestsSimpleAccount *self,
+    const gchar *object_path,
+    TpConnectionStatus status,
+    TpConnectionStatusReason reason,
+    const gchar *connection_error,
+    GHashTable *details);
+
 void tp_tests_simple_account_removed (TpTestsSimpleAccount *self);
 void tp_tests_simple_account_set_enabled (TpTestsSimpleAccount *self,
     gboolean enabled);

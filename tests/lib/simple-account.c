@@ -56,6 +56,8 @@ enum
   PROP_CONNECTION,
   PROP_CONNECTION_STATUS,
   PROP_CONNECTION_STATUS_REASON,
+  PROP_CONNECTION_ERROR,
+  PROP_CONNECTION_ERROR_DETAILS,
   PROP_CURRENT_PRESENCE,
   PROP_REQUESTED_PRESENCE,
   PROP_NORMALIZED_NAME,
@@ -76,6 +78,10 @@ struct _TpTestsSimpleAccountPrivate
   gchar *presence_status;
   gchar *presence_msg;
   gchar *connection_path;
+  TpConnectionStatus connection_status;
+  TpConnectionStatusReason connection_status_reason;
+  gchar *connection_error;
+  GHashTable *connection_error_details;
   gboolean enabled;
   GPtrArray *uri_schemes;
   GHashTable *parameters;
@@ -137,6 +143,10 @@ tp_tests_simple_account_init (TpTestsSimpleAccount *self)
   self->priv->presence_status = g_strdup ("currently-away");
   self->priv->presence_msg = g_strdup ("this is my CurrentPresence");
   self->priv->connection_path = g_strdup ("/");
+  self->priv->connection_status = TP_CONNECTION_STATUS_CONNECTED;
+  self->priv->connection_status_reason = TP_CONNECTION_STATUS_REASON_REQUESTED;
+  self->priv->connection_error = g_strdup ("");
+  self->priv->connection_error_details = tp_asv_new (NULL, NULL);
   self->priv->enabled = TRUE;
 
   self->priv->uri_schemes = g_ptr_array_new_with_free_func (g_free);
@@ -198,10 +208,16 @@ tp_tests_simple_account_get_property (GObject *object,
       g_value_set_boxed (value, self->priv->connection_path);
       break;
     case PROP_CONNECTION_STATUS:
-      g_value_set_uint (value, TP_CONNECTION_STATUS_CONNECTED);
+      g_value_set_uint (value, self->priv->connection_status);
       break;
     case PROP_CONNECTION_STATUS_REASON:
-      g_value_set_uint (value, TP_CONNECTION_STATUS_REASON_REQUESTED);
+      g_value_set_uint (value, self->priv->connection_status_reason);
+      break;
+    case PROP_CONNECTION_ERROR:
+      g_value_set_string (value, self->priv->connection_error);
+      break;
+    case PROP_CONNECTION_ERROR_DETAILS:
+      g_value_set_boxed (value, self->priv->connection_error_details);
       break;
     case PROP_CURRENT_PRESENCE:
       g_value_take_boxed (value, tp_value_array_build (3,
@@ -310,6 +326,8 @@ tp_tests_simple_account_finalize (GObject *object)
   g_free (self->priv->presence_status);
   g_free (self->priv->presence_msg);
   g_free (self->priv->connection_path);
+  g_free (self->priv->connection_error);
+  g_hash_table_unref (self->priv->connection_error_details);
 
   g_ptr_array_unref (self->priv->uri_schemes);
   g_hash_table_unref (self->priv->parameters);
@@ -342,6 +360,8 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
         { "Connection", "connection", NULL },
         { "ConnectionStatus", "connection-status", NULL },
         { "ConnectionStatusReason", "connection-status-reason", NULL },
+        { "ConnectionError", "connection-error", NULL },
+        { "ConnectionErrorDetails", "connection-error-details", NULL },
         { "CurrentPresence", "current-presence", NULL },
         { "RequestedPresence", "requested-presence", NULL },
         { "NormalizedName", "normalized-name", NULL },
@@ -475,6 +495,20 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
   g_object_class_install_property (object_class, PROP_CONNECTION_STATUS_REASON,
       param_spec);
 
+  param_spec = g_param_spec_string ("connection-error",
+      "connection error", "ConnectionError property",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CONNECTION_ERROR,
+      param_spec);
+
+  param_spec = g_param_spec_boxed ("connection-error-details",
+      "connection error details", "ConnectionErrorDetails property",
+      TP_HASH_TYPE_STRING_VARIANT_MAP,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CONNECTION_ERROR_DETAILS,
+      param_spec);
+
   param_spec = g_param_spec_boxed ("current-presence", "current presence",
       "CurrentPresence property",
       TP_STRUCT_TYPE_PRESENCE,
@@ -597,6 +631,78 @@ tp_tests_simple_account_set_connection (TpTestsSimpleAccount *self,
 
   change = tp_asv_new (NULL, NULL);
   tp_asv_set_string (change, "Connection", object_path);
+  tp_svc_account_emit_account_property_changed (self, change);
+  g_hash_table_unref (change);
+}
+
+void
+tp_tests_simple_account_set_connection_with_status (TpTestsSimpleAccount *self,
+    const gchar *object_path,
+    TpConnectionStatus status,
+    TpConnectionStatusReason reason)
+{
+  GHashTable *change;
+
+  if (object_path == NULL)
+    object_path = "/";
+
+  g_free (self->priv->connection_path);
+  self->priv->connection_path = g_strdup (object_path);
+
+  self->priv->connection_status = status;
+  self->priv->connection_status_reason = reason;
+
+  change = tp_asv_new (
+      "Connection", DBUS_TYPE_G_OBJECT_PATH, object_path,
+      "ConnectionStatus", G_TYPE_UINT, status,
+      "ConnectionStatusReason", G_TYPE_UINT, reason,
+      NULL);
+
+  tp_svc_account_emit_account_property_changed (self, change);
+  g_hash_table_unref (change);
+}
+
+void
+tp_tests_simple_account_set_connection_with_status_and_details (
+    TpTestsSimpleAccount *self,
+    const gchar *object_path,
+    TpConnectionStatus status,
+    TpConnectionStatusReason reason,
+    const gchar *connection_error,
+    GHashTable *details)
+{
+  GHashTable *change;
+
+  if (object_path == NULL)
+    object_path = "/";
+
+  g_free (self->priv->connection_path);
+  self->priv->connection_path = g_strdup (object_path);
+
+  self->priv->connection_status = status;
+  self->priv->connection_status_reason = reason;
+
+  if (connection_error == NULL)
+    connection_error = "";
+
+  g_free (self->priv->connection_error);
+  self->priv->connection_error = g_strdup (connection_error);
+
+  g_hash_table_unref (self->priv->connection_error_details);
+  if (details != NULL)
+    self->priv->connection_error_details = g_hash_table_ref (details);
+  else
+    self->priv->connection_error_details = tp_asv_new (NULL, NULL);
+
+  change = tp_asv_new (
+      "Connection", DBUS_TYPE_G_OBJECT_PATH, object_path,
+      "ConnectionStatus", G_TYPE_UINT, status,
+      "ConnectionStatusReason", G_TYPE_UINT, reason,
+      "ConnectionError", G_TYPE_STRING, self->priv->connection_error,
+      "ConnectionErrorDetails", TP_HASH_TYPE_STRING_VARIANT_MAP,
+          self->priv->connection_error_details,
+      NULL);
+
   tp_svc_account_emit_account_property_changed (self, change);
   g_hash_table_unref (change);
 }
