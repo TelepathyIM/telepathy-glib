@@ -596,9 +596,6 @@ tp_tests_simple_account_set_presence (TpTestsSimpleAccount *self,
     const gchar *status,
     const gchar *message)
 {
-  GHashTable *props;
-  GValueArray *v;
-
   g_free (self->priv->presence_status);
   g_free (self->priv->presence_msg);
 
@@ -606,33 +603,22 @@ tp_tests_simple_account_set_presence (TpTestsSimpleAccount *self,
   self->priv->presence_status = g_strdup (status);
   self->priv->presence_msg = g_strdup (message);
 
-  g_object_get (self, "current-presence", &v, NULL);
-
-  props = tp_asv_new (
-      "CurrentPresence", TP_STRUCT_TYPE_PRESENCE, v,
-      NULL);
-
-  tp_svc_account_emit_account_property_changed (self, props);
-
-  g_boxed_free (TP_STRUCT_TYPE_PRESENCE, v);
+  tp_dbus_properties_mixin_emit_properties_changed_varargs (G_OBJECT (self),
+      TP_IFACE_ACCOUNT, "CurrentPresence", NULL);
 }
 
 void
 tp_tests_simple_account_set_connection (TpTestsSimpleAccount *self,
     const gchar *object_path)
 {
-  GHashTable *change;
-
   if (object_path == NULL)
     object_path = "/";
 
   g_free (self->priv->connection_path);
   self->priv->connection_path = g_strdup (object_path);
 
-  change = tp_asv_new (NULL, NULL);
-  tp_asv_set_string (change, "Connection", object_path);
-  tp_svc_account_emit_account_property_changed (self, change);
-  g_hash_table_unref (change);
+  tp_dbus_properties_mixin_emit_properties_changed_varargs (G_OBJECT (self),
+      TP_IFACE_ACCOUNT, "Connection", NULL);
 }
 
 void
@@ -641,8 +627,6 @@ tp_tests_simple_account_set_connection_with_status (TpTestsSimpleAccount *self,
     TpConnectionStatus status,
     TpConnectionStatusReason reason)
 {
-  GHashTable *change;
-
   if (object_path == NULL)
     object_path = "/";
 
@@ -652,14 +636,12 @@ tp_tests_simple_account_set_connection_with_status (TpTestsSimpleAccount *self,
   self->priv->connection_status = status;
   self->priv->connection_status_reason = reason;
 
-  change = tp_asv_new (
-      "Connection", DBUS_TYPE_G_OBJECT_PATH, object_path,
-      "ConnectionStatus", G_TYPE_UINT, status,
-      "ConnectionStatusReason", G_TYPE_UINT, reason,
+  tp_dbus_properties_mixin_emit_properties_changed_varargs (G_OBJECT (self),
+      TP_IFACE_ACCOUNT,
+      "Connection",
+      "ConnectionStatus",
+      "ConnectionStatusReason",
       NULL);
-
-  tp_svc_account_emit_account_property_changed (self, change);
-  g_hash_table_unref (change);
 }
 
 void
@@ -671,8 +653,6 @@ tp_tests_simple_account_set_connection_with_status_and_details (
     const gchar *connection_error,
     GHashTable *details)
 {
-  GHashTable *change;
-
   if (object_path == NULL)
     object_path = "/";
 
@@ -694,17 +674,14 @@ tp_tests_simple_account_set_connection_with_status_and_details (
   else
     self->priv->connection_error_details = tp_asv_new (NULL, NULL);
 
-  change = tp_asv_new (
-      "Connection", DBUS_TYPE_G_OBJECT_PATH, object_path,
-      "ConnectionStatus", G_TYPE_UINT, status,
-      "ConnectionStatusReason", G_TYPE_UINT, reason,
-      "ConnectionError", G_TYPE_STRING, self->priv->connection_error,
-      "ConnectionErrorDetails", TP_HASH_TYPE_STRING_VARIANT_MAP,
-          self->priv->connection_error_details,
+  tp_dbus_properties_mixin_emit_properties_changed_varargs (G_OBJECT (self),
+      TP_IFACE_ACCOUNT,
+      "Connection",
+      "ConnectionStatus",
+      "ConnectionStatusReason",
+      "ConnectionError",
+      "ConnectionErrorDetails",
       NULL);
-
-  tp_svc_account_emit_account_property_changed (self, change);
-  g_hash_table_unref (change);
 }
 
 void
@@ -717,14 +694,10 @@ void
 tp_tests_simple_account_set_enabled (TpTestsSimpleAccount *self,
     gboolean enabled)
 {
-  GHashTable *change;
-
   self->priv->enabled = enabled;
 
-  change = tp_asv_new (NULL, NULL);
-  tp_asv_set_boolean (change, "Enabled", enabled);
-  tp_svc_account_emit_account_property_changed (self, change);
-  g_hash_table_unref (change);
+  tp_dbus_properties_mixin_emit_properties_changed_varargs (G_OBJECT (self),
+      TP_IFACE_ACCOUNT, "Enabled", NULL);
 }
 
 void

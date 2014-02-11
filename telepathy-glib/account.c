@@ -996,13 +996,9 @@ _tp_account_update (TpAccount *account,
 }
 
 static void
-_tp_account_properties_changed (TpAccount *proxy,
-    GHashTable *properties,
-    gpointer user_data,
-    GObject *weak_object)
+account_props_changed (TpAccount *self,
+    GHashTable *properties)
 {
-  TpAccount *self = TP_ACCOUNT (weak_object);
-
   if (!tp_proxy_is_prepared (self, TP_ACCOUNT_FEATURE_CORE))
     return;
 
@@ -1082,6 +1078,10 @@ dbus_properties_changed_cb (TpProxy *proxy,
 {
   TpAccount *self = TP_ACCOUNT (weak_object);
 
+  if (!tp_strdiff (interface_name, TP_IFACE_ACCOUNT))
+    {
+      account_props_changed (self, changed_properties);
+    }
   if (!tp_strdiff (interface_name, TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING1))
     {
       addressing_props_changed (self, changed_properties);
@@ -1123,9 +1123,6 @@ _tp_account_constructed (GObject *object)
 
   g_signal_connect (self, "invalidated",
       G_CALLBACK (_tp_account_invalidated_cb), NULL);
-
-  tp_cli_account_connect_to_account_property_changed (self,
-      _tp_account_properties_changed, NULL, NULL, object, NULL);
 
   tp_cli_dbus_properties_connect_to_properties_changed (self,
       dbus_properties_changed_cb, NULL, NULL, object, NULL);

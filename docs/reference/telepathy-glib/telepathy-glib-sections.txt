@@ -3904,7 +3904,6 @@ TpCapabilitiesPrivate
 <TITLE>svc-account</TITLE>
 TpSvcAccount
 TpSvcAccountClass
-tp_svc_account_emit_account_property_changed
 tp_svc_account_emit_removed
 tp_svc_account_reconnect_impl
 tp_svc_account_return_from_reconnect
@@ -4157,8 +4156,6 @@ tp_cli_account_callback_for_remove
 tp_cli_account_call_remove
 tp_cli_account_callback_for_update_parameters
 tp_cli_account_call_update_parameters
-tp_cli_account_signal_callback_account_property_changed
-tp_cli_account_connect_to_account_property_changed
 tp_cli_account_signal_callback_removed
 tp_cli_account_connect_to_removed
 <SUBSECTION>
