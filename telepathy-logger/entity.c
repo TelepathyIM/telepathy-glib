@@ -289,16 +289,21 @@ tpl_entity_new_from_tp_contact (TpContact *contact,
     TpEntityType type)
 {
   g_return_val_if_fail (contact == NULL || TP_IS_CONTACT (contact), NULL);
-  g_return_val_if_fail (type == TP_ENTITY_TYPE_CONTACT || type == TP_ENTITY_TYPE_SELF,
-      NULL);
 
   if (contact != NULL)
-    return tpl_entity_new (tp_contact_get_identifier (contact),
-        type,
-        tp_contact_get_alias (contact),
-        tp_contact_get_avatar_token (contact));
+    {
+      g_return_val_if_fail (type == TP_ENTITY_TYPE_CONTACT ||
+          type == TP_ENTITY_TYPE_SELF, NULL);
+
+      return tpl_entity_new (tp_contact_get_identifier (contact),
+          type,
+          tp_contact_get_alias (contact),
+          tp_contact_get_avatar_token (contact));
+    }
   else
-    return tpl_entity_new ("unknown", TP_ENTITY_TYPE_NONE, NULL, NULL);
+    {
+      return tpl_entity_new ("unknown", TP_ENTITY_TYPE_NONE, NULL, NULL);
+    }
 }
 
 
