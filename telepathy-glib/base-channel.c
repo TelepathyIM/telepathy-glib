@@ -30,7 +30,7 @@
  * relevant properties.
  *
  * Subclasses should fill in #TpBaseChannelClass.channel_type and
- * #TpBaseChannelClass.target_handle_type; and implement the
+ * #TpBaseChannelClass.target_entity_type; and implement the
  * #TpBaseChannelClass.get_interfaces and
  * #TpBaseChannelClass.close virtual functions.
  *
@@ -125,7 +125,7 @@
  * @dbus_props_class: The class structure for the DBus properties mixin
  * @channel_type: The type of channel that instances of this class represent
  * (e.g. #TP_IFACE_CHANNEL_TYPE_TEXT)
- * @target_handle_type: The type of handle that is the target of channels of
+ * @target_entity_type: The type of handle that is the target of channels of
  * this type
  * @close: A virtual function called to close the channel, which will be called
  *  by tp_base_channel_close() and by the implementation of the Closed D-Bus
@@ -610,7 +610,7 @@ tp_base_channel_get_self_handle (TpBaseChannel *chan)
  * @chan: a channel
  *
  * Returns the target handle of @chan (without a reference), which will be 0
- * if #TpBaseChannelClass.target_handle_type is #TP_ENTITY_TYPE_NONE for this
+ * if #TpBaseChannelClass.target_entity_type is #TP_ENTITY_TYPE_NONE for this
  * class, and non-zero otherwise. This is a shortcut for retrieving the
  * #TpChannelIface:handle property.
  *
@@ -739,7 +739,7 @@ tp_base_channel_fill_basic_immutable_properties (TpBaseChannel *chan, GHashTable
   tp_dbus_properties_mixin_fill_properties_hash (G_OBJECT (chan),
       properties,
       TP_IFACE_CHANNEL, "ChannelType",
-      TP_IFACE_CHANNEL, "TargetHandleType",
+      TP_IFACE_CHANNEL, "TargetEntityType",
       TP_IFACE_CHANNEL, "TargetHandle",
       TP_IFACE_CHANNEL, "TargetID",
       TP_IFACE_CHANNEL, "InitiatorHandle",
@@ -820,7 +820,7 @@ tp_base_channel_get_property (GObject *object,
       g_value_set_static_string (value, klass->channel_type);
       break;
     case PROP_HANDLE_TYPE:
-      g_value_set_uint (value, klass->target_handle_type);
+      g_value_set_uint (value, klass->target_entity_type);
       break;
     case PROP_HANDLE:
       g_value_set_uint (value, chan->priv->target);
@@ -829,9 +829,9 @@ tp_base_channel_get_property (GObject *object,
       if (chan->priv->target != 0)
         {
           TpHandleRepoIface *repo = tp_base_connection_get_handles (
-              chan->priv->conn, klass->target_handle_type);
+              chan->priv->conn, klass->target_entity_type);
 
-          g_assert (klass->target_handle_type != TP_ENTITY_TYPE_NONE);
+          g_assert (klass->target_entity_type != TP_ENTITY_TYPE_NONE);
           g_assert (repo != NULL);
           g_value_set_string (value, tp_handle_inspect (repo, chan->priv->target));
         }
@@ -970,7 +970,7 @@ static void
 tp_base_channel_class_init (TpBaseChannelClass *tp_base_channel_class)
 {
   static TpDBusPropertiesMixinPropImpl channel_props[] = {
-      { "TargetHandleType", "handle-type", NULL },
+      { "TargetEntityType", "handle-type", NULL },
       { "TargetHandle", "handle", NULL },
       { "TargetID", "target-id", NULL },
       { "ChannelType", "channel-type", NULL },

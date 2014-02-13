@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
     handler.add_handler_filter({
         Tp.PROP_CHANNEL_CHANNEL_TYPE: Tp.IFACE_CHANNEL_TYPE_STREAM_TUBE,
-        Tp.PROP_CHANNEL_TARGET_HANDLE_TYPE: int(Tp.HandleType.CONTACT),
+        Tp.PROP_CHANNEL_TARGET_ENTITY_TYPE: int(Tp.HandleType.CONTACT),
         Tp.PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE: "ExampleService",
     })
 

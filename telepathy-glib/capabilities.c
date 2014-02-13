@@ -336,7 +336,7 @@ supports_simple_channel (TpCapabilities *self,
 
       chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
       handle_type = tp_asv_get_uint32 (fixed,
-          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
+          TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
 
       if (!valid)
         continue;
@@ -363,7 +363,7 @@ supports_simple_channel (TpCapabilities *self,
  * then this method will return %FALSE.
  *
  * Returns: %TRUE if a channel request containing Text as ChannelType,
- * HandleTypeContact as TargetHandleType and a contact identifier can be
+ * HandleTypeContact as TargetEntityType and a contact identifier can be
  * expected to work, %FALSE otherwise.
  *
  * Since: 0.11.3
@@ -394,7 +394,7 @@ tp_capabilities_supports_text_chats (TpCapabilities *self)
  * (because more information is needed), then this method will return %FALSE.
  *
  * Returns: %TRUE if a channel request containing Text as ChannelType,
- * HandleTypeRoom as TargetHandleType and a channel identifier can be
+ * HandleTypeRoom as TargetEntityType and a channel identifier can be
  * expected to work, %FALSE otherwise.
  *
  * Since: 0.11.3
@@ -419,7 +419,7 @@ tp_capabilities_supports_text_chatrooms (TpCapabilities *self)
  * SMS text channels.
  *
  * Returns: %TRUE if a channel request containing Text as ChannelType,
- * HandleTypeContact as TargetHandleType, a channel identifier and
+ * HandleTypeContact as TargetEntityType, a channel identifier and
  * #TP_PROP_CHANNEL_INTERFACE_SMS_SMS_CHANNEL set to %TRUE can be
  * expected to work, %FALSE otherwise.
  *
@@ -447,7 +447,7 @@ tp_capabilities_supports_sms (TpCapabilities *self)
           &allowed);
 
       handle_type = tp_asv_get_uint32 (fixed,
-          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
+          TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
 
       if (!valid)
         continue;
@@ -514,7 +514,7 @@ supports_call_full (TpCapabilities *self,
         continue;
 
       handle_type = tp_asv_get_uint32 (fixed_prop,
-          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
+          TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
       if (!valid || handle_type != expected_handle_type)
         continue;
 
@@ -572,7 +572,7 @@ supports_call_full (TpCapabilities *self,
  * @handle_type to %TP_ENTITY_TYPE_CONTACT.
  *
  * Returns: %TRUE if a channel request containing Call as ChannelType,
- * @handle_type as TargetHandleType, a True value for InitialAudio and an
+ * @handle_type as TargetEntityType, a True value for InitialAudio and an
  * identifier of the appropriate type can be expected to work, %FALSE otherwise.
  *
  * Since: 0.17.6
@@ -600,7 +600,7 @@ tp_capabilities_supports_audio_call (TpCapabilities *self,
  * @handle_type to %TP_ENTITY_TYPE_CONTACT.
  *
  * Returns: %TRUE if a channel request containing Call as ChannelType,
- * @handle_type as TargetHandleType, a True value for
+ * @handle_type as TargetEntityType, a True value for
  * InitialAudio/InitialVideo and an identifier of the appropriate type can be
  * expected to work,
  * %FALSE otherwise.
@@ -648,7 +648,7 @@ supports_file_transfer (TpCapabilities *self,
         continue;
 
       handle_type = tp_asv_get_uint32 (fixed,
-          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
+          TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
 
       if (!valid)
         continue;
@@ -711,7 +711,7 @@ supports_file_transfer (TpCapabilities *self,
  * a contact identifier.
  *
  * Returns: %TRUE if a channel request containing FileTransfer as ChannelType,
- * HandleTypeContact as TargetHandleType and a contact identifier can be
+ * HandleTypeContact as TargetEntityType and a contact identifier can be
  * expected to work, %FALSE otherwise.
  *
  * Since: 0.17.6
@@ -828,7 +828,7 @@ tp_capabilities_supports_tubes_common (TpCapabilities *self,
         continue;
 
       handle_type = tp_asv_get_uint32 (fixed,
-          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
+          TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
       if (!valid || handle_type != expected_handle_type)
         continue;
 
@@ -858,7 +858,7 @@ tp_capabilities_supports_tubes_common (TpCapabilities *self,
  *
  * If the #TpCapabilities:contact-specific property is %TRUE, this function
  * checks if the contact associated with this #TpCapabilities supports
- * stream tubes with @handle_type as TargetHandleType.
+ * stream tubes with @handle_type as TargetEntityType.
  * If @service is not %NULL, it also checks if it supports stream tubes
  * with @service as #TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE.
  *
@@ -890,7 +890,7 @@ tp_capabilities_supports_stream_tubes (TpCapabilities *self,
  *
  * If the #TpCapabilities:contact-specific property is %TRUE, this function
  * checks if the contact associated with this #TpCapabilities supports
- * D-Bus tubes with @handle_type as TargetHandleType.
+ * D-Bus tubes with @handle_type as TargetEntityType.
  * If @service_name is not %NULL, it also checks if it supports stream tubes
  * with @service as #TP_PROP_CHANNEL_TYPE_DBUS_TUBE_SERVICE_NAME.
  *
@@ -958,8 +958,8 @@ tp_capabilities_supports_contact_search (TpCapabilities *self,
 
       tp_value_array_unpack (arr, 2, &fixed, &allowed_properties);
 
-      /* ContactSearch channel should have ChannelType and TargetHandleType=NONE
-       * but CM implementations are wrong and omitted TargetHandleType,
+      /* ContactSearch channel should have ChannelType and TargetEntityType=NONE
+       * but CM implementations are wrong and omitted TargetEntityType,
        * so it's set in stone now.  */
       if (g_hash_table_size (fixed) != 1)
         continue;
@@ -1008,7 +1008,7 @@ tp_capabilities_supports_contact_search (TpCapabilities *self,
  * request = tp_asv_new (
  *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
  *       TP_IFACE_CHANNEL_TYPE_ROOM_LIST,
- *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_ENTITY_TYPE_NONE,
+ *     TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT, TP_ENTITY_TYPE_NONE,
  *     NULL);
  *
  * req = tp_account_channel_request_new (account, request,
@@ -1028,14 +1028,14 @@ tp_capabilities_supports_contact_search (TpCapabilities *self,
  * request = tp_asv_new (
  *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
  *       TP_IFACE_CHANNEL_TYPE_ROOM_LIST,
- *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_ENTITY_TYPE_NONE,
+ *     TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT, TP_ENTITY_TYPE_NONE,
  *     TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER, G_TYPE_STRING,
  *       "characters.shakespeare.lit",
  *     NULL);
  * ]|
  *
  * Returns: %TRUE if a channel request containing RoomList as ChannelType,
- * HandleTypeNone as TargetHandleType can be expected to work,
+ * HandleTypeNone as TargetEntityType can be expected to work,
  * %FALSE otherwise.
  *
  * Since: 0.13.14
@@ -1067,7 +1067,7 @@ tp_capabilities_supports_room_list (TpCapabilities *self,
         continue;
 
       handle_type = tp_asv_get_uint32 (fixed,
-          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
+          TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
       if (!valid || handle_type != TP_ENTITY_TYPE_NONE)
         continue;
 

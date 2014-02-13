@@ -358,14 +358,14 @@ new_channel (ExampleCallManager *self,
 
 static const gchar * const audio_fixed_properties[] = {
     TP_PROP_CHANNEL_CHANNEL_TYPE,
-    TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
+    TP_PROP_CHANNEL_TARGET_ENTITY_TYPE,
     TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO,
     NULL
 };
 
 static const gchar * const video_fixed_properties[] = {
     TP_PROP_CHANNEL_CHANNEL_TYPE,
-    TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
+    TP_PROP_CHANNEL_TARGET_ENTITY_TYPE,
     TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO,
     NULL
 };
@@ -392,7 +392,7 @@ example_call_manager_type_foreach_channel_class (GType type,
   GHashTable *table = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE,
           G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CALL1,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_ENTITY_TYPE_CONTACT,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT, TP_ENTITY_TYPE_CONTACT,
     TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO, G_TYPE_BOOLEAN, TRUE,
       NULL);
 
@@ -425,7 +425,7 @@ example_call_manager_request (ExampleCallManager *self,
     }
 
   if (tp_asv_get_uint32 (request_properties,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL) != TP_ENTITY_TYPE_CONTACT)
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, NULL) != TP_ENTITY_TYPE_CONTACT)
     {
       return FALSE;
     }

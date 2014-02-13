@@ -21,14 +21,14 @@ def create_request_dict(action, contact_id):
         return {
             TelepathyGLib.PROP_CHANNEL_CHANNEL_TYPE:
                 TelepathyGLib.IFACE_CHANNEL_TYPE_TEXT,
-            TelepathyGLib.PROP_CHANNEL_TARGET_HANDLE_TYPE:
+            TelepathyGLib.PROP_CHANNEL_TARGET_ENTITY_TYPE:
                 int(TelepathyGLib.HandleType.CONTACT),
             TelepathyGLib.PROP_CHANNEL_TARGET_ID: contact_id}
     elif action in ['audio', 'video']:
         return {
             TelepathyGLib.PROP_CHANNEL_CHANNEL_TYPE:
                 TelepathyGLib.IFACE_CHANNEL_TYPE_STREAMED_MEDIA,
-            TelepathyGLib.PROP_CHANNEL_TARGET_HANDLE_TYPE:
+            TelepathyGLib.PROP_CHANNEL_TARGET_ENTITY_TYPE:
                 int(TelepathyGLib.HandleType.CONTACT),
             TelepathyGLib.PROP_CHANNEL_TARGET_ID: contact_id,
             TelepathyGLib.PROP_CHANNEL_TYPE_STREAMED_MEDIA_INITIAL_AUDIO:

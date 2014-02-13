@@ -405,7 +405,7 @@ example_csh_room_channel_class_init (ExampleCSHRoomChannelClass *klass)
   object_class->finalize = finalize;
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_TEXT;
-  base_class->target_handle_type = TP_ENTITY_TYPE_ROOM;
+  base_class->target_entity_type = TP_ENTITY_TYPE_ROOM;
   base_class->get_interfaces = example_csh_room_channel_get_interfaces;
 
   base_class->close = example_csh_room_channel_close;

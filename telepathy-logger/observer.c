@@ -223,7 +223,7 @@ _tpl_observer_init (TplObserver *self)
       tp_asv_new (
        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
            TP_IFACE_CHANNEL_TYPE_TEXT,
-       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+       TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
            TP_ENTITY_TYPE_CONTACT,
       NULL));
 
@@ -232,7 +232,7 @@ _tpl_observer_init (TplObserver *self)
       tp_asv_new (
        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
            TP_IFACE_CHANNEL_TYPE_TEXT,
-       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+       TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
            TP_ENTITY_TYPE_ROOM,
       NULL));
 
@@ -241,7 +241,7 @@ _tpl_observer_init (TplObserver *self)
       tp_asv_new (
        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
            "im.telepathy.v1.Channel.Type.Call1",
-       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+       TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
            TP_ENTITY_TYPE_CONTACT,
       NULL));
 
@@ -250,7 +250,7 @@ _tpl_observer_init (TplObserver *self)
       tp_asv_new (
        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
            "im.telepathy.v1.Channel.Type.Call1",
-       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+       TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
            TP_ENTITY_TYPE_ROOM,
       NULL));
 

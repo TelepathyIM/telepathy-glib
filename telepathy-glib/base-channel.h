@@ -55,7 +55,7 @@ struct _TpBaseChannelClass
   TpDBusPropertiesMixinClass dbus_props_class;
 
   const gchar *channel_type;
-  TpEntityType target_handle_type;
+  TpEntityType target_entity_type;
 
   TpBaseChannelCloseFunc close;
   TpBaseChannelFillPropertiesFunc fill_immutable_properties;

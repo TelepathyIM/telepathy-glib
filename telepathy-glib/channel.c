@@ -486,7 +486,7 @@ _tp_channel_maybe_set_handle_type (TpChannel *self,
     {
       self->priv->handle_type = handle_type;
       g_hash_table_insert (self->priv->channel_properties,
-          g_strdup (TP_PROP_CHANNEL_TARGET_HANDLE_TYPE),
+          g_strdup (TP_PROP_CHANNEL_TARGET_ENTITY_TYPE),
           tp_g_value_slice_new_uint (handle_type));
     }
 }
@@ -567,7 +567,7 @@ tp_channel_set_property (GObject *object,
                   (GBoxedCopyFunc) tp_g_value_slice_dup);
 
               u = tp_asv_get_uint32 (self->priv->channel_properties,
-                  TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
+                  TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
               _tp_channel_maybe_set_handle_type (self, u, valid);
 
               u = tp_asv_get_uint32 (self->priv->channel_properties,
@@ -673,7 +673,7 @@ _tp_channel_got_properties (TpProxy *proxy,
   _tp_channel_maybe_set_interfaces (self,
       tp_asv_get_boxed (asv, "Interfaces", G_TYPE_STRV));
 
-  u = tp_asv_get_uint32 (asv, "TargetHandleType", &valid);
+  u = tp_asv_get_uint32 (asv, "TargetEntityType", &valid);
   _tp_channel_maybe_set_handle_type (self, u, valid);
 
   u = tp_asv_get_uint32 (asv, "TargetHandle", &valid);
@@ -1173,7 +1173,7 @@ tp_channel_class_init (TpChannelClass *klass)
    *
    * Changed in 0.11.4: this property is never %NULL. Previously,
    * it was %NULL before an identifier was known, or when a channel
-   * with no TargetID D-Bus property had TargetHandleType %TP_ENTITY_TYPE_NONE.
+   * with no TargetID D-Bus property had TargetEntityType %TP_ENTITY_TYPE_NONE.
    */
   param_spec = g_param_spec_string ("identifier",
       "The identifier",

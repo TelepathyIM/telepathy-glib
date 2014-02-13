@@ -178,7 +178,7 @@ class Dialler(Gtk.Application):
                 {
                     Tp.PROP_CHANNEL_CHANNEL_TYPE:
                         Tp.IFACE_CHANNEL_TYPE_CALL,
-                    Tp.PROP_CHANNEL_TARGET_HANDLE_TYPE:
+                    Tp.PROP_CHANNEL_TARGET_ENTITY_TYPE:
                         int(Tp.HandleType.CONTACT),
                     Tp.PROP_CHANNEL_TARGET_ID: self.target_entry.get_text(),
                     Tp.PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO: True,

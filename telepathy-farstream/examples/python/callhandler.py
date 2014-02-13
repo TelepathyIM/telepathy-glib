@@ -61,22 +61,22 @@ class CallHandler(dbus.service.Object, telepathy.server.DBusProperties):
     def _get_filters(self):
         return dbus.Array ([
             { CHANNEL_INTERFACE + ".ChannelType": CHANNEL_TYPE_CALL,
-              CHANNEL_INTERFACE + ".TargetHandleType":
+              CHANNEL_INTERFACE + ".TargetEntityType":
                 CONNECTION_HANDLE_TYPE_CONTACT,
               CALL_INITIAL_AUDIO: True,
             },
             { CHANNEL_INTERFACE + ".ChannelType": CHANNEL_TYPE_CALL,
-              CHANNEL_INTERFACE + ".TargetHandleType":
+              CHANNEL_INTERFACE + ".TargetEntityType":
                 CONNECTION_HANDLE_TYPE_CONTACT,
               CALL_INITIAL_VIDEO: True,
             },
             { CHANNEL_INTERFACE + ".ChannelType": CHANNEL_TYPE_CALL,
-              CHANNEL_INTERFACE + ".TargetHandleType":
+              CHANNEL_INTERFACE + ".TargetEntityType":
                 CONNECTION_HANDLE_TYPE_ROOM,
               CALL_INITIAL_AUDIO: True,
             },
             { CHANNEL_INTERFACE + ".ChannelType": CHANNEL_TYPE_CALL,
-              CHANNEL_INTERFACE + ".TargetHandleType":
+              CHANNEL_INTERFACE + ".TargetEntityType":
                 CONNECTION_HANDLE_TYPE_ROOM,
               CALL_INITIAL_VIDEO: True,
             }

@@ -14,5 +14,5 @@ Icon=face-smile
 
 [room]
 im.telepathy.v1.Channel.ChannelType s=im.telepathy.v1.Channel.Type.Text
-im.telepathy.v1.Channel.TargetHandleType u=2
+im.telepathy.v1.Channel.TargetEntityType u=2
 allowed=im.telepathy.v1.Channel.TargetHandle;im.telepathy.v1.Channel.TargetID;

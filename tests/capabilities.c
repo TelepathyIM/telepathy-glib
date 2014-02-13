@@ -37,7 +37,7 @@ add_text_chat_class (GPtrArray *classes,
   fixed = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_TEXT,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
           handle_type,
       NULL);
 
@@ -68,7 +68,7 @@ add_ft_class (GPtrArray *classes,
   fixed = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
           TP_ENTITY_TYPE_CONTACT,
       NULL);
 
@@ -127,7 +127,7 @@ test_basics (Test *test,
   chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
   g_assert_cmpstr (chan_type, ==, TP_IFACE_CHANNEL_TYPE_TEXT);
 
-  handle_type = tp_asv_get_uint32 (fixed, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
+  handle_type = tp_asv_get_uint32 (fixed, TP_PROP_CHANNEL_TARGET_ENTITY_TYPE,
       &valid);
   g_assert (valid);
   g_assert_cmpuint (handle_type, ==, TP_ENTITY_TYPE_CONTACT);
@@ -148,7 +148,7 @@ test_basics (Test *test,
   chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
   g_assert_cmpstr (chan_type, ==, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1);
 
-  handle_type = tp_asv_get_uint32 (fixed, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
+  handle_type = tp_asv_get_uint32 (fixed, TP_PROP_CHANNEL_TARGET_ENTITY_TYPE,
       &valid);
   g_assert (valid);
   g_assert_cmpuint (handle_type, ==, TP_ENTITY_TYPE_CONTACT);
@@ -253,7 +253,7 @@ add_stream_tube_class (GPtrArray *classes,
   fixed = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
           handle_type,
       NULL);
 
@@ -286,7 +286,7 @@ add_dbus_tube_class (GPtrArray *classes,
   fixed = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_DBUS_TUBE1,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
           handle_type,
       NULL);
 
@@ -611,7 +611,7 @@ add_room_list_class (GPtrArray *classes,
   fixed = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_ROOM_LIST1,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
           TP_ENTITY_TYPE_NONE,
       NULL);
 
@@ -718,7 +718,7 @@ add_sms_class (GPtrArray *classes,
   fixed = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_TEXT,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
           TP_ENTITY_TYPE_CONTACT,
       NULL);
 
@@ -820,7 +820,7 @@ add_call_class (GPtrArray *classes,
   fixed = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_CALL1,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
           handle_type,
       NULL);
 
@@ -1139,7 +1139,7 @@ test_classes_variant (Test *test,
   g_assert_cmpstr (chan_type, ==, TP_IFACE_CHANNEL_TYPE_TEXT);
 
   g_assert (g_variant_lookup (fixed,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, "u", &handle_type));
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, "u", &handle_type));
   g_assert_cmpuint (handle_type, ==, TP_ENTITY_TYPE_CONTACT);
 
   g_assert_cmpuint (g_variant_n_children (allowed), ==, 0);
@@ -1163,7 +1163,7 @@ test_classes_variant (Test *test,
   g_assert_cmpstr (chan_type, ==, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1);
 
   g_assert (g_variant_lookup (fixed,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, "u", &handle_type));
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, "u", &handle_type));
   g_assert_cmpuint (handle_type, ==, TP_ENTITY_TYPE_CONTACT);
 
   g_assert_cmpuint (g_variant_n_children (allowed), ==, 2);

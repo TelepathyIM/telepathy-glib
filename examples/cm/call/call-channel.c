@@ -338,7 +338,7 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
   call_class->add_content = call_add_content;
   call_class->hangup = call_hangup;
 
-  base_class->target_handle_type = TP_ENTITY_TYPE_CONTACT;
+  base_class->target_entity_type = TP_ENTITY_TYPE_CONTACT;
   base_class->get_interfaces = example_call_channel_get_interfaces;
   base_class->close = close_channel;
 

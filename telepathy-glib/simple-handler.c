@@ -50,7 +50,7 @@
  *
  * tp_base_client_take_handler_filter (client, tp_asv_new (
  *      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
- *      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_ENTITY_TYPE_CONTACT,
+ *      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT, TP_ENTITY_TYPE_CONTACT,
  *      NULL));
  *
  * tp_base_client_register (client, NULL);

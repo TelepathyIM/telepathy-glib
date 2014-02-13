@@ -61,7 +61,7 @@ if __name__ == '__main__':
     handler.add_handler_filter({
         TelepathyGLib.PROP_CHANNEL_CHANNEL_TYPE: TelepathyGLib.IFACE_CHANNEL_TYPE_TEXT,
         # bgo #637466
-        TelepathyGLib.PROP_CHANNEL_TARGET_HANDLE_TYPE: int(TelepathyGLib.HandleType.CONTACT),
+        TelepathyGLib.PROP_CHANNEL_TARGET_ENTITY_TYPE: int(TelepathyGLib.HandleType.CONTACT),
         TelepathyGLib.PROP_CHANNEL_REQUESTED: False,
     })
 

@@ -402,7 +402,7 @@ check_filters (GPtrArray *filters)
   g_assert_cmpstr (tp_asv_get_string (filter, TP_PROP_CHANNEL_CHANNEL_TYPE), ==,
       TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1);
   g_assert_cmpuint (tp_asv_get_uint32 (filter,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL), ==, TP_ENTITY_TYPE_CONTACT);
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, NULL), ==, TP_ENTITY_TYPE_CONTACT);
 }
 
 static void
@@ -481,7 +481,7 @@ test_observer (Test *test,
   tp_base_client_take_observer_filter (test->base_client, tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
           TP_ENTITY_TYPE_CONTACT,
         NULL));
 
@@ -625,7 +625,7 @@ test_approver (Test *test,
   tp_base_client_take_approver_filter (test->base_client, tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
           TP_ENTITY_TYPE_CONTACT,
         NULL));
 
@@ -813,7 +813,7 @@ test_handler (Test *test,
   tp_base_client_take_handler_filter (test->base_client, tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
           TP_ENTITY_TYPE_CONTACT,
         NULL));
 
@@ -965,7 +965,7 @@ test_handler_requests (Test *test,
   tp_base_client_take_handler_filter (test->base_client, tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
           TP_ENTITY_TYPE_CONTACT,
         NULL));
 

@@ -1606,7 +1606,7 @@ tp_account_channel_request_set_target_contact (
 
   /* Do not use tp_asv_set_uint32 or similar - the key is dup'd */
   g_hash_table_insert (self->priv->request,
-      g_strdup (TP_PROP_CHANNEL_TARGET_HANDLE_TYPE),
+      g_strdup (TP_PROP_CHANNEL_TARGET_ENTITY_TYPE),
       tp_g_value_slice_new_uint (TP_ENTITY_TYPE_CONTACT));
   /* We use the ID because it persists across a disconnect/reconnect */
   g_hash_table_insert (self->priv->request,
@@ -1643,7 +1643,7 @@ tp_account_channel_request_set_target_id (
 
   /* Do not use tp_asv_set_uint32 or similar - the key is dup'd */
   g_hash_table_insert (self->priv->request,
-      g_strdup (TP_PROP_CHANNEL_TARGET_HANDLE_TYPE),
+      g_strdup (TP_PROP_CHANNEL_TARGET_ENTITY_TYPE),
       tp_g_value_slice_new_uint (handle_type));
   g_hash_table_insert (self->priv->request,
       g_strdup (TP_PROP_CHANNEL_TARGET_ID),

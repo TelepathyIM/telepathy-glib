@@ -799,7 +799,7 @@ add_text_chat_class (GPtrArray *classes,
   fixed = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_TEXT,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
           handle_type,
       NULL);
 

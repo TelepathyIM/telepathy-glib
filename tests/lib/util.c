@@ -650,7 +650,7 @@ tp_tests_channel_new (TpConnection *conn,
   if (optional_handle_type != TP_ENTITY_TYPE_NONE)
     {
       tp_asv_set_uint32 (asv,
-          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, optional_handle_type);
+          TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, optional_handle_type);
     }
   if (optional_handle != 0)
     {

@@ -2358,13 +2358,13 @@ static void conn_requests_check_basic_properties (TpBaseConnection *self,
 static void
 conn_requests_requestotron_validate_handle (TpBaseConnection *self,
     GHashTable *requested_properties, TpChannelManagerRequestMethod method,
-    const gchar *type, TpEntityType target_handle_type,
+    const gchar *type, TpEntityType target_entity_type,
     TpHandle target_handle, const gchar *target_id,
     DBusGMethodInvocation *context);
 
 static void conn_requests_offer_request (TpBaseConnection *self,
     GHashTable *requested_properties, TpChannelManagerRequestMethod method,
-    const gchar *type, TpEntityType target_handle_type,
+    const gchar *type, TpEntityType target_entity_type,
     TpHandle target_handle, DBusGMethodInvocation *context);
 
 
@@ -2399,11 +2399,11 @@ conn_requests_check_basic_properties (TpBaseConnection *self,
                                       DBusGMethodInvocation *context)
 {
   /* Step 1:
-   *  Check that ChannelType, TargetHandleType, TargetHandle, TargetID have
+   *  Check that ChannelType, TargetEntityType, TargetHandle, TargetID have
    *  the correct types, and that ChannelType is not omitted.
    */
   const gchar *type;
-  TpEntityType target_handle_type;
+  TpEntityType target_entity_type;
   TpHandle target_handle;
   const gchar *target_id;
   gboolean valid;
@@ -2414,14 +2414,14 @@ conn_requests_check_basic_properties (TpBaseConnection *self,
   if (type == NULL)
     RETURN_INVALID_ARGUMENT ("ChannelType is required");
 
-  target_handle_type = tp_asv_get_uint32 (requested_properties,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
+  target_entity_type = tp_asv_get_uint32 (requested_properties,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
 
-  /* Allow TargetHandleType to be missing, but not to be otherwise broken */
+  /* Allow TargetEntityType to be missing, but not to be otherwise broken */
   if (!valid && tp_asv_lookup (requested_properties,
-          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE) != NULL)
+          TP_PROP_CHANNEL_TARGET_ENTITY_TYPE) != NULL)
     RETURN_INVALID_ARGUMENT (
-        "TargetHandleType must be an integer in range 0 to 2**32-1");
+        "TargetEntityType must be an integer in range 0 to 2**32-1");
 
   target_handle = tp_asv_get_uint32 (requested_properties,
       TP_PROP_CHANNEL_TARGET_HANDLE, &valid);
@@ -2458,7 +2458,7 @@ conn_requests_check_basic_properties (TpBaseConnection *self,
 
   conn_requests_requestotron_validate_handle (self,
       requested_properties, method,
-      type, target_handle_type, target_handle, target_id,
+      type, target_entity_type, target_handle, target_id,
       context);
 }
 
@@ -2472,7 +2472,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
                                             GHashTable *requested_properties,
                                             TpChannelManagerRequestMethod method,
                                             const gchar *type,
-                                            TpEntityType target_handle_type,
+                                            TpEntityType target_entity_type,
                                             TpHandle target_handle,
                                             const gchar *target_id,
                                             DBusGMethodInvocation *context)
@@ -2484,28 +2484,28 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
   GValue *target_id_value = NULL;
 
   /* Handle type 0 cannot have a handle */
-  if (target_handle_type == TP_ENTITY_TYPE_NONE && target_handle != 0)
+  if (target_entity_type == TP_ENTITY_TYPE_NONE && target_handle != 0)
     RETURN_INVALID_ARGUMENT (
-        "When TargetHandleType is NONE, TargetHandle must be omitted");
+        "When TargetEntityType is NONE, TargetHandle must be omitted");
 
   /* Handle type 0 cannot have a target id */
-  if (target_handle_type == TP_ENTITY_TYPE_NONE && target_id != NULL)
+  if (target_entity_type == TP_ENTITY_TYPE_NONE && target_id != NULL)
     RETURN_INVALID_ARGUMENT (
-      "When TargetHandleType is NONE, TargetID must be omitted");
+      "When TargetEntityType is NONE, TargetID must be omitted");
 
-  if (target_handle_type != TP_ENTITY_TYPE_NONE)
+  if (target_entity_type != TP_ENTITY_TYPE_NONE)
     {
       GError *error = NULL;
 
       if (target_handle == 0 && target_id == NULL)
-        RETURN_INVALID_ARGUMENT ("When TargetHandleType is not None, either "
+        RETURN_INVALID_ARGUMENT ("When TargetEntityType is not None, either "
             "TargetHandle or TargetID must also be given");
 
       if (target_handle != 0 && target_id != NULL)
         RETURN_INVALID_ARGUMENT (
             "TargetHandle and TargetID must not both be given");
 
-      handles = tp_base_connection_get_handles (self, target_handle_type);
+      handles = tp_base_connection_get_handles (self, target_entity_type);
 
       if (handles == NULL)
         {
@@ -2572,7 +2572,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
     }
 
   conn_requests_offer_request (self, requested_properties, method, type,
-      target_handle_type, target_handle, context);
+      target_entity_type, target_handle, context);
 
   /* If we made a new table, we should destroy it, and whichever of the GValues
    * holding TargetHandle or TargetID we filled in.  The other GValues are
@@ -2596,7 +2596,7 @@ conn_requests_offer_request (TpBaseConnection *self,
                              GHashTable *requested_properties,
                              TpChannelManagerRequestMethod method,
                              const gchar *type,
-                             TpEntityType target_handle_type,
+                             TpEntityType target_entity_type,
                              TpHandle target_handle,
                              DBusGMethodInvocation *context)
 {
@@ -2623,7 +2623,7 @@ conn_requests_offer_request (TpBaseConnection *self,
     }
 
   request = _tp_channel_manager_request_new (context, method,
-      type, target_handle_type, target_handle);
+      type, target_entity_type, target_handle);
   g_ptr_array_add (priv->channel_requests, request);
 
   for (i = 0; i < priv->channel_managers->len; i++)

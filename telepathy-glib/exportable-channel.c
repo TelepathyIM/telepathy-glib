@@ -109,7 +109,7 @@ exportable_channel_base_init (gpointer klass)
        *      tp_dbus_properties_mixin_make_properties_hash (object,
        *          // The spec says these properties MUST be included:
        *          TP_IFACE_CHANNEL, "TargetHandle",
-       *          TP_IFACE_CHANNEL, "TargetHandleType",
+       *          TP_IFACE_CHANNEL, "TargetEntityType",
        *          TP_IFACE_CHANNEL, "ChannelType",
        *          TP_IFACE_CHANNEL, "TargetID",
        *          TP_IFACE_CHANNEL, "Requested",

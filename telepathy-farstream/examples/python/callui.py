@@ -47,7 +47,7 @@ class CallChannelRequest:
 
         props = {
             CHANNEL_INTERFACE + ".ChannelType": CHANNEL_TYPE_CALL,
-            CHANNEL_INTERFACE + ".TargetHandleType": calltype,
+            CHANNEL_INTERFACE + ".TargetEntityType": calltype,
               CHANNEL_INTERFACE + ".TargetID": contact,
         }
 
@@ -76,7 +76,7 @@ class CallChannelRequest:
 class Account:
     CALL_CLASS = {
         CHANNEL_INTERFACE + '.ChannelType': CHANNEL_TYPE_CALL,
-        CHANNEL_INTERFACE + '.TargetHandleType': HANDLE_TYPE_CONTACT
+        CHANNEL_INTERFACE + '.TargetEntityType': HANDLE_TYPE_CONTACT
     }
 
     def __init__(self, bus, path):
@@ -103,7 +103,7 @@ class Account:
         conn = self.bus.get_object (path[1:].replace("/","."), path)
         yours, channel, properties = conn.EnsureChannel (
             { CHANNEL_INTERFACE + ".ChannelType": CHANNEL_TYPE_CONTACT_LIST,
-              CHANNEL_INTERFACE + ".TargetHandleType": HANDLE_TYPE_LIST,
+              CHANNEL_INTERFACE + ".TargetEntityType": HANDLE_TYPE_LIST,
               CHANNEL_INTERFACE + ".TargetID": "subscribe"
             },
             dbus_interface = CONNECTION_INTERFACE_REQUESTS

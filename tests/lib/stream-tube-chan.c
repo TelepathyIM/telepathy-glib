@@ -277,7 +277,7 @@ tp_tests_stream_tube_channel_class_init (TpTestsStreamTubeChannelClass *klass)
   base_class->close = channel_close;
   base_class->fill_immutable_properties = fill_immutable_properties;
 
-  /* base_class->target_handle_type is defined in subclasses */
+  /* base_class->target_entity_type is defined in subclasses */
 
   param_spec = g_param_spec_string ("service", "service name",
       "the service associated with this tube object.",
@@ -625,7 +625,7 @@ tp_tests_contact_stream_tube_channel_class_init (
 {
   TpBaseChannelClass *base_class = TP_BASE_CHANNEL_CLASS (klass);
 
-  base_class->target_handle_type = TP_ENTITY_TYPE_CONTACT;
+  base_class->target_entity_type = TP_ENTITY_TYPE_CONTACT;
 }
 
 /* Room Stream Tube */
@@ -646,5 +646,5 @@ tp_tests_room_stream_tube_channel_class_init (
 {
   TpBaseChannelClass *base_class = TP_BASE_CHANNEL_CLASS (klass);
 
-  base_class->target_handle_type = TP_ENTITY_TYPE_ROOM;
+  base_class->target_entity_type = TP_ENTITY_TYPE_ROOM;
 }

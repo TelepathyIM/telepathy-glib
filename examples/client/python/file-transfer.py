@@ -65,7 +65,7 @@ if __name__ == '__main__':
     request_dict = {
         TelepathyGLib.PROP_CHANNEL_CHANNEL_TYPE:
             TelepathyGLib.IFACE_CHANNEL_TYPE_FILE_TRANSFER,
-        TelepathyGLib.PROP_CHANNEL_TARGET_HANDLE_TYPE:
+        TelepathyGLib.PROP_CHANNEL_TARGET_ENTITY_TYPE:
             int(TelepathyGLib.HandleType.CONTACT),
         TelepathyGLib.PROP_CHANNEL_TARGET_ID:
             contact_id,

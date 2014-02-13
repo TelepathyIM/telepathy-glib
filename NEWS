@@ -445,7 +445,7 @@ Fixes:
 • Fix generation of reentrant-methods.list in highly parallel builds
   (fd.o #52480, Ross Burton)
 
-• TpBaseChannel: assert that the subclass sets TargetHandleType. (Will)
+• TpBaseChannel: assert that the subclass sets TargetEntityType. (Will)
 
 telepathy-glib 0.19.5 (2012-07-24)
 ==================================

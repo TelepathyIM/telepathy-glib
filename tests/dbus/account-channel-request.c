@@ -187,7 +187,7 @@ create_request (void)
 {
   return tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
         TP_ENTITY_TYPE_CONTACT,
       TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, "alice",
       NULL);
@@ -199,7 +199,7 @@ floating_request (void)
   return g_variant_new_parsed (
       "{ %s: <%s>, %s: <%u>, %s: <%s> }",
       TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT,
       TP_PROP_CHANNEL_TARGET_ID, "alice");
 }
 
@@ -237,7 +237,7 @@ test_handle_create_success (Test *test,
   g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
         TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
   g_assert_cmpuint (tp_asv_get_uint32 (test->cd_service->last_request,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL), ==, TP_ENTITY_TYPE_CONTACT);
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, NULL), ==, TP_ENTITY_TYPE_CONTACT);
   g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 3);
 
   g_object_unref (req);
@@ -276,7 +276,7 @@ test_handle_create_fail (Test *test,
   g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
         TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
   g_assert_cmpuint (tp_asv_get_uint32 (test->cd_service->last_request,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL), ==, TP_ENTITY_TYPE_CONTACT);
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, NULL), ==, TP_ENTITY_TYPE_CONTACT);
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
         TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO, NULL), ==, TRUE);
   g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
@@ -507,7 +507,7 @@ test_handle_ensure_success (Test *test,
   g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
         TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
   g_assert_cmpuint (tp_asv_get_uint32 (test->cd_service->last_request,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL), ==, TP_ENTITY_TYPE_CONTACT);
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, NULL), ==, TP_ENTITY_TYPE_CONTACT);
   g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 3);
 }
 
