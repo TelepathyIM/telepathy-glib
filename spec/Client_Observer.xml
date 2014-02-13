@@ -194,12 +194,12 @@ Interfaces=im.telepathy.v1.Client.Observer;
 
 [im.telepathy.v1.Client.Observer.ObserverChannelFilter 0]
 im.telepathy.v1.Channel.ChannelType s=im.telepathy.v1.Channel.Type.Text
-im.telepathy.v1.Channel.TargetHandleType u=1
+im.telepathy.v1.Channel.TargetEntityType u=1
 im.telepathy.v1.Channel.Requested b=true
 
 [im.telepathy.v1.Client.Observer.ObserverChannelFilter 1]
 im.telepathy.v1.Channel.ChannelType s=im.telepathy.v1.Channel.Type.Text
-im.telepathy.v1.Channel.TargetHandleType u=2
+im.telepathy.v1.Channel.TargetEntityType u=2
 im.telepathy.v1.Channel.Requested b=true
 </pre>
 
