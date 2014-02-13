@@ -338,7 +338,7 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
   call_class->add_content = call_add_content;
   call_class->hangup = call_hangup;
 
-  base_class->target_handle_type = TP_HANDLE_TYPE_CONTACT;
+  base_class->target_handle_type = TP_ENTITY_TYPE_CONTACT;
   base_class->get_interfaces = example_call_channel_get_interfaces;
   base_class->close = close_channel;
 
@@ -412,7 +412,7 @@ simulate_contact_answered_cb (gpointer p)
     }
 
   contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+      (self->priv->conn, TP_ENTITY_TYPE_CONTACT);
   peer = tp_handle_inspect (contact_repo, self->priv->handle);
 
   /* If the contact's ID contains the magic string "(terminate)", simulate
@@ -565,7 +565,7 @@ simulate_contact_ringing_cb (gpointer p)
 {
   ExampleCallChannel *self = p;
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+      (self->priv->conn, TP_ENTITY_TYPE_CONTACT);
   const gchar *peer;
 
   tp_base_call_channel_update_member_flags ((TpBaseCallChannel *) self,
@@ -623,7 +623,7 @@ accept_incoming_call (ExampleCallChannel *self)
 {
   TpBaseCallChannel *base = (TpBaseCallChannel *) self;
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+      (self->priv->conn, TP_ENTITY_TYPE_CONTACT);
   GList *contents;
 
   g_message ("SIGNALLING: send: Accepting incoming call from %s",
@@ -768,7 +768,7 @@ hold_request_hold (TpSvcChannelInterfaceHold1 *iface,
 {
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+      (self->priv->conn, TP_ENTITY_TYPE_CONTACT);
   GError *error = NULL;
   const gchar *peer;
   GSourceFunc callback;

@@ -36,7 +36,7 @@
  * time.
  *
  * Most connection managers will use this for handles of type
- * %TP_HANDLE_TYPE_LIST.
+ * %TP_ENTITY_TYPE_LIST.
  */
 
 #include "config.h"
@@ -60,7 +60,7 @@ struct _TpStaticHandleRepoClass {
 
 struct _TpStaticHandleRepo {
   GObject parent;
-  TpHandleType handle_type;
+  TpEntityType handle_type;
   TpHandle last_handle;
   gchar **handle_names;
   GData **datalists;

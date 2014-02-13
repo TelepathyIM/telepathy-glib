@@ -995,13 +995,13 @@ sig_match_conn (TpStreamTubeChannel *self,
 static gboolean
 can_identify_contact (TpStreamTubeChannel *self)
 {
-  TpHandleType handle_type;
+  TpEntityType handle_type;
 
   tp_channel_get_handle (TP_CHANNEL (self), &handle_type);
 
   /* With contact stream tube, it's always the same contact connecting to the
    * tube */
-  if (handle_type == TP_HANDLE_TYPE_CONTACT)
+  if (handle_type == TP_ENTITY_TYPE_CONTACT)
     return TRUE;
 
   /* Room stream tube, we need either the Credentials or Port access control
@@ -1097,11 +1097,11 @@ _new_remote_connection (TpChannel *channel,
   ConnWaitingSig *found_conn = NULL;
   SigWaitingConn *sig;
   TpHandle chan_handle;
-  TpHandleType handle_type;
+  TpEntityType handle_type;
   gboolean rejected = FALSE;
 
   chan_handle = tp_channel_get_handle (channel, &handle_type);
-  if (handle_type == TP_HANDLE_TYPE_CONTACT &&
+  if (handle_type == TP_ENTITY_TYPE_CONTACT &&
       handle != chan_handle)
     {
       DEBUG ("CM claimed that handle %u connected to the stream tube, "

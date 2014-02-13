@@ -321,7 +321,7 @@ struct _TpBaseConnectionPrivate
   /* array of reffed (TpChannelManagerRequest *) */
   GPtrArray *channel_requests;
 
-  TpHandleRepoIface *handles[TP_NUM_HANDLE_TYPES];
+  TpHandleRepoIface *handles[TP_NUM_ENTITY_TYPES];
 
   /* Created in constructed, this is an array of static strings which
    * represent the interfaces on this connection.
@@ -528,7 +528,7 @@ tp_base_connection_dispose (GObject *object)
       priv->channel_requests = NULL;
     }
 
-  for (i = 0; i < TP_NUM_HANDLE_TYPES; i++)
+  for (i = 0; i < TP_NUM_ENTITY_TYPES; i++)
     tp_clear_object (priv->handles + i);
 
   if (priv->interfaces)
@@ -755,13 +755,13 @@ manager_channel_closed_cb (TpChannelManager *manager,
  */
 void
 _tp_base_connection_set_handle_repo (TpBaseConnection *self,
-    TpHandleType handle_type,
+    TpEntityType handle_type,
     TpHandleRepoIface *handle_repo)
 {
   g_return_if_fail (TP_IS_BASE_CONNECTION (self));
   g_return_if_fail (!self->priv->been_constructed);
   g_return_if_fail (tp_handle_type_is_valid (handle_type, NULL));
-  g_return_if_fail (self->priv->handles[TP_HANDLE_TYPE_CONTACT] != NULL);
+  g_return_if_fail (self->priv->handles[TP_ENTITY_TYPE_CONTACT] != NULL);
   g_return_if_fail (self->priv->handles[handle_type] == NULL);
   g_return_if_fail (TP_IS_HANDLE_REPO_IFACE (handle_repo));
 
@@ -812,7 +812,7 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
   (cls->create_handle_repos) (self, priv->handles);
 
   /* a connection that doesn't support contacts is no use to anyone */
-  g_assert (priv->handles[TP_HANDLE_TYPE_CONTACT] != NULL);
+  g_assert (priv->handles[TP_ENTITY_TYPE_CONTACT] != NULL);
 
   if (cls->create_channel_managers != NULL)
     priv->channel_managers = cls->create_channel_managers (self);
@@ -1009,7 +1009,7 @@ _tp_base_connection_fill_contact_attributes (TpBaseConnection *self,
       return;
     }
 
-  tmp = tp_handle_inspect (self->priv->handles[TP_HANDLE_TYPE_CONTACT],
+  tmp = tp_handle_inspect (self->priv->handles[TP_ENTITY_TYPE_CONTACT],
       contact);
   g_assert (tmp != NULL);
 
@@ -1064,14 +1064,14 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   /**
    * TpBaseConnection:self-handle: (skip)
    *
-   * The handle of type %TP_HANDLE_TYPE_CONTACT representing the local user.
+   * The handle of type %TP_ENTITY_TYPE_CONTACT representing the local user.
    * Must be set nonzero by the subclass before moving to state CONNECTED.
    *
    * Since: 0.7.15
    */
   param_spec = g_param_spec_uint ("self-handle",
       "Connection.SelfHandle",
-      "The handle of type %TP_HANDLE_TYPE_CONTACT representing the local user.",
+      "The handle of type %TP_ENTITY_TYPE_CONTACT representing the local user.",
       0, G_MAXUINT, 0,
       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SELF_HANDLE, param_spec);
@@ -1245,7 +1245,7 @@ tp_base_connection_init (TpBaseConnection *self)
   self->priv = priv;
   priv->status = TP_INTERNAL_CONNECTION_STATUS_NEW;
 
-  for (i = 0; i < TP_NUM_HANDLE_TYPES; i++)
+  for (i = 0; i < TP_NUM_ENTITY_TYPES; i++)
     {
       priv->handles[i] = NULL;
     }
@@ -1632,11 +1632,11 @@ tp_base_connection_check_connected (TpBaseConnection *self,
  */
 TpHandleRepoIface *
 tp_base_connection_get_handles (TpBaseConnection *self,
-                                TpHandleType handle_type)
+                                TpEntityType handle_type)
 {
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
 
-  if (handle_type >= TP_NUM_HANDLE_TYPES)
+  if (handle_type >= TP_NUM_ENTITY_TYPES)
     return NULL;
 
   return self->priv->handles[handle_type];
@@ -1688,7 +1688,7 @@ tp_base_connection_set_self_handle (TpBaseConnection *self,
   if (self_handle != 0)
     {
       self->priv->self_id = tp_handle_inspect (
-          self->priv->handles[TP_HANDLE_TYPE_CONTACT], self_handle);
+          self->priv->handles[TP_ENTITY_TYPE_CONTACT], self_handle);
     }
 
   tp_svc_connection_emit_self_contact_changed (self,
@@ -1991,7 +1991,7 @@ tp_base_connection_change_status (TpBaseConnection *self,
        * before changing the state to CONNECTED */
 
       g_assert (priv->self_handle != 0);
-      g_assert (tp_handle_is_valid (priv->handles[TP_HANDLE_TYPE_CONTACT],
+      g_assert (tp_handle_is_valid (priv->handles[TP_ENTITY_TYPE_CONTACT],
                 priv->self_handle, NULL));
       if (klass->connected)
         (klass->connected) (self);
@@ -2358,13 +2358,13 @@ static void conn_requests_check_basic_properties (TpBaseConnection *self,
 static void
 conn_requests_requestotron_validate_handle (TpBaseConnection *self,
     GHashTable *requested_properties, TpChannelManagerRequestMethod method,
-    const gchar *type, TpHandleType target_handle_type,
+    const gchar *type, TpEntityType target_handle_type,
     TpHandle target_handle, const gchar *target_id,
     DBusGMethodInvocation *context);
 
 static void conn_requests_offer_request (TpBaseConnection *self,
     GHashTable *requested_properties, TpChannelManagerRequestMethod method,
-    const gchar *type, TpHandleType target_handle_type,
+    const gchar *type, TpEntityType target_handle_type,
     TpHandle target_handle, DBusGMethodInvocation *context);
 
 
@@ -2403,7 +2403,7 @@ conn_requests_check_basic_properties (TpBaseConnection *self,
    *  the correct types, and that ChannelType is not omitted.
    */
   const gchar *type;
-  TpHandleType target_handle_type;
+  TpEntityType target_handle_type;
   TpHandle target_handle;
   const gchar *target_id;
   gboolean valid;
@@ -2472,7 +2472,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
                                             GHashTable *requested_properties,
                                             TpChannelManagerRequestMethod method,
                                             const gchar *type,
-                                            TpHandleType target_handle_type,
+                                            TpEntityType target_handle_type,
                                             TpHandle target_handle,
                                             const gchar *target_id,
                                             DBusGMethodInvocation *context)
@@ -2484,16 +2484,16 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
   GValue *target_id_value = NULL;
 
   /* Handle type 0 cannot have a handle */
-  if (target_handle_type == TP_HANDLE_TYPE_NONE && target_handle != 0)
+  if (target_handle_type == TP_ENTITY_TYPE_NONE && target_handle != 0)
     RETURN_INVALID_ARGUMENT (
         "When TargetHandleType is NONE, TargetHandle must be omitted");
 
   /* Handle type 0 cannot have a target id */
-  if (target_handle_type == TP_HANDLE_TYPE_NONE && target_id != NULL)
+  if (target_handle_type == TP_ENTITY_TYPE_NONE && target_id != NULL)
     RETURN_INVALID_ARGUMENT (
       "When TargetHandleType is NONE, TargetID must be omitted");
 
-  if (target_handle_type != TP_HANDLE_TYPE_NONE)
+  if (target_handle_type != TP_ENTITY_TYPE_NONE)
     {
       GError *error = NULL;
 
@@ -2596,7 +2596,7 @@ conn_requests_offer_request (TpBaseConnection *self,
                              GHashTable *requested_properties,
                              TpChannelManagerRequestMethod method,
                              const gchar *type,
-                             TpHandleType target_handle_type,
+                             TpEntityType target_handle_type,
                              TpHandle target_handle,
                              DBusGMethodInvocation *context)
 {
@@ -2974,7 +2974,7 @@ tp_base_connection_dup_contact_attributes_hash (TpBaseConnection *self,
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
   g_return_val_if_fail (tp_base_connection_check_connected (self, NULL), NULL);
 
-  contact_repo = tp_base_connection_get_handles (self, TP_HANDLE_TYPE_CONTACT);
+  contact_repo = tp_base_connection_get_handles (self, TP_ENTITY_TYPE_CONTACT);
   klass = TP_BASE_CONNECTION_GET_CLASS (self);
   g_return_val_if_fail (klass->fill_contact_attributes != NULL, NULL);
 
@@ -3116,7 +3116,7 @@ contacts_get_contact_by_id_impl (TpSvcConnection *iface,
 {
   TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
   GetContactByIdData *data;
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);

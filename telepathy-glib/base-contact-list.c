@@ -699,7 +699,7 @@ tp_base_contact_list_constructed (GObject *object)
     }
 
   self->priv->contact_repo = tp_base_connection_get_handles (self->priv->conn,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
   g_object_ref (self->priv->contact_repo);
 
   if (TP_IS_CONTACT_GROUP_LIST (self))
@@ -3168,7 +3168,7 @@ tp_base_contact_list_dup_contact_groups (TpBaseContactList *self,
  *
  * Signature of a virtual method that lists the members of a group.
  *
- * Returns: (transfer full): a set of contact (%TP_HANDLE_TYPE_CONTACT) handles
+ * Returns: (transfer full): a set of contact (%TP_ENTITY_TYPE_CONTACT) handles
  *
  * Since: 0.13.0
  */
@@ -3190,7 +3190,7 @@ tp_base_contact_list_dup_contact_groups (TpBaseContactList *self,
  * method, implemented using #TpContactGroupListInterface.dup_group_members.
  * It must always be implemented.
  *
- * Returns: a set of contact (%TP_HANDLE_TYPE_CONTACT) handles
+ * Returns: a set of contact (%TP_ENTITY_TYPE_CONTACT) handles
  *
  * Since: 0.13.0
  */

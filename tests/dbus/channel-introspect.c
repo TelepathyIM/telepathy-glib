@@ -49,7 +49,7 @@ assert_chan_sane (TpChannel *chan,
     const gchar *initiator_id)
 {
   GVariant *variant;
-  TpHandleType type;
+  TpEntityType type;
   TpContact *contact;
 
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
@@ -57,7 +57,7 @@ assert_chan_sane (TpChannel *chan,
   g_assert_cmpuint (tp_channel_get_handle (chan, NULL), ==, handle);
   g_assert_cmpuint (tp_channel_get_handle (chan, &type), ==, handle);
   g_assert_cmpuint (type, ==,
-      handle == 0 ? TP_HANDLE_TYPE_NONE : TP_HANDLE_TYPE_CONTACT);
+      handle == 0 ? TP_ENTITY_TYPE_NONE : TP_ENTITY_TYPE_CONTACT);
   g_assert_cmpstr (tp_channel_get_channel_type (chan), ==,
       TP_IFACE_CHANNEL_TYPE_TEXT);
   g_assert_cmpuint (tp_channel_get_channel_type_id (chan), ==,
@@ -89,7 +89,7 @@ assert_chan_sane (TpChannel *chan,
       TP_IFACE_CHANNEL_TYPE_TEXT);
   g_assert_cmpuint (
       tp_vardict_get_uint32 (variant, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL), ==,
-      handle == 0 ? TP_HANDLE_TYPE_NONE : TP_HANDLE_TYPE_CONTACT);
+      handle == 0 ? TP_ENTITY_TYPE_NONE : TP_ENTITY_TYPE_CONTACT);
   g_assert_cmpuint (
       tp_vardict_get_uint32 (variant, TP_PROP_CHANNEL_TARGET_HANDLE, NULL), ==,
       handle);
@@ -127,7 +127,7 @@ main (int argc,
   service_conn = TP_TESTS_SIMPLE_CONNECTION (service_conn_as_base);
 
   contact_repo = tp_base_connection_get_handles (service_conn_as_base,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
   g_assert (contact_repo != NULL);
 
   handle = tp_handle_ensure (contact_repo, IDENTIFIER, NULL, &error);
@@ -222,7 +222,7 @@ main (int argc,
   asv = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_TEXT,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
+      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_ENTITY_TYPE_CONTACT,
       TP_PROP_CHANNEL_TARGET_HANDLE, G_TYPE_UINT, handle,
       TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, IDENTIFIER,
       TP_PROP_CHANNEL_INITIATOR_HANDLE, G_TYPE_UINT, handle,
@@ -261,7 +261,7 @@ main (int argc,
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
             TP_IFACE_CHANNEL_TYPE_TEXT,
         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-            TP_HANDLE_TYPE_CONTACT,
+            TP_ENTITY_TYPE_CONTACT,
         TP_PROP_CHANNEL_TARGET_HANDLE, G_TYPE_UINT, handle,
         TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, IDENTIFIER,
         TP_PROP_CHANNEL_INITIATOR_HANDLE, G_TYPE_UINT, handle,
@@ -332,7 +332,7 @@ main (int argc,
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
             TP_IFACE_CHANNEL_TYPE_TEXT,
         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-            TP_HANDLE_TYPE_CONTACT,
+            TP_ENTITY_TYPE_CONTACT,
         TP_PROP_CHANNEL_TARGET_HANDLE, G_TYPE_UINT, handle,
         TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, IDENTIFIER,
         TP_PROP_CHANNEL_INITIATOR_HANDLE, G_TYPE_UINT, handle,

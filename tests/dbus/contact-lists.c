@@ -293,7 +293,7 @@ setup_pre_connect (
   g_assert_no_error (error);
 
   test->contact_repo = tp_base_connection_get_handles (
-      test->service_conn_as_base, TP_HANDLE_TYPE_CONTACT);
+      test->service_conn_as_base, TP_ENTITY_TYPE_CONTACT);
 
   test->conn = tp_tests_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);

@@ -28,7 +28,7 @@ setup (Test *test,
 
 static void
 add_text_chat_class (GPtrArray *classes,
-    TpHandleType handle_type)
+    TpEntityType handle_type)
 {
   GHashTable *fixed;
   const gchar * const allowed[] = { NULL };
@@ -69,7 +69,7 @@ add_ft_class (GPtrArray *classes,
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-          TP_HANDLE_TYPE_CONTACT,
+          TP_ENTITY_TYPE_CONTACT,
       NULL);
 
   arr = tp_value_array_build (2,
@@ -92,12 +92,12 @@ test_basics (Test *test,
   GHashTable *fixed;
   GStrv allowed;
   const gchar *chan_type;
-  TpHandleType handle_type;
+  TpEntityType handle_type;
   gboolean valid;
 
   /* TpCapabilities containing the text chats and ft caps */
   classes = g_ptr_array_sized_new (2);
-  add_text_chat_class (classes, TP_HANDLE_TYPE_CONTACT);
+  add_text_chat_class (classes, TP_ENTITY_TYPE_CONTACT);
   add_ft_class (classes, NULL);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
@@ -130,7 +130,7 @@ test_basics (Test *test,
   handle_type = tp_asv_get_uint32 (fixed, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
       &valid);
   g_assert (valid);
-  g_assert_cmpuint (handle_type, ==, TP_HANDLE_TYPE_CONTACT);
+  g_assert_cmpuint (handle_type, ==, TP_ENTITY_TYPE_CONTACT);
 
   g_assert_cmpuint (g_strv_length (allowed), ==, 0);
 
@@ -151,7 +151,7 @@ test_basics (Test *test,
   handle_type = tp_asv_get_uint32 (fixed, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
       &valid);
   g_assert (valid);
-  g_assert_cmpuint (handle_type, ==, TP_HANDLE_TYPE_CONTACT);
+  g_assert_cmpuint (handle_type, ==, TP_ENTITY_TYPE_CONTACT);
 
   g_assert_cmpuint (g_strv_length (allowed), ==, 2);
   g_assert (tp_strv_contains ((const gchar * const * ) allowed,
@@ -171,7 +171,7 @@ test_supports (Test *test,
 
   /* TpCapabilities containing the text chats caps */
   classes = g_ptr_array_sized_new (1);
-  add_text_chat_class (classes, TP_HANDLE_TYPE_CONTACT);
+  add_text_chat_class (classes, TP_ENTITY_TYPE_CONTACT);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -190,7 +190,7 @@ test_supports (Test *test,
 
   /* TpCapabilities containing the text chatrooms caps */
   classes = g_ptr_array_sized_new (1);
-  add_text_chat_class (classes, TP_HANDLE_TYPE_ROOM);
+  add_text_chat_class (classes, TP_ENTITY_TYPE_ROOM);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -209,8 +209,8 @@ test_supports (Test *test,
 
   /* TpCapabilities containing both caps */
   classes = g_ptr_array_sized_new (2);
-  add_text_chat_class (classes, TP_HANDLE_TYPE_CONTACT);
-  add_text_chat_class (classes, TP_HANDLE_TYPE_ROOM);
+  add_text_chat_class (classes, TP_ENTITY_TYPE_CONTACT);
+  add_text_chat_class (classes, TP_ENTITY_TYPE_ROOM);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -243,7 +243,7 @@ test_supports (Test *test,
 
 static void
 add_stream_tube_class (GPtrArray *classes,
-    TpHandleType handle_type,
+    TpEntityType handle_type,
     const gchar *service)
 {
   GHashTable *fixed;
@@ -275,7 +275,7 @@ add_stream_tube_class (GPtrArray *classes,
 
 static void
 add_dbus_tube_class (GPtrArray *classes,
-    TpHandleType handle_type,
+    TpEntityType handle_type,
     const gchar *service_name,
     gboolean add_extra_fixed)
 {
@@ -320,27 +320,27 @@ test_supports_tube (Test *test,
   caps = _tp_capabilities_new (NULL, TRUE);
 
   g_assert (!tp_capabilities_supports_stream_tubes (caps,
-        TP_HANDLE_TYPE_CONTACT, NULL));
-  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
+        TP_ENTITY_TYPE_CONTACT, NULL));
+  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_ROOM,
         NULL));
   g_assert (!tp_capabilities_supports_stream_tubes (caps,
-        TP_HANDLE_TYPE_CONTACT, "test-service"));
-  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
+        TP_ENTITY_TYPE_CONTACT, "test-service"));
+  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "test-service"));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         NULL));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_ROOM,
         NULL));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         "com.Test"));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "com.Test"));
 
   g_object_unref (caps);
 
   /* TpCapabilities containing the private stream tube caps without service */
   classes = g_ptr_array_sized_new (1);
-  add_stream_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL);
+  add_stream_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -350,21 +350,21 @@ test_supports_tube (Test *test,
   g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
      classes);
 
-  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         NULL));
-  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_ROOM,
         NULL));
   g_assert (!tp_capabilities_supports_stream_tubes (caps,
-        TP_HANDLE_TYPE_CONTACT, "test-service"));
-  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
+        TP_ENTITY_TYPE_CONTACT, "test-service"));
+  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "test-service"));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         NULL));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_ROOM,
         NULL));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         "com.Test"));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "com.Test"));
 
   g_object_unref (caps);
@@ -372,8 +372,8 @@ test_supports_tube (Test *test,
   /* TpCapabilities containing the private and muc stream tube caps without
    * service */
   classes = g_ptr_array_sized_new (2);
-  add_stream_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL);
-  add_stream_tube_class (classes, TP_HANDLE_TYPE_ROOM, NULL);
+  add_stream_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL);
+  add_stream_tube_class (classes, TP_ENTITY_TYPE_ROOM, NULL);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -383,21 +383,21 @@ test_supports_tube (Test *test,
   g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
      classes);
 
-  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         NULL));
-  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_ROOM,
         NULL));
   g_assert (!tp_capabilities_supports_stream_tubes (caps,
-        TP_HANDLE_TYPE_CONTACT, "test-service"));
-  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
+        TP_ENTITY_TYPE_CONTACT, "test-service"));
+  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "test-service"));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         NULL));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_ROOM,
         NULL));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         "com.Test"));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "com.Test"));
 
   g_object_unref (caps);
@@ -405,10 +405,10 @@ test_supports_tube (Test *test,
   /* TpCapabilities containing the private and muc stream tube caps and
    * one with a service */
   classes = g_ptr_array_sized_new (4);
-  add_stream_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL);
-  add_stream_tube_class (classes, TP_HANDLE_TYPE_ROOM, NULL);
-  add_stream_tube_class (classes, TP_HANDLE_TYPE_CONTACT, "test-service");
-  add_stream_tube_class (classes, TP_HANDLE_TYPE_ROOM, "test-service");
+  add_stream_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL);
+  add_stream_tube_class (classes, TP_ENTITY_TYPE_ROOM, NULL);
+  add_stream_tube_class (classes, TP_ENTITY_TYPE_CONTACT, "test-service");
+  add_stream_tube_class (classes, TP_ENTITY_TYPE_ROOM, "test-service");
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -418,33 +418,33 @@ test_supports_tube (Test *test,
   g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
      classes);
 
-  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         NULL));
-  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_ROOM,
         NULL));
-  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         "test-service"));
-  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "test-service"));
   g_assert (!tp_capabilities_supports_stream_tubes (caps,
-        TP_HANDLE_TYPE_CONTACT, "badger"));
-  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
+        TP_ENTITY_TYPE_CONTACT, "badger"));
+  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "badger"));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         NULL));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_ROOM,
         NULL));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         "com.Test"));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "com.Test"));
 
   g_object_unref (caps);
 
   /* Connection capabilities */
   classes = g_ptr_array_sized_new (2);
-  add_stream_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL);
-  add_dbus_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL, FALSE);
+  add_stream_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL);
+  add_dbus_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL, FALSE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -454,30 +454,30 @@ test_supports_tube (Test *test,
   g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
      classes);
 
-  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         NULL));
-  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_ROOM,
         NULL));
   /* the service is meaningless for connection capabilities */
-  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         "test-service"));
-  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "test-service"));
-  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         NULL));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_ROOM,
         NULL));
   /* the service name is meaningless for connection capabilities */
-  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         "com.Test"));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "com.Test"));
 
   g_object_unref (caps);
 
   /* TpCapabilities containing the private dbus tube caps without service */
   classes = g_ptr_array_sized_new (1);
-  add_dbus_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL, FALSE);
+  add_dbus_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL, FALSE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -488,20 +488,20 @@ test_supports_tube (Test *test,
      classes);
 
   g_assert (!tp_capabilities_supports_stream_tubes (caps,
-        TP_HANDLE_TYPE_CONTACT, NULL));
-  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
+        TP_ENTITY_TYPE_CONTACT, NULL));
+  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_ROOM,
         NULL));
   g_assert (!tp_capabilities_supports_stream_tubes (caps,
-        TP_HANDLE_TYPE_CONTACT, "test-service"));
-  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
+        TP_ENTITY_TYPE_CONTACT, "test-service"));
+  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "test-service"));
-  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         NULL));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_ROOM,
         NULL));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         "com.Test"));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "com.Test"));
 
   g_object_unref (caps);
@@ -509,8 +509,8 @@ test_supports_tube (Test *test,
   /* TpCapabilities containing the private and muc dbus tube caps without
    * service */
   classes = g_ptr_array_sized_new (2);
-  add_dbus_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL, FALSE);
-  add_dbus_tube_class (classes, TP_HANDLE_TYPE_ROOM, NULL, FALSE);
+  add_dbus_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL, FALSE);
+  add_dbus_tube_class (classes, TP_ENTITY_TYPE_ROOM, NULL, FALSE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -521,20 +521,20 @@ test_supports_tube (Test *test,
      classes);
 
   g_assert (!tp_capabilities_supports_stream_tubes (caps,
-        TP_HANDLE_TYPE_CONTACT, NULL));
-  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
+        TP_ENTITY_TYPE_CONTACT, NULL));
+  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_ROOM,
         NULL));
   g_assert (!tp_capabilities_supports_stream_tubes (caps,
-        TP_HANDLE_TYPE_CONTACT, "test-service"));
-  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
+        TP_ENTITY_TYPE_CONTACT, "test-service"));
+  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "test-service"));
-  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         NULL));
-  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_ROOM,
         NULL));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         "com.Test"));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "com.Test"));
 
   g_object_unref (caps);
@@ -542,10 +542,10 @@ test_supports_tube (Test *test,
   /* TpCapabilities containing the private and muc dbus tube caps and
    * one with a service */
   classes = g_ptr_array_sized_new (4);
-  add_dbus_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL, FALSE);
-  add_dbus_tube_class (classes, TP_HANDLE_TYPE_ROOM, NULL, FALSE);
-  add_dbus_tube_class (classes, TP_HANDLE_TYPE_CONTACT, "com.Test", FALSE);
-  add_dbus_tube_class (classes, TP_HANDLE_TYPE_ROOM, "com.Test", FALSE);
+  add_dbus_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL, FALSE);
+  add_dbus_tube_class (classes, TP_ENTITY_TYPE_ROOM, NULL, FALSE);
+  add_dbus_tube_class (classes, TP_ENTITY_TYPE_CONTACT, "com.Test", FALSE);
+  add_dbus_tube_class (classes, TP_ENTITY_TYPE_ROOM, "com.Test", FALSE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -556,31 +556,31 @@ test_supports_tube (Test *test,
      classes);
 
   g_assert (!tp_capabilities_supports_stream_tubes (caps,
-        TP_HANDLE_TYPE_CONTACT, NULL));
-  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
+        TP_ENTITY_TYPE_CONTACT, NULL));
+  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_ROOM,
         NULL));
   g_assert (!tp_capabilities_supports_stream_tubes (caps,
-        TP_HANDLE_TYPE_CONTACT, "test-service"));
-  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_HANDLE_TYPE_ROOM,
+        TP_ENTITY_TYPE_CONTACT, "test-service"));
+  g_assert (!tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "test-service"));
-  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         NULL));
-  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_ROOM,
         NULL));
-  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         "com.Test"));
-  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "com.Test"));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_CONTACT,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         "com.Badger"));
-  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_HANDLE_TYPE_ROOM,
+  g_assert (!tp_capabilities_supports_dbus_tubes (caps, TP_ENTITY_TYPE_ROOM,
         "com.Badger"));
 
   g_object_unref (caps);
 
   /* Any extra fixed prop make it unsupported */
   classes = g_ptr_array_sized_new (1);
-  add_dbus_tube_class (classes, TP_HANDLE_TYPE_CONTACT, NULL, TRUE);
+  add_dbus_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL, TRUE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -591,7 +591,7 @@ test_supports_tube (Test *test,
      classes);
 
   g_assert (!tp_capabilities_supports_dbus_tubes (caps,
-      TP_HANDLE_TYPE_CONTACT, NULL));
+      TP_ENTITY_TYPE_CONTACT, NULL));
 
   g_object_unref (caps);
 }
@@ -612,7 +612,7 @@ add_room_list_class (GPtrArray *classes,
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_ROOM_LIST1,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-          TP_HANDLE_TYPE_NONE,
+          TP_ENTITY_TYPE_NONE,
       NULL);
 
   if (add_extra_fixed)
@@ -719,7 +719,7 @@ add_sms_class (GPtrArray *classes,
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-          TP_HANDLE_TYPE_CONTACT,
+          TP_ENTITY_TYPE_CONTACT,
       NULL);
 
   allowed = g_ptr_array_new ();
@@ -807,7 +807,7 @@ test_supports_sms (Test *test,
 
 static void
 add_call_class (GPtrArray *classes,
-    TpHandleType handle_type,
+    TpEntityType handle_type,
     gboolean initial_audio,
     gboolean initial_video,
     gboolean use_allowed,
@@ -877,7 +877,7 @@ test_supports_call (Test *test,
 
   /* A class with no audio/video can't do anything */
   classes = g_ptr_array_sized_new (1);
-  add_call_class (classes, TP_HANDLE_TYPE_CONTACT, FALSE, FALSE, FALSE, FALSE);
+  add_call_class (classes, TP_ENTITY_TYPE_CONTACT, FALSE, FALSE, FALSE, FALSE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -888,15 +888,15 @@ test_supports_call (Test *test,
      classes);
 
   g_assert (!tp_capabilities_supports_audio_call (caps,
-      TP_HANDLE_TYPE_CONTACT));
+      TP_ENTITY_TYPE_CONTACT));
   g_assert (!tp_capabilities_supports_audio_video_call (caps,
-      TP_HANDLE_TYPE_CONTACT));
+      TP_ENTITY_TYPE_CONTACT));
 
   g_object_unref (caps);
 
   /* A class with only audio can't do audio_video */
   classes = g_ptr_array_sized_new (1);
-  add_call_class (classes, TP_HANDLE_TYPE_CONTACT, TRUE, FALSE, FALSE, FALSE);
+  add_call_class (classes, TP_ENTITY_TYPE_CONTACT, TRUE, FALSE, FALSE, FALSE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -907,15 +907,15 @@ test_supports_call (Test *test,
      classes);
 
   g_assert (tp_capabilities_supports_audio_call (caps,
-      TP_HANDLE_TYPE_CONTACT));
+      TP_ENTITY_TYPE_CONTACT));
   g_assert (!tp_capabilities_supports_audio_video_call (caps,
-      TP_HANDLE_TYPE_CONTACT));
+      TP_ENTITY_TYPE_CONTACT));
 
   g_object_unref (caps);
 
   /* A class with audio and video in fixed can't do audio only */
   classes = g_ptr_array_sized_new (1);
-  add_call_class (classes, TP_HANDLE_TYPE_CONTACT, TRUE, TRUE, FALSE, FALSE);
+  add_call_class (classes, TP_ENTITY_TYPE_CONTACT, TRUE, TRUE, FALSE, FALSE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -926,15 +926,15 @@ test_supports_call (Test *test,
      classes);
 
   g_assert (!tp_capabilities_supports_audio_call (caps,
-      TP_HANDLE_TYPE_CONTACT));
+      TP_ENTITY_TYPE_CONTACT));
   g_assert (tp_capabilities_supports_audio_video_call (caps,
-      TP_HANDLE_TYPE_CONTACT));
+      TP_ENTITY_TYPE_CONTACT));
 
   g_object_unref (caps);
 
   /* A class with audio and video in allowed can do audio only */
   classes = g_ptr_array_sized_new (1);
-  add_call_class (classes, TP_HANDLE_TYPE_CONTACT, TRUE, TRUE, TRUE, FALSE);
+  add_call_class (classes, TP_ENTITY_TYPE_CONTACT, TRUE, TRUE, TRUE, FALSE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -945,15 +945,15 @@ test_supports_call (Test *test,
      classes);
 
   g_assert (tp_capabilities_supports_audio_call (caps,
-      TP_HANDLE_TYPE_CONTACT));
+      TP_ENTITY_TYPE_CONTACT));
   g_assert (tp_capabilities_supports_audio_video_call (caps,
-      TP_HANDLE_TYPE_CONTACT));
+      TP_ENTITY_TYPE_CONTACT));
 
   g_object_unref (caps);
 
   /* A class with unknown extra fixed can't do anything */
   classes = g_ptr_array_sized_new (1);
-  add_call_class (classes, TP_HANDLE_TYPE_CONTACT, TRUE, TRUE, TRUE, TRUE);
+  add_call_class (classes, TP_ENTITY_TYPE_CONTACT, TRUE, TRUE, TRUE, TRUE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
@@ -964,9 +964,9 @@ test_supports_call (Test *test,
      classes);
 
   g_assert (!tp_capabilities_supports_audio_call (caps,
-      TP_HANDLE_TYPE_CONTACT));
+      TP_ENTITY_TYPE_CONTACT));
   g_assert (!tp_capabilities_supports_audio_video_call (caps,
-      TP_HANDLE_TYPE_CONTACT));
+      TP_ENTITY_TYPE_CONTACT));
 
   g_object_unref (caps);
 }
@@ -1106,7 +1106,7 @@ test_classes_variant (Test *test,
 
   /* TpCapabilities containing the text chats and ft caps */
   classes = g_ptr_array_sized_new (2);
-  add_text_chat_class (classes, TP_HANDLE_TYPE_CONTACT);
+  add_text_chat_class (classes, TP_ENTITY_TYPE_CONTACT);
   add_ft_class (classes, NULL);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
@@ -1140,7 +1140,7 @@ test_classes_variant (Test *test,
 
   g_assert (g_variant_lookup (fixed,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, "u", &handle_type));
-  g_assert_cmpuint (handle_type, ==, TP_HANDLE_TYPE_CONTACT);
+  g_assert_cmpuint (handle_type, ==, TP_ENTITY_TYPE_CONTACT);
 
   g_assert_cmpuint (g_variant_n_children (allowed), ==, 0);
 
@@ -1164,7 +1164,7 @@ test_classes_variant (Test *test,
 
   g_assert (g_variant_lookup (fixed,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, "u", &handle_type));
-  g_assert_cmpuint (handle_type, ==, TP_HANDLE_TYPE_CONTACT);
+  g_assert_cmpuint (handle_type, ==, TP_ENTITY_TYPE_CONTACT);
 
   g_assert_cmpuint (g_variant_n_children (allowed), ==, 2);
   strv = g_variant_get_strv (allowed, NULL);

@@ -128,7 +128,7 @@ setup (Test *test,
       tp_proxy_get_object_path (test->connection));
 
   contact_repo = tp_base_connection_get_handles (test->base_connection,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
   g_assert (contact_repo != NULL);
 
   handle = tp_handle_ensure (contact_repo, "bob", NULL, &test->error);
@@ -144,7 +144,7 @@ setup (Test *test,
 
   /* Create client-side text channel object */
   test->text_chan = tp_tests_channel_new (test->connection, chan_path, NULL,
-      TP_HANDLE_TYPE_CONTACT, handle, &test->error);
+      TP_ENTITY_TYPE_CONTACT, handle, &test->error);
   g_assert_no_error (test->error);
 
   g_free (chan_path);
@@ -166,7 +166,7 @@ setup (Test *test,
 
   /* Create client-side text channel object */
   test->text_chan_2 = tp_tests_channel_new (test->connection, chan_path, NULL,
-      TP_HANDLE_TYPE_CONTACT, handle, &test->error);
+      TP_ENTITY_TYPE_CONTACT, handle, &test->error);
   g_assert_no_error (test->error);
 
   g_free (chan_path);
@@ -402,7 +402,7 @@ check_filters (GPtrArray *filters)
   g_assert_cmpstr (tp_asv_get_string (filter, TP_PROP_CHANNEL_CHANNEL_TYPE), ==,
       TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1);
   g_assert_cmpuint (tp_asv_get_uint32 (filter,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL), ==, TP_HANDLE_TYPE_CONTACT);
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL), ==, TP_ENTITY_TYPE_CONTACT);
 }
 
 static void
@@ -482,7 +482,7 @@ test_observer (Test *test,
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-          TP_HANDLE_TYPE_CONTACT,
+          TP_ENTITY_TYPE_CONTACT,
         NULL));
 
   tp_base_client_set_observer_recover (test->base_client, TRUE);
@@ -626,7 +626,7 @@ test_approver (Test *test,
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-          TP_HANDLE_TYPE_CONTACT,
+          TP_ENTITY_TYPE_CONTACT,
         NULL));
 
   tp_base_client_register (test->base_client, &test->error);
@@ -814,7 +814,7 @@ test_handler (Test *test,
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-          TP_HANDLE_TYPE_CONTACT,
+          TP_ENTITY_TYPE_CONTACT,
         NULL));
 
   tp_base_client_set_handler_bypass_approval (test->base_client, TRUE);
@@ -966,7 +966,7 @@ test_handler_requests (Test *test,
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-          TP_HANDLE_TYPE_CONTACT,
+          TP_ENTITY_TYPE_CONTACT,
         NULL));
 
   tp_base_client_set_handler_request_notification (test->base_client);

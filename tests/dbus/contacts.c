@@ -238,7 +238,7 @@ ensure_contact (Fixture *f,
   TpBaseConnection *service_conn = (TpBaseConnection *) f->service_conn;
   TpConnection *client_conn = f->client_conn;
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
-      service_conn, TP_HANDLE_TYPE_CONTACT);
+      service_conn, TP_ENTITY_TYPE_CONTACT);
 
   *handle = tp_handle_ensure (contact_repo, id, NULL, NULL);
   return tp_connection_dup_contact_if_possible (client_conn, *handle, id);
@@ -790,7 +790,7 @@ free_rcc_list (GPtrArray *rccs)
 
 static void
 add_text_chat_class (GPtrArray *classes,
-    TpHandleType handle_type)
+    TpEntityType handle_type)
 {
   GHashTable *fixed;
   const gchar * const allowed[] = { NULL };
@@ -824,12 +824,12 @@ create_contact_caps (TpHandle *handles)
 
   /* Support private text chats */
   caps1 = g_ptr_array_sized_new (2);
-  add_text_chat_class (caps1, TP_HANDLE_TYPE_CONTACT);
+  add_text_chat_class (caps1, TP_ENTITY_TYPE_CONTACT);
   g_hash_table_insert (capabilities, GUINT_TO_POINTER (handles[0]), caps1);
 
   /* Support text chatrooms */
   caps2 = g_ptr_array_sized_new (1);
-  add_text_chat_class (caps2, TP_HANDLE_TYPE_ROOM);
+  add_text_chat_class (caps2, TP_ENTITY_TYPE_ROOM);
   g_hash_table_insert (capabilities, GUINT_TO_POINTER (handles[1]), caps2);
 
   /* Don't support anything */
@@ -1128,8 +1128,8 @@ create_new_contact_caps (TpHandle *handles)
 
   /* Support private text chats and chatrooms */
   caps1 = g_ptr_array_sized_new (2);
-  add_text_chat_class (caps1, TP_HANDLE_TYPE_CONTACT);
-  add_text_chat_class (caps1, TP_HANDLE_TYPE_ROOM);
+  add_text_chat_class (caps1, TP_ENTITY_TYPE_CONTACT);
+  add_text_chat_class (caps1, TP_ENTITY_TYPE_ROOM);
   g_hash_table_insert (capabilities, GUINT_TO_POINTER (handles[0]), caps1);
 
   /* Don't support anything */
@@ -1852,7 +1852,7 @@ setup_broken_client_types_conn (Fixture *f,
   g_object_ref (f->service_conn);
 
   f->service_repo = tp_base_connection_get_handles (f->base_connection,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
   f->result.loop = g_main_loop_new (NULL, FALSE);
 }
 
@@ -2137,7 +2137,7 @@ setup_internal (Fixture *f,
   g_object_ref (f->service_conn);
 
   f->service_repo = tp_base_connection_get_handles (f->base_connection,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
   f->result.loop = g_main_loop_new (NULL, FALSE);
 }
 

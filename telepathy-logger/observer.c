@@ -224,7 +224,7 @@ _tpl_observer_init (TplObserver *self)
        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
            TP_IFACE_CHANNEL_TYPE_TEXT,
        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-           TP_HANDLE_TYPE_CONTACT,
+           TP_ENTITY_TYPE_CONTACT,
       NULL));
 
   /* Observe room text channels */
@@ -233,7 +233,7 @@ _tpl_observer_init (TplObserver *self)
        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
            TP_IFACE_CHANNEL_TYPE_TEXT,
        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-           TP_HANDLE_TYPE_ROOM,
+           TP_ENTITY_TYPE_ROOM,
       NULL));
 
   /* Observe contact call channels */
@@ -242,7 +242,7 @@ _tpl_observer_init (TplObserver *self)
        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
            "im.telepathy.v1.Channel.Type.Call1",
        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-           TP_HANDLE_TYPE_CONTACT,
+           TP_ENTITY_TYPE_CONTACT,
       NULL));
 
   /* Observe room call channels */
@@ -251,7 +251,7 @@ _tpl_observer_init (TplObserver *self)
        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
            "im.telepathy.v1.Channel.Type.Call1",
        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-           TP_HANDLE_TYPE_ROOM,
+           TP_ENTITY_TYPE_ROOM,
       NULL));
 
   tp_base_client_set_observer_recover (TP_BASE_CLIENT (self), TRUE);

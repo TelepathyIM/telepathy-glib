@@ -312,7 +312,7 @@ _tp_capabilities_new (const GPtrArray *classes,
 static gboolean
 supports_simple_channel (TpCapabilities *self,
     const gchar *expected_chan_type,
-    TpHandleType expected_handle_type)
+    TpEntityType expected_handle_type)
 {
   guint i;
 
@@ -324,7 +324,7 @@ supports_simple_channel (TpCapabilities *self,
       GHashTable *fixed;
       const gchar * const *allowed;
       const gchar *chan_type;
-      TpHandleType handle_type;
+      TpEntityType handle_type;
       gboolean valid;
 
       tp_value_array_unpack (arr, 2,
@@ -372,7 +372,7 @@ gboolean
 tp_capabilities_supports_text_chats (TpCapabilities *self)
 {
   return supports_simple_channel (self, TP_IFACE_CHANNEL_TYPE_TEXT,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
 }
 
 /**
@@ -383,7 +383,7 @@ tp_capabilities_supports_text_chats (TpCapabilities *self)
  * checks if named text chatrooms can be joined by providing a chatroom
  * identifier, for instance by calling
  * tp_account_channel_request_new_text() followed by
- * tp_account_channel_request_set_target_id() with %TP_HANDLE_TYPE_ROOM.
+ * tp_account_channel_request_set_target_id() with %TP_ENTITY_TYPE_ROOM.
  *
  * If the #TpCapabilities:contact-specific property is %TRUE, this function
  * checks if the contact associated with this #TpCapabilities can be invited
@@ -403,7 +403,7 @@ gboolean
 tp_capabilities_supports_text_chatrooms (TpCapabilities *self)
 {
   return supports_simple_channel (self, TP_IFACE_CHANNEL_TYPE_TEXT,
-      TP_HANDLE_TYPE_ROOM);
+      TP_ENTITY_TYPE_ROOM);
 }
 
 /**
@@ -438,7 +438,7 @@ tp_capabilities_supports_sms (TpCapabilities *self)
       GHashTable *fixed;
       const gchar * const *allowed;
       const gchar *chan_type;
-      TpHandleType handle_type;
+      TpEntityType handle_type;
       gboolean valid;
       guint nb_fixed_props;
 
@@ -452,7 +452,7 @@ tp_capabilities_supports_sms (TpCapabilities *self)
       if (!valid)
         continue;
 
-      if (handle_type != TP_HANDLE_TYPE_CONTACT)
+      if (handle_type != TP_ENTITY_TYPE_CONTACT)
         continue;
 
       chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
@@ -487,7 +487,7 @@ tp_capabilities_supports_sms (TpCapabilities *self)
 
 static gboolean
 supports_call_full (TpCapabilities *self,
-    TpHandleType expected_handle_type,
+    TpEntityType expected_handle_type,
     gboolean expected_initial_audio,
     gboolean expected_initial_video)
 {
@@ -501,7 +501,7 @@ supports_call_full (TpCapabilities *self,
       GHashTable *fixed_prop;
       const gchar * const *allowed_prop;
       const gchar *chan_type;
-      TpHandleType handle_type;
+      TpEntityType handle_type;
       gboolean valid;
       guint nb_fixed_props = 2;
 
@@ -559,8 +559,8 @@ supports_call_full (TpCapabilities *self,
 /**
  * tp_capabilities_supports_audio_call:
  * @self: a #TpCapabilities object
- * @handle_type: the handle type of the call; #TP_HANDLE_TYPE_CONTACT for
- *  private, #TP_HANDLE_TYPE_ROOM or #TP_HANDLE_TYPE_NONE for conference
+ * @handle_type: the handle type of the call; #TP_ENTITY_TYPE_CONTACT for
+ *  private, #TP_ENTITY_TYPE_ROOM or #TP_ENTITY_TYPE_NONE for conference
  *  (depending on the protocol)
  *
  * Return whether audio calls can be established, for instance by calling
@@ -569,7 +569,7 @@ supports_call_full (TpCapabilities *self,
  *
  * To check whether requests using
  * tp_account_channel_request_set_target_contact() would work, set
- * @handle_type to %TP_HANDLE_TYPE_CONTACT.
+ * @handle_type to %TP_ENTITY_TYPE_CONTACT.
  *
  * Returns: %TRUE if a channel request containing Call as ChannelType,
  * @handle_type as TargetHandleType, a True value for InitialAudio and an
@@ -579,7 +579,7 @@ supports_call_full (TpCapabilities *self,
  */
 gboolean
 tp_capabilities_supports_audio_call (TpCapabilities *self,
-    TpHandleType handle_type)
+    TpEntityType handle_type)
 {
   return supports_call_full (self, handle_type, TRUE, FALSE);
 }
@@ -587,8 +587,8 @@ tp_capabilities_supports_audio_call (TpCapabilities *self,
 /**
  * tp_capabilities_supports_audio_video_call:
  * @self: a #TpCapabilities object
- * @handle_type: the handle type of the call; #TP_HANDLE_TYPE_CONTACT for
- *  private, #TP_HANDLE_TYPE_ROOM or #TP_HANDLE_TYPE_NONE for conference
+ * @handle_type: the handle type of the call; #TP_ENTITY_TYPE_CONTACT for
+ *  private, #TP_ENTITY_TYPE_ROOM or #TP_ENTITY_TYPE_NONE for conference
  *  (depending on the protocol)
  *
  * Return whether audio/video calls can be established, for instance by calling
@@ -597,7 +597,7 @@ tp_capabilities_supports_audio_call (TpCapabilities *self,
  *
  * To check whether requests using
  * tp_account_channel_request_set_target_contact() would work, set
- * @handle_type to %TP_HANDLE_TYPE_CONTACT.
+ * @handle_type to %TP_ENTITY_TYPE_CONTACT.
  *
  * Returns: %TRUE if a channel request containing Call as ChannelType,
  * @handle_type as TargetHandleType, a True value for
@@ -609,7 +609,7 @@ tp_capabilities_supports_audio_call (TpCapabilities *self,
  */
 gboolean
 tp_capabilities_supports_audio_video_call (TpCapabilities *self,
-    TpHandleType handle_type)
+    TpEntityType handle_type)
 {
   return supports_call_full (self, handle_type, TRUE, TRUE);
 }
@@ -635,7 +635,7 @@ supports_file_transfer (TpCapabilities *self,
       GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
       GHashTable *fixed;
       const gchar *chan_type;
-      TpHandleType handle_type;
+      TpEntityType handle_type;
       gboolean valid;
       guint n_fixed = 2;
       const gchar * const *allowed;
@@ -653,7 +653,7 @@ supports_file_transfer (TpCapabilities *self,
       if (!valid)
         continue;
 
-      if (handle_type != TP_HANDLE_TYPE_CONTACT)
+      if (handle_type != TP_ENTITY_TYPE_CONTACT)
         continue;
 
       /* ContentType, Filename, Size are mandatory. In principle we could check
@@ -799,15 +799,15 @@ tp_capabilities_supports_file_transfer_timestamp (TpCapabilities *self)
 static gboolean
 tp_capabilities_supports_tubes_common (TpCapabilities *self,
     const gchar *expected_channel_type,
-    TpHandleType expected_handle_type,
+    TpEntityType expected_handle_type,
     const gchar *service_prop,
     const gchar *expected_service)
 {
   guint i;
 
   g_return_val_if_fail (TP_IS_CAPABILITIES (self), FALSE);
-  g_return_val_if_fail (expected_handle_type == TP_HANDLE_TYPE_CONTACT ||
-      expected_handle_type == TP_HANDLE_TYPE_ROOM, FALSE);
+  g_return_val_if_fail (expected_handle_type == TP_ENTITY_TYPE_CONTACT ||
+      expected_handle_type == TP_ENTITY_TYPE_ROOM, FALSE);
 
   for (i = 0; i < self->priv->classes->len; i++)
     {
@@ -815,7 +815,7 @@ tp_capabilities_supports_tubes_common (TpCapabilities *self,
       GHashTable *fixed;
       const gchar * const *allowed;
       const gchar *chan_type;
-      TpHandleType handle_type;
+      TpEntityType handle_type;
       gboolean valid;
       guint nb_fixed_props = 2;
 
@@ -852,8 +852,8 @@ tp_capabilities_supports_tubes_common (TpCapabilities *self,
 /**
  * tp_capabilities_supports_stream_tubes:
  * @self: a #TpCapabilities object
- * @handle_type: the handle type of the tube (either #TP_HANDLE_TYPE_CONTACT
- * or #TP_HANDLE_TYPE_ROOM)
+ * @handle_type: the handle type of the tube (either #TP_ENTITY_TYPE_CONTACT
+ * or #TP_ENTITY_TYPE_ROOM)
  * @service: the service of the tube, or %NULL
  *
  * If the #TpCapabilities:contact-specific property is %TRUE, this function
@@ -873,7 +873,7 @@ tp_capabilities_supports_tubes_common (TpCapabilities *self,
  */
 gboolean
 tp_capabilities_supports_stream_tubes (TpCapabilities *self,
-    TpHandleType handle_type,
+    TpEntityType handle_type,
     const gchar *service)
 {
   return tp_capabilities_supports_tubes_common (self,
@@ -884,8 +884,8 @@ tp_capabilities_supports_stream_tubes (TpCapabilities *self,
 /**
  * tp_capabilities_supports_dbus_tubes:
  * @self: a #TpCapabilities object
- * @handle_type: the handle type of the tube (either #TP_HANDLE_TYPE_CONTACT
- * or #TP_HANDLE_TYPE_ROOM)
+ * @handle_type: the handle type of the tube (either #TP_ENTITY_TYPE_CONTACT
+ * or #TP_ENTITY_TYPE_ROOM)
  * @service_name: the service name of the tube, or %NULL
  *
  * If the #TpCapabilities:contact-specific property is %TRUE, this function
@@ -906,7 +906,7 @@ tp_capabilities_supports_stream_tubes (TpCapabilities *self,
  */
 gboolean
 tp_capabilities_supports_dbus_tubes (TpCapabilities *self,
-    TpHandleType handle_type,
+    TpEntityType handle_type,
     const gchar *service_name)
 {
   return tp_capabilities_supports_tubes_common (self,
@@ -1008,7 +1008,7 @@ tp_capabilities_supports_contact_search (TpCapabilities *self,
  * request = tp_asv_new (
  *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
  *       TP_IFACE_CHANNEL_TYPE_ROOM_LIST,
- *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_NONE,
+ *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_ENTITY_TYPE_NONE,
  *     NULL);
  *
  * req = tp_account_channel_request_new (account, request,
@@ -1028,7 +1028,7 @@ tp_capabilities_supports_contact_search (TpCapabilities *self,
  * request = tp_asv_new (
  *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
  *       TP_IFACE_CHANNEL_TYPE_ROOM_LIST,
- *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_NONE,
+ *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_ENTITY_TYPE_NONE,
  *     TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER, G_TYPE_STRING,
  *       "characters.shakespeare.lit",
  *     NULL);
@@ -1054,7 +1054,7 @@ tp_capabilities_supports_room_list (TpCapabilities *self,
       GHashTable *fixed;
       const gchar *chan_type;
       const gchar **allowed_properties;
-      TpHandleType handle_type;
+      TpEntityType handle_type;
       gboolean valid;
 
       tp_value_array_unpack (arr, 2, &fixed, &allowed_properties);
@@ -1068,7 +1068,7 @@ tp_capabilities_supports_room_list (TpCapabilities *self,
 
       handle_type = tp_asv_get_uint32 (fixed,
           TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
-      if (!valid || handle_type != TP_HANDLE_TYPE_NONE)
+      if (!valid || handle_type != TP_ENTITY_TYPE_NONE)
         continue;
 
       result = TRUE;

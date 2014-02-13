@@ -142,14 +142,14 @@
  *      the ChannelType property is present, and is a (const gchar *)
  *   </listitem>
  *   <listitem>
- *     the TargetHandleType property is a valid #TpHandleType, if present
+ *     the TargetHandleType property is a valid #TpEntityType, if present
  *   </listitem>
  *   <listitem>
  *     if TargetHandleType is None, TargetHandle is omitted
  *   </listitem>
  *   <listitem>
  *     if TargetHandleType is not None, TargetHandle is a valid #TpHandle of
- *     that #TpHandleType
+ *     that #TpEntityType
  *   </listitem>
  * </itemizedlist>
  *

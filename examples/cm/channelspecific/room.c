@@ -60,9 +60,9 @@ suggest_room_identity (ExampleCSHRoomChannel *self)
   TpBaseConnection *connection =
     tp_base_channel_get_connection (TP_BASE_CHANNEL (self));
   TpHandleRepoIface *contact_repo =
-    tp_base_connection_get_handles (connection, TP_HANDLE_TYPE_CONTACT);
+    tp_base_connection_get_handles (connection, TP_ENTITY_TYPE_CONTACT);
   TpHandleRepoIface *room_repo =
-    tp_base_connection_get_handles (connection, TP_HANDLE_TYPE_ROOM);
+    tp_base_connection_get_handles (connection, TP_ENTITY_TYPE_ROOM);
   gchar *nick, *id;
   TpHandle ret;
 
@@ -88,9 +88,9 @@ complete_join (ExampleCSHRoomChannel *self)
 {
   TpBaseConnection *conn = tp_base_channel_get_connection (TP_BASE_CHANNEL (self));
   TpHandleRepoIface *contact_repo =
-    tp_base_connection_get_handles (conn, TP_HANDLE_TYPE_CONTACT);
+    tp_base_connection_get_handles (conn, TP_ENTITY_TYPE_CONTACT);
   TpHandleRepoIface *room_repo =
-    tp_base_connection_get_handles (conn, TP_HANDLE_TYPE_ROOM);
+    tp_base_connection_get_handles (conn, TP_ENTITY_TYPE_ROOM);
   const gchar *room_name = tp_handle_inspect (room_repo,
       tp_base_channel_get_target_handle (TP_BASE_CHANNEL (self)));
   gchar *str;
@@ -261,7 +261,7 @@ constructor (GType type,
   ExampleCSHRoomChannel *self = EXAMPLE_CSH_ROOM_CHANNEL (object);
   TpBaseConnection *conn = tp_base_channel_get_connection (TP_BASE_CHANNEL (self));
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (conn, TP_HANDLE_TYPE_CONTACT);
+      (conn, TP_ENTITY_TYPE_CONTACT);
   TpHandle self_handle;
 
   tp_base_channel_register (TP_BASE_CHANNEL (self));
@@ -405,7 +405,7 @@ example_csh_room_channel_class_init (ExampleCSHRoomChannelClass *klass)
   object_class->finalize = finalize;
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_TEXT;
-  base_class->target_handle_type = TP_HANDLE_TYPE_ROOM;
+  base_class->target_handle_type = TP_ENTITY_TYPE_ROOM;
   base_class->get_interfaces = example_csh_room_channel_get_interfaces;
 
   base_class->close = example_csh_room_channel_close;

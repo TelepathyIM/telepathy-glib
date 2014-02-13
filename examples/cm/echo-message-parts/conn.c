@@ -106,10 +106,10 @@ example_normalize_contact (TpHandleRepoIface *repo G_GNUC_UNUSED,
 
 static void
 create_handle_repos (TpBaseConnection *conn,
-                     TpHandleRepoIface *repos[TP_NUM_HANDLE_TYPES])
+                     TpHandleRepoIface *repos[TP_NUM_ENTITY_TYPES])
 {
-  repos[TP_HANDLE_TYPE_CONTACT] = tp_dynamic_handle_repo_new
-      (TP_HANDLE_TYPE_CONTACT, example_normalize_contact, NULL);
+  repos[TP_ENTITY_TYPE_CONTACT] = tp_dynamic_handle_repo_new
+      (TP_ENTITY_TYPE_CONTACT, example_normalize_contact, NULL);
 }
 
 static GPtrArray *
@@ -130,7 +130,7 @@ start_connecting (TpBaseConnection *conn,
 {
   ExampleEcho2Connection *self = EXAMPLE_ECHO_2_CONNECTION (conn);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
   TpHandle self_handle;
 
   /* In a real connection manager we'd ask the underlying implementation to

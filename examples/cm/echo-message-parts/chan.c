@@ -332,7 +332,7 @@ example_echo_2_channel_class_init (ExampleEcho2ChannelClass *klass)
   object_class->finalize = finalize;
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_TEXT;
-  base_class->target_handle_type = TP_HANDLE_TYPE_CONTACT;
+  base_class->target_handle_type = TP_ENTITY_TYPE_CONTACT;
   base_class->get_interfaces = example_echo_2_channel_get_interfaces;
   base_class->close = example_echo_2_channel_close;
   base_class->fill_immutable_properties =

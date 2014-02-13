@@ -1607,7 +1607,7 @@ tp_account_channel_request_set_target_contact (
   /* Do not use tp_asv_set_uint32 or similar - the key is dup'd */
   g_hash_table_insert (self->priv->request,
       g_strdup (TP_PROP_CHANNEL_TARGET_HANDLE_TYPE),
-      tp_g_value_slice_new_uint (TP_HANDLE_TYPE_CONTACT));
+      tp_g_value_slice_new_uint (TP_ENTITY_TYPE_CONTACT));
   /* We use the ID because it persists across a disconnect/reconnect */
   g_hash_table_insert (self->priv->request,
       g_strdup (TP_PROP_CHANNEL_TARGET_ID),
@@ -1617,8 +1617,8 @@ tp_account_channel_request_set_target_contact (
 /**
  * tp_account_channel_request_set_target_id:
  * @self: a #TpAccountChannelRequest
- * @handle_type: the type of @identifier, typically %TP_HANDLE_TYPE_CONTACT
- *  or %TP_HANDLE_TYPE_ROOM
+ * @handle_type: the type of @identifier, typically %TP_ENTITY_TYPE_CONTACT
+ *  or %TP_ENTITY_TYPE_ROOM
  * @identifier: the unique identifier of the contact, room etc. to be
  *  contacted
  *
@@ -1633,12 +1633,12 @@ tp_account_channel_request_set_target_contact (
 void
 tp_account_channel_request_set_target_id (
     TpAccountChannelRequest *self,
-    TpHandleType handle_type,
+    TpEntityType handle_type,
     const gchar *identifier)
 {
   g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
   g_return_if_fail (identifier != NULL);
-  g_return_if_fail (handle_type != TP_HANDLE_TYPE_NONE);
+  g_return_if_fail (handle_type != TP_ENTITY_TYPE_NONE);
   g_return_if_fail (!self->priv->requested);
 
   /* Do not use tp_asv_set_uint32 or similar - the key is dup'd */
@@ -1768,22 +1768,22 @@ tp_account_channel_request_set_request_property (
  * tp_account_channel_request_set_target_contact() or one of the generic
  * methods that takes a handle type argument. To check whether this
  * is possible, use tp_capabilities_supports_audio_call() with
- * @handle_type set to %TP_HANDLE_TYPE_CONTACT.
+ * @handle_type set to %TP_ENTITY_TYPE_CONTACT.
  *
  * <!-- reinstate this when we have CMs that actually allow it:
  * In some protocols it is possible to create a conference call which
  * takes place in a named chatroom, by calling
  * tp_account_channel_request_set_target_id() with @handle_type
- * set to %TP_HANDLE_TYPE_ROOM. To test whether this is possible, use
+ * set to %TP_ENTITY_TYPE_ROOM. To test whether this is possible, use
  * tp_capabilities_supports_audio_call() with @handle_type set to
- * %TP_HANDLE_TYPE_ROOM.
+ * %TP_ENTITY_TYPE_ROOM.
  * -->
  *
  * In some protocols, it is possible to create a Call channel without
  * setting a target at all, which will result in a new, empty
  * conference call. To test whether this is possible, use
  * tp_capabilities_supports_audio_call() with @handle_type set to
- * %TP_HANDLE_TYPE_NONE.
+ * %TP_ENTITY_TYPE_NONE.
  *
  * Returns: a new #TpAccountChannelRequest object
  *

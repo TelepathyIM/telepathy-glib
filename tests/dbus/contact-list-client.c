@@ -69,7 +69,7 @@ setup (Test *test,
   g_assert_no_error (test->error);
 
   test->contact_repo = tp_base_connection_get_handles (test->base_connection,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
   g_assert (test->contact_repo != NULL);
 
   /* Connect the connection */

@@ -252,7 +252,7 @@ tp_cm_message_set_sender (TpMessage *self,
   cm_msg = (TpCMMessage *) self;
 
   contact_repo = tp_base_connection_get_handles (cm_msg->priv->connection,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
 
   id = tp_handle_inspect (contact_repo, handle);
   if (id != NULL)
@@ -296,7 +296,7 @@ _tp_cm_message_new_from_parts (TpBaseConnection *conn,
  * Return the sender of @self, i.e. the "message-sender" key of the header,
  * or 0 if there is no sender.
  *
- * Returns: a %TP_HANDLE_TYPE_CONTACT handle, or 0
+ * Returns: a %TP_ENTITY_TYPE_CONTACT handle, or 0
  *
  * Since: 0.13.9
  */

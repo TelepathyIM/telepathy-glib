@@ -173,7 +173,7 @@
 /**
  * TpPresenceMixinGetContactStatusFunc:
  * @obj: An object with this mixin.
- * @contact: A #TpHandle of type %TP_HANDLE_TYPE_CONTACT
+ * @contact: A #TpHandle of type %TP_ENTITY_TYPE_CONTACT
  *
  * Return the contact's status
  *

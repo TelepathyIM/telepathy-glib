@@ -81,8 +81,8 @@ tp_channel_iface_base_init (gpointer klass)
     /**
      * TpChannelIface:handle-type:
      *
-     * The #TpHandleType of this channel's associated handle, or
-     * %TP_HANDLE_TYPE_NONE (which is numerically 0) if no handle.
+     * The #TpEntityType of this channel's associated handle, or
+     * %TP_ENTITY_TYPE_NONE (which is numerically 0) if no handle.
      *
      * In #TpChannel, if this is TP_UNKNOWN_HANDLE_TYPE
      * during construction, we ask the remote D-Bus object what its
@@ -95,7 +95,7 @@ tp_channel_iface_base_init (gpointer klass)
      * construction might also be ignored.
      */
     param_spec = g_param_spec_uint ("handle-type", "Handle type",
-        "The TpHandleType of this channel's associated handle.",
+        "The TpEntityType of this channel's associated handle.",
         0, G_MAXUINT32, TP_UNKNOWN_HANDLE_TYPE,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
     g_object_interface_install_property (klass, param_spec);
@@ -107,7 +107,7 @@ tp_channel_iface_base_init (gpointer klass)
      * Read-only except during construction.
      *
      * In #TpChannel, if this is 0
-     * during construction, and handle-type is not TP_HANDLE_TYPE_NONE (== 0),
+     * during construction, and handle-type is not TP_ENTITY_TYPE_NONE (== 0),
      * we ask the remote D-Bus object what its handle type is; reading this
      * property will yield 0 until we get the reply, or if GetHandle()
      * fails. This is not guaranteed to be set until tp_proxy_prepare_async()

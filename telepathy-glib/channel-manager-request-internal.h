@@ -50,7 +50,7 @@ struct _TpChannelManagerRequest
   TpChannelManagerRequestMethod method;
 
   gchar *channel_type;
-  TpHandleType handle_type;
+  TpEntityType handle_type;
   TpHandle handle;
 
   /* only meaningful for METHOD_ENSURE_CHANNEL; only true if this is the first
@@ -88,7 +88,7 @@ TpChannelManagerRequest * _tp_channel_manager_request_new (
     DBusGMethodInvocation *context,
     TpChannelManagerRequestMethod method,
     const char *channel_type,
-    TpHandleType handle_type,
+    TpEntityType handle_type,
     TpHandle handle);
 
 void _tp_channel_manager_request_cancel (TpChannelManagerRequest *self);

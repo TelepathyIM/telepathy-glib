@@ -91,7 +91,7 @@ test_entity_instantiation_from_tp_contact (void)
   connection = TP_TESTS_CONTACTS_CONNECTION (base_connection);
 
   repo = tp_base_connection_get_handles (base_connection,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
 
   handles[0] = tp_handle_ensure (repo, "alice", NULL, NULL);
   g_assert (handles[0] != 0);

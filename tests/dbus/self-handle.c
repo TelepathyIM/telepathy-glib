@@ -53,7 +53,7 @@ setup (Fixture *f,
   g_assert (f->service_conn_as_base != NULL);
 
   f->contact_repo = tp_base_connection_get_handles (f->service_conn_as_base,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
 
   ok = tp_base_connection_register (f->service_conn_as_base, "simple",
         &f->name, &f->conn_path, &f->error);

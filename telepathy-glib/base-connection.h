@@ -49,7 +49,7 @@ typedef gboolean (*TpBaseConnectionStartConnectingImpl) (
     TpBaseConnection *self, GError **error);
 
 typedef void (*TpBaseConnectionCreateHandleReposImpl) (TpBaseConnection *self,
-    TpHandleRepoIface *repos[TP_NUM_HANDLE_TYPES]);
+    TpHandleRepoIface *repos[TP_NUM_ENTITY_TYPES]);
 
 typedef GPtrArray *(*TpBaseConnectionCreateChannelManagersImpl) (
     TpBaseConnection *self);
@@ -127,7 +127,7 @@ gboolean tp_base_connection_check_connected (TpBaseConnection *self,
     GError **error);
 
 TpHandleRepoIface *tp_base_connection_get_handles (TpBaseConnection *self,
-    TpHandleType handle_type);
+    TpEntityType handle_type);
 
 gboolean tp_base_connection_register (TpBaseConnection *self,
     const gchar *cm_name, gchar **bus_name, gchar **object_path,

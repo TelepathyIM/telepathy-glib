@@ -64,7 +64,7 @@ get_contacts (TplCallChannel *self,
   GHashTable *members;
   GHashTableIter iter;
   TpHandle handle;
-  TpHandleType handle_type;
+  TpEntityType handle_type;
   gboolean is_room;
   TpContact *contact;
   TplEntity *entity;
@@ -82,7 +82,7 @@ get_contacts (TplCallChannel *self,
 
   /* Identify target */
   handle = tp_channel_get_handle (chan, &handle_type);
-  is_room = (handle_type == TP_HANDLE_TYPE_ROOM);
+  is_room = (handle_type == TP_ENTITY_TYPE_ROOM);
 
   if (is_room)
     {

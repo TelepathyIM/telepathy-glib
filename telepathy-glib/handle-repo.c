@@ -264,7 +264,7 @@ tp_handle_repo_iface_default_init (TpHandleRepoIfaceInterface *iface)
   iface->ensure_handle_finish = default_ensure_handle_finish;
 
   param_spec = g_param_spec_uint ("handle-type", "Handle type",
-      "The TpHandleType held in this handle repository.",
+      "The TpEntityType held in this handle repository.",
       0, G_MAXUINT32, 0,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_interface_install_property (iface, param_spec);

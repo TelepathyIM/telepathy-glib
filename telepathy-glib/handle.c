@@ -34,15 +34,15 @@
  *  "(invalid handle type)" for others.
  */
 const gchar *
-tp_handle_type_to_string (TpHandleType type)
+tp_handle_type_to_string (TpEntityType type)
 {
   switch (type)
     {
-    case TP_HANDLE_TYPE_NONE:
+    case TP_ENTITY_TYPE_NONE:
       return "(no handle)";
-    case TP_HANDLE_TYPE_CONTACT:
+    case TP_ENTITY_TYPE_CONTACT:
       return "contact";
-    case TP_HANDLE_TYPE_ROOM:
+    case TP_ENTITY_TYPE_ROOM:
       return "room";
     }
 

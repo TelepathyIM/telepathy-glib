@@ -23,7 +23,7 @@ test_handles (void)
   const gchar *return_jid;
 
   tp_repo = tp_tests_object_new_static_class (TP_TYPE_DYNAMIC_HANDLE_REPO,
-      "handle-type", TP_HANDLE_TYPE_CONTACT,
+      "handle-type", TP_ENTITY_TYPE_CONTACT,
       NULL);
   g_assert (tp_repo != NULL);
 

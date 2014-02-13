@@ -242,7 +242,7 @@ tp_channel_get_channel_type_id (TpChannel *self)
  *
  * If @handle_type is not %NULL, the type of handle is written into it.
  * This will be %TP_UNKNOWN_HANDLE_TYPE if the handle has not yet been
- * discovered, or %TP_HANDLE_TYPE_NONE if there is no handle with which this
+ * discovered, or %TP_ENTITY_TYPE_NONE if there is no handle with which this
  * channel will always communicate. This is the same as the
  * #TpChannelIface:handle-type property.
  *
@@ -251,7 +251,7 @@ tp_channel_get_channel_type_id (TpChannel *self)
  */
 TpHandle
 tp_channel_get_handle (TpChannel *self,
-                       TpHandleType *handle_type)
+                       TpEntityType *handle_type)
 {
   g_return_val_if_fail (TP_IS_CHANNEL (self), 0);
 
@@ -479,7 +479,7 @@ _tp_channel_maybe_set_handle (TpChannel *self,
 
 static void
 _tp_channel_maybe_set_handle_type (TpChannel *self,
-                                   TpHandleType handle_type,
+                                   TpEntityType handle_type,
                                    gboolean valid)
 {
   if (valid)
@@ -797,7 +797,7 @@ _tp_channel_create_contacts (TpChannel *self)
   contacts = g_ptr_array_new ();
 
   /* Create target contact */
-  if (self->priv->handle_type == TP_HANDLE_TYPE_CONTACT)
+  if (self->priv->handle_type == TP_ENTITY_TYPE_CONTACT)
     {
       if (self->priv->handle == 0 || self->priv->identifier == NULL)
         {
@@ -1162,7 +1162,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * TpChannel:identifier:
    *
    * This channel's associated identifier, or the empty string if it has
-   * handle type %TP_HANDLE_TYPE_NONE.
+   * handle type %TP_ENTITY_TYPE_NONE.
    *
    * For channels where #TpChannelIface:handle is non-zero, this is the result
    * of inspecting #TpChannelIface:handle.
@@ -1173,7 +1173,7 @@ tp_channel_class_init (TpChannelClass *klass)
    *
    * Changed in 0.11.4: this property is never %NULL. Previously,
    * it was %NULL before an identifier was known, or when a channel
-   * with no TargetID D-Bus property had TargetHandleType %TP_HANDLE_TYPE_NONE.
+   * with no TargetID D-Bus property had TargetHandleType %TP_ENTITY_TYPE_NONE.
    */
   param_spec = g_param_spec_string ("identifier",
       "The identifier",
@@ -1307,7 +1307,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * TpChannel:target-contact:
    *
    * If this channel is for communication with a single contact (that is,
-   * #TpChannelIface:handle-type is %TP_HANDLE_TYPE_CONTACT), then a #TpContact
+   * #TpChannelIface:handle-type is %TP_ENTITY_TYPE_CONTACT), then a #TpContact
    * representing the remote contact. For chat rooms, contact search channels and
    * other channels without a single remote contact, %NULL.
    *

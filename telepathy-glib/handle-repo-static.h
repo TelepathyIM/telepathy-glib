@@ -51,7 +51,7 @@ G_BEGIN_DECLS
  * same order as the string vector, to avoid having to look up handles
  * internally.
  *
- * This is intended for handles of type %TP_HANDLE_TYPE_LIST,
+ * This is intended for handles of type %TP_ENTITY_TYPE_LIST,
  * for which the connection manager should only accept a static list of
  * supported handle names.
  *
@@ -97,11 +97,11 @@ GType tp_static_handle_repo_get_type (void);
  */
 static inline
 /* spacer so gtkdoc documents this function as though not static */
-TpHandleRepoIface *tp_static_handle_repo_new (TpHandleType handle_type,
+TpHandleRepoIface *tp_static_handle_repo_new (TpEntityType handle_type,
     const gchar **handle_names);
 
 static inline TpHandleRepoIface *
-tp_static_handle_repo_new (TpHandleType handle_type,
+tp_static_handle_repo_new (TpEntityType handle_type,
                            const gchar **handle_names)
 {
   return (TpHandleRepoIface *) g_object_new (TP_TYPE_STATIC_HANDLE_REPO,

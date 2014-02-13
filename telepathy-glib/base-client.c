@@ -369,7 +369,7 @@ tp_base_client_add_observer_filter (TpBaseClient *self,
  *        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
  *            TP_IFACE_CHANNEL_TYPE_TEXT,
  *        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
- *            TP_HANDLE_TYPE_CONTACT,
+ *            TP_ENTITY_TYPE_CONTACT,
  *        ...));
  * ]|
  *
@@ -409,7 +409,7 @@ tp_base_client_take_observer_filter (TpBaseClient *self,
  * tp_base_client_add_observer_filter_vardict (client,
  *    g_variant_new_parsed ("{ %s: <%s>, %s: <%u>, ... }",
  *        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT,
- *        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, (guint32) TP_HANDLE_TYPE_CONTACT,
+ *        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT,
  *        ...));
  * ]|
  *
@@ -552,7 +552,7 @@ tp_base_client_add_approver_filter (TpBaseClient *self,
  *        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
  *            TP_IFACE_CHANNEL_TYPE_TEXT,
  *        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
- *            TP_HANDLE_TYPE_CONTACT,
+ *            TP_ENTITY_TYPE_CONTACT,
  *        ...));
  * ]|
  *
@@ -669,7 +669,7 @@ tp_base_client_add_handler_filter (TpBaseClient *self,
  *        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
  *            TP_IFACE_CHANNEL_TYPE_TEXT,
  *        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
- *            TP_HANDLE_TYPE_CONTACT,
+ *            TP_ENTITY_TYPE_CONTACT,
  *        ...));
  * ]|
  *

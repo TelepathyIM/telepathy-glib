@@ -539,7 +539,7 @@ constructed (GObject *object)
   g_assert (self->priv->conn != NULL);
 
   self->priv->contact_repo = tp_base_connection_get_handles (self->priv->conn,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
   self->priv->contacts = tp_handle_set_new (self->priv->contact_repo);
   self->priv->blocked_contacts = tp_handle_set_new (self->priv->contact_repo);
   self->priv->cancelled_publish_requests = tp_handle_set_new (

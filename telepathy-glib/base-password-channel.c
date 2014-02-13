@@ -151,7 +151,7 @@ tp_base_password_channel_constructed (GObject *obj)
   TpBaseConnection *base_conn = tp_base_channel_get_connection (
       TP_BASE_CHANNEL (obj));
   TpHandleRepoIface *contact_handles = tp_base_connection_get_handles (
-      base_conn, TP_HANDLE_TYPE_CONTACT);
+      base_conn, TP_ENTITY_TYPE_CONTACT);
 
   if (((GObjectClass *) tp_base_password_channel_parent_class)->constructed != NULL)
     ((GObjectClass *) tp_base_password_channel_parent_class)->constructed (obj);
@@ -291,7 +291,7 @@ tp_base_password_channel_class_init (TpBasePasswordChannelClass *tp_base_passwor
   object_class->finalize = tp_base_password_channel_finalize;
 
   chan_class->channel_type = TP_IFACE_CHANNEL_TYPE_SERVER_AUTHENTICATION1;
-  chan_class->target_handle_type = TP_HANDLE_TYPE_NONE;
+  chan_class->target_handle_type = TP_ENTITY_TYPE_NONE;
   chan_class->get_interfaces = tp_base_password_channel_get_interfaces;
   chan_class->close = tp_base_password_channel_close;
   chan_class->fill_immutable_properties =

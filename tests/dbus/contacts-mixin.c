@@ -164,7 +164,7 @@ main (int argc,
   service_conn = TP_TESTS_CONTACTS_CONNECTION (service_conn_as_base);
 
   service_repo = tp_base_connection_get_handles (service_conn_as_base,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
 
   /* Set up some contacts */
 

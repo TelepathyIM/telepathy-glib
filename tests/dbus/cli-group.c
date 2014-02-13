@@ -408,7 +408,7 @@ main (int argc,
   service_conn = TP_TESTS_SIMPLE_CONNECTION (service_conn_as_base);
 
   contact_repo = tp_base_connection_get_handles (service_conn_as_base,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
   MYASSERT (contact_repo != NULL, "");
 
   self_handle = tp_handle_ensure (contact_repo, "me@example.com", NULL, NULL);

@@ -279,7 +279,7 @@ example_csh_room_manager_type_foreach_channel_class (GType type,
     GHashTable *table = tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE,
             G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_ROOM,
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_ENTITY_TYPE_ROOM,
         NULL);
 
     func (type, table, allowed_properties, user_data);
@@ -305,7 +305,7 @@ example_csh_room_manager_request (ExampleCSHRoomManager *self,
     }
 
   if (tp_asv_get_uint32 (request_properties,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL) != TP_HANDLE_TYPE_ROOM)
+      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL) != TP_ENTITY_TYPE_ROOM)
     {
       return FALSE;
     }

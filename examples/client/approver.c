@@ -146,7 +146,7 @@ main (int argc,
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_TEXT,
         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-          TP_HANDLE_TYPE_CONTACT,
+          TP_ENTITY_TYPE_CONTACT,
         NULL));
 
   /* call
@@ -154,7 +154,7 @@ main (int argc,
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_CALL,
         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-          TP_HANDLE_TYPE_CONTACT,
+          TP_ENTITY_TYPE_CONTACT,
         NULL));
   */
 
@@ -163,7 +163,7 @@ main (int argc,
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_TEXT,
         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-          TP_HANDLE_TYPE_ROOM,
+          TP_ENTITY_TYPE_ROOM,
         NULL));
 
   /* file transfer */
@@ -171,7 +171,7 @@ main (int argc,
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1,
         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
-          TP_HANDLE_TYPE_CONTACT,
+          TP_ENTITY_TYPE_CONTACT,
         NULL));
 
   if (!tp_base_client_register (approver, &error))

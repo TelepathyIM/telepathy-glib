@@ -102,11 +102,11 @@ create_tube_service (Test *test,
       tp_proxy_get_object_path (test->connection));
 
   test->contact_repo = tp_base_connection_get_handles (test->base_connection,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
   g_assert (test->contact_repo != NULL);
 
   test->room_repo = tp_base_connection_get_handles (test->base_connection,
-      TP_HANDLE_TYPE_ROOM);
+      TP_ENTITY_TYPE_ROOM);
   g_assert (test->room_repo != NULL);
 
   if (contact)

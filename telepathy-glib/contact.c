@@ -456,7 +456,7 @@ tp_contact_get_connection (TpContact *self)
  * tp_contact_get_handle:
  * @self: a contact
  *
- * Return the contact's handle, which is of type %TP_HANDLE_TYPE_CONTACT,
+ * Return the contact's handle, which is of type %TP_ENTITY_TYPE_CONTACT,
  * or 0 if the #TpContact:connection has become invalid.
  *
  * This handle is referenced using the Telepathy D-Bus API and remains
@@ -1237,7 +1237,7 @@ tp_contact_class_init (TpContactClass *klass)
    * TpContact:handle:
    *
    * The contact's handle in the Telepathy D-Bus API, a handle of type
-   * %TP_HANDLE_TYPE_CONTACT representing the string
+   * %TP_ENTITY_TYPE_CONTACT representing the string
    * given by #TpContact:identifier.
    *
    * This handle is referenced using the Telepathy D-Bus API and remains
@@ -1252,7 +1252,7 @@ tp_contact_class_init (TpContactClass *klass)
    */
   param_spec = g_param_spec_uint ("handle",
       "Handle",
-      "The TP_HANDLE_TYPE_CONTACT handle for this contact",
+      "The TP_ENTITY_TYPE_CONTACT handle for this contact",
       0, G_MAXUINT32, 0,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_HANDLE, param_spec);
@@ -1699,7 +1699,7 @@ tp_contact_ensure (TpConnection *connection,
 /**
  * tp_connection_dup_contact_if_possible:
  * @connection: a connection
- * @handle: a handle of type %TP_HANDLE_TYPE_CONTACT
+ * @handle: a handle of type %TP_ENTITY_TYPE_CONTACT
  * @identifier: (transfer none): the normalized identifier (XMPP JID, etc.)
  *  corresponding to @handle, or %NULL if not known
  *

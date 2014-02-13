@@ -55,12 +55,12 @@ typedef guint TpHandle;
 /**
  * TP_UNKNOWN_HANDLE_TYPE:
  *
- * An invalid handle type (-1 cast to TpHandleType) used to represent an
+ * An invalid handle type (-1 cast to TpEntityType) used to represent an
  * unknown handle type.
  *
  * Since: 0.7.0
  */
-#define TP_UNKNOWN_HANDLE_TYPE ((TpHandleType) -1)
+#define TP_UNKNOWN_HANDLE_TYPE ((TpEntityType) -1)
 
 /**
  * tp_handle_type_is_valid:
@@ -74,25 +74,25 @@ typedef guint TpHandle;
  */
 static inline
 /* spacer so gtkdoc documents this function as though not static */
-gboolean tp_handle_type_is_valid (TpHandleType type, GError **error);
+gboolean tp_handle_type_is_valid (TpEntityType type, GError **error);
 
-/* Must be static inline because it references TP_NUM_HANDLE_TYPES -
+/* Must be static inline because it references TP_NUM_ENTITY_TYPES -
  * if it wasn't inlined, a newer libtelepathy-glib with a larger number
  * of handle types might accept handle types that won't fit in the
- * connection manager's array of length TP_NUM_HANDLE_TYPES
+ * connection manager's array of length TP_NUM_ENTITY_TYPES
  */
 
 static inline gboolean
-tp_handle_type_is_valid (TpHandleType type, GError **error)
+tp_handle_type_is_valid (TpEntityType type, GError **error)
 {
-  if (type > TP_HANDLE_TYPE_NONE && type < TP_NUM_HANDLE_TYPES)
+  if (type > TP_ENTITY_TYPE_NONE && type < TP_NUM_ENTITY_TYPES)
     return TRUE;
 
   tp_g_set_error_invalid_handle_type (type, error);
   return FALSE;
 }
 
-const gchar *tp_handle_type_to_string (TpHandleType type);
+const gchar *tp_handle_type_to_string (TpEntityType type);
 
 G_END_DECLS
 

@@ -94,7 +94,7 @@ main (int argc,
   /* Paste on a channel */
 
   contact_repo = tp_base_connection_get_handles (service_conn_as_base,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
   MYASSERT (contact_repo != NULL, "");
 
   handle = tp_handle_ensure (contact_repo, "them@example.org", NULL, &error);
@@ -110,7 +110,7 @@ main (int argc,
         NULL));
 
   chan = tp_tests_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
-      TP_HANDLE_TYPE_CONTACT, handle, &error);
+      TP_ENTITY_TYPE_CONTACT, handle, &error);
   g_assert_no_error (error);
 
   tp_tests_proxy_run_until_prepared (chan, NULL);

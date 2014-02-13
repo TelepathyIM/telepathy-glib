@@ -194,7 +194,7 @@ _tp_base_call_dup_member_identifiers (TpBaseConnection *conn,
 
   identifiers = g_hash_table_new (NULL, NULL);
 
-  contact_repo = tp_base_connection_get_handles (conn, TP_HANDLE_TYPE_CONTACT);
+  contact_repo = tp_base_connection_get_handles (conn, TP_ENTITY_TYPE_CONTACT);
 
   g_hash_table_iter_init (&iter, source);
   while (g_hash_table_iter_next (&iter, &key, NULL))

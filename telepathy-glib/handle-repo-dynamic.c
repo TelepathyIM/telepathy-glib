@@ -36,7 +36,7 @@
  * perform validation and normalization on handle ID strings.
  *
  * Most connection managers will use this for all supported handle types
- * except %TP_HANDLE_TYPE_LIST.
+ * except %TP_ENTITY_TYPE_LIST.
  *
  * Changed in 0.13.8: handles are no longer reference-counted, and
  * the reference-count-related functions are stubs. Instead, handles remain
@@ -170,7 +170,7 @@ struct _TpDynamicHandleRepoClass {
 struct _TpDynamicHandleRepo {
   GObject parent;
 
-  TpHandleType handle_type;
+  TpEntityType handle_type;
 
   /* Array of TpHandlePriv keyed by handle; 0th element is unused */
   GArray *handle_to_priv;

@@ -101,7 +101,7 @@ setup_services (Test *test,
       tp_proxy_get_object_path (test->connection));
 
   contact_repo = tp_base_connection_get_handles (test->base_connection,
-      TP_HANDLE_TYPE_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
   g_assert (contact_repo != NULL);
 
   handle = tp_handle_ensure (contact_repo, "bob", NULL, &test->error);
@@ -117,7 +117,7 @@ setup_services (Test *test,
 
   /* Create client-side text channel object */
   test->text_chan = tp_tests_channel_new (test->connection, chan_path, NULL,
-      TP_HANDLE_TYPE_CONTACT, handle, &test->error);
+      TP_ENTITY_TYPE_CONTACT, handle, &test->error);
   g_assert_no_error (test->error);
 
   g_free (chan_path);

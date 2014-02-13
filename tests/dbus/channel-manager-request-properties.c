@@ -117,7 +117,7 @@ channel_manager_request_cb (TpTestsSimpleChannelManager *channel_manager,
   TpHandle handle = tp_asv_get_uint32 (request_properties,
       TP_PROP_CHANNEL_TARGET_HANDLE, NULL);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
-      (TpBaseConnection *) test->service_conn, TP_HANDLE_TYPE_CONTACT);
+      (TpBaseConnection *) test->service_conn, TP_ENTITY_TYPE_CONTACT);
 
   tp_asv_dump (request_properties);
 
@@ -164,7 +164,7 @@ test_target_id (Test *test,
 
   request = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
+      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_ENTITY_TYPE_CONTACT,
       TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, "lolbags#dingdong",
       NULL);
 

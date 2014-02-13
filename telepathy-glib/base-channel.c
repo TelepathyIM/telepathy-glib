@@ -610,7 +610,7 @@ tp_base_channel_get_self_handle (TpBaseChannel *chan)
  * @chan: a channel
  *
  * Returns the target handle of @chan (without a reference), which will be 0
- * if #TpBaseChannelClass.target_handle_type is #TP_HANDLE_TYPE_NONE for this
+ * if #TpBaseChannelClass.target_handle_type is #TP_ENTITY_TYPE_NONE for this
  * class, and non-zero otherwise. This is a shortcut for retrieving the
  * #TpChannelIface:handle property.
  *
@@ -831,7 +831,7 @@ tp_base_channel_get_property (GObject *object,
           TpHandleRepoIface *repo = tp_base_connection_get_handles (
               chan->priv->conn, klass->target_handle_type);
 
-          g_assert (klass->target_handle_type != TP_HANDLE_TYPE_NONE);
+          g_assert (klass->target_handle_type != TP_ENTITY_TYPE_NONE);
           g_assert (repo != NULL);
           g_value_set_string (value, tp_handle_inspect (repo, chan->priv->target));
         }
@@ -847,7 +847,7 @@ tp_base_channel_get_property (GObject *object,
       if (chan->priv->initiator != 0)
         {
           TpHandleRepoIface *repo = tp_base_connection_get_handles (
-              chan->priv->conn, TP_HANDLE_TYPE_CONTACT);
+              chan->priv->conn, TP_ENTITY_TYPE_CONTACT);
 
           g_assert (repo != NULL);
           g_assert (chan->priv->initiator != 0);

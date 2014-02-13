@@ -70,12 +70,12 @@ TpHandle tp_dynamic_handle_repo_lookup_exact (TpHandleRepoIface *irepo,
 
 static inline
 /* spacer so gtkdoc documents this function as though not static */
-TpHandleRepoIface *tp_dynamic_handle_repo_new (TpHandleType handle_type,
+TpHandleRepoIface *tp_dynamic_handle_repo_new (TpEntityType handle_type,
     TpDynamicHandleRepoNormalizeFunc normalize_func,
     gpointer default_normalize_context);
 
 static inline TpHandleRepoIface *
-tp_dynamic_handle_repo_new (TpHandleType handle_type,
+tp_dynamic_handle_repo_new (TpEntityType handle_type,
                             TpDynamicHandleRepoNormalizeFunc normalize_func,
                             gpointer default_normalize_context)
 {
