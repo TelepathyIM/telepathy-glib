@@ -44,6 +44,8 @@ tp_handle_type_to_string (TpEntityType type)
       return "contact";
     case TP_ENTITY_TYPE_ROOM:
       return "room";
+    case TP_ENTITY_TYPE_SELF:
+      return "self";
     }
 
   return "(invalid handle type)";
