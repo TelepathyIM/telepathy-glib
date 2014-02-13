@@ -13,18 +13,18 @@ test_entity_instantiation (void)
 {
   TplEntity *entity;
 
-  entity = tpl_entity_new ("my-identifier", TPL_ENTITY_CONTACT,
+  entity = tpl_entity_new ("my-identifier", TP_ENTITY_TYPE_CONTACT,
       "my-alias", "my-token");
 
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==, "my-identifier");
-  g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_CONTACT);
+  g_assert (tpl_entity_get_entity_type (entity) == TP_ENTITY_TYPE_CONTACT);
   g_assert_cmpstr (tpl_entity_get_alias (entity), ==, "my-alias");
   g_assert_cmpstr (tpl_entity_get_avatar_token (entity), ==, "my-token");
 
   g_object_unref (entity);
 
   /* Check that identifier is copied in absence of ID */
-  entity = tpl_entity_new ("my-identifier", TPL_ENTITY_CONTACT,
+  entity = tpl_entity_new ("my-identifier", TP_ENTITY_TYPE_CONTACT,
       NULL, NULL);
 
   g_assert_cmpstr (tpl_entity_get_alias (entity), ==, "my-identifier");
@@ -41,7 +41,7 @@ test_entity_instantiation_from_room_id (void)
   entity = tpl_entity_new_from_room_id ("my-room-id");
 
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==, "my-room-id");
-  g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_ROOM);
+  g_assert (tpl_entity_get_entity_type (entity) == TP_ENTITY_TYPE_ROOM);
   g_assert_cmpstr (tpl_entity_get_alias (entity), ==, "my-room-id");
   g_assert_cmpstr (tpl_entity_get_avatar_token (entity), ==, "");
 
@@ -122,18 +122,18 @@ test_entity_instantiation_from_tp_contact (void)
   g_main_loop_run (result.loop);
   bob = result.contact;
 
-  entity = tpl_entity_new_from_tp_contact (alice, TPL_ENTITY_SELF);
+  entity = tpl_entity_new_from_tp_contact (alice, TP_ENTITY_TYPE_SELF);
 
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==, "alice");
-  g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_SELF);
+  g_assert (tpl_entity_get_entity_type (entity) == TP_ENTITY_TYPE_SELF);
   g_assert_cmpstr (tpl_entity_get_alias (entity), ==, alias[0]);
   g_assert_cmpstr (tpl_entity_get_avatar_token (entity), ==, avatar_tokens[0]);
   g_object_unref (entity);
 
-  entity = tpl_entity_new_from_tp_contact (bob, TPL_ENTITY_CONTACT);
+  entity = tpl_entity_new_from_tp_contact (bob, TP_ENTITY_TYPE_CONTACT);
 
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==, "bob");
-  g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_CONTACT);
+  g_assert (tpl_entity_get_entity_type (entity) == TP_ENTITY_TYPE_CONTACT);
   g_assert_cmpstr (tpl_entity_get_alias (entity), ==, alias[1]);
   g_assert_cmpstr (tpl_entity_get_avatar_token (entity), ==, "");
   g_object_unref (entity);

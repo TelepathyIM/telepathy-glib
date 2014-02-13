@@ -46,7 +46,7 @@ G_DEFINE_TYPE (TplEntity, tpl_entity, G_TYPE_OBJECT)
 
 struct _TplEntityPriv
 {
-  TplEntityType type;
+  TpEntityType type;
   gchar *alias;
   gchar *identifier;
   gchar *avatar_token;
@@ -158,14 +158,14 @@ static void tpl_entity_class_init (TplEntityClass *klass)
   /**
    * TplEntity:type:
    *
-   * The entity's type (see #TplEntityType).
+   * The entity's type (see #TpEntityType).
    */
   param_spec = g_param_spec_int ("type",
       "Type",
       "The entity's type",
-      TPL_ENTITY_UNKNOWN,
-      TPL_ENTITY_SELF,
-      TPL_ENTITY_UNKNOWN,
+      TP_ENTITY_TYPE_NONE,
+      TP_ENTITY_TYPE_SELF,
+      TP_ENTITY_TYPE_NONE,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TYPE, param_spec);
 
@@ -220,7 +220,7 @@ tpl_entity_init (TplEntity *self)
 
 TplEntity *
 tpl_entity_new (const gchar *id,
-    TplEntityType type,
+    TpEntityType type,
     const gchar *alias,
     const gchar *avatar_token)
 {
@@ -237,16 +237,16 @@ tpl_entity_new (const gchar *id,
 
   switch (type)
     {
-    case TPL_ENTITY_ROOM:
+    case TP_ENTITY_TYPE_ROOM:
       DEBUG ("Room id: %s", id);
       break;
-    case TPL_ENTITY_CONTACT:
+    case TP_ENTITY_TYPE_CONTACT:
       DEBUG ("Contact id: %s, tok: %s", id, avatar_token);
       break;
-    case TPL_ENTITY_SELF:
+    case TP_ENTITY_TYPE_SELF:
       DEBUG ("Self id: %s, tok: %s", id, avatar_token);
       break;
-    case TPL_ENTITY_UNKNOWN:
+    case TP_ENTITY_TYPE_NONE:
       DEBUG ("Unknown entity.");
       break;
     default:
@@ -263,13 +263,13 @@ tpl_entity_new (const gchar *id,
  * @room_id: the room id which will be the identifier for the entity
  *
  * Returns: a TplEntity instance with identifier, alias copied from
- * @room_id. It also sets %TPL_ENTITY_ROOM as type for
+ * @room_id. It also sets %TP_ENTITY_TYPE_ROOM as type for
  * the #TplEntity returned.
  */
 TplEntity *
 tpl_entity_new_from_room_id (const gchar *room_id)
 {
-  return tpl_entity_new (room_id, TPL_ENTITY_ROOM, NULL, NULL);
+  return tpl_entity_new (room_id, TP_ENTITY_TYPE_ROOM, NULL, NULL);
 }
 
 
@@ -280,16 +280,16 @@ tpl_entity_new_from_room_id (const gchar *room_id)
  *
  * Returns: a TplEntity instance with identifier, alias and
  * avatar's token copied. Type parameter is useful to differentiate between
- * normal contact and self contact, thus only %TPL_ENTITY_CONTACT and
- * %TPL_ENTITY_SELF are accepted. If contact is %NULL, an entity of type
- * %TPL_ENTITY_UNKNOWN with id set to "unknown" is returned.
+ * normal contact and self contact, thus only %TP_ENTITY_TYPE_CONTACT and
+ * %TP_ENTITY_TYPE_SELF are accepted. If contact is %NULL, an entity of type
+ * %TP_ENTITY_TYPE_NONE with id set to "unknown" is returned.
  */
 TplEntity *
 tpl_entity_new_from_tp_contact (TpContact *contact,
-    TplEntityType type)
+    TpEntityType type)
 {
   g_return_val_if_fail (contact == NULL || TP_IS_CONTACT (contact), NULL);
-  g_return_val_if_fail (type == TPL_ENTITY_CONTACT || type == TPL_ENTITY_SELF,
+  g_return_val_if_fail (type == TP_ENTITY_TYPE_CONTACT || type == TP_ENTITY_TYPE_SELF,
       NULL);
 
   if (contact != NULL)
@@ -298,7 +298,7 @@ tpl_entity_new_from_tp_contact (TpContact *contact,
         tp_contact_get_alias (contact),
         tp_contact_get_avatar_token (contact));
   else
-    return tpl_entity_new ("unknown", TPL_ENTITY_UNKNOWN, NULL, NULL);
+    return tpl_entity_new ("unknown", TP_ENTITY_TYPE_NONE, NULL, NULL);
 }
 
 
@@ -338,10 +338,10 @@ tpl_entity_get_identifier (TplEntity *self)
  *
  * Returns: the type of the entity
  */
-TplEntityType
+TpEntityType
 tpl_entity_get_entity_type (TplEntity *self)
 {
-  g_return_val_if_fail (TPL_IS_ENTITY (self), TPL_ENTITY_UNKNOWN);
+  g_return_val_if_fail (TPL_IS_ENTITY (self), TP_ENTITY_TYPE_NONE);
 
   return self->priv->type;
 }
@@ -388,21 +388,21 @@ _tpl_entity_compare (TplEntity *a,
 }
 
 
-TplEntityType
+TpEntityType
 _tpl_entity_type_from_str (const gchar *type_str)
 {
   guint i;
   for (i = 0; i < G_N_ELEMENTS (entity_types); ++i)
     if (!tp_strdiff (type_str, entity_types[i]))
-      return (TplEntityType) i;
+      return (TpEntityType) i;
 
   /* default case */
-  return TPL_ENTITY_UNKNOWN;
+  return TP_ENTITY_TYPE_NONE;
 }
 
 
 const gchar *
-_tpl_entity_type_to_str (TplEntityType type)
+_tpl_entity_type_to_str (TpEntityType type)
 {
   g_return_val_if_fail (G_N_ELEMENTS (entity_types) >= type, "unknown");
   return entity_types[type];

@@ -185,7 +185,7 @@ setup (PidginTestCaseFixture* fixture,
   fixture->irc_room = tpl_entity_new_from_room_id ("#telepathy");
 
   fixture->contact = tpl_entity_new ("user2@collabora.co.uk",
-      TPL_ENTITY_CONTACT, NULL, NULL);
+      TP_ENTITY_TYPE_CONTACT, NULL, NULL);
 
   if (user_data != NULL)
     setup_service (fixture, user_data);
@@ -425,17 +425,17 @@ test_get_entities_jabber (PidginTestCaseFixture *fixture,
   entity = g_list_nth_data (l, 0);
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==,
       "user5@collabora.co.uk");
-  g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_CONTACT);
+  g_assert (tpl_entity_get_entity_type (entity) == TP_ENTITY_TYPE_CONTACT);
 
   entity = g_list_nth_data (l, 1);
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==,
       "user2@collabora.co.uk");
-  g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_CONTACT);
+  g_assert (tpl_entity_get_entity_type (entity) == TP_ENTITY_TYPE_CONTACT);
 
   entity = g_list_nth_data (l, 2);
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==,
       "test@conference.collabora.co.uk");
-  g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_ROOM);
+  g_assert (tpl_entity_get_entity_type (entity) == TP_ENTITY_TYPE_ROOM);
 
   g_list_foreach (l, (GFunc) g_object_unref, NULL);
   g_list_free (l);
@@ -483,7 +483,7 @@ test_get_events_for_empty_file (PidginTestCaseFixture *fixture,
   TplEntity *entity;
   GDate *date;
 
-  entity = tpl_entity_new ("87654321", TPL_ENTITY_CONTACT, NULL, NULL);
+  entity = tpl_entity_new ("87654321", TP_ENTITY_TYPE_CONTACT, NULL, NULL);
 
   /* Check with empty file */
   date = g_date_new_dmy (7, 2, 2010);

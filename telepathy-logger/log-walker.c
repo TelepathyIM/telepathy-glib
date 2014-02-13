@@ -124,7 +124,7 @@
  *
  *     log_manager = tpl_log_manager_dup_singleton ();
  *
- *     target = tpl_entity_new ("bob@foo.net", TPL_ENTITY_CONTACT, NULL, NULL);
+ *     target = tpl_entity_new ("bob@foo.net", TP_ENTITY_TYPE_CONTACT, NULL, NULL);
  *
  *     walker = tpl_log_manager_walk_filtered_events (log_manager,
  *         account,

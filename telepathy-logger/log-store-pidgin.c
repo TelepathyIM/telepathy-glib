@@ -283,7 +283,7 @@ log_store_pidgin_get_dir (TplLogStore *self,
     {
       const gchar *orig_id = tpl_entity_get_identifier (target);
 
-      if (tpl_entity_get_entity_type (target) == TPL_ENTITY_ROOM)
+      if (tpl_entity_get_entity_type (target) == TP_ENTITY_TYPE_ROOM)
         id = g_strdup_printf ("%s.chat", orig_id);
       else if (g_str_has_suffix (orig_id, "#1"))
         /* Small butterfly workaround */
@@ -550,7 +550,7 @@ log_store_pidgin_search_hit_new (TplLogStore *self,
   TplLogSearchHit *hit;
   gchar **strv;
   guint len;
-  TplEntityType type;
+  TpEntityType type;
   gchar *id;
 
   if (!g_str_has_suffix (filename, TXT_LOG_FILENAME_SUFFIX)
@@ -564,10 +564,10 @@ log_store_pidgin_search_hit_new (TplLogStore *self,
   hit->date = log_store_pidgin_get_time (strv[len-1]);
 
   type = g_str_has_suffix (strv[len-2], ".chat")
-    ? TPL_ENTITY_ROOM : TPL_ENTITY_CONTACT;
+    ? TP_ENTITY_TYPE_ROOM : TP_ENTITY_TYPE_CONTACT;
 
   /* Remove ".chat" suffix. */
-  if (type == TPL_ENTITY_ROOM)
+  if (type == TP_ENTITY_TYPE_ROOM)
     id = g_strndup (strv[len-2], (strlen (strv[len-2]) - 5));
   else
     id = g_strdup (strv[len-2]);
@@ -787,7 +787,7 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
            * as is_user will be always FALSE  */
           sender = tpl_entity_new (
               is_user ? own_user : sender_name,
-              is_user ? TPL_ENTITY_SELF : TPL_ENTITY_CONTACT,
+              is_user ? TP_ENTITY_TYPE_SELF : TP_ENTITY_TYPE_CONTACT,
               sender_name, NULL);
 
           /* FIXME: in text format it's not possible to guess who is the
@@ -796,23 +796,23 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
           if (is_html || is_room)
             {
               const gchar *receiver_id;
-              TplEntityType receiver_type;
+              TpEntityType receiver_type;
 
               /* In chatrooms, the receiver is always the room */
               if (is_room)
                 {
                   receiver_id = target_id;
-                  receiver_type = TPL_ENTITY_ROOM;
+                  receiver_type = TP_ENTITY_TYPE_ROOM;
                 }
               else if (is_user)
                 {
                   receiver_id = target_id;
-                  receiver_type = TPL_ENTITY_CONTACT;
+                  receiver_type = TP_ENTITY_TYPE_CONTACT;
                 }
               else
                 {
                   receiver_id = own_user;
-                  receiver_type = TPL_ENTITY_SELF;
+                  receiver_type = TP_ENTITY_TYPE_SELF;
                 }
 
               receiver = tpl_entity_new (receiver_id, receiver_type,
@@ -1018,7 +1018,7 @@ log_store_pidgin_get_entities_for_dir (TplLogStore *self,
           g_free (id);
         }
       else
-        entity = tpl_entity_new (name, TPL_ENTITY_CONTACT, NULL, NULL);
+        entity = tpl_entity_new (name, TP_ENTITY_TYPE_CONTACT, NULL, NULL);
 
       entities = g_list_prepend (entities, entity);
     }

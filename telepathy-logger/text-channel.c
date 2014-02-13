@@ -62,7 +62,7 @@ get_my_contact (TplTextChannel *self)
     my_contact = tp_connection_get_self_contact (tp_conn);
 
   self->priv->self = tpl_entity_new_from_tp_contact (my_contact,
-      TPL_ENTITY_SELF);
+      TP_ENTITY_TYPE_SELF);
 }
 
 
@@ -86,7 +86,7 @@ get_remote_contact (TplTextChannel *self)
   else
     {
       self->priv->remote =
-        tpl_entity_new_from_tp_contact (contact, TPL_ENTITY_CONTACT);
+        tpl_entity_new_from_tp_contact (contact, TP_ENTITY_TYPE_CONTACT);
     }
 }
 
@@ -205,7 +205,7 @@ tpl_text_channel_store_message (TplTextChannel *self,
   TplLogManager *logmanager;
   GError *error = NULL;
 
-  if (tpl_entity_get_entity_type (sender) == TPL_ENTITY_SELF)
+  if (tpl_entity_get_entity_type (sender) == TP_ENTITY_TYPE_SELF)
     direction = "sent";
   else
     direction = "received";
@@ -241,7 +241,7 @@ tpl_text_channel_store_message (TplTextChannel *self,
       return;
     }
 
-  if (tpl_entity_get_entity_type (sender) == TPL_ENTITY_SELF)
+  if (tpl_entity_get_entity_type (sender) == TP_ENTITY_TYPE_SELF)
     DEBUG ("Logging message sent to %s (%s)",
         tpl_entity_get_alias (receiver),
         tpl_entity_get_identifier (receiver));
@@ -276,7 +276,7 @@ tpl_text_channel_store_message (TplTextChannel *self,
       PATH_DEBUG (self, "LogStore: %s", error->message);
       g_error_free (error);
     }
-  else if (tpl_entity_get_entity_type (sender) != TPL_ENTITY_SELF)
+  else if (tpl_entity_get_entity_type (sender) != TP_ENTITY_TYPE_SELF)
     {
       TplLogStore *cache = _tpl_log_store_sqlite_dup ();
       _tpl_log_store_sqlite_add_pending_message (cache,
@@ -316,7 +316,7 @@ on_message_received_cb (TpTextChannel *text_chan,
 
   sender = tpl_entity_new_from_tp_contact (
       tp_signalled_message_get_sender (TP_MESSAGE (message)),
-      TPL_ENTITY_CONTACT);
+      TP_ENTITY_TYPE_CONTACT);
 
   tpl_text_channel_store_message (self, TP_MESSAGE (message),
       sender, receiver);
@@ -341,7 +341,7 @@ on_message_sent_cb (TpChannel *proxy,
   if (tp_signalled_message_get_sender (TP_MESSAGE (message)) != NULL)
     sender = tpl_entity_new_from_tp_contact (
         tp_signalled_message_get_sender (TP_MESSAGE (message)),
-        TPL_ENTITY_SELF);
+        TP_ENTITY_TYPE_SELF);
   else
     sender = g_object_ref (priv->self);
 

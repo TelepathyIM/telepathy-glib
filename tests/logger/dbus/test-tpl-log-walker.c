@@ -260,7 +260,7 @@ test_get_events (WalkerTestCaseFixture *fixture,
   TplEntity *user5;
   TplLogWalker *walker;
 
-  user5 = tpl_entity_new ("user5@collabora.co.uk", TPL_ENTITY_CONTACT,
+  user5 = tpl_entity_new ("user5@collabora.co.uk", TP_ENTITY_TYPE_CONTACT,
       "User5", "");
 
   /* Both text and call events without a filter */
@@ -337,7 +337,7 @@ test_rewind (WalkerTestCaseFixture *fixture,
   TplEntity *user5;
   TplLogWalker *walker;
 
-  user5 = tpl_entity_new ("user5@collabora.co.uk", TPL_ENTITY_CONTACT,
+  user5 = tpl_entity_new ("user5@collabora.co.uk", TP_ENTITY_TYPE_CONTACT,
       "User5", "");
 
   /* Both text and call events without a filter */

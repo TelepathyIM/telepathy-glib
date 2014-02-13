@@ -279,7 +279,7 @@ log_store_xml_get_dir (TplLogStoreXml *self,
     }
 
   if (target != NULL
-      && tpl_entity_get_entity_type (target) == TPL_ENTITY_ROOM)
+      && tpl_entity_get_entity_type (target) == TP_ENTITY_TYPE_ROOM)
     basedir = g_build_path (G_DIR_SEPARATOR_S,
         log_store_xml_get_basedir (self), escaped_account, LOG_DIR_CHATROOMS,
         escaped_id, NULL);
@@ -503,7 +503,7 @@ add_text_event (TplLogStoreXml *self,
       contact_name ? contact_name : "",
       avatar_token ? avatar_token : "",
       (sender && tpl_entity_get_entity_type (sender)
-          == TPL_ENTITY_SELF) ? "true" : "false",
+          == TP_ENTITY_TYPE_SELF) ? "true" : "false",
       _tpl_text_event_message_type_to_str (msg_type));
 
   token_str = tpl_text_event_get_message_token (message);
@@ -630,7 +630,7 @@ add_call_event (TplLogStoreXml *self,
         sender_id ? sender_id : "",
         sender_name ? sender_name : "",
         (sender && tpl_entity_get_entity_type (sender) ==
-            TPL_ENTITY_SELF) ? "true" : "false",
+            TP_ENTITY_TYPE_SELF) ? "true" : "false",
         sender_avatar ? sender_avatar : "",
         tpl_call_event_get_duration (event),
         actor_id ? actor_id : "",
@@ -1039,7 +1039,7 @@ log_store_xml_search_hit_new (TplLogStoreXml *self,
   if (is_chatroom)
     target = tpl_entity_new_from_room_id (chat_id);
   else
-    target = tpl_entity_new (chat_id, TPL_ENTITY_CONTACT, NULL, NULL);
+    target = tpl_entity_new (chat_id, TP_ENTITY_TYPE_CONTACT, NULL, NULL);
 
   hit = _tpl_log_manager_search_hit_new (account, target, date);
 
@@ -1107,13 +1107,13 @@ parse_text_node (TplLogStoreXml *self,
   if (is_room)
     receiver = tpl_entity_new_from_room_id (target_id);
   else if (is_user)
-    receiver = tpl_entity_new (target_id, TPL_ENTITY_CONTACT, NULL, NULL);
+    receiver = tpl_entity_new (target_id, TP_ENTITY_TYPE_CONTACT, NULL, NULL);
   else
     receiver = tpl_entity_new (tp_account_get_normalized_name (account),
-        TPL_ENTITY_SELF, tp_account_get_nickname (account), NULL);
+        TP_ENTITY_TYPE_SELF, tp_account_get_nickname (account), NULL);
 
   sender = tpl_entity_new (sender_id,
-      is_user ? TPL_ENTITY_SELF : TPL_ENTITY_CONTACT,
+      is_user ? TP_ENTITY_TYPE_SELF : TP_ENTITY_TYPE_CONTACT,
       sender_name, sender_avatar_token);
 
   event = g_object_new (TPL_TYPE_TEXT_EVENT,
@@ -1225,13 +1225,13 @@ parse_call_node (TplLogStoreXml *self,
   if (is_room)
     receiver = tpl_entity_new_from_room_id (target_id);
   else if (is_user)
-    receiver = tpl_entity_new (target_id, TPL_ENTITY_CONTACT, NULL, NULL);
+    receiver = tpl_entity_new (target_id, TP_ENTITY_TYPE_CONTACT, NULL, NULL);
   else
     receiver = tpl_entity_new (tp_account_get_normalized_name (account),
-        TPL_ENTITY_SELF, tp_account_get_nickname (account), NULL);
+        TP_ENTITY_TYPE_SELF, tp_account_get_nickname (account), NULL);
 
   sender = tpl_entity_new (sender_id,
-      is_user ? TPL_ENTITY_SELF : TPL_ENTITY_CONTACT,
+      is_user ? TP_ENTITY_TYPE_SELF : TP_ENTITY_TYPE_CONTACT,
       sender_name, sender_avatar_token);
 
   actor = tpl_entity_new (actor_id,
@@ -1661,7 +1661,7 @@ log_store_xml_get_entities_for_dir (TplLogStoreXml *self,
       if (is_chatroom)
         entity = tpl_entity_new_from_room_id (name);
       else
-        entity = tpl_entity_new (name, TPL_ENTITY_CONTACT, NULL, NULL);
+        entity = tpl_entity_new (name, TP_ENTITY_TYPE_CONTACT, NULL, NULL);
 
       entities = g_list_prepend (entities, entity);
     }

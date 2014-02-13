@@ -129,7 +129,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
       <arg direction="in" name="Type" type="i">
         <tp:docstring>
-        The entity type, should be one of TPL_ENTITY_CONTACT (1) or TPL_ENTITY_ROOM (2).
+        The entity type, should be one of TP_ENTITY_TYPE_CONTACT (1) or TP_ENTITY_TYPE_ROOM (2).
         </tp:docstring>
       </arg>
 

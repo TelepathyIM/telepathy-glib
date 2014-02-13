@@ -587,12 +587,12 @@ tpl_log_store_sqlite_get_entities (TplLogStore *self,
       TplEntity *entity;
       const char *identifier;
       gboolean chatroom;
-      TplEntityType type;
+      TpEntityType type;
 
       /* for some reason this returns unsigned char */
       identifier = (const char *) sqlite3_column_text (sql, 0);
       chatroom = sqlite3_column_int (sql, 1);
-      type = chatroom ? TPL_ENTITY_ROOM : TPL_ENTITY_CONTACT;
+      type = chatroom ? TP_ENTITY_TYPE_ROOM : TP_ENTITY_TYPE_CONTACT;
 
       DEBUG ("identifier = %s, chatroom = %i", identifier, chatroom);
 

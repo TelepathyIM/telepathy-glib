@@ -314,7 +314,7 @@ _tpl_event_get_target (TplEvent *self)
   g_return_val_if_fail (TPL_IS_EVENT (self), NULL);
 
   if (_tpl_event_target_is_room (self)
-      || tpl_entity_get_entity_type (self->priv->sender) == TPL_ENTITY_SELF)
+      || tpl_entity_get_entity_type (self->priv->sender) == TP_ENTITY_TYPE_SELF)
     return self->priv->receiver;
   else
     return self->priv->sender;
@@ -337,7 +337,7 @@ _tpl_event_target_is_room (TplEvent *self)
   if (self->priv->receiver == NULL)
     return FALSE;
 
-  return (tpl_entity_get_entity_type (self->priv->receiver) == TPL_ENTITY_ROOM);
+  return (tpl_entity_get_entity_type (self->priv->receiver) == TP_ENTITY_TYPE_ROOM);
 }
 
 

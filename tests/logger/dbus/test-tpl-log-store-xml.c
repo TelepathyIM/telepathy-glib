@@ -236,7 +236,7 @@ test_clear_entity (XmlTestCaseFixture *fixture,
     entity = tpl_entity_new_from_room_id ("meego@conference.collabora.co.uk");
   else
     entity = tpl_entity_new ("derek.foreman@collabora.co.uk",
-        TPL_ENTITY_CONTACT, NULL, NULL);
+        TP_ENTITY_TYPE_CONTACT, NULL, NULL);
 
   _tpl_log_store_clear_entity (fixture->store, account, entity);
   g_object_unref (account);
@@ -318,9 +318,9 @@ test_add_text_event (XmlTestCaseFixture *fixture,
       TP_ACCOUNT_OBJECT_PATH_BASE "idle/irc/me",
       &account, &account_service);
 
-  me = tpl_entity_new ("bob.mcbadgers@example.com", TPL_ENTITY_SELF,
+  me = tpl_entity_new ("bob.mcbadgers@example.com", TP_ENTITY_TYPE_SELF,
       "my-alias", "my-avatar");
-  contact = tpl_entity_new ("contact", TPL_ENTITY_CONTACT, "contact-alias",
+  contact = tpl_entity_new ("contact", TP_ENTITY_TYPE_CONTACT, "contact-alias",
       "contact-token");
   room = tpl_entity_new_from_room_id ("room");
 
@@ -490,8 +490,8 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
       TP_ACCOUNT_OBJECT_PATH_BASE "idle/irc/me",
       &account, &account_service);
 
-  me = tpl_entity_new ("me", TPL_ENTITY_SELF, "my-alias", "my-avatar");
-  contact = tpl_entity_new ("contact", TPL_ENTITY_CONTACT, "contact-alias",
+  me = tpl_entity_new ("me", TP_ENTITY_TYPE_SELF, "my-alias", "my-avatar");
+  contact = tpl_entity_new ("contact", TP_ENTITY_TYPE_CONTACT, "contact-alias",
       "contact-token");
 
   /* 1. Outgoing message to a contact. */
@@ -743,9 +743,9 @@ test_add_call_event (XmlTestCaseFixture *fixture,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/me",
       &account, &account_service);
 
-  me = tpl_entity_new ("bob.mcbadgers@example.com", TPL_ENTITY_SELF,
+  me = tpl_entity_new ("bob.mcbadgers@example.com", TP_ENTITY_TYPE_SELF,
       "my-alias", "my-avatar");
-  contact = tpl_entity_new ("contact", TPL_ENTITY_CONTACT, "contact-alias",
+  contact = tpl_entity_new ("contact", TP_ENTITY_TYPE_CONTACT, "contact-alias",
       "contact-token");
   room = tpl_entity_new_from_room_id ("room");
 
@@ -887,10 +887,10 @@ test_exists (XmlTestCaseFixture *fixture,
   g_assert_no_error (error);
   g_assert (account1 != NULL);
 
-  user2 = tpl_entity_new ("user2@collabora.co.uk", TPL_ENTITY_CONTACT,
+  user2 = tpl_entity_new ("user2@collabora.co.uk", TP_ENTITY_TYPE_CONTACT,
       "User2", "");
 
-  user3 = tpl_entity_new ("user3@collabora.co.uk", TPL_ENTITY_CONTACT,
+  user3 = tpl_entity_new ("user3@collabora.co.uk", TP_ENTITY_TYPE_CONTACT,
       "User3", "");
 
   g_assert (_tpl_log_store_exists (fixture->store, account1, NULL, TPL_EVENT_MASK_ANY));
@@ -938,16 +938,16 @@ test_get_events_for_date (XmlTestCaseFixture *fixture,
 
   date = g_date_new_dmy (13, 1, 2010);
 
-  user2 = tpl_entity_new ("user2@collabora.co.uk", TPL_ENTITY_CONTACT,
+  user2 = tpl_entity_new ("user2@collabora.co.uk", TP_ENTITY_TYPE_CONTACT,
       "User2", "");
 
-  user3 = tpl_entity_new ("user3@collabora.co.uk", TPL_ENTITY_CONTACT,
+  user3 = tpl_entity_new ("user3@collabora.co.uk", TP_ENTITY_TYPE_CONTACT,
       "User3", "");
 
-  user4 = tpl_entity_new ("user4@collabora.co.uk", TPL_ENTITY_CONTACT,
+  user4 = tpl_entity_new ("user4@collabora.co.uk", TP_ENTITY_TYPE_CONTACT,
       "User4", "");
 
-  user5 = tpl_entity_new ("user5@collabora.co.uk", TPL_ENTITY_CONTACT,
+  user5 = tpl_entity_new ("user5@collabora.co.uk", TP_ENTITY_TYPE_CONTACT,
       "User5", "");
 
   /* Check that text event and call event are merged properly, call events

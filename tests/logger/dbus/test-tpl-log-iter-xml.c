@@ -93,10 +93,10 @@ test_get_events (XmlTestCaseFixture *fixture,
   const gchar *message;
   gint64 timestamp;
 
-  user2 = tpl_entity_new ("user2@collabora.co.uk", TPL_ENTITY_CONTACT,
+  user2 = tpl_entity_new ("user2@collabora.co.uk", TP_ENTITY_TYPE_CONTACT,
       "User2", "");
 
-  user4 = tpl_entity_new ("user4@collabora.co.uk", TPL_ENTITY_CONTACT,
+  user4 = tpl_entity_new ("user4@collabora.co.uk", TP_ENTITY_TYPE_CONTACT,
       "User4", "");
 
   /* Text events spanning multiple days */
@@ -246,10 +246,10 @@ test_rewind (XmlTestCaseFixture *fixture,
   const gchar *message;
   gint64 timestamp;
 
-  user2 = tpl_entity_new ("user2@collabora.co.uk", TPL_ENTITY_CONTACT,
+  user2 = tpl_entity_new ("user2@collabora.co.uk", TP_ENTITY_TYPE_CONTACT,
       "User2", "");
 
-  user4 = tpl_entity_new ("user4@collabora.co.uk", TPL_ENTITY_CONTACT,
+  user4 = tpl_entity_new ("user4@collabora.co.uk", TP_ENTITY_TYPE_CONTACT,
       "User4", "");
 
   /* Text events spanning multiple days */

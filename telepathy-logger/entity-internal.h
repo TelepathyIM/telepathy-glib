@@ -37,8 +37,8 @@ typedef struct
 } TplEntityClass;
 
 gint _tpl_entity_compare (TplEntity *e1, TplEntity *e2);
-TplEntityType _tpl_entity_type_from_str (const gchar *type_str);
-const gchar * _tpl_entity_type_to_str (TplEntityType type);
+TpEntityType _tpl_entity_type_from_str (const gchar *type_str);
+const gchar * _tpl_entity_type_to_str (TpEntityType type);
 
 G_END_DECLS
 #endif // __TPL_ENTITY_INTERNAL_H__

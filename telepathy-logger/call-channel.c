@@ -77,7 +77,7 @@ get_contacts (TplCallChannel *self,
     {
       handle = tp_contact_get_handle (contact);
       g_hash_table_insert (priv->entities, GUINT_TO_POINTER (handle),
-          tpl_entity_new_from_tp_contact (contact, TPL_ENTITY_CONTACT));
+          tpl_entity_new_from_tp_contact (contact, TP_ENTITY_TYPE_CONTACT));
     }
 
   /* Identify target */
@@ -113,7 +113,7 @@ get_contacts (TplCallChannel *self,
     contact = tp_connection_get_self_contact (con);
 
   handle = tp_contact_get_handle (contact);
-  entity = tpl_entity_new_from_tp_contact (contact, TPL_ENTITY_SELF);
+  entity = tpl_entity_new_from_tp_contact (contact, TP_ENTITY_TYPE_SELF);
   g_hash_table_insert (priv->entities, GUINT_TO_POINTER (handle), entity);
 
   if (tp_channel_get_requested (chan) || is_room)
@@ -159,7 +159,7 @@ call_state_changed_cb (TpCallChannel *call,
               GUINT_TO_POINTER (reason->actor));
 
           if (priv->end_actor == NULL)
-            priv->end_actor = tpl_entity_new ("unknown", TPL_ENTITY_UNKNOWN,
+            priv->end_actor = tpl_entity_new ("unknown", TP_ENTITY_TYPE_NONE,
                 NULL, NULL);
           else
             g_object_ref (priv->end_actor);
@@ -212,7 +212,7 @@ call_members_changed_cb (TpCallChannel *call,
       if (!entity)
         {
           entity = tpl_entity_new_from_tp_contact (contact,
-              TPL_ENTITY_CONTACT);
+              TP_ENTITY_TYPE_CONTACT);
           g_hash_table_insert (priv->entities, GUINT_TO_POINTER (handle),
               entity);
         }

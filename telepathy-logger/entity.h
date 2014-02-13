@@ -32,24 +32,6 @@ G_BEGIN_DECLS
 #define TPL_IS_ENTITY_CLASS(klass)  (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_ENTITY))
 #define TPL_ENTITY_GET_CLASS(obj)   (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_ENTITY, TplEntityClass))
 
-/**
- * TplEntityType:
- * @TPL_ENTITY_UNKNOWN: the current contact's type is unknown
- * @TPL_ENTITY_CONTACT: the contact's type represents a user (buddy), but not
- *    the account's owner for which @TPL_ENTITY_SELF is used
- * @TPL_ENTITY_ROOM: a named room (#TP_ENTITY_TYPE_ROOM)
- * @TPL_ENTITY_SELF: the contact's type represents the owner of the account
- *    whose channel has been logged, as opposed to @TPL_ENTITY_CONTACT which
- *    represents any other user
- */
-typedef enum
-{
-  TPL_ENTITY_UNKNOWN,
-  TPL_ENTITY_CONTACT,
-  TPL_ENTITY_ROOM,
-  TPL_ENTITY_SELF
-} TplEntityType;
-
 typedef struct _TplEntity TplEntity;
 typedef struct _TplEntityPriv TplEntityPriv;
 
@@ -65,15 +47,15 @@ struct _TplEntity
 GType tpl_entity_get_type (void);
 
 TplEntity *tpl_entity_new (const gchar *id,
-    TplEntityType type,
+    TpEntityType type,
     const gchar *alias,
     const gchar *avatar_token);
-TplEntity *tpl_entity_new_from_tp_contact (TpContact *contact, TplEntityType type);
+TplEntity *tpl_entity_new_from_tp_contact (TpContact *contact, TpEntityType type);
 TplEntity *tpl_entity_new_from_room_id (const gchar *room_id);
 
 const gchar *tpl_entity_get_alias (TplEntity *self);
 const gchar *tpl_entity_get_identifier (TplEntity *self);
-TplEntityType tpl_entity_get_entity_type (TplEntity *self);
+TpEntityType tpl_entity_get_entity_type (TplEntity *self);
 const gchar *tpl_entity_get_avatar_token (TplEntity *self);
 
 G_END_DECLS

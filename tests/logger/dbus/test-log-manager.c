@@ -277,8 +277,8 @@ test_exists (TestCaseFixture *fixture,
   TplEntity *entity;
   TplEntity *no_entity;
 
-  entity = tpl_entity_new (ID, TPL_ENTITY_CONTACT, NULL, NULL);
-  no_entity = tpl_entity_new ("unknown", TPL_ENTITY_CONTACT, NULL, NULL);
+  entity = tpl_entity_new (ID, TP_ENTITY_TYPE_CONTACT, NULL, NULL);
+  no_entity = tpl_entity_new ("unknown", TP_ENTITY_TYPE_CONTACT, NULL, NULL);
 
   g_assert (tpl_log_manager_exists (fixture->manager, fixture->account,
         entity, TPL_EVENT_MASK_ANY));
@@ -313,7 +313,7 @@ test_get_dates (TestCaseFixture *fixture,
   GList *loc;
   TplEntity *entity;
 
-  entity = tpl_entity_new (ID, TPL_ENTITY_CONTACT, NULL, NULL);
+  entity = tpl_entity_new (ID, TP_ENTITY_TYPE_CONTACT, NULL, NULL);
 
   tpl_log_manager_get_dates_async (fixture->manager,
       fixture->account, entity, TPL_EVENT_MASK_ANY,
@@ -361,7 +361,7 @@ test_get_events_for_date (TestCaseFixture *fixture,
   TplEntity *entity;
   GDate *date;
 
-  entity = tpl_entity_new (ID, TPL_ENTITY_CONTACT, NULL, NULL);
+  entity = tpl_entity_new (ID, TP_ENTITY_TYPE_CONTACT, NULL, NULL);
   date = g_date_new_dmy (13, 1, 2010);
 
   tpl_log_manager_get_events_for_date_async (fixture->manager,
@@ -402,7 +402,7 @@ test_get_events_for_date_account_unprepared (TestCaseFixture *fixture,
       account_path, NULL, NULL);
   g_assert (!tp_proxy_is_prepared (account, TP_ACCOUNT_FEATURE_CORE));
 
-  entity = tpl_entity_new (ID, TPL_ENTITY_CONTACT, NULL, NULL);
+  entity = tpl_entity_new (ID, TP_ENTITY_TYPE_CONTACT, NULL, NULL);
   date = g_date_new_dmy (13, 1, 2010);
 
   tpl_log_manager_get_events_for_date_async (fixture->manager,
@@ -468,7 +468,7 @@ test_get_filtered_events (TestCaseFixture *fixture,
   TplEntity *entity;
   GDate *date;
 
-  entity = tpl_entity_new (ID, TPL_ENTITY_CONTACT, NULL, NULL);
+  entity = tpl_entity_new (ID, TP_ENTITY_TYPE_CONTACT, NULL, NULL);
   date = g_date_new_dmy (13, 1, 2010);
 
   tpl_log_manager_get_filtered_events_async (fixture->manager,
@@ -641,8 +641,8 @@ test_ignorelist (TestCaseFixture *fixture,
   TplConf *conf;
   gboolean passed;
 
-  receiver = tpl_entity_new ("ignoreduser1@collabora.co.uk", TPL_ENTITY_CONTACT, "Me", "no-avatar");
-  sender = tpl_entity_new ("ignoreduser2@collabora.co.uk", TPL_ENTITY_CONTACT, "Someone Else", "no-avatar");
+  receiver = tpl_entity_new ("ignoreduser1@collabora.co.uk", TP_ENTITY_TYPE_CONTACT, "Me", "no-avatar");
+  sender = tpl_entity_new ("ignoreduser2@collabora.co.uk", TP_ENTITY_TYPE_CONTACT, "Someone Else", "no-avatar");
 
   event1 = g_object_new (TPL_TYPE_TEXT_EVENT,
     "account", fixture->account,
