@@ -491,28 +491,25 @@ create_channel_cb (GObject *source_object,
 static void
 open_new_channel (TpRoomList *self)
 {
-  GHashTable *request;
+  GVariantDict dict;
   TpAccountChannelRequest *channel_request;
 
   DEBUG ("Requesting new RoomList channel");
 
-  request = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-        TP_IFACE_CHANNEL_TYPE_ROOM_LIST1,
-      NULL);
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict,
+      TP_PROP_CHANNEL_CHANNEL_TYPE, "s", TP_IFACE_CHANNEL_TYPE_ROOM_LIST1);
 
   if (self->priv->server != NULL)
-    tp_asv_set_string (request, TP_PROP_CHANNEL_TYPE_ROOM_LIST1_SERVER,
-        self->priv->server);
+    g_variant_dict_insert (&dict,
+        TP_PROP_CHANNEL_TYPE_ROOM_LIST1_SERVER, "s", self->priv->server);
 
-  channel_request = tp_account_channel_request_new (self->priv->account,
-      request, TP_USER_ACTION_TIME_NOT_USER_ACTION);
+  channel_request = tp_account_channel_request_new_vardict (self->priv->account,
+      g_variant_dict_end (&dict), TP_USER_ACTION_TIME_NOT_USER_ACTION);
 
   tp_account_channel_request_create_and_handle_channel_async (channel_request,
       NULL, create_channel_cb, G_OBJECT (self));
   g_object_unref (channel_request);
-
-  g_hash_table_unref (request);
 }
 
 static void
