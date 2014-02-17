@@ -265,32 +265,27 @@ _create_search_channel_cb (GObject *source_object,
 static void
 tp_contact_search_open_new_channel (TpContactSearch *self)
 {
-  GHashTable *request;
+  GVariantDict dict;
   TpAccountChannelRequest *channel_request;
 
   close_search_channel (self);
 
   DEBUG ("Requesting new search channel");
 
-  request = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE,
-      G_TYPE_STRING,
-      TP_IFACE_CHANNEL_TYPE_CONTACT_SEARCH1,
-      NULL);
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict,
+      TP_PROP_CHANNEL_CHANNEL_TYPE, "s", TP_IFACE_CHANNEL_TYPE_CONTACT_SEARCH1);
 
   if (self->priv->server != NULL)
-    tp_asv_set_string (request,
-        TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH1_SERVER,
-        self->priv->server);
+    g_variant_dict_insert (&dict,
+        TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH1_SERVER, "s", self->priv->server);
 
   if (self->priv->limit != 0)
-    tp_asv_set_uint32 (request,
-      TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH1_LIMIT,
-      self->priv->limit);
+    g_variant_dict_insert (&dict,
+        TP_PROP_CHANNEL_TYPE_CONTACT_SEARCH1_LIMIT, "s", self->priv->limit);
 
-  channel_request = tp_account_channel_request_new (self->priv->account,
-      request,
-      TP_USER_ACTION_TIME_NOT_USER_ACTION);
+  channel_request = tp_account_channel_request_new_vardict (self->priv->account,
+      g_variant_dict_end (&dict), TP_USER_ACTION_TIME_NOT_USER_ACTION);
 
   tp_account_channel_request_create_and_handle_channel_async (
       channel_request,
@@ -298,8 +293,6 @@ tp_contact_search_open_new_channel (TpContactSearch *self)
       _create_search_channel_cb,
       G_OBJECT (self));
   g_object_unref (channel_request);
-
-  g_hash_table_unref (request);
 }
 
 static void
