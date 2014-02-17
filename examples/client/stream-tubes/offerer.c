@@ -139,7 +139,7 @@ main (int argc,
   char *account_path;
   GError *error = NULL;
   TpAccountChannelRequest *req;
-  GHashTable *request;
+  GVariant *request;
 
   if (argc != 3)
     {
@@ -155,28 +155,16 @@ main (int argc,
   g_assert_no_error (error);
   g_free (account_path);
 
-  request = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE,
-      G_TYPE_STRING,
-      TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
-
-      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE,
-      G_TYPE_UINT,
-      TP_ENTITY_TYPE_CONTACT,
-
-      TP_PROP_CHANNEL_TARGET_ID,
-      G_TYPE_STRING,
-      argv[2],
-
-      TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SERVICE,
-      G_TYPE_STRING,
-      "ExampleService",
-
-      NULL);
+  request = g_variant_new_parsed (
+      "{ %s: <%s>, %s: <%u>, %s: <%s>, %s: <%s> }",
+      TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT,
+      TP_PROP_CHANNEL_TARGET_ID, argv[2],
+      TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SERVICE, "ExampleService");
 
   g_message ("Offer channel to %s", argv[2]);
 
-  req = tp_account_channel_request_new (account, request,
+  req = tp_account_channel_request_new_vardict (account, request,
       TP_USER_ACTION_TIME_CURRENT_TIME);
 
   tp_account_channel_request_create_and_handle_channel_async (req, NULL,
@@ -187,7 +175,6 @@ main (int argc,
 
   g_object_unref (account);
   g_object_unref (req);
-  g_hash_table_unref (request);
   g_main_loop_unref (loop);
   g_object_unref (factory);
 
