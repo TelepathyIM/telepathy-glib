@@ -527,12 +527,12 @@ test_storage (Test *test,
       g_assert_cmpstr (tp_account_get_storage_provider (test->account), ==,
           NULL);
       assert_strprop (test->account, "storage-provider", NULL);
-      g_assert (tp_account_get_storage_identifier (test->account) == NULL);
+      g_assert (tp_account_dup_storage_identifier (test->account) == NULL);
       g_object_get (test->account,
           "storage-identifier", &gvariant,
           NULL);
       g_assert (gvariant == NULL);
-      g_assert (tp_account_get_storage_identifier (test->account) == NULL);
+      g_assert (tp_account_dup_storage_identifier (test->account) == NULL);
       g_object_get (test->account,
           "storage-identifier", &gvariant,
           NULL);
@@ -552,9 +552,10 @@ test_storage (Test *test,
   assert_strprop (test->account, "storage-provider",
       "im.telepathy.v1.glib.test");
 
-  g_assert_cmpstr (
-      g_variant_get_string ((GVariant *) tp_account_get_storage_identifier (
-          test->account), NULL), ==, "unique-identifier");
+  gvariant = tp_account_dup_storage_identifier (test->account);
+  g_assert_cmpstr (g_variant_get_string (gvariant, NULL), ==,
+      "unique-identifier");
+  g_variant_unref (gvariant);
   g_object_get (test->account,
       "storage-identifier", &gvariant,
       NULL);

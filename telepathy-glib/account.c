@@ -3797,20 +3797,23 @@ tp_account_get_storage_provider (TpAccount *self)
 }
 
 /**
- * tp_account_get_storage_identifier:
+ * tp_account_dup_storage_identifier:
  * @self: a #TpAccount
  *
  * <!-- -->
  *
- * Returns: (transfer none): the same as the #TpAccount:storage-identifier
+ * Returns: (transfer full): the same as the #TpAccount:storage-identifier
  * property
  */
-const GVariant *
-tp_account_get_storage_identifier (TpAccount *self)
+GVariant *
+tp_account_dup_storage_identifier (TpAccount *self)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
 
-  return self->priv->storage_identifier;
+  if (self->priv->storage_identifier == NULL)
+    return NULL;
+
+  return g_variant_ref (self->priv->storage_identifier);
 }
 
 /**

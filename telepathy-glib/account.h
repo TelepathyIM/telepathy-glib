@@ -242,7 +242,7 @@ gboolean tp_account_set_avatar_finish (TpAccount *self,
 gboolean tp_account_get_changing_presence (TpAccount *self);
 
 const gchar *tp_account_get_storage_provider (TpAccount *self);
-const GVariant *tp_account_get_storage_identifier (TpAccount *self);
+GVariant * tp_account_dup_storage_identifier (TpAccount *self);
 TpStorageRestrictionFlags tp_account_get_storage_restrictions (TpAccount *self);
 void tp_account_dup_storage_specific_information_async (
     TpAccount *self,
