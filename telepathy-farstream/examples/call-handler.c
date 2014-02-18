@@ -588,6 +588,7 @@ main (int argc, char **argv)
 {
   TpBaseClient *client;
   TpAccountManager *am;
+  GVariantDict dict;
 
   gst_init (&argc, &argv);
 
@@ -604,25 +605,29 @@ main (int argc, char **argv)
     NULL,
     NULL);
 
-  tp_base_client_take_handler_filter (client,
-    tp_asv_new (
-       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_CALL1,
-       TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-          TP_ENTITY_TYPE_CONTACT,
-        TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO, G_TYPE_BOOLEAN,
-          TRUE,
-       NULL));
+  /* Audio */
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_CHANNEL_TYPE, "s",
+      TP_IFACE_CHANNEL_TYPE_CALL1);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, "u",
+      TP_ENTITY_TYPE_CONTACT);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO, "b",
+      TRUE);
 
-  tp_base_client_take_handler_filter (client,
-    tp_asv_new (
-       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_CALL1,
-       TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-          TP_ENTITY_TYPE_CONTACT,
-        TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO, G_TYPE_BOOLEAN,
-          TRUE,
-       NULL));
+  tp_base_client_add_handler_filter_vardict (client,
+      g_variant_dict_end (&dict));
+
+  /* Video */
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_CHANNEL_TYPE, "s",
+      TP_IFACE_CHANNEL_TYPE_CALL1);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, "u",
+      TP_ENTITY_TYPE_CONTACT);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO, "b",
+      TRUE);
+
+  tp_base_client_add_handler_filter (client,
+      g_variant_dict_end (&dict));
 
   tp_base_client_add_handler_capabilities_varargs (client,
     TP_IFACE_CHANNEL_TYPE_CALL1 "/video/h264",
