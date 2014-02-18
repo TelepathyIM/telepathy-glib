@@ -371,7 +371,7 @@ test_prepare_success (Test *test,
   TpConnectionStatusReason reason;
   gchar *status = NULL;
   gchar *message = NULL;
-  const GHashTable *details = GUINT_TO_POINTER (666);
+  GVariant *details = GUINT_TO_POINTER (666);
   GStrv strv;
   const gchar * const *cstrv;
   GVariant *variant;
@@ -413,11 +413,11 @@ test_prepare_success (Test *test,
   g_assert_cmpint (reason, ==, TP_CONNECTION_STATUS_REASON_REQUESTED);
   assert_uintprop (test->account, "connection-status-reason",
       TP_CONNECTION_STATUS_REASON_REQUESTED);
-  g_assert_cmpstr (tp_account_get_detailed_error (test->account, NULL), ==,
-      NULL);
+  g_assert_cmpstr (tp_account_dup_detailed_error_vardict (test->account, NULL),
+      ==, NULL);
   assert_strprop (test->account, "connection-error", NULL);
-  g_assert_cmpstr (tp_account_get_detailed_error (test->account, &details), ==,
-      NULL);
+  g_assert_cmpstr (tp_account_dup_detailed_error_vardict (
+        test->account, &details), ==, NULL);
   /* this is documented to be untouched */
   g_assert_cmpuint (GPOINTER_TO_UINT (details), ==, 666);
 
@@ -766,8 +766,8 @@ test_connection (Test *test,
   g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, conn1_path);
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
 
-  g_assert_cmpstr (tp_account_get_detailed_error (test->account, NULL), ==,
-      TP_ERROR_STR_CANCELLED);
+  g_assert_cmpstr (tp_account_dup_detailed_error_vardict (test->account, NULL),
+      ==, TP_ERROR_STR_CANCELLED);
 
   /* a no-op "change" */
 
@@ -815,8 +815,8 @@ test_connection (Test *test,
   conn = tp_account_get_connection (test->account);
   g_assert (conn == NULL);
 
-  g_assert_cmpstr (tp_account_get_detailed_error (test->account, NULL), ==,
-      TP_ERROR_STR_ENCRYPTION_ERROR);
+  g_assert_cmpstr (tp_account_dup_detailed_error_vardict (test->account, NULL),
+      ==, TP_ERROR_STR_ENCRYPTION_ERROR);
 
   /* another connection */
 
@@ -848,15 +848,6 @@ test_connection (Test *test,
   tp_tests_proxy_run_until_dbus_queue_processed (test->account);
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
   g_assert_cmpuint (test_get_times_notified (test, "connection-error"), ==, 1);
-
-  g_assert_cmpstr (tp_account_get_detailed_error (test->account,
-      (const GHashTable **) &details), ==,
-      "org.debian.packages.OpenSSL.NotRandomEnough");
-  g_assert_cmpuint (tp_asv_size (details), >=, 2);
-  g_assert_cmpstr (tp_asv_get_string (details, "debug-message"), ==,
-      "shiiiiii-");
-  g_assert_cmpuint (tp_asv_get_uint32 (details, "bits-of-entropy", NULL), ==,
-      15);
 
   s = tp_account_dup_detailed_error_vardict (test->account, &details_v);
   g_assert_cmpstr (s, ==, "org.debian.packages.OpenSSL.NotRandomEnough");

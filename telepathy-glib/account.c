@@ -3701,45 +3701,6 @@ tp_account_set_avatar_async (TpAccount *self,
 }
 
 /**
- * tp_account_get_detailed_error: (skip)
- * @self: an account
- * @details: (out) (allow-none) (element-type utf8 GObject.Value) (transfer none):
- *  optionally used to return a map from string to #GValue, which must not be
- *  modified, destroyed or unreffed by the caller
- *
- * If the account's connection is not connected, return the D-Bus error name
- * with which it last disconnected or failed to connect (in particular, this
- * is %TP_ERROR_STR_CANCELLED if it was disconnected by a user request).
- * This is the same as #TpAccount:connection-error.
- *
- * If @details is not %NULL, it will be used to return additional details about
- * the error (the same as #TpAccount:connection-error-details).
- *
- * Otherwise, return %NULL, without altering @details.
- *
- * The returned string and @details may become invalid when the main loop is
- * re-entered or the account is destroyed.
- *
- * Returns: (transfer none) (allow-none): a D-Bus error name, or %NULL.
- *
- * Since: 0.11.7
- */
-const gchar *
-tp_account_get_detailed_error (TpAccount *self,
-    const GHashTable **details)
-{
-  g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
-
-  if (self->priv->connection_status == TP_CONNECTION_STATUS_CONNECTED)
-    return NULL;
-
-  if (details != NULL)
-    *details = self->priv->error_details;
-
-  return self->priv->error;
-}
-
-/**
  * tp_account_dup_detailed_error_vardict:
  * @self: an account
  * @details: (out) (allow-none) (transfer full):
