@@ -251,24 +251,28 @@ log_store_pidgin_get_dir (TplLogStore *self,
   gchar *username, *normalized, *tmp;
   gchar *id = NULL; /* if not NULL, it contains a modified version of
                        target id, to be g_free'd */
-  const GHashTable *params;
+  GVariant *params;
+  const gchar *account_param;
 
-  params = tp_account_get_parameters (account);
+  params = tp_account_dup_parameters_vardict (account);
   protocol = tp_account_get_protocol_name (account);
+
+  g_variant_lookup (params, "account", "&s", &account_param);
 
   if (tp_strdiff (protocol, "irc") == 0)
     {
-      const gchar *account_param, *server;
+      const gchar *server;
 
-      account_param = tp_asv_get_string (params, "account");
-      server = tp_asv_get_string (params, "server");
+      g_variant_lookup (params, "server", "&s", &server);
 
       username = g_strdup_printf ("%s@%s", account_param, server);
     }
   else
     {
-      username = g_strdup (tp_asv_get_string (params, "account"));
+      username = g_strdup (account_param);
     }
+
+  g_variant_unref (params);
 
   if (username == NULL)
     {
@@ -517,18 +521,27 @@ log_store_pidgin_dup_account (TplLogStorePidgin *self,
   for (l = accounts; l != NULL; l = l->next)
     {
       TpAccount *acc = (TpAccount *) l->data;
-      const GHashTable *params;
+      GVariant *params;
+      const gchar *account_param, *server_param;
 
       if (tp_strdiff (tp_account_get_protocol_name (acc), protocol))
         continue;
 
-      params = tp_account_get_parameters (acc);
+      params = tp_account_dup_parameters_vardict (acc);
 
-      if (!tp_strdiff (username, tp_asv_get_string (params, "account")))
+      g_variant_lookup (params,
+          "account", "&s", &account_param,
+          "server", "&s", &server_param);
+
+      if (!tp_strdiff (username, account_param))
         {
-          if (is_irc && tp_strdiff (server, tp_asv_get_string (params, "server")))
-            continue;
+          if (is_irc && tp_strdiff (server, server_param))
+            {
+              g_variant_unref (params);
+              continue;
+            }
 
+          g_variant_unref (params);
           account = g_object_ref (acc);
           break;
         }
