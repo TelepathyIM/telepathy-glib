@@ -61,10 +61,6 @@ GType tp_account_channel_request_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_ACCOUNT_CHANNEL_REQUEST, \
                               TpAccountChannelRequestClass))
 
-TpAccountChannelRequest * tp_account_channel_request_new (
-    TpAccount *account,
-    GHashTable *request,
-    gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
 _TP_AVAILABLE_IN_0_20
 TpAccountChannelRequest * tp_account_channel_request_new_vardict (
     TpAccount *account,

@@ -4952,7 +4952,6 @@ tp_svc_channel_type_contact_search1_get_type
 <TITLE>account-channel-request</TITLE>
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 TpAccountChannelRequest
-tp_account_channel_request_new
 tp_account_channel_request_new_vardict
 tp_account_channel_request_get_request
 tp_account_channel_request_dup_request
