@@ -195,7 +195,7 @@ test_properties (Test *test,
   g_free (service);
 
   /* Parameters */
-  parameters_vardict = tp_dbus_tube_channel_dup_parameters_vardict (
+  parameters_vardict = tp_dbus_tube_channel_dup_parameters (
       test->tube);
   /* NULL as the tube has not be offered yet */
   g_assert (parameters_vardict == NULL);
@@ -204,7 +204,7 @@ test_properties (Test *test,
   create_tube_service (test, FALSE, FALSE);
 
   /* Parameters */
-  parameters_vardict = tp_dbus_tube_channel_dup_parameters_vardict (
+  parameters_vardict = tp_dbus_tube_channel_dup_parameters (
       test->tube);
   check_parameters_vardict (parameters_vardict);
 
@@ -368,7 +368,7 @@ test_offer (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  variant = tp_dbus_tube_channel_dup_parameters_vardict (test->tube);
+  variant = tp_dbus_tube_channel_dup_parameters (test->tube);
   check_parameters_vardict (variant);
   g_variant_unref (variant);
 
