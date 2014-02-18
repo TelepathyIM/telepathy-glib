@@ -164,7 +164,7 @@ main (int argc,
 
   g_message ("Offer channel to %s", argv[2]);
 
-  req = tp_account_channel_request_new_vardict (account, request,
+  req = tp_account_channel_request_new (account, request,
       TP_USER_ACTION_TIME_CURRENT_TIME);
 
   tp_account_channel_request_create_and_handle_channel_async (req, NULL,

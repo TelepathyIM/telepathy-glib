@@ -519,7 +519,7 @@ tp_account_channel_request_class_init (
 }
 
 /**
- * tp_account_channel_request_new_vardict:
+ * tp_account_channel_request_new:
  * @account: a #TpAccount
  * @request: the requested
  *  properties of the channel (see #TpAccountChannelRequest:request)
@@ -540,7 +540,7 @@ tp_account_channel_request_class_init (
  * Since: 0.19.10
  */
 TpAccountChannelRequest *
-tp_account_channel_request_new_vardict (
+tp_account_channel_request_new (
     TpAccount *account,
     GVariant *request,
     gint64 user_action_time)

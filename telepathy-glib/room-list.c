@@ -504,7 +504,7 @@ open_new_channel (TpRoomList *self)
     g_variant_dict_insert (&dict,
         TP_PROP_CHANNEL_TYPE_ROOM_LIST1_SERVER, "s", self->priv->server);
 
-  channel_request = tp_account_channel_request_new_vardict (self->priv->account,
+  channel_request = tp_account_channel_request_new (self->priv->account,
       g_variant_dict_end (&dict), TP_USER_ACTION_TIME_NOT_USER_ACTION);
 
   tp_account_channel_request_create_and_handle_channel_async (channel_request,

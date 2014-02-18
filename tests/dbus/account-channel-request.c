@@ -520,7 +520,7 @@ test_handle_cancel_before (Test *test,
 {
   TpAccountChannelRequest *req;
 
-  req = tp_account_channel_request_new_vardict (test->account,
+  req = tp_account_channel_request_new (test->account,
       floating_request (), 0);
 
   g_cancellable_cancel (test->cancellable);
@@ -549,7 +549,7 @@ test_handle_cancel_after_create (Test *test,
 {
   TpAccountChannelRequest *req;
 
-  req = tp_account_channel_request_new_vardict (test->account,
+  req = tp_account_channel_request_new (test->account,
       floating_request (), 0);
 
   tp_account_channel_request_ensure_and_handle_channel_async (req,
@@ -588,7 +588,7 @@ test_handle_re_handle (Test *test,
 {
   TpAccountChannelRequest *req, *req2;
 
-  req = tp_account_channel_request_new_vardict (test->account,
+  req = tp_account_channel_request_new (test->account,
       floating_request (), 0);
 
   tp_account_channel_request_ensure_and_handle_channel_async (req,
@@ -601,7 +601,7 @@ test_handle_re_handle (Test *test,
       G_CALLBACK (re_handled_cb), test);
 
   /* Ensure the same channel to re-handle it */
-  req2 = tp_account_channel_request_new_vardict (test->account,
+  req2 = tp_account_channel_request_new (test->account,
       floating_request (), 666);
 
   tp_account_channel_request_ensure_and_handle_channel_async (req2,
@@ -671,7 +671,7 @@ test_handle_create_success_hints (Test *test,
   TpAccountChannelRequest *req;
   GHashTable *hints;
 
-  req = tp_account_channel_request_new_vardict (test->account,
+  req = tp_account_channel_request_new (test->account,
       floating_request (), 0);
 
   hints = create_hints ();
@@ -740,7 +740,7 @@ test_handle_delegated (Test *test,
   TpBaseClient *base_client;
   TpClient *client;
 
-  req = tp_account_channel_request_new_vardict (test->account,
+  req = tp_account_channel_request_new (test->account,
       floating_request (), 0);
 
   /* Allow other clients to preempt the channel */
@@ -838,7 +838,7 @@ test_observe_create_success (Test *test,
 {
   TpAccountChannelRequest *req;
 
-  req = tp_account_channel_request_new_vardict (test->account,
+  req = tp_account_channel_request_new (test->account,
       floating_request (), 0);
 
   tp_account_channel_request_create_channel_async (req, "Fake",
@@ -864,7 +864,7 @@ test_observe_create_fail (Test *test,
   g_variant_dict_insert (&dict,
       "CreateChannelFail", "b", TRUE);
 
-  req = tp_account_channel_request_new_vardict (test->account,
+  req = tp_account_channel_request_new (test->account,
       g_variant_dict_end (&dict), 0);
 
   tp_account_channel_request_create_channel_async (req, "Fake",
@@ -891,7 +891,7 @@ test_observe_proceed_fail (Test *test,
   g_variant_dict_insert (&dict,
       "ProceedFail", "b", TRUE);
 
-  req = tp_account_channel_request_new_vardict (test->account,
+  req = tp_account_channel_request_new (test->account,
       g_variant_dict_end (&dict), 0);
 
   tp_account_channel_request_create_channel_async (req, "Fake",
@@ -918,7 +918,7 @@ test_observe_cr_failed (Test *test,
   g_variant_dict_insert (&dict,
       "FireFailed", "b", TRUE);
 
-  req = tp_account_channel_request_new_vardict (test->account,
+  req = tp_account_channel_request_new (test->account,
       g_variant_dict_end (&dict), 0);
 
   tp_account_channel_request_create_channel_async (req, "Fake",
@@ -957,7 +957,7 @@ test_observe_ensure_success (Test *test,
 {
   TpAccountChannelRequest *req;
 
-  req = tp_account_channel_request_new_vardict (test->account,
+  req = tp_account_channel_request_new (test->account,
       floating_request (), 0);
 
   tp_account_channel_request_ensure_channel_async (req, "Fake",
@@ -976,7 +976,7 @@ test_observe_cancel_before (Test *test,
 {
   TpAccountChannelRequest *req;
 
-  req = tp_account_channel_request_new_vardict (test->account,
+  req = tp_account_channel_request_new (test->account,
       floating_request (), 0);
 
   g_cancellable_cancel (test->cancellable);
@@ -996,7 +996,7 @@ test_observe_cancel_after_create (Test *test,
 {
   TpAccountChannelRequest *req;
 
-  req = tp_account_channel_request_new_vardict (test->account,
+  req = tp_account_channel_request_new (test->account,
       floating_request (), 0);
 
   tp_account_channel_request_create_channel_async (req, "Fake",
