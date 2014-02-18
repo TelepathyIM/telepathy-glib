@@ -139,7 +139,7 @@ void tp_base_connection_disconnect_with_error (TpBaseConnection *self,
     const GError *error, GHashTable *details, TpConnectionStatusReason reason);
 */
 
-void tp_base_connection_disconnect_with_dbus_error_vardict (
+void tp_base_connection_disconnect_with_dbus_error (
     TpBaseConnection *self,
     const gchar *error_name,
     GVariant *details,

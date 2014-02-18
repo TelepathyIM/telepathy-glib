@@ -1730,7 +1730,7 @@ void tp_base_connection_finish_shutdown (TpBaseConnection *self)
 }
 
 /**
- * tp_base_connection_disconnect_with_dbus_error_vardict: (skip)
+ * tp_base_connection_disconnect_with_dbus_error: (skip)
  * @self: The connection
  * @error_name: The D-Bus error with which the connection changed status to
  *              Disconnected
@@ -1765,7 +1765,7 @@ void tp_base_connection_finish_shutdown (TpBaseConnection *self)
  * Since: 0.7.24
  */
 void
-tp_base_connection_disconnect_with_dbus_error_vardict (TpBaseConnection *self,
+tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,
     const gchar *error_name,
     GVariant *details,
     TpConnectionStatusReason reason)
