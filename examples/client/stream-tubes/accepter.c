@@ -111,20 +111,11 @@ main (int argc,
   handler = tp_simple_handler_new_with_am (manager, FALSE, FALSE,
       "ExampleServiceHandler", FALSE, _handle_channel, NULL, NULL);
 
-  tp_base_client_take_handler_filter (handler, tp_asv_new (
-        TP_PROP_CHANNEL_CHANNEL_TYPE,
-        G_TYPE_STRING,
-        TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
-
-        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE,
-        G_TYPE_UINT,
-        TP_ENTITY_TYPE_CONTACT,
-
-        TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SERVICE,
-        G_TYPE_STRING,
-        "ExampleService",
-
-        NULL));
+  tp_base_client_add_handler_filter_vardict (handler,
+      g_variant_new_parsed ("{ %s: <%s>, %s: <%u>, %s: <%s> }",
+        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT,
+        TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SERVICE, "ExampleService"));
 
   tp_base_client_register (handler, &error);
   g_assert_no_error (error);

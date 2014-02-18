@@ -106,19 +106,22 @@ main (int argc,
   GMainLoop *mainloop;
   GError *error = NULL;
   TpBaseClient *handler;
+  GVariantDict dict;
 
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
   handler = tp_simple_handler_new (NULL, FALSE, FALSE,
       "ExampleHandler", FALSE, handle_channel_cb, NULL, NULL);
 
-  tp_base_client_take_handler_filter (handler, tp_asv_new (
-        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_TEXT,
-        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-          TP_ENTITY_TYPE_CONTACT,
-        TP_PROP_CHANNEL_REQUESTED, G_TYPE_BOOLEAN, FALSE,
-        NULL));
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_CHANNEL_TYPE, "s",
+      TP_IFACE_CHANNEL_TYPE_TEXT);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, "u",
+      (guint32) TP_ENTITY_TYPE_CONTACT);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_REQUESTED, "b", FALSE);
+
+  tp_base_client_add_handler_filter_vardict (handler,
+      g_variant_dict_end (&dict));
 
   if (!tp_base_client_register (handler, &error))
     {
