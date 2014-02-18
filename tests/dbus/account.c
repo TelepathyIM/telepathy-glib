@@ -394,8 +394,6 @@ test_prepare_success (Test *test,
   assert_strprop (test->account, "display-name", "Fake Account");
   g_assert_cmpstr (tp_account_get_nickname (test->account), ==, "badger");
   assert_strprop (test->account, "nickname", "badger");
-  g_assert_cmpuint (tp_asv_size (tp_account_get_parameters (test->account)),
-      ==, 0);
   variant = tp_account_dup_parameters_vardict (test->account);
   g_assert_cmpstr (g_variant_get_type_string (variant), ==, "a{sv}");
   g_assert_cmpuint (g_variant_n_children (variant), ==, 0);
