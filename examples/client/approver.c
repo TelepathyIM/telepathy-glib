@@ -142,25 +142,25 @@ main (int argc,
       FALSE, add_dispatch_operation_cb, NULL, NULL);
 
   /* contact text chat */
-  tp_base_client_add_approver_filter_vardict (approver,
+  tp_base_client_add_approver_filter (approver,
       g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
         TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT,
         TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT));
 
   /* calls */
-  tp_base_client_add_approver_filter_vardict (approver,
+  tp_base_client_add_approver_filter (approver,
       g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
         TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_CALL1,
         TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT));
 
   /* room text chat */
-  tp_base_client_add_approver_filter_vardict (approver,
+  tp_base_client_add_approver_filter (approver,
       g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
         TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT,
         TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_ROOM));
 
   /* file transfer */
-  tp_base_client_add_approver_filter_vardict (approver,
+  tp_base_client_add_approver_filter (approver,
       g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
         TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1,
         TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT));

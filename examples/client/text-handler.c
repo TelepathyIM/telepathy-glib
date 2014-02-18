@@ -120,7 +120,7 @@ main (int argc,
       (guint32) TP_ENTITY_TYPE_CONTACT);
   g_variant_dict_insert (&dict, TP_PROP_CHANNEL_REQUESTED, "b", FALSE);
 
-  tp_base_client_add_handler_filter_vardict (handler,
+  tp_base_client_add_handler_filter (handler,
       g_variant_dict_end (&dict));
 
   if (!tp_base_client_register (handler, &error))

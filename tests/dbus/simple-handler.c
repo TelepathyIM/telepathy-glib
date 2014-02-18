@@ -300,11 +300,11 @@ test_properties (Test *test,
 {
   create_simple_handler (test, FALSE, TRUE, handle_channel_success);
 
-  tp_base_client_add_handler_filter_vardict (test->simple_handler,
+  tp_base_client_add_handler_filter (test->simple_handler,
       g_variant_new_parsed ("{ %s: <%s> }",
         TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT));
 
-  tp_base_client_add_handler_filter_vardict (test->simple_handler,
+  tp_base_client_add_handler_filter (test->simple_handler,
       g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
         TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
         TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT));
@@ -384,7 +384,7 @@ test_success (Test *test,
 {
   create_simple_handler (test, FALSE, FALSE, handle_channel_success);
 
-  tp_base_client_add_handler_filter_vardict (test->simple_handler,
+  tp_base_client_add_handler_filter (test->simple_handler,
       g_variant_new_parsed ("@a{sv} {}"));
 
   tp_base_client_register (test->simple_handler, &test->error);
@@ -427,7 +427,7 @@ test_delayed (Test *test,
 {
   create_simple_handler (test, FALSE, FALSE, handle_channel_async);
 
-  tp_base_client_add_handler_filter_vardict (test->simple_handler,
+  tp_base_client_add_handler_filter (test->simple_handler,
       g_variant_new_parsed ("@a{sv} {}"));
 
   tp_base_client_register (test->simple_handler, &test->error);
@@ -461,7 +461,7 @@ test_fail (Test *test,
 {
   create_simple_handler (test, FALSE, FALSE, handle_channel_fail);
 
-  tp_base_client_add_handler_filter_vardict (test->simple_handler,
+  tp_base_client_add_handler_filter (test->simple_handler,
       g_variant_new_parsed ("@a{sv} {}"));
 
   tp_base_client_register (test->simple_handler, &test->error);

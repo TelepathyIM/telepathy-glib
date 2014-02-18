@@ -111,7 +111,7 @@ main (int argc,
   handler = tp_simple_handler_new_with_am (manager, FALSE, FALSE,
       "ExampleServiceHandler", FALSE, _handle_channel, NULL, NULL);
 
-  tp_base_client_add_handler_filter_vardict (handler,
+  tp_base_client_add_handler_filter (handler,
       g_variant_new_parsed ("{ %s: <%s>, %s: <%u>, %s: <%s> }",
         TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
         TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT,

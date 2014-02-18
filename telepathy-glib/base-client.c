@@ -353,7 +353,7 @@ tp_base_client_take_observer_filter (TpBaseClient *self,
 }
 
 /**
- * tp_base_client_add_observer_filter_vardict:
+ * tp_base_client_add_observer_filter:
  * @self: a client
  * @filter: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
  *
@@ -369,7 +369,7 @@ tp_base_client_take_observer_filter (TpBaseClient *self,
  * will be taken, allowing for uses like this:
  *
  * |[
- * tp_base_client_add_observer_filter_vardict (client,
+ * tp_base_client_add_observer_filter (client,
  *    g_variant_new_parsed ("{ %s: <%s>, %s: <%u>, ... }",
  *        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT,
  *        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT,
@@ -379,7 +379,7 @@ tp_base_client_take_observer_filter (TpBaseClient *self,
  * Since: 0.19.10
  */
 void
-tp_base_client_add_observer_filter_vardict (TpBaseClient *self,
+tp_base_client_add_observer_filter (TpBaseClient *self,
     GVariant *filter)
 {
   g_return_if_fail (g_variant_is_of_type (filter, G_VARIANT_TYPE_VARDICT));
@@ -511,7 +511,7 @@ tp_base_client_take_approver_filter (TpBaseClient *self,
 }
 
 /**
- * tp_base_client_add_approver_filter_vardict:
+ * tp_base_client_add_approver_filter:
  * @self: a client
  * @filter: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
  *
@@ -524,13 +524,13 @@ tp_base_client_take_approver_filter (TpBaseClient *self,
  * #TpBaseClientClass.add_dispatch_operation.
  *
  * If the variant is floating (see g_variant_ref_sink()), ownership
- * will be taken. See tp_base_client_add_observer_filter_vardict() for
+ * will be taken. See tp_base_client_add_observer_filter() for
  * more details.
  *
  * Since: 0.19.10
  */
 void
-tp_base_client_add_approver_filter_vardict (TpBaseClient *self,
+tp_base_client_add_approver_filter (TpBaseClient *self,
     GVariant *filter)
 {
   g_return_if_fail (g_variant_is_of_type (filter, G_VARIANT_TYPE_VARDICT));
@@ -602,7 +602,7 @@ tp_base_client_take_handler_filter (TpBaseClient *self,
 }
 
 /**
- * tp_base_client_add_handler_filter_vardict:
+ * tp_base_client_add_handler_filter:
  * @self: a client
  * @filter: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
  *
@@ -615,13 +615,13 @@ tp_base_client_take_handler_filter (TpBaseClient *self,
  * #TpBaseClientClass.handle_channel.
  *
  * If the variant is floating (see g_variant_ref_sink()), ownership
- * will be taken. See tp_base_client_add_observer_filter_vardict() for
+ * will be taken. See tp_base_client_add_observer_filter() for
  * more details.
  *
  * Since: 0.19.10
  */
 void
-tp_base_client_add_handler_filter_vardict (TpBaseClient *self,
+tp_base_client_add_handler_filter (TpBaseClient *self,
     GVariant *filter)
 {
   g_return_if_fail (g_variant_is_of_type (filter, G_VARIANT_TYPE_VARDICT));

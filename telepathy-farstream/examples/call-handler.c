@@ -614,7 +614,7 @@ main (int argc, char **argv)
   g_variant_dict_insert (&dict, TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO, "b",
       TRUE);
 
-  tp_base_client_add_handler_filter_vardict (client,
+  tp_base_client_add_handler_filter (client,
       g_variant_dict_end (&dict));
 
   /* Video */
