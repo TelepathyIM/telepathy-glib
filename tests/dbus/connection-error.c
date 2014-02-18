@@ -154,14 +154,13 @@ test_registered_error (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
   GError *error = NULL;
-  const GHashTable *asv;
+  GVariant *asv;
   gboolean ok;
+  gchar *str;
 
   asv = GUINT_TO_POINTER (0xDEADBEEF);
-  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, NULL), ==,
-      NULL);
-  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, &asv), ==,
-      NULL);
+  g_assert_cmpstr (tp_connection_dup_detailed_error_vardict (test->conn, &asv),
+      ==, NULL);
   g_assert_cmpuint (GPOINTER_TO_UINT (asv), ==, 0xDEADBEEF);
 
   connection_errors = 0;
@@ -182,11 +181,11 @@ test_registered_error (Test *test,
   g_assert_error (error, example_com_error_quark (), DOMAIN_SPECIFIC_ERROR);
   g_assert (!ok);
 
-  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, NULL), ==,
-      "com.example.DomainSpecificError");
-  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, &asv), ==,
-      "com.example.DomainSpecificError");
+  str = tp_connection_dup_detailed_error_vardict (test->conn, &asv);
+  g_assert_cmpstr (str, ==, "com.example.DomainSpecificError");
   g_assert (asv != NULL);
+  g_variant_unref (asv);
+  g_free (str);
 
   g_assert_cmpstr (g_quark_to_string (error->domain), ==,
       g_quark_to_string (example_com_error_quark ()));
@@ -212,8 +211,9 @@ test_unregistered_error (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
   GError *error = NULL;
-  const GHashTable *asv;
+  GVariant *asv;
   gboolean ok;
+  gchar *str;
 
   connection_errors = 0;
   tp_cli_connection_connect_to_connection_error (test->conn,
@@ -235,11 +235,13 @@ test_unregistered_error (Test *test,
   g_assert_error (error, TP_ERROR, TP_ERROR_NETWORK_ERROR);
   g_assert (!ok);
 
-  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, NULL), ==,
-      "net.example.WTF");
-  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, &asv), ==,
-      "net.example.WTF");
+  str = tp_connection_dup_detailed_error_vardict (test->conn, NULL);
+  g_assert_cmpstr (str, ==, "net.example.WTF");
+  g_free (str);
+  str = tp_connection_dup_detailed_error_vardict (test->conn, &asv);
+  g_assert_cmpstr (str, ==, "net.example.WTF");
   g_assert (asv != NULL);
+  g_variant_unref (asv);
 
   g_error_free (error);
   error = NULL;
@@ -262,17 +264,15 @@ test_detailed_error (Test *test,
     gconstpointer mode)
 {
   GError *error = NULL;
-  const GHashTable *asv;
+  GVariant *asv;
   gchar *str;
   GVariant *variant, *details;
   gboolean ok;
   gint32 bees;
 
   asv = GUINT_TO_POINTER (0xDEADBEEF);
-  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, NULL), ==,
-      NULL);
-  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, &asv), ==,
-      NULL);
+  g_assert_cmpstr (tp_connection_dup_detailed_error_vardict (test->conn, &asv),
+      ==, NULL);
   g_assert_cmpuint (GPOINTER_TO_UINT (asv), ==, 0xDEADBEEF);
 
   connection_errors = 0;
@@ -301,15 +301,6 @@ test_detailed_error (Test *test,
   tp_tests_proxy_run_until_prepared_or_failed (test->conn, NULL, &error);
 
   g_assert_error (error, example_com_error_quark (), DOMAIN_SPECIFIC_ERROR);
-
-  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, NULL), ==,
-      "com.example.DomainSpecificError");
-  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, &asv), ==,
-      "com.example.DomainSpecificError");
-  g_assert (asv != NULL);
-  g_assert_cmpstr (tp_asv_get_string (asv, "debug-message"), ==,
-      "not enough bees");
-  g_assert_cmpint (tp_asv_get_int32 (asv, "bees-required", NULL), ==, 2342);
 
   str = tp_connection_dup_detailed_error_vardict (test->conn, NULL);
   g_assert_cmpstr (str, ==, "com.example.DomainSpecificError");

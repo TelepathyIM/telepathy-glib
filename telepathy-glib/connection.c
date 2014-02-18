@@ -2522,7 +2522,7 @@ tp_connection_get_capabilities (TpConnection *self)
   return self->priv->capabilities;
 }
 
-/**
+/*
  * tp_connection_get_detailed_error:
  * @self: a connection
  * @details: (out) (allow-none) (element-type utf8 GObject.Value) (transfer none):
@@ -2539,7 +2539,7 @@ tp_connection_get_capabilities (TpConnection *self)
  *
  * Since: 0.11.4
  */
-const gchar *
+static const gchar *
 tp_connection_get_detailed_error (TpConnection *self,
     const GHashTable **details)
 {
