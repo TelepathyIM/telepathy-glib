@@ -123,11 +123,11 @@ gboolean tp_account_is_enabled (TpAccount *account);
 gboolean tp_account_is_usable (TpAccount *account);
 
 _TP_AVAILABLE_IN_0_18
-void tp_account_update_parameters_vardict_async (TpAccount *account,
+void tp_account_update_parameters_async (TpAccount *account,
     GVariant *parameters, const gchar **unset_parameters,
     GAsyncReadyCallback callback, gpointer user_data);
 _TP_AVAILABLE_IN_0_18
-gboolean tp_account_update_parameters_vardict_finish (TpAccount *account,
+gboolean tp_account_update_parameters_finish (TpAccount *account,
     GAsyncResult *result, gchar ***reconnect_required, GError **error);
 
 void tp_account_remove_async (TpAccount *account,

@@ -277,11 +277,11 @@ test_reconnect (Test *test,
   test->account = tp_tests_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
 
-  tp_account_update_parameters_vardict_async (test->account,
+  tp_account_update_parameters_async (test->account,
       g_variant_new_parsed ("{ 'set': <%s> }", "value"), unset,
       tp_tests_result_ready_cb, &test->result);
   tp_tests_run_until_result (&test->result);
-  tp_account_update_parameters_vardict_finish (test->account, test->result,
+  tp_account_update_parameters_finish (test->account, test->result,
       &reconnect_required, &test->error);
 
   g_assert_no_error (test->error);

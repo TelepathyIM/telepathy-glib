@@ -2708,7 +2708,7 @@ _tp_account_updated_cb (TpAccount *proxy,
 }
 
 /**
- * tp_account_update_parameters_vardict_async:
+ * tp_account_update_parameters_async:
  * @account: a #TpAccount
  * @parameters: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
  *  containing new parameters to set on @account
@@ -2728,7 +2728,7 @@ _tp_account_updated_cb (TpAccount *proxy,
  * Since: 0.17.6
  */
 void
-tp_account_update_parameters_vardict_async (TpAccount *account,
+tp_account_update_parameters_async (TpAccount *account,
     GVariant *parameters,
     const gchar **unset_parameters,
     GAsyncReadyCallback callback,
@@ -2742,7 +2742,7 @@ tp_account_update_parameters_vardict_async (TpAccount *account,
   hash = _tp_asv_from_vardict (parameters);
 
   result = g_simple_async_result_new (G_OBJECT (account),
-      callback, user_data, tp_account_update_parameters_vardict_async);
+      callback, user_data, tp_account_update_parameters_async);
 
   tp_cli_account_call_update_parameters (account, -1, hash,
       unset_parameters, _tp_account_updated_cb, result,
@@ -2755,7 +2755,7 @@ tp_account_update_parameters_vardict_async (TpAccount *account,
 }
 
 /**
- * tp_account_update_parameters_vardict_finish:
+ * tp_account_update_parameters_finish:
  * @account: a #TpAccount
  * @result: a #GAsyncResult
  * @reconnect_required: (out) (type GStrv) (transfer full): a #GStrv to
@@ -2769,13 +2769,13 @@ tp_account_update_parameters_vardict_async (TpAccount *account,
  * Since: 0.17.6
  */
 gboolean
-tp_account_update_parameters_vardict_finish (TpAccount *account,
+tp_account_update_parameters_finish (TpAccount *account,
     GAsyncResult *result,
     gchar ***reconnect_required,
     GError **error)
 {
   _tp_implement_finish_copy_pointer (account,
-      tp_account_update_parameters_vardict_async, g_strdupv,
+      tp_account_update_parameters_async, g_strdupv,
       reconnect_required);
 
 }
