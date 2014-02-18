@@ -254,7 +254,7 @@ log_store_pidgin_get_dir (TplLogStore *self,
   GVariant *params;
   const gchar *account_param;
 
-  params = tp_account_dup_parameters_vardict (account);
+  params = tp_account_dup_parameters (account);
   protocol = tp_account_get_protocol_name (account);
 
   g_variant_lookup (params, "account", "&s", &account_param);
@@ -527,7 +527,7 @@ log_store_pidgin_dup_account (TplLogStorePidgin *self,
       if (tp_strdiff (tp_account_get_protocol_name (acc), protocol))
         continue;
 
-      params = tp_account_dup_parameters_vardict (acc);
+      params = tp_account_dup_parameters (acc);
 
       g_variant_lookup (params,
           "account", "&s", &account_param,

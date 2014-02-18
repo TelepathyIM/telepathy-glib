@@ -202,8 +202,7 @@ TpConnectionPresenceType tp_account_get_requested_presence (
 TpConnectionPresenceType tp_account_get_automatic_presence (
     TpAccount *self, gchar **status, gchar **status_message);
 
-_TP_AVAILABLE_IN_0_18
-GVariant *tp_account_dup_parameters_vardict (TpAccount *account);
+GVariant * tp_account_dup_parameters (TpAccount *account);
 
 const gchar *tp_account_get_nickname (TpAccount *account);
 

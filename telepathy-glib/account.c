@@ -2371,7 +2371,7 @@ tp_account_get_icon_name (TpAccount *account)
 }
 
 /**
- * tp_account_dup_parameters_vardict:
+ * tp_account_dup_parameters:
  * @account: a #TpAccount
  *
  * Returns the parameters of the account, in a variant of type
@@ -2389,11 +2389,9 @@ tp_account_get_icon_name (TpAccount *account)
  *
  * Returns: (transfer full): the dictionary of
  *  parameters on @account, of type %G_VARIANT_TYPE_VARDICT
- *
- * Since: 0.17.6
  */
 GVariant *
-tp_account_dup_parameters_vardict (TpAccount *account)
+tp_account_dup_parameters (TpAccount *account)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
