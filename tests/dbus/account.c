@@ -413,10 +413,10 @@ test_prepare_success (Test *test,
   g_assert_cmpint (reason, ==, TP_CONNECTION_STATUS_REASON_REQUESTED);
   assert_uintprop (test->account, "connection-status-reason",
       TP_CONNECTION_STATUS_REASON_REQUESTED);
-  g_assert_cmpstr (tp_account_dup_detailed_error_vardict (test->account, NULL),
+  g_assert_cmpstr (tp_account_dup_detailed_error (test->account, NULL),
       ==, NULL);
   assert_strprop (test->account, "connection-error", NULL);
-  g_assert_cmpstr (tp_account_dup_detailed_error_vardict (
+  g_assert_cmpstr (tp_account_dup_detailed_error (
         test->account, &details), ==, NULL);
   /* this is documented to be untouched */
   g_assert_cmpuint (GPOINTER_TO_UINT (details), ==, 666);
@@ -766,7 +766,7 @@ test_connection (Test *test,
   g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, conn1_path);
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
 
-  g_assert_cmpstr (tp_account_dup_detailed_error_vardict (test->account, NULL),
+  g_assert_cmpstr (tp_account_dup_detailed_error (test->account, NULL),
       ==, TP_ERROR_STR_CANCELLED);
 
   /* a no-op "change" */
@@ -815,7 +815,7 @@ test_connection (Test *test,
   conn = tp_account_get_connection (test->account);
   g_assert (conn == NULL);
 
-  g_assert_cmpstr (tp_account_dup_detailed_error_vardict (test->account, NULL),
+  g_assert_cmpstr (tp_account_dup_detailed_error (test->account, NULL),
       ==, TP_ERROR_STR_ENCRYPTION_ERROR);
 
   /* another connection */
@@ -849,7 +849,7 @@ test_connection (Test *test,
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
   g_assert_cmpuint (test_get_times_notified (test, "connection-error"), ==, 1);
 
-  s = tp_account_dup_detailed_error_vardict (test->account, &details_v);
+  s = tp_account_dup_detailed_error (test->account, &details_v);
   g_assert_cmpstr (s, ==, "org.debian.packages.OpenSSL.NotRandomEnough");
   g_free (s);
   g_assert_cmpuint (g_variant_n_children (details_v), >=, 2);

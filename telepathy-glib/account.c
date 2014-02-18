@@ -3701,7 +3701,7 @@ tp_account_set_avatar_async (TpAccount *self,
 }
 
 /**
- * tp_account_dup_detailed_error_vardict:
+ * tp_account_dup_detailed_error:
  * @self: an account
  * @details: (out) (allow-none) (transfer full):
  *  optionally used to return a variant of type %G_VARIANT_TYPE_VARDICT,
@@ -3721,11 +3721,9 @@ tp_account_set_avatar_async (TpAccount *self,
  * re-entered or the account is destroyed.
  *
  * Returns: (transfer full) (allow-none): a D-Bus error name, or %NULL.
- *
- * Since: 0.17.6
  */
 gchar *
-tp_account_dup_detailed_error_vardict (TpAccount *self,
+tp_account_dup_detailed_error (TpAccount *self,
     GVariant **details)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);

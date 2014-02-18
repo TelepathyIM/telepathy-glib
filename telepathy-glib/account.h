@@ -190,8 +190,7 @@ gboolean tp_account_get_has_been_online (TpAccount *account);
 TpConnectionStatus tp_account_get_connection_status (TpAccount *account,
     TpConnectionStatusReason *reason);
 
-_TP_AVAILABLE_IN_0_18
-gchar *tp_account_dup_detailed_error_vardict (TpAccount *self,
+gchar *tp_account_dup_detailed_error (TpAccount *self,
     GVariant **details);
 
 TpConnectionPresenceType tp_account_get_current_presence (TpAccount *account,
