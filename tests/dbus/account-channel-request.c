@@ -182,25 +182,27 @@ out:
   g_main_loop_quit (test->mainloop);
 }
 
-static GHashTable *
-create_request (void)
+/* @dict is uninitialized on entry. */
+static void
+init_dict_request (GVariantDict *dict)
 {
-  return tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
-      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-        TP_ENTITY_TYPE_CONTACT,
-      TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, "alice",
-      NULL);
+  g_variant_dict_init (dict, NULL);
+
+  g_variant_dict_insert (dict,
+      TP_PROP_CHANNEL_CHANNEL_TYPE, "s", TP_IFACE_CHANNEL_TYPE_TEXT);
+  g_variant_dict_insert (dict,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, "u", TP_ENTITY_TYPE_CONTACT);
+  g_variant_dict_insert (dict,
+      TP_PROP_CHANNEL_TARGET_ID, "s", "alice");
 }
 
 static GVariant *
 floating_request (void)
 {
-  return g_variant_new_parsed (
-      "{ %s: <%s>, %s: <%u>, %s: <%s> }",
-      TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT,
-      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT,
-      TP_PROP_CHANNEL_TARGET_ID, "alice");
+  GVariantDict dict;
+
+  init_dict_request (&dict);
+  return g_variant_dict_end (&dict);
 }
 
 static void
@@ -853,20 +855,21 @@ static void
 test_observe_create_fail (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *request;
   TpAccountChannelRequest *req;
+  GVariantDict dict;
 
-  request = create_request ();
+  init_dict_request (&dict);
 
   /* Ask to the CD to fail */
-  tp_asv_set_boolean (request, "CreateChannelFail", TRUE);
+  g_variant_dict_insert (&dict,
+      "CreateChannelFail", "b", TRUE);
 
-  req = tp_account_channel_request_new (test->account, request, 0);
+  req = tp_account_channel_request_new_vardict (test->account,
+      g_variant_dict_end (&dict), 0);
 
   tp_account_channel_request_create_channel_async (req, "Fake",
       NULL, create_cb, test);
 
-  g_hash_table_unref (request);
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
@@ -879,20 +882,21 @@ static void
 test_observe_proceed_fail (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *request;
   TpAccountChannelRequest *req;
+  GVariantDict dict;
 
-  request = create_request ();
+  init_dict_request (&dict);
 
   /* Ask to the CD to fail */
-  tp_asv_set_boolean (request, "ProceedFail", TRUE);
+  g_variant_dict_insert (&dict,
+      "ProceedFail", "b", TRUE);
 
-  req = tp_account_channel_request_new (test->account, request, 0);
+  req = tp_account_channel_request_new_vardict (test->account,
+      g_variant_dict_end (&dict), 0);
 
   tp_account_channel_request_create_channel_async (req, "Fake",
       NULL, create_cb, test);
 
-  g_hash_table_unref (request);
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
@@ -905,20 +909,21 @@ static void
 test_observe_cr_failed (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *request;
   TpAccountChannelRequest *req;
+  GVariantDict dict;
 
-  request = create_request ();
+  init_dict_request (&dict);
 
   /* Ask to the CR to fire the signal */
-  tp_asv_set_boolean (request, "FireFailed", TRUE);
+  g_variant_dict_insert (&dict,
+      "FireFailed", "b", TRUE);
 
-  req = tp_account_channel_request_new (test->account, request, 0);
+  req = tp_account_channel_request_new_vardict (test->account,
+      g_variant_dict_end (&dict), 0);
 
   tp_account_channel_request_create_channel_async (req, "Fake",
       NULL, create_cb, test);
 
-  g_hash_table_unref (request);
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
