@@ -183,7 +183,7 @@ gint tp_connection_presence_type_cmp_availability (TpConnectionPresenceType p1,
   TpConnectionPresenceType p2);
 
 _TP_AVAILABLE_IN_0_20
-gchar *tp_connection_dup_detailed_error_vardict (TpConnection *self,
+gchar *tp_connection_dup_detailed_error (TpConnection *self,
     GVariant **details) G_GNUC_WARN_UNUSED_RESULT;
 
 

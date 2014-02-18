@@ -249,10 +249,10 @@ test_fail_to_prepare (Test *test,
   g_assert (!tp_proxy_is_prepared (test->conn,
         TP_CONNECTION_FEATURE_CONNECTED));
 
-  str = tp_connection_dup_detailed_error_vardict (test->conn, NULL);
+  str = tp_connection_dup_detailed_error (test->conn, NULL);
   g_assert_cmpstr (str, ==, TP_ERROR_STR_PERMISSION_DENIED);
   g_free (str);
-  str = tp_connection_dup_detailed_error_vardict (test->conn, &asv);
+  str = tp_connection_dup_detailed_error (test->conn, &asv);
   g_assert_cmpstr (str, ==, TP_ERROR_STR_PERMISSION_DENIED);
   g_assert (asv != NULL);
   g_free (str);

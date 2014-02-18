@@ -2606,7 +2606,7 @@ tp_connection_get_detailed_error (TpConnection *self,
 }
 
 /**
- * tp_connection_dup_detailed_error_vardict:
+ * tp_connection_dup_detailed_error:
  * @self: a connection
  * @details: (out) (allow-none) (transfer full):
  *  optionally used to return a %G_VARIANT_TYPE_VARDICT with details
@@ -2623,7 +2623,7 @@ tp_connection_get_detailed_error (TpConnection *self,
  * Since: 0.19.0
  */
 gchar *
-tp_connection_dup_detailed_error_vardict (TpConnection *self,
+tp_connection_dup_detailed_error (TpConnection *self,
     GVariant **details)
 {
   const GHashTable *asv;

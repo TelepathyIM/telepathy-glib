@@ -159,7 +159,7 @@ test_registered_error (Test *test,
   gchar *str;
 
   asv = GUINT_TO_POINTER (0xDEADBEEF);
-  g_assert_cmpstr (tp_connection_dup_detailed_error_vardict (test->conn, &asv),
+  g_assert_cmpstr (tp_connection_dup_detailed_error (test->conn, &asv),
       ==, NULL);
   g_assert_cmpuint (GPOINTER_TO_UINT (asv), ==, 0xDEADBEEF);
 
@@ -181,7 +181,7 @@ test_registered_error (Test *test,
   g_assert_error (error, example_com_error_quark (), DOMAIN_SPECIFIC_ERROR);
   g_assert (!ok);
 
-  str = tp_connection_dup_detailed_error_vardict (test->conn, &asv);
+  str = tp_connection_dup_detailed_error (test->conn, &asv);
   g_assert_cmpstr (str, ==, "com.example.DomainSpecificError");
   g_assert (asv != NULL);
   g_variant_unref (asv);
@@ -235,10 +235,10 @@ test_unregistered_error (Test *test,
   g_assert_error (error, TP_ERROR, TP_ERROR_NETWORK_ERROR);
   g_assert (!ok);
 
-  str = tp_connection_dup_detailed_error_vardict (test->conn, NULL);
+  str = tp_connection_dup_detailed_error (test->conn, NULL);
   g_assert_cmpstr (str, ==, "net.example.WTF");
   g_free (str);
-  str = tp_connection_dup_detailed_error_vardict (test->conn, &asv);
+  str = tp_connection_dup_detailed_error (test->conn, &asv);
   g_assert_cmpstr (str, ==, "net.example.WTF");
   g_assert (asv != NULL);
   g_variant_unref (asv);
@@ -271,7 +271,7 @@ test_detailed_error (Test *test,
   gint32 bees;
 
   asv = GUINT_TO_POINTER (0xDEADBEEF);
-  g_assert_cmpstr (tp_connection_dup_detailed_error_vardict (test->conn, &asv),
+  g_assert_cmpstr (tp_connection_dup_detailed_error (test->conn, &asv),
       ==, NULL);
   g_assert_cmpuint (GPOINTER_TO_UINT (asv), ==, 0xDEADBEEF);
 
@@ -302,10 +302,10 @@ test_detailed_error (Test *test,
 
   g_assert_error (error, example_com_error_quark (), DOMAIN_SPECIFIC_ERROR);
 
-  str = tp_connection_dup_detailed_error_vardict (test->conn, NULL);
+  str = tp_connection_dup_detailed_error (test->conn, NULL);
   g_assert_cmpstr (str, ==, "com.example.DomainSpecificError");
   g_free (str);
-  str = tp_connection_dup_detailed_error_vardict (test->conn, &variant);
+  str = tp_connection_dup_detailed_error (test->conn, &variant);
   g_assert_cmpstr (str, ==, "com.example.DomainSpecificError");
   g_free (str);
   g_assert (variant != NULL);
