@@ -131,7 +131,7 @@ struct _TpAccountPrivate {
   gchar *display_name;
   GStrv supersedes;
 
-  GHashTable *parameters;
+  GVariant *parameters;
 
   gchar *storage_provider;
   GVariant *storage_identifier;
@@ -928,10 +928,9 @@ _tp_account_update (TpAccount *account,
           TP_HASH_TYPE_STRING_VARIANT_MAP);
 
       if (priv->parameters != NULL)
-        g_hash_table_unref (priv->parameters);
+        g_variant_unref (priv->parameters);
 
-      priv->parameters = g_boxed_copy (TP_HASH_TYPE_STRING_VARIANT_MAP,
-          parameters);
+      priv->parameters = _tp_asv_to_vardict (parameters);
       /* this isn't a property, so we don't notify */
     }
 
@@ -1290,7 +1289,7 @@ _tp_account_finalize (GObject *object)
   g_free (priv->display_name);
   g_free (priv->service);
 
-  tp_clear_pointer (&priv->parameters, g_hash_table_unref);
+  tp_clear_pointer (&priv->parameters, g_variant_unref);
   tp_clear_pointer (&priv->error_details, g_hash_table_unref);
 
   g_free (priv->storage_provider);
@@ -2395,7 +2394,7 @@ tp_account_dup_parameters (TpAccount *account)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
-  return _tp_asv_to_vardict (account->priv->parameters);
+  return g_variant_ref (account->priv->parameters);
 }
 
 /**
