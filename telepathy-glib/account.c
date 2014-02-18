@@ -2708,65 +2708,6 @@ _tp_account_updated_cb (TpAccount *proxy,
 }
 
 /**
- * tp_account_update_parameters_async:
- * @account: a #TpAccount
- * @parameters: (element-type utf8 GObject.Value) (transfer none): new
- *  parameters to set on @account
- * @unset_parameters: list of parameters to unset on @account
- * @callback: a callback to call when the request is satisfied
- * @user_data: data to pass to @callback
- *
- * Requests an asynchronous update of parameters of @account. When the
- * operation is finished, @callback will be called. You can then call
- * tp_account_update_parameters_finish() to get the result of the operation.
- *
- * Since: 0.9.0
- */
-void
-tp_account_update_parameters_async (TpAccount *account,
-    GHashTable *parameters,
-    const gchar **unset_parameters,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
-{
-  GSimpleAsyncResult *result;
-
-  g_return_if_fail (TP_IS_ACCOUNT (account));
-
-  result = g_simple_async_result_new (G_OBJECT (account),
-      callback, user_data, tp_account_update_parameters_finish);
-
-  tp_cli_account_call_update_parameters (account, -1, parameters,
-      unset_parameters, _tp_account_updated_cb, result,
-      NULL, G_OBJECT (account));
-}
-
-/**
- * tp_account_update_parameters_finish:
- * @account: a #TpAccount
- * @result: a #GAsyncResult
- * @reconnect_required: (out) (array zero-terminated=1) (transfer full): a #GStrv to
- *  fill with properties that need a reconnect to take effect
- * @error: a #GError to fill
- *
- * Finishes an async update of the parameters on @account.
- *
- * Returns: %TRUE if the request succeeded, otherwise %FALSE
- *
- * Since: 0.9.0
- */
-gboolean
-tp_account_update_parameters_finish (TpAccount *account,
-    GAsyncResult *result,
-    gchar ***reconnect_required,
-    GError **error)
-{
-  _tp_implement_finish_copy_pointer (account,
-      tp_account_update_parameters_finish, g_strdupv,
-      reconnect_required);
-}
-
-/**
  * tp_account_update_parameters_vardict_async:
  * @account: a #TpAccount
  * @parameters: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
@@ -2793,14 +2734,22 @@ tp_account_update_parameters_vardict_async (TpAccount *account,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
+  GSimpleAsyncResult *result;
   GHashTable *hash;
+
+  g_return_if_fail (TP_IS_ACCOUNT (account));
 
   hash = _tp_asv_from_vardict (parameters);
 
+  result = g_simple_async_result_new (G_OBJECT (account),
+      callback, user_data, tp_account_update_parameters_vardict_async);
+
+  tp_cli_account_call_update_parameters (account, -1, hash,
+      unset_parameters, _tp_account_updated_cb, result,
+      NULL, G_OBJECT (account));
+
   g_variant_ref_sink (parameters);
 
-  tp_account_update_parameters_async (account, hash,
-      unset_parameters, callback, user_data);
   g_variant_unref (parameters);
   g_hash_table_unref (hash);
 }
@@ -2825,9 +2774,10 @@ tp_account_update_parameters_vardict_finish (TpAccount *account,
     gchar ***reconnect_required,
     GError **error)
 {
-  /* share an implementation with the non-vardict version */
-  return tp_account_update_parameters_finish (account, result,
-      reconnect_required, error);
+  _tp_implement_finish_copy_pointer (account,
+      tp_account_update_parameters_vardict_async, g_strdupv,
+      reconnect_required);
+
 }
 
 /**

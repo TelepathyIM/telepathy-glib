@@ -277,29 +277,12 @@ test_reconnect (Test *test,
   test->account = tp_tests_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
 
-  if (!tp_strdiff (data, "vardict"))
-    {
-      tp_account_update_parameters_vardict_async (test->account,
-          g_variant_new_parsed ("{ 'set': <%s> }", "value"), unset,
-          tp_tests_result_ready_cb, &test->result);
-      tp_tests_run_until_result (&test->result);
-      tp_account_update_parameters_vardict_finish (test->account, test->result,
-          &reconnect_required, &test->error);
-    }
-  else
-    {
-      GHashTable *set = tp_asv_new (
-          "set", G_TYPE_STRING, "value",
-          NULL);
-
-      tp_account_update_parameters_async (test->account, set, unset,
-          tp_tests_result_ready_cb, &test->result);
-      tp_tests_run_until_result (&test->result);
-      tp_account_update_parameters_finish (test->account, test->result,
-          &reconnect_required, &test->error);
-
-      g_hash_table_unref (set);
-    }
+  tp_account_update_parameters_vardict_async (test->account,
+      g_variant_new_parsed ("{ 'set': <%s> }", "value"), unset,
+      tp_tests_result_ready_cb, &test->result);
+  tp_tests_run_until_result (&test->result);
+  tp_account_update_parameters_vardict_finish (test->account, test->result,
+      &reconnect_required, &test->error);
 
   g_assert_no_error (test->error);
   /* check that reconnect_required survives longer than result */
@@ -916,8 +899,6 @@ main (int argc,
 
   g_test_add ("/account/reconnect", Test, NULL, setup_service, test_reconnect,
       teardown_service);
-  g_test_add ("/account/reconnect", Test, "vardict", setup_service,
-      test_reconnect, teardown_service);
 
   g_test_add ("/account/prepare/success", Test, NULL, setup_service,
               test_prepare_success, teardown_service);
