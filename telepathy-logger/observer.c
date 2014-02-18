@@ -219,40 +219,28 @@ _tpl_observer_init (TplObserver *self)
   priv->logmanager = tpl_log_manager_dup_singleton ();
 
   /* Observe contact text channels */
-  tp_base_client_take_observer_filter (TP_BASE_CLIENT (self),
-      tp_asv_new (
-       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-           TP_IFACE_CHANNEL_TYPE_TEXT,
-       TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-           TP_ENTITY_TYPE_CONTACT,
-      NULL));
+  tp_base_client_add_observer_filter_vardict (TP_BASE_CLIENT (self),
+      g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
+        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT));
 
   /* Observe room text channels */
-  tp_base_client_take_observer_filter (TP_BASE_CLIENT (self),
-      tp_asv_new (
-       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-           TP_IFACE_CHANNEL_TYPE_TEXT,
-       TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-           TP_ENTITY_TYPE_ROOM,
-      NULL));
+  tp_base_client_add_observer_filter_vardict (TP_BASE_CLIENT (self),
+      g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
+        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_ROOM));
 
   /* Observe contact call channels */
-  tp_base_client_take_observer_filter (TP_BASE_CLIENT (self),
-      tp_asv_new (
-       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-           "im.telepathy.v1.Channel.Type.Call1",
-       TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-           TP_ENTITY_TYPE_CONTACT,
-      NULL));
+  tp_base_client_add_observer_filter_vardict (TP_BASE_CLIENT (self),
+      g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
+        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_CALL1,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT));
 
   /* Observe room call channels */
-  tp_base_client_take_observer_filter (TP_BASE_CLIENT (self),
-      tp_asv_new (
-       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-           "im.telepathy.v1.Channel.Type.Call1",
-       TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-           TP_ENTITY_TYPE_ROOM,
-      NULL));
+  tp_base_client_add_observer_filter_vardict (TP_BASE_CLIENT (self),
+      g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
+        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_CALL1,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_ROOM));
 
   tp_base_client_set_observer_recover (TP_BASE_CLIENT (self), TRUE);
 }
