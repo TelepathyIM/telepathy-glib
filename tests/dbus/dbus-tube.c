@@ -166,15 +166,6 @@ test_creation (Test *test,
 }
 
 static void
-check_parameters (GHashTable *parameters)
-{
-  g_assert (parameters != NULL);
-
-  g_assert_cmpuint (g_hash_table_size (parameters), ==, 1);
-  g_assert_cmpuint (tp_asv_get_uint32 (parameters, "badger", NULL), ==, 42);
-}
-
-static void
 check_parameters_vardict (GVariant *parameters_vardict)
 {
   guint32 badger_value;
@@ -191,7 +182,6 @@ test_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   gchar *service;
-  GHashTable *parameters;
   GVariant *parameters_vardict;
 
   /* Outgoing tube */
@@ -205,29 +195,19 @@ test_properties (Test *test,
   g_free (service);
 
   /* Parameters */
-  parameters = tp_dbus_tube_channel_get_parameters (test->tube);
   parameters_vardict = tp_dbus_tube_channel_dup_parameters_vardict (
       test->tube);
   /* NULL as the tube has not be offered yet */
-  g_assert (parameters == NULL);
-  g_object_get (test->tube, "parameters", &parameters, NULL);
-  g_assert (parameters == NULL);
   g_assert (parameters_vardict == NULL);
 
   /* Incoming tube */
   create_tube_service (test, FALSE, FALSE);
 
   /* Parameters */
-  parameters = tp_dbus_tube_channel_get_parameters (test->tube);
-  check_parameters (parameters);
-  g_object_get (test->tube, "parameters", &parameters, NULL);
-  check_parameters (parameters);
-
   parameters_vardict = tp_dbus_tube_channel_dup_parameters_vardict (
       test->tube);
   check_parameters_vardict (parameters_vardict);
 
-  g_hash_table_unref (parameters);
   g_variant_unref (parameters_vardict);
 
   g_object_get (test->tube,
@@ -370,6 +350,7 @@ test_offer (Test *test,
 {
   const TpTestsDBusTubeChannelOpenMode open_mode = GPOINTER_TO_UINT (data);
   GHashTable *params;
+  GVariant *variant;
 
   /* Outgoing tube */
   create_tube_service (test, TRUE, TRUE);
@@ -381,12 +362,15 @@ test_offer (Test *test,
       G_CALLBACK (new_connection_cb), test);
 
   tp_dbus_tube_channel_offer_async (test->tube, params, tube_offer_cb, test);
+  g_hash_table_unref (params);
 
   test->wait = 2;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  check_parameters (tp_dbus_tube_channel_get_parameters (test->tube));
+  variant = tp_dbus_tube_channel_dup_parameters_vardict (test->tube);
+  check_parameters_vardict (variant);
+  g_variant_unref (variant);
 
   g_assert (G_IS_DBUS_CONNECTION (test->tube_conn));
   g_assert (G_IS_DBUS_CONNECTION (test->cm_conn));

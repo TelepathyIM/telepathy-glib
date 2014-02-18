@@ -522,23 +522,6 @@ tp_dbus_tube_channel_get_service_name (TpDBusTubeChannel *self)
 }
 
 /**
- * tp_dbus_tube_channel_get_parameters: (skip)
- * @self: a #TpDBusTubeChannel
- *
- * Return the #TpDBusTubeChannel:parameters property
- *
- * Returns: (transfer none) (element-type utf8 GObject.Value):
- * the value of #TpDBusTubeChannel:parameters
- *
- * Since: 0.18.0
- */
-GHashTable *
-tp_dbus_tube_channel_get_parameters (TpDBusTubeChannel *self)
-{
-  return self->priv->parameters;
-}
-
-/**
  * tp_dbus_tube_channel_dup_parameters_vardict:
  * @self: a #TpDBusTubeChannel
  *
