@@ -467,23 +467,18 @@ static void
 test_observer (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *requests_satisfied, *filter, *chan_props;
+  GHashTable *requests_satisfied, *chan_props;
   GHashTable *info;
   TpChannel *chan;
 
-  filter = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
-      NULL);
+  tp_base_client_add_observer_filter_vardict (test->base_client,
+      g_variant_new_parsed ("{ %s: <%s> }",
+        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT));
 
-  tp_base_client_add_observer_filter (test->base_client, filter);
-  g_hash_table_unref (filter);
-
-  tp_base_client_take_observer_filter (test->base_client, tp_asv_new (
-        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
-        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-          TP_ENTITY_TYPE_CONTACT,
-        NULL));
+  tp_base_client_add_observer_filter_vardict (test->base_client,
+      g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
+        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT));
 
   tp_base_client_set_observer_recover (test->base_client, TRUE);
   tp_base_client_set_observer_delay_approvers (test->base_client, TRUE);
@@ -607,7 +602,6 @@ static void
 test_approver (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *filter;
   GHashTable *chan_props;
   TpChannel *chan;
   GHashTable *properties;
@@ -615,19 +609,14 @@ test_approver (Test *test,
   static const gchar *possible_handlers[] = {
     TP_CLIENT_BUS_NAME_BASE ".Badger", NULL, };
 
-  filter = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
-      NULL);
+  tp_base_client_add_approver_filter_vardict (test->base_client,
+      g_variant_new_parsed ("{ %s: <%s> }",
+        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT));
 
-  tp_base_client_add_approver_filter (test->base_client, filter);
-  g_hash_table_unref (filter);
-
-  tp_base_client_take_approver_filter (test->base_client, tp_asv_new (
-        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
-        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-          TP_ENTITY_TYPE_CONTACT,
-        NULL));
+  tp_base_client_add_approver_filter_vardict (test->base_client,
+      g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
+        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, TP_ENTITY_TYPE_CONTACT));
 
   tp_base_client_register (test->base_client, &test->error);
   g_assert_no_error (test->error);
@@ -807,15 +796,16 @@ test_handler (Test *test,
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
       NULL);
 
-  tp_base_client_add_handler_filter (test->base_client, filter);
+  tp_base_client_add_handler_filter_vardict (test->base_client,
+      g_variant_new_parsed ("{ %s: <%s> }",
+        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT));
+
   g_hash_table_unref (filter);
 
-  tp_base_client_take_handler_filter (test->base_client, tp_asv_new (
-        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
-        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-          TP_ENTITY_TYPE_CONTACT,
-        NULL));
+  tp_base_client_add_handler_filter_vardict (test->base_client,
+      g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
+        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT));
 
   tp_base_client_set_handler_bypass_approval (test->base_client, TRUE);
 
@@ -962,12 +952,10 @@ test_handler_requests (Test *test,
   TpChannelRequest *request;
   GList *requests;
 
-  tp_base_client_take_handler_filter (test->base_client, tp_asv_new (
-        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
-        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-          TP_ENTITY_TYPE_CONTACT,
-        NULL));
+  tp_base_client_add_handler_filter_vardict (test->base_client,
+      g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
+        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT));
 
   tp_base_client_set_handler_request_notification (test->base_client);
 
@@ -1086,15 +1074,13 @@ test_channel_dispatch_operation_claim_with_async (Test *test,
   GList *handled;
 
   /* Register an Approver and Handler */
-  tp_base_client_take_approver_filter (test->base_client, tp_asv_new (
-        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_TEXT,
-        NULL));
+  tp_base_client_add_approver_filter_vardict (test->base_client,
+      g_variant_new_parsed ("{ %s: <%s> }",
+        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT));
 
-  tp_base_client_take_handler_filter (test->base_client, tp_asv_new (
-        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_TEXT,
-        NULL));
+  tp_base_client_add_handler_filter_vardict (test->base_client,
+      g_variant_new_parsed ("{ %s: <%s> }",
+        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT));
 
   tp_base_client_register (test->base_client, &test->error);
   g_assert_no_error (test->error);
