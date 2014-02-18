@@ -317,44 +317,7 @@ tp_base_client_dup_account (TpBaseClient *self,
       path, NULL, error);
 }
 
-static GHashTable *
-_tp_base_client_copy_filter (GHashTable *filter)
-{
-  GHashTable *copy;
-
-  copy = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
-      (GDestroyNotify) tp_g_value_slice_free);
-  tp_g_hash_table_update (copy, filter, (GBoxedCopyFunc) g_strdup,
-      (GBoxedCopyFunc) tp_g_value_slice_dup);
-  return copy;
-}
-
-/**
- * tp_base_client_add_observer_filter:
- * @self: a #TpBaseClient
- * @filter: (transfer none) (element-type utf8 GObject.Value):
- * a %TP_HASH_TYPE_CHANNEL_CLASS
- *
- * Register a new channel class as Observer.ObserverChannelFilter.
- * The #TpBaseClientClass.observe_channel virtual method will be called
- * whenever a new channel's properties match the ones in @filter.
- *
- * This method may only be called before tp_base_client_register() is
- * called, and may only be called on objects whose class implements
- * #TpBaseClientClass.observe_channel.
- *
- * Since: 0.11.5
- */
-void
-tp_base_client_add_observer_filter (TpBaseClient *self,
-    GHashTable *filter)
-{
-  g_return_if_fail (filter != NULL);
-  tp_base_client_take_observer_filter (self,
-      _tp_base_client_copy_filter (filter));
-}
-
-/**
+/*
  * tp_base_client_take_observer_filter: (skip)
  * @self: a client
  * @filter: (transfer full) (element-type utf8 GObject.Value):
@@ -375,7 +338,7 @@ tp_base_client_add_observer_filter (TpBaseClient *self,
  *
  * Since: 0.11.5
  */
-void
+static void
 tp_base_client_take_observer_filter (TpBaseClient *self,
     GHashTable *filter)
 {
@@ -512,32 +475,7 @@ tp_base_client_set_observer_delay_approvers (TpBaseClient *self,
     }
 }
 
-/**
- * tp_base_client_add_approver_filter:
- * @self: a #TpBaseClient
- * @filter: (transfer none) (element-type utf8 GObject.Value):
- * a %TP_HASH_TYPE_CHANNEL_CLASS
- *
- * Register a new channel class as Approver.ApproverChannelFilter.
- * The #TpBaseClientClass.add_dispatch_operation virtual method will be called
- * whenever a new channel's properties match the ones in @filter.
- *
- * This method may only be called before tp_base_client_register() is
- * called, and may only be called on objects whose class implements
- * #TpBaseClientClass.add_dispatch_operation.
- *
- * Since: 0.11.5
- */
-void
-tp_base_client_add_approver_filter (TpBaseClient *self,
-    GHashTable *filter)
-{
-  g_return_if_fail (filter != NULL);
-  tp_base_client_take_approver_filter (self,
-      _tp_base_client_copy_filter (filter));
-}
-
-/**
+/*
  * tp_base_client_take_approver_filter: (skip)
  * @self: a client
  * @filter: (transfer full) (element-type utf8 GObject.Value):
@@ -558,7 +496,7 @@ tp_base_client_add_approver_filter (TpBaseClient *self,
  *
  * Since: 0.11.5
  */
-void
+static void
 tp_base_client_take_approver_filter (TpBaseClient *self,
     GHashTable *filter)
 {
@@ -628,33 +566,7 @@ tp_base_client_be_a_handler (TpBaseClient *self)
   self->priv->flags |= CLIENT_IS_HANDLER;
 }
 
-/**
- * tp_base_client_add_handler_filter:
- * @self: a #TpBaseClient
- * @filter: (transfer none) (element-type utf8 GObject.Value):
- * a %TP_HASH_TYPE_CHANNEL_CLASS
- *
- * Register a new channel class as Handler.HandlerChannelFilter.
- * The #TpBaseClientClass.handle_channel virtual method will be called
- * whenever a new channel's properties match the ones in @filter.
- *
- * This method may only be called before tp_base_client_register() is
- * called, and may only be called on objects whose class implements
- * #TpBaseClientClass.handle_channel.
- *
- * Since: 0.11.6
- */
-void
-tp_base_client_add_handler_filter (TpBaseClient *self,
-    GHashTable *filter)
-{
-  g_return_if_fail (filter != NULL);
-
-  tp_base_client_take_handler_filter (self,
-      _tp_base_client_copy_filter (filter));
-}
-
-/**
+/*
  * tp_base_client_take_handler_filter: (skip)
  * @self: a #TpBaseClient
  * @filter: (transfer full) (element-type utf8 GObject.Value):
@@ -675,7 +587,7 @@ tp_base_client_add_handler_filter (TpBaseClient *self,
  *
  * Since: 0.11.6
  */
-void
+static void
 tp_base_client_take_handler_filter (TpBaseClient *self,
     GHashTable *filter)
 {
