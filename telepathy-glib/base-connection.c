@@ -1730,65 +1730,6 @@ void tp_base_connection_finish_shutdown (TpBaseConnection *self)
 }
 
 /**
- * tp_base_connection_disconnect_with_dbus_error: (skip)
- * @self: The connection
- * @error_name: The D-Bus error with which the connection changed status to
- *              Disconnected
- * @details: Further details of the error, as a hash table where the keys
- *           are strings as defined in the Telepathy specification, and the
- *           values are #GValue<!-- -->s. %NULL is allowed, and treated as
- *           an empty hash table.
- * @reason: The reason code to use in the StatusChanged signal
- *          (a less specific, non-extensible version of @error_name)
- *
- * Changes the #TpBaseConnection<!-- -->.status of @self to
- * %TP_CONNECTION_STATUS_DISCONNECTED, as if by a call to
- * tp_base_connection_change_status(), but additionally emits the
- * <code>ConnectionError</code> D-Bus signal to provide more details about the
- * error.
- *
- * Well-known keys for @details are documented in the Telepathy specification's
- * <ulink url='http://telepathy.freedesktop.org/spec/Connection.html#Signal:ConnectionError'>definition
- * of the ConnectionError signal</ulink>, and include:
- *
- * <itemizedlist>
- * <listitem><code>"debug-message"</code>, whose value should have type
- *    #G_TYPE_STRING, for debugging information about the
- *    disconnection which should not be shown to the user</listitem>
- * <listitem><code>"server-message"</code>, whose value should also have type
- *    #G_TYPE_STRING, for a human-readable error message from the server (in an
- *    unspecified language) explaining why the user was
- *    disconnected.</listitem>
- * </itemizedlist>
- *
- * Since: 0.7.24
- */
-void
-tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,
-                                               const gchar *error_name,
-                                               GHashTable *details,
-                                               TpConnectionStatusReason reason)
-{
-  GHashTable *dup_ = NULL;
-
-  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
-  g_return_if_fail (tp_dbus_check_valid_interface_name (error_name, NULL));
-
-  if (details == NULL)
-    {
-      dup_ = g_hash_table_new (g_str_hash, g_str_equal);
-      details = dup_;
-    }
-
-  tp_svc_connection_emit_connection_error (self, error_name, details);
-  tp_base_connection_change_status (self, TP_CONNECTION_STATUS_DISCONNECTED,
-      reason);
-
-  if (dup_ != NULL)
-    g_hash_table_unref (dup_);
-}
-
-/**
  * tp_base_connection_disconnect_with_dbus_error_vardict: (skip)
  * @self: The connection
  * @error_name: The D-Bus error with which the connection changed status to

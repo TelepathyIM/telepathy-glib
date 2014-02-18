@@ -170,8 +170,8 @@ test_registered_error (Test *test,
   tp_cli_connection_connect_to_status_changed (test->conn, on_status_changed,
       test->mainloop, NULL, NULL, NULL);
 
-  tp_base_connection_disconnect_with_dbus_error (test->service_conn_as_base,
-      "com.example.DomainSpecificError", NULL,
+  tp_base_connection_disconnect_with_dbus_error_vardict (
+      test->service_conn_as_base, "com.example.DomainSpecificError", NULL,
       TP_CONNECTION_STATUS_REASON_NETWORK_ERROR);
 
   g_main_loop_run (test->mainloop);
@@ -221,8 +221,8 @@ test_unregistered_error (Test *test,
   tp_cli_connection_connect_to_status_changed (test->conn, on_status_changed,
       test->mainloop, NULL, NULL, NULL);
 
-  tp_base_connection_disconnect_with_dbus_error (test->service_conn_as_base,
-      "net.example.WTF", NULL,
+  tp_base_connection_disconnect_with_dbus_error_vardict (
+      test->service_conn_as_base, "net.example.WTF", NULL,
       TP_CONNECTION_STATUS_REASON_NETWORK_ERROR);
 
   g_main_loop_run (test->mainloop);
@@ -298,17 +298,17 @@ test_detailed_error (Test *test,
     }
   else
     {
-      GHashTable *details = tp_asv_new (
-          "debug-message", G_TYPE_STRING, "not enough bees",
-          "bees-required", G_TYPE_INT, 2342,
-          NULL);
+      GVariantDict dict;
 
-      tp_base_connection_disconnect_with_dbus_error (
+      g_variant_dict_init (&dict, NULL);
+      g_variant_dict_insert (&dict, "debug-message", "s", "not enough bees");
+      g_variant_dict_insert (&dict, "bees-required", "i", 2342);
+
+      tp_base_connection_disconnect_with_dbus_error_vardict (
           test->service_conn_as_base,
           "com.example.DomainSpecificError",
-          details,
+          g_variant_dict_end (&dict),
           TP_CONNECTION_STATUS_REASON_NETWORK_ERROR);
-      g_hash_table_unref (details);
     }
 
   g_main_loop_run (test->mainloop);
