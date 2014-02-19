@@ -3791,7 +3791,6 @@ tp_contact_get_presence_status
 tp_contact_get_presence_type
 <SUBSECTION>
 TP_CONTACT_FEATURE_LOCATION
-tp_contact_get_location
 tp_contact_dup_location
 <SUBSECTION>
 TP_CONTACT_FEATURE_CAPABILITIES

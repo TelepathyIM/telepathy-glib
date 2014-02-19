@@ -727,7 +727,7 @@ tp_contact_get_presence_message (TpContact *self)
  *
  * Since: 0.11.1
  */
-GHashTable *
+static GHashTable *
 tp_contact_get_location (TpContact *self)
 {
   g_return_val_if_fail (self != NULL, NULL);

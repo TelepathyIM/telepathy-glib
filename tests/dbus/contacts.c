@@ -768,13 +768,8 @@ test_no_features (Fixture *f,
 
 /* Just put a country in locations for easier comparaisons.
  * FIXME: Ideally we should have a MYASSERT_SAME_ASV */
-#define ASSERT_SAME_LOCATION(left, left_vardict, right)\
+#define ASSERT_SAME_LOCATION(left_vardict, right)\
   G_STMT_START {\
-    g_assert_cmpuint (g_hash_table_size (left), ==, \
-        g_hash_table_size (right));\
-    g_assert_cmpstr (tp_asv_get_string (left, "country"), ==,\
-        tp_asv_get_string (right, "country"));\
-    \
     g_assert_cmpstr (g_variant_get_type_string (left_vardict), ==, "a{sv}"); \
     g_assert_cmpuint (g_variant_n_children (left_vardict), ==, \
         g_hash_table_size (right));\
@@ -974,15 +969,13 @@ test_upgrade (Fixture *f,
             TP_CONTACT_FEATURE_LOCATION), "");
 
       vardict = tp_contact_dup_location (contacts[i]);
-      ASSERT_SAME_LOCATION (tp_contact_get_location (contacts[i]),
-          vardict, locations[i]);
+      ASSERT_SAME_LOCATION (vardict, locations[i]);
       g_variant_unref (vardict);
 
       g_object_get (contacts[i],
           "location-vardict", &vardict,
           NULL);
-      ASSERT_SAME_LOCATION (tp_contact_get_location (contacts[i]),
-          vardict, locations[i]);
+      ASSERT_SAME_LOCATION (vardict, locations[i]);
       g_variant_unref (vardict);
 
       MYASSERT (tp_contact_has_feature (contacts[i],
@@ -1196,7 +1189,6 @@ test_features (Fixture *f,
       TpConnectionPresenceType presence_type;
       gchar *presence_status;
       gchar *presence_message;
-      GHashTable *location;
       GVariant *location_vardict;
       TpCapabilities *capabilities;
   } from_gobject;
@@ -1264,8 +1256,7 @@ test_features (Fixture *f,
       MYASSERT (tp_contact_has_feature (contacts[i],
             TP_CONTACT_FEATURE_LOCATION), "");
       vardict = tp_contact_dup_location (contacts[i]);
-      ASSERT_SAME_LOCATION (tp_contact_get_location (contacts[i]),
-          vardict, locations[i]);
+      ASSERT_SAME_LOCATION (vardict, locations[i]);
       g_variant_unref (vardict);
 
       MYASSERT (tp_contact_has_feature (contacts[i],
@@ -1304,7 +1295,6 @@ test_features (Fixture *f,
       "presence-type", &from_gobject.presence_type,
       "presence-status", &from_gobject.presence_status,
       "presence-message", &from_gobject.presence_message,
-      "location", &from_gobject.location,
       "location-vardict", &from_gobject.location_vardict,
       "capabilities", &from_gobject.capabilities,
       NULL);
@@ -1317,7 +1307,7 @@ test_features (Fixture *f,
       TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
   g_assert_cmpstr (from_gobject.presence_status, ==, "available");
   g_assert_cmpstr (from_gobject.presence_message, ==, "");
-  ASSERT_SAME_LOCATION (from_gobject.location, from_gobject.location_vardict,
+  ASSERT_SAME_LOCATION (from_gobject.location_vardict,
       locations[0]);
   MYASSERT (tp_capabilities_is_specific_to_contact (from_gobject.capabilities),
       "");
@@ -1331,7 +1321,6 @@ test_features (Fixture *f,
   g_free (from_gobject.avatar_token);
   g_free (from_gobject.presence_status);
   g_free (from_gobject.presence_message);
-  g_hash_table_unref (from_gobject.location);
   g_variant_unref (from_gobject.location_vardict);
   g_object_unref (from_gobject.capabilities);
 
@@ -1389,8 +1378,7 @@ test_features (Fixture *f,
       MYASSERT (tp_contact_has_feature (contacts[i],
             TP_CONTACT_FEATURE_LOCATION), "");
       vardict = tp_contact_dup_location (contacts[i]);
-      ASSERT_SAME_LOCATION (tp_contact_get_location (contacts[i]),
-          vardict, new_locations[i]);
+      ASSERT_SAME_LOCATION (vardict, new_locations[i]);
       g_variant_unref (vardict);
 
       caps = tp_contact_get_capabilities (contacts[i]);
@@ -1724,10 +1712,13 @@ assert_no_location (TpContact *contact)
   /* We could reasonably represent “no published location” as NULL or as an
    * empty a{sv}, so allow both.
    */
-  GHashTable *retrieved_location = tp_contact_get_location (contact);
+  GVariant *retrieved_location = tp_contact_dup_location (contact);
 
   if (retrieved_location != NULL)
-    g_assert (g_hash_table_size (retrieved_location) == 0);
+    {
+      g_assert (g_variant_n_children (retrieved_location) == 0);
+      g_variant_unref (retrieved_location);
+    }
 }
 
 /* This is a regression test for an issue where the LOCATION feature would
@@ -1791,7 +1782,7 @@ test_no_location (Fixture *f,
   g_assert (notify_ctx_alice.location_changed);
   g_assert (notify_ctx_alice.location_vardict_changed);
   vardict = tp_contact_dup_location (contact);
-  ASSERT_SAME_LOCATION (tp_contact_get_location (contact), vardict, norway);
+  ASSERT_SAME_LOCATION (vardict, norway);
   g_variant_unref (vardict);
 
   weak_pointer = contact;
@@ -1828,7 +1819,7 @@ test_no_location (Fixture *f,
 
   g_assert (g_ptr_array_index (f->result.contacts, 0) == contact);
   vardict = tp_contact_dup_location (contact);
-  ASSERT_SAME_LOCATION (tp_contact_get_location (contact), vardict, norway);
+  ASSERT_SAME_LOCATION (vardict, norway);
   g_variant_unref (vardict);
   reset_result (&f->result);
 
