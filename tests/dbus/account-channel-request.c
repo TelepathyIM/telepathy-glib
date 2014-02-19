@@ -471,14 +471,10 @@ test_handle_ensure_success (Test *test,
   g_variant_unref (vardict);
 
   g_object_get (req,
-      "request", &asv,
       "request-vardict", &vardict,
       NULL);
-  g_assert_cmpstr (tp_asv_get_string (asv,
-      TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
   g_assert_cmpstr (tp_vardict_get_string (vardict,
       TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
-  g_hash_table_unref (asv);
   g_variant_unref (vardict);
 
   tp_account_channel_request_ensure_and_handle_channel_async (req,

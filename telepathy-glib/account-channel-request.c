@@ -108,7 +108,6 @@ G_DEFINE_TYPE(TpAccountChannelRequest,
 
 enum {
     PROP_ACCOUNT = 1,
-    PROP_REQUEST,
     PROP_REQUEST_VARDICT,
     PROP_USER_ACTION_TIME,
     PROP_CHANNEL_REQUEST,
@@ -238,10 +237,6 @@ tp_account_channel_request_get_property (GObject *object,
         g_value_set_object (value, self->priv->account);
         break;
 
-      case PROP_REQUEST:
-        g_value_set_boxed (value, self->priv->request);
-        break;
-
       case PROP_REQUEST_VARDICT:
         g_value_take_variant (value,
             tp_account_channel_request_dup_request (self));
@@ -274,25 +269,6 @@ tp_account_channel_request_set_property (GObject *object,
     {
       case PROP_ACCOUNT:
         self->priv->account = g_value_dup_object (value);
-        break;
-
-      case PROP_REQUEST:
-        /* If this property remains unset, GObject will set it to a NULL
-         * value. Ignore that, so request-vardict can be set instead. */
-        if (g_value_get_boxed (value) == NULL)
-          return;
-
-        /* Construct-only and mutually exclusive with request-vardict */
-        g_return_if_fail (self->priv->request == NULL);
-
-        /* We do not use tp_asv_new() and friends, because in principle,
-         * the request can contain user-defined keys. */
-        self->priv->request = g_hash_table_new_full (g_str_hash, g_str_equal,
-            g_free, (GDestroyNotify) tp_g_value_slice_free);
-        tp_g_hash_table_update (self->priv->request,
-            g_value_get_boxed (value),
-            (GBoxedCopyFunc) g_strdup,
-            (GBoxedCopyFunc) tp_g_value_slice_dup);
         break;
 
       case PROP_REQUEST_VARDICT:
@@ -378,26 +354,6 @@ tp_account_channel_request_class_init (
       TP_TYPE_ACCOUNT,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ACCOUNT,
-      param_spec);
-
-  /**
-   * TpAccountChannelRequest:request:
-   *
-   * The desired D-Bus properties for the channel, represented as a
-   * #GHashTable where the keys are strings and the values are #GValue.
-   *
-   * When constructing a new object, one of
-   * #TpAccountChannelRequest:request or
-   * #TpAccountChannelRequest:request-vardict must be set to a non-%NULL
-   * value, and the other must remain unspecified.
-   *
-   * Since: 0.11.12
-   */
-  param_spec = g_param_spec_boxed ("request", "GHashTable",
-      "A dictionary containing desirable properties for the channel",
-      TP_HASH_TYPE_STRING_VARIANT_MAP,
-      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_REQUEST,
       param_spec);
 
   /**
@@ -1645,20 +1601,19 @@ tp_account_channel_request_new_text (
     gint64 user_action_time)
 {
   TpAccountChannelRequest *self;
-  GHashTable *request;
+  GVariantDict dict;
 
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
-  request = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
-      NULL);
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_CHANNEL_TYPE, "s",
+      TP_IFACE_CHANNEL_TYPE_TEXT);
 
   self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
       "account", account,
-      "request", request,
+      "request-vardict", g_variant_dict_end (&dict),
       "user-action-time", user_action_time,
       NULL);
-  g_hash_table_unref (request);
   return self;
 }
 
@@ -1763,21 +1718,21 @@ tp_account_channel_request_new_audio_call (
     gint64 user_action_time)
 {
   TpAccountChannelRequest *self;
-  GHashTable *request;
+  GVariantDict dict;
 
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
-  request = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CALL1,
-      TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO, G_TYPE_BOOLEAN, TRUE,
-      NULL);
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_CHANNEL_TYPE, "s",
+      TP_IFACE_CHANNEL_TYPE_CALL1);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO, "b",
+      TRUE);
 
   self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
       "account", account,
-      "request", request,
+      "request-vardict", g_variant_dict_end (&dict),
       "user-action-time", user_action_time,
       NULL);
-  g_hash_table_unref (request);
   return self;
 }
 
@@ -1812,22 +1767,23 @@ tp_account_channel_request_new_audio_video_call (
     gint64 user_action_time)
 {
   TpAccountChannelRequest *self;
-  GHashTable *request;
+  GVariantDict dict;
 
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
-  request = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CALL1,
-      TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO, G_TYPE_BOOLEAN, TRUE,
-      TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO, G_TYPE_BOOLEAN, TRUE,
-      NULL);
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_CHANNEL_TYPE, "s",
+      TP_IFACE_CHANNEL_TYPE_CALL1);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO, "b",
+      TRUE);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO, "b",
+      TRUE);
 
   self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
       "account", account,
-      "request", request,
+      "request-vardict", g_variant_dict_end (&dict),
       "user-action-time", user_action_time,
       NULL);
-  g_hash_table_unref (request);
   return self;
 }
 
@@ -1868,7 +1824,7 @@ tp_account_channel_request_new_file_transfer (
     gint64 user_action_time)
 {
   TpAccountChannelRequest *self;
-  GHashTable *request;
+  GVariantDict dict;
 
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (!tp_str_empty (filename), NULL);
@@ -1877,20 +1833,21 @@ tp_account_channel_request_new_file_transfer (
   if (mime_type == NULL)
     mime_type = "application/octet-stream";
 
-  request = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_FILENAME, G_TYPE_STRING, filename,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_CONTENT_TYPE, G_TYPE_STRING, mime_type,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_SIZE, G_TYPE_UINT64, size,
-      NULL);
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_CHANNEL_TYPE, "s",
+      TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_FILENAME,
+      "s", filename);
+  g_variant_dict_insert (&dict,
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_CONTENT_TYPE, "s", mime_type);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_SIZE, "t",
+      size);
 
   self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
       "account", account,
-      "request", request,
+      "request-vardict", g_variant_dict_end (&dict),
       "user-action-time", user_action_time,
       NULL);
-  g_hash_table_unref (request);
   return self;
 }
 
