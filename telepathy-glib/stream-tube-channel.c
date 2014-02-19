@@ -306,7 +306,7 @@ tp_stream_tube_channel_get_property (GObject *object,
 
       case PROP_PARAMETERS_VARDICT:
         g_value_take_variant (value,
-            tp_stream_tube_channel_dup_parameters_vardict (self));
+            tp_stream_tube_channel_dup_parameters (self));
         break;
 
       default:
@@ -453,7 +453,7 @@ tp_stream_tube_channel_class_init (TpStreamTubeChannelClass *klass)
    *
    * In high-level language bindings, use
    * #TpStreamTubeChannel:parameters-vardict or
-   * tp_stream_tube_channel_dup_parameters_vardict() to get the same
+   * tp_stream_tube_channel_dup_parameters() to get the same
    * information in a more convenient format.
    *
    * Since: 0.13.2
@@ -1494,7 +1494,7 @@ tp_stream_tube_channel_get_service (TpStreamTubeChannel *self)
 }
 
 /**
- * tp_stream_tube_channel_dup_parameters_vardict:
+ * tp_stream_tube_channel_dup_parameters:
  * @self: a #TpStreamTubeChannel
  *
  * Return the parameters of the dbus-tube channel in a variant of
@@ -1513,7 +1513,7 @@ tp_stream_tube_channel_get_service (TpStreamTubeChannel *self)
  * Since: 0.19.10
  */
 GVariant *
-tp_stream_tube_channel_dup_parameters_vardict (TpStreamTubeChannel *self)
+tp_stream_tube_channel_dup_parameters (TpStreamTubeChannel *self)
 {
   g_return_val_if_fail (TP_IS_STREAM_TUBE_CHANNEL (self), NULL);
 

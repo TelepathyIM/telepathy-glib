@@ -272,7 +272,7 @@ test_properties (Test *test,
   g_free (service);
 
   /* Parameters */
-  parameters_vardict = tp_stream_tube_channel_dup_parameters_vardict (
+  parameters_vardict = tp_stream_tube_channel_dup_parameters (
       test->tube);
   /* NULL as the tube has not been offered yet */
   g_assert (parameters_vardict == NULL);
@@ -286,7 +286,7 @@ test_properties (Test *test,
       TP_SOCKET_ACCESS_CONTROL_LOCALHOST, FALSE);
 
   /* Parameters */
-  parameters_vardict = tp_stream_tube_channel_dup_parameters_vardict (
+  parameters_vardict = tp_stream_tube_channel_dup_parameters (
       test->tube);
   check_parameters (parameters_vardict);
   g_variant_unref (parameters_vardict);
@@ -584,7 +584,7 @@ test_offer_success (Test *test,
   tp_stream_tube_channel_offer_async (test->tube, params, tube_offer_cb, test);
   g_hash_table_unref (params);
 
-  parameters_vardict = tp_stream_tube_channel_dup_parameters_vardict (
+  parameters_vardict = tp_stream_tube_channel_dup_parameters (
       test->tube);
   check_parameters (parameters_vardict);
   g_variant_unref (parameters_vardict);
