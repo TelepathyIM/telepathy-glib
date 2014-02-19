@@ -31,6 +31,7 @@
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/variant-util-internal.h>
 
 #include "telepathy-glib/account-manager.h"
 
@@ -1224,9 +1225,9 @@ _tp_account_manager_created_cb (TpAccountManager *proxy,
  * @connection_manager: the name of a connection manager
  * @protocol: the name of a protocol
  * @display_name: the display name for the account
- * @parameters: (element-type utf8 GObject.Value) (transfer none): parameters
+ * @parameters: a #G_VARIANT_TYPE_VARDICT #GVariant containing the parameters
  *  for the new account
- * @properties: (element-type utf8 GObject.Value) (transfer none): properties
+ * @properties: a #G_VARIANT_TYPE_VARDICT #GVariant containing the properties
  *  for the new account
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
@@ -1242,6 +1243,8 @@ _tp_account_manager_created_cb (TpAccountManager *proxy,
  * tp_simple_client_factory_add_account_features() for the account
  * manager's #TpProxy:factory.
  *
+ * @parameters and @properties are consumed if they are floating.
+ *
  * It is usually better to use #TpAccountRequest instead, particularly when
  * using high-level language bindings.
  *
@@ -1252,12 +1255,13 @@ tp_account_manager_create_account_async (TpAccountManager *manager,
     const gchar *connection_manager,
     const gchar *protocol,
     const gchar *display_name,
-    GHashTable *parameters,
-    GHashTable *properties,
+    GVariant *parameters,
+    GVariant *properties,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
   GSimpleAsyncResult *res;
+  GHashTable *params_asv, *props_asv;
 
   g_return_if_fail (TP_IS_ACCOUNT_MANAGER (manager));
   g_return_if_fail (connection_manager != NULL);
@@ -1270,10 +1274,21 @@ tp_account_manager_create_account_async (TpAccountManager *manager,
   res = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
       tp_account_manager_create_account_finish);
 
+  g_variant_ref_sink (parameters);
+  params_asv = _tp_asv_from_vardict (parameters);
+
+  g_variant_ref_sink (properties);
+  props_asv = _tp_asv_from_vardict (properties);
+
   tp_cli_account_manager_call_create_account (manager,
-      -1, connection_manager, protocol, display_name, parameters,
-      properties, _tp_account_manager_created_cb, res, g_object_unref,
+      -1, connection_manager, protocol, display_name, params_asv,
+      props_asv, _tp_account_manager_created_cb, res, g_object_unref,
       G_OBJECT (manager));
+
+  g_variant_unref (parameters);
+  g_variant_unref (properties);
+  g_hash_table_unref (params_asv);
+  g_hash_table_unref (props_asv);
 }
 
 /**

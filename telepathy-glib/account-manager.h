@@ -102,7 +102,7 @@ TpConnectionPresenceType tp_account_manager_get_most_available_presence (
 
 void tp_account_manager_create_account_async (TpAccountManager *manager,
     const gchar *connection_manager, const gchar *protocol,
-    const gchar *display_name, GHashTable *parameters, GHashTable *properties,
+    const gchar *display_name, GVariant *parameters, GVariant *properties,
     GAsyncReadyCallback callback, gpointer user_data);
 
 TpAccount * tp_account_manager_create_account_finish (
