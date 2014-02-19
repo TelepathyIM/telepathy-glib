@@ -350,17 +350,12 @@ test_immutable_properties (Test *test,
 
   g_hash_table_unref (props);
 
-  g_object_get (test->cr, "immutable-properties", &props, NULL);
-  g_assert_cmpuint (tp_asv_get_uint32 (props, "badger", NULL), ==, 42);
-
-  g_hash_table_unref (props);
-
   vardict = tp_channel_request_dup_immutable_properties (test->cr);
   g_assert_cmpuint (tp_vardict_get_uint32 (vardict, "badger", NULL), ==, 42);
   g_variant_unref (vardict);
 
   g_object_get (test->cr,
-      "immutable-properties-vardict", &vardict, NULL);
+      "immutable-properties", &vardict, NULL);
   g_assert_cmpuint (tp_vardict_get_uint32 (vardict, "badger", NULL), ==, 42);
   g_variant_unref (vardict);
 }

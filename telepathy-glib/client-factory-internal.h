@@ -62,7 +62,7 @@ TpChannelRequest *_tp_channel_request_new_with_factory (
     TpClientFactory *factory,
     TpDBusDaemon *bus_daemon,
     const gchar *object_path,
-    GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error);
 
 TpChannelDispatchOperation *_tp_channel_dispatch_operation_new_with_factory (

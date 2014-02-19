@@ -101,7 +101,6 @@ enum {
 
 enum {
   PROP_IMMUTABLE_PROPERTIES = 1,
-  PROP_IMMUTABLE_PROPERTIES_VARDICT,
   PROP_ACCOUNT,
   PROP_USER_ACTION_TIME,
   PROP_PREFERRED_HANDLER,
@@ -111,7 +110,7 @@ enum {
 static guint signals[N_SIGNALS] = { 0 };
 
 struct _TpChannelRequestPrivate {
-    GHashTable *immutable_properties;
+    GVariant *immutable_properties;
     TpAccount *account;
 };
 
@@ -136,7 +135,7 @@ tp_channel_request_set_property (GObject *object,
     {
       case PROP_IMMUTABLE_PROPERTIES:
         g_assert (self->priv->immutable_properties == NULL);
-        self->priv->immutable_properties = g_value_dup_boxed (value);
+        self->priv->immutable_properties = g_value_dup_variant (value);
         break;
 
       default:
@@ -156,12 +155,7 @@ tp_channel_request_get_property (GObject *object,
   switch (property_id)
     {
       case PROP_IMMUTABLE_PROPERTIES:
-        g_value_set_boxed (value, self->priv->immutable_properties);
-        break;
-
-      case PROP_IMMUTABLE_PROPERTIES_VARDICT:
-        g_value_take_variant (value,
-            tp_channel_request_dup_immutable_properties (self));
+        g_value_set_variant (value, self->priv->immutable_properties);
         break;
 
       case PROP_ACCOUNT:
@@ -290,7 +284,7 @@ tp_channel_request_dispose (GObject *object)
   void (*dispose) (GObject *) =
     G_OBJECT_CLASS (tp_channel_request_parent_class)->dispose;
 
-  tp_clear_pointer (&self->priv->immutable_properties, g_hash_table_unref);
+  tp_clear_pointer (&self->priv->immutable_properties, g_variant_unref);
 
   tp_clear_object (&self->priv->account);
 
@@ -320,28 +314,6 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    * TpChannelRequest:immutable-properties:
    *
    * The immutable D-Bus properties of this channel request, represented by a
-   * #GHashTable where the keys are D-Bus interface name + "." + property
-   * name, and the values are #GValue instances.
-   *
-   * Note that this property is set only if the immutable properties have been
-   * set during the construction of the #TpChannelRequest.
-   *
-   * Read-only except during construction.
-   *
-   * Since: 0.13.14
-   */
-  param_spec = g_param_spec_boxed ("immutable-properties",
-      "Immutable D-Bus properties",
-      "A map D-Bus interface + \".\" + property name => GValue",
-      TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP,
-      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_IMMUTABLE_PROPERTIES,
-      param_spec);
-
-  /**
-   * TpChannelRequest:immutable-properties-vardict:
-   *
-   * The immutable D-Bus properties of this channel request, represented by a
    * %G_VARIANT_TYPE_VARDICT where the keys are
    * D-Bus interface name + "." + property name.
    *
@@ -352,13 +324,13 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    *
    * Since: 0.19.10
    */
-  param_spec = g_param_spec_variant ("immutable-properties-vardict",
+  param_spec = g_param_spec_variant ("immutable-properties",
       "Immutable D-Bus properties",
       "A map D-Bus interface + \".\" + property name => variant",
       G_VARIANT_TYPE_VARDICT, NULL,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class,
-      PROP_IMMUTABLE_PROPERTIES_VARDICT, param_spec);
+      PROP_IMMUTABLE_PROPERTIES, param_spec);
 
   /**
    * TpChannelRequest:account:
@@ -490,7 +462,7 @@ TpChannelRequest *
 _tp_channel_request_new_with_factory (TpClientFactory *factory,
     TpDBusDaemon *bus_daemon,
     const gchar *object_path,
-    GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error)
 {
   TpChannelRequest *self;
@@ -525,10 +497,10 @@ _tp_channel_request_new_with_factory (TpClientFactory *factory,
  * tp_channel_request_dup_immutable_properties:
  * @self: a #TpChannelRequest
  *
- * Return the #TpChannelRequest:immutable-properties-vardict property.
+ * Return the #TpChannelRequest:immutable-properties property.
  *
  * Returns: (transfer full): the value of
- * #TpChannelRequest:immutable-properties-vardict
+ * #TpChannelRequest:immutable-properties
  *
  * Since: 0.19.10
  */
@@ -540,7 +512,7 @@ tp_channel_request_dup_immutable_properties (TpChannelRequest *self)
   if (self->priv->immutable_properties == NULL)
     return NULL;
 
-  return _tp_asv_to_vardict (self->priv->immutable_properties);
+  return g_variant_ref (self->priv->immutable_properties);
 }
 
 /**
@@ -561,18 +533,19 @@ tp_channel_request_get_account (TpChannelRequest *self)
   /* lazily initialize self->priv->account */
   if (self->priv->account == NULL)
     {
-      const gchar *path;
+      gchar *path;
 
       if (self->priv->immutable_properties == NULL)
         return NULL;
 
-      path = tp_asv_get_object_path (self->priv->immutable_properties,
-          TP_PROP_CHANNEL_REQUEST_ACCOUNT);
-      if (path == NULL)
+      if (!g_variant_lookup (self->priv->immutable_properties,
+          TP_PROP_CHANNEL_REQUEST_ACCOUNT, "o", &path))
         return NULL;
 
       self->priv->account = tp_client_factory_ensure_account (
           tp_proxy_get_factory (self), path, NULL, NULL);
+
+      g_free (path);
     }
 
   return self->priv->account;
@@ -591,13 +564,18 @@ tp_channel_request_get_account (TpChannelRequest *self)
 gint64
 tp_channel_request_get_user_action_time (TpChannelRequest *self)
 {
+  gint64 user_action_time;
+
   g_return_val_if_fail (TP_IS_CHANNEL_REQUEST (self), 0);
 
   if (self->priv->immutable_properties == NULL)
     return 0;
 
-  return tp_asv_get_int64 (self->priv->immutable_properties,
-      TP_PROP_CHANNEL_REQUEST_USER_ACTION_TIME, NULL);
+  if (!g_variant_lookup (self->priv->immutable_properties,
+      TP_PROP_CHANNEL_REQUEST_USER_ACTION_TIME, "x", &user_action_time))
+    return 0;
+
+  return user_action_time;
 }
 
 /**
@@ -613,36 +591,18 @@ tp_channel_request_get_user_action_time (TpChannelRequest *self)
 const gchar *
 tp_channel_request_get_preferred_handler (TpChannelRequest *self)
 {
+  const gchar *ph;
+
   g_return_val_if_fail (TP_IS_CHANNEL_REQUEST (self), NULL);
 
   if (self->priv->immutable_properties == NULL)
     return NULL;
 
-  return tp_asv_get_string (self->priv->immutable_properties,
-      TP_PROP_CHANNEL_REQUEST_PREFERRED_HANDLER);
-}
-
-/**
- * tp_channel_request_get_hints:
- * @self: a #TpChannelRequest
- *
- * Return the #TpChannelRequest:hints property
- *
- * Returns: (transfer none): the value of
- * #TpChannelRequest:hints
- *
- * Since: 0.13.14
- */
-static const GHashTable *
-tp_channel_request_get_hints (TpChannelRequest *self)
-{
-  g_return_val_if_fail (TP_IS_CHANNEL_REQUEST (self), NULL);
-
-  if (self->priv->immutable_properties == NULL)
+  if (!g_variant_lookup (self->priv->immutable_properties,
+      TP_PROP_CHANNEL_REQUEST_PREFERRED_HANDLER, "&s", &ph))
     return NULL;
 
-  return tp_asv_get_boxed (self->priv->immutable_properties,
-      TP_PROP_CHANNEL_REQUEST_HINTS, TP_HASH_TYPE_STRING_VARIANT_MAP);
+  return ph;
 }
 
 /**
@@ -658,14 +618,16 @@ tp_channel_request_get_hints (TpChannelRequest *self)
 GVariant *
 tp_channel_request_dup_hints (TpChannelRequest *self)
 {
-  const GHashTable *hints;
+  GVariant *hints;
 
   g_return_val_if_fail (TP_IS_CHANNEL_REQUEST (self), NULL);
 
-  hints = tp_channel_request_get_hints (self);
-
-  if (hints == NULL)
+  if (self->priv->immutable_properties == NULL)
     return NULL;
 
-  return _tp_asv_to_vardict (hints);
+  if (!g_variant_lookup (self->priv->immutable_properties,
+      TP_PROP_CHANNEL_REQUEST_HINTS, "@a{sv}", &hints))
+    return NULL;
+
+  return hints;
 }
