@@ -543,25 +543,6 @@ _tp_channel_request_new_with_factory (TpClientFactory *factory,
 }
 
 /**
- * tp_channel_request_get_immutable_properties:
- * @self: a #TpChannelRequest
- *
- * Return the #TpChannelRequest:immutable-properties construct-only property
- *
- * Returns: (transfer none): the value of
- * #TpChannelRequest:immutable-properties
- *
- * Since: 0.13.14
- */
-const GHashTable *
-tp_channel_request_get_immutable_properties (TpChannelRequest *self)
-{
-  g_return_val_if_fail (TP_IS_CHANNEL_REQUEST (self), NULL);
-
-  return self->priv->immutable_properties;
-}
-
-/**
  * tp_channel_request_dup_immutable_properties:
  * @self: a #TpChannelRequest
  *

@@ -350,9 +350,6 @@ test_immutable_properties (Test *test,
 
   g_hash_table_unref (props);
 
-  props = (GHashTable *) tp_channel_request_get_immutable_properties (test->cr);
-  g_assert_cmpuint (tp_asv_get_uint32 (props, "badger", NULL), ==, 42);
-
   g_object_get (test->cr, "immutable-properties", &props, NULL);
   g_assert_cmpuint (tp_asv_get_uint32 (props, "badger", NULL), ==, 42);
 
