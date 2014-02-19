@@ -973,7 +973,7 @@ test_upgrade (Fixture *f,
       g_variant_unref (vardict);
 
       g_object_get (contacts[i],
-          "location-vardict", &vardict,
+          "location", &vardict,
           NULL);
       ASSERT_SAME_LOCATION (vardict, locations[i]);
       g_variant_unref (vardict);
@@ -1052,7 +1052,6 @@ typedef struct
   gboolean presence_status_changed;
   gboolean presence_msg_changed;
   gboolean location_changed;
-  gboolean location_vardict_changed;
   gboolean capabilities_changed;
 } notify_ctx;
 
@@ -1065,7 +1064,6 @@ notify_ctx_init (notify_ctx *ctx)
   ctx->presence_status_changed = FALSE;
   ctx->presence_msg_changed = FALSE;
   ctx->location_changed = FALSE;
-  ctx->location_vardict_changed = FALSE;
   ctx->capabilities_changed = FALSE;
 }
 
@@ -1075,7 +1073,7 @@ notify_ctx_is_fully_changed (notify_ctx *ctx)
   return ctx->alias_changed && ctx->avatar_token_changed &&
     ctx->presence_type_changed && ctx->presence_status_changed &&
     ctx->presence_msg_changed && ctx->location_changed &&
-    ctx->location_vardict_changed && ctx->capabilities_changed;
+    ctx->capabilities_changed;
 }
 
 static gboolean
@@ -1084,7 +1082,7 @@ notify_ctx_is_changed (notify_ctx *ctx)
   return ctx->alias_changed || ctx->avatar_token_changed ||
     ctx->presence_type_changed || ctx->presence_status_changed ||
     ctx->presence_msg_changed || ctx->location_changed ||
-    ctx->location_vardict_changed || ctx->capabilities_changed;
+    ctx->capabilities_changed;
 }
 
 static void
@@ -1104,8 +1102,6 @@ contact_notify_cb (TpContact *contact,
     ctx->presence_msg_changed = TRUE;
   else if (!tp_strdiff (param->name, "location"))
     ctx->location_changed = TRUE;
-  else if (!tp_strdiff (param->name, "location-vardict"))
-    ctx->location_vardict_changed = TRUE;
   else if (!tp_strdiff (param->name, "capabilities"))
     ctx->capabilities_changed = TRUE;
 }
@@ -1295,7 +1291,7 @@ test_features (Fixture *f,
       "presence-type", &from_gobject.presence_type,
       "presence-status", &from_gobject.presence_status,
       "presence-message", &from_gobject.presence_message,
-      "location-vardict", &from_gobject.location_vardict,
+      "location", &from_gobject.location_vardict,
       "capabilities", &from_gobject.capabilities,
       NULL);
   MYASSERT (from_gobject.connection == client_conn, "");
@@ -1780,7 +1776,6 @@ test_no_location (Fixture *f,
       1, &handle, &norway);
   tp_tests_proxy_run_until_dbus_queue_processed (f->client_conn);
   g_assert (notify_ctx_alice.location_changed);
-  g_assert (notify_ctx_alice.location_vardict_changed);
   vardict = tp_contact_dup_location (contact);
   ASSERT_SAME_LOCATION (vardict, norway);
   g_variant_unref (vardict);

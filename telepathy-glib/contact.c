@@ -154,8 +154,8 @@ tp_contact_get_feature_quark_presence (void)
  * "location" feature.
  *
  * When this feature is prepared, the contact's location has been
- * retrieved.  In particular, the #TpContact:location and
- * #TpContact:location-vardict properties have been set.
+ * retrieved.  In particular, the #TpContact:location
+ * property has been set.
  *
  * Since: 0.99.1
  */
@@ -326,7 +326,6 @@ enum {
     PROP_PRESENCE_STATUS,
     PROP_PRESENCE_MESSAGE,
     PROP_LOCATION,
-    PROP_LOCATION_VARDICT,
     PROP_CAPABILITIES,
     PROP_CONTACT_INFO,
     PROP_CLIENT_TYPES,
@@ -386,7 +385,7 @@ struct _TpContactPrivate {
     gchar *presence_message;
 
     /* location */
-    GHashTable *location;
+    GVariant *location;
 
     /* client types */
     gchar **client_types;
@@ -713,29 +712,6 @@ tp_contact_get_presence_message (TpContact *self)
 }
 
 /**
- * tp_contact_get_location:
- * @self: a contact
- *
- * Return the contact's user-defined location or %NULL if the location is
- * unspecified.
- * This remains valid until the main loop is re-entered; if the caller
- * requires a hash table that will persist for longer than that, it must be
- * reffed with g_hash_table_ref().
- *
- * Returns: (element-type utf8 GObject.Value) (transfer none): the same
- *  #GHashTable (or %NULL) as the #TpContact:location property
- *
- * Since: 0.11.1
- */
-static GHashTable *
-tp_contact_get_location (TpContact *self)
-{
-  g_return_val_if_fail (self != NULL, NULL);
-
-  return self->priv->location;
-}
-
-/**
  * tp_contact_dup_location:
  * @self: a contact
  *
@@ -746,7 +722,7 @@ tp_contact_get_location (TpContact *self)
  * but in a different format.
  *
  * Returns: a variant of type %G_VARIANT_TYPE_VARDICT, the same as
- *  the #TpContact:location-vardict property
+ *  the #TpContact:location property
  *
  * Since: 0.19.10
  */
@@ -758,7 +734,7 @@ tp_contact_dup_location (TpContact *self)
   if (self->priv->location == NULL)
     return NULL;
 
-  return _tp_asv_to_vardict (self->priv->location);
+  return g_variant_ref (self->priv->location);
 }
 
 /**
@@ -1041,7 +1017,7 @@ tp_contact_dispose (GObject *object)
       self->priv->connection = NULL;
     }
 
-  tp_clear_pointer (&self->priv->location, g_hash_table_unref);
+  tp_clear_pointer (&self->priv->location, g_variant_unref);
   tp_clear_object (&self->priv->capabilities);
   tp_clear_object (&self->priv->avatar_file);
   tp_clear_pointer (&self->priv->contact_groups, g_ptr_array_unref);
@@ -1123,10 +1099,6 @@ tp_contact_get_property (GObject *object,
       break;
 
     case PROP_LOCATION:
-      g_value_set_boxed (value, tp_contact_get_location (self));
-      break;
-
-    case PROP_LOCATION_VARDICT:
       g_value_take_variant (value, tp_contact_dup_location (self));
       break;
 
@@ -1415,28 +1387,6 @@ tp_contact_class_init (TpContactClass *klass)
    * TpContact:location:
    *
    * If this contact has set a user-defined location, a string to
-   * #GValue * hash table containing his location. If not, %NULL.
-   * tp_asv_get_string() and similar functions can be used to access
-   * the contents.
-   *
-   * This may be %NULL even if the contact has set a location,
-   * if this #TpContact object has not been set up to track
-   * %TP_CONTACT_FEATURE_LOCATION.
-   *
-   * Since: 0.11.1
-   */
-  param_spec = g_param_spec_boxed ("location",
-      "Location",
-      "User-defined location, or NULL",
-      TP_HASH_TYPE_STRING_VARIANT_MAP,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_LOCATION,
-      param_spec);
-
-  /**
-   * TpContact:location-vardict:
-   *
-   * If this contact has set a user-defined location, a string to
    * variant map containing his location. If not, %NULL.
    * tp_vardict_get_string() and similar functions can be used to access
    * the contents.
@@ -1444,18 +1394,13 @@ tp_contact_class_init (TpContactClass *klass)
    * This may be %NULL even if the contact has set a location,
    * if this #TpContact object has not been set up to track
    * %TP_CONTACT_FEATURE_LOCATION.
-   *
-   * This property contains the same information as #TpContact:location,
-   * in a different format.
-   *
-   * Since: 0.19.10
    */
-  param_spec = g_param_spec_variant ("location-vardict",
+  param_spec = g_param_spec_variant ("location",
       "Location",
       "User-defined location, or NULL",
       G_VARIANT_TYPE_VARDICT, NULL,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_LOCATION_VARDICT,
+  g_object_class_install_property (object_class, PROP_LOCATION,
       param_spec);
 
   /**
@@ -1855,7 +1800,7 @@ contact_maybe_set_location (TpContact *self,
     return;
 
   if (self->priv->location != NULL)
-    g_hash_table_unref (self->priv->location);
+    g_variant_unref (self->priv->location);
 
   /* We guarantee that, if we've fetched a location for a contact, the
    * :location property is non-NULL. This is mainly because Empathy assumed
@@ -1867,9 +1812,9 @@ contact_maybe_set_location (TpContact *self,
     g_hash_table_ref (location);
 
   self->priv->has_features |= CONTACT_FEATURE_FLAG_LOCATION;
-  self->priv->location = location;
+  self->priv->location = _tp_asv_to_vardict (location);
   g_object_notify ((GObject *) self, "location");
-  g_object_notify ((GObject *) self, "location-vardict");
+  g_hash_table_unref (location);
 }
 
 static void
