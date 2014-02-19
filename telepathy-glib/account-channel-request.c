@@ -108,7 +108,7 @@ G_DEFINE_TYPE(TpAccountChannelRequest,
 
 enum {
     PROP_ACCOUNT = 1,
-    PROP_REQUEST_VARDICT,
+    PROP_REQUEST,
     PROP_USER_ACTION_TIME,
     PROP_CHANNEL_REQUEST,
     N_PROPS
@@ -237,7 +237,7 @@ tp_account_channel_request_get_property (GObject *object,
         g_value_set_object (value, self->priv->account);
         break;
 
-      case PROP_REQUEST_VARDICT:
+      case PROP_REQUEST:
         g_value_take_variant (value,
             tp_account_channel_request_dup_request (self));
         break;
@@ -271,7 +271,7 @@ tp_account_channel_request_set_property (GObject *object,
         self->priv->account = g_value_dup_object (value);
         break;
 
-      case PROP_REQUEST_VARDICT:
+      case PROP_REQUEST:
           {
             GHashTable *hash;
 
@@ -357,22 +357,20 @@ tp_account_channel_request_class_init (
       param_spec);
 
   /**
-   * TpAccountChannelRequest:request-vardict:
+   * TpAccountChannelRequest:request:
    *
    * The desired D-Bus properties for the channel.
    *
-   * When constructing a new object, one of
-   * #TpAccountChannelRequest:request or
-   * #TpAccountChannelRequest:request-vardict must be set to a non-%NULL
-   * value, and the other must remain unspecified.
+   * When constructing a new object, #TpAccountChannelRequest:request
+   * must be set to a non-%NULL value.
    *
    * Since: 0.19.10
    */
-  param_spec = g_param_spec_variant ("request-vardict", "Request",
+  param_spec = g_param_spec_variant ("request", "Request",
       "A dictionary containing desirable properties for the channel",
       G_VARIANT_TYPE_VARDICT, NULL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_REQUEST_VARDICT,
+  g_object_class_install_property (object_class, PROP_REQUEST,
       param_spec);
 
   /**
@@ -512,7 +510,7 @@ tp_account_channel_request_new (
 
   ret = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
       "account", account,
-      "request-vardict", request,
+      "request", request,
       "user-action-time", user_action_time,
       NULL);
   g_variant_unref (request);
@@ -540,11 +538,11 @@ tp_account_channel_request_get_account (
  * tp_account_channel_request_dup_request:
  * @self: a #TpAccountChannelRequest
  *
- * Return the #TpAccountChannelRequest:request-vardict construct-only
+ * Return the #TpAccountChannelRequest:request construct-only
  * property.
  *
  * Returns: (transfer full): the value of
- *  #TpAccountChannelRequest:request-vardict
+ *  #TpAccountChannelRequest:request
  *
  * Since: 0.19.10
  */
@@ -1594,7 +1592,7 @@ tp_account_channel_request_new_text (
 
   self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
       "account", account,
-      "request-vardict", g_variant_dict_end (&dict),
+      "request", g_variant_dict_end (&dict),
       "user-action-time", user_action_time,
       NULL);
   return self;
@@ -1713,7 +1711,7 @@ tp_account_channel_request_new_audio_call (
 
   self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
       "account", account,
-      "request-vardict", g_variant_dict_end (&dict),
+      "request", g_variant_dict_end (&dict),
       "user-action-time", user_action_time,
       NULL);
   return self;
@@ -1764,7 +1762,7 @@ tp_account_channel_request_new_audio_video_call (
 
   self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
       "account", account,
-      "request-vardict", g_variant_dict_end (&dict),
+      "request", g_variant_dict_end (&dict),
       "user-action-time", user_action_time,
       NULL);
   return self;
@@ -1828,7 +1826,7 @@ tp_account_channel_request_new_file_transfer (
 
   self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
       "account", account,
-      "request-vardict", g_variant_dict_end (&dict),
+      "request", g_variant_dict_end (&dict),
       "user-action-time", user_action_time,
       NULL);
   return self;

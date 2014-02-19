@@ -467,7 +467,7 @@ test_handle_ensure_success (Test *test,
   g_variant_unref (vardict);
 
   g_object_get (req,
-      "request-vardict", &vardict,
+      "request", &vardict,
       NULL);
   g_assert_cmpstr (tp_vardict_get_string (vardict,
       TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
