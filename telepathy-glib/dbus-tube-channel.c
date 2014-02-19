@@ -119,7 +119,6 @@ enum
 {
   PROP_SERVICE_NAME = 1,
   PROP_PARAMETERS,
-  PROP_PARAMETERS_VARDICT
 };
 
 static void
@@ -151,10 +150,6 @@ tp_dbus_tube_channel_get_property (GObject *object,
         break;
 
       case PROP_PARAMETERS:
-        g_value_set_boxed (value, self->priv->parameters);
-        break;
-
-      case PROP_PARAMETERS_VARDICT:
         g_value_take_variant (value,
             tp_dbus_tube_channel_dup_parameters (self));
         break;
@@ -433,36 +428,17 @@ tp_dbus_tube_channel_class_init (TpDBusTubeChannelClass *klass)
   /**
    * TpDBusTubeChannel:parameters:
    *
-   * A string to #GValue #GHashTable representing the parameters of the tube.
-   *
-   * Will be %NULL for outgoing tubes until the tube has been offered.
-   *
-   * In high-level language bindings, use
-   * tp_dbus_tube_channel_dup_parameters() to get the same information
-   * in a more convenient format.
-   *
-   * Since: 0.18.0
-   */
-  param_spec = g_param_spec_boxed ("parameters", "Parameters",
-      "The parameters of the dbus tube",
-      TP_HASH_TYPE_STRING_VARIANT_MAP,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (gobject_class, PROP_PARAMETERS, param_spec);
-
-  /**
-   * TpDBusTubeChannel:parameters-vardict:
-   *
    * A %G_VARIANT_TYPE_VARDICT representing the parameters of the tube.
    *
    * Will be %NULL for outgoing tubes until the tube has been offered.
    *
    * Since: 0.19.10
    */
-  param_spec = g_param_spec_variant ("parameters-vardict", "Parameters",
+  param_spec = g_param_spec_variant ("parameters", "Parameters",
       "The parameters of the D-Bus tube",
       G_VARIANT_TYPE_VARDICT, NULL,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (gobject_class, PROP_PARAMETERS_VARDICT,
+  g_object_class_install_property (gobject_class, PROP_PARAMETERS,
       param_spec);
 
   g_type_class_add_private (gobject_class, sizeof (TpDBusTubeChannelPrivate));
@@ -623,7 +599,6 @@ proxy_prepare_offer_cb (GObject *source,
     self->priv->parameters = tp_asv_new (NULL, NULL);
 
   g_object_notify (G_OBJECT (self), "parameters");
-  g_object_notify (G_OBJECT (self), "parameters-vardict");
 
   /* TODO: provide a way to use TP_SOCKET_ACCESS_CONTROL_LOCALHOST if you're in
    * an environment where you need to disable authentication. tp-glib can't
