@@ -651,12 +651,14 @@ out:
   g_main_loop_quit (test->mainloop);
 }
 
-static GHashTable *
+static GVariant *
 create_hints (void)
 {
-  return tp_asv_new (
-      "Badger", G_TYPE_UINT, 42,
-      NULL);
+  GVariantDict dict;
+
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict, "Badger", "u", 42);
+  return g_variant_dict_end (&dict);
 }
 
 static void
@@ -664,14 +666,11 @@ test_handle_create_success_hints (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpAccountChannelRequest *req;
-  GHashTable *hints;
 
   req = tp_account_channel_request_new (test->account,
       floating_request (), 0);
 
-  hints = create_hints ();
-  tp_account_channel_request_set_hints (req, hints);
-  g_hash_table_unref (hints);
+  tp_account_channel_request_set_hints (req, create_hints ());
 
   tp_account_channel_request_create_and_handle_channel_async (req,
       NULL, create_and_handle_hints_cb, test);

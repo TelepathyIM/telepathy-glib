@@ -86,7 +86,7 @@ void tp_account_channel_request_set_hint (TpAccountChannelRequest *self,
     GVariant *value);
 
 void tp_account_channel_request_set_hints (TpAccountChannelRequest *self,
-    GHashTable *hints);
+    GVariant *hints);
 
 _TP_AVAILABLE_IN_0_16
 void tp_account_channel_request_set_delegate_to_preferred_handler (

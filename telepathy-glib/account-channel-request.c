@@ -149,7 +149,7 @@ struct _TpAccountChannelRequestPrivate
   TpChannel *channel;
   TpHandleChannelContext *handle_context;
   TpDBusDaemon *dbus;
-  GHashTable *hints;
+  GVariant *hints;
 
   /* TRUE if the channel has been requested (an _async function has been called
    * on the TpAccountChannelRequest) */
@@ -209,7 +209,7 @@ tp_account_channel_request_dispose (GObject *object)
   tp_clear_object (&self->priv->channel);
   tp_clear_object (&self->priv->handle_context);
   tp_clear_object (&self->priv->dbus);
-  tp_clear_pointer (&self->priv->hints, g_hash_table_unref);
+  tp_clear_pointer (&self->priv->hints, g_variant_unref);
 
   if (self->priv->delegated_channel_destroy != NULL)
     {
@@ -322,7 +322,7 @@ tp_account_channel_request_constructed (GObject *object)
   self->priv->dbus = g_object_ref (tp_proxy_get_dbus_daemon (
         self->priv->account));
 
-  self->priv->hints = tp_asv_new (NULL, NULL);
+  self->priv->hints = g_variant_new ("a{sv}", NULL);
 }
 
 static void
@@ -892,6 +892,7 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
 {
   GError *error = NULL;
   TpChannelDispatcher *cd;
+  GHashTable *hints;
 
   g_return_if_fail (!self->priv->requested);
   self->priv->requested = TRUE;
@@ -937,6 +938,8 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
 
   cd = tp_channel_dispatcher_new (self->priv->dbus);
 
+  hints = _tp_asv_from_vardict (self->priv->hints);
+
   if (ensure)
     {
       self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
@@ -947,8 +950,7 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
           tp_proxy_get_object_path (self->priv->account),
           self->priv->request, self->priv->user_action_time,
           tp_base_client_get_bus_name (self->priv->handler),
-          self->priv->hints,
-          acr_request_cb, self, NULL, G_OBJECT (self));
+          hints, acr_request_cb, self, NULL, G_OBJECT (self));
     }
   else
     {
@@ -961,10 +963,10 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
           self->priv->request,
           self->priv->user_action_time,
           tp_base_client_get_bus_name (self->priv->handler),
-          self->priv->hints,
-          acr_request_cb, self, NULL, G_OBJECT (self));
+          hints, acr_request_cb, self, NULL, G_OBJECT (self));
     }
 
+  g_hash_table_unref (hints);
   g_object_unref (cd);
 }
 
@@ -1164,6 +1166,7 @@ request_channel_async (TpAccountChannelRequest *self,
     gboolean ensure)
 {
   TpChannelDispatcher *cd;
+  GHashTable *hints;
 
   g_return_if_fail (!self->priv->requested);
   self->priv->requested = TRUE;
@@ -1185,6 +1188,8 @@ request_channel_async (TpAccountChannelRequest *self,
 
   cd = tp_channel_dispatcher_new (self->priv->dbus);
 
+  hints = _tp_asv_from_vardict (self->priv->hints);
+
   if (ensure)
     {
       self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
@@ -1195,8 +1200,7 @@ request_channel_async (TpAccountChannelRequest *self,
           tp_proxy_get_object_path (self->priv->account), self->priv->request,
           self->priv->user_action_time,
           preferred_handler == NULL ? "" : preferred_handler,
-          self->priv->hints,
-          acr_request_cb, self, NULL, G_OBJECT (self));
+          hints, acr_request_cb, self, NULL, G_OBJECT (self));
     }
   else
     {
@@ -1208,10 +1212,10 @@ request_channel_async (TpAccountChannelRequest *self,
           tp_proxy_get_object_path (self->priv->account), self->priv->request,
           self->priv->user_action_time,
           preferred_handler == NULL ? "" : preferred_handler,
-          self->priv->hints,
-          acr_request_cb, self, NULL, G_OBJECT (self));
+          hints, acr_request_cb, self, NULL, G_OBJECT (self));
     }
 
+  g_hash_table_unref (hints);
   g_object_unref (cd);
 }
 
@@ -1365,33 +1369,31 @@ tp_account_channel_request_set_hint (TpAccountChannelRequest *self,
     const gchar *key,
     GVariant *value)
 {
-  GValue one = G_VALUE_INIT, *two;
+  GVariantDict dict;
 
   g_return_if_fail (!self->priv->requested);
   g_return_if_fail (key != NULL);
   g_return_if_fail (value != NULL);
 
-  if (self->priv->hints == NULL)
-    self->priv->hints = tp_asv_new (NULL, NULL);
+  g_variant_dict_init (&dict, self->priv->hints);
+  g_variant_dict_insert_value (&dict, key, value);
 
-  dbus_g_value_parse_g_variant (value, &one);
-  two = tp_g_value_slice_dup (&one);
-
-  g_hash_table_insert (self->priv->hints, g_strdup (key), two);
-
-  g_value_unset (&one);
+  g_variant_unref (self->priv->hints);
+  self->priv->hints = g_variant_dict_end (&dict);
 }
 
 /**
  * tp_account_channel_request_set_hints:
  * @self: a #TpAccountChannelRequest
- * @hints: a #TP_HASH_TYPE_STRING_VARIANT_MAP
+ * @hints: a #G_VARIANT_TYPE_VARDICT #GVariant
  *
  * Set additional information about the channel request, which will be used
  * as the value for the resulting request's #TpChannelRequest:hints property.
  *
  * This function can't be called once @self has been used to request a
  * channel.
+ *
+ * @hints is consumed if it is floating.
  *
  * In high-level language bindings, use tp_account_channel_request_set_hint()
  * instead.
@@ -1400,13 +1402,13 @@ tp_account_channel_request_set_hint (TpAccountChannelRequest *self,
  */
 void
 tp_account_channel_request_set_hints (TpAccountChannelRequest *self,
-    GHashTable *hints)
+    GVariant *hints)
 {
   g_return_if_fail (!self->priv->requested);
   g_return_if_fail (hints != NULL);
 
-  tp_clear_pointer (&self->priv->hints, g_hash_table_unref);
-  self->priv->hints = g_hash_table_ref (hints);
+  tp_clear_pointer (&self->priv->hints, g_variant_unref);
+  self->priv->hints = g_variant_ref_sink (hints);
 }
 
 /**
@@ -1430,9 +1432,9 @@ tp_account_channel_request_set_delegate_to_preferred_handler (
 {
   g_return_if_fail (!self->priv->requested);
 
-  tp_asv_set_boolean (self->priv->hints,
+  tp_account_channel_request_set_hint (self,
       "im.telepathy.v1.ChannelRequest.DelegateToPreferredHandler",
-      delegate);
+      g_variant_new_boolean (TRUE));
 }
 
 /**
