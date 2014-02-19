@@ -277,7 +277,7 @@ test_properties (Test *test,
   /* NULL as the tube has not been offered yet */
   g_assert (parameters_vardict == NULL);
   g_object_get (test->tube,
-      "parameters-vardict", &parameters_vardict,
+      "parameters", &parameters_vardict,
       NULL);
   g_assert (parameters_vardict == NULL);
 
@@ -292,7 +292,7 @@ test_properties (Test *test,
   g_variant_unref (parameters_vardict);
 
   g_object_get (test->tube,
-      "parameters-vardict", &parameters_vardict,
+      "parameters", &parameters_vardict,
       NULL);
 
   g_assert (parameters_vardict != NULL);

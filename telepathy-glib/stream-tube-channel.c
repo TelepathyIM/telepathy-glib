@@ -185,7 +185,6 @@ enum
 {
   PROP_SERVICE = 1,
   PROP_PARAMETERS,
-  PROP_PARAMETERS_VARDICT
 };
 
 enum /* signals */
@@ -301,10 +300,6 @@ tp_stream_tube_channel_get_property (GObject *object,
         break;
 
       case PROP_PARAMETERS:
-        g_value_set_boxed (value, self->priv->parameters);
-        break;
-
-      case PROP_PARAMETERS_VARDICT:
         g_value_take_variant (value,
             tp_stream_tube_channel_dup_parameters (self));
         break;
@@ -447,37 +442,17 @@ tp_stream_tube_channel_class_init (TpStreamTubeChannelClass *klass)
   /**
    * TpStreamTubeChannel:parameters:
    *
-   * A string to #GValue #GHashTable representing the parameters of the tube.
-   *
-   * Will be %NULL for outgoing tubes until the tube has been offered.
-   *
-   * In high-level language bindings, use
-   * #TpStreamTubeChannel:parameters-vardict or
-   * tp_stream_tube_channel_dup_parameters() to get the same
-   * information in a more convenient format.
-   *
-   * Since: 0.13.2
-   */
-  param_spec = g_param_spec_boxed ("parameters", "Parameters",
-      "The parameters of the stream tube",
-      TP_HASH_TYPE_STRING_VARIANT_MAP,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (gobject_class, PROP_PARAMETERS, param_spec);
-
-  /**
-   * TpStreamTubeChannel:parameters-vardict:
-   *
    * A %G_VARIANT_TYPE_VARDICT representing the parameters of the tube.
    *
    * Will be %NULL for outgoing tubes until the tube has been offered.
    *
    * Since: 0.19.10
    */
-  param_spec = g_param_spec_variant ("parameters-vardict", "Parameters",
+  param_spec = g_param_spec_variant ("parameters", "Parameters",
       "The parameters of the stream tube",
       G_VARIANT_TYPE_VARDICT, NULL,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (gobject_class, PROP_PARAMETERS_VARDICT,
+  g_object_class_install_property (gobject_class, PROP_PARAMETERS,
       param_spec);
 
   /**
@@ -1206,7 +1181,6 @@ _offer_with_address (TpStreamTubeChannel *self,
     self->priv->parameters = tp_asv_new (NULL, NULL);
 
   g_object_notify (G_OBJECT (self), "parameters");
-  g_object_notify (G_OBJECT (self), "parameters-vardict");
 
   /* Call Offer */
   tp_cli_channel_type_stream_tube1_call_offer (TP_CHANNEL (self), -1,
