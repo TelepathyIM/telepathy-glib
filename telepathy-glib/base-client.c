@@ -1951,16 +1951,17 @@ delegate_channels_if_needed (TpBaseClient *self,
   for (l = requests; l != NULL; l = g_list_next (l))
     {
       TpChannelRequest *cr = l->data;
-      const GHashTable *hints;
-      gboolean should_delegate;
+      GVariant *hints;
+      gboolean should_delegate = FALSE;
 
-      hints = tp_channel_request_get_hints (cr);
+      hints = tp_channel_request_dup_hints (cr);
       if (hints == NULL)
         continue;
 
-      should_delegate = tp_asv_get_boolean (hints,
-          "im.telepathy.v1.ChannelRequest.DelegateToPreferredHandler",
-          NULL);
+      g_variant_lookup (hints,
+            "im.telepathy.v1.ChannelRequest.DelegateToPreferredHandler", "b",
+            &should_delegate);
+      g_variant_unref (hints);
 
       if (!should_delegate)
         continue;

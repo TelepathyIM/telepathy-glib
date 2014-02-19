@@ -616,8 +616,9 @@ create_and_handle_hints_cb (GObject *source,
   Test *test = user_data;
   TpHandleChannelContext *context = NULL;
   GList *reqs;
-  const GHashTable *hints;
+  GVariant *hints;
   TpChannelRequest *req;
+  guint32 badger;
 
   test->channel = tp_account_channel_request_create_and_handle_channel_finish (
       TP_ACCOUNT_CHANNEL_REQUEST (source), result, &context, &test->error);
@@ -635,9 +636,11 @@ create_and_handle_hints_cb (GObject *source,
   req = reqs->data;
   g_assert (TP_IS_CHANNEL_REQUEST (req));
 
-  hints = tp_channel_request_get_hints (req);
-  g_assert_cmpuint (g_hash_table_size ((GHashTable *) hints), ==, 1);
-  g_assert_cmpuint (tp_asv_get_uint32 (hints, "Badger", NULL), ==, 42);
+  hints = tp_channel_request_dup_hints (req);
+  g_assert_cmpuint (g_variant_n_children (hints), ==, 1);
+  g_variant_lookup (hints, "Badger", "u", &badger);
+  g_assert_cmpuint (badger, ==, 42);
+  g_variant_unref (hints);
 
   g_list_foreach (reqs, (GFunc) g_object_unref, NULL);
   g_list_free (reqs);

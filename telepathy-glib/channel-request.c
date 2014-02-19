@@ -106,7 +106,6 @@ enum {
   PROP_USER_ACTION_TIME,
   PROP_PREFERRED_HANDLER,
   PROP_HINTS,
-  PROP_HINTS_VARDICT
 };
 
 static guint signals[N_SIGNALS] = { 0 };
@@ -180,10 +179,6 @@ tp_channel_request_get_property (GObject *object,
         break;
 
       case PROP_HINTS:
-        g_value_set_boxed (value, tp_channel_request_get_hints (self));
-        break;
-
-      case PROP_HINTS_VARDICT:
         g_value_take_variant (value, tp_channel_request_dup_hints (self));
         break;
 
@@ -419,22 +414,6 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
   /**
    * TpChannelRequest:hints:
    *
-   * A #TP_HASH_TYPE_STRING_VARIANT_MAP of metadata provided by
-   * the channel requester; or %NULL if #TpChannelRequest:immutable-properties
-   * is not defined or if no hints has been defined.
-   *
-   * Read-only.
-   *
-   * Since: 0.13.14
-   */
-  param_spec = g_param_spec_boxed ("hints", "Hints", "Hints",
-      TP_HASH_TYPE_STRING_VARIANT_MAP,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_HINTS, param_spec);
-
-  /**
-   * TpChannelRequest:hints-vardict:
-   *
    * A %G_VARIANT_TYPE_VARDICT of metadata provided by
    * the channel requester; or %NULL if #TpChannelRequest:immutable-properties
    * is not defined or if no hints have been defined.
@@ -443,10 +422,10 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    *
    * Since: 0.19.10
    */
-  param_spec = g_param_spec_variant ("hints-vardict", "Hints", "Hints",
+  param_spec = g_param_spec_variant ("hints", "Hints", "Hints",
       G_VARIANT_TYPE_VARDICT, NULL,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_HINTS_VARDICT,
+  g_object_class_install_property (object_class, PROP_HINTS,
       param_spec);
 
   /**
@@ -654,7 +633,7 @@ tp_channel_request_get_preferred_handler (TpChannelRequest *self)
  *
  * Since: 0.13.14
  */
-const GHashTable *
+static const GHashTable *
 tp_channel_request_get_hints (TpChannelRequest *self)
 {
   g_return_val_if_fail (TP_IS_CHANNEL_REQUEST (self), NULL);
@@ -670,9 +649,9 @@ tp_channel_request_get_hints (TpChannelRequest *self)
  * tp_channel_request_dup_hints:
  * @self: a #TpChannelRequest
  *
- * Return the #TpChannelRequest:hints-vardict property
+ * Return the #TpChannelRequest:hints property
  *
- * Returns: (transfer full): the value of #TpChannelRequest:hints-vardict
+ * Returns: (transfer full): the value of #TpChannelRequest:hints
  *
  * Since: 0.19.10
  */

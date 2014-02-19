@@ -4326,7 +4326,6 @@ tp_channel_request_dup_immutable_properties
 tp_channel_request_get_account
 tp_channel_request_get_user_action_time
 tp_channel_request_get_preferred_handler
-tp_channel_request_get_hints
 tp_channel_request_dup_hints
 <SUBSECTION Standard>
 TP_CHANNEL_REQUEST
