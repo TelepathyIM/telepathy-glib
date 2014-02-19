@@ -537,23 +537,6 @@ tp_account_channel_request_get_account (
 }
 
 /**
- * tp_account_channel_request_get_request:
- * @self: a #TpAccountChannelRequest
- *
- * Return the #TpAccountChannelRequest:request construct-only property
- *
- * Returns: (transfer none): the value of #TpAccountChannelRequest:request
- *
- * Since: 0.11.12
- */
-GHashTable *
-tp_account_channel_request_get_request (
-    TpAccountChannelRequest *self)
-{
-  return self->priv->request;
-}
-
-/**
  * tp_account_channel_request_dup_request:
  * @self: a #TpAccountChannelRequest
  *

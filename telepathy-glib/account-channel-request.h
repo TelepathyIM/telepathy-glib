@@ -70,8 +70,6 @@ TpAccountChannelRequest * tp_account_channel_request_new (
 TpAccount * tp_account_channel_request_get_account (
     TpAccountChannelRequest *self);
 
-GHashTable * tp_account_channel_request_get_request (
-    TpAccountChannelRequest *self);
 _TP_AVAILABLE_IN_0_20
 GVariant *tp_account_channel_request_dup_request (
     TpAccountChannelRequest *self);

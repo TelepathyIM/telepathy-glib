@@ -453,7 +453,6 @@ test_handle_ensure_success (Test *test,
 {
   TpAccountChannelRequest *req;
   TpContact *alice;
-  GHashTable *asv;
   GVariant *vardict;
 
   alice = tp_tests_connection_run_until_contact_by_id (test->connection,
@@ -462,10 +461,7 @@ test_handle_ensure_success (Test *test,
   req = tp_account_channel_request_new_text (test->account, 0);
   tp_account_channel_request_set_target_contact (req, alice);
 
-  asv = (GHashTable *) tp_account_channel_request_get_request (req);
   vardict = tp_account_channel_request_dup_request (req);
-  g_assert_cmpstr (tp_asv_get_string (asv,
-      TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
   g_assert_cmpstr (tp_vardict_get_string (vardict,
       TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
   g_variant_unref (vardict);
