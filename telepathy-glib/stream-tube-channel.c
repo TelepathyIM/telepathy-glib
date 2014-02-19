@@ -1494,23 +1494,6 @@ tp_stream_tube_channel_get_service (TpStreamTubeChannel *self)
 }
 
 /**
- * tp_stream_tube_channel_get_parameters: (skip)
- * @self: a #TpStreamTubeChannel
- *
- * Return the #TpStreamTubeChannel:parameters property
- *
- * Returns: (transfer none) (element-type utf8 GObject.Value):
- * the value of #TpStreamTubeChannel:parameters
- *
- * Since: 0.13.2
- */
-GHashTable *
-tp_stream_tube_channel_get_parameters (TpStreamTubeChannel *self)
-{
-  return self->priv->parameters;
-}
-
-/**
  * tp_stream_tube_channel_dup_parameters_vardict:
  * @self: a #TpStreamTubeChannel
  *

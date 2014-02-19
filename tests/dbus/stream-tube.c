@@ -237,21 +237,17 @@ test_creation (Test *test,
 }
 
 static void
-check_parameters (GHashTable *parameters,
-    GVariant *parameters_vardict)
+check_parameters (GVariant *parameters_vardict)
 {
   gboolean found;
   guint32 u32;
 
-  g_assert (parameters != NULL);
   g_assert (parameters_vardict != NULL);
   g_assert_cmpstr (g_variant_get_type_string (parameters_vardict), ==,
       "a{sv}");
 
-  g_assert_cmpuint (g_hash_table_size (parameters), ==, 1);
   g_assert_cmpuint (g_variant_n_children (parameters_vardict), ==, 1);
 
-  g_assert_cmpuint (tp_asv_get_uint32 (parameters, "badger", NULL), ==, 42);
   found = g_variant_lookup (parameters_vardict, "badger", "u", &u32);
   g_assert_cmpint (found, ==, TRUE);
   g_assert_cmpuint (u32, ==, 42);
@@ -262,7 +258,6 @@ test_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   gchar *service;
-  GHashTable *parameters;
   GVariant *parameters_vardict;
 
   /* Outgoing tube */
@@ -277,11 +272,6 @@ test_properties (Test *test,
   g_free (service);
 
   /* Parameters */
-  parameters = tp_stream_tube_channel_get_parameters (test->tube);
-  /* NULL as the tube has not been offered yet */
-  g_assert (parameters == NULL);
-  g_object_get (test->tube, "parameters", &parameters, NULL);
-  g_assert (parameters == NULL);
   parameters_vardict = tp_stream_tube_channel_dup_parameters_vardict (
       test->tube);
   /* NULL as the tube has not been offered yet */
@@ -296,20 +286,17 @@ test_properties (Test *test,
       TP_SOCKET_ACCESS_CONTROL_LOCALHOST, FALSE);
 
   /* Parameters */
-  parameters = tp_stream_tube_channel_get_parameters (test->tube);
   parameters_vardict = tp_stream_tube_channel_dup_parameters_vardict (
       test->tube);
-  check_parameters (parameters, parameters_vardict);
+  check_parameters (parameters_vardict);
   g_variant_unref (parameters_vardict);
 
   g_object_get (test->tube,
-      "parameters", &parameters,
       "parameters-vardict", &parameters_vardict,
       NULL);
 
   g_assert (parameters_vardict != NULL);
-  check_parameters (parameters, parameters_vardict);
-  g_hash_table_unref (parameters);
+  check_parameters (parameters_vardict);
   g_variant_unref (parameters_vardict);
 }
 
@@ -594,15 +581,12 @@ test_offer_success (Test *test,
 
   params = tp_asv_new ("badger", G_TYPE_UINT, 42, NULL);
 
-  g_assert (tp_stream_tube_channel_get_parameters (test->tube) == NULL);
-
   tp_stream_tube_channel_offer_async (test->tube, params, tube_offer_cb, test);
   g_hash_table_unref (params);
 
   parameters_vardict = tp_stream_tube_channel_dup_parameters_vardict (
       test->tube);
-  check_parameters (tp_stream_tube_channel_get_parameters (test->tube),
-      parameters_vardict);
+  check_parameters (parameters_vardict);
   g_variant_unref (parameters_vardict);
 
   test->wait = 1;
