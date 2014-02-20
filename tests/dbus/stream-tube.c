@@ -554,7 +554,7 @@ test_offer_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   guint i = GPOINTER_TO_UINT (data);
-  GHashTable *params;
+  GVariantDict params;
   GSocketAddress *address;
   GSocketClient *client;
   TpHandle bob_handle;
@@ -579,10 +579,11 @@ test_offer_success (Test *test,
   create_tube_service (test, TRUE, contexts[i].address_type,
       contexts[i].access_control, contexts[i].contact);
 
-  params = tp_asv_new ("badger", G_TYPE_UINT, 42, NULL);
+  g_variant_dict_init (&params, NULL);
+  g_variant_dict_insert (&params, "badger", "u", 42);
 
-  tp_stream_tube_channel_offer_async (test->tube, params, tube_offer_cb, test);
-  g_hash_table_unref (params);
+  tp_stream_tube_channel_offer_async (test->tube, g_variant_dict_end (&params),
+      tube_offer_cb, test);
 
   parameters_vardict = tp_stream_tube_channel_dup_parameters (
       test->tube);

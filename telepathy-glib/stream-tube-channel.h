@@ -79,7 +79,7 @@ TpStreamTubeConnection * tp_stream_tube_channel_accept_finish (
 /* Outgoing tube methods */
 
 void tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
-    GHashTable *params,
+    GVariant *params,
     GAsyncReadyCallback callback,
     gpointer user_data);
 

@@ -1147,7 +1147,7 @@ _channel_offered (TpChannel *channel,
 
 static void
 _offer_with_address (TpStreamTubeChannel *self,
-    GHashTable *params)
+    GVariant *params)
 {
   GValue *addressv = NULL;
   GError *error = NULL;
@@ -1176,7 +1176,7 @@ _offer_with_address (TpStreamTubeChannel *self,
 
   g_assert (self->priv->parameters == NULL);
   if (params != NULL)
-    self->priv->parameters = g_hash_table_ref (params);
+    self->priv->parameters = _tp_asv_from_vardict (params);
   else
     self->priv->parameters = tp_asv_new (NULL, NULL);
 
@@ -1306,7 +1306,8 @@ service_incoming_cb (GSocketService *service,
 /**
  * tp_stream_tube_channel_offer_async:
  * @self: an outgoing #TpStreamTubeChannel
- * @params: (allow-none) (transfer none): parameters of the tube, or %NULL
+ * @params: (allow-none): a #%G_VARIANT_TYPE_VARDICT representing the parameters
+ * of the tube, or %NULL
  * @callback: a callback to call when the tube has been offered
  * @user_data: data to pass to @callback
  *
@@ -1318,11 +1319,13 @@ service_incoming_cb (GSocketService *service,
  * #TpStreamTubeConnection each time a contact establishes a connection to
  * the tube.
  *
+ * @params is consumed if it is floating.
+ *
  * Since: 0.13.2
  */
 void
 tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
-    GHashTable *params,
+    GVariant *params,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -1425,6 +1428,13 @@ tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
   g_socket_service_start (self->priv->service);
 
   _offer_with_address (self, params);
+
+  if (params != NULL)
+    {
+      /* consume the floating ref */
+      g_variant_ref_sink (params);
+      g_variant_unref (params);
+    }
 }
 
 /**
