@@ -73,7 +73,7 @@ GVariant * tp_dbus_tube_channel_dup_parameters (TpDBusTubeChannel *self);
 
 _TP_AVAILABLE_IN_0_18
 void tp_dbus_tube_channel_offer_async (TpDBusTubeChannel *self,
-    GHashTable *params,
+    GVariant *params,
     GAsyncReadyCallback callback,
     gpointer user_data);
 

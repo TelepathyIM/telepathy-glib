@@ -349,20 +349,21 @@ test_offer (Test *test,
     gconstpointer data)
 {
   const TpTestsDBusTubeChannelOpenMode open_mode = GPOINTER_TO_UINT (data);
-  GHashTable *params;
+  GVariantDict params;
   GVariant *variant;
 
   /* Outgoing tube */
   create_tube_service (test, TRUE, TRUE);
   tp_tests_dbus_tube_channel_set_open_mode (test->tube_chan_service, open_mode);
 
-  params = tp_asv_new ("badger", G_TYPE_UINT, 42, NULL);
+  g_variant_dict_init (&params, NULL);
+  g_variant_dict_insert (&params, "badger", "u", 42);
 
   g_signal_connect (test->tube_chan_service, "new-connection",
       G_CALLBACK (new_connection_cb), test);
 
-  tp_dbus_tube_channel_offer_async (test->tube, params, tube_offer_cb, test);
-  g_hash_table_unref (params);
+  tp_dbus_tube_channel_offer_async (test->tube, g_variant_dict_end (&params),
+      tube_offer_cb, test);
 
   test->wait = 2;
   g_main_loop_run (test->mainloop);

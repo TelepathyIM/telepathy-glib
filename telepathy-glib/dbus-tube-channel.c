@@ -574,7 +574,7 @@ proxy_prepare_offer_cb (GObject *source,
     gpointer user_data)
 {
   TpDBusTubeChannel *self = (TpDBusTubeChannel *) source;
-  GHashTable *params = user_data;
+  GVariant *params = user_data;
   GError *error = NULL;
 
   if (!tp_proxy_prepare_finish (source, result, &error))
@@ -594,7 +594,7 @@ proxy_prepare_offer_cb (GObject *source,
 
   g_assert (self->priv->parameters == NULL);
   if (params != NULL)
-    self->priv->parameters = g_hash_table_ref (params);
+    self->priv->parameters = _tp_asv_from_vardict (params);
   else
     self->priv->parameters = tp_asv_new (NULL, NULL);
 
@@ -609,13 +609,14 @@ proxy_prepare_offer_cb (GObject *source,
       dbus_tube_offer_cb, NULL, NULL, G_OBJECT (self));
 
 out:
-  tp_clear_pointer (&params, g_hash_table_unref);
+  tp_clear_pointer (&params, g_variant_unref);
 }
 
 /**
  * tp_dbus_tube_channel_offer_async:
  * @self: an outgoing #TpDBusTubeChannel
- * @params: (allow-none) (transfer none): parameters of the tube, or %NULL
+ * @params: (allow-none): a #%G_VARIANT_TYPE_VARDICT representing the parameters
+ * of the tube, or %NULL
  * @callback: a callback to call when the tube has been offered
  * @user_data: data to pass to @callback
  *
@@ -624,11 +625,13 @@ out:
  * tp_dbus_tube_channel_offer_finish() to get the #GDBusConnection that will
  * be used to communicate through the tube.
  *
+ * @params is consumed if it is floating.
+ *
  * Since: 0.18.0
  */
 void
 tp_dbus_tube_channel_offer_async (TpDBusTubeChannel *self,
-    GHashTable *params,
+    GVariant *params,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -644,7 +647,7 @@ tp_dbus_tube_channel_offer_async (TpDBusTubeChannel *self,
 
   /* We need CORE to be prepared as we rely on State changes */
   tp_proxy_prepare_async (self, features, proxy_prepare_offer_cb,
-      params != NULL ? g_hash_table_ref (params) : params);
+      params != NULL ? g_variant_ref_sink (params) : params);
 }
 
 /**
