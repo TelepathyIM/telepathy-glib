@@ -145,7 +145,7 @@ conn_waiting_sig_free (ConnWaitingSig *c)
 
 struct _TpStreamTubeChannelPrivate
 {
-  GHashTable *parameters;
+  GVariant *parameters;
 
   /* Offering side */
   GSocketService *service;
@@ -228,7 +228,7 @@ tp_stream_tube_channel_dispose (GObject *obj)
     }
 
   tp_clear_object (&self->priv->result);
-  tp_clear_pointer (&self->priv->parameters, g_hash_table_unref);
+  tp_clear_pointer (&self->priv->parameters, g_variant_unref);
 
   g_slist_foreach (self->priv->conn_waiting_sig, (GFunc) conn_waiting_sig_free,
       NULL);
@@ -394,12 +394,11 @@ tp_stream_tube_channel_constructed (GObject *obj)
         {
           DEBUG ("Incoming tube doesn't have Tube.Parameters property");
 
-          self->priv->parameters = tp_asv_new (NULL, NULL);
+          self->priv->parameters = g_variant_new ("a{sv}", NULL);
         }
       else
         {
-          self->priv->parameters = g_boxed_copy (
-              TP_HASH_TYPE_STRING_VARIANT_MAP, params);
+          self->priv->parameters = _tp_asv_to_vardict (params);
         }
     }
 
@@ -1151,6 +1150,7 @@ _offer_with_address (TpStreamTubeChannel *self,
 {
   GValue *addressv = NULL;
   GError *error = NULL;
+  GHashTable *params_asv;
 
   addressv = tp_address_variant_from_g_socket_address (self->priv->address,
       &self->priv->socket_type, &error);
@@ -1176,16 +1176,20 @@ _offer_with_address (TpStreamTubeChannel *self,
 
   g_assert (self->priv->parameters == NULL);
   if (params != NULL)
-    self->priv->parameters = _tp_asv_from_vardict (params);
+    self->priv->parameters = g_variant_ref (params);
   else
-    self->priv->parameters = tp_asv_new (NULL, NULL);
+    self->priv->parameters = g_variant_new ("a{sv}", NULL);
 
   g_object_notify (G_OBJECT (self), "parameters");
+
+  params_asv = _tp_asv_from_vardict (self->priv->parameters);
 
   /* Call Offer */
   tp_cli_channel_type_stream_tube1_call_offer (TP_CHANNEL (self), -1,
       self->priv->socket_type, addressv, self->priv->access_control,
-      self->priv->parameters, _channel_offered, NULL, NULL, G_OBJECT (self));
+      params_asv, _channel_offered, NULL, NULL, G_OBJECT (self));
+
+  g_hash_table_unref (params_asv);
 
 finally:
   if (addressv != NULL)
@@ -1504,5 +1508,5 @@ tp_stream_tube_channel_dup_parameters (TpStreamTubeChannel *self)
   if (self->priv->parameters == NULL)
       return NULL;
 
-  return _tp_asv_to_vardict (self->priv->parameters);
+  return g_variant_ref (self->priv->parameters);
 }
