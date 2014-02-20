@@ -108,7 +108,7 @@ G_DEFINE_TYPE (TpDBusTubeChannel, tp_dbus_tube_channel, TP_TYPE_CHANNEL)
 
 struct _TpDBusTubeChannelPrivate
 {
-  GHashTable *parameters;
+  GVariant *parameters;
   TpTubeChannelState state;
 
   GSimpleAsyncResult *result;
@@ -126,7 +126,7 @@ tp_dbus_tube_channel_dispose (GObject *obj)
 {
   TpDBusTubeChannel *self = (TpDBusTubeChannel *) obj;
 
-  tp_clear_pointer (&self->priv->parameters, g_hash_table_unref);
+  tp_clear_pointer (&self->priv->parameters, g_variant_unref);
   /* If priv->result isn't NULL, it owns a ref to self. */
   g_warn_if_fail (self->priv->result == NULL);
   tp_clear_pointer (&self->priv->address, g_free);
@@ -309,12 +309,11 @@ tp_dbus_tube_channel_constructed (GObject *obj)
         {
           DEBUG ("Incoming tube doesn't have Tube.Parameters property");
 
-          self->priv->parameters = tp_asv_new (NULL, NULL);
+          self->priv->parameters = g_variant_new ("a{sv}", NULL);
         }
       else
         {
-          self->priv->parameters = g_boxed_copy (
-              TP_HASH_TYPE_STRING_VARIANT_MAP, params);
+          self->priv->parameters = _tp_asv_to_vardict (params);
         }
     }
 
@@ -524,7 +523,7 @@ tp_dbus_tube_channel_dup_parameters (TpDBusTubeChannel *self)
   if (self->priv->parameters == NULL)
       return NULL;
 
-  return _tp_asv_to_vardict (self->priv->parameters);
+  return g_variant_ref (self->priv->parameters);
 }
 
 /**
@@ -576,6 +575,7 @@ proxy_prepare_offer_cb (GObject *source,
   TpDBusTubeChannel *self = (TpDBusTubeChannel *) source;
   GVariant *params = user_data;
   GError *error = NULL;
+  GHashTable *params_asv;
 
   if (!tp_proxy_prepare_finish (source, result, &error))
     {
@@ -594,19 +594,23 @@ proxy_prepare_offer_cb (GObject *source,
 
   g_assert (self->priv->parameters == NULL);
   if (params != NULL)
-    self->priv->parameters = _tp_asv_from_vardict (params);
+    self->priv->parameters = g_variant_ref (params);
   else
-    self->priv->parameters = tp_asv_new (NULL, NULL);
+    self->priv->parameters = g_variant_new ("a{sv}", NULL);
 
   g_object_notify (G_OBJECT (self), "parameters");
+
+  params_asv = _tp_asv_from_vardict (self->priv->parameters);
 
   /* TODO: provide a way to use TP_SOCKET_ACCESS_CONTROL_LOCALHOST if you're in
    * an environment where you need to disable authentication. tp-glib can't
    * guess this for you.
    */
   tp_cli_channel_type_dbus_tube1_call_offer (TP_CHANNEL (self), -1,
-      self->priv->parameters, TP_SOCKET_ACCESS_CONTROL_CREDENTIALS,
+      params_asv, TP_SOCKET_ACCESS_CONTROL_CREDENTIALS,
       dbus_tube_offer_cb, NULL, NULL, G_OBJECT (self));
+
+  g_hash_table_unref (params_asv);
 
 out:
   tp_clear_pointer (&params, g_variant_unref);
