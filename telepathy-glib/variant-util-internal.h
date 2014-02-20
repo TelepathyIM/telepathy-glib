@@ -25,12 +25,8 @@
 #include <glib.h>
 #include <gio/gio.h>
 
-GVariant *_tp_asv_to_vardict (const GHashTable *asv);
-
 GVariant * _tp_boxed_to_variant (GType gtype,
     const gchar *variant_type,
     gpointer boxed);
-
-GHashTable * _tp_asv_from_vardict (GVariant *variant);
 
 #endif /* __TP_VARIANT_UTIL_INTERNAL_H__ */

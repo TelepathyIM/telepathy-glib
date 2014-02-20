@@ -86,7 +86,7 @@
 #include <telepathy-glib/simple-handler.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/util-internal.h>
-#include <telepathy-glib/variant-util-internal.h>
+#include <telepathy-glib/variant-util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
@@ -283,7 +283,7 @@ tp_account_channel_request_set_property (GObject *object,
             /* Construct-only and mutually exclusive with request */
             g_return_if_fail (self->priv->request == NULL);
 
-            hash = _tp_asv_from_vardict (g_value_get_variant (value));
+            hash = tp_asv_from_vardict (g_value_get_variant (value));
             self->priv->request = g_hash_table_new_full (g_str_hash,
                 g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free);
 
@@ -552,7 +552,7 @@ tp_account_channel_request_dup_request (
 {
   g_return_val_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self), NULL);
 
-  return _tp_asv_to_vardict (self->priv->request);
+  return tp_asv_to_vardict (self->priv->request);
 }
 
 /**
@@ -938,7 +938,7 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
 
   cd = tp_channel_dispatcher_new (self->priv->dbus);
 
-  hints = _tp_asv_from_vardict (self->priv->hints);
+  hints = tp_asv_from_vardict (self->priv->hints);
 
   if (ensure)
     {
@@ -1188,7 +1188,7 @@ request_channel_async (TpAccountChannelRequest *self,
 
   cd = tp_channel_dispatcher_new (self->priv->dbus);
 
-  hints = _tp_asv_from_vardict (self->priv->hints);
+  hints = tp_asv_from_vardict (self->priv->hints);
 
   if (ensure)
     {

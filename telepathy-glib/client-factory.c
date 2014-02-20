@@ -125,7 +125,7 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/client-factory-internal.h"
 #include "telepathy-glib/util-internal.h"
-#include "telepathy-glib/variant-util-internal.h"
+#include "telepathy-glib/variant-util.h"
 
 struct _TpClientFactoryPrivate
 {
@@ -1158,7 +1158,7 @@ _tp_client_factory_ensure_channel_request (TpClientFactory *self,
   if (request != NULL)
     return g_object_ref (request);
 
-  props = _tp_asv_to_vardict (immutable_properties);
+  props = tp_asv_to_vardict (immutable_properties);
 
   request = _tp_channel_request_new_with_factory (self, self->priv->dbus,
       object_path, props, error);

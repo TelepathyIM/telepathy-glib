@@ -60,7 +60,7 @@
 #include <telepathy-glib/stream-tube-connection-internal.h>
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
-#include <telepathy-glib/variant-util-internal.h>
+#include <telepathy-glib/variant-util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 #include "telepathy-glib/channel-internal.h"
@@ -398,7 +398,7 @@ tp_stream_tube_channel_constructed (GObject *obj)
         }
       else
         {
-          self->priv->parameters = _tp_asv_to_vardict (params);
+          self->priv->parameters = tp_asv_to_vardict (params);
         }
     }
 
@@ -1182,7 +1182,7 @@ _offer_with_address (TpStreamTubeChannel *self,
 
   g_object_notify (G_OBJECT (self), "parameters");
 
-  params_asv = _tp_asv_from_vardict (self->priv->parameters);
+  params_asv = tp_asv_from_vardict (self->priv->parameters);
 
   /* Call Offer */
   tp_cli_channel_type_stream_tube1_call_offer (TP_CHANNEL (self), -1,

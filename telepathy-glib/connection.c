@@ -50,7 +50,7 @@
 #include "telepathy-glib/client-factory-internal.h"
 #include "telepathy-glib/contact-internal.h"
 #include "telepathy-glib/util-internal.h"
-#include "telepathy-glib/variant-util-internal.h"
+#include "telepathy-glib/variant-util.h"
 
 /**
  * SECTION:connection
@@ -2633,7 +2633,7 @@ tp_connection_dup_detailed_error (TpConnection *self,
     return NULL;
 
   if (details != NULL)
-    *details = _tp_asv_to_vardict (asv);
+    *details = tp_asv_to_vardict (asv);
 
   return g_strdup (error);
 }

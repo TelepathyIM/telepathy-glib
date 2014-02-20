@@ -99,7 +99,7 @@
 #include "telepathy-glib/automatic-client-factory-internal.h"
 #include "telepathy-glib/channel-internal.h"
 #include "telepathy-glib/debug-internal.h"
-#include "telepathy-glib/variant-util-internal.h"
+#include "telepathy-glib/variant-util.h"
 
 #include <stdio.h>
 #include <glib/gstdio.h>
@@ -313,7 +313,7 @@ tp_dbus_tube_channel_constructed (GObject *obj)
         }
       else
         {
-          self->priv->parameters = _tp_asv_to_vardict (params);
+          self->priv->parameters = tp_asv_to_vardict (params);
         }
     }
 
@@ -600,7 +600,7 @@ proxy_prepare_offer_cb (GObject *source,
 
   g_object_notify (G_OBJECT (self), "parameters");
 
-  params_asv = _tp_asv_from_vardict (self->priv->parameters);
+  params_asv = tp_asv_from_vardict (self->priv->parameters);
 
   /* TODO: provide a way to use TP_SOCKET_ACCESS_CONTROL_LOCALHOST if you're in
    * an environment where you need to disable authentication. tp-glib can't

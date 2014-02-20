@@ -39,7 +39,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/util.h>
-#include <telepathy-glib/variant-util-internal.h>
+#include <telepathy-glib/variant-util.h>
 
 #define DEBUG_FLAG TP_DEBUG_MISC
 #include "telepathy-glib/debug-internal.h"
@@ -179,7 +179,7 @@ tp_message_dup_part (TpMessage *self,
   if (part >= self->parts->len)
     return NULL;
 
-  return _tp_asv_to_vardict (g_ptr_array_index (self->parts, part));
+  return tp_asv_to_vardict (g_ptr_array_index (self->parts, part));
 }
 
 

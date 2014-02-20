@@ -194,7 +194,7 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/client-factory-internal.h"
 #include "telepathy-glib/util-internal.h"
-#include "telepathy-glib/variant-util-internal.h"
+#include "telepathy-glib/variant-util.h"
 
 static void observer_iface_init (gpointer, gpointer);
 static void approver_iface_init (gpointer, gpointer);
@@ -385,7 +385,7 @@ tp_base_client_add_observer_filter (TpBaseClient *self,
   g_return_if_fail (g_variant_is_of_type (filter, G_VARIANT_TYPE_VARDICT));
 
   g_variant_ref_sink (filter);
-  tp_base_client_take_observer_filter (self, _tp_asv_from_vardict (filter));
+  tp_base_client_take_observer_filter (self, tp_asv_from_vardict (filter));
   g_variant_unref (filter);
 }
 
@@ -536,7 +536,7 @@ tp_base_client_add_approver_filter (TpBaseClient *self,
   g_return_if_fail (g_variant_is_of_type (filter, G_VARIANT_TYPE_VARDICT));
 
   g_variant_ref_sink (filter);
-  tp_base_client_take_approver_filter (self, _tp_asv_from_vardict (filter));
+  tp_base_client_take_approver_filter (self, tp_asv_from_vardict (filter));
   g_variant_unref (filter);
 }
 
@@ -627,7 +627,7 @@ tp_base_client_add_handler_filter (TpBaseClient *self,
   g_return_if_fail (g_variant_is_of_type (filter, G_VARIANT_TYPE_VARDICT));
 
   g_variant_ref_sink (filter);
-  tp_base_client_take_handler_filter (self, _tp_asv_from_vardict (filter));
+  tp_base_client_take_handler_filter (self, tp_asv_from_vardict (filter));
   g_variant_unref (filter);
 }
 

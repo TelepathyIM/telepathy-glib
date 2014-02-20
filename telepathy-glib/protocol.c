@@ -2079,7 +2079,7 @@ tp_protocol_identify_account_async (TpProtocol *self,
   task = g_task_new (self, cancellable, callback, user_data);
   g_task_set_source_tag (task, tp_protocol_identify_account_async);
   g_variant_ref_sink (vardict);
-  asv = _tp_asv_from_vardict (vardict);
+  asv = tp_asv_from_vardict (vardict);
   tp_cli_protocol_call_identify_account (self, -1, asv,
       tp_protocol_async_string_cb, task, g_object_unref, NULL);
   g_hash_table_unref (asv);

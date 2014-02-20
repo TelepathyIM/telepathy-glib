@@ -1781,7 +1781,7 @@ tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,
     }
   else
     {
-      hash = _tp_asv_from_vardict (details);
+      hash = tp_asv_from_vardict (details);
     }
 
   tp_svc_connection_emit_connection_error (self, error_name, hash);

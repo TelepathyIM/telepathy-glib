@@ -40,7 +40,7 @@
 #include "telepathy-glib/contact-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/util-internal.h"
-#include "telepathy-glib/variant-util-internal.h"
+#include "telepathy-glib/variant-util.h"
 
 static const gchar *
 nonnull (const gchar *s)
@@ -1812,7 +1812,7 @@ contact_maybe_set_location (TpContact *self,
     g_hash_table_ref (location);
 
   self->priv->has_features |= CONTACT_FEATURE_FLAG_LOCATION;
-  self->priv->location = _tp_asv_to_vardict (location);
+  self->priv->location = tp_asv_to_vardict (location);
   g_object_notify ((GObject *) self, "location");
   g_hash_table_unref (location);
 }

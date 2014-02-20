@@ -36,7 +36,7 @@
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/tls-certificate-rejection-internal.h>
-#include "telepathy-glib/variant-util-internal.h"
+#include "telepathy-glib/variant-util.h"
 
 #define DEBUG_FLAG TP_DEBUG_TLS
 #include "debug-internal.h"
@@ -182,7 +182,7 @@ tp_tls_certificate_rejected_cb (TpTLSCertificate *self,
           tp_proxy_dbus_error_to_gerror (self, error_name,
               tp_asv_get_string (details, "debug-message"), &error);
 
-          vardict = _tp_asv_to_vardict (details);
+          vardict = tp_asv_to_vardict (details);
 
           rej = _tp_tls_certificate_rejection_new (error,
               reason, error_name, vardict);
@@ -727,7 +727,7 @@ tp_tls_certificate_add_rejection (TpTLSCertificate *self,
     }
   else
     {
-      hash = _tp_asv_from_vardict (details);
+      hash = tp_asv_from_vardict (details);
       g_variant_ref_sink (details);
     }
 

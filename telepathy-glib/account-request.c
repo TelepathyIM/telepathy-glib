@@ -32,7 +32,7 @@
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/util-internal.h"
-#include "telepathy-glib/variant-util-internal.h"
+#include "telepathy-glib/variant-util.h"
 
 /**
  * SECTION:account-request
@@ -210,10 +210,10 @@ tp_account_request_get_property (GObject *object,
       g_value_set_string (value, self->priv->display_name);
       break;
     case PROP_PARAMETERS:
-      g_value_take_variant (value, _tp_asv_to_vardict (self->priv->parameters));
+      g_value_take_variant (value, tp_asv_to_vardict (self->priv->parameters));
       break;
     case PROP_PROPERTIES:
-      g_value_take_variant (value, _tp_asv_to_vardict (self->priv->properties));
+      g_value_take_variant (value, tp_asv_to_vardict (self->priv->properties));
       break;
     case PROP_ICON_NAME:
       g_value_set_string (value,

@@ -42,7 +42,7 @@
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/client-factory-internal.h"
 #include <telepathy-glib/util-internal.h>
-#include "telepathy-glib/variant-util-internal.h"
+#include "telepathy-glib/variant-util.h"
 
 /**
  * SECTION:account
@@ -930,7 +930,7 @@ _tp_account_update (TpAccount *account,
       if (priv->parameters != NULL)
         g_variant_unref (priv->parameters);
 
-      priv->parameters = _tp_asv_to_vardict (parameters);
+      priv->parameters = tp_asv_to_vardict (parameters);
       /* this isn't a property, so we don't notify */
     }
 
@@ -2739,7 +2739,7 @@ tp_account_update_parameters_async (TpAccount *account,
 
   g_return_if_fail (TP_IS_ACCOUNT (account));
 
-  hash = _tp_asv_from_vardict (parameters);
+  hash = tp_asv_from_vardict (parameters);
 
   result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_update_parameters_async);
@@ -3649,7 +3649,7 @@ tp_account_dup_detailed_error (TpAccount *self,
     return NULL;
 
   if (details != NULL)
-    *details = _tp_asv_to_vardict (self->priv->error_details);
+    *details = tp_asv_to_vardict (self->priv->error_details);
 
   return g_strdup (self->priv->error);
 }
@@ -3730,7 +3730,7 @@ _tp_account_get_storage_specific_information_cb (TpProxy *self,
       GHashTable *asv = g_value_get_boxed (value);
 
       g_simple_async_result_set_op_res_gpointer (result,
-          _tp_asv_to_vardict (asv), (GDestroyNotify) g_variant_unref);
+          tp_asv_to_vardict (asv), (GDestroyNotify) g_variant_unref);
     }
 
   g_simple_async_result_complete (result);

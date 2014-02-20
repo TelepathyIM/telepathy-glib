@@ -38,7 +38,7 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/client-factory-internal.h"
-#include "telepathy-glib/variant-util-internal.h"
+#include "telepathy-glib/variant-util.h"
 
 /**
  * SECTION:channel
@@ -345,7 +345,7 @@ tp_channel_dup_immutable_properties (TpChannel *self)
 {
   g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
 
-  return _tp_asv_to_vardict (self->priv->channel_properties);
+  return tp_asv_to_vardict (self->priv->channel_properties);
 }
 
 /**

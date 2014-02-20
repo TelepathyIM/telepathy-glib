@@ -31,7 +31,7 @@
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
-#include <telepathy-glib/variant-util-internal.h>
+#include <telepathy-glib/variant-util.h>
 
 #include "telepathy-glib/account-manager.h"
 
@@ -1275,10 +1275,10 @@ tp_account_manager_create_account_async (TpAccountManager *manager,
       tp_account_manager_create_account_finish);
 
   g_variant_ref_sink (parameters);
-  params_asv = _tp_asv_from_vardict (parameters);
+  params_asv = tp_asv_from_vardict (parameters);
 
   g_variant_ref_sink (properties);
-  props_asv = _tp_asv_from_vardict (properties);
+  props_asv = tp_asv_from_vardict (properties);
 
   tp_cli_account_manager_call_create_account (manager,
       -1, connection_manager, protocol, display_name, params_asv,

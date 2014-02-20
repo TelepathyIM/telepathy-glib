@@ -113,7 +113,7 @@ int main (int argc, char **argv)
 
   tp_asv_dump (hash);
 
-  vardict = _tp_asv_to_vardict (hash);
+  vardict = tp_asv_to_vardict (hash);
 
   /* Tests: tp_asv_get_boolean */
 

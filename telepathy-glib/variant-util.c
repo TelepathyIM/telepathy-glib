@@ -49,13 +49,17 @@
 #define DEBUG_FLAG TP_DEBUG_MISC
 #include "debug-internal.h"
 
-/*
- * _tp_asv_to_vardict:
+/**
+ * tp_asv_to_vardict: (skip)
+ * @asv: a #TP_HASH_TYPE_STRING_VARIANT_MAP
+ *
+ * Convert a #TP_HASH_TYPE_STRING_VARIANT_MAP to a #GVariant of type
+ * %G_VARIANT_TYPE_VARDICT
  *
  * Returns: (transfer full): a #GVariant of type %G_VARIANT_TYPE_VARDICT
- */
+ **/
 GVariant *
-_tp_asv_to_vardict (const GHashTable *asv)
+tp_asv_to_vardict (const GHashTable *asv)
 {
   return _tp_boxed_to_variant (TP_HASH_TYPE_STRING_VARIANT_MAP, "a{sv}", (gpointer) asv);
 }
@@ -81,15 +85,18 @@ _tp_boxed_to_variant (GType gtype,
   return g_variant_ref_sink (ret);
 }
 
-/*
- * _tp_asv_from_vardict:
+/**
+ * tp_asv_from_vardict: (skip)
  * @variant: a #GVariant of type %G_VARIANT_TYPE_VARDICT
+ *
+ * Convert a #GVariant of type %G_VARIANT_TYPE_VARDICT to a
+ * #TP_HASH_TYPE_STRING_VARIANT_MAP
  *
  * Returns: (transfer full): a newly created #GHashTable of
  * type #TP_HASH_TYPE_STRING_VARIANT_MAP
- */
+ **/
 GHashTable *
-_tp_asv_from_vardict (GVariant *variant)
+tp_asv_from_vardict (GVariant *variant)
 {
   GValue v = G_VALUE_INIT;
   GHashTable *result;
