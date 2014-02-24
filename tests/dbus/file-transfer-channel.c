@@ -378,6 +378,24 @@ test_create_unrequested (Test *test,
   g_assert_no_error (error);
 }
 
+static void
+check_metadata (GVariant *metadata)
+{
+  GVariant *as;
+  const gchar **metadata_values;
+  gsize len;
+
+  g_assert (metadata != NULL);
+  g_assert_cmpuint (g_variant_n_children (metadata), ==, 1);
+  as = g_variant_lookup_value (metadata, "banana", G_VARIANT_TYPE ("as"));
+  metadata_values = g_variant_get_strv (as, &len);
+  g_assert_cmpuint (len, ==, 1);
+  g_assert_cmpuint (g_strv_length ((GStrv) metadata_values), ==, 1);
+  g_assert_cmpstr (metadata_values[0], ==, "cheese");
+  g_free (metadata_values);
+  g_variant_unref (as);
+}
+
 /* Test setting and getting properties */
 static void
 test_properties (Test *test,
@@ -386,8 +404,7 @@ test_properties (Test *test,
   GDateTime *date1, *date2;
   TpFileTransferStateChangeReason reason;
   const GError *error = NULL;
-  const GHashTable *metadata;
-  const gchar * const *metadata_values;
+  GVariant *metadata;
 
   create_file_transfer_channel (test, FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX,
       TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
@@ -418,11 +435,13 @@ test_properties (Test *test,
   g_assert_cmpstr (tp_file_transfer_channel_get_service_name (test->channel),
       ==, "fit.service.name");
 
-  metadata = tp_file_transfer_channel_get_metadata (test->channel);
-  g_assert_cmpuint (g_hash_table_size ((GHashTable *) metadata), ==, 1);
-  metadata_values = g_hash_table_lookup ((GHashTable *) metadata, "banana");
-  g_assert_cmpuint (g_strv_length ((GStrv) metadata_values), ==, 1);
-  g_assert_cmpstr (metadata_values[0], ==, "cheese");
+  metadata = tp_file_transfer_channel_dup_metadata (test->channel);
+  check_metadata (metadata);
+  g_variant_unref (metadata);
+
+  g_object_get (test->channel, "metadata", &metadata, NULL);
+  check_metadata (metadata);
+  g_variant_unref (metadata);
 
   error = tp_proxy_get_invalidated (test->channel);
   g_assert_no_error (error);

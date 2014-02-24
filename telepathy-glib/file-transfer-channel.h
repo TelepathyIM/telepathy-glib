@@ -127,8 +127,7 @@ _TP_AVAILABLE_IN_0_18
 const gchar * tp_file_transfer_channel_get_service_name (
     TpFileTransferChannel *self);
 
-_TP_AVAILABLE_IN_0_18
-const GHashTable * tp_file_transfer_channel_get_metadata (
+GVariant * tp_file_transfer_channel_dup_metadata (
     TpFileTransferChannel *self);
 
 G_END_DECLS

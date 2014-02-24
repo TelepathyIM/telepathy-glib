@@ -108,6 +108,7 @@
 #include <telepathy-glib/proxy-internal.h>
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/variant-util-internal.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 #include "telepathy-glib/automatic-client-factory-internal.h"
@@ -146,7 +147,7 @@ struct _TpFileTransferChannelPrivate
     goffset initial_offset;
     /* Metadata */
     const gchar *service_name;
-    GHashTable *metadata; /* const gchar* => const gchar* const* */
+    GVariant *metadata; /* a{sas} */
 
     /* Streams and sockets for sending and receiving the actual file */
     GSocket *client_socket;
@@ -525,6 +526,7 @@ tp_file_transfer_channel_constructed (GObject *obj)
   gboolean valid;
   gint64 date;
   const gchar *uri;
+  GHashTable *metadata;
 
   G_OBJECT_CLASS (tp_file_transfer_channel_parent_class)->constructed (obj);
 
@@ -608,14 +610,16 @@ tp_file_transfer_channel_constructed (GObject *obj)
   self->priv->service_name = tp_asv_get_string (properties,
       TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA1_SERVICE_NAME);
 
-  self->priv->metadata = tp_asv_get_boxed (properties,
+  metadata = tp_asv_get_boxed (properties,
      TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA1_METADATA,
      TP_HASH_TYPE_METADATA);
 
-  if (self->priv->metadata == NULL)
-    self->priv->metadata = g_hash_table_new (g_str_hash, g_str_equal);
+  if (metadata == NULL)
+    self->priv->metadata = g_variant_new ("a{sas}", NULL);
   else
-    g_hash_table_ref (self->priv->metadata);
+    self->priv->metadata = _tp_boxed_to_variant (TP_HASH_TYPE_METADATA,
+        "a{sas}", metadata);
+  g_variant_ref_sink (self->priv->metadata);
 
   self->priv->cancellable = g_cancellable_new ();
   g_signal_connect (self, "invalidated",
@@ -673,7 +677,7 @@ tp_file_transfer_channel_get_property (GObject *object,
         break;
 
       case PROP_METADATA:
-        g_value_set_boxed (value, self->priv->metadata);
+        g_value_set_variant (value, self->priv->metadata);
         break;
 
       default:
@@ -714,7 +718,7 @@ tp_file_transfer_channel_dispose (GObject *obj)
 
   tp_clear_pointer (&self->priv->date, g_date_time_unref);
   g_clear_object (&self->priv->file);
-  tp_clear_pointer (&self->priv->metadata, g_hash_table_unref);
+  tp_clear_pointer (&self->priv->metadata, g_variant_unref);
   g_clear_object (&self->priv->stream);
 
   if (self->priv->cancellable != NULL)
@@ -997,10 +1001,11 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    *
    * Since: 0.17.1
    */
-  param_spec = g_param_spec_boxed ("metadata",
+  param_spec = g_param_spec_variant ("metadata",
       "Metadata",
-      "The Metadata.Metadata property of this channel",
-      TP_HASH_TYPE_METADATA,
+      "The Metadata.Metadata property of this channel as a variant of type"
+      "a{sas}, i.e. map with string keys and array-of-strings values",
+      G_VARIANT_TYPE ("a{sas}"), NULL,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_METADATA,
       param_spec);
@@ -1637,20 +1642,21 @@ tp_file_transfer_channel_get_service_name (TpFileTransferChannel *self)
 }
 
 /**
- * tp_file_transfer_channel_get_metadata:
+ * tp_file_transfer_channel_dup_metadata:
  * @self: a #TpFileTransferChannel
  *
  * Return the #TpFileTransferChannel:metadata property
  *
- * Returns: (transfer none) (element-type utf8 GStrv): the
- *   value of the #TpFileTransferChannel:metadata property
+ * Returns: (transfer full): the
+ *   value of the #TpFileTransferChannel:metadata property as a variant of type
+ *   "a{sas}, i.e. map with string keys and array-of-strings values.
  *
  * Since: 0.17.1
  */
-const GHashTable *
-tp_file_transfer_channel_get_metadata (TpFileTransferChannel *self)
+GVariant *
+tp_file_transfer_channel_dup_metadata (TpFileTransferChannel *self)
 {
   g_return_val_if_fail (TP_IS_FILE_TRANSFER_CHANNEL (self), NULL);
 
-  return self->priv->metadata;
+  return g_variant_ref (self->priv->metadata);
 }
