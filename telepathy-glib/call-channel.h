@@ -27,6 +27,7 @@
 
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/defs.h>
+#include <telepathy-glib/variant-util.h>
 
 G_BEGIN_DECLS
 
@@ -87,7 +88,7 @@ GPtrArray *tp_call_channel_get_contents (TpCallChannel *self);
 _TP_AVAILABLE_IN_0_18
 TpCallState tp_call_channel_get_state (TpCallChannel *self,
     TpCallFlags *flags,
-    GHashTable **details,
+    GVariant **details,
     TpCallStateReason **reason);
 _TP_AVAILABLE_IN_0_18
 gboolean tp_call_channel_has_hardware_streaming (TpCallChannel *self);

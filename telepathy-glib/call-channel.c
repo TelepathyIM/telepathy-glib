@@ -76,7 +76,7 @@ struct _TpCallChannelPrivate
   GPtrArray *contents;
   TpCallState state;
   TpCallFlags flags;
-  GHashTable *state_details;
+  GVariant *state_details;
   TpCallStateReason *state_reason;
   gboolean hardware_streaming;
   /* TpContact -> TpCallMemberFlags */
@@ -405,12 +405,12 @@ call_state_changed_cb (TpChannel *channel,
       flags);
 
   tp_clear_pointer (&self->priv->state_reason, _tp_call_state_reason_unref);
-  tp_clear_pointer (&self->priv->state_details, g_hash_table_unref);
+  tp_clear_pointer (&self->priv->state_details, g_variant_unref);
 
   self->priv->state = state;
   self->priv->flags = flags;
   self->priv->state_reason = _tp_call_state_reason_new (reason);
-  self->priv->state_details = g_hash_table_ref (details);
+  self->priv->state_details = g_variant_ref_sink (tp_asv_to_vardict (details));
 
   g_object_notify ((GObject *) self, "state");
   g_object_notify ((GObject *) self, "flags");
@@ -594,8 +594,9 @@ got_all_properties_cb (TpProxy *proxy,
       "CallState", NULL);
   self->priv->flags = tp_asv_get_uint32 (properties,
       "CallFlags", NULL);
-  self->priv->state_details = g_hash_table_ref (tp_asv_get_boxed (properties,
-      "CallStateDetails", TP_HASH_TYPE_STRING_VARIANT_MAP));
+  self->priv->state_details = g_variant_ref_sink (
+      tp_asv_to_vardict (tp_asv_get_boxed (properties,
+          "CallStateDetails", TP_HASH_TYPE_STRING_VARIANT_MAP)));
   self->priv->state_reason = _tp_call_state_reason_new (tp_asv_get_boxed (properties,
       "CallStateReason", TP_STRUCT_TYPE_CALL_STATE_REASON));
   members = tp_asv_get_boxed (properties,
@@ -735,7 +736,7 @@ tp_call_channel_dispose (GObject *obj)
   g_assert (self->priv->core_result == NULL);
 
   tp_clear_pointer (&self->priv->contents, g_ptr_array_unref);
-  tp_clear_pointer (&self->priv->state_details, g_hash_table_unref);
+  tp_clear_pointer (&self->priv->state_details, g_variant_unref);
   tp_clear_pointer (&self->priv->state_reason, _tp_call_state_reason_unref);
   tp_clear_pointer (&self->priv->members, g_hash_table_unref);
   tp_clear_pointer (&self->priv->initial_audio_name, g_free);
@@ -767,7 +768,7 @@ tp_call_channel_get_property (GObject *object,
         break;
 
       case PROP_STATE_DETAILS:
-        g_value_set_boxed (value, self->priv->state_details);
+        g_value_set_variant (value, self->priv->state_details);
         break;
 
       case PROP_STATE_REASON:
@@ -905,14 +906,12 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
   /**
    * TpCallChannel:state-details:
    *
-   * Detailed infoermation about #TpCallChannel:state. It is a #GHashTable
-   * mapping gchar*->GValue, it can be accessed using the tp_asv_* functions.
-   *
-   * Since: 0.17.5
+   * Detailed information about #TpCallChannel:state. It is a #GVariant
+   * of type #G_VARIANT_TYPE_VARDICT.
    */
-  param_spec = g_param_spec_boxed ("state-details", "State details",
+  param_spec = g_param_spec_variant ("state-details", "State details",
       "The details of the call",
-      G_TYPE_HASH_TABLE,
+      G_VARIANT_TYPE_VARDICT, NULL,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (gobject_class,
       PROP_STATE_DETAILS, param_spec);
@@ -1094,8 +1093,8 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
    * @state: the new #TpCallState
    * @flags: the new #TpCallFlags
    * @reason: the #TpCallStateReason for the change
-   * @details: (element-type utf8 GObject.Value): additional details as a
-   *   #GHashTable readable using the tp_asv_* functions.
+   * @details: additional details as a
+   * #GVariant of type #G_VARIANT_TYPE_VARDICT.
    *
    * The ::state-changed signal is emitted whenever the
    * call state changes.
@@ -1108,7 +1107,7 @@ tp_call_channel_class_init (TpCallChannelClass *klass)
       0, NULL, NULL, NULL,
       G_TYPE_NONE,
       4, G_TYPE_UINT, G_TYPE_UINT, TP_TYPE_CALL_STATE_REASON,
-      G_TYPE_HASH_TABLE);
+      G_TYPE_VARIANT);
 
   /**
    * TpCallChannel::members-changed:
@@ -1210,7 +1209,7 @@ tp_call_channel_get_contents (TpCallChannel *self)
  * @self: a #TpCallChannel
  * @flags: (out) (allow-none) (transfer none): a place to set the value of
  *  #TpCallChannel:flags
- * @details: (out) (allow-none) (transfer none): a place to set the value of
+ * @details: (out) (allow-none) (transfer full): a place to set the value of
  *  #TpCallChannel:state-details
  * @reason: (out) (allow-none) (transfer none): a place to set the value of
  *  #TpCallChannel:state-reason
@@ -1223,7 +1222,7 @@ tp_call_channel_get_contents (TpCallChannel *self)
 TpCallState
 tp_call_channel_get_state (TpCallChannel *self,
     TpCallFlags *flags,
-    GHashTable **details,
+    GVariant **details,
     TpCallStateReason **reason)
 {
   g_return_val_if_fail (TP_IS_CALL_CHANNEL (self), TP_CALL_STATE_UNKNOWN);
@@ -1231,7 +1230,7 @@ tp_call_channel_get_state (TpCallChannel *self,
   if (flags != NULL)
     *flags = self->priv->flags;
   if (details != NULL)
-    *details = self->priv->state_details;
+    *details = g_variant_ref (self->priv->state_details);
   if (reason != NULL)
     *reason = self->priv->state_reason;
 

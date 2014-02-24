@@ -203,7 +203,7 @@ assert_call_properties (TpCallChannel *channel,
 {
   TpCallState state;
   TpCallFlags flags;
-  GHashTable *details;
+  GVariant *details;
   TpCallStateReason *r;
 
   state = tp_call_channel_get_state (channel, &flags, &details, &r);
@@ -215,6 +215,8 @@ assert_call_properties (TpCallChannel *channel,
   g_assert_cmpstr (r->dbus_reason, ==, dbus_reason);
   if (check_call_flags)
     g_assert_cmpuint (flags, ==, call_flags);
+  g_assert (details != NULL);
+  g_variant_unref (details);
 
   /* Hard-coded properties */
   g_assert_cmpint (tp_call_channel_has_hardware_streaming (channel), ==, FALSE);
