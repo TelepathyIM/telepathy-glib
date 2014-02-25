@@ -2423,3 +2423,55 @@ tp_account_channel_request_set_file_transfer_hash (
       g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_HASH),
       tp_g_value_slice_new_string (hash));
 }
+
+/**
+ * tp_account_channel_request_new_stream_tube:
+ * @account: a #TpAccount
+ * @service: the service name that will be used over the tube. It should be a
+ * well-known TCP service name as defined by
+ * http://www.iana.org/assignments/port-numbers or
+ * http://www.dns-sd.org/ServiceTypes.html, for instance "rsync" or "daap".
+ * @user_action_time: the time of the user action that caused this request,
+ *  or one of the special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME (see
+ *  #TpAccountChannelRequest:user-action-time)
+ *
+ * Convenience function to create a new #TpAccountChannelRequest object,
+ * which will yield a StreamTube channel.
+ *
+ * After creating the request, you will also need to set the "target"
+ * of the channel by calling one of the following functions:
+ *
+ * - tp_account_channel_request_set_target_contact()
+ * - tp_account_channel_request_set_target_id()
+ *
+ * Returns: a new #TpAccountChannelRequest object
+ *
+ * Since: UNRELEASED
+ */
+TpAccountChannelRequest *
+tp_account_channel_request_new_stream_tube (TpAccount *account,
+    const gchar *service,
+    gint64 user_action_time)
+{
+  TpAccountChannelRequest *self;
+  GHashTable *request;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+  g_return_val_if_fail (!tp_str_empty (service), NULL);
+
+  request = tp_asv_new (
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+          TP_IFACE_CHANNEL_TYPE_STREAM_TUBE,
+      TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE, G_TYPE_STRING, service,
+      NULL);
+
+  self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
+      "account", account,
+      "request", request,
+      "user-action-time", user_action_time,
+      NULL);
+
+  g_hash_table_unref (request);
+  return self;
+}
