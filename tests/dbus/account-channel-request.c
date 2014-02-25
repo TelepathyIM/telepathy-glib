@@ -1318,8 +1318,12 @@ test_no_handle_type (Test *test,
 {
   TpAccountChannelRequest *req;
   gboolean valid;
+  const gchar * const channels[] = { "/chan1", "/chan2", NULL };
+  GPtrArray *chans;
 
   req = tp_account_channel_request_new_text (test->account, 0);
+
+  tp_account_channel_request_set_conference_initial_channels (req, channels);
 
   /* Ask to the CR to fire the signal */
   tp_account_channel_request_set_request_property (req, "FireFailed",
@@ -1342,8 +1346,16 @@ test_no_handle_type (Test *test,
   g_assert (valid);
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
         "FireFailed", NULL), ==, TRUE);
-  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 3);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 4);
   g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
+
+  chans = tp_asv_get_boxed (test->cd_service->last_request,
+      TP_PROP_CHANNEL_INTERFACE_CONFERENCE_INITIAL_CHANNELS,
+      TP_ARRAY_TYPE_OBJECT_PATH_LIST);
+  g_assert (chans != NULL);
+  g_assert_cmpuint (chans->len, ==, 2);
+  g_assert_cmpstr (g_ptr_array_index (chans, 0), ==, "/chan1");
+  g_assert_cmpstr (g_ptr_array_index (chans, 1), ==, "/chan2");
 }
 
 int

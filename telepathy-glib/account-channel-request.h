@@ -176,6 +176,13 @@ TpAccountChannelRequest *tp_account_channel_request_new_dbus_tube (
     const gchar *service_name,
     gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
 
+/* Conference */
+
+_TP_AVAILABLE_IN_0_24
+void tp_account_channel_request_set_conference_initial_channels (
+    TpAccountChannelRequest *self,
+    const gchar * const * channels);
+
 /* Channel target (shared between all channel types) */
 
 _TP_AVAILABLE_IN_0_20

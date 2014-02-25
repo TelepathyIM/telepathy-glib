@@ -2546,3 +2546,38 @@ tp_account_channel_request_set_sms_channel (TpAccountChannelRequest *self,
       g_strdup (TP_PROP_CHANNEL_INTERFACE_SMS_SMS_CHANNEL),
       tp_g_value_slice_new_boolean (is_sms_channel));
 }
+
+/**
+ * tp_account_channel_request_set_conference_initial_channels:
+ * @self: a #TpAccountChannelRequest
+ * @channels: a #NULL-terminated array of channel paths
+ *
+ * Indicate that the channel which is going to be requested using @self
+ * is an upgrade of the channels whose object paths is listed in @channels.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_account_channel_request_set_conference_initial_channels (
+    TpAccountChannelRequest *self,
+    const gchar * const * channels)
+{
+  GPtrArray *chans;
+  guint i;
+
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+
+  chans = g_ptr_array_new ();
+  for (i = 0; channels != NULL && channels[i] != NULL; i++)
+    g_ptr_array_add (chans, (gpointer) channels[i]);
+
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_INTERFACE_CONFERENCE_INITIAL_CHANNELS),
+      tp_g_value_slice_new_boxed (TP_ARRAY_TYPE_OBJECT_PATH_LIST, chans));
+
+  g_ptr_array_unref (chans);
+}
