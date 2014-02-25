@@ -1026,6 +1026,16 @@ going_to_request (TpAccountChannelRequest *self,
 
   self->priv->ensure = ensure;
 
+  /* Set TargetHandleType: TP_HANDLE_TYPE_NONE if no TargetHandleType has been
+   * defined. */
+  if (g_hash_table_lookup (self->priv->request,
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE) == NULL)
+    {
+      g_hash_table_insert (self->priv->request,
+          g_strdup (TP_PROP_CHANNEL_TARGET_HANDLE_TYPE),
+          tp_g_value_slice_new_uint (TP_HANDLE_TYPE_NONE));
+    }
+
   return TRUE;
 }
 

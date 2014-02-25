@@ -319,7 +319,7 @@ test_handle_proceed_fail (Test *test,
         TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, NULL), ==, TRUE);
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
         "ProceedFail", NULL), ==, TRUE);
-  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 4);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 5);
 }
 
 /* ChannelRequest fire the 'Failed' signal */
@@ -358,7 +358,7 @@ test_handle_cr_failed (Test *test,
       "application/x-rar");
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
         "FireFailed", NULL), ==, TRUE);
-  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 5);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 6);
   g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
 }
 
@@ -425,7 +425,7 @@ test_ft_props (Test *test,
       "This is not a hash");
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
         "FireFailed", NULL), ==, TRUE);
-  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 11);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 12);
   g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
 }
 
@@ -458,7 +458,7 @@ test_stream_tube_props (Test *test,
         TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE), ==, "daap");
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
         "FireFailed", NULL), ==, TRUE);
-  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 3);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 4);
   g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
 }
 
@@ -492,7 +492,7 @@ test_dbus_tube_props (Test *test,
       "com.example.ServiceName");
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
         "FireFailed", NULL), ==, TRUE);
-  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 3);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 4);
   g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
 }
 
@@ -1310,6 +1310,42 @@ test_observe_no_channel (Test *test,
   g_assert_error (test->error, TP_ERROR, TP_ERROR_CONFUSED);
 }
 
+/* Check if TargetHandleType: TP_HANDLE_TYPE_NONE is automatically added if no
+ * target has been specified by the user. */
+static void
+test_no_handle_type (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpAccountChannelRequest *req;
+  gboolean valid;
+
+  req = tp_account_channel_request_new_text (test->account, 0);
+
+  /* Ask to the CR to fire the signal */
+  tp_account_channel_request_set_request_property (req, "FireFailed",
+      g_variant_new_boolean (TRUE));
+
+  tp_account_channel_request_create_and_handle_channel_async (req,
+      NULL, create_and_handle_cb, test);
+
+  g_object_unref (req);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
+  g_assert (test->channel == NULL);
+
+  /* The request had the properties we wanted */
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_TEXT);
+  g_assert_cmpuint (tp_asv_get_uint32 (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid), ==, TP_HANDLE_TYPE_NONE);
+  g_assert (valid);
+  g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
+        "FireFailed", NULL), ==, TRUE);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 3);
+  g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
+}
+
 int
 main (int argc,
       char **argv)
@@ -1380,6 +1416,8 @@ main (int argc,
       setup, test_stream_tube_props, teardown);
   g_test_add ("/account-channels/test-dbus-tube-props", Test, NULL,
       setup, test_dbus_tube_props, teardown);
+  g_test_add ("/account-channels/test-no-handle-type", Test, NULL,
+      setup, test_no_handle_type, teardown);
 
   return tp_tests_run_with_bus ();
 }
