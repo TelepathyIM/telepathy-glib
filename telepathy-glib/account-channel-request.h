@@ -166,6 +166,12 @@ TpAccountChannelRequest *tp_account_channel_request_new_stream_tube (
     const gchar *service,
     gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
 
+_TP_AVAILABLE_IN_0_24
+TpAccountChannelRequest *tp_account_channel_request_new_dbus_tube (
+    TpAccount *account,
+    const gchar *service_name,
+    gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
+
 /* Channel target (shared between all channel types) */
 
 _TP_AVAILABLE_IN_0_20

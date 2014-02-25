@@ -459,6 +459,40 @@ test_stream_tube_props (Test *test,
 }
 
 static void
+test_dbus_tube_props (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpAccountChannelRequest *req;
+
+  req = tp_account_channel_request_new_dbus_tube (test->account,
+      "com.example.ServiceName", 0);
+
+  /* Ask to the CR to fire the signal */
+  tp_account_channel_request_set_request_property (req, "FireFailed",
+      g_variant_new_boolean (TRUE));
+
+  tp_account_channel_request_create_and_handle_channel_async (req,
+      NULL, create_and_handle_cb, test);
+
+  g_object_unref (req);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
+  g_assert (test->channel == NULL);
+
+  /* The request had the properties we wanted */
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_DBUS_TUBE);
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_DBUS_TUBE_SERVICE_NAME), ==,
+      "com.example.ServiceName");
+  g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
+        "FireFailed", NULL), ==, TRUE);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 3);
+  g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
+}
+
+static void
 ensure_and_handle_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
@@ -1340,6 +1374,8 @@ main (int argc,
       setup, test_ft_props, teardown);
   g_test_add ("/account-channels/test-stream-tube-props", Test, NULL,
       setup, test_stream_tube_props, teardown);
+  g_test_add ("/account-channels/test-dbus-tube-props", Test, NULL,
+      setup, test_dbus_tube_props, teardown);
 
   return tp_tests_run_with_bus ();
 }

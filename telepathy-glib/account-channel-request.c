@@ -2475,3 +2475,52 @@ tp_account_channel_request_new_stream_tube (TpAccount *account,
   g_hash_table_unref (request);
   return self;
 }
+
+/**
+ * tp_account_channel_request_new_dbus_tube:
+ * @account: a #TpAccount
+ * @service_name: the service name that will be used over the tube. It should be
+ * @user_action_time: the time of the user action that caused this request,
+ *  or one of the special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME (see
+ *  #TpAccountChannelRequest:user-action-time)
+ *
+ * Convenience function to create a new #TpAccountChannelRequest object,
+ * which will yield a DBusTube channel.
+ *
+ * After creating the request, you will also need to set the "target"
+ * of the channel by calling one of the following functions:
+ *
+ * - tp_account_channel_request_set_target_contact()
+ * - tp_account_channel_request_set_target_id()
+ *
+ * Returns: a new #TpAccountChannelRequest object
+ *
+ * Since: UNRELEASED
+ */
+TpAccountChannelRequest *
+tp_account_channel_request_new_dbus_tube (TpAccount *account,
+    const gchar *service_name,
+    gint64 user_action_time)
+{
+  TpAccountChannelRequest *self;
+  GHashTable *request;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+  g_return_val_if_fail (!tp_str_empty (service_name), NULL);
+
+  request = tp_asv_new (
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+          TP_IFACE_CHANNEL_TYPE_DBUS_TUBE,
+      TP_PROP_CHANNEL_TYPE_DBUS_TUBE_SERVICE_NAME, G_TYPE_STRING, service_name,
+      NULL);
+
+  self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
+      "account", account,
+      "request", request,
+      "user-action-time", user_action_time,
+      NULL);
+
+  g_hash_table_unref (request);
+  return self;
+}
