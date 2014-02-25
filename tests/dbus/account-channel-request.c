@@ -1371,6 +1371,63 @@ test_no_handle_type (Test *test,
   g_assert (tp_strv_contains (strv, "snake@badger.com"));
 }
 
+static void
+test_initial_invitees (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpAccountChannelRequest *req;
+  gboolean valid;
+  GPtrArray *invitees;
+  TpContact *contact;
+  const gchar * const *strv;
+
+  req = tp_account_channel_request_new_text (test->account, 0);
+
+  invitees = g_ptr_array_new_with_free_func (g_object_unref);
+
+  contact = tp_tests_connection_run_until_contact_by_id (test->connection,
+      "badger@badger.com", 0, NULL);
+  g_ptr_array_add (invitees, contact);
+  contact = tp_tests_connection_run_until_contact_by_id (test->connection,
+      "snake@badger.com", 0, NULL);
+  g_ptr_array_add (invitees, contact);
+
+  tp_account_channel_request_set_initial_invitees (req, invitees);
+  g_ptr_array_unref (invitees);
+
+  /* Ask to the CR to fire the signal */
+  tp_account_channel_request_set_request_property (req, "FireFailed",
+      g_variant_new_boolean (TRUE));
+
+  tp_account_channel_request_create_and_handle_channel_async (req,
+      NULL, create_and_handle_cb, test);
+
+  g_object_unref (req);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
+  g_assert (test->channel == NULL);
+
+  /* The request had the properties we wanted */
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_TEXT);
+  g_assert_cmpuint (tp_asv_get_uint32 (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid), ==, TP_HANDLE_TYPE_NONE);
+  g_assert (valid);
+  g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
+        "FireFailed", NULL), ==, TRUE);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 4);
+  g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
+
+  strv = tp_asv_get_boxed (test->cd_service->last_request,
+      TP_PROP_CHANNEL_INTERFACE_CONFERENCE_INITIAL_INVITEE_IDS,
+      G_TYPE_STRV);
+  g_assert (strv != NULL);
+  g_assert_cmpuint (g_strv_length ((GStrv) strv), ==, 2);
+  g_assert (tp_strv_contains (strv, "badger@badger.com"));
+  g_assert (tp_strv_contains (strv, "snake@badger.com"));
+}
+
 int
 main (int argc,
       char **argv)
@@ -1443,6 +1500,8 @@ main (int argc,
       setup, test_dbus_tube_props, teardown);
   g_test_add ("/account-channels/test-no-handle-type", Test, NULL,
       setup, test_no_handle_type, teardown);
+  g_test_add ("/account-channels/test-initial-invitees", Test, NULL,
+      setup, test_initial_invitees, teardown);
 
   return tp_tests_run_with_bus ();
 }

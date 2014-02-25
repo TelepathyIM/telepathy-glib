@@ -2608,3 +2608,44 @@ tp_account_channel_request_set_initial_invitee_ids (
       g_strdup (TP_PROP_CHANNEL_INTERFACE_CONFERENCE_INITIAL_INVITEE_IDS),
       tp_g_value_slice_new_boxed (G_TYPE_STRV, ids));
 }
+
+/**
+ * tp_account_channel_request_set_initial_invitees:
+ * @self: a #TpAccountChannelRequest
+ * @contacts: (element-type TelepathyGLib.Contact): a #GPtrArray of #TpContact
+ *
+ * Indicate that the contacts listed in @contacts have to be invited to the
+ * conference represented by the channel which is going to be requested
+ * using @self.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_account_channel_request_set_initial_invitees (
+    TpAccountChannelRequest *self,
+    GPtrArray *contacts)
+{
+  guint i;
+  GPtrArray *ids;
+
+  g_return_if_fail (contacts != NULL);
+
+  ids = g_ptr_array_new ();
+
+  for (i = 0; i < contacts->len; i++)
+    {
+      TpContact *contact = g_ptr_array_index (contacts, i);
+
+      g_ptr_array_add (ids, (gchar *) tp_contact_get_identifier (contact));
+    }
+
+  g_ptr_array_add (ids, NULL);
+
+  tp_account_channel_request_set_initial_invitee_ids (self,
+      (const gchar * const *) ids->pdata);
+
+  g_ptr_array_unref (ids);
+}
