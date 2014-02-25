@@ -2581,3 +2581,30 @@ tp_account_channel_request_set_conference_initial_channels (
 
   g_ptr_array_unref (chans);
 }
+
+/**
+ * tp_account_channel_request_set_initial_invitee_ids:
+ * @self: a #TpAccountChannelRequest
+ * @ids: a #NULL-terminated array of contact ids
+ *
+ * Indicate that the contacts listed in @ids have to be invited to the
+ * conference represented by the channel which is going to be requested
+ * using @self.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_account_channel_request_set_initial_invitee_ids (
+    TpAccountChannelRequest *self,
+    const gchar * const * ids)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_INTERFACE_CONFERENCE_INITIAL_INVITEE_IDS),
+      tp_g_value_slice_new_boxed (G_TYPE_STRV, ids));
+}

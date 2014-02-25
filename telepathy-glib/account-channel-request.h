@@ -183,6 +183,11 @@ void tp_account_channel_request_set_conference_initial_channels (
     TpAccountChannelRequest *self,
     const gchar * const * channels);
 
+_TP_AVAILABLE_IN_0_24
+void tp_account_channel_request_set_initial_invitee_ids (
+    TpAccountChannelRequest *self,
+    const gchar * const * ids);
+
 /* Channel target (shared between all channel types) */
 
 _TP_AVAILABLE_IN_0_20

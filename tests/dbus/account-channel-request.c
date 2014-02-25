@@ -1320,10 +1320,15 @@ test_no_handle_type (Test *test,
   gboolean valid;
   const gchar * const channels[] = { "/chan1", "/chan2", NULL };
   GPtrArray *chans;
+  const gchar * const invitees[] = { "badger@badger.com",
+      "snake@badger.com", NULL };
+  const gchar * const *strv;
 
   req = tp_account_channel_request_new_text (test->account, 0);
 
   tp_account_channel_request_set_conference_initial_channels (req, channels);
+
+  tp_account_channel_request_set_initial_invitee_ids (req, invitees);
 
   /* Ask to the CR to fire the signal */
   tp_account_channel_request_set_request_property (req, "FireFailed",
@@ -1346,7 +1351,7 @@ test_no_handle_type (Test *test,
   g_assert (valid);
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
         "FireFailed", NULL), ==, TRUE);
-  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 4);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 5);
   g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
 
   chans = tp_asv_get_boxed (test->cd_service->last_request,
@@ -1356,6 +1361,14 @@ test_no_handle_type (Test *test,
   g_assert_cmpuint (chans->len, ==, 2);
   g_assert_cmpstr (g_ptr_array_index (chans, 0), ==, "/chan1");
   g_assert_cmpstr (g_ptr_array_index (chans, 1), ==, "/chan2");
+
+  strv = tp_asv_get_boxed (test->cd_service->last_request,
+      TP_PROP_CHANNEL_INTERFACE_CONFERENCE_INITIAL_INVITEE_IDS,
+      G_TYPE_STRV);
+  g_assert (strv != NULL);
+  g_assert_cmpuint (g_strv_length ((GStrv) strv), ==, 2);
+  g_assert (tp_strv_contains (strv, "badger@badger.com"));
+  g_assert (tp_strv_contains (strv, "snake@badger.com"));
 }
 
 int
