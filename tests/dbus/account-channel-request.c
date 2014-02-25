@@ -374,6 +374,8 @@ test_ft_props (Test *test,
       1111222233);
   tp_account_channel_request_set_file_transfer_uri (req,
       "file:///home/Downloads/warez.rar");
+  tp_account_channel_request_set_file_transfer_hash (req,
+      TP_FILE_HASH_TYPE_SHA256, "This is not a hash");
 
   /* Ask to the CR to fire the signal */
   tp_account_channel_request_set_request_property (req, "FireFailed",
@@ -411,9 +413,15 @@ test_ft_props (Test *test,
   g_assert_cmpuint (tp_asv_get_uint64 (test->cd_service->last_request,
         TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DATE, NULL), ==,
       1111222233);
+  g_assert_cmpuint (tp_asv_get_uint32 (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_HASH_TYPE, NULL), ==,
+      TP_FILE_HASH_TYPE_SHA256);
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_HASH), ==,
+      "This is not a hash");
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
         "FireFailed", NULL), ==, TRUE);
-  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 9);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 11);
   g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
 }
 

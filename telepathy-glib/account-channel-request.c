@@ -2390,3 +2390,36 @@ tp_account_channel_request_set_file_transfer_initial_offset (
           tp_g_value_slice_new_uint64 (offset));
     }
 }
+
+/**
+ * tp_account_channel_request_set_file_transfer_hash:
+ * @self: a #TpAccountChannelRequest
+ * @hash_type: a type of @hash
+ * @hash: hash of the contents of the file transfer
+ *
+ * Configure this channel request to accompany the file transfer with
+ * the hash of the file.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_account_channel_request_set_file_transfer_hash (
+    TpAccountChannelRequest *self,
+    TpFileHashType hash_type,
+    const gchar *hash)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+  g_return_if_fail (hash_type < TP_NUM_FILE_HASH_TYPES);
+
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_HASH_TYPE),
+      tp_g_value_slice_new_uint (hash_type));
+
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_HASH),
+      tp_g_value_slice_new_string (hash));
+}

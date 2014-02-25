@@ -152,6 +152,12 @@ void tp_account_channel_request_set_file_transfer_initial_offset (
     TpAccountChannelRequest *self,
     guint64 offset);
 
+_TP_AVAILABLE_IN_0_24
+void tp_account_channel_request_set_file_transfer_hash (
+    TpAccountChannelRequest *self,
+    TpFileHashType hash_type,
+    const gchar *hash);
+
 /* Channel target (shared between all channel types) */
 
 _TP_AVAILABLE_IN_0_20
