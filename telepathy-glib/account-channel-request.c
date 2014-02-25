@@ -1000,6 +1000,35 @@ delegated_channels_cb (TpBaseClient *client,
       self->priv->delegated_channel_data);
 }
 
+static gboolean
+going_to_request (TpAccountChannelRequest *self,
+    ActionType action_type,
+    gboolean ensure,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  g_return_val_if_fail (!self->priv->requested, FALSE);
+  self->priv->requested = TRUE;
+
+  self->priv->action_type = action_type;
+
+  if (g_cancellable_is_cancelled (cancellable))
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (self), callback,
+          user_data, G_IO_ERROR, G_IO_ERROR_CANCELLED,
+          "Operation has been cancelled");
+      return FALSE;
+    }
+
+  if (cancellable != NULL)
+    self->priv->cancellable = g_object_ref (cancellable);
+
+  self->priv->ensure = ensure;
+
+  return TRUE;
+}
+
 static void
 request_and_handle_channel_async (TpAccountChannelRequest *self,
     GCancellable *cancellable,
@@ -1010,23 +1039,9 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
   GError *error = NULL;
   TpChannelDispatcher *cd;
 
-  g_return_if_fail (!self->priv->requested);
-  self->priv->requested = TRUE;
-
-  self->priv->action_type = ACTION_TYPE_HANDLE;
-
-  if (g_cancellable_is_cancelled (cancellable))
-    {
-      g_simple_async_report_error_in_idle (G_OBJECT (self), callback,
-          user_data, G_IO_ERROR, G_IO_ERROR_CANCELLED,
-          "Operation has been cancelled");
-
-      return;
-    }
-
-  if (cancellable != NULL)
-    self->priv->cancellable = g_object_ref (cancellable);
-  self->priv->ensure = ensure;
+  if (!going_to_request (self, ACTION_TYPE_HANDLE, ensure, cancellable,
+        callback, user_data))
+    return;
 
   /* Create a temp handler */
   self->priv->handler = tp_simple_handler_new_with_factory (
@@ -1293,23 +1308,9 @@ request_channel_async (TpAccountChannelRequest *self,
 {
   TpChannelDispatcher *cd;
 
-  g_return_if_fail (!self->priv->requested);
-  self->priv->requested = TRUE;
-
-  self->priv->action_type = ACTION_TYPE_FORGET;
-
-  if (g_cancellable_is_cancelled (cancellable))
-    {
-      g_simple_async_report_error_in_idle (G_OBJECT (self), callback,
-          user_data, G_IO_ERROR, G_IO_ERROR_CANCELLED,
-          "Operation has been cancelled");
-
-      return;
-    }
-
-  if (cancellable != NULL)
-    self->priv->cancellable = g_object_ref (cancellable);
-  self->priv->ensure = ensure;
+  if (!going_to_request (self, ACTION_TYPE_FORGET, ensure, cancellable,
+        callback, user_data))
+    return;
 
   cd = tp_channel_dispatcher_new (self->priv->dbus);
 
@@ -1560,23 +1561,9 @@ request_and_observe_channel_async (TpAccountChannelRequest *self,
 {
   TpChannelDispatcher *cd;
 
-  g_return_if_fail (!self->priv->requested);
-  self->priv->requested = TRUE;
-
-  self->priv->action_type = ACTION_TYPE_OBSERVE;
-
-  if (g_cancellable_is_cancelled (cancellable))
-    {
-      g_simple_async_report_error_in_idle (G_OBJECT (self), callback,
-          user_data, G_IO_ERROR, G_IO_ERROR_CANCELLED,
-          "Operation has been cancelled");
-
-      return;
-    }
-
-  if (cancellable != NULL)
-    self->priv->cancellable = g_object_ref (cancellable);
-  self->priv->ensure = ensure;
+  if (!going_to_request (self, ACTION_TYPE_OBSERVE, ensure, cancellable,
+        callback, user_data))
+    return;
 
   cd = tp_channel_dispatcher_new (self->priv->dbus);
 
