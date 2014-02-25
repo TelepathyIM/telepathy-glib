@@ -210,6 +210,8 @@ test_handle_create_success (Test *test,
   tp_account_channel_request_set_target_id (req, TP_HANDLE_TYPE_CONTACT,
       "alice");
 
+  tp_account_channel_request_set_sms_channel (req, TRUE);
+
   /* We didn't start requesting the channel yet, so there is no
    * ChannelRequest */
   chan_req = tp_account_channel_request_get_channel_request (req);
@@ -236,7 +238,9 @@ test_handle_create_success (Test *test,
         TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
   g_assert_cmpuint (tp_asv_get_uint32 (test->cd_service->last_request,
         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL), ==, TP_HANDLE_TYPE_CONTACT);
-  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 3);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 4);
+  g_assert (tp_asv_get_boolean (test->cd_service->last_request,
+        TP_PROP_CHANNEL_INTERFACE_SMS_SMS_CHANNEL, NULL));
 }
 
 /* ChannelDispatcher.CreateChannel() call fails */

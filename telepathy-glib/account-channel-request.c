@@ -2524,3 +2524,28 @@ tp_account_channel_request_new_dbus_tube (TpAccount *account,
   g_hash_table_unref (request);
   return self;
 }
+
+/**
+ * tp_account_channel_request_set_sms_channel:
+ * @self: a #TpAccountChannelRequest
+ * @is_sms_channel: #TRUE if the channel should use SMS
+ *
+ * If @is_sms_channel is set to #TRUE, messages sent and received on the
+ * requested channel will be transmitted via SMS.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_account_channel_request_set_sms_channel (TpAccountChannelRequest *self,
+    gboolean is_sms_channel)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_INTERFACE_SMS_SMS_CHANNEL),
+      tp_g_value_slice_new_boolean (is_sms_channel));
+}

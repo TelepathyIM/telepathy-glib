@@ -114,6 +114,10 @@ TpAccountChannelRequest *tp_account_channel_request_new_text (
     TpAccount *account,
     gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
 
+_TP_AVAILABLE_IN_0_24
+void tp_account_channel_request_set_sms_channel (TpAccountChannelRequest *self,
+    gboolean is_sms_channel);
+
 /* Calls */
 
 _TP_AVAILABLE_IN_0_20
