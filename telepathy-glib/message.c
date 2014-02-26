@@ -737,7 +737,7 @@ tp_message_is_mutable (TpMessage *self)
 }
 
 /**
- * tp_message_get_token:
+ * tp_message_dup_token:
  * @self: a message
  *
  * Return this message's identifier in the underlying protocol. This is
@@ -747,12 +747,12 @@ tp_message_is_mutable (TpMessage *self)
  *
  * If there is no suitable token, return %NULL.
  *
- * Returns: (transfer none): a non-empty opaque identifier, or %NULL if none
+ * Returns: (transfer full): a non-empty opaque identifier, or %NULL if none
  *
  * Since: 0.13.9
  */
-const gchar *
-tp_message_get_token (TpMessage *self)
+gchar *
+tp_message_dup_token (TpMessage *self)
 {
   const gchar *token;
 
@@ -763,7 +763,7 @@ tp_message_get_token (TpMessage *self)
   if (tp_str_empty (token))
     return NULL;
   else
-    return token;
+    return g_strdup (token);
 }
 
 /**
@@ -870,21 +870,19 @@ tp_message_is_rescued (TpMessage *self)
 }
 
 /**
- * tp_message_get_supersedes:
+ * tp_message_dup_supersedes:
  * @self: a message
  *
  * If this message replaces a previous message, return the value of
- * tp_message_get_token() for that previous message. Otherwise, return %NULL.
+ * tp_message_dup_token() for that previous message. Otherwise, return %NULL.
  *
  * For instance, a user interface could replace the superseded
  * message with this message, or grey out the superseded message.
  *
- * Returns: (transfer none): a non-empty opaque identifier, or %NULL if none
- *
- * Since: 0.13.9
+ * Returns: (transfer full): a non-empty opaque identifier, or %NULL if none
  */
-const gchar *
-tp_message_get_supersedes (TpMessage *self)
+gchar *
+tp_message_dup_supersedes (TpMessage *self)
 {
   const gchar *token;
 
@@ -895,11 +893,11 @@ tp_message_get_supersedes (TpMessage *self)
   if (tp_str_empty (token))
     return NULL;
   else
-    return token;
+    return g_strdup (token);
 }
 
 /**
- * tp_message_get_specific_to_interface:
+ * tp_message_dup_specific_to_interface:
  * @self: a message
  *
  * If this message is specific to a particular D-Bus interface and should
@@ -908,16 +906,21 @@ tp_message_get_supersedes (TpMessage *self)
  *
  * If this message is an ordinary message or delivery report, return %NULL.
  *
- * Returns: (transfer none): a D-Bus interface name, or %NULL for ordinary
+ * Returns: (transfer full): a D-Bus interface name, or %NULL for ordinary
  *  messages and delivery reports
- *
- * Since: 0.13.9
  */
-const gchar *
-tp_message_get_specific_to_interface (TpMessage *self)
+gchar *
+tp_message_dup_specific_to_interface (TpMessage *self)
 {
+  const gchar *interface;
+
   g_return_val_if_fail (TP_IS_MESSAGE (self), NULL);
-  return tp_asv_get_string (tp_message_peek (self, 0), "interface");
+
+  interface = tp_asv_get_string (tp_message_peek (self, 0), "interface");
+  if (interface == NULL)
+    return NULL;
+
+  return g_strdup (interface);
 }
 
 /**

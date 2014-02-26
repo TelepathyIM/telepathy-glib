@@ -82,13 +82,13 @@ gchar * tp_message_to_text (TpMessage *message) G_GNUC_WARN_UNUSED_RESULT;
 gboolean tp_message_is_mutable (TpMessage *self);
 
 TpChannelTextMessageType tp_message_get_message_type (TpMessage *self);
-const gchar *tp_message_get_token (TpMessage *self);
+gchar *tp_message_dup_token (TpMessage *self);
 gint64 tp_message_get_sent_timestamp (TpMessage *self);
 gint64 tp_message_get_received_timestamp (TpMessage *self);
 gboolean tp_message_is_scrollback (TpMessage *self);
 gboolean tp_message_is_rescued (TpMessage *self);
-const gchar *tp_message_get_supersedes (TpMessage *self);
-const gchar *tp_message_get_specific_to_interface (TpMessage *self);
+gchar *tp_message_dup_supersedes (TpMessage *self);
+gchar *tp_message_dup_specific_to_interface (TpMessage *self);
 gboolean tp_message_is_delivery_report (TpMessage *self);
 _TP_AVAILABLE_IN_0_16
 guint32 tp_message_get_pending_message_id (TpMessage *self,

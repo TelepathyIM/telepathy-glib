@@ -53,6 +53,7 @@ test_new_from_parts (Test *test,
   GVariant *part_vardict;
   gboolean valid;
   const gchar *s;
+  gchar *token;
 
   parts = g_ptr_array_new_full (2, (GDestroyNotify) g_hash_table_unref);
 
@@ -108,13 +109,15 @@ test_new_from_parts (Test *test,
   g_assert_cmpuint (tp_message_get_message_type (msg), ==,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE);
   g_assert_cmpuint (tp_cm_message_get_sender (msg), ==, sender);
-  g_assert_cmpstr (tp_message_get_token (msg), ==, "token");
+  token = tp_message_dup_token (msg);
+  g_assert_cmpstr (token, ==, "token");
+  g_free (token);
   g_assert_cmpint ((gint) tp_message_get_sent_timestamp (msg), ==, 42);
   g_assert_cmpint ((gint) tp_message_get_received_timestamp (msg), ==, 666);
   g_assert_cmpint (tp_message_is_scrollback (msg), ==, TRUE);
   g_assert_cmpint (tp_message_is_rescued (msg), ==, FALSE);
-  g_assert_cmpstr (tp_message_get_supersedes (msg), ==, NULL);
-  g_assert_cmpstr (tp_message_get_specific_to_interface (msg), ==, NULL);
+  g_assert_cmpstr (tp_message_dup_supersedes (msg), ==, NULL);
+  g_assert_cmpstr (tp_message_dup_specific_to_interface (msg), ==, NULL);
   g_assert_cmpint (tp_message_is_delivery_report (msg), ==, FALSE);
   g_assert_cmpuint (tp_message_get_pending_message_id (msg, &valid), ==, 666);
   g_assert (valid);
@@ -156,13 +159,13 @@ test_new_text (Test *test,
   g_assert_cmpuint (tp_message_get_message_type (msg), ==,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION);
   g_assert_cmpuint (tp_cm_message_get_sender (msg), ==, sender);
-  g_assert_cmpstr (tp_message_get_token (msg), ==, NULL);
+  g_assert_cmpstr (tp_message_dup_token (msg), ==, NULL);
   g_assert_cmpint ((gint) tp_message_get_sent_timestamp (msg), ==, 0);
   g_assert_cmpint ((gint) tp_message_get_received_timestamp (msg), ==, 0);
   g_assert_cmpint (tp_message_is_scrollback (msg), ==, FALSE);
   g_assert_cmpint (tp_message_is_rescued (msg), ==, FALSE);
-  g_assert_cmpstr (tp_message_get_supersedes (msg), ==, NULL);
-  g_assert_cmpstr (tp_message_get_specific_to_interface (msg), ==, NULL);
+  g_assert_cmpstr (tp_message_dup_supersedes (msg), ==, NULL);
+  g_assert_cmpstr (tp_message_dup_specific_to_interface (msg), ==, NULL);
   g_assert_cmpint (tp_message_is_delivery_report (msg), ==, FALSE);
 
   g_object_unref (msg);

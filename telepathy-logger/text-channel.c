@@ -165,17 +165,6 @@ get_network_timestamp (TpMessage *message)
   return timestamp;
 }
 
-
-static gint64
-get_message_edit_timestamp (TpMessage *message)
-{
-  if (tp_message_get_supersedes (message) != NULL)
-    return get_network_timestamp (message);
-  else
-    return 0;
-}
-
-
 static gint64
 get_message_timestamp (TpMessage *message)
 {
@@ -199,8 +188,8 @@ tpl_text_channel_store_message (TplTextChannel *self,
   TplTextChannelPriv *priv = self->priv;
   const gchar *direction;
   TpChannelTextMessageType type;
-  gint64 timestamp;
-  gchar *text;
+  gint64 timestamp, edit_timestamp;
+  gchar *text, *token, *supersedes;
   TplTextEvent *event;
   TplLogManager *logmanager;
   GError *error = NULL;
@@ -250,6 +239,13 @@ tpl_text_channel_store_message (TplTextChannel *self,
         tpl_entity_get_alias (sender),
         tpl_entity_get_identifier (sender));
 
+  token = tp_message_dup_token (message);
+  supersedes = tp_message_dup_supersedes (message);
+
+  if (supersedes != NULL)
+    edit_timestamp = get_network_timestamp (message);
+  else
+    edit_timestamp = 0;
 
   /* Initialise TplTextEvent */
   event = g_object_new (TPL_TYPE_TEXT_EVENT,
@@ -259,13 +255,16 @@ tpl_text_channel_store_message (TplTextChannel *self,
       "receiver", receiver,
       "sender", sender,
       "timestamp", timestamp,
-      "message-token", tp_message_get_token (message),
-      "supersedes-token", tp_message_get_supersedes (message),
-      "edit-timestamp", get_message_edit_timestamp (message),
+      "message-token", token,
+      "supersedes-token", supersedes,
+      "edit-timestamp", edit_timestamp,
       /* TplTextEvent */
       "message-type", type,
       "message", text,
       NULL);
+
+  g_free (token);
+  g_free (supersedes);
 
   /* Store sent event */
   logmanager = tpl_log_manager_dup_singleton ();
