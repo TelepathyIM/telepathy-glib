@@ -265,7 +265,6 @@ _tp_cm_message_new_from_parts (TpBaseConnection *conn,
 {
   TpMessage *self;
   guint i;
-  const GHashTable *header;
   TpHandle sender;
 
   g_return_val_if_fail (parts != NULL, NULL);
@@ -281,8 +280,7 @@ _tp_cm_message_new_from_parts (TpBaseConnection *conn,
           (GBoxedCopyFunc) tp_g_value_slice_dup);
     }
 
-  header = tp_message_peek (self, 0);
-  sender = tp_asv_get_uint32 (header, "message-sender", NULL);
+  sender = tp_cm_message_get_sender (self);
   if (sender != 0)
     tp_cm_message_set_sender (self, sender);
 
