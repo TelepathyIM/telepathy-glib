@@ -1,5 +1,17 @@
-telepathy-glib 0.23.2 (UNRELEASED)
+telepathy-glib 0.23.2 (2014-02-26)
 ==================================
+
+Enhancements:
+
+• TpBaseConnection now has an "account-path-suffix" property
+  (fd.o #74030, Xavier)
+
+• New high level TpAccountChannelRequest API, including tubes, Conference and
+  SMSChannel. (fd.o #75450, Guillaume)
+
+• 'TargetHandleType: None' is now automatically added when requesting a
+  channel with TpAccountChannelRequest if no handle type has been defined.
+  (fd.o #75450, Guillaume)
 
 telepathy-glib 0.23.1 (2014-02-04)
 ==================================

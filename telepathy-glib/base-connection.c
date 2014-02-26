@@ -1692,7 +1692,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    * It is given by the AccountManager in the connection parameters. Or %NULL if
    * the ConnectionManager or the AccountManager are too old.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.23.2
    */
   param_spec = g_param_spec_string ("account-path-suffix",
       "Account path suffix",
@@ -4137,7 +4137,7 @@ tp_base_connection_get_object_path (TpBaseConnection *self)
  *
  * Returns: the same value has the #TpBaseConnection:account-path-suffix
  *  property.
- * Since: 0.UNRELEASED
+ * Since: 0.23.2
  */
 const gchar *
 tp_base_connection_get_account_path_suffix (TpBaseConnection *self)

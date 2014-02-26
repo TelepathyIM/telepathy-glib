@@ -2400,7 +2400,7 @@ tp_account_channel_request_set_file_transfer_initial_offset (
  * This function can't be called once @self has been used to request a
  * channel.
  *
- * Since: UNRELEASED
+ * Since: 0.23.2
  */
 void
 tp_account_channel_request_set_file_transfer_hash (
@@ -2444,7 +2444,7 @@ tp_account_channel_request_set_file_transfer_hash (
  *
  * Returns: a new #TpAccountChannelRequest object
  *
- * Since: UNRELEASED
+ * Since: 0.23.2
  */
 TpAccountChannelRequest *
 tp_account_channel_request_new_stream_tube (TpAccount *account,
@@ -2493,7 +2493,7 @@ tp_account_channel_request_new_stream_tube (TpAccount *account,
  *
  * Returns: a new #TpAccountChannelRequest object
  *
- * Since: UNRELEASED
+ * Since: 0.23.2
  */
 TpAccountChannelRequest *
 tp_account_channel_request_new_dbus_tube (TpAccount *account,
@@ -2533,7 +2533,7 @@ tp_account_channel_request_new_dbus_tube (TpAccount *account,
  * This function can't be called once @self has been used to request a
  * channel.
  *
- * Since: UNRELEASED
+ * Since: 0.23.2
  */
 void
 tp_account_channel_request_set_sms_channel (TpAccountChannelRequest *self,
@@ -2558,7 +2558,7 @@ tp_account_channel_request_set_sms_channel (TpAccountChannelRequest *self,
  * This function can't be called once @self has been used to request a
  * channel.
  *
- * Since: UNRELEASED
+ * Since: 0.23.2
  */
 void
 tp_account_channel_request_set_conference_initial_channels (
@@ -2594,7 +2594,7 @@ tp_account_channel_request_set_conference_initial_channels (
  * This function can't be called once @self has been used to request a
  * channel.
  *
- * Since: UNRELEASED
+ * Since: 0.23.2
  */
 void
 tp_account_channel_request_set_initial_invitee_ids (
@@ -2621,7 +2621,7 @@ tp_account_channel_request_set_initial_invitee_ids (
  * This function can't be called once @self has been used to request a
  * channel.
  *
- * Since: UNRELEASED
+ * Since: 0.23.2
  */
 void
 tp_account_channel_request_set_initial_invitees (
