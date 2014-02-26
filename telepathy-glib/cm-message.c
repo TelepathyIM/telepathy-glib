@@ -301,8 +301,16 @@ _tp_cm_message_new_from_parts (TpBaseConnection *conn,
 TpHandle
 tp_cm_message_get_sender (TpMessage *self)
 {
+  GVariant *header;
+  TpHandle sender = 0;
+
   g_return_val_if_fail (TP_IS_CM_MESSAGE (self), 0);
-  return tp_asv_get_uint32 (tp_message_peek (self, 0), "message-sender", NULL);
+
+  header = tp_message_dup_part (self, 0);
+  g_variant_lookup (header, "message-sender", "u", &sender);
+  g_variant_unref (header);
+
+  return sender;
 }
 
 /**
