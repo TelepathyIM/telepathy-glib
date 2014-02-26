@@ -112,15 +112,6 @@ on_channel_invalidated_cb (TpProxy *proxy,
   g_object_unref (observer);
 }
 
-
-static guint
-get_message_pending_id (TpMessage *m)
-{
-  return tp_asv_get_uint32 (tp_message_peek (TP_MESSAGE (m), 0),
-      "pending-message-id", NULL);
-}
-
-
 static gint64
 get_original_message_timestamp (TpMessage *message)
 {
@@ -280,7 +271,7 @@ tpl_text_channel_store_message (TplTextChannel *self,
       TplLogStore *cache = _tpl_log_store_sqlite_dup ();
       _tpl_log_store_sqlite_add_pending_message (cache,
           TP_CHANNEL (self),
-          get_message_pending_id (message),
+          tp_message_get_pending_message_id (message, NULL),
           timestamp,
           &error);
 
@@ -361,7 +352,8 @@ on_pending_message_removed_cb (TpTextChannel *self,
   GError *error = NULL;
 
   ids = g_list_prepend (ids,
-      GUINT_TO_POINTER (get_message_pending_id (TP_MESSAGE (message))));
+      GUINT_TO_POINTER (tp_message_get_pending_message_id (
+          TP_MESSAGE (message), NULL)));
 
   cache = _tpl_log_store_sqlite_dup ();
   _tpl_log_store_sqlite_remove_pending_messages (cache, TP_CHANNEL (self),
@@ -384,8 +376,8 @@ pending_message_compare_id (TpSignalledMessage *m1,
 {
   guint id1, id2;
 
-  id1 = get_message_pending_id (TP_MESSAGE (m1));
-  id2 = get_message_pending_id (TP_MESSAGE (m2));
+  id1 = tp_message_get_pending_message_id (TP_MESSAGE (m1), NULL);
+  id2 = tp_message_get_pending_message_id (TP_MESSAGE (m2), NULL);
 
   if (id1 > id2)
     return 1;
@@ -471,7 +463,8 @@ store_pending_messages (TplTextChannel *self)
         }
 
       pending = pending_it->data;
-      pending_id = get_message_pending_id (TP_MESSAGE (pending));
+      pending_id = tp_message_get_pending_message_id (TP_MESSAGE (pending),
+          NULL);
       pending_ts = get_message_timestamp (TP_MESSAGE (pending));
 
       if (cached->id == pending_id)
