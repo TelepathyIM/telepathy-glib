@@ -216,7 +216,8 @@ create_file_transfer_channel (Test *test,
 
   factory = tp_proxy_get_factory (test->connection);
   test->channel = TP_FILE_TRANSFER_CHANNEL (tp_client_factory_ensure_channel (
-      factory, test->connection, chan_path, props, &test->error));
+      factory, test->connection, chan_path, tp_asv_to_vardict (props),
+      &test->error));
   g_assert_no_error (test->error);
   g_assert (TP_IS_FILE_TRANSFER_CHANNEL (test->channel));
 

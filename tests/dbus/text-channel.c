@@ -83,7 +83,7 @@ create_contact_chan (Test *test)
 
   factory = tp_proxy_get_factory (test->connection);
   test->channel = TP_TEXT_CHANNEL (tp_client_factory_ensure_channel (factory,
-      test->connection, chan_path, props, &test->error));
+      test->connection, chan_path, tp_asv_to_vardict (props), &test->error));
   g_assert_no_error (test->error);
   g_assert (TP_IS_TEXT_CHANNEL (test->channel));
 
@@ -107,7 +107,8 @@ create_contact_chan (Test *test)
       NULL);
 
   test->sms_channel = TP_TEXT_CHANNEL (tp_client_factory_ensure_channel (
-      factory, test->connection, chan_path, props, &test->error));
+      factory, test->connection, chan_path, tp_asv_to_vardict (props),
+      &test->error));
   g_assert_no_error (test->error);
   g_assert (TP_IS_TEXT_CHANNEL (test->sms_channel));
 

@@ -208,7 +208,8 @@ create_tube_service (Test *test,
 
   factory = tp_proxy_get_factory (test->connection);
   test->tube = TP_STREAM_TUBE_CHANNEL (tp_client_factory_ensure_channel (
-      factory, test->connection, chan_path, props, &test->error));
+      factory, test->connection, chan_path, tp_asv_to_vardict (props),
+      &test->error));
   g_assert_no_error (test->error);
   g_assert (TP_IS_STREAM_TUBE_CHANNEL (test->tube));
 

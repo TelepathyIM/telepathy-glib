@@ -33,6 +33,7 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/variant-util.h>
 
 #define DEBUG_FLAG TP_DEBUG_DISPATCHER
 #include "telepathy-glib/dbus-internal.h"
@@ -221,7 +222,7 @@ tp_channel_request_succeeded_cb (TpChannelRequest *self,
     }
 
   channel = tp_client_factory_ensure_channel (tp_proxy_get_factory (self),
-      connection, chan_path, chan_props, &error);
+      connection, chan_path, tp_asv_to_vardict (chan_props), &error);
   if (channel == NULL)
     {
       DEBUG ("Failed to create TpChannel: %s", error->message);

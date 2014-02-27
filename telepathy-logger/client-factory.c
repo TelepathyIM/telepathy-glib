@@ -36,25 +36,34 @@ static TpChannel *
 create_channel_impl (TpClientFactory *self,
     TpConnection *conn,
     const gchar *object_path,
-    const GHashTable *properties,
+    GVariant *properties,
     GError **error)
 {
   const gchar *chan_type;
+  GHashTable *asv;
+  TpChannel *channel;
 
-  chan_type = tp_asv_get_string (properties, TP_PROP_CHANNEL_CHANNEL_TYPE);
+  asv = tp_asv_from_vardict (properties);
+  chan_type = tp_asv_get_string (asv, TP_PROP_CHANNEL_CHANNEL_TYPE);
 
   if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_TEXT))
     {
-      return (TpChannel *) _tpl_text_channel_new_with_factory (self, conn,
-          object_path, properties, error);
+      channel = (TpChannel *) _tpl_text_channel_new_with_factory (self, conn,
+          object_path, asv, error);
     }
   else if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_CALL1))
     {
-      return (TpChannel *) _tpl_call_channel_new_with_factory (self, conn,
-          object_path, properties, error);
+      channel = (TpChannel *) _tpl_call_channel_new_with_factory (self, conn,
+          object_path, asv, error);
+    }
+  else
+    {
+      channel = chainup->create_channel (self, conn, object_path, properties,
+          error);
     }
 
-  return chainup->create_channel (self, conn, object_path, properties, error);
+  g_hash_table_unref (asv);
+  return channel;
 }
 
 static GArray *

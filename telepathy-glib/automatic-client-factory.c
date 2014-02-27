@@ -112,6 +112,7 @@
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/automatic-client-factory-internal.h"
+#include "telepathy-glib/variant-util.h"
 
 G_DEFINE_TYPE (TpAutomaticClientFactory, tp_automatic_client_factory,
     TP_TYPE_CLIENT_FACTORY)
@@ -121,7 +122,7 @@ G_DEFINE_TYPE (TpAutomaticClientFactory, tp_automatic_client_factory,
 
 typedef gboolean (*CheckPropertiesFunc) (
     const gchar *object_path,
-    const GHashTable *properties);
+    GVariant *properties);
 
 typedef TpChannel *(*NewFunc) (
     TpClientFactory *client,
@@ -190,16 +191,19 @@ static TpChannel *
 create_channel_impl (TpClientFactory *self,
     TpConnection *conn,
     const gchar *object_path,
-    const GHashTable *properties,
+    GVariant *properties,
     GError **error)
 {
-  const gchar *chan_type;
+  const gchar *chan_type = NULL;
   ChannelTypeMapping *m;
+  TpChannel *channel = NULL;
 
-  chan_type = tp_asv_get_string (properties, TP_PROP_CHANNEL_CHANNEL_TYPE);
+  g_variant_lookup (properties, TP_PROP_CHANNEL_CHANNEL_TYPE, "&s", &chan_type);
 
   for (m = channel_type_mapping; m->channel_type != NULL; m++)
     {
+      GHashTable *asv;
+
       if (tp_strdiff (chan_type, m->channel_type))
         continue;
 
@@ -207,11 +211,20 @@ create_channel_impl (TpClientFactory *self,
           !m->check_properties (object_path, properties))
         break;
 
-      return m->new_func (self, conn, object_path, properties, error);
+      asv = tp_asv_from_vardict (properties);
+      channel = m->new_func (self, conn, object_path, asv, error);
+      g_hash_table_unref (asv);
+      break;
     }
 
-  /* Chainup on parent implementation as fallback */
-  return chainup->create_channel (self, conn, object_path, properties, error);
+  if (channel == NULL)
+    {
+      /* Chainup on parent implementation as fallback */
+      channel = chainup->create_channel (self, conn, object_path, properties,
+          error);
+    }
+
+  return channel;
 }
 
 static GArray *

@@ -63,7 +63,7 @@ struct _TpClientFactoryClass {
     TpChannel * (*create_channel) (TpClientFactory *self,
         TpConnection *conn,
         const gchar *object_path,
-        const GHashTable *immutable_properties,
+        GVariant *immutable_properties,
         GError **error);
     GArray * (*dup_channel_features) (TpClientFactory *self,
         TpChannel *channel);
@@ -138,7 +138,7 @@ void tp_client_factory_add_connection_features_varargs (TpClientFactory *self,
 TpChannel *tp_client_factory_ensure_channel (TpClientFactory *self,
     TpConnection *connection,
     const gchar *object_path,
-    const GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error);
 GArray *tp_client_factory_dup_channel_features (TpClientFactory *self,
     TpChannel *channel);

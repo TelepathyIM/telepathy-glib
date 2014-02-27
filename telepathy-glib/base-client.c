@@ -1542,7 +1542,7 @@ ensure_account_connection_channel (TpBaseClient *self,
   _tp_connection_set_account (*connection, *account);
 
   *channel = tp_client_factory_ensure_channel (self->priv->factory,
-      *connection, chan_path, chan_props, error);
+      *connection, chan_path, tp_asv_to_vardict (chan_props), error);
   if (*channel == NULL)
     goto error;
 

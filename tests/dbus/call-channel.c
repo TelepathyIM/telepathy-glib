@@ -154,7 +154,8 @@ channel_created_cb (TpConnection *connection,
   g_assert_no_error ((GError *) error);
 
   test->chan = tp_client_factory_ensure_channel (test->factory,
-      connection, object_path, immutable_properties, &new_error);
+      connection, object_path, tp_asv_to_vardict (immutable_properties),
+      &new_error);
   g_assert_no_error (new_error);
 
   g_assert (TP_IS_CALL_CHANNEL (test->chan));
@@ -871,7 +872,7 @@ expect_incoming_call_cb (TpConnection *conn,
   g_assert (test->chan == NULL);
 
   test->chan = tp_client_factory_ensure_channel (test->factory,
-      conn, object_path, properties, &error);
+      conn, object_path, tp_asv_to_vardict (properties), &error);
   g_assert_no_error (error);
 
   g_assert (TP_IS_CALL_CHANNEL (test->chan));

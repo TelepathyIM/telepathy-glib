@@ -34,6 +34,7 @@
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/util-internal.h>
+#include <telepathy-glib/variant-util.h>
 
 #define DEBUG_FLAG TP_DEBUG_DISPATCHER
 #include "telepathy-glib/dbus-internal.h"
@@ -276,8 +277,8 @@ maybe_set_channel (TpChannelDispatchOperation *self,
     return;
 
   self->priv->channel = tp_client_factory_ensure_channel (
-      tp_proxy_get_factory (self), self->priv->connection, path, properties,
-      &error);
+      tp_proxy_get_factory (self), self->priv->connection, path,
+      tp_asv_to_vardict (properties), &error);
   if (self->priv->channel == NULL)
     {
       DEBUG ("Failed to create channel %s: %s", path, error->message);

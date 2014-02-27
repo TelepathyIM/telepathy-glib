@@ -230,11 +230,19 @@ static TpChannel *
 create_channel_impl (TpClientFactory *self,
     TpConnection *conn,
     const gchar *object_path,
-    const GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error)
 {
-  return _tp_channel_new_with_factory (self, conn, object_path,
-      immutable_properties, error);
+  TpChannel *channel;
+  GHashTable *props;
+
+  props = tp_asv_from_vardict (immutable_properties);
+
+  channel = _tp_channel_new_with_factory (self, conn, object_path,
+      props, error);
+
+  g_hash_table_unref (props);
+  return channel;
 }
 
 static GArray *
@@ -718,8 +726,8 @@ tp_client_factory_add_connection_features_varargs (
  * @self: a #TpClientFactory
  * @connection: a #TpConnection whose #TpProxy:factory is this object
  * @object_path: the object path of a channel on @connection
- * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
- *  the immutable properties of the channel
+ * @immutable_properties: (allow-none) a #G_VARIANT_TYPE_VARDICT containing
+ * the immutable properties of the account, or %NULL.
  * @error: Used to raise an error if @object_path is not valid
  *
  * Returns a #TpChannel proxy for the channel at @object_path on @connection.
@@ -735,6 +743,8 @@ tp_client_factory_add_connection_features_varargs (
  * #TpAccountChannelRequest and #TpBaseClient are more appropriate ways
  * to obtain channels for most applications.
  *
+ * @immutable_properties is consumed if it is floating.
+ *
  * Returns: (transfer full): a reference to a #TpChannel;
  *  see tp_channel_new_from_properties().
  *
@@ -744,7 +754,7 @@ TpChannel *
 tp_client_factory_ensure_channel (TpClientFactory *self,
     TpConnection *connection,
     const gchar *object_path,
-    const GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error)
 {
   TpChannel *channel;
@@ -754,13 +764,24 @@ tp_client_factory_ensure_channel (TpClientFactory *self,
   g_return_val_if_fail (tp_proxy_get_factory (connection) == self, NULL);
   g_return_val_if_fail (g_variant_is_object_path (object_path), NULL);
 
+  if (immutable_properties != NULL)
+    g_variant_ref_sink (immutable_properties);
+  else
+    immutable_properties = g_variant_new ("a{sv}", NULL);
+
   channel = lookup_proxy (self, object_path);
   if (channel != NULL)
-    return g_object_ref (channel);
+    {
+      g_object_ref (channel);
+    }
+  else
+    {
+      channel = TP_CLIENT_FACTORY_GET_CLASS (self)->create_channel (self,
+          connection, object_path, immutable_properties, error);
+      insert_proxy (self, channel);
+    }
 
-  channel = TP_CLIENT_FACTORY_GET_CLASS (self)->create_channel (self,
-      connection, object_path, immutable_properties, error);
-  insert_proxy (self, channel);
+  g_variant_unref (immutable_properties);
 
   return channel;
 }
