@@ -193,7 +193,7 @@ _tp_client_factory_insert_proxy (TpClientFactory *self,
 static TpAccount *
 create_account_impl (TpClientFactory *self,
     const gchar *object_path,
-    const GHashTable *immutable_properties G_GNUC_UNUSED,
+    GVariant *immutable_properties G_GNUC_UNUSED,
     GError **error)
 {
   return _tp_account_new_with_factory (self, self->priv->dbus, object_path,
@@ -435,8 +435,8 @@ tp_client_factory_get_dbus_daemon (TpClientFactory *self)
  * tp_client_factory_ensure_account:
  * @self: a #TpClientFactory object
  * @object_path: the object path of an account
- * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
- *  the immutable properties of the account, or %NULL.
+ * @immutable_properties: (allow-none) a #G_VARIANT_TYPE_VARDICT containing
+ * the immutable properties of the account, or %NULL.
  * @error: Used to raise an error if @object_path is not valid
  *
  * Returns a #TpAccount proxy for the account at @object_path. The returned
@@ -451,6 +451,8 @@ tp_client_factory_get_dbus_daemon (TpClientFactory *self)
  * and #TpAccountManager::usability-changed are more appropriate for most
  * applications.
  *
+ * @immutable_properties is consumed if it is floating.
+ *
  * Returns: (transfer full): a reference to a #TpAccount;
  *  see tp_account_new().
  *
@@ -459,7 +461,7 @@ tp_client_factory_get_dbus_daemon (TpClientFactory *self)
 TpAccount *
 tp_client_factory_ensure_account (TpClientFactory *self,
     const gchar *object_path,
-    const GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error)
 {
   TpAccount *account;
@@ -467,13 +469,24 @@ tp_client_factory_ensure_account (TpClientFactory *self,
   g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (g_variant_is_object_path (object_path), NULL);
 
+  if (immutable_properties != NULL)
+    g_variant_ref_sink (immutable_properties);
+  else
+    immutable_properties = g_variant_new ("a{sv}", NULL);
+
   account = lookup_proxy (self, object_path);
   if (account != NULL)
-    return g_object_ref (account);
+    {
+      g_object_ref (account);
+    }
+  else
+    {
+      account = TP_CLIENT_FACTORY_GET_CLASS (self)->create_account (self,
+          object_path, immutable_properties, error);
+      insert_proxy (self, account);
+    }
 
-  account = TP_CLIENT_FACTORY_GET_CLASS (self)->create_account (self,
-      object_path, immutable_properties, error);
-  insert_proxy (self, account);
+  g_variant_unref (immutable_properties);
 
   return account;
 }

@@ -46,7 +46,7 @@ struct _TpClientFactoryClass {
     /* TpAccount */
     TpAccount * (*create_account) (TpClientFactory *self,
         const gchar *object_path,
-        const GHashTable *immutable_properties,
+        GVariant *immutable_properties,
         GError **error);
     GArray * (*dup_account_features) (TpClientFactory *self,
         TpAccount *account);
@@ -111,7 +111,7 @@ TpDBusDaemon *tp_client_factory_get_dbus_daemon (TpClientFactory *self);
 /* TpAccount */
 TpAccount *tp_client_factory_ensure_account (TpClientFactory *self,
     const gchar *object_path,
-    const GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error);
 GArray *tp_client_factory_dup_account_features (TpClientFactory *self,
     TpAccount *account);

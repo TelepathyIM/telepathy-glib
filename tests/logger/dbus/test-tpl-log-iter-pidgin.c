@@ -93,7 +93,7 @@ setup (PidginTestCaseFixture* fixture,
 
   fixture->account = tp_client_factory_ensure_account (fixture->factory,
       tp_asv_get_string (params, "account-path"),
-      params,
+      tp_asv_to_vardict (params),
       &error);
   g_assert_no_error (error);
   g_assert (fixture->account != NULL);
