@@ -54,7 +54,7 @@ struct _TpClientFactoryClass {
     /* TpConnection */
     TpConnection * (*create_connection) (TpClientFactory *self,
         const gchar *object_path,
-        const GHashTable *immutable_properties,
+        GVariant *immutable_properties,
         GError **error);
     GArray * (*dup_connection_features) (TpClientFactory *self,
         TpConnection *connection);
@@ -124,7 +124,7 @@ void tp_client_factory_add_account_features_varargs (TpClientFactory *self,
 /* TpConnection */
 TpConnection *tp_client_factory_ensure_connection (TpClientFactory *self,
     const gchar *object_path,
-    const GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error);
 GArray *tp_client_factory_dup_connection_features (TpClientFactory *self,
     TpConnection *connection);

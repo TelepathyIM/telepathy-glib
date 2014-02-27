@@ -211,7 +211,7 @@ dup_account_features_impl (TpClientFactory *self,
 static TpConnection *
 create_connection_impl (TpClientFactory *self,
     const gchar *object_path,
-    const GHashTable *immutable_properties G_GNUC_UNUSED,
+    GVariant *immutable_properties,
     GError **error)
 {
   return _tp_connection_new_with_factory (self, self->priv->dbus, NULL,
@@ -576,8 +576,8 @@ tp_client_factory_add_account_features_varargs (
  * tp_client_factory_ensure_connection:
  * @self: a #TpClientFactory object
  * @object_path: the object path of a connection
- * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
- *  the immutable properties of the connection.
+ * @immutable_properties: (allow-none) a #G_VARIANT_TYPE_VARDICT containing
+ * the immutable properties of the connection, or %NULL.
  * @error: Used to raise an error if @object_path is not valid
  *
  * Returns a #TpConnection proxy for the connection at @object_path.
@@ -592,6 +592,8 @@ tp_client_factory_add_account_features_varargs (
  * This function is rather low-level. #TpAccount:connection is more
  * appropriate for most applications.
  *
+ * @immutable_properties is consumed if it is floating.
+ *
  * Returns: (transfer full): a reference to a #TpConnection;
  *  see tp_connection_new().
  *
@@ -600,7 +602,7 @@ tp_client_factory_add_account_features_varargs (
 TpConnection *
 tp_client_factory_ensure_connection (TpClientFactory *self,
     const gchar *object_path,
-    const GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error)
 {
   TpConnection *connection;
@@ -608,13 +610,24 @@ tp_client_factory_ensure_connection (TpClientFactory *self,
   g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (g_variant_is_object_path (object_path), NULL);
 
+  if (immutable_properties != NULL)
+    g_variant_ref_sink (immutable_properties);
+  else
+    immutable_properties = g_variant_new ("a{sv}", NULL);
+
   connection = lookup_proxy (self, object_path);
   if (connection != NULL)
-    return g_object_ref (connection);
+    {
+      g_object_ref (connection);
+    }
+  else
+    {
+      connection = TP_CLIENT_FACTORY_GET_CLASS (self)->create_connection (
+          self, object_path, immutable_properties, error);
+      insert_proxy (self, connection);
+    }
 
-  connection = TP_CLIENT_FACTORY_GET_CLASS (self)->create_connection (
-      self, object_path, immutable_properties, error);
-  insert_proxy (self, connection);
+  g_variant_unref (immutable_properties);
 
   return connection;
 }
