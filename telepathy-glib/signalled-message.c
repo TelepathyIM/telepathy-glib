@@ -242,17 +242,24 @@ guint
 _tp_signalled_message_get_pending_message_id (TpMessage *message,
     gboolean *valid)
 {
-  const GHashTable *part0;
+  guint id;
+  GVariant *part0;
+  gboolean ok;
 
   g_return_val_if_fail (TP_IS_SIGNALLED_MESSAGE (message), 0);
   g_return_val_if_fail (valid != NULL, 0);
 
-  part0 = tp_message_peek (message, 0);
+  part0 = tp_message_dup_part (message, 0);
   if (part0 == NULL)
     {
       *valid = FALSE;
       return 0;
     }
 
-  return tp_asv_get_uint32 (part0, "pending-message-id", valid);
+  ok = g_variant_lookup (part0, "pending-message-id", "u", &id);
+  if (valid != NULL)
+    *valid = ok;
+
+  g_variant_unref (part0);
+  return id;
 }

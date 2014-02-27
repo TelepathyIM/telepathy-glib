@@ -736,6 +736,22 @@ tp_message_is_mutable (TpMessage *self)
   return self->priv->mutable;
 }
 
+static gboolean
+lookup_in_header (TpMessage *self,
+    const gchar *key,
+    const gchar *type,
+    gpointer out)
+{
+  GVariant *header;
+  gboolean result;
+
+  header = tp_message_dup_part (self, 0);
+  result = g_variant_lookup (header, key, type, out);
+
+  g_variant_unref (header);
+  return result;
+}
+
 /**
  * tp_message_dup_token:
  * @self: a message
@@ -754,16 +770,12 @@ tp_message_is_mutable (TpMessage *self)
 gchar *
 tp_message_dup_token (TpMessage *self)
 {
-  const gchar *token;
+  gchar *token = NULL;
 
   g_return_val_if_fail (TP_IS_MESSAGE (self), NULL);
 
-  token = tp_asv_get_string (tp_message_peek (self, 0), "message-token");
-
-  if (tp_str_empty (token))
-    return NULL;
-  else
-    return g_strdup (token);
+  lookup_in_header (self, "message-token", "s", &token);
+  return token;
 }
 
 /**
@@ -779,10 +791,11 @@ tp_message_dup_token (TpMessage *self)
 TpChannelTextMessageType
 tp_message_get_message_type (TpMessage *self)
 {
-  g_return_val_if_fail (TP_IS_MESSAGE (self),
-      TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL);
+  TpChannelTextMessageType msg_type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
+
   /* if message-type is absent or invalid we just return 0, which is NORMAL */
-  return tp_asv_get_uint32 (tp_message_peek (self, 0), "message-type", NULL);
+  lookup_in_header (self, "message-type", "u", &msg_type);
+  return msg_type;
 }
 
 /**
@@ -804,8 +817,12 @@ tp_message_get_message_type (TpMessage *self)
 gint64
 tp_message_get_sent_timestamp (TpMessage *self)
 {
+  gint64 sent = 0;
+
   g_return_val_if_fail (TP_IS_MESSAGE (self), 0);
-  return tp_asv_get_int64 (tp_message_peek (self, 0), "message-sent", NULL);
+
+  lookup_in_header (self, "message-sent", "x", &sent);
+  return sent;
 }
 
 /**
@@ -823,9 +840,12 @@ tp_message_get_sent_timestamp (TpMessage *self)
 gint64
 tp_message_get_received_timestamp (TpMessage *self)
 {
+  gint64 received = 0;
+
   g_return_val_if_fail (TP_IS_MESSAGE (self), 0);
-  return tp_asv_get_int64 (tp_message_peek (self, 0), "message-received",
-      NULL);
+
+  lookup_in_header (self, "message-received", "x", &received);
+  return received;
 }
 
 /**
@@ -842,8 +862,12 @@ tp_message_get_received_timestamp (TpMessage *self)
 gboolean
 tp_message_is_scrollback (TpMessage *self)
 {
+  gboolean scrollback = FALSE;
+
   g_return_val_if_fail (TP_IS_MESSAGE (self), FALSE);
-  return tp_asv_get_boolean (tp_message_peek (self, 0), "scrollback", NULL);
+
+  lookup_in_header (self, "scrollback", "b", &scrollback);
+  return scrollback;
 }
 
 /**
@@ -865,8 +889,12 @@ tp_message_is_scrollback (TpMessage *self)
 gboolean
 tp_message_is_rescued (TpMessage *self)
 {
+  gboolean rescued = FALSE;
+
   g_return_val_if_fail (TP_IS_MESSAGE (self), FALSE);
-  return tp_asv_get_boolean (tp_message_peek (self, 0), "rescued", NULL);
+
+  lookup_in_header (self, "rescued", "b", &rescued);
+  return rescued;
 }
 
 /**
@@ -884,16 +912,12 @@ tp_message_is_rescued (TpMessage *self)
 gchar *
 tp_message_dup_supersedes (TpMessage *self)
 {
-  const gchar *token;
+  gchar *token = NULL;
 
   g_return_val_if_fail (TP_IS_MESSAGE (self), NULL);
 
-  token = tp_asv_get_string (tp_message_peek (self, 0), "supersedes");
-
-  if (tp_str_empty (token))
-    return NULL;
-  else
-    return g_strdup (token);
+  lookup_in_header (self, "supersedes", "s", &token);
+  return token;
 }
 
 /**
@@ -912,15 +936,12 @@ tp_message_dup_supersedes (TpMessage *self)
 gchar *
 tp_message_dup_specific_to_interface (TpMessage *self)
 {
-  const gchar *interface;
+  gchar *interface = NULL;
 
   g_return_val_if_fail (TP_IS_MESSAGE (self), NULL);
 
-  interface = tp_asv_get_string (tp_message_peek (self, 0), "interface");
-  if (interface == NULL)
-    return NULL;
-
-  return g_strdup (interface);
+  lookup_in_header (self, "supersedes", "s", &interface);
+  return interface;
 }
 
 /**
@@ -937,12 +958,11 @@ tp_message_dup_specific_to_interface (TpMessage *self)
 gboolean
 tp_message_is_delivery_report (TpMessage *self)
 {
-  gboolean valid;
+  TpDeliveryStatus status = TP_DELIVERY_STATUS_UNKNOWN;
 
   g_return_val_if_fail (TP_IS_MESSAGE (self), FALSE);
 
-  tp_asv_get_uint32 (tp_message_peek (self, 0), "delivery-status", &valid);
-  return valid;
+  return lookup_in_header (self, "delivery-status", "u", &status);
 }
 
 /**
@@ -962,10 +982,12 @@ guint32
 tp_message_get_pending_message_id (TpMessage *self,
     gboolean *valid)
 {
+  guint32 id = 0;
+
   g_return_val_if_fail (TP_IS_MESSAGE (self), FALSE);
 
-  return tp_asv_get_uint32 (tp_message_peek (self, 0),
-      "pending-message-id", valid);
+  lookup_in_header (self, "pending-message-id", "u", &id);
+  return id;
 }
 
 /*

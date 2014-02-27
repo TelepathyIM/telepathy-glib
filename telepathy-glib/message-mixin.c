@@ -685,14 +685,15 @@ tp_message_mixin_has_pending_messages (GObject *object,
 
   if (msg != NULL && first_sender != NULL)
     {
-      const GHashTable *header = tp_message_peek (msg, 0);
-      gboolean valid = TRUE;
-      TpHandle h = tp_asv_get_uint32 (header, "message-sender", &valid);
+      GVariant *header = tp_message_dup_part (msg, 0);
+      TpHandle h;
 
-      if (valid)
+      if (g_variant_lookup (header, "message-sender", "u", &h))
         *first_sender = h;
       else
         WARNING ("oldest message's message-sender is mistyped");
+
+      g_variant_unref (header);
     }
 
   return (msg != NULL);
