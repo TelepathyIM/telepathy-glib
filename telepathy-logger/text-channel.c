@@ -115,15 +115,17 @@ on_channel_invalidated_cb (TpProxy *proxy,
 static gint64
 get_original_message_timestamp (TpMessage *message)
 {
+  GVariant *header;
   gint64 timestamp;
 
-  timestamp = tp_asv_get_int64 (tp_message_peek (message, 0),
-      "original-message-sent", NULL);
+  header = tp_message_dup_part (message, 0);
+
+  g_variant_lookup (header, "original-message-sent", "x", &timestamp);
 
   if (timestamp == 0)
-    timestamp = tp_asv_get_int64 (tp_message_peek (message, 0),
-        "original-message-received", NULL);
+    g_variant_lookup (header, "original-message-received", "x", &timestamp);
 
+  g_variant_unref (header);
   return timestamp;
 }
 
