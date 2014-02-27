@@ -241,6 +241,7 @@ test_unregistered_error (Test *test,
   str = tp_connection_dup_detailed_error (test->conn, &asv);
   g_assert_cmpstr (str, ==, "net.example.WTF");
   g_assert (asv != NULL);
+  g_free (str);
   g_variant_unref (asv);
 
   g_error_free (error);
