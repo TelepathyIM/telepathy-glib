@@ -49,11 +49,12 @@ test_new_from_parts (Test *test,
   GPtrArray *parts;
   TpHandle sender;
   TpMessage *msg;
-  const GHashTable *part;
+  GVariant *part;
   GVariant *part_vardict;
   gboolean valid;
   const gchar *s;
   gchar *token;
+  guint32 u;
 
   parts = g_ptr_array_new_full (2, (GDestroyNotify) g_hash_table_unref);
 
@@ -82,19 +83,21 @@ test_new_from_parts (Test *test,
   g_assert (TP_IS_CM_MESSAGE (msg));
   g_assert_cmpuint (tp_message_count_parts (msg), ==, 2);
 
-  part = tp_message_peek (msg, 0);
-  g_assert_cmpuint (tp_asv_get_uint32 (part, "message-sender", NULL), ==,
-      sender);
-  g_assert_cmpstr (tp_asv_get_string (part, "message-sender-id"), ==,
-      "bob");
-  g_assert_cmpstr (tp_asv_get_string (part, "message-token"), ==,
-      "token");
+  part = tp_message_dup_part (msg, 0);
+  g_variant_lookup (part, "message-sender", "u", &u);
+  g_assert_cmpuint (u, ==, sender);
+  g_variant_lookup (part, "message-sender-id", "&s", &s);
+  g_assert_cmpstr (s, ==, "bob");
+  g_variant_lookup (part, "message-token", "&s", &s);
+  g_assert_cmpstr (s, ==, "token");
+  g_variant_unref (part);
 
-  part = tp_message_peek (msg, 1);
-  g_assert_cmpstr (tp_asv_get_string (part, "content-type"), ==,
-      "text/plain");
-  g_assert_cmpstr (tp_asv_get_string (part, "content"), ==,
-      "Badger");
+  part = tp_message_dup_part (msg, 1);
+  g_variant_lookup (part, "content-type", "&s", &s);
+  g_assert_cmpstr (s, ==, "text/plain");
+  g_variant_lookup (part, "content", "&s", &s);
+  g_assert_cmpstr (s, ==, "Badger");
+  g_variant_unref (part);
 
   part_vardict = tp_message_dup_part (msg, 1);
   g_assert_cmpstr (g_variant_get_type_string (part_vardict), ==, "a{sv}");
@@ -131,7 +134,9 @@ test_new_text (Test *test,
 {
   TpHandle sender;
   TpMessage *msg;
-  const GHashTable *part;
+  GVariant *part;
+  guint u;
+  const gchar *s;
 
   sender = tp_handle_ensure (test->contact_repo, "bob", NULL, &test->error);
   g_assert_no_error (test->error);
@@ -141,20 +146,24 @@ test_new_text (Test *test,
   g_assert (TP_IS_CM_MESSAGE (msg));
   g_assert_cmpuint (tp_message_count_parts (msg), ==, 2);
 
-  part = tp_message_peek (msg, 0);
-  g_assert_cmpuint (tp_asv_get_uint32 (part, "message-sender", NULL), ==,
-      sender);
-  g_assert_cmpuint (tp_asv_get_uint32 (part, "message-type", NULL), ==,
-      TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION);
-  g_assert_cmpstr (tp_asv_get_string (part, "message-sender-id"), ==,
-      "bob");
-  g_assert_cmpstr (tp_asv_get_string (part, "message-token"), ==, NULL);
+  part = tp_message_dup_part (msg, 0);
+  g_variant_lookup (part, "message-sender", "u", &u);
+  g_assert_cmpuint (u, ==, sender);
+  g_variant_lookup (part, "message-type", "u", &u);
+  g_assert_cmpuint (u, ==, TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION);
+  g_variant_lookup (part, "message-sender-id", "&s", &s);
+  g_assert_cmpstr (s, ==, "bob");
+  s = NULL;
+  g_variant_lookup (part, "message-token", "&s", &s);
+  g_assert_cmpstr (s, ==, NULL);
+  g_variant_unref (part);
 
-  part = tp_message_peek (msg, 1);
-  g_assert_cmpstr (tp_asv_get_string (part, "content-type"), ==,
-      "text/plain");
-  g_assert_cmpstr (tp_asv_get_string (part, "content"), ==,
-      "builds some stuff");
+  part = tp_message_dup_part (msg, 1);
+  g_variant_lookup (part, "content-type", "&s", &s);
+  g_assert_cmpstr (s, ==, "text/plain");
+  g_variant_lookup (part, "content", "&s", &s);
+  g_assert_cmpstr (s, ==, "builds some stuff");
+  g_variant_unref (part);
 
   g_assert_cmpuint (tp_message_get_message_type (msg), ==,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION);
@@ -177,8 +186,9 @@ test_set_message (Test *test,
 {
   TpHandle sender;
   TpMessage *msg, *echo;
-  const GHashTable *part;
-  GPtrArray *echo_parts;
+  GVariant *part, *echo_parts, *echo_part;
+  guint u;
+  const gchar *s;
 
   sender = tp_handle_ensure (test->contact_repo, "escher@tuxedo.cat", NULL,
       &test->error);
@@ -199,23 +209,27 @@ test_set_message (Test *test,
   /* destroy the echo */
   g_object_unref (echo);
 
-  part = tp_message_peek (msg, 0);
-  g_assert (G_VALUE_HOLDS (tp_asv_lookup (part, "delivery-echo"),
-        TP_ARRAY_TYPE_MESSAGE_PART_LIST));
+  part = tp_message_dup_part (msg, 0);
 
-  echo_parts = tp_asv_get_boxed (part, "delivery-echo",
-      TP_ARRAY_TYPE_MESSAGE_PART_LIST);
+  echo_parts = g_variant_lookup_value (part, "delivery-echo",
+      G_VARIANT_TYPE ("aa{sv}"));
   g_assert (echo_parts != NULL);
-  g_assert_cmpuint (echo_parts->len, ==, 2);
+  g_assert_cmpuint (g_variant_n_children (echo_parts), ==, 2);
+  g_variant_unref (part);
 
-  part = g_ptr_array_index (echo_parts, 0);
-  g_assert_cmpuint (tp_asv_get_uint32 (part, "message-type", NULL), ==,
-      TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION);
+  echo_part = g_variant_get_child_value (echo_parts, 0);
+  g_assert (echo_part != 0);
+  g_variant_lookup (echo_part, "message-type", "u", &u);
+  g_assert_cmpuint (u, ==, TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION);
+  g_variant_unref (echo_part);
 
-  part = g_ptr_array_index (echo_parts, 1);
-  g_assert_cmpstr (tp_asv_get_string (part, "content"), ==,
-      "meows");
+  echo_part = g_variant_get_child_value (echo_parts, 1);
+  g_assert (echo_part != 0);
+  g_variant_lookup (echo_part, "content", "&s", &s);
+  g_assert_cmpstr (s, ==, "meows");
+  g_variant_unref (echo_part);
 
+  g_variant_unref (echo_parts);
   g_object_unref (msg);
 }
 
@@ -225,8 +239,9 @@ test_set_message_2 (Test *test,
 {
   TpHandle sender;
   TpMessage *msg, *echo;
-  const GHashTable *part;
-  GPtrArray *echo_parts;
+  GVariant *part, *echo_parts, *echo_part;
+  guint u;
+  const gchar *s;
 
   sender = tp_handle_ensure (test->contact_repo, "escher@tuxedo.cat", NULL,
       &test->error);
@@ -245,22 +260,27 @@ test_set_message_2 (Test *test,
   /* change the echo */
   tp_message_set_string (echo, 1, "content", "yawns");
 
-  part = tp_message_peek (msg, 0);
-  g_assert (G_VALUE_HOLDS (tp_asv_lookup (part, "delivery-echo"),
-        TP_ARRAY_TYPE_MESSAGE_PART_LIST));
+  part = tp_message_dup_part (msg, 0);
 
-  echo_parts = tp_asv_get_boxed (part, "delivery-echo",
-      TP_ARRAY_TYPE_MESSAGE_PART_LIST);
+  echo_parts = g_variant_lookup_value (part, "delivery-echo",
+      G_VARIANT_TYPE ("aa{sv}"));
   g_assert (echo_parts != NULL);
+  g_assert_cmpuint (g_variant_n_children (echo_parts), ==, 2);
+  g_variant_unref (part);
 
-  part = g_ptr_array_index (echo_parts, 0);
-  g_assert_cmpuint (tp_asv_get_uint32 (part, "message-type", NULL), ==,
-      TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION);
+  echo_part = g_variant_get_child_value (echo_parts, 0);
+  g_assert (echo_part != 0);
+  g_variant_lookup (echo_part, "message-type", "u", &u);
+  g_assert_cmpuint (u, ==, TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION);
+  g_variant_unref (echo_part);
 
-  part = g_ptr_array_index (echo_parts, 1);
-  g_assert_cmpstr (tp_asv_get_string (part, "content"), ==,
-      "meows");
+  echo_part = g_variant_get_child_value (echo_parts, 1);
+  g_assert (echo_part != 0);
+  g_variant_lookup (echo_part, "content", "&s", &s);
+  g_assert_cmpstr (s, ==, "meows");
+  g_variant_unref (echo_part);
 
+  g_variant_unref (echo_parts);
   g_object_unref (echo);
   g_object_unref (msg);
 }
@@ -280,8 +300,9 @@ test_take_message (Test *test,
 {
   TpHandle sender;
   TpMessage *msg, *echo;
-  const GHashTable *part;
-  GPtrArray *echo_parts;
+  GVariant *part, *echo_parts, *echo_part;
+  guint u;
+  const gchar *s;
   gboolean destroyed = FALSE;
 
   sender = tp_handle_ensure (test->contact_repo, "escher@tuxedo.cat", NULL,
@@ -305,22 +326,27 @@ test_take_message (Test *test,
   /* ensure the message was destroyed */
   g_assert (destroyed == TRUE);
 
-  part = tp_message_peek (msg, 0);
-  g_assert (G_VALUE_HOLDS (tp_asv_lookup (part, "delivery-echo"),
-        TP_ARRAY_TYPE_MESSAGE_PART_LIST));
+  part = tp_message_dup_part (msg, 0);
 
-  echo_parts = tp_asv_get_boxed (part, "delivery-echo",
-      TP_ARRAY_TYPE_MESSAGE_PART_LIST);
+  echo_parts = g_variant_lookup_value (part, "delivery-echo",
+      G_VARIANT_TYPE ("aa{sv}"));
   g_assert (echo_parts != NULL);
+  g_assert_cmpuint (g_variant_n_children (echo_parts), ==, 2);
+  g_variant_unref (part);
 
-  part = g_ptr_array_index (echo_parts, 0);
-  g_assert_cmpuint (tp_asv_get_uint32 (part, "message-type", NULL), ==,
-      TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION);
+  echo_part = g_variant_get_child_value (echo_parts, 0);
+  g_assert (echo_part != 0);
+  g_variant_lookup (echo_part, "message-type", "u", &u);
+  g_assert_cmpuint (u, ==, TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION);
+  g_variant_unref (echo_part);
 
-  part = g_ptr_array_index (echo_parts, 1);
-  g_assert_cmpstr (tp_asv_get_string (part, "content"), ==,
-      "meows");
+  echo_part = g_variant_get_child_value (echo_parts, 1);
+  g_assert (echo_part != 0);
+  g_variant_lookup (echo_part, "content", "&s", &s);
+  g_assert_cmpstr (s, ==, "meows");
+  g_variant_unref (echo_part);
 
+  g_variant_unref (echo_parts);
   g_object_unref (msg);
 }
 

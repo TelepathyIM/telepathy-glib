@@ -801,7 +801,8 @@ test_pending_messages_with_no_sender_id (Test *test,
   TpMessage *signalled_message;
   GList *messages;
   TpContact *sender;
-  gchar *text;
+  gchar *text = NULL;
+  GVariant *part;
 
   g_test_bug ("39172");
 
@@ -815,8 +816,12 @@ test_pending_messages_with_no_sender_id (Test *test,
   cm_message = tp_cm_message_new_text (test->base_connection, 0,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, "hi mum");
   tp_message_set_uint32 (cm_message, 0, "message-sender", test->bob);
-  g_assert_cmpstr (NULL, ==,
-      tp_asv_get_string (tp_message_peek (cm_message, 0), "message-sender-id"));
+
+  part = tp_message_dup_part (cm_message, 0);
+  g_variant_lookup (part, "message-sender-id", "&s", &text);
+  g_assert_cmpstr (NULL, ==, text);
+  g_variant_unref (part);
+
   tp_message_mixin_take_received (G_OBJECT (test->chan_service), cm_message);
 
   test->wait = 1;
