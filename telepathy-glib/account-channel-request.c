@@ -883,6 +883,45 @@ delegated_channels_cb (TpBaseClient *client,
       self->priv->delegated_channel_data);
 }
 
+static gboolean
+going_to_request (TpAccountChannelRequest *self,
+    ActionType action_type,
+    gboolean ensure,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  g_return_val_if_fail (!self->priv->requested, FALSE);
+
+  self->priv->requested = TRUE;
+  self->priv->action_type = action_type;
+
+  if (g_cancellable_is_cancelled (cancellable))
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (self), callback,
+          user_data, G_IO_ERROR, G_IO_ERROR_CANCELLED,
+          "Operation has been cancelled");
+      return FALSE;
+    }
+
+  if (cancellable != NULL)
+    self->priv->cancellable = g_object_ref (cancellable);
+
+  self->priv->ensure = ensure;
+
+  /* Set TargetHandleType: TP_HANDLE_TYPE_NONE if no TargetHandleType has been
+   * defined. */
+  if (g_hash_table_lookup (self->priv->request,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE) == NULL)
+    {
+      g_hash_table_insert (self->priv->request,
+          g_strdup (TP_PROP_CHANNEL_TARGET_ENTITY_TYPE),
+          tp_g_value_slice_new_uint (TP_ENTITY_TYPE_NONE));
+    }
+
+  return TRUE;
+}
+
 static void
 request_and_handle_channel_async (TpAccountChannelRequest *self,
     GCancellable *cancellable,
@@ -894,23 +933,9 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
   TpChannelDispatcher *cd;
   GHashTable *hints;
 
-  g_return_if_fail (!self->priv->requested);
-  self->priv->requested = TRUE;
-
-  self->priv->action_type = ACTION_TYPE_HANDLE;
-
-  if (g_cancellable_is_cancelled (cancellable))
-    {
-      g_simple_async_report_error_in_idle (G_OBJECT (self), callback,
-          user_data, G_IO_ERROR, G_IO_ERROR_CANCELLED,
-          "Operation has been cancelled");
-
-      return;
-    }
-
-  if (cancellable != NULL)
-    self->priv->cancellable = g_object_ref (cancellable);
-  self->priv->ensure = ensure;
+  if (!going_to_request (self, ACTION_TYPE_HANDLE, ensure, cancellable,
+        callback, user_data))
+    return;
 
   /* Create a temp handler */
   self->priv->handler = tp_simple_handler_new (
@@ -1168,23 +1193,9 @@ request_channel_async (TpAccountChannelRequest *self,
   TpChannelDispatcher *cd;
   GHashTable *hints;
 
-  g_return_if_fail (!self->priv->requested);
-  self->priv->requested = TRUE;
-
-  self->priv->action_type = ACTION_TYPE_OBSERVE;
-
-  if (g_cancellable_is_cancelled (cancellable))
-    {
-      g_simple_async_report_error_in_idle (G_OBJECT (self), callback,
-          user_data, G_IO_ERROR, G_IO_ERROR_CANCELLED,
-          "Operation has been cancelled");
-
-      return;
-    }
-
-  if (cancellable != NULL)
-    self->priv->cancellable = g_object_ref (cancellable);
-  self->priv->ensure = ensure;
+  if (!going_to_request (self, ACTION_TYPE_OBSERVE, ensure, cancellable,
+        callback, user_data))
+    return;
 
   cd = tp_channel_dispatcher_new (self->priv->dbus);
 
@@ -1991,4 +2002,264 @@ tp_account_channel_request_set_file_transfer_initial_offset (
           g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_INITIAL_OFFSET),
           tp_g_value_slice_new_uint64 (offset));
     }
+}
+
+/**
+ * tp_account_channel_request_set_file_transfer_hash:
+ * @self: a #TpAccountChannelRequest
+ * @hash_type: a type of @hash
+ * @hash: hash of the contents of the file transfer
+ *
+ * Configure this channel request to accompany the file transfer with
+ * the hash of the file.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.23.2
+ */
+void
+tp_account_channel_request_set_file_transfer_hash (
+    TpAccountChannelRequest *self,
+    TpFileHashType hash_type,
+    const gchar *hash)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+  g_return_if_fail (hash_type < TP_NUM_FILE_HASH_TYPES);
+
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_CONTENT_HASH_TYPE),
+      tp_g_value_slice_new_uint (hash_type));
+
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_CONTENT_HASH),
+      tp_g_value_slice_new_string (hash));
+}
+
+/**
+ * tp_account_channel_request_new_stream_tube:
+ * @account: a #TpAccount
+ * @service: the service name that will be used over the tube. It should be a
+ * well-known TCP service name as defined by
+ * http://www.iana.org/assignments/port-numbers or
+ * http://www.dns-sd.org/ServiceTypes.html, for instance "rsync" or "daap".
+ * @user_action_time: the time of the user action that caused this request,
+ *  or one of the special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME (see
+ *  #TpAccountChannelRequest:user-action-time)
+ *
+ * Convenience function to create a new #TpAccountChannelRequest object,
+ * which will yield a StreamTube channel.
+ *
+ * After creating the request, you will also need to set the "target"
+ * of the channel by calling one of the following functions:
+ *
+ * - tp_account_channel_request_set_target_contact()
+ * - tp_account_channel_request_set_target_id()
+ *
+ * Returns: a new #TpAccountChannelRequest object
+ *
+ * Since: 0.23.2
+ */
+TpAccountChannelRequest *
+tp_account_channel_request_new_stream_tube (TpAccount *account,
+    const gchar *service,
+    gint64 user_action_time)
+{
+  TpAccountChannelRequest *self;
+  GVariantDict dict;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+  g_return_val_if_fail (!tp_str_empty (service), NULL);
+
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_CHANNEL_TYPE, "s",
+      TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SERVICE,
+      "s", service);
+
+  self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
+      "account", account,
+      "request", g_variant_dict_end (&dict),
+      "user-action-time", user_action_time,
+      NULL);
+
+  return self;
+}
+
+/**
+ * tp_account_channel_request_new_dbus_tube:
+ * @account: a #TpAccount
+ * @service_name: the service name that will be used over the tube. It should be
+ * @user_action_time: the time of the user action that caused this request,
+ *  or one of the special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME (see
+ *  #TpAccountChannelRequest:user-action-time)
+ *
+ * Convenience function to create a new #TpAccountChannelRequest object,
+ * which will yield a DBusTube channel.
+ *
+ * After creating the request, you will also need to set the "target"
+ * of the channel by calling one of the following functions:
+ *
+ * - tp_account_channel_request_set_target_contact()
+ * - tp_account_channel_request_set_target_id()
+ *
+ * Returns: a new #TpAccountChannelRequest object
+ *
+ * Since: 0.23.2
+ */
+TpAccountChannelRequest *
+tp_account_channel_request_new_dbus_tube (TpAccount *account,
+    const gchar *service_name,
+    gint64 user_action_time)
+{
+  TpAccountChannelRequest *self;
+  GVariantDict dict;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+  g_return_val_if_fail (!tp_str_empty (service_name), NULL);
+
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_CHANNEL_TYPE, "s",
+      TP_IFACE_CHANNEL_TYPE_DBUS_TUBE1);
+  g_variant_dict_insert (&dict, TP_PROP_CHANNEL_TYPE_DBUS_TUBE1_SERVICE_NAME,
+      "s", service_name);
+
+  self = g_object_new (TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
+      "account", account,
+      "request", g_variant_dict_end (&dict),
+      "user-action-time", user_action_time,
+      NULL);
+
+  return self;
+}
+
+/**
+ * tp_account_channel_request_set_sms_channel:
+ * @self: a #TpAccountChannelRequest
+ * @is_sms_channel: #TRUE if the channel should use SMS
+ *
+ * If @is_sms_channel is set to #TRUE, messages sent and received on the
+ * requested channel will be transmitted via SMS.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.23.2
+ */
+void
+tp_account_channel_request_set_sms_channel (TpAccountChannelRequest *self,
+    gboolean is_sms_channel)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_INTERFACE_SMS1_SMS_CHANNEL),
+      tp_g_value_slice_new_boolean (is_sms_channel));
+}
+
+/**
+ * tp_account_channel_request_set_conference_initial_channels:
+ * @self: a #TpAccountChannelRequest
+ * @channels: a #NULL-terminated array of channel paths
+ *
+ * Indicate that the channel which is going to be requested using @self
+ * is an upgrade of the channels whose object paths is listed in @channels.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.23.2
+ */
+void
+tp_account_channel_request_set_conference_initial_channels (
+    TpAccountChannelRequest *self,
+    const gchar * const * channels)
+{
+  GPtrArray *chans;
+  guint i;
+
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+
+  chans = g_ptr_array_new ();
+  for (i = 0; channels != NULL && channels[i] != NULL; i++)
+    g_ptr_array_add (chans, (gpointer) channels[i]);
+
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_INTERFACE_CONFERENCE1_INITIAL_CHANNELS),
+      tp_g_value_slice_new_boxed (TP_ARRAY_TYPE_OBJECT_PATH_LIST, chans));
+
+  g_ptr_array_unref (chans);
+}
+
+/**
+ * tp_account_channel_request_set_initial_invitee_ids:
+ * @self: a #TpAccountChannelRequest
+ * @ids: a #NULL-terminated array of contact ids
+ *
+ * Indicate that the contacts listed in @ids have to be invited to the
+ * conference represented by the channel which is going to be requested
+ * using @self.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.23.2
+ */
+void
+tp_account_channel_request_set_initial_invitee_ids (
+    TpAccountChannelRequest *self,
+    const gchar * const * ids)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+
+  g_hash_table_insert (self->priv->request,
+      g_strdup (TP_PROP_CHANNEL_INTERFACE_CONFERENCE1_INITIAL_INVITEE_IDS),
+      tp_g_value_slice_new_boxed (G_TYPE_STRV, ids));
+}
+
+/**
+ * tp_account_channel_request_set_initial_invitees:
+ * @self: a #TpAccountChannelRequest
+ * @contacts: (element-type TelepathyGLib.Contact): a #GPtrArray of #TpContact
+ *
+ * Indicate that the contacts listed in @contacts have to be invited to the
+ * conference represented by the channel which is going to be requested
+ * using @self.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.23.2
+ */
+void
+tp_account_channel_request_set_initial_invitees (
+    TpAccountChannelRequest *self,
+    GPtrArray *contacts)
+{
+  guint i;
+  GPtrArray *ids;
+
+  g_return_if_fail (contacts != NULL);
+
+  ids = g_ptr_array_new ();
+
+  for (i = 0; i < contacts->len; i++)
+    {
+      TpContact *contact = g_ptr_array_index (contacts, i);
+
+      g_ptr_array_add (ids, (gchar *) tp_contact_get_identifier (contact));
+    }
+
+  g_ptr_array_add (ids, NULL);
+
+  tp_account_channel_request_set_initial_invitee_ids (self,
+      (const gchar * const *) ids->pdata);
+
+  g_ptr_array_unref (ids);
 }

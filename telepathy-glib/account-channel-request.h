@@ -100,6 +100,10 @@ TpAccountChannelRequest *tp_account_channel_request_new_text (
     TpAccount *account,
     gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
 
+_TP_AVAILABLE_IN_0_24
+void tp_account_channel_request_set_sms_channel (TpAccountChannelRequest *self,
+    gboolean is_sms_channel);
+
 /* Calls */
 
 _TP_AVAILABLE_IN_0_20
@@ -137,6 +141,43 @@ _TP_AVAILABLE_IN_0_20
 void tp_account_channel_request_set_file_transfer_initial_offset (
     TpAccountChannelRequest *self,
     guint64 offset);
+
+_TP_AVAILABLE_IN_0_24
+void tp_account_channel_request_set_file_transfer_hash (
+    TpAccountChannelRequest *self,
+    TpFileHashType hash_type,
+    const gchar *hash);
+
+/* Tube */
+
+_TP_AVAILABLE_IN_0_24
+TpAccountChannelRequest *tp_account_channel_request_new_stream_tube (
+    TpAccount *account,
+    const gchar *service,
+    gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
+
+_TP_AVAILABLE_IN_0_24
+TpAccountChannelRequest *tp_account_channel_request_new_dbus_tube (
+    TpAccount *account,
+    const gchar *service_name,
+    gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
+
+/* Conference */
+
+_TP_AVAILABLE_IN_0_24
+void tp_account_channel_request_set_conference_initial_channels (
+    TpAccountChannelRequest *self,
+    const gchar * const * channels);
+
+_TP_AVAILABLE_IN_0_24
+void tp_account_channel_request_set_initial_invitee_ids (
+    TpAccountChannelRequest *self,
+    const gchar * const * ids);
+
+_TP_AVAILABLE_IN_0_24
+void tp_account_channel_request_set_initial_invitees (
+    TpAccountChannelRequest *self,
+    GPtrArray *contacts);
 
 /* Channel target (shared between all channel types) */
 

@@ -216,6 +216,8 @@ test_handle_create_success (Test *test,
   tp_account_channel_request_set_target_id (req, TP_ENTITY_TYPE_CONTACT,
       "alice");
 
+  tp_account_channel_request_set_sms_channel (req, TRUE);
+
   /* We didn't start requesting the channel yet, so there is no
    * ChannelRequest */
   chan_req = tp_account_channel_request_get_channel_request (req);
@@ -240,9 +242,9 @@ test_handle_create_success (Test *test,
         TP_PROP_CHANNEL_TARGET_ID), ==, "alice");
   g_assert_cmpuint (tp_asv_get_uint32 (test->cd_service->last_request,
         TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, NULL), ==, TP_ENTITY_TYPE_CONTACT);
-  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 3);
-
-  g_object_unref (req);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 4);
+  g_assert (tp_asv_get_boolean (test->cd_service->last_request,
+        TP_PROP_CHANNEL_INTERFACE_SMS1_SMS_CHANNEL, NULL));
 }
 
 /* ChannelDispatcher.CreateChannel() call fails */
@@ -321,7 +323,7 @@ test_handle_proceed_fail (Test *test,
         TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO, NULL), ==, TRUE);
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
         "ProceedFail", NULL), ==, TRUE);
-  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 4);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 5);
 }
 
 /* ChannelRequest fire the 'Failed' signal */
@@ -360,7 +362,7 @@ test_handle_cr_failed (Test *test,
       "application/x-rar");
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
         "FireFailed", NULL), ==, TRUE);
-  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 5);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 6);
   g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
 }
 
@@ -380,6 +382,8 @@ test_ft_props (Test *test,
       1111222233);
   tp_account_channel_request_set_file_transfer_uri (req,
       "file:///home/Downloads/warez.rar");
+  tp_account_channel_request_set_file_transfer_hash (req,
+      TP_FILE_HASH_TYPE_SHA256, "This is not a hash");
 
   /* Ask to the CR to fire the signal */
   tp_account_channel_request_set_request_property (req, "FireFailed",
@@ -417,9 +421,82 @@ test_ft_props (Test *test,
   g_assert_cmpuint (tp_asv_get_uint64 (test->cd_service->last_request,
         TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_DATE, NULL), ==,
       1111222233);
+  g_assert_cmpuint (tp_asv_get_uint32 (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_CONTENT_HASH_TYPE, NULL), ==,
+      TP_FILE_HASH_TYPE_SHA256);
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_CONTENT_HASH), ==,
+      "This is not a hash");
   g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
         "FireFailed", NULL), ==, TRUE);
-  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 9);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 12);
+  g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
+}
+
+static void
+test_stream_tube_props (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpAccountChannelRequest *req;
+
+  req = tp_account_channel_request_new_stream_tube (test->account, "daap",
+      0);
+
+  /* Ask to the CR to fire the signal */
+  tp_account_channel_request_set_request_property (req, "FireFailed",
+      g_variant_new_boolean (TRUE));
+
+  tp_account_channel_request_create_and_handle_channel_async (req,
+      NULL, create_and_handle_cb, test);
+
+  g_object_unref (req);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
+  g_assert (test->channel == NULL);
+
+  /* The request had the properties we wanted */
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1);
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SERVICE), ==, "daap");
+  g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
+        "FireFailed", NULL), ==, TRUE);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 4);
+  g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
+}
+
+static void
+test_dbus_tube_props (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpAccountChannelRequest *req;
+
+  req = tp_account_channel_request_new_dbus_tube (test->account,
+      "com.example.ServiceName", 0);
+
+  /* Ask to the CR to fire the signal */
+  tp_account_channel_request_set_request_property (req, "FireFailed",
+      g_variant_new_boolean (TRUE));
+
+  tp_account_channel_request_create_and_handle_channel_async (req,
+      NULL, create_and_handle_cb, test);
+
+  g_object_unref (req);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
+  g_assert (test->channel == NULL);
+
+  /* The request had the properties we wanted */
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_DBUS_TUBE1);
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TYPE_DBUS_TUBE1_SERVICE_NAME), ==,
+      "com.example.ServiceName");
+  g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
+        "FireFailed", NULL), ==, TRUE);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 4);
   g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
 }
 
@@ -1005,6 +1082,124 @@ test_observe_cancel_after_create (Test *test,
   g_assert_error (test->error, TP_ERROR, TP_ERROR_CANCELLED);
 }
 
+/* Check if TargetHandleType: TP_ENTITY_TYPE_NONE is automatically added if no
+ * target has been specified by the user. */
+static void
+test_no_handle_type (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpAccountChannelRequest *req;
+  gboolean valid;
+  const gchar * const channels[] = { "/chan1", "/chan2", NULL };
+  GPtrArray *chans;
+  const gchar * const invitees[] = { "badger@badger.com",
+      "snake@badger.com", NULL };
+  const gchar * const *strv;
+
+  req = tp_account_channel_request_new_text (test->account, 0);
+
+  tp_account_channel_request_set_conference_initial_channels (req, channels);
+
+  tp_account_channel_request_set_initial_invitee_ids (req, invitees);
+
+  /* Ask to the CR to fire the signal */
+  tp_account_channel_request_set_request_property (req, "FireFailed",
+      g_variant_new_boolean (TRUE));
+
+  tp_account_channel_request_create_and_handle_channel_async (req,
+      NULL, create_and_handle_cb, test);
+
+  g_object_unref (req);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
+  g_assert (test->channel == NULL);
+
+  /* The request had the properties we wanted */
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_TEXT);
+  g_assert_cmpuint (tp_asv_get_uint32 (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid), ==, TP_ENTITY_TYPE_NONE);
+  g_assert (valid);
+  g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
+        "FireFailed", NULL), ==, TRUE);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 5);
+  g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
+
+  chans = tp_asv_get_boxed (test->cd_service->last_request,
+      TP_PROP_CHANNEL_INTERFACE_CONFERENCE1_INITIAL_CHANNELS,
+      TP_ARRAY_TYPE_OBJECT_PATH_LIST);
+  g_assert (chans != NULL);
+  g_assert_cmpuint (chans->len, ==, 2);
+  g_assert_cmpstr (g_ptr_array_index (chans, 0), ==, "/chan1");
+  g_assert_cmpstr (g_ptr_array_index (chans, 1), ==, "/chan2");
+
+  strv = tp_asv_get_boxed (test->cd_service->last_request,
+      TP_PROP_CHANNEL_INTERFACE_CONFERENCE1_INITIAL_INVITEE_IDS,
+      G_TYPE_STRV);
+  g_assert (strv != NULL);
+  g_assert_cmpuint (g_strv_length ((GStrv) strv), ==, 2);
+  g_assert (tp_strv_contains (strv, "badger@badger.com"));
+  g_assert (tp_strv_contains (strv, "snake@badger.com"));
+}
+
+static void
+test_initial_invitees (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpAccountChannelRequest *req;
+  gboolean valid;
+  GPtrArray *invitees;
+  TpContact *contact;
+  const gchar * const *strv;
+
+  req = tp_account_channel_request_new_text (test->account, 0);
+
+  invitees = g_ptr_array_new_with_free_func (g_object_unref);
+
+  contact = tp_tests_connection_run_until_contact_by_id (test->connection,
+      "badger@badger.com", NULL);
+  g_ptr_array_add (invitees, contact);
+  contact = tp_tests_connection_run_until_contact_by_id (test->connection,
+      "snake@badger.com", NULL);
+  g_ptr_array_add (invitees, contact);
+
+  tp_account_channel_request_set_initial_invitees (req, invitees);
+  g_ptr_array_unref (invitees);
+
+  /* Ask to the CR to fire the signal */
+  tp_account_channel_request_set_request_property (req, "FireFailed",
+      g_variant_new_boolean (TRUE));
+
+  tp_account_channel_request_create_and_handle_channel_async (req,
+      NULL, create_and_handle_cb, test);
+
+  g_object_unref (req);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
+  g_assert (test->channel == NULL);
+
+  /* The request had the properties we wanted */
+  g_assert_cmpstr (tp_asv_get_string (test->cd_service->last_request,
+        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_TEXT);
+  g_assert_cmpuint (tp_asv_get_uint32 (test->cd_service->last_request,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid), ==, TP_ENTITY_TYPE_NONE);
+  g_assert (valid);
+  g_assert_cmpuint (tp_asv_get_boolean (test->cd_service->last_request,
+        "FireFailed", NULL), ==, TRUE);
+  g_assert_cmpuint (tp_asv_size (test->cd_service->last_request), ==, 4);
+  g_assert_cmpuint (test->cd_service->last_user_action_time, ==, 0);
+
+  strv = tp_asv_get_boxed (test->cd_service->last_request,
+      TP_PROP_CHANNEL_INTERFACE_CONFERENCE1_INITIAL_INVITEE_IDS,
+      G_TYPE_STRV);
+  g_assert (strv != NULL);
+  g_assert_cmpuint (g_strv_length ((GStrv) strv), ==, 2);
+  g_assert (tp_strv_contains (strv, "badger@badger.com"));
+  g_assert (tp_strv_contains (strv, "snake@badger.com"));
+}
+
 int
 main (int argc,
       char **argv)
@@ -1053,6 +1248,14 @@ main (int argc,
   /* Particular properties of the request */
   g_test_add ("/account-channels/test-ft-props", Test, NULL,
       setup, test_ft_props, teardown);
+  g_test_add ("/account-channels/test-stream-tube-props", Test, NULL,
+      setup, test_stream_tube_props, teardown);
+  g_test_add ("/account-channels/test-dbus-tube-props", Test, NULL,
+      setup, test_dbus_tube_props, teardown);
+  g_test_add ("/account-channels/test-no-handle-type", Test, NULL,
+      setup, test_no_handle_type, teardown);
+  g_test_add ("/account-channels/test-initial-invitees", Test, NULL,
+      setup, test_initial_invitees, teardown);
 
   return tp_tests_run_with_bus ();
 }

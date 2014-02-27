@@ -232,6 +232,10 @@ void tp_contact_attribute_map_take_sliced_gvalue (TpContactAttributeMap *map,
     const gchar *token,
     GValue *value);
 
+_TP_AVAILABLE_IN_0_24
+const gchar *tp_base_connection_get_account_path_suffix (
+    TpBaseConnection *self);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_BASE_CONNECTION_H__*/

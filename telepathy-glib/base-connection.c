@@ -277,6 +277,7 @@ enum
     PROP_REQUESTABLE_CHANNEL_CLASSES,
     PROP_DBUS_STATUS,
     PROP_DBUS_DAEMON,
+    PROP_ACCOUNT_PATH_SUFFIX,
     N_PROPS
 };
 
@@ -357,6 +358,8 @@ struct _TpBaseConnectionPrivate
   /* GQuark iface => GHashTable {
    *    unique name borrowed from interested_clients => gsize count } */
   GHashTable *client_interests;
+
+  gchar *account_path_suffix;
 };
 
 static const gchar * const *tp_base_connection_get_interfaces (
@@ -418,6 +421,10 @@ tp_base_connection_get_property (GObject *object,
       g_value_set_object (value, self->priv->bus_proxy);
       break;
 
+    case PROP_ACCOUNT_PATH_SUFFIX:
+      g_value_set_string (value, self->priv->account_path_suffix);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -453,6 +460,11 @@ tp_base_connection_set_property (GObject      *object,
           if (dbus_daemon != NULL)
             self->priv->bus_proxy = g_object_ref (dbus_daemon);
         }
+      break;
+
+    case PROP_ACCOUNT_PATH_SUFFIX:
+      g_assert (self->priv->account_path_suffix == NULL); /* construct-only */
+      self->priv->account_path_suffix = g_value_dup_string (value);
       break;
 
     default:
@@ -551,6 +563,7 @@ tp_base_connection_finalize (GObject *object)
   g_free (priv->object_path);
   g_hash_table_unref (priv->client_interests);
   g_hash_table_unref (priv->interested_clients);
+  g_free (priv->account_path_suffix);
 
   G_OBJECT_CLASS (tp_base_connection_parent_class)->finalize (object);
 }
@@ -1157,6 +1170,27 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
       g_param_spec_object ("dbus-daemon", "D-Bus daemon",
         "The D-Bus daemon used by this object", TP_TYPE_DBUS_DAEMON,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TpBaseConnection:account-path-suffix:
+   *
+   * The suffix of the account object path such as
+   * "gabble/jabber/chris_40example_2ecom0" for the account whose object path is
+   * %TP_ACCOUNT_OBJECT_PATH_BASE + "gabble/jabber/chris_40example_2ecom0".
+   * The same as returned by tp_account_get_path_suffix().
+   *
+   * It is given by the AccountManager in the connection parameters. Or %NULL if
+   * the ConnectionManager or the AccountManager are too old.
+   *
+   * Since: 0.23.2
+   */
+  param_spec = g_param_spec_string ("account-path-suffix",
+      "Account path suffix",
+      "The suffix of the account path",
+      NULL,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_ACCOUNT_PATH_SUFFIX,
+      param_spec);
 
   /* signal definitions */
 
@@ -3090,4 +3124,22 @@ conn_iface_init (TpSvcConnectionClass *klass)
   IMPLEMENT (get_contact_attributes);
   IMPLEMENT (get_contact_by_id);
 #undef IMPLEMENT
+}
+
+/**
+ * tp_base_connection_get_account_path_suffix:
+ * @self: the connection
+ *
+ * <!-- -->
+ *
+ * Returns: the same value has the #TpBaseConnection:account-path-suffix
+ *  property.
+ * Since: 0.23.2
+ */
+const gchar *
+tp_base_connection_get_account_path_suffix (TpBaseConnection *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
+
+  return self->priv->account_path_suffix;
 }
