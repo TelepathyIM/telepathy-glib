@@ -81,8 +81,15 @@ send_message (GObject *object,
   guint len = tp_message_count_parts (message);
   TpMessage *received = NULL;
   guint i;
+  GVariant *header;
+  GVariantDict header_dict;
 
-  if (tp_asv_get_string (tp_message_peek (message, 0), "interface") != NULL)
+  header = tp_message_dup_part (message, 0);
+  g_return_if_fail (header != NULL);
+
+  g_variant_dict_init (&header_dict, header);
+
+  if (g_variant_dict_contains (&header_dict, "interface"))
     {
       /* this message is interface-specific - let's not echo it */
       goto finally;
@@ -98,8 +105,8 @@ send_message (GObject *object,
       tp_cm_message_set_sender (received,
           tp_base_channel_get_target_handle (base));
 
-      message_type = tp_asv_get_uint32 (tp_message_peek (message, 0),
-          "message-type", &valid);
+      valid = g_variant_dict_lookup (&header_dict, "message-type", "u",
+          &message_type);
 
       /* The check for 'valid' means that if message-type is missing or of the
        * wrong type, fall back to NORMAL (this is in fact a no-op, since
@@ -115,50 +122,53 @@ send_message (GObject *object,
   /* Copy the content for the "received" message */
   for (i = 1; i < len; i++)
     {
-      const GHashTable *input = tp_message_peek (message, i);
+      GVariant *input = tp_message_dup_part (message, i);
+      GVariantDict dict;
       const gchar *s;
-      const GValue *value;
+      GVariant *value;
       guint j;
+
+      g_variant_dict_init (&dict, input);
 
       /* in this example we ignore interface-specific parts */
 
-      s = tp_asv_get_string (input, "content-type");
+      if (!g_variant_dict_contains (&dict, "content-type"))
+        goto next;
 
-      if (s == NULL)
-        continue;
-
-      s = tp_asv_get_string (input, "interface");
-
-      if (s != NULL)
-        continue;
+      if (g_variant_dict_contains (&dict, "interface"))
+        goto next;
 
       /* OK, we want to copy this part */
 
       j = tp_message_append_part (received);
 
-      s = tp_asv_get_string (input, "content-type");
+      g_variant_dict_lookup (&dict, "content-type", "&s", &s);
       g_assert (s != NULL);   /* already checked */
       tp_message_set_string (received, j, "content-type", s);
 
-      s = tp_asv_get_string (input, "identifier");
-
+      g_variant_dict_lookup (&dict, "identifier", "&s", &s);
       if (s != NULL)
         tp_message_set_string (received, j, "identifier", s);
 
-      s = tp_asv_get_string (input, "alternative");
-
+      g_variant_dict_lookup (&dict, "alternative", "&s", &s);
       if (s != NULL)
         tp_message_set_string (received, j, "alternative", s);
 
-      s = tp_asv_get_string (input, "lang");
-
+      g_variant_dict_lookup (&dict, "lang", "&s", &s);
       if (s != NULL)
         tp_message_set_string (received, j, "lang", s);
 
-      value = tp_asv_lookup (input, "content");
-
+      value = g_variant_dict_lookup_value (&dict, "content",
+          G_VARIANT_TYPE_STRING);
       if (value != NULL)
-        tp_message_set (received, j, "content", value);
+        {
+          tp_message_set_variant (received, j, "content", value);
+          g_variant_unref (value);
+        }
+
+next:
+      g_variant_unref (input);
+      g_variant_dict_clear (&dict);
     }
 
 finally:
@@ -172,6 +182,9 @@ finally:
        * the received message is owned by the mixin */
       tp_message_mixin_take_received (object, received);
     }
+
+  g_variant_unref (header);
+  g_variant_dict_clear (&header_dict);
 }
 
 static gboolean
