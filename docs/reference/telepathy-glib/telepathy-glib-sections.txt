@@ -2102,7 +2102,6 @@ TpMessageMixinPrivate
 TpMessage
 tp_message_count_parts
 tp_message_dup_part
-tp_message_peek
 tp_message_to_text
 tp_message_get_message_type
 tp_message_get_received_timestamp

@@ -44,7 +44,6 @@ typedef struct _TpMessageClass TpMessageClass;
 GType tp_message_get_type (void);
 
 guint tp_message_count_parts (TpMessage *self);
-const GHashTable *tp_message_peek (TpMessage *self, guint part);
 _TP_AVAILABLE_IN_0_20
 GVariant *tp_message_dup_part (TpMessage *self, guint part);
 guint tp_message_append_part (TpMessage *self);

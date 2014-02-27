@@ -136,30 +136,6 @@ tp_message_count_parts (TpMessage *self)
 }
 
 /**
- * tp_message_peek:
- * @self: a message
- * @part: a part number
- *
- * <!-- nothing more to say -->
- *
- * Returns: (transfer none) (element-type utf8 GObject.Value):
- *  the #GHashTable used to implement the given part, or %NULL if the
- *  part number is out of range. The hash table is only valid as long as the
- *  message is valid and the part is not deleted.
- *
- * Since: 0.7.21
- */
-const GHashTable *
-tp_message_peek (TpMessage *self,
-                 guint part)
-{
-  if (part >= self->parts->len)
-    return NULL;
-
-  return g_ptr_array_index (self->parts, part);
-}
-
-/**
  * tp_message_dup_part:
  * @self: a message
  * @part: a part number
