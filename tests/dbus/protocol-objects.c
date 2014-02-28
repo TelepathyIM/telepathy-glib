@@ -451,6 +451,9 @@ static void
 test_protocol_object (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
+  GHashTable *props;
+  TpProtocol *protocol;
+
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "example_echo_2");
   tp_tests_proxy_run_until_prepared (test->cm, NULL);
@@ -458,6 +461,22 @@ test_protocol_object (Test *test,
       tp_connection_manager_get_protocol_object (test->cm, "example"));
 
   check_tp_protocol (test->protocol);
+
+  /* Create a new TpProtocol for the same protocol but by passing it all its
+   * immutable properities */
+  g_object_get (test->protocol,
+      "protocol-properties", &props,
+      NULL);
+
+  protocol = tp_protocol_new (test->dbus, "example_echo_2",
+      "example", props, &test->error);
+  g_assert_no_error (test->error);
+  g_assert (TP_IS_PROTOCOL (protocol));
+
+  check_tp_protocol (protocol);
+
+  g_object_unref (protocol);
+  g_hash_table_unref (props);
 }
 
 static void
