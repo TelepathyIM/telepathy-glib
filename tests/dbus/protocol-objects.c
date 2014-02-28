@@ -387,71 +387,77 @@ check_avatar_requirements (TpAvatarRequirements *req)
 }
 
 static void
-test_protocol_object (Test *test,
-    gconstpointer data G_GNUC_UNUSED)
+check_tp_protocol (TpProtocol *protocol)
 {
   TpAvatarRequirements *req;
   GList *l;
   TpConnectionManagerParam *param;
 
+  g_assert_cmpstr (tp_protocol_get_name (protocol), ==, "example");
+
+  g_assert_cmpstr (tp_protocol_get_cm_name (protocol),
+      ==, "example_echo_2");
+
+  g_assert (tp_proxy_has_interface_by_id (protocol,
+      TP_IFACE_QUARK_PROTOCOL));
+  g_assert (tp_proxy_has_interface_by_id (protocol,
+      TP_IFACE_QUARK_PROTOCOL_INTERFACE_AVATARS));
+
+  g_assert (tp_proxy_is_prepared (protocol,
+        TP_PROTOCOL_FEATURE_PARAMETERS));
+
+  g_assert (tp_protocol_has_param (protocol, "account"));
+  g_assert (!tp_protocol_has_param (protocol, "no-way"));
+
+  g_assert (tp_proxy_is_prepared (protocol, TP_PROTOCOL_FEATURE_CORE));
+
+  g_assert_cmpstr (tp_protocol_get_icon_name (protocol), ==,
+      "im-icq");
+  g_assert_cmpstr (tp_protocol_get_english_name (protocol), ==,
+      "Echo II example");
+  g_assert_cmpstr (tp_protocol_get_vcard_field (protocol), ==,
+      "x-telepathy-example");
+  g_assert (TP_IS_CAPABILITIES (tp_protocol_get_capabilities (
+          protocol)));
+
+  req = tp_protocol_get_avatar_requirements (protocol);
+  check_avatar_requirements (req);
+
+  g_object_get (protocol, "avatar-requirements", &req, NULL);
+  check_avatar_requirements (req);
+
+  l = tp_protocol_dup_params (protocol);
+  g_assert_cmpuint (g_list_length (l), ==, 1);
+  param = l->data;
+  g_assert_cmpstr (param->name, ==, "account");
+  g_list_free_full (l, (GDestroyNotify) tp_connection_manager_param_free);
+
+  g_assert_cmpstr (tp_protocol_get_param (protocol, "account")->name, ==,
+      "account");
+
+  param = tp_protocol_dup_param (protocol, "account");
+  /* it's a copy */
+  g_assert (param != tp_protocol_get_param (protocol, "account"));
+  g_assert_cmpstr (param->name, ==, "account");
+  tp_connection_manager_param_free (param);
+
+  g_assert_cmpstr (tp_protocol_borrow_params (protocol)[0].name, ==,
+      "account");
+  g_assert_cmpstr (tp_protocol_borrow_params (protocol)[1].name, ==,
+      NULL);
+}
+
+static void
+test_protocol_object (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "example_echo_2");
   tp_tests_proxy_run_until_prepared (test->cm, NULL);
   test->protocol = g_object_ref (
       tp_connection_manager_get_protocol_object (test->cm, "example"));
 
-  g_assert_cmpstr (tp_protocol_get_name (test->protocol), ==, "example");
-
-  g_assert_cmpstr (tp_protocol_get_cm_name (test->protocol),
-      ==, "example_echo_2");
-
-  g_assert (tp_proxy_has_interface_by_id (test->protocol,
-      TP_IFACE_QUARK_PROTOCOL));
-  g_assert (tp_proxy_has_interface_by_id (test->protocol,
-      TP_IFACE_QUARK_PROTOCOL_INTERFACE_AVATARS));
-
-  g_assert (tp_proxy_is_prepared (test->protocol,
-        TP_PROTOCOL_FEATURE_PARAMETERS));
-
-  g_assert (tp_protocol_has_param (test->protocol, "account"));
-  g_assert (!tp_protocol_has_param (test->protocol, "no-way"));
-
-  g_assert (tp_proxy_is_prepared (test->protocol, TP_PROTOCOL_FEATURE_CORE));
-
-  g_assert_cmpstr (tp_protocol_get_icon_name (test->protocol), ==,
-      "im-icq");
-  g_assert_cmpstr (tp_protocol_get_english_name (test->protocol), ==,
-      "Echo II example");
-  g_assert_cmpstr (tp_protocol_get_vcard_field (test->protocol), ==,
-      "x-telepathy-example");
-  g_assert (TP_IS_CAPABILITIES (tp_protocol_get_capabilities (
-          test->protocol)));
-
-  req = tp_protocol_get_avatar_requirements (test->protocol);
-  check_avatar_requirements (req);
-
-  g_object_get (test->protocol, "avatar-requirements", &req, NULL);
-  check_avatar_requirements (req);
-
-  l = tp_protocol_dup_params (test->protocol);
-  g_assert_cmpuint (g_list_length (l), ==, 1);
-  param = l->data;
-  g_assert_cmpstr (param->name, ==, "account");
-  g_list_free_full (l, (GDestroyNotify) tp_connection_manager_param_free);
-
-  g_assert_cmpstr (tp_protocol_get_param (test->protocol, "account")->name, ==,
-      "account");
-
-  param = tp_protocol_dup_param (test->protocol, "account");
-  /* it's a copy */
-  g_assert (param != tp_protocol_get_param (test->protocol, "account"));
-  g_assert_cmpstr (param->name, ==, "account");
-  tp_connection_manager_param_free (param);
-
-  g_assert_cmpstr (tp_protocol_borrow_params (test->protocol)[0].name, ==,
-      "account");
-  g_assert_cmpstr (tp_protocol_borrow_params (test->protocol)[1].name, ==,
-      NULL);
+  check_tp_protocol (test->protocol);
 }
 
 static void
