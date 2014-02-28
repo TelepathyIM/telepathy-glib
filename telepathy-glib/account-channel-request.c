@@ -456,7 +456,7 @@ tp_account_channel_request_class_init (
    * @user_action_time, and if appropriate, moving to the foreground.
    *
    * @context can be used to obtain extensible information about the channel
-   * via tp_handle_channel_context_get_handler_info(), and any similar methods
+   * via tp_handle_channel_context_dup_handler_info(), and any similar methods
    * that are added in future. It is not valid for the receiver of this signal
    * to call tp_handle_channel_context_accept(),
    * tp_handle_channel_context_delay() or tp_handle_channel_context_fail().
@@ -1144,7 +1144,7 @@ tp_account_channel_request_ensure_and_handle_channel_async (
  * will fail with the error %TP_ERROR_NOT_YOURS.
  *
  * @context can be used to obtain extensible information about the channel
- * via tp_handle_channel_context_get_handler_info(), and any similar methods
+ * via tp_handle_channel_context_dup_handler_info(), and any similar methods
  * that are added in future. It is not valid for the caller of this method
  * to call tp_handle_channel_context_accept(),
  * tp_handle_channel_context_delay() or tp_handle_channel_context_fail().

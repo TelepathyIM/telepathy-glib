@@ -57,6 +57,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util-internal.h>
+#include <telepathy-glib/variant-util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
@@ -673,7 +674,7 @@ _tp_handle_channel_context_prepare_finish (
 }
 
 /**
- * tp_handle_channel_context_get_handler_info:
+ * tp_handle_channel_context_dup_handler_info:
  * @self: a channel-handling context
  *
  * Return any extra information that accompanied this request to handle
@@ -681,19 +682,14 @@ _tp_handle_channel_context_prepare_finish (
  * Well-known keys for this map will be defined by the Telepathy D-Bus
  * Interface Specification; at the time of writing, none have been defined.
  *
- * The returned hash table is only valid for as long as @self is.
- *
- * Returns: (transfer none) (element-type utf8 GObject.Value): extensible
- *  extra handler information, in a form suitable for use with
- *  tp_asv_get_string() etc.
- *
- * Since: 0.11.14
+ * Returns: (transfer full): a #G_VARIANT_TYPE_VARDICT #Gvariant containing the
+ *  extra handler information.
  */
-const GHashTable *
-tp_handle_channel_context_get_handler_info (TpHandleChannelContext *self)
+GVariant *
+tp_handle_channel_context_dup_handler_info (TpHandleChannelContext *self)
 {
   g_return_val_if_fail (TP_IS_HANDLE_CHANNELS_CONTEXT (self), NULL);
-  return self->handler_info;
+  return g_variant_ref_sink (tp_asv_to_vardict (self->handler_info));
 }
 
 /**

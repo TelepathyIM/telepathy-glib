@@ -64,7 +64,7 @@ void tp_handle_channel_context_fail (
 void tp_handle_channel_context_delay (
     TpHandleChannelContext *self);
 
-const GHashTable *tp_handle_channel_context_get_handler_info (
+GVariant * tp_handle_channel_context_dup_handler_info (
     TpHandleChannelContext *self);
 
 GList * tp_handle_channel_context_get_requests (
