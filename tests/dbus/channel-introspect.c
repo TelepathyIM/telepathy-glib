@@ -118,6 +118,7 @@ main (int argc,
   GHashTable *asv;
   GAsyncResult *prepare_result;
   GQuark group_features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
+  const gchar * const empty[] = { NULL };
 
   tp_tests_abort_after (10);
   dbus = tp_tests_dbus_daemon_dup_or_die ();
@@ -227,7 +228,7 @@ main (int argc,
       TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, IDENTIFIER,
       TP_PROP_CHANNEL_INITIATOR_HANDLE, G_TYPE_UINT, handle,
       TP_PROP_CHANNEL_INITIATOR_ID, G_TYPE_STRING, IDENTIFIER,
-      TP_PROP_CHANNEL_INTERFACES, G_TYPE_STRV, NULL,
+      TP_PROP_CHANNEL_INTERFACES, G_TYPE_STRV, empty,
       TP_PROP_CHANNEL_REQUESTED, G_TYPE_BOOLEAN, FALSE,
       NULL);
 
