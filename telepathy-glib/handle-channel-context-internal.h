@@ -49,7 +49,7 @@ struct _TpHandleChannelContext {
   /* array of reffed TpChannelRequest */
   GPtrArray *requests_satisfied;
   guint64 user_action_time;
-  GHashTable *handler_info;
+  GVariant *handler_info;
 };
 
 TpHandleChannelContext * _tp_handle_channel_context_new (
@@ -58,7 +58,7 @@ TpHandleChannelContext * _tp_handle_channel_context_new (
     TpChannel *channel,
     GPtrArray *requests_satisfied,
     guint64 user_action_time,
-    GHashTable *handler_info,
+    GVariant *handler_info,
     DBusGMethodInvocation *dbus_context);
 
 TpHandleChannelContextState _tp_handle_channel_context_get_state

@@ -152,11 +152,7 @@ tp_handle_channel_context_dispose (GObject *object)
       self->requests_satisfied = NULL;
     }
 
-  if (self->handler_info != NULL)
-    {
-      g_hash_table_unref (self->handler_info);
-      self->handler_info = NULL;
-    }
+  g_clear_pointer (&self->handler_info, g_variant_unref);
 
   if (self->priv->result != NULL)
     {
@@ -200,7 +196,7 @@ tp_handle_channel_context_get_property (GObject *object,
         break;
 
       case PROP_HANDLER_INFO:
-        g_value_set_boxed (value, self->handler_info);
+        g_value_set_variant (value, self->handler_info);
         break;
 
       default:
@@ -243,7 +239,7 @@ tp_handle_channel_context_set_property (GObject *object,
         break;
 
       case PROP_HANDLER_INFO:
-        self->handler_info = g_value_dup_boxed (value);
+        self->handler_info = g_value_dup_variant (value);
         break;
 
       case PROP_DBUS_CONTEXT:
@@ -385,17 +381,16 @@ tp_handle_channel_context_class_init (
   /**
    * TpHandleChannelContext:handler-info:
    *
-   * A #GHashTable where the keys are string and values are GValue instances.
-   * It represents the Handler_info hash table that has been passed to
-   * HandleChannels.
+   * A #G_VARIANT_TYPE_VARDICT #GVariant containing the Handler_Info
+   * dictionnary that has been passed to HandleChannels.
    *
    * This property can't be %NULL.
    *
    * Since: 0.11.6
    */
-  param_spec = g_param_spec_boxed ("handler-info", "Handler info",
+  param_spec = g_param_spec_variant ("handler-info", "Handler info",
       "The Handler that has been passed to ObserveChannels",
-      TP_HASH_TYPE_STRING_VARIANT_MAP,
+      G_VARIANT_TYPE_VARDICT, NULL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_HANDLER_INFO,
       param_spec);
@@ -438,10 +433,14 @@ TpHandleChannelContext * _tp_handle_channel_context_new (
     TpChannel *channel,
     GPtrArray *requests_satisfied,
     guint64 user_action_time,
-    GHashTable *handler_info,
+    GVariant *handler_info,
     DBusGMethodInvocation *dbus_context)
 {
-  return g_object_new (TP_TYPE_HANDLE_CHANNELS_CONTEXT,
+  TpHandleChannelContext *ctx;
+
+  g_variant_ref_sink (handler_info);
+
+  ctx = g_object_new (TP_TYPE_HANDLE_CHANNELS_CONTEXT,
       "account", account,
       "connection", connection,
       "channel", channel,
@@ -450,6 +449,9 @@ TpHandleChannelContext * _tp_handle_channel_context_new (
       "handler-info", handler_info,
       "dbus-context", dbus_context,
       NULL);
+
+  g_variant_unref (handler_info);
+  return ctx;
 }
 
 /**
@@ -689,7 +691,7 @@ GVariant *
 tp_handle_channel_context_dup_handler_info (TpHandleChannelContext *self)
 {
   g_return_val_if_fail (TP_IS_HANDLE_CHANNELS_CONTEXT (self), NULL);
-  return g_variant_ref_sink (tp_asv_to_vardict (self->handler_info));
+  return g_variant_ref (self->handler_info);
 }
 
 /**

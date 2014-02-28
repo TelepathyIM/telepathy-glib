@@ -2142,7 +2142,7 @@ _tp_base_client_handle_channel (TpSvcClientHandler *iface,
     }
 
   ctx = _tp_handle_channel_context_new (account, connection, channel,
-      requests, user_action_time, handler_info, context);
+      requests, user_action_time, tp_asv_to_vardict (handler_info), context);
 
   account_features = dup_features_for_account (self, account);
   connection_features = dup_features_for_connection (self, connection);
