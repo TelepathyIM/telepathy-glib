@@ -56,13 +56,13 @@
  * Convert a #TP_HASH_TYPE_STRING_VARIANT_MAP to a #GVariant of type
  * %G_VARIANT_TYPE_VARDICT
  *
- * Returns: (transfer full): a #GVariant of type %G_VARIANT_TYPE_VARDICT
+ * Returns: a new floating #GVariant of type %G_VARIANT_TYPE_VARDICT
  **/
 GVariant *
 tp_asv_to_vardict (const GHashTable *asv)
 {
-  return g_variant_ref_sink (_tp_boxed_to_variant (
-        TP_HASH_TYPE_STRING_VARIANT_MAP, "a{sv}", (gpointer) asv));
+  return _tp_boxed_to_variant (TP_HASH_TYPE_STRING_VARIANT_MAP, "a{sv}",
+      (gpointer) asv);
 }
 
 GVariant *

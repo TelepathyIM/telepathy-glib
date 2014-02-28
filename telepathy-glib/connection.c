@@ -2633,7 +2633,7 @@ tp_connection_dup_detailed_error (TpConnection *self,
     return NULL;
 
   if (details != NULL)
-    *details = tp_asv_to_vardict (asv);
+    *details = g_variant_ref_sink (tp_asv_to_vardict (asv));
 
   return g_strdup (error);
 }

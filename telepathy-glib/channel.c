@@ -345,7 +345,8 @@ tp_channel_dup_immutable_properties (TpChannel *self)
 {
   g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
 
-  return tp_asv_to_vardict (self->priv->channel_properties);
+  return g_variant_ref_sink (
+      tp_asv_to_vardict (self->priv->channel_properties));
 }
 
 /**

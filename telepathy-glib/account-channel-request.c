@@ -552,7 +552,7 @@ tp_account_channel_request_dup_request (
 {
   g_return_val_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self), NULL);
 
-  return tp_asv_to_vardict (self->priv->request);
+  return g_variant_ref_sink (tp_asv_to_vardict (self->priv->request));
 }
 
 /**

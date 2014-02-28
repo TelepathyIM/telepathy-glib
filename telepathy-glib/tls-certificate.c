@@ -184,6 +184,7 @@ tp_tls_certificate_rejected_cb (TpTLSCertificate *self,
 
           vardict = tp_asv_to_vardict (details);
 
+          g_variant_ref_sink (vardict);
           rej = _tp_tls_certificate_rejection_new (error,
               reason, error_name, vardict);
 

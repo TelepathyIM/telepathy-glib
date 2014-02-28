@@ -1812,7 +1812,7 @@ contact_maybe_set_location (TpContact *self,
     g_hash_table_ref (location);
 
   self->priv->has_features |= CONTACT_FEATURE_FLAG_LOCATION;
-  self->priv->location = tp_asv_to_vardict (location);
+  self->priv->location = g_variant_ref_sink (tp_asv_to_vardict (location));
   g_object_notify ((GObject *) self, "location");
   g_hash_table_unref (location);
 }

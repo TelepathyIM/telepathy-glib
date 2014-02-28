@@ -398,7 +398,8 @@ tp_stream_tube_channel_constructed (GObject *obj)
         }
       else
         {
-          self->priv->parameters = tp_asv_to_vardict (params);
+          self->priv->parameters = g_variant_ref_sink (
+              tp_asv_to_vardict (params));
         }
     }
 

@@ -1160,6 +1160,7 @@ _tp_client_factory_ensure_channel_request (TpClientFactory *self,
 
   props = tp_asv_to_vardict (immutable_properties);
 
+  g_variant_ref_sink (props);
   request = _tp_channel_request_new_with_factory (self, self->priv->dbus,
       object_path, props, error);
   g_variant_unref (props);

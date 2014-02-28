@@ -930,7 +930,7 @@ _tp_account_update (TpAccount *account,
       if (priv->parameters != NULL)
         g_variant_unref (priv->parameters);
 
-      priv->parameters = tp_asv_to_vardict (parameters);
+      priv->parameters = g_variant_ref_sink (tp_asv_to_vardict (parameters));
       /* this isn't a property, so we don't notify */
     }
 
@@ -3649,7 +3649,8 @@ tp_account_dup_detailed_error (TpAccount *self,
     return NULL;
 
   if (details != NULL)
-    *details = tp_asv_to_vardict (self->priv->error_details);
+    *details = g_variant_ref_sink (
+        tp_asv_to_vardict (self->priv->error_details));
 
   return g_strdup (self->priv->error);
 }
@@ -3730,7 +3731,8 @@ _tp_account_get_storage_specific_information_cb (TpProxy *self,
       GHashTable *asv = g_value_get_boxed (value);
 
       g_simple_async_result_set_op_res_gpointer (result,
-          tp_asv_to_vardict (asv), (GDestroyNotify) g_variant_unref);
+          g_variant_ref_sink (tp_asv_to_vardict (asv)),
+          (GDestroyNotify) g_variant_unref);
     }
 
   g_simple_async_result_complete (result);

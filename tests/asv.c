@@ -114,6 +114,7 @@ int main (int argc, char **argv)
   tp_asv_dump (hash);
 
   vardict = tp_asv_to_vardict (hash);
+  g_variant_ref_sink (vardict);
 
   /* Tests: tp_asv_get_boolean */
 

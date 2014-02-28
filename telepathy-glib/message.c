@@ -179,7 +179,8 @@ tp_message_dup_part (TpMessage *self,
   if (part >= self->parts->len)
     return NULL;
 
-  return tp_asv_to_vardict (g_ptr_array_index (self->parts, part));
+  return g_variant_ref_sink (tp_asv_to_vardict (g_ptr_array_index (
+          self->parts, part)));
 }
 
 
