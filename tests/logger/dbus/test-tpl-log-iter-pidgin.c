@@ -48,9 +48,9 @@ setup (PidginTestCaseFixture* fixture,
 {
   GArray *features;
   GError *error = NULL;
-  GHashTable *params = (GHashTable *) user_data;
-  GValue *boxed_params;
-  const gchar *account_path;
+  GVariant *params = (GVariant *) user_data;
+  GHashTable *asv;
+  const gchar *account_path = NULL;
 
   fixture->main_loop = g_main_loop_new (NULL, FALSE);
   g_assert (fixture->main_loop != NULL);
@@ -74,15 +74,14 @@ setup (PidginTestCaseFixture* fixture,
   g_assert (fixture->account_service != NULL);
 
   /* account-path will be set-up as parameter as well, this is not an issue */
-  account_path = tp_asv_get_string (params, "account-path");
+  g_variant_lookup (params, "account-path", "&o", &account_path);
   g_assert (account_path != NULL);
 
-  boxed_params = tp_g_value_slice_new_boxed (TP_HASH_TYPE_STRING_VARIANT_MAP,
-      params);
-  g_object_set_property (G_OBJECT (fixture->account_service),
-      "parameters",
-      boxed_params);
-  tp_g_value_slice_free (boxed_params);
+  asv = tp_asv_from_vardict (params);
+  g_object_set (G_OBJECT (fixture->account_service),
+      "parameters", asv,
+      NULL);
+  g_hash_table_unref (asv);
 
   tp_dbus_daemon_register_object (fixture->bus,
       account_path,
@@ -92,9 +91,7 @@ setup (PidginTestCaseFixture* fixture,
   g_assert (fixture->factory != NULL);
 
   fixture->account = tp_client_factory_ensure_account (fixture->factory,
-      tp_asv_get_string (params, "account-path"),
-      tp_asv_to_vardict (params),
-      &error);
+      account_path, params, &error);
   g_assert_no_error (error);
   g_assert (fixture->account != NULL);
 
@@ -808,26 +805,30 @@ test_rewind (PidginTestCaseFixture *fixture,
 }
 
 
+static GVariant *
+create_params (void)
+{
+  GVariantDict dict;
+
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict, "account", "s", "user");
+  g_variant_dict_insert (&dict, "server", "s", "irc.freenode.net");
+  g_variant_dict_insert (&dict, "account-path", "o",
+      TP_ACCOUNT_OBJECT_PATH_BASE "foo/irc/baz");
+
+  return g_variant_ref_sink (g_variant_dict_end (&dict));
+}
+
 gint
 main (gint argc, gchar **argv)
 {
-  GHashTable *params;
   gint retval;
+  GVariant *params;
 
   g_test_init (&argc, &argv, NULL);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
-  params = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-      (GDestroyNotify) tp_g_value_slice_free);
-  g_assert (params != NULL);
-
-  g_hash_table_insert (params, "account",
-      tp_g_value_slice_new_static_string ("user"));
-  g_hash_table_insert (params, "server",
-      tp_g_value_slice_new_static_string ("irc.freenode.net"));
-  g_hash_table_insert (params, "account-path",
-      tp_g_value_slice_new_static_string (
-          TP_ACCOUNT_OBJECT_PATH_BASE "foo/irc/baz"));
+  params = create_params ();
 
   g_test_add ("/log-iter-xml/get-events",
       PidginTestCaseFixture, params,
@@ -839,7 +840,6 @@ main (gint argc, gchar **argv)
 
   retval = g_test_run ();
 
-  g_hash_table_unref (params);
-
+  g_variant_unref (params);
   return retval;
 }
