@@ -156,6 +156,7 @@ enum
 {
     PROP_PROTOCOL_NAME = 1,
     PROP_PROTOCOL_PROPERTIES,
+    PROP_PROTOCOL_PROPERTIES_VARDICT,
     PROP_ENGLISH_NAME,
     PROP_VCARD_FIELD,
     PROP_ICON_NAME,
@@ -275,6 +276,11 @@ tp_protocol_get_property (GObject *object,
 
     case PROP_PROTOCOL_PROPERTIES:
       g_value_set_boxed (value, self->priv->protocol_properties);
+      break;
+
+    case PROP_PROTOCOL_PROPERTIES_VARDICT:
+      g_value_take_variant (value,
+          tp_protocol_dup_immutable_properties (self));
       break;
 
     case PROP_ENGLISH_NAME:
@@ -750,6 +756,28 @@ tp_protocol_class_init (TpProtocolClass *klass)
         "The immutable properties of this Protocol",
         TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TpProtocol:protocol-properties-vardict:
+   *
+   * The immutable properties of this Protocol, as provided at construction
+   * time. This is a #G_VARIANT_TYPE_VARDICT #GVariant,
+   * which must not be modified.
+   *
+   * If the immutable properties were not provided at construction time,
+   * the %TP_PROTOCOL_FEATURE_PARAMETERS and %TP_PROTOCOL_FEATURE_CORE features
+   * will both be unavailable, and this #TpProtocol object will only be useful
+   * as a way to access lower-level D-Bus calls.
+   *
+   * Since: UNRELEASED
+   */
+  g_object_class_install_property (object_class,
+      PROP_PROTOCOL_PROPERTIES_VARDICT,
+      g_param_spec_variant ("protocol-properties-vardict",
+        "Protocol properties",
+        "The immutable properties of this Protocol",
+        G_VARIANT_TYPE_VARDICT, NULL,
+        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   /**
    * TpProtocol:english-name:
@@ -2345,4 +2373,20 @@ tp_protocol_dup_presence_statuses (TpProtocol *self)
     }
 
   return g_list_reverse (l);
+}
+
+/**
+ * tp_protocol_dup_immutable_properties:
+ * @self: a #TpProtocol object
+ *
+ * Return the #TpProtocol:protocol-properties-vardict property.
+ *
+ * Returns: (transfer full): the value of
+ * #TpProtocol:protocol-properties-vardict
+ * Since: UNRELEASED
+ */
+GVariant *
+tp_protocol_dup_immutable_properties (TpProtocol *self)
+{
+  return _tp_asv_to_vardict (self->priv->protocol_properties);
 }

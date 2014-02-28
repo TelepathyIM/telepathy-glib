@@ -6177,6 +6177,7 @@ tp_protocol_get_param
 tp_protocol_dup_param
 tp_protocol_has_param
 tp_protocol_can_register
+tp_protocol_dup_immutable_properties
 <SUBSECTION>
 TP_PROTOCOL_FEATURE_CORE
 tp_protocol_get_capabilities

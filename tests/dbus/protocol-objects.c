@@ -453,6 +453,7 @@ test_protocol_object (Test *test,
 {
   GHashTable *props;
   TpProtocol *protocol;
+  GVariant *vardict;
 
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "example_echo_2");
@@ -474,6 +475,12 @@ test_protocol_object (Test *test,
   g_assert (TP_IS_PROTOCOL (protocol));
 
   check_tp_protocol (protocol);
+
+  vardict = tp_protocol_dup_immutable_properties (test->protocol);
+  g_assert (vardict != NULL);
+  g_assert (g_variant_is_of_type (vardict, G_VARIANT_TYPE_VARDICT));
+
+  g_variant_unref (vardict);
 
   g_object_unref (protocol);
   g_hash_table_unref (props);
