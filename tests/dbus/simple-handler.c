@@ -291,6 +291,16 @@ handle_channel_success (
     TpHandleChannelContext *context,
     gpointer user_data)
 {
+  GVariant *info;
+  guint u = 0;
+
+  info = tp_handle_channel_context_dup_handler_info (context);
+  g_assert (info != NULL);
+  g_assert (g_variant_is_of_type (info, G_VARIANT_TYPE_VARDICT));
+  g_variant_lookup (info, "badger", "u", &u);
+  g_assert_cmpuint (u, ==, 42);
+  g_variant_unref (info);
+
   tp_handle_channel_context_accept (context);
 }
 
@@ -354,7 +364,9 @@ call_handle_channel (Test *test)
   int i;
 
   requests_satisfied = g_hash_table_new (NULL, NULL);
-  info = g_hash_table_new (NULL, NULL);
+  info = tp_asv_new (
+      "badger", G_TYPE_UINT, 42,
+      NULL);
   chan_props = tp_tests_dup_channel_props_asv (test->text_chan);
 
   tp_proxy_add_interface_by_id (TP_PROXY (test->client),
