@@ -1015,6 +1015,45 @@ finally:
 }
 
 /**
+ * tp_protocol_new_vardict:
+ * @dbus: proxy for the D-Bus daemon; may not be %NULL
+ * @cm_name: the connection manager name (such as "gabble")
+ * @protocol_name: the protocol name (such as "jabber")
+ * @immutable_properties: the immutable D-Bus properties for this protocol
+ * @error: used to indicate the error if %NULL is returned
+ *
+ * Create a new protocol proxy.
+ *
+ * If @immutable_properties is a floating reference, this function will
+ * take ownership of it, much like g_variant_ref_sink(). See documentation of
+ * that function for details.
+ *
+ * Returns: a new protocol proxy, or %NULL on invalid arguments
+ *
+ * Since: 0.UNRELEASED
+ */
+TpProtocol *
+tp_protocol_new_vardict (TpDBusDaemon *dbus,
+    const gchar *cm_name,
+    const gchar *protocol_name,
+    GVariant *immutable_properties,
+    GError **error)
+{
+  GHashTable *hash;
+  TpProtocol *ret;
+
+  g_return_val_if_fail (g_variant_is_of_type (immutable_properties,
+        G_VARIANT_TYPE_VARDICT), NULL);
+
+  g_variant_ref_sink (immutable_properties);
+  hash = _tp_asv_from_vardict (immutable_properties);
+  ret = tp_protocol_new (dbus, cm_name, protocol_name, hash, error);
+  g_hash_table_unref (hash);
+  g_variant_unref (immutable_properties);
+  return ret;
+}
+
+/**
  * tp_protocol_init_known_interfaces:
  *
  * Ensure that the known interfaces for TpProtocol have been set up.

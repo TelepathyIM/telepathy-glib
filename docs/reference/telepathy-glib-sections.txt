@@ -6165,6 +6165,7 @@ TP_TYPE_SVC_PROTOCOL_INTERFACE_AVATARS
 TpProtocol
 TpProtocolClass
 tp_protocol_new
+tp_protocol_new_vardict
 tp_protocol_get_name
 tp_protocol_get_cm_name
 tp_protocol_init_known_interfaces

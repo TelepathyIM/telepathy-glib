@@ -11,6 +11,7 @@
 
 #include <telepathy-glib/protocol.h>
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/variant-util-internal.h>
 
 #include "tests/lib/echo-cm.h"
 
@@ -480,9 +481,19 @@ test_protocol_object (Test *test,
   g_assert (vardict != NULL);
   g_assert (g_variant_is_of_type (vardict, G_VARIANT_TYPE_VARDICT));
 
-  g_variant_unref (vardict);
+  g_object_unref (protocol);
+
+  /* Same but using tp_protocol_new_vardict */
+  protocol = tp_protocol_new_vardict (test->dbus, "example_echo_2",
+      "example", vardict, &test->error);
+  g_assert_no_error (test->error);
+  g_assert (TP_IS_PROTOCOL (protocol));
+
+  check_tp_protocol (protocol);
 
   g_object_unref (protocol);
+
+  g_variant_unref (vardict);
   g_hash_table_unref (props);
 }
 
