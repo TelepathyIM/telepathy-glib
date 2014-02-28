@@ -185,9 +185,9 @@ tp_capabilities_set_property (GObject *object,
     {
     case PROP_CHANNEL_CLASSES:
       self->priv->classes = g_value_dup_boxed (value);
-      self->priv->classes_variant = _tp_boxed_to_variant (
+      self->priv->classes_variant = g_variant_ref_sink (_tp_boxed_to_variant (
           TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST, "a(a{sv}as)",
-          self->priv->classes);
+          self->priv->classes));
       break;
 
     case PROP_CONTACT_SPECIFIC:

@@ -61,7 +61,8 @@
 GVariant *
 tp_asv_to_vardict (const GHashTable *asv)
 {
-  return _tp_boxed_to_variant (TP_HASH_TYPE_STRING_VARIANT_MAP, "a{sv}", (gpointer) asv);
+  return g_variant_ref_sink (_tp_boxed_to_variant (
+        TP_HASH_TYPE_STRING_VARIANT_MAP, "a{sv}", (gpointer) asv));
 }
 
 GVariant *
@@ -82,7 +83,7 @@ _tp_boxed_to_variant (GType gtype,
 
   g_value_unset (&v);
 
-  return g_variant_ref_sink (ret);
+  return ret;
 }
 
 /**
