@@ -912,60 +912,6 @@ tp_protocol_init (TpProtocol *self)
       TpProtocolPrivate);
 }
 
-/*
- * tp_protocol_new:
- * @dbus: proxy for the D-Bus daemon; may not be %NULL
- * @cm_name: the connection manager name (such as "gabble")
- * @protocol_name: the protocol name (such as "jabber")
- * @immutable_properties: the immutable D-Bus properties for this protocol
- * @error: used to indicate the error if %NULL is returned
- *
- * <!-- -->
- *
- * Returns: a new protocol proxy, or %NULL on invalid arguments
- *
- * Since: 0.11.11
- */
-static TpProtocol *
-tp_protocol_new (TpDBusDaemon *dbus,
-    const gchar *cm_name,
-    const gchar *protocol_name,
-    const GHashTable *immutable_properties,
-    GError **error)
-{
-  TpProtocol *ret = NULL;
-  gchar *bus_name = NULL;
-  gchar *object_path = NULL;
-
-  g_return_val_if_fail (TP_IS_DBUS_DAEMON (dbus), NULL);
-
-  if (!tp_connection_manager_check_valid_protocol_name (protocol_name, error))
-    goto finally;
-
-  if (!tp_connection_manager_check_valid_name (cm_name, error))
-    goto finally;
-
-  bus_name = g_strdup_printf ("%s%s", TP_CM_BUS_NAME_BASE, cm_name);
-  object_path = g_strdup_printf ("%s%s/%s", TP_CM_OBJECT_PATH_BASE, cm_name,
-      protocol_name);
-  /* e.g. local-xmpp -> local_xmpp */
-  g_strdelimit (object_path, "-", '_');
-
-  ret = TP_PROTOCOL (g_object_new (TP_TYPE_PROTOCOL,
-        "dbus-daemon", dbus,
-        "bus-name", bus_name,
-        "object-path", object_path,
-        "protocol-name", protocol_name,
-        "protocol-properties", immutable_properties,
-        "cm-name", cm_name,
-        NULL));
-
-finally:
-  g_free (bus_name);
-  g_free (object_path);
-  return ret;
-}
-
 /**
  * tp_protocol_new_vardict:
  * @dbus: proxy for the D-Bus daemon; may not be %NULL
@@ -992,27 +938,50 @@ tp_protocol_new_vardict (TpDBusDaemon *dbus,
     GVariant *immutable_properties,
     GError **error)
 {
-  TpProtocol *ret;
+  TpProtocol *ret = NULL;
+  gchar *bus_name = NULL;
+  gchar *object_path = NULL;
+  GHashTable *hash = NULL;
 
   g_return_val_if_fail (immutable_properties == NULL ||
       g_variant_is_of_type (immutable_properties, G_VARIANT_TYPE_VARDICT),
       NULL);
+  g_return_val_if_fail (TP_IS_DBUS_DAEMON (dbus), NULL);
 
-  if (immutable_properties != NULL)
-    {
-      GHashTable *hash;
+  if (immutable_properties == NULL)
+    immutable_properties = g_variant_new ("a{sv}", NULL);
 
-      g_variant_ref_sink (immutable_properties);
-      hash = tp_asv_from_vardict (immutable_properties);
-      ret = tp_protocol_new (dbus, cm_name, protocol_name, hash, error);
-      g_hash_table_unref (hash);
-      g_variant_unref (immutable_properties);
-    }
-  else
-    {
-      ret = tp_protocol_new (dbus, cm_name, protocol_name, NULL, error);
-    }
+  g_variant_ref_sink (immutable_properties);
 
+  if (!tp_connection_manager_check_valid_protocol_name (protocol_name, error))
+    goto finally;
+
+  if (!tp_connection_manager_check_valid_name (cm_name, error))
+    goto finally;
+
+  bus_name = g_strdup_printf ("%s%s", TP_CM_BUS_NAME_BASE, cm_name);
+  object_path = g_strdup_printf ("%s%s/%s", TP_CM_OBJECT_PATH_BASE, cm_name,
+      protocol_name);
+  /* e.g. local-xmpp -> local_xmpp */
+  g_strdelimit (object_path, "-", '_');
+
+  hash = tp_asv_from_vardict (immutable_properties);
+
+  ret = TP_PROTOCOL (g_object_new (TP_TYPE_PROTOCOL,
+        "dbus-daemon", dbus,
+        "bus-name", bus_name,
+        "object-path", object_path,
+        "protocol-name", protocol_name,
+        "protocol-properties", hash,
+        "cm-name", cm_name,
+        NULL));
+
+  g_hash_table_unref (hash);
+
+finally:
+  g_variant_unref (immutable_properties);
+  g_free (bus_name);
+  g_free (object_path);
   return ret;
 }
 
