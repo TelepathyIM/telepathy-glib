@@ -34,6 +34,7 @@
 #include <telepathy-glib/proxy-internal.h>
 #include <telepathy-glib/proxy-subclass.h>
 #include "telepathy-glib/util.h"
+#include "telepathy-glib/variant-util.h"
 
 #define DEBUG_FLAG TP_DEBUG_MANAGER
 #include "telepathy-glib/debug-internal.h"
@@ -380,13 +381,12 @@ tp_connection_manager_get_all_cb (TpProxy *proxy,
           while (g_hash_table_iter_next (&iter, &k, &v))
             {
               const gchar *name = k;
-              GHashTable *protocol_properties = v;
 
               if (tp_connection_manager_check_valid_protocol_name (name, NULL))
                 {
-                  TpProtocol *proto_object = tp_protocol_new (
+                  TpProtocol *proto_object = tp_protocol_new_vardict (
                       tp_proxy_get_dbus_daemon (self), self->priv->name, name,
-                      protocol_properties, NULL);
+                      tp_asv_to_vardict (v), NULL);
 
                   /* tp_protocol_new can currently only fail because of
                    * malformed names, and we already checked for that */
@@ -627,8 +627,8 @@ tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
       if (immutables == NULL)
         continue;
 
-      proto_object = tp_protocol_new (dbus_daemon, cm_name, name,
-          immutables, NULL);
+      proto_object = tp_protocol_new_vardict (dbus_daemon, cm_name, name,
+          tp_asv_to_vardict (immutables), NULL);
       g_assert (proto_object != NULL);
 
       /* steals @name */
