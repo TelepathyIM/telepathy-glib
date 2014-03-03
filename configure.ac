@@ -278,7 +278,7 @@ AC_SUBST(GLIB_MKENUMS)
 GLIB_GSETTINGS
 
 dnl Check for D-Bus
-PKG_CHECK_MODULES(DBUS, [dbus-1 >= 1.1, dbus-glib-1 >= 0.90])
+PKG_CHECK_MODULES(DBUS, [dbus-1 >= 1.1, dbus-glib-1 >= 0.102])
 
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
