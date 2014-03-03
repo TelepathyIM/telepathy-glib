@@ -971,7 +971,8 @@ finally:
  * @dbus: proxy for the D-Bus daemon; may not be %NULL
  * @cm_name: the connection manager name (such as "gabble")
  * @protocol_name: the protocol name (such as "jabber")
- * @immutable_properties: the immutable D-Bus properties for this protocol
+ * @immutable_properties: (allow-none): the immutable D-Bus properties for this
+ * protocol, or %NULL
  * @error: used to indicate the error if %NULL is returned
  *
  * Create a new protocol proxy.
@@ -991,17 +992,27 @@ tp_protocol_new_vardict (TpDBusDaemon *dbus,
     GVariant *immutable_properties,
     GError **error)
 {
-  GHashTable *hash;
   TpProtocol *ret;
 
-  g_return_val_if_fail (g_variant_is_of_type (immutable_properties,
-        G_VARIANT_TYPE_VARDICT), NULL);
+  g_return_val_if_fail (immutable_properties == NULL ||
+      g_variant_is_of_type (immutable_properties, G_VARIANT_TYPE_VARDICT),
+      NULL);
 
-  g_variant_ref_sink (immutable_properties);
-  hash = tp_asv_from_vardict (immutable_properties);
-  ret = tp_protocol_new (dbus, cm_name, protocol_name, hash, error);
-  g_hash_table_unref (hash);
-  g_variant_unref (immutable_properties);
+  if (immutable_properties != NULL)
+    {
+      GHashTable *hash;
+
+      g_variant_ref_sink (immutable_properties);
+      hash = tp_asv_from_vardict (immutable_properties);
+      ret = tp_protocol_new (dbus, cm_name, protocol_name, hash, error);
+      g_hash_table_unref (hash);
+      g_variant_unref (immutable_properties);
+    }
+  else
+    {
+      ret = tp_protocol_new (dbus, cm_name, protocol_name, NULL, error);
+    }
+
   return ret;
 }
 
