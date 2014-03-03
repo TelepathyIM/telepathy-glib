@@ -4846,6 +4846,7 @@ TP_TYPE_SVC_PROTOCOL_INTERFACE_AVATARS1
 TpProtocol
 TpProtocolClass
 tp_protocol_new
+tp_protocol_new_vardict
 tp_protocol_get_name
 tp_protocol_get_cm_name
 tp_protocol_init_known_interfaces
@@ -4858,6 +4859,7 @@ tp_protocol_get_param
 tp_protocol_dup_param
 tp_protocol_has_param
 tp_protocol_can_register
+tp_protocol_dup_immutable_properties
 <SUBSECTION>
 TP_PROTOCOL_FEATURE_CORE
 tp_protocol_get_capabilities

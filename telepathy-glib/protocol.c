@@ -158,6 +158,7 @@ enum
 {
     PROP_PROTOCOL_NAME = 1,
     PROP_PROTOCOL_PROPERTIES,
+    PROP_PROTOCOL_PROPERTIES_VARDICT,
     PROP_ENGLISH_NAME,
     PROP_VCARD_FIELD,
     PROP_ICON_NAME,
@@ -253,6 +254,11 @@ tp_protocol_get_property (GObject *object,
 
     case PROP_PROTOCOL_PROPERTIES:
       g_value_set_boxed (value, self->priv->protocol_properties);
+      break;
+
+    case PROP_PROTOCOL_PROPERTIES_VARDICT:
+      g_value_take_variant (value,
+          tp_protocol_dup_immutable_properties (self));
       break;
 
     case PROP_ENGLISH_NAME:
@@ -704,6 +710,28 @@ tp_protocol_class_init (TpProtocolClass *klass)
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   /**
+   * TpProtocol:protocol-properties-vardict:
+   *
+   * The immutable properties of this Protocol, as provided at construction
+   * time. This is a #G_VARIANT_TYPE_VARDICT #GVariant,
+   * which must not be modified.
+   *
+   * If the immutable properties were not provided at construction time,
+   * the %TP_PROTOCOL_FEATURE_PARAMETERS and %TP_PROTOCOL_FEATURE_CORE features
+   * will both be unavailable, and this #TpProtocol object will only be useful
+   * as a way to access lower-level D-Bus calls.
+   *
+   * Since: UNRELEASED
+   */
+  g_object_class_install_property (object_class,
+      PROP_PROTOCOL_PROPERTIES_VARDICT,
+      g_param_spec_variant ("protocol-properties-vardict",
+        "Protocol properties",
+        "The immutable properties of this Protocol",
+        G_VARIANT_TYPE_VARDICT, NULL,
+        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
    * TpProtocol:english-name:
    *
    * The name of the protocol in a form suitable for display to users,
@@ -935,6 +963,45 @@ tp_protocol_new (TpDBusDaemon *dbus,
 finally:
   g_free (bus_name);
   g_free (object_path);
+  return ret;
+}
+
+/**
+ * tp_protocol_new_vardict:
+ * @dbus: proxy for the D-Bus daemon; may not be %NULL
+ * @cm_name: the connection manager name (such as "gabble")
+ * @protocol_name: the protocol name (such as "jabber")
+ * @immutable_properties: the immutable D-Bus properties for this protocol
+ * @error: used to indicate the error if %NULL is returned
+ *
+ * Create a new protocol proxy.
+ *
+ * If @immutable_properties is a floating reference, this function will
+ * take ownership of it, much like g_variant_ref_sink(). See documentation of
+ * that function for details.
+ *
+ * Returns: a new protocol proxy, or %NULL on invalid arguments
+ *
+ * Since: 0.UNRELEASED
+ */
+TpProtocol *
+tp_protocol_new_vardict (TpDBusDaemon *dbus,
+    const gchar *cm_name,
+    const gchar *protocol_name,
+    GVariant *immutable_properties,
+    GError **error)
+{
+  GHashTable *hash;
+  TpProtocol *ret;
+
+  g_return_val_if_fail (g_variant_is_of_type (immutable_properties,
+        G_VARIANT_TYPE_VARDICT), NULL);
+
+  g_variant_ref_sink (immutable_properties);
+  hash = tp_asv_from_vardict (immutable_properties);
+  ret = tp_protocol_new (dbus, cm_name, protocol_name, hash, error);
+  g_hash_table_unref (hash);
+  g_variant_unref (immutable_properties);
   return ret;
 }
 
@@ -2307,4 +2374,21 @@ tp_protocol_dup_presence_statuses (TpProtocol *self)
     }
 
   return g_list_reverse (l);
+}
+
+/**
+ * tp_protocol_dup_immutable_properties:
+ * @self: a #TpProtocol object
+ *
+ * Return the #TpProtocol:protocol-properties-vardict property.
+ *
+ * Returns: (transfer full): the value of
+ * #TpProtocol:protocol-properties-vardict
+ * Since: UNRELEASED
+ */
+GVariant *
+tp_protocol_dup_immutable_properties (TpProtocol *self)
+{
+  return g_variant_ref_sink (tp_asv_to_vardict (
+        self->priv->protocol_properties));
 }

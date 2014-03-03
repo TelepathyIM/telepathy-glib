@@ -71,6 +71,12 @@ TpProtocol *tp_protocol_new (TpDBusDaemon *dbus, const gchar *cm_name,
     const gchar *protocol_name, const GHashTable *immutable_properties,
     GError **error);
 
+TpProtocol * tp_protocol_new_vardict (TpDBusDaemon *dbus,
+    const gchar *cm_name,
+    const gchar *protocol_name,
+    GVariant *immutable_properties,
+    GError **error);
+
 const gchar *tp_protocol_get_name (TpProtocol *self);
 
 _TP_AVAILABLE_IN_0_20
@@ -93,6 +99,8 @@ _TP_AVAILABLE_IN_0_18
 GList *tp_protocol_dup_params (TpProtocol *self) G_GNUC_WARN_UNUSED_RESULT;
 _TP_AVAILABLE_IN_1_0
 GPtrArray *tp_protocol_get_params (TpProtocol *self);
+
+GVariant * tp_protocol_dup_immutable_properties (TpProtocol *self);
 
 const gchar * const *
 /* gtk-doc sucks */
