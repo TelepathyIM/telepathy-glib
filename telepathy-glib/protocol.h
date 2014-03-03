@@ -67,7 +67,7 @@ struct _TpProtocol
 
 void tp_protocol_init_known_interfaces (void);
 
-TpProtocol * tp_protocol_new_vardict (TpDBusDaemon *dbus,
+TpProtocol * tp_protocol_new (TpDBusDaemon *dbus,
     const gchar *cm_name,
     const gchar *protocol_name,
     GVariant *immutable_properties,

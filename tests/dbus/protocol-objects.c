@@ -125,7 +125,7 @@ test_protocol_properties (Test *test,
   GValueArray *va;
   GHashTable *fixed;
 
-  test->protocol = tp_protocol_new_vardict (test->dbus, "example_echo_2",
+  test->protocol = tp_protocol_new (test->dbus, "example_echo_2",
       "example", NULL, NULL);
   g_assert (test->protocol != NULL);
 
@@ -175,7 +175,7 @@ test_protocol_avatar_properties (Test *test,
   gboolean is_set;
   guint num;
 
-  test->protocol = tp_protocol_new_vardict (test->dbus, "example_echo_2",
+  test->protocol = tp_protocol_new (test->dbus, "example_echo_2",
       "example", NULL, NULL);
   g_assert (test->protocol != NULL);
 
@@ -222,7 +222,7 @@ test_protocol_addressing_properties (Test *test,
 {
   GHashTable *properties = NULL;
 
-  test->protocol = tp_protocol_new_vardict (test->dbus, "example_echo_2",
+  test->protocol = tp_protocol_new (test->dbus, "example_echo_2",
       "example", NULL, NULL);
   g_assert (test->protocol != NULL);
 
@@ -404,7 +404,7 @@ test_protocol_object (Test *test,
       "protocol-properties-vardict", &props,
       NULL);
 
-  protocol = tp_protocol_new_vardict (test->dbus, "example_echo_2",
+  protocol = tp_protocol_new (test->dbus, "example_echo_2",
       "example", props, &test->error);
   g_assert_no_error (test->error);
   g_assert (TP_IS_PROTOCOL (protocol));
