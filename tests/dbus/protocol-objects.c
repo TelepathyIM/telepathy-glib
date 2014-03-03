@@ -125,7 +125,7 @@ test_protocol_properties (Test *test,
   GValueArray *va;
   GHashTable *fixed;
 
-  test->protocol = tp_protocol_new (test->dbus, "example_echo_2",
+  test->protocol = tp_protocol_new_vardict (test->dbus, "example_echo_2",
       "example", NULL, NULL);
   g_assert (test->protocol != NULL);
 
@@ -175,7 +175,7 @@ test_protocol_avatar_properties (Test *test,
   gboolean is_set;
   guint num;
 
-  test->protocol = tp_protocol_new (test->dbus, "example_echo_2",
+  test->protocol = tp_protocol_new_vardict (test->dbus, "example_echo_2",
       "example", NULL, NULL);
   g_assert (test->protocol != NULL);
 
@@ -222,7 +222,7 @@ test_protocol_addressing_properties (Test *test,
 {
   GHashTable *properties = NULL;
 
-  test->protocol = tp_protocol_new (test->dbus, "example_echo_2",
+  test->protocol = tp_protocol_new_vardict (test->dbus, "example_echo_2",
       "example", NULL, NULL);
   g_assert (test->protocol != NULL);
 
@@ -387,9 +387,8 @@ static void
 test_protocol_object (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GHashTable *props;
+  GVariant *props;
   TpProtocol *protocol;
-  GVariant *vardict;
 
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "example_echo_2");
@@ -402,34 +401,19 @@ test_protocol_object (Test *test,
   /* Create a new TpProtocol for the same protocol but by passing it all its
    * immutable properities */
   g_object_get (test->protocol,
-      "protocol-properties", &props,
+      "protocol-properties-vardict", &props,
       NULL);
 
-  protocol = tp_protocol_new (test->dbus, "example_echo_2",
+  protocol = tp_protocol_new_vardict (test->dbus, "example_echo_2",
       "example", props, &test->error);
   g_assert_no_error (test->error);
   g_assert (TP_IS_PROTOCOL (protocol));
 
   check_tp_protocol (protocol);
 
-  vardict = tp_protocol_dup_immutable_properties (test->protocol);
-  g_assert (vardict != NULL);
-  g_assert (g_variant_is_of_type (vardict, G_VARIANT_TYPE_VARDICT));
-
   g_object_unref (protocol);
 
-  /* Same but using tp_protocol_new_vardict */
-  protocol = tp_protocol_new_vardict (test->dbus, "example_echo_2",
-      "example", vardict, &test->error);
-  g_assert_no_error (test->error);
-  g_assert (TP_IS_PROTOCOL (protocol));
-
-  check_tp_protocol (protocol);
-
-  g_object_unref (protocol);
-
-  g_variant_unref (vardict);
-  g_hash_table_unref (props);
+  g_variant_unref (props);
 }
 
 

@@ -912,7 +912,7 @@ tp_protocol_init (TpProtocol *self)
       TpProtocolPrivate);
 }
 
-/**
+/*
  * tp_protocol_new:
  * @dbus: proxy for the D-Bus daemon; may not be %NULL
  * @cm_name: the connection manager name (such as "gabble")
@@ -926,7 +926,7 @@ tp_protocol_init (TpProtocol *self)
  *
  * Since: 0.11.11
  */
-TpProtocol *
+static TpProtocol *
 tp_protocol_new (TpDBusDaemon *dbus,
     const gchar *cm_name,
     const gchar *protocol_name,
