@@ -477,10 +477,10 @@ tp_client_factory_ensure_account (TpClientFactory *self,
   g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (g_variant_is_object_path (object_path), NULL);
 
-  if (immutable_properties != NULL)
-    g_variant_ref_sink (immutable_properties);
-  else
+  if (immutable_properties == NULL)
     immutable_properties = g_variant_new ("a{sv}", NULL);
+
+  g_variant_ref_sink (immutable_properties);
 
   account = lookup_proxy (self, object_path);
   if (account != NULL)
@@ -618,10 +618,10 @@ tp_client_factory_ensure_connection (TpClientFactory *self,
   g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (g_variant_is_object_path (object_path), NULL);
 
-  if (immutable_properties != NULL)
-    g_variant_ref_sink (immutable_properties);
-  else
+  if (immutable_properties == NULL)
     immutable_properties = g_variant_new ("a{sv}", NULL);
+
+  g_variant_ref_sink (immutable_properties);
 
   connection = lookup_proxy (self, object_path);
   if (connection != NULL)
@@ -764,10 +764,10 @@ tp_client_factory_ensure_channel (TpClientFactory *self,
   g_return_val_if_fail (tp_proxy_get_factory (connection) == self, NULL);
   g_return_val_if_fail (g_variant_is_object_path (object_path), NULL);
 
-  if (immutable_properties != NULL)
-    g_variant_ref_sink (immutable_properties);
-  else
+  if (immutable_properties == NULL)
     immutable_properties = g_variant_new ("a{sv}", NULL);
+
+  g_variant_ref_sink (immutable_properties);
 
   channel = lookup_proxy (self, object_path);
   if (channel != NULL)
