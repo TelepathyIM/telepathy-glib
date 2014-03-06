@@ -401,7 +401,7 @@ test_protocol_object (Test *test,
   /* Create a new TpProtocol for the same protocol but by passing it all its
    * immutable properities */
   g_object_get (test->protocol,
-      "protocol-properties-vardict", &props,
+      "protocol-properties", &props,
       NULL);
 
   protocol = tp_protocol_new (test->dbus, "example_echo_2",

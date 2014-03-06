@@ -684,7 +684,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   /**
-   * TpProtocol:protocol-properties-vardict:
+   * TpProtocol:protocol-properties:
    *
    * The immutable properties of this Protocol, as provided at construction
    * time. This is a #G_VARIANT_TYPE_VARDICT #GVariant,
@@ -699,7 +699,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
    */
   g_object_class_install_property (object_class,
       PROP_PROTOCOL_PROPERTIES_VARDICT,
-      g_param_spec_variant ("protocol-properties-vardict",
+      g_param_spec_variant ("protocol-properties",
         "Protocol properties",
         "The immutable properties of this Protocol",
         G_VARIANT_TYPE_VARDICT, NULL,
@@ -943,7 +943,7 @@ tp_protocol_new (TpDBusDaemon *dbus,
         "bus-name", bus_name,
         "object-path", object_path,
         "protocol-name", protocol_name,
-        "protocol-properties-vardict", immutable_properties,
+        "protocol-properties", immutable_properties,
         "cm-name", cm_name,
         NULL));
 
@@ -2329,10 +2329,10 @@ tp_protocol_dup_presence_statuses (TpProtocol *self)
  * tp_protocol_dup_immutable_properties:
  * @self: a #TpProtocol object
  *
- * Return the #TpProtocol:protocol-properties-vardict property.
+ * Return the #TpProtocol:protocol-propertiesproperty.
  *
  * Returns: (transfer full): the value of
- * #TpProtocol:protocol-properties-vardict
+ * #TpProtocol:protocol-properties
  * Since: UNRELEASED
  */
 GVariant *
