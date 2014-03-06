@@ -157,7 +157,6 @@ struct _TpProtocolPrivate
 enum
 {
     PROP_PROTOCOL_NAME = 1,
-    PROP_PROTOCOL_PROPERTIES,
     PROP_PROTOCOL_PROPERTIES_VARDICT,
     PROP_ENGLISH_NAME,
     PROP_VCARD_FIELD,
@@ -250,11 +249,6 @@ tp_protocol_get_property (GObject *object,
     {
     case PROP_PROTOCOL_NAME:
       g_value_set_string (value, self->priv->name);
-      break;
-
-    case PROP_PROTOCOL_PROPERTIES:
-      g_value_take_boxed (value,
-          tp_asv_from_vardict (self->priv->protocol_properties));
       break;
 
     case PROP_PROTOCOL_PROPERTIES_VARDICT:
@@ -688,26 +682,6 @@ tp_protocol_class_init (TpProtocolClass *klass)
         "The Protocol from telepathy-spec, such as 'jabber' or 'local-xmpp'",
         NULL,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-
-  /**
-   * TpProtocol:protocol-properties:
-   *
-   * The immutable properties of this Protocol, as provided at construction
-   * time. This is a map from string to #GValue, which must not be modified.
-   *
-   * If the immutable properties were not provided at construction time,
-   * the %TP_PROTOCOL_FEATURE_PARAMETERS and %TP_PROTOCOL_FEATURE_CORE features
-   * will both be unavailable, and this #TpProtocol object will only be useful
-   * as a way to access lower-level D-Bus calls.
-   *
-   * Since: 0.11.11
-   */
-  g_object_class_install_property (object_class, PROP_PROTOCOL_PROPERTIES,
-      g_param_spec_boxed ("protocol-properties",
-        "Protocol properties",
-        "The immutable properties of this Protocol",
-        TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP,
-        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   /**
    * TpProtocol:protocol-properties-vardict:
