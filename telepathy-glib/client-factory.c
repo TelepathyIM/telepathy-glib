@@ -1259,3 +1259,42 @@ _tp_client_factory_ensure_channel_dispatch_operation (
 
   return dispatch;
 }
+
+/**
+ * tp_client_factory_ensure_protocol:
+ * @self: a #TpClientFactory
+ * @cm_name: the connection manager name (such as "gabble")
+ * @protocol_name: the protocol name (such as "jabber")
+ * @immutable_properties: (allow-none) a #G_VARIANT_TYPE_VARDICT containing
+ * the immutable properties of the protocol, or %NULL.
+ * @error: Used to raise an error if @cm_name or @protocol_name is invalid
+ *
+ * Returns a #TpProtocol proxy for the protocol @protocol_name on connection
+ * manager @cm_name.
+ * The returned #TpProtocol is cached; the same #TpProtocol object
+ * will be returned by this function repeatedly, as long as at least one
+ * reference exists.
+ *
+ * Note that the returned #TpProtocol is not guaranteed to be ready; the
+ * caller is responsible for calling tp_proxy_prepare_async() with the desired
+ * features (as given by tp_client_factory_dup_protocol_features()).
+ *
+ * @immutable_properties is consumed if it is floating.
+ *
+ * Returns: (transfer full): a reference to a #TpProtocol,
+ * or %NULL on invalid arguments
+ *
+ * Since: UNRELEASED
+ */
+TpProtocol *
+tp_client_factory_ensure_protocol (TpClientFactory *self,
+    const gchar *cm_name,
+    const gchar *protocol_name,
+    GVariant *immutable_properties,
+    GError **error)
+{
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
+
+  return tp_protocol_new (self->priv->dbus, cm_name, protocol_name,
+      immutable_properties, error);
+}

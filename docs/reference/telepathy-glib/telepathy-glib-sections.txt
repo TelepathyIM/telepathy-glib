@@ -5785,6 +5785,8 @@ tp_client_factory_ensure_contact_by_id_finish
 tp_client_factory_dup_contact_features
 tp_client_factory_add_contact_features
 tp_client_factory_add_contact_features_varargs
+<SUBSECTION>
+tp_client_factory_ensure_protocol
 <SUBSECTION Standard>
 TP_IS_CLIENT_FACTORY
 TP_IS_CLIENT_FACTORY_CLASS

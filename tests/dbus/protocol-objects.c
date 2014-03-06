@@ -25,6 +25,7 @@ typedef struct
 {
   GMainLoop *mainloop;
   TpDBusDaemon *dbus;
+  TpClientFactory *factory;
   GError *error /* statically initialized to NULL */ ;
 
   ExampleEcho2ConnectionManager *service_cm;
@@ -48,6 +49,8 @@ setup (Test *test,
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = tp_dbus_daemon_dup (NULL);
   g_assert (test->dbus != NULL);
+
+  test->factory = tp_automatic_client_factory_new (test->dbus);
 
   test->service_cm = EXAMPLE_ECHO_2_CONNECTION_MANAGER (g_object_new (
         EXAMPLE_TYPE_ECHO_2_CONNECTION_MANAGER,
@@ -83,6 +86,7 @@ teardown (Test *test,
   tp_clear_object (&test->file_cm);
   tp_clear_object (&test->file_protocol);
 
+  tp_clear_object (&test->factory);
   tp_clear_object (&test->dbus);
   g_main_loop_unref (test->mainloop);
   test->mainloop = NULL;
@@ -125,8 +129,8 @@ test_protocol_properties (Test *test,
   GValueArray *va;
   GHashTable *fixed;
 
-  test->protocol = tp_protocol_new (test->dbus, "example_echo_2",
-      "example", NULL, NULL);
+  test->protocol = tp_client_factory_ensure_protocol (test->factory,
+      "example_echo_2", "example", NULL, NULL);
   g_assert (test->protocol != NULL);
 
   tp_cli_dbus_properties_run_get_all (test->protocol, -1,
@@ -175,8 +179,8 @@ test_protocol_avatar_properties (Test *test,
   gboolean is_set;
   guint num;
 
-  test->protocol = tp_protocol_new (test->dbus, "example_echo_2",
-      "example", NULL, NULL);
+  test->protocol = tp_client_factory_ensure_protocol (test->factory,
+      "example_echo_2", "example", NULL, NULL);
   g_assert (test->protocol != NULL);
 
   tp_cli_dbus_properties_run_get_all (test->protocol, -1,
@@ -222,8 +226,8 @@ test_protocol_addressing_properties (Test *test,
 {
   GHashTable *properties = NULL;
 
-  test->protocol = tp_protocol_new (test->dbus, "example_echo_2",
-      "example", NULL, NULL);
+  test->protocol = tp_client_factory_ensure_protocol (test->factory,
+      "example_echo_2", "example", NULL, NULL);
   g_assert (test->protocol != NULL);
 
   tp_cli_dbus_properties_run_get_all (test->protocol, -1,
@@ -404,7 +408,7 @@ test_protocol_object (Test *test,
       "protocol-properties", &props,
       NULL);
 
-  protocol = tp_protocol_new (test->dbus, "example_echo_2",
+  protocol = tp_client_factory_ensure_protocol (test->factory, "example_echo_2",
       "example", props, &test->error);
   g_assert_no_error (test->error);
   g_assert (TP_IS_PROTOCOL (protocol));

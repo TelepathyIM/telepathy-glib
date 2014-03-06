@@ -32,6 +32,7 @@
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/dbus-daemon.h>
+#include <telepathy-glib/protocol.h>
 
 G_BEGIN_DECLS
 
@@ -182,6 +183,14 @@ void tp_client_factory_add_contact_features (TpClientFactory *self,
 void tp_client_factory_add_contact_features_varargs (TpClientFactory *self,
     GQuark feature,
     ...);
+
+/* TpProtocol */
+_TP_AVAILABLE_IN_UNRELEASED
+TpProtocol *tp_client_factory_ensure_protocol (TpClientFactory *self,
+    const gchar *cm_name,
+    const gchar *protocol_name,
+    GVariant *immutable_properties,
+    GError **error);
 
 G_END_DECLS
 
