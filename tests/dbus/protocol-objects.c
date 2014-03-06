@@ -620,6 +620,7 @@ test_factory (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpProtocol *p1, *p2, *p3;
+  GArray *arr;
 
   p1 = tp_client_factory_ensure_protocol (test->factory,
       "example_echo_2", "example", NULL, NULL);
@@ -637,6 +638,14 @@ test_factory (Test *test,
   g_assert (TP_IS_PROTOCOL (p3));
   /* the object has been removed from the cache */
   g_assert (p3 != p1);
+
+  arr = tp_client_factory_dup_protocol_features (test->factory,
+      p3);
+  g_assert (arr != NULL);
+  g_assert_cmpuint (arr->len, ==, 1);
+  g_assert_cmpuint (g_array_index (arr, guint, 0), ==,
+      TP_PROTOCOL_FEATURE_CORE);
+  g_array_unref (arr);
 
   g_object_unref (p3);
 }

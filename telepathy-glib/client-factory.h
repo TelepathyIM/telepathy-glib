@@ -83,6 +83,8 @@ struct _TpClientFactoryClass {
         const gchar *protocol_name,
         GVariant *immutable_properties,
         GError **error);
+    GArray * (*dup_protocol_features) (TpClientFactory *self,
+        TpProtocol *protocol);
 
     /*<private>*/
     GCallback padding[20];
@@ -198,6 +200,16 @@ TpProtocol *tp_client_factory_ensure_protocol (TpClientFactory *self,
     const gchar *protocol_name,
     GVariant *immutable_properties,
     GError **error);
+_TP_AVAILABLE_IN_UNRELEASED
+GArray *tp_client_factory_dup_protocol_features (TpClientFactory *self,
+    TpProtocol *protocol);
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_client_factory_add_protocol_features (TpClientFactory *self,
+    const GQuark *features);
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_client_factory_add_protocol_features_varargs (TpClientFactory *self,
+    GQuark feature,
+    ...);
 
 G_END_DECLS
 

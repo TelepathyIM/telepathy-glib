@@ -94,6 +94,7 @@
  * @dup_contact_features: implementation of tp_client_factory_dup_contact_features()
  * @create_protocol: create a #TpProtocol;
  *  see tp_client_factory_ensure_protocol()
+ * @dup_protocol_features: implementation of tp_client_factory_dup_protocol_features()
  *
  * The class structure for #TpClientFactory.
  *
@@ -143,6 +144,7 @@ struct _TpClientFactoryPrivate
   GArray *desired_connection_features;
   GArray *desired_channel_features;
   GArray *desired_contact_features;
+  GArray *desired_protocol_features;
 };
 
 enum
@@ -339,6 +341,7 @@ tp_client_factory_finalize (GObject *object)
   tp_clear_pointer (&self->priv->desired_connection_features, g_array_unref);
   tp_clear_pointer (&self->priv->desired_channel_features, g_array_unref);
   tp_clear_pointer (&self->priv->desired_contact_features, g_array_unref);
+  tp_clear_pointer (&self->priv->desired_protocol_features, g_array_unref);
 
   G_OBJECT_CLASS (tp_client_factory_parent_class)->finalize (object);
 }
@@ -372,6 +375,11 @@ tp_client_factory_init (TpClientFactory *self)
 
   self->priv->desired_contact_features = g_array_new (TRUE, FALSE,
       sizeof (GQuark));
+
+  self->priv->desired_protocol_features = g_array_new (TRUE, FALSE,
+      sizeof (GQuark));
+  feature = TP_PROTOCOL_FEATURE_CORE;
+  g_array_append_val (self->priv->desired_protocol_features, feature);
 }
 
 static TpProtocol *
@@ -383,6 +391,14 @@ create_protocol_impl (TpClientFactory *self,
 {
   return tp_protocol_new (self->priv->dbus, cm_name, protocol_name,
       immutable_properties, error);
+}
+
+static GArray *
+dup_protocol_features_impl (TpClientFactory *self,
+    TpProtocol *protocol)
+{
+  return _tp_quark_array_copy (
+      (GQuark *) self->priv->desired_protocol_features->data);
 }
 
 static void
@@ -407,6 +423,7 @@ tp_client_factory_class_init (TpClientFactoryClass *klass)
   klass->create_contact = create_contact_impl;
   klass->dup_contact_features = dup_contact_features_impl;
   klass->create_protocol = create_protocol_impl;
+  klass->dup_protocol_features = dup_protocol_features_impl;
 
   /**
    * TpClientFactory:dbus-daemon:
@@ -1369,4 +1386,84 @@ tp_client_factory_ensure_protocol (TpClientFactory *self,
   g_variant_unref (immutable_properties);
 
   return protocol;
+}
+
+/**
+ * tp_client_factory_dup_protocol_features:
+ * @self: a #TpClientFactory object
+ * @protocol: a #TpProtocol
+ *
+ * Return a zero-terminated #GArray containing the #TpProtocol features that
+ * should be prepared on @protocol.
+ *
+ * Returns: (transfer full) (element-type GLib.Quark): a newly allocated
+ *  #GArray
+ *
+ * Since: UNRELEASED
+ */
+GArray *
+tp_client_factory_dup_protocol_features (TpClientFactory *self,
+    TpProtocol *protocol)
+{
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
+  g_return_val_if_fail (TP_IS_PROTOCOL (protocol), NULL);
+
+  return TP_CLIENT_FACTORY_GET_CLASS (self)->dup_protocol_features (
+      self, protocol);
+}
+
+/**
+ * tp_client_factory_add_protocol_features:
+ * @self: a #TpClientFactory object
+ * @features: (transfer none) (array zero-terminated=1) (allow-none): an array
+ *  of desired features, ending with 0; %NULL is equivalent to an array
+ *  containing only 0
+ *
+ * Add @features to the desired features to be prepared on #TpProtocol
+ * objects. Those features will be added to the features already returned be
+ * tp_client_factory_dup_protocol_features().
+ *
+ * It is not necessary to add %TP_PROTOCOL_FEATURE_CORE as it is already
+ * included by default.
+ *
+ * Note that these features will not be added to existing #TpProtocol
+ * objects; the user must call tp_proxy_prepare_async() themself.
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_client_factory_add_protocol_features (
+    TpClientFactory *self,
+    const GQuark *features)
+{
+  g_return_if_fail (TP_IS_CLIENT_FACTORY (self));
+
+  _tp_quark_array_merge (self->priv->desired_protocol_features, features, -1);
+}
+
+/**
+ * tp_client_factory_add_protocol_features_varargs: (skip)
+ * @self: a #TpClientFactory
+ * @feature: the first feature
+ * @...: the second and subsequent features, if any, ending with 0
+ *
+ * The same as tp_client_factory_add_protocol_features(), but with a
+ * more convenient calling convention from C.
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_client_factory_add_protocol_features_varargs (
+    TpClientFactory *self,
+    GQuark feature,
+    ...)
+{
+  va_list var_args;
+
+  g_return_if_fail (TP_IS_CLIENT_FACTORY (self));
+
+  va_start (var_args, feature);
+  _tp_quark_array_merge_valist (self->priv->desired_protocol_features,
+      feature, var_args);
+  va_end (var_args);
 }
