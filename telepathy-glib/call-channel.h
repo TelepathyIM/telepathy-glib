@@ -71,6 +71,7 @@ struct _TpCallStateReason
   gchar *message;
 
   /*<private>*/
+  GCallback _padding[5];
   guint ref_count;
 };
 
