@@ -140,7 +140,7 @@ struct _TpProtocolPrivate
 {
   gchar *name;
   GPtrArray *params;
-  GHashTable *protocol_properties;
+  GVariant *protocol_properties;
   gchar *vcard_field;
   gchar *english_name;
   gchar *icon_name;
@@ -253,7 +253,8 @@ tp_protocol_get_property (GObject *object,
       break;
 
     case PROP_PROTOCOL_PROPERTIES:
-      g_value_set_boxed (value, self->priv->protocol_properties);
+      g_value_take_boxed (value,
+          tp_asv_from_vardict (self->priv->protocol_properties));
       break;
 
     case PROP_PROTOCOL_PROPERTIES_VARDICT:
@@ -325,7 +326,9 @@ tp_protocol_set_property (GObject *object,
 
     case PROP_PROTOCOL_PROPERTIES:
       g_assert (self->priv->protocol_properties == NULL);
-      self->priv->protocol_properties = g_value_dup_boxed (value);
+      self->priv->protocol_properties = tp_asv_to_vardict (
+          g_value_get_boxed (value));
+      g_variant_ref_sink (self->priv->protocol_properties);
       break;
 
     case PROP_CM_NAME:
@@ -384,7 +387,7 @@ tp_protocol_finalize (GObject *object)
     g_hash_table_unref (self->priv->presence_statuses);
 
   if (self->priv->protocol_properties != NULL)
-    g_hash_table_unref (self->priv->protocol_properties);
+    g_variant_unref (self->priv->protocol_properties);
 
   if (finalize != NULL)
     finalize (object);
@@ -393,24 +396,27 @@ tp_protocol_finalize (GObject *object)
 static gboolean
 tp_protocol_check_for_core (TpProtocol *self)
 {
-  const GHashTable *props = self->priv->protocol_properties;
-  const GValue *value;
+  GVariant *v;
 
-  /* this one can legitimately be NULL so we need to be more careful */
-  value = tp_asv_lookup (props, TP_PROP_PROTOCOL_CONNECTION_INTERFACES);
-
-  if (value == NULL || !G_VALUE_HOLDS (value, G_TYPE_STRV))
+  v = g_variant_lookup_value (self->priv->protocol_properties,
+        TP_PROP_PROTOCOL_CONNECTION_INTERFACES, G_VARIANT_TYPE ("as"));
+  if (v == NULL)
     {
       DEBUG ("Interfaces not found");
       return FALSE;
     }
+  g_variant_unref (v);
 
-  if (tp_asv_get_boxed (props, TP_PROP_PROTOCOL_REQUESTABLE_CHANNEL_CLASSES,
-        TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST) == NULL)
+  v = g_variant_lookup_value (self->priv->protocol_properties,
+        TP_PROP_PROTOCOL_REQUESTABLE_CHANNEL_CLASSES,
+        G_VARIANT_TYPE ("a(a{sv}as)"));
+
+  if (v == NULL)
     {
       DEBUG ("Requestable channel classes not found");
       return FALSE;
     }
+  g_variant_unref (v);
 
   /* Interfaces has a sensible default, the empty list.
    * VCardField, EnglishName and Icon have a sensible default, "". */
@@ -466,6 +472,7 @@ tp_protocol_constructed (GObject *object)
   const GPtrArray *rccs;
   gboolean had_immutables = TRUE;
   const gchar * const *interfaces;
+  GHashTable *protocol_properties;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -479,36 +486,29 @@ tp_protocol_constructed (GObject *object)
     {
       DEBUG ("immutable properties not supplied");
       had_immutables = FALSE;
-      self->priv->protocol_properties = g_hash_table_new_full (g_str_hash,
-          g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free);
+      self->priv->protocol_properties = g_variant_new ("a{sv}", NULL);
     }
   else
     {
-      GHashTableIter iter;
-      gpointer k, v;
+      gchar *print;
 
       DEBUG ("immutable properties already supplied");
 
-      g_hash_table_iter_init (&iter, self->priv->protocol_properties);
-
-      while (g_hash_table_iter_next (&iter, &k, &v))
-        {
-          gchar *printed;
-
-          printed = g_strdup_value_contents (v);
-          DEBUG ("%s = %s", (const gchar *) k, printed);
-          g_free (printed);
-        }
+      print = g_variant_print (self->priv->protocol_properties, TRUE);
+      DEBUG ("%s\n", print);
+      g_free (print);
     }
 
+  protocol_properties = tp_asv_from_vardict (self->priv->protocol_properties);
+
   self->priv->params = tp_protocol_params_from_param_specs (
-        tp_asv_get_boxed (self->priv->protocol_properties,
+        tp_asv_get_boxed (protocol_properties,
           TP_PROP_PROTOCOL_PARAMETERS,
           TP_ARRAY_TYPE_PARAM_SPEC_LIST),
         tp_proxy_get_bus_name (self), self->priv->name);
 
   /* force vCard field to lower case, even if the CM is spec-incompliant */
-  s = tp_asv_get_string (self->priv->protocol_properties,
+  s = tp_asv_get_string (protocol_properties,
       TP_PROP_PROTOCOL_VCARD_FIELD);
 
   if (tp_str_empty (s))
@@ -516,7 +516,7 @@ tp_protocol_constructed (GObject *object)
   else
     self->priv->vcard_field = g_utf8_strdown (s, -1);
 
-  s = tp_asv_get_string (self->priv->protocol_properties,
+  s = tp_asv_get_string (protocol_properties,
       TP_PROP_PROTOCOL_ENGLISH_NAME);
 
   if (tp_str_empty (s))
@@ -524,7 +524,7 @@ tp_protocol_constructed (GObject *object)
   else
     self->priv->english_name = g_strdup (s);
 
-  s = tp_asv_get_string (self->priv->protocol_properties,
+  s = tp_asv_get_string (protocol_properties,
       TP_PROP_PROTOCOL_ICON);
 
   if (tp_str_empty (s))
@@ -533,7 +533,7 @@ tp_protocol_constructed (GObject *object)
   else
     self->priv->icon_name = g_strdup (s);
 
-  rccs = tp_asv_get_boxed (self->priv->protocol_properties,
+  rccs = tp_asv_get_boxed (protocol_properties,
         TP_PROP_PROTOCOL_REQUESTABLE_CHANNEL_CLASSES,
         TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
 
@@ -541,10 +541,10 @@ tp_protocol_constructed (GObject *object)
     self->priv->capabilities = _tp_capabilities_new (rccs, FALSE);
 
   self->priv->authentication_types = asv_strdupv_or_empty (
-      self->priv->protocol_properties,
+      protocol_properties,
       TP_PROP_PROTOCOL_AUTHENTICATION_TYPES);
 
-  interfaces = tp_asv_get_strv (self->priv->protocol_properties,
+  interfaces = tp_asv_get_strv (protocol_properties,
       TP_PROP_PROTOCOL_INTERFACES);
 
   tp_proxy_add_interfaces (proxy, interfaces);
@@ -556,21 +556,21 @@ tp_protocol_constructed (GObject *object)
           self->priv->name);
 
       self->priv->avatar_req = tp_avatar_requirements_new (
-          (GStrv) tp_asv_get_strv (self->priv->protocol_properties,
+          (GStrv) tp_asv_get_strv (protocol_properties,
             TP_PROP_PROTOCOL_INTERFACE_AVATARS1_SUPPORTED_AVATAR_MIME_TYPES),
-          tp_asv_get_uint32 (self->priv->protocol_properties,
+          tp_asv_get_uint32 (protocol_properties,
             TP_PROP_PROTOCOL_INTERFACE_AVATARS1_MINIMUM_AVATAR_WIDTH, NULL),
-          tp_asv_get_uint32 (self->priv->protocol_properties,
+          tp_asv_get_uint32 (protocol_properties,
             TP_PROP_PROTOCOL_INTERFACE_AVATARS1_MINIMUM_AVATAR_HEIGHT, NULL),
-          tp_asv_get_uint32 (self->priv->protocol_properties,
+          tp_asv_get_uint32 (protocol_properties,
             TP_PROP_PROTOCOL_INTERFACE_AVATARS1_RECOMMENDED_AVATAR_WIDTH, NULL),
-          tp_asv_get_uint32 (self->priv->protocol_properties,
+          tp_asv_get_uint32 (protocol_properties,
             TP_PROP_PROTOCOL_INTERFACE_AVATARS1_RECOMMENDED_AVATAR_HEIGHT, NULL),
-          tp_asv_get_uint32 (self->priv->protocol_properties,
+          tp_asv_get_uint32 (protocol_properties,
             TP_PROP_PROTOCOL_INTERFACE_AVATARS1_MAXIMUM_AVATAR_WIDTH, NULL),
-          tp_asv_get_uint32 (self->priv->protocol_properties,
+          tp_asv_get_uint32 (protocol_properties,
             TP_PROP_PROTOCOL_INTERFACE_AVATARS1_MAXIMUM_AVATAR_HEIGHT, NULL),
-          tp_asv_get_uint32 (self->priv->protocol_properties,
+          tp_asv_get_uint32 (protocol_properties,
             TP_PROP_PROTOCOL_INTERFACE_AVATARS1_MAXIMUM_AVATAR_BYTES, NULL));
     }
 
@@ -581,10 +581,10 @@ tp_protocol_constructed (GObject *object)
           self->priv->name);
 
       self->priv->addressable_vcard_fields = asv_strdupv_or_empty (
-          self->priv->protocol_properties,
+          protocol_properties,
           TP_PROP_PROTOCOL_INTERFACE_ADDRESSING1_ADDRESSABLE_VCARD_FIELDS);
       self->priv->addressable_uri_schemes = asv_strdupv_or_empty (
-          self->priv->protocol_properties,
+          protocol_properties,
           TP_PROP_PROTOCOL_INTERFACE_ADDRESSING1_ADDRESSABLE_URI_SCHEMES);
     }
 
@@ -595,7 +595,7 @@ tp_protocol_constructed (GObject *object)
           self->priv->name);
 
       self->priv->presence_statuses = tp_asv_get_boxed (
-          self->priv->protocol_properties,
+          protocol_properties,
           TP_PROP_PROTOCOL_INTERFACE_PRESENCE1_STATUSES,
           TP_HASH_TYPE_STATUS_SPEC_MAP);
 
@@ -631,6 +631,8 @@ tp_protocol_constructed (GObject *object)
       had_immutables);
   _tp_proxy_set_feature_prepared (proxy, TP_PROTOCOL_FEATURE_CORE,
       had_immutables && tp_protocol_check_for_core (self));
+
+  g_hash_table_unref (protocol_properties);
 }
 
 enum {
@@ -2369,6 +2371,5 @@ tp_protocol_dup_presence_statuses (TpProtocol *self)
 GVariant *
 tp_protocol_dup_immutable_properties (TpProtocol *self)
 {
-  return g_variant_ref_sink (tp_asv_to_vardict (
-        self->priv->protocol_properties));
+  return g_variant_ref (self->priv->protocol_properties);
 }
