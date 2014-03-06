@@ -324,11 +324,9 @@ tp_protocol_set_property (GObject *object,
       self->priv->name = g_value_dup_string (value);
       break;
 
-    case PROP_PROTOCOL_PROPERTIES:
+    case PROP_PROTOCOL_PROPERTIES_VARDICT:
       g_assert (self->priv->protocol_properties == NULL);
-      self->priv->protocol_properties = tp_asv_to_vardict (
-          g_value_get_boxed (value));
-      g_variant_ref_sink (self->priv->protocol_properties);
+      self->priv->protocol_properties = g_value_dup_variant (value);
       break;
 
     case PROP_CM_NAME:
@@ -709,7 +707,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
         "Protocol properties",
         "The immutable properties of this Protocol",
         TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP,
-        G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   /**
    * TpProtocol:protocol-properties-vardict:
@@ -731,7 +729,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
         "Protocol properties",
         "The immutable properties of this Protocol",
         G_VARIANT_TYPE_VARDICT, NULL,
-        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   /**
    * TpProtocol:english-name:
@@ -943,7 +941,6 @@ tp_protocol_new (TpDBusDaemon *dbus,
   TpProtocol *ret = NULL;
   gchar *bus_name = NULL;
   gchar *object_path = NULL;
-  GHashTable *hash = NULL;
 
   g_return_val_if_fail (immutable_properties == NULL ||
       g_variant_is_of_type (immutable_properties, G_VARIANT_TYPE_VARDICT),
@@ -967,18 +964,14 @@ tp_protocol_new (TpDBusDaemon *dbus,
   /* e.g. local-xmpp -> local_xmpp */
   g_strdelimit (object_path, "-", '_');
 
-  hash = tp_asv_from_vardict (immutable_properties);
-
   ret = TP_PROTOCOL (g_object_new (TP_TYPE_PROTOCOL,
         "dbus-daemon", dbus,
         "bus-name", bus_name,
         "object-path", object_path,
         "protocol-name", protocol_name,
-        "protocol-properties", hash,
+        "protocol-properties-vardict", immutable_properties,
         "cm-name", cm_name,
         NULL));
-
-  g_hash_table_unref (hash);
 
 finally:
   g_variant_unref (immutable_properties);
