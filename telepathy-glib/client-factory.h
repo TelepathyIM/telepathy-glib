@@ -77,6 +77,13 @@ struct _TpClientFactoryClass {
     GArray * (*dup_contact_features) (TpClientFactory *self,
         TpConnection *connection);
 
+    /* TpProcotol */
+    TpProtocol * (*create_protocol) (TpClientFactory *self,
+        const gchar *cm_name,
+        const gchar *protocol_name,
+        GVariant *immutable_properties,
+        GError **error);
+
     /*<private>*/
     GCallback padding[20];
 };

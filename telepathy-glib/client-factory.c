@@ -92,12 +92,15 @@
  * @create_contact: create a #TpContact;
  *  see tp_client_factory_ensure_contact()
  * @dup_contact_features: implementation of tp_client_factory_dup_contact_features()
+ * @create_protocol: create a #TpProtocol;
+ *  see tp_client_factory_ensure_protocol()
  *
  * The class structure for #TpClientFactory.
  *
  * #TpClientFactory maintains a cache of previously-constructed proxy
  * objects, so the implementations of @create_account,
- * @create_connection, @create_channel, and @create_contact may assume that a
+ * @create_connection, @create_channel, @create_contact and @create_protocol
+ * may assume that a
  * new object should be created when they are called. The default
  * implementations create unadorned instances of the relevant classes;
  * subclasses of the factory may choose to create more interesting proxy
@@ -364,6 +367,17 @@ tp_client_factory_init (TpClientFactory *self)
       sizeof (GQuark));
 }
 
+static TpProtocol *
+create_protocol_impl (TpClientFactory *self,
+    const gchar *cm_name,
+    const gchar *protocol_name,
+    GVariant *immutable_properties G_GNUC_UNUSED,
+    GError **error)
+{
+  return tp_protocol_new (self->priv->dbus, cm_name, protocol_name,
+      immutable_properties, error);
+}
+
 static void
 tp_client_factory_class_init (TpClientFactoryClass *klass)
 {
@@ -385,6 +399,7 @@ tp_client_factory_class_init (TpClientFactoryClass *klass)
   klass->dup_channel_features = dup_channel_features_impl;
   klass->create_contact = create_contact_impl;
   klass->dup_contact_features = dup_contact_features_impl;
+  klass->create_protocol = create_protocol_impl;
 
   /**
    * TpClientFactory:dbus-daemon:
@@ -1295,6 +1310,6 @@ tp_client_factory_ensure_protocol (TpClientFactory *self,
 {
   g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
 
-  return tp_protocol_new (self->priv->dbus, cm_name, protocol_name,
-      immutable_properties, error);
+  return TP_CLIENT_FACTORY_GET_CLASS (self)->create_protocol (self,
+      cm_name, protocol_name, immutable_properties, error);
 }
