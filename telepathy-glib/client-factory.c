@@ -135,6 +135,10 @@ struct _TpClientFactoryPrivate
   TpDBusDaemon *dbus;
   /* Owned object-path -> weakref to TpProxy */
   GHashTable *proxy_cache;
+  /* TpProtocol aren't requested using their object path so we concat their CM
+   * and name to identifiy them.
+   * Owned "cm-name protocol-name" -> weakref to TpProtocol */
+  GHashTable *protocols_cache;
   GArray *desired_account_features;
   GArray *desired_connection_features;
   GArray *desired_channel_features;
@@ -330,6 +334,7 @@ tp_client_factory_finalize (GObject *object)
 
   g_clear_object (&self->priv->dbus);
   tp_clear_pointer (&self->priv->proxy_cache, g_hash_table_unref);
+  tp_clear_pointer (&self->priv->protocols_cache, g_hash_table_unref);
   tp_clear_pointer (&self->priv->desired_account_features, g_array_unref);
   tp_clear_pointer (&self->priv->desired_connection_features, g_array_unref);
   tp_clear_pointer (&self->priv->desired_channel_features, g_array_unref);
@@ -347,6 +352,8 @@ tp_client_factory_init (TpClientFactory *self)
       TpClientFactoryPrivate);
 
   self->priv->proxy_cache = g_hash_table_new (g_str_hash, g_str_equal);
+  self->priv->protocols_cache = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, NULL);
 
   self->priv->desired_account_features = g_array_new (TRUE, FALSE,
       sizeof (GQuark));
@@ -1275,6 +1282,27 @@ _tp_client_factory_ensure_channel_dispatch_operation (
   return dispatch;
 }
 
+static void
+protocol_destroyed_cb (gpointer data,
+    GObject *protocol)
+{
+  /* We can't compute the key as @protocol has been destroyed so look for it
+   * in the hash table. */
+  TpClientFactory *self = data;
+  GHashTableIter iter;
+  gpointer p;
+
+  g_hash_table_iter_init (&iter, self->priv->protocols_cache);
+  while (g_hash_table_iter_next (&iter, NULL, &p))
+    {
+      if (p == protocol)
+        {
+          g_hash_table_iter_remove (&iter);
+          return;
+        }
+    }
+}
+
 /**
  * tp_client_factory_ensure_protocol:
  * @self: a #TpClientFactory
@@ -1308,8 +1336,37 @@ tp_client_factory_ensure_protocol (TpClientFactory *self,
     GVariant *immutable_properties,
     GError **error)
 {
+  TpProtocol *protocol;
+  gchar *key;
+
   g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
 
-  return TP_CLIENT_FACTORY_GET_CLASS (self)->create_protocol (self,
-      cm_name, protocol_name, immutable_properties, error);
+  if (immutable_properties == NULL)
+    immutable_properties = g_variant_new ("a{sv}", NULL);
+
+  g_variant_ref_sink (immutable_properties);
+
+  key = g_strdup_printf ("%s %s", cm_name, protocol_name);
+
+  protocol = g_hash_table_lookup (self->priv->protocols_cache, key);
+  if (protocol != NULL)
+    {
+      g_object_ref (protocol);
+
+      g_free (key);
+    }
+  else
+    {
+      protocol = TP_CLIENT_FACTORY_GET_CLASS (self)->create_protocol (
+          self, cm_name, protocol_name, immutable_properties, error);
+
+      g_object_weak_ref (G_OBJECT (protocol), protocol_destroyed_cb, self);
+
+      /* pass ownership of 'key' to the hash table */
+      g_hash_table_insert (self->priv->protocols_cache, key, protocol);
+    }
+
+  g_variant_unref (immutable_properties);
+
+  return protocol;
 }

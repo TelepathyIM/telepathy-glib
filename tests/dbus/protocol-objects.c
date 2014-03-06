@@ -615,6 +615,32 @@ test_id (Test *test,
   g_clear_error (&test->error);
 }
 
+static void
+test_factory (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpProtocol *p1, *p2, *p3;
+
+  p1 = tp_client_factory_ensure_protocol (test->factory,
+      "example_echo_2", "example", NULL, NULL);
+  g_assert (TP_IS_PROTOCOL (p1));
+
+  p2 = tp_client_factory_ensure_protocol (test->factory,
+      "example_echo_2", "example", NULL, NULL);
+  g_assert (p1 == p2);
+
+  g_object_unref (p1);
+  g_object_unref (p2);
+
+  p3 = tp_client_factory_ensure_protocol (test->factory,
+      "example_echo_2", "example", NULL, NULL);
+  g_assert (TP_IS_PROTOCOL (p3));
+  /* the object has been removed from the cache */
+  g_assert (p3 != p1);
+
+  g_object_unref (p3);
+}
+
 int
 main (int argc,
       char **argv)
@@ -638,6 +664,8 @@ main (int argc,
       test_normalize, teardown);
   g_test_add ("/protocol-objects/id", Test, NULL, setup,
       test_id, teardown);
+  g_test_add ("/protocol-objects/factory", Test, NULL, setup,
+      test_factory, teardown);
 
   return tp_tests_run_with_bus ();
 }
