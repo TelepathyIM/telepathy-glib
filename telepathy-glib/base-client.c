@@ -317,41 +317,6 @@ tp_base_client_dup_account (TpBaseClient *self,
       path, NULL, error);
 }
 
-/*
- * tp_base_client_take_observer_filter: (skip)
- * @self: a client
- * @filter: (transfer full) (element-type utf8 GObject.Value):
- * a %TP_HASH_TYPE_CHANNEL_CLASS, ownership of which is taken by @self
- *
- * The same as tp_base_client_add_observer_filter(), but ownership of @filter
- * is taken by @self. This makes it convenient to call using tp_asv_new():
- *
- * |[
- * tp_base_client_take_observer_filter (client,
- *    tp_asv_new (
- *        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
- *            TP_IFACE_CHANNEL_TYPE_TEXT,
- *        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
- *            TP_ENTITY_TYPE_CONTACT,
- *        ...));
- * ]|
- *
- * Since: 0.11.5
- */
-static void
-tp_base_client_take_observer_filter (TpBaseClient *self,
-    GHashTable *filter)
-{
-  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
-
-  g_return_if_fail (TP_IS_BASE_CLIENT (self));
-  g_return_if_fail (!self->priv->registered);
-  g_return_if_fail (cls->observe_channel != NULL);
-
-  self->priv->flags |= CLIENT_IS_OBSERVER;
-  g_ptr_array_add (self->priv->observer_filters, filter);
-}
-
 /**
  * tp_base_client_add_observer_filter:
  * @self: a client
@@ -382,10 +347,16 @@ void
 tp_base_client_add_observer_filter (TpBaseClient *self,
     GVariant *filter)
 {
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+  g_return_if_fail (cls->observe_channel != NULL);
   g_return_if_fail (g_variant_is_of_type (filter, G_VARIANT_TYPE_VARDICT));
 
   g_variant_ref_sink (filter);
-  tp_base_client_take_observer_filter (self, tp_asv_from_vardict (filter));
+  self->priv->flags |= CLIENT_IS_OBSERVER;
+  g_ptr_array_add (self->priv->observer_filters, tp_asv_from_vardict (filter));
   g_variant_unref (filter);
 }
 
@@ -475,41 +446,6 @@ tp_base_client_set_observer_delay_approvers (TpBaseClient *self,
     }
 }
 
-/*
- * tp_base_client_take_approver_filter: (skip)
- * @self: a client
- * @filter: (transfer full) (element-type utf8 GObject.Value):
- * a %TP_HASH_TYPE_CHANNEL_CLASS, ownership of which is taken by @self
- *
- * The same as tp_base_client_add_approver_filter(), but ownership of @filter
- * is taken by @self. This makes it convenient to call using tp_asv_new():
- *
- * |[
- * tp_base_client_take_approver_filter (client,
- *    tp_asv_new (
- *        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
- *            TP_IFACE_CHANNEL_TYPE_TEXT,
- *        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
- *            TP_ENTITY_TYPE_CONTACT,
- *        ...));
- * ]|
- *
- * Since: 0.11.5
- */
-static void
-tp_base_client_take_approver_filter (TpBaseClient *self,
-    GHashTable *filter)
-{
-  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
-
-  g_return_if_fail (TP_IS_BASE_CLIENT (self));
-  g_return_if_fail (!self->priv->registered);
-  g_return_if_fail (cls->add_dispatch_operation != NULL);
-
-  self->priv->flags |= CLIENT_IS_APPROVER;
-  g_ptr_array_add (self->priv->approver_filters, filter);
-}
-
 /**
  * tp_base_client_add_approver_filter:
  * @self: a client
@@ -533,10 +469,16 @@ void
 tp_base_client_add_approver_filter (TpBaseClient *self,
     GVariant *filter)
 {
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+  g_return_if_fail (cls->add_dispatch_operation != NULL);
   g_return_if_fail (g_variant_is_of_type (filter, G_VARIANT_TYPE_VARDICT));
 
   g_variant_ref_sink (filter);
-  tp_base_client_take_approver_filter (self, tp_asv_from_vardict (filter));
+  self->priv->flags |= CLIENT_IS_APPROVER;
+  g_ptr_array_add (self->priv->approver_filters, tp_asv_from_vardict (filter));
   g_variant_unref (filter);
 }
 
@@ -566,41 +508,6 @@ tp_base_client_be_a_handler (TpBaseClient *self)
   self->priv->flags |= CLIENT_IS_HANDLER;
 }
 
-/*
- * tp_base_client_take_handler_filter: (skip)
- * @self: a #TpBaseClient
- * @filter: (transfer full) (element-type utf8 GObject.Value):
- * a %TP_HASH_TYPE_CHANNEL_CLASS, ownership of which is taken by @self
- *
- * The same as tp_base_client_add_handler_filter(), but ownership of @filter
- * is taken by @self. This makes it convenient to call using tp_asv_new():
- *
- * |[
- * tp_base_client_take_handler_filter (client,
- *    tp_asv_new (
- *        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
- *            TP_IFACE_CHANNEL_TYPE_TEXT,
- *        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
- *            TP_ENTITY_TYPE_CONTACT,
- *        ...));
- * ]|
- *
- * Since: 0.11.6
- */
-static void
-tp_base_client_take_handler_filter (TpBaseClient *self,
-    GHashTable *filter)
-{
-  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
-
-  g_return_if_fail (TP_IS_BASE_CLIENT (self));
-  g_return_if_fail (!self->priv->registered);
-  g_return_if_fail (cls->handle_channel != NULL);
-
-  self->priv->flags |= CLIENT_IS_HANDLER;
-  g_ptr_array_add (self->priv->handler_filters, filter);
-}
-
 /**
  * tp_base_client_add_handler_filter:
  * @self: a client
@@ -624,10 +531,16 @@ void
 tp_base_client_add_handler_filter (TpBaseClient *self,
     GVariant *filter)
 {
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+  g_return_if_fail (cls->handle_channel != NULL);
   g_return_if_fail (g_variant_is_of_type (filter, G_VARIANT_TYPE_VARDICT));
 
   g_variant_ref_sink (filter);
-  tp_base_client_take_handler_filter (self, tp_asv_from_vardict (filter));
+  self->priv->flags |= CLIENT_IS_HANDLER;
+  g_ptr_array_add (self->priv->handler_filters, tp_asv_from_vardict (filter));
   g_variant_unref (filter);
 }
 
