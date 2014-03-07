@@ -35,6 +35,7 @@ struct _TpConnectionManagerParam
 };
 
 TpProtocol * _tp_protocol_new (TpDBusDaemon *dbus,
+    TpClientFactory *factory,
     const gchar *cm_name,
     const gchar *protocol_name,
     GVariant *immutable_properties,

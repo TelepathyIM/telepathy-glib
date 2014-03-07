@@ -390,7 +390,7 @@ create_protocol_impl (TpClientFactory *self,
     GVariant *immutable_properties G_GNUC_UNUSED,
     GError **error)
 {
-  return _tp_protocol_new (self->priv->dbus, cm_name, protocol_name,
+  return _tp_protocol_new (self->priv->dbus, self, cm_name, protocol_name,
       immutable_properties, error);
 }
 
@@ -1408,6 +1408,7 @@ tp_client_factory_dup_protocol_features (TpClientFactory *self,
 {
   g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (TP_IS_PROTOCOL (protocol), NULL);
+  g_return_val_if_fail (tp_proxy_get_factory (protocol) == self, NULL);
 
   return TP_CLIENT_FACTORY_GET_CLASS (self)->dup_protocol_features (
       self, protocol);

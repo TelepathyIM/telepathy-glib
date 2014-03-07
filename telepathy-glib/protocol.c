@@ -889,6 +889,7 @@ tp_protocol_init (TpProtocol *self)
 /*
  * _tp_protocol_new:
  * @dbus: proxy for the D-Bus daemon; may not be %NULL
+ * @factory: a #TpClientFactory, or %NULL
  * @cm_name: the connection manager name (such as "gabble")
  * @protocol_name: the protocol name (such as "jabber")
  * @immutable_properties: (allow-none): the immutable D-Bus properties for this
@@ -907,6 +908,7 @@ tp_protocol_init (TpProtocol *self)
  */
 TpProtocol *
 _tp_protocol_new (TpDBusDaemon *dbus,
+    TpClientFactory *factory,
     const gchar *cm_name,
     const gchar *protocol_name,
     GVariant *immutable_properties,
@@ -920,6 +922,8 @@ _tp_protocol_new (TpDBusDaemon *dbus,
       g_variant_is_of_type (immutable_properties, G_VARIANT_TYPE_VARDICT),
       NULL);
   g_return_val_if_fail (TP_IS_DBUS_DAEMON (dbus), NULL);
+  g_return_val_if_fail (factory == NULL || TP_IS_CLIENT_FACTORY (factory),
+      NULL);
 
   if (immutable_properties == NULL)
     immutable_properties = g_variant_new ("a{sv}", NULL);
@@ -940,6 +944,7 @@ _tp_protocol_new (TpDBusDaemon *dbus,
 
   ret = TP_PROTOCOL (g_object_new (TP_TYPE_PROTOCOL,
         "dbus-daemon", dbus,
+        "factory", factory,
         "bus-name", bus_name,
         "object-path", object_path,
         "protocol-name", protocol_name,

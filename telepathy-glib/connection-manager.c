@@ -385,8 +385,8 @@ tp_connection_manager_get_all_cb (TpProxy *proxy,
               if (tp_connection_manager_check_valid_protocol_name (name, NULL))
                 {
                   TpProtocol *proto_object = _tp_protocol_new (
-                      tp_proxy_get_dbus_daemon (self), self->priv->name, name,
-                      tp_asv_to_vardict (v), NULL);
+                      tp_proxy_get_dbus_daemon (self), NULL, self->priv->name,
+                      name, tp_asv_to_vardict (v), NULL);
 
                   /* _tp_protocol_new can currently only fail because of
                    * malformed names, and we already checked for that */
@@ -627,7 +627,7 @@ tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
       if (immutables == NULL)
         continue;
 
-      proto_object = _tp_protocol_new (dbus_daemon, cm_name, name,
+      proto_object = _tp_protocol_new (dbus_daemon, NULL, cm_name, name,
           tp_asv_to_vardict (immutables), NULL);
       g_assert (proto_object != NULL);
 
