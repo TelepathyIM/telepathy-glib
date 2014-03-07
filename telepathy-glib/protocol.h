@@ -67,12 +67,6 @@ struct _TpProtocol
 
 void tp_protocol_init_known_interfaces (void);
 
-TpProtocol * tp_protocol_new (TpDBusDaemon *dbus,
-    const gchar *cm_name,
-    const gchar *protocol_name,
-    GVariant *immutable_properties,
-    GError **error);
-
 const gchar *tp_protocol_get_name (TpProtocol *self);
 
 _TP_AVAILABLE_IN_0_20

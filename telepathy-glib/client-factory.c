@@ -128,6 +128,7 @@
 #include "telepathy-glib/contact-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/client-factory-internal.h"
+#include "telepathy-glib/protocol-internal.h"
 #include "telepathy-glib/util-internal.h"
 #include "telepathy-glib/variant-util.h"
 
@@ -389,7 +390,7 @@ create_protocol_impl (TpClientFactory *self,
     GVariant *immutable_properties G_GNUC_UNUSED,
     GError **error)
 {
-  return tp_protocol_new (self->priv->dbus, cm_name, protocol_name,
+  return _tp_protocol_new (self->priv->dbus, cm_name, protocol_name,
       immutable_properties, error);
 }
 

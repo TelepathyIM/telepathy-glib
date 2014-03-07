@@ -34,6 +34,12 @@ struct _TpConnectionManagerParam
   guint flags;
 };
 
+TpProtocol * _tp_protocol_new (TpDBusDaemon *dbus,
+    const gchar *cm_name,
+    const gchar *protocol_name,
+    GVariant *immutable_properties,
+    GError **error);
+
 GHashTable *_tp_protocol_parse_manager_file (GKeyFile *file,
     const gchar *cm_name,
     const gchar *group,
