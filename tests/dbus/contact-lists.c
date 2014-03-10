@@ -18,6 +18,7 @@
 #include "telepathy-glib/reentrants.h"
 
 #include "examples/cm/contactlist/conn.h"
+#include "tests/lib/debug.h"
 #include "tests/lib/util.h"
 
 typedef enum {
@@ -95,14 +96,28 @@ typedef struct {
 
     GMainLoop *main_loop;
     GError *error /* = NULL */;
+
+    gsize waiting;
 } Test;
 
+/* Implementation detail: dbus-glib used to avoid scheduling more than one
+ * event per main loop iteration, but GDBus does not, so you cannot reliably
+ * use this function with more than one g_main_loop_run() call. */
 static void
 test_quit_loop (gpointer p)
 {
   Test *test = p;
 
   g_main_loop_quit (test->main_loop);
+}
+
+static void
+test_dec_waiting (gpointer p)
+{
+  Test *test = p;
+
+  g_assert_cmpuint (test->waiting, >=, 1);
+  test->waiting--;
 }
 
 static void
@@ -950,7 +965,7 @@ test_add_to_publish_pre_approve (Test *test,
 
   /* by the time the method returns, we should have had the
    * change-notification, too */
-  g_assert_cmpuint (test->log->len, ==, 1);
+  g_assert_cmpuint (test->log->len, >=, 1);
   test_assert_one_contact_changed (test, 0, test->ninja, TP_SUBSCRIPTION_STATE_ASK,
       TP_SUBSCRIPTION_STATE_NO, "");
 
@@ -958,7 +973,7 @@ test_add_to_publish_pre_approve (Test *test,
   while (test->log->len < 2)
     g_main_context_iteration (NULL, TRUE);
 
-  g_assert_cmpuint (test->log->len, ==, 2);
+  g_assert_cmpuint (test->log->len, >=, 2);
   test_assert_one_contact_changed (test, 1, test->ninja, TP_SUBSCRIPTION_STATE_YES,
       TP_SUBSCRIPTION_STATE_NO, "");
 
@@ -967,7 +982,7 @@ test_add_to_publish_pre_approve (Test *test,
   while (test->log->len < 3)
     g_main_context_iteration (NULL, TRUE);
 
-  g_assert_cmpuint (test->log->len, ==, 3);
+  g_assert_cmpuint (test->log->len, >=, 3);
   test_assert_one_contact_changed (test, 2, test->ninja, TP_SUBSCRIPTION_STATE_YES,
       TP_SUBSCRIPTION_STATE_YES, "");
 
@@ -1016,7 +1031,7 @@ test_remove_from_publish (Test *test,
 
   /* by the time the method returns, we should have had the
    * removal-notification, too */
-  g_assert_cmpuint (test->log->len, ==, 1);
+  g_assert_cmpuint (test->log->len, >=, 1);
   test_assert_one_contact_changed (test, 0, test->sjoerd,
       TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_NO, "");
 
@@ -1024,7 +1039,7 @@ test_remove_from_publish (Test *test,
   while (test->log->len < 2)
     g_main_context_iteration (NULL, TRUE);
 
-  g_assert_cmpuint (test->log->len, ==, 2);
+  g_assert_cmpuint (test->log->len, >=, 2);
   test_assert_one_contact_changed (test, 1, test->sjoerd,
       TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_ASK,
       "May I see your presence, please?");
@@ -1223,15 +1238,19 @@ test_accept_subscribe_request (Test *test,
 
   /* by the time the method returns, we should have had the
    * change-notification, too */
-  g_assert_cmpuint (test->log->len, ==, 1);
+  g_assert_cmpuint (test->log->len, >=, 1);
   test_assert_one_contact_changed (test, 0, test->ninja,
       TP_SUBSCRIPTION_STATE_ASK, TP_SUBSCRIPTION_STATE_NO, "");
 
-  /* after a short delay, the contact accepts our request */
+  /* After a short delay, the contact accepts our request.
+   * We shouldn't assert len == 1 above because this happens automatically,
+   * and when we do a _run_ call, GDBus can give us than one
+   * event per main loop iteration (dbus-glib went to some lengths
+   * not to do so). */
   while (test->log->len < 2)
     g_main_context_iteration (NULL, TRUE);
 
-  g_assert_cmpuint (test->log->len, ==, 2);
+  g_assert_cmpuint (test->log->len, >=, 2);
   test_assert_one_contact_changed (test, 1, test->ninja,
       TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_NO, "");
 
@@ -1239,7 +1258,7 @@ test_accept_subscribe_request (Test *test,
   while (test->log->len < 3)
     g_main_context_iteration (NULL, TRUE);
 
-  g_assert_cmpuint (test->log->len, ==, 3);
+  g_assert_cmpuint (test->log->len, >=, 3);
   test_assert_one_contact_changed (test, 2, test->ninja,
       TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_ASK,
       "May I see your presence, please?");
@@ -1269,7 +1288,7 @@ test_reject_subscribe_request (Test *test,
 
   /* by the time the method returns, we should have had the
    * change-notification, too */
-  g_assert_cmpuint (test->log->len, ==, 1);
+  g_assert_cmpuint (test->log->len, >=, 1);
   test_assert_one_contact_changed (test, 0, test->ninja,
       TP_SUBSCRIPTION_STATE_ASK, TP_SUBSCRIPTION_STATE_NO, "");
 
@@ -1277,7 +1296,7 @@ test_reject_subscribe_request (Test *test,
   while (test->log->len < 2)
     g_main_context_iteration (NULL, TRUE);
 
-  g_assert_cmpuint (test->log->len, ==, 2);
+  g_assert_cmpuint (test->log->len, >=, 2);
   test_assert_one_contact_changed (test, 1, test->ninja,
       TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY, TP_SUBSCRIPTION_STATE_NO, "");
 
@@ -1835,20 +1854,22 @@ test_request_blocked_contacts_connect_failed (Test *test,
    * before Connect(), when Connect() ultimately fails, returns an appropriate
    * error.
    */
+  test->waiting = 2;
   tp_cli_connection_interface_contact_blocking1_call_request_blocked_contacts (
       test->conn, -1, request_blocked_contacts_failed_cb,
-      test, test_quit_loop, NULL);
+      test, test_dec_waiting, NULL);
   tp_cli_connection_interface_contact_blocking1_call_request_blocked_contacts (
       test->conn, -1, request_blocked_contacts_failed_cb,
-      test, test_quit_loop, NULL);
+      test, test_dec_waiting, NULL);
 
   /* We expect calling Connect() to fail because the handle was invalid, but
    * don't wait around for it.
    */
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
-  /* Spin the mainloop twice, once for each outstanding call. */
-  g_main_loop_run (test->main_loop);
-  g_main_loop_run (test->main_loop);
+
+  /* Wait for both calls to complete and "free" their user-data. */
+  while (test->waiting > 0)
+    g_main_context_iteration (NULL, TRUE);
 }
 
 static void
