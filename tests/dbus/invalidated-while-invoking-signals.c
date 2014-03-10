@@ -20,7 +20,11 @@
 #include "tests/lib/contacts-conn.h"
 #include "tests/lib/util.h"
 
-static GMainLoop *mainloop;
+typedef struct {
+    TpBaseConnection *service;
+    TpConnection *client;
+    GMainLoop *mainloop;
+} Fixture;
 
 static void
 on_status_changed (TpConnection *connection,
@@ -29,19 +33,22 @@ on_status_changed (TpConnection *connection,
                    gpointer user_data,
                    GObject *weak_object)
 {
-  TpConnection **client = user_data;
+  Fixture *f = user_data;
 
   MYASSERT (status == TP_CONNECTION_STATUS_DISCONNECTED, "%u", status);
 
-  MYASSERT (*client == connection, "%p vs %p", *client, connection);
-  g_object_unref (*client);
-  *client = NULL;
+  MYASSERT (f->client == connection, "%p vs %p", f->client, connection);
+  g_object_unref (f->client);
+  f->client = NULL;
 }
 
 static gboolean
 disconnect (gpointer data)
 {
-  tp_tests_simple_connection_inject_disconnect (data);
+  Fixture *f = data;
+
+  tp_tests_simple_connection_inject_disconnect (
+      TP_TESTS_SIMPLE_CONNECTION (f->service));
 
   return FALSE;
 }
@@ -50,37 +57,54 @@ static void
 on_shutdown_finished (TpBaseConnection *base_conn,
                       gpointer user_data)
 {
-  g_main_loop_quit (mainloop);
+  Fixture *f = user_data;
+
+  g_main_loop_quit (f->mainloop);
+}
+
+static void
+setup (Fixture *f,
+    gconstpointer data)
+{
+  f->mainloop = g_main_loop_new (NULL, FALSE);
+
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
+      "me@example.com", &f->service, &f->client);
+}
+
+static void
+test_invalidated_while_invoking_signals (Fixture *f,
+      gconstpointer data)
+{
+  g_signal_connect (f->service, "shutdown-finished",
+      G_CALLBACK (on_shutdown_finished), f);
+
+  MYASSERT (tp_cli_connection_connect_to_status_changed (f->client,
+        on_status_changed, f, NULL, NULL, NULL), "");
+
+  g_idle_add (disconnect, f);
+
+  g_main_loop_run (f->mainloop);
+}
+
+static void
+teardown (Fixture *f,
+    gconstpointer data)
+{
+  g_object_unref (f->service);
+  g_object_unref (f->client);
+  g_main_loop_unref (f->mainloop);
 }
 
 int
 main (int argc,
-      char **argv)
+    char **argv)
 {
-  TpBaseConnection *service;
-  TpConnection *client;
+  tp_tests_init (&argc, &argv);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
-  tp_tests_abort_after (10);
-  tp_debug_set_flags ("all");
-  mainloop = g_main_loop_new (NULL, FALSE);
+  g_test_add ("/invalidated-while-invoking-signals/dispose",
+      Fixture, NULL, setup, test_invalidated_while_invoking_signals, teardown);
 
-  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
-      "me@example.com", &service, &client);
-
-  g_signal_connect (service, "shutdown-finished",
-      G_CALLBACK (on_shutdown_finished), NULL);
-
-  MYASSERT (tp_cli_connection_connect_to_status_changed (client,
-        on_status_changed, &client, NULL, NULL, NULL), "");
-
-  g_idle_add (disconnect, service);
-
-  g_main_loop_run (mainloop);
-
-  g_message ("Cleaning up");
-  g_object_unref (service);
-  g_object_unref (client);
-  g_main_loop_unref (mainloop);
-
-  return 0;
+  return tp_tests_run_with_bus ();
 }
