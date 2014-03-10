@@ -15,15 +15,17 @@
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/debug.h>
+#include <telepathy-glib/proxy-subclass.h>
 
 #include "tests/lib/myassert.h"
 #include "tests/lib/contacts-conn.h"
 #include "tests/lib/util.h"
 
 typedef struct {
+    const gchar *mode;
     TpBaseConnection *service;
     TpConnection *client;
-    GMainLoop *mainloop;
+    gboolean shutdown_finished;
 } Fixture;
 
 static void
@@ -38,8 +40,22 @@ on_status_changed (TpConnection *connection,
   MYASSERT (status == TP_CONNECTION_STATUS_DISCONNECTED, "%u", status);
 
   MYASSERT (f->client == connection, "%p vs %p", f->client, connection);
-  g_object_unref (f->client);
-  f->client = NULL;
+
+  if (!tp_strdiff (f->mode, "invalidate"))
+    {
+      GError e = { TP_ERROR, TP_ERROR_CANCELLED, "regression test" };
+
+      tp_proxy_invalidate (TP_PROXY (f->client), &e);
+    }
+  else
+    {
+      /* The original test did this, and assumed that this was the
+       * last-unref, and would cause invalidation. That was a failing
+       * test-case for #14854 before it was fixed. However, the fix for
+       * #14854 made that untrue, by taking a reference. */
+      g_object_unref (f->client);
+      f->client = NULL;
+    }
 }
 
 static gboolean
@@ -59,14 +75,15 @@ on_shutdown_finished (TpBaseConnection *base_conn,
 {
   Fixture *f = user_data;
 
-  g_main_loop_quit (f->mainloop);
+  f->shutdown_finished = TRUE;
 }
 
 static void
 setup (Fixture *f,
     gconstpointer data)
 {
-  f->mainloop = g_main_loop_new (NULL, FALSE);
+  f->mode = data;
+  f->shutdown_finished = FALSE;
 
   tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
       "me@example.com", &f->service, &f->client);
@@ -84,7 +101,17 @@ test_invalidated_while_invoking_signals (Fixture *f,
 
   g_idle_add (disconnect, f);
 
-  g_main_loop_run (f->mainloop);
+  if (!tp_strdiff (f->mode, "invalidate"))
+    {
+      while (tp_proxy_get_invalidated (f->client) == NULL ||
+          !f->shutdown_finished)
+        g_main_context_iteration (NULL, TRUE);
+    }
+  else
+    {
+      while (f->client != NULL || !f->shutdown_finished)
+        g_main_context_iteration (NULL, TRUE);
+    }
 }
 
 static void
@@ -92,8 +119,7 @@ teardown (Fixture *f,
     gconstpointer data)
 {
   g_object_unref (f->service);
-  g_object_unref (f->client);
-  g_main_loop_unref (f->mainloop);
+  g_clear_object (&f->client);
 }
 
 int
@@ -105,6 +131,9 @@ main (int argc,
 
   g_test_add ("/invalidated-while-invoking-signals/dispose",
       Fixture, NULL, setup, test_invalidated_while_invoking_signals, teardown);
+  g_test_add ("/invalidated-while-invoking-signals/invalidate",
+      Fixture, "invalidate", setup, test_invalidated_while_invoking_signals,
+      teardown);
 
   return tp_tests_run_with_bus ();
 }
