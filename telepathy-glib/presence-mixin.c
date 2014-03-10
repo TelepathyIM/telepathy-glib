@@ -925,15 +925,11 @@ tp_presence_mixin_fill_contact_attributes (GObject *obj,
     }
   else
     {
-      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-      GType type = G_TYPE_VALUE_ARRAY;
-      G_GNUC_END_IGNORE_DEPRECATIONS
-
       presence = construct_presence_value_array (status, mixin_cls->statuses);
       tp_presence_status_free (status);
       tp_contact_attribute_map_take_sliced_gvalue (attributes, contact,
           TP_TOKEN_CONNECTION_INTERFACE_PRESENCE1_PRESENCE,
-          tp_g_value_slice_new_take_boxed (type, presence));
+          tp_g_value_slice_new_take_boxed (TP_STRUCT_TYPE_PRESENCE, presence));
     }
   return TRUE;
 }
