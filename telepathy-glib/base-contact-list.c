@@ -561,6 +561,8 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
       self->priv->svc_contact_groups = FALSE;
       self->priv->svc_contact_blocking = FALSE;
     }
+
+  g_clear_pointer (&self->priv->groups, g_hash_table_unref);
 }
 
 static void
