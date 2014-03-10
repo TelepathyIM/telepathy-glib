@@ -335,10 +335,23 @@ tp_tests_simple_channel_dispatcher_dispose (GObject *object)
   g_slist_foreach (self->priv->requests, (GFunc) g_object_unref, NULL);
   g_slist_free (self->priv->requests);
 
-  g_free (self->priv->old_handler);
-
   if (G_OBJECT_CLASS (tp_tests_simple_channel_dispatcher_parent_class)->dispose != NULL)
     G_OBJECT_CLASS (tp_tests_simple_channel_dispatcher_parent_class)->dispose (object);
+}
+
+static void
+tp_tests_simple_channel_dispatcher_finalize (GObject *object)
+{
+  TpTestsSimpleChannelDispatcher *self = SIMPLE_CHANNEL_DISPATCHER (object);
+
+  g_clear_pointer (&self->last_request, g_hash_table_unref);
+  g_clear_pointer (&self->last_hints, g_hash_table_unref);
+  g_free (self->last_account);
+  g_free (self->last_preferred_handler);
+  g_free (self->priv->old_handler);
+
+  if (G_OBJECT_CLASS (tp_tests_simple_channel_dispatcher_parent_class)->finalize != NULL)
+    G_OBJECT_CLASS (tp_tests_simple_channel_dispatcher_parent_class)->finalize (object);
 }
 
 static void
@@ -367,6 +380,7 @@ tp_tests_simple_channel_dispatcher_class_init (
   object_class->set_property = tp_tests_simple_channel_dispatcher_set_property;
 
   object_class->dispose = tp_tests_simple_channel_dispatcher_dispose;
+  object_class->finalize = tp_tests_simple_channel_dispatcher_finalize;
 
   param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
       "In this case we only implement ChannelDispatcher, so none.",
