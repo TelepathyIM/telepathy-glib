@@ -137,6 +137,56 @@ static GMainLoop *mainloop;
 static gchar *two = "2", *five = "5";
 static gboolean had_owners = FALSE;
 
+static gboolean
+request_names (gpointer obj)
+{
+  GError *error = NULL;
+  guint ret;
+  gboolean ok;
+
+  ok = tp_cli_dbus_daemon_run_request_name (obj, -1,
+        "com.example", 0, &ret, &error, NULL);
+  g_assert_no_error (error);
+  g_assert (ok);
+  g_assert_cmpuint (ret, ==, 1);
+
+  ok = tp_cli_dbus_daemon_run_request_name (obj, -1,
+        "org.example", 0, &ret, &error, NULL);
+  g_assert_no_error (error);
+  g_assert (ok);
+  g_assert_cmpuint (ret, ==, 1);
+
+  ok = tp_cli_dbus_daemon_run_request_name (obj, -1,
+        "net.example", 0, &ret, &error, NULL);
+  g_assert_no_error (error);
+  g_assert (ok);
+  g_assert_cmpuint (ret, ==, 1);
+
+  return FALSE;
+}
+
+static gboolean
+release_names (gpointer obj)
+{
+  GError *error = NULL;
+  guint ret;
+  gboolean ok;
+
+  ok = tp_cli_dbus_daemon_run_release_name (obj, -1,
+        "org.example", &ret, &error, NULL);
+  g_assert_no_error (error);
+  g_assert (ok);
+  g_assert_cmpuint (ret, ==, 1);
+
+  ok = tp_cli_dbus_daemon_run_release_name (obj, -1,
+        "net.example", &ret, &error, NULL);
+  g_assert_no_error (error);
+  g_assert (ok);
+  g_assert_cmpuint (ret, ==, 1);
+
+  return FALSE;
+}
+
 static void
 noc (TpDBusDaemon *obj,
      const gchar *name,
@@ -163,33 +213,23 @@ noc (TpDBusDaemon *obj,
             }
           else
             {
-              guint ret;
-              GError *error = NULL;
-
-              g_assert (tp_cli_dbus_daemon_run_request_name (obj, -1,
-                    "com.example", 0, &ret, &error, NULL));
-              g_assert (ret == 1 && error == NULL);
-              g_assert (tp_cli_dbus_daemon_run_request_name (obj, -1,
-                    "org.example", 0, &ret, &error, NULL));
-              g_assert (ret == 1 && error == NULL);
-              g_assert (tp_cli_dbus_daemon_run_request_name (obj, -1,
-                    "net.example", 0, &ret, &error, NULL));
-              g_assert (ret == 1 && error == NULL);
+              /* do it in an idle: re-entering this same watch callback
+               * doesn't seem to work under GDBus, and it was a terrible
+               * idea anyway */
+              g_idle_add_full (G_PRIORITY_DEFAULT,
+                  request_names, g_object_ref (obj), g_object_unref);
             }
         }
       else
         {
-          guint ret;
-          GError *error = NULL;
+          gboolean ok;
 
-          g_assert (tp_dbus_daemon_cancel_name_owner_watch (obj,
-                "org.example", noc, five));
-          g_assert (tp_cli_dbus_daemon_run_release_name (obj, -1,
-                "org.example", &ret, &error, NULL));
-          g_assert (ret == 1 && error == NULL);
-          g_assert (tp_cli_dbus_daemon_run_release_name (obj, -1,
-                "net.example", &ret, &error, NULL));
-          g_assert (ret == 1 && error == NULL);
+          ok = tp_dbus_daemon_cancel_name_owner_watch (obj,
+                "org.example", noc, five);
+          g_assert (ok);
+
+          g_idle_add_full (G_PRIORITY_DEFAULT,
+              release_names, g_object_ref (obj), g_object_unref);
         }
     }
 }
