@@ -374,7 +374,7 @@ void
 tp_tests_init (int *argc,
     char ***argv)
 {
-  tp_tests_abort_after (10);
+  tp_tests_abort_after (30);
   tp_debug_set_flags ("all");
 
   g_test_init (argc, argv, NULL);
