@@ -16,6 +16,8 @@
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/telepathy-glib-dbus.h>
 
+#include "tests/lib/debug.h"
+
 static void password_iface_init (gpointer iface, gpointer data);
 
 G_DEFINE_TYPE_WITH_CODE (TpTestsTextChannelGroup,
@@ -97,8 +99,13 @@ remove_with_reason (GObject *obj,
       /* User wants to leave */
       if (!self->priv->closed)
         {
+          DEBUG ("closed");
           self->priv->closed = TRUE;
           tp_svc_channel_emit_closed (self);
+        }
+      else
+        {
+          DEBUG ("already closed");
         }
 
       return TRUE;
@@ -179,7 +186,12 @@ dispose (GObject *object)
 
   if (!self->priv->closed)
     {
+      DEBUG ("closed");
       tp_svc_channel_emit_closed (self);
+    }
+  else
+    {
+      DEBUG ("already closed");
     }
 
   ((GObjectClass *) tp_tests_text_channel_group_parent_class)->dispose (object);
@@ -205,8 +217,13 @@ channel_close (TpBaseChannel *base)
 
   if (!self->priv->closed)
     {
+      DEBUG ("closed");
       self->priv->closed = TRUE;
       tp_svc_channel_emit_closed (self);
+    }
+  else
+    {
+      DEBUG ("already closed");
     }
 }
 
