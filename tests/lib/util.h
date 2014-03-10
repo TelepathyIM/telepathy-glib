@@ -108,4 +108,20 @@ TpChannel *tp_tests_channel_new_from_properties (TpConnection *conn,
 
 GHashTable * tp_tests_dup_channel_props_asv (TpChannel *channel);
 
+#define tp_tests_assert_last_unref(op) \
+  G_STMT_START \
+    { \
+      gpointer _tmp; \
+      \
+      _tmp = *(op); \
+      *(op) = NULL; \
+      \
+      _tp_tests_assert_last_unref (_tmp, __FILE__, __LINE__); \
+    } \
+  G_STMT_END
+void _tp_tests_assert_last_unref (gpointer obj,
+    const gchar *file,
+    int line);
+
+
 #endif /* #ifndef __TP_TESTS_LIB_UTIL_H__ */

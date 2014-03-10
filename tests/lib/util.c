@@ -699,3 +699,19 @@ tp_tests_dup_channel_props_asv (TpChannel *channel)
 
   return asv;
 }
+
+void
+_tp_tests_assert_last_unref (gpointer obj,
+    const gchar *file,
+    int line)
+{
+  GWeakRef weak;
+
+  g_weak_ref_init (&weak, obj);
+  g_object_unref (obj);
+  obj = g_weak_ref_get (&weak);
+
+  if (obj != NULL)
+    g_error ("%s:%d: %s %p should not have had any more references",
+        file, line, G_OBJECT_TYPE_NAME (obj), obj);
+}
