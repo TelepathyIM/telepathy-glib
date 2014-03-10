@@ -747,8 +747,9 @@ test_connection (Test *test,
   g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, conn1_path);
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
 
-  g_assert_cmpstr (tp_account_dup_detailed_error (test->account, NULL),
-      ==, TP_ERROR_STR_CANCELLED);
+  s = tp_account_dup_detailed_error (test->account, NULL);
+  g_assert_cmpstr (s, ==, TP_ERROR_STR_CANCELLED);
+  g_free (s);
 
   /* a no-op "change" */
 
@@ -796,8 +797,9 @@ test_connection (Test *test,
   conn = tp_account_get_connection (test->account);
   g_assert (conn == NULL);
 
-  g_assert_cmpstr (tp_account_dup_detailed_error (test->account, NULL),
-      ==, TP_ERROR_STR_ENCRYPTION_ERROR);
+  s = tp_account_dup_detailed_error (test->account, NULL);
+  g_assert_cmpstr (s, ==, TP_ERROR_STR_ENCRYPTION_ERROR);
+  g_free (s);
 
   /* another connection */
 
