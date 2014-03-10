@@ -190,6 +190,13 @@
 }
 
 {
+   gobject_init_ctor
+   Memcheck:Leak
+   ...
+   fun:gobject_init_ctor
+}
+
+{
    g_type_init_with_debug_flags
    Memcheck:Leak
    ...
