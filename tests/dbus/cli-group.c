@@ -135,6 +135,8 @@ test_channel_proxy (TpTestsTextChannelGroup *service_chan,
   tp_tests_channel_assert_expect_members (chan, expected_members);
 
   tp_intset_destroy (expected_members);
+
+  g_main_loop_unref (loop);
 }
 
 static void
