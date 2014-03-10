@@ -742,7 +742,7 @@ tp_base_call_stream_remove_member (TpBaseCallStream *self,
 static void
 tp_base_call_stream_set_sending_dbus (TpSvcCall1Stream *iface,
     gboolean sending,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseCallStream *self = TP_BASE_CALL_STREAM (iface);
   GError *error = NULL;
@@ -756,7 +756,7 @@ tp_base_call_stream_set_sending_dbus (TpSvcCall1Stream *iface,
     }
   else
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
     }
 
   g_clear_error (&error);
@@ -766,7 +766,7 @@ static void
 tp_base_call_stream_request_receiving (TpSvcCall1Stream *iface,
     TpHandle contact,
     gboolean receiving,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseCallStream *self = TP_BASE_CALL_STREAM (iface);
   TpBaseCallStreamClass *klass = TP_BASE_CALL_STREAM_GET_CLASS (self);
@@ -825,7 +825,7 @@ out:
   return;
 
 error:
-  dbus_g_method_return_error (context, error);
+  g_dbus_method_invocation_return_gerror (context, error);
   g_clear_error (&error);
 }
 

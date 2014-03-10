@@ -60,7 +60,7 @@ TpObserveChannelContext * _tp_observe_channel_context_new (
     TpChannelDispatchOperation *dispatch_operation,
     GPtrArray *requests,
     GHashTable *observer_info,
-    DBusGMethodInvocation *dbus_context);
+    GDBusMethodInvocation *dbus_context);
 
 TpObserveChannelContextState _tp_observe_channel_context_get_state (
     TpObserveChannelContext *self);

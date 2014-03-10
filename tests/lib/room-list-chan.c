@@ -209,7 +209,7 @@ find_rooms (gpointer data)
 
 static void
 room_list_list_rooms (TpSvcChannelTypeRoomList1 *chan,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpTestsRoomListChan *self = TP_TESTS_ROOM_LIST_CHAN (chan);
 
@@ -218,7 +218,7 @@ room_list_list_rooms (TpSvcChannelTypeRoomList1 *chan,
       GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Already listing" };
 
-      dbus_g_method_return_error (context, &error);
+      g_dbus_method_invocation_return_gerror (context, &error);
       return;
     }
 
@@ -227,7 +227,7 @@ room_list_list_rooms (TpSvcChannelTypeRoomList1 *chan,
       GError error = { TP_ERROR, TP_ERROR_SERVICE_CONFUSED,
           "Computer says no" };
 
-      dbus_g_method_return_error (context, &error);
+      g_dbus_method_invocation_return_gerror (context, &error);
       return;
     }
 

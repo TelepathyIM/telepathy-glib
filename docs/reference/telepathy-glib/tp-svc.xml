@@ -100,7 +100,7 @@ G_DEFINE_TYPE_WITH_CODE(GabbleConnection,
     <informalexample><programlisting>
         void (*tp_svc_media_session_handler_error_impl)
           (TpSvcMediaSessionHandler *self, guint errno, const char *message,
-           DBusGMethodInvocation *context);
+           GDBusMethodInvocation *context);
     </programlisting></informalexample>
     and here's the beginning of the corresponding implementation:
     <informalexample><programlisting>
@@ -108,7 +108,7 @@ static void
 gabble_media_session_error (TpSvcMediaSessionHandler *iface,
                             guint errno,
                             const char *message,
-                            DBusGMethodInvocation *context)
+                            GDBusMethodInvocation *context)
 {
   GabbleMediaSession *self = GABBLE_MEDIA_SESSION (iface);
 
@@ -134,13 +134,13 @@ gabble_media_session_error (TpSvcMediaSessionHandler *iface,
   <para>
     For instance, Error doesn't return anything, so
     tp_svc_media_session_handler_return_from_error() doesn't take any
-    parameters apart from the DBusGMethodInvocation:
+    parameters apart from the GDBusMethodInvocation:
     <informalexample><programlisting>
 static void
 gabble_media_session_error (TpSvcMediaSessionHandler *iface,
                             guint errno,
                             const char *message,
-                            DBusGMethodInvocation *context)
+                            GDBusMethodInvocation *context)
 {
   GabbleMediaSession *self = GABBLE_MEDIA_SESSION (iface);
 

@@ -55,7 +55,7 @@ TpAddDispatchOperationContext * _tp_add_dispatch_operation_context_new (
     TpConnection *connection,
     TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
-    DBusGMethodInvocation *dbus_context);
+    GDBusMethodInvocation *dbus_context);
 
 TpAddDispatchOperationContextState _tp_add_dispatch_operation_context_get_state
     (TpAddDispatchOperationContext *self);

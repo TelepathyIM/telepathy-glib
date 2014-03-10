@@ -389,7 +389,7 @@ tp_message_mixin_maybe_send_gone (GObject *object)
 static void
 tp_message_mixin_set_chat_state_async (TpSvcChannelInterfaceChatState1 *iface,
     guint state,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   GObject *object = (GObject *) iface;
   TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
@@ -432,7 +432,7 @@ tp_message_mixin_set_chat_state_async (TpSvcChannelInterfaceChatState1 *iface,
   return;
 
 error:
-  dbus_g_method_return_error (context, error);
+  g_dbus_method_invocation_return_gerror (context, error);
   g_clear_error (&error);
 }
 
@@ -536,7 +536,7 @@ static void
 tp_message_mixin_acknowledge_pending_messages_async (
     TpSvcChannelTypeText *iface,
     const GArray *ids,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpMessageMixin *mixin = TP_MESSAGE_MIXIN (iface);
   GPtrArray *links = g_ptr_array_sized_new (ids->len);
@@ -568,7 +568,7 @@ tp_message_mixin_acknowledge_pending_messages_async (
               "invalid message id %u", id);
 
           DEBUG ("%s", error->message);
-          dbus_g_method_return_error (context, error);
+          g_dbus_method_invocation_return_gerror (context, error);
           g_error_free (error);
 
           g_ptr_array_unref (links);
@@ -747,7 +747,7 @@ tp_message_mixin_set_rescued (GObject *obj)
 
 
 struct _TpMessageMixinOutgoingMessagePrivate {
-    DBusGMethodInvocation *context;
+    GDBusMethodInvocation *context;
     gboolean messages:1;
 };
 
@@ -795,7 +795,7 @@ tp_message_mixin_sent (GObject *object,
     {
       GError *e = g_error_copy (error);
 
-      dbus_g_method_return_error (cm_msg->outgoing_context, e);
+      g_dbus_method_invocation_return_gerror (cm_msg->outgoing_context, e);
       g_error_free (e);
     }
   else
@@ -829,7 +829,7 @@ static void
 tp_message_mixin_send_message_async (TpSvcChannelTypeText *iface,
                                      const GPtrArray *parts,
                                      guint flags,
-                                     DBusGMethodInvocation *context)
+                                     GDBusMethodInvocation *context)
 {
   TpMessageMixin *mixin = TP_MESSAGE_MIXIN (iface);
   TpMessage *message;
@@ -850,7 +850,7 @@ tp_message_mixin_send_message_async (TpSvcChannelTypeText *iface,
       GError e = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
         "Cannot send a message that does not have at least one part" };
 
-      dbus_g_method_return_error (context, &e);
+      g_dbus_method_invocation_return_gerror (context, &e);
       return;
     }
 
@@ -866,7 +866,7 @@ tp_message_mixin_send_message_async (TpSvcChannelTypeText *iface,
                   TP_ERROR_INVALID_ARGUMENT,
                   "Key '%s' not allowed in a sent message", *iter);
 
-              dbus_g_method_return_error (context, error);
+              g_dbus_method_invocation_return_gerror (context, error);
               return;
             }
         }
@@ -880,7 +880,7 @@ tp_message_mixin_send_message_async (TpSvcChannelTypeText *iface,
               TP_ERROR_INVALID_ARGUMENT,
               "Key '%s' not allowed in a message header", *iter);
 
-          dbus_g_method_return_error (context, error);
+          g_dbus_method_invocation_return_gerror (context, error);
           return;
         }
     }
@@ -893,7 +893,7 @@ tp_message_mixin_send_message_async (TpSvcChannelTypeText *iface,
               TP_ERROR_INVALID_ARGUMENT,
               "Key '%s' not allowed in an outgoing message header", *iter);
 
-          dbus_g_method_return_error (context, error);
+          g_dbus_method_invocation_return_gerror (context, error);
           return;
         }
     }
@@ -909,7 +909,7 @@ tp_message_mixin_send_message_async (TpSvcChannelTypeText *iface,
                   TP_ERROR_INVALID_ARGUMENT,
                   "Key '%s' not allowed in a message body", *iter);
 
-              dbus_g_method_return_error (context, error);
+              g_dbus_method_invocation_return_gerror (context, error);
               return;
             }
         }

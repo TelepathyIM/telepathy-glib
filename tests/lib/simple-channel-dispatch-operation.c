@@ -58,27 +58,27 @@ tp_tests_simple_channel_dispatch_operation_handle_with (
     TpSvcChannelDispatchOperation *iface,
     const gchar *handler,
     gint64 user_action_timestamp,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   if (!tp_strdiff (handler, "FAIL"))
     {
       GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT, "Nope" };
 
-      dbus_g_method_return_error (context, &error);
+      g_dbus_method_invocation_return_gerror (context, &error);
       return;
     }
 
-  dbus_g_method_return (context);
+  g_dbus_method_invocation_return_value (context, NULL);
 }
 
 static void
 tp_tests_simple_channel_dispatch_operation_claim (
     TpSvcChannelDispatchOperation *iface,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   tp_svc_channel_dispatch_operation_emit_finished (iface, "", "");
 
-  dbus_g_method_return (context);
+  g_dbus_method_invocation_return_value (context, NULL);
 }
 
 static void

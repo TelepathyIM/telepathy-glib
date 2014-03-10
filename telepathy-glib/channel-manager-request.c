@@ -95,7 +95,7 @@ tp_channel_manager_request_init (TpChannelManagerRequest *self)
 
 TpChannelManagerRequest *
 _tp_channel_manager_request_new (
-    DBusGMethodInvocation *context,
+    GDBusMethodInvocation *context,
     TpChannelManagerRequestMethod method,
     const char *channel_type,
     TpEntityType handle_type,
@@ -134,7 +134,7 @@ _tp_channel_manager_request_cancel (TpChannelManagerRequest *self)
   DEBUG ("cancelling request at %p for %s/%u/%u", self,
       self->channel_type, self->handle_type, self->handle);
 
-  dbus_g_method_return_error (self->context, &error);
+  g_dbus_method_invocation_return_gerror (self->context, &error);
   self->context = NULL;
 }
 
@@ -189,6 +189,6 @@ _tp_channel_manager_request_fail (TpChannelManagerRequest *self,
       "handle_type=%u, handle=%u",
       self, self->channel_type, self->handle_type, self->handle);
 
-  dbus_g_method_return_error (self->context, error);
+  g_dbus_method_invocation_return_gerror (self->context, error);
   self->context = NULL;
 }

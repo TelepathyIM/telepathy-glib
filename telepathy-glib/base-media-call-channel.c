@@ -461,7 +461,7 @@ hold_change_failed (TpBaseMediaCallChannel *self)
 static void
 tp_base_media_call_channel_get_hold_state (
     TpSvcChannelInterfaceHold1 *hold_iface,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseMediaCallChannel *self = TP_BASE_MEDIA_CALL_CHANNEL (hold_iface);
 
@@ -473,7 +473,7 @@ static void
 tp_base_media_call_channel_request_hold (
     TpSvcChannelInterfaceHold1 *hold_iface,
     gboolean hold,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseMediaCallChannel *self = TP_BASE_MEDIA_CALL_CHANNEL (hold_iface);
 

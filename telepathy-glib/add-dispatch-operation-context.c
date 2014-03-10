@@ -78,7 +78,7 @@ struct _TpAddDispatchOperationContextPrivate
 {
   TpAddDispatchOperationContextState state;
   GSimpleAsyncResult *result;
-  DBusGMethodInvocation *dbus_context;
+  GDBusMethodInvocation *dbus_context;
 
   /* Number of calls we are waiting they return. Once they have all returned
    * the context is considered as prepared */
@@ -324,14 +324,14 @@ tp_add_dispatch_operation_context_class_init (
   /**
    * TpAddDispatchOperationContext:dbus-context: (skip)
    *
-   * The #DBusGMethodInvocation representing the D-Bus context of the
+   * The #GDBusMethodInvocation representing the D-Bus context of the
    * AddDispatchOperation call.
    * Can only be written during construction.
    *
    * Since: 0.11.5
    */
   param_spec = g_param_spec_pointer ("dbus-context", "D-Bus context",
-      "The DBusGMethodInvocation associated with the AddDispatchOperation call",
+      "The GDBusMethodInvocation associated with the AddDispatchOperation call",
       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DBUS_CONTEXT,
       param_spec);
@@ -343,7 +343,7 @@ _tp_add_dispatch_operation_context_new (
     TpConnection *connection,
     TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
-    DBusGMethodInvocation *dbus_context)
+    GDBusMethodInvocation *dbus_context)
 {
   return g_object_new (TP_TYPE_ADD_DISPATCH_OPERATION_CONTEXT,
       "account", account,
@@ -372,7 +372,7 @@ tp_add_dispatch_operation_context_accept (TpAddDispatchOperationContext *self)
   g_return_if_fail (self->priv->dbus_context != NULL);
 
   self->priv->state = TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_DONE;
-  dbus_g_method_return (self->priv->dbus_context);
+  g_dbus_method_invocation_return_value (self->priv->dbus_context, NULL);
 
   self->priv->dbus_context = NULL;
 }
@@ -396,7 +396,7 @@ tp_add_dispatch_operation_context_fail (TpAddDispatchOperationContext *self,
   g_return_if_fail (self->priv->dbus_context != NULL);
 
   self->priv->state = TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_FAILED;
-  dbus_g_method_return_error (self->priv->dbus_context, error);
+  g_dbus_method_invocation_return_gerror (self->priv->dbus_context, error);
 
   self->priv->dbus_context = NULL;
 }

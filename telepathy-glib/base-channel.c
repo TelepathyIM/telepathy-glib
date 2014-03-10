@@ -1066,7 +1066,7 @@ tp_base_channel_class_init (TpBaseChannelClass *tp_base_channel_class)
 static void
 tp_base_channel_close_dbus (
     TpSvcChannel *iface,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseChannel *chan = TP_BASE_CHANNEL (iface);
 

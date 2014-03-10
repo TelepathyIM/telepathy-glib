@@ -50,7 +50,7 @@ struct _TpCMMessage {
     guint32 incoming_id;
 
     /* for sending */
-    DBusGMethodInvocation *outgoing_context;
+    GDBusMethodInvocation *outgoing_context;
     TpMessageSendingFlags outgoing_flags;
 };
 

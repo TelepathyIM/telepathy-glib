@@ -1725,7 +1725,7 @@ tp_base_protocol_new_connection (TpBaseProtocol *self,
 static void
 protocol_normalize_contact (TpSvcProtocol *protocol,
     const gchar *contact,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseProtocol *self = TP_BASE_PROTOCOL (protocol);
   TpBaseProtocolClass *cls = TP_BASE_PROTOCOL_GET_CLASS (self);
@@ -1746,7 +1746,7 @@ protocol_normalize_contact (TpSvcProtocol *protocol,
 
   if (ret == NULL)
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_error_free (error);
     }
   else
@@ -1759,7 +1759,7 @@ protocol_normalize_contact (TpSvcProtocol *protocol,
 static void
 protocol_identify_account (TpSvcProtocol *protocol,
     GHashTable *parameters,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseProtocol *self = TP_BASE_PROTOCOL (protocol);
   TpBaseProtocolClass *cls = TP_BASE_PROTOCOL_GET_CLASS (self);
@@ -1787,7 +1787,7 @@ protocol_identify_account (TpSvcProtocol *protocol,
 
   if (ret == NULL)
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_error_free (error);
     }
   else
@@ -1800,7 +1800,7 @@ protocol_identify_account (TpSvcProtocol *protocol,
 static void
 addressing_normalize_contact_uri (TpSvcProtocolInterfaceAddressing1 *protocol,
     const gchar *uri,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseProtocol *self = TP_BASE_PROTOCOL (protocol);
   TpProtocolAddressingInterface *iface;
@@ -1819,7 +1819,7 @@ addressing_normalize_contact_uri (TpSvcProtocolInterfaceAddressing1 *protocol,
 
   if (ret == NULL)
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_error_free (error);
       return;
     }
@@ -1839,7 +1839,7 @@ static void
 addressing_normalize_vcard_address (TpSvcProtocolInterfaceAddressing1 *protocol,
     const gchar *vcard_field,
     const gchar *vcard_address,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseProtocol *self = TP_BASE_PROTOCOL (protocol);
   TpProtocolAddressingInterface *iface;
@@ -1859,7 +1859,7 @@ addressing_normalize_vcard_address (TpSvcProtocolInterfaceAddressing1 *protocol,
 
   if (ret == NULL)
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_error_free (error);
       return;
     }

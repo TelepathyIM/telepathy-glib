@@ -483,7 +483,7 @@ example_contact_list_connection_class_init (
 static void
 request_aliases (TpSvcConnectionInterfaceAliasing1 *aliasing,
                  const GArray *contacts,
-                 DBusGMethodInvocation *context)
+                 GDBusMethodInvocation *context)
 {
   ExampleContactListConnection *self =
     EXAMPLE_CONTACT_LIST_CONNECTION (aliasing);
@@ -499,7 +499,7 @@ request_aliases (TpSvcConnectionInterfaceAliasing1 *aliasing,
 
   if (!tp_handles_are_valid (contact_repo, contacts, FALSE, &error))
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_error_free (error);
       return;
     }
@@ -525,7 +525,7 @@ request_aliases (TpSvcConnectionInterfaceAliasing1 *aliasing,
 static void
 set_aliases (TpSvcConnectionInterfaceAliasing1 *aliasing,
              GHashTable *aliases,
-             DBusGMethodInvocation *context)
+             GDBusMethodInvocation *context)
 {
   ExampleContactListConnection *self =
     EXAMPLE_CONTACT_LIST_CONNECTION (aliasing);
@@ -544,7 +544,7 @@ set_aliases (TpSvcConnectionInterfaceAliasing1 *aliasing,
       if (!tp_handle_is_valid (contact_repo, GPOINTER_TO_UINT (key),
             &error))
         {
-          dbus_g_method_return_error (context, error);
+          g_dbus_method_invocation_return_gerror (context, error);
           g_error_free (error);
           return;
         }

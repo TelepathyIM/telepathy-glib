@@ -353,7 +353,7 @@ static void
 dbus_tube_offer (TpSvcChannelTypeDBusTube1 *chan,
     GHashTable *parameters,
     guint access_control,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpTestsDBusTubeChannel *self = (TpTestsDBusTubeChannel *) chan;
 
@@ -374,7 +374,7 @@ dbus_tube_offer (TpSvcChannelTypeDBusTube1 *chan,
 static void
 dbus_tube_accept (TpSvcChannelTypeDBusTube1 *chan,
     guint access_control,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpTestsDBusTubeChannel *self = (TpTestsDBusTubeChannel *) chan;
 

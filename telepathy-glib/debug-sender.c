@@ -282,7 +282,7 @@ tp_debug_sender_class_init (TpDebugSenderClass *klass)
 
 static void
 get_messages (TpSvcDebug1 *self,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpDebugSender *dbg = TP_DEBUG_SENDER (self);
   GPtrArray *messages;

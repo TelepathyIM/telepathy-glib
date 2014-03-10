@@ -62,7 +62,7 @@ static void
 my_get (TpSvcDBusProperties *iface G_GNUC_UNUSED,
     const gchar *i G_GNUC_UNUSED,
     const gchar *p G_GNUC_UNUSED,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   /* The telepathy-glib client side should never call this:
    * GetAll() is better. */
@@ -72,7 +72,7 @@ my_get (TpSvcDBusProperties *iface G_GNUC_UNUSED,
 static void
 my_get_all (TpSvcDBusProperties *iface,
     const gchar *i,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   MyConnectionManager *cm = (MyConnectionManager *) iface;
   GHashTable *ht;

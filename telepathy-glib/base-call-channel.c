@@ -1268,7 +1268,7 @@ tp_base_call_channel_is_accepted (TpBaseCallChannel *self)
 
 static void
 tp_base_call_channel_set_ringing (TpSvcChannelTypeCall1 *iface,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseCallChannel *self = TP_BASE_CALL_CHANNEL (iface);
   TpBaseCallChannelClass *klass = TP_BASE_CALL_CHANNEL_GET_CLASS (self);
@@ -1278,13 +1278,13 @@ tp_base_call_channel_set_ringing (TpSvcChannelTypeCall1 *iface,
     {
       GError e = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Call was requested. Ringing doesn't make sense." };
-      dbus_g_method_return_error (context, &e);
+      g_dbus_method_invocation_return_gerror (context, &e);
     }
   else if (self->priv->state != TP_CALL_STATE_INITIALISED)
     {
       GError e = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "Call is not in the right state for Ringing." };
-      dbus_g_method_return_error (context, &e);
+      g_dbus_method_invocation_return_gerror (context, &e);
     }
   else
     {
@@ -1309,7 +1309,7 @@ tp_base_call_channel_set_ringing (TpSvcChannelTypeCall1 *iface,
 
 static void
 tp_base_call_channel_set_queued (TpSvcChannelTypeCall1 *iface,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseCallChannel *self = TP_BASE_CALL_CHANNEL (iface);
   TpBaseCallChannelClass *klass = TP_BASE_CALL_CHANNEL_GET_CLASS (self);
@@ -1319,14 +1319,14 @@ tp_base_call_channel_set_queued (TpSvcChannelTypeCall1 *iface,
     {
       GError e = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Call was requested. Queued doesn't make sense." };
-      dbus_g_method_return_error (context, &e);
+      g_dbus_method_invocation_return_gerror (context, &e);
     }
   else if (self->priv->state != TP_CALL_STATE_INITIALISING &&
            self->priv->state != TP_CALL_STATE_INITIALISED)
     {
       GError e = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "Call is not in the right state for Queuing." };
-      dbus_g_method_return_error (context, &e);
+      g_dbus_method_invocation_return_gerror (context, &e);
     }
   else
     {
@@ -1351,7 +1351,7 @@ tp_base_call_channel_set_queued (TpSvcChannelTypeCall1 *iface,
 static void
 raise_accept_state_error (TpBaseCallChannel *self,
     TpCallState expected,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   GError *e = NULL;
 
@@ -1360,13 +1360,13 @@ raise_accept_state_error (TpBaseCallChannel *self,
       call_state_to_string (expected),
       call_state_to_string (self->priv->state));
 
-  dbus_g_method_return_error (context, e);
+  g_dbus_method_invocation_return_gerror (context, e);
   g_error_free (e);
 }
 
 static void
 tp_base_call_channel_accept (TpSvcChannelTypeCall1 *iface,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseCallChannel *self = TP_BASE_CALL_CHANNEL (iface);
   TpBaseCallChannelClass *klass = TP_BASE_CALL_CHANNEL_GET_CLASS (self);
@@ -1429,7 +1429,7 @@ tp_base_call_channel_hangup (TpSvcChannelTypeCall1 *iface,
   guint reason,
   const gchar *detailed_reason,
   const gchar *message,
-  DBusGMethodInvocation *context)
+  GDBusMethodInvocation *context)
 {
   TpBaseCallChannel *self = TP_BASE_CALL_CHANNEL (iface);
   TpBaseCallChannelClass *klass = TP_BASE_CALL_CHANNEL_GET_CLASS (self);
@@ -1439,7 +1439,7 @@ tp_base_call_channel_hangup (TpSvcChannelTypeCall1 *iface,
     {
       GError e = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "This call has already ended" };
-      dbus_g_method_return_error (context, &e);
+      g_dbus_method_invocation_return_gerror (context, &e);
       return;
     }
 
@@ -1458,7 +1458,7 @@ tp_base_call_channel_add_content_dbus (TpSvcChannelTypeCall1 *iface,
   const gchar *name,
   TpMediaStreamType mtype,
   TpMediaStreamDirection initial_direction,
-  DBusGMethodInvocation *context)
+  GDBusMethodInvocation *context)
 {
   TpBaseCallChannel *self = TP_BASE_CALL_CHANNEL (iface);
   TpBaseCallChannelClass *klass = TP_BASE_CALL_CHANNEL_GET_CLASS (self);
@@ -1509,7 +1509,7 @@ tp_base_call_channel_add_content_dbus (TpSvcChannelTypeCall1 *iface,
   return;
 
 error:
-  dbus_g_method_return_error (context, error);
+  g_dbus_method_invocation_return_gerror (context, error);
   g_error_free (error);
 }
 

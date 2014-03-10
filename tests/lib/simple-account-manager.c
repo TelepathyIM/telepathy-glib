@@ -52,7 +52,7 @@ tp_tests_simple_account_manager_create_account (TpSvcAccountManager *svc,
     const gchar *in_Display_Name,
     GHashTable *in_Parameters,
     GHashTable *in_Properties,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpTestsSimpleAccountManager *self = (TpTestsSimpleAccountManager *) svc;
   const gchar *out = TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/lospolloshermanos";
@@ -61,7 +61,7 @@ tp_tests_simple_account_manager_create_account (TpSvcAccountManager *svc,
   if (!tp_strdiff (tp_asv_get_string (in_Parameters, "fail"), "yes"))
     {
       GError e = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT, "loldongs" };
-      dbus_g_method_return_error (context, &e);
+      g_dbus_method_invocation_return_gerror (context, &e);
       return;
     }
 

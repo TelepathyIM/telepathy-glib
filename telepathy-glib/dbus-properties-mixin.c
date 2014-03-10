@@ -1068,7 +1068,7 @@ static void
 _tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,
                                const gchar *interface_name,
                                const gchar *property_name,
-                               DBusGMethodInvocation *context)
+                               GDBusMethodInvocation *context)
 {
   GObject *self = G_OBJECT (iface);
   GValue value = { 0 };
@@ -1082,7 +1082,7 @@ _tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,
     }
   else
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_error_free (error);
     }
 }
@@ -1141,7 +1141,7 @@ tp_dbus_properties_mixin_dup_all (GObject *self,
 static void
 _tp_dbus_properties_mixin_get_all_dbus (TpSvcDBusProperties *iface,
     const gchar *interface_name,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   GHashTable *values = tp_dbus_properties_mixin_dup_all (G_OBJECT (iface),
       interface_name);
@@ -1259,7 +1259,7 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
                                const gchar *interface_name,
                                const gchar *property_name,
                                const GValue *value,
-                               DBusGMethodInvocation *context)
+                               GDBusMethodInvocation *context)
 {
   GObject *self = G_OBJECT (iface);
   GError *error = NULL;
@@ -1271,7 +1271,7 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
     }
   else
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_error_free (error);
     }
 }

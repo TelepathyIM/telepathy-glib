@@ -141,7 +141,7 @@ tp_tests_simple_channel_request_dup_immutable_props (
 
 static void
 tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpTestsSimpleChannelRequest *self = SIMPLE_CHANNEL_REQUEST (request);
   TpClient *client;
@@ -161,7 +161,7 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
      GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Computer says no" };
 
-      dbus_g_method_return_error (context, &error);
+      g_dbus_method_invocation_return_gerror (context, &error);
       return;
     }
 
@@ -243,7 +243,7 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
 
 static void
 tp_tests_simple_channel_request_cancel (TpSvcChannelRequest *request,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   tp_svc_channel_request_emit_failed (request, TP_ERROR_STR_CANCELLED,
       "ChannelRequest has been cancelled");

@@ -65,7 +65,7 @@ struct _FavouriteContactClosure {
   gchar *account;
   gchar *contact_id;
   gchar *file_contents;
-  DBusGMethodInvocation *context;
+  GDBusMethodInvocation *context;
   FavouriteContactCallback cb;
 };
 
@@ -90,7 +90,7 @@ static FavouriteContactClosure *
 favourite_contact_closure_new (TplDBusService *self,
     const gchar *account,
     const gchar *contact_id,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   FavouriteContactClosure *closure;
 
@@ -427,7 +427,7 @@ pendingproc_get_favourite_contacts (TplActionChain *action_chain,
 
 static void
 tpl_dbus_service_get_favourite_contacts (TpSvcLogger *logger,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TplDBusService *self;
   TplDBusServicePriv *priv;
@@ -576,7 +576,7 @@ pendingproc_add_favourite_contact (TplActionChain *action_chain,
 
   if (!tp_dbus_check_valid_object_path (closure->account, &error))
     {
-      dbus_g_method_return_error (closure->context, error);
+      g_dbus_method_invocation_return_gerror (closure->context, error);
 
       goto pendingproc_add_favourite_contact_ERROR;
     }
@@ -605,7 +605,7 @@ static void
 tpl_dbus_service_add_favourite_contact (TpSvcLogger *logger,
     const gchar *account,
     const gchar *contact_id,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TplDBusService *self = TPL_DBUS_SERVICE (logger);
   TplDBusServicePriv *priv;
@@ -673,7 +673,7 @@ pendingproc_remove_favourite_contact (TplActionChain *action_chain,
 
   if (!tp_dbus_check_valid_object_path (closure->account, &error))
     {
-      dbus_g_method_return_error (closure->context, error);
+      g_dbus_method_invocation_return_gerror (closure->context, error);
 
       goto pendingproc_remove_favourite_contact_ERROR;
     }
@@ -706,7 +706,7 @@ static void
 tpl_dbus_service_remove_favourite_contact (TpSvcLogger *logger,
     const gchar *account,
     const gchar *contact_id,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TplDBusService *self = TPL_DBUS_SERVICE (logger);
   TplDBusServicePriv *priv;
@@ -733,7 +733,7 @@ tpl_dbus_service_remove_favourite_contact (TpSvcLogger *logger,
 
 static void
 tpl_dbus_service_clear (TpSvcLogger *logger,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TplDBusService *self = TPL_DBUS_SERVICE (logger);
 
@@ -750,7 +750,7 @@ tpl_dbus_service_clear (TpSvcLogger *logger,
 static void
 tpl_dbus_service_clear_account (TpSvcLogger *logger,
     const gchar *account_path,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TplDBusService *self = TPL_DBUS_SERVICE (logger);
   TpDBusDaemon *bus;
@@ -765,7 +765,7 @@ tpl_dbus_service_clear_account (TpSvcLogger *logger,
   if (bus == NULL)
     {
       DEBUG ("Unable to acquire the bus daemon: %s", error->message);
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       goto out;
     }
 
@@ -777,7 +777,7 @@ tpl_dbus_service_clear_account (TpSvcLogger *logger,
     {
       DEBUG ("Unable to acquire the account for %s: %s", account_path,
           error->message);
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       goto out;
     }
 
@@ -801,7 +801,7 @@ tpl_dbus_service_clear_entity (TpSvcLogger *logger,
     const gchar *account_path,
     const gchar *identifier,
     gint type,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TplDBusService *self = TPL_DBUS_SERVICE (logger);
   TpDBusDaemon *bus;
@@ -818,7 +818,7 @@ tpl_dbus_service_clear_entity (TpSvcLogger *logger,
   if (bus == NULL)
     {
       DEBUG ("Unable to acquire the bus daemon: %s", error->message);
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       goto out;
     }
 
@@ -830,7 +830,7 @@ tpl_dbus_service_clear_entity (TpSvcLogger *logger,
     {
       DEBUG ("Unable to acquire the account for %s: %s", account_path,
           error->message);
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       goto out;
     }
 

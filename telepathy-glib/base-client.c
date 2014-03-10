@@ -1650,7 +1650,7 @@ _tp_base_client_observe_channel (TpSvcClientObserver *iface,
     const gchar *dispatch_operation_path,
     GHashTable *requests_hash,
     GHashTable *observer_info,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseClient *self = TP_BASE_CLIENT (iface);
   TpObserveChannelContext *ctx;
@@ -1817,7 +1817,7 @@ static void
 _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
     const gchar *dispatch_operation_path,
     GHashTable *properties,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseClient *self = TP_BASE_CLIENT (iface);
   TpAddDispatchOperationContext *ctx;
@@ -2165,7 +2165,7 @@ _tp_base_client_handle_channel (TpSvcClientHandler *iface,
     GHashTable *requests_hash,
     gint64 user_action_time,
     GHashTable *handler_info,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseClient *self = TP_BASE_CLIENT (iface);
   TpHandleChannelContext *ctx;
@@ -2321,7 +2321,7 @@ static void
 _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
     const gchar *path,
     GHashTable *properties,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseClient *self = TP_BASE_CLIENT (iface);
   TpChannelRequest *request;
@@ -2381,7 +2381,7 @@ _tp_base_client_remove_request (TpSvcClientInterfaceRequests *iface,
     const gchar *path,
     const gchar *error,
     const gchar *reason,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseClient *self = TP_BASE_CLIENT (iface);
   TpChannelRequest *request;

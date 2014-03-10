@@ -92,7 +92,7 @@ struct _TpHandleChannelContextPrivate
 {
   TpHandleChannelContextState state;
   GSimpleAsyncResult *result;
-  DBusGMethodInvocation *dbus_context;
+  GDBusMethodInvocation *dbus_context;
 
   /* Number of calls we are waiting they return. Once they have all returned
    * the context is considered as prepared */
@@ -398,14 +398,14 @@ tp_handle_channel_context_class_init (
   /**
    * TpHandleChannelContext:dbus-context: (skip)
    *
-   * The #DBusGMethodInvocation representing the D-Bus context of the
+   * The #GDBusMethodInvocation representing the D-Bus context of the
    * HandleChannels call.
    * Can only be written during construction.
    *
    * Since: 0.11.6
    */
   param_spec = g_param_spec_pointer ("dbus-context", "D-Bus context",
-      "The DBusGMethodInvocation associated with the HandleChannels call",
+      "The GDBusMethodInvocation associated with the HandleChannels call",
       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DBUS_CONTEXT,
       param_spec);
@@ -434,7 +434,7 @@ TpHandleChannelContext * _tp_handle_channel_context_new (
     GPtrArray *requests_satisfied,
     guint64 user_action_time,
     GVariant *handler_info,
-    DBusGMethodInvocation *dbus_context)
+    GDBusMethodInvocation *dbus_context)
 {
   TpHandleChannelContext *ctx;
 
@@ -475,7 +475,7 @@ tp_handle_channel_context_accept (TpHandleChannelContext *self)
   g_return_if_fail (self->priv->dbus_context != NULL);
 
   self->priv->state = TP_HANDLE_CHANNEL_CONTEXT_STATE_DONE;
-  dbus_g_method_return (self->priv->dbus_context);
+  g_dbus_method_invocation_return_value (self->priv->dbus_context, NULL);
 
   self->priv->dbus_context = NULL;
 
@@ -501,7 +501,7 @@ tp_handle_channel_context_fail (TpHandleChannelContext *self,
   g_return_if_fail (self->priv->dbus_context != NULL);
 
   self->priv->state = TP_HANDLE_CHANNEL_CONTEXT_STATE_FAILED;
-  dbus_g_method_return_error (self->priv->dbus_context, error);
+  g_dbus_method_invocation_return_gerror (self->priv->dbus_context, error);
 
   self->priv->dbus_context = NULL;
 }

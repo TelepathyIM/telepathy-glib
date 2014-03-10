@@ -59,7 +59,7 @@ TpHandleChannelContext * _tp_handle_channel_context_new (
     GPtrArray *requests_satisfied,
     guint64 user_action_time,
     GVariant *handler_info,
-    DBusGMethodInvocation *dbus_context);
+    GDBusMethodInvocation *dbus_context);
 
 TpHandleChannelContextState _tp_handle_channel_context_get_state
     (TpHandleChannelContext *self);

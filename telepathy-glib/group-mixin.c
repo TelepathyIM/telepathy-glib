@@ -552,7 +552,7 @@ static void
 tp_group_mixin_add_members_async (TpSvcChannelInterfaceGroup1 *obj,
                                   const GArray *contacts,
                                   const gchar *message,
-                                  DBusGMethodInvocation *context)
+                                  GDBusMethodInvocation *context)
 {
   GError *error = NULL;
 
@@ -562,7 +562,7 @@ tp_group_mixin_add_members_async (TpSvcChannelInterfaceGroup1 *obj,
     }
   else
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_error_free (error);
     }
 }
@@ -692,7 +692,7 @@ tp_group_mixin_remove_members_async
      const GArray *contacts,
      const gchar *message,
      guint reason,
-     DBusGMethodInvocation *context)
+     GDBusMethodInvocation *context)
 {
   GError *error = NULL;
 
@@ -704,7 +704,7 @@ tp_group_mixin_remove_members_async
     }
   else
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_error_free (error);
     }
 }
@@ -2008,7 +2008,7 @@ tp_external_group_mixin_get_dbus_property (GObject *object,
         GError na = { TP_ERROR, TP_ERROR_NOT_AVAILABLE, "I'm sure I " \
                       "had a group object around here somewhere?" };\
         \
-        dbus_g_method_return_error (context, &na); \
+        g_dbus_method_invocation_return_gerror (context, &na); \
         return; \
       } \
 
@@ -2016,7 +2016,7 @@ static void
 tp_external_group_mixin_add_members_async (TpSvcChannelInterfaceGroup1 *obj,
                                            const GArray *contacts,
                                            const gchar *message,
-                                           DBusGMethodInvocation *context)
+                                           GDBusMethodInvocation *context)
 {
   EXTERNAL_OR_DIE (group)
   tp_group_mixin_add_members_async ((TpSvcChannelInterfaceGroup1 *) group,
@@ -2029,7 +2029,7 @@ tp_external_group_mixin_remove_members_async
      const GArray *contacts,
      const gchar *message,
      guint reason,
-     DBusGMethodInvocation *context)
+     GDBusMethodInvocation *context)
 {
   EXTERNAL_OR_DIE (group)
   tp_group_mixin_remove_members_async

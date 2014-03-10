@@ -1203,7 +1203,7 @@ static void
 tp_base_media_call_stream_complete_sending_state_change (
     TpSvcCall1StreamInterfaceMedia *iface,
     TpStreamFlowState state,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (iface);
   TpBaseMediaCallStreamClass *klass =
@@ -1215,7 +1215,7 @@ tp_base_media_call_stream_complete_sending_state_change (
     {
       GError e = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Invalid sending state transition" };
-      dbus_g_method_return_error (context, &e);
+      g_dbus_method_invocation_return_gerror (context, &e);
       return;
     }
 
@@ -1243,7 +1243,7 @@ tp_base_media_call_stream_report_sending_failure (
     TpCallStateChangeReason reason,
     const gchar *dbus_reason,
     const gchar *message,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (iface);
   TpBaseMediaCallStreamClass *klass =
@@ -1289,7 +1289,7 @@ static void
 tp_base_media_call_stream_complete_receiving_state_change (
     TpSvcCall1StreamInterfaceMedia *iface,
     TpStreamFlowState state,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (iface);
   TpBaseMediaCallStreamClass *klass =
@@ -1301,7 +1301,7 @@ tp_base_media_call_stream_complete_receiving_state_change (
     {
       GError e = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Invalid receiving state transition" };
-      dbus_g_method_return_error (context, &e);
+      g_dbus_method_invocation_return_gerror (context, &e);
       return;
     }
 
@@ -1338,7 +1338,7 @@ tp_base_media_call_stream_report_receiving_failure (
     TpCallStateChangeReason reason,
     const gchar *dbus_reason,
     const gchar *message,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (iface);
   TpBaseMediaCallStreamClass *klass =
@@ -1381,7 +1381,7 @@ static void
 tp_base_media_call_stream_set_credentials (TpSvcCall1StreamInterfaceMedia *iface,
     const gchar *username,
     const gchar *password,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (iface);
 
@@ -1406,7 +1406,7 @@ tp_base_media_call_stream_set_credentials (TpSvcCall1StreamInterfaceMedia *iface
 static void
 tp_base_media_call_stream_add_candidates (TpSvcCall1StreamInterfaceMedia *iface,
     const GPtrArray *candidates,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (iface);
   TpBaseMediaCallStreamClass *klass =
@@ -1420,7 +1420,7 @@ tp_base_media_call_stream_add_candidates (TpSvcCall1StreamInterfaceMedia *iface,
       GError e = { TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
           "Connection Manager did not implement "
           "TpBaseMediaCallStream::add_local_candidates vmethod" };
-      dbus_g_method_return_error (context, &e);
+      g_dbus_method_invocation_return_gerror (context, &e);
       return;
     }
 
@@ -1430,7 +1430,7 @@ tp_base_media_call_stream_add_candidates (TpSvcCall1StreamInterfaceMedia *iface,
   accepted_candidates = klass->add_local_candidates (self, candidates, &error);
   if (accepted_candidates == NULL)
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_clear_error (&error);
       return;
     }
@@ -1455,7 +1455,7 @@ tp_base_media_call_stream_add_candidates (TpSvcCall1StreamInterfaceMedia *iface,
 static void
 tp_base_media_call_stream_finish_initial_candidates (
     TpSvcCall1StreamInterfaceMedia *iface,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (iface);
   TpBaseMediaCallStreamClass *klass =
@@ -1465,7 +1465,7 @@ tp_base_media_call_stream_finish_initial_candidates (
   if (klass->finish_initial_candidates != NULL)
     if (!klass->finish_initial_candidates (self, &error))
       {
-        dbus_g_method_return_error (context, error);
+        g_dbus_method_invocation_return_gerror (context, error);
         g_clear_error (&error);
         return;
       }
@@ -1477,7 +1477,7 @@ tp_base_media_call_stream_finish_initial_candidates (
 static void
 tp_base_media_call_stream_fail (TpSvcCall1StreamInterfaceMedia *iface,
     const GValueArray *reason_array,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (iface);
   TpBaseCallStream *base = TP_BASE_CALL_STREAM (self);

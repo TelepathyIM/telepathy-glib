@@ -46,7 +46,7 @@ struct _TpChannelManagerRequest
   /*<private>*/
   GObject parent;
 
-  DBusGMethodInvocation *context;
+  GDBusMethodInvocation *context;
   TpChannelManagerRequestMethod method;
 
   gchar *channel_type;
@@ -85,7 +85,7 @@ GType tp_channel_manager_request_get_type (void);
     TpChannelManagerRequestClass))
 
 TpChannelManagerRequest * _tp_channel_manager_request_new (
-    DBusGMethodInvocation *context,
+    GDBusMethodInvocation *context,
     TpChannelManagerRequestMethod method,
     const char *channel_type,
     TpEntityType handle_type,

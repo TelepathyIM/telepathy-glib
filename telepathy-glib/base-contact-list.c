@@ -278,7 +278,7 @@ struct _TpBaseContactListPrivate
   /* owned gchar* => owned TpHandleSet */
   GHashTable *groups;
 
-  /* DBusGMethodInvocation *s for calls to RequestBlockedContacts which are
+  /* GDBusMethodInvocation *s for calls to RequestBlockedContacts which are
    * waiting for the contact list to (fail to) be downloaded.
    */
   GQueue blocked_contact_requests;
@@ -530,11 +530,11 @@ tp_base_contact_list_fail_blocked_contact_requests (
     TpBaseContactList *self,
     const GError *error)
 {
-  DBusGMethodInvocation *context;
+  GDBusMethodInvocation *context;
 
   while ((context = g_queue_pop_head (&self->priv->blocked_contact_requests))
           != NULL)
-    dbus_g_method_return_error (context, error);
+    g_dbus_method_invocation_return_gerror (context, error);
 }
 
 static void
@@ -996,7 +996,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
           self->priv->blocked_contact_requests.length > 0)
         {
           GHashTable *map = tp_handle_set_to_identifier_map (blocked);
-          DBusGMethodInvocation *context;
+          GDBusMethodInvocation *context;
 
           while ((context = g_queue_pop_head (
                       &self->priv->blocked_contact_requests)) != NULL)
@@ -3626,7 +3626,7 @@ static void
 tp_base_contact_list_mixin_get_contact_list_attributes (
     TpSvcConnectionInterfaceContactList1 *svc,
     const gchar **interfaces,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
       BASE_CONTACT_LIST);
@@ -3637,7 +3637,7 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
   if (tp_base_contact_list_get_state (self, &error)
       != TP_CONTACT_LIST_STATE_SUCCESS)
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_clear_error (&error);
     }
   else
@@ -3894,13 +3894,13 @@ tp_base_contact_list_check_group_change (TpBaseContactList *self,
 /* Normally we'd use the return_from functions, but these methods all return
  * void, and life's too short. */
 static void
-tp_base_contact_list_mixin_return_void (DBusGMethodInvocation *context,
+tp_base_contact_list_mixin_return_void (GDBusMethodInvocation *context,
     const GError *error)
 {
   if (error == NULL)
-    dbus_g_method_return (context);
+    g_dbus_method_invocation_return_value (context, NULL);
   else
-    dbus_g_method_return_error (context, error);
+    g_dbus_method_invocation_return_gerror (context, error);
 }
 
 static void
@@ -3921,7 +3921,7 @@ tp_base_contact_list_mixin_request_subscription (
     TpSvcConnectionInterfaceContactList1 *svc,
     const GArray *contacts,
     const gchar *message,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
       BASE_CONTACT_LIST);
@@ -3960,7 +3960,7 @@ static void
 tp_base_contact_list_mixin_authorize_publication (
     TpSvcConnectionInterfaceContactList1 *svc,
     const GArray *contacts,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
       BASE_CONTACT_LIST);
@@ -3999,7 +3999,7 @@ static void
 tp_base_contact_list_mixin_remove_contacts (
     TpSvcConnectionInterfaceContactList1 *svc,
     const GArray *contacts,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
       BASE_CONTACT_LIST);
@@ -4038,7 +4038,7 @@ static void
 tp_base_contact_list_mixin_unsubscribe (
     TpSvcConnectionInterfaceContactList1 *svc,
     const GArray *contacts,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
       BASE_CONTACT_LIST);
@@ -4077,7 +4077,7 @@ static void
 tp_base_contact_list_mixin_unpublish (
     TpSvcConnectionInterfaceContactList1 *svc,
     const GArray *contacts,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
       BASE_CONTACT_LIST);
@@ -4275,7 +4275,7 @@ tp_base_contact_list_mixin_download_cb (GObject *source,
 static void
 tp_base_contact_list_mixin_download (
     TpSvcConnectionInterfaceContactList1 *svc,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
       BASE_CONTACT_LIST);
@@ -4386,7 +4386,7 @@ tp_base_contact_list_mixin_set_contact_groups (
     TpSvcConnectionInterfaceContactGroups1 *svc,
     guint contact,
     const gchar **groups,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
       BASE_CONTACT_LIST);
@@ -4450,7 +4450,7 @@ tp_base_contact_list_mixin_set_group_members (
     TpSvcConnectionInterfaceContactGroups1 *svc,
     const gchar *group,
     const GArray *contacts,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
       BASE_CONTACT_LIST);
@@ -4491,7 +4491,7 @@ tp_base_contact_list_mixin_add_to_group (
     TpSvcConnectionInterfaceContactGroups1 *svc,
     const gchar *group,
     const GArray *contacts,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
       BASE_CONTACT_LIST);
@@ -4538,7 +4538,7 @@ tp_base_contact_list_mixin_remove_from_group (
     TpSvcConnectionInterfaceContactGroups1 *svc,
     const gchar *group,
     const GArray *contacts,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
       BASE_CONTACT_LIST);
@@ -4587,7 +4587,7 @@ static void
 tp_base_contact_list_mixin_remove_group (
     TpSvcConnectionInterfaceContactGroups1 *svc,
     const gchar *group,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
       BASE_CONTACT_LIST);
@@ -4633,7 +4633,7 @@ tp_base_contact_list_mixin_rename_group (
     TpSvcConnectionInterfaceContactGroups1 *svc,
     const gchar *before,
     const gchar *after,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
       BASE_CONTACT_LIST);
@@ -4764,14 +4764,14 @@ tp_base_contact_list_mixin_groups_iface_init (gpointer klass)
     { \
       GError e = { TP_ERROR, TP_ERROR_NOT_IMPLEMENTED, \
           "ContactBlocking is not supported on this connection" }; \
-      dbus_g_method_return_error (context, &e); \
+      g_dbus_method_invocation_return_gerror (context, &e); \
       return; \
     }
 
 static void
 tp_base_contact_list_mixin_request_blocked_contacts (
     TpSvcConnectionInterfaceContactBlocking1 *svc,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
       BASE_CONTACT_LIST);
@@ -4787,7 +4787,7 @@ tp_base_contact_list_mixin_request_blocked_contacts (
 
     case TP_CONTACT_LIST_STATE_FAILURE:
       g_warn_if_fail (self->priv->failure != NULL);
-      dbus_g_method_return_error (context, self->priv->failure);
+      g_dbus_method_invocation_return_gerror (context, self->priv->failure);
       break;
 
     case TP_CONTACT_LIST_STATE_SUCCESS:
@@ -4807,7 +4807,7 @@ tp_base_contact_list_mixin_request_blocked_contacts (
         GError broken = { TP_ERROR, TP_ERROR_CONFUSED,
             "My internal list of blocked contacts is inconsistent! "
             "I apologise for any inconvenience caused." };
-        dbus_g_method_return_error (context, &broken);
+        g_dbus_method_invocation_return_gerror (context, &broken);
         g_return_if_reached ();
       }
     }
@@ -4820,7 +4820,7 @@ blocked_cb (
     gpointer user_data)
 {
   TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
-  DBusGMethodInvocation *context = user_data;
+  GDBusMethodInvocation *context = user_data;
   GError *error = NULL;
 
   if (tp_base_contact_list_block_contacts_with_abuse_finish (self, result,
@@ -4831,7 +4831,7 @@ blocked_cb (
     }
   else
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_clear_error (&error);
     }
 }
@@ -4841,7 +4841,7 @@ tp_base_contact_list_mixin_block_contacts (
     TpSvcConnectionInterfaceContactBlocking1 *svc,
     const GArray *contacts_arr,
     gboolean report_abusive,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
       BASE_CONTACT_LIST);
@@ -4863,7 +4863,7 @@ unblocked_cb (
     gpointer user_data)
 {
   TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
-  DBusGMethodInvocation *context = user_data;
+  GDBusMethodInvocation *context = user_data;
   GError *error = NULL;
 
   if (tp_base_contact_list_unblock_contacts_finish (self, result, &error))
@@ -4872,7 +4872,7 @@ unblocked_cb (
     }
   else
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_clear_error (&error);
     }
 }
@@ -4881,7 +4881,7 @@ static void
 tp_base_contact_list_mixin_unblock_contacts (
     TpSvcConnectionInterfaceContactBlocking1 *svc,
     const GArray *contacts_arr,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
       BASE_CONTACT_LIST);

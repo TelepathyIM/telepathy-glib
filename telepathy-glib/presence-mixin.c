@@ -766,7 +766,7 @@ tp_presence_mixin_set_presence (
     TpSvcConnectionInterfacePresence1 *iface,
     const gchar *status,
     const gchar *message,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   GObject *obj = (GObject *) iface;
   TpPresenceMixinClass *mixin_cls =
@@ -803,7 +803,7 @@ out:
     }
   else
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_error_free (error);
     }
 

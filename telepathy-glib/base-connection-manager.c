@@ -740,7 +740,7 @@ static void
 tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
                                                const gchar *proto,
                                                GHashTable *parameters,
-                                               DBusGMethodInvocation *context)
+                                               GDBusMethodInvocation *context)
 {
   TpBaseConnectionManager *self = TP_BASE_CONNECTION_MANAGER (iface);
   TpBaseConnectionManagerClass *cls =
@@ -800,7 +800,7 @@ tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
   return;
 
 ERROR:
-  dbus_g_method_return_error (context, error);
+  g_dbus_method_invocation_return_gerror (context, error);
   g_error_free (error);
 }
 

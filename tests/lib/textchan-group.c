@@ -266,7 +266,7 @@ tp_tests_text_channel_set_password (TpTestsTextChannelGroup *self,
 
 static void
 password_get_password_flags (TpSvcChannelInterfacePassword1 *chan,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpTestsTextChannelGroup *self = (TpTestsTextChannelGroup *) chan;
   TpChannelPasswordFlags flags = 0;
@@ -281,7 +281,7 @@ password_get_password_flags (TpSvcChannelInterfacePassword1 *chan,
 static void
 password_provide_password (TpSvcChannelInterfacePassword1 *chan,
     const gchar *password,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpTestsTextChannelGroup *self = (TpTestsTextChannelGroup *) chan;
 

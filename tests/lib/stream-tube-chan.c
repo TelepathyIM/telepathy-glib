@@ -375,7 +375,7 @@ stream_tube_offer (TpSvcChannelTypeStreamTube1 *iface,
     const GValue *address,
     guint access_control,
     GHashTable *parameters,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpTestsStreamTubeChannel *self = (TpTestsStreamTubeChannel *) iface;
   GError *error = NULL;
@@ -404,7 +404,7 @@ stream_tube_offer (TpSvcChannelTypeStreamTube1 *iface,
   return;
 
 fail:
-  dbus_g_method_return_error (context, error);
+  g_dbus_method_invocation_return_gerror (context, error);
   g_error_free (error);
 }
 
@@ -465,7 +465,7 @@ stream_tube_accept (TpSvcChannelTypeStreamTube1 *iface,
     TpSocketAddressType address_type,
     TpSocketAccessControl access_control,
     const GValue *access_control_param,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpTestsStreamTubeChannel *self = (TpTestsStreamTubeChannel *) iface;
   GError *error = NULL;
@@ -503,7 +503,7 @@ stream_tube_accept (TpSvcChannelTypeStreamTube1 *iface,
   return;
 
 fail:
-  dbus_g_method_return_error (context, error);
+  g_dbus_method_invocation_return_gerror (context, error);
   g_error_free (error);
 }
 

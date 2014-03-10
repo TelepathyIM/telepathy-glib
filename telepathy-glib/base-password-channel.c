@@ -504,7 +504,7 @@ tp_base_password_channel_start_mechanism_with_data (
     TpSvcChannelInterfaceSASLAuthentication1 *self,
     const gchar *mechanism,
     const GArray *initial_data,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBasePasswordChannel *channel = TP_BASE_PASSWORD_CHANNEL (self);
   TpBasePasswordChannelPrivate *priv = channel->priv;
@@ -549,14 +549,14 @@ tp_base_password_channel_start_mechanism_with_data (
 
 error:
   DEBUG ("%s", error->message);
-  dbus_g_method_return_error (context, error);
+  g_dbus_method_invocation_return_gerror (context, error);
   g_error_free (error);
 }
 
 static void
 tp_base_password_channel_accept_sasl (
     TpSvcChannelInterfaceSASLAuthentication1 *self,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBasePasswordChannel *channel = TP_BASE_PASSWORD_CHANNEL (self);
   TpBasePasswordChannelPrivate *priv = channel->priv;
@@ -565,7 +565,7 @@ tp_base_password_channel_accept_sasl (
     {
       GError *error = g_error_new (TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "AcceptSASL cannot be called in state %u", priv->sasl_status);
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_error_free (error);
       return;
     }
@@ -584,7 +584,7 @@ tp_base_password_channel_abort_sasl (
     TpSvcChannelInterfaceSASLAuthentication1 *self,
     TpSASLAbortReason reason,
     const gchar *debug_message,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBasePasswordChannel *channel = TP_BASE_PASSWORD_CHANNEL (self);
   TpBasePasswordChannelPrivate *priv = channel->priv;
@@ -594,7 +594,7 @@ tp_base_password_channel_abort_sasl (
     {
       GError *error = g_error_new (TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "AbortSASL cannot be called in state %u", priv->sasl_status);
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_error_free (error);
       return;
     }

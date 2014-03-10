@@ -122,7 +122,7 @@ tp_tests_simple_channel_dispatcher_create_channel (
     gint64 user_action_time,
     const gchar *preferred_handler,
     GHashTable *hints,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpTestsSimpleChannelDispatcher *self = SIMPLE_CHANNEL_DISPATCHER (dispatcher);
   gchar *path;
@@ -144,7 +144,7 @@ tp_tests_simple_channel_dispatcher_create_channel (
       GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Computer says no" };
 
-      dbus_g_method_return_error (context, &error);
+      g_dbus_method_invocation_return_gerror (context, &error);
       return;
     }
 
@@ -169,7 +169,7 @@ tp_tests_simple_channel_dispatcher_ensure_channel (
     gint64 user_action_time,
     const gchar *preferred_handler,
     GHashTable *hints,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpTestsSimpleChannelDispatcher *self = SIMPLE_CHANNEL_DISPATCHER (dispatcher);
   gchar *path;
@@ -219,7 +219,7 @@ tp_tests_simple_channel_dispatcher_delegate_channels (
     const GPtrArray *channels,
     gint64 user_action_time,
     const gchar *preferred_handler,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpTestsSimpleChannelDispatcher *self = (TpTestsSimpleChannelDispatcher *)
     dispatcher;
@@ -262,7 +262,7 @@ tp_tests_simple_channel_dispatcher_present_channel (
     TpSvcChannelDispatcher *dispatcher,
     const gchar *channel,
     gint64 user_action_time,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   tp_svc_channel_dispatcher_return_from_present_channel (context);
 }

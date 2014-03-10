@@ -221,7 +221,7 @@
 /**
  * TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED: (skip)
  * @conn: A TpBaseConnection
- * @context: A DBusGMethodInvocation
+ * @context: A GDBusMethodInvocation
  *
  * If @conn is not in state #TP_CONNECTION_STATUS_CONNECTED, complete the
  * D-Bus method invocation @context by raising the Telepathy error
@@ -331,7 +331,7 @@ struct _TpBaseConnectionPrivate
    * so that we can use GArray's convenient auto-null-termination. */
   GArray *interfaces;
 
-  /* Array of DBusGMethodInvocation * representing Disconnect calls.
+  /* Array of GDBusMethodInvocation * representing Disconnect calls.
    * If NULL and we are in a state != DISCONNECTED, then we have not started
    * shutting down yet.
    * If NULL and we are in state DISCONNECTED, then we have finished shutting
@@ -1492,7 +1492,7 @@ conn_status_reason_from_g_error (GError *error)
 
 static void
 tp_base_connection_connect (TpSvcConnection *iface,
-                            DBusGMethodInvocation *context)
+                            GDBusMethodInvocation *context)
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (iface);
   TpBaseConnectionClass *cls = TP_BASE_CONNECTION_GET_CLASS (self);
@@ -1519,7 +1519,7 @@ tp_base_connection_connect (TpSvcConnection *iface,
                 TP_CONNECTION_STATUS_DISCONNECTED,
                 conn_status_reason_from_g_error (error));
             }
-          dbus_g_method_return_error (context, error);
+          g_dbus_method_invocation_return_gerror (context, error);
           g_error_free (error);
           return;
         }
@@ -1529,7 +1529,7 @@ tp_base_connection_connect (TpSvcConnection *iface,
 
 static void
 tp_base_connection_disconnect (TpSvcConnection *iface,
-                               DBusGMethodInvocation *context)
+                               GDBusMethodInvocation *context)
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (iface);
 
@@ -2200,7 +2200,7 @@ tp_base_connection_add_client_interest (TpBaseConnection *self,
 static void
 tp_base_connection_dbus_add_client_interest (TpSvcConnection *svc,
     const gchar **interests,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseConnection *self = (TpBaseConnection *) svc;
   gchar *unique_name = NULL;
@@ -2224,7 +2224,7 @@ finally:
 static void
 tp_base_connection_dbus_remove_client_interest (TpSvcConnection *svc,
     const gchar **interests,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   gchar *unique_name = NULL;
   const gchar **interest;
@@ -2330,25 +2330,25 @@ finally:
  */
 static void conn_requests_check_basic_properties (TpBaseConnection *self,
     GHashTable *requested_properties, TpChannelManagerRequestMethod method,
-    DBusGMethodInvocation *context);
+    GDBusMethodInvocation *context);
 
 static void
 conn_requests_requestotron_validate_handle (TpBaseConnection *self,
     GHashTable *requested_properties, TpChannelManagerRequestMethod method,
     const gchar *type, TpEntityType target_entity_type,
     TpHandle target_handle, const gchar *target_id,
-    DBusGMethodInvocation *context);
+    GDBusMethodInvocation *context);
 
 static void conn_requests_offer_request (TpBaseConnection *self,
     GHashTable *requested_properties, TpChannelManagerRequestMethod method,
     const gchar *type, TpEntityType target_entity_type,
-    TpHandle target_handle, DBusGMethodInvocation *context);
+    TpHandle target_handle, GDBusMethodInvocation *context);
 
 
 #define RETURN_INVALID_ARGUMENT(message) \
   G_STMT_START { \
     GError e = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT, message }; \
-    dbus_g_method_return_error (context, &e); \
+    g_dbus_method_invocation_return_gerror (context, &e); \
     return; \
   } G_STMT_END
 
@@ -2357,7 +2357,7 @@ static void
 conn_requests_requestotron (TpBaseConnection *self,
                             GHashTable *requested_properties,
                             TpChannelManagerRequestMethod method,
-                            DBusGMethodInvocation *context)
+                            GDBusMethodInvocation *context)
 {
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
 
@@ -2373,7 +2373,7 @@ static void
 conn_requests_check_basic_properties (TpBaseConnection *self,
                                       GHashTable *requested_properties,
                                       TpChannelManagerRequestMethod method,
-                                      DBusGMethodInvocation *context)
+                                      GDBusMethodInvocation *context)
 {
   /* Step 1:
    *  Check that ChannelType, TargetEntityType, TargetHandle, TargetID have
@@ -2452,7 +2452,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
                                             TpEntityType target_entity_type,
                                             TpHandle target_handle,
                                             const gchar *target_id,
-                                            DBusGMethodInvocation *context)
+                                            GDBusMethodInvocation *context)
 {
   /* Step 2: Validate the supplied set of Handle properties */
   TpHandleRepoIface *handles = NULL;
@@ -2489,7 +2489,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
           GError e = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
               "Handle type not supported by this connection manager" };
 
-          dbus_g_method_return_error (context, &e);
+          g_dbus_method_invocation_return_gerror (context, &e);
           return;
         }
 
@@ -2505,7 +2505,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
                */
               error->domain = TP_ERROR;
               error->code = TP_ERROR_INVALID_HANDLE;
-              dbus_g_method_return_error (context, error);
+              g_dbus_method_invocation_return_gerror (context, error);
               g_error_free (error);
               return;
             }
@@ -2528,7 +2528,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
             {
               error->domain = TP_ERROR;
               error->code = TP_ERROR_INVALID_HANDLE;
-              dbus_g_method_return_error (context, error);
+              g_dbus_method_invocation_return_gerror (context, error);
               g_error_free (error);
               return;
             }
@@ -2575,7 +2575,7 @@ conn_requests_offer_request (TpBaseConnection *self,
                              const gchar *type,
                              TpEntityType target_entity_type,
                              TpHandle target_handle,
-                             DBusGMethodInvocation *context)
+                             GDBusMethodInvocation *context)
 {
   /* Step 3: offer the incoming, vaguely sanitized request to the channel
    * managers.
@@ -2623,7 +2623,7 @@ conn_requests_offer_request (TpBaseConnection *self,
 static void
 conn_requests_create_channel (TpSvcConnectionInterfaceRequests *svc,
                               GHashTable *requested_properties,
-                              DBusGMethodInvocation *context)
+                              GDBusMethodInvocation *context)
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (svc);
 
@@ -2635,7 +2635,7 @@ conn_requests_create_channel (TpSvcConnectionInterfaceRequests *svc,
 static void
 conn_requests_ensure_channel (TpSvcConnectionInterfaceRequests *svc,
                               GHashTable *requested_properties,
-                              DBusGMethodInvocation *context)
+                              GDBusMethodInvocation *context)
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (svc);
 
@@ -3016,7 +3016,7 @@ static void
 contacts_get_contact_attributes_impl (TpSvcConnection *iface,
   const GArray *handles,
   const char **interfaces,
-  DBusGMethodInvocation *context)
+  GDBusMethodInvocation *context)
 {
   TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
   GHashTable *result;
@@ -3038,7 +3038,7 @@ typedef struct
 {
   TpBaseConnection *conn;
   GStrv interfaces;
-  DBusGMethodInvocation *context;
+  GDBusMethodInvocation *context;
 } GetContactByIdData;
 
 static void
@@ -3058,7 +3058,7 @@ ensure_handle_cb (GObject *source,
 
   if (handle == 0)
     {
-      dbus_g_method_return_error (data->context, error);
+      g_dbus_method_invocation_return_gerror (data->context, error);
       g_clear_error (&error);
       goto out;
     }
@@ -3089,7 +3089,7 @@ static void
 contacts_get_contact_by_id_impl (TpSvcConnection *iface,
   const gchar *id,
   const gchar **interfaces,
-  DBusGMethodInvocation *context)
+  GDBusMethodInvocation *context)
 {
   TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,

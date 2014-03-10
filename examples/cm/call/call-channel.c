@@ -753,7 +753,7 @@ simulate_inability_to_unhold (gpointer p)
 
 static void
 hold_get_hold_state (TpSvcChannelInterfaceHold1 *iface,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
 
@@ -764,7 +764,7 @@ hold_get_hold_state (TpSvcChannelInterfaceHold1 *iface,
 static void
 hold_request_hold (TpSvcChannelInterfaceHold1 *iface,
     gboolean hold,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
@@ -828,7 +828,7 @@ hold_request_hold (TpSvcChannelInterfaceHold1 *iface,
   return;
 
 error:
-  dbus_g_method_return_error (context, error);
+  g_dbus_method_invocation_return_gerror (context, error);
   g_error_free (error);
 }
 

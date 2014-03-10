@@ -42,7 +42,7 @@ tp_tests_bug19101_connection_get_contact_by_id (
     TpSvcConnection *iface,
     const gchar *id,
     const char **interfaces,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseConnection *base_conn = TP_BASE_CONNECTION (iface);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (

@@ -756,7 +756,7 @@ tp_base_call_content_remove_stream (TpBaseCallContent *self,
 
 static void
 tp_call_content_remove (TpSvcCall1Content *content,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseCallContent *self = TP_BASE_CALL_CONTENT (content);
 
@@ -764,7 +764,7 @@ tp_call_content_remove (TpSvcCall1Content *content,
     {
       GError error = { TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
           "Contents are not mutable" };
-      dbus_g_method_return_error (context, &error);
+      g_dbus_method_invocation_return_gerror (context, &error);
       return;
     }
 
@@ -864,7 +864,7 @@ _tp_base_call_content_accepted (TpBaseCallContent *self,
 static void
 tp_call_content_start_tone (TpSvcCall1ContentInterfaceDTMF1 *dtmf,
     guchar event,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseCallContent *self = TP_BASE_CALL_CONTENT (dtmf);
   TpBaseCallContentClass *klass = TP_BASE_CALL_CONTENT_GET_CLASS (self);
@@ -874,13 +874,13 @@ tp_call_content_start_tone (TpSvcCall1ContentInterfaceDTMF1 *dtmf,
     {
       GError err = {G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD,
                     "Method does not exist"};
-      dbus_g_method_return_error (context, &err);
+      g_dbus_method_invocation_return_gerror (context, &err);
       return;
     }
 
   if (!klass->start_tone (self, event, &error))
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_clear_error (&error);
       return;
     }
@@ -890,7 +890,7 @@ tp_call_content_start_tone (TpSvcCall1ContentInterfaceDTMF1 *dtmf,
 
 static void
 tp_call_content_stop_tone (TpSvcCall1ContentInterfaceDTMF1 *dtmf,
-   DBusGMethodInvocation *context)
+   GDBusMethodInvocation *context)
 {
   TpBaseCallContent *self = TP_BASE_CALL_CONTENT (dtmf);
   TpBaseCallContentClass *klass = TP_BASE_CALL_CONTENT_GET_CLASS (self);
@@ -900,13 +900,13 @@ tp_call_content_stop_tone (TpSvcCall1ContentInterfaceDTMF1 *dtmf,
     {
       GError err = {G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD,
                     "Method does not exist"};
-      dbus_g_method_return_error (context, &err);
+      g_dbus_method_invocation_return_gerror (context, &err);
       return;
     }
 
   if (!klass->stop_tone (self, &error))
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_clear_error (&error);
       return;
     }
@@ -917,7 +917,7 @@ tp_call_content_stop_tone (TpSvcCall1ContentInterfaceDTMF1 *dtmf,
 static void
 tp_call_content_multiple_tones (TpSvcCall1ContentInterfaceDTMF1 *dtmf,
     const gchar *tones,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseCallContent *self = TP_BASE_CALL_CONTENT (dtmf);
   TpBaseCallContentClass *klass = TP_BASE_CALL_CONTENT_GET_CLASS (self);
@@ -927,13 +927,13 @@ tp_call_content_multiple_tones (TpSvcCall1ContentInterfaceDTMF1 *dtmf,
     {
       GError err = {G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD,
                     "Method does not exist"};
-      dbus_g_method_return_error (context, &err);
+      g_dbus_method_invocation_return_gerror (context, &err);
       return;
     }
 
   if (!klass->multiple_tones (self, tones, &error))
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_clear_error (&error);
       return;
     }

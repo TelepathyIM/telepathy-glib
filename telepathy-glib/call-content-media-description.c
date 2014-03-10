@@ -1185,7 +1185,7 @@ _tp_call_content_media_description_dup_properties (
 static void
 tp_call_content_media_description_accept (TpSvcCall1ContentMediaDescription *iface,
     GHashTable *properties,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpCallContentMediaDescription *self = (TpCallContentMediaDescription *) iface;
   GPtrArray *codecs;
@@ -1208,7 +1208,7 @@ tp_call_content_media_description_accept (TpSvcCall1ContentMediaDescription *ifa
     {
       GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                        "Codecs can not be empty" };
-      dbus_g_method_return_error (context, &error);
+      g_dbus_method_invocation_return_gerror (context, &error);
       return;
     }
 
@@ -1219,7 +1219,7 @@ tp_call_content_media_description_accept (TpSvcCall1ContentMediaDescription *ifa
     {
       GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                        "Remote contact must the same as in request." };
-      dbus_g_method_return_error (context, &error);
+      g_dbus_method_invocation_return_gerror (context, &error);
       return;
     }
 
@@ -1236,7 +1236,7 @@ tp_call_content_media_description_accept (TpSvcCall1ContentMediaDescription *ifa
 static void
 tp_call_content_media_description_reject (TpSvcCall1ContentMediaDescription *iface,
     const GValueArray *reason_array,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpCallContentMediaDescription *self = (TpCallContentMediaDescription *) iface;
 
@@ -1246,7 +1246,7 @@ tp_call_content_media_description_reject (TpSvcCall1ContentMediaDescription *ifa
     {
       GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                        "Can not reject an empty Media Description" };
-      dbus_g_method_return_error (context, &error);
+      g_dbus_method_invocation_return_gerror (context, &error);
       return;
     }
 

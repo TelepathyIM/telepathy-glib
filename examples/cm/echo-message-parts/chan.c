@@ -373,7 +373,7 @@ example_echo_2_channel_class_init (ExampleEcho2ChannelClass *klass)
 
 static void
 destroyable_destroy (TpSvcChannelInterfaceDestroyable1 *iface,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseChannel *self = TP_BASE_CHANNEL (iface);
 
@@ -411,7 +411,7 @@ example_echo_2_channel_set_sms (ExampleEcho2Channel *self,
 static void
 sms_get_sms_length (TpSvcChannelInterfaceSMS1 *self,
     const GPtrArray *parts,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpMessage *message;
   guint i;

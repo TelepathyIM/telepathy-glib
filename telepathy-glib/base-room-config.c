@@ -209,7 +209,7 @@ struct _TpBaseRoomConfigPrivate {
     /* Details of a pending update, or both NULL if no call to
      * UpdateConfiguration is in progress.
      */
-    DBusGMethodInvocation *update_configuration_ctx;
+    GDBusMethodInvocation *update_configuration_ctx;
     GHashTable *validated_properties;
 };
 
@@ -898,7 +898,7 @@ update_cb (
     }
   else
     {
-      dbus_g_method_return_error (priv->update_configuration_ctx, error);
+      g_dbus_method_invocation_return_gerror (priv->update_configuration_ctx, error);
       g_clear_error (&error);
     }
 
@@ -922,7 +922,7 @@ static void
 tp_base_room_config_update_configuration (
     TpSvcChannelInterfaceRoomConfig1 *iface,
     GHashTable *properties,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseRoomConfig *self = find_myself ((GObject *) iface);
   TpBaseChannel *channel = TP_BASE_CHANNEL (iface);
@@ -989,7 +989,7 @@ tp_base_room_config_update_configuration (
    * mainly as a convenience to the subclass, which would probably like
    * tp_base_room_config_get_channel() to work reliably.
    *
-   * If the DBusGMethodInvocation kept the object alive, we wouldn't need this.
+   * If the GDBusMethodInvocation kept the object alive, we wouldn't need this.
    */
   g_object_ref (priv->channel);
   /* This means the CM could modify validated_properties if it wanted. This is
@@ -1000,7 +1000,7 @@ tp_base_room_config_update_configuration (
   return;
 
 err:
-  dbus_g_method_return_error (context, error);
+  g_dbus_method_invocation_return_gerror (context, error);
   g_clear_error (&error);
 }
 

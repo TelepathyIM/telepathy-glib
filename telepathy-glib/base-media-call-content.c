@@ -676,7 +676,7 @@ static void
 tp_base_media_call_content_update_local_media_description (
     TpSvcCall1ContentInterfaceMedia *iface,
     GHashTable *properties,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (iface);
   GHashTable *current_properties;
@@ -691,7 +691,7 @@ tp_base_media_call_content_update_local_media_description (
     {
       GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "The media description is missing the RemoteContact key." };
-      dbus_g_method_return_error (context, &error);
+      g_dbus_method_invocation_return_gerror (context, &error);
       return;
     }
 
@@ -703,7 +703,7 @@ tp_base_media_call_content_update_local_media_description (
     {
       GError error = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "The initial MediaDescription object has not yet appeared" };
-      dbus_g_method_return_error (context, &error);
+      g_dbus_method_invocation_return_gerror (context, &error);
       return;
     }
 
@@ -715,7 +715,7 @@ tp_base_media_call_content_update_local_media_description (
     {
       GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
                        "Codecs can not be empty" };
-      dbus_g_method_return_error (context, &error);
+      g_dbus_method_invocation_return_gerror (context, &error);
       return;
     }
 
@@ -725,7 +725,7 @@ tp_base_media_call_content_update_local_media_description (
       GError error = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
                        "Can not update the media description while there is"
                        " an outstanding offer for this contact." };
-      dbus_g_method_return_error (context, &error);
+      g_dbus_method_invocation_return_gerror (context, &error);
       return;
     }
 
@@ -738,7 +738,7 @@ tp_base_media_call_content_update_local_media_description (
 static void
 tp_base_media_call_content_fail (TpSvcCall1ContentInterfaceMedia *iface,
     const GValueArray *reason_array,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (iface);
   TpBaseCallContent *content = (TpBaseCallContent *) self;
@@ -756,7 +756,7 @@ tp_base_media_call_content_acknowledge_dtmf_change (
     TpSvcCall1ContentInterfaceMedia *iface,
     guchar in_Event,
     guint in_State,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (iface);
 
@@ -764,7 +764,7 @@ tp_base_media_call_content_acknowledge_dtmf_change (
     {
       GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "The acknoledgement is not for the right event"};
-      dbus_g_method_return_error (context, &error);
+      g_dbus_method_invocation_return_gerror (context, &error);
       return;
     }
 
@@ -773,7 +773,7 @@ tp_base_media_call_content_acknowledge_dtmf_change (
     {
       GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "The new sending state can not be a pending state"};
-      dbus_g_method_return_error (context, &error);
+      g_dbus_method_invocation_return_gerror (context, &error);
       return;
     }
 
@@ -785,7 +785,7 @@ tp_base_media_call_content_acknowledge_dtmf_change (
     {
       GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Acknowledge rejected because we are not in a pending state"};
-      dbus_g_method_return_error (context, &error);
+      g_dbus_method_invocation_return_gerror (context, &error);
       return;
     }
 
@@ -797,7 +797,7 @@ tp_base_media_call_content_acknowledge_dtmf_change (
     {
       GError error = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "The new sending state does not match the pending state"};
-      dbus_g_method_return_error (context, &error);
+      g_dbus_method_invocation_return_gerror (context, &error);
       return;
     }
 

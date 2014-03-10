@@ -198,7 +198,7 @@ gboolean tp_base_connection_channel_manager_iter_next (
     \
     if (!tp_base_connection_check_connected (c_, &e_)) \
       { \
-        dbus_g_method_return_error ((context), e_); \
+        g_dbus_method_invocation_return_gerror ((context), e_); \
         g_error_free (e_); \
         return; \
       } \

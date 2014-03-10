@@ -764,7 +764,7 @@ static void
 call_stream_endpoint_set_selected_candidate_pair (TpSvcCall1StreamEndpoint *iface,
     const GValueArray *local_candidate,
     const GValueArray *remote_candidate,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpCallStreamEndpoint *self = TP_CALL_STREAM_ENDPOINT (iface);
   TpStreamComponent component;
@@ -774,7 +774,7 @@ call_stream_endpoint_set_selected_candidate_pair (TpSvcCall1StreamEndpoint *ifac
 
   if (!common_checks (self, local_candidate, remote_candidate, &error))
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_clear_error (&error);
       return;
     }
@@ -822,7 +822,7 @@ static void
 call_stream_endpoint_set_endpoint_state (TpSvcCall1StreamEndpoint *iface,
     TpStreamComponent component,
     TpStreamEndpointState state,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpCallStreamEndpoint *self = TP_CALL_STREAM_ENDPOINT (iface);
 
@@ -830,7 +830,7 @@ call_stream_endpoint_set_endpoint_state (TpSvcCall1StreamEndpoint *iface,
     {
       GError *error = g_error_new (TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Stream component %d is out of the valid range.", state);
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_error_free (error);
       return;
     }
@@ -839,7 +839,7 @@ call_stream_endpoint_set_endpoint_state (TpSvcCall1StreamEndpoint *iface,
     {
       GError *error = g_error_new (TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Stream state %d is out of the valid range.", state);
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_error_free (error);
       return;
     }
@@ -873,14 +873,14 @@ call_stream_endpoint_accept_selected_candidate_pair (
     TpSvcCall1StreamEndpoint *iface,
     const GValueArray *local_candidate,
     const GValueArray *remote_candidate,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpCallStreamEndpoint *self = TP_CALL_STREAM_ENDPOINT (iface);
   GError *error = NULL;
 
   if (!common_checks (self, local_candidate, remote_candidate, &error))
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_clear_error (&error);
       return;
     }
@@ -900,14 +900,14 @@ call_stream_endpoint_reject_selected_candidate_pair (
     TpSvcCall1StreamEndpoint *iface,
     const GValueArray *local_candidate,
     const GValueArray *remote_candidate,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpCallStreamEndpoint *self = TP_CALL_STREAM_ENDPOINT (iface);
   GError *error = NULL;
 
   if (!common_checks (self, local_candidate, remote_candidate, &error))
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_clear_error (&error);
       return;
     }
@@ -925,7 +925,7 @@ call_stream_endpoint_reject_selected_candidate_pair (
 static void
 call_stream_endpoint_set_controlling (TpSvcCall1StreamEndpoint *iface,
     gboolean controlling,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpCallStreamEndpoint *self = TP_CALL_STREAM_ENDPOINT (iface);
 

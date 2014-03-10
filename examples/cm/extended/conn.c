@@ -229,7 +229,7 @@ example_extended_connection_class_init (ExampleExtendedConnectionClass *klass)
 static void
 my_get_hats (ExampleSvcConnectionInterfaceHats *iface,
              const GArray *contacts,
-             DBusGMethodInvocation *context)
+             GDBusMethodInvocation *context)
 {
   ExampleExtendedConnection *self = EXAMPLE_EXTENDED_CONNECTION (iface);
   TpBaseConnection *base = (TpBaseConnection *) self;
@@ -241,7 +241,7 @@ my_get_hats (ExampleSvcConnectionInterfaceHats *iface,
 
   if (!tp_handles_are_valid (contact_repo, contacts, FALSE, &error))
     {
-      dbus_g_method_return_error (context, error);
+      g_dbus_method_invocation_return_gerror (context, error);
       g_error_free (error);
       return;
     }
@@ -291,7 +291,7 @@ my_set_hat (ExampleSvcConnectionInterfaceHats *iface,
             const gchar *color,
             guint style,
             GHashTable *properties,
-            DBusGMethodInvocation *context)
+            GDBusMethodInvocation *context)
 {
   ExampleExtendedConnection *self = EXAMPLE_EXTENDED_CONNECTION (iface);
   TpBaseConnection *base = (TpBaseConnection *) self;

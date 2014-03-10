@@ -448,7 +448,7 @@ file_transfer_provide_file (TpSvcChannelTypeFileTransfer1 *iface,
     TpSocketAddressType address_type,
     TpSocketAccessControl access_control,
     const GValue *access_control_param,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpTestsFileTransferChannel *self = (TpTestsFileTransferChannel *) iface;
   TpBaseChannel *base_chan = (TpBaseChannel *) iface;
@@ -512,7 +512,7 @@ file_transfer_provide_file (TpSvcChannelTypeFileTransfer1 *iface,
   return;
 
 fail:
-  dbus_g_method_return_error (context, error);
+  g_dbus_method_invocation_return_gerror (context, error);
   g_error_free (error);
 }
 
@@ -522,7 +522,7 @@ file_transfer_accept_file (TpSvcChannelTypeFileTransfer1 *iface,
     TpSocketAccessControl access_control,
     const GValue *access_control_param,
     guint64 offset,
-    DBusGMethodInvocation *context)
+    GDBusMethodInvocation *context)
 {
   TpTestsFileTransferChannel *self = (TpTestsFileTransferChannel *) iface;
   TpBaseChannel *base_chan = (TpBaseChannel *) iface;
@@ -577,7 +577,7 @@ file_transfer_accept_file (TpSvcChannelTypeFileTransfer1 *iface,
   return;
 
 fail:
-  dbus_g_method_return_error (context, error);
+  g_dbus_method_invocation_return_gerror (context, error);
   g_error_free (error);
 }
 
