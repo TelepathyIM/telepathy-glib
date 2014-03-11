@@ -228,8 +228,6 @@ enum {
 
 static guint signals[N_SIGNALS] = { 0 };
 
-static dbus_int32_t clients_slot = -1;
-
 typedef enum {
     CLIENT_IS_OBSERVER = 1 << 0,
     CLIENT_IS_APPROVER = 1 << 1,
@@ -247,7 +245,7 @@ struct _TpBaseClientPrivate
   gchar *name;
   gboolean uniquify_name;
   /* reffed */
-  DBusConnection *libdbus;
+  GDBusConnection *gdbus;
 
   gboolean registered;
   ClientFlags flags;
@@ -896,6 +894,19 @@ tp_base_client_add_handler_capabilities_varargs (TpBaseClient *self,
   va_end (ap);
 }
 
+static GQuark
+clients_quark (void)
+{
+  static GQuark q = 0;
+
+  if (G_UNLIKELY (q == 0))
+    {
+      q = g_quark_from_static_string ("tp_base_client_register");
+    }
+
+  return q;
+}
+
 /**
  * tp_base_client_register:
  * @self: a #TpBaseClient, which must not have been registered with
@@ -942,16 +953,10 @@ tp_base_client_register (TpBaseClient *self,
     return TRUE;
 
   /* Client is an handler */
-  self->priv->libdbus = dbus_connection_ref (
-      dbus_g_connection_get_connection (
-        tp_proxy_get_dbus_connection (self->priv->dbus)));
+  self->priv->gdbus = g_object_ref (
+      tp_proxy_get_dbus_connection (self->priv->dbus));
 
-  /* one ref per TpBaseClient with CLIENT_IS_HANDLER, released
-   * in tp_base_client_unregister() */
-  if (!dbus_connection_allocate_data_slot (&clients_slot))
-    ERROR ("Out of memory");
-
-  clients = dbus_connection_get_data (self->priv->libdbus, clients_slot);
+  clients = g_object_get_qdata (G_OBJECT (self->priv->gdbus), clients_quark ());
 
   if (clients == NULL)
     {
@@ -961,8 +966,8 @@ tp_base_client_register (TpBaseClient *self,
        * borrowed client path => borrowed (GHashTable *) */
       clients = g_hash_table_new (g_str_hash, g_str_equal);
 
-      dbus_connection_set_data (self->priv->libdbus, clients_slot, clients,
-          (DBusFreeFunction) g_hash_table_unref);
+      g_object_set_qdata_full (G_OBJECT (self->priv->gdbus),
+          clients_quark (), clients, (GDestroyNotify) g_hash_table_unref);
     }
 
   g_hash_table_insert (clients, self->priv->object_path, self->priv->my_chans);
@@ -1015,12 +1020,9 @@ tp_base_client_dup_handled_channels (TpBaseClient *self)
 
   g_return_val_if_fail (self->priv->flags & CLIENT_IS_HANDLER, NULL);
 
-  if (clients_slot == -1)
-    return NULL;
-
   set = g_hash_table_new (g_str_hash, g_str_equal);
 
-  clients = dbus_connection_get_data (self->priv->libdbus, clients_slot);
+  clients = g_object_get_qdata (G_OBJECT (self->priv->gdbus), clients_quark ());
 
   g_hash_table_iter_init (&iter, clients);
   while (g_hash_table_iter_next (&iter, NULL, &value))
@@ -2608,14 +2610,12 @@ tp_base_client_unregister (TpBaseClient *self)
     {
       GHashTable *clients;
 
-      clients = dbus_connection_get_data (self->priv->libdbus, clients_slot);
+      clients = g_object_get_qdata (G_OBJECT (self->priv->gdbus),
+          clients_quark ());
       if (clients != NULL)
         g_hash_table_remove (clients, self->priv->object_path);
 
-      dbus_connection_unref (self->priv->libdbus);
-      self->priv->libdbus = NULL;
-
-      dbus_connection_free_data_slot (&clients_slot);
+      g_clear_object (&self->priv->gdbus);
     }
 
   self->priv->registered = FALSE;
