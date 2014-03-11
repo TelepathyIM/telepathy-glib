@@ -71,13 +71,11 @@ struct _TpDBusDaemonPrivate
 {
   /* dup'd name => _NameOwnerWatch */
   GHashTable *name_owner_watches;
-  /* reffed */
-  DBusConnection *libdbus;
 };
 
 G_DEFINE_TYPE (TpDBusDaemon, tp_dbus_daemon, TP_TYPE_PROXY)
 
-static gpointer starter_bus_daemon = NULL;
+static gpointer default_bus_daemon = NULL;
 
 /**
  * tp_dbus_daemon_dup:
@@ -102,21 +100,21 @@ static gpointer starter_bus_daemon = NULL;
 TpDBusDaemon *
 tp_dbus_daemon_dup (GError **error)
 {
-  DBusGConnection *conn;
+  GDBusConnection *conn;
 
-  if (starter_bus_daemon != NULL)
-    return g_object_ref (starter_bus_daemon);
+  if (default_bus_daemon != NULL)
+    return g_object_ref (default_bus_daemon);
 
-  conn = dbus_g_bus_get (DBUS_BUS_STARTER, error);
+  conn = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, error);
 
   if (conn == NULL)
     return NULL;
 
-  starter_bus_daemon = tp_dbus_daemon_new (conn);
-  g_assert (starter_bus_daemon != NULL);
-  g_object_add_weak_pointer (starter_bus_daemon, &starter_bus_daemon);
+  default_bus_daemon = tp_dbus_daemon_new (conn);
+  g_assert (default_bus_daemon != NULL);
+  g_object_add_weak_pointer (default_bus_daemon, &default_bus_daemon);
 
-  return starter_bus_daemon;
+  return default_bus_daemon;
 }
 
 /**
@@ -127,7 +125,7 @@ tp_dbus_daemon_dup (GError **error)
  * connection.
  *
  * Use tp_dbus_daemon_dup() instead if you just want a connection to the
- * starter or session bus (which is almost always the right thing for
+ * session bus (which is almost always the right thing for
  * Telepathy).
  *
  * Returns: a new proxy for signals and method calls on the bus daemon
@@ -1524,5 +1522,5 @@ tp_dbus_daemon_class_init (TpDBusDaemonClass *klass)
 gboolean
 _tp_dbus_daemon_is_the_shared_one (TpDBusDaemon *self)
 {
-  return (self != NULL && self == starter_bus_daemon);
+  return (self != NULL && self == default_bus_daemon);
 }
