@@ -2384,10 +2384,8 @@ _tp_base_client_remove_request (TpSvcClientInterfaceRequests *iface,
   request = find_request_by_path (self, path);
   if (request == NULL)
     {
-      GError err = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-          "Uknown ChannelRequest" };
-
-      dbus_g_method_return_error (context, &err);
+      g_dbus_method_invocation_return_error_literal (context,
+          TP_ERROR, TP_ERROR_INVALID_ARGUMENT, "Unknown ChannelRequest");
       return;
     }
 
