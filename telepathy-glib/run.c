@@ -167,19 +167,18 @@ add_signal_handlers (void)
 #endif /* HAVE_SIGNAL && ENABLE_BACKTRACE */
 }
 
-static DBusHandlerResult
-dbus_filter_function (DBusConnection *connection,
-                      DBusMessage *message,
-                      void *user_data)
+static void
+gdbus_closed_cb (GDBusConnection *connection,
+    gboolean remote_peer_vanished,
+    GError *error,
+    gpointer user_data)
 {
-  if (dbus_message_is_signal (message, DBUS_INTERFACE_LOCAL, "Disconnected") &&
-      !tp_strdiff (dbus_message_get_path (message), DBUS_PATH_LOCAL))
-    {
-      g_message ("Got disconnected from the session bus");
-      quit_loop ();
-    }
+  if (error)
+    g_message ("Got disconnected from the session bus: %s", error->message);
+  else
+    g_message ("Disconnected from the session bus from our side");
 
-  return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+  quit_loop ();
 }
 
 /**
@@ -212,7 +211,7 @@ tp_run_connection_manager (const char *prog_name,
                            int argc,
                            char **argv)
 {
-  DBusConnection *connection = NULL;
+  GDBusConnection *connection = NULL;
   TpDBusDaemon *bus_daemon = NULL;
   GError *error = NULL;
   int ret = 1;
@@ -260,14 +259,9 @@ tp_run_connection_manager (const char *prog_name,
   g_signal_connect (manager, "no-more-connections",
       (GCallback) no_more_connections, NULL);
 
-  /* It appears that dbus-glib registers a filter that wrongly returns
-   * DBUS_HANDLER_RESULT_HANDLED for signals, so for *our* filter to have any
-   * effect, we need to install it before calling
-   * tp_base_connection_manager_register () */
-  connection = dbus_g_connection_get_connection (
-      tp_proxy_get_dbus_connection (bus_daemon));
-  dbus_connection_add_filter (connection, dbus_filter_function, NULL, NULL);
-  dbus_connection_set_exit_on_disconnect (connection, FALSE);
+  connection = tp_proxy_get_dbus_connection (bus_daemon);
+  g_signal_connect (connection, "closed",
+      G_CALLBACK (gdbus_closed_cb), mainloop);
 
   if (!tp_base_connection_manager_register (manager))
     {
@@ -290,7 +284,8 @@ tp_run_connection_manager (const char *prog_name,
 out:
   /* locals */
   if (connection != NULL)
-    dbus_connection_remove_filter (connection, dbus_filter_function, NULL);
+    g_signal_handlers_disconnect_by_func (connection, gdbus_closed_cb,
+        mainloop);
 
   if (bus_daemon != NULL)
     g_object_unref (bus_daemon);
