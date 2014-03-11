@@ -495,6 +495,8 @@ tp_base_connection_unregister (TpBaseConnection *self)
 
           if (priv->bus_name != NULL)
             tp_dbus_daemon_release_name (priv->bus_proxy, priv->bus_name, NULL);
+          else
+            DEBUG ("not releasing bus name: nothing to release");
 
           priv->been_registered = FALSE;
         }
