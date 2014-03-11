@@ -383,8 +383,6 @@ struct _TpProxyPrivate {
      * completed */
     guint pending_will_announce_calls;
 
-    gboolean dispose_has_run;
-
     TpClientFactory *factory;
 };
 
@@ -1113,10 +1111,6 @@ tp_proxy_dispose (GObject *object)
   TpProxy *self = TP_PROXY (object);
   GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_PROXY_UNREFERENCED,
       "Proxy unreferenced" };
-
-  if (self->priv->dispose_has_run)
-    return;
-  self->priv->dispose_has_run = TRUE;
 
   DEBUG ("%p", self);
 
