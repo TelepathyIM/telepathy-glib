@@ -147,6 +147,7 @@ tp_dbus_daemon_new (GDBusConnection *connection)
 
 typedef struct
 {
+  guint id;
   gchar *last_owner;
   GArray *callbacks;
   gsize invoking;
@@ -246,180 +247,33 @@ _tp_dbus_daemon_name_owner_changed (TpDBusDaemon *self,
   g_object_unref (self);
 }
 
-static dbus_int32_t daemons_slot = -1;
-
-typedef struct {
-    DBusConnection *libdbus;
-    DBusMessage *message;
-} NOCIdleContext;
-
-static NOCIdleContext *
-noc_idle_context_new (DBusConnection *libdbus,
-                      DBusMessage *message)
+static void
+_tp_dbus_daemon_name_appeared_cb (GDBusConnection *connection G_GNUC_UNUSED,
+    const gchar *name,
+    const gchar *name_owner,
+    gpointer user_data)
 {
-  NOCIdleContext *context = g_slice_new (NOCIdleContext);
-
-  context->libdbus = dbus_connection_ref (libdbus);
-  context->message = dbus_message_ref (message);
-  return context;
+  DEBUG ("%s is owned by %s", name, name_owner);
+  _tp_dbus_daemon_name_owner_changed (user_data, name, name_owner);
 }
 
 static void
-noc_idle_context_free (gpointer data)
+_tp_dbus_daemon_name_vanished_cb (GDBusConnection *connection,
+    const gchar *name,
+    gpointer user_data)
 {
-  NOCIdleContext *context = data;
-
-  dbus_connection_unref (context->libdbus);
-  dbus_message_unref (context->message);
-  g_slice_free (NOCIdleContext, context);
-}
-
-static gboolean
-noc_idle_context_invoke (gpointer data)
-{
-  NOCIdleContext *context = data;
-  const gchar *name;
-  const gchar *old_owner;
-  const gchar *new_owner;
-  DBusError dbus_error = DBUS_ERROR_INIT;
-  GSList **daemons;
-
-  if (daemons_slot == -1)
-    return FALSE;
-
-  if (!dbus_message_get_args (context->message, &dbus_error,
-        DBUS_TYPE_STRING, &name,
-        DBUS_TYPE_STRING, &old_owner,
-        DBUS_TYPE_STRING, &new_owner,
-        DBUS_TYPE_INVALID))
+  if (tp_proxy_get_invalidated (user_data) != NULL)
     {
-      DEBUG ("Couldn't unpack NameOwnerChanged(s, s, s): %s: %s",
-          dbus_error.name, dbus_error.message);
-      dbus_error_free (&dbus_error);
-      return FALSE;
-    }
-
-  daemons = dbus_connection_get_data (context->libdbus, daemons_slot);
-
-  DEBUG ("NameOwnerChanged(%s, %s -> %s)", name, old_owner, new_owner);
-
-  /* should always be non-NULL, barring bugs */
-  if (G_LIKELY (daemons != NULL))
-    {
-      GSList *iter;
-
-      for (iter = *daemons; iter != NULL; iter = iter->next)
-        {
-          _tp_dbus_daemon_name_owner_changed (iter->data, name, new_owner);
-        }
-    }
-
-  return FALSE;
-}
-
-static DBusHandlerResult
-_tp_dbus_daemon_name_owner_changed_filter (DBusConnection *libdbus,
-                                           DBusMessage *message,
-                                           void *unused G_GNUC_UNUSED)
-{
-  /* We have to do the real work in an idle, so we don't break re-entrant
-   * calls (the dbus-glib event source isn't re-entrant) */
-  if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS,
-        "NameOwnerChanged") &&
-      dbus_message_has_sender (message, DBUS_SERVICE_DBUS))
-    g_idle_add_full (G_PRIORITY_HIGH, noc_idle_context_invoke,
-        noc_idle_context_new (libdbus, message),
-        noc_idle_context_free);
-
-  return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-}
-
-typedef struct {
-    TpDBusDaemon *self;
-    gchar *name;
-    DBusMessage *reply;
-    gsize refs;
-} GetNameOwnerContext;
-
-static GetNameOwnerContext *
-get_name_owner_context_new (TpDBusDaemon *self,
-                            const gchar *name)
-{
-  GetNameOwnerContext *context = g_slice_new (GetNameOwnerContext);
-
-  context->self = g_object_ref (self);
-  context->name = g_strdup (name);
-  context->reply = NULL;
-  context->refs = 1;
-  return context;
-}
-
-static void
-get_name_owner_context_unref (gpointer data)
-{
-  GetNameOwnerContext *context = data;
-
-  if (--context->refs == 0)
-    {
-      g_object_unref (context->self);
-      g_free (context->name);
-
-      if (context->reply != NULL)
-        dbus_message_unref (context->reply);
-
-      g_slice_free (GetNameOwnerContext, context);
-    }
-}
-
-static gboolean
-_tp_dbus_daemon_get_name_owner_idle (gpointer data)
-{
-  GetNameOwnerContext *context = data;
-  const gchar *owner = "";
-
-  if (context->reply == NULL)
-    {
-      DEBUG ("Connection disconnected or no reply to GetNameOwner(%s)",
-          context->name);
-    }
-  else if (dbus_message_get_type (context->reply) ==
-      DBUS_MESSAGE_TYPE_METHOD_RETURN)
-    {
-      if (dbus_message_get_args (context->reply, NULL,
-            DBUS_TYPE_STRING, &owner,
-            DBUS_TYPE_INVALID))
-        {
-          DEBUG ("GetNameOwner(%s) -> %s", context->name, owner);
-        }
-      else
-        {
-          DEBUG ("Malformed reply from GetNameOwner(%s), assuming no owner",
-              context->name);
-        }
+      /* telepathy-glib has not traditionally called "name owner lost"
+       * callbacks when the D-Bus connection dropped, which applications
+       * might be relying on. tests/dbus/dbus.c certainly does. */
+      DEBUG ("%s (ignoring because %p has been invalidated)", name, user_data);
     }
   else
     {
-      if (DEBUGGING)
-        {
-          DBusError error = DBUS_ERROR_INIT;
-
-          if (dbus_set_error_from_message (&error, context->reply))
-            {
-              DEBUG ("GetNameOwner(%s) raised %s: %s", context->name,
-                  error.name, error.message);
-              dbus_error_free (&error);
-            }
-          else
-            {
-              DEBUG ("Unexpected message type from GetNameOwner(%s)",
-                  context->name);
-            }
-        }
+      DEBUG ("%s", name);
+      _tp_dbus_daemon_name_owner_changed (user_data, name, "");
     }
-
-  _tp_dbus_daemon_name_owner_changed (context->self, context->name, owner);
-
-  return FALSE;
 }
 
 /**
@@ -434,38 +288,6 @@ _tp_dbus_daemon_get_name_owner_idle (gpointer data)
  *
  * Since: 0.7.1
  */
-
-static inline gchar *
-_tp_dbus_daemon_get_noc_rule (const gchar *name)
-{
-  return g_strdup_printf ("type='signal',"
-      "sender='" DBUS_SERVICE_DBUS "',"
-      "path='" DBUS_PATH_DBUS "',"
-      "interface='"DBUS_INTERFACE_DBUS "',"
-      "member='NameOwnerChanged',"
-      "arg0='%s'", name);
-}
-
-static void
-_tp_dbus_daemon_get_name_owner_notify (DBusPendingCall *pc,
-                                       gpointer data)
-{
-  GetNameOwnerContext *context = data;
-
-  /* we recycle this function for the case where the connection is already
-   * disconnected: in that case we use pc = NULL */
-  if (pc != NULL)
-    context->reply = dbus_pending_call_steal_reply (pc);
-
-  /* We have to do the real work in an idle, so we don't break re-entrant
-   * calls (the dbus-glib event source isn't re-entrant) */
-  context->refs++;
-  g_idle_add_full (G_PRIORITY_HIGH, _tp_dbus_daemon_get_name_owner_idle,
-      context, get_name_owner_context_unref);
-
-  if (pc != NULL)
-    dbus_pending_call_unref (pc);
-}
 
 /**
  * tp_dbus_daemon_watch_name_owner:
@@ -482,6 +304,8 @@ _tp_dbus_daemon_get_name_owner_notify (DBusPendingCall *pc,
  *
  * If multiple watches are registered for the same @name, they will be called
  * in the order they were registered.
+ *
+ * New code should use g_bus_watch_name() or similar instead.
  *
  * Since: 0.7.1
  */
@@ -501,13 +325,11 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
         TP_DBUS_NAME_TYPE_ANY, NULL));
   g_return_if_fail (callback != NULL);
 
+  DEBUG ("%s", name);
+
   if (watch == NULL)
     {
-      gchar *match_rule;
-      DBusMessage *message;
-      DBusPendingCall *pc = NULL;
-      GetNameOwnerContext *context = get_name_owner_context_new (self, name);
-
+      DEBUG ("- new watch");
       /* Allocate a new watch */
       watch = g_slice_new0 (_NameOwnerWatch);
       watch->last_owner = NULL;
@@ -517,46 +339,17 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
       g_hash_table_insert (self->priv->name_owner_watches, g_strdup (name),
           watch);
 
-      /* We want to be notified about name owner changes for this one.
-       * Assume the match addition will succeed; there's no good way to cope
-       * with failure here... */
-      match_rule = _tp_dbus_daemon_get_noc_rule (name);
-      DEBUG ("Adding match rule %s", match_rule);
-      dbus_bus_add_match (self->priv->libdbus, match_rule, NULL);
-      g_free (match_rule);
-
-      message = dbus_message_new_method_call (DBUS_SERVICE_DBUS,
-          DBUS_PATH_DBUS, DBUS_INTERFACE_DBUS, "GetNameOwner");
-
-      if (message == NULL)
-        ERROR ("Out of memory");
-
-      /* We already checked that @name was in (a small subset of) UTF-8,
-       * so OOM is the only thing that can go wrong. The use of &name here
-       * is because libdbus is strange. */
-      if (!dbus_message_append_args (message,
-            DBUS_TYPE_STRING, &name,
-            DBUS_TYPE_INVALID))
-        ERROR ("Out of memory");
-
-      if (!dbus_connection_send_with_reply (self->priv->libdbus,
-          message, &pc, -1))
-        ERROR ("Out of memory");
-      /* pc is unreffed by _tp_dbus_daemon_get_name_owner_notify */
-      dbus_message_unref (message);
-
-      if (pc == NULL || dbus_pending_call_get_completed (pc))
-        {
-          /* pc can be NULL when the connection is already disconnected */
-          _tp_dbus_daemon_get_name_owner_notify (pc, context);
-          get_name_owner_context_unref (context);
-        }
-      else if (!dbus_pending_call_set_notify (pc,
-            _tp_dbus_daemon_get_name_owner_notify,
-            context, get_name_owner_context_unref))
-        {
-          ERROR ("Out of memory");
-        }
+      watch->id = g_bus_watch_name_on_connection (
+          tp_proxy_get_dbus_connection (self),
+          name, G_BUS_NAME_WATCHER_FLAGS_NONE,
+          _tp_dbus_daemon_name_appeared_cb,
+          _tp_dbus_daemon_name_vanished_cb,
+          g_object_ref (self),
+          g_object_unref);
+    }
+  else
+    {
+      DEBUG ("- appending to existing watch");
     }
 
   g_array_append_val (watch->callbacks, tmp);
@@ -564,6 +357,7 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
   if (watch->last_owner != NULL)
     {
       /* FIXME: should avoid reentrancy? */
+      DEBUG ("- already owned by %s", watch->last_owner);
       callback (self, name, watch->last_owner, user_data);
     }
 }
@@ -573,8 +367,6 @@ _tp_dbus_daemon_stop_watching (TpDBusDaemon *self,
                                const gchar *name,
                                _NameOwnerWatch *watch)
 {
-  gchar *match_rule;
-
   /* Clean up any leftöver callbacks. */
   if (watch->callbacks->len > 0)
     {
@@ -590,14 +382,10 @@ _tp_dbus_daemon_stop_watching (TpDBusDaemon *self,
         }
     }
 
+  g_bus_unwatch_name (watch->id);
   g_array_unref (watch->callbacks);
   g_free (watch->last_owner);
   g_slice_free (_NameOwnerWatch, watch);
-
-  match_rule = _tp_dbus_daemon_get_noc_rule (name);
-  DEBUG ("Removing match rule %s", match_rule);
-  dbus_bus_remove_match (self->priv->libdbus, match_rule, NULL);
-  g_free (match_rule);
 }
 
 /**
@@ -630,6 +418,8 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
   g_return_val_if_fail (name != NULL, FALSE);
   g_return_val_if_fail (callback != NULL, FALSE);
 
+  DEBUG ("%s", name);
+
   if (watch != NULL)
     {
       /* Check to see whether this (callback, user_data) pair is in the watch's
@@ -639,6 +429,8 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
        * we iterate in reverse to have "last in = first out" as documented. */
       guint i;
 
+      DEBUG ("- %u watch(es) found", array->len);
+
       for (i = array->len; i > 0; i--)
         {
           _NameOwnerSubWatch *entry = &g_array_index (array,
@@ -646,6 +438,7 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
 
           if (entry->callback == callback && entry->user_data == user_data)
             {
+              DEBUG ("- found matching callback and user data");
               entry->callback = NULL;
               tp_dbus_daemon_maybe_free_name_owner_watch (self, name, watch);
               return TRUE;
@@ -654,6 +447,7 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
     }
 
   /* We haven't found it */
+  DEBUG ("- did not find matching callback and user data");
   return FALSE;
 }
 
@@ -1373,58 +1167,18 @@ tp_dbus_daemon_list_activatable_names (TpDBusDaemon *self,
       callback, user_data, destroy, weak_object);
 }
 
-static void
-free_daemon_list (gpointer p)
-{
-  GSList **slistp = p;
-
-  g_slist_free (*slistp);
-  g_slice_free (GSList *, slistp);
-}
-
-/* If you add more slice-allocation in this function, make the suppression
- * "tp_dbus_daemon_constructor @daemons once per DBusConnection" in
- * telepathy-glib.supp more specific. */
 static GObject *
 tp_dbus_daemon_constructor (GType type,
                             guint n_params,
                             GObjectConstructParam *params)
 {
-  GObjectClass *object_class =
-      (GObjectClass *) tp_dbus_daemon_parent_class;
+  GObjectClass *object_class = G_OBJECT_CLASS (tp_dbus_daemon_parent_class);
+
   TpDBusDaemon *self = TP_DBUS_DAEMON (object_class->constructor (type,
         n_params, params));
-  GSList **daemons;
 
   g_assert (!tp_strdiff (tp_proxy_get_bus_name (self), DBUS_SERVICE_DBUS));
   g_assert (!tp_strdiff (tp_proxy_get_object_path (self), DBUS_PATH_DBUS));
-
-  self->priv->libdbus = dbus_connection_ref (
-      dbus_g_connection_get_connection (
-        tp_proxy_get_dbus_connection (self)));
-
-  /* one ref per TpDBusDaemon, released in finalize */
-  if (!dbus_connection_allocate_data_slot (&daemons_slot))
-    ERROR ("Out of memory");
-
-  daemons = dbus_connection_get_data (self->priv->libdbus, daemons_slot);
-
-  if (daemons == NULL)
-    {
-      /* This slice is never freed; it's a one-per-DBusConnection leak. */
-      daemons = g_slice_new (GSList *);
-
-      *daemons = NULL;
-      dbus_connection_set_data (self->priv->libdbus, daemons_slot, daemons,
-          free_daemon_list);
-
-      /* we add this filter at most once per DBusConnection */
-      if (!dbus_connection_add_filter (self->priv->libdbus,
-            _tp_dbus_daemon_name_owner_changed_filter, NULL, NULL))
-        ERROR ("Out of memory");
-    }
-
-  *daemons = g_slist_prepend (*daemons, self);
 
   return (GObject *) self;
 }
@@ -1443,7 +1197,6 @@ static void
 tp_dbus_daemon_dispose (GObject *object)
 {
   TpDBusDaemon *self = TP_DBUS_DAEMON (object);
-  GSList **daemons;
 
   if (self->priv->name_owner_watches != NULL)
     {
@@ -1467,28 +1220,6 @@ tp_dbus_daemon_dispose (GObject *object)
       g_hash_table_unref (tmp);
     }
 
-  if (self->priv->libdbus != NULL)
-    {
-      /* remove myself from the list to be notified on NoC */
-      daemons = dbus_connection_get_data (self->priv->libdbus, daemons_slot);
-
-      /* should always be non-NULL, barring bugs */
-      if (G_LIKELY (daemons != NULL))
-        {
-          *daemons = g_slist_remove (*daemons, self);
-
-          if (*daemons == NULL)
-            {
-              /* this results in a call to free_daemon_list (daemons) */
-              dbus_connection_set_data (self->priv->libdbus, daemons_slot,
-                  NULL, NULL);
-            }
-        }
-
-      dbus_connection_unref (self->priv->libdbus);
-      self->priv->libdbus = NULL;
-    }
-
   G_OBJECT_CLASS (tp_dbus_daemon_parent_class)->dispose (object);
 }
 
@@ -1496,9 +1227,6 @@ static void
 tp_dbus_daemon_finalize (GObject *object)
 {
   GObjectFinalizeFunc chain_up = G_OBJECT_CLASS (tp_dbus_daemon_parent_class)->finalize;
-
-  /* one ref per TpDBusDaemon, from constructor */
-  dbus_connection_free_data_slot (&daemons_slot);
 
   if (chain_up != NULL)
     chain_up (object);

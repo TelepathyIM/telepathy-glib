@@ -258,14 +258,6 @@
 }
 
 {
-   tp_dbus_daemon_constructor filter not freed til we fall off the bus
-   Memcheck:Leak
-   ...
-   fun:dbus_connection_add_filter
-   fun:tp_dbus_daemon_constructor
-}
-
-{
    Leak in tp-glib 0.11.16 (Fedora 14)
    Memcheck:Leak
    ...

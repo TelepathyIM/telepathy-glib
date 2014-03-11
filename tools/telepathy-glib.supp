@@ -309,14 +309,6 @@
 }
 
 {
-   tp_dbus_daemon_constructor filter not freed til we fall off the bus
-   Memcheck:Leak
-   ...
-   fun:dbus_connection_add_filter
-   fun:tp_dbus_daemon_constructor
-}
-
-{
    tp_g_socket_address_from_variant reffing GNIO types
    Memcheck:Leak
    ...
