@@ -663,7 +663,7 @@ make_the_connection_disappear (Fixture *f)
   /* check that that worked */
   ok = tp_cli_connection_run_connect (f->client_conn, -1,
       &error, NULL);
-  g_assert_error (error, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
+  g_assert_error (error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD);
   g_assert (!ok);
   g_clear_error (&error);
 }
@@ -1930,7 +1930,7 @@ test_superfluous_attributes (Fixture *f,
       upgrade_cb, &f->result);
   g_main_loop_run (f->result.loop);
   /* Not gonna make any particular assertions about what the error is. */
-  g_assert_error (f->result.error, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
+  g_assert_error (f->result.error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD);
 
   put_the_connection_back (f);
   reset_result (&f->result);

@@ -305,7 +305,7 @@ test_get_messages_failed (Test *test,
 
   test->wait = 1;
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
+  g_assert_error (test->error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD);
 
   g_assert (test->messages == NULL);
 }

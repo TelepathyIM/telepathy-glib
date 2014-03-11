@@ -141,8 +141,8 @@ test (Fixture *f,
   tp_tests_proxy_run_until_prepared_or_failed (early_cm, NULL, &error);
   g_assert (error != NULL);
   g_assert (tp_proxy_get_invalidated (early_cm) == NULL);
-  g_assert_cmpuint (error->domain, ==, DBUS_GERROR);
-  g_assert_cmpint (error->code, ==, DBUS_GERROR_SERVICE_UNKNOWN);
+  g_assert_cmpuint (error->domain, ==, G_DBUS_ERROR);
+  g_assert_cmpint (error->code, ==, G_DBUS_ERROR_SERVICE_UNKNOWN);
   g_clear_error (&error);
 
   if (!saw_exited)

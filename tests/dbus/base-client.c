@@ -346,7 +346,7 @@ test_register (Test *test,
       TP_IFACE_CLIENT, get_client_prop_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
 
-  g_assert_error (test->error, DBUS_GERROR, DBUS_GERROR_SERVICE_UNKNOWN);
+  g_assert_error (test->error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN);
   g_error_free (test->error);
   test->error = NULL;
 
@@ -368,7 +368,7 @@ test_register (Test *test,
       TP_IFACE_CLIENT, get_client_prop_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
 
-  g_assert_error (test->error, DBUS_GERROR, DBUS_GERROR_SERVICE_UNKNOWN);
+  g_assert_error (test->error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN);
   g_error_free (test->error);
   test->error = NULL;
 

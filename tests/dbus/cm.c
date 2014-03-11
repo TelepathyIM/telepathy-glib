@@ -820,7 +820,7 @@ test_nothing_ready (Test *test,
 
   tp_tests_proxy_run_until_prepared_or_failed (test->cm, NULL,
       &test->error);
-  g_assert_error (test->error, DBUS_GERROR, DBUS_GERROR_SERVICE_UNKNOWN);
+  g_assert_error (test->error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN);
 
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "nonexistent_cm");

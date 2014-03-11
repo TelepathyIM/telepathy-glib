@@ -303,7 +303,7 @@ main (int argc,
   g_assert_no_error (error);
 
   tp_tests_proxy_run_until_prepared_or_failed (chan, NULL, &error);
-  g_assert_error (error, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
+  g_assert_error (error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD);
   g_error_free (error);
   error = NULL;
 

@@ -360,8 +360,7 @@ test (Fixture *f,
   tp_cli_dbus_properties_connect_to_properties_changed (f->proxies[TEST_F],
       unwanted_signal_cb, &freed, set_freed, NULL, &error_out);
   MYASSERT (freed, "");
-  MYASSERT (error_out != NULL, "");
-  MYASSERT (error_out->code == DBUS_GERROR_NAME_HAS_NO_OWNER, "");
+  g_assert_error (error_out, TP_DBUS_ERRORS, TP_DBUS_ERROR_NAME_OWNER_LOST);
   g_error_free (error_out);
   error_out = NULL;
 
