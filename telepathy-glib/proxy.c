@@ -1128,18 +1128,25 @@ tp_proxy_finalize (GObject *object)
   G_OBJECT_CLASS (tp_proxy_parent_class)->finalize (object);
 }
 
-static void tp_proxy_once (void);
-
 static void
 tp_proxy_class_init (TpProxyClass *klass)
 {
+  TpProxyImplementation impl = {
+      VERSION,
+      sizeof (TpProxyImplementation),
+      _tp_proxy_check_interface_by_id,
+      _tp_proxy_pending_call_v1_new,
+      _tp_proxy_signal_connection_v1_new,
+      /* keep this at the end as a final sanity-check of the size */
+      TP_TYPE_PROXY
+  };
   GParamSpec *param_spec;
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   /* Ensure that remote errors will be mapped to the TP_ERROR domain */
   TP_ERROR;
 
-  tp_proxy_once ();
+  tp_private_proxy_set_implementation (&impl);
 
   g_type_class_add_private (klass, sizeof (TpProxyPrivate));
 
@@ -1385,27 +1392,6 @@ tp_proxy_get_invalidated (gpointer self)
   TpProxy *proxy = TP_PROXY (self);
 
   return proxy->priv->invalidated;
-}
-
-static void
-tp_proxy_once (void)
-{
-  TpProxyImplementation impl = {
-      VERSION,
-      sizeof (TpProxyImplementation),
-      _tp_proxy_get_interface_by_id,
-      _tp_proxy_check_interface_by_id,
-      _tp_proxy_pending_call_new,
-      _tp_proxy_pending_call_take_pending_call,
-      _tp_proxy_pending_call_take_results,
-      _tp_proxy_pending_call_completed,
-      _tp_proxy_signal_connection_new,
-      _tp_proxy_signal_connection_take_results,
-      /* keep this at the end as a final sanity-check of the size */
-      TP_TYPE_PROXY
-  };
-
-  tp_private_proxy_set_implementation (&impl);
 }
 
 static const TpProxyFeature *
