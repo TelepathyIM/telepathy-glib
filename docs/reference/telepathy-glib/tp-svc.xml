@@ -14,10 +14,8 @@
 
   <para>
     The GInterfaces whose names start with TpSvc are generated automatically
-    from the Telepathy specification, and can be used to make it easier
-    to export methods and signals onto D-Bus. By implementing these
-    GInterfaces you can avoid needing to generate any "glue" using the
-    dbus-glib tools - this is all done internally inside telepathy-glib.
+    from the Telepathy specification, and can be used to make it
+    somewhat easier to export methods and signals onto D-Bus.
   </para>
 
 
@@ -114,21 +112,18 @@ gabble_media_session_error (TpSvcMediaSessionHandler *iface,
 
   /* do stuff with self here */
     </programlisting></informalexample>
-    All service methods in telepathy-glib are asynchronous - you can of
-    course implement them synchronously if you like, but you have to return
-    the result or error to D-Bus by calling a callback rather than by
-    returning from a function.
   </para>
 
   <para>
-    The method implementation's last parameter is a DBusGMethodInvocation.
-    To send the reply, you must either call dbus_g_method_return_error
-    (for a failure), dbus_g_method_return (for a successful return),
+    The method implementation's last parameter is a GDBusMethodInvocation.
+    To send the reply, you must either call
+    g_dbus_method_invocation_return_gerror or similar (for a failure),
+    g_dbus_method_invocation_return_value (for a successful return),
     or an inline function whose name contains "_return_from_" provided by
     the TpSvc interface. For example, for Error there's an inline function
     tp_svc_media_session_handler_return_from_error(). These inline functions
-    are just a simple wrapper around dbus_g_method_return() to make it
-    type-safe - it's recommended that you use them where possible.
+    are just a simple wrapper around g_dbus_method_invocation_return_value()
+    to make it type-safe.
   </para>
 
   <para>
@@ -152,7 +147,8 @@ gabble_media_session_error (TpSvcMediaSessionHandler *iface,
   </para>
 
   <para>
-    As for signals, they're named as dictated by dbus-glib. This normally
+    As for signals, they're named as dictated by dbus-glib
+    (even though we don't actually use dbus-glib any more). This normally
     gives you a sensible lower-case name - for instance NewStreamHandler
     is mapped to "new-stream-handler".
   </para>
