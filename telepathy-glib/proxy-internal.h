@@ -28,10 +28,6 @@ typedef struct {
     const gchar *version;
     gsize size;
 
-    GDBusProxy *(*get_interface_by_id) (TpProxy *,
-        GQuark,
-        GError **);
-
     gboolean (*check_interface_by_id) (TpProxy *,
         GQuark,
         GError **);
@@ -69,10 +65,6 @@ typedef struct {
 
     GType type;
 } TpProxyImplementation;
-
-DBusGProxy *_tp_proxy_get_interface_by_id (TpProxy *self,
-    GQuark iface,
-    GError **error);
 
 gboolean _tp_proxy_check_interface_by_id (TpProxy *self,
     GQuark iface,

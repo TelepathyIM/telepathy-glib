@@ -407,11 +407,8 @@ static guint signals[N_SIGNALS] = {0};
  *
  * Since: 0.19.9
  */
-
-/* that's implemented in the core library, but it calls this: */
-
 GDBusProxy *
-_tp_proxy_get_interface_by_id (TpProxy *self,
+tp_proxy_get_interface_by_id (TpProxy *self,
     GQuark iface,
     GError **error)
 {

@@ -31,15 +31,6 @@
 
 static TpProxyImplementation _tp_proxy_implementation = { NULL };
 
-GDBusProxy *
-tp_proxy_get_interface_by_id (gpointer proxy,
-    GQuark iface,
-    GError **error)
-{
-  g_assert (_tp_proxy_implementation.version != NULL);
-  return _tp_proxy_implementation.get_interface_by_id (proxy, iface, error);
-}
-
 gboolean
 tp_proxy_check_interface_by_id (gpointer proxy,
     GQuark iface,
@@ -127,7 +118,6 @@ tp_private_proxy_set_implementation (TpProxyImplementation *impl)
   g_assert (g_str_equal (g_type_name (impl->type), "TpProxy"));
   g_assert (_tp_proxy_implementation.version == NULL);
 
-  g_assert (impl->get_interface_by_id != NULL);
   g_assert (impl->check_interface_by_id != NULL);
   g_assert (impl->pending_call_new != NULL);
   g_assert (impl->pending_call_take_pending_call != NULL);
