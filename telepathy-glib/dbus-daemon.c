@@ -869,151 +869,6 @@ tp_dbus_daemon_get_unique_name (TpDBusDaemon *self)
       tp_proxy_get_dbus_connection (self));
 }
 
-typedef struct {
-    TpDBusDaemon *self;
-    DBusMessage *reply;
-    TpDBusDaemonListNamesCb callback;
-    gpointer user_data;
-    GDestroyNotify destroy;
-    gpointer weak_object;
-    gsize refs;
-} ListNamesContext;
-
-static ListNamesContext *
-list_names_context_new (TpDBusDaemon *self,
-    TpDBusDaemonListNamesCb callback,
-    gpointer user_data,
-    GDestroyNotify destroy,
-    GObject *weak_object)
-{
-  ListNamesContext *context = g_slice_new (ListNamesContext);
-
-  context->self = g_object_ref (self);
-  context->reply = NULL;
-  context->callback = callback;
-  context->user_data = user_data;
-  context->destroy = destroy;
-  context->weak_object = weak_object;
-
-  if (context->weak_object != NULL)
-    g_object_add_weak_pointer (weak_object, &context->weak_object);
-
-  context->refs = 1;
-  return context;
-}
-
-static void
-list_names_context_unref (gpointer data)
-{
-  ListNamesContext *context = data;
-
-  if (--context->refs == 0)
-    {
-      g_object_unref (context->self);
-
-      if (context->reply != NULL)
-        dbus_message_unref (context->reply);
-
-      if (context->destroy != NULL)
-        context->destroy (context->user_data);
-
-      context->destroy = NULL;
-
-      if (context->weak_object != NULL)
-        g_object_remove_weak_pointer (context->weak_object,
-            &context->weak_object);
-
-      g_slice_free (ListNamesContext, context);
-    }
-}
-
-static gboolean
-_tp_dbus_daemon_list_names_idle (gpointer data)
-{
-  ListNamesContext *context = data;
-  char **array = NULL;
-  const gchar * const *result = NULL;
-  GError *error = NULL;
-
-  if (context->callback == NULL)
-    {
-      DEBUG ("Caller no longer cares (weak object vanished), ignoring");
-      return FALSE;
-    }
-
-  if (context->reply == NULL)
-    {
-      g_set_error_literal (&error, DBUS_GERROR, DBUS_GERROR_DISCONNECTED,
-          "DBusConnection disconnected");
-    }
-  else if (dbus_message_get_type (context->reply) ==
-      DBUS_MESSAGE_TYPE_METHOD_RETURN)
-    {
-      int n_elements;
-
-      if (dbus_message_get_args (context->reply, NULL,
-            DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &array, &n_elements,
-            DBUS_TYPE_INVALID))
-        {
-          result = (const gchar * const *) array;
-          g_assert (result[n_elements] == NULL);
-        }
-      else
-        {
-          g_set_error_literal (&error, DBUS_GERROR, DBUS_GERROR_INVALID_ARGS,
-              "Malformed reply from List*Names()");
-        }
-    }
-  else
-    {
-      DBusError dbus_error = DBUS_ERROR_INIT;
-
-      if (dbus_set_error_from_message (&dbus_error, context->reply))
-        {
-          /* FIXME: ideally we'd use dbus-glib's error mapping here, but we
-           * don't have access to it */
-          g_set_error (&error, DBUS_GERROR, DBUS_GERROR_FAILED,
-              "List*Names() raised %s: %s", dbus_error.name,
-              dbus_error.message);
-          dbus_error_free (&dbus_error);
-        }
-      else
-        {
-          g_set_error_literal (&error, DBUS_GERROR, DBUS_GERROR_INVALID_ARGS,
-              "Unexpected message type from List*Names()");
-        }
-    }
-
-  if (error != NULL)
-    DEBUG ("%s", error->message);
-
-  context->callback (context->self, result, error, context->user_data,
-      context->weak_object);
-  dbus_free_string_array (array);   /* NULL-safe */
-  return FALSE;
-}
-
-static void
-_tp_dbus_daemon_list_names_notify (DBusPendingCall *pc,
-                                   gpointer data)
-{
-  ListNamesContext *context = data;
-
-  /* we recycle this function for the case where the connection is already
-   * disconnected: in that case we use pc = NULL */
-  if (pc != NULL)
-    context->reply = dbus_pending_call_steal_reply (pc);
-
-  /* We have to do the real work in an idle, so we don't break re-entrant
-   * calls (the dbus-glib event source isn't re-entrant) */
-  context->refs++;
-  g_idle_add_full (G_PRIORITY_HIGH, _tp_dbus_daemon_list_names_idle,
-      context, list_names_context_unref);
-
-  if (pc != NULL)
-    dbus_pending_call_unref (pc);
-}
-
 /**
  * TpDBusDaemonListNamesCb:
  * @bus_daemon: object representing a connection to a bus
@@ -1030,52 +885,6 @@ _tp_dbus_daemon_list_names_notify (DBusPendingCall *pc,
  * Since: 0.7.35
  */
 
-static void
-_tp_dbus_daemon_list_names_common (TpDBusDaemon *self,
-    const gchar *method,
-    gint timeout_ms,
-    TpDBusDaemonListNamesCb callback,
-    gpointer user_data,
-    GDestroyNotify destroy,
-    GObject *weak_object)
-{
-  DBusMessage *message;
-  DBusPendingCall *pc = NULL;
-  ListNamesContext *context;
-
-  g_return_if_fail (TP_IS_DBUS_DAEMON (self));
-  g_return_if_fail (callback != NULL);
-  g_return_if_fail (weak_object == NULL || G_IS_OBJECT (weak_object));
-
-  message = dbus_message_new_method_call (DBUS_SERVICE_DBUS,
-      DBUS_PATH_DBUS, DBUS_INTERFACE_DBUS, method);
-
-  if (message == NULL)
-    ERROR ("Out of memory");
-
-  if (!dbus_connection_send_with_reply (self->priv->libdbus,
-      message, &pc, timeout_ms))
-    ERROR ("Out of memory");
-  /* pc is unreffed by _tp_dbus_daemon_list_names_notify */
-  dbus_message_unref (message);
-
-  context = list_names_context_new (self, callback, user_data, destroy,
-    weak_object);
-
-  if (pc == NULL || dbus_pending_call_get_completed (pc))
-    {
-      /* pc can be NULL when the connection is already disconnected */
-      _tp_dbus_daemon_list_names_notify (pc, context);
-      list_names_context_unref (context);
-    }
-  else if (!dbus_pending_call_set_notify (pc,
-        _tp_dbus_daemon_list_names_notify, context,
-        list_names_context_unref))
-    {
-      ERROR ("Out of memory");
-    }
-}
-
 /**
  * tp_dbus_daemon_list_names:
  * @self: object representing a connection to a bus
@@ -1091,10 +900,6 @@ _tp_dbus_daemon_list_names_common (TpDBusDaemon *self,
  * will be called from the main loop with a list of all the names (either
  * unique or well-known) that exist on the bus.
  *
- * In versions of telepathy-glib that have it, this should be preferred
- * instead of calling tp_cli_dbus_daemon_call_list_names(), since that
- * function will result in wakeups for every NameOwnerChanged signal.
- *
  * Since: 0.7.35
  */
 void
@@ -1105,8 +910,20 @@ tp_dbus_daemon_list_names (TpDBusDaemon *self,
     GDestroyNotify destroy,
     GObject *weak_object)
 {
-  _tp_dbus_daemon_list_names_common (self, "ListNames", timeout_ms,
-      callback, user_data, destroy, weak_object);
+  /* This is the same type as TpDBusDaemonListNamesCb, spelled out
+   * explicitly to make it clearer that the cast below is OK... */
+  void (*explicit_callback) (TpDBusDaemon *, const gchar * const *,
+      const GError *, gpointer, GObject *) = callback;
+  /* ... and this is the same type as
+   * tp_cli_dbus_daemon_callback_for_list_names, which differs only in
+   * the constness of its second parameter. Again, spelling it out explicitly
+   * in the declaration to make it clearer that it's OK to do. */
+  void (*cast_callback) (TpDBusDaemon *, const gchar **,
+      const GError *, gpointer, GObject *) =
+    (tp_cli_dbus_daemon_callback_for_list_names) explicit_callback;
+
+  tp_cli_dbus_daemon_call_list_names (self, timeout_ms,
+      cast_callback, user_data, destroy, weak_object);
 }
 
 /**
@@ -1124,10 +941,6 @@ tp_dbus_daemon_list_names (TpDBusDaemon *self,
  * The @callback will be called from the main loop with a list of all the
  * well-known names that are available for service-activation on the bus.
  *
- * In versions of telepathy-glib that have it, this should be preferred
- * instead of calling tp_cli_dbus_daemon_call_list_activatable_names(), since
- * that function will result in wakeups for every NameOwnerChanged signal.
- *
  * Since: 0.7.35
  */
 void
@@ -1138,8 +951,15 @@ tp_dbus_daemon_list_activatable_names (TpDBusDaemon *self,
     GDestroyNotify destroy,
     GObject *weak_object)
 {
-  _tp_dbus_daemon_list_names_common (self, "ListActivatableNames", timeout_ms,
-      callback, user_data, destroy, weak_object);
+  /* Same comments as for ListNames */
+  void (*explicit_callback) (TpDBusDaemon *, const gchar * const *,
+      const GError *, gpointer, GObject *) = callback;
+  void (*cast_callback) (TpDBusDaemon *, const gchar **,
+      const GError *, gpointer, GObject *) =
+    (tp_cli_dbus_daemon_callback_for_list_activatable_names) explicit_callback;
+
+  tp_cli_dbus_daemon_call_list_activatable_names (self, timeout_ms,
+      cast_callback, user_data, destroy, weak_object);
 }
 
 static GObject *
