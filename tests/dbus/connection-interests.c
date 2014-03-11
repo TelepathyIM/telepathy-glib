@@ -79,8 +79,7 @@ interested_connection_class_init (InterestedConnectionClass *cls)
 
 typedef struct {
     TpDBusDaemon *dbus;
-    DBusConnection *client_libdbus;
-    DBusGConnection *client_dbusglib;
+    GDBusConnection *client_gdbus;
     TpDBusDaemon *client_bus;
     TpTestsSimpleConnection *service_conn;
     TpBaseConnection *service_conn_as_base;
@@ -154,14 +153,8 @@ setup (Test *test,
   tp_debug_set_flags ("all");
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  test->client_libdbus = dbus_bus_get_private (DBUS_BUS_STARTER, NULL);
-  g_assert (test->client_libdbus != NULL);
-  dbus_connection_setup_with_g_main (test->client_libdbus, NULL);
-  dbus_connection_set_exit_on_disconnect (test->client_libdbus, FALSE);
-  test->client_dbusglib = dbus_connection_get_g_connection (
-      test->client_libdbus);
-  dbus_g_connection_ref (test->client_dbusglib);
-  test->client_bus = tp_dbus_daemon_new (test->client_dbusglib);
+  test->client_gdbus = tp_tests_get_private_bus ();
+  test->client_bus = tp_dbus_daemon_new (test->client_gdbus);
   g_assert (test->client_bus != NULL);
 
   test->service_conn = tp_tests_object_new_static_class (
@@ -252,9 +245,11 @@ teardown (Test *test,
   g_object_unref (test->client_bus);
   test->client_bus = NULL;
 
-  dbus_g_connection_unref (test->client_dbusglib);
-  dbus_connection_close (test->client_libdbus);
-  dbus_connection_unref (test->client_libdbus);
+  if (test->client_gdbus != NULL)
+    {
+      g_dbus_connection_close_sync (test->client_gdbus, NULL, NULL);
+      g_object_unref (test->client_gdbus);
+    }
 
   g_ptr_array_unref (test->log);
 }
@@ -348,8 +343,10 @@ test_interest (Test *test,
 
   /* we auto-release the Location client interest by dropping the client
    * connection */
-  dbus_connection_flush (test->client_libdbus);
-  dbus_connection_close (test->client_libdbus);
+  g_dbus_connection_flush_sync (test->client_gdbus, NULL, NULL);
+  g_dbus_connection_close_sync (test->client_gdbus, NULL, NULL);
+  g_object_unref (test->client_gdbus);
+  test->client_gdbus = NULL;
 
   while (test->log->len < 6)
     g_main_context_iteration (NULL, TRUE);

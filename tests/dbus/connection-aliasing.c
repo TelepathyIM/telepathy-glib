@@ -26,8 +26,7 @@
 typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
-    DBusConnection *client_libdbus;
-    DBusGConnection *client_dbusglib;
+    GDBusConnection *client_gdbus;
     TpDBusDaemon *client_bus;
     ExampleContactListConnection *service_conn;
     TpBaseConnection *service_conn_as_base;
@@ -55,14 +54,8 @@ setup (Test *test,
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->error = NULL;
 
-  test->client_libdbus = dbus_bus_get_private (DBUS_BUS_STARTER, NULL);
-  g_assert (test->client_libdbus != NULL);
-  dbus_connection_setup_with_g_main (test->client_libdbus, NULL);
-  dbus_connection_set_exit_on_disconnect (test->client_libdbus, FALSE);
-  test->client_dbusglib = dbus_connection_get_g_connection (
-      test->client_libdbus);
-  dbus_g_connection_ref (test->client_dbusglib);
-  test->client_bus = tp_dbus_daemon_new (test->client_dbusglib);
+  test->client_gdbus = tp_tests_get_private_bus ();
+  test->client_bus = tp_dbus_daemon_new (test->client_gdbus);
   g_assert (test->client_bus != NULL);
 
   test->service_conn = tp_tests_object_new_static_class (
@@ -128,9 +121,8 @@ teardown (Test *test,
   g_object_unref (test->client_bus);
   test->client_bus = NULL;
 
-  dbus_g_connection_unref (test->client_dbusglib);
-  dbus_connection_close (test->client_libdbus);
-  dbus_connection_unref (test->client_libdbus);
+  g_dbus_connection_close_sync (test->client_gdbus, NULL, NULL);
+  g_object_unref (test->client_gdbus);
 }
 
 static void

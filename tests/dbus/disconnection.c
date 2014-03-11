@@ -1,8 +1,5 @@
 #include "config.h"
 
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib-lowlevel.h>
-
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/debug.h>
@@ -44,8 +41,7 @@ typedef struct {
     TpProxy *proxies[N_PROXIES];
     GObject *cd_service;
 
-    DBusConnection *private_libdbus;
-    DBusGConnection *private_dbusglib;
+    GDBusConnection *private_gdbus;
     TpDBusDaemon *private_dbus_daemon;
 } Fixture;
 
@@ -158,25 +154,18 @@ setup (Fixture *f,
       NULL);
   tp_dbus_daemon_register_object (f->dbus_daemon, "/", f->cd_service);
 
-  f->private_libdbus = dbus_bus_get_private (DBUS_BUS_STARTER, NULL);
-  g_assert (f->private_libdbus != NULL);
-  dbus_connection_setup_with_g_main (f->private_libdbus, NULL);
-  dbus_connection_set_exit_on_disconnect (f->private_libdbus, FALSE);
-  f->private_dbusglib = dbus_connection_get_g_connection (
-      f->private_libdbus);
-  dbus_g_connection_ref (f->private_dbusglib);
-  f->private_dbus_daemon = tp_dbus_daemon_new (f->private_dbusglib);
+  f->private_gdbus = tp_tests_get_private_bus ();
+  g_assert (f->private_gdbus != NULL);
+  f->private_dbus_daemon = tp_dbus_daemon_new (f->private_gdbus);
   g_assert (f->private_dbus_daemon != NULL);
 }
 
 static void
 drop_private_connection (Fixture *f)
 {
-  dbus_g_connection_unref (f->private_dbusglib);
-  f->private_dbusglib = NULL;
-  dbus_connection_close (f->private_libdbus);
-  dbus_connection_unref (f->private_libdbus);
-  f->private_libdbus = NULL;
+  g_dbus_connection_flush_sync (f->private_gdbus, NULL, NULL);
+  g_dbus_connection_close_sync (f->private_gdbus, NULL, NULL);
+  g_clear_object (&f->private_gdbus);
 }
 
 static void

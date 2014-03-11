@@ -35,7 +35,7 @@ typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
 
-    DBusGConnection *private_conn;
+    GDBusConnection *private_conn;
     TpDBusDaemon *private_dbus;
     TpTestsSimpleChannelDispatchOperation *cdo_service;
     TpTestsEchoChannel *text_chan_service;
@@ -54,22 +54,12 @@ static void
 setup (Test *test,
        gconstpointer data)
 {
-  DBusConnection *libdbus;
-
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  libdbus = dbus_bus_get_private (DBUS_BUS_STARTER, NULL);
-  g_assert (libdbus != NULL);
-  dbus_connection_setup_with_g_main (libdbus, NULL);
-  dbus_connection_set_exit_on_disconnect (libdbus, FALSE);
-  test->private_conn = dbus_connection_get_g_connection (libdbus);
-  /* transfer ref */
-  dbus_g_connection_ref (test->private_conn);
-  dbus_connection_unref (libdbus);
-  g_assert (test->private_conn != NULL);
+  test->private_conn = tp_tests_get_private_bus ();
   test->private_dbus = tp_dbus_daemon_new (test->private_conn);
   g_assert (test->private_dbus != NULL);
 
@@ -162,13 +152,9 @@ teardown (Test *test,
   test->cdo_service = NULL;
 
   if (test->private_conn != NULL)
-    {
-      dbus_connection_close (dbus_g_connection_get_connection (
-            test->private_conn));
+    g_dbus_connection_close_sync (test->private_conn, NULL, NULL);
 
-      dbus_g_connection_unref (test->private_conn);
-      test->private_conn = NULL;
-    }
+  g_clear_object (&test->private_conn);
 
   /* make sure any pending things have happened */
   tp_tests_proxy_run_until_dbus_queue_processed (test->dbus);
@@ -268,10 +254,8 @@ test_crash (Test *test,
 
   g_assert (tp_proxy_get_invalidated (test->cdo) == NULL);
 
-  dbus_connection_close (dbus_g_connection_get_connection (
-        test->private_conn));
-  dbus_g_connection_unref (test->private_conn);
-  test->private_conn = NULL;
+  g_dbus_connection_close_sync (test->private_conn, NULL, NULL);
+  g_clear_object (&test->private_conn);
 
   while (tp_proxy_get_invalidated (test->cdo) == NULL)
     g_main_context_iteration (NULL, TRUE);

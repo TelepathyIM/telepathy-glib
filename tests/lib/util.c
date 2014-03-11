@@ -801,3 +801,18 @@ _tp_tests_await_last_unref (gpointer obj,
       obj = g_weak_ref_get (&weak);
     }
 }
+
+GDBusConnection *
+tp_tests_get_private_bus (void)
+{
+  GDBusConnection *ret;
+  GError *error = NULL;
+
+  ret = g_dbus_connection_new_for_address_sync (
+      g_getenv ("DBUS_SESSION_BUS_ADDRESS"),
+      G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT |
+      G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION,
+      NULL, NULL, &error);
+  g_assert_no_error (error);
+  return ret;
+}

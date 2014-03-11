@@ -138,5 +138,6 @@ void _tp_tests_assert_last_unref (gpointer obj,
     const gchar *file,
     int line);
 
+GDBusConnection *tp_tests_get_private_bus (void);
 
 #endif /* #ifndef __TP_TESTS_LIB_UTIL_H__ */
