@@ -607,16 +607,16 @@ tp_dbus_daemon_release_name (TpDBusDaemon *self,
                              const gchar *well_known_name,
                              GError **error)
 {
-  DBusGConnection *gconn;
-  DBusConnection *dbc;
-  DBusError dbus_error;
-  int result;
+  guint32 result;
   const GError *invalidated;
+  GVariant *tuple;
 
   g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), FALSE);
   g_return_val_if_fail (tp_dbus_check_valid_bus_name (well_known_name,
         TP_DBUS_NAME_TYPE_WELL_KNOWN, error), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+  DEBUG ("%s", well_known_name);
 
   invalidated = tp_proxy_get_invalidated (self);
 
@@ -625,38 +625,46 @@ tp_dbus_daemon_release_name (TpDBusDaemon *self,
       if (error != NULL)
         *error = g_error_copy (invalidated);
 
+      DEBUG ("- not releasing, we have fallen off D-Bus");
       return FALSE;
     }
 
-  gconn = tp_proxy_get_dbus_connection (self);
-  dbc = dbus_g_connection_get_connection (gconn);
-  dbus_error_init (&dbus_error);
-  result = dbus_bus_release_name (dbc, well_known_name, &dbus_error);
+  tuple = g_dbus_connection_call_sync (tp_proxy_get_dbus_connection (self),
+      "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
+      "ReleaseName", g_variant_new ("(s)", well_known_name),
+      G_VARIANT_TYPE ("(u)"), G_DBUS_CALL_FLAGS_NONE, -1, NULL, error);
+
+  if (tuple == NULL)
+    {
+      DEBUG ("- D-Bus error");
+      return FALSE;
+    }
+
+  g_variant_get (tuple, "(u)", &result);
+  g_variant_unref (tuple);
 
   switch (result)
     {
     case DBUS_RELEASE_NAME_REPLY_RELEASED:
+      DEBUG ("- released");
       return TRUE;
 
     case DBUS_RELEASE_NAME_REPLY_NOT_OWNER:
+      DEBUG ("- not ours");
       g_set_error (error, TP_ERROR, TP_ERROR_NOT_YOURS,
           "Name '%s' owned by another process", well_known_name);
       return FALSE;
 
     case DBUS_RELEASE_NAME_REPLY_NON_EXISTENT:
+      DEBUG ("- not owned");
       g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "Name '%s' not owned", well_known_name);
       return FALSE;
 
-    case -1:
-      g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
-          "%s: %s", dbus_error.name, dbus_error.message);
-      dbus_error_free (&dbus_error);
-      return FALSE;
-
     default:
+      DEBUG ("- unexpected code %u", result);
       g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
-          "ReleaseName('%s') returned %d and I don't know what that means",
+          "ReleaseName('%s') returned %u and I don't know what that means",
           well_known_name, result);
       return FALSE;
     }
