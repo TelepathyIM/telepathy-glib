@@ -364,15 +364,29 @@ main (int argc,
   g_error_free (error_out);
   error_out = NULL;
 
-  /* Now that the main loop has run, cancelled signal connections have been
-   * freed */
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_B), "");
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_C), "");
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_D), "");
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_E), "");
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_F), "");
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_G), "");
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_H), "");
+  /* It might take a little longer to free all the user-data, because it
+   * happens in an idle */
+
+  while (!tp_intset_is_member (freed_user_data, TEST_B))
+    g_main_context_iteration (NULL, TRUE);
+
+  while (!tp_intset_is_member (freed_user_data, TEST_C))
+    g_main_context_iteration (NULL, TRUE);
+
+  while (!tp_intset_is_member (freed_user_data, TEST_D))
+    g_main_context_iteration (NULL, TRUE);
+
+  while (!tp_intset_is_member (freed_user_data, TEST_E))
+    g_main_context_iteration (NULL, TRUE);
+
+  while (!tp_intset_is_member (freed_user_data, TEST_F))
+    g_main_context_iteration (NULL, TRUE);
+
+  while (!tp_intset_is_member (freed_user_data, TEST_G))
+    g_main_context_iteration (NULL, TRUE);
+
+  while (!tp_intset_is_member (freed_user_data, TEST_H))
+    g_main_context_iteration (NULL, TRUE);
 
   /* both A and Z are still listening for signals, so their user data is
    * still held */
@@ -389,6 +403,12 @@ main (int argc,
   g_assert (f->proxies[TEST_G] == NULL);
   tp_tests_assert_last_unref (&f->proxies[TEST_H]);
   tp_tests_assert_last_unref (&f->proxies[TEST_Z]);
+
+  while (!tp_intset_is_member (freed_user_data, TEST_A))
+    g_main_context_iteration (NULL, TRUE);
+
+  while (!tp_intset_is_member (freed_user_data, TEST_Z))
+    g_main_context_iteration (NULL, TRUE);
 
   /* we should already have checked each of these at least once, but just to
    * make sure we have a systematic test that all user data is freed... */

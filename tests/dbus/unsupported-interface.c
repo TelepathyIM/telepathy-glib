@@ -196,7 +196,10 @@ test_supported_signal (Fixture *f,
   g_assert (!f->freed);
 
   tp_proxy_signal_connection_disconnect (sc);
-  g_assert (f->freed);
+
+  /* GDBus invokes destructors in an idle */
+  while (!f->freed)
+    g_main_context_iteration (NULL, TRUE);
 }
 
 static void
