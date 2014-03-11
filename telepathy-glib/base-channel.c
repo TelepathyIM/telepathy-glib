@@ -1072,10 +1072,9 @@ tp_base_channel_close_dbus (
 
   if (DEBUGGING)
     {
-      gchar *caller = dbus_g_method_get_sender (context);
+      const gchar *caller = g_dbus_method_invocation_get_sender (context);
 
       DEBUG ("called by %s", caller);
-      g_free (caller);
     }
 
   tp_base_channel_close (chan);

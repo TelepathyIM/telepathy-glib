@@ -2203,7 +2203,7 @@ tp_base_connection_dbus_add_client_interest (TpSvcConnection *svc,
     GDBusMethodInvocation *context)
 {
   TpBaseConnection *self = (TpBaseConnection *) svc;
-  gchar *unique_name = NULL;
+  const gchar *unique_name = NULL;
 
   g_return_if_fail (TP_IS_BASE_CONNECTION (self));
   g_return_if_fail (self->priv->bus_proxy != NULL);
@@ -2211,14 +2211,13 @@ tp_base_connection_dbus_add_client_interest (TpSvcConnection *svc,
   if (interests == NULL || interests[0] == NULL)
     goto finally;
 
-  unique_name = dbus_g_method_get_sender (context);
+  unique_name = g_dbus_method_invocation_get_sender (context);
 
   tp_base_connection_add_client_interest_impl (self, unique_name,
       (const gchar * const *) interests, FALSE);
 
 finally:
   tp_svc_connection_return_from_add_client_interest (context);
-  g_free (unique_name);
 }
 
 static void
@@ -2226,7 +2225,7 @@ tp_base_connection_dbus_remove_client_interest (TpSvcConnection *svc,
     const gchar **interests,
     GDBusMethodInvocation *context)
 {
-  gchar *unique_name = NULL;
+  const gchar *unique_name = NULL;
   const gchar **interest;
   TpBaseConnection *self = (TpBaseConnection *) svc;
   gpointer name_in_hash, count_p;
@@ -2238,7 +2237,7 @@ tp_base_connection_dbus_remove_client_interest (TpSvcConnection *svc,
   if (interests == NULL || interests[0] == NULL)
     goto finally;
 
-  unique_name = dbus_g_method_get_sender (context);
+  unique_name = g_dbus_method_invocation_get_sender (context);
 
   /* this method isn't really meant to fail, so we might as well return now */
 
@@ -2321,7 +2320,6 @@ tp_base_connection_dbus_remove_client_interest (TpSvcConnection *svc,
 
 finally:
   tp_svc_connection_return_from_remove_client_interest (context);
-  g_free (unique_name);
 }
 
 /* The handling of calls to Connection.Interface.Requests.CreateChannel is
