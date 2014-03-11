@@ -513,16 +513,16 @@ tp_dbus_daemon_request_name (TpDBusDaemon *self,
                              gboolean idempotent,
                              GError **error)
 {
-  DBusGConnection *gconn;
-  DBusConnection *dbc;
-  DBusError dbus_error;
-  int result;
+  GVariant *tuple;
+  guint32 result;
   const GError *invalidated;
 
   g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), FALSE);
   g_return_val_if_fail (tp_dbus_check_valid_bus_name (well_known_name,
         TP_DBUS_NAME_TYPE_WELL_KNOWN, error), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+  DEBUG ("%s", well_known_name);
 
   invalidated = tp_proxy_get_invalidated (self);
 
@@ -531,22 +531,35 @@ tp_dbus_daemon_request_name (TpDBusDaemon *self,
       if (error != NULL)
         *error = g_error_copy (invalidated);
 
+      DEBUG ("- not requesting, we have fallen off D-Bus");
       return FALSE;
     }
 
-  gconn = tp_proxy_get_dbus_connection (self);
-  dbc = dbus_g_connection_get_connection (gconn);
+  tuple = g_dbus_connection_call_sync (tp_proxy_get_dbus_connection (self),
+      "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
+      "RequestName",
+      g_variant_new ("(su)", well_known_name,
+        (guint32) DBUS_NAME_FLAG_DO_NOT_QUEUE),
+      G_VARIANT_TYPE ("(u)"), G_DBUS_CALL_FLAGS_NONE, -1, NULL, error);
 
-  dbus_error_init (&dbus_error);
-  result = dbus_bus_request_name (dbc, well_known_name,
-      DBUS_NAME_FLAG_DO_NOT_QUEUE, &dbus_error);
+  if (tuple == NULL)
+    {
+      DEBUG ("- D-Bus error");
+      return FALSE;
+    }
+
+  g_variant_get (tuple, "(u)", &result);
+  g_variant_unref (tuple);
 
   switch (result)
     {
     case DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER:
+      DEBUG ("- acquired");
       return TRUE;
 
     case DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER:
+      DEBUG ("- already owned by us");
+
       if (idempotent)
         {
           return TRUE;
@@ -560,20 +573,16 @@ tp_dbus_daemon_request_name (TpDBusDaemon *self,
 
     case DBUS_REQUEST_NAME_REPLY_EXISTS:
     case DBUS_REQUEST_NAME_REPLY_IN_QUEUE:
+      DEBUG ("- already owned by someone else");
       /* the latter shouldn't actually happen since we said DO_NOT_QUEUE */
       g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "Name '%s' already in use by another process", well_known_name);
       return FALSE;
 
-    case -1:
-      g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
-          "%s: %s", dbus_error.name, dbus_error.message);
-      dbus_error_free (&dbus_error);
-      return FALSE;
-
     default:
+      DEBUG ("- unexpected code %u", result);
       g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
-          "RequestName('%s') returned %d and I don't know what that means",
+          "RequestName('%s') returned %u and I don't know what that means",
           well_known_name, result);
       return FALSE;
     }
