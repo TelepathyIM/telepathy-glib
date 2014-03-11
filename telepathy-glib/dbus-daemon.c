@@ -31,6 +31,7 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/svc-interface-skeleton-internal.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_PROXY
@@ -903,14 +904,63 @@ tp_dbus_daemon_release_name (TpDBusDaemon *self,
     }
 }
 
+typedef struct _Registration Registration;
+
+struct _Registration {
+    /* (transfer full) */
+    GDBusConnection *conn;
+    /* (transfer full) */
+    gchar *object_path;
+    /* (transfer full) */
+    GSList *skeletons;
+};
+
+static GQuark
+registration_quark (void)
+{
+  static GQuark q = 0;
+
+  if (G_UNLIKELY (q == 0))
+    {
+      q = g_quark_from_static_string ("tp_dbus_daemon_register_object");
+    }
+
+  return q;
+}
+
+static void
+tp_dbus_daemon_registration_free (gpointer p)
+{
+  Registration *r = p;
+  GSList *iter;
+
+  DEBUG ("%s (r=%p)", r->object_path, r);
+
+  for (iter = r->skeletons; iter != NULL; iter = iter->next)
+    {
+      DEBUG ("%p", iter->data);
+      g_assert (TP_IS_SVC_INTERFACE_SKELETON (iter->data));
+      g_dbus_interface_skeleton_unexport (iter->data);
+      g_object_unref (iter->data);
+    }
+
+  g_slist_free (r->skeletons);
+  g_free (r->object_path);
+  g_clear_object (&r->conn);
+  g_slice_free (Registration, r);
+}
+
 /**
  * tp_dbus_daemon_register_object:
  * @self: object representing a connection to a bus
  * @object_path: an object path
  * @object: (type GObject.Object) (transfer none): an object to export
  *
- * Export @object at @object_path. This is a convenience wrapper around
- * dbus_g_connection_register_g_object(), and behaves similarly.
+ * Export @object at @object_path. Its `TpSvc` interfaces will all
+ * be exported.
+ *
+ * Since 0.UNRELEASED, as a simplification, exporting an object in this
+ * way at more than one location or on more than one bus is not allowed.
  *
  * Since: 0.11.3
  */
@@ -919,12 +969,96 @@ tp_dbus_daemon_register_object (TpDBusDaemon *self,
     const gchar *object_path,
     gpointer object)
 {
+  GDBusConnection *conn;
+  GType *interfaces;
+  guint n = 0;
+  guint i;
+  Registration *r;
+
   g_return_if_fail (TP_IS_DBUS_DAEMON (self));
   g_return_if_fail (tp_dbus_check_valid_object_path (object_path, NULL));
   g_return_if_fail (G_IS_OBJECT (object));
 
-  dbus_g_connection_register_g_object (tp_proxy_get_dbus_connection (self),
-      object_path, object);
+  conn = tp_proxy_get_dbus_connection (self);
+  r = g_slice_new0 (Registration);
+  r->conn = g_object_ref (conn);
+  r->object_path = g_strdup (object_path);
+  r->skeletons = NULL;
+
+  DEBUG ("%p (r=%p) on %s (%p) at %s", object, r,
+      g_dbus_connection_get_unique_name (conn), conn, object_path);
+
+  if (!g_object_replace_qdata (object, registration_quark (),
+        NULL, /* if old value is NULL... */
+        r, /* ... replace it with r... */
+        tp_dbus_daemon_registration_free, /* ... with this free-function... */
+        NULL /* ... and don't retrieve the old free-function */ ))
+    {
+      DEBUG ("already exported, discarding %p", r);
+      tp_dbus_daemon_registration_free (r);
+
+      /* dbus-glib silently allowed duplicate registrations; to avoid
+       * breaking too much existing code, so must we. We don't allow
+       * registrations on different connections or at different object
+       * paths, though, in the hope that nobody actually does that. */
+
+      r = g_object_get_qdata (object, registration_quark ());
+
+      if (!tp_strdiff (r->object_path, object_path) &&
+          r->conn == conn)
+        {
+          DEBUG ("already exported at identical (connection, path), ignoring");
+          return;
+        }
+
+      CRITICAL ("object has already been exported on %s (%p) at %s, cannot "
+          "export on %s (%p) at %s",
+          g_dbus_connection_get_unique_name (r->conn), r->conn, r->object_path,
+          g_dbus_connection_get_unique_name (conn), conn, object_path);
+      return;
+    }
+
+  /* FIXME: if @object is a GDBusObject or GDBusObjectManagerServer,
+   * export it that way instead? */
+
+  interfaces = g_type_interfaces (G_OBJECT_TYPE (object), &n);
+
+  for (i = 0; i < n; i++)
+    {
+      GType iface = interfaces[i];
+      const TpSvcInterfaceInfo *iinfo;
+      TpSvcInterfaceSkeleton *skeleton;
+      GError *error = NULL;
+
+      iinfo = tp_svc_interface_peek_dbus_interface_info (iface);
+
+      if (iinfo == NULL)
+        {
+          DEBUG ("- %s is not a D-Bus interface", g_type_name (iface));
+          continue;
+        }
+
+      skeleton = _tp_svc_interface_skeleton_new (object, iface, iinfo);
+
+      if (!g_dbus_interface_skeleton_export (
+            G_DBUS_INTERFACE_SKELETON (skeleton), conn, object_path,
+            &error))
+        {
+          CRITICAL ("cannot export %s %p skeleton %p as '%s': %s #%d: %s",
+              g_type_name (iface), object, skeleton,
+              iinfo->interface_info->name,
+              g_quark_to_string (error->domain), error->code, error->message);
+          g_object_unref (skeleton);
+          continue;
+        }
+
+      r->skeletons = g_slist_prepend (r->skeletons, skeleton);
+
+      DEBUG ("- %s skeleton %p (wrapping %s %p)",
+          iinfo->interface_info->name, skeleton, g_type_name (iface), object);
+    }
+
+  g_free (interfaces);
 }
 
 /**
@@ -945,8 +1079,9 @@ tp_dbus_daemon_unregister_object (TpDBusDaemon *self,
   g_return_if_fail (TP_IS_DBUS_DAEMON (self));
   g_return_if_fail (G_IS_OBJECT (object));
 
-  dbus_g_connection_unregister_g_object (tp_proxy_get_dbus_connection (self),
-      object);
+  DEBUG ("%p", object);
+
+  g_object_set_qdata (object, registration_quark (), NULL);
 }
 
 /**
