@@ -33,11 +33,10 @@
  * given by @context.
  */
 void
-tp_dbus_g_method_return_not_implemented (DBusGMethodInvocation *context)
+tp_dbus_g_method_return_not_implemented (GDBusMethodInvocation *context)
 {
-  GError e = { TP_ERROR, TP_ERROR_NOT_IMPLEMENTED, "Not implemented" };
-
-  dbus_g_method_return_error (context, &e);
+  g_dbus_method_invocation_return_dbus_error (context,
+      TP_ERROR_STR_NOT_IMPLEMENTED, "Not implemented");
 }
 
 /* this is the core library, we don't have debug infrastructure yet */
