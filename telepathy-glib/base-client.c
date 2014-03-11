@@ -1759,8 +1759,7 @@ out:
   if (error == NULL)
     return;
 
-  dbus_g_method_return_error (context, error);
-  g_error_free (error);
+  g_dbus_method_invocation_take_error (context, error);
 }
 
 static void
@@ -1937,9 +1936,7 @@ out:
   if (error == NULL)
     return;
 
-  dbus_g_method_return_error (context, error);
-  g_error_free (error);
-
+  g_dbus_method_invocation_take_error (context, error);
 }
 
 static void
@@ -2255,8 +2252,7 @@ out:
   if (error == NULL)
     return;
 
-  dbus_g_method_return_error (context, error);
-  g_error_free (error);
+  g_dbus_method_invocation_take_error (context, error);
 }
 
 static void
@@ -2372,8 +2368,7 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
 err:
   g_clear_object (&account);
 
-  dbus_g_method_return_error (context, error);
-  g_error_free (error);
+  g_dbus_method_invocation_take_error (context, error);
 }
 
 static void
