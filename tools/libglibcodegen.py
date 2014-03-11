@@ -193,3 +193,25 @@ def copy_into_gvalue(gvaluep, gtype, marshaller, name):
         return 'g_value_set_double (%s, %s);' % (gvaluep, name)
     else:
         raise AssertionError("Don't know how to put %s in a GValue" % gtype)
+
+def value_getter(gtype, marshaller):
+    if marshaller == 'BOXED':
+        return 'g_value_get_boxed'
+    elif gtype == 'G_TYPE_STRING':
+        return 'g_value_get_string'
+    elif gtype == 'G_TYPE_UCHAR':
+        return 'g_value_get_uchar'
+    elif gtype == 'G_TYPE_BOOLEAN':
+        return 'g_value_get_boolean'
+    elif gtype == 'G_TYPE_UINT':
+        return 'g_value_get_uint'
+    elif gtype == 'G_TYPE_INT':
+        return 'g_value_get_int'
+    elif gtype == 'G_TYPE_UINT64':
+        return 'g_value_get_uint64'
+    elif gtype == 'G_TYPE_INT64':
+        return 'g_value_get_int64'
+    elif gtype == 'G_TYPE_DOUBLE':
+        return 'g_value_get_double'
+    else:
+        raise AssertionError("Don't know how to get %s from a GValue" % marshaller)
