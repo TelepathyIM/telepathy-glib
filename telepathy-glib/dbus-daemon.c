@@ -865,7 +865,8 @@ tp_dbus_daemon_get_unique_name (TpDBusDaemon *self)
 {
   g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), NULL);
 
-  return dbus_bus_get_unique_name (self->priv->libdbus);
+  return g_dbus_connection_get_unique_name (
+      tp_proxy_get_dbus_connection (self));
 }
 
 typedef struct {
