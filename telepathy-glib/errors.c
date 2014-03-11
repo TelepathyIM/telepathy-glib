@@ -44,8 +44,8 @@
  * enumeration.
  *
  * This macro expands to a call to a function returning the Telepathy error
- * domain. Since 0.7.17, this function automatically registers the domain with
- * dbus-glib for server-side use (using dbus_g_error_domain_register()) when
+ * domain. Since 0.UNRELEASED, this function automatically registers the
+ * domain with GIO (using g_dbus_error_register_error()) when
  * called.
  *
  * This used to be called %TP_ERRORS.
@@ -318,11 +318,31 @@ tp_error_quark (void)
 
   if (g_once_init_enter (&quark))
     {
-      GQuark domain = g_quark_from_static_string ("tp-error-quark");
+      gsize domain = 0;
+      GEnumClass *cls;
+      guint i;
+      GDBusErrorEntry *entries;
 
-      dbus_g_error_domain_register (domain, TP_ERROR_PREFIX,
-          TP_TYPE_ERROR);
+      cls = g_type_class_ref (TP_TYPE_ERROR);
+      entries = g_new0 (GDBusErrorEntry, cls->n_values);
+
+      for (i = 0; i < cls->n_values; i++)
+        {
+          entries[i].error_code = cls->values[i].value;
+          entries[i].dbus_error_name = g_strdup_printf ("%s.%s",
+              TP_ERROR_PREFIX, cls->values[i].value_nick);
+        }
+
+      g_dbus_error_register_error_domain ("tp-error-quark", &domain,
+          entries, cls->n_values);
+
+      for (i = 0; i < cls->n_values; i++)
+        g_free ((gchar *) entries[i].dbus_error_name);
+
+      g_free (entries);
+
       g_once_init_leave (&quark, domain);
+      g_type_class_unref (cls);
     }
 
   return (GQuark) quark;

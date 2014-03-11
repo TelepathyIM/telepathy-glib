@@ -3008,7 +3008,6 @@ tp_proxy_get_interface_by_id
 tp_proxy_check_interface_by_id
 tp_proxy_invalidate
 TpProxyInterfaceAddedCb
-tp_proxy_subclass_add_error_mapping
 <SUBSECTION>
 TpProxyInvokeFunc
 tp_proxy_pending_call_v0_new

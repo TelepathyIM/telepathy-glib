@@ -67,8 +67,9 @@ tp_dbus_errors_quark (void)
 
 /**
  * TpDBusError:
- * @TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR: Raised if the error raised by
- *  a remote D-Bus object is not recognised
+ * @TP_DBUS_ERROR_INCONSISTENT: Raised if information received from a remote
+ *  object is inconsistent or otherwise obviously wrong.
+ *  See also %TP_ERROR_CONFUSED.
  * @TP_DBUS_ERROR_PROXY_UNREFERENCED: Emitted in #TpProxy::invalidated
  *  when the #TpProxy has lost its last reference
  * @TP_DBUS_ERROR_NO_INTERFACE: Raised by #TpProxy methods if the remote
@@ -91,9 +92,6 @@ tp_dbus_errors_quark (void)
  *  is available.
  * @TP_DBUS_ERROR_CANCELLED: Raised from calls that re-enter the main
  *  loop (*_run_*) if they are cancelled
- * @TP_DBUS_ERROR_INCONSISTENT: Raised if information received from a remote
- *  object is inconsistent or otherwise obviously wrong (added in 0.7.17).
- *  See also %TP_ERROR_CONFUSED.
  *
  * #GError codes for use with the %TP_DBUS_ERRORS domain.
  *
@@ -228,15 +226,6 @@ tp_dbus_errors_quark (void)
  *
  * Since: 0.11.3
  */
-
-typedef struct _TpProxyErrorMappingLink TpProxyErrorMappingLink;
-
-struct _TpProxyErrorMappingLink {
-    const gchar *prefix;
-    GQuark domain;
-    GEnumClass *code_enum_class;
-    TpProxyErrorMappingLink *next;
-};
 
 struct _TpProxyFeaturePrivate
 {
@@ -716,19 +705,6 @@ tp_proxy_add_interfaces (TpProxy *self,
     }
 }
 
-static GQuark
-error_mapping_quark (void)
-{
-  static GQuark q = 0;
-
-  if (G_UNLIKELY (q == 0))
-    {
-      q = g_quark_from_static_string ("TpProxyErrorMappingCb_0.7.1");
-    }
-
-  return q;
-}
-
 /**
  * tp_proxy_dbus_error_to_gerror:
  * @self: a #TpProxy or subclass
@@ -750,77 +726,27 @@ tp_proxy_dbus_error_to_gerror (gpointer self,
                                const char *debug_message,
                                GError **error)
 {
-  GType proxy_type = TP_TYPE_PROXY;
-  GType type;
-
   g_return_if_fail (TP_IS_PROXY (self));
+  g_return_if_fail (dbus_error != NULL);
 
-  if (error == NULL)
-    return;
-
-  g_return_if_fail (*error == NULL);
-
-  if (!tp_dbus_check_valid_interface_name (dbus_error, error))
+  if (tp_str_empty (debug_message))
     {
-      return;
+      /* best we can do */
+      debug_message = dbus_error;
     }
 
-  if (debug_message == NULL)
-    debug_message = "";
-
-  for (type = G_TYPE_FROM_INSTANCE (self);
-       type != proxy_type;
-       type = g_type_parent (type))
+  if (error != NULL)
     {
-      TpProxyErrorMappingLink *iter;
+      /* make sure the error domain is registered */
+      TP_ERROR;
 
-      for (iter = g_type_get_qdata (type, error_mapping_quark ());
-           iter != NULL;
-           iter = iter->next)
-        {
-          size_t prefix_len = strlen (iter->prefix);
+      *error = g_dbus_error_new_for_dbus_error (dbus_error, debug_message);
 
-          if (!strncmp (dbus_error, iter->prefix, prefix_len)
-              && dbus_error[prefix_len] == '.')
-            {
-              GEnumValue *code =
-                g_enum_get_value_by_nick (iter->code_enum_class,
-                    dbus_error + prefix_len + 1);
-
-              if (code != NULL)
-                {
-                  g_set_error (error, iter->domain, code->value,
-                      "%s", debug_message);
-                  return;
-                }
-            }
-        }
-    }
-
-  /* we don't have an error mapping - so let's just paste the
-   * error name and message into TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR */
-  g_set_error (error, TP_DBUS_ERRORS,
-      TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR, "%s: %s", dbus_error, debug_message);
-}
-
-GError *
-_tp_proxy_take_and_remap_error (TpProxy *self,
-                                GError *error)
-{
-  if (error == NULL ||
-      error->domain != DBUS_GERROR ||
-      error->code != DBUS_GERROR_REMOTE_EXCEPTION)
-    {
-      return error;
-    }
-  else
-    {
-      GError *replacement = NULL;
-      const gchar *dbus = dbus_g_error_get_name (error);
-
-      tp_proxy_dbus_error_to_gerror (self, dbus, error->message, &replacement);
-      g_error_free (error);
-      return replacement;
+      /* Our old behaviour was that we only put the detailed D-Bus error
+       * in the message if we raised TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR.
+       * Be consistent with that. */
+      if (!g_error_matches (*error, G_IO_ERROR, G_IO_ERROR_DBUS_ERROR))
+        g_dbus_error_strip_remote_error (*error);
     }
 }
 
@@ -1150,67 +1076,6 @@ tp_proxy_finalize (GObject *object)
   G_OBJECT_CLASS (tp_proxy_parent_class)->finalize (object);
 }
 
-/**
- * tp_proxy_subclass_add_error_mapping:
- * @proxy_subclass: The #GType of a subclass of #TpProxy (which must not be
- *  #TpProxy itself)
- * @static_prefix: A prefix for D-Bus error names, not including the trailing
- *  dot (which must remain valid forever, and should usually be in static
- *  storage)
- * @domain: A quark representing the corresponding #GError domain
- * @code_enum_type: The type of a subclass of #GEnumClass
- *
- * Register a mapping from D-Bus errors received from the given proxy
- * subclass to #GError instances.
- *
- * When a D-Bus error is received, the #TpProxy code checks for error
- * mappings registered for the class of the proxy receiving the error,
- * then for all of its parent classes.
- *
- * If there is an error mapping for which the D-Bus error name
- * starts with the mapping's @static_prefix, the proxy will check the
- * corresponding @code_enum_type for a value whose @value_nick is
- * the rest of the D-Bus error name (with the leading dot removed). If there
- * isn't such a value, it will continue to try other error mappings.
- *
- * If a suitable error mapping and code are found, the #GError that is raised
- * will have its error domain set to the @domain from the error mapping,
- * and its error code taken from the enum represented by the @code_enum_type.
- *
- * If no suitable error mapping or code is found, the #GError will have
- * error domain %TP_DBUS_ERRORS and error code
- * %TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR.
- *
- * Since: 0.7.1
- */
-void
-tp_proxy_subclass_add_error_mapping (GType proxy_subclass,
-                                     const gchar *static_prefix,
-                                     GQuark domain,
-                                     GType code_enum_type)
-{
-  GQuark q = error_mapping_quark ();
-  TpProxyErrorMappingLink *old_link = g_type_get_qdata (proxy_subclass, q);
-  TpProxyErrorMappingLink *new_link;
-  GType tp_type_proxy = TP_TYPE_PROXY;
-
-  g_return_if_fail (proxy_subclass != tp_type_proxy);
-  g_return_if_fail (g_type_is_a (proxy_subclass, tp_type_proxy));
-  g_return_if_fail (static_prefix != NULL);
-  g_return_if_fail (domain != 0);
-  g_return_if_fail (code_enum_type != G_TYPE_INVALID);
-
-  new_link = g_slice_new0 (TpProxyErrorMappingLink);
-  new_link->prefix = static_prefix;
-  new_link->domain = domain;
-  /* We never unref the enum type - intentional one-per-process leak.
-   * See "tp_proxy_subclass_add_error_mapping refs the enum" in our valgrind
-   * suppressions file */
-  new_link->code_enum_class = g_type_class_ref (code_enum_type);
-  new_link->next = old_link;    /* may be NULL */
-  g_type_set_qdata (proxy_subclass, q, new_link);
-}
-
 static void tp_proxy_once (void);
 
 static void
@@ -1218,6 +1083,9 @@ tp_proxy_class_init (TpProxyClass *klass)
 {
   GParamSpec *param_spec;
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  /* Ensure that remote errors will be mapped to the TP_ERROR domain */
+  TP_ERROR;
 
   tp_proxy_once ();
 

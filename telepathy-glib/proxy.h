@@ -47,7 +47,7 @@ typedef struct _TpProxy TpProxy;
 GQuark tp_dbus_errors_quark (void);
 
 typedef enum {
-    TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR = 0,
+    TP_DBUS_ERROR_INCONSISTENT = 0,
     TP_DBUS_ERROR_PROXY_UNREFERENCED = 1,
     TP_DBUS_ERROR_NO_INTERFACE = 2,
     TP_DBUS_ERROR_NAME_OWNER_LOST = 3,
@@ -57,9 +57,8 @@ typedef enum {
     TP_DBUS_ERROR_INVALID_MEMBER_NAME = 7,
     TP_DBUS_ERROR_OBJECT_REMOVED = 8,
     TP_DBUS_ERROR_CANCELLED = 9,
-    TP_DBUS_ERROR_INCONSISTENT = 10,
 } TpDBusError;
-#define TP_NUM_DBUS_ERRORS (TP_DBUS_ERROR_INCONSISTENT + 1)
+#define TP_NUM_DBUS_ERRORS (TP_DBUS_ERROR_CANCELLED + 1)
 
 struct _TpProxy {
     /*<private>*/

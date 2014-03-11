@@ -258,14 +258,6 @@
 }
 
 {
-   tp_proxy_subclass_add_error_mapping refs the enum
-   Memcheck:Leak
-   ...
-   fun:g_type_class_ref
-   fun:tp_proxy_subclass_add_error_mapping
-}
-
-{
    tp_dbus_daemon_constructor filter not freed til we fall off the bus
    Memcheck:Leak
    ...

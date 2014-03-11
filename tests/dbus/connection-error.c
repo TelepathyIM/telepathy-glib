@@ -53,30 +53,6 @@ typedef enum
   DOMAIN_SPECIFIC_ERROR = 0,
 } ExampleError;
 
-/* example_com_error_get_type relies on this */
-G_STATIC_ASSERT (sizeof (GType) <= sizeof (gsize));
-
-static GType
-example_com_error_get_type (void)
-{
-  static gsize type = 0;
-
-  if (g_once_init_enter (&type))
-    {
-      static const GEnumValue values[] = {
-            { DOMAIN_SPECIFIC_ERROR, "DOMAIN_SPECIFIC_ERROR",
-              "DomainSpecificError" },
-            { 0 }
-      };
-      GType gtype;
-
-      gtype = g_enum_register_static ("ExampleError", values);
-      g_once_init_leave (&type, gtype);
-    }
-
-  return (GType) type;
-}
-
 static GQuark
 example_com_error_quark (void)
 {
@@ -88,8 +64,10 @@ example_com_error_quark (void)
 
       g_assert (sizeof (GQuark) <= sizeof (gsize));
 
-      dbus_g_error_domain_register (domain, "com.example",
-          example_com_error_get_type ());
+      if (!g_dbus_error_register_error (domain, DOMAIN_SPECIFIC_ERROR,
+            "com.example.DomainSpecificError"))
+        g_assert_not_reached ();
+
       g_once_init_leave (&quark, domain);
     }
 
@@ -104,26 +82,10 @@ typedef struct {
 } Test;
 
 static void
-global_setup (void)
-{
-  static gboolean done = FALSE;
-
-  if (done)
-    return;
-
-  done = TRUE;
-
-  tp_debug_set_flags ("all");
-
-  tp_proxy_subclass_add_error_mapping (TP_TYPE_CONNECTION,
-      "com.example", example_com_error_quark (), example_com_error_get_type ());
-}
-
-static void
 setup (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
-  global_setup ();
+  tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
 
@@ -168,6 +130,9 @@ test_registered_error (Test *test,
       on_connection_error, NULL, NULL, NULL, NULL);
   tp_cli_connection_connect_to_status_changed (test->conn, on_status_changed,
       test->mainloop, NULL, NULL, NULL);
+
+  /* evaluate the error quark for its side-effect of registering the domain */
+  g_assert_cmpuint (example_com_error_quark (), !=, 0);
 
   tp_base_connection_disconnect_with_dbus_error (
       test->service_conn_as_base, "com.example.DomainSpecificError", NULL,

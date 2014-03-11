@@ -114,9 +114,6 @@ void _tp_proxy_signal_connection_take_results (TpProxySignalConnection *sc,
  */
 void tp_private_proxy_set_implementation (TpProxyImplementation *impl);
 
-GError *_tp_proxy_take_and_remap_error (TpProxy *self, GError *error)
-  G_GNUC_WARN_UNUSED_RESULT;
-
 typedef void (*TpProxyProc) (TpProxy *);
 
 gboolean _tp_proxy_is_preparing (gpointer self,

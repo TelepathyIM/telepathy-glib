@@ -1005,8 +1005,7 @@ tp_connection_status_changed_cb (TpConnection *self,
           /* ... but if we don't know anything about that D-Bus error
            * name, we can still be more helpful by deriving an error code from
            * TpConnectionStatusReason */
-          if (g_error_matches (error, TP_DBUS_ERRORS,
-                TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR))
+          if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_DBUS_ERROR))
             {
               GError *from_csr = NULL;
 
@@ -2551,10 +2550,9 @@ tp_connection_get_detailed_error (TpConnection *self,
               break;
 
             case TP_DBUS_ERROR_OBJECT_REMOVED:
-            case TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR:
             case TP_DBUS_ERROR_INCONSISTENT:
             /* ... and all other cases up to and including
-             * TP_DBUS_ERROR_INCONSISTENT don't make sense in this context, so
+             * TP_DBUS_ERROR_CANCELLED don't make sense in this context, so
              * just use the generic one for them too */
             default:
               return TP_ERROR_STR_DISCONNECTED;

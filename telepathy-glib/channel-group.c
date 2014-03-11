@@ -590,17 +590,21 @@ members_changed_prepared_cb (GObject *object,
 
           if (error_detail != NULL)
             {
+              DEBUG ("detailed error: %s", error_detail);
+
               /* CM specified a D-Bus error name */
               tp_proxy_dbus_error_to_gerror (self, error_detail,
-                  debug_message == NULL || debug_message[0] == '\0'
-                      ? error_detail
-                      : debug_message,
-                  &self->priv->group_remove_error);
+                  debug_message, &self->priv->group_remove_error);
+
+              DEBUG ("-> %s #%d: %s",
+                  g_quark_to_string (self->priv->group_remove_error->domain),
+                  self->priv->group_remove_error->code,
+                  self->priv->group_remove_error->message);
 
               /* ... but if we don't know anything about that D-Bus error
                * name, we can still do better by using RemovedFromGroup */
               if (g_error_matches (self->priv->group_remove_error,
-                    TP_DBUS_ERRORS, TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR))
+                    G_IO_ERROR, G_IO_ERROR_DBUS_ERROR))
                 {
                   self->priv->group_remove_error->domain =
                     TP_ERRORS_REMOVED_FROM_GROUP;
@@ -611,6 +615,8 @@ members_changed_prepared_cb (GObject *object,
             }
           else
             {
+              DEBUG ("no detailed error");
+
               /* Use our separate error domain */
               g_set_error_literal (&self->priv->group_remove_error,
                   TP_ERRORS_REMOVED_FROM_GROUP, reason, debug_message);
