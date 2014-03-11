@@ -459,13 +459,8 @@ _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self,
                                 gchar **unique_name,
                                 GError **error)
 {
-  DBusGConnection *gconn;
-  DBusConnection *dbc;
-  DBusMessage *message;
-  DBusMessage *reply;
-  DBusError dbus_error;
-  const char *name_in_reply;
   const GError *invalidated;
+  GVariant *tuple;
 
   g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -480,56 +475,18 @@ _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self,
       return FALSE;
     }
 
-  gconn = tp_proxy_get_dbus_connection (self);
-  dbc = dbus_g_connection_get_connection (gconn);
+  tuple = g_dbus_connection_call_sync (tp_proxy_get_dbus_connection (self),
+      "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
+      "GetNameOwner", g_variant_new ("(s)", well_known_name),
+      G_VARIANT_TYPE ("(s)"), G_DBUS_CALL_FLAGS_NONE, -1, NULL, error);
 
-  message = dbus_message_new_method_call (DBUS_SERVICE_DBUS, DBUS_PATH_DBUS,
-      DBUS_INTERFACE_DBUS, "GetNameOwner");
-
-  if (message == NULL)
-    ERROR ("Out of memory");
-
-  if (!dbus_message_append_args (message,
-        DBUS_TYPE_STRING, &well_known_name,
-        DBUS_TYPE_INVALID))
-    ERROR ("Out of memory");
-
-  dbus_error_init (&dbus_error);
-  reply = dbus_connection_send_with_reply_and_block (dbc, message,
-      timeout_ms, &dbus_error);
-
-  dbus_message_unref (message);
-
-  if (reply == NULL)
-    {
-      if (!tp_strdiff (dbus_error.name, DBUS_ERROR_NO_MEMORY))
-        ERROR ("Out of memory");
-
-      /* FIXME: ideally we'd use dbus-glib's error mapping for this */
-      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_NAME_OWNER_LOST,
-          "%s: %s", dbus_error.name, dbus_error.message);
-
-      dbus_error_free (&dbus_error);
-      return FALSE;
-    }
-
-  if (!dbus_message_get_args (reply, &dbus_error,
-        DBUS_TYPE_STRING, &name_in_reply,
-        DBUS_TYPE_INVALID))
-    {
-      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_NAME_OWNER_LOST,
-          "%s: %s", dbus_error.name, dbus_error.message);
-
-      dbus_error_free (&dbus_error);
-      dbus_message_unref (reply);
-      return FALSE;
-    }
+  if (tuple == NULL)
+    return FALSE;
 
   if (unique_name != NULL)
-    *unique_name = g_strdup (name_in_reply);
+    g_variant_get (tuple, "(s)", unique_name);
 
-  dbus_message_unref (reply);
-
+  g_variant_unref (tuple);
   return TRUE;
 }
 
