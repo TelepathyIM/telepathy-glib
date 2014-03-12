@@ -117,7 +117,7 @@ main (int argc,
    * contact */
   filter = tp_channel_filter_new_for_text_chats ();
   tp_channel_filter_require_locally_requested (filter, FALSE);
-  tp_base_client_take_handler_filter_object (handler, filter);
+  tp_base_client_take_handler_filter (handler, filter);
 
   if (!tp_base_client_register (handler, &error))
     {

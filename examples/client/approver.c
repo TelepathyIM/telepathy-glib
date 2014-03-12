@@ -142,19 +142,19 @@ main (int argc,
       FALSE, add_dispatch_operation_cb, NULL, NULL);
 
   /* contact text chat */
-  tp_base_client_take_approver_filter_object (approver,
+  tp_base_client_take_approver_filter (approver,
       tp_channel_filter_new_for_text_chats ());
 
   /* call */
-  tp_base_client_take_approver_filter_object (approver,
+  tp_base_client_take_approver_filter (approver,
       tp_channel_filter_new_for_calls (TP_ENTITY_TYPE_CONTACT));
 
   /* room text chat */
-  tp_base_client_take_approver_filter_object (approver,
+  tp_base_client_take_approver_filter (approver,
       tp_channel_filter_new_for_text_chatrooms ());
 
   /* file transfer */
-  tp_base_client_take_approver_filter_object (approver,
+  tp_base_client_take_approver_filter (approver,
       tp_channel_filter_new_for_file_transfers (NULL));
 
   if (!tp_base_client_register (approver, &error))

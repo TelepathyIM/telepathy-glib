@@ -319,7 +319,7 @@ tp_base_client_dup_account (TpBaseClient *self,
 }
 
 /**
- * tp_base_client_add_observer_filter_object:
+ * tp_base_client_add_observer_filter:
  * @self: a #TpBaseClient
  * @filter: a filter
  *
@@ -334,13 +334,13 @@ tp_base_client_dup_account (TpBaseClient *self,
  *
  * |[
  * filter = tp_channel_filter_new_for_text_chats ();
- * tp_base_client_add_observer_filter_object (client, filter);
+ * tp_base_client_add_observer_filter (client, filter);
  * g_object_unref (filter);
  *
  * filter = tp_channel_filter_new_for_file_transfer (NULL);
  * tp_channel_filter_require_target_is_contact (filter);
  * tp_channel_filter_require_requested (filter, FALSE);
- * tp_base_client_add_observer_filter_object (client, filter);
+ * tp_base_client_add_observer_filter (client, filter);
  * g_object_unref (filter);
  * ]|
  *
@@ -354,7 +354,7 @@ tp_base_client_dup_account (TpBaseClient *self,
  * Since: 0.UNRELEASED
  */
 void
-tp_base_client_add_observer_filter_object (TpBaseClient *self,
+tp_base_client_add_observer_filter (TpBaseClient *self,
     TpChannelFilter *filter)
 {
   g_return_if_fail (TP_IS_CHANNEL_FILTER (filter));
@@ -362,26 +362,26 @@ tp_base_client_add_observer_filter_object (TpBaseClient *self,
 }
 
 /**
- * tp_base_client_take_observer_filter_object: (skip)
+ * tp_base_client_take_observer_filter: (skip)
  * @self: a #TpBaseClient
  * @filter: (transfer full): a filter
  *
- * The same as tp_base_client_add_observer_filter_object(), but also
+ * The same as tp_base_client_add_observer_filter(), but also
  * takes ownership of the filter. This makes it more convenient to call
  * in simple situations:
  *
  * |[
- * tp_base_client_take_observer_filter_object (client,
+ * tp_base_client_take_observer_filter (client,
  *     tp_channel_filter_new_for_text_chats ());
  * ]|
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_base_client_take_observer_filter_object (TpBaseClient *self,
+tp_base_client_take_observer_filter (TpBaseClient *self,
     TpChannelFilter *filter)
 {
-  tp_base_client_add_observer_filter_object (self, filter);
+  tp_base_client_add_observer_filter (self, filter);
   g_object_unref (filter);
 }
 
@@ -515,7 +515,7 @@ tp_base_client_set_observer_delay_approvers (TpBaseClient *self,
 }
 
 /**
- * tp_base_client_add_approver_filter_object:
+ * tp_base_client_add_approver_filter:
  * @self: a #TpBaseClient
  * @filter: a filter
  *
@@ -526,7 +526,7 @@ tp_base_client_set_observer_delay_approvers (TpBaseClient *self,
  *
  * This method can be called more than once. If it is, the client will
  * be an Approver for any channel that matches any of the filters.
- * See tp_base_client_add_observer_filter_object().
+ * See tp_base_client_add_observer_filter().
  *
  * This method may only be called before tp_base_client_register() is
  * called, and may only be called on objects whose class implements
@@ -535,7 +535,7 @@ tp_base_client_set_observer_delay_approvers (TpBaseClient *self,
  * Since: 0.UNRELEASED
  */
 void
-tp_base_client_add_approver_filter_object (TpBaseClient *self,
+tp_base_client_add_approver_filter (TpBaseClient *self,
     TpChannelFilter *filter)
 {
   g_return_if_fail (TP_IS_CHANNEL_FILTER (filter));
@@ -543,26 +543,26 @@ tp_base_client_add_approver_filter_object (TpBaseClient *self,
 }
 
 /**
- * tp_base_client_take_approver_filter_object: (skip)
+ * tp_base_client_take_approver_filter: (skip)
  * @self: a #TpBaseClient
  * @filter: (transfer full): a filter
  *
- * The same as tp_base_client_add_approver_filter_object(), but also
+ * The same as tp_base_client_add_approver_filter(), but also
  * takes ownership of the filter. This makes it more convenient to call
  * in simple situations:
  *
  * |[
- * tp_base_client_take_approver_filter_object (client,
+ * tp_base_client_take_approver_filter (client,
  *     tp_channel_filter_new_for_text_chats ());
  * ]|
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_base_client_take_approver_filter_object (TpBaseClient *self,
+tp_base_client_take_approver_filter (TpBaseClient *self,
     TpChannelFilter *filter)
 {
-  tp_base_client_add_approver_filter_object (self, filter);
+  tp_base_client_add_approver_filter (self, filter);
   g_object_unref (filter);
 }
 
@@ -629,7 +629,7 @@ tp_base_client_be_a_handler (TpBaseClient *self)
 }
 
 /**
- * tp_base_client_add_handler_filter_object:
+ * tp_base_client_add_handler_filter:
  * @self: a #TpBaseClient
  * @filter: a filter
  *
@@ -640,7 +640,7 @@ tp_base_client_be_a_handler (TpBaseClient *self)
  *
  * This method can be called more than once. If it is, the client will
  * be a Handler for any channel that matches any of the filters.
- * See tp_base_client_add_observer_filter_object().
+ * See tp_base_client_add_observer_filter().
  *
  * This method may only be called before tp_base_client_register() is
  * called, and may only be called on objects whose class implements
@@ -649,7 +649,7 @@ tp_base_client_be_a_handler (TpBaseClient *self)
  * Since: 0.UNRELEASED
  */
 void
-tp_base_client_add_handler_filter_object (TpBaseClient *self,
+tp_base_client_add_handler_filter (TpBaseClient *self,
     TpChannelFilter *filter)
 {
   g_return_if_fail (TP_IS_CHANNEL_FILTER (filter));
@@ -693,26 +693,26 @@ tp_base_client_add_handler_filter_variant (TpBaseClient *self,
 }
 
 /**
- * tp_base_client_take_handler_filter_object: (skip)
+ * tp_base_client_take_handler_filter: (skip)
  * @self: a #TpBaseClient
  * @filter: (transfer full): a filter
  *
- * The same as tp_base_client_add_handler_filter_object(), but also
+ * The same as tp_base_client_add_handler_filter(), but also
  * takes ownership of the filter. This makes it more convenient to call
  * in simple situations:
  *
  * |[
- * tp_base_client_take_handler_filter_object (client,
+ * tp_base_client_take_handler_filter (client,
  *     tp_channel_filter_new_for_text_chats ());
  * ]|
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_base_client_take_handler_filter_object (TpBaseClient *self,
+tp_base_client_take_handler_filter (TpBaseClient *self,
     TpChannelFilter *filter)
 {
-  tp_base_client_add_handler_filter_object (self, filter);
+  tp_base_client_add_handler_filter (self, filter);
   g_object_unref (filter);
 }
 

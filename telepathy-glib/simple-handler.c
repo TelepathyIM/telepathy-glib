@@ -48,7 +48,7 @@
  * client = tp_simple_handler_new (NULL, FALSE, FALSE,
  *     "MyHandler", FALSE, my_handle_channel, user_data);
  *
- * tp_base_client_take_handler_filter_object (client,
+ * tp_base_client_take_handler_filter (client,
  *      tp_channel_filter_new_for_text_chats ());
  *
  * tp_base_client_register (client, NULL);

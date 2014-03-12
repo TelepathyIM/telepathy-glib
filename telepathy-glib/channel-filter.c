@@ -70,9 +70,9 @@
  * required.
  *
  * Finally, add it to a #TpBaseClient using
- * tp_base_client_add_observer_filter_object(),
- * tp_base_client_add_approver_filter_object() and/or
- * tp_base_client_add_handler_filter_object() (depending on the type
+ * tp_base_client_add_observer_filter(),
+ * tp_base_client_add_approver_filter() and/or
+ * tp_base_client_add_handler_filter() (depending on the type
  * of client required), and release the filter object with g_object_unref().
  *
  * If you would like the #TpBaseClient to act on particular channels in
@@ -433,7 +433,7 @@ tp_channel_filter_new_for_dbus_tubes (const gchar *service)
  * |[
  * filter = tp_channel_filter_new_for_file_transfer ("com.example.MyApp");
  * tp_channel_filter_require_locally_requested (filter, FALSE);
- * tp_base_client_take_handler_filter_object (client, filter);
+ * tp_base_client_take_handler_filter (client, filter);
  * ]|
  */
 TpChannelFilter *

@@ -173,7 +173,7 @@ main (int argc,
   filter = tp_channel_filter_new_for_dbus_tubes (EXAMPLE_SERVICE_NAME);
   tp_channel_filter_require_locally_requested (filter, FALSE);
   tp_channel_filter_require_target_is_contact (filter);
-  tp_base_client_take_handler_filter_object (handler, filter);
+  tp_base_client_take_handler_filter (handler, filter);
 
   tp_base_client_register (handler, &error);
   g_assert_no_error (error);

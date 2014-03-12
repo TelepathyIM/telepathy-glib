@@ -474,12 +474,12 @@ test_observer (Test *test,
 
   filter = tp_channel_filter_new ();
   tp_channel_filter_require_channel_type (filter, TP_IFACE_CHANNEL_TYPE_TEXT);
-  tp_base_client_add_observer_filter_object (test->base_client, filter);
+  tp_base_client_add_observer_filter (test->base_client, filter);
   g_object_unref (filter);
 
   filter = tp_channel_filter_new_for_stream_tubes (NULL);
   tp_channel_filter_require_target_is_contact (filter);
-  tp_base_client_add_observer_filter_object (test->base_client, filter);
+  tp_base_client_add_observer_filter (test->base_client, filter);
   g_object_unref (filter);
 
   tp_base_client_set_observer_recover (test->base_client, TRUE);
@@ -614,12 +614,12 @@ test_approver (Test *test,
 
   filter = tp_channel_filter_new ();
   tp_channel_filter_require_channel_type (filter, TP_IFACE_CHANNEL_TYPE_TEXT);
-  tp_base_client_add_approver_filter_object (test->base_client, filter);
+  tp_base_client_add_approver_filter (test->base_client, filter);
   g_object_unref (filter);
 
   filter = tp_channel_filter_new_for_stream_tubes (NULL);
   tp_channel_filter_require_target_is_contact (filter);
-  tp_base_client_add_approver_filter_object (test->base_client, filter);
+  tp_base_client_add_approver_filter (test->base_client, filter);
   g_object_unref (filter);
 
   tp_base_client_register (test->base_client, &test->error);
@@ -798,12 +798,12 @@ test_handler (Test *test,
 
   filter = tp_channel_filter_new ();
   tp_channel_filter_require_channel_type (filter, TP_IFACE_CHANNEL_TYPE_TEXT);
-  tp_base_client_add_handler_filter_object (test->base_client, filter);
+  tp_base_client_add_handler_filter (test->base_client, filter);
   g_object_unref (filter);
 
   filter = tp_channel_filter_new_for_stream_tubes (NULL);
   tp_channel_filter_require_target_is_contact (filter);
-  tp_base_client_add_handler_filter_object (test->base_client, filter);
+  tp_base_client_add_handler_filter (test->base_client, filter);
   g_object_unref (filter);
 
   tp_base_client_set_handler_bypass_approval (test->base_client, TRUE);
@@ -954,7 +954,7 @@ test_handler_requests (Test *test,
 
   filter = tp_channel_filter_new_for_stream_tubes (NULL);
   tp_channel_filter_require_target_is_contact (filter);
-  tp_base_client_add_handler_filter_object (test->base_client, filter);
+  tp_base_client_add_handler_filter (test->base_client, filter);
   g_object_unref (filter);
 
   tp_base_client_set_handler_request_notification (test->base_client);

@@ -72,7 +72,7 @@ main (int argc,
   observer = tp_simple_observer_new_with_am (manager, FALSE,
       "ExampleMediaObserver", FALSE, observe_channel_cb, NULL, NULL);
 
-  tp_base_client_take_observer_filter_object (observer,
+  tp_base_client_take_observer_filter (observer,
       tp_channel_filter_new_for_calls (TP_ENTITY_TYPE_CONTACT));
 
   if (!tp_base_client_register (observer, &error))

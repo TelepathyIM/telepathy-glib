@@ -47,7 +47,7 @@
  * client = tp_simple_observer_new (NULL, TRUE, "MyObserver",
  *     FALSE, my_observe_channel, user_data);
  *
- * tp_base_client_take_observer_filter_object (client,
+ * tp_base_client_take_observer_filter (client,
  *      tp_channel_filter_new_for_text_chats ());
  *
  * tp_base_client_register (client, NULL);
