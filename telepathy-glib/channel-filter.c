@@ -108,11 +108,7 @@ struct _TpChannelFilter {
 };
 
 struct _TpChannelFilterPrivate {
-  /* dup'd string => slice-allocated GValue
-   *
-   * Do not use tp_asv_new() and friends, because they expect static
-   * string keys. */
-  GHashTable *asv;
+  GVariantDict dict;
 
   gboolean already_used;
 };
@@ -125,20 +121,19 @@ tp_channel_filter_init (TpChannelFilter *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_CHANNEL_FILTER,
       TpChannelFilterPrivate);
 
-  self->priv->asv = g_hash_table_new_full (g_str_hash, g_str_equal,
-      g_free, (GDestroyNotify) tp_g_value_slice_free);
+  g_variant_dict_init (&self->priv->dict, NULL);
 
   self->priv->already_used = FALSE;
 }
 
 static void
-tp_channel_filter_dispose (GObject *object)
+tp_channel_filter_finalize (GObject *object)
 {
   TpChannelFilter *self = TP_CHANNEL_FILTER (object);
 
-  tp_clear_pointer (&self->priv->asv, g_hash_table_unref);
+  g_variant_dict_clear (&self->priv->dict);
 
-  G_OBJECT_CLASS (tp_channel_filter_parent_class)->dispose (object);
+  G_OBJECT_CLASS (tp_channel_filter_parent_class)->finalize (object);
 }
 
 static void
@@ -148,7 +143,7 @@ tp_channel_filter_class_init (TpChannelFilterClass *cls)
 
   g_type_class_add_private (cls, sizeof (TpChannelFilterPrivate));
 
-  object_class->dispose = tp_channel_filter_dispose;
+  object_class->finalize = tp_channel_filter_finalize;
 }
 
 /**
@@ -295,9 +290,8 @@ tp_channel_filter_require_target_type (TpChannelFilter *self,
   g_return_if_fail (TP_IS_CHANNEL_FILTER (self));
   g_return_if_fail (((guint) entity_type) < TP_NUM_ENTITY_TYPES);
 
-  g_hash_table_insert (self->priv->asv,
-      g_strdup (TP_PROP_CHANNEL_TARGET_ENTITY_TYPE),
-      tp_g_value_slice_new_uint (entity_type));
+  g_variant_dict_insert (&self->priv->dict,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, "u", entity_type);
 }
 
 /**
@@ -338,9 +332,8 @@ tp_channel_filter_require_channel_type (TpChannelFilter *self,
   g_return_if_fail (TP_IS_CHANNEL_FILTER (self));
   g_return_if_fail (g_dbus_is_interface_name (channel_type));
 
-  g_hash_table_insert (self->priv->asv,
-      g_strdup (TP_PROP_CHANNEL_CHANNEL_TYPE),
-      tp_g_value_slice_new_string (channel_type));
+  g_variant_dict_insert (&self->priv->dict, TP_PROP_CHANNEL_CHANNEL_TYPE, "s",
+      channel_type);
 }
 
 /**
@@ -370,9 +363,8 @@ tp_channel_filter_new_for_stream_tubes (const gchar *service)
       TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1);
 
   if (service != NULL)
-    g_hash_table_insert (self->priv->asv,
-        g_strdup (TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SERVICE),
-        tp_g_value_slice_new_string (service));
+    g_variant_dict_insert (&self->priv->dict,
+        TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SERVICE, "s", service);
 
   return self;
 }
@@ -404,9 +396,8 @@ tp_channel_filter_new_for_dbus_tubes (const gchar *service)
       TP_IFACE_CHANNEL_TYPE_DBUS_TUBE1);
 
   if (service != NULL)
-    g_hash_table_insert (self->priv->asv,
-        g_strdup (TP_PROP_CHANNEL_TYPE_DBUS_TUBE1_SERVICE_NAME),
-        tp_g_value_slice_new_string (service));
+    g_variant_dict_insert (&self->priv->dict,
+        TP_PROP_CHANNEL_TYPE_DBUS_TUBE1_SERVICE_NAME, "s", service);
 
   return self;
 }
@@ -455,9 +446,9 @@ tp_channel_filter_new_for_file_transfers (const gchar *service)
       TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1);
 
   if (service != NULL)
-    g_hash_table_insert (self->priv->asv,
-        g_strdup (TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA1_SERVICE_NAME),
-        tp_g_value_slice_new_string (service));
+    g_variant_dict_insert (&self->priv->dict,
+        TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA1_SERVICE_NAME, "s",
+        service);
 
   return self;
 }
@@ -496,9 +487,8 @@ tp_channel_filter_require_locally_requested (TpChannelFilter *self,
   g_return_if_fail (!self->priv->already_used);
 
   /* Do not use tp_asv_set_uint32 or similar - the key is dup'd */
-  g_hash_table_insert (self->priv->asv,
-      g_strdup (TP_PROP_CHANNEL_REQUESTED),
-      tp_g_value_slice_new_boolean (requested));
+  g_variant_dict_insert (&self->priv->dict,
+      TP_PROP_CHANNEL_REQUESTED, "b", requested);
 }
 
 /**
@@ -535,20 +525,11 @@ tp_channel_filter_require_property (TpChannelFilter *self,
     const gchar *name,
     GVariant *value)
 {
-  GValue *gvalue;
-
   g_return_if_fail (TP_IS_CHANNEL_FILTER (self));
   g_return_if_fail (!self->priv->already_used);
   g_return_if_fail (name != NULL);
 
-  g_variant_ref_sink (value);
-
-  gvalue = g_slice_new0 (GValue);
-  dbus_g_value_parse_g_variant (value, gvalue);
-
-  g_variant_unref (value);
-
-  g_hash_table_insert (self->priv->asv, g_strdup (name), gvalue);
+  g_variant_dict_insert_value (&self->priv->dict, name, value);
 }
 
 GVariant *
@@ -557,5 +538,7 @@ _tp_channel_filter_use (TpChannelFilter *self)
   g_return_val_if_fail (TP_IS_CHANNEL_FILTER (self), NULL);
 
   self->priv->already_used = TRUE;
-  return tp_asv_to_vardict (self->priv->asv);
+  return g_variant_dict_end (&self->priv->dict);
+  /* self->priv->dict is now invalid but self->priv->already_used prevents us
+   * from trying to re-use it. */
 }
