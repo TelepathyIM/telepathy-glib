@@ -358,7 +358,7 @@ tp_base_client_add_observer_filter_object (TpBaseClient *self,
     TpChannelFilter *filter)
 {
   g_return_if_fail (TP_IS_CHANNEL_FILTER (filter));
-  tp_base_client_add_observer_filter (self, _tp_channel_filter_use (filter));
+  tp_base_client_add_observer_filter_variant (self, _tp_channel_filter_use (filter));
 }
 
 /**
@@ -386,7 +386,7 @@ tp_base_client_take_observer_filter_object (TpBaseClient *self,
 }
 
 /**
- * tp_base_client_add_observer_filter:
+ * tp_base_client_add_observer_filter_variant:
  * @self: a client
  * @filter: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
  *
@@ -402,7 +402,7 @@ tp_base_client_take_observer_filter_object (TpBaseClient *self,
  * will be taken, allowing for uses like this:
  *
  * |[
- * tp_base_client_add_observer_filter (client,
+ * tp_base_client_add_observer_filter_variant (client,
  *    g_variant_new_parsed ("{ %s: <%s>, %s: <%u>, ... }",
  *        TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT,
  *        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT,
@@ -412,7 +412,7 @@ tp_base_client_take_observer_filter_object (TpBaseClient *self,
  * Since: 0.19.10
  */
 void
-tp_base_client_add_observer_filter (TpBaseClient *self,
+tp_base_client_add_observer_filter_variant (TpBaseClient *self,
     GVariant *filter)
 {
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
@@ -539,7 +539,7 @@ tp_base_client_add_approver_filter_object (TpBaseClient *self,
     TpChannelFilter *filter)
 {
   g_return_if_fail (TP_IS_CHANNEL_FILTER (filter));
-  tp_base_client_add_approver_filter (self, _tp_channel_filter_use (filter));
+  tp_base_client_add_approver_filter_variant (self, _tp_channel_filter_use (filter));
 }
 
 /**
@@ -567,7 +567,7 @@ tp_base_client_take_approver_filter_object (TpBaseClient *self,
 }
 
 /**
- * tp_base_client_add_approver_filter:
+ * tp_base_client_add_approver_filter_variant:
  * @self: a client
  * @filter: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
  *
@@ -580,13 +580,13 @@ tp_base_client_take_approver_filter_object (TpBaseClient *self,
  * #TpBaseClientClass.add_dispatch_operation.
  *
  * If the variant is floating (see g_variant_ref_sink()), ownership
- * will be taken. See tp_base_client_add_observer_filter() for
+ * will be taken. See tp_base_client_add_observer_filter_variant() for
  * more details.
  *
  * Since: 0.19.10
  */
 void
-tp_base_client_add_approver_filter (TpBaseClient *self,
+tp_base_client_add_approver_filter_variant (TpBaseClient *self,
     GVariant *filter)
 {
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
@@ -653,11 +653,11 @@ tp_base_client_add_handler_filter_object (TpBaseClient *self,
     TpChannelFilter *filter)
 {
   g_return_if_fail (TP_IS_CHANNEL_FILTER (filter));
-  tp_base_client_add_handler_filter (self, _tp_channel_filter_use (filter));
+  tp_base_client_add_handler_filter_variant (self, _tp_channel_filter_use (filter));
 }
 
 /**
- * tp_base_client_add_handler_filter:
+ * tp_base_client_add_handler_filter_variant:
  * @self: a client
  * @filter: (transfer none): a variant of type %G_VARIANT_TYPE_VARDICT
  *
@@ -670,13 +670,13 @@ tp_base_client_add_handler_filter_object (TpBaseClient *self,
  * #TpBaseClientClass.handle_channel.
  *
  * If the variant is floating (see g_variant_ref_sink()), ownership
- * will be taken. See tp_base_client_add_observer_filter() for
+ * will be taken. See tp_base_client_add_observer_filter_variant() for
  * more details.
  *
  * Since: 0.19.10
  */
 void
-tp_base_client_add_handler_filter (TpBaseClient *self,
+tp_base_client_add_handler_filter_variant (TpBaseClient *self,
     GVariant *filter)
 {
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
@@ -907,7 +907,7 @@ tp_base_client_add_handler_capabilities_varargs (TpBaseClient *self,
  * requested via the various filters.
  *
  * Methods that set the filters and other immutable state, such as
- * tp_base_client_add_observer_filter(), cannot be called after this one.
+ * tp_base_client_add_observer_filter_variant(), cannot be called after this one.
  *
  * Returns: %TRUE if the client was registered successfully
  *

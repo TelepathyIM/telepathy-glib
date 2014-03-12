@@ -279,11 +279,11 @@ test_properties (Test *test,
 {
   create_simple_approver (test, add_dispatch_success);
 
-  tp_base_client_add_approver_filter (test->simple_approver,
+  tp_base_client_add_approver_filter_variant (test->simple_approver,
       g_variant_new_parsed ("{ %s: <%s> }",
         TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT));
 
-  tp_base_client_add_approver_filter (test->simple_approver,
+  tp_base_client_add_approver_filter_variant (test->simple_approver,
       g_variant_new_parsed ("{ %s: <%s>, %s: <%u> }",
         TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
         TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT));
@@ -370,7 +370,7 @@ test_success (Test *test,
 {
   create_simple_approver (test, add_dispatch_success);
 
-  tp_base_client_add_approver_filter (test->simple_approver,
+  tp_base_client_add_approver_filter_variant (test->simple_approver,
       g_variant_new_parsed ("@a{sv} {}"));
 
   tp_base_client_register (test->simple_approver, &test->error);
@@ -416,7 +416,7 @@ test_delayed (Test *test,
 {
   create_simple_approver (test, add_dispatch_async);
 
-  tp_base_client_add_approver_filter (test->simple_approver,
+  tp_base_client_add_approver_filter_variant (test->simple_approver,
       g_variant_new_parsed ("@a{sv} {}"));
 
   tp_base_client_register (test->simple_approver, &test->error);
@@ -449,7 +449,7 @@ test_fail (Test *test,
 {
   create_simple_approver (test, add_dispatch_fail);
 
-  tp_base_client_add_approver_filter (test->simple_approver,
+  tp_base_client_add_approver_filter_variant (test->simple_approver,
       g_variant_new_parsed ("@a{sv} {}"));
 
   tp_base_client_register (test->simple_approver, &test->error);

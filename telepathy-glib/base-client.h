@@ -110,7 +110,7 @@ void tp_base_client_implement_handle_channel (TpBaseClientClass *klass,
 /* setup functions which can only be called before register() */
 
 _TP_AVAILABLE_IN_0_20
-void tp_base_client_add_observer_filter (TpBaseClient *self,
+void tp_base_client_add_observer_filter_variant (TpBaseClient *self,
     GVariant *filter);
 
 _TP_AVAILABLE_IN_UNRELEASED
@@ -126,7 +126,7 @@ void tp_base_client_set_observer_delay_approvers (TpBaseClient *self,
     gboolean delay);
 
 _TP_AVAILABLE_IN_0_20
-void tp_base_client_add_approver_filter (TpBaseClient *self,
+void tp_base_client_add_approver_filter_variant (TpBaseClient *self,
     GVariant *filter);
 
 _TP_AVAILABLE_IN_UNRELEASED
@@ -139,7 +139,7 @@ void tp_base_client_take_approver_filter_object (TpBaseClient *self,
 void tp_base_client_be_a_handler (TpBaseClient *self);
 
 _TP_AVAILABLE_IN_0_20
-void tp_base_client_add_handler_filter (TpBaseClient *self,
+void tp_base_client_add_handler_filter_variant (TpBaseClient *self,
     GVariant *filter);
 
 _TP_AVAILABLE_IN_UNRELEASED

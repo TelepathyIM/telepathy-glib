@@ -1074,11 +1074,11 @@ test_channel_dispatch_operation_claim_with_async (Test *test,
   GList *handled;
 
   /* Register an Approver and Handler */
-  tp_base_client_add_approver_filter (test->base_client,
+  tp_base_client_add_approver_filter_variant (test->base_client,
       g_variant_new_parsed ("{ %s: <%s> }",
         TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT));
 
-  tp_base_client_add_handler_filter (test->base_client,
+  tp_base_client_add_handler_filter_variant (test->base_client,
       g_variant_new_parsed ("{ %s: <%s> }",
         TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT));
 
