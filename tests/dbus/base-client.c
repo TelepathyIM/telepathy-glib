@@ -393,9 +393,11 @@ check_filters (GPtrArray *filters)
   g_assert_cmpuint (filters->len, ==, 2);
 
   filter = g_ptr_array_index (filters, 0);
-  g_assert_cmpuint (g_hash_table_size (filter), ==, 1);
+  g_assert_cmpuint (g_hash_table_size (filter), ==, 2);
   g_assert_cmpstr (tp_asv_get_string (filter, TP_PROP_CHANNEL_CHANNEL_TYPE), ==,
       TP_IFACE_CHANNEL_TYPE_TEXT);
+  g_assert_cmpuint (tp_asv_get_uint32 (filter,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, NULL), ==, TP_ENTITY_TYPE_CONTACT);
 
   filter = g_ptr_array_index (filters, 1);
   g_assert_cmpuint (g_hash_table_size (filter), ==, 2);
@@ -472,8 +474,7 @@ test_observer (Test *test,
   TpChannel *chan;
   GHashTable *chan_props, *requests_satisfied;
 
-  filter = tp_channel_filter_new_for_all_types ();
-  tp_channel_filter_require_channel_type (filter, TP_IFACE_CHANNEL_TYPE_TEXT);
+  filter = tp_channel_filter_new_for_text_chats ();
   tp_base_client_add_observer_filter (test->base_client, filter);
   g_object_unref (filter);
 
@@ -612,8 +613,7 @@ test_approver (Test *test,
   GHashTable *chan_props;
   TpChannel *chan;
 
-  filter = tp_channel_filter_new_for_all_types ();
-  tp_channel_filter_require_channel_type (filter, TP_IFACE_CHANNEL_TYPE_TEXT);
+  filter = tp_channel_filter_new_for_text_chats ();
   tp_base_client_add_approver_filter (test->base_client, filter);
   g_object_unref (filter);
 
@@ -796,8 +796,7 @@ test_handler (Test *test,
   GList *chans;
   TpTestsSimpleClient *client_2;
 
-  filter = tp_channel_filter_new_for_all_types ();
-  tp_channel_filter_require_channel_type (filter, TP_IFACE_CHANNEL_TYPE_TEXT);
+  filter = tp_channel_filter_new_for_text_chats ();
   tp_base_client_add_handler_filter (test->base_client, filter);
   g_object_unref (filter);
 

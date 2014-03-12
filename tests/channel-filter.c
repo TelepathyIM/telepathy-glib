@@ -156,14 +156,6 @@ test_basics (Fixture *f,
   g_clear_object (&f->filter);
 
   f->filter = tp_channel_filter_new_for_all_types ();
-  tp_channel_filter_require_channel_type (f->filter, "com.example.Bees");
-  asv = _tp_channel_filter_use (f->filter);
-  g_assert_cmpuint (tp_asv_size (asv), ==, 1);
-  g_assert_cmpstr (tp_asv_get_string (asv,
-        TP_PROP_CHANNEL_CHANNEL_TYPE), ==, "com.example.Bees");
-  g_clear_object (&f->filter);
-
-  f->filter = tp_channel_filter_new_for_all_types ();
   tp_channel_filter_require_locally_requested (f->filter, TRUE);
   asv = _tp_channel_filter_use (f->filter);
   g_assert_cmpuint (tp_asv_size (asv), ==, 1);

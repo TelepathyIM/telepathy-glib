@@ -160,6 +160,28 @@ tp_channel_filter_new_for_all_types (void)
       NULL);
 }
 
+/*
+ * tp_channel_filter_require_channel_type:
+ * @self: a channel filter
+ * @channel_type: the desired value for #TpChannel:channel-type
+ *
+ * Narrow @self to require a particular channel type, given as a D-Bus
+ * interface name.
+ *
+ * It is an error to call this method if the channel filter has already
+ * been passed to a #TpBaseClient.
+ */
+static void
+tp_channel_filter_require_channel_type (TpChannelFilter *self,
+    const gchar *channel_type)
+{
+  g_return_if_fail (TP_IS_CHANNEL_FILTER (self));
+  g_return_if_fail (g_dbus_is_interface_name (channel_type));
+
+  g_variant_dict_insert (&self->priv->dict, TP_PROP_CHANNEL_CHANNEL_TYPE, "s",
+      channel_type);
+}
+
 /**
  * tp_channel_filter_new_for_text_chats:
  *
@@ -309,28 +331,6 @@ tp_channel_filter_new_for_calls (TpEntityType entity_type)
   tp_channel_filter_require_target_type (self, entity_type);
   tp_channel_filter_require_channel_type (self, TP_IFACE_CHANNEL_TYPE_CALL1);
   return self;
-}
-
-/**
- * tp_channel_filter_require_channel_type:
- * @self: a channel filter
- * @channel_type: the desired value for #TpChannel:channel-type
- *
- * Narrow @self to require a particular channel type, given as a D-Bus
- * interface name.
- *
- * It is an error to call this method if the channel filter has already
- * been passed to a #TpBaseClient.
- */
-void
-tp_channel_filter_require_channel_type (TpChannelFilter *self,
-    const gchar *channel_type)
-{
-  g_return_if_fail (TP_IS_CHANNEL_FILTER (self));
-  g_return_if_fail (g_dbus_is_interface_name (channel_type));
-
-  g_variant_dict_insert (&self->priv->dict, TP_PROP_CHANNEL_CHANNEL_TYPE, "s",
-      channel_type);
 }
 
 /**

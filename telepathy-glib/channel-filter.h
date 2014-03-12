@@ -92,10 +92,6 @@ void tp_channel_filter_require_locally_requested (TpChannelFilter *self,
     gboolean requested);
 
 _TP_AVAILABLE_IN_UNRELEASED
-void tp_channel_filter_require_channel_type (TpChannelFilter *self,
-    const gchar *channel_type);
-
-_TP_AVAILABLE_IN_UNRELEASED
 void tp_channel_filter_require_property (TpChannelFilter *self,
     const gchar *name,
     GVariant *value);
