@@ -6197,7 +6197,7 @@ TpRoomInfoPriv
 <TITLE>channel-filter</TITLE>
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 TpChannelFilter
-tp_channel_filter_new
+tp_channel_filter_new_for_all_types
 tp_channel_filter_new_for_calls
 tp_channel_filter_new_for_dbus_tubes
 tp_channel_filter_new_for_file_transfers

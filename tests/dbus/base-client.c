@@ -472,7 +472,7 @@ test_observer (Test *test,
   TpChannel *chan;
   GHashTable *chan_props, *requests_satisfied;
 
-  filter = tp_channel_filter_new ();
+  filter = tp_channel_filter_new_for_all_types ();
   tp_channel_filter_require_channel_type (filter, TP_IFACE_CHANNEL_TYPE_TEXT);
   tp_base_client_add_observer_filter (test->base_client, filter);
   g_object_unref (filter);
@@ -612,7 +612,7 @@ test_approver (Test *test,
   GHashTable *chan_props;
   TpChannel *chan;
 
-  filter = tp_channel_filter_new ();
+  filter = tp_channel_filter_new_for_all_types ();
   tp_channel_filter_require_channel_type (filter, TP_IFACE_CHANNEL_TYPE_TEXT);
   tp_base_client_add_approver_filter (test->base_client, filter);
   g_object_unref (filter);
@@ -796,7 +796,7 @@ test_handler (Test *test,
   GList *chans;
   TpTestsSimpleClient *client_2;
 
-  filter = tp_channel_filter_new ();
+  filter = tp_channel_filter_new_for_all_types ();
   tp_channel_filter_require_channel_type (filter, TP_IFACE_CHANNEL_TYPE_TEXT);
   tp_base_client_add_handler_filter (test->base_client, filter);
   g_object_unref (filter);

@@ -53,7 +53,7 @@ GType tp_channel_filter_get_type (void);
                               TpChannelFilterClass))
 
 _TP_AVAILABLE_IN_UNRELEASED G_GNUC_WARN_UNUSED_RESULT
-TpChannelFilter *tp_channel_filter_new (void);
+TpChannelFilter *tp_channel_filter_new_for_all_types (void);
 
 _TP_AVAILABLE_IN_UNRELEASED G_GNUC_WARN_UNUSED_RESULT
 TpChannelFilter *tp_channel_filter_new_for_text_chats (void);

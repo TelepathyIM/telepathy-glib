@@ -28,7 +28,7 @@ test_basics (Fixture *f,
       TP_ENTITY_TYPE_NONE };
       */
 
-  f->filter = tp_channel_filter_new ();
+  f->filter = tp_channel_filter_new_for_all_types ();
   vardict = _tp_channel_filter_use (f->filter);
   g_assert_cmpuint (g_variant_n_children (vardict), ==, 0);
   g_variant_unref (vardict);
@@ -115,7 +115,7 @@ test_basics (Fixture *f,
   g_assert (valid);
   g_clear_object (&f->filter);
 
-  f->filter = tp_channel_filter_new ();
+  f->filter = tp_channel_filter_new_for_all_types ();
   tp_channel_filter_require_target_is_contact (f->filter);
   asv = _tp_channel_filter_use (f->filter);
   g_assert_cmpuint (tp_asv_size (asv), ==, 1);
@@ -125,7 +125,7 @@ test_basics (Fixture *f,
   g_assert (valid);
   g_clear_object (&f->filter);
 
-  f->filter = tp_channel_filter_new ();
+  f->filter = tp_channel_filter_new_for_all_types ();
   tp_channel_filter_require_target_is_room (f->filter);
   asv = _tp_channel_filter_use (f->filter);
   g_assert_cmpuint (tp_asv_size (asv), ==, 1);
@@ -135,7 +135,7 @@ test_basics (Fixture *f,
   g_assert (valid);
   g_clear_object (&f->filter);
 
-  f->filter = tp_channel_filter_new ();
+  f->filter = tp_channel_filter_new_for_all_types ();
   tp_channel_filter_require_no_target (f->filter);
   asv = _tp_channel_filter_use (f->filter);
   g_assert_cmpuint (tp_asv_size (asv), ==, 1);
@@ -145,7 +145,7 @@ test_basics (Fixture *f,
   g_assert (valid);
   g_clear_object (&f->filter);
 
-  f->filter = tp_channel_filter_new ();
+  f->filter = tp_channel_filter_new_for_all_types ();
   tp_channel_filter_require_target_type (f->filter, TP_ENTITY_TYPE_ROOM);
   asv = _tp_channel_filter_use (f->filter);
   g_assert_cmpuint (tp_asv_size (asv), ==, 1);
@@ -155,7 +155,7 @@ test_basics (Fixture *f,
   g_assert (valid);
   g_clear_object (&f->filter);
 
-  f->filter = tp_channel_filter_new ();
+  f->filter = tp_channel_filter_new_for_all_types ();
   tp_channel_filter_require_channel_type (f->filter, "com.example.Bees");
   asv = _tp_channel_filter_use (f->filter);
   g_assert_cmpuint (tp_asv_size (asv), ==, 1);
@@ -163,7 +163,7 @@ test_basics (Fixture *f,
         TP_PROP_CHANNEL_CHANNEL_TYPE), ==, "com.example.Bees");
   g_clear_object (&f->filter);
 
-  f->filter = tp_channel_filter_new ();
+  f->filter = tp_channel_filter_new_for_all_types ();
   tp_channel_filter_require_locally_requested (f->filter, TRUE);
   asv = _tp_channel_filter_use (f->filter);
   g_assert_cmpuint (tp_asv_size (asv), ==, 1);
@@ -172,7 +172,7 @@ test_basics (Fixture *f,
   g_assert (valid);
   g_clear_object (&f->filter);
 
-  f->filter = tp_channel_filter_new ();
+  f->filter = tp_channel_filter_new_for_all_types ();
   tp_channel_filter_require_locally_requested (f->filter, FALSE);
   asv = _tp_channel_filter_use (f->filter);
   g_assert_cmpuint (tp_asv_size (asv), ==, 1);
@@ -181,7 +181,7 @@ test_basics (Fixture *f,
   g_assert (valid);
   g_clear_object (&f->filter);
 
-  f->filter = tp_channel_filter_new ();
+  f->filter = tp_channel_filter_new_for_all_types ();
   tp_channel_filter_require_property (f->filter,
       "com.example.Answer", g_variant_new_uint32 (42));
   asv = _tp_channel_filter_use (f->filter);

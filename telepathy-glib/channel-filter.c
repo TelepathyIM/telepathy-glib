@@ -147,17 +147,14 @@ tp_channel_filter_class_init (TpChannelFilterClass *cls)
 }
 
 /**
- * tp_channel_filter_new:
+ * tp_channel_filter_new_for_all_types:
  *
  * Return a channel filter that matches every channel.
  *
- * You can make the filter more restrictive by setting properties. In
- * practice, to make a filter useful, you should set at least a channel
- * type (text, call, file transfer etc.) and a target type
- * (contact, chatroom, etc.).
+ * You can make the filter more restrictive by setting properties.
  */
 TpChannelFilter *
-tp_channel_filter_new (void)
+tp_channel_filter_new_for_all_types (void)
 {
   return g_object_new (TP_TYPE_CHANNEL_FILTER,
       NULL);
@@ -175,7 +172,7 @@ tp_channel_filter_new (void)
 TpChannelFilter *
 tp_channel_filter_new_for_text_chats (void)
 {
-  TpChannelFilter *self = tp_channel_filter_new ();
+  TpChannelFilter *self = tp_channel_filter_new_for_all_types ();
 
   tp_channel_filter_require_target_is_contact (self);
   tp_channel_filter_require_channel_type (self, TP_IFACE_CHANNEL_TYPE_TEXT);
@@ -195,7 +192,7 @@ tp_channel_filter_new_for_text_chats (void)
 TpChannelFilter *
 tp_channel_filter_new_for_text_chatrooms (void)
 {
-  TpChannelFilter *self = tp_channel_filter_new ();
+  TpChannelFilter *self = tp_channel_filter_new_for_all_types ();
 
   tp_channel_filter_require_target_is_room (self);
   tp_channel_filter_require_channel_type (self, TP_IFACE_CHANNEL_TYPE_TEXT);
@@ -307,7 +304,7 @@ tp_channel_filter_require_target_type (TpChannelFilter *self,
 TpChannelFilter *
 tp_channel_filter_new_for_calls (TpEntityType entity_type)
 {
-  TpChannelFilter *self = tp_channel_filter_new ();
+  TpChannelFilter *self = tp_channel_filter_new_for_all_types ();
 
   tp_channel_filter_require_target_type (self, entity_type);
   tp_channel_filter_require_channel_type (self, TP_IFACE_CHANNEL_TYPE_CALL1);
@@ -357,7 +354,7 @@ tp_channel_filter_require_channel_type (TpChannelFilter *self,
 TpChannelFilter *
 tp_channel_filter_new_for_stream_tubes (const gchar *service)
 {
-  TpChannelFilter *self = tp_channel_filter_new ();
+  TpChannelFilter *self = tp_channel_filter_new_for_all_types ();
 
   tp_channel_filter_require_channel_type (self,
       TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1);
@@ -390,7 +387,7 @@ tp_channel_filter_new_for_stream_tubes (const gchar *service)
 TpChannelFilter *
 tp_channel_filter_new_for_dbus_tubes (const gchar *service)
 {
-  TpChannelFilter *self = tp_channel_filter_new ();
+  TpChannelFilter *self = tp_channel_filter_new_for_all_types ();
 
   tp_channel_filter_require_channel_type (self,
       TP_IFACE_CHANNEL_TYPE_DBUS_TUBE1);
@@ -439,7 +436,7 @@ tp_channel_filter_new_for_dbus_tubes (const gchar *service)
 TpChannelFilter *
 tp_channel_filter_new_for_file_transfers (const gchar *service)
 {
-  TpChannelFilter *self = tp_channel_filter_new ();
+  TpChannelFilter *self = tp_channel_filter_new_for_all_types ();
 
   tp_channel_filter_require_target_is_contact (self);
   tp_channel_filter_require_channel_type (self,
