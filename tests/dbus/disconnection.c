@@ -1,5 +1,8 @@
 #include "config.h"
 
+#include <dbus/dbus.h>
+#include <dbus/dbus-glib-lowlevel.h>
+
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/debug.h>
@@ -19,7 +22,6 @@
 #define PTR(ui) GUINT_TO_POINTER(ui)
 
 /* state tracking */
-static GMainLoop *mainloop;
 static TpIntset *caught_signal;
 static TpIntset *freed_user_data;
 
@@ -40,6 +42,10 @@ typedef struct {
     TpDBusDaemon *dbus_daemon;
     TpProxy *proxies[N_PROXIES];
     GObject *cd_service;
+
+    DBusConnection *private_libdbus;
+    DBusGConnection *private_dbusglib;
+    TpDBusDaemon *private_dbus_daemon;
 } Fixture;
 
 static Fixture *f;
@@ -112,13 +118,6 @@ signal_cb (TpProxy *proxy,
   MYASSERT (proxy == want_proxy, ": %p != %p", proxy, want_proxy);
   MYASSERT (weak_object == want_object, ": %p != %p", weak_object,
       want_object);
-
-  if (tp_intset_is_member (caught_signal, TEST_A) &&
-      tp_intset_is_member (caught_signal, TEST_Z))
-    {
-      /* we've had all the signals we're going to */
-      g_main_loop_quit (mainloop);
-    }
 }
 
 static void
@@ -142,6 +141,26 @@ setup (void)
       TP_TESTS_TYPE_SIMPLE_CHANNEL_DISPATCHER,
       NULL);
   tp_dbus_daemon_register_object (f->dbus_daemon, "/", f->cd_service);
+
+  f->private_libdbus = dbus_bus_get_private (DBUS_BUS_STARTER, NULL);
+  g_assert (f->private_libdbus != NULL);
+  dbus_connection_setup_with_g_main (f->private_libdbus, NULL);
+  dbus_connection_set_exit_on_disconnect (f->private_libdbus, FALSE);
+  f->private_dbusglib = dbus_connection_get_g_connection (
+      f->private_libdbus);
+  dbus_g_connection_ref (f->private_dbusglib);
+  f->private_dbus_daemon = tp_dbus_daemon_new (f->private_dbusglib);
+  g_assert (f->private_dbus_daemon != NULL);
+}
+
+static void
+drop_private_connection (void)
+{
+  dbus_g_connection_unref (f->private_dbusglib);
+  f->private_dbusglib = NULL;
+  dbus_connection_close (f->private_libdbus);
+  dbus_connection_unref (f->private_libdbus);
+  f->private_libdbus = NULL;
 }
 
 static void
@@ -149,13 +168,22 @@ teardown (void)
 {
   tp_tests_assert_last_unref (&f->cd_service);
   tp_tests_assert_last_unref (&f->dbus_daemon);
+
+  tp_tests_assert_last_unref (&f->private_dbus_daemon);
 }
 
 static TpProxy *
-new_proxy (void)
+new_proxy (int which)
 {
+  TpDBusDaemon *local_dbus_daemon;
+
+  if (which == TEST_F)
+    local_dbus_daemon = f->private_dbus_daemon;
+  else
+    local_dbus_daemon = f->dbus_daemon;
+
   return tp_tests_object_new_static_class (TP_TYPE_PROXY,
-      "dbus-daemon", f->dbus_daemon,
+      "dbus-daemon", local_dbus_daemon,
       "bus-name", tp_dbus_daemon_get_unique_name (f->dbus_daemon),
       "object-path", "/",
       NULL);
@@ -170,7 +198,6 @@ main (int argc,
   GError *error_out = NULL;
   GError err = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT, "Because I said so" };
   TpProxySignalConnection *sc;
-  gpointer tmp_obj;
   gboolean freed = FALSE;
   GHashTable *empty_asv;
   int i;
@@ -188,17 +215,15 @@ main (int argc,
 
   setup ();
 
-  mainloop = g_main_loop_new (NULL, FALSE);
-
   g_message ("Creating proxies");
 
   for (i = TEST_A; i <= TEST_H; i++)
     {
-      f->proxies[i] = new_proxy ();
+      f->proxies[i] = new_proxy (i);
       g_message ("%c=%p", 'a' + i, f->proxies[i]);
     }
 
-  f->proxies[TEST_Z] = new_proxy ();
+  f->proxies[TEST_Z] = new_proxy (TEST_Z);
   g_message ("z=%p", f->proxies[TEST_Z]);
 
   /* a survives */
@@ -266,30 +291,13 @@ main (int argc,
   tp_proxy_signal_connection_disconnect (sc);
 
   /* f gets its signal connection cancelled because it's implicitly
-   * invalidated by its DBusGProxy being destroyed.
-   *
-   * Note that this test case exploits implementation details of dbus-glib.
-   * If it stops working after a dbus-glib upgrade, that's probably why. */
+   * invalidated by its own connection disconnecting. */
   g_message ("Connecting signal to f");
   tp_cli_dbus_properties_connect_to_properties_changed (f->proxies[TEST_F],
       signal_cb, PTR (TEST_F),
       destroy_user_data, NULL, &error_out);
   g_assert_no_error (error_out);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_F), "");
-  g_message ("Forcibly disposing f's DBusGProxy to simulate name owner loss");
-  tmp_obj = tp_proxy_get_interface_by_id (f->proxies[TEST_F],
-      TP_IFACE_QUARK_DBUS_PROPERTIES, NULL);
-  MYASSERT (tmp_obj != NULL, "");
-  g_object_run_dispose (tmp_obj);
-  /* assert that connecting to a signal on an invalid proxy fails */
-  freed = FALSE;
-  tp_cli_dbus_properties_connect_to_properties_changed (f->proxies[TEST_F],
-      unwanted_signal_cb, &freed, set_freed, NULL, &error_out);
-  MYASSERT (freed, "");
-  MYASSERT (error_out != NULL, "");
-  MYASSERT (error_out->code == DBUS_GERROR_NAME_HAS_NO_OWNER, "");
-  g_error_free (error_out);
-  error_out = NULL;
 
   /* g gets its signal connection cancelled because it's
    * implicitly invalidated by being destroyed; unlike d, the signal
@@ -333,9 +341,28 @@ main (int argc,
       TP_IFACE_CHANNEL_DISPATCHER, empty_asv, NULL);
   g_hash_table_unref (empty_asv);
 
+  g_message ("Dropping private D-Bus connection");
+  drop_private_connection ();
+
+  /* wait for everything to happen */
   g_message ("Running main loop");
-  g_main_loop_run (mainloop);
-  g_main_loop_unref (mainloop);
+
+  /* There's no guarantee that proxy F will detect that its socket closed
+   * in any particular order relative to the signals, so wait for both. */
+  while (!tp_intset_is_member (caught_signal, TEST_A) ||
+      !tp_intset_is_member (caught_signal, TEST_Z) ||
+      tp_proxy_get_invalidated (f->proxies[TEST_F]) == NULL)
+    g_main_context_iteration (NULL, TRUE);
+
+  /* assert that connecting to a signal on an invalid proxy fails */
+  freed = FALSE;
+  tp_cli_dbus_properties_connect_to_properties_changed (f->proxies[TEST_F],
+      unwanted_signal_cb, &freed, set_freed, NULL, &error_out);
+  MYASSERT (freed, "");
+  MYASSERT (error_out != NULL, "");
+  MYASSERT (error_out->code == DBUS_GERROR_NAME_HAS_NO_OWNER, "");
+  g_error_free (error_out);
+  error_out = NULL;
 
   /* Now that the main loop has run, cancelled signal connections have been
    * freed */
