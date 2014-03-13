@@ -97,6 +97,8 @@
  * @dup_protocol_features: implementation of tp_client_factory_dup_protocol_features()
  * @create_tls_certificate: create a #TpTLSCertificate;
  *  see tp_client_factory_ensure_tls_certificate()
+ * @dup_tls_certificate_features: implementation of
+ *  tp_client_factory_dup_tls_certificate_features()
  *
  * The class structure for #TpClientFactory.
  *
@@ -148,6 +150,7 @@ struct _TpClientFactoryPrivate
   GArray *desired_channel_features;
   GArray *desired_contact_features;
   GArray *desired_protocol_features;
+  GArray *desired_tls_certificate_features;
 };
 
 enum
@@ -345,6 +348,8 @@ tp_client_factory_finalize (GObject *object)
   tp_clear_pointer (&self->priv->desired_channel_features, g_array_unref);
   tp_clear_pointer (&self->priv->desired_contact_features, g_array_unref);
   tp_clear_pointer (&self->priv->desired_protocol_features, g_array_unref);
+  tp_clear_pointer (&self->priv->desired_tls_certificate_features,
+      g_array_unref);
 
   G_OBJECT_CLASS (tp_client_factory_parent_class)->finalize (object);
 }
@@ -383,6 +388,11 @@ tp_client_factory_init (TpClientFactory *self)
       sizeof (GQuark));
   feature = TP_PROTOCOL_FEATURE_CORE;
   g_array_append_val (self->priv->desired_protocol_features, feature);
+
+  self->priv->desired_tls_certificate_features = g_array_new (TRUE, FALSE,
+      sizeof (GQuark));
+  feature = TP_TLS_CERTIFICATE_FEATURE_CORE;
+  g_array_append_val (self->priv->desired_tls_certificate_features, feature);
 }
 
 static TpProtocol *
@@ -413,6 +423,14 @@ create_tls_certificate_impl (TpClientFactory *self,
   return tp_tls_certificate_new (conn_or_chan, object_path, error);
 }
 
+static GArray *
+dup_tls_certificate_features_impl (TpClientFactory *self,
+    TpTLSCertificate *certificate)
+{
+  return _tp_quark_array_copy (
+      (GQuark *) self->priv->desired_tls_certificate_features->data);
+}
+
 static void
 tp_client_factory_class_init (TpClientFactoryClass *klass)
 {
@@ -437,6 +455,7 @@ tp_client_factory_class_init (TpClientFactoryClass *klass)
   klass->create_protocol = create_protocol_impl;
   klass->dup_protocol_features = dup_protocol_features_impl;
   klass->create_tls_certificate = create_tls_certificate_impl;
+  klass->dup_tls_certificate_features = dup_tls_certificate_features_impl;
 
   /**
    * TpClientFactory:dbus-daemon:
@@ -1528,4 +1547,84 @@ tp_client_factory_ensure_tls_certificate (TpClientFactory *self,
     }
 
   return cert;
+}
+
+/**
+ * tp_client_factory_dup_tls_certificate_features:
+ * @self: a #TpClientFactory object
+ * @certificate: a #TpTLSCertificate
+ *
+ * Return a zero-terminated #GArray containing the #TpTLSCertificate features
+ * that should be prepared on @protocol.
+ *
+ * Returns: (transfer full) (element-type GLib.Quark): a newly allocated
+ *  #GArray
+ *
+ * Since: UNRELEASED
+ */
+GArray *
+tp_client_factory_dup_tls_certificate_features (TpClientFactory *self,
+    TpTLSCertificate *certificate)
+{
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
+  g_return_val_if_fail (TP_IS_TLS_CERTIFICATE (certificate), NULL);
+
+  return TP_CLIENT_FACTORY_GET_CLASS (self)->dup_tls_certificate_features (
+      self, certificate);
+}
+
+/**
+ * tp_client_factory_add_tls_certificate_features:
+ * @self: a #TpClientFactory object
+ * @features: (transfer none) (array zero-terminated=1) (allow-none): an array
+ *  of desired features, ending with 0; %NULL is equivalent to an array
+ *  containing only 0
+ *
+ * Add @features to the desired features to be prepared on #TpTLSCertificate
+ * objects. Those features will be added to the features already returned be
+ * tp_client_factory_dup_tls_certificate_features().
+ *
+ * It is not necessary to add %TP_TLS_CERTIFICATE_FEATURE_CORE as it is already
+ * included by default.
+ *
+ * Note that these features will not be added to existing #TpTLSCertificate
+ * objects; the user must call tp_proxy_prepare_async() themself.
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_client_factory_add_tls_certificate_features (TpClientFactory *self,
+    const GQuark *features)
+{
+  g_return_if_fail (TP_IS_CLIENT_FACTORY (self));
+
+  _tp_quark_array_merge (self->priv->desired_tls_certificate_features, features,
+      -1);
+}
+
+/**
+ * tp_client_factory_add_tls_certificate_features_varargs: (skip)
+ * @self: a #TpClientFactory
+ * @feature: the first feature
+ * @...: the second and subsequent features, if any, ending with 0
+ *
+ * The same as tp_client_factory_add_tls_certificate_features(), but with a
+ * more convenient calling convention from C.
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_client_factory_add_tls_certificate_features_varargs (
+    TpClientFactory *self,
+    GQuark feature,
+    ...)
+{
+  va_list var_args;
+
+  g_return_if_fail (TP_IS_CLIENT_FACTORY (self));
+
+  va_start (var_args, feature);
+  _tp_quark_array_merge_valist (self->priv->desired_tls_certificate_features,
+      feature, var_args);
+  va_end (var_args);
 }

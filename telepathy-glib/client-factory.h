@@ -92,6 +92,8 @@ struct _TpClientFactoryClass {
         TpProxy *conn_or_chan,
         const gchar *object_path,
         GError **error);
+    GArray * (*dup_tls_certificate_features) (TpClientFactory *self,
+        TpTLSCertificate *certificate);
 
     /*<private>*/
     GCallback padding[20];
@@ -225,6 +227,17 @@ TpTLSCertificate *tp_client_factory_ensure_tls_certificate (
     TpProxy *conn_or_chan,
     const gchar *object_path,
     GError **error);
+_TP_AVAILABLE_IN_UNRELEASED
+GArray *tp_client_factory_dup_tls_certificate_features (TpClientFactory *self,
+    TpTLSCertificate *certificate);
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_client_factory_add_tls_certificate_features (TpClientFactory *self,
+    const GQuark *features);
+_TP_AVAILABLE_IN_UNRELEASED
+void tp_client_factory_add_tls_certificate_features_varargs (
+    TpClientFactory *self,
+    GQuark feature,
+    ...);
 
 G_END_DECLS
 

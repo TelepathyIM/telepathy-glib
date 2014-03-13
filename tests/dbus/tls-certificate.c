@@ -344,6 +344,8 @@ test_factory (Test *test,
 {
   /* TpTLSCertificate is cached by the factory */
   TpTLSCertificate *cert;
+  GArray *features;
+  GQuark f;
 
   cert = tp_client_factory_ensure_tls_certificate (test->factory,
       TP_PROXY (test->connection), test->cert_path, &test->error);
@@ -352,6 +354,14 @@ test_factory (Test *test,
   g_assert (cert == test->cert);
 
   g_object_unref (cert);
+
+  features = tp_client_factory_dup_tls_certificate_features (test->factory,
+      test->cert);
+  g_assert (features != NULL);
+  g_assert_cmpuint (features->len, ==, 1);
+  f = g_array_index (features, GQuark, 0);
+  g_assert_cmpuint (f, ==, TP_TLS_CERTIFICATE_FEATURE_CORE);
+  g_array_unref (features);
 }
 
 int
