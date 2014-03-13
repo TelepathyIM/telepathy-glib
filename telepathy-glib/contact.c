@@ -2054,20 +2054,22 @@ mime_file_written (GObject *source_object,
   WriteAvatarData *avatar_data = user_data;
   GFile *file = G_FILE (source_object);
   TpContact *self;
+  gchar *path = g_file_get_path (file);
 
   g_assert (file == avatar_data->mime_file);
 
   if (!g_file_replace_contents_finish (file, res, NULL, &error))
     {
-      DEBUG ("Failed to store MIME type in cache (%s): %s",
-          g_file_get_path (file), error->message);
+      DEBUG ("Failed to store MIME type in cache (%s): %s", path,
+          error->message);
       g_clear_error (&error);
     }
   else
     {
-      DEBUG ("Contact avatar MIME type stored in cache: %s",
-          g_file_get_path (file));
+      DEBUG ("Contact avatar MIME type stored in cache: %s", path);
     }
+
+  g_free (path);
 
   self = g_weak_ref_get (&avatar_data->contact);
 

@@ -2128,7 +2128,7 @@ finish_all_requests (TpProxy *self,
       tp_proxy_prepare_request_finish (iter->data, error);
     }
 
-  g_queue_clear (tmp);
+  g_queue_free (tmp);
 }
 
 /*

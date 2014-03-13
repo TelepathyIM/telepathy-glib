@@ -1,3 +1,13 @@
+telepathy-glib 0.99.8 (UNRELEASED)
+==================================
+
+Fixes:
+
+• fix a memory leak when cleaning up TpProxy "prepare" requests
+  (fd.o #76000, Simon)
+
+• fix a memory leak for paths to contacts' avatar data (fd.o #76000, Simon)
+
 telepathy-glib 0.99.7 (2014-01-29)
 ==================================
 
