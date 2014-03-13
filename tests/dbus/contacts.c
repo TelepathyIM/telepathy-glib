@@ -230,17 +230,25 @@ contact_info_request_cancel (gpointer cancellable)
   return FALSE;
 }
 
+static TpHandle
+ensure_handle (Fixture *f,
+    const gchar *id)
+{
+  TpBaseConnection *service_conn = (TpBaseConnection *) f->service_conn;
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
+      service_conn, TP_ENTITY_TYPE_CONTACT);
+
+  return tp_handle_ensure (contact_repo, id, NULL, NULL);
+}
+
 static TpContact *
 ensure_contact (Fixture *f,
     const gchar *id,
     TpHandle *handle)
 {
-  TpBaseConnection *service_conn = (TpBaseConnection *) f->service_conn;
   TpConnection *client_conn = f->client_conn;
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
-      service_conn, TP_ENTITY_TYPE_CONTACT);
 
-  *handle = tp_handle_ensure (contact_repo, id, NULL, NULL);
+  *handle = ensure_handle (f, id);
   return tp_connection_dup_contact_if_possible (client_conn, *handle, id);
 }
 
@@ -320,10 +328,19 @@ test_contact_info (Fixture *f,
   g_object_unref (contact);
 
   /* TEST 4: First set the info in the CM for an handle, then create a TpContact
-   * without INFO feature, and finally refresh the contact's info. */
-  contact = ensure_contact (f, "info-test-4", &handle);
+   * without INFO feature, and finally refresh the contact's info.
+   *
+   * We can't use ensure_contact() because that would create the contact
+   * before we change its contact info, and changing its contact info
+   * emits a signal. If we receive that signal while the contact exists,
+   * we'll opportunistically fill in its contact info, and the assertion
+   * that it has no contact info fails. */
+  handle = ensure_handle (f, "info-test-4");
   tp_tests_contacts_connection_change_contact_info (service_conn, handle,
       info);
+  tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
+  contact = tp_connection_dup_contact_if_possible (client_conn, handle,
+      "info-test-4");
 
   tp_connection_upgrade_contacts_async (client_conn,
       1, &contact, NULL,
@@ -1787,12 +1804,17 @@ test_no_location (Fixture *f,
 
   /* Check that first retrieving a contact without the LOCATION feature, and
    * later upgrading it to have the LOCATION feature, does the right thing.
-   */
-  contact = ensure_contact (f, "rupert", &handle);
+   * As with "TEST 4" in the location tests, we must defer creating the
+   * contact until after we have changed its location at the service side. */
+  handle = ensure_handle (f, "rupert");
   g_assert_cmpuint (handle, !=, 0);
 
   tp_tests_contacts_connection_change_locations (f->service_conn,
       1, &handle, &norway);
+  tp_tests_proxy_run_until_dbus_queue_processed (f->client_conn);
+
+  contact = tp_connection_dup_contact_if_possible (f->client_conn, handle,
+      "rupert");
 
   tp_connection_upgrade_contacts_async (f->client_conn,
       1, &contact, NULL,
