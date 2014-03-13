@@ -1499,5 +1499,20 @@ tp_client_factory_ensure_tls_certificate (TpClientFactory *self,
     const gchar *object_path,
     GError **error)
 {
-  return tp_tls_certificate_new (conn_or_chan, object_path, error);
+  TpTLSCertificate *cert;
+
+  g_return_val_if_fail (tp_proxy_get_factory (conn_or_chan) == self, NULL);
+
+  cert = lookup_proxy (self, object_path);
+  if (cert != NULL)
+    {
+      g_object_ref (cert);
+    }
+  else
+    {
+      cert = tp_tls_certificate_new (conn_or_chan, object_path, error);
+      insert_proxy (self, cert);
+    }
+
+  return cert;
 }

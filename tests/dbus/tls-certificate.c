@@ -289,6 +289,8 @@ test_reject (Test *test,
   /* Test if we cope with an empty rejections list */
   tp_tests_tls_certificate_clear_rejection (test->service_cert);
 
+  tp_clear_object (&test->cert);
+
   cert = tp_client_factory_ensure_tls_certificate (test->factory,
       TP_PROXY (test->connection), test->cert_path, &test->error);
   g_assert_no_error (test->error);
@@ -336,6 +338,22 @@ test_invalidated (Test *test,
   g_assert_error (test->error, TP_ERROR, TP_ERROR_CANCELLED);
 }
 
+static void
+test_factory (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  /* TpTLSCertificate is cached by the factory */
+  TpTLSCertificate *cert;
+
+  cert = tp_client_factory_ensure_tls_certificate (test->factory,
+      TP_PROXY (test->connection), test->cert_path, &test->error);
+  g_assert_no_error (test->error);
+
+  g_assert (cert == test->cert);
+
+  g_object_unref (cert);
+}
+
 int
 main (int argc,
       char **argv)
@@ -353,6 +371,8 @@ main (int argc,
       test_reject, teardown);
   g_test_add ("/tls-certificate/invalidated", Test, NULL, setup,
       test_invalidated, teardown);
+  g_test_add ("/tls-certificate/factory", Test, NULL, setup,
+      test_factory, teardown);
 
   return tp_tests_run_with_bus ();
 }
