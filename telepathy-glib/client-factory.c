@@ -95,6 +95,8 @@
  * @create_protocol: create a #TpProtocol;
  *  see tp_client_factory_ensure_protocol()
  * @dup_protocol_features: implementation of tp_client_factory_dup_protocol_features()
+ * @create_tls_certificate: create a #TpTLSCertificate;
+ *  see tp_client_factory_ensure_tls_certificate()
  *
  * The class structure for #TpClientFactory.
  *
@@ -402,6 +404,15 @@ dup_protocol_features_impl (TpClientFactory *self,
       (GQuark *) self->priv->desired_protocol_features->data);
 }
 
+static TpTLSCertificate *
+create_tls_certificate_impl (TpClientFactory *self,
+    TpProxy *conn_or_chan,
+    const gchar *object_path,
+    GError **error)
+{
+  return tp_tls_certificate_new (conn_or_chan, object_path, error);
+}
+
 static void
 tp_client_factory_class_init (TpClientFactoryClass *klass)
 {
@@ -425,6 +436,7 @@ tp_client_factory_class_init (TpClientFactoryClass *klass)
   klass->dup_contact_features = dup_contact_features_impl;
   klass->create_protocol = create_protocol_impl;
   klass->dup_protocol_features = dup_protocol_features_impl;
+  klass->create_tls_certificate = create_tls_certificate_impl;
 
   /**
    * TpClientFactory:dbus-daemon:
@@ -1510,7 +1522,8 @@ tp_client_factory_ensure_tls_certificate (TpClientFactory *self,
     }
   else
     {
-      cert = tp_tls_certificate_new (conn_or_chan, object_path, error);
+      cert = TP_CLIENT_FACTORY_GET_CLASS (self)->create_tls_certificate (self,
+        conn_or_chan, object_path, error);
       insert_proxy (self, cert);
     }
 

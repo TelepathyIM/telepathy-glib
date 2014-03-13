@@ -87,6 +87,12 @@ struct _TpClientFactoryClass {
     GArray * (*dup_protocol_features) (TpClientFactory *self,
         TpProtocol *protocol);
 
+    /* TpTLSCertificate */
+    TpTLSCertificate * (*create_tls_certificate) (TpClientFactory *self,
+        TpProxy *conn_or_chan,
+        const gchar *object_path,
+        GError **error);
+
     /*<private>*/
     GCallback padding[20];
 };
