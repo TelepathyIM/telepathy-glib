@@ -69,6 +69,7 @@ teardown (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   g_clear_object (&test->account);
+  g_clear_object (&test->account_manager);
 
   tp_dbus_daemon_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
       &test->error);
