@@ -11,7 +11,7 @@ static void
 test_get_interface_after_invalidate (void)
 {
   TpDBusDaemon *bus_daemon;
-  DBusGProxy *props;
+  GDBusProxy *props;
   GError invalidation_reason = { TP_ERROR, TP_ERROR_NOT_YOURS, "bees!" };
   GError *error = NULL;
 

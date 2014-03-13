@@ -135,7 +135,7 @@ tp_dbus_daemon_dup (GError **error)
  * Since: 0.7.1
  */
 TpDBusDaemon *
-tp_dbus_daemon_new (DBusGConnection *connection)
+tp_dbus_daemon_new (GDBusConnection *connection)
 {
   g_return_val_if_fail (connection != NULL, NULL);
 

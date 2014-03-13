@@ -160,7 +160,7 @@ TpClientFactory *tp_proxy_get_factory (gpointer self);
 
 TpDBusDaemon *tp_proxy_get_dbus_daemon (gpointer self);
 
-DBusGConnection *tp_proxy_get_dbus_connection (gpointer self);
+GDBusConnection *tp_proxy_get_dbus_connection (gpointer self);
 
 const gchar *tp_proxy_get_bus_name (gpointer self);
 

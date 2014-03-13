@@ -28,7 +28,7 @@ typedef struct {
     const gchar *version;
     gsize size;
 
-    DBusGProxy *(*get_interface_by_id) (TpProxy *,
+    GDBusProxy *(*get_interface_by_id) (TpProxy *,
         GQuark,
         GError **);
 

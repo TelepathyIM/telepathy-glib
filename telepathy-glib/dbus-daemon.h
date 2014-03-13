@@ -54,7 +54,7 @@ GType tp_dbus_daemon_get_type (void);
 
 TpDBusDaemon *tp_dbus_daemon_dup (GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
-TpDBusDaemon *tp_dbus_daemon_new (DBusGConnection *connection)
+TpDBusDaemon *tp_dbus_daemon_new (GDBusConnection *connection)
   G_GNUC_WARN_UNUSED_RESULT;
 
 typedef void (*TpDBusDaemonNameOwnerChangedCb) (TpDBusDaemon *bus_daemon,

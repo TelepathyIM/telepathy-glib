@@ -31,8 +31,8 @@
 
 static TpProxyImplementation _tp_proxy_implementation = { NULL };
 
-DBusGProxy *
-tp_proxy_get_interface_by_id (TpProxy *proxy,
+GDBusProxy *
+tp_proxy_get_interface_by_id (gpointer proxy,
     GQuark iface,
     GError **error)
 {

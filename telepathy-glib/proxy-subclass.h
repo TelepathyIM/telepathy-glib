@@ -57,8 +57,7 @@ TpProxySignalConnection *tp_proxy_signal_connection_v0_new (TpProxy *self,
 void tp_proxy_signal_connection_v0_take_results
     (TpProxySignalConnection *sc, GValueArray *args);
 
-_TP_AVAILABLE_IN_0_20
-DBusGProxy *tp_proxy_get_interface_by_id (TpProxy *self, GQuark iface,
+GDBusProxy *tp_proxy_get_interface_by_id (TpProxy *self, GQuark iface,
     GError **error);
 
 void tp_proxy_add_interface_by_id (TpProxy *self, GQuark iface);

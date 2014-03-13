@@ -111,7 +111,7 @@ test_properties (void)
   TpDBusDaemon *bus = tp_dbus_daemon_dup (NULL);
   gchar *bus_name;
   gchar *object_path;
-  DBusGConnection *dbus_conn;
+  GDBusConnection *dbus_conn;
 
   g_object_get (bus,
       "dbus-connection", &dbus_conn,
@@ -124,11 +124,11 @@ test_properties (void)
         object_path);
 
   g_assert_cmpstr (bus_name, ==, "org.freedesktop.DBus");
-  g_assert (dbus_conn != NULL);
+  g_assert (G_IS_DBUS_CONNECTION (dbus_conn));
 
   g_free (bus_name);
   g_free (object_path);
-  dbus_g_connection_unref (dbus_conn);
+  g_object_unref (dbus_conn);
   g_object_unref (bus);
 }
 

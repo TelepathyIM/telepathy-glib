@@ -151,7 +151,7 @@ tp_dbus_errors_quark (void)
  * @see_also: #TpProxy
  *
  * The implementations of #TpProxy subclasses and "mixin" functions need
- * access to the underlying dbus-glib objects used to implement the
+ * access to the underlying GDBus objects used to implement the
  * #TpProxy API.
  *
  * Mixin functions to implement particular D-Bus interfaces should usually
@@ -339,15 +339,15 @@ tp_proxy_prepare_request_finish (TpProxyPrepareRequest *req,
 
 struct _TpProxyPrivate {
     TpDBusDaemon *dbus_daemon;
-    DBusGConnection *dbus_connection;
+    GDBusConnection *dbus_connection;
     gchar *bus_name;
     gchar *object_path;
 
     GError *invalidated;
 
-    /* GQuark for interface => either a ref'd DBusGProxy *,
+    /* GQuark for interface => either a ref'd GDBusProxy *,
      * or the TpProxy itself used as a dummy value to indicate that
-     * the DBusGProxy has not been needed yet */
+     * the GDBusProxy has not been needed yet */
     GData *interfaces;
 
     /* feature => FeatureState */
@@ -365,6 +365,9 @@ struct _TpProxyPrivate {
     guint pending_will_announce_calls;
 
     TpClientFactory *factory;
+
+    gulong gdbus_closed_signal;
+    guint unique_name_watch;
 };
 
 G_DEFINE_TYPE (TpProxy, tp_proxy, G_TYPE_OBJECT)
@@ -387,8 +390,6 @@ enum {
 
 static guint signals[N_SIGNALS] = {0};
 
-static void tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy, TpProxy *self);
-
 /**
  * tp_proxy_get_interface_by_id: (skip)
  * @self: the TpProxy
@@ -399,7 +400,7 @@ static void tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy, TpProxy *self);
  *
  * <!-- -->
  *
- * Returns: a borrowed reference to a #DBusGProxy
+ * Returns: a borrowed reference to a #GDBusProxy
  * for which the bus name and object path are the same as for @self, but the
  * interface is as given (or %NULL if an @error is raised).
  * The reference is only valid as long as @self is.
@@ -409,41 +410,39 @@ static void tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy, TpProxy *self);
 
 /* that's implemented in the core library, but it calls this: */
 
-DBusGProxy *
+GDBusProxy *
 _tp_proxy_get_interface_by_id (TpProxy *self,
     GQuark iface,
     GError **error)
 {
-  gpointer dgproxy;
+  gpointer iface_proxy;
 
   g_return_val_if_fail (TP_IS_PROXY (self), NULL);
 
   if (!_tp_proxy_check_interface_by_id (self, iface, error))
     return NULL;
 
-  dgproxy = g_datalist_id_get_data (&self->priv->interfaces, iface);
+  iface_proxy = g_datalist_id_get_data (&self->priv->interfaces, iface);
 
-  if (dgproxy == self)
+  if (iface_proxy == self)
     {
       /* dummy value - we've never actually needed the interface, so we
        * didn't create it, to avoid binding to all the signals */
 
-      dgproxy = dbus_g_proxy_new_for_name (self->priv->dbus_connection,
-          self->priv->bus_name, self->priv->object_path, g_quark_to_string (iface));
-      DEBUG ("%p: %s DBusGProxy is %p", self, g_quark_to_string (iface),
-          dgproxy);
-
-      g_signal_connect (dgproxy, "destroy",
-          G_CALLBACK (tp_proxy_iface_destroyed_cb), self);
+      iface_proxy = g_dbus_proxy_new_sync (self->priv->dbus_connection,
+          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
+          NULL, /* FIXME: add interface info */
+          self->priv->bus_name,
+          self->priv->object_path,
+          g_quark_to_string (iface),
+          NULL, /* cancellable */
+          error);
 
       g_datalist_id_set_data_full (&self->priv->interfaces, iface,
-          dgproxy, g_object_unref);
-
-      g_signal_emit (self, signals[SIGNAL_INTERFACE_ADDED], 0,
-          (guint) iface, dgproxy);
+          iface_proxy, g_object_unref);
     }
 
-  return dgproxy;
+  return iface_proxy;
 }
 
 /**
@@ -549,24 +548,6 @@ tp_proxy_has_interface (gpointer self,
     g_datalist_id_get_data (&proxy->priv->interfaces, q) != NULL);
 }
 
-static void
-tp_proxy_lose_interface (GQuark unused,
-                         gpointer dgproxy_or_self,
-                         gpointer self)
-{
-  if (dgproxy_or_self != self)
-    g_signal_handlers_disconnect_by_func (dgproxy_or_self,
-        G_CALLBACK (tp_proxy_iface_destroyed_cb), self);
-}
-
-static void
-tp_proxy_lose_interfaces (TpProxy *self)
-{
-  g_datalist_foreach (&self->priv->interfaces,
-      tp_proxy_lose_interface, self);
-
-  g_datalist_clear (&self->priv->interfaces);
-}
 
 static void tp_proxy_poll_features (TpProxy *self, const GError *error);
 
@@ -587,13 +568,8 @@ tp_proxy_emit_invalidated (gpointer p)
   /* Don't clear the datalist until after we've emitted the signal, so
    * the pending call and signal connection friend classes can still get
    * to the proxies */
-  tp_proxy_lose_interfaces (self);
-
-  if (self->priv->dbus_connection != NULL)
-    {
-      dbus_g_connection_unref (self->priv->dbus_connection);
-      self->priv->dbus_connection = NULL;
-    }
+  g_datalist_clear (&self->priv->interfaces);
+  g_clear_object (&self->priv->dbus_connection);
 
   return FALSE;
 }
@@ -615,37 +591,67 @@ tp_proxy_invalidate (TpProxy *self, const GError *error)
   g_return_if_fail (self != NULL);
   g_return_if_fail (error != NULL);
 
-  if (self->priv->invalidated == NULL)
+  if (self->priv->invalidated != NULL)
     {
-      DEBUG ("%p: %s", self, error->message);
-      self->priv->invalidated = g_error_copy (error);
+      DEBUG ("%p: already invalidated", self);
+      return;
+    }
 
-      tp_proxy_emit_invalidated (self);
+  DEBUG ("%p: %s #%d: %s", self, g_quark_to_string (error->domain),
+      error->code, error->message);
+  self->priv->invalidated = g_error_copy (error);
+
+  if (self->priv->unique_name_watch != 0)
+    {
+      /* there's no point in watching for this now */
+      g_bus_unwatch_name (self->priv->unique_name_watch);
+      self->priv->unique_name_watch = 0;
+    }
+
+  if (self->priv->gdbus_closed_signal != 0)
+    {
+      /* there's no point in watching for this now */
+      g_signal_handler_disconnect (self->priv->dbus_connection,
+          self->priv->gdbus_closed_signal);
+      self->priv->gdbus_closed_signal = 0;
+    }
+
+  tp_proxy_emit_invalidated (self);
+}
+
+static void
+tp_proxy_closed_cb (GDBusConnection *connection,
+    gboolean remote_peer_vanished,
+    GError *error,
+    gpointer user_data)
+{
+  TpProxy *self = TP_PROXY (user_data);
+
+  if (error != NULL)
+    {
+      tp_proxy_invalidate (self, error);
+    }
+  else
+    {
+      GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_NAME_OWNER_LOST,
+          "Disconnected from D-Bus by local request" };
+
+      tp_proxy_invalidate (self, &e);
     }
 }
 
 static void
-tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy,
-                             TpProxy *self)
+tp_proxy_unique_name_vanished_cb (GDBusConnection *conn,
+    const gchar *name,
+    gpointer user_data)
 {
-  /* We can't call any API on the proxy now. Because the proxies are all
-   * for the same bus name, we can assume that all of them are equally
-   * useless now */
-  tp_proxy_lose_interfaces (self);
+  TpProxy *self = TP_PROXY (user_data);
+  GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_NAME_OWNER_LOST,
+      "Name owner lost (service crashed?)" };
 
-  /* We need to be able to delay emitting the invalidated signal, so that
-   * any queued-up method calls and signal handlers will run first, and so
-   * it doesn't try to reenter libdbus.
-   */
-  if (self->priv->invalidated == NULL)
-    {
-      DEBUG ("%p", self);
-      self->priv->invalidated = g_error_new_literal (TP_DBUS_ERRORS,
-          TP_DBUS_ERROR_NAME_OWNER_LOST, "Name owner lost (service crashed?)");
+  DEBUG ("%p: %s", self, name);
 
-      g_idle_add_full (G_PRIORITY_HIGH, tp_proxy_emit_invalidated,
-          g_object_ref (self), g_object_unref);
-    }
+  tp_proxy_invalidate (self, &e);
 }
 
 /**
@@ -656,7 +662,7 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy,
  * Declare that this proxy supports a given interface.
  *
  * To use methods and signals of that interface, either call
- * tp_proxy_get_interface_by_id() to get the #DBusGProxy, or use the
+ * tp_proxy_get_interface_by_id() to get the #GDBusProxy, or use the
  * tp_cli_* wrapper functions (strongly recommended).
  *
  * If the interface is the proxy's "main interface", or has already been
@@ -668,7 +674,7 @@ void
 tp_proxy_add_interface_by_id (TpProxy *self,
                               GQuark iface)
 {
-  DBusGProxy *iface_proxy = g_datalist_id_get_data (&self->priv->interfaces,
+  GDBusProxy *iface_proxy = g_datalist_id_get_data (&self->priv->interfaces,
       iface);
 
   g_return_if_fail
@@ -679,8 +685,8 @@ tp_proxy_add_interface_by_id (TpProxy *self,
 
   if (iface_proxy == NULL)
     {
-      /* we don't want to actually create it just yet - dbus-glib will
-       * helpfully wake us up on every signal, if we do. So we set a
+      /* we don't want to actually create it just yet - we'll get
+       * woken up on every signal, if we do. So we set a
        * dummy value (self), and replace it with the real value in
        * tp_proxy_get_interface_by_id */
       g_datalist_id_set_data_full (&self->priv->interfaces, iface,
@@ -863,7 +869,7 @@ tp_proxy_get_property (GObject *object,
         }
       break;
     case PROP_DBUS_CONNECTION:
-      g_value_set_boxed (value, self->priv->dbus_connection);
+      g_value_set_object (value, self->priv->dbus_connection);
       break;
     case PROP_BUS_NAME:
       g_value_set_string (value, self->priv->bus_name);
@@ -914,7 +920,7 @@ tp_proxy_set_property (GObject *object,
             {
               if (self->priv->dbus_connection == NULL)
                 {
-                  self->priv->dbus_connection = dbus_g_connection_ref (
+                  self->priv->dbus_connection = g_object_ref (
                       tp_proxy_get_dbus_connection (self->priv->dbus_daemon));
                 }
               else
@@ -927,17 +933,17 @@ tp_proxy_set_property (GObject *object,
       break;
     case PROP_DBUS_CONNECTION:
         {
-          DBusGConnection *conn = g_value_get_boxed (value);
+          GDBusConnection *conn = g_value_get_object (value);
 
           /* if we're given a NULL dbus-connection, but we've got a
-           * DBusGConnection from the dbus-daemon, we want to keep it */
+           * GDBusConnection from the dbus-daemon, we want to keep it */
           if (conn == NULL)
             return;
 
           if (self->priv->dbus_connection == NULL)
-            self->priv->dbus_connection = g_value_dup_boxed (value);
+            self->priv->dbus_connection = g_value_dup_object (value);
 
-          g_assert (self->priv->dbus_connection == g_value_get_boxed (value));
+          g_assert (self->priv->dbus_connection == g_value_get_object (value));
         }
       break;
     case PROP_BUS_NAME:
@@ -1065,6 +1071,9 @@ tp_proxy_constructor (GType type,
   g_return_val_if_fail (self->priv->object_path != NULL, NULL);
   g_return_val_if_fail (self->priv->bus_name != NULL, NULL);
 
+  DEBUG ("%s:%s -> %s %p", self->priv->bus_name, self->priv->object_path,
+      G_OBJECT_TYPE_NAME (self), self);
+
   g_return_val_if_fail (tp_dbus_check_valid_object_path (self->priv->object_path,
         NULL), NULL);
   g_return_val_if_fail (tp_dbus_check_valid_bus_name (self->priv->bus_name,
@@ -1086,6 +1095,27 @@ tp_proxy_constructor (GType type,
       g_return_val_if_fail (self->priv->bus_name[0] == ':', NULL);
     }
 
+  self->priv->gdbus_closed_signal = g_signal_connect_object (
+      self->priv->dbus_connection, "closed",
+      G_CALLBACK (tp_proxy_closed_cb), self, 0);
+
+  if (self->priv->bus_name[0] == ':')
+    {
+      /* We're tracking a unique name. When it becomes unowned,
+       * signal the destruction of the TpProxy. */
+      DEBUG ("%p: watching whether unique name %s disappears",
+          self, self->priv->bus_name);
+
+      self->priv->unique_name_watch = g_bus_watch_name_on_connection (
+          self->priv->dbus_connection,
+          self->priv->bus_name,
+          G_BUS_NAME_WATCHER_FLAGS_NONE,
+          NULL,
+          tp_proxy_unique_name_vanished_cb,
+          self,
+          NULL);
+    }
+
   return (GObject *) self;
 }
 
@@ -1100,6 +1130,9 @@ tp_proxy_dispose (GObject *object)
 
   DEBUG ("%p", self);
 
+  /* One day we should stop doing this. When that day comes, we need
+   * to make sure the cleanup from tp_proxy_invalidate() is duplicated
+   * here, and is idempotent. */
   tp_proxy_invalidate (self, &e);
 
   tp_clear_object (&self->priv->dbus_daemon);
@@ -1229,8 +1262,8 @@ tp_proxy_class_init (TpProxyClass *klass)
    * The D-Bus connection for this object. Read-only except during
    * construction.
    */
-  param_spec = g_param_spec_boxed ("dbus-connection", "D-Bus connection",
-      "The D-Bus connection used by this object", DBUS_TYPE_G_CONNECTION,
+  param_spec = g_param_spec_object ("dbus-connection", "D-Bus connection",
+      "The D-Bus connection used by this object", G_TYPE_DBUS_CONNECTION,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DBUS_CONNECTION,
       param_spec);
@@ -1378,11 +1411,11 @@ tp_proxy_get_dbus_daemon (gpointer self)
  *
  * Returns: a borrowed reference to the D-Bus connection used by this object.
  *  The caller must reference the returned pointer with
- *  dbus_g_connection_ref() if it will be kept.
+ *  g_object_ref() if it will be kept.
  *
  * Since: 0.7.17
  */
-DBusGConnection *
+GDBusConnection *
 tp_proxy_get_dbus_connection (gpointer self)
 {
   TpProxy *proxy = TP_PROXY (self);
