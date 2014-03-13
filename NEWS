@@ -1,7 +1,15 @@
 telepathy-glib 0.22.2 (UNRELEASED)
 ==================================
 
-...
+Fixes:
+
+• clean up file transfer error handling to fix a crash frequently seen
+  under GLib 2.39 (fd.o #72319, Xavier)
+
+• fix a memory leak when cleaning up TpProxy "prepare" requests
+  (fd.o #76000, Simon)
+
+• fix a memory leak for paths to contacts' avatar data (fd.o #76000, Simon)
 
 telepathy-glib 0.22.1 (2014-01-29)
 ==================================
