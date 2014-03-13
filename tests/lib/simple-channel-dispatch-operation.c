@@ -99,6 +99,12 @@ tp_tests_simple_channel_dispatch_operation_init (TpTestsSimpleChannelDispatchOpe
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TESTS_TYPE_SIMPLE_CHANNEL_DISPATCH_OPERATION,
       TpTestsSimpleChannelDispatchOperationPrivate);
+
+  /* we need something of the appropriate type so GetAll() won't crash */
+  self->priv->chan_path = g_strdup ("/");
+  self->priv->account_path = g_strdup ("/");
+  self->priv->conn_path = g_strdup ("/");
+  self->priv->chan_props = tp_asv_new (NULL, NULL);
 }
 
 static void
@@ -240,6 +246,7 @@ tp_tests_simple_channel_dispatch_operation_set_conn_path (
     TpTestsSimpleChannelDispatchOperation *self,
     const gchar *conn_path)
 {
+  g_free (self->priv->conn_path);
   self->priv->conn_path = g_strdup (conn_path);
 }
 
@@ -248,9 +255,8 @@ tp_tests_simple_channel_dispatch_operation_set_channel (
     TpTestsSimpleChannelDispatchOperation *self,
     TpChannel *chan)
 {
-  g_assert (self->priv->chan_path == NULL);
-  g_assert (self->priv->chan_props == NULL);
-
+  g_hash_table_unref (self->priv->chan_props);
+  g_free (self->priv->chan_path);
   self->priv->chan_path = g_strdup (tp_proxy_get_object_path (chan));
   self->priv->chan_props = tp_tests_dup_channel_props_asv (chan);
 }
@@ -260,5 +266,6 @@ tp_tests_simple_channel_dispatch_operation_set_account_path (
     TpTestsSimpleChannelDispatchOperation *self,
     const gchar *account_path)
 {
+  g_free (self->priv->account_path);
   self->priv->account_path = g_strdup (account_path);
 }
