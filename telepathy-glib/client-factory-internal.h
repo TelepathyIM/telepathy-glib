@@ -72,6 +72,10 @@ TpChannelDispatchOperation *_tp_channel_dispatch_operation_new_with_factory (
     GHashTable *immutable_properties,
     GError **error);
 
+TpTLSCertificate *_tp_tls_certificate_new (TpProxy *conn_or_chan,
+    const gchar *object_path,
+    GError **error);
+
 G_END_DECLS
 
 #endif

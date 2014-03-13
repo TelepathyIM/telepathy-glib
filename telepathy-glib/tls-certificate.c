@@ -25,6 +25,7 @@
 
 #include <glib/gstdio.h>
 
+#include <telepathy-glib/client-factory-internal.h>
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/dbus-internal.h>
@@ -592,8 +593,8 @@ reject_reason_get_dbus_error (TpTLSCertificateRejectReason reason)
   return retval;
 }
 
-/**
- * tp_tls_certificate_new:
+/*
+ * _tp_tls_certificate_new:
  * @conn_or_chan: a #TpConnection or #TpChannel parent for this object, whose
  *  invalidation will also result in invalidation of the returned object
  * @object_path: the object path of this TLS certificate
@@ -606,7 +607,7 @@ reject_reason_get_dbus_error (TpTLSCertificateRejectReason reason)
  * Since: 0.19.0
  */
 TpTLSCertificate *
-tp_tls_certificate_new (TpProxy *conn_or_chan,
+_tp_tls_certificate_new (TpProxy *conn_or_chan,
     const gchar *object_path,
     GError **error)
 {

@@ -420,7 +420,7 @@ create_tls_certificate_impl (TpClientFactory *self,
     const gchar *object_path,
     GError **error)
 {
-  return tp_tls_certificate_new (conn_or_chan, object_path, error);
+  return _tp_tls_certificate_new (conn_or_chan, object_path, error);
 }
 
 static GArray *

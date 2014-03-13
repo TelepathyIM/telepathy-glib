@@ -80,11 +80,6 @@ GQuark tp_tls_certificate_get_feature_quark_core (void);
   (tp_tls_certificate_get_feature_quark_core ())
 
 _TP_AVAILABLE_IN_0_20
-TpTLSCertificate *tp_tls_certificate_new (TpProxy *conn_or_chan,
-    const gchar *object_path,
-    GError **error);
-
-_TP_AVAILABLE_IN_0_20
 TpTLSCertificateRejection *tp_tls_certificate_get_rejection (
     TpTLSCertificate *self);
 

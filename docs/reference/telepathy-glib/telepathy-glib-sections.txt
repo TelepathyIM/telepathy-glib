@@ -6191,7 +6191,6 @@ TpRoomInfoPriv
 <TITLE>TpTLSCertificate</TITLE>
 TpTLSCertificate
 tp_tls_certificate_init_known_interfaces
-tp_tls_certificate_new
 TP_TLS_CERTIFICATE_FEATURE_CORE
 tp_tls_certificate_get_rejection
 tp_tls_certificate_get_nth_rejection
