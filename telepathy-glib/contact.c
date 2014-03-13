@@ -2797,19 +2797,21 @@ mime_file_written (GObject *source_object,
   WriteAvatarData *avatar_data = user_data;
   GFile *file = G_FILE (source_object);
   TpContact *self;
+  gchar *path;
 
   g_assert (file == avatar_data->mime_file);
 
+  path = g_file_get_path (file);
   if (!g_file_replace_contents_finish (file, res, NULL, &error))
     {
       DEBUG ("Failed to store MIME type in cache (%s): %s",
-          g_file_get_path (file), error->message);
+          path, error->message);
       g_clear_error (&error);
     }
   else
     {
       DEBUG ("Contact avatar MIME type stored in cache: %s",
-          g_file_get_path (file));
+          path);
     }
 
   self = g_weak_ref_get (&avatar_data->contact);
@@ -2826,10 +2828,11 @@ mime_file_written (GObject *source_object,
     }
   else
     {
+      gchar *data_path = g_file_get_path (avatar_data->file);
+
       DEBUG ("Saved avatar '%s' of MIME type '%s' still used by '%s' to '%s'",
           avatar_data->token, avatar_data->mime_type,
-          self->priv->identifier,
-          g_file_get_path (avatar_data->file));
+          self->priv->identifier, data_path);
       g_clear_object (&self->priv->avatar_file);
       self->priv->avatar_file = g_object_ref (avatar_data->file);
 
@@ -2842,9 +2845,11 @@ mime_file_written (GObject *source_object,
       g_object_notify ((GObject *) self, "avatar-file");
 
       g_object_unref (self);
+      g_free (data_path);
     }
 
   write_avatar_data_free (avatar_data);
+  g_free (path);
 }
 
 static void
@@ -2855,26 +2860,29 @@ avatar_file_written (GObject *source_object,
   GError *error = NULL;
   WriteAvatarData *avatar_data = user_data;
   GFile *file = G_FILE (source_object);
+  gchar *path = g_file_get_path (file);
 
   g_assert (file == avatar_data->file);
 
   if (!g_file_replace_contents_finish (file, res, NULL, &error))
     {
       DEBUG ("Failed to store avatar in cache (%s): %s",
-          g_file_get_path (file), error->message);
+          path, error->message);
       DEBUG ("Storing the MIME type anyway");
       g_clear_error (&error);
     }
   else
     {
       DEBUG ("Contact avatar stored in cache: %s",
-          g_file_get_path (file));
+          path);
     }
 
   g_file_replace_contents_async (avatar_data->mime_file,
       avatar_data->mime_type, strlen (avatar_data->mime_type),
       NULL, FALSE, G_FILE_CREATE_PRIVATE|G_FILE_CREATE_REPLACE_DESTINATION,
       NULL, mime_file_written, avatar_data);
+
+  g_free (path);
 }
 
 static void
