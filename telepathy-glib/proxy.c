@@ -548,29 +548,6 @@ tp_proxy_has_interface (gpointer self,
 
 static void tp_proxy_poll_features (TpProxy *self, const GError *error);
 
-/* This signature is chosen to match GSourceFunc */
-static gboolean
-tp_proxy_emit_invalidated (gpointer p)
-{
-  TpProxy *self = TP_PROXY (p);
-
-  g_signal_emit (self, signals[SIGNAL_INVALIDATED], 0,
-      self->priv->invalidated->domain, self->priv->invalidated->code,
-      self->priv->invalidated->message);
-
-  /* make all pending tp_proxy_prepare_async calls fail */
-  tp_proxy_poll_features (self, NULL);
-  g_assert_cmpuint (g_queue_get_length (self->priv->prepare_requests), ==, 0);
-
-  /* Don't clear the datalist until after we've emitted the signal, so
-   * the pending call and signal connection friend classes can still get
-   * to the proxies */
-  g_datalist_clear (&self->priv->interfaces);
-  g_clear_object (&self->priv->dbus_connection);
-
-  return FALSE;
-}
-
 /**
  * tp_proxy_invalidate:
  * @self: a proxy
@@ -613,7 +590,19 @@ tp_proxy_invalidate (TpProxy *self, const GError *error)
       self->priv->gdbus_closed_signal = 0;
     }
 
-  tp_proxy_emit_invalidated (self);
+  g_signal_emit (self, signals[SIGNAL_INVALIDATED], 0,
+      self->priv->invalidated->domain, self->priv->invalidated->code,
+      self->priv->invalidated->message);
+
+  /* make all pending tp_proxy_prepare_async calls fail */
+  tp_proxy_poll_features (self, NULL);
+  g_assert_cmpuint (g_queue_get_length (self->priv->prepare_requests), ==, 0);
+
+  /* Don't clear the datalist until after we've emitted the signal, so
+   * the pending call and signal connection friend classes can still get
+   * to the proxies */
+  g_datalist_clear (&self->priv->interfaces);
+  g_clear_object (&self->priv->dbus_connection);
 }
 
 static void
