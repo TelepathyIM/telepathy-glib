@@ -5789,6 +5789,8 @@ tp_client_factory_ensure_protocol
 tp_client_factory_dup_protocol_features
 tp_client_factory_add_protocol_features
 tp_client_factory_add_protocol_features_varargs
+<SUBSECTION>
+tp_client_factory_ensure_tls_certificate
 <SUBSECTION Standard>
 TP_IS_CLIENT_FACTORY
 TP_IS_CLIENT_FACTORY_CLASS

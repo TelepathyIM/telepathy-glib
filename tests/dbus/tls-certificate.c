@@ -26,6 +26,7 @@ typedef struct {
     TpTestsTLSCertificate *service_cert;
 
     /* Client side objects */
+    TpClientFactory *factory;
     TpConnection *connection;
     TpTLSCertificate *cert;
 
@@ -51,6 +52,8 @@ setup (Test *test,
   tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
       "me@test.com", &test->base_connection, &test->connection);
 
+  test->factory = g_object_ref (tp_proxy_get_factory (test->connection));
+
   path = g_strdup_printf ("%s/TlsCertificate",
       tp_proxy_get_object_path (test->connection));
 
@@ -69,8 +72,8 @@ setup (Test *test,
 
   g_ptr_array_unref (chain_data);
 
-  test->cert = tp_tls_certificate_new (TP_PROXY (test->connection), path,
-      &test->error);
+  test->cert = tp_client_factory_ensure_tls_certificate (test->factory,
+      TP_PROXY (test->connection), path, &test->error);
   g_assert_no_error (test->error);
 
   g_free (path);
@@ -93,6 +96,7 @@ teardown (Test *test,
 {
   g_clear_error (&test->error);
 
+  tp_clear_object (&test->factory);
   tp_clear_object (&test->dbus);
   g_main_loop_unref (test->mainloop);
   test->mainloop = NULL;
@@ -286,8 +290,9 @@ test_reject (Test *test,
   /* Test if we cope with an empty rejections list */
   tp_tests_tls_certificate_clear_rejection (test->service_cert);
 
-  cert = tp_tls_certificate_new (TP_PROXY (test->connection),
-      tp_proxy_get_object_path (test->cert), &test->error);
+  cert = tp_client_factory_ensure_tls_certificate (test->factory,
+      TP_PROXY (test->connection), tp_proxy_get_object_path (test->cert),
+      &test->error);
   g_assert_no_error (test->error);
 
   prepare_cert (test, cert);

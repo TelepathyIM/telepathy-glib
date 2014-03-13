@@ -33,6 +33,7 @@
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/dbus-daemon.h>
 #include <telepathy-glib/protocol.h>
+#include <telepathy-glib/tls-certificate.h>
 
 G_BEGIN_DECLS
 
@@ -210,6 +211,14 @@ _TP_AVAILABLE_IN_UNRELEASED
 void tp_client_factory_add_protocol_features_varargs (TpClientFactory *self,
     GQuark feature,
     ...);
+
+/* TpTLSCertificate */
+_TP_AVAILABLE_IN_UNRELEASED
+TpTLSCertificate *tp_client_factory_ensure_tls_certificate (
+    TpClientFactory *self,
+    TpProxy *conn_or_chan,
+    const gchar *object_path,
+    GError **error);
 
 G_END_DECLS
 

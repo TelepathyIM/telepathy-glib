@@ -1469,3 +1469,35 @@ tp_client_factory_add_protocol_features_varargs (
       feature, var_args);
   va_end (var_args);
 }
+
+/**
+ * tp_client_factory_ensure_tls_certificate:
+ * @self: a #TpClientFactory
+ * @conn_or_chan: a #TpConnection or #TpChannel parent for this object, whose
+ *  invalidation will also result in invalidation of the returned object
+ * @object_path: the object path of this TLS certificate
+ * @error: Used to raise an error
+ *
+ * Returns a #TpTLSCertificate proxy for the channel or connection
+ * @conn_or_chan.
+ * The returned #TpTLSCertificate is cached; the same #TpTLSCertificate object
+ * will be returned by this function repeatedly, as long as at least one
+ * reference exists.
+ *
+ * Note that the returned #TpTLSCertificate is not guaranteed to be ready; the
+ * caller is responsible for calling tp_proxy_prepare_async() with the desired
+ * features (as given by tp_client_factory_dup_tls_certificate_features()).
+ *
+ * Returns: (transfer full): a reference to a #TpTLSCertificate,
+ * or %NULL on invalid arguments
+ *
+ * Since: UNRELEASED
+ */
+TpTLSCertificate *
+tp_client_factory_ensure_tls_certificate (TpClientFactory *self,
+    TpProxy *conn_or_chan,
+    const gchar *object_path,
+    GError **error)
+{
+  return tp_tls_certificate_new (conn_or_chan, object_path, error);
+}
