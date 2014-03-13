@@ -83,6 +83,15 @@ tp_proxy_get_interface_by_id (TpProxy *proxy,
   return _tp_proxy_implementation.get_interface_by_id (proxy, iface, error);
 }
 
+gboolean
+tp_proxy_check_interface_by_id (gpointer proxy,
+    GQuark iface,
+    GError **error)
+{
+  g_assert (_tp_proxy_implementation.version != NULL);
+  return _tp_proxy_implementation.check_interface_by_id (proxy, iface, error);
+}
+
 TpProxyPendingCall *
 tp_proxy_pending_call_v0_new (TpProxy *proxy,
     GQuark iface,
@@ -161,6 +170,7 @@ tp_private_proxy_set_implementation (TpProxyImplementation *impl)
   g_assert (_tp_proxy_implementation.version == NULL);
 
   g_assert (impl->get_interface_by_id != NULL);
+  g_assert (impl->check_interface_by_id != NULL);
   g_assert (impl->pending_call_new != NULL);
   g_assert (impl->pending_call_take_pending_call != NULL);
   g_assert (impl->pending_call_take_results != NULL);
