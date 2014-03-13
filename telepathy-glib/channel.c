@@ -658,10 +658,16 @@ _tp_channel_got_properties (TpProxy *proxy,
   const gchar *s;
   gboolean b;
 
-
   if (error != NULL)
     {
       _tp_channel_abort_introspection (self, "GetAll failed", error);
+      return;
+    }
+
+  if (tp_proxy_get_invalidated (self))
+    {
+      /* this will do the necessary cleanup */
+      _tp_channel_continue_introspection (self);
       return;
     }
 
