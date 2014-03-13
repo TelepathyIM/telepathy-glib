@@ -21,6 +21,7 @@ typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
 
+    gchar *cert_path;
     /* Service side objects */
     TpBaseConnection *base_connection;
     TpTestsTLSCertificate *service_cert;
@@ -39,7 +40,6 @@ static void
 setup (Test *test,
        gconstpointer data)
 {
-  gchar *path;
   GPtrArray *chain_data;
   GArray *cert;
 
@@ -54,7 +54,7 @@ setup (Test *test,
 
   test->factory = g_object_ref (tp_proxy_get_factory (test->connection));
 
-  path = g_strdup_printf ("%s/TlsCertificate",
+  test->cert_path = g_strdup_printf ("%s/TlsCertificate",
       tp_proxy_get_object_path (test->connection));
 
   chain_data = g_ptr_array_new_with_free_func ((GDestroyNotify) g_array_unref);
@@ -64,7 +64,7 @@ setup (Test *test,
   g_ptr_array_add (chain_data, cert);
 
   test->service_cert = g_object_new (TP_TESTS_TYPE_TLS_CERTIFICATE,
-      "object-path", path,
+      "object-path", test->cert_path,
       "certificate-type", "x509",
       "certificate-chain-data", chain_data,
       "dbus-daemon", test->dbus,
@@ -73,10 +73,8 @@ setup (Test *test,
   g_ptr_array_unref (chain_data);
 
   test->cert = tp_client_factory_ensure_tls_certificate (test->factory,
-      TP_PROXY (test->connection), path, &test->error);
+      TP_PROXY (test->connection), test->cert_path, &test->error);
   g_assert_no_error (test->error);
-
-  g_free (path);
 }
 
 static void
@@ -88,6 +86,7 @@ disconnect_conn (Test *test)
   tp_tests_connection_assert_disconnect_succeeds (test->connection);
   tp_clear_object (&test->connection);
   tp_clear_object (&test->base_connection);
+  g_free (test->cert_path);
 }
 
 static void
@@ -291,8 +290,7 @@ test_reject (Test *test,
   tp_tests_tls_certificate_clear_rejection (test->service_cert);
 
   cert = tp_client_factory_ensure_tls_certificate (test->factory,
-      TP_PROXY (test->connection), tp_proxy_get_object_path (test->cert),
-      &test->error);
+      TP_PROXY (test->connection), test->cert_path, &test->error);
   g_assert_no_error (test->error);
 
   prepare_cert (test, cert);
