@@ -444,8 +444,6 @@ tp_tls_certificate_class_init (TpTLSCertificateClass *klass)
   GObjectClass *oclass = G_OBJECT_CLASS (klass);
   TpProxyClass *pclass = TP_PROXY_CLASS (klass);
 
-  tp_tls_certificate_init_known_interfaces ();
-
   oclass->get_property = tp_tls_certificate_get_property;
   oclass->set_property = tp_tls_certificate_set_property;
   oclass->constructed = tp_tls_certificate_constructed;
@@ -811,37 +809,6 @@ tp_tls_certificate_reject_finish (TpTLSCertificate *self,
 }
 
 #include <telepathy-glib/_gen/tp-cli-tls-cert-body.h>
-
-/**
- * tp_tls_certificate_init_known_interfaces:
- *
- * Ensure that the known interfaces for TpTLSCertificate have been set up.
- * This is done automatically when necessary, but for correct
- * overriding of library interfaces by local extensions, you should
- * call this function before calling
- * tp_proxy_or_subclass_hook_on_interface_add() with first argument
- * %TP_TYPE_TLS_CERTIFICATE.
- *
- * Since: 0.19.0
- */
-void
-tp_tls_certificate_init_known_interfaces (void)
-{
-  static gsize once = 0;
-
-  if (g_once_init_enter (&once))
-    {
-      GType tp_type = TP_TYPE_TLS_CERTIFICATE;
-
-      tp_proxy_init_known_interfaces ();
-      tp_proxy_or_subclass_hook_on_interface_add (tp_type,
-          tp_cli_tls_cert_add_signals);
-      tp_proxy_subclass_add_error_mapping (tp_type,
-          TP_ERROR_PREFIX, TP_ERROR, TP_TYPE_ERROR);
-
-      g_once_init_leave (&once, 1);
-    }
-}
 
 /**
  * tp_tls_certificate_get_rejection:

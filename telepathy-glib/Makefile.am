@@ -62,7 +62,6 @@ tpginclude_HEADERS = \
     call-channel.h \
     call-content.h \
     call-content-media-description.h \
-    call-misc.h \
     call-stream.h \
     call-stream-endpoint.h \
     channel.h \
@@ -247,7 +246,6 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     call-content.c \
     call-content-media-description.c \
     call-internal.h \
-    call-misc.c \
     call-stream.c \
     call-stream-endpoint.c \
     channel.c \

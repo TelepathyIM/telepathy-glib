@@ -845,7 +845,6 @@ process_media_description (TfCallContent *self,
       return;
     }
 
-  tp_call_content_media_description_init_known_interfaces ();
   proxy = g_object_new (TP_TYPE_PROXY,
       "dbus-daemon", tp_proxy_get_dbus_daemon (self->proxy),
       "bus-name", tp_proxy_get_bus_name (self->proxy),

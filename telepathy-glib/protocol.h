@@ -65,8 +65,6 @@ struct _TpProtocol
   TpProtocolPrivate *priv;
 };
 
-void tp_protocol_init_known_interfaces (void);
-
 const gchar *tp_protocol_get_name (TpProtocol *self);
 
 _TP_AVAILABLE_IN_0_20

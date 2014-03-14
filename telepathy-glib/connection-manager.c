@@ -950,37 +950,6 @@ tp_connection_manager_set_property (GObject *object,
     }
 }
 
-/**
- * tp_connection_manager_init_known_interfaces:
- *
- * Ensure that the known interfaces for TpConnectionManager have been set up.
- * This is done automatically when necessary, but for correct
- * overriding of library interfaces by local extensions, you should
- * call this function before calling
- * tp_proxy_or_subclass_hook_on_interface_add() with first argument
- * %TP_TYPE_CONNECTION_MANAGER.
- *
- * Since: 0.7.32
- */
-void
-tp_connection_manager_init_known_interfaces (void)
-{
-  static gsize once = 0;
-
-  if (g_once_init_enter (&once))
-    {
-      GType tp_type = TP_TYPE_CONNECTION_MANAGER;
-
-      tp_proxy_init_known_interfaces ();
-      tp_proxy_or_subclass_hook_on_interface_add (tp_type,
-          tp_cli_connection_manager_add_signals);
-      tp_proxy_subclass_add_error_mapping (tp_type,
-          TP_ERROR_PREFIX, TP_ERROR, TP_TYPE_ERROR);
-
-      g_once_init_leave (&once, 1);
-    }
-}
-
 enum {
     FEAT_CORE,
     N_FEAT
@@ -1009,8 +978,6 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
-
-  tp_connection_manager_init_known_interfaces ();
 
   g_type_class_add_private (klass, sizeof (TpConnectionManagerPrivate));
 

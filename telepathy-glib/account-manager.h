@@ -88,8 +88,6 @@ gboolean tp_account_manager_can_set_default (void);
 
 TpAccountManager *tp_account_manager_dup (void) G_GNUC_WARN_UNUSED_RESULT;
 
-void tp_account_manager_init_known_interfaces (void);
-
 _TP_AVAILABLE_IN_0_20
 GList *tp_account_manager_dup_usable_accounts (TpAccountManager *manager)
   G_GNUC_WARN_UNUSED_RESULT;

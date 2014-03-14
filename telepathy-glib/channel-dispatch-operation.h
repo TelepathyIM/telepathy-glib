@@ -75,8 +75,6 @@ GType tp_channel_dispatch_operation_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CHANNEL_DISPATCH_OPERATION, \
                               TpChannelDispatchOperationClass))
 
-void tp_channel_dispatch_operation_init_known_interfaces (void);
-
 #define TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE \
   tp_channel_dispatch_operation_get_feature_quark_core ()
 

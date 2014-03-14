@@ -48,7 +48,6 @@
 #include "telepathy-glib/call-stream.h"
 
 #include <telepathy-glib/call-content.h>
-#include <telepathy-glib/call-misc.h>
 #include <telepathy-glib/cli-call.h>
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/dbus.h>
@@ -343,7 +342,6 @@ tp_call_stream_class_init (TpCallStreamClass *klass)
   proxy_class->interface = TP_IFACE_QUARK_CALL1_STREAM;
 
   g_type_class_add_private (gobject_class, sizeof (TpCallStreamPrivate));
-  tp_call_stream_init_known_interfaces ();
 
   /**
    * TpCallStream:connection:
@@ -455,37 +453,6 @@ tp_call_stream_init (TpCallStream *self)
 
   self->priv->remote_members = g_hash_table_new_full (NULL, NULL,
       g_object_unref, NULL);
-}
-
-/**
- * tp_call_stream_init_known_interfaces:
- *
- * Ensure that the known interfaces for #TpCallStream have been set up.
- * This is done automatically when necessary, but for correct
- * overriding of library interfaces by local extensions, you should
- * call this function before calling
- * tp_proxy_or_subclass_hook_on_interface_add() with first argument
- * %TP_TYPE_CALL_STREAM.
- *
- * Since: 0.17.5
- */
-void
-tp_call_stream_init_known_interfaces (void)
-{
-  static gsize once = 0;
-
-  if (g_once_init_enter (&once))
-    {
-      GType tp_type = TP_TYPE_CALL_STREAM;
-
-      tp_proxy_init_known_interfaces ();
-      tp_proxy_or_subclass_hook_on_interface_add (tp_type,
-          tp_cli_call_stream_add_signals);
-      tp_proxy_subclass_add_error_mapping (tp_type,
-          TP_ERROR_PREFIX, TP_ERROR, TP_TYPE_ERROR);
-
-      g_once_init_leave (&once, 1);
-    }
 }
 
 /**

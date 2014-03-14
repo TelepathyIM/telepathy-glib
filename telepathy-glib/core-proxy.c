@@ -29,49 +29,6 @@
 #define DEBUG_FLAG TP_DEBUG_PROXY
 #include "debug-internal.h"
 
-/**
- * tp_proxy_dbus_g_proxy_claim_for_signal_adding:
- * @proxy: a #DBusGProxy
- *
- * Attempt to "claim" a #DBusGProxy for addition of signal signatures.
- * If this function has not been called on @proxy before, %TRUE is
- * returned, and the caller may safely call dbus_g_proxy_add_signal()
- * on @proxy. If this function has already been caled, %FALSE is
- * returned, and the caller may not safely call dbus_g_proxy_add_signal().
- *
- * This is intended for use by auto-generated signal-adding functions,
- * to allow interfaces provided as local extensions to override those in
- * telepathy-glib without causing assertion failures.
- *
- * Returns: %TRUE if it is safe to call dbus_g_proxy_add_signal()
- * Since: 0.7.6
- */
-gboolean
-tp_proxy_dbus_g_proxy_claim_for_signal_adding (DBusGProxy *proxy)
-{
-  static GQuark q = 0;
-
-  g_return_val_if_fail (proxy != NULL, FALSE);
-
-  if (G_UNLIKELY (q == 0))
-    {
-      q = g_quark_from_static_string (
-          "tp_proxy_dbus_g_proxy_claim_for_signal_adding@0.7.6");
-    }
-
-  if (g_object_get_qdata ((GObject *) proxy, q) != NULL)
-    {
-      /* Someone else has already added signal signatures for this interface.
-       * We can't do it again or it'll cause an assertion */
-      return FALSE;
-    }
-
-  /* the proxy is just used as qdata here because it's a convenient
-   * non-NULL pointer */
-  g_object_set_qdata ((GObject *) proxy, q, proxy);
-  return TRUE;
-}
-
 static TpProxyImplementation _tp_proxy_implementation = { NULL };
 
 DBusGProxy *

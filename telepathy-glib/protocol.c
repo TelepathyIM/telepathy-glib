@@ -876,7 +876,6 @@ tp_protocol_class_init (TpProtocolClass *klass)
   proxy_class->list_features = tp_protocol_list_features;
   proxy_class->must_have_unique_name = FALSE;
   proxy_class->interface = TP_IFACE_QUARK_PROTOCOL;
-  tp_protocol_init_known_interfaces ();
 }
 
 static void
@@ -958,39 +957,6 @@ finally:
   g_free (object_path);
   return ret;
 }
-
-/**
- * tp_protocol_init_known_interfaces:
- *
- * Ensure that the known interfaces for TpProtocol have been set up.
- * This is done automatically when necessary, but for correct
- * overriding of library interfaces by local extensions, you should
- * call this function before calling
- * tp_proxy_or_subclass_hook_on_interface_add() with first argument
- * %TP_TYPE_PROTOCOL.
- *
- * Since: 0.11.11
- */
-void
-tp_protocol_init_known_interfaces (void)
-{
-  static gsize once = 0;
-
-  if (g_once_init_enter (&once))
-    {
-      GType type = TP_TYPE_PROTOCOL;
-
-      tp_proxy_init_known_interfaces ();
-
-      tp_proxy_or_subclass_hook_on_interface_add (type,
-          tp_cli_protocol_add_signals);
-      tp_proxy_subclass_add_error_mapping (type,
-          TP_ERROR_PREFIX, TP_ERROR, TP_TYPE_ERROR);
-
-      g_once_init_leave (&once, 1);
-    }
-}
-
 
 /**
  * tp_protocol_get_name:

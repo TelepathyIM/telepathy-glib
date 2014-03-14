@@ -390,16 +390,6 @@ _tpl_call_channel_class_init (TplCallChannelClass *klass)
   proxy_class->list_features = tpl_call_channel_list_features;
 
   g_type_class_add_private (object_class, sizeof (TplCallChannelPriv));
-
-  dbus_g_object_register_marshaller (tpl_marshal_VOID__UINT_UINT_BOXED_BOXED,
-      G_TYPE_NONE,
-      G_TYPE_UINT, G_TYPE_UINT, G_TYPE_BOXED, G_TYPE_BOXED,
-      G_TYPE_INVALID);
-
-  dbus_g_object_register_marshaller (tpl_marshal_VOID__BOXED_BOXED,
-      G_TYPE_NONE,
-      G_TYPE_BOXED, G_TYPE_BOXED,
-      G_TYPE_INVALID);
 }
 
 

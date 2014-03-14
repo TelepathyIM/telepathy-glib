@@ -1939,7 +1939,6 @@ tp_dbus_daemon_release_name
 tp_dbus_daemon_request_name
 tp_dbus_daemon_register_object
 tp_dbus_daemon_unregister_object
-tp_dbus_daemon_init_known_interfaces
 <SUBSECTION Standard>
 tp_dbus_name_type_get_type
 tp_dbus_daemon_get_type
@@ -3009,10 +3008,7 @@ tp_proxy_get_interface_by_id
 tp_proxy_check_interface_by_id
 tp_proxy_invalidate
 TpProxyInterfaceAddedCb
-tp_proxy_or_subclass_hook_on_interface_add
-tp_proxy_init_known_interfaces
 tp_proxy_subclass_add_error_mapping
-tp_proxy_dbus_g_proxy_claim_for_signal_adding
 <SUBSECTION>
 TpProxyInvokeFunc
 tp_proxy_pending_call_v0_new
@@ -3029,7 +3025,6 @@ tp_proxy_signal_connection_v0_take_results
 <INCLUDE>telepathy-glib/channel.h</INCLUDE>
 TpChannel
 TpChannelClass
-tp_channel_init_known_interfaces
 <SUBSECTION>
 TP_CHANNEL_FEATURE_CORE
 tp_channel_get_connection
@@ -3280,7 +3275,6 @@ tp_connection_get_status
 tp_connection_get_cm_name
 tp_connection_get_protocol_name
 tp_connection_get_self_contact
-tp_connection_init_known_interfaces
 tp_connection_presence_type_cmp_availability
 tp_connection_get_capabilities
 tp_connection_get_avatar_requirements
@@ -3676,7 +3670,6 @@ tp_connection_manager_param_get_default
 tp_connection_manager_param_dup_default_variant
 tp_connection_manager_check_valid_name
 tp_connection_manager_check_valid_protocol_name
-tp_connection_manager_init_known_interfaces
 tp_connection_manager_param_copy
 tp_connection_manager_param_free
 tp_connection_manager_param_dup_variant_type
@@ -3980,7 +3973,6 @@ TP_SVC_ACCOUNT_MANAGER_GET_CLASS
 <TITLE>account</TITLE>
 TpAccount
 TpAccountClass
-tp_account_init_known_interfaces
 tp_account_get_path_suffix
 tp_account_get_connection
 tp_account_get_display_name
@@ -4108,7 +4100,6 @@ TpAccountManager
 TpAccountManagerClass
 tp_account_manager_new
 tp_account_manager_new_with_factory
-tp_account_manager_init_known_interfaces
 tp_account_manager_set_default
 tp_account_manager_can_set_default
 tp_account_manager_dup
@@ -4171,7 +4162,6 @@ tp_cli_account_manager_add_signals
 TpChannelDispatcher
 TpChannelDispatcherClass
 tp_channel_dispatcher_new
-tp_channel_dispatcher_init_known_interfaces
 <SUBSECTION>
 tp_cli_channel_dispatcher_interface_messages1_call_send_message
 tp_cli_channel_dispatcher_interface_messages1_callback_for_send_message
@@ -4290,7 +4280,6 @@ TP_SVC_CHANNEL_DISPATCHER_INTERFACE_OPERATION_LIST_GET_CLASS
 <TITLE>channel-dispatch-operation</TITLE>
 TpChannelDispatchOperation
 TpChannelDispatchOperationClass
-tp_channel_dispatch_operation_init_known_interfaces
 <SUBSECTION>
 TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE
 tp_channel_dispatch_operation_get_account
@@ -4325,7 +4314,6 @@ tp_channel_dispatch_operation_get_feature_quark_core
 <TITLE>channel-request</TITLE>
 TpChannelRequest
 TpChannelRequestClass
-tp_channel_request_init_known_interfaces
 tp_channel_request_dup_immutable_properties
 tp_channel_request_get_account
 tp_channel_request_get_user_action_time
@@ -4392,7 +4380,6 @@ TP_TYPE_SVC_CHANNEL_REQUEST
 <TITLE>client</TITLE>
 TpClient
 TpClientClass
-tp_client_init_known_interfaces
 <SUBSECTION Standard>
 tp_client_get_type
 TP_CLIENT
@@ -4854,7 +4841,6 @@ TpProtocol
 TpProtocolClass
 tp_protocol_get_name
 tp_protocol_get_cm_name
-tp_protocol_init_known_interfaces
 <SUBSECTION>
 TP_PROTOCOL_FEATURE_PARAMETERS
 tp_protocol_get_params
@@ -5610,7 +5596,6 @@ tp_cli_call_content_add_signals
 <SUBSECTION>
 TpCallContent
 TpCallContentClass
-tp_call_content_init_known_interfaces
 TP_CALL_CONTENT_FEATURE_CORE
 <SUBSECTION>
 tp_call_content_get_disposition
@@ -5694,7 +5679,6 @@ tp_cli_call_stream_add_signals
 <SUBSECTION>
 TpCallStream
 TpCallStreamClass
-tp_call_stream_init_known_interfaces
 TP_CALL_STREAM_FEATURE_CORE
 <SUBSECTION>
 tp_call_stream_can_request_receiving
@@ -5749,15 +5733,6 @@ tp_cli_call1_stream_endpoint_signal_callback_remote_credentials_set
 <SUBSECTION Standard>
 tp_cli_call_content_media_description_add_signals
 tp_cli_call_stream_endpoint_add_signals
-</SECTION>
-
-<SECTION>
-<FILE>call-misc</FILE>
-<TITLE>call-misc</TITLE>
-<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
-<SUBSECTION>
-tp_call_content_media_description_init_known_interfaces
-tp_call_stream_endpoint_init_known_interfaces
 </SECTION>
 
 <SECTION>
@@ -6086,7 +6061,6 @@ TpBaseMediaCallChannelPrivate
 <SUBSECTION>
 TpDebugClient
 TpDebugClientClass
-tp_debug_client_init_known_interfaces
 tp_debug_client_new
 tp_debug_client_set_enabled_async
 tp_debug_client_set_enabled_finish
@@ -6231,7 +6205,6 @@ TP_TYPE_CHANNEL_FILTER
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <TITLE>TpTLSCertificate</TITLE>
 TpTLSCertificate
-tp_tls_certificate_init_known_interfaces
 TP_TLS_CERTIFICATE_FEATURE_CORE
 tp_tls_certificate_get_rejection
 tp_tls_certificate_get_nth_rejection

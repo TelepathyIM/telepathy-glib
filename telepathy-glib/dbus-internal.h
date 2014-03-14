@@ -30,8 +30,6 @@ G_BEGIN_DECLS
 gboolean _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self, gint timeout_ms,
     const gchar *well_known_name, gchar **unique_name, GError **error);
 
-void _tp_register_dbus_glib_marshallers (void);
-
 gboolean _tp_dbus_daemon_is_the_shared_one (TpDBusDaemon *self);
 
 G_END_DECLS

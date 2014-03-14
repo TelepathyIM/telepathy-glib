@@ -1144,8 +1144,6 @@ tp_channel_class_init (TpChannelClass *klass)
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
 
-  tp_channel_init_known_interfaces ();
-
   g_type_class_add_private (klass, sizeof (TpChannelPrivate));
 
   object_class->constructor = tp_channel_constructor;
@@ -1455,41 +1453,6 @@ _tp_channel_new_with_factory (TpClientFactory *factory,
 
 finally:
   return ret;
-}
-
-static gpointer
-tp_channel_once (gpointer data G_GNUC_UNUSED)
-{
-  GType type = TP_TYPE_CHANNEL;
-
-  tp_proxy_init_known_interfaces ();
-
-  tp_proxy_or_subclass_hook_on_interface_add (type,
-      tp_cli_channel_add_signals);
-  tp_proxy_subclass_add_error_mapping (type,
-      TP_ERROR_PREFIX, TP_ERROR, TP_TYPE_ERROR);
-
-  return NULL;
-}
-
-/**
- * tp_channel_init_known_interfaces:
- *
- * Ensure that the known interfaces for TpChannel have been set up.
- * This is done automatically when necessary, but for correct
- * overriding of library interfaces by local extensions, you should
- * call this function before calling
- * tp_proxy_or_subclass_hook_on_interface_add() with first argument
- * %TP_TYPE_CHANNEL.
- *
- * Since: 0.7.6
- */
-void
-tp_channel_init_known_interfaces (void)
-{
-  static GOnce once = G_ONCE_INIT;
-
-  g_once (&once, tp_channel_once, NULL);
 }
 
 /**

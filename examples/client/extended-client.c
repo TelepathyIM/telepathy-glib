@@ -287,8 +287,6 @@ main (int argc,
 
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
-  example_cli_init ();
-
   dbus = tp_dbus_daemon_dup (&error);
 
   if (dbus == NULL)

@@ -54,7 +54,6 @@
 #include <telepathy-glib/call-channel.h>
 #include <telepathy-glib/call-content-media-description.h>
 #include <telepathy-glib/call-content.h>
-#include <telepathy-glib/call-misc.h>
 #include <telepathy-glib/call-stream-endpoint.h>
 #include <telepathy-glib/call-stream.h>
 #include <telepathy-glib/capabilities.h>

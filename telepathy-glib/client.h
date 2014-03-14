@@ -68,8 +68,6 @@ GType tp_client_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CLIENT, \
                               TpClientClass))
 
-void tp_client_init_known_interfaces (void);
-
 G_END_DECLS
 
 #endif

@@ -229,7 +229,6 @@ tp_debug_client_class_init (TpDebugClientClass *klass)
       1, TP_TYPE_DEBUG_MESSAGE);
 
   g_type_class_add_private (klass, sizeof (TpDebugClientPrivate));
-  tp_debug_client_init_known_interfaces ();
 }
 
 GQuark
@@ -316,37 +315,6 @@ tp_debug_client_list_features (TpProxyClass *klass)
     }
 
   return features;
-}
-
-/**
- * tp_debug_client_init_known_interfaces:
- *
- * Ensure that the known interfaces for TpDebugClient have been set up.
- * This is done automatically when necessary, but for correct
- * overriding of library interfaces by local extensions, you should
- * call this function before calling
- * tp_proxy_or_subclass_hook_on_interface_add() with first argument
- * %TP_TYPE_DEBUG_CLIENT.
- *
- * Since: 0.19.0
- */
-void
-tp_debug_client_init_known_interfaces (void)
-{
-  static gsize once = 0;
-
-  if (g_once_init_enter (&once))
-    {
-      GType tp_type = TP_TYPE_DEBUG_CLIENT;
-
-      tp_proxy_init_known_interfaces ();
-      tp_proxy_or_subclass_hook_on_interface_add (tp_type,
-          tp_cli_debug_add_signals);
-      tp_proxy_subclass_add_error_mapping (tp_type,
-          TP_ERROR_PREFIX, TP_ERROR, TP_TYPE_ERROR);
-
-      g_once_init_leave (&once, 1);
-    }
 }
 
 /**

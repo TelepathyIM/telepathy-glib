@@ -177,8 +177,6 @@ void tp_list_connection_names (TpDBusDaemon *bus_daemon,
     gpointer user_data, GDestroyNotify destroy,
     GObject *weak_object);
 
-void tp_connection_init_known_interfaces (void);
-
 gint tp_connection_presence_type_cmp_availability (TpConnectionPresenceType p1,
   TpConnectionPresenceType p2);
 

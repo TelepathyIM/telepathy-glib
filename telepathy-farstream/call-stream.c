@@ -911,7 +911,6 @@ tf_call_stream_add_endpoint (TfCallStream *self, const gchar *obj_path)
 
   self->endpoint_objpath = g_strdup (obj_path);
 
-  tp_call_stream_endpoint_init_known_interfaces ();
   self->endpoint = g_object_new (TP_TYPE_PROXY,
       "dbus-daemon", tp_proxy_get_dbus_daemon (self->proxy),
       "bus-name", tp_proxy_get_bus_name (self->proxy),

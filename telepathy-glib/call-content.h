@@ -59,9 +59,6 @@ struct _TpCallContentClass
 _TP_AVAILABLE_IN_0_18
 GType tp_call_content_get_type (void);
 
-_TP_AVAILABLE_IN_0_18
-void tp_call_content_init_known_interfaces (void);
-
 #define TP_CALL_CONTENT_FEATURE_CORE \
   tp_call_content_get_feature_quark_core ()
 _TP_AVAILABLE_IN_0_18

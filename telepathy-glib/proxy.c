@@ -169,18 +169,6 @@ tp_dbus_errors_quark (void)
  */
 
 /**
- * TpProxyInterfaceAddedCb:
- * @self: the proxy
- * @quark: a quark whose string value is the interface being added
- * @proxy: the #DBusGProxy for the added interface
- * @unused: unused
- *
- * The signature of a #TpProxy::interface-added signal callback.
- *
- * Since: 0.7.1
- */
-
-/**
  * TpProxyClass:
  * @parent_class: The parent class structure
  * @interface: If set non-zero by a subclass, #TpProxy will
@@ -248,13 +236,6 @@ struct _TpProxyErrorMappingLink {
     GQuark domain;
     GEnumClass *code_enum_class;
     TpProxyErrorMappingLink *next;
-};
-
-typedef struct _TpProxyInterfaceAddLink TpProxyInterfaceAddLink;
-
-struct _TpProxyInterfaceAddLink {
-    TpProxyInterfaceAddedCb callback;
-    TpProxyInterfaceAddLink *next;
 };
 
 struct _TpProxyFeaturePrivate
@@ -400,7 +381,6 @@ enum
 };
 
 enum {
-    SIGNAL_INTERFACE_ADDED,
     SIGNAL_INVALIDATED,
     N_SIGNALS
 };
@@ -987,19 +967,6 @@ tp_proxy_init (TpProxy *self)
   self->priv->prepare_requests = g_queue_new ();
 }
 
-static GQuark
-interface_added_cb_quark (void)
-{
-  static GQuark q = 0;
-
-  if (G_UNLIKELY (q == 0))
-    {
-      q = g_quark_from_static_string ("TpProxyInterfaceAddedCb_0.7.1");
-    }
-
-  return q;
-}
-
 static FeatureState
 tp_proxy_get_feature_state (TpProxy *self,
     GQuark feature)
@@ -1042,11 +1009,8 @@ tp_proxy_constructor (GType type,
   TpProxy *self = TP_PROXY (object_class->constructor (type,
         n_params, params));
   TpProxyClass *klass = TP_PROXY_GET_CLASS (self);
-  TpProxyInterfaceAddLink *iter;
   GType proxy_parent_type = G_TYPE_FROM_CLASS (tp_proxy_parent_class);
   GType ancestor_type;
-
-  _tp_register_dbus_glib_marshallers ();
 
   for (ancestor_type = type;
        ancestor_type != proxy_parent_type && ancestor_type != 0;
@@ -1056,13 +1020,6 @@ tp_proxy_constructor (GType type,
       const TpProxyFeature *features;
       guint i;
       GArray *core_features;
-
-      for (iter = g_type_get_qdata (ancestor_type,
-              interface_added_cb_quark ());
-           iter != NULL;
-           iter = iter->next)
-        g_signal_connect (self, "interface-added", G_CALLBACK (iter->callback),
-            NULL);
 
       if (ancestor == NULL || ancestor->list_features == NULL)
         continue;
@@ -1175,42 +1132,6 @@ tp_proxy_finalize (GObject *object)
 }
 
 /**
- * tp_proxy_or_subclass_hook_on_interface_add:
- * @proxy_or_subclass: The #GType of #TpProxy or a subclass
- * @callback: A signal handler for #TpProxy::interface-added
- *
- * Arrange for @callback to be connected to #TpProxy::interface-added
- * during the #TpProxy constructor. This is done sufficiently early that
- * it will see the signal for the default interface (@interface member of
- * #TpProxyClass), if any, being added. The intended use is for the callback
- * to call dbus_g_proxy_add_signal() on the new #DBusGProxy.
- *
- * Since 0.7.6, to ensure correct overriding of interfaces that might be
- * added to telepathy-glib, before calling this function you should
- * call tp_proxy_init_known_interfaces, tp_connection_init_known_interfaces,
- * tp_channel_init_known_interfaces etc. as appropriate for the subclass.
- *
- * Since: 0.7.1
- */
-void
-tp_proxy_or_subclass_hook_on_interface_add (GType proxy_or_subclass,
-    TpProxyInterfaceAddedCb callback)
-{
-  GQuark q = interface_added_cb_quark ();
-  TpProxyInterfaceAddLink *old_link = g_type_get_qdata (proxy_or_subclass, q);
-  TpProxyInterfaceAddLink *new_link;
-
-  g_return_if_fail (g_type_is_a (proxy_or_subclass, TP_TYPE_PROXY));
-  g_return_if_fail (callback != NULL);
-
-  /* never freed, suppressed in telepathy-glib.supp */
-  new_link = g_slice_new0 (TpProxyInterfaceAddLink);
-  new_link->callback = callback;
-  new_link->next = old_link;    /* may be NULL */
-  g_type_set_qdata (proxy_or_subclass, q, new_link);
-}
-
-/**
  * tp_proxy_subclass_add_error_mapping:
  * @proxy_subclass: The #GType of a subclass of #TpProxy (which must not be
  *  #TpProxy itself)
@@ -1271,13 +1192,15 @@ tp_proxy_subclass_add_error_mapping (GType proxy_subclass,
   g_type_set_qdata (proxy_subclass, q, new_link);
 }
 
+static void tp_proxy_once (void);
+
 static void
 tp_proxy_class_init (TpProxyClass *klass)
 {
   GParamSpec *param_spec;
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-  tp_proxy_init_known_interfaces ();
+  tp_proxy_once ();
 
   g_type_class_add_private (klass, sizeof (TpProxyPrivate));
 
@@ -1358,28 +1281,6 @@ tp_proxy_class_init (TpProxyClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_FACTORY,
       param_spec);
-
-  /**
-   * TpProxy::interface-added: (skip)
-   * @self: the proxy object
-   * @id: the GQuark representing the interface
-   * @proxy: the dbus-glib proxy representing the interface
-   *
-   * Emitted when this proxy has gained an interface. It is not guaranteed
-   * to be emitted immediately, but will be emitted before the interface is
-   * first used (at the latest: before it's returned from
-   * tp_proxy_get_interface_by_id(), any signal is connected, or any
-   * method is called).
-   *
-   * The intended use is to call dbus_g_proxy_add_signals(). This signal
-   * should only be used by TpProy implementations
-   */
-  signals[SIGNAL_INTERFACE_ADDED] = g_signal_new ("interface-added",
-      G_OBJECT_CLASS_TYPE (klass),
-      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-      0,
-      NULL, NULL, NULL,
-      G_TYPE_NONE, 2, G_TYPE_UINT, DBUS_TYPE_G_PROXY);
 
   /**
    * TpProxy::invalidated:
@@ -1547,8 +1448,8 @@ tp_proxy_get_invalidated (gpointer self)
   return proxy->priv->invalidated;
 }
 
-static gpointer
-tp_proxy_once (gpointer data G_GNUC_UNUSED)
+static void
+tp_proxy_once (void)
 {
   TpProxyImplementation impl = {
       VERSION,
@@ -1566,33 +1467,6 @@ tp_proxy_once (gpointer data G_GNUC_UNUSED)
   };
 
   tp_private_proxy_set_implementation (&impl);
-
-  tp_proxy_or_subclass_hook_on_interface_add (impl.type,
-      tp_cli_generic_add_signals);
-
-  return NULL;
-}
-
-/**
- * tp_proxy_init_known_interfaces:
- *
- * Ensure that the known interfaces for TpProxy have been set up.
- * This is done automatically when necessary, but for correct
- * overriding of library interfaces by local extensions, you should
- * call this function before calling
- * tp_proxy_or_subclass_hook_on_interface_add().
- *
- * Functions like tp_connection_init_known_interfaces and
- * tp_channel_init_known_interfaces do this automatically.
- *
- * Since: 0.7.6
- */
-void
-tp_proxy_init_known_interfaces (void)
-{
-  static GOnce once = G_ONCE_INIT;
-
-  g_once (&once, tp_proxy_once, NULL);
 }
 
 static const TpProxyFeature *

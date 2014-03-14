@@ -69,8 +69,6 @@ GType tp_channel_request_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CHANNEL_REQUEST, \
                               TpChannelRequestClass))
 
-void tp_channel_request_init_known_interfaces (void);
-
 _TP_AVAILABLE_IN_0_20
 GVariant *tp_channel_request_dup_immutable_properties (TpChannelRequest *self);
 

@@ -62,32 +62,12 @@ struct _TpLoggerPriv
 };
 
 static void
-tp_logger_init_known_interfaces (void)
-{
-  static gsize once = 0;
-
-  if (g_once_init_enter (&once))
-    {
-      GType tp_type = TP_TYPE_ACCOUNT_MANAGER;
-
-      tp_proxy_init_known_interfaces ();
-      tp_proxy_or_subclass_hook_on_interface_add (tp_type,
-          tp_cli_logger_add_signals);
-      tp_proxy_subclass_add_error_mapping (tp_type,
-          TP_ERROR_PREFIX, TP_ERROR, TP_TYPE_ERROR);
-
-      g_once_init_leave (&once, 1);
-    }
-}
-
-static void
 tp_logger_class_init (
     TpLoggerClass *klass)
 {
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
 
   proxy_class->interface = TP_IFACE_QUARK_LOGGER;
-  tp_logger_init_known_interfaces ();
 
   g_type_class_add_private (klass, sizeof (TpLoggerPriv));
 }

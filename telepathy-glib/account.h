@@ -88,8 +88,6 @@ GQuark tp_account_get_feature_quark_addressing (void) G_GNUC_CONST;
 
 const gchar *tp_account_get_path_suffix (TpAccount *account);
 
-void tp_account_init_known_interfaces (void);
-
 TpConnection *tp_account_get_connection (TpAccount *account);
 
 const gchar *tp_account_get_display_name (TpAccount *account);

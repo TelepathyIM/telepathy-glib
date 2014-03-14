@@ -112,9 +112,6 @@ gboolean tp_tls_certificate_reject_finish (TpTLSCertificate *self,
     GError **error);
 
 _TP_AVAILABLE_IN_0_20
-void tp_tls_certificate_init_known_interfaces (void);
-
-_TP_AVAILABLE_IN_0_20
 const gchar * tp_tls_certificate_get_cert_type (TpTLSCertificate *self);
 _TP_AVAILABLE_IN_0_20
 GPtrArray * tp_tls_certificate_get_cert_data (TpTLSCertificate *self);

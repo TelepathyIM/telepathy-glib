@@ -50,7 +50,6 @@
 #include <config.h>
 
 #include <telepathy-glib/call-content.h>
-#include <telepathy-glib/call-misc.h>
 #include <telepathy-glib/call-stream.h>
 #include <telepathy-glib/cli-channel.h>
 #include <telepathy-glib/cli-misc.h>

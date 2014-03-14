@@ -44,7 +44,6 @@ libexample_extensions_la_SOURCES = \
     extensions.h
 
 nodist_libexample_extensions_la_SOURCES = \
-    _gen/register-dbus-glib-marshallers-body.h \
     _gen/enums.h \
     _gen/gtypes.h \
     _gen/gtypes-body.h \
@@ -87,11 +86,6 @@ _gen/gtypes-body.h: _gen/all.xml \
 	$(top_srcdir)/tools/glib-gtypes-generator.py
 	$(AM_V_GEN)$(PYTHON) $(top_srcdir)/tools/glib-gtypes-generator.py \
 		$< _gen/gtypes Example
-
-_gen/register-dbus-glib-marshallers-body.h: _gen/all.xml \
-	$(tools_dir)/glib-client-marshaller-gen.py
-	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-client-marshaller-gen.py $< \
-		_example_ext > $@
 
 _gen/enums.h: _gen/all.xml \
 	$(tools_dir)/c-constants-gen.py

@@ -84,9 +84,6 @@ GType tp_debug_client_get_type (void);
                               TpDebugClientClass))
 
 _TP_AVAILABLE_IN_0_20
-void tp_debug_client_init_known_interfaces (void);
-
-_TP_AVAILABLE_IN_0_20
 void tp_debug_client_get_messages_async (
     TpDebugClient *self,
     GAsyncReadyCallback callback,

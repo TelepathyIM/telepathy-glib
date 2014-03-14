@@ -138,8 +138,6 @@ _TP_AVAILABLE_IN_0_24
 GVariantType *tp_connection_manager_param_dup_variant_type (
     const TpConnectionManagerParam *param);
 
-void tp_connection_manager_init_known_interfaces (void);
-
 #define TP_CONNECTION_MANAGER_FEATURE_CORE \
   (tp_connection_manager_get_feature_quark_core ())
 

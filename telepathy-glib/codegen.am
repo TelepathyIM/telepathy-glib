@@ -103,7 +103,6 @@ nodist_libtelepathy_glib_main_internal_la_SOURCES = \
     $(NULL)
 
 nodist_libtelepathy_glib_dbus_internal_la_SOURCES += \
-    _gen/register-dbus-glib-marshallers-body.h \
     _gen/tp-cli-account-body.h \
     _gen/tp-cli-account-manager-body.h \
     _gen/tp-cli-call-content-body.h \
@@ -212,10 +211,6 @@ _gen/telepathy-interfaces.h: _gen/stable-spec.xml \
 	$(tools_dir)/glib-interfaces-gen.py
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-interfaces-gen.py \
 		Tp _gen/interfaces-body.h _gen/telepathy-interfaces.h $<
-
-_gen/register-dbus-glib-marshallers-body.h: _gen/stable-spec.xml \
-	$(tools_dir)/glib-client-marshaller-gen.py
-	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-client-marshaller-gen.py $< _tp > $@
 
 _gen/genums.c: _gen/spec-stamp genums.c.template \
 		$(tpginclude_HEADERS) codegen.am

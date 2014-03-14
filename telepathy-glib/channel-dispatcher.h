@@ -73,8 +73,6 @@ GType tp_channel_dispatcher_get_type (void);
 TpChannelDispatcher *tp_channel_dispatcher_new (TpDBusDaemon *bus_daemon)
     G_GNUC_WARN_UNUSED_RESULT;
 
-void tp_channel_dispatcher_init_known_interfaces (void);
-
 _TP_AVAILABLE_IN_0_16
 void tp_channel_dispatcher_present_channel_async (TpChannelDispatcher *self,
     TpChannel *channel,

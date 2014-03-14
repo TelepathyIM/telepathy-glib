@@ -57,12 +57,6 @@ TpProxySignalConnection *tp_proxy_signal_connection_v0_new (TpProxy *self,
 void tp_proxy_signal_connection_v0_take_results
     (TpProxySignalConnection *sc, GValueArray *args);
 
-typedef void (*TpProxyInterfaceAddedCb) (TpProxy *self,
-    guint quark, DBusGProxy *proxy, gpointer unused);
-
-void tp_proxy_or_subclass_hook_on_interface_add (GType proxy_or_subclass,
-    TpProxyInterfaceAddedCb callback);
-
 _TP_AVAILABLE_IN_0_20
 DBusGProxy *tp_proxy_get_interface_by_id (TpProxy *self, GQuark iface,
     GError **error);
@@ -71,13 +65,6 @@ void tp_proxy_add_interface_by_id (TpProxy *self, GQuark iface);
 void tp_proxy_add_interfaces (TpProxy *self, const gchar * const *interfaces);
 
 void tp_proxy_invalidate (TpProxy *self, const GError *error);
-
-void tp_proxy_subclass_add_error_mapping (GType proxy_subclass,
-    const gchar *static_prefix, GQuark domain, GType code_enum_type);
-
-gboolean tp_proxy_dbus_g_proxy_claim_for_signal_adding (DBusGProxy *proxy);
-
-void tp_proxy_init_known_interfaces (void);
 
 G_END_DECLS
 

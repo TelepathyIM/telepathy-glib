@@ -59,9 +59,6 @@ struct _TpCallStreamClass
 _TP_AVAILABLE_IN_0_18
 GType tp_call_stream_get_type (void);
 
-_TP_AVAILABLE_IN_0_18
-void tp_call_stream_init_known_interfaces (void);
-
 #define TP_CALL_STREAM_FEATURE_CORE \
   tp_call_stream_get_feature_quark_core ()
 _TP_AVAILABLE_IN_0_18

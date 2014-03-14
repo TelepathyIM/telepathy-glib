@@ -23,7 +23,6 @@
 #define TELEPATHY_GLIB_CLI_CALL_H
 
 #include <telepathy-glib/call-content.h>
-#include <telepathy-glib/call-misc.h>
 #include <telepathy-glib/call-stream.h>
 
 #include <telepathy-glib/_gen/tp-cli-call-content.h>

@@ -77,8 +77,6 @@ GQuark tp_errors_removed_from_group_quark (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CHANNEL, \
                               TpChannelClass))
 
-void tp_channel_init_known_interfaces (void);
-
 _TP_AVAILABLE_IN_0_20
 TpConnection *tp_channel_get_connection (TpChannel *self);
 _TP_AVAILABLE_IN_0_20
