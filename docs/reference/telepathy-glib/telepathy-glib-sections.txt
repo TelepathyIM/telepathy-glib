@@ -3010,10 +3010,8 @@ tp_proxy_invalidate
 TpProxyInterfaceAddedCb
 <SUBSECTION>
 TpProxyWrapperFunc
-TpProxyInvokeFunc
 tp_proxy_pending_call_v1_new
-tp_proxy_signal_connection_v0_new
-tp_proxy_signal_connection_v0_take_results
+tp_proxy_signal_connection_v1_new
 </SECTION>
 
 <SECTION>

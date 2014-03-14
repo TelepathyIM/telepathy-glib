@@ -47,16 +47,13 @@ typedef struct {
     TpProxySignalConnection *(*signal_connection_new) (TpProxy *,
         GQuark,
         const gchar *,
-        const GType *,
-        GCallback,
-        TpProxyInvokeFunc,
+        const GVariantType *,
+        TpProxyWrapperFunc,
         GCallback,
         gpointer,
         GDestroyNotify,
         GObject *,
         GError **);
-    void (*signal_connection_take_results) (TpProxySignalConnection *,
-        GValueArray *);
 
     GType type;
 } TpProxyImplementation;
@@ -78,20 +75,17 @@ _tp_proxy_pending_call_v1_new (TpProxy *proxy,
     GDestroyNotify destroy,
     GObject *weak_object);
 
-TpProxySignalConnection *_tp_proxy_signal_connection_new (TpProxy *self,
+TpProxySignalConnection *
+_tp_proxy_signal_connection_v1_new (TpProxy *self,
     GQuark iface,
     const gchar *member,
-    const GType *expected_types,
-    GCallback collect_args,
-    TpProxyInvokeFunc invoke_callback,
+    const GVariantType *expected_types,
+    TpProxyWrapperFunc wrapper,
     GCallback callback,
     gpointer user_data,
     GDestroyNotify destroy,
     GObject *weak_object,
     GError **error);
-
-void _tp_proxy_signal_connection_take_results (TpProxySignalConnection *sc,
-    GValueArray *args);
 
 /*
  * Implemented in the -core library, and called by the -main library.
@@ -122,5 +116,10 @@ gboolean _tp_proxy_will_announce_connected_finish (TpProxy *self,
 
 void _tp_proxy_ensure_factory (gpointer self,
     TpClientFactory *factory);
+
+void _tp_proxy_add_signal_connection (TpProxy *self,
+    TpProxySignalConnection *sc);
+void _tp_proxy_remove_signal_connection (TpProxy *self,
+    TpProxySignalConnection *sc);
 
 #endif

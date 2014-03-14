@@ -32,9 +32,6 @@ G_BEGIN_DECLS
 typedef void (*TpProxyWrapperFunc) (TpProxy *self,
     const GError *error, GVariant *args,
     GCallback callback, gpointer user_data, GObject *weak_object);
-typedef void (*TpProxyInvokeFunc) (TpProxy *self,
-    GError *error, GValueArray *args, GCallback callback, gpointer user_data,
-    GObject *weak_object);
 
 TpProxyPendingCall *tp_proxy_pending_call_v1_new (TpProxy *self,
     gint timeout_ms, GQuark iface, const gchar *member,
@@ -42,15 +39,11 @@ TpProxyPendingCall *tp_proxy_pending_call_v1_new (TpProxy *self,
     GCallback callback, gpointer user_data, GDestroyNotify destroy,
     GObject *weak_object);
 
-TpProxySignalConnection *tp_proxy_signal_connection_v0_new (TpProxy *self,
-    GQuark iface, const gchar *member,
-    const GType *expected_types,
-    GCallback collect_args, TpProxyInvokeFunc invoke_callback,
+TpProxySignalConnection *tp_proxy_signal_connection_v1_new (TpProxy *self,
+    GQuark iface, const gchar *member, const GVariantType *expected_types,
+    TpProxyWrapperFunc wrapper,
     GCallback callback, gpointer user_data, GDestroyNotify destroy,
     GObject *weak_object, GError **error);
-
-void tp_proxy_signal_connection_v0_take_results
-    (TpProxySignalConnection *sc, GValueArray *args);
 
 GDBusProxy *tp_proxy_get_interface_by_id (TpProxy *self, GQuark iface,
     GError **error);

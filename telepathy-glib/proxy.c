@@ -355,6 +355,9 @@ struct _TpProxyPrivate {
 
     TpClientFactory *factory;
 
+    /* used as a set, may be %NULL */
+    GHashTable *signal_connections;
+
     gulong gdbus_closed_signal;
     guint unique_name_watch;
 };
@@ -537,6 +540,36 @@ tp_proxy_has_interface (gpointer self,
 
 static void tp_proxy_poll_features (TpProxy *self, const GError *error);
 
+/* Signature chosen to be a GSourceFunc */
+static gboolean
+tp_proxy_disconnect_all_signals (gpointer p)
+{
+  TpProxy *self = p;
+  GHashTableIter iter;
+  GHashTable *signal_connections;
+  gpointer sc;
+
+  DEBUG ("%p", self);
+
+  signal_connections = self->priv->signal_connections;
+  /* make _tp_proxy_remove_signal_connection do nothing */
+  self->priv->signal_connections = NULL;
+
+  if (signal_connections == NULL)
+    return FALSE;
+
+  g_hash_table_iter_init (&iter, signal_connections);
+
+  while (g_hash_table_iter_next (&iter, &sc, NULL))
+    {
+      g_hash_table_iter_remove (&iter);
+      tp_proxy_signal_connection_disconnect (sc);
+    }
+
+  g_hash_table_unref (signal_connections);
+  return FALSE;
+}
+
 /**
  * tp_proxy_invalidate:
  * @self: a proxy
@@ -592,6 +625,21 @@ tp_proxy_invalidate (TpProxy *self, const GError *error)
    * to the proxies */
   g_datalist_clear (&self->priv->interfaces);
   g_clear_object (&self->priv->dbus_connection);
+
+  /* Don't disconnect D-Bus signal handlers until we go back to the main
+   * loop, so that if this is called in response to StatusChanged or similar,
+   * any other handlers to StatusChanged get a chance to run.
+   *
+   * This is deliberately the same priority with which GDBus schedules
+   * signal callbacks, so it happens immediately after the signal callbacks
+   * themselves. */
+  if (self->priv->signal_connections != NULL)
+    {
+      DEBUG ("%p: disconnecting signal handlers later", self);
+      g_idle_add_full (G_PRIORITY_DEFAULT,
+          tp_proxy_disconnect_all_signals, g_object_ref (self),
+          g_object_unref);
+    }
 }
 
 static void
@@ -1041,6 +1089,10 @@ tp_proxy_dispose (GObject *object)
       "Proxy unreferenced" };
 
   DEBUG ("%p", self);
+
+  /* Do this explicitly here, so that we're at least not relying on
+   * tp_proxy_invalidate() for this one thing. */
+  tp_proxy_disconnect_all_signals (self);
 
   /* One day we should stop doing this. When that day comes, we need
    * to make sure the cleanup from tp_proxy_invalidate() is duplicated
@@ -2142,4 +2194,26 @@ _tp_proxy_will_announce_connected_finish (TpProxy *self,
     GError **error)
 {
   _tp_implement_finish_void (self, _tp_proxy_will_announce_connected_async)
+}
+
+void
+_tp_proxy_add_signal_connection (TpProxy *self,
+    TpProxySignalConnection *sc)
+{
+  g_assert (self->priv->invalidated == NULL);
+
+  if (self->priv->signal_connections == NULL)
+    {
+      self->priv->signal_connections = g_hash_table_new (NULL, NULL);
+    }
+
+  g_hash_table_add (self->priv->signal_connections, sc);
+}
+
+void
+_tp_proxy_remove_signal_connection (TpProxy *self,
+    TpProxySignalConnection *sc)
+{
+  if (self->priv->signal_connections != NULL)
+    g_hash_table_remove (self->priv->signal_connections, sc);
 }

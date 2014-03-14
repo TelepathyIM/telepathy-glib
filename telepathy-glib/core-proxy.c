@@ -60,12 +60,11 @@ tp_proxy_pending_call_v1_new (TpProxy *proxy,
 }
 
 TpProxySignalConnection *
-tp_proxy_signal_connection_v0_new (TpProxy *self,
+tp_proxy_signal_connection_v1_new (TpProxy *self,
     GQuark iface,
     const gchar *member,
-    const GType *expected_types,
-    GCallback collect_args,
-    TpProxyInvokeFunc invoke_callback,
+    const GVariantType *expected_types,
+    TpProxyWrapperFunc wrapper,
     GCallback callback,
     gpointer user_data,
     GDestroyNotify destroy,
@@ -74,16 +73,8 @@ tp_proxy_signal_connection_v0_new (TpProxy *self,
 {
   g_assert (_tp_proxy_implementation.version != NULL);
   return _tp_proxy_implementation.signal_connection_new (self, iface, member,
-      expected_types, collect_args, invoke_callback, callback, user_data,
-      destroy, weak_object, error);
-}
-
-void
-tp_proxy_signal_connection_v0_take_results (TpProxySignalConnection *sc,
-    GValueArray *args)
-{
-  g_assert (_tp_proxy_implementation.version != NULL);
-  _tp_proxy_implementation.signal_connection_take_results (sc, args);
+      expected_types, wrapper, callback, user_data, destroy, weak_object,
+      error);
 }
 
 void
@@ -98,7 +89,6 @@ tp_private_proxy_set_implementation (TpProxyImplementation *impl)
   g_assert (impl->check_interface_by_id != NULL);
   g_assert (impl->pending_call_new != NULL);
   g_assert (impl->signal_connection_new != NULL);
-  g_assert (impl->signal_connection_take_results != NULL);
 
   memcpy (&_tp_proxy_implementation, impl, sizeof (TpProxyImplementation));
 

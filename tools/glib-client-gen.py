@@ -113,7 +113,7 @@ class Generator(object):
 
         arg_count = 0
         args = []
-        out_args = []
+        arg_sig = []
 
         for arg in signal.getElementsByTagName('arg'):
             name = arg.getAttribute('name')
@@ -128,11 +128,10 @@ class Generator(object):
 
             info = type_to_gtype(type)
             args.append((name, info, tp_type, arg))
+            arg_sig.append(type)
 
         callback_name = ('%s_%s_signal_callback_%s'
                          % (self.prefix_lc, iface_lc, member_lc))
-        collect_name = ('_%s_%s_collect_args_of_%s'
-                        % (self.prefix_lc, iface_lc, member_lc))
         invoke_name = ('_%s_%s_invoke_callback_for_%s'
                        % (self.prefix_lc, iface_lc, member_lc))
 
@@ -182,56 +181,24 @@ class Generator(object):
 
         self.h('    gpointer user_data, GObject *weak_object);')
 
-        if args:
-            self.b('static void')
-            self.b('%s (DBusGProxy *proxy G_GNUC_UNUSED,' % collect_name)
-
-            for arg in args:
-                name, info, tp_type, elt = arg
-                ctype, gtype, marshaller, pointer = info
-
-                const = pointer and 'const ' or ''
-
-                self.b('    %s%s%s,' % (const, ctype, name))
-
-            self.b('    TpProxySignalConnection *sc)')
-            self.b('{')
-            self.b('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
-            self.b('  GValueArray *args = g_value_array_new (%d);' % len(args))
-            self.b('  GValue blank = { 0 };')
-            self.b('  guint i;')
-            self.b('')
-            self.b('  g_value_init (&blank, G_TYPE_INT);')
-            self.b('')
-            self.b('  for (i = 0; i < %d; i++)' % len(args))
-            self.b('    g_value_array_append (args, &blank);')
-            self.b('  G_GNUC_END_IGNORE_DEPRECATIONS')
-            self.b('')
-
-            for i, arg in enumerate(args):
-                name, info, tp_type, elt = arg
-                ctype, gtype, marshaller, pointer = info
-
-                self.b('  g_value_unset (args->values + %d);' % i)
-                self.b('  g_value_init (args->values + %d, %s);' % (i, gtype))
-
-                self.b('  ' + copy_into_gvalue('args->values + %d' % i,
-                    gtype, marshaller, name))
-                self.b('')
-
-            self.b('  tp_proxy_signal_connection_v0_take_results (sc, args);')
-            self.b('}')
-
         self.b('static void')
         self.b('%s (TpProxy *tpproxy,' % invoke_name)
-        self.b('    GError *error G_GNUC_UNUSED,')
-        self.b('    GValueArray *args,')
+        self.b('    const GError *error G_GNUC_UNUSED,')
+        self.b('    GVariant *variant,')
         self.b('    GCallback generic_callback,')
         self.b('    gpointer user_data,')
         self.b('    GObject *weak_object)')
         self.b('{')
         self.b('  %s callback =' % callback_name)
         self.b('      (%s) generic_callback;' % callback_name)
+
+        if args:
+            self.b('  GValue args_val = G_VALUE_INIT;')
+            self.b('  GValueArray *args_va;')
+            self.b('')
+            self.b('  dbus_g_value_parse_g_variant (variant, &args_val);')
+            self.b('  args_va = g_value_get_boxed (&args_val);')
+
         self.b('')
         self.b('  if (callback != NULL)')
         self.b('    callback (g_object_ref (tpproxy),')
@@ -241,20 +208,14 @@ class Generator(object):
             ctype, gtype, marshaller, pointer = info
 
             getter = value_getter(gtype, marshaller)
-            self.b('      %s (args->values + %d),' % (getter, i))
+            self.b('      %s (args_va->values + %d),' % (getter, i))
 
         self.b('      user_data,')
         self.b('      weak_object);')
         self.b('')
 
-        self.b('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
-        if len(args) > 0:
-            self.b('  g_value_array_free (args);')
-        else:
-            self.b('  if (args != NULL)')
-            self.b('    g_value_array_free (args);')
-            self.b('')
-        self.b('  G_GNUC_END_IGNORE_DEPRECATIONS')
+        if args:
+            self.b('  g_value_unset (&args_val);')
 
         self.b('  g_object_unref (tpproxy);')
         self.b('}')
@@ -320,27 +281,11 @@ class Generator(object):
         self.b('    GObject *weak_object,')
         self.b('    GError **error)')
         self.b('{')
-        self.b('  GType expected_types[%d] = {' % (len(args) + 1))
-
-        for arg in args:
-            name, info, tp_type, elt = arg
-            ctype, gtype, marshaller, pointer = info
-
-            self.b('      %s,' % gtype)
-
-        self.b('      G_TYPE_INVALID };')
-        self.b('')
         self.b('  g_return_val_if_fail (callback != NULL, NULL);')
         self.b('')
-        self.b('  return tp_proxy_signal_connection_v0_new ((TpProxy *) proxy,')
+        self.b('  return tp_proxy_signal_connection_v1_new ((TpProxy *) proxy,')
         self.b('      %s, \"%s\",' % (self.get_iface_quark(), member))
-        self.b('      expected_types,')
-
-        if args:
-            self.b('      G_CALLBACK (%s),' % collect_name)
-        else:
-            self.b('      NULL, /* no args => no collector function */')
-
+        self.b('      G_VARIANT_TYPE ("(%s)"),' % ''.join(arg_sig))
         self.b('      %s,' % invoke_name)
         self.b('      G_CALLBACK (callback), user_data, destroy,')
         self.b('      weak_object, error);')
@@ -981,23 +926,6 @@ class Generator(object):
         b('}')
         b('')
 
-    def do_signal_add(self, signal):
-        marshaller_items = []
-        gtypes = []
-
-        for i in signal.getElementsByTagName('arg'):
-            name = i.getAttribute('name')
-            type = i.getAttribute('type')
-            info = type_to_gtype(type)
-            # type, GType, STRING, is a pointer
-            gtypes.append(info[1])
-
-        self.b('  dbus_g_proxy_add_signal (proxy, "%s",'
-               % signal.getAttribute('name'))
-        for gtype in gtypes:
-            self.b('      %s,' % gtype)
-        self.b('      G_TYPE_INVALID);')
-
     def do_interface(self, node):
         ifaces = node.getElementsByTagName('interface')
         assert len(ifaces) == 1
@@ -1012,24 +940,6 @@ class Generator(object):
 
         signals = node.getElementsByTagName('signal')
         methods = node.getElementsByTagName('method')
-
-        if signals:
-            self.b('static inline void')
-            self.b('%s_add_signals_for_%s (DBusGProxy *proxy)'
-                    % (self.prefix_lc, name.lower()))
-            self.b('{')
-
-            if self.tp_proxy_api >= (0, 7, 6):
-                self.b('  if (!tp_proxy_dbus_g_proxy_claim_for_signal_adding '
-                       '(proxy))')
-                self.b('    return;')
-
-            for signal in signals:
-                self.do_signal_add(signal)
-
-            self.b('}')
-            self.b('')
-            self.b('')
 
         for signal in signals:
             self.do_signal(name, signal)
@@ -1063,53 +973,6 @@ class Generator(object):
 
         for node in nodes:
             self.do_interface(node)
-
-        if self.group is not None:
-            self.h('void %s_%s_add_signals (TpProxy *self,'
-                    % (self.prefix_lc, self.group))
-            self.h('    guint quark,')
-            self.h('    DBusGProxy *proxy,')
-            self.h('    gpointer unused);')
-            self.h('')
-
-            self.b('/*')
-            self.b(' * %s_%s_add_signals:' % (self.prefix_lc, self.group))
-            self.b(' * @self: the #TpProxy')
-            self.b(' * @quark: a quark whose string value is the interface')
-            self.b(' *   name whose signals should be added')
-            self.b(' * @proxy: the D-Bus proxy to which to add the signals')
-            self.b(' * @unused: not used for anything')
-            self.b(' *')
-            self.b(' * Tell dbus-glib that @proxy has the signatures of all')
-            self.b(' * signals on the given interface, if it\'s one we')
-            self.b(' * support.')
-            self.b(' *')
-            self.b(' * This function should be used as a signal handler for')
-            self.b(' * #TpProxy::interface-added.')
-            self.b(' */')
-            self.b('void')
-            self.b('%s_%s_add_signals (TpProxy *self G_GNUC_UNUSED,'
-                    % (self.prefix_lc, self.group))
-            self.b('    guint quark,')
-            self.b('    DBusGProxy *proxy,')
-            self.b('    gpointer unused G_GNUC_UNUSED)')
-
-            self.b('{')
-
-            for node in nodes:
-                iface = node.getElementsByTagName('interface')[0]
-                self.iface_dbus = iface.getAttribute('name')
-                signals = node.getElementsByTagName('signal')
-                if not signals:
-                    continue
-                name = node.getAttribute('name').replace('/', '').lower()
-                self.iface_uc = name.upper()
-                self.b('  if (quark == %s)' % self.get_iface_quark())
-                self.b('    %s_add_signals_for_%s (proxy);'
-                       % (self.prefix_lc, name))
-
-            self.b('}')
-            self.b('')
 
         self.h('G_END_DECLS')
         self.h('')

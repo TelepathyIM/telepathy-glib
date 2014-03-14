@@ -40,155 +40,27 @@
  * Since: 0.7.1
  */
 
-typedef struct _TpProxySignalInvocation TpProxySignalInvocation;
-
-struct _TpProxySignalInvocation {
-    TpProxySignalConnection *sc;
-    TpProxy *proxy;
-    GValueArray *args;
-    guint idle_source;
-};
-
 struct _TpProxySignalConnection {
     /* 1 if D-Bus has us
-     * 1 per member of @invocations
-     * 1 per callback being invoked right now */
+     * 1 if per callback being invoked (possibly nested!) right now */
     gsize refcount;
 
-    /* borrowed ref (discarded when we see invalidated signal)
-     * + 1 per member of @invocations
-     * + 1 per callback being invoked (possibly nested!) right now */
+    /* (transfer full) */
+    GDBusConnection *conn;
+
     TpProxy *proxy;
 
-    DBusGProxy *iface_proxy;
-    gchar *member;
+    guint id;
+    GVariantType *expected_types;
     GCallback collect_args;
-    TpProxyInvokeFunc invoke_callback;
+    TpProxyWrapperFunc wrapper;
     GCallback callback;
     gpointer user_data;
     GDestroyNotify destroy;
     GObject *weak_object;
-    /* queue of _TpProxySignalInvocation, not including any that are
-     * being invoked right now */
-    GQueue invocations;
 };
 
-static void _tp_proxy_signal_connection_dgproxy_destroy (DBusGProxy *,
-    TpProxySignalConnection *);
-
-static void
-tp_proxy_signal_connection_disconnect_dbus_glib (TpProxySignalConnection *sc)
-{
-  DBusGProxy *iface_proxy = sc->iface_proxy;
-
-  /* ignore if already done */
-  if (iface_proxy == NULL)
-    return;
-
-  sc->iface_proxy = NULL;
-  g_signal_handlers_disconnect_by_func (iface_proxy,
-      _tp_proxy_signal_connection_dgproxy_destroy, sc);
-  dbus_g_proxy_disconnect_signal (iface_proxy, sc->member,
-      sc->collect_args, (gpointer) sc);
-
-  g_object_unref (iface_proxy);
-}
-
-static void
-tp_proxy_signal_connection_proxy_invalidated (TpProxy *proxy,
-                                              guint domain,
-                                              gint code,
-                                              const gchar *message,
-                                              TpProxySignalConnection *sc)
-{
-  g_assert (sc != NULL);
-  g_assert (domain != 0);
-  g_assert (message != NULL);
-
-  DEBUG ("%p: TpProxy %p invalidated (I have %p): %s", sc, proxy,
-      sc->proxy, message);
-  g_assert (proxy == sc->proxy);
-
-  g_signal_handlers_disconnect_by_func (sc->proxy,
-      tp_proxy_signal_connection_proxy_invalidated, sc);
-  sc->proxy = NULL;
-
-  tp_proxy_signal_connection_disconnect_dbus_glib (sc);
-}
-
-static void
-tp_proxy_signal_connection_lost_weak_ref (gpointer data,
-                                          GObject *dead)
-{
-  TpProxySignalConnection *sc = data;
-
-  DEBUG ("%p: lost weak ref to %p", sc, dead);
-
-  g_assert (dead == sc->weak_object);
-
-  sc->weak_object = NULL;
-
-  tp_proxy_signal_connection_disconnect (sc);
-}
-
-static gboolean
-_tp_proxy_signal_connection_finish_free (gpointer p)
-{
-  TpProxySignalConnection *sc = p;
-
-  if (sc->weak_object != NULL)
-    {
-      g_object_weak_unref (sc->weak_object,
-          tp_proxy_signal_connection_lost_weak_ref, sc);
-      sc->weak_object = NULL;
-    }
-
-  g_slice_free (TpProxySignalConnection, sc);
-
-  return FALSE;
-}
-
-/* Return TRUE if it dies. */
-static gboolean
-tp_proxy_signal_connection_unref (TpProxySignalConnection *sc)
-{
-  if (--(sc->refcount) > 0)
-    {
-      MORE_DEBUG ("%p: %" G_GSIZE_FORMAT " refs left", sc, sc->refcount);
-      return FALSE;
-    }
-
-  MORE_DEBUG ("removed last ref to %p", sc);
-
-  if (sc->proxy != NULL)
-    {
-      g_signal_handlers_disconnect_by_func (sc->proxy,
-          tp_proxy_signal_connection_proxy_invalidated, sc);
-      sc->proxy = NULL;
-    }
-
-  g_assert (sc->invocations.length == 0);
-
-  if (sc->destroy != NULL)
-    sc->destroy (sc->user_data);
-
-  sc->destroy = NULL;
-  sc->user_data = NULL;
-
-  g_free (sc->member);
-
-  /* We can't inline this here, because of fd.o #14750. If our signal
-   * connection gets destroyed by side-effects of something else losing a
-   * weak reference to the same object (e.g. a pending call whose weak
-   * object is the same as ours has the last ref to the TpProxy, causing
-   * invalidation when the weak object goes away) then we need to avoid dying
-   * til *our* weak-reference callback has run. So, don't actually free the
-   * signal connection until we've re-entered the main loop. */
-  g_idle_add_full (G_PRIORITY_HIGH, _tp_proxy_signal_connection_finish_free,
-      sc, NULL);
-
-  return TRUE;
-}
+static void tp_proxy_signal_connection_unref (TpProxySignalConnection *sc);
 
 /**
  * tp_proxy_signal_connection_disconnect:
@@ -214,129 +86,157 @@ tp_proxy_signal_connection_unref (TpProxySignalConnection *sc)
 void
 tp_proxy_signal_connection_disconnect (TpProxySignalConnection *sc)
 {
-  TpProxySignalInvocation *invocation;
+  guint id;
 
-  while ((invocation = g_queue_pop_head (&sc->invocations)) != NULL)
+  /* ignore if already done */
+  if (sc->id == 0)
     {
-      g_assert (invocation->sc == sc);
-      g_object_unref (invocation->proxy);
-      invocation->proxy = NULL;
-      invocation->sc = NULL;
-      g_source_remove (invocation->idle_source);
-
-      if (tp_proxy_signal_connection_unref (sc))
-        return;
+      DEBUG ("%p: already done, ignoring", sc);
+      return;
     }
 
-  tp_proxy_signal_connection_disconnect_dbus_glib (sc);
+  DEBUG ("%p", sc);
+
+  id = sc->id;
+  sc->id = 0;
+
+  if (sc->proxy != NULL)
+    {
+      _tp_proxy_remove_signal_connection (sc->proxy, sc);
+      sc->proxy = NULL;
+    }
+
+  /* likely to free @sc */
+  sc->refcount++;
+  g_dbus_connection_signal_unsubscribe (sc->conn, id);
+  tp_proxy_signal_connection_unref (sc);
 }
 
 static void
-tp_proxy_signal_invocation_free (gpointer p)
+tp_proxy_signal_connection_lost_weak_ref (gpointer data,
+                                          GObject *dead)
 {
-  TpProxySignalInvocation *invocation = p;
+  TpProxySignalConnection *sc = data;
 
-  if (invocation->sc != NULL)
-    {
-      /* this shouldn't really happen - it'll get run if the idle source
-       * is removed by something other than t_p_s_c_disconnect or
-       * t_p_s_i_run */
-      WARNING ("idle source removed by someone else");
+  DEBUG ("%p: lost weak ref to %p", sc, dead);
 
-      g_queue_remove (&invocation->sc->invocations, invocation);
-      g_object_unref (invocation->proxy);
-      tp_proxy_signal_connection_unref (invocation->sc);
-    }
+  g_assert (dead == sc->weak_object);
 
-  g_assert (invocation->proxy == NULL);
+  sc->weak_object = NULL;
 
-  if (invocation->args != NULL)
-    tp_value_array_free (invocation->args);
-
-  g_slice_free (TpProxySignalInvocation, invocation);
+  /* don't wrap this in a ref/unref, because we might already have had the
+   * last-unref as a result of our TpProxy disappearing, in which case
+   * we are waiting for an idle to avoid fd.o #14750 */
+  tp_proxy_signal_connection_disconnect (sc);
 }
 
 static gboolean
-tp_proxy_signal_invocation_run (gpointer p)
+_tp_proxy_signal_connection_finish_free (gpointer p)
 {
-  TpProxySignalInvocation *invocation = p;
-  TpProxySignalInvocation *popped = g_queue_pop_head
-      (&invocation->sc->invocations);
+  TpProxySignalConnection *sc = p;
 
-  /* if GLib is running idle handlers in the wrong order, then we've lost */
-  MORE_DEBUG ("%p: popped %p", invocation->sc, popped);
-  g_assert (popped == invocation);
+  DEBUG ("%p", sc);
 
-  invocation->sc->invoke_callback (invocation->proxy, NULL,
-      invocation->args, invocation->sc->callback, invocation->sc->user_data,
-      invocation->sc->weak_object);
+  if (sc->weak_object != NULL)
+    {
+      g_object_weak_unref (sc->weak_object,
+          tp_proxy_signal_connection_lost_weak_ref, sc);
+      sc->weak_object = NULL;
+    }
 
-  /* the invoke callback steals args */
-  invocation->args = NULL;
-
-  /* there's one ref to the proxy per queued invocation, to keep it
-   * alive */
-  MORE_DEBUG ("%p refcount-- due to %p run, sc=%p", invocation->proxy,
-      invocation, invocation->sc);
-  g_object_unref (invocation->proxy);
-  invocation->proxy = NULL;
-  tp_proxy_signal_connection_unref (invocation->sc);
-  invocation->sc = NULL;
+  g_slice_free (TpProxySignalConnection, sc);
 
   return FALSE;
 }
 
 static void
-tp_proxy_signal_connection_dropped (gpointer p,
-                                    GClosure *unused)
+tp_proxy_signal_connection_unref (TpProxySignalConnection *sc)
 {
-  TpProxySignalConnection *sc = p;
+  if (--(sc->refcount) > 0)
+    {
+      MORE_DEBUG ("%p: %" G_GSIZE_FORMAT " refs left", sc, sc->refcount);
+      return;
+    }
 
-  MORE_DEBUG ("%p (%u invocations queued)", sc, sc->invocations.length);
+  MORE_DEBUG ("removed last ref to %p", sc);
 
+  if (sc->proxy != NULL)
+    {
+      _tp_proxy_remove_signal_connection (sc->proxy, sc);
+      sc->proxy = NULL;
+    }
+
+  if (sc->destroy != NULL)
+    sc->destroy (sc->user_data);
+
+  sc->destroy = NULL;
+  sc->user_data = NULL;
+  g_clear_object (&sc->conn);
+  g_clear_pointer (&sc->expected_types, g_variant_type_free);
+
+  /* We can't inline this here, because of fd.o #14750. If our signal
+   * connection gets destroyed by side-effects of something else losing a
+   * weak reference to the same object (e.g. a pending call whose weak
+   * object is the same as ours has the last ref to the TpProxy, causing
+   * invalidation when the weak object goes away) then we need to avoid dying
+   * til *our* weak-reference callback has run. So, don't actually free the
+   * signal connection until we've re-entered the main loop. */
+  g_idle_add_full (G_PRIORITY_HIGH, _tp_proxy_signal_connection_finish_free,
+      sc, NULL);
+}
+
+static void
+tp_proxy_signal_connection_cb (GDBusConnection *connection,
+    const gchar *sender_name,
+    const gchar *object_path,
+    const gchar *interface_name,
+    const gchar *signal_name,
+    GVariant *parameters,
+    gpointer user_data)
+{
+  TpProxySignalConnection *sc = user_data;
+  TpProxy *proxy;
+
+  DEBUG ("%p: %s.%s from %s:%s", sc, interface_name, signal_name, sender_name,
+      object_path);
+
+  if (!g_variant_is_of_type (parameters, sc->expected_types))
+    {
+      DEBUG ("... expected parameters of type '%.*s', got '%s', ignoring",
+          (int) g_variant_type_get_string_length (sc->expected_types),
+          g_variant_type_peek_string (sc->expected_types),
+          g_variant_get_type_string (parameters));
+      return;
+    }
+
+  /* we shouldn't get here if we already disconnected the GDBus-level
+   * signal connection... */
+  g_assert (sc->id != 0);
+  /* ... or if the proxy has already been disposed, which disconnects
+   * the GDBus-level signal connection */
+  g_assert (sc->proxy != NULL);
+
+  /* The callback might invalidate proxy, which disconnects the signal
+   * and sets sc->proxy to NULL, so we need to use a temporary here */
+  sc->refcount++;
+  proxy = g_object_ref (sc->proxy);
+  sc->wrapper (proxy, NULL, parameters,
+      sc->callback, sc->user_data, sc->weak_object);
+  g_object_unref (proxy);
   tp_proxy_signal_connection_unref (sc);
 }
 
-static void
-_tp_proxy_signal_connection_dgproxy_destroy (DBusGProxy *iface_proxy,
-                                             TpProxySignalConnection *sc)
-{
-  g_assert (iface_proxy != NULL);
-  g_assert (sc != NULL);
-  g_assert (sc->iface_proxy == iface_proxy);
-
-  DEBUG ("%p: DBusGProxy %p invalidated", sc, iface_proxy);
-
-  sc->iface_proxy = NULL;
-  g_signal_handlers_disconnect_by_func (iface_proxy,
-      _tp_proxy_signal_connection_dgproxy_destroy, sc);
-  g_object_unref (iface_proxy);
-}
-
-static void
-collect_none (DBusGProxy *dgproxy, TpProxySignalConnection *sc)
-{
-  _tp_proxy_signal_connection_take_results (sc, NULL);
-}
-
 /**
- * tp_proxy_signal_connection_v0_new:
+ * tp_proxy_signal_connection_v1_new:
  * @self: a proxy
  * @iface: a quark whose string value is the D-Bus interface
  * @member: the name of the signal to which we're connecting
  * @expected_types: an array of expected GTypes for the arguments, terminated
  *  by %G_TYPE_INVALID
- * @collect_args: a callback to be given to dbus_g_proxy_connect_signal(),
- *  which must marshal the arguments into a #GValueArray and use them to call
- *  tp_proxy_signal_connection_v0_take_results(); this callback is not
- *  guaranteed to be called by future versions of telepathy-glib, which might
- *  be able to implement its functionality internally. If no arguments are
- *  expected at all (expected_types = { G_TYPE_INVALID }) then this callback
- *  should instead be %NULL
- * @invoke_callback: a function which will be called with @error = %NULL,
+ * @wrapper: a function which will be called with @error = %NULL,
  *  which should invoke @callback with @user_data, @weak_object and other
  *  appropriate arguments taken from @args
- * @callback: user callback to be invoked by @invoke_callback
+ * @callback: user callback to be invoked by @wrapper
  * @user_data: user-supplied data for the callback
  * @destroy: user-supplied destructor for the data, which will be called
  *   when the signal connection is disconnected for any reason,
@@ -347,7 +247,7 @@ collect_none (DBusGProxy *dgproxy, TpProxySignalConnection *sc)
  * @error: If not %NULL, used to raise an error if %NULL is returned
  *
  * Allocate a new structure representing a signal connection, and connect to
- * the signal, arranging for @invoke_callback to be called when it arrives.
+ * the signal, arranging for @wrapper to be called when it arrives.
  *
  * This function is for use by #TpProxy subclass implementations only, and
  * should usually only be called from code generated by
@@ -362,12 +262,11 @@ collect_none (DBusGProxy *dgproxy, TpProxySignalConnection *sc)
 /* that's implemented in the core library, but it calls this: */
 
 TpProxySignalConnection *
-_tp_proxy_signal_connection_new (TpProxy *self,
+_tp_proxy_signal_connection_v1_new (TpProxy *self,
     GQuark iface,
     const gchar *member,
-    const GType *expected_types,
-    GCallback collect_args,
-    TpProxyInvokeFunc invoke_callback,
+    const GVariantType *expected_types,
+    TpProxyWrapperFunc wrapper,
     GCallback callback,
     gpointer user_data,
     GDestroyNotify destroy,
@@ -375,10 +274,8 @@ _tp_proxy_signal_connection_new (TpProxy *self,
     GError **error)
 {
   TpProxySignalConnection *sc;
-  DBusGProxy *iface_proxy = tp_proxy_get_interface_by_id (self,
-      iface, error);
 
-  if (iface_proxy == NULL)
+  if (!tp_proxy_check_interface_by_id (self, iface, error))
     {
       if (destroy != NULL)
         destroy (user_data);
@@ -386,89 +283,36 @@ _tp_proxy_signal_connection_new (TpProxy *self,
       return NULL;
     }
 
-  if (expected_types[0] == G_TYPE_INVALID)
-    {
-      collect_args = G_CALLBACK (collect_none);
-    }
-  else
-    {
-      g_return_val_if_fail (collect_args != NULL, NULL);
-    }
-
   sc = g_slice_new0 (TpProxySignalConnection);
 
-  MORE_DEBUG ("(proxy=%p, if=%s, sig=%s, collect=%p, invoke=%p, "
-      "cb=%p, ud=%p, dn=%p, wo=%p) -> %p",
-      self, g_quark_to_string (iface), member, collect_args,
-      invoke_callback, callback, user_data, destroy, weak_object, sc);
-
   sc->refcount = 1;
+  sc->expected_types = g_variant_type_copy (expected_types);
+  sc->conn = g_object_ref (tp_proxy_get_dbus_connection (self));
   sc->proxy = self;
-  sc->iface_proxy = g_object_ref (iface_proxy);
-  sc->member = g_strdup (member);
-  sc->collect_args = collect_args;
-  sc->invoke_callback = invoke_callback;
+  sc->wrapper = wrapper;
   sc->callback = callback;
   sc->user_data = user_data;
   sc->destroy = destroy;
   sc->weak_object = weak_object;
 
+  DEBUG ("%p: %s.%s from %s:%s %p",
+      sc, g_quark_to_string (iface), member, tp_proxy_get_bus_name (self),
+      tp_proxy_get_object_path (self), self);
+
   if (weak_object != NULL)
     g_object_weak_ref (weak_object, tp_proxy_signal_connection_lost_weak_ref,
         sc);
 
-  g_signal_connect (self, "invalidated",
-      G_CALLBACK (tp_proxy_signal_connection_proxy_invalidated), sc);
-
-  g_signal_connect (iface_proxy, "destroy",
-      G_CALLBACK (_tp_proxy_signal_connection_dgproxy_destroy), sc);
-
-  dbus_g_proxy_connect_signal (iface_proxy, member, collect_args, sc,
-      tp_proxy_signal_connection_dropped);
-
+  sc->id = g_dbus_connection_signal_subscribe (sc->conn,
+      tp_proxy_get_bus_name (self),
+      g_quark_to_string (iface),
+      member,
+      tp_proxy_get_object_path (self),
+      NULL, /* arg0 */
+      G_DBUS_SIGNAL_FLAGS_NONE,
+      tp_proxy_signal_connection_cb,
+      sc,
+      (GDestroyNotify) tp_proxy_signal_connection_unref);
+  _tp_proxy_add_signal_connection (self, sc);
   return sc;
-}
-
-/**
- * tp_proxy_signal_connection_v0_take_results:
- * @sc: The signal connection
- * @args: The arguments of the signal
- *
- * Feed the results of a signal invocation back into the signal connection
- * machinery.
- *
- * This method should only be called from #TpProxy subclass implementations,
- * in the callback that implements @collect_args.
- *
- * Since: 0.7.1
- */
-
-/* that's implemented in the core library, but it calls this: */
-
-void
-_tp_proxy_signal_connection_take_results (TpProxySignalConnection *sc,
-    GValueArray *args)
-{
-  TpProxySignalInvocation *invocation = g_slice_new0 (TpProxySignalInvocation);
-  /* FIXME: assert that the GValueArray is the right length, or
-   * even that it contains the right types? */
-
-  /* as long as there are queued invocations, we keep one ref to the TpProxy
-   * and one ref to the TpProxySignalConnection per invocation */
-  MORE_DEBUG ("%p refcount++ due to %p, sc=%p", sc->proxy, invocation, sc);
-  invocation->proxy = g_object_ref (sc->proxy);
-  sc->refcount++;
-
-  invocation->sc = sc;
-  invocation->args = args;
-
-  g_queue_push_tail (&sc->invocations, invocation);
-
-  MORE_DEBUG ("invocations: head=%p tail=%p count=%u",
-      sc->invocations.head, sc->invocations.tail,
-      sc->invocations.length);
-
-  invocation->idle_source = g_idle_add_full (G_PRIORITY_HIGH,
-      tp_proxy_signal_invocation_run, invocation,
-      tp_proxy_signal_invocation_free);
 }
