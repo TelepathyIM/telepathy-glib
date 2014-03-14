@@ -624,6 +624,7 @@ _tp_tls_certificate_new (TpProxy *conn_or_chan,
       "dbus-daemon", tp_proxy_get_dbus_daemon (conn_or_chan),
       "bus-name", tp_proxy_get_bus_name (conn_or_chan),
       "object-path", object_path,
+      "factory", tp_proxy_get_factory (conn_or_chan),
       NULL);
 
 finally:

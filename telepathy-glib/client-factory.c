@@ -1568,6 +1568,7 @@ tp_client_factory_dup_tls_certificate_features (TpClientFactory *self,
 {
   g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (TP_IS_TLS_CERTIFICATE (certificate), NULL);
+  g_return_val_if_fail (tp_proxy_get_factory (certificate) == self, NULL);
 
   return TP_CLIENT_FACTORY_GET_CLASS (self)->dup_tls_certificate_features (
       self, certificate);
