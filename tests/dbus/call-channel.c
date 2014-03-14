@@ -658,7 +658,9 @@ test_basics (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  g_assert (test->added_content != NULL);
+  g_assert (TP_IS_CALL_CONTENT (test->added_content));
+  g_assert (tp_proxy_get_factory (test->added_content) ==
+      tp_proxy_get_factory (test->call_chan));
   video_content = test->added_content;
   tp_tests_proxy_run_until_prepared (video_content, NULL);
 
