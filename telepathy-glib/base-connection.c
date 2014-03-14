@@ -1411,7 +1411,9 @@ tp_base_connection_register (TpBaseConnection *self,
   g_free (safe_proto);
   g_free (unique_name);
 
-  if (!tp_dbus_daemon_request_name (priv->bus_proxy, priv->bus_name, FALSE,
+  if (!tp_dbus_daemon_try_register_object (priv->bus_proxy, priv->object_path,
+        self, error) ||
+      !tp_dbus_daemon_request_name (priv->bus_proxy, priv->bus_name, FALSE,
         error))
     {
       g_free (priv->bus_name);
@@ -1421,7 +1423,6 @@ tp_base_connection_register (TpBaseConnection *self,
 
   DEBUG ("%p: bus name %s; object path %s", self, priv->bus_name,
       priv->object_path);
-  tp_dbus_daemon_register_object (priv->bus_proxy, priv->object_path, self);
   self->priv->been_registered = TRUE;
 
   if (bus_name != NULL)

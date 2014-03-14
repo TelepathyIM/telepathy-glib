@@ -87,6 +87,10 @@ void tp_dbus_daemon_list_activatable_names (TpDBusDaemon *self,
 
 void tp_dbus_daemon_register_object (TpDBusDaemon *self,
     const gchar *object_path, gpointer object);
+gboolean tp_dbus_daemon_try_register_object (TpDBusDaemon *self,
+    const gchar *object_path,
+    gpointer object,
+    GError **error);
 void tp_dbus_daemon_unregister_object (TpDBusDaemon *self, gpointer object);
 
 G_END_DECLS

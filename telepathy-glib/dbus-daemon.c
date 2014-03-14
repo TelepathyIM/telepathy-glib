@@ -725,25 +725,71 @@ tp_dbus_daemon_registration_free (gpointer p)
  * Export @object at @object_path. Its `TpSvc` interfaces will all
  * be exported.
  *
- * Since 0.UNRELEASED, as a simplification, exporting an object in this
- * way at more than one location or on more than one bus is not allowed.
+ * It is considered to be a programming error to register an object
+ * at a path where another object already exists.
  *
- * Since: 0.11.3
+ * Since 0.UNRELEASED, as a simplification, exporting an object in this
+ * way at more than one location or on more than one bus is not allowed,
+ * and is also considered to be a programming error.
+ * However, redundantly re-exporting the same object at the same path
+ * on the same bus is allowed.
+ *
+ * Also since 0.UNRELEASED, this function must be called *before* taking any
+ * bus name whose presence is meant to correspond to the existence of this
+ * object. It is *not* sufficient to take the bus name within the same
+ * main-loop iteration as registering the object (even though that
+ * was sufficient under dbus-glib), because GDBus dispatches
+ * method calls in a separate thread.
  */
 void
 tp_dbus_daemon_register_object (TpDBusDaemon *self,
     const gchar *object_path,
     gpointer object)
 {
+  GError *error = NULL;
+
+  if (!tp_dbus_daemon_try_register_object (self, object_path, object, &error))
+    {
+      CRITICAL ("Unable to register %s %p at %s:%s: %s #%d: %s",
+          G_OBJECT_TYPE_NAME (object), object,
+          g_dbus_connection_get_unique_name (
+            tp_proxy_get_dbus_connection (self)),
+          object_path,
+          g_quark_to_string (error->domain), error->code,
+          error->message);
+    }
+}
+
+/**
+ * tp_dbus_daemon_try_register_object:
+ * @self: object representing a connection to a bus
+ * @object_path: an object path
+ * @object: (type GObject.Object) (transfer none): an object to export
+ * @error: used to raise %G_IO_ERROR_EXISTS if an object exists at that path
+ *
+ * The same as tp_dbus_daemon_register_object(), except that it is not
+ * considered to be a programming error to register an object at a path
+ * where another object exists.
+ *
+ * Returns: %TRUE if the object is successfully registered
+ */
+gboolean
+tp_dbus_daemon_try_register_object (TpDBusDaemon *self,
+    const gchar *object_path,
+    gpointer object,
+    GError **error)
+{
   GDBusConnection *conn;
   GType *interfaces;
   guint n = 0;
   guint i;
   Registration *r;
+  gboolean ret = FALSE;
 
-  g_return_if_fail (TP_IS_DBUS_DAEMON (self));
-  g_return_if_fail (tp_dbus_check_valid_object_path (object_path, NULL));
-  g_return_if_fail (G_IS_OBJECT (object));
+  g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), FALSE);
+  g_return_val_if_fail (tp_dbus_check_valid_object_path (object_path, error),
+      FALSE);
+  g_return_val_if_fail (G_IS_OBJECT (object), FALSE);
 
   conn = tp_proxy_get_dbus_connection (self);
   r = g_slice_new0 (Registration);
@@ -774,14 +820,17 @@ tp_dbus_daemon_register_object (TpDBusDaemon *self,
           r->conn == conn)
         {
           DEBUG ("already exported at identical (connection, path), ignoring");
-          return;
+          return TRUE;
         }
 
-      CRITICAL ("object has already been exported on %s (%p) at %s, cannot "
+      CRITICAL ("%s %p has already been exported on %s (%p) at %s, cannot "
           "export on %s (%p) at %s",
+          G_OBJECT_TYPE_NAME (object), object,
           g_dbus_connection_get_unique_name (r->conn), r->conn, r->object_path,
           g_dbus_connection_get_unique_name (conn), conn, object_path);
-      return;
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_BUSY,
+          "Already exported with different connection or object-path");
+      return FALSE;
     }
 
   /* FIXME: if @object is a GDBusObject or GDBusObjectManagerServer,
@@ -794,7 +843,7 @@ tp_dbus_daemon_register_object (TpDBusDaemon *self,
       GType iface = interfaces[i];
       const TpSvcInterfaceInfo *iinfo;
       TpSvcInterfaceSkeleton *skeleton;
-      GError *error = NULL;
+      GError *inner_error = NULL;
 
       iinfo = tp_svc_interface_peek_dbus_interface_info (iface);
 
@@ -808,14 +857,19 @@ tp_dbus_daemon_register_object (TpDBusDaemon *self,
 
       if (!g_dbus_interface_skeleton_export (
             G_DBUS_INTERFACE_SKELETON (skeleton), conn, object_path,
-            &error))
+            &inner_error))
         {
-          CRITICAL ("cannot export %s %p skeleton %p as '%s': %s #%d: %s",
+          DEBUG ("cannot export %s %p skeleton %p as '%s': %s #%d: %s",
               g_type_name (iface), object, skeleton,
               iinfo->interface_info->name,
-              g_quark_to_string (error->domain), error->code, error->message);
+              g_quark_to_string (inner_error->domain), inner_error->code,
+              inner_error->message);
           g_object_unref (skeleton);
-          continue;
+          g_propagate_error (error, inner_error);
+
+          /* roll back */
+          tp_dbus_daemon_unregister_object (self, object);
+          goto finally;
         }
 
       r->skeletons = g_slist_prepend (r->skeletons, skeleton);
@@ -824,7 +878,10 @@ tp_dbus_daemon_register_object (TpDBusDaemon *self,
           iinfo->interface_info->name, skeleton, g_type_name (iface), object);
     }
 
+  ret = TRUE;
+finally:
   g_free (interfaces);
+  return ret;
 }
 
 /**

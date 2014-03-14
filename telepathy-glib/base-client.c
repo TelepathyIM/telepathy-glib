@@ -937,15 +937,19 @@ tp_base_client_register (TpBaseClient *self,
 
   DEBUG ("request name %s", self->priv->bus_name);
 
+  if (!tp_dbus_daemon_try_register_object (self->priv->dbus,
+        self->priv->object_path, G_OBJECT (self), error))
+    {
+      DEBUG ("Failed to register object path %s", self->priv->object_path);
+      return FALSE;
+    }
+
   if (!tp_dbus_daemon_request_name (self->priv->dbus, self->priv->bus_name,
         TRUE, error))
     {
       DEBUG ("Failed to register bus name %s", self->priv->bus_name);
       return FALSE;
     }
-
-  tp_dbus_daemon_register_object (self->priv->dbus, self->priv->object_path,
-      G_OBJECT (self));
 
   self->priv->registered = TRUE;
 

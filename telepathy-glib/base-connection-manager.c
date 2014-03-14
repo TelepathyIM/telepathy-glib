@@ -833,15 +833,13 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
 
   g_assert (self->priv->dbus_daemon != NULL);
 
-  string = g_string_new (TP_CM_BUS_NAME_BASE);
-  g_string_append (string, cls->cm_dbus_name);
-
-  if (!tp_dbus_daemon_request_name (self->priv->dbus_daemon, string->str,
-        TRUE, &error))
-    goto except;
+  string = g_string_new (TP_CM_OBJECT_PATH_BASE);
 
   g_string_assign (string, TP_CM_OBJECT_PATH_BASE);
   g_string_append (string, cls->cm_dbus_name);
+
+  /* don't bother handling failure gracefully: CMs should know what
+   * objects they export */
   tp_dbus_daemon_register_object (self->priv->dbus_daemon, string->str, self);
 
   g_hash_table_iter_init (&iter, self->priv->protocols);
@@ -853,7 +851,7 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
 
       if (!tp_connection_manager_check_valid_protocol_name (name, &error))
         {
-          g_critical ("%s", error->message);
+          CRITICAL ("%s", error->message);
           goto except;
         }
 
@@ -872,6 +870,18 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
           protocol);
     }
 
+  g_string_assign (string, TP_CM_BUS_NAME_BASE);
+  g_string_append (string, cls->cm_dbus_name);
+
+  if (!tp_dbus_daemon_request_name (self->priv->dbus_daemon, string->str,
+        TRUE, &error))
+    {
+      WARNING ("Couldn't claim bus name. If you are trying to debug this "
+          "connection manager, disable all accounts and kill any running "
+          "copies of this CM, then try again. %s", error->message);
+      goto except;
+    }
+
   g_string_free (string, TRUE);
 
   self->priv->registered = TRUE;
@@ -879,9 +889,6 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
   return TRUE;
 
 except:
-  WARNING ("Couldn't claim bus name. If you are trying to debug this "
-      "connection manager, disable all accounts and kill any running "
-      "copies of this CM, then try again. %s", error->message);
   g_error_free (error);
 
   if (string != NULL)
