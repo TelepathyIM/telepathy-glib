@@ -163,6 +163,13 @@ create_tube_service (Test *test,
        * same TpStreamTubeChannel object instead of a new one. */
       tp_tests_proxy_run_until_dbus_queue_processed (test->tube);
       g_list_free_full (test->tube_conns, g_object_unref);
+
+      /* We have to wait for an idle to go off before asserting that it has
+       * had its last-unref, because if the proxy has just been invalidated,
+       * it holds a ref to itself until the idle disconnects all its signal
+       * connections. */
+      g_main_context_iteration (NULL, FALSE);
+
       g_object_add_weak_pointer (G_OBJECT (test->tube), (gpointer) &test->tube);
       g_object_unref (test->tube);
       g_assert (test->tube == NULL);
