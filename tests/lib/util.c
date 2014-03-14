@@ -153,8 +153,18 @@ tp_tests_dbus_daemon_dup_or_die (void)
 }
 
 static void
-introspect_cb (TpProxy *proxy G_GNUC_UNUSED,
-    const gchar *xml G_GNUC_UNUSED,
+queue_get_id_cb (TpDBusDaemon *proxy G_GNUC_UNUSED,
+    const gchar *out G_GNUC_UNUSED,
+    const GError *error G_GNUC_UNUSED,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  g_main_loop_quit (user_data);
+}
+
+static void
+queue_get_all_cb (TpProxy *proxy G_GNUC_UNUSED,
+    GHashTable *out G_GNUC_UNUSED,
     const GError *error G_GNUC_UNUSED,
     gpointer user_data,
     GObject *weak_object G_GNUC_UNUSED)
@@ -167,8 +177,60 @@ tp_tests_proxy_run_until_dbus_queue_processed (gpointer proxy)
 {
   GMainLoop *loop = g_main_loop_new (NULL, FALSE);
 
-  tp_cli_dbus_introspectable_call_introspect (proxy, -1, introspect_cb,
-      loop, NULL, NULL);
+  g_assert (TP_IS_PROXY (proxy));
+  g_assert (tp_proxy_get_invalidated (proxy) == NULL);
+
+  /* We used to use Introspect() on @proxy here, but because GDBus implements
+   * them internally without using a GDBusMethodInvocation, the replies to
+   * Introspectable, Peer and Properties can "jump the queue" and be
+   * sent back before things that were already queued for sending.
+   * There is no other interface that all objects are expected to have,
+   * so we have to cheat.
+   *
+   * I'm relying here on the fact that Properties calls on an interface
+   * that the object *does* implement don't jump the queue.
+   *
+   * https://bugzilla.gnome.org/show_bug.cgi?id=726259 */
+  if (TP_IS_DBUS_DAEMON (proxy))
+    tp_cli_dbus_daemon_call_get_id (proxy, -1,
+        queue_get_id_cb, loop, NULL, NULL);
+  else if (TP_IS_ACCOUNT (proxy))
+    tp_cli_dbus_properties_call_get_all (proxy, -1, TP_IFACE_ACCOUNT,
+        queue_get_all_cb, loop, NULL, NULL);
+  else if (TP_IS_ACCOUNT_MANAGER (proxy))
+    tp_cli_dbus_properties_call_get_all (proxy, -1, TP_IFACE_ACCOUNT_MANAGER,
+        queue_get_all_cb, loop, NULL, NULL);
+  else if (TP_IS_CHANNEL (proxy))
+    tp_cli_dbus_properties_call_get_all (proxy, -1, TP_IFACE_CHANNEL,
+        queue_get_all_cb, loop, NULL, NULL);
+  else if (TP_IS_CHANNEL_DISPATCHER (proxy))
+    tp_cli_dbus_properties_call_get_all (proxy, -1,
+        TP_IFACE_CHANNEL_DISPATCHER,
+        queue_get_all_cb, loop, NULL, NULL);
+  else if (TP_IS_CHANNEL_DISPATCH_OPERATION (proxy))
+    tp_cli_dbus_properties_call_get_all (proxy, -1,
+        TP_IFACE_CHANNEL_DISPATCH_OPERATION,
+        queue_get_all_cb, loop, NULL, NULL);
+  else if (TP_IS_CHANNEL_REQUEST (proxy))
+    tp_cli_dbus_properties_call_get_all (proxy, -1, TP_IFACE_CHANNEL_REQUEST,
+        queue_get_all_cb, loop, NULL, NULL);
+  else if (TP_IS_CLIENT (proxy))
+    tp_cli_dbus_properties_call_get_all (proxy, -1, TP_IFACE_CLIENT,
+        queue_get_all_cb, loop, NULL, NULL);
+  else if (TP_IS_CONNECTION (proxy))
+    tp_cli_dbus_properties_call_get_all (proxy, -1, TP_IFACE_CONNECTION,
+        queue_get_all_cb, loop, NULL, NULL);
+  else if (TP_IS_CONNECTION_MANAGER (proxy))
+    tp_cli_dbus_properties_call_get_all (proxy, -1,
+        TP_IFACE_CONNECTION_MANAGER,
+        queue_get_all_cb, loop, NULL, NULL);
+  else if (TP_IS_PROTOCOL (proxy))
+    tp_cli_dbus_properties_call_get_all (proxy, -1, TP_IFACE_PROTOCOL,
+        queue_get_all_cb, loop, NULL, NULL);
+  else
+    g_error ("Don't know how to sync GDBus queue for %s",
+        G_OBJECT_TYPE_NAME (proxy));
+
   g_main_loop_run (loop);
   g_main_loop_unref (loop);
 }
