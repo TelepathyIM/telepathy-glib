@@ -335,14 +335,14 @@ main (int argc,
       destroy_user_data, (GObject *) f->proxies[TEST_A], &error_out);
   g_assert_no_error (error_out);
 
+  g_message ("Dropping private D-Bus connection");
+  drop_private_connection ();
+
   g_message ("Emitting signal");
   empty_asv = tp_asv_new (NULL, NULL);
   tp_svc_dbus_properties_emit_properties_changed (f->cd_service,
       TP_IFACE_CHANNEL_DISPATCHER, empty_asv, NULL);
   g_hash_table_unref (empty_asv);
-
-  g_message ("Dropping private D-Bus connection");
-  drop_private_connection ();
 
   /* wait for everything to happen */
   g_message ("Running main loop");
