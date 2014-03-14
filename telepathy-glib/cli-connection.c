@@ -25,5 +25,6 @@
 
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/util.h>
 
 #include "_gen/tp-cli-connection-body.h"

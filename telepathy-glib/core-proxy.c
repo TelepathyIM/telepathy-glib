@@ -41,45 +41,22 @@ tp_proxy_check_interface_by_id (gpointer proxy,
 }
 
 TpProxyPendingCall *
-tp_proxy_pending_call_v0_new (TpProxy *proxy,
+tp_proxy_pending_call_v1_new (TpProxy *proxy,
+    gint timeout_ms,
     GQuark iface,
     const gchar *member,
-    DBusGProxy *iface_proxy,
-    TpProxyInvokeFunc invoke_callback,
+    GVariant *args,
+    const GVariantType *reply_type,
+    TpProxyWrapperFunc wrapper,
     GCallback callback,
     gpointer user_data,
     GDestroyNotify destroy,
-    GObject *weak_object,
-    gboolean cancel_must_raise)
+    GObject *weak_object)
 {
   g_assert (_tp_proxy_implementation.version != NULL);
-  return _tp_proxy_implementation.pending_call_new (proxy, iface, member,
-      iface_proxy, invoke_callback, callback, user_data, destroy,
-      weak_object, cancel_must_raise);
-}
-
-void
-tp_proxy_pending_call_v0_take_pending_call (TpProxyPendingCall *pc,
-    DBusGProxyCall *pending_call)
-{
-  g_assert (_tp_proxy_implementation.version != NULL);
-  _tp_proxy_implementation.pending_call_take_pending_call (pc, pending_call);
-}
-
-void
-tp_proxy_pending_call_v0_completed (gpointer p)
-{
-  g_assert (_tp_proxy_implementation.version != NULL);
-  _tp_proxy_implementation.pending_call_completed (p);
-}
-
-void
-tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *pc,
-    GError *error,
-    GValueArray *args)
-{
-  g_assert (_tp_proxy_implementation.version != NULL);
-  _tp_proxy_implementation.pending_call_take_results (pc, error, args);
+  return _tp_proxy_implementation.pending_call_new (proxy, timeout_ms,
+      iface, member, args, reply_type, wrapper,
+      callback, user_data, destroy, weak_object);
 }
 
 TpProxySignalConnection *
@@ -120,9 +97,6 @@ tp_private_proxy_set_implementation (TpProxyImplementation *impl)
 
   g_assert (impl->check_interface_by_id != NULL);
   g_assert (impl->pending_call_new != NULL);
-  g_assert (impl->pending_call_take_pending_call != NULL);
-  g_assert (impl->pending_call_take_results != NULL);
-  g_assert (impl->pending_call_completed != NULL);
   g_assert (impl->signal_connection_new != NULL);
   g_assert (impl->signal_connection_take_results != NULL);
 

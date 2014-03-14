@@ -30,7 +30,7 @@ from getopt import gnu_getopt
 from libtpcodegen import file_set_contents, key_by_name, u
 from libglibcodegen import (Signature, type_to_gtype,
         get_docstring, xml_escape, get_deprecated, copy_into_gvalue,
-        value_getter, move_into_gvalue)
+        value_getter)
 
 NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
 
@@ -382,6 +382,8 @@ class Generator(object):
         ret_count = 0
         in_args = []
         out_args = []
+        in_sig = []
+        out_sig = []
 
         for arg in method.getElementsByTagName('arg'):
             name = arg.getAttribute('name')
@@ -406,6 +408,7 @@ class Generator(object):
             if direction != 'out':
                 in_args.append((name, info, tp_type, arg))
             else:
+                out_sig.append(type)
                 out_args.append((name, info, tp_type, arg))
 
         # Async reply callback type
@@ -476,109 +479,19 @@ class Generator(object):
                                                          iface_lc,
                                                          member_lc)
 
-        collect_callback = '_%s_%s_collect_callback_%s' % (self.prefix_lc,
-                                                           iface_lc,
-                                                           member_lc)
-
-        # This is needed by both reentrant and non-reentrant calls
-        if self.split_reentrants:
-            collector = lambda x: (self.b(x), self.rb(x))
-        else:
-            collector = self.b
-
-        # The callback called by dbus-glib; this ends the call and collects
-        # the results into a GValueArray.
-        collector('static void')
-        collector('%s (DBusGProxy *proxy,' % collect_callback)
-        collector('    DBusGProxyCall *call,')
-        collector('    gpointer user_data)')
-        collector('{')
-        collector('  GError *error = NULL;')
-
-        if len(out_args) > 0:
-            collector('  GValueArray *args;')
-            collector('  GValue blank = { 0 };')
-            collector('  guint i;')
-
-            for arg in out_args:
-                name, info, tp_type, elt = arg
-                ctype, gtype, marshaller, pointer = info
-
-                # "We handle variants specially; the caller is expected to
-                # have already allocated storage for them". Thanks,
-                # dbus-glib...
-                if gtype == 'G_TYPE_VALUE':
-                    collector('  GValue *%s = g_new0 (GValue, 1);' % name)
-                else:
-                    collector('  %s%s;' % (ctype, name))
-
-        collector('')
-        collector('  dbus_g_proxy_end_call (proxy, call, &error,')
-
-        for arg in out_args:
-            name, info, tp_type, elt = arg
-            ctype, gtype, marshaller, pointer = info
-
-            if gtype == 'G_TYPE_VALUE':
-                collector('      %s, %s,' % (gtype, name))
-            else:
-                collector('      %s, &%s,' % (gtype, name))
-
-        collector('      G_TYPE_INVALID);')
-
-        if len(out_args) == 0:
-            collector('  tp_proxy_pending_call_v0_take_results (user_data, error,'
-                   'NULL);')
-        else:
-            collector('')
-            collector('  if (error != NULL)')
-            collector('    {')
-            collector('      tp_proxy_pending_call_v0_take_results (user_data, error,')
-            collector('          NULL);')
-
-            for arg in out_args:
-                name, info, tp_type, elt = arg
-                ctype, gtype, marshaller, pointer = info
-                if gtype == 'G_TYPE_VALUE':
-                    collector('      g_free (%s);' % name)
-
-            collector('      return;')
-            collector('    }')
-            collector('')
-            collector('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
-            collector('')
-            collector('  args = g_value_array_new (%d);' % len(out_args))
-            collector('  g_value_init (&blank, G_TYPE_INT);')
-            collector('')
-            collector('  for (i = 0; i < %d; i++)' % len(out_args))
-            collector('    g_value_array_append (args, &blank);')
-            collector('')
-            collector('  G_GNUC_END_IGNORE_DEPRECATIONS')
-
-            for i, arg in enumerate(out_args):
-                name, info, tp_type, elt = arg
-                ctype, gtype, marshaller, pointer = info
-
-                collector('')
-                collector('  g_value_unset (args->values + %d);' % i)
-                collector('  g_value_init (args->values + %d, %s);'
-                          % (i, gtype))
-                collector('  ' + move_into_gvalue('args->values + %d' % i,
-                    gtype, marshaller, name))
-
-            collector('  tp_proxy_pending_call_v0_take_results (user_data, '
-                      'NULL, args);')
-
-        collector('}')
-
         self.b('static void')
         self.b('%s (TpProxy *self,' % invoke_callback)
-        self.b('    GError *error,')
-        self.b('    GValueArray *args,')
+        self.b('    const GError *error,')
+        self.b('    GVariant *args,')
         self.b('    GCallback generic_callback,')
         self.b('    gpointer user_data,')
         self.b('    GObject *weak_object)')
         self.b('{')
+
+        if out_args:
+            self.b('  GValue args_val = G_VALUE_INIT;')
+            self.b('  GValueArray *args_va;')
+
         self.b('  %s callback = (%s) generic_callback;'
                % (callback_name, callback_name))
         self.b('')
@@ -598,9 +511,14 @@ class Generator(object):
                 self.b('          0,')
 
         self.b('          error, user_data, weak_object);')
-        self.b('      g_error_free (error);')
         self.b('      return;')
         self.b('    }')
+        self.b('')
+
+        if out_args:
+            self.b('  dbus_g_value_parse_g_variant (args, &args_val);')
+            self.b('  args_va = g_value_get_boxed (&args_val);')
+            self.b('')
 
         self.b('  callback ((%s) self,' % self.proxy_cls)
 
@@ -609,18 +527,13 @@ class Generator(object):
             ctype, gtype, marshaller, pointer = info
 
             getter = value_getter(gtype, marshaller)
-            self.b('      %s (args->values + %d),' % (getter, i))
+            self.b('      %s (args_va->values + %d),' % (getter, i))
 
         self.b('      error, user_data, weak_object);')
-        self.b('')
 
-        self.b('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
-        if len(out_args) > 0:
-            self.b('  g_value_array_free (args);')
-        else:
-            self.b('  if (args != NULL)')
-            self.b('    g_value_array_free (args);')
-        self.b('  G_GNUC_END_IGNORE_DEPRECATIONS')
+        if out_args:
+            self.b('')
+            self.b('  g_value_unset (&args_val);')
 
         self.b('}')
         self.b('')
@@ -717,80 +630,42 @@ class Generator(object):
         self.b('    GDestroyNotify destroy,')
         self.b('    GObject *weak_object)')
         self.b('{')
-        self.b('  GError *error = NULL;')
-        self.b('  GQuark interface = %s;' % self.get_iface_quark())
-        self.b('  DBusGProxy *iface;')
+        self.b('  TpProxyPendingCall *ret;')
+        self.b('  GValue args_val = G_VALUE_INIT;')
         self.b('')
-        self.b('  g_return_val_if_fail (callback != NULL || '
-               'user_data == NULL, NULL);')
-        self.b('  g_return_val_if_fail (callback != NULL || '
-               'destroy == NULL, NULL);')
-        self.b('  g_return_val_if_fail (callback != NULL || '
-               'weak_object == NULL, NULL);')
-        self.b('')
-        self.b('  iface = tp_proxy_get_interface_by_id (')
-        self.b('      (TpProxy *) proxy,')
-        self.b('      interface, (callback == NULL ? NULL : &error));')
-        self.b('')
-        self.b('  if (callback == NULL)')
-        self.b('    {')
-        self.b('      if (iface == NULL)')
-        self.b('        return NULL;')
-        self.b('')
-        self.b('      dbus_g_proxy_call_no_reply (iface, "%s",' % member)
+        self.b('  g_value_init (&args_val, '
+                'dbus_g_type_get_struct ("GValueArray",')
 
         for arg in in_args:
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
+            self.b('      %s,' % gtype)
 
-            const = pointer and 'const ' or ''
+        self.b('      G_TYPE_INVALID));')
+        self.b('  g_value_take_boxed (&args_val,')
+        self.b('      tp_value_array_build (%d,' % len(in_args))
 
+        for arg in in_args:
+            name, info, tp_type, elt = arg
+            ctype, gtype, marshaller, pointer = info
             self.b('          %s, %s,' % (gtype, name))
 
-        self.b('          G_TYPE_INVALID);')
-        self.b('      return NULL;')
-        self.b('    }')
-        self.b('  else')
-        self.b('    {')
-        self.b('      TpProxyPendingCall *data;')
+        self.b('          G_TYPE_INVALID));')
         self.b('')
-        self.b('      data = tp_proxy_pending_call_v0_new ((TpProxy *) proxy,')
-        self.b('          interface, "%s", iface,' % member)
-        self.b('          %s,' % invoke_callback)
-        self.b('          G_CALLBACK (callback), user_data, destroy,')
-        self.b('          weak_object, FALSE);')
-        self.b('')
-        # If iface is NULL then the only valid thing we can do is to
-        # terminate the call with an error. Go through the machinery
-        # we'd use for dbus-glib anyway, to stop it being re-entrant.
-        self.b('      if (iface == NULL)')
-        self.b('        {')
-        self.b('          tp_proxy_pending_call_v0_take_results (data,')
-        self.b('              error, NULL);')
-        self.b('          tp_proxy_pending_call_v0_completed (data);')
-        self.b('          return data;')
-        self.b('        }')
-        self.b('')
-        self.b('      tp_proxy_pending_call_v0_take_pending_call (data,')
-        self.b('          dbus_g_proxy_begin_call_with_timeout (iface,')
-        self.b('              "%s",' % member)
-        self.b('              %s,' % collect_callback)
-        self.b('              data,')
-        self.b('              tp_proxy_pending_call_v0_completed,')
-        self.b('              timeout_ms,')
-
-        for arg in in_args:
-            name, info, tp_type, elt = arg
-            ctype, gtype, marshaller, pointer = info
-
-            const = pointer and 'const ' or ''
-
-            self.b('              %s, %s,' % (gtype, name))
-
-        self.b('              G_TYPE_INVALID));')
-        self.b('')
-        self.b('      return data;')
-        self.b('    }')
+        self.b('  ret = tp_proxy_pending_call_v1_new ((TpProxy *) proxy,')
+        self.b('      timeout_ms,')
+        self.b('      %s,' % self.get_iface_quark())
+        self.b('      "%s",' % member)
+        self.b('      /* consume floating ref */')
+        self.b('      dbus_g_value_build_g_variant (&args_val),')
+        self.b('      G_VARIANT_TYPE ("(%s)"),' % (''.join(out_sig)))
+        self.b('      %s,' % invoke_callback)
+        self.b('      G_CALLBACK (callback),')
+        self.b('      user_data,')
+        self.b('      destroy,')
+        self.b('      weak_object);')
+        self.b('  g_value_unset (&args_val);')
+        self.b('  return ret;')
         self.b('}')
         self.b('')
 
@@ -827,7 +702,7 @@ class Generator(object):
         self.h('#endif /* __GTK_DOC_IGNORE__ */')
 
         self.do_method_reentrant(method, iface_lc, member, member_lc,
-                                 in_args, out_args, collect_callback)
+                                 in_args, out_args, out_sig)
 
         # leave a gap for the end of the method
         self.d('')
@@ -835,7 +710,7 @@ class Generator(object):
         self.h('')
 
     def do_method_reentrant(self, method, iface_lc, member, member_lc, in_args,
-            out_args, collect_callback):
+            out_args, out_sig):
         # Reentrant blocking calls
         # Example:
         # gboolean tp_cli_properties_interface_run_get_properties
@@ -882,12 +757,18 @@ class Generator(object):
 
         b('static void')
         b('%s (TpProxy *self G_GNUC_UNUSED,' % reentrant_invoke)
-        b('    GError *error,')
-        b('    GValueArray *args,')
-        b('    GCallback unused G_GNUC_UNUSED,')
-        b('    gpointer user_data G_GNUC_UNUSED,')
-        b('    GObject *unused2 G_GNUC_UNUSED)')
+        b('    const GError *error,')
+        b('    GVariant *args_variant,')
+        b('    GCallback dummy G_GNUC_UNUSED,')
+        b('    gpointer user_data,')
+        b('    GObject *weak_object G_GNUC_UNUSED)')
         b('{')
+
+        if out_args:
+            b('  GValue args_val = G_VALUE_INIT;')
+            b('  GValueArray *args;')
+            b('')
+
         b('  _%s_%s_run_state_%s *state = user_data;'
                % (self.prefix_lc, iface_lc, member_lc))
         b('')
@@ -898,13 +779,15 @@ class Generator(object):
         b('  if (error != NULL)')
         b('    {')
         b('      if (state->error != NULL)')
-        b('        *state->error = error;')
-        b('      else')
-        b('        g_error_free (error);')
+        b('        *state->error = g_error_copy (error);')
         b('')
         b('      return;')
         b('    }')
         b('')
+
+        if out_args:
+            b('  dbus_g_value_parse_g_variant (args_variant, &args_val);')
+            b('  args = g_value_get_boxed (&args_val);')
 
         for i, arg in enumerate(out_args):
             name, info, tp_type, elt = arg
@@ -926,13 +809,8 @@ class Generator(object):
 
             b('')
 
-        b('  G_GNUC_BEGIN_IGNORE_DEPRECATIONS')
-        if len(out_args) > 0:
-            b('  g_value_array_free (args);')
-        else:
-            b('  if (args != NULL)')
-            b('    g_value_array_free (args);')
-        b('  G_GNUC_END_IGNORE_DEPRECATIONS')
+        if out_args:
+            b('  g_value_unset (&args_val);')
 
         b('}')
         b('')
@@ -1029,7 +907,6 @@ class Generator(object):
         b('    GError **error,')
         b('    GMainLoop **loop)')
         b('{')
-        b('  DBusGProxy *iface;')
         b('  GQuark interface = %s;' % self.get_iface_quark())
         b('  TpProxyPendingCall *pc;')
         b('  _%s_%s_run_state_%s state = {'
@@ -1042,43 +919,52 @@ class Generator(object):
             b('    %s,' % name)
 
         b('      FALSE /* completed */, FALSE /* success */ };')
+        b('  GValue args_val = G_VALUE_INIT;')
         b('')
-        b('  g_return_val_if_fail (%s (proxy), FALSE);'
-               % self.proxy_assert)
-        b('')
-        b('  iface = tp_proxy_get_interface_by_id')
-        b('       ((TpProxy *) proxy, interface, error);')
-        b('')
-        b('  if (iface == NULL)')
-        b('    return FALSE;')
-        b('')
-        b('  state.loop = g_main_loop_new (NULL, FALSE);')
-        b('')
-        b('  pc = tp_proxy_pending_call_v0_new ((TpProxy *) proxy,')
-        b('      interface, "%s", iface,' % member)
-        b('      %s,' % reentrant_invoke)
-        b('      NULL, &state, NULL, NULL, TRUE);')
-        b('')
-        b('  if (loop != NULL)')
-        b('    *loop = state.loop;')
-        b('')
-        b('  tp_proxy_pending_call_v0_take_pending_call (pc,')
-        b('      dbus_g_proxy_begin_call_with_timeout (iface,')
-        b('          "%s",' % member)
-        b('          %s,' % collect_callback)
-        b('          pc,')
-        b('          tp_proxy_pending_call_v0_completed,')
-        b('          timeout_ms,')
+        b('  g_value_init (&args_val, dbus_g_type_get_struct ("GValueArray",')
 
         for arg in in_args:
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
+            b('      %s,' % gtype)
 
-            const = pointer and 'const ' or ''
+        b('      G_TYPE_INVALID));')
 
-            b('              %s, %s,' % (gtype, name))
+        b('  g_value_take_boxed (&args_val,')
+        b('      tp_value_array_build (%d,' % len(in_args))
+
+        for arg in in_args:
+            name, info, tp_type, elt = arg
+            ctype, gtype, marshaller, pointer = info
+            b('          %s, %s,' % (gtype, name))
 
         b('          G_TYPE_INVALID));')
+        b('')
+        b('  g_return_val_if_fail (%s (proxy), FALSE);'
+               % self.proxy_assert)
+        b('')
+        b('  if (!tp_proxy_check_interface_by_id')
+        b('       ((TpProxy *) proxy, interface, error))')
+        b('    return FALSE;')
+        b('')
+        b('  state.loop = g_main_loop_new (NULL, FALSE);')
+        b('')
+        b('  if (loop != NULL)')
+        b('    *loop = state.loop;')
+        b('')
+        b('  pc = tp_proxy_pending_call_v1_new ((TpProxy *) proxy,')
+        b('      timeout_ms,')
+        b('      interface,')
+        b('      "%s",' % member)
+        b('      /* consume floating ref */')
+        b('      dbus_g_value_build_g_variant (&args_val),')
+        b('      G_VARIANT_TYPE ("(%s)"),' % (''.join(out_sig)))
+        b('      %s,' % reentrant_invoke)
+        b('      (void *) 1, /* any non-NULL pointer */')
+        b('      &state,')
+        b('      NULL,')
+        b('      NULL);')
+        b('  g_value_unset (&args_val);')
         b('')
         b('  if (!state.completed)')
         b('    g_main_loop_run (state.loop);')

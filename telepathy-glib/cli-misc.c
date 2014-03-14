@@ -26,6 +26,7 @@
 
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/util.h>
 
 #include "telepathy-glib/_gen/tp-cli-account-body.h"
 #include "telepathy-glib/_gen/tp-cli-account-manager-body.h"

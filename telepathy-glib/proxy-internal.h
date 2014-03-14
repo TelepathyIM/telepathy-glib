@@ -33,21 +33,16 @@ typedef struct {
         GError **);
 
     TpProxyPendingCall *(*pending_call_new) (TpProxy *,
+        gint,
         GQuark,
         const gchar *,
-        DBusGProxy *,
-        TpProxyInvokeFunc,
+        GVariant *,
+        const GVariantType *,
+        TpProxyWrapperFunc,
         GCallback,
         gpointer,
         GDestroyNotify,
-        GObject *,
-        gboolean);
-    void (*pending_call_take_pending_call) (TpProxyPendingCall *,
-        DBusGProxyCall *);
-    void (*pending_call_take_results) (TpProxyPendingCall *,
-        GError *,
-        GValueArray *);
-    GDestroyNotify pending_call_completed;
+        GObject *);
 
     TpProxySignalConnection *(*signal_connection_new) (TpProxy *,
         GQuark,
@@ -70,25 +65,18 @@ gboolean _tp_proxy_check_interface_by_id (TpProxy *self,
     GQuark iface,
     GError **error);
 
-TpProxyPendingCall *_tp_proxy_pending_call_new (TpProxy *self,
+TpProxyPendingCall *
+_tp_proxy_pending_call_v1_new (TpProxy *proxy,
+    gint timeout_ms,
     GQuark iface,
     const gchar *member,
-    DBusGProxy *iface_proxy,
-    TpProxyInvokeFunc invoke_callback,
+    GVariant *args,
+    const GVariantType *reply_type,
+    TpProxyWrapperFunc wrapper,
     GCallback callback,
     gpointer user_data,
     GDestroyNotify destroy,
-    GObject *weak_object,
-    gboolean cancel_must_raise);
-
-void _tp_proxy_pending_call_take_pending_call (TpProxyPendingCall *pc,
-    DBusGProxyCall *pending_call);
-
-void _tp_proxy_pending_call_take_results (TpProxyPendingCall *pc,
-    GError *error,
-    GValueArray *args);
-
-void _tp_proxy_pending_call_completed (gpointer p);
+    GObject *weak_object);
 
 TpProxySignalConnection *_tp_proxy_signal_connection_new (TpProxy *self,
     GQuark iface,

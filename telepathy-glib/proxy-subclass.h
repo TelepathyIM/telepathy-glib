@@ -29,23 +29,18 @@
 
 G_BEGIN_DECLS
 
+typedef void (*TpProxyWrapperFunc) (TpProxy *self,
+    const GError *error, GVariant *args,
+    GCallback callback, gpointer user_data, GObject *weak_object);
 typedef void (*TpProxyInvokeFunc) (TpProxy *self,
     GError *error, GValueArray *args, GCallback callback, gpointer user_data,
     GObject *weak_object);
 
-TpProxyPendingCall *tp_proxy_pending_call_v0_new (TpProxy *self,
-    GQuark iface, const gchar *member, DBusGProxy *iface_proxy,
-    TpProxyInvokeFunc invoke_callback,
+TpProxyPendingCall *tp_proxy_pending_call_v1_new (TpProxy *self,
+    gint timeout_ms, GQuark iface, const gchar *member,
+    GVariant *args, const GVariantType *reply_type, TpProxyWrapperFunc wrapper,
     GCallback callback, gpointer user_data, GDestroyNotify destroy,
-    GObject *weak_object, gboolean cancel_must_raise);
-
-void tp_proxy_pending_call_v0_take_pending_call (TpProxyPendingCall *pc,
-    DBusGProxyCall *pending_call);
-
-void tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *pc,
-    GError *error, GValueArray *args);
-
-void tp_proxy_pending_call_v0_completed (gpointer p);
+    GObject *weak_object);
 
 TpProxySignalConnection *tp_proxy_signal_connection_v0_new (TpProxy *self,
     GQuark iface, const gchar *member,
