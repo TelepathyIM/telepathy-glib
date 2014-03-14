@@ -265,6 +265,7 @@ tp_tests_create_conn (GType conn_type,
   gchar *name;
   gchar *conn_path;
   GError *error = NULL;
+  gboolean ok;
 
   g_assert (service_conn != NULL);
   g_assert (client_conn != NULL);
@@ -278,9 +279,10 @@ tp_tests_create_conn (GType conn_type,
         NULL);
   g_assert (*service_conn != NULL);
 
-  g_assert (tp_base_connection_register (*service_conn, "simple",
-        &name, &conn_path, &error));
+  ok = tp_base_connection_register (*service_conn, "simple",
+        &name, &conn_path, &error);
   g_assert_no_error (error);
+  g_assert (ok);
 
   *client_conn = tp_tests_connection_new (dbus, NULL, conn_path, &error);
   g_assert (*client_conn != NULL);

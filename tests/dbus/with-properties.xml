@@ -10,9 +10,12 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal"
                   value="true"/>
 
-      <property name="ReadOnly" access="read" type="u"/>
-      <property name="WriteOnly" access="write" type="u"/>
-      <property name="ReadWrite" access="readwrite" type="u">
+      <property name="ReadOnly" access="read" type="u"
+          tp:name-for-bindings="Read_Only"/>
+      <property name="WriteOnly" access="write" type="u"
+          tp:name-for-bindings="Write_Only"/>
+      <property name="ReadWrite" access="readwrite" type="u"
+          tp:name-for-bindings="Read_Write">
         <!-- … and that this overrides the global annotation. -->
         <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal"
                     value="invalidates"/>

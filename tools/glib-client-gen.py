@@ -29,8 +29,8 @@ from getopt import gnu_getopt
 
 from libtpcodegen import file_set_contents, key_by_name, u
 from libglibcodegen import (Signature, type_to_gtype,
-        get_docstring, xml_escape, get_deprecated, copy_into_gvalue)
-
+        get_docstring, xml_escape, get_deprecated, copy_into_gvalue,
+        value_getter)
 
 NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
 
@@ -236,31 +236,12 @@ class Generator(object):
         self.b('  if (callback != NULL)')
         self.b('    callback (g_object_ref (tpproxy),')
 
-        # FIXME: factor out into a function
         for i, arg in enumerate(args):
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            if marshaller == 'BOXED':
-                self.b('      g_value_get_boxed (args->values + %d),' % i)
-            elif gtype == 'G_TYPE_STRING':
-                self.b('      g_value_get_string (args->values + %d),' % i)
-            elif gtype == 'G_TYPE_UCHAR':
-                self.b('      g_value_get_uchar (args->values + %d),' % i)
-            elif gtype == 'G_TYPE_BOOLEAN':
-                self.b('      g_value_get_boolean (args->values + %d),' % i)
-            elif gtype == 'G_TYPE_UINT':
-                self.b('      g_value_get_uint (args->values + %d),' % i)
-            elif gtype == 'G_TYPE_INT':
-                self.b('      g_value_get_int (args->values + %d),' % i)
-            elif gtype == 'G_TYPE_UINT64':
-                self.b('      g_value_get_uint64 (args->values + %d),' % i)
-            elif gtype == 'G_TYPE_INT64':
-                self.b('      g_value_get_int64 (args->values + %d),' % i)
-            elif gtype == 'G_TYPE_DOUBLE':
-                self.b('      g_value_get_double (args->values + %d),' % i)
-            else:
-                assert False, "Don't know how to get %s from a GValue" % gtype
+            getter = value_getter(gtype, marshaller)
+            self.b('      %s (args->values + %d),' % (getter, i))
 
         self.b('      user_data,')
         self.b('      weak_object);')
@@ -623,31 +604,12 @@ class Generator(object):
 
         self.b('  callback ((%s) self,' % self.proxy_cls)
 
-        # FIXME: factor out into a function
         for i, arg in enumerate(out_args):
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            if marshaller == 'BOXED':
-                self.b('      g_value_get_boxed (args->values + %d),' % i)
-            elif gtype == 'G_TYPE_STRING':
-                self.b('      g_value_get_string (args->values + %d),' % i)
-            elif gtype == 'G_TYPE_UCHAR':
-                self.b('      g_value_get_uchar (args->values + %d),' % i)
-            elif gtype == 'G_TYPE_BOOLEAN':
-                self.b('      g_value_get_boolean (args->values + %d),' % i)
-            elif gtype == 'G_TYPE_UINT':
-                self.b('      g_value_get_uint (args->values + %d),' % i)
-            elif gtype == 'G_TYPE_INT':
-                self.b('      g_value_get_int (args->values + %d),' % i)
-            elif gtype == 'G_TYPE_UINT64':
-                self.b('      g_value_get_uint64 (args->values + %d),' % i)
-            elif gtype == 'G_TYPE_INT64':
-                self.b('      g_value_get_int64 (args->values + %d),' % i)
-            elif gtype == 'G_TYPE_DOUBLE':
-                self.b('      g_value_get_double (args->values + %d),' % i)
-            else:
-                assert False, "Don't know how to get %s from a GValue" % gtype
+            getter = value_getter(gtype, marshaller)
+            self.b('      %s (args->values + %d),' % (getter, i))
 
         self.b('      error, user_data, weak_object);')
         self.b('')

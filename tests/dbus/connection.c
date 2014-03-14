@@ -280,6 +280,7 @@ test_object_path (Test *test,
       "simple_protocol");
 
   /* Register the same connection with an invalid object path */
+  tp_dbus_daemon_unregister_object (test->dbus, test->service_conn);
   tp_dbus_daemon_register_object (test->dbus, invalid_path, test->service_conn);
   tp_dbus_daemon_request_name (test->dbus, invalid_name, FALSE, &error);
   g_assert_no_error (error);
@@ -289,6 +290,12 @@ test_object_path (Test *test,
   g_assert (connection == NULL);
   g_assert_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_OBJECT_PATH);
   g_clear_error (&error);
+
+  /* Put it back where it was meant to be so we can do teardown. */
+  tp_dbus_daemon_unregister_object (test->dbus, test->service_conn);
+  tp_dbus_daemon_register_object (test->dbus,
+      tp_base_connection_get_object_path (test->service_conn_as_base),
+      test->service_conn);
 }
 
 int

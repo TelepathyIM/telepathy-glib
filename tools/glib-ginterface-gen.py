@@ -26,22 +26,12 @@ import sys
 import os.path
 import xml.dom.minidom
 
-from libtpcodegen import file_set_contents, key_by_name, u
+from libtpcodegen import file_set_contents, key_by_name, u, get_emits_changed
 from libglibcodegen import Signature, type_to_gtype, \
         NS_TP, dbus_gutils_wincaps_to_uscore
 
 
 NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
-
-def get_emits_changed(node):
-    try:
-        return [
-            annotation.getAttribute('value')
-            for annotation in node.getElementsByTagName('annotation')
-            if annotation.getAttribute('name') == 'org.freedesktop.DBus.Property.EmitsChangedSignal'
-            ][0]
-    except IndexError:
-        return None
 
 class Generator(object):
 
