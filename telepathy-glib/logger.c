@@ -84,16 +84,15 @@ static gpointer logger_singleton = NULL;
 /**
  * tp_logger_dup:
  *
- * Returns an logger proxy on the D-Bus daemon on which this
- * process was activated (if it was launched by D-Bus service activation), or
- * the session bus (otherwise). This logger proxy will always have
+ * Returns an logger proxy on the session bus.
+ * This logger proxy will always have
  * the result of tp_dbus_daemon_dup() as its #TpProxy:dbus-daemon.
  *
  * The returned #TpLogger is cached; the same #TpLogger object
  * will be returned by this function repeatedly, as long as at least one
  * reference exists.
  *
- * Returns: (transfer full): an logger proxy on the starter or session
+ * Returns: (transfer full): an logger proxy on the session
  *          bus, or %NULL if it wasn't possible to get a dbus daemon proxy for
  *          the appropriate bus
 

@@ -694,7 +694,7 @@ _tp_account_manager_new_internal (TpClientFactory *factory,
  * @bus_daemon.
  *
  * Use tp_account_manager_dup() instead if you want an account manager proxy
- * on the starter or session bus (which is almost always the right thing for
+ * on the session bus (which is almost always the right thing fo
  * Telepathy).
  *
  * Returns: a new reference to an account manager proxy
@@ -730,7 +730,7 @@ tp_account_manager_new_with_factory (TpClientFactory *factory)
       tp_client_factory_get_dbus_daemon (factory));
 }
 
-static gpointer starter_account_manager_proxy = NULL;
+static gpointer default_account_manager_proxy = NULL;
 
 /**
  * tp_account_manager_set_default:
@@ -767,16 +767,16 @@ tp_account_manager_set_default (TpAccountManager *manager)
       g_return_if_reached ();
     }
 
-  if (starter_account_manager_proxy != NULL)
+  if (default_account_manager_proxy != NULL)
     {
       CRITICAL ("tp_account_manager_set_default() may only be called once and"
           "before first call of tp_account_manager_dup()");
       g_return_if_reached ();
     }
 
-  starter_account_manager_proxy = manager;
-  g_object_add_weak_pointer (starter_account_manager_proxy,
-      &starter_account_manager_proxy);
+  default_account_manager_proxy = manager;
+  g_object_add_weak_pointer (default_account_manager_proxy,
+      &default_account_manager_proxy);
 }
 
 /**
@@ -793,15 +793,14 @@ tp_account_manager_set_default (TpAccountManager *manager)
 gboolean
 tp_account_manager_can_set_default (void)
 {
-  return starter_account_manager_proxy == NULL;
+  return default_account_manager_proxy == NULL;
 }
 
 /**
  * tp_account_manager_dup:
  *
- * Returns an account manager proxy on the D-Bus daemon on which this
- * process was activated (if it was launched by D-Bus service activation), or
- * the session bus (otherwise). This account manager will always have
+ * Returns an account manager proxy on the session bus.
+ * This account manager will always have
  * the result of tp_dbus_daemon_dup() as its #TpProxy:dbus-daemon.
  *
  * The returned #TpAccountManager is cached; the same #TpAccountManager object
@@ -814,7 +813,7 @@ tp_account_manager_can_set_default (void)
  * will be created the first time this function is called, using a new
  * #TpAutomaticClientFactory as its #TpProxy:factory.
  *
- * Returns: (transfer full): an account manager proxy on the starter or session
+ * Returns: (transfer full): an account manager proxy on the session
  *          bus, or %NULL if it wasn't possible to get a dbus daemon proxy for
  *          the appropriate bus
  *
@@ -826,8 +825,8 @@ tp_account_manager_dup (void)
   TpDBusDaemon *dbus;
   GError *error = NULL;
 
-  if (starter_account_manager_proxy != NULL)
-    return g_object_ref (starter_account_manager_proxy);
+  if (default_account_manager_proxy != NULL)
+    return g_object_ref (default_account_manager_proxy);
 
   dbus = tp_dbus_daemon_dup (&error);
   if (dbus == NULL)
@@ -837,14 +836,14 @@ tp_account_manager_dup (void)
       return NULL;
     }
 
-  starter_account_manager_proxy = tp_account_manager_new (dbus);
-  g_assert (starter_account_manager_proxy != NULL);
-  g_object_add_weak_pointer (starter_account_manager_proxy,
-      &starter_account_manager_proxy);
+  default_account_manager_proxy = tp_account_manager_new (dbus);
+  g_assert (default_account_manager_proxy != NULL);
+  g_object_add_weak_pointer (default_account_manager_proxy,
+      &default_account_manager_proxy);
 
   g_object_unref (dbus);
 
-  return starter_account_manager_proxy;
+  return default_account_manager_proxy;
 }
 
 static void

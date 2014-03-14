@@ -337,15 +337,13 @@ tp_debug_sender_init (TpDebugSender *self)
 /**
  * tp_debug_sender_dup:
  *
- * Returns a #TpDebugSender instance on the bus this process was activated by
- * (if it was launched by D-Bus service activation), or the session bus
- * (otherwise).
+ * Returns a #TpDebugSender instance on the session bus.
  *
  * The returned #TpDebugSender is cached; the same #TpDebugSender object will
  * be returned by this function repeatedly, as long as at least one reference
  * exists.
  *
- * Returns: a reference to the #TpDebugSender instance for the current starter
+ * Returns: a reference to the #TpDebugSender instance for the current session
  *          bus daemon
  *
  * Since: 0.7.36
