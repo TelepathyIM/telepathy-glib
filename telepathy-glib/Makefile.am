@@ -85,6 +85,7 @@ tpginclude_HEADERS = \
     contact.h \
     contact-operations.h \
     base-contact-list.h \
+    core-svc-interface.h \
     dbus.h \
     dbus-daemon.h \
     dbus-properties-mixin.h \
@@ -190,6 +191,7 @@ libtelepathy_glib_core_internal_la_LIBADD = $(ALL_LIBS)
 libtelepathy_glib_core_internal_la_SOURCES = \
     core-dbus.c \
     core-proxy.c \
+    core-svc-interface.c \
     core-util.c \
     errors.c \
     $(NULL)
@@ -335,6 +337,8 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     stream-tube-channel.c \
     stream-tube-connection-internal.h \
     stream-tube-connection.c \
+    svc-interface-skeleton.c \
+    svc-interface-skeleton-internal.h \
     text-channel.c \
     tls-certificate.c \
     tls-certificate-rejection.c \

@@ -104,6 +104,7 @@ static GDebugKey keys[] = {
   { "call",          TP_DEBUG_CALL },
   { "debugger",      TP_DEBUG_DEBUGGER },
   { "tls",           TP_DEBUG_TLS },
+  { "svc",           TP_DEBUG_SVC },
   { 0, }
 };
 
@@ -139,6 +140,7 @@ static DebugKeyToDomain key_to_domain[] = {
   { TP_DEBUG_ROOM_CONFIG, G_LOG_DOMAIN "/room-config" },
   { TP_DEBUG_DEBUGGER,   G_LOG_DOMAIN "/debugger" },
   { TP_DEBUG_TLS,        G_LOG_DOMAIN "/tls" },
+  { TP_DEBUG_SVC,        G_LOG_DOMAIN "/svc" },
   { 0, NULL }
 };
 
