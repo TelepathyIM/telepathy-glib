@@ -29,7 +29,7 @@ from getopt import gnu_getopt
 
 from libtpcodegen import file_set_contents, key_by_name, u
 from libglibcodegen import (Signature, type_to_gtype,
-        get_docstring, xml_escape, get_deprecated, copy_into_gvalue,
+        get_docstring, xml_escape, get_deprecated,
         value_getter)
 
 NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"

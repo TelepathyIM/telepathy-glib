@@ -25,7 +25,6 @@ EXTRA_DIST = \
     flymake.mk \
     git-which-branch.sh \
     glib-client-gen.py \
-    glib-client-marshaller-gen.py \
     glib-errors-check-gen.py \
     glib-errors-str-gen.py \
     glib-ginterface-gen.py \
@@ -52,8 +51,6 @@ all: $(EXTRA_DIST)
 libglibcodegen.py: libtpcodegen.py
 	$(AM_V_GEN)test -e ${srcdir}/$@ && touch ${srcdir}/$@
 c-constants-gen.py: libglibcodegen.py
-	$(AM_V_GEN)test -e ${srcdir}/$@ && touch ${srcdir}/$@
-glib-client-marshaller-gen.py: libglibcodegen.py
 	$(AM_V_GEN)test -e ${srcdir}/$@ && touch ${srcdir}/$@
 glib-errors-enum-body-gen.py: libglibcodegen.py
 	$(AM_V_GEN)test -e ${srcdir}/$@ && touch ${srcdir}/$@

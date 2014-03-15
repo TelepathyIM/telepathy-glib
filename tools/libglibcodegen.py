@@ -47,59 +47,6 @@ def dbus_gutils_wincaps_to_uscore(s):
             ret += c
     return ret
 
-
-def signal_to_marshal_type(signal):
-    """
-    return a list of strings indicating the marshalling type for this signal.
-    """
-
-    mtype=[]
-    for i in signal.getElementsByTagName("arg"):
-        name =i.getAttribute("name")
-        type = i.getAttribute("type")
-        mtype.append(type_to_gtype(type)[2])
-
-    return mtype
-
-
-_glib_marshallers = ['VOID', 'BOOLEAN', 'CHAR', 'UCHAR', 'INT',
-        'STRING', 'UINT', 'LONG', 'ULONG', 'ENUM', 'FLAGS', 'FLOAT',
-        'DOUBLE', 'STRING', 'PARAM', 'BOXED', 'POINTER', 'OBJECT',
-        'UINT_POINTER']
-
-
-def signal_to_marshal_name(signal, prefix):
-
-    mtype = signal_to_marshal_type(signal)
-    if len(mtype):
-        name = '_'.join(mtype)
-    else:
-        name = 'VOID'
-
-    if name in _glib_marshallers:
-        return 'g_cclosure_marshal_VOID__' + name
-    else:
-        return prefix + '_marshal_VOID__' + name
-
-
-def method_to_glue_marshal_name(method, prefix):
-
-    mtype = []
-    for i in method.getElementsByTagName("arg"):
-        if i.getAttribute("direction") != "out":
-            type = i.getAttribute("type")
-            mtype.append(type_to_gtype(type)[2])
-
-    mtype.append('POINTER')
-
-    name = '_'.join(mtype)
-
-    if name in _glib_marshallers:
-        return 'g_cclosure_marshal_VOID__' + name
-    else:
-        return prefix + '_marshal_VOID__' + name
-
-
 def type_to_gtype(s):
     if s == 'y': #byte
         return ("guchar ", "G_TYPE_UCHAR","UCHAR", False)
@@ -176,28 +123,6 @@ def move_into_gvalue(gvaluep, gtype, marshaller, name):
         return 'g_value_take_string (%s, %s);' % (gvaluep, name)
     elif marshaller == 'BOXED':
         return 'g_value_take_boxed (%s, %s);' % (gvaluep, name)
-    elif gtype == 'G_TYPE_UCHAR':
-        return 'g_value_set_uchar (%s, %s);' % (gvaluep, name)
-    elif gtype == 'G_TYPE_BOOLEAN':
-        return 'g_value_set_boolean (%s, %s);' % (gvaluep, name)
-    elif gtype == 'G_TYPE_INT':
-        return 'g_value_set_int (%s, %s);' % (gvaluep, name)
-    elif gtype == 'G_TYPE_UINT':
-        return 'g_value_set_uint (%s, %s);' % (gvaluep, name)
-    elif gtype == 'G_TYPE_INT64':
-        return 'g_value_set_int (%s, %s);' % (gvaluep, name)
-    elif gtype == 'G_TYPE_UINT64':
-        return 'g_value_set_uint64 (%s, %s);' % (gvaluep, name)
-    elif gtype == 'G_TYPE_DOUBLE':
-        return 'g_value_set_double (%s, %s);' % (gvaluep, name)
-    else:
-        raise AssertionError("Don't know how to put %s in a GValue" % gtype)
-
-def copy_into_gvalue(gvaluep, gtype, marshaller, name):
-    if gtype == 'G_TYPE_STRING':
-        return 'g_value_set_string (%s, %s);' % (gvaluep, name)
-    elif marshaller == 'BOXED':
-        return 'g_value_set_boxed (%s, %s);' % (gvaluep, name)
     elif gtype == 'G_TYPE_UCHAR':
         return 'g_value_set_uchar (%s, %s);' % (gvaluep, name)
     elif gtype == 'G_TYPE_BOOLEAN':
