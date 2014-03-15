@@ -443,7 +443,7 @@ tp_client_factory_get_dbus_daemon (TpClientFactory *self)
  * tp_client_factory_ensure_account:
  * @self: a #TpClientFactory object
  * @object_path: the object path of an account
- * @immutable_properties: (allow-none) a #G_VARIANT_TYPE_VARDICT containing
+ * @immutable_properties: (allow-none): a #G_VARIANT_TYPE_VARDICT containing
  * the immutable properties of the account, or %NULL.
  * @error: Used to raise an error if @object_path is not valid
  *
@@ -584,7 +584,7 @@ tp_client_factory_add_account_features_varargs (
  * tp_client_factory_ensure_connection:
  * @self: a #TpClientFactory object
  * @object_path: the object path of a connection
- * @immutable_properties: (allow-none) a #G_VARIANT_TYPE_VARDICT containing
+ * @immutable_properties: (allow-none): a #G_VARIANT_TYPE_VARDICT containing
  * the immutable properties of the connection, or %NULL.
  * @error: Used to raise an error if @object_path is not valid
  *
@@ -726,7 +726,7 @@ tp_client_factory_add_connection_features_varargs (
  * @self: a #TpClientFactory
  * @connection: a #TpConnection whose #TpProxy:factory is this object
  * @object_path: the object path of a channel on @connection
- * @immutable_properties: (allow-none) a #G_VARIANT_TYPE_VARDICT containing
+ * @immutable_properties: (allow-none): a #G_VARIANT_TYPE_VARDICT containing
  * the immutable properties of the account, or %NULL.
  * @error: Used to raise an error if @object_path is not valid
  *
