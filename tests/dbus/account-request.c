@@ -27,7 +27,7 @@ typedef struct {
   TpTestsSimpleAccount *account_service;
 
   TpAccountManager *account_manager;
-  TpAccountRequest *account;
+  TpAccountRequest *ar;
 
   GAsyncResult *result;
   GError *error /* initialized where needed */;
@@ -61,14 +61,14 @@ setup (Test *test,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/lospolloshermanos",
       test->account_service);
 
-  test->account = NULL;
+  test->ar = NULL;
 }
 
 static void
 teardown (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  g_clear_object (&test->account);
+  g_clear_object (&test->ar);
 
   /* If we don't let it prepare before we tear down the AccountManager
    * service, then it might be invalidated between teardown and the next
@@ -97,9 +97,9 @@ static void
 test_new (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  test->account = tp_account_request_new (test->account_manager,
+  test->ar = tp_account_request_new (test->account_manager,
       "gabble", "jabber", "Gustavo Fring");
-  g_assert (TP_IS_ACCOUNT_REQUEST (test->account));
+  g_assert (TP_IS_ACCOUNT_REQUEST (test->ar));
 }
 
 static void
@@ -109,10 +109,10 @@ test_gobject_properties (Test *test,
   TpAccountManager *am;
   gchar *manager, *protocol, *display_name;
 
-  test->account = tp_account_request_new (test->account_manager,
+  test->ar = tp_account_request_new (test->account_manager,
       "gabble", "jabber", "Charles Dickens");
 
-  g_object_get (test->account,
+  g_object_get (test->ar,
       "account-manager", &am,
       "cm-name", &manager,
       "protocol-name", &protocol,
@@ -141,21 +141,21 @@ test_parameters (Test *test,
   const gchar *s;
   guint u;
 
-  test->account = tp_account_request_new (test->account_manager,
+  test->ar = tp_account_request_new (test->account_manager,
       "gabble", "jabber", "Mike Ehrmantraut");
 
   v_str = g_variant_new_string ("banana");
-  tp_account_request_set_parameter (test->account, "cheese", v_str);
+  tp_account_request_set_parameter (test->ar, "cheese", v_str);
   g_variant_unref (v_str);
 
   v_int = g_variant_new_uint32 (42);
-  tp_account_request_set_parameter (test->account, "life", v_int);
+  tp_account_request_set_parameter (test->ar, "life", v_int);
   g_variant_unref (v_int);
 
-  tp_account_request_set_parameter_string (test->account,
+  tp_account_request_set_parameter_string (test->ar,
       "great", "expectations");
 
-  g_object_get (test->account,
+  g_object_get (test->ar,
       "parameters", &params,
       NULL);
 
@@ -174,9 +174,9 @@ test_parameters (Test *test,
   g_variant_unref (params);
 
   /* now let's unset one and see if it's okay */
-  tp_account_request_unset_parameter (test->account, "cheese");
+  tp_account_request_unset_parameter (test->ar, "cheese");
 
-  g_object_get (test->account,
+  g_object_get (test->ar,
       "parameters", &params,
       NULL);
 
@@ -210,10 +210,10 @@ test_properties (Test *test,
   GVariant *v;
   gchar *service, *storage_provider;
 
-  test->account = tp_account_request_new (test->account_manager,
+  test->ar = tp_account_request_new (test->account_manager,
       "gabble", "jabber", "Walter Jr.");
 
-  g_object_get (test->account,
+  g_object_get (test->ar,
       "properties", &props,
       NULL);
 
@@ -222,9 +222,9 @@ test_properties (Test *test,
   g_variant_unref (props);
 
   /* now set an icon and try again */
-  tp_account_request_set_icon_name (test->account, "user32.dll");
+  tp_account_request_set_icon_name (test->ar, "user32.dll");
 
-  g_object_get (test->account,
+  g_object_get (test->ar,
       "properties", &props,
       "icon-name", &icon_name,
       NULL);
@@ -239,9 +239,9 @@ test_properties (Test *test,
   g_free (icon_name);
 
   /* now set the nickname and try again */
-  tp_account_request_set_nickname (test->account, "Walter Jr.");
+  tp_account_request_set_nickname (test->ar, "Walter Jr.");
 
-  g_object_get (test->account,
+  g_object_get (test->ar,
       "properties", &props,
       "nickname", &nickname,
       NULL);
@@ -259,11 +259,11 @@ test_properties (Test *test,
   g_free (nickname);
 
   /* next is requested presence */
-  tp_account_request_set_requested_presence (test->account,
+  tp_account_request_set_requested_presence (test->ar,
       TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, "available",
       "come at me, bro!");
 
-  g_object_get (test->account,
+  g_object_get (test->ar,
       "requested-presence-type", &presence_type,
       "requested-status", &presence_status,
       "requested-status-message", &presence_message,
@@ -277,11 +277,11 @@ test_properties (Test *test,
   g_free (presence_message);
 
   /* and automatic presence */
-  tp_account_request_set_automatic_presence (test->account,
+  tp_account_request_set_automatic_presence (test->ar,
       TP_CONNECTION_PRESENCE_TYPE_BUSY, "busy",
       "come at me later, actually!");
 
-  g_object_get (test->account,
+  g_object_get (test->ar,
       "automatic-presence-type", &presence_type,
       "automatic-status", &presence_status,
       "automatic-status-message", &presence_message,
@@ -295,10 +295,10 @@ test_properties (Test *test,
   g_free (presence_message);
 
   /* now enabled and connect automatically */
-  tp_account_request_set_enabled (test->account, FALSE);
-  tp_account_request_set_connect_automatically (test->account, TRUE);
+  tp_account_request_set_enabled (test->ar, FALSE);
+  tp_account_request_set_connect_automatically (test->ar, TRUE);
 
-  g_object_get (test->account,
+  g_object_get (test->ar,
       "properties", &props,
       "enabled", &enabled,
       "connect-automatically", &connect_automatically,
@@ -318,10 +318,10 @@ test_properties (Test *test,
   g_variant_unref (props);
 
   /* supersedes */
-  tp_account_request_add_supersedes (test->account,
+  tp_account_request_add_supersedes (test->ar,
       "/science/yeah/woo");
 
-  g_object_get (test->account,
+  g_object_get (test->ar,
       "properties", &props,
       "supersedes", &supersedes,
       NULL);
@@ -340,12 +340,12 @@ test_properties (Test *test,
   /* avatar */
   avatar = g_array_new (FALSE, FALSE, sizeof (guchar));
   g_array_append_vals (avatar, "hello world", strlen ("hello world") + 1);
-  tp_account_request_set_avatar (test->account,
+  tp_account_request_set_avatar (test->ar,
       (const guchar *) avatar->data, avatar->len, "image/lolz");
   g_array_unref (avatar);
   avatar = NULL;
 
-  g_object_get (test->account,
+  g_object_get (test->ar,
       "properties", &props,
       "avatar", &avatar,
       "avatar-mime-type", &mime_type,
@@ -365,9 +365,9 @@ test_properties (Test *test,
   g_free (mime_type);
 
   /* service */
-  tp_account_request_set_service (test->account, "Mushroom");
+  tp_account_request_set_service (test->ar, "Mushroom");
 
-  g_object_get (test->account,
+  g_object_get (test->ar,
       "properties", &props,
       "service", &service,
       NULL);
@@ -383,9 +383,9 @@ test_properties (Test *test,
   g_free (service);
 
   /* storage provider */
-  tp_account_request_set_storage_provider (test->account, "my.provider");
+  tp_account_request_set_storage_provider (test->ar, "my.provider");
 
-  g_object_get (test->account,
+  g_object_get (test->ar,
       "properties", &props,
       "storage-provider", &storage_provider,
       NULL);
@@ -411,41 +411,41 @@ test_create_succeed (Test *test,
   GPtrArray *supersedes;
   GArray *avatar;
 
-  test->account = tp_account_request_new (test->account_manager,
+  test->ar = tp_account_request_new (test->account_manager,
       "gabble", "jabber", "Hank Schrader");
 
-  tp_account_request_set_display_name (test->account, "Walter White");
-  tp_account_request_set_icon_name (test->account, "gasmask");
-  tp_account_request_set_nickname (test->account, "Heisenberg");
-  tp_account_request_set_requested_presence (test->account,
+  tp_account_request_set_display_name (test->ar, "Walter White");
+  tp_account_request_set_icon_name (test->ar, "gasmask");
+  tp_account_request_set_nickname (test->ar, "Heisenberg");
+  tp_account_request_set_requested_presence (test->ar,
       TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, "available",
       "Better call Saul!");
-  tp_account_request_set_automatic_presence (test->account,
+  tp_account_request_set_automatic_presence (test->ar,
       TP_CONNECTION_PRESENCE_TYPE_BUSY, "busy",
       "Cooking");
-  tp_account_request_set_enabled (test->account, TRUE);
-  tp_account_request_set_connect_automatically (test->account, TRUE);
+  tp_account_request_set_enabled (test->ar, TRUE);
+  tp_account_request_set_connect_automatically (test->ar, TRUE);
 
-  tp_account_request_set_parameter_string (test->account,
+  tp_account_request_set_parameter_string (test->ar,
       "account", "walter@white.us");
-  tp_account_request_set_parameter_string (test->account,
+  tp_account_request_set_parameter_string (test->ar,
       "password", "holly");
 
-  tp_account_request_add_supersedes (test->account,
+  tp_account_request_add_supersedes (test->ar,
       "/some/silly/account");
 
   avatar = g_array_new (FALSE, FALSE, sizeof (guchar));
   g_array_append_vals (avatar, "blue meth", strlen ("blue meth") + 1);
-  tp_account_request_set_avatar (test->account,
+  tp_account_request_set_avatar (test->ar,
       (const guchar *) avatar->data, avatar->len, "image/png");
   g_array_unref (avatar);
   avatar = NULL;
 
-  tp_account_request_create_account_async (test->account,
+  tp_account_request_create_account_async (test->ar,
       tp_tests_result_ready_cb, &test->result);
   tp_tests_run_until_result (&test->result);
 
-  account = tp_account_request_create_account_finish (test->account,
+  account = tp_account_request_create_account_finish (test->ar,
       test->result, &test->error);
   g_assert_no_error (test->error);
   g_assert (account != NULL);
@@ -516,18 +516,18 @@ test_create_fail (Test *test,
 {
   TpAccount *account;
 
-  test->account = tp_account_request_new (test->account_manager,
+  test->ar = tp_account_request_new (test->account_manager,
       "gabble", "jabber", "Walter White");
 
   /* this will make CreateAccount fail */
-  tp_account_request_set_parameter_string (test->account,
+  tp_account_request_set_parameter_string (test->ar,
       "fail", "yes");
 
-  tp_account_request_create_account_async (test->account,
+  tp_account_request_create_account_async (test->ar,
       tp_tests_result_ready_cb, &test->result);
   tp_tests_run_until_result (&test->result);
 
-  account = tp_account_request_create_account_finish (test->account,
+  account = tp_account_request_create_account_finish (test->ar,
       test->result, &test->error);
   g_assert (test->error != NULL);
   g_assert (account == NULL);
@@ -537,13 +537,13 @@ test_create_fail (Test *test,
 
   /* now let's unset the fail=yes and make sure it works */
 
-  tp_account_request_unset_parameter (test->account, "fail");
+  tp_account_request_unset_parameter (test->ar, "fail");
 
-  tp_account_request_create_account_async (test->account,
+  tp_account_request_create_account_async (test->ar,
       tp_tests_result_ready_cb, &test->result);
   tp_tests_run_until_result (&test->result);
 
-  account = tp_account_request_create_account_finish (test->account,
+  account = tp_account_request_create_account_finish (test->ar,
       test->result, &test->error);
   g_assert_no_error (test->error);
   g_assert (account != NULL);
