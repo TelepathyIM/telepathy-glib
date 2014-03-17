@@ -68,6 +68,10 @@ static void
 teardown (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
+  /* holds a ref to the TpAccountRequest and to the TpAccount */
+  if (test->result != NULL)
+    tp_tests_assert_last_unref (&test->result);
+
   g_clear_object (&test->ar);
 
   /* If we don't let it prepare before we tear down the AccountManager
@@ -90,7 +94,6 @@ teardown (Test *test,
   tp_clear_pointer (&test->mainloop, g_main_loop_unref);
 
   g_clear_error (&test->error);
-  g_clear_object (&test->result);
 }
 
 static void
