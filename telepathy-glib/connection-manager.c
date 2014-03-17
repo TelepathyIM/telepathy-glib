@@ -1789,6 +1789,31 @@ list_context_unref (_ListContext *list_context)
 }
 
 static void
+all_cms_prepared (_ListContext *list_context)
+{
+  TpConnectionManager **cms;
+  guint n_cms = list_context->arr->len;
+
+  DEBUG ("We've prepared as many as possible of %u CMs", n_cms);
+
+  g_assert (list_context->callback != NULL);
+
+  g_ptr_array_add (list_context->arr, NULL);
+  cms = (TpConnectionManager **) list_context->arr->pdata;
+
+  /* If we never had a weak object anyway, call the callback.
+   * If we had a weak object when we started, only call the callback
+   * if it hasn't died yet. */
+  if (!list_context->had_weak_object || list_context->weak_object != NULL)
+    {
+      list_context->callback (cms, n_cms, NULL, list_context->user_data,
+          list_context->weak_object);
+    }
+
+  list_context->callback = NULL;
+}
+
+static void
 tp_list_connection_managers_cm_prepared (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
@@ -1814,26 +1839,7 @@ tp_list_connection_managers_cm_prepared (GObject *source,
 
   if (list_context->cms_to_ready == 0)
     {
-      TpConnectionManager **cms;
-      guint n_cms = list_context->arr->len;
-
-      DEBUG ("We've prepared as many as possible of %u CMs", n_cms);
-
-      g_assert (list_context->callback != NULL);
-
-      g_ptr_array_add (list_context->arr, NULL);
-      cms = (TpConnectionManager **) list_context->arr->pdata;
-
-      /* If we never had a weak object anyway, call the callback.
-       * If we had a weak object when we started, only call the callback
-       * if it hasn't died yet. */
-      if (!list_context->had_weak_object || list_context->weak_object != NULL)
-        {
-          list_context->callback (cms, n_cms, NULL, list_context->user_data,
-              list_context->weak_object);
-        }
-
-      list_context->callback = NULL;
+      all_cms_prepared (list_context);
     }
   else
     {
