@@ -74,12 +74,8 @@ teardown (Test *test,
 
   tp_tests_assert_last_unref (&test->ar);
 
-  /* If we don't let it prepare before we tear down the AccountManager
-   * service, then it might be invalidated between teardown and the next
-   * setup by its GetAll call failing. That would be bad, because we're
-   * using the global shared instance, so it could break the next test. */
-  tp_tests_proxy_run_until_prepared (test->account_manager, NULL);
-  g_clear_object (&test->account_manager);
+  /* It might have a GetAll() in-flight, so we have to wait */
+  tp_tests_await_last_unref (&test->account_manager);
 
   tp_dbus_daemon_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
       &test->error);
