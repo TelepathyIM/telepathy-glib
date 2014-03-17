@@ -27,6 +27,8 @@
 #include <gio/gunixconnection.h>
 #endif
 
+#include "debug.h"
+
 void
 tp_tests_proxy_run_until_prepared (gpointer proxy,
     const GQuark *features)
@@ -778,4 +780,61 @@ _tp_tests_assert_last_unref (gpointer obj,
   if (obj != NULL)
     g_error ("%s:%d: %s %p should not have had any more references",
         file, line, G_OBJECT_TYPE_NAME (obj), obj);
+}
+
+/*
+ * tp_tests_await_last_unref:
+ * @op: a pointer to a #GObject
+ *
+ * Set @op to point to %NULL, release one reference to the object to which
+ * it previously pointed, and wait for that object to be freed by iterating
+ * the default (NULL) main-context.
+ *
+ * For instance, suppose you have this code, and you want to adapt it to
+ * assert that @obj is not leaked:
+ *
+ * |[
+ * obj = my_object_new ();
+ * my_object_do_thing_async (obj, NULL, NULL);
+ * g_clear_object (&obj);
+ * ]|
+ *
+ * Because #GAsyncResult async calls take a ref to the
+ * source object for the duration of the async call, this will cause
+ * an assertion failure:
+ *
+ * |[
+ * obj = my_object_new ();
+ * my_object_do_thing_async (obj, NULL, NULL);
+ * tp_tests_assert_last_unref (&obj);
+ * ]|
+ *
+ * but this is OK, and will wait for the `do_thing_async` call to finish:
+ *
+ * |[
+ * obj = my_object_new ();
+ * my_object_do_thing_async (obj, NULL, NULL);
+ * tp_tests_await_last_unref (&obj);
+ * ]|
+ */
+/* Really a macro, this is its implementation. @obj is the original `*op` */
+void
+_tp_tests_await_last_unref (gpointer obj,
+    const gchar *file,
+    int line)
+{
+  GWeakRef weak;
+
+  g_weak_ref_init (&weak, obj);
+  g_object_unref (obj);
+  obj = g_weak_ref_get (&weak);
+
+  while (obj != NULL)
+    {
+      DEBUG ("%s %p still has references, waiting...",
+          G_OBJECT_TYPE_NAME (obj), obj);
+      g_object_unref (obj);
+      g_main_context_iteration (NULL, TRUE);
+      obj = g_weak_ref_get (&weak);
+    }
 }
