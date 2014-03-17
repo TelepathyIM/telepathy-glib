@@ -45,6 +45,7 @@ tests_list = \
     test-handle-repo \
     test-handle-set \
     test-invalidated-while-invoking-signals \
+    test-list-cm-no-cm \
     test-long-connection-name \
     test-message-mixin \
     test-params-cm \
@@ -129,6 +130,8 @@ test_client_SOURCES = client.c
 test_cli_group_SOURCES = cli-group.c
 
 test_cm_SOURCES = cm.c
+
+test_list_cm_no_cm_SOURCES = list-cm-no-cm.c
 
 test_connection_SOURCES = connection.c
 

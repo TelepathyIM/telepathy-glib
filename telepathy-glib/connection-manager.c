@@ -1918,6 +1918,12 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
       DEBUG ("Total of %" G_GSIZE_FORMAT " CMs to be prepared",
           list_context->cms_to_ready);
 
+      if (list_context->cms_to_ready == 0)
+        {
+          all_cms_prepared (list_context);
+          return;
+        }
+
       for (i = 0; i < list_context->cms_to_ready; i++)
         {
           TpConnectionManager *cm = g_ptr_array_index (list_context->arr, i);
