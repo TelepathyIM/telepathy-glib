@@ -85,10 +85,10 @@ teardown (Test *test,
       &test->error);
   g_assert_no_error (test->error);
   tp_dbus_daemon_unregister_object (test->dbus, test->am);
-  g_clear_object (&test->am);
+  tp_tests_assert_last_unref (&test->am);
 
   tp_dbus_daemon_unregister_object (test->dbus, test->account_service);
-  g_clear_object (&test->account_service);
+  tp_tests_assert_last_unref (&test->account_service);
 
   g_clear_object (&test->dbus);
   tp_clear_pointer (&test->mainloop, g_main_loop_unref);
