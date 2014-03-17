@@ -536,7 +536,7 @@ test_create_fail (Test *test,
   g_assert (account == NULL);
 
   g_clear_error (&test->error);
-  test->result = NULL;
+  tp_tests_assert_last_unref (&test->result);
 
   /* now let's unset the fail=yes and make sure it works */
 
