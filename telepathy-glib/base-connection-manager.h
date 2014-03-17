@@ -26,7 +26,6 @@
 #ifndef __TP_BASE_CONNECTION_MANAGER_H__
 #define __TP_BASE_CONNECTION_MANAGER_H__
 
-#include <dbus/dbus-glib.h>
 #include <glib-object.h>
 
 #include <telepathy-glib/base-connection.h>

@@ -25,7 +25,6 @@
 #ifndef __TP_BASE_CLIENT_H__
 #define __TP_BASE_CLIENT_H__
 
-#include <dbus/dbus-glib.h>
 #include <glib-object.h>
 
 #include <telepathy-glib/account.h>

@@ -3,6 +3,8 @@
 #include "telepathy-glib/interfaces.h"
 #include "telepathy-glib/reentrants.h"
 
+#include <dbus/dbus-glib.h>
+
 #include <telepathy-glib/_gen/tp-cli-account-reentrant-body.h>
 #include <telepathy-glib/_gen/tp-cli-account-manager-reentrant-body.h>
 #include <telepathy-glib/_gen/tp-cli-channel-reentrant-body.h>

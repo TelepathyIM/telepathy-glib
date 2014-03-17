@@ -25,6 +25,8 @@
 
 #include <glib/gstdio.h>
 
+#include <dbus/dbus-glib.h>
+
 #include <telepathy-glib/client-factory-internal.h>
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/dbus.h>

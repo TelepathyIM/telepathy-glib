@@ -60,6 +60,7 @@
 #include <string.h>
 
 #include <dbus/dbus.h>
+#include <dbus/dbus-glib.h>
 
 #include <gobject/gvaluecollector.h>
 

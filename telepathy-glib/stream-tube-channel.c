@@ -49,6 +49,8 @@
 
 #include "telepathy-glib/stream-tube-channel.h"
 
+#include <dbus/dbus-glib.h>
+
 #include <telepathy-glib/cli-channel.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/dbus.h>

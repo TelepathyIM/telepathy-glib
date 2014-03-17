@@ -22,8 +22,6 @@
 #ifndef __TP_ADD_DISPATCH_OPERATION_CONTEXT_INTERNAL_H__
 #define __TP_ADD_DISPATCH_OPERATION_CONTEXT_INTERNAL_H__
 
-#include <dbus/dbus-glib.h>
-
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/add-dispatch-operation-context.h>
 #include <telepathy-glib/channel-dispatch-operation.h>

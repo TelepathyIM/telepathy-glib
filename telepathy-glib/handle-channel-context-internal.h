@@ -22,8 +22,6 @@
 #ifndef __TP_HANDLE_CHANNEL_CONTEXT_INTERNAL_H__
 #define __TP_HANDLE_CHANNEL_CONTEXT_INTERNAL_H__
 
-#include <dbus/dbus-glib.h>
-
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/handle-channel-context.h>

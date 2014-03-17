@@ -25,6 +25,8 @@
 
 #include <string.h>
 
+#include <dbus/dbus-glib.h>
+
 #include <telepathy-glib/cli-misc.h>
 #include "telepathy-glib/defs.h"
 #include "telepathy-glib/enums.h"

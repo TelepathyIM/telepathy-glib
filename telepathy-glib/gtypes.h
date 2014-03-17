@@ -25,7 +25,8 @@
 #ifndef __TP_GTYPES_H__
 #define __TP_GTYPES_H__
 
-#include <dbus/dbus-glib.h>
+#include <glib.h>
+#include <glib-object.h>
 
 G_BEGIN_DECLS
 

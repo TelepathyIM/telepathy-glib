@@ -26,7 +26,6 @@
 #ifndef __TP_BASE_CONNECTION_H__
 #define __TP_BASE_CONNECTION_H__
 
-#include <dbus/dbus-glib.h>
 #include <glib-object.h>
 
 #include <telepathy-glib/channel-manager.h>

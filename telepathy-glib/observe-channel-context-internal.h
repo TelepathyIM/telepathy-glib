@@ -22,8 +22,6 @@
 #ifndef __TP_OBSERVE_CHANNEL_CONTEXT_INTERNAL_H__
 #define __TP_OBSERVE_CHANNEL_CONTEXT_INTERNAL_H__
 
-#include <dbus/dbus-glib.h>
-
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/channel-dispatch-operation.h>
 #include <telepathy-glib/observe-channel-context.h>

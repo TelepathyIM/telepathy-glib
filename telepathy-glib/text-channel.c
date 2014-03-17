@@ -47,6 +47,8 @@
 
 #include "telepathy-glib/text-channel.h"
 
+#include <dbus/dbus-glib.h>
+
 #include <telepathy-glib/cli-channel.h>
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/contact.h>

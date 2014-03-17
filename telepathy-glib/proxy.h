@@ -26,7 +26,6 @@
 #ifndef __TP_PROXY_H__
 #define __TP_PROXY_H__
 
-#include <dbus/dbus-glib.h>
 #include <gio/gio.h>
 
 #include <telepathy-glib/defs.h>

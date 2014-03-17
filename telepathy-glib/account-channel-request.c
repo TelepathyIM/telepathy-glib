@@ -76,6 +76,8 @@
 #include "telepathy-glib/account-channel-request.h"
 #include "telepathy-glib/account-channel-request-internal.h"
 
+#include <dbus/dbus-glib.h>
+
 #include "telepathy-glib/base-client-internal.h"
 #include <telepathy-glib/channel-dispatcher.h>
 #include <telepathy-glib/channel-request.h>

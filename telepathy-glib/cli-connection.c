@@ -23,6 +23,8 @@
 
 #include <telepathy-glib/cli-connection.h>
 
+#include <dbus/dbus-glib.h>
+
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util.h>

@@ -43,6 +43,8 @@
 #include <telepathy-glib/variant-util.h>
 #include <telepathy-glib/variant-util-internal.h>
 
+#include <dbus/dbus-glib.h>
+
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/util.h>
 

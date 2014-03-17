@@ -26,6 +26,8 @@
 #include "telepathy-glib/account-internal.h"
 #include "telepathy-glib/account.h"
 
+#include <dbus/dbus-glib.h>
+
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>

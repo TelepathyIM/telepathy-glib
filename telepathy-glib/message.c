@@ -35,6 +35,8 @@
 #include "message.h"
 #include "message-internal.h"
 
+#include <dbus/dbus-glib.h>
+
 #include <telepathy-glib/cm-message.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>

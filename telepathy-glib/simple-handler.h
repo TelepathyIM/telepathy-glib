@@ -25,7 +25,6 @@
 #ifndef __TP_SIMPLE_HANDLER_H__
 #define __TP_SIMPLE_HANDLER_H__
 
-#include <dbus/dbus-glib.h>
 #include <glib-object.h>
 
 #include <telepathy-glib/account-manager.h>
