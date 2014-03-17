@@ -72,7 +72,7 @@ teardown (Test *test,
   if (test->result != NULL)
     tp_tests_assert_last_unref (&test->result);
 
-  g_clear_object (&test->ar);
+  tp_tests_assert_last_unref (&test->ar);
 
   /* If we don't let it prepare before we tear down the AccountManager
    * service, then it might be invalidated between teardown and the next
