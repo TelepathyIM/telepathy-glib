@@ -1,3 +1,10 @@
+telepathy-glib 0.23.4 (UNRELEASED)
+==================================
+
+Fixes:
+
+• don't leak every D-Bus method call result, a regression in 0.23.1 (Simon)
+
 telepathy-glib 0.23.3 (2014-03-18)
 ==================================
 
