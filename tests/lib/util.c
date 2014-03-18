@@ -89,11 +89,6 @@ start_dbus_session (void)
 
   g_test_dbus_unset ();
 
-  /* GLib 2.36 does not unset STARTER env variables but tp-glib are using them.
-   * See https://bugzilla.gnome.org/show_bug.cgi?id=697348 */
-  g_unsetenv ("DBUS_STARTER_ADDRESS");
-  g_unsetenv ("DBUS_STARTER_BUS_TYPE");
-
   test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
   g_test_dbus_add_service_dir (test_dbus, g_getenv ("TP_TESTS_SERVICES_DIR"));
   g_test_dbus_up (test_dbus);
