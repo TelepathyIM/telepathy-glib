@@ -32,6 +32,10 @@ typedef struct {
         GQuark,
         GError **);
 
+    gboolean (*check_interface_by_id) (TpProxy *,
+        GQuark,
+        GError **);
+
     TpProxyPendingCall *(*pending_call_new) (TpProxy *,
         GQuark,
         const gchar *,
@@ -67,6 +71,10 @@ typedef struct {
 } TpProxyImplementation;
 
 DBusGProxy *_tp_proxy_get_interface_by_id (TpProxy *self,
+    GQuark iface,
+    GError **error);
+
+gboolean _tp_proxy_check_interface_by_id (TpProxy *self,
     GQuark iface,
     GError **error);
 

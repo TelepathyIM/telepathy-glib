@@ -101,6 +101,10 @@ main (int argc,
   GError *error = NULL;
   gboolean saw_exited;
 
+  /* If we're running slowly (for instance in a parallel build)
+   * we don't want the CM process in the background to time out and exit. */
+  g_setenv ("EXAMPLE_PERSIST", "1", TRUE);
+
   tp_tests_abort_after (5);
 
   tp_debug_set_flags ("all");

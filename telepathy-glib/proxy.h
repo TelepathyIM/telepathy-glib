@@ -151,6 +151,8 @@ GType tp_proxy_get_type (void);
                               TpProxyClass))
 
 gboolean tp_proxy_has_interface_by_id (gpointer self, GQuark iface);
+gboolean tp_proxy_check_interface_by_id (gpointer self, GQuark iface,
+    GError **error);
 gboolean tp_proxy_has_interface (gpointer self, const gchar *iface);
 
 _TP_AVAILABLE_IN_0_16

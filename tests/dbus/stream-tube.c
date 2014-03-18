@@ -71,6 +71,9 @@ typedef struct {
     TpConnection *connection;
     TpStreamTubeChannel *tube;
 
+    /* (element-type TpStreamTubeConnection) (transfer full) */
+    GList *tube_conns;
+    /* last item of tube_conns */
     TpStreamTubeConnection *tube_conn;
     GIOStream *cm_stream;
 
@@ -105,6 +108,7 @@ teardown (Test *test,
   tp_clear_object (&test->tube_chan_service);
   tp_clear_object (&test->tube);
   tp_clear_object (&test->tube_conn);
+  g_list_free_full (test->tube_conns, g_object_unref);
   tp_clear_object (&test->cm_stream);
 
   tp_tests_connection_assert_disconnect_succeeds (test->connection);
@@ -158,6 +162,15 @@ create_tube_service (Test *test,
       /* Make sure the proxy goes away, otherwise the factory will return the
        * same TpStreamTubeChannel object instead of a new one. */
       tp_tests_proxy_run_until_dbus_queue_processed (test->tube);
+      g_list_free_full (test->tube_conns, g_object_unref);
+      test->tube_conns = NULL;
+
+      /* We have to wait for an idle to go off before asserting that it has
+       * had its last-unref, because if the proxy has just been invalidated,
+       * it holds a ref to itself until the idle disconnects all its signal
+       * connections. */
+      g_main_context_iteration (NULL, FALSE);
+
       g_object_add_weak_pointer (G_OBJECT (test->tube), (gpointer) &test->tube);
       g_object_unref (test->tube);
       g_assert (test->tube == NULL);
@@ -308,8 +321,13 @@ tube_accept_cb (GObject *source,
 {
   Test *test = user_data;
 
+  tp_clear_object (&test->tube_conn);
   test->tube_conn = tp_stream_tube_channel_accept_finish (
       TP_STREAM_TUBE_CHANNEL (source), result, &test->error);
+
+  if (test->tube_conn != NULL)
+    test->tube_conns = g_list_append (test->tube_conns,
+        g_object_ref (test->tube_conn));
 
   test->wait--;
   if (test->wait <= 0)
@@ -516,6 +534,8 @@ tube_incoming_cb (TpStreamTubeChannel *tube,
 {
   tp_clear_object (&test->tube_conn);
   test->tube_conn = g_object_ref (tube_conn);
+  test->tube_conns = g_list_append (test->tube_conns,
+      g_object_ref (test->tube_conn));
 
   test->wait--;
   if (test->wait <= 0)
@@ -752,35 +772,40 @@ run_tube_test (const char *test_path,
 }
 
 static void
-wait_tube_conn (Test *test,
+wait_tube_conns (Test *test,
     GIOStream **alice_stream,
     GIOStream **bob_stream)
 {
-  GSocketConnection *conn;
-  TpContact *contact;
+  GList *l;
 
-  test->wait = 1;
+  test->wait = 2;
   g_main_loop_run (test->mainloop);
-  g_assert (test->tube_conn != NULL);
+  g_assert_cmpuint (g_list_length (test->tube_conns), ==, 2);
 
-  conn = tp_stream_tube_connection_get_socket_connection (test->tube_conn);
-  contact = tp_stream_tube_connection_get_contact (test->tube_conn);
-
-  if (!tp_strdiff (tp_contact_get_identifier (contact), "bob"))
+  for (l = test->tube_conns; l != NULL; l = l->next)
     {
-      g_assert (*bob_stream == NULL);
+      GSocketConnection *conn;
+      TpContact *contact;
 
-      *bob_stream = g_object_ref (conn);
-    }
-  else if (!tp_strdiff (tp_contact_get_identifier (contact), "alice"))
-    {
-      g_assert (*alice_stream == NULL);
+      conn = tp_stream_tube_connection_get_socket_connection (l->data);
+      contact = tp_stream_tube_connection_get_contact (l->data);
 
-      *alice_stream = g_object_ref (conn);
-    }
-  else
-    {
-      g_assert_not_reached ();
+      if (!tp_strdiff (tp_contact_get_identifier (contact), "bob"))
+        {
+          g_assert (*bob_stream == NULL);
+
+          *bob_stream = g_object_ref (conn);
+        }
+      else if (!tp_strdiff (tp_contact_get_identifier (contact), "alice"))
+        {
+          g_assert (*alice_stream == NULL);
+
+          *alice_stream = g_object_ref (conn);
+        }
+      else
+        {
+          g_assert_not_reached ();
+        }
     }
 }
 
@@ -877,8 +902,7 @@ test_offer_race (Test *test,
       alice_cm_stream, alice_handle);
 
   /* Both connections are received and identified */
-  wait_tube_conn (test, &alice_stream, &bob_stream);
-  wait_tube_conn (test, &alice_stream, &bob_stream);
+  wait_tube_conns (test, &alice_stream, &bob_stream);
 
   g_assert (alice_stream != NULL);
   g_assert (bob_stream != NULL);

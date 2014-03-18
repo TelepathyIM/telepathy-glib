@@ -97,17 +97,7 @@ remove_with_reason (GObject *obj,
   if (handle == group->self_handle)
     {
       /* User wants to leave */
-      if (!self->priv->closed)
-        {
-          DEBUG ("closed");
-          self->priv->closed = TRUE;
-          tp_svc_channel_emit_closed (self);
-        }
-      else
-        {
-          DEBUG ("already closed");
-        }
-
+      tp_base_channel_destroyed (TP_BASE_CHANNEL (self));
       return TRUE;
     }
 
@@ -175,29 +165,6 @@ constructed (GObject *object)
 }
 
 static void
-dispose (GObject *object)
-{
-  TpTestsTextChannelGroup *self = TP_TESTS_TEXT_CHANNEL_GROUP (object);
-
-  if (self->priv->disposed)
-    return;
-
-  self->priv->disposed = TRUE;
-
-  if (!self->priv->closed)
-    {
-      DEBUG ("closed");
-      tp_svc_channel_emit_closed (self);
-    }
-  else
-    {
-      DEBUG ("already closed");
-    }
-
-  ((GObjectClass *) tp_tests_text_channel_group_parent_class)->dispose (object);
-}
-
-static void
 finalize (GObject *object)
 {
   TpTestsTextChannelGroup *self = TP_TESTS_TEXT_CHANNEL_GROUP (object);
@@ -213,18 +180,7 @@ finalize (GObject *object)
 static void
 channel_close (TpBaseChannel *base)
 {
-  TpTestsTextChannelGroup *self = TP_TESTS_TEXT_CHANNEL_GROUP (base);
-
-  if (!self->priv->closed)
-    {
-      DEBUG ("closed");
-      self->priv->closed = TRUE;
-      tp_svc_channel_emit_closed (self);
-    }
-  else
-    {
-      DEBUG ("already closed");
-    }
+  tp_base_channel_destroyed (base);
 }
 
 static void
@@ -236,7 +192,6 @@ tp_tests_text_channel_group_class_init (TpTestsTextChannelGroupClass *klass)
   g_type_class_add_private (klass, sizeof (TpTestsTextChannelGroupPrivate));
 
   object_class->constructed = constructed;
-  object_class->dispose = dispose;
   object_class->finalize = finalize;
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_TEXT;

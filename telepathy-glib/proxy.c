@@ -438,16 +438,8 @@ _tp_proxy_get_interface_by_id (TpProxy *self,
 
   g_return_val_if_fail (TP_IS_PROXY (self), NULL);
 
-  if (self->priv->invalidated != NULL)
-    {
-      g_set_error (error, self->priv->invalidated->domain, self->priv->invalidated->code,
-          "%s", self->priv->invalidated->message);
-      return NULL;
-    }
-
-  if (!tp_dbus_check_valid_interface_name (g_quark_to_string (iface),
-        error))
-      return NULL;
+  if (!_tp_proxy_check_interface_by_id (self, iface, error))
+    return NULL;
 
   dgproxy = g_datalist_id_get_data (&self->priv->interfaces, iface);
 
@@ -471,16 +463,53 @@ _tp_proxy_get_interface_by_id (TpProxy *self,
           (guint) iface, dgproxy);
     }
 
-  if (dgproxy != NULL)
+  return dgproxy;
+}
+
+/**
+ * tp_proxy_check_interface_by_id:
+ * @self: the #TpProxy (or subclass)
+ * @iface: quark representing the D-Bus interface required
+ * @error: used to raise an error in the #TP_DBUS_ERRORS domain if @iface
+ *         is invalid, @self has been invalidated or @self does not implement
+ *         @iface
+ *
+ * Return whether this proxy is known to have a particular interface, by its
+ * quark ID.
+ *
+ * Returns: %TRUE if this proxy implements the given interface.
+ */
+
+/* The implementation in the core library calls this: */
+
+gboolean
+_tp_proxy_check_interface_by_id (TpProxy *self,
+    GQuark iface,
+    GError **error)
+{
+  g_return_val_if_fail (TP_IS_PROXY (self), FALSE);
+
+  if (self->priv->invalidated != NULL)
     {
-      return dgproxy;
+      g_set_error (error, self->priv->invalidated->domain,
+          self->priv->invalidated->code,
+          "%s", self->priv->invalidated->message);
+      return FALSE;
     }
 
-  g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_NO_INTERFACE,
-      "Object %s does not have interface %s",
-      self->priv->object_path, g_quark_to_string (iface));
+  if (!tp_dbus_check_valid_interface_name (g_quark_to_string (iface),
+        error))
+      return FALSE;
 
-  return NULL;
+  if (g_datalist_id_get_data (&self->priv->interfaces, iface) == NULL)
+    {
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_NO_INTERFACE,
+          "Object %s does not have interface %s",
+          self->priv->object_path, g_quark_to_string (iface));
+      return FALSE;
+    }
+
+  return TRUE;
 }
 
 /**
@@ -1525,6 +1554,7 @@ tp_proxy_once (gpointer data G_GNUC_UNUSED)
       VERSION,
       sizeof (TpProxyImplementation),
       _tp_proxy_get_interface_by_id,
+      _tp_proxy_check_interface_by_id,
       _tp_proxy_pending_call_new,
       _tp_proxy_pending_call_take_pending_call,
       _tp_proxy_pending_call_take_results,

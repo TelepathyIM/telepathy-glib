@@ -66,6 +66,7 @@
     <xi:include href="xml/room-info.xml"/>
     <xi:include href="xml/tls-certificate.xml"/>
     <xi:include href="xml/tls-certificate-rejection.xml"/>
+    <xi:include href="xml/logger.xml"/>
   </chapter>
 
   <chapter id="ch-service-base">
