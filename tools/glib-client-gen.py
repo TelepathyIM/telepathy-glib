@@ -30,7 +30,7 @@ from getopt import gnu_getopt
 from libtpcodegen import file_set_contents, key_by_name, u
 from libglibcodegen import (Signature, type_to_gtype,
         get_docstring, xml_escape, get_deprecated, copy_into_gvalue,
-        value_getter)
+        value_getter, move_into_gvalue)
 
 NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
 
@@ -563,7 +563,7 @@ class Generator(object):
                 collector('  g_value_unset (args->values + %d);' % i)
                 collector('  g_value_init (args->values + %d, %s);'
                           % (i, gtype))
-                collector('  ' + copy_into_gvalue('args->values + %d' % i,
+                collector('  ' + move_into_gvalue('args->values + %d' % i,
                     gtype, marshaller, name))
 
             collector('  tp_proxy_pending_call_v0_take_results (user_data, '
