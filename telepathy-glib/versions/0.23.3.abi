@@ -1,0 +1,6 @@
+Version: TELEPATHY_GLIB_0.23.3
+Extends: TELEPATHY_GLIB_0.23.2
+Release: 0.23.3
+
+tp_protocol_dup_immutable_properties
+tp_protocol_new_vardict

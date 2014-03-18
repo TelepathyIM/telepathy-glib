@@ -39,6 +39,7 @@ tests_list = \
     test-handle-repo \
     test-handle-set \
     test-invalidated-while-invoking-signals \
+    test-list-cm-no-cm \
     test-long-connection-name \
     test-message-mixin \
     test-properties \
@@ -143,6 +144,8 @@ test_cm_LDADD = \
     $(LDADD) \
     $(top_builddir)/examples/cm/echo-message-parts/libexample-cm-echo-2.la
 test_cm_SOURCES = cm.c
+
+test_list_cm_no_cm_SOURCES = list-cm-no-cm.c
 
 test_connection_SOURCES = connection.c
 

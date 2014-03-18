@@ -90,6 +90,7 @@ GList *tp_protocol_dup_params (TpProtocol *self) G_GNUC_WARN_UNUSED_RESULT;
 _TP_AVAILABLE_IN_1_0
 GPtrArray *tp_protocol_get_params (TpProtocol *self);
 
+_TP_AVAILABLE_IN_0_24
 GVariant * tp_protocol_dup_immutable_properties (TpProtocol *self);
 
 const gchar * const *

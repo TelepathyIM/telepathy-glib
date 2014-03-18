@@ -695,7 +695,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
    * will both be unavailable, and this #TpProtocol object will only be useful
    * as a way to access lower-level D-Bus calls.
    *
-   * Since: UNRELEASED
+   * Since: 0.23.3
    */
   g_object_class_install_property (object_class,
       PROP_PROTOCOL_PROPERTIES_VARDICT,
@@ -2338,6 +2338,7 @@ tp_protocol_dup_presence_statuses (TpProtocol *self)
  *
  * Returns: (transfer full): the value of
  * #TpProtocol:protocol-properties
+ *
  * Since: UNRELEASED
  */
 GVariant *

@@ -134,6 +134,7 @@ _tp_call_content_new (TpCallChannel *self,
       "object-path", object_path,
       "connection", tp_channel_get_connection ((TpChannel *) self),
       "channel", self,
+      "factory", tp_proxy_get_factory (self),
       NULL);
 }
 

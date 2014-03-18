@@ -118,6 +118,7 @@ _tp_call_stream_new (TpCallContent *self,
       "object-path", object_path,
       "connection", self->priv->connection,
       "content", self,
+      "factory", tp_proxy_get_factory (self),
       NULL);
 }
 
