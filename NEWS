@@ -1,6 +1,57 @@
 telepathy-glib 0.99.8 (UNRELEASED)
 ==================================
 
+Dependencies:
+
+• GLib ≥ 2.39.90
+• dbus-glib ≥ 0.102
+
+API breaks caused by telepathy-spec changes:
+
+• Account.AccountPropertyChanged has been replaced with
+  the standard o.fd.DBus.Properties.PropertiesChanged
+
+• Handle_Type is now Entity_Type, and all uses of the term have also been
+  renamed (TpEntityType, TargetEntityType, etc.)
+
+• HandleChannel's Requests_Satisfied parameter has changed from ao
+  (array of object path) to a{oa{sv}} (map from object path to its immutable
+  properties), replacing Handler_Info["request-properties"]. Observer
+  has had a similar change.
+
+Other API breaks:
+
+• Various APIs that previously took a GHashTable<string, GValue> now take
+  a GVariant of type G_VARIANT_TYPE_VARDICT, often by deleting the GHashTable
+  version and removing the _vardict suffix from an existing GVariant version
+
+• tp_message_peek has been superseded by tp_message_dup_part
+
+• TpMessage string accessors now return a copied string, and their names
+  contain "dup" instead of "get"
+
+• TpProtocol and TpTLSCertificate objects cannot be created directly,
+  go via TpClientFactory instead
+
+• The tpl-extensions pkg-config module has gone away
+
+Deleted draft API that never had a satisfactory implementation:
+
+• Account.I.ExternalPasswordStorage1
+• Channel.I.CredentialsStorage1
+• CM.I.AccountStorage1
+
+Additions:
+
+• TpLogger, a TpProxy subclass which hosts generated code for talking to
+  the Logger (but you should use libtelepathy-logger-1 instead)
+
+• tp_asv_from_vardict, tp_asv_to_vardict
+
+• tp_base_connection_get_account_path_suffix
+
+• more TpAccountChannelRequest high-level API
+
 Fixes:
 
 • fix a memory leak when cleaning up TpProxy "prepare" requests
