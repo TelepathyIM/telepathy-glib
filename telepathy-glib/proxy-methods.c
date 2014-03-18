@@ -198,6 +198,36 @@ finally:
   tp_proxy_pending_call_free (pc);
 }
 
+/**
+ * tp_proxy_pending_call_v1_new:
+ * @self: the proxy
+ * @timeout_ms: the timeout in milliseconds, usually -1 to use a default
+ * @iface: a quark representing the D-Bus interface name
+ * @member: the method name
+ * @args: arguments for the call; if this is a floating reference, this
+ *  method will take ownership as if via g_variant_ref_sink()
+ * @reply_type: the expected type of the reply, which must be a tuple type
+ * @wrapper: (allow-none): a wrapper function to call when the call completes,
+ *  or %NULL if the method reply/error should be ignored
+ * @callback: (allow-none): callback to pass to the wrapper function. If it
+ *  is non-%NULL, @wrapper must also be non-%NULL.
+ * @user_data: (allow-none): user data to pass to the wrapper function
+ * @destroy: (allow-none): callback to destroy @user_data
+ * @weak_object: (allow-none): object to pass to the wrapper function; if this
+ *  object is finalized before the call completes, @wrapper will not be
+ *  called at all
+ *
+ * Make a D-Bus call. If it is not cancelled, call @wrapper when it completes.
+ * The @wrapper will usually call @callback, but is not required to do so.
+ *
+ * If the call is cancelled with tp_proxy_pending_call_cancel() or by
+ * finalization of the @weak_object, then @wrapper is not called at all,
+ * but @destroy will still be called.
+ *
+ * This function is intended to be called by generated code. If possible,
+ * use g_dbus_connection_call() or g_dbus_proxy_call() instead.
+ */
+/* implemented in the core library as a call to this: */
 TpProxyPendingCall *
 _tp_proxy_pending_call_v1_new (TpProxy *self,
     gint timeout_ms,
