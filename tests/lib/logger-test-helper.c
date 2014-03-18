@@ -52,7 +52,7 @@ tpl_test_create_and_prepare_account (TpDBusDaemon *dbus,
   g_array_append_val (features, zero);
 
   tp_tests_proxy_run_until_prepared (*account, (GQuark *) features->data);
-  g_array_free (features, FALSE);
+  g_array_unref (features);
 }
 
 void

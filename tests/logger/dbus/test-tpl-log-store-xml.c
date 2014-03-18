@@ -101,12 +101,14 @@ teardown (XmlTestCaseFixture *fixture,
                   fixture->tmp_basedir);
 
       g_free (fixture->tmp_basedir);
+      g_free (command);
     }
 
   if (fixture->store == NULL)
     g_object_unref (fixture->store);
 
   g_clear_object (&fixture->factory);
+  g_main_loop_unref (fixture->main_loop);
 }
 
 

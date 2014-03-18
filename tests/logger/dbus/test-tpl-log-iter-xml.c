@@ -78,6 +78,7 @@ teardown (XmlTestCaseFixture *fixture,
   g_clear_object (&fixture->factory);
   g_clear_object (&fixture->bus);
   g_clear_object (&fixture->store);
+  g_main_loop_unref (fixture->main_loop);
 }
 
 

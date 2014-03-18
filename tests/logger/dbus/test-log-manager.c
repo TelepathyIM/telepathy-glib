@@ -137,6 +137,7 @@ teardown (TestCaseFixture* fixture,
                   fixture->tmp_basedir);
 
       g_free (fixture->tmp_basedir);
+      g_free (command);
     }
 
   g_object_unref (fixture->manager);
@@ -620,6 +621,8 @@ check_ignored_messages (TestCaseFixture *fixture,
       g_object_get (G_OBJECT (found_event), "message-token", &result_token, NULL);
       g_object_get (G_OBJECT (event), "message-token", &ref_token, NULL);
       exists = (g_strcmp0 (result_token, ref_token) == 0);
+      g_free (ref_token);
+      g_free (result_token);
 
       if (should_exist != exists) {
         g_list_free_full (fixture->ret, g_object_unref);
@@ -628,6 +631,7 @@ check_ignored_messages (TestCaseFixture *fixture,
   }
 
   g_list_free_full (fixture->ret, g_object_unref);
+  g_date_free (date);
 
   return TRUE;
 }
@@ -802,7 +806,7 @@ main (int argc, char **argv)
 
   retval = tp_tests_run_with_bus ();
 
-  g_list_foreach (l, (GFunc) g_hash_table_unref, NULL);
+  g_list_free_full (l, (GDestroyNotify) g_hash_table_unref);
 
   g_test_dbus_down (test_dbus);
   g_clear_object (&test_dbus);

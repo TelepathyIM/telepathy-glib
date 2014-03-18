@@ -269,6 +269,8 @@ test_get_events (WalkerTestCaseFixture *fixture,
       NULL);
 
   get_events (fixture, walker, 0);
+  g_list_free_full (fixture->events, g_object_unref);
+  fixture->events = NULL;
   test_get_events_text (fixture, walker, 2, 1263427264, "L''");
   test_get_events_text (fixture, walker, 5, 1263427262, "J");
   test_get_events_text (fixture, walker, 1, 1263427261, "I'''");
@@ -278,12 +280,16 @@ test_get_events (WalkerTestCaseFixture *fixture,
   test_get_events_text (fixture, walker, 4, 1263254401, "5''");
   test_get_events_text (fixture, walker, 2, 1263254401, "5");
   get_events (fixture, walker, 0);
+  g_list_free_full (fixture->events, g_object_unref);
+  fixture->events = NULL;
   test_get_events_text (fixture, walker, 3, 1263168066, "H'");
   test_get_events_text (fixture, walker, 3, 1263168065, "G''");
   test_get_events_text (fixture, walker, 6, 1263168063, "E");
   test_get_events_text (fixture, walker, 1, 1263168062, "D''");
   test_get_events_text (fixture, walker, 2, 1263168062, "D");
   get_events (fixture, walker, 0);
+  g_list_free_full (fixture->events, g_object_unref);
+  fixture->events = NULL;
   test_get_events_text (fixture, walker, 4, 1263168005, "4");
   test_get_events_text (fixture, walker, 2, 1263168003, "2");
   test_get_events_text (fixture, walker, 4, 1263081661, "A");

@@ -272,6 +272,7 @@ test_get_dates_jabber (PidginTestCaseFixture *fixture,
 {
   GList *dates = NULL;
   GDate *date = NULL;
+  GDate *ref_date;
 
   /* Chatroom messages */
   dates = log_store_pidgin_get_dates (TPL_LOG_STORE (fixture->store),
@@ -280,14 +281,16 @@ test_get_dates_jabber (PidginTestCaseFixture *fixture,
   g_assert_cmpint (g_list_length (dates), ==, 2);
 
   date = g_list_nth_data (dates, 0);
-  g_assert_cmpint (0, ==,
-      g_date_compare (date, g_date_new_dmy (12, G_DATE_APRIL, 2010)));
+  ref_date = g_date_new_dmy (12, G_DATE_APRIL, 2010);
+  g_assert_cmpint (0, ==, g_date_compare (date, ref_date));
+  g_date_free (ref_date);
 
   g_date_free (date);
 
   date = g_list_nth_data (dates, 1);
-  g_assert_cmpint (0, ==,
-      g_date_compare (date, g_date_new_dmy (29, G_DATE_APRIL, 2010)));
+  ref_date = g_date_new_dmy (29, G_DATE_APRIL, 2010);
+  g_assert_cmpint (0, ==, g_date_compare (date, ref_date));
+  g_date_free (ref_date);
 
   g_date_free (date);
   g_list_free (dates);
@@ -299,8 +302,9 @@ test_get_dates_jabber (PidginTestCaseFixture *fixture,
   g_assert_cmpint (g_list_length (dates), ==, 1);
 
   date = g_list_nth_data (dates, 0);
-  g_assert_cmpint (0, ==,
-      g_date_compare (date, g_date_new_dmy (10, G_DATE_DECEMBER, 2010)));
+  ref_date = g_date_new_dmy (10, G_DATE_DECEMBER, 2010);
+  g_assert_cmpint (0, ==, g_date_compare (date, ref_date));
+  g_date_free (ref_date);
 
   g_date_free (date);
   g_list_free (dates);
@@ -312,6 +316,7 @@ test_get_dates_irc (PidginTestCaseFixture *fixture,
 {
   GList *dates = NULL;
   GDate *date = NULL;
+  GDate *ref_date;
 
   dates = log_store_pidgin_get_dates (TPL_LOG_STORE (fixture->store),
       fixture->account,
@@ -321,8 +326,9 @@ test_get_dates_irc (PidginTestCaseFixture *fixture,
   g_assert_cmpint (g_list_length (dates), ==, 1);
 
   date = g_list_nth_data (dates, 0);
-  g_assert_cmpint (0, ==,
-      g_date_compare (date, g_date_new_dmy (30, G_DATE_NOVEMBER, 2010)));
+  ref_date = g_date_new_dmy (30, G_DATE_NOVEMBER, 2010);
+  g_assert_cmpint (0, ==, g_date_compare (date, ref_date));
+  g_date_free (ref_date);
 
   g_list_foreach (dates, (GFunc) g_date_free, NULL);
   g_list_free (dates);
@@ -617,7 +623,7 @@ main (int argc, char **argv)
 
   retval = g_test_run ();
 
-  g_list_foreach (l, (GFunc) g_hash_table_unref, NULL);
+  g_list_free_full (l, (GDestroyNotify) g_hash_table_unref);
 
   g_test_dbus_down (test_dbus);
   g_clear_object (&test_dbus);
