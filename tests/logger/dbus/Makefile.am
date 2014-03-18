@@ -49,11 +49,9 @@ AM_TESTS_ENVIRONMENT = \
     G_SLICE=debug-blocks					\
     TPL_DEBUG=all						\
     G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly)	\
-    $(NULL)
-
-LOG_COMPILER = \
-    sh $(top_srcdir)/tools/with-session-bus.sh			\
-        --config-file=dbus-1/session.conf --			\
+    DBUS_SESSION_BUS_ADDRESS=this-is-clearly-not-valid		\
+    DBUS_STARTER_ADDRESS=this-is-clearly-not-valid		\
+    DBUS_STARTER_BUS_TYPE=this-is-clearly-not-valid		\
     $(NULL)
 
 check-valgrind:
@@ -64,26 +62,13 @@ check-valgrind:
 include $(top_srcdir)/tools/valgrind.mk
 
 VALGRIND_LOG_COMPILER = \
-    $(LOG_COMPILER)				\
     env G_SLICE=always-malloc CHECK_VERBOSE=1	\
     $(top_builddir)/libtool --mode=execute	\
     $(VALGRIND) --suppressions=$(top_srcdir)/tests/suppressions/tpl.supp $(VALGRIND_FLAGS) \
     $(NULL)
-
-BUILT_SOURCES = \
-	dbus-1/session.conf \
-	$(NULL)
 
 CLEANFILES = $(BUILT_SOURCES)
 
 distclean-local:
 	rm -f capture-*.log
 	rm -rf _gen
-
-EXTRA_DIST = \
-    dbus-1/session.conf.in 	\
-    $(NULL)
-
-dbus-1/%.conf: $(srcdir)/dbus-1/%.conf.in
-	$(AM_V_at)$(MKDIR_P) dbus-1
-	$(AM_V_GEN)sed -e "s|[@]abs_top_builddir[@]|@abs_top_builddir@|g" $< > $@
