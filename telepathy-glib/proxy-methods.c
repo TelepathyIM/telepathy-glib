@@ -34,6 +34,22 @@
 #endif
 
 /**
+ * TpProxyWrapperFunc:
+ * @self: a proxy
+ * @error: (allow-none): an error, or %NULL for a successful reply
+ * @args: (allow-none): the arguments of a successful reply, or %NULL
+ *  on error
+ * @callback: the callback to call
+ * @user_data: user data to pass to the callback
+ * @weak_object: object to pass to the callback
+ *
+ * A simplified reinvention of #GClosureMarshal for #TpProxy subclasses.
+ * Functions with this signature are intended to be
+ * programmatically-generated; there should be no need to use it in
+ * hand-written code, other than the implementation of #TpProxy.
+ */
+
+/**
  * TpProxyPendingCall:
  *
  * Opaque structure representing a pending D-Bus call.
