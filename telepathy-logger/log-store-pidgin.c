@@ -702,6 +702,7 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
       if (hits == NULL)
         {
           g_strfreev (lines);
+          g_free (date_str);
           continue;
         }
 
@@ -709,6 +710,7 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
         {
           g_strfreev (lines);
           g_strfreev (hits);
+          g_free (date_str);
           continue;
         }
 
@@ -850,6 +852,7 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
           g_free (sender_name);
           g_free (time_str);
           g_object_unref (sender);
+          g_free (body);
 
           i = j - 1;
         }
@@ -859,6 +862,7 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
       g_free (own_user);
       g_free (date);
       g_free (protocol);
+      g_free (date_str);
 
       g_strfreev (lines);
     }

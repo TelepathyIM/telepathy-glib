@@ -520,6 +520,7 @@ add_text_event (TplLogStoreXml *self,
           guint edit_timestamp;
           g_string_append_printf (event, " supersedes-token='%s'",
               supersedes_token);
+          g_free (supersedes_token);
 
           edit_timestamp = tpl_text_event_get_edit_timestamp (message);
           if (edit_timestamp != 0)
@@ -1505,6 +1506,10 @@ log_store_xml_get_all_files (TplLogStoreXml *self,
               log_store_xml_get_all_files (self, filename, type_mask));
           g_free (filename);
         }
+      else
+        {
+          g_free (filename);
+        }
     }
 
 out:
@@ -1516,7 +1521,9 @@ out:
   return files;
 }
 
-
+/*
+ * @files: (transfer full) (element-type utf8):
+ */
 static GList *
 _log_store_xml_search_in_files (TplLogStoreXml *self,
     const gchar *text,
@@ -1599,7 +1606,7 @@ out:
   if (regex != NULL)
     g_regex_unref (regex);
 
-  g_list_free (files);
+  g_list_free_full (files, g_free);
   return hits;
 }
 
