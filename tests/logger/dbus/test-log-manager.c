@@ -40,60 +40,6 @@ typedef struct
   TplLogManager *manager;
 } TestCaseFixture;
 
-
-
-static TpDebugSender *debug_sender = NULL;
-static gboolean stamp_logs = FALSE;
-
-
-static void
-log_to_debug_sender (const gchar *log_domain,
-    GLogLevelFlags log_level,
-    const gchar *string)
-{
-  GTimeVal now;
-
-  g_return_if_fail (TP_IS_DEBUG_SENDER (debug_sender));
-
-  g_get_current_time (&now);
-
-  tp_debug_sender_add_message (debug_sender, &now, log_domain, log_level,
-      string);
-}
-
-
-static void
-log_handler (const gchar *log_domain,
-    GLogLevelFlags log_level,
-    const gchar *message,
-    gpointer user_data)
-{
-  if (stamp_logs)
-    {
-      GTimeVal now;
-      gchar now_str[32];
-      gchar *tmp;
-      struct tm tm;
-
-      g_get_current_time (&now);
-      localtime_r (&(now.tv_sec), &tm);
-      strftime (now_str, 32, "%Y-%m-%d %H:%M:%S", &tm);
-      tmp = g_strdup_printf ("%s.%06ld: %s",
-          now_str, now.tv_usec, message);
-
-      g_log_default_handler (log_domain, log_level, tmp, NULL);
-
-      g_free (tmp);
-    }
-  else
-    {
-      g_log_default_handler (log_domain, log_level, message, NULL);
-    }
-
-  log_to_debug_sender (log_domain, log_level, message);
-}
-
-
 static void
 teardown_service (TestCaseFixture* fixture,
     gconstpointer user_data)
@@ -257,16 +203,6 @@ setup_for_writing (TestCaseFixture *fixture,
 
   setup (fixture, user_data);
 }
-
-static void
-setup_debug (void)
-{
-  stamp_logs = (g_getenv ("TPL_TIMING") != NULL);
-  debug_sender = tp_debug_sender_dup ();
-
-  g_log_set_default_handler (log_handler, NULL);
-}
-
 
 static void
 test_exists (TestCaseFixture *fixture,
@@ -743,18 +679,9 @@ main (int argc, char **argv)
   GHashTable *params = NULL;
   GList *l = NULL;
   int retval;
-  GTestDBus *test_dbus;
 
   tpl_debug_set_flags ("all");
   tp_debug_set_flags ("all");
-
-  /* FIXME: this stuff should be part of the fixture, but setup_debug()
-   * uses tp_dbus_daemon_dup() */
-  g_test_dbus_unset ();
-  test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
-  g_test_dbus_up (test_dbus);
-
-  setup_debug ();
 
   /* no account tests */
   tp_tests_init (&argc, &argv);
@@ -804,12 +731,9 @@ main (int argc, char **argv)
       TestCaseFixture, params,
       setup_for_writing, test_ignorelist, teardown);
 
-  retval = g_test_run ();
+  retval = tp_tests_run_with_bus ();
 
   g_list_free_full (l, (GDestroyNotify) g_hash_table_unref);
-
-  g_test_dbus_down (test_dbus);
-  g_clear_object (&test_dbus);
 
   return retval;
 }
