@@ -18,8 +18,8 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#ifndef __TPL_DEBUG_H__
-#define __TPL_DEBUG_H__
+#ifndef __TPL_DEBUG_INTERNAL_H__
+#define __TPL_DEBUG_INTERNAL_H__
 
 #include "config.h"
 
@@ -95,4 +95,4 @@ G_STMT_START { \
 
 #endif /* DEBUG_FLAG */
 
-#endif /* __TPL_DEBUG_H__ */
+#endif /* __TPL_DEBUG_INTERNAL_H__ */

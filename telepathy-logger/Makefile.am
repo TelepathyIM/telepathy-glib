@@ -49,6 +49,7 @@ EXTRA_DIST = \
 
 LIBTPLdir = $(includedir)/telepathy-logger-1/telepathy-logger
 LIBTPL_HEADERS = \
+		debug.h				\
 		entity.h			\
 		event.h				\
 		log-manager.h			\
