@@ -54,6 +54,8 @@ Additions:
 
 Fixes:
 
+• don't leak every D-Bus method call result, a regression in 0.23.1 (Simon)
+
 • fix a memory leak when cleaning up TpProxy "prepare" requests
   (fd.o #76000, Simon)
 
