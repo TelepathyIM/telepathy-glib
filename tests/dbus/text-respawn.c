@@ -146,9 +146,14 @@ main (int argc,
   TpCapabilities *caps;
   GPtrArray *classes;
   GQuark conn_features[] = { TP_CONNECTION_FEATURE_CAPABILITIES, 0 };
+  GTestDBus *test_dbus;
 
   tp_tests_abort_after (10);
   /* tp_debug_set_flags ("all"); */
+
+  g_test_dbus_unset ();
+  test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
+  g_test_dbus_up (test_dbus);
 
   tp_tests_create_conn (TP_TESTS_TYPE_ECHO_CONNECTION, "me@example.com",
       TRUE, &service_conn_as_base, &conn);
@@ -341,6 +346,9 @@ main (int argc,
 
   g_free (last_sent_text);
   g_free (last_received_text);
+
+  g_test_dbus_down (test_dbus);
+  tp_tests_assert_last_unref (&test_dbus);
 
   return 0;
 }

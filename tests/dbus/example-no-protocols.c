@@ -100,6 +100,7 @@ main (int argc,
   gulong handler;
   GError *error = NULL;
   gboolean saw_exited;
+  GTestDBus *test_dbus;
 
   /* If we're running slowly (for instance in a parallel build)
    * we don't want the CM process in the background to time out and exit. */
@@ -108,6 +109,10 @@ main (int argc,
   tp_tests_abort_after (5);
 
   tp_debug_set_flags ("all");
+
+  g_test_dbus_unset ();
+  test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
+  g_test_dbus_up (test_dbus);
 
   mainloop = g_main_loop_new (NULL, FALSE);
 
@@ -165,6 +170,9 @@ main (int argc,
   g_object_unref (early_cm);
   g_object_unref (dbus_daemon);
   g_main_loop_unref (mainloop);
+
+  g_test_dbus_down (test_dbus);
+  tp_tests_assert_last_unref (&test_dbus);
 
   return 0;
 }

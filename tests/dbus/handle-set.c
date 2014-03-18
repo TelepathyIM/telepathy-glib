@@ -23,10 +23,15 @@ main (int argc,
   TpIntset *iset = NULL, *result = NULL;
   GError *error = NULL;
   gchar *s;
+  GTestDBus *test_dbus;
 
   TpHandle h1, h2, h3, h4;
 
   tp_tests_abort_after (10);
+
+  g_test_dbus_unset ();
+  test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
+  g_test_dbus_up (test_dbus);
 
   repo = tp_tests_object_new_static_class (TP_TYPE_DYNAMIC_HANDLE_REPO,
       "handle-type", TP_ENTITY_TYPE_CONTACT,
@@ -122,6 +127,9 @@ main (int argc,
   tp_handle_set_destroy (set);
 
   g_object_unref (G_OBJECT (repo));
+
+  g_test_dbus_down (test_dbus);
+  tp_tests_assert_last_unref (&test_dbus);
 
   return 0;
 }

@@ -153,11 +153,16 @@ main (int argc,
       "GON OUT BACKSON" };
   TpHandleRepoIface *service_repo;
   guint i;
+  GTestDBus *test_dbus;
 
   /* Setup */
 
   tp_tests_abort_after (10);
   tp_debug_set_flags ("all");
+
+  g_test_dbus_unset ();
+  test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
+  g_test_dbus_up (test_dbus);
 
   tp_tests_create_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION, "me@example.com",
       TRUE, &service_conn_as_base, &client_conn);
@@ -194,6 +199,9 @@ main (int argc,
   service_conn_as_base = NULL;
   g_object_unref (service_conn);
   g_array_unref (handles);
+
+  g_test_dbus_down (test_dbus);
+  tp_tests_assert_last_unref (&test_dbus);
 
   return 0;
 }

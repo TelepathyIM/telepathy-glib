@@ -79,10 +79,15 @@ main (int argc,
   GError *error = NULL;
   gchar *chan_path;
   TpHandle handle;
+  GTestDBus *test_dbus;
 
   tp_tests_abort_after (10);
   tp_debug_set_flags ("all");
   mainloop = g_main_loop_new (NULL, FALSE);
+
+  g_test_dbus_unset ();
+  test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
+  g_test_dbus_up (test_dbus);
 
   tp_tests_create_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION, "me@example.com",
       TRUE, &service_conn_as_base, &conn);
@@ -132,6 +137,9 @@ main (int argc,
   g_object_unref (service_conn);
   g_main_loop_unref (mainloop);
   g_free (chan_path);
+
+  g_test_dbus_down (test_dbus);
+  tp_tests_assert_last_unref (&test_dbus);
 
   return 0;
 }

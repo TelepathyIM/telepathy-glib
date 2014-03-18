@@ -46,6 +46,8 @@ enum {
 };
 
 typedef struct {
+    GTestDBus *test_dbus;
+
     TpDBusDaemon *dbus_daemon;
     TpProxy *proxies[N_PROXIES];
     GObject *cd_service;
@@ -172,6 +174,10 @@ signal_cb (TpProxy *proxy,
 static void
 setup (void)
 {
+  g_test_dbus_unset ();
+  f->test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
+  g_test_dbus_up (f->test_dbus);
+
   f->dbus_daemon = tp_tests_dbus_daemon_dup_or_die ();
 
   /* Any random object with an interface: what matters is that it can
@@ -210,6 +216,9 @@ teardown (void)
   tp_tests_assert_last_unref (&f->dbus_daemon);
 
   tp_tests_assert_last_unref (&f->private_dbus_daemon);
+
+  g_test_dbus_down (f->test_dbus);
+  tp_tests_assert_last_unref (&f->test_dbus);
 }
 
 static TpProxy *

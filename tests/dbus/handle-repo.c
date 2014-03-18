@@ -75,9 +75,18 @@ test_handles (void)
 
 int main (int argc, char **argv)
 {
+  GTestDBus *test_dbus;
+
   tp_tests_abort_after (10);
 
+  g_test_dbus_unset ();
+  test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
+  g_test_dbus_up (test_dbus);
+
   test_handles ();
+
+  g_test_dbus_down (test_dbus);
+  tp_tests_assert_last_unref (&test_dbus);
 
   return 0;
 }

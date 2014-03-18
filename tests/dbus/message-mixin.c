@@ -162,9 +162,15 @@ main (int argc,
   gboolean ok;
   GHashTable *parameters;
   GQuark connected_feature[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+  GTestDBus *test_dbus;
 
   tp_tests_abort_after (10);
   tp_debug_set_flags ("all");
+
+  g_test_dbus_unset ();
+  test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
+  g_test_dbus_up (test_dbus);
+
   dbus = tp_tests_dbus_daemon_dup_or_die ();
 
   service_cm = EXAMPLE_ECHO_2_CONNECTION_MANAGER (
@@ -782,6 +788,9 @@ main (int argc,
 
   g_free (last_message_sent_token);
   g_free (last_message_sent_sender_id);
+
+  g_test_dbus_down (test_dbus);
+  tp_tests_assert_last_unref (&test_dbus);
 
   return 0;
 }
