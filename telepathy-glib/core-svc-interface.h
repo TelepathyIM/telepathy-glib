@@ -36,14 +36,15 @@ struct _TpSvcInterfaceInfo {
     GDBusInterfaceInfo *interface_info;
     GDBusInterfaceVTable *vtable;
     gchar **signals;
+    /*<private>*/
     gpointer _reserved[8];
 };
 
-void tp_svc_interface_set_dbus_interface_info (GType type,
+void tp_svc_interface_set_dbus_interface_info (GType g_interface,
     const TpSvcInterfaceInfo *info);
 
 const TpSvcInterfaceInfo *tp_svc_interface_peek_dbus_interface_info (
-    GType type);
+    GType g_interface);
 
 G_END_DECLS
 

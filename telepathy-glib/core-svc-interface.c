@@ -81,9 +81,9 @@ tp_svc_interface_peek_dbus_interface_info (GType g_interface)
  * tp_svc_interface_set_dbus_interface_info: (skip)
  * @g_interface: The #GType of a service interface
  * @info: struct encapsulating the #GDBusInterfaceInfo, the #GDBusVTable
- *  and the GLib signal names corresponding to D-Bus signals
- * @vtable: the vtable, whose methods must expect the object
- *  implementing @g_interface as their user-data
+ *  and the GLib signal names corresponding to D-Bus signals.
+ *  The #GDBusVTable methods must expect the object
+ *  implementing @g_interface as their user-data.
  *
  * Declare that @g_interface implements the given D-Bus interface, with the
  * given vtable. This may only be called once per GInterface, usually from
