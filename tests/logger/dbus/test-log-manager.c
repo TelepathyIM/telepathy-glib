@@ -804,7 +804,7 @@ main (int argc, char **argv)
       TestCaseFixture, params,
       setup_for_writing, test_ignorelist, teardown);
 
-  retval = tp_tests_run_with_bus ();
+  retval = g_test_run ();
 
   g_list_free_full (l, (GDestroyNotify) g_hash_table_unref);
 
