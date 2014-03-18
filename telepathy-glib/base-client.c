@@ -988,7 +988,7 @@ tp_base_client_dup_pending_requests (TpBaseClient *self)
 {
   g_return_val_if_fail (self->priv->flags & CLIENT_IS_HANDLER, NULL);
 
-  return _tp_g_list_copy_deep (self->priv->pending_requests,
+  return g_list_copy_deep (self->priv->pending_requests,
       (GCopyFunc) g_object_ref, NULL);
 }
 

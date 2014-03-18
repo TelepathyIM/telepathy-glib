@@ -795,7 +795,7 @@ tp_contact_dup_contact_info (TpContact *self)
 {
   g_return_val_if_fail (TP_IS_CONTACT (self), NULL);
 
-  return _tp_g_list_copy_deep (self->priv->contact_info,
+  return g_list_copy_deep (self->priv->contact_info,
       (GCopyFunc) tp_contact_info_field_copy, NULL);
 }
 

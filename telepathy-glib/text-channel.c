@@ -1231,7 +1231,7 @@ tp_text_channel_get_feature_quark_incoming_messages (void)
 GList *
 tp_text_channel_dup_pending_messages (TpTextChannel *self)
 {
-  return _tp_g_list_copy_deep (
+  return g_list_copy_deep (
       g_queue_peek_head_link (self->priv->pending_messages),
       (GCopyFunc) g_object_ref, NULL);
 }

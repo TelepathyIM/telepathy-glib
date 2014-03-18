@@ -160,7 +160,7 @@ G_DEFINE_BOXED_TYPE (TpContactInfoFieldSpec, tp_contact_info_field_spec,
 GList *
 tp_contact_info_spec_list_copy (GList *list)
 {
-  return _tp_g_list_copy_deep (list,
+  return g_list_copy_deep (list,
       (GCopyFunc) tp_contact_info_field_spec_copy, NULL);
 }
 
@@ -310,7 +310,7 @@ G_DEFINE_BOXED_TYPE (TpContactInfoField, tp_contact_info_field,
 GList *
 tp_contact_info_list_copy (GList *list)
 {
-  return _tp_g_list_copy_deep (list,
+  return g_list_copy_deep (list,
       (GCopyFunc) tp_contact_info_field_copy, NULL);
 }
 
@@ -481,7 +481,7 @@ tp_connection_dup_contact_info_supported_fields (TpConnection *self)
 {
   g_return_val_if_fail (TP_IS_CONNECTION (self), NULL);
 
-  return _tp_g_list_copy_deep (self->priv->contact_info_supported_fields,
+  return g_list_copy_deep (self->priv->contact_info_supported_fields,
       (GCopyFunc) tp_contact_info_field_spec_copy, NULL);
 }
 

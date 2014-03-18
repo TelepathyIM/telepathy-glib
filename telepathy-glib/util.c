@@ -1768,7 +1768,7 @@ _tp_contacts_from_values (GHashTable *table)
 GList *
 _tp_object_list_copy (GList *l)
 {
-  return _tp_g_list_copy_deep (l, (GCopyFunc) g_object_ref, NULL);
+  return g_list_copy_deep (l, (GCopyFunc) g_object_ref, NULL);
 }
 
 /*
@@ -1783,23 +1783,4 @@ void
 _tp_object_list_free (GList *l)
 {
   g_list_free_full (l, g_object_unref);
-}
-
-GList *
-_tp_g_list_copy_deep (GList *list,
-    GCopyFunc func,
-    gpointer user_data)
-{
-  GList *ret = NULL;
-  GList *l;
-
-  ret = g_list_copy (list);
-
-  if (func != NULL)
-    {
-      for (l = ret; l != NULL; l = l->next)
-        l->data = func (l->data, user_data);
-    }
-
-  return ret;
 }

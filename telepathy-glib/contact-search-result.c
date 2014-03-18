@@ -258,6 +258,6 @@ tp_contact_search_result_dup_fields (TpContactSearchResult *self)
 {
   g_return_val_if_fail (TP_IS_CONTACT_SEARCH_RESULT (self), NULL);
 
-  return _tp_g_list_copy_deep (self->priv->fields,
+  return g_list_copy_deep (self->priv->fields,
       (GCopyFunc) tp_contact_info_field_copy, NULL);
 }
