@@ -224,8 +224,14 @@ main (int argc, char **argv)
 {
   Context ctx;
   TpDBusDaemon *dbus_daemon;
+  GTestDBus *test_dbus;
+  int ret;
 
   tp_tests_init (&argc, &argv);
+
+  g_test_dbus_unset ();
+  test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
+  g_test_dbus_up (test_dbus);
 
   dbus_daemon = tp_tests_dbus_daemon_dup_or_die ();
   ctx.obj = tp_tests_object_new_static_class (TEST_TYPE_PROPERTIES, NULL);
@@ -246,11 +252,14 @@ main (int argc, char **argv)
 
   g_test_add_data_func ("/properties/changed", &ctx, (GTestDataFunc) test_emit_changed);
 
-  tp_tests_run_with_bus ();
+  ret = g_test_run ();
 
   g_object_unref (ctx.obj);
   g_object_unref (ctx.proxy);
   g_object_unref (dbus_daemon);
 
-  return 0;
+  g_test_dbus_down (test_dbus);
+  tp_tests_assert_last_unref (&test_dbus);
+
+  return ret;
 }
