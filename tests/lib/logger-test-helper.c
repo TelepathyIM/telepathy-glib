@@ -61,8 +61,8 @@ tpl_test_release_account (TpDBusDaemon *dbus,
     TpTestsSimpleAccount *account_service)
 {
   tp_dbus_daemon_unregister_object (dbus, account_service);
-  g_object_unref (account_service);
-  g_object_unref (account);
+  tp_tests_assert_last_unref (&account_service);
+  tp_tests_await_last_unref (&account);
 }
 
 void

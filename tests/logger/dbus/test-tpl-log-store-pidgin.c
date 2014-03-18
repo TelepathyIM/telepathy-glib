@@ -33,6 +33,7 @@ typedef struct
   GMainLoop *main_loop;
 
   TpDBusDaemon *dbus;
+  TpAccountManager *account_manager;
   TpAccount *account;
   TpTestsSimpleAccount *account_service;
   TpClientFactory *factory;
@@ -149,6 +150,8 @@ setup_service (PidginTestCaseFixture* fixture,
 
   fixture->factory = _tpl_client_factory_dup (fixture->dbus);
 
+  fixture->account_manager = tp_account_manager_dup ();
+
   fixture->account = tp_client_factory_ensure_account (fixture->factory,
       account_path, NULL, NULL);
   g_assert (fixture->account != NULL);
@@ -201,18 +204,23 @@ teardown_service (PidginTestCaseFixture* fixture,
 
   g_assert (user_data != NULL);
 
+  if (fixture->store != NULL)
+    tp_tests_assert_last_unref (&fixture->store);
+
   if (fixture->account != NULL)
     {
       /* FIXME is it useful in this suite */
       tp_tests_proxy_run_until_dbus_queue_processed (fixture->account);
 
-      g_object_unref (fixture->account);
-      fixture->account = NULL;
+      tp_tests_assert_last_unref (&fixture->account);
     }
 
+  /* wait for pending call if any */
+  if (fixture->account_manager != NULL)
+    tp_tests_await_last_unref (&fixture->account_manager);
+
   tp_dbus_daemon_unregister_object (fixture->dbus, fixture->account_service);
-  g_object_unref (fixture->account_service);
-  fixture->account_service = NULL;
+  tp_tests_await_last_unref (&fixture->account_service);
 
   tp_dbus_daemon_release_name (fixture->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
       &error);
@@ -221,7 +229,7 @@ teardown_service (PidginTestCaseFixture* fixture,
   g_object_unref (fixture->dbus);
   fixture->dbus = NULL;
 
-  g_clear_object (&fixture->factory);
+  tp_tests_assert_last_unref (&fixture->factory);
 }
 
 static void
@@ -231,12 +239,10 @@ teardown (PidginTestCaseFixture* fixture,
   g_free (fixture->basedir);
   fixture->basedir = NULL;
 
-  g_object_unref (fixture->store);
-  fixture->store = NULL;
-
-  g_object_unref (fixture->room);
-  g_object_unref (fixture->irc_room);
-  g_object_unref (fixture->contact);
+  tp_tests_assert_last_unref (&fixture->store);
+  tp_tests_assert_last_unref (&fixture->room);
+  tp_tests_assert_last_unref (&fixture->irc_room);
+  tp_tests_assert_last_unref (&fixture->contact);
 
   if (user_data != NULL)
     teardown_service (fixture, user_data);

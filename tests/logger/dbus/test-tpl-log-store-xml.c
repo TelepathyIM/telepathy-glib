@@ -25,6 +25,7 @@ typedef struct
   TplLogStore *store;
   TpDBusDaemon *bus;
   TpClientFactory *factory;
+  TpAccountManager *account_manager;
 } XmlTestCaseFixture;
 
 
@@ -54,6 +55,8 @@ setup (XmlTestCaseFixture* fixture,
   g_assert_no_error (error);
 
   fixture->factory = _tpl_client_factory_dup (fixture->bus);
+
+  fixture->account_manager = tp_account_manager_dup ();
 
   tp_debug_divert_messages (g_getenv ("TPL_LOGFILE"));
 
@@ -88,6 +91,15 @@ teardown (XmlTestCaseFixture *fixture,
 {
   GError *error = NULL;
 
+  if (fixture->store != NULL)
+    tp_tests_assert_last_unref (&fixture->store);
+
+  /* wait for pending call if any */
+  if (fixture->account_manager != NULL)
+    tp_tests_await_last_unref (&fixture->account_manager);
+
+  tp_tests_assert_last_unref (&fixture->factory);
+
   tp_dbus_daemon_release_name (fixture->bus, TP_ACCOUNT_MANAGER_BUS_NAME,
       &error);
   g_assert_no_error (error);
@@ -104,10 +116,6 @@ teardown (XmlTestCaseFixture *fixture,
       g_free (command);
     }
 
-  if (fixture->store == NULL)
-    g_object_unref (fixture->store);
-
-  g_clear_object (&fixture->factory);
   g_main_loop_unref (fixture->main_loop);
 }
 
@@ -168,7 +176,7 @@ test_clear_account (XmlTestCaseFixture *fixture,
   g_assert (account != NULL);
 
   _tpl_log_store_clear_account (fixture->store, account);
-  g_object_unref (account);
+  tp_tests_await_last_unref (&account);
 
   hits = _tpl_log_store_search_new (fixture->store, kept, TPL_EVENT_MASK_TEXT);
 
@@ -241,8 +249,8 @@ test_clear_entity (XmlTestCaseFixture *fixture,
         TP_ENTITY_TYPE_CONTACT, NULL, NULL);
 
   _tpl_log_store_clear_entity (fixture->store, account, entity);
-  g_object_unref (account);
   g_object_unref (entity);
+  tp_tests_await_last_unref (&account);
 
   hits = _tpl_log_store_search_new (fixture->store,
       always_kept, TPL_EVENT_MASK_TEXT);
@@ -465,10 +473,15 @@ test_add_text_event (XmlTestCaseFixture *fixture,
    * this assertion, as long as you don't break message edits). */
   assert_cmp_text_event (event, events->data);
 
+  tp_tests_assert_last_unref (&event);
+
+  while (events != NULL)
+    {
+      tp_tests_assert_last_unref (&events->data);
+      events = g_list_delete_link (events, events);
+    }
+
   tpl_test_release_account  (fixture->bus, account, account_service);
-  g_object_unref (event);
-  g_list_foreach (events, (GFunc) g_object_unref, NULL);
-  g_list_free (events);
 }
 
 static void
@@ -668,16 +681,19 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   assert_cmp_text_event (TPL_EVENT (new_new_event), events->next->data);
   assert_cmp_text_event (TPL_EVENT (late_event), g_list_last (events)->data);
 
-  tpl_test_release_account (fixture->bus, account, account_service);
+  tp_tests_assert_last_unref (&event);
+  tp_tests_assert_last_unref (&new_event);
+  tp_tests_assert_last_unref (&new_new_event);
+  tp_tests_assert_last_unref (&late_event);
+  tp_tests_assert_last_unref (&early_event);
 
-  g_list_foreach (events, (GFunc) g_object_unref, NULL);
-  g_list_free (events);
+  while (events != NULL)
+    {
+      tp_tests_assert_last_unref (&events->data);
+      events = g_list_delete_link (events, events);
+    }
 
-  g_object_unref (event);
-  g_object_unref (new_event);
-  g_object_unref (new_new_event);
-  g_object_unref (late_event);
-  g_object_unref (early_event);
+  tpl_test_release_account  (fixture->bus, account, account_service);
 }
 
 static void
@@ -863,10 +879,15 @@ test_add_call_event (XmlTestCaseFixture *fixture,
 
   assert_cmp_call_event (event, events->data);
 
-  tpl_test_release_account (fixture->bus, account, account_service);
-  g_object_unref (event);
-  g_object_unref (events->data);
-  g_list_free (events);
+  tp_tests_assert_last_unref (&event);
+
+  while (events != NULL)
+    {
+      tp_tests_assert_last_unref (&events->data);
+      events = g_list_delete_link (events, events);
+    }
+
+  tpl_test_release_account  (fixture->bus, account, account_service);
 }
 
 static void
@@ -916,8 +937,8 @@ test_exists (XmlTestCaseFixture *fixture,
   g_assert (!_tpl_log_store_exists (fixture->store, account2, user3, TPL_EVENT_MASK_TEXT));
   g_assert (_tpl_log_store_exists (fixture->store, account2, user3, TPL_EVENT_MASK_CALL));
 
-  g_object_unref (account1);
-  g_object_unref (account2);
+  tp_tests_await_last_unref (&account1);
+  tp_tests_await_last_unref (&account2);
   g_object_unref (user2);
   g_object_unref (user3);
 }
