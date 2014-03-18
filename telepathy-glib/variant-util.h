@@ -39,6 +39,9 @@ GVariant * tp_asv_to_vardict (const GHashTable *asv);
 
 GHashTable * tp_asv_from_vardict (GVariant *variant);
 
+gboolean tp_vardict_has_key (GVariant *variant,
+    const gchar *key);
+
 const gchar *tp_vardict_get_string (GVariant *variant,
     const gchar *key);
 const gchar *tp_vardict_get_object_path (GVariant *variant,

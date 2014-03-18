@@ -617,3 +617,27 @@ IMPLEMENT (uint32)
 IMPLEMENT (uint64)
 
 #undef IMPLEMENT
+
+/**
+ * tp_vardict_has_key:
+ * @variant: a #GVariant of type %G_VARIANT_TYPE_VARDICT
+ * @key: The key to look up
+ *
+ * Check if @variant contains @key.
+ *
+ * Returns: %TRUE, if @variant contains @key, %FALSE otherwise
+ * Since: UNRELEASED
+ */
+gboolean
+tp_vardict_has_key (GVariant *variant,
+    const gchar *key)
+{
+  GVariant *v;
+
+  v = g_variant_lookup_value (variant, key, NULL);
+  if (v == NULL)
+    return FALSE;
+
+  g_variant_unref (v);
+  return TRUE;
+}

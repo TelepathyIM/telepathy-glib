@@ -1896,6 +1896,7 @@ tp_variant_convert
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 tp_asv_from_vardict
 tp_asv_to_vardict
+tp_vardict_has_key
 tp_vardict_get_boolean
 tp_vardict_get_double
 tp_vardict_get_int32
