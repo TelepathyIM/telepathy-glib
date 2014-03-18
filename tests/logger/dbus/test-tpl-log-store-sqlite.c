@@ -4,8 +4,21 @@
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/client-factory-internal.h>
 
-int
-main (int argc, char **argv)
+#include "tests/lib/util.h"
+
+typedef struct {
+    int dummy;
+} Fixture;
+
+static void
+setup (Fixture *fixture,
+    gconstpointer data)
+{
+}
+
+static void
+test (Fixture *fixture,
+    gconstpointer data)
 {
   TplLogStore *store;
   TpDBusDaemon *bus;
@@ -35,4 +48,21 @@ main (int argc, char **argv)
   g_object_unref (account);
   g_object_unref (bus);
   g_object_unref (factory);
+}
+
+static void
+teardown (Fixture *fixture,
+    gconstpointer data)
+{
+}
+
+int
+main (int argc,
+    char **argv)
+{
+  tp_tests_init (&argc, &argv);
+
+  g_test_add ("/log-store-sqlite", Fixture, NULL, setup, test, teardown);
+
+  return tp_tests_run_with_bus ();
 }

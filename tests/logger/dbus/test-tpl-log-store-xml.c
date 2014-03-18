@@ -1073,7 +1073,7 @@ test_get_events_for_date (XmlTestCaseFixture *fixture,
 
 gint main (gint argc, gchar **argv)
 {
-  g_test_init (&argc, &argv, NULL);
+  tp_tests_init (&argc, &argv);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
   g_test_add ("/log-store-xml/clear",
@@ -1112,5 +1112,5 @@ gint main (gint argc, gchar **argv)
       XmlTestCaseFixture, NULL,
       setup, test_get_events_for_date, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

@@ -825,7 +825,7 @@ main (gint argc, gchar **argv)
   gint retval;
   GVariant *params;
 
-  g_test_init (&argc, &argv, NULL);
+  tp_tests_init (&argc, &argv);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
   params = create_params ();
@@ -838,7 +838,7 @@ main (gint argc, gchar **argv)
       PidginTestCaseFixture, params,
       setup, test_rewind, teardown);
 
-  retval = g_test_run ();
+  retval = tp_tests_run_with_bus ();
 
   g_variant_unref (params);
   return retval;

@@ -154,7 +154,7 @@ test_entity_instantiation_from_tp_contact (void)
 int main (int argc,
     char **argv)
 {
-  g_test_init (&argc, &argv, NULL);
+  tp_tests_init (&argc, &argv);
 
   g_test_add_func ("/entity/instantiation",
       test_entity_instantiation);
@@ -165,5 +165,5 @@ int main (int argc,
   g_test_add_func ("/entity/instantiation-from-tp-contact",
       test_entity_instantiation_from_tp_contact);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

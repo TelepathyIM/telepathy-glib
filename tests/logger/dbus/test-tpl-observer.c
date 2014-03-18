@@ -2,8 +2,21 @@
 
 #include <telepathy-logger/observer-internal.h>
 
-int
-main (int argc, char **argv)
+#include "tests/lib/util.h"
+
+typedef struct {
+    int dummy;
+} Fixture;
+
+static void
+setup (Fixture *fixture,
+    gconstpointer data)
+{
+}
+
+static void
+test (Fixture *fixture,
+    gconstpointer data)
 {
   TplObserver *obs, *obs2;
 
@@ -27,7 +40,21 @@ main (int argc, char **argv)
 
   /* proper disposal for the singleton when no references are present */
   g_object_unref (obs);
-
-  return 0;
 }
 
+static void
+teardown (Fixture *fixture,
+    gconstpointer data)
+{
+}
+
+int
+main (int argc,
+    char **argv)
+{
+  tp_tests_init (&argc, &argv);
+
+  g_test_add ("/log-store-sqlite", Fixture, NULL, setup, test, teardown);
+
+  return tp_tests_run_with_bus ();
+}

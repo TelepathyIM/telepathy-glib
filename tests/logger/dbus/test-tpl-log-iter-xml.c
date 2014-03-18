@@ -427,7 +427,7 @@ test_rewind (XmlTestCaseFixture *fixture,
 
 gint main (gint argc, gchar **argv)
 {
-  g_test_init (&argc, &argv, NULL);
+  tp_tests_init (&argc, &argv);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
   g_test_add ("/log-iter-xml/get-events",
@@ -438,5 +438,5 @@ gint main (gint argc, gchar **argv)
       XmlTestCaseFixture, NULL,
       setup, test_rewind, teardown);
 
-  return g_test_run ();
+  return tp_tests_run_with_bus ();
 }

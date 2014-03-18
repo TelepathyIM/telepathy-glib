@@ -526,11 +526,18 @@ main (int argc, char **argv)
   GHashTable *params = NULL;
   GList *l = NULL;
   int retval;
+  GTestDBus *test_dbus;
+
+  /* FIXME: this stuff should be part of the fixture, but setup_debug()
+   * uses tp_dbus_daemon_dup() */
+  g_test_dbus_unset ();
+  test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
+  g_test_dbus_up (test_dbus);
 
   setup_debug ();
 
   /* no account tests */
-  g_test_init (&argc, &argv, NULL);
+  tp_tests_init (&argc, &argv);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
   g_test_add ("/log-store-pidgin/get-name",
@@ -611,6 +618,9 @@ main (int argc, char **argv)
   retval = g_test_run ();
 
   g_list_foreach (l, (GFunc) g_hash_table_unref, NULL);
+
+  g_test_dbus_down (test_dbus);
+  g_clear_object (&test_dbus);
 
   return retval;
 }
