@@ -5,6 +5,7 @@
 #include "lib/logger-test-helper.h"
 #include "lib/util.h"
 
+#include <telepathy-logger/debug.h>
 #include "telepathy-logger/debug-internal.h"
 #include "telepathy-logger/log-manager-internal.h"
 #include "telepathy-logger/log-store-internal.h"
@@ -35,6 +36,9 @@ setup (XmlTestCaseFixture* fixture,
 {
   GError *error = NULL;
 
+  tpl_debug_set_flags ("all");
+  tp_debug_set_flags ("all");
+
   fixture->main_loop = g_main_loop_new (NULL, FALSE);
 
   fixture->store = g_object_new (TPL_TYPE_LOG_STORE_XML,
@@ -57,10 +61,6 @@ setup (XmlTestCaseFixture* fixture,
   fixture->factory = _tpl_client_factory_dup (fixture->bus);
 
   fixture->account_manager = tp_account_manager_dup ();
-
-  tp_debug_divert_messages (g_getenv ("TPL_LOGFILE"));
-
-  _tpl_debug_set_flags_from_env ();
 }
 
 

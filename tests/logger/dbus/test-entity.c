@@ -2,6 +2,9 @@
 
 #include <glib.h>
 #include <glib/gprintf.h>
+#include <telepathy-glib/telepathy-glib.h>
+
+#include <telepathy-logger/debug.h>
 #include <telepathy-logger/entity.h>
 #include <telepathy-logger/entity-internal.h>
 
@@ -154,6 +157,9 @@ test_entity_instantiation_from_tp_contact (void)
 int main (int argc,
     char **argv)
 {
+  tpl_debug_set_flags ("all");
+  tp_debug_set_flags ("all");
+
   tp_tests_init (&argc, &argv);
 
   g_test_add_func ("/entity/instantiation",

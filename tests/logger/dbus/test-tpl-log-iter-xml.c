@@ -4,6 +4,7 @@
 #include "lib/util.h"
 
 #include "telepathy-logger/call-event.h"
+#include <telepathy-logger/debug.h>
 #include "telepathy-logger/debug-internal.h"
 #include "telepathy-logger/log-iter-internal.h"
 #include "telepathy-logger/log-iter-xml-internal.h"
@@ -34,6 +35,9 @@ setup (XmlTestCaseFixture* fixture,
 {
   GError *error = NULL;
 
+  tpl_debug_set_flags ("all");
+  tp_debug_set_flags ("all");
+
   fixture->main_loop = g_main_loop_new (NULL, FALSE);
 
   fixture->store = g_object_new (TPL_TYPE_LOG_STORE_XML,
@@ -55,10 +59,6 @@ setup (XmlTestCaseFixture* fixture,
   tpl_test_create_and_prepare_account (fixture->bus, fixture->factory,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/user_40collabora_2eco_2euk",
       &fixture->account, &fixture->account_service);
-
-  tp_debug_divert_messages (g_getenv ("TPL_LOGFILE"));
-
-  _tpl_debug_set_flags_from_env ();
 }
 
 

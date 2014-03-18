@@ -1,5 +1,8 @@
 #include "config.h"
 
+#include <telepathy-glib/telepathy-glib.h>
+
+#include <telepathy-logger/debug.h>
 #include <telepathy-logger/log-store-sqlite-internal.h>
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/client-factory-internal.h>
@@ -14,6 +17,8 @@ static void
 setup (Fixture *fixture,
     gconstpointer data)
 {
+  tpl_debug_set_flags ("all");
+  tp_debug_set_flags ("all");
 }
 
 static void
@@ -25,8 +30,6 @@ test (Fixture *fixture,
   TpAccount *account;
   GError *error = NULL;
   TpClientFactory* factory;
-
-  _tpl_debug_set_flags_from_env ();
 
   bus = tp_dbus_daemon_dup (&error);
   g_assert_no_error (error);

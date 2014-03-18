@@ -7,6 +7,7 @@
 #include "lib/simple-account-manager.h"
 #include "lib/logger-test-helper.h"
 
+#include <telepathy-logger/debug.h>
 #include "telepathy-logger/debug-internal.h"
 #include "telepathy-logger/log-manager-internal.h"
 #include "telepathy-logger/log-store-internal.h"
@@ -260,10 +261,6 @@ setup_for_writing (TestCaseFixture *fixture,
 static void
 setup_debug (void)
 {
-  tp_debug_divert_messages (g_getenv ("TPL_LOGFILE"));
-
-  _tpl_debug_set_flags_from_env ();
-
   stamp_logs = (g_getenv ("TPL_TIMING") != NULL);
   debug_sender = tp_debug_sender_dup ();
 
@@ -747,6 +744,9 @@ main (int argc, char **argv)
   GList *l = NULL;
   int retval;
   GTestDBus *test_dbus;
+
+  tpl_debug_set_flags ("all");
+  tp_debug_set_flags ("all");
 
   /* FIXME: this stuff should be part of the fixture, but setup_debug()
    * uses tp_dbus_daemon_dup() */

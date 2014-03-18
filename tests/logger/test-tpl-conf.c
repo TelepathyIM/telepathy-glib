@@ -1,11 +1,17 @@
 #include "config.h"
 
+#include <telepathy-glib/telepathy-glib.h>
+
 #include <telepathy-logger/conf-internal.h>
+#include <telepathy-logger/debug.h>
 
 int
 main (int argc, char **argv)
 {
   TplConf *conf, *conf2;
+
+  tpl_debug_set_flags ("all");
+  tp_debug_set_flags ("all");
 
   conf = _tpl_conf_dup ();
 

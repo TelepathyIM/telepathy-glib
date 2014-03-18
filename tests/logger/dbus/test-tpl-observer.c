@@ -1,5 +1,8 @@
 #include "config.h"
 
+#include <telepathy-glib/telepathy-glib.h>
+
+#include <telepathy-logger/debug.h>
 #include <telepathy-logger/observer-internal.h>
 
 #include "tests/lib/util.h"
@@ -12,6 +15,8 @@ static void
 setup (Fixture *fixture,
     gconstpointer data)
 {
+  tpl_debug_set_flags ("all");
+  tp_debug_set_flags ("all");
 }
 
 static void

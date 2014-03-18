@@ -9,6 +9,7 @@
 #include "lib/simple-account.h"
 #include "lib/simple-account-manager.h"
 
+#include <telepathy-logger/debug.h>
 #include <telepathy-logger/log-store-pidgin-internal.h>
 #include <telepathy-logger/text-event-internal.h>
 #include <telepathy-logger/client-factory-internal.h>
@@ -169,6 +170,9 @@ static void
 setup (PidginTestCaseFixture* fixture,
     gconstpointer user_data)
 {
+  tpl_debug_set_flags ("all");
+  tp_debug_set_flags ("all");
+
   DEBUG ("setting up");
 
   fixture->main_loop = g_main_loop_new (NULL, FALSE);
@@ -521,10 +525,6 @@ test_get_events_for_empty_file (PidginTestCaseFixture *fixture,
 static void
 setup_debug (void)
 {
-  tp_debug_divert_messages (g_getenv ("TPL_LOGFILE"));
-
-  _tpl_debug_set_flags_from_env ();
-
   stamp_logs = (g_getenv ("TPL_TIMING") != NULL);
   debug_sender = tp_debug_sender_dup ();
 

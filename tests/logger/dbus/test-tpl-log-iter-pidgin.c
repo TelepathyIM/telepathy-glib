@@ -3,6 +3,7 @@
 #include "lib/simple-account.h"
 #include "lib/util.h"
 
+#include <telepathy-logger/debug.h>
 #include "telepathy-logger/debug-internal.h"
 #include "telepathy-logger/log-iter-internal.h"
 #include "telepathy-logger/log-iter-pidgin-internal.h"
@@ -51,6 +52,9 @@ setup (PidginTestCaseFixture* fixture,
   GVariant *params = (GVariant *) user_data;
   GHashTable *asv;
   const gchar *account_path = NULL;
+
+  tpl_debug_set_flags ("all");
+  tp_debug_set_flags ("all");
 
   fixture->main_loop = g_main_loop_new (NULL, FALSE);
   g_assert (fixture->main_loop != NULL);
@@ -106,10 +110,6 @@ setup (PidginTestCaseFixture* fixture,
   g_array_free (features, FALSE);
 
   g_main_loop_run (fixture->main_loop);
-
-  tp_debug_divert_messages (g_getenv ("TPL_LOGFILE"));
-
-  _tpl_debug_set_flags_from_env ();
 }
 
 
