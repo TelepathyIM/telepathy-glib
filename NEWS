@@ -1,5 +1,15 @@
-telepathy-glib 0.23.3 (UNRELEASED)
+telepathy-glib 0.23.3 (2014-03-18)
 ==================================
+
+This is the release candidate for the future 0.24.0 stable release.
+
+Enhancements:
+
+• TpProtocol gained API to access to its immutable properties as a
+  GVariant. (fd.o #55108, Guillaume)
+
+• TpCallStream and TpCallContent now inherit the factory from their
+  TpCallChannel. (fd.o #76168, Guillaume)
 
 Fixes:
 
@@ -7,6 +17,13 @@ Fixes:
   (fd.o #76000, Simon)
 
 • fix a memory leak for paths to contacts' avatar data (fd.o #76000, Simon)
+
+• fix crashes in TpFileTransferChannel with GLib 2.39 (fd.o #72319, Xavier)
+
+• fix some paths memory leaks (fd.o #76119, Guillaume)
+
+• tp_list_connection_managers_async() now terminates properly if there is no
+  CM installed. (fd.o #68892, Guillaume)
 
 telepathy-glib 0.23.2 (2014-02-26)
 ==================================

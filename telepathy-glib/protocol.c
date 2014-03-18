@@ -769,7 +769,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
    * will both be unavailable, and this #TpProtocol object will only be useful
    * as a way to access lower-level D-Bus calls.
    *
-   * Since: UNRELEASED
+   * Since: 0.23.3
    */
   g_object_class_install_property (object_class,
       PROP_PROTOCOL_PROPERTIES_VARDICT,
@@ -1030,7 +1030,7 @@ finally:
  *
  * Returns: a new protocol proxy, or %NULL on invalid arguments
  *
- * Since: 0.UNRELEASED
+ * Since: 0.23.3
  */
 TpProtocol *
 tp_protocol_new_vardict (TpDBusDaemon *dbus,
@@ -2422,7 +2422,7 @@ tp_protocol_dup_presence_statuses (TpProtocol *self)
  *
  * Returns: (transfer full): the value of
  * #TpProtocol:protocol-properties-vardict
- * Since: UNRELEASED
+ * Since: 0.23.3
  */
 GVariant *
 tp_protocol_dup_immutable_properties (TpProtocol *self)

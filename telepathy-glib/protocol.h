@@ -81,6 +81,7 @@ TpProtocol *tp_protocol_new (TpDBusDaemon *dbus, const gchar *cm_name,
     const gchar *protocol_name, const GHashTable *immutable_properties,
     GError **error);
 
+_TP_AVAILABLE_IN_0_24
 TpProtocol * tp_protocol_new_vardict (TpDBusDaemon *dbus,
     const gchar *cm_name,
     const gchar *protocol_name,
@@ -108,6 +109,7 @@ GStrv tp_protocol_dup_param_names (TpProtocol *self) G_GNUC_WARN_UNUSED_RESULT;
 _TP_AVAILABLE_IN_0_18
 GList *tp_protocol_dup_params (TpProtocol *self) G_GNUC_WARN_UNUSED_RESULT;
 
+_TP_AVAILABLE_IN_0_24
 GVariant * tp_protocol_dup_immutable_properties (TpProtocol *self);
 
 #ifndef TP_DISABLE_DEPRECATED
