@@ -351,7 +351,7 @@ tp_base_client_dup_account (TpBaseClient *self,
  * called, and may only be called on objects whose class implements
  * #TpBaseClientClass.observe_channel.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.8
  */
 void
 tp_base_client_add_observer_filter (TpBaseClient *self,
@@ -375,7 +375,7 @@ tp_base_client_add_observer_filter (TpBaseClient *self,
  *     tp_channel_filter_new_for_text_chats ());
  * ]|
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.8
  */
 void
 tp_base_client_take_observer_filter (TpBaseClient *self,
@@ -532,7 +532,7 @@ tp_base_client_set_observer_delay_approvers (TpBaseClient *self,
  * called, and may only be called on objects whose class implements
  * #TpBaseClientClass.add_dispatch_operation.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.8
  */
 void
 tp_base_client_add_approver_filter (TpBaseClient *self,
@@ -556,7 +556,7 @@ tp_base_client_add_approver_filter (TpBaseClient *self,
  *     tp_channel_filter_new_for_text_chats ());
  * ]|
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.8
  */
 void
 tp_base_client_take_approver_filter (TpBaseClient *self,
@@ -646,7 +646,7 @@ tp_base_client_be_a_handler (TpBaseClient *self)
  * called, and may only be called on objects whose class implements
  * #TpBaseClientClass.handle_channel.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.8
  */
 void
 tp_base_client_add_handler_filter (TpBaseClient *self,
@@ -706,7 +706,7 @@ tp_base_client_add_handler_filter_variant (TpBaseClient *self,
  *     tp_channel_filter_new_for_text_chats ());
  * ]|
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.8
  */
 void
 tp_base_client_take_handler_filter (TpBaseClient *self,

@@ -43,7 +43,7 @@
  *
  * Data structure representing a #TpLogger.
  *
- * Since: UNRELEASED
+ * Since: 0.99.8
  */
 
 /**
@@ -51,7 +51,7 @@
  *
  * The class of a #TpLogger.
  *
- * Since: UNRELEASED
+ * Since: 0.99.8
  */
 
 G_DEFINE_TYPE (TpLogger, tp_logger, TP_TYPE_PROXY)
@@ -117,7 +117,7 @@ static gpointer logger_singleton = NULL;
  *          bus, or %NULL if it wasn't possible to get a dbus daemon proxy for
  *          the appropriate bus
 
- * Since: UNRELEASED
+ * Since: 0.99.8
  */
 TpLogger *
 tp_logger_dup (void)

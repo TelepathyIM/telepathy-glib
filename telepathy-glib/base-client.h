@@ -113,10 +113,10 @@ _TP_AVAILABLE_IN_0_20
 void tp_base_client_add_observer_filter_variant (TpBaseClient *self,
     GVariant *filter);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_base_client_add_observer_filter (TpBaseClient *self,
     TpChannelFilter *filter);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_base_client_take_observer_filter (TpBaseClient *self,
     TpChannelFilter *filter);
 
@@ -129,10 +129,10 @@ _TP_AVAILABLE_IN_0_20
 void tp_base_client_add_approver_filter_variant (TpBaseClient *self,
     GVariant *filter);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_base_client_add_approver_filter (TpBaseClient *self,
     TpChannelFilter *filter);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_base_client_take_approver_filter (TpBaseClient *self,
     TpChannelFilter *filter);
 
@@ -142,10 +142,10 @@ _TP_AVAILABLE_IN_0_20
 void tp_base_client_add_handler_filter_variant (TpBaseClient *self,
     GVariant *filter);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_base_client_add_handler_filter (TpBaseClient *self,
     TpChannelFilter *filter);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_base_client_take_handler_filter (TpBaseClient *self,
     TpChannelFilter *filter);
 

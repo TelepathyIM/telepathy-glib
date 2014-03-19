@@ -1376,7 +1376,7 @@ protocol_destroyed_cb (gpointer data,
  * Returns: (transfer full): a reference to a #TpProtocol,
  * or %NULL on invalid arguments
  *
- * Since: UNRELEASED
+ * Since: 0.99.8
  */
 TpProtocol *
 tp_client_factory_ensure_protocol (TpClientFactory *self,
@@ -1431,7 +1431,7 @@ tp_client_factory_ensure_protocol (TpClientFactory *self,
  * Returns: (transfer full) (element-type GLib.Quark): a newly allocated
  *  #GArray
  *
- * Since: UNRELEASED
+ * Since: 0.99.8
  */
 GArray *
 tp_client_factory_dup_protocol_features (TpClientFactory *self,
@@ -1462,7 +1462,7 @@ tp_client_factory_dup_protocol_features (TpClientFactory *self,
  * Note that these features will not be added to existing #TpProtocol
  * objects; the user must call tp_proxy_prepare_async() themself.
  *
- * Since: UNRELEASED
+ * Since: 0.99.8
  */
 void
 tp_client_factory_add_protocol_features (
@@ -1483,7 +1483,7 @@ tp_client_factory_add_protocol_features (
  * The same as tp_client_factory_add_protocol_features(), but with a
  * more convenient calling convention from C.
  *
- * Since: UNRELEASED
+ * Since: 0.99.8
  */
 void
 tp_client_factory_add_protocol_features_varargs (
@@ -1522,7 +1522,7 @@ tp_client_factory_add_protocol_features_varargs (
  * Returns: (transfer full): a reference to a #TpTLSCertificate,
  * or %NULL on invalid arguments
  *
- * Since: UNRELEASED
+ * Since: 0.99.8
  */
 TpTLSCertificate *
 tp_client_factory_ensure_tls_certificate (TpClientFactory *self,
@@ -1560,7 +1560,7 @@ tp_client_factory_ensure_tls_certificate (TpClientFactory *self,
  * Returns: (transfer full) (element-type GLib.Quark): a newly allocated
  *  #GArray
  *
- * Since: UNRELEASED
+ * Since: 0.99.8
  */
 GArray *
 tp_client_factory_dup_tls_certificate_features (TpClientFactory *self,
@@ -1591,7 +1591,7 @@ tp_client_factory_dup_tls_certificate_features (TpClientFactory *self,
  * Note that these features will not be added to existing #TpTLSCertificate
  * objects; the user must call tp_proxy_prepare_async() themself.
  *
- * Since: UNRELEASED
+ * Since: 0.99.8
  */
 void
 tp_client_factory_add_tls_certificate_features (TpClientFactory *self,
@@ -1612,7 +1612,7 @@ tp_client_factory_add_tls_certificate_features (TpClientFactory *self,
  * The same as tp_client_factory_add_tls_certificate_features(), but with a
  * more convenient calling convention from C.
  *
- * Since: UNRELEASED
+ * Since: 0.99.8
  */
 void
 tp_client_factory_add_tls_certificate_features_varargs (

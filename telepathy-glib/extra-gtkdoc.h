@@ -1099,7 +1099,7 @@
  * This interface (auto-generated from the Telepathy spec) makes it easier
  * to export objects implementing the Telepathy Logger interface.
  *
- * Since: UNRELEASED
+ * Since: 0.99.8
  */
 
 /**

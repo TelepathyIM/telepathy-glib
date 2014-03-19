@@ -626,7 +626,7 @@ IMPLEMENT (uint64)
  * Check if @variant contains @key.
  *
  * Returns: %TRUE, if @variant contains @key, %FALSE otherwise
- * Since: UNRELEASED
+ * Since: 0.99.8
  */
 gboolean
 tp_vardict_has_key (GVariant *variant,

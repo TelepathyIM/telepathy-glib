@@ -904,7 +904,7 @@ tp_protocol_init (TpProtocol *self)
  *
  * Returns: a new protocol proxy, or %NULL on invalid arguments
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.8
  */
 TpProtocol *
 _tp_protocol_new (TpDBusDaemon *dbus,
@@ -2339,7 +2339,7 @@ tp_protocol_dup_presence_statuses (TpProtocol *self)
  * Returns: (transfer full): the value of
  * #TpProtocol:protocol-properties
  *
- * Since: UNRELEASED
+ * Since: 0.99.8
  */
 GVariant *
 tp_protocol_dup_immutable_properties (TpProtocol *self)

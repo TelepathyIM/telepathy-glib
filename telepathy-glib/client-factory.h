@@ -203,37 +203,37 @@ void tp_client_factory_add_contact_features_varargs (TpClientFactory *self,
     ...);
 
 /* TpProtocol */
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 TpProtocol *tp_client_factory_ensure_protocol (TpClientFactory *self,
     const gchar *cm_name,
     const gchar *protocol_name,
     GVariant *immutable_properties,
     GError **error);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 GArray *tp_client_factory_dup_protocol_features (TpClientFactory *self,
     TpProtocol *protocol);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_client_factory_add_protocol_features (TpClientFactory *self,
     const GQuark *features);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_client_factory_add_protocol_features_varargs (TpClientFactory *self,
     GQuark feature,
     ...);
 
 /* TpTLSCertificate */
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 TpTLSCertificate *tp_client_factory_ensure_tls_certificate (
     TpClientFactory *self,
     TpProxy *conn_or_chan,
     const gchar *object_path,
     GError **error);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 GArray *tp_client_factory_dup_tls_certificate_features (TpClientFactory *self,
     TpTLSCertificate *certificate);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_client_factory_add_tls_certificate_features (TpClientFactory *self,
     const GQuark *features);
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_client_factory_add_tls_certificate_features_varargs (
     TpClientFactory *self,
     GQuark feature,

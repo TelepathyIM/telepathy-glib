@@ -52,46 +52,46 @@ GType tp_channel_filter_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CHANNEL_FILTER, \
                               TpChannelFilterClass))
 
-_TP_AVAILABLE_IN_UNRELEASED G_GNUC_WARN_UNUSED_RESULT
+_TP_AVAILABLE_IN_1_0 G_GNUC_WARN_UNUSED_RESULT
 TpChannelFilter *tp_channel_filter_new_for_all_types (void);
 
-_TP_AVAILABLE_IN_UNRELEASED G_GNUC_WARN_UNUSED_RESULT
+_TP_AVAILABLE_IN_1_0 G_GNUC_WARN_UNUSED_RESULT
 TpChannelFilter *tp_channel_filter_new_for_text_chats (void);
 
-_TP_AVAILABLE_IN_UNRELEASED G_GNUC_WARN_UNUSED_RESULT
+_TP_AVAILABLE_IN_1_0 G_GNUC_WARN_UNUSED_RESULT
 TpChannelFilter *tp_channel_filter_new_for_text_chatrooms (void);
 
-_TP_AVAILABLE_IN_UNRELEASED G_GNUC_WARN_UNUSED_RESULT
+_TP_AVAILABLE_IN_1_0 G_GNUC_WARN_UNUSED_RESULT
 TpChannelFilter *tp_channel_filter_new_for_calls (TpEntityType entity_type);
 
-_TP_AVAILABLE_IN_UNRELEASED G_GNUC_WARN_UNUSED_RESULT
+_TP_AVAILABLE_IN_1_0 G_GNUC_WARN_UNUSED_RESULT
 TpChannelFilter *tp_channel_filter_new_for_stream_tubes (const gchar *service);
 
-_TP_AVAILABLE_IN_UNRELEASED G_GNUC_WARN_UNUSED_RESULT
+_TP_AVAILABLE_IN_1_0 G_GNUC_WARN_UNUSED_RESULT
 TpChannelFilter *tp_channel_filter_new_for_dbus_tubes (const gchar *service);
 
-_TP_AVAILABLE_IN_UNRELEASED G_GNUC_WARN_UNUSED_RESULT
+_TP_AVAILABLE_IN_1_0 G_GNUC_WARN_UNUSED_RESULT
 TpChannelFilter *tp_channel_filter_new_for_file_transfers (
     const gchar *service);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_channel_filter_require_target_is_contact (TpChannelFilter *self);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_channel_filter_require_target_is_room (TpChannelFilter *self);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_channel_filter_require_no_target (TpChannelFilter *self);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_channel_filter_require_target_type (TpChannelFilter *self,
     TpEntityType entity_type);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_channel_filter_require_locally_requested (TpChannelFilter *self,
     gboolean requested);
 
-_TP_AVAILABLE_IN_UNRELEASED
+_TP_AVAILABLE_IN_1_0
 void tp_channel_filter_require_property (TpChannelFilter *self,
     const gchar *name,
     GVariant *value);
