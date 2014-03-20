@@ -30,7 +30,6 @@ AM_TESTS_ENVIRONMENT = \
 	G_DEBUG=fatal-warnings,fatal-criticals		\
 	TPL_TEST_MODE=true 				\
 	XDG_DATA_HOME=@abs_top_srcdir@/tests/logger/logs \
-	TEST_LOG_DIR=@abs_top_srcdir@/tests/logger/logs	\
 	$(NULL)
 
 check-valgrind: $(TESTS)
