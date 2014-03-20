@@ -79,16 +79,17 @@
 
 struct _TplLogStoreXmlPriv
 {
+  gchar *name;
+  gboolean writable;
   gchar *basedir;
-  gboolean test_mode;
   TpAccountManager *account_manager;
 };
 
 enum {
     PROP_0,
+    PROP_NAME,
     PROP_READABLE,
-    PROP_BASEDIR,
-    PROP_TESTMODE
+    PROP_WRITABLE,
 };
 
 static void log_store_iface_init (gpointer g_iface, gpointer iface_data);
@@ -134,6 +135,8 @@ log_store_xml_finalize (GObject *object)
   TplLogStoreXml *self = TPL_LOG_STORE_XML (object);
   TplLogStoreXmlPriv *priv = self->priv;
 
+  g_free (self->priv->name);
+
   if (priv->basedir != NULL)
     {
       g_free (priv->basedir);
@@ -148,18 +151,18 @@ tpl_log_store_xml_get_property (GObject *object,
     GValue *value,
     GParamSpec *pspec)
 {
-  TplLogStoreXmlPriv *priv = TPL_LOG_STORE_XML (object)->priv;
+  TplLogStoreXml *self = TPL_LOG_STORE_XML (object);
 
   switch (param_id)
     {
+      case PROP_NAME:
+        g_value_set_string (value, self->priv->name);
+        break;
       case PROP_READABLE:
         g_value_set_boolean (value, TRUE);
         break;
-      case PROP_BASEDIR:
-        g_value_set_string (value, priv->basedir);
-        break;
-      case PROP_TESTMODE:
-        g_value_set_boolean (value, priv->test_mode);
+      case PROP_WRITABLE:
+        g_value_set_boolean (value, self->priv->writable);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -178,11 +181,11 @@ tpl_log_store_xml_set_property (GObject *object,
 
   switch (param_id)
     {
-      case PROP_BASEDIR:
-        log_store_xml_set_basedir (self, g_value_get_string (value));
+      case PROP_NAME:
+        self->priv->name = g_value_dup_string (value);
         break;
-      case PROP_TESTMODE:
-        self->priv->test_mode = g_value_get_boolean (value);
+      case PROP_WRITABLE:
+        self->priv->writable = g_value_get_boolean (value);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -195,32 +198,15 @@ static void
 _tpl_log_store_xml_class_init (TplLogStoreXmlClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  GParamSpec *param_spec;
 
   object_class->finalize = log_store_xml_finalize;
   object_class->dispose = log_store_xml_dispose;
   object_class->get_property = tpl_log_store_xml_get_property;
   object_class->set_property = tpl_log_store_xml_set_property;
 
+  g_object_class_override_property (object_class, PROP_NAME, "name");
   g_object_class_override_property (object_class, PROP_READABLE, "readable");
-
-  /**
-   * TplLogStoreXml:basedir:
-   *
-   * The log store's basedir.
-   */
-  param_spec = g_param_spec_string ("basedir",
-      "Basedir",
-      "The TplLogStore implementation's name",
-      NULL, G_PARAM_READABLE | G_PARAM_WRITABLE |
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_BASEDIR, param_spec);
-
-  param_spec = g_param_spec_boolean ("testmode",
-      "TestMode",
-      "Whether the logstore is in testmode, for testsuite use only",
-      FALSE, G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_TESTMODE, param_spec);
+  g_object_class_override_property (object_class, PROP_WRITABLE, "writable");
 
   g_type_class_add_private (object_class, sizeof (TplLogStoreXmlPriv));
 }
@@ -673,6 +659,7 @@ log_store_xml_add_event (TplLogStore *store,
     GError **error)
 {
   TplLogStoreXml *self = TPL_LOG_STORE_XML (store);
+  gchar *name;
 
   g_return_val_if_fail (TPL_IS_EVENT (event), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -682,10 +669,13 @@ log_store_xml_add_event (TplLogStore *store,
   else if (TPL_IS_CALL_EVENT (event))
     return add_call_event (self, TPL_CALL_EVENT (event), error);
 
+  name = _tpl_log_store_dup_name (store);
+
   DEBUG ("TplEntry not handled by this LogStore (%s). "
-      "Ignoring Event", _tpl_log_store_get_name (store));
+      "Ignoring Event", name);
   /* do not consider it an error, this LogStore simply do not want/need
    * this Event */
+  g_free (name);
   return TRUE;
 }
 
@@ -1736,18 +1726,6 @@ log_store_xml_get_entities (TplLogStore *store,
   return entities;
 }
 
-
-static const gchar *
-log_store_xml_get_name (TplLogStore *store)
-{
-  TplLogStoreXml *self = (TplLogStoreXml *) store;
-
-  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
-
-  return "TpLogger";
-}
-
-
 /* returns am absolute path for the base directory of LogStore */
 static const gchar *
 log_store_xml_get_basedir (TplLogStoreXml *self)
@@ -1759,22 +1737,13 @@ log_store_xml_get_basedir (TplLogStoreXml *self)
   if (self->priv->basedir == NULL)
     {
       gchar *dir;
-      const char *user_data_dir;
-      const char *name;
+      char *name;
 
-      if (self->priv->test_mode && g_getenv ("TPL_TEST_LOG_DIR") != NULL)
-        {
-          user_data_dir = g_getenv ("TPL_TEST_LOG_DIR");
-        }
-      else
-        {
-          user_data_dir = g_get_user_data_dir ();
-        }
-
-      name = _tpl_log_store_get_name ((TplLogStore *) self);
-      dir = g_build_path (G_DIR_SEPARATOR_S, user_data_dir, name, "logs",
-          NULL);
+      name = _tpl_log_store_dup_name ((TplLogStore *) self);
+      dir = g_build_path (G_DIR_SEPARATOR_S, g_get_user_data_dir (), name,
+          "logs", NULL);
       log_store_xml_set_basedir (self, dir);
+      g_free (name);
       g_free (dir);
     }
 
@@ -1931,7 +1900,6 @@ log_store_iface_init (gpointer g_iface,
 {
   TplLogStoreInterface *iface = (TplLogStoreInterface *) g_iface;
 
-  iface->get_name = log_store_xml_get_name;
   iface->exists = log_store_xml_exists;
   iface->add_event = log_store_xml_add_event;
   iface->get_dates = log_store_xml_get_dates;
@@ -1943,4 +1911,30 @@ log_store_iface_init (gpointer g_iface,
   iface->clear_account = log_store_xml_clear_account;
   iface->clear_entity = log_store_xml_clear_entity;
   iface->create_iter = log_store_xml_create_iter;
+}
+
+TplLogStore *
+_tpl_log_store_xml_new (void)
+{
+  return g_object_new (TPL_TYPE_LOG_STORE_XML,
+      "name", "telepathy-1",
+      NULL);
+}
+
+TplLogStore *
+_tpl_log_store_empathy_new (void)
+{
+  return g_object_new (TPL_TYPE_LOG_STORE_XML,
+      "name", "Empathy",
+      "writable", FALSE,
+      NULL);
+}
+
+TplLogStore *
+_tpl_log_store_xml_legacy_new (void)
+{
+  return g_object_new (TPL_TYPE_LOG_STORE_XML,
+      "name", "TpLogger",
+      "writable", FALSE,
+      NULL);
 }

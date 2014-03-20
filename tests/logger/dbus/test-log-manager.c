@@ -191,7 +191,7 @@ setup_for_writing (TestCaseFixture *fixture,
   gchar *writable_dir;
 
   readonly_dir = g_build_path (G_DIR_SEPARATOR_S,
-      g_getenv ("TPL_TEST_LOG_DIR"), "TpLogger", "logs", NULL);
+      g_getenv ("TPL_TEST_LOG_DIR"), "telepathy-1", "logs", NULL);
 
   writable_dir = g_build_path (G_DIR_SEPARATOR_S,
       g_get_tmp_dir (), "logger-test-logs", NULL);
@@ -256,10 +256,10 @@ test_get_dates (TestCaseFixture *fixture,
 
   g_object_unref (entity);
 
-  /* it includes 1 date from libpurple logs, 5 from TpLogger. Empathy
-   * log-store date are the same of the TpLogger store, and wont' be present,
-   * being duplicates */
-  g_assert_cmpint (g_list_length (fixture->ret), ==, 6);
+  /* it includes 1 date from libpurple logs, 5 from telepathy-1 and
+   * 1 from TpLogger. Empathy log-store date are the same of the TpLogger store,
+   * and wont' be present, being duplicates */
+  g_assert_cmpint (g_list_length (fixture->ret), ==, 7);
 
   /* we do not want duplicates, dates are suppose to be ordered */
   fixture->ret = g_list_sort (fixture->ret, (GCompareFunc) g_date_compare);

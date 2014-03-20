@@ -40,10 +40,7 @@ setup (XmlTestCaseFixture* fixture,
   tp_debug_set_flags ("all");
 
   fixture->main_loop = g_main_loop_new (NULL, FALSE);
-
-  fixture->store = g_object_new (TPL_TYPE_LOG_STORE_XML,
-      "testmode", TRUE,
-      NULL);
+  fixture->store = _tpl_log_store_xml_new ();
 
   if (fixture->tmp_basedir != NULL)
     log_store_xml_set_basedir (TPL_LOG_STORE_XML (fixture->store),
@@ -72,7 +69,7 @@ setup_for_writing (XmlTestCaseFixture *fixture,
   gchar *writable_dir;
 
   readonly_dir = g_build_path (G_DIR_SEPARATOR_S,
-      g_getenv ("TPL_TEST_LOG_DIR"), "TpLogger", "logs", NULL);
+      g_getenv ("TPL_TEST_LOG_DIR"), "telepathy-1", "logs", NULL);
 
   writable_dir = g_build_path (G_DIR_SEPARATOR_S,
       g_get_tmp_dir (), "logger-test-logs", NULL);

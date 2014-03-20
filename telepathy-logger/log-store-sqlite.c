@@ -50,11 +50,16 @@ G_DEFINE_TYPE_WITH_CODE (TplLogStoreSqlite, _tpl_log_store_sqlite,
 enum /* properties */
 {
   PROP_0,
+  PROP_NAME,
   PROP_READABLE,
+  PROP_WRITABLE,
 };
 
 struct _TplLogStoreSqlitePrivate
 {
+  gchar *name;
+  gchar writable;
+
   sqlite3 *db;
 };
 
@@ -101,11 +106,20 @@ tpl_log_store_sqlite_get_property (GObject *self,
     GValue *value,
     GParamSpec *pspec)
 {
+  TplLogStoreSqlitePrivate *priv = TPL_LOG_STORE_SQLITE (self)->priv;
+
   switch (id)
     {
+      case PROP_NAME:
+        g_value_set_string (value, priv->name);
+        break;
       case PROP_READABLE:
         /* this store should never be queried by the LogManager */
         g_value_set_boolean (value, FALSE);
+        break;
+
+      case PROP_WRITABLE:
+        g_value_set_boolean (value, priv->writable);
         break;
 
       default:
@@ -114,6 +128,27 @@ tpl_log_store_sqlite_get_property (GObject *self,
     }
 }
 
+static void
+tpl_log_store_sqlite_set_property (GObject *self,
+    guint id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  TplLogStoreSqlitePrivate *priv = TPL_LOG_STORE_SQLITE (self)->priv;
+
+  switch (id)
+    {
+      case PROP_NAME:
+        priv->name = g_value_dup_string (value);
+        break;
+      case PROP_WRITABLE:
+        priv->writable = g_value_get_boolean (value);
+        break;
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (self, id, pspec);
+        break;
+    }
+}
 
 static void
 purge_pending_messages (TplLogStoreSqlitePrivate *priv,
@@ -270,7 +305,7 @@ out:
 
 
 static void
-tpl_log_store_sqlite_dispose (GObject *self)
+tpl_log_store_sqlite_finalize (GObject *self)
 {
   TplLogStoreSqlitePrivate *priv = TPL_LOG_STORE_SQLITE (self)->priv;
 
@@ -280,7 +315,9 @@ tpl_log_store_sqlite_dispose (GObject *self)
       priv->db = NULL;
     }
 
-  G_OBJECT_CLASS (_tpl_log_store_sqlite_parent_class)->dispose (self);
+  g_free (priv->name);
+
+  G_OBJECT_CLASS (_tpl_log_store_sqlite_parent_class)->finalize (self);
 }
 
 
@@ -291,9 +328,12 @@ _tpl_log_store_sqlite_class_init (TplLogStoreSqliteClass *klass)
 
   gobject_class->constructor = tpl_log_store_sqlite_constructor;
   gobject_class->get_property = tpl_log_store_sqlite_get_property;
-  gobject_class->dispose = tpl_log_store_sqlite_dispose;
+  gobject_class->set_property = tpl_log_store_sqlite_set_property;
+  gobject_class->finalize = tpl_log_store_sqlite_finalize;
 
+  g_object_class_override_property (gobject_class, PROP_NAME, "name");
   g_object_class_override_property (gobject_class, PROP_READABLE, "readable");
+  g_object_class_override_property (gobject_class, PROP_WRITABLE, "writable");
 
   g_type_class_add_private (gobject_class, sizeof (TplLogStoreSqlitePrivate));
 }
@@ -352,14 +392,6 @@ get_datetime (gint64 timestamp)
 
   return date;
 }
-
-
-static const char *
-tpl_log_store_sqlite_get_name (TplLogStore *self)
-{
-  return TPL_LOG_STORE_SQLITE_NAME;
-}
-
 
 static gboolean
 tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
@@ -617,7 +649,6 @@ out:
 static void
 log_store_iface_init (TplLogStoreInterface *iface)
 {
-  iface->get_name = tpl_log_store_sqlite_get_name;
   iface->add_event = tpl_log_store_sqlite_add_event;
   iface->get_entities = tpl_log_store_sqlite_get_entities;
 }
@@ -625,7 +656,10 @@ log_store_iface_init (TplLogStoreInterface *iface)
 TplLogStore *
 _tpl_log_store_sqlite_dup (void)
 {
-  return g_object_new (TPL_TYPE_LOG_STORE_SQLITE, NULL);
+  return g_object_new (TPL_TYPE_LOG_STORE_SQLITE,
+      "name", TPL_LOG_STORE_SQLITE_NAME,
+      "writable", TRUE,
+      NULL);
 }
 
 

@@ -43,6 +43,7 @@ AM_TESTS_ENVIRONMENT = \
     abs_top_builddir=@abs_top_builddir@				\
     TPL_TEST_MODE=true						\
     TPL_TEST_LOG_DIR=@abs_top_srcdir@/tests/logger/logs		\
+    HOME=@abs_top_srcdir@/tests/logger/logs		\
     GSETTINGS_SCHEMA_DIR=@abs_srcdir@/data			\
     XDG_DATA_HOME=@abs_top_builddir@/tests/logger/logs		\
     XDG_DATA_DIRS=@abs_srcdir@					\

@@ -58,6 +58,8 @@ typedef struct
 
 GType tpl_log_store_pidgin_get_type (void);
 
+TplLogStore * _tpl_log_store_pidgin_new (void);
+
 G_END_DECLS
 
 #endif /* __TPL_LOG_STORE_PIDGIN_H__ */

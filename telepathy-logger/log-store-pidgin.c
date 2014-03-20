@@ -46,17 +46,18 @@
 
 struct _TplLogStorePidginPriv
 {
-  gboolean test_mode;
-  TpAccountManager *account_manager;
+  gchar *name;
+  gboolean writable;
 
+  TpAccountManager *account_manager;
   gchar *basedir;
 };
 
 enum {
     PROP_0,
+    PROP_NAME,
     PROP_READABLE,
-    PROP_BASEDIR,
-    PROP_TESTMODE,
+    PROP_WRITABLE,
 };
 
 
@@ -66,7 +67,6 @@ static void tpl_log_store_pidgin_get_property (GObject *object, guint param_id, 
     GParamSpec *pspec);
 static void tpl_log_store_pidgin_set_property (GObject *object, guint param_id, const GValue *value,
     GParamSpec *pspec);
-static const gchar *log_store_pidgin_get_name (TplLogStore *store);
 static const gchar *log_store_pidgin_get_basedir (TplLogStorePidgin *self);
 static void log_store_pidgin_set_basedir (TplLogStorePidgin *self,
     const gchar *data);
@@ -82,18 +82,18 @@ tpl_log_store_pidgin_get_property (GObject *object,
     GValue *value,
     GParamSpec *pspec)
 {
-  TplLogStorePidginPriv *priv = TPL_LOG_STORE_PIDGIN (object)->priv;
+  TplLogStorePidgin *self = TPL_LOG_STORE_PIDGIN (object);
 
   switch (param_id)
     {
+      case PROP_NAME:
+        g_value_set_string (value, self->priv->name);
+        break;
       case PROP_READABLE:
         g_value_set_boolean (value, TRUE);
         break;
-      case PROP_BASEDIR:
-        g_value_set_string (value, priv->basedir);
-        break;
-      case PROP_TESTMODE:
-        g_value_set_boolean (value, priv->test_mode);
+      case PROP_WRITABLE:
+        g_value_set_boolean (value, self->priv->writable);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -112,11 +112,12 @@ tpl_log_store_pidgin_set_property (GObject *object,
 
   switch (param_id)
     {
-      case PROP_BASEDIR:
-        log_store_pidgin_set_basedir (self, g_value_get_string (value));
+      case PROP_NAME:
+        self->priv->name = g_value_dup_string (value);
         break;
-      case PROP_TESTMODE:
-        self->priv->test_mode = g_value_get_boolean (value);
+      case PROP_WRITABLE:
+        /* we don't support writing to Pidgin logs atm */
+        g_return_if_fail (!g_value_get_boolean (value));
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -131,44 +132,34 @@ tpl_log_store_pidgin_dispose (GObject *self)
   TplLogStorePidginPriv *priv = TPL_LOG_STORE_PIDGIN (self)->priv;
 
   g_clear_object (&priv->account_manager);
-  g_free (priv->basedir);
-  priv->basedir = NULL;
 
   G_OBJECT_CLASS (tpl_log_store_pidgin_parent_class)->dispose (self);
 }
 
+static void
+tpl_log_store_pidgin_finalize (GObject *self)
+{
+  TplLogStorePidginPriv *priv = TPL_LOG_STORE_PIDGIN (self)->priv;
+
+  g_free (priv->basedir);
+  g_free (priv->name);
+
+  G_OBJECT_CLASS (tpl_log_store_pidgin_parent_class)->finalize (self);
+}
 
 static void
 tpl_log_store_pidgin_class_init (TplLogStorePidginClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  GParamSpec *param_spec;
 
   object_class->get_property = tpl_log_store_pidgin_get_property;
   object_class->set_property = tpl_log_store_pidgin_set_property;
   object_class->dispose = tpl_log_store_pidgin_dispose;
+  object_class->finalize = tpl_log_store_pidgin_finalize;
 
+  g_object_class_override_property (object_class, PROP_NAME, "name");
   g_object_class_override_property (object_class, PROP_READABLE, "readable");
-
-  /**
-   * TplLogStorePidgin:basedir:
-   *
-   * The log store's basedir.
-   */
-  param_spec = g_param_spec_string ("basedir",
-      "Basedir",
-      "The directory where the LogStore will look for data",
-      NULL, G_PARAM_READABLE | G_PARAM_WRITABLE |
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_BASEDIR, param_spec);
-
-
-  param_spec = g_param_spec_boolean ("testmode",
-      "TestMode",
-      "Whether the logstore is in testmode, for testsuite use only",
-      FALSE, G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_TESTMODE, param_spec);
-
+  g_object_class_override_property (object_class, PROP_WRITABLE, "writable");
 
   g_type_class_add_private (object_class, sizeof (TplLogStorePidginPriv));
 }
@@ -183,18 +174,6 @@ tpl_log_store_pidgin_init (TplLogStorePidgin *self)
   self->priv->account_manager = tp_account_manager_dup ();
 }
 
-
-static const gchar *
-log_store_pidgin_get_name (TplLogStore *store)
-{
-  TplLogStorePidgin *self = (TplLogStorePidgin *) store;
-
-  g_return_val_if_fail (TPL_IS_LOG_STORE_PIDGIN (self), NULL);
-
-  return TPL_LOG_STORE_PIDGIN_NAME;
-}
-
-
 /* returns an absolute path for the base directory of LogStore */
 static const gchar *
 log_store_pidgin_get_basedir (TplLogStorePidgin *self)
@@ -207,12 +186,11 @@ log_store_pidgin_get_basedir (TplLogStorePidgin *self)
     {
       gchar *dir;
 
-      if (self->priv->test_mode && g_getenv ("TPL_TEST_LOG_DIR") != NULL)
-        dir = g_build_path (G_DIR_SEPARATOR_S, g_getenv ("TPL_TEST_LOG_DIR"),
-            "purple", NULL);
-      else
-        dir = g_build_path (G_DIR_SEPARATOR_S, g_get_home_dir (), ".purple",
-            "logs", NULL);
+      /* This is fine with tests as we depend on GLib 2.36 which is now using
+       * $HOME to find the home dir. */
+      dir = g_build_path (G_DIR_SEPARATOR_S, g_get_home_dir (), ".purple",
+          "logs", NULL);
+
       log_store_pidgin_set_basedir (self, dir);
 
       g_free (dir);
@@ -1166,7 +1144,6 @@ log_store_iface_init (gpointer g_iface,
 {
   TplLogStoreInterface *iface = (TplLogStoreInterface *) g_iface;
 
-  iface->get_name = log_store_pidgin_get_name;
   iface->exists = log_store_pidgin_exists;
   iface->add_event = NULL;
   iface->get_dates = log_store_pidgin_get_dates;
@@ -1175,4 +1152,12 @@ log_store_iface_init (gpointer g_iface,
   iface->search_new = log_store_pidgin_search_new;
   iface->get_filtered_events = log_store_pidgin_get_filtered_events;
   iface->create_iter = log_store_pidgin_create_iter;
+}
+
+TplLogStore *
+_tpl_log_store_pidgin_new (void)
+{
+  return g_object_new (TPL_TYPE_LOG_STORE_PIDGIN,
+      "name", TPL_LOG_STORE_PIDGIN_NAME,
+      NULL);
 }

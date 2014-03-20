@@ -99,8 +99,6 @@ libtelepathy_logger_1_la_SOURCES = \
 		log-store-internal.h		\
 		log-store-xml.c			\
 		log-store-xml-internal.h	\
-		log-store-empathy.c		\
-		log-store-empathy-internal.h	\
 		log-store-sqlite.c		\
 		log-store-sqlite-internal.h	\
 		log-store-pidgin.c		\
