@@ -23,7 +23,19 @@
 #include <gio/gio.h>
 #include <telepathy-glib/util.h>
 
-int main (int argc, char **argv)
+typedef struct {
+    int dummy;
+} Fixture;
+
+extern "C" void
+setup (Fixture *f,
+    gconstpointer data)
+{
+}
+
+extern "C" void
+test (Fixture *f,
+    gconstpointer data)
 {
   GObject *o;
   GHashTable *h;
@@ -36,6 +48,22 @@ int main (int argc, char **argv)
 
   h = g_hash_table_new (NULL, NULL);
   tp_clear_boxed (G_TYPE_HASH_TABLE, &h);
+}
 
-  return 0;
+extern "C" void
+teardown (Fixture *f,
+    gconstpointer data)
+{
+}
+
+int
+main (int argc,
+    char **argv)
+{
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
+
+  g_test_add ("/util/cxx", Fixture, NULL, setup, test, teardown);
+
+  return g_test_run ();
 }
