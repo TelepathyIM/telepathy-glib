@@ -44,7 +44,7 @@ else
 noinst_PROGRAMS = $(programs_list)
 endif
 
-tpglib-tests.list:
+tpglib-tests.list: Makefile
 	$(AM_V_GEN)echo $(programs_list) > $@
 
 TESTS = $(programs_list) \
