@@ -2,7 +2,7 @@
 
 script_fullname=`readlink -e "@tpglibtestsdir@/run-test.sh"`
 if [ `readlink -e "$0"` != "$script_fullname" ] ; then
-  echo "This script is meant to be installed at $script_fullname"
+  echo "This script is meant to be installed at $script_fullname" >&2
   exit 1
 fi
 
@@ -23,15 +23,13 @@ export GSETTINGS_BACKEND
 DBUS_SESSION_BUS_ADDRESS=this-is-clearly-not-valid
 export DBUS_SESSION_BUS_ADDRESS
 
+
 if [ -n "$1" ] ; then
-  list="$1"
+  testname="$1"
+  shift
 else
-  echo "Usage: $0 testname"
+  echo "Usage: $0 testname" >&2
   exit 1
 fi
 
-for i in $list ; do 
-  echo "Testing $i"
-  @tpglibtestsdir@/tools/test-wrapper.sh @tpglibtestsdir@/$i
-done
-
+exec "@tpglibtestsdir@/$testname" --tap "$@"
