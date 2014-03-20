@@ -57,6 +57,8 @@ tests_list = \
     test-tls-certificate \
     test-unsupported-interface
 
+CLEANFILES =
+
 if ENABLE_INSTALLED_TESTS
 managersdir = @tpglibtestsdir@/telepathy-1/managers/
 managers_DATA = \
@@ -69,6 +71,10 @@ testsdir = @tpglibtestsdir@
 tests_PROGRAMS = $(tests_list)
 tests_SCRIPTS = run-test.sh
 tests_DATA = tpglib-dbus-tests.list
+CLEANFILES += \
+	$(tests_DATA) \
+	$(tests_SCRIPTS) \
+	$(NULL)
 else
 noinst_PROGRAMS = $(tests_list)
 endif
@@ -314,8 +320,7 @@ BUILT_SOURCES = \
 	run-test.sh \
 	$(NULL)
 
-CLEANFILES = \
-    $(BUILT_SOURCES)
+CLEANFILES += $(BUILT_SOURCES)
 
 distclean-local:
 	rm -f capture-*.log
