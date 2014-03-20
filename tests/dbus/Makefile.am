@@ -75,9 +75,21 @@ CLEANFILES += \
 	$(tests_DATA) \
 	$(tests_SCRIPTS) \
 	$(NULL)
+
+insttestdir = ${datadir}/installed-tests/telepathy-glib
+insttest_DATA = $(patsubst %,%.test,$(tests_list))
+CLEANFILES += $(insttest_DATA)
 else
 noinst_PROGRAMS = $(tests_list)
 endif
+
+%.test: Makefile
+	$(AM_V_GEN)( echo '[Test]'; \
+		echo 'Exec=${testsdir}/run-test.sh $*'; \
+		echo 'Type=session'; \
+		echo 'Output=TAP'; \
+	) > $@.tmp
+	@mv $@.tmp $@
 
 TESTS = $(tests_list)
 
