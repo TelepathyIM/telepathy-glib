@@ -32,10 +32,14 @@ programs_list += \
     test-util-cxx
 endif
 
+CLEANFILES =
+
 if ENABLE_INSTALLED_TESTS
 testsdir = @tpglibtestsdir@
 tests_PROGRAMS = $(programs_list)
 tests_DATA = tpglib-tests.list
+CLEANFILES += $(tests_DATA)
+
 else
 noinst_PROGRAMS = $(programs_list)
 endif
