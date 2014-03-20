@@ -1,13 +1,25 @@
 #!/bin/sh
 
+set -e
+
 script_fullname=`readlink -e "@tpglibtestsdir@/run-test.sh"`
 if [ `readlink -e "$0"` != "$script_fullname" ] ; then
   echo "This script is meant to be installed at $script_fullname" >&2
   exit 1
 fi
 
+tmp="`mktemp -d`"
+
+XDG_CACHE_HOME="$tmp/cache"
+export XDG_CACHE_HOME
+XDG_CONFIG_HOME="$tmp/config"
+export XDG_CONFIG_HOME
+XDG_DATA_HOME="$tmp/localshare"
+export XDG_DATA_HOME
 XDG_DATA_DIRS=@tpglibtestsdir@:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}
 export XDG_DATA_DIRS
+XDG_RUNTIME_DIR="$tmp"
+export XDG_RUNTIME_DIR
 G_SLICE=debug-blocks
 export G_SLICE
 G_DEBUG=fatal_warnings,fatal_criticals
@@ -32,4 +44,7 @@ else
   exit 1
 fi
 
-exec "@tpglibtestsdir@/$testname" --tap "$@"
+e=0
+"@tpglibtestsdir@/$testname" --tap "$@" || e=$?
+rm -fr "$tmp"
+exit $e
