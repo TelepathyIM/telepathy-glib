@@ -40,9 +40,21 @@ tests_PROGRAMS = $(programs_list)
 tests_DATA = tpglib-tests.list
 CLEANFILES += $(tests_DATA)
 
+insttestdir = ${datadir}/installed-tests/telepathy-glib
+insttest_DATA = $(patsubst %,%.test,$(programs_list))
+CLEANFILES += $(insttest_DATA)
+
 else
 noinst_PROGRAMS = $(programs_list)
 endif
+
+%.test: Makefile
+	$(AM_V_GEN)( echo '[Test]'; \
+		echo 'Exec=${testsdir}/$* --tap'; \
+		echo 'Type=session'; \
+		echo 'Output=TAP'; \
+	) > $@.tmp
+	@mv $@.tmp $@
 
 tpglib-tests.list: Makefile
 	$(AM_V_GEN)echo $(programs_list) > $@
