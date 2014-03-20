@@ -6,7 +6,7 @@ if [ `readlink -e "$0"` != "$script_fullname" ] ; then
   exit 1
 fi
 
-XDG_DATA_DIRS=@tpglibtestsdir@:$XDG_DATA_DIRS
+XDG_DATA_DIRS=@tpglibtestsdir@:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}
 export XDG_DATA_DIRS
 G_SLICE=debug-blocks
 export G_SLICE
