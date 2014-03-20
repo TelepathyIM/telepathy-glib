@@ -5,8 +5,19 @@
 #include <telepathy-logger/conf-internal.h>
 #include <telepathy-logger/debug.h>
 
-int
-main (int argc, char **argv)
+typedef struct {
+    int dummy;
+} Fixture;
+
+static void
+setup (Fixture *f,
+    gconstpointer data)
+{
+}
+
+static void
+test (Fixture *f,
+    gconstpointer data)
 {
   TplConf *conf, *conf2;
 
@@ -29,7 +40,22 @@ main (int argc, char **argv)
 
   /* proper disposal for the singleton when no references are present */
   g_object_unref (conf);
-
-  return 0;
 }
 
+static void
+teardown (Fixture *f,
+    gconstpointer data)
+{
+}
+
+int
+main (int argc,
+    char **argv)
+{
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
+
+  g_test_add ("/tpl-conf", Fixture, NULL, setup, test, teardown);
+
+  return g_test_run ();
+}

@@ -21,6 +21,16 @@
 #include "tests/lib/echo-chan.h"
 #include "tests/lib/util.h"
 
+typedef struct {
+    int dummy;
+} Fixture;
+
+static void
+setup (Fixture *f,
+    gconstpointer data)
+{
+}
+
 static GMainLoop *mainloop;
 gboolean shutdown_finished = FALSE;
 gboolean invalidated = FALSE;
@@ -66,9 +76,9 @@ on_shutdown_finished (TpBaseConnection *base_conn,
     g_main_loop_quit (mainloop);
 }
 
-int
-main (int argc,
-      char **argv)
+static void
+test (Fixture *f,
+    gconstpointer data)
 {
   TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
@@ -140,6 +150,23 @@ main (int argc,
 
   g_test_dbus_down (test_dbus);
   tp_tests_assert_last_unref (&test_dbus);
+}
 
-  return 0;
+static void
+teardown (Fixture *f,
+    gconstpointer data)
+{
+}
+
+int
+main (int argc,
+    char **argv)
+{
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
+
+  g_test_add ("/finalized-in-invalidated-handler",
+      Fixture, NULL, setup, test, teardown);
+
+  return g_test_run ();
 }

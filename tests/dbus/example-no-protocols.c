@@ -13,6 +13,16 @@
 
 #include "tests/lib/util.h"
 
+typedef struct {
+    int dummy;
+} Fixture;
+
+static void
+setup (Fixture *f,
+    gconstpointer data)
+{
+}
+
 static void
 prepare (void)
 {
@@ -90,9 +100,9 @@ early_cm_exited (TpConnectionManager *cm,
   *saw_exited = TRUE;
 }
 
-int
-main (int argc,
-      char **argv)
+static void
+test (Fixture *f,
+    gconstpointer data)
 {
   GMainLoop *mainloop;
   TpConnectionManager *early_cm, *late_cm;
@@ -173,6 +183,22 @@ main (int argc,
 
   g_test_dbus_down (test_dbus);
   tp_tests_assert_last_unref (&test_dbus);
+}
 
-  return 0;
+static void
+teardown (Fixture *f,
+    gconstpointer data)
+{
+}
+
+int
+main (int argc,
+    char **argv)
+{
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
+
+  g_test_add ("/example-no-protocols", Fixture, NULL, setup, test, teardown);
+
+  return g_test_run ();
 }

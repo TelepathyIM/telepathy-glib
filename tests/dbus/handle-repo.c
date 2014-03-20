@@ -12,8 +12,13 @@
 
 #include "tests/lib/util.h"
 
+typedef struct {
+    GTestDBus *test_dbus;
+} Fixture;
+
 static void
-test_handles (void)
+test_handles (Fixture *f,
+    gconstpointer data)
 {
   TpDBusDaemon *bus_daemon = tp_tests_dbus_daemon_dup_or_die ();
   TpHandleRepoIface *tp_repo = NULL;
@@ -73,20 +78,33 @@ test_handles (void)
   g_object_unref (bus_daemon);
 }
 
-int main (int argc, char **argv)
+static void
+setup (Fixture *f,
+    gconstpointer data)
 {
-  GTestDBus *test_dbus;
-
   tp_tests_abort_after (10);
 
   g_test_dbus_unset ();
-  test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
-  g_test_dbus_up (test_dbus);
+  f->test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
+  g_test_dbus_up (f->test_dbus);
+}
 
-  test_handles ();
+static void
+teardown (Fixture *f,
+    gconstpointer data)
+{
+  g_test_dbus_down (f->test_dbus);
+  tp_tests_assert_last_unref (&f->test_dbus);
+}
 
-  g_test_dbus_down (test_dbus);
-  tp_tests_assert_last_unref (&test_dbus);
+int
+main (int argc,
+    char **argv)
+{
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
-  return 0;
+  g_test_add ("/handle-repo", Fixture, NULL, setup, test_handles, teardown);
+
+  return g_test_run ();
 }

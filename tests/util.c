@@ -6,6 +6,16 @@
 
 #include <telepathy-glib/util.h>
 
+typedef struct {
+    int dummy;
+} Fixture;
+
+static void
+setup (Fixture *f,
+    gconstpointer data)
+{
+}
+
 void test_strv_contains (void);
 
 void
@@ -292,7 +302,10 @@ test_utf8_make_valid (void)
     }
 }
 
-int main (int argc, char **argv)
+/* FIXME: split this up into sensible test-cases */
+static void
+test (Fixture *f,
+    gconstpointer data)
 {
   GPtrArray *ptrarray;
   gchar *string;
@@ -332,6 +345,22 @@ int main (int argc, char **argv)
   test_value_array_build ();
 
   test_utf8_make_valid ();
+}
 
-  return 0;
+static void
+teardown (Fixture *f,
+    gconstpointer data)
+{
+}
+
+int
+main (int argc,
+    char **argv)
+{
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
+
+  g_test_add ("/util", Fixture, NULL, setup, test, teardown);
+
+  return g_test_run ();
 }

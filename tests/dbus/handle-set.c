@@ -13,9 +13,19 @@
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
 
-int
-main (int argc,
-      char **argv)
+typedef struct {
+    int dummy;
+} Fixture;
+
+static void
+setup (Fixture *f,
+    gconstpointer data)
+{
+}
+
+static void
+test (Fixture *f,
+    gconstpointer data)
 {
   TpHandleRepoIface *repo = NULL;
   TpHandleSet *set = NULL;
@@ -130,6 +140,22 @@ main (int argc,
 
   g_test_dbus_down (test_dbus);
   tp_tests_assert_last_unref (&test_dbus);
+}
 
-  return 0;
+static void
+teardown (Fixture *f,
+    gconstpointer data)
+{
+}
+
+int
+main (int argc,
+    char **argv)
+{
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
+
+  g_test_add ("/handle-set", Fixture, NULL, setup, test, teardown);
+
+  return g_test_run ();
 }

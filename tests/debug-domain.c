@@ -44,7 +44,19 @@ handler (const gchar *log_domain,
   g_strfreev (parts);
 }
 
-int main (int argc, char **argv)
+typedef struct {
+    int dummy;
+} Fixture;
+
+static void
+setup (Fixture *f,
+    gconstpointer data)
+{
+}
+
+static void
+test (Fixture *f,
+    gconstpointer data)
 {
   TestItem i;
 
@@ -57,6 +69,22 @@ int main (int argc, char **argv)
       i = items[item];
       _tp_log (G_LOG_LEVEL_DEBUG, i.flag, "foo");
     }
+}
 
-  return 0;
+static void
+teardown (Fixture *f,
+    gconstpointer data)
+{
+}
+
+int
+main (int argc,
+    char **argv)
+{
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
+
+  g_test_add ("/debug-domain", Fixture, NULL, setup, test, teardown);
+
+  return g_test_run ();
 }

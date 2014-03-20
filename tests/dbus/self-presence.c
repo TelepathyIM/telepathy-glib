@@ -24,6 +24,16 @@
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
 
+typedef struct {
+    int dummy;
+} Fixture;
+
+static void
+setup (Fixture *f,
+    gconstpointer data)
+{
+}
+
 static void
 test_presence (TpTestsContactsConnection *service_conn,
                TpConnection *client_conn)
@@ -115,9 +125,9 @@ test_presence (TpTestsContactsConnection *service_conn,
   g_free (value);
 }
 
-int
-main (int argc,
-      char **argv)
+static void
+test (Fixture *f,
+    gconstpointer data)
 {
   TpDBusDaemon *dbus;
   TpTestsContactsConnection *service_conn;
@@ -206,6 +216,22 @@ main (int argc,
 
   g_test_dbus_down (test_dbus);
   tp_tests_assert_last_unref (&test_dbus);
+}
 
-  return 0;
+static void
+teardown (Fixture *f,
+    gconstpointer data)
+{
+}
+
+int
+main (int argc,
+    char **argv)
+{
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
+
+  g_test_add ("/self-presence", Fixture, NULL, setup, test, teardown);
+
+  return g_test_run ();
 }
