@@ -1,5 +1,6 @@
 # To be included by Makefile.am.
 
+# Must put oldest versions first
 ABI_LISTS = \
     versions/core-1.0.abi \
     versions/dbus-1.0.abi \
@@ -72,9 +73,7 @@ libtelepathy_glib_1_core_la_DEPENDENCIES += \
     _gen/core-abi.txt \
     $(NULL)
 
-# Always allow undocumented ABI for now
-# will be "if OFFICIAL_RELEASE" eventually
-if FALSE
+if OFFICIAL_RELEASE
 # don't allow undocumented ABI
 MAKE_VERSION_SCRIPT_FLAGS =
 else
