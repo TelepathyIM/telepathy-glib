@@ -42,6 +42,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = telepathy-logger-1.pc
 
 lib_LTLIBRARIES = libtelepathy-logger-1.la
+noinst_LTLIBRARIES = libtelepathy-logger-internal.la
 
 EXTRA_DIST = \
 	tpl-marshal.list \
@@ -70,7 +71,7 @@ BUILT_SOURCES = \
 	tpl-marshal.c tpl-marshal.h \
 	$(NULL)
 
-libtelepathy_logger_1_la_SOURCES = \
+libtelepathy_logger_internal_la_SOURCES = \
 		action-chain.c			\
 		action-chain-internal.h		\
 		call-event.c                    \
@@ -119,18 +120,21 @@ libtelepathy_logger_1_la_SOURCES = \
 		call-channel-internal.h         \
 		$(NULL)
 
-nodist_libtelepathy_logger_1_la_SOURCES = \
+nodist_libtelepathy_logger_internal_la_SOURCES = \
 		$(BUILT_SOURCES)
 
-libtelepathy_logger_1_la_LIBADD = \
+libtelepathy_logger_internal_la_LIBADD = \
 	$(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
 	$(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
 	$(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
 	$(TPL_LIBS) \
 	$(NULL)
 
+libtelepathy_logger_1_la_SOURCES=
+libtelepathy_logger_1_la_LIBADD = libtelepathy-logger-internal.la
+
 check_c_sources = \
-	$(libtelepathy_logger_1_la_SOURCES)	\
+	$(libtelepathy_logger_internal_la_SOURCES)	\
 	$(telepathy_logger_SOURCES)		\
 	$(LIBTPL_HEADERS)
 include $(top_srcdir)/tools/check-coding-style.mk
@@ -139,7 +143,10 @@ check-local: check-coding-style
 CLEANFILES = $(BUILT_SOURCES)
 
 if HAVE_INTROSPECTION
-introspection_sources = $(libtelepathy_logger_1_la_SOURCES) $(LIBTPL_HEADERS)
+introspection_sources = \
+	$(libtelepathy_logger_internal_la_SOURCES) \
+	$(LIBTPL_HEADERS) \
+	$(NULL)
 
 TelepathyLogger-1.gir: libtelepathy-logger-1.la
 TelepathyLogger_1_gir_SCANNERFLAGS = --identifier-prefix=Tpl --warn-all

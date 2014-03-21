@@ -5,6 +5,7 @@ RFC822-style symbol lists.
 
 Usage:
     make-version-script.py [--symbols SYMBOLS] [--unreleased-version VER]
+        [--private-version VER]
         [--dpkg "LIBRARY.so.0 LIBRARY0 #MINVER#"]
         [--dpkg-build-depends-package LIBRARY-dev]
         [FILES...]
@@ -30,7 +31,7 @@ This script originates in telepathy-glib <http://telepathy.freedesktop.org/> -
 please send us any changes that are needed.
 """
 
-# Copyright (C) 2008-2010 Collabora Ltd. <http://www.collabora.co.uk/>
+# Copyright (C) 2008-2014 Collabora Ltd. <http://www.collabora.co.uk/>
 # Copyright (C) 2008 Nokia Corporation
 #
 # Copying and distribution of this file, with or without modification,
@@ -45,8 +46,25 @@ def e(format, *args):
     sys.stderr.write((format + '\n') % args)
 
 
+def verscmp(a, b):
+    """verscmp(a, b) OP 0 == a OP b, for OP in (==, <=, etc.)"""
+    a = a.split('.')
+    b = b.split('.')
+    i = 0
+    la = len(a)
+    lb = len(b)
+    while True:
+        if la == i and lb == i:
+            return 0    # a == b
+        if la == i:
+            return -1   # a < b, e.g. 1.2 < 1.2.3
+        if lb == i:
+            return 1    # a > b, e.g. 1.2.3 > 1.2
+        return cmp(int(a[i]), int(b[i]))
+
 def main(abifiles, symbols=None, unreleased_version=None,
-         dpkg=False, dpkg_first_line=None, dpkg_build_depends_package=None):
+         dpkg=False, dpkg_first_line=None, dpkg_build_depends_package=None,
+         private_version=None):
 
     gnuld = not dpkg
     symbol_set = None
@@ -60,12 +78,9 @@ def main(abifiles, symbols=None, unreleased_version=None,
 
     dpkg_symbols = []
     dpkg_versions = []
+    private_symbols = []
 
-    if dpkg:
-        assert dpkg_first_line is not None
-        print(dpkg_first_line)
-        if dpkg_build_depends_package is not None:
-            print("* Build-Depends-Package: %s" % dpkg_build_depends_package)
+    version = None
 
     for filename in abifiles:
         lines = open(filename, 'r').readlines()
@@ -92,7 +107,12 @@ def main(abifiles, symbols=None, unreleased_version=None,
                 extends = line
                 continue
             elif line.lower().startswith('release:'):
-                release = line[8:].strip()
+                line = line[8:].strip()
+                if release is not None and verscmp(release, line) >= 0:
+                    e('Versions not in ascending order: %s >= %s',
+                            release, line)
+                    raise SystemExit(1)
+                release = line
                 continue
             else:
                 e('Could not understand line in %s header: %s', filename, line)
@@ -150,6 +170,20 @@ def main(abifiles, symbols=None, unreleased_version=None,
                 print("")
 
     if dpkg:
+        assert dpkg_first_line is not None
+        print(dpkg_first_line)
+        if private_version is not None:
+            # "1.2.3" < "1.2.3." < "1.2.3.1" < "1.2.4" in Debian packaging.
+            # Also, in practice the version will be 1.2.3-1 or something,
+            # or possibly 1.2.3+dfsg1-1, which satisfy
+            # "1.2.3" < "1.2.3-1" < "1.2.3+" < "1.2.3.", so 1.2.3-1 and
+            # 1.2.3+dfsg1-1 both satisfy this restrictive dependency.
+            print('| #PACKAGE# (>= %s), #PACKAGE# (<< %s.)'
+                  % (release, release))
+
+        if dpkg_build_depends_package is not None:
+            print("* Build-Depends-Package: %s" % dpkg_build_depends_package)
+
         dpkg_symbols.sort()
         dpkg_versions.sort()
 
@@ -171,6 +205,28 @@ def main(abifiles, symbols=None, unreleased_version=None,
             raise SystemExit(1)
 
         unreleased = symbol_set - versioned_symbols
+
+        if private_version is not None:
+            private = set([symbol
+                for symbol in unreleased
+                    if symbol.startswith('_')])
+
+            if private:
+                if gnuld:
+                    print('%s {' % private_version)
+                    print('    global:')
+
+                    for symbol in private:
+                        print('        %s;' % symbol)
+
+                    print('};')
+                elif dpkg:
+                    for symbol in private:
+                        print(' %s@%s 0 1' % (symbol, private_version))
+
+                unreleased = set([symbol
+                    for symbol in unreleased
+                        if symbol not in private])
 
         if unreleased:
             if unreleased_version is None:
@@ -194,7 +250,8 @@ def main(abifiles, symbols=None, unreleased_version=None,
 if __name__ == '__main__':
     options, argv = gnu_getopt (sys.argv[1:], '',
                                 ['symbols=', 'unreleased-version=',
-                                 'dpkg=', 'dpkg-build-depends-package='])
+                                 'dpkg=', 'dpkg-build-depends-package=',
+                                 'private-version='])
 
     opts = {'dpkg': False}
 
