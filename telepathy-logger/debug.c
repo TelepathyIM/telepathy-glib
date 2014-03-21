@@ -72,7 +72,7 @@ _tpl_debug_flag_is_set (TplDebugFlags flag)
   return flag & flags;
 }
 
-GHashTable *flag_to_domains = NULL;
+static GHashTable *flag_to_domains = NULL;
 
 
 void
