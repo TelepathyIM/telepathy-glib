@@ -200,6 +200,10 @@ tp_proxy_pending_call_async_ready_cb (GObject *source_object,
     }
   else
     {
+      if (error->domain != G_IO_ERROR ||
+          error->code != G_IO_ERROR_DBUS_ERROR)
+        g_dbus_error_strip_remote_error (error);
+
       DEBUG ("%p: %s #%d: %s", pc,
           g_quark_to_string (error->domain), error->code,
           error->message);
