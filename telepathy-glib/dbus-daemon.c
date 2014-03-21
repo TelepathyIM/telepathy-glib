@@ -160,8 +160,7 @@ typedef struct
   GDestroyNotify destroy;
 } _NameOwnerSubWatch;
 
-static void _tp_dbus_daemon_stop_watching (TpDBusDaemon *self,
-    const gchar *name, _NameOwnerWatch *watch);
+static void name_owner_watch_free (gpointer p);
 
 static void
 tp_dbus_daemon_maybe_free_name_owner_watch (TpDBusDaemon *self,
@@ -179,6 +178,8 @@ tp_dbus_daemon_maybe_free_name_owner_watch (TpDBusDaemon *self,
   if (watch->invoking > 0)
     return;
 
+  DEBUG ("%s: %p (%u callbacks in %p)", name, watch, array->len, array);
+
   for (i = array->len; i > 0; i--)
     {
       _NameOwnerSubWatch *entry = &g_array_index (array,
@@ -186,6 +187,8 @@ tp_dbus_daemon_maybe_free_name_owner_watch (TpDBusDaemon *self,
 
       if (entry->callback != NULL)
         continue;
+
+      DEBUG ("compacting expired entry #%u", i - 1);
 
       if (entry->destroy != NULL)
         entry->destroy (entry->user_data);
@@ -195,7 +198,7 @@ tp_dbus_daemon_maybe_free_name_owner_watch (TpDBusDaemon *self,
 
   if (array->len == 0)
     {
-      _tp_dbus_daemon_stop_watching (self, name, watch);
+      DEBUG ("no more callbacks, removing %p", watch);
       g_hash_table_remove (self->priv->name_owner_watches, name);
     }
 }
@@ -329,12 +332,12 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
 
   if (watch == NULL)
     {
-      DEBUG ("- new watch");
       /* Allocate a new watch */
       watch = g_slice_new0 (_NameOwnerWatch);
       watch->last_owner = NULL;
       watch->callbacks = g_array_new (FALSE, FALSE,
           sizeof (_NameOwnerSubWatch));
+      DEBUG ("- new watch %p (callbacks at %p)", watch, watch->callbacks);
 
       g_hash_table_insert (self->priv->name_owner_watches, g_strdup (name),
           watch);
@@ -349,7 +352,8 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
     }
   else
     {
-      DEBUG ("- appending to existing watch");
+      DEBUG ("- appending to existing watch %p (callbacks at %p)", watch,
+          watch->callbacks);
     }
 
   g_array_append_val (watch->callbacks, tmp);
@@ -363,10 +367,13 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
 }
 
 static void
-_tp_dbus_daemon_stop_watching (TpDBusDaemon *self,
-                               const gchar *name,
-                               _NameOwnerWatch *watch)
+name_owner_watch_free (gpointer p)
 {
+  _NameOwnerWatch *watch = p;
+
+  DEBUG ("%p (%u callbacks in %p)", watch, watch->callbacks->len,
+      watch->callbacks);
+
   /* Clean up any leftöver callbacks. */
   if (watch->callbacks->len > 0)
     {
@@ -418,7 +425,7 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
   g_return_val_if_fail (name != NULL, FALSE);
   g_return_val_if_fail (callback != NULL, FALSE);
 
-  DEBUG ("%s", name);
+  DEBUG ("%s (%p)", name, watch);
 
   if (watch != NULL)
     {
@@ -429,7 +436,7 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
        * we iterate in reverse to have "last in = first out" as documented. */
       guint i;
 
-      DEBUG ("- %u watch(es) found", array->len);
+      DEBUG ("- %u watch(es) in %p", array->len, array);
 
       for (i = array->len; i > 0; i--)
         {
@@ -438,7 +445,7 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
 
           if (entry->callback == callback && entry->user_data == user_data)
             {
-              DEBUG ("- found matching callback and user data");
+              DEBUG ("- found matching callback and user data (#%u)", i - 1);
               entry->callback = NULL;
               tp_dbus_daemon_maybe_free_name_owner_watch (self, name, watch);
               return TRUE;
@@ -1042,7 +1049,7 @@ tp_dbus_daemon_init (TpDBusDaemon *self)
       TpDBusDaemonPrivate);
 
   self->priv->name_owner_watches = g_hash_table_new_full (g_str_hash,
-      g_str_equal, g_free, NULL);
+      g_str_equal, g_free, name_owner_watch_free);
 }
 
 static void
@@ -1065,7 +1072,7 @@ tp_dbus_daemon_dispose (GObject *object)
 
           /* it refs us while invoking stuff */
           g_assert (watch->invoking == 0);
-          _tp_dbus_daemon_stop_watching (self, k, watch);
+          DEBUG ("removing watch for %s: %p", (gchar *) k, watch);
           g_hash_table_iter_remove (&iter);
         }
 
