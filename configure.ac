@@ -25,10 +25,11 @@ m4_define([tp_glib_nano_version], [1])
 # If interfaces have been removed since last release, set age to 0
 #
 # If interfaces have been added, release builds will fail unless you add a new
-# file like telepathy-glib/versions/1.1.0.abi to add them to the official ABI.
-# This also forces binaries built against devel versions to be rebuilt
-# (we don't guarantee that we won't add ABI then remove it again, if it was
-# never seen in a release).
+# file like telepathy-glib/versions/core-1.2.abi to add them to the official
+# ABI of the next stable branch. This also forces binaries built against
+# devel versions to be rebuilt (we don't guarantee that we won't add ABI in
+# a development branch then remove it again, particularly if it was never
+# seen in a release).
 
 # These are shared by libtelepathy-glib-1 and libtelepathy-glib-1-core
 m4_define([tp_glib_lt_current], [0])

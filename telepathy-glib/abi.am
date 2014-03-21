@@ -1,9 +1,9 @@
 # To be included by Makefile.am.
 
 ABI_LISTS = \
-    versions/core-1.0.0.abi \
-    versions/dbus-1.0.0.abi \
-    versions/main-1.0.0.abi \
+    versions/core-1.0.abi \
+    versions/dbus-1.0.abi \
+    versions/main-1.0.abi \
     $(NULL)
 
 # The quoting here is unnecessary but harmless, and has the useful side-effect
