@@ -123,7 +123,7 @@ struct _TfCallContentClass {
 
 static void call_content_async_initable_init (GAsyncInitableIface *asynciface);
 
-G_DEFINE_TYPE_WITH_CODE (TfCallContent, tf_call_content, TF_TYPE_CONTENT,
+G_DEFINE_TYPE_WITH_CODE (TfCallContent, _tf_call_content, TF_TYPE_CONTENT,
                          G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE,
                              call_content_async_initable_init))
 
@@ -217,7 +217,7 @@ static void tf_call_content_receiving_failed (TfContent *content,
     const gchar *message);
 
 static void
-tf_call_content_class_init (TfCallContentClass *klass)
+_tf_call_content_class_init (TfCallContentClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   TfContentClass *content_class = TF_CONTENT_CLASS (klass);
@@ -325,7 +325,7 @@ free_content_fsstream (gpointer data)
 }
 
 static void
-tf_call_content_init (TfCallContent *self)
+_tf_call_content_init (TfCallContent *self)
 {
   self->fsstreams = g_ptr_array_new ();
   self->dtmf_sending_state = TP_SENDING_STATE_NONE;
@@ -390,8 +390,8 @@ tf_call_content_dispose (GObject *object)
     g_object_unref (self->proxy);
   self->proxy = NULL;
 
-  if (G_OBJECT_CLASS (tf_call_content_parent_class)->dispose)
-    G_OBJECT_CLASS (tf_call_content_parent_class)->dispose (object);
+  if (G_OBJECT_CLASS (_tf_call_content_parent_class)->dispose)
+    G_OBJECT_CLASS (_tf_call_content_parent_class)->dispose (object);
 }
 
 
@@ -405,8 +405,8 @@ tf_call_content_finalize (GObject *object)
 
   g_mutex_clear (&self->mutex);
 
-  if (G_OBJECT_CLASS (tf_call_content_parent_class)->finalize)
-    G_OBJECT_CLASS (tf_call_content_parent_class)->finalize (object);
+  if (G_OBJECT_CLASS (_tf_call_content_parent_class)->finalize)
+    G_OBJECT_CLASS (_tf_call_content_parent_class)->finalize (object);
 }
 
 
@@ -437,7 +437,7 @@ tf_call_content_get_property (GObject    *object,
         g_object_get_property (G_OBJECT (self->fssession), "sink-pad", value);
       break;
     case PROP_MEDIA_TYPE:
-      g_value_set_enum (value, tf_call_content_get_fs_media_type (self));
+      g_value_set_enum (value, _tf_call_content_get_fs_media_type (self));
       break;
     case PROP_OBJECT_PATH:
       g_object_get_property (G_OBJECT (self->proxy), "object-path", value);
@@ -510,7 +510,7 @@ static void
 add_stream (TfCallContent *self, TpCallStream *stream_proxy)
 {
   g_ptr_array_add (self->streams,
-      tf_call_stream_new (self, stream_proxy));
+      _tf_call_stream_new (self, stream_proxy));
 }
 
 static void
@@ -884,7 +884,7 @@ process_media_description (TfCallContent *self,
 
 
   g_debug ("Got MediaDescription %s", media_description_objpath);
-  fscodecs = tpcodecs_to_fscodecs (tf_call_content_get_fs_media_type (self),
+  fscodecs = tpcodecs_to_fscodecs (_tf_call_content_get_fs_media_type (self),
       codecs, does_avpf, rtcp_fb);
 
   fsrtp_hdrext = tprtphdrext_to_fsrtphdrext (rtp_hdrext);
@@ -1065,7 +1065,7 @@ streams_removed (TpCallContent *proxy,
   for (i = 0; i < streams->len; i++)
     for (j = 0; j < self->streams->len; j++)
       if (g_ptr_array_index (streams, i) ==
-          tf_call_stream_get_proxy (g_ptr_array_index (self->streams, j)))
+          _tf_call_stream_get_proxy (g_ptr_array_index (self->streams, j)))
         {
           g_ptr_array_remove_index_fast (self->streams, j);
           break;
@@ -1149,7 +1149,7 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
     }
 
   self->fssession = fs_conference_new_session (self->fsconference,
-      tf_call_content_get_fs_media_type (self), &myerror);
+      _tf_call_content_get_fs_media_type (self), &myerror);
 
   if (!self->fssession)
     {
@@ -1732,7 +1732,7 @@ tf_call_content_init_finish (GAsyncInitable *initable,
 }
 
 TfCallContent *
-tf_call_content_new_async (TfCallChannel *call_channel,
+_tf_call_content_new_async (TfCallChannel *call_channel,
     TpCallContent *content_proxy, GError **error,
     GAsyncReadyCallback callback, gpointer user_data)
 {
@@ -2087,7 +2087,7 @@ tf_call_content_dtmf_stopped (TfCallContent *self, FsDTMFMethod method)
 
 
 gboolean
-tf_call_content_bus_message (TfCallContent *content,
+_tf_call_content_bus_message (TfCallContent *content,
     GstMessage *message)
 {
   gboolean ret = TRUE;
@@ -2173,7 +2173,7 @@ tf_call_content_bus_message (TfCallContent *content,
     }
 
   for (i = 0; i < content->streams->len; i++)
-    if (tf_call_stream_bus_message (g_ptr_array_index (content->streams, i),
+    if (_tf_call_stream_bus_message (g_ptr_array_index (content->streams, i),
             message))
       return TRUE;
 
@@ -2354,7 +2354,7 @@ _tf_call_content_put_fsstream (TfCallContent *content, FsStream *fsstream)
 }
 
 FsMediaType
-tf_call_content_get_fs_media_type (TfCallContent *content)
+_tf_call_content_get_fs_media_type (TfCallContent *content)
 {
   return tp_media_type_to_fs (tp_call_content_get_media_type (content->proxy));
 }
@@ -2519,7 +2519,7 @@ tf_call_content_sending_failed (TfContent *content,
     }
 
   for (i = 0; i < self->streams->len; i++)
-    tf_call_stream_sending_failed (g_ptr_array_index (self->streams, i),
+    _tf_call_stream_sending_failed (g_ptr_array_index (self->streams, i),
         message);
 }
 
@@ -2539,13 +2539,13 @@ tf_call_content_receiving_failed (TfContent *content,
     }
 
   for (i = 0; i < self->streams->len; i++)
-    tf_call_stream_receiving_failed (g_ptr_array_index (self->streams, i),
+    _tf_call_stream_receiving_failed (g_ptr_array_index (self->streams, i),
         handles, handle_count, message);
 }
 
 
 TpCallContent *
-tf_call_content_get_proxy (TfCallContent *content)
+_tf_call_content_get_proxy (TfCallContent *content)
 {
   g_return_val_if_fail (TF_IS_CALL_CONTENT (content), NULL);
 

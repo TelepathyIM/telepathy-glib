@@ -28,7 +28,7 @@
 
 G_BEGIN_DECLS
 
-#define TF_TYPE_CALL_CHANNEL tf_call_channel_get_type()
+#define TF_TYPE_CALL_CHANNEL (_tf_call_channel_get_type ())
 
 #define TF_CALL_CHANNEL(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
@@ -86,15 +86,15 @@ struct _TfCallChannelClass{
 };
 
 
-GType tf_call_channel_get_type (void);
+GType _tf_call_channel_get_type (void);
 
-void tf_call_channel_new_async (TpChannel *channel_proxy,
+void _tf_call_channel_new_async (TpChannel *channel_proxy,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-void tf_call_channel_error (TfCallChannel *channel);
+void _tf_call_channel_error (TfCallChannel *channel);
 
-gboolean tf_call_channel_bus_message (TfCallChannel *channel,
+gboolean _tf_call_channel_bus_message (TfCallChannel *channel,
     GstMessage *message);
 
 /* Private methods, only to be used inside TP-FS */

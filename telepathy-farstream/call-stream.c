@@ -56,7 +56,7 @@
 #include "utils.h"
 
 
-G_DEFINE_TYPE (TfCallStream, tf_call_stream, G_TYPE_OBJECT);
+G_DEFINE_TYPE (TfCallStream, _tf_call_stream, G_TYPE_OBJECT);
 
 static void tf_call_stream_dispose (GObject *object);
 static void tf_call_stream_finalize (GObject *object);
@@ -76,7 +76,7 @@ static void _tf_call_stream_remove_endpoint (TfCallStream *self);
 
 
 static void
-tf_call_stream_class_init (TfCallStreamClass *klass)
+_tf_call_stream_class_init (TfCallStreamClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
@@ -85,7 +85,7 @@ tf_call_stream_class_init (TfCallStreamClass *klass)
 }
 
 static void
-tf_call_stream_init (TfCallStream *self)
+_tf_call_stream_init (TfCallStream *self)
 {
   self->sending_state = TP_STREAM_FLOW_STATE_STOPPED;
   self->receiving_state = TP_STREAM_FLOW_STATE_STOPPED;
@@ -130,8 +130,8 @@ tf_call_stream_dispose (GObject *object)
 
   _tf_call_stream_destroy (self);
 
-  if (G_OBJECT_CLASS (tf_call_stream_parent_class)->dispose)
-    G_OBJECT_CLASS (tf_call_stream_parent_class)->dispose (object);
+  if (G_OBJECT_CLASS (_tf_call_stream_parent_class)->dispose)
+    G_OBJECT_CLASS (_tf_call_stream_parent_class)->dispose (object);
 }
 
 static void
@@ -149,8 +149,8 @@ tf_call_stream_finalize (GObject *object)
     g_boxed_free (TP_ARRAY_TYPE_STRING_VARIANT_MAP_LIST, self->relay_info);
   self->relay_info = NULL;
 
-  if (G_OBJECT_CLASS (tf_call_stream_parent_class)->finalize)
-    G_OBJECT_CLASS (tf_call_stream_parent_class)->finalize (object);
+  if (G_OBJECT_CLASS (_tf_call_stream_parent_class)->finalize)
+    G_OBJECT_CLASS (_tf_call_stream_parent_class)->finalize (object);
 }
 
 
@@ -362,7 +362,7 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
 
       g_debug ("Transmitter: rawudp");
 
-      switch (tf_call_content_get_fs_media_type (self->call_content))
+      switch (_tf_call_content_get_fs_media_type (self->call_content))
         {
         case TP_MEDIA_STREAM_TYPE_VIDEO:
           preferred_local_candidates = g_list_prepend (NULL,
@@ -1366,7 +1366,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
 }
 
 TfCallStream *
-tf_call_stream_new (TfCallContent *call_content,
+_tf_call_stream_new (TfCallContent *call_content,
     TpCallStream *stream_proxy)
 {
   TfCallStream *self;
@@ -1592,7 +1592,7 @@ cb_fs_new_active_candidate_pair (TfCallStream *stream,
 }
 
 gboolean
-tf_call_stream_bus_message (TfCallStream *stream, GstMessage *message)
+_tf_call_stream_bus_message (TfCallStream *stream, GstMessage *message)
 {
   FsError errorno;
   const gchar *msg;
@@ -1691,7 +1691,7 @@ tf_call_stream_fail (TfCallStream *self,
 }
 
 void
-tf_call_stream_sending_failed (TfCallStream *self, const gchar *message)
+_tf_call_stream_sending_failed (TfCallStream *self, const gchar *message)
 {
   g_warning ("Reporting sending failure: %s", message);
 
@@ -1706,7 +1706,7 @@ tf_call_stream_sending_failed (TfCallStream *self, const gchar *message)
 
 
 void
-tf_call_stream_receiving_failed (TfCallStream *self,
+_tf_call_stream_receiving_failed (TfCallStream *self,
     guint *handles, guint handle_count,
     const gchar *message)
 {
@@ -1734,7 +1734,7 @@ tf_call_stream_receiving_failed (TfCallStream *self,
 
 
 TpCallStream *
-tf_call_stream_get_proxy (TfCallStream *stream)
+_tf_call_stream_get_proxy (TfCallStream *stream)
 {
   g_return_val_if_fail (TF_IS_CALL_STREAM (stream), NULL);
 

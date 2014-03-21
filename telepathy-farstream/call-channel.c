@@ -40,7 +40,7 @@
 
 static void call_channel_async_initable_init (GAsyncInitableIface *asynciface);
 
-G_DEFINE_TYPE_WITH_CODE (TfCallChannel, tf_call_channel, G_TYPE_OBJECT,
+G_DEFINE_TYPE_WITH_CODE (TfCallChannel, _tf_call_channel, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE,
         call_channel_async_initable_init))
 
@@ -103,7 +103,7 @@ static void channel_prepared (GObject *proxy, GAsyncResult *prepare_res,
 
 
 static void
-tf_call_channel_class_init (TfCallChannelClass *klass)
+_tf_call_channel_class_init (TfCallChannelClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
@@ -170,7 +170,7 @@ free_participant (gpointer data)
 }
 
 static void
-tf_call_channel_init (TfCallChannel *self)
+_tf_call_channel_init (TfCallChannel *self)
 {
   self->fsconferences = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
       free_call_conference);
@@ -262,8 +262,8 @@ tf_call_channel_dispose (GObject *object)
     g_object_unref (self->proxy);
   self->proxy = NULL;
 
-  if (G_OBJECT_CLASS (tf_call_channel_parent_class)->dispose)
-    G_OBJECT_CLASS (tf_call_channel_parent_class)->dispose (object);
+  if (G_OBJECT_CLASS (_tf_call_channel_parent_class)->dispose)
+    G_OBJECT_CLASS (_tf_call_channel_parent_class)->dispose (object);
 }
 
 static void
@@ -332,12 +332,12 @@ add_content (TfCallChannel *self, TpCallContent *content_proxy)
 
   for (i = 0; i < self->contents->len; i++)
     {
-      if (tf_call_content_get_proxy (g_ptr_array_index (self->contents, i)) ==
+      if (_tf_call_content_get_proxy (g_ptr_array_index (self->contents, i)) ==
           content_proxy)
         return TRUE;
     }
 
-  content = tf_call_content_new_async (self, content_proxy,
+  content = _tf_call_content_new_async (self, content_proxy,
       &error, content_ready, g_object_ref (self));
 
   if (error)
@@ -381,7 +381,7 @@ content_removed (TpCallChannel *proxy,
   for (i = 0; i < self->contents->len; i++)
     {
 
-      if (tf_call_content_get_proxy (g_ptr_array_index (self->contents, i)) ==
+      if (_tf_call_content_get_proxy (g_ptr_array_index (self->contents, i)) ==
           content_proxy)
         {
           TfCallContent *content = g_ptr_array_index (self->contents, i);
@@ -448,7 +448,7 @@ out:
 }
 
 void
-tf_call_channel_new_async (TpChannel *channel,
+_tf_call_channel_new_async (TpChannel *channel,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -484,7 +484,7 @@ find_call_conference_by_conference (TfCallChannel *channel,
 }
 
 gboolean
-tf_call_channel_bus_message (TfCallChannel *channel,
+_tf_call_channel_bus_message (TfCallChannel *channel,
     GstMessage *message)
 {
   GError *error = NULL;
@@ -511,7 +511,7 @@ tf_call_channel_bus_message (TfCallChannel *channel,
 
       g_warning ("session ERROR: %s (%s)", error->message, debug);
 
-      tf_call_channel_error (channel);
+      _tf_call_channel_error (channel);
 
       g_error_free (error);
       g_free (debug);
@@ -521,7 +521,7 @@ tf_call_channel_bus_message (TfCallChannel *channel,
     }
 
   for (i = 0; i < channel->contents->len; i++)
-    if (tf_call_content_bus_message (g_ptr_array_index (channel->contents, i),
+    if (_tf_call_content_bus_message (g_ptr_array_index (channel->contents, i),
             message))
       return TRUE;
 
@@ -529,7 +529,7 @@ tf_call_channel_bus_message (TfCallChannel *channel,
 }
 
 void
-tf_call_channel_error (TfCallChannel *channel)
+_tf_call_channel_error (TfCallChannel *channel)
 {
   tp_call_channel_hangup_async (TP_CALL_CHANNEL (channel->proxy),
       TP_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "", NULL, NULL);

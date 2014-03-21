@@ -30,7 +30,7 @@
 
 G_BEGIN_DECLS
 
-#define TF_TYPE_CALL_STREAM tf_call_stream_get_type()
+#define TF_TYPE_CALL_STREAM (_tf_call_stream_get_type ())
 
 #define TF_CALL_STREAM(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
@@ -111,22 +111,22 @@ struct _TfCallStreamClass{
 };
 
 
-GType tf_call_stream_get_type (void);
+GType _tf_call_stream_get_type (void);
 
-TfCallStream *tf_call_stream_new (
+TfCallStream *_tf_call_stream_new (
     TfCallContent *content,
     TpCallStream *stream_proxy);
 
-gboolean tf_call_stream_bus_message (TfCallStream *stream, GstMessage *message);
+gboolean _tf_call_stream_bus_message (TfCallStream *stream, GstMessage *message);
 
-void tf_call_stream_sending_failed (TfCallStream *stream, const gchar *message);
+void _tf_call_stream_sending_failed (TfCallStream *stream, const gchar *message);
 
-void tf_call_stream_receiving_failed (TfCallStream *stream,
+void _tf_call_stream_receiving_failed (TfCallStream *stream,
     guint *handles, guint handle_count,
     const gchar *message);
 
 TpCallStream *
-tf_call_stream_get_proxy (TfCallStream *stream);
+_tf_call_stream_get_proxy (TfCallStream *stream);
 
 
 G_END_DECLS

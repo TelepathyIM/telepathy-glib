@@ -252,7 +252,7 @@ channel_prepared (GObject *obj,
         }
       else
         {
-          tf_call_channel_new_async (channel_proxy, call_channel_ready, res);
+          _tf_call_channel_new_async (channel_proxy, call_channel_ready, res);
 
           self->priv->channel_invalidated_handler = g_signal_connect (
               self->priv->channel_proxy,
@@ -536,7 +536,7 @@ tf_channel_bus_message (TfChannel *channel,
   g_return_val_if_fail (message != NULL, FALSE);
 
   if (channel->priv->call_channel)
-    return tf_call_channel_bus_message (channel->priv->call_channel,
+    return _tf_call_channel_bus_message (channel->priv->call_channel,
       message);
 
   return FALSE;

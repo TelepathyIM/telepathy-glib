@@ -31,7 +31,7 @@
 
 G_BEGIN_DECLS
 
-#define TF_TYPE_CALL_CONTENT tf_call_content_get_type()
+#define TF_TYPE_CALL_CONTENT (_tf_call_content_get_type ())
 
 #define TF_CALL_CONTENT(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
@@ -70,16 +70,16 @@ typedef struct _TfCallContent TfCallContent;
 
 typedef struct _TfCallContentClass TfCallContentClass;
 
-GType tf_call_content_get_type (void);
+GType _tf_call_content_get_type (void);
 
-TfCallContent *tf_call_content_new_async (
+TfCallContent *_tf_call_content_new_async (
     TfCallChannel *call_channel,
     TpCallContent *content_proxy,
     GError **error,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tf_call_content_bus_message (TfCallContent *content,
+gboolean _tf_call_content_bus_message (TfCallContent *content,
     GstMessage *message);
 
 
@@ -94,14 +94,14 @@ FsStream *_tf_call_content_get_fsstream_by_handle (TfCallContent *content,
 void _tf_call_content_put_fsstream (TfCallContent *content, FsStream *fsstream);
 
 FsMediaType
-tf_call_content_get_fs_media_type (TfCallContent *content);
+_tf_call_content_get_fs_media_type (TfCallContent *content);
 
 
 gboolean
-tf_call_content_bus_message (TfCallContent *content, GstMessage *message);
+_tf_call_content_bus_message (TfCallContent *content, GstMessage *message);
 
 TpCallContent *
-tf_call_content_get_proxy (TfCallContent *content);
+_tf_call_content_get_proxy (TfCallContent *content);
 
 G_END_DECLS
 
