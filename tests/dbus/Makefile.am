@@ -301,8 +301,11 @@ AM_CFLAGS = $(ERROR_CFLAGS)
 
 AM_TESTS_ENVIRONMENT = \
     abs_top_builddir=@abs_top_builddir@ \
+    XDG_CACHE_HOME=@abs_builddir@/tmp-cache \
+    XDG_CONFIG_HOME=@abs_builddir@/tmp-config \
     XDG_DATA_HOME=@abs_builddir@ \
     XDG_DATA_DIRS=@abs_srcdir@:$${XDG_DATA_DIRS:=/usr/local/share:/usr/share} \
+    XDG_RUNTIME_DIR=@abs_builddir@/tmp-runtime \
     G_SLICE=debug-blocks \
     G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly) \
     G_MESSAGES_DEBUG=all \
@@ -378,3 +381,6 @@ _gen/errors-check.h: $(top_srcdir)/spec/errors.xml \
 	$(top_srcdir)/tools/glib-errors-check-gen.py
 	$(AM_V_at)$(MKDIR_P) _gen
 	$(AM_V_GEN)$(PYTHON) $(top_srcdir)/tools/glib-errors-check-gen.py $< > $@
+
+clean-local:
+	rm -fr tmp-cache tmp-config tmp-runtime

@@ -45,8 +45,11 @@ AM_TESTS_ENVIRONMENT = \
     TPL_TEST_LOG_DIR=@abs_top_srcdir@/tests/logger/logs		\
     HOME=@abs_top_srcdir@/tests/logger/logs		\
     GSETTINGS_SCHEMA_DIR=@abs_srcdir@/data			\
+    XDG_CACHE_HOME=@abs_builddir@/tmp-cache			\
+    XDG_CONFIG_HOME=@abs_builddir@/tmp-config			\
     XDG_DATA_HOME=@abs_top_srcdir@/tests/logger/logs		\
     XDG_DATA_DIRS=@abs_srcdir@					\
+    XDG_RUNTIME_DIR=@abs_builddir@/tmp-runtime			\
     G_SLICE=debug-blocks					\
     TPL_DEBUG=all						\
     G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly)	\
@@ -73,3 +76,6 @@ CLEANFILES = $(BUILT_SOURCES)
 distclean-local:
 	rm -f capture-*.log
 	rm -rf _gen
+
+clean-local:
+	rm -fr tmp-cache tmp-config tmp-data tmp-runtime

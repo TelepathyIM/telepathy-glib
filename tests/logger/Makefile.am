@@ -29,7 +29,10 @@ AM_CFLAGS = \
 AM_TESTS_ENVIRONMENT = \
 	G_DEBUG=fatal-warnings,fatal-criticals		\
 	TPL_TEST_MODE=true 				\
+	XDG_CACHE_HOME=@abs_builddir@/tmp-cache \
+	XDG_CONFIG_HOME=@abs_builddir@/tmp-config \
 	XDG_DATA_HOME=@abs_top_srcdir@/tests/logger/logs \
+	XDG_RUNTIME_DIR=@abs_builddir@/tmp-runtime \
 	$(NULL)
 
 check-valgrind: $(TESTS)
@@ -52,3 +55,6 @@ check_c_sources = \
 
 include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
+
+clean-local:
+	rm -fr tmp-cache tmp-config tmp-runtime

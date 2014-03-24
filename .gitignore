@@ -147,6 +147,10 @@ telepathy-glib/version.h
 /test-driver
 /tests/all-errors-documented.py.log
 /tests/all-errors-documented.py.trs
+/tests/**/tmp-cache
+/tests/**/tmp-config
+/tests/**/tmp-data
+/tests/**/tmp-runtime
 tests/dbus/dbus-installed/session.conf
 tests/dbus/dbus-uninstalled/session.conf
 tests/dbus/run-test.sh
