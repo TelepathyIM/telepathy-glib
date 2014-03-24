@@ -1357,7 +1357,7 @@ protocol_destroyed_cb (gpointer data,
  * @self: a #TpClientFactory
  * @cm_name: the connection manager name (such as "gabble")
  * @protocol_name: the protocol name (such as "jabber")
- * @immutable_properties: (allow-none) a #G_VARIANT_TYPE_VARDICT containing
+ * @immutable_properties: (allow-none): a #G_VARIANT_TYPE_VARDICT containing
  * the immutable properties of the protocol, or %NULL.
  * @error: Used to raise an error if @cm_name or @protocol_name is invalid
  *
