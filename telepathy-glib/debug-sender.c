@@ -80,6 +80,7 @@ static void debug_iface_init (gpointer g_iface, gpointer iface_data);
 
 struct _TpDebugSenderPrivate
 {
+  GDBusConnection *conn;
   gboolean enabled;
   gboolean timestamps;
   GQueue *messages;
@@ -189,6 +190,16 @@ tp_debug_sender_set_property (GObject *object,
 }
 
 static void
+tp_debug_sender_dispose (GObject *object)
+{
+  TpDebugSender *self = TP_DEBUG_SENDER (object);
+
+  g_clear_object (&self->priv->conn);
+
+  G_OBJECT_CLASS (tp_debug_sender_parent_class)->dispose (object);
+}
+
+static void
 tp_debug_sender_finalize (GObject *object)
 {
   TpDebugSender *self = TP_DEBUG_SENDER (object);
@@ -225,6 +236,7 @@ tp_debug_sender_constructor (GType type,
 static void
 tp_debug_sender_constructed (GObject *object)
 {
+  TpDebugSender *self = TP_DEBUG_SENDER (object);
   TpDBusDaemon *dbus_daemon;
 
   dbus_daemon = tp_dbus_daemon_dup (NULL);
@@ -233,6 +245,9 @@ tp_debug_sender_constructed (GObject *object)
     {
       tp_dbus_daemon_register_object (dbus_daemon,
           TP_DEBUG_OBJECT_PATH, debug_sender);
+
+      self->priv->conn = g_object_ref (tp_proxy_get_dbus_connection (
+            dbus_daemon));
 
       g_object_unref (dbus_daemon);
     }
@@ -259,6 +274,7 @@ tp_debug_sender_class_init (TpDebugSenderClass *klass)
 
   object_class->get_property = tp_debug_sender_get_property;
   object_class->set_property = tp_debug_sender_set_property;
+  object_class->dispose = tp_debug_sender_dispose;
   object_class->finalize = tp_debug_sender_finalize;
   object_class->constructor = tp_debug_sender_constructor;
   object_class->constructed = tp_debug_sender_constructed;
@@ -354,6 +370,13 @@ tp_debug_sender_dup (void)
   return g_object_new (TP_TYPE_DEBUG_SENDER, NULL);
 }
 
+/* GDBus is less tolerant of NULL than dbus-glib */
+static inline const gchar *
+nonnull (const gchar *s)
+{
+  return (s == NULL ? "" : s);
+}
+
 static void
 _tp_debug_sender_take (TpDebugSender *self,
     DebugMessage *new_msg)
@@ -372,8 +395,18 @@ _tp_debug_sender_take (TpDebugSender *self,
 
   if (self->priv->enabled)
     {
-      tp_svc_debug1_emit_new_debug_message (self, new_msg->timestamp,
-          new_msg->domain, new_msg->level, new_msg->string);
+      /* don't use tp_svc_debug1_emit_new_debug_message
+       * to avoid triggering another g_debug(), which triggers
+       * another g_debug(), etc., forever */
+      g_dbus_connection_emit_signal (self->priv->conn,
+          NULL, /* broadcast */
+          TP_DEBUG_OBJECT_PATH,
+          TP_IFACE_DEBUG1,
+          "NewDebugMessage",
+          g_variant_new ("(dsus)", new_msg->timestamp,
+            nonnull (new_msg->domain),
+            new_msg->level, nonnull (new_msg->string)),
+          NULL);
     }
 
 #ifndef ENABLE_DEBUG_CACHE
@@ -591,6 +624,8 @@ tp_debug_sender_log_handler (const gchar *log_domain,
       if (now.tv_sec == 0)
         g_get_current_time (&now);
 
+      /* We could probably make this object thread-safe now that
+       * we're using GDBus, but for now, use an idle. */
       g_idle_add_full (G_PRIORITY_HIGH, tp_debug_sender_idle,
           debug_message_new (&now, log_domain, log_level, message),
           NULL);
