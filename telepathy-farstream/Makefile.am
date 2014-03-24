@@ -91,6 +91,20 @@ ABI_LISTS = \
 	1.0.abi \
 	$(NULL)
 
+EXTRA_DIST = $(ABI_LISTS)
+
+CLEANFILES = \
+	_gen/abi.funcnames \
+	_gen/abi.funcs \
+	_gen/abi.nm \
+	_gen/abi.tpfuncnames \
+	_gen/abi.txt \
+	_gen/version-script.txt \
+	_gen/libtelepathy-farstream-1-0.symbols \
+	_gen/versioned-abi.tmp \
+	_gen/versioned-abi.txt \
+	$(NULL)
+
 _gen/abi.txt: libtelepathy-farstream-internal.la Makefile.am
 	$(MKDIR_P) _gen
 	$(NM) .libs/libtelepathy-farstream-internal.a > _gen/abi.nm
@@ -177,7 +191,7 @@ gir_DATA = $(INTROSPECTION_GIRS)
 typelibdir = $(libdir)/girepository-1.0
 typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 
-CLEANFILES = $(gir_DATA) $(typelib_DATA)
+CLEANFILES += $(gir_DATA) $(typelib_DATA)
 endif
 
 SUBDIRS = . examples

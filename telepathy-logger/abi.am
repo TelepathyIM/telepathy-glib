@@ -79,4 +79,16 @@ _gen/version-script.txt: \
 	: # the versioned API should always match the ^tp API
 	diff -c _gen/versioned-abi.txt _gen/abi.txt
 
+CLEANFILES += \
+	_gen/abi.funcnames \
+	_gen/abi.funcs \
+	_gen/abi.nm \
+	_gen/abi.tpfuncnames \
+	_gen/abi.txt \
+	_gen/version-script.txt \
+	_gen/libtelepathy-logger-1-0.symbols \
+	_gen/versioned-abi.tmp \
+	_gen/versioned-abi.txt \
+	$(NULL)
+
 # vim:ft=automake:

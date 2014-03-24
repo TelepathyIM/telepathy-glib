@@ -46,6 +46,7 @@ noinst_LTLIBRARIES = libtelepathy-logger-internal.la
 
 EXTRA_DIST = \
 	tpl-marshal.list \
+	$(ABI_LISTS) \
 	$(NULL)
 
 LIBTPLdir = $(includedir)/telepathy-logger-1/telepathy-logger
