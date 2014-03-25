@@ -28,7 +28,19 @@
     g_assert_cmpstr (tp_asv_get_object_path (hash, key), ==, expected_value); \
     g_assert_cmpstr (tp_vardict_get_object_path (vardict, key), ==, expected_value); \
 
-int main (int argc, char **argv)
+typedef struct {
+    int dummy;
+} Fixture;
+
+static void
+setup (Fixture *f,
+    gconstpointer data)
+{
+}
+
+static void
+test (Fixture *f,
+    gconstpointer data)
 {
   GHashTable *hash;
   GVariant *vardict;
@@ -283,6 +295,22 @@ int main (int argc, char **argv)
 
   g_hash_table_unref (hash);
   g_variant_unref (vardict);
+}
 
-  return 0;
+static void
+teardown (Fixture *f,
+    gconstpointer data)
+{
+}
+
+int
+main (int argc,
+    char **argv)
+{
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
+
+  g_test_add ("/asv", Fixture, NULL, setup, test, teardown);
+
+  return g_test_run ();
 }

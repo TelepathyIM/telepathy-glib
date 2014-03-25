@@ -25,6 +25,16 @@
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
 
+typedef struct {
+    int dummy;
+} Fixture;
+
+static void
+setup (Fixture *f,
+    gconstpointer data)
+{
+}
+
 static guint received_count = 0;
 static guint last_received_id = 0;
 static gint64 last_received_time = 0;
@@ -129,9 +139,9 @@ build_message (TpChannelTextMessageType type,
   return out;
 }
 
-int
-main (int argc,
-      char **argv)
+static void
+test (Fixture *f,
+    gconstpointer data)
 {
   TpTestsEchoConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
@@ -349,6 +359,22 @@ main (int argc,
 
   g_test_dbus_down (test_dbus);
   tp_tests_assert_last_unref (&test_dbus);
+}
 
-  return 0;
+static void
+teardown (Fixture *f,
+    gconstpointer data)
+{
+}
+
+int
+main (int argc,
+    char **argv)
+{
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
+
+  g_test_add ("/text-respawn", Fixture, NULL, setup, test, teardown);
+
+  return g_test_run ();
 }

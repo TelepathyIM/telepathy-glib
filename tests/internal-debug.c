@@ -58,13 +58,41 @@ test_debugging_again (void)
   g_assert (DEBUGGING == 1);
 }
 
-int
-main (int argc, char **argv)
+typedef struct {
+    int dummy;
+} Fixture;
+
+static void
+setup (Fixture *f,
+    gconstpointer data)
+{
+}
+
+static void
+test (Fixture *f,
+    gconstpointer data)
 {
   /* We enable debugging for IM, but not for the connection. */
   tp_debug_set_flags ("im");
   test_debugging ();
   test_not_debugging ();
   test_debugging_again ();
-  return 0;
+}
+
+static void
+teardown (Fixture *f,
+    gconstpointer data)
+{
+}
+
+int
+main (int argc,
+    char **argv)
+{
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
+
+  g_test_add ("/internal-debug", Fixture, NULL, setup, test, teardown);
+
+  return g_test_run ();
 }

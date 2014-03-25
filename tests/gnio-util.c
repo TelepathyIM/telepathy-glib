@@ -16,6 +16,17 @@
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/gtypes.h>
 
+typedef struct {
+    int dummy;
+} Fixture;
+
+static void
+setup (Fixture *f,
+    gconstpointer data)
+{
+  dbus_g_type_specialized_init ();
+}
+
 #define IPV4_ADDR "127.0.1.1"
 #define IPV6_ADDR "::1"
 #define UNIX_ADDR "/tmp/socket/test/123456"
@@ -24,7 +35,8 @@
 #define PORT 41414
 
 static void
-test_variant_to_sockaddr_ipv4 (void)
+test_variant_to_sockaddr_ipv4 (Fixture *f,
+    gconstpointer data)
 {
   GSocketAddress *sockaddr;
   GInetSocketAddress *inetaddr;
@@ -55,7 +67,8 @@ test_variant_to_sockaddr_ipv4 (void)
 }
 
 static void
-test_variant_to_sockaddr_ipv6 (void)
+test_variant_to_sockaddr_ipv6 (Fixture *f,
+    gconstpointer data)
 {
   GSocketAddress *sockaddr;
   GInetSocketAddress *inetaddr;
@@ -86,7 +99,8 @@ test_variant_to_sockaddr_ipv6 (void)
 }
 
 static void
-test_sockaddr_to_variant_ipv4 (void)
+test_sockaddr_to_variant_ipv4 (Fixture *f,
+    gconstpointer data)
 {
   GInetAddress *hostaddr = g_inet_address_new_from_string (IPV4_ADDR);
   GSocketAddress *sockaddr = g_inet_socket_address_new (hostaddr, PORT);
@@ -133,7 +147,8 @@ test_sockaddr_to_variant_ipv4 (void)
 }
 
 static void
-test_sockaddr_to_variant_ipv6 (void)
+test_sockaddr_to_variant_ipv6 (Fixture *f,
+    gconstpointer data)
 {
   GInetAddress *hostaddr = g_inet_address_new_from_string (IPV6_ADDR);
   GSocketAddress *sockaddr = g_inet_socket_address_new (hostaddr, PORT);
@@ -181,7 +196,8 @@ test_sockaddr_to_variant_ipv6 (void)
 
 #ifdef HAVE_GIO_UNIX
 static void
-test_variant_to_sockaddr_unix (void)
+test_variant_to_sockaddr_unix (Fixture *f,
+    gconstpointer data)
 {
   GArray *array;
   GValue value = { 0, };
@@ -214,7 +230,8 @@ test_variant_to_sockaddr_unix (void)
 }
 
 static void
-test_variant_to_sockaddr_abstract_unix (void)
+test_variant_to_sockaddr_abstract_unix (Fixture *f,
+    gconstpointer data)
 {
   GArray *array;
   GValue value = { 0, };
@@ -249,7 +266,8 @@ test_variant_to_sockaddr_abstract_unix (void)
 }
 
 static void
-test_sockaddr_to_variant_unix (void)
+test_sockaddr_to_variant_unix (Fixture *f,
+    gconstpointer data)
 {
   GSocketAddress *sockaddr = g_unix_socket_address_new (UNIX_ADDR);
   GValue *variant;
@@ -273,7 +291,8 @@ test_sockaddr_to_variant_unix (void)
 }
 
 static void
-test_sockaddr_to_variant_abstract_unix (void)
+test_sockaddr_to_variant_abstract_unix (Fixture *f,
+    gconstpointer data)
 {
   GSocketAddress *sockaddr = g_unix_socket_address_new_with_type (
       ABST_ADDR, ABST_ADDR_LEN, G_UNIX_SOCKET_ADDRESS_ABSTRACT);
@@ -299,21 +318,38 @@ test_sockaddr_to_variant_abstract_unix (void)
 }
 #endif /* HAVE_GIO_UNIX */
 
-int
-main (int argc, char **argv)
+static void
+teardown (Fixture *f,
+    gconstpointer data)
 {
-  dbus_g_type_specialized_init ();
+}
 
-  test_variant_to_sockaddr_ipv4 ();
-  test_variant_to_sockaddr_ipv6 ();
-  test_sockaddr_to_variant_ipv4 ();
-  test_sockaddr_to_variant_ipv6 ();
+int
+main (int argc,
+    char **argv)
+{
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
+
+  g_test_add ("/variant-to-sockaddr/ipv4", Fixture, NULL,
+      setup, test_variant_to_sockaddr_ipv4, teardown);
+  g_test_add ("/variant-to-sockaddr/ipv6", Fixture, NULL,
+      setup, test_variant_to_sockaddr_ipv6, teardown);
+  g_test_add ("/sockaddr-to-variant/ipv4", Fixture, NULL,
+      setup, test_sockaddr_to_variant_ipv4, teardown);
+  g_test_add ("/sockaddr-to-variant/ipv6", Fixture, NULL,
+      setup, test_sockaddr_to_variant_ipv6, teardown);
+
 #ifdef HAVE_GIO_UNIX
-  test_variant_to_sockaddr_unix ();
-  test_variant_to_sockaddr_abstract_unix ();
-  test_sockaddr_to_variant_unix ();
-  test_sockaddr_to_variant_abstract_unix ();
+  g_test_add ("/variant-to-sockaddr/unix", Fixture, NULL,
+      setup, test_variant_to_sockaddr_unix, teardown);
+  g_test_add ("/variant-to-sockaddr/abstract-unix", Fixture, NULL,
+      setup, test_variant_to_sockaddr_abstract_unix, teardown);
+  g_test_add ("/sockaddr-to-variant/unix", Fixture, NULL,
+      setup, test_sockaddr_to_variant_unix, teardown);
+  g_test_add ("/sockaddr-to-variant/abstract-unix", Fixture, NULL,
+      setup, test_sockaddr_to_variant_abstract_unix, teardown);
 #endif /* HAVE_GIO_UNIX */
 
-  return 0;
+  return g_test_run ();
 }

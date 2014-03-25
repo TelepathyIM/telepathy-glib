@@ -21,7 +21,7 @@
 /* just for convenience, since it's used a lot */
 #define PTR(ui) GUINT_TO_POINTER(ui)
 
-/* state tracking */
+/* state tracking (FIXME: move this into the Fixture) */
 static TpIntset *caught_signal;
 static TpIntset *freed_user_data;
 
@@ -49,7 +49,8 @@ typedef struct {
     TpDBusDaemon *private_dbus_daemon;
 } Fixture;
 
-static Fixture *f;
+/* FIXME: it would be better not to need this */
+static Fixture *global_fixture;
 
 static void
 h_stub_destroyed (gpointer data,
@@ -89,6 +90,7 @@ signal_cb (TpProxy *proxy,
     gpointer user_data,
     GObject *weak_object)
 {
+  Fixture *f = global_fixture;
   guint which = GPOINTER_TO_UINT (user_data);
   TpProxy *want_proxy = NULL;
   GObject *want_object = NULL;
@@ -131,8 +133,17 @@ set_freed (gpointer user_data)
 }
 
 static void
-setup (void)
+setup (Fixture *f,
+    gconstpointer user_data)
 {
+  global_fixture = f;
+
+  tp_tests_abort_after (10);
+  tp_debug_set_flags ("all");
+
+  freed_user_data = tp_intset_sized_new (N_PROXIES);
+  caught_signal = tp_intset_sized_new (N_PROXIES);
+
   g_test_dbus_unset ();
   f->test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
   g_test_dbus_up (f->test_dbus);
@@ -159,7 +170,7 @@ setup (void)
 }
 
 static void
-drop_private_connection (void)
+drop_private_connection (Fixture *f)
 {
   dbus_g_connection_unref (f->private_dbusglib);
   f->private_dbusglib = NULL;
@@ -169,7 +180,8 @@ drop_private_connection (void)
 }
 
 static void
-teardown (void)
+teardown (Fixture *f,
+    gconstpointer data)
 {
   tp_tests_assert_last_unref (&f->cd_service);
   tp_tests_assert_last_unref (&f->dbus_daemon);
@@ -178,10 +190,16 @@ teardown (void)
 
   g_test_dbus_down (f->test_dbus);
   tp_tests_assert_last_unref (&f->test_dbus);
+
+  tp_intset_destroy (freed_user_data);
+  tp_intset_destroy (caught_signal);
+
+  global_fixture = NULL;
 }
 
 static TpProxy *
-new_proxy (int which)
+new_proxy (Fixture *f,
+    int which)
 {
   TpDBusDaemon *local_dbus_daemon;
 
@@ -197,11 +215,10 @@ new_proxy (int which)
       NULL);
 }
 
-int
-main (int argc,
-      char **argv)
+static void
+test (Fixture *f,
+    gconstpointer data)
 {
-  Fixture fixture = { NULL };
   GObject *stub;
   GError *error_out = NULL;
   GError err = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT, "Because I said so" };
@@ -210,28 +227,15 @@ main (int argc,
   GHashTable *empty_asv;
   int i;
 
-  tp_tests_abort_after (10);
-  tp_debug_set_flags ("all");
-
-  freed_user_data = tp_intset_sized_new (N_PROXIES);
-  caught_signal = tp_intset_sized_new (N_PROXIES);
-
-  /* it's on the stack, but it's valid until we leave main(), which will
-   * do for now... one day this test should use GTest, but this might
-   * not be that day */
-  f = &fixture;
-
-  setup ();
-
   g_message ("Creating proxies");
 
   for (i = TEST_A; i <= TEST_H; i++)
     {
-      f->proxies[i] = new_proxy (i);
+      f->proxies[i] = new_proxy (f, i);
       g_message ("%c=%p", 'a' + i, f->proxies[i]);
     }
 
-  f->proxies[TEST_Z] = new_proxy (TEST_Z);
+  f->proxies[TEST_Z] = new_proxy (f, TEST_Z);
   g_message ("z=%p", f->proxies[TEST_Z]);
 
   /* a survives */
@@ -344,7 +348,7 @@ main (int argc,
   g_assert_no_error (error_out);
 
   g_message ("Dropping private D-Bus connection");
-  drop_private_connection ();
+  drop_private_connection (f);
 
   g_message ("Emitting signal");
   empty_asv = tp_asv_new (NULL, NULL);
@@ -429,11 +433,16 @@ main (int argc,
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_G), "");
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_H), "");
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_Z), "");
+}
 
-  tp_intset_destroy (freed_user_data);
-  tp_intset_destroy (caught_signal);
+int
+main (int argc,
+    char **argv)
+{
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
-  teardown ();
+  g_test_add ("/disconnection", Fixture, NULL, setup, test, teardown);
 
-  return 0;
+  return g_test_run ();
 }

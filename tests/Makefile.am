@@ -32,15 +32,31 @@ programs_list += \
     test-util-cxx
 endif
 
+CLEANFILES =
+
 if ENABLE_INSTALLED_TESTS
 testsdir = @tpglibtestsdir@
 tests_PROGRAMS = $(programs_list)
 tests_DATA = tpglib-tests.list
+CLEANFILES += $(tests_DATA)
+
+insttestdir = ${datadir}/installed-tests/telepathy-glib
+insttest_DATA = $(patsubst %,%.test,$(programs_list))
+CLEANFILES += $(insttest_DATA)
+
 else
 noinst_PROGRAMS = $(programs_list)
 endif
 
-tpglib-tests.list:
+%.test: Makefile
+	$(AM_V_GEN)( echo '[Test]'; \
+		echo 'Exec=${testsdir}/$* --tap'; \
+		echo 'Type=session'; \
+		echo 'Output=TAP'; \
+	) > $@.tmp
+	@mv $@.tmp $@
+
+tpglib-tests.list: Makefile
 	$(AM_V_GEN)echo $(programs_list) > $@
 
 TESTS = $(programs_list) \
@@ -53,6 +69,10 @@ AM_TESTS_ENVIRONMENT = \
     G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly) \
     G_MESSAGES_DEBUG=all \
     PYTHONPATH=@abs_top_srcdir@/tools \
+    XDG_CACHE_HOME=@abs_builddir@/tmp-cache \
+    XDG_CONFIG_HOME=@abs_builddir@/tmp-config \
+    XDG_DATA_HOME=@abs_builddir@/tmp-data \
+    XDG_RUNTIME_DIR=@abs_builddir@/tmp-runtime \
     $(NULL)
 LOG_COMPILER =
 
@@ -197,3 +217,6 @@ AM_CXXFLAGS = $(ERROR_CXXFLAGS)
 if HAVE_CXX
 test_util_cxx_SOURCES = util-cxx.cpp
 endif
+
+clean-local:
+	rm -fr tmp-cache tmp-config tmp-data tmp-runtime

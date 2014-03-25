@@ -1,13 +1,25 @@
 #!/bin/sh
 
+set -e
+
 script_fullname=`readlink -e "@tpglibtestsdir@/run-test.sh"`
 if [ `readlink -e "$0"` != "$script_fullname" ] ; then
-  echo "This script is meant to be installed at $script_fullname"
+  echo "This script is meant to be installed at $script_fullname" >&2
   exit 1
 fi
 
-XDG_DATA_DIRS=@tpglibtestsdir@:$XDG_DATA_DIRS
+tmp="`mktemp -d`"
+
+XDG_CACHE_HOME="$tmp/cache"
+export XDG_CACHE_HOME
+XDG_CONFIG_HOME="$tmp/config"
+export XDG_CONFIG_HOME
+XDG_DATA_HOME="$tmp/localshare"
+export XDG_DATA_HOME
+XDG_DATA_DIRS=@tpglibtestsdir@:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}
 export XDG_DATA_DIRS
+XDG_RUNTIME_DIR="$tmp"
+export XDG_RUNTIME_DIR
 G_SLICE=debug-blocks
 export G_SLICE
 G_DEBUG=fatal_warnings,fatal_criticals
@@ -23,15 +35,16 @@ export GSETTINGS_BACKEND
 DBUS_SESSION_BUS_ADDRESS=this-is-clearly-not-valid
 export DBUS_SESSION_BUS_ADDRESS
 
+
 if [ -n "$1" ] ; then
-  list="$1"
+  testname="$1"
+  shift
 else
-  echo "Usage: $0 testname"
+  echo "Usage: $0 testname" >&2
   exit 1
 fi
 
-for i in $list ; do 
-  echo "Testing $i"
-  @tpglibtestsdir@/tools/test-wrapper.sh @tpglibtestsdir@/$i
-done
-
+e=0
+"@tpglibtestsdir@/$testname" --tap "$@" || e=$?
+rm -fr "$tmp"
+exit $e

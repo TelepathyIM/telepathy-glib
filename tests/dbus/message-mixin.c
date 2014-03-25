@@ -28,6 +28,16 @@
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
 
+typedef struct {
+    int dummy;
+} Fixture;
+
+static void
+setup (Fixture *f,
+    gconstpointer data)
+{
+}
+
 static guint message_received_count = 0;
 static guint last_message_received_sender = 0;
 static guint last_message_received_type = 0;
@@ -144,9 +154,9 @@ on_messages_removed (TpChannel *chan,
     }
 }
 
-int
-main (int argc,
-      char **argv)
+static void
+test (Fixture *f,
+    gconstpointer data)
 {
   ExampleEcho2ConnectionManager *service_cm;
   TpBaseConnectionManager *service_cm_as_base;
@@ -791,6 +801,22 @@ main (int argc,
 
   g_test_dbus_down (test_dbus);
   tp_tests_assert_last_unref (&test_dbus);
+}
 
-  return 0;
+static void
+teardown (Fixture *f,
+    gconstpointer data)
+{
+}
+
+int
+main (int argc,
+    char **argv)
+{
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
+
+  g_test_add ("/message-mixin", Fixture, NULL, setup, test, teardown);
+
+  return g_test_run ();
 }

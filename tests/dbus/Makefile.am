@@ -57,6 +57,8 @@ tests_list = \
     test-tls-certificate \
     test-unsupported-interface
 
+CLEANFILES =
+
 if ENABLE_INSTALLED_TESTS
 managersdir = @tpglibtestsdir@/telepathy-1/managers/
 managers_DATA = \
@@ -69,9 +71,25 @@ testsdir = @tpglibtestsdir@
 tests_PROGRAMS = $(tests_list)
 tests_SCRIPTS = run-test.sh
 tests_DATA = tpglib-dbus-tests.list
+CLEANFILES += \
+	$(tests_DATA) \
+	$(tests_SCRIPTS) \
+	$(NULL)
+
+insttestdir = ${datadir}/installed-tests/telepathy-glib
+insttest_DATA = $(patsubst %,%.test,$(tests_list))
+CLEANFILES += $(insttest_DATA)
 else
 noinst_PROGRAMS = $(tests_list)
 endif
+
+%.test: Makefile
+	$(AM_V_GEN)( echo '[Test]'; \
+		echo 'Exec=${testsdir}/run-test.sh $*'; \
+		echo 'Type=session'; \
+		echo 'Output=TAP'; \
+	) > $@.tmp
+	@mv $@.tmp $@
 
 TESTS = $(tests_list)
 
@@ -283,8 +301,11 @@ AM_CFLAGS = $(ERROR_CFLAGS)
 
 AM_TESTS_ENVIRONMENT = \
     abs_top_builddir=@abs_top_builddir@ \
+    XDG_CACHE_HOME=@abs_builddir@/tmp-cache \
+    XDG_CONFIG_HOME=@abs_builddir@/tmp-config \
     XDG_DATA_HOME=@abs_builddir@ \
     XDG_DATA_DIRS=@abs_srcdir@:$${XDG_DATA_DIRS:=/usr/local/share:/usr/share} \
+    XDG_RUNTIME_DIR=@abs_builddir@/tmp-runtime \
     G_SLICE=debug-blocks \
     G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly) \
     G_MESSAGES_DEBUG=all \
@@ -314,8 +335,7 @@ BUILT_SOURCES = \
 	run-test.sh \
 	$(NULL)
 
-CLEANFILES = \
-    $(BUILT_SOURCES)
+CLEANFILES += $(BUILT_SOURCES)
 
 distclean-local:
 	rm -f capture-*.log
@@ -361,3 +381,6 @@ _gen/errors-check.h: $(top_srcdir)/spec/errors.xml \
 	$(top_srcdir)/tools/glib-errors-check-gen.py
 	$(AM_V_at)$(MKDIR_P) _gen
 	$(AM_V_GEN)$(PYTHON) $(top_srcdir)/tools/glib-errors-check-gen.py $< > $@
+
+clean-local:
+	rm -fr tmp-cache tmp-config tmp-runtime

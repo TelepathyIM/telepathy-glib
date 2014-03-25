@@ -4,6 +4,16 @@
 #include <telepathy-glib/intset.h>
 #include <telepathy-glib/util.h>
 
+typedef struct {
+    int dummy;
+} Fixture;
+
+static void
+setup (Fixture *f,
+    gconstpointer data)
+{
+}
+
 static void
 iterate_fast (TpIntset *set)
 {
@@ -28,7 +38,10 @@ test_iteration (TpIntset *set)
   iterate_fast (set);
 }
 
-int main (int argc, char **argv)
+/* FIXME: split this up into sensible test-cases */
+static void
+test (Fixture *f,
+    gconstpointer data)
 {
   TpIntset *set1 = tp_intset_new ();
   TpIntset *a, *b, *copy;
@@ -200,6 +213,22 @@ int main (int argc, char **argv)
   a = NULL;
   value = NULL;
   b = NULL;
+}
 
-  return 0;
+static void
+teardown (Fixture *f,
+    gconstpointer data)
+{
+}
+
+int
+main (int argc,
+    char **argv)
+{
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
+
+  g_test_add ("/intset", Fixture, NULL, setup, test, teardown);
+
+  return g_test_run ();
 }
