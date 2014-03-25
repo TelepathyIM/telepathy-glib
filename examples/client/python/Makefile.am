@@ -10,18 +10,18 @@ EXTRA_DIST = \
   stream-tube-accepter.py
 
 installable_scripts = \
-    telepathy-example-python-dialler \
-    telepathy-example-python-contact-list \
-    telepathy-example-python-ensure-channel \
-    telepathy-example-python-file-transfer \
-    telepathy-example-python-ft-handler \
-    telepathy-example-python-inspect-cm \
-    telepathy-example-python-text-handler \
-    telepathy-example-python-stream-tube-accepter \
-    telepathy-example-python-stream-tube-offerer \
+    telepathy-1-example-python-dialler \
+    telepathy-1-example-python-contact-list \
+    telepathy-1-example-python-ensure-channel \
+    telepathy-1-example-python-file-transfer \
+    telepathy-1-example-python-ft-handler \
+    telepathy-1-example-python-inspect-cm \
+    telepathy-1-example-python-text-handler \
+    telepathy-1-example-python-stream-tube-accepter \
+    telepathy-1-example-python-stream-tube-offerer \
     $(NULL)
 
-telepathy-example-python-%: %.py
+telepathy-1-example-python-%: %.py
 	cp $< $@
 	chmod +x $@
 

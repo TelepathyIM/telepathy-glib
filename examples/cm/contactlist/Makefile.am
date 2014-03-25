@@ -1,6 +1,6 @@
 # Example connection manager with ContactList channels.
 
-EXAMPLES = telepathy-example-cm-contactlist
+EXAMPLES = telepathy-1-example-cm-contactlist
 noinst_LTLIBRARIES = libexample-cm-contactlist.la
 
 if INSTALL_EXAMPLES
@@ -21,10 +21,10 @@ libexample_cm_contactlist_la_SOURCES = \
 
 libexample_cm_contactlist_la_LIBADD = $(LDADD)
 
-telepathy_example_cm_contactlist_SOURCES = \
+telepathy_1_example_cm_contactlist_SOURCES = \
     main.c
 
-telepathy_example_cm_contactlist_LDADD = \
+telepathy_1_example_cm_contactlist_LDADD = \
     $(noinst_LTLIBRARIES)
 
 if INSTALL_EXAMPLES
@@ -34,9 +34,9 @@ $(service_DATA): %: Makefile
 	$(MKDIR_P) _gen
 	{ echo "[D-BUS Service]" && \
 	echo "Name=im.telepathy.v1.ConnectionManager.example_contact_list" && \
-	echo "Exec=${libexecdir}/telepathy-example-cm-contactlist"; } > $@
+	echo "Exec=${libexecdir}/telepathy-1-example-cm-contactlist"; } > $@
 
-managerdir = ${datadir}/telepathy/managers
+managerdir = ${datadir}/telepathy-1/managers
 dist_manager_DATA = example_contact_list.manager
 endif
 

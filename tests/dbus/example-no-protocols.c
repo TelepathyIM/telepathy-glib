@@ -37,13 +37,13 @@ prepare (void)
     {
       command[0] = g_strdup_printf ("%s/%s",
             abs_top_builddir,
-            "examples/cm/no-protocols/telepathy-example-no-protocols");
+            "examples/cm/no-protocols/telepathy-1-example-no-protocols");
     }
   else
     {
       command[0] = g_strdup_printf ("%s/%s",
           libexec,
-          "telepathy-example-no-protocols");
+          "telepathy-1-example-no-protocols");
     }
 
   if (!g_spawn_async (NULL, command, NULL, 0, NULL, NULL, NULL, &error))

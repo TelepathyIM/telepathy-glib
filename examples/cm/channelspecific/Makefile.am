@@ -1,7 +1,7 @@
 # Example connection manager with chatrooms where contacts have
 # channel-specific handles.
 
-EXAMPLES = telepathy-example-cm-csh
+EXAMPLES = telepathy-1-example-cm-csh
 noinst_LTLIBRARIES = libexample-cm-csh.la
 
 if INSTALL_EXAMPLES
@@ -24,10 +24,10 @@ libexample_cm_csh_la_SOURCES = \
 
 libexample_cm_csh_la_LIBADD = $(LDADD)
 
-telepathy_example_cm_csh_SOURCES = \
+telepathy_1_example_cm_csh_SOURCES = \
     main.c
 
-telepathy_example_cm_csh_LDADD = \
+telepathy_1_example_cm_csh_LDADD = \
     $(noinst_LTLIBRARIES)
 
 servicedir = ${datadir}/dbus-1/services
@@ -38,9 +38,9 @@ $(service_DATA): %: Makefile
 	$(MKDIR_P) _gen
 	{ echo "[D-BUS Service]" && \
 	echo "Name=im.telepathy.v1.ConnectionManager.example_csh" && \
-	echo "Exec=${libexecdir}/telepathy-example-cm-csh"; } > $@
+	echo "Exec=${libexecdir}/telepathy-1-example-cm-csh"; } > $@
 
-managerdir = ${datadir}/telepathy/managers
+managerdir = ${datadir}/telepathy-1/managers
 dist_manager_DATA = example_csh.manager
 endif
 

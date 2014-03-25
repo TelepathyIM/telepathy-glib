@@ -2,41 +2,41 @@ SUBDIRS = stream-tubes dbus-tubes python js
 
 EXAMPLES =
 
-EXAMPLES += telepathy-example-inspect-channel
-telepathy_example_inspect_channel_SOURCES = inspect-channel.c
+EXAMPLES += telepathy-1-example-inspect-channel
+telepathy_1_example_inspect_channel_SOURCES = inspect-channel.c
 
-EXAMPLES += telepathy-example-inspect-connection
-telepathy_example_inspect_connection_SOURCES = inspect-connection.c
+EXAMPLES += telepathy-1-example-inspect-connection
+telepathy_1_example_inspect_connection_SOURCES = inspect-connection.c
 
-EXAMPLES += telepathy-example-inspect-contact
-telepathy_example_inspect_contact_SOURCES = inspect-contact.c
+EXAMPLES += telepathy-1-example-inspect-contact
+telepathy_1_example_inspect_contact_SOURCES = inspect-contact.c
 
-EXAMPLES += telepathy-example-inspect-cm
-telepathy_example_inspect_cm_SOURCES = inspect-cm.c
+EXAMPLES += telepathy-1-example-inspect-cm
+telepathy_1_example_inspect_cm_SOURCES = inspect-cm.c
 
-EXAMPLES += telepathy-example-list-connections
-telepathy_example_list_connections_SOURCES = list-connections.c
+EXAMPLES += telepathy-1-example-list-connections
+telepathy_1_example_list_connections_SOURCES = list-connections.c
 
-EXAMPLES += telepathy-example-list-managers
-telepathy_example_list_managers_SOURCES = list-managers.c
+EXAMPLES += telepathy-1-example-list-managers
+telepathy_1_example_list_managers_SOURCES = list-managers.c
 
-EXAMPLES += telepathy-example-extended-client
-telepathy_example_extended_client_SOURCES = extended-client.c
-telepathy_example_extended_client_LDADD = \
+EXAMPLES += telepathy-1-example-extended-client
+telepathy_1_example_extended_client_SOURCES = extended-client.c
+telepathy_1_example_extended_client_LDADD = \
     $(top_builddir)/examples/extensions/libexample-extensions.la \
     $(LDADD)
 
-EXAMPLES += telepathy-example-media-observer
-telepathy_example_media_observer_SOURCES = media-observer.c
+EXAMPLES += telepathy-1-example-media-observer
+telepathy_1_example_media_observer_SOURCES = media-observer.c
 
-EXAMPLES += telepathy-example-approver
-telepathy_example_approver_SOURCES = approver.c
+EXAMPLES += telepathy-1-example-approver
+telepathy_1_example_approver_SOURCES = approver.c
 
-EXAMPLES += telepathy-example-text-handler
-telepathy_example_text_handler_SOURCES = text-handler.c
+EXAMPLES += telepathy-1-example-text-handler
+telepathy_1_example_text_handler_SOURCES = text-handler.c
 
-EXAMPLES += telepathy-example-contact-list
-telepathy_example_contact_list_SOURCES = contact-list.c
+EXAMPLES += telepathy-1-example-contact-list
+telepathy_1_example_contact_list_SOURCES = contact-list.c
 
 if INSTALL_EXAMPLES
 bin_PROGRAMS = $(EXAMPLES)

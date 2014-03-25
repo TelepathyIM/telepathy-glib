@@ -1,4 +1,4 @@
-EXAMPLES = telepathy-example-no-protocols
+EXAMPLES = telepathy-1-example-no-protocols
 
 if INSTALL_EXAMPLES
 libexec_PROGRAMS = $(EXAMPLES)
@@ -6,7 +6,7 @@ else
 noinst_PROGRAMS = $(EXAMPLES)
 endif
 
-telepathy_example_no_protocols_SOURCES = \
+telepathy_1_example_no_protocols_SOURCES = \
     connection-manager.c \
     connection-manager.h \
     main.c
@@ -18,9 +18,9 @@ $(service_DATA): %: Makefile
 	$(MKDIR_P) _gen
 	{ echo "[D-BUS Service]" && \
 	echo "Name=im.telepathy.v1.ConnectionManager.example_no_protocols" && \
-	echo "Exec=${libexecdir}/telepathy-example-cm-no-protocols"; } > $@
+	echo "Exec=${libexecdir}/telepathy-1-example-cm-no-protocols"; } > $@
 
-managerdir = ${datadir}/telepathy/managers
+managerdir = ${datadir}/telepathy-1/managers
 dist_manager_DATA = example_no_protocols.manager
 endif
 

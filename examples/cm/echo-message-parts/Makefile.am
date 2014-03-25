@@ -1,4 +1,4 @@
-EXAMPLES = telepathy-example-cm-echo-2
+EXAMPLES = telepathy-1-example-cm-echo-2
 noinst_LTLIBRARIES = libexample-cm-echo-2.la
 
 if INSTALL_EXAMPLES
@@ -21,10 +21,10 @@ libexample_cm_echo_2_la_SOURCES = \
 
 libexample_cm_echo_2_la_LIBADD = $(LDADD)
 
-telepathy_example_cm_echo_2_SOURCES = \
+telepathy_1_example_cm_echo_2_SOURCES = \
     main.c
 
-telepathy_example_cm_echo_2_LDADD = \
+telepathy_1_example_cm_echo_2_LDADD = \
     $(noinst_LTLIBRARIES)
 
 if INSTALL_EXAMPLES
@@ -34,9 +34,9 @@ $(service_DATA): %: Makefile
 	$(MKDIR_P) _gen
 	{ echo "[D-BUS Service]" && \
 	echo "Name=im.telepathy.v1.ConnectionManager.example_echo_2" && \
-	echo "Exec=${libexecdir}/telepathy-example-cm-echo-2"; } > $@
+	echo "Exec=${libexecdir}/telepathy-1-example-cm-echo-2"; } > $@
 
-managerdir = ${datadir}/telepathy/managers
+managerdir = ${datadir}/telepathy-1/managers
 dist_manager_DATA = example_echo_2.manager
 endif
 

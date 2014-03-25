@@ -1,4 +1,4 @@
-EXAMPLES = telepathy-example-cm-extended
+EXAMPLES = telepathy-1-example-cm-extended
 
 if INSTALL_EXAMPLES
 libexec_PROGRAMS = $(EXAMPLES)
@@ -6,7 +6,7 @@ else
 noinst_PROGRAMS = $(EXAMPLES)
 endif
 
-telepathy_example_cm_extended_SOURCES = \
+telepathy_1_example_cm_extended_SOURCES = \
     conn.c \
     conn.h \
     connection-manager.c \
@@ -22,9 +22,9 @@ $(service_DATA): %: Makefile
 	$(MKDIR_P) _gen
 	{ echo "[D-BUS Service]" && \
 	echo "Name=im.telepathy.v1.ConnectionManager.example_extended" && \
-	echo "Exec=${libexecdir}/telepathy-example-cm-extended"; } > $@
+	echo "Exec=${libexecdir}/telepathy-1-example-cm-extended"; } > $@
 
-managerdir = ${datadir}/telepathy/managers
+managerdir = ${datadir}/telepathy-1/managers
 dist_manager_DATA = example_extended.manager
 endif
 

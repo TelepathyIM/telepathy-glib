@@ -1,6 +1,6 @@
 # Example connection manager with audio/video calls.
 
-EXAMPLES = telepathy-example-cm-call
+EXAMPLES = telepathy-1-example-cm-call
 noinst_LTLIBRARIES = libexample-cm-call.la
 
 if INSTALL_EXAMPLES
@@ -27,10 +27,10 @@ libexample_cm_call_la_SOURCES = \
 
 libexample_cm_call_la_LIBADD = $(LDADD)
 
-telepathy_example_cm_call_SOURCES = \
+telepathy_1_example_cm_call_SOURCES = \
     main.c
 
-telepathy_example_cm_call_LDADD = \
+telepathy_1_example_cm_call_LDADD = \
     $(noinst_LTLIBRARIES)
 
 servicedir = ${datadir}/dbus-1/services
@@ -41,9 +41,9 @@ $(service_DATA): %: Makefile
 	$(MKDIR_P) _gen
 	{ echo "[D-BUS Service]" && \
 	echo "Name=im.telepathy.v1.ConnectionManager.example_call" && \
-	echo "Exec=${libexecdir}/telepathy-example-cm-call"; } > $@
+	echo "Exec=${libexecdir}/telepathy-1-example-cm-call"; } > $@
 
-managerdir = ${datadir}/telepathy/managers
+managerdir = ${datadir}/telepathy-1/managers
 dist_manager_DATA = example_call.manager
 endif
 
