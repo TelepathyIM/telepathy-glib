@@ -1,7 +1,27 @@
-telepathy-glib 0.99.9 (UNRELEASED)
+telepathy-glib 0.99.9 (2013-03-25)
 ==================================
 
-…
+The “scatterbrain” release.
+
+• Make the Logger properly parallel-installable: it writes logs to
+  XDG_DATA_HOME/telepathy-1/logs, and also reads from Telepathy 0.x locations
+  but does not write them (fd.o #70990, Guillaume)
+
+• Re-namespace examples to telepathy-1-example-* (Simon)
+
+• Start tracking ABI again (still no ABI guarantees or SONAME management,
+  but at least we're tracking symbol versioning) (fd.o #76462, Simon)
+
+• Hide some symbols which should not have been exported by the Logger library
+  (fd.o #76462, Simon)
+
+• Provide GNOME-style installed tests (only for telepathy-glib so far,
+  not for the Logger) if configured with --enable-installed-tests
+  (fd.o #74626, Simon)
+
+• Use GTest for all C/C++ tests
+
+• Avoid writing to XDG_CACHE_HOME in Logger tests
 
 telepathy-glib 0.99.8 (2013-03-19)
 ==================================
