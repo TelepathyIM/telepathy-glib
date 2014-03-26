@@ -597,6 +597,8 @@ tp_dbus_daemon_unregister_object (TpDBusDaemon *self,
 
   DEBUG ("%p", object);
 
+  /* The free-function for the qdata, tp_dbus_daemon_registration_free(), will
+   * automatically unregister the object (if registered) */
   g_object_set_qdata (object, registration_quark (), NULL);
 }
 
