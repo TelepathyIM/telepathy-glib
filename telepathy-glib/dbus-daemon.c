@@ -371,7 +371,7 @@ struct _Registration {
     /* (transfer full) */
     gchar *object_path;
     /* (transfer full) */
-    GSList *skeletons;
+    GList *skeletons;
 };
 
 static GQuark
@@ -391,7 +391,7 @@ static void
 tp_dbus_daemon_registration_free (gpointer p)
 {
   Registration *r = p;
-  GSList *iter;
+  GList *iter;
 
   DEBUG ("%s (r=%p)", r->object_path, r);
 
@@ -403,7 +403,7 @@ tp_dbus_daemon_registration_free (gpointer p)
       g_object_unref (iter->data);
     }
 
-  g_slist_free (r->skeletons);
+  g_list_free (r->skeletons);
   g_free (r->object_path);
   g_clear_object (&r->conn);
   g_slice_free (Registration, r);
@@ -565,7 +565,7 @@ tp_dbus_daemon_try_register_object (TpDBusDaemon *self,
           goto finally;
         }
 
-      r->skeletons = g_slist_prepend (r->skeletons, skeleton);
+      r->skeletons = g_list_prepend (r->skeletons, skeleton);
 
       DEBUG ("- %s skeleton %p (wrapping %s %p)",
           iinfo->interface_info->name, skeleton, g_type_name (iface), object);
