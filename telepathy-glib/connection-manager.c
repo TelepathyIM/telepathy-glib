@@ -1211,113 +1211,62 @@ tp_connection_manager_activate (TpConnectionManager *self)
   return TRUE;
 }
 
-static gboolean
-steal_into_ptr_array (gpointer key,
-                      gpointer value,
-                      gpointer user_data)
-{
-  if (value != NULL)
-    g_ptr_array_add (user_data, value);
-
-  g_free (key);
-
-  return TRUE;
-}
-
-typedef void (*TpConnectionManagerListCb) (TpConnectionManager * const *cms,
-    gsize n_cms,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object);
-
 typedef struct
 {
-  GHashTable *table;
-  GPtrArray *arr;
-  GSimpleAsyncResult *result;
-  TpConnectionManagerListCb callback;
-  gpointer user_data;
-  GDestroyNotify destroy;
-  gpointer weak_object;
-  TpProxyPendingCall *pending_call;
-  size_t base_len;
-  gsize refcount;
-  gsize cms_to_ready;
-  unsigned getting_names:1;
-  unsigned had_weak_object:1;
-} _ListContext;
+  TpDBusDaemon *dbus_daemon;
+  /* name -> TpConnectionManager */
+  GHashTable *cms;
+  guint n_operations;
+} ListCMSData;
 
-static void
-list_context_unref (_ListContext *list_context)
+static ListCMSData *
+list_cms_data_new (TpDBusDaemon *dbus_daemon)
 {
-  guint i;
+  ListCMSData *data;
 
-  if (--list_context->refcount > 0)
-    return;
+  data = g_slice_new0 (ListCMSData);
+  data->dbus_daemon = g_object_ref (dbus_daemon);
+  data->cms = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, g_object_unref);
 
-  if (list_context->weak_object != NULL)
-    g_object_remove_weak_pointer (list_context->weak_object,
-        &list_context->weak_object);
-
-  if (list_context->destroy != NULL)
-    list_context->destroy (list_context->user_data);
-
-  if (list_context->arr != NULL)
-    {
-      for (i = 0; i < list_context->arr->len; i++)
-        {
-          TpConnectionManager *cm = g_ptr_array_index (list_context->arr, i);
-
-          if (cm != NULL)
-            g_object_unref (cm);
-        }
-
-      g_ptr_array_unref (list_context->arr);
-    }
-
-  g_hash_table_unref (list_context->table);
-  g_slice_free (_ListContext, list_context);
+  return data;
 }
 
 static void
-all_cms_prepared (_ListContext *list_context)
+list_cms_data_free (ListCMSData *data)
 {
-  TpConnectionManager **cms;
-  guint n_cms = list_context->arr->len;
-
-  DEBUG ("We've prepared as many as possible of %u CMs", n_cms);
-
-  g_assert (list_context->callback != NULL);
-
-  g_ptr_array_add (list_context->arr, NULL);
-  cms = (TpConnectionManager **) list_context->arr->pdata;
-
-  /* If we never had a weak object anyway, call the callback.
-   * If we had a weak object when we started, only call the callback
-   * if it hasn't died yet. */
-  if (!list_context->had_weak_object || list_context->weak_object != NULL)
-    {
-      list_context->callback (cms, n_cms, NULL, list_context->user_data,
-          list_context->weak_object);
-    }
-
-  list_context->callback = NULL;
+  g_object_unref (data->dbus_daemon);
+  g_hash_table_unref (data->cms);
+  g_slice_free (ListCMSData, data);
 }
 
 static void
-tp_list_connection_managers_cm_prepared (GObject *source,
+list_cms_task_maybe_done (GTask *task)
+{
+  ListCMSData *data = g_task_get_task_data (task);
+
+  if (data->n_operations == 0 && !g_task_had_error (task))
+    {
+      GList *cms;
+
+      cms = g_hash_table_get_values (data->cms);
+      g_list_foreach (cms, (GFunc) g_object_ref, NULL);
+
+      g_task_return_pointer (task, cms, (GDestroyNotify) _tp_object_list_free);
+    }
+}
+
+static void
+cm_prepared_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  _ListContext *list_context = user_data;
+  TpConnectionManager *cm = (TpConnectionManager *) source;
+  GTask *task = user_data;
+  ListCMSData *data = g_task_get_task_data (task);
   GError *error = NULL;
-  TpConnectionManager *cm = TP_CONNECTION_MANAGER (source);
 
-  if (tp_proxy_prepare_finish (source, result, &error))
-    {
-      DEBUG ("%s: prepared", cm->priv->name);
-    }
-  else
+  if (!tp_proxy_prepare_finish (cm, result, &error))
     {
       DEBUG ("%s: failed to prepare, continuing: %s #%d: %s", cm->priv->name,
           g_quark_to_string (error->domain), error->code, error->message);
@@ -1326,185 +1275,110 @@ tp_list_connection_managers_cm_prepared (GObject *source,
        * the CM is ready *if possible* */
     }
 
-  list_context->cms_to_ready--;
+  data->n_operations--;
+  list_cms_task_maybe_done (task);
 
-  if (list_context->cms_to_ready == 0)
-    {
-      all_cms_prepared (list_context);
-    }
-  else
-    {
-      DEBUG ("We still need to prepare %" G_GSIZE_FORMAT " CM(s)",
-          list_context->cms_to_ready);
-    }
-
-  list_context_unref (list_context);
+  g_object_unref (task);
 }
 
 static void
-tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
-                                       const gchar * const *names,
-                                       const GError *error,
-                                       gpointer user_data,
-                                       GObject *weak_object)
+handle_list_names_reply (GTask *task,
+    GVariant *reply)
 {
-  _ListContext *list_context = user_data;
-  const gchar * const *name_iter;
-  const gchar *method;
+  ListCMSData *data = g_task_get_task_data (task);
+  const gchar **names;
+  const gchar **iter;
 
-  if (list_context->getting_names)
-    method = "ListNames";
-  else
-    method = "ListActivatableNames";
-
-  /* The TpProxy APIs we use guarantee this */
-  g_assert (weak_object != NULL || !list_context->had_weak_object);
-
-  if (error != NULL)
+  g_variant_get (reply, "(^a&s)", &names);
+  for (iter = names; *iter != NULL; iter++)
     {
-      DEBUG ("%s failed: %s #%d: %s", method,
-          g_quark_to_string (error->domain), error->code, error->message);
-      list_context->callback (NULL, 0, error, list_context->user_data,
-          weak_object);
-      return;
-    }
-
-  DEBUG ("%s succeeded", method);
-
-  for (name_iter = names; name_iter != NULL && *name_iter != NULL; name_iter++)
-    {
-      const gchar *name;
       TpConnectionManager *cm;
+      const gchar *cm_name;
 
-      if (strncmp (TP_CM_BUS_NAME_BASE, *name_iter, list_context->base_len)
-          != 0)
+      if (!g_str_has_prefix (*iter, TP_CM_BUS_NAME_BASE) ||
+          g_hash_table_contains (data->cms, *iter))
         continue;
 
-      name = *name_iter + list_context->base_len;
-      DEBUG ("  found CM: %s", name);
+      /* just ignore connection managers with bad names */
+      cm_name = *iter + strlen (TP_CM_BUS_NAME_BASE);
+      cm = tp_connection_manager_new (data->dbus_daemon, cm_name, NULL, NULL);
+      if (cm == NULL)
+        continue;
 
-      if (g_hash_table_lookup (list_context->table, name) == NULL)
-        {
-          /* just ignore connection managers with bad names */
-          cm = tp_connection_manager_new (bus_daemon, name, NULL, NULL);
-          if (cm != NULL)
-            g_hash_table_insert (list_context->table, g_strdup (name), cm);
-        }
+      g_hash_table_insert (data->cms, g_strdup (*iter), cm);
+
+      data->n_operations++;
+      tp_proxy_prepare_async (cm, NULL,
+          cm_prepared_cb, g_object_ref (task));
     }
-
-  if (list_context->getting_names)
-    {
-      /* now that we have all the CMs, wait for them all to be ready */
-      guint i;
-
-      list_context->arr = g_ptr_array_sized_new (g_hash_table_size
-              (list_context->table));
-
-      g_hash_table_foreach_steal (list_context->table, steal_into_ptr_array,
-          list_context->arr);
-
-      list_context->cms_to_ready = list_context->arr->len;
-      list_context->refcount += list_context->cms_to_ready;
-
-      DEBUG ("Total of %" G_GSIZE_FORMAT " CMs to be prepared",
-          list_context->cms_to_ready);
-
-      if (list_context->cms_to_ready == 0)
-        {
-          all_cms_prepared (list_context);
-          return;
-        }
-
-      for (i = 0; i < list_context->cms_to_ready; i++)
-        {
-          TpConnectionManager *cm = g_ptr_array_index (list_context->arr, i);
-
-          DEBUG ("  preparing %s", cm->priv->name);
-          tp_proxy_prepare_async (cm, NULL,
-              tp_list_connection_managers_cm_prepared, list_context);
-        }
-    }
-  else
-    {
-      DEBUG ("Calling ListNames");
-      list_context->getting_names = TRUE;
-      list_context->refcount++;
-      tp_dbus_daemon_list_names (bus_daemon, 2000,
-          tp_list_connection_managers_got_names, list_context,
-          (GDestroyNotify) list_context_unref, weak_object);
-    }
+  g_free (names);
+  g_variant_unref (reply);
 }
 
 static void
-tp_list_connection_managers (TpDBusDaemon *bus_daemon,
-                             TpConnectionManagerListCb callback,
-                             gpointer user_data,
-                             GDestroyNotify destroy,
-                             GObject *weak_object)
+list_names_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
 {
-  _ListContext *list_context = g_slice_new0 (_ListContext);
+  GDBusConnection *dbus_connection = (GDBusConnection *) source;
+  GTask *task = user_data;
+  ListCMSData *data = g_task_get_task_data (task);
+  GVariant *reply;
+  GError *error = NULL;
 
-  list_context->base_len = strlen (TP_CM_BUS_NAME_BASE);
-  list_context->callback = callback;
-  list_context->user_data = user_data;
-  list_context->destroy = destroy;
-
-  list_context->getting_names = FALSE;
-  list_context->refcount = 1;
-  list_context->table = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
-      g_object_unref);
-  list_context->arr = NULL;
-  list_context->cms_to_ready = 0;
-
-  if (weak_object != NULL)
+  reply = g_dbus_connection_call_finish (dbus_connection, result, &error);
+  if (reply == NULL)
     {
-      list_context->weak_object = weak_object;
-      list_context->had_weak_object = TRUE;
-      g_object_add_weak_pointer (weak_object, &list_context->weak_object);
+      g_task_return_error (task, error);
+      goto out;
     }
 
-  DEBUG ("Calling ListActivatableNames");
-  tp_dbus_daemon_list_activatable_names (bus_daemon, 2000,
-      tp_list_connection_managers_got_names, list_context,
-      (GDestroyNotify) list_context_unref, weak_object);
+  handle_list_names_reply (task, reply);
+
+  data->n_operations--;
+  list_cms_task_maybe_done (task);
+
+out:
+  g_object_unref (task);
 }
 
 static void
-list_connection_managers_async_cb (TpConnectionManager * const *cms,
-    gsize n_cms,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
+list_activatable_names_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
 {
-  GSimpleAsyncResult *result = user_data;
+  GDBusConnection *dbus_connection = (GDBusConnection *) source;
+  GTask *task = user_data;
+  ListCMSData *data = g_task_get_task_data (task);
+  GVariant *reply;
+  GError *error = NULL;
 
-  if (error != NULL)
+  reply = g_dbus_connection_call_finish (dbus_connection, result, &error);
+  if (reply == NULL)
     {
-      g_simple_async_result_set_from_error (result, error);
-    }
-  else
-    {
-      GList *l = NULL;
-      gsize i;
-
-      for (i = 0; i < n_cms; i++)
-          l = g_list_prepend (l, g_object_ref (cms[i]));
-
-      l = g_list_reverse (l);
-
-      g_simple_async_result_set_op_res_gpointer (result, l,
-          (GDestroyNotify) _tp_object_list_free);
+      g_task_return_error (task, error);
+      goto out;
     }
 
-  g_simple_async_result_complete_in_idle (result);
+  handle_list_names_reply (task, reply);
 
-  /* result is unreffed by GDestroyNotify */
+  data->n_operations++;
+  g_dbus_connection_call (dbus_connection,
+      "org.freedesktop.DBus", "/", "org.freedesktop.DBus",
+      "ListNames",
+      g_variant_new ("()"),
+      G_VARIANT_TYPE ("(as)"),
+      G_DBUS_CALL_FLAGS_NONE,
+      2000, NULL,
+      list_names_cb, g_object_ref (task));
+
+out:
+  g_object_unref (task);
 }
 
 /**
  * tp_list_connection_managers_async:
- * @dbus_daemon: (allow-none): a #TpDBusDaemon, or %NULL to use
- *  tp_dbus_daemon_dup()
+ * @dbus_daemon: a #TpDBusDaemon
  * @callback: a callback to call with a list of CMs
  * @user_data: data to pass to @callback
  *
@@ -1519,29 +1393,22 @@ tp_list_connection_managers_async (TpDBusDaemon *dbus_daemon,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  GSimpleAsyncResult *result;
-  GError *error = NULL;
+  GTask *task;
+  ListCMSData *data;
 
-  if (dbus_daemon == NULL)
-    dbus_daemon = tp_dbus_daemon_dup (&error);
-  else
-    g_object_ref (dbus_daemon);
+  task = g_task_new (NULL, NULL, callback, user_data);
 
-  result = g_simple_async_result_new (NULL, callback, user_data,
-      tp_list_connection_managers_async);
+  data = list_cms_data_new (dbus_daemon);
+  g_task_set_task_data (task, data, (GDestroyNotify) list_cms_data_free);
 
-  if (dbus_daemon == NULL)
-    {
-      g_simple_async_result_take_error (result, error);
-      g_simple_async_result_complete_in_idle (result);
-      g_object_unref (result);
-    }
-  else
-    {
-      tp_list_connection_managers (dbus_daemon,
-          list_connection_managers_async_cb, result, g_object_unref, NULL);
-      g_object_unref (dbus_daemon);
-    }
+  g_dbus_connection_call (tp_proxy_get_dbus_connection (dbus_daemon),
+      "org.freedesktop.DBus", "/", "org.freedesktop.DBus",
+      "ListActivatableNames",
+      g_variant_new ("()"),
+      G_VARIANT_TYPE ("(as)"),
+      G_DBUS_CALL_FLAGS_NONE,
+      2000, NULL,
+      list_activatable_names_cb, task);
 }
 
 /**
@@ -1562,9 +1429,9 @@ GList *
 tp_list_connection_managers_finish (GAsyncResult *result,
     GError **error)
 {
-  _tp_implement_finish_return_copy_pointer (NULL,
-      tp_list_connection_managers_async,
-      _tp_object_list_copy);
+  g_return_val_if_fail (g_task_is_valid (result, NULL), NULL);
+
+  return g_task_propagate_pointer (G_TASK (result), error);
 }
 
 /**
