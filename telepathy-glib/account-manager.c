@@ -118,6 +118,7 @@ struct _TpAccountManagerPrivate {
   gchar *requested_status_message;
 
   guint n_preparing_accounts;
+  guint watch_name_id;
 };
 
 typedef struct {
@@ -224,18 +225,12 @@ _tp_account_manager_start (TpAccountManager *self)
 }
 
 static void
-_tp_account_manager_name_owner_cb (TpDBusDaemon *proxy,
+name_vanished_cb (GDBusConnection *connection,
     const gchar *name,
-    const gchar *new_owner,
     gpointer user_data)
 {
-  DEBUG ("Name owner changed for %s, new name: %s", name, new_owner);
-
-  if (tp_str_empty (new_owner))
-    {
-      /* AM quit or crashed for some reason, let's start it again */
-      _tp_account_manager_start (user_data);
-    }
+  /* AM quit or crashed for some reason, let's start it again */
+  _tp_account_manager_start (user_data);
 }
 
 static void insert_account (TpAccountManager *self, TpAccount *account);
@@ -539,15 +534,11 @@ _tp_account_manager_dispose (GObject *object)
   TpAccountManager *self = TP_ACCOUNT_MANAGER (object);
   TpAccountManagerPrivate *priv = self->priv;
 
-  if (priv->dispose_run)
-    return;
+  g_clear_pointer (&priv->accounts, g_hash_table_unref);
 
-  priv->dispose_run = TRUE;
-
-  g_hash_table_unref (priv->accounts);
-
-  tp_dbus_daemon_cancel_name_owner_watch (tp_proxy_get_dbus_daemon (self),
-      TP_ACCOUNT_MANAGER_BUS_NAME, _tp_account_manager_name_owner_cb, self);
+  if (priv->watch_name_id != 0)
+    g_bus_unwatch_name (priv->watch_name_id);
+  priv->watch_name_id = 0;
 
   G_OBJECT_CLASS (tp_account_manager_parent_class)->dispose (object);
 }
@@ -1300,8 +1291,15 @@ tp_account_manager_enable_restart (TpAccountManager *manager)
 {
   g_return_if_fail (TP_IS_ACCOUNT_MANAGER (manager));
 
-  tp_dbus_daemon_watch_name_owner (tp_proxy_get_dbus_daemon (manager),
-      TP_ACCOUNT_MANAGER_BUS_NAME, _tp_account_manager_name_owner_cb,
+  if (manager->priv->watch_name_id != 0)
+    return;
+
+  manager->priv->watch_name_id = g_bus_watch_name_on_connection (
+      tp_proxy_get_dbus_connection (manager),
+      TP_ACCOUNT_MANAGER_BUS_NAME,
+      G_BUS_NAME_WATCHER_FLAGS_NONE,
+      NULL,
+      name_vanished_cb,
       manager, NULL);
 
   _tp_account_manager_start (manager);
