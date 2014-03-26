@@ -304,21 +304,27 @@ manager_new_action (gpointer script_data,
 
 /* We really don't want to have MC being launched during this test */
 static void
-finish_assert_am_not_activatable_action (TpDBusDaemon *proxy,
-    const gchar * const *names,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
+finish_assert_am_not_activatable_action (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
 {
+  GDBusConnection *dbus_connection = (GDBusConnection *) source;
+  GVariant *reply;
+  const gchar **names;
   guint i;
+  GError *error = NULL;
 
-  g_assert (error == NULL);
+  reply = g_dbus_connection_call_finish (dbus_connection, result, &error);
+  g_assert_no_error (error);
 
+  g_variant_get (reply, "(^a&s)", &names);
   for (i=0; names[i] != NULL; i++)
     {
       g_assert_cmpstr (names[i], !=, TP_ACCOUNT_MANAGER_BUS_NAME);
       g_assert_cmpstr (names[i], !=, "im.telepathy.v1.MissionControl5");
     }
+  g_free (names);
+  g_variant_unref (reply);
 
   script_continue (user_data);
 }
@@ -329,8 +335,14 @@ assert_am_not_activatable_action (gpointer script_data,
 {
   Test *test = (Test *) script_data;
 
-  tp_dbus_daemon_list_activatable_names (test->dbus, 500,
-      finish_assert_am_not_activatable_action, test, NULL, NULL);
+  g_dbus_connection_call (tp_proxy_get_dbus_connection (test->dbus),
+      "org.freedesktop.DBus", "/", "org.freedesktop.DBus",
+      "ListActivatableNames",
+      g_variant_new ("()"),
+      G_VARIANT_TYPE ("(as)"),
+      G_DBUS_CALL_FLAGS_NONE,
+      500, NULL,
+      finish_assert_am_not_activatable_action, test);
 }
 
 static void
