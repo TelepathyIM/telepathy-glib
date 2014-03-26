@@ -1009,7 +1009,6 @@ tp_intset_union
 tp_intset_union_update
 tp_list_connection_managers_async
 tp_list_connection_managers_finish
-tp_list_connection_names
 tp_logger_dup
 tp_logger_get_type
 tp_message_append_part

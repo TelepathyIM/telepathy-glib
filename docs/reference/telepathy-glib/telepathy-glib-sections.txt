@@ -3245,8 +3245,6 @@ tp_cli_connection_interface_service_point1_signal_callback_service_points_change
 <FILE>connection</FILE>
 <TITLE>connection</TITLE>
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
-TpConnectionNameListCb
-tp_list_connection_names
 TpConnection
 TpConnectionClass
 TP_CONNECTION_FEATURE_CORE

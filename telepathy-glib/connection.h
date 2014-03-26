@@ -167,16 +167,6 @@ void tp_connection_set_contact_info_async (TpConnection *self,
 gboolean tp_connection_set_contact_info_finish (TpConnection *self,
     GAsyncResult *result, GError **error);
 
-typedef void (*TpConnectionNameListCb) (const gchar * const *names,
-    gsize n, const gchar * const *cms, const gchar * const *protocols,
-    const GError *error, gpointer user_data,
-    GObject *weak_object);
-
-void tp_list_connection_names (TpDBusDaemon *bus_daemon,
-    TpConnectionNameListCb callback,
-    gpointer user_data, GDestroyNotify destroy,
-    GObject *weak_object);
-
 gint tp_connection_presence_type_cmp_availability (TpConnectionPresenceType p1,
   TpConnectionPresenceType p2);
 

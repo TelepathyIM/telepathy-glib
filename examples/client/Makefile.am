@@ -14,9 +14,6 @@ telepathy_1_example_inspect_contact_SOURCES = inspect-contact.c
 EXAMPLES += telepathy-1-example-inspect-cm
 telepathy_1_example_inspect_cm_SOURCES = inspect-cm.c
 
-EXAMPLES += telepathy-1-example-list-connections
-telepathy_1_example_list_connections_SOURCES = list-connections.c
-
 EXAMPLES += telepathy-1-example-list-managers
 telepathy_1_example_list_managers_SOURCES = list-managers.c
 
