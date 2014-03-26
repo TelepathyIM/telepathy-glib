@@ -75,15 +75,15 @@ struct _TpDebugClient {
 
 struct _TpDebugClientPrivate {
     gboolean enabled;
+    guint watch_id;
 };
 
+static void name_vanished_cb (GDBusConnection *dbus_connection,
+    const gchar *name,
+    gpointer user_data);
 static const TpProxyFeature *tp_debug_client_list_features (
     TpProxyClass *klass);
 static void tp_debug_client_prepare_core (TpDebugClient *self);
-static void name_owner_changed_cb (TpDBusDaemon *bus,
-    const gchar *name,
-    const gchar *new_owner,
-    gpointer user_data);
 
 G_DEFINE_TYPE (TpDebugClient, tp_debug_client, TP_TYPE_PROXY)
 
@@ -153,9 +153,13 @@ tp_debug_client_constructed (GObject *object)
   if (parent_class->constructed != NULL)
     parent_class->constructed (object);
 
-  tp_dbus_daemon_watch_name_owner (
-      tp_proxy_get_dbus_daemon (proxy), tp_proxy_get_bus_name (proxy),
-      name_owner_changed_cb, object, NULL);
+  self->priv->watch_id = g_bus_watch_name_on_connection (
+      tp_proxy_get_dbus_connection (proxy),
+      tp_proxy_get_bus_name (proxy),
+      G_BUS_NAME_WATCHER_FLAGS_NONE,
+      NULL, name_vanished_cb,
+      object, NULL);
+
   tp_debug_client_prepare_core (self);
 
   if (!tp_cli_debug1_connect_to_new_debug_message (self, new_debug_message_cb,
@@ -169,12 +173,12 @@ tp_debug_client_constructed (GObject *object)
 static void
 tp_debug_client_dispose (GObject *object)
 {
-  TpProxy *proxy = TP_PROXY (object);
+  TpDebugClient *self = TP_DEBUG_CLIENT (object);
   GObjectClass *parent_class = G_OBJECT_CLASS (tp_debug_client_parent_class);
 
-  tp_dbus_daemon_cancel_name_owner_watch (
-      tp_proxy_get_dbus_daemon (proxy), tp_proxy_get_bus_name (proxy),
-      name_owner_changed_cb, object);
+  if (self->priv->watch_id != 0)
+    g_bus_unwatch_name (self->priv->watch_id);
+  self->priv->watch_id = 0;
 
   if (parent_class->dispose != NULL)
     parent_class->dispose (object);
@@ -238,24 +242,18 @@ tp_debug_client_get_feature_quark_core (void)
 }
 
 static void
-name_owner_changed_cb (
-    TpDBusDaemon *bus,
+name_vanished_cb (GDBusConnection *dbus_connection,
     const gchar *name,
-    const gchar *new_owner,
     gpointer user_data)
 {
   TpDebugClient *self = TP_DEBUG_CLIENT (user_data);
+  GError *error = g_error_new (TP_DBUS_ERRORS,
+      TP_DBUS_ERROR_NAME_OWNER_LOST,
+      "%s fell off the bus", name);
 
-  if (tp_str_empty (new_owner))
-    {
-      GError *error = g_error_new (TP_DBUS_ERRORS,
-          TP_DBUS_ERROR_NAME_OWNER_LOST,
-          "%s fell off the bus", name);
-
-      DEBUG ("%s fell off the bus", name);
-      tp_proxy_invalidate (TP_PROXY (self), error);
-      g_error_free (error);
-    }
+  DEBUG ("%s fell off the bus", name);
+  tp_proxy_invalidate (TP_PROXY (self), error);
+  g_error_free (error);
 }
 
 static void
