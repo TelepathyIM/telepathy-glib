@@ -1,7 +1,9 @@
-telepathy-glib 0.23.4 (UNRELEASED)
+telepathy-glib 0.24.0 (2014-03-26)
 ==================================
 
-Fixes:
+The “space Tolkien” release.
+
+Fixes since 0.23.3:
 
 • don't leak every D-Bus method call result, a regression in 0.23.1 (Simon)
 
