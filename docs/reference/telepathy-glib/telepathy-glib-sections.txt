@@ -1929,9 +1929,6 @@ TpDBusDaemonClass
 tp_dbus_daemon_dup
 tp_dbus_daemon_new
 tp_dbus_daemon_get_unique_name
-TpDBusDaemonListNamesCb
-tp_dbus_daemon_list_names
-tp_dbus_daemon_list_activatable_names
 tp_dbus_daemon_release_name
 tp_dbus_daemon_request_name
 tp_dbus_daemon_register_object

@@ -799,8 +799,6 @@ tp_dbus_check_valid_object_path
 tp_dbus_daemon_dup
 tp_dbus_daemon_get_type
 tp_dbus_daemon_get_unique_name
-tp_dbus_daemon_list_activatable_names
-tp_dbus_daemon_list_names
 tp_dbus_daemon_new
 tp_dbus_daemon_register_object
 tp_dbus_daemon_release_name
