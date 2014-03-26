@@ -1121,7 +1121,6 @@ tp_proxy_get_bus_name
 tp_proxy_get_dbus_connection
 tp_proxy_get_dbus_daemon
 tp_proxy_get_factory
-tp_proxy_get_interface_by_id
 tp_proxy_get_invalidated
 tp_proxy_get_object_path
 tp_proxy_get_type

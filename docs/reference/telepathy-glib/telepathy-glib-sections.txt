@@ -2999,7 +2999,6 @@ tp_cli_generic_add_signals
 <INCLUDE>telepathy-glib/proxy-subclass.h</INCLUDE>
 tp_proxy_add_interface_by_id
 tp_proxy_add_interfaces
-tp_proxy_get_interface_by_id
 tp_proxy_check_interface_by_id
 tp_proxy_invalidate
 <SUBSECTION>

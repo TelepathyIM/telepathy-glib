@@ -334,9 +334,7 @@ struct _TpProxyPrivate {
 
     GError *invalidated;
 
-    /* GQuark for interface => either a ref'd GDBusProxy *,
-     * or the TpProxy itself used as a dummy value to indicate that
-     * the GDBusProxy has not been needed yet */
+    /* GQuark for interface => the TpProxy itself (just a dummy value) */
     GData *interfaces;
 
     /* feature => FeatureState */
@@ -381,58 +379,6 @@ enum {
 };
 
 static guint signals[N_SIGNALS] = {0};
-
-/**
- * tp_proxy_get_interface_by_id: (skip)
- * @self: the TpProxy
- * @iface: quark representing the interface required
- * @error: used to raise an error in the #TP_DBUS_ERRORS domain if @iface
- *         is invalid, @self has been invalidated or @self does not implement
- *         @iface
- *
- * <!-- -->
- *
- * Returns: a borrowed reference to a #GDBusProxy
- * for which the bus name and object path are the same as for @self, but the
- * interface is as given (or %NULL if an @error is raised).
- * The reference is only valid as long as @self is.
- *
- * Since: 0.19.9
- */
-GDBusProxy *
-tp_proxy_get_interface_by_id (TpProxy *self,
-    GQuark iface,
-    GError **error)
-{
-  gpointer iface_proxy;
-
-  g_return_val_if_fail (TP_IS_PROXY (self), NULL);
-
-  if (!_tp_proxy_check_interface_by_id (self, iface, error))
-    return NULL;
-
-  iface_proxy = g_datalist_id_get_data (&self->priv->interfaces, iface);
-
-  if (iface_proxy == self)
-    {
-      /* dummy value - we've never actually needed the interface, so we
-       * didn't create it, to avoid binding to all the signals */
-
-      iface_proxy = g_dbus_proxy_new_sync (self->priv->dbus_connection,
-          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
-          NULL, /* FIXME: add interface info */
-          self->priv->bus_name,
-          self->priv->object_path,
-          g_quark_to_string (iface),
-          NULL, /* cancellable */
-          error);
-
-      g_datalist_id_set_data_full (&self->priv->interfaces, iface,
-          iface_proxy, g_object_unref);
-    }
-
-  return iface_proxy;
-}
 
 /**
  * tp_proxy_check_interface_by_id:
@@ -684,9 +630,8 @@ tp_proxy_unique_name_vanished_cb (GDBusConnection *conn,
  *
  * Declare that this proxy supports a given interface.
  *
- * To use methods and signals of that interface, either call
- * tp_proxy_get_interface_by_id() to get the #GDBusProxy, or use the
- * tp_cli_* wrapper functions (strongly recommended).
+ * To use methods and signals of that interface, use the
+ * tp_cli_* wrapper functions or GDBus.
  *
  * If the interface is the proxy's "main interface", or has already been
  * added, then do nothing.
@@ -697,21 +642,17 @@ void
 tp_proxy_add_interface_by_id (TpProxy *self,
                               GQuark iface)
 {
-  GDBusProxy *iface_proxy = g_datalist_id_get_data (&self->priv->interfaces,
-      iface);
-
   g_return_if_fail
       (tp_dbus_check_valid_interface_name (g_quark_to_string (iface),
           NULL));
 
   g_return_if_fail (tp_proxy_get_invalidated (self) == NULL);
 
-  if (iface_proxy == NULL)
+  if (g_datalist_id_get_data (&self->priv->interfaces, iface) == NULL)
     {
-      /* we don't want to actually create it just yet - we'll get
-       * woken up on every signal, if we do. So we set a
-       * dummy value (self), and replace it with the real value in
-       * tp_proxy_get_interface_by_id */
+      /* At some point we might store a value - maybe a GDBusProxy -
+       * but for now it's just @self, which is a convenient
+       * non-NULL pointer. */
       g_datalist_id_set_data_full (&self->priv->interfaces, iface,
           self, NULL);
     }

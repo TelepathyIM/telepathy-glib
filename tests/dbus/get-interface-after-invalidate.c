@@ -11,18 +11,18 @@ static void
 test_get_interface_after_invalidate (void)
 {
   TpDBusDaemon *bus_daemon;
-  GDBusProxy *props;
+  gboolean has_props;
   GError invalidation_reason = { TP_ERROR, TP_ERROR_NOT_YOURS, "bees!" };
   GError *error = NULL;
 
   bus_daemon = tp_tests_dbus_daemon_dup_or_die ();
   tp_proxy_invalidate ((TpProxy *) bus_daemon, &invalidation_reason);
 
-  props = tp_proxy_get_interface_by_id ((TpProxy *) bus_daemon,
+  has_props = tp_proxy_check_interface_by_id ((TpProxy *) bus_daemon,
       TP_IFACE_QUARK_DBUS_DAEMON, &error);
 
   /* Borrowing the interface should fail because the proxy is invalidated. */
-  g_assert (props == NULL);
+  g_assert (!has_props);
   g_assert (error != NULL);
   g_assert_cmpuint (error->domain, ==, invalidation_reason.domain);
   g_assert_cmpint (error->code, ==, invalidation_reason.code);

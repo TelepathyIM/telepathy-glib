@@ -45,9 +45,6 @@ TpProxySignalConnection *tp_proxy_signal_connection_v1_new (TpProxy *self,
     GCallback callback, gpointer user_data, GDestroyNotify destroy,
     GObject *weak_object, GError **error);
 
-GDBusProxy *tp_proxy_get_interface_by_id (TpProxy *self, GQuark iface,
-    GError **error);
-
 void tp_proxy_add_interface_by_id (TpProxy *self, GQuark iface);
 void tp_proxy_add_interfaces (TpProxy *self, const gchar * const *interfaces);
 
