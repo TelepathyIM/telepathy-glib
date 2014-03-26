@@ -1929,9 +1929,6 @@ TpDBusDaemonClass
 tp_dbus_daemon_dup
 tp_dbus_daemon_new
 tp_dbus_daemon_get_unique_name
-TpDBusDaemonNameOwnerChangedCb
-tp_dbus_daemon_watch_name_owner
-tp_dbus_daemon_cancel_name_owner_watch
 TpDBusDaemonListNamesCb
 tp_dbus_daemon_list_names
 tp_dbus_daemon_list_activatable_names
