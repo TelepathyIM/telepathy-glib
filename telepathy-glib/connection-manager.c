@@ -212,6 +212,8 @@ struct _TpConnectionManagerPrivate {
     /* TRUE if the CM exited (crashed?) during introspection.
      * We'll retry, but only once. */
     gboolean retried_introspection;
+
+    guint watch_id;
 };
 
 G_DEFINE_TYPE (TpConnectionManager,
@@ -492,70 +494,8 @@ tp_connection_manager_idle_introspect (gpointer data)
 static gboolean tp_connection_manager_idle_read_manager_file (gpointer data);
 
 static void
-tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
-                                             const gchar *name,
-                                             const gchar *new_owner,
-                                             gpointer user_data)
+name_owner_changed (TpConnectionManager *self)
 {
-  TpConnectionManager *self = user_data;
-
-  /* make sure self exists for the duration of this callback */
-  g_object_ref (self);
-
-  if (new_owner[0] == '\0')
-    {
-      GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_NAME_OWNER_LOST,
-          "Connection manager process exited during introspection" };
-
-      self->priv->running = FALSE;
-
-      /* cancel pending introspection, if any */
-      if (introspection_in_progress (self))
-        {
-          if (self->priv->retried_introspection)
-            {
-              DEBUG ("%s: %s, twice: assuming fatal and not retrying",
-                  self->priv->name, e.message);
-              tp_connection_manager_end_introspection (self, &e);
-            }
-          else
-            {
-              self->priv->retried_introspection = TRUE;
-              DEBUG ("%s: %s: retrying", self->priv->name, e.message);
-              tp_connection_manager_reset_introspection (self);
-              tp_connection_manager_continue_introspection (self);
-            }
-        }
-
-      /* If our name wasn't known already, a change to "" is just the initial
-       * state, so we didn't *exit* as such. */
-      if (self->priv->name_known)
-        {
-          DEBUG ("%s: exited", self->priv->name);
-          g_signal_emit (self, signals[SIGNAL_EXITED], 0);
-        }
-    }
-  else
-    {
-      /* represent an atomic change of ownership as if it was an exit and
-       * restart */
-      if (self->priv->running)
-        {
-          DEBUG ("%s: atomic name owner change, behaving as if it exited",
-              self->priv->name);
-          tp_connection_manager_name_owner_changed_cb (bus, name, "", self);
-          DEBUG ("%s: back to normal handling", self->priv->name);
-        }
-
-      DEBUG ("%s: is now running", self->priv->name);
-      self->priv->running = TRUE;
-      g_signal_emit (self, signals[SIGNAL_ACTIVATED], 0);
-
-      if (self->priv->introspect_idle_id == 0)
-        self->priv->introspect_idle_id = g_idle_add (
-            tp_connection_manager_idle_introspect, self);
-    }
-
   /* if we haven't started introspecting yet, now would be a good time */
   if (!self->priv->name_known)
     {
@@ -582,6 +522,72 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
       /* Unfreeze automatic reading of .manager file if manager-file changes */
       self->priv->name_known = TRUE;
     }
+}
+
+static void
+name_appeared_cb (GDBusConnection *connection,
+    const gchar *name,
+    const gchar *name_owner,
+    gpointer user_data)
+{
+  TpConnectionManager *self = user_data;
+
+  g_object_ref (self);
+
+  DEBUG ("%s: is now running", self->priv->name);
+  g_assert (!self->priv->running);
+  self->priv->running = TRUE;
+  g_signal_emit (self, signals[SIGNAL_ACTIVATED], 0);
+
+  if (self->priv->introspect_idle_id == 0)
+    self->priv->introspect_idle_id = g_idle_add (
+        tp_connection_manager_idle_introspect, self);
+
+  name_owner_changed (self);
+
+  g_object_unref (self);
+}
+
+static void
+name_vanished_cb (GDBusConnection *connection,
+    const gchar *name,
+    gpointer user_data)
+{
+  TpConnectionManager *self = user_data;
+  GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_NAME_OWNER_LOST,
+      "Connection manager process exited during introspection" };
+
+  g_object_ref (self);
+
+  self->priv->running = FALSE;
+
+  /* cancel pending introspection, if any */
+  if (introspection_in_progress (self))
+    {
+      if (self->priv->retried_introspection)
+        {
+          DEBUG ("%s: %s, twice: assuming fatal and not retrying",
+              self->priv->name, e.message);
+          tp_connection_manager_end_introspection (self, &e);
+        }
+      else
+        {
+          self->priv->retried_introspection = TRUE;
+          DEBUG ("%s: %s: retrying", self->priv->name, e.message);
+          tp_connection_manager_reset_introspection (self);
+          tp_connection_manager_continue_introspection (self);
+        }
+    }
+
+  /* If our name wasn't known already, a change to "" is just the initial
+   * state, so we didn't *exit* as such. */
+  if (self->priv->name_known)
+    {
+      DEBUG ("%s: exited", self->priv->name);
+      g_signal_emit (self, signals[SIGNAL_EXITED], 0);
+    }
+
+  name_owner_changed (self);
 
   g_object_unref (self);
 }
@@ -784,8 +790,12 @@ tp_connection_manager_constructor (GType type,
   g_return_val_if_fail (tp_proxy_get_bus_name (self) != NULL, NULL);
 
   /* Watch my D-Bus name */
-  tp_dbus_daemon_watch_name_owner (tp_proxy_get_dbus_daemon (self),
-      tp_proxy_get_bus_name (self), tp_connection_manager_name_owner_changed_cb,
+  self->priv->watch_id = g_bus_watch_name_on_connection (
+      tp_proxy_get_dbus_connection (self),
+      tp_proxy_get_bus_name (self),
+      G_BUS_NAME_WATCHER_FLAGS_NONE,
+      name_appeared_cb,
+      name_vanished_cb,
       self, NULL);
 
   self->priv->name = strrchr (tp_proxy_get_object_path (self), '/') + 1;
@@ -817,9 +827,9 @@ tp_connection_manager_dispose (GObject *object)
 
   self->priv->disposed = TRUE;
 
-  tp_dbus_daemon_cancel_name_owner_watch (tp_proxy_get_dbus_daemon (self),
-      tp_proxy_get_bus_name (self), tp_connection_manager_name_owner_changed_cb,
-      object);
+  if (self->priv->watch_id != 0)
+    g_bus_unwatch_name (self->priv->watch_id);
+  self->priv->watch_id = 0;
 
   if (self->priv->protocols != NULL)
     {
