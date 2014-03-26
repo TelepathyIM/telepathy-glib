@@ -84,13 +84,12 @@ connection_manager_got_info (TpConnectionManager *cm,
 }
 
 static void
-wait_for_name_owner_cb (TpDBusDaemon *dbus_daemon,
+wait_for_name_owner_cb (GDBusConnection *connection,
     const gchar *name,
     const gchar *new_owner,
     gpointer main_loop)
 {
-  if (new_owner[0] != '\0')
-    g_main_loop_quit (main_loop);
+  g_main_loop_quit (main_loop);
 }
 
 static void
@@ -111,6 +110,7 @@ test (Fixture *f,
   GError *error = NULL;
   gboolean saw_exited;
   GTestDBus *test_dbus;
+  guint name_owner_watch;
 
   /* If we're running slowly (for instance in a parallel build)
    * we don't want the CM process in the background to time out and exit. */
@@ -157,10 +157,14 @@ test (Fixture *f,
 
   /* Now start the connection manager and wait for it to start */
   prepare ();
-  tp_dbus_daemon_watch_name_owner (dbus_daemon,
-      TP_CM_BUS_NAME_BASE "example_no_protocols", wait_for_name_owner_cb,
+  name_owner_watch = g_bus_watch_name_on_connection (
+      tp_proxy_get_dbus_connection (dbus_daemon),
+      TP_CM_BUS_NAME_BASE "example_no_protocols",
+      G_BUS_NAME_WATCHER_FLAGS_NONE,
+      wait_for_name_owner_cb, NULL,
       g_main_loop_ref (mainloop), (GDestroyNotify) g_main_loop_unref);
   g_main_loop_run (mainloop);
+  g_bus_unwatch_name (name_owner_watch);
 
   /* This TpConnectionManager works fine. */
   late_cm = tp_connection_manager_new (dbus_daemon, "example_no_protocols",
