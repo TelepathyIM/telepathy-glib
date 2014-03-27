@@ -28,9 +28,11 @@ AM_CPPFLAGS =						\
 	$(WARN_CFLAGS)
 
 libexec_PROGRAMS = \
-	telepathy-logger
+	telepathy-logger-1
 
-telepathy_logger_LDADD = \
+telepathy_logger_1_SOURCES = telepathy-logger.c
+
+telepathy_logger_1_LDADD = \
 	libtelepathy-logger-1.la \
 	$(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
 	$(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \

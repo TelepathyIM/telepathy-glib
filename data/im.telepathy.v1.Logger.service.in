@@ -1,3 +1,3 @@
 [D-BUS Service]
 Name=im.telepathy.v1.Logger
-Exec=@libexecdir@/telepathy-logger
+Exec=@libexecdir@/telepathy-logger-1
