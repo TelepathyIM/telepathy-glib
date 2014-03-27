@@ -260,6 +260,9 @@ tp_run_connection_manager (const char *prog_name,
       (GCallback) no_more_connections, NULL);
 
   connection = tp_proxy_get_dbus_connection (bus_daemon);
+  /* Exit gracefully (terminate the main loop) on close, rather
+   * than raising SIGTERM, so that valgrind can see our memory leaks */
+  g_dbus_connection_set_exit_on_close (connection, FALSE);
   g_signal_connect (connection, "closed",
       G_CALLBACK (gdbus_closed_cb), mainloop);
 
