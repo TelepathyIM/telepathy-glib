@@ -32,7 +32,7 @@
 
 #define GET_PRIV(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TPL_TYPE_CONF, TplConfPriv))
 
-#define GSETTINGS_SCHEMA "org.freedesktop.Telepathy.Logger"
+#define GSETTINGS_SCHEMA "im.telepathy.v1.Logger"
 #define KEY_ENABLED "enabled"
 
 G_DEFINE_TYPE (TplConf, _tpl_conf, G_TYPE_OBJECT)
