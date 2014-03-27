@@ -1,5 +1,5 @@
 <schemalist>
-  <schema id="org.freedesktop.Telepathy.Logger" path="/apps/telepathy-logger/">
+  <schema id="im.telepathy.v1.Logger" path="/apps/telepathy-logger/">
     <key name="enabled" type="b">
       <default>true</default>
       <_summary>Enable logging</_summary>

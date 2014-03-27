@@ -1,7 +1,7 @@
 if ENABLE_LOGGER
 
 gsettings_files = \
-	org.freedesktop.Telepathy.Logger.gschema.xml.in \
+	im.telepathy.v1.Logger.gschema.xml.in \
 	$(NULL)
 gsettings_SCHEMAS = $(gsettings_files:.xml.in=.xml)
 @INTLTOOL_XML_NOMERGE_RULE@
