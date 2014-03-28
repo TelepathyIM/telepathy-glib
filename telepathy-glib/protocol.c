@@ -47,6 +47,7 @@
 #define DEBUG_FLAG TP_DEBUG_PARAMS
 #include "telepathy-glib/capabilities-internal.h"
 #include "telepathy-glib/cli-misc.h"
+#include "telepathy-glib/client-factory-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/util-internal.h"
@@ -887,6 +888,21 @@ tp_protocol_init (TpProtocol *self)
       TpProtocolPrivate);
 }
 
+gchar *
+_tp_protocol_build_object_path (const gchar *cm_name,
+    const gchar *protocol_name)
+{
+  gchar *object_path;
+
+  object_path = g_strdup_printf ("%s%s/%s", TP_CM_OBJECT_PATH_BASE, cm_name,
+      protocol_name);
+
+  /* e.g. local-xmpp -> local_xmpp */
+  g_strdelimit (object_path, "-", '_');
+
+  return object_path;
+}
+
 /*
  * _tp_protocol_new:
  * @dbus: proxy for the D-Bus daemon; may not be %NULL
@@ -938,10 +954,7 @@ _tp_protocol_new (TpDBusDaemon *dbus,
     goto finally;
 
   bus_name = g_strdup_printf ("%s%s", TP_CM_BUS_NAME_BASE, cm_name);
-  object_path = g_strdup_printf ("%s%s/%s", TP_CM_OBJECT_PATH_BASE, cm_name,
-      protocol_name);
-  /* e.g. local-xmpp -> local_xmpp */
-  g_strdelimit (object_path, "-", '_');
+  object_path = _tp_protocol_build_object_path (cm_name, protocol_name);
 
   ret = TP_PROTOCOL (g_object_new (TP_TYPE_PROTOCOL,
         "dbus-daemon", dbus,

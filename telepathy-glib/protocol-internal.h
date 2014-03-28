@@ -34,6 +34,9 @@ struct _TpConnectionManagerParam
   guint flags;
 };
 
+gchar *_tp_protocol_build_object_path (const gchar *cm_name,
+    const gchar *protocol_name);
+
 TpProtocol * _tp_protocol_new (TpDBusDaemon *dbus,
     TpClientFactory *factory,
     const gchar *cm_name,
