@@ -129,6 +129,7 @@ void tp_client_factory_set_default (TpClientFactory *self);
 gboolean tp_client_factory_can_set_default (void);
 
 TpDBusDaemon *tp_client_factory_get_dbus_daemon (TpClientFactory *self);
+GDBusConnection *tp_client_factory_get_dbus_connection (TpClientFactory *self);
 
 /* TpAccount */
 TpAccount *tp_client_factory_ensure_account (TpClientFactory *self,

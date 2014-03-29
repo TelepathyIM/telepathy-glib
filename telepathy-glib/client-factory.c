@@ -605,6 +605,25 @@ tp_client_factory_get_dbus_daemon (TpClientFactory *self)
 }
 
 /**
+ * tp_client_factory_get_dbus_connection:
+ * @self: a #TpClientFactory object
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer none): the #TpClientFactory:dbus-daemon's
+ *  #GDBusConnection.
+ *
+ * Since: 0.UNRELEASED
+ */
+GDBusConnection *
+tp_client_factory_get_dbus_connection (TpClientFactory *self)
+{
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
+
+  return tp_proxy_get_dbus_connection (self->priv->dbus);
+}
+
+/**
  * tp_client_factory_ensure_account:
  * @self: a #TpClientFactory object
  * @object_path: the object path of an account
