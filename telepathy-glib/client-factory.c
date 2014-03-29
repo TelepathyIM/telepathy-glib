@@ -679,6 +679,33 @@ tp_client_factory_ensure_channel_dispatcher (TpClientFactory *self)
 }
 
 /**
+ * tp_client_factory_dup_logger:
+ * @self: a #TpClientFactory object
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer full): a reference to a #TpLogger singleton.
+ *
+ * Since: 0.UNRELEASED
+ */
+TpLogger *
+tp_client_factory_dup_logger (TpClientFactory *self)
+{
+  TpLogger *logger;
+
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
+
+  logger = lookup_proxy (self, TP_LOGGER_OBJECT_PATH);
+  if (logger != NULL)
+    return g_object_ref (logger);
+
+  logger = _tp_logger_new (self);
+  insert_proxy (self, logger);
+
+  return logger;
+}
+
+/**
  * tp_client_factory_ensure_account:
  * @self: a #TpClientFactory object
  * @object_path: the object path of an account

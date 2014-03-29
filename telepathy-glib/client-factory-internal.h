@@ -90,6 +90,8 @@ TpConnectionManager *_tp_connection_manager_new (TpClientFactory *factory,
     GError **error);
 gchar *_tp_connection_manager_build_object_path (const gchar *name);
 
+TpLogger *_tp_logger_new (TpClientFactory *factory);
+
 G_END_DECLS
 
 #endif

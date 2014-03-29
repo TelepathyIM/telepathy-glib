@@ -36,6 +36,7 @@
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/dbus-daemon.h>
 #include <telepathy-glib/debug-client.h>
+#include <telepathy-glib/logger.h>
 #include <telepathy-glib/protocol.h>
 #include <telepathy-glib/tls-certificate.h>
 
@@ -139,6 +140,7 @@ TpAccountManager *tp_client_factory_ensure_account_manager (
     TpClientFactory *self);
 TpChannelDispatcher *tp_client_factory_ensure_channel_dispatcher (
     TpClientFactory *self);
+TpLogger *tp_client_factory_dup_logger (TpClientFactory *self);
 
 /* TpAccount */
 TpAccount *tp_client_factory_ensure_account (TpClientFactory *self,

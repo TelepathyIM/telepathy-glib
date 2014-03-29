@@ -27,6 +27,7 @@
 #include <telepathy-glib/proxy-subclass.h>
 
 #define DEBUG_FLAG TP_DEBUG_PROXY
+#include "telepathy-glib/client-factory-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/dbus-internal.h"
 
@@ -79,51 +80,45 @@ tp_logger_init (TpLogger *self)
       TP_TYPE_LOGGER, TpLoggerPriv);
 }
 
-static gpointer logger_singleton = NULL;
+TpLogger *
+_tp_logger_new (TpClientFactory *factory)
+{
+  return g_object_new (TP_TYPE_LOGGER,
+      "dbus-daemon", tp_client_factory_get_dbus_daemon (factory),
+      "bus-name", TP_LOGGER_BUS_NAME,
+      "object-path", TP_LOGGER_OBJECT_PATH,
+      "factory", factory,
+      NULL);
+}
 
 /**
  * tp_logger_dup:
  *
- * Returns an logger proxy on the session bus.
- * This logger proxy will always have
- * the result of tp_dbus_daemon_dup() as its #TpProxy:dbus-daemon.
+ * Returns the default #TpClientFactory's #TpLogger. It will use
+ * tp_client_factory_dup(), print a warning and return %NULL if it fails.
  *
- * The returned #TpLogger is cached; the same #TpLogger object
- * will be returned by this function repeatedly, as long as at least one
- * reference exists.
+ * Returns: (transfer full): a reference on a #TpLogger singleton.
  *
- * Returns: (transfer full): an logger proxy on the session
- *          bus, or %NULL if it wasn't possible to get a dbus daemon proxy for
- *          the appropriate bus
-
  * Since: 0.99.8
  */
 TpLogger *
 tp_logger_dup (void)
 {
-  TpDBusDaemon *dbus;
+  TpLogger *self;
+  TpClientFactory *factory;
   GError *error = NULL;
 
-  if (logger_singleton != NULL)
-    g_object_ref (logger_singleton);
-
-  dbus = tp_dbus_daemon_dup (&error);
-  if (dbus == NULL)
+  factory = tp_client_factory_dup (&error);
+  if (factory == NULL)
     {
-      WARNING ("Error getting default TpDBusDaemon: %s", error->message);
+      WARNING ("Error getting default TpClientFactory: %s", error->message);
       g_clear_error (&error);
       return NULL;
     }
 
-  logger_singleton = g_object_new (TP_TYPE_LOGGER,
-      "dbus-daemon", dbus,
-      "bus-name", TP_LOGGER_BUS_NAME,
-      "object-path", TP_LOGGER_OBJECT_PATH,
-      NULL);
+  self = tp_client_factory_dup_logger (factory);
 
-  g_assert (logger_singleton != NULL);
-  g_object_add_weak_pointer (logger_singleton, &logger_singleton);
+  g_object_unref (factory);
 
-  g_object_unref (dbus);
-  return logger_singleton;
+  return self;
 }

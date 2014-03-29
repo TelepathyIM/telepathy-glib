@@ -5730,6 +5730,7 @@ tp_client_factory_get_dbus_connection
 <SUBSECTION>
 tp_client_factory_ensure_account_manager
 tp_client_factory_ensure_channel_dispatcher
+tp_client_factory_dup_logger
 <SUBSECTION>
 tp_client_factory_ensure_account
 tp_client_factory_dup_account_features
