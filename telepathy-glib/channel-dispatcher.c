@@ -33,6 +33,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_DISPATCHER
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/client-factory-internal.h"
 
 /**
  * SECTION:channel-dispatcher
@@ -111,29 +112,15 @@ tp_channel_dispatcher_class_init (TpChannelDispatcherClass *klass)
   proxy_class->interface = TP_IFACE_QUARK_CHANNEL_DISPATCHER;
 }
 
-/**
- * tp_channel_dispatcher_new:
- * @bus_daemon: Proxy for the D-Bus daemon
- *
- * Convenience function to create a new channel dispatcher proxy.
- *
- * Returns: a new reference to a channel dispatcher proxy
- */
 TpChannelDispatcher *
-tp_channel_dispatcher_new (TpDBusDaemon *bus_daemon)
+_tp_channel_dispatcher_new (TpClientFactory *factory)
 {
-  TpChannelDispatcher *self;
-
-  g_return_val_if_fail (bus_daemon != NULL, NULL);
-
-  self = TP_CHANNEL_DISPATCHER (g_object_new (TP_TYPE_CHANNEL_DISPATCHER,
-        "dbus-daemon", bus_daemon,
-        "dbus-connection", tp_proxy_get_dbus_connection (bus_daemon),
+  return TP_CHANNEL_DISPATCHER (g_object_new (TP_TYPE_CHANNEL_DISPATCHER,
+        "dbus-daemon", tp_client_factory_get_dbus_daemon (factory),
         "bus-name", TP_CHANNEL_DISPATCHER_BUS_NAME,
         "object-path", TP_CHANNEL_DISPATCHER_OBJECT_PATH,
+        "factory", factory,
         NULL));
-
-  return self;
 }
 
 static void

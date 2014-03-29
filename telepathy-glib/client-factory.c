@@ -652,6 +652,33 @@ tp_client_factory_ensure_account_manager (TpClientFactory *self)
 }
 
 /**
+ * tp_client_factory_dup_channel_dispatcher:
+ * @self: a #TpClientFactory object
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer full): a reference to a #TpChannelDispatcher singleton.
+ *
+ * Since: 0.UNRELEASED
+ */
+TpChannelDispatcher *
+tp_client_factory_dup_channel_dispatcher (TpClientFactory *self)
+{
+  TpChannelDispatcher *channel_dispatcher;
+
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
+
+  channel_dispatcher = lookup_proxy (self, TP_CHANNEL_DISPATCHER_OBJECT_PATH);
+  if (channel_dispatcher != NULL)
+    return g_object_ref (channel_dispatcher);
+
+  channel_dispatcher = _tp_channel_dispatcher_new (self);
+  insert_proxy (self, channel_dispatcher);
+
+  return channel_dispatcher;
+}
+
+/**
  * tp_client_factory_ensure_account:
  * @self: a #TpClientFactory object
  * @object_path: the object path of an account

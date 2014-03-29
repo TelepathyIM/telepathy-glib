@@ -1268,7 +1268,7 @@ test_present_channel (Test *test,
 {
   TpChannelDispatcher *cd;
 
-  cd = tp_channel_dispatcher_new (test->dbus);
+  cd = tp_client_factory_dup_channel_dispatcher (test->factory);
 
   tp_channel_dispatcher_present_channel_async (cd, test->text_chan,
       TP_USER_ACTION_TIME_CURRENT_TIME, present_channel_cb, test);

@@ -78,6 +78,8 @@ TpTLSCertificate *_tp_tls_certificate_new (TpProxy *conn_or_chan,
 
 TpAccountManager *_tp_account_manager_new (TpClientFactory *factory);
 
+TpChannelDispatcher *_tp_channel_dispatcher_new (TpClientFactory *factory);
+
 G_END_DECLS
 
 #endif

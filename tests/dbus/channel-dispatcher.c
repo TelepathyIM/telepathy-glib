@@ -58,8 +58,12 @@ static void
 test_new (Test *test,
           gconstpointer data G_GNUC_UNUSED)
 {
-  test->cd = tp_channel_dispatcher_new (test->dbus);
+  TpClientFactory *factory;
+
+  factory = tp_client_factory_new (test->dbus);
+  test->cd = tp_client_factory_dup_channel_dispatcher (factory);
   g_assert (test->cd != NULL);
+  g_object_unref (factory);
 }
 
 int

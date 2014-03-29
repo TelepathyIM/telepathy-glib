@@ -28,6 +28,7 @@
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/channel.h>
+#include <telepathy-glib/channel-dispatcher.h>
 #include <telepathy-glib/channel-dispatch-operation.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/connection.h>
@@ -133,6 +134,8 @@ TpDBusDaemon *tp_client_factory_get_dbus_daemon (TpClientFactory *self);
 GDBusConnection *tp_client_factory_get_dbus_connection (TpClientFactory *self);
 
 TpAccountManager *tp_client_factory_ensure_account_manager (
+    TpClientFactory *self);
+TpChannelDispatcher *tp_client_factory_dup_channel_dispatcher (
     TpClientFactory *self);
 
 /* TpAccount */

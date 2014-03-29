@@ -4143,7 +4143,6 @@ tp_cli_account_manager_add_signals
 <TITLE>channel-dispatcher</TITLE>
 TpChannelDispatcher
 TpChannelDispatcherClass
-tp_channel_dispatcher_new
 <SUBSECTION>
 tp_cli_channel_dispatcher_interface_messages1_call_send_message
 tp_cli_channel_dispatcher_interface_messages1_callback_for_send_message
@@ -5731,6 +5730,7 @@ tp_client_factory_get_dbus_daemon
 tp_client_factory_get_dbus_connection
 <SUBSECTION>
 tp_client_factory_ensure_account_manager
+tp_client_factory_dup_channel_dispatcher
 <SUBSECTION>
 tp_client_factory_ensure_account
 tp_client_factory_dup_account_features
