@@ -31,6 +31,7 @@
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_DEBUGGER
+#include "telepathy-glib/client-factory-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/util-internal.h"
@@ -315,22 +316,8 @@ tp_debug_client_list_features (TpProxyClass *klass)
   return features;
 }
 
-/**
- * tp_debug_client_new:
- * @dbus: a D-Bus daemon; may not be %NULL
- * @unique_name: the unique name of the process to be debugged; may not be
- *  %NULL or a well-known name
- * @error: used to raise an error if @unique_name is not valid
- *
- * <!-- -->
- *
- * Returns: a new debug client proxy, or %NULL on invalid arguments
- *
- * Since: 0.19.0
- */
 TpDebugClient *
-tp_debug_client_new (
-    TpDBusDaemon *dbus,
+_tp_debug_client_new (TpClientFactory *factory,
     const gchar *unique_name,
     GError **error)
 {
@@ -339,9 +326,10 @@ tp_debug_client_new (
     return NULL;
 
   return TP_DEBUG_CLIENT (g_object_new (TP_TYPE_DEBUG_CLIENT,
-      "dbus-daemon", dbus,
+      "dbus-daemon", tp_client_factory_get_dbus_daemon (factory),
       "bus-name", unique_name,
       "object-path", TP_DEBUG_OBJECT_PATH,
+      "factory", factory,
       NULL));
 }
 

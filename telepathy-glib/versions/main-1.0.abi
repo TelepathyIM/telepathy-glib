@@ -826,7 +826,6 @@ tp_debug_client_get_messages_async
 tp_debug_client_get_messages_finish
 tp_debug_client_get_type
 tp_debug_client_is_enabled
-tp_debug_client_new
 tp_debug_client_set_enabled_async
 tp_debug_client_set_enabled_finish
 tp_debug_divert_messages

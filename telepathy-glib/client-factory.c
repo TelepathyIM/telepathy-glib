@@ -1776,3 +1776,35 @@ tp_client_factory_add_tls_certificate_features_varargs (
       feature, var_args);
   va_end (var_args);
 }
+
+/**
+ * tp_client_factory_ensure_debug_client:
+ * @self: a #TpClientFactory
+ * @unique_name: the unique name of the process to be debugged; may not be
+ *  %NULL or a well-known name
+ * @error: Used to raise an error
+ *
+ * The returned #TpDebugClient is cached; the same #TpDebugClient object
+ * will be returned by this function repeatedly, as long as at least one
+ * reference exists.
+ *
+ * Note that the returned #TpDebugClient is not guaranteed to be ready; the
+ * caller is responsible for calling tp_proxy_prepare_async() with the desired
+ * features.
+ *
+ * Returns: (transfer full): a reference to a #TpDebugClient,
+ *  or %NULL on invalid arguments.
+ *
+ * Since: 0.UNRELEASED
+ */
+TpDebugClient *
+tp_client_factory_ensure_debug_client (TpClientFactory *self,
+    const gchar *unique_name,
+    GError **error)
+{
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
+
+  /* FIXME: make it unique per @unique_name, can't use self->priv->proxy_cache
+   * in this case. */
+  return _tp_debug_client_new (self, unique_name, error);
+}

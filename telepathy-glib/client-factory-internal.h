@@ -80,6 +80,10 @@ TpAccountManager *_tp_account_manager_new (TpClientFactory *factory);
 
 TpChannelDispatcher *_tp_channel_dispatcher_new (TpClientFactory *factory);
 
+TpDebugClient *_tp_debug_client_new (TpClientFactory *factory,
+    const gchar *unique_name,
+    GError **error);
+
 G_END_DECLS
 
 #endif

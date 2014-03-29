@@ -35,12 +35,6 @@ typedef struct _TpDebugClient TpDebugClient;
 typedef struct _TpDebugClientPrivate TpDebugClientPrivate;
 typedef struct _TpDebugClientClass TpDebugClientClass;
 
-_TP_AVAILABLE_IN_0_20
-TpDebugClient *tp_debug_client_new (
-    TpDBusDaemon *dbus,
-    const gchar *unique_name,
-    GError **error);
-
 #define TP_DEBUG_CLIENT_FEATURE_CORE \
     (tp_debug_client_get_feature_quark_core ())
 _TP_AVAILABLE_IN_0_20

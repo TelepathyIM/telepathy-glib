@@ -36,6 +36,8 @@ static void
 setup (Test *test,
        gconstpointer data)
 {
+  TpClientFactory *factory;
+
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
@@ -44,9 +46,11 @@ setup (Test *test,
   test->sender = tp_debug_sender_dup ();
   g_assert (test->sender != NULL);
 
-  test->client = tp_debug_client_new (test->dbus,
+  factory = tp_client_factory_new (test->dbus);
+  test->client = tp_client_factory_ensure_debug_client (factory,
       tp_dbus_daemon_get_unique_name (test->dbus), &test->error);
   g_assert_no_error (test->error);
+  g_object_unref (factory);
 }
 
 static void

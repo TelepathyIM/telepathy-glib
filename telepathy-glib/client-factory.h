@@ -34,6 +34,7 @@
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/dbus-daemon.h>
+#include <telepathy-glib/debug-client.h>
 #include <telepathy-glib/protocol.h>
 #include <telepathy-glib/tls-certificate.h>
 
@@ -249,6 +250,11 @@ void tp_client_factory_add_tls_certificate_features_varargs (
     TpClientFactory *self,
     GQuark feature,
     ...);
+
+/* TpDebugClient */
+TpDebugClient *tp_client_factory_ensure_debug_client (TpClientFactory *self,
+    const gchar *unique_name,
+    GError **error);
 
 G_END_DECLS
 

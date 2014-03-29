@@ -5765,6 +5765,8 @@ tp_client_factory_ensure_tls_certificate
 tp_client_factory_add_tls_certificate_features
 tp_client_factory_add_tls_certificate_features_varargs
 tp_client_factory_dup_tls_certificate_features
+<SUBSECTION>
+tp_client_factory_ensure_debug_client
 <SUBSECTION Standard>
 TP_IS_CLIENT_FACTORY
 TP_IS_CLIENT_FACTORY_CLASS
@@ -6049,7 +6051,6 @@ TpBaseMediaCallChannelPrivate
 <SUBSECTION>
 TpDebugClient
 TpDebugClientClass
-tp_debug_client_new
 tp_debug_client_set_enabled_async
 tp_debug_client_set_enabled_finish
 tp_debug_client_is_enabled
