@@ -503,8 +503,6 @@ _tp_account_manager_constructed (GObject *object)
 
   g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
 
-  _tp_proxy_ensure_factory (self, NULL);
-
   tp_cli_account_manager_connect_to_account_usability_changed (self,
       _tp_account_manager_usability_changed_cb, NULL,
       NULL, G_OBJECT (self), NULL);
@@ -662,13 +660,13 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
         G_TYPE_STRING); /* stauts message*/
 }
 
-static TpAccountManager *
-_tp_account_manager_new_internal (TpClientFactory *factory,
-    TpDBusDaemon *bus_daemon)
+TpAccountManager *
+_tp_account_manager_new (TpClientFactory *factory)
 {
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (factory), NULL);
+
   return TP_ACCOUNT_MANAGER (g_object_new (TP_TYPE_ACCOUNT_MANAGER,
-          "dbus-daemon", bus_daemon,
-          "dbus-connection", tp_proxy_get_dbus_connection (bus_daemon),
+          "dbus-daemon", tp_client_factory_get_dbus_daemon (factory),
           "bus-name", TP_ACCOUNT_MANAGER_BUS_NAME,
           "object-path", TP_ACCOUNT_MANAGER_OBJECT_PATH,
           "factory", factory,
@@ -676,165 +674,35 @@ _tp_account_manager_new_internal (TpClientFactory *factory,
 }
 
 /**
- * tp_account_manager_new:
- * @bus_daemon: Proxy for the D-Bus daemon
- *
- * Convenience function to create a new account manager proxy. The returned
- * #TpAccountManager is not guaranteed to be prepared on return.
- * Its #TpProxy:factory will be a new #TpAutomaticClientFactory for
- * @bus_daemon.
- *
- * Use tp_account_manager_dup() instead if you want an account manager proxy
- * on the session bus (which is almost always the right thing fo
- * Telepathy).
- *
- * Returns: a new reference to an account manager proxy
- */
-TpAccountManager *
-tp_account_manager_new (TpDBusDaemon *bus_daemon)
-{
-  g_return_val_if_fail (TP_IS_DBUS_DAEMON (bus_daemon), NULL);
-
-  return _tp_account_manager_new_internal (NULL, bus_daemon);
-}
-
-/**
- * tp_account_manager_new_with_factory:
- * @factory: a #TpClientFactory
- *
- * Convenience function to create a new account manager proxy. The returned
- * #TpAccountManager is not guaranteed to be ready on return.
- *
- * Should be used only by applications having their own #TpClientFactory
- * subclass. Usually this should be done at application startup and followed by
- * a call to tp_account_manager_set_default() to ensure other libraries/plugins
- * will use this custom factory as well.
- *
- * Returns: a new reference to an account manager proxy
- */
-TpAccountManager *
-tp_account_manager_new_with_factory (TpClientFactory *factory)
-{
-  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (factory), NULL);
-
-  return _tp_account_manager_new_internal (factory,
-      tp_client_factory_get_dbus_daemon (factory));
-}
-
-static gpointer default_account_manager_proxy = NULL;
-
-/**
- * tp_account_manager_set_default:
- * @manager: a #TpAccountManager
- *
- * Define the #TpAccountManager singleton that will be returned by
- * tp_account_manager_dup().
- *
- * This function may only be called before the first call to
- * tp_account_manager_dup(), and may not be called more than once. Applications
- * which use a custom #TpClientFactory and want the default
- * #TpAccountManager to use that factory should call this after calling
- * tp_account_manager_new_with_factory().
- *
- * Only a weak reference is taken on @manager. It is the caller's responsibility
- * to keep it alive. If @manager is disposed after calling this function, the
- * next call to tp_account_manager_dup() will return a newly created
- * #TpAccountManager.
- *
- * Note that @manager must use the default #TpDBusDaemon as returned by
- * tp_dbus_daemon_dup().
- *
- * Since: 0.15.5
- */
-void
-tp_account_manager_set_default (TpAccountManager *manager)
-{
-  g_return_if_fail (TP_IS_ACCOUNT_MANAGER (manager));
-
-  if (!_tp_dbus_daemon_is_the_shared_one (tp_proxy_get_dbus_daemon (manager)))
-    {
-      CRITICAL ("'manager' must use the TpDBusDaemon returned by"
-          "tp_dbus_daemon_dup()");
-      g_return_if_reached ();
-    }
-
-  if (default_account_manager_proxy != NULL)
-    {
-      CRITICAL ("tp_account_manager_set_default() may only be called once and"
-          "before first call of tp_account_manager_dup()");
-      g_return_if_reached ();
-    }
-
-  default_account_manager_proxy = manager;
-  g_object_add_weak_pointer (default_account_manager_proxy,
-      &default_account_manager_proxy);
-}
-
-/**
- * tp_account_manager_can_set_default:
- *
- * Check if tp_account_manager_set_default() has already successfully been
- * called.
- *
- * Returns: %TRUE if tp_account_manager_set_default() has already successfully
- * been called in this process, %FALSE otherwise.
- *
- * Since: 0.19.6
- */
-gboolean
-tp_account_manager_can_set_default (void)
-{
-  return default_account_manager_proxy == NULL;
-}
-
-/**
  * tp_account_manager_dup:
  *
- * Returns an account manager proxy on the session bus.
- * This account manager will always have
- * the result of tp_dbus_daemon_dup() as its #TpProxy:dbus-daemon.
+ * Returns the default #TpClientFactory's #TpAccountManager. It will use
+ * tp_client_factory_dup(), print a warning and return %NULL if it fails.
  *
- * The returned #TpAccountManager is cached; the same #TpAccountManager object
- * will be returned by this function repeatedly, as long as at least one
- * reference exists. Note that the returned #TpAccountManager is not guaranteed
- * to be ready on return.
- *
- * If tp_account_manager_set_default() has been called successfully,
- * that #TpAccountManager will be returned. Otherwise, a new #TpAccountManager
- * will be created the first time this function is called, using a new
- * #TpAutomaticClientFactory as its #TpProxy:factory.
- *
- * Returns: (transfer full): an account manager proxy on the session
- *          bus, or %NULL if it wasn't possible to get a dbus daemon proxy for
- *          the appropriate bus
+ * Returns: (transfer full): a reference on a #TpAccountManager singleton.
  *
  * Since: 0.9.0
  */
 TpAccountManager *
 tp_account_manager_dup (void)
 {
-  TpDBusDaemon *dbus;
+  TpAccountManager *self;
+  TpClientFactory *factory;
   GError *error = NULL;
 
-  if (default_account_manager_proxy != NULL)
-    return g_object_ref (default_account_manager_proxy);
-
-  dbus = tp_dbus_daemon_dup (&error);
-  if (dbus == NULL)
+  factory = tp_client_factory_dup (&error);
+  if (factory == NULL)
     {
-      WARNING ("Error getting default TpDBusDaemon: %s", error->message);
+      WARNING ("Error getting default TpClientFactory: %s", error->message);
       g_clear_error (&error);
       return NULL;
     }
 
-  default_account_manager_proxy = tp_account_manager_new (dbus);
-  g_assert (default_account_manager_proxy != NULL);
-  g_object_add_weak_pointer (default_account_manager_proxy,
-      &default_account_manager_proxy);
+  self = tp_client_factory_dup_account_manager (factory);
 
-  g_object_unref (dbus);
+  g_object_unref (factory);
 
-  return default_account_manager_proxy;
+  return self;
 }
 
 static void

@@ -47,6 +47,19 @@ typedef struct {
     GError *error /* initialized where needed */;
 } Test;
 
+static TpAccountManager *
+account_manager_new (TpDBusDaemon *dbus)
+{
+  TpClientFactory *factory;
+  TpAccountManager *am;
+
+  factory = tp_client_factory_new (dbus);
+  am = tp_client_factory_dup_account_manager (factory);
+  g_object_unref (factory);
+
+  return am;
+}
+
 /**
   * Functions for manipulating scripts follow this comment.
   * In order to be generally useful, the script should probably be stored in its
@@ -229,7 +242,7 @@ static void
 test_new (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  test->am = tp_account_manager_new (test->dbus);
+  test->am = account_manager_new (test->dbus);
 }
 
 static void
@@ -298,7 +311,7 @@ manager_new_action (gpointer script_data,
 {
   Test *test = (Test *) script_data;
 
-  test->am = tp_account_manager_new (test->dbus);
+  test->am = account_manager_new (test->dbus);
   script_continue (test);
 }
 

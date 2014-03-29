@@ -4084,10 +4084,6 @@ TpAccountRequestPrivate
 <TITLE>account-manager</TITLE>
 TpAccountManager
 TpAccountManagerClass
-tp_account_manager_new
-tp_account_manager_new_with_factory
-tp_account_manager_set_default
-tp_account_manager_can_set_default
 tp_account_manager_dup
 tp_account_manager_create_account_async
 tp_account_manager_create_account_finish
@@ -5733,6 +5729,8 @@ tp_client_factory_set_default
 tp_client_factory_can_set_default
 tp_client_factory_get_dbus_daemon
 tp_client_factory_get_dbus_connection
+<SUBSECTION>
+tp_client_factory_dup_account_manager
 <SUBSECTION>
 tp_client_factory_ensure_account
 tp_client_factory_dup_account_features

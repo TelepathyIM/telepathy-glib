@@ -126,6 +126,7 @@
 #include "telepathy-glib/client-factory.h"
 
 #include <telepathy-glib/automatic-client-factory.h>
+#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
@@ -621,6 +622,33 @@ tp_client_factory_get_dbus_connection (TpClientFactory *self)
   g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
 
   return tp_proxy_get_dbus_connection (self->priv->dbus);
+}
+
+/**
+ * tp_client_factory_dup_account_manager:
+ * @self: a #TpClientFactory object
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer full): a reference to a #TpAccountManager singleton.
+ *
+ * Since: 0.UNRELEASED
+ */
+TpAccountManager *
+tp_client_factory_dup_account_manager (TpClientFactory *self)
+{
+  TpAccountManager *account_manager;
+
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
+
+  account_manager = lookup_proxy (self, TP_ACCOUNT_MANAGER_OBJECT_PATH);
+  if (account_manager != NULL)
+    return g_object_ref (account_manager);
+
+  account_manager = _tp_account_manager_new (self);
+  insert_proxy (self, account_manager);
+
+  return account_manager;
 }
 
 /**

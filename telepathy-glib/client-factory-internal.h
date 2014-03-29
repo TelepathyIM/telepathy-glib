@@ -76,6 +76,8 @@ TpTLSCertificate *_tp_tls_certificate_new (TpProxy *conn_or_chan,
     const gchar *object_path,
     GError **error);
 
+TpAccountManager *_tp_account_manager_new (TpClientFactory *factory);
+
 G_END_DECLS
 
 #endif

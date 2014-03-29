@@ -75,7 +75,7 @@ setup (Test *test,
   tp_dbus_daemon_register_object (test->dbus, ACCOUNT_PATH,
       test->account_service);
 
-  test->account_manager = tp_account_manager_new (test->dbus);
+  test->account_manager = tp_account_manager_dup ();
   g_assert (test->account_manager != NULL);
 
    /* Create client-side Account object */
