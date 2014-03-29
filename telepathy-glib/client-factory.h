@@ -32,6 +32,7 @@
 #include <telepathy-glib/channel-dispatch-operation.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/connection.h>
+#include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/dbus-daemon.h>
 #include <telepathy-glib/debug-client.h>
@@ -256,6 +257,12 @@ TpDebugClient *tp_client_factory_ensure_debug_client (TpClientFactory *self,
     const gchar *unique_name,
     GError **error);
 
+/* TpConnectionManager */
+TpConnectionManager *tp_client_factory_ensure_connection_manager (
+    TpClientFactory *self,
+    const gchar *name,
+    const gchar *manager_filename,
+    GError **error);
 G_END_DECLS
 
 #endif

@@ -82,10 +82,6 @@ struct _TpConnectionManagerClass {
     gpointer *priv;
 };
 
-TpConnectionManager *tp_connection_manager_new (TpDBusDaemon *dbus,
-    const gchar *name, const gchar *manager_filename, GError **error)
-  G_GNUC_WARN_UNUSED_RESULT;
-
 gboolean tp_connection_manager_activate (TpConnectionManager *self);
 
 _TP_AVAILABLE_IN_0_18

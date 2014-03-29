@@ -162,7 +162,7 @@ test (Fixture *f,
 {
   ExampleEcho2ConnectionManager *service_cm;
   TpBaseConnectionManager *service_cm_as_base;
-  TpDBusDaemon *dbus;
+  TpClientFactory *factory;
   TpConnectionManager *cm;
   TpConnection *conn;
   TpChannel *chan;
@@ -183,7 +183,8 @@ test (Fixture *f,
   test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
   g_test_dbus_up (test_dbus);
 
-  dbus = tp_tests_dbus_daemon_dup_or_die ();
+  factory = tp_client_factory_dup (&error);
+  g_assert_no_error (error);
 
   service_cm = EXAMPLE_ECHO_2_CONNECTION_MANAGER (
       tp_tests_object_new_static_class (
@@ -196,7 +197,8 @@ test (Fixture *f,
   ok = tp_base_connection_manager_register (service_cm_as_base);
   g_assert (ok);
 
-  cm = tp_connection_manager_new (dbus, "example_echo_2", NULL, &error);
+  cm = tp_client_factory_ensure_connection_manager (factory, "example_echo_2",
+      NULL, &error);
   g_assert (cm != NULL);
   tp_tests_proxy_run_until_prepared (cm, NULL);
 
@@ -210,7 +212,8 @@ test (Fixture *f,
 
   g_hash_table_unref (parameters);
 
-  conn = tp_tests_connection_new (dbus, name, conn_path, &error);
+  conn = tp_tests_connection_new (tp_client_factory_get_dbus_daemon (factory),
+      name, conn_path, &error);
   MYASSERT (conn != NULL, "");
   g_assert_no_error (error);
 
@@ -793,7 +796,7 @@ test (Fixture *f,
   g_object_unref (chan);
   g_object_unref (conn);
 
-  g_object_unref (dbus);
+  g_object_unref (factory);
   g_free (name);
   g_free (conn_path);
   g_free (chan_path);

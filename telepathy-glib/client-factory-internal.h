@@ -84,6 +84,12 @@ TpDebugClient *_tp_debug_client_new (TpClientFactory *factory,
     const gchar *unique_name,
     GError **error);
 
+TpConnectionManager *_tp_connection_manager_new (TpClientFactory *factory,
+    const gchar *name,
+    const gchar *manager_filename,
+    GError **error);
+gchar *_tp_connection_manager_build_object_path (const gchar *name);
+
 G_END_DECLS
 
 #endif

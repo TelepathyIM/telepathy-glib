@@ -3633,7 +3633,6 @@ tp_list_connection_managers_async
 tp_list_connection_managers_finish
 TpConnectionManager
 TpConnectionManagerClass
-tp_connection_manager_new
 tp_connection_manager_get_name
 TP_CONNECTION_MANAGER_FEATURE_CORE
 TpCMInfoSource
@@ -5767,6 +5766,8 @@ tp_client_factory_add_tls_certificate_features_varargs
 tp_client_factory_dup_tls_certificate_features
 <SUBSECTION>
 tp_client_factory_ensure_debug_client
+<SUBSECTION>
+tp_client_factory_ensure_connection_manager
 <SUBSECTION Standard>
 TP_IS_CLIENT_FACTORY
 TP_IS_CLIENT_FACTORY_CLASS

@@ -389,8 +389,10 @@ tp_connection_manager_get_all_cb (TpProxy *proxy,
 
               if (tp_connection_manager_check_valid_protocol_name (name, NULL))
                 {
-                  TpProtocol *proto_object = _tp_protocol_new (
-                      tp_proxy_get_dbus_daemon (self), NULL, self->priv->name,
+                  TpProtocol *proto_object;
+
+                  proto_object = tp_client_factory_ensure_protocol (
+                      tp_proxy_get_factory (self), self->priv->name,
                       name, tp_asv_to_vardict (v), NULL);
 
                   /* _tp_protocol_new can currently only fail because of
@@ -594,7 +596,7 @@ name_vanished_cb (GDBusConnection *connection,
 }
 
 static gboolean
-tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
+tp_connection_manager_read_file (TpClientFactory *factory,
     const gchar *cm_name,
     const gchar *filename,
     GHashTable **protocols_out,
@@ -636,7 +638,7 @@ tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
       if (immutables == NULL)
         continue;
 
-      proto_object = _tp_protocol_new (dbus_daemon, NULL, cm_name, name,
+      proto_object = tp_client_factory_ensure_protocol (factory, cm_name, name,
           tp_asv_to_vardict (immutables), NULL);
       g_assert (proto_object != NULL);
 
@@ -682,7 +684,7 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
           DEBUG ("%s: reading %s", self->priv->name, self->priv->manager_file);
 
           if (!tp_connection_manager_read_file (
-              tp_proxy_get_dbus_daemon (self),
+              tp_proxy_get_factory (self),
               self->priv->name, self->priv->manager_file, &protocols, &interfaces,
               &error))
             {
@@ -1109,23 +1111,14 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
       G_TYPE_NONE, 1, G_TYPE_UINT);
 }
 
-/**
- * tp_connection_manager_new:
- * @dbus: Proxy for the D-Bus daemon
- * @name: The connection manager name (such as "gabble")
- * @manager_filename: (allow-none): The #TpConnectionManager:manager-file
- *  property, which may (and generally should) be %NULL.
- * @error: used to return an error if %NULL is returned
- *
- * Convenience function to create a new connection manager proxy. If
- * its protocol and parameter information are required, you should call
- * tp_proxy_prepare_async() on the result.
- *
- * Returns: a new reference to a connection manager proxy, or %NULL if @error
- *          is set.
- */
+gchar *
+_tp_connection_manager_build_object_path (const gchar *name)
+{
+  return g_strdup_printf ("%s%s", TP_CM_OBJECT_PATH_BASE, name);
+}
+
 TpConnectionManager *
-tp_connection_manager_new (TpDBusDaemon *dbus,
+_tp_connection_manager_new (TpClientFactory *factory,
                            const gchar *name,
                            const gchar *manager_filename,
                            GError **error)
@@ -1133,21 +1126,21 @@ tp_connection_manager_new (TpDBusDaemon *dbus,
   TpConnectionManager *cm;
   gchar *object_path, *bus_name;
 
-  g_return_val_if_fail (dbus != NULL, NULL);
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (factory), NULL);
   g_return_val_if_fail (name != NULL, NULL);
 
   if (!tp_connection_manager_check_valid_name (name, error))
     return NULL;
 
-  object_path = g_strdup_printf ("%s%s", TP_CM_OBJECT_PATH_BASE, name);
+  object_path = _tp_connection_manager_build_object_path (name);
   bus_name = g_strdup_printf ("%s%s", TP_CM_BUS_NAME_BASE, name);
 
   cm = TP_CONNECTION_MANAGER (g_object_new (TP_TYPE_CONNECTION_MANAGER,
-        "dbus-daemon", dbus,
-        "dbus-connection", tp_proxy_get_dbus_connection (dbus),
+        "dbus-daemon", tp_client_factory_get_dbus_daemon (factory),
         "bus-name", bus_name,
         "object-path", object_path,
         "manager-file", manager_filename,
+        "factory", factory,
         NULL));
 
   g_free (object_path);
@@ -1302,9 +1295,8 @@ handle_list_names_reply (GTask *task,
 
       /* just ignore connection managers with bad names */
       cm_name = *iter + strlen (TP_CM_BUS_NAME_BASE);
-      cm = tp_connection_manager_new (
-          tp_client_factory_get_dbus_daemon (data->factory), cm_name, NULL,
-          NULL);
+      cm = tp_client_factory_ensure_connection_manager (data->factory, cm_name,
+          NULL, NULL);
       if (cm == NULL)
         continue;
 
@@ -1388,6 +1380,9 @@ out:
  * List the available (running or installed) connection managers,
  * asynchronously, and wait for their %TP_CONNECTION_MANAGER_FEATURE_CORE
  * feature to be ready.
+ *
+ * @factory will be used to create the #TpConnectionManager objects using
+ * tp_client_factory_ensure_connection_manager().
  *
  * Since: 0.17.6
  */

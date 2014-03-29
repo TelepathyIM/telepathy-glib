@@ -78,11 +78,14 @@ setup (Test *test,
   guint video = TP_MEDIA_STREAM_TYPE_VIDEO;
   guint not_a_media_type = 31337;
   GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+  GError *error = NULL;
 
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->factory = tp_client_factory_dup (&error);
+  g_assert_no_error (error);
 
   test->service_cm = EXAMPLE_CALL_CONNECTION_MANAGER (
       tp_tests_object_new_static_class (
@@ -95,8 +98,8 @@ setup (Test *test,
   ok = tp_base_connection_manager_register (service_cm_as_base);
   g_assert (ok);
 
-  test->cm = tp_connection_manager_new (test->dbus, "example_call",
-      NULL, &test->error);
+  test->cm = tp_client_factory_ensure_connection_manager (test->factory,
+      "example_call", NULL, &test->error);
   g_assert (test->cm != NULL);
   tp_tests_proxy_run_until_prepared (test->cm, NULL);
 
@@ -110,8 +113,6 @@ setup (Test *test,
   tp_cli_connection_manager_run_request_connection (test->cm, -1,
       "example", parameters, &bus_name, &object_path, &test->error, NULL);
   g_assert_no_error (test->error);
-
-  test->factory = tp_automatic_client_factory_new (test->dbus);
 
   test->conn = tp_client_factory_ensure_connection (test->factory,
       object_path, NULL, &test->error);

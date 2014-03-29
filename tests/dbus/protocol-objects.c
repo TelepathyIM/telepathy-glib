@@ -62,16 +62,16 @@ setup (Test *test,
   ok = tp_base_connection_manager_register (service_cm_as_base);
   g_assert (ok);
 
-  test->cm = tp_connection_manager_new (test->dbus, "example_echo_2",
-      NULL, &test->error);
+  test->cm = tp_client_factory_ensure_connection_manager (test->factory,
+      "example_echo_2", NULL, &test->error);
   g_assert (test->cm != NULL);
   tp_tests_proxy_run_until_prepared (test->cm, NULL);
 
   ok = tp_base_connection_manager_register (service_cm_as_base);
   g_assert (ok);
 
-  test->file_cm = tp_connection_manager_new (test->dbus, "test_manager_file",
-      NULL, &test->error);
+  test->file_cm = tp_client_factory_ensure_connection_manager (test->factory,
+      "test_manager_file", NULL, &test->error);
   g_assert (test->file_cm != NULL);
   tp_tests_proxy_run_until_prepared (test->file_cm, NULL);
 }
@@ -623,18 +623,18 @@ test_factory (Test *test,
   GArray *arr;
 
   p1 = tp_client_factory_ensure_protocol (test->factory,
-      "example_echo_2", "example", NULL, NULL);
+      "example_echo_3", "example", NULL, NULL);
   g_assert (TP_IS_PROTOCOL (p1));
 
   p2 = tp_client_factory_ensure_protocol (test->factory,
-      "example_echo_2", "example", NULL, NULL);
+      "example_echo_3", "example", NULL, NULL);
   g_assert (p1 == p2);
 
   g_object_unref (p1);
   g_object_unref (p2);
 
   p3 = tp_client_factory_ensure_protocol (test->factory,
-      "example_echo_2", "example", NULL, NULL);
+      "example_echo_3", "example", NULL, NULL);
   g_assert (TP_IS_PROTOCOL (p3));
   /* the object has been removed from the cache */
   g_assert (p3 != p1);

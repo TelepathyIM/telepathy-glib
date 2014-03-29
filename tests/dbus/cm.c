@@ -214,8 +214,8 @@ test_nothing_got_info (Test *test,
   GError *error = NULL;
   gulong id;
 
-  test->cm = tp_connection_manager_new (test->dbus, "not_actually_there",
-      NULL, &error);
+  test->cm = tp_client_factory_ensure_connection_manager (test->factory,
+      "not_actually_there", NULL, &error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (error);
 
@@ -263,8 +263,8 @@ test_file_got_info (Test *test,
   gboolean ok;
   GVariant *variant;
 
-  test->cm = tp_connection_manager_new (test->dbus, "spurious",
-      NULL, &error);
+  test->cm = tp_client_factory_ensure_connection_manager (test->factory,
+      "spurious", NULL, &error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (error);
 
@@ -390,8 +390,8 @@ test_complex_file_got_info (Test *test,
   GList *protocols;
   GValue value = {0, };
 
-  test->cm = tp_connection_manager_new (test->dbus, "test_manager_file",
-      NULL, &error);
+  test->cm = tp_client_factory_ensure_connection_manager (test->factory,
+      "test_manager_file", NULL, &error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (error);
 
@@ -793,7 +793,7 @@ test_dbus_got_info (Test *test,
   GError *error = NULL;
   gulong id;
 
-  test->cm = tp_connection_manager_new (test->dbus,
+  test->cm = tp_client_factory_ensure_connection_manager (test->factory,
       TP_BASE_CONNECTION_MANAGER_GET_CLASS (test->service_cm)->cm_dbus_name,
       NULL, &error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
@@ -814,8 +814,8 @@ test_nothing_ready (Test *test,
   guint info_source;
 
   test->error = NULL;
-  test->cm = tp_connection_manager_new (test->dbus, "nonexistent_cm",
-      NULL, &test->error);
+  test->cm = tp_client_factory_ensure_connection_manager (test->factory,
+      "nonexistent_cm", NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (test->error);
 
@@ -852,8 +852,8 @@ test_file_ready (Test *test,
   GList *l;
 
   test->error = NULL;
-  test->cm = tp_connection_manager_new (test->dbus, "spurious",
-      NULL, &test->error);
+  test->cm = tp_client_factory_ensure_connection_manager (test->factory,
+      "spurious", NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (test->error);
 
@@ -893,8 +893,8 @@ test_complex_file_ready (Test *test,
   guint info_source;
 
   test->error = NULL;
-  test->cm = tp_connection_manager_new (test->dbus, "test_manager_file",
-      NULL, &test->error);
+  test->cm = tp_client_factory_ensure_connection_manager (test->factory,
+      "test_manager_file", NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert_no_error (test->error);
 
@@ -937,7 +937,7 @@ test_dbus_ready (Test *test,
   GList *l;
 
   test->error = NULL;
-  test->cm = tp_connection_manager_new (test->dbus,
+  test->cm = tp_client_factory_ensure_connection_manager (test->factory,
       TP_BASE_CONNECTION_MANAGER_GET_CLASS (test->service_cm)->cm_dbus_name,
       NULL, &test->error);
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));

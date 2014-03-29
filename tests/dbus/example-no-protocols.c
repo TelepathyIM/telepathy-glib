@@ -105,7 +105,7 @@ test (Fixture *f,
 {
   GMainLoop *mainloop;
   TpConnectionManager *early_cm, *late_cm;
-  TpDBusDaemon *dbus_daemon;
+  TpClientFactory *factory;
   gulong handler;
   GError *error = NULL;
   gboolean saw_exited;
@@ -126,12 +126,13 @@ test (Fixture *f,
 
   mainloop = g_main_loop_new (NULL, FALSE);
 
-  dbus_daemon = tp_tests_dbus_daemon_dup_or_die ();
+  factory = tp_client_factory_dup (&error);
+  g_assert_no_error (error);
 
   /* First try making a TpConnectionManager before the CM is available. This
    * will fail. */
-  early_cm = tp_connection_manager_new (dbus_daemon, "example_no_protocols",
-      NULL, NULL);
+  early_cm = tp_client_factory_ensure_connection_manager (factory,
+      "example_no_protocols", NULL, NULL);
   g_assert (early_cm != NULL);
 
   /* Failure to introspect is signalled as 'exited' */
@@ -158,7 +159,7 @@ test (Fixture *f,
   /* Now start the connection manager and wait for it to start */
   prepare ();
   name_owner_watch = g_bus_watch_name_on_connection (
-      tp_proxy_get_dbus_connection (dbus_daemon),
+      tp_client_factory_get_dbus_connection (factory),
       TP_CM_BUS_NAME_BASE "example_no_protocols",
       G_BUS_NAME_WATCHER_FLAGS_NONE,
       wait_for_name_owner_cb, NULL,
@@ -167,8 +168,8 @@ test (Fixture *f,
   g_bus_unwatch_name (name_owner_watch);
 
   /* This TpConnectionManager works fine. */
-  late_cm = tp_connection_manager_new (dbus_daemon, "example_no_protocols",
-      NULL, NULL);
+  late_cm = tp_client_factory_ensure_connection_manager (factory,
+      "example_no_protocols", NULL, NULL);
   g_assert (late_cm != NULL);
 
   handler = g_signal_connect (late_cm, "got-info",
@@ -182,7 +183,7 @@ test (Fixture *f,
 
   g_object_unref (late_cm);
   g_object_unref (early_cm);
-  g_object_unref (dbus_daemon);
+  g_object_unref (factory);
   g_main_loop_unref (mainloop);
 
   g_test_dbus_down (test_dbus);

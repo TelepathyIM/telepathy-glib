@@ -1808,3 +1808,58 @@ tp_client_factory_ensure_debug_client (TpClientFactory *self,
    * in this case. */
   return _tp_debug_client_new (self, unique_name, error);
 }
+
+/**
+ * tp_client_factory_ensure_connection_manager:
+ * @self: a #TpClientFactory
+ * @name: The connection manager name (such as "gabble")
+ * @manager_filename: (allow-none): The #TpConnectionManager:manager-file
+ *  property, which may (and generally should) be %NULL.
+ * @error: Used to raise an error
+ *
+ * The returned #TpConnectionManager is cached; the same #TpConnectionManager
+ * object will be returned by this function repeatedly, as long as at least one
+ * reference exists.
+ *
+ * Note that the returned #TpConnectionManager is not guaranteed to be ready;
+ * the caller is responsible for calling tp_proxy_prepare_async() with the
+ * desired features.
+ *
+ * Returns: (transfer full): a reference to a #TpConnectionManager,
+ *  or %NULL on invalid arguments.
+ *
+ * Since: UNRELEASED
+ */
+TpConnectionManager *
+tp_client_factory_ensure_connection_manager (TpClientFactory *self,
+    const gchar *name,
+    const gchar *manager_filename,
+    GError **error)
+{
+  TpConnectionManager *cm;
+  gchar *object_path;
+
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
+
+  object_path = _tp_connection_manager_build_object_path (name);
+  cm = lookup_proxy (self, object_path);
+  if (cm != NULL)
+    {
+      g_object_ref (cm);
+    }
+  else
+    {
+      cm = _tp_connection_manager_new (self, name, manager_filename, error);
+
+      if (cm != NULL)
+        {
+          g_assert (g_str_equal (tp_proxy_get_object_path (cm),
+              object_path));
+          insert_proxy (self, cm);
+        }
+    }
+
+  g_free (object_path);
+
+  return cm;
+}

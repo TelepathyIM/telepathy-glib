@@ -253,7 +253,8 @@ main (int argc,
       cm_name = argv[1];
       manager_file = argv[2];   /* possibly NULL */
 
-      cm = tp_connection_manager_new (dbus, cm_name, manager_file, &error);
+      cm = tp_client_factory_ensure_connection_manager (factory, cm_name,
+          manager_file, &error);
 
       if (cm == NULL)
         {
