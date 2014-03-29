@@ -124,6 +124,9 @@ GType tp_client_factory_get_type (void);
                               TpClientFactoryClass))
 
 TpClientFactory * tp_client_factory_new (TpDBusDaemon *dbus);
+TpClientFactory * tp_client_factory_dup (GError **error);
+void tp_client_factory_set_default (TpClientFactory *self);
+gboolean tp_client_factory_can_set_default (void);
 
 TpDBusDaemon *tp_client_factory_get_dbus_daemon (TpClientFactory *self);
 

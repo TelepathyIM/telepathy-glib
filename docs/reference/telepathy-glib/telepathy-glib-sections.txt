@@ -5728,6 +5728,9 @@ tp_cli_call_stream_endpoint_add_signals
 TpClientFactory
 TpClientFactoryClass
 tp_client_factory_new
+tp_client_factory_dup
+tp_client_factory_set_default
+tp_client_factory_can_set_default
 tp_client_factory_get_dbus_daemon
 <SUBSECTION>
 tp_client_factory_ensure_account

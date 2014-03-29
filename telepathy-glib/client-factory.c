@@ -125,6 +125,7 @@
 
 #include "telepathy-glib/client-factory.h"
 
+#include <telepathy-glib/automatic-client-factory.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
@@ -482,6 +483,106 @@ tp_client_factory_new (TpDBusDaemon *dbus)
   return g_object_new (TP_TYPE_CLIENT_FACTORY,
       "dbus-daemon", dbus,
       NULL);
+}
+
+static GWeakRef singleton;
+
+/**
+ * tp_client_factory_dup:
+ * @error: Used to raise an error if getting the session #GDBusConnection fails
+ *
+ * Get a reference to a #TpClientFactory singleton. It can fail and block only
+ * if the session #GDBusConnection singleton doesn't exist yet. It is thus
+ * recommended to call g_bus_get() before using a #TpClientFactory if the
+ * application must not block.
+ *
+ * By default it will create a #TpAutomaticClientFactory.
+ *
+ * Returns: (transfer full): a reference to a #TpClientFactory singleton.
+ * Since: 0.UNRELEASED
+ */
+TpClientFactory *
+tp_client_factory_dup (GError **error)
+{
+  TpClientFactory *self;
+
+  self = g_weak_ref_get (&singleton);
+  if (self == NULL)
+    {
+      TpDBusDaemon *dbus;
+
+      dbus = tp_dbus_daemon_dup (error);
+      if (dbus == NULL)
+        return NULL;
+
+      self = tp_automatic_client_factory_new (dbus);
+      g_weak_ref_set (&singleton, self);
+      g_object_unref (dbus);
+    }
+
+  return self;
+}
+
+/**
+ * tp_client_factory_set_default:
+ * @self: a #TpClientFactory
+ *
+ * Define the #TpClientFactory singleton that will be returned by
+ * tp_client_factory_dup().
+ *
+ * This function may only be called before the first call to
+ * tp_client_factory_dup(), and may not be called more than once. Applications
+ * which use a custom #TpClientFactory and want it to be the default factory
+ * should call this.
+ *
+ * Only a weak reference is taken on @self. It is the caller's responsibility
+ * to keep it alive. If @self is disposed after calling this function, the
+ * next call to tp_client_factory_dup() will return a newly created
+ * #TpClientFactory.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_client_factory_set_default (TpClientFactory *self)
+{
+  TpClientFactory *tmp;
+
+  g_return_if_fail (TP_IS_CLIENT_FACTORY (self));
+
+  tmp = g_weak_ref_get (&singleton);
+  if (tmp != NULL)
+    {
+      CRITICAL ("tp_client_factory_set_default() may only be called once and"
+          "before first call of tp_client_factory_dup()");
+      g_object_unref (tmp);
+      g_return_if_reached ();
+    }
+
+  g_weak_ref_set (&singleton, self);
+}
+
+/**
+ * tp_client_factory_can_set_default:
+ *
+ * Check if tp_client_factory_set_default() has already successfully been
+ * called.
+ *
+ * Returns: %TRUE if tp_client_factory_set_default() has already successfully
+ * been called in this process, %FALSE otherwise.
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_client_factory_can_set_default (void)
+{
+  TpClientFactory *tmp;
+  gboolean ret;
+
+  tmp = g_weak_ref_get (&singleton);
+  ret = (tmp == NULL);
+  g_clear_object (&tmp);
+
+  return ret;
 }
 
 /**
