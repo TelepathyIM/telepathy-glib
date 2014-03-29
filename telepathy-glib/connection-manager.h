@@ -89,7 +89,7 @@ TpConnectionManager *tp_connection_manager_new (TpDBusDaemon *dbus,
 gboolean tp_connection_manager_activate (TpConnectionManager *self);
 
 _TP_AVAILABLE_IN_0_18
-void tp_list_connection_managers_async (TpDBusDaemon *dbus_daemon,
+void tp_list_connection_managers_async (TpClientFactory *factory,
     GAsyncReadyCallback callback,
     gpointer user_data);
 _TP_AVAILABLE_IN_0_18

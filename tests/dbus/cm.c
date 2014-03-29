@@ -31,6 +31,7 @@ typedef ExampleEcho2ConnectionManagerClass MyConnectionManagerClass;
 typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
+    TpClientFactory *factory;
     MyConnectionManager *service_cm;
 
     TpConnectionManager *cm;
@@ -123,6 +124,7 @@ setup (Test *test,
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->factory = tp_client_factory_new (test->dbus);
 
   test->service_cm = tp_tests_object_new_static_class (
       my_connection_manager_get_type (),
@@ -143,6 +145,7 @@ teardown (Test *test,
 {
   g_clear_object (&test->service_cm);
   g_clear_object (&test->dbus);
+  g_clear_object (&test->factory);
   g_clear_object (&test->cm);
   g_clear_object (&test->echo);
   g_clear_object (&test->spurious);
@@ -1016,7 +1019,7 @@ test_list (Test *test,
   GAsyncResult *res = NULL;
   GList *cms;
 
-  tp_list_connection_managers_async (test->dbus, tp_tests_result_ready_cb,
+  tp_list_connection_managers_async (test->factory, tp_tests_result_ready_cb,
       &res);
   tp_tests_run_until_result (&res);
 

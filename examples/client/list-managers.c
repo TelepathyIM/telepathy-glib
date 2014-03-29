@@ -58,6 +58,7 @@ main (int argc,
 {
   ExampleData data = { g_main_loop_new (NULL, FALSE), 0 };
   TpDBusDaemon *bus_daemon;
+  TpClientFactory *factory;
   GError *error = NULL;
 
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
@@ -72,8 +73,10 @@ main (int argc,
       goto out;
     }
 
-  tp_list_connection_managers_async (bus_daemon,
+  factory = tp_client_factory_new (bus_daemon);
+  tp_list_connection_managers_async (factory,
       got_connection_managers, &data);
+  g_object_unref (factory);
 
   g_main_loop_run (data.mainloop);
 

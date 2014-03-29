@@ -227,10 +227,10 @@ main (int argc,
       char **argv)
 {
   const gchar *cm_name, *manager_file;
+  TpClientFactory *factory = NULL;
   TpConnectionManager *cm = NULL;
   GMainLoop *mainloop = NULL;
   GError *error = NULL;
-  TpDBusDaemon *dbus = NULL;
   int ret = 1;
 
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
@@ -238,9 +238,8 @@ main (int argc,
   if (g_getenv ("EXAMPLE_TIMING") != NULL)
     g_log_set_default_handler (tp_debug_timestamped_log_handler, NULL);
 
-  dbus = tp_dbus_daemon_dup (&error);
-
-  if (dbus == NULL)
+  factory = tp_client_factory_dup (&error);
+  if (factory == NULL)
     {
       g_warning ("%s", error->message);
       g_error_free (error);
@@ -267,7 +266,7 @@ main (int argc,
     }
   else
     {
-      tp_list_connection_managers_async (dbus, list_cb, mainloop);
+      tp_list_connection_managers_async (factory, list_cb, mainloop);
     }
 
   g_main_loop_run (mainloop);
@@ -280,8 +279,8 @@ out:
   if (mainloop != NULL)
     g_main_loop_unref (mainloop);
 
-  if (dbus != NULL)
-    g_object_unref (dbus);
+  if (factory != NULL)
+    g_object_unref (factory);
 
   return ret;
 }

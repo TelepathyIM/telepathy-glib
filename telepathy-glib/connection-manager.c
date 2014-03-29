@@ -39,6 +39,7 @@
 #include "telepathy-glib/variant-util.h"
 
 #define DEBUG_FLAG TP_DEBUG_MANAGER
+#include "telepathy-glib/client-factory-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/protocol-internal.h"
 #include "telepathy-glib/util-internal.h"
@@ -1213,19 +1214,19 @@ tp_connection_manager_activate (TpConnectionManager *self)
 
 typedef struct
 {
-  TpDBusDaemon *dbus_daemon;
+  TpClientFactory *factory;
   /* name -> TpConnectionManager */
   GHashTable *cms;
   guint n_operations;
 } ListCMSData;
 
 static ListCMSData *
-list_cms_data_new (TpDBusDaemon *dbus_daemon)
+list_cms_data_new (TpClientFactory *factory)
 {
   ListCMSData *data;
 
   data = g_slice_new0 (ListCMSData);
-  data->dbus_daemon = g_object_ref (dbus_daemon);
+  data->factory = g_object_ref (factory);
   data->cms = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, g_object_unref);
 
@@ -1235,7 +1236,7 @@ list_cms_data_new (TpDBusDaemon *dbus_daemon)
 static void
 list_cms_data_free (ListCMSData *data)
 {
-  g_object_unref (data->dbus_daemon);
+  g_object_unref (data->factory);
   g_hash_table_unref (data->cms);
   g_slice_free (ListCMSData, data);
 }
@@ -1301,7 +1302,9 @@ handle_list_names_reply (GTask *task,
 
       /* just ignore connection managers with bad names */
       cm_name = *iter + strlen (TP_CM_BUS_NAME_BASE);
-      cm = tp_connection_manager_new (data->dbus_daemon, cm_name, NULL, NULL);
+      cm = tp_connection_manager_new (
+          tp_client_factory_get_dbus_daemon (data->factory), cm_name, NULL,
+          NULL);
       if (cm == NULL)
         continue;
 
@@ -1378,7 +1381,7 @@ out:
 
 /**
  * tp_list_connection_managers_async:
- * @dbus_daemon: a #TpDBusDaemon
+ * @factory: a #TpClientFactory
  * @callback: a callback to call with a list of CMs
  * @user_data: data to pass to @callback
  *
@@ -1389,7 +1392,7 @@ out:
  * Since: 0.17.6
  */
 void
-tp_list_connection_managers_async (TpDBusDaemon *dbus_daemon,
+tp_list_connection_managers_async (TpClientFactory *factory,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -1398,10 +1401,10 @@ tp_list_connection_managers_async (TpDBusDaemon *dbus_daemon,
 
   task = g_task_new (NULL, NULL, callback, user_data);
 
-  data = list_cms_data_new (dbus_daemon);
+  data = list_cms_data_new (factory);
   g_task_set_task_data (task, data, (GDestroyNotify) list_cms_data_free);
 
-  g_dbus_connection_call (tp_proxy_get_dbus_connection (dbus_daemon),
+  g_dbus_connection_call (tp_client_factory_get_dbus_connection (factory),
       "org.freedesktop.DBus", "/", "org.freedesktop.DBus",
       "ListActivatableNames",
       g_variant_new ("()"),

@@ -17,6 +17,7 @@
 typedef struct {
   GMainLoop *mainloop;
   TpDBusDaemon *dbus;
+  TpClientFactory *factory;
   GError *error;
 } Test;
 
@@ -28,6 +29,7 @@ setup (Test *test,
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->factory = tp_client_factory_new (test->dbus);
 
   test->error = NULL;
 }
@@ -37,6 +39,7 @@ teardown (Test *test,
           gconstpointer data)
 {
   g_clear_object (&test->dbus);
+  g_clear_object (&test->factory);
   g_main_loop_unref (test->mainloop);
   test->mainloop = NULL;
 }
@@ -48,7 +51,7 @@ test_list_cm_no_cm (Test *test,
   GAsyncResult *res = NULL;
   GList *cms;
 
-  tp_list_connection_managers_async (test->dbus, tp_tests_result_ready_cb,
+  tp_list_connection_managers_async (test->factory, tp_tests_result_ready_cb,
       &res);
   tp_tests_run_until_result (&res);
   cms = tp_list_connection_managers_finish (res, &test->error);
