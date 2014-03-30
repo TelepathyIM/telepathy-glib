@@ -849,6 +849,7 @@ process_media_description (TfCallContent *self,
       "dbus-daemon", tp_proxy_get_dbus_daemon (self->proxy),
       "bus-name", tp_proxy_get_bus_name (self->proxy),
       "object-path", media_description_objpath,
+      "factory", tp_proxy_get_factory (self->proxy),
       NULL);
   tp_proxy_add_interface_by_id (TP_PROXY (proxy),
       TP_IFACE_QUARK_CALL1_CONTENT_MEDIA_DESCRIPTION);

@@ -915,6 +915,7 @@ tf_call_stream_add_endpoint (TfCallStream *self, const gchar *obj_path)
       "dbus-daemon", tp_proxy_get_dbus_daemon (self->proxy),
       "bus-name", tp_proxy_get_bus_name (self->proxy),
       "object-path", self->endpoint_objpath,
+      "factory", tp_proxy_get_factory (self->proxy),
       NULL);
   tp_proxy_add_interface_by_id (TP_PROXY (self->endpoint),
       TP_IFACE_QUARK_CALL1_STREAM_ENDPOINT);
