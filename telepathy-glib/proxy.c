@@ -1208,27 +1208,6 @@ tp_proxy_get_factory (gpointer self)
   return proxy->priv->factory;
 }
 
-void
-_tp_proxy_ensure_factory (gpointer proxy,
-    TpClientFactory *factory)
-{
-  TpProxy *self = TP_PROXY (proxy);
-
-  if (self->priv->factory != NULL)
-    return;
-
-  if (factory != NULL)
-    {
-      self->priv->factory = g_object_ref (factory);
-    }
-  else
-    {
-      self->priv->factory = tp_automatic_client_factory_new (self->priv->dbus_daemon);
-    }
-
-  _tp_client_factory_insert_proxy (self->priv->factory, self);
-}
-
 /**
  * tp_proxy_get_dbus_daemon:
  * @self: a #TpProxy or subclass

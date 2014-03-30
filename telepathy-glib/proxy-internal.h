@@ -114,9 +114,6 @@ gboolean _tp_proxy_will_announce_connected_finish (TpProxy *self,
     GAsyncResult *result,
     GError **error);
 
-void _tp_proxy_ensure_factory (gpointer self,
-    TpClientFactory *factory);
-
 void _tp_proxy_add_signal_connection (TpProxy *self,
     TpProxySignalConnection *sc);
 void _tp_proxy_remove_signal_connection (TpProxy *self,
