@@ -390,6 +390,7 @@ run_until_active_get_all_cb (TpProxy *proxy,
           "dbus-daemon", tp_proxy_get_dbus_daemon (proxy),
           "bus-name", tp_proxy_get_bus_name (proxy),
           "object-path", object_path,
+          "factory", tp_proxy_get_factory (proxy),
           NULL);
       tp_proxy_add_interface_by_id (endpoint,
           TP_IFACE_QUARK_CALL1_STREAM_ENDPOINT);

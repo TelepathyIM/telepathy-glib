@@ -145,7 +145,7 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
 {
   TpTestsSimpleChannelRequest *self = SIMPLE_CHANNEL_REQUEST (request);
   TpClient *client;
-  TpDBusDaemon *dbus;
+  TpClientFactory *factory;
   gchar *client_path;
   GHashTable *satisfied, *info;
   TpBaseConnection *base_conn = (TpBaseConnection *) self->priv->conn;
@@ -202,13 +202,14 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
   client_path = g_strdelimit (g_strdup_printf ("/%s",
         self->priv->preferred_handler), ".", '/');
 
-  dbus = tp_dbus_daemon_dup (NULL);
-  g_assert (dbus != NULL);
+  factory = tp_client_factory_dup (NULL);
+  g_assert (factory != NULL);
 
   client = tp_tests_object_new_static_class (TP_TYPE_CLIENT,
-          "dbus-daemon", dbus,
+          "dbus-daemon", tp_client_factory_get_dbus_daemon (factory),
           "bus-name", self->priv->preferred_handler,
           "object-path", client_path,
+          "factory", factory,
           NULL);
 
   tp_proxy_add_interface_by_id (TP_PROXY (client), TP_IFACE_QUARK_CLIENT);
@@ -237,7 +238,7 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
   g_hash_table_unref (satisfied);
   g_hash_table_unref (info);
   g_hash_table_unref (chan_props);
-  g_object_unref (dbus);
+  g_object_unref (factory);
   g_object_unref (client);
 }
 

@@ -111,6 +111,7 @@ setup (Test *test,
           "dbus-daemon", test->dbus,
           "bus-name", tp_base_client_get_bus_name (test->base_client),
           "object-path", tp_base_client_get_object_path (test->base_client),
+          "factory", test->factory,
           NULL);
 
   g_assert (test->client != NULL);

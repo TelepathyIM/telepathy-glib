@@ -856,6 +856,7 @@ test_handle_delegated (Test *test,
       "dbus-daemon", tp_base_client_get_dbus_daemon (base_client),
       "bus-name", tp_base_client_get_bus_name (base_client),
       "object-path",  tp_base_client_get_object_path (base_client),
+      "factory", tp_proxy_get_factory (test->account),
       NULL);
 
   tp_proxy_add_interface_by_id (TP_PROXY (client),

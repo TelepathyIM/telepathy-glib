@@ -45,12 +45,12 @@ enum {
 typedef struct {
     GTestDBus *test_dbus;
 
-    TpDBusDaemon *dbus_daemon;
+    TpClientFactory *factory;
     TpProxy *proxies[N_PROXIES];
     GObject *cd_service;
 
     GDBusConnection *private_gdbus;
-    TpDBusDaemon *private_dbus_daemon;
+    TpClientFactory *private_factory;
 
     gboolean had_last_reply;
 } Fixture;
@@ -173,6 +173,9 @@ static void
 setup (Fixture *f,
     gconstpointer data)
 {
+  TpDBusDaemon *dbus_daemon;
+  GError *error = NULL;
+
   global_fixture = f;
 
   tp_tests_abort_after (10);
@@ -186,7 +189,9 @@ setup (Fixture *f,
   f->test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
   g_test_dbus_up (f->test_dbus);
 
-  f->dbus_daemon = tp_tests_dbus_daemon_dup_or_die ();
+  f->factory = tp_client_factory_dup (&error);
+  g_assert_no_error (error);
+  dbus_daemon = tp_client_factory_get_dbus_daemon (f->factory);
 
   /* Any random object with an interface: what matters is that it can
    * accept a method call and emit a signal. We use the Properties
@@ -194,12 +199,14 @@ setup (Fixture *f,
   f->cd_service = tp_tests_object_new_static_class (
       TP_TESTS_TYPE_SIMPLE_CHANNEL_DISPATCHER,
       NULL);
-  tp_dbus_daemon_register_object (f->dbus_daemon, "/", f->cd_service);
+  tp_dbus_daemon_register_object (dbus_daemon, "/", f->cd_service);
 
   f->private_gdbus = tp_tests_get_private_bus ();
   g_assert (f->private_gdbus != NULL);
-  f->private_dbus_daemon = tp_dbus_daemon_new (f->private_gdbus);
-  g_assert (f->private_dbus_daemon != NULL);
+  dbus_daemon = tp_dbus_daemon_new (f->private_gdbus);
+  g_assert (dbus_daemon != NULL);
+  f->private_factory = tp_client_factory_new (dbus_daemon);
+  g_object_unref (dbus_daemon);
 }
 
 static void
@@ -215,9 +222,9 @@ teardown (Fixture *f,
     gconstpointer data)
 {
   tp_tests_assert_last_unref (&f->cd_service);
-  tp_tests_assert_last_unref (&f->dbus_daemon);
+  tp_tests_assert_last_unref (&f->factory);
 
-  tp_tests_assert_last_unref (&f->private_dbus_daemon);
+  tp_tests_assert_last_unref (&f->private_factory);
 
   g_test_dbus_down (f->test_dbus);
   tp_tests_assert_last_unref (&f->test_dbus);
@@ -233,17 +240,22 @@ static TpProxy *
 new_proxy (Fixture *f,
     int which)
 {
+  TpClientFactory *local_factory;
   TpDBusDaemon *local_dbus_daemon;
 
   if (which == TEST_F)
-    local_dbus_daemon = f->private_dbus_daemon;
+    local_factory = f->private_factory;
   else
-    local_dbus_daemon = f->dbus_daemon;
+    local_factory = f->factory;
+
+  local_dbus_daemon = tp_client_factory_get_dbus_daemon (local_factory);
 
   return tp_tests_object_new_static_class (TP_TYPE_PROXY,
       "dbus-daemon", local_dbus_daemon,
-      "bus-name", tp_dbus_daemon_get_unique_name (f->dbus_daemon),
+      "bus-name", tp_dbus_daemon_get_unique_name (
+          tp_client_factory_get_dbus_daemon (f->factory)),
       "object-path", "/",
+      "factory", local_factory,
       NULL);
 }
 

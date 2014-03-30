@@ -29,6 +29,7 @@
 typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
+    TpClientFactory *factory;
 
     /* Service side objects */
     TpBaseClient *simple_approver;
@@ -60,6 +61,7 @@ setup (Test *test,
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->factory = tp_client_factory_dup (NULL);
 
   test->error = NULL;
 
@@ -153,6 +155,7 @@ teardown (Test *test,
       &test->error);
   g_assert_no_error (test->error);
 
+  g_object_unref (test->factory);
   g_object_unref (test->dbus);
   test->dbus = NULL;
   g_main_loop_unref (test->mainloop);
@@ -184,6 +187,7 @@ create_simple_approver (Test *test,
           "dbus-daemon", test->dbus,
           "bus-name", tp_base_client_get_bus_name (test->simple_approver),
           "object-path", tp_base_client_get_object_path (test->simple_approver),
+          "factory", test->factory,
           NULL);
 
   g_assert (test->client != NULL);

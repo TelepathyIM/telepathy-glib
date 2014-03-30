@@ -17,7 +17,7 @@
 
 typedef struct {
     GMainLoop *mainloop;
-    TpDBusDaemon *dbus;
+    TpClientFactory *factory;
 
     TpClient *client;
     GError *error /* initialized where needed */;
@@ -27,10 +27,13 @@ static void
 setup (Test *test,
        gconstpointer data)
 {
+  GError *error = NULL;
+
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->factory = tp_client_factory_dup (&error);
+  g_assert_no_error (error);
 
   test->client = NULL;
 }
@@ -45,8 +48,8 @@ teardown (Test *test,
       test->client = NULL;
     }
 
-  g_object_unref (test->dbus);
-  test->dbus = NULL;
+  g_object_unref (test->factory);
+  test->factory = NULL;
   g_main_loop_unref (test->mainloop);
   test->mainloop = NULL;
 }
@@ -56,9 +59,10 @@ test_new (Test *test,
           gconstpointer data G_GNUC_UNUSED)
 {
   test->client = tp_tests_object_new_static_class (TP_TYPE_CLIENT,
-      "dbus-daemon", test->dbus,
+      "dbus-daemon", tp_client_factory_get_dbus_daemon (test->factory),
       "object-path", "/im/telepathy/v1/Client/whatever",
       "bus-name", "im.telepathy.v1.Client.whatever",
+      "factory", test->factory,
       NULL);
   g_assert (test->client != NULL);
 }

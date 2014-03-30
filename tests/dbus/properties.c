@@ -224,6 +224,7 @@ main (int argc, char **argv)
 {
   Context ctx;
   TpDBusDaemon *dbus_daemon;
+  TpClientFactory *factory;
   GTestDBus *test_dbus;
   int ret;
 
@@ -234,6 +235,7 @@ main (int argc, char **argv)
   g_test_dbus_up (test_dbus);
 
   dbus_daemon = tp_tests_dbus_daemon_dup_or_die ();
+  factory = tp_client_factory_dup (NULL);
   ctx.obj = tp_tests_object_new_static_class (TEST_TYPE_PROPERTIES, NULL);
   tp_dbus_daemon_register_object (dbus_daemon, "/", ctx.obj);
 
@@ -242,6 +244,7 @@ main (int argc, char **argv)
       "dbus-daemon", dbus_daemon,
       "bus-name", tp_dbus_daemon_get_unique_name (dbus_daemon),
       "object-path", "/",
+      "factory", factory,
       NULL));
 
   g_assert (tp_proxy_has_interface (ctx.proxy, "org.freedesktop.DBus.Properties"));
@@ -257,6 +260,7 @@ main (int argc, char **argv)
   g_object_unref (ctx.obj);
   g_object_unref (ctx.proxy);
   g_object_unref (dbus_daemon);
+  g_object_unref (factory);
 
   g_test_dbus_down (test_dbus);
   tp_tests_assert_last_unref (&test_dbus);
