@@ -41,36 +41,40 @@ _tp_client_factory_ensure_channel_dispatch_operation (TpClientFactory *self,
     GHashTable *immutable_properties,
     GError **error);
 
-TpAccount *_tp_account_new_with_factory (TpClientFactory *factory,
-    TpDBusDaemon *bus_daemon,
+TpAccount *_tp_account_new (TpClientFactory *factory,
     const gchar *object_path,
     GError **error);
 
-TpConnection *_tp_connection_new_with_factory (TpClientFactory *factory,
-    TpDBusDaemon *dbus,
+TpConnection *_tp_connection_new (TpClientFactory *factory,
     const gchar *bus_name,
     const gchar *object_path,
     GError **error);
 
-TpChannel *_tp_channel_new_with_factory (TpClientFactory *factory,
+TpChannel *_tp_channel_new (TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
     const GHashTable *immutable_properties,
     GError **error);
 
-TpChannelRequest *_tp_channel_request_new_with_factory (
+TpChannelRequest *_tp_channel_request_new (
     TpClientFactory *factory,
-    TpDBusDaemon *bus_daemon,
     const gchar *object_path,
     GVariant *immutable_properties,
     GError **error);
 
-TpChannelDispatchOperation *_tp_channel_dispatch_operation_new_with_factory (
+TpChannelDispatchOperation *_tp_channel_dispatch_operation_new (
     TpClientFactory *factory,
-    TpDBusDaemon *bus_daemon,
     const gchar *object_path,
     GHashTable *immutable_properties,
     GError **error);
+
+TpProtocol * _tp_protocol_new (TpClientFactory *factory,
+    const gchar *cm_name,
+    const gchar *protocol_name,
+    GVariant *immutable_properties,
+    GError **error);
+gchar *_tp_protocol_build_object_path (const gchar *cm_name,
+    const gchar *protocol_name);
 
 TpTLSCertificate *_tp_tls_certificate_new (TpProxy *conn_or_chan,
     const gchar *object_path,

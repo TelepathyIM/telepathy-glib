@@ -209,8 +209,7 @@ create_account_impl (TpClientFactory *self,
     GVariant *immutable_properties G_GNUC_UNUSED,
     GError **error)
 {
-  return _tp_account_new_with_factory (self, self->priv->dbus, object_path,
-      error);
+  return _tp_account_new (self, object_path, error);
 }
 
 static GArray *
@@ -227,8 +226,7 @@ create_connection_impl (TpClientFactory *self,
     GVariant *immutable_properties,
     GError **error)
 {
-  return _tp_connection_new_with_factory (self, self->priv->dbus, NULL,
-      object_path, error);
+  return _tp_connection_new (self, NULL, object_path, error);
 }
 
 static GArray *
@@ -251,8 +249,7 @@ create_channel_impl (TpClientFactory *self,
 
   props = tp_asv_from_vardict (immutable_properties);
 
-  channel = _tp_channel_new_with_factory (self, conn, object_path,
-      props, error);
+  channel = _tp_channel_new (self, conn, object_path, props, error);
 
   g_hash_table_unref (props);
   return channel;
@@ -397,8 +394,8 @@ create_protocol_impl (TpClientFactory *self,
     GVariant *immutable_properties G_GNUC_UNUSED,
     GError **error)
 {
-  return _tp_protocol_new (self->priv->dbus, self, cm_name, protocol_name,
-      immutable_properties, error);
+  return _tp_protocol_new (self, cm_name, protocol_name, immutable_properties,
+      error);
 }
 
 static GArray *
@@ -1474,8 +1471,7 @@ _tp_client_factory_ensure_channel_request (TpClientFactory *self,
   props = tp_asv_to_vardict (immutable_properties);
 
   g_variant_ref_sink (props);
-  request = _tp_channel_request_new_with_factory (self, self->priv->dbus,
-      object_path, props, error);
+  request = _tp_channel_request_new (self, object_path, props, error);
   g_variant_unref (props);
   insert_proxy (self, request);
 
@@ -1519,8 +1515,8 @@ _tp_client_factory_ensure_channel_dispatch_operation (
   if (dispatch != NULL)
     return g_object_ref (dispatch);
 
-  dispatch = _tp_channel_dispatch_operation_new_with_factory (self,
-      self->priv->dbus, object_path, immutable_properties, error);
+  dispatch = _tp_channel_dispatch_operation_new (self, object_path,
+      immutable_properties, error);
   insert_proxy (self, dispatch);
 
   return dispatch;

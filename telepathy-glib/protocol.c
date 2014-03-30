@@ -924,8 +924,7 @@ _tp_protocol_build_object_path (const gchar *cm_name,
  * Since: 0.99.8
  */
 TpProtocol *
-_tp_protocol_new (TpDBusDaemon *dbus,
-    TpClientFactory *factory,
+_tp_protocol_new (TpClientFactory *factory,
     const gchar *cm_name,
     const gchar *protocol_name,
     GVariant *immutable_properties,
@@ -938,7 +937,7 @@ _tp_protocol_new (TpDBusDaemon *dbus,
   g_return_val_if_fail (immutable_properties == NULL ||
       g_variant_is_of_type (immutable_properties, G_VARIANT_TYPE_VARDICT),
       NULL);
-  g_return_val_if_fail (TP_IS_DBUS_DAEMON (dbus), NULL);
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (factory), NULL);
   g_return_val_if_fail (factory == NULL || TP_IS_CLIENT_FACTORY (factory),
       NULL);
 
@@ -957,7 +956,6 @@ _tp_protocol_new (TpDBusDaemon *dbus,
   object_path = _tp_protocol_build_object_path (cm_name, protocol_name);
 
   ret = TP_PROTOCOL (g_object_new (TP_TYPE_PROTOCOL,
-        "dbus-daemon", dbus,
         "factory", factory,
         "bus-name", bus_name,
         "object-path", object_path,

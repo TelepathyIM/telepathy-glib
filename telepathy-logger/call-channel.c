@@ -415,6 +415,7 @@ _tpl_call_channel_init (TplCallChannel *self)
 
 /**
  * _tpl_call_channel_new:
+ * @factory: a #TpClientFactory
  * @conn: TpConnection instance owning the channel
  * @object_path: the channel's DBus path
  * @tp_chan_props: channel's immutable properties, obtained for example by
@@ -438,17 +439,7 @@ _tpl_call_channel_init (TplCallChannel *self)
  * @object_path is not valid.
  */
 TplCallChannel *
-_tpl_call_channel_new (TpConnection *conn,
-    const gchar *object_path,
-    GHashTable *tp_chan_props,
-    GError **error)
-{
-  return _tpl_call_channel_new_with_factory (NULL, conn, object_path,
-      tp_chan_props, error);
-}
-
-TplCallChannel *
-_tpl_call_channel_new_with_factory (TpClientFactory *factory,
+_tpl_call_channel_new (TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
     const GHashTable *tp_chan_props,
@@ -469,7 +460,6 @@ _tpl_call_channel_new_with_factory (TpClientFactory *factory,
   self = g_object_new (TPL_TYPE_CALL_CHANNEL,
       "factory", factory,
       "connection", conn,
-      "dbus-daemon", tp_proxy_get_dbus_daemon (conn),
       "bus-name", tp_proxy_get_bus_name (conn),
       "object-path", object_path,
       "handle-type", (guint) TP_UNKNOWN_HANDLE_TYPE,

@@ -428,8 +428,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
 }
 
 TpChannelRequest *
-_tp_channel_request_new_with_factory (TpClientFactory *factory,
-    TpDBusDaemon *bus_daemon,
+_tp_channel_request_new (TpClientFactory *factory,
     const gchar *object_path,
     GVariant *immutable_properties,
     GError **error)
@@ -437,20 +436,19 @@ _tp_channel_request_new_with_factory (TpClientFactory *factory,
   TpChannelRequest *self;
   gchar *unique_name;
 
-  g_return_val_if_fail (bus_daemon != NULL, NULL);
+  g_return_val_if_fail (factory != NULL, NULL);
   g_return_val_if_fail (object_path != NULL, NULL);
   g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
   if (!tp_dbus_check_valid_object_path (object_path, error))
     return NULL;
 
-  if (!_tp_dbus_daemon_get_name_owner (bus_daemon, -1,
+  if (!_tp_dbus_daemon_get_name_owner (
+      tp_client_factory_get_dbus_daemon (factory), -1,
       TP_CHANNEL_DISPATCHER_BUS_NAME, &unique_name, error))
     return NULL;
 
   self = TP_CHANNEL_REQUEST (g_object_new (TP_TYPE_CHANNEL_REQUEST,
-        "dbus-daemon", bus_daemon,
-        "dbus-connection", tp_proxy_get_dbus_connection (bus_daemon),
         "bus-name", unique_name,
         "object-path", object_path,
         "immutable-properties", immutable_properties,

@@ -1970,8 +1970,7 @@ tp_connection_class_init (TpConnectionClass *klass)
 }
 
 TpConnection *
-_tp_connection_new_with_factory (TpClientFactory *factory,
-    TpDBusDaemon *dbus,
+_tp_connection_new (TpClientFactory *factory,
     const gchar *bus_name,
     const gchar *object_path,
     GError **error)
@@ -1981,7 +1980,7 @@ _tp_connection_new_with_factory (TpClientFactory *factory,
   gchar *dup_unique_name = NULL;
   TpConnection *ret = NULL;
 
-  g_return_val_if_fail (TP_IS_DBUS_DAEMON (dbus), NULL);
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (factory), NULL);
   g_return_val_if_fail (object_path != NULL ||
                         (bus_name != NULL && bus_name[0] != ':'), NULL);
 
@@ -2010,7 +2009,8 @@ _tp_connection_new_with_factory (TpClientFactory *factory,
   /* Resolve unique name if necessary */
   if (bus_name[0] != ':')
     {
-      if (!_tp_dbus_daemon_get_name_owner (dbus, 2000, bus_name,
+      if (!_tp_dbus_daemon_get_name_owner (
+          tp_client_factory_get_dbus_daemon (factory), 2000, bus_name,
           &dup_unique_name, error))
         goto finally;
 
@@ -2025,7 +2025,6 @@ _tp_connection_new_with_factory (TpClientFactory *factory,
     goto finally;
 
   ret = TP_CONNECTION (g_object_new (TP_TYPE_CONNECTION,
-        "dbus-daemon", dbus,
         "bus-name", bus_name,
         "object-path", object_path,
         "factory", factory,

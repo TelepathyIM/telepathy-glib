@@ -1147,7 +1147,7 @@ tp_call_channel_init (TpCallChannel *self)
 }
 
 TpCallChannel *
-_tp_call_channel_new_with_factory (TpClientFactory *factory,
+_tp_call_channel_new (TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
     const GHashTable *immutable_properties,
@@ -1162,7 +1162,6 @@ _tp_call_channel_new_with_factory (TpClientFactory *factory,
 
   return g_object_new (TP_TYPE_CALL_CHANNEL,
       "connection", conn,
-      "dbus-daemon", tp_proxy_get_dbus_daemon (conn),
       "bus-name", tp_proxy_get_bus_name (conn),
       "object-path", object_path,
       "handle-type", (guint) TP_UNKNOWN_HANDLE_TYPE,

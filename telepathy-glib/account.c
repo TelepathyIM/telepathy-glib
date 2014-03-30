@@ -2127,14 +2127,13 @@ tp_account_class_init (TpAccountClass *klass)
 }
 
 TpAccount *
-_tp_account_new_with_factory (TpClientFactory *factory,
-    TpDBusDaemon *bus_daemon,
+_tp_account_new (TpClientFactory *factory,
     const gchar *object_path,
     GError **error)
 {
   TpAccount *self;
 
-  g_return_val_if_fail (TP_IS_DBUS_DAEMON (bus_daemon), NULL);
+  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (factory), NULL);
   g_return_val_if_fail (object_path != NULL, NULL);
   g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
@@ -2142,8 +2141,6 @@ _tp_account_new_with_factory (TpClientFactory *factory,
     return NULL;
 
   self = TP_ACCOUNT (g_object_new (TP_TYPE_ACCOUNT,
-          "dbus-daemon", bus_daemon,
-          "dbus-connection", tp_proxy_get_dbus_connection (bus_daemon),
           "bus-name", TP_ACCOUNT_MANAGER_BUS_NAME,
           "object-path", object_path,
           "factory", factory,
