@@ -170,9 +170,9 @@ tp_dbus_errors_quark (void)
  * TpProxyClass:
  * @parent_class: The parent class structure
  * @interface: If set non-zero by a subclass, #TpProxy will
- *    automatically add this interface in its constructor
+ *    automatically add this interface in its constructed
  * @must_have_unique_name: If set %TRUE by a subclass, the #TpProxy
- *    constructor will fail if a well-known bus name is given
+ *    constructed will fail if a well-known bus name is given
  *
  * The class of a #TpProxy. The struct fields not documented here are reserved.
  *
@@ -907,17 +907,31 @@ assert_feature_validity (TpProxy *self,
     g_assert (TP_IS_CONNECTION (self));
 }
 
-static GObject *
-tp_proxy_constructor (GType type,
-                      guint n_params,
-                      GObjectConstructParam *params)
+static void
+tp_proxy_constructed (GObject *object)
 {
-  GObjectClass *object_class = (GObjectClass *) tp_proxy_parent_class;
-  TpProxy *self = TP_PROXY (object_class->constructor (type,
-        n_params, params));
+  TpProxy *self = TP_PROXY (object);
   TpProxyClass *klass = TP_PROXY_GET_CLASS (self);
   GType proxy_parent_type = G_TYPE_FROM_CLASS (tp_proxy_parent_class);
   GType ancestor_type;
+  GType type = G_TYPE_FROM_INSTANCE (object);
+
+  G_OBJECT_CLASS (tp_proxy_parent_class)->constructed (object);
+
+  g_assert (self->priv->dbus_connection != NULL);
+  g_assert (self->priv->object_path != NULL);
+  g_assert (self->priv->bus_name != NULL);
+  g_assert (tp_dbus_check_valid_object_path (self->priv->object_path, NULL));
+  g_assert (tp_dbus_check_valid_bus_name (self->priv->bus_name,
+        TP_DBUS_NAME_TYPE_ANY, NULL));
+
+  /* Some interfaces are stateful, so we only allow binding to a unique
+   * name, like in dbus_g_proxy_new_for_name_owner() */
+  if (klass->must_have_unique_name)
+    g_assert (g_dbus_is_unique_name (self->priv->bus_name));
+
+  DEBUG ("%s:%s -> %s %p", self->priv->bus_name, self->priv->object_path,
+      G_OBJECT_TYPE_NAME (self), self);
 
   for (ancestor_type = type;
        ancestor_type != proxy_parent_type && ancestor_type != 0;
@@ -968,18 +982,6 @@ tp_proxy_constructor (GType type,
       g_array_unref (core_features);
     }
 
-  g_return_val_if_fail (self->priv->dbus_connection != NULL, NULL);
-  g_return_val_if_fail (self->priv->object_path != NULL, NULL);
-  g_return_val_if_fail (self->priv->bus_name != NULL, NULL);
-
-  DEBUG ("%s:%s -> %s %p", self->priv->bus_name, self->priv->object_path,
-      G_OBJECT_TYPE_NAME (self), self);
-
-  g_return_val_if_fail (tp_dbus_check_valid_object_path (self->priv->object_path,
-        NULL), NULL);
-  g_return_val_if_fail (tp_dbus_check_valid_bus_name (self->priv->bus_name,
-        TP_DBUS_NAME_TYPE_ANY, NULL), NULL);
-
   tp_proxy_add_interface_by_id (self, TP_IFACE_QUARK_DBUS_INTROSPECTABLE);
   tp_proxy_add_interface_by_id (self, TP_IFACE_QUARK_DBUS_PEER);
   tp_proxy_add_interface_by_id (self, TP_IFACE_QUARK_DBUS_PROPERTIES);
@@ -987,13 +989,6 @@ tp_proxy_constructor (GType type,
   if (klass->interface != 0)
     {
       tp_proxy_add_interface_by_id (self, klass->interface);
-    }
-
-  /* Some interfaces are stateful, so we only allow binding to a unique
-   * name, like in dbus_g_proxy_new_for_name_owner() */
-  if (klass->must_have_unique_name)
-    {
-      g_return_val_if_fail (self->priv->bus_name[0] == ':', NULL);
     }
 
   self->priv->gdbus_closed_signal = g_signal_connect_object (
@@ -1016,8 +1011,6 @@ tp_proxy_constructor (GType type,
           self,
           NULL);
     }
-
-  return (GObject *) self;
 }
 
 static GQuark const no_quarks[] = { 0 };
@@ -1091,7 +1084,7 @@ tp_proxy_class_init (TpProxyClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpProxyPrivate));
 
-  object_class->constructor = tp_proxy_constructor;
+  object_class->constructed = tp_proxy_constructed;
   object_class->get_property = tp_proxy_get_property;
   object_class->set_property = tp_proxy_set_property;
   object_class->dispose = tp_proxy_dispose;

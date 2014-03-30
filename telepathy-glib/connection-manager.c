@@ -778,19 +778,12 @@ tp_connection_manager_find_manager_file (const gchar *name)
   return NULL;
 }
 
-static GObject *
-tp_connection_manager_constructor (GType type,
-                                   guint n_params,
-                                   GObjectConstructParam *params)
+static void
+tp_connection_manager_constructed (GObject *object)
 {
-  GObjectClass *object_class =
-      (GObjectClass *) tp_connection_manager_parent_class;
-  TpConnectionManager *self =
-      TP_CONNECTION_MANAGER (object_class->constructor (type, n_params,
-            params));
+  TpConnectionManager *self = TP_CONNECTION_MANAGER (object);
 
-  g_return_val_if_fail (tp_proxy_get_object_path (self) != NULL, NULL);
-  g_return_val_if_fail (tp_proxy_get_bus_name (self) != NULL, NULL);
+  G_OBJECT_CLASS (tp_connection_manager_parent_class)->constructed (object);
 
   /* Watch my D-Bus name */
   self->priv->watch_id = g_bus_watch_name_on_connection (
@@ -809,8 +802,6 @@ tp_connection_manager_constructor (GType type,
       self->priv->manager_file =
           tp_connection_manager_find_manager_file (self->priv->name);
     }
-
-  return (GObject *) self;
 }
 
 static void
@@ -996,7 +987,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpConnectionManagerPrivate));
 
-  object_class->constructor = tp_connection_manager_constructor;
+  object_class->constructed = tp_connection_manager_constructed;
   object_class->get_property = tp_connection_manager_get_property;
   object_class->set_property = tp_connection_manager_set_property;
   object_class->dispose = tp_connection_manager_dispose;

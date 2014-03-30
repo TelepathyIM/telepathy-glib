@@ -621,20 +621,15 @@ tp_dbus_daemon_get_unique_name (TpDBusDaemon *self)
       tp_proxy_get_dbus_connection (self));
 }
 
-static GObject *
-tp_dbus_daemon_constructor (GType type,
-                            guint n_params,
-                            GObjectConstructParam *params)
+static void
+tp_dbus_daemon_constructed (GObject *object)
 {
-  GObjectClass *object_class = G_OBJECT_CLASS (tp_dbus_daemon_parent_class);
+  TpDBusDaemon *self = TP_DBUS_DAEMON (object);
 
-  TpDBusDaemon *self = TP_DBUS_DAEMON (object_class->constructor (type,
-        n_params, params));
+  G_OBJECT_CLASS (tp_dbus_daemon_parent_class)->constructed (object);
 
   g_assert (!tp_strdiff (tp_proxy_get_bus_name (self), DBUS_SERVICE_DBUS));
   g_assert (!tp_strdiff (tp_proxy_get_object_path (self), DBUS_PATH_DBUS));
-
-  return (GObject *) self;
 }
 
 static void
@@ -652,7 +647,7 @@ tp_dbus_daemon_class_init (TpDBusDaemonClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpDBusDaemonPrivate));
 
-  object_class->constructor = tp_dbus_daemon_constructor;
+  object_class->constructed = tp_dbus_daemon_constructed;
 
   proxy_class->interface = TP_IFACE_QUARK_DBUS_DAEMON;
 }

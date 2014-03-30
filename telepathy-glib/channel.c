@@ -909,16 +909,14 @@ tp_channel_connection_invalidated_cb (TpConnection *conn,
   g_object_unref (self);
 }
 
-static GObject *
-tp_channel_constructor (GType type,
-                        guint n_params,
-                        GObjectConstructParam *params)
+static void
+tp_channel_constructed (GObject *object)
 {
-  GObjectClass *object_class = (GObjectClass *) tp_channel_parent_class;
-  TpChannel *self = TP_CHANNEL (object_class->constructor (type,
-        n_params, params));
+  TpChannel *self = TP_CHANNEL (object);
   GError *error = NULL;
   TpProxySignalConnection *sc;
+
+  G_OBJECT_CLASS (tp_channel_parent_class)->constructed (object);
 
   g_assert (tp_proxy_get_factory (self) ==
       tp_proxy_get_factory (self->priv->connection));
@@ -939,7 +937,7 @@ tp_channel_constructor (GType type,
       CRITICAL ("Couldn't connect to Closed: %s", error->message);
       g_assert_not_reached ();
       g_error_free (error);
-      return NULL;
+      return;
     }
 
   DEBUG ("%p: constructed with channel type \"%s\", handle #%d of type %d",
@@ -964,8 +962,6 @@ tp_channel_constructor (GType type,
       _tp_channel_create_contacts);
 
   _tp_channel_continue_introspection (self);
-
-  return (GObject *) self;
 }
 
 static void
@@ -1146,7 +1142,7 @@ tp_channel_class_init (TpChannelClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpChannelPrivate));
 
-  object_class->constructor = tp_channel_constructor;
+  object_class->constructed = tp_channel_constructed;
   object_class->get_property = tp_channel_get_property;
   object_class->set_property = tp_channel_set_property;
   object_class->dispose = tp_channel_dispose;
