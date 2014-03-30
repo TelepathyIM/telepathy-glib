@@ -84,7 +84,6 @@ TpLogger *
 _tp_logger_new (TpClientFactory *factory)
 {
   return g_object_new (TP_TYPE_LOGGER,
-      "dbus-daemon", tp_client_factory_get_dbus_daemon (factory),
       "bus-name", TP_LOGGER_BUS_NAME,
       "object-path", TP_LOGGER_OBJECT_PATH,
       "factory", factory,

@@ -112,8 +112,6 @@ _tp_call_stream_new (TpCallContent *self,
 {
   return g_object_new (TP_TYPE_CALL_STREAM,
       "bus-name", tp_proxy_get_bus_name (self),
-      "dbus-daemon", tp_proxy_get_dbus_daemon (self),
-      "dbus-connection", tp_proxy_get_dbus_connection (self),
       "object-path", object_path,
       "connection", self->priv->connection,
       "content", self,

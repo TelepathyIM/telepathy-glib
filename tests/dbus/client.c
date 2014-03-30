@@ -59,7 +59,6 @@ test_new (Test *test,
           gconstpointer data G_GNUC_UNUSED)
 {
   test->client = tp_tests_object_new_static_class (TP_TYPE_CLIENT,
-      "dbus-daemon", tp_client_factory_get_dbus_daemon (test->factory),
       "object-path", "/im/telepathy/v1/Client/whatever",
       "bus-name", "im.telepathy.v1.Client.whatever",
       "factory", test->factory,

@@ -128,8 +128,6 @@ _tp_call_content_new (TpCallChannel *self,
 {
   return g_object_new (TP_TYPE_CALL_CONTENT,
       "bus-name", tp_proxy_get_bus_name (self),
-      "dbus-daemon", tp_proxy_get_dbus_daemon (self),
-      "dbus-connection", tp_proxy_get_dbus_connection (self),
       "object-path", object_path,
       "connection", tp_channel_get_connection ((TpChannel *) self),
       "channel", self,

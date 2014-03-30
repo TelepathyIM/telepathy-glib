@@ -387,7 +387,6 @@ run_until_active_get_all_cb (TpProxy *proxy,
       TpProxy *endpoint;
 
       endpoint = g_object_new (TP_TYPE_PROXY,
-          "dbus-daemon", tp_proxy_get_dbus_daemon (proxy),
           "bus-name", tp_proxy_get_bus_name (proxy),
           "object-path", object_path,
           "factory", tp_proxy_get_factory (proxy),

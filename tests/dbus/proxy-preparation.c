@@ -45,7 +45,6 @@ create_my_conn (Test *test)
   factory = tp_client_factory_new (test->dbus);
   test->my_conn = g_object_new (TP_TESTS_TYPE_MY_CONN_PROXY,
       "factory", factory,
-      "dbus-daemon", test->dbus,
       "bus-name", tp_proxy_get_bus_name (test->connection),
       "object-path", tp_proxy_get_object_path (test->connection),
       NULL);

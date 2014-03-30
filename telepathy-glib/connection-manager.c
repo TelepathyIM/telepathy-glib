@@ -1127,7 +1127,6 @@ _tp_connection_manager_new (TpClientFactory *factory,
   bus_name = g_strdup_printf ("%s%s", TP_CM_BUS_NAME_BASE, name);
 
   cm = TP_CONNECTION_MANAGER (g_object_new (TP_TYPE_CONNECTION_MANAGER,
-        "dbus-daemon", tp_client_factory_get_dbus_daemon (factory),
         "bus-name", bus_name,
         "object-path", object_path,
         "manager-file", manager_filename,

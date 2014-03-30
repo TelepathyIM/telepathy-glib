@@ -677,7 +677,6 @@ tp_call_content_media_description_new (TpDBusDaemon *dbus_daemon,
   g_return_val_if_fail (g_variant_is_object_path (object_path), NULL);
 
   return g_object_new (TP_TYPE_CALL_CONTENT_MEDIA_DESCRIPTION,
-      "dbus-daemon", dbus_daemon,
       "object-path", object_path,
       "further-negotiation-required", further_negotiation_required,
       "has-remote-information", has_remote_information,

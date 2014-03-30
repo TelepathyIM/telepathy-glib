@@ -853,7 +853,6 @@ test_handle_delegated (Test *test,
   g_assert (TP_IS_BASE_CLIENT (base_client));
 
   client = tp_tests_object_new_static_class (TP_TYPE_CLIENT,
-      "dbus-daemon", tp_base_client_get_dbus_daemon (base_client),
       "bus-name", tp_base_client_get_bus_name (base_client),
       "object-path",  tp_base_client_get_object_path (base_client),
       "factory", tp_proxy_get_factory (test->account),

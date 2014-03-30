@@ -34,7 +34,7 @@ static GMainLoop *mainloop = NULL;
 int
 main (int argc, char *argv[])
 {
-  TpDBusDaemon *bus;
+  TpClientFactory *factory;
   TpProxy *proxy;
   GError *error = NULL;
   char *account;
@@ -49,16 +49,16 @@ main (int argc, char *argv[])
 
   account = g_strdup_printf ("%s%s", TP_ACCOUNT_OBJECT_PATH_BASE, argv[1]);
 
-  bus = tp_dbus_daemon_dup (&error);
+  factory = tp_client_factory_dup (&error);
   g_assert_no_error (error);
 
   proxy = g_object_new (TP_TYPE_PROXY,
       "bus-name", TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME,
       "object-path", TPL_DBUS_SRV_OBJECT_PATH,
-      "dbus-daemon", bus,
+      "factory", factory,
       NULL);
 
-  g_object_unref (bus);
+  g_object_unref (factory);
 
   tp_proxy_add_interface_by_id (proxy, TPL_IFACE_QUARK_LOGGER);
 

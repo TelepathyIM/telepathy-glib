@@ -116,7 +116,6 @@ TpChannelDispatcher *
 _tp_channel_dispatcher_new (TpClientFactory *factory)
 {
   return TP_CHANNEL_DISPATCHER (g_object_new (TP_TYPE_CHANNEL_DISPATCHER,
-        "dbus-daemon", tp_client_factory_get_dbus_daemon (factory),
         "bus-name", TP_CHANNEL_DISPATCHER_BUS_NAME,
         "object-path", TP_CHANNEL_DISPATCHER_OBJECT_PATH,
         "factory", factory,

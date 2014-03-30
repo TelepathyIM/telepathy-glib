@@ -206,7 +206,6 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
   g_assert (factory != NULL);
 
   client = tp_tests_object_new_static_class (TP_TYPE_CLIENT,
-          "dbus-daemon", tp_client_factory_get_dbus_daemon (factory),
           "bus-name", self->priv->preferred_handler,
           "object-path", client_path,
           "factory", factory,

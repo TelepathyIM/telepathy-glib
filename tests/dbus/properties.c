@@ -241,7 +241,6 @@ main (int argc, char **argv)
 
   /* Open a D-Bus connection to myself */
   ctx.proxy = TP_PROXY (tp_tests_object_new_static_class (TP_TYPE_PROXY,
-      "dbus-daemon", dbus_daemon,
       "bus-name", tp_dbus_daemon_get_unique_name (dbus_daemon),
       "object-path", "/",
       "factory", factory,

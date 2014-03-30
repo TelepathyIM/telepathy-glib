@@ -184,7 +184,6 @@ create_simple_approver (Test *test,
 
   /* Create client-side Client object */
   test->client = tp_tests_object_new_static_class (TP_TYPE_CLIENT,
-          "dbus-daemon", test->dbus,
           "bus-name", tp_base_client_get_bus_name (test->simple_approver),
           "object-path", tp_base_client_get_object_path (test->simple_approver),
           "factory", test->factory,

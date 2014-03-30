@@ -666,7 +666,6 @@ _tp_account_manager_new (TpClientFactory *factory)
   g_return_val_if_fail (TP_IS_CLIENT_FACTORY (factory), NULL);
 
   return TP_ACCOUNT_MANAGER (g_object_new (TP_TYPE_ACCOUNT_MANAGER,
-          "dbus-daemon", tp_client_factory_get_dbus_daemon (factory),
           "bus-name", TP_ACCOUNT_MANAGER_BUS_NAME,
           "object-path", TP_ACCOUNT_MANAGER_OBJECT_PATH,
           "factory", factory,

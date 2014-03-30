@@ -241,17 +241,13 @@ new_proxy (Fixture *f,
     int which)
 {
   TpClientFactory *local_factory;
-  TpDBusDaemon *local_dbus_daemon;
 
   if (which == TEST_F)
     local_factory = f->private_factory;
   else
     local_factory = f->factory;
 
-  local_dbus_daemon = tp_client_factory_get_dbus_daemon (local_factory);
-
   return tp_tests_object_new_static_class (TP_TYPE_PROXY,
-      "dbus-daemon", local_dbus_daemon,
       "bus-name", tp_dbus_daemon_get_unique_name (
           tp_client_factory_get_dbus_daemon (f->factory)),
       "object-path", "/",

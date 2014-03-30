@@ -326,7 +326,6 @@ _tp_debug_client_new (TpClientFactory *factory,
     return NULL;
 
   return TP_DEBUG_CLIENT (g_object_new (TP_TYPE_DEBUG_CLIENT,
-      "dbus-daemon", tp_client_factory_get_dbus_daemon (factory),
       "bus-name", unique_name,
       "object-path", TP_DEBUG_OBJECT_PATH,
       "factory", factory,
