@@ -816,36 +816,11 @@ tp_proxy_set_property (GObject *object,
         {
           g_assert (self->priv->dbus_daemon == NULL);
           self->priv->dbus_daemon = g_value_dup_object (value);
-
-          if (self->priv->dbus_daemon != NULL)
-            {
-              if (self->priv->dbus_connection == NULL)
-                {
-                  self->priv->dbus_connection = g_object_ref (
-                      tp_proxy_get_dbus_connection (self->priv->dbus_daemon));
-                }
-              else
-                {
-                  g_assert (self->priv->dbus_connection ==
-                      tp_proxy_get_dbus_connection (self->priv->dbus_daemon));
-                }
-            }
         }
       break;
     case PROP_DBUS_CONNECTION:
-        {
-          GDBusConnection *conn = g_value_get_object (value);
-
-          /* if we're given a NULL dbus-connection, but we've got a
-           * GDBusConnection from the dbus-daemon, we want to keep it */
-          if (conn == NULL)
-            return;
-
-          if (self->priv->dbus_connection == NULL)
-            self->priv->dbus_connection = g_value_dup_object (value);
-
-          g_assert (self->priv->dbus_connection == g_value_get_object (value));
-        }
+      g_assert (self->priv->dbus_connection == NULL);
+      self->priv->dbus_connection = g_value_dup_object (value);
       break;
     case PROP_BUS_NAME:
       g_assert (self->priv->bus_name == NULL);
@@ -918,7 +893,6 @@ tp_proxy_constructed (GObject *object)
 
   G_OBJECT_CLASS (tp_proxy_parent_class)->constructed (object);
 
-  g_assert (self->priv->dbus_connection != NULL);
   g_assert (self->priv->object_path != NULL);
   g_assert (self->priv->bus_name != NULL);
   g_assert (tp_dbus_check_valid_object_path (self->priv->object_path, NULL));
@@ -929,6 +903,31 @@ tp_proxy_constructed (GObject *object)
    * name, like in dbus_g_proxy_new_for_name_owner() */
   if (klass->must_have_unique_name)
     g_assert (g_dbus_is_unique_name (self->priv->bus_name));
+
+  if (!TP_IS_DBUS_DAEMON (self))
+    {
+      TpDBusDaemon *dbus_daemon;
+      GDBusConnection *dbus_connection;
+
+      g_assert (self->priv->factory != NULL);
+      dbus_daemon = tp_client_factory_get_dbus_daemon (self->priv->factory);
+      dbus_connection = tp_client_factory_get_dbus_connection (
+          self->priv->factory);
+
+      if (self->priv->dbus_daemon == NULL)
+        self->priv->dbus_daemon = g_object_ref (dbus_daemon);
+      else
+        g_assert (self->priv->dbus_daemon == dbus_daemon);
+
+      if (self->priv->dbus_connection == NULL)
+        self->priv->dbus_connection = g_object_ref (dbus_connection);
+      else
+        g_assert (self->priv->dbus_connection == dbus_connection);
+    }
+  else
+    {
+      g_assert (self->priv->dbus_connection != NULL);
+    }
 
   DEBUG ("%s:%s -> %s %p", self->priv->bus_name, self->priv->object_path,
       G_OBJECT_TYPE_NAME (self), self);
