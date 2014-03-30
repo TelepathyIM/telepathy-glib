@@ -52,18 +52,18 @@
  *   TpAccountManager *manager;
  *
  *   factory = my_factory_new ();
- *   manager = tp_account_manager_new_with_factory (factory);
- *   tp_account_manager_set_default (manager);
+ *   tp_client_factory_set_default (factory);
  *
  *   ...
+ *   manager = tp_account_manager_dup ();
  *   tp_proxy_prepare_async (manager, am_features, callback, user_data);
  *   ...
  * }
  * ]|
  *
- * The call to tp_account_manager_set_default() near the beginning of main()
+ * The call to tp_client_factory_set_default() near the beginning of main()
  * will ensure that any libraries or plugins which also use Telepathy (and call
- * tp_account_manager_dup()) will share your #TpAccountManager.
+ * tp_client_factory_dup()) will share your #TpClientFactory.
  *
  * Since: 0.99.1
  */
