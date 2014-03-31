@@ -61,14 +61,14 @@ setup (Test *test,
 
   /* Claim AccountManager bus-name (needed as we're going to export an Account
    * object). */
-  tp_dbus_daemon_request_name (test->dbus,
+  tp_dbus_connection_request_name (test->dbus,
           TP_ACCOUNT_MANAGER_BUS_NAME, FALSE, &test->error);
   g_assert_no_error (test->error);
 
   /* Create service-side Account object */
   test->account_service = tp_tests_object_new_static_class (
       TP_TESTS_TYPE_SIMPLE_ACCOUNT, NULL);
-  tp_dbus_daemon_register_object (test->dbus, ACCOUNT_PATH,
+  tp_dbus_connection_register_object (test->dbus, ACCOUNT_PATH,
       test->account_service);
 
    /* Create client-side Account object */
@@ -115,10 +115,10 @@ teardown (Test *test,
   g_object_unref (test->simple_observer);
   g_object_unref (test->client);
 
-  tp_dbus_daemon_unregister_object (test->dbus, test->account_service);
+  tp_dbus_connection_unregister_object (test->dbus, test->account_service);
   g_object_unref (test->account_service);
 
-  tp_dbus_daemon_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
+  tp_dbus_connection_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
       &test->error);
   g_assert_no_error (test->error);
 

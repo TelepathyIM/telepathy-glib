@@ -657,7 +657,7 @@ make_the_connection_disappear (Fixture *f)
   GError *error = NULL;
   gboolean ok;
 
-  tp_dbus_daemon_unregister_object (
+  tp_dbus_connection_unregister_object (
       tp_base_connection_get_dbus_connection (f->base_connection),
       f->base_connection);
   /* check that that worked */
@@ -677,7 +677,7 @@ put_the_connection_back (Fixture *f)
   GError *error = NULL;
   gboolean ok;
 
-  tp_dbus_daemon_register_object (
+  tp_dbus_connection_register_object (
       tp_base_connection_get_dbus_connection (f->base_connection),
       tp_base_connection_get_object_path (f->base_connection),
       f->base_connection);

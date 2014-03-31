@@ -41,7 +41,7 @@ tpl_test_create_and_prepare_account (GDBusConnection *dbus,
       NULL);
   g_assert (*account_service != NULL);
 
-  tp_dbus_daemon_register_object (dbus, path, *account_service);
+  tp_dbus_connection_register_object (dbus, path, *account_service);
 
   *account = tp_client_factory_ensure_account (factory, path, NULL,
       &error);
@@ -60,7 +60,7 @@ tpl_test_release_account (GDBusConnection *dbus,
     TpAccount *account,
     TpTestsSimpleAccount *account_service)
 {
-  tp_dbus_daemon_unregister_object (dbus, account_service);
+  tp_dbus_connection_unregister_object (dbus, account_service);
   tp_tests_assert_last_unref (&account_service);
   tp_tests_await_last_unref (&account);
 }

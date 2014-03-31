@@ -86,7 +86,7 @@ setup (Test *test,
       "me@test.com", &test->base_connection, &test->connection);
 
   /* Claim CD bus-name */
-  tp_dbus_daemon_request_name (test->dbus,
+  tp_dbus_connection_request_name (test->dbus,
           TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, &test->error);
   g_assert_no_error (test->error);
 
@@ -96,7 +96,7 @@ setup (Test *test,
       "connection", test->base_connection,
       NULL);
 
-  tp_dbus_daemon_register_object (test->dbus, TP_CHANNEL_DISPATCHER_OBJECT_PATH,
+  tp_dbus_connection_register_object (test->dbus, TP_CHANNEL_DISPATCHER_OBJECT_PATH,
       test->cd_service);
 
   create_room_list (test, SERVER);
@@ -109,7 +109,7 @@ teardown (Test *test,
 {
   g_clear_error (&test->error);
 
-  tp_dbus_daemon_release_name (test->dbus, TP_CHANNEL_DISPATCHER_BUS_NAME,
+  tp_dbus_connection_release_name (test->dbus, TP_CHANNEL_DISPATCHER_BUS_NAME,
       &test->error);
   g_assert_no_error (test->error);
 

@@ -935,14 +935,14 @@ tp_base_client_register (TpBaseClient *self,
 
   DEBUG ("request name %s", self->priv->bus_name);
 
-  if (!tp_dbus_daemon_try_register_object (self->priv->dbus,
+  if (!tp_dbus_connection_try_register_object (self->priv->dbus,
         self->priv->object_path, G_OBJECT (self), error))
     {
       DEBUG ("Failed to register object path %s", self->priv->object_path);
       return FALSE;
     }
 
-  if (!tp_dbus_daemon_request_name (self->priv->dbus, self->priv->bus_name,
+  if (!tp_dbus_connection_request_name (self->priv->dbus, self->priv->bus_name,
         TRUE, error))
     {
       DEBUG ("Failed to register bus name %s", self->priv->bus_name);
@@ -2589,7 +2589,7 @@ tp_base_client_unregister (TpBaseClient *self)
   if (!self->priv->registered)
     return;
 
-  if (!tp_dbus_daemon_release_name (self->priv->dbus, self->priv->bus_name,
+  if (!tp_dbus_connection_release_name (self->priv->dbus, self->priv->bus_name,
         &error))
     {
       WARNING ("Failed to release bus name (%s): %s", self->priv->bus_name,
@@ -2598,7 +2598,7 @@ tp_base_client_unregister (TpBaseClient *self)
       g_error_free (error);
     }
 
-  tp_dbus_daemon_unregister_object (self->priv->dbus, self);
+  tp_dbus_connection_unregister_object (self->priv->dbus, self);
 
   if (self->priv->flags & CLIENT_IS_HANDLER)
     {

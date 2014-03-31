@@ -91,7 +91,7 @@ setup (Test *test,
 
   test->cr_service = tp_tests_object_new_static_class (test_simple_cr_get_type (),
       NULL);
-  tp_dbus_daemon_register_object (test->private_dbus, "/whatever",
+  tp_dbus_connection_register_object (test->private_dbus, "/whatever",
       test->cr_service);
 }
 
@@ -111,7 +111,7 @@ teardown (Test *test,
 
   if (test->private_dbus != NULL)
     {
-      tp_dbus_daemon_release_name (test->private_dbus,
+      tp_dbus_connection_release_name (test->private_dbus,
           TP_CHANNEL_DISPATCHER_BUS_NAME, NULL);
 
       g_dbus_connection_close_sync (test->private_dbus, NULL, NULL);
@@ -171,7 +171,7 @@ test_new (Test *test,
       "/whatever", NULL, NULL);
   g_assert (test->cr == NULL);
 
-  ok = tp_dbus_daemon_request_name (test->private_dbus,
+  ok = tp_dbus_connection_request_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 
@@ -189,7 +189,7 @@ test_crash (Test *test,
 {
   gboolean ok;
 
-  ok = tp_dbus_daemon_request_name (test->private_dbus,
+  ok = tp_dbus_connection_request_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 
@@ -197,7 +197,7 @@ test_crash (Test *test,
   g_assert (test->cr != NULL);
   g_assert (tp_proxy_get_invalidated (test->cr) == NULL);
 
-  tp_dbus_daemon_release_name (test->private_dbus,
+  tp_dbus_connection_release_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, NULL);
 
   tp_tests_proxy_run_until_dbus_queue_processed (test->cr);
@@ -239,7 +239,7 @@ test_succeeded (Test *test,
   gboolean ok;
   GHashTable *props;
 
-  ok = tp_dbus_daemon_request_name (test->private_dbus,
+  ok = tp_dbus_connection_request_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 
@@ -279,7 +279,7 @@ test_failed (Test *test,
 {
   gboolean ok;
 
-  ok = tp_dbus_daemon_request_name (test->private_dbus,
+  ok = tp_dbus_connection_request_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 
@@ -320,7 +320,7 @@ test_immutable_properties (Test *test,
   props = tp_asv_new ("badger", G_TYPE_UINT, 42,
       NULL);
 
-  ok = tp_dbus_daemon_request_name (test->private_dbus,
+  ok = tp_dbus_connection_request_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 
@@ -361,7 +361,7 @@ test_properties (Test *test,
       TP_PROP_CHANNEL_REQUEST_HINTS, TP_HASH_TYPE_STRING_VARIANT_MAP, hints,
       NULL);
 
-  ok = tp_dbus_daemon_request_name (test->private_dbus,
+  ok = tp_dbus_connection_request_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 

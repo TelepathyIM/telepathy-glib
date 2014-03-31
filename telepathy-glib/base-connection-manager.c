@@ -836,7 +836,7 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
 
   /* don't bother handling failure gracefully: CMs should know what
    * objects they export */
-  tp_dbus_daemon_register_object (self->priv->dbus_connection, string->str, self);
+  tp_dbus_connection_register_object (self->priv->dbus_connection, string->str, self);
 
   g_hash_table_iter_init (&iter, self->priv->protocols);
 
@@ -862,14 +862,14 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
 
       g_strdelimit (string->str, "-", '_');
 
-      tp_dbus_daemon_register_object (self->priv->dbus_connection, string->str,
+      tp_dbus_connection_register_object (self->priv->dbus_connection, string->str,
           protocol);
     }
 
   g_string_assign (string, TP_CM_BUS_NAME_BASE);
   g_string_append (string, cls->cm_dbus_name);
 
-  if (!tp_dbus_daemon_request_name (self->priv->dbus_connection, string->str,
+  if (!tp_dbus_connection_request_name (self->priv->dbus_connection, string->str,
         TRUE, &error))
     {
       WARNING ("Couldn't claim bus name. If you are trying to debug this "

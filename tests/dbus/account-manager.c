@@ -165,22 +165,22 @@ setup_service (Test *test,
 {
   setup (test, data);
 
-  g_assert (tp_dbus_daemon_request_name (test->dbus,
+  g_assert (tp_dbus_connection_request_name (test->dbus,
           TP_ACCOUNT_MANAGER_BUS_NAME, FALSE, &test->error));
 
   test->service = tp_tests_object_new_static_class (
       TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER, NULL);
-  tp_dbus_daemon_register_object (test->dbus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
+  tp_dbus_connection_register_object (test->dbus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
       test->service);
 
   test->account1_service = tp_tests_object_new_static_class (
       TP_TESTS_TYPE_SIMPLE_ACCOUNT, NULL);
-  tp_dbus_daemon_register_object (test->dbus, ACCOUNT1_PATH,
+  tp_dbus_connection_register_object (test->dbus, ACCOUNT1_PATH,
       test->account1_service);
 
   test->account2_service = tp_tests_object_new_static_class (
       TP_TESTS_TYPE_SIMPLE_ACCOUNT, NULL);
-  tp_dbus_daemon_register_object (test->dbus, ACCOUNT2_PATH,
+  tp_dbus_connection_register_object (test->dbus, ACCOUNT2_PATH,
       test->account2_service);
 }
 
@@ -216,14 +216,14 @@ teardown_service (Test *test,
 {
   script_start_with_deadline (test, 1000);
   g_assert (
-      tp_dbus_daemon_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
+      tp_dbus_connection_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
                                &test->error));
-  tp_dbus_daemon_unregister_object (test->dbus, test->service);
+  tp_dbus_connection_unregister_object (test->dbus, test->service);
   g_object_unref (test->service);
 
-  tp_dbus_daemon_unregister_object (test->dbus, test->account1_service);
+  tp_dbus_connection_unregister_object (test->dbus, test->account1_service);
   g_object_unref (test->account1_service);
-  tp_dbus_daemon_unregister_object (test->dbus, test->account2_service);
+  tp_dbus_connection_unregister_object (test->dbus, test->account2_service);
   g_object_unref (test->account2_service);
 
   g_clear_object (&test->account1);
@@ -485,7 +485,7 @@ register_service_action (gpointer script_data,
 {
   Test *test = (Test *) script_data;
 
-  tp_dbus_daemon_register_object (test->dbus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
+  tp_dbus_connection_register_object (test->dbus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
       test->service);
 
   script_continue (test);
@@ -547,7 +547,7 @@ static void
 test_prepare_destroyed (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  tp_dbus_daemon_unregister_object (test->dbus, test->service);
+  tp_dbus_connection_unregister_object (test->dbus, test->service);
   test_prepare (test, data);
   script_append_action (test, assert_failed_action, NULL);
   script_append_action (test, register_service_action, NULL);

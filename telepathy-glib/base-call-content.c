@@ -213,7 +213,7 @@ tp_base_call_content_constructed (GObject *obj)
     G_OBJECT_CLASS (tp_base_call_content_parent_class)->constructed (obj);
 
   DEBUG ("Registering %s", self->priv->object_path);
-  tp_dbus_daemon_register_object (bus, self->priv->object_path, obj);
+  tp_dbus_connection_register_object (bus, self->priv->object_path, obj);
 }
 
 static void
@@ -222,7 +222,7 @@ tp_base_call_content_deinit_real (TpBaseCallContent *self)
   GDBusConnection *bus = tp_base_connection_get_dbus_connection (
       (TpBaseConnection *) self->priv->conn);
 
-  tp_dbus_daemon_unregister_object (bus, G_OBJECT (self));
+  tp_dbus_connection_unregister_object (bus, G_OBJECT (self));
 
   tp_clear_pointer (&self->priv->streams, _tp_object_list_free);
 }

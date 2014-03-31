@@ -102,7 +102,7 @@ create_channel_request (TpTestsSimpleChannelDispatcher *self,
   dbus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
   g_assert (dbus != NULL);
 
-  tp_dbus_daemon_register_object (dbus, path, chan_request);
+  tp_dbus_connection_register_object (dbus, path, chan_request);
 
   g_object_unref (dbus);
 

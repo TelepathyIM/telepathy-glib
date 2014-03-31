@@ -237,7 +237,7 @@ main (int argc, char **argv)
   dbus_connection = tp_tests_dbus_dup_or_die ();
   factory = tp_client_factory_dup (NULL);
   ctx.obj = tp_tests_object_new_static_class (TEST_TYPE_PROPERTIES, NULL);
-  tp_dbus_daemon_register_object (dbus_connection, "/", ctx.obj);
+  tp_dbus_connection_register_object (dbus_connection, "/", ctx.obj);
 
   /* Open a D-Bus connection to myself */
   ctx.proxy = TP_PROXY (tp_tests_object_new_static_class (TP_TYPE_PROXY,

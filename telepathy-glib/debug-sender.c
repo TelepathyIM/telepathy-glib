@@ -242,7 +242,7 @@ tp_debug_sender_constructed (GObject *object)
 
   if (self->priv->conn != NULL)
     {
-      tp_dbus_daemon_register_object (self->priv->conn,
+      tp_dbus_connection_register_object (self->priv->conn,
           TP_DEBUG_OBJECT_PATH, debug_sender);
     }
 }

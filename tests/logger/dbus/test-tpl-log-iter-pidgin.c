@@ -64,7 +64,7 @@ setup (PidginTestCaseFixture* fixture,
   fixture->bus = tp_tests_dbus_dup_or_die ();
   g_assert (fixture->bus != NULL);
 
-  tp_dbus_daemon_request_name (fixture->bus,
+  tp_dbus_connection_request_name (fixture->bus,
       TP_ACCOUNT_MANAGER_BUS_NAME,
       FALSE,
       &error);
@@ -85,7 +85,7 @@ setup (PidginTestCaseFixture* fixture,
       NULL);
   g_hash_table_unref (asv);
 
-  tp_dbus_daemon_register_object (fixture->bus,
+  tp_dbus_connection_register_object (fixture->bus,
       account_path,
       fixture->account_service);
 
@@ -117,7 +117,7 @@ teardown (PidginTestCaseFixture *fixture,
 {
   GError *error = NULL;
 
-  tp_dbus_daemon_release_name (fixture->bus,
+  tp_dbus_connection_release_name (fixture->bus,
       TP_ACCOUNT_MANAGER_BUS_NAME,
       &error);
   g_assert_no_error (error);
@@ -125,7 +125,7 @@ teardown (PidginTestCaseFixture *fixture,
   g_clear_object (&fixture->account);
   g_clear_object (&fixture->factory);
 
-  tp_dbus_daemon_unregister_object (fixture->bus, fixture->account_service);
+  tp_dbus_connection_unregister_object (fixture->bus, fixture->account_service);
   g_clear_object (&fixture->account_service);
 
   g_clear_object (&fixture->bus);

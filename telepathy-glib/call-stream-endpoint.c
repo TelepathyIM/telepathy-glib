@@ -147,7 +147,7 @@ tp_call_stream_endpoint_constructed (GObject *obj)
 
   /* register object on the bus */
   DEBUG ("Registering %s", self->priv->object_path);
-  tp_dbus_daemon_register_object (self->priv->dbus_connection,
+  tp_dbus_connection_register_object (self->priv->dbus_connection,
       self->priv->object_path, obj);
 
   if (G_OBJECT_CLASS (tp_call_stream_endpoint_parent_class)->constructed != NULL)
@@ -159,7 +159,7 @@ tp_call_stream_endpoint_dispose (GObject *object)
 {
   TpCallStreamEndpoint *self = TP_CALL_STREAM_ENDPOINT (object);
 
-  tp_dbus_daemon_unregister_object (self->priv->dbus_connection, G_OBJECT (self));
+  tp_dbus_connection_unregister_object (self->priv->dbus_connection, G_OBJECT (self));
 
   g_clear_object (&self->priv->dbus_connection);
 

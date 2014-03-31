@@ -99,7 +99,7 @@ telepathy_logger_dbus_init (void)
       goto out;
     }
 
-  if (!tp_dbus_daemon_request_name (dbus_connection,
+  if (!tp_dbus_connection_request_name (dbus_connection,
         TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME, FALSE, &error))
     {
       g_critical ("Failed to acquire bus name %s: %s",
@@ -108,7 +108,7 @@ telepathy_logger_dbus_init (void)
     }
 
   dbus_srv = _tpl_dbus_service_new ();
-  tp_dbus_daemon_register_object (dbus_connection, TPL_DBUS_SRV_OBJECT_PATH,
+  tp_dbus_connection_register_object (dbus_connection, TPL_DBUS_SRV_OBJECT_PATH,
       G_OBJECT (dbus_srv));
 
   DEBUG ("TPL DBus service registered to: %s",

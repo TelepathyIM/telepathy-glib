@@ -90,9 +90,9 @@ my_get_all (TpSvcDBusProperties *iface,
 
       cm->drop_name_on_get--;
 
-      tp_dbus_daemon_release_name (dbus, string->str, &error);
+      tp_dbus_connection_release_name (dbus, string->str, &error);
       g_assert_no_error (error);
-      tp_dbus_daemon_request_name (dbus, string->str, FALSE, &error);
+      tp_dbus_connection_request_name (dbus, string->str, FALSE, &error);
       g_assert_no_error (error);
     }
 

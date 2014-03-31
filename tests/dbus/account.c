@@ -130,12 +130,12 @@ setup_service (Test *test,
 {
   setup (test, data);
 
-  tp_dbus_daemon_request_name (test->dbus,
+  tp_dbus_connection_request_name (test->dbus,
       TP_ACCOUNT_MANAGER_BUS_NAME, FALSE, &test->error);
   g_assert_no_error (test->error);
 
   test->account_service = g_object_new (TP_TESTS_TYPE_SIMPLE_ACCOUNT, NULL);
-  tp_dbus_daemon_register_object (test->dbus, ACCOUNT_PATH,
+  tp_dbus_connection_register_object (test->dbus, ACCOUNT_PATH,
       test->account_service);
 
   tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
@@ -215,11 +215,11 @@ static void
 teardown_service (Test *test,
     gconstpointer data)
 {
-  tp_dbus_daemon_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
+  tp_dbus_connection_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
       &test->error);
   g_assert_no_error (test->error);
 
-  tp_dbus_daemon_unregister_object (test->dbus, test->account_service);
+  tp_dbus_connection_unregister_object (test->dbus, test->account_service);
   g_clear_object (&test->account_service);
 
   tp_tests_connection_assert_disconnect_succeeds (test->conn1);

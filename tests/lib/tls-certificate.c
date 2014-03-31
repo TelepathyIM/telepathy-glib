@@ -165,7 +165,7 @@ tp_tests_tls_certificate_constructed (GObject *object)
     chain_up (object);
 
   /* register the certificate on the bus */
-  tp_dbus_daemon_register_object (self->priv->dbus_connection,
+  tp_dbus_connection_register_object (self->priv->dbus_connection,
       self->priv->object_path, self);
 }
 

@@ -42,12 +42,12 @@ setup (Test *test,
   g_assert (test->dbus != NULL);
 
   /* create the account manager service */
-  tp_dbus_daemon_request_name (test->dbus,
+  tp_dbus_connection_request_name (test->dbus,
       TP_ACCOUNT_MANAGER_BUS_NAME, FALSE, &test->error);
   g_assert_no_error (test->error);
   test->am = tp_tests_object_new_static_class (
       TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER, NULL);
-  tp_dbus_daemon_register_object (test->dbus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
+  tp_dbus_connection_register_object (test->dbus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
       test->am);
 
   /* and now the account manager proxy */
@@ -57,7 +57,7 @@ setup (Test *test,
   /* finally create the account service */
   test->account_service = tp_tests_object_new_static_class (
       TP_TESTS_TYPE_SIMPLE_ACCOUNT, NULL);
-  tp_dbus_daemon_register_object (test->dbus,
+  tp_dbus_connection_register_object (test->dbus,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/lospolloshermanos",
       test->account_service);
 
@@ -77,13 +77,13 @@ teardown (Test *test,
   /* It might have a GetAll() in-flight, so we have to wait */
   tp_tests_await_last_unref (&test->account_manager);
 
-  tp_dbus_daemon_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
+  tp_dbus_connection_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
       &test->error);
   g_assert_no_error (test->error);
-  tp_dbus_daemon_unregister_object (test->dbus, test->am);
+  tp_dbus_connection_unregister_object (test->dbus, test->am);
   tp_tests_assert_last_unref (&test->am);
 
-  tp_dbus_daemon_unregister_object (test->dbus, test->account_service);
+  tp_dbus_connection_unregister_object (test->dbus, test->account_service);
   tp_tests_assert_last_unref (&test->account_service);
 
   g_clear_object (&test->dbus);

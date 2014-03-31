@@ -748,7 +748,7 @@ _tp_channel_dispatch_operation_new (TpClientFactory *factory,
   if (!tp_dbus_check_valid_object_path (object_path, error))
     return NULL;
 
-  if (!_tp_dbus_daemon_get_name_owner (
+  if (!_tp_dbus_connection_get_name_owner (
       tp_client_factory_get_dbus_connection (factory), -1,
       TP_CHANNEL_DISPATCHER_BUS_NAME, &unique_name, error))
     return NULL;

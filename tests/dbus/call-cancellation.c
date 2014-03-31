@@ -199,7 +199,7 @@ setup (Fixture *f,
   f->cd_service = tp_tests_object_new_static_class (
       TP_TESTS_TYPE_SIMPLE_CHANNEL_DISPATCHER,
       NULL);
-  tp_dbus_daemon_register_object (dbus_connection, "/", f->cd_service);
+  tp_dbus_connection_register_object (dbus_connection, "/", f->cd_service);
 
   f->private_gdbus = tp_tests_get_private_bus ();
   g_assert (f->private_gdbus != NULL);

@@ -27,7 +27,7 @@
 
 G_BEGIN_DECLS
 
-gboolean _tp_dbus_daemon_get_name_owner (GDBusConnection *dbus_connection,
+gboolean _tp_dbus_connection_get_name_owner (GDBusConnection *dbus_connection,
     gint timeout_ms, const gchar *well_known_name, gchar **unique_name,
     GError **error);
 

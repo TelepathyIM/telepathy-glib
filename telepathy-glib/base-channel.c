@@ -381,7 +381,7 @@ tp_base_channel_register (TpBaseChannel *chan)
   g_assert (chan->priv->object_path != NULL);
   g_return_if_fail (!chan->priv->registered);
 
-  tp_dbus_daemon_register_object (bus, chan->priv->object_path, chan);
+  tp_dbus_connection_register_object (bus, chan->priv->object_path, chan);
   chan->priv->registered = TRUE;
 }
 
@@ -411,7 +411,7 @@ tp_base_channel_destroyed (TpBaseChannel *chan)
 
   if (chan->priv->registered)
     {
-      tp_dbus_daemon_unregister_object (bus, chan);
+      tp_dbus_connection_unregister_object (bus, chan);
       chan->priv->registered = FALSE;
     }
 
@@ -467,7 +467,7 @@ tp_base_channel_disappear (TpBaseChannel *chan)
 
   if (priv->registered)
     {
-      tp_dbus_daemon_unregister_object (bus, chan);
+      tp_dbus_connection_unregister_object (bus, chan);
       priv->registered = FALSE;
     }
 

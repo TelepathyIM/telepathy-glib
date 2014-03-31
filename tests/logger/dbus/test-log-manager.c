@@ -57,11 +57,11 @@ teardown_service (TestCaseFixture* fixture,
       fixture->account = NULL;
     }
 
-  tp_dbus_daemon_unregister_object (fixture->dbus, fixture->account_service);
+  tp_dbus_connection_unregister_object (fixture->dbus, fixture->account_service);
   g_object_unref (fixture->account_service);
   fixture->account_service = NULL;
 
-  tp_dbus_daemon_release_name (fixture->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
+  tp_dbus_connection_release_name (fixture->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
       &error);
   g_assert_no_error (error);
 
@@ -128,7 +128,7 @@ setup_service (TestCaseFixture* fixture,
   fixture->dbus = tp_tests_dbus_dup_or_die ();
   g_assert (fixture->dbus != NULL);
 
-  tp_dbus_daemon_request_name (fixture->dbus,
+  tp_dbus_connection_request_name (fixture->dbus,
       TP_ACCOUNT_MANAGER_BUS_NAME, FALSE, &error);
   g_assert_no_error (error);
 
@@ -147,7 +147,7 @@ setup_service (TestCaseFixture* fixture,
   g_object_set_property (G_OBJECT (fixture->account_service),
       "parameters", boxed_params);
 
-  tp_dbus_daemon_register_object (fixture->dbus, account_path,
+  tp_dbus_connection_register_object (fixture->dbus, account_path,
       fixture->account_service);
 
   fixture->factory = _tpl_client_factory_dup (fixture->dbus);

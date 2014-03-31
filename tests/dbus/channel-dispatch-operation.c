@@ -66,7 +66,7 @@ setup (Test *test,
   test->cdo_service = tp_tests_object_new_static_class (
       TP_TESTS_TYPE_SIMPLE_CHANNEL_DISPATCH_OPERATION,
       NULL);
-  tp_dbus_daemon_register_object (test->private_dbus, "/whatever",
+  tp_dbus_connection_register_object (test->private_dbus, "/whatever",
       test->cdo_service);
  }
 
@@ -120,7 +120,7 @@ setup_services (Test *test,
   tp_tests_simple_channel_dispatch_operation_set_account_path (test->cdo_service,
        ACCOUNT_PATH);
 
-  g_assert (tp_dbus_daemon_request_name (test->private_dbus,
+  g_assert (tp_dbus_connection_request_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL));
 }
 
@@ -134,12 +134,12 @@ teardown (Test *test,
       test->cdo = NULL;
     }
 
-  tp_dbus_daemon_release_name (test->dbus, TP_CHANNEL_DISPATCHER_BUS_NAME,
+  tp_dbus_connection_release_name (test->dbus, TP_CHANNEL_DISPATCHER_BUS_NAME,
       NULL);
 
   if (test->private_dbus != NULL)
     {
-      tp_dbus_daemon_release_name (test->private_dbus,
+      tp_dbus_connection_release_name (test->private_dbus,
           TP_CHANNEL_DISPATCHER_BUS_NAME, NULL);
 
       g_dbus_connection_close_sync (test->private_dbus, NULL, NULL);
@@ -214,7 +214,7 @@ test_new (Test *test,
       "/whatever", NULL, NULL);
   g_assert (test->cdo == NULL);
 
-  ok = tp_dbus_daemon_request_name (test->private_dbus,
+  ok = tp_dbus_connection_request_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 
@@ -233,7 +233,7 @@ test_crash (Test *test,
 {
   gboolean ok;
 
-  ok = tp_dbus_daemon_request_name (test->private_dbus,
+  ok = tp_dbus_connection_request_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 
@@ -242,7 +242,7 @@ test_crash (Test *test,
   g_assert (test->cdo != NULL);
   g_assert (tp_proxy_get_invalidated (test->cdo) == NULL);
 
-  tp_dbus_daemon_release_name (test->private_dbus,
+  tp_dbus_connection_release_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, NULL);
 
   tp_tests_proxy_run_until_dbus_queue_processed (test->cdo);
@@ -266,7 +266,7 @@ test_finished (Test *test,
 {
   gboolean ok;
 
-  ok = tp_dbus_daemon_request_name (test->private_dbus,
+  ok = tp_dbus_connection_request_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
   g_assert (ok);
 

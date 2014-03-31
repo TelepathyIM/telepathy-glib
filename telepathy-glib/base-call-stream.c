@@ -172,7 +172,7 @@ tp_base_call_stream_constructed (GObject *obj)
 
   /* register object on the bus */
   DEBUG ("Registering %s", self->priv->object_path);
-  tp_dbus_daemon_register_object (bus, self->priv->object_path, obj);
+  tp_dbus_connection_register_object (bus, self->priv->object_path, obj);
 }
 
 static GPtrArray *
@@ -188,7 +188,7 @@ tp_base_call_stream_dispose (GObject *object)
   GDBusConnection *bus = tp_base_connection_get_dbus_connection (
       (TpBaseConnection *) self->priv->conn);
 
-  tp_dbus_daemon_unregister_object (bus, G_OBJECT (self));
+  tp_dbus_connection_unregister_object (bus, G_OBJECT (self));
 
   tp_clear_object (&self->priv->conn);
 

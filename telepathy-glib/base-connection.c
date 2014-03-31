@@ -479,10 +479,10 @@ tp_base_connection_unregister (TpBaseConnection *self)
 
       if (priv->been_registered)
         {
-          tp_dbus_daemon_unregister_object (priv->dbus_connection, self);
+          tp_dbus_connection_unregister_object (priv->dbus_connection, self);
 
           if (priv->bus_name != NULL)
-            tp_dbus_daemon_release_name (priv->dbus_connection, priv->bus_name,
+            tp_dbus_connection_release_name (priv->dbus_connection, priv->bus_name,
                 NULL);
           else
             DEBUG ("not releasing bus name: nothing to release");
@@ -1394,9 +1394,9 @@ tp_base_connection_register (TpBaseConnection *self,
   g_free (safe_proto);
   g_free (unique_name);
 
-  if (!tp_dbus_daemon_try_register_object (priv->dbus_connection, priv->object_path,
+  if (!tp_dbus_connection_try_register_object (priv->dbus_connection, priv->object_path,
         self, error) ||
-      !tp_dbus_daemon_request_name (priv->dbus_connection, priv->bus_name, FALSE,
+      !tp_dbus_connection_request_name (priv->dbus_connection, priv->bus_name, FALSE,
         error))
     {
       g_free (priv->bus_name);

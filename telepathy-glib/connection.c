@@ -2009,7 +2009,7 @@ _tp_connection_new (TpClientFactory *factory,
   /* Resolve unique name if necessary */
   if (bus_name[0] != ':')
     {
-      if (!_tp_dbus_daemon_get_name_owner (
+      if (!_tp_dbus_connection_get_name_owner (
           tp_client_factory_get_dbus_connection (factory), 2000, bus_name,
           &dup_unique_name, error))
         goto finally;

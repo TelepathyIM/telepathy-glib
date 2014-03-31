@@ -27,8 +27,9 @@
 #define __TELEPATHY_DBUS_H__
 #define __TP_IN_DBUS_H__
 
+#include <gio/gio.h>
+
 #include <telepathy-glib/defs.h>
-#include <telepathy-glib/dbus-daemon.h>
 
 #include <telepathy-glib/_gen/genums.h>
 
@@ -133,6 +134,21 @@ const gchar * const *
 tp_asv_get_strv (const GHashTable *asv, const gchar *key);
 void tp_asv_set_strv (GHashTable *asv, const gchar *key, gchar **value);
 void tp_asv_dump (GHashTable *asv);
+
+gboolean tp_dbus_connection_request_name (GDBusConnection *dbus_connection,
+    const gchar *well_known_name, gboolean idempotent, GError **error);
+gboolean tp_dbus_connection_release_name (GDBusConnection *dbus_connection,
+    const gchar *well_known_name, GError **error);
+
+void tp_dbus_connection_register_object (GDBusConnection *dbus_connection,
+    const gchar *object_path, gpointer object);
+gboolean tp_dbus_connection_try_register_object (
+    GDBusConnection *dbus_connection,
+    const gchar *object_path,
+    gpointer object,
+    GError **error);
+void tp_dbus_connection_unregister_object (GDBusConnection *dbus_connection,
+    gpointer object);
 
 G_END_DECLS
 

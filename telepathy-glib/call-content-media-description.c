@@ -1111,7 +1111,7 @@ cancelled_cb (GCancellable *cancellable,
 {
   TpCallContentMediaDescription *self = user_data;
 
-  tp_dbus_daemon_unregister_object (self->priv->dbus_connection,
+  tp_dbus_connection_unregister_object (self->priv->dbus_connection,
       G_OBJECT (self));
 
   g_simple_async_result_set_error (self->priv->result,
@@ -1146,7 +1146,7 @@ _tp_call_content_media_description_offer_async (
 
   /* register object on the bus */
   DEBUG ("Registering %s", self->priv->object_path);
-  tp_dbus_daemon_register_object (self->priv->dbus_connection,
+  tp_dbus_connection_register_object (self->priv->dbus_connection,
       self->priv->object_path, G_OBJECT (self));
 }
 
@@ -1232,7 +1232,7 @@ tp_call_content_media_description_accept (TpSvcCall1ContentMediaDescription *ifa
 
   tp_svc_call1_content_media_description_return_from_accept (context);
 
-  tp_dbus_daemon_unregister_object (self->priv->dbus_connection,
+  tp_dbus_connection_unregister_object (self->priv->dbus_connection,
       G_OBJECT (self));
 }
 
@@ -1269,7 +1269,7 @@ tp_call_content_media_description_reject (TpSvcCall1ContentMediaDescription *ifa
 
   tp_svc_call1_content_media_description_return_from_reject (context);
 
-  tp_dbus_daemon_unregister_object (self->priv->dbus_connection,
+  tp_dbus_connection_unregister_object (self->priv->dbus_connection,
       G_OBJECT (self));
 }
 

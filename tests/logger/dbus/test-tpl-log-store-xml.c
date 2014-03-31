@@ -49,7 +49,7 @@ setup (XmlTestCaseFixture* fixture,
   fixture->bus = tp_tests_dbus_dup_or_die ();
   g_assert (fixture->bus != NULL);
 
-  tp_dbus_daemon_request_name (fixture->bus,
+  tp_dbus_connection_request_name (fixture->bus,
       TP_ACCOUNT_MANAGER_BUS_NAME,
       FALSE,
       &error);
@@ -97,7 +97,7 @@ teardown (XmlTestCaseFixture *fixture,
 
   tp_tests_assert_last_unref (&fixture->factory);
 
-  tp_dbus_daemon_release_name (fixture->bus, TP_ACCOUNT_MANAGER_BUS_NAME,
+  tp_dbus_connection_release_name (fixture->bus, TP_ACCOUNT_MANAGER_BUS_NAME,
       &error);
   g_assert_no_error (error);
 
