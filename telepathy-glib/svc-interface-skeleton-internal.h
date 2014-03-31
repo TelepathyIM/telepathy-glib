@@ -22,7 +22,7 @@
 
 #include <gio/gio.h>
 
-#include <telepathy-glib/core-svc-interface.h>
+#include <telepathy-glib/svc-interface.h>
 #include <telepathy-glib/defs.h>
 
 G_BEGIN_DECLS

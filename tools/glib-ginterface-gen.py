@@ -741,9 +741,9 @@ class Generator(object):
         self.b('')
 
         if self.allow_single_include:
-            self.b('#include <telepathy-glib/core-svc-interface.h>')
             self.b('#include <telepathy-glib/dbus.h>')
             self.b('#include <telepathy-glib/dbus-properties-mixin.h>')
+            self.b('#include <telepathy-glib/svc-interface.h>')
             self.b('#include <telepathy-glib/util.h>')
             self.b('#include <telepathy-glib/value-array.h>')
         else:

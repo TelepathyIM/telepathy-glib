@@ -179,7 +179,7 @@
   <chapter id="ch-service-dbus">
     <title>Low-level generated code - service-side</title>
       <xi:include href="tp-svc.xml"/>
-      <xi:include href="xml/core-svc-interface.xml"/>
+      <xi:include href="xml/svc-interface.xml"/>
 
       <xi:include href="xml/svc-channel.xml"/>
       <xi:include href="xml/svc-channel-group.xml"/>

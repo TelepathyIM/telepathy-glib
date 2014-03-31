@@ -85,7 +85,6 @@ tpginclude_HEADERS = \
     contact.h \
     contact-operations.h \
     base-contact-list.h \
-    core-svc-interface.h \
     dbus.h \
     dbus-properties-mixin.h \
     dbus-tube-channel.h \
@@ -156,6 +155,7 @@ tpgdbusinclude_HEADERS = \
     svc-connection-manager.h \
     svc-debug.h \
     svc-generic.h \
+    svc-interface.h \
     svc-properties-interface.h \
     svc-protocol.h \
     svc-tls.h \
@@ -194,7 +194,6 @@ libtelepathy_glib_core_internal_la_LIBADD = $(ALL_LIBS)
 libtelepathy_glib_core_internal_la_SOURCES = \
     core-dbus.c \
     core-proxy.c \
-    core-svc-interface.c \
     errors.c \
     $(NULL)
 
@@ -211,6 +210,7 @@ libtelepathy_glib_dbus_internal_la_SOURCES = \
     gtypes.c \
     interfaces.c \
     sliced-gvalue.c \
+    svc-interface.c \
     value-array.c \
     $(NULL)
 
@@ -292,7 +292,6 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     dbus.c \
     dbus-internal.h \
     dbus-properties-mixin.c \
-    dbus-properties-mixin-internal.h \
     dbus-tube-channel.c \
     debug.c \
     debug-client.c \

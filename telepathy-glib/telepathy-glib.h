@@ -66,7 +66,6 @@
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/client.h>
 #include <telepathy-glib/client-message.h>
-#include <telepathy-glib/core-svc-interface.h>
 #include <telepathy-glib/cm-message.h>
 #include <telepathy-glib/connection-contact-list.h>
 #include <telepathy-glib/connection-manager.h>

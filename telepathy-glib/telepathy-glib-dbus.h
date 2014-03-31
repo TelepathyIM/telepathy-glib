@@ -67,6 +67,7 @@
 #include <telepathy-glib/svc-connection-manager.h>
 #include <telepathy-glib/svc-debug.h>
 #include <telepathy-glib/svc-generic.h>
+#include <telepathy-glib/svc-interface.h>
 #include <telepathy-glib/svc-properties-interface.h>
 #include <telepathy-glib/svc-protocol.h>
 #include <telepathy-glib/svc-tls.h>

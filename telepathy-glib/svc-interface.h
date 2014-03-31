@@ -16,16 +16,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#if !defined (_TP_GLIB_H_INSIDE) && !defined (_TP_COMPILATION)
-#error "Only <telepathy-glib/telepathy-glib.h> can be included directly."
+#if !defined (_TP_GLIB_DBUS_H_INSIDE) && !defined (_TP_COMPILATION)
+#error "Only <telepathy-glib/telepathy-glib-dbus.h> can be included directly."
 #endif
 
-#ifndef __TP_CORE_SVC_INTERFACE_H__
-#define __TP_CORE_SVC_INTERFACE_H__
+#ifndef __TP_SVC_INTERFACE_H__
+#define __TP_SVC_INTERFACE_H__
 
 #include <gio/gio.h>
 
-#include <telepathy-glib/defs.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
 
@@ -44,6 +44,13 @@ void tp_svc_interface_set_dbus_interface_info (GType g_interface,
     const TpSvcInterfaceInfo *info);
 
 const TpSvcInterfaceInfo *tp_svc_interface_peek_dbus_interface_info (
+    GType g_interface);
+
+void tp_svc_interface_set_dbus_properties_info (GType g_interface,
+    TpDBusPropertiesMixinIfaceInfo *info);
+
+_TP_AVAILABLE_IN_0_16
+TpDBusPropertiesMixinIfaceInfo *tp_svc_interface_get_dbus_properties_info (
     GType g_interface);
 
 G_END_DECLS

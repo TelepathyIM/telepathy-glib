@@ -26,6 +26,7 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/sliced-gvalue.h>
 #include <telepathy-glib/svc-channel.h>
+#include <telepathy-glib/svc-interface.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_ROOM_CONFIG
