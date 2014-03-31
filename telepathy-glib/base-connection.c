@@ -276,7 +276,7 @@ enum
     PROP_INTERFACES,
     PROP_REQUESTABLE_CHANNEL_CLASSES,
     PROP_DBUS_STATUS,
-    PROP_DBUS_DAEMON,
+    PROP_DBUS_CONNECTION,
     PROP_ACCOUNT_PATH_SUFFIX,
     N_PROPS
 };
@@ -340,7 +340,7 @@ struct _TpBaseConnectionPrivate
    * DISCONNECTED). */
   GPtrArray *disconnect_requests;
 
-  TpDBusDaemon *bus_proxy;
+  GDBusConnection *dbus_connection;
   /* TRUE after constructor() returns */
   gboolean been_constructed;
   /* TRUE if on D-Bus */
@@ -369,11 +369,12 @@ static gboolean
 tp_base_connection_ensure_dbus (TpBaseConnection *self,
     GError **error)
 {
-  if (self->priv->bus_proxy == NULL)
+  if (self->priv->dbus_connection == NULL)
     {
-      self->priv->bus_proxy = tp_dbus_daemon_dup (error);
+      self->priv->dbus_connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL,
+          error);
 
-      if (self->priv->bus_proxy == NULL)
+      if (self->priv->dbus_connection == NULL)
         return FALSE;
     }
 
@@ -417,8 +418,8 @@ tp_base_connection_get_property (GObject *object,
       g_value_set_uint (value, tp_base_connection_get_status (self));
       break;
 
-    case PROP_DBUS_DAEMON:
-      g_value_set_object (value, self->priv->bus_proxy);
+    case PROP_DBUS_CONNECTION:
+      g_value_set_object (value, self->priv->dbus_connection);
       break;
 
     case PROP_ACCOUNT_PATH_SUFFIX:
@@ -451,15 +452,9 @@ tp_base_connection_set_property (GObject      *object,
       tp_base_connection_set_self_handle (self, g_value_get_uint (value));
       break;
 
-    case PROP_DBUS_DAEMON:
-        {
-          TpDBusDaemon *dbus_daemon = g_value_get_object (value);
-
-          g_assert (self->priv->bus_proxy == NULL);     /* construct-only */
-
-          if (dbus_daemon != NULL)
-            self->priv->bus_proxy = g_object_ref (dbus_daemon);
-        }
+    case PROP_DBUS_CONNECTION:
+      g_assert (self->priv->dbus_connection == NULL);     /* construct-only */
+      self->priv->dbus_connection = g_value_dup_object (value);
       break;
 
     case PROP_ACCOUNT_PATH_SUFFIX:
@@ -478,16 +473,17 @@ tp_base_connection_unregister (TpBaseConnection *self)
 {
   TpBaseConnectionPrivate *priv = self->priv;
 
-  if (priv->bus_proxy != NULL)
+  if (priv->dbus_connection != NULL)
     {
       GHashTableIter iter;
 
       if (priv->been_registered)
         {
-          tp_dbus_daemon_unregister_object (priv->bus_proxy, self);
+          tp_dbus_daemon_unregister_object (priv->dbus_connection, self);
 
           if (priv->bus_name != NULL)
-            tp_dbus_daemon_release_name (priv->bus_proxy, priv->bus_name, NULL);
+            tp_dbus_daemon_release_name (priv->dbus_connection, priv->bus_name,
+                NULL);
           else
             DEBUG ("not releasing bus name: nothing to release");
 
@@ -519,7 +515,7 @@ tp_base_connection_dispose (GObject *object)
 
   tp_base_connection_unregister (self);
 
-  tp_clear_object (&priv->bus_proxy);
+  tp_clear_object (&priv->dbus_connection);
 
   g_ptr_array_foreach (priv->channel_managers, (GFunc) g_object_unref, NULL);
   g_ptr_array_unref (priv->channel_managers);
@@ -1145,21 +1141,20 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   g_object_class_install_property (object_class, PROP_DBUS_STATUS, param_spec);
 
   /**
-   * TpBaseConnection:dbus-daemon: (skip)
+   * TpBaseConnection:dbus-connection:
    *
-   * #TpDBusDaemon object encapsulating this object's connection to D-Bus.
-   * Read-only except during construction.
+   * This object's connection to D-Bus. Read-only except during construction.
    *
    * If this property is %NULL or omitted during construction, the object will
    * automatically attempt to connect to the session bus with
-   * tp_dbus_daemon_dup() just after it is constructed; if this fails, this
+   * g_bus_get_sync() just after it is constructed; if this fails, this
    * property will remain %NULL, and tp_base_connection_register() will fail.
    *
-   * Since: 0.11.3
+   * Since: 0.UNRELEASED
    */
-  g_object_class_install_property (object_class, PROP_DBUS_DAEMON,
-      g_param_spec_object ("dbus-daemon", "D-Bus daemon",
-        "The D-Bus daemon used by this object", TP_TYPE_DBUS_DAEMON,
+  g_object_class_install_property (object_class, PROP_DBUS_CONNECTION,
+      g_param_spec_object ("dbus-connection", "D-Bus connection",
+        "The D-Bus connection used by this object", G_TYPE_DBUS_CONNECTION,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   /**
@@ -1399,9 +1394,9 @@ tp_base_connection_register (TpBaseConnection *self,
   g_free (safe_proto);
   g_free (unique_name);
 
-  if (!tp_dbus_daemon_try_register_object (priv->bus_proxy, priv->object_path,
+  if (!tp_dbus_daemon_try_register_object (priv->dbus_connection, priv->object_path,
         self, error) ||
-      !tp_dbus_daemon_request_name (priv->bus_proxy, priv->bus_name, FALSE,
+      !tp_dbus_daemon_request_name (priv->dbus_connection, priv->bus_name, FALSE,
         error))
     {
       g_free (priv->bus_name);
@@ -2090,7 +2085,7 @@ ensure_client_data (TpBaseConnection *self,
       client = g_slice_new0 (ClientData);
       client->interests = g_hash_table_new (NULL, NULL);
       client->watch_id = g_bus_watch_name_on_connection (
-          tp_proxy_get_dbus_connection (self->priv->bus_proxy),
+          self->priv->dbus_connection,
           unique_name,
           G_BUS_NAME_WATCHER_FLAGS_NONE,
           NULL, client_vanished_cb,
@@ -2200,7 +2195,7 @@ tp_base_connection_dbus_add_client_interest (TpSvcConnection *svc,
   const gchar *unique_name = NULL;
 
   g_return_if_fail (TP_IS_BASE_CONNECTION (self));
-  g_return_if_fail (self->priv->bus_proxy != NULL);
+  g_return_if_fail (self->priv->dbus_connection != NULL);
 
   if (interests == NULL || interests[0] == NULL)
     goto finally;
@@ -2225,7 +2220,7 @@ tp_base_connection_dbus_remove_client_interest (TpSvcConnection *svc,
   ClientData *client;
 
   g_return_if_fail (TP_IS_BASE_CONNECTION (self));
-  g_return_if_fail (self->priv->bus_proxy != NULL);
+  g_return_if_fail (self->priv->dbus_connection != NULL);
 
   if (interests == NULL || interests[0] == NULL)
     goto finally;
@@ -2694,23 +2689,23 @@ tp_base_connection_channel_manager_iter_next (TpChannelManagerIter *iter,
 }
 
 /**
- * tp_base_connection_get_dbus_daemon: (skip)
+ * tp_base_connection_get_dbus_connection:
  * @self: the connection manager
  *
  * <!-- -->
  *
  * Returns: (transfer none): the value of the
- *  #TpBaseConnectionManager:dbus-daemon property. The caller must reference
+ *  #TpBaseConnectionManager:dbus-connection property. The caller must reference
  *  the returned object with g_object_ref() if it will be kept.
  *
  * Since: 0.11.3
  */
-TpDBusDaemon *
-tp_base_connection_get_dbus_daemon (TpBaseConnection *self)
+GDBusConnection *
+tp_base_connection_get_dbus_connection (TpBaseConnection *self)
 {
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
 
-  return self->priv->bus_proxy;
+  return self->priv->dbus_connection;
 }
 
 gpointer

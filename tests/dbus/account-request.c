@@ -21,7 +21,7 @@
 
 typedef struct {
   GMainLoop *mainloop;
-  TpDBusDaemon *dbus;
+  GDBusConnection *dbus;
 
   TpTestsSimpleAccountManager *am;
   TpTestsSimpleAccount *account_service;
@@ -38,7 +38,7 @@ setup (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_dup_or_die ();
   g_assert (test->dbus != NULL);
 
   /* create the account manager service */
@@ -86,7 +86,7 @@ teardown (Test *test,
   tp_dbus_daemon_unregister_object (test->dbus, test->account_service);
   tp_tests_assert_last_unref (&test->account_service);
 
-  tp_tests_assert_last_unref (&test->dbus);
+  g_clear_object (&test->dbus);
   tp_clear_pointer (&test->mainloop, g_main_loop_unref);
 
   g_clear_error (&test->error);

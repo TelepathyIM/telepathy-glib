@@ -16,7 +16,7 @@
 
 typedef struct {
   GMainLoop *mainloop;
-  TpDBusDaemon *dbus;
+  GDBusConnection *dbus;
   TpClientFactory *factory;
   GError *error;
 } Test;
@@ -28,7 +28,7 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_dup_or_die ();
   test->factory = tp_client_factory_new (test->dbus);
 
   test->error = NULL;

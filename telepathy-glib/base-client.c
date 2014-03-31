@@ -213,7 +213,7 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseClient, tp_base_client, G_TYPE_OBJECT,
       requests_iface_init))
 
 enum {
-    PROP_DBUS_DAEMON = 1,
+    PROP_DBUS_CONNECTION = 1,
     PROP_FACTORY,
     PROP_NAME,
     PROP_UNIQUIFY_NAME,
@@ -241,11 +241,9 @@ typedef enum {
 struct _TpBaseClientPrivate
 {
   TpClientFactory *factory;
-  TpDBusDaemon *dbus;
+  GDBusConnection *dbus;
   gchar *name;
   gboolean uniquify_name;
-  /* reffed */
-  GDBusConnection *gdbus;
 
   gboolean registered;
   ClientFlags flags;
@@ -957,10 +955,7 @@ tp_base_client_register (TpBaseClient *self,
     return TRUE;
 
   /* Client is an handler */
-  self->priv->gdbus = g_object_ref (
-      tp_proxy_get_dbus_connection (self->priv->dbus));
-
-  clients = g_object_get_qdata (G_OBJECT (self->priv->gdbus), clients_quark ());
+  clients = g_object_get_qdata (G_OBJECT (self->priv->dbus), clients_quark ());
 
   if (clients == NULL)
     {
@@ -970,7 +965,7 @@ tp_base_client_register (TpBaseClient *self,
        * borrowed client path => borrowed (GHashTable *) */
       clients = g_hash_table_new (g_str_hash, g_str_equal);
 
-      g_object_set_qdata_full (G_OBJECT (self->priv->gdbus),
+      g_object_set_qdata_full (G_OBJECT (self->priv->dbus),
           clients_quark (), clients, (GDestroyNotify) g_hash_table_unref);
     }
 
@@ -1026,7 +1021,7 @@ tp_base_client_dup_handled_channels (TpBaseClient *self)
 
   set = g_hash_table_new (g_str_hash, g_str_equal);
 
-  clients = g_object_get_qdata (G_OBJECT (self->priv->gdbus), clients_quark ());
+  clients = g_object_get_qdata (G_OBJECT (self->priv->dbus), clients_quark ());
 
   g_hash_table_iter_init (&iter, clients);
   while (g_hash_table_iter_next (&iter, NULL, &value))
@@ -1128,7 +1123,7 @@ tp_base_client_get_property (GObject *object,
 
   switch (property_id)
     {
-      case PROP_DBUS_DAEMON:
+      case PROP_DBUS_CONNECTION:
         g_value_set_object (value, self->priv->dbus);
         break;
 
@@ -1160,7 +1155,7 @@ tp_base_client_set_property (GObject *object,
 
   switch (property_id)
     {
-      case PROP_DBUS_DAEMON:
+      case PROP_DBUS_CONNECTION:
         g_assert (self->priv->dbus == NULL);    /* construct-only */
         self->priv->dbus = g_value_dup_object (value);
         break;
@@ -1197,20 +1192,16 @@ tp_base_client_constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 
-  /* Ensure we have a factory */
-  if (self->priv->factory == NULL)
-    {
-      self->priv->factory = tp_automatic_client_factory_new (self->priv->dbus);
-    }
+  g_assert (self->priv->factory != NULL);
 
-  /* Ensure we have a TpDBusDaemon */
+  /* Ensure we have a GDBusConnection */
   if (self->priv->dbus == NULL)
     {
       self->priv->dbus = g_object_ref (
-          tp_client_factory_get_dbus_daemon (self->priv->factory));
+          tp_client_factory_get_dbus_connection (self->priv->factory));
     }
 
-  g_assert (tp_client_factory_get_dbus_daemon (self->priv->factory) ==
+  g_assert (tp_client_factory_get_dbus_connection (self->priv->factory) ==
       self->priv->dbus);
 
   /* Bus name */
@@ -1389,20 +1380,19 @@ tp_base_client_class_init (TpBaseClientClass *cls)
   object_class->finalize = tp_base_client_finalize;
 
   /**
-   * TpBaseClient:dbus-daemon:
+   * TpBaseClient:dbus-connection:
    *
-   * #TpDBusDaemon object encapsulating this object's connection to D-Bus.
-   * Read-only except during construction.
+   * This object's connection to D-Bus. Read-only except during construction.
    *
    * This property can't be %NULL after construction.
    *
-   * Since: 0.11.5
+   * Since: 0.UNRELEASED
    */
-  param_spec = g_param_spec_object ("dbus-daemon", "TpDBusDaemon object",
-      "The dbus daemon associated with this client",
-      TP_TYPE_DBUS_DAEMON,
+  param_spec = g_param_spec_object ("dbus-connection", "GDBusConnection object",
+      "The dbus connection associated with this client",
+      G_TYPE_DBUS_CONNECTION,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_DBUS_DAEMON, param_spec);
+  g_object_class_install_property (object_class, PROP_DBUS_CONNECTION, param_spec);
 
   /**
    * TpBaseClient:factory:
@@ -2510,20 +2500,20 @@ tp_base_client_get_uniquify_name (TpBaseClient *self)
 }
 
 /**
- * tp_base_client_get_dbus_daemon:
+ * tp_base_client_get_dbus_connection:
  * @self: a #TpBaseClient
  *
- * Return the #TpBaseClient:dbus-daemon construct-only property, which
+ * Return the #TpBaseClient:dbus-connection construct-only property, which
  * represents the D-Bus connection used to export this client object.
  *
  * The returned object's reference count is not incremented, so it is not
  * necessarily valid after @self is destroyed.
  *
- * Returns: (transfer none): the value of #TpBaseClient:dbus-daemon
- * Since: 0.11.11
+ * Returns: (transfer none): the value of #TpBaseClient:dbus-connection
+ * Since: 0.UNRELEASED
  */
-TpDBusDaemon *
-tp_base_client_get_dbus_daemon (TpBaseClient *self)
+GDBusConnection *
+tp_base_client_get_dbus_connection (TpBaseClient *self)
 {
   g_return_val_if_fail (TP_IS_BASE_CLIENT (self), NULL);
   return self->priv->dbus;
@@ -2614,12 +2604,10 @@ tp_base_client_unregister (TpBaseClient *self)
     {
       GHashTable *clients;
 
-      clients = g_object_get_qdata (G_OBJECT (self->priv->gdbus),
+      clients = g_object_get_qdata (G_OBJECT (self->priv->dbus),
           clients_quark ());
       if (clients != NULL)
         g_hash_table_remove (clients, self->priv->object_path);
-
-      g_clear_object (&self->priv->gdbus);
     }
 
   self->priv->registered = FALSE;

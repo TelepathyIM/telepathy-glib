@@ -658,7 +658,7 @@ make_the_connection_disappear (Fixture *f)
   gboolean ok;
 
   tp_dbus_daemon_unregister_object (
-      tp_base_connection_get_dbus_daemon (f->base_connection),
+      tp_base_connection_get_dbus_connection (f->base_connection),
       f->base_connection);
   /* check that that worked */
   ok = tp_cli_connection_run_connect (f->client_conn, -1,
@@ -678,7 +678,7 @@ put_the_connection_back (Fixture *f)
   gboolean ok;
 
   tp_dbus_daemon_register_object (
-      tp_base_connection_get_dbus_daemon (f->base_connection),
+      tp_base_connection_get_dbus_connection (f->base_connection),
       tp_base_connection_get_object_path (f->base_connection),
       f->base_connection);
   /* check that *that* worked */

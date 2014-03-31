@@ -25,13 +25,13 @@
 
 #include "simple-account.h"
 
-void tpl_test_create_and_prepare_account (TpDBusDaemon *dbus,
+void tpl_test_create_and_prepare_account (GDBusConnection *dbus,
     TpClientFactory *factory,
     const gchar *path,
     TpAccount **account,
     TpTestsSimpleAccount **account_service);
 
-void tpl_test_release_account (TpDBusDaemon *dbus,
+void tpl_test_release_account (GDBusConnection *dbus,
     TpAccount *account,
     TpTestsSimpleAccount *account_service);
 

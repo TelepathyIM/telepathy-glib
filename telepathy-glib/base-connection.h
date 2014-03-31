@@ -203,7 +203,8 @@ gboolean tp_base_connection_channel_manager_iter_next (
       } \
   } G_STMT_END
 
-TpDBusDaemon *tp_base_connection_get_dbus_daemon (TpBaseConnection *self);
+GDBusConnection *tp_base_connection_get_dbus_connection (
+    TpBaseConnection *self);
 
 void tp_base_connection_add_client_interest (TpBaseConnection *self,
     const gchar *unique_name, const gchar *token,

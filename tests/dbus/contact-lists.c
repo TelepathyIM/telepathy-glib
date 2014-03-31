@@ -71,7 +71,7 @@ log_entry_free (LogEntry *le)
 }
 
 typedef struct {
-    TpDBusDaemon *dbus;
+    GDBusConnection *dbus;
     ExampleContactListConnection *service_conn;
     TpBaseConnection *service_conn_as_base;
     gchar *conn_name;
@@ -282,7 +282,7 @@ setup_pre_connect (
   const gchar *account;
 
   tp_debug_set_flags ("all");
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_dup_or_die ();
   test->main_loop = g_main_loop_new (NULL, FALSE);
 
   /* Some tests want 'account' to be an invalid identifier, so that Connect()

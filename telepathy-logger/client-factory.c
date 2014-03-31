@@ -105,15 +105,15 @@ _tpl_client_factory_class_init (TplClientFactoryClass *cls)
 
 
 static TpClientFactory *
-_tpl_client_factory_new (TpDBusDaemon *dbus)
+_tpl_client_factory_new (GDBusConnection *dbus)
 {
   return g_object_new (TPL_TYPE_CLIENT_FACTORY,
-      "dbus-daemon", dbus,
+      "dbus-connection", dbus,
       NULL);
 }
 
 TpClientFactory *
-_tpl_client_factory_dup (TpDBusDaemon *dbus)
+_tpl_client_factory_dup (GDBusConnection *dbus)
 {
   static TpClientFactory *singleton = NULL;
 

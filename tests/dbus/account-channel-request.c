@@ -28,7 +28,7 @@
 
 typedef struct {
     GMainLoop *mainloop;
-    TpDBusDaemon *dbus;
+    GDBusConnection *dbus;
 
     /* Service side objects */
     TpBaseConnection *base_connection;
@@ -54,7 +54,7 @@ setup (Test *test,
        gconstpointer data)
 {
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_dup_or_die ();
 
   test->cancellable = g_cancellable_new ();
 

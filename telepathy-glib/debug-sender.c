@@ -237,19 +237,13 @@ static void
 tp_debug_sender_constructed (GObject *object)
 {
   TpDebugSender *self = TP_DEBUG_SENDER (object);
-  TpDBusDaemon *dbus_daemon;
 
-  dbus_daemon = tp_dbus_daemon_dup (NULL);
+  self->priv->conn = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
 
-  if (dbus_daemon != NULL)
+  if (self->priv->conn != NULL)
     {
-      tp_dbus_daemon_register_object (dbus_daemon,
+      tp_dbus_daemon_register_object (self->priv->conn,
           TP_DEBUG_OBJECT_PATH, debug_sender);
-
-      self->priv->conn = g_object_ref (tp_proxy_get_dbus_connection (
-            dbus_daemon));
-
-      g_object_unref (dbus_daemon);
     }
 }
 
@@ -360,7 +354,7 @@ tp_debug_sender_init (TpDebugSender *self)
  * exists.
  *
  * Returns: a reference to the #TpDebugSender instance for the current session
- *          bus daemon
+ *          bus connection
  *
  * Since: 0.7.36
  */

@@ -105,33 +105,6 @@ test_validation (void)
         TP_DBUS_NAME_TYPE_ANY, NULL));
 }
 
-static void
-test_properties (void)
-{
-  TpDBusDaemon *bus = tp_dbus_daemon_dup (NULL);
-  gchar *bus_name;
-  gchar *object_path;
-  GDBusConnection *dbus_conn;
-
-  g_object_get (bus,
-      "dbus-connection", &dbus_conn,
-      "bus-name", &bus_name,
-      "object-path", &object_path,
-      NULL);
-
-  if (object_path[0] != '/')
-    g_error ("supposed object-path \"%s\" doesn't start with a /",
-        object_path);
-
-  g_assert_cmpstr (bus_name, ==, "org.freedesktop.DBus");
-  g_assert (G_IS_DBUS_CONNECTION (dbus_conn));
-
-  g_free (bus_name);
-  g_free (object_path);
-  g_object_unref (dbus_conn);
-  g_object_unref (bus);
-}
-
 int
 main (int argc,
       char **argv)
@@ -139,7 +112,6 @@ main (int argc,
   tp_tests_init (&argc, &argv);
 
   g_test_add_func ("/dbus/validation", test_validation);
-  g_test_add_func ("/dbus-daemon/properties", test_properties);
 
   return tp_tests_run_with_bus ();
 }

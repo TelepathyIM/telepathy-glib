@@ -132,7 +132,7 @@ static void
 setup (Fixture *f,
     gconstpointer user_data)
 {
-  TpDBusDaemon *dbus_daemon;
+  GDBusConnection *dbus_connection;
   GError *error = NULL;
 
   global_fixture = f;
@@ -149,7 +149,7 @@ setup (Fixture *f,
 
   f->factory = tp_client_factory_dup (&error);
   g_assert_no_error (error);
-  dbus_daemon = tp_client_factory_get_dbus_daemon (f->factory);
+  dbus_connection = tp_client_factory_get_dbus_connection (f->factory);
 
   /* Any random object with an interface: what matters is that it can
    * accept a method call and emit a signal. We use the Properties
@@ -157,14 +157,11 @@ setup (Fixture *f,
   f->cd_service = tp_tests_object_new_static_class (
       TP_TESTS_TYPE_SIMPLE_CHANNEL_DISPATCHER,
       NULL);
-  tp_dbus_daemon_register_object (dbus_daemon, "/", f->cd_service);
+  tp_dbus_daemon_register_object (dbus_connection, "/", f->cd_service);
 
   f->private_gdbus = tp_tests_get_private_bus ();
   g_assert (f->private_gdbus != NULL);
-  dbus_daemon = tp_dbus_daemon_new (f->private_gdbus);
-  g_assert (dbus_daemon != NULL);
-  f->private_factory = tp_client_factory_new (dbus_daemon);
-  g_object_unref (dbus_daemon);
+  f->private_factory = tp_client_factory_new (f->private_gdbus);
 }
 
 static void
@@ -206,7 +203,7 @@ new_proxy (Fixture *f,
 
   return tp_tests_object_new_static_class (TP_TYPE_PROXY,
       "bus-name", tp_dbus_daemon_get_unique_name (
-          tp_client_factory_get_dbus_daemon (f->factory)),
+          tp_client_factory_get_dbus_connection (f->factory)),
       "object-path", "/",
       "factory", local_factory,
       NULL);

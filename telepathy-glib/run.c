@@ -212,7 +212,6 @@ tp_run_connection_manager (const char *prog_name,
                            char **argv)
 {
   GDBusConnection *connection = NULL;
-  TpDBusDaemon *bus_daemon = NULL;
   GError *error = NULL;
   int ret = 1;
 
@@ -241,9 +240,9 @@ tp_run_connection_manager (const char *prog_name,
 
   mainloop = g_main_loop_new (NULL, FALSE);
 
-  bus_daemon = tp_dbus_daemon_dup (&error);
+  connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
 
-  if (bus_daemon == NULL)
+  if (connection == NULL)
     {
       WARNING ("%s", error->message);
       g_error_free (error);
@@ -259,7 +258,6 @@ tp_run_connection_manager (const char *prog_name,
   g_signal_connect (manager, "no-more-connections",
       (GCallback) no_more_connections, NULL);
 
-  connection = tp_proxy_get_dbus_connection (bus_daemon);
   /* Exit gracefully (terminate the main loop) on close, rather
    * than raising SIGTERM, so that valgrind can see our memory leaks */
   g_dbus_connection_set_exit_on_close (connection, FALSE);
@@ -290,8 +288,8 @@ out:
     g_signal_handlers_disconnect_by_func (connection, gdbus_closed_cb,
         mainloop);
 
-  if (bus_daemon != NULL)
-    g_object_unref (bus_daemon);
+  if (connection != NULL)
+    g_object_unref (connection);
 
   /* globals */
   if (timeout_id != 0)

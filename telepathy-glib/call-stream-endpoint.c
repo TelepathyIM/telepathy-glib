@@ -83,7 +83,7 @@ G_DEFINE_TYPE_WITH_CODE(TpCallStreamEndpoint,
 enum
 {
   PROP_OBJECT_PATH = 1,
-  PROP_DBUS_DAEMON,
+  PROP_DBUS_CONNECTION,
 
   PROP_REMOTE_CREDENTIALS,
   PROP_REMOTE_CANDIDATES,
@@ -106,7 +106,7 @@ static guint _signals[LAST_SIGNAL] = { 0, };
 
 struct _TpCallStreamEndpointPrivate
 {
-  TpDBusDaemon *dbus_daemon;
+  GDBusConnection *dbus_connection;
   gchar *object_path;
 
   gchar *username;
@@ -147,7 +147,7 @@ tp_call_stream_endpoint_constructed (GObject *obj)
 
   /* register object on the bus */
   DEBUG ("Registering %s", self->priv->object_path);
-  tp_dbus_daemon_register_object (self->priv->dbus_daemon,
+  tp_dbus_daemon_register_object (self->priv->dbus_connection,
       self->priv->object_path, obj);
 
   if (G_OBJECT_CLASS (tp_call_stream_endpoint_parent_class)->constructed != NULL)
@@ -159,9 +159,9 @@ tp_call_stream_endpoint_dispose (GObject *object)
 {
   TpCallStreamEndpoint *self = TP_CALL_STREAM_ENDPOINT (object);
 
-  tp_dbus_daemon_unregister_object (self->priv->dbus_daemon, G_OBJECT (self));
+  tp_dbus_daemon_unregister_object (self->priv->dbus_connection, G_OBJECT (self));
 
-  g_clear_object (&self->priv->dbus_daemon);
+  g_clear_object (&self->priv->dbus_connection);
 
   if (G_OBJECT_CLASS (tp_call_stream_endpoint_parent_class)->dispose)
     G_OBJECT_CLASS (tp_call_stream_endpoint_parent_class)->dispose (object);
@@ -195,8 +195,8 @@ tp_call_stream_endpoint_get_property (GObject *object,
       case PROP_OBJECT_PATH:
         g_value_set_string (value, self->priv->object_path);
         break;
-      case PROP_DBUS_DAEMON:
-        g_value_set_object (value, self->priv->dbus_daemon);
+      case PROP_DBUS_CONNECTION:
+        g_value_set_object (value, self->priv->dbus_connection);
         break;
       case PROP_REMOTE_CREDENTIALS:
         {
@@ -247,9 +247,9 @@ tp_call_stream_endpoint_set_property (GObject *object,
         g_assert (self->priv->object_path == NULL);   /* construct-only */
         self->priv->object_path = g_value_dup_string (value);
         break;
-      case PROP_DBUS_DAEMON:
-        g_assert (self->priv->dbus_daemon == NULL);   /* construct-only */
-        self->priv->dbus_daemon = g_value_dup_object (value);
+      case PROP_DBUS_CONNECTION:
+        g_assert (self->priv->dbus_connection == NULL);   /* construct-only */
+        self->priv->dbus_connection = g_value_dup_object (value);
         break;
       case PROP_TRANSPORT:
         self->priv->transport = g_value_get_uint (value);
@@ -310,18 +310,18 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
   g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
 
   /**
-   * TpCallStreamEndpoint:dbus-daemon:
+   * TpCallStreamEndpoint:dbus-connection:
    *
-   * The connection to the DBus daemon owning the CM.
+   * The connection to the DBus owning the CM.
    *
-   * Since: 0.17.5
+   * Since: 0.UNRELEASED
    */
-  param_spec = g_param_spec_object ("dbus-daemon",
-      "The DBus daemon connection",
-      "The connection to the DBus daemon owning the CM",
-      TP_TYPE_DBUS_DAEMON,
+  param_spec = g_param_spec_object ("dbus-connection",
+      "The DBus connection",
+      "The connection to the DBus owning the CM",
+      G_TYPE_DBUS_CONNECTION,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_DBUS_DAEMON, param_spec);
+  g_object_class_install_property (object_class, PROP_DBUS_CONNECTION, param_spec);
 
   /**
    * TpCallStreamEndpoint:remote-credentials:
@@ -489,7 +489,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
 
 /**
  * tp_call_stream_endpoint_new:
- * @dbus_daemon: value of #TpCallStreamEndpoint:dbus-daemon property
+ * @dbus_connection: value of #TpCallStreamEndpoint:dbus-connection property
  * @object_path: value of #TpCallStreamEndpoint:object-path property
  * @transport: value of #TpCallStreamEndpoint:transport property
  * @is_ice_lite: value of #TpCallStreamEndpoint:is_ice_lite property
@@ -501,16 +501,16 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
  * Since: 0.17.5
  */
 TpCallStreamEndpoint *
-tp_call_stream_endpoint_new (TpDBusDaemon *dbus_daemon,
+tp_call_stream_endpoint_new (GDBusConnection *dbus_connection,
     const gchar *object_path,
     TpStreamTransportType transport,
     gboolean is_ice_lite)
 {
-  g_return_val_if_fail (TP_IS_DBUS_DAEMON (dbus_daemon), NULL);
+  g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus_connection), NULL);
   g_return_val_if_fail (g_variant_is_object_path (object_path), NULL);
 
   return g_object_new (TP_TYPE_CALL_STREAM_ENDPOINT,
-      "dbus-daemon", dbus_daemon,
+      "dbus-connection", dbus_connection,
       "object-path", object_path,
       "transport", transport,
       "is-ice-lite", is_ice_lite,

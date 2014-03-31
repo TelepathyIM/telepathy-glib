@@ -753,7 +753,7 @@ tpl_dbus_service_clear_account (TpSvcLogger *logger,
     GDBusMethodInvocation *context)
 {
   TplDBusService *self = TPL_DBUS_SERVICE (logger);
-  TpDBusDaemon *bus;
+  GDBusConnection *bus;
   TpAccount *account;
   GError *error = NULL;
   TpClientFactory *factory = NULL;
@@ -761,10 +761,10 @@ tpl_dbus_service_clear_account (TpSvcLogger *logger,
   g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
   g_return_if_fail (context != NULL);
 
-  bus = tp_dbus_daemon_dup (&error);
+  bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
   if (bus == NULL)
     {
-      DEBUG ("Unable to acquire the bus daemon: %s", error->message);
+      DEBUG ("Unable to acquire the bus connection: %s", error->message);
       g_dbus_method_invocation_return_gerror (context, error);
       goto out;
     }
@@ -804,7 +804,7 @@ tpl_dbus_service_clear_entity (TpSvcLogger *logger,
     GDBusMethodInvocation *context)
 {
   TplDBusService *self = TPL_DBUS_SERVICE (logger);
-  TpDBusDaemon *bus;
+  GDBusConnection *bus;
   TpAccount *account;
   TplEntity *entity;
   GError *error = NULL;
@@ -814,10 +814,10 @@ tpl_dbus_service_clear_entity (TpSvcLogger *logger,
   g_return_if_fail (context != NULL);
   g_return_if_fail (!TPL_STR_EMPTY (identifier));
 
-  bus = tp_dbus_daemon_dup (&error);
+  bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
   if (bus == NULL)
     {
-      DEBUG ("Unable to acquire the bus daemon: %s", error->message);
+      DEBUG ("Unable to acquire the bus connection: %s", error->message);
       g_dbus_method_invocation_return_gerror (context, error);
       goto out;
     }

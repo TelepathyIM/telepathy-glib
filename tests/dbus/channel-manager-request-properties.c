@@ -25,7 +25,7 @@
 typedef struct
 {
   GMainLoop *mainloop;
-  TpDBusDaemon *dbus;
+  GDBusConnection *dbus;
   TpTestsEchoConnection *service_conn;
   TpTestsSimpleChannelManager *channel_manager;
 
@@ -47,7 +47,7 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_dup_or_die ();
 
   test->channel_manager = tp_tests_object_new_static_class (
       TP_TESTS_TYPE_SIMPLE_CHANNEL_MANAGER, NULL);

@@ -88,7 +88,7 @@ G_DEFINE_TYPE_WITH_CODE(TpCallContentMediaDescription,
 enum
 {
   PROP_OBJECT_PATH = 1,
-  PROP_DBUS_DAEMON,
+  PROP_DBUS_CONNECTION,
 
   PROP_INTERFACES,
   PROP_FURTHER_NEGOTIATION_REQUIRED,
@@ -114,7 +114,7 @@ enum
 /* private structure */
 struct _TpCallContentMediaDescriptionPrivate
 {
-  TpDBusDaemon *dbus_daemon;
+  GDBusConnection *dbus_connection;
   gchar *object_path;
 
   /* GPtrArray of static strings, NULL-terminated */
@@ -174,7 +174,7 @@ tp_call_content_media_description_dispose (GObject *object)
 
   tp_clear_pointer (&self->priv->codecs, g_ptr_array_unref);
   tp_clear_pointer (&self->priv->ssrcs, g_hash_table_unref);
-  g_clear_object (&self->priv->dbus_daemon);
+  g_clear_object (&self->priv->dbus_connection);
 
   tp_clear_pointer (&self->priv->header_extensions, g_ptr_array_unref);
   tp_clear_pointer (&self->priv->feedback_messages, g_hash_table_unref);
@@ -210,8 +210,8 @@ tp_call_content_media_description_get_property (GObject *object,
       case PROP_OBJECT_PATH:
         g_value_set_string (value, self->priv->object_path);
         break;
-      case PROP_DBUS_DAEMON:
-        g_value_set_object (value, self->priv->dbus_daemon);
+      case PROP_DBUS_CONNECTION:
+        g_value_set_object (value, self->priv->dbus_connection);
         break;
       case PROP_INTERFACES:
         g_value_set_boxed (value, self->priv->interfaces->pdata);
@@ -281,9 +281,9 @@ tp_call_content_media_description_set_property (GObject *object,
         g_assert (self->priv->object_path == NULL); /* construct-only */
         self->priv->object_path = g_value_dup_string (value);
         break;
-      case PROP_DBUS_DAEMON:
-        g_assert (self->priv->dbus_daemon == NULL); /* construct-only */
-        self->priv->dbus_daemon = g_value_dup_object (value);
+      case PROP_DBUS_CONNECTION:
+        g_assert (self->priv->dbus_connection == NULL); /* construct-only */
+        self->priv->dbus_connection = g_value_dup_object (value);
         break;
       case PROP_FURTHER_NEGOTIATION_REQUIRED:
         self->priv->further_negotiation_required = g_value_get_boolean (value);
@@ -380,18 +380,18 @@ tp_call_content_media_description_class_init (
   g_object_class_install_property (object_class, PROP_OBJECT_PATH, spec);
 
   /**
-   * TpCallContentMediaDescription:dbus-daemon:
+   * TpCallContentMediaDescription:dbus-connection:
    *
-   * The connection to the DBus daemon owning the CM.
+   * The connection to the DBus owning the CM.
    *
    * Since: 0.17.5
    */
-  spec = g_param_spec_object ("dbus-daemon",
-      "The DBus daemon connection",
-      "The connection to the DBus daemon owning the CM",
-      TP_TYPE_DBUS_DAEMON,
+  spec = g_param_spec_object ("dbus-connection",
+      "The DBus connection",
+      "The connection to the DBus owning the CM",
+      G_TYPE_DBUS_CONNECTION,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_DBUS_DAEMON, spec);
+  g_object_class_install_property (object_class, PROP_DBUS_CONNECTION, spec);
 
   /**
    * TpCallContentMediaDescription:interfaces:
@@ -647,7 +647,8 @@ tp_call_content_media_description_class_init (
 
 /**
  * tp_call_content_media_description_new:
- * @dbus_daemon: value of #TpCallContentMediaDescription:dbus-daemon property
+ * @dbus_connection: value of #TpCallContentMediaDescription:dbus-connection
+ *  property
  * @object_path: value of #TpCallContentMediaDescription:object-path property
  * @remote_contact: value of
  *  #TpCallContentMediaDescription:remote-contact property
@@ -668,7 +669,7 @@ tp_call_content_media_description_class_init (
  * Since: 0.17.5
  */
 TpCallContentMediaDescription *
-tp_call_content_media_description_new (TpDBusDaemon *dbus_daemon,
+tp_call_content_media_description_new (GDBusConnection *dbus_connection,
     const gchar *object_path,
     TpHandle remote_contact,
     gboolean has_remote_information,
@@ -677,6 +678,7 @@ tp_call_content_media_description_new (TpDBusDaemon *dbus_daemon,
   g_return_val_if_fail (g_variant_is_object_path (object_path), NULL);
 
   return g_object_new (TP_TYPE_CALL_CONTENT_MEDIA_DESCRIPTION,
+      "dbus-connection", dbus_connection,
       "object-path", object_path,
       "further-negotiation-required", further_negotiation_required,
       "has-remote-information", has_remote_information,
@@ -1109,7 +1111,8 @@ cancelled_cb (GCancellable *cancellable,
 {
   TpCallContentMediaDescription *self = user_data;
 
-  tp_dbus_daemon_unregister_object (self->priv->dbus_daemon, G_OBJECT (self));
+  tp_dbus_daemon_unregister_object (self->priv->dbus_connection,
+      G_OBJECT (self));
 
   g_simple_async_result_set_error (self->priv->result,
       G_IO_ERROR, G_IO_ERROR_CANCELLED,
@@ -1143,7 +1146,7 @@ _tp_call_content_media_description_offer_async (
 
   /* register object on the bus */
   DEBUG ("Registering %s", self->priv->object_path);
-  tp_dbus_daemon_register_object (self->priv->dbus_daemon,
+  tp_dbus_daemon_register_object (self->priv->dbus_connection,
       self->priv->object_path, G_OBJECT (self));
 }
 
@@ -1229,7 +1232,8 @@ tp_call_content_media_description_accept (TpSvcCall1ContentMediaDescription *ifa
 
   tp_svc_call1_content_media_description_return_from_accept (context);
 
-  tp_dbus_daemon_unregister_object (self->priv->dbus_daemon, G_OBJECT (self));
+  tp_dbus_daemon_unregister_object (self->priv->dbus_connection,
+      G_OBJECT (self));
 }
 
 static void
@@ -1265,7 +1269,8 @@ tp_call_content_media_description_reject (TpSvcCall1ContentMediaDescription *ifa
 
   tp_svc_call1_content_media_description_return_from_reject (context);
 
-  tp_dbus_daemon_unregister_object (self->priv->dbus_daemon, G_OBJECT (self));
+  tp_dbus_daemon_unregister_object (self->priv->dbus_connection,
+      G_OBJECT (self));
 }
 
 static void

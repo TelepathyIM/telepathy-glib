@@ -156,8 +156,6 @@ gboolean tp_proxy_has_interface (gpointer self, const gchar *iface);
 _TP_AVAILABLE_IN_0_16
 TpClientFactory *tp_proxy_get_factory (gpointer self);
 
-TpDBusDaemon *tp_proxy_get_dbus_daemon (gpointer self);
-
 GDBusConnection *tp_proxy_get_dbus_connection (gpointer self);
 
 const gchar *tp_proxy_get_bus_name (gpointer self);

@@ -208,7 +208,7 @@ const gchar *tp_base_client_get_name (TpBaseClient *self);
 gboolean tp_base_client_get_uniquify_name (TpBaseClient *self);
 const gchar *tp_base_client_get_bus_name (TpBaseClient *self);
 const gchar *tp_base_client_get_object_path (TpBaseClient *self);
-TpDBusDaemon *tp_base_client_get_dbus_daemon (TpBaseClient *self);
+GDBusConnection *tp_base_client_get_dbus_connection (TpBaseClient *self);
 
 void tp_base_client_unregister (TpBaseClient *self);
 

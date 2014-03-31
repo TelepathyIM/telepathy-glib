@@ -57,20 +57,21 @@ TpDBusDaemon *tp_dbus_daemon_dup (GError **error) G_GNUC_WARN_UNUSED_RESULT;
 TpDBusDaemon *tp_dbus_daemon_new (GDBusConnection *connection)
   G_GNUC_WARN_UNUSED_RESULT;
 
-gboolean tp_dbus_daemon_request_name (TpDBusDaemon *self,
+gboolean tp_dbus_daemon_request_name (GDBusConnection *dbus_connection,
     const gchar *well_known_name, gboolean idempotent, GError **error);
-gboolean tp_dbus_daemon_release_name (TpDBusDaemon *self,
+gboolean tp_dbus_daemon_release_name (GDBusConnection *dbus_connection,
     const gchar *well_known_name, GError **error);
 
-const gchar *tp_dbus_daemon_get_unique_name (TpDBusDaemon *self);
+const gchar *tp_dbus_daemon_get_unique_name (GDBusConnection *dbus_connection);
 
-void tp_dbus_daemon_register_object (TpDBusDaemon *self,
+void tp_dbus_daemon_register_object (GDBusConnection *dbus_connection,
     const gchar *object_path, gpointer object);
-gboolean tp_dbus_daemon_try_register_object (TpDBusDaemon *self,
+gboolean tp_dbus_daemon_try_register_object (GDBusConnection *dbus_connection,
     const gchar *object_path,
     gpointer object,
     GError **error);
-void tp_dbus_daemon_unregister_object (TpDBusDaemon *self, gpointer object);
+void tp_dbus_daemon_unregister_object (GDBusConnection *dbus_connection,
+    gpointer object);
 
 G_END_DECLS
 

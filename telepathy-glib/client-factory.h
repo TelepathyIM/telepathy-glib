@@ -34,7 +34,6 @@
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/contact.h>
-#include <telepathy-glib/dbus-daemon.h>
 #include <telepathy-glib/debug-client.h>
 #include <telepathy-glib/logger.h>
 #include <telepathy-glib/protocol.h>
@@ -128,12 +127,11 @@ GType tp_client_factory_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CLIENT_FACTORY, \
                               TpClientFactoryClass))
 
-TpClientFactory * tp_client_factory_new (TpDBusDaemon *dbus);
+TpClientFactory * tp_client_factory_new (GDBusConnection *dbus_connection);
 TpClientFactory * tp_client_factory_dup (GError **error);
 void tp_client_factory_set_default (TpClientFactory *self);
 gboolean tp_client_factory_can_set_default (void);
 
-TpDBusDaemon *tp_client_factory_get_dbus_daemon (TpClientFactory *self);
 GDBusConnection *tp_client_factory_get_dbus_connection (TpClientFactory *self);
 
 TpAccountManager *tp_client_factory_ensure_account_manager (

@@ -23,7 +23,7 @@
 #include "tests/lib/util.h"
 
 typedef struct {
-  TpDBusDaemon *dbus;
+  GDBusConnection *dbus;
   TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   gchar *name;
@@ -40,7 +40,7 @@ setup (Fixture *f,
 {
   gboolean ok;
 
-  f->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  f->dbus = tp_tests_dbus_dup_or_die ();
 
   f->service_conn = TP_TESTS_SIMPLE_CONNECTION (
       tp_tests_object_new_static_class (TP_TESTS_TYPE_CONTACTS_CONNECTION,

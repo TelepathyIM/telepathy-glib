@@ -87,20 +87,20 @@ static TplDBusService *
 telepathy_logger_dbus_init (void)
 {
   TplDBusService *dbus_srv = NULL;
-  TpDBusDaemon *tp_bus = NULL;
+  GDBusConnection *dbus_connection = NULL;
   GError *error = NULL;
 
 
   DEBUG ("Initializing TPL DBus service");
-  tp_bus = tp_dbus_daemon_dup (&error);
-  if (tp_bus == NULL)
+  dbus_connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
+  if (dbus_connection == NULL)
     {
-      g_critical ("Failed to acquire bus daemon: %s", error->message);
+      g_critical ("Failed to acquire bus connection: %s", error->message);
       goto out;
     }
 
-  if (!tp_dbus_daemon_request_name (tp_bus, TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME,
-        FALSE, &error))
+  if (!tp_dbus_daemon_request_name (dbus_connection,
+        TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME, FALSE, &error))
     {
       g_critical ("Failed to acquire bus name %s: %s",
           TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME, error->message);
@@ -108,7 +108,7 @@ telepathy_logger_dbus_init (void)
     }
 
   dbus_srv = _tpl_dbus_service_new ();
-  tp_dbus_daemon_register_object (tp_bus, TPL_DBUS_SRV_OBJECT_PATH,
+  tp_dbus_daemon_register_object (dbus_connection, TPL_DBUS_SRV_OBJECT_PATH,
       G_OBJECT (dbus_srv));
 
   DEBUG ("TPL DBus service registered to: %s",
@@ -117,8 +117,8 @@ telepathy_logger_dbus_init (void)
 out:
   if (error != NULL)
       g_clear_error (&error);
-  if (tp_bus != NULL)
-    g_object_unref (tp_bus);
+  if (dbus_connection != NULL)
+    g_object_unref (dbus_connection);
 
   return dbus_srv;
 }

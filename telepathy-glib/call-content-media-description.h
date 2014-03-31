@@ -79,7 +79,7 @@ GType tp_call_content_media_description_get_type (void);
 
 _TP_AVAILABLE_IN_0_18
 TpCallContentMediaDescription *tp_call_content_media_description_new (
-    TpDBusDaemon *dbus_daemon,
+    GDBusConnection *dbus_connection,
     const gchar *object_path,
     TpHandle remote_contact,
     gboolean has_remote_information,

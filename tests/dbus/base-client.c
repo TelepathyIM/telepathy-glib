@@ -37,7 +37,7 @@
 
 typedef struct {
     GMainLoop *mainloop;
-    TpDBusDaemon *dbus;
+    GDBusConnection *dbus;
 
     /* Service side objects */
     TpBaseClient *base_client;
@@ -79,7 +79,7 @@ setup (Test *test,
   GError *error = NULL;
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_dup_or_die ();
 
   test->error = NULL;
   test->interfaces = NULL;
@@ -108,7 +108,6 @@ setup (Test *test,
 
   /* Create client-side Client object */
   test->client = tp_tests_object_new_static_class (TP_TYPE_CLIENT,
-          "dbus-daemon", test->dbus,
           "bus-name", tp_base_client_get_bus_name (test->base_client),
           "object-path", tp_base_client_get_object_path (test->base_client),
           "factory", test->factory,
@@ -284,13 +283,13 @@ test_basics (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpClientFactory *factory;
-  TpDBusDaemon *dbus;
+  GDBusConnection *dbus;
   gchar *name;
   gboolean unique;
 
   g_object_get (test->base_client,
       "factory", &factory,
-      "dbus-daemon", &dbus,
+      "dbus-connection", &dbus,
       "name", &name,
       "uniquify-name", &unique,
       NULL);
@@ -300,7 +299,7 @@ test_basics (Test *test,
   g_assert_cmpstr ("Test", ==, name);
   g_assert (!unique);
 
-  g_assert (test->dbus == tp_base_client_get_dbus_daemon (test->base_client));
+  g_assert (test->dbus == tp_base_client_get_dbus_connection (test->base_client));
   g_assert_cmpstr ("Test", ==, tp_base_client_get_name (test->base_client));
   g_assert (!tp_base_client_get_uniquify_name (test->base_client));
 
@@ -798,6 +797,7 @@ test_handler (Test *test,
   const gchar *caps[] = { "mushroom", "snake", NULL };
   GList *chans;
   TpTestsSimpleClient *client_2;
+  TpClientFactory *factory_2;
 
   filter = tp_channel_filter_new_for_text_chats ();
   tp_base_client_add_handler_filter (test->base_client, filter);
@@ -870,7 +870,8 @@ test_handler (Test *test,
         test->text_chan_2));
 
   /* Create another client sharing the same unique name */
-  client_2 = tp_tests_simple_client_new (NULL, "Test", TRUE);
+  factory_2 = tp_automatic_client_factory_new (test->dbus);
+  client_2 = tp_tests_simple_client_new (factory_2, "Test", TRUE);
   tp_base_client_be_a_handler (TP_BASE_CLIENT (client_2));
   tp_base_client_register (TP_BASE_CLIENT (client_2), &test->error);
   g_assert_no_error (test->error);
@@ -885,6 +886,7 @@ test_handler (Test *test,
         test->text_chan_2));
 
   g_object_unref (client_2);
+  g_object_unref (factory_2);
 }
 
 /* Test Requests interface on Handler */

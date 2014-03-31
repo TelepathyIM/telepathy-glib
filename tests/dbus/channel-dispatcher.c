@@ -17,7 +17,7 @@
 
 typedef struct {
     GMainLoop *mainloop;
-    TpDBusDaemon *dbus;
+    GDBusConnection *dbus;
 
     TpChannelDispatcher *cd;
     GError *error /* initialized where needed */;
@@ -30,7 +30,7 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_dup_or_die ();
 
   test->cd = NULL;
 }

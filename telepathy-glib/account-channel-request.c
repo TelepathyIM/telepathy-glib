@@ -150,7 +150,6 @@ struct _TpAccountChannelRequestPrivate
   gulong cancel_id;
   TpChannel *channel;
   TpHandleChannelContext *handle_context;
-  TpDBusDaemon *dbus;
   GVariant *hints;
 
   /* TRUE if the channel has been requested (an _async function has been called
@@ -210,7 +209,6 @@ tp_account_channel_request_dispose (GObject *object)
   tp_clear_object (&self->priv->chan_request);
   tp_clear_object (&self->priv->channel);
   tp_clear_object (&self->priv->handle_context);
-  tp_clear_object (&self->priv->dbus);
   tp_clear_pointer (&self->priv->hints, g_variant_unref);
 
   if (self->priv->delegated_channel_destroy != NULL)
@@ -320,9 +318,6 @@ tp_account_channel_request_constructed (GObject *object)
 
   g_assert (self->priv->account != NULL);
   g_assert (self->priv->request != NULL);
-
-  self->priv->dbus = g_object_ref (tp_proxy_get_dbus_daemon (
-        self->priv->account));
 
   self->priv->hints = g_variant_new ("a{sv}", NULL);
 }

@@ -24,7 +24,7 @@
 typedef struct
 {
   GMainLoop *mainloop;
-  TpDBusDaemon *dbus;
+  GDBusConnection *dbus;
   TpClientFactory *factory;
   GError *error /* statically initialized to NULL */ ;
 
@@ -47,7 +47,7 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_dbus_daemon_dup (NULL);
+  test->dbus = tp_tests_dbus_dup_or_die ();
   g_assert (test->dbus != NULL);
 
   test->factory = tp_automatic_client_factory_new (test->dbus);

@@ -1106,10 +1106,6 @@ _tp_account_constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 
-  g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
-
-  g_assert (tp_proxy_get_factory (self) != NULL);
-
   sc = tp_cli_account_connect_to_removed (self, _tp_account_removed_cb,
       NULL, NULL, NULL, &error);
 

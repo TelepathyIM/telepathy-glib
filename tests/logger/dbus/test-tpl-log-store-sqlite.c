@@ -26,12 +26,12 @@ test (Fixture *fixture,
     gconstpointer data)
 {
   TplLogStore *store;
-  TpDBusDaemon *bus;
+  GDBusConnection *bus;
   TpAccount *account;
   GError *error = NULL;
   TpClientFactory* factory;
 
-  bus = tp_dbus_daemon_dup (&error);
+  bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
   g_assert_no_error (error);
 
   factory = _tpl_client_factory_dup (bus);

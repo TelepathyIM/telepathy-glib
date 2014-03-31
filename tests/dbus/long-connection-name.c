@@ -35,7 +35,7 @@ int
 main (int argc,
       char **argv)
 {
-  TpDBusDaemon *dbus;
+  GDBusConnection *dbus;
   TpTestsEchoConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   GError *error = NULL;
@@ -49,7 +49,7 @@ main (int argc,
   test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
   g_test_dbus_up (test_dbus);
 
-  dbus = tp_tests_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_dup_or_die ();
 
   MYASSERT (strlen (LONG_ACCOUNT_IS_LONG) == 256, "");
   service_conn = TP_TESTS_ECHO_CONNECTION (tp_tests_object_new_static_class (

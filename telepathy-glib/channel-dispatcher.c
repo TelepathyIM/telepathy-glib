@@ -87,27 +87,11 @@ tp_channel_dispatcher_init (TpChannelDispatcher *self)
 }
 
 static void
-tp_channel_dispatcher_constructed (GObject *object)
-{
-  TpChannelDispatcher *self = TP_CHANNEL_DISPATCHER (object);
-  void (*chain_up) (GObject *) =
-    ((GObjectClass *) tp_channel_dispatcher_parent_class)->constructed;
-
-  if (chain_up != NULL)
-    chain_up (object);
-
-  g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
-}
-
-static void
 tp_channel_dispatcher_class_init (TpChannelDispatcherClass *klass)
 {
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
-  GObjectClass *object_class = (GObjectClass *) klass;
 
   g_type_class_add_private (klass, sizeof (TpChannelDispatcherPrivate));
-
-  object_class->constructed = tp_channel_dispatcher_constructed;
 
   proxy_class->interface = TP_IFACE_QUARK_CHANNEL_DISPATCHER;
 }

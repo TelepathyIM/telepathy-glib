@@ -180,12 +180,12 @@ struct _TpBaseConnectionManagerPrivate
    /* dup'd string => ref to TpBaseProtocol */
   GHashTable *protocols;
 
-  TpDBusDaemon *dbus_daemon;
+  GDBusConnection *dbus_connection;
 };
 
 enum
 {
-    PROP_DBUS_DAEMON = 1,
+    PROP_DBUS_CONNECTION = 1,
     PROP_INTERFACES,
     PROP_PROTOCOLS,
     N_PROPS
@@ -212,10 +212,10 @@ tp_base_connection_manager_dispose (GObject *object)
 
   priv->dispose_has_run = TRUE;
 
-  if (priv->dbus_daemon != NULL)
+  if (priv->dbus_connection != NULL)
     {
-      g_object_unref (priv->dbus_daemon);
-      priv->dbus_daemon = NULL;
+      g_object_unref (priv->dbus_connection);
+      priv->dbus_connection = NULL;
     }
 
   if (priv->protocols != NULL)
@@ -243,11 +243,12 @@ static gboolean
 tp_base_connection_manager_ensure_dbus (TpBaseConnectionManager *self,
     GError **error)
 {
-  if (self->priv->dbus_daemon == NULL)
+  if (self->priv->dbus_connection == NULL)
     {
-      self->priv->dbus_daemon = tp_dbus_daemon_dup (error);
+      self->priv->dbus_connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL,
+          error);
 
-      if (self->priv->dbus_daemon == NULL)
+      if (self->priv->dbus_connection == NULL)
         return FALSE;
     }
 
@@ -291,8 +292,8 @@ tp_base_connection_manager_get_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_DBUS_DAEMON:
-      g_value_set_object (value, self->priv->dbus_daemon);
+    case PROP_DBUS_CONNECTION:
+      g_value_set_object (value, self->priv->dbus_connection);
       break;
 
     case PROP_INTERFACES:
@@ -347,14 +348,10 @@ tp_base_connection_manager_set_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_DBUS_DAEMON:
+    case PROP_DBUS_CONNECTION:
         {
-          TpDBusDaemon *dbus_daemon = g_value_get_object (value);
-
-          g_assert (self->priv->dbus_daemon == NULL);     /* construct-only */
-
-          if (dbus_daemon != NULL)
-            self->priv->dbus_daemon = g_object_ref (dbus_daemon);
+          g_assert (self->priv->dbus_connection == NULL);     /* construct-only */
+          self->priv->dbus_connection = g_value_dup_object (value);
         }
       break;
 
@@ -401,22 +398,21 @@ tp_base_connection_manager_class_init (TpBaseConnectionManagerClass *klass)
   klass->get_interfaces = tp_base_connection_manager_get_interfaces;
 
   /**
-   * TpBaseConnectionManager:dbus-daemon:
+   * TpBaseConnectionManager:dbus-connection:
    *
-   * #TpDBusDaemon object encapsulating this object's connection to D-Bus.
-   * Read-only except during construction.
+   * This object's connection to D-Bus. Read-only except during construction.
    *
    * If this property is %NULL or omitted during construction, the object will
    * automatically attempt to connect to the session bus with
-   * tp_dbus_daemon_dup() just after it is constructed; if this fails, a
+   * g_bus_get_sync() just after it is constructed; if this fails, a
    * warning will be logged with g_warning(), and this property will remain
    * %NULL.
    *
    * Since: 0.11.3
    */
-  g_object_class_install_property (object_class, PROP_DBUS_DAEMON,
-      g_param_spec_object ("dbus-daemon", "D-Bus daemon",
-        "The D-Bus daemon used by this object", TP_TYPE_DBUS_DAEMON,
+  g_object_class_install_property (object_class, PROP_DBUS_CONNECTION,
+      g_param_spec_object ("dbus-connection", "D-Bus connection",
+        "The D-Bus connection used by this object", G_TYPE_DBUS_CONNECTION,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   /**
@@ -831,7 +827,7 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
   if (!tp_base_connection_manager_ensure_dbus (self, &error))
     goto except;
 
-  g_assert (self->priv->dbus_daemon != NULL);
+  g_assert (self->priv->dbus_connection != NULL);
 
   string = g_string_new (TP_CM_OBJECT_PATH_BASE);
 
@@ -840,7 +836,7 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
 
   /* don't bother handling failure gracefully: CMs should know what
    * objects they export */
-  tp_dbus_daemon_register_object (self->priv->dbus_daemon, string->str, self);
+  tp_dbus_daemon_register_object (self->priv->dbus_connection, string->str, self);
 
   g_hash_table_iter_init (&iter, self->priv->protocols);
 
@@ -866,14 +862,14 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
 
       g_strdelimit (string->str, "-", '_');
 
-      tp_dbus_daemon_register_object (self->priv->dbus_daemon, string->str,
+      tp_dbus_daemon_register_object (self->priv->dbus_connection, string->str,
           protocol);
     }
 
   g_string_assign (string, TP_CM_BUS_NAME_BASE);
   g_string_append (string, cls->cm_dbus_name);
 
-  if (!tp_dbus_daemon_request_name (self->priv->dbus_daemon, string->str,
+  if (!tp_dbus_daemon_request_name (self->priv->dbus_connection, string->str,
         TRUE, &error))
     {
       WARNING ("Couldn't claim bus name. If you are trying to debug this "
@@ -909,23 +905,23 @@ service_iface_init (gpointer g_iface, gpointer iface_data)
 }
 
 /**
- * tp_base_connection_manager_get_dbus_daemon:
+ * tp_base_connection_manager_get_dbus_connection:
  * @self: the connection manager
  *
  * <!-- -->
  *
  * Returns: (transfer none): the value of the
- *  #TpBaseConnectionManager:dbus-daemon property. The caller must reference
+ *  #TpBaseConnectionManager:dbus-connection property. The caller must reference
  *  the returned object with g_object_ref() if it will be kept.
  *
  * Since: 0.11.3
  */
-TpDBusDaemon *
-tp_base_connection_manager_get_dbus_daemon (TpBaseConnectionManager *self)
+GDBusConnection *
+tp_base_connection_manager_get_dbus_connection (TpBaseConnectionManager *self)
 {
   g_return_val_if_fail (TP_IS_BASE_CONNECTION_MANAGER (self), NULL);
 
-  return self->priv->dbus_daemon;
+  return self->priv->dbus_connection;
 }
 
 /**

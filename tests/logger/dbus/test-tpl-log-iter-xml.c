@@ -23,7 +23,7 @@ typedef struct
   GMainLoop *main_loop;
   TplLogStore *store;
   TpAccount *account;
-  TpDBusDaemon *bus;
+  GDBusConnection *bus;
   TpClientFactory *factory;
   TpTestsSimpleAccount *account_service;
 } XmlTestCaseFixture;
@@ -41,7 +41,7 @@ setup (XmlTestCaseFixture* fixture,
   fixture->main_loop = g_main_loop_new (NULL, FALSE);
   fixture->store = _tpl_log_store_xml_new ();
 
-  fixture->bus = tp_tests_dbus_daemon_dup_or_die ();
+  fixture->bus = tp_tests_dbus_dup_or_die ();
   g_assert (fixture->bus != NULL);
 
   tp_dbus_daemon_request_name (fixture->bus,

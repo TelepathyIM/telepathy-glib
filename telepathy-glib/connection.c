@@ -2010,7 +2010,7 @@ _tp_connection_new (TpClientFactory *factory,
   if (bus_name[0] != ':')
     {
       if (!_tp_dbus_daemon_get_name_owner (
-          tp_client_factory_get_dbus_daemon (factory), 2000, bus_name,
+          tp_client_factory_get_dbus_connection (factory), 2000, bus_name,
           &dup_unique_name, error))
         goto finally;
 

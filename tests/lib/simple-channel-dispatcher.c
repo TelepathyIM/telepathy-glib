@@ -76,7 +76,7 @@ create_channel_request (TpTestsSimpleChannelDispatcher *self,
   GPtrArray *requests;
   static guint count = 0;
   gchar *path;
-  TpDBusDaemon *dbus;
+  GDBusConnection *dbus;
   GHashTable *hints;
 
   requests = g_ptr_array_sized_new (1);
@@ -99,7 +99,7 @@ create_channel_request (TpTestsSimpleChannelDispatcher *self,
 
   g_ptr_array_unref (requests);
 
-  dbus = tp_dbus_daemon_dup (NULL);
+  dbus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
   g_assert (dbus != NULL);
 
   tp_dbus_daemon_register_object (dbus, path, chan_request);

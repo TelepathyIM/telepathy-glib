@@ -24,7 +24,7 @@ typedef struct
   GMainLoop *main_loop;
   TplLogManager *manager;
   TpAccount *account;
-  TpDBusDaemon *bus;
+  GDBusConnection *bus;
   TpClientFactory *factory;
   TpTestsSimpleAccount *account_service;
 } WalkerTestCaseFixture;
@@ -63,7 +63,7 @@ setup (WalkerTestCaseFixture* fixture,
 
   fixture->manager = tpl_log_manager_dup_singleton ();
 
-  fixture->bus = tp_tests_dbus_daemon_dup_or_die ();
+  fixture->bus = tp_tests_dbus_dup_or_die ();
   g_assert (fixture->bus != NULL);
 
   tp_dbus_daemon_request_name (fixture->bus,

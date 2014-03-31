@@ -74,7 +74,8 @@ GType tp_call_stream_endpoint_get_type (void);
     TP_TYPE_CALL_STREAM_ENDPOINT, TpCallStreamEndpointClass))
 
 _TP_AVAILABLE_IN_0_18
-TpCallStreamEndpoint *tp_call_stream_endpoint_new (TpDBusDaemon *dbus_daemon,
+TpCallStreamEndpoint *tp_call_stream_endpoint_new (
+    GDBusConnection *dbus_connection,
     const gchar *object_path,
     TpStreamTransportType transport,
     gboolean is_ice_lite);

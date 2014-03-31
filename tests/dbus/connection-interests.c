@@ -78,9 +78,8 @@ interested_connection_class_init (InterestedConnectionClass *cls)
 }
 
 typedef struct {
-    TpDBusDaemon *dbus;
+    GDBusConnection *dbus;
     GDBusConnection *client_gdbus;
-    TpDBusDaemon *client_bus;
     TpTestsSimpleConnection *service_conn;
     TpBaseConnection *service_conn_as_base;
     gchar *conn_name;
@@ -151,11 +150,10 @@ setup (Test *test,
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
   tp_debug_set_flags ("all");
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_dup_or_die ();
 
   test->client_gdbus = tp_tests_get_private_bus ();
-  test->client_bus = tp_dbus_daemon_new (test->client_gdbus);
-  g_assert (test->client_bus != NULL);
+  g_assert (test->client_gdbus != NULL);
 
   test->service_conn = tp_tests_object_new_static_class (
         interested_connection_get_type (),
@@ -173,7 +171,7 @@ setup (Test *test,
   test->cwr_ready = FALSE;
   test->cwr_error = NULL;
 
-  test->conn = tp_tests_connection_new (test->client_bus, test->conn_name,
+  test->conn = tp_tests_connection_new (test->client_gdbus, test->conn_name,
       test->conn_path, &error);
   g_assert_no_error (error);
   g_assert (test->conn != NULL);
@@ -242,8 +240,6 @@ teardown (Test *test,
 
   g_object_unref (test->dbus);
   test->dbus = NULL;
-  g_object_unref (test->client_bus);
-  test->client_bus = NULL;
 
   if (test->client_gdbus != NULL)
     {
@@ -266,7 +262,7 @@ test_interested_client (Test *test,
       TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS1);
 
   /* run until (after) the AddClientInterest calls have gone out */
-  tp_tests_proxy_run_until_dbus_queue_processed (test->client_bus);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->client_gdbus);
 
   /* we auto-release the Location client interest by disposing the client
    * connection */
@@ -275,7 +271,7 @@ test_interested_client (Test *test,
   test->conn = NULL;
 
   /* run until (after) the RemoveClientInterest call has gone out */
-  tp_tests_proxy_run_until_dbus_queue_processed (test->client_bus);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->client_gdbus);
 
   /* then, run until (after) the CM should have processed both ACI and RCI */
   tp_tests_proxy_run_until_dbus_queue_processed (test->dbus);

@@ -252,10 +252,6 @@ tp_channel_request_constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 
-  g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
-
-  g_assert (tp_proxy_get_factory (self) != NULL);
-
   sc = tp_cli_channel_request_connect_to_failed (self,
       tp_channel_request_failed_cb, NULL, NULL, NULL, &error);
 
@@ -444,7 +440,7 @@ _tp_channel_request_new (TpClientFactory *factory,
     return NULL;
 
   if (!_tp_dbus_daemon_get_name_owner (
-      tp_client_factory_get_dbus_daemon (factory), -1,
+      tp_client_factory_get_dbus_connection (factory), -1,
       TP_CHANNEL_DISPATCHER_BUS_NAME, &unique_name, error))
     return NULL;
 

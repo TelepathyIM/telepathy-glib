@@ -67,7 +67,7 @@ GType tp_automatic_client_factory_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_AUTOMATIC_CLIENT_FACTORY, \
                               TpAutomaticClientFactoryClass))
 
-TpClientFactory *tp_automatic_client_factory_new (TpDBusDaemon *dbus);
+TpClientFactory *tp_automatic_client_factory_new (GDBusConnection *dbus_connection);
 
 G_END_DECLS
 

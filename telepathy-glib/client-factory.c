@@ -140,7 +140,7 @@
 
 struct _TpClientFactoryPrivate
 {
-  TpDBusDaemon *dbus;
+  GDBusConnection *dbus_connection;
   /* Owned object-path -> weakref to TpProxy */
   GHashTable *proxy_cache;
   GArray *desired_account_features;
@@ -153,7 +153,7 @@ struct _TpClientFactoryPrivate
 
 enum
 {
-  PROP_DBUS_DAEMON = 1,
+  PROP_DBUS_CONNECTION = 1,
   N_PROPS
 };
 
@@ -290,8 +290,8 @@ tp_client_factory_get_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_DBUS_DAEMON:
-      g_value_set_object (value, self->priv->dbus);
+    case PROP_DBUS_CONNECTION:
+      g_value_set_object (value, self->priv->dbus_connection);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -309,9 +309,9 @@ tp_client_factory_set_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_DBUS_DAEMON:
-      g_assert (self->priv->dbus == NULL); /* construct only */
-      self->priv->dbus = g_value_dup_object (value);
+    case PROP_DBUS_CONNECTION:
+      g_assert (self->priv->dbus_connection == NULL); /* construct only */
+      self->priv->dbus_connection = g_value_dup_object (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -324,8 +324,7 @@ tp_client_factory_constructed (GObject *object)
 {
   TpClientFactory *self = (TpClientFactory *) object;
 
-  if (self->priv->dbus == NULL)
-    self->priv->dbus = tp_dbus_daemon_dup (NULL);
+  g_assert (self->priv->dbus_connection != NULL);
 
   G_OBJECT_CLASS (tp_client_factory_parent_class)->constructed (object);
 }
@@ -335,7 +334,7 @@ tp_client_factory_finalize (GObject *object)
 {
   TpClientFactory *self = (TpClientFactory *) object;
 
-  g_clear_object (&self->priv->dbus);
+  g_clear_object (&self->priv->dbus_connection);
   tp_clear_pointer (&self->priv->proxy_cache, g_hash_table_unref);
   tp_clear_pointer (&self->priv->desired_account_features, g_array_unref);
   tp_clear_pointer (&self->priv->desired_connection_features, g_array_unref);
@@ -450,36 +449,35 @@ tp_client_factory_class_init (TpClientFactoryClass *klass)
   klass->dup_tls_certificate_features = dup_tls_certificate_features_impl;
 
   /**
-   * TpClientFactory:dbus-daemon:
+   * TpClientFactory:dbus-connection:
    *
-   * The D-Bus daemon for this object.
+   * The D-Bus connection for this object.
    */
-  param_spec = g_param_spec_object ("dbus-daemon", "D-Bus daemon",
-      "The D-Bus daemon used by this object",
-      TP_TYPE_DBUS_DAEMON,
+  param_spec = g_param_spec_object ("dbus-connection", "D-Bus connection",
+      "The D-Bus connection used by this object",
+      G_TYPE_DBUS_CONNECTION,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_DBUS_DAEMON,
+  g_object_class_install_property (object_class, PROP_DBUS_CONNECTION,
       param_spec);
 }
 
 /**
  * tp_client_factory_new:
- * @dbus: (allow-none): a #TpDBusDaemon, or %NULL
+ * @dbus_connection: a #GDBusConnection
  *
- * Creates a new #TpClientFactory instance. If @dbus is %NULL then
- * tp_dbus_daemon_dup() will be used.
+ * Creates a new #TpClientFactory instance.
  *
  * Returns: a new #TpClientFactory
  *
  * Since: 0.99.1
  */
 TpClientFactory *
-tp_client_factory_new (TpDBusDaemon *dbus)
+tp_client_factory_new (GDBusConnection *dbus_connection)
 {
-  g_return_val_if_fail (dbus == NULL || TP_IS_DBUS_DAEMON (dbus), NULL);
+  g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus_connection), NULL);
 
   return g_object_new (TP_TYPE_CLIENT_FACTORY,
-      "dbus-daemon", dbus,
+      "dbus-connection", dbus_connection,
       NULL);
 }
 
@@ -507,15 +505,15 @@ tp_client_factory_dup (GError **error)
   self = g_weak_ref_get (&singleton);
   if (self == NULL)
     {
-      TpDBusDaemon *dbus;
+      GDBusConnection *dbus_connection;
 
-      dbus = tp_dbus_daemon_dup (error);
-      if (dbus == NULL)
+      dbus_connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, error);
+      if (dbus_connection == NULL)
         return NULL;
 
-      self = tp_automatic_client_factory_new (dbus);
+      self = tp_automatic_client_factory_new (dbus_connection);
       g_weak_ref_set (&singleton, self);
-      g_object_unref (dbus);
+      g_object_unref (dbus_connection);
     }
 
   return self;
@@ -584,32 +582,12 @@ tp_client_factory_can_set_default (void)
 }
 
 /**
- * tp_client_factory_get_dbus_daemon:
- * @self: a #TpClientFactory object
- *
- * <!-- -->
- *
- * Returns: (transfer none): the value of the #TpClientFactory:dbus-daemon
- *  property
- *
- * Since: 0.99.1
- */
-TpDBusDaemon *
-tp_client_factory_get_dbus_daemon (TpClientFactory *self)
-{
-  g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
-
-  return self->priv->dbus;
-}
-
-/**
  * tp_client_factory_get_dbus_connection:
  * @self: a #TpClientFactory object
  *
  * <!-- -->
  *
- * Returns: (transfer none): the #TpClientFactory:dbus-daemon's
- *  #GDBusConnection.
+ * Returns: (transfer none): the #TpClientFactory:dbus-connection property.
  *
  * Since: 0.UNRELEASED
  */
@@ -618,7 +596,7 @@ tp_client_factory_get_dbus_connection (TpClientFactory *self)
 {
   g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
 
-  return tp_proxy_get_dbus_connection (self->priv->dbus);
+  return self->priv->dbus_connection;
 }
 
 /**

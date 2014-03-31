@@ -146,29 +146,18 @@ tp_dbus_daemon_new (GDBusConnection *connection)
 
 /* for internal use (TpChannel, TpConnection _new convenience functions) */
 gboolean
-_tp_dbus_daemon_get_name_owner (TpDBusDaemon *self,
+_tp_dbus_daemon_get_name_owner (GDBusConnection *dbus_connection,
                                 gint timeout_ms,
                                 const gchar *well_known_name,
                                 gchar **unique_name,
                                 GError **error)
 {
-  const GError *invalidated;
   GVariant *tuple;
 
-  g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), FALSE);
+  g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus_connection), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-  invalidated = tp_proxy_get_invalidated (self);
-
-  if (invalidated != NULL)
-    {
-      if (error != NULL)
-        *error = g_error_copy (invalidated);
-
-      return FALSE;
-    }
-
-  tuple = g_dbus_connection_call_sync (tp_proxy_get_dbus_connection (self),
+  tuple = g_dbus_connection_call_sync (dbus_connection,
       "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
       "GetNameOwner", g_variant_new ("(s)", well_known_name),
       G_VARIANT_TYPE ("(s)"), G_DBUS_CALL_FLAGS_NONE, -1, NULL, error);
@@ -185,7 +174,7 @@ _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self,
 
 /**
  * tp_dbus_daemon_request_name:
- * @self: a TpDBusDaemon
+ * @dbus_connection: a #GDBusConnection
  * @well_known_name: a well-known name to acquire
  * @idempotent: whether to consider it to be a success if this process
  *              already owns the name
@@ -201,34 +190,22 @@ _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self,
  * Since: 0.7.30
  */
 gboolean
-tp_dbus_daemon_request_name (TpDBusDaemon *self,
+tp_dbus_daemon_request_name (GDBusConnection *dbus_connection,
                              const gchar *well_known_name,
                              gboolean idempotent,
                              GError **error)
 {
   GVariant *tuple;
   guint32 result;
-  const GError *invalidated;
 
-  g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), FALSE);
+  g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus_connection), FALSE);
   g_return_val_if_fail (tp_dbus_check_valid_bus_name (well_known_name,
         TP_DBUS_NAME_TYPE_WELL_KNOWN, error), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
   DEBUG ("%s", well_known_name);
 
-  invalidated = tp_proxy_get_invalidated (self);
-
-  if (invalidated != NULL)
-    {
-      if (error != NULL)
-        *error = g_error_copy (invalidated);
-
-      DEBUG ("- not requesting, we have fallen off D-Bus");
-      return FALSE;
-    }
-
-  tuple = g_dbus_connection_call_sync (tp_proxy_get_dbus_connection (self),
+  tuple = g_dbus_connection_call_sync (dbus_connection,
       "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
       "RequestName",
       g_variant_new ("(su)", well_known_name,
@@ -283,7 +260,7 @@ tp_dbus_daemon_request_name (TpDBusDaemon *self,
 
 /**
  * tp_dbus_daemon_release_name:
- * @self: a TpDBusDaemon
+ * @dbus_connection: a #GDBusConnection
  * @well_known_name: a well-known name owned by this process to release
  * @error: used to raise an error if %FALSE is returned
  *
@@ -296,33 +273,21 @@ tp_dbus_daemon_request_name (TpDBusDaemon *self,
  * Since: 0.7.30
  */
 gboolean
-tp_dbus_daemon_release_name (TpDBusDaemon *self,
+tp_dbus_daemon_release_name (GDBusConnection *dbus_connection,
                              const gchar *well_known_name,
                              GError **error)
 {
   guint32 result;
-  const GError *invalidated;
   GVariant *tuple;
 
-  g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), FALSE);
+  g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus_connection), FALSE);
   g_return_val_if_fail (tp_dbus_check_valid_bus_name (well_known_name,
         TP_DBUS_NAME_TYPE_WELL_KNOWN, error), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
   DEBUG ("%s", well_known_name);
 
-  invalidated = tp_proxy_get_invalidated (self);
-
-  if (invalidated != NULL)
-    {
-      if (error != NULL)
-        *error = g_error_copy (invalidated);
-
-      DEBUG ("- not releasing, we have fallen off D-Bus");
-      return FALSE;
-    }
-
-  tuple = g_dbus_connection_call_sync (tp_proxy_get_dbus_connection (self),
+  tuple = g_dbus_connection_call_sync (dbus_connection,
       "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
       "ReleaseName", g_variant_new ("(s)", well_known_name),
       G_VARIANT_TYPE ("(u)"), G_DBUS_CALL_FLAGS_NONE, -1, NULL, error);
@@ -411,7 +376,7 @@ tp_dbus_daemon_registration_free (gpointer p)
 
 /**
  * tp_dbus_daemon_register_object:
- * @self: object representing a connection to a bus
+ * @dbus_connection: a #GDBusConnection
  * @object_path: an object path
  * @object: (type GObject.Object) (transfer none): an object to export
  *
@@ -435,18 +400,18 @@ tp_dbus_daemon_registration_free (gpointer p)
  * method calls in a separate thread.
  */
 void
-tp_dbus_daemon_register_object (TpDBusDaemon *self,
+tp_dbus_daemon_register_object (GDBusConnection *dbus_connection,
     const gchar *object_path,
     gpointer object)
 {
   GError *error = NULL;
 
-  if (!tp_dbus_daemon_try_register_object (self, object_path, object, &error))
+  if (!tp_dbus_daemon_try_register_object (dbus_connection, object_path, object,
+          &error))
     {
       CRITICAL ("Unable to register %s %p at %s:%s: %s #%d: %s",
           G_OBJECT_TYPE_NAME (object), object,
-          g_dbus_connection_get_unique_name (
-            tp_proxy_get_dbus_connection (self)),
+          g_dbus_connection_get_unique_name (dbus_connection),
           object_path,
           g_quark_to_string (error->domain), error->code,
           error->message);
@@ -455,7 +420,7 @@ tp_dbus_daemon_register_object (TpDBusDaemon *self,
 
 /**
  * tp_dbus_daemon_try_register_object:
- * @self: object representing a connection to a bus
+ * @dbus_connection: a #GDBusConnection
  * @object_path: an object path
  * @object: (type GObject.Object) (transfer none): an object to export
  * @error: used to raise %G_IO_ERROR_EXISTS if an object exists at that path
@@ -467,7 +432,7 @@ tp_dbus_daemon_register_object (TpDBusDaemon *self,
  * Returns: %TRUE if the object is successfully registered
  */
 gboolean
-tp_dbus_daemon_try_register_object (TpDBusDaemon *self,
+tp_dbus_daemon_try_register_object (GDBusConnection *dbus_connection,
     const gchar *object_path,
     gpointer object,
     GError **error)
@@ -479,12 +444,12 @@ tp_dbus_daemon_try_register_object (TpDBusDaemon *self,
   Registration *r;
   gboolean ret = FALSE;
 
-  g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), FALSE);
+  g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus_connection), FALSE);
   g_return_val_if_fail (tp_dbus_check_valid_object_path (object_path, error),
       FALSE);
   g_return_val_if_fail (G_IS_OBJECT (object), FALSE);
 
-  conn = tp_proxy_get_dbus_connection (self);
+  conn = dbus_connection;
   r = g_slice_new0 (Registration);
   r->conn = g_object_ref (conn);
   r->object_path = g_strdup (object_path);
@@ -561,7 +526,7 @@ tp_dbus_daemon_try_register_object (TpDBusDaemon *self,
           g_propagate_error (error, inner_error);
 
           /* roll back */
-          tp_dbus_daemon_unregister_object (self, object);
+          tp_dbus_daemon_unregister_object (dbus_connection, object);
           goto finally;
         }
 
@@ -579,7 +544,7 @@ finally:
 
 /**
  * tp_dbus_daemon_unregister_object:
- * @self: object representing a connection to a bus
+ * @dbus_connection: a #GDBusConnection
  * @object: (type GObject.Object) (transfer none): an object previously exported
  * with tp_dbus_daemon_register_object()
  *
@@ -589,10 +554,10 @@ finally:
  * Since: 0.11.3
  */
 void
-tp_dbus_daemon_unregister_object (TpDBusDaemon *self,
+tp_dbus_daemon_unregister_object (GDBusConnection *dbus_connection,
     gpointer object)
 {
-  g_return_if_fail (TP_IS_DBUS_DAEMON (self));
+  g_return_if_fail (G_IS_DBUS_CONNECTION (dbus_connection));
   g_return_if_fail (G_IS_OBJECT (object));
 
   DEBUG ("%p", object);
@@ -604,7 +569,7 @@ tp_dbus_daemon_unregister_object (TpDBusDaemon *self,
 
 /**
  * tp_dbus_daemon_get_unique_name:
- * @self: object representing a connection to a bus
+ * @dbus_connection: a #GDBusConnection
  *
  * <!-- Returns: is enough -->
  *
@@ -613,12 +578,11 @@ tp_dbus_daemon_unregister_object (TpDBusDaemon *self,
  * Since: 0.7.35
  */
 const gchar *
-tp_dbus_daemon_get_unique_name (TpDBusDaemon *self)
+tp_dbus_daemon_get_unique_name (GDBusConnection *dbus_connection)
 {
-  g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), NULL);
+  g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus_connection), NULL);
 
-  return g_dbus_connection_get_unique_name (
-      tp_proxy_get_dbus_connection (self));
+  return g_dbus_connection_get_unique_name (dbus_connection);
 }
 
 static void

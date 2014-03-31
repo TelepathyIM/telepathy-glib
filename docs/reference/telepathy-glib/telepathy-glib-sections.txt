@@ -47,7 +47,7 @@ TpBaseConnectionProc
 TpBaseConnectionStartConnectingImpl
 tp_base_connection_get_bus_name
 tp_base_connection_get_object_path
-tp_base_connection_get_dbus_daemon
+tp_base_connection_get_dbus_connection
 tp_base_connection_register
 tp_base_connection_get_handles
 tp_base_connection_get_self_handle
@@ -98,7 +98,7 @@ TpBaseConnectionManager
 TpBaseConnectionManagerClass
 TpBaseConnectionManagerNewConnFunc
 TpBaseConnectionManagerGetInterfacesFunc
-tp_base_connection_manager_get_dbus_daemon
+tp_base_connection_manager_get_dbus_connection
 tp_base_connection_manager_register
 tp_base_connection_manager_add_protocol
 <SUBSECTION Standard>
@@ -2906,7 +2906,6 @@ tp_proxy_pending_call_cancel
 TpProxySignalConnection
 tp_proxy_signal_connection_disconnect
 tp_proxy_get_factory
-tp_proxy_get_dbus_daemon
 tp_proxy_get_dbus_connection
 tp_proxy_get_bus_name
 tp_proxy_get_object_path
@@ -4535,7 +4534,7 @@ tp_base_client_register
 tp_base_client_unregister
 tp_base_client_get_bus_name
 tp_base_client_get_object_path
-tp_base_client_get_dbus_daemon
+tp_base_client_get_dbus_connection
 tp_base_client_get_name
 tp_base_client_get_uniquify_name
 <SUBSECTION Standard>
@@ -5725,7 +5724,6 @@ tp_client_factory_new
 tp_client_factory_dup
 tp_client_factory_set_default
 tp_client_factory_can_set_default
-tp_client_factory_get_dbus_daemon
 tp_client_factory_get_dbus_connection
 <SUBSECTION>
 tp_client_factory_ensure_account_manager

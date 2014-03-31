@@ -41,7 +41,7 @@
 typedef struct
 {
   GMainLoop *mainloop;
-  TpDBusDaemon *dbus;
+  GDBusConnection *dbus;
   GError *error /* statically initialized to NULL */ ;
   guint wait_count;
 
@@ -83,7 +83,7 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_dup_or_die ();
   test->factory = tp_client_factory_dup (&error);
   g_assert_no_error (error);
 

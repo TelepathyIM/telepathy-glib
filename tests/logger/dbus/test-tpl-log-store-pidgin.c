@@ -33,7 +33,7 @@ typedef struct
 
   GMainLoop *main_loop;
 
-  TpDBusDaemon *dbus;
+  GDBusConnection *dbus;
   TpAccountManager *account_manager;
   TpAccount *account;
   TpTestsSimpleAccount *account_service;
@@ -72,7 +72,7 @@ setup_service (PidginTestCaseFixture* fixture,
 
   g_assert (params != NULL);
 
-  fixture->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  fixture->dbus = tp_tests_dbus_dup_or_die ();
   g_assert (fixture->dbus != NULL);
 
   tp_dbus_daemon_request_name (fixture->dbus,

@@ -30,7 +30,7 @@ typedef ExampleEcho2ConnectionManagerClass MyConnectionManagerClass;
 
 typedef struct {
     GMainLoop *mainloop;
-    TpDBusDaemon *dbus;
+    GDBusConnection *dbus;
     TpClientFactory *factory;
     MyConnectionManager *service_cm;
 
@@ -81,7 +81,7 @@ my_get_all (TpSvcDBusProperties *iface,
   /* If necessary, emulate the CM exiting and coming back. */
   if (cm->drop_name_on_get)
     {
-      TpDBusDaemon *dbus = tp_base_connection_manager_get_dbus_daemon (
+      GDBusConnection *dbus = tp_base_connection_manager_get_dbus_connection (
           TP_BASE_CONNECTION_MANAGER (cm));
       GString *string = g_string_new (TP_CM_BUS_NAME_BASE);
       GError *error = NULL;
@@ -123,7 +123,7 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_dup_or_die ();
   test->factory = tp_client_factory_new (test->dbus);
 
   test->service_cm = tp_tests_object_new_static_class (

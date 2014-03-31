@@ -53,10 +53,9 @@ test_simple_cr_class_init (TestSimpleCRClass *klass)
 
 typedef struct {
     GMainLoop *mainloop;
-    TpDBusDaemon *dbus;
+    GDBusConnection *dbus;
 
-    GDBusConnection *private_conn;
-    TpDBusDaemon *private_dbus;
+    GDBusConnection *private_dbus;
     GObject *cr_service;
 
     /* Service side objects */
@@ -79,11 +78,10 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_dup_or_die ();
   g_assert (test->dbus != NULL);
 
-  test->private_conn = tp_tests_get_private_bus ();
-  test->private_dbus = tp_dbus_daemon_new (test->private_conn);
+  test->private_dbus = tp_tests_get_private_bus ();
   g_assert (test->private_dbus != NULL);
 
   /* Create (service and client sides) connection objects */
@@ -116,17 +114,14 @@ teardown (Test *test,
       tp_dbus_daemon_release_name (test->private_dbus,
           TP_CHANNEL_DISPATCHER_BUS_NAME, NULL);
 
+      g_dbus_connection_close_sync (test->private_dbus, NULL, NULL);
+
       g_object_unref (test->private_dbus);
       test->private_dbus = NULL;
     }
 
   g_object_unref (test->cr_service);
   test->cr_service = NULL;
-
-  if (test->private_conn != NULL)
-    g_dbus_connection_close_sync (test->private_conn, NULL, NULL);
-
-  g_clear_object (&test->private_conn);
 
   /* make sure any pending things have happened */
   tp_tests_proxy_run_until_dbus_queue_processed (test->dbus);
@@ -139,7 +134,7 @@ teardown (Test *test,
 }
 
 static TpChannelRequest *
-channel_request_new (TpDBusDaemon *bus_daemon,
+channel_request_new (GDBusConnection *bus_connection,
     const gchar *object_path,
     GHashTable *immutable_properties,
     GError **error)
@@ -155,7 +150,7 @@ channel_request_new (TpDBusDaemon *bus_daemon,
   else
     g_hash_table_ref (immutable_properties);
 
-  factory = tp_client_factory_new (bus_daemon);
+  factory = tp_client_factory_new (bus_connection);
   self = _tp_client_factory_ensure_channel_request (factory, object_path,
       immutable_properties, error);
 
@@ -209,8 +204,8 @@ test_crash (Test *test,
 
   g_assert (tp_proxy_get_invalidated (test->cr) == NULL);
 
-  g_dbus_connection_close_sync (test->private_conn, NULL, NULL);
-  g_clear_object (&test->private_conn);
+  g_dbus_connection_close_sync (test->private_dbus, NULL, NULL);
+  g_clear_object (&test->private_dbus);
 
   while (tp_proxy_get_invalidated (test->cr) == NULL)
     g_main_context_iteration (NULL, TRUE);

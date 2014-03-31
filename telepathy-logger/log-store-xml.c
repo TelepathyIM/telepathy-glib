@@ -431,7 +431,7 @@ add_text_event (TplLogStoreXml *self,
 {
   gboolean ret = FALSE;
   gint64 timestamp;
-  TpDBusDaemon *bus_daemon;
+  GDBusConnection *bus_connection;
   TpAccount *account;
   TplEntity *sender;
   const gchar *body_str;
@@ -448,10 +448,10 @@ add_text_event (TplLogStoreXml *self,
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
   g_return_val_if_fail (TPL_IS_TEXT_EVENT (message), FALSE);
 
-  bus_daemon = tp_dbus_daemon_dup (error);
-  if (bus_daemon == NULL)
+  bus_connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, error);
+  if (bus_connection == NULL)
     {
-      DEBUG ("Error acquiring bus daemon: %s", (*error)->message);
+      DEBUG ("Error acquiring bus connection: %s", (*error)->message);
       goto out;
     }
 
@@ -540,8 +540,8 @@ out:
   g_string_free (event, TRUE);
   g_free (avatar_token);
 
-  if (bus_daemon != NULL)
-    g_object_unref (bus_daemon);
+  if (bus_connection != NULL)
+    g_object_unref (bus_connection);
 
   return ret;
 }
@@ -553,7 +553,7 @@ add_call_event (TplLogStoreXml *self,
     GError **error)
 {
   gboolean ret = FALSE;
-  TpDBusDaemon *bus_daemon;
+  GDBusConnection *bus_connection;
   TpAccount *account;
   TplEntity *sender;
   TplEntity *actor;
@@ -572,10 +572,10 @@ add_call_event (TplLogStoreXml *self,
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
   g_return_val_if_fail (TPL_IS_CALL_EVENT (event), FALSE);
 
-  bus_daemon = tp_dbus_daemon_dup (error);
-  if (bus_daemon == NULL)
+  bus_connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, error);
+  if (bus_connection == NULL)
     {
-      DEBUG ("Error acquiring bus daemon: %s", (*error)->message);
+      DEBUG ("Error acquiring bus connection: %s", (*error)->message);
       goto out;
     }
 
@@ -645,8 +645,8 @@ out:
   g_free (time_str);
   g_free (log_str);
 
-  if (bus_daemon != NULL)
-    g_object_unref (bus_daemon);
+  if (bus_connection != NULL)
+    g_object_unref (bus_connection);
 
   return ret;
 }

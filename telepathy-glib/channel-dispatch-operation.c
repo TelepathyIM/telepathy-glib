@@ -401,10 +401,6 @@ tp_channel_dispatch_operation_constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 
-  g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
-
-  g_assert (tp_proxy_get_factory (self) != NULL);
-
   maybe_set_connection (self,
       tp_asv_get_boxed (self->priv->immutable_properties,
         TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION,
@@ -753,7 +749,7 @@ _tp_channel_dispatch_operation_new (TpClientFactory *factory,
     return NULL;
 
   if (!_tp_dbus_daemon_get_name_owner (
-      tp_client_factory_get_dbus_daemon (factory), -1,
+      tp_client_factory_get_dbus_connection (factory), -1,
       TP_CHANNEL_DISPATCHER_BUS_NAME, &unique_name, error))
     return NULL;
 

@@ -265,7 +265,8 @@ _tpl_observer_dup (GError **error)
   if (G_UNLIKELY (observer_singleton == NULL))
     {
       GError *dbus_error = NULL;
-      TpDBusDaemon *dbus = tp_dbus_daemon_dup (&dbus_error);
+      GDBusConnection *dbus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL,
+          &dbus_error);
       TpClientFactory *factory;
 
       if (dbus == NULL)

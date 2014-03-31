@@ -129,7 +129,7 @@ static void
 test (Fixture *f,
     gconstpointer data)
 {
-  TpDBusDaemon *dbus;
+  GDBusConnection *dbus;
   TpTestsContactsConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   gchar *name;
@@ -151,7 +151,7 @@ test (Fixture *f,
   test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
   g_test_dbus_up (test_dbus);
 
-  dbus = tp_tests_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_dup_or_die ();
 
   service_conn = TP_TESTS_CONTACTS_CONNECTION (
       tp_tests_object_new_static_class (

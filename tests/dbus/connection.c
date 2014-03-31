@@ -22,7 +22,7 @@
 #include "tests/lib/util.h"
 
 typedef struct {
-    TpDBusDaemon *dbus;
+    GDBusConnection *dbus;
     TpTestsSimpleConnection *service_conn;
     TpBaseConnection *service_conn_as_base;
     gchar *conn_name;
@@ -56,7 +56,7 @@ setup (Test *test,
   invalidated_for_test.domain = TP_ERROR;
 
   tp_debug_set_flags ("all");
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_dup_or_die ();
 
   test->service_conn = TP_TESTS_SIMPLE_CONNECTION (
     tp_tests_object_new_static_class (

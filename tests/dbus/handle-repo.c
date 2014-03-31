@@ -20,7 +20,7 @@ static void
 test_handles (Fixture *f,
     gconstpointer data)
 {
-  TpDBusDaemon *bus_daemon = tp_tests_dbus_daemon_dup_or_die ();
+  GDBusConnection *bus_connection = tp_tests_dbus_dup_or_die ();
   TpHandleRepoIface *tp_repo = NULL;
   GError *error = NULL;
   TpHandle handle = 0;
@@ -72,10 +72,10 @@ test_handles (Fixture *f,
   /* wait for D-Bus to catch up (just to detect any crashes) but don't assert
    * that the handle doesn't remain valid - unref is a no-op since
    * 0.13.8 */
-  tp_tests_proxy_run_until_dbus_queue_processed (bus_daemon);
+  tp_tests_proxy_run_until_dbus_queue_processed (bus_connection);
 
   g_object_unref (tp_repo);
-  g_object_unref (bus_daemon);
+  g_object_unref (bus_connection);
 }
 
 static void

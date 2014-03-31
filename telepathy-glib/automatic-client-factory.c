@@ -269,21 +269,20 @@ tp_automatic_client_factory_class_init (TpAutomaticClientFactoryClass *klass)
 
 /**
  * tp_automatic_client_factory_new:
- * @dbus: (allow-none): a #TpDBusDaemon, or %NULL
+ * @dbus_connection: a #GDBusConnection
  *
- * Returns a new #TpAutomaticClientFactory instance. If @dbus is %NULL then
- * tp_dbus_daemon_dup() will be used.
+ * <!-- -->
  *
  * Returns: a new #TpAutomaticClientFactory
  *
  * Since: 0.99.1
  */
 TpClientFactory *
-tp_automatic_client_factory_new (TpDBusDaemon *dbus)
+tp_automatic_client_factory_new (GDBusConnection *dbus_connection)
 {
-  g_return_val_if_fail (dbus == NULL || TP_IS_DBUS_DAEMON (dbus), NULL);
+  g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus_connection), NULL);
 
   return g_object_new (TP_TYPE_AUTOMATIC_CLIENT_FACTORY,
-      "dbus-daemon", dbus,
+      "dbus-connection", dbus_connection,
       NULL);
 }

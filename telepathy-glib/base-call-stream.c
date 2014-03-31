@@ -164,7 +164,7 @@ static void
 tp_base_call_stream_constructed (GObject *obj)
 {
   TpBaseCallStream *self = TP_BASE_CALL_STREAM (obj);
-  TpDBusDaemon *bus = tp_base_connection_get_dbus_daemon (
+  GDBusConnection *bus = tp_base_connection_get_dbus_connection (
       (TpBaseConnection *) self->priv->conn);
 
   if (G_OBJECT_CLASS (tp_base_call_stream_parent_class)->constructed != NULL)
@@ -185,7 +185,7 @@ static void
 tp_base_call_stream_dispose (GObject *object)
 {
   TpBaseCallStream *self = TP_BASE_CALL_STREAM (object);
-  TpDBusDaemon *bus = tp_base_connection_get_dbus_daemon (
+  GDBusConnection *bus = tp_base_connection_get_dbus_connection (
       (TpBaseConnection *) self->priv->conn);
 
   tp_dbus_daemon_unregister_object (bus, G_OBJECT (self));

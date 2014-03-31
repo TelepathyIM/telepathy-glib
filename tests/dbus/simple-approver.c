@@ -28,7 +28,7 @@
 
 typedef struct {
     GMainLoop *mainloop;
-    TpDBusDaemon *dbus;
+    GDBusConnection *dbus;
     TpClientFactory *factory;
 
     /* Service side objects */
@@ -60,7 +60,7 @@ setup (Test *test,
   TpHandleRepoIface *contact_repo;
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_dup_or_die ();
   test->factory = tp_client_factory_dup (NULL);
 
   test->error = NULL;

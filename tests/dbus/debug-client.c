@@ -18,7 +18,7 @@
 
 typedef struct {
     GMainLoop *mainloop;
-    TpDBusDaemon *dbus;
+    GDBusConnection *dbus;
 
     /* Service side object */
     TpDebugSender *sender;
@@ -39,7 +39,7 @@ setup (Test *test,
   TpClientFactory *factory;
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_dup_or_die ();
 
   test->error = NULL;
 

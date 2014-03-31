@@ -501,8 +501,6 @@ _tp_account_manager_constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 
-  g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
-
   tp_cli_account_manager_connect_to_account_usability_changed (self,
       _tp_account_manager_usability_changed_cb, NULL,
       NULL, G_OBJECT (self), NULL);

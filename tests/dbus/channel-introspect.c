@@ -107,7 +107,7 @@ main (int argc,
   TpHandleRepoIface *contact_repo;
   TpTestsEchoChannel *service_props_chan;
   TpTestsTextChannelGroup *service_props_group_chan;
-  TpDBusDaemon *dbus;
+  GDBusConnection *dbus;
   TpConnection *conn, *conn2;
   TpChannel *chan, *chan2;
   GError *error = NULL;
@@ -128,7 +128,7 @@ main (int argc,
   test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
   g_test_dbus_up (test_dbus);
 
-  dbus = tp_tests_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_dup_or_die ();
 
   tp_tests_create_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION, "me@example.com",
       TRUE, &service_conn_as_base, &conn);

@@ -25,9 +25,8 @@
 
 typedef struct {
     GMainLoop *mainloop;
-    TpDBusDaemon *dbus;
+    GDBusConnection *dbus;
     GDBusConnection *client_gdbus;
-    TpDBusDaemon *client_bus;
     ExampleContactListConnection *service_conn;
     TpBaseConnection *service_conn_as_base;
     gchar *conn_name;
@@ -49,14 +48,13 @@ setup (Test *test,
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
   tp_debug_set_flags ("all");
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_dup_or_die ();
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->error = NULL;
 
   test->client_gdbus = tp_tests_get_private_bus ();
-  test->client_bus = tp_dbus_daemon_new (test->client_gdbus);
-  g_assert (test->client_bus != NULL);
+  g_assert (test->client_gdbus != NULL);
 
   test->service_conn = tp_tests_object_new_static_class (
         EXAMPLE_TYPE_CONTACT_LIST_CONNECTION,
@@ -74,7 +72,7 @@ setup (Test *test,
   test->cwr_ready = FALSE;
   test->cwr_error = NULL;
 
-  test->conn = tp_tests_connection_new (test->client_bus, test->conn_name,
+  test->conn = tp_tests_connection_new (test->client_gdbus, test->conn_name,
       test->conn_path, &error);
   g_assert (test->conn != NULL);
   g_assert_no_error (error);
@@ -118,8 +116,6 @@ teardown (Test *test,
 
   g_object_unref (test->dbus);
   test->dbus = NULL;
-  g_object_unref (test->client_bus);
-  test->client_bus = NULL;
 
   g_dbus_connection_close_sync (test->client_gdbus, NULL, NULL);
   g_object_unref (test->client_gdbus);

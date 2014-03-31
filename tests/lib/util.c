@@ -99,32 +99,16 @@ tp_tests_run_with_bus (void)
   return ret;
 }
 
-TpDBusDaemon *
-tp_tests_dbus_daemon_dup_or_die (void)
+GDBusConnection *
+tp_tests_dbus_dup_or_die (void)
 {
-  TpDBusDaemon *d;
+  GDBusConnection *d;
+  GError *error = NULL;
 
-  d = tp_dbus_daemon_dup (NULL);
-
-  /* In a shared library, this would be very bad (see fd.o #18832), but in a
-   * regression test that's going to be run under a temporary session bus,
-   * it's just what we want. */
-  if (d == NULL)
-    {
-      g_error ("Unable to connect to session bus");
-    }
+  d = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
+  g_assert_no_error (error);
 
   return d;
-}
-
-static void
-queue_get_id_cb (TpDBusDaemon *proxy G_GNUC_UNUSED,
-    const gchar *out G_GNUC_UNUSED,
-    const GError *error G_GNUC_UNUSED,
-    gpointer user_data,
-    GObject *weak_object G_GNUC_UNUSED)
-{
-  g_main_loop_quit (user_data);
 }
 
 static void
@@ -137,13 +121,24 @@ queue_get_all_cb (TpProxy *proxy G_GNUC_UNUSED,
   g_main_loop_quit (user_data);
 }
 
+static void
+queue_gdbus_call_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  g_main_loop_quit (user_data);
+}
+
 void
 tp_tests_proxy_run_until_dbus_queue_processed (gpointer proxy)
 {
   GMainLoop *loop = g_main_loop_new (NULL, FALSE);
 
-  g_assert (TP_IS_PROXY (proxy));
-  g_assert (tp_proxy_get_invalidated (proxy) == NULL);
+  if (!G_IS_DBUS_CONNECTION (proxy))
+    {
+      g_assert (TP_IS_PROXY (proxy));
+      g_assert (tp_proxy_get_invalidated (proxy) == NULL);
+    }
 
   /* We used to use Introspect() on @proxy here, but because GDBus implements
    * them internally without using a GDBusMethodInvocation, the replies to
@@ -156,9 +151,15 @@ tp_tests_proxy_run_until_dbus_queue_processed (gpointer proxy)
    * that the object *does* implement don't jump the queue.
    *
    * https://bugzilla.gnome.org/show_bug.cgi?id=726259 */
-  if (TP_IS_DBUS_DAEMON (proxy))
-    tp_cli_dbus_daemon_call_get_id (proxy, -1,
-        queue_get_id_cb, loop, NULL, NULL);
+  if (G_IS_DBUS_CONNECTION (proxy))
+    {
+      g_dbus_connection_call (proxy,
+          "org.freedesktop.DBus", "/", "org.freedesktop.DBus", "GetId",
+          g_variant_new ("()"),
+          G_VARIANT_TYPE ("(s)"),
+          G_DBUS_CALL_FLAGS_NONE,
+          -1, NULL, queue_gdbus_call_cb, loop);
+    }
   else if (TP_IS_ACCOUNT (proxy))
     tp_cli_dbus_properties_call_get_all (proxy, -1, TP_IFACE_ACCOUNT,
         queue_get_all_cb, loop, NULL, NULL);
@@ -288,7 +289,7 @@ tp_tests_create_conn (GType conn_type,
     TpBaseConnection **service_conn,
     TpConnection **client_conn)
 {
-  TpDBusDaemon *dbus;
+  GDBusConnection *dbus;
   gchar *name;
   gchar *conn_path;
   GError *error = NULL;
@@ -297,7 +298,7 @@ tp_tests_create_conn (GType conn_type,
   g_assert (service_conn != NULL);
   g_assert (client_conn != NULL);
 
-  dbus = tp_tests_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_dup_or_die ();
 
   *service_conn = tp_tests_object_new_static_class (
         conn_type,
@@ -606,7 +607,7 @@ tp_tests_channel_assert_expect_members (TpChannel *channel,
 }
 
 TpConnection *
-tp_tests_connection_new (TpDBusDaemon *dbus,
+tp_tests_connection_new (GDBusConnection *dbus,
     const gchar *bus_name,
     const gchar *object_path,
     GError **error)
@@ -615,7 +616,7 @@ tp_tests_connection_new (TpDBusDaemon *dbus,
   gchar *dup_path = NULL;
   TpConnection *ret = NULL;
 
-  g_return_val_if_fail (TP_IS_DBUS_DAEMON (dbus), NULL);
+  g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus), NULL);
   g_return_val_if_fail (object_path != NULL ||
                         (bus_name != NULL && bus_name[0] != ':'), NULL);
 
@@ -640,7 +641,7 @@ finally:
 }
 
 TpAccount *
-tp_tests_account_new (TpDBusDaemon *dbus,
+tp_tests_account_new (GDBusConnection *dbus,
     const gchar *object_path,
     GError **error)
 {

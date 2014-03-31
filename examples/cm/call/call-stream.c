@@ -65,7 +65,7 @@ constructed (GObject *object)
       ((GObjectClass *) example_call_stream_parent_class)->constructed;
   static guint count = 0;
   TpBaseConnection *conn;
-  TpDBusDaemon *dbus;
+  GDBusConnection *dbus;
   gchar *object_path;
   TpCallStreamEndpoint *endpoint;
 
@@ -73,7 +73,7 @@ constructed (GObject *object)
     chain_up (object);
 
   conn = tp_base_call_stream_get_connection ((TpBaseCallStream *) self);
-  dbus = tp_base_connection_get_dbus_daemon (conn);
+  dbus = tp_base_connection_get_dbus_connection (conn);
   object_path = g_strdup_printf ("%s/Endpoint%d",
       tp_base_call_stream_get_object_path ((TpBaseCallStream *) self),
       count++);

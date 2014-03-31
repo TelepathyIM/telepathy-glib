@@ -15,7 +15,7 @@
 
 gint tp_tests_run_with_bus (void);
 
-TpDBusDaemon *tp_tests_dbus_daemon_dup_or_die (void);
+GDBusConnection *tp_tests_dbus_dup_or_die (void);
 
 void tp_tests_proxy_run_until_dbus_queue_processed (gpointer proxy);
 
@@ -85,12 +85,12 @@ TpContact *tp_tests_connection_run_until_contact_by_id (
 void tp_tests_channel_assert_expect_members (TpChannel *channel,
     TpIntset *expected_members);
 
-TpConnection *tp_tests_connection_new (TpDBusDaemon *dbus,
+TpConnection *tp_tests_connection_new (GDBusConnection *dbus,
     const gchar *bus_name,
     const gchar *object_path,
     GError **error);
 
-TpAccount *tp_tests_account_new (TpDBusDaemon *dbus,
+TpAccount *tp_tests_account_new (GDBusConnection *dbus,
     const gchar *object_path,
     GError **error);
 

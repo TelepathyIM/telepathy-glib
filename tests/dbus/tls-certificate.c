@@ -19,7 +19,7 @@
 
 typedef struct {
     GMainLoop *mainloop;
-    TpDBusDaemon *dbus;
+    GDBusConnection *dbus;
 
     gchar *cert_path;
     /* Service side objects */
@@ -44,7 +44,7 @@ setup (Test *test,
   GArray *cert;
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_dup_or_die ();
 
   test->error = NULL;
 
@@ -67,7 +67,7 @@ setup (Test *test,
       "object-path", test->cert_path,
       "certificate-type", "x509",
       "certificate-chain-data", chain_data,
-      "dbus-daemon", test->dbus,
+      "dbus-connection", test->dbus,
       NULL);
 
   g_ptr_array_unref (chain_data);

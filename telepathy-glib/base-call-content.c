@@ -206,7 +206,7 @@ static void
 tp_base_call_content_constructed (GObject *obj)
 {
   TpBaseCallContent *self = TP_BASE_CALL_CONTENT (obj);
-  TpDBusDaemon *bus = tp_base_connection_get_dbus_daemon (
+  GDBusConnection *bus = tp_base_connection_get_dbus_connection (
       (TpBaseConnection *) self->priv->conn);
 
   if (G_OBJECT_CLASS (tp_base_call_content_parent_class)->constructed != NULL)
@@ -219,7 +219,7 @@ tp_base_call_content_constructed (GObject *obj)
 static void
 tp_base_call_content_deinit_real (TpBaseCallContent *self)
 {
-  TpDBusDaemon *bus = tp_base_connection_get_dbus_daemon (
+  GDBusConnection *bus = tp_base_connection_get_dbus_connection (
       (TpBaseConnection *) self->priv->conn);
 
   tp_dbus_daemon_unregister_object (bus, G_OBJECT (self));

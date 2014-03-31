@@ -57,15 +57,15 @@ main (int argc,
       char **argv)
 {
   ExampleData data = { g_main_loop_new (NULL, FALSE), 0 };
-  TpDBusDaemon *bus_daemon;
+  GDBusConnection *bus_connection;
   TpClientFactory *factory;
   GError *error = NULL;
 
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
-  bus_daemon = tp_dbus_daemon_dup (&error);
+  bus_connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
 
-  if (bus_daemon == NULL)
+  if (bus_connection == NULL)
     {
       g_warning ("%s", error->message);
       g_error_free (error);
@@ -73,7 +73,7 @@ main (int argc,
       goto out;
     }
 
-  factory = tp_client_factory_new (bus_daemon);
+  factory = tp_client_factory_new (bus_connection);
   tp_list_connection_managers_async (factory,
       got_connection_managers, &data);
   g_object_unref (factory);
@@ -84,8 +84,8 @@ out:
   if (data.mainloop != NULL)
     g_main_loop_unref (data.mainloop);
 
-  if (bus_daemon != NULL)
-    g_object_unref (bus_daemon);
+  if (bus_connection != NULL)
+    g_object_unref (bus_connection);
 
   return data.exit_code;
 }

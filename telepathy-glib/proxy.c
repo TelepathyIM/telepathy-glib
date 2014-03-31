@@ -327,7 +327,6 @@ tp_proxy_prepare_request_finish (TpProxyPrepareRequest *req,
 }
 
 struct _TpProxyPrivate {
-    TpDBusDaemon *dbus_daemon;
     GDBusConnection *dbus_connection;
     gchar *bus_name;
     gchar *object_path;
@@ -364,7 +363,7 @@ G_DEFINE_TYPE (TpProxy, tp_proxy, G_TYPE_OBJECT)
 
 enum
 {
-  PROP_DBUS_DAEMON = 1,
+  PROP_0,
   PROP_DBUS_CONNECTION,
   PROP_BUS_NAME,
   PROP_OBJECT_PATH,
@@ -759,16 +758,6 @@ tp_proxy_get_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_DBUS_DAEMON:
-      if (TP_IS_DBUS_DAEMON (self))
-        {
-          g_value_set_object (value, self);
-        }
-      else
-        {
-          g_value_set_object (value, self->priv->dbus_daemon);
-        }
-      break;
     case PROP_DBUS_CONNECTION:
       g_value_set_object (value, self->priv->dbus_connection);
       break;
@@ -807,17 +796,6 @@ tp_proxy_set_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_DBUS_DAEMON:
-      if (TP_IS_DBUS_DAEMON (self))
-        {
-          g_assert (g_value_get_object (value) == NULL);
-        }
-      else
-        {
-          g_assert (self->priv->dbus_daemon == NULL);
-          self->priv->dbus_daemon = g_value_dup_object (value);
-        }
-      break;
     case PROP_DBUS_CONNECTION:
       g_assert (self->priv->dbus_connection == NULL);
       self->priv->dbus_connection = g_value_dup_object (value);
@@ -906,18 +884,11 @@ tp_proxy_constructed (GObject *object)
 
   if (!TP_IS_DBUS_DAEMON (self))
     {
-      TpDBusDaemon *dbus_daemon;
       GDBusConnection *dbus_connection;
 
       g_assert (self->priv->factory != NULL);
-      dbus_daemon = tp_client_factory_get_dbus_daemon (self->priv->factory);
       dbus_connection = tp_client_factory_get_dbus_connection (
           self->priv->factory);
-
-      if (self->priv->dbus_daemon == NULL)
-        self->priv->dbus_daemon = g_object_ref (dbus_daemon);
-      else
-        g_assert (self->priv->dbus_daemon == dbus_daemon);
 
       if (self->priv->dbus_connection == NULL)
         self->priv->dbus_connection = g_object_ref (dbus_connection);
@@ -1032,7 +1003,6 @@ tp_proxy_dispose (GObject *object)
    * here, and is idempotent. */
   tp_proxy_invalidate (self, &e);
 
-  tp_clear_object (&self->priv->dbus_daemon);
   tp_clear_object (&self->priv->factory);
 
   G_OBJECT_CLASS (tp_proxy_parent_class)->dispose (object);
@@ -1088,19 +1058,6 @@ tp_proxy_class_init (TpProxyClass *klass)
   object_class->set_property = tp_proxy_set_property;
   object_class->dispose = tp_proxy_dispose;
   object_class->finalize = tp_proxy_finalize;
-
-  /**
-   * TpProxy:dbus-daemon:
-   *
-   * The D-Bus daemon for this object (this object itself, if it is a
-   * TpDBusDaemon). Read-only except during construction.
-   */
-  param_spec = g_param_spec_object ("dbus-daemon", "D-Bus daemon",
-      "The D-Bus daemon used by this object, or this object itself if it's "
-      "a TpDBusDaemon", TP_TYPE_DBUS_DAEMON,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_DBUS_DAEMON,
-      param_spec);
 
   /**
    * TpProxy:dbus-connection: (skip)
@@ -1205,27 +1162,6 @@ tp_proxy_get_factory (gpointer self)
   g_return_val_if_fail (TP_IS_PROXY (self), NULL);
 
   return proxy->priv->factory;
-}
-
-/**
- * tp_proxy_get_dbus_daemon:
- * @self: a #TpProxy or subclass
- *
- * <!-- -->
- *
- * Returns: (transfer none): a borrowed reference to the #TpDBusDaemon for
- *  this object, if any; always %NULL if this object is itself a
- *  #TpDBusDaemon. The caller must reference the returned object with
- *  g_object_ref() if it will be kept.
- *
- * Since: 0.7.17
- */
-TpDBusDaemon *
-tp_proxy_get_dbus_daemon (gpointer self)
-{
-  TpProxy *proxy = TP_PROXY (self);
-
-  return proxy->priv->dbus_daemon;
 }
 
 /**

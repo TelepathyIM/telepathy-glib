@@ -212,8 +212,8 @@ test (Fixture *f,
 
   g_hash_table_unref (parameters);
 
-  conn = tp_tests_connection_new (tp_client_factory_get_dbus_daemon (factory),
-      name, conn_path, &error);
+  conn = tp_tests_connection_new (
+      tp_client_factory_get_dbus_connection (factory), name, conn_path, &error);
   MYASSERT (conn != NULL, "");
   g_assert_no_error (error);
 

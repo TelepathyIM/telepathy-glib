@@ -29,7 +29,7 @@ typedef struct {
 
 typedef struct {
     GMainLoop *mainloop;
-    TpDBusDaemon *dbus;
+    GDBusConnection *dbus;
 
     TpTestsSimpleAccountManager *service /* initialized in prepare_service */;
     TpAccountManager *am;
@@ -48,7 +48,7 @@ typedef struct {
 } Test;
 
 static TpAccountManager *
-account_manager_new (TpDBusDaemon *dbus)
+account_manager_new (GDBusConnection *dbus)
 {
   TpClientFactory *factory;
   TpAccountManager *am;
@@ -152,7 +152,7 @@ setup (Test *test,
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
 
-  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_dup_or_die ();
 
   test->am = NULL;
   test->timeout_id = 0;
@@ -250,15 +250,15 @@ test_dup (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpAccountManager *one, *two;
-  TpDBusDaemon *dbus_one, *dbus_two;
+  GDBusConnection *dbus_one, *dbus_two;
 
   one = tp_account_manager_dup ();
   two = tp_account_manager_dup ();
 
   g_assert (one == two);
 
-  dbus_one = tp_dbus_daemon_dup (NULL);
-  dbus_two = tp_proxy_get_dbus_daemon (one);
+  dbus_one = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
+  dbus_two = tp_proxy_get_dbus_connection (one);
 
   g_assert (dbus_one == dbus_two);
 
@@ -348,7 +348,7 @@ assert_am_not_activatable_action (gpointer script_data,
 {
   Test *test = (Test *) script_data;
 
-  g_dbus_connection_call (tp_proxy_get_dbus_connection (test->dbus),
+  g_dbus_connection_call (test->dbus,
       "org.freedesktop.DBus", "/", "org.freedesktop.DBus",
       "ListActivatableNames",
       g_variant_new ("()"),

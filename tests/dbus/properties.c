@@ -223,7 +223,7 @@ int
 main (int argc, char **argv)
 {
   Context ctx;
-  TpDBusDaemon *dbus_daemon;
+  GDBusConnection *dbus_connection;
   TpClientFactory *factory;
   GTestDBus *test_dbus;
   int ret;
@@ -234,14 +234,14 @@ main (int argc, char **argv)
   test_dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
   g_test_dbus_up (test_dbus);
 
-  dbus_daemon = tp_tests_dbus_daemon_dup_or_die ();
+  dbus_connection = tp_tests_dbus_dup_or_die ();
   factory = tp_client_factory_dup (NULL);
   ctx.obj = tp_tests_object_new_static_class (TEST_TYPE_PROPERTIES, NULL);
-  tp_dbus_daemon_register_object (dbus_daemon, "/", ctx.obj);
+  tp_dbus_daemon_register_object (dbus_connection, "/", ctx.obj);
 
   /* Open a D-Bus connection to myself */
   ctx.proxy = TP_PROXY (tp_tests_object_new_static_class (TP_TYPE_PROXY,
-      "bus-name", tp_dbus_daemon_get_unique_name (dbus_daemon),
+      "bus-name", tp_dbus_daemon_get_unique_name (dbus_connection),
       "object-path", "/",
       "factory", factory,
       NULL));
@@ -258,7 +258,7 @@ main (int argc, char **argv)
 
   g_object_unref (ctx.obj);
   g_object_unref (ctx.proxy);
-  g_object_unref (dbus_daemon);
+  g_object_unref (dbus_connection);
   g_object_unref (factory);
 
   g_test_dbus_down (test_dbus);
