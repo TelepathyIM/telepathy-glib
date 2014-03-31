@@ -30,6 +30,7 @@
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/svc-protocol.h>
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/value-array.h>
 
 #define DEBUG_FLAG TP_DEBUG_PARAMS
 #include "telepathy-glib/debug-internal.h"

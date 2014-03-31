@@ -29,6 +29,7 @@
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/value-array.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 #include "telepathy-glib/channel-internal.h"

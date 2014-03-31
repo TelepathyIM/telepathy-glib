@@ -19,6 +19,3 @@ tp_proxy_signal_connection_v1_new
 tp_svc_interface_peek_dbus_interface_info
 tp_svc_interface_set_dbus_interface_info
 tp_svc_interface_set_dbus_properties_info
-tp_value_array_build
-tp_value_array_free
-tp_value_array_unpack

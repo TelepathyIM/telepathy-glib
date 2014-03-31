@@ -40,6 +40,7 @@
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/tls-certificate-rejection-internal.h>
 #include "telepathy-glib/variant-util.h"
+#include <telepathy-glib/value-array.h>
 
 #define DEBUG_FLAG TP_DEBUG_TLS
 #include "debug-internal.h"

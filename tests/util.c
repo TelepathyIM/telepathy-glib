@@ -5,6 +5,7 @@
 #include <glib.h>
 
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/value-array.h>
 
 typedef struct {
     int dummy;

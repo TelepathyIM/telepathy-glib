@@ -1315,9 +1315,6 @@ tp_mixin_instance_get_offset
 tp_escape_as_identifier
 tp_strv_contains
 tp_g_signal_connect_object
-tp_value_array_build
-tp_value_array_unpack
-tp_value_array_free
 TpWeakRef
 tp_weak_ref_new
 tp_weak_ref_dup_object
@@ -1330,6 +1327,15 @@ tp_simple_async_report_success_in_idle
 tp_user_action_time_from_x11
 tp_user_action_time_should_present
 tp_utf8_make_valid
+</SECTION>
+
+<SECTION>
+<FILE>value-array</FILE>
+<TITLE>value-array</TITLE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
+tp_value_array_build
+tp_value_array_unpack
+tp_value_array_free
 </SECTION>
 
 <SECTION>

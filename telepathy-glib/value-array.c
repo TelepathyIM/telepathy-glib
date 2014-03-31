@@ -1,5 +1,6 @@
 /*
- * util.c - Source for telepathy-glib utility functions
+ * value-array.c - GValueArray utilities
+ *
  * Copyright © 2006-2014 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright © 2006-2008 Nokia Corporation
  *
@@ -19,12 +20,13 @@
  */
 
 #include <config.h>
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/value-array.h>
 
 #include <string.h>
 #include <gobject/gvaluecollector.h>
 
 #include <telepathy-glib/defs.h>
+#include <telepathy-glib/util.h>
 
 /* this is the core library, we don't have debug infrastructure yet */
 #define CRITICAL(format, ...) \
@@ -33,6 +35,17 @@
 #define WARNING(format, ...) \
   g_log (G_LOG_DOMAIN "/misc", G_LOG_LEVEL_WARNING, "%s: " format, \
       G_STRFUNC, ##__VA_ARGS__)
+
+/**
+ * SECTION:value-array
+ * @title: GValueArray utilities
+ * @short_description: Functions to manipulate #GValueArray as used in
+ *  dbus-glib, despite its deprecation in GLib
+ *
+ * dbus-glib uses #GValueArray to represent a D-Bus struct/tuple, even
+ * though it's now deprecated in GLib. These utility functions pack/unpack
+ * #GValueArray structures and avoid some of the deprecation warnings.
+ */
 
 /**
  * tp_value_array_build: (skip)

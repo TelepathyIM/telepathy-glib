@@ -918,3 +918,6 @@ tp_type_dbus_struct_uus
 tp_type_dbus_struct_uuss
 tp_type_dbus_struct_uuus
 tp_type_dbus_struct_uv
+tp_value_array_build
+tp_value_array_free
+tp_value_array_unpack

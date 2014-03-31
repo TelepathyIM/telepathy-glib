@@ -4,6 +4,7 @@
 #include "telepathy-glib/reentrants.h"
 
 #include <dbus/dbus-glib.h>
+#include <telepathy-glib/value-array.h>
 
 #include <telepathy-glib/_gen/tp-cli-account-reentrant-body.h>
 #include <telepathy-glib/_gen/tp-cli-account-manager-reentrant-body.h>

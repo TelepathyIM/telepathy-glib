@@ -12,6 +12,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/value-array.h>
 
 #include "tests/lib/util.h"
 

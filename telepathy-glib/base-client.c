@@ -189,6 +189,7 @@
 #include <telepathy-glib/svc-client.h>
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/value-array.h>
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/connection-internal.h"

@@ -275,6 +275,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-connection.h>
+#include <telepathy-glib/value-array.h>
 
 #define DEBUG_FLAG TP_DEBUG_PRESENCE
 

@@ -745,8 +745,10 @@ class Generator(object):
             self.b('#include <telepathy-glib/dbus.h>')
             self.b('#include <telepathy-glib/dbus-properties-mixin.h>')
             self.b('#include <telepathy-glib/util.h>')
+            self.b('#include <telepathy-glib/value-array.h>')
         else:
             self.b('#include <telepathy-glib/telepathy-glib.h>')
+            self.b('#include <telepathy-glib/telepathy-glib-dbus.h>')
         self.b('')
 
         for header in self.headers:

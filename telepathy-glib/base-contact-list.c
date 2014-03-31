@@ -30,6 +30,7 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-connection.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/value-array.h>
 
 #include <telepathy-glib/base-connection-internal.h>
 #include <telepathy-glib/handle-repo-internal.h>

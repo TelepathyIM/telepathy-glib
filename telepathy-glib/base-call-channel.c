@@ -119,6 +119,7 @@
 #include "telepathy-glib/svc-channel.h"
 #include "telepathy-glib/svc-properties-interface.h"
 #include "telepathy-glib/util.h"
+#include <telepathy-glib/value-array.h>
 
 static void call_iface_init (gpointer, gpointer);
 

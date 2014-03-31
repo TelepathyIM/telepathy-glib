@@ -110,6 +110,7 @@
 #include "telepathy-glib/svc-call.h"
 #include "telepathy-glib/svc-generic.h"
 #include "telepathy-glib/util.h"
+#include <telepathy-glib/value-array.h>
 
 static void call_stream_iface_init (gpointer g_iface, gpointer iface_data);
 

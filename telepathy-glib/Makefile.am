@@ -158,6 +158,7 @@ tpgdbusinclude_HEADERS = \
     svc-tls.h \
     svc-logger.h \
     telepathy-glib-dbus.h \
+    value-array.h \
     $(NULL)
 
 BUILT_SOURCES = $(codegen_sources)
@@ -191,7 +192,6 @@ libtelepathy_glib_core_internal_la_SOURCES = \
     core-dbus.c \
     core-proxy.c \
     core-svc-interface.c \
-    core-util.c \
     errors.c \
     $(NULL)
 
@@ -205,6 +205,7 @@ libtelepathy_glib_dbus_internal_la_SOURCES = \
     cli-misc.c \
     gtypes.c \
     interfaces.c \
+    value-array.c \
     $(NULL)
 
 libtelepathy_glib_main_internal_la_LIBADD = \

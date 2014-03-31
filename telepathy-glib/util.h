@@ -98,29 +98,6 @@ gulong tp_g_signal_connect_object (gpointer instance,
     const gchar *detailed_signal, GCallback c_handler, gpointer gobject,
     GConnectFlags connect_flags);
 
-GValueArray *tp_value_array_build (gsize length,
-  GType type,
-  ...) G_GNUC_WARN_UNUSED_RESULT;
-void tp_value_array_unpack (GValueArray *array,
-    gsize len,
-    ...);
-
-/* Work around GLib having deprecated something that is part of our API. */
-_TP_AVAILABLE_IN_0_24
-void tp_value_array_free (GValueArray *va);
-#if TP_VERSION_MAX_ALLOWED >= TP_VERSION_0_24
-#define tp_value_array_free(va) _tp_value_array_free_inline (va)
-#ifndef __GTK_DOC_IGNORE__ /* gtk-doc can't parse this */
-static inline void
-_tp_value_array_free_inline (GValueArray *va)
-{
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  g_value_array_free (va);
-  G_GNUC_END_IGNORE_DEPRECATIONS
-}
-#endif
-#endif
-
 /* See https://bugzilla.gnome.org/show_bug.cgi?id=680813 for glib inclusion */
 typedef struct _TpWeakRef TpWeakRef;
 TpWeakRef *tp_weak_ref_new (gpointer object,

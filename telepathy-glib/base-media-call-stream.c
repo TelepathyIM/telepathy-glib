@@ -164,6 +164,7 @@
 #include "telepathy-glib/svc-call.h"
 #include "telepathy-glib/util.h"
 #include "telepathy-glib/util-internal.h"
+#include <telepathy-glib/value-array.h>
 
 static void call_stream_media_iface_init (gpointer, gpointer);
 

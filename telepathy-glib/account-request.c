@@ -28,6 +28,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/value-array.h>
 #include <telepathy-glib/client-factory.h>
 
 #define DEBUG_FLAG TP_DEBUG_ACCOUNTS

@@ -25,6 +25,9 @@
 
 #define _TP_GLIB_DBUS_H_INSIDE
 
+/* utilities for the dbus-glib type system */
+#include <telepathy-glib/value-array.h>
+
 /* common */
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>

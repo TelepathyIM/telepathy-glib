@@ -63,6 +63,7 @@
 #include "telepathy-glib/svc-properties-interface.h"
 #include "telepathy-glib/util.h"
 #include "telepathy-glib/util-internal.h"
+#include <telepathy-glib/value-array.h>
 
 static void call_content_media_description_iface_init (gpointer iface,
     gpointer data);

@@ -140,6 +140,7 @@
 #include "telepathy-glib/svc-generic.h"
 #include "telepathy-glib/util.h"
 #include "telepathy-glib/util-internal.h"
+#include <telepathy-glib/value-array.h>
 
 static void call_content_iface_init (gpointer g_iface, gpointer iface_data);
 static void call_content_dtmf_iface_init (gpointer g_iface,

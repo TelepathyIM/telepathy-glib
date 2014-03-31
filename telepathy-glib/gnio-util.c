@@ -44,6 +44,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/util-internal.h>
+#include <telepathy-glib/value-array.h>
 
 #include <string.h>
 

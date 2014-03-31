@@ -72,6 +72,7 @@
 #include "telepathy-glib/svc-properties-interface.h"
 #include "telepathy-glib/util.h"
 #include "telepathy-glib/util-internal.h"
+#include <telepathy-glib/value-array.h>
 
 #define DTMF_PAUSE_MS (3000)
 

@@ -32,6 +32,7 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/value-array.h>
 
 #include "telepathy-glib/reentrants.h"
 

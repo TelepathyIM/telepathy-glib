@@ -43,6 +43,7 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/value-array.h>
 
 #define DEBUG_FLAG TP_DEBUG_PARAMS
 #include "telepathy-glib/capabilities-internal.h"
