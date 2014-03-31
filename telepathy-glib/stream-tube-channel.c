@@ -56,6 +56,7 @@
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/enums.h>
+#include <telepathy-glib/gnio-unix.h>
 #include <telepathy-glib/gnio-util.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>

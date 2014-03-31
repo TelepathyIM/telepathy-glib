@@ -31,6 +31,7 @@
 #include <telepathy-glib/value-array.h>
 
 /* common */
+#include <telepathy-glib/gnio-util.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 

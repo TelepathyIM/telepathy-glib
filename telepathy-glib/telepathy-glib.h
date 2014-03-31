@@ -26,7 +26,7 @@
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/util.h>
-#include <telepathy-glib/gnio-util.h>
+#include <telepathy-glib/gnio-unix.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/intset.h>
 #include <telepathy-glib/heap.h>

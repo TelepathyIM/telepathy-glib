@@ -99,7 +99,7 @@ tpginclude_HEADERS = \
     errors.h \
     exportable-channel.h \
     file-transfer-channel.h \
-    gnio-util.h \
+    gnio-unix.h \
     group-mixin.h \
     handle.h \
     handle-channel-context.h \
@@ -140,6 +140,7 @@ tpgdbusinclude_HEADERS = \
     cli-channel.h \
     cli-connection.h \
     cli-misc.h \
+    gnio-util.h \
     gtypes.h \
     interfaces.h \
     sliced-gvalue.h \
@@ -206,6 +207,7 @@ libtelepathy_glib_dbus_internal_la_SOURCES = \
     cli-channel.c \
     cli-connection.c \
     cli-misc.c \
+    gnio-util.c \
     gtypes.c \
     interfaces.c \
     sliced-gvalue.c \
@@ -301,7 +303,7 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     debug-internal.h \
     exportable-channel.c \
     file-transfer-channel.c \
-    gnio-util.c \
+    gnio-unix.c \
     group-mixin.c \
     handle.c \
     handle-channel-context-internal.h \

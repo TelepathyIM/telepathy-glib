@@ -102,6 +102,7 @@
 #include <telepathy-glib/cli-channel.h>
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/gnio-unix.h>
 #include <telepathy-glib/gnio-util.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
