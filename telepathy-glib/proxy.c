@@ -868,6 +868,7 @@ tp_proxy_constructed (GObject *object)
   GType proxy_parent_type = G_TYPE_FROM_CLASS (tp_proxy_parent_class);
   GType ancestor_type;
   GType type = G_TYPE_FROM_INSTANCE (object);
+  GDBusConnection *dbus_connection;
 
   G_OBJECT_CLASS (tp_proxy_parent_class)->constructed (object);
 
@@ -882,23 +883,12 @@ tp_proxy_constructed (GObject *object)
   if (klass->must_have_unique_name)
     g_assert (g_dbus_is_unique_name (self->priv->bus_name));
 
-  if (!TP_IS_DBUS_DAEMON (self))
-    {
-      GDBusConnection *dbus_connection;
-
-      g_assert (self->priv->factory != NULL);
-      dbus_connection = tp_client_factory_get_dbus_connection (
-          self->priv->factory);
-
-      if (self->priv->dbus_connection == NULL)
-        self->priv->dbus_connection = g_object_ref (dbus_connection);
-      else
-        g_assert (self->priv->dbus_connection == dbus_connection);
-    }
+  g_assert (self->priv->factory != NULL);
+  dbus_connection = tp_client_factory_get_dbus_connection (self->priv->factory);
+  if (self->priv->dbus_connection == NULL)
+    self->priv->dbus_connection = g_object_ref (dbus_connection);
   else
-    {
-      g_assert (self->priv->dbus_connection != NULL);
-    }
+    g_assert (self->priv->dbus_connection == dbus_connection);
 
   DEBUG ("%s:%s -> %s %p", self->priv->bus_name, self->priv->object_path,
       G_OBJECT_TYPE_NAME (self), self);

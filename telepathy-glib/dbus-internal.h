@@ -31,8 +31,6 @@ gboolean _tp_dbus_daemon_get_name_owner (GDBusConnection *dbus_connection,
     gint timeout_ms, const gchar *well_known_name, gchar **unique_name,
     GError **error);
 
-gboolean _tp_dbus_daemon_is_the_shared_one (TpDBusDaemon *self);
-
 G_END_DECLS
 
 #endif /* __TP_INTERNAL_DBUS_GLIB_H__ */

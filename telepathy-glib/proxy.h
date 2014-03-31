@@ -33,8 +33,6 @@
 
 G_BEGIN_DECLS
 
-/* Forward declaration of a subclass - from dbus.h */
-typedef struct _TpDBusDaemon TpDBusDaemon;
 /* Forward declaration - from client-factory.h */
 typedef struct _TpClientFactory TpClientFactory;
 

@@ -15,7 +15,6 @@ codegen_extra_dist = \
     debug.xml \
     connection.xml \
     connection-manager.xml \
-    dbus-daemon.xml \
     dbus-introspectable.xml \
     dbus-peer.xml \
     dbus-properties.xml \
@@ -63,7 +62,6 @@ nodist_gendbusinclude_HEADERS += \
     _gen/tp-cli-client.h \
     _gen/tp-cli-connection.h \
     _gen/tp-cli-connection-manager.h \
-    _gen/tp-cli-dbus-daemon.h \
     _gen/tp-cli-debug.h \
     _gen/tp-cli-generic.h \
     _gen/tp-cli-protocol.h \
@@ -116,7 +114,6 @@ nodist_libtelepathy_glib_dbus_internal_la_SOURCES += \
     _gen/tp-cli-client-body.h \
     _gen/tp-cli-connection-body.h \
     _gen/tp-cli-connection-manager-body.h \
-    _gen/tp-cli-dbus-daemon-body.h \
     _gen/tp-cli-debug-body.h \
     _gen/tp-cli-generic-body.h \
     _gen/tp-cli-protocol-body.h \
@@ -152,7 +149,6 @@ nodist_libtelepathy_glib_reentrants_la_SOURCES = \
     _gen/tp-cli-client-reentrant-body.h \
     _gen/tp-cli-connection-reentrant-body.h \
     _gen/tp-cli-connection-manager-reentrant-body.h \
-    _gen/tp-cli-dbus-daemon-reentrant-body.h \
     _gen/tp-cli-generic-reentrant-body.h \
     _gen/tp-cli-protocol-reentrant-body.h \
     _gen/tp-cli-account-reentrant.h \
@@ -164,7 +160,6 @@ nodist_libtelepathy_glib_reentrants_la_SOURCES = \
     _gen/tp-cli-client-reentrant.h \
     _gen/tp-cli-connection-reentrant.h \
     _gen/tp-cli-connection-manager-reentrant.h \
-    _gen/tp-cli-dbus-daemon-reentrant.h \
     _gen/tp-cli-generic-reentrant.h \
     _gen/tp-cli-protocol-reentrant.h
 
@@ -312,10 +307,6 @@ _gen/tp-cli-%-body.h: _gen/tp-spec-%.xml \
 		connection) \
 			subclass=--subclass=TpConnection; \
 			subclass_assert=--subclass-assert=TP_IS_CONNECTION; \
-			;; \
-		dbus-daemon) \
-			subclass=--subclass=TpDBusDaemon; \
-			subclass_assert=--subclass-assert=TP_IS_DBUS_DAEMON; \
 			;; \
 		debug) \
 			subclass=--subclass=TpDebugClient; \

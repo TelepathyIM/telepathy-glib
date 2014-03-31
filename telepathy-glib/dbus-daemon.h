@@ -31,32 +31,6 @@
 
 G_BEGIN_DECLS
 
-/* TpDBusDaemon is typedef'd in proxy.h */
-typedef struct _TpDBusDaemonPrivate TpDBusDaemonPrivate;
-typedef struct _TpDBusDaemonClass TpDBusDaemonClass;
-GType tp_dbus_daemon_get_type (void);
-
-#define TP_TYPE_DBUS_DAEMON \
-  (tp_dbus_daemon_get_type ())
-#define TP_DBUS_DAEMON(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), TP_TYPE_DBUS_DAEMON, \
-                              TpDBusDaemon))
-#define TP_DBUS_DAEMON_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), TP_TYPE_DBUS_DAEMON, \
-                           TpDBusDaemonClass))
-#define TP_IS_DBUS_DAEMON(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TP_TYPE_DBUS_DAEMON))
-#define TP_IS_DBUS_DAEMON_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass), TP_TYPE_DBUS_DAEMON))
-#define TP_DBUS_DAEMON_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_DBUS_DAEMON, \
-                              TpDBusDaemonClass))
-
-TpDBusDaemon *tp_dbus_daemon_dup (GError **error) G_GNUC_WARN_UNUSED_RESULT;
-
-TpDBusDaemon *tp_dbus_daemon_new (GDBusConnection *connection)
-  G_GNUC_WARN_UNUSED_RESULT;
-
 gboolean tp_dbus_daemon_request_name (GDBusConnection *dbus_connection,
     const gchar *well_known_name, gboolean idempotent, GError **error);
 gboolean tp_dbus_daemon_release_name (GDBusConnection *dbus_connection,

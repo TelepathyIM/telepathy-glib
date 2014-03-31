@@ -9,7 +9,6 @@
 <xi:include href="connection.xml"/>
 <xi:include href="channel.xml"/>
 <xi:include href="generic.xml"/>
-<xi:include href="dbus-daemon.xml"/>
 
 <xi:include href="account-manager.xml"/>
 <xi:include href="account.xml"/>

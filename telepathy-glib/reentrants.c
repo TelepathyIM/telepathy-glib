@@ -14,6 +14,5 @@
 #include <telepathy-glib/_gen/tp-cli-client-reentrant-body.h>
 #include <telepathy-glib/_gen/tp-cli-connection-reentrant-body.h>
 #include <telepathy-glib/_gen/tp-cli-connection-manager-reentrant-body.h>
-#include <telepathy-glib/_gen/tp-cli-dbus-daemon-reentrant-body.h>
 #include <telepathy-glib/_gen/tp-cli-generic-reentrant-body.h>
 #include <telepathy-glib/_gen/tp-cli-protocol-reentrant-body.h>
