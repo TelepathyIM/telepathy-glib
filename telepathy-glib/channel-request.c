@@ -24,6 +24,7 @@
 #include "telepathy-glib/channel-request.h"
 
 #include <telepathy-glib/account-manager.h>
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/connection.h>

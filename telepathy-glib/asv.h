@@ -30,6 +30,10 @@
 
 G_BEGIN_DECLS
 
+GVariant * tp_asv_to_vardict (const GHashTable *asv);
+
+GHashTable * tp_asv_from_vardict (GVariant *variant);
+
 #define tp_asv_size(asv) _tp_asv_size_inline (asv)
 
 static inline guint

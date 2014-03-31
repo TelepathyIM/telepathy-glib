@@ -11,6 +11,7 @@
 
 #include <string.h>
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/stream-tube-channel.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>

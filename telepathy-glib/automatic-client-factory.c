@@ -106,6 +106,7 @@
 
 #include "telepathy-glib/automatic-client-factory.h"
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 

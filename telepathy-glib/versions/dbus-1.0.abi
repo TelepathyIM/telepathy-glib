@@ -3,6 +3,7 @@ Extends: -
 Release: 1.0
 
 tp_asv_dump
+tp_asv_from_vardict
 tp_asv_get_boolean
 tp_asv_get_boxed
 tp_asv_get_bytes
@@ -34,6 +35,7 @@ tp_asv_take_boxed
 tp_asv_take_bytes
 tp_asv_take_object_path
 tp_asv_take_string
+tp_asv_to_vardict
 tp_cli_account_call_reconnect
 tp_cli_account_call_remove
 tp_cli_account_call_update_parameters

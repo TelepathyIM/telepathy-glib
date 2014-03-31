@@ -35,10 +35,6 @@ GVariantClass tp_variant_type_classify (const GVariantType *type);
 GVariant *tp_variant_convert (GVariant *variant,
     const GVariantType *type);
 
-GVariant * tp_asv_to_vardict (const GHashTable *asv);
-
-GHashTable * tp_asv_from_vardict (GVariant *variant);
-
 gboolean tp_vardict_has_key (GVariant *variant,
     const gchar *key);
 

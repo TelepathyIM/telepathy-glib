@@ -21,6 +21,7 @@
 
 #include <dbus/dbus-glib.h>
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/variant-util.h>
 

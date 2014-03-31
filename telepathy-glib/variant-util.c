@@ -51,22 +51,6 @@
 #define DEBUG_FLAG TP_DEBUG_MISC
 #include "debug-internal.h"
 
-/**
- * tp_asv_to_vardict: (skip)
- * @asv: a #TP_HASH_TYPE_STRING_VARIANT_MAP
- *
- * Convert a #TP_HASH_TYPE_STRING_VARIANT_MAP to a #GVariant of type
- * %G_VARIANT_TYPE_VARDICT
- *
- * Returns: a new floating #GVariant of type %G_VARIANT_TYPE_VARDICT
- **/
-GVariant *
-tp_asv_to_vardict (const GHashTable *asv)
-{
-  return _tp_boxed_to_variant (TP_HASH_TYPE_STRING_VARIANT_MAP, "a{sv}",
-      (gpointer) asv);
-}
-
 GVariant *
 _tp_boxed_to_variant (GType gtype,
     const gchar *variant_type,
@@ -86,35 +70,6 @@ _tp_boxed_to_variant (GType gtype,
   g_value_unset (&v);
 
   return ret;
-}
-
-/**
- * tp_asv_from_vardict: (skip)
- * @variant: a #GVariant of type %G_VARIANT_TYPE_VARDICT
- *
- * Convert a #GVariant of type %G_VARIANT_TYPE_VARDICT to a
- * #TP_HASH_TYPE_STRING_VARIANT_MAP
- *
- * Returns: (transfer full): a newly created #GHashTable of
- * type #TP_HASH_TYPE_STRING_VARIANT_MAP
- **/
-GHashTable *
-tp_asv_from_vardict (GVariant *variant)
-{
-  GValue v = G_VALUE_INIT;
-  GHashTable *result;
-
-  g_return_val_if_fail (variant != NULL, NULL);
-  g_return_val_if_fail (g_variant_is_of_type (variant, G_VARIANT_TYPE_VARDICT),
-      NULL);
-
-  dbus_g_value_parse_g_variant (variant, &v);
-  g_assert (G_VALUE_HOLDS (&v, TP_HASH_TYPE_STRING_VARIANT_MAP));
-
-  result = g_value_dup_boxed (&v);
-
-  g_value_unset (&v);
-  return result;
 }
 
 /**

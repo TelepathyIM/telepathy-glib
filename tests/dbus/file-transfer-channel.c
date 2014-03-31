@@ -13,6 +13,7 @@
 #include <glib.h>
 #include <string.h>
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/file-transfer-channel.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>

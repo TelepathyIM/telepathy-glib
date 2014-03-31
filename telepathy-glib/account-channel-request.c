@@ -78,6 +78,7 @@
 
 #include <dbus/dbus-glib.h>
 
+#include <telepathy-glib/asv.h>
 #include "telepathy-glib/base-client-internal.h"
 #include <telepathy-glib/channel-dispatcher.h>
 #include <telepathy-glib/channel-request.h>
