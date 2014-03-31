@@ -87,16 +87,13 @@ nodist_gendbusinclude_HEADERS += \
     _gen/tp-svc-logger.h \
     $(NULL)
 
-nodist_libtelepathy_glib_core_internal_la_SOURCES = \
-    _gen/genums.c \
-    $(NULL)
-
 nodist_libtelepathy_glib_dbus_internal_la_SOURCES = \
     _gen/gtypes-body.h \
     _gen/interfaces-body.h \
     $(NULL)
 
 nodist_libtelepathy_glib_main_internal_la_SOURCES = \
+    _gen/genums.c \
     _gen/error-str.c \
     $(NULL)
 

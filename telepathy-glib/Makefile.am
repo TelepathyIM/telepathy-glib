@@ -194,7 +194,6 @@ libtelepathy_glib_core_internal_la_LIBADD = $(ALL_LIBS)
 libtelepathy_glib_core_internal_la_SOURCES = \
     core-dbus.c \
     core-proxy.c \
-    errors.c \
     $(NULL)
 
 libtelepathy_glib_dbus_internal_la_LIBADD = \
@@ -300,6 +299,7 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     debug-message-internal.h \
     dtmf.c \
     debug-internal.h \
+    errors.c \
     exportable-channel.c \
     file-transfer-channel.c \
     gnio-unix.c \

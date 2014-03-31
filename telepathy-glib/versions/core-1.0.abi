@@ -2,16 +2,7 @@ Version: TELEPATHY_GLIB_CORE_1.0
 Extends: -
 Release: 1.0
 
-tp_base_room_config_property_get_type
-tp_cm_info_source_get_type
-tp_dbus_error_get_type
 tp_dbus_g_method_return_not_implemented
-tp_dbus_name_type_get_type
-tp_dbus_properties_mixin_flags_get_type
-tp_error_get_type
-tp_error_quark
-tp_g_set_error_invalid_handle_type
-tp_g_set_error_unsupported_handle_type
 tp_private_proxy_set_implementation
 tp_proxy_check_interface_by_id
 tp_proxy_pending_call_v1_new
