@@ -238,18 +238,21 @@ new_proxy (Fixture *f,
     int which)
 {
   TpClientFactory *local_factory;
+  TpProxy *ret;
 
   if (which == TEST_F)
     local_factory = f->private_factory;
   else
     local_factory = f->factory;
 
-  return tp_tests_object_new_static_class (TP_TYPE_PROXY,
+  ret = tp_tests_object_new_static_class (TP_TYPE_PROXY,
       "bus-name", g_dbus_connection_get_unique_name (
           tp_client_factory_get_dbus_connection (f->factory)),
       "object-path", "/",
       "factory", local_factory,
       NULL);
+  tp_proxy_add_interface_by_id (ret, TP_IFACE_QUARK_CHANNEL_DISPATCHER);
+  return ret;
 }
 
 static void
@@ -260,6 +263,8 @@ test (Fixture *f,
   GError err = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT, "Because I said so" };
   TpProxyPendingCall *pc;
   guint i;
+  GError *error = NULL;
+  gboolean still_alive;
 
   g_message ("Creating proxies");
 
@@ -302,7 +307,23 @@ test (Fixture *f,
       destroy_user_data, NULL);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_C), "");
   g_message ("Forcibly invalidating c");
+
+  still_alive = tp_proxy_check_interface_by_id (f->proxies[TEST_C],
+      TP_IFACE_QUARK_CHANNEL_DISPATCHER, &error);
+  g_assert_no_error (error);
+  g_assert (still_alive);
+
   tp_proxy_invalidate (f->proxies[TEST_C], &err);
+
+  /* previously tested by get-interface-after-invalidate.c, but
+   * that test has been removed because it used TpDBusDaemon directly */
+  still_alive = tp_proxy_check_interface_by_id (f->proxies[TEST_C],
+      TP_IFACE_QUARK_CHANNEL_DISPATCHER, &error);
+  g_assert_error (error, err.domain, err.code);
+  g_assert_cmpstr (error->message, ==, err.message);
+  g_assert (!still_alive);
+  g_error_free (error);
+
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_C), "");
   MYASSERT (!tp_intset_is_member (method_ok, TEST_C), "");
   MYASSERT (!tp_intset_is_member (method_error, TEST_C), "");
