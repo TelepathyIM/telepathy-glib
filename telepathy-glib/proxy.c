@@ -171,8 +171,9 @@ tp_dbus_errors_quark (void)
  * @parent_class: The parent class structure
  * @interface: If set non-zero by a subclass, #TpProxy will
  *    automatically add this interface in its constructed
- * @must_have_unique_name: If set %TRUE by a subclass, the #TpProxy
- *    constructed will fail if a well-known bus name is given
+ * @must_have_unique_name: If set %TRUE by a subclass, it is considered to
+ *    be a programming error to use this proxy to communicate with a
+ *    well-known bus name (and this will be checked during construction)
  *
  * The class of a #TpProxy. The struct fields not documented here are reserved.
  *
