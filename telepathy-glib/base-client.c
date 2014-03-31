@@ -1213,7 +1213,7 @@ tp_base_client_constructed (GObject *object)
     {
       gchar *unique;
 
-      unique = tp_escape_as_identifier (tp_dbus_daemon_get_unique_name (
+      unique = tp_escape_as_identifier (g_dbus_connection_get_unique_name (
             self->priv->dbus));
 
       g_string_append_printf (string, ".%s.n%u", unique, unique_counter++);

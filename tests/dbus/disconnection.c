@@ -202,7 +202,7 @@ new_proxy (Fixture *f,
     local_factory = f->factory;
 
   return tp_tests_object_new_static_class (TP_TYPE_PROXY,
-      "bus-name", tp_dbus_daemon_get_unique_name (
+      "bus-name", g_dbus_connection_get_unique_name (
           tp_client_factory_get_dbus_connection (f->factory)),
       "object-path", "/",
       "factory", local_factory,

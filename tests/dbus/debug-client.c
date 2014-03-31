@@ -48,7 +48,7 @@ setup (Test *test,
 
   factory = tp_client_factory_new (test->dbus);
   test->client = tp_client_factory_ensure_debug_client (factory,
-      tp_dbus_daemon_get_unique_name (test->dbus), &test->error);
+      g_dbus_connection_get_unique_name (test->dbus), &test->error);
   g_assert_no_error (test->error);
   g_object_unref (factory);
 }

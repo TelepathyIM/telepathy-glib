@@ -459,21 +459,3 @@ tp_dbus_daemon_unregister_object (GDBusConnection *dbus_connection,
    * automatically unregister the object (if registered) */
   g_object_set_qdata (object, registration_quark (), NULL);
 }
-
-/**
- * tp_dbus_daemon_get_unique_name:
- * @dbus_connection: a #GDBusConnection
- *
- * <!-- Returns: is enough -->
- *
- * Returns: the unique name of this connection to the bus, which is valid for
- *  as long as this #TpDBusDaemon is
- * Since: 0.7.35
- */
-const gchar *
-tp_dbus_daemon_get_unique_name (GDBusConnection *dbus_connection)
-{
-  g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus_connection), NULL);
-
-  return g_dbus_connection_get_unique_name (dbus_connection);
-}

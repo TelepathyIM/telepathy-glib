@@ -36,8 +36,6 @@ gboolean tp_dbus_daemon_request_name (GDBusConnection *dbus_connection,
 gboolean tp_dbus_daemon_release_name (GDBusConnection *dbus_connection,
     const gchar *well_known_name, GError **error);
 
-const gchar *tp_dbus_daemon_get_unique_name (GDBusConnection *dbus_connection);
-
 void tp_dbus_daemon_register_object (GDBusConnection *dbus_connection,
     const gchar *object_path, gpointer object);
 gboolean tp_dbus_daemon_try_register_object (GDBusConnection *dbus_connection,
