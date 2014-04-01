@@ -2832,7 +2832,7 @@ tp_base_client_delegate_channels_async (TpBaseClient *self,
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (self->priv->flags & CLIENT_IS_HANDLER);
 
-  cd = tp_client_factory_dup_channel_dispatcher (self->priv->factory);
+  cd = tp_client_factory_ensure_channel_dispatcher (self->priv->factory);
 
   chans = g_ptr_array_new_full (g_list_length (channels), g_free);
 

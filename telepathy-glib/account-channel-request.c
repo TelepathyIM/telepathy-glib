@@ -963,7 +963,7 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
       return;
     }
 
-  cd = tp_client_factory_dup_channel_dispatcher (tp_proxy_get_factory (
+  cd = tp_client_factory_ensure_channel_dispatcher (tp_proxy_get_factory (
       self->priv->account));
 
   hints = tp_asv_from_vardict (self->priv->hints);
@@ -1200,7 +1200,7 @@ request_channel_async (TpAccountChannelRequest *self,
         callback, user_data))
     return;
 
-  cd = tp_client_factory_dup_channel_dispatcher (tp_proxy_get_factory (
+  cd = tp_client_factory_ensure_channel_dispatcher (tp_proxy_get_factory (
       self->priv->account));
 
   hints = tp_asv_from_vardict (self->priv->hints);

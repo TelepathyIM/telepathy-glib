@@ -652,7 +652,7 @@ tp_client_factory_ensure_account_manager (TpClientFactory *self)
 }
 
 /**
- * tp_client_factory_dup_channel_dispatcher:
+ * tp_client_factory_ensure_channel_dispatcher:
  * @self: a #TpClientFactory object
  *
  * <!-- -->
@@ -662,7 +662,7 @@ tp_client_factory_ensure_account_manager (TpClientFactory *self)
  * Since: 0.UNRELEASED
  */
 TpChannelDispatcher *
-tp_client_factory_dup_channel_dispatcher (TpClientFactory *self)
+tp_client_factory_ensure_channel_dispatcher (TpClientFactory *self)
 {
   TpChannelDispatcher *channel_dispatcher;
 

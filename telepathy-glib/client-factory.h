@@ -135,7 +135,7 @@ GDBusConnection *tp_client_factory_get_dbus_connection (TpClientFactory *self);
 
 TpAccountManager *tp_client_factory_ensure_account_manager (
     TpClientFactory *self);
-TpChannelDispatcher *tp_client_factory_dup_channel_dispatcher (
+TpChannelDispatcher *tp_client_factory_ensure_channel_dispatcher (
     TpClientFactory *self);
 
 /* TpAccount */

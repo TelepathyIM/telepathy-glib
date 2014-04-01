@@ -61,7 +61,7 @@ test_new (Test *test,
   TpClientFactory *factory;
 
   factory = tp_client_factory_new (test->dbus);
-  test->cd = tp_client_factory_dup_channel_dispatcher (factory);
+  test->cd = tp_client_factory_ensure_channel_dispatcher (factory);
   g_assert (test->cd != NULL);
   g_object_unref (factory);
 }
