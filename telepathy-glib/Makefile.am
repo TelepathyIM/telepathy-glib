@@ -163,17 +163,13 @@ tpgdbusinclude_HEADERS = \
     value-array.h \
     $(NULL)
 
-BUILT_SOURCES = $(codegen_sources)
-
-CLEANFILES = \
-    $(BUILT_SOURCES)
-
 nodist_tpginclude_HEADERS = \
     version.h \
     $(NULL)
 
 distclean-local:
 	rm -rf _gen
+	rm -rf _gdbus
 
 clean-local:
 	rm -rf tmp-introspect*
@@ -182,7 +178,7 @@ check_c_sources = \
     $(tpginclude_HEADERS) \
     $(tpgdbusinclude_HEADERS) \
     $(libtelepathy_glib_dbus_internal_la_SOURCES) \
-    $(libtelepathy_glib_main_internal_la_SOURCES) \
+    $(libtelepathy_glib_main_internal_handwritten_source) \
     $(NULL)
 
 include $(top_srcdir)/tools/check-coding-style.mk
@@ -214,7 +210,7 @@ libtelepathy_glib_main_internal_la_LIBADD = \
     libtelepathy-glib-1-dbus.la \
     $(NULL)
 
-libtelepathy_glib_main_internal_la_SOURCES = \
+libtelepathy_glib_main_internal_handwritten_source = \
     account.c \
     account-channel-request.c \
     account-channel-request-internal.h \
@@ -345,6 +341,35 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     util-internal.h \
     variant-util.c \
     variant-util-internal.h
+
+libtelepathy_glib_main_internal_la_SOURCES = \
+    $(gdbus_codegen) \
+    $(libtelepathy_glib_main_internal_handwritten_source) \
+    $(NULL)
+
+gdbus_codegen = \
+    _gdbus/Connection.c \
+    _gdbus/Connection.h \
+    $(NULL)
+
+_gdbus/%.c: _gdbus/%-stamp
+	@:
+_gdbus/%.h: _gdbus/%-stamp
+	@:
+_gdbus/%-stamp: Makefile ../spec/%.xml
+	$(MKDIR_P) _gdbus
+	gdbus-codegen --interface-prefix im.telepathy.v1. \
+	              --generate-c-code _gdbus/$* \
+	              --c-namespace _TpGDBus \
+	              $(top_srcdir)/spec/$*.xml
+	touch $@
+
+BUILT_SOURCES = \
+    $(codegen_sources) \
+    $(gdbus_codegen)
+
+CLEANFILES = \
+    $(BUILT_SOURCES)
 
 libtelepathy_glib_reentrants_la_SOURCES = \
     reentrants.c \

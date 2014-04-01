@@ -131,6 +131,7 @@ tags
 
 /telepathy-glib-0.*
 /telepathy-glib/tmp-introspect*/
+/telepathy-glib/_gdbus
 telepathy-glib/version.h
 
 /telepathy-logger/telepathy-logger-1

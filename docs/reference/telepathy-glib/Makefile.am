@@ -63,6 +63,7 @@ EXTRA_HFILES=
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h private_code
 IGNORE_HFILES=\
     proxy-introspectable.h \
+    _gdbus \
     $(NULL)
 
 # Images to copy into HTML directory.
