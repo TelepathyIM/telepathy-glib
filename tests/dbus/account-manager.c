@@ -54,7 +54,7 @@ account_manager_new (TpDBusDaemon *dbus)
   TpAccountManager *am;
 
   factory = tp_client_factory_new (dbus);
-  am = tp_client_factory_dup_account_manager (factory);
+  am = tp_client_factory_ensure_account_manager (factory);
   g_object_unref (factory);
 
   return am;

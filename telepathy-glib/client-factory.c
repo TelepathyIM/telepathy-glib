@@ -625,7 +625,7 @@ tp_client_factory_get_dbus_connection (TpClientFactory *self)
 }
 
 /**
- * tp_client_factory_dup_account_manager:
+ * tp_client_factory_ensure_account_manager:
  * @self: a #TpClientFactory object
  *
  * <!-- -->
@@ -635,7 +635,7 @@ tp_client_factory_get_dbus_connection (TpClientFactory *self)
  * Since: 0.UNRELEASED
  */
 TpAccountManager *
-tp_client_factory_dup_account_manager (TpClientFactory *self)
+tp_client_factory_ensure_account_manager (TpClientFactory *self)
 {
   TpAccountManager *account_manager;
 

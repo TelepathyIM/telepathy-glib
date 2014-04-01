@@ -132,7 +132,8 @@ gboolean tp_client_factory_can_set_default (void);
 TpDBusDaemon *tp_client_factory_get_dbus_daemon (TpClientFactory *self);
 GDBusConnection *tp_client_factory_get_dbus_connection (TpClientFactory *self);
 
-TpAccountManager *tp_client_factory_dup_account_manager (TpClientFactory *self);
+TpAccountManager *tp_client_factory_ensure_account_manager (
+    TpClientFactory *self);
 
 /* TpAccount */
 TpAccount *tp_client_factory_ensure_account (TpClientFactory *self,

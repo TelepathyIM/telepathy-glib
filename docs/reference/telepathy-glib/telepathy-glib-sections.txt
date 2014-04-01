@@ -5730,7 +5730,7 @@ tp_client_factory_can_set_default
 tp_client_factory_get_dbus_daemon
 tp_client_factory_get_dbus_connection
 <SUBSECTION>
-tp_client_factory_dup_account_manager
+tp_client_factory_ensure_account_manager
 <SUBSECTION>
 tp_client_factory_ensure_account
 tp_client_factory_dup_account_features

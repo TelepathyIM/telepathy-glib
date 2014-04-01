@@ -698,7 +698,7 @@ tp_account_manager_dup (void)
       return NULL;
     }
 
-  self = tp_client_factory_dup_account_manager (factory);
+  self = tp_client_factory_ensure_account_manager (factory);
 
   g_object_unref (factory);
 
