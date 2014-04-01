@@ -679,7 +679,7 @@ tp_client_factory_ensure_channel_dispatcher (TpClientFactory *self)
 }
 
 /**
- * tp_client_factory_dup_logger:
+ * tp_client_factory_ensure_logger:
  * @self: a #TpClientFactory object
  *
  * <!-- -->
@@ -689,7 +689,7 @@ tp_client_factory_ensure_channel_dispatcher (TpClientFactory *self)
  * Since: 0.UNRELEASED
  */
 TpLogger *
-tp_client_factory_dup_logger (TpClientFactory *self)
+tp_client_factory_ensure_logger (TpClientFactory *self)
 {
   TpLogger *logger;
 

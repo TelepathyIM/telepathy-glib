@@ -140,7 +140,7 @@ TpAccountManager *tp_client_factory_ensure_account_manager (
     TpClientFactory *self);
 TpChannelDispatcher *tp_client_factory_ensure_channel_dispatcher (
     TpClientFactory *self);
-TpLogger *tp_client_factory_dup_logger (TpClientFactory *self);
+TpLogger *tp_client_factory_ensure_logger (TpClientFactory *self);
 
 /* TpAccount */
 TpAccount *tp_client_factory_ensure_account (TpClientFactory *self,

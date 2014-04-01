@@ -116,7 +116,7 @@ tp_logger_dup (void)
       return NULL;
     }
 
-  self = tp_client_factory_dup_logger (factory);
+  self = tp_client_factory_ensure_logger (factory);
 
   g_object_unref (factory);
 
