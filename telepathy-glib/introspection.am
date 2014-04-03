@@ -15,10 +15,9 @@ INTROSPECTION_GIRS = TelepathyGLib-1.gir TelepathyGLibDBus-1.gir
 # telepathy-glib-1-dbus
 INTROSPECTION_SCANNER_ENV = PKG_CONFIG_PATH=$(builddir):$${PKG_CONFIG_PATH}
 
-TelepathyGLib-1.gir: libtelepathy-glib-1.la libtelepathy-glib-1-core.la
+TelepathyGLib-1.gir: libtelepathy-glib-1.la
 # /!\ Order matters, see https://bugzilla.gnome.org/show_bug.cgi?id=660629
 TelepathyGLib_1_gir_FILES = \
-	$(srcdir)/core-dbus.c \
 	$(srcdir)/proxy.c _gen/proxy-introspectable.h \
 	$(srcdir)/account.c $(srcdir)/account.h \
 	$(srcdir)/account-channel-request.c $(srcdir)/account-channel-request.h \
@@ -90,7 +89,6 @@ TelepathyGLib_1_gir_NAMESPACE = TelepathyGLib
 TelepathyGLib_1_gir_VERSION = 1
 TelepathyGLib_1_gir_LIBS = \
     libtelepathy-glib-1.la \
-    libtelepathy-glib-1-core.la \
     $(NULL)
 TelepathyGLib_1_gir_EXPORT_PACKAGES = telepathy-glib-1
 TelepathyGLib_1_gir_CFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS)
@@ -124,7 +122,6 @@ TelepathyGLibDBus_1_gir_NAMESPACE = TelepathyGLibDBus
 TelepathyGLibDBus_1_gir_VERSION = 1
 TelepathyGLibDBus_1_gir_LIBS = \
     libtelepathy-glib-1-dbus.la \
-    libtelepathy-glib-1-core.la \
     $(NULL)
 TelepathyGLibDBus_1_gir_EXPORT_PACKAGES = telepathy-glib-1-dbus
 TelepathyGLibDBus_1_gir_CFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS)

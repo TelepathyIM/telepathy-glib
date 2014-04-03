@@ -36,7 +36,6 @@ telepathy_logger_1_LDADD = \
 	libtelepathy-logger-1.la \
 	$(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
 	$(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
-	$(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
 	$(TPL_LIBS) \
 	$(NULL)
 
@@ -129,7 +128,6 @@ nodist_libtelepathy_logger_internal_la_SOURCES = \
 libtelepathy_logger_internal_la_LIBADD = \
 	$(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
 	$(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
-	$(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
 	$(TPL_LIBS) \
 	$(NULL)
 

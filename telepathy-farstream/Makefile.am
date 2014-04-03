@@ -46,7 +46,6 @@ AM_CFLAGS = \
 libtelepathy_farstream_internal_la_LIBADD = \
 	$(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
 	$(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
-	$(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
 	$(GST_LIBS) \

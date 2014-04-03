@@ -27,7 +27,6 @@ codegen_extra_dist = \
     logger.xml
 
 codegen_sources = \
-    $(nodist_libtelepathy_glib_core_internal_la_SOURCES) \
     $(nodist_libtelepathy_glib_dbus_internal_la_SOURCES) \
     $(nodist_libtelepathy_glib_main_internal_la_SOURCES) \
     $(nodist_geninclude_HEADERS) \

@@ -32,7 +32,7 @@
 static TpProxyImplementation _tp_proxy_implementation = { NULL };
 
 gboolean
-tp_proxy_check_interface_by_id (gpointer proxy,
+_tp_proxy_core_check_interface_by_id (gpointer proxy,
     GQuark iface,
     GError **error)
 {

@@ -16,8 +16,8 @@ EXTRA_DIST = \
 
 # libtelepathy-glib-1 is just a shared version of
 # libtelepathy-glib-main-internal, produced by abi.am. Similarly,
-# libtelepathy-glib-1-core and libtelepathy-glib-1-dbus are shared versions of
-# libtelepathy-glib-core-internal and -dbus-internal.
+# libtelepathy-glib-1-dbus is a shared version of
+# libtelepathy-glib-dbus-internal.
 #
 # The static version is necessary because one of the tests wants to use
 # internal symbols (_tp_log) which are made invisible by GNU ld, and it
@@ -26,7 +26,6 @@ EXTRA_DIST = \
 # Put the lowest-level library first, so that libtool will be able to relink
 # them during installation.
 lib_LTLIBRARIES = \
-    libtelepathy-glib-1-core.la \
     libtelepathy-glib-1-dbus.la \
     libtelepathy-glib-1.la \
     $(NULL)
@@ -34,7 +33,6 @@ lib_LTLIBRARIES = \
 noinst_LTLIBRARIES = \
     libtelepathy-glib-main-internal.la \
     libtelepathy-glib-dbus-internal.la \
-    libtelepathy-glib-core-internal.la \
     libtelepathy-glib-reentrants.la \
     $(NULL)
 
@@ -139,6 +137,7 @@ tpgdbusinclude_HEADERS = \
     cli-channel.h \
     cli-connection.h \
     cli-misc.h \
+    cli-proxy.h \
     gnio-util.h \
     gtypes.h \
     interfaces.h \
@@ -182,7 +181,6 @@ clean-local:
 check_c_sources = \
     $(tpginclude_HEADERS) \
     $(tpgdbusinclude_HEADERS) \
-    $(libtelepathy_glib_core_internal_la_SOURCES) \
     $(libtelepathy_glib_dbus_internal_la_SOURCES) \
     $(libtelepathy_glib_main_internal_la_SOURCES) \
     $(NULL)
@@ -190,21 +188,15 @@ check_c_sources = \
 include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
 
-libtelepathy_glib_core_internal_la_LIBADD = $(ALL_LIBS)
-libtelepathy_glib_core_internal_la_SOURCES = \
-    core-dbus.c \
-    core-proxy.c \
-    $(NULL)
-
 libtelepathy_glib_dbus_internal_la_LIBADD = \
     $(ALL_LIBS) \
-    libtelepathy-glib-1-core.la \
     $(NULL)
 libtelepathy_glib_dbus_internal_la_SOURCES = \
     asv.c \
     cli-channel.c \
     cli-connection.c \
     cli-misc.c \
+    core-proxy.c \
     gnio-util.c \
     gtypes.c \
     interfaces.c \
@@ -382,22 +374,13 @@ include introspection.am
 Android.mk: Makefile.am $(codegen_sources)
 	androgenizer -:PROJECT telepathy-glib \
 	\
-	-:SHARED libtelepathy-glib-1-core -:TAGS eng debug \
-	 -:REL_TOP $(top_srcdir) -:ABS_TOP $(abs_top_srcdir) \
-	 -:SOURCES $(libtelepathy_glib_core_internal_la_SOURCES) \
-	  $(nodist_libtelepathy_glib_core_internal_la_SOURCES) \
-	 -:CFLAGS $(DEFAULT_INCLUDES) $(DEFS) $(CFLAGS) $(GIO_UNIX_CFLAGS) $(DBUS_CFLAGS) $(AM_CFLAGS) \
-	 -:CPPFLAGS $(CPPFLAGS) $(AM_CPPFLAGS) $(INCLUDES) \
-	 -:LDFLAGS $(ALL_LIBS) \
-	  $(libtelepathy_glib_core_internal_la_LDFLAGS) \
-	\
 	 -:SHARED libtelepathy-glib-1-dbus -:TAGS eng debug \
 	 -:REL_TOP $(top_srcdir) -:ABS_TOP $(abs_top_srcdir) \
 	 -:SOURCES $(libtelepathy_glib_dbus_internal_la_SOURCES) \
 	  $(nodist_libtelepathy_glib_dbus_internal_la_SOURCES) \
 	 -:CFLAGS $(DEFAULT_INCLUDES) $(DEFS) $(CFLAGS) $(GIO_UNIX_CFLAGS) $(DBUS_CFLAGS) $(AM_CFLAGS) \
 	 -:CPPFLAGS $(CPPFLAGS) $(AM_CPPFLAGS) $(INCLUDES) \
-	 -:LDFLAGS $(ALL_LIBS) -ltelepathy-glib-1-core \
+	 -:LDFLAGS $(ALL_LIBS) \
 	  $(libtelepathy_glib_dbus_internal_la_LDFLAGS) \
 	\
 	 -:SHARED libtelepathy-glib-1 -:TAGS eng debug \
@@ -406,7 +389,7 @@ Android.mk: Makefile.am $(codegen_sources)
 	  $(nodist_libtelepathy_glib_main_internal_la_SOURCES) \
 	 -:CFLAGS $(DEFAULT_INCLUDES) $(DEFS) $(CFLAGS) $(GIO_UNIX_CFLAGS) $(DBUS_CFLAGS) $(AM_CFLAGS) \
 	 -:CPPFLAGS $(CPPFLAGS) $(AM_CPPFLAGS) $(INCLUDES) \
-	 -:LDFLAGS $(ALL_LIBS) -ltelepathy-glib-1-dbus -ltelepathy-glib-1-core \
+	 -:LDFLAGS $(ALL_LIBS) -ltelepathy-glib-1-dbus \
 	  $(libtelepathy_glib_main_internal_la_LDFLAGS) \
 	\
 	> $@

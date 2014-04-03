@@ -79,6 +79,7 @@
 #include <telepathy-glib/message-internal.h>
 #include <telepathy-glib/sliced-gvalue.h>
 #include <telepathy-glib/svc-channel.h>
+#include <telepathy-glib/svc-interface.h>
 
 #define DEBUG_FLAG TP_DEBUG_IM
 

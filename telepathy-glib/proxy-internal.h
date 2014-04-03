@@ -22,13 +22,15 @@
 #define __TP_PROXY_INTERNAL_H__
 
 #include <telepathy-glib/proxy.h>
+
+#include <telepathy-glib/cli-proxy.h>
 #include <telepathy-glib/proxy-subclass.h>
 
 typedef struct {
     const gchar *version;
     gsize size;
 
-    gboolean (*check_interface_by_id) (TpProxy *,
+    gboolean (*check_interface_by_id) (gpointer,
         GQuark,
         GError **);
 
@@ -58,7 +60,8 @@ typedef struct {
     GType type;
 } TpProxyImplementation;
 
-gboolean _tp_proxy_check_interface_by_id (TpProxy *self,
+/* Only available in the -dbus library */
+gboolean _tp_proxy_core_check_interface_by_id (gpointer proxy,
     GQuark iface,
     GError **error);
 
@@ -88,10 +91,10 @@ _tp_proxy_signal_connection_v1_new (TpProxy *self,
     GError **error);
 
 /*
- * Implemented in the -core library, and called by the -main library.
+ * Implemented in the -dbus library, and called by the -main library.
  *
  * This is only extern so that the -main part can call into the
- * -core part across a shared-library boundary. If you are not
+ * -dbus part across a shared-library boundary. If you are not
  * TpProxy early initialization, don't.
  */
 void tp_private_proxy_set_implementation (TpProxyImplementation *impl);

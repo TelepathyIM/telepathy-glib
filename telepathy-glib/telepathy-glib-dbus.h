@@ -36,6 +36,7 @@
 #include <telepathy-glib/interfaces.h>
 
 /* client-side */
+#include <telepathy-glib/cli-proxy.h>
 #include <telepathy-glib/_gen/tp-cli-account.h>
 #include <telepathy-glib/_gen/tp-cli-account-manager.h>
 #include <telepathy-glib/_gen/tp-cli-call-content.h>

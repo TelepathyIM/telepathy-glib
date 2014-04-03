@@ -20,7 +20,7 @@
  */
 
 #if !defined (_TP_GLIB_DBUS_H_INSIDE) && !defined (_TP_COMPILATION)
-#error "Only <telepathy-glib/telepathy-glib.h> can be included directly."
+#error "Only <telepathy-glib/telepathy-glib-dbus.h> can be included directly."
 #endif
 
 #include <glib-object.h>

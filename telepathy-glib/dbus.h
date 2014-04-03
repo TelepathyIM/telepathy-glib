@@ -35,8 +35,6 @@
 
 G_BEGIN_DECLS
 
-void tp_dbus_g_method_return_not_implemented (GDBusMethodInvocation *context);
-
 typedef enum /*< flags >*/
 {
   TP_DBUS_NAME_TYPE_UNIQUE = 1,

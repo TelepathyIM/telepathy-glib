@@ -259,7 +259,7 @@ tp_proxy_signal_connection_cb (GDBusConnection *connection,
  * Since: 0.7.1
  */
 
-/* that's implemented in the core library, but it calls this: */
+/* that's implemented in the dbus library, but it calls this: */
 
 TpProxySignalConnection *
 _tp_proxy_signal_connection_v1_new (TpProxy *self,

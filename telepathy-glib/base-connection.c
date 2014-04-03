@@ -251,6 +251,7 @@
 #include <telepathy-glib/sliced-gvalue.h>
 #include <telepathy-glib/svc-connection.h>
 #include <telepathy-glib/svc-generic.h>
+#include <telepathy-glib/svc-interface.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/value-array.h>
 

@@ -189,6 +189,7 @@
 #include <telepathy-glib/observe-channel-context-internal.h>
 #include <telepathy-glib/svc-client.h>
 #include <telepathy-glib/svc-generic.h>
+#include <telepathy-glib/svc-interface.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/value-array.h>
 

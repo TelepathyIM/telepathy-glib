@@ -382,7 +382,7 @@ static guint signals[N_SIGNALS] = {0};
 
 /**
  * tp_proxy_check_interface_by_id:
- * @self: the #TpProxy (or subclass)
+ * @proxy: the #TpProxy (or subclass)
  * @iface: quark representing the D-Bus interface required
  * @error: used to raise an error in the #TP_DBUS_ERRORS domain if @iface
  *         is invalid, @self has been invalidated or @self does not implement
@@ -394,13 +394,13 @@ static guint signals[N_SIGNALS] = {0};
  * Returns: %TRUE if this proxy implements the given interface.
  */
 
-/* The implementation in the core library calls this: */
-
 gboolean
-_tp_proxy_check_interface_by_id (TpProxy *self,
+tp_proxy_check_interface_by_id (gpointer proxy,
     GQuark iface,
     GError **error)
 {
+  TpProxy *self = proxy;
+
   g_return_val_if_fail (TP_IS_PROXY (self), FALSE);
 
   if (self->priv->invalidated != NULL)
@@ -1028,7 +1028,7 @@ tp_proxy_class_init (TpProxyClass *klass)
   TpProxyImplementation impl = {
       VERSION,
       sizeof (TpProxyImplementation),
-      _tp_proxy_check_interface_by_id,
+      tp_proxy_check_interface_by_id,
       _tp_proxy_pending_call_v1_new,
       _tp_proxy_signal_connection_v1_new,
       /* keep this at the end as a final sanity-check of the size */

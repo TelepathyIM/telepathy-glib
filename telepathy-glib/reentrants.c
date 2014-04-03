@@ -6,6 +6,7 @@
 #include <dbus/dbus-glib.h>
 #include <telepathy-glib/value-array.h>
 
+#include <telepathy-glib/cli-proxy.h>
 #include <telepathy-glib/_gen/tp-cli-account-reentrant-body.h>
 #include <telepathy-glib/_gen/tp-cli-account-manager-reentrant-body.h>
 #include <telepathy-glib/_gen/tp-cli-channel-reentrant-body.h>

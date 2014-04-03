@@ -94,7 +94,6 @@ libtp_glib_tests_internal_la_LIBADD = \
     $(GLIB_LIBS) \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-main-internal.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
     $(NULL)
 
 libtp_glib_tests_la_LIBADD = \
@@ -102,7 +101,6 @@ libtp_glib_tests_la_LIBADD = \
     $(GLIB_LIBS) \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
     $(NULL)
 
 if ENABLE_LOGGER

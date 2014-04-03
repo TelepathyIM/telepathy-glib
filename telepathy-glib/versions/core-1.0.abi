@@ -1,9 +1,0 @@
-Version: TELEPATHY_GLIB_CORE_1.0
-Extends: -
-Release: 1.0
-
-tp_dbus_g_method_return_not_implemented
-tp_private_proxy_set_implementation
-tp_proxy_check_interface_by_id
-tp_proxy_pending_call_v1_new
-tp_proxy_signal_connection_v1_new

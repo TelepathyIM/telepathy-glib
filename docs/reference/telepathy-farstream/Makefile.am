@@ -83,7 +83,6 @@ GTKDOC_LIBS= \
 	$(top_builddir)/telepathy-farstream/libtelepathy-farstream-1.la \
 	$(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
 	$(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
-	$(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
 	$(NULL)
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.

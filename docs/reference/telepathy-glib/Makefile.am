@@ -87,7 +87,6 @@ GTKDOC_CFLAGS=-I$(top_srcdir) -I$(top_builddir) @DBUS_CFLAGS@ @GLIB_CFLAGS@
 GTKDOC_LIBS = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
     $(DBUS_LIBS) \
     $(GLIB_LIBS) \
     $(NULL)

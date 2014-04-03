@@ -26,10 +26,14 @@
 
 #include <dbus/dbus-glib.h>
 
+#include <telepathy-glib/cli-proxy.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/value-array.h>
+
+#define tp_proxy_check_interface_by_id(s, i, e) \
+  _tp_proxy_core_check_interface_by_id (s, i, e)
 
 #include "telepathy-glib/_gen/tp-cli-account-body.h"
 #include "telepathy-glib/_gen/tp-cli-account-manager-body.h"

@@ -33,7 +33,6 @@ distclean-local:
 LDADD = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
     $(GLIB_LIBS) \
     $(DBUS_LIBS) \
     $(NULL)

@@ -195,3 +195,17 @@ tp_svc_interface_set_dbus_properties_info (GType g_interface,
 
   g_type_set_qdata (g_interface, q, info);
 }
+
+/**
+ * tp_dbus_g_method_return_not_implemented: (skip)
+ * @context: The D-Bus method invocation context
+ *
+ * Return the Telepathy error NotImplemented from the method invocation
+ * given by @context.
+ */
+void
+tp_dbus_g_method_return_not_implemented (GDBusMethodInvocation *context)
+{
+  g_dbus_method_invocation_return_dbus_error (context,
+      TP_ERROR_STR_NOT_IMPLEMENTED, "Not implemented");
+}

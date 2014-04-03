@@ -2,7 +2,6 @@
 
 # Must put oldest versions first
 ABI_LISTS = \
-    versions/core-1.0.abi \
     versions/dbus-1.0.abi \
     versions/main-1.0.abi \
     $(NULL)
@@ -10,22 +9,6 @@ ABI_LISTS = \
 # The quoting here is unnecessary but harmless, and has the useful side-effect
 # that vim quickfix mode (:make) doesn't interpret the libtool --mode=link
 # command as an error message in a bizarrely named file
-#
-# libtelepathy-glib-core shares its Libtool versioning with libtelepathy-glib:
-# they are intended to be upgraded in lockstep, and always break ABI at the
-# same time.
-libtelepathy_glib_1_core_la_LDFLAGS = \
-    $(AM_LDFLAGS) \
-    -no-undefined \
-    -version-info "$(LT_CURRENT)":"$(LT_REVISION)":"$(LT_AGE)" \
-    $(NULL)
-libtelepathy_glib_1_core_la_LIBADD = libtelepathy-glib-core-internal.la
-nodist_libtelepathy_glib_1_core_la_SOURCES =
-libtelepathy_glib_1_core_la_DEPENDENCIES = \
-    libtelepathy-glib-core-internal.la \
-    abi.am \
-    $(NULL)
-
 libtelepathy_glib_1_dbus_la_LDFLAGS = \
     $(AM_LDFLAGS) \
     -no-undefined \
@@ -57,9 +40,6 @@ nodist_libtelepathy_glib_1_la_SOURCES += \
 nodist_libtelepathy_glib_1_dbus_la_SOURCES += \
     _gen/dbus-version-script.txt \
     $(NULL)
-nodist_libtelepathy_glib_1_core_la_SOURCES += \
-    _gen/core-version-script.txt \
-    $(NULL)
 libtelepathy_glib_1_la_DEPENDENCIES += \
     _gen/main-version-script.txt \
     _gen/main-abi.txt \
@@ -67,10 +47,6 @@ libtelepathy_glib_1_la_DEPENDENCIES += \
 libtelepathy_glib_1_dbus_la_DEPENDENCIES += \
     _gen/dbus-version-script.txt \
     _gen/dbus-abi.txt \
-    $(NULL)
-libtelepathy_glib_1_core_la_DEPENDENCIES += \
-    _gen/core-version-script.txt \
-    _gen/core-abi.txt \
     $(NULL)
 
 if OFFICIAL_RELEASE
@@ -123,12 +99,8 @@ libtelepathy_glib_1_la_LDFLAGS += \
 libtelepathy_glib_1_dbus_la_LDFLAGS += \
     $(VERSION_SCRIPT_ARG)=_gen/dbus-version-script.txt
 
-libtelepathy_glib_1_core_la_LDFLAGS += \
-    $(VERSION_SCRIPT_ARG)=_gen/core-version-script.txt
-
 else # !HAVE_LD_VERSION_SCRIPT
 
-libtelepathy_glib_1_core_la_LDFLAGS += -export-symbols-regex '^tp'
 libtelepathy_glib_1_dbus_la_LDFLAGS += -export-symbols-regex '^tp'
 libtelepathy_glib_1_la_LDFLAGS += -export-symbols-regex '^tp'
 

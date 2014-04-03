@@ -32,7 +32,6 @@ libexample_extensions_la_LIBADD = \
     $(DBUS_LIBS) \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
     $(NULL)
 
 # The client-specific parts are built into a separate .o file, so the linker

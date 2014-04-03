@@ -29,22 +29,6 @@
 
 G_BEGIN_DECLS
 
-typedef void (*TpProxyWrapperFunc) (TpProxy *self,
-    const GError *error, GVariant *args,
-    GCallback callback, gpointer user_data, GObject *weak_object);
-
-TpProxyPendingCall *tp_proxy_pending_call_v1_new (TpProxy *self,
-    gint timeout_ms, GQuark iface, const gchar *member,
-    GVariant *args, const GVariantType *reply_type, TpProxyWrapperFunc wrapper,
-    GCallback callback, gpointer user_data, GDestroyNotify destroy,
-    GObject *weak_object);
-
-TpProxySignalConnection *tp_proxy_signal_connection_v1_new (TpProxy *self,
-    GQuark iface, const gchar *member, const GVariantType *expected_types,
-    TpProxyWrapperFunc wrapper,
-    GCallback callback, gpointer user_data, GDestroyNotify destroy,
-    GObject *weak_object, GError **error);
-
 void tp_proxy_add_interface_by_id (TpProxy *self, GQuark iface);
 void tp_proxy_add_interfaces (TpProxy *self, const gchar * const *interfaces);
 

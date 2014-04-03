@@ -20,8 +20,8 @@
 #error "Only <telepathy-glib/telepathy-glib-dbus.h> can be included directly."
 #endif
 
-#ifndef __TP_SVC_INTERFACE_H__
-#define __TP_SVC_INTERFACE_H__
+#ifndef __TP_CLI_PROXY_H__
+#define __TP_CLI_PROXY_H__
 
 #include <gio/gio.h>
 
@@ -29,31 +29,21 @@
 
 G_BEGIN_DECLS
 
-typedef struct _TpSvcInterfaceInfo TpSvcInterfaceInfo;
+typedef void (*TpProxyWrapperFunc) (TpProxy *self,
+    const GError *error, GVariant *args,
+    GCallback callback, gpointer user_data, GObject *weak_object);
 
-struct _TpSvcInterfaceInfo {
-    volatile gint ref_count;
-    GDBusInterfaceInfo *interface_info;
-    GDBusInterfaceVTable *vtable;
-    gchar **signals;
-    /*<private>*/
-    gpointer _reserved[8];
-};
+TpProxyPendingCall *tp_proxy_pending_call_v1_new (TpProxy *self,
+    gint timeout_ms, GQuark iface, const gchar *member,
+    GVariant *args, const GVariantType *reply_type, TpProxyWrapperFunc wrapper,
+    GCallback callback, gpointer user_data, GDestroyNotify destroy,
+    GObject *weak_object);
 
-void tp_svc_interface_set_dbus_interface_info (GType g_interface,
-    const TpSvcInterfaceInfo *info);
-
-const TpSvcInterfaceInfo *tp_svc_interface_peek_dbus_interface_info (
-    GType g_interface);
-
-void tp_svc_interface_set_dbus_properties_info (GType g_interface,
-    TpDBusPropertiesMixinIfaceInfo *info);
-
-_TP_AVAILABLE_IN_0_16
-TpDBusPropertiesMixinIfaceInfo *tp_svc_interface_get_dbus_properties_info (
-    GType g_interface);
-
-void tp_dbus_g_method_return_not_implemented (GDBusMethodInvocation *context);
+TpProxySignalConnection *tp_proxy_signal_connection_v1_new (TpProxy *self,
+    GQuark iface, const gchar *member, const GVariantType *expected_types,
+    TpProxyWrapperFunc wrapper,
+    GCallback callback, gpointer user_data, GDestroyNotify destroy,
+    GObject *weak_object, GError **error);
 
 G_END_DECLS
 

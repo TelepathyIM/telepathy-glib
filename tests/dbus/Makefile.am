@@ -100,7 +100,6 @@ LDADD = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-reentrants.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
     $(GLIB_LIBS) \
     $(DBUS_LIBS) \
     $(NULL)
@@ -113,7 +112,6 @@ test_account_channel_request_LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests-internal.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-main-internal.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
     $(GLIB_LIBS)
 
 test_account_request_SOURCES = account-request.c
@@ -134,7 +132,6 @@ test_channel_dispatch_operation_LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests-internal.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-main-internal.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
     $(GLIB_LIBS)
 
 test_channel_introspect_SOURCES = channel-introspect.c
@@ -145,7 +142,6 @@ test_channel_request_LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests-internal.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-main-internal.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
     $(GLIB_LIBS)
 
 test_call_channel_SOURCES = call-channel.c
@@ -263,7 +259,6 @@ test_cm_message_LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests-internal.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-main-internal.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-1-dbus.la \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib-1-core.la \
     $(GLIB_LIBS)
 
 test_text_channel_SOURCES = text-channel.c

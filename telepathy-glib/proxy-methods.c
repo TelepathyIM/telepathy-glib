@@ -247,7 +247,7 @@ finally:
  * This function is intended to be called by generated code. If possible,
  * use g_dbus_connection_call() or g_dbus_proxy_call() instead.
  */
-/* implemented in the core library as a call to this: */
+/* implemented in the dbus library as a call to this: */
 TpProxyPendingCall *
 _tp_proxy_pending_call_v1_new (TpProxy *self,
     gint timeout_ms,
@@ -324,9 +324,7 @@ _tp_proxy_pending_call_v1_new (TpProxy *self,
   if (weak_object != NULL)
     g_object_weak_ref (weak_object, tp_proxy_pending_call_lost_weak_ref, pc);
 
-  /* very slight optimization: intra-library call to the real implementation
-   * rather than calling across library boundaries via the core library */
-  if (_tp_proxy_check_interface_by_id (self, iface, &pc->error))
+  if (tp_proxy_check_interface_by_id (self, iface, &pc->error))
     {
       DEBUG ("... doing GDBus call");
 
