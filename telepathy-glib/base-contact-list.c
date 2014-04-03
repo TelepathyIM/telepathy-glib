@@ -28,6 +28,7 @@
 #include <telepathy-glib/handle-repo-dynamic.h>
 #include <telepathy-glib/handle-repo-static.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/sliced-gvalue.h>
 #include <telepathy-glib/svc-connection.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/value-array.h>

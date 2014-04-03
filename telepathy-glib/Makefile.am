@@ -141,6 +141,7 @@ tpgdbusinclude_HEADERS = \
     cli-misc.h \
     gtypes.h \
     interfaces.h \
+    sliced-gvalue.h \
     svc-account.h \
     svc-account-manager.h \
     svc-call.h \
@@ -205,6 +206,7 @@ libtelepathy_glib_dbus_internal_la_SOURCES = \
     cli-misc.c \
     gtypes.c \
     interfaces.c \
+    sliced-gvalue.c \
     value-array.c \
     $(NULL)
 

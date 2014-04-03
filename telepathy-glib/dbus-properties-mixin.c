@@ -24,6 +24,7 @@
 #include "telepathy-glib/dbus-properties-mixin-internal.h"
 
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/sliced-gvalue.h>
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/util.h>
 

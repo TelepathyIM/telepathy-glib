@@ -27,6 +27,7 @@
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/sliced-gvalue.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/value-array.h>
 #include <telepathy-glib/client-factory.h>

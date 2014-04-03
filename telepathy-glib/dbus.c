@@ -67,6 +67,7 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/proxy.h>
+#include <telepathy-glib/sliced-gvalue.h>
 #include <telepathy-glib/svc-interface-skeleton-internal.h>
 #include <telepathy-glib/util.h>
 
@@ -506,121 +507,6 @@ tp_dbus_check_valid_object_path (const gchar *path, GError **error)
     }
 
   return TRUE;
-}
-
-/**
- * tp_g_value_slice_new_bytes: (skip)
- * @length: number of bytes to copy
- * @bytes: location of an array of bytes to be copied (this may be %NULL
- *  if and only if length is 0)
- *
- * Slice-allocate a #GValue containing a byte-array, using
- * tp_g_value_slice_new_boxed(). This function is convenient to use when
- * constructing hash tables from string to #GValue, for example.
- *
- * Returns: a #GValue of type %DBUS_TYPE_G_UCHAR_ARRAY whose value is a copy
- * of @length bytes from @bytes, to be freed with tp_g_value_slice_free() or
- * g_slice_free()
- *
- * Since: 0.7.27
- */
-GValue *
-tp_g_value_slice_new_bytes (guint length,
-                            gconstpointer bytes)
-{
-  GArray *arr;
-
-  g_return_val_if_fail (length == 0 || bytes != NULL, NULL);
-  arr = g_array_sized_new (FALSE, FALSE, 1, length);
-
-  if (length > 0)
-    g_array_append_vals (arr, bytes, length);
-
-  return tp_g_value_slice_new_take_boxed (DBUS_TYPE_G_UCHAR_ARRAY, arr);
-}
-
-/**
- * tp_g_value_slice_new_take_bytes: (skip)
- * @bytes: a non-NULL #GArray of guchar, ownership of which will be taken by
- *  the #GValue
- *
- * Slice-allocate a #GValue containing @bytes, using
- * tp_g_value_slice_new_boxed(). This function is convenient to use when
- * constructing hash tables from string to #GValue, for example.
- *
- * Returns: a #GValue of type %DBUS_TYPE_G_UCHAR_ARRAY whose value is
- * @bytes, to be freed with tp_g_value_slice_free() or
- * g_slice_free()
- *
- * Since: 0.7.27
- */
-GValue *
-tp_g_value_slice_new_take_bytes (GArray *bytes)
-{
-  g_return_val_if_fail (bytes != NULL, NULL);
-  return tp_g_value_slice_new_take_boxed (DBUS_TYPE_G_UCHAR_ARRAY, bytes);
-}
-
-/**
- * tp_g_value_slice_new_object_path: (skip)
- * @path: a valid D-Bus object path which will be copied
- *
- * Slice-allocate a #GValue containing an object path, using
- * tp_g_value_slice_new_boxed(). This function is convenient to use when
- * constructing hash tables from string to #GValue, for example.
- *
- * Returns: a #GValue of type %DBUS_TYPE_G_OBJECT_PATH whose value is a copy
- * of @path, to be freed with tp_g_value_slice_free() or g_slice_free()
- *
- * Since: 0.7.27
- */
-GValue *
-tp_g_value_slice_new_object_path (const gchar *path)
-{
-  g_return_val_if_fail (tp_dbus_check_valid_object_path (path, NULL), NULL);
-  return tp_g_value_slice_new_boxed (DBUS_TYPE_G_OBJECT_PATH, path);
-}
-
-/**
- * tp_g_value_slice_new_static_object_path: (skip)
- * @path: a valid D-Bus object path which must remain valid forever
- *
- * Slice-allocate a #GValue containing an object path, using
- * tp_g_value_slice_new_static_boxed(). This function is convenient to use when
- * constructing hash tables from string to #GValue, for example.
- *
- * Returns: a #GValue of type %DBUS_TYPE_G_OBJECT_PATH whose value is @path,
- * to be freed with tp_g_value_slice_free() or g_slice_free()
- *
- * Since: 0.7.27
- */
-GValue *
-tp_g_value_slice_new_static_object_path (const gchar *path)
-{
-  g_return_val_if_fail (tp_dbus_check_valid_object_path (path, NULL), NULL);
-  return tp_g_value_slice_new_static_boxed (DBUS_TYPE_G_OBJECT_PATH, path);
-}
-
-/**
- * tp_g_value_slice_new_take_object_path: (skip)
- * @path: a valid D-Bus object path which will be freed with g_free() by the
- *  returned #GValue (the caller must own it before calling this function, but
- *  no longer owns it after this function returns)
- *
- * Slice-allocate a #GValue containing an object path, using
- * tp_g_value_slice_new_take_boxed(). This function is convenient to use when
- * constructing hash tables from string to #GValue, for example.
- *
- * Returns: a #GValue of type %DBUS_TYPE_G_OBJECT_PATH whose value is @path,
- * to be freed with tp_g_value_slice_free() or g_slice_free()
- *
- * Since: 0.7.27
- */
-GValue *
-tp_g_value_slice_new_take_object_path (gchar *path)
-{
-  g_return_val_if_fail (tp_dbus_check_valid_object_path (path, NULL), NULL);
-  return tp_g_value_slice_new_take_boxed (DBUS_TYPE_G_OBJECT_PATH, path);
 }
 
 /**

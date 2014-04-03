@@ -40,6 +40,7 @@
 #include <telepathy-glib/cm-message.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/sliced-gvalue.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/variant-util.h>
 

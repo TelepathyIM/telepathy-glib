@@ -37,6 +37,7 @@
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/sliced-gvalue.h>
 #include <telepathy-glib/util.h>
 
 G_DEFINE_TYPE (TpCMMessage, tp_cm_message, TP_TYPE_MESSAGE)

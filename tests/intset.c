@@ -2,6 +2,7 @@
 
 #include <glib.h>
 #include <telepathy-glib/intset.h>
+#include <telepathy-glib/sliced-gvalue.h>
 #include <telepathy-glib/util.h>
 
 typedef struct {

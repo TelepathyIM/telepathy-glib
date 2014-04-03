@@ -58,21 +58,6 @@ gboolean tp_dbus_check_valid_member_name (const gchar *name,
 gboolean tp_dbus_check_valid_object_path (const gchar *path,
     GError **error);
 
-/* The scanner warns about these, but they're skipped anyway.
- * See GNOME bug#656743 */
-#ifndef __GI_SCANNER__
-GValue *tp_g_value_slice_new_bytes (guint length, gconstpointer bytes)
-  G_GNUC_WARN_UNUSED_RESULT;
-GValue *tp_g_value_slice_new_take_bytes (GArray *bytes)
-  G_GNUC_WARN_UNUSED_RESULT;
-GValue *tp_g_value_slice_new_object_path (const gchar *path)
-  G_GNUC_WARN_UNUSED_RESULT;
-GValue *tp_g_value_slice_new_static_object_path (const gchar *path)
-  G_GNUC_WARN_UNUSED_RESULT;
-GValue *tp_g_value_slice_new_take_object_path (gchar *path)
-  G_GNUC_WARN_UNUSED_RESULT;
-#endif /* __GI_SCANNER__ */
-
 #define tp_asv_size(asv) _tp_asv_size_inline (asv)
 
 static inline guint

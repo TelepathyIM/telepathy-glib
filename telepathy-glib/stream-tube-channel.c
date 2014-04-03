@@ -59,6 +59,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/sliced-gvalue.h>
 #include <telepathy-glib/stream-tube-connection-internal.h>
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>

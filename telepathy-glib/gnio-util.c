@@ -43,6 +43,7 @@
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/sliced-gvalue.h>
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/value-array.h>
 

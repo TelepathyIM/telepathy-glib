@@ -13,6 +13,7 @@
 #endif /* HAVE_GIO_UNIX */
 
 #include <telepathy-glib/gnio-util.h>
+#include <telepathy-glib/sliced-gvalue.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/gtypes.h>
 
