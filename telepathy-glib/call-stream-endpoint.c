@@ -315,7 +315,7 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
    *
    * The connection to the DBus owning the CM.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.99.10
    */
   param_spec = g_param_spec_object ("dbus-connection",
       "The DBus connection",

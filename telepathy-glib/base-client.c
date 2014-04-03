@@ -1389,7 +1389,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    *
    * This property can't be %NULL after construction.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.99.10
    */
   param_spec = g_param_spec_object ("dbus-connection", "GDBusConnection object",
       "The dbus connection associated with this client",
@@ -2513,7 +2513,7 @@ tp_base_client_get_uniquify_name (TpBaseClient *self)
  * necessarily valid after @self is destroyed.
  *
  * Returns: (transfer none): the value of #TpBaseClient:dbus-connection
- * Since: 0.UNRELEASED
+ * Since: 0.99.10
  */
 GDBusConnection *
 tp_base_client_get_dbus_connection (TpBaseClient *self)

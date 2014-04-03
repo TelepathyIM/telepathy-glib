@@ -711,13 +711,13 @@ tp_dbus_connection_registration_free (gpointer p)
  * It is considered to be a programming error to register an object
  * at a path where another object already exists.
  *
- * Since 0.UNRELEASED, as a simplification, exporting an object in this
+ * Since 0.99.10, as a simplification, exporting an object in this
  * way at more than one location or on more than one bus is not allowed,
  * and is also considered to be a programming error.
  * However, redundantly re-exporting the same object at the same path
  * on the same bus is allowed.
  *
- * Also since 0.UNRELEASED, this function must be called *before* taking any
+ * Also since 0.99.10, this function must be called *before* taking any
  * bus name whose presence is meant to correspond to the existence of this
  * object. It is *not* sufficient to take the bus name within the same
  * main-loop iteration as registering the object (even though that

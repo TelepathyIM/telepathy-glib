@@ -27,7 +27,7 @@
  * #TpSvcInterfaceInfo describes a dbus-glib-style #GInterface in sufficient
  * detail to export it on a #GDBusConnection.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.10
  */
 
 /**
@@ -46,6 +46,8 @@
  * and telepathy-glib.
  *
  * These structs are intended to be programmatically-generated.
+ *
+ * Since: 0.99.10
  */
 
 static GQuark
@@ -70,6 +72,8 @@ quark (void)
  * attached.
  *
  * Returns: (transfer null): a #TpSvcInterfaceInfo struct, or %NULL
+ *
+ * Since: 0.99.10
  */
 const TpSvcInterfaceInfo *
 tp_svc_interface_peek_dbus_interface_info (GType g_interface)
@@ -91,6 +95,8 @@ tp_svc_interface_peek_dbus_interface_info (GType g_interface)
  *
  * This is typically only used within generated code; there is normally no
  * reason to call it manually.
+ *
+ * Since: 0.99.10
  */
 void
 tp_svc_interface_set_dbus_interface_info (GType g_interface,

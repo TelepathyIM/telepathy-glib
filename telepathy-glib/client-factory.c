@@ -496,7 +496,7 @@ static GWeakRef singleton;
  * By default it will create a #TpAutomaticClientFactory.
  *
  * Returns: (transfer full): a reference to a #TpClientFactory singleton.
- * Since: 0.UNRELEASED
+ * Since: 0.99.10
  */
 TpClientFactory *
 tp_client_factory_dup (GError **error)
@@ -537,7 +537,7 @@ tp_client_factory_dup (GError **error)
  * next call to tp_client_factory_dup() will return a newly created
  * #TpClientFactory.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.10
  */
 void
 tp_client_factory_set_default (TpClientFactory *self)
@@ -567,7 +567,7 @@ tp_client_factory_set_default (TpClientFactory *self)
  * Returns: %TRUE if tp_client_factory_set_default() has already successfully
  * been called in this process, %FALSE otherwise.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.10
  */
 gboolean
 tp_client_factory_can_set_default (void)
@@ -590,7 +590,7 @@ tp_client_factory_can_set_default (void)
  *
  * Returns: (transfer none): the #TpClientFactory:dbus-connection property.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.10
  */
 GDBusConnection *
 tp_client_factory_get_dbus_connection (TpClientFactory *self)
@@ -608,7 +608,7 @@ tp_client_factory_get_dbus_connection (TpClientFactory *self)
  *
  * Returns: (transfer full): a reference to a #TpAccountManager singleton.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.10
  */
 TpAccountManager *
 tp_client_factory_ensure_account_manager (TpClientFactory *self)
@@ -635,7 +635,7 @@ tp_client_factory_ensure_account_manager (TpClientFactory *self)
  *
  * Returns: (transfer full): a reference to a #TpChannelDispatcher singleton.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.10
  */
 TpChannelDispatcher *
 tp_client_factory_ensure_channel_dispatcher (TpClientFactory *self)
@@ -662,7 +662,7 @@ tp_client_factory_ensure_channel_dispatcher (TpClientFactory *self)
  *
  * Returns: (transfer full): a reference to a #TpLogger singleton.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.10
  */
 TpLogger *
 tp_client_factory_ensure_logger (TpClientFactory *self)
@@ -1797,7 +1797,7 @@ tp_client_factory_add_tls_certificate_features_varargs (
  * Returns: (transfer full): a reference to a #TpDebugClient,
  *  or %NULL on invalid arguments.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.10
  */
 TpDebugClient *
 tp_client_factory_ensure_debug_client (TpClientFactory *self,
@@ -1830,7 +1830,7 @@ tp_client_factory_ensure_debug_client (TpClientFactory *self,
  * Returns: (transfer full): a reference to a #TpConnectionManager,
  *  or %NULL on invalid arguments.
  *
- * Since: UNRELEASED
+ * Since: 0.99.10
  */
 TpConnectionManager *
 tp_client_factory_ensure_connection_manager (TpClientFactory *self,

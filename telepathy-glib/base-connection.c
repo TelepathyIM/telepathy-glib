@@ -1154,7 +1154,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    * g_bus_get_sync() just after it is constructed; if this fails, this
    * property will remain %NULL, and tp_base_connection_register() will fail.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.99.10
    */
   g_object_class_install_property (object_class, PROP_DBUS_CONNECTION,
       g_param_spec_object ("dbus-connection", "D-Bus connection",

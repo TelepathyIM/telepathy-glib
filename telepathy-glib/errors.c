@@ -44,7 +44,7 @@
  * enumeration.
  *
  * This macro expands to a call to a function returning the Telepathy error
- * domain. Since 0.UNRELEASED, this function automatically registers the
+ * domain. Since 0.99.10, this function automatically registers the
  * domain with GIO (using g_dbus_error_register_error()) when
  * called.
  *
