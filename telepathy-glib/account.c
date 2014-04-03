@@ -103,7 +103,8 @@ struct _TpAccountPrivate {
   TpConnectionStatus connection_status;
   TpConnectionStatusReason reason;
   gchar *error;
-  GHashTable *error_details;
+  /* never NULL */
+  GVariant *error_details;
 
   TpConnectionPresenceType cur_presence;
   gchar *cur_status;
@@ -386,8 +387,8 @@ tp_account_init (TpAccount *self)
 
   self->priv->connection_status = TP_CONNECTION_STATUS_DISCONNECTED;
   self->priv->error = g_strdup (TP_ERROR_STR_DISCONNECTED);
-  self->priv->error_details = g_hash_table_new_full (g_str_hash, g_str_equal,
-      g_free, (GDestroyNotify) tp_g_value_slice_free);
+  self->priv->error_details = g_variant_new ("a{sv}", NULL);
+  g_variant_ref_sink (self->priv->error_details);
   self->priv->supersedes = g_new0 (gchar *, 1);
 }
 
@@ -404,31 +405,32 @@ _tp_account_invalidated_cb (TpAccount *self,
    * so claim the disconnection already happened (see fd.o#25149) */
   if (priv->connection_status != TP_CONNECTION_STATUS_DISCONNECTED)
     {
+      gchar *debug_message;
+
       priv->connection_status = TP_CONNECTION_STATUS_DISCONNECTED;
       tp_clear_pointer (&priv->error, g_free);
-      g_hash_table_remove_all (priv->error_details);
 
       if (domain == TP_DBUS_ERRORS && code == TP_DBUS_ERROR_OBJECT_REMOVED)
         {
           /* presumably the user asked for it to be deleted... */
           priv->reason = TP_CONNECTION_STATUS_REASON_REQUESTED;
           priv->error = g_strdup (TP_ERROR_STR_CANCELLED);
-          g_hash_table_insert (priv->error_details,
-              g_strdup ("debug-message"),
-              tp_g_value_slice_new_static_string ("TpAccount was removed"));
+          debug_message = g_strdup ("TpAccount was removed");
         }
       else
         {
-          gchar *s;
-
           priv->reason = TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED;
           priv->error = g_strdup (TP_ERROR_STR_DISCONNECTED);
-          s = g_strdup_printf ("TpAccount was invalidated: %s #%u: %s",
+          debug_message = g_strdup_printf (
+              "TpAccount was invalidated: %s #%u: %s",
               g_quark_to_string (domain), code, message);
-          g_hash_table_insert (priv->error_details,
-              g_strdup ("debug-message"),
-              tp_g_value_slice_new_take_string (s));
         }
+
+      g_variant_unref (priv->error_details);
+      priv->error_details = g_variant_new_parsed ("{ 'debug-message': <%s> }",
+          debug_message);
+      g_variant_ref_sink (priv->error_details);
+      g_free (debug_message);
 
       g_object_notify ((GObject *) self, "connection-status");
       g_object_notify ((GObject *) self, "connection-status-reason");
@@ -685,16 +687,16 @@ _tp_account_update (TpAccount *account,
           "ConnectionErrorDetails", TP_HASH_TYPE_STRING_VARIANT_MAP);
 
       if ((details != NULL && tp_asv_size (details) > 0) ||
-          tp_asv_size (priv->error_details) > 0)
+          g_variant_n_children (priv->error_details) > 0)
         {
-          g_hash_table_remove_all (priv->error_details);
+          g_variant_unref (priv->error_details);
 
-          if (details != NULL)
-            tp_g_hash_table_update (priv->error_details,
-                (GHashTable *) details,
-                (GBoxedCopyFunc) g_strdup,
-                (GBoxedCopyFunc) tp_g_value_slice_dup);
+          if (details == NULL)
+            priv->error_details = g_variant_new ("a{sv}", NULL);
+          else
+            priv->error_details = tp_asv_to_vardict (details);
 
+          g_variant_ref_sink (priv->error_details);
           status_changed = TRUE;
         }
     }
@@ -705,7 +707,9 @@ _tp_account_update (TpAccount *account,
         {
           /* our connection status is CONNECTED - clear any error we may
            * have recorded previously */
-          g_hash_table_remove_all (priv->error_details);
+          g_variant_unref (priv->error_details);
+          priv->error_details = g_variant_new ("a{sv}", NULL);
+          g_variant_ref_sink (priv->error_details);
           tp_clear_pointer (&priv->error, g_free);
         }
       else if (priv->error == NULL)
@@ -1167,7 +1171,7 @@ _tp_account_get_property (GObject *object,
       g_value_set_string (value, self->priv->error);
       break;
     case PROP_CONNECTION_ERROR_DETAILS:
-      g_value_set_boxed (value, self->priv->error_details);
+      g_value_set_variant (value, self->priv->error_details);
       break;
     case PROP_CONNECTION:
       g_value_set_object (value,
@@ -1291,7 +1295,7 @@ _tp_account_finalize (GObject *object)
   g_free (priv->service);
 
   tp_clear_pointer (&priv->parameters, g_variant_unref);
-  tp_clear_pointer (&priv->error_details, g_hash_table_unref);
+  g_variant_unref (priv->error_details);
 
   g_free (priv->storage_provider);
   tp_clear_pointer (&priv->storage_identifier, g_variant_unref);
@@ -1516,9 +1520,9 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount:connection-error-details:
    *
-   * A map from string to #GValue containing extensible error details
-   * related to #TpAccount:connection-error. Functions like tp_asv_get_string()
-   * can be used to read from this map.
+   * A map from string to variant (%G_VARIANT_TYPE_VARDICT) containing
+   * extensible error details related to #TpAccount:connection-error.
+   * Functions like tp_vardict_get_string() can be used to read from this map.
    *
    * The keys for this map are defined by
    * <ulink url="http://telepathy.freedesktop.org/spec/">the Telepathy D-Bus
@@ -1534,14 +1538,12 @@ tp_account_class_init (TpAccountClass *klass)
    * This is not guaranteed to have been retrieved until
    * tp_proxy_prepare_async() has finished; until then, the value is
    * an empty map.
-   *
-   * Since: 0.11.7
    */
   g_object_class_install_property (object_class, PROP_CONNECTION_ERROR_DETAILS,
-      g_param_spec_boxed ("connection-error-details",
+      g_param_spec_variant ("connection-error-details",
           "ConnectionErrorDetails",
           "Extensible details of the account's last connection error",
-          G_TYPE_HASH_TABLE,
+          G_VARIANT_TYPE_VARDICT, g_variant_new ("a{sv}", NULL),
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
@@ -2070,23 +2072,17 @@ tp_account_class_init (TpAccountClass *klass)
    * @new_status: new #TpAccount:connection-status
    * @reason: the #TpAccount:connection-status-reason
    * @dbus_error_name: (allow-none): the #TpAccount:connection-error
-   * @details: (element-type utf8 GObject.Value): the
-   *  #TpAccount:connection-error-details
+   * @details: the #TpAccount:connection-error-details,
+   *  as a variant of type %G_VARIANT_TYPE_VARDICT
    *
    * Emitted when the connection status on the account changes.
-   *
-   * The @dbus_error_name and @details parameters were present, but
-   * non-functional (always %NULL), in older versions. They have been
-   * available with their current behaviour since version 0.11.7.
-   *
-   * Since: 0.9.0
    */
   signals[STATUS_CHANGED] = g_signal_new ("status-changed",
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
       0, NULL, NULL, NULL,
       G_TYPE_NONE, 5, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_STRING,
-      G_TYPE_HASH_TABLE);
+      G_TYPE_VARIANT);
 
   /**
    * TpAccount::presence-changed:
@@ -3615,8 +3611,7 @@ tp_account_dup_detailed_error (TpAccount *self,
     return NULL;
 
   if (details != NULL)
-    *details = g_variant_ref_sink (
-        tp_asv_to_vardict (self->priv->error_details));
+    *details = g_variant_ref (self->priv->error_details);
 
   return g_strdup (self->priv->error);
 }
