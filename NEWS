@@ -23,6 +23,8 @@ API breaks:
   However, dbus-glib's "specialized type" system is still used in the
   public API, for now.
 
+  (fd.o #28782, Simon)
+
 • The "factory" construct-time property for all TpProxy subclasses is
   now mandatory:
 
@@ -39,8 +41,14 @@ API breaks:
   · tp_connection_manager_new() has been removed, use
     tp_client_factory_ensure_connection_manager() instead.
 
+  (fd.o #76828; Xavier, Simon)
+
 • TpDBusDaemon has been replaced by TpClientFactory or GDBusConnection,
-  depending on context.
+  depending on context. (fd.o #76828; Xavier, Simon)
+
+• The "-core" shared library has gone away, and some functionality that
+  primarily used dbus-glib types (tp_asv_*, tp_g_value_slice_*,
+  tp_value_array_*) has moved into telepathy-glib-1-dbus. (fd.o #76855, Simon)
 
 telepathy-glib 0.99.9 (2013-03-25)
 ==================================
