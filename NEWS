@@ -1,7 +1,46 @@
 telepathy-glib 0.99.10 (UNRELEASED)
 ===================================
 
-...
+API breaks:
+
+• telepathy-glib now uses GDBus' G_BUS_TYPE_SESSION, not
+  libdbus/dbus-glib's DBUS_BUS_STARTER, as its D-Bus connection:
+
+  · every function that previously involved a dbus-glib DBusGMethodInvocation
+    now uses a GDBus GDBusMethodInvocation
+  · public headers do not include <dbus/dbus-glib.h>
+  · D-Bus errors will now come from the G_IO_ERROR and G_DBUS_ERROR
+    domains
+  · object implementors need to be more careful to register well-known
+    objects at their documented object-paths *before* requesting the
+    corresponding bus names
+  · TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR has been replaced by
+    G_IO_ERROR_DBUS_ERROR
+  · TpProxy::interface-added, dbus-glib signals marshallers,
+    and the _init_known_interfaces() family of functions are no longer
+    required or implemented
+
+  However, dbus-glib's "specialized type" system is still used in the
+  public API, for now.
+
+• The "factory" construct-time property for all TpProxy subclasses is
+  now mandatory:
+
+  · tp_account_manager_set_default() and tp_account_manager_can_set_default()
+    have been removed, use tp_client_factory_set_default(),
+    tp_client_factory_can_set_default() and tp_client_factory_dup() instead.
+  · tp_account_manager_new() and tp_account_manager_new_with_factory() have
+    been removed, use tp_client_factory_dup_account_manager() instead.
+    tp_account_manager_dup() still exists, and is now equivalent to calling
+    tp_client_factory_dup_account_manager() on the result of
+    tp_client_factory_dup().
+  · tp_channel_dispatcher_new() has been removed, use
+    tp_client_factory_dup_channel_dispatcher() instead.
+  · tp_connection_manager_new() has been removed, use
+    tp_client_factory_ensure_connection_manager() instead.
+
+• TpDBusDaemon has been replaced by TpClientFactory or GDBusConnection,
+  depending on context.
 
 telepathy-glib 0.99.9 (2013-03-25)
 ==================================
