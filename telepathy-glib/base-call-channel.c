@@ -104,6 +104,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CALL
 
+#include <telepathy-glib/asv.h>
 #include "telepathy-glib/base-call-content.h"
 #include "telepathy-glib/base-call-internal.h"
 #include "telepathy-glib/base-media-call-stream.h"

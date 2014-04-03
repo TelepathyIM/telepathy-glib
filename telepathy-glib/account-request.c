@@ -24,6 +24,7 @@
 
 #include <dbus/dbus-glib.h>
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>

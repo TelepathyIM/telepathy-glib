@@ -238,6 +238,7 @@
 
 #include <dbus/dbus-glib-lowlevel.h>
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/channel-manager.h>
 #include <telepathy-glib/channel-manager-request-internal.h>
 #include <telepathy-glib/connection-manager.h>

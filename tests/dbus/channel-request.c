@@ -10,6 +10,7 @@
 
 #include "config.h"
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/client-factory-internal.h>
 #include <telepathy-glib/defs.h>

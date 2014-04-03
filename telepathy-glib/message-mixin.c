@@ -66,6 +66,7 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <string.h>
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/base-channel.h>
 #include <telepathy-glib/cm-message.h>
 #include <telepathy-glib/cm-message-internal.h>

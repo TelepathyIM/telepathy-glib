@@ -51,6 +51,7 @@
 
 #include <dbus/dbus-glib.h>
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/cli-channel.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/dbus.h>

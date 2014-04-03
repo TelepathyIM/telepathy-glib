@@ -22,6 +22,7 @@
 
 #include "telepathy-glib/connection-contact-list.h"
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/cli-connection.h>
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/dbus.h>

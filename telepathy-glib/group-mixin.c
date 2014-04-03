@@ -64,6 +64,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/base-channel.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>

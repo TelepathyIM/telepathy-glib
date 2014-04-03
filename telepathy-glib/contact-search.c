@@ -22,6 +22,7 @@
 
 #include "telepathy-glib/contact-search.h"
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/cli-channel.h>
 #include <telepathy-glib/contact-search-result.h>
 #include <telepathy-glib/contact-search-internal.h>

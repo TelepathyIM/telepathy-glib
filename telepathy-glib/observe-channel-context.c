@@ -49,6 +49,7 @@
 #include "telepathy-glib/observe-channel-context-internal.h"
 #include "telepathy-glib/observe-channel-context.h"
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/dbus.h>

@@ -22,6 +22,7 @@
 #include "telepathy-glib/capabilities.h"
 #include "telepathy-glib/capabilities-internal.h"
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/dbus-internal.h>
 #include <telepathy-glib/enums.h>

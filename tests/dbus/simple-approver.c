@@ -11,6 +11,7 @@
 
 #include <dbus/dbus-glib.h>
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/simple-approver.h>
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/client.h>

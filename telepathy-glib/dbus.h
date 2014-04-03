@@ -58,68 +58,6 @@ gboolean tp_dbus_check_valid_member_name (const gchar *name,
 gboolean tp_dbus_check_valid_object_path (const gchar *path,
     GError **error);
 
-#define tp_asv_size(asv) _tp_asv_size_inline (asv)
-
-static inline guint
-_tp_asv_size_inline (const GHashTable *asv)
-{
-  /* The empty comment here is to stop gtkdoc thinking g_hash_table_size is
-   * a declaration. */
-  return g_hash_table_size /* */ ((GHashTable *) asv);
-}
-
-GHashTable *tp_asv_new (const gchar *first_key, ...)
-  G_GNUC_NULL_TERMINATED G_GNUC_WARN_UNUSED_RESULT;
-gboolean tp_asv_get_boolean (const GHashTable *asv, const gchar *key,
-    gboolean *valid);
-void tp_asv_set_boolean (GHashTable *asv, const gchar *key, gboolean value);
-gpointer tp_asv_get_boxed (const GHashTable *asv, const gchar *key,
-    GType type);
-void tp_asv_set_boxed (GHashTable *asv, const gchar *key, GType type,
-    gconstpointer value);
-void tp_asv_take_boxed (GHashTable *asv, const gchar *key, GType type,
-    gpointer value);
-void tp_asv_set_static_boxed (GHashTable *asv, const gchar *key, GType type,
-    gconstpointer value);
-const GArray *tp_asv_get_bytes (const GHashTable *asv, const gchar *key);
-void tp_asv_set_bytes (GHashTable *asv, const gchar *key, guint length,
-    gconstpointer bytes);
-void tp_asv_take_bytes (GHashTable *asv, const gchar *key, GArray *value);
-gdouble tp_asv_get_double (const GHashTable *asv, const gchar *key,
-    gboolean *valid);
-void tp_asv_set_double (GHashTable *asv, const gchar *key, gdouble value);
-gint32 tp_asv_get_int32 (const GHashTable *asv, const gchar *key,
-    gboolean *valid);
-void tp_asv_set_int32 (GHashTable *asv, const gchar *key, gint32 value);
-gint64 tp_asv_get_int64 (const GHashTable *asv, const gchar *key,
-    gboolean *valid);
-void tp_asv_set_int64 (GHashTable *asv, const gchar *key, gint64 value);
-const gchar *tp_asv_get_object_path (const GHashTable *asv, const gchar *key);
-void tp_asv_set_object_path (GHashTable *asv, const gchar *key,
-    const gchar *value);
-void tp_asv_take_object_path (GHashTable *asv, const gchar *key,
-    gchar *value);
-void tp_asv_set_static_object_path (GHashTable *asv, const gchar *key,
-    const gchar *value);
-const gchar *tp_asv_get_string (const GHashTable *asv, const gchar *key);
-void tp_asv_set_string (GHashTable *asv, const gchar *key, const gchar *value);
-void tp_asv_take_string (GHashTable *asv, const gchar *key, gchar *value);
-void tp_asv_set_static_string (GHashTable *asv, const gchar *key,
-    const gchar *value);
-guint32 tp_asv_get_uint32 (const GHashTable *asv, const gchar *key,
-    gboolean *valid);
-void tp_asv_set_uint32 (GHashTable *asv, const gchar *key, guint32 value);
-guint64 tp_asv_get_uint64 (const GHashTable *asv, const gchar *key,
-    gboolean *valid);
-void tp_asv_set_uint64 (GHashTable *asv, const gchar *key, guint64 value);
-const GValue *tp_asv_lookup (const GHashTable *asv, const gchar *key);
-
-const gchar * const *
-/* this comment stops gtkdoc denying that this function exists */
-tp_asv_get_strv (const GHashTable *asv, const gchar *key);
-void tp_asv_set_strv (GHashTable *asv, const gchar *key, gchar **value);
-void tp_asv_dump (GHashTable *asv);
-
 gboolean tp_dbus_connection_request_name (GDBusConnection *dbus_connection,
     const gchar *well_known_name, gboolean idempotent, GError **error);
 gboolean tp_dbus_connection_release_name (GDBusConnection *dbus_connection,

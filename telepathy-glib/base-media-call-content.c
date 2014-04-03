@@ -58,6 +58,7 @@
 #include <string.h>
 
 #define DEBUG_FLAG TP_DEBUG_CALL
+#include <telepathy-glib/asv.h>
 #include "telepathy-glib/base-call-internal.h"
 #include "telepathy-glib/base-call-channel.h"
 #include "telepathy-glib/base-channel.h"

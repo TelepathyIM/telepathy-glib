@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <string.h>
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/capabilities-internal.h>
 #include <telepathy-glib/cli-connection.h>
 #include <telepathy-glib/client-factory.h>

@@ -24,6 +24,8 @@
 #include <telepathy-glib/base-protocol-internal.h>
 
 #include <dbus/dbus-protocol.h>
+
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/channel-manager.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>

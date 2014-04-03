@@ -14,6 +14,7 @@
 /* We include -internal headers of context to be able to easily access to
  * their semi-private attributes (connection, account, channels, etc). */
 #include <telepathy-glib/add-dispatch-operation-context-internal.h>
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/base-client.h>
 #include <telepathy-glib/cli-channel.h>
 #include <telepathy-glib/cli-misc.h>

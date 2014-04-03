@@ -23,6 +23,7 @@
 
 #include "telepathy-glib/channel-internal.h"
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/cli-channel.h>
 #include <telepathy-glib/cli-misc.h>

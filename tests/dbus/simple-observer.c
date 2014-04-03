@@ -9,6 +9,7 @@
 
 #include "config.h"
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/simple-observer.h>
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/client.h>

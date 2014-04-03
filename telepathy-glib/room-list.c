@@ -47,6 +47,7 @@
 #include "telepathy-glib/room-list.h"
 #include <telepathy-glib/room-info-internal.h>
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/cli-channel.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/telepathy-glib.h>

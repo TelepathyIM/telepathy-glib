@@ -13,6 +13,7 @@
 #include "protocol.h"
 
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include "call-manager.h"
 #include "conn.h"

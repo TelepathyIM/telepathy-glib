@@ -23,6 +23,7 @@
 #include "room-info.h"
 #include "room-info-internal.h"
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/sliced-gvalue.h>

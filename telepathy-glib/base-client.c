@@ -174,6 +174,7 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/add-dispatch-operation-context-internal.h>
 #include <telepathy-glib/automatic-client-factory.h>
 #include <telepathy-glib/channel-dispatcher.h>

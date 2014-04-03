@@ -135,6 +135,7 @@ tpginclude_HEADERS = \
     $(NULL)
 
 tpgdbusinclude_HEADERS = \
+    asv.h \
     cli-call.h \
     cli-channel.h \
     cli-connection.h \
@@ -201,6 +202,7 @@ libtelepathy_glib_dbus_internal_la_LIBADD = \
     libtelepathy-glib-1-core.la \
     $(NULL)
 libtelepathy_glib_dbus_internal_la_SOURCES = \
+    asv.c \
     cli-channel.c \
     cli-connection.c \
     cli-misc.c \

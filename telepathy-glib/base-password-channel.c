@@ -56,6 +56,7 @@
 
 #include "telepathy-glib/base-password-channel.h"
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>

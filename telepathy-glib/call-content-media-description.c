@@ -53,6 +53,7 @@
 #include "call-content-media-description.h"
 
 #define DEBUG_FLAG TP_DEBUG_CALL
+#include <telepathy-glib/asv.h>
 #include "telepathy-glib/base-call-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/dbus.h"

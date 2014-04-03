@@ -11,6 +11,7 @@
 #include "config.h"
 
 #include <telepathy-glib/account.h>
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/enums.h>

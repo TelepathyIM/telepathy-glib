@@ -11,6 +11,7 @@
 
 #include <string.h>
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/cli-channel.h>
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/message-mixin.h>

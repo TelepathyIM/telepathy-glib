@@ -47,6 +47,7 @@
 
 #include "telepathy-glib/call-stream.h"
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/call-content.h>
 #include <telepathy-glib/cli-call.h>
 #include <telepathy-glib/cli-misc.h>

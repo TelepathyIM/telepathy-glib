@@ -83,6 +83,7 @@
 
 #include "telepathy-glib/dbus-tube-channel.h"
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/cli-channel.h>
 #include <telepathy-glib/cli-misc.h>
 #include <telepathy-glib/contact.h>
