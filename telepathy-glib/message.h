@@ -70,8 +70,6 @@ void tp_message_set_string_printf (TpMessage *self, guint part,
     const gchar *key, const gchar *fmt, ...) G_GNUC_PRINTF (4, 5);
 void tp_message_set_bytes (TpMessage *self, guint part, const gchar *key,
     guint len, gconstpointer bytes);
-void tp_message_set (TpMessage *self, guint part, const gchar *key,
-    const GValue *source);
 _TP_AVAILABLE_IN_0_20
 void tp_message_set_variant (TpMessage *self, guint part, const gchar *key,
     GVariant *value);

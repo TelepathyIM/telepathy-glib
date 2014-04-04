@@ -423,15 +423,24 @@ sms_get_sms_length (TpSvcChannelInterfaceSMS1 *self,
 
   for (i = 0; i < parts->len; i++)
     {
-      GHashTableIter iter;
-      gpointer key, value;
+      GVariant *vardict;
+      GVariantIter iter;
+      gchar *key;
+      GVariant *value;
+
+      vardict = g_variant_ref_sink (tp_asv_to_vardict (
+            g_ptr_array_index (parts, i)));
 
       tp_message_append_part (message);
-      g_hash_table_iter_init (&iter, g_ptr_array_index (parts, i));
-      while (g_hash_table_iter_next (&iter, &key, &value))
+
+      g_variant_iter_init (&iter, vardict);
+
+      while (g_variant_iter_loop (&iter, "{sv}", &key, &value))
         {
-          tp_message_set (message, i, key, value);
+          tp_message_set_variant (message, i, key, value);
         }
+
+      g_variant_unref (vardict);
     }
 
   txt = tp_message_to_text (message);

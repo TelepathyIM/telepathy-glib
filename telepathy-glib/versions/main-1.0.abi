@@ -986,7 +986,6 @@ tp_message_mixin_maybe_send_gone
 tp_message_mixin_sent
 tp_message_mixin_set_rescued
 tp_message_mixin_take_received
-tp_message_set
 tp_message_set_boolean
 tp_message_set_bytes
 tp_message_set_int32

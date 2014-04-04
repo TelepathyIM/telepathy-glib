@@ -487,35 +487,6 @@ tp_message_set_bytes (TpMessage *self,
 
 
 /**
- * tp_message_set:
- * @self: a message
- * @part: a part number, which must be strictly less than the number
- *  returned by tp_message_count_parts()
- * @key: a key in the mapping representing the part
- * @source: a value, encoded as dbus-glib would
- *
- * Set @key in part @part of @self to have a copy of @source as its value.
- *
- * In high-level language bindings, use tp_message_set_variant() instead.
- *
- * Since: 0.7.21
- */
-void
-tp_message_set (TpMessage *self,
-                guint part,
-                const gchar *key,
-                const GValue *source)
-{
-  g_return_if_fail (part < self->parts->len);
-  g_return_if_fail (key != NULL);
-  g_return_if_fail (source != NULL);
-  g_return_if_fail (self->priv->mutable);
-
-  g_hash_table_insert (g_ptr_array_index (self->parts, part),
-      g_strdup (key), tp_g_value_slice_dup (source));
-}
-
-/**
  * tp_message_set_variant:
  * @self: a message
  * @part: a part number, which must be strictly less than the number
