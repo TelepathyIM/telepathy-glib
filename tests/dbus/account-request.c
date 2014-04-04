@@ -202,7 +202,8 @@ test_properties (Test *test,
   gchar *presence_status, *presence_message;
   gboolean enabled, connect_automatically;
   gchar **supersedes;
-  GArray *avatar;
+  GBytes *avatar;
+  gsize len;
   gchar *mime_type;
   gboolean found;
   const gchar *s;
@@ -338,12 +339,9 @@ test_properties (Test *test,
   g_variant_unref (props);
 
   /* avatar */
-  avatar = g_array_new (FALSE, FALSE, sizeof (guchar));
-  g_array_append_vals (avatar, "hello world", strlen ("hello world") + 1);
   tp_account_request_set_avatar (test->ar,
-      (const guchar *) avatar->data, avatar->len, "image/lolz");
-  g_array_unref (avatar);
-  avatar = NULL;
+      (const guchar *) "hello world", strlen ("hello world") + 1,
+      "image/lolz");
 
   g_object_get (test->ar,
       "properties", &props,
@@ -351,8 +349,9 @@ test_properties (Test *test,
       "avatar-mime-type", &mime_type,
       NULL);
 
-  g_assert_cmpstr (avatar->data, ==, "hello world");
-  g_assert_cmpuint (avatar->len, ==, strlen ("hello world") + 1);
+  g_assert_cmpstr ((const gchar *) g_bytes_get_data (avatar, &len), ==,
+      "hello world");
+  g_assert_cmpuint (len, ==, strlen ("hello world") + 1);
   g_assert_cmpstr (mime_type, ==, "image/lolz");
 
   v = g_variant_lookup_value (props, TP_PROP_ACCOUNT_INTERFACE_AVATAR1_AVATAR,
@@ -361,7 +360,7 @@ test_properties (Test *test,
   g_variant_unref (v);
 
   g_variant_unref (props);
-  g_array_unref (avatar);
+  g_bytes_unref (avatar);
   g_free (mime_type);
 
   /* service */

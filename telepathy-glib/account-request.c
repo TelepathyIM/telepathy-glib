@@ -285,7 +285,12 @@ tp_account_request_get_property (GObject *object,
             TP_STRUCT_TYPE_AVATAR);
 
         if (array != NULL)
-          g_value_set_boxed (value, g_value_get_boxed (array->values));
+          {
+            GArray *uchars = g_value_get_boxed (array->values);
+
+            g_value_take_boxed (value,
+                g_bytes_new (uchars->data, uchars->len));
+          }
       }
       break;
     case PROP_AVATAR_MIME_TYPE:
@@ -668,14 +673,12 @@ tp_account_request_class_init (TpAccountRequestClass *klass)
    * The avatar set on the account. The avatar's mime type can be read
    * in the #TpAccountRequest:avatar-mime-type property. To change this
    * property, use tp_account_request_set_avatar().
-   *
-   * Since: 0.19.1
    */
   g_object_class_install_property (object_class, PROP_AVATAR,
       g_param_spec_boxed ("avatar",
         "Avatar",
         "The account's avatar data",
-        G_TYPE_ARRAY,
+        G_TYPE_BYTES,
         G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
