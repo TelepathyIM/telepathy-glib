@@ -26,8 +26,8 @@
 
 G_BEGIN_DECLS
 
-/* NULL-safe for @classes */
-TpCapabilities * _tp_capabilities_new (const GPtrArray *classes,
+/* NULL-safe for @classes, consumes floating ref */
+TpCapabilities * _tp_capabilities_new (GVariant *classes,
     gboolean contact_specific);
 
 G_END_DECLS

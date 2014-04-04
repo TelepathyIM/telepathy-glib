@@ -115,7 +115,7 @@ test_prepare (Test *test,
       TP_CONNECTION_FEATURE_CAPABILITIES, 0 };
   TpConnectionStatusReason reason;
   TpCapabilities *caps;
-  GPtrArray *classes;
+  GVariant *classes;
   gchar *cm_name, *protocol_name;
 
   test->conn = tp_tests_connection_new (test->dbus, test->conn_name, test->conn_path,
@@ -187,9 +187,10 @@ test_prepare (Test *test,
 
   caps = tp_connection_get_capabilities (test->conn);
   g_assert (caps != NULL);
-  classes = tp_capabilities_get_channel_classes (caps);
-  g_assert (classes != NULL);
-  g_assert_cmpint (classes->len, ==, 0);
+  classes = tp_capabilities_dup_channel_classes (caps);
+  g_assert_cmpstr (g_variant_get_type_string (classes), ==, "a(a{sv}as)");
+  g_assert_cmpuint (g_variant_n_children (classes), ==, 0);
+  g_variant_unref (classes);
 }
 
 static void

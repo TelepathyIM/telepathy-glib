@@ -536,7 +536,9 @@ tp_protocol_constructed (GObject *object)
         TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
 
   if (rccs != NULL)
-    self->priv->capabilities = _tp_capabilities_new (rccs, FALSE);
+    self->priv->capabilities = _tp_capabilities_new (_tp_boxed_to_variant (
+          TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+          "a(a{sv}as)", (GPtrArray *) rccs), FALSE);
 
   self->priv->authentication_types = asv_strdupv_or_empty (
       protocol_properties,

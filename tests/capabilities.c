@@ -28,60 +28,29 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 }
 
-static void
-add_text_chat_class (GPtrArray *classes,
-    TpEntityType handle_type)
+static GVariant *
+text_chat_class (TpEntityType handle_type)
 {
-  GHashTable *fixed;
-  const gchar * const allowed[] = { NULL };
-  GValueArray *arr;
-
-  fixed = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_TEXT,
-      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-          handle_type,
-      NULL);
-
-  arr = tp_value_array_build (2,
-      TP_HASH_TYPE_STRING_VARIANT_MAP, fixed,
-      G_TYPE_STRV, allowed,
-      G_TYPE_INVALID);
-
-  g_hash_table_unref (fixed);
-
-  g_ptr_array_add (classes, arr);
+  return g_variant_new_parsed ("({%s: <%s>, %s: <%u>}, @as [])",
+      TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) handle_type);
 }
 
-static void
-add_ft_class (GPtrArray *classes,
-    const gchar * const *allowed)
+static GVariant *
+ft_class (const gchar * const *allowed)
 {
-  GHashTable *fixed;
   const gchar * const default_allowed[] = {
       TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_FILENAME,
       TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_SIZE,
       NULL };
-  GValueArray *arr;
 
   if (allowed == NULL)
     allowed = default_allowed;
 
-  fixed = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1,
-      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-          TP_ENTITY_TYPE_CONTACT,
-      NULL);
-
-  arr = tp_value_array_build (2,
-      TP_HASH_TYPE_STRING_VARIANT_MAP, fixed,
-      G_TYPE_STRV, allowed,
-      G_TYPE_INVALID);
-
-  g_hash_table_unref (fixed);
-
-  g_ptr_array_add (classes, arr);
+  return g_variant_new_parsed ("({%s: <%s>, %s: <%u>}, %^as)",
+      TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) TP_ENTITY_TYPE_CONTACT,
+      allowed);
 }
 
 static void
@@ -89,78 +58,66 @@ test_basics (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpCapabilities *caps;
-  GPtrArray *classes;
-  GValueArray *arr;
-  GHashTable *fixed;
-  GStrv allowed;
+  GVariant *classes;
+  GVariant *fixed;
+  const gchar **allowed;
   const gchar *chan_type;
   TpEntityType handle_type;
   gboolean valid;
 
-  /* TpCapabilities containing the text chats and ft caps */
-  classes = g_ptr_array_sized_new (2);
-  add_text_chat_class (classes, TP_ENTITY_TYPE_CONTACT);
-  add_ft_class (classes, NULL);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*, %*]",
+        text_chat_class (TP_ENTITY_TYPE_CONTACT),
+        ft_class (NULL)),
       "contact-specific", FALSE,
       NULL);
 
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
-
   g_assert (!tp_capabilities_is_specific_to_contact (caps));
-  classes = tp_capabilities_get_channel_classes (caps);
+  classes = tp_capabilities_dup_channel_classes (caps);
 
-  g_assert_cmpuint (classes->len, ==, 2);
+  g_assert_cmpuint (g_variant_n_children (classes), ==, 2);
 
   /* Check text chats class */
-  arr = g_ptr_array_index (classes, 0);
-  g_assert_cmpuint (arr->n_values, ==, 2);
+  g_variant_get_child (classes, 0, "(@a{sv}^a&s)", &fixed, &allowed);
 
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  fixed = g_value_get_boxed (g_value_array_get_nth (arr, 0));
-  allowed = g_value_get_boxed (g_value_array_get_nth (arr, 1));
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+  g_assert_cmpuint (g_variant_n_children (fixed), ==, 2);
 
-  g_assert_cmpuint (g_hash_table_size (fixed), ==, 2);
-
-  chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+  chan_type = tp_vardict_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
   g_assert_cmpstr (chan_type, ==, TP_IFACE_CHANNEL_TYPE_TEXT);
 
-  handle_type = tp_asv_get_uint32 (fixed, TP_PROP_CHANNEL_TARGET_ENTITY_TYPE,
-      &valid);
+  handle_type = tp_vardict_get_uint32 (fixed,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
   g_assert (valid);
   g_assert_cmpuint (handle_type, ==, TP_ENTITY_TYPE_CONTACT);
 
-  g_assert_cmpuint (g_strv_length (allowed), ==, 0);
+  g_assert_cmpuint (g_strv_length ((GStrv) allowed), ==, 0);
+
+  g_variant_unref (fixed);
+  g_free (allowed);
 
   /* Check ft class */
-  arr = g_ptr_array_index (classes, 1);
-  g_assert_cmpuint (arr->n_values, ==, 2);
+  g_variant_get_child (classes, 1, "(@a{sv}^a&s)", &fixed, &allowed);
 
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  fixed = g_value_get_boxed (g_value_array_get_nth (arr, 0));
-  allowed = g_value_get_boxed (g_value_array_get_nth (arr, 1));
-  G_GNUC_END_IGNORE_DEPRECATIONS
+  g_assert_cmpuint (g_variant_n_children (fixed), ==, 2);
 
-  g_assert_cmpuint (g_hash_table_size (fixed), ==, 2);
-
-  chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+  chan_type = tp_vardict_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
   g_assert_cmpstr (chan_type, ==, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1);
 
-  handle_type = tp_asv_get_uint32 (fixed, TP_PROP_CHANNEL_TARGET_ENTITY_TYPE,
-      &valid);
+  handle_type = tp_vardict_get_uint32 (fixed,
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
   g_assert (valid);
   g_assert_cmpuint (handle_type, ==, TP_ENTITY_TYPE_CONTACT);
 
-  g_assert_cmpuint (g_strv_length (allowed), ==, 2);
+  g_assert_cmpuint (g_strv_length ((GStrv) allowed), ==, 2);
   g_assert (tp_strv_contains ((const gchar * const * ) allowed,
       TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_FILENAME));
   g_assert (tp_strv_contains ((const gchar * const * ) allowed,
       TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_SIZE));
 
+  g_variant_unref (fixed);
+  g_free (allowed);
+
+  g_variant_unref (classes);
   g_object_unref (caps);
 }
 
@@ -169,19 +126,14 @@ test_supports (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpCapabilities *caps;
-  GPtrArray *classes;
-
-  /* TpCapabilities containing the text chats caps */
-  classes = g_ptr_array_sized_new (1);
-  add_text_chat_class (classes, TP_ENTITY_TYPE_CONTACT);
+  GVariant *classes;
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*, %*]",
+        text_chat_class (TP_ENTITY_TYPE_CONTACT),
+        ft_class (NULL)),
       "contact-specific", TRUE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_is_specific_to_contact (caps));
   g_assert (tp_capabilities_supports_text_chats (caps));
@@ -191,16 +143,11 @@ test_supports (Test *test,
   g_object_unref (caps);
 
   /* TpCapabilities containing the text chatrooms caps */
-  classes = g_ptr_array_sized_new (1);
-  add_text_chat_class (classes, TP_ENTITY_TYPE_ROOM);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        text_chat_class (TP_ENTITY_TYPE_ROOM)),
       "contact-specific", TRUE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_is_specific_to_contact (caps));
   g_assert (!tp_capabilities_supports_text_chats (caps));
@@ -210,17 +157,12 @@ test_supports (Test *test,
   g_object_unref (caps);
 
   /* TpCapabilities containing both caps */
-  classes = g_ptr_array_sized_new (2);
-  add_text_chat_class (classes, TP_ENTITY_TYPE_CONTACT);
-  add_text_chat_class (classes, TP_ENTITY_TYPE_ROOM);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*, %*]",
+        text_chat_class (TP_ENTITY_TYPE_CONTACT),
+        text_chat_class (TP_ENTITY_TYPE_ROOM)),
       "contact-specific", TRUE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_is_specific_to_contact (caps));
   g_assert (tp_capabilities_supports_text_chats (caps));
@@ -230,85 +172,74 @@ test_supports (Test *test,
   g_object_unref (caps);
 
   /* TpCapabilities containing no caps */
-  caps = _tp_capabilities_new (NULL, TRUE);
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
+      "channel-classes", g_variant_new_parsed ("@a(a{sv}as) []"),
+      "contact-specific", TRUE,
+      NULL);
 
   g_assert (tp_capabilities_is_specific_to_contact (caps));
   g_assert (!tp_capabilities_supports_text_chats (caps));
   g_assert (!tp_capabilities_supports_text_chatrooms (caps));
   g_assert (!tp_capabilities_supports_sms (caps));
 
-  classes = tp_capabilities_get_channel_classes (caps);
-  g_assert_cmpuint (classes->len, ==, 0);
+  classes = tp_capabilities_dup_channel_classes (caps);
+  g_assert_cmpuint (g_variant_n_children (classes), ==, 0);
+  g_variant_unref (classes);
 
   g_object_unref (caps);
 }
 
-static void
-add_stream_tube_class (GPtrArray *classes,
-    TpEntityType handle_type,
+static GVariant *
+stream_tube_class (TpEntityType handle_type,
     const gchar *service)
 {
-  GHashTable *fixed;
-  const gchar * const allowed[] = { NULL };
-  GValueArray *arr;
+  GVariantBuilder fixed;
 
-  fixed = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1,
-      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-          handle_type,
-      NULL);
+  g_variant_builder_init (&fixed, G_VARIANT_TYPE_VARDICT);
+  g_variant_builder_add (&fixed, "{sv}", TP_PROP_CHANNEL_CHANNEL_TYPE,
+      g_variant_new_string (TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1));
+  g_variant_builder_add (&fixed, "{sv}", TP_PROP_CHANNEL_TARGET_ENTITY_TYPE,
+      g_variant_new_uint32 (handle_type));
 
   if (service != NULL)
     {
-      tp_asv_set_string (fixed, TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SERVICE,
-          service);
+      g_variant_builder_add (&fixed, "{sv}",
+          TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SERVICE,
+          g_variant_new_string (service));
     }
 
-  arr = tp_value_array_build (2,
-      TP_HASH_TYPE_STRING_VARIANT_MAP, fixed,
-      G_TYPE_STRV, allowed,
-      G_TYPE_INVALID);
-
-  g_hash_table_unref (fixed);
-
-  g_ptr_array_add (classes, arr);
+  return g_variant_new_parsed ("(%@a{sv}, @as [])",
+      g_variant_builder_end (&fixed));
 }
 
-static void
-add_dbus_tube_class (GPtrArray *classes,
-    TpEntityType handle_type,
+static GVariant *
+dbus_tube_class (TpEntityType handle_type,
     const gchar *service_name,
     gboolean add_extra_fixed)
 {
-  GHashTable *fixed;
-  const gchar * const allowed[] = { NULL };
-  GValueArray *arr;
+  GVariantBuilder fixed;
 
-  fixed = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_DBUS_TUBE1,
-      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-          handle_type,
-      NULL);
+  g_variant_builder_init (&fixed, G_VARIANT_TYPE_VARDICT);
+  g_variant_builder_add (&fixed, "{sv}", TP_PROP_CHANNEL_CHANNEL_TYPE,
+      g_variant_new_string (TP_IFACE_CHANNEL_TYPE_DBUS_TUBE1));
+  g_variant_builder_add (&fixed, "{sv}", TP_PROP_CHANNEL_TARGET_ENTITY_TYPE,
+      g_variant_new_uint32 (handle_type));
 
   if (service_name != NULL)
     {
-      tp_asv_set_string (fixed, TP_PROP_CHANNEL_TYPE_DBUS_TUBE1_SERVICE_NAME,
-          service_name);
+      g_variant_builder_add (&fixed, "{sv}",
+          TP_PROP_CHANNEL_TYPE_DBUS_TUBE1_SERVICE_NAME,
+          g_variant_new_string (service_name));
     }
 
   if (add_extra_fixed)
-    tp_asv_set_boolean (fixed, "ExtraBadgersRequired", TRUE);
+    {
+      g_variant_builder_add (&fixed, "{sv}", "ExtraBadgersRequired",
+          g_variant_new_boolean (TRUE));
+    }
 
-  arr = tp_value_array_build (2,
-      TP_HASH_TYPE_STRING_VARIANT_MAP, fixed,
-      G_TYPE_STRV, allowed,
-      G_TYPE_INVALID);
-
-  g_hash_table_unref (fixed);
-
-  g_ptr_array_add (classes, arr);
+  return g_variant_new_parsed ("(%@a{sv}, @as [])",
+      g_variant_builder_end (&fixed));
 }
 
 static void
@@ -316,10 +247,12 @@ test_supports_tube (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpCapabilities *caps;
-  GPtrArray *classes;
 
   /* TpCapabilities containing no caps */
-  caps = _tp_capabilities_new (NULL, TRUE);
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
+      "channel-classes", g_variant_new_parsed ("@a(a{sv}as) []"),
+      "contact-specific", TRUE,
+      NULL);
 
   g_assert (!tp_capabilities_supports_stream_tubes (caps,
         TP_ENTITY_TYPE_CONTACT, NULL));
@@ -341,16 +274,11 @@ test_supports_tube (Test *test,
   g_object_unref (caps);
 
   /* TpCapabilities containing the private stream tube caps without service */
-  classes = g_ptr_array_sized_new (1);
-  add_stream_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        stream_tube_class (TP_ENTITY_TYPE_CONTACT, NULL)),
       "contact-specific", TRUE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         NULL));
@@ -373,17 +301,12 @@ test_supports_tube (Test *test,
 
   /* TpCapabilities containing the private and muc stream tube caps without
    * service */
-  classes = g_ptr_array_sized_new (2);
-  add_stream_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL);
-  add_stream_tube_class (classes, TP_ENTITY_TYPE_ROOM, NULL);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*, %*]",
+        stream_tube_class (TP_ENTITY_TYPE_CONTACT, NULL),
+        stream_tube_class (TP_ENTITY_TYPE_ROOM, NULL)),
       "contact-specific", TRUE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         NULL));
@@ -406,19 +329,14 @@ test_supports_tube (Test *test,
 
   /* TpCapabilities containing the private and muc stream tube caps and
    * one with a service */
-  classes = g_ptr_array_sized_new (4);
-  add_stream_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL);
-  add_stream_tube_class (classes, TP_ENTITY_TYPE_ROOM, NULL);
-  add_stream_tube_class (classes, TP_ENTITY_TYPE_CONTACT, "test-service");
-  add_stream_tube_class (classes, TP_ENTITY_TYPE_ROOM, "test-service");
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*, %*, %*, %*]",
+        stream_tube_class (TP_ENTITY_TYPE_CONTACT, NULL),
+        stream_tube_class (TP_ENTITY_TYPE_ROOM, NULL),
+        stream_tube_class (TP_ENTITY_TYPE_CONTACT, "test-service"),
+        stream_tube_class (TP_ENTITY_TYPE_ROOM, "test-service")),
       "contact-specific", TRUE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         NULL));
@@ -444,17 +362,12 @@ test_supports_tube (Test *test,
   g_object_unref (caps);
 
   /* Connection capabilities */
-  classes = g_ptr_array_sized_new (2);
-  add_stream_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL);
-  add_dbus_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL, FALSE);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*, %*]",
+        stream_tube_class (TP_ENTITY_TYPE_CONTACT, NULL),
+        dbus_tube_class (TP_ENTITY_TYPE_CONTACT, NULL, FALSE)),
       "contact-specific", FALSE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_supports_stream_tubes (caps, TP_ENTITY_TYPE_CONTACT,
         NULL));
@@ -478,16 +391,11 @@ test_supports_tube (Test *test,
   g_object_unref (caps);
 
   /* TpCapabilities containing the private dbus tube caps without service */
-  classes = g_ptr_array_sized_new (1);
-  add_dbus_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL, FALSE);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        dbus_tube_class (TP_ENTITY_TYPE_CONTACT, NULL, FALSE)),
       "contact-specific", TRUE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (!tp_capabilities_supports_stream_tubes (caps,
         TP_ENTITY_TYPE_CONTACT, NULL));
@@ -510,17 +418,12 @@ test_supports_tube (Test *test,
 
   /* TpCapabilities containing the private and muc dbus tube caps without
    * service */
-  classes = g_ptr_array_sized_new (2);
-  add_dbus_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL, FALSE);
-  add_dbus_tube_class (classes, TP_ENTITY_TYPE_ROOM, NULL, FALSE);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*, %*]",
+        dbus_tube_class (TP_ENTITY_TYPE_CONTACT, NULL, FALSE),
+        dbus_tube_class (TP_ENTITY_TYPE_ROOM, NULL, FALSE)),
       "contact-specific", TRUE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (!tp_capabilities_supports_stream_tubes (caps,
         TP_ENTITY_TYPE_CONTACT, NULL));
@@ -543,19 +446,14 @@ test_supports_tube (Test *test,
 
   /* TpCapabilities containing the private and muc dbus tube caps and
    * one with a service */
-  classes = g_ptr_array_sized_new (4);
-  add_dbus_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL, FALSE);
-  add_dbus_tube_class (classes, TP_ENTITY_TYPE_ROOM, NULL, FALSE);
-  add_dbus_tube_class (classes, TP_ENTITY_TYPE_CONTACT, "com.Test", FALSE);
-  add_dbus_tube_class (classes, TP_ENTITY_TYPE_ROOM, "com.Test", FALSE);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*, %*, %*, %*]",
+        dbus_tube_class (TP_ENTITY_TYPE_CONTACT, NULL, FALSE),
+        dbus_tube_class (TP_ENTITY_TYPE_ROOM, NULL, FALSE),
+        dbus_tube_class (TP_ENTITY_TYPE_CONTACT, "com.Test", FALSE),
+        dbus_tube_class (TP_ENTITY_TYPE_ROOM, "com.Test", FALSE)),
       "contact-specific", TRUE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (!tp_capabilities_supports_stream_tubes (caps,
         TP_ENTITY_TYPE_CONTACT, NULL));
@@ -581,16 +479,11 @@ test_supports_tube (Test *test,
   g_object_unref (caps);
 
   /* Any extra fixed prop make it unsupported */
-  classes = g_ptr_array_sized_new (1);
-  add_dbus_tube_class (classes, TP_ENTITY_TYPE_CONTACT, NULL, TRUE);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        dbus_tube_class (TP_ENTITY_TYPE_CONTACT, NULL, TRUE)),
       "contact-specific", TRUE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (!tp_capabilities_supports_dbus_tubes (caps,
       TP_ENTITY_TYPE_CONTACT, NULL));
@@ -598,36 +491,32 @@ test_supports_tube (Test *test,
   g_object_unref (caps);
 }
 
-static void
-add_room_list_class (GPtrArray *classes,
-    gboolean server,
+static GVariant *
+room_list_class (gboolean server,
     gboolean add_extra_fixed)
 {
-  GHashTable *fixed;
+  GVariantBuilder fixed;
   const gchar * const allowed[] = {
       TP_PROP_CHANNEL_TYPE_ROOM_LIST1_SERVER,
       NULL };
   const gchar * const no_allowed[] = { NULL };
-  GValueArray *arr;
 
-  fixed = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_ROOM_LIST1,
-      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-          TP_ENTITY_TYPE_NONE,
-      NULL);
+  g_variant_builder_init (&fixed, G_VARIANT_TYPE_VARDICT);
+
+  g_variant_builder_add (&fixed, "{sv}", TP_PROP_CHANNEL_CHANNEL_TYPE,
+      g_variant_new_string (TP_IFACE_CHANNEL_TYPE_ROOM_LIST1));
+  g_variant_builder_add (&fixed, "{sv}", TP_PROP_CHANNEL_TARGET_ENTITY_TYPE,
+      g_variant_new_uint32 (TP_ENTITY_TYPE_NONE));
 
   if (add_extra_fixed)
-    tp_asv_set_boolean (fixed, "ExtraBadgersRequired", TRUE);
+    {
+      g_variant_builder_add (&fixed, "{sv}", "ExtraBadgersRequired",
+          g_variant_new_boolean (TRUE));
+    }
 
-  arr = tp_value_array_build (2,
-      TP_HASH_TYPE_STRING_VARIANT_MAP, fixed,
-      G_TYPE_STRV, server ? allowed : no_allowed,
-      G_TYPE_INVALID);
-
-  g_hash_table_unref (fixed);
-
-  g_ptr_array_add (classes, arr);
+  return g_variant_new_parsed ("(%@a{sv}, %^as)",
+      g_variant_builder_end (&fixed),
+      server ? allowed : no_allowed);
 }
 
 static void
@@ -635,20 +524,14 @@ test_supports_room_list (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpCapabilities *caps;
-  GPtrArray *classes;
   gboolean with_server = TRUE;
 
   /* Does not support room list */
-  classes = g_ptr_array_sized_new (4);
-  add_ft_class (classes, NULL);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        ft_class (NULL)),
       "contact-specific", FALSE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (!tp_capabilities_supports_room_list (caps, &with_server));
   g_assert (!with_server);
@@ -656,17 +539,12 @@ test_supports_room_list (Test *test,
   g_object_unref (caps);
 
   /* Support room list but no server */
-  classes = g_ptr_array_sized_new (4);
-  add_ft_class (classes, NULL);
-  add_room_list_class (classes, FALSE, FALSE);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*, %*]",
+        ft_class (NULL),
+        room_list_class (FALSE, FALSE)),
       "contact-specific", FALSE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_supports_room_list (caps, &with_server));
   g_assert (!with_server);
@@ -674,17 +552,12 @@ test_supports_room_list (Test *test,
   g_object_unref (caps);
 
   /* Support room list with server */
-  classes = g_ptr_array_sized_new (4);
-  add_ft_class (classes, NULL);
-  add_room_list_class (classes, TRUE, FALSE);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*, %*]",
+        ft_class (NULL),
+        room_list_class (TRUE, FALSE)),
       "contact-specific", FALSE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_supports_room_list (caps, &with_server));
   g_assert (with_server);
@@ -692,64 +565,50 @@ test_supports_room_list (Test *test,
   g_object_unref (caps);
 
   /* Any extra fixed prop make it unsupported */
-  classes = g_ptr_array_sized_new (1);
-  add_room_list_class (classes, FALSE, TRUE);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        room_list_class (FALSE, TRUE)),
       "contact-specific", FALSE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (!tp_capabilities_supports_room_list (caps, NULL));
 
   g_object_unref (caps);
 }
 
-static void
-add_sms_class (GPtrArray *classes,
-    gboolean add_extra_fixed,
+static GVariant *
+sms_class (gboolean add_extra_fixed,
     gboolean use_allowed)
 {
-  GHashTable *fixed;
-  GPtrArray *allowed;
-  GValueArray *arr;
+  GVariantBuilder fixed;
+  const gchar *allowed[] = { NULL, NULL };
 
-  fixed = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_TEXT,
-      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-          TP_ENTITY_TYPE_CONTACT,
-      NULL);
-
-  allowed = g_ptr_array_new ();
+  g_variant_builder_init (&fixed, G_VARIANT_TYPE_VARDICT);
+  g_variant_builder_add (&fixed, "{sv}", TP_PROP_CHANNEL_CHANNEL_TYPE,
+      g_variant_new_string (TP_IFACE_CHANNEL_TYPE_TEXT));
+  g_variant_builder_add (&fixed, "{sv}", TP_PROP_CHANNEL_TARGET_ENTITY_TYPE,
+      g_variant_new_uint32 (TP_ENTITY_TYPE_CONTACT));
 
   if (use_allowed)
     {
-      g_ptr_array_add (allowed, TP_PROP_CHANNEL_INTERFACE_SMS1_SMS_CHANNEL);
+      allowed[0] = TP_PROP_CHANNEL_INTERFACE_SMS1_SMS_CHANNEL;
     }
   else
     {
-      tp_asv_set_boolean (fixed, TP_PROP_CHANNEL_INTERFACE_SMS1_SMS_CHANNEL,
-          TRUE);
+      g_variant_builder_add (&fixed, "{sv}",
+          TP_PROP_CHANNEL_INTERFACE_SMS1_SMS_CHANNEL,
+          g_variant_new_boolean (TRUE));
     }
 
-  g_ptr_array_add (allowed, NULL);
-
   if (add_extra_fixed)
-    tp_asv_set_boolean (fixed, "ExtraBadgersRequired", TRUE);
+    {
+      g_variant_builder_add (&fixed, "{sv}", "ExtraBadgersRequired",
+          g_variant_new_boolean (TRUE));
+    }
 
-  arr = tp_value_array_build (2,
-      TP_HASH_TYPE_STRING_VARIANT_MAP, fixed,
-      G_TYPE_STRV, allowed->pdata,
-      G_TYPE_INVALID);
-
-  g_hash_table_unref (fixed);
-  g_ptr_array_unref (allowed);
-
-  g_ptr_array_add (classes, arr);
+  return g_variant_new_parsed ("(%@a{sv}, %^as)",
+      g_variant_builder_end (&fixed),
+      allowed);
 }
 
 static void
@@ -757,74 +616,56 @@ test_supports_sms (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpCapabilities *caps;
-  GPtrArray *classes;
-
-  classes = g_ptr_array_sized_new (1);
-  add_sms_class (classes, FALSE, FALSE);
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        sms_class (FALSE, FALSE)),
       "contact-specific", FALSE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_supports_sms (caps));
 
   g_object_unref (caps);
 
   /* Reject if more fixed properties are required */
-  classes = g_ptr_array_sized_new (1);
-  add_sms_class (classes, TRUE, FALSE);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        sms_class (TRUE, FALSE)),
       "contact-specific", FALSE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (!tp_capabilities_supports_sms (caps));
 
   g_object_unref (caps);
 
   /* Test with SMS as an allowed property */
-  classes = g_ptr_array_sized_new (1);
-  add_sms_class (classes, FALSE, TRUE);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        sms_class (FALSE, TRUE)),
       "contact-specific", FALSE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_supports_sms (caps));
 
   g_object_unref (caps);
 }
 
-static void
-add_call_class (GPtrArray *classes,
-    TpEntityType handle_type,
+static GVariant *
+call_class (TpEntityType handle_type,
     gboolean initial_audio,
     gboolean initial_video,
     gboolean use_allowed,
     gboolean add_extra_fixed)
 {
-  GHashTable *fixed;
+  GVariantBuilder fixed;
   GPtrArray *allowed;
-  GValueArray *arr;
+  GVariant *ret;
 
-  fixed = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
-          TP_IFACE_CHANNEL_TYPE_CALL1,
-      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-          handle_type,
-      NULL);
+  g_variant_builder_init (&fixed, G_VARIANT_TYPE_VARDICT);
+  g_variant_builder_add (&fixed, "{sv}", TP_PROP_CHANNEL_CHANNEL_TYPE,
+      g_variant_new_string (TP_IFACE_CHANNEL_TYPE_CALL1));
+  g_variant_builder_add (&fixed, "{sv}", TP_PROP_CHANNEL_TARGET_ENTITY_TYPE,
+      g_variant_new_uint32 (handle_type));
 
   allowed = g_ptr_array_new ();
 
@@ -836,8 +677,9 @@ add_call_class (GPtrArray *classes,
         }
       else
         {
-          tp_asv_set_boolean (fixed, TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO,
-              TRUE);
+          g_variant_builder_add (&fixed, "{sv}",
+              TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO,
+              g_variant_new_boolean (TRUE));
         }
     }
 
@@ -849,25 +691,23 @@ add_call_class (GPtrArray *classes,
         }
       else
         {
-          tp_asv_set_boolean (fixed, TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO,
-              TRUE);
+          g_variant_builder_add (&fixed, "{sv}",
+              TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO,
+              g_variant_new_boolean (TRUE));
         }
     }
 
-  g_ptr_array_add (allowed, NULL);
-
   if (add_extra_fixed)
-    tp_asv_set_boolean (fixed, "ExtraBadgersRequired", TRUE);
+    {
+      g_variant_builder_add (&fixed, "{sv}", "ExtraBadgersRequired",
+          g_variant_new_boolean (TRUE));
+    }
 
-  arr = tp_value_array_build (2,
-      TP_HASH_TYPE_STRING_VARIANT_MAP, fixed,
-      G_TYPE_STRV, allowed->pdata,
-      G_TYPE_INVALID);
-
-  g_hash_table_unref (fixed);
+  g_ptr_array_add (allowed, NULL);
+  ret = g_variant_new_parsed ("(%@a{sv}, %^as)",
+      g_variant_builder_end (&fixed), allowed->pdata);
   g_ptr_array_unref (allowed);
-
-  g_ptr_array_add (classes, arr);
+  return ret;
 }
 
 static void
@@ -875,19 +715,13 @@ test_supports_call (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpCapabilities *caps;
-  GPtrArray *classes;
 
   /* A class with no audio/video can't do anything */
-  classes = g_ptr_array_sized_new (1);
-  add_call_class (classes, TP_ENTITY_TYPE_CONTACT, FALSE, FALSE, FALSE, FALSE);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        call_class (TP_ENTITY_TYPE_CONTACT, FALSE, FALSE, FALSE, FALSE)),
       "contact-specific", FALSE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (!tp_capabilities_supports_audio_call (caps,
       TP_ENTITY_TYPE_CONTACT));
@@ -897,16 +731,11 @@ test_supports_call (Test *test,
   g_object_unref (caps);
 
   /* A class with only audio can't do audio_video */
-  classes = g_ptr_array_sized_new (1);
-  add_call_class (classes, TP_ENTITY_TYPE_CONTACT, TRUE, FALSE, FALSE, FALSE);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        call_class (TP_ENTITY_TYPE_CONTACT, TRUE, FALSE, FALSE, FALSE)),
       "contact-specific", FALSE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_supports_audio_call (caps,
       TP_ENTITY_TYPE_CONTACT));
@@ -916,16 +745,11 @@ test_supports_call (Test *test,
   g_object_unref (caps);
 
   /* A class with audio and video in fixed can't do audio only */
-  classes = g_ptr_array_sized_new (1);
-  add_call_class (classes, TP_ENTITY_TYPE_CONTACT, TRUE, TRUE, FALSE, FALSE);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        call_class (TP_ENTITY_TYPE_CONTACT, TRUE, TRUE, FALSE, FALSE)),
       "contact-specific", FALSE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (!tp_capabilities_supports_audio_call (caps,
       TP_ENTITY_TYPE_CONTACT));
@@ -935,16 +759,11 @@ test_supports_call (Test *test,
   g_object_unref (caps);
 
   /* A class with audio and video in allowed can do audio only */
-  classes = g_ptr_array_sized_new (1);
-  add_call_class (classes, TP_ENTITY_TYPE_CONTACT, TRUE, TRUE, TRUE, FALSE);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        call_class (TP_ENTITY_TYPE_CONTACT, TRUE, TRUE, TRUE, FALSE)),
       "contact-specific", FALSE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_supports_audio_call (caps,
       TP_ENTITY_TYPE_CONTACT));
@@ -954,16 +773,11 @@ test_supports_call (Test *test,
   g_object_unref (caps);
 
   /* A class with unknown extra fixed can't do anything */
-  classes = g_ptr_array_sized_new (1);
-  add_call_class (classes, TP_ENTITY_TYPE_CONTACT, TRUE, TRUE, TRUE, TRUE);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        call_class (TP_ENTITY_TYPE_CONTACT, TRUE, TRUE, TRUE, TRUE)),
       "contact-specific", FALSE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (!tp_capabilities_supports_audio_call (caps,
       TP_ENTITY_TYPE_CONTACT));
@@ -978,7 +792,6 @@ test_supports_ft_props (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpCapabilities *caps;
-  GPtrArray *classes;
   const gchar * const allow_uri[] = { TP_PROP_CHANNEL_TYPE_FILE_TRANSFER1_URI,
       NULL };
   const gchar * const allow_desc[] = {
@@ -999,16 +812,11 @@ test_supports_ft_props (Test *test,
 
   g_object_unref (caps);
 
-  classes = g_ptr_array_sized_new (1);
-  add_ft_class (classes, NULL);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        ft_class (NULL)),
       "contact-specific", TRUE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_supports_file_transfer (caps));
   g_assert (!tp_capabilities_supports_file_transfer_uri (caps));
@@ -1018,16 +826,11 @@ test_supports_ft_props (Test *test,
 
   g_object_unref (caps);
 
-  classes = g_ptr_array_sized_new (1);
-  add_ft_class (classes, allow_uri);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        ft_class (allow_uri)),
       "contact-specific", TRUE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_supports_file_transfer (caps));
   g_assert (tp_capabilities_supports_file_transfer_uri (caps));
@@ -1037,16 +840,11 @@ test_supports_ft_props (Test *test,
 
   g_object_unref (caps);
 
-  classes = g_ptr_array_sized_new (1);
-  add_ft_class (classes, allow_desc);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        ft_class (allow_desc)),
       "contact-specific", TRUE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_supports_file_transfer (caps));
   g_assert (!tp_capabilities_supports_file_transfer_uri (caps));
@@ -1056,16 +854,11 @@ test_supports_ft_props (Test *test,
 
   g_object_unref (caps);
 
-  classes = g_ptr_array_sized_new (1);
-  add_ft_class (classes, allow_date);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        ft_class (allow_date)),
       "contact-specific", TRUE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_supports_file_transfer (caps));
   g_assert (!tp_capabilities_supports_file_transfer_uri (caps));
@@ -1075,16 +868,11 @@ test_supports_ft_props (Test *test,
 
   g_object_unref (caps);
 
-  classes = g_ptr_array_sized_new (1);
-  add_ft_class (classes, allow_initial_offset);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*]",
+        ft_class (allow_initial_offset)),
       "contact-specific", TRUE,
       NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
 
   g_assert (tp_capabilities_supports_file_transfer (caps));
   g_assert (!tp_capabilities_supports_file_transfer_uri (caps));
@@ -1100,26 +888,20 @@ test_classes_variant (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpCapabilities *caps;
-  GPtrArray *classes;
   GVariant *v, *v2, *class, *fixed, *allowed;
   const gchar *chan_type;
   guint32 handle_type;
   const gchar **strv;
 
   /* TpCapabilities containing the text chats and ft caps */
-  classes = g_ptr_array_sized_new (2);
-  add_text_chat_class (classes, TP_ENTITY_TYPE_CONTACT);
-  add_ft_class (classes, NULL);
-
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
+      "channel-classes", g_variant_new_parsed ("[%*, %*]",
+        text_chat_class (TP_ENTITY_TYPE_CONTACT),
+        ft_class (NULL)),
       "contact-specific", FALSE,
       NULL);
 
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
-
-  v = tp_capabilities_dup_channel_classes_variant (caps);
+  v = tp_capabilities_dup_channel_classes (caps);
 
   g_assert (v != NULL);
   g_assert_cmpstr (g_variant_get_type_string (v), ==, "a(a{sv}as)");
@@ -1181,7 +963,7 @@ test_classes_variant (Test *test,
   g_variant_unref (allowed);
 
   /* Test GObject getter */
-  g_object_get (caps, "channel-classes-variant", &v2, NULL);
+  g_object_get (caps, "channel-classes", &v2, NULL);
   g_assert (g_variant_equal (v, v2));
 
   g_variant_unref (v);

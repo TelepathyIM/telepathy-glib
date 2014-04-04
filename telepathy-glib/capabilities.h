@@ -54,10 +54,7 @@ GType tp_capabilities_get_type (void) G_GNUC_CONST;
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CAPABILITIES, \
                               TpCapabilitiesClass))
 
-GPtrArray * tp_capabilities_get_channel_classes (TpCapabilities *self);
-
-_TP_AVAILABLE_IN_0_20
-GVariant * tp_capabilities_dup_channel_classes_variant (TpCapabilities *self);
+GVariant *tp_capabilities_dup_channel_classes (TpCapabilities *self);
 
 gboolean tp_capabilities_is_specific_to_contact (TpCapabilities *self);
 

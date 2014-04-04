@@ -25,6 +25,7 @@
 
 #include <string.h>
 
+#include <dbus/dbus-glib.h>
 #include <dbus/dbus-protocol.h>
 
 #include <telepathy-glib/asv.h>
@@ -538,8 +539,8 @@ tp_connection_get_rcc_cb (TpProxy *proxy,
 
   DEBUG ("CAPABILITIES ready");
 
-  self->priv->capabilities = _tp_capabilities_new (g_value_get_boxed (value),
-      FALSE);
+  self->priv->capabilities = _tp_capabilities_new (
+      dbus_g_value_build_g_variant (value), FALSE);
 
 finally:
   while ((result = g_queue_pop_head (&self->priv->capabilities_queue)) != NULL)

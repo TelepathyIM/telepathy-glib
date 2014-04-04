@@ -70,34 +70,13 @@ G_DEFINE_TYPE (TpCapabilities, tp_capabilities, G_TYPE_OBJECT)
 enum {
     PROP_CHANNEL_CLASSES = 1,
     PROP_CONTACT_SPECIFIC,
-    PROP_CHANNEL_CLASSES_VARIANT,
     N_PROPS
 };
 
 struct _TpCapabilitiesPrivate {
-    GPtrArray *classes;
     gboolean contact_specific;
     GVariant *classes_variant;
 };
-
-/**
- * tp_capabilities_get_channel_classes:
- * @self: a #TpCapabilities object
- *
- * <!-- -->
- *
- * Returns: (transfer none) (element-type GHashTable): the same #GPtrArray as
- * the #TpCapabilities:channel-classes property
- *
- * Since: 0.11.3
- */
-GPtrArray *
-tp_capabilities_get_channel_classes (TpCapabilities *self)
-{
-  g_return_val_if_fail (self != NULL, NULL);
-
-  return self->priv->classes;
-}
 
 /**
  * tp_capabilities_is_specific_to_contact:
@@ -124,7 +103,7 @@ tp_capabilities_constructed (GObject *object)
     ((GObjectClass *) tp_capabilities_parent_class)->constructed;
   TpCapabilities *self = TP_CAPABILITIES (object);
 
-  g_assert (self->priv->classes != NULL);
+  g_assert (self->priv->classes_variant != NULL);
 
   if (chain_up != NULL)
     chain_up (object);
@@ -134,13 +113,6 @@ static void
 tp_capabilities_dispose (GObject *object)
 {
   TpCapabilities *self = TP_CAPABILITIES (object);
-
-  if (self->priv->classes != NULL)
-    {
-      g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-          self->priv->classes);
-      self->priv->classes = NULL;
-    }
 
   tp_clear_pointer (&self->priv->classes_variant, g_variant_unref);
 
@@ -157,15 +129,11 @@ tp_capabilities_get_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_CHANNEL_CLASSES:
-      g_value_set_boxed (value, self->priv->classes);
-      break;
-
     case PROP_CONTACT_SPECIFIC:
       g_value_set_boolean (value, self->priv->contact_specific);
       break;
 
-    case PROP_CHANNEL_CLASSES_VARIANT:
+    case PROP_CHANNEL_CLASSES:
       g_value_set_variant (value, self->priv->classes_variant);
       break;
 
@@ -186,10 +154,17 @@ tp_capabilities_set_property (GObject *object,
   switch (property_id)
     {
     case PROP_CHANNEL_CLASSES:
-      self->priv->classes = g_value_dup_boxed (value);
-      self->priv->classes_variant = g_variant_ref_sink (_tp_boxed_to_variant (
-          TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST, "a(a{sv}as)",
-          self->priv->classes));
+        {
+          GVariant *variant = g_value_dup_variant (value);
+          gchar *s;
+
+          s = g_variant_print (variant, TRUE);
+          DEBUG ("%s", s);
+          g_free (s);
+          g_return_if_fail (g_variant_is_of_type (variant,
+                G_VARIANT_TYPE ("a(a{sv}as)")));
+          self->priv->classes_variant = variant;
+        }
       break;
 
     case PROP_CONTACT_SPECIFIC:
@@ -215,29 +190,6 @@ tp_capabilities_class_init (TpCapabilitiesClass *klass)
   object_class->dispose = tp_capabilities_dispose;
 
   /**
-   * TpCapabilities:channel-classes:
-   *
-   * The underlying data structure used by Telepathy to represent the
-   * requests that can succeed.
-   *
-   * This can be used by advanced clients to determine whether an unusually
-   * complex request would succeed. See the Telepathy D-Bus API Specification
-   * for details of how to interpret the returned #GPtrArray of
-   * #TP_STRUCT_TYPE_REQUESTABLE_CHANNEL_CLASS.
-   *
-   * The higher-level methods like
-   * tp_capabilities_supports_text_chats() are likely to be more useful to
-   * the majority of clients.
-   */
-  param_spec = g_param_spec_boxed ("channel-classes",
-      "GPtrArray of TP_STRUCT_TYPE_REQUESTABLE_CHANNEL_CLASS",
-      "The channel classes supported",
-      TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CHANNEL_CLASSES,
-      param_spec);
-
-  /**
    * TpCapabilities:contact-specific:
    *
    * Whether this object accurately describes the capabilities of a particular
@@ -253,7 +205,7 @@ tp_capabilities_class_init (TpCapabilitiesClass *klass)
       param_spec);
 
   /**
-   * TpCapabilities:channel-classes-variant:
+   * TpCapabilities:channel-classes:
    *
    * The underlying data structure used by Telepathy to represent the
    * requests that can succeed.
@@ -266,16 +218,14 @@ tp_capabilities_class_init (TpCapabilitiesClass *klass)
    * The higher-level methods like
    * tp_capabilities_supports_text_chats() are likely to be more useful to
    * the majority of clients.
-   *
-   * Since: 0.19.0
    */
-  param_spec = g_param_spec_variant ("channel-classes-variant",
+  param_spec = g_param_spec_variant ("channel-classes",
       "GVariant of type a(a{sv}as)",
       "The channel classes supported",
       G_VARIANT_TYPE ("a(a{sv}as)"),
       NULL,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CHANNEL_CLASSES_VARIANT,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CHANNEL_CLASSES,
       param_spec);
 }
 
@@ -286,27 +236,24 @@ tp_capabilities_init (TpCapabilities *self)
       TpCapabilitiesPrivate);
 }
 
-/* NULL-safe for @classes */
+/* NULL-safe for @classes, sinks floating refs */
 TpCapabilities *
-_tp_capabilities_new (const GPtrArray *classes,
+_tp_capabilities_new (GVariant *classes,
     gboolean contact_specific)
 {
-  GPtrArray *empty = NULL;
   TpCapabilities *self;
 
   if (classes == NULL)
-    {
-      empty = g_ptr_array_sized_new (0);
-      classes = empty;
-    }
+    classes = g_variant_new ("a(a{sv}as)", NULL);
+
+  g_variant_ref_sink (classes);
 
   self = g_object_new (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
       "contact-specific", contact_specific,
       NULL);
 
-  if (empty != NULL)
-    g_ptr_array_unref (empty);
+  g_variant_unref (classes);
 
   return self;
 }
@@ -316,28 +263,24 @@ supports_simple_channel (TpCapabilities *self,
     const gchar *expected_chan_type,
     TpEntityType expected_handle_type)
 {
-  guint i;
+  GVariantIter iter;
+  GVariant *fixed;
 
   g_return_val_if_fail (TP_IS_CAPABILITIES (self), FALSE);
 
-  for (i = 0; i < self->priv->classes->len; i++)
+  g_variant_iter_init (&iter, self->priv->classes_variant);
+
+  while (g_variant_iter_loop (&iter, "(@a{sv}@as)", &fixed, NULL))
     {
-      GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
-      GHashTable *fixed;
-      const gchar * const *allowed;
       const gchar *chan_type;
       TpEntityType handle_type;
       gboolean valid;
 
-      tp_value_array_unpack (arr, 2,
-          &fixed,
-          &allowed);
-
-      if (g_hash_table_size (fixed) != 2)
+      if (g_variant_n_children (fixed) != 2)
         continue;
 
-      chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
-      handle_type = tp_asv_get_uint32 (fixed,
+      chan_type = tp_vardict_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+      handle_type = tp_vardict_get_uint32 (fixed,
           TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
 
       if (!valid)
@@ -345,7 +288,10 @@ supports_simple_channel (TpCapabilities *self,
 
       if (!tp_strdiff (chan_type, expected_chan_type) &&
           handle_type == expected_handle_type)
-        return TRUE;
+        {
+          g_variant_unref (fixed);
+          return TRUE;
+        }
     }
 
   return FALSE;
@@ -430,25 +376,22 @@ tp_capabilities_supports_text_chatrooms (TpCapabilities *self)
 gboolean
 tp_capabilities_supports_sms (TpCapabilities *self)
 {
-  guint i;
+  GVariantIter iter;
+  GVariant *fixed;
+  const gchar **allowed;
 
   g_return_val_if_fail (TP_IS_CAPABILITIES (self), FALSE);
 
-  for (i = 0; i < self->priv->classes->len; i++)
+  g_variant_iter_init (&iter, self->priv->classes_variant);
+
+  while (g_variant_iter_loop (&iter, "(@a{sv}^a&s)", &fixed, &allowed))
     {
-      GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
-      GHashTable *fixed;
-      const gchar * const *allowed;
       const gchar *chan_type;
       TpEntityType handle_type;
       gboolean valid;
       guint nb_fixed_props;
 
-      tp_value_array_unpack (arr, 2,
-          &fixed,
-          &allowed);
-
-      handle_type = tp_asv_get_uint32 (fixed,
+      handle_type = tp_vardict_get_uint32 (fixed,
           TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
 
       if (!valid)
@@ -457,14 +400,14 @@ tp_capabilities_supports_sms (TpCapabilities *self)
       if (handle_type != TP_ENTITY_TYPE_CONTACT)
         continue;
 
-      chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+      chan_type = tp_vardict_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
 
       if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_TEXT))
         continue;
 
       /* SMSChannel be either in fixed or allowed properties */
-      if (tp_asv_get_boolean (fixed, TP_PROP_CHANNEL_INTERFACE_SMS1_SMS_CHANNEL,
-            NULL))
+      if (tp_vardict_get_boolean (fixed,
+            TP_PROP_CHANNEL_INTERFACE_SMS1_SMS_CHANNEL, NULL))
         {
           /* In fixed, succeed if there is no more fixed properties required */
           nb_fixed_props = 3;
@@ -479,8 +422,12 @@ tp_capabilities_supports_sms (TpCapabilities *self)
           nb_fixed_props = 2;
         }
 
-      if (g_hash_table_size (fixed) == nb_fixed_props)
-        return TRUE;
+      if (g_variant_n_children (fixed) == nb_fixed_props)
+        {
+          g_variant_unref (fixed);
+          g_free (allowed);
+          return TRUE;
+        }
     }
 
   return FALSE;
@@ -493,29 +440,26 @@ supports_call_full (TpCapabilities *self,
     gboolean expected_initial_audio,
     gboolean expected_initial_video)
 {
-  guint i;
+  GVariantIter iter;
+  GVariant *fixed;
+  const gchar **allowed_prop;
 
   g_return_val_if_fail (TP_IS_CAPABILITIES (self), FALSE);
 
-  for (i = 0; i < self->priv->classes->len; i++)
+  g_variant_iter_init (&iter, self->priv->classes_variant);
+
+  while (g_variant_iter_loop (&iter, "(@a{sv}^a&s)", &fixed, &allowed_prop))
     {
-      GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
-      GHashTable *fixed_prop;
-      const gchar * const *allowed_prop;
       const gchar *chan_type;
       TpEntityType handle_type;
       gboolean valid;
       guint nb_fixed_props = 2;
 
-      tp_value_array_unpack (arr, 2,
-          &fixed_prop,
-          &allowed_prop);
-
-      chan_type = tp_asv_get_string (fixed_prop, TP_PROP_CHANNEL_CHANNEL_TYPE);
+      chan_type = tp_vardict_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
       if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_CALL1))
         continue;
 
-      handle_type = tp_asv_get_uint32 (fixed_prop,
+      handle_type = tp_vardict_get_uint32 (fixed,
           TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
       if (!valid || handle_type != expected_handle_type)
         continue;
@@ -523,7 +467,7 @@ supports_call_full (TpCapabilities *self,
       if (expected_initial_audio)
         {
           /* We want audio, INITIAL_AUDIO must be in either fixed or allowed */
-          if (tp_asv_get_boolean (fixed_prop,
+          if (tp_vardict_get_boolean (fixed,
                   TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_AUDIO, NULL))
             {
               nb_fixed_props++;
@@ -538,7 +482,7 @@ supports_call_full (TpCapabilities *self,
       if (expected_initial_video)
         {
           /* We want video, INITIAL_VIDEO must be in either fixed or allowed */
-          if (tp_asv_get_boolean (fixed_prop,
+          if (tp_vardict_get_boolean (fixed,
                   TP_PROP_CHANNEL_TYPE_CALL1_INITIAL_VIDEO, NULL))
             {
               nb_fixed_props++;
@@ -551,8 +495,12 @@ supports_call_full (TpCapabilities *self,
         }
 
       /* We found the right class */
-      if (g_hash_table_size (fixed_prop) == nb_fixed_props)
-        return TRUE;
+      if (g_variant_n_children (fixed) == nb_fixed_props)
+        {
+          g_variant_unref (fixed);
+          g_free (allowed_prop);
+          return TRUE;
+        }
     }
 
   return FALSE;
@@ -628,28 +576,27 @@ static gboolean
 supports_file_transfer (TpCapabilities *self,
     FTCapFlags flags)
 {
-  guint i;
+  GVariantIter iter;
+  GVariant *fixed;
+  const gchar **allowed;
 
   g_return_val_if_fail (TP_IS_CAPABILITIES (self), FALSE);
 
-  for (i = 0; i < self->priv->classes->len; i++)
+  g_variant_iter_init (&iter, self->priv->classes_variant);
+
+  while (g_variant_iter_loop (&iter, "(@a{sv}^a&s)", &fixed, &allowed))
     {
-      GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
-      GHashTable *fixed;
       const gchar *chan_type;
       TpEntityType handle_type;
       gboolean valid;
       guint n_fixed = 2;
-      const gchar * const *allowed;
 
-      tp_value_array_unpack (arr, 2, &fixed, &allowed);
-
-      chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+      chan_type = tp_vardict_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
 
       if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1))
         continue;
 
-      handle_type = tp_asv_get_uint32 (fixed,
+      handle_type = tp_vardict_get_uint32 (fixed,
           TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
 
       if (!valid)
@@ -696,9 +643,11 @@ supports_file_transfer (TpCapabilities *self,
             continue;
         }
 
-      if (n_fixed != tp_asv_size (fixed))
+      if (n_fixed != g_variant_n_children (fixed))
         continue;
 
+      g_variant_unref (fixed);
+      g_free (allowed);
       return TRUE;
     }
 
@@ -805,31 +754,28 @@ tp_capabilities_supports_tubes_common (TpCapabilities *self,
     const gchar *service_prop,
     const gchar *expected_service)
 {
-  guint i;
+  GVariantIter iter;
+  GVariant *fixed;
+  const gchar **allowed;
 
   g_return_val_if_fail (TP_IS_CAPABILITIES (self), FALSE);
   g_return_val_if_fail (expected_handle_type == TP_ENTITY_TYPE_CONTACT ||
       expected_handle_type == TP_ENTITY_TYPE_ROOM, FALSE);
 
-  for (i = 0; i < self->priv->classes->len; i++)
+  g_variant_iter_init (&iter, self->priv->classes_variant);
+
+  while (g_variant_iter_loop (&iter, "(@a{sv}^a&s)", &fixed, &allowed))
     {
-      GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
-      GHashTable *fixed;
-      const gchar * const *allowed;
       const gchar *chan_type;
       TpEntityType handle_type;
       gboolean valid;
       guint nb_fixed_props = 2;
 
-      tp_value_array_unpack (arr, 2,
-          &fixed,
-          &allowed);
-
-      chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+      chan_type = tp_vardict_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
       if (tp_strdiff (chan_type, expected_channel_type))
         continue;
 
-      handle_type = tp_asv_get_uint32 (fixed,
+      handle_type = tp_vardict_get_uint32 (fixed,
           TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
       if (!valid || handle_type != expected_handle_type)
         continue;
@@ -839,13 +785,17 @@ tp_capabilities_supports_tubes_common (TpCapabilities *self,
           const gchar *service;
 
           nb_fixed_props++;
-          service = tp_asv_get_string (fixed, service_prop);
+          service = tp_vardict_get_string (fixed, service_prop);
           if (tp_strdiff (service, expected_service))
             continue;
         }
 
-      if (g_hash_table_size (fixed) == nb_fixed_props)
-        return TRUE;
+      if (g_variant_n_children (fixed) == nb_fixed_props)
+        {
+          g_variant_unref (fixed);
+          g_free (allowed);
+          return TRUE;
+        }
     }
 
   return FALSE;
@@ -941,7 +891,10 @@ tp_capabilities_supports_contact_search (TpCapabilities *self,
     gboolean *with_server)
 {
   gboolean ret = FALSE;
-  guint i, j;
+  GVariantIter iter;
+  GVariant *fixed;
+  const gchar **allowed_properties;
+  guint j;
 
   g_return_val_if_fail (TP_IS_CAPABILITIES (self), FALSE);
 
@@ -951,22 +904,20 @@ tp_capabilities_supports_contact_search (TpCapabilities *self,
   if (with_server)
     *with_server = FALSE;
 
-  for (i = 0; i < self->priv->classes->len; i++)
-    {
-      GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
-      GHashTable *fixed;
-      const gchar *chan_type;
-      const gchar **allowed_properties;
+  g_variant_iter_init (&iter, self->priv->classes_variant);
 
-      tp_value_array_unpack (arr, 2, &fixed, &allowed_properties);
+  while (g_variant_iter_loop (&iter, "(@a{sv}^a&s)", &fixed,
+        &allowed_properties))
+    {
+      const gchar *chan_type;
 
       /* ContactSearch channel should have ChannelType and TargetEntityType=NONE
        * but CM implementations are wrong and omitted TargetEntityType,
        * so it's set in stone now.  */
-      if (g_hash_table_size (fixed) != 1)
+      if (g_variant_n_children (fixed) != 1)
         continue;
 
-      chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+      chan_type = tp_vardict_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
       if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_CONTACT_SEARCH1))
         continue;
 
@@ -1048,27 +999,27 @@ tp_capabilities_supports_room_list (TpCapabilities *self,
 {
   gboolean result = FALSE;
   gboolean server = FALSE;
-  guint i;
+  GVariantIter iter;
+  GVariant *fixed;
+  const gchar **allowed_properties;
 
-  for (i = 0; i < self->priv->classes->len; i++)
+  g_variant_iter_init (&iter, self->priv->classes_variant);
+
+  while (g_variant_iter_loop (&iter, "(@a{sv}^a&s)", &fixed,
+        &allowed_properties))
     {
-      GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
-      GHashTable *fixed;
       const gchar *chan_type;
-      const gchar **allowed_properties;
       TpEntityType handle_type;
       gboolean valid;
 
-      tp_value_array_unpack (arr, 2, &fixed, &allowed_properties);
-
-      if (g_hash_table_size (fixed) != 2)
+      if (g_variant_n_children (fixed) != 2)
         continue;
 
-      chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+      chan_type = tp_vardict_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
       if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_ROOM_LIST1))
         continue;
 
-      handle_type = tp_asv_get_uint32 (fixed,
+      handle_type = tp_vardict_get_uint32 (fixed,
           TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
       if (!valid || handle_type != TP_ENTITY_TYPE_NONE)
         continue;
@@ -1087,18 +1038,16 @@ tp_capabilities_supports_room_list (TpCapabilities *self,
 }
 
 /**
- * tp_capabilities_dup_channel_classes_variant:
+ * tp_capabilities_dup_channel_classes:
  * @self: a #TpCapabilities
  *
- * Return the #TpCapabilities:channel-classes-variant property
+ * Return the #TpCapabilities:channel-classes property
  *
  * Returns: (transfer full): the value of the
- * #TpCapabilities:channel-classes-variant property
- *
- * Since: 0.19.0
+ * #TpCapabilities:channel-classes property
  */
 GVariant *
-tp_capabilities_dup_channel_classes_variant (TpCapabilities *self)
+tp_capabilities_dup_channel_classes (TpCapabilities *self)
 {
   return g_variant_ref (self->priv->classes_variant);
 }

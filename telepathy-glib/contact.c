@@ -43,6 +43,7 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/util-internal.h"
 #include "telepathy-glib/variant-util.h"
+#include "telepathy-glib/variant-util-internal.h"
 
 static const gchar *
 nonnull (const gchar *s)
@@ -1839,7 +1840,9 @@ contact_maybe_set_capabilities (TpContact *self,
   if (self == NULL || arr == NULL)
     return;
 
-  capabilities = _tp_capabilities_new (arr, TRUE);
+  capabilities = _tp_capabilities_new (_tp_boxed_to_variant (
+        TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+        "a(a{sv}as)", arr), TRUE);
   contact_set_capabilities (self, capabilities);
   g_object_unref (capabilities);
 }

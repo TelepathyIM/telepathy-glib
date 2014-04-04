@@ -155,7 +155,7 @@ test (Fixture *f,
   TpHandle handle;
   GPtrArray *message;
   TpCapabilities *caps;
-  GPtrArray *classes;
+  GVariant *classes;
   GQuark conn_features[] = { TP_CONNECTION_FEATURE_CAPABILITIES, 0 };
   GTestDBus *test_dbus;
 
@@ -200,9 +200,10 @@ test (Fixture *f,
 
   caps = tp_connection_get_capabilities (conn);
   g_assert (caps != NULL);
-  classes = tp_capabilities_get_channel_classes (caps);
+  classes = tp_capabilities_dup_channel_classes (caps);
   g_assert (classes != NULL);
-  g_assert_cmpint (classes->len, ==, 1);
+  g_assert_cmpuint (g_variant_n_children (classes), ==, 1);
+  g_variant_unref (classes);
   g_assert (tp_capabilities_supports_text_chats (caps));
 
   MYASSERT (tp_cli_channel_type_text_connect_to_message_received (chan, on_received,
