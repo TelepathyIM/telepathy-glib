@@ -199,7 +199,7 @@ def main(abifiles, symbols=None, unreleased_version=None,
         if missing:
             e('These symbols have disappeared:')
 
-            for symbol in missing:
+            for symbol in sorted(missing):
                 e('    %s', symbol)
 
             raise SystemExit(1)
@@ -216,12 +216,12 @@ def main(abifiles, symbols=None, unreleased_version=None,
                     print('%s {' % private_version)
                     print('    global:')
 
-                    for symbol in private:
+                    for symbol in sorted(private):
                         print('        %s;' % symbol)
 
                     print('};')
                 elif dpkg:
-                    for symbol in private:
+                    for symbol in sorted(private):
                         print(' %s@%s 0 1' % (symbol, private_version))
 
                 unreleased = set([symbol
@@ -232,7 +232,7 @@ def main(abifiles, symbols=None, unreleased_version=None,
             if unreleased_version is None:
                 e('Unversioned symbols are not allowed in releases:')
 
-                for symbol in unreleased:
+                for symbol in sorted(unreleased):
                     e('    %s', symbol)
 
                 raise SystemExit(1)
@@ -241,7 +241,7 @@ def main(abifiles, symbols=None, unreleased_version=None,
                 print("%s {" % unreleased_version)
                 print("    global:")
 
-                for symbol in unreleased:
+                for symbol in sorted(unreleased):
                     print("        %s;" % symbol)
 
                 print("} %s;" % version)
