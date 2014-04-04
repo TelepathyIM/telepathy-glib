@@ -114,7 +114,7 @@ show_cm (TpConnectionManager *cm)
       while (params)
         {
           TpConnectionManagerParam *param = params->data;
-          GValue value = { 0 };
+          GVariant *variant;
 
           g_message ("\tParameter: %s",
               tp_connection_manager_param_get_name (param));
@@ -138,13 +138,15 @@ show_cm (TpConnectionManager *cm)
               tp_connection_manager_param_is_dbus_property (param) ?
                 "yes" : "no");
 
-          if (tp_connection_manager_param_get_default (param, &value))
+          variant = tp_connection_manager_param_dup_default_variant (param);
+
+          if (variant != NULL)
             {
-              gchar *s = g_strdup_value_contents (&value);
+              gchar *s = g_variant_print (variant, TRUE);
 
               g_message ("\t\tDefault value: %s", s);
               g_free (s);
-              g_value_unset (&value);
+              g_variant_unref (variant);
             }
           else
             {

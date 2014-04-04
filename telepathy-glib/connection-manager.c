@@ -1851,37 +1851,6 @@ tp_connection_manager_param_is_dbus_property (
 }
 
 /**
- * tp_connection_manager_param_get_default:
- * @param: a parameter supported by a #TpConnectionManager
- * @value: pointer to an unset (all zeroes) #GValue into which the default's
- *         type and value are written
- *
- * Get the default value for this parameter, if there is one. If %FALSE is
- * returned, @value is left uninitialized.
- *
- * Returns: %TRUE if there is a default value
- * Since: 0.7.26
- */
-gboolean
-tp_connection_manager_param_get_default (
-    const TpConnectionManagerParam *param,
-    GValue *value)
-{
-  g_return_val_if_fail (param != NULL, FALSE);
-  g_return_val_if_fail (value != NULL, FALSE);
-  g_return_val_if_fail (!G_IS_VALUE (value), FALSE);
-
-  if ((param->flags & TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT) == 0
-      || !G_IS_VALUE (&param->default_value))
-    return FALSE;
-
-  g_value_init (value, G_VALUE_TYPE (&param->default_value));
-  g_value_copy (&param->default_value, value);
-
-  return TRUE;
-}
-
-/**
  * tp_connection_manager_param_dup_default_variant:
  * @param: a parameter supported by a #TpConnectionManager
  *

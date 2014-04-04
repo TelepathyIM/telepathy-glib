@@ -157,21 +157,22 @@ static void
 assert_param_flags (const TpConnectionManagerParam *param,
     TpConnMgrParamFlags flags)
 {
-  GValue value = {0, };
+  GVariant *value = NULL;
 
   g_assert (tp_connection_manager_param_is_required (param) ==
       ((flags & TP_CONN_MGR_PARAM_FLAG_REQUIRED) != 0));
   g_assert (tp_connection_manager_param_is_required_for_registration (param) ==
       ((flags & TP_CONN_MGR_PARAM_FLAG_REGISTER) != 0));
-  g_assert (tp_connection_manager_param_get_default (param, &value) ==
+  value = tp_connection_manager_param_dup_default_variant (param);
+  g_assert ((value != NULL) ==
       ((flags & TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT) != 0));
   g_assert (tp_connection_manager_param_is_secret (param) ==
       ((flags & TP_CONN_MGR_PARAM_FLAG_SECRET) != 0));
   g_assert (tp_connection_manager_param_is_dbus_property (param) ==
       ((flags & TP_CONN_MGR_PARAM_FLAG_DBUS_PROPERTY) != 0));
 
-  if (G_IS_VALUE (&value))
-    g_value_unset (&value);
+  if (value != NULL)
+    g_variant_unref (value);
 }
 
 static void
@@ -259,8 +260,6 @@ test_file_got_info (Test *test,
   const TpConnectionManagerParam *param;
   TpProtocol *protocol;
   gchar **strv;
-  GValue value = { 0 };
-  gboolean ok;
   GVariant *variant;
 
   test->cm = tp_client_factory_ensure_connection_manager (test->factory,
@@ -324,9 +323,6 @@ test_file_got_info (Test *test,
   g_assert (!tp_connection_manager_param_is_secret (param));
   g_assert (!tp_connection_manager_param_is_dbus_property (param));
   g_assert (!tp_connection_manager_param_is_dbus_property (param));
-  ok = tp_connection_manager_param_get_default (param, &value);
-  g_assert (!ok);
-  g_assert (!G_IS_VALUE (&value));
   g_assert (tp_connection_manager_param_dup_default_variant (param) == NULL);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 1);
@@ -342,14 +338,10 @@ test_file_got_info (Test *test,
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "b");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert (param == tp_protocol_get_param (protocol, "register"));
-  ok = tp_connection_manager_param_get_default (param, &value);
-  g_assert (ok);
-  g_assert (G_IS_VALUE (&value));
-  g_assert (G_VALUE_HOLDS_BOOLEAN (&value));
-  g_value_unset (&value);
   variant = tp_connection_manager_param_dup_default_variant (param);
   g_assert_cmpstr (g_variant_get_type_string (variant), ==, "b");
   g_assert_cmpint (g_variant_get_boolean (variant), ==, TRUE);
+  g_variant_unref (variant);
 
   g_assert_cmpuint (tp_protocol_get_params (protocol)->len, ==, 3);
 
@@ -385,10 +377,9 @@ test_complex_file_got_info (Test *test,
   gulong id;
   const TpConnectionManagerParam *param;
   TpProtocol *protocol;
-  gchar **strv;
-  GPtrArray *arr;
   GList *protocols;
-  GValue value = {0, };
+  GVariant *variant;
+  const gchar *s;
 
   test->cm = tp_client_factory_ensure_connection_manager (test->factory,
       "test_manager_file", NULL, &error);
@@ -423,50 +414,50 @@ test_complex_file_got_info (Test *test,
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "s");
   assert_param_flags (param,
       TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS_STRING (&value));
-  g_assert_cmpstr (g_value_get_string (&value), ==, "foo@default");
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "s");
+  g_assert_cmpstr (g_variant_get_string (variant, NULL), ==, "foo@default");
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 1);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "password");
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "s");
   assert_param_flags (param,
       TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_SECRET);
-  g_assert (!tp_connection_manager_param_get_default (param, &value));
+  g_assert (tp_connection_manager_param_dup_default_variant (param) == NULL);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 2);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "encryption-key");
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "s");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_SECRET);
-  g_assert (!tp_connection_manager_param_get_default (param, &value));
+  g_assert (tp_connection_manager_param_dup_default_variant (param) == NULL);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 3);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "port");
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "q");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS_UINT (&value));
-  g_assert_cmpuint (g_value_get_uint (&value), ==, 1234);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpuint (g_variant_get_uint32 (variant), ==, 1234);
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 4);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "register");
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "b");
   assert_param_flags (param, 0);
-  g_assert (!tp_connection_manager_param_get_default (param, &value));
+  g_assert (tp_connection_manager_param_dup_default_variant (param) == NULL);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 5);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "server-list");
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "as");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS (&value, G_TYPE_STRV));
-  strv = g_value_get_boxed (&value);
-  g_assert_cmpstr (strv[0], ==, "foo");
-  g_assert_cmpstr (strv[1], ==, "bar");
-  g_assert (strv[2] == NULL);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "as");
+  g_assert_cmpuint (g_variant_n_children (variant), ==, 2);
+  g_variant_get_child (variant, 0, "&s", &s);
+  g_assert_cmpstr (s, ==, "foo");
+  g_variant_get_child (variant, 1, "&s", &s);
+  g_assert_cmpstr (s, ==, "bar");
+  g_variant_unref (variant);
 
   g_assert_cmpuint (tp_protocol_get_params (protocol)->len, ==, 6);
 
@@ -478,51 +469,52 @@ test_complex_file_got_info (Test *test,
   assert_param_flags (param,
       TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "s");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS_STRING (&value));
-  g_assert_cmpstr (g_value_get_string (&value), ==, "bar@default");
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "s");
+  g_assert_cmpstr (g_variant_get_string (variant, NULL), ==, "bar@default");
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 1);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "encryption-key");
   assert_param_flags (param,
       TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_SECRET);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "s");
-  g_assert (!tp_connection_manager_param_get_default (param, &value));
+  g_assert (tp_connection_manager_param_dup_default_variant (param) == NULL);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 2);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "password");
   assert_param_flags (param,
       TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_SECRET);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "s");
-  g_assert (!tp_connection_manager_param_get_default (param, &value));
+  g_assert (tp_connection_manager_param_dup_default_variant (param) == NULL);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 3);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "port");
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "q");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS_UINT (&value));
-  g_assert_cmpuint (g_value_get_uint (&value), ==, 4321);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "u");
+  g_assert_cmpuint (g_variant_get_uint32 (variant), ==, 4321);
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 4);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "register");
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "b");
   assert_param_flags (param, 0);
-  g_assert (!tp_connection_manager_param_get_default (param, &value));
+  g_assert (tp_connection_manager_param_dup_default_variant (param) == NULL);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 5);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "server-list");
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "as");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS (&value, G_TYPE_STRV));
-  strv = g_value_get_boxed (&value);
-  g_assert_cmpstr (strv[0], ==, "bar");
-  g_assert_cmpstr (strv[1], ==, "foo");
-  g_assert (strv[2] == NULL);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "as");
+  g_assert_cmpuint (g_variant_n_children (variant), ==, 2);
+  g_variant_get_child (variant, 0, "&s", &s);
+  g_assert_cmpstr (s, ==, "bar");
+  g_variant_get_child (variant, 1, "&s", &s);
+  g_assert_cmpstr (s, ==, "foo");
+  g_variant_unref (variant);
 
   g_assert_cmpuint (tp_protocol_get_params (protocol)->len, ==, 6);
 
@@ -536,237 +528,250 @@ test_complex_file_got_info (Test *test,
   assert_param_flags (param,
       TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "s");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS_STRING (&value));
-  g_assert_cmpstr (g_value_get_string (&value), ==, "hello world");
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "s");
+  g_assert_cmpstr (g_variant_get_string (variant, NULL), ==, "hello world");
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 1);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "semicolons");
   assert_param_flags (param,
       TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT | TP_CONN_MGR_PARAM_FLAG_SECRET);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "s");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS_STRING (&value));
-  g_assert_cmpstr (g_value_get_string (&value), ==, "list;of;misc;");
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "s");
+  g_assert_cmpstr (g_variant_get_string (variant, NULL), ==, "list;of;misc;");
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 2);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "list");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "as");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS (&value, G_TYPE_STRV));
-  strv = g_value_get_boxed (&value);
-  g_assert_cmpstr (strv[0], ==, "list");
-  g_assert_cmpstr (strv[1], ==, "of");
-  g_assert_cmpstr (strv[2], ==, "misc");
-  g_assert (strv[3] == NULL);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "as");
+  g_assert_cmpuint (g_variant_n_children (variant), ==, 3);
+  g_variant_get_child (variant, 0, "&s", &s);
+  g_assert_cmpstr (s, ==, "list");
+  g_variant_get_child (variant, 1, "&s", &s);
+  g_assert_cmpstr (s, ==, "of");
+  g_variant_get_child (variant, 2, "&s", &s);
+  g_assert_cmpstr (s, ==, "misc");
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 3);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "unterminated-list");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "as");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS (&value, G_TYPE_STRV));
-  strv = g_value_get_boxed (&value);
-  g_assert_cmpstr (strv[0], ==, "list");
-  g_assert_cmpstr (strv[1], ==, "of");
-  g_assert_cmpstr (strv[2], ==, "misc");
-  g_assert (strv[3] == NULL);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "as");
+  g_assert_cmpuint (g_variant_n_children (variant), ==, 3);
+  g_variant_get_child (variant, 0, "&s", &s);
+  g_assert_cmpstr (s, ==, "list");
+  g_variant_get_child (variant, 1, "&s", &s);
+  g_assert_cmpstr (s, ==, "of");
+  g_variant_get_child (variant, 2, "&s", &s);
+  g_assert_cmpstr (s, ==, "misc");
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 4);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "spaces-in-list");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "as");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS (&value, G_TYPE_STRV));
-  strv = g_value_get_boxed (&value);
-  g_assert_cmpstr (strv[0], ==, "list");
-  g_assert_cmpstr (strv[1], ==, " of");
-  g_assert_cmpstr (strv[2], ==, " misc ");
-  g_assert (strv[3] == NULL);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "as");
+  g_assert_cmpuint (g_variant_n_children (variant), ==, 3);
+  g_variant_get_child (variant, 0, "&s", &s);
+  g_assert_cmpstr (s, ==, "list");
+  g_variant_get_child (variant, 1, "&s", &s);
+  g_assert_cmpstr (s, ==, " of");
+  g_variant_get_child (variant, 2, "&s", &s);
+  g_assert_cmpstr (s, ==, " misc ");
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 5);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "escaped-semicolon-in-list");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "as");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS (&value, G_TYPE_STRV));
-  strv = g_value_get_boxed (&value);
-  g_assert_cmpstr (strv[0], ==, "list;of");
-  g_assert_cmpstr (strv[1], ==, "misc");
-  g_assert (strv[2] == NULL);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "as");
+  g_assert_cmpuint (g_variant_n_children (variant), ==, 2);
+  g_variant_get_child (variant, 0, "&s", &s);
+  g_assert_cmpstr (s, ==, "list;of");
+  g_variant_get_child (variant, 1, "&s", &s);
+  g_assert_cmpstr (s, ==, "misc");
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 6);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "doubly-escaped-semicolon-in-list");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "as");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS (&value, G_TYPE_STRV));
-  strv = g_value_get_boxed (&value);
-  g_assert_cmpstr (strv[0], ==, "list\\");
-  g_assert_cmpstr (strv[1], ==, "of");
-  g_assert_cmpstr (strv[2], ==, "misc");
-  g_assert (strv[3] == NULL);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "as");
+  g_assert_cmpuint (g_variant_n_children (variant), ==, 3);
+  g_variant_get_child (variant, 0, "&s", &s);
+  g_assert_cmpstr (s, ==, "list\\");
+  g_variant_get_child (variant, 1, "&s", &s);
+  g_assert_cmpstr (s, ==, "of");
+  g_variant_get_child (variant, 2, "&s", &s);
+  g_assert_cmpstr (s, ==, "misc");
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 7);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "triply-escaped-semicolon-in-list");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "as");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS (&value, G_TYPE_STRV));
-  strv = g_value_get_boxed (&value);
-  g_assert_cmpstr (strv[0], ==, "list\\;of");
-  g_assert_cmpstr (strv[1], ==, "misc");
-  g_assert (strv[2] == NULL);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "as");
+  g_assert_cmpuint (g_variant_n_children (variant), ==, 2);
+  g_variant_get_child (variant, 0, "&s", &s);
+  g_assert_cmpstr (s, ==, "list\\;of");
+  g_variant_get_child (variant, 1, "&s", &s);
+  g_assert_cmpstr (s, ==, "misc");
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 8);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "empty-list");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "as");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS (&value, G_TYPE_STRV));
-  strv = g_value_get_boxed (&value);
-  g_assert (strv == NULL || strv[0] == NULL);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "as");
+  g_assert_cmpuint (g_variant_n_children (variant), ==, 0);
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 9);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "escaped-semicolon");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "s");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS_STRING (&value));
-  g_assert_cmpstr (g_value_get_string (&value), ==, "foo\\;bar");
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "s");
+  g_assert_cmpstr (g_variant_get_string (variant, NULL), ==, "foo\\;bar");
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 10);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "object");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "o");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS (&value, DBUS_TYPE_G_OBJECT_PATH));
-  g_assert_cmpstr (g_value_get_boxed (&value), ==, "/misc");
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "o");
+  g_assert_cmpstr (g_variant_get_string (variant, NULL), ==, "/misc");
+  g_variant_unref (variant);
 
+  /* We can't currently distinguish between u and q because we still go
+   * via dbus-glib */
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 11);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "q");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "q");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS_UINT (&value));
-  g_assert_cmpint (g_value_get_uint (&value), ==, 42);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "u");
+  g_assert_cmpuint (g_variant_get_uint32 (variant), ==, 42);
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 12);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "u");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "u");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS_UINT (&value));
-  g_assert_cmpint (g_value_get_uint (&value), ==, 42);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "u");
+  g_assert_cmpuint (g_variant_get_uint32 (variant), ==, 42);
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 13);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "t");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "t");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS_UINT64 (&value));
-  g_assert_cmpuint ((guint) g_value_get_uint64 (&value), ==, 42);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "t");
+  g_assert_cmpuint (g_variant_get_uint64 (variant), ==, 42);
+  g_variant_unref (variant);
 
+  /* We can't currently distinguish between i and n because we still go
+   * via dbus-glib */
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 14);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "n");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "n");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS_INT (&value));
-  g_assert_cmpint (g_value_get_int (&value), ==, -42);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "i");
+  g_assert_cmpint (g_variant_get_int32 (variant), ==, -42);
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 15);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "i");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "i");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS_INT (&value));
-  g_assert_cmpint (g_value_get_int (&value), ==, -42);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "i");
+  g_assert_cmpint (g_variant_get_int32 (variant), ==, -42);
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 16);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "x");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "x");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS_INT64 (&value));
-  g_assert_cmpint ((int) g_value_get_int64 (&value), ==, -42);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "x");
+  g_assert_cmpint (g_variant_get_int64 (variant), ==, -42);
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 17);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "d");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "d");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS_DOUBLE (&value));
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "d");
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 18);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "empty-string-in-list");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "as");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS (&value, G_TYPE_STRV));
-  strv = g_value_get_boxed (&value);
-  g_assert_cmpstr (strv[0], ==, "");
-  g_assert (strv[1] == NULL);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "as");
+  g_assert_cmpuint (g_variant_n_children (variant), ==, 1);
+  g_variant_get_child (variant, 0, "&s", &s);
+  g_assert_cmpstr (s, ==, "");
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 19);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "true");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "b");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS_BOOLEAN (&value));
-  g_assert_cmpint (g_value_get_boolean (&value), ==, TRUE);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "b");
+  g_assert_cmpint (g_variant_get_boolean (variant), ==, TRUE);
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 20);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "false");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "b");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS_BOOLEAN (&value));
-  g_assert_cmpint (g_value_get_boolean (&value), ==, FALSE);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "b");
+  g_assert_cmpint (g_variant_get_boolean (variant), ==, FALSE);
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 21);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "y");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "y");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS_UCHAR (&value));
-  g_assert_cmpint (g_value_get_uchar (&value), ==, 42);
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "y");
+  g_assert_cmpint (g_variant_get_byte (variant), ==, 42);
+  g_variant_unref (variant);
 
   param = g_ptr_array_index (tp_protocol_get_params (protocol), 22);
   g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==, "ao");
   assert_param_flags (param, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param), ==, "ao");
-  tp_connection_manager_param_get_default (param, &value);
-  g_assert (G_VALUE_HOLDS (&value,
-        TP_ARRAY_TYPE_OBJECT_PATH_LIST));
-  arr = g_value_get_boxed (&value);
-  g_assert_cmpuint (arr->len, ==, 2);
-  g_assert_cmpstr ((gchar *) g_ptr_array_index (arr, 0), ==, "/misc");
-  g_assert_cmpstr ((gchar *) g_ptr_array_index (arr, 1), ==, "/other");
-  g_value_unset (&value);
+  variant = tp_connection_manager_param_dup_default_variant (param);
+  g_assert_cmpstr (g_variant_get_type_string (variant), ==, "ao");
+  g_assert_cmpuint (g_variant_n_children (variant), ==, 2);
+  g_variant_get_child (variant, 0, "&o", &s);
+  g_assert_cmpstr (s, ==, "/misc");
+  g_variant_get_child (variant, 1, "&o", &s);
+  g_assert_cmpstr (s, ==, "/other");
+  g_variant_unref (variant);
 
   g_assert_cmpuint (tp_protocol_get_params (protocol)->len, ==, 23);
 }

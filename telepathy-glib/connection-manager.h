@@ -125,8 +125,6 @@ gboolean tp_connection_manager_param_is_secret (
     const TpConnectionManagerParam *param);
 gboolean tp_connection_manager_param_is_dbus_property (
     const TpConnectionManagerParam *param);
-gboolean tp_connection_manager_param_get_default (
-    const TpConnectionManagerParam *param, GValue *value);
 _TP_AVAILABLE_IN_0_20
 GVariant *tp_connection_manager_param_dup_default_variant (
     const TpConnectionManagerParam *param);
