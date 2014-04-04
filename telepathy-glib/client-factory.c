@@ -1461,8 +1461,9 @@ _tp_client_factory_ensure_channel_request (TpClientFactory *self,
  * _tp_client_factory_ensure_channel_dispatch_operation:
  * @self: a #TpClientFactory object
  * @object_path: the object path of a channel dispatch operation
- * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
- *  the immutable properties of the channel dispatch operation
+ * @immutable_properties: (allow-none): the immutable properties of the channel
+ *  dispatch operation as %G_VARIANT_TYPE_VARDICT; ownership is taken
+ *  if floating
  * @error: Used to raise an error if @object_path is not valid
  *
  * Returns a #TpChannelDispatchOperation for @object_path.
@@ -1482,21 +1483,34 @@ TpChannelDispatchOperation *
 _tp_client_factory_ensure_channel_dispatch_operation (
     TpClientFactory *self,
     const gchar *object_path,
-    GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error)
 {
-  TpChannelDispatchOperation *dispatch;
+  TpChannelDispatchOperation *dispatch = NULL;
 
   g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (g_variant_is_object_path (object_path), NULL);
+  g_return_val_if_fail (immutable_properties == NULL ||
+      g_variant_is_of_type (immutable_properties,
+        G_VARIANT_TYPE_VARDICT), NULL);
+
+  if (immutable_properties != NULL)
+    g_variant_ref_sink (immutable_properties);
 
   dispatch = lookup_proxy (self, object_path);
   if (dispatch != NULL)
-    return g_object_ref (dispatch);
+    {
+      g_object_ref (dispatch);
+      goto finally;
+    }
 
   dispatch = _tp_channel_dispatch_operation_new (self, object_path,
       immutable_properties, error);
   insert_proxy (self, dispatch);
+
+finally:
+  if (immutable_properties != NULL)
+    g_variant_unref (immutable_properties);
 
   return dispatch;
 }

@@ -38,7 +38,7 @@ TpChannelRequest *_tp_client_factory_ensure_channel_request (
 TpChannelDispatchOperation *
 _tp_client_factory_ensure_channel_dispatch_operation (TpClientFactory *self,
     const gchar *object_path,
-    GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error);
 
 TpAccount *_tp_account_new (TpClientFactory *factory,
@@ -65,7 +65,7 @@ TpChannelRequest *_tp_channel_request_new (
 TpChannelDispatchOperation *_tp_channel_dispatch_operation_new (
     TpClientFactory *factory,
     const gchar *object_path,
-    GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error);
 
 TpProtocol * _tp_protocol_new (TpClientFactory *factory,

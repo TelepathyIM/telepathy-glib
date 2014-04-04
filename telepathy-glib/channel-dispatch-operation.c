@@ -198,7 +198,9 @@ tp_channel_dispatch_operation_get_property (GObject *object,
       break;
 
     case PROP_CDO_PROPERTIES:
-      g_value_set_boxed (value, self->priv->immutable_properties);
+      /* consume floating ref */
+      g_value_set_variant (value,
+          tp_asv_to_vardict (self->priv->immutable_properties));
       break;
 
     default:
@@ -374,14 +376,19 @@ tp_channel_dispatch_operation_set_property (GObject *object,
 
       case PROP_CDO_PROPERTIES:
         {
-          GHashTable *asv = g_value_get_boxed (value);
+          GVariant *vardict = g_value_get_variant (value);
+          GHashTable *asv;
 
-          if (asv == NULL)
+          if (vardict == NULL)
             return;
 
+          /* This implementation is pretty stupid and does a lot of copying:
+           * we still work in terms of GHashTable<string,GValue> internally. */
+          asv = tp_asv_from_vardict (vardict);
           tp_g_hash_table_update (self->priv->immutable_properties,
               asv, (GBoxedCopyFunc) g_strdup,
               (GBoxedCopyFunc) tp_g_value_slice_dup);
+          g_hash_table_unref (asv);
         }
         break;
 
@@ -711,20 +718,19 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
    * TpChannelDispatchOperation:cdo-properties:
    *
    * The immutable D-Bus properties of this ChannelDispatchOperation,
-   * represented by a #GHashTable where the keys are D-Bus
-   * interface name + "." + property name, and the values are #GValue instances.
+   * represented by a #GVariant of type %G_VARIANT_TYPE_VARDICT
+   * where the keys are D-Bus
+   * interface name + "." + property name.
    *
    * Read-only except during construction. If this is not provided
    * during construction, it is not guaranteed to be set until
    * tp_proxy_prepare_async() has finished preparing
    * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE.
-   *
-   * Since: 0.11.5
    */
-  param_spec = g_param_spec_boxed ("cdo-properties",
+  param_spec = g_param_spec_variant ("cdo-properties",
       "Immutable D-Bus properties",
-      "A map D-Bus interface + \".\" + property name => GValue",
-      TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP,
+      "A map D-Bus interface + \".\" + property name => value",
+      G_VARIANT_TYPE_VARDICT, NULL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class,
       PROP_CDO_PROPERTIES, param_spec);
@@ -737,23 +743,29 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
 TpChannelDispatchOperation *
 _tp_channel_dispatch_operation_new (TpClientFactory *factory,
     const gchar *object_path,
-    GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error)
 {
-  TpChannelDispatchOperation *self;
-  gchar *unique_name;
+  TpChannelDispatchOperation *self = NULL;
+  gchar *unique_name = NULL;
 
   g_return_val_if_fail (factory != NULL, NULL);
+  g_return_val_if_fail (immutable_properties == NULL ||
+      g_variant_is_of_type (immutable_properties,
+        G_VARIANT_TYPE_VARDICT), NULL);
   g_return_val_if_fail (object_path != NULL, NULL);
   g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
+  if (immutable_properties != NULL)
+    g_variant_ref_sink (immutable_properties);
+
   if (!tp_dbus_check_valid_object_path (object_path, error))
-    return NULL;
+    goto finally;
 
   if (!_tp_dbus_connection_get_name_owner (
       tp_client_factory_get_dbus_connection (factory), -1,
       TP_CHANNEL_DISPATCHER_BUS_NAME, &unique_name, error))
-    return NULL;
+    goto finally;
 
   self = TP_CHANNEL_DISPATCH_OPERATION (g_object_new (
         TP_TYPE_CHANNEL_DISPATCH_OPERATION,
@@ -762,6 +774,10 @@ _tp_channel_dispatch_operation_new (TpClientFactory *factory,
         "cdo-properties", immutable_properties,
         "factory", factory,
         NULL));
+
+finally:
+  if (immutable_properties != NULL)
+    g_variant_unref (immutable_properties);
 
   g_free (unique_name);
 

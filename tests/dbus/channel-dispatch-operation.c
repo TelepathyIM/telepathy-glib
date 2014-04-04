@@ -179,26 +179,29 @@ teardown_services (Test *test,
 static TpChannelDispatchOperation *
 dispatch_operation_new (GDBusConnection *bus_connection,
     const gchar *object_path,
-    GHashTable *immutable_properties,
+    GHashTable *asv,
     GError **error)
 {
   TpChannelDispatchOperation *self;
   TpClientFactory *factory;
+  GVariant *immutable_properties;
 
   if (!tp_dbus_check_valid_object_path (object_path, error))
     return NULL;
 
-  if (immutable_properties == NULL)
-    immutable_properties = tp_asv_new (NULL, NULL);
+  if (asv == NULL)
+    immutable_properties = g_variant_new ("a{sv}", NULL);
   else
-    g_hash_table_ref (immutable_properties);
+    immutable_properties = tp_asv_to_vardict (asv);
+
+  g_variant_ref_sink (immutable_properties);
 
   factory = tp_client_factory_new (bus_connection);
   self = _tp_client_factory_ensure_channel_dispatch_operation (factory,
       object_path, immutable_properties, error);
 
   g_object_unref (factory);
-  g_hash_table_unref (immutable_properties);
+  g_variant_unref (immutable_properties);
 
   return self;
 }
@@ -306,7 +309,7 @@ check_immutable_properties (Test *test)
   TpConnection *conn;
   TpAccount *account;
   GStrv possible_handlers;
-  GHashTable *immutable_props;
+  GVariant *immutable_props;
 
   g_object_get (test->cdo,
       "connection", &conn,
@@ -347,16 +350,16 @@ check_immutable_properties (Test *test)
         POSSIBLE_HANDLERS[0]));
 
   /* immutable properties */
-  g_assert (tp_asv_get_object_path (immutable_props,
+  g_assert (tp_vardict_get_object_path (immutable_props,
         TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION) != NULL);
-  g_assert (tp_asv_get_object_path (immutable_props,
+  g_assert (tp_vardict_get_object_path (immutable_props,
         TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT) != NULL);
-  g_assert (tp_asv_get_strv (immutable_props,
-        TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS) != NULL);
-  g_assert (tp_asv_get_strv (immutable_props,
-        TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES) != NULL);
-  g_assert_cmpuint (g_hash_table_size (immutable_props), ==, 6);
-  g_hash_table_unref (immutable_props);
+  g_assert (g_variant_lookup (immutable_props,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS, "@as", NULL));
+  g_assert (g_variant_lookup (immutable_props,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES, "@as", NULL));
+  g_assert_cmpuint (g_variant_n_children (immutable_props), ==, 6);
+  g_variant_unref (immutable_props);
 }
 
 static void

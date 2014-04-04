@@ -1899,7 +1899,9 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
 
   dispatch_operation =
       _tp_client_factory_ensure_channel_dispatch_operation (
-          self->priv->factory, dispatch_operation_path, properties, &error);
+          self->priv->factory, dispatch_operation_path,
+          tp_asv_to_vardict (properties), &error);
+
   if (dispatch_operation == NULL)
     {
       DEBUG ("Failed to create TpChannelDispatchOperation: %s", error->message);
