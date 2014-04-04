@@ -210,11 +210,16 @@ const gchar * const *
 /* ugh, gtk-doc */
 tp_account_get_supersedes (TpAccount *self);
 
-void tp_account_get_avatar_async (TpAccount *account,
-    GAsyncReadyCallback callback, gpointer user_data);
+void tp_account_dup_avatar_async (TpAccount *account,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
-const GArray *tp_account_get_avatar_finish (TpAccount *account,
-    GAsyncResult *result, GError **error);
+G_GNUC_WARN_UNUSED_RESULT
+GBytes *tp_account_dup_avatar_finish (TpAccount *account,
+    GAsyncResult *result,
+    gchar **mime_type,
+    GError **error);
 
 void tp_account_set_avatar_async (TpAccount *self,
     const guchar *avatar,

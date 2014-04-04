@@ -2105,7 +2105,7 @@ tp_account_class_init (TpAccountClass *klass)
    * TpAccount::avatar-changed:
    * @self: a #TpAccount
    *
-   * Emitted when the avatar changes. Call tp_account_get_avatar_async()
+   * Emitted when the avatar changes. Call tp_account_dup_avatar_async()
    * to get the new avatar data.
    *
    * Since: 0.23.0
@@ -3311,93 +3311,109 @@ _tp_account_got_avatar_cb (TpProxy *proxy,
     gpointer user_data,
     GObject *weak_object)
 {
-  GSimpleAsyncResult *result = G_SIMPLE_ASYNC_RESULT (user_data);
+  GTask *task = user_data;
 
   if (error != NULL)
     {
       DEBUG ("Failed to get avatar: %s", error->message);
-      g_simple_async_result_set_from_error (result, error);
+      g_task_return_error (task, g_error_copy (error));
     }
   else if (!G_VALUE_HOLDS (out_Value, TP_STRUCT_TYPE_AVATAR))
     {
       DEBUG ("Avatar had wrong type: %s", G_VALUE_TYPE_NAME (out_Value));
-      g_simple_async_result_set_error (result, TP_ERROR, TP_ERROR_CONFUSED,
+      g_task_return_new_error (task, TP_ERROR, TP_ERROR_CONFUSED,
           "Incorrect type for Avatar property");
     }
   else
     {
-      GValueArray *avatar;
-      GArray *res;
-      const GArray *tmp;
-      const gchar *mime_type;
-
-      avatar = g_value_get_boxed (out_Value);
-      tp_value_array_unpack (avatar, 2,
-          &tmp,
-          &mime_type);
-
-      res = g_array_sized_new (FALSE, FALSE, 1, tmp->len);
-      g_array_append_vals (res, tmp->data, tmp->len);
-      g_simple_async_result_set_op_res_gpointer (result, res,
-          (GDestroyNotify) g_array_unref);
+      /* we just put the GValueArray in the task, and use a non-trivial
+       * finish function to split it into data and MIME type */
+      g_task_return_pointer (task, g_value_dup_boxed (out_Value),
+          (GDestroyNotify) tp_value_array_free);
     }
 
-  g_simple_async_result_complete (result);
-  g_object_unref (result);
+  g_object_unref (task);
 }
 
 /**
- * tp_account_get_avatar_async:
+ * tp_account_dup_avatar_async:
  * @account: a #TpAccount
+ * @cancellable: (allow-none): may be used to cancel the async request
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
  * Requests an asynchronous get of @account's avatar. When
  * the operation is finished, @callback will be called. You can then call
- * tp_account_get_avatar_finish() to get the result of the operation.
+ * tp_account_dup_avatar_finish() to get the result of the operation.
  *
  * Since: 0.9.0
  */
 void
-tp_account_get_avatar_async (TpAccount *account,
+tp_account_dup_avatar_async (TpAccount *account,
+    GCancellable *cancellable,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  GSimpleAsyncResult *result;
+  GTask *task;
 
   g_return_if_fail (TP_IS_ACCOUNT (account));
+  /* this method makes no sense to call for its side-effects */
+  g_return_if_fail (callback != NULL);
 
-  result = g_simple_async_result_new (G_OBJECT (account),
-      callback, user_data, tp_account_get_avatar_finish);
+  task = g_task_new (account, cancellable, callback, user_data);
+  g_task_set_source_tag (task, tp_account_dup_avatar_async);
 
   tp_cli_dbus_properties_call_get (account, -1,
       TP_IFACE_ACCOUNT_INTERFACE_AVATAR1, "Avatar", _tp_account_got_avatar_cb,
-      result, NULL, G_OBJECT (account));
+      task, NULL, NULL);
 }
 
 /**
- * tp_account_get_avatar_finish:
+ * tp_account_dup_avatar_finish:
  * @account: a #TpAccount
  * @result: a #GAsyncResult
+ * @mime_type: (out) (allow-none) (transfer full): optionally used to
+ *  return the MIME-type of the avatar, typically "image/png"
  * @error: a #GError to fill
  *
- * Finishes an async get operation of @account's avatar.
+ * Interprets the result of tp_account_dup_avatar_async().
  *
- * Beware that the returned value is only valid until @result is freed.
- * Copy it with g_array_ref() if you need to keep it for longer.
- *
- * Returns: (element-type guchar) (transfer none): a #GArray of #guchar
- *  containing the bytes of the account's avatar, or %NULL on failure
- *
- * Since: 0.9.0
+ * Returns: the bytes of the account's avatar, or %NULL on failure
  */
-const GArray *
-tp_account_get_avatar_finish (TpAccount *account,
+GBytes *
+tp_account_dup_avatar_finish (TpAccount *account,
     GAsyncResult *result,
+    gchar **mime_type,
     GError **error)
 {
-  _tp_implement_finish_return_copy_pointer (account,
-      tp_account_get_avatar_finish, /* do not copy */);
+  GValueArray *va;
+  const GArray *tmp;
+  const gchar *mime_type_tmp;
+  GBytes *ret;
+
+  g_return_val_if_fail (g_task_is_valid (result, account), NULL);
+  g_return_val_if_fail (g_async_result_is_tagged (result,
+        tp_account_dup_avatar_async), NULL);
+
+  if (mime_type != NULL)
+    *mime_type = NULL;
+
+  /* take ownership */
+  va = g_task_propagate_pointer (G_TASK (result), error);
+
+  if (va == NULL)
+    return NULL;
+
+  tp_value_array_unpack (va, 2,
+      &tmp,
+      &mime_type_tmp);
+
+  if (mime_type != NULL)
+    *mime_type = g_strdup (mime_type_tmp);
+
+  ret = g_bytes_new (tmp->data, tmp->len);
+  tp_value_array_free (va);
+  return ret;
 }
 
 static void

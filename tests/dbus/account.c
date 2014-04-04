@@ -665,7 +665,9 @@ static void
 test_avatar (Test *test,
     gconstpointer mode)
 {
-  const GArray *blob;
+  GBytes *blob;
+  gsize len;
+  gchar *mime;
   GError *error = NULL;
 
   test->account = tp_tests_account_new (test->dbus, ACCOUNT_PATH, NULL);
@@ -674,17 +676,20 @@ test_avatar (Test *test,
   tp_proxy_prepare_async (test->account, NULL, account_prepare_cb, test);
   g_main_loop_run (test->mainloop);
 
-  tp_account_get_avatar_async (test->account,
+  tp_account_dup_avatar_async (test->account, NULL,
       tp_tests_result_ready_cb, &test->result);
   tp_tests_run_until_result (&test->result);
 
-  blob = tp_account_get_avatar_finish (
-      test->account, test->result, &error);
+  blob = tp_account_dup_avatar_finish (
+      test->account, test->result, &mime, &error);
   g_assert_no_error (error);
 
-  g_assert_cmpuint (blob->len, ==, 4);
-  g_assert_cmpstr (((char *) blob->data), ==, ":-)");
+  g_assert_cmpstr ((const char *) g_bytes_get_data (blob, &len), ==, ":-)");
+  g_assert_cmpuint (len, ==, 4);
+  g_assert_cmpstr (mime, ==, "text/plain");
 
+  g_bytes_unref (blob);
+  g_free (mime);
   tp_clear_object (&test->result);
 
   /* change the avatar */
@@ -694,18 +699,19 @@ test_avatar (Test *test,
   tp_tests_simple_account_set_avatar (test->account_service, ":-(");
   g_main_loop_run (test->mainloop);
 
-  tp_account_get_avatar_async (test->account,
+  tp_account_dup_avatar_async (test->account, NULL,
       tp_tests_result_ready_cb, &test->result);
   tp_tests_run_until_result (&test->result);
 
-  blob = tp_account_get_avatar_finish (
-      test->account, test->result, &error);
+  blob = tp_account_dup_avatar_finish (
+      test->account, test->result, NULL, &error);
   g_assert_no_error (error);
 
   g_assert (blob != NULL);
-  g_assert_cmpuint (blob->len, ==, 4);
-  g_assert_cmpstr (((char *) blob->data), ==, ":-(");
+  g_assert_cmpstr ((const char *) g_bytes_get_data (blob, &len), ==, ":-(");
+  g_assert_cmpuint (len, ==, 4);
 
+  g_bytes_unref (blob);
   tp_clear_object (&test->result);
 }
 
