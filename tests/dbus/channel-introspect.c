@@ -18,6 +18,7 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
 
+#include "tests/lib/debug.h"
 #include "tests/lib/myassert.h"
 #include "tests/lib/contacts-conn.h"
 #include "tests/lib/textchan-group.h"
@@ -52,6 +53,7 @@ assert_chan_sane (TpChannel *chan,
   GVariant *variant;
   TpEntityType type;
   TpContact *contact;
+  gchar *s;
 
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
       TRUE);
@@ -64,7 +66,8 @@ assert_chan_sane (TpChannel *chan,
   g_assert_cmpuint (tp_channel_get_channel_type_id (chan), ==,
       TP_IFACE_QUARK_CHANNEL_TYPE_TEXT);
   g_assert (TP_IS_CONNECTION (tp_channel_get_connection (chan)));
-  g_assert_cmpstr (tp_channel_get_identifier (chan), ==, IDENTIFIER);
+  g_assert_cmpstr (tp_channel_get_identifier (chan), ==,
+      handle == 0 ? "" : IDENTIFIER);
   g_assert (tp_channel_get_requested (chan) == requested);
 
   contact = tp_channel_get_initiator_contact (chan);
@@ -85,6 +88,9 @@ assert_chan_sane (TpChannel *chan,
 
   variant = tp_channel_dup_immutable_properties (chan);
   g_assert (variant != NULL);
+  s = g_variant_print (variant, TRUE);
+  DEBUG ("%s", s);
+  g_free (s);
   g_assert_cmpstr (
       tp_vardict_get_string (variant, TP_PROP_CHANNEL_CHANNEL_TYPE), ==,
       TP_IFACE_CHANNEL_TYPE_TEXT);
@@ -96,7 +102,8 @@ assert_chan_sane (TpChannel *chan,
       handle);
   g_assert_cmpstr (
       tp_vardict_get_string (variant, TP_PROP_CHANNEL_TARGET_ID), ==,
-      IDENTIFIER);
+      handle == 0 ? "" : IDENTIFIER);
+  g_variant_unref (variant);
 }
 
 int
@@ -270,9 +277,9 @@ main (int argc,
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
             TP_IFACE_CHANNEL_TYPE_TEXT,
         TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-            TP_ENTITY_TYPE_CONTACT,
-        TP_PROP_CHANNEL_TARGET_HANDLE, G_TYPE_UINT, handle,
-        TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, IDENTIFIER,
+            TP_ENTITY_TYPE_NONE,
+        TP_PROP_CHANNEL_TARGET_HANDLE, G_TYPE_UINT, 0,
+        TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, "",
         TP_PROP_CHANNEL_INITIATOR_HANDLE, G_TYPE_UINT, handle,
         TP_PROP_CHANNEL_INITIATOR_ID, G_TYPE_STRING, IDENTIFIER,
         TP_PROP_CHANNEL_INTERFACES, G_TYPE_STRV, interfaces,
@@ -340,11 +347,10 @@ main (int argc,
     asv = tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
             TP_IFACE_CHANNEL_TYPE_TEXT,
-        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-            TP_ENTITY_TYPE_CONTACT,
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT, TP_ENTITY_TYPE_NONE,
         TP_PROP_CHANNEL_TARGET_HANDLE, G_TYPE_UINT, handle,
-        TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, IDENTIFIER,
-        TP_PROP_CHANNEL_INITIATOR_HANDLE, G_TYPE_UINT, handle,
+        TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, "",
+        TP_PROP_CHANNEL_INITIATOR_HANDLE, G_TYPE_UINT, 0,
         TP_PROP_CHANNEL_INITIATOR_ID, G_TYPE_STRING, IDENTIFIER,
         TP_PROP_CHANNEL_INTERFACES, G_TYPE_STRV, interfaces,
         TP_PROP_CHANNEL_REQUESTED, G_TYPE_BOOLEAN, FALSE,
