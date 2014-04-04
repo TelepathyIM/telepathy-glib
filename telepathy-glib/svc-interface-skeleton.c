@@ -90,10 +90,73 @@ tp_svc_interface_skeleton_method_call (GDBusConnection *connection,
   g_object_unref (object);
 }
 
+static GVariant *
+tp_svc_interface_skeleton_get_property (GDBusConnection *connection,
+    const gchar *sender,
+    const gchar *object_path,
+    const gchar *interface_name,
+    const gchar *property_name,
+    GError **error,
+    gpointer user_data)
+{
+  TpSvcInterfaceSkeleton *self = TP_SVC_INTERFACE_SKELETON (user_data);
+  GObject *object;
+  GValue value = G_VALUE_INIT;
+  GVariant *ret = NULL;
+
+  DEBUG ("Get(%s.%s) on %s %p from %s", interface_name, property_name,
+      object_path, self, sender);
+
+  object = g_weak_ref_get (&self->priv->object);
+  g_return_val_if_fail (object != NULL, NULL);
+
+  if (tp_dbus_properties_mixin_get (object, interface_name, property_name,
+          &value, error))
+    {
+      ret = dbus_g_value_build_g_variant (&value);
+      g_value_unset (&value);
+    }
+
+  g_object_unref (object);
+
+  return ret;
+}
+
+static gboolean
+tp_svc_interface_skeleton_set_property (GDBusConnection *connection,
+    const gchar *sender,
+    const gchar *object_path,
+    const gchar *interface_name,
+    const gchar *property_name,
+    GVariant *variant,
+    GError **error,
+    gpointer user_data)
+{
+  TpSvcInterfaceSkeleton *self = TP_SVC_INTERFACE_SKELETON (user_data);
+  GObject *object;
+  GValue value = G_VALUE_INIT;
+  gboolean ret;
+
+  DEBUG ("Set(%s.%s) on %s %p from %s", interface_name, property_name,
+      object_path, self, sender);
+
+  object = g_weak_ref_get (&self->priv->object);
+  g_return_val_if_fail (object != NULL, FALSE);
+
+  dbus_g_value_parse_g_variant (variant, &value);
+  ret = tp_dbus_properties_mixin_set (object, interface_name, property_name,
+      &value, error);
+
+  g_value_unset (&value);
+  g_object_unref (object);
+
+  return ret;
+}
+
 static GDBusInterfaceVTable vtable = {
     tp_svc_interface_skeleton_method_call,
-    NULL,
-    NULL
+    tp_svc_interface_skeleton_get_property,
+    tp_svc_interface_skeleton_set_property
 };
 
 static GDBusInterfaceVTable *
@@ -109,10 +172,14 @@ tp_svc_interface_skeleton_get_properties (GDBusInterfaceSkeleton *skel)
   GVariant *ret;
   GHashTable *asv;
   const gchar *iface_name = self->priv->iinfo->interface_info->name;
+  GObject *object;
+
+  object = g_weak_ref_get (&self->priv->object);
+  g_return_val_if_fail (object != NULL, NULL);
 
   /* For now assume we have the TpDBusPropertiesMixin if we have
    * any properties at all. This never returns NULL. */
-  asv = tp_dbus_properties_mixin_dup_all ((GObject *) self, iface_name);
+  asv = tp_dbus_properties_mixin_dup_all (object, iface_name);
 
   ret = g_variant_ref_sink (tp_asv_to_vardict (asv));
   g_hash_table_unref (asv);

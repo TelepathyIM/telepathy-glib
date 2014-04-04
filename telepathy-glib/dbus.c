@@ -41,6 +41,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/proxy.h>
 #include <telepathy-glib/sliced-gvalue.h>
+#include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/svc-interface-skeleton-internal.h>
 #include <telepathy-glib/util.h>
 
@@ -835,6 +836,11 @@ tp_dbus_connection_try_register_object (GDBusConnection *dbus_connection,
           DEBUG ("- %s is not a D-Bus interface", g_type_name (iface));
           continue;
         }
+
+      /* We don't want to export Properties interface, TpSvcInterfaceSkeleton
+       * will handle that itself. */
+      if (iface == TP_TYPE_SVC_DBUS_PROPERTIES)
+        continue;
 
       skeleton = _tp_svc_interface_skeleton_new (object, iface, iinfo);
 
