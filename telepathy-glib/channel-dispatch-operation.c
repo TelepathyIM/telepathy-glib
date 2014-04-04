@@ -122,7 +122,8 @@ struct _TpChannelDispatchOperationPrivate {
   TpAccount *account;
   TpChannel *channel;
   GStrv possible_handlers;
-  GHashTable *immutable_properties;
+  /* a{sv} */
+  GVariant *immutable_properties;
 };
 
 enum
@@ -144,8 +145,8 @@ tp_channel_dispatch_operation_init (TpChannelDispatchOperation *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TYPE_CHANNEL_DISPATCH_OPERATION, TpChannelDispatchOperationPrivate);
 
-  self->priv->immutable_properties = g_hash_table_new_full (g_str_hash,
-      g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free);
+  self->priv->immutable_properties = g_variant_ref_sink (
+      g_variant_new ("a{sv}", NULL));
 }
 
 static void
@@ -198,9 +199,7 @@ tp_channel_dispatch_operation_get_property (GObject *object,
       break;
 
     case PROP_CDO_PROPERTIES:
-      /* consume floating ref */
-      g_value_set_variant (value,
-          tp_asv_to_vardict (self->priv->immutable_properties));
+      g_value_set_variant (value, self->priv->immutable_properties);
       break;
 
     default:
@@ -210,13 +209,16 @@ tp_channel_dispatch_operation_get_property (GObject *object,
 }
 
 static void
-maybe_set_connection (TpChannelDispatchOperation *self,
-    const gchar *path)
+maybe_set_connection (TpChannelDispatchOperation *self)
 {
   GError *error = NULL;
+  const gchar *path;
 
   if (self->priv->connection != NULL)
     return;
+
+  path = tp_vardict_get_object_path (self->priv->immutable_properties,
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION);
 
   if (path == NULL)
     return;
@@ -230,23 +232,20 @@ maybe_set_connection (TpChannelDispatchOperation *self,
       return;
     }
 
-  if (g_hash_table_lookup (self->priv->immutable_properties,
-        TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION) == NULL)
-    g_hash_table_insert (self->priv->immutable_properties,
-        g_strdup (TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION),
-        tp_g_value_slice_new_boxed (DBUS_TYPE_G_OBJECT_PATH, path));
-
   g_object_notify ((GObject *) self, "connection");
 }
 
 static void
-maybe_set_account (TpChannelDispatchOperation *self,
-    const gchar *path)
+maybe_set_account (TpChannelDispatchOperation *self)
 {
   GError *error = NULL;
+  const gchar *path;
 
   if (self->priv->account != NULL)
     return;
+
+  path = tp_vardict_get_object_path (self->priv->immutable_properties,
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT);
 
   if (path == NULL)
     return;
@@ -260,31 +259,35 @@ maybe_set_account (TpChannelDispatchOperation *self,
       return;
     }
 
-  if (g_hash_table_lookup (self->priv->immutable_properties,
-        TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT) == NULL)
-    g_hash_table_insert (self->priv->immutable_properties,
-        g_strdup (TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT),
-        tp_g_value_slice_new_boxed (DBUS_TYPE_G_OBJECT_PATH, path));
-
   g_object_notify ((GObject *) self, "account");
 }
 
 static void
-maybe_set_channel (TpChannelDispatchOperation *self,
-    const gchar *path,
-    GHashTable *properties)
+maybe_set_channel (TpChannelDispatchOperation *self)
 {
   GError *error = NULL;
+  const gchar *path;
+  GVariant *properties;
 
   if (self->priv->channel != NULL)
     return;
 
+  path = tp_vardict_get_object_path (self->priv->immutable_properties,
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL);
+
   if (path == NULL)
     return;
 
+  properties = g_variant_lookup_value (self->priv->immutable_properties,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL_PROPERTIES,
+        G_VARIANT_TYPE_VARDICT);
+
   self->priv->channel = tp_client_factory_ensure_channel (
       tp_proxy_get_factory (self), self->priv->connection, path,
-      tp_asv_to_vardict (properties), &error);
+      properties, &error);
+
+  g_variant_unref (properties);
+
   if (self->priv->channel == NULL)
     {
       DEBUG ("Failed to create channel %s: %s", path, error->message);
@@ -292,61 +295,47 @@ maybe_set_channel (TpChannelDispatchOperation *self,
       return;
     }
 
-  if (g_hash_table_lookup (self->priv->immutable_properties,
-        TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL) == NULL)
-    {
-      g_hash_table_insert (self->priv->immutable_properties,
-          g_strdup (TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL),
-          tp_g_value_slice_new_boxed (DBUS_TYPE_G_OBJECT_PATH, path));
-    }
-
-  if (g_hash_table_lookup (self->priv->immutable_properties,
-        TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL_PROPERTIES) == NULL)
-    {
-      g_hash_table_insert (self->priv->immutable_properties,
-          g_strdup (TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL_PROPERTIES),
-          tp_g_value_slice_new_boxed (
-            TP_HASH_TYPE_STRING_VARIANT_MAP, properties));
-    }
-
   g_object_notify ((GObject *) self, "channel");
 }
 
 static void
-maybe_set_possible_handlers (TpChannelDispatchOperation *self,
-    GStrv handlers)
+maybe_set_possible_handlers (TpChannelDispatchOperation *self)
 {
+  GVariant *handlers;
+
   if (self->priv->possible_handlers != NULL)
     return;
+
+  handlers = g_variant_lookup_value (self->priv->immutable_properties,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS,
+        G_VARIANT_TYPE_STRING_ARRAY);
 
   if (handlers == NULL)
     return;
 
-  self->priv->possible_handlers = g_strdupv (handlers);
+  self->priv->possible_handlers = g_variant_dup_strv (handlers, NULL);
+  g_variant_unref (handlers);
 
   g_object_notify ((GObject *) self, "possible-handlers");
-
-  if (g_hash_table_lookup (self->priv->immutable_properties,
-        TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS) != NULL)
-    return;
-
-  g_hash_table_insert (self->priv->immutable_properties,
-      g_strdup (TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS),
-      tp_g_value_slice_new_boxed (G_TYPE_STRV, handlers));
 }
 
 static void
-maybe_set_interfaces (TpChannelDispatchOperation *self,
-    const gchar **interfaces)
+maybe_set_interfaces (TpChannelDispatchOperation *self)
 {
-  if (interfaces == NULL)
+  GVariant *variant;
+  const gchar **interfaces;
+
+  variant = g_variant_lookup_value (self->priv->immutable_properties,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,
+        G_VARIANT_TYPE_STRING_ARRAY);
+
+  if (variant == NULL)
     return;
 
+  interfaces = g_variant_get_strv (variant, NULL);
   tp_proxy_add_interfaces ((TpProxy *) self, interfaces);
-
-  g_hash_table_insert (self->priv->immutable_properties,
-      g_strdup (TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES),
-      tp_g_value_slice_new_boxed (G_TYPE_STRV, interfaces));
+  g_free (interfaces);
+  g_variant_unref (variant);
 }
 
 static void
@@ -377,18 +366,12 @@ tp_channel_dispatch_operation_set_property (GObject *object,
       case PROP_CDO_PROPERTIES:
         {
           GVariant *vardict = g_value_get_variant (value);
-          GHashTable *asv;
 
           if (vardict == NULL)
             return;
 
-          /* This implementation is pretty stupid and does a lot of copying:
-           * we still work in terms of GHashTable<string,GValue> internally. */
-          asv = tp_asv_from_vardict (vardict);
-          tp_g_hash_table_update (self->priv->immutable_properties,
-              asv, (GBoxedCopyFunc) g_strdup,
-              (GBoxedCopyFunc) tp_g_value_slice_dup);
-          g_hash_table_unref (asv);
+          g_clear_pointer (&self->priv->immutable_properties, g_variant_unref);
+          self->priv->immutable_properties = g_variant_ref (vardict);
         }
         break;
 
@@ -396,6 +379,16 @@ tp_channel_dispatch_operation_set_property (GObject *object,
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
   }
+}
+
+static void
+extract_core_properties (TpChannelDispatchOperation *self)
+{
+  maybe_set_connection (self);
+  maybe_set_account (self);
+  maybe_set_channel (self);
+  maybe_set_possible_handlers (self);
+  maybe_set_interfaces (self);
 }
 
 static void
@@ -410,33 +403,7 @@ tp_channel_dispatch_operation_constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 
-  maybe_set_connection (self,
-      tp_asv_get_boxed (self->priv->immutable_properties,
-        TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION,
-        DBUS_TYPE_G_OBJECT_PATH));
-
-  maybe_set_account (self,
-      tp_asv_get_boxed (self->priv->immutable_properties,
-        TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT,
-        DBUS_TYPE_G_OBJECT_PATH));
-
-  maybe_set_channel (self,
-      tp_asv_get_boxed (self->priv->immutable_properties,
-        TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL,
-        DBUS_TYPE_G_OBJECT_PATH),
-      tp_asv_get_boxed (self->priv->immutable_properties,
-        TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL_PROPERTIES,
-        TP_HASH_TYPE_STRING_VARIANT_MAP));
-
-  maybe_set_possible_handlers (self,
-      tp_asv_get_boxed (self->priv->immutable_properties,
-        TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS,
-        G_TYPE_STRV));
-
-  maybe_set_interfaces (self,
-      tp_asv_get_boxed (self->priv->immutable_properties,
-        TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,
-        G_TYPE_STRV));
+  extract_core_properties (self);
 
   sc = tp_cli_channel_dispatch_operation_connect_to_finished (self,
       tp_channel_dispatch_operation_finished_cb, NULL, NULL, NULL, &error);
@@ -474,11 +441,7 @@ tp_channel_dispatch_operation_dispose (GObject *object)
   g_strfreev (self->priv->possible_handlers);
   self->priv->possible_handlers = NULL;
 
-  if (self->priv->immutable_properties != NULL)
-    {
-      g_hash_table_unref (self->priv->immutable_properties);
-      self->priv->immutable_properties = NULL;
-    }
+  g_clear_pointer (&self->priv->immutable_properties, g_variant_unref);
 
   if (dispose != NULL)
     dispose (object);
@@ -495,6 +458,8 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
   GSimpleAsyncResult *result = user_data;
   gboolean prepared = TRUE;
   GError *e = NULL;
+  GVariantDict dict;
+  gpointer p;
 
   if (error != NULL)
     {
@@ -506,9 +471,63 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
       goto out;
     }
 
-  /* Connection */
-  maybe_set_connection (self, tp_asv_get_boxed (props, "Connection",
-        DBUS_TYPE_G_OBJECT_PATH));
+  /* copy the immutable properties we know (if any) as a starting point */
+  g_variant_dict_init (&dict, self->priv->immutable_properties);
+
+  /* copy the properties we received from D-Bus into that dict */
+
+  p = tp_asv_get_boxed (props, "Connection", DBUS_TYPE_G_OBJECT_PATH);
+
+  if (p != NULL)
+    g_variant_dict_insert_value (&dict,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION,
+        g_variant_new_object_path (p));
+
+  p = tp_asv_get_boxed (props, "Account", DBUS_TYPE_G_OBJECT_PATH);
+
+  if (p != NULL)
+    g_variant_dict_insert_value (&dict,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT,
+        g_variant_new_object_path (p));
+
+  p = tp_asv_get_boxed (props, "Channel", DBUS_TYPE_G_OBJECT_PATH);
+
+  if (p != NULL)
+    g_variant_dict_insert_value (&dict,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL,
+        g_variant_new_object_path (p));
+
+  p = tp_asv_get_boxed (props, "ChannelProperties",
+      TP_HASH_TYPE_STRING_VARIANT_MAP);
+
+  if (p != NULL)
+    g_variant_dict_insert_value (&dict,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL_PROPERTIES,
+        tp_asv_to_vardict (p));
+
+  p = tp_asv_get_boxed (props, "PossibleHandlers", G_TYPE_STRV);
+
+  if (p != NULL)
+    g_variant_dict_insert_value (&dict,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS,
+        g_variant_new_strv (p, -1));
+
+  p = tp_asv_get_boxed (props, "Interfaces", G_TYPE_STRV);
+
+  if (p != NULL)
+    g_variant_dict_insert_value (&dict,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,
+        g_variant_new_strv (p, -1));
+
+  /* swap out our immutable properties for the new, hopefully more
+   * complete set */
+  g_clear_pointer (&self->priv->immutable_properties, g_variant_unref);
+  self->priv->immutable_properties = g_variant_ref_sink (
+      g_variant_dict_end (&dict));
+
+  /* copy those that have high-level API into the corresponding
+   * struct members */
+  extract_core_properties (self);
 
   if (self->priv->connection == NULL)
     {
@@ -520,10 +539,6 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
       goto out;
     }
 
-  /* Account */
-  maybe_set_account (self, tp_asv_get_boxed (props, "Account",
-        DBUS_TYPE_G_OBJECT_PATH));
-
   if (self->priv->account == NULL)
     {
       e = g_error_new_literal (TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
@@ -533,12 +548,6 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
       prepared = FALSE;
       goto out;
     }
-
-  /* Channel */
-  maybe_set_channel (self,
-      tp_asv_get_boxed (props, "Channel", DBUS_TYPE_G_OBJECT_PATH),
-      tp_asv_get_boxed (props, "ChannelProperties",
-        TP_HASH_TYPE_STRING_VARIANT_MAP));
 
   if (self->priv->channel == NULL)
     {
@@ -550,11 +559,6 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
       goto out;
     }
 
-
-  /* PossibleHandlers */
-  maybe_set_possible_handlers (self, tp_asv_get_boxed (props,
-        "PossibleHandlers", G_TYPE_STRV));
-
   if (self->priv->possible_handlers == NULL)
     {
       e = g_error_new_literal (TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
@@ -564,9 +568,6 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
       prepared = FALSE;
       goto out;
     }
-
-  maybe_set_interfaces (self, tp_asv_get_boxed (props,
-        "Interfaces", G_TYPE_STRV));
 
   g_object_notify ((GObject *) self, "cdo-properties");
 
