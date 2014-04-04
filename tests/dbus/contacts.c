@@ -1554,21 +1554,11 @@ test_dup_if_possible (Fixture *f,
 
 typedef struct
 {
+  gboolean signal_received;
   TpSubscriptionState subscribe;
   TpSubscriptionState publish;
-  const gchar *publish_request;
-
-  GMainLoop *loop;
+  gchar *publish_request;
 } SubscriptionStates;
-
-static void
-assert_subscription_states (TpContact *contact,
-    SubscriptionStates *states)
-{
-  g_assert_cmpint (tp_contact_get_subscribe_state (contact), ==, states->subscribe);
-  g_assert_cmpint (tp_contact_get_publish_state (contact), ==, states->publish);
-  g_assert_cmpstr (tp_contact_get_publish_request (contact), ==, states->publish_request);
-}
 
 static void
 subscription_states_changed_cb (TpContact *contact,
@@ -1577,8 +1567,16 @@ subscription_states_changed_cb (TpContact *contact,
     const gchar *publish_request,
     SubscriptionStates *states)
 {
-  assert_subscription_states (contact, states);
-  g_main_loop_quit (states->loop);
+  g_assert_cmpint (tp_contact_get_subscribe_state (contact), ==, subscribe);
+  g_assert_cmpint (tp_contact_get_publish_state (contact), ==, publish);
+  g_assert_cmpstr (tp_contact_get_publish_request (contact), ==,
+      publish_request);
+
+  states->signal_received = TRUE;
+  states->subscribe = subscribe;
+  states->publish = publish;
+  g_clear_pointer (&states->publish_request, g_free);
+  states->publish_request = g_strdup (publish_request);
 }
 
 static void
@@ -1589,8 +1587,8 @@ test_subscription_states (Fixture *f,
   TpContact *alice;
   TpTestsContactListManager *manager;
   GQuark features[] = { TP_CONTACT_FEATURE_SUBSCRIPTION_STATES, 0 };
-  SubscriptionStates states = { TP_SUBSCRIPTION_STATE_NO,
-      TP_SUBSCRIPTION_STATE_NO, "", f->result.loop };
+  SubscriptionStates states = { FALSE, TP_SUBSCRIPTION_STATE_NO,
+      TP_SUBSCRIPTION_STATE_NO, NULL };
 
   manager = tp_tests_contacts_connection_get_contact_list_manager (
       f->service_conn);
@@ -1604,7 +1602,12 @@ test_subscription_states (Fixture *f,
   g_main_loop_run (f->result.loop);
   g_assert_no_error (f->result.error);
 
-  assert_subscription_states (alice, &states);
+  g_assert_cmpint (tp_contact_get_subscribe_state (alice), ==,
+      TP_SUBSCRIPTION_STATE_NO);
+  g_assert_cmpint (tp_contact_get_publish_state (alice), ==,
+      TP_SUBSCRIPTION_STATE_NO);
+  g_assert_cmpstr (tp_contact_get_publish_request (alice), ==,
+      "");
 
   reset_result (&f->result);
 
@@ -1613,24 +1616,56 @@ test_subscription_states (Fixture *f,
 
   /* Request subscription */
   tp_tests_contact_list_manager_request_subscription (manager, 1, &alice_handle, "");
-  states.subscribe = TP_SUBSCRIPTION_STATE_ASK;
-  g_main_loop_run (states.loop);
+
+  while (!states.signal_received)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_cmpint (states.subscribe, ==, TP_SUBSCRIPTION_STATE_ASK);
+  g_assert_cmpint (states.publish, ==, TP_SUBSCRIPTION_STATE_NO);
+  g_assert_cmpstr (states.publish_request, ==, "");
+  g_clear_pointer (&states.publish_request, g_free);
+  states.signal_received = FALSE;
 
   /* Request again must re-emit the signal. Saying please this time will make
    * the request accepted and will ask for publish. */
   tp_tests_contact_list_manager_request_subscription (manager, 1, &alice_handle, "please");
-  g_main_loop_run (states.loop);
-  states.subscribe = TP_SUBSCRIPTION_STATE_YES;
-  states.publish = TP_SUBSCRIPTION_STATE_ASK;
-  states.publish_request = "automatic publish request";
-  g_main_loop_run (states.loop);
+
+  while (!states.signal_received)
+    g_main_context_iteration (NULL, TRUE);
+
+  if (states.subscribe != TP_SUBSCRIPTION_STATE_YES)
+    {
+      /* we might receive this repeated signal in the same main loop
+       * iteration as the YES/ASK/"automatic publish request" one below,
+       * in which case it isn't visible to this regression test,
+       * or we might receive it in its own main loop iteration */
+      g_assert_cmpint (states.subscribe, ==, TP_SUBSCRIPTION_STATE_ASK);
+      g_assert_cmpint (states.publish, ==, TP_SUBSCRIPTION_STATE_NO);
+      g_assert_cmpstr (states.publish_request, ==, "");
+      g_clear_pointer (&states.publish_request, g_free);
+      states.signal_received = FALSE;
+
+      while (!states.signal_received)
+        g_main_context_iteration (NULL, TRUE);
+    }
+
+  g_assert_cmpint (states.subscribe, ==, TP_SUBSCRIPTION_STATE_YES);
+  g_assert_cmpint (states.publish, ==, TP_SUBSCRIPTION_STATE_ASK);
+  g_assert_cmpstr (states.publish_request, ==, "automatic publish request");
+  g_clear_pointer (&states.publish_request, g_free);
+  states.signal_received = FALSE;
 
   /* Remove the contact */
   tp_tests_contact_list_manager_remove (manager, 1, &alice_handle);
-  states.subscribe = TP_SUBSCRIPTION_STATE_NO;
-  states.publish = TP_SUBSCRIPTION_STATE_NO;
-  states.publish_request = "";
-  g_main_loop_run (states.loop);
+
+  while (!states.signal_received)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_cmpint (states.subscribe, ==, TP_SUBSCRIPTION_STATE_NO);
+  g_assert_cmpint (states.publish, ==, TP_SUBSCRIPTION_STATE_NO);
+  g_assert_cmpstr (states.publish_request, ==, "");
+  g_clear_pointer (&states.publish_request, g_free);
+  states.signal_received = FALSE;
 
   g_object_unref (alice);
 }
