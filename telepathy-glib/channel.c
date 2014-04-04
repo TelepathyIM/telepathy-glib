@@ -114,10 +114,7 @@ enum {
 static guint signals[N_SIGNALS] = { 0 };
 
 
-G_DEFINE_TYPE_WITH_CODE (TpChannel,
-    tp_channel,
-    TP_TYPE_PROXY,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL))
+G_DEFINE_TYPE (TpChannel, tp_channel, TP_TYPE_PROXY)
 
 /**
  * TP_CHANNEL_FEATURE_CORE:
@@ -535,20 +532,6 @@ tp_channel_set_property (GObject *object,
     {
     case PROP_CONNECTION:
       self->priv->connection = TP_CONNECTION (g_value_dup_object (value));
-      break;
-
-    case PROP_CHANNEL_TYPE:
-      _tp_channel_maybe_set_channel_type (self, g_value_get_string (value));
-      break;
-
-    case PROP_HANDLE_TYPE:
-      _tp_channel_maybe_set_handle_type (self, g_value_get_uint (value),
-          (g_value_get_uint (value) != TP_UNKNOWN_HANDLE_TYPE));
-      break;
-
-    case PROP_HANDLE:
-      _tp_channel_maybe_set_handle (self, g_value_get_uint (value),
-          (g_value_get_uint (value) != 0));
       break;
 
     case PROP_CHANNEL_PROPERTIES:
@@ -1154,12 +1137,47 @@ tp_channel_class_init (TpChannelClass *klass)
   proxy_class->must_have_unique_name = TRUE;
   proxy_class->list_features = tp_channel_list_features;
 
-  g_object_class_override_property (object_class, PROP_CHANNEL_TYPE,
-      "channel-type");
-  g_object_class_override_property (object_class, PROP_HANDLE_TYPE,
-      "handle-type");
-  g_object_class_override_property (object_class, PROP_HANDLE,
-      "handle");
+  /**
+   * TpChannel:channel-type:
+   *
+   * The D-Bus interface representing the type of this channel.
+   * This is not guaranteed to be available until tp_proxy_prepare_async()
+   * has finished preparing %TP_CHANNEL_FEATURE_CORE; it may be %NULL
+   * until then.
+   */
+  param_spec = g_param_spec_string ("channel-type", "Telepathy channel type",
+      "The D-Bus interface representing the type of this channel.",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CHANNEL_TYPE, param_spec);
+
+  /**
+   * TpChannel:handle-type:
+   *
+   * The #TpEntityType of this channel's associated handle, or
+   * %TP_ENTITY_TYPE_NONE (which is numerically 0) if no handle,
+   * or %TP_UNKNOWN_HANDLE_TYPE if this property is not available yet.
+   * This is not guaranteed to be available until tp_proxy_prepare_async()
+   * has finished preparing %TP_CHANNEL_FEATURE_CORE.
+   */
+  param_spec = g_param_spec_uint ("handle-type", "Telepathy entity type",
+      "The TpEntityType of this channel's associated handle",
+      0, G_MAXUINT32, TP_UNKNOWN_HANDLE_TYPE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_HANDLE_TYPE, param_spec);
+
+  /**
+   * TpChannel:handle:
+   *
+   * This channel's associated handle, or 0 if no handle or unknown.
+   * This is not guaranteed to be known until tp_proxy_prepare_async()
+   * has finished preparing %TP_CHANNEL_FEATURE_CORE.
+   */
+  param_spec = g_param_spec_uint ("handle", "Handle",
+      "The TpHandle representing the contact, chatroom, etc. with which "
+      "this channel communicates",
+      0, G_MAXUINT32, 0, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_HANDLE, param_spec);
 
   /**
    * TpChannel:identifier:
@@ -1434,16 +1452,10 @@ _tp_channel_new (TpClientFactory *factory,
   if (!tp_dbus_check_valid_object_path (object_path, error))
     goto finally;
 
-  /* An unfortunate collision between the default value in
-   * TpChannelIface (0), and the default we want (-1), means that
-   * we have to pass TP_UNKNOWN_HANDLE_TYPE to the constructor
-   * explicitly, even if providing channel-properties. */
-
   ret = TP_CHANNEL (g_object_new (TP_TYPE_CHANNEL,
         "connection", conn,
         "bus-name", tp_proxy_get_bus_name (conn),
         "object-path", object_path,
-        "handle-type", (guint) TP_UNKNOWN_HANDLE_TYPE,
         "channel-properties", immutable_properties,
         "factory", factory,
         NULL));

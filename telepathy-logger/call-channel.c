@@ -462,7 +462,6 @@ _tpl_call_channel_new (TpClientFactory *factory,
       "connection", conn,
       "bus-name", tp_proxy_get_bus_name (conn),
       "object-path", object_path,
-      "handle-type", (guint) TP_UNKNOWN_HANDLE_TYPE,
       "channel-properties", tp_chan_props,
       NULL);
 
