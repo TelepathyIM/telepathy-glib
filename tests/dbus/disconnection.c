@@ -38,6 +38,7 @@ enum {
 
 typedef struct {
     GTestDBus *test_dbus;
+    GDBusConnection *dbus_connection;
     TpClientFactory *factory;
     TpProxy *proxies[N_PROXIES];
     GObject *cd_service;
@@ -133,7 +134,6 @@ static void
 setup (Fixture *f,
     gconstpointer user_data)
 {
-  GDBusConnection *dbus_connection;
   GError *error = NULL;
 
   global_fixture = f;
@@ -150,7 +150,8 @@ setup (Fixture *f,
 
   f->factory = tp_client_factory_dup (&error);
   g_assert_no_error (error);
-  dbus_connection = tp_client_factory_get_dbus_connection (f->factory);
+  f->dbus_connection = g_object_ref (tp_client_factory_get_dbus_connection (
+      f->factory));
 
   /* Any random object with an interface: what matters is that it can
    * accept a method call and emit a signal. We use the Properties
@@ -158,7 +159,7 @@ setup (Fixture *f,
   f->cd_service = tp_tests_object_new_static_class (
       TP_TESTS_TYPE_SIMPLE_CHANNEL_DISPATCHER,
       NULL);
-  tp_dbus_connection_register_object (dbus_connection, "/", f->cd_service);
+  tp_dbus_connection_register_object (f->dbus_connection, "/", f->cd_service);
 
   f->private_gdbus = tp_tests_get_private_bus ();
   g_assert (f->private_gdbus != NULL);
@@ -179,6 +180,7 @@ teardown (Fixture *f,
 {
   tp_tests_assert_last_unref (&f->cd_service);
   tp_tests_assert_last_unref (&f->factory);
+  g_clear_object (&f->dbus_connection);
 
   tp_tests_assert_last_unref (&f->private_factory);
 
@@ -219,7 +221,6 @@ test (Fixture *f,
   GError err = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT, "Because I said so" };
   TpProxySignalConnection *sc;
   gboolean freed = FALSE;
-  GHashTable *empty_asv;
   int i;
 
   g_message ("Creating proxies");
@@ -346,10 +347,15 @@ test (Fixture *f,
   drop_private_connection (f);
 
   g_message ("Emitting signal");
-  empty_asv = tp_asv_new (NULL, NULL);
-  tp_svc_dbus_properties_emit_properties_changed (f->cd_service,
-      TP_IFACE_CHANNEL_DISPATCHER, empty_asv, NULL);
-  g_hash_table_unref (empty_asv);
+  g_dbus_connection_emit_signal (f->dbus_connection, NULL,
+      "/",
+      "org.freedesktop.DBus.Properties",
+      "PropertiesChanged",
+      g_variant_new ("(s@a{sv}@as)",
+          TP_IFACE_CHANNEL_DISPATCHER,
+          g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0),
+          g_variant_new_strv (NULL, 0)),
+      NULL);
 
   /* wait for everything to happen */
   g_message ("Running main loop");
