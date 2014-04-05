@@ -891,3 +891,27 @@ tp_dbus_connection_unregister_object (GDBusConnection *dbus_connection,
    * will automatically unregister the object (if registered) */
   g_object_set_qdata (object, registration_quark (), NULL);
 }
+
+GDBusConnection *
+_tp_dbus_object_get_connection (gpointer object)
+{
+  Registration *r;
+
+  r = g_object_get_qdata (object, registration_quark ());
+  if (r != NULL)
+    return r->conn;
+
+  return NULL;
+}
+
+const gchar *
+_tp_dbus_object_get_object_path (gpointer object)
+{
+  Registration *r;
+
+  r = g_object_get_qdata (object, registration_quark ());
+  if (r != NULL)
+    return r->object_path;
+
+  return NULL;
+}

@@ -29,6 +29,7 @@
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_PROPERTIES
+#include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 
 /**
@@ -925,9 +926,10 @@ tp_dbus_properties_mixin_emit_properties_changed (
 {
   TpDBusPropertiesMixinIfaceImpl *iface_impl;
   TpDBusPropertiesMixinIfaceInfo *iface_info;
-  GHashTable *changed_properties;
+  GVariantDict changed_properties;
   GPtrArray *invalidated_properties;
   const gchar * const *prop_name;
+  GDBusConnection *dbus_connection;
 
   g_return_if_fail (interface_name != NULL);
   iface_impl = _tp_dbus_properties_mixin_find_iface_impl (object,
@@ -942,8 +944,7 @@ tp_dbus_properties_mixin_emit_properties_changed (
   if (properties == NULL || properties[0] == NULL)
     return;
 
-  changed_properties = g_hash_table_new_full (g_str_hash, g_str_equal,
-      NULL, (GDestroyNotify) tp_g_value_slice_free);
+  g_variant_dict_init (&changed_properties, NULL);
   invalidated_properties = g_ptr_array_new ();
 
   for (prop_name = properties; *prop_name != NULL; prop_name++)
@@ -968,12 +969,14 @@ tp_dbus_properties_mixin_emit_properties_changed (
       if (prop_info->flags & TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_CHANGED)
         {
           GValue v = { 0, };
+          GVariant *variant;
 
           g_value_init (&v, prop_info->type);
           iface_impl->getter (object, iface_info->dbus_interface,
               prop_info->name, &v, prop_impl->getter_data);
-          g_hash_table_insert (changed_properties, (gchar *) *prop_name,
-              tp_g_value_slice_dup (&v));
+          variant = dbus_g_value_build_g_variant (&v);
+          g_variant_dict_insert_value (&changed_properties, *prop_name,
+              variant);
 
           g_value_unset (&v);
         }
@@ -991,9 +994,23 @@ tp_dbus_properties_mixin_emit_properties_changed (
 
   g_ptr_array_add (invalidated_properties, NULL);
 
-  tp_svc_dbus_properties_emit_properties_changed (object, interface_name,
-      changed_properties, (const gchar **) invalidated_properties->pdata);
-  g_hash_table_unref (changed_properties);
+  dbus_connection = _tp_dbus_object_get_connection (object);
+  if (dbus_connection != NULL)
+    {
+      g_dbus_connection_emit_signal (dbus_connection,
+          NULL, /* broadcast */
+          _tp_dbus_object_get_object_path (object),
+          "org.freedesktop.DBus.Properties",
+          "PropertiesChanged",
+          /* consume floating ref */
+          g_variant_new ("(s@a{sv}^as)", interface_name,
+              g_variant_dict_end (&changed_properties),
+              invalidated_properties->pdata),
+          /* cannot fail unless a parameter is incompatible with D-Bus,
+           * so ignore error */
+          NULL);
+    }
+
   g_ptr_array_unref (invalidated_properties);
 }
 
