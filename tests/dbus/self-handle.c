@@ -97,6 +97,21 @@ swapped_counter_cb (gpointer user_data)
   ++*times;
 }
 
+static GDBusMessage *
+got_all_counter_filter (GDBusConnection *connection,
+    GDBusMessage *message,
+    gboolean incoming,
+    gpointer user_data)
+{
+  guint *times = user_data;
+
+  if (incoming &&
+      !tp_strdiff (g_dbus_message_get_member (message), "GetAll"))
+    ++*times;
+
+  return message;
+}
+
 static void
 test_self_handle (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
@@ -211,6 +226,7 @@ test_change_inconveniently (Fixture *f,
   guint contact_times = 0, got_all_times = 0;
   gboolean ok;
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+  guint filter_id;
 
   /* This test exercises what happens if the self-contact changes
    * between obtaining its handle for the first time and having the
@@ -221,9 +237,9 @@ test_change_inconveniently (Fixture *f,
 
   g_signal_connect_swapped (f->client_conn, "notify::self-contact",
       G_CALLBACK (swapped_counter_cb), &contact_times);
-  g_signal_connect_swapped (f->service_conn,
-      "got-all::" TP_IFACE_CONNECTION,
-      G_CALLBACK (swapped_counter_cb), &got_all_times);
+  filter_id = g_dbus_connection_add_filter (f->dbus,
+      got_all_counter_filter,
+      &got_all_times, NULL);
 
   tp_proxy_prepare_async (f->client_conn, features, tp_tests_result_ready_cb,
       &f->result);
@@ -274,6 +290,8 @@ test_change_inconveniently (Fixture *f,
       tp_base_connection_get_self_handle (f->service_conn_as_base));
   g_assert_cmpstr (tp_contact_get_identifier (after), ==,
       "myself@example.org");
+
+  g_dbus_connection_remove_filter (f->dbus, filter_id);
 
   g_object_unref (after);
 }

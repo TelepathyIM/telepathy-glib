@@ -24,11 +24,8 @@
 #include "room-list-chan.h"
 #include "util.h"
 
-static void props_iface_init (TpSvcDBusPropertiesClass *);
-
 G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleConnection, tp_tests_simple_connection,
     TP_TYPE_BASE_CONNECTION,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES, props_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION, NULL))
 
 /* type definition stuff */
@@ -39,14 +36,6 @@ enum
   PROP_DBUS_STATUS,
   N_PROPS
 };
-
-enum
-{
-  SIGNAL_GOT_ALL,
-  N_SIGNALS
-};
-
-static guint signals[N_SIGNALS] = {0};
 
 struct _TpTestsSimpleConnectionPrivate
 {
@@ -296,13 +285,6 @@ tp_tests_simple_connection_class_init (TpTestsSimpleConnectionClass *klass)
       TP_CONNECTION_STATUS_DISCONNECTED,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DBUS_STATUS, param_spec);
-
-  signals[SIGNAL_GOT_ALL] = g_signal_new ("got-all",
-      G_OBJECT_CLASS_TYPE (klass),
-      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-      0,
-      NULL, NULL, NULL,
-      G_TYPE_NONE, 0);
 }
 
 void
@@ -415,27 +397,4 @@ tp_tests_simple_connection_ensure_room_list_chan (TpTestsSimpleConnection *self,
         "channel-properties", props, NULL);
 
   return chan_path;
-}
-
-static void
-get_all (TpSvcDBusProperties *iface,
-    const gchar *interface_name,
-    GDBusMethodInvocation *context)
-{
-  GHashTable *values = tp_dbus_properties_mixin_dup_all (G_OBJECT (iface),
-      interface_name);
-
-  tp_svc_dbus_properties_return_from_get_all (context, values);
-  g_hash_table_unref (values);
-  g_signal_emit (iface, signals[SIGNAL_GOT_ALL],
-      g_quark_from_string (interface_name));
-}
-
-static void
-props_iface_init (TpSvcDBusPropertiesClass *iface)
-{
-#define IMPLEMENT(x) \
-  tp_svc_dbus_properties_implement_##x (iface, x)
-  IMPLEMENT (get_all);
-#undef IMPLEMENT
 }
