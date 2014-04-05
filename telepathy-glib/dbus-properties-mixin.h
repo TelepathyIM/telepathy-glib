@@ -118,9 +118,6 @@ void tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
     GQuark iface, TpDBusPropertiesMixinGetter getter,
     TpDBusPropertiesMixinSetter setter, TpDBusPropertiesMixinPropImpl *props);
 
-void tp_dbus_properties_mixin_iface_init (gpointer g_iface,
-    gpointer iface_data);
-
 gboolean tp_dbus_properties_mixin_get (GObject *self,
     const gchar *interface_name, const gchar *property_name,
     GValue *value, GError **error);

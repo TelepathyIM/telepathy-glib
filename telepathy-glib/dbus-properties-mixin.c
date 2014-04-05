@@ -1049,29 +1049,6 @@ tp_dbus_properties_mixin_emit_properties_changed_varargs (
   g_ptr_array_unref (property_names);
 }
 
-static void
-_tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,
-                               const gchar *interface_name,
-                               const gchar *property_name,
-                               GDBusMethodInvocation *context)
-{
-  GObject *self = G_OBJECT (iface);
-  GValue value = { 0 };
-  GError *error = NULL;
-
-  if (tp_dbus_properties_mixin_get (self, interface_name, property_name,
-        &value, &error))
-    {
-      tp_svc_dbus_properties_return_from_get (context, &value);
-      g_value_unset (&value);
-    }
-  else
-    {
-      g_dbus_method_invocation_return_gerror (context, error);
-      g_error_free (error);
-    }
-}
-
 /**
  * tp_dbus_properties_mixin_dup_all:
  * @self: an object with this mixin
@@ -1121,18 +1098,6 @@ tp_dbus_properties_mixin_dup_all (GObject *self,
     }
 
   return values;
-}
-
-static void
-_tp_dbus_properties_mixin_get_all_dbus (TpSvcDBusProperties *iface,
-    const gchar *interface_name,
-    GDBusMethodInvocation *context)
-{
-  GHashTable *values = tp_dbus_properties_mixin_dup_all (G_OBJECT (iface),
-      interface_name);
-
-  tp_svc_dbus_properties_return_from_get_all (context, values);
-  g_hash_table_unref (values);
 }
 
 /**
@@ -1237,49 +1202,4 @@ out:
     g_value_unset (&copy);
 
   return ret;
-}
-
-static void
-_tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
-                               const gchar *interface_name,
-                               const gchar *property_name,
-                               const GValue *value,
-                               GDBusMethodInvocation *context)
-{
-  GObject *self = G_OBJECT (iface);
-  GError *error = NULL;
-
-  if (tp_dbus_properties_mixin_set (self, interface_name, property_name, value,
-          &error))
-    {
-      tp_svc_dbus_properties_return_from_set (context);
-    }
-  else
-    {
-      g_dbus_method_invocation_return_gerror (context, error);
-      g_error_free (error);
-    }
-}
-
-/**
- * tp_dbus_properties_mixin_iface_init:
- * @g_iface: a pointer to a #TpSvcDBusPropertiesClass structure
- * @iface_data: ignored
- *
- * Declare that the DBus.Properties interface represented by @g_iface
- * is implemented using this mixin.
- */
-void
-tp_dbus_properties_mixin_iface_init (gpointer g_iface,
-                                     gpointer iface_data)
-{
-  TpSvcDBusPropertiesClass *cls = g_iface;
-
-#define IMPLEMENT(x, suffix) \
-    tp_svc_dbus_properties_implement_##x (cls, \
-        _tp_dbus_properties_mixin_##x##suffix)
-  IMPLEMENT (get,);
-  IMPLEMENT (get_all,_dbus);
-  IMPLEMENT (set,);
-#undef IMPLEMENT
 }

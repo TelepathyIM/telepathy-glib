@@ -94,8 +94,6 @@ typedef struct {
 } DebugMessage;
 
 G_DEFINE_TYPE_WITH_CODE (TpDebugSender, tp_debug_sender, G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
-        tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DEBUG1, debug_iface_init))
 
 /* properties */

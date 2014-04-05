@@ -148,9 +148,6 @@ static void call_content_dtmf_iface_init (gpointer g_iface,
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseCallContent, tp_base_call_content,
     G_TYPE_OBJECT,
-
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
-        tp_dbus_properties_mixin_iface_init)
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL1_CONTENT,
         call_content_iface_init)
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL1_CONTENT_INTERFACE_DTMF1,

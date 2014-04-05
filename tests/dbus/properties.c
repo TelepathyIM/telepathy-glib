@@ -50,9 +50,7 @@ GType test_properties_get_type (void);
 G_DEFINE_TYPE_WITH_CODE (TestProperties,
     test_properties,
     G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE (TEST_TYPE_SVC_WITH_PROPERTIES, NULL);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
-      tp_dbus_properties_mixin_iface_init));
+    G_IMPLEMENT_INTERFACE (TEST_TYPE_SVC_WITH_PROPERTIES, NULL))
 
 static void
 test_properties_init (TestProperties *self)

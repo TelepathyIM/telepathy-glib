@@ -25,8 +25,6 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleChannelRequest,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_REQUEST,
         channel_request_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
-        tp_dbus_properties_mixin_iface_init)
     )
 
 

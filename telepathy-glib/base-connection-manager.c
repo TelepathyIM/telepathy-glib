@@ -164,8 +164,6 @@ static void service_iface_init (gpointer, gpointer);
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseConnectionManager,
     tp_base_connection_manager,
     G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
-      tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_MANAGER,
         service_iface_init))
 

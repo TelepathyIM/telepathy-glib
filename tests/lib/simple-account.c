@@ -30,8 +30,6 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleAccount,
         NULL);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_INTERFACE_STORAGE1,
         NULL);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
-        tp_dbus_properties_mixin_iface_init)
     )
 
 /* TP_IFACE_ACCOUNT is implied */
