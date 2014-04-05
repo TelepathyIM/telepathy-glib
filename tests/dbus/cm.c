@@ -23,101 +23,74 @@ typedef enum {
 } TestFlags;
 
 typedef struct {
-    ExampleEcho2ConnectionManager parent;
-    guint drop_name_on_get;
-} MyConnectionManager;
-typedef ExampleEcho2ConnectionManagerClass MyConnectionManagerClass;
-
-typedef struct {
     GMainLoop *mainloop;
     GDBusConnection *dbus;
     TpClientFactory *factory;
-    MyConnectionManager *service_cm;
+    TpBaseConnectionManager *service_cm;
 
     TpConnectionManager *cm;
     TpConnectionManager *echo;
     TpConnectionManager *spurious;
     GError *error /* initialized where needed */;
+
+    guint drop_name_on_get;
+    guint filter_id;
 } Test;
 
-static void my_properties_iface_init (gpointer iface);
-static GType my_connection_manager_get_type (void);
-
-G_DEFINE_TYPE_WITH_CODE (MyConnectionManager,
-    my_connection_manager,
-    EXAMPLE_TYPE_ECHO_2_CONNECTION_MANAGER,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
-      my_properties_iface_init))
-
-static void
-my_connection_manager_class_init (MyConnectionManagerClass *cls)
+static gboolean
+drop_name_idle_cb (gpointer user_data)
 {
+  Test *test = user_data;
+  GString *string = g_string_new (TP_CM_BUS_NAME_BASE);
+  GError *error = NULL;
+
+  g_string_append (string, "example_echo_2");
+
+  tp_dbus_connection_release_name (test->dbus, string->str, &error);
+  g_assert_no_error (error);
+  tp_dbus_connection_request_name (test->dbus, string->str, FALSE, &error);
+  g_assert_no_error (error);
+
+  test->drop_name_on_get--;
+
+  return G_SOURCE_REMOVE;
 }
 
-static void
-my_connection_manager_init (MyConnectionManager *self)
+static GDBusMessage *
+get_all_filter (GDBusConnection *dbus,
+    GDBusMessage *message,
+    gboolean incoming,
+    gpointer user_data)
 {
-}
+  Test *test = user_data;
+  gchar *object_path;
 
-static void
-my_get (TpSvcDBusProperties *iface G_GNUC_UNUSED,
-    const gchar *i G_GNUC_UNUSED,
-    const gchar *p G_GNUC_UNUSED,
-    GDBusMethodInvocation *context)
-{
-  /* The telepathy-glib client side should never call this:
-   * GetAll() is better. */
-  g_assert_not_reached ();
-}
-
-static void
-my_get_all (TpSvcDBusProperties *iface,
-    const gchar *i,
-    GDBusMethodInvocation *context)
-{
-  MyConnectionManager *cm = (MyConnectionManager *) iface;
-  GHashTable *ht;
+  object_path = g_strconcat (TP_CM_OBJECT_PATH_BASE, "example_echo_2",
+      NULL);
 
   /* If necessary, emulate the CM exiting and coming back. */
-  if (cm->drop_name_on_get)
+  if (test->drop_name_on_get > 0 && !incoming &&
+      !tp_strdiff (g_dbus_message_get_member (message), "GetAll") &&
+      !tp_strdiff (g_dbus_message_get_path (message), object_path))
     {
-      GDBusConnection *dbus = tp_base_connection_manager_get_dbus_connection (
-          TP_BASE_CONNECTION_MANAGER (cm));
-      GString *string = g_string_new (TP_CM_BUS_NAME_BASE);
-      GError *error = NULL;
+      /* Must be in idle cb otherwise _sync dbus call deadlocks from a message
+       * filter func. */
+      g_idle_add (drop_name_idle_cb, test);
 
-      g_string_append (string, "example_echo_2");
-
-      cm->drop_name_on_get--;
-
-      tp_dbus_connection_release_name (dbus, string->str, &error);
-      g_assert_no_error (error);
-      tp_dbus_connection_request_name (dbus, string->str, FALSE, &error);
-      g_assert_no_error (error);
+      /* Drop the message to be sure we won't get the reply before
+       * NameOwnerChanged */
+      g_clear_object (&message);
     }
 
-  ht = tp_dbus_properties_mixin_dup_all ((GObject *) cm, i);
-  tp_svc_dbus_properties_return_from_get_all (context, ht);
-  g_hash_table_unref (ht);
-}
+  g_free (object_path);
 
-static void
-my_properties_iface_init (gpointer iface)
-{
-  TpSvcDBusPropertiesClass *cls = iface;
-
-#define IMPLEMENT(x) \
-    tp_svc_dbus_properties_implement_##x (cls, my_##x)
-  IMPLEMENT (get);
-  IMPLEMENT (get_all);
-#undef IMPLEMENT
+  return message;
 }
 
 static void
 setup (Test *test,
        gconstpointer data)
 {
-  TpBaseConnectionManager *service_cm_as_base;
   gboolean ok;
 
   tp_debug_set_flags ("all");
@@ -127,14 +100,15 @@ setup (Test *test,
   test->factory = tp_client_factory_new (test->dbus);
 
   test->service_cm = tp_tests_object_new_static_class (
-      my_connection_manager_get_type (),
+      EXAMPLE_TYPE_ECHO_2_CONNECTION_MANAGER,
       NULL);
   g_assert (test->service_cm != NULL);
-  service_cm_as_base = TP_BASE_CONNECTION_MANAGER (test->service_cm);
-  g_assert (service_cm_as_base != NULL);
 
-  ok = tp_base_connection_manager_register (service_cm_as_base);
+  ok = tp_base_connection_manager_register (test->service_cm);
   g_assert (ok);
+
+  test->filter_id = g_dbus_connection_add_filter (test->dbus, get_all_filter,
+      test, NULL);
 
   test->cm = NULL;
 }
@@ -143,6 +117,8 @@ static void
 teardown (Test *test,
           gconstpointer data)
 {
+  g_dbus_connection_remove_filter (test->dbus, test->filter_id);
+
   g_clear_object (&test->service_cm);
   g_clear_object (&test->dbus);
   g_clear_object (&test->factory);
@@ -950,11 +926,11 @@ test_dbus_ready (Test *test,
 
   if (flags & DROP_NAME_ON_GET_TWICE)
     {
-      test->service_cm->drop_name_on_get = 2;
+      test->drop_name_on_get = 2;
     }
   else if (flags & DROP_NAME_ON_GET)
     {
-      test->service_cm->drop_name_on_get = 1;
+      test->drop_name_on_get = 1;
     }
 
   if (flags & ACTIVATE_CM)
@@ -977,6 +953,7 @@ test_dbus_ready (Test *test,
   tp_tests_proxy_run_until_prepared_or_failed (test->cm, NULL,
       &test->error);
 
+  g_assert_cmpuint (test->drop_name_on_get, ==, 0);
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "example_echo_2");
 
