@@ -15,8 +15,6 @@ noinst_LTLIBRARIES = \
     $(NULL)
 
 libtp_glib_tests_la_SOURCES = \
-    bug-19101-conn.c \
-    bug-19101-conn.h \
     broken-client-types-conn.c \
     broken-client-types-conn.h \
     contacts-conn.c \
