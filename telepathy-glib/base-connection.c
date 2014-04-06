@@ -221,18 +221,17 @@
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/value-array.h>
 
+#include <telepathy-glib/_gdbus/Connection.h>
+
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/variant-util-internal.h"
 
-static void conn_iface_init (TpSvcConnectionClass *);
 static void requests_iface_init (gpointer, gpointer);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseConnection,
     tp_base_connection,
     G_TYPE_DBUS_OBJECT_SKELETON,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION,
-      conn_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_REQUESTS,
       requests_iface_init))
 
@@ -254,10 +253,27 @@ enum
     SHUTDOWN_FINISHED,
     CLIENTS_INTERESTED,
     CLIENTS_UNINTERESTED,
+    STATUS_CHANGED,
     N_SIGNALS
 };
 
 static guint signals[N_SIGNALS] = {0};
+
+#define _TP_GDBUS_ERROR_IF_NOT_CONNECTED(conn, context) \
+  G_STMT_START { \
+    TpBaseConnection *c_ = (conn); \
+    GError *e_ = NULL; \
+    \
+    if (!tp_base_connection_check_connected (c_, &e_)) \
+      { \
+        g_dbus_method_invocation_return_gerror ((context), e_); \
+        g_error_free (e_); \
+        return TRUE; \
+      } \
+  } G_STMT_END
+
+static void update_rcc_property (TpBaseConnection *self);
+static void conn_skeleton_init (TpBaseConnection *self);
 
 static void
 channel_request_cancel (gpointer data,
@@ -311,6 +327,8 @@ struct _TpBaseConnectionPrivate
   GHashTable *interests;
 
   gchar *account_path_suffix;
+
+  _TpGDBusConnection *connection_skeleton;
 };
 
 typedef struct
@@ -364,9 +382,8 @@ tp_base_connection_get_property (GObject *object,
       break;
 
     case PROP_INTERFACES:
-      g_value_take_boxed (value,
-          _tp_g_dbus_object_dup_interface_names (G_DBUS_OBJECT (self),
-            TP_IFACE_CONNECTION, TP_IFACE_CONNECTION_INTERFACE_REQUESTS));
+      g_object_get_property (G_OBJECT (self->priv->connection_skeleton),
+          "interfaces", value);
       break;
 
     case PROP_DBUS_CONNECTION:
@@ -481,6 +498,8 @@ tp_base_connection_dispose (GObject *object)
 
   for (i = 0; i < TP_NUM_ENTITY_TYPES; i++)
     tp_clear_object (priv->handles + i);
+
+  g_clear_object (&self->priv->connection_skeleton);
 
   if (G_OBJECT_CLASS (tp_base_connection_parent_class)->dispose)
     G_OBJECT_CLASS (tp_base_connection_parent_class)->dispose (object);
@@ -742,11 +761,23 @@ tp_base_connection_interface_changed_cb (TpBaseConnection *self,
     }
   else
     {
+      GValue value = G_VALUE_INIT;
+
       /* We'd ideally like to detect attempts to remove interfaces
        * and diagnose those as invalid, too, but we can't do that because
        * replacement by a subclass is represented as remove + add. */
       DEBUG ("%s %s %p \"%s\"",
           verb, G_OBJECT_TYPE_NAME (interface), interface, info->name);
+
+      /* Update the Interfaces property. For now we do this from scratch
+       * every time, rather than doing anything intelligently diff-based. */
+      g_value_init (&value, G_TYPE_STRV);
+      g_value_take_boxed (&value,
+          _tp_g_dbus_object_dup_interface_names (G_DBUS_OBJECT (self),
+            TP_IFACE_CONNECTION, TP_IFACE_CONNECTION_INTERFACE_REQUESTS));
+      g_object_set_property (G_OBJECT (self->priv->connection_skeleton),
+          "interfaces", &value);
+      g_value_unset (&value);
     }
 }
 
@@ -827,7 +858,16 @@ tp_base_connection_constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 
-  object_skeleton_take_svc_interface (skel, TP_TYPE_SVC_CONNECTION);
+  self->priv->connection_skeleton = _tp_gdbus_connection_skeleton_new ();
+  g_dbus_object_skeleton_add_interface (skel,
+      G_DBUS_INTERFACE_SKELETON (self->priv->connection_skeleton));
+  _tp_gdbus_connection_set_status (self->priv->connection_skeleton,
+      TP_CONNECTION_STATUS_DISCONNECTED);
+  conn_skeleton_init (self);
+
+  /* Set the initial RCC, it won't be definitive until status is CONNECTED */
+  update_rcc_property (self);
+
   object_skeleton_take_svc_interface (skel,
       TP_TYPE_SVC_CONNECTION_INTERFACE_REQUESTS);
 
@@ -837,6 +877,9 @@ tp_base_connection_constructed (GObject *object)
   g_signal_connect (self, "interface-removed",
       G_CALLBACK (tp_base_connection_interface_changed_cb),
       GINT_TO_POINTER (-1));
+
+  /* We don't have any interfaces yet (except for Connection and Requests)
+   * so it's OK that the default for _TpGDBusConnection:interfaces is NULL. */
 }
 
 /**
@@ -935,6 +978,22 @@ conn_requests_get_requestables (TpBaseConnection *self)
   return details;
 }
 
+static void
+update_rcc_property (TpBaseConnection *self)
+{
+  GPtrArray *rcc;
+  GValue value = G_VALUE_INIT;
+
+  rcc = conn_requests_get_requestables (self);
+  g_value_init (&value, TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
+  g_value_take_boxed (&value, rcc);
+
+  _tp_gdbus_connection_set_requestable_channel_classes (
+      self->priv->connection_skeleton,
+      dbus_g_value_build_g_variant (&value));
+
+  g_value_unset (&value);
+}
 
 static void
 conn_requests_get_dbus_property (GObject *object,
@@ -998,65 +1057,9 @@ _tp_base_connection_fill_contact_attributes (TpBaseConnection *self,
       tp_g_value_slice_new_string (tmp));
 }
 
-enum {
-    DBUSPROP_0,
-    DBUSPROP_SELF_HANDLE,
-    DBUSPROP_SELF_ID,
-    DBUSPROP_STATUS,
-    DBUSPROP_INTERFACES,
-    DBUSPROP_RCCS,
-    N_DBUSPROPS
-};
-
-static void
-tp_base_connection_get_connection_property (GObject *object,
-    GQuark iface,
-    GQuark name,
-    GValue *value,
-    gpointer getter_data)
-{
-  TpBaseConnection *self = TP_BASE_CONNECTION (object);
-
-  switch (GPOINTER_TO_UINT (getter_data))
-    {
-      case DBUSPROP_SELF_HANDLE:
-        g_value_set_uint (value, self->priv->self_handle);
-        break;
-
-      case DBUSPROP_SELF_ID:
-        g_value_set_string (value, self->priv->self_id);
-        break;
-
-      case DBUSPROP_STATUS:
-        g_value_set_uint (value, tp_base_connection_get_status (self));
-        break;
-
-      case DBUSPROP_INTERFACES:
-        g_value_take_boxed (value,
-            _tp_g_dbus_object_dup_interface_names (G_DBUS_OBJECT (self),
-              TP_IFACE_CONNECTION, TP_IFACE_CONNECTION_INTERFACE_REQUESTS));
-        break;
-
-      case DBUSPROP_RCCS:
-        g_value_take_boxed (value, conn_requests_get_requestables (self));
-        break;
-
-      default:
-        g_return_if_reached ();
-    }
-}
-
 static void
 tp_base_connection_class_init (TpBaseConnectionClass *klass)
 {
-  static TpDBusPropertiesMixinPropImpl connection_properties[] = {
-      { "SelfHandle", GUINT_TO_POINTER (DBUSPROP_SELF_HANDLE), NULL },
-      { "SelfID", GUINT_TO_POINTER (DBUSPROP_SELF_ID), NULL },
-      { "Status", GUINT_TO_POINTER (DBUSPROP_STATUS), NULL },
-      { "Interfaces", GUINT_TO_POINTER (DBUSPROP_INTERFACES), NULL },
-      { "RequestableChannelClasses", GUINT_TO_POINTER (DBUSPROP_RCCS), NULL },
-      { NULL }
-  };
   static TpDBusPropertiesMixinPropImpl requests_properties[] = {
         { "Channels", NULL, NULL },
         { NULL }
@@ -1237,10 +1240,27 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
                   NULL, NULL, NULL,
                   G_TYPE_NONE, 1, G_TYPE_STRING);
 
+  /**
+   * TpBaseConnection::status-changed:
+   * @connection: the #TpBaseConnection
+   * @status: the new #TpConnectionStatus
+   * @reason: the #TpConnectionStatus for this status change
+   *
+   * Emitted when the status of this connection changes. Mainly for
+   * compatibility since #TpBaseConnection doesn't implement #TpSvcConnection
+   * interface anymore.
+   *
+   * Since: 0.UNRELEASED
+   */
+  signals[STATUS_CHANGED] =
+    g_signal_new ("status-changed",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL, NULL,
+                  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
+
   tp_dbus_properties_mixin_class_init (object_class, 0);
-  tp_dbus_properties_mixin_implement_interface (object_class,
-      TP_IFACE_QUARK_CONNECTION,
-      tp_base_connection_get_connection_property, NULL, connection_properties);
   tp_dbus_properties_mixin_implement_interface (object_class,
       TP_IFACE_QUARK_CONNECTION_INTERFACE_REQUESTS,
       conn_requests_get_dbus_property, NULL,
@@ -1466,11 +1486,11 @@ conn_status_reason_from_g_error (GError *error)
   return TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED;
 }
 
-static void
-tp_base_connection_connect (TpSvcConnection *iface,
-                            GDBusMethodInvocation *context)
+static gboolean
+tp_base_connection_connect (_TpGDBusConnection *skeleton,
+    GDBusMethodInvocation *context,
+    TpBaseConnection *self)
 {
-  TpBaseConnection *self = TP_BASE_CONNECTION (iface);
   TpBaseConnectionClass *cls = TP_BASE_CONNECTION_GET_CLASS (self);
   GError *error = NULL;
 
@@ -1497,32 +1517,32 @@ tp_base_connection_connect (TpSvcConnection *iface,
             }
           g_dbus_method_invocation_return_gerror (context, error);
           g_error_free (error);
-          return;
+          return TRUE;
         }
     }
-  tp_svc_connection_return_from_connect (context);
+  _tp_gdbus_connection_complete_connect (skeleton, context);
+  return TRUE;
 }
 
-static void
-tp_base_connection_disconnect (TpSvcConnection *iface,
-                               GDBusMethodInvocation *context)
+static gboolean
+tp_base_connection_disconnect (_TpGDBusConnection *skeleton,
+    GDBusMethodInvocation *context,
+    TpBaseConnection *self)
 {
-  TpBaseConnection *self = TP_BASE_CONNECTION (iface);
-
   g_assert (TP_IS_BASE_CONNECTION (self));
 
   if (self->priv->disconnect_requests != NULL)
     {
       g_assert (self->priv->status == TP_CONNECTION_STATUS_DISCONNECTED);
       g_ptr_array_add (self->priv->disconnect_requests, context);
-      return;
+      return TRUE;
     }
 
   if (self->priv->status == TP_CONNECTION_STATUS_DISCONNECTED)
     {
       /* status DISCONNECTED and disconnect_requests NULL => already dead */
-      tp_svc_connection_return_from_disconnect (context);
-      return;
+      _tp_gdbus_connection_complete_disconnect (skeleton, context);
+      return TRUE;
     }
 
   self->priv->disconnect_requests = g_ptr_array_sized_new (1);
@@ -1531,6 +1551,8 @@ tp_base_connection_disconnect (TpSvcConnection *iface,
   tp_base_connection_change_status (self,
       TP_CONNECTION_STATUS_DISCONNECTED,
       TP_CONNECTION_STATUS_REASON_REQUESTED);
+
+  return TRUE;
 }
 
 /**
@@ -1695,8 +1717,13 @@ tp_base_connection_set_self_handle (TpBaseConnection *self,
           self->priv->handles[TP_ENTITY_TYPE_CONTACT], self_handle);
     }
 
-  tp_svc_connection_emit_self_contact_changed (self,
-      self->priv->self_handle, self->priv->self_id);
+  _tp_gdbus_connection_set_self_handle (self->priv->connection_skeleton,
+      self->priv->self_handle);
+  _tp_gdbus_connection_set_self_id (self->priv->connection_skeleton,
+      self->priv->self_id);
+  _tp_gdbus_connection_emit_self_contact_changed (
+      self->priv->connection_skeleton, self->priv->self_handle,
+      self->priv->self_id);
 
   g_object_notify ((GObject *) self, "self-handle");
   g_object_notify ((GObject *) self, "self-id");
@@ -1724,8 +1751,8 @@ void tp_base_connection_finish_shutdown (TpBaseConnection *self)
 
   for (i = 0; i < contexts->len; i++)
     {
-      tp_svc_connection_return_from_disconnect (g_ptr_array_index (contexts,
-            i));
+      _tp_gdbus_connection_complete_disconnect (self->priv->connection_skeleton,
+          g_ptr_array_index (contexts, i));
     }
 
   g_ptr_array_unref (contexts);
@@ -1774,25 +1801,16 @@ tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,
     GVariant *details,
     TpConnectionStatusReason reason)
 {
-  GHashTable *hash;
-
   g_return_if_fail (TP_IS_BASE_CONNECTION (self));
   g_return_if_fail (tp_dbus_check_valid_interface_name (error_name, NULL));
 
   if (details == NULL)
-    {
-      hash = g_hash_table_new (g_str_hash, g_str_equal);
-    }
-  else
-    {
-      hash = tp_asv_from_vardict (details);
-    }
+      details = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
 
-  tp_svc_connection_emit_connection_error (self, error_name, hash);
+  _tp_gdbus_connection_emit_connection_error (self->priv->connection_skeleton,
+      error_name, details);
   tp_base_connection_change_status (self, TP_CONNECTION_STATUS_DISCONNECTED,
       reason);
-
-  g_hash_table_unref (hash);
 }
 
 /**
@@ -1920,7 +1938,10 @@ tp_base_connection_change_status (TpBaseConnection *self,
     }
 
   DEBUG("emitting status-changed to %u, for reason %u", status, reason);
-  tp_svc_connection_emit_status_changed (self, status, reason);
+  _tp_gdbus_connection_set_status (self->priv->connection_skeleton, status);
+  _tp_gdbus_connection_emit_status_changed (self->priv->connection_skeleton,
+      status, reason);
+  g_signal_emit (self, signals[STATUS_CHANGED], 0, status, reason);
 
   /* tell subclass about the state change. In the case of
    * disconnection, shut down afterwards */
@@ -1934,10 +1955,13 @@ tp_base_connection_change_status (TpBaseConnection *self,
     case TP_CONNECTION_STATUS_CONNECTED:
       /* the implementation should have ensured we have a valid self_handle
        * before changing the state to CONNECTED */
-
       g_assert (priv->self_handle != 0);
       g_assert (tp_handle_is_valid (priv->handles[TP_ENTITY_TYPE_CONTACT],
                 priv->self_handle, NULL));
+
+      /* RCC property is immutable after CONNECTED, do a last update now */
+      update_rcc_property (self);
+
       if (klass->connected)
         (klass->connected) (self);
       break;
@@ -2139,41 +2163,42 @@ tp_base_connection_add_client_interest (TpBaseConnection *self,
       only_if_uninterested);
 }
 
-static void
-tp_base_connection_dbus_add_client_interest (TpSvcConnection *svc,
-    const gchar **interests,
-    GDBusMethodInvocation *context)
+static gboolean
+tp_base_connection_dbus_add_client_interest (_TpGDBusConnection *skeleton,
+    GDBusMethodInvocation *context,
+    const gchar * const *interests,
+    TpBaseConnection *self)
 {
-  TpBaseConnection *self = (TpBaseConnection *) svc;
   const gchar *unique_name = NULL;
 
-  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
-  g_return_if_fail (self->priv->dbus_connection != NULL);
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), FALSE);
+  g_return_val_if_fail (self->priv->dbus_connection != NULL, FALSE);
 
   if (interests == NULL || interests[0] == NULL)
     goto finally;
 
   unique_name = g_dbus_method_invocation_get_sender (context);
 
-  tp_base_connection_add_client_interest_impl (self, unique_name,
-      (const gchar * const *) interests, FALSE);
+  tp_base_connection_add_client_interest_impl (self, unique_name, interests,
+      FALSE);
 
 finally:
-  tp_svc_connection_return_from_add_client_interest (context);
+  _tp_gdbus_connection_complete_add_client_interest (skeleton, context);
+  return TRUE;
 }
 
-static void
-tp_base_connection_dbus_remove_client_interest (TpSvcConnection *svc,
-    const gchar **interests,
-    GDBusMethodInvocation *context)
+static gboolean
+tp_base_connection_dbus_remove_client_interest (_TpGDBusConnection *skeleton,
+    GDBusMethodInvocation *context,
+    const gchar * const *interests,
+    TpBaseConnection *self)
 {
-  TpBaseConnection *self = (TpBaseConnection *) svc;
   const gchar *unique_name;
-  const gchar **interest;
+  const gchar * const *interest;
   ClientData *client;
 
-  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
-  g_return_if_fail (self->priv->dbus_connection != NULL);
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), FALSE);
+  g_return_val_if_fail (self->priv->dbus_connection != NULL, FALSE);
 
   if (interests == NULL || interests[0] == NULL)
     goto finally;
@@ -2233,7 +2258,8 @@ tp_base_connection_dbus_remove_client_interest (TpSvcConnection *svc,
     }
 
 finally:
-  tp_svc_connection_return_from_remove_client_interest (context);
+  _tp_gdbus_connection_complete_remove_client_interest (skeleton, context);
+  return TRUE;
 }
 
 /* The handling of calls to Connection.Interface.Requests.CreateChannel is
@@ -2924,26 +2950,39 @@ tp_base_connection_dup_contact_attributes_hash (TpBaseConnection *self,
   return result;
 }
 
-static void
-contacts_get_contact_attributes_impl (TpSvcConnection *iface,
-  const GArray *handles,
-  const char **interfaces,
-  GDBusMethodInvocation *context)
+static gboolean
+contacts_get_contact_attributes_impl (_TpGDBusConnection *skeleton,
+  GDBusMethodInvocation *context,
+  GVariant *handles,
+  const gchar * const *interfaces,
+  TpBaseConnection *conn)
 {
-  TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
-  GHashTable *result;
+  const TpHandle *c_array;
+  GArray *array;
+  gsize n;
+  GHashTable *attributes;
+  GValue value = G_VALUE_INIT;
+  GVariant *result;
 
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
+  _TP_GDBUS_ERROR_IF_NOT_CONNECTED (conn, context);
 
-  result = tp_base_connection_dup_contact_attributes_hash (conn,
-      handles,
-      (const gchar * const *) interfaces,
-      contacts_always_included_interfaces);
+  c_array = g_variant_get_fixed_array (handles, &n, sizeof (TpHandle));
+  array = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n);
+  g_array_append_vals (array, c_array, n);
 
-  tp_svc_connection_return_from_get_contact_attributes (
-      context, result);
+  attributes = tp_base_connection_dup_contact_attributes_hash (conn,
+      array, interfaces, contacts_always_included_interfaces);
+  g_value_init (&value, TP_HASH_TYPE_CONTACT_ATTRIBUTES_MAP);
+  g_value_take_boxed (&value, attributes);
+  result = dbus_g_value_build_g_variant (&value);
+  g_value_unset (&value);
 
-  g_hash_table_unref (result);
+  _tp_gdbus_connection_complete_get_contact_attributes (skeleton, context,
+      result);
+
+  g_array_unref (array);
+
+  return TRUE;
 }
 
 typedef struct
@@ -2960,10 +2999,12 @@ ensure_handle_cb (GObject *source,
 {
   TpHandleRepoIface *contact_repo = (TpHandleRepoIface *) source;
   GetContactByIdData *data = user_data;
+  TpBaseConnection *self = data->conn;
   TpHandle handle;
   GArray *handles;
   GHashTable *attributes;
-  GHashTable *ret;
+  GHashTable *asv;
+  GVariant *ret;
   GError *error = NULL;
 
   handle = tp_handle_ensure_finish (contact_repo, result, &error);
@@ -2978,18 +3019,19 @@ ensure_handle_cb (GObject *source,
   handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
   g_array_append_val (handles, handle);
 
-  attributes = tp_base_connection_dup_contact_attributes_hash (data->conn,
+  attributes = tp_base_connection_dup_contact_attributes_hash (self,
       handles, (const gchar * const *) data->interfaces,
       contacts_always_included_interfaces);
 
-  ret = g_hash_table_lookup (attributes, GUINT_TO_POINTER (handle));
-  g_assert (ret != NULL);
+  asv = g_hash_table_lookup (attributes, GUINT_TO_POINTER (handle));
+  g_assert (asv != NULL);
+  ret = tp_asv_to_vardict (asv);
+  g_hash_table_unref (attributes);
 
-  tp_svc_connection_return_from_get_contact_by_id (
-      data->context, handle, ret);
+  _tp_gdbus_connection_complete_get_contact_by_id (
+      self->priv->connection_skeleton, data->context, handle, ret);
 
   g_array_unref (handles);
-  g_hash_table_unref (attributes);
 
 out:
   g_object_unref (data->conn);
@@ -2997,18 +3039,18 @@ out:
   g_slice_free (GetContactByIdData, data);
 }
 
-static void
-contacts_get_contact_by_id_impl (TpSvcConnection *iface,
+static gboolean
+contacts_get_contact_by_id_impl (_TpGDBusConnection *skeleton,
+  GDBusMethodInvocation *context,
   const gchar *id,
-  const gchar **interfaces,
-  GDBusMethodInvocation *context)
+  const gchar * const *interfaces,
+  TpBaseConnection *conn)
 {
-  TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
       TP_ENTITY_TYPE_CONTACT);
   GetContactByIdData *data;
 
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
+  _TP_GDBUS_ERROR_IF_NOT_CONNECTED (conn, context);
 
   DEBUG ("%s: '%s', %u interfaces", conn->priv->object_path, id,
       (interfaces == NULL ? 0 : g_strv_length ((GStrv) interfaces)));
@@ -3020,24 +3062,25 @@ contacts_get_contact_by_id_impl (TpSvcConnection *iface,
 
   tp_handle_ensure_async (contact_repo, conn, id, NULL,
       ensure_handle_cb, data);
+
+  return TRUE;
 }
 
 static void
-conn_iface_init (TpSvcConnectionClass *klass)
+conn_skeleton_init (TpBaseConnection *self)
 {
-#define IMPLEMENT(prefix,x) tp_svc_connection_implement_##x (klass, \
-    tp_base_connection_##prefix##x)
-  IMPLEMENT(,connect);
-  IMPLEMENT(,disconnect);
-  IMPLEMENT(dbus_,add_client_interest);
-  IMPLEMENT(dbus_,remove_client_interest);
-#undef IMPLEMENT
-
-#define IMPLEMENT(x) tp_svc_connection_implement_##x ( \
-    klass, contacts_##x##_impl)
-  IMPLEMENT (get_contact_attributes);
-  IMPLEMENT (get_contact_by_id);
-#undef IMPLEMENT
+  g_signal_connect_object (self->priv->connection_skeleton, "handle-connect",
+      G_CALLBACK (tp_base_connection_connect), self, 0);
+  g_signal_connect_object (self->priv->connection_skeleton, "handle-disconnect",
+      G_CALLBACK (tp_base_connection_disconnect), self, 0);
+  g_signal_connect_object (self->priv->connection_skeleton, "handle-add-client-interest",
+      G_CALLBACK (tp_base_connection_dbus_add_client_interest), self, 0);
+  g_signal_connect_object (self->priv->connection_skeleton, "handle-remove-client-interest",
+      G_CALLBACK (tp_base_connection_dbus_remove_client_interest), self, 0);
+  g_signal_connect_object (self->priv->connection_skeleton, "handle-get-contact-attributes",
+      G_CALLBACK (contacts_get_contact_attributes_impl), self, 0);
+  g_signal_connect_object (self->priv->connection_skeleton, "handle-get-contact-by-id",
+      G_CALLBACK (contacts_get_contact_by_id_impl), self, 0);
 }
 
 /**
