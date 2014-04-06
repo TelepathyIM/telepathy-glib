@@ -210,9 +210,6 @@ static void
 channel_closed_cb (ExampleCSHRoomChannel *chan,
                    ExampleCSHRoomManager *self)
 {
-  tp_channel_manager_emit_channel_closed_for_object (TP_CHANNEL_MANAGER (self),
-      TP_EXPORTABLE_CHANNEL (chan));
-
   if (self->priv->channels != NULL)
     {
       TpHandle handle;
@@ -223,6 +220,9 @@ channel_closed_cb (ExampleCSHRoomChannel *chan,
 
       g_hash_table_remove (self->priv->channels, GUINT_TO_POINTER (handle));
     }
+
+  tp_channel_manager_emit_channel_closed_for_object (TP_CHANNEL_MANAGER (self),
+      TP_EXPORTABLE_CHANNEL (chan));
 }
 
 static void

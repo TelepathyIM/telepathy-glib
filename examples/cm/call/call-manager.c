@@ -292,6 +292,9 @@ example_call_manager_foreach_channel (TpChannelManager *iface,
   GHashTableIter iter;
   gpointer chan;
 
+  if (self->priv->channels == NULL)
+    return;
+
   g_hash_table_iter_init (&iter, self->priv->channels);
 
   while (g_hash_table_iter_next (&iter, &chan, NULL))
@@ -302,11 +305,11 @@ static void
 channel_closed_cb (ExampleCallChannel *chan,
     ExampleCallManager *self)
 {
-  tp_channel_manager_emit_channel_closed_for_object (
-      TP_CHANNEL_MANAGER (self), TP_EXPORTABLE_CHANNEL (chan));
-
   if (self->priv->channels != NULL)
     g_hash_table_remove (self->priv->channels, chan);
+
+  tp_channel_manager_emit_channel_closed_for_object (
+      TP_CHANNEL_MANAGER (self), TP_EXPORTABLE_CHANNEL (chan));
 }
 
 static ExampleCallChannel *

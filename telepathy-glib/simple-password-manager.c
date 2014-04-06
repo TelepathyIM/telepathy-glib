@@ -300,10 +300,10 @@ static void
 tp_simple_password_manager_channel_closed_cb (GObject *chan,
     TpSimplePasswordManager *manager)
 {
+  tp_clear_object (&manager->priv->channel);
+
   tp_channel_manager_emit_channel_closed_for_object (
       TP_CHANNEL_MANAGER (manager), TP_EXPORTABLE_CHANNEL (chan));
-
-  tp_clear_object (&manager->priv->channel);
 }
 
 static void

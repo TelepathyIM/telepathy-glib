@@ -195,9 +195,6 @@ static void
 channel_closed_cb (TpTestsEchoChannel *chan,
                    TpTestsEchoImManager *self)
 {
-  tp_channel_manager_emit_channel_closed_for_object (TP_CHANNEL_MANAGER (self),
-      TP_EXPORTABLE_CHANNEL (chan));
-
   if (self->priv->channels != NULL)
     {
       TpHandle handle;
@@ -221,6 +218,9 @@ channel_closed_cb (TpTestsEchoChannel *chan,
               TP_EXPORTABLE_CHANNEL (chan), NULL);
         }
     }
+
+  tp_channel_manager_emit_channel_closed_for_object (TP_CHANNEL_MANAGER (self),
+      TP_EXPORTABLE_CHANNEL (chan));
 }
 
 static void
