@@ -24,9 +24,8 @@
 #include "room-list-chan.h"
 #include "util.h"
 
-G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleConnection, tp_tests_simple_connection,
-    TP_TYPE_BASE_CONNECTION,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION, NULL))
+G_DEFINE_TYPE (TpTestsSimpleConnection, tp_tests_simple_connection,
+    TP_TYPE_BASE_CONNECTION)
 
 /* type definition stuff */
 
