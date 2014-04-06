@@ -75,6 +75,7 @@ tp_channel_manager_request_finalize (GObject *object)
         self->handle);
 
   g_free (self->channel_type);
+  g_object_unref (self->skeleton);
 
   chain_up (object);
 }
@@ -96,6 +97,7 @@ tp_channel_manager_request_init (TpChannelManagerRequest *self)
 TpChannelManagerRequest *
 _tp_channel_manager_request_new (
     GDBusMethodInvocation *context,
+    _TpGDBusConnectionInterfaceRequests *skeleton,
     TpChannelManagerRequestMethod method,
     const char *channel_type,
     TpEntityType entity_type,
@@ -111,6 +113,7 @@ _tp_channel_manager_request_new (
       NULL);
 
   result->context = context;
+  result->skeleton = g_object_ref (skeleton);
   result->method = method;
   result->channel_type = g_strdup (channel_type);
   result->entity_type = entity_type;
@@ -160,14 +163,14 @@ _tp_channel_manager_request_satisfy (TpChannelManagerRequest *self,
   switch (self->method)
     {
       case TP_CHANNEL_MANAGER_REQUEST_METHOD_CREATE_CHANNEL:
-        g_dbus_method_invocation_return_value (self->context,
-            g_variant_new ("(o@a{sv})", object_path, properties));
+        _tp_gdbus_connection_interface_requests_complete_create_channel (
+            self->skeleton, self->context, object_path, properties);
         break;
 
       case TP_CHANNEL_MANAGER_REQUEST_METHOD_ENSURE_CHANNEL:
-        g_dbus_method_invocation_return_value (self->context,
-            g_variant_new ("(bo@a{sv})", self->yours, object_path,
-              properties));
+        _tp_gdbus_connection_interface_requests_complete_ensure_channel (
+            self->skeleton, self->context, self->yours, object_path,
+            properties);
         break;
 
       default:

@@ -208,7 +208,6 @@
 #include <telepathy-glib/channel-manager.h>
 #include <telepathy-glib/channel-manager-request-internal.h>
 #include <telepathy-glib/connection-manager.h>
-#include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/dbus-internal.h>
 #include <telepathy-glib/exportable-channel.h>
@@ -222,18 +221,14 @@
 #include <telepathy-glib/value-array.h>
 
 #include <telepathy-glib/_gdbus/Connection.h>
+#include <telepathy-glib/_gdbus/Connection_Interface_Requests.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/variant-util-internal.h"
 
-static void requests_iface_init (gpointer, gpointer);
-
-G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseConnection,
-    tp_base_connection,
-    G_TYPE_DBUS_OBJECT_SKELETON,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_REQUESTS,
-      requests_iface_init))
+G_DEFINE_ABSTRACT_TYPE (TpBaseConnection, tp_base_connection,
+    G_TYPE_DBUS_OBJECT_SKELETON)
 
 enum
 {
@@ -272,7 +267,9 @@ static guint signals[N_SIGNALS] = {0};
   } G_STMT_END
 
 static void update_rcc_property (TpBaseConnection *self);
+static void update_channels_property (TpBaseConnection *self);
 static void conn_skeleton_init (TpBaseConnection *self);
+static void requests_skeleton_init (TpBaseConnection *self);
 
 static void
 channel_request_cancel (gpointer data,
@@ -328,6 +325,7 @@ struct _TpBaseConnectionPrivate
   gchar *account_path_suffix;
 
   _TpGDBusConnection *connection_skeleton;
+  _TpGDBusConnectionInterfaceRequests *requests_skeleton;
 };
 
 typedef struct
@@ -499,6 +497,7 @@ tp_base_connection_dispose (GObject *object)
     tp_clear_object (priv->handles + i);
 
   g_clear_object (&self->priv->connection_skeleton);
+  g_clear_object (&self->priv->requests_skeleton);
 
   if (G_OBJECT_CLASS (tp_base_connection_parent_class)->dispose)
     G_OBJECT_CLASS (tp_base_connection_parent_class)->dispose (object);
@@ -644,7 +643,6 @@ manager_new_channel_cb (TpChannelManager *manager,
 {
   gchar *path;
   GVariant *variant;
-  GHashTable *props;
 
   g_assert (TP_IS_CHANNEL_MANAGER (manager));
   g_assert (TP_IS_BASE_CONNECTION (self));
@@ -657,12 +655,11 @@ manager_new_channel_cb (TpChannelManager *manager,
       "channel-properties", &variant,
       NULL);
 
-  props = tp_asv_from_vardict (variant);
-  tp_svc_connection_interface_requests_emit_new_channel (self,
-      path, props);
+  update_channels_property (self);
+  _tp_gdbus_connection_interface_requests_emit_new_channel (
+      self->priv->requests_skeleton, path, variant);
 
   g_free (path);
-  g_hash_table_unref (props);
   g_variant_unref (variant);
 }
 
@@ -716,7 +713,9 @@ manager_channel_closed_cb (TpChannelManager *manager,
   g_assert (path != NULL);
   g_assert (TP_IS_BASE_CONNECTION (self));
 
-  tp_svc_connection_interface_requests_emit_channel_closed (self, path);
+  update_channels_property (self);
+  _tp_gdbus_connection_interface_requests_emit_channel_closed (
+      self->priv->requests_skeleton, path);
 }
 
 /*
@@ -778,22 +777,6 @@ tp_base_connection_interface_changed_cb (TpBaseConnection *self,
           "interfaces", &value);
       g_value_unset (&value);
     }
-}
-
-static void
-object_skeleton_take_interface (GDBusObjectSkeleton *skel,
-    GDBusInterfaceSkeleton *iface)
-{
-  g_dbus_object_skeleton_add_interface (skel, iface);
-  g_object_unref (iface);
-}
-
-static void
-object_skeleton_take_svc_interface (GDBusObjectSkeleton *skel,
-    GType type)
-{
-  object_skeleton_take_interface (skel,
-      tp_svc_interface_skeleton_new (skel, type));
 }
 
 static GObject *
@@ -864,11 +847,14 @@ tp_base_connection_constructed (GObject *object)
       TP_CONNECTION_STATUS_DISCONNECTED);
   conn_skeleton_init (self);
 
+  self->priv->requests_skeleton =
+      _tp_gdbus_connection_interface_requests_skeleton_new ();
+  g_dbus_object_skeleton_add_interface (skel,
+      G_DBUS_INTERFACE_SKELETON (self->priv->requests_skeleton));
+  requests_skeleton_init (self);
+
   /* Set the initial RCC, it won't be definitive until status is CONNECTED */
   update_rcc_property (self);
-
-  object_skeleton_take_svc_interface (skel,
-      TP_TYPE_SVC_CONNECTION_INTERFACE_REQUESTS);
 
   g_signal_connect (self, "interface-added",
       G_CALLBACK (tp_base_connection_interface_changed_cb),
@@ -941,6 +927,20 @@ conn_requests_get_channel_details (TpBaseConnection *self)
   return details;
 }
 
+static void
+update_channels_property (TpBaseConnection *self)
+{
+  GPtrArray *channels;
+  GValue value = G_VALUE_INIT;
+
+  channels = conn_requests_get_channel_details (self);
+  g_print ("update Channels to %d\n", channels->len);
+  g_value_init (&value, TP_ARRAY_TYPE_CHANNEL_DETAILS_LIST);
+  g_value_take_boxed (&value, channels);
+  _tp_gdbus_connection_interface_requests_set_channels (
+      self->priv->requests_skeleton, dbus_g_value_build_g_variant (&value));
+  g_value_unset (&value);
+}
 
 static void
 get_requestables_foreach (TpChannelManager *manager,
@@ -994,27 +994,6 @@ update_rcc_property (TpBaseConnection *self)
   g_value_unset (&value);
 }
 
-static void
-conn_requests_get_dbus_property (GObject *object,
-                                 GQuark interface,
-                                 GQuark name,
-                                 GValue *value,
-                                 gpointer unused G_GNUC_UNUSED)
-{
-  TpBaseConnection *self = TP_BASE_CONNECTION (object);
-
-  g_return_if_fail (interface == TP_IFACE_QUARK_CONNECTION_INTERFACE_REQUESTS);
-
-  if (name == g_quark_from_static_string ("Channels"))
-    {
-      g_value_take_boxed (value, conn_requests_get_channel_details (self));
-    }
-  else
-    {
-      g_return_if_reached ();
-    }
-}
-
 /* this is not really gtk-doc - it's for gobject-introspection */
 /**
  * TpBaseConnectionClass::fill_contact_attributes:
@@ -1059,10 +1038,6 @@ _tp_base_connection_fill_contact_attributes (TpBaseConnection *self,
 static void
 tp_base_connection_class_init (TpBaseConnectionClass *klass)
 {
-  static TpDBusPropertiesMixinPropImpl requests_properties[] = {
-        { "Channels", NULL, NULL },
-        { NULL }
-  };
   GParamSpec *param_spec;
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
@@ -1258,12 +1233,6 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
                   0,
                   NULL, NULL, NULL,
                   G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
-
-  tp_dbus_properties_mixin_class_init (object_class, 0);
-  tp_dbus_properties_mixin_implement_interface (object_class,
-      TP_IFACE_QUARK_CONNECTION_INTERFACE_REQUESTS,
-      conn_requests_get_dbus_property, NULL,
-      requests_properties);
 }
 
 static void
@@ -2294,17 +2263,20 @@ static void conn_requests_offer_request (TpBaseConnection *self,
 
 static void
 conn_requests_requestotron (TpBaseConnection *self,
-                            GHashTable *requested_properties,
+                            GVariant *requested_properties,
                             TpChannelManagerRequestMethod method,
                             GDBusMethodInvocation *context)
 {
+  GHashTable *asv;
+
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
 
   /* Call the first function in the chain handling incoming requests; it will
    * call the next steps.
    */
-  conn_requests_check_basic_properties (self, requested_properties, method,
-      context);
+  asv = tp_asv_from_vardict (requested_properties);
+  conn_requests_check_basic_properties (self, asv, method, context);
+  g_hash_table_unref (asv);
 }
 
 
@@ -2535,7 +2507,8 @@ conn_requests_offer_request (TpBaseConnection *self,
       g_assert_not_reached ();
     }
 
-  request = _tp_channel_manager_request_new (context, method,
+  request = _tp_channel_manager_request_new (context,
+      self->priv->requests_skeleton, method,
       type, target_entity_type, target_handle);
   g_ptr_array_add (priv->channel_requests, request);
 
@@ -2556,42 +2529,41 @@ conn_requests_offer_request (TpBaseConnection *self,
 }
 
 
-static void
-conn_requests_create_channel (TpSvcConnectionInterfaceRequests *svc,
-                              GHashTable *requested_properties,
-                              GDBusMethodInvocation *context)
+static gboolean
+conn_requests_create_channel (_TpGDBusConnectionInterfaceRequests *skeleton,
+    GDBusMethodInvocation *context,
+    GVariant *requested_properties,
+    TpBaseConnection *self)
 {
-  TpBaseConnection *self = TP_BASE_CONNECTION (svc);
-
   conn_requests_requestotron (self, requested_properties,
       TP_CHANNEL_MANAGER_REQUEST_METHOD_CREATE_CHANNEL, context);
+  return TRUE;
 }
 
 
-static void
-conn_requests_ensure_channel (TpSvcConnectionInterfaceRequests *svc,
-                              GHashTable *requested_properties,
-                              GDBusMethodInvocation *context)
+static gboolean
+conn_requests_ensure_channel (_TpGDBusConnectionInterfaceRequests *skeleton,
+    GDBusMethodInvocation *context,
+    GVariant *requested_properties,
+    TpBaseConnection *self)
 {
-  TpBaseConnection *self = TP_BASE_CONNECTION (svc);
-
   conn_requests_requestotron (self, requested_properties,
       TP_CHANNEL_MANAGER_REQUEST_METHOD_ENSURE_CHANNEL, context);
+  return TRUE;
 }
 
 
 static void
-requests_iface_init (gpointer g_iface,
-                     gpointer iface_data G_GNUC_UNUSED)
+requests_skeleton_init (TpBaseConnection *self)
 {
-  TpSvcConnectionInterfaceRequestsClass *iface = g_iface;
-
-#define IMPLEMENT(x) \
-    tp_svc_connection_interface_requests_implement_##x (\
-        iface, conn_requests_##x)
-  IMPLEMENT (create_channel);
-  IMPLEMENT (ensure_channel);
-#undef IMPLEMENT
+  g_signal_connect_object (self->priv->requests_skeleton,
+      "handle-create-channel",
+      G_CALLBACK (conn_requests_create_channel),
+      self, 0);
+  g_signal_connect_object (self->priv->requests_skeleton,
+      "handle-ensure-channel",
+      G_CALLBACK (conn_requests_ensure_channel),
+      self, 0);
 }
 
 

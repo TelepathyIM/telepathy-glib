@@ -350,6 +350,8 @@ libtelepathy_glib_main_internal_la_SOURCES = \
 gdbus_codegen = \
     _gdbus/Connection.c \
     _gdbus/Connection.h \
+    _gdbus/Connection_Interface_Requests.c \
+    _gdbus/Connection_Interface_Requests.h \
     $(NULL)
 
 _gdbus/%.c: _gdbus/%-stamp

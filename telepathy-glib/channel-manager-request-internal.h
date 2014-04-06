@@ -24,6 +24,7 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/_gdbus/Connection_Interface_Requests.h>
 #include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
@@ -46,6 +47,7 @@ struct _TpChannelManagerRequest
   GObject parent;
 
   GDBusMethodInvocation *context;
+  _TpGDBusConnectionInterfaceRequests *skeleton;
   TpChannelManagerRequestMethod method;
 
   gchar *channel_type;
@@ -85,6 +87,7 @@ GType tp_channel_manager_request_get_type (void);
 
 TpChannelManagerRequest * _tp_channel_manager_request_new (
     GDBusMethodInvocation *context,
+    _TpGDBusConnectionInterfaceRequests *skeleton,
     TpChannelManagerRequestMethod method,
     const char *channel_type,
     TpEntityType entity_type,
