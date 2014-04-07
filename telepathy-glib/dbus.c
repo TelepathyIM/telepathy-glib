@@ -837,14 +837,6 @@ tp_dbus_connection_try_register_object (GDBusConnection *dbus_connection,
           continue;
         }
 
-      /* We don't want to export Properties interface, TpSvcInterfaceSkeleton
-       * will handle that itself. */
-      if (iface == TP_TYPE_SVC_DBUS_PROPERTIES)
-        {
-          WARNING ("TpSvcDBusProperties interface shouldn't be implemented");
-          continue;
-        }
-
       skeleton = _tp_svc_interface_skeleton_new (object, iface, iinfo);
 
       if (!g_dbus_interface_skeleton_export (
