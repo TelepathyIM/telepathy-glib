@@ -158,11 +158,6 @@ tp_text_channel_get_property (GObject *object,
             tp_text_channel_get_delivery_reporting_support (self));
         break;
 
-      case PROP_MESSAGE_TYPES:
-        g_value_set_boxed (value,
-            tp_text_channel_get_message_types (self));
-        break;
-
       case PROP_IS_SMS_CHANNEL:
         g_value_set_boolean (value, tp_text_channel_is_sms_channel (self));
         break;
@@ -943,22 +938,6 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
   g_object_class_install_property (gobject_class,
       PROP_DELIVERY_REPORTING_SUPPORT, param_spec);
 
-  /**
-   * TpTextChannel:message-types:
-   *
-   * A #GArray containing the #TpChannelTextMessageType which may be sent on
-   * this channel.
-   *
-   * Since: 0.13.16
-   */
-  param_spec = g_param_spec_boxed ("message-types",
-      "MessageTypes",
-      "The MessageTypes property of the channel",
-      DBUS_TYPE_G_UINT_ARRAY,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (gobject_class,
-      PROP_MESSAGE_TYPES, param_spec);
-
  /**
    * TpTextChannel:is-sms-channel:
    *
@@ -1657,25 +1636,6 @@ tp_text_channel_set_chat_state_finish (TpTextChannel *self,
     GError **error)
 {
   _tp_implement_finish_void (self, tp_text_channel_set_chat_state_async)
-}
-
-/**
- * tp_text_channel_get_message_types:
- * @self: a #TpTextChannel
- *
- * Return the #TpTextChannel:message-types property
- *
- * Returns: (transfer none) (element-type TelepathyGLib.ChannelTextMessageType):
- * the value of #TpTextChannel:message-types
- *
- * Since: 0.13.16
- */
-GArray *
-tp_text_channel_get_message_types (TpTextChannel *self)
-{
-  g_return_val_if_fail (TP_IS_TEXT_CHANNEL (self), NULL);
-
-  return self->priv->message_types;
 }
 
 /**

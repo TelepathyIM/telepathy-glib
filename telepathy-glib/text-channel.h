@@ -70,8 +70,6 @@ TpMessagePartSupportFlags tp_text_channel_get_message_part_support_flags (
 TpDeliveryReportingSupportFlags tp_text_channel_get_delivery_reporting_support (
     TpTextChannel *self);
 
-GArray * tp_text_channel_get_message_types (TpTextChannel *self);
-
 gboolean tp_text_channel_supports_message_type (TpTextChannel *self,
     TpChannelTextMessageType message_type);
 
