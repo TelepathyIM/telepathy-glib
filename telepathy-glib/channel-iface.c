@@ -61,13 +61,6 @@ tp_channel_iface_base_init (gpointer klass)
      * The D-Bus interface representing the type of this channel. Read-only
      * except during construction.
      *
-     * In #TpChannel this property is read-only except during construction;
-     * if %NULL during construction (the default), we ask the remote D-Bus
-     * object what its channel type is, and reading this property will yield
-     * %NULL until a reply is received. This is not guaranteed to have happened
-     * until tp_proxy_prepare_async() has finished preparing
-     * %TP_CHANNEL_FEATURE_CORE.
-     *
      * In connection manager implementations, attempts to set this property
      * during construction will usually be ignored or treated as an
      * error.
@@ -84,15 +77,8 @@ tp_channel_iface_base_init (gpointer klass)
      * The #TpEntityType of this channel's associated handle, or
      * %TP_ENTITY_TYPE_NONE (which is numerically 0) if no handle.
      *
-     * In #TpChannel, if this is TP_UNKNOWN_ENTITY_TYPE
-     * during construction, we ask the remote D-Bus object what its
-     * entity type is; reading this property will yield TP_UNKNOWN_ENTITY_TYPE
-     * until we get the reply. This is not guaranteed to be have happened
-     * until tp_proxy_prepare_async() has finished preparing
-     * %TP_CHANNEL_FEATURE_CORE.
-     *
      * In connection manager implementations, attempts to set this during
-     * construction might also be ignored.
+     * construction might be ignored.
      */
     param_spec = g_param_spec_uint ("entity-type", "Entity type",
         "The TpEntityType of this channel's associated handle.",
@@ -105,13 +91,6 @@ tp_channel_iface_base_init (gpointer klass)
      *
      * This channel's associated handle, or 0 if no handle or unknown.
      * Read-only except during construction.
-     *
-     * In #TpChannel, if this is 0
-     * during construction, and entity-type is not TP_ENTITY_TYPE_NONE (== 0),
-     * we ask the remote D-Bus object what its entity type is; reading this
-     * property will yield 0 until we get the reply, or if GetHandle()
-     * fails. This is not guaranteed to be set until tp_proxy_prepare_async()
-     * has finished preparing %TP_CHANNEL_FEATURE_CORE.
      *
      * In connection manager implementations, attempts to set this during
      * construction might be ignored, depending on the channel type.

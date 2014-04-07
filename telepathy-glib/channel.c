@@ -129,8 +129,8 @@ G_DEFINE_TYPE (TpChannel, tp_channel, TP_TYPE_PROXY)
  *
  * Specifically, this implies that:
  *
- * - #TpChannelIface:channel-type is set
- * - #TpChannelIface:entity-type and #TpChannelIface:handle are set
+ * - #TpChannel:channel-type is set
+ * - #TpChannel:entity-type and #TpChannel:handle are set
  * - any extra interfaces will have been set up in TpProxy (i.e.
  *   #TpProxy:interfaces contains at least all extra Channel interfaces)
  *
@@ -187,7 +187,7 @@ tp_channel_get_feature_quark_group (void)
  * Get the D-Bus interface name representing this channel's type,
  * if it has been discovered.
  *
- * This is the same as the #TpChannelIface:channel-type property; it isn't
+ * This is the same as the #TpChannel:channel-type property; it isn't
  * guaranteed to be non-%NULL until the %TP_CHANNEL_FEATURE_CORE feature has
  * been prepared.
  *
@@ -211,7 +211,7 @@ tp_channel_get_channel_type (TpChannel *self)
  * Get the D-Bus interface name representing this channel's type, as a GQuark,
  * if it has been discovered.
  *
- * This is the same as the #TpChannelIface:channel-type property, except that it
+ * This is the same as the #TpChannel:channel-type property, except that it
  * is a GQuark rather than a string. It isn't guaranteed to be nonzero until
  * the %TP_CHANNEL_FEATURE_CORE property is ready.
  *
@@ -237,7 +237,7 @@ tp_channel_get_channel_type_id (TpChannel *self)
  * channel communicates for its whole lifetime, or 0 if there is no such
  * handle or it has not yet been discovered.
  *
- * This is the same as the #TpChannelIface:handle property. It isn't
+ * This is the same as the #TpChannel:handle property. It isn't
  * guaranteed to have its final value until the %TP_CHANNEL_FEATURE_CORE
  * feature is ready.
  *
@@ -245,7 +245,7 @@ tp_channel_get_channel_type_id (TpChannel *self)
  * This will be %TP_UNKNOWN_ENTITY_TYPE if the handle has not yet been
  * discovered, or %TP_ENTITY_TYPE_NONE if there is no handle with which this
  * channel will always communicate. This is the same as the
- * #TpChannelIface:entity-type property.
+ * #TpChannel:entity-type property.
  *
  * Returns: the handle
  * Since: 0.7.12
@@ -1197,8 +1197,8 @@ tp_channel_class_init (TpChannelClass *klass)
    * This channel's associated identifier, or the empty string if it has
    * entity type %TP_ENTITY_TYPE_NONE.
    *
-   * For channels where #TpChannelIface:handle is non-zero, this is the result
-   * of inspecting #TpChannelIface:handle.
+   * For channels where #TpChannel:handle is non-zero, this is the result
+   * of inspecting #TpChannel:handle.
    *
    * This is not guaranteed to be set until tp_proxy_prepare_async() has
    * finished preparing %TP_CHANNEL_FEATURE_CORE; until then, it may be
@@ -1340,7 +1340,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * TpChannel:target-contact:
    *
    * If this channel is for communication with a single contact (that is,
-   * #TpChannelIface:entity-type is %TP_ENTITY_TYPE_CONTACT), then a #TpContact
+   * #TpChannel:entity-type is %TP_ENTITY_TYPE_CONTACT), then a #TpContact
    * representing the remote contact. For chat rooms, contact search channels and
    * other channels without a single remote contact, %NULL.
    *
