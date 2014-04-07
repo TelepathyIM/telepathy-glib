@@ -40,21 +40,19 @@ create_channel_impl (TpClientFactory *self,
     GError **error)
 {
   const gchar *chan_type;
-  GHashTable *asv;
   TpChannel *channel;
 
-  asv = tp_asv_from_vardict (properties);
-  chan_type = tp_asv_get_string (asv, TP_PROP_CHANNEL_CHANNEL_TYPE);
+  chan_type = tp_vardict_get_string (properties, TP_PROP_CHANNEL_CHANNEL_TYPE);
 
   if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_TEXT))
     {
       channel = (TpChannel *) _tpl_text_channel_new (self, conn,
-          object_path, asv, error);
+          object_path, properties, error);
     }
   else if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_CALL1))
     {
       channel = (TpChannel *) _tpl_call_channel_new (self, conn,
-          object_path, asv, error);
+          object_path, properties, error);
     }
   else
     {
@@ -62,7 +60,6 @@ create_channel_impl (TpClientFactory *self,
           error);
     }
 
-  g_hash_table_unref (asv);
   return channel;
 }
 

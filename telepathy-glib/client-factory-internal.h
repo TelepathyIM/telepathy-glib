@@ -53,7 +53,7 @@ TpConnection *_tp_connection_new (TpClientFactory *factory,
 TpChannel *_tp_channel_new (TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
-    const GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error);
 
 TpChannelRequest *_tp_channel_request_new (

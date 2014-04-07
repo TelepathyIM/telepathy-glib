@@ -29,31 +29,31 @@ G_BEGIN_DECLS
 TpTextChannel *_tp_text_channel_new (TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
-    const GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error);
 
 TpStreamTubeChannel *_tp_stream_tube_channel_new (TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
-    const GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error);
 
 TpDBusTubeChannel *_tp_dbus_tube_channel_new (TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
-    const GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error);
 
 TpFileTransferChannel *_tp_file_transfer_channel_new (TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
-    const GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error);
 
 TpCallChannel *_tp_call_channel_new (TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
-    const GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error);
 
 G_END_DECLS

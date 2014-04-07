@@ -246,13 +246,10 @@ create_channel_impl (TpClientFactory *self,
     GError **error)
 {
   TpChannel *channel;
-  GHashTable *props;
 
-  props = tp_asv_from_vardict (immutable_properties);
+  channel = _tp_channel_new (self, conn, object_path, immutable_properties,
+      error);
 
-  channel = _tp_channel_new (self, conn, object_path, props, error);
-
-  g_hash_table_unref (props);
   return channel;
 }
 

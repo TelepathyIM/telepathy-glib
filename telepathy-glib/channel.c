@@ -23,6 +23,8 @@
 
 #include "telepathy-glib/channel-internal.h"
 
+#include <dbus/dbus-glib.h>
+
 #include <telepathy-glib/asv.h>
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/cli-channel.h>
@@ -409,7 +411,8 @@ tp_channel_get_property (GObject *object,
       g_value_set_string (value, tp_channel_get_identifier (self));
       break;
     case PROP_CHANNEL_PROPERTIES:
-      g_value_set_boxed (value, self->priv->channel_properties);
+      g_value_take_variant (value,
+          tp_channel_dup_immutable_properties (self));
       break;
     case PROP_GROUP_FLAGS:
       g_value_set_uint (value, self->priv->group_flags);
@@ -536,13 +539,20 @@ tp_channel_set_property (GObject *object,
 
     case PROP_CHANNEL_PROPERTIES:
         {
-          GHashTable *asv = g_value_get_boxed (value);
-          gboolean valid;
+          GVariant *vardict;
+
+          vardict = g_value_get_variant (value);
 
           /* default value at construct time is NULL, we need to ignore that */
-          if (asv != NULL)
+          if (vardict != NULL)
             {
+              GValue inner_value = G_VALUE_INIT;
+              GHashTable *asv;
+              gboolean valid;
               guint u;
+
+              dbus_g_value_parse_g_variant (vardict, &inner_value);
+              asv = g_value_get_boxed (&inner_value);
 
               /* no need to emit GObject::notify for any of these since this
                * can only happen at construct time, before anyone has
@@ -572,6 +582,8 @@ tp_channel_set_property (GObject *object,
                   tp_asv_get_boxed (self->priv->channel_properties,
                       TP_PROP_CHANNEL_INTERFACES,
                       G_TYPE_STRV));
+
+              g_value_unset (&inner_value);
             }
         }
       break;
@@ -1208,8 +1220,8 @@ tp_channel_class_init (TpChannelClass *klass)
    * TpChannel:channel-properties:
    *
    * The immutable D-Bus properties of this channel, represented by a
-   * #GHashTable where the keys are D-Bus interface name + "." + property
-   * name, and the values are #GValue instances.
+   * %G_VARIANT_TYPE_VARDICT where the keys are
+   * D-Bus interface name + "." + property name.
    *
    * Read-only except during construction. If this is not provided
    * during construction, a reasonable (but possibly incomplete) version
@@ -1217,10 +1229,10 @@ tp_channel_class_init (TpChannelClass *klass)
    * property repeatedly may yield progressively more complete values until
    * tp_proxy_prepare_async() has finished preparing %TP_CHANNEL_FEATURE_CORE.
    */
-  param_spec = g_param_spec_boxed ("channel-properties",
+  param_spec = g_param_spec_variant ("channel-properties",
       "Immutable D-Bus properties",
-      "A map D-Bus interface + \".\" + property name => GValue",
-      TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP,
+      "A map D-Bus interface + \".\" + property name => variant",
+      G_VARIANT_TYPE_VARDICT, NULL,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CHANNEL_PROPERTIES,
       param_spec);
@@ -1440,7 +1452,7 @@ TpChannel *
 _tp_channel_new (TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
-    const GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error)
 {
   TpChannel *ret = NULL;

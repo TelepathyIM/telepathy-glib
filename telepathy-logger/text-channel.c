@@ -715,7 +715,7 @@ TplTextChannel *
 _tpl_text_channel_new (TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
-    const GHashTable *tp_chan_props,
+    GVariant *tp_chan_props,
     GError **error)
 {
   TplTextChannel *self;

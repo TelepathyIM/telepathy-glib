@@ -65,7 +65,7 @@ GType _tpl_call_channel_get_type (void);
 TplCallChannel * _tpl_call_channel_new (TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
-    const GHashTable *tp_chan_props,
+    GVariant *tp_chan_props,
     GError **error);
 
 G_END_DECLS

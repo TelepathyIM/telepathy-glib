@@ -494,7 +494,7 @@ TpStreamTubeChannel *
 _tp_stream_tube_channel_new (TpClientFactory *factory,
     TpConnection *conn,
     const gchar *object_path,
-    const GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error)
 {
   g_return_val_if_fail (TP_IS_CONNECTION (conn), NULL);
