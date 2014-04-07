@@ -289,7 +289,8 @@ _tpl_conf_set_ignorelist (TplConf *self,
  * Provides list of IDs in "account_id/entity_id" format. Events from or to
  * this entities should not be logged.
  *
- * Returns: (transfer none) NULL-terminated list of contact IDs.
+ * Returns: (transfer none) (array zero-terminated=1) (element-type utf8):
+ *  NULL-terminated list of contact IDs.
  */
 const gchar **
 _tpl_conf_get_ignorelist (TplConf *self)
