@@ -1,7 +1,40 @@
 telepathy-glib 0.99.11 (UNRELEASED)
 ===================================
 
-...
+API breaks:
+
+• "handle type" has been replaced with "entity type" in all function names,
+  properties, constants etc. ("git grep -i handle.type" will be useful)
+
+• tp_connection_manager_param_get_default() has been removed,
+  use tp_connection_manager_param_dup_default_variant() instead
+
+• tp_message_set() has been removed, use tp_message_set_variant() instead
+
+• tp_capabilities_get_channel_classes() has been removed, and
+  tp_capabilities_dup_channel_classes_variant() has been renamed to
+  tp_capabilities_dup_channel_classes(). Similarly,
+  the old TpCapabilities:channel-classes has been removed, and
+  TpCapabilities:channel-classes-variant has been renamed to
+  TpCapabilities:channel-classes
+
+• tp_account_get_avatar_async() has been removed, use
+  tp_account_dup_avatar_async() (which returns GBytes) instead
+
+• tp_text_channel_get_message_types() has been removed, use
+  tp_text_channel_supports_message_type() instead
+
+• TpAccount:connection-error-details, and the corresponding
+  argument in TpAccount::status-changed, changed from GHashTable to GVariant
+
+• TpChannelDispatchOperation:cdo-properties,
+  TpChannel:channel-properties and TpObserveChannelContext:observer-info
+  changed from GHashTable to GVariant
+
+• TpChannel no longer implements TpChannelIface;
+  TpChannel:entity-type, TpChannel:handle and TpChannel:channel-type
+  have changed from read/write/construct-only to read-only, so TpChannel
+  subclasses must stop passing handle-type or entity-type to the constructor
 
 telepathy-glib 0.99.10 (2014-04-03)
 ===================================
