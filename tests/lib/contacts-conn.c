@@ -190,11 +190,26 @@ finalize (GObject *object)
   G_OBJECT_CLASS (tp_tests_contacts_connection_parent_class)->finalize (object);
 }
 
+static GVariant *
+_tp_g_variant_new_boxed (GType gtype,
+    gpointer boxed)
+{
+  GValue value = G_VALUE_INIT;
+  GVariant *variant;
+
+  g_value_init (&value, gtype);
+  g_value_set_boxed (&value, boxed);
+  variant = dbus_g_value_build_g_variant (&value);
+  g_value_unset (&value);
+
+  return variant;
+}
+
 static void
 tp_tests_contacts_connection_fill_contact_attributes (TpBaseConnection *base,
     const gchar *dbus_interface,
     TpHandle contact,
-    TpContactAttributeMap *attributes)
+    GVariantDict *attributes)
 {
   TpTestsContactsConnection *self = TP_TESTS_CONTACTS_CONNECTION (base);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (base,
@@ -211,9 +226,8 @@ tp_tests_contacts_connection_fill_contact_attributes (TpBaseConnection *base,
           alias = tp_handle_inspect (contact_repo, contact);
         }
 
-      tp_contact_attribute_map_take_sliced_gvalue (attributes, contact,
-          TP_IFACE_CONNECTION_INTERFACE_ALIASING1 "/alias",
-          tp_g_value_slice_new_string (alias));
+      g_variant_dict_insert (attributes,
+          TP_IFACE_CONNECTION_INTERFACE_ALIASING1 "/alias", "s", alias);
 
       return;
     }
@@ -226,9 +240,8 @@ tp_tests_contacts_connection_fill_contact_attributes (TpBaseConnection *base,
 
       if (a != NULL && a->token != NULL)
         {
-          tp_contact_attribute_map_take_sliced_gvalue (attributes, contact,
-              TP_IFACE_CONNECTION_INTERFACE_AVATARS1 "/token",
-              tp_g_value_slice_new_string (a->token));
+          g_variant_dict_insert (attributes,
+              TP_IFACE_CONNECTION_INTERFACE_AVATARS1 "/token", "s", a->token);
         }
 
       return;
@@ -242,9 +255,9 @@ tp_tests_contacts_connection_fill_contact_attributes (TpBaseConnection *base,
 
       if (location != NULL)
         {
-          tp_contact_attribute_map_take_sliced_gvalue (attributes, contact,
+          g_variant_dict_insert_value (attributes,
               TP_IFACE_CONNECTION_INTERFACE_LOCATION1 "/location",
-              tp_g_value_slice_new_boxed (TP_HASH_TYPE_LOCATION, location));
+              _tp_g_variant_new_boxed (TP_HASH_TYPE_LOCATION, location));
         }
 
       return;
@@ -258,10 +271,10 @@ tp_tests_contacts_connection_fill_contact_attributes (TpBaseConnection *base,
 
       if (caps != NULL)
         {
-          tp_contact_attribute_map_take_sliced_gvalue (attributes, contact,
+          g_variant_dict_insert_value (attributes,
               TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES1 "/capabilities",
-              tp_g_value_slice_new_boxed (
-                TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST, caps));
+              _tp_g_variant_new_boxed (
+                  TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST, caps));
         }
 
       return;
@@ -275,9 +288,9 @@ tp_tests_contacts_connection_fill_contact_attributes (TpBaseConnection *base,
 
       if (info != NULL)
         {
-          tp_contact_attribute_map_take_sliced_gvalue (attributes, contact,
+          g_variant_dict_insert_value (attributes,
               TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO1 "/info",
-              tp_g_value_slice_new_boxed (TP_ARRAY_TYPE_CONTACT_INFO_FIELD_LIST,
+              _tp_g_variant_new_boxed (TP_ARRAY_TYPE_CONTACT_INFO_FIELD_LIST,
                   info));
         }
 

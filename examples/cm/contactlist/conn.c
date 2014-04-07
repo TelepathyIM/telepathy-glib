@@ -233,18 +233,16 @@ static void
 example_contact_list_connection_fill_contact_attributes (TpBaseConnection *conn,
     const gchar *dbus_interface,
     TpHandle contact,
-    TpContactAttributeMap *attributes)
+    GVariantDict *attributes)
 {
   ExampleContactListConnection *self =
     EXAMPLE_CONTACT_LIST_CONNECTION (conn);
 
   if (!tp_strdiff (dbus_interface, TP_IFACE_CONNECTION_INTERFACE_ALIASING1))
     {
-      tp_contact_attribute_map_set (attributes, contact,
-          TP_TOKEN_CONNECTION_INTERFACE_ALIASING1_ALIAS,
-          g_variant_new_string (
-            example_contact_list_get_alias (self->priv->contact_list,
-              contact)));
+      g_variant_dict_insert (attributes,
+          TP_TOKEN_CONNECTION_INTERFACE_ALIASING1_ALIAS, "s",
+          example_contact_list_get_alias (self->priv->contact_list, contact));
       return;
     }
 

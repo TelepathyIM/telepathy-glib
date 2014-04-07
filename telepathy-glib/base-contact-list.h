@@ -600,7 +600,7 @@ _TP_AVAILABLE_IN_1_0
 gboolean tp_base_contact_list_fill_contact_attributes (TpBaseContactList *self,
   const gchar *dbus_interface,
   TpHandle contact,
-  TpContactAttributeMap *attributes);
+  GVariantDict *attributes);
 
 G_END_DECLS
 

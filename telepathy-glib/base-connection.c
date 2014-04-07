@@ -143,11 +143,9 @@
  *  Connection. This must be set by subclasses to a non-%NULL
  *  value. Since: 0.7.15
  * @fill_contact_attributes: If @dbus_interface is recognised by this
- *  object, fill in any contact attribute tokens for @contact in @attributes
- *  by using tp_contact_attribute_map_set()
- *  or tp_contact_attribute_map_take_sliced_gvalue, and return. Otherwise,
- *  chain up to the superclass' implementation.
- *  Since: 0.99.6
+ *  object, fill in any contact attribute tokens for @contact in @attributes,
+ *  and return. Otherwise, chain up to the superclass' implementation.
+ *  Since: 0.UNRELEASED
  *
  * The class of a #TpBaseConnection. Many members are virtual methods etc.
  * to be filled in in the subclass' class_init function.
@@ -1000,22 +998,20 @@ update_rcc_property (TpBaseConnection *self)
  * @self: a connection
  * @dbus_interface: a D-Bus interface
  * @contact: a contact
- * @attributes: used to return the attributes
+ * @attributes: used to return @contact's attributes
  *
  * If @dbus_interface is recognised by this object, fill in any contact
- * attribute tokens for @contact in @attributes by using
- * tp_contact_attribute_map_set() or
- * tp_contact_attribute_map_take_sliced_gvalue, and return. Otherwise,
+ * attribute tokens for @contact in @attributes, and return. Otherwise,
  * chain up to the superclass' implementation.
  *
- * Since: 0.99.6
+ * Since: 0.UNRELEASED
  */
 
 static void
 _tp_base_connection_fill_contact_attributes (TpBaseConnection *self,
     const gchar *dbus_interface,
     TpHandle contact,
-    TpContactAttributeMap *attributes)
+    GVariantDict *attributes)
 {
   const gchar *tmp;
 
@@ -1030,9 +1026,7 @@ _tp_base_connection_fill_contact_attributes (TpBaseConnection *self,
   g_assert (tmp != NULL);
 
   /* this is always included */
-  tp_contact_attribute_map_take_sliced_gvalue (attributes,
-      contact, TP_TOKEN_CONNECTION_CONTACT_ID,
-      tp_g_value_slice_new_string (tmp));
+  g_variant_dict_insert (attributes, TP_TOKEN_CONNECTION_CONTACT_ID, "s", tmp);
 }
 
 static void
@@ -2730,97 +2724,12 @@ tp_base_connection_get_object_path (TpBaseConnection *self)
   return self->priv->object_path;
 }
 
-/**
- * TpContactAttributeMap:
- *
- * Opaque structure representing a map from #TpHandle to
- * maps from contact attribute tokens to variants.
- *
- * This structure cannot currently be copied, freed or read via
- * public API.
- *
- * Since: 0.99.6
- */
-
-/* Implementation detail: there is no such thing as a TpContactAttributeMap,
- * it's just a GHashTable<TpHandle, GHashTable<gchar *, sliced GValue *>>. */
-
-/**
- * tp_contact_attribute_map_set:
- * @map: an opaque map from contacts to their attributes
- * @contact: a contact
- * @token: a contact attribute
- * @value: the value of the attribute. If it is floating, ownership
- *  will be taken, as if via g_variant_ref_sink().
- *
- * Put a contact attribute in @self. It is an error to use this function
- * for a @contact that was not requested.
- *
- * Since: 0.99.6
- */
-void
-tp_contact_attribute_map_set (TpContactAttributeMap *map,
-    TpHandle contact,
-    const gchar *token,
-    GVariant *value)
-{
-  GValue *gv = g_slice_new0 (GValue);
-
-  g_variant_ref_sink (value);
-  dbus_g_value_parse_g_variant (value, gv);
-  tp_contact_attribute_map_take_sliced_gvalue (map, contact, token, gv);
-  g_variant_unref (value);
-}
-
-/**
- * tp_contact_attribute_map_take_sliced_gvalue: (skip)
- * @map: an opaque map from contacts to their attributes
- * @contact: a contact
- * @token: a contact attribute
- * @value: (transfer full): a slice-allocated #GValue, for instance
- *  from tp_g_value_slice_new(). Ownership is taken by @self.
- *
- * Put a contact attribute in @self. It is an error to use this function
- * for a @contact that was not requested.
- *
- * This version of tp_contact_attribute_map_set() isn't
- * introspectable, but is close to the API that "Telepathy 0"
- * connection managers used.
- *
- * Since: 0.99.6
- */
-void
-tp_contact_attribute_map_take_sliced_gvalue (TpContactAttributeMap *map,
-    TpHandle contact,
-    const gchar *token,
-    GValue *value)
-{
-  GHashTable *auasv = (GHashTable *) map;
-  GHashTable *asv;
-
-  g_return_if_fail (map != NULL);
-
-  asv = g_hash_table_lookup (auasv, GUINT_TO_POINTER (contact));
-
-  if (G_UNLIKELY (asv == NULL))
-    {
-      /* This is a programmer error; I'm not using g_return_if_fail
-       * to give a better diagnostic */
-      CRITICAL ("contact %u not in TpContactAttributeMap", contact);
-      return;
-    }
-
-  g_return_if_fail (G_IS_VALUE (value));
-
-  g_hash_table_insert (asv, g_strdup (token), value);
-}
-
 static const gchar * const contacts_always_included_interfaces[] = {
     TP_IFACE_CONNECTION,
     NULL
 };
 
-/**
+/*
  * tp_base_connection_dup_contact_attributes_hash: (skip)
  * @self: A connection instance that uses this mixin. The connection must
  *  be connected.
@@ -2840,34 +2749,23 @@ static const gchar * const contacts_always_included_interfaces[] = {
  * the behaviour is defined by the interface; the attribute should either
  * be omitted from the result or replaced with a default value.
  *
- * Returns: (element-type guint GLib.HashTable): a map from #TpHandle
- *  to #GHashTable, where the values are maps from string to #GValue
+ * Returns: a floating GVariant of type "a{ua{sv}}"
  * Since: 0.99.6
  */
-GHashTable *
-tp_base_connection_dup_contact_attributes_hash (TpBaseConnection *self,
+GVariant *
+_tp_base_connection_dup_contact_attributes_hash (TpBaseConnection *self,
     const GArray *handles,
     const gchar * const *interfaces,
     const gchar * const *assumed_interfaces)
 {
-  GHashTable *result;
-  guint i;
+  TpBaseConnectionClass *klass = TP_BASE_CONNECTION_GET_CLASS (self);
   TpHandleRepoIface *contact_repo;
-  GArray *valid_handles;
-  TpBaseConnectionClass *klass;
+  GVariantBuilder builder;
+  guint i;
 
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
   g_return_val_if_fail (tp_base_connection_check_connected (self, NULL), NULL);
-
-  contact_repo = tp_base_connection_get_handles (self, TP_ENTITY_TYPE_CONTACT);
-  klass = TP_BASE_CONNECTION_GET_CLASS (self);
   g_return_val_if_fail (klass->fill_contact_attributes != NULL, NULL);
-
-  /* Setup handle array and hash with valid handles */
-  valid_handles = g_array_sized_new (TRUE, TRUE, sizeof (TpHandle),
-      handles->len);
-  result = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL,
-      (GDestroyNotify) g_hash_table_unref);
 
   DEBUG ("%u contact(s)", handles->len);
 
@@ -2881,13 +2779,14 @@ tp_base_connection_dup_contact_attributes_hash (TpBaseConnection *self,
       DEBUG ("\tselected interface: '%s'", interfaces[i]);
     }
 
+  contact_repo = tp_base_connection_get_handles (self, TP_ENTITY_TYPE_CONTACT);
+  g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{ua{sv}}"));
+
   for (i = 0; i < handles->len; i++)
     {
-      TpHandle h;
-      GHashTable *attr_hash;
+      TpHandle h = g_array_index (handles, TpHandle, i);
+      GVariantDict dict;
       guint j;
-
-      h = g_array_index (handles, TpHandle, i);
 
       DEBUG ("\tcontact #%u", h);
 
@@ -2897,27 +2796,24 @@ tp_base_connection_dup_contact_attributes_hash (TpBaseConnection *self,
           continue;
         }
 
-      attr_hash = g_hash_table_new_full (g_str_hash,
-          g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free);
-      g_array_append_val (valid_handles, h);
-      g_hash_table_insert (result, GUINT_TO_POINTER (h), attr_hash);
+      g_variant_dict_init (&dict, NULL);
 
       for (j = 0; assumed_interfaces != NULL && assumed_interfaces[j] != NULL; j++)
         {
           klass->fill_contact_attributes (self, assumed_interfaces[j], h,
-              (TpContactAttributeMap *) result);
+              &dict);
         }
 
       for (j = 0; interfaces != NULL && interfaces[j] != NULL; j++)
         {
-          klass->fill_contact_attributes (self, interfaces[j], h,
-              (TpContactAttributeMap *) result);
+          klass->fill_contact_attributes (self, interfaces[j], h, &dict);
         }
+
+      g_variant_builder_add (&builder, "{u@a{sv}}", h,
+          g_variant_dict_end (&dict));
     }
 
-  g_array_unref (valid_handles);
-
-  return result;
+  return g_variant_builder_end (&builder);
 }
 
 static gboolean
@@ -2930,8 +2826,6 @@ contacts_get_contact_attributes_impl (_TpGDBusConnection *skeleton,
   const TpHandle *c_array;
   GArray *array;
   gsize n;
-  GHashTable *attributes;
-  GValue value = G_VALUE_INIT;
   GVariant *result;
   /* In principle C does not guarantee that TpHandle (which is an
    * unsigned int) is exactly 32 bits. In practice, int is 32-bit on
@@ -2948,12 +2842,8 @@ contacts_get_contact_attributes_impl (_TpGDBusConnection *skeleton,
   array = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n);
   g_array_append_vals (array, c_array, n);
 
-  attributes = tp_base_connection_dup_contact_attributes_hash (conn,
+  result = _tp_base_connection_dup_contact_attributes_hash (conn,
       array, interfaces, contacts_always_included_interfaces);
-  g_value_init (&value, TP_HASH_TYPE_CONTACT_ATTRIBUTES_MAP);
-  g_value_take_boxed (&value, attributes);
-  result = dbus_g_value_build_g_variant (&value);
-  g_value_unset (&value);
 
   _tp_gdbus_connection_complete_get_contact_attributes (skeleton, context,
       result);
@@ -2980,9 +2870,9 @@ ensure_handle_cb (GObject *source,
   TpBaseConnection *self = data->conn;
   TpHandle handle;
   GArray *handles;
-  GHashTable *attributes;
-  GHashTable *asv;
+  GVariant *attributes;
   GVariant *ret;
+  TpHandle ret_handle;
   GError *error = NULL;
 
   handle = tp_handle_ensure_finish (contact_repo, result, &error);
@@ -2996,19 +2886,18 @@ ensure_handle_cb (GObject *source,
   handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
   g_array_append_val (handles, handle);
 
-  attributes = tp_base_connection_dup_contact_attributes_hash (self,
+  attributes = _tp_base_connection_dup_contact_attributes_hash (self,
       handles, (const gchar * const *) data->interfaces,
       contacts_always_included_interfaces);
-
-  asv = g_hash_table_lookup (attributes, GUINT_TO_POINTER (handle));
-  g_assert (asv != NULL);
-  ret = tp_asv_to_vardict (asv);
-  g_hash_table_unref (attributes);
+  g_variant_ref_sink (attributes);
+  g_variant_get_child (attributes, 0, "{u@a{sv}}", &ret_handle, &ret);
+  g_assert (ret_handle == handle);
 
   _tp_gdbus_connection_complete_get_contact_by_id (
       self->priv->connection_skeleton, data->context, handle, ret);
 
   g_array_unref (handles);
+  g_variant_unref (attributes);
 
 out:
   g_object_unref (data->conn);

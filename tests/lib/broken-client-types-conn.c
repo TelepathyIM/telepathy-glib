@@ -33,22 +33,16 @@ static void
 fill_contact_attributes (TpBaseConnection *base,
     const gchar *dbus_interface,
     TpHandle contact,
-    TpContactAttributeMap *attributes)
+    GVariantDict *attributes)
 {
   if (!tp_strdiff (dbus_interface,
         TP_IFACE_CONNECTION_INTERFACE_CLIENT_TYPES1))
     {
       /* Muahaha. Actually we add Presence information. */
-      GValueArray *presence = tp_value_array_build (3,
-          G_TYPE_UINT, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE,
-          G_TYPE_STRING, "available",
-          G_TYPE_STRING, "hi mum!",
-          G_TYPE_INVALID);
-
-      tp_contact_attribute_map_take_sliced_gvalue (attributes,
-          contact,
+      g_variant_dict_insert (attributes,
           TP_TOKEN_CONNECTION_INTERFACE_PRESENCE1_PRESENCE,
-          tp_g_value_slice_new_take_boxed (TP_STRUCT_TYPE_PRESENCE, presence));
+          "(uss)", TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, "available",
+          "hi mum!");
     }
 }
 

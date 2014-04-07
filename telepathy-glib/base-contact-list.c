@@ -23,6 +23,7 @@
 
 #include <dbus/dbus-glib-lowlevel.h>
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
@@ -3648,18 +3649,22 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
       GArray *contacts;
       const gchar *assumed[] = { TP_IFACE_CONNECTION,
           TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1, NULL };
-      GHashTable *result;
+      GVariant *result;
+      GValue value = G_VALUE_INIT;
 
       set = tp_base_contact_list_dup_contacts (self);
       contacts = tp_handle_set_to_array (set);
-      result = tp_base_connection_dup_contact_attributes_hash (
+      result = _tp_base_connection_dup_contact_attributes_hash (
           self->priv->conn, contacts, interfaces, assumed);
+      g_variant_ref_sink (result);
+      dbus_g_value_parse_g_variant (result, &value);
       tp_svc_connection_interface_contact_list1_return_from_get_contact_list_attributes (
-          context, result);
+          context, g_value_get_boxed (&value));
 
       g_array_unref (contacts);
       tp_handle_set_destroy (set);
-      g_hash_table_unref (result);
+      g_variant_unref (result);
+      g_value_unset (&value);
     }
 }
 
@@ -4184,7 +4189,7 @@ gboolean
 tp_base_contact_list_fill_contact_attributes (TpBaseContactList *self,
   const gchar *dbus_interface,
   TpHandle contact,
-  TpContactAttributeMap *attributes)
+  GVariantDict *attributes)
 {
   g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), FALSE);
   g_return_val_if_fail (self->priv->conn != NULL, FALSE);
@@ -4202,13 +4207,12 @@ tp_base_contact_list_fill_contact_attributes (TpBaseContactList *self,
       tp_base_contact_list_dup_states (self, contact,
           &subscribe, &publish, &publish_request);
 
-      tp_contact_attribute_map_take_sliced_gvalue (attributes,
-          contact, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_PUBLISH,
-          tp_g_value_slice_new_uint (publish));
+      g_variant_dict_insert (attributes,
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_PUBLISH, "u", publish);
 
-      tp_contact_attribute_map_take_sliced_gvalue (attributes,
-          contact, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_SUBSCRIBE,
-          tp_g_value_slice_new_uint (subscribe));
+      g_variant_dict_insert (attributes,
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_SUBSCRIBE,
+          "u", subscribe);
 
       if (tp_str_empty (publish_request) ||
           publish != TP_SUBSCRIPTION_STATE_ASK)
@@ -4217,9 +4221,9 @@ tp_base_contact_list_fill_contact_attributes (TpBaseContactList *self,
         }
       else
         {
-          tp_contact_attribute_map_take_sliced_gvalue (attributes,
-              contact, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_PUBLISH_REQUEST,
-              tp_g_value_slice_new_take_string (publish_request));
+          g_variant_dict_insert (attributes,
+              TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST1_PUBLISH_REQUEST,
+              "&s", publish_request);
         }
 
       return TRUE;
@@ -4231,10 +4235,13 @@ tp_base_contact_list_fill_contact_attributes (TpBaseContactList *self,
     {
       if (self->priv->state == TP_CONTACT_LIST_STATE_SUCCESS)
         {
-          tp_contact_attribute_map_take_sliced_gvalue (attributes,
-              contact, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS1_GROUPS,
-              tp_g_value_slice_new_take_boxed (G_TYPE_STRV,
-                tp_base_contact_list_dup_contact_groups (self, contact)));
+          gchar **groups;
+
+          groups = tp_base_contact_list_dup_contact_groups (self, contact);
+          g_variant_dict_insert (attributes,
+              TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS1_GROUPS,
+              "^a&s", groups);
+          g_free (groups);
         }
       /* else just omit the attributes */
 
@@ -4247,10 +4254,9 @@ tp_base_contact_list_fill_contact_attributes (TpBaseContactList *self,
     {
       if (self->priv->state == TP_CONTACT_LIST_STATE_SUCCESS)
         {
-          tp_contact_attribute_map_take_sliced_gvalue (attributes,
-              contact, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_BLOCKING1_BLOCKED,
-              tp_g_value_slice_new_boolean (
-                tp_base_contact_list_is_blocked (self, contact)));
+          g_variant_dict_insert (attributes,
+              TP_TOKEN_CONNECTION_INTERFACE_CONTACT_BLOCKING1_BLOCKED,
+              "b", tp_base_contact_list_is_blocked (self, contact));
         }
       /* else just omit the attributes */
 

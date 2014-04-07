@@ -337,7 +337,7 @@ static void
 example_call_connection_fill_contact_attributes (TpBaseConnection *conn,
     const gchar *dbus_interface,
     TpHandle contact,
-    TpContactAttributeMap *attributes)
+    GVariantDict *attributes)
 {
   if (tp_presence_mixin_fill_contact_attributes (G_OBJECT (conn),
         dbus_interface, contact, attributes))
