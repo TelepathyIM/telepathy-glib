@@ -1425,10 +1425,9 @@ tp_channel_class_init (TpChannelClass *klass)
    * @remote_pending: (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
    *  a #GPtrArray of #TpContact containing the remote-pending members added
    * @actor: a #TpContact for the "actor" handle in @details
-   * @details: (type GLib.HashTable) (element-type utf8 GObject.Value):
-   *  a #GHashTable mapping (gchar *) to #GValue containing details
-   *  about the change, as described in the specification of the
-   *  MembersChanged signal.
+   * @details: a %G_VARIANT_TYPE_VARDICT (map from strings to variants)
+   *  containing details about the change, as described in the specification
+   *  of the MembersChanged signal.
    *
    * Emitted when the group members change in a Group channel.
    *
@@ -1445,7 +1444,7 @@ tp_channel_class_init (TpChannelClass *klass)
       NULL, NULL, NULL,
       G_TYPE_NONE, 6,
       G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY,
-      TP_TYPE_CONTACT, TP_HASH_TYPE_STRING_VARIANT_MAP);
+      TP_TYPE_CONTACT, G_TYPE_VARIANT);
 }
 
 TpChannel *

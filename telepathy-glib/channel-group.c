@@ -447,7 +447,7 @@ typedef struct
   GPtrArray *local_pending;
   GPtrArray *remote_pending;
   TpContact *actor;
-  GHashTable *details;
+  GVariant *details;
 } MembersChangedData;
 
 static void
@@ -458,7 +458,7 @@ members_changed_data_free (MembersChangedData *data)
   tp_clear_pointer (&data->local_pending, g_ptr_array_unref);
   tp_clear_pointer (&data->remote_pending, g_ptr_array_unref);
   g_clear_object (&data->actor);
-  tp_clear_pointer (&data->details, g_hash_table_unref);
+  g_clear_pointer (&data->details, g_variant_unref);
 
   g_slice_free (MembersChangedData, data);
 }
@@ -477,8 +477,8 @@ members_changed_prepared_cb (GObject *object,
 
   _tp_channel_contacts_queue_prepare_finish (self, result, NULL, NULL);
 
-  reason = tp_asv_get_uint32 (data->details, "change-reason", NULL);
-  message = tp_asv_get_string (data->details, "message");
+  reason = tp_vardict_get_uint32 (data->details, "change-reason", NULL);
+  message = tp_vardict_get_string (data->details, "message");
 
   for (i = 0; i < data->added->len; i++)
     {
@@ -575,9 +575,9 @@ members_changed_prepared_cb (GObject *object,
       if (contact == self->priv->group_self_contact ||
           contact == tp_connection_get_self_contact (self->priv->connection))
         {
-          const gchar *error_detail = tp_asv_get_string (data->details,
+          const gchar *error_detail = tp_vardict_get_string (data->details,
               "error");
-          const gchar *debug_message = tp_asv_get_string (data->details,
+          const gchar *debug_message = tp_vardict_get_string (data->details,
               "debug-message");
 
           if (debug_message == NULL && !tp_str_empty (message))
@@ -675,7 +675,7 @@ members_changed_cb (TpChannel *self,
   data->local_pending = dup_contact_array (self, local_pending, ids);
   data->remote_pending = dup_contact_array (self, remote_pending, ids);
   data->actor = dup_contact (self, actor, ids);
-  data->details = g_hash_table_ref (details);
+  data->details = g_variant_ref_sink (tp_asv_to_vardict (details));
 
   contacts = g_ptr_array_new ();
   tp_g_ptr_array_extend (contacts, data->added);

@@ -51,7 +51,7 @@ TpHandle self_handle, camel, camel2;
 
 typedef void (*diff_checker) (const GPtrArray *added, const GPtrArray *removed,
     const GPtrArray *local_pending, const GPtrArray *remote_pending,
-    const GHashTable *details);
+    GVariant *details);
 
 static gboolean expecting_members_changed = FALSE;
 static const gchar *expected_message;
@@ -93,7 +93,7 @@ on_members_changed (TpChannel *proxy,
                     GPtrArray *local_pending,
                     GPtrArray *remote_pending,
                     TpContact *actor,
-                    GHashTable *details,
+                    GVariant *details,
                     gpointer user_data)
 {
   const gchar *message;
@@ -104,7 +104,7 @@ on_members_changed (TpChannel *proxy,
       ": got unexpected MembersChanged");
   expecting_members_changed = FALSE;
 
-  message = tp_asv_get_string (details, "message");
+  message = tp_vardict_get_string (details, "message");
 
   if (message == NULL)
     message = "";
@@ -120,7 +120,7 @@ on_members_changed (TpChannel *proxy,
       g_assert_cmpuint (expected_actor, ==, 0);
     }
 
-  reason = tp_asv_get_uint32 (details, "change-reason", &valid);
+  reason = tp_vardict_get_uint32 (details, "change-reason", &valid);
   if (valid)
     {
       g_assert_cmpuint (reason, ==, expected_reason);
@@ -129,8 +129,7 @@ on_members_changed (TpChannel *proxy,
     {
       g_assert_cmpuint (expected_reason, ==,
           TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-      MYASSERT (tp_asv_lookup (details, "reason") == NULL,
-          ": utterly unreasonable");
+      g_assert (!tp_vardict_has_key (details, "reason"));
     }
 
   expected_diffs (added, removed, local_pending,
@@ -178,10 +177,10 @@ check_initial_properties (void)
 }
 
 static void
-details_contains_ids_for (const GHashTable *details,
+details_contains_ids_for (GVariant *details,
                           TpHandle *hs)
 {
-  GHashTable *contact_ids;
+  GVariant *contact_ids;
   const gchar *id;
   guint n = 0;
   TpHandle *h;
@@ -189,20 +188,38 @@ details_contains_ids_for (const GHashTable *details,
   if (details == NULL)
     return;
 
-  contact_ids = tp_asv_get_boxed (details, "contact-ids",
-      TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP);
+  if (!g_variant_lookup (details, "contact-ids", "@a{us}", &contact_ids))
+    {
+      g_error ("details did not contain contact-ids or it had the wrong type");
+    }
+
   g_assert (contact_ids != NULL);
 
   for (h = hs; *h != 0; h++)
     {
+      gboolean found = FALSE;
+      gsize i;
+      guint32 handle;
       n++;
 
-      id = g_hash_table_lookup (contact_ids, GUINT_TO_POINTER (*h));
-      MYASSERT (id != NULL, ": id for %u in map", *h);
-      g_assert_cmpstr (id, ==, tp_handle_inspect (contact_repo, *h));
+      for (i = 0; i < g_variant_n_children (contact_ids); i++)
+        {
+          g_variant_get_child (contact_ids, i, "{u&s}", &handle, &id);
+
+          if (handle == *h)
+            {
+              g_assert_cmpstr (id, !=, NULL);
+              g_assert_cmpstr (id, ==, tp_handle_inspect (contact_repo, *h));
+              found = TRUE;
+            }
+        }
+
+      if (!found)
+        g_error ("did not find an ID for contact#%u", *h);
     }
 
-  MYASSERT (g_hash_table_size (contact_ids) == n, ": %u contact IDs", n);
+  g_assert_cmpuint (g_variant_n_children (contact_ids), ==, n);
+  g_variant_unref (contact_ids);
 }
 
 static void
@@ -210,7 +227,7 @@ self_added_to_lp (const GPtrArray *added,
                   const GPtrArray *removed,
                   const GPtrArray *local_pending,
                   const GPtrArray *remote_pending,
-                  const GHashTable *details)
+                  GVariant *details)
 {
   TpContact *c;
   TpHandle hs[] = { self_handle, 0 };
@@ -232,7 +249,7 @@ self_added_to_members (const GPtrArray *added,
                        const GPtrArray *removed,
                        const GPtrArray *local_pending,
                        const GPtrArray *remote_pending,
-                       const GHashTable *details)
+                       GVariant *details)
 {
   TpContact *c;
   TpHandle hs[] = { self_handle, 0 };
@@ -301,7 +318,7 @@ camel_added (const GPtrArray *added,
              const GPtrArray *removed,
              const GPtrArray *local_pending,
              const GPtrArray *remote_pending,
-             const GHashTable *details)
+             GVariant *details)
 {
   TpContact *c;
   TpHandle hs[] = { camel, 0 };
@@ -323,7 +340,7 @@ camel2_added (const GPtrArray *added,
               const GPtrArray *removed,
               const GPtrArray *local_pending,
               const GPtrArray *remote_pending,
-              const GHashTable *details)
+              GVariant *details)
 {
   TpContact *c;
   /* camel is the actor */
@@ -346,7 +363,7 @@ camel_removed (const GPtrArray *added,
                const GPtrArray *removed,
                const GPtrArray *local_pending,
                const GPtrArray *remote_pending,
-               const GHashTable *details)
+               GVariant *details)
 {
   TpContact *c;
   /* camel2 is the actor. camel shouldn't be in the ids, because they were

@@ -574,7 +574,7 @@ group_contacts_changed_cb (TpChannel *self,
     GPtrArray *local_pending,
     GPtrArray *remote_pending,
     TpContact *actor,
-    GHashTable *details,
+    GVariant *details,
     Test *test)
 {
   test->wait--;

@@ -49,14 +49,15 @@ group_members_changed_cb (TpChannel *chan_,
                           GPtrArray *local_pending,
                           GPtrArray *remote_pending,
                           TpContact *actor,
-                          GHashTable *details,
+                          GVariant *details,
                           gpointer user_data)
 {
-  guint reason = tp_asv_get_uint32 (details, "change-reason", NULL);
+  guint reason = tp_vardict_get_uint32 (details, "change-reason", NULL);
   GMainLoop *loop = user_data;
 
-  DEBUG ("%u, %u, %u, %u, %u details", added->len, removed->len,
-      local_pending->len, remote_pending->len, g_hash_table_size (details));
+  DEBUG ("%u, %u, %u, %u, %" G_GSIZE_FORMAT " details", added->len,
+      removed->len, local_pending->len, remote_pending->len,
+      g_variant_n_children (details));
 
   MYASSERT (expecting_group_members_changed, "");
   g_assert_cmpuint (reason, ==, expected_reason);
