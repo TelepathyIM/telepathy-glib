@@ -79,14 +79,14 @@ tp_channel_iface_base_init (gpointer klass)
     g_object_interface_install_property (klass, param_spec);
 
     /**
-     * TpChannelIface:handle-type:
+     * TpChannelIface:entity-type:
      *
      * The #TpEntityType of this channel's associated handle, or
      * %TP_ENTITY_TYPE_NONE (which is numerically 0) if no handle.
      *
-     * In #TpChannel, if this is TP_UNKNOWN_HANDLE_TYPE
+     * In #TpChannel, if this is TP_UNKNOWN_ENTITY_TYPE
      * during construction, we ask the remote D-Bus object what its
-     * handle type is; reading this property will yield TP_UNKNOWN_HANDLE_TYPE
+     * entity type is; reading this property will yield TP_UNKNOWN_ENTITY_TYPE
      * until we get the reply. This is not guaranteed to be have happened
      * until tp_proxy_prepare_async() has finished preparing
      * %TP_CHANNEL_FEATURE_CORE.
@@ -94,9 +94,9 @@ tp_channel_iface_base_init (gpointer klass)
      * In connection manager implementations, attempts to set this during
      * construction might also be ignored.
      */
-    param_spec = g_param_spec_uint ("handle-type", "Handle type",
+    param_spec = g_param_spec_uint ("entity-type", "Entity type",
         "The TpEntityType of this channel's associated handle.",
-        0, G_MAXUINT32, TP_UNKNOWN_HANDLE_TYPE,
+        0, G_MAXUINT32, TP_UNKNOWN_ENTITY_TYPE,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
     g_object_interface_install_property (klass, param_spec);
 
@@ -107,8 +107,8 @@ tp_channel_iface_base_init (gpointer klass)
      * Read-only except during construction.
      *
      * In #TpChannel, if this is 0
-     * during construction, and handle-type is not TP_ENTITY_TYPE_NONE (== 0),
-     * we ask the remote D-Bus object what its handle type is; reading this
+     * during construction, and entity-type is not TP_ENTITY_TYPE_NONE (== 0),
+     * we ask the remote D-Bus object what its entity type is; reading this
      * property will yield 0 until we get the reply, or if GetHandle()
      * fails. This is not guaranteed to be set until tp_proxy_prepare_async()
      * has finished preparing %TP_CHANNEL_FEATURE_CORE.
@@ -118,7 +118,7 @@ tp_channel_iface_base_init (gpointer klass)
      */
     param_spec = g_param_spec_uint ("handle", "Handle",
         "The TpHandle representing the contact, group, etc. with which "
-        "this channel communicates, whose type is given by the handle-type "
+        "this channel communicates, whose type is given by the entity-type "
         "property.",
         0, G_MAXUINT32, 0,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);

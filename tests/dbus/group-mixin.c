@@ -561,7 +561,7 @@ test (Fixture *f,
   MYASSERT (tp_cli_connection_run_connect (conn, -1, &error, NULL), "");
   g_assert_no_error (error);
 
-  chan = tp_tests_channel_new (conn, chan_path, NULL, TP_UNKNOWN_HANDLE_TYPE, 0,
+  chan = tp_tests_channel_new (conn, chan_path, NULL, TP_UNKNOWN_ENTITY_TYPE, 0,
       &error);
   g_assert_no_error (error);
 

@@ -29,11 +29,11 @@ setup (Test *test,
 }
 
 static GVariant *
-text_chat_class (TpEntityType handle_type)
+text_chat_class (TpEntityType entity_type)
 {
   return g_variant_new_parsed ("({%s: <%s>, %s: <%u>}, @as [])",
       TP_PROP_CHANNEL_CHANNEL_TYPE, TP_IFACE_CHANNEL_TYPE_TEXT,
-      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) handle_type);
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, (guint32) entity_type);
 }
 
 static GVariant *
@@ -62,7 +62,7 @@ test_basics (Test *test,
   GVariant *fixed;
   const gchar **allowed;
   const gchar *chan_type;
-  TpEntityType handle_type;
+  TpEntityType entity_type;
   gboolean valid;
 
   caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
@@ -85,10 +85,10 @@ test_basics (Test *test,
   chan_type = tp_vardict_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
   g_assert_cmpstr (chan_type, ==, TP_IFACE_CHANNEL_TYPE_TEXT);
 
-  handle_type = tp_vardict_get_uint32 (fixed,
+  entity_type = tp_vardict_get_uint32 (fixed,
       TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
   g_assert (valid);
-  g_assert_cmpuint (handle_type, ==, TP_ENTITY_TYPE_CONTACT);
+  g_assert_cmpuint (entity_type, ==, TP_ENTITY_TYPE_CONTACT);
 
   g_assert_cmpuint (g_strv_length ((GStrv) allowed), ==, 0);
 
@@ -103,10 +103,10 @@ test_basics (Test *test,
   chan_type = tp_vardict_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
   g_assert_cmpstr (chan_type, ==, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1);
 
-  handle_type = tp_vardict_get_uint32 (fixed,
+  entity_type = tp_vardict_get_uint32 (fixed,
       TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
   g_assert (valid);
-  g_assert_cmpuint (handle_type, ==, TP_ENTITY_TYPE_CONTACT);
+  g_assert_cmpuint (entity_type, ==, TP_ENTITY_TYPE_CONTACT);
 
   g_assert_cmpuint (g_strv_length ((GStrv) allowed), ==, 2);
   g_assert (tp_strv_contains ((const gchar * const * ) allowed,
@@ -190,7 +190,7 @@ test_supports (Test *test,
 }
 
 static GVariant *
-stream_tube_class (TpEntityType handle_type,
+stream_tube_class (TpEntityType entity_type,
     const gchar *service)
 {
   GVariantBuilder fixed;
@@ -199,7 +199,7 @@ stream_tube_class (TpEntityType handle_type,
   g_variant_builder_add (&fixed, "{sv}", TP_PROP_CHANNEL_CHANNEL_TYPE,
       g_variant_new_string (TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1));
   g_variant_builder_add (&fixed, "{sv}", TP_PROP_CHANNEL_TARGET_ENTITY_TYPE,
-      g_variant_new_uint32 (handle_type));
+      g_variant_new_uint32 (entity_type));
 
   if (service != NULL)
     {
@@ -213,7 +213,7 @@ stream_tube_class (TpEntityType handle_type,
 }
 
 static GVariant *
-dbus_tube_class (TpEntityType handle_type,
+dbus_tube_class (TpEntityType entity_type,
     const gchar *service_name,
     gboolean add_extra_fixed)
 {
@@ -223,7 +223,7 @@ dbus_tube_class (TpEntityType handle_type,
   g_variant_builder_add (&fixed, "{sv}", TP_PROP_CHANNEL_CHANNEL_TYPE,
       g_variant_new_string (TP_IFACE_CHANNEL_TYPE_DBUS_TUBE1));
   g_variant_builder_add (&fixed, "{sv}", TP_PROP_CHANNEL_TARGET_ENTITY_TYPE,
-      g_variant_new_uint32 (handle_type));
+      g_variant_new_uint32 (entity_type));
 
   if (service_name != NULL)
     {
@@ -651,7 +651,7 @@ test_supports_sms (Test *test,
 }
 
 static GVariant *
-call_class (TpEntityType handle_type,
+call_class (TpEntityType entity_type,
     gboolean initial_audio,
     gboolean initial_video,
     gboolean use_allowed,
@@ -665,7 +665,7 @@ call_class (TpEntityType handle_type,
   g_variant_builder_add (&fixed, "{sv}", TP_PROP_CHANNEL_CHANNEL_TYPE,
       g_variant_new_string (TP_IFACE_CHANNEL_TYPE_CALL1));
   g_variant_builder_add (&fixed, "{sv}", TP_PROP_CHANNEL_TARGET_ENTITY_TYPE,
-      g_variant_new_uint32 (handle_type));
+      g_variant_new_uint32 (entity_type));
 
   allowed = g_ptr_array_new ();
 
@@ -890,7 +890,7 @@ test_classes_variant (Test *test,
   TpCapabilities *caps;
   GVariant *v, *v2, *class, *fixed, *allowed;
   const gchar *chan_type;
-  guint32 handle_type;
+  guint32 entity_type;
   const gchar **strv;
 
   /* TpCapabilities containing the text chats and ft caps */
@@ -923,8 +923,8 @@ test_classes_variant (Test *test,
   g_assert_cmpstr (chan_type, ==, TP_IFACE_CHANNEL_TYPE_TEXT);
 
   g_assert (g_variant_lookup (fixed,
-      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, "u", &handle_type));
-  g_assert_cmpuint (handle_type, ==, TP_ENTITY_TYPE_CONTACT);
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, "u", &entity_type));
+  g_assert_cmpuint (entity_type, ==, TP_ENTITY_TYPE_CONTACT);
 
   g_assert_cmpuint (g_variant_n_children (allowed), ==, 0);
 
@@ -947,8 +947,8 @@ test_classes_variant (Test *test,
   g_assert_cmpstr (chan_type, ==, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1);
 
   g_assert (g_variant_lookup (fixed,
-      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, "u", &handle_type));
-  g_assert_cmpuint (handle_type, ==, TP_ENTITY_TYPE_CONTACT);
+      TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, "u", &entity_type));
+  g_assert_cmpuint (entity_type, ==, TP_ENTITY_TYPE_CONTACT);
 
   g_assert_cmpuint (g_variant_n_children (allowed), ==, 2);
   strv = g_variant_get_strv (allowed, NULL);

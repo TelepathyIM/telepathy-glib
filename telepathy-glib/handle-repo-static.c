@@ -1,6 +1,6 @@
 /*
  * handle-repo-static.c - mechanism to store and retrieve handles on a
- * connection (implementation for handle types with a fixed list of possible
+ * connection (implementation for entity types with a fixed list of possible
  * handles)
  *
  * Copyright (C) 2007 Collabora Ltd. <http://www.collabora.co.uk/>
@@ -32,7 +32,7 @@
  * these handles can never be destroyed, and no more can be created, so
  * no reference counting is performed.
  *
- * The #TpHandleRepoIface:handle-type property must be set at construction
+ * The #TpHandleRepoIface:entity-type property must be set at construction
  * time.
  *
  * Most connection managers will use this for handles of type
@@ -50,7 +50,7 @@
 
 enum
 {
-  PROP_HANDLE_TYPE = 1,
+  PROP_ENTITY_TYPE = 1,
   PROP_HANDLE_NAMES,
 };
 
@@ -60,7 +60,7 @@ struct _TpStaticHandleRepoClass {
 
 struct _TpStaticHandleRepo {
   GObject parent;
-  TpEntityType handle_type;
+  TpEntityType entity_type;
   TpHandle last_handle;
   gchar **handle_names;
   GData **datalists;
@@ -76,7 +76,7 @@ G_DEFINE_TYPE_WITH_CODE (TpStaticHandleRepo, tp_static_handle_repo,
 static void
 tp_static_handle_repo_init (TpStaticHandleRepo *self)
 {
-  self->handle_type = 0;
+  self->entity_type = 0;
   self->last_handle = 0;
   self->handle_names = NULL;
   self->datalists = NULL;
@@ -111,8 +111,8 @@ static_get_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_HANDLE_TYPE:
-      g_value_set_uint (value, self->handle_type);
+    case PROP_ENTITY_TYPE:
+      g_value_set_uint (value, self->entity_type);
       break;
     case PROP_HANDLE_NAMES:
       g_value_set_boxed (value, g_strdupv (self->handle_names));
@@ -134,8 +134,8 @@ static_set_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_HANDLE_TYPE:
-      self->handle_type = g_value_get_uint (value);
+    case PROP_ENTITY_TYPE:
+      self->entity_type = g_value_get_uint (value);
       break;
 
     case PROP_HANDLE_NAMES:
@@ -178,8 +178,8 @@ tp_static_handle_repo_class_init (TpStaticHandleRepoClass *klass)
   object_class->set_property = static_set_property;
   object_class->finalize = static_finalize;
 
-  g_object_class_override_property (object_class, PROP_HANDLE_TYPE,
-      "handle-type");
+  g_object_class_override_property (object_class, PROP_ENTITY_TYPE,
+      "entity-type");
   param_spec = g_param_spec_boxed ("handle-names", "Handle names",
       "The static set of handle names supported by this repo.",
       G_TYPE_STRV,
@@ -199,8 +199,8 @@ static_handle_is_valid (TpHandleRepoIface *irepo,
     {
       g_set_error (error, TP_ERROR, TP_ERROR_INVALID_HANDLE,
           "handle %u is not a valid %s handle (type %u)",
-          handle, tp_handle_type_to_string (self->handle_type),
-          self->handle_type);
+          handle, tp_entity_type_to_string (self->entity_type),
+          self->entity_type);
       return FALSE;
     }
   else

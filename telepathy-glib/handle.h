@@ -53,46 +53,46 @@ typedef guint TpHandle;
 #define TP_TYPE_HANDLE G_TYPE_UINT
 
 /**
- * TP_UNKNOWN_HANDLE_TYPE:
+ * TP_UNKNOWN_ENTITY_TYPE:
  *
- * An invalid handle type (-1 cast to TpEntityType) used to represent an
- * unknown handle type.
+ * An invalid entity type (-1 cast to TpEntityType) used to represent an
+ * unknown entity type.
  *
  * Since: 0.7.0
  */
-#define TP_UNKNOWN_HANDLE_TYPE ((TpEntityType) -1)
+#define TP_UNKNOWN_ENTITY_TYPE ((TpEntityType) -1)
 
 /**
- * tp_handle_type_is_valid:
- * @type: A handle type, valid or not, to be checked
- * @error: Set if the handle type is invalid
+ * tp_entity_type_is_valid:
+ * @type: A entity type, valid or not, to be checked
+ * @error: Set if the entity type is invalid
  *
- * If the given handle type is valid, return %TRUE. If not, set @error
+ * If the given entity type is valid, return %TRUE. If not, set @error
  * and return %FALSE.
  *
- * Returns: %TRUE if the handle type is valid.
+ * Returns: %TRUE if the entity type is valid.
  */
 static inline
 /* spacer so gtkdoc documents this function as though not static */
-gboolean tp_handle_type_is_valid (TpEntityType type, GError **error);
+gboolean tp_entity_type_is_valid (TpEntityType type, GError **error);
 
 /* Must be static inline because it references TP_NUM_ENTITY_TYPES -
  * if it wasn't inlined, a newer libtelepathy-glib with a larger number
- * of handle types might accept handle types that won't fit in the
+ * of entity types might accept entity types that won't fit in the
  * connection manager's array of length TP_NUM_ENTITY_TYPES
  */
 
 static inline gboolean
-tp_handle_type_is_valid (TpEntityType type, GError **error)
+tp_entity_type_is_valid (TpEntityType type, GError **error)
 {
   if (type > TP_ENTITY_TYPE_NONE && type < TP_NUM_ENTITY_TYPES)
     return TRUE;
 
-  tp_g_set_error_invalid_handle_type (type, error);
+  tp_g_set_error_invalid_entity_type (type, error);
   return FALSE;
 }
 
-const gchar *tp_handle_type_to_string (TpEntityType type);
+const gchar *tp_entity_type_to_string (TpEntityType type);
 
 G_END_DECLS
 

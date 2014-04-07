@@ -46,7 +46,7 @@ struct _TpChannelPrivate {
     GQueue *introspect_needed;
 
     GQuark channel_type;
-    TpEntityType handle_type;
+    TpEntityType entity_type;
     TpHandle handle;
     gchar *identifier;
     /* owned string (iface + "." + prop) => slice-allocated GValue */

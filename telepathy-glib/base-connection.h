@@ -126,7 +126,7 @@ gboolean tp_base_connection_check_connected (TpBaseConnection *self,
     GError **error);
 
 TpHandleRepoIface *tp_base_connection_get_handles (TpBaseConnection *self,
-    TpEntityType handle_type);
+    TpEntityType entity_type);
 
 gboolean tp_base_connection_register (TpBaseConnection *self,
     const gchar *cm_name, gchar **bus_name, gchar **object_path,

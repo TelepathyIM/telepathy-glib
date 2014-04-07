@@ -94,7 +94,7 @@ enum
 {
   PROP_CONNECTION = 1,
   PROP_CHANNEL_TYPE,
-  PROP_HANDLE_TYPE,
+  PROP_ENTITY_TYPE,
   PROP_HANDLE,
   PROP_IDENTIFIER,
   PROP_CHANNEL_PROPERTIES,
@@ -130,7 +130,7 @@ G_DEFINE_TYPE (TpChannel, tp_channel, TP_TYPE_PROXY)
  * Specifically, this implies that:
  *
  * - #TpChannelIface:channel-type is set
- * - #TpChannelIface:handle-type and #TpChannelIface:handle are set
+ * - #TpChannelIface:entity-type and #TpChannelIface:handle are set
  * - any extra interfaces will have been set up in TpProxy (i.e.
  *   #TpProxy:interfaces contains at least all extra Channel interfaces)
  *
@@ -231,7 +231,7 @@ tp_channel_get_channel_type_id (TpChannel *self)
 /**
  * tp_channel_get_handle:
  * @self: a channel
- * @handle_type: (out): if not %NULL, used to return the type of this handle
+ * @entity_type: (out): if not %NULL, used to return the type of this handle
  *
  * Get the handle representing the contact, chatroom, etc. with which this
  * channel communicates for its whole lifetime, or 0 if there is no such
@@ -241,24 +241,24 @@ tp_channel_get_channel_type_id (TpChannel *self)
  * guaranteed to have its final value until the %TP_CHANNEL_FEATURE_CORE
  * feature is ready.
  *
- * If @handle_type is not %NULL, the type of handle is written into it.
- * This will be %TP_UNKNOWN_HANDLE_TYPE if the handle has not yet been
+ * If @entity_type is not %NULL, the type of handle is written into it.
+ * This will be %TP_UNKNOWN_ENTITY_TYPE if the handle has not yet been
  * discovered, or %TP_ENTITY_TYPE_NONE if there is no handle with which this
  * channel will always communicate. This is the same as the
- * #TpChannelIface:handle-type property.
+ * #TpChannelIface:entity-type property.
  *
  * Returns: the handle
  * Since: 0.7.12
  */
 TpHandle
 tp_channel_get_handle (TpChannel *self,
-                       TpEntityType *handle_type)
+                       TpEntityType *entity_type)
 {
   g_return_val_if_fail (TP_IS_CHANNEL (self), 0);
 
-  if (handle_type != NULL)
+  if (entity_type != NULL)
     {
-      *handle_type = self->priv->handle_type;
+      *entity_type = self->priv->entity_type;
     }
 
   return self->priv->handle;
@@ -401,8 +401,8 @@ tp_channel_get_property (GObject *object,
       g_value_set_static_string (value,
           g_quark_to_string (self->priv->channel_type));
       break;
-    case PROP_HANDLE_TYPE:
-      g_value_set_uint (value, self->priv->handle_type);
+    case PROP_ENTITY_TYPE:
+      g_value_set_uint (value, self->priv->entity_type);
       break;
     case PROP_HANDLE:
       g_value_set_uint (value, self->priv->handle);
@@ -481,16 +481,16 @@ _tp_channel_maybe_set_handle (TpChannel *self,
 
 
 static void
-_tp_channel_maybe_set_handle_type (TpChannel *self,
-                                   TpEntityType handle_type,
+_tp_channel_maybe_set_entity_type (TpChannel *self,
+                                   TpEntityType entity_type,
                                    gboolean valid)
 {
   if (valid)
     {
-      self->priv->handle_type = handle_type;
+      self->priv->entity_type = entity_type;
       g_hash_table_insert (self->priv->channel_properties,
           g_strdup (TP_PROP_CHANNEL_TARGET_ENTITY_TYPE),
-          tp_g_value_slice_new_uint (handle_type));
+          tp_g_value_slice_new_uint (entity_type));
     }
 }
 
@@ -564,7 +564,7 @@ tp_channel_set_property (GObject *object,
 
               u = tp_asv_get_uint32 (self->priv->channel_properties,
                   TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
-              _tp_channel_maybe_set_handle_type (self, u, valid);
+              _tp_channel_maybe_set_entity_type (self, u, valid);
 
               u = tp_asv_get_uint32 (self->priv->channel_properties,
                   TP_PROP_CHANNEL_TARGET_HANDLE, &valid);
@@ -678,7 +678,7 @@ _tp_channel_got_properties (TpProxy *proxy,
       tp_asv_get_boxed (asv, "Interfaces", G_TYPE_STRV));
 
   u = tp_asv_get_uint32 (asv, "TargetEntityType", &valid);
-  _tp_channel_maybe_set_handle_type (self, u, valid);
+  _tp_channel_maybe_set_entity_type (self, u, valid);
 
   u = tp_asv_get_uint32 (asv, "TargetHandle", &valid);
   _tp_channel_maybe_set_handle (self, u, valid);
@@ -715,7 +715,7 @@ _tp_channel_got_properties (TpProxy *proxy,
 
   g_object_notify ((GObject *) self, "channel-type");
   g_object_notify ((GObject *) self, "interfaces");
-  g_object_notify ((GObject *) self, "handle-type");
+  g_object_notify ((GObject *) self, "entity-type");
   g_object_notify ((GObject *) self, "handle");
   g_object_notify ((GObject *) self, "identifier");
 
@@ -801,7 +801,7 @@ _tp_channel_create_contacts (TpChannel *self)
   contacts = g_ptr_array_new ();
 
   /* Create target contact */
-  if (self->priv->handle_type == TP_ENTITY_TYPE_CONTACT)
+  if (self->priv->entity_type == TP_ENTITY_TYPE_CONTACT)
     {
       if (self->priv->handle == 0 || self->priv->identifier == NULL)
         {
@@ -942,7 +942,7 @@ tp_channel_constructed (GObject *object)
       (self->priv->channel_type != 0)
           ? g_quark_to_string (self->priv->channel_type)
           : "(null)",
-      self->priv->handle, self->priv->handle_type);
+      self->priv->handle, self->priv->entity_type);
 
   self->priv->introspect_needed = g_queue_new ();
 
@@ -969,7 +969,7 @@ tp_channel_init (TpChannel *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_CHANNEL,
       TpChannelPrivate);
   self->priv->channel_type = 0;
-  self->priv->handle_type = TP_UNKNOWN_HANDLE_TYPE;
+  self->priv->entity_type = TP_UNKNOWN_ENTITY_TYPE;
   self->priv->handle = 0;
   self->priv->channel_properties = g_hash_table_new_full (g_str_hash,
       g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free);
@@ -1164,19 +1164,19 @@ tp_channel_class_init (TpChannelClass *klass)
   g_object_class_install_property (object_class, PROP_CHANNEL_TYPE, param_spec);
 
   /**
-   * TpChannel:handle-type:
+   * TpChannel:entity-type:
    *
    * The #TpEntityType of this channel's associated handle, or
    * %TP_ENTITY_TYPE_NONE (which is numerically 0) if no handle,
-   * or %TP_UNKNOWN_HANDLE_TYPE if this property is not available yet.
+   * or %TP_UNKNOWN_ENTITY_TYPE if this property is not available yet.
    * This is not guaranteed to be available until tp_proxy_prepare_async()
    * has finished preparing %TP_CHANNEL_FEATURE_CORE.
    */
-  param_spec = g_param_spec_uint ("handle-type", "Telepathy entity type",
+  param_spec = g_param_spec_uint ("entity-type", "Telepathy entity type",
       "The TpEntityType of this channel's associated handle",
-      0, G_MAXUINT32, TP_UNKNOWN_HANDLE_TYPE,
+      0, G_MAXUINT32, TP_UNKNOWN_ENTITY_TYPE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_HANDLE_TYPE, param_spec);
+  g_object_class_install_property (object_class, PROP_ENTITY_TYPE, param_spec);
 
   /**
    * TpChannel:handle:
@@ -1195,7 +1195,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * TpChannel:identifier:
    *
    * This channel's associated identifier, or the empty string if it has
-   * handle type %TP_ENTITY_TYPE_NONE.
+   * entity type %TP_ENTITY_TYPE_NONE.
    *
    * For channels where #TpChannelIface:handle is non-zero, this is the result
    * of inspecting #TpChannelIface:handle.
@@ -1340,7 +1340,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * TpChannel:target-contact:
    *
    * If this channel is for communication with a single contact (that is,
-   * #TpChannelIface:handle-type is %TP_ENTITY_TYPE_CONTACT), then a #TpContact
+   * #TpChannelIface:entity-type is %TP_ENTITY_TYPE_CONTACT), then a #TpContact
    * representing the remote contact. For chat rooms, contact search channels and
    * other channels without a single remote contact, %NULL.
    *

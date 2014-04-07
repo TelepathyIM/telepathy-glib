@@ -255,39 +255,39 @@
  */
 
 /**
- * tp_g_set_error_invalid_handle_type: (skip)
- * @type: An invalid handle type
+ * tp_g_set_error_invalid_entity_type: (skip)
+ * @type: An invalid entity type
  * @error: Either %NULL, or used to return an error (as for g_set_error)
  *
- * Set the error NotImplemented for an invalid handle type,
+ * Set the error NotImplemented for an invalid entity type,
  * with an appropriate message.
  *
  * Changed in version 0.7.23: previously, the error was
  * InvalidArgument.
  */
 void
-tp_g_set_error_invalid_handle_type (guint type, GError **error)
+tp_g_set_error_invalid_entity_type (guint type, GError **error)
 {
   g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
-      "unsupported handle type %u", type);
+      "unsupported entity type %u", type);
 }
 
 /**
- * tp_g_set_error_unsupported_handle_type: (skip)
- * @type: An unsupported handle type
+ * tp_g_set_error_unsupported_entity_type: (skip)
+ * @type: An unsupported entity type
  * @error: Either %NULL, or used to return an error (as for g_set_error)
  *
- * Set the error NotImplemented for a handle type which is valid but is not
+ * Set the error NotImplemented for a entity type which is valid but is not
  * supported by this connection manager, with an appropriate message.
  *
  * Changed in version 0.7.23: previously, the error was
  * InvalidArgument.
  */
 void
-tp_g_set_error_unsupported_handle_type (guint type, GError **error)
+tp_g_set_error_unsupported_entity_type (guint type, GError **error)
 {
   g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
-      "unsupported handle type %u", type);
+      "unsupported entity type %u", type);
 }
 
 /**

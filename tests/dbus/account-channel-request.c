@@ -1086,7 +1086,7 @@ test_observe_cancel_after_create (Test *test,
 /* Check if TargetHandleType: TP_ENTITY_TYPE_NONE is automatically added if no
  * target has been specified by the user. */
 static void
-test_no_handle_type (Test *test,
+test_no_entity_type (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpAccountChannelRequest *req;
@@ -1253,8 +1253,8 @@ main (int argc,
       setup, test_stream_tube_props, teardown);
   g_test_add ("/account-channels/test-dbus-tube-props", Test, NULL,
       setup, test_dbus_tube_props, teardown);
-  g_test_add ("/account-channels/test-no-handle-type", Test, NULL,
-      setup, test_no_handle_type, teardown);
+  g_test_add ("/account-channels/test-no-entity-type", Test, NULL,
+      setup, test_no_entity_type, teardown);
   g_test_add ("/account-channels/test-initial-invitees", Test, NULL,
       setup, test_initial_invitees, teardown);
 

@@ -44,7 +44,7 @@ test (Fixture *f,
   g_test_dbus_up (test_dbus);
 
   repo = tp_tests_object_new_static_class (TP_TYPE_DYNAMIC_HANDLE_REPO,
-      "handle-type", TP_ENTITY_TYPE_CONTACT,
+      "entity-type", TP_ENTITY_TYPE_CONTACT,
       NULL);
   MYASSERT (repo != NULL, "");
 

@@ -187,7 +187,7 @@ void tp_account_channel_request_set_target_contact (
     TpContact *contact);
 _TP_AVAILABLE_IN_0_20
 void tp_account_channel_request_set_target_id (TpAccountChannelRequest *self,
-    TpEntityType handle_type,
+    TpEntityType entity_type,
     const gchar *identifier);
 
 /* Generic low-level */

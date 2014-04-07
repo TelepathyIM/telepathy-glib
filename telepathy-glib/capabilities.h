@@ -65,10 +65,10 @@ gboolean tp_capabilities_supports_sms (TpCapabilities *self);
 
 _TP_AVAILABLE_IN_0_18
 gboolean tp_capabilities_supports_audio_call (TpCapabilities *self,
-    TpEntityType handle_type);
+    TpEntityType entity_type);
 _TP_AVAILABLE_IN_0_18
 gboolean tp_capabilities_supports_audio_video_call (TpCapabilities *self,
-    TpEntityType handle_type);
+    TpEntityType entity_type);
 _TP_AVAILABLE_IN_0_18
 gboolean tp_capabilities_supports_file_transfer (TpCapabilities *self);
 _TP_AVAILABLE_IN_0_20
@@ -84,11 +84,11 @@ gboolean tp_capabilities_supports_file_transfer_initial_offset (
     TpCapabilities *self);
 
 gboolean tp_capabilities_supports_stream_tubes (TpCapabilities *self,
-    TpEntityType handle_type,
+    TpEntityType entity_type,
     const gchar *service);
 
 gboolean tp_capabilities_supports_dbus_tubes (TpCapabilities *self,
-    TpEntityType handle_type,
+    TpEntityType entity_type,
     const gchar *service_name);
 
 gboolean tp_capabilities_supports_contact_search (TpCapabilities *self,

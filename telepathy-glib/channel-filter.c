@@ -512,7 +512,7 @@ tp_channel_filter_require_locally_requested (TpChannelFilter *self,
  *
  * |[
  * tp_channel_filter_require_property (filter,
- *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
+ *     TP_PROP_CHANNEL_TARGET_ENTITY_TYPE,
  *     g_variant_new_uint32 (TP_ENTITY_TYPE_CONTACT));
  * ]|
  *

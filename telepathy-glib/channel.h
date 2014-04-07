@@ -119,7 +119,7 @@ GQuark tp_channel_get_feature_quark_core (void) G_GNUC_CONST;
 
 const gchar *tp_channel_get_channel_type (TpChannel *self);
 GQuark tp_channel_get_channel_type_id (TpChannel *self);
-TpHandle tp_channel_get_handle (TpChannel *self, TpEntityType *handle_type);
+TpHandle tp_channel_get_handle (TpChannel *self, TpEntityType *entity_type);
 const gchar *tp_channel_get_identifier (TpChannel *self);
 
 _TP_AVAILABLE_IN_0_16

@@ -184,7 +184,7 @@ main (int argc,
   tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   chan = tp_tests_channel_new (conn, props_chan_path, NULL,
-      TP_UNKNOWN_HANDLE_TYPE, 0, &error);
+      TP_UNKNOWN_ENTITY_TYPE, 0, &error);
   g_assert_no_error (error);
 
   prepare_result = NULL;
@@ -307,7 +307,7 @@ main (int argc,
   bad_chan_path = g_strdup_printf ("%s/Does/Not/Actually/Exist",
       tp_proxy_get_object_path (conn));
   chan = tp_tests_channel_new (conn, bad_chan_path, NULL,
-      TP_UNKNOWN_HANDLE_TYPE, 0, &error);
+      TP_UNKNOWN_ENTITY_TYPE, 0, &error);
   g_assert_no_error (error);
 
   tp_tests_proxy_run_until_prepared_or_failed (chan, NULL, &error);
@@ -374,7 +374,7 @@ main (int argc,
   g_message ("Channel already dead");
 
   chan = tp_tests_channel_new (conn, props_chan_path, NULL,
-      TP_UNKNOWN_HANDLE_TYPE, 0, &error);
+      TP_UNKNOWN_ENTITY_TYPE, 0, &error);
   g_assert_no_error (error);
 
   prepare_result = NULL;

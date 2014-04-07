@@ -41,7 +41,7 @@ test_basics (Fixture *f,
   g_assert_cmpstr (tp_asv_get_string (asv,
         TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_TEXT);
   g_assert_cmpuint (tp_asv_get_uint32 (asv,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid),
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid),
       ==, TP_ENTITY_TYPE_CONTACT);
   g_assert (valid);
   g_clear_object (&f->filter);
@@ -52,21 +52,21 @@ test_basics (Fixture *f,
   g_assert_cmpstr (tp_asv_get_string (asv,
         TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_TEXT);
   g_assert_cmpuint (tp_asv_get_uint32 (asv,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid),
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid),
       ==, TP_ENTITY_TYPE_ROOM);
   g_assert (valid);
   g_clear_object (&f->filter);
 
-  for (i = 0; i < G_N_ELEMENTS (call_handle_types); i++)
+  for (i = 0; i < G_N_ELEMENTS (call_entity_types); i++)
     {
-      f->filter = tp_channel_filter_new_for_calls (call_handle_types[i]);
+      f->filter = tp_channel_filter_new_for_calls (call_entity_types[i]);
       asv = _tp_channel_filter_use (f->filter);
       g_assert_cmpuint (tp_asv_size (asv), ==, 2);
       g_assert_cmpstr (tp_asv_get_string (asv,
             TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_CALL);
       g_assert_cmpuint (tp_asv_get_uint32 (asv,
-            TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid),
-          ==, call_handle_types[i]);
+            TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid),
+          ==, call_entity_types[i]);
       g_assert (valid);
       g_clear_object (&f->filter);
     }
@@ -95,7 +95,7 @@ test_basics (Fixture *f,
   g_assert_cmpstr (tp_asv_get_string (asv,
         TP_PROP_CHANNEL_CHANNEL_TYPE), ==, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER);
   g_assert_cmpuint (tp_asv_get_uint32 (asv,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid),
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid),
       ==, TP_ENTITY_TYPE_CONTACT);
   g_assert (valid);
   g_clear_object (&f->filter);
@@ -110,7 +110,7 @@ test_basics (Fixture *f,
         TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_SERVICE_NAME), ==,
       "com.example.AbiWord");
   g_assert_cmpuint (tp_asv_get_uint32 (asv,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid),
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid),
       ==, TP_ENTITY_TYPE_CONTACT);
   g_assert (valid);
   g_clear_object (&f->filter);
@@ -120,7 +120,7 @@ test_basics (Fixture *f,
   asv = _tp_channel_filter_use (f->filter);
   g_assert_cmpuint (tp_asv_size (asv), ==, 1);
   g_assert_cmpuint (tp_asv_get_uint32 (asv,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid),
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid),
       ==, TP_ENTITY_TYPE_CONTACT);
   g_assert (valid);
   g_clear_object (&f->filter);
@@ -130,7 +130,7 @@ test_basics (Fixture *f,
   asv = _tp_channel_filter_use (f->filter);
   g_assert_cmpuint (tp_asv_size (asv), ==, 1);
   g_assert_cmpuint (tp_asv_get_uint32 (asv,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid),
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid),
       ==, TP_ENTITY_TYPE_ROOM);
   g_assert (valid);
   g_clear_object (&f->filter);
@@ -140,7 +140,7 @@ test_basics (Fixture *f,
   asv = _tp_channel_filter_use (f->filter);
   g_assert_cmpuint (tp_asv_size (asv), ==, 1);
   g_assert_cmpuint (tp_asv_get_uint32 (asv,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid),
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid),
       ==, TP_ENTITY_TYPE_NONE);
   g_assert (valid);
   g_clear_object (&f->filter);
@@ -150,7 +150,7 @@ test_basics (Fixture *f,
   asv = _tp_channel_filter_use (f->filter);
   g_assert_cmpuint (tp_asv_size (asv), ==, 1);
   g_assert_cmpuint (tp_asv_get_uint32 (asv,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid),
+        TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid),
       ==, TP_ENTITY_TYPE_ROOM);
   g_assert (valid);
   g_clear_object (&f->filter);

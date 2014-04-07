@@ -40,8 +40,8 @@ GQuark tp_error_quark (void);
 
 #define TP_ERROR (tp_error_quark ())
 
-void tp_g_set_error_invalid_handle_type (guint type, GError **error);
-void tp_g_set_error_unsupported_handle_type (guint type, GError **error);
+void tp_g_set_error_invalid_entity_type (guint type, GError **error);
+void tp_g_set_error_unsupported_entity_type (guint type, GError **error);
 
 typedef enum {
     TP_ERROR_NETWORK_ERROR, /*< nick=NetworkError >*/

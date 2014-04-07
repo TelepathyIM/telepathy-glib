@@ -261,7 +261,7 @@ _tp_capabilities_new (GVariant *classes,
 static gboolean
 supports_simple_channel (TpCapabilities *self,
     const gchar *expected_chan_type,
-    TpEntityType expected_handle_type)
+    TpEntityType expected_entity_type)
 {
   GVariantIter iter;
   GVariant *fixed;
@@ -273,21 +273,21 @@ supports_simple_channel (TpCapabilities *self,
   while (g_variant_iter_loop (&iter, "(@a{sv}@as)", &fixed, NULL))
     {
       const gchar *chan_type;
-      TpEntityType handle_type;
+      TpEntityType entity_type;
       gboolean valid;
 
       if (g_variant_n_children (fixed) != 2)
         continue;
 
       chan_type = tp_vardict_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
-      handle_type = tp_vardict_get_uint32 (fixed,
+      entity_type = tp_vardict_get_uint32 (fixed,
           TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
 
       if (!valid)
         continue;
 
       if (!tp_strdiff (chan_type, expected_chan_type) &&
-          handle_type == expected_handle_type)
+          entity_type == expected_entity_type)
         {
           g_variant_unref (fixed);
           return TRUE;
@@ -387,17 +387,17 @@ tp_capabilities_supports_sms (TpCapabilities *self)
   while (g_variant_iter_loop (&iter, "(@a{sv}^a&s)", &fixed, &allowed))
     {
       const gchar *chan_type;
-      TpEntityType handle_type;
+      TpEntityType entity_type;
       gboolean valid;
       guint nb_fixed_props;
 
-      handle_type = tp_vardict_get_uint32 (fixed,
+      entity_type = tp_vardict_get_uint32 (fixed,
           TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
 
       if (!valid)
         continue;
 
-      if (handle_type != TP_ENTITY_TYPE_CONTACT)
+      if (entity_type != TP_ENTITY_TYPE_CONTACT)
         continue;
 
       chan_type = tp_vardict_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
@@ -436,7 +436,7 @@ tp_capabilities_supports_sms (TpCapabilities *self)
 
 static gboolean
 supports_call_full (TpCapabilities *self,
-    TpEntityType expected_handle_type,
+    TpEntityType expected_entity_type,
     gboolean expected_initial_audio,
     gboolean expected_initial_video)
 {
@@ -451,7 +451,7 @@ supports_call_full (TpCapabilities *self,
   while (g_variant_iter_loop (&iter, "(@a{sv}^a&s)", &fixed, &allowed_prop))
     {
       const gchar *chan_type;
-      TpEntityType handle_type;
+      TpEntityType entity_type;
       gboolean valid;
       guint nb_fixed_props = 2;
 
@@ -459,9 +459,9 @@ supports_call_full (TpCapabilities *self,
       if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_CALL1))
         continue;
 
-      handle_type = tp_vardict_get_uint32 (fixed,
+      entity_type = tp_vardict_get_uint32 (fixed,
           TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
-      if (!valid || handle_type != expected_handle_type)
+      if (!valid || entity_type != expected_entity_type)
         continue;
 
       if (expected_initial_audio)
@@ -509,48 +509,48 @@ supports_call_full (TpCapabilities *self,
 /**
  * tp_capabilities_supports_audio_call:
  * @self: a #TpCapabilities object
- * @handle_type: the handle type of the call; #TP_ENTITY_TYPE_CONTACT for
+ * @entity_type: the entity type of the call; #TP_ENTITY_TYPE_CONTACT for
  *  private, #TP_ENTITY_TYPE_ROOM or #TP_ENTITY_TYPE_NONE for conference
  *  (depending on the protocol)
  *
  * Return whether audio calls can be established, for instance by calling
  * tp_account_channel_request_new_audio_call(), followed by
- * tp_account_channel_request_set_target_id() with @handle_type.
+ * tp_account_channel_request_set_target_id() with @entity_type.
  *
  * To check whether requests using
  * tp_account_channel_request_set_target_contact() would work, set
- * @handle_type to %TP_ENTITY_TYPE_CONTACT.
+ * @entity_type to %TP_ENTITY_TYPE_CONTACT.
  *
  * Returns: %TRUE if a channel request containing Call as ChannelType,
- * @handle_type as TargetEntityType, a True value for InitialAudio and an
+ * @entity_type as TargetEntityType, a True value for InitialAudio and an
  * identifier of the appropriate type can be expected to work, %FALSE otherwise.
  *
  * Since: 0.17.6
  */
 gboolean
 tp_capabilities_supports_audio_call (TpCapabilities *self,
-    TpEntityType handle_type)
+    TpEntityType entity_type)
 {
-  return supports_call_full (self, handle_type, TRUE, FALSE);
+  return supports_call_full (self, entity_type, TRUE, FALSE);
 }
 
 /**
  * tp_capabilities_supports_audio_video_call:
  * @self: a #TpCapabilities object
- * @handle_type: the handle type of the call; #TP_ENTITY_TYPE_CONTACT for
+ * @entity_type: the entity type of the call; #TP_ENTITY_TYPE_CONTACT for
  *  private, #TP_ENTITY_TYPE_ROOM or #TP_ENTITY_TYPE_NONE for conference
  *  (depending on the protocol)
  *
  * Return whether audio/video calls can be established, for instance by calling
  * tp_account_channel_request_new_audio_video_call(), followed by
- * tp_account_channel_request_set_target_id() with @handle_type.
+ * tp_account_channel_request_set_target_id() with @entity_type.
  *
  * To check whether requests using
  * tp_account_channel_request_set_target_contact() would work, set
- * @handle_type to %TP_ENTITY_TYPE_CONTACT.
+ * @entity_type to %TP_ENTITY_TYPE_CONTACT.
  *
  * Returns: %TRUE if a channel request containing Call as ChannelType,
- * @handle_type as TargetEntityType, a True value for
+ * @entity_type as TargetEntityType, a True value for
  * InitialAudio/InitialVideo and an identifier of the appropriate type can be
  * expected to work,
  * %FALSE otherwise.
@@ -559,9 +559,9 @@ tp_capabilities_supports_audio_call (TpCapabilities *self,
  */
 gboolean
 tp_capabilities_supports_audio_video_call (TpCapabilities *self,
-    TpEntityType handle_type)
+    TpEntityType entity_type)
 {
-  return supports_call_full (self, handle_type, TRUE, TRUE);
+  return supports_call_full (self, entity_type, TRUE, TRUE);
 }
 
 typedef enum {
@@ -587,7 +587,7 @@ supports_file_transfer (TpCapabilities *self,
   while (g_variant_iter_loop (&iter, "(@a{sv}^a&s)", &fixed, &allowed))
     {
       const gchar *chan_type;
-      TpEntityType handle_type;
+      TpEntityType entity_type;
       gboolean valid;
       guint n_fixed = 2;
 
@@ -596,13 +596,13 @@ supports_file_transfer (TpCapabilities *self,
       if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER1))
         continue;
 
-      handle_type = tp_vardict_get_uint32 (fixed,
+      entity_type = tp_vardict_get_uint32 (fixed,
           TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
 
       if (!valid)
         continue;
 
-      if (handle_type != TP_ENTITY_TYPE_CONTACT)
+      if (entity_type != TP_ENTITY_TYPE_CONTACT)
         continue;
 
       /* ContentType, Filename, Size are mandatory. In principle we could check
@@ -750,7 +750,7 @@ tp_capabilities_supports_file_transfer_timestamp (TpCapabilities *self)
 static gboolean
 tp_capabilities_supports_tubes_common (TpCapabilities *self,
     const gchar *expected_channel_type,
-    TpEntityType expected_handle_type,
+    TpEntityType expected_entity_type,
     const gchar *service_prop,
     const gchar *expected_service)
 {
@@ -759,15 +759,15 @@ tp_capabilities_supports_tubes_common (TpCapabilities *self,
   const gchar **allowed;
 
   g_return_val_if_fail (TP_IS_CAPABILITIES (self), FALSE);
-  g_return_val_if_fail (expected_handle_type == TP_ENTITY_TYPE_CONTACT ||
-      expected_handle_type == TP_ENTITY_TYPE_ROOM, FALSE);
+  g_return_val_if_fail (expected_entity_type == TP_ENTITY_TYPE_CONTACT ||
+      expected_entity_type == TP_ENTITY_TYPE_ROOM, FALSE);
 
   g_variant_iter_init (&iter, self->priv->classes_variant);
 
   while (g_variant_iter_loop (&iter, "(@a{sv}^a&s)", &fixed, &allowed))
     {
       const gchar *chan_type;
-      TpEntityType handle_type;
+      TpEntityType entity_type;
       gboolean valid;
       guint nb_fixed_props = 2;
 
@@ -775,9 +775,9 @@ tp_capabilities_supports_tubes_common (TpCapabilities *self,
       if (tp_strdiff (chan_type, expected_channel_type))
         continue;
 
-      handle_type = tp_vardict_get_uint32 (fixed,
+      entity_type = tp_vardict_get_uint32 (fixed,
           TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
-      if (!valid || handle_type != expected_handle_type)
+      if (!valid || entity_type != expected_entity_type)
         continue;
 
       if (expected_service != NULL && self->priv->contact_specific)
@@ -804,19 +804,19 @@ tp_capabilities_supports_tubes_common (TpCapabilities *self,
 /**
  * tp_capabilities_supports_stream_tubes:
  * @self: a #TpCapabilities object
- * @handle_type: the handle type of the tube (either #TP_ENTITY_TYPE_CONTACT
+ * @entity_type: the entity type of the tube (either #TP_ENTITY_TYPE_CONTACT
  * or #TP_ENTITY_TYPE_ROOM)
  * @service: the service of the tube, or %NULL
  *
  * If the #TpCapabilities:contact-specific property is %TRUE, this function
  * checks if the contact associated with this #TpCapabilities supports
- * stream tubes with @handle_type as TargetEntityType.
+ * stream tubes with @entity_type as TargetEntityType.
  * If @service is not %NULL, it also checks if it supports stream tubes
  * with @service as #TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE.
  *
  * If the #TpCapabilities:contact-specific property is %FALSE, this function
  * checks if the connection supports requesting stream tube channels with
- * @handle_type as ChannelType. The @service argument is unused in this case.
+ * @entity_type as ChannelType. The @service argument is unused in this case.
  *
  * Returns: %TRUE if the contact or connection supports this type of stream
  * tubes.
@@ -825,30 +825,30 @@ tp_capabilities_supports_tubes_common (TpCapabilities *self,
  */
 gboolean
 tp_capabilities_supports_stream_tubes (TpCapabilities *self,
-    TpEntityType handle_type,
+    TpEntityType entity_type,
     const gchar *service)
 {
   return tp_capabilities_supports_tubes_common (self,
-      TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1, handle_type,
+      TP_IFACE_CHANNEL_TYPE_STREAM_TUBE1, entity_type,
       TP_PROP_CHANNEL_TYPE_STREAM_TUBE1_SERVICE, service);
 }
 
 /**
  * tp_capabilities_supports_dbus_tubes:
  * @self: a #TpCapabilities object
- * @handle_type: the handle type of the tube (either #TP_ENTITY_TYPE_CONTACT
+ * @entity_type: the entity type of the tube (either #TP_ENTITY_TYPE_CONTACT
  * or #TP_ENTITY_TYPE_ROOM)
  * @service_name: the service name of the tube, or %NULL
  *
  * If the #TpCapabilities:contact-specific property is %TRUE, this function
  * checks if the contact associated with this #TpCapabilities supports
- * D-Bus tubes with @handle_type as TargetEntityType.
+ * D-Bus tubes with @entity_type as TargetEntityType.
  * If @service_name is not %NULL, it also checks if it supports stream tubes
  * with @service as #TP_PROP_CHANNEL_TYPE_DBUS_TUBE_SERVICE_NAME.
  *
  * If the #TpCapabilities:contact-specific property is %FALSE, this function
  * checks if the connection supports requesting D-Bus tube channels with
- * @handle_type as ChannelType. The @service_name argument is unused in
+ * @entity_type as ChannelType. The @service_name argument is unused in
  * this case.
  *
  * Returns: %TRUE if the contact or connection supports this type of D-Bus
@@ -858,11 +858,11 @@ tp_capabilities_supports_stream_tubes (TpCapabilities *self,
  */
 gboolean
 tp_capabilities_supports_dbus_tubes (TpCapabilities *self,
-    TpEntityType handle_type,
+    TpEntityType entity_type,
     const gchar *service_name)
 {
   return tp_capabilities_supports_tubes_common (self,
-      TP_IFACE_CHANNEL_TYPE_DBUS_TUBE1, handle_type,
+      TP_IFACE_CHANNEL_TYPE_DBUS_TUBE1, entity_type,
       TP_PROP_CHANNEL_TYPE_DBUS_TUBE1_SERVICE_NAME, service_name);
 }
 
@@ -1009,7 +1009,7 @@ tp_capabilities_supports_room_list (TpCapabilities *self,
         &allowed_properties))
     {
       const gchar *chan_type;
-      TpEntityType handle_type;
+      TpEntityType entity_type;
       gboolean valid;
 
       if (g_variant_n_children (fixed) != 2)
@@ -1019,9 +1019,9 @@ tp_capabilities_supports_room_list (TpCapabilities *self,
       if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_ROOM_LIST1))
         continue;
 
-      handle_type = tp_vardict_get_uint32 (fixed,
+      entity_type = tp_vardict_get_uint32 (fixed,
           TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
-      if (!valid || handle_type != TP_ENTITY_TYPE_NONE)
+      if (!valid || entity_type != TP_ENTITY_TYPE_NONE)
         continue;
 
       result = TRUE;

@@ -822,6 +822,7 @@ tp_dtmf_player_play
 tp_dynamic_handle_repo_get_type
 tp_dynamic_handle_repo_lookup_exact
 tp_dynamic_handle_repo_set_normalize_async
+tp_entity_type_to_string
 tp_error_get_dbus_name
 tp_error_get_type
 tp_error_quark
@@ -852,8 +853,8 @@ tp_file_transfer_channel_provide_file_finish
 tp_g_hash_table_update
 tp_g_ptr_array_contains
 tp_g_ptr_array_extend
-tp_g_set_error_invalid_handle_type
-tp_g_set_error_unsupported_handle_type
+tp_g_set_error_invalid_entity_type
+tp_g_set_error_unsupported_entity_type
 tp_g_signal_connect_object
 tp_group_mixin_add_handle_owner
 tp_group_mixin_add_handle_owners
@@ -913,7 +914,6 @@ tp_handle_set_size
 tp_handle_set_to_array
 tp_handle_set_to_identifier_map
 tp_handle_set_update
-tp_handle_type_to_string
 tp_handles_are_valid
 tp_heap_add
 tp_heap_clear

@@ -29,7 +29,7 @@ channel_ready_cb (GObject *source,
 {
   TpChannel *channel = TP_CHANNEL (source);
   InspectChannelData *data = user_data;
-  guint handle_type, handle;
+  guint entity_type, handle;
   gchar *channel_type;
   gchar **interfaces, **iter;
   GError *error = NULL;
@@ -45,13 +45,13 @@ channel_ready_cb (GObject *source,
 
   g_object_get (channel,
       "channel-type", &channel_type,
-      "handle-type", &handle_type,
+      "entity-type", &entity_type,
       "handle", &handle,
       "interfaces", &interfaces,
       NULL);
 
   printf ("Type: %s\n", channel_type);
-  printf ("Handle: of type %u, #%u\n", handle_type, handle);
+  printf ("Handle: of type %u, #%u\n", entity_type, handle);
   puts ("Interfaces:");
 
   for (iter = interfaces; iter != NULL && *iter != NULL; iter++)

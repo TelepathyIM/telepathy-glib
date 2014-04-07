@@ -38,7 +38,7 @@ G_BEGIN_DECLS
  *
  * A static handle repository contains a fixed set of handles.
  *
- * As well as setting the #TpHandleRepoIface:handle-type property, code
+ * As well as setting the #TpHandleRepoIface:entity-type property, code
  * which creates a static handle repository must set the
  * #TpStaticHandleRepo:handle-names construction property to a strv of
  * valid handle names. All of these are preallocated; no more may be
@@ -87,7 +87,7 @@ GType tp_static_handle_repo_get_type (void);
 
 /**
  * tp_static_handle_repo_new:
- * @handle_type: The type of handle to store in the
+ * @entity_type: The type of handle to store in the
  *  new repository
  * @handle_names: Same as #TpStaticHandleRepo:handle-names
  *
@@ -97,15 +97,15 @@ GType tp_static_handle_repo_get_type (void);
  */
 static inline
 /* spacer so gtkdoc documents this function as though not static */
-TpHandleRepoIface *tp_static_handle_repo_new (TpEntityType handle_type,
+TpHandleRepoIface *tp_static_handle_repo_new (TpEntityType entity_type,
     const gchar **handle_names);
 
 static inline TpHandleRepoIface *
-tp_static_handle_repo_new (TpEntityType handle_type,
+tp_static_handle_repo_new (TpEntityType entity_type,
                            const gchar **handle_names)
 {
   return (TpHandleRepoIface *) g_object_new (TP_TYPE_STATIC_HANDLE_REPO,
-      "handle-type", (guint)handle_type,
+      "entity-type", (guint)entity_type,
       "handle-names", handle_names,
       NULL);
 }

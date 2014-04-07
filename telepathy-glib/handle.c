@@ -24,17 +24,17 @@
 #include <telepathy-glib/handle.h>
 
 /**
- * tp_handle_type_to_string:
- * @type: A handle type, which need not be valid
+ * tp_entity_type_to_string:
+ * @type: A entity type, which need not be valid
  *
  * <!---->
  *
- * Returns: a human-readable string describing the handle type, e.g. "contact".
- *  For invalid handle types, returns "(no handle)" for 0 or
- *  "(invalid handle type)" for others.
+ * Returns: a human-readable string describing the entity type, e.g. "contact".
+ *  For invalid entity types, returns "(no handle)" for 0 or
+ *  "(invalid entity type)" for others.
  */
 const gchar *
-tp_handle_type_to_string (TpEntityType type)
+tp_entity_type_to_string (TpEntityType type)
 {
   switch (type)
     {
@@ -48,5 +48,5 @@ tp_handle_type_to_string (TpEntityType type)
       return "self";
     }
 
-  return "(invalid handle type)";
+  return "(invalid entity type)";
 }

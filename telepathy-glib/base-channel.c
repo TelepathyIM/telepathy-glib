@@ -322,7 +322,7 @@ enum
 {
   PROP_OBJECT_PATH = 1,
   PROP_CHANNEL_TYPE,
-  PROP_HANDLE_TYPE,
+  PROP_ENTITY_TYPE,
   PROP_HANDLE,
   PROP_INITIATOR_HANDLE,
   PROP_INITIATOR_ID,
@@ -821,7 +821,7 @@ tp_base_channel_get_property (GObject *object,
     case PROP_CHANNEL_TYPE:
       g_value_set_static_string (value, klass->channel_type);
       break;
-    case PROP_HANDLE_TYPE:
+    case PROP_ENTITY_TYPE:
       g_value_set_uint (value, klass->target_entity_type);
       break;
     case PROP_HANDLE:
@@ -919,7 +919,7 @@ tp_base_channel_set_property (GObject *object,
       /* similarly we can't ref this yet */
       chan->priv->initiator = g_value_get_uint (value);
       break;
-    case PROP_HANDLE_TYPE:
+    case PROP_ENTITY_TYPE:
     case PROP_CHANNEL_TYPE:
       /* these properties are writable in the interface, but not actually
        * meaningfully changeable on this channel, so we do nothing */
@@ -972,7 +972,7 @@ static void
 tp_base_channel_class_init (TpBaseChannelClass *tp_base_channel_class)
 {
   static TpDBusPropertiesMixinPropImpl channel_props[] = {
-      { "TargetEntityType", "handle-type", NULL },
+      { "TargetEntityType", "entity-type", NULL },
       { "TargetHandle", "handle", NULL },
       { "TargetID", "target-id", NULL },
       { "ChannelType", "channel-type", NULL },
@@ -1008,8 +1008,8 @@ tp_base_channel_class_init (TpBaseChannelClass *tp_base_channel_class)
       "object-path");
   g_object_class_override_property (object_class, PROP_CHANNEL_TYPE,
       "channel-type");
-  g_object_class_override_property (object_class, PROP_HANDLE_TYPE,
-      "handle-type");
+  g_object_class_override_property (object_class, PROP_ENTITY_TYPE,
+      "entity-type");
   g_object_class_override_property (object_class, PROP_HANDLE, "handle");
   g_object_class_override_property (object_class, PROP_CHANNEL_DESTROYED,
       "channel-destroyed");

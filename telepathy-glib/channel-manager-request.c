@@ -71,7 +71,7 @@ tp_channel_manager_request_finalize (GObject *object)
   g_assert (self->context == NULL);
 
   DEBUG("Freeing channel request at %p: ctype=%s htype=%d handle=%d",
-        self, self->channel_type, self->handle_type,
+        self, self->channel_type, self->entity_type,
         self->handle);
 
   g_free (self->channel_type);
@@ -98,7 +98,7 @@ _tp_channel_manager_request_new (
     GDBusMethodInvocation *context,
     TpChannelManagerRequestMethod method,
     const char *channel_type,
-    TpEntityType handle_type,
+    TpEntityType entity_type,
     TpHandle handle)
 {
   TpChannelManagerRequest *result;
@@ -113,12 +113,12 @@ _tp_channel_manager_request_new (
   result->context = context;
   result->method = method;
   result->channel_type = g_strdup (channel_type);
-  result->handle_type = handle_type;
+  result->entity_type = entity_type;
   result->handle = handle;
   result->yours = FALSE;
 
   DEBUG ("New channel request at %p: ctype=%s htype=%d handle=%d",
-        result, channel_type, handle_type, handle);
+        result, channel_type, entity_type, handle);
 
   return result;
 }
@@ -132,7 +132,7 @@ _tp_channel_manager_request_cancel (TpChannelManagerRequest *self)
   g_return_if_fail (self->context != NULL);
 
   DEBUG ("cancelling request at %p for %s/%u/%u", self,
-      self->channel_type, self->handle_type, self->handle);
+      self->channel_type, self->entity_type, self->handle);
 
   g_dbus_method_invocation_return_gerror (self->context, &error);
   self->context = NULL;
@@ -149,8 +149,8 @@ _tp_channel_manager_request_satisfy (TpChannelManagerRequest *self,
   g_return_if_fail (self->context != NULL);
 
   DEBUG ("completing queued request %p with success, "
-      "channel_type=%s, handle_type=%u, "
-      "handle=%u", self, self->channel_type, self->handle_type, self->handle);
+      "channel_type=%s, entity_type=%u, "
+      "handle=%u", self, self->channel_type, self->entity_type, self->handle);
 
   g_object_get (channel,
       "object-path", &object_path,
@@ -186,8 +186,8 @@ _tp_channel_manager_request_fail (TpChannelManagerRequest *self,
   g_return_if_fail (self->context != NULL);
 
   DEBUG ("completing queued request %p with error, channel_type=%s, "
-      "handle_type=%u, handle=%u",
-      self, self->channel_type, self->handle_type, self->handle);
+      "entity_type=%u, handle=%u",
+      self, self->channel_type, self->entity_type, self->handle);
 
   g_dbus_method_invocation_return_gerror (self->context, error);
   self->context = NULL;

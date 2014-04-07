@@ -31,11 +31,11 @@
  * A dynamic handle repository will accept arbitrary handles, which can
  * be created and destroyed at runtime.
  *
- * The #TpHandleRepoIface:handle-type property must be set at construction
+ * The #TpHandleRepoIface:entity-type property must be set at construction
  * time; the #TpDynamicHandleRepo:normalize-function property may be set to
  * perform validation and normalization on handle ID strings.
  *
- * Most connection managers will use this for all supported handle types
+ * Most connection managers will use this for all supported entity types
  * except %TP_ENTITY_TYPE_LIST.
  *
  * Changed in 0.13.8: handles are no longer reference-counted, and
@@ -103,7 +103,7 @@
 
 /**
  * tp_dynamic_handle_repo_new:
- * @handle_type: The handle type
+ * @entity_type: The entity type
  * @normalize_func: The function to be used to normalize and validate handles,
  *  or %NULL to accept all handles as-is
  * @default_normalize_context: The context pointer to be passed to the
@@ -145,7 +145,7 @@ handle_priv_free_contents (TpHandlePriv *priv)
 
 enum
 {
-  PROP_HANDLE_TYPE = 1,
+  PROP_ENTITY_TYPE = 1,
   PROP_NORMALIZE_FUNCTION,
   PROP_DEFAULT_NORMALIZE_CONTEXT,
 };
@@ -170,7 +170,7 @@ struct _TpDynamicHandleRepoClass {
 struct _TpDynamicHandleRepo {
   GObject parent;
 
-  TpEntityType handle_type;
+  TpEntityType entity_type;
 
   /* Array of TpHandlePriv keyed by handle; 0th element is unused */
   GArray *handle_to_priv;
@@ -262,8 +262,8 @@ dynamic_get_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_HANDLE_TYPE:
-      g_value_set_uint (value, self->handle_type);
+    case PROP_ENTITY_TYPE:
+      g_value_set_uint (value, self->entity_type);
       break;
     case PROP_NORMALIZE_FUNCTION:
       g_value_set_pointer (value, self->normalize_function);
@@ -287,8 +287,8 @@ dynamic_set_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_HANDLE_TYPE:
-      self->handle_type = g_value_get_uint (value);
+    case PROP_ENTITY_TYPE:
+      self->entity_type = g_value_get_uint (value);
       break;
     case PROP_NORMALIZE_FUNCTION:
       self->normalize_function = g_value_get_pointer (value);
@@ -314,8 +314,8 @@ tp_dynamic_handle_repo_class_init (TpDynamicHandleRepoClass *klass)
   object_class->get_property = dynamic_get_property;
   object_class->set_property = dynamic_set_property;
 
-  g_object_class_override_property (object_class, PROP_HANDLE_TYPE,
-      "handle-type");
+  g_object_class_override_property (object_class, PROP_ENTITY_TYPE,
+      "entity-type");
 
   /**
    * TpDynamicHandleRepo:normalize-function:
@@ -361,8 +361,8 @@ dynamic_handle_is_valid (TpHandleRepoIface *irepo,
     {
       g_set_error (error, TP_ERROR, TP_ERROR_INVALID_HANDLE,
           "handle %u is not currently a valid %s handle (type %u)",
-          handle, tp_handle_type_to_string (self->handle_type),
-          self->handle_type);
+          handle, tp_entity_type_to_string (self->entity_type),
+          self->entity_type);
       return FALSE;
     }
   else
@@ -491,8 +491,8 @@ dynamic_lookup_handle (TpHandleRepoIface *irepo,
     {
       g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "no %s handle (type %u) currently exists for ID \"%s\"",
-          tp_handle_type_to_string (self->handle_type),
-          self->handle_type, id);
+          tp_entity_type_to_string (self->entity_type),
+          self->entity_type, id);
     }
 
   g_free (normal_id);

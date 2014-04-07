@@ -154,18 +154,18 @@ gchar *tp_handle_set_dump (const TpHandleSet *self) G_GNUC_WARN_UNUSED_RESULT;
 /**
  * tp_handles_supported_and_valid: (skip)
  * @repos: An array of possibly null pointers to handle repositories, indexed
- *         by handle type, where a null pointer means an unsupported handle
+ *         by entity type, where a null pointer means an unsupported handle
  *         type
- * @handle_type: The handle type
+ * @entity_type: The entity type
  * @handles: A GArray of guint representing handles of the given type
  * @allow_zero: If %TRUE, zero is treated like a valid handle
  * @error: Used to return an error if %FALSE is returned
  *
- * Return %TRUE if the given handle type is supported (i.e. repos[handle_type]
+ * Return %TRUE if the given entity type is supported (i.e. repos[entity_type]
  * is not %NULL) and the given handles are all valid in that repository.
  * If not, set @error and return %FALSE.
  *
- * Returns: %TRUE if the handle type is supported and the handles are all
+ * Returns: %TRUE if the entity type is supported and the handles are all
  * valid.
  */
 
@@ -173,25 +173,25 @@ static inline
 /* spacer so gtkdoc documents this function as though not static */
 gboolean tp_handles_supported_and_valid (
     TpHandleRepoIface *repos[TP_NUM_ENTITY_TYPES],
-    TpEntityType handle_type, const GArray *handles, gboolean allow_zero,
+    TpEntityType entity_type, const GArray *handles, gboolean allow_zero,
     GError **error);
 
 static inline gboolean
 tp_handles_supported_and_valid (TpHandleRepoIface *repos[TP_NUM_ENTITY_TYPES],
-                                TpEntityType handle_type,
+                                TpEntityType entity_type,
                                 const GArray *handles,
                                 gboolean allow_zero,
                                 GError **error)
 {
-  if (!tp_handle_type_is_valid (handle_type, error))
+  if (!tp_entity_type_is_valid (entity_type, error))
     return FALSE;
 
-  if (!repos[handle_type])
+  if (!repos[entity_type])
     {
-      tp_g_set_error_unsupported_handle_type (handle_type, error);
+      tp_g_set_error_unsupported_entity_type (entity_type, error);
       return FALSE;
     }
-  return tp_handles_are_valid (repos[handle_type], handles, allow_zero, error);
+  return tp_handles_are_valid (repos[entity_type], handles, allow_zero, error);
 }
 
 G_END_DECLS

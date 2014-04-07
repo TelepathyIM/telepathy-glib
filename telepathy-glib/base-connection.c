@@ -145,7 +145,7 @@
  * TpBaseConnectionClass:
  * @parent_class: The superclass' structure
  * @create_handle_repos: Fill in suitable handle repositories in the
- *  given array for all those handle types this Connection supports.
+ *  given array for all those entity types this Connection supports.
  *  Must be set by subclasses to a non-%NULL value; the function must create
  *  at least a CONTACT handle repository (failing to do so will cause a crash).
  * @get_unique_connection_name: Construct a unique name for this connection
@@ -753,24 +753,24 @@ manager_channel_closed_cb (TpChannelManager *manager,
 }
 
 /*
- * Set the @handle_type'th handle repository, which must be %NULL, to
+ * Set the @entity_type'th handle repository, which must be %NULL, to
  * @handle_repo. This method can only be called from code run during the
  * constructor(), after handle repository instantiation (in practice, this
  * means it can only be called from the @create_channel_managers callback).
  */
 void
 _tp_base_connection_set_handle_repo (TpBaseConnection *self,
-    TpEntityType handle_type,
+    TpEntityType entity_type,
     TpHandleRepoIface *handle_repo)
 {
   g_return_if_fail (TP_IS_BASE_CONNECTION (self));
   g_return_if_fail (!self->priv->been_constructed);
-  g_return_if_fail (tp_handle_type_is_valid (handle_type, NULL));
+  g_return_if_fail (tp_entity_type_is_valid (entity_type, NULL));
   g_return_if_fail (self->priv->handles[TP_ENTITY_TYPE_CONTACT] != NULL);
-  g_return_if_fail (self->priv->handles[handle_type] == NULL);
+  g_return_if_fail (self->priv->handles[entity_type] == NULL);
   g_return_if_fail (TP_IS_HANDLE_REPO_IFACE (handle_repo));
 
-  self->priv->handles[handle_type] = g_object_ref (handle_repo);
+  self->priv->handles[entity_type] = g_object_ref (handle_repo);
 }
 
 static void
@@ -1647,23 +1647,23 @@ tp_base_connection_check_connected (TpBaseConnection *self,
 /**
  * tp_base_connection_get_handles:
  * @self: A connection
- * @handle_type: The handle type
+ * @entity_type: The entity type
  *
  * <!---->
  *
  * Returns: (transfer none): the handle repository corresponding to the given
- * handle type, or #NULL if it's unsupported or invalid.
+ * entity type, or #NULL if it's unsupported or invalid.
  */
 TpHandleRepoIface *
 tp_base_connection_get_handles (TpBaseConnection *self,
-                                TpEntityType handle_type)
+                                TpEntityType entity_type)
 {
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
 
-  if (handle_type >= TP_NUM_ENTITY_TYPES)
+  if (entity_type >= TP_NUM_ENTITY_TYPES)
     return NULL;
 
-  return self->priv->handles[handle_type];
+  return self->priv->handles[entity_type];
 }
 
 
@@ -2423,12 +2423,12 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
   GValue *target_handle_value = NULL;
   GValue *target_id_value = NULL;
 
-  /* Handle type 0 cannot have a handle */
+  /* entity type 0 cannot have a handle */
   if (target_entity_type == TP_ENTITY_TYPE_NONE && target_handle != 0)
     RETURN_INVALID_ARGUMENT (
         "When TargetEntityType is NONE, TargetHandle must be omitted");
 
-  /* Handle type 0 cannot have a target id */
+  /* entity type 0 cannot have a target id */
   if (target_entity_type == TP_ENTITY_TYPE_NONE && target_id != NULL)
     RETURN_INVALID_ARGUMENT (
       "When TargetEntityType is NONE, TargetID must be omitted");
@@ -2450,7 +2450,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
       if (handles == NULL)
         {
           GError e = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
-              "Handle type not supported by this connection manager" };
+              "entity type not supported by this connection manager" };
 
           g_dbus_method_invocation_return_gerror (context, &e);
           return;

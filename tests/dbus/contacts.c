@@ -804,7 +804,7 @@ free_rcc_list (GPtrArray *rccs)
 
 static void
 add_text_chat_class (GPtrArray *classes,
-    TpEntityType handle_type)
+    TpEntityType entity_type)
 {
   GHashTable *fixed;
   const gchar * const allowed[] = { NULL };
@@ -814,7 +814,7 @@ add_text_chat_class (GPtrArray *classes,
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, G_TYPE_UINT,
-          handle_type,
+          entity_type,
       NULL);
 
   arr = tp_value_array_build (2,
