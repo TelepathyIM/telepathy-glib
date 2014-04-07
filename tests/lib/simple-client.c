@@ -34,14 +34,14 @@ simple_observe_channel (
     TpObserveChannelContext *context)
 {
   TpTestsSimpleClient *self = TP_TESTS_SIMPLE_CLIENT (client);
-  GHashTable *info;
+  GVariant *info;
   gboolean fail;
   GList *l;
 
   /* Fail if caller set the fake "FAIL" info */
   g_object_get (context, "observer-info", &info, NULL);
-  fail = tp_asv_get_boolean (info, "FAIL", NULL);
-  g_hash_table_unref (info);
+  fail = tp_vardict_get_boolean (info, "FAIL", NULL);
+  g_variant_unref (info);
 
   if (self->observe_ctx != NULL)
     {

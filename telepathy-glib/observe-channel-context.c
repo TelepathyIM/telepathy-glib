@@ -145,11 +145,7 @@ tp_observe_channel_context_dispose (GObject *object)
       self->requests = NULL;
     }
 
-  if (self->observer_info != NULL)
-    {
-      g_hash_table_unref (self->observer_info);
-      self->observer_info = NULL;
-    }
+  g_clear_pointer (&self->observer_info, g_variant_unref);
 
   if (self->priv->result != NULL)
     {
@@ -187,7 +183,7 @@ tp_observe_channel_context_get_property (GObject *object,
         g_value_set_boxed (value, self->requests);
         break;
       case PROP_OBSERVER_INFO:
-        g_value_set_boxed (value, self->observer_info);
+        g_value_set_variant (value, self->observer_info);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -225,7 +221,7 @@ tp_observe_channel_context_set_property (GObject *object,
         self->priv->dbus_context = g_value_get_pointer (value);
         break;
       case PROP_OBSERVER_INFO:
-        self->observer_info = g_value_dup_boxed (value);
+        self->observer_info = g_value_dup_variant (value);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -374,19 +370,17 @@ tp_observe_channel_context_class_init (TpObserveChannelContextClass *cls)
   /**
    * TpObserveChannelContext:observer-info:
    *
-   * A #GHashTable where the keys are string and values are GValue instances.
+   * A %G_VARIANT_TYPE_VARDICT.
    * It represents the Observer_Info hash table that has been passed to
    * ObserveChannels.
    * It's recommended to use high-level method such as
    * tp_observe_channel_context_is_recovering() to access to its content.
    *
-   * This property can't be %NULL.
-   *
-   * Since: 0.11.5
+   * This property can't be %NULL at runtime.
    */
-  param_spec = g_param_spec_boxed ("observer-info", "Observer info",
+  param_spec = g_param_spec_variant ("observer-info", "Observer info",
       "The Observer_Info that has been passed to ObserveChannels",
-      TP_HASH_TYPE_STRING_VARIANT_MAP,
+      G_VARIANT_TYPE_VARDICT, NULL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_OBSERVER_INFO,
       param_spec);
@@ -399,10 +393,13 @@ _tp_observe_channel_context_new (
     TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     GPtrArray *requests,
-    GHashTable *observer_info,
+    GVariant *observer_info,
     GDBusMethodInvocation *dbus_context)
 {
-  return g_object_new (TP_TYPE_OBSERVE_CHANNELS_CONTEXT,
+  TpObserveChannelContext *self;
+
+  g_variant_ref_sink (observer_info);
+  self = g_object_new (TP_TYPE_OBSERVE_CHANNELS_CONTEXT,
       "account", account,
       "connection", connection,
       "channel", channel,
@@ -411,6 +408,8 @@ _tp_observe_channel_context_new (
       "observer-info", observer_info,
       "dbus-context", dbus_context,
       NULL);
+  g_variant_unref (observer_info);
+  return self;
 }
 
 /**
@@ -498,7 +497,7 @@ tp_observe_channel_context_is_recovering (TpObserveChannelContext *self)
 {
   /* tp_asv_get_boolean returns FALSE if the key is not set which is what we
    * want */
-  return tp_asv_get_boolean (self->observer_info, "recovering", NULL);
+  return tp_vardict_get_boolean (self->observer_info, "recovering", NULL);
 }
 
 TpObserveChannelContextState

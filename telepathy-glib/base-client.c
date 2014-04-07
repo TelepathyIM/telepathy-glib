@@ -1727,7 +1727,8 @@ _tp_base_client_observe_channel (TpSvcClientObserver *iface,
     }
 
   ctx = _tp_observe_channel_context_new (account, connection, channel,
-      dispatch_operation, requests, observer_info, context);
+      dispatch_operation, requests, tp_asv_to_vardict (observer_info),
+      context);
 
   account_features = dup_features_for_account (self, account);
   connection_features = dup_features_for_connection (self, connection);

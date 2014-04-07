@@ -48,7 +48,7 @@ struct _TpObserveChannelContext {
   TpChannelDispatchOperation *dispatch_operation;
   /* Array of reffed TpChannelRequest */
   GPtrArray *requests;
-  GHashTable *observer_info;
+  GVariant *observer_info;
 };
 
 TpObserveChannelContext * _tp_observe_channel_context_new (
@@ -57,7 +57,7 @@ TpObserveChannelContext * _tp_observe_channel_context_new (
     TpChannel *channel,
     TpChannelDispatchOperation *dispatch_operation,
     GPtrArray *requests,
-    GHashTable *observer_info,
+    GVariant *observer_info,
     GDBusMethodInvocation *dbus_context);
 
 TpObserveChannelContextState _tp_observe_channel_context_get_state (
