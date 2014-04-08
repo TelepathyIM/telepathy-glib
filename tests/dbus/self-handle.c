@@ -16,11 +16,132 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/svc-generic.h>
 
 #include "tests/lib/contacts-conn.h"
 #include "tests/lib/debug.h"
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
+
+typedef struct {
+    TpTestsContactsConnection parent;
+    gboolean change_self_handle_after_get_all;
+} MyConnection;
+
+typedef struct {
+    TpTestsContactsConnectionClass parent_class;
+} MyConnectionClass;
+
+static GType my_connection_get_type (void);
+
+#define MY_CONNECTION(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), my_connection_get_type (), MyConnection))
+
+static void props_iface_init (TpSvcDBusPropertiesClass *);
+
+G_DEFINE_TYPE_WITH_CODE (MyConnection, my_connection,
+    TP_TESTS_TYPE_CONTACTS_CONNECTION,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES, props_iface_init))
+
+static void
+my_connection_init (MyConnection *self)
+{
+}
+
+static void
+my_connection_class_init (MyConnectionClass *cls)
+{
+}
+
+static void
+get (TpSvcDBusProperties *iface,
+    const gchar *interface_name,
+    const gchar *property_name,
+    GDBusMethodInvocation *context)
+{
+  GObject *self = G_OBJECT (iface);
+  GValue value = { 0 };
+  GError *error = NULL;
+
+  if (tp_dbus_properties_mixin_get (self, interface_name, property_name,
+        &value, &error))
+    {
+      tp_svc_dbus_properties_return_from_get (context, &value);
+      g_value_unset (&value);
+    }
+  else
+    {
+      g_dbus_method_invocation_return_gerror (context, error);
+      g_error_free (error);
+    }
+}
+
+static void
+set (TpSvcDBusProperties *iface,
+    const gchar *interface_name,
+    const gchar *property_name,
+    const GValue *value,
+    GDBusMethodInvocation *context)
+{
+  GObject *self = G_OBJECT (iface);
+  GError *error = NULL;
+
+  if (tp_dbus_properties_mixin_set (self, interface_name, property_name, value,
+          &error))
+    {
+      tp_svc_dbus_properties_return_from_set (context);
+    }
+  else
+    {
+      g_dbus_method_invocation_return_gerror (context, error);
+      g_error_free (error);
+    }
+}
+
+static void
+get_all (TpSvcDBusProperties *iface,
+    const gchar *interface_name,
+    GDBusMethodInvocation *context)
+{
+  MyConnection *self = MY_CONNECTION (iface);
+  TpBaseConnection *base = TP_BASE_CONNECTION (iface);
+  GHashTable *values = tp_dbus_properties_mixin_dup_all (G_OBJECT (iface),
+      interface_name);
+
+  tp_svc_dbus_properties_return_from_get_all (context, values);
+  g_hash_table_unref (values);
+
+  if (self->change_self_handle_after_get_all &&
+      tp_base_connection_get_status (base) == TP_CONNECTION_STATUS_CONNECTED)
+    {
+      TpTestsSimpleConnection *simple = TP_TESTS_SIMPLE_CONNECTION (iface);
+      TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (base,
+          TP_ENTITY_TYPE_CONTACT);
+
+      DEBUG ("changing my own identifier to something else");
+      self->change_self_handle_after_get_all = FALSE;
+      tp_tests_simple_connection_set_identifier (simple, "myself@example.org");
+      g_assert_cmpstr (tp_handle_inspect (contact_repo,
+            tp_base_connection_get_self_handle (base)), ==,
+          "myself@example.org");
+    }
+}
+
+/* This relies on the assumption that every interface implemented by
+ * TpTestsContactsConnection (or at least those exercised by this test)
+ * is hooked up to TpDBusPropertiesMixin, which is true in practice. The
+ * timing is quite subtle: to work as intended, test_change_inconveniently()
+ * needs to change the self-handle *immediately* after the GetAll call. */
+static void
+props_iface_init (TpSvcDBusPropertiesClass *iface)
+{
+#define IMPLEMENT(x) \
+  tp_svc_dbus_properties_implement_##x (iface, x)
+  IMPLEMENT (get);
+  IMPLEMENT (set);
+  IMPLEMENT (get_all);
+#undef IMPLEMENT
+}
 
 typedef struct {
   GDBusConnection *dbus;
@@ -43,7 +164,7 @@ setup (Fixture *f,
   f->dbus = tp_tests_dbus_dup_or_die ();
 
   f->service_conn = TP_TESTS_SIMPLE_CONNECTION (
-      tp_tests_object_new_static_class (TP_TESTS_TYPE_CONTACTS_CONNECTION,
+      tp_tests_object_new_static_class (my_connection_get_type (),
         "account", "me@example.com",
         "protocol", "simple",
         NULL));
@@ -95,21 +216,6 @@ swapped_counter_cb (gpointer user_data)
   guint *times = user_data;
 
   ++*times;
-}
-
-static GDBusMessage *
-got_all_counter_filter (GDBusConnection *connection,
-    GDBusMessage *message,
-    gboolean incoming,
-    gpointer user_data)
-{
-  guint *times = user_data;
-
-  if (incoming &&
-      !tp_strdiff (g_dbus_message_get_member (message), "GetAll"))
-    ++*times;
-
-  return message;
 }
 
 static void
@@ -223,10 +329,11 @@ test_change_inconveniently (Fixture *f,
     gconstpointer arg)
 {
   TpContact *after;
-  guint contact_times = 0, got_all_times = 0;
+  guint contact_times = 0;
   gboolean ok;
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
-  guint filter_id;
+
+  MY_CONNECTION (f->service_conn)->change_self_handle_after_get_all = TRUE;
 
   /* This test exercises what happens if the self-contact changes
    * between obtaining its handle for the first time and having the
@@ -237,9 +344,6 @@ test_change_inconveniently (Fixture *f,
 
   g_signal_connect_swapped (f->client_conn, "notify::self-contact",
       G_CALLBACK (swapped_counter_cb), &contact_times);
-  filter_id = g_dbus_connection_add_filter (f->dbus,
-      got_all_counter_filter,
-      &got_all_times, NULL);
 
   tp_proxy_prepare_async (f->client_conn, features, tp_tests_result_ready_cb,
       &f->result);
@@ -257,18 +361,6 @@ test_change_inconveniently (Fixture *f,
   tp_base_connection_change_status (f->service_conn_as_base,
       TP_CONNECTION_STATUS_CONNECTED,
       TP_CONNECTION_STATUS_REASON_REQUESTED);
-
-  /* run the main loop until just after GetAll(Connection)
-   * is processed, to make sure the client first saw the old self handle */
-  while (got_all_times == 0)
-    g_main_context_iteration (NULL, TRUE);
-
-  DEBUG ("changing my own identifier to something else");
-  tp_tests_simple_connection_set_identifier (f->service_conn,
-      "myself@example.org");
-  g_assert_cmpstr (tp_handle_inspect (f->contact_repo,
-        tp_base_connection_get_self_handle (f->service_conn_as_base)), ==,
-      "myself@example.org");
 
   /* now run the main loop and let the client catch up */
   tp_tests_run_until_result (&f->result);
@@ -290,8 +382,6 @@ test_change_inconveniently (Fixture *f,
       tp_base_connection_get_self_handle (f->service_conn_as_base));
   g_assert_cmpstr (tp_contact_get_identifier (after), ==,
       "myself@example.org");
-
-  g_dbus_connection_remove_filter (f->dbus, filter_id);
 
   g_object_unref (after);
 }
