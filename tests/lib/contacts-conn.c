@@ -567,8 +567,6 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
   klass->properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpTestsContactsConnectionClass, properties_class));
-
-  tp_base_contact_list_mixin_class_init (base_class);
 }
 
 TpTestsContactListManager *

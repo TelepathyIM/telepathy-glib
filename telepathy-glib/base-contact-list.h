@@ -588,11 +588,6 @@ struct _TpMutableContactGroupListInterface {
     TpBaseContactListUIntFunc get_group_storage;
 };
 
-/* ---- Mixin-like functionality for our parent TpBaseConnection ---- */
-
-void tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls);
-void tp_base_contact_list_mixin_blocking_iface_init (gpointer klass);
-
 _TP_AVAILABLE_IN_1_0
 gboolean tp_base_contact_list_fill_contact_attributes (TpBaseContactList *self,
   const gchar *dbus_interface,

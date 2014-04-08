@@ -138,7 +138,7 @@ gboolean tp_handle_set_is_empty (const TpHandleSet *set);
 int tp_handle_set_size (const TpHandleSet *set);
 GArray *tp_handle_set_to_array (const TpHandleSet *set)
   G_GNUC_WARN_UNUSED_RESULT;
-GHashTable *tp_handle_set_to_identifier_map (TpHandleSet *self)
+GVariant *tp_handle_set_to_identifier_map (TpHandleSet *self)
     G_GNUC_WARN_UNUSED_RESULT;
 TpHandleSet *tp_handle_set_new_from_array (TpHandleRepoIface *repo,
     const GArray *array) G_GNUC_WARN_UNUSED_RESULT;

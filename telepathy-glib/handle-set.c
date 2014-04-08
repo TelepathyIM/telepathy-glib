@@ -299,25 +299,20 @@ tp_handle_set_to_array (const TpHandleSet *set)
  *
  * Returns a dictionary mapping each handle in @self to the corresponding
  * identifier, as if retrieved by calling tp_handle_inspect() on each handle.
- * The type of the returned value is described as
- * <code>Handle_Identifier_Map</code> in the Telepathy specification.
  *
- * Returns: (transfer full) (element-type TpHandle utf8): a map from the
- *  handles in @self to the corresponding identifier.
+ * Returns: (transfer none): a floating #GVariant of type "a{us}".
  */
-GHashTable *
+GVariant *
 tp_handle_set_to_identifier_map (
     TpHandleSet *self)
 {
-  /* We don't bother dupping the strings: they remain valid as long as the
-   * connection's alive and hence the repo exists.
-   */
-  GHashTable *map = g_hash_table_new (NULL, NULL);
+  GVariantBuilder builder;
   TpIntsetFastIter iter;
   TpHandle handle;
 
-  g_return_val_if_fail (self != NULL, map);
+  g_return_val_if_fail (self != NULL, NULL);
 
+  g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{us}"));
   tp_intset_fast_iter_init (&iter, self->intset);
   while (tp_intset_fast_iter_next (&iter, &handle))
     {
@@ -327,12 +322,14 @@ tp_handle_set_to_identifier_map (
         }
       else
         {
-          g_hash_table_insert (map, GUINT_TO_POINTER (handle),
-              (gchar *) tp_handle_inspect (self->repo, handle));
+          /* We don't bother dupping the strings: they remain valid as long as
+           * the connection's alive and hence the repo exists. */
+          g_variant_builder_add (&builder, "{u&s}", handle,
+              tp_handle_inspect (self->repo, handle));
         }
     }
 
-  return map;
+  return g_variant_builder_end (&builder);
 }
 
 /**

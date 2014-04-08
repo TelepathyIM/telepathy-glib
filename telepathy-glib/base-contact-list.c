@@ -25,10 +25,10 @@
 
 #include <telepathy-glib/_gdbus/Connection_Interface_Contact_List1.h>
 #include <telepathy-glib/_gdbus/Connection_Interface_Contact_Groups1.h>
+#include <telepathy-glib/_gdbus/Connection_Interface_Contact_Blocking1.h>
 
 #include <telepathy-glib/asv.h>
 #include <telepathy-glib/dbus.h>
-#include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
 #include <telepathy-glib/handle-repo-static.h>
 #include <telepathy-glib/interfaces.h>
@@ -278,7 +278,7 @@ struct _TpBaseContactListPrivate
    * the constructor and cleared when we lose @conn. */
   _TpGDBusConnectionInterfaceContactList1 *contact_list_skeleton;
   _TpGDBusConnectionInterfaceContactGroups1 *contact_groups_skeleton;
-  gboolean svc_contact_blocking;
+  _TpGDBusConnectionInterfaceContactBlocking1 *contact_blocking_skeleton;
 
   /* TRUE if the contact list must be downloaded at connection. Default is
    * TRUE. */
@@ -544,10 +544,10 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
           self->priv->status_changed_id = 0;
         }
 
-      tp_clear_object (&self->priv->conn);
+      g_clear_object (&self->priv->conn);
       g_clear_object (&self->priv->contact_list_skeleton);
       g_clear_object (&self->priv->contact_groups_skeleton);
-      self->priv->svc_contact_blocking = FALSE;
+      g_clear_object (&self->priv->contact_blocking_skeleton);
     }
 
   g_clear_pointer (&self->priv->groups, g_hash_table_unref);
@@ -673,6 +673,8 @@ static void _tp_base_contact_list_implement_contact_list (
     TpBaseContactList *self);
 static void _tp_base_contact_list_implement_contact_groups (
     TpBaseContactList *self);
+static void _tp_base_contact_list_implement_contact_blocking (
+    TpBaseContactList *self);
 
 static void
 tp_base_contact_list_constructed (GObject *object)
@@ -694,9 +696,6 @@ tp_base_contact_list_constructed (GObject *object)
 
   /* ContactList1 iface is mandatory to implement */
   _tp_base_contact_list_implement_contact_list (self);
-
-  self->priv->svc_contact_blocking =
-    TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING1 (self->priv->conn);
 
   if (TP_IS_MUTABLE_CONTACT_LIST (self))
     {
@@ -732,6 +731,8 @@ tp_base_contact_list_constructed (GObject *object)
       g_return_if_fail (iface->block_contacts_finish != NULL);
       g_return_if_fail (iface->unblock_contacts_async != NULL);
       g_return_if_fail (iface->unblock_contacts_finish != NULL);
+
+      _tp_base_contact_list_implement_contact_blocking (self);
     }
 
   self->priv->contact_repo = tp_base_connection_get_handles (self->priv->conn,
@@ -1032,17 +1033,18 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
 
       tp_base_contact_list_contact_blocking_changed (self, blocked);
 
-      if (self->priv->svc_contact_blocking &&
+      if (self->priv->contact_blocking_skeleton != NULL &&
           self->priv->blocked_contact_requests.length > 0)
         {
-          GHashTable *map = tp_handle_set_to_identifier_map (blocked);
+          GVariant *map = tp_handle_set_to_identifier_map (blocked);
           GDBusMethodInvocation *context;
 
           while ((context = g_queue_pop_head (
                       &self->priv->blocked_contact_requests)) != NULL)
-            tp_svc_connection_interface_contact_blocking1_return_from_request_blocked_contacts (context, map);
-
-          g_hash_table_unref (map);
+            {
+              _tp_gdbus_connection_interface_contact_blocking1_complete_request_blocked_contacts (
+                  self->priv->contact_blocking_skeleton, context, map);
+            }
         }
 
       tp_handle_set_destroy (blocked);
@@ -1295,7 +1297,7 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
     TpHandleSet *changed)
 {
   TpHandleSet *now_blocked;
-  GHashTable *blocked_contacts, *unblocked_contacts;
+  GVariantBuilder blocked_contacts, unblocked_contacts;
   TpIntsetFastIter iter;
   TpHandle handle;
 
@@ -1305,45 +1307,36 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
   /* don't do anything if we're disconnecting, or if we haven't had the
    * initial contact list yet */
   if (tp_base_contact_list_get_state (self, NULL) !=
-      TP_CONTACT_LIST_STATE_SUCCESS)
+          TP_CONTACT_LIST_STATE_SUCCESS ||
+      tp_handle_set_is_empty (changed) ||
+      self->priv->contact_blocking_skeleton == NULL)
     return;
 
   g_return_if_fail (tp_base_contact_list_can_block (self));
 
   now_blocked = tp_base_contact_list_dup_blocked_contacts (self);
 
-  blocked_contacts = g_hash_table_new (NULL, NULL);
-  unblocked_contacts = g_hash_table_new (NULL, NULL);
-
+  g_variant_builder_init (&blocked_contacts, G_VARIANT_TYPE ("a{us}"));
+  g_variant_builder_init (&unblocked_contacts, G_VARIANT_TYPE ("a{us}"));
   tp_intset_fast_iter_init (&iter, tp_handle_set_peek (changed));
-
   while (tp_intset_fast_iter_next (&iter, &handle))
     {
       const char *id = tp_handle_inspect (self->priv->contact_repo, handle);
 
       if (tp_handle_set_is_member (now_blocked, handle))
-        {
-          g_hash_table_insert (blocked_contacts, GUINT_TO_POINTER (handle),
-              (gpointer) id);
-        }
+        g_variant_builder_add (&blocked_contacts, "{us}", handle, id);
       else
-        {
-          g_hash_table_insert (unblocked_contacts, GUINT_TO_POINTER (handle),
-              (gpointer) id);
-        }
+        g_variant_builder_add (&unblocked_contacts, "{us}", handle, id);
 
       DEBUG ("Contact %s: blocked=%c", id,
           tp_handle_set_is_member (now_blocked, handle) ? 'Y' : 'N');
     }
 
-  if (self->priv->svc_contact_blocking &&
-      (g_hash_table_size (blocked_contacts) > 0 ||
-       g_hash_table_size (unblocked_contacts) > 0))
-    tp_svc_connection_interface_contact_blocking1_emit_blocked_contacts_changed (
-        self->priv->conn, blocked_contacts, unblocked_contacts);
+  _tp_gdbus_connection_interface_contact_blocking1_emit_blocked_contacts_changed (
+      self->priv->contact_blocking_skeleton,
+      g_variant_builder_end (&blocked_contacts),
+      g_variant_builder_end (&unblocked_contacts));
 
-  g_hash_table_unref (blocked_contacts);
-  g_hash_table_unref (unblocked_contacts);
   tp_handle_set_destroy (now_blocked);
 }
 
@@ -4793,22 +4786,20 @@ _tp_base_contact_list_implement_contact_groups (TpBaseContactList *self)
 }
 
 #define ERROR_IF_BLOCKING_NOT_SUPPORTED(self, context) \
-  if (!self->priv->svc_contact_blocking) \
+  if (self->priv->contact_blocking_skeleton == NULL) \
     { \
       GError e = { TP_ERROR, TP_ERROR_NOT_IMPLEMENTED, \
           "ContactBlocking is not supported on this connection" }; \
       g_dbus_method_invocation_return_gerror (context, &e); \
-      return; \
+      return TRUE; \
     }
 
-static void
+static gboolean
 tp_base_contact_list_mixin_request_blocked_contacts (
-    TpSvcConnectionInterfaceContactBlocking1 *svc,
-    GDBusMethodInvocation *context)
+    _TpGDBusConnectionInterfaceContactBlocking1 *skeleton,
+    GDBusMethodInvocation *context,
+    TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
-      BASE_CONTACT_LIST);
-
   ERROR_IF_BLOCKING_NOT_SUPPORTED (self, context);
 
   switch (self->priv->state)
@@ -4826,11 +4817,10 @@ tp_base_contact_list_mixin_request_blocked_contacts (
     case TP_CONTACT_LIST_STATE_SUCCESS:
       {
         TpHandleSet *blocked = tp_base_contact_list_dup_blocked_contacts (self);
-        GHashTable *map = tp_handle_set_to_identifier_map (blocked);
 
-        tp_svc_connection_interface_contact_blocking1_return_from_request_blocked_contacts (context, map);
+        _tp_gdbus_connection_interface_contact_blocking1_complete_request_blocked_contacts (
+            skeleton, context, tp_handle_set_to_identifier_map (blocked));
 
-        g_hash_table_unref (map);
         tp_handle_set_destroy (blocked);
         break;
       }
@@ -4841,9 +4831,11 @@ tp_base_contact_list_mixin_request_blocked_contacts (
             "My internal list of blocked contacts is inconsistent! "
             "I apologise for any inconvenience caused." };
         g_dbus_method_invocation_return_gerror (context, &broken);
-        g_return_if_reached ();
+        g_return_val_if_reached (TRUE);
       }
     }
+
+  return TRUE;
 }
 
 static void
@@ -4859,8 +4851,8 @@ blocked_cb (
   if (tp_base_contact_list_block_contacts_with_abuse_finish (self, result,
           &error))
     {
-      tp_svc_connection_interface_contact_blocking1_return_from_block_contacts (
-          context);
+      _tp_gdbus_connection_interface_contact_blocking1_complete_block_contacts (
+          self->priv->contact_blocking_skeleton, context);
     }
   else
     {
@@ -4869,24 +4861,31 @@ blocked_cb (
     }
 }
 
-static void
+static gboolean
 tp_base_contact_list_mixin_block_contacts (
-    TpSvcConnectionInterfaceContactBlocking1 *svc,
-    const GArray *contacts_arr,
+    _TpGDBusConnectionInterfaceContactBlocking1 *skeleton,
+    GDBusMethodInvocation *context,
+    GVariant *contacts_variant,
     gboolean report_abusive,
-    GDBusMethodInvocation *context)
+    TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
-      BASE_CONTACT_LIST);
   TpHandleSet *contacts;
+  GVariantIter iter;
+  TpHandle contact;
 
   ERROR_IF_BLOCKING_NOT_SUPPORTED (self, context);
 
-  contacts = tp_handle_set_new_from_array (self->priv->contact_repo,
-      contacts_arr);
+  contacts = tp_handle_set_new (self->priv->contact_repo);
+  g_variant_iter_init (&iter, contacts_variant);
+  while (g_variant_iter_loop (&iter, "u", &contact))
+    tp_handle_set_add (contacts, contact);
+
   tp_base_contact_list_block_contacts_with_abuse_async (self, contacts,
       report_abusive, blocked_cb, context);
+
   tp_handle_set_destroy (contacts);
+
+  return TRUE;
 }
 
 static void
@@ -4901,7 +4900,8 @@ unblocked_cb (
 
   if (tp_base_contact_list_unblock_contacts_finish (self, result, &error))
     {
-      tp_svc_connection_interface_contact_blocking1_return_from_unblock_contacts (context);
+      _tp_gdbus_connection_interface_contact_blocking1_complete_unblock_contacts (
+          self->priv->contact_blocking_skeleton, context);
     }
   else
     {
@@ -4910,115 +4910,64 @@ unblocked_cb (
     }
 }
 
-static void
+static gboolean
 tp_base_contact_list_mixin_unblock_contacts (
-    TpSvcConnectionInterfaceContactBlocking1 *svc,
-    const GArray *contacts_arr,
-    GDBusMethodInvocation *context)
+    _TpGDBusConnectionInterfaceContactBlocking1 *skeleton,
+    GDBusMethodInvocation *context,
+    GVariant *contacts_variant,
+    TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
-      BASE_CONTACT_LIST);
   TpHandleSet *contacts;
+  GVariantIter iter;
+  TpHandle contact;
 
   ERROR_IF_BLOCKING_NOT_SUPPORTED (self, context);
 
-  contacts = tp_handle_set_new_from_array (self->priv->contact_repo,
-      contacts_arr);
+  contacts = tp_handle_set_new (self->priv->contact_repo);
+  g_variant_iter_init (&iter, contacts_variant);
+  while (g_variant_iter_loop (&iter, "u", &contact))
+    tp_handle_set_add (contacts, contact);
+
   tp_base_contact_list_unblock_contacts_async (self, contacts, unblocked_cb,
       context);
+
   tp_handle_set_destroy (contacts);
-}
 
-/**
- * tp_base_contact_list_mixin_blocking_iface_init:
- * @klass: the service-side D-Bus interface,
- *  a #TpSvcConnectionInterfaceContactBlocking1Class
- *
- * Use the #TpBaseContactList like a mixin, to implement the ContactBlocking
- * D-Bus interface.
- *
- * This function should be passed to G_IMPLEMENT_INTERFACE() for
- * #TpSvcConnectionInterfaceContactBlocking1
- *
- * Since: 0.15.1
- */
-void
-tp_base_contact_list_mixin_blocking_iface_init (gpointer klass)
-{
-#define IMPLEMENT(x) tp_svc_connection_interface_contact_blocking1_implement_##x (\
-  klass, tp_base_contact_list_mixin_##x)
-  IMPLEMENT (block_contacts);
-  IMPLEMENT (unblock_contacts);
-  IMPLEMENT (request_blocked_contacts);
-#undef IMPLEMENT
+  return TRUE;
 }
-
-static TpDBusPropertiesMixinPropImpl known_blocking_props[] = {
-    { "ContactBlockingCapabilities" },
-    { NULL }
-};
 
 static void
-tp_base_contact_list_get_blocking_dbus_property (GObject *conn,
-    GQuark interface G_GNUC_UNUSED,
-    GQuark name G_GNUC_UNUSED,
-    GValue *value,
-    gpointer data)
+_tp_base_contact_list_implement_contact_blocking (TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata (conn, BASE_CONTACT_LIST);
-  TpBlockableContactListInterface *iface =
-      TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
-  static GQuark contact_blocking_capabilities_q = 0;
+  TpBlockableContactListInterface *iface;
   guint flags = 0;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
-  g_return_if_fail (TP_IS_BLOCKABLE_CONTACT_LIST (self));
-  g_return_if_fail (self->priv->conn != NULL);
+  self->priv->contact_blocking_skeleton =
+      _tp_gdbus_connection_interface_contact_blocking1_skeleton_new ();
 
-  if (G_UNLIKELY (contact_blocking_capabilities_q == 0))
-    contact_blocking_capabilities_q =
-        g_quark_from_static_string ("ContactBlockingCapabilities");
-
-  g_return_if_fail (name == contact_blocking_capabilities_q);
-
+  iface = TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
   if (iface->block_contacts_with_abuse_async != NULL)
     flags |= TP_CONTACT_BLOCKING_CAPABILITY_CAN_REPORT_ABUSIVE;
 
-  g_value_set_uint (value, flags);
-}
+  _tp_gdbus_connection_interface_contact_blocking1_set_contact_blocking_capabilities (
+      self->priv->contact_blocking_skeleton, flags);
 
-/**
- * tp_base_contact_list_mixin_class_init:
- * @cls: A subclass of #TpBaseConnection that has a #TpContactsMixinClass,
- *  and implements #TpSvcConnectionInterfaceContactList1 using
- *  #TpBaseContactList
- *
- * Register the #TpBaseContactList to be used like a mixin in @cls.
- * Before this function is called, the #TpContactsMixin must be initialized
- * with tp_contacts_mixin_class_init().
- *
- * If the connection implements #TpSvcConnectionInterfaceContactGroups1, this
- * function automatically sets up that interface as well as ContactList.
- * In this case, when the #TpBaseContactList is created later, it must
- * implement %TP_TYPE_CONTACT_GROUP_LIST.
- *
- * Since: 0.13.0
- */
-void
-tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls)
-{
-  GType type = G_OBJECT_CLASS_TYPE (cls);
-  GObjectClass *obj_cls = (GObjectClass *) cls;
+  g_signal_connect_object (self->priv->contact_blocking_skeleton,
+      "handle-block-contacts",
+      G_CALLBACK (tp_base_contact_list_mixin_block_contacts),
+      self, 0);
+  g_signal_connect_object (self->priv->contact_blocking_skeleton,
+      "handle-unblock-contacts",
+      G_CALLBACK (tp_base_contact_list_mixin_unblock_contacts),
+      self, 0);
+  g_signal_connect_object (self->priv->contact_blocking_skeleton,
+      "handle-request-blocked-contacts",
+      G_CALLBACK (tp_base_contact_list_mixin_request_blocked_contacts),
+      self, 0);
 
-  g_return_if_fail (TP_IS_BASE_CONNECTION_CLASS (cls));
-
-  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING1))
-    {
-      tp_dbus_properties_mixin_implement_interface (obj_cls,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_BLOCKING1,
-          tp_base_contact_list_get_blocking_dbus_property,
-          NULL, known_blocking_props);
-    }
+  g_dbus_object_skeleton_add_interface (
+      G_DBUS_OBJECT_SKELETON (self->priv->conn),
+      G_DBUS_INTERFACE_SKELETON (self->priv->contact_blocking_skeleton));
 }
 
 /**

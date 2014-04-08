@@ -4933,8 +4933,6 @@ tp_svc_channel_type_server_tls_connection1_get_type
 <TITLE>base-contact-list</TITLE>
 TpBaseContactList
 TpBaseContactListClass
-tp_base_contact_list_mixin_class_init
-tp_base_contact_list_mixin_blocking_iface_init
 tp_base_contact_list_get_state
 tp_base_contact_list_get_connection
 tp_base_contact_list_set_list_pending

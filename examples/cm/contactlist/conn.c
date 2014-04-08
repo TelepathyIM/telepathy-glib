@@ -28,8 +28,6 @@ G_DEFINE_TYPE_WITH_CODE (ExampleContactListConnection,
     TP_TYPE_BASE_CONNECTION,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING1,
       init_aliasing);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING1,
-      tp_base_contact_list_mixin_blocking_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE1,
         tp_presence_mixin_iface_init))
 
@@ -287,11 +285,6 @@ constructed (GObject *object)
   g_object_unref (iface);
 
   iface = tp_svc_interface_skeleton_new (skel,
-      TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING1);
-  g_dbus_object_skeleton_add_interface (skel, iface);
-  g_object_unref (iface);
-
-  iface = tp_svc_interface_skeleton_new (skel,
       TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE1);
   g_dbus_object_skeleton_add_interface (skel, iface);
   g_object_unref (iface);
@@ -457,8 +450,6 @@ example_contact_list_connection_class_init (
       status_available, get_contact_status, set_own_status,
       example_contact_list_presence_statuses ());
   tp_presence_mixin_init_dbus_properties (object_class);
-
-  tp_base_contact_list_mixin_class_init (base_class);
 
   klass->properties_mixin.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
