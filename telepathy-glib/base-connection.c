@@ -1021,15 +1021,61 @@ _tp_base_connection_fill_contact_attributes (TpBaseConnection *self,
       tp_g_value_slice_new_string (tmp));
 }
 
+enum {
+    DBUSPROP_0,
+    DBUSPROP_SELF_HANDLE,
+    DBUSPROP_SELF_ID,
+    DBUSPROP_STATUS,
+    DBUSPROP_INTERFACES,
+    DBUSPROP_RCCS,
+    N_DBUSPROPS
+};
+
+static void
+tp_base_connection_get_connection_property (GObject *object,
+    GQuark iface,
+    GQuark name,
+    GValue *value,
+    gpointer getter_data)
+{
+  TpBaseConnection *self = TP_BASE_CONNECTION (object);
+
+  switch (GPOINTER_TO_UINT (getter_data))
+    {
+      case DBUSPROP_SELF_HANDLE:
+        g_value_set_uint (value, self->priv->self_handle);
+        break;
+
+      case DBUSPROP_SELF_ID:
+        g_value_set_string (value, self->priv->self_id);
+        break;
+
+      case DBUSPROP_STATUS:
+        g_value_set_uint (value, tp_base_connection_get_status (self));
+        break;
+
+      case DBUSPROP_INTERFACES:
+        g_value_set_boxed (value, tp_base_connection_get_interfaces (self));
+        break;
+
+      case DBUSPROP_RCCS:
+        g_value_take_boxed (value, conn_requests_get_requestables (self));
+        break;
+
+      default:
+        g_return_if_reached ();
+    }
+}
+
 static void
 tp_base_connection_class_init (TpBaseConnectionClass *klass)
 {
   static TpDBusPropertiesMixinPropImpl connection_properties[] = {
-      { "SelfHandle", "self-handle", NULL },
-      { "SelfID", "self-id", NULL },
-      { "Status", "dbus-status", NULL },
-      { "Interfaces", "interfaces", NULL },
-      { "RequestableChannelClasses", "requestable-channel-classes", NULL },
+      { "SelfHandle", GUINT_TO_POINTER (DBUSPROP_SELF_HANDLE), NULL },
+      { "SelfID", GUINT_TO_POINTER (DBUSPROP_SELF_ID), NULL },
+      { "Status", GUINT_TO_POINTER (DBUSPROP_STATUS), NULL },
+      { "Interfaces", GUINT_TO_POINTER (DBUSPROP_INTERFACES), NULL },
+      { "RequestableChannelClasses", GUINT_TO_POINTER (DBUSPROP_RCCS), NULL },
       { NULL }
   };
   static TpDBusPropertiesMixinPropImpl requests_properties[] = {
@@ -1249,8 +1295,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   tp_dbus_properties_mixin_class_init (object_class, 0);
   tp_dbus_properties_mixin_implement_interface (object_class,
       TP_IFACE_QUARK_CONNECTION,
-      tp_dbus_properties_mixin_getter_gobject_properties, NULL,
-      connection_properties);
+      tp_base_connection_get_connection_property, NULL, connection_properties);
   tp_dbus_properties_mixin_implement_interface (object_class,
       TP_IFACE_QUARK_CONNECTION_INTERFACE_REQUESTS,
       conn_requests_get_dbus_property, NULL,
