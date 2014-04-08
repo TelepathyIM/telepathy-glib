@@ -88,7 +88,7 @@ exportable_channel_base_init (gpointer klass)
        *
        * The D-Bus properties to be announced in the NewChannels signal
        * and in the Channels property, as a map from
-       * interface.name.propertyname to GValue.
+       * interface.name.propertyname to variant.
        *
        * A channel's immutable properties are constant for its lifetime on the
        * bus, so this property should only change when the closed signal is
@@ -105,16 +105,14 @@ exportable_channel_base_init (gpointer klass)
        *
        * <informalexample><programlisting>
        *  case PROP_CHANNEL_PROPERTIES:
-       *    g_value_take_boxed (value,
-       *      tp_dbus_properties_mixin_make_properties_hash (object,
+       *    {
+       *      GHashTable *hash = tp_dbus_properties_mixin_make_properties_hash (object,
        *          // The spec says these properties MUST be included:
        *          TP_IFACE_CHANNEL, "TargetHandle",
        *          TP_IFACE_CHANNEL, "TargetEntityType",
        *          TP_IFACE_CHANNEL, "ChannelType",
        *          TP_IFACE_CHANNEL, "TargetID",
        *          TP_IFACE_CHANNEL, "Requested",
-       *          // These aren't mandatory as of spec 0.17.17
-       *          // (but they should be):
        *          TP_IFACE_CHANNEL, "InitiatorHandle",
        *          TP_IFACE_CHANNEL, "InitiatorID",
        *          TP_IFACE_CHANNEL, "Interfaces",
@@ -122,13 +120,17 @@ exportable_channel_base_init (gpointer klass)
        *          TP_IFACE_CHANNEL_INTERFACE_MESSAGES, "SupportedContentTypes",
        *          // etc.
        *          NULL));
+       *
+       *      g_value_set_variant (value, tp_asv_to_vardict (hash));
+       *      g_hash_table_unref (hash);
+       *    }
        *    break;
        * </programlisting></informalexample>
        */
-      param_spec = g_param_spec_boxed ("channel-properties",
+      param_spec = g_param_spec_variant ("channel-properties",
           "Channel properties",
-          "The channel properties",
-          TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP,
+          "The channel's immutable properties",
+          G_VARIANT_TYPE_VARDICT, NULL,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
       g_object_interface_install_property (klass, param_spec);
 

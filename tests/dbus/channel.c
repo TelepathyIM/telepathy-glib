@@ -46,7 +46,7 @@ create_contact_chan (Test *test)
 {
   gchar *chan_path;
   TpHandle handle;
-  GHashTable *props;
+  GVariant *props;
 
   tp_clear_object (&test->chan_contact_service);
   tp_clear_object (&test->chan_room_service);
@@ -76,20 +76,21 @@ create_contact_chan (Test *test)
       "channel-properties", &props,
       NULL);
 
-  test->channel_contact = tp_tests_channel_new_from_properties (test->connection,
+  test->channel_contact = tp_client_factory_ensure_channel (
+      tp_proxy_get_factory (test->connection), test->connection,
       chan_path, props, &test->error);
   g_assert_no_error (test->error);
 
   g_free (chan_path);
 
-  g_hash_table_unref (props);
+  g_variant_unref (props);
 }
 
 static void
 create_room_chan (Test *test)
 {
   gchar *chan_path;
-  GHashTable *props;
+  GVariant *props;
 
   tp_clear_object (&test->chan_room_service);
 
@@ -111,7 +112,8 @@ create_room_chan (Test *test)
       "channel-properties", &props,
       NULL);
 
-  test->channel_room = tp_tests_channel_new_from_properties (test->connection,
+  test->channel_room = tp_client_factory_ensure_channel (
+      tp_proxy_get_factory (test->connection), test->connection,
       chan_path, props, &test->error);
   g_assert_no_error (test->error);
 
@@ -120,7 +122,7 @@ create_room_chan (Test *test)
 
   g_free (chan_path);
 
-  g_hash_table_unref (props);
+  g_variant_unref (props);
 }
 
 static void

@@ -158,7 +158,7 @@ create_file_transfer_channel (Test *test,
   TpClientFactory *factory;
   gchar *chan_path;
   TpHandle handle, alf_handle;
-  GHashTable *props;
+  GVariant *props;
   GHashTable *sockets;
   GHashTable *metadata;
   GQuark features[] = { TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE, 0};
@@ -217,7 +217,7 @@ create_file_transfer_channel (Test *test,
 
   factory = tp_proxy_get_factory (test->connection);
   test->channel = TP_FILE_TRANSFER_CHANNEL (tp_client_factory_ensure_channel (
-      factory, test->connection, chan_path, tp_asv_to_vardict (props),
+      factory, test->connection, chan_path, props,
       &test->error));
   g_assert_no_error (test->error);
   g_assert (TP_IS_FILE_TRANSFER_CHANNEL (test->channel));
@@ -231,7 +231,7 @@ create_file_transfer_channel (Test *test,
 
   g_free (chan_path);
   g_hash_table_unref (metadata);
-  g_hash_table_unref (props);
+  g_variant_unref (props);
   g_hash_table_unref (sockets);
 }
 

@@ -561,14 +561,17 @@ get_channel_details (GObject *obj)
 {
   GValueArray *structure;
   GHashTable *table;
+  GVariant *variant;
   gchar *object_path;
 
   g_assert (TP_IS_EXPORTABLE_CHANNEL (obj));
 
   g_object_get (obj,
       "object-path", &object_path,
-      "channel-properties", &table,
+      "channel-properties", &variant,
       NULL);
+
+  table = tp_asv_from_vardict (variant);
 
   structure = tp_value_array_build (2,
       DBUS_TYPE_G_OBJECT_PATH, object_path,
@@ -577,6 +580,7 @@ get_channel_details (GObject *obj)
 
   g_free (object_path);
   g_hash_table_unref (table);
+  g_variant_unref (variant);
 
   return structure;
 }
@@ -667,6 +671,7 @@ manager_new_channel_cb (TpChannelManager *manager,
     TpBaseConnection *self)
 {
   gchar *path;
+  GVariant *variant;
   GHashTable *props;
 
   g_assert (TP_IS_CHANNEL_MANAGER (manager));
@@ -677,14 +682,16 @@ manager_new_channel_cb (TpChannelManager *manager,
 
   g_object_get (channel,
       "object-path", &path,
-      "channel-properties", &props,
+      "channel-properties", &variant,
       NULL);
 
+  props = tp_asv_from_vardict (variant);
   tp_svc_connection_interface_requests_emit_new_channel (self,
       path, props);
 
   g_free (path);
   g_hash_table_unref (props);
+  g_variant_unref (variant);
 }
 
 

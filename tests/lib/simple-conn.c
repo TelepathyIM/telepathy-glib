@@ -335,7 +335,15 @@ tp_tests_simple_connection_ensure_text_chan (TpTestsSimpleConnection *self,
   g_object_get (chan, "object-path", &chan_path, NULL);
 
   if (props != NULL)
-    g_object_get (chan, "channel-properties", props, NULL);
+    {
+      GVariant *tmp;
+
+      g_object_get (chan,
+          "channel-properties", &tmp,
+          NULL);
+      *props = tp_asv_from_vardict (tmp);
+      g_variant_unref (tmp);
+    }
 
   return chan_path;
 }
@@ -379,8 +387,15 @@ tp_tests_simple_connection_ensure_room_list_chan (TpTestsSimpleConnection *self,
     }
 
   if (props != NULL)
-    g_object_get (self->priv->room_list_chan,
-        "channel-properties", props, NULL);
+    {
+      GVariant *tmp;
+
+      g_object_get (self->priv->room_list_chan,
+          "channel-properties", &tmp,
+          NULL);
+      *props = tp_asv_from_vardict (tmp);
+      g_variant_unref (tmp);
+    }
 
   return chan_path;
 }

@@ -304,6 +304,7 @@
 
 #include <dbus/dbus-glib-lowlevel.h>
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/exportable-channel.h>
@@ -885,7 +886,8 @@ tp_base_channel_get_property (GObject *object,
           if (klass->fill_immutable_properties)
             klass->fill_immutable_properties (chan, properties);
 
-          g_value_take_boxed (value, properties);
+          g_value_set_variant (value, tp_asv_to_vardict (properties));
+          g_hash_table_unref (properties);
         }
       break;
     default:

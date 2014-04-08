@@ -143,7 +143,7 @@ _tp_channel_manager_request_satisfy (TpChannelManagerRequest *self,
     TpExportableChannel *channel)
 {
   gchar *object_path;
-  GHashTable *properties;
+  GVariant *properties;
 
   g_return_if_fail (TP_IS_EXPORTABLE_CHANNEL (channel));
   g_return_if_fail (self->context != NULL);
@@ -160,13 +160,14 @@ _tp_channel_manager_request_satisfy (TpChannelManagerRequest *self,
   switch (self->method)
     {
       case TP_CHANNEL_MANAGER_REQUEST_METHOD_CREATE_CHANNEL:
-        tp_svc_connection_interface_requests_return_from_create_channel (
-            self->context, object_path, properties);
+        g_dbus_method_invocation_return_value (self->context,
+            g_variant_new ("(o@a{sv})", object_path, properties));
         break;
 
       case TP_CHANNEL_MANAGER_REQUEST_METHOD_ENSURE_CHANNEL:
-        tp_svc_connection_interface_requests_return_from_ensure_channel (
-            self->context, self->yours, object_path, properties);
+        g_dbus_method_invocation_return_value (self->context,
+            g_variant_new ("(bo@a{sv})", self->yours, object_path,
+              properties));
         break;
 
       default:
@@ -176,7 +177,7 @@ _tp_channel_manager_request_satisfy (TpChannelManagerRequest *self,
   self->context = NULL;
 
   g_free (object_path);
-  g_hash_table_unref (properties);
+  g_variant_unref (properties);
 }
 
 void

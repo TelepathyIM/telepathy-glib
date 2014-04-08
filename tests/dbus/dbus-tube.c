@@ -86,7 +86,7 @@ create_tube_service (Test *test,
 {
   gchar *chan_path;
   TpHandle handle, alf_handle;
-  GHashTable *props;
+  GVariant *props;
   GType type;
   TpClientFactory *factory;
 
@@ -136,18 +136,20 @@ create_tube_service (Test *test,
       NULL);
 
   /* Create client-side tube channel object */
-  g_object_get (test->tube_chan_service, "channel-properties", &props, NULL);
+  g_object_get (test->tube_chan_service,
+      "channel-properties", &props,
+      NULL);
 
   factory = tp_proxy_get_factory (test->connection);
   test->tube = (TpDBusTubeChannel *) tp_client_factory_ensure_channel (
-      factory, test->connection, chan_path, tp_asv_to_vardict (props),
+      factory, test->connection, chan_path, props,
       &test->error);
   g_assert (TP_IS_DBUS_TUBE_CHANNEL (test->tube));
 
   g_assert_no_error (test->error);
 
   g_free (chan_path);
-  g_hash_table_unref (props);
+  g_variant_unref (props);
 }
 
 /* Test Basis */

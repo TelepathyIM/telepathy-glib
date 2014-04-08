@@ -54,7 +54,7 @@ create_contact_chan (Test *test)
 {
   TpClientFactory *factory;
   gchar *chan_path;
-  GHashTable *props;
+  GVariant *props;
 
   tp_clear_object (&test->chan_service);
   tp_clear_object (&test->sms_chan_service);
@@ -84,12 +84,12 @@ create_contact_chan (Test *test)
 
   factory = tp_proxy_get_factory (test->connection);
   test->channel = TP_TEXT_CHANNEL (tp_client_factory_ensure_channel (factory,
-      test->connection, chan_path, tp_asv_to_vardict (props), &test->error));
+      test->connection, chan_path, props, &test->error));
   g_assert_no_error (test->error);
   g_assert (TP_IS_TEXT_CHANNEL (test->channel));
 
   g_free (chan_path);
-  g_hash_table_unref (props);
+  g_variant_unref (props);
 
   /* Register channel implementing SMS */
   chan_path = g_strdup_printf ("%s/ChannelSMS",
@@ -108,13 +108,13 @@ create_contact_chan (Test *test)
       NULL);
 
   test->sms_channel = TP_TEXT_CHANNEL (tp_client_factory_ensure_channel (
-      factory, test->connection, chan_path, tp_asv_to_vardict (props),
+      factory, test->connection, chan_path, props,
       &test->error));
   g_assert_no_error (test->error);
   g_assert (TP_IS_TEXT_CHANNEL (test->sms_channel));
 
   g_free (chan_path);
-  g_hash_table_unref (props);
+  g_variant_unref (props);
 }
 
 static void
