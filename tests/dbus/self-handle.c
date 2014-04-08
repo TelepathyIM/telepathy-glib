@@ -32,6 +32,9 @@ typedef struct {
   TpConnection *client_conn;
   TpHandleRepoIface *contact_repo;
   GAsyncResult *result;
+
+  guint get_all_serial;
+  GDBusMessage *message;
 } Fixture;
 
 static void
@@ -95,21 +98,6 @@ swapped_counter_cb (gpointer user_data)
   guint *times = user_data;
 
   ++*times;
-}
-
-static GDBusMessage *
-got_all_counter_filter (GDBusConnection *connection,
-    GDBusMessage *message,
-    gboolean incoming,
-    gpointer user_data)
-{
-  guint *times = user_data;
-
-  if (incoming &&
-      !tp_strdiff (g_dbus_message_get_member (message), "GetAll"))
-    ++*times;
-
-  return message;
 }
 
 static void
@@ -218,12 +206,69 @@ test_change_early (Fixture *f,
   g_object_unref (after);
 }
 
+static gboolean
+change_self_contact_after_get_all_idle_cb (gpointer user_data)
+{
+  Fixture *f = user_data;
+  GError *error = NULL;
+
+  f->get_all_serial = 0;
+
+  /* We can now resend the GetAll reply, closely followed by a self contact
+   * change. */
+  g_dbus_connection_send_message (f->dbus, f->message,
+      G_DBUS_SEND_MESSAGE_FLAGS_PRESERVE_SERIAL, NULL, &error);
+  g_assert_no_error (error);
+  g_clear_object (&f->message);
+
+  DEBUG ("changing my own identifier to something else");
+  tp_tests_simple_connection_set_identifier (f->service_conn,
+      "myself@example.org");
+  g_assert_cmpstr (tp_handle_inspect (f->contact_repo,
+        tp_base_connection_get_self_handle (f->service_conn_as_base)), ==,
+      "myself@example.org");
+
+  return G_SOURCE_REMOVE;
+}
+
+static GDBusMessage *
+change_self_contact_after_get_all_filter (GDBusConnection *connection,
+    GDBusMessage *message,
+    gboolean incoming,
+    gpointer user_data)
+{
+  Fixture *f = user_data;
+
+  if (!incoming)
+    return message;
+
+  if (!tp_strdiff (g_dbus_message_get_member (message), "GetAll") &&
+      !tp_strdiff (g_dbus_message_get_path (message),
+          tp_proxy_get_object_path (f->client_conn)))
+    {
+      /* We just received TpConnection's GetAll message, remember the serial
+       * to catch the reply message later. */
+      f->get_all_serial = g_dbus_message_get_serial (message);
+    }
+  else if (f->get_all_serial != 0 &&
+      g_dbus_message_get_reply_serial (message) == f->get_all_serial)
+    {
+      /* This is the reply, delay that message until an idle callback to avoid
+       * threading issues. */
+      f->message = message;
+      message = NULL;
+      g_idle_add (change_self_contact_after_get_all_idle_cb, f);
+    }
+
+  return message;
+}
+
 static void
 test_change_inconveniently (Fixture *f,
     gconstpointer arg)
 {
   TpContact *after;
-  guint contact_times = 0, got_all_times = 0;
+  guint contact_times = 0;
   gboolean ok;
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
   guint filter_id;
@@ -238,8 +283,7 @@ test_change_inconveniently (Fixture *f,
   g_signal_connect_swapped (f->client_conn, "notify::self-contact",
       G_CALLBACK (swapped_counter_cb), &contact_times);
   filter_id = g_dbus_connection_add_filter (f->dbus,
-      got_all_counter_filter,
-      &got_all_times, NULL);
+      change_self_contact_after_get_all_filter, f, NULL);
 
   tp_proxy_prepare_async (f->client_conn, features, tp_tests_result_ready_cb,
       &f->result);
@@ -257,18 +301,6 @@ test_change_inconveniently (Fixture *f,
   tp_base_connection_change_status (f->service_conn_as_base,
       TP_CONNECTION_STATUS_CONNECTED,
       TP_CONNECTION_STATUS_REASON_REQUESTED);
-
-  /* run the main loop until just after GetAll(Connection)
-   * is processed, to make sure the client first saw the old self handle */
-  while (got_all_times == 0)
-    g_main_context_iteration (NULL, TRUE);
-
-  DEBUG ("changing my own identifier to something else");
-  tp_tests_simple_connection_set_identifier (f->service_conn,
-      "myself@example.org");
-  g_assert_cmpstr (tp_handle_inspect (f->contact_repo,
-        tp_base_connection_get_self_handle (f->service_conn_as_base)), ==,
-      "myself@example.org");
 
   /* now run the main loop and let the client catch up */
   tp_tests_run_until_result (&f->result);
