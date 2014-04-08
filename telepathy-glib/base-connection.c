@@ -276,8 +276,6 @@ enum
     PROP_SELF_HANDLE,
     PROP_SELF_ID,
     PROP_INTERFACES,
-    PROP_REQUESTABLE_CHANNEL_CLASSES,
-    PROP_DBUS_STATUS,
     PROP_DBUS_CONNECTION,
     PROP_ACCOUNT_PATH_SUFFIX,
     N_PROPS
@@ -410,14 +408,6 @@ tp_base_connection_get_property (GObject *object,
 
     case PROP_INTERFACES:
       g_value_set_boxed (value, tp_base_connection_get_interfaces (self));
-      break;
-
-    case PROP_REQUESTABLE_CHANNEL_CLASSES:
-      g_value_take_boxed (value, conn_requests_get_requestables (self));
-      break;
-
-    case PROP_DBUS_STATUS:
-      g_value_set_uint (value, tp_base_connection_get_status (self));
       break;
 
     case PROP_DBUS_CONNECTION:
@@ -1156,39 +1146,6 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   g_object_class_install_property (object_class, PROP_INTERFACES, param_spec);
 
   /**
-   * TpBaseConnection:requestable-channel-classes: (skip)
-   *
-   * The classes of channel that are expected to be available on this connection
-   */
-  param_spec = g_param_spec_boxed ("requestable-channel-classes",
-      "Connection.RequestableChannelClasses",
-      "Connection.RequestableChannelClasses",
-      TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class,
-      PROP_REQUESTABLE_CHANNEL_CLASSES, param_spec);
-
-  /**
-   * TpBaseConnection:dbus-status: (skip)
-   *
-   * The Connection.Status as visible on D-Bus, which is the same as
-   * #TpBaseConnection<!-- -->.status except that
-   * %TP_INTERNAL_CONNECTION_STATUS_NEW is replaced by
-   * %TP_CONNECTION_STATUS_DISCONNECTED.
-   *
-   * The #GObject::notify signal is not currently emitted for this property.
-   *
-   * Since: 0.11.3
-   */
-  param_spec = g_param_spec_uint ("dbus-status",
-      "Connection.Status",
-      "The connection status as visible on D-Bus",
-      TP_CONNECTION_STATUS_CONNECTED, TP_CONNECTION_STATUS_DISCONNECTED,
-      TP_CONNECTION_STATUS_DISCONNECTED,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_DBUS_STATUS, param_spec);
-
-  /**
    * TpBaseConnection:dbus-connection:
    *
    * This object's connection to D-Bus. Read-only except during construction.
@@ -1612,7 +1569,7 @@ tp_base_connection_get_interfaces (TpBaseConnection *self)
  * a failed attempt to connect, or loss of an established connection).
  * Use tp_base_connection_is_destroyed() to distinguish between the two.
  *
- * Returns: the value of #TpBaseConnection:dbus-status
+ * Returns: the connection's status
  * Since: 0.19.1
  */
 TpConnectionStatus
