@@ -24,6 +24,7 @@
 #include <dbus/dbus-glib-lowlevel.h>
 
 #include <telepathy-glib/_gdbus/Connection_Interface_Contact_List1.h>
+#include <telepathy-glib/_gdbus/Connection_Interface_Contact_Groups1.h>
 
 #include <telepathy-glib/asv.h>
 #include <telepathy-glib/dbus.h>
@@ -86,9 +87,7 @@
  * To support user-defined contact groups too, additionally implement
  * %TP_TYPE_CONTACT_GROUP_LIST in the #TpBaseContactList subclass, add the
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1 interface to the output of
- * #TpBaseConnectionClass.get interfaces_always_present, and implement the
- * %TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1 in the #TpBaseConnection
- * subclass using tp_base_contact_list_mixin_groups_iface_init().
+ * #TpBaseConnectionClass.get interfaces_always_present.
  *
  * Optionally, one or more of the #TP_TYPE_MUTABLE_CONTACT_LIST,
  * #TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, and #TP_TYPE_BLOCKABLE_CONTACT_LIST
@@ -278,7 +277,7 @@ struct _TpBaseContactListPrivate
    * decide whether to emit signals on these new interfaces. Initialized in
    * the constructor and cleared when we lose @conn. */
   _TpGDBusConnectionInterfaceContactList1 *contact_list_skeleton;
-  gboolean svc_contact_groups;
+  _TpGDBusConnectionInterfaceContactGroups1 *contact_groups_skeleton;
   gboolean svc_contact_blocking;
 
   /* TRUE if the contact list must be downloaded at connection. Default is
@@ -547,7 +546,7 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
 
       tp_clear_object (&self->priv->conn);
       g_clear_object (&self->priv->contact_list_skeleton);
-      self->priv->svc_contact_groups = FALSE;
+      g_clear_object (&self->priv->contact_groups_skeleton);
       self->priv->svc_contact_blocking = FALSE;
     }
 
@@ -639,18 +638,40 @@ update_immutable_contact_list_properties (TpBaseContactList *self)
 }
 
 static void
+update_immutable_contact_groups_properties (TpBaseContactList *self)
+{
+  if (self->priv->contact_groups_skeleton == NULL)
+    return;
+
+  _tp_gdbus_connection_interface_contact_groups1_set_disjoint_groups (
+      self->priv->contact_groups_skeleton,
+      tp_base_contact_list_has_disjoint_groups (self));
+
+  _tp_gdbus_connection_interface_contact_groups1_set_group_storage (
+      self->priv->contact_groups_skeleton,
+      tp_base_contact_list_get_group_storage (self));
+}
+
+static void
 status_changed_cb (TpBaseConnection *conn,
     guint status,
     guint reason,
     TpBaseContactList *self)
 {
   if (status == TP_CONNECTION_STATUS_CONNECTED)
-    update_immutable_contact_list_properties (self);
+    {
+      update_immutable_contact_list_properties (self);
+      update_immutable_contact_groups_properties (self);
+    }
   else if (status == TP_CONNECTION_STATUS_DISCONNECTED)
-    tp_base_contact_list_free_contents (self);
+    {
+      tp_base_contact_list_free_contents (self);
+    }
 }
 
 static void _tp_base_contact_list_implement_contact_list (
+    TpBaseContactList *self);
+static void _tp_base_contact_list_implement_contact_groups (
     TpBaseContactList *self);
 
 static void
@@ -674,8 +695,6 @@ tp_base_contact_list_constructed (GObject *object)
   /* ContactList1 iface is mandatory to implement */
   _tp_base_contact_list_implement_contact_list (self);
 
-  self->priv->svc_contact_groups =
-    TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1 (self->priv->conn);
   self->priv->svc_contact_blocking =
     TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING1 (self->priv->conn);
 
@@ -728,6 +747,8 @@ tp_base_contact_list_constructed (GObject *object)
       g_return_if_fail (iface->dup_groups != NULL);
       g_return_if_fail (iface->dup_contact_groups != NULL);
       g_return_if_fail (iface->dup_group_members != NULL);
+
+      _tp_base_contact_list_implement_contact_groups (self);
     }
 
   if (TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
@@ -2522,6 +2543,20 @@ tp_base_contact_list_normalize_group (TpBaseContactList *self,
   return iface->normalize_group (self, s);
 }
 
+static void
+update_groups_property (TpBaseContactList *self)
+{
+  gchar **groups;
+
+  if (self->priv->contact_groups_skeleton == NULL)
+    return;
+
+  groups = tp_base_contact_list_dup_groups (self);
+  _tp_gdbus_connection_interface_contact_groups1_set_groups (
+      self->priv->contact_groups_skeleton, (const gchar * const *) groups);
+  g_strfreev (groups);
+}
+
 /**
  * tp_base_contact_list_groups_created:
  * @self: a contact list manager
@@ -2594,11 +2629,14 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
       DEBUG ("GroupsCreated([%u including '%s'])", actually_created->len,
           (gchar *) g_ptr_array_index (actually_created, 0));
 
-      if (self->priv->svc_contact_groups)
+      if (self->priv->contact_groups_skeleton != NULL)
       {
         g_ptr_array_add (actually_created, NULL);
-        tp_svc_connection_interface_contact_groups1_emit_groups_created (
-            self->priv->conn, (const gchar **) actually_created->pdata);
+
+        update_groups_property (self);
+        _tp_gdbus_connection_interface_contact_groups1_emit_groups_created (
+            self->priv->contact_groups_skeleton,
+            (const gchar * const *) actually_created->pdata);
       }
     }
 
@@ -2694,23 +2732,30 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
           actually_removed->len,
           (gchar *) g_ptr_array_index (actually_removed, 0));
 
+      update_groups_property (self);
+
       g_ptr_array_add (actually_removed, NULL);
 
-      if (self->priv->svc_contact_groups)
-        tp_svc_connection_interface_contact_groups1_emit_groups_removed (
-            self->priv->conn, (const gchar **) actually_removed->pdata);
+      if (self->priv->contact_groups_skeleton != NULL)
+        _tp_gdbus_connection_interface_contact_groups1_emit_groups_removed (
+            self->priv->contact_groups_skeleton,
+            (const gchar * const *) actually_removed->pdata);
 
       if (members_arr->len > 0)
         {
+          const gchar *empty_strv[] = { NULL };
+
           /* we already added NULL to actually_removed, so subtract 1 from its
            * length */
           DEBUG ("GroupsChanged([%u contacts], [], [%u groups])",
               members_arr->len, actually_removed->len - 1);
 
-          if (self->priv->svc_contact_groups)
-            tp_svc_connection_interface_contact_groups1_emit_groups_changed (
-                self->priv->conn, members_arr, NULL,
-                (const gchar **) actually_removed->pdata);
+          if (self->priv->contact_groups_skeleton != NULL)
+            _tp_gdbus_connection_interface_contact_groups1_emit_groups_changed (
+                self->priv->contact_groups_skeleton,
+                g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
+                    members_arr->data, members_arr->len, sizeof (TpHandle)),
+                empty_strv, (const gchar * const *) actually_removed->pdata);
         }
 
       g_array_unref (members_arr);
@@ -2756,16 +2801,18 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
 
   DEBUG ("GroupRenamed('%s', '%s')", old_names[0], new_names[0]);
 
-  if (self->priv->svc_contact_groups)
+  update_groups_property (self);
+
+  if (self->priv->contact_groups_skeleton != NULL)
     {
-      tp_svc_connection_interface_contact_groups1_emit_group_renamed (
-          self->priv->conn, old_names[0], new_names[0]);
+      _tp_gdbus_connection_interface_contact_groups1_emit_group_renamed (
+          self->priv->contact_groups_skeleton, old_names[0], new_names[0]);
 
-      tp_svc_connection_interface_contact_groups1_emit_groups_created (
-          self->priv->conn, new_names);
+      _tp_gdbus_connection_interface_contact_groups1_emit_groups_created (
+          self->priv->contact_groups_skeleton, new_names);
 
-      tp_svc_connection_interface_contact_groups1_emit_groups_removed (
-          self->priv->conn, old_names);
+      _tp_gdbus_connection_interface_contact_groups1_emit_groups_removed (
+          self->priv->contact_groups_skeleton, old_names);
     }
 
   old_members = tp_base_contact_list_dup_group_members (self, old_name);
@@ -2776,12 +2823,15 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
       DEBUG ("GroupsChanged([%u contacts], ['%s'], ['%s'])",
           tp_intset_size (set), new_names[0], old_names[0]);
 
-      if (self->priv->svc_contact_groups)
+      if (self->priv->contact_groups_skeleton != NULL)
         {
           GArray *arr = tp_intset_to_array (set);
 
-          tp_svc_connection_interface_contact_groups1_emit_groups_changed (
-              self->priv->conn, arr, new_names, old_names);
+          _tp_gdbus_connection_interface_contact_groups1_emit_groups_changed (
+              self->priv->contact_groups_skeleton,
+              g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
+                  arr->data, arr->len, sizeof (TpHandle)),
+              new_names, old_names);
           g_array_unref (arr);
         }
     }
@@ -2971,17 +3021,21 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
           tp_handle_set_size (contacts), really_added->len,
           really_removed->len);
 
+      update_groups_property (self);
+
       g_ptr_array_add (really_added, NULL);
       g_ptr_array_add (really_removed, NULL);
 
-      if (self->priv->svc_contact_groups)
+      if (self->priv->contact_groups_skeleton != NULL)
         {
           GArray *members_arr = tp_handle_set_to_array (contacts);
 
-          tp_svc_connection_interface_contact_groups1_emit_groups_changed (
-              self->priv->conn, members_arr,
-              (const gchar **) really_added->pdata,
-              (const gchar **) really_removed->pdata);
+          _tp_gdbus_connection_interface_contact_groups1_emit_groups_changed (
+              self->priv->contact_groups_skeleton,
+              g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
+                    members_arr->data, members_arr->len, sizeof (TpHandle)),
+              (const gchar * const *) really_added->pdata,
+              (const gchar * const *) really_removed->pdata);
           g_array_unref (members_arr);
         }
     }
@@ -4382,15 +4436,14 @@ tp_base_contact_list_mixin_set_contact_groups_cb (GObject *source,
   g_clear_error (&error);
 }
 
-static void
+static gboolean
 tp_base_contact_list_mixin_set_contact_groups (
-    TpSvcConnectionInterfaceContactGroups1 *svc,
+    _TpGDBusConnectionInterfaceContactGroups1 *skeleton,
+    GDBusMethodInvocation *context,
     guint contact,
-    const gchar **groups,
-    GDBusMethodInvocation *context)
+    const gchar *const *groups,
+    TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
-      BASE_CONTACT_LIST);
   const gchar *empty_strv[] = { NULL };
   GError *error = NULL;
   GPtrArray *normalized_groups = NULL;
@@ -4431,6 +4484,8 @@ finally:
     tp_base_contact_list_mixin_return_void (context, error);
 
   g_clear_error (&error);
+
+  return TRUE;
 }
 
 static void
@@ -4446,20 +4501,26 @@ tp_base_contact_list_mixin_set_group_members_cb (GObject *source,
   g_clear_error (&error);
 }
 
-static void
+static gboolean
 tp_base_contact_list_mixin_set_group_members (
-    TpSvcConnectionInterfaceContactGroups1 *svc,
+    _TpGDBusConnectionInterfaceContactGroups1 *skeleton,
+    GDBusMethodInvocation *context,
     const gchar *group,
-    const GArray *contacts,
-    GDBusMethodInvocation *context)
+    GVariant *contacts_variant,
+    TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
-      BASE_CONTACT_LIST);
   TpHandleSet *contacts_set = NULL;
   GError *error = NULL;
+  GArray *contacts;
 
-  if (!tp_base_contact_list_check_group_change (self, NULL, &error))
-    goto error;
+  contacts = handles_variant_to_array (contacts_variant);
+
+  if (!tp_base_contact_list_check_group_change (self, contacts, &error))
+    {
+      tp_base_contact_list_mixin_return_void (context, error);
+      g_clear_error (&error);
+      goto out;
+    }
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
@@ -4467,11 +4528,10 @@ tp_base_contact_list_mixin_set_group_members (
       group, contacts_set, tp_base_contact_list_mixin_set_group_members_cb,
       context);
   tp_handle_set_destroy (contacts_set);
-  return;
 
-error:
-  tp_base_contact_list_mixin_return_void (context, error);
-  g_clear_error (&error);
+out:
+  g_array_unref (contacts);
+  return TRUE;
 }
 
 static void
@@ -4487,26 +4547,34 @@ tp_base_contact_list_mixin_add_to_group_cb (GObject *source,
   g_clear_error (&error);
 }
 
-static void
+static gboolean
 tp_base_contact_list_mixin_add_to_group (
-    TpSvcConnectionInterfaceContactGroups1 *svc,
+    _TpGDBusConnectionInterfaceContactGroups1 *skeleton,
+    GDBusMethodInvocation *context,
     const gchar *group,
-    const GArray *contacts,
-    GDBusMethodInvocation *context)
+    GVariant *contacts_variant,
+    TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
-      BASE_CONTACT_LIST);
   GError *error = NULL;
   gchar *normalized_group = NULL;
   TpHandleSet *contacts_set;
+  GArray *contacts;
+
+  contacts = handles_variant_to_array (contacts_variant);
 
   if (!tp_base_contact_list_check_group_change (self, contacts, &error))
-    goto sync_exit;
+    {
+      tp_base_contact_list_mixin_return_void (context, error);
+      g_clear_error (&error);
+      goto out;
+    }
 
   normalized_group = tp_base_contact_list_normalize_group (self, group);
-
   if (normalized_group == NULL)
-    goto sync_exit;
+    {
+      tp_base_contact_list_mixin_return_void (context, NULL);
+      goto out;
+    }
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
@@ -4514,11 +4582,10 @@ tp_base_contact_list_mixin_add_to_group (
       contacts_set, tp_base_contact_list_mixin_add_to_group_cb, context);
   tp_handle_set_destroy (contacts_set);
   g_free (normalized_group);
-  return;
 
-sync_exit:
-  tp_base_contact_list_mixin_return_void (context, error);
-  g_clear_error (&error);
+out:
+  g_array_unref (contacts);
+  return TRUE;
 }
 
 static void
@@ -4534,41 +4601,46 @@ tp_base_contact_list_mixin_remove_from_group_cb (GObject *source,
   g_clear_error (&error);
 }
 
-static void
+static gboolean
 tp_base_contact_list_mixin_remove_from_group (
-    TpSvcConnectionInterfaceContactGroups1 *svc,
+    _TpGDBusConnectionInterfaceContactGroups1 *skeleton,
+    GDBusMethodInvocation *context,
     const gchar *group,
-    const GArray *contacts,
-    GDBusMethodInvocation *context)
+    GVariant *contacts_variant,
+    TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
-      BASE_CONTACT_LIST);
   GError *error = NULL;
   gchar *normalized_group = NULL;
   TpHandleSet *contacts_set;
+  GArray *contacts;
+
+  contacts = handles_variant_to_array (contacts_variant);
 
   if (!tp_base_contact_list_check_group_change (self, contacts, &error))
-    goto sync_exit;
+    {
+      tp_base_contact_list_mixin_return_void (context, error);
+      g_clear_error (&error);
+      goto out;
+    }
 
   normalized_group = tp_base_contact_list_normalize_group (self, group);
-
   if (normalized_group == NULL
       || g_hash_table_lookup (self->priv->groups, normalized_group) == NULL)
-    goto sync_exit;
+    {
+      tp_base_contact_list_mixin_return_void (context, NULL);
+      goto out;
+    }
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
   tp_base_contact_list_remove_from_group_async (self, normalized_group,
       contacts_set, tp_base_contact_list_mixin_remove_from_group_cb, context);
   tp_handle_set_destroy (contacts_set);
-  g_free (normalized_group);
 
-  return;
-
-sync_exit:
-  tp_base_contact_list_mixin_return_void (context, error);
-  g_clear_error (&error);
+out:
   g_free (normalized_group);
+  g_array_unref (contacts);
+  return TRUE;
 }
 
 static void
@@ -4584,36 +4656,37 @@ tp_base_contact_list_mixin_remove_group_cb (GObject *source,
   g_clear_error (&error);
 }
 
-static void
+static gboolean
 tp_base_contact_list_mixin_remove_group (
-    TpSvcConnectionInterfaceContactGroups1 *svc,
+    _TpGDBusConnectionInterfaceContactGroups1 *skeleton,
+    GDBusMethodInvocation *context,
     const gchar *group,
-    GDBusMethodInvocation *context)
+    TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
-      BASE_CONTACT_LIST);
   GError *error = NULL;
   gchar *normalized_group = NULL;
 
   if (!tp_base_contact_list_check_group_change (self, NULL, &error))
-    goto sync_exit;
+    {
+      tp_base_contact_list_mixin_return_void (context, error);
+      g_clear_error (&error);
+      goto out;
+    }
 
   normalized_group = tp_base_contact_list_normalize_group (self, group);
-
   if (normalized_group == NULL
       || g_hash_table_lookup (self->priv->groups, normalized_group) == NULL)
-    goto sync_exit;
-
-  g_free (normalized_group);
+    {
+      tp_base_contact_list_mixin_return_void (context, NULL);
+      goto out;
+    }
 
   tp_base_contact_list_remove_group_async (self, group,
       tp_base_contact_list_mixin_remove_group_cb, context);
-  return;
 
-sync_exit:
-  tp_base_contact_list_mixin_return_void (context, error);
-  g_clear_error (&error);
+out:
   g_free (normalized_group);
+  return TRUE;
 }
 
 static void
@@ -4629,135 +4702,94 @@ tp_base_contact_list_mixin_rename_group_cb (GObject *source,
   g_clear_error (&error);
 }
 
-static void
+static gboolean
 tp_base_contact_list_mixin_rename_group (
-    TpSvcConnectionInterfaceContactGroups1 *svc,
+    _TpGDBusConnectionInterfaceContactGroups1 *skeleton,
+    GDBusMethodInvocation *context,
     const gchar *before,
     const gchar *after,
-    GDBusMethodInvocation *context)
+    TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
-      BASE_CONTACT_LIST);
   GError *error = NULL;
-  gchar *old_normalized;
-  gchar *new_normalized;
+  gchar *old_normalized = NULL;
+  gchar *new_normalized = NULL;
 
   if (!tp_base_contact_list_check_group_change (self, NULL, &error))
-    goto sync_exit;
+    {
+      tp_base_contact_list_mixin_return_void (context, error);
+      g_clear_error (&error);
+      goto out;
+    }
 
-  /* jtodo: just use the normalize func directly */
-
+  /* todo: just use the normalize func directly */
   old_normalized = tp_base_contact_list_normalize_group (self, before);
-
   if (g_hash_table_lookup (self->priv->groups, old_normalized) == NULL)
     {
       g_set_error (&error, TP_ERROR, TP_ERROR_DOES_NOT_EXIST,
           "Group '%s' does not exist", before);
-      g_free (old_normalized);
-      goto sync_exit;
+      tp_base_contact_list_mixin_return_void (context, error);
+      g_clear_error (&error);
+      goto out;
     }
 
   new_normalized = tp_base_contact_list_normalize_group (self, after);
-
   if (g_hash_table_lookup (self->priv->groups, new_normalized) != NULL)
     {
       g_set_error (&error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
           "Group '%s' already exists", new_normalized);
-      g_free (new_normalized);
-      goto sync_exit;
+      tp_base_contact_list_mixin_return_void (context, error);
+      g_clear_error (&error);
+      goto out;
     }
 
   tp_base_contact_list_rename_group_async (self,
       old_normalized, new_normalized,
       tp_base_contact_list_mixin_rename_group_cb, context);
+
+out:
   g_free (old_normalized);
   g_free (new_normalized);
-  return;
-
-sync_exit:
-  tp_base_contact_list_mixin_return_void (context, error);
-  g_clear_error (&error);
+  return TRUE;
 }
-
-typedef enum {
-    GP_DISJOINT_GROUPS,
-    GP_GROUP_STORAGE,
-    GP_GROUPS,
-    NUM_GROUP_PROPERTIES
-} GroupProp;
-
-static TpDBusPropertiesMixinPropImpl known_group_props[] = {
-    { "DisjointGroups", GINT_TO_POINTER (GP_DISJOINT_GROUPS), },
-    { "GroupStorage", GINT_TO_POINTER (GP_GROUP_STORAGE) },
-    { "Groups", GINT_TO_POINTER (GP_GROUPS) },
-    { NULL }
-};
 
 static void
-tp_base_contact_list_get_group_dbus_property (GObject *conn,
-    GQuark interface G_GNUC_UNUSED,
-    GQuark name G_GNUC_UNUSED,
-    GValue *value,
-    gpointer data)
+_tp_base_contact_list_implement_contact_groups (TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata (conn, BASE_CONTACT_LIST);
-  GroupProp p = GPOINTER_TO_INT (data);
+  self->priv->contact_groups_skeleton =
+      _tp_gdbus_connection_interface_contact_groups1_skeleton_new ();
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
-  g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
-  g_return_if_fail (self->priv->conn != NULL);
+  /* Set initial value for immutable properties, will update them once
+   * connection' status goes to CONNECTED. */
+  update_immutable_contact_groups_properties (self);
 
-  switch (p)
-    {
-    case GP_DISJOINT_GROUPS:
-      g_return_if_fail (G_VALUE_HOLDS_BOOLEAN (value));
-      g_value_set_boolean (value,
-          tp_base_contact_list_has_disjoint_groups (self));
-      break;
+  g_signal_connect_object (self->priv->contact_groups_skeleton,
+      "handle-set-contact-groups",
+      G_CALLBACK (tp_base_contact_list_mixin_set_contact_groups),
+      self, 0);
+  g_signal_connect_object (self->priv->contact_groups_skeleton,
+      "handle-set-group-members",
+      G_CALLBACK (tp_base_contact_list_mixin_set_group_members),
+      self, 0);
+  g_signal_connect_object (self->priv->contact_groups_skeleton,
+      "handle-add-to-group",
+      G_CALLBACK (tp_base_contact_list_mixin_add_to_group),
+      self, 0);
+  g_signal_connect_object (self->priv->contact_groups_skeleton,
+      "handle-remove-from-group",
+      G_CALLBACK (tp_base_contact_list_mixin_remove_from_group),
+      self, 0);
+  g_signal_connect_object (self->priv->contact_groups_skeleton,
+      "handle-remove-group",
+      G_CALLBACK (tp_base_contact_list_mixin_remove_group),
+      self, 0);
+  g_signal_connect_object (self->priv->contact_groups_skeleton,
+      "handle-rename-group",
+      G_CALLBACK (tp_base_contact_list_mixin_rename_group),
+      self, 0);
 
-    case GP_GROUP_STORAGE:
-      g_return_if_fail (G_VALUE_HOLDS_UINT (value));
-      g_value_set_uint (value, tp_base_contact_list_get_group_storage (self));
-      break;
-
-    case GP_GROUPS:
-      g_return_if_fail (G_VALUE_HOLDS (value, G_TYPE_STRV));
-
-      if (self->priv->state == TP_CONTACT_LIST_STATE_SUCCESS)
-        g_value_take_boxed (value, tp_base_contact_list_dup_groups (self));
-
-      break;
-
-    default:
-      g_return_if_reached ();
-    }
-}
-
-/**
- * tp_base_contact_list_mixin_groups_iface_init:
- * @klass: the service-side D-Bus interface,
- *  a #TpSvcConnectionInterfaceContactGroups1Class
- *
- * Use the #TpBaseContactList like a mixin, to implement the ContactGroups
- * D-Bus interface.
- *
- * This function should be passed to G_IMPLEMENT_INTERFACE() for
- * #TpSvcConnectionInterfaceContactGroups1.
- *
- * Since: 0.13.0
- */
-void
-tp_base_contact_list_mixin_groups_iface_init (gpointer klass)
-{
-#define IMPLEMENT(x) tp_svc_connection_interface_contact_groups1_implement_##x (\
-  klass, tp_base_contact_list_mixin_##x)
-  IMPLEMENT (set_contact_groups);
-  IMPLEMENT (set_group_members);
-  IMPLEMENT (add_to_group);
-  IMPLEMENT (remove_from_group);
-  IMPLEMENT (remove_group);
-  IMPLEMENT (rename_group);
-#undef IMPLEMENT
+  g_dbus_object_skeleton_add_interface (
+      G_DBUS_OBJECT_SKELETON (self->priv->conn),
+      G_DBUS_INTERFACE_SKELETON (self->priv->contact_groups_skeleton));
 }
 
 #define ERROR_IF_BLOCKING_NOT_SUPPORTED(self, context) \
@@ -4979,14 +5011,6 @@ tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls)
   GObjectClass *obj_cls = (GObjectClass *) cls;
 
   g_return_if_fail (TP_IS_BASE_CONNECTION_CLASS (cls));
-
-  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1))
-    {
-      tp_dbus_properties_mixin_implement_interface (obj_cls,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_GROUPS1,
-          tp_base_contact_list_get_group_dbus_property,
-          NULL, known_group_props);
-    }
 
   if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING1))
     {

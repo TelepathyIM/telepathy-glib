@@ -350,6 +350,8 @@ libtelepathy_glib_main_internal_la_SOURCES = \
 gdbus_codegen = \
     _gdbus/Connection.c \
     _gdbus/Connection.h \
+    _gdbus/Connection_Interface_Contact_Groups1.c \
+    _gdbus/Connection_Interface_Contact_Groups1.h \
     _gdbus/Connection_Interface_Contact_List1.c \
     _gdbus/Connection_Interface_Contact_List1.h \
     _gdbus/Connection_Interface_Requests.c \

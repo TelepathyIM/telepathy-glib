@@ -591,8 +591,6 @@ struct _TpMutableContactGroupListInterface {
 /* ---- Mixin-like functionality for our parent TpBaseConnection ---- */
 
 void tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls);
-void tp_base_contact_list_mixin_groups_iface_init (gpointer klass);
-_TP_AVAILABLE_IN_0_16
 void tp_base_contact_list_mixin_blocking_iface_init (gpointer klass);
 
 _TP_AVAILABLE_IN_1_0

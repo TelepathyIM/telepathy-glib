@@ -28,8 +28,6 @@ G_DEFINE_TYPE_WITH_CODE (ExampleContactListConnection,
     TP_TYPE_BASE_CONNECTION,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING1,
       init_aliasing);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1,
-      tp_base_contact_list_mixin_groups_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING1,
       tp_base_contact_list_mixin_blocking_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE1,
@@ -290,11 +288,6 @@ constructed (GObject *object)
 
   iface = tp_svc_interface_skeleton_new (skel,
       TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING1);
-  g_dbus_object_skeleton_add_interface (skel, iface);
-  g_object_unref (iface);
-
-  iface = tp_svc_interface_skeleton_new (skel,
-      TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1);
   g_dbus_object_skeleton_add_interface (skel, iface);
   g_object_unref (iface);
 
