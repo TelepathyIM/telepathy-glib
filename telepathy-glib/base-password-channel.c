@@ -187,6 +187,75 @@ tp_base_password_channel_set_property (GObject *object,
   }
 }
 
+enum {
+    DBUSPROP_0,
+    DBUSPROP_AUTHENTICATION_METHOD,
+    DBUSPROP_AVAILABLE_MECHANISMS,
+    DBUSPROP_HAS_INITIAL_DATA,
+    DBUSPROP_CAN_TRY_AGAIN,
+    DBUSPROP_SASL_STATUS,
+    DBUSPROP_SASL_ERROR,
+    DBUSPROP_SASL_ERROR_DETAILS,
+    DBUSPROP_AUTHORIZATION_IDENTITY,
+    DBUSPROP_DEFAULT_USERNAME,
+    DBUSPROP_DEFAULT_REALM,
+    DBUSPROP_MAY_SAVE_RESPONSE,
+    N_DBUSPROPS
+};
+
+static void
+tp_base_password_channel_get_sasl_property (GObject *object,
+    GQuark iface,
+    GQuark name,
+    GValue *value,
+    gpointer getter_data)
+{
+  TpBasePasswordChannel *chan = TP_BASE_PASSWORD_CHANNEL (object);
+  TpBasePasswordChannelPrivate *priv = chan->priv;
+
+  switch (GPOINTER_TO_UINT (getter_data))
+    {
+    case DBUSPROP_AUTHENTICATION_METHOD:
+      g_value_set_static_string (value,
+          TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION1);
+      break;
+    case DBUSPROP_AVAILABLE_MECHANISMS:
+      g_value_set_boxed (value,
+          tp_base_password_channel_available_mechanisms);
+      break;
+    case DBUSPROP_HAS_INITIAL_DATA:
+      g_value_set_boolean (value, TRUE);
+      break;
+    case DBUSPROP_CAN_TRY_AGAIN:
+      g_value_set_boolean (value, FALSE);
+      break;
+    case DBUSPROP_SASL_STATUS:
+      g_value_set_uint (value, priv->sasl_status);
+      break;
+    case DBUSPROP_SASL_ERROR:
+      g_value_set_string (value, priv->sasl_error);
+      break;
+    case DBUSPROP_SASL_ERROR_DETAILS:
+      g_value_set_boxed (value, priv->sasl_error_details);
+      break;
+    case DBUSPROP_AUTHORIZATION_IDENTITY:
+      g_value_set_string (value, priv->authorization_identity);
+      break;
+    case DBUSPROP_DEFAULT_USERNAME:
+      g_value_set_string (value, priv->default_username);
+      break;
+    case DBUSPROP_DEFAULT_REALM:
+      g_value_set_string (value, priv->default_realm);
+      break;
+    case DBUSPROP_MAY_SAVE_RESPONSE:
+      g_value_set_boolean (value, priv->may_save_response);
+      break;
+    default:
+      g_return_if_reached ();
+      break;
+  }
+}
+
 static void
 tp_base_password_channel_get_property (GObject *object,
     guint property_id,
@@ -198,45 +267,14 @@ tp_base_password_channel_get_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_AUTHENTICATION_METHOD:
-      g_value_set_static_string (value,
-          TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION1);
-      break;
-    case PROP_AVAILABLE_MECHANISMS:
-      g_value_set_boxed (value,
-          tp_base_password_channel_available_mechanisms);
-      break;
-    case PROP_HAS_INITIAL_DATA:
-      g_value_set_boolean (value, TRUE);
-      break;
-    case PROP_CAN_TRY_AGAIN:
-      g_value_set_boolean (value, FALSE);
-      break;
-    case PROP_SASL_STATUS:
-      g_value_set_uint (value, priv->sasl_status);
-      break;
-    case PROP_SASL_ERROR:
-      g_value_set_string (value, priv->sasl_error);
-      break;
-    case PROP_SASL_ERROR_DETAILS:
-      g_value_set_boxed (value, priv->sasl_error_details);
-      break;
-    case PROP_AUTHORIZATION_IDENTITY:
-      g_value_set_string (value, priv->authorization_identity);
-      break;
-    case PROP_DEFAULT_USERNAME:
-      g_value_set_string (value, priv->default_username);
-      break;
-    case PROP_DEFAULT_REALM:
-      g_value_set_string (value, priv->default_realm);
-      break;
     case PROP_MAY_SAVE_RESPONSE:
       g_value_set_boolean (value, priv->may_save_response);
       break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
-  }
+    }
 }
 
 static void tp_base_password_channel_finalize (GObject *object);
@@ -251,30 +289,34 @@ tp_base_password_channel_class_init (TpBasePasswordChannelClass *tp_base_passwor
       tp_base_password_channel_class);
 
   static TpDBusPropertiesMixinPropImpl server_base_password_props[] = {
-    { "AuthenticationMethod", "authentication-method", NULL },
+    { "AuthenticationMethod",
+      GUINT_TO_POINTER (DBUSPROP_AUTHENTICATION_METHOD) },
     { NULL }
   };
   static TpDBusPropertiesMixinPropImpl sasl_auth_props[] = {
-    { "AvailableMechanisms", "available-mechanisms", NULL },
-    { "HasInitialData", "has-initial-data", NULL },
-    { "CanTryAgain", "can-try-again", NULL },
-    { "SASLStatus", "sasl-status", NULL },
-    { "SASLError", "sasl-error", NULL },
-    { "SASLErrorDetails", "sasl-error-details", NULL },
-    { "AuthorizationIdentity", "authorization-identity", NULL },
-    { "DefaultUsername", "default-username", NULL },
-    { "DefaultRealm", "default-realm", NULL },
-    { "MaySaveResponse", "may-save-response", NULL },
+    { "AvailableMechanisms", GUINT_TO_POINTER (DBUSPROP_AVAILABLE_MECHANISMS) },
+    { "HasInitialData", GUINT_TO_POINTER (DBUSPROP_HAS_INITIAL_DATA) },
+    { "CanTryAgain", GUINT_TO_POINTER (DBUSPROP_CAN_TRY_AGAIN) },
+    { "SASLStatus", GUINT_TO_POINTER (DBUSPROP_SASL_STATUS) },
+    { "SASLError", GUINT_TO_POINTER (DBUSPROP_SASL_ERROR) },
+    { "SASLErrorDetails", GUINT_TO_POINTER (DBUSPROP_SASL_ERROR_DETAILS) },
+    { "AuthorizationIdentity",
+      GUINT_TO_POINTER (DBUSPROP_AUTHORIZATION_IDENTITY) },
+    { "DefaultUsername", GUINT_TO_POINTER (DBUSPROP_DEFAULT_USERNAME) },
+    { "DefaultRealm", GUINT_TO_POINTER (DBUSPROP_DEFAULT_REALM) },
+    { "MaySaveResponse", GUINT_TO_POINTER (DBUSPROP_MAY_SAVE_RESPONSE) },
     { NULL }
   };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
     { TP_IFACE_CHANNEL_TYPE_SERVER_AUTHENTICATION1,
-      tp_dbus_properties_mixin_getter_gobject_properties,
+      /* this only has one property so we recycle the getter function from
+       * the SASL interface */
+      tp_base_password_channel_get_sasl_property,
       NULL,
       server_base_password_props,
     },
     { TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION1,
-      tp_dbus_properties_mixin_getter_gobject_properties,
+      tp_base_password_channel_get_sasl_property,
       NULL,
       sasl_auth_props,
     },
@@ -297,86 +339,6 @@ tp_base_password_channel_class_init (TpBasePasswordChannelClass *tp_base_passwor
   chan_class->close = tp_base_password_channel_close;
   chan_class->fill_immutable_properties =
     tp_base_password_channel_fill_immutable_properties;
-
-  param_spec = g_param_spec_string ("authentication-method",
-      "Authentication method",
-      "Interface of authentication method",
-      "",
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_AUTHENTICATION_METHOD,
-      param_spec);
-
-  param_spec = g_param_spec_boxed ("available-mechanisms",
-      "Available authentication mechanisms",
-      "The set of mechanisms the server advertised.",
-      G_TYPE_STRV,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_AVAILABLE_MECHANISMS,
-      param_spec);
-
-  param_spec = g_param_spec_boolean ("has-initial-data",
-      "Whether the StartMechanismWithData can be called",
-      "Whether the StartMechanismWithData can be called",
-      FALSE,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_HAS_INITIAL_DATA,
-      param_spec);
-
-  param_spec = g_param_spec_boolean ("can-try-again",
-      "Whether StartMechanism will work in failed state",
-      "Whether StartMechanism will work in failed states",
-      FALSE,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CAN_TRY_AGAIN,
-      param_spec);
-
-  param_spec = g_param_spec_uint ("sasl-status",
-      "Current status",
-      "The status of the current SASL authentication.",
-      0, TP_NUM_SASL_STATUSES, 0,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_SASL_STATUS,
-      param_spec);
-
-  param_spec = g_param_spec_string ("sasl-error",
-      "SASL error",
-      "SASL error",
-      "",
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_SASL_ERROR,
-      param_spec);
-
-  param_spec = g_param_spec_boxed ("sasl-error-details",
-      "SASL error details",
-      "SASL error details",
-      TP_HASH_TYPE_STRING_VARIANT_MAP,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_SASL_ERROR_DETAILS,
-      param_spec);
-
-  param_spec = g_param_spec_string ("authorization-identity",
-      "base_password identity",
-      "Authorization identity",
-      "",
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_AUTHORIZATION_IDENTITY,
-      param_spec);
-
-  param_spec = g_param_spec_string ("default-username",
-      "default username",
-      "DefaultUsername",
-      "",
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_DEFAULT_USERNAME,
-      param_spec);
-
-  param_spec = g_param_spec_string ("default-realm",
-      "default realm",
-      "DefaultRealm",
-      "",
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_DEFAULT_REALM,
-      param_spec);
 
   param_spec = g_param_spec_boolean ("may-save-response",
       "Whether the client may save the authentication response",
