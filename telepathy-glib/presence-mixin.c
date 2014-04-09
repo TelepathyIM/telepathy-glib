@@ -94,33 +94,15 @@
  */
 
 /**
- * TpPresenceStatusOptionalArgumentSpec:
- * @name: Name of the argument as passed over D-Bus
- * @dtype: D-Bus type signature of the argument
- *
- * Structure specifying a supported optional argument for a presence status.
- *
- * In addition to the fields documented here, there are two gpointer fields
- * which must currently be %NULL. A meaning may be defined for these in a
- * future version of telepathy-glib.
- */
-
-/**
  * TpPresenceStatusSpec:
  * @name: String identifier of the presence status
  * @presence_type: A type value, as specified by #TpConnectionPresenceType
  * @self: Indicates if this status may be set on yourself
- * @optional_arguments: An array of #TpPresenceStatusOptionalArgumentSpec
- *  structures representing the optional arguments for this status, terminated
- *  by a NULL name. If there are no optional arguments for a status, this can
- *  be NULL. In modern Telepathy connection managers, the only optional
- *  argument should be a string (type "s") named "message" on statuses
- *  that have an optional human-readable message. All other optional arguments
- *  are deprecated.
+ * @has_message: %TRUE if a human-readable message can accompany this status.
  *
  * Structure specifying a supported presence status.
  *
- * In addition to the fields documented here, there are two gpointer fields
+ * In addition to the fields documented here, there are some reserved fields
  * which must currently be %NULL. A meaning may be defined for these in a
  * future version of telepathy-glib.
  */
@@ -129,20 +111,13 @@
  * TpPresenceStatus:
  * @index: Index of the presence status in the provided supported presence
  *  statuses array
- * @optional_arguments: A GHashTable mapping of string identifiers to GValues
- *  of the optional status arguments, if any. If there are no optional
- *  arguments, this pointer may be NULL.
+ * @message: the non-%NULL human-readable status message
  *
  * Structure representing a presence status.
  *
- * In addition to the fields documented here, there are two gpointer fields
+ * In addition to the fields documented here, there are some gpointer fields
  * which must currently be %NULL. A meaning may be defined for these in a
  * future version of telepathy-glib.
- *
- * In modern Telepathy connection managers, the only optional
- * argument should be a %G_TYPE_STRING named "message", on statuses
- * that have an optional human-readable message. All other optional arguments
- * are deprecated.
  */
 
 /**
@@ -191,12 +166,6 @@
  * status in SetStatuses. It is also used in ClearStatus and RemoveStatus to
  * reset the user's own status back to the "default" one with a %NULL status
  * argument.
- *
- * The optional_arguments hash table in @status, if not NULL, will have been
- * filtered so it only contains recognised parameters, so the callback
- * need not (and cannot) check for unrecognised parameters. However, the
- * types of the parameters are not currently checked, so the callback is
- * responsible for doing so.
  *
  * The callback is responsible for emitting PresenceUpdate, if appropriate,
  * by calling tp_presence_mixin_emit_presence_update().
@@ -287,51 +256,29 @@ static GHashTable *construct_presence_hash (
   const TpPresenceStatusSpec *supported_statuses,
   GHashTable *contact_statuses);
 
-/*
- * deep_copy_hashtable
- *
- * Make a deep copy of a GHashTable.
- */
-static GHashTable *
-deep_copy_hashtable (GHashTable *hash_table)
-{
-  GValue value = {0, };
-
-  if (!hash_table)
-    return NULL;
-
-  g_value_init (&value, TP_HASH_TYPE_STRING_VARIANT_MAP);
-  g_value_take_boxed (&value, hash_table);
-  return g_value_dup_boxed (&value);
-}
-
-
 /**
  * tp_presence_status_new: (skip)
  * @which: Index of the presence status in the provided supported presence
  *  statuses array
- * @optional_arguments: Optional arguments for the presence statuses. Can be
- *  NULL if there are no optional arguments. The presence status object makes a
- *  copy of the hashtable, so you should free the original.
+ * @message: (allow-none): a human-readable status message, or %NULL
  *
  * Construct a presence status structure. You should free the returned
  * structure with #tp_presence_status_free.
- *
- * In modern Telepathy connection managers, the only optional
- * argument should be a %G_TYPE_STRING named "message", on statuses
- * that have an optional human-readable message. All other optional arguments
- * are deprecated.
  *
  * Returns: A pointer to the newly allocated presence status structure.
  */
 TpPresenceStatus *
 tp_presence_status_new (guint which,
-                        GHashTable *optional_arguments)
+    const gchar *message)
 {
   TpPresenceStatus *status = g_slice_new (TpPresenceStatus);
 
   status->index = which;
-  status->optional_arguments = deep_copy_hashtable (optional_arguments);
+
+  if (message == NULL)
+    message = "";
+
+  status->message = g_strdup (message);
 
   return status;
 }
@@ -349,9 +296,7 @@ tp_presence_status_free (TpPresenceStatus *status)
   if (!status)
     return;
 
-  if (status->optional_arguments)
-    g_hash_table_unref (status->optional_arguments);
-
+  g_free (status->message);
   g_slice_free (TpPresenceStatus, status);
 }
 
@@ -776,7 +721,6 @@ tp_presence_mixin_set_presence (
   TpPresenceStatus status_to_set = { 0, };
   int s;
   GError *error = NULL;
-  GHashTable *optional_arguments = NULL;
 
   DEBUG ("called.");
 
@@ -784,18 +728,15 @@ tp_presence_mixin_set_presence (
   if (s == -1)
     goto out;
 
-  status_to_set.index = s;
+  if (message == NULL)
+    message = "";
 
-  if (*message != '\0')
-    {
-      optional_arguments = g_hash_table_new_full (g_str_hash, g_str_equal,
-          NULL, (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (optional_arguments, "message",
-          tp_g_value_slice_new_string (message));
-      status_to_set.optional_arguments = optional_arguments;
-    }
+  status_to_set.index = s;
+  status_to_set.message = g_strdup (message);
 
   mixin_cls->set_own_status (obj, &status_to_set, &error);
+
+  g_free (status_to_set.message);
 
 out:
   if (error == NULL)
@@ -808,9 +749,6 @@ out:
       g_dbus_method_invocation_return_gerror (context, error);
       g_error_free (error);
     }
-
-  if (optional_arguments != NULL)
-    g_hash_table_unref (optional_arguments);
 }
 
 static GValueArray *
@@ -825,13 +763,7 @@ construct_presence_value_array (TpPresenceStatus *status,
   status_name = supported_statuses[status->index].name;
   status_type = supported_statuses[status->index].presence_type;
 
-  if (status->optional_arguments != NULL)
-    {
-      GValue *val;
-      val = g_hash_table_lookup (status->optional_arguments, "message");
-      if (val != NULL)
-        message = g_value_get_string (val);
-    }
+  message = status->message;
 
   if (message == NULL)
     message = "";
@@ -1013,20 +945,9 @@ tp_presence_status_spec_can_set_on_self (const TpPresenceStatusSpec *self)
 gboolean
 tp_presence_status_spec_has_message (const TpPresenceStatusSpec *self)
 {
-  const TpPresenceStatusOptionalArgumentSpec *arg;
-
   g_return_val_if_fail (self != NULL, FALSE);
 
-  if (self->optional_arguments == NULL)
-    return FALSE;
-
-  for (arg = self->optional_arguments; arg->name != NULL; arg++)
-    {
-      if (!tp_strdiff (arg->name, "message") && !tp_strdiff (arg->dtype, "s"))
-        return TRUE;
-    }
-
-  return FALSE;
+  return self->has_message;
 }
 
 /**
@@ -1050,10 +971,6 @@ tp_presence_status_spec_new (const gchar *name,
     gboolean has_message)
 {
   TpPresenceStatusSpec *ret;
-  static const TpPresenceStatusOptionalArgumentSpec yes_it_has_a_message[] = {
-        { "message", "s" },
-        { NULL }
-  };
 
   g_return_val_if_fail (!tp_str_empty (name), NULL);
   g_return_val_if_fail (type >= 0 && type < TP_NUM_CONNECTION_PRESENCE_TYPES,
@@ -1064,11 +981,7 @@ tp_presence_status_spec_new (const gchar *name,
   ret->name = g_strdup (name);
   ret->presence_type = type;
   ret->self = can_set_on_self;
-
-  if (has_message)
-    ret->optional_arguments = yes_it_has_a_message;
-  else
-    ret->optional_arguments = NULL;
+  ret->has_message = has_message;
 
   /* dummy marker for "this is on the heap" rather than a real struct */
   ret->priv = (TpPresenceStatusSpecPrivate *) ret;
@@ -1081,10 +994,6 @@ tp_presence_status_spec_new (const gchar *name,
  * @self: a presence status specification
  *
  * Copy a presence status specification.
- *
- * If @self has optional arguments other than a string named "message",
- * they are not copied. Optional arguments with other names or types
- * are deprecated.
  *
  * Returns: (transfer full): a new #TpPresenceStatusSpec resembling @self
  * Since: 0.99.5

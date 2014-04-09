@@ -1703,7 +1703,6 @@ TpBaseRoomConfigPrivate
 <SECTION>
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>presence-mixin</FILE>
-TpPresenceStatusOptionalArgumentSpec
 TpPresenceStatusSpec
 tp_presence_status_spec_can_set_on_self
 tp_presence_status_spec_get_name

@@ -239,11 +239,7 @@ get_contact_status (GObject *object,
     EXAMPLE_CALL_CONNECTION (object);
   TpBaseConnection *base = TP_BASE_CONNECTION (object);
   ExampleCallPresence presence;
-  GHashTable *parameters;
-  TpPresenceStatus *result;
-
-  parameters = g_hash_table_new_full (g_str_hash,
-      g_str_equal, NULL, (GDestroyNotify) tp_g_value_slice_free);
+  const gchar *message;
 
   /* we know our own status from the connection; for this example CM,
    * everyone else's status is assumed to be "available" */
@@ -251,19 +247,15 @@ get_contact_status (GObject *object,
     {
       presence = (self->priv->away ? EXAMPLE_CALL_PRESENCE_AWAY
           : EXAMPLE_CALL_PRESENCE_AVAILABLE);
-
-      if (self->priv->presence_message[0] != '\0')
-        g_hash_table_insert (parameters, "message",
-            tp_g_value_slice_new_string (self->priv->presence_message));
+      message = self->priv->presence_message;
     }
   else
     {
       presence = EXAMPLE_CALL_PRESENCE_AVAILABLE;
+      message = NULL;
     }
 
-  result = tp_presence_status_new (presence, parameters);
-  g_hash_table_unref (parameters);
-  return result;
+  return tp_presence_status_new (presence, message);
 }
 
 static gboolean
@@ -275,24 +267,10 @@ set_own_status (GObject *object,
     EXAMPLE_CALL_CONNECTION (object);
   TpBaseConnection *base = TP_BASE_CONNECTION (object);
   GHashTable *presences;
-  const gchar *message = "";
-
-  if (status->optional_arguments != NULL)
-    {
-      GValue *v = g_hash_table_lookup (status->optional_arguments, "message");
-
-      if (v != NULL && G_VALUE_HOLDS_STRING (v))
-        {
-          message = g_value_get_string (v);
-
-          if (message == NULL)
-            message = "";
-        }
-    }
 
   if (status->index == EXAMPLE_CALL_PRESENCE_AWAY)
     {
-      if (self->priv->away && !tp_strdiff (message,
+      if (self->priv->away && !tp_strdiff (status->message,
             self->priv->presence_message))
         return TRUE;
 
@@ -300,7 +278,7 @@ set_own_status (GObject *object,
     }
   else
     {
-      if (!self->priv->away && !tp_strdiff (message,
+      if (!self->priv->away && !tp_strdiff (status->message,
             self->priv->presence_message))
         return TRUE;
 
@@ -308,7 +286,7 @@ set_own_status (GObject *object,
     }
 
   g_free (self->priv->presence_message);
-  self->priv->presence_message = g_strdup (message);
+  self->priv->presence_message = g_strdup (status->message);
 
   presences = g_hash_table_new_full (g_direct_hash, g_direct_equal,
       NULL, NULL);
@@ -320,25 +298,19 @@ set_own_status (GObject *object,
 
   if (!self->priv->away)
     {
-      g_signal_emit (self, signals[SIGNAL_AVAILABLE], 0, message);
+      g_signal_emit (self, signals[SIGNAL_AVAILABLE], 0, status->message);
     }
 
   return TRUE;
 }
 
-static const TpPresenceStatusOptionalArgumentSpec can_have_message[] = {
-      { "message", "s", NULL, NULL },
-      { NULL }
-};
-
 /* Must be kept in sync with ExampleCallPresence enum in header */
 static const TpPresenceStatusSpec presence_statuses[] = {
-      { "offline", TP_CONNECTION_PRESENCE_TYPE_OFFLINE, FALSE, NULL },
-      { "unknown", TP_CONNECTION_PRESENCE_TYPE_UNKNOWN, FALSE, NULL },
-      { "error", TP_CONNECTION_PRESENCE_TYPE_ERROR, FALSE, NULL },
-      { "away", TP_CONNECTION_PRESENCE_TYPE_AWAY, TRUE, can_have_message },
-      { "available", TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, TRUE,
-        can_have_message },
+      { "offline", TP_CONNECTION_PRESENCE_TYPE_OFFLINE, FALSE, FALSE },
+      { "unknown", TP_CONNECTION_PRESENCE_TYPE_UNKNOWN, FALSE, FALSE },
+      { "error", TP_CONNECTION_PRESENCE_TYPE_ERROR, FALSE, FALSE },
+      { "away", TP_CONNECTION_PRESENCE_TYPE_AWAY, TRUE, TRUE },
+      { "available", TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, TRUE, TRUE },
       { NULL }
 };
 

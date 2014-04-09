@@ -22,11 +22,11 @@
 /* this array must be kept in sync with the enum
  * ExampleContactListPresence in contact-list.h */
 static const TpPresenceStatusSpec _statuses[] = {
-      { "offline", TP_CONNECTION_PRESENCE_TYPE_OFFLINE, FALSE, NULL },
-      { "unknown", TP_CONNECTION_PRESENCE_TYPE_UNKNOWN, FALSE, NULL },
-      { "error", TP_CONNECTION_PRESENCE_TYPE_ERROR, FALSE, NULL },
-      { "away", TP_CONNECTION_PRESENCE_TYPE_AWAY, TRUE, NULL },
-      { "available", TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, TRUE, NULL },
+      { "offline", TP_CONNECTION_PRESENCE_TYPE_OFFLINE, FALSE, FALSE },
+      { "unknown", TP_CONNECTION_PRESENCE_TYPE_UNKNOWN, FALSE, FALSE },
+      { "error", TP_CONNECTION_PRESENCE_TYPE_ERROR, FALSE, FALSE },
+      { "away", TP_CONNECTION_PRESENCE_TYPE_AWAY, TRUE, FALSE },
+      { "available", TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, TRUE, FALSE },
       { NULL }
 };
 

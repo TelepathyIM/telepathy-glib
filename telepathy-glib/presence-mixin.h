@@ -32,28 +32,17 @@
 
 G_BEGIN_DECLS
 
-typedef struct _TpPresenceStatusOptionalArgumentSpec
-    TpPresenceStatusOptionalArgumentSpec;
 typedef struct _TpPresenceStatusSpec TpPresenceStatusSpec;
 typedef struct _TpPresenceStatusSpecPrivate TpPresenceStatusSpecPrivate;
-
-struct _TpPresenceStatusOptionalArgumentSpec {
-    const gchar *name;
-    const gchar *dtype;
-
-    /*<private>*/
-    gpointer _future1;
-    gpointer _future2;
-};
 
 struct _TpPresenceStatusSpec {
     const gchar *name;
     TpConnectionPresenceType presence_type;
     gboolean self;
-    const TpPresenceStatusOptionalArgumentSpec *optional_arguments;
+    gboolean has_message;
 
     /*<private>*/
-    gpointer _future1;
+    GCallback _future[10];
     TpPresenceStatusSpecPrivate *priv;
 };
 
@@ -93,15 +82,14 @@ typedef struct _TpPresenceStatus TpPresenceStatus;
 
 struct _TpPresenceStatus {
     guint index;
-    GHashTable *optional_arguments;
+    gchar *message;
 
     /*<private>*/
-    gpointer _future1;
-    gpointer _future2;
+    gpointer _future[6];
 };
 
 TpPresenceStatus *tp_presence_status_new (guint which,
-    GHashTable *optional_arguments) G_GNUC_WARN_UNUSED_RESULT;
+    const gchar *message) G_GNUC_WARN_UNUSED_RESULT;
 void tp_presence_status_free (TpPresenceStatus *status);
 
 typedef gboolean (*TpPresenceMixinStatusAvailableFunc) (GObject *obj,
@@ -135,9 +123,7 @@ struct _TpPresenceMixinClass {
     TpPresenceMixinGetMaximumStatusMessageLengthFunc get_maximum_status_message_length;
 
     /*<private>*/
-    gpointer _future1;
-    gpointer _future2;
-    gpointer _future3;
+    GCallback _future[10];
 };
 
 struct _TpPresenceMixin {

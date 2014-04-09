@@ -303,8 +303,6 @@ get_contact_status (GObject *object,
     EXAMPLE_CONTACT_LIST_CONNECTION (object);
   TpBaseConnection *base = TP_BASE_CONNECTION (object);
   ExampleContactListPresence presence;
-  GHashTable *parameters;
-  TpPresenceStatus *result;
 
   /* we get our own status from the connection, and everyone else's status
    * from the contact lists */
@@ -319,12 +317,7 @@ get_contact_status (GObject *object,
           self->priv->contact_list, contact);
     }
 
-  parameters = g_hash_table_new_full (g_str_hash,
-      g_str_equal, NULL, (GDestroyNotify) tp_g_value_slice_free);
-  result = tp_presence_status_new (presence, parameters);
-  g_hash_table_unref (parameters);
-
-  return result;
+  return tp_presence_status_new (presence, "");
 }
 
 static gboolean

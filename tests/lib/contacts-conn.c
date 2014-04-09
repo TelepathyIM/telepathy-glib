@@ -373,20 +373,14 @@ constructed (GObject *object)
       G_STRUCT_OFFSET (TpTestsContactsConnection, presence_mixin));
 }
 
-static const TpPresenceStatusOptionalArgumentSpec can_have_message[] = {
-      { "message", "s", NULL, NULL },
-      { NULL }
-};
-
 /* Must match TpTestsContactsConnectionPresenceStatusIndex in the .h */
 static const TpPresenceStatusSpec my_statuses[] = {
-      { "available", TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, TRUE,
-        can_have_message },
-      { "busy", TP_CONNECTION_PRESENCE_TYPE_BUSY, TRUE, can_have_message },
-      { "away", TP_CONNECTION_PRESENCE_TYPE_AWAY, TRUE, can_have_message },
-      { "offline", TP_CONNECTION_PRESENCE_TYPE_OFFLINE, FALSE, NULL },
-      { "unknown", TP_CONNECTION_PRESENCE_TYPE_UNKNOWN, FALSE, NULL },
-      { "error", TP_CONNECTION_PRESENCE_TYPE_ERROR, FALSE, NULL },
+      { "available", TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, TRUE, TRUE},
+      { "busy", TP_CONNECTION_PRESENCE_TYPE_BUSY, TRUE, TRUE },
+      { "away", TP_CONNECTION_PRESENCE_TYPE_AWAY, TRUE, TRUE },
+      { "offline", TP_CONNECTION_PRESENCE_TYPE_OFFLINE, FALSE, FALSE },
+      { "unknown", TP_CONNECTION_PRESENCE_TYPE_UNKNOWN, FALSE, FALSE },
+      { "error", TP_CONNECTION_PRESENCE_TYPE_ERROR, FALSE, FALSE },
       { NULL }
 };
 
@@ -404,28 +398,16 @@ my_get_contact_status (GObject *object,
     TpHandle contact)
 {
   TpTestsContactsConnection *self = TP_TESTS_CONTACTS_CONNECTION (object);
-  TpPresenceStatus *result;
   gpointer key = GUINT_TO_POINTER (contact);
   TpTestsContactsConnectionPresenceStatusIndex index;
   const gchar *presence_message;
-  GHashTable *parameters;
 
   index = GPOINTER_TO_UINT (g_hash_table_lookup (
         self->priv->presence_statuses, key));
   presence_message = g_hash_table_lookup (
       self->priv->presence_messages, key);
 
-  parameters = g_hash_table_new_full (g_str_hash,
-      g_str_equal, NULL, (GDestroyNotify) tp_g_value_slice_free);
-
-  if (presence_message != NULL)
-    g_hash_table_insert (parameters, (gpointer) "message",
-        tp_g_value_slice_new_string (presence_message));
-
-  result = tp_presence_status_new (index, parameters);
-  g_hash_table_unref (parameters);
-
-  return result;
+  return tp_presence_status_new (index, presence_message);
 }
 
 static gboolean
@@ -435,16 +417,8 @@ my_set_own_status (GObject *object,
 {
   TpBaseConnection *base_conn = TP_BASE_CONNECTION (object);
   TpTestsContactsConnectionPresenceStatusIndex index = status->index;
-  const gchar *message = "";
+  const gchar *message = status->message;
   TpHandle self_handle;
-
-  if (status->optional_arguments != NULL)
-    {
-      message = g_hash_table_lookup (status->optional_arguments, "message");
-
-      if (message == NULL)
-        message = "";
-    }
 
   self_handle = tp_base_connection_get_self_handle (base_conn);
   tp_tests_contacts_connection_change_presences (TP_TESTS_CONTACTS_CONNECTION (object),
@@ -625,7 +599,6 @@ tp_tests_contacts_connection_change_presences (
 
   for (i = 0; i < n; i++)
     {
-      GHashTable *parameters;
       gpointer key = GUINT_TO_POINTER (handles[i]);
 
       DEBUG ("contact#%u -> %s \"%s\"", handles[i],
@@ -636,16 +609,8 @@ tp_tests_contacts_connection_change_presences (
       g_hash_table_insert (self->priv->presence_messages, key,
           g_strdup (messages[i]));
 
-      parameters = g_hash_table_new_full (g_str_hash,
-          g_str_equal, NULL, (GDestroyNotify) tp_g_value_slice_free);
-
-      if (messages[i] != NULL && messages[i][0] != '\0')
-        g_hash_table_insert (parameters, (gpointer) "message",
-            tp_g_value_slice_new_string (messages[i]));
-
       g_hash_table_insert (presences, key, tp_presence_status_new (indexes[i],
-            parameters));
-      g_hash_table_unref (parameters);
+            messages[i]));
     }
 
   tp_presence_mixin_emit_presence_update ((GObject *) self,

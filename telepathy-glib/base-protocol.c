@@ -976,27 +976,11 @@ protocol_prop_presence_getter (GObject *object,
             {
               GValueArray *val = NULL;
               gchar *key = NULL;
-              gboolean message = FALSE;
               gboolean settable = status->self;
+              gboolean message = (settable && status->has_message);
               TpConnectionPresenceType type = status->presence_type;
 
               key = g_strdup (status->name);
-
-              /* look for a string argument named 'message' */
-              if (settable && status->optional_arguments != NULL)
-                {
-                  const TpPresenceStatusOptionalArgumentSpec *arg =
-                    status->optional_arguments;
-
-                  for (; !message && arg->name != NULL; arg++)
-                    {
-                      if (tp_strdiff (arg->dtype, "s") ||
-                          tp_strdiff (arg->name, "message"))
-                        continue;
-
-                      message = TRUE;
-                    }
-                }
 
               val = tp_value_array_build (3,
                   G_TYPE_UINT, type,
