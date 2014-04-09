@@ -1107,10 +1107,10 @@ emit_members_changed_signals (GObject *channel,
                               const GArray *remote_pending,
                               TpHandle actor,
                               TpChannelGroupChangeReason reason,
-                              const GHashTable *details)
+                              GVariant *details)
 {
   TpGroupMixin *mixin = TP_GROUP_MIXIN (channel);
-  GHashTable *details_ = (GHashTable *) details; /* Cast the pain away! */
+  GHashTable *details_ = tp_asv_from_vardict (details);
   gboolean added_contact_ids;
 
   if (DEBUGGING)
@@ -1160,6 +1160,8 @@ emit_members_changed_signals (GObject *channel,
 
   if (added_contact_ids)
     remove_contact_ids (details_);
+
+  g_hash_table_unref (details_);
 }
 
 
@@ -1172,12 +1174,14 @@ change_members (GObject *obj,
                 const TpIntset *add_remote_pending,
                 TpHandle actor,
                 TpChannelGroupChangeReason reason,
-                const GHashTable *details)
+                GVariant *details)
 {
   TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
   TpIntset *new_add, *new_remove, *new_local_pending,
            *new_remote_pending, *tmp, *tmp2, *empty;
   gboolean ret;
+
+  g_assert (!g_variant_is_floating (details));
 
   empty = tp_intset_new ();
 
@@ -1345,7 +1349,7 @@ change_members (GObject *obj,
  *  and removed from members and remote pending
  * @add_remote_pending: A set of contact handles to be added to remote pending,
  *  and removed from members and local pending
- * @details: a map from strings to GValues detailing the change
+ * @details: (allow-none): a %G_VARIANT_TYPE_VARDICT describing the change
  *
  * Change the sets of members as given by the arguments, and emit the
  * MembersChanged signal if the changes were not a no-op.
@@ -1361,11 +1365,14 @@ change_members (GObject *obj,
  * equivalent to an empty set.
  *
  * details may contain, among other entries, the well-known
- * keys (and corresponding type, wrapped in a GValue) defined by the
+ * keys (and corresponding type, wrapped in a variant) defined by the
  * Group.MembersChanged signal's specification; these include "actor"
- * (a handle as G_TYPE_UINT), "change-reason" (an element of
- * #TpChannelGroupChangeReason as G_TYPE_UINT), "message" (G_TYPE_STRING),
- * "error" (G_TYPE_STRING), "debug-message" (G_TYPE_STRING).
+ * (a handle as %G_VARIANT_TYPE_UINT32), "change-reason" (an element of
+ * #TpChannelGroupChangeReason as %G_VARIANT_TYPE_UINT32),
+ * "message" (%G_VARIANT_TYPE_STRING),
+ * "error" (%G_VARIANT_TYPE_STRING), "debug-message" (%G_VARIANT_TYPE_STRING).
+ * If it is a floating reference, ownership is taken; if it is %NULL,
+ * it is treated as an empty map.
  *
  * Returns: %TRUE if the group was changed and the MembersChanged
  *  signals were emitted; %FALSE if nothing actually changed and the signals
@@ -1379,33 +1386,39 @@ tp_group_mixin_change_members (GObject *obj,
     const TpIntset *del,
     const TpIntset *add_local_pending,
     const TpIntset *add_remote_pending,
-    const GHashTable *details)
+    GVariant *details)
 {
   const gchar *message;
   TpHandle actor;
   TpChannelGroupChangeReason reason;
   gboolean valid;
+  gboolean ret;
 
-  g_return_val_if_fail (details != NULL, FALSE);
+  if (details == NULL)
+    details = g_variant_new ("a{sv}", NULL);
+
+  g_variant_ref_sink (details);
 
   /* For each detail we're extracting for the benefit of old-school
    * MembersChanged, warn if it's present but badly typed.
    */
 
-  message = tp_asv_get_string (details, "message");
-  g_warn_if_fail (message != NULL || tp_asv_lookup (details, "message") == NULL);
+  message = tp_vardict_get_string (details, "message");
+  g_warn_if_fail (message != NULL || !tp_vardict_has_key (details, "message"));
 
   /* change_members will cry (via tp_handle_set_add) if actor is non-zero and
    * invalid.
    */
-  actor = tp_asv_get_uint32 (details, "actor", &valid);
-  g_warn_if_fail (valid || tp_asv_lookup (details, "actor") == NULL);
+  actor = tp_vardict_get_uint32 (details, "actor", &valid);
+  g_warn_if_fail (valid || !tp_vardict_has_key (details, "actor"));
 
-  reason = tp_asv_get_uint32 (details, "change-reason", &valid);
-  g_warn_if_fail (valid || tp_asv_lookup (details, "change-reason") == NULL);
+  reason = tp_vardict_get_uint32 (details, "change-reason", &valid);
+  g_warn_if_fail (valid || !tp_vardict_has_key (details, "change-reason"));
 
-  return change_members (obj, message, add, del, add_local_pending,
+  ret = change_members (obj, message, add, del, add_local_pending,
       add_remote_pending, actor, reason, details);
+  g_variant_unref (details);
+  return ret;
 }
 
 /**

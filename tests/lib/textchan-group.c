@@ -61,17 +61,13 @@ add_member (GObject *obj,
 {
   TpTestsTextChannelGroup *self = TP_TESTS_TEXT_CHANNEL_GROUP (obj);
   TpIntset *add = tp_intset_new ();
-  GHashTable *details = tp_asv_new (
-      "actor", G_TYPE_UINT, tp_base_connection_get_self_handle (self->conn),
-      "change-reason", G_TYPE_UINT, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
-      "message", G_TYPE_STRING, message,
-      NULL);
 
   tp_intset_add (add, handle);
-  tp_group_mixin_change_members (obj, add, NULL, NULL, NULL, details);
+  tp_group_mixin_change_members (obj, add, NULL, NULL, NULL,
+      g_variant_new_parsed ("{'actor': <%u>, 'message': <%s>}",
+        (guint32) tp_base_connection_get_self_handle (self->conn),
+        message));
   tp_intset_destroy (add);
-
-  g_hash_table_unref (details);
 
   return TRUE;
 }
@@ -218,11 +214,6 @@ void
 tp_tests_text_channel_group_join (TpTestsTextChannelGroup *self)
 {
   TpIntset *add, *empty;
-  GHashTable *details = tp_asv_new (
-      "actor", G_TYPE_UINT, 0,
-      "change-reason", G_TYPE_UINT, 0,
-      "message", G_TYPE_STRING, "",
-      NULL);
 
  /* Add ourself as a member */
   add = tp_intset_new_containing (
@@ -230,11 +221,10 @@ tp_tests_text_channel_group_join (TpTestsTextChannelGroup *self)
   empty = tp_intset_new ();
 
   tp_group_mixin_change_members ((GObject *) self, add, empty,
-      empty, empty, details);
+      empty, empty, NULL);
 
   tp_intset_destroy (add);
   tp_intset_destroy (empty);
-  g_hash_table_unref (details);
 }
 
 void

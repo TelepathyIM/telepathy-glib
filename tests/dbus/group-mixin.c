@@ -274,22 +274,20 @@ check_incoming_invitation (void)
   /* We get an invitation to the channel */
   {
     TpIntset *add_local_pending = tp_intset_new ();
-    GHashTable *details = tp_asv_new (
-        "message", G_TYPE_STRING, "HELLO THAR",
-        "actor", G_TYPE_UINT, 0,
-        "change-reason", G_TYPE_UINT, TP_CHANNEL_GROUP_CHANGE_REASON_INVITED,
-        NULL);
+
     tp_intset_add (add_local_pending, self_handle);
 
     expect_signals ("HELLO THAR", 0, TP_CHANNEL_GROUP_CHANGE_REASON_INVITED,
         self_added_to_lp);
     tp_group_mixin_change_members ((GObject *) service_chan, NULL,
-        NULL, add_local_pending, NULL, details);
+        NULL, add_local_pending, NULL,
+        g_variant_new_parsed ("{'message': <'HELLO THAR'>, "
+          "'change-reason': <%u>}",
+          (guint32) TP_CHANNEL_GROUP_CHANGE_REASON_INVITED));
     wait_for_outstanding_signals ();
     MYASSERT (!outstanding_signals (),
         ": MembersChanged should have fired once");
 
-    g_hash_table_unref (details);
     tp_intset_destroy (add_local_pending);
   }
 
@@ -399,18 +397,14 @@ in_the_desert (void)
   /* A camel is approaching */
   {
     TpIntset *add = tp_intset_new ();
-    GHashTable *details = tp_asv_new (
-        "message", G_TYPE_STRING, "",
-        "actor", G_TYPE_UINT, camel,
-        "change-reason", G_TYPE_UINT, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
-        NULL);
 
     tp_intset_add (add, camel);
     tp_intset_add (expected_members, camel);
     expect_signals ("", camel, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
         camel_added);
     tp_group_mixin_change_members ((GObject *) service_chan, add, NULL,
-        NULL, NULL, details);
+        NULL, NULL,
+        g_variant_new_parsed ("{'actor': <%u>}", (guint32) camel));
     wait_for_outstanding_signals ();
     MYASSERT (!outstanding_signals (),
         ": MembersChanged should have fired once");
@@ -421,66 +415,50 @@ in_the_desert (void)
   /* A second camel is approaching (invited by the first camel) */
   {
     TpIntset *add = tp_intset_new ();
-    GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal,
-        NULL, (GDestroyNotify) tp_g_value_slice_free);
 
     tp_intset_add (add, camel2);
     tp_intset_add (expected_members, camel2);
 
-    g_hash_table_insert (details, "actor", tp_g_value_slice_new_uint (camel));
-
     expect_signals ("", camel, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
         camel2_added);
     tp_group_mixin_change_members ((GObject *) service_chan, add,
-        NULL, NULL, NULL, details);
+        NULL, NULL, NULL,
+        g_variant_new_parsed ("{'actor': <%u>}", (guint32) camel));
     wait_for_outstanding_signals ();
     MYASSERT (!outstanding_signals (),
         ": MembersChanged should have fired once");
 
     tp_intset_destroy (add);
-    g_hash_table_unref (details);
   }
 
   {
     TpIntset *del = tp_intset_new ();
-    GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal,
-        NULL, (GDestroyNotify) tp_g_value_slice_free);
 
     tp_intset_add (del, camel);
     tp_intset_remove (expected_members, camel);
 
-    g_hash_table_insert (details, "actor", tp_g_value_slice_new_uint (camel2));
-
     /* It turns out that spitting was not included in the GroupChangeReason
-     * enum.
-     */
-    g_hash_table_insert (details, "error",
-        tp_g_value_slice_new_static_string ("le.mac.Spat"));
-    g_hash_table_insert (details, "saliva-consistency",
-        tp_g_value_slice_new_static_string ("fluid"));
-
-    /* Kicking is the closest we have to this .. unsavory act. */
-    g_hash_table_insert (details, "change-reason",
-        tp_g_value_slice_new_uint (TP_CHANNEL_GROUP_CHANGE_REASON_KICKED));
-    g_hash_table_insert (details, "message",
-        tp_g_value_slice_new_static_string ("*ptooey*"));
-
-    /* Check that all the right information was extracted from the dict. */
+     * enum. Kicking is the closest we have to this .. unsavory act. */
     expect_signals ("*ptooey*", camel2,
         TP_CHANNEL_GROUP_CHANGE_REASON_KICKED, camel_removed);
     tp_group_mixin_change_members ((GObject *) service_chan, NULL,
-        del, NULL, NULL, details);
+        del, NULL, NULL,
+        g_variant_new_parsed ("{ 'actor': <%u>, "
+          "'error': <'le.mac.Spat'>, "
+          "'saliva-consistency': <'fluid'>, "
+          "'change-reason': <%u>, "
+          "'message': <'*ptooey*'> }",
+          (guint32) camel2,
+          (guint32) TP_CHANNEL_GROUP_CHANGE_REASON_KICKED));
     wait_for_outstanding_signals ();
     MYASSERT (!outstanding_signals (),
         ": MembersChanged should have fired once");
 
     tp_intset_destroy (del);
-    g_hash_table_unref (details);
   }
 
   /* We and the second camel should be left in the channel */
   {
-    GArray *service_members;
     TpIntset *service_members_intset;
 
     tp_tests_channel_assert_expect_members (chan, expected_members);
@@ -488,13 +466,9 @@ in_the_desert (void)
     /* And let's check that the group mixin agrees, in case that's just the
      * client binding being wrong.
      */
-    tp_group_mixin_get_members ((GObject *) service_chan, &service_members,
-        NULL);
-    service_members_intset = tp_intset_from_array (service_members);
+    service_members_intset = tp_handle_set_peek (
+        TP_GROUP_MIXIN (service_chan)->members);
     g_assert (tp_intset_is_equal (service_members_intset, expected_members));
-
-    g_array_unref (service_members);
-    tp_intset_destroy (service_members_intset);
   }
 
   tp_intset_destroy (expected_members);

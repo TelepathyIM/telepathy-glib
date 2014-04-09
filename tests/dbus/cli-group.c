@@ -72,7 +72,6 @@ test_channel_proxy (TpTestsTextChannelGroup *service_chan,
                     TpChannel *chan)
 {
   TpIntset *add, *rem, *expected_members;
-  GHashTable *details;
   GQuark features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
   GMainLoop *loop = g_main_loop_new (NULL, FALSE);
 
@@ -90,16 +89,10 @@ test_channel_proxy (TpTestsTextChannelGroup *service_chan,
 
   expected_reason++;
 
-  details = tp_asv_new (
-      "message", G_TYPE_STRING, "quantum tunnelling",
-      "change-reason", G_TYPE_UINT, expected_reason,
-      "actor", G_TYPE_UINT, 0,
-      NULL);
-
   tp_group_mixin_change_members ((GObject *) service_chan,
-      add, NULL, NULL, NULL, details);
-
-  tp_clear_pointer (&details, g_hash_table_unref);
+      add, NULL, NULL, NULL,
+      g_variant_new_parsed ("{'message': <'quantum tunnelling'>, "
+        "'change-reason': <%u>}", (guint32) expected_reason));
 
   /* Run until we get "group-members-changed" signal */
   g_main_loop_run (loop);
@@ -116,16 +109,12 @@ test_channel_proxy (TpTestsTextChannelGroup *service_chan,
   expecting_group_members_changed = TRUE;
   expected_reason++;
 
-  details = tp_asv_new (
-      "message", G_TYPE_STRING, "goat",
-      "change-reason", G_TYPE_UINT, expected_reason,
-      "actor", G_TYPE_UINT, 0,
-      NULL);
-
   tp_group_mixin_change_members ((GObject *) service_chan,
-      add, rem, NULL, NULL, details);
+      add, rem, NULL, NULL,
+      g_variant_new_parsed ("{'message': <'goat'>, "
+        "'change-reason': <%u>, "
+        "'actor': <uint32 0> }", (guint32) expected_reason));
 
-  tp_clear_pointer (&details, g_hash_table_unref);
   tp_intset_destroy (add);
   tp_intset_destroy (rem);
 
@@ -246,7 +235,6 @@ check_removed_unknown_error_in_invalidated (void)
   TpIntset *self_handle_singleton = tp_intset_new ();
   gboolean invalidated = FALSE;
   GError *error = NULL;
-  GHashTable *details;
 
   chan_path = g_strdup_printf ("%s/Channel_1_6180339887",
       tp_proxy_get_object_path (conn));
@@ -267,34 +255,22 @@ check_removed_unknown_error_in_invalidated (void)
   g_signal_connect (chan, "invalidated",
       (GCallback) check_invalidated_unknown_error_cb, &invalidated);
 
-  details = tp_asv_new (
-      "message", G_TYPE_STRING, "hello",
-      "change-reason", G_TYPE_UINT, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
-      "actor", G_TYPE_UINT, 0,
-      NULL);
-
   tp_intset_add (self_handle_singleton, self_handle);
   tp_group_mixin_change_members ((GObject *) service_chan,
-      self_handle_singleton, NULL, NULL, NULL, details);
-
-  tp_clear_pointer (&details, g_hash_table_unref);
+      self_handle_singleton, NULL, NULL, NULL,
+      g_variant_new_parsed ("{'message': <'hello'>}"));
 
   run_until_members_changed (chan);
 
-  details = tp_asv_new (
-      "message", G_TYPE_STRING, REMOVED_MESSAGE,
-      "change-reason", G_TYPE_UINT, REMOVED_REASON,
-      "error", G_TYPE_STRING, REMOVED_UNKNOWN_ERROR,
-      NULL);
-
   tp_group_mixin_change_members ((GObject *) service_chan, NULL,
-      self_handle_singleton, NULL, NULL, details);
+      self_handle_singleton, NULL, NULL,
+      g_variant_new_parsed ("{'message': <%s>, 'change-reason': <%u>, "
+        "'error': <%s> }", REMOVED_MESSAGE, (guint32) REMOVED_REASON,
+        REMOVED_UNKNOWN_ERROR));
 
   run_until_members_changed (chan);
 
   tp_cli_channel_call_close (chan, -1, NULL, NULL, NULL, NULL);
-
-  tp_clear_pointer (&details, g_hash_table_unref);
 
   tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
@@ -336,8 +312,6 @@ check_removed_known_error_in_invalidated (void)
   TpTestsTextChannelGroup *service_chan;
   TpChannel *chan;
   TpIntset *self_handle_singleton = tp_intset_new ();
-  GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-      (GDestroyNotify) tp_g_value_slice_free);
   gboolean invalidated = FALSE;
   GError *error = NULL;
 
@@ -359,34 +333,22 @@ check_removed_known_error_in_invalidated (void)
   g_signal_connect (chan, "invalidated",
       (GCallback) check_invalidated_known_error_cb, &invalidated);
 
-  details = tp_asv_new (
-      "message", G_TYPE_STRING, "hello",
-      "change-reason", G_TYPE_UINT, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
-      "actor", G_TYPE_UINT, 0,
-      NULL);
-
   tp_intset_add (self_handle_singleton, self_handle);
   tp_group_mixin_change_members ((GObject *) service_chan,
-      self_handle_singleton, NULL, NULL, NULL, details);
-
-  tp_clear_pointer (&details, g_hash_table_unref);
+      self_handle_singleton, NULL, NULL, NULL,
+      g_variant_new_parsed ("{'message': <'hello'>}"));
 
   run_until_members_changed (chan);
 
-  details = tp_asv_new (
-      "message", G_TYPE_STRING, REMOVED_MESSAGE,
-      "change-reason", G_TYPE_UINT, REMOVED_REASON,
-      "error", G_TYPE_STRING, REMOVED_KNOWN_ERROR_STR,
-      NULL);
-
   tp_group_mixin_change_members ((GObject *) service_chan, NULL,
-      self_handle_singleton, NULL, NULL, details);
+      self_handle_singleton, NULL, NULL,
+      g_variant_new_parsed ("{'message': <%s>, 'change-reason': <%u>, "
+        "'error': <%s> }", REMOVED_MESSAGE, (guint32) REMOVED_REASON,
+        REMOVED_KNOWN_ERROR_STR));
 
   run_until_members_changed (chan);
 
   tp_cli_channel_call_close (chan, -1, NULL, NULL, NULL, NULL);
-
-  tp_clear_pointer (&details, g_hash_table_unref);
 
   tp_tests_proxy_run_until_dbus_queue_processed (conn);
 

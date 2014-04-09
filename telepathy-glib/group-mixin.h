@@ -192,7 +192,7 @@ void tp_group_mixin_change_flags (GObject *obj,
 gboolean tp_group_mixin_change_members (GObject *obj,
     const TpIntset *add, const TpIntset *del,
     const TpIntset *add_local_pending, const TpIntset *add_remote_pending,
-    const GHashTable *details);
+    GVariant *details);
 void tp_group_mixin_change_self_handle (GObject *obj,
     TpHandle new_self_handle);
 
