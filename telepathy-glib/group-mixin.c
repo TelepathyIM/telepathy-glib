@@ -77,6 +77,13 @@
 
 #include "debug-internal.h"
 
+static gboolean tp_group_mixin_get_members (GObject *obj,
+    GArray **ret, GError **error);
+static gboolean tp_group_mixin_get_local_pending_members_with_info (
+    GObject *obj, GPtrArray **ret, GError **error);
+static gboolean tp_group_mixin_get_remote_pending_members (GObject *obj,
+    GArray **ret, GError **error);
+
 static const char *
 group_change_reason_str (guint reason)
 {
@@ -733,28 +740,6 @@ tp_group_mixin_get_members (GObject *obj,
   return TRUE;
 }
 
-/**
- * tp_group_mixin_get_local_pending_members: (skip)
- * @obj: An object implementing the group interface using this mixin
- * @ret: Used to return a newly-allocated GArray of guint contact handles
- * @error: Unused
- *
- * Get the group's local-pending members.
- *
- * Returns: %TRUE
- */
-gboolean
-tp_group_mixin_get_local_pending_members (GObject *obj,
-                                          GArray **ret,
-                                          GError **error)
-{
-  TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
-
-  *ret = tp_handle_set_to_array (mixin->local_pending);
-
-  return TRUE;
-}
-
 typedef struct {
     TpGroupMixin *mixin;
     GPtrArray *array;
@@ -837,104 +822,6 @@ tp_group_mixin_get_remote_pending_members (GObject *obj,
   TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
 
   *ret = tp_handle_set_to_array (mixin->remote_pending);
-
-  return TRUE;
-}
-
-/**
- * tp_group_mixin_get_all_members: (skip)
- * @obj: An object implementing the group interface using this mixin
- * @members: Used to return a newly-allocated GArray of guint representing
- * the handles of the group's members
- * @local_pending: Used to return a newly-allocated GArray of guint
- * representing the handles of the group's local pending members
- * @remote_pending: Used to return a newly-allocated GArray of guint
- * representing the handles of the group's remote pending members
- * @error: Unused
- *
- * Get the group's current and pending members.
- *
- * Returns: %TRUE
- */
-gboolean
-tp_group_mixin_get_all_members (GObject *obj,
-                                GArray **members,
-                                GArray **local_pending,
-                                GArray **remote_pending,
-                                GError **error)
-{
-  TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
-
-  *members = tp_handle_set_to_array (mixin->members);
-  *local_pending = tp_handle_set_to_array (mixin->local_pending);
-  *remote_pending = tp_handle_set_to_array (mixin->remote_pending);
-
-  return TRUE;
-}
-
-/**
- * tp_group_mixin_get_handle_owners: (skip)
- * @obj: An object implementing the group interface with this mixin
- * @handles: An array of guint representing locally valid handles
- * @ret: Used to return an array of guint representing globally valid
- *  handles, or 0 where unavailable, if %TRUE is returned
- * @error: Used to return an error if %FALSE is returned
- *
- * If the mixin has the flag %TP_CHANNEL_GROUP_FLAG_CHANNEL_SPECIFIC_HANDLES,
- * return the global owners of the given local handles, or 0 where
- * unavailable.
- *
- * Returns: %TRUE (setting @ret) on success, %FALSE (setting @error) on
- * failure
- */
-gboolean
-tp_group_mixin_get_handle_owners (GObject *obj,
-                                  const GArray *handles,
-                                  GArray **ret,
-                                  GError **error)
-{
-  TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
-  TpGroupMixinPrivate *priv = mixin->priv;
-  guint i;
-
-  if ((mixin->group_flags &
-        TP_CHANNEL_GROUP_FLAG_CHANNEL_SPECIFIC_HANDLES) == 0)
-    {
-      g_set_error (error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,
-          "channel doesn't have channel specific handles");
-
-      return FALSE;
-    }
-
-  if (!tp_handles_are_valid (mixin->handle_repo, handles, FALSE, error))
-    {
-      return FALSE;
-    }
-
-  *ret = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), handles->len);
-
-  for (i = 0; i < handles->len; i++)
-    {
-      TpHandle local_handle = g_array_index (handles, TpHandle, i);
-      TpHandle owner_handle;
-
-      if (!tp_handle_set_is_member (mixin->members, local_handle))
-        {
-          g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-              "handle %u is not a member", local_handle);
-
-          g_array_unref (*ret);
-          *ret = NULL;
-
-          return FALSE;
-        }
-
-      owner_handle = GPOINTER_TO_UINT (
-          g_hash_table_lookup (priv->handle_owners,
-                               GUINT_TO_POINTER (local_handle)));
-
-      g_array_append_val (*ret, owner_handle);
-    }
 
   return TRUE;
 }

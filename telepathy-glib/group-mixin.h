@@ -187,21 +187,6 @@ gboolean tp_group_mixin_remove_members (GObject *obj,
     const GArray *contacts, const gchar *message, guint reason,
     GError **error);
 
-gboolean tp_group_mixin_get_members (GObject *obj,
-    GArray **ret, GError **error);
-gboolean tp_group_mixin_get_local_pending_members (GObject *obj,
-    GArray **ret, GError **error);
-gboolean tp_group_mixin_get_local_pending_members_with_info (GObject *obj,
-    GPtrArray **ret, GError **error);
-gboolean tp_group_mixin_get_remote_pending_members (GObject *obj,
-    GArray **ret, GError **error);
-gboolean tp_group_mixin_get_all_members (GObject *obj,
-    GArray **members, GArray **local_pending, GArray **remote_pending,
-    GError **error);
-
-gboolean tp_group_mixin_get_handle_owners (GObject *obj,
-    const GArray *handles, GArray **ret, GError **error);
-
 void tp_group_mixin_change_flags (GObject *obj,
     TpChannelGroupFlags add, TpChannelGroupFlags del);
 gboolean tp_group_mixin_change_members (GObject *obj,
