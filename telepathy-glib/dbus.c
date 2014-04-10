@@ -39,6 +39,7 @@
 
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy.h>
 #include <telepathy-glib/sliced-gvalue.h>
 #include <telepathy-glib/svc-generic.h>
@@ -1060,4 +1061,54 @@ _tp_dbus_object_get_object_path (gpointer object)
     return r->object_path;
 
   return NULL;
+}
+
+GStrv
+_tp_g_dbus_object_dup_interface_names (GDBusObject *obj,
+    const gchar *skip_class,
+    const gchar *skip_type)
+{
+  GList *ifaces = g_dbus_object_get_interfaces (obj);
+  GPtrArray *ret = g_ptr_array_new ();
+  GList *iter;
+
+  for (iter = ifaces; iter != NULL; iter = iter->next)
+    {
+      GDBusInterfaceInfo *info = g_dbus_interface_get_info (iter->data);
+
+      if (info != NULL)
+        {
+          if (info->name == NULL)
+            {
+              WARNING ("%s %p lists NULL as a GDBusInterfaceInfo->name",
+                  G_OBJECT_TYPE_NAME (iter->data), info);
+            }
+          else if (!tp_strdiff (TP_IFACE_DBUS_PROPERTIES, info->name))
+            {
+              /* ignore org.freedesktop.DBus, which is implied/assumed */
+            }
+          else if (skip_class != NULL && !tp_strdiff (skip_class, info->name))
+            {
+              /* ignore im.telepathy.v1.Channel or whatever */
+            }
+          else if (skip_type != NULL && !tp_strdiff (skip_type, info->name))
+            {
+              /* ignore im.telepathy.v1.Channel.Type.Call1 or whatever */
+            }
+          else
+            {
+              g_ptr_array_add (ret, g_strdup (info->name));
+            }
+        }
+      else
+        {
+          CRITICAL ("%s %p has no GDBusInterfaceInfo",
+              G_OBJECT_TYPE_NAME (iter->data), info);
+        }
+    }
+
+  g_list_free_full (ifaces, g_object_unref);
+
+  g_ptr_array_add (ret, NULL);
+  return (GStrv) g_ptr_array_free (ret, FALSE);
 }

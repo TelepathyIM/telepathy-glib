@@ -101,7 +101,7 @@ GType tp_base_protocol_get_type (void) G_GNUC_CONST;
 struct _TpBaseProtocol
 {
   /*<private>*/
-  GObject parent;
+  GDBusObjectSkeleton parent;
   TpBaseProtocolPrivate *priv;
 };
 
@@ -121,8 +121,6 @@ typedef gchar *(*TpBaseProtocolIdentifyAccountFunc) (TpBaseProtocol *self,
     GHashTable *asv,
     GError **error);
 
-typedef GStrv (*TpBaseProtocolGetInterfacesFunc) (TpBaseProtocol *self);
-
 typedef void (*TpBaseProtocolGetConnectionDetailsFunc) (TpBaseProtocol *self,
     GStrv *connection_interfaces,
     GType **channel_manager_types,
@@ -140,11 +138,9 @@ typedef void (*TpBaseProtocolGetAvatarDetailsFunc) (TpBaseProtocol *self,
     guint *max_width,
     guint *max_bytes);
 
-typedef GPtrArray * (*TpBaseProtocolGetInterfacesArrayFunc) (TpBaseProtocol *self);
-
 struct _TpBaseProtocolClass
 {
-  GObjectClass parent_class;
+  GDBusObjectSkeletonClass parent_class;
   TpDBusPropertiesMixinClass dbus_properties_class;
 
   gboolean is_stub;
@@ -160,10 +156,6 @@ struct _TpBaseProtocolClass
       GHashTable *asv,
       GError **error);
 
-  /*<private>*/
-  GStrv (*_TP_SEAL (get_interfaces)) (TpBaseProtocol *self);
-  /*<public>*/
-
   void (*get_connection_details) (TpBaseProtocol *self,
       GStrv *connection_interfaces,
       GType **channel_manager_types,
@@ -176,8 +168,6 @@ struct _TpBaseProtocolClass
   TpBaseProtocolGetAvatarDetailsFunc get_avatar_details;
 
   GStrv (*dup_authentication_types) (TpBaseProtocol *self);
-
-  TpBaseProtocolGetInterfacesArrayFunc get_interfaces_array;
 
   /*<private>*/
   GCallback padding[4];

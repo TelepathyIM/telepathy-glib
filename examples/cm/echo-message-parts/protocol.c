@@ -123,20 +123,6 @@ identify_account (TpBaseProtocol *self G_GNUC_UNUSED,
   return NULL;
 }
 
-static GPtrArray *
-get_interfaces_array (TpBaseProtocol *self)
-{
-  GPtrArray *interfaces;
-
-  interfaces = TP_BASE_PROTOCOL_CLASS (
-      example_echo_2_protocol_parent_class)->get_interfaces_array (self);
-
-  g_ptr_array_add (interfaces, TP_IFACE_PROTOCOL_INTERFACE_AVATARS1);
-  g_ptr_array_add (interfaces, TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING1);
-
-  return interfaces;
-}
-
 static void
 get_connection_details (TpBaseProtocol *self G_GNUC_UNUSED,
     GStrv *connection_interfaces,
@@ -305,7 +291,6 @@ example_echo_2_protocol_class_init (
 
   base_class->normalize_contact = normalize_contact;
   base_class->identify_account = identify_account;
-  base_class->get_interfaces_array = get_interfaces_array;
   base_class->get_connection_details = get_connection_details;
   base_class->get_avatar_details = get_avatar_details;
 }

@@ -34,6 +34,10 @@ gboolean _tp_dbus_connection_get_name_owner (GDBusConnection *dbus_connection,
 GDBusConnection *_tp_dbus_object_get_connection (gpointer object);
 const gchar *_tp_dbus_object_get_object_path (gpointer object);
 
+GStrv _tp_g_dbus_object_dup_interface_names (GDBusObject *obj,
+    const gchar *skip_class,
+    const gchar *skip_type);
+
 G_END_DECLS
 
 #endif /* __TP_INTERNAL_DBUS_GLIB_H__ */

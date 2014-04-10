@@ -37,6 +37,7 @@
 #include <telepathy-glib/value-array.h>
 
 #define DEBUG_FLAG TP_DEBUG_PARAMS
+#include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 
 /**
@@ -356,21 +357,6 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  */
 
 /**
- * TpBaseProtocolGetInterfacesFunc:
- * @self: a protocol
- *
- * Signature of a virtual method to get the D-Bus interfaces implemented by
- * @self, in addition to the Protocol interface.
- *
- * If you implement #TpBaseProtocolClass.get_statuses, you should include
- * %TP_IFACE_PROTOCOL_INTERFACE_PRESENCE in the returned array.
- *
- * Returns: (transfer full): a %NULL-terminated array of D-Bus interface names
- *
- * Since: 0.11.11
- */
-
-/**
  * TpBaseProtocolGetConnectionDetailsFunc:
  * @self: a protocol
  * @connection_interfaces: (out) (transfer full): used to return a
@@ -419,37 +405,6 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * protocol implemented by @self.
  *
  * Since: 0.13.7
- */
-
-/**
- * TpBaseProtocolGetInterfacesArrayFunc:
- * @self: a #TpBaseProtocol
- *
- * Signature of an implementation of
- * #TpBaseProtocolClass.get_interfaces_array virtual function.
- *
- * Implementation must first chainup on parent class implementation and then
- * add extra interfaces into the #GPtrArray.
- *
- * |[
- * static GPtrArray *
- * my_protocol_get_interfaces_array (TpBaseProtocol *self)
- * {
- *   GPtrArray *interfaces;
- *
- *   interfaces = TP_BASE_PROTOCOL_CLASS (
- *       my_protocol_parent_class)->get_interfaces_array (self);
- *
- *   g_ptr_array_add (interfaces, TP_IFACE_BADGERS);
- *
- *   return interfaces;
- * }
- * ]|
- *
- * Returns: (transfer container): a #GPtrArray of static strings for D-Bus
- *   interfaces implemented by this client.
- *
- * Since: 0.19.4
  */
 
 /**
@@ -556,10 +511,6 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  *  and must either return a newly allocated string that represents the
  *  "identity" of the parameters in @asv (usually the "account" parameter),
  *  or %NULL with an error raised via @error
- * @get_interfaces_array: a callback used to implement the Interfaces
- *  D-Bus property; The implementation must first chainup to parent
- *  class implementation and then add extra interfaces to the
- *  #GPtrArray. Replaces @get_interfaces
  * @get_connection_details: a callback used to implement the Protocol D-Bus
  *  properties that represent details of the connections provided by this
  *  protocol
@@ -581,7 +532,7 @@ static void presence_iface_init (TpSvcProtocolInterfacePresence1Class *cls);
 static void addressing_iface_init (TpSvcProtocolInterfaceAddressing1Class *cls);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseProtocol, tp_base_protocol,
-    G_TYPE_OBJECT,
+    G_TYPE_DBUS_OBJECT_SKELETON,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL, protocol_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL_INTERFACE_PRESENCE1,
       presence_iface_init);
@@ -608,7 +559,6 @@ typedef struct
 struct _TpBaseProtocolPrivate
 {
   gchar *name;
-  GStrv interfaces;
   GStrv connection_interfaces;
   GStrv authentication_types;
   GPtrArray *requestable_channel_classes;
@@ -666,23 +616,34 @@ tp_base_protocol_build_requestable_channel_classes (
 }
 
 static void
+object_skeleton_take_interface (GDBusObjectSkeleton *skel,
+    GDBusInterfaceSkeleton *iface)
+{
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+}
+
+static void
+object_skeleton_take_svc_interface (GDBusObjectSkeleton *skel,
+    GType type)
+{
+  object_skeleton_take_interface (skel,
+      tp_svc_interface_skeleton_new (skel, type));
+}
+
+static void
 tp_base_protocol_constructed (GObject *object)
 {
   TpBaseProtocol *self = (TpBaseProtocol *) object;
   TpBaseProtocolClass *cls = TP_BASE_PROTOCOL_GET_CLASS (self);
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (self);
   void (*chain_up) (GObject *) =
     ((GObjectClass *) tp_base_protocol_parent_class)->constructed;
-  GPtrArray *ifaces;
 
   if (chain_up != NULL)
     chain_up (object);
 
-  /* TODO: when we don't have to deal with
-   * TpBaseProtocolClass.get_interfaces, we won't have to do any of this */
-  ifaces = (cls->get_interfaces_array) (self);
-  g_ptr_array_add (ifaces, NULL);
-  self->priv->interfaces = g_strdupv ((GStrv) ifaces->pdata);
-  g_ptr_array_unref (ifaces);
+  object_skeleton_take_svc_interface (skel, TP_TYPE_SVC_PROTOCOL);
 
   if (cls->get_connection_details != NULL)
     {
@@ -733,6 +694,21 @@ tp_base_protocol_constructed (GObject *object)
           &self->priv->avatar_specs.max_height,
           &self->priv->avatar_specs.max_width,
           &self->priv->avatar_specs.max_bytes);
+
+      object_skeleton_take_svc_interface (skel,
+          TP_TYPE_SVC_PROTOCOL_INTERFACE_AVATARS1);
+    }
+
+  if (cls->get_statuses != NULL)
+    {
+      object_skeleton_take_svc_interface (skel,
+          TP_TYPE_SVC_PROTOCOL_INTERFACE_PRESENCE1);
+    }
+
+  if (TP_IS_PROTOCOL_ADDRESSING (self))
+    {
+      object_skeleton_take_svc_interface (skel,
+          TP_TYPE_SVC_PROTOCOL_INTERFACE_ADDRESSING1);
     }
 
   if (self->priv->avatar_specs.supported_mime_types == NULL)
@@ -831,15 +807,13 @@ tp_base_protocol_get_immutable_properties (TpBaseProtocol *self)
           NULL);
     }
 
-  if (tp_strv_contains ((const gchar * const *) self->priv->interfaces,
-          TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING1))
+  if (TP_IS_PROTOCOL_ADDRESSING (self))
     tp_dbus_properties_mixin_fill_properties_hash ((GObject *) self, table,
         TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING1, "AddressableVCardFields",
         TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING1, "AddressableURISchemes",
         NULL);
 
-  if (tp_strv_contains ((const gchar * const *) self->priv->interfaces,
-          TP_IFACE_PROTOCOL_INTERFACE_PRESENCE1))
+  if (cls->get_statuses != NULL)
     tp_dbus_properties_mixin_fill_properties_hash ((GObject *) self, table,
         TP_IFACE_PROTOCOL_INTERFACE_PRESENCE1, "Statuses",
         NULL);
@@ -901,7 +875,6 @@ tp_base_protocol_finalize (GObject *object)
     ((GObjectClass *) tp_base_protocol_parent_class)->finalize;
 
   g_free (self->priv->name);
-  g_strfreev (self->priv->interfaces);
   g_strfreev (self->priv->connection_interfaces);
   g_strfreev (self->priv->authentication_types);
   g_free (self->priv->icon);
@@ -1110,7 +1083,9 @@ protocol_properties_getter (GObject *object,
       break;
 
     case PP_INTERFACES:
-      g_value_set_boxed (value, self->priv->interfaces);
+        g_value_take_boxed (value,
+            _tp_g_dbus_object_dup_interface_names (G_DBUS_OBJECT (self),
+              TP_IFACE_PROTOCOL, NULL));
       break;
 
     case PP_CONNECTION_INTERFACES:
@@ -1140,32 +1115,6 @@ protocol_properties_getter (GObject *object,
     default:
       g_assert_not_reached ();
     }
-}
-
-static GPtrArray *
-tp_base_protocol_get_interfaces_array (TpBaseProtocol *self)
-{
-  TpBaseProtocolClass *klass = TP_BASE_PROTOCOL_GET_CLASS (self);
-  GPtrArray *interfaces = g_ptr_array_new ();
-  gchar **old_ifaces = NULL, **ptr;
-
-  /* copy the klass->get_interfaces property value for backwards
-   * compatibility */
-  if (klass->get_interfaces != NULL)
-    old_ifaces = klass->get_interfaces (self);
-
-  for (ptr = old_ifaces;
-       ptr != NULL && *ptr != NULL;
-       ptr++)
-    {
-      g_ptr_array_add (interfaces, (char *) *ptr);
-    }
-
-  /* TODO: old_ifaces is leaked because get_interfaces returns a new
-   * GStrv, but we want static strings nowadays. leaking is better
-   * than crashing though. this'll be fixed soon */
-
-  return interfaces;
 }
 
 static void
@@ -1233,8 +1182,6 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
   object_class->get_property = tp_base_protocol_get_property;
   object_class->set_property = tp_base_protocol_set_property;
   object_class->finalize = tp_base_protocol_finalize;
-
-  klass->get_interfaces_array = tp_base_protocol_get_interfaces_array;
 
   g_object_class_install_property (object_class, PROP_NAME,
       g_param_spec_string ("name",
