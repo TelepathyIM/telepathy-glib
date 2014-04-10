@@ -183,6 +183,7 @@ tp_svc_interface_skeleton_get_properties (GDBusInterfaceSkeleton *skel)
 
   ret = g_variant_ref_sink (tp_asv_to_vardict (asv));
   g_hash_table_unref (asv);
+  g_object_unref (object);
   return ret;
 }
 
