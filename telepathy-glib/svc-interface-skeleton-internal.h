@@ -62,10 +62,6 @@ struct _TpSvcInterfaceSkeleton
   TpSvcInterfaceSkeletonPrivate *priv;
 };
 
-TpSvcInterfaceSkeleton *_tp_svc_interface_skeleton_new (gpointer object,
-    GType iface,
-    const TpSvcInterfaceInfo *iinfo);
-
 G_END_DECLS
 
 #endif

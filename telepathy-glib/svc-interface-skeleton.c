@@ -22,11 +22,13 @@
 #include <dbus/dbus-glib.h>
 
 #include <telepathy-glib/asv.h>
+#include <telepathy-glib/core-dbus-properties-mixin-internal.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/variant-util.h>
 
-#define DEBUG_FLAG TP_DEBUG_SVC
-#include "debug-internal.h"
+#define DEBUG(format, ...) \
+  g_log (G_LOG_DOMAIN "/svc", G_LOG_LEVEL_DEBUG, "%s: " format, \
+      G_STRFUNC, ##__VA_ARGS__)
 
 struct _TpSvcInterfaceSkeletonPrivate
 {
@@ -101,7 +103,6 @@ tp_svc_interface_skeleton_get_property (GDBusConnection *connection,
 {
   TpSvcInterfaceSkeleton *self = TP_SVC_INTERFACE_SKELETON (user_data);
   GObject *object;
-  GValue value = G_VALUE_INIT;
   GVariant *ret = NULL;
 
   DEBUG ("Get(%s.%s) on %s %p from %s", interface_name, property_name,
@@ -110,12 +111,8 @@ tp_svc_interface_skeleton_get_property (GDBusConnection *connection,
   object = g_weak_ref_get (&self->priv->object);
   g_return_val_if_fail (object != NULL, NULL);
 
-  if (tp_dbus_properties_mixin_get (object, interface_name, property_name,
-          &value, error))
-    {
-      ret = dbus_g_value_build_g_variant (&value);
-      g_value_unset (&value);
-    }
+  ret = _tp_dbus_properties_mixin_dup_in_dbus_lib (object, interface_name,
+      property_name, error);
 
   g_object_unref (object);
 
@@ -134,7 +131,6 @@ tp_svc_interface_skeleton_set_property (GDBusConnection *connection,
 {
   TpSvcInterfaceSkeleton *self = TP_SVC_INTERFACE_SKELETON (user_data);
   GObject *object;
-  GValue value = G_VALUE_INIT;
   gboolean ret;
 
   DEBUG ("Set(%s.%s) on %s %p from %s", interface_name, property_name,
@@ -143,11 +139,9 @@ tp_svc_interface_skeleton_set_property (GDBusConnection *connection,
   object = g_weak_ref_get (&self->priv->object);
   g_return_val_if_fail (object != NULL, FALSE);
 
-  dbus_g_value_parse_g_variant (variant, &value);
-  ret = tp_dbus_properties_mixin_set (object, interface_name, property_name,
-      &value, error);
+  ret = _tp_dbus_properties_mixin_set_in_dbus_lib (object, interface_name,
+      property_name, variant, error);
 
-  g_value_unset (&value);
   g_object_unref (object);
 
   return ret;
@@ -169,20 +163,17 @@ static GVariant *
 tp_svc_interface_skeleton_get_properties (GDBusInterfaceSkeleton *skel)
 {
   TpSvcInterfaceSkeleton *self = TP_SVC_INTERFACE_SKELETON (skel);
-  GVariant *ret;
-  GHashTable *asv;
   const gchar *iface_name = self->priv->iinfo->interface_info->name;
   GObject *object;
+  GVariant *ret;
 
   object = g_weak_ref_get (&self->priv->object);
   g_return_val_if_fail (object != NULL, NULL);
 
   /* For now assume we have the TpDBusPropertiesMixin if we have
    * any properties at all. This never returns NULL. */
-  asv = tp_dbus_properties_mixin_dup_all (object, iface_name);
 
-  ret = g_variant_ref_sink (tp_asv_to_vardict (asv));
-  g_hash_table_unref (asv);
+  ret = _tp_dbus_properties_mixin_dup_all_in_dbus_lib (object, iface_name);
   g_object_unref (object);
   return ret;
 }
@@ -257,21 +248,27 @@ tp_svc_interface_skeleton_emit_signal (GClosure *closure,
       NULL);
 }
 
-/*
- * _tp_svc_interface_skeleton_new: (skip)
+/**
+ * tp_svc_interface_skeleton_new: (skip)
  * @object: (type GObject.Object): a #GObject
  * @iface: a `TpSvc` interface on the object
- * @iinfo: a description of the corresponding D-Bus interface
+ *
+ * Return a GDBus interface skeleton whose methods and signals
+ * are implemented by @iface on @object, and whose properties
+ * are implemented by a #TpDBusPropertiesMixin on @object.
  *
  * Returns: (transfer full): a new interface skeleton wrapping @iface
  *  on @object
  */
-TpSvcInterfaceSkeleton *
-_tp_svc_interface_skeleton_new (gpointer object,
-    GType iface,
-    const TpSvcInterfaceInfo *iinfo)
+GDBusInterfaceSkeleton *
+tp_svc_interface_skeleton_new (gpointer object,
+    GType iface)
 {
   TpSvcInterfaceSkeleton *self;
+  const TpSvcInterfaceInfo *iinfo =
+    tp_svc_interface_peek_dbus_interface_info (iface);
+
+  g_return_val_if_fail (iinfo != NULL, NULL);
 
   /* not bothering to refcount it, it must be static for now */
   g_return_val_if_fail (iinfo->ref_count == -1, NULL);
@@ -308,5 +305,5 @@ _tp_svc_interface_skeleton_new (gpointer object,
         }
     }
 
-  return self;
+  return G_DBUS_INTERFACE_SKELETON (self);
 }

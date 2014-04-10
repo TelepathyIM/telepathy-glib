@@ -55,6 +55,9 @@ TpDBusPropertiesMixinIfaceInfo *tp_svc_interface_get_dbus_properties_info (
 
 void tp_dbus_g_method_return_not_implemented (GDBusMethodInvocation *context);
 
+GDBusInterfaceSkeleton *tp_svc_interface_skeleton_new (gpointer object,
+    GType iface);
+
 G_END_DECLS
 
 #endif

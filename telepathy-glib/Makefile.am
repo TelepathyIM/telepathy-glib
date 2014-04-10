@@ -196,12 +196,16 @@ libtelepathy_glib_dbus_internal_la_SOURCES = \
     cli-channel.c \
     cli-connection.c \
     cli-misc.c \
+    core-dbus-properties-mixin-internal.h \
+    core-dbus-properties-mixin.c \
     core-proxy.c \
     gnio-util.c \
     gtypes.c \
     interfaces.c \
     sliced-gvalue.c \
     svc-interface.c \
+    svc-interface-skeleton.c \
+    svc-interface-skeleton-internal.h \
     value-array.c \
     $(NULL)
 
@@ -333,8 +337,6 @@ libtelepathy_glib_main_internal_la_SOURCES = \
     stream-tube-channel.c \
     stream-tube-connection-internal.h \
     stream-tube-connection.c \
-    svc-interface-skeleton.c \
-    svc-interface-skeleton-internal.h \
     text-channel.c \
     tls-certificate.c \
     tls-certificate-rejection.c \

@@ -22,6 +22,7 @@
 
 #include <telepathy-glib/dbus-properties-mixin.h>
 
+#include <telepathy-glib/asv.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/sliced-gvalue.h>
 #include <telepathy-glib/svc-generic.h>
@@ -29,6 +30,7 @@
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_PROPERTIES
+#include <telepathy-glib/core-dbus-properties-mixin-internal.h>
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 
@@ -262,6 +264,8 @@ tp_dbus_properties_mixin_setter_gobject_properties (GObject *object,
  * Since: 0.7.3
  */
 
+static void tp_dbus_properties_mixin_hook_to_dbus_library (void);
+
 static GQuark
 _prop_mixin_offset_quark (void)
 {
@@ -413,6 +417,8 @@ tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
 
   g_return_if_fail (G_IS_OBJECT_CLASS (cls));
 
+  tp_dbus_properties_mixin_hook_to_dbus_library ();
+
   /* never freed - intentional per-class leak */
   iface_impl = g_new0 (TpDBusPropertiesMixinIfaceImpl, 1);
   iface_impl->name = g_quark_to_string (iface);
@@ -530,6 +536,8 @@ tp_dbus_properties_mixin_class_init (GObjectClass *cls,
   g_return_if_fail (G_IS_OBJECT_CLASS (cls));
   g_return_if_fail (g_type_get_qdata (type, q) == NULL);
   g_type_set_qdata (type, q, GSIZE_TO_POINTER (offset));
+
+  tp_dbus_properties_mixin_hook_to_dbus_library ();
 
   if (offset == 0)
     return;
@@ -1202,4 +1210,78 @@ out:
     g_value_unset (&copy);
 
   return ret;
+}
+
+static GVariant *
+_tp_dbus_properties_mixin_dup_variant (GObject *object,
+    const gchar *interface_name,
+    const gchar *property_name,
+    GError **error)
+{
+  GValue value = G_VALUE_INIT;
+  GVariant *ret = NULL;
+
+  if (tp_dbus_properties_mixin_get (object, interface_name, property_name,
+          &value, error))
+    {
+      ret = g_variant_ref_sink (dbus_g_value_build_g_variant (&value));
+      g_value_unset (&value);
+    }
+
+  return ret;
+}
+
+static gboolean
+_tp_dbus_properties_mixin_set_variant (GObject *object,
+    const gchar *interface_name,
+    const gchar *property_name,
+    GVariant *value,
+    GError **error)
+{
+  gboolean ret;
+  GValue gvalue = G_VALUE_INIT;
+
+  g_variant_ref_sink (value);
+
+  dbus_g_value_parse_g_variant (value, &gvalue);
+  ret = tp_dbus_properties_mixin_set (object, interface_name, property_name,
+      &gvalue, error);
+
+  g_value_unset (&gvalue);
+  g_variant_unref (value);
+  return ret;
+}
+
+static GVariant *
+_tp_dbus_properties_mixin_dup_all_vardict (GObject *object,
+    const gchar *interface_name)
+{
+  GVariant *ret;
+  GHashTable *asv;
+
+  asv = tp_dbus_properties_mixin_dup_all (object, interface_name);
+  ret = g_variant_ref_sink (tp_asv_to_vardict (asv));
+  g_hash_table_unref (asv);
+  return ret;
+}
+
+static TpDBusPropertiesMixinImpl impl = { NULL };
+
+static void
+tp_dbus_properties_mixin_hook_to_dbus_library (void)
+{
+  static gsize done = 0;
+
+  if (g_once_init_enter (&done))
+    {
+      impl.dup_variant = _tp_dbus_properties_mixin_dup_variant;
+      impl.set_variant = _tp_dbus_properties_mixin_set_variant;
+      impl.dup_all_vardict = _tp_dbus_properties_mixin_dup_all_vardict;
+      impl.version = VERSION;
+      impl.size = sizeof (impl);
+
+      tp_private_dbus_properties_mixin_set_implementation (&impl);
+
+      g_once_init_leave (&done, 1);
+    }
 }

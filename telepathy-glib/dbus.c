@@ -958,7 +958,7 @@ tp_dbus_connection_try_register_object (GDBusConnection *dbus_connection,
               continue;
             }
 
-          skeleton = _tp_svc_interface_skeleton_new (object, iface, iinfo);
+          skeleton = tp_svc_interface_skeleton_new (object, iface);
 
           DEBUG ("- %s skeleton %p (wrapping %s %p)",
               iinfo->interface_info->name, skeleton, g_type_name (iface),

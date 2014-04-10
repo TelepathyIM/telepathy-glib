@@ -6268,10 +6268,11 @@ TpLoggerPriv
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib-dbus.h</INCLUDE>
 <TITLE>TpSvcInterface</TITLE>
 <FILE>svc-interface</FILE>
 TpSvcInterfaceInfo
 tp_svc_interface_peek_dbus_interface_info
 tp_svc_interface_set_dbus_interface_info
+tp_svc_interface_skeleton_new
 </SECTION>
