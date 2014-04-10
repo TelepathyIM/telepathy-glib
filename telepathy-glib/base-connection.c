@@ -517,43 +517,6 @@ tp_base_connection_finalize (GObject *object)
   G_OBJECT_CLASS (tp_base_connection_parent_class)->finalize (object);
 }
 
-/*
- * get_channel_details:
- * @obj: a channel, which must implement one of #TpExportableChannel and
- *       #TpChannelIface
- *
- * Returns: (oa{sv}: o.fd.T.Conn.Iface.Requests.Channel_Details), suitable for
- *          inclusion in the NewChannels signal.
- */
-static GValueArray *
-get_channel_details (GObject *obj)
-{
-  GValueArray *structure;
-  GHashTable *table;
-  GVariant *variant;
-  gchar *object_path;
-
-  g_assert (TP_IS_EXPORTABLE_CHANNEL (obj));
-
-  g_object_get (obj,
-      "object-path", &object_path,
-      "channel-properties", &variant,
-      NULL);
-
-  table = tp_asv_from_vardict (variant);
-
-  structure = tp_value_array_build (2,
-      DBUS_TYPE_G_OBJECT_PATH, object_path,
-      TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP, table,
-      G_TYPE_INVALID);
-
-  g_free (object_path);
-  g_hash_table_unref (table);
-  g_variant_unref (variant);
-
-  return structure;
-}
-
 static void
 satisfy_request (TpBaseConnection *conn,
     TpChannelManagerRequest *request,
@@ -897,47 +860,41 @@ tp_base_connection_add_possible_client_interest (TpBaseConnection *self,
 
 static void
 manager_get_channel_details_foreach (TpExportableChannel *chan,
-                                     gpointer data)
+    gpointer user_data)
 {
-  GPtrArray *details = data;
+  GVariantBuilder *builder = user_data;
+  GVariant *properties;
+  gchar *object_path;
 
-  g_ptr_array_add (details, get_channel_details (G_OBJECT (chan)));
+  g_object_get (chan,
+      "object-path", &object_path,
+      "channel-properties", &properties,
+      NULL);
+
+  g_variant_builder_add (builder, "(&o@a{sv})", object_path, properties);
+  g_variant_unref (properties);
 }
 
-
-static GPtrArray *
-conn_requests_get_channel_details (TpBaseConnection *self)
+static void
+update_channels_property (TpBaseConnection *self)
 {
   TpBaseConnectionPrivate *priv = self->priv;
-  /* guess that each ChannelManager has two channels, on average */
-  GPtrArray *details = g_ptr_array_sized_new (priv->channel_managers->len * 2);
+  GVariantBuilder builder;
   guint i;
 
+  g_variant_builder_init (&builder, G_VARIANT_TYPE ("a(oa{sv})"));
   for (i = 0; i < priv->channel_managers->len; i++)
     {
       TpChannelManager *manager = TP_CHANNEL_MANAGER (
           g_ptr_array_index (priv->channel_managers, i));
 
       tp_channel_manager_foreach_channel (manager,
-          manager_get_channel_details_foreach, details);
+          manager_get_channel_details_foreach, &builder);
     }
 
-  return details;
-}
-
-static void
-update_channels_property (TpBaseConnection *self)
-{
-  GPtrArray *channels;
-  GValue value = G_VALUE_INIT;
-
-  channels = conn_requests_get_channel_details (self);
-  g_print ("update Channels to %d\n", channels->len);
-  g_value_init (&value, TP_ARRAY_TYPE_CHANNEL_DETAILS_LIST);
-  g_value_take_boxed (&value, channels);
   _tp_gdbus_connection_interface_requests_set_channels (
-      self->priv->requests_skeleton, dbus_g_value_build_g_variant (&value));
-  g_value_unset (&value);
+      self->priv->requests_skeleton,
+      g_variant_builder_end (&builder));
 }
 
 static void
