@@ -22,10 +22,10 @@
 /**
  * SECTION:base-channel
  * @title: TpBaseChannel
- * @short_description: base class for #TpExportableChannel implementations
+ * @short_description: base class for all channel implementations
  * @see_also: #TpSvcChannel
  *
- * This base class makes it easier to write #TpExportableChannel
+ * This base class makes it easier to write channels
  * implementations by implementing some of its properties, and defining other
  * relevant properties.
  *
@@ -38,7 +38,7 @@
  * D-Bus properties besides those on the Channel interface, the subclass should
  * implement the #TpBaseChannelClass.fill_immutable_properties virtual function.
  *
- * If the #TpExportableChannel:object-path property is not set at construct
+ * If the #TpBaseChannel:object-path property is not set at construct
  * time, the #TpBaseChannelClass.get_object_path_suffix virtual function will
  * be called to determine the channel's path, whose default implementation
  * simply generates a unique path based on the object's address in memory.
@@ -67,7 +67,7 @@
  *   if (tp_base_channel_is_registered (chan))
  *     {
  *       tp_channel_manager_emit_channel_closed (manager,
- *           TP_EXPORTABLE_CHANNEL (chan));
+ *           TP_BASE_CHANNEL (chan));
  *     }
  *
  *   if (tp_base_channel_is_destroyed (chan))
@@ -78,7 +78,7 @@
  *   else if (tp_base_channel_is_respawning (chan))
  *     {
  *       // reopened_with_requested() must have been called; re-announce the channel
- *       tp_channel_manager_emit_new_channel (manager, TP_EXPORTABLE_CHANNEL (chan));
+ *       tp_channel_manager_emit_new_channel (manager, TP_BASE_CHANNEL (chan));
  *     }
  *   else
  *     {
@@ -104,7 +104,7 @@
  *   while (g_hash_table_iter_next (&iter, NULL, &chan))
  *     {
  *       if (tp_base_channel_is_registered (TP_BASE_CHANNEL (chan)))
- *         func (TP_EXPORTABLE_CHANNEL (chan), user_data);
+ *         func (TP_BASE_CHANNEL (chan), user_data);
  *     }
  * }
  * ]|
@@ -137,7 +137,7 @@
  * @get_object_path_suffix: Returns a string that will be appended to the
  * Connection objects's object path to get the Channel's object path.  This
  * function will only be called as a fallback if the
- * #TpExportableChannel:object-path property is not set.  The default
+ * #TpBaseChannel:object-path property is not set.  The default
  * implementation simply generates a unique path based on the object's address
  * in memory.  The returned string will be freed automatically.
  * @get_interfaces: Extra interfaces provided by this channel (this SHOULD NOT
@@ -298,6 +298,15 @@
  * Since: 0.17.5
  */
 
+/**
+ * TpBaseChannelFunc:
+ * @channel: A #TpBaseChannel
+ * @user_data: Arbitrary user-supplied data
+ *
+ * A callback for functions which act on base channels.
+ */
+
+
 #include "config.h"
 
 #include "base-channel.h"
@@ -305,9 +314,8 @@
 #include <dbus/dbus-glib-lowlevel.h>
 
 #include <telepathy-glib/asv.h>
-#include <telepathy-glib/channel-iface.h>
+#include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/dbus.h>
-#include <telepathy-glib/exportable-channel.h>
 #include "telepathy-glib/group-mixin.h"
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-channel.h>
@@ -358,15 +366,13 @@ static void channel_iface_init (gpointer g_iface, gpointer iface_data);
 G_DEFINE_TYPE_WITH_CODE (TpBaseChannel, tp_base_channel,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_EXPORTABLE_CHANNEL, NULL);
     )
 
 /**
  * tp_base_channel_register:
  * @chan: a channel
  *
- * Make the channel appear on the bus.  #TpExportableChannel:object-path must have been set
+ * Make the channel appear on the bus.  #TpBaseChannel:object-path must have been set
  * to a valid path, which must not already be in use as another object's path.
  *
  * Since: 0.11.14
@@ -390,7 +396,7 @@ tp_base_channel_register (TpBaseChannel *chan)
  *
  * Called by subclasses to indicate that this channel was destroyed and can be
  * removed from the bus.  The "Closed" signal will be emitted and the
- * #TpExportableChannel:channel-destroyed property will be set.
+ * #TpBaseChannel:channel-destroyed property will be set.
  *
  * Since: 0.11.14
  */
@@ -444,7 +450,7 @@ tp_base_channel_reopened (TpBaseChannel *chan, TpHandle initiator)
  * Called by subclasses to indicate that this channel is closing and
  * should be unregistered from the bus, but the actual object
  * shouldn't be destroyed. The "Closed" signal will be emitted,
- * the #TpExportableChannel:channel-destroyed property will not be
+ * the #TpBaseChannel:channel-destroyed property will not be
  * set, and the channel will be unregistered from the bus.
  *
  * Since: 0.19.7
@@ -482,7 +488,7 @@ tp_base_channel_disappear (TpBaseChannel *chan)
  * Called by subclasses to indicate that this channel was closed but
  * was re-opened, either due to pending messages or from having
  * disappeared (with tp_base_channel_disappear()). The "Closed" signal
- * will be emitted, but the #TpExportableChannel:channel-destroyed
+ * will be emitted, but the #TpBaseChannel:channel-destroyed
  * property will not be set.  The channel's
  * #TpBaseChannel:initiator-handle property will be set to @initiator,
  * and the #TpBaseChannel:requested property will be set to
@@ -520,7 +526,7 @@ tp_base_channel_reopened_with_requested (TpBaseChannel *chan,
  * @chan: a channel
  *
  * Asks @chan to close, just as if the Close D-Bus method had been called. If
- * #TpExportableChannel:channel-destroyed is TRUE, this is a no-op.
+ * #TpBaseChannel:channel-destroyed is TRUE, this is a no-op.
  *
  * Note that, depending on the subclass's implementation of
  * #TpBaseChannelClass.close and internal behaviour, this may or may not be a
@@ -547,7 +553,7 @@ tp_base_channel_close (TpBaseChannel *chan)
  * @chan: a channel
  *
  * Returns @chan's object path, as a shortcut for retrieving the
- * #TpChannelIface:object-path property.
+ * #TpBaseChannel:object-path property.
  *
  * Returns: (transfer none): @chan's object path
  *
@@ -613,7 +619,7 @@ tp_base_channel_get_self_handle (TpBaseChannel *chan)
  * Returns the target handle of @chan (without a reference), which will be 0
  * if #TpBaseChannelClass.target_entity_type is #TP_ENTITY_TYPE_NONE for this
  * class, and non-zero otherwise. This is a shortcut for retrieving the
- * #TpChannelIface:handle property.
+ * #TpBaseChannel:handle property.
  *
  * Returns: the target handle of @chan
  *
@@ -689,7 +695,7 @@ tp_base_channel_is_registered (TpBaseChannel *chan)
  * tp_base_channel_is_destroyed:
  * @chan: a channel
  *
- * Returns the value of the #TpExportableChannel:channel-destroyed property,
+ * Returns the value of the #TpBaseChannel:channel-destroyed property,
  * which is TRUE if tp_base_channel_destroyed() has been called (and thus the
  * channel has been removed from the bus).
  *
@@ -1004,17 +1010,136 @@ tp_base_channel_class_init (TpBaseChannelClass *tp_base_channel_class)
   object_class->dispose = tp_base_channel_dispose;
   object_class->finalize = tp_base_channel_finalize;
 
-  g_object_class_override_property (object_class, PROP_OBJECT_PATH,
-      "object-path");
-  g_object_class_override_property (object_class, PROP_CHANNEL_TYPE,
-      "channel-type");
-  g_object_class_override_property (object_class, PROP_ENTITY_TYPE,
-      "entity-type");
-  g_object_class_override_property (object_class, PROP_HANDLE, "handle");
-  g_object_class_override_property (object_class, PROP_CHANNEL_DESTROYED,
-      "channel-destroyed");
-  g_object_class_override_property (object_class, PROP_CHANNEL_PROPERTIES,
-      "channel-properties");
+  /**
+   * TpBaseChannel:object-path:
+   *
+   * The D-Bus object path used for this object on the bus. Read-only
+   * except during construction.
+   */
+  param_spec = g_param_spec_string ("object-path", "D-Bus object path",
+      "The D-Bus object path used for this object on the bus.", NULL,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
+
+  /**
+   * TpBaseChannel:channel-type:
+   *
+   * The D-Bus interface representing the type of this channel. Read-only
+   * except during construction.
+   *
+   * In connection manager implementations, attempts to set this property
+   * during construction will usually be ignored or treated as an
+   * error.
+   */
+  param_spec = g_param_spec_string ("channel-type", "Telepathy channel type",
+      "The D-Bus interface representing the type of this channel.",
+      NULL,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CHANNEL_TYPE, param_spec);
+
+  /**
+   * TpBaseChannel:entity-type:
+   *
+   * The #TpEntityType of this channel's associated handle, or
+   * %TP_ENTITY_TYPE_NONE (which is numerically 0) if no handle.
+   *
+   * In connection manager implementations, attempts to set this during
+   * construction might be ignored.
+   */
+  param_spec = g_param_spec_uint ("entity-type", "Entity type",
+      "The TpEntityType of this channel's associated handle.",
+      0, G_MAXUINT32, TP_UNKNOWN_ENTITY_TYPE,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_ENTITY_TYPE, param_spec);
+
+  /**
+   * TpBaseChannel:handle:
+   *
+   * This channel's associated handle, or 0 if no handle or unknown.
+   * Read-only except during construction.
+   *
+   * In connection manager implementations, attempts to set this during
+   * construction might be ignored, depending on the channel type.
+   */
+  param_spec = g_param_spec_uint ("handle", "Handle",
+      "The TpHandle representing the contact, group, etc. with which "
+      "this channel communicates, whose type is given by the entity-type "
+      "property.",
+      0, G_MAXUINT32, 0,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_HANDLE, param_spec);
+
+  /**
+   * TpBaseChannel:channel-properties:
+   *
+   * The D-Bus properties to be announced in the NewChannels signal
+   * and in the Channels property, as a map from
+   * interface.name.propertyname to variant.
+   *
+   * A channel's immutable properties are constant for its lifetime on the
+   * bus, so this property should only change when the closed signal is
+   * emitted (so that respawned channels can reappear on the bus with
+   * different properties).  All of the D-Bus properties mentioned here
+   * should be exposed through the D-Bus properties interface; additional
+   * (possibly mutable) properties not included here may also be exposed
+   * via the D-Bus properties interface.
+   *
+   * If the channel implementation uses
+   * <link linkend="telepathy-glib-dbus-properties-mixin">TpDBusPropertiesMixin</link>,
+   * this property can implemented using
+   * tp_dbus_properties_mixin_make_properties_hash() as follows:
+   *
+   * <informalexample><programlisting>
+   *  case PROP_CHANNEL_PROPERTIES:
+   *    {
+   *      GHashTable *hash = tp_dbus_properties_mixin_make_properties_hash (object,
+   *          // The spec says these properties MUST be included:
+   *          TP_IFACE_CHANNEL, "TargetHandle",
+   *          TP_IFACE_CHANNEL, "TargetEntityType",
+   *          TP_IFACE_CHANNEL, "ChannelType",
+   *          TP_IFACE_CHANNEL, "TargetID",
+   *          TP_IFACE_CHANNEL, "Requested",
+   *          TP_IFACE_CHANNEL, "InitiatorHandle",
+   *          TP_IFACE_CHANNEL, "InitiatorID",
+   *          TP_IFACE_CHANNEL, "Interfaces",
+   *          // Perhaps your channel has some other immutable properties:
+   *          TP_IFACE_CHANNEL_INTERFACE_MESSAGES, "SupportedContentTypes",
+   *          // etc.
+   *          NULL));
+   *
+   *      g_value_set_variant (value, tp_asv_to_vardict (hash));
+   *      g_hash_table_unref (hash);
+   *    }
+   *    break;
+   * </programlisting></informalexample>
+   */
+  param_spec = g_param_spec_variant ("channel-properties",
+      "Channel properties",
+      "The channel's immutable properties",
+      G_VARIANT_TYPE_VARDICT, NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CHANNEL_PROPERTIES,
+      param_spec);
+
+  /**
+   * TpBaseChannel:channel-destroyed:
+   *
+   * If true, the closed signal on the Channel interface indicates that
+   * the channel can go away.
+   *
+   * If false, the closed signal indicates to the channel manager that the
+   * channel should appear to go away and be re-created, by emitting Closed
+   * followed by NewChannel. (This is to support the "respawning" of  Text
+   * channels which are closed with unacknowledged messages.)
+   */
+  param_spec = g_param_spec_boolean ("channel-destroyed",
+      "Destroyed?",
+      "If true, the channel has *really* closed, rather than just "
+      "appearing to do so",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CHANNEL_DESTROYED,
+      param_spec);
 
   param_spec = g_param_spec_object ("connection", "TpBaseConnection object",
       "Connection object that owns this channel.",

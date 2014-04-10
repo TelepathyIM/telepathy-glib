@@ -60,7 +60,6 @@
 #include <telepathy-glib/channel-dispatch-operation.h>
 #include <telepathy-glib/channel-dispatcher.h>
 #include <telepathy-glib/channel-filter.h>
-#include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/channel-manager.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/channel.h>
@@ -82,7 +81,6 @@
 #include <telepathy-glib/debug-sender.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/dtmf.h>
-#include <telepathy-glib/exportable-channel.h>
 #include <telepathy-glib/file-transfer-channel.h>
 #include <telepathy-glib/group-mixin.h>
 #include <telepathy-glib/handle-channel-context.h>

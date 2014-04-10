@@ -176,7 +176,7 @@ tp_tests_echo_im_manager_close_all (TpTestsEchoImManager *self)
 
 static void
 tp_tests_echo_im_manager_foreach_channel (TpChannelManager *iface,
-                                         TpExportableChannelFunc callback,
+                                         TpBaseChannelFunc callback,
                                          gpointer user_data)
 {
   TpTestsEchoImManager *self = TP_TESTS_ECHO_IM_MANAGER (iface);
@@ -187,7 +187,7 @@ tp_tests_echo_im_manager_foreach_channel (TpChannelManager *iface,
 
   while (g_hash_table_iter_next (&iter, &handle, &channel))
     {
-      callback (TP_EXPORTABLE_CHANNEL (channel), user_data);
+      callback (TP_BASE_CHANNEL (channel), user_data);
     }
 }
 
@@ -215,12 +215,12 @@ channel_closed_cb (TpTestsEchoChannel *chan,
       else
         {
           tp_channel_manager_emit_new_channel (TP_CHANNEL_MANAGER (self),
-              TP_EXPORTABLE_CHANNEL (chan), NULL);
+              TP_BASE_CHANNEL (chan), NULL);
         }
     }
 
   tp_channel_manager_emit_channel_closed_for_object (TP_CHANNEL_MANAGER (self),
-      TP_EXPORTABLE_CHANNEL (chan));
+      TP_BASE_CHANNEL (chan));
 }
 
 static void
@@ -254,7 +254,7 @@ new_channel (TpTestsEchoImManager *self,
     requests = g_slist_prepend (requests, request);
 
   tp_channel_manager_emit_new_channel (TP_CHANNEL_MANAGER (self),
-      TP_EXPORTABLE_CHANNEL (chan),
+      TP_BASE_CHANNEL (chan),
       requests);
   g_slist_free (requests);
 }
@@ -338,7 +338,7 @@ tp_tests_echo_im_manager_request (TpTestsEchoImManager *self,
   else
     {
       tp_channel_manager_emit_request_already_satisfied (
-          TP_CHANNEL_MANAGER (self), request, TP_EXPORTABLE_CHANNEL (chan));
+          TP_CHANNEL_MANAGER (self), request, TP_BASE_CHANNEL (chan));
     }
 
   return TRUE;

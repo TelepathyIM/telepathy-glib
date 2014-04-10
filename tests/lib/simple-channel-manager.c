@@ -55,7 +55,7 @@ tp_tests_simple_channel_manager_request (TpChannelManager *manager,
   TpTestsSimpleChannelManager *self =
     TP_TESTS_SIMPLE_CHANNEL_MANAGER (manager);
   GSList *tokens;
-  TpExportableChannel *channel;
+  TpBaseChannel *channel;
   TpHandle handle = tp_asv_get_uint32 (request_properties,
       TP_PROP_CHANNEL_TARGET_HANDLE, NULL);
   gchar *path;

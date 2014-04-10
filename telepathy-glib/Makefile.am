@@ -63,7 +63,6 @@ tpginclude_HEADERS = \
     call-stream.h \
     call-stream-endpoint.h \
     channel.h \
-    channel-iface.h \
     channel-dispatcher.h \
     channel-dispatch-operation.h \
     channel-filter.h \
@@ -94,7 +93,6 @@ tpginclude_HEADERS = \
     dtmf.h \
     enums.h \
     errors.h \
-    exportable-channel.h \
     file-transfer-channel.h \
     gnio-unix.h \
     group-mixin.h \
@@ -292,7 +290,6 @@ libtelepathy_glib_main_internal_handwritten_source = \
     dtmf.c \
     debug-internal.h \
     errors.c \
-    exportable-channel.c \
     file-transfer-channel.c \
     gnio-unix.c \
     group-mixin.c \
@@ -306,7 +303,6 @@ libtelepathy_glib_main_internal_handwritten_source = \
     handle-set.c \
     heap.c \
     intset.c \
-    channel-iface.c \
     logger.c \
     message.c \
     message-internal.h \

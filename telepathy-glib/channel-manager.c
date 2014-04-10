@@ -198,7 +198,6 @@
 #include <telepathy-glib/channel-manager-request-internal.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>
-#include <telepathy-glib/exportable-channel.h>
 #include <telepathy-glib/util.h>
 
 enum {
@@ -224,7 +223,7 @@ channel_manager_base_init (gpointer klass)
       /**
        * TpChannelManager::new-channel:
        * @self: the channel manager
-       * @channel: a object implementing #TpExportableChannel
+       * @channel: a object implementing #TpBaseChannel
        * @channels: (type GLib.SList) (element-type TelepathyGLib.ChannelManagerRequest):
        * a #GSList of #TpChannelManagerRequest satisfied by @channel
        *
@@ -245,7 +244,7 @@ channel_manager_base_init (gpointer klass)
        * @self: the channel manager
        * @request: a #TpChannelManagerRequest supplied by the requester,
        *  representing a request
-       * @channel: the existing #TpExportableChannel that satisfies the
+       * @channel: the existing #TpBaseChannel that satisfies the
        *  request
        *
        * Emitted when a channel request is satisfied by an existing channel.
@@ -334,7 +333,7 @@ tp_channel_manager_get_type (void)
 /**
  * tp_channel_manager_emit_new_channel:
  * @self: An object implementing #TpChannelManager
- * @channel: A #TpExportableChannel
+ * @channel: A #TpBaseChannel
  * @requests: (element-type TelepathyGLib.ChannelManagerRequest)
  * the #TpChannelManagerRequest objects satisfied by this channel
  *
@@ -345,11 +344,11 @@ tp_channel_manager_get_type (void)
  */
 void
 tp_channel_manager_emit_new_channel (TpChannelManager *self,
-    TpExportableChannel *channel,
+    TpBaseChannel *channel,
     GSList *requests)
 {
   g_return_if_fail (TP_IS_CHANNEL_MANAGER (self));
-  g_return_if_fail (TP_IS_EXPORTABLE_CHANNEL (channel));
+  g_return_if_fail (TP_IS_BASE_CHANNEL (channel));
 
   g_signal_emit (self, signals[S_NEW_CHANNEL], 0, channel, requests);
 }
@@ -379,22 +378,22 @@ tp_channel_manager_emit_channel_closed (TpChannelManager *self,
 /**
  * tp_channel_manager_emit_channel_closed_for_object:
  * @self: An object implementing #TpChannelManager
- * @channel: A #TpExportableChannel
+ * @channel: A #TpBaseChannel
  *
  * Emit the #TpChannelManager::channel-closed signal indicating that
  * the given channel has been closed. (This is a convenient shortcut for
  * calling tp_channel_manager_emit_channel_closed() with the
- * #TpExportableChannel:object-path property of @channel.)
+ * #TpBaseChannel:object-path property of @channel.)
  *
  * Since: 0.7.15
  */
 void
 tp_channel_manager_emit_channel_closed_for_object (TpChannelManager *self,
-    TpExportableChannel *channel)
+    TpBaseChannel *channel)
 {
   gchar *path;
 
-  g_return_if_fail (TP_IS_EXPORTABLE_CHANNEL (channel));
+  g_return_if_fail (TP_IS_BASE_CHANNEL (channel));
   g_object_get (channel,
       "object-path", &path,
       NULL);
@@ -415,9 +414,9 @@ tp_channel_manager_emit_channel_closed_for_object (TpChannelManager *self,
 void
 tp_channel_manager_emit_request_already_satisfied (TpChannelManager *self,
     TpChannelManagerRequest *request,
-    TpExportableChannel *channel)
+    TpBaseChannel *channel)
 {
-  g_return_if_fail (TP_IS_EXPORTABLE_CHANNEL (channel));
+  g_return_if_fail (TP_IS_BASE_CHANNEL (channel));
   g_return_if_fail (TP_IS_CHANNEL_MANAGER (self));
 
   g_signal_emit (self, signals[S_REQUEST_ALREADY_SATISFIED], 0,
@@ -501,7 +500,7 @@ tp_channel_manager_emit_request_failed_printf (TpChannelManager *self,
  */
 void
 tp_channel_manager_foreach_channel (TpChannelManager *manager,
-                                    TpExportableChannelFunc func,
+                                    TpBaseChannelFunc func,
                                     gpointer user_data)
 {
   TpChannelManagerIface *iface = TP_CHANNEL_MANAGER_GET_INTERFACE (

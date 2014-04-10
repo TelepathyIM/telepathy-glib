@@ -143,12 +143,12 @@ _tp_channel_manager_request_cancel (TpChannelManagerRequest *self)
 
 void
 _tp_channel_manager_request_satisfy (TpChannelManagerRequest *self,
-    TpExportableChannel *channel)
+    TpBaseChannel *channel)
 {
   gchar *object_path;
   GVariant *properties;
 
-  g_return_if_fail (TP_IS_EXPORTABLE_CHANNEL (channel));
+  g_return_if_fail (TP_IS_BASE_CHANNEL (channel));
   g_return_if_fail (self->context != NULL);
 
   DEBUG ("completing queued request %p with success, "

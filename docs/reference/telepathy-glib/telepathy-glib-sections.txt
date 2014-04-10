@@ -1,21 +1,5 @@
 <SECTION>
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
-<FILE>channel-iface</FILE>
-TpChannelFunc
-<TITLE>TpChannelIface</TITLE>
-TpChannelIface
-TpChannelIfaceClass
-<SUBSECTION Standard>
-TP_CHANNEL_IFACE
-TP_IS_CHANNEL_IFACE
-TP_TYPE_CHANNEL_IFACE
-tp_channel_iface_get_type
-TP_CHANNEL_IFACE_GET_CLASS
-TpChannelPrivate
-</SECTION>
-
-<SECTION>
-<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>version</FILE>
 <TITLE>version</TITLE>
 TP_MAJOR_VERSION
@@ -158,21 +142,6 @@ TpChannelManagerRequestMethod
 
 <SECTION>
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
-<FILE>exportable-channel</FILE>
-TpExportableChannelFunc
-<TITLE>TpExportableChannel</TITLE>
-TpExportableChannel
-TpExportableChannelIface
-<SUBSECTION Standard>
-TP_EXPORTABLE_CHANNEL
-TP_IS_EXPORTABLE_CHANNEL
-TP_TYPE_EXPORTABLE_CHANNEL
-tp_exportable_channel_get_type
-TP_EXPORTABLE_CHANNEL_GET_INTERFACE
-</SECTION>
-
-<SECTION>
-<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>base-channel</FILE>
 <TITLE>TpBaseChannel</TITLE>
 TpBaseChannel
@@ -181,6 +150,7 @@ TpBaseChannelFillPropertiesFunc
 TpBaseChannelCloseFunc
 TpBaseChannelGetPathFunc
 TpBaseChannelGetInterfacesFunc
+TpBaseChannelFunc
 tp_base_channel_register
 tp_base_channel_close
 tp_base_channel_destroyed
@@ -2973,6 +2943,7 @@ tp_channel_close_finish
 tp_channel_destroy_async
 tp_channel_destroy_finish
 <SUBSECTION Private>
+TpChannelPrivate
 tp_channel_get_feature_quark_core
 tp_channel_get_feature_quark_group
 tp_channel_get_feature_quark_password

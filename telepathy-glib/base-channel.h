@@ -29,12 +29,14 @@
 #include <glib-object.h>
 
 #include <telepathy-glib/dbus-properties-mixin.h>
-#include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/defs.h>
 
 #include "connection.h"
 
 G_BEGIN_DECLS
+
+/* forward declaration to avoid include cycle */
+typedef struct _TpBaseConnection TpBaseConnection;
 
 typedef struct _TpBaseChannel TpBaseChannel;
 typedef struct _TpBaseChannelClass TpBaseChannelClass;
@@ -45,6 +47,8 @@ typedef void (*TpBaseChannelFillPropertiesFunc) (TpBaseChannel *chan,
     GHashTable *properties);
 typedef gchar *(*TpBaseChannelGetPathFunc) (TpBaseChannel *chan);
 typedef GPtrArray *(*TpBaseChannelGetInterfacesFunc) (TpBaseChannel *chan);
+typedef void (*TpBaseChannelFunc) (TpBaseChannel *channel,
+    gpointer user_data);
 
 struct _TpBaseChannelClass
 {

@@ -250,7 +250,7 @@ tp_simple_password_manager_constructed (GObject *object)
 
 static void
 tp_simple_password_manager_foreach_channel (TpChannelManager *manager,
-    TpExportableChannelFunc foreach,
+    TpBaseChannelFunc foreach,
     gpointer user_data)
 {
   TpSimplePasswordManager *self = TP_SIMPLE_PASSWORD_MANAGER (manager);
@@ -259,7 +259,7 @@ tp_simple_password_manager_foreach_channel (TpChannelManager *manager,
   if (priv->channel != NULL
       && !tp_base_channel_is_destroyed (TP_BASE_CHANNEL (priv->channel)))
     {
-      foreach (TP_EXPORTABLE_CHANNEL (priv->channel), user_data);
+      foreach (TP_BASE_CHANNEL (priv->channel), user_data);
     }
 }
 
@@ -303,7 +303,7 @@ tp_simple_password_manager_channel_closed_cb (GObject *chan,
   tp_clear_object (&manager->priv->channel);
 
   tp_channel_manager_emit_channel_closed_for_object (
-      TP_CHANNEL_MANAGER (manager), TP_EXPORTABLE_CHANNEL (chan));
+      TP_CHANNEL_MANAGER (manager), TP_BASE_CHANNEL (chan));
 }
 
 static void
@@ -363,7 +363,7 @@ tp_simple_password_manager_prompt_common_async (
   tp_base_channel_register ((TpBaseChannel *) priv->channel);
 
   tp_channel_manager_emit_new_channel (TP_CHANNEL_MANAGER (self),
-      TP_EXPORTABLE_CHANNEL (priv->channel), NULL);
+      TP_BASE_CHANNEL (priv->channel), NULL);
 }
 
 /**

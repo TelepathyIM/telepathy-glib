@@ -96,7 +96,7 @@ TpChannelManagerRequest * _tp_channel_manager_request_new (
 void _tp_channel_manager_request_cancel (TpChannelManagerRequest *self);
 
 void _tp_channel_manager_request_satisfy (TpChannelManagerRequest *self,
-    TpExportableChannel *channel);
+    TpBaseChannel *channel);
 
 void _tp_channel_manager_request_fail (TpChannelManagerRequest *self,
     GError *error);

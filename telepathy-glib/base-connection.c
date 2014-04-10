@@ -208,7 +208,6 @@
 #include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/dbus-internal.h>
-#include <telepathy-glib/exportable-channel.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/sliced-gvalue.h>
@@ -520,7 +519,7 @@ tp_base_connection_finalize (GObject *object)
 static void
 satisfy_request (TpBaseConnection *conn,
     TpChannelManagerRequest *request,
-    TpExportableChannel *channel)
+    TpBaseChannel *channel)
 {
   TpBaseConnectionPrivate *priv = conn->priv;
 
@@ -543,7 +542,7 @@ fail_channel_request (TpBaseConnection *conn,
 
 static void
 manager_new_channel (TpBaseConnection *self,
-    TpExportableChannel *channel,
+    TpBaseChannel *channel,
     GSList *request_tokens)
 {
   gchar *object_path;
@@ -589,7 +588,7 @@ break_loop_early:
 
   for (iter = request_tokens; iter != NULL; iter = iter->next)
     {
-      satisfy_request (self, iter->data, TP_EXPORTABLE_CHANNEL (channel));
+      satisfy_request (self, iter->data, TP_BASE_CHANNEL (channel));
     }
 
   g_free (object_path);
@@ -598,7 +597,7 @@ break_loop_early:
 
 static void
 manager_new_channel_cb (TpChannelManager *manager,
-    TpExportableChannel *channel,
+    TpBaseChannel *channel,
     GSList *requests,
     TpBaseConnection *self)
 {
@@ -628,20 +627,20 @@ manager_new_channel_cb (TpChannelManager *manager,
 static void
 manager_request_already_satisfied_cb (TpChannelManager *manager,
                                       gpointer request_token,
-                                      TpExportableChannel *channel,
+                                      TpBaseChannel *channel,
                                       TpBaseConnection *self)
 {
   gchar *object_path;
 
   g_assert (TP_IS_CHANNEL_MANAGER (manager));
-  g_assert (TP_IS_EXPORTABLE_CHANNEL (channel));
+  g_assert (TP_IS_BASE_CHANNEL (channel));
   g_assert (TP_IS_BASE_CONNECTION (self));
 
   g_object_get (channel,
       "object-path", &object_path,
       NULL);
 
-  satisfy_request (self, request_token, TP_EXPORTABLE_CHANNEL (channel));
+  satisfy_request (self, request_token, TP_BASE_CHANNEL (channel));
   g_free (object_path);
 }
 
@@ -859,7 +858,7 @@ tp_base_connection_add_possible_client_interest (TpBaseConnection *self,
 /* D-Bus properties for the Requests interface */
 
 static void
-manager_get_channel_details_foreach (TpExportableChannel *chan,
+manager_get_channel_details_foreach (TpBaseChannel *chan,
     gpointer user_data)
 {
   GVariantBuilder *builder = user_data;

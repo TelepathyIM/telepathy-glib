@@ -285,7 +285,7 @@ example_call_manager_class_init (ExampleCallManagerClass *klass)
 
 static void
 example_call_manager_foreach_channel (TpChannelManager *iface,
-    TpExportableChannelFunc callback,
+    TpBaseChannelFunc callback,
     gpointer user_data)
 {
   ExampleCallManager *self = EXAMPLE_CALL_MANAGER (iface);
@@ -309,7 +309,7 @@ channel_closed_cb (ExampleCallChannel *chan,
     g_hash_table_remove (self->priv->channels, chan);
 
   tp_channel_manager_emit_channel_closed_for_object (
-      TP_CHANNEL_MANAGER (self), TP_EXPORTABLE_CHANNEL (chan));
+      TP_CHANNEL_MANAGER (self), TP_BASE_CHANNEL (chan));
 }
 
 static ExampleCallChannel *
@@ -353,7 +353,7 @@ new_channel (ExampleCallManager *self,
     requests = g_slist_prepend (requests, request);
 
   tp_channel_manager_emit_new_channel (TP_CHANNEL_MANAGER (self),
-      TP_EXPORTABLE_CHANNEL (chan), requests);
+      TP_BASE_CHANNEL (chan), requests);
   g_slist_free (requests);
 
   return chan;
@@ -490,7 +490,7 @@ example_call_manager_request (ExampleCallManager *self,
             {
               tp_channel_manager_emit_request_already_satisfied (
                   TP_CHANNEL_MANAGER (self), request,
-                  TP_EXPORTABLE_CHANNEL (chan));
+                  TP_BASE_CHANNEL (chan));
               return TRUE;
             }
         }

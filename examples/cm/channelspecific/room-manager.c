@@ -191,7 +191,7 @@ example_csh_room_manager_close_all (ExampleCSHRoomManager *self)
 
 static void
 example_csh_room_manager_foreach_channel (TpChannelManager *manager,
-                                          TpExportableChannelFunc callback,
+                                          TpBaseChannelFunc callback,
                                           gpointer user_data)
 {
   ExampleCSHRoomManager *self = EXAMPLE_CSH_ROOM_MANAGER (manager);
@@ -202,7 +202,7 @@ example_csh_room_manager_foreach_channel (TpChannelManager *manager,
 
   while (g_hash_table_iter_next (&iter, &handle, &channel))
     {
-      callback (TP_EXPORTABLE_CHANNEL (channel), user_data);
+      callback (TP_BASE_CHANNEL (channel), user_data);
     }
 }
 
@@ -222,7 +222,7 @@ channel_closed_cb (ExampleCSHRoomChannel *chan,
     }
 
   tp_channel_manager_emit_channel_closed_for_object (TP_CHANNEL_MANAGER (self),
-      TP_EXPORTABLE_CHANNEL (chan));
+      TP_BASE_CHANNEL (chan));
 }
 
 static void
@@ -255,7 +255,7 @@ new_channel (ExampleCSHRoomManager *self,
     requests = g_slist_prepend (requests, request);
 
   tp_channel_manager_emit_new_channel (TP_CHANNEL_MANAGER (self),
-      TP_EXPORTABLE_CHANNEL (chan), requests);
+      TP_BASE_CHANNEL (chan), requests);
   g_slist_free (requests);
 }
 
@@ -337,7 +337,7 @@ example_csh_room_manager_request (ExampleCSHRoomManager *self,
   else
     {
       tp_channel_manager_emit_request_already_satisfied (
-          TP_CHANNEL_MANAGER (self), request, TP_EXPORTABLE_CHANNEL (chan));
+          TP_CHANNEL_MANAGER (self), request, TP_BASE_CHANNEL (chan));
     }
 
   return TRUE;

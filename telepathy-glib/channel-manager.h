@@ -30,8 +30,8 @@
 #include <glib-object.h>
 
 #include <telepathy-glib/defs.h>
-#include <telepathy-glib/exportable-channel.h>
 #include <telepathy-glib/channel-manager-request.h>
+#include <telepathy-glib/base-channel.h>
 
 G_BEGIN_DECLS
 
@@ -56,11 +56,11 @@ typedef struct _TpChannelManagerIface TpChannelManagerIface;
 /* virtual methods */
 
 typedef void (*TpChannelManagerForeachChannelFunc) (
-    TpChannelManager *manager, TpExportableChannelFunc func,
+    TpChannelManager *manager, TpBaseChannelFunc func,
     gpointer user_data);
 
 void tp_channel_manager_foreach_channel (TpChannelManager *manager,
-    TpExportableChannelFunc func, gpointer user_data);
+    TpBaseChannelFunc func, gpointer user_data);
 
 
 typedef void (*TpChannelManagerChannelClassFunc) (
@@ -132,16 +132,16 @@ GType tp_channel_manager_get_type (void);
 /* signal emission */
 
 void tp_channel_manager_emit_new_channel (TpChannelManager *self,
-    TpExportableChannel *channel, GSList *requests);
+    TpBaseChannel *channel, GSList *requests);
 
 void tp_channel_manager_emit_channel_closed (TpChannelManager *self,
     const gchar *path);
 void tp_channel_manager_emit_channel_closed_for_object (TpChannelManager *self,
-    TpExportableChannel *channel);
+    TpBaseChannel *channel);
 
 void tp_channel_manager_emit_request_already_satisfied (TpChannelManager *self,
     TpChannelManagerRequest *request,
-    TpExportableChannel *channel);
+    TpBaseChannel *channel);
 
 void tp_channel_manager_emit_request_failed (TpChannelManager *self,
     TpChannelManagerRequest *request,
