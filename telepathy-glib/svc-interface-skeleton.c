@@ -220,12 +220,20 @@ tp_svc_interface_skeleton_emit_signal (GClosure *closure,
   SignalClosure *sc = (SignalClosure *) closure;
   TpSvcInterfaceSkeleton *self = sc->self;
   GDBusInterfaceSkeleton *skel = G_DBUS_INTERFACE_SKELETON (self);
+  GDBusConnection *connection =
+    g_dbus_interface_skeleton_get_connection (skel);
   const gchar *path = g_dbus_interface_skeleton_get_object_path (skel);
   GVariantBuilder builder;
   guint i;
 
   DEBUG ("%s.%s from %s %p", self->priv->iinfo->interface_info->name,
       sc->name, path, self);
+
+  if (path == NULL || connection == NULL)
+    {
+      DEBUG ("- ignoring, object no longer exported");
+      return;
+    }
 
   g_variant_builder_init (&builder, G_VARIANT_TYPE_TUPLE);
 
@@ -235,10 +243,9 @@ tp_svc_interface_skeleton_emit_signal (GClosure *closure,
         dbus_g_value_build_g_variant (param_values + i));
 
   /* we only support being exported on one connection */
-  g_dbus_connection_emit_signal (
-      g_dbus_interface_skeleton_get_connection (skel),
+  g_dbus_connection_emit_signal (connection,
       NULL, /* broadcast */
-      g_dbus_interface_skeleton_get_object_path (skel),
+      path,
       self->priv->iinfo->interface_info->name,
       sc->name,
       /* consume floating ref */
