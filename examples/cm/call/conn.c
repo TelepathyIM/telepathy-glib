@@ -214,9 +214,16 @@ constructed (GObject *object)
 {
   void (*chain_up) (GObject *) =
     G_OBJECT_CLASS (example_call_connection_parent_class)->constructed;
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (object);
+  GDBusInterfaceSkeleton *iface;
 
   if (chain_up != NULL)
     chain_up (object);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
 
   tp_presence_mixin_init (object,
       G_STRUCT_OFFSET (ExampleCallConnection, presence_mixin));
@@ -326,21 +333,6 @@ example_call_connection_get_possible_interfaces (void)
   return interfaces_always_present;
 }
 
-static GPtrArray *
-get_interfaces_always_present (TpBaseConnection *base)
-{
-  GPtrArray *interfaces;
-  guint i;
-
-  interfaces = TP_BASE_CONNECTION_CLASS (
-      example_call_connection_parent_class)->get_interfaces_always_present (base);
-
-  for (i = 0; interfaces_always_present[i] != NULL; i++)
-    g_ptr_array_add (interfaces, (gchar *) interfaces_always_present[i]);
-
-  return interfaces;
-}
-
 static void
 example_call_connection_fill_contact_attributes (TpBaseConnection *conn,
     const gchar *dbus_interface,
@@ -375,7 +367,6 @@ example_call_connection_class_init (
   base_class->create_channel_managers = create_channel_managers;
   base_class->start_connecting = start_connecting;
   base_class->shut_down = shut_down;
-  base_class->get_interfaces_always_present = get_interfaces_always_present;
   base_class->fill_contact_attributes =
     example_call_connection_fill_contact_attributes;
 

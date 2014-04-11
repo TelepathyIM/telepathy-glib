@@ -184,19 +184,21 @@ example_extended_connection_get_possible_interfaces (void)
   return interfaces_always_present;
 }
 
-static GPtrArray *
-get_interfaces_always_present (TpBaseConnection *base)
+static void
+constructed (GObject *object)
 {
-  GPtrArray *interfaces;
-  guint i;
+  void (*chain_up) (GObject *) =
+    G_OBJECT_CLASS (example_extended_connection_parent_class)->constructed;
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (object);
+  GDBusInterfaceSkeleton *iface;
 
-  interfaces = TP_BASE_CONNECTION_CLASS (
-      example_extended_connection_parent_class)->get_interfaces_always_present (base);
+  if (chain_up != NULL)
+    chain_up (object);
 
-  for (i = 0; interfaces_always_present[i] != NULL; i++)
-    g_ptr_array_add (interfaces, (gchar *) interfaces_always_present[i]);
-
-  return interfaces;
+  iface = tp_svc_interface_skeleton_new (skel,
+      EXAMPLE_TYPE_SVC_CONNECTION_INTERFACE_HATS);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
 }
 
 static void
@@ -209,6 +211,7 @@ example_extended_connection_class_init (ExampleExtendedConnectionClass *klass)
 
   object_class->get_property = get_property;
   object_class->set_property = set_property;
+  object_class->constructed = constructed;
   object_class->finalize = finalize;
   g_type_class_add_private (klass, sizeof (ExampleExtendedConnectionPrivate));
 
@@ -217,8 +220,6 @@ example_extended_connection_class_init (ExampleExtendedConnectionClass *klass)
   base_class->create_channel_managers = create_channel_managers;
   base_class->start_connecting = start_connecting;
   base_class->shut_down = shut_down;
-
-  base_class->get_interfaces_always_present = get_interfaces_always_present;
 
   param_spec = g_param_spec_string ("account", "Account name",
       "The username of this user", NULL,

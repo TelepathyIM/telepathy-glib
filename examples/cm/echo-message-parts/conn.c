@@ -168,21 +168,6 @@ example_echo_2_connection_get_possible_interfaces (void)
   return interfaces_always_present;
 }
 
-static GPtrArray *
-get_interfaces_always_present (TpBaseConnection *base)
-{
-  GPtrArray *interfaces;
-  guint i;
-
-  interfaces = TP_BASE_CONNECTION_CLASS (
-      example_echo_2_connection_parent_class)->get_interfaces_always_present (base);
-
-  for (i = 0; interfaces_always_present[i] != NULL; i++)
-    g_ptr_array_add (interfaces, (gchar *) interfaces_always_present[i]);
-
-  return interfaces;
-}
-
 static void
 example_echo_2_connection_class_init (ExampleEcho2ConnectionClass *klass)
 {
@@ -201,7 +186,6 @@ example_echo_2_connection_class_init (ExampleEcho2ConnectionClass *klass)
   base_class->create_channel_managers = create_channel_managers;
   base_class->start_connecting = start_connecting;
   base_class->shut_down = shut_down;
-  base_class->get_interfaces_always_present = get_interfaces_always_present;
 
   param_spec = g_param_spec_string ("account", "Account name",
       "The username of this user", NULL,

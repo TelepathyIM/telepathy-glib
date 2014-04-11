@@ -13,6 +13,7 @@
 #include "my-conn-proxy.h"
 
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 G_DEFINE_TYPE  (TpTestsMyConnProxy, tp_tests_my_conn_proxy,
     TP_TYPE_CONNECTION)

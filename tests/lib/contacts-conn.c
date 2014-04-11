@@ -19,6 +19,7 @@
 #include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include "debug.h"
+#include "my-conn-proxy.h"
 
 static void init_aliasing (gpointer, gpointer);
 static void init_avatars (gpointer, gpointer);
@@ -45,6 +46,12 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsContactsConnection,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1,
       tp_base_contact_list_mixin_groups_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CLIENT_TYPES1,
+      NULL);
+    /* We don't really implement this one, but the proxy-preparation test
+     * wants to be able to add interfaces at runtime like Gabble does.
+     * It can be any interface we don't really need (implementation detail:
+     * it's PowerSaving1). */
+    G_IMPLEMENT_INTERFACE (TP_TESTS_TYPE_SVC_CONNECTION_INTERFACE_LATER,
       NULL);
     );
 
@@ -360,11 +367,58 @@ static void
 constructed (GObject *object)
 {
   TpTestsContactsConnection *self = TP_TESTS_CONTACTS_CONNECTION (object);
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (object);
+  GDBusInterfaceSkeleton *iface;
   void (*parent_impl) (GObject *) =
     G_OBJECT_CLASS (tp_tests_contacts_connection_parent_class)->constructed;
 
   if (parent_impl != NULL)
     parent_impl (object);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CONNECTION_INTERFACE_AVATARS1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CONNECTION_INTERFACE_CLIENT_TYPES1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_CAPABILITIES1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_INFO1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CONNECTION_INTERFACE_LOCATION1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
 
   self->priv->list_manager = g_object_new (TP_TESTS_TYPE_CONTACT_LIST_MANAGER,
       "connection", self, NULL);
@@ -439,32 +493,6 @@ create_channel_managers (TpBaseConnection *conn)
   return g_ptr_array_new ();
 }
 
-static GPtrArray *
-tp_tests_contacts_get_interfaces_always_present (TpBaseConnection *base)
-{
-  GPtrArray *interfaces;
-  static const gchar *interfaces_always_present[] = {
-      TP_IFACE_CONNECTION_INTERFACE_ALIASING1,
-      TP_IFACE_CONNECTION_INTERFACE_AVATARS1,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1,
-      TP_IFACE_CONNECTION_INTERFACE_PRESENCE1,
-      TP_IFACE_CONNECTION_INTERFACE_LOCATION1,
-      TP_IFACE_CONNECTION_INTERFACE_CLIENT_TYPES1,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES1,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO1,
-      NULL };
-  guint i;
-
-  interfaces = TP_BASE_CONNECTION_CLASS (
-      tp_tests_contacts_connection_parent_class)->get_interfaces_always_present (base);
-
-  for (i = 0; interfaces_always_present[i] != NULL; i++)
-    g_ptr_array_add (interfaces, (gchar *) interfaces_always_present[i]);
-
-  return interfaces;
-}
-
 enum
 {
   ALIASING_DP_ALIAS_FLAGS,
@@ -523,7 +551,6 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
   object_class->finalize = finalize;
   g_type_class_add_private (klass, sizeof (TpTestsContactsConnectionPrivate));
 
-  base_class->get_interfaces_always_present = tp_tests_contacts_get_interfaces_always_present;
   base_class->create_channel_managers = create_channel_managers;
   base_class->fill_contact_attributes =
     tp_tests_contacts_connection_fill_contact_attributes;

@@ -265,6 +265,8 @@ static void
 constructed (GObject *object)
 {
   ExampleContactListConnection *self = EXAMPLE_CONTACT_LIST_CONNECTION (object);
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (object);
+  GDBusInterfaceSkeleton *iface;
   void (*chain_up) (GObject *) =
     G_OBJECT_CLASS (example_contact_list_connection_parent_class)->constructed;
 
@@ -284,6 +286,31 @@ constructed (GObject *object)
 
   tp_presence_mixin_init (object,
       G_STRUCT_OFFSET (ExampleContactListConnection, presence_mixin));
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
 }
 
 static gboolean
@@ -371,22 +398,6 @@ example_contact_list_connection_get_possible_interfaces (void)
   return interfaces_always_present;
 }
 
-static GPtrArray *
-get_interfaces_always_present (TpBaseConnection *base)
-{
-  GPtrArray *interfaces;
-  guint i;
-
-  interfaces = TP_BASE_CONNECTION_CLASS (
-      example_contact_list_connection_parent_class)->get_interfaces_always_present (
-          base);
-
-  for (i = 0; interfaces_always_present[i] != NULL; i++)
-    g_ptr_array_add (interfaces, (gchar *) interfaces_always_present[i]);
-
-  return interfaces;
-}
-
 enum
 {
   ALIASING_DP_ALIAS_FLAGS,
@@ -442,7 +453,6 @@ example_contact_list_connection_class_init (
   base_class->create_channel_managers = create_channel_managers;
   base_class->start_connecting = start_connecting;
   base_class->shut_down = shut_down;
-  base_class->get_interfaces_always_present = get_interfaces_always_present;
   base_class->fill_contact_attributes =
     example_contact_list_connection_fill_contact_attributes;
 

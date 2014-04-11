@@ -72,6 +72,10 @@
  * asynchronously, returning %TRUE in most cases and changing the status
  * to CONNECTED or DISCONNECTED later.
  *
+ * Subclasses may call g_dbus_object_skeleton_add_interface()
+ * at any time before the status reaches CONNECTED. It is considered
+ * to be an error to do so after CONNECTED status has been reached.
+ *
  * Returns: %FALSE if failure has already occurred, else %TRUE.
  */
 
@@ -110,38 +114,6 @@
  */
 
 /**
- * TpBaseConnectionGetInterfacesImpl:
- * @self: a #TpBaseConnection
- *
- * Signature of an implementation of
- * #TpBaseConnectionClass.get_interfaces_always_present virtual
- * function.
- *
- * Implementation must first chainup on parent class implementation and then
- * add extra interfaces into the #GPtrArray.
- *
- * |[
- * static GPtrArray *
- * my_connection_get_interfaces_always_present (TpBaseConnection *self)
- * {
- *   GPtrArray *interfaces;
- *
- *   interfaces = TP_BASE_CONNECTION_CLASS (
- *       my_connection_parent_class)->get_interfaces_always_present (self);
- *
- *   g_ptr_array_add (interfaces, TP_IFACE_BADGERS);
- *
- *   return interfaces;
- * }
- * ]|
- *
- * Returns: (transfer container): a #GPtrArray of static strings for D-Bus
- *   interfaces implemented by this client.
- *
- * Since: 0.19.4
- */
-
-/**
  * TpBaseConnectionClass:
  * @parent_class: The superclass' structure
  * @create_handle_repos: Fill in suitable handle repositories in the
@@ -167,12 +139,6 @@
  * @start_connecting: Asynchronously start connecting - called to implement
  *  the Connect D-Bus method. See #TpBaseConnectionStartConnectingImpl for
  *  details. May not be left as %NULL.
- * @get_interfaces_always_present: Returns a #GPtrArray of extra D-Bus
- *  interfaces which are always implemented by instances of this class,
- *  which may be filled in by subclasses. The default is to list no
- *  additional interfaces. Individual instances may detect which
- *  additional interfaces they support and signal them before going
- *  to state CONNECTED by calling tp_base_connection_add_interfaces().
  * @create_channel_managers: Create an array of channel managers for this
  *  Connection. This must be set by subclasses to a non-%NULL
  *  value. Since: 0.7.15
@@ -264,7 +230,7 @@ static void requests_iface_init (gpointer, gpointer);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseConnection,
     tp_base_connection,
-    G_TYPE_OBJECT,
+    G_TYPE_DBUS_OBJECT_SKELETON,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION,
       conn_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_REQUESTS,
@@ -324,13 +290,6 @@ struct _TpBaseConnectionPrivate
 
   TpHandleRepoIface *handles[TP_NUM_ENTITY_TYPES];
 
-  /* Created in constructed, this is an array of static strings which
-   * represent the interfaces on this connection.
-   *
-   * Note that this is a GArray of gchar*, not a GPtrArray,
-   * so that we can use GArray's convenient auto-null-termination. */
-  GArray *interfaces;
-
   /* Array of GDBusMethodInvocation * representing Disconnect calls.
    * If NULL and we are in a state != DISCONNECTED, then we have not started
    * shutting down yet.
@@ -362,8 +321,6 @@ typedef struct
 } ClientData;
 
 static void client_data_free (ClientData *client);
-static const gchar * const *tp_base_connection_get_interfaces (
-    TpBaseConnection *self);
 
 static gboolean
 tp_base_connection_ensure_dbus (TpBaseConnection *self,
@@ -407,7 +364,9 @@ tp_base_connection_get_property (GObject *object,
       break;
 
     case PROP_INTERFACES:
-      g_value_set_boxed (value, tp_base_connection_get_interfaces (self));
+      g_value_take_boxed (value,
+          _tp_g_dbus_object_dup_interface_names (G_DBUS_OBJECT (self),
+            TP_IFACE_CONNECTION, TP_IFACE_CONNECTION_INTERFACE_REQUESTS));
       break;
 
     case PROP_DBUS_CONNECTION:
@@ -522,11 +481,6 @@ tp_base_connection_dispose (GObject *object)
 
   for (i = 0; i < TP_NUM_ENTITY_TYPES; i++)
     tp_clear_object (priv->handles + i);
-
-  if (priv->interfaces)
-    {
-      g_array_unref (priv->interfaces);
-    }
 
   if (G_OBJECT_CLASS (tp_base_connection_parent_class)->dispose)
     G_OBJECT_CLASS (tp_base_connection_parent_class)->dispose (object);
@@ -769,24 +723,47 @@ _tp_base_connection_set_handle_repo (TpBaseConnection *self,
 }
 
 static void
-tp_base_connection_create_interfaces_array (TpBaseConnection *self)
+tp_base_connection_interface_changed_cb (TpBaseConnection *self,
+    GDBusInterface *interface,
+    gpointer user_data)
 {
-  TpBaseConnectionPrivate *priv = self->priv;
-  TpBaseConnectionClass *klass = TP_BASE_CONNECTION_GET_CLASS (self);
-  GPtrArray *always;
-  guint i;
+  GDBusInterfaceInfo *info = g_dbus_interface_get_info (interface);
+  gint what_happened = GPOINTER_TO_INT (user_data);
+  const gchar *verb = (what_happened == 1 ? "add" : "remove");
 
-  g_assert (priv->interfaces == NULL);
+  g_assert (what_happened == 1 || what_happened == -1);
 
-  always = klass->get_interfaces_always_present (self);
+  if (self->priv->status == TP_CONNECTION_STATUS_CONNECTED)
+    {
+      WARNING ("Adding or removing Connection interfaces after CONNECTED "
+          "status has been reached is not supported. "
+          "(Tried to %s %s %p, \"%s\")",
+          verb, G_OBJECT_TYPE_NAME (interface), interface, info->name);
+    }
+  else
+    {
+      /* We'd ideally like to detect attempts to remove interfaces
+       * and diagnose those as invalid, too, but we can't do that because
+       * replacement by a subclass is represented as remove + add. */
+      DEBUG ("%s %s %p \"%s\"",
+          verb, G_OBJECT_TYPE_NAME (interface), interface, info->name);
+    }
+}
 
-  priv->interfaces = g_array_sized_new (TRUE, FALSE, sizeof (gchar *),
-      always->len);
+static void
+object_skeleton_take_interface (GDBusObjectSkeleton *skel,
+    GDBusInterfaceSkeleton *iface)
+{
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+}
 
-  for (i = 0; i < always->len; i++)
-    g_array_append_val (priv->interfaces, g_ptr_array_index (always, i));
-
-  g_ptr_array_unref (always);
+static void
+object_skeleton_take_svc_interface (GDBusObjectSkeleton *skel,
+    GType type)
+{
+  object_skeleton_take_interface (skel,
+      tp_svc_interface_skeleton_new (skel, type));
 }
 
 static GObject *
@@ -834,11 +811,32 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
           (GCallback) manager_channel_closed_cb, self);
     }
 
-  tp_base_connection_create_interfaces_array (self);
-
   priv->been_constructed = TRUE;
 
   return (GObject *) self;
+}
+
+static void
+tp_base_connection_constructed (GObject *object)
+{
+  TpBaseConnection *self = TP_BASE_CONNECTION (object);
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (self);
+  void (*chain_up) (GObject *) =
+    ((GObjectClass *) tp_base_connection_parent_class)->constructed;
+
+  if (chain_up != NULL)
+    chain_up (object);
+
+  object_skeleton_take_svc_interface (skel, TP_TYPE_SVC_CONNECTION);
+  object_skeleton_take_svc_interface (skel,
+      TP_TYPE_SVC_CONNECTION_INTERFACE_REQUESTS);
+
+  g_signal_connect (self, "interface-added",
+      G_CALLBACK (tp_base_connection_interface_changed_cb),
+      GINT_TO_POINTER (+1));
+  g_signal_connect (self, "interface-removed",
+      G_CALLBACK (tp_base_connection_interface_changed_cb),
+      GINT_TO_POINTER (-1));
 }
 
 /**
@@ -959,24 +957,6 @@ conn_requests_get_dbus_property (GObject *object,
     }
 }
 
-static GPtrArray *
-tp_base_connection_get_interfaces_always_present (TpBaseConnection *self)
-{
-  GPtrArray *interfaces = g_ptr_array_new ();
-  const gchar **ptr;
-
-  /* copy the klass->interfaces_always_present property for backwards
-   * compatibility */
-  for (ptr = TP_BASE_CONNECTION_GET_CLASS (self)->interfaces_always_present;
-       ptr != NULL && *ptr != NULL;
-       ptr++)
-    {
-      g_ptr_array_add (interfaces, (gchar *) *ptr);
-    }
-
-  return interfaces;
-}
-
 /* this is not really gtk-doc - it's for gobject-introspection */
 /**
  * TpBaseConnectionClass::fill_contact_attributes:
@@ -1052,7 +1032,9 @@ tp_base_connection_get_connection_property (GObject *object,
         break;
 
       case DBUSPROP_INTERFACES:
-        g_value_set_boxed (value, tp_base_connection_get_interfaces (self));
+        g_value_take_boxed (value,
+            _tp_g_dbus_object_dup_interface_names (G_DBUS_OBJECT (self),
+              TP_IFACE_CONNECTION, TP_IFACE_CONNECTION_INTERFACE_REQUESTS));
         break;
 
       case DBUSPROP_RCCS:
@@ -1083,14 +1065,13 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (TpBaseConnectionPrivate));
+  object_class->constructed = tp_base_connection_constructed;
   object_class->dispose = tp_base_connection_dispose;
   object_class->finalize = tp_base_connection_finalize;
   object_class->constructor = tp_base_connection_constructor;
   object_class->get_property = tp_base_connection_get_property;
   object_class->set_property = tp_base_connection_set_property;
 
-  klass->get_interfaces_always_present =
-    tp_base_connection_get_interfaces_always_present;
   klass->fill_contact_attributes = _tp_base_connection_fill_contact_attributes;
 
   /**
@@ -1552,14 +1533,6 @@ tp_base_connection_disconnect (TpSvcConnection *iface,
       TP_CONNECTION_STATUS_REASON_REQUESTED);
 }
 
-static const gchar * const *
-tp_base_connection_get_interfaces (TpBaseConnection *self)
-{
-  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
-
-  return (const gchar * const *)(self->priv->interfaces->data);
-}
-
 /**
  * tp_base_connection_get_status:
  * @self: the connection
@@ -1995,37 +1968,6 @@ tp_base_connection_change_status (TpBaseConnection *self,
     }
 
   g_object_unref (self);
-}
-
-
-/**
- * tp_base_connection_add_interfaces: (skip)
- * @self: A TpBaseConnection in state #TP_INTERNAL_CONNECTION_STATUS_NEW
- *  or #TP_CONNECTION_STATUS_CONNECTING
- * @interfaces: A %NULL-terminated array of D-Bus interface names, which
- *  must remain valid at least until the connection enters state
- *  #TP_CONNECTION_STATUS_DISCONNECTED (in practice, you should either
- *  use static strings, or use strdup'd strings and free them in the dispose
- *  callback).
- *
- * Add some interfaces to the list supported by this Connection. If you're
- * going to call this function at all, you must do so before moving to state
- * CONNECTED (or DISCONNECTED); if you don't call it, only the set of
- * interfaces always present (@get_interfaces_always_present in
- * #TpBaseConnectionClass) will be supported.
- */
-void
-tp_base_connection_add_interfaces (TpBaseConnection *self,
-                                   const gchar **interfaces)
-{
-  TpBaseConnectionPrivate *priv = self->priv;
-
-  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
-  g_return_if_fail (priv->status != TP_CONNECTION_STATUS_CONNECTED);
-  g_return_if_fail (priv->status != TP_CONNECTION_STATUS_DISCONNECTED);
-
-  for (; interfaces != NULL && *interfaces != NULL; interfaces++)
-    g_array_append_val (priv->interfaces, *interfaces);
 }
 
 static guint

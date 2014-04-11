@@ -18,6 +18,7 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/svc-connection.h>
+#include <telepathy-glib/svc-interface.h>
 #include <telepathy-glib/value-array.h>
 
 #include <dbus/dbus-glib.h>
@@ -83,24 +84,27 @@ balanced_connection_init (BalancedConnection *self)
 {
 }
 
-static GPtrArray *
-get_interfaces (TpBaseConnection *base)
+static void
+balanced_connection_constructed (GObject *object)
 {
-  GPtrArray *interfaces;
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (object);
+  GDBusInterfaceSkeleton *iface;
+  void (*parent_impl) (GObject *) =
+    G_OBJECT_CLASS (balanced_connection_parent_class)->constructed;
 
-  interfaces = TP_BASE_CONNECTION_CLASS (
-      balanced_connection_parent_class)->get_interfaces_always_present (base);
+  if (parent_impl != NULL)
+    parent_impl (object);
 
-  g_ptr_array_add (interfaces, TP_IFACE_CONNECTION_INTERFACE_BALANCE1);
-
-  return interfaces;
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CONNECTION_INTERFACE_BALANCE1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
 }
 
 static void
 balanced_connection_class_init (BalancedConnectionClass *cls)
 {
   GObjectClass *object_class = (GObjectClass *) cls;
-  TpBaseConnectionClass *base_class = TP_BASE_CONNECTION_CLASS (cls);
 
   static TpDBusPropertiesMixinPropImpl balance_props[] = {
         { "AccountBalance", "account-balance", NULL },
@@ -108,9 +112,8 @@ balanced_connection_class_init (BalancedConnectionClass *cls)
         { NULL }
   };
 
+  object_class->constructed = balanced_connection_constructed;
   object_class->get_property = balanced_connection_get_property;
-
-  base_class->get_interfaces_always_present = get_interfaces;
 
   g_object_class_install_property (object_class, PROP_ACCOUNT_BALANCE,
       g_param_spec_boxed ("account-balance", "", "",

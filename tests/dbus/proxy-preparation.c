@@ -11,6 +11,7 @@
 
 #include <telepathy-glib/cli-connection.h>
 #include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/telepathy-glib-dbus.h>
 
 #include "tests/lib/util.h"
 #include "tests/lib/simple-account.h"
@@ -386,7 +387,7 @@ test_interface_later (Test *test,
 {
   GQuark features[] = { TP_TESTS_MY_CONN_PROXY_FEATURE_INTERFACE_LATER, 0 };
   GQuark connected[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
-  const gchar *interfaces[] = { TP_TESTS_MY_CONN_PROXY_IFACE_LATER, NULL };
+  GDBusInterfaceSkeleton *iface;
 
   /* We need a not yet connected connection */
   recreate_connection (test);
@@ -404,7 +405,11 @@ test_interface_later (Test *test,
   tp_cli_connection_call_connect (test->connection, -1, NULL, NULL, NULL, NULL);
 
   /* While connecting the interface is added */
-  tp_base_connection_add_interfaces (test->base_connection, interfaces);
+  iface = tp_svc_interface_skeleton_new (test->base_connection,
+      TP_TESTS_TYPE_SVC_CONNECTION_INTERFACE_LATER);
+  g_dbus_object_skeleton_add_interface (
+      G_DBUS_OBJECT_SKELETON (test->base_connection), iface);
+  g_object_unref (iface);
 
   /* Wait that CONNECTED is announced */
   tp_proxy_prepare_async (test->my_conn, connected, prepare_cb, test);

@@ -56,18 +56,15 @@ typedef GPtrArray *(*TpBaseConnectionCreateChannelManagersImpl) (
 typedef gchar *(*TpBaseConnectionGetUniqueConnectionNameImpl) (
     TpBaseConnection *self);
 
-typedef GPtrArray *(*TpBaseConnectionGetInterfacesImpl) (
-    TpBaseConnection *self);
-
 struct _TpBaseConnection {
     /*<private>*/
-    GObject parent;
+    GDBusObjectSkeleton parent;
 
     TpBaseConnectionPrivate *priv;
 };
 
 struct _TpBaseConnectionClass {
-    GObjectClass parent_class;
+    GDBusObjectSkeletonClass parent_class;
 
 #ifdef __GI_SCANNER__
     /*<private>*/
@@ -87,12 +84,7 @@ struct _TpBaseConnectionClass {
 
     TpBaseConnectionStartConnectingImpl start_connecting;
 
-    /*<private>*/
-    const gchar **_TP_SEAL (interfaces_always_present);
-    /*<public>*/
     TpBaseConnectionCreateChannelManagersImpl create_channel_managers;
-
-    TpBaseConnectionGetInterfacesImpl get_interfaces_always_present;
 
     void (*fill_contact_attributes) (TpBaseConnection *self,
         const gchar *dbus_interface,
@@ -153,9 +145,6 @@ void tp_base_connection_set_self_handle (TpBaseConnection *self,
     TpHandle self_handle);
 
 void tp_base_connection_finish_shutdown (TpBaseConnection *self);
-
-void tp_base_connection_add_interfaces (TpBaseConnection *self,
-    const gchar **interfaces);
 
 typedef struct _TpChannelManagerIter TpChannelManagerIter;
 
