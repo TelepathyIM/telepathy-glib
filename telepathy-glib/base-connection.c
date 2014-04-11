@@ -2961,6 +2961,14 @@ contacts_get_contact_attributes_impl (_TpGDBusConnection *skeleton,
   GHashTable *attributes;
   GValue value = G_VALUE_INIT;
   GVariant *result;
+  /* In principle C does not guarantee that TpHandle (which is an
+   * unsigned int) is exactly 32 bits. In practice, int is 32-bit on
+   * every relevant platform.
+   *
+   * If this assertion fails, the g_variant_get_fixed_array() call
+   * will fail at runtime too, and we'll have to change the code to copy
+   * handles into @array one at a time. */
+  G_STATIC_ASSERT (sizeof (TpHandle) == sizeof (guint32));
 
   _TP_GDBUS_ERROR_IF_NOT_CONNECTED (conn, context);
 
