@@ -352,6 +352,8 @@ gdbus_codegen = \
     _gdbus/Connection_Interface_Contact_Groups1.h \
     _gdbus/Connection_Interface_Contact_List1.c \
     _gdbus/Connection_Interface_Contact_List1.h \
+    _gdbus/Connection_Interface_Presence1.c \
+    _gdbus/Connection_Interface_Presence1.h \
     _gdbus/Connection_Interface_Requests.c \
     _gdbus/Connection_Interface_Requests.h \
     $(NULL)

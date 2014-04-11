@@ -34,8 +34,6 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsContactsConnection,
       init_aliasing);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_AVATARS1,
       init_avatars);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE1,
-      tp_presence_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_LOCATION1, NULL)
     G_IMPLEMENT_INTERFACE (
       TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_CAPABILITIES1, NULL)
@@ -414,11 +412,6 @@ constructed (GObject *object)
   g_dbus_object_skeleton_add_interface (skel, iface);
   g_object_unref (iface);
 
-  iface = tp_svc_interface_skeleton_new (skel,
-      TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE1);
-  g_dbus_object_skeleton_add_interface (skel, iface);
-  g_object_unref (iface);
-
   self->priv->list_manager = g_object_new (TP_TESTS_TYPE_CONTACT_LIST_MANAGER,
       "connection", self, NULL);
 
@@ -561,8 +554,6 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
   mixin_class = TP_PRESENCE_MIXIN_CLASS(klass);
   mixin_class->get_maximum_status_message_length =
       my_get_maximum_status_message_length_cb;
-
-  tp_presence_mixin_init_dbus_properties (object_class);
 
   klass->properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,

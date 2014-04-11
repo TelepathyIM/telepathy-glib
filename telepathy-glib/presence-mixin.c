@@ -40,30 +40,6 @@
  *   You can implement #TpSvcConnectionInterfacePresence1 as follows:
  *   <itemizedlist>
  *     <listitem>
- *       <para>use the #TpContactsMixin and
- *        <link linkend="telepathy-glib-dbus-properties-mixin">TpDBusPropertiesMixin</link>;</para>
- *     </listitem>
- *     <listitem>
- *       <para>pass tp_presence_mixin_iface_init() as an
- *         argument to G_IMPLEMENT_INTERFACE(), like so:
- *       </para>
- *       |[
- *       G_DEFINE_TYPE_WITH_CODE (MyConnection, my_connection,
- *           TP_TYPE_BASE_CONNECTION,
- *           // ...
- *           G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE1,
- *               tp_presence_mixin_iface_init);
- *           // ...
- *           )
- *       ]|
- *     </listitem>
- *     <listitem>
- *       <para>
- *         call tp_presence_mixin_init_dbus_properties() in the
- *         #GTypeInfo class_init function;
- *       </para>
- *     </listitem>
- *     <listitem>
  *       <para>in the #TpBaseConnectionClass.fill_contact_attributes
  *       implementation, call tp_presence_mixin_fill_contact_attributes()
  *       and do not chain up if it returns %TRUE:
@@ -237,6 +213,8 @@
 #include <dbus/dbus-glib.h>
 #include <string.h>
 
+#include <telepathy-glib/_gdbus/Connection_Interface_Presence1.h>
+
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/enums.h>
@@ -250,6 +228,11 @@
 #define DEBUG_FLAG TP_DEBUG_PRESENCE
 
 #include "debug-internal.h"
+
+struct _TpPresenceMixinPrivate
+{
+  _TpGDBusConnectionInterfacePresence1 *skeleton;
+};
 
 
 static GVariant *construct_presence_hash (
@@ -413,6 +396,30 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
     }
 }
 
+static void update_statuses_property (TpPresenceMixin *self,
+    GObject *object);
+static void update_max_status_message_len_property (TpPresenceMixin *self,
+    GObject *object);
+static gboolean tp_presence_mixin_set_presence (
+    _TpGDBusConnectionInterfacePresence1 *skeleton,
+    GDBusMethodInvocation *context,
+    const gchar *status,
+    const gchar *message,
+    GObject *obj);
+
+static void
+connection_status_changed_cb (GObject *object,
+    TpConnectionStatus status,
+    TpConnectionStatusReason reason,
+    TpPresenceMixin *self)
+{
+  if (status == TP_CONNECTION_STATUS_CONNECTED)
+    {
+      update_statuses_property (self, object);
+      update_max_status_message_len_property (self, object);
+    }
+}
+
 /**
  * tp_presence_mixin_init: (skip)
  * @obj: An instance of the implementation that uses this mixin
@@ -432,6 +439,8 @@ void
 tp_presence_mixin_init (GObject *obj,
                         glong offset)
 {
+  TpPresenceMixin *self;
+
   DEBUG ("called.");
 
   g_assert (TP_IS_BASE_CONNECTION (obj));
@@ -439,6 +448,22 @@ tp_presence_mixin_init (GObject *obj,
   g_type_set_qdata (G_OBJECT_TYPE (obj),
                     TP_PRESENCE_MIXIN_OFFSET_QUARK,
                     GINT_TO_POINTER (offset));
+
+  self = TP_PRESENCE_MIXIN (obj);
+  self->priv = g_slice_new0 (TpPresenceMixinPrivate);
+
+  self->priv->skeleton = _tp_gdbus_connection_interface_presence1_skeleton_new ();
+  g_signal_connect_object (self->priv->skeleton, "handle-set-presence",
+      G_CALLBACK (tp_presence_mixin_set_presence), obj, 0);
+
+  /* Set the initial properties values, we'll update them once CONNECTED */
+  update_max_status_message_len_property (self, obj);
+  update_statuses_property (self, obj);
+  g_signal_connect (obj, "status-changed",
+      G_CALLBACK (connection_status_changed_cb), self);
+
+  g_dbus_object_skeleton_add_interface (G_DBUS_OBJECT_SKELETON (obj),
+      G_DBUS_INTERFACE_SKELETON (self->priv->skeleton));
 }
 
 /**
@@ -450,9 +475,13 @@ tp_presence_mixin_init (GObject *obj,
 void
 tp_presence_mixin_finalize (GObject *obj)
 {
+  TpPresenceMixin *self = TP_PRESENCE_MIXIN (obj);
+
   DEBUG ("%p", obj);
 
-  /* free any data held directly by the object here */
+  g_object_unref (self->priv->skeleton);
+
+  g_slice_free (TpPresenceMixinPrivate, self->priv);
 }
 
 /**
@@ -469,22 +498,15 @@ void
 tp_presence_mixin_emit_presence_update (GObject *obj,
                                         GHashTable *contact_statuses)
 {
+  TpPresenceMixin *self = TP_PRESENCE_MIXIN (obj);
   TpPresenceMixinClass *mixin_cls =
     TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
-  GVariant *presence_hash;
-  GValue value = G_VALUE_INIT;
 
   DEBUG ("called.");
 
-  presence_hash = construct_presence_hash (mixin_cls->statuses,
-      contact_statuses);
-  g_variant_ref_sink (presence_hash);
-  dbus_g_value_parse_g_variant (presence_hash, &value);
-  tp_svc_connection_interface_presence1_emit_presences_changed (obj,
-      g_value_get_boxed (&value));
-
-  g_value_unset (&value);
-  g_variant_unref (presence_hash);
+  _tp_gdbus_connection_interface_presence1_emit_presences_changed (
+      self->priv->skeleton,
+      construct_presence_hash (mixin_cls->statuses, contact_statuses));
 }
 
 
@@ -595,112 +617,53 @@ check_for_status (GObject *object, const gchar *status, GError **error)
   return i;
 }
 
-enum {
-  MIXIN_DP_STATUSES,
-  MIXIN_DP_MAX_STATUS_MESSAGE_LENGTH,
-  NUM_MIXIN_DBUS_PROPERTIES
-};
-
-static TpDBusPropertiesMixinPropImpl known_presence_props[] = {
-  { "Statuses", NULL, NULL },
-  { "MaximumStatusMessageLength", NULL, NULL },
-  { NULL }
-};
-
 static void
-tp_presence_mixin_get_dbus_property (GObject *object,
-                                     GQuark interface,
-                                     GQuark name,
-                                     GValue *value,
-                                     gpointer unused G_GNUC_UNUSED)
+update_statuses_property (TpPresenceMixin *self,
+    GObject *object)
 {
   TpPresenceMixinClass *mixin_cls =
       TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (object));
-  static GQuark q[NUM_MIXIN_DBUS_PROPERTIES] = { 0, };
+  GVariantBuilder builder;
+  int i;
 
-  DEBUG ("called.");
-
-  if (G_UNLIKELY (q[0] == 0))
+  g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{s(ubb)}"));
+  for (i = 0; mixin_cls->statuses[i].name != NULL; i++)
     {
-      q[MIXIN_DP_STATUSES] = g_quark_from_static_string ("Statuses");
-      q[MIXIN_DP_MAX_STATUS_MESSAGE_LENGTH] =
-          g_quark_from_static_string ("MaximumStatusMessageLength");
-    }
+      gboolean message;
 
-  g_return_if_fail (object != NULL);
+      /* we include statuses here even if they're not available
+       * to set on yourself */
+      if (!check_status_available (object, mixin_cls, i, NULL, FALSE))
+        continue;
 
-  if (name == q[MIXIN_DP_STATUSES])
-    {
-      GHashTable *ret;
-      GValueArray *status;
-      int i;
+      message = tp_presence_status_spec_has_message (
+          &mixin_cls->statuses[i]);
 
-      g_return_if_fail (G_VALUE_HOLDS_BOXED (value));
+      g_variant_builder_add (&builder, "{s(ubb)}",
+          mixin_cls->statuses[i].name,
+          mixin_cls->statuses[i].presence_type,
+          mixin_cls->statuses[i].self,
+          message);
+   }
 
-      ret = g_hash_table_new_full (g_str_hash, g_str_equal,
-                               NULL, (GDestroyNotify) tp_value_array_free);
-
-      for (i=0; mixin_cls->statuses[i].name != NULL; i++)
-        {
-          gboolean message;
-
-          /* we include statuses here even if they're not available
-           * to set on yourself */
-          if (!check_status_available (object, mixin_cls, i, NULL, FALSE))
-            continue;
-
-          message = tp_presence_status_spec_has_message (
-              &mixin_cls->statuses[i]);
-
-          status = tp_value_array_build (3,
-             G_TYPE_UINT, (guint) mixin_cls->statuses[i].presence_type,
-             G_TYPE_BOOLEAN, mixin_cls->statuses[i].self,
-             G_TYPE_BOOLEAN, message,
-             G_TYPE_INVALID);
-
-         g_hash_table_insert (ret, (gchar *) mixin_cls->statuses[i].name,
-             status);
-       }
-       g_value_take_boxed (value, ret);
-    }
-  else if (name == q[MIXIN_DP_MAX_STATUS_MESSAGE_LENGTH])
-    {
-      guint max_status_message_length = 0;
-
-      g_assert (G_VALUE_HOLDS (value, G_TYPE_UINT));
-
-      if (mixin_cls->get_maximum_status_message_length != NULL)
-        max_status_message_length =
-            mixin_cls->get_maximum_status_message_length (object);
-
-      g_value_set_uint (value, max_status_message_length);
-    }
-  else
-    {
-      g_return_if_reached ();
-    }
-
+  _tp_gdbus_connection_interface_presence1_set_statuses (self->priv->skeleton,
+      g_variant_builder_end (&builder));
 }
 
-/**
- * tp_presence_mixin_init_dbus_properties: (skip)
- * @cls: The class of an object with this mixin
- *
- * Set up #TpDBusPropertiesMixinClass to use this mixin's implementation of
- * the Presence interface's properties.
- *
- * This automatically sets up a list of the supported properties for the
- * Presence interface.
- *
- * Since: 0.7.13
- */
-void
-tp_presence_mixin_init_dbus_properties (GObjectClass *cls)
+static void
+update_max_status_message_len_property (TpPresenceMixin *self,
+    GObject *object)
 {
-  tp_dbus_properties_mixin_implement_interface (cls,
-      TP_IFACE_QUARK_CONNECTION_INTERFACE_PRESENCE1,
-      tp_presence_mixin_get_dbus_property,
-      NULL, known_presence_props);
+  TpPresenceMixinClass *mixin_cls =
+      TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (object));
+  guint max_status_message_length = 0;
+
+  if (mixin_cls->get_maximum_status_message_length != NULL)
+    max_status_message_length =
+        mixin_cls->get_maximum_status_message_length (object);
+
+  _tp_gdbus_connection_interface_presence1_set_maximum_status_message_length (
+      self->priv->skeleton, max_status_message_length);
 }
 
 /*
@@ -712,14 +675,14 @@ tp_presence_mixin_init_dbus_properties (GObjectClass *cls)
  * @context: The D-Bus invocation context to use to return values
  *           or throw an error.
  */
-static void
+static gboolean
 tp_presence_mixin_set_presence (
-    TpSvcConnectionInterfacePresence1 *iface,
+    _TpGDBusConnectionInterfacePresence1 *skeleton,
+    GDBusMethodInvocation *context,
     const gchar *status,
     const gchar *message,
-    GDBusMethodInvocation *context)
+    GObject *obj)
 {
-  GObject *obj = (GObject *) iface;
   TpPresenceMixinClass *mixin_cls =
     TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
   TpPresenceStatus status_to_set = { 0, };
@@ -745,7 +708,7 @@ tp_presence_mixin_set_presence (
 out:
   if (error == NULL)
     {
-      tp_svc_connection_interface_presence1_return_from_set_presence (
+      _tp_gdbus_connection_interface_presence1_complete_set_presence (skeleton,
           context);
     }
   else
@@ -753,6 +716,8 @@ out:
       g_dbus_method_invocation_return_gerror (context, error);
       g_error_free (error);
     }
+
+  return TRUE;
 }
 
 static GVariant *
@@ -796,30 +761,6 @@ construct_presence_hash (const TpPresenceStatusSpec *supported_statuses,
     }
 
   return g_variant_builder_end (&builder);
-}
-
-/**
- * tp_presence_mixin_iface_init: (skip)
- * @g_iface: A pointer to the #TpSvcConnectionInterfacePresence1Class in
- * an object class
- * @iface_data: Ignored
- *
- * Fill in the vtable entries needed to implement the presence interface
- * using this mixin. This function should usually be called via
- * G_IMPLEMENT_INTERFACE.
- *
- * Since: 0.7.13
- */
-void
-tp_presence_mixin_iface_init (gpointer g_iface,
-                                       gpointer iface_data)
-{
-  TpSvcConnectionInterfacePresence1Class *klass = g_iface;
-
-#define IMPLEMENT(x) tp_svc_connection_interface_presence1_implement_##x\
- (klass, tp_presence_mixin_##x)
-  IMPLEMENT(set_presence);
-#undef IMPLEMENT
 }
 
 /**
