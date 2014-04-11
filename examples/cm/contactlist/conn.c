@@ -22,12 +22,14 @@
 #include "protocol.h"
 
 static void init_aliasing (gpointer, gpointer);
+static void init_presence (gpointer, gpointer);
 
 G_DEFINE_TYPE_WITH_CODE (ExampleContactListConnection,
     example_contact_list_connection,
     TP_TYPE_BASE_CONNECTION,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING1,
       init_aliasing)
+    G_IMPLEMENT_INTERFACE (TP_TYPE_PRESENCE_MIXIN, init_presence)
     )
 
 enum
@@ -175,8 +177,7 @@ presence_updated_cb (ExampleContactList *contact_list,
   status = tp_presence_status_new (
       example_contact_list_get_presence (contact_list, contact),
       NULL);
-  tp_presence_mixin_emit_one_presence_update ((GObject *) self,
-      contact, status);
+  tp_presence_mixin_emit_one_presence_update (base, contact, status);
   tp_presence_status_free (status);
 }
 
@@ -244,10 +245,6 @@ example_contact_list_connection_fill_contact_attributes (TpBaseConnection *conn,
         dbus_interface, contact, attributes))
     return;
 
-  if (tp_presence_mixin_fill_contact_attributes (G_OBJECT (conn),
-        dbus_interface, contact, attributes))
-    return;
-
   ((TpBaseConnectionClass *) example_contact_list_connection_parent_class)->
     fill_contact_attributes (conn, dbus_interface, contact, attributes);
 }
@@ -275,9 +272,6 @@ constructed (GObject *object)
   g_signal_connect (self->priv->contact_list, "presence-updated",
       G_CALLBACK (presence_updated_cb), self);
 
-  tp_presence_mixin_init (object,
-      G_STRUCT_OFFSET (ExampleContactListConnection, presence_mixin));
-
   iface = tp_svc_interface_skeleton_new (skel,
       TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING1);
   g_dbus_object_skeleton_add_interface (skel, iface);
@@ -285,21 +279,17 @@ constructed (GObject *object)
 }
 
 static gboolean
-status_available (GObject *object,
-                  guint index_)
+status_available (TpBaseConnection *base,
+    guint index_)
 {
-  TpBaseConnection *base = TP_BASE_CONNECTION (object);
-
   return tp_base_connection_check_connected (base, NULL);
 }
 
 static TpPresenceStatus *
-get_contact_status (GObject *object,
+get_contact_status (TpBaseConnection *base,
     TpHandle contact)
 {
-  ExampleContactListConnection *self =
-    EXAMPLE_CONTACT_LIST_CONNECTION (object);
-  TpBaseConnection *base = TP_BASE_CONNECTION (object);
+  ExampleContactListConnection *self = EXAMPLE_CONTACT_LIST_CONNECTION (base);
   ExampleContactListPresence presence;
 
   /* we get our own status from the connection, and everyone else's status
@@ -319,13 +309,11 @@ get_contact_status (GObject *object,
 }
 
 static gboolean
-set_own_status (GObject *object,
+set_own_status (TpBaseConnection *base,
                 const TpPresenceStatus *status,
                 GError **error)
 {
-  ExampleContactListConnection *self =
-    EXAMPLE_CONTACT_LIST_CONNECTION (object);
-  TpBaseConnection *base = TP_BASE_CONNECTION (object);
+  ExampleContactListConnection *self = EXAMPLE_CONTACT_LIST_CONNECTION (base);
   GHashTable *presences;
 
   if (status->index == EXAMPLE_CONTACT_LIST_PRESENCE_AWAY)
@@ -348,10 +336,23 @@ set_own_status (GObject *object,
   g_hash_table_insert (presences,
       GUINT_TO_POINTER (tp_base_connection_get_self_handle (base)),
       (gpointer) status);
-  tp_presence_mixin_emit_presence_update (object, presences);
+  tp_presence_mixin_emit_presence_update (base, presences);
   g_hash_table_unref (presences);
   return TRUE;
 }
+
+static void
+init_presence (gpointer g_iface,
+    gpointer iface_data)
+{
+  TpPresenceMixinInterface *iface = g_iface;
+
+  iface->status_available = status_available;
+  iface->get_contact_status = get_contact_status;
+  iface->set_own_status = set_own_status;
+  iface->statuses = example_contact_list_presence_statuses ();
+}
+
 
 static const gchar *interfaces_always_present[] = {
     TP_IFACE_CONNECTION_INTERFACE_ALIASING1,
@@ -438,11 +439,6 @@ example_contact_list_connection_class_init (
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
       param_spec);
-
-  tp_presence_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleContactListConnectionClass, presence_mixin),
-      status_available, get_contact_status, set_own_status,
-      example_contact_list_presence_statuses ());
 
   klass->properties_mixin.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,

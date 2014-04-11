@@ -31,8 +31,12 @@
 #include "call-manager.h"
 #include "protocol.h"
 
-G_DEFINE_TYPE (ExampleCallConnection, example_call_connection,
-    TP_TYPE_BASE_CONNECTION)
+static void init_presence (gpointer g_iface,
+    gpointer iface_data);
+
+G_DEFINE_TYPE_WITH_CODE (ExampleCallConnection, example_call_connection,
+    TP_TYPE_BASE_CONNECTION,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_PRESENCE_MIXIN, init_presence))
 
 enum
 {
@@ -206,35 +210,18 @@ shut_down (TpBaseConnection *conn)
   tp_base_connection_finish_shutdown (conn);
 }
 
-static void
-constructed (GObject *object)
-{
-  void (*chain_up) (GObject *) =
-    G_OBJECT_CLASS (example_call_connection_parent_class)->constructed;
-
-  if (chain_up != NULL)
-    chain_up (object);
-
-  tp_presence_mixin_init (object,
-      G_STRUCT_OFFSET (ExampleCallConnection, presence_mixin));
-}
-
 static gboolean
-status_available (GObject *object,
+status_available (TpBaseConnection *base,
     guint index_)
 {
-  TpBaseConnection *base = TP_BASE_CONNECTION (object);
-
   return tp_base_connection_check_connected (base, NULL);
 }
 
 static TpPresenceStatus *
-get_contact_status (GObject *object,
+get_contact_status (TpBaseConnection *base,
     TpHandle contact)
 {
-  ExampleCallConnection *self =
-    EXAMPLE_CALL_CONNECTION (object);
-  TpBaseConnection *base = TP_BASE_CONNECTION (object);
+  ExampleCallConnection *self = EXAMPLE_CALL_CONNECTION (base);
   ExampleCallPresence presence;
   const gchar *message;
 
@@ -256,13 +243,11 @@ get_contact_status (GObject *object,
 }
 
 static gboolean
-set_own_status (GObject *object,
+set_own_status (TpBaseConnection *base,
     const TpPresenceStatus *status,
     GError **error)
 {
-  ExampleCallConnection *self =
-    EXAMPLE_CALL_CONNECTION (object);
-  TpBaseConnection *base = TP_BASE_CONNECTION (object);
+  ExampleCallConnection *self = EXAMPLE_CALL_CONNECTION (base);
   GHashTable *presences;
 
   if (status->index == EXAMPLE_CALL_PRESENCE_AWAY)
@@ -290,7 +275,7 @@ set_own_status (GObject *object,
   g_hash_table_insert (presences,
       GUINT_TO_POINTER (tp_base_connection_get_self_handle (base)),
       (gpointer) status);
-  tp_presence_mixin_emit_presence_update (object, presences);
+  tp_presence_mixin_emit_presence_update (base, presences);
   g_hash_table_unref (presences);
 
   if (!self->priv->away)
@@ -324,17 +309,15 @@ example_call_connection_get_possible_interfaces (void)
 }
 
 static void
-example_call_connection_fill_contact_attributes (TpBaseConnection *conn,
-    const gchar *dbus_interface,
-    TpHandle contact,
-    GVariantDict *attributes)
+init_presence (gpointer g_iface,
+    gpointer iface_data)
 {
-  if (tp_presence_mixin_fill_contact_attributes (G_OBJECT (conn),
-        dbus_interface, contact, attributes))
-    return;
+  TpPresenceMixinInterface *iface = g_iface;
 
-  ((TpBaseConnectionClass *) example_call_connection_parent_class)->
-    fill_contact_attributes (conn, dbus_interface, contact, attributes);
+  iface->status_available = status_available;
+  iface->get_contact_status = get_contact_status;
+  iface->set_own_status = set_own_status;
+  iface->statuses = presence_statuses;
 }
 
 static void
@@ -347,7 +330,6 @@ example_call_connection_class_init (
 
   object_class->get_property = get_property;
   object_class->set_property = set_property;
-  object_class->constructed = constructed;
   object_class->finalize = finalize;
   g_type_class_add_private (klass,
       sizeof (ExampleCallConnectionPrivate));
@@ -357,8 +339,6 @@ example_call_connection_class_init (
   base_class->create_channel_managers = create_channel_managers;
   base_class->start_connecting = start_connecting;
   base_class->shut_down = shut_down;
-  base_class->fill_contact_attributes =
-    example_call_connection_fill_contact_attributes;
 
   param_spec = g_param_spec_string ("account", "Account name",
       "The username of this user", NULL,
@@ -377,9 +357,4 @@ example_call_connection_class_init (
   signals[SIGNAL_AVAILABLE] = g_signal_new ("available",
       G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
       NULL, G_TYPE_NONE, 1, G_TYPE_STRING);
-
-  tp_presence_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleCallConnectionClass, presence_mixin),
-      status_available, get_contact_status, set_own_status,
-      presence_statuses);
 }

@@ -24,12 +24,14 @@
 static void init_aliasing (gpointer, gpointer);
 static void init_avatars (gpointer, gpointer);
 static void init_contact_info (gpointer, gpointer);
+static void init_presence (gpointer, gpointer);
 static void conn_avatars_properties_getter (GObject *object, GQuark interface,
     GQuark name, GValue *value, gpointer getter_data);
 
 G_DEFINE_TYPE_WITH_CODE (TpTestsContactsConnection,
     tp_tests_contacts_connection,
     TP_TESTS_TYPE_SIMPLE_CONNECTION,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_PRESENCE_MIXIN, init_presence)
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING1,
       init_aliasing);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_AVATARS1,
@@ -296,10 +298,6 @@ tp_tests_contacts_connection_fill_contact_attributes (TpBaseConnection *base,
         dbus_interface, contact, attributes))
     return;
 
-  if (tp_presence_mixin_fill_contact_attributes (G_OBJECT (self),
-        dbus_interface, contact, attributes))
-    return;
-
   ((TpBaseConnectionClass *) tp_tests_contacts_connection_parent_class)->
     fill_contact_attributes (base, dbus_interface, contact, attributes);
 }
@@ -414,9 +412,6 @@ constructed (GObject *object)
 
   self->priv->list_manager = g_object_new (TP_TESTS_TYPE_CONTACT_LIST_MANAGER,
       "connection", self, NULL);
-
-  tp_presence_mixin_init (object,
-      G_STRUCT_OFFSET (TpTestsContactsConnection, presence_mixin));
 }
 
 /* Must match TpTestsContactsConnectionPresenceStatusIndex in the .h */
@@ -431,19 +426,17 @@ static const TpPresenceStatusSpec my_statuses[] = {
 };
 
 static gboolean
-my_status_available (GObject *object,
-                     guint index)
+my_status_available (TpBaseConnection *base,
+    guint index)
 {
-  TpBaseConnection *base = TP_BASE_CONNECTION (object);
-
   return tp_base_connection_check_connected (base, NULL);
 }
 
 static TpPresenceStatus *
-my_get_contact_status (GObject *object,
+my_get_contact_status (TpBaseConnection *base_conn,
     TpHandle contact)
 {
-  TpTestsContactsConnection *self = TP_TESTS_CONTACTS_CONNECTION (object);
+  TpTestsContactsConnection *self = TP_TESTS_CONTACTS_CONNECTION (base_conn);
   gpointer key = GUINT_TO_POINTER (contact);
   TpTestsContactsConnectionPresenceStatusIndex index;
   const gchar *presence_message;
@@ -457,26 +450,40 @@ my_get_contact_status (GObject *object,
 }
 
 static gboolean
-my_set_own_status (GObject *object,
+my_set_own_status (TpBaseConnection *base_conn,
                    const TpPresenceStatus *status,
                    GError **error)
 {
-  TpBaseConnection *base_conn = TP_BASE_CONNECTION (object);
   TpTestsContactsConnectionPresenceStatusIndex index = status->index;
   const gchar *message = status->message;
   TpHandle self_handle;
 
   self_handle = tp_base_connection_get_self_handle (base_conn);
-  tp_tests_contacts_connection_change_presences (TP_TESTS_CONTACTS_CONNECTION (object),
+  tp_tests_contacts_connection_change_presences (
+      TP_TESTS_CONTACTS_CONNECTION (base_conn),
       1, &self_handle, &index, &message);
 
   return TRUE;
 }
 
 static guint
-my_get_maximum_status_message_length_cb (GObject *obj)
+my_get_maximum_status_message_length_cb (TpBaseConnection *base_conn)
 {
   return 512;
+}
+
+static void
+init_presence (gpointer g_iface,
+    gpointer iface_data)
+{
+  TpPresenceMixinInterface *iface = g_iface;
+
+  iface->status_available = my_status_available;
+  iface->get_contact_status = my_get_contact_status;
+  iface->set_own_status = my_set_own_status;
+  iface->statuses = my_statuses;
+  iface->get_maximum_status_message_length =
+      my_get_maximum_status_message_length_cb;
 }
 
 static GPtrArray *
@@ -514,7 +521,6 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
   TpBaseConnectionClass *base_class =
       (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
-  TpPresenceMixinClass *mixin_class;
   static TpDBusPropertiesMixinPropImpl aliasing_props[] = {
     { "AliasFlags", GUINT_TO_POINTER (ALIASING_DP_ALIAS_FLAGS), NULL },
     { NULL }
@@ -546,14 +552,6 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
   base_class->create_channel_managers = create_channel_managers;
   base_class->fill_contact_attributes =
     tp_tests_contacts_connection_fill_contact_attributes;
-
-  tp_presence_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TpTestsContactsConnectionClass, presence_mixin),
-      my_status_available, my_get_contact_status,
-      my_set_own_status, my_statuses);
-  mixin_class = TP_PRESENCE_MIXIN_CLASS(klass);
-  mixin_class->get_maximum_status_message_length =
-      my_get_maximum_status_message_length_cb;
 
   klass->properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
@@ -628,7 +626,7 @@ tp_tests_contacts_connection_change_presences (
             messages[i]));
     }
 
-  tp_presence_mixin_emit_presence_update ((GObject *) self,
+  tp_presence_mixin_emit_presence_update ((TpBaseConnection *) self,
       presences);
   g_hash_table_unref (presences);
 }

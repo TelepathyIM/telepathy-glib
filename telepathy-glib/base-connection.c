@@ -217,9 +217,6 @@
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/value-array.h>
 
-#include <telepathy-glib/_gdbus/Connection.h>
-#include <telepathy-glib/_gdbus/Connection_Interface_Requests.h>
-
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/variant-util-internal.h"
@@ -276,54 +273,6 @@ channel_request_cancel (gpointer data,
 
   _tp_channel_manager_request_cancel (request);
 }
-
-struct _TpBaseConnectionPrivate
-{
-  gchar *bus_name;
-  gchar *object_path;
-
-  TpConnectionStatus status;
-
-  TpHandle self_handle;
-  const gchar *self_id;
-
-  /* Telepathy properties */
-  gchar *protocol;
-
-  /* if TRUE, the object has gone away */
-  gboolean dispose_has_run;
-  /* array of (TpChannelManager *) */
-  GPtrArray *channel_managers;
-  /* array of reffed (TpChannelManagerRequest *) */
-  GPtrArray *channel_requests;
-
-  TpHandleRepoIface *handles[TP_NUM_ENTITY_TYPES];
-
-  /* Array of GDBusMethodInvocation * representing Disconnect calls.
-   * If NULL and we are in a state != DISCONNECTED, then we have not started
-   * shutting down yet.
-   * If NULL and we are in state DISCONNECTED, then we have finished shutting
-   * down.
-   * If not NULL, we are trying to shut down (and must be in state
-   * DISCONNECTED). */
-  GPtrArray *disconnect_requests;
-
-  GDBusConnection *dbus_connection;
-  /* TRUE after constructor() returns */
-  gboolean been_constructed;
-  /* TRUE if on D-Bus */
-  gboolean been_registered;
-
-  /* g_strdup (unique name) => owned ClientData struct */
-  GHashTable *clients;
-  /* GQuark iface => number of clients interested */
-  GHashTable *interests;
-
-  gchar *account_path_suffix;
-
-  _TpGDBusConnection *connection_skeleton;
-  _TpGDBusConnectionInterfaceRequests *requests_skeleton;
-};
 
 typedef struct
 {
@@ -495,6 +444,7 @@ tp_base_connection_dispose (GObject *object)
 
   g_clear_object (&self->priv->connection_skeleton);
   g_clear_object (&self->priv->requests_skeleton);
+  g_clear_object (&self->priv->presence_skeleton);
 
   if (G_OBJECT_CLASS (tp_base_connection_parent_class)->dispose)
     G_OBJECT_CLASS (tp_base_connection_parent_class)->dispose (object);
@@ -823,6 +773,11 @@ tp_base_connection_constructed (GObject *object)
       G_CALLBACK (tp_base_connection_interface_changed_cb),
       GINT_TO_POINTER (-1));
 
+  if (TP_IS_PRESENCE_MIXIN (self))
+    {
+      _tp_presence_mixin_init (self);
+    }
+
   /* We don't have any interfaces yet (except for Connection and Requests)
    * so it's OK that the default for _TpGDBusConnection:interfaces is NULL. */
 }
@@ -971,6 +926,10 @@ _tp_base_connection_fill_contact_attributes (TpBaseConnection *self,
 {
   const gchar *tmp;
 
+  if (_tp_presence_mixin_fill_contact_attributes (self, dbus_interface, contact,
+          attributes))
+    return;
+
   if (tp_strdiff (dbus_interface, TP_IFACE_CONNECTION))
     {
       DEBUG ("contact #%u: interface '%s' unhandled", contact, dbus_interface);
@@ -1067,7 +1026,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    *
    * If this property is %NULL or omitted during construction, the object will
    * automatically attempt to connect to the session bus with
-   * g_bus_get_sync() just after it is constructed; if this fails, this
+   * g_bus_get_sync() just after it is ; if this fails, this
    * property will remain %NULL, and tp_base_connection_register() will fail.
    *
    * Since: 0.99.10

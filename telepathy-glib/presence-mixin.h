@@ -32,6 +32,8 @@
 
 G_BEGIN_DECLS
 
+/* -- TpPresenceStatusSpec -- */
+
 typedef struct _TpPresenceStatusSpec TpPresenceStatusSpec;
 typedef struct _TpPresenceStatusSpecPrivate TpPresenceStatusSpecPrivate;
 
@@ -78,6 +80,9 @@ TpPresenceStatusSpec *tp_presence_status_spec_copy (
 _TP_AVAILABLE_IN_1_0
 void tp_presence_status_spec_free (TpPresenceStatusSpec *self);
 
+/* -- TpPresenceStatus -- */
+
+
 typedef struct _TpPresenceStatus TpPresenceStatus;
 
 struct _TpPresenceStatus {
@@ -92,82 +97,56 @@ TpPresenceStatus *tp_presence_status_new (guint which,
     const gchar *message) G_GNUC_WARN_UNUSED_RESULT;
 void tp_presence_status_free (TpPresenceStatus *status);
 
-typedef gboolean (*TpPresenceMixinStatusAvailableFunc) (GObject *obj,
+/* -- TpPresenceMixinInterface -- */
+
+#define TP_TYPE_PRESENCE_MIXIN \
+  (tp_presence_mixin_get_type ())
+
+#define TP_IS_PRESENCE_MIXIN(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+  TP_TYPE_PRESENCE_MIXIN))
+
+#define TP_PRESENCE_MIXIN_GET_INTERFACE(obj) \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), \
+  TP_TYPE_PRESENCE_MIXIN, TpPresenceMixinInterface))
+
+typedef struct _TpPresenceMixinInterface TpPresenceMixinInterface;
+/* For some reason g-i wants that name */
+typedef struct _TpPresenceMixinInterface TpPresenceMixin;
+
+typedef gboolean (*TpPresenceMixinStatusAvailableFunc) (TpBaseConnection *self,
     guint which);
 
-typedef TpPresenceStatus *(*TpPresenceMixinGetContactStatusFunc) (GObject *obj,
+typedef TpPresenceStatus *(*TpPresenceMixinGetContactStatusFunc) (
+    TpBaseConnection *self,
     TpHandle contact);
 
-typedef gboolean (*TpPresenceMixinSetOwnStatusFunc) (GObject *obj,
-    const TpPresenceStatus *status, GError **error);
+typedef gboolean (*TpPresenceMixinSetOwnStatusFunc) (TpBaseConnection *self,
+    const TpPresenceStatus *status,
+    GError **error);
 
 typedef guint (*TpPresenceMixinGetMaximumStatusMessageLengthFunc) (
-    GObject *obj);
+    TpBaseConnection *self);
 
-typedef struct _TpPresenceMixinClass TpPresenceMixinClass;
-typedef struct _TpPresenceMixinClassPrivate TpPresenceMixinClassPrivate;
-typedef struct _TpPresenceMixin TpPresenceMixin;
-typedef struct _TpPresenceMixinPrivate TpPresenceMixinPrivate;
+struct _TpPresenceMixinInterface {
+  GTypeInterface parent;
 
-struct _TpPresenceMixinClass {
-    TpPresenceMixinStatusAvailableFunc status_available;
-    TpPresenceMixinGetContactStatusFunc get_contact_status;
-    TpPresenceMixinSetOwnStatusFunc set_own_status;
+  TpPresenceMixinStatusAvailableFunc status_available;
+  TpPresenceMixinGetContactStatusFunc get_contact_status;
+  TpPresenceMixinSetOwnStatusFunc set_own_status;
+  TpPresenceMixinGetMaximumStatusMessageLengthFunc
+      get_maximum_status_message_length;
 
-    const TpPresenceStatusSpec *statuses;
-
-    /*<private>*/
-    TpPresenceMixinClassPrivate *priv;
-
-    /*<public>*/
-    TpPresenceMixinGetMaximumStatusMessageLengthFunc get_maximum_status_message_length;
-
-    /*<private>*/
-    GCallback _future[10];
+  const TpPresenceStatusSpec *statuses;
 };
 
-struct _TpPresenceMixin {
-  /*<private>*/
-  TpPresenceMixinPrivate *priv;
-};
+GType tp_presence_mixin_get_type (void) G_GNUC_CONST;
 
-/* TYPE MACROS */
-#define TP_PRESENCE_MIXIN_CLASS_OFFSET_QUARK \
-  (tp_presence_mixin_class_get_offset_quark ())
-#define TP_PRESENCE_MIXIN_CLASS_OFFSET(o) \
-  tp_mixin_class_get_offset (o, TP_PRESENCE_MIXIN_CLASS_OFFSET_QUARK)
-#define TP_PRESENCE_MIXIN_CLASS(o) \
-  ((TpPresenceMixinClass *) tp_mixin_offset_cast (o, \
-    TP_PRESENCE_MIXIN_CLASS_OFFSET (o)))
-
-#define TP_PRESENCE_MIXIN_OFFSET_QUARK (tp_presence_mixin_get_offset_quark ())
-#define TP_PRESENCE_MIXIN_OFFSET(o) \
-  tp_mixin_instance_get_offset (o, TP_PRESENCE_MIXIN_OFFSET_QUARK)
-#define TP_PRESENCE_MIXIN(o) \
-  ((TpPresenceMixin *) tp_mixin_offset_cast (o, TP_PRESENCE_MIXIN_OFFSET (o)))
-
-GQuark tp_presence_mixin_class_get_offset_quark (void);
-GQuark tp_presence_mixin_get_offset_quark (void);
-
-void tp_presence_mixin_class_init (GObjectClass *obj_cls, glong offset,
-    TpPresenceMixinStatusAvailableFunc status_available,
-    TpPresenceMixinGetContactStatusFunc get_contact_status,
-    TpPresenceMixinSetOwnStatusFunc set_own_status,
-    const TpPresenceStatusSpec *statuses);
-
-void tp_presence_mixin_init (GObject *obj, glong offset);
-void tp_presence_mixin_finalize (GObject *obj);
-
-void tp_presence_mixin_emit_presence_update (GObject *obj,
+void tp_presence_mixin_emit_presence_update (TpBaseConnection *self,
     GHashTable *contact_presences);
-void tp_presence_mixin_emit_one_presence_update (GObject *obj,
-    TpHandle handle, const TpPresenceStatus *status);
-
-_TP_AVAILABLE_IN_1_0
-gboolean tp_presence_mixin_fill_contact_attributes (GObject *obj,
-  const gchar *dbus_interface,
-  TpHandle contact,
-  GVariantDict *attributes);
+void tp_presence_mixin_emit_one_presence_update (TpBaseConnection *self,
+    TpHandle handle,
+    const TpPresenceStatus *status);
 
 G_END_DECLS
 

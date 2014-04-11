@@ -27,14 +27,12 @@ typedef struct _ExampleCallConnectionClassPrivate
 
 struct _ExampleCallConnectionClass {
     TpBaseConnectionClass parent_class;
-    TpPresenceMixinClass presence_mixin;
 
     ExampleCallConnectionClassPrivate *priv;
 };
 
 struct _ExampleCallConnection {
     TpBaseConnection parent;
-    TpPresenceMixin presence_mixin;
 
     ExampleCallConnectionPrivate *priv;
 };

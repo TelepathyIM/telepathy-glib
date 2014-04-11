@@ -27,14 +27,11 @@ typedef struct _TpTestsContactsConnectionPrivate TpTestsContactsConnectionPrivat
 struct _TpTestsContactsConnectionClass {
     TpTestsSimpleConnectionClass parent_class;
 
-    TpPresenceMixinClass presence_mixin;
     TpDBusPropertiesMixinClass properties_class;
 };
 
 struct _TpTestsContactsConnection {
     TpTestsSimpleConnection parent;
-
-    TpPresenceMixin presence_mixin;
 
     TpTestsContactsConnectionPrivate *priv;
 };

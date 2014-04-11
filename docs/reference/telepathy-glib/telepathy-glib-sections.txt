@@ -1682,28 +1682,16 @@ TpPresenceStatus
 tp_presence_status_new
 tp_presence_status_free
 <TITLE>TpPresenceMixin</TITLE>
-TpPresenceMixin
-TpPresenceMixinClass
-tp_presence_mixin_class_init
-tp_presence_mixin_init
-tp_presence_mixin_finalize
+TpPresenceMixinInterface
 tp_presence_mixin_emit_presence_update
 tp_presence_mixin_emit_one_presence_update
-tp_presence_mixin_fill_contact_attributes
-<SUBSECTION Private>
-TP_PRESENCE_MIXIN_CLASS_OFFSET_QUARK
-TP_PRESENCE_MIXIN_CLASS_OFFSET
-TP_PRESENCE_MIXIN_OFFSET_QUARK
-TP_PRESENCE_MIXIN_OFFSET
-tp_presence_mixin_class_get_offset_quark
-tp_presence_mixin_get_offset_quark
-TpPresenceMixinPrivate
-TpPresenceMixinClassPrivate
 <SUBSECTION Standard>
-TP_PRESENCE_MIXIN_CLASS
-TP_PRESENCE_MIXIN
+TP_TYPE_PRESENCE_MIXIN
+TP_IS_PRESENCE_MIXIN
+TP_PRESENCE_MIXIN_GET_INTERFACE
 TpPresenceStatusSpecPrivate
 tp_presence_status_spec_get_type
+tp_presence_mixin_get_type
 </SECTION>
 
 <SECTION>
