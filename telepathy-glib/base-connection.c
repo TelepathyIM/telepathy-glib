@@ -1244,7 +1244,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    * TpBaseConnection::status-changed:
    * @connection: the #TpBaseConnection
    * @status: the new #TpConnectionStatus
-   * @reason: the #TpConnectionStatus for this status change
+   * @reason: the #TpConnectionStatusReason for this status change
    *
    * Emitted when the status of this connection changes. Mainly for
    * compatibility since #TpBaseConnection doesn't implement #TpSvcConnection
