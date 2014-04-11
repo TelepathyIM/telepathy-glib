@@ -266,8 +266,7 @@ static guint signals[N_SIGNALS] = {0};
     \
     if (!tp_base_connection_check_connected (c_, &e_)) \
       { \
-        g_dbus_method_invocation_return_gerror ((context), e_); \
-        g_error_free (e_); \
+        g_dbus_method_invocation_take_error ((context), e_); \
         return TRUE; \
       } \
   } G_STMT_END
@@ -1515,8 +1514,7 @@ tp_base_connection_connect (_TpGDBusConnection *skeleton,
                 TP_CONNECTION_STATUS_DISCONNECTED,
                 conn_status_reason_from_g_error (error));
             }
-          g_dbus_method_invocation_return_gerror (context, error);
-          g_error_free (error);
+          g_dbus_method_invocation_take_error (context, error);
           return TRUE;
         }
     }
@@ -2446,8 +2444,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
                */
               error->domain = TP_ERROR;
               error->code = TP_ERROR_INVALID_HANDLE;
-              g_dbus_method_invocation_return_gerror (context, error);
-              g_error_free (error);
+              g_dbus_method_invocation_take_error (context, error);
               return;
             }
 
@@ -2469,8 +2466,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
             {
               error->domain = TP_ERROR;
               error->code = TP_ERROR_INVALID_HANDLE;
-              g_dbus_method_invocation_return_gerror (context, error);
-              g_error_free (error);
+              g_dbus_method_invocation_take_error (context, error);
               return;
             }
 
@@ -3014,8 +3010,7 @@ ensure_handle_cb (GObject *source,
 
   if (handle == 0)
     {
-      g_dbus_method_invocation_return_gerror (data->context, error);
-      g_clear_error (&error);
+      g_dbus_method_invocation_take_error (data->context, error);
       goto out;
     }
 
