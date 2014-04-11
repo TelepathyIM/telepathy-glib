@@ -1939,9 +1939,12 @@ tp_base_connection_change_status (TpBaseConnection *self,
 
   DEBUG("emitting status-changed to %u, for reason %u", status, reason);
   _tp_gdbus_connection_set_status (self->priv->connection_skeleton, status);
+  /* Emit status-changed before sending the D-Bus signal, because in practice
+   * that's what happened in telepathy-glib 0.x, as demonstrated by Gabble's
+   * regression tests failing otherwise. */
+  g_signal_emit (self, signals[STATUS_CHANGED], 0, status, reason);
   _tp_gdbus_connection_emit_status_changed (self->priv->connection_skeleton,
       status, reason);
-  g_signal_emit (self, signals[STATUS_CHANGED], 0, status, reason);
 
   /* tell subclass about the state change. In the case of
    * disconnection, shut down afterwards */
