@@ -2286,8 +2286,8 @@ static void conn_requests_offer_request (TpBaseConnection *self,
 
 #define RETURN_INVALID_ARGUMENT(message) \
   G_STMT_START { \
-    GError e = { TP_ERROR, TP_ERROR_INVALID_ARGUMENT, message }; \
-    g_dbus_method_invocation_return_gerror (context, &e); \
+    g_dbus_method_invocation_return_error_literal (context, TP_ERROR, \
+        TP_ERROR_INVALID_ARGUMENT, message); \
     return; \
   } G_STMT_END
 
@@ -2425,10 +2425,9 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
 
       if (handles == NULL)
         {
-          GError e = { TP_ERROR, TP_ERROR_NOT_AVAILABLE,
-              "entity type not supported by this connection manager" };
-
-          g_dbus_method_invocation_return_gerror (context, &e);
+          g_dbus_method_invocation_return_error_literal (context,
+              TP_ERROR, TP_ERROR_NOT_AVAILABLE,
+              "entity type not supported by this connection manager");
           return;
         }
 
