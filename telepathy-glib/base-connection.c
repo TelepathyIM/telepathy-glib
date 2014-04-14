@@ -22,17 +22,12 @@
 /**
  * SECTION:base-connection
  * @title: TpBaseConnection
- * @short_description: base class for #TpSvcConnection implementations
- * @see_also: #TpBaseConnectionManager, #TpSvcConnection
+ * @short_description: base class for core Connection D-Bus interfaces
+ *  implementation
+ * @see_also: #TpBaseConnectionManager, #TpBaseContactList, #TpPresenceMixin
  *
- * This base class makes it easier to write #TpSvcConnection implementations
+ * This base class makes it easier to write Connection implementations
  * by managing connection status, channel managers and handle tracking.
- * A subclass should often not need to implement any of the Connection
- * methods itself.
- *
- * However, methods may be reimplemented if needed: for instance, Gabble
- * overrides RequestHandles so it can validate MUC rooms, which must be done
- * asynchronously.
  */
 
 /**
@@ -166,7 +161,7 @@
 /**
  * TpBaseConnection:
  *
- * Data structure representing a generic #TpSvcConnection implementation.
+ * Data structure representing a generic connection implementation.
  *
  */
 

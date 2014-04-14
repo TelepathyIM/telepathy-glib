@@ -51,14 +51,9 @@
  *
  * Connection managers should subclass #TpBaseContactList, implementing the
  * virtual methods for core functionality in #TpBaseContactListClass.
- * Then, in the connection manager's #TpBaseConnection subclass:
- *
- * <itemizedlist>
- *  <listitem>
- *   <para>in the #TpBaseConnectionClass.fill_contact_attributes
- *    implementation, call tp_base_contact_list_fill_contact_attributes()
- *    and do not chain up if it returns %TRUE:
- *    </para>
+ * Then, in the #TpBaseConnectionClass.fill_contact_attributes implementation,
+ * call tp_base_contact_list_fill_contact_attributes() and do not chain up if it
+ * returns %TRUE:
  * |[
  * // ...
  * if (!tp_strdiff (dbus_interface, MY_IFACE_CONNECTION_INTERFACE_HATS))
@@ -76,22 +71,11 @@
  * ((TpBaseConnectionClass *) my_connection_parent_class)->
  *     fill_contact_attributes (self, dbus_interface, contact, attributes);
  * ]|
- *  </listitem>
- *  <listitem>
- *   <para>include %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1 in
- *    the output of
- *    #TpBaseConnectionClass.get_interfaces_always_present</para>
- *  </listitem>
- * </itemizedlist>
- *
- * To support user-defined contact groups too, additionally implement
- * %TP_TYPE_CONTACT_GROUP_LIST in the #TpBaseContactList subclass, add the
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS1 interface to the output of
- * #TpBaseConnectionClass.get interfaces_always_present.
  *
  * Optionally, one or more of the #TP_TYPE_MUTABLE_CONTACT_LIST,
- * #TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, and #TP_TYPE_BLOCKABLE_CONTACT_LIST
- * GObject interfaces may also be implemented, as appropriate to the protocol.
+ * #TP_TYPE_CONTACT_GROUP_LIST, #TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, and
+ * #TP_TYPE_BLOCKABLE_CONTACT_LIST GObject interfaces may also be implemented,
+ * as appropriate to the protocol.
  *
  * Since: 0.13.0
  */
