@@ -42,8 +42,8 @@ cscope.out
 depcomp
 /data/*.client
 /data/*.service
-/data/org.freedesktop.Telepathy.Logger.gschema.valid
-/data/org.freedesktop.Telepathy.Logger.gschema.xml
+/data/im.telepathy.v1.Logger.gschema.valid
+/data/im.telepathy.v1.Logger.gschema.xml
 
 /docs/reference/libtelepathy-logger/*.stamp
 /docs/reference/libtelepathy-logger/*.bak
@@ -90,8 +90,8 @@ depcomp
 /docs/reference/telepathy-farstream/tmpl/
 /docs/reference/telepathy-farstream/xml/
 
-examples/client/telepathy-example-*
-examples/cm/*/telepathy-example-*
+examples/client/telepathy-1-example-*
+examples/cm/*/telepathy-1-example-*
 examples/extensions/extensions.html
 /examples/future/*/telepathy-example-*
 examples/client/dbus-tubes/accepter
