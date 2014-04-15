@@ -45,14 +45,13 @@ typedef void (*TpBaseChannelCloseFunc) (TpBaseChannel *chan);
 typedef void (*TpBaseChannelFillPropertiesFunc) (TpBaseChannel *chan,
     GHashTable *properties);
 typedef gchar *(*TpBaseChannelGetPathFunc) (TpBaseChannel *chan);
-typedef GPtrArray *(*TpBaseChannelGetInterfacesFunc) (TpBaseChannel *chan);
 typedef void (*TpBaseChannelFunc) (TpBaseChannel *channel,
     gpointer user_data);
 
 struct _TpBaseChannelClass
 {
   /*< private >*/
-  GObjectClass parent_class;
+  GDBusObjectSkeletonClass parent_class;
 
   /*< public >*/
   const gchar *channel_type;
@@ -61,7 +60,6 @@ struct _TpBaseChannelClass
   TpBaseChannelCloseFunc close;
   TpBaseChannelFillPropertiesFunc fill_immutable_properties;
   TpBaseChannelGetPathFunc get_object_path_suffix;
-  TpBaseChannelGetInterfacesFunc get_interfaces;
 
   /*< private >*/
   GCallback _reserved[9];
@@ -70,7 +68,7 @@ struct _TpBaseChannelClass
 struct _TpBaseChannel
 {
   /*< private >*/
-  GObject parent;
+  GDBusObjectSkeleton parent;
 
   TpBaseChannelPrivate *priv;
 };

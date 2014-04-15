@@ -115,18 +115,6 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpTestsDBusTubeChannel,
 
 /* type definition stuff */
 
-static GPtrArray *
-tp_tests_dbus_tube_channel_get_interfaces (TpBaseChannel *self)
-{
-  GPtrArray *interfaces;
-
-  interfaces = TP_BASE_CHANNEL_CLASS (
-      tp_tests_dbus_tube_channel_parent_class)->get_interfaces (self);
-
-  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_TUBE1);
-  return interfaces;
-};
-
 static void
 tp_tests_dbus_tube_channel_init (TpTestsDBusTubeChannel *self)
 {
@@ -147,6 +135,18 @@ constructor (GType type,
       G_OBJECT_CLASS (tp_tests_dbus_tube_channel_parent_class)->constructor (
           type, n_props, props);
   TpTestsDBusTubeChannel *self = TP_TESTS_DBUS_TUBE_CHANNEL (object);
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (self);
+  GDBusInterfaceSkeleton *iface;
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CHANNEL_TYPE_DBUS_TUBE1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CHANNEL_INTERFACE_TUBE1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
 
   if (tp_base_channel_is_requested (TP_BASE_CHANNEL (self)))
     self->priv->state = TP_TUBE_CHANNEL_STATE_NOT_OFFERED;
@@ -237,7 +237,6 @@ tp_tests_dbus_tube_channel_class_init (TpTestsDBusTubeChannelClass *klass)
   object_class->dispose = dispose;
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_DBUS_TUBE1;
-  base_class->get_interfaces = tp_tests_dbus_tube_channel_get_interfaces;
   base_class->close = channel_close;
   base_class->fill_immutable_properties = fill_immutable_properties;
 

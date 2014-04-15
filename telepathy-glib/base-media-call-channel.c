@@ -87,6 +87,7 @@
 #include "telepathy-glib/interfaces.h"
 #include "telepathy-glib/svc-call.h"
 #include "telepathy-glib/svc-channel.h"
+#include "telepathy-glib/svc-interface.h"
 #include "telepathy-glib/svc-properties-interface.h"
 #include "telepathy-glib/util.h"
 
@@ -113,19 +114,6 @@ enum
 {
   LAST_PROPERTY
 };
-
-static GPtrArray *
-tp_base_media_call_channel_get_interfaces (TpBaseChannel *base)
-{
-  GPtrArray *interfaces;
-
-  interfaces = TP_BASE_CHANNEL_CLASS (
-      tp_base_media_call_channel_parent_class)->get_interfaces (base);
-
-  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_HOLD1);
-
-  return interfaces;
-}
 
 static void
 call_members_changed_cb (TpBaseMediaCallChannel *self,
@@ -294,15 +282,30 @@ tp_base_media_call_channel_is_connected (TpBaseCallChannel *self)
 }
 
 static void
+constructed (GObject *object)
+{
+  TpBaseMediaCallChannel *self = (TpBaseMediaCallChannel *) object;
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (self);
+  GDBusInterfaceSkeleton *iface;
+
+  G_OBJECT_CLASS (tp_base_media_call_channel_parent_class)->constructed (object);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CHANNEL_INTERFACE_HOLD1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+}
+
+static void
 tp_base_media_call_channel_class_init (TpBaseMediaCallChannelClass *klass)
 {
-  TpBaseChannelClass *base_channel_class = TP_BASE_CHANNEL_CLASS (klass);
+  GObjectClass *oclass = G_OBJECT_CLASS (klass);
   TpBaseCallChannelClass *base_call_channel_class =
       TP_BASE_CALL_CHANNEL_CLASS (klass);
 
-  g_type_class_add_private (klass, sizeof (TpBaseMediaCallChannelPrivate));
+  oclass->constructed = constructed;
 
-  base_channel_class->get_interfaces = tp_base_media_call_channel_get_interfaces;
+  g_type_class_add_private (klass, sizeof (TpBaseMediaCallChannelPrivate));
 
   base_call_channel_class->accept = tp_base_media_call_channel_accept;
   base_call_channel_class->remote_accept =

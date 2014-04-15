@@ -76,18 +76,6 @@ struct _ExampleCallChannelPrivate
   gboolean closed;
 };
 
-static GPtrArray *
-example_call_channel_get_interfaces (TpBaseChannel *self)
-{
-  GPtrArray *interfaces;
-
-  interfaces = TP_BASE_CHANNEL_CLASS (
-      example_call_channel_parent_class)->get_interfaces (self);
-
-  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_HOLD1);
-  return interfaces;
-}
-
 /* In practice you need one for audio, plus one per video (e.g. a
  * presentation might have separate video contents for the slides
  * and a camera pointed at the presenter), so having more than three
@@ -136,9 +124,16 @@ constructed (GObject *object)
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (object);
   TpBaseChannel *base = (TpBaseChannel *) self;
   TpBaseCallChannel *call = (TpBaseCallChannel *) self;
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (self);
+  GDBusInterfaceSkeleton *iface;
 
   if (chain_up != NULL)
     chain_up (object);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CHANNEL_INTERFACE_HOLD1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
 
   self->priv->handle = tp_base_channel_get_target_handle (base);
   self->priv->locally_requested = tp_base_channel_is_requested (base);
@@ -339,7 +334,6 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
   call_class->hangup = call_hangup;
 
   base_class->target_entity_type = TP_ENTITY_TYPE_CONTACT;
-  base_class->get_interfaces = example_call_channel_get_interfaces;
   base_class->close = close_channel;
 
   object_class->constructed = constructed;

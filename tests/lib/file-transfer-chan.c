@@ -120,6 +120,18 @@ constructor (GType type,
     G_OBJECT_CLASS (tp_tests_file_transfer_channel_parent_class)->constructor
     (type, n_props, props);
   TpTestsFileTransferChannel *self = TP_TESTS_FILE_TRANSFER_CHANNEL (object);
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (self);
+  GDBusInterfaceSkeleton *iface;
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CHANNEL_TYPE_FILE_TRANSFER1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
 
   self->priv->state = TP_FILE_TRANSFER_STATE_PENDING;
 

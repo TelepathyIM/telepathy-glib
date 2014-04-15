@@ -29,19 +29,6 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsTextChannelGroup,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_PASSWORD1,
       password_iface_init);)
 
-static GPtrArray *
-text_channel_group_get_interfaces (TpBaseChannel *self)
-{
-  GPtrArray *interfaces;
-
-  interfaces = TP_BASE_CHANNEL_CLASS (
-      tp_tests_text_channel_group_parent_class)->get_interfaces (self);
-
-  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_GROUP1);
-  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_PASSWORD1);
-  return interfaces;
-};
-
 /* type definition stuff */
 
 struct _TpTestsTextChannelGroupPrivate
@@ -130,9 +117,26 @@ constructed (GObject *object)
       "text/plain",
       NULL
   };
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (self);
+  GDBusInterfaceSkeleton *iface;
 
   G_OBJECT_CLASS (tp_tests_text_channel_group_parent_class)->constructed (
       object);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CHANNEL_TYPE_TEXT);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CHANNEL_INTERFACE_PASSWORD1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
 
   self->conn = tp_base_channel_get_connection (base);
 
@@ -190,7 +194,6 @@ tp_tests_text_channel_group_class_init (TpTestsTextChannelGroupClass *klass)
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_TEXT;
   base_class->target_entity_type = TP_ENTITY_TYPE_NONE;
-  base_class->get_interfaces = text_channel_group_get_interfaces;
   base_class->close = channel_close;
 
   tp_group_mixin_class_init (object_class,

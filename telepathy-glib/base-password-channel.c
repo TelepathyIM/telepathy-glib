@@ -63,6 +63,7 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/svc-channel.h>
+#include <telepathy-glib/svc-interface.h>
 
 #define DEBUG_FLAG TP_DEBUG_SASL
 #include "telepathy-glib/debug-internal.h"
@@ -125,19 +126,6 @@ struct _TpBasePasswordChannelPrivate
   gboolean may_save_response;
 };
 
-static GPtrArray *
-tp_base_password_channel_get_interfaces (TpBaseChannel *base)
-{
-  GPtrArray *interfaces;
-
-  interfaces = TP_BASE_CHANNEL_CLASS (
-      tp_base_password_channel_parent_class)->get_interfaces (base);
-
-  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION1);
-
-  return interfaces;
-}
-
 static void
 tp_base_password_channel_init (TpBasePasswordChannel *self)
 {
@@ -154,6 +142,8 @@ tp_base_password_channel_constructed (GObject *obj)
       TP_BASE_CHANNEL (obj));
   TpHandleRepoIface *contact_handles = tp_base_connection_get_handles (
       base_conn, TP_ENTITY_TYPE_CONTACT);
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (chan);
+  GDBusInterfaceSkeleton *iface;
 
   if (((GObjectClass *) tp_base_password_channel_parent_class)->constructed != NULL)
     ((GObjectClass *) tp_base_password_channel_parent_class)->constructed (obj);
@@ -166,6 +156,16 @@ tp_base_password_channel_constructed (GObject *obj)
         tp_base_connection_get_self_handle (base_conn)));
   priv->default_username = g_strdup (priv->authorization_identity);
   priv->default_realm = g_strdup ("");
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CHANNEL_TYPE_SERVER_AUTHENTICATION1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CHANNEL_INTERFACE_SASL_AUTHENTICATION1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
 }
 
 static void
@@ -321,7 +321,6 @@ tp_base_password_channel_class_init (TpBasePasswordChannelClass *tp_base_passwor
 
   chan_class->channel_type = TP_IFACE_CHANNEL_TYPE_SERVER_AUTHENTICATION1;
   chan_class->target_entity_type = TP_ENTITY_TYPE_NONE;
-  chan_class->get_interfaces = tp_base_password_channel_get_interfaces;
   chan_class->close = tp_base_password_channel_close;
   chan_class->fill_immutable_properties =
     tp_base_password_channel_fill_immutable_properties;

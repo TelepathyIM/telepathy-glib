@@ -31,18 +31,6 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsEchoChannel,
 
 /* type definition stuff */
 
-static GPtrArray *
-tp_tests_echo_channel_get_interfaces (TpBaseChannel *self)
-{
-  GPtrArray *interfaces;
-
-  interfaces = TP_BASE_CHANNEL_CLASS (tp_tests_echo_channel_parent_class)->
-    get_interfaces (self);
-
-  g_ptr_array_add (interfaces, TP_IFACE_CHANNEL_INTERFACE_DESTROYABLE1);
-  return interfaces;
-};
-
 static void
 tp_tests_echo_channel_init (TpTestsEchoChannel *self)
 {
@@ -65,9 +53,22 @@ constructed (GObject *object)
       "text/plain",
       NULL
   };
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (self);
+  GDBusInterfaceSkeleton *iface;
+
   g_assert (conn != NULL);
 
   G_OBJECT_CLASS (tp_tests_echo_channel_parent_class)->constructed (object);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CHANNEL_TYPE_TEXT);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CHANNEL_INTERFACE_DESTROYABLE1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
 
   tp_base_channel_register (TP_BASE_CHANNEL (self));
 
@@ -133,7 +134,6 @@ tp_tests_echo_channel_class_init (TpTestsEchoChannelClass *klass)
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_TEXT;
   base_class->target_entity_type = TP_ENTITY_TYPE_CONTACT;
-  base_class->get_interfaces = tp_tests_echo_channel_get_interfaces;
   base_class->close = channel_close;
 
   tp_message_mixin_init_dbus_properties (object_class);

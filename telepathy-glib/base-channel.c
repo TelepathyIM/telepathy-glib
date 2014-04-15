@@ -31,7 +31,6 @@
  *
  * Subclasses should fill in #TpBaseChannelClass.channel_type and
  * #TpBaseChannelClass.target_entity_type; and implement the
- * #TpBaseChannelClass.get_interfaces and
  * #TpBaseChannelClass.close virtual functions.
  *
  * If the channel type and/or interfaces being implemented define immutable
@@ -139,10 +138,6 @@
  * #TpBaseChannel:object-path property is not set.  The default
  * implementation simply generates a unique path based on the object's address
  * in memory.  The returned string will be freed automatically.
- * @get_interfaces: Extra interfaces provided by this channel (this SHOULD NOT
- *  include the channel type and interface itself). Implementation must first
- *  chainup on parent class implementation and then add extra interfaces into
- *  the #GPtrArray.
  *
  * The class structure for #TpBaseChannel
  *
@@ -268,36 +263,6 @@
  */
 
 /**
- * TpBaseChannelGetInterfacesFunc:
- * @chan: a channel
- *
- * Signature of an implementation of #TpBaseChannelClass.get_interfaces virtual
- * function.
- *
- * Implementation must first chainup on parent class implementation and then
- * add extra interfaces into the #GPtrArray.
- *
- * |[
- * static GPtrArray *
- * my_channel_get_interfaces (TpBaseChannel *self)
- * {
- *   GPtrArray *interfaces;
- *
- *   interfaces = TP_BASE_CHANNEL_CLASS (my_channel_parent_class)->get_interfaces (self);
- *
- *   g_ptr_array_add (interfaces, TP_IFACE_BADGERS);
- *
- *   return interfaces;
- * }
- * ]|
- *
- * Returns: (transfer container): a #GPtrArray of static strings for D-Bus
- *   interfaces implemented by this client.
- *
- * Since: 0.17.5
- */
-
-/**
  * TpBaseChannelFunc:
  * @channel: A #TpBaseChannel
  * @user_data: Arbitrary user-supplied data
@@ -320,12 +285,13 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/svc-generic.h>
+#include <telepathy-glib/svc-interface.h>
 #include <telepathy-glib/debug-internal.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
-
 #include "debug-internal.h"
+#include "dbus-internal.h"
 
 enum
 {
@@ -364,7 +330,7 @@ struct _TpBaseChannelPrivate
 static void channel_iface_init (gpointer g_iface, gpointer iface_data);
 
 G_DEFINE_TYPE_WITH_CODE (TpBaseChannel, tp_base_channel,
-    G_TYPE_OBJECT,
+    G_TYPE_DBUS_OBJECT_SKELETON,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
     )
 
@@ -374,6 +340,9 @@ G_DEFINE_TYPE_WITH_CODE (TpBaseChannel, tp_base_channel,
  *
  * Make the channel appear on the bus.  #TpBaseChannel:object-path must have been set
  * to a valid path, which must not already be in use as another object's path.
+ *
+ * Subclasses may call g_dbus_object_skeleton_add_interface() at any time before
+ * calling this function. It is considered to be an error to do so afterward.
  *
  * Since: 0.11.14
  */
@@ -767,10 +736,21 @@ tp_base_channel_get_basic_object_path_suffix (TpBaseChannel *self)
   return escaped;
 }
 
-static GPtrArray *
-tp_base_channel_get_basic_interfaces (TpBaseChannel *self)
+static void
+tp_base_channel_interface_changed_cb (TpBaseChannel *self,
+    GDBusInterface *interface,
+    gpointer user_data)
 {
-  return g_ptr_array_new ();
+  GDBusInterfaceInfo *info = g_dbus_interface_get_info (interface);
+  const gchar *verb = user_data;
+
+  if (self->priv->registered)
+    {
+      WARNING ("Adding or removing interfaces after tp_base_channel_register() "
+          "has been called is not supported. "
+          "(Tried to %s %s %p, \"%s\")",
+          verb, G_OBJECT_TYPE_NAME (interface), interface, info->name);
+    }
 }
 
 static void
@@ -780,7 +760,6 @@ tp_base_channel_init (TpBaseChannel *self)
       TP_TYPE_BASE_CHANNEL, TpBaseChannelPrivate);
 
   self->priv = priv;
-
 }
 
 static void
@@ -790,6 +769,8 @@ tp_base_channel_constructed (GObject *object)
   GObjectClass *parent_class = tp_base_channel_parent_class;
   TpBaseChannel *chan = TP_BASE_CHANNEL (object);
   TpBaseConnection *conn = chan->priv->conn;
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (chan);
+  GDBusInterfaceSkeleton *iface;
 
   if (parent_class->constructed != NULL)
     parent_class->constructed (object);
@@ -808,6 +789,17 @@ tp_base_channel_constructed (GObject *object)
           tp_base_connection_get_object_path (conn), base_path);
       g_free (base_path);
     }
+
+  iface = tp_svc_interface_skeleton_new (skel, TP_TYPE_SVC_CHANNEL);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+
+  g_signal_connect (chan, "interface-added",
+      G_CALLBACK (tp_base_channel_interface_changed_cb),
+      "add");
+  g_signal_connect (chan, "interface-removed",
+      G_CALLBACK (tp_base_channel_interface_changed_cb),
+      "remove");
 }
 
 static void
@@ -873,11 +865,9 @@ tp_base_channel_get_property (GObject *object,
       break;
     case PROP_INTERFACES:
       {
-        GPtrArray *interfaces = klass->get_interfaces (chan);
-
-        g_ptr_array_add (interfaces, NULL);
-        g_value_set_boxed (value, interfaces->pdata);
-        g_ptr_array_unref (interfaces);
+        g_value_take_boxed (value,
+            _tp_g_dbus_object_dup_interface_names_except (G_DBUS_OBJECT (chan),
+                TP_IFACE_CHANNEL, klass->channel_type, NULL));
         break;
       }
     case PROP_CHANNEL_DESTROYED:
@@ -1181,8 +1171,6 @@ tp_base_channel_class_init (TpBaseChannelClass *tp_base_channel_class)
       tp_base_channel_fill_basic_immutable_properties;
   tp_base_channel_class->get_object_path_suffix =
       tp_base_channel_get_basic_object_path_suffix;
-  tp_base_channel_class->get_interfaces =
-      tp_base_channel_get_basic_interfaces;
 }
 
 static void

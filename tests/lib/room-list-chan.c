@@ -75,9 +75,16 @@ tp_tests_room_list_chan_constructed (GObject *object)
   TpTestsRoomListChan *self = TP_TESTS_ROOM_LIST_CHAN (object);
   void (*chain_up) (GObject *) =
       ((GObjectClass *) tp_tests_room_list_chan_parent_class)->constructed;
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (self);
+  GDBusInterfaceSkeleton *iface;
 
   if (chain_up != NULL)
     chain_up (object);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CHANNEL_TYPE_ROOM_LIST1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
 
   tp_base_channel_register (TP_BASE_CHANNEL (self));
 }

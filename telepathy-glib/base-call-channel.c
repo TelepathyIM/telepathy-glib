@@ -117,6 +117,7 @@
 #include "telepathy-glib/interfaces.h"
 #include "telepathy-glib/svc-call.h"
 #include "telepathy-glib/svc-channel.h"
+#include "telepathy-glib/svc-interface.h"
 #include "telepathy-glib/svc-properties-interface.h"
 #include "telepathy-glib/util.h"
 #include <telepathy-glib/value-array.h>
@@ -239,10 +240,17 @@ tp_base_call_channel_constructed (GObject *obj)
 {
   TpBaseCallChannel *self = TP_BASE_CALL_CHANNEL (obj);
   TpBaseChannel *base = TP_BASE_CHANNEL (self);
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (self);
+  GDBusInterfaceSkeleton *iface;
 
   if (G_OBJECT_CLASS (tp_base_call_channel_parent_class)->constructed
       != NULL)
     G_OBJECT_CLASS (tp_base_call_channel_parent_class)->constructed (obj);
+
+  iface = tp_svc_interface_skeleton_new (skel,
+      TP_TYPE_SVC_CHANNEL_TYPE_CALL1);
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
 
   if (tp_base_channel_is_requested (base))
     {
