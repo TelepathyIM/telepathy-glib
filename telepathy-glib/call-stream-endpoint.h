@@ -43,7 +43,7 @@ struct _TpCallStreamEndpointClass {
   /*<private>*/
   GObjectClass parent_class;
 
-  TpDBusPropertiesMixinClass dbus_props_class;
+  GCallback _padding[4];
 };
 
 struct _TpCallStreamEndpoint {

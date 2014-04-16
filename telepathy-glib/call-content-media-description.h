@@ -47,7 +47,6 @@ struct _TpCallContentMediaDescriptionClass {
   /*<private>*/
   GObjectClass parent_class;
 
-  TpDBusPropertiesMixinClass dbus_props_class;
   gpointer future[4];
 };
 

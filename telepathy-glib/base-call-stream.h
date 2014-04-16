@@ -53,8 +53,6 @@ struct _TpBaseCallStreamClass {
   /*<private>*/
   GObjectClass parent_class;
 
-  TpDBusPropertiesMixinClass dbus_props_class;
-
   /*< public >*/
   TpBaseCallStreamRequestReceivingFunc request_receiving;
   TpBaseCallStreamSetSendingFunc set_sending;

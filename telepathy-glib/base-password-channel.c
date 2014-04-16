@@ -307,21 +307,6 @@ tp_base_password_channel_class_init (TpBasePasswordChannelClass *tp_base_passwor
     { "MaySaveResponse", GUINT_TO_POINTER (DBUSPROP_MAY_SAVE_RESPONSE) },
     { NULL }
   };
-  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-    { TP_IFACE_CHANNEL_TYPE_SERVER_AUTHENTICATION1,
-      /* this only has one property so we recycle the getter function from
-       * the SASL interface */
-      tp_base_password_channel_get_sasl_property,
-      NULL,
-      server_base_password_props,
-    },
-    { TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION1,
-      tp_base_password_channel_get_sasl_property,
-      NULL,
-      sasl_auth_props,
-    },
-    { NULL }
-  };
   GObjectClass *object_class = G_OBJECT_CLASS (tp_base_password_channel_class);
   GParamSpec *param_spec;
 
@@ -371,9 +356,16 @@ tp_base_password_channel_class_init (TpBasePasswordChannelClass *tp_base_passwor
       G_TYPE_NONE, 4,
       G_TYPE_GSTRING, G_TYPE_UINT, G_TYPE_INT, G_TYPE_STRING);
 
-  tp_base_password_channel_class->properties_class.interfaces = prop_interfaces;
-  tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TpBasePasswordChannelClass, properties_class));
+  tp_dbus_properties_mixin_class_init (object_class, 0);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CHANNEL_TYPE_SERVER_AUTHENTICATION1,
+      /* this only has one property so we recycle the getter function from
+       * the SASL interface */
+      tp_base_password_channel_get_sasl_property, NULL,
+      server_base_password_props);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CHANNEL_INTERFACE_SASL_AUTHENTICATION1,
+      tp_base_password_channel_get_sasl_property, NULL, sasl_auth_props);
 }
 
 static void

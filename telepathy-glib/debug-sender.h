@@ -58,7 +58,6 @@ struct _TpDebugSender {
 struct _TpDebugSenderClass {
   /*<private>*/
   GObjectClass parent_class;
-  TpDBusPropertiesMixinClass dbus_props_class;
   GCallback _padding[7];
   gpointer priv;
 };

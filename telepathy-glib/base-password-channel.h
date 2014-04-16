@@ -37,15 +37,15 @@ typedef struct _TpBasePasswordChannelClass TpBasePasswordChannelClass;
 
 struct _TpBasePasswordChannelClass
 {
+  /*<private>*/
   TpBaseChannelClass parent_class;
-
-  TpDBusPropertiesMixinClass properties_class;
+  GCallback _padding[4];
 };
 
 struct _TpBasePasswordChannel
 {
+  /*<private>*/
   TpBaseChannel parent;
-
   TpBasePasswordChannelPrivate *priv;
 };
 

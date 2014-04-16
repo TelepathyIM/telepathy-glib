@@ -56,8 +56,6 @@ struct _TpBaseCallContentClass {
   /*<private>*/
   GObjectClass parent_class;
 
-  TpDBusPropertiesMixinClass dbus_props_class;
-
   /*< public >*/
   TpBaseCallContentDeinitFunc deinit;
   TpBaseCallContentGetInterfacesFunc get_interfaces;

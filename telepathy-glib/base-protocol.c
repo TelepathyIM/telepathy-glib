@@ -492,7 +492,6 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
 /**
  * TpBaseProtocolClass:
  * @parent_class: the parent class
- * @dbus_properties_class: a D-Bus properties mixin
  * @is_stub: if %TRUE, this protocol will not be advertised on D-Bus (for
  *  internal use by #TpBaseConnection)
  * @get_parameters: a callback used to implement
@@ -1163,17 +1162,6 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
     { NULL }
   };
 
-  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-      { TP_IFACE_PROTOCOL, protocol_properties_getter, NULL, channel_props },
-      { TP_IFACE_PROTOCOL_INTERFACE_PRESENCE1, protocol_prop_presence_getter,
-        NULL, presence_props },
-      { TP_IFACE_PROTOCOL_INTERFACE_AVATARS1, protocol_prop_avatar_getter,
-        NULL, avatar_props },
-      { TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING1,
-        protocol_prop_addressing_getter, NULL, addressing_props },
-      { NULL }
-  };
-
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (TpBaseProtocolPrivate));
@@ -1218,9 +1206,19 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
           TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
-  klass->dbus_properties_class.interfaces = prop_interfaces;
-  tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TpBaseProtocolClass, dbus_properties_class));
+  tp_dbus_properties_mixin_class_init (object_class, 0);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_PROTOCOL, protocol_properties_getter, NULL,
+      channel_props);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_PROTOCOL_INTERFACE_PRESENCE1,
+      protocol_prop_presence_getter, NULL, presence_props);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_PROTOCOL_INTERFACE_AVATARS1, protocol_prop_avatar_getter,
+        NULL, avatar_props);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_PROTOCOL_INTERFACE_ADDRESSING1,
+      protocol_prop_addressing_getter, NULL, addressing_props);
 }
 
 static void

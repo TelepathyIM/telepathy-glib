@@ -277,14 +277,6 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
     { "IsICELite", "is-ice-lite", NULL },
     { NULL }
   };
-  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-      { TP_IFACE_CALL1_STREAM_ENDPOINT,
-        tp_dbus_properties_mixin_getter_gobject_properties,
-        NULL,
-        endpoint_props,
-      },
-      { NULL }
-  };
 
   g_type_class_add_private (klass, sizeof (TpCallStreamEndpointPrivate));
 
@@ -427,9 +419,11 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_IS_ICE_LITE, param_spec);
 
-  klass->dbus_props_class.interfaces = prop_interfaces;
-  tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TpCallStreamEndpointClass, dbus_props_class));
+  tp_dbus_properties_mixin_class_init (object_class, 0);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CALL1_STREAM_ENDPOINT,
+      tp_dbus_properties_mixin_getter_gobject_properties, NULL,
+      endpoint_props);
 
   /**
    * TpCallStreamEndpoint::candidate-selected:

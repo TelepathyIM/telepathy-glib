@@ -56,8 +56,6 @@ struct _TpBaseChannelClass
   GObjectClass parent_class;
 
   /*< public >*/
-  TpDBusPropertiesMixinClass dbus_props_class;
-
   const gchar *channel_type;
   TpEntityType target_entity_type;
 

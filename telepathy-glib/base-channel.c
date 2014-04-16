@@ -122,7 +122,6 @@
 
 /**
  * TpBaseChannelClass:
- * @dbus_props_class: The class structure for the DBus properties mixin
  * @channel_type: The type of channel that instances of this class represent
  * (e.g. #TP_IFACE_CHANNEL_TYPE_TEXT)
  * @target_entity_type: The type of handle that is the target of channels of
@@ -988,14 +987,6 @@ tp_base_channel_class_init (TpBaseChannelClass *tp_base_channel_class)
       { "InitiatorID", "initiator-id", NULL },
       { NULL }
   };
-  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-      { TP_IFACE_CHANNEL,
-        tp_dbus_properties_mixin_getter_gobject_properties,
-        NULL,
-        channel_props,
-      },
-      { NULL }
-  };
   GObjectClass *object_class = G_OBJECT_CLASS (tp_base_channel_class);
   GParamSpec *param_spec;
 
@@ -1179,9 +1170,13 @@ tp_base_channel_class_init (TpBaseChannelClass *tp_base_channel_class)
   g_object_class_install_property (object_class, PROP_INITIATOR_ID,
       param_spec);
 
-  tp_base_channel_class->dbus_props_class.interfaces = prop_interfaces;
-  tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TpBaseChannelClass, dbus_props_class));
+  tp_dbus_properties_mixin_class_init (object_class, 0);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CHANNEL,
+      tp_dbus_properties_mixin_getter_gobject_properties,
+      NULL,
+      channel_props);
+
   tp_base_channel_class->fill_immutable_properties =
       tp_base_channel_fill_basic_immutable_properties;
   tp_base_channel_class->get_object_path_suffix =

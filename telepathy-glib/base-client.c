@@ -1359,17 +1359,6 @@ tp_base_client_class_init (TpBaseClientClass *cls)
           GINT_TO_POINTER (DP_OBSERVER_DELAY_APPROVERS) },
         { NULL }
   };
-  static TpDBusPropertiesMixinIfaceImpl prop_ifaces[] = {
-        { TP_IFACE_CLIENT, tp_base_client_get_dbus_properties, NULL,
-          client_properties },
-        { TP_IFACE_CLIENT_OBSERVER, tp_base_client_get_dbus_properties, NULL,
-          observer_properties },
-        { TP_IFACE_CLIENT_APPROVER, tp_base_client_get_dbus_properties, NULL,
-          approver_properties },
-        { TP_IFACE_CLIENT_HANDLER, tp_base_client_get_dbus_properties, NULL,
-          handler_properties },
-        { NULL }
-  };
   GObjectClass *object_class = G_OBJECT_CLASS (cls);
 
   g_type_class_add_private (cls, sizeof (TpBaseClientPrivate));
@@ -1490,9 +1479,19 @@ tp_base_client_class_init (TpBaseClientClass *cls)
       G_TYPE_NONE, 3,
       TP_TYPE_CHANNEL_REQUEST, G_TYPE_STRING, G_TYPE_STRING);
 
-  cls->dbus_properties_class.interfaces = prop_ifaces;
-  tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TpBaseClientClass, dbus_properties_class));
+  tp_dbus_properties_mixin_class_init (object_class, 0);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+        TP_IFACE_QUARK_CLIENT, tp_base_client_get_dbus_properties,
+        NULL, client_properties);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+        TP_IFACE_QUARK_CLIENT_OBSERVER, tp_base_client_get_dbus_properties,
+        NULL, observer_properties);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+        TP_IFACE_QUARK_CLIENT_APPROVER, tp_base_client_get_dbus_properties,
+        NULL, approver_properties);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+        TP_IFACE_QUARK_CLIENT_HANDLER, tp_base_client_get_dbus_properties,
+        NULL, handler_properties);
 }
 
 static GList *

@@ -316,14 +316,6 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *klass)
     { "CanRequestReceiving", "can-request-receiving", NULL },
     { NULL }
   };
-  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-      { TP_IFACE_CALL1_STREAM,
-        tp_dbus_properties_mixin_getter_gobject_properties,
-        NULL,
-        stream_props,
-      },
-      { NULL }
-  };
 
   g_type_class_add_private (klass, sizeof (TpBaseCallStreamPrivate));
 
@@ -461,9 +453,10 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *klass)
   g_object_class_install_property (object_class, PROP_CAN_REQUEST_RECEIVING,
       param_spec);
 
-  klass->dbus_props_class.interfaces = prop_interfaces;
-  tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TpBaseCallStreamClass, dbus_props_class));
+  tp_dbus_properties_mixin_class_init (object_class, 0);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CALL1_STREAM,
+      tp_dbus_properties_mixin_getter_gobject_properties, NULL, stream_props);
 }
 
 /**

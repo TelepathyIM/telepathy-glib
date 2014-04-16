@@ -83,7 +83,6 @@ struct _TpBaseClientClass {
     TpBaseClientClassHandleChannelImpl handle_channel;
     /*<private>*/
     GCallback _padding[4];
-    TpDBusPropertiesMixinClass dbus_properties_class;
     TpBaseClientClassPrivate *priv;
 };
 

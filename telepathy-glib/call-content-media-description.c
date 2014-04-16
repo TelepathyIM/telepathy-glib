@@ -334,29 +334,6 @@ tp_call_content_media_description_class_init (
     { "EnableMetrics", "enable-metrics", NULL },
     { NULL }
   };
-  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-      { TP_IFACE_CALL1_CONTENT_MEDIA_DESCRIPTION,
-        tp_dbus_properties_mixin_getter_gobject_properties,
-        NULL,
-        media_description_props,
-      },
-      { TP_IFACE_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS1,
-        tp_dbus_properties_mixin_getter_gobject_properties,
-        NULL,
-        rtp_header_extensions_props,
-      },
-      { TP_IFACE_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK1,
-        tp_dbus_properties_mixin_getter_gobject_properties,
-        NULL,
-        rtcp_feedback_props,
-      },
-      { TP_IFACE_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_EXTENDED_REPORTS1,
-        tp_dbus_properties_mixin_getter_gobject_properties,
-        NULL,
-        rtcp_extended_reports_props,
-      },
-      { NULL }
-  };
 
   g_type_class_add_private (klass, sizeof (TpCallContentMediaDescriptionPrivate));
 
@@ -640,9 +617,23 @@ tp_call_content_media_description_class_init (
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ENABLE_METRICS, spec);
 
-  klass->dbus_props_class.interfaces = prop_interfaces;
-  tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TpCallContentMediaDescriptionClass, dbus_props_class));
+  tp_dbus_properties_mixin_class_init (object_class, 0);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CALL1_CONTENT_MEDIA_DESCRIPTION,
+      tp_dbus_properties_mixin_getter_gobject_properties, NULL,
+      media_description_props);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS1,
+      tp_dbus_properties_mixin_getter_gobject_properties, NULL,
+      rtp_header_extensions_props);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK1,
+      tp_dbus_properties_mixin_getter_gobject_properties, NULL,
+      rtcp_feedback_props);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CALL1_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_EXTENDED_REPORTS1,
+      tp_dbus_properties_mixin_getter_gobject_properties, NULL,
+      rtcp_extended_reports_props);
 }
 
 /**
