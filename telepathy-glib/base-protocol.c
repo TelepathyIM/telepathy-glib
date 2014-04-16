@@ -1083,7 +1083,7 @@ protocol_properties_getter (GObject *object,
 
     case PP_INTERFACES:
         g_value_take_boxed (value,
-            _tp_g_dbus_object_dup_interface_names (G_DBUS_OBJECT (self),
+            _tp_g_dbus_object_dup_interface_names_except (G_DBUS_OBJECT (self),
               TP_IFACE_PROTOCOL, NULL));
       break;
 

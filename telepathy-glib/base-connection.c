@@ -676,8 +676,9 @@ tp_base_connection_interface_changed_cb (TpBaseConnection *self,
        * every time, rather than doing anything intelligently diff-based. */
       g_value_init (&value, G_TYPE_STRV);
       g_value_take_boxed (&value,
-          _tp_g_dbus_object_dup_interface_names (G_DBUS_OBJECT (self),
-            TP_IFACE_CONNECTION, TP_IFACE_CONNECTION_INTERFACE_REQUESTS));
+          _tp_g_dbus_object_dup_interface_names_except (G_DBUS_OBJECT (self),
+            TP_IFACE_CONNECTION, TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
+            NULL));
       g_object_set_property (G_OBJECT (self->priv->connection_skeleton),
           "interfaces", &value);
       g_value_unset (&value);

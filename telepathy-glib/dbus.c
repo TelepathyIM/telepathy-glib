@@ -1043,13 +1043,13 @@ tp_dbus_connection_unregister_object (GDBusConnection *dbus_connection,
 }
 
 GStrv
-_tp_g_dbus_object_dup_interface_names (GDBusObject *obj,
-    const gchar *skip_class,
-    const gchar *skip_type)
+_tp_g_dbus_object_dup_interface_names_except (GDBusObject *obj,
+    ...)
 {
   GList *ifaces = g_dbus_object_get_interfaces (obj);
   GPtrArray *ret = g_ptr_array_new ();
   GList *iter;
+  const gchar *skip;
 
   for (iter = ifaces; iter != NULL; iter = iter->next)
     {
@@ -1066,17 +1066,22 @@ _tp_g_dbus_object_dup_interface_names (GDBusObject *obj,
             {
               /* ignore org.freedesktop.DBus, which is implied/assumed */
             }
-          else if (skip_class != NULL && !tp_strdiff (skip_class, info->name))
-            {
-              /* ignore im.telepathy.v1.Channel or whatever */
-            }
-          else if (skip_type != NULL && !tp_strdiff (skip_type, info->name))
-            {
-              /* ignore im.telepathy.v1.Channel.Type.Call1 or whatever */
-            }
           else
             {
-              g_ptr_array_add (ret, g_strdup (info->name));
+              va_list ap;
+
+              va_start (ap, obj);
+
+              while ((skip = va_arg (ap, const gchar *)) != NULL)
+                {
+                  if (!tp_strdiff (skip, info->name))
+                    break;
+                }
+
+              va_end (ap);
+
+              if (skip == NULL)
+                g_ptr_array_add (ret, g_strdup (info->name));
             }
         }
       else
