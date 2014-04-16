@@ -263,7 +263,8 @@ test_setters (Test *test,
     &test->result);
   tp_tests_run_until_result (&test->result);
   tp_account_set_enabled_finish (test->account, test->result, &test->error);
-  g_assert_error (test->error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED);
+  /* this is what TpDBusPropertiesMixin raises for an unimplemented property */
+  g_assert_error (test->error, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS);
   g_clear_error (&test->error);
   tp_clear_object (&test->result);
 }

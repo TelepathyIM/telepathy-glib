@@ -672,7 +672,7 @@ _iface_impl_get_property_impl (
 
   if (prop_impl == NULL)
     {
-      g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
+      g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
           "Unknown property %s on %s", property_name, interface_name);
       return FALSE;
     }
@@ -681,14 +681,14 @@ _iface_impl_get_property_impl (
 
   if ((prop_info->flags & TP_DBUS_PROPERTIES_MIXIN_FLAG_READ) == 0)
     {
-      g_set_error (error, TP_ERROR, TP_ERROR_PERMISSION_DENIED,
+      g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
           "Property %s on %s is write-only", property_name, interface_name);
       return FALSE;
     }
 
   if (iface_impl->getter == NULL)
     {
-      g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
+      g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
           "Getting properties on %s is unimplemented", interface_name);
       return FALSE;
     }
@@ -735,7 +735,7 @@ tp_dbus_properties_mixin_get (GObject *self,
 
   if (iface_impl == NULL)
     {
-      g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
+      g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
           "No properties known for interface %s", interface_name);
       return FALSE;
     }
@@ -1149,7 +1149,7 @@ tp_dbus_properties_mixin_set (
 
   if (iface_impl == NULL)
     {
-      g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
+      g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
           "No properties known for interface '%s'", interface_name);
       return FALSE;
     }
@@ -1161,7 +1161,7 @@ tp_dbus_properties_mixin_set (
 
   if (prop_impl == NULL)
     {
-      g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
+      g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
           "Unknown property '%s' on interface '%s'", property_name,
           interface_name);
       return FALSE;
@@ -1171,14 +1171,14 @@ tp_dbus_properties_mixin_set (
 
   if ((prop_info->flags & TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE) == 0)
     {
-      g_set_error (error, TP_ERROR, TP_ERROR_PERMISSION_DENIED,
+      g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
           "'%s.%s' is read-only", interface_name, property_name);
       return FALSE;
     }
 
   if (iface_impl->setter == NULL)
     {
-      g_set_error (error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED,
+      g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
           "Setting properties on '%s' is unimplemented", interface_name);
       return FALSE;
     }
@@ -1189,7 +1189,7 @@ tp_dbus_properties_mixin_set (
 
       if (!g_value_transform (value, &copy))
         {
-          g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
               "Cannot convert %s to %s for property %s",
               g_type_name (G_VALUE_TYPE (value)),
               g_type_name (prop_info->type),
