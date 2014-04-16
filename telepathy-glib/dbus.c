@@ -40,6 +40,7 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/object-registration-internal.h>
 #include <telepathy-glib/proxy.h>
 #include <telepathy-glib/sliced-gvalue.h>
 #include <telepathy-glib/svc-generic.h>
@@ -655,38 +656,12 @@ tp_dbus_connection_release_name (GDBusConnection *dbus_connection,
     }
 }
 
-typedef struct _Registration Registration;
-
-struct _Registration {
-    /* (transfer full) */
-    GDBusConnection *conn;
-    /* (transfer full) */
-    gchar *object_path;
-    /* (transfer full) */
-    GList *skeletons;
-    /* (transfer none), do not dereference */
-    gpointer object;
-};
-
-static GQuark
-registration_quark (void)
-{
-  static GQuark q = 0;
-
-  if (G_UNLIKELY (q == 0))
-    {
-      q = g_quark_from_static_string ("tp_dbus_connection_register_object");
-    }
-
-  return q;
-}
-
 static void
 tp_dbus_connection_registration_iface_added_cb (GDBusObject *object,
     GDBusInterface *iface,
     gpointer user_data)
 {
-  Registration *r = user_data;
+  TpDBusConnectionRegistration *r = user_data;
   GError *error = NULL;
 
   if (!G_IS_DBUS_INTERFACE_SKELETON (iface))
@@ -718,7 +693,7 @@ tp_dbus_connection_registration_iface_removed_cb (GDBusObject *object,
     GDBusInterface *iface,
     gpointer user_data)
 {
-  Registration *r = user_data;
+  TpDBusConnectionRegistration *r = user_data;
   GList *iface_link;
 
   iface_link = g_list_find (r->skeletons, iface);
@@ -734,7 +709,7 @@ tp_dbus_connection_registration_iface_removed_cb (GDBusObject *object,
 static void
 tp_dbus_connection_registration_free (gpointer p)
 {
-  Registration *r = p;
+  TpDBusConnectionRegistration *r = p;
   GList *iter;
 
   DEBUG ("%s (r=%p)", r->object_path, r);
@@ -763,7 +738,7 @@ tp_dbus_connection_registration_free (gpointer p)
           tp_dbus_connection_registration_iface_removed_cb, r);
     }
 
-  g_slice_free (Registration, r);
+  g_slice_free (TpDBusConnectionRegistration, r);
 }
 
 /**
@@ -925,7 +900,7 @@ tp_dbus_connection_try_register_object (GDBusConnection *dbus_connection,
     GError **error)
 {
   GDBusConnection *conn;
-  Registration *r;
+  TpDBusConnectionRegistration *r;
   gboolean ret = FALSE;
   GHashTable *skeletons = NULL;
   GHashTableIter hash_iter;
@@ -945,7 +920,7 @@ tp_dbus_connection_try_register_object (GDBusConnection *dbus_connection,
       !G_IS_DBUS_OBJECT (object), FALSE);
 
   conn = dbus_connection;
-  r = g_slice_new0 (Registration);
+  r = g_slice_new0 (TpDBusConnectionRegistration);
   r->conn = g_object_ref (conn);
   r->object = object;
   r->object_path = g_strdup (object_path);
@@ -954,7 +929,8 @@ tp_dbus_connection_try_register_object (GDBusConnection *dbus_connection,
   DEBUG ("%p (r=%p) on %s (%p) at %s", object, r,
       g_dbus_connection_get_unique_name (conn), conn, object_path);
 
-  if (!g_object_replace_qdata (object, registration_quark (),
+  if (!g_object_replace_qdata (object,
+        _tp_dbus_connection_registration_quark (),
         NULL, /* if old value is NULL... */
         r, /* ... replace it with r... */
         tp_dbus_connection_registration_free, /* ... with this free-function... */
@@ -968,7 +944,8 @@ tp_dbus_connection_try_register_object (GDBusConnection *dbus_connection,
        * registrations on different connections or at different object
        * paths, though, in the hope that nobody actually does that. */
 
-      r = g_object_get_qdata (object, registration_quark ());
+      r = g_object_get_qdata (object,
+          _tp_dbus_connection_registration_quark ());
 
       if (!tp_strdiff (r->object_path, object_path) &&
           r->conn == conn)
@@ -1062,31 +1039,7 @@ tp_dbus_connection_unregister_object (GDBusConnection *dbus_connection,
 
   /* The free-function for the qdata, tp_dbus_connection_registration_free(),
    * will automatically unregister the object (if registered) */
-  g_object_set_qdata (object, registration_quark (), NULL);
-}
-
-GDBusConnection *
-_tp_dbus_object_get_connection (gpointer object)
-{
-  Registration *r;
-
-  r = g_object_get_qdata (object, registration_quark ());
-  if (r != NULL)
-    return r->conn;
-
-  return NULL;
-}
-
-const gchar *
-_tp_dbus_object_get_object_path (gpointer object)
-{
-  Registration *r;
-
-  r = g_object_get_qdata (object, registration_quark ());
-  if (r != NULL)
-    return r->object_path;
-
-  return NULL;
+  g_object_set_qdata (object, _tp_dbus_connection_registration_quark (), NULL);
 }
 
 GStrv

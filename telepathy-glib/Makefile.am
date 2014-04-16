@@ -309,6 +309,7 @@ libtelepathy_glib_main_internal_handwritten_source = \
     message-mixin.c \
     observe-channel-context-internal.h \
     observe-channel-context.c \
+    object-registration-internal.h \
     presence-mixin.c \
     protocol.c \
     protocol-internal.h \

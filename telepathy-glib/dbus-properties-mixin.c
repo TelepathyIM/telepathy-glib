@@ -33,6 +33,7 @@
 #include <telepathy-glib/core-dbus-properties-mixin-internal.h>
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
+#include <telepathy-glib/object-registration-internal.h>
 
 /**
  * SECTION:dbus-properties-mixin
@@ -937,7 +938,7 @@ tp_dbus_properties_mixin_emit_properties_changed (
   GVariantDict changed_properties;
   GPtrArray *invalidated_properties;
   const gchar * const *prop_name;
-  GDBusConnection *dbus_connection;
+  TpDBusConnectionRegistration *r;
 
   g_return_if_fail (interface_name != NULL);
   iface_impl = _tp_dbus_properties_mixin_find_iface_impl (object,
@@ -1002,12 +1003,13 @@ tp_dbus_properties_mixin_emit_properties_changed (
 
   g_ptr_array_add (invalidated_properties, NULL);
 
-  dbus_connection = _tp_dbus_object_get_connection (object);
-  if (dbus_connection != NULL)
+  r = g_object_get_qdata (object, _tp_dbus_connection_registration_quark ());
+
+  if (r != NULL && r->conn != NULL)
     {
-      g_dbus_connection_emit_signal (dbus_connection,
+      g_dbus_connection_emit_signal (r->conn,
           NULL, /* broadcast */
-          _tp_dbus_object_get_object_path (object),
+          r->object_path,
           "org.freedesktop.DBus.Properties",
           "PropertiesChanged",
           /* consume floating ref */

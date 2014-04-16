@@ -31,9 +31,6 @@ gboolean _tp_dbus_connection_get_name_owner (GDBusConnection *dbus_connection,
     gint timeout_ms, const gchar *well_known_name, gchar **unique_name,
     GError **error);
 
-GDBusConnection *_tp_dbus_object_get_connection (gpointer object);
-const gchar *_tp_dbus_object_get_object_path (gpointer object);
-
 GStrv _tp_g_dbus_object_dup_interface_names (GDBusObject *obj,
     const gchar *skip_class,
     const gchar *skip_type);
