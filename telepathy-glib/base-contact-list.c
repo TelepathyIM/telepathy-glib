@@ -23,6 +23,8 @@
 
 #include <dbus/dbus-glib-lowlevel.h>
 
+#include <telepathy-glib/_gdbus/Connection_Interface_Contact_List1.h>
+
 #include <telepathy-glib/asv.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
@@ -46,27 +48,11 @@
  * inside a connection manager. It can be used to implement the ContactList
  * D-Bus interface on the Connection.
  *
- * Connections that use #TpBaseContactList must also have the #TpContactsMixin.
- *
  * Connection managers should subclass #TpBaseContactList, implementing the
  * virtual methods for core functionality in #TpBaseContactListClass.
  * Then, in the connection manager's #TpBaseConnection subclass:
  *
  * <itemizedlist>
- *  <listitem>
- *   <para>in #G_DEFINE_TYPE_WITH_CODE, implement
- *   #TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST1 using
- *   tp_base_contact_list_mixin_list_iface_init():</para>
- * |[
- * G_DEFINE_TYPE_WITH_CODE (MyConnection, my_connection,
- *     TP_TYPE_BASE_CONNECTION,
- *     // ...
- *     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST1,
- *         tp_base_contact_list_mixin_list_iface_init);
- *     // ...
- *     )
- * ]|
- *  </listitem>
  *  <listitem>
  *   <para>in the #TpBaseConnectionClass.fill_contact_attributes
  *    implementation, call tp_base_contact_list_fill_contact_attributes()
@@ -291,7 +277,7 @@ struct _TpBaseContactListPrivate
   /* TRUE if @conn implements TpSvcConnectionInterface$FOO - used to
    * decide whether to emit signals on these new interfaces. Initialized in
    * the constructor and cleared when we lose @conn. */
-  gboolean svc_contact_list;
+  _TpGDBusConnectionInterfaceContactList1 *contact_list_skeleton;
   gboolean svc_contact_groups;
   gboolean svc_contact_blocking;
 
@@ -560,7 +546,7 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
         }
 
       tp_clear_object (&self->priv->conn);
-      self->priv->svc_contact_list = FALSE;
+      g_clear_object (&self->priv->contact_list_skeleton);
       self->priv->svc_contact_groups = FALSE;
       self->priv->svc_contact_blocking = FALSE;
     }
@@ -633,14 +619,39 @@ tp_base_contact_list_set_property (GObject *object,
 }
 
 static void
+update_immutable_contact_list_properties (TpBaseContactList *self)
+{
+  _tp_gdbus_connection_interface_contact_list1_set_contact_list_persists (
+      self->priv->contact_list_skeleton,
+      tp_base_contact_list_get_contact_list_persists (self));
+
+  _tp_gdbus_connection_interface_contact_list1_set_can_change_contact_list (
+      self->priv->contact_list_skeleton,
+      tp_base_contact_list_can_change_contact_list (self));
+
+  _tp_gdbus_connection_interface_contact_list1_set_request_uses_message (
+      self->priv->contact_list_skeleton,
+      tp_base_contact_list_get_request_uses_message (self));
+
+  _tp_gdbus_connection_interface_contact_list1_set_download_at_connection (
+      self->priv->contact_list_skeleton,
+      self->priv->download_at_connection);
+}
+
+static void
 status_changed_cb (TpBaseConnection *conn,
     guint status,
     guint reason,
     TpBaseContactList *self)
 {
-  if (status == TP_CONNECTION_STATUS_DISCONNECTED)
+  if (status == TP_CONNECTION_STATUS_CONNECTED)
+    update_immutable_contact_list_properties (self);
+  else if (status == TP_CONNECTION_STATUS_DISCONNECTED)
     tp_base_contact_list_free_contents (self);
 }
+
+static void _tp_base_contact_list_implement_contact_list (
+    TpBaseContactList *self);
 
 static void
 tp_base_contact_list_constructed (GObject *object)
@@ -660,8 +671,9 @@ tp_base_contact_list_constructed (GObject *object)
   g_return_if_fail (cls->get_contact_list_persists != NULL);
   g_return_if_fail (cls->download_async != NULL);
 
-  self->priv->svc_contact_list =
-    TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_LIST1 (self->priv->conn);
+  /* ContactList1 iface is mandatory to implement */
+  _tp_base_contact_list_implement_contact_list (self);
+
   self->priv->svc_contact_groups =
     TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1 (self->priv->conn);
   self->priv->svc_contact_blocking =
@@ -882,8 +894,10 @@ tp_base_contact_list_set_list_pending (TpBaseContactList *self)
     return;
 
   self->priv->state = TP_CONTACT_LIST_STATE_WAITING;
-  tp_svc_connection_interface_contact_list1_emit_contact_list_state_changed (
-      self->priv->conn, self->priv->state);
+  _tp_gdbus_connection_interface_contact_list1_set_contact_list_state (
+      self->priv->contact_list_skeleton, self->priv->state);
+  _tp_gdbus_connection_interface_contact_list1_emit_contact_list_state_changed (
+      self->priv->contact_list_skeleton, self->priv->state);
 }
 
 /**
@@ -915,8 +929,10 @@ tp_base_contact_list_set_list_failed (TpBaseContactList *self,
   self->priv->state = TP_CONTACT_LIST_STATE_FAILURE;
   g_clear_error (&self->priv->failure);
   self->priv->failure = g_error_new_literal (domain, code, message);
-  tp_svc_connection_interface_contact_list1_emit_contact_list_state_changed (
-      self->priv->conn, self->priv->state);
+  _tp_gdbus_connection_interface_contact_list1_set_contact_list_state (
+      self->priv->contact_list_skeleton, self->priv->state);
+  _tp_gdbus_connection_interface_contact_list1_emit_contact_list_state_changed (
+      self->priv->contact_list_skeleton, self->priv->state);
 
   tp_base_contact_list_fail_blocked_contact_requests (self,
       self->priv->failure);
@@ -1039,8 +1055,10 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
 
   /* emit this last, so people can distinguish between the initial state
    * and subsequent changes */
-  tp_svc_connection_interface_contact_list1_emit_contact_list_state_changed (
-      self->priv->conn, self->priv->state);
+  _tp_gdbus_connection_interface_contact_list1_set_contact_list_state (
+      self->priv->contact_list_skeleton, self->priv->state);
+  _tp_gdbus_connection_interface_contact_list1_emit_contact_list_state_changed (
+      self->priv->contact_list_skeleton, self->priv->state);
 }
 
 char
@@ -1100,11 +1118,12 @@ tp_base_contact_list_contacts_changed_internal (TpBaseContactList *self,
     TpHandleSet *removed,
     gboolean is_initial_roster)
 {
-  GHashTable *changes;
-  GHashTable *change_ids;
-  GHashTable *removal_ids;
+  GVariantBuilder changes;
+  GVariantBuilder change_ids;
+  GVariantBuilder removal_ids;
   TpIntsetFastIter iter;
   TpHandle contact;
+  gboolean emit_signal = FALSE;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
 
@@ -1114,9 +1133,9 @@ tp_base_contact_list_contacts_changed_internal (TpBaseContactList *self,
       TP_CONTACT_LIST_STATE_SUCCESS)
     return;
 
-  changes = g_hash_table_new_full (NULL, NULL, NULL,
-      (GDestroyNotify) tp_value_array_free);
-  change_ids = g_hash_table_new (NULL, NULL);
+  g_variant_builder_init (&changes, G_VARIANT_TYPE ("a{u(uus)}"));
+  g_variant_builder_init (&change_ids, G_VARIANT_TYPE ("a{us}"));
+  g_variant_builder_init (&removal_ids, G_VARIANT_TYPE ("a{us}"));
 
   if (changed != NULL)
     tp_intset_fast_iter_init (&iter, tp_handle_set_peek (changed));
@@ -1139,51 +1158,42 @@ tp_base_contact_list_contacts_changed_internal (TpBaseContactList *self,
           _tp_base_contact_list_presence_state_to_letter (publish),
           publish_request);
 
-      g_hash_table_insert (changes, GUINT_TO_POINTER (contact),
-          tp_value_array_build (3,
-            G_TYPE_UINT, subscribe,
-            G_TYPE_UINT, publish,
-            G_TYPE_STRING, publish_request,
-            G_TYPE_INVALID));
-      g_free (publish_request);
-
-      g_hash_table_insert (change_ids, GUINT_TO_POINTER (contact),
-          (gchar *) tp_handle_inspect (self->priv->contact_repo, contact));
+      g_variant_builder_add (&changes, "{u(uu&s)}", contact, subscribe,
+          publish, publish_request);
+      g_variant_builder_add (&change_ids, "{us}", contact,
+          tp_handle_inspect (self->priv->contact_repo, contact));
+      emit_signal = TRUE;
     }
-
-  removal_ids = g_hash_table_new (NULL, NULL);
 
   if (removed != NULL)
     {
-      GArray *removals = tp_handle_set_to_array (removed);
-      guint i;
-
-      for (i = 0; i < removals->len; i++)
+      tp_intset_fast_iter_init (&iter, tp_handle_set_peek (removed));
+      while (tp_intset_fast_iter_next (&iter, &contact))
         {
-          TpHandle handle = g_array_index (removals, TpHandle, i);
-
-          g_hash_table_insert (removal_ids, GUINT_TO_POINTER (handle),
-              (gchar *) tp_handle_inspect (self->priv->contact_repo, handle));
+          g_variant_builder_add (&removal_ids, "{us}", contact,
+              tp_handle_inspect (self->priv->contact_repo, contact));
+          emit_signal = TRUE;
         }
-
-      g_array_unref (removals);
     }
 
-  if (g_hash_table_size (changes) > 0 || g_hash_table_size (removal_ids) > 0)
+  if (emit_signal)
     {
       DEBUG ("ContactsChanged([%u changed], [%u removed])",
-          g_hash_table_size (changes), g_hash_table_size (removal_ids));
+          changed != NULL ? tp_handle_set_size (changed) : 0,
+          removed != NULL ? tp_handle_set_size (removed) : 0);
 
-      if (self->priv->svc_contact_list)
-        {
-          tp_svc_connection_interface_contact_list1_emit_contacts_changed (
-              self->priv->conn, changes, change_ids, removal_ids);
-        }
+      _tp_gdbus_connection_interface_contact_list1_emit_contacts_changed (
+          self->priv->contact_list_skeleton,
+          g_variant_builder_end (&changes),
+          g_variant_builder_end (&change_ids),
+          g_variant_builder_end (&removal_ids));
     }
-
-  g_hash_table_unref (changes);
-  g_hash_table_unref (change_ids);
-  g_hash_table_unref (removal_ids);
+  else
+    {
+      g_variant_builder_clear (&changes);
+      g_variant_builder_clear (&change_ids);
+      g_variant_builder_clear (&removal_ids);
+    }
 }
 
 /**
@@ -3625,17 +3635,14 @@ tp_base_contact_list_remove_group_finish (TpBaseContactList *self,
   return mutable_groups_iface->remove_group_finish (self, result, error);
 }
 
-static void
+static gboolean
 tp_base_contact_list_mixin_get_contact_list_attributes (
-    TpSvcConnectionInterfaceContactList1 *svc,
+    _TpGDBusConnectionInterfaceContactList1 *skeleton,
+    GDBusMethodInvocation *context,
     const gchar **interfaces,
-    GDBusMethodInvocation *context)
+    TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
-      BASE_CONTACT_LIST);
   GError *error = NULL;
-
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
 
   if (tp_base_contact_list_get_state (self, &error)
       != TP_CONTACT_LIST_STATE_SUCCESS)
@@ -3650,22 +3657,20 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
       const gchar *assumed[] = { TP_IFACE_CONNECTION,
           TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1, NULL };
       GVariant *result;
-      GValue value = G_VALUE_INIT;
 
       set = tp_base_contact_list_dup_contacts (self);
       contacts = tp_handle_set_to_array (set);
       result = _tp_base_connection_dup_contact_attributes_hash (
           self->priv->conn, contacts, interfaces, assumed);
-      g_variant_ref_sink (result);
-      dbus_g_value_parse_g_variant (result, &value);
-      tp_svc_connection_interface_contact_list1_return_from_get_contact_list_attributes (
-          context, g_value_get_boxed (&value));
+
+      _tp_gdbus_connection_interface_contact_list1_complete_get_contact_list_attributes (
+          skeleton, context, result);
 
       g_array_unref (contacts);
       tp_handle_set_destroy (set);
-      g_variant_unref (result);
-      g_value_unset (&value);
     }
+
+  return TRUE;
 }
 
 /**
@@ -3898,6 +3903,20 @@ tp_base_contact_list_check_group_change (TpBaseContactList *self,
   return TRUE;
 }
 
+static GArray *
+handles_variant_to_array (GVariant *variant)
+{
+  const TpHandle *handles;
+  GArray *array;
+  gsize n;
+
+  handles = g_variant_get_fixed_array (variant, &n, sizeof (TpHandle));
+  array = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n);
+  g_array_append_vals (array, handles, n);
+
+  return array;
+}
+
 /* Normally we'd use the return_from functions, but these methods all return
  * void, and life's too short. */
 static void
@@ -3923,31 +3942,36 @@ tp_base_contact_list_mixin_request_subscription_cb (GObject *source,
   g_clear_error (&error);
 }
 
-static void
+static gboolean
 tp_base_contact_list_mixin_request_subscription (
-    TpSvcConnectionInterfaceContactList1 *svc,
-    const GArray *contacts,
+    _TpGDBusConnectionInterfaceContactList1 *skeleton,
+    GDBusMethodInvocation *context,
+    GVariant *contacts_variant,
     const gchar *message,
-    GDBusMethodInvocation *context)
+    TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
-      BASE_CONTACT_LIST);
   GError *error = NULL;
   TpHandleSet *contacts_set;
+  GArray *contacts;
+
+  contacts = handles_variant_to_array (contacts_variant);
 
   if (!tp_base_contact_list_check_list_change (self, contacts, &error))
-    goto error;
+    {
+      tp_base_contact_list_mixin_return_void (context, error);
+      g_clear_error (&error);
+      goto out;
+    }
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
   tp_base_contact_list_request_subscription_async (self, contacts_set, message,
       tp_base_contact_list_mixin_request_subscription_cb, context);
   tp_handle_set_destroy (contacts_set);
-  return;
 
-error:
-  tp_base_contact_list_mixin_return_void (context, error);
-  g_clear_error (&error);
+out:
+  g_array_unref (contacts);
+  return TRUE;
 }
 
 static void
@@ -3963,30 +3987,35 @@ tp_base_contact_list_mixin_authorize_publication_cb (GObject *source,
   g_clear_error (&error);
 }
 
-static void
+static gboolean
 tp_base_contact_list_mixin_authorize_publication (
-    TpSvcConnectionInterfaceContactList1 *svc,
-    const GArray *contacts,
-    GDBusMethodInvocation *context)
+    _TpGDBusConnectionInterfaceContactList1 *skeleton,
+    GDBusMethodInvocation *context,
+    GVariant *contacts_variant,
+    TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
-      BASE_CONTACT_LIST);
   GError *error = NULL;
   TpHandleSet *contacts_set;
+  GArray *contacts;
+
+  contacts = handles_variant_to_array (contacts_variant);
 
   if (!tp_base_contact_list_check_list_change (self, contacts, &error))
-    goto error;
+    {
+      tp_base_contact_list_mixin_return_void (context, error);
+      g_clear_error (&error);
+      goto out;
+    }
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
   tp_base_contact_list_authorize_publication_async (self, contacts_set,
       tp_base_contact_list_mixin_authorize_publication_cb, context);
   tp_handle_set_destroy (contacts_set);
-  return;
 
-error:
-  tp_base_contact_list_mixin_return_void (context, error);
-  g_clear_error (&error);
+out:
+  g_array_unref (contacts);
+  return TRUE;
 }
 
 static void
@@ -4002,30 +4031,35 @@ tp_base_contact_list_mixin_remove_contacts_cb (GObject *source,
   g_clear_error (&error);
 }
 
-static void
+static gboolean
 tp_base_contact_list_mixin_remove_contacts (
-    TpSvcConnectionInterfaceContactList1 *svc,
-    const GArray *contacts,
-    GDBusMethodInvocation *context)
+    _TpGDBusConnectionInterfaceContactList1 *skeleton,
+    GDBusMethodInvocation *context,
+    GVariant *contacts_variant,
+    TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
-      BASE_CONTACT_LIST);
   GError *error = NULL;
   TpHandleSet *contacts_set;
+  GArray *contacts;
+
+  contacts = handles_variant_to_array (contacts_variant);
 
   if (!tp_base_contact_list_check_list_change (self, contacts, &error))
-    goto error;
+    {
+      tp_base_contact_list_mixin_return_void (context, error);
+      g_clear_error (&error);
+      goto out;
+    }
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
   tp_base_contact_list_remove_contacts_async (self, contacts_set,
       tp_base_contact_list_mixin_remove_contacts_cb, context);
   tp_handle_set_destroy (contacts_set);
-  return;
 
-error:
-  tp_base_contact_list_mixin_return_void (context, error);
-  g_clear_error (&error);
+out:
+  g_array_unref (contacts);
+  return TRUE;
 }
 
 static void
@@ -4041,30 +4075,35 @@ tp_base_contact_list_mixin_unsubscribe_cb (GObject *source,
   g_clear_error (&error);
 }
 
-static void
+static gboolean
 tp_base_contact_list_mixin_unsubscribe (
-    TpSvcConnectionInterfaceContactList1 *svc,
-    const GArray *contacts,
-    GDBusMethodInvocation *context)
+    _TpGDBusConnectionInterfaceContactList1 *skeleton,
+    GDBusMethodInvocation *context,
+    GVariant *contacts_variant,
+    TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
-      BASE_CONTACT_LIST);
   GError *error = NULL;
   TpHandleSet *contacts_set;
+  GArray *contacts;
+
+  contacts = handles_variant_to_array (contacts_variant);
 
   if (!tp_base_contact_list_check_list_change (self, contacts, &error))
-    goto error;
+    {
+      tp_base_contact_list_mixin_return_void (context, error);
+      g_clear_error (&error);
+      goto out;
+    }
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
   tp_base_contact_list_unsubscribe_async (self, contacts_set,
       tp_base_contact_list_mixin_unsubscribe_cb, context);
   tp_handle_set_destroy (contacts_set);
-  return;
 
-error:
-  tp_base_contact_list_mixin_return_void (context, error);
-  g_clear_error (&error);
+out:
+  g_array_unref (contacts);
+  return TRUE;
 }
 
 static void
@@ -4080,96 +4119,35 @@ tp_base_contact_list_mixin_unpublish_cb (GObject *source,
   g_clear_error (&error);
 }
 
-static void
+static gboolean
 tp_base_contact_list_mixin_unpublish (
-    TpSvcConnectionInterfaceContactList1 *svc,
-    const GArray *contacts,
-    GDBusMethodInvocation *context)
+    _TpGDBusConnectionInterfaceContactList1 *skeleton,
+    GDBusMethodInvocation *context,
+    GVariant *contacts_variant,
+    TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
-      BASE_CONTACT_LIST);
   GError *error = NULL;
   TpHandleSet *contacts_set;
+  GArray *contacts;
+
+  contacts = handles_variant_to_array (contacts_variant);
 
   if (!tp_base_contact_list_check_list_change (self, contacts, &error))
-    goto error;
+    {
+      tp_base_contact_list_mixin_return_void (context, error);
+      g_clear_error (&error);
+      goto out;
+    }
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
   tp_base_contact_list_unpublish_async (self, contacts_set,
       tp_base_contact_list_mixin_unpublish_cb, context);
   tp_handle_set_destroy (contacts_set);
-  return;
 
-error:
-  tp_base_contact_list_mixin_return_void (context, error);
-  g_clear_error (&error);
-}
-
-typedef enum {
-    LP_CONTACT_LIST_STATE,
-    LP_CONTACT_LIST_PERSISTS,
-    LP_CAN_CHANGE_CONTACT_LIST,
-    LP_REQUEST_USES_MESSAGE,
-    LP_DOWNLOAD_AT_CONNECTION,
-    NUM_LIST_PROPERTIES
-} ListProp;
-
-static TpDBusPropertiesMixinPropImpl known_list_props[] = {
-    { "ContactListState", GINT_TO_POINTER (LP_CONTACT_LIST_STATE), },
-    { "ContactListPersists", GINT_TO_POINTER (LP_CONTACT_LIST_PERSISTS), },
-    { "CanChangeContactList", GINT_TO_POINTER (LP_CAN_CHANGE_CONTACT_LIST) },
-    { "RequestUsesMessage", GINT_TO_POINTER (LP_REQUEST_USES_MESSAGE) },
-    { "DownloadAtConnection", GINT_TO_POINTER (LP_DOWNLOAD_AT_CONNECTION) },
-    { NULL }
-};
-
-static void
-tp_base_contact_list_get_list_dbus_property (GObject *conn,
-    GQuark interface G_GNUC_UNUSED,
-    GQuark name G_GNUC_UNUSED,
-    GValue *value,
-    gpointer data)
-{
-  TpBaseContactList *self = g_object_get_qdata (conn, BASE_CONTACT_LIST);
-  ListProp p = GPOINTER_TO_INT (data);
-
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
-  g_return_if_fail (self->priv->conn != NULL);
-
-  switch (p)
-    {
-    case LP_CONTACT_LIST_STATE:
-      g_return_if_fail (G_VALUE_HOLDS_UINT (value));
-      g_value_set_uint (value, self->priv->state);
-      break;
-
-    case LP_CONTACT_LIST_PERSISTS:
-      g_return_if_fail (G_VALUE_HOLDS_BOOLEAN (value));
-      g_value_set_boolean (value,
-          tp_base_contact_list_get_contact_list_persists (self));
-      break;
-
-    case LP_CAN_CHANGE_CONTACT_LIST:
-      g_return_if_fail (G_VALUE_HOLDS_BOOLEAN (value));
-      g_value_set_boolean (value,
-          tp_base_contact_list_can_change_contact_list (self));
-      break;
-
-    case LP_REQUEST_USES_MESSAGE:
-      g_return_if_fail (G_VALUE_HOLDS_BOOLEAN (value));
-      g_value_set_boolean (value,
-          tp_base_contact_list_get_request_uses_message (self));
-      break;
-
-    case LP_DOWNLOAD_AT_CONNECTION:
-      g_return_if_fail (G_VALUE_HOLDS_BOOLEAN (value));
-      g_value_set_boolean (value, self->priv->download_at_connection);
-      break;
-
-    default:
-      g_return_if_reached ();
-    }
+out:
+  g_array_unref (contacts);
+  return TRUE;
 }
 
 /**
@@ -4280,44 +4258,59 @@ tp_base_contact_list_mixin_download_cb (GObject *source,
   g_clear_error (&error);
 }
 
-static void
+static gboolean
 tp_base_contact_list_mixin_download (
-    TpSvcConnectionInterfaceContactList1 *svc,
-    GDBusMethodInvocation *context)
+    _TpGDBusConnectionInterfaceContactList1 *skeleton,
+    GDBusMethodInvocation *context,
+    TpBaseContactList *self)
 {
-  TpBaseContactList *self = g_object_get_qdata ((GObject *) svc,
-      BASE_CONTACT_LIST);
-
   tp_base_contact_list_download_async (self,
       tp_base_contact_list_mixin_download_cb, context);
+  return TRUE;
 }
 
-/**
- * tp_base_contact_list_mixin_list_iface_init:
- * @klass: the service-side D-Bus interface,
- *  a #TpSvcConnectionInterfaceContactList1Class
- *
- * Use the #TpBaseContactList like a mixin, to implement the ContactList
- * D-Bus interface.
- *
- * This function should be passed to G_IMPLEMENT_INTERFACE() for
- * #TpSvcConnectionInterfaceContactList1.
- *
- * Since: 0.13.0
- */
-void
-tp_base_contact_list_mixin_list_iface_init (gpointer klass)
+static void
+_tp_base_contact_list_implement_contact_list (TpBaseContactList *self)
 {
-#define IMPLEMENT(x) tp_svc_connection_interface_contact_list1_implement_##x (\
-  klass, tp_base_contact_list_mixin_##x)
-  IMPLEMENT (get_contact_list_attributes);
-  IMPLEMENT (request_subscription);
-  IMPLEMENT (authorize_publication);
-  IMPLEMENT (remove_contacts);
-  IMPLEMENT (unsubscribe);
-  IMPLEMENT (unpublish);
-  IMPLEMENT (download);
-#undef IMPLEMENT
+  self->priv->contact_list_skeleton =
+      _tp_gdbus_connection_interface_contact_list1_skeleton_new ();
+
+  /* Set initial value for immutable properties, will update them once
+   * connection' status goes to CONNECTED. */
+  update_immutable_contact_list_properties (self);
+
+  g_signal_connect_object (self->priv->contact_list_skeleton,
+      "handle-get-contact-list-attributes",
+      G_CALLBACK (tp_base_contact_list_mixin_get_contact_list_attributes),
+      self, 0);
+  g_signal_connect_object (self->priv->contact_list_skeleton,
+      "handle-request-subscription",
+      G_CALLBACK (tp_base_contact_list_mixin_request_subscription),
+      self, 0);
+  g_signal_connect_object (self->priv->contact_list_skeleton,
+      "handle-authorize-publication",
+      G_CALLBACK (tp_base_contact_list_mixin_authorize_publication),
+      self, 0);
+  g_signal_connect_object (self->priv->contact_list_skeleton,
+      "handle-remove-contacts",
+      G_CALLBACK (tp_base_contact_list_mixin_remove_contacts),
+      self, 0);
+  g_signal_connect_object (self->priv->contact_list_skeleton,
+      "handle-unsubscribe",
+      G_CALLBACK (tp_base_contact_list_mixin_unsubscribe),
+      self, 0);
+  g_signal_connect_object (self->priv->contact_list_skeleton,
+      "handle-unpublish",
+      G_CALLBACK (tp_base_contact_list_mixin_unpublish),
+      self, 0);
+  g_signal_connect_object (self->priv->contact_list_skeleton,
+      "handle-download",
+      G_CALLBACK (tp_base_contact_list_mixin_download),
+      self, 0);
+
+  g_dbus_object_skeleton_add_interface (
+      G_DBUS_OBJECT_SKELETON (self->priv->conn),
+      G_DBUS_INTERFACE_SKELETON (self->priv->contact_list_skeleton));
 }
 
 /**
@@ -4986,13 +4979,6 @@ tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls)
   GObjectClass *obj_cls = (GObjectClass *) cls;
 
   g_return_if_fail (TP_IS_BASE_CONNECTION_CLASS (cls));
-  g_return_if_fail (g_type_is_a (type,
-        TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST1));
-
-  tp_dbus_properties_mixin_implement_interface (obj_cls,
-      TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_LIST1,
-      tp_base_contact_list_get_list_dbus_property,
-      NULL, known_list_props);
 
   if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1))
     {

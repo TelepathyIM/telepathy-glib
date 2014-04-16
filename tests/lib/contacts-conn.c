@@ -41,8 +41,6 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsContactsConnection,
       TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_CAPABILITIES1, NULL)
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_INFO1,
       init_contact_info)
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST1,
-      tp_base_contact_list_mixin_list_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1,
       tp_base_contact_list_mixin_groups_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CLIENT_TYPES1,
@@ -410,11 +408,6 @@ constructed (GObject *object)
 
   iface = tp_svc_interface_skeleton_new (skel,
       TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS1);
-  g_dbus_object_skeleton_add_interface (skel, iface);
-  g_object_unref (iface);
-
-  iface = tp_svc_interface_skeleton_new (skel,
-      TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST1);
   g_dbus_object_skeleton_add_interface (skel, iface);
   g_object_unref (iface);
 
