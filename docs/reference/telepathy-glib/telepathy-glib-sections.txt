@@ -1688,6 +1688,7 @@ tp_presence_mixin_fill_contact_attributes
 tp_presence_mixin_emit_presence_update
 tp_presence_mixin_emit_one_presence_update
 <SUBSECTION Standard>
+TP_PRESENCE_MIXIN
 TP_TYPE_PRESENCE_MIXIN
 TP_IS_PRESENCE_MIXIN
 TP_PRESENCE_MIXIN_GET_INTERFACE

@@ -177,7 +177,8 @@ presence_updated_cb (ExampleContactList *contact_list,
   status = tp_presence_status_new (
       example_contact_list_get_presence (contact_list, contact),
       NULL);
-  tp_presence_mixin_emit_one_presence_update (base, contact, status);
+  tp_presence_mixin_emit_one_presence_update (TP_PRESENCE_MIXIN (self),
+      contact, status);
   tp_presence_status_free (status);
 }
 
@@ -245,7 +246,7 @@ example_contact_list_connection_fill_contact_attributes (TpBaseConnection *conn,
         dbus_interface, contact, attributes))
     return;
 
-  if (tp_presence_mixin_fill_contact_attributes (conn,
+  if (tp_presence_mixin_fill_contact_attributes (TP_PRESENCE_MIXIN (self),
         dbus_interface, contact, attributes))
     return;
 
@@ -276,7 +277,7 @@ constructed (GObject *object)
   g_signal_connect (self->priv->contact_list, "presence-updated",
       G_CALLBACK (presence_updated_cb), self);
 
-  tp_presence_mixin_init (TP_BASE_CONNECTION (object));
+  tp_presence_mixin_init (TP_PRESENCE_MIXIN (object));
 
   iface = tp_svc_interface_skeleton_new (skel,
       TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING1);
@@ -285,17 +286,18 @@ constructed (GObject *object)
 }
 
 static gboolean
-status_available (TpBaseConnection *base,
+status_available (TpPresenceMixin *mixin,
     guint index_)
 {
-  return tp_base_connection_check_connected (base, NULL);
+  return tp_base_connection_check_connected (TP_BASE_CONNECTION (mixin), NULL);
 }
 
 static TpPresenceStatus *
-get_contact_status (TpBaseConnection *base,
+get_contact_status (TpPresenceMixin *mixin,
     TpHandle contact)
 {
-  ExampleContactListConnection *self = EXAMPLE_CONTACT_LIST_CONNECTION (base);
+  ExampleContactListConnection *self = EXAMPLE_CONTACT_LIST_CONNECTION (mixin);
+  TpBaseConnection *base = TP_BASE_CONNECTION (mixin);
   ExampleContactListPresence presence;
 
   /* we get our own status from the connection, and everyone else's status
@@ -315,11 +317,12 @@ get_contact_status (TpBaseConnection *base,
 }
 
 static gboolean
-set_own_status (TpBaseConnection *base,
+set_own_status (TpPresenceMixin *mixin,
                 const TpPresenceStatus *status,
                 GError **error)
 {
-  ExampleContactListConnection *self = EXAMPLE_CONTACT_LIST_CONNECTION (base);
+  ExampleContactListConnection *self = EXAMPLE_CONTACT_LIST_CONNECTION (mixin);
+  TpBaseConnection *base = TP_BASE_CONNECTION (mixin);
   GHashTable *presences;
 
   if (status->index == EXAMPLE_CONTACT_LIST_PRESENCE_AWAY)
@@ -342,7 +345,7 @@ set_own_status (TpBaseConnection *base,
   g_hash_table_insert (presences,
       GUINT_TO_POINTER (tp_base_connection_get_self_handle (base)),
       (gpointer) status);
-  tp_presence_mixin_emit_presence_update (base, presences);
+  tp_presence_mixin_emit_presence_update (TP_PRESENCE_MIXIN (self), presences);
   g_hash_table_unref (presences);
   return TRUE;
 }

@@ -127,7 +127,7 @@ constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 
-  tp_presence_mixin_init (TP_BASE_CONNECTION (object));
+  tp_presence_mixin_init (TP_PRESENCE_MIXIN (object));
 }
 
 static void
@@ -223,17 +223,18 @@ shut_down (TpBaseConnection *conn)
 }
 
 static gboolean
-status_available (TpBaseConnection *base,
+status_available (TpPresenceMixin *mixin,
     guint index_)
 {
-  return tp_base_connection_check_connected (base, NULL);
+  return tp_base_connection_check_connected (TP_BASE_CONNECTION (mixin), NULL);
 }
 
 static TpPresenceStatus *
-get_contact_status (TpBaseConnection *base,
+get_contact_status (TpPresenceMixin *mixin,
     TpHandle contact)
 {
-  ExampleCallConnection *self = EXAMPLE_CALL_CONNECTION (base);
+  ExampleCallConnection *self = EXAMPLE_CALL_CONNECTION (mixin);
+  TpBaseConnection *base = TP_BASE_CONNECTION (mixin);
   ExampleCallPresence presence;
   const gchar *message;
 
@@ -255,11 +256,12 @@ get_contact_status (TpBaseConnection *base,
 }
 
 static gboolean
-set_own_status (TpBaseConnection *base,
+set_own_status (TpPresenceMixin *mixin,
     const TpPresenceStatus *status,
     GError **error)
 {
-  ExampleCallConnection *self = EXAMPLE_CALL_CONNECTION (base);
+  ExampleCallConnection *self = EXAMPLE_CALL_CONNECTION (mixin);
+  TpBaseConnection *base = TP_BASE_CONNECTION (mixin);
   GHashTable *presences;
 
   if (status->index == EXAMPLE_CALL_PRESENCE_AWAY)
@@ -287,7 +289,7 @@ set_own_status (TpBaseConnection *base,
   g_hash_table_insert (presences,
       GUINT_TO_POINTER (tp_base_connection_get_self_handle (base)),
       (gpointer) status);
-  tp_presence_mixin_emit_presence_update (base, presences);
+  tp_presence_mixin_emit_presence_update (TP_PRESENCE_MIXIN (self), presences);
   g_hash_table_unref (presences);
 
   if (!self->priv->away)
@@ -326,7 +328,7 @@ fill_contact_attributes (TpBaseConnection *conn,
     TpHandle contact,
     GVariantDict *attributes)
 {
-  if (tp_presence_mixin_fill_contact_attributes (conn,
+  if (tp_presence_mixin_fill_contact_attributes (TP_PRESENCE_MIXIN (conn),
         dbus_interface, contact, attributes))
     return;
 

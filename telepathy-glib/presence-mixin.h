@@ -102,6 +102,10 @@ void tp_presence_status_free (TpPresenceStatus *status);
 #define TP_TYPE_PRESENCE_MIXIN \
   (tp_presence_mixin_get_type ())
 
+#define TP_PRESENCE_MIXIN(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
+  TP_TYPE_PRESENCE_MIXIN, TpPresenceMixin))
+
 #define TP_IS_PRESENCE_MIXIN(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
   TP_TYPE_PRESENCE_MIXIN))
@@ -111,22 +115,21 @@ void tp_presence_status_free (TpPresenceStatus *status);
   TP_TYPE_PRESENCE_MIXIN, TpPresenceMixinInterface))
 
 typedef struct _TpPresenceMixinInterface TpPresenceMixinInterface;
-/* For some reason g-i wants that name */
-typedef struct _TpPresenceMixinInterface TpPresenceMixin;
+typedef struct _TpPresenceMixin TpPresenceMixin;
 
-typedef gboolean (*TpPresenceMixinStatusAvailableFunc) (TpBaseConnection *self,
+typedef gboolean (*TpPresenceMixinStatusAvailableFunc) (TpPresenceMixin *self,
     guint which);
 
 typedef TpPresenceStatus *(*TpPresenceMixinGetContactStatusFunc) (
-    TpBaseConnection *self,
+    TpPresenceMixin *self,
     TpHandle contact);
 
-typedef gboolean (*TpPresenceMixinSetOwnStatusFunc) (TpBaseConnection *self,
+typedef gboolean (*TpPresenceMixinSetOwnStatusFunc) (TpPresenceMixin *self,
     const TpPresenceStatus *status,
     GError **error);
 
 typedef guint (*TpPresenceMixinGetMaximumStatusMessageLengthFunc) (
-    TpBaseConnection *self);
+    TpPresenceMixin *self);
 
 struct _TpPresenceMixinInterface {
   GTypeInterface parent;
@@ -142,14 +145,14 @@ struct _TpPresenceMixinInterface {
 
 GType tp_presence_mixin_get_type (void) G_GNUC_CONST;
 
-void tp_presence_mixin_emit_presence_update (TpBaseConnection *self,
+void tp_presence_mixin_emit_presence_update (TpPresenceMixin *self,
     GHashTable *contact_presences);
-void tp_presence_mixin_emit_one_presence_update (TpBaseConnection *self,
+void tp_presence_mixin_emit_one_presence_update (TpPresenceMixin *self,
     TpHandle handle,
     const TpPresenceStatus *status);
 
-void tp_presence_mixin_init (TpBaseConnection *self);
-gboolean tp_presence_mixin_fill_contact_attributes (TpBaseConnection *self,
+void tp_presence_mixin_init (TpPresenceMixin *self);
+gboolean tp_presence_mixin_fill_contact_attributes (TpPresenceMixin *self,
     const gchar *dbus_interface,
     TpHandle contact,
     GVariantDict *attributes);

@@ -226,14 +226,14 @@ tp_presence_status_free (TpPresenceStatus *status)
 
 G_DEFINE_INTERFACE (TpPresenceMixin, tp_presence_mixin, TP_TYPE_BASE_CONNECTION)
 
-static void update_statuses_property (TpBaseConnection *self);
-static void update_max_status_message_len_property (TpBaseConnection *self);
+static void update_statuses_property (TpPresenceMixin *self);
+static void update_max_status_message_len_property (TpPresenceMixin *self);
 static gboolean tp_presence_mixin_set_presence (
     _TpGDBusConnectionInterfacePresence1 *skeleton,
     GDBusMethodInvocation *context,
     const gchar *status,
     const gchar *message,
-    TpBaseConnection *self);
+    TpPresenceMixin *self);
 
 static void
 tp_presence_mixin_default_init (TpPresenceMixinInterface *iface)
@@ -241,11 +241,13 @@ tp_presence_mixin_default_init (TpPresenceMixinInterface *iface)
 }
 
 static void
-connection_status_changed_cb (TpBaseConnection *self,
+connection_status_changed_cb (TpBaseConnection *base,
     TpConnectionStatus status,
     TpConnectionStatusReason reason,
     gpointer user_data)
 {
+  TpPresenceMixin *self = TP_PRESENCE_MIXIN (base);
+
   if (status == TP_CONNECTION_STATUS_CONNECTED)
     {
       update_statuses_property (self);
@@ -262,7 +264,7 @@ connection_status_changed_cb (TpBaseConnection *self,
  * subclass that implements #TpPresenceMixin.
  */
 void
-tp_presence_mixin_init (TpBaseConnection *self)
+tp_presence_mixin_init (TpPresenceMixin *self)
 {
   _TpGDBusConnectionInterfacePresence1 *presence_skeleton;
   TpPresenceMixinInterface *iface = TP_PRESENCE_MIXIN_GET_INTERFACE (self);
@@ -322,7 +324,7 @@ tp_presence_mixin_init (TpBaseConnection *self)
  * #tp_presence_mixin_emit_one_presence_update.
  */
 void
-tp_presence_mixin_emit_presence_update (TpBaseConnection *self,
+tp_presence_mixin_emit_presence_update (TpPresenceMixin *self,
                                         GHashTable *contact_statuses)
 {
   TpPresenceMixinInterface *iface = TP_PRESENCE_MIXIN_GET_INTERFACE (self);
@@ -348,7 +350,7 @@ tp_presence_mixin_emit_presence_update (TpBaseConnection *self,
  * just a convenience wrapper around tp_presence_mixin_emit_presence_update().
  */
 void
-tp_presence_mixin_emit_one_presence_update (TpBaseConnection *self,
+tp_presence_mixin_emit_one_presence_update (TpPresenceMixin *self,
                                             TpHandle handle,
                                             const TpPresenceStatus *status)
 {
@@ -365,7 +367,7 @@ tp_presence_mixin_emit_one_presence_update (TpBaseConnection *self,
 }
 
 static gboolean
-check_status_available (TpBaseConnection *self,
+check_status_available (TpPresenceMixin *self,
     TpPresenceMixinInterface *iface,
     guint i,
     GError **error,
@@ -412,7 +414,7 @@ check_status_available (TpBaseConnection *self,
 }
 
 static int
-check_for_status (TpBaseConnection *self,
+check_for_status (TpPresenceMixin *self,
     const gchar *status,
     GError **error)
 {
@@ -445,7 +447,7 @@ check_for_status (TpBaseConnection *self,
 }
 
 static void
-update_statuses_property (TpBaseConnection *self)
+update_statuses_property (TpPresenceMixin *self)
 {
   TpPresenceMixinInterface *iface = TP_PRESENCE_MIXIN_GET_INTERFACE (self);
   _TpGDBusConnectionInterfacePresence1 *presence_skeleton;
@@ -481,7 +483,7 @@ update_statuses_property (TpBaseConnection *self)
 }
 
 static void
-update_max_status_message_len_property (TpBaseConnection *self)
+update_max_status_message_len_property (TpPresenceMixin *self)
 {
   TpPresenceMixinInterface *iface = TP_PRESENCE_MIXIN_GET_INTERFACE (self);
   _TpGDBusConnectionInterfacePresence1 *presence_skeleton;
@@ -503,7 +505,7 @@ tp_presence_mixin_set_presence (
     GDBusMethodInvocation *context,
     const gchar *status,
     const gchar *message,
-    TpBaseConnection *self)
+    TpPresenceMixin *self)
 {
   TpPresenceMixinInterface *iface = TP_PRESENCE_MIXIN_GET_INTERFACE (self);
   TpPresenceStatus status_to_set = { 0, };
@@ -620,7 +622,7 @@ construct_presence_map (const TpPresenceStatusSpec *supported_statuses,
  * Returns: %TRUE if @dbus_interface was handled
  */
 gboolean
-tp_presence_mixin_fill_contact_attributes (TpBaseConnection *self,
+tp_presence_mixin_fill_contact_attributes (TpPresenceMixin *self,
   const gchar *dbus_interface,
   TpHandle contact,
   GVariantDict *attributes)

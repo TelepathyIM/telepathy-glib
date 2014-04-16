@@ -298,7 +298,7 @@ tp_tests_contacts_connection_fill_contact_attributes (TpBaseConnection *base,
         dbus_interface, contact, attributes))
     return;
 
-  if (tp_presence_mixin_fill_contact_attributes (base,
+  if (tp_presence_mixin_fill_contact_attributes (TP_PRESENCE_MIXIN (self),
         dbus_interface, contact, attributes))
     return;
 
@@ -417,7 +417,7 @@ constructed (GObject *object)
   self->priv->list_manager = g_object_new (TP_TESTS_TYPE_CONTACT_LIST_MANAGER,
       "connection", self, NULL);
 
-  tp_presence_mixin_init (TP_BASE_CONNECTION (self));
+  tp_presence_mixin_init (TP_PRESENCE_MIXIN (self));
 }
 
 /* Must match TpTestsContactsConnectionPresenceStatusIndex in the .h */
@@ -432,17 +432,17 @@ static const TpPresenceStatusSpec my_statuses[] = {
 };
 
 static gboolean
-my_status_available (TpBaseConnection *base,
+my_status_available (TpPresenceMixin *mixin,
     guint index)
 {
-  return tp_base_connection_check_connected (base, NULL);
+  return tp_base_connection_check_connected (TP_BASE_CONNECTION (mixin), NULL);
 }
 
 static TpPresenceStatus *
-my_get_contact_status (TpBaseConnection *base_conn,
+my_get_contact_status (TpPresenceMixin *mixin,
     TpHandle contact)
 {
-  TpTestsContactsConnection *self = TP_TESTS_CONTACTS_CONNECTION (base_conn);
+  TpTestsContactsConnection *self = TP_TESTS_CONTACTS_CONNECTION (mixin);
   gpointer key = GUINT_TO_POINTER (contact);
   TpTestsContactsConnectionPresenceStatusIndex index;
   const gchar *presence_message;
@@ -456,10 +456,11 @@ my_get_contact_status (TpBaseConnection *base_conn,
 }
 
 static gboolean
-my_set_own_status (TpBaseConnection *base_conn,
+my_set_own_status (TpPresenceMixin *mixin,
                    const TpPresenceStatus *status,
                    GError **error)
 {
+  TpBaseConnection *base_conn = TP_BASE_CONNECTION (mixin);
   TpTestsContactsConnectionPresenceStatusIndex index = status->index;
   const gchar *message = status->message;
   TpHandle self_handle;
@@ -473,7 +474,7 @@ my_set_own_status (TpBaseConnection *base_conn,
 }
 
 static guint
-my_get_maximum_status_message_length_cb (TpBaseConnection *base_conn)
+my_get_maximum_status_message_length_cb (TpPresenceMixin *mixin G_GNUC_UNUSED)
 {
   return 512;
 }
@@ -632,7 +633,7 @@ tp_tests_contacts_connection_change_presences (
             messages[i]));
     }
 
-  tp_presence_mixin_emit_presence_update ((TpBaseConnection *) self,
+  tp_presence_mixin_emit_presence_update (TP_PRESENCE_MIXIN (self),
       presences);
   g_hash_table_unref (presences);
 }
