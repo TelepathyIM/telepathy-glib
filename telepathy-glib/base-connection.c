@@ -2660,11 +2660,10 @@ static const gchar * const contacts_always_included_interfaces[] = {
  * the behaviour is defined by the interface; the attribute should either
  * be omitted from the result or replaced with a default value.
  *
- * Returns: a floating GVariant of type "a{ua{sv}}"
- * Since: 0.99.6
+ * Returns: (transfer full): a #GVariant of type "a{ua{sv}}"
  */
 GVariant *
-_tp_base_connection_dup_contact_attributes_hash (TpBaseConnection *self,
+_tp_base_connection_dup_contact_attributes (TpBaseConnection *self,
     const GArray *handles,
     const gchar * const *interfaces,
     const gchar * const *assumed_interfaces)
@@ -2724,7 +2723,7 @@ _tp_base_connection_dup_contact_attributes_hash (TpBaseConnection *self,
           g_variant_dict_end (&dict));
     }
 
-  return g_variant_builder_end (&builder);
+  return g_variant_ref_sink (g_variant_builder_end (&builder));
 }
 
 static gboolean
@@ -2753,13 +2752,14 @@ contacts_get_contact_attributes_impl (_TpGDBusConnection *skeleton,
   array = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n);
   g_array_append_vals (array, c_array, n);
 
-  result = _tp_base_connection_dup_contact_attributes_hash (conn,
+  result = _tp_base_connection_dup_contact_attributes (conn,
       array, interfaces, contacts_always_included_interfaces);
 
   _tp_gdbus_connection_complete_get_contact_attributes (skeleton, context,
       result);
 
   g_array_unref (array);
+  g_variant_unref (result);
 
   return TRUE;
 }
@@ -2797,10 +2797,9 @@ ensure_handle_cb (GObject *source,
   handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
   g_array_append_val (handles, handle);
 
-  attributes = _tp_base_connection_dup_contact_attributes_hash (self,
+  attributes = _tp_base_connection_dup_contact_attributes (self,
       handles, (const gchar * const *) data->interfaces,
       contacts_always_included_interfaces);
-  g_variant_ref_sink (attributes);
   g_variant_get_child (attributes, 0, "{u@a{sv}}", &ret_handle, &ret);
   g_assert (ret_handle == handle);
 

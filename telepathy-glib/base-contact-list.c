@@ -3691,7 +3691,7 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
 
       set = tp_base_contact_list_dup_contacts (self);
       contacts = tp_handle_set_to_array (set);
-      result = _tp_base_connection_dup_contact_attributes_hash (
+      result = _tp_base_connection_dup_contact_attributes (
           self->priv->conn, contacts, interfaces, assumed);
 
       _tp_gdbus_connection_interface_contact_list1_complete_get_contact_list_attributes (
@@ -3699,6 +3699,7 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
 
       g_array_unref (contacts);
       tp_handle_set_destroy (set);
+      g_variant_unref (result);
     }
 
   return TRUE;

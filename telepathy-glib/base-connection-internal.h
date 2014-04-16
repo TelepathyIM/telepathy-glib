@@ -93,7 +93,7 @@ void _tp_base_connection_set_handle_repo (TpBaseConnection *self,
 gpointer _tp_base_connection_find_channel_manager (TpBaseConnection *self,
     GType type);
 
-GVariant *_tp_base_connection_dup_contact_attributes_hash (
+GVariant *_tp_base_connection_dup_contact_attributes (
     TpBaseConnection *self,
     const GArray *handles,
     const gchar * const *interfaces,
