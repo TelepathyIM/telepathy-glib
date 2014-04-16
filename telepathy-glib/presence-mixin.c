@@ -171,7 +171,7 @@ struct _TpPresenceMixinPrivate
 };
 
 
-static GVariant *construct_presence_hash (
+static GVariant *construct_presence_map (
   const TpPresenceStatusSpec *supported_statuses,
   GHashTable *contact_statuses);
 
@@ -314,7 +314,7 @@ tp_presence_mixin_emit_presence_update (TpBaseConnection *self,
 
   _tp_gdbus_connection_interface_presence1_emit_presences_changed (
       self->priv->presence_skeleton,
-      construct_presence_hash (iface->statuses, contact_statuses));
+      construct_presence_map (iface->statuses, contact_statuses));
 }
 
 /**
@@ -532,7 +532,7 @@ construct_presence_variant (TpPresenceStatus *status,
 }
 
 static GVariant *
-construct_presence_hash (const TpPresenceStatusSpec *supported_statuses,
+construct_presence_map (const TpPresenceStatusSpec *supported_statuses,
                          GHashTable *contact_statuses)
 {
   GVariantBuilder builder;
