@@ -365,6 +365,8 @@ gdbus_codegen = \
     _gdbus/Client_Handler.h \
     _gdbus/Client_Interface_Requests.c \
     _gdbus/Client_Interface_Requests.h \
+    _gdbus/Channel_Interface_Room_Config1.c \
+    _gdbus/Channel_Interface_Room_Config1.h \
     $(NULL)
 
 _gdbus/%.c: _gdbus/%-stamp

@@ -21,6 +21,8 @@
 
 #include <telepathy-glib/base-room-config.h>
 
+#include <telepathy-glib/_gdbus/Channel_Interface_Room_Config1.h>
+
 #include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/interfaces.h>
@@ -38,45 +40,9 @@
  * @title: TpBaseRoomConfig
  * @short_description: implements the RoomConfig interface for chat rooms.
  *
- * This class implements the #TpSvcChannelInterfaceRoomConfig interface on
+ * This class implements the RoomConfig1 interface on
  * multi-user chat room channels. CMs are expected to subclass this base class
  * to implement the protocol-specific details of changing room configuration.
- * Then, in the connection manager's subclass of #TpBaseChannel for multi-user
- * chats:
- *
- * <itemizedlist>
- *  <listitem>
- *   <para>in #G_DEFINE_TYPE_WITH_CODE, implement
- *   #TP_TYPE_SVC_CHANNEL_INTERFACE_ROOM_CONFIG using
- *   tp_base_room_config_iface_init():</para>
- * |[
- * G_DEFINE_TYPE_WITH_CODE (MyMucChannel, my_muc_channel,
- *     TP_TYPE_BASE_CHANNEL,
- *     // ...
- *     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_ROOM_CONFIG,
- *         tp_base_room_config_iface_init)
- *     // ...
- *     )
- * ]|
- *  </listitem>
- *  <listitem>
- *   <para>in the <function>class_init</function> method, call
- *    tp_base_room_config_register_class():</para>
- * |[
- * static void
- * my_muc_channel_class_init (MyMucChannelClass *klass)
- * {
- *   // ...
- *   tp_base_room_config_register_class (TP_BASE_CHANNEL_CLASS (klass));
- *   // ...
- * }
- * ]|
- *  </listitem>
- *  <listitem>
- *   <para>include %TP_IFACE_CHANNEL_INTERFACE_ROOM_CONFIG in the return of
- *    #TpBaseChannelClass.get_interfaces.</para>
- *  </listitem>
- * </itemizedlist>
  *
  * If this protocol supports modifying some aspects of the room's
  * configuration, the subclass should call
@@ -93,7 +59,6 @@
  *      "description", "A place to bury strangers",
  *      "private", TRUE,
  *      NULL);
- *   tp_base_room_config_emit_properties_changed (room_config);
  * ]|
  *
  * On joining the room, once the entire room configuration has been retrieved
@@ -124,7 +89,7 @@
 /**
  * TpBaseRoomConfigUpdateAsync:
  * @self: a #TpBaseRoomConfig
- * @validated_properties: a mapping from #TpBaseRoomConfigProperty to #GValue,
+ * @validated_properties: a mapping from #TpBaseRoomConfigProperty to #GVariant,
  *  whose types have already been validated. The function should not modify
  *  this hash table.
  * @callback: a callback to call on success, failure or disconnection
@@ -180,33 +145,10 @@
  */
 
 struct _TpBaseRoomConfigPrivate {
-    TpBaseChannel *channel;
+    GWeakRef channel;
 
-    gboolean anonymous;
-    gboolean invite_only;
-    guint32 limit;
-    gboolean moderated;
-    gchar *title;
-    gchar *description;
-    gboolean persistent;
-    gboolean private;
-    gboolean password_protected;
-    gchar *password;
-    gchar *password_hint;
-
-    gboolean can_update_configuration;
+    _TpGDBusChannelInterfaceRoomConfig1 *skeleton;
     TpIntset *mutable_properties;
-    gboolean configuration_retrieved;
-
-    /* Contains elements of TpBaseRoomConfigProperty which are known to have
-     * changed since we last emitted PropertiesChanged.
-     */
-    TpIntset *changed_properties;
-    /* These two properties are not elements of TpBaseRoomConfigProperty; we
-     * track 'em separately.
-     */
-    gboolean can_update_configuration_changed;
-    gboolean mutable_properties_changed;
 
     /* Details of a pending update, or both NULL if no call to
      * UpdateConfiguration is in progress.
@@ -216,7 +158,7 @@ struct _TpBaseRoomConfigPrivate {
 };
 
 enum {
-    PROP_CHANNEL = 42,
+    PROP_CHANNEL = 1,
 
     /* D-Bus properties */
     PROP_ANONYMOUS,
@@ -230,13 +172,30 @@ enum {
     PROP_PASSWORD_PROTECTED,
     PROP_PASSWORD,
     PROP_PASSWORD_HINT,
-
     PROP_CAN_UPDATE_CONFIGURATION,
     PROP_MUTABLE_PROPERTIES,
     PROP_CONFIGURATION_RETRIEVED,
 };
 
 G_DEFINE_TYPE (TpBaseRoomConfig, tp_base_room_config, G_TYPE_OBJECT)
+
+/* Must be in the same order than TpBaseRoomConfigProperty */
+static gchar *room_config_properties[] = {
+    "anonymous",
+    "invite-only",
+    "limit",
+    "moderated",
+    "title",
+    "description",
+    "persistent",
+    "private",
+    "password-protected",
+    "password",
+    "password-hint"
+};
+
+G_STATIC_ASSERT (G_N_ELEMENTS (room_config_properties) ==
+    TP_NUM_BASE_ROOM_CONFIG_PROPERTIES);
 
 static gboolean tp_base_room_config_update_finish (
     TpBaseRoomConfig *self,
@@ -253,26 +212,6 @@ tp_base_room_config_init (TpBaseRoomConfig *self)
   priv = self->priv;
 
   priv->mutable_properties = tp_intset_new ();
-  priv->changed_properties = tp_intset_new ();
-}
-
-static void
-add_properties_from_intset (
-    GPtrArray *property_names,
-    TpIntset *properties)
-{
-  TpIntsetFastIter iter;
-  guint i;
-
-  tp_intset_fast_iter_init (&iter, properties);
-  while (tp_intset_fast_iter_next (&iter, &i))
-    {
-      const gchar *property_name = _tp_enum_to_nick (
-          TP_TYPE_BASE_ROOM_CONFIG_PROPERTY, i);
-
-      g_assert (property_name != NULL);
-      g_ptr_array_add (property_names, (gchar *) property_name);
-    }
 }
 
 static void
@@ -288,74 +227,31 @@ tp_base_room_config_get_property (
   switch (property_id)
     {
       case PROP_CHANNEL:
-        g_value_set_object (value, priv->channel);
+        g_value_take_object (value, g_weak_ref_get (&priv->channel));
         break;
-      case PROP_ANONYMOUS:
-        g_value_set_boolean (value, priv->anonymous);
-        break;
-      case PROP_INVITE_ONLY:
-        g_value_set_boolean (value, priv->invite_only);
-        break;
-      case PROP_LIMIT:
-        g_value_set_uint (value, priv->limit);
-        break;
-      case PROP_MODERATED:
-        g_value_set_boolean (value, priv->moderated);
-        break;
-      case PROP_TITLE:
-        g_value_set_string (value, priv->title);
-        break;
-      case PROP_DESCRIPTION:
-        g_value_set_string (value, priv->description);
-        break;
-      case PROP_PERSISTENT:
-        g_value_set_boolean (value, priv->persistent);
-        break;
-      case PROP_PRIVATE:
-        g_value_set_boolean (value, priv->private);
-        break;
-      case PROP_PASSWORD_PROTECTED:
-        g_value_set_boolean (value, priv->password_protected);
-        break;
-      case PROP_PASSWORD:
-        g_value_set_string (value, priv->password);
-        break;
-      case PROP_PASSWORD_HINT:
-        g_value_set_string (value, priv->password_hint);
-        break;
-      case PROP_CAN_UPDATE_CONFIGURATION:
-        g_value_set_boolean (value, priv->can_update_configuration);
-        break;
-      case PROP_MUTABLE_PROPERTIES:
-      {
-        GPtrArray *property_names = g_ptr_array_new ();
 
-        add_properties_from_intset (property_names, priv->mutable_properties);
-        g_ptr_array_add (property_names, NULL);
-        g_value_take_boxed (value,
-            g_strdupv ((gchar **) property_names->pdata));
-        g_ptr_array_unref (property_names);
-        break;
-      }
+      /* DBus properties are stored in the skeleton with the same name */
+      case PROP_ANONYMOUS:
+      case PROP_INVITE_ONLY:
+      case PROP_LIMIT:
+      case PROP_MODERATED:
+      case PROP_TITLE:
+      case PROP_DESCRIPTION:
+      case PROP_PERSISTENT:
+      case PROP_PRIVATE:
+      case PROP_PASSWORD_PROTECTED:
+      case PROP_PASSWORD:
+      case PROP_PASSWORD_HINT:
+      case PROP_CAN_UPDATE_CONFIGURATION:
+      case PROP_MUTABLE_PROPERTIES:
       case PROP_CONFIGURATION_RETRIEVED:
-        g_value_set_boolean (value, priv->configuration_retrieved);
+        g_object_get_property (G_OBJECT (priv->skeleton),
+            g_param_spec_get_name (pspec), value);
         break;
+
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
-}
-
-static void
-channel_died_cb (
-    gpointer data,
-    GObject *deceased_channel)
-{
-  TpBaseRoomConfig *self = TP_BASE_ROOM_CONFIG (data);
-  TpBaseRoomConfigPrivate *priv = self->priv;
-
-  DEBUG ("(TpBaseChannel *)%p associated with (TpBaseRoomConfig *)%p died",
-      deceased_channel, self);
-  priv->channel = NULL;
 }
 
 static void
@@ -371,105 +267,36 @@ tp_base_room_config_set_property (
   switch (property_id)
     {
       case PROP_CHANNEL:
-        g_assert (priv->channel == NULL);
-        priv->channel = g_value_get_object (value);
-        g_assert (priv->channel != NULL);
-        g_object_weak_ref (G_OBJECT (priv->channel), channel_died_cb, self);
-        DEBUG ("associated (TpBaseChannel *)%p with (TpBaseRoomConfig *)%p",
-            priv->channel, self);
+        g_weak_ref_set (&priv->channel, g_value_get_object (value));
         break;
 
-/* We track changed-ness of all the configuration field-flavoured properties in
- * priv->changed_properties. The setters can be mechanically generated: we need
- * the property name in uppercase to build PROP_FOO and TP_BASE_ROOM_CONFIG_FOO,
- * and in lowercase to assign to priv->foo.
- */
-#define CASE_BOOL(uppercase, lowercase) \
-      case PROP_ ## uppercase: \
-      { \
-        gboolean lowercase = g_value_get_boolean (value); \
-        if (!priv->lowercase != !lowercase) \
-          tp_intset_add (priv->changed_properties, \
-              TP_BASE_ROOM_CONFIG_ ## uppercase); \
-        priv->lowercase = lowercase; \
-        break; \
-      }
-#define CASE_STRING(uppercase, lowercase) \
-      case PROP_ ## uppercase: \
-      { \
-        gchar *lowercase = g_value_dup_string (value); \
-        if (tp_strdiff (priv->lowercase, lowercase)) \
-          tp_intset_add (priv->changed_properties, \
-              TP_BASE_ROOM_CONFIG_ ## uppercase); \
-        g_free (priv->lowercase); \
-        priv->lowercase = lowercase; \
-        break; \
-      }
-CASE_BOOL (ANONYMOUS, anonymous)
-CASE_BOOL (INVITE_ONLY, invite_only)
-/* LIMIT is the only non-string or -boolean property, so there's no macro for
- * it. It's interspersed with the others because they're in the same order as
- * in the spec.
- */
+      /* DBus properties are stored in the skeleton with the same name */
+      case PROP_ANONYMOUS:
+      case PROP_INVITE_ONLY:
       case PROP_LIMIT:
-      {
-        guint limit = g_value_get_uint (value);
-
-        if (limit != priv->limit)
-          tp_intset_add (priv->changed_properties,
-              TP_BASE_ROOM_CONFIG_LIMIT);
-
-        priv->limit = limit;
-        break;
-      }
-CASE_BOOL (MODERATED, moderated)
-CASE_STRING (TITLE, title);
-CASE_STRING (DESCRIPTION, description)
-CASE_BOOL (PERSISTENT, persistent)
-CASE_BOOL (PRIVATE, private)
-CASE_BOOL (PASSWORD_PROTECTED, password_protected)
-CASE_STRING (PASSWORD, password)
-CASE_STRING (PASSWORD_HINT, password_hint)
-#undef CASE_BOOL
-#undef CASE_STRING
-
-/* This is not a member of TpBaseRoomConfigProperty, so we track its
- * changed-ness separately.
- */
+      case PROP_MODERATED:
+      case PROP_TITLE:
+      case PROP_DESCRIPTION:
+      case PROP_PERSISTENT:
+      case PROP_PRIVATE:
+      case PROP_PASSWORD_PROTECTED:
+      case PROP_PASSWORD:
+      case PROP_PASSWORD_HINT:
       case PROP_CAN_UPDATE_CONFIGURATION:
-      {
-        gboolean can_update_configuration = g_value_get_boolean (value);
-
-        if (!priv->can_update_configuration != !can_update_configuration)
-          priv->can_update_configuration_changed = TRUE;
-
-        priv->can_update_configuration = can_update_configuration;
+        g_object_set_property (G_OBJECT (priv->skeleton),
+            g_param_spec_get_name (pspec), value);
         break;
-      }
+
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
 }
 
-/* This quark is used to attach a pointer to this object to its parent
- * TpBaseChannel, so we can recover ourself in D-Bus method invocations
- * and property lookups.
- */
-static GQuark find_myself_q = 0;
-
-static TpBaseRoomConfig *
-find_myself (GObject *parent)
-{
-  TpBaseRoomConfig *self = g_object_get_qdata (parent, find_myself_q);
-
-  DEBUG ("retrieved %p from channel %p", self, parent);
-
-  g_return_val_if_fail (TP_IS_BASE_CHANNEL (parent), NULL);
-  g_return_val_if_fail (self != NULL, NULL);
-  g_return_val_if_fail (TP_IS_BASE_ROOM_CONFIG (self), NULL);
-
-  return self;
-}
+static gboolean tp_base_room_config_update_configuration (
+    _TpGDBusChannelInterfaceRoomConfig1 *skeleton,
+    GDBusMethodInvocation *context,
+    GVariant *properties,
+    TpBaseRoomConfig *self);
 
 static void
 tp_base_room_config_constructed (GObject *object)
@@ -477,13 +304,25 @@ tp_base_room_config_constructed (GObject *object)
   TpBaseRoomConfig *self = TP_BASE_ROOM_CONFIG (object);
   TpBaseRoomConfigPrivate *priv = self->priv;
   GObjectClass *parent_class = tp_base_room_config_parent_class;
+  TpBaseChannel *channel;
 
   if (parent_class->constructed != NULL)
     parent_class->constructed (object);
 
-  g_assert (priv->channel != NULL);
-  g_assert (find_myself_q != 0);
-  g_object_set_qdata (G_OBJECT (priv->channel), find_myself_q, self);
+
+  channel = g_weak_ref_get (&priv->channel);
+  g_assert (channel != NULL);
+  DEBUG ("associated (TpBaseChannel *)%p with (TpBaseRoomConfig *)%p",
+      channel, self);
+
+  priv->skeleton = _tp_gdbus_channel_interface_room_config1_skeleton_new ();
+  g_signal_connect_object (priv->skeleton, "handle-update-configuration",
+      G_CALLBACK (tp_base_room_config_update_configuration), self, 0);
+
+  g_dbus_object_skeleton_add_interface (G_DBUS_OBJECT_SKELETON (channel),
+      G_DBUS_INTERFACE_SKELETON (priv->skeleton));
+
+  g_object_unref (channel);
 }
 
 static void
@@ -493,12 +332,8 @@ tp_base_room_config_dispose (GObject *object)
   GObjectClass *parent_class = tp_base_room_config_parent_class;
   TpBaseRoomConfigPrivate *priv = self->priv;
 
-  if (priv->channel != NULL)
-    {
-      g_object_set_qdata (G_OBJECT (priv->channel), find_myself_q, NULL);
-      g_object_weak_unref (G_OBJECT (priv->channel), channel_died_cb, self);
-      priv->channel = NULL;
-    }
+  g_weak_ref_clear (&priv->channel);
+  g_clear_object (&priv->skeleton);
 
   if (parent_class->dispose != NULL)
     parent_class->dispose (object);
@@ -511,12 +346,7 @@ tp_base_room_config_finalize (GObject *object)
   GObjectClass *parent_class = tp_base_room_config_parent_class;
   TpBaseRoomConfigPrivate *priv = self->priv;
 
-  g_free (priv->title);
-  g_free (priv->description);
-  g_free (priv->password);
-  g_free (priv->password_hint);
   tp_intset_destroy (priv->mutable_properties);
-  tp_intset_destroy (priv->changed_properties);
 
   if (priv->update_configuration_ctx != NULL)
     {
@@ -543,7 +373,6 @@ tp_base_room_config_class_init (TpBaseRoomConfigClass *klass)
   object_class->finalize = tp_base_room_config_finalize;
 
   g_type_class_add_private (klass, sizeof (TpBaseRoomConfigPrivate));
-  find_myself_q = g_quark_from_static_string ("TpBaseRoomConfig pointer");
 
   klass->update_finish = tp_base_room_config_update_finish;
 
@@ -655,146 +484,43 @@ tp_base_room_config_class_init (TpBaseRoomConfigClass *klass)
       param_spec);
 }
 
-/* room_config_getter:
- *
- * This is basically an indirected version of
- * tp_dbus_properties_mixin_getter_gobject_properties to cope with this GObject
- * not actually being the exported D-Bus object.
- */
-static void
-room_config_getter (
-    GObject *object,
-    GQuark iface,
-    GQuark name,
-    GValue *value,
-    gpointer getter_data)
-{
-  TpBaseRoomConfig *self = find_myself (object);
-
-  g_return_if_fail (self != NULL);
-
-  g_object_get_property ((GObject *) self, getter_data, value);
-}
-
-/* The TpBaseRoomConfigProperty enum is used to index into this array: be
- * careful! */
-static TpDBusPropertiesMixinPropImpl room_config_properties[] = {
-  /* Configuration */
-  { "Anonymous", "anonymous", NULL, },
-  { "InviteOnly", "invite-only", NULL },
-  { "Limit", "limit", NULL },
-  { "Moderated", "moderated", NULL },
-  { "Title", "title", NULL },
-  { "Description", "description", NULL },
-  { "Persistent", "persistent", NULL },
-  { "Private", "private", NULL },
-  { "PasswordProtected", "password-protected", NULL },
-  { "Password", "password", NULL },
-  { "PasswordHint", "password-hint", NULL },
-
-  /* Meta-data */
-  { "CanUpdateConfiguration", "can-update-configuration", NULL },
-  { "MutableProperties", "mutable-properties", NULL },
-  { "ConfigurationRetrieved", "configuration-retrieved", NULL },
-
-  { NULL }
-};
-
-/**
- * tp_base_room_config_register_class:
- * @base_channel_class: the class structure for a subclass of #TpBaseChannel
- *  which uses this object to implement #TP_SVC_CHANNEL_INTERFACE_ROOM_CONFIG
- *
- * Registers that D-Bus properties for the RoomConfig1 interface should be
- * handled by a #TpBaseRoomConfig object associated with instances of
- * @base_channel_class.
- *
- * @base_channel_class must implement #TP_SVC_CHANNEL_INTERFACE_ROOM_CONFIG
- * using tp_base_room_config_iface_init(), and instances of @base_channel_class
- * must construct an instance of #TpBaseRoomConfig, passing themself as
- * #TpBaseRoomConfig:channel.
- */
-void
-tp_base_room_config_register_class (
-    TpBaseChannelClass *base_channel_class)
-{
-  GObjectClass *cls = G_OBJECT_CLASS (base_channel_class);
-
-  tp_dbus_properties_mixin_implement_interface (cls,
-      TP_IFACE_QUARK_CHANNEL_INTERFACE_ROOM_CONFIG1,
-      room_config_getter, NULL, room_config_properties);
-}
-
-/* This is almost copy-pasta from _tp_dbus_properties_mixin_find_prop_impl,
- * except this operates on the IfaceInfo structure…
- */
-static TpDBusPropertiesMixinPropInfo *
-find_prop_info (
-    TpDBusPropertiesMixinIfaceInfo *iface_info,
-    const gchar *property_name)
-{
-  GQuark prop_quark = g_quark_try_string (property_name);
-  TpDBusPropertiesMixinPropInfo *prop_info;
-
-  if (prop_quark == 0)
-    return NULL;
-
-  for (prop_info = iface_info->props;
-       prop_info->name != 0;
-       prop_info++)
-    {
-      if (prop_info->name == prop_quark)
-        return prop_info;
-    }
-
-  return NULL;
-}
-
 static gboolean
-validate_property_type (
+validate_property_type (TpBaseRoomConfig *self,
     const gchar *property_name,
-    const GValue *value,
+    GVariant *value,
     GError **error)
 {
-  static TpDBusPropertiesMixinIfaceInfo *iface_info = NULL;
-  TpDBusPropertiesMixinPropInfo *prop_info;
+  GDBusInterfaceInfo *iinfo = g_dbus_interface_get_info (
+      G_DBUS_INTERFACE (self->priv->skeleton));
+  guint i;
 
   g_return_val_if_fail (value != NULL, FALSE);
 
-  if (G_UNLIKELY (iface_info == NULL))
-    iface_info = tp_svc_interface_get_dbus_properties_info (
-          TP_TYPE_SVC_CHANNEL_INTERFACE_ROOM_CONFIG1);
-
-  g_return_val_if_fail (iface_info != NULL, FALSE);
-
-  /* If we recognise the property name, but it's not registered with
-   * TpDBusPropertiesMixin, then something is really screw-y.
-   */
-  prop_info = find_prop_info (iface_info, property_name);
-  g_return_val_if_fail (prop_info != NULL, FALSE);
-
-  /* TODO: transform types just like TpDBusPropertiesMixin does. We only
-   * have one property that isn't a boolean or a string, so this is not a
-   * pressing concern, and it would be nice to be able to reuse more of
-   * TpDBusPropertiesMixin's validation code.
-   */
-  if (!G_VALUE_HOLDS (value, prop_info->type))
+  for (i = 0; iinfo->properties[i] != NULL; i++)
     {
-      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-          "'%s' has type '%s', not '%s'", property_name,
-          prop_info->dbus_signature, G_VALUE_TYPE_NAME (value));
-      return FALSE;
+      if (g_str_equal (iinfo->properties[i]->name, property_name))
+        {
+          if (!g_variant_is_of_type (value,
+                  G_VARIANT_TYPE (iinfo->properties[i]->signature)))
+            {
+              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+                  "'%s' has type '%s', not '%s'", property_name,
+                  iinfo->properties[i]->signature,
+                  g_variant_get_type_string (value));
+              return FALSE;
+            }
+          return TRUE;
+        }
     }
 
-  return TRUE;
+  g_assert_not_reached ();
 }
 
 static gboolean
-validate_property (
-    TpBaseRoomConfig *self,
+validate_property (TpBaseRoomConfig *self,
     GHashTable *validated_properties,
     const gchar *property_name,
-    GValue *value,
+    GVariant *value,
     GError **error)
 {
   TpBaseRoomConfigPrivate *priv = self->priv;
@@ -815,11 +541,11 @@ validate_property (
       return FALSE;
     }
 
-  if (!validate_property_type (property_name, value, error))
+  if (!validate_property_type (self, property_name, value, error))
     return FALSE;
 
   g_hash_table_insert (validated_properties,
-      GUINT_TO_POINTER (property_id), tp_g_value_slice_dup (value));
+      GUINT_TO_POINTER (property_id), g_variant_ref (value));
   return TRUE;
 }
 
@@ -827,27 +553,27 @@ validate_property (
  * validate_properties:
  * @self: it's me!
  * @properties: a mapping from unqualified property names (gchar *) to
- *              corresponding new values (GValue *).
+ *              corresponding new GVariant.
  * @error: set to a TP_ERROR if validation fails.
  *
  * Validates the names and types and mutability of @properties.
  *
  * Returns: a mapping from TpBaseRoomConfigProperty elements to corresponding
- *          new values (GValue *).
+ *          new GVariant.
  */
 static GHashTable *
-validate_properties (
-    TpBaseRoomConfig *self,
-    GHashTable *properties,
+validate_properties (TpBaseRoomConfig *self,
+    GVariant *properties,
     GError **error)
 {
   GHashTable *validated_properties = g_hash_table_new_full (
-      NULL, NULL, NULL, (GDestroyNotify) tp_g_value_slice_free);
-  GHashTableIter iter;
-  gpointer k, v;
+      NULL, NULL, NULL, (GDestroyNotify) g_variant_unref);
+  GVariantIter iter;
+  const gchar *k;
+  GVariant *v;
 
-  g_hash_table_iter_init (&iter, properties);
-  while (g_hash_table_iter_next (&iter, &k, &v))
+  g_variant_iter_init (&iter, properties);
+  while (g_variant_iter_loop (&iter, "{&sv}", &k, &v))
     {
       if (!validate_property (self, validated_properties, k, v, error))
         {
@@ -860,21 +586,17 @@ validate_properties (
 }
 
 static void
-update_cb (
-    GObject *source,
+update_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
   TpBaseRoomConfig *self = TP_BASE_ROOM_CONFIG (source);
   TpBaseRoomConfigPrivate *priv = self->priv;
+  TpBaseChannel *channel = user_data;
   GError *error = NULL;
 
   g_return_if_fail (priv->update_configuration_ctx != NULL);
   g_return_if_fail (priv->validated_properties != NULL);
-  /* We took a ref to the channel before calling out to application code; it
-   * shouldn't have died in the meantime.
-   */
-  g_return_if_fail (priv->channel != NULL);
 
   if (TP_BASE_ROOM_CONFIG_GET_CLASS (self)->update_finish (
         self, result, &error))
@@ -886,19 +608,22 @@ update_cb (
       while (g_hash_table_iter_next (&iter, &k, &v))
         {
           TpBaseRoomConfigProperty property_id = GPOINTER_TO_UINT (k);
-          GValue *value = v;
+          GVariant *variant = v;
+          GValue value = G_VALUE_INIT;
           const gchar *g_property_name;
 
-          g_assert_cmpuint (property_id, <, TP_NUM_BASE_ROOM_CONFIG_PROPERTIES);
-          g_property_name = room_config_properties[property_id].getter_data;
-          g_assert_cmpstr (NULL, !=, g_property_name);
+          g_assert (property_id < TP_NUM_BASE_ROOM_CONFIG_PROPERTIES);
+          g_property_name = room_config_properties[property_id];
+          g_assert (g_property_name != NULL);
 
-          g_object_set_property ((GObject *) self, g_property_name, value);
+          g_dbus_gvariant_to_gvalue (variant, &value);
+          g_object_set_property (G_OBJECT (priv->skeleton), g_property_name,
+              &value);
+          g_value_unset (&value);
         }
 
-      tp_base_room_config_emit_properties_changed (self);
-      tp_svc_channel_interface_room_config1_return_from_update_configuration (
-          priv->update_configuration_ctx);
+      _tp_gdbus_channel_interface_room_config1_complete_update_configuration (
+          priv->skeleton, priv->update_configuration_ctx);
     }
   else
     {
@@ -908,7 +633,7 @@ update_cb (
 
   priv->update_configuration_ctx = NULL;
   tp_clear_pointer (&priv->validated_properties, g_hash_table_unref);
-  g_object_unref (priv->channel);
+  g_object_unref (channel);
 }
 
 static gboolean
@@ -922,29 +647,16 @@ tp_base_room_config_update_finish (
   _tp_implement_finish_void (self, source_tag);
 }
 
-static void
+static gboolean
 tp_base_room_config_update_configuration (
-    TpSvcChannelInterfaceRoomConfig1 *iface,
-    GHashTable *properties,
-    GDBusMethodInvocation *context)
+    _TpGDBusChannelInterfaceRoomConfig1 *skeleton,
+    GDBusMethodInvocation *context,
+    GVariant *properties,
+    TpBaseRoomConfig *self)
 {
-  TpBaseRoomConfig *self = find_myself ((GObject *) iface);
-  TpBaseChannel *channel = TP_BASE_CHANNEL (iface);
   TpBaseRoomConfigPrivate *priv;
   TpBaseRoomConfigUpdateAsync update_async;
   GError *error = NULL;
-
-  if (self == NULL)
-    {
-      g_set_error (&error, TP_ERROR, TP_ERROR_CONFUSED,
-          "Internal error: couldn't find TpBaseRoomConfig object "
-          "attached to (TpBaseChannel *) %p at %s",
-          iface,
-          tp_base_channel_get_object_path (channel));
-
-      CRITICAL ("%s", error->message);
-      goto err;
-    }
 
   priv = self->priv;
   update_async = TP_BASE_ROOM_CONFIG_GET_CLASS (self)->update_async;
@@ -968,7 +680,8 @@ tp_base_room_config_update_configuration (
    */
   g_warn_if_fail (priv->validated_properties == NULL);
 
-  if (!priv->can_update_configuration)
+  if (!_tp_gdbus_channel_interface_room_config1_get_can_update_configuration (
+          priv->skeleton))
     {
       g_set_error (&error, TP_ERROR, TP_ERROR_PERMISSION_DENIED,
           "The user doesn't have permission to modify this room's "
@@ -976,11 +689,11 @@ tp_base_room_config_update_configuration (
       goto err;
     }
 
-  if (g_hash_table_size (properties) == 0)
+  if (g_variant_n_children (properties) == 0)
     {
-      tp_svc_channel_interface_room_config1_return_from_update_configuration (
-          context);
-      return;
+      _tp_gdbus_channel_interface_room_config1_complete_update_configuration (
+          priv->skeleton, context);
+      goto out;
     }
 
   priv->validated_properties = validate_properties (self, properties, &error);
@@ -991,43 +704,23 @@ tp_base_room_config_update_configuration (
   priv->update_configuration_ctx = context;
   /* We ensure our channel stays alive for the duration of the call. This is
    * mainly as a convenience to the subclass, which would probably like
-   * tp_base_room_config_get_channel() to work reliably.
+   * tp_base_room_config_get_channel() to work reliably. If the
+   * GDBusMethodInvocation kept the object alive, we wouldn't need this.
    *
-   * If the GDBusMethodInvocation kept the object alive, we wouldn't need this.
+   * The CM could modify validated_properties if it wanted. This is good in some
+   * ways: it means it can further sanitize the values if it wants, for
+   * instance. But I guess it's also possible for the CM to mess up.
    */
-  g_object_ref (priv->channel);
-  /* This means the CM could modify validated_properties if it wanted. This is
-   * good in some ways: it means it can further sanitize the values if it
-   * wants, for instance. But I guess it's also possible for the CM to mess up.
-   */
-  update_async (self, priv->validated_properties, update_cb, NULL);
-  return;
+  update_async (self, priv->validated_properties, update_cb,
+      g_weak_ref_get (&priv->channel));
+  goto out;
 
 err:
   g_dbus_method_invocation_return_gerror (context, error);
   g_clear_error (&error);
-}
 
-/**
- * tp_base_room_config_iface_init:
- * @g_iface: a pointer to a #TpSvcChannelInterfaceRoomConfigClass structure
- * @iface_data: ignored
- *
- * Pass this as the second argument to G_IMPLEMENT_INTERFACE() when defining a
- * #TpBaseChannel subclass to declare that TP_SVC_CHANNEL_INTERFACE_ROOM_CONFIG
- * is implemented using this class. The #TpBaseChannel subclass must also call
- * tp_base_room_config_register_class() in its class_init function, and
- * construct a #TpBaseRoomConfig object for each instance.
- */
-void
-tp_base_room_config_iface_init (
-    gpointer g_iface,
-    gpointer iface_data)
-{
-#define IMPLEMENT(x) tp_svc_channel_interface_room_config1_implement_##x (\
-    g_iface, tp_base_room_config_##x)
-  IMPLEMENT (update_configuration);
-#undef IMPLEMENT
+out:
+  return TRUE;
 }
 
 /**
@@ -1039,13 +732,11 @@ tp_base_room_config_iface_init (
  * Returns: (transfer full): the #TpBaseRoomConfig:channel property.
  */
 TpBaseChannel *
-tp_base_room_config_dup_channel (
-    TpBaseRoomConfig *self)
+tp_base_room_config_dup_channel (TpBaseRoomConfig *self)
 {
   g_return_val_if_fail (TP_IS_BASE_ROOM_CONFIG (self), NULL);
-  g_return_val_if_fail (self->priv->channel != NULL, NULL);
 
-  return g_object_ref (self->priv->channel);
+  return g_weak_ref_get (&self->priv->channel);
 }
 
 /**
@@ -1056,9 +747,6 @@ tp_base_room_config_dup_channel (
  *
  * Specify whether or not the local user currently has permission to modify the
  * room configuration.
- *
- * Changes made by calling this function are not signalled over D-Bus until
- * tp_base_room_config_emit_properties_changed() is next called.
  */
 void
 tp_base_room_config_set_can_update_configuration (
@@ -1095,9 +783,6 @@ tp_base_room_config_set_can_update_configuration (
  * Call tp_base_room_config_set_can_update_configuration() to specify whether or
  * not it is currently possible for the local user to alter properties marked
  * as mutable.
- *
- * Changes made by calling this function are not signalled over D-Bus until
- * tp_base_room_config_emit_properties_changed() is next called.
  */
 void
 tp_base_room_config_set_property_mutable (
@@ -1124,68 +809,30 @@ tp_base_room_config_set_property_mutable (
 
   if (changed)
     {
+      GPtrArray *property_names;
+      TpIntsetFastIter iter;
+      guint i;
+
+      /* Construct an strv of mutable property names */
+      property_names = g_ptr_array_sized_new (
+          tp_intset_size (priv->mutable_properties));
+      tp_intset_fast_iter_init (&iter, priv->mutable_properties);
+      while (tp_intset_fast_iter_next (&iter, &i))
+        {
+          const gchar *property_name = _tp_enum_to_nick (
+              TP_TYPE_BASE_ROOM_CONFIG_PROPERTY, i);
+
+          g_assert (property_name != NULL);
+          g_ptr_array_add (property_names, (gchar *) property_name);
+        }
+      g_ptr_array_add (property_names, NULL);
+
+      _tp_gdbus_channel_interface_room_config1_set_mutable_properties (
+          priv->skeleton, (const gchar * const *) property_names->pdata);
       g_object_notify ((GObject *) self, "mutable-properties");
-      priv->mutable_properties_changed = TRUE;
+
+      g_ptr_array_unref (property_names);
    }
-}
-
-/**
- * tp_base_room_config_emit_properties_changed:
- * @self: a #TpBaseRoomConfig object.
- *
- * Signal the new values of properties which have been modified since the last
- * call to this method, if any. This includes changes made by calling
- * tp_base_room_config_set_can_update_configuration() and
- * tp_base_room_config_set_property_mutable(), as well as changes to any of the
- * (writeable) GObject properties on this object.
- */
-void
-tp_base_room_config_emit_properties_changed (
-    TpBaseRoomConfig *self)
-{
-  TpBaseRoomConfigPrivate *priv;
-
-  g_return_if_fail (TP_IS_BASE_ROOM_CONFIG (self));
-  priv = self->priv;
-
-  if (priv->channel == NULL)
-    {
-      CRITICAL ("the channel associated with (TpBaseRoomConfig *)%p has died",
-          self);
-      g_return_if_reached ();
-    }
-  else
-    {
-      GPtrArray *changed = g_ptr_array_new ();
-
-      add_properties_from_intset (changed, priv->changed_properties);
-      tp_intset_clear (priv->changed_properties);
-
-      if (priv->mutable_properties_changed)
-        {
-          g_ptr_array_add (changed, "MutableProperties");
-          priv->mutable_properties_changed = FALSE;
-        }
-
-      if (priv->can_update_configuration_changed)
-        {
-          g_ptr_array_add (changed, "CanUpdateConfiguration");
-          priv->can_update_configuration_changed = FALSE;
-        }
-
-      if (changed->len > 0)
-        {
-          g_ptr_array_add (changed, NULL);
-          DEBUG ("emitting PropertiesChanged for %s",
-              g_strjoinv (", ", (gchar **) changed->pdata));
-          tp_dbus_properties_mixin_emit_properties_changed (
-              G_OBJECT (priv->channel),
-              TP_IFACE_CHANNEL_INTERFACE_ROOM_CONFIG1,
-              (const gchar * const *) changed->pdata);
-        }
-
-      g_ptr_array_unref (changed);
-    }
 }
 
 /**
@@ -1195,35 +842,12 @@ tp_base_room_config_emit_properties_changed (
  * Signal that the room's configuration has been retrieved, as well as
  * signalling any queued property changes. This function should be called once
  * all properties have been set to meaningful values.
- *
- * It is safe to call this function more than once; second and subsequent calls
- * are equivalent to calling tp_base_room_config_emit_properties_changed().
  */
 void
-tp_base_room_config_set_retrieved (
-    TpBaseRoomConfig *self)
+tp_base_room_config_set_retrieved (TpBaseRoomConfig *self)
 {
-  TpBaseRoomConfigPrivate *priv;
-
   g_return_if_fail (TP_IS_BASE_ROOM_CONFIG (self));
-  priv = self->priv;
 
-  if (priv->channel == NULL)
-    {
-      CRITICAL ("the channel associated with (TpBaseRoomConfig *)%p has died",
-          self);
-      g_return_if_reached ();
-    }
-
-  /* Flush any pending property changes */
-  tp_base_room_config_emit_properties_changed (self);
-
-  if (!priv->configuration_retrieved)
-    {
-      priv->configuration_retrieved = TRUE;
-      tp_dbus_properties_mixin_emit_properties_changed_varargs (
-          G_OBJECT (priv->channel),
-          TP_IFACE_CHANNEL_INTERFACE_ROOM_CONFIG1,
-          "ConfigurationRetrieved", NULL);
-    }
+  _tp_gdbus_channel_interface_room_config1_set_configuration_retrieved (
+      self->priv->skeleton, TRUE);
 }

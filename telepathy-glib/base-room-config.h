@@ -59,7 +59,8 @@ struct _TpBaseRoomConfig {
 };
 
 /* By an astonishing coincidence, the nicknames for this enum are the names of
- * corresponding D-Bus properties.
+ * corresponding D-Bus properties. Make sure to keep room_config_properties
+ * in the same order.
  */
 typedef enum {
     TP_BASE_ROOM_CONFIG_ANONYMOUS = 0, /*< nick=Anonymous >*/
@@ -96,14 +97,6 @@ GType tp_base_room_config_get_type (void);
                               TpBaseRoomConfigClass))
 
 _TP_AVAILABLE_IN_0_16
-void tp_base_room_config_register_class (
-    TpBaseChannelClass *base_channel_class);
-_TP_AVAILABLE_IN_0_16
-void tp_base_room_config_iface_init (
-    gpointer g_iface,
-    gpointer iface_data);
-
-_TP_AVAILABLE_IN_0_16
 TpBaseChannel *tp_base_room_config_dup_channel (
     TpBaseRoomConfig *self);
 
@@ -117,10 +110,6 @@ void tp_base_room_config_set_property_mutable (
     TpBaseRoomConfig *self,
     TpBaseRoomConfigProperty property_id,
     gboolean is_mutable);
-
-_TP_AVAILABLE_IN_0_16
-void tp_base_room_config_emit_properties_changed (
-    TpBaseRoomConfig *self);
 
 _TP_AVAILABLE_IN_0_16
 void tp_base_room_config_set_retrieved (

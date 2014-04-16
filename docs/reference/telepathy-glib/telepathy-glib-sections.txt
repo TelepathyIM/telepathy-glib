@@ -1640,8 +1640,6 @@ TpBaseRoomConfig
 TpBaseRoomConfigClass
 TpBaseRoomConfigUpdateAsync
 TpBaseRoomConfigUpdateFinish
-tp_base_room_config_register_class
-tp_base_room_config_iface_init
 <SUBSECTION>
 TpBaseRoomConfigProperty
 TP_TYPE_BASE_ROOM_CONFIG_PROPERTY
@@ -1649,7 +1647,6 @@ TP_TYPE_BASE_ROOM_CONFIG_PROPERTY
 tp_base_room_config_dup_channel
 tp_base_room_config_set_can_update_configuration
 tp_base_room_config_set_property_mutable
-tp_base_room_config_emit_properties_changed
 tp_base_room_config_set_retrieved
 <SUBSECTION Standard>
 TP_BASE_ROOM_CONFIG
