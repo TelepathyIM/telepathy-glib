@@ -36,21 +36,17 @@ G_BEGIN_DECLS
  * TpHandle:
  *
  * Type representing Telepathy handles within telepathy-glib.
- *
- * This is guint despite the wire protocol having 32-bit integers, because
- * dbus-glib expects GArrays of guint and so on. If the dbus-glib ABI changes
- * in future, telepathy-glib is likely to have a matching ABI change.
  */
-typedef guint TpHandle;
+typedef guint32 TpHandle;
 
-/**
- * TP_TYPE_HANDLE:
- *
- * The GType of a TpHandle, currently G_TYPE_UINT.
- *
- * This won't change unless in an ABI-incompatible version of telepathy-glib.
- */
-#define TP_TYPE_HANDLE G_TYPE_UINT
+#ifndef __GI_SCANNER__
+/* Lots of places in telepathy-glib, and Telepathy applications, assume
+ * that TpHandle is guint (its historical, dbus-glib-derived type).
+ * This is true on all currently relevant platforms. In the unlikely
+ * event that we find a platform where guint is larger than guint32,
+ * implementations will need to be changed. */
+G_STATIC_ASSERT (sizeof (guint) == sizeof (TpHandle));
+#endif
 
 /**
  * TP_UNKNOWN_ENTITY_TYPE:

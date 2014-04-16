@@ -157,7 +157,7 @@ gchar *tp_handle_set_dump (const TpHandleSet *self) G_GNUC_WARN_UNUSED_RESULT;
  *         by entity type, where a null pointer means an unsupported handle
  *         type
  * @entity_type: The entity type
- * @handles: A GArray of guint representing handles of the given type
+ * @handles: A GArray of guint32 representing handles of the given type
  * @allow_zero: If %TRUE, zero is treated like a valid handle
  * @error: Used to return an error if %FALSE is returned
  *

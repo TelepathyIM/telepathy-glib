@@ -80,7 +80,7 @@ tp_handle_set_new (TpHandleRepoIface *repo)
 /**
  * tp_handle_set_new_from_array: (skip)
  * @repo: #TpHandleRepoIface that holds the handles to be reffed by this set
- * @array: (element-type uint): array of handles to be referenced by this set
+ * @array: (element-type guint32): array of handles to be referenced by this set
  *
  * Creates a new #TpHandleSet
  *
@@ -282,8 +282,8 @@ tp_handle_set_size (const TpHandleSet *set)
  *
  * <!--Returns: says it all, this comment is just to keep gtkdoc happy-->
  *
- * Returns: (element-type uint): a newly-allocated GArray of guint representing
- * the handles in the set
+ * Returns: (element-type guint32): a newly-allocated GArray of guint32
+ * representing the handles in the set
  */
 GArray *
 tp_handle_set_to_array (const TpHandleSet *set)
@@ -475,7 +475,7 @@ gchar *
 tp_handle_set_dump (const TpHandleSet *self)
 {
   TpIntsetFastIter iter;
-  guint handle;
+  guint32 handle;
   GString *string = g_string_new ("{ ");
 
   tp_intset_fast_iter_init (&iter, self->intset);
