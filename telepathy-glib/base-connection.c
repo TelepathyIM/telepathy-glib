@@ -821,8 +821,9 @@ manager_get_channel_details_foreach (TpBaseChannel *chan,
       "channel-properties", &properties,
       NULL);
 
-  g_variant_builder_add (builder, "(&o@a{sv})", object_path, properties);
+  g_variant_builder_add (builder, "(o@a{sv})", object_path, properties);
   g_variant_unref (properties);
+  g_free (object_path);
 }
 
 static void

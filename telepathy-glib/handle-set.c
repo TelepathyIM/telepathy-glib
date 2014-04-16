@@ -322,9 +322,7 @@ tp_handle_set_to_identifier_map (
         }
       else
         {
-          /* We don't bother dupping the strings: they remain valid as long as
-           * the connection's alive and hence the repo exists. */
-          g_variant_builder_add (&builder, "{u&s}", handle,
+          g_variant_builder_add (&builder, "{us}", handle,
               tp_handle_inspect (self->repo, handle));
         }
     }

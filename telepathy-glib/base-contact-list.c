@@ -1165,11 +1165,12 @@ tp_base_contact_list_contacts_changed_internal (TpBaseContactList *self,
           _tp_base_contact_list_presence_state_to_letter (publish),
           publish_request);
 
-      g_variant_builder_add (&changes, "{u(uu&s)}", contact, subscribe,
+      g_variant_builder_add (&changes, "{u(uus)}", contact, subscribe,
           publish, publish_request);
       g_variant_builder_add (&change_ids, "{us}", contact,
           tp_handle_inspect (self->priv->contact_repo, contact));
       emit_signal = TRUE;
+      g_free (publish_request);
     }
 
   if (removed != NULL)
