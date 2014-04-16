@@ -584,13 +584,13 @@ _tp_quark_array_copy (const GQuark *quarks)
  * common in practice.
  *
  * If more than one piece of auxiliary data is required, the @user_data
- * argument to the constructor can be a struct or a #GValueArray.
+ * argument to the constructor can be a struct.
  *
  * Since: 0.11.3
  */
 struct _TpWeakRef {
     /*<private>*/
-    gpointer object;
+    GWeakRef object;
     gpointer user_data;
     GDestroyNotify destroy;
 };
@@ -620,8 +620,7 @@ tp_weak_ref_new (gpointer object,
   g_return_val_if_fail (G_IS_OBJECT (object), NULL);
 
   self = g_slice_new (TpWeakRef);
-  self->object = object;
-  g_object_add_weak_pointer (self->object, &self->object);
+  g_weak_ref_init (&self->object, object);
   self->user_data = user_data;
   self->destroy = destroy;
   return self;
@@ -658,10 +657,7 @@ tp_weak_ref_get_user_data (TpWeakRef *self)
 gpointer
 tp_weak_ref_dup_object (TpWeakRef *self)
 {
-  if (self->object != NULL)
-    return g_object_ref (self->object);
-
-  return NULL;
+  return g_weak_ref_get (&self->object);
 }
 
 /**
@@ -677,8 +673,7 @@ tp_weak_ref_dup_object (TpWeakRef *self)
 void
 tp_weak_ref_destroy (TpWeakRef *self)
 {
-  if (self->object != NULL)
-    g_object_remove_weak_pointer (self->object, &self->object);
+  g_weak_ref_clear (&self->object);
 
   if (self->destroy != NULL)
     (self->destroy) (self->user_data);
