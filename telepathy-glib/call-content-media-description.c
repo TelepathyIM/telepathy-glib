@@ -57,6 +57,7 @@
 #include "telepathy-glib/base-call-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/dbus.h"
+#include <telepathy-glib/dbus-properties-mixin.h>
 #include "telepathy-glib/gtypes.h"
 #include "telepathy-glib/handle.h"
 #include "telepathy-glib/interfaces.h"

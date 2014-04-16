@@ -36,7 +36,6 @@
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
-#include <telepathy-glib/dbus-properties-mixin.h>
 
 G_BEGIN_DECLS
 

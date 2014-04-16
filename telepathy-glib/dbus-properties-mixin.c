@@ -29,11 +29,19 @@
 #include <telepathy-glib/svc-interface.h>
 #include <telepathy-glib/util.h>
 
-#define DEBUG_FLAG TP_DEBUG_PROPERTIES
-#include <telepathy-glib/core-dbus-properties-mixin-internal.h>
 #include "telepathy-glib/dbus-internal.h"
-#include "telepathy-glib/debug-internal.h"
 #include <telepathy-glib/object-registration-internal.h>
+
+/* no debug infrastructure here, this is the -dbus library */
+#define DEBUG(format, ...) \
+  g_log (G_LOG_DOMAIN "/properties", G_LOG_LEVEL_DEBUG, "%s: " format, \
+      G_STRFUNC, ##__VA_ARGS__)
+#define CRITICAL(format, ...) \
+  g_log (G_LOG_DOMAIN "/properties", G_LOG_LEVEL_CRITICAL, "%s: " format, \
+      G_STRFUNC, ##__VA_ARGS__)
+#define WARNING(format, ...) \
+  g_log (G_LOG_DOMAIN "/properties", G_LOG_LEVEL_WARNING, "%s: " format, \
+      G_STRFUNC, ##__VA_ARGS__)
 
 /**
  * SECTION:dbus-properties-mixin
@@ -80,18 +88,7 @@
  * %TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_INVALIDATED may be specified for a
  * property.
  *
- * Since 0.11.5, there is a corresponding #GFlagsClass type,
- * %TP_TYPE_DBUS_PROPERTIES_MIXIN_FLAGS.
- *
  * Since: 0.7.3
- */
-
-/**
- * TP_TYPE_DBUS_PROPERTIES_MIXIN_FLAGS:
- *
- * The #GFlagsClass type of #TpDBusPropertiesMixinFlags.
- *
- * Since: 0.11.5
  */
 
 /**
@@ -265,8 +262,6 @@ tp_dbus_properties_mixin_setter_gobject_properties (GObject *object,
  * Since: 0.7.3
  */
 
-static void tp_dbus_properties_mixin_hook_to_dbus_library (void);
-
 static GQuark
 _prop_mixin_offset_quark (void)
 {
@@ -418,8 +413,6 @@ tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
 
   g_return_if_fail (G_IS_OBJECT_CLASS (cls));
 
-  tp_dbus_properties_mixin_hook_to_dbus_library ();
-
   /* never freed - intentional per-class leak */
   iface_impl = g_new0 (TpDBusPropertiesMixinIfaceImpl, 1);
   iface_impl->name = g_quark_to_string (iface);
@@ -537,8 +530,6 @@ tp_dbus_properties_mixin_class_init (GObjectClass *cls,
   g_return_if_fail (G_IS_OBJECT_CLASS (cls));
   g_return_if_fail (g_type_get_qdata (type, q) == NULL);
   g_type_set_qdata (type, q, GSIZE_TO_POINTER (offset));
-
-  tp_dbus_properties_mixin_hook_to_dbus_library ();
 
   if (offset == 0)
     return;
@@ -1214,8 +1205,23 @@ out:
   return ret;
 }
 
-static GVariant *
-_tp_dbus_properties_mixin_dup_variant (GObject *object,
+/**
+ * tp_dbus_properties_mixin_dup_variant:
+ * @object: an object with this mixin
+ * @interface_name: a D-Bus interface name
+ * @property_name: a D-Bus property name
+ * @error: used to return an error on failure
+ *
+ * Get the value of the property @property_name on @interface_name, as if
+ * by calling the D-Bus method org.freedesktop.DBus.Properties.Get.
+ *
+ * If Get would return a D-Bus error, %NULL is returned and @error
+ * is filled in instead.
+ *
+ * Returns: (transfer full) (allow-none): a reference to a #GVariant, or %NULL
+ */
+GVariant *
+tp_dbus_properties_mixin_dup_variant (GObject *object,
     const gchar *interface_name,
     const gchar *property_name,
     GError **error)
@@ -1233,8 +1239,24 @@ _tp_dbus_properties_mixin_dup_variant (GObject *object,
   return ret;
 }
 
-static gboolean
-_tp_dbus_properties_mixin_set_variant (GObject *object,
+/**
+ * tp_dbus_properties_mixin_set_variant:
+ * @object: an object with this mixin
+ * @interface_name: a D-Bus interface name
+ * @property_name: a D-Bus property name
+ * @value: a #GVariant containing the new value for this property;
+ *  if it is floating, ownership will be taken
+ * @error: used to return an error on failure
+ *
+ * Sets a property to the value specified by @value, as if by
+ * calling the D-Bus method org.freedesktop.DBus.Properties.Set.
+ *
+ * If Set would return a D-Bus error, sets @error and returns %FALSE
+ *
+ * Returns: %TRUE on success; %FALSE (setting @error) on failure
+ */
+gboolean
+tp_dbus_properties_mixin_set_variant (GObject *object,
     const gchar *interface_name,
     const gchar *property_name,
     GVariant *value,
@@ -1254,8 +1276,21 @@ _tp_dbus_properties_mixin_set_variant (GObject *object,
   return ret;
 }
 
-static GVariant *
-_tp_dbus_properties_mixin_dup_all_vardict (GObject *object,
+/**
+ * tp_dbus_properties_mixin_dup_all_vardict:
+ * @object: an object with this mixin
+ * @interface_name: a D-Bus interface name
+ *
+ * Get all the properties of a particular interface, as if by
+ * calling the D-Bus method org.freedesktop.DBus.Properties.GetAll.
+ * This implementation
+ * never returns an error: it will return an empty map if the interface
+ * is unknown.
+ *
+ * Returns: (transfer full): a variant of type %G_VARIANT_TYPE_VARDICT
+ */
+GVariant *
+tp_dbus_properties_mixin_dup_all_vardict (GObject *object,
     const gchar *interface_name)
 {
   GVariant *ret;
@@ -1265,25 +1300,4 @@ _tp_dbus_properties_mixin_dup_all_vardict (GObject *object,
   ret = g_variant_ref_sink (tp_asv_to_vardict (asv));
   g_hash_table_unref (asv);
   return ret;
-}
-
-static TpDBusPropertiesMixinImpl impl = { NULL };
-
-static void
-tp_dbus_properties_mixin_hook_to_dbus_library (void)
-{
-  static gsize done = 0;
-
-  if (g_once_init_enter (&done))
-    {
-      impl.dup_variant = _tp_dbus_properties_mixin_dup_variant;
-      impl.set_variant = _tp_dbus_properties_mixin_set_variant;
-      impl.dup_all_vardict = _tp_dbus_properties_mixin_dup_all_vardict;
-      impl.version = VERSION;
-      impl.size = sizeof (impl);
-
-      tp_private_dbus_properties_mixin_set_implementation (&impl);
-
-      g_once_init_leave (&done, 1);
-    }
 }

@@ -156,6 +156,7 @@
 #include "telepathy-glib/base-media-call-channel.h"
 #include "telepathy-glib/call-stream-endpoint.h"
 #include "telepathy-glib/dbus.h"
+#include <telepathy-glib/dbus-properties-mixin.h>
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/enums.h"
 #include "telepathy-glib/gtypes.h"

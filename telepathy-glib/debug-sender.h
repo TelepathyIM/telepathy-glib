@@ -26,7 +26,6 @@
 
 #include <glib-object.h>
 
-#include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/enums.h>
 

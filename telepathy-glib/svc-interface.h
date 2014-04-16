@@ -27,6 +27,8 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
+#include <telepathy-glib/dbus-properties-mixin.h>
+
 G_BEGIN_DECLS
 
 typedef struct _TpSvcInterfaceInfo TpSvcInterfaceInfo;

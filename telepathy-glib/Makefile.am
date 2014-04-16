@@ -83,7 +83,6 @@ tpginclude_HEADERS = \
     contact-operations.h \
     base-contact-list.h \
     dbus.h \
-    dbus-properties-mixin.h \
     dbus-tube-channel.h \
     defs.h \
     debug.h \
@@ -136,6 +135,7 @@ tpgdbusinclude_HEADERS = \
     cli-connection.h \
     cli-misc.h \
     cli-proxy.h \
+    dbus-properties-mixin.h \
     gnio-util.h \
     gtypes.h \
     interfaces.h \
@@ -190,9 +190,8 @@ libtelepathy_glib_dbus_internal_la_SOURCES = \
     cli-channel.c \
     cli-connection.c \
     cli-misc.c \
-    core-dbus-properties-mixin-internal.h \
-    core-dbus-properties-mixin.c \
     core-proxy.c \
+    dbus-properties-mixin.c \
     gnio-util.c \
     gtypes.c \
     interfaces.c \
@@ -280,7 +279,6 @@ libtelepathy_glib_main_internal_handwritten_source = \
     cm-message-internal.h \
     dbus.c \
     dbus-internal.h \
-    dbus-properties-mixin.c \
     dbus-tube-channel.c \
     debug.c \
     debug-client.c \

@@ -109,6 +109,7 @@
 #include "telepathy-glib/base-call-internal.h"
 #include "telepathy-glib/base-media-call-stream.h"
 #include "telepathy-glib/base-connection.h"
+#include <telepathy-glib/dbus-properties-mixin.h>
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/dbus.h"
 #include "telepathy-glib/enums.h"

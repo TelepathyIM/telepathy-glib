@@ -22,7 +22,6 @@
 #include <dbus/dbus-glib.h>
 
 #include <telepathy-glib/asv.h>
-#include <telepathy-glib/core-dbus-properties-mixin-internal.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/variant-util.h>
 
@@ -111,7 +110,7 @@ tp_svc_interface_skeleton_get_property (GDBusConnection *connection,
   object = g_weak_ref_get (&self->priv->object);
   g_return_val_if_fail (object != NULL, NULL);
 
-  ret = _tp_dbus_properties_mixin_dup_in_dbus_lib (object, interface_name,
+  ret = tp_dbus_properties_mixin_dup_variant (object, interface_name,
       property_name, error);
 
   g_object_unref (object);
@@ -139,7 +138,7 @@ tp_svc_interface_skeleton_set_property (GDBusConnection *connection,
   object = g_weak_ref_get (&self->priv->object);
   g_return_val_if_fail (object != NULL, FALSE);
 
-  ret = _tp_dbus_properties_mixin_set_in_dbus_lib (object, interface_name,
+  ret = tp_dbus_properties_mixin_set_variant (object, interface_name,
       property_name, variant, error);
 
   g_object_unref (object);
@@ -173,7 +172,7 @@ tp_svc_interface_skeleton_get_properties (GDBusInterfaceSkeleton *skel)
   /* For now assume we have the TpDBusPropertiesMixin if we have
    * any properties at all. This never returns NULL. */
 
-  ret = _tp_dbus_properties_mixin_dup_all_in_dbus_lib (object, iface_name);
+  ret = tp_dbus_properties_mixin_dup_all_vardict (object, iface_name);
   g_object_unref (object);
   return ret;
 }

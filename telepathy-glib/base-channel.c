@@ -315,6 +315,7 @@
 #include <telepathy-glib/asv.h>
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/dbus-properties-mixin.h>
 #include "telepathy-glib/group-mixin.h"
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-channel.h>

@@ -56,6 +56,7 @@
 #include <telepathy-glib/_gen/tp-cli-logger.h>
 
 /* service-side */
+#include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/svc-account.h>
 #include <telepathy-glib/svc-account-manager.h>
 #include <telepathy-glib/svc-call.h>

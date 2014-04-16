@@ -18,8 +18,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#if !defined (_TP_GLIB_H_INSIDE) && !defined (_TP_COMPILATION)
-#error "Only <telepathy-glib/telepathy-glib.h> can be included directly."
+#if !defined (_TP_GLIB_DBUS_H_INSIDE) && !defined (_TP_COMPILATION)
+#error "Only <telepathy-glib/telepathy-glib-dbus.h> can be included directly."
 #endif
 
 #ifndef __TP_DBUS_PROPERTIES_MIXIN_H__
@@ -27,8 +27,7 @@
 
 #include <glib-object.h>
 
-#include <telepathy-glib/defs.h>
-#include <telepathy-glib/_gen/genums.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
 
@@ -121,6 +120,13 @@ void tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
 gboolean tp_dbus_properties_mixin_get (GObject *self,
     const gchar *interface_name, const gchar *property_name,
     GValue *value, GError **error);
+
+GVariant *tp_dbus_properties_mixin_dup_variant (GObject *object,
+    const gchar *interface_name,
+    const gchar *property_name,
+    GError **error)
+  G_GNUC_WARN_UNUSED_RESULT;
+
 _TP_AVAILABLE_IN_0_16
 gboolean tp_dbus_properties_mixin_set (
     GObject *self,
@@ -129,9 +135,19 @@ gboolean tp_dbus_properties_mixin_set (
     const GValue *value,
     GError **error);
 
+gboolean tp_dbus_properties_mixin_set_variant (GObject *object,
+    const gchar *interface_name,
+    const gchar *property_name,
+    GVariant *value,
+    GError **error);
+
 _TP_AVAILABLE_IN_0_22
 GHashTable *tp_dbus_properties_mixin_dup_all (GObject *self,
     const gchar *interface_name);
+
+GVariant *tp_dbus_properties_mixin_dup_all_vardict (GObject *object,
+    const gchar *interface_name)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 GHashTable *tp_dbus_properties_mixin_make_properties_hash (
     GObject *object, const gchar *first_interface,

@@ -27,7 +27,6 @@
 #ifndef __TP_GROUP_MIXIN_H__
 #define __TP_GROUP_MIXIN_H__
 
-#include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/handle-repo.h>
 #include <telepathy-glib/util.h>
 
