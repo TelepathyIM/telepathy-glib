@@ -810,6 +810,97 @@ tp_dbus_connection_register_object (GDBusConnection *dbus_connection,
     }
 }
 
+static void
+_tp_dbus_connection_gather_gdbus_skeletons (GDBusObject *object,
+    GHashTable *skeletons)
+{
+  GList *object_interfaces;
+  GList *list_iter;
+
+  DEBUG ("Getting GDBusObject skeletons");
+
+  object_interfaces = g_dbus_object_get_interfaces (object);
+
+  for (list_iter = object_interfaces;
+      list_iter != NULL;
+      list_iter = list_iter->next)
+    {
+      GDBusInterface *iface = list_iter->data;
+      const gchar *iface_name = g_dbus_interface_get_info (iface)->name;
+
+      if (!G_IS_DBUS_INTERFACE_SKELETON (iface))
+        {
+          DEBUG ("- not a GDBusInterfaceSkeleton: %s %p",
+              G_OBJECT_TYPE_NAME (iface), iface);
+          continue;
+        }
+
+      if (g_hash_table_contains (skeletons, iface_name))
+        {
+          WARNING ("%s %p has more than one implementation of %s",
+              G_OBJECT_TYPE_NAME (object), object, iface_name);
+          /* use the second one added - that's consistent with
+           * GDBusObjectManagerServer */
+        }
+
+      DEBUG ("- %s skeleton: %s %p",
+          iface_name, G_OBJECT_TYPE_NAME (iface), iface);
+
+      g_hash_table_replace (skeletons, (gchar *) iface_name,
+          g_object_ref (iface));
+    }
+
+  g_list_free_full (object_interfaces, g_object_unref);
+}
+
+static void
+_tp_dbus_connection_gather_tp_svc_skeletons (GObject *object,
+    GHashTable *skeletons)
+{
+  GDBusInterfaceSkeleton *skeleton;
+  GType *interfaces = NULL;
+  guint n = 0;
+  guint i;
+
+  DEBUG ("Getting TpSvc* skeletons");
+
+  interfaces = g_type_interfaces (G_OBJECT_TYPE (object), &n);
+
+  /* Get the TpSvc interfaces if any. These take precedence over whatever
+   * was in the GDBusObject, because in practice CMs rely on overriding
+   * base-classes' interfaces. */
+  for (i = 0; i < n; i++)
+    {
+      GType iface = interfaces[i];
+      const TpSvcInterfaceInfo *iinfo;
+
+      iinfo = tp_svc_interface_peek_dbus_interface_info (iface);
+
+      if (iinfo == NULL)
+        {
+          DEBUG ("- %s is not a D-Bus interface", g_type_name (iface));
+          continue;
+        }
+
+      skeleton = tp_svc_interface_skeleton_new (object, iface);
+
+      DEBUG ("- %s skeleton %p (wrapping %s %p)",
+          iinfo->interface_info->name, skeleton, g_type_name (iface),
+          object);
+
+      if (g_hash_table_contains (skeletons, iinfo->interface_info->name))
+        {
+          DEBUG ("  (overriding existing implementation of %s)",
+              iinfo->interface_info->name);
+        }
+
+      g_hash_table_replace (skeletons,
+          (gchar *) iinfo->interface_info->name, skeleton);
+    }
+
+  g_free (interfaces);
+}
+
 /**
  * tp_dbus_connection_try_register_object:
  * @dbus_connection: a #GDBusConnection
@@ -830,9 +921,6 @@ tp_dbus_connection_try_register_object (GDBusConnection *dbus_connection,
     GError **error)
 {
   GDBusConnection *conn;
-  GType *interfaces = NULL;
-  guint n = 0;
-  guint i;
   Registration *r;
   gboolean ret = FALSE;
   GHashTable *skeletons = NULL;
@@ -891,46 +979,9 @@ tp_dbus_connection_try_register_object (GDBusConnection *dbus_connection,
   skeletons = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       g_object_unref);
 
-  /* If it's a GDBusObject, take its interfaces. */
   if (G_IS_DBUS_OBJECT (object))
     {
-      GList *object_interfaces;
-      GList *list_iter;
-
-      DEBUG ("Getting GDBusObject skeletons");
-
-      object_interfaces = g_dbus_object_get_interfaces (object);
-
-      for (list_iter = object_interfaces;
-          list_iter != NULL;
-          list_iter = list_iter->next)
-        {
-          GDBusInterface *iface = list_iter->data;
-          const gchar *iface_name = g_dbus_interface_get_info (iface)->name;
-
-          if (!G_IS_DBUS_INTERFACE_SKELETON (iface))
-            {
-              DEBUG ("- not a GDBusInterfaceSkeleton: %s %p",
-                  G_OBJECT_TYPE_NAME (iface), iface);
-              continue;
-            }
-
-          if (g_hash_table_contains (skeletons, iface_name))
-            {
-              WARNING ("%s %p has more than one implementation of %s",
-                  G_OBJECT_TYPE_NAME (object), object, iface_name);
-              /* use the second one added - that's consistent with
-               * GDBusObjectManagerServer */
-            }
-
-          DEBUG ("- %s skeleton: %s %p",
-              iface_name, G_OBJECT_TYPE_NAME (iface), iface);
-
-          g_hash_table_replace (skeletons, (gchar *) iface_name,
-              g_object_ref (iface));
-        }
-
-      g_list_free_full (object_interfaces, g_object_unref);
+      _tp_dbus_connection_gather_gdbus_skeletons (object, skeletons);
 
       g_signal_connect (object, "interface-added",
           G_CALLBACK (tp_dbus_connection_registration_iface_added_cb), r);
@@ -939,43 +990,7 @@ tp_dbus_connection_try_register_object (GDBusConnection *dbus_connection,
     }
   else
     {
-      DEBUG ("Getting TpSvc* skeletons");
-
-      interfaces = g_type_interfaces (G_OBJECT_TYPE (object), &n);
-
-      /* Get the TpSvc interfaces if any. These take precedence over whatever
-       * was in the GDBusObject, because in practice CMs rely on overriding
-       * base-classes' interfaces. */
-      for (i = 0; i < n; i++)
-        {
-          GType iface = interfaces[i];
-          const TpSvcInterfaceInfo *iinfo;
-
-          iinfo = tp_svc_interface_peek_dbus_interface_info (iface);
-
-          if (iinfo == NULL)
-            {
-              DEBUG ("- %s is not a D-Bus interface", g_type_name (iface));
-              continue;
-            }
-
-          skeleton = tp_svc_interface_skeleton_new (object, iface);
-
-          DEBUG ("- %s skeleton %p (wrapping %s %p)",
-              iinfo->interface_info->name, skeleton, g_type_name (iface),
-              object);
-
-          if (g_hash_table_contains (skeletons, iinfo->interface_info->name))
-            {
-              DEBUG ("  (overriding existing implementation of %s)",
-                  iinfo->interface_info->name);
-            }
-
-          g_hash_table_replace (skeletons,
-              (gchar *) iinfo->interface_info->name, skeleton);
-        }
-
-      g_free (interfaces);
+      _tp_dbus_connection_gather_tp_svc_skeletons (object, skeletons);
     }
 
   DEBUG ("Exporting skeletons");
