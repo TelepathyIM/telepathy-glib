@@ -772,8 +772,12 @@ tp_dbus_connection_registration_free (gpointer p)
  * @object_path: an object path
  * @object: (type GObject.Object) (transfer none): an object to export
  *
- * Export @object at @object_path. Its `TpSvc` interfaces will all
- * be exported.
+ * Export @object at @object_path:
+ *
+ * * if it is a #GDBusObjectSkeleton, it will be exported
+ * * if it is a #GDBusObject but not a #GDBusObjectSkeleton, it is
+ *   considered to be a programming error
+ * * otherwise, its `TpSvc` interfaces will all be exported
  *
  * It is considered to be a programming error to register an object
  * at a path where another object already exists.
@@ -932,6 +936,13 @@ tp_dbus_connection_try_register_object (GDBusConnection *dbus_connection,
   g_return_val_if_fail (tp_dbus_check_valid_object_path (object_path, error),
       FALSE);
   g_return_val_if_fail (G_IS_OBJECT (object), FALSE);
+  /* If it implements GDBusObject then it must currently be a
+   * GDBusObjectSkeleton. The implementation doesn't actually assume that,
+   * as long as its interfaces are GDBusInterfaceSkeletons - we could
+   * relax this (to allow for objects that proxy a GDBusObjectSkeleton's
+   * interfaces, for instance) if needed. */
+  g_return_val_if_fail (G_IS_DBUS_OBJECT_SKELETON (object) ||
+      !G_IS_DBUS_OBJECT (object), FALSE);
 
   conn = dbus_connection;
   r = g_slice_new0 (Registration);
