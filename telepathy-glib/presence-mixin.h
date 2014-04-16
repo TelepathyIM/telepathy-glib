@@ -148,6 +148,12 @@ void tp_presence_mixin_emit_one_presence_update (TpBaseConnection *self,
     TpHandle handle,
     const TpPresenceStatus *status);
 
+void tp_presence_mixin_init (TpBaseConnection *self);
+gboolean tp_presence_mixin_fill_contact_attributes (TpBaseConnection *self,
+    const gchar *dbus_interface,
+    TpHandle contact,
+    GVariantDict *attributes);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_PRESENCE_MIXIN_H__ */

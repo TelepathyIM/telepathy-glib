@@ -439,7 +439,6 @@ tp_base_connection_dispose (GObject *object)
 
   g_clear_object (&self->priv->connection_skeleton);
   g_clear_object (&self->priv->requests_skeleton);
-  g_clear_object (&self->priv->presence_skeleton);
 
   if (G_OBJECT_CLASS (tp_base_connection_parent_class)->dispose)
     G_OBJECT_CLASS (tp_base_connection_parent_class)->dispose (object);
@@ -769,11 +768,6 @@ tp_base_connection_constructed (GObject *object)
       G_CALLBACK (tp_base_connection_interface_changed_cb),
       GINT_TO_POINTER (-1));
 
-  if (TP_IS_PRESENCE_MIXIN (self))
-    {
-      _tp_presence_mixin_init (self);
-    }
-
   /* We don't have any interfaces yet (except for Connection and Requests)
    * so it's OK that the default for _TpGDBusConnection:interfaces is NULL. */
 }
@@ -922,10 +916,6 @@ _tp_base_connection_fill_contact_attributes (TpBaseConnection *self,
     GVariantDict *attributes)
 {
   const gchar *tmp;
-
-  if (_tp_presence_mixin_fill_contact_attributes (self, dbus_interface, contact,
-          attributes))
-    return;
 
   if (tp_strdiff (dbus_interface, TP_IFACE_CONNECTION))
     {

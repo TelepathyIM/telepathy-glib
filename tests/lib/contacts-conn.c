@@ -298,6 +298,10 @@ tp_tests_contacts_connection_fill_contact_attributes (TpBaseConnection *base,
         dbus_interface, contact, attributes))
     return;
 
+  if (tp_presence_mixin_fill_contact_attributes (base,
+        dbus_interface, contact, attributes))
+    return;
+
   ((TpBaseConnectionClass *) tp_tests_contacts_connection_parent_class)->
     fill_contact_attributes (base, dbus_interface, contact, attributes);
 }
@@ -412,6 +416,8 @@ constructed (GObject *object)
 
   self->priv->list_manager = g_object_new (TP_TESTS_TYPE_CONTACT_LIST_MANAGER,
       "connection", self, NULL);
+
+  tp_presence_mixin_init (TP_BASE_CONNECTION (self));
 }
 
 /* Must match TpTestsContactsConnectionPresenceStatusIndex in the .h */

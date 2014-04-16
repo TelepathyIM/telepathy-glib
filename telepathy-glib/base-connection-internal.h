@@ -83,7 +83,6 @@ struct _TpBaseConnectionPrivate
 
   _TpGDBusConnection *connection_skeleton;
   _TpGDBusConnectionInterfaceRequests *requests_skeleton;
-  _TpGDBusConnectionInterfacePresence1 *presence_skeleton;
 };
 
 void _tp_base_connection_set_handle_repo (TpBaseConnection *self,
@@ -98,13 +97,6 @@ GVariant *_tp_base_connection_dup_contact_attributes (
     const GArray *handles,
     const gchar * const *interfaces,
     const gchar * const *assumed_interfaces);
-
-/* TpPresenceMixin */
-void _tp_presence_mixin_init (TpBaseConnection *self);
-gboolean _tp_presence_mixin_fill_contact_attributes (TpBaseConnection *self,
-    const gchar *dbus_interface,
-    TpHandle contact,
-    GVariantDict *attributes);
 
 G_END_DECLS
 

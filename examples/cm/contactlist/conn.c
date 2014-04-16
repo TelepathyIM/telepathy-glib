@@ -245,6 +245,10 @@ example_contact_list_connection_fill_contact_attributes (TpBaseConnection *conn,
         dbus_interface, contact, attributes))
     return;
 
+  if (tp_presence_mixin_fill_contact_attributes (conn,
+        dbus_interface, contact, attributes))
+    return;
+
   ((TpBaseConnectionClass *) example_contact_list_connection_parent_class)->
     fill_contact_attributes (conn, dbus_interface, contact, attributes);
 }
@@ -271,6 +275,8 @@ constructed (GObject *object)
       G_CALLBACK (alias_updated_cb), self);
   g_signal_connect (self->priv->contact_list, "presence-updated",
       G_CALLBACK (presence_updated_cb), self);
+
+  tp_presence_mixin_init (TP_BASE_CONNECTION (object));
 
   iface = tp_svc_interface_skeleton_new (skel,
       TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING1);

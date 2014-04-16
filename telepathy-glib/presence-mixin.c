@@ -165,11 +165,16 @@
 #include "debug-internal.h"
 #include "base-connection-internal.h"
 
-struct _TpPresenceMixinPrivate
+static GQuark
+skeleton_quark (void)
 {
-  _TpGDBusConnectionInterfacePresence1 *skeleton;
-};
+  static GQuark q = 0;
 
+  if (q == 0)
+    q = g_quark_from_static_string ("TpPresenceMixin-skeleton");
+
+  return q;
+}
 
 static GVariant *construct_presence_map (
   const TpPresenceStatusSpec *supported_statuses,
@@ -248,15 +253,26 @@ connection_status_changed_cb (TpBaseConnection *self,
     }
 }
 
+/**
+ * tp_presence_mixin_init:
+ * @self: a #TpBaseConnection that implements #TpPresenceMixinInterface
+ *
+ * Implement the Presence interface via this mixin. Call this from
+ * the #GObjectClass.constructed function of a #TpBaseConnection
+ * subclass that implements #TpPresenceMixin.
+ */
 void
-_tp_presence_mixin_init (TpBaseConnection *self)
+tp_presence_mixin_init (TpBaseConnection *self)
 {
+  _TpGDBusConnectionInterfacePresence1 *presence_skeleton;
   TpPresenceMixinInterface *iface = TP_PRESENCE_MIXIN_GET_INTERFACE (self);
   guint i;
 
-  g_assert (iface->get_contact_status != NULL);
-  g_assert (iface->set_own_status != NULL);
-  g_assert (iface->statuses != NULL);
+  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
+  g_return_if_fail (TP_IS_PRESENCE_MIXIN (self));
+  g_return_if_fail (iface->get_contact_status != NULL);
+  g_return_if_fail (iface->set_own_status != NULL);
+  g_return_if_fail (iface->statuses != NULL);
 
   for (i = 0; iface->statuses[i].name != NULL; i++)
     {
@@ -278,10 +294,11 @@ _tp_presence_mixin_init (TpBaseConnection *self)
         }
     }
 
-  self->priv->presence_skeleton =
-      _tp_gdbus_connection_interface_presence1_skeleton_new ();
+  presence_skeleton = _tp_gdbus_connection_interface_presence1_skeleton_new ();
+  g_object_set_qdata_full (G_OBJECT (self), skeleton_quark (),
+      presence_skeleton, g_object_unref);
 
-  g_signal_connect_object (self->priv->presence_skeleton, "handle-set-presence",
+  g_signal_connect_object (presence_skeleton, "handle-set-presence",
       G_CALLBACK (tp_presence_mixin_set_presence), self, 0);
 
   /* Set the initial properties values, we'll update them once CONNECTED */
@@ -291,7 +308,7 @@ _tp_presence_mixin_init (TpBaseConnection *self)
       G_CALLBACK (connection_status_changed_cb), NULL);
 
   g_dbus_object_skeleton_add_interface (G_DBUS_OBJECT_SKELETON (self),
-      G_DBUS_INTERFACE_SKELETON (self->priv->presence_skeleton));
+      G_DBUS_INTERFACE_SKELETON (presence_skeleton));
 }
 
 /**
@@ -309,11 +326,15 @@ tp_presence_mixin_emit_presence_update (TpBaseConnection *self,
                                         GHashTable *contact_statuses)
 {
   TpPresenceMixinInterface *iface = TP_PRESENCE_MIXIN_GET_INTERFACE (self);
+  _TpGDBusConnectionInterfacePresence1 *presence_skeleton;
 
   DEBUG ("called.");
 
+  presence_skeleton = g_object_get_qdata (G_OBJECT (self), skeleton_quark ());
+  g_return_if_fail (presence_skeleton != NULL);
+
   _tp_gdbus_connection_interface_presence1_emit_presences_changed (
-      self->priv->presence_skeleton,
+      presence_skeleton,
       construct_presence_map (iface->statuses, contact_statuses));
 }
 
@@ -427,8 +448,12 @@ static void
 update_statuses_property (TpBaseConnection *self)
 {
   TpPresenceMixinInterface *iface = TP_PRESENCE_MIXIN_GET_INTERFACE (self);
+  _TpGDBusConnectionInterfacePresence1 *presence_skeleton;
   GVariantBuilder builder;
   int i;
+
+  presence_skeleton = g_object_get_qdata (G_OBJECT (self), skeleton_quark ());
+  g_return_if_fail (presence_skeleton != NULL);
 
   g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{s(ubb)}"));
   for (i = 0; iface->statuses[i].name != NULL; i++)
@@ -451,7 +476,7 @@ update_statuses_property (TpBaseConnection *self)
    }
 
   _tp_gdbus_connection_interface_presence1_set_statuses (
-      self->priv->presence_skeleton,
+      presence_skeleton,
       g_variant_builder_end (&builder));
 }
 
@@ -459,13 +484,17 @@ static void
 update_max_status_message_len_property (TpBaseConnection *self)
 {
   TpPresenceMixinInterface *iface = TP_PRESENCE_MIXIN_GET_INTERFACE (self);
+  _TpGDBusConnectionInterfacePresence1 *presence_skeleton;
   guint max_status_message_length = 0;
+
+  presence_skeleton = g_object_get_qdata (G_OBJECT (self), skeleton_quark ());
+  g_return_if_fail (presence_skeleton != NULL);
 
   if (iface->get_maximum_status_message_length != NULL)
     max_status_message_length = iface->get_maximum_status_message_length (self);
 
   _tp_gdbus_connection_interface_presence1_set_maximum_status_message_length (
-      self->priv->presence_skeleton, max_status_message_length);
+      presence_skeleton, max_status_message_length);
 }
 
 static gboolean
@@ -555,8 +584,43 @@ construct_presence_map (const TpPresenceStatusSpec *supported_statuses,
   return g_variant_builder_end (&builder);
 }
 
+/**
+ * tp_presence_mixin_fill_contact_attributes:
+ * @self: a connection that implements #TpPresenceMixin
+ * @dbus_interface: the interface in which the client is interested
+ * @contact: a contact's handle
+ * @attributes: used to return the attributes of @contact
+ *
+ * If this mixin implements @dbus_interface, fill in the attributes
+ * for @contact and return %TRUE.
+ *
+ * Typical usage is something like this:
+ *
+ * |[
+ * static void
+ * my_fill_contact_attributes (TpBaseConnection *base,
+ *     ...)
+ * {
+ *   if (!tp_strdiff (dbus_interface, INTERFACE_THAT_I_IMPLEMENT))
+ *     {
+ *       // ... fill them in
+ *       return;
+ *     }
+ *   // ... similar calls for any other interfaces
+ *
+ *   if (tp_presence_mixin_fill_contact_attributes (base, ...))
+ *     return;
+ *   // ... similar calls for any other mixins
+ *
+ *   TP_BASE_CONNECTION_CLASS (my_connection_parent_class)->
+ *     fill_contact_attributes (base, ...);
+ * }
+ * ]|
+ *
+ * Returns: %TRUE if @dbus_interface was handled
+ */
 gboolean
-_tp_presence_mixin_fill_contact_attributes (TpBaseConnection *self,
+tp_presence_mixin_fill_contact_attributes (TpBaseConnection *self,
   const gchar *dbus_interface,
   TpHandle contact,
   GVariantDict *attributes)

@@ -119,6 +119,18 @@ set_property (GObject *object,
 }
 
 static void
+constructed (GObject *object)
+{
+  void (*chain_up) (GObject *) =
+    G_OBJECT_CLASS (example_call_connection_parent_class)->constructed;
+
+  if (chain_up != NULL)
+    chain_up (object);
+
+  tp_presence_mixin_init (TP_BASE_CONNECTION (object));
+}
+
+static void
 finalize (GObject *object)
 {
   ExampleCallConnection *self = EXAMPLE_CALL_CONNECTION (object);
@@ -309,6 +321,20 @@ example_call_connection_get_possible_interfaces (void)
 }
 
 static void
+fill_contact_attributes (TpBaseConnection *conn,
+    const gchar *dbus_interface,
+    TpHandle contact,
+    GVariantDict *attributes)
+{
+  if (tp_presence_mixin_fill_contact_attributes (conn,
+        dbus_interface, contact, attributes))
+    return;
+
+  ((TpBaseConnectionClass *) example_call_connection_parent_class)->
+    fill_contact_attributes (conn, dbus_interface, contact, attributes);
+}
+
+static void
 init_presence (gpointer g_iface,
     gpointer iface_data)
 {
@@ -330,6 +356,7 @@ example_call_connection_class_init (
 
   object_class->get_property = get_property;
   object_class->set_property = set_property;
+  object_class->constructed = constructed;
   object_class->finalize = finalize;
   g_type_class_add_private (klass,
       sizeof (ExampleCallConnectionPrivate));
@@ -339,6 +366,7 @@ example_call_connection_class_init (
   base_class->create_channel_managers = create_channel_managers;
   base_class->start_connecting = start_connecting;
   base_class->shut_down = shut_down;
+  base_class->fill_contact_attributes = fill_contact_attributes;
 
   param_spec = g_param_spec_string ("account", "Account name",
       "The username of this user", NULL,

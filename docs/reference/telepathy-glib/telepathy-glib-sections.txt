@@ -1683,6 +1683,8 @@ tp_presence_status_new
 tp_presence_status_free
 <TITLE>TpPresenceMixin</TITLE>
 TpPresenceMixinInterface
+tp_presence_mixin_init
+tp_presence_mixin_fill_contact_attributes
 tp_presence_mixin_emit_presence_update
 tp_presence_mixin_emit_one_presence_update
 <SUBSECTION Standard>
