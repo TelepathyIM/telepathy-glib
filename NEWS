@@ -36,6 +36,59 @@ API breaks:
   have changed from read/write/construct-only to read-only, so TpChannel
   subclasses must stop passing handle-type or entity-type to the constructor
 
+• tp_dbus_connection_try_register_object() can export a GDBusObjectSkeleton;
+  this will use g_dbus_object_get_interfaces(), ignoring any TpSvc*
+  interfaces that are not represented in that list. Exporting a GDBusObject
+  that is not a GDBusObjectSkeleton is not currently allowed.
+
+• TpBaseProtocol and TpBaseConnection are now subclasses of
+  GDBusObjectSkeleton, and no longer implement any TpSvc* interfaces.
+  They no longer have virtual methods to list interface names; subclasses
+  are expected to register all their interfaces (TpSvc* or otherwise) via
+  g_dbus_object_skeleton_add_interface().
+
+• TpBaseContactList and TpPresenceMixin don't implement TpSvc* interfaces
+  either; instead, they call g_dbus_object_skeleton_add_interface()
+  on their associated TpBaseConnection.
+
+• TpSvcInterfaceSkeleton has moved to the -dbus library, but now has a
+  public constructor in that library.
+
+• The TpBaseConnectionClass.fill_contact_attributes() vfunc now takes
+  a GVariantDict argument. TpContactAttributeMap has been removed.
+
+• TpDBusPropertiesMixin communicates with GDBus on a per-interface basis
+  rather than by implementing TpSvcDBusProperties
+
+• TpPresenceMixin is now a GInterface. The only "glue" required is to
+  implement its virtual methods (which now take a TpPresenceMixin * first
+  argument), call tp_presence_mixin_init() in constructed(), and call
+  tp_presence_mixin_fill_contact_attributes() in fill_contact_attributes().
+
+• TpHandle is now a guint32, not a guint. There is a static assertion that
+  these are the same size; we might later add support for architectures
+  where their sizes differ, in the unlikely event that anyone finds one.
+
+• TpDBusPropertiesMixin has moved to the -dbus library, and is no longer
+  present in the class struct of public classes.
+
+• Accessing a missing property raises o.fd.DBus.Error.InvalidArgs,
+  not im.telepathy.v1.Error.NotImplemented. Similarly, trying to write
+  to a read-only property raises o.fd.DBus.Error.InvalidArgs,
+  not im.t.v1.Error.PermissionDenied.
+
+• Most GObject properties of TpBasePasswordChannel have been removed.
+
+• TpBaseConnection:dbus-status, TpBaseConnection:requestable-channel-classes
+  have been removed.
+
+• TpPresenceMixin no longer supports status parameters other than the
+  message, and its API has been simplified accordingly.
+
+• tp_group_mixin_change_members() takes a GVariant for the details.
+
+• Some unused API has been removed from TpGroupMixin.
+
 telepathy-glib 0.99.10 (2014-04-03)
 ===================================
 
