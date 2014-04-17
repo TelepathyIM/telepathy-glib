@@ -35,44 +35,42 @@ G_BEGIN_DECLS
 
 typedef struct _TpCMParamSpec TpCMParamSpec;
 
-typedef void (*TpCMParamSetter) (const TpCMParamSpec *paramspec,
-    const GValue *value, gpointer params);
+typedef GVariant *(*TpCMParamFilter) (const TpCMParamSpec *paramspec,
+    GVariant *value, gpointer user_data, GError **error);
 
-typedef gboolean (*TpCMParamFilter) (const TpCMParamSpec *paramspec,
-    GValue *value, GError **error);
+GVariant *tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
+    GVariant *value, gpointer user_data, GError **error);
 
-gboolean tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
-    GValue *value, GError **error);
-
-gboolean tp_cm_param_filter_uint_nonzero (const TpCMParamSpec *paramspec,
-    GValue *value, GError **error);
-
-/* XXX: This should be driven by GTypes, but the GType is insufficiently
- * descriptive: if it's UINT we can't tell whether the D-Bus type is
- * UInt32, UInt16 or possibly even Byte. So we have the D-Bus type too.
- *
- * As it stands at the moment it could be driven by the *D-Bus* type, but
- * in future we may want to have more than one possible GType for a D-Bus
- * type, e.g. converting arrays of string into either a strv or a GPtrArray.
- * So, we keep the redundancy for future expansion.
- */
+GVariant *tp_cm_param_filter_uint_nonzero (const TpCMParamSpec *paramspec,
+    GVariant *value, gpointer user_data, GError **error);
 
 struct _TpCMParamSpec {
-    const gchar *name;
+    gchar *name;
     const gchar *dtype;
-    GType gtype;
-    guint flags;
-    gconstpointer def;
-    gsize offset;
-
-    TpCMParamFilter filter;
-    gconstpointer filter_data;
-
-    gconstpointer setter_data;
+    TpConnMgrParamFlags flags;
+    GVariant *def;
 
     /*<private>*/
-    gpointer _future1;
+    gpointer _future[5];
+
+    TpCMParamFilter filter;
+    gpointer user_data;
+    GDestroyNotify destroy;
+
+    guint ref_count;
 };
+
+TpCMParamSpec *tp_cm_param_spec_new (const gchar *name,
+    TpConnMgrParamFlags flags,
+    GVariant *def,
+    TpCMParamFilter filter,
+    gpointer user_data,
+    GDestroyNotify destroy);
+TpCMParamSpec *tp_cm_param_spec_ref (TpCMParamSpec *self);
+void tp_cm_param_spec_unref (TpCMParamSpec *self);
+
+GType tp_cm_param_spec_get_type (void) G_GNUC_CONST;
+#define TP_TYPE_CM_PARAM_SPEC (tp_cm_param_spec_get_type ())
 
 typedef struct _TpBaseProtocol TpBaseProtocol;
 typedef struct _TpBaseProtocolClass TpBaseProtocolClass;
@@ -104,8 +102,7 @@ struct _TpBaseProtocol
   TpBaseProtocolPrivate *priv;
 };
 
-typedef const TpCMParamSpec *(*TpBaseProtocolGetParametersFunc) (
-    TpBaseProtocol *self);
+typedef GPtrArray *(*TpBaseProtocolDupParametersFunc) (TpBaseProtocol *self);
 
 typedef TpBaseConnection *(*TpBaseProtocolNewConnectionFunc) (
     TpBaseProtocol *self,
@@ -142,24 +139,13 @@ struct _TpBaseProtocolClass
   GDBusObjectSkeletonClass parent_class;
 
   gboolean is_stub;
-  const TpCMParamSpec *(*get_parameters) (TpBaseProtocol *self);
-  TpBaseConnection *(*new_connection) (TpBaseProtocol *self,
-      GHashTable *asv,
-      GError **error);
+  TpBaseProtocolDupParametersFunc dup_parameters;
+  TpBaseProtocolNewConnectionFunc new_connection;
 
-  gchar *(*normalize_contact) (TpBaseProtocol *self,
-      const gchar *contact,
-      GError **error);
-  gchar *(*identify_account) (TpBaseProtocol *self,
-      GHashTable *asv,
-      GError **error);
+  TpBaseProtocolNormalizeContactFunc normalize_contact;
+  TpBaseProtocolIdentifyAccountFunc identify_account;
 
-  void (*get_connection_details) (TpBaseProtocol *self,
-      GStrv *connection_interfaces,
-      GType **channel_manager_types,
-      gchar **icon_name,
-      gchar **english_name,
-      gchar **vcard_field);
+  TpBaseProtocolGetConnectionDetailsFunc get_connection_details;
 
   const TpPresenceStatusSpec * (*get_statuses) (TpBaseProtocol *self);
 
@@ -175,7 +161,7 @@ struct _TpBaseProtocolClass
 const gchar *tp_base_protocol_get_name (TpBaseProtocol *self);
 GHashTable *tp_base_protocol_get_immutable_properties (TpBaseProtocol *self);
 
-const TpCMParamSpec *tp_base_protocol_get_parameters (TpBaseProtocol *self);
+GPtrArray *tp_base_protocol_dup_parameters (TpBaseProtocol *self);
 const TpPresenceStatusSpec *tp_base_protocol_get_statuses (TpBaseProtocol *self);
 
 TpBaseConnection *tp_base_protocol_new_connection (TpBaseProtocol *self,
@@ -196,6 +182,7 @@ TpBaseConnection *tp_base_protocol_new_connection (TpBaseProtocol *self,
       TP_TYPE_PROTOCOL_ADDRESSING, TpProtocolAddressingInterface))
 
 typedef struct _TpProtocolAddressingInterface TpProtocolAddressingInterface;
+typedef struct _TpProtocolAddressing TpProtocolAddressing;
 
 typedef GStrv (*TpBaseProtocolDupSupportedVCardFieldsFunc) (TpBaseProtocol *self);
 

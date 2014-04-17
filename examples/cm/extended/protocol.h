@@ -18,13 +18,9 @@ G_BEGIN_DECLS
 typedef struct _ExampleExtendedProtocol ExampleExtendedProtocol;
 typedef struct _ExampleExtendedProtocolPrivate ExampleExtendedProtocolPrivate;
 typedef struct _ExampleExtendedProtocolClass ExampleExtendedProtocolClass;
-typedef struct _ExampleExtendedProtocolClassPrivate
-    ExampleExtendedProtocolClassPrivate;
 
 struct _ExampleExtendedProtocolClass {
     TpBaseProtocolClass parent_class;
-
-    ExampleExtendedProtocolClassPrivate *priv;
 };
 
 struct _ExampleExtendedProtocol {

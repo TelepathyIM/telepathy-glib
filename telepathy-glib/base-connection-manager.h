@@ -35,22 +35,6 @@
 
 G_BEGIN_DECLS
 
-void tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
-    const GValue *value, gpointer params);
-
-typedef struct {
-    const gchar *name;
-    const TpCMParamSpec *parameters;
-    gpointer (*params_new) (void);
-    void (*params_free) (gpointer);
-    TpCMParamSetter set_param;
-
-    /*<private>*/
-    gpointer _future1;
-    gpointer _future2;
-    gpointer _future3;
-} TpCMProtocolSpec;
-
 typedef struct _TpBaseConnectionManager TpBaseConnectionManager;
 typedef struct _TpBaseConnectionManagerPrivate TpBaseConnectionManagerPrivate;
 typedef struct _TpBaseConnectionManagerClass TpBaseConnectionManagerClass;

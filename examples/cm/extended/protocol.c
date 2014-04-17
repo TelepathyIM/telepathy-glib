@@ -17,6 +17,11 @@
 
 #include "conn.h"
 
+struct _ExampleExtendedProtocolPrivate
+{
+  GPtrArray *params;
+};
+
 G_DEFINE_TYPE (ExampleExtendedProtocol,
     example_extended_protocol,
     TP_TYPE_BASE_PROTOCOL)
@@ -25,23 +30,28 @@ static void
 example_extended_protocol_init (
     ExampleExtendedProtocol *self)
 {
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, EXAMPLE_TYPE_EXTENDED_PROTOCOL,
+      ExampleExtendedProtocolPrivate);
 }
 
-static const TpCMParamSpec example_extended_example_params[] = {
-  { "account", "s", G_TYPE_STRING,
-    TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER,
-    NULL, /* no default */
-    0, /* formerly struct offset, now unused */
-    tp_cm_param_filter_string_nonempty, /* filter - empty strings disallowed */
-    NULL, /* filter data, unused for our filter */
-    NULL /* setter data, now unused */ },
-  { NULL }
-};
-
-static const TpCMParamSpec *
-get_parameters (TpBaseProtocol *self)
+static GPtrArray *
+dup_parameters (TpBaseProtocol *base)
 {
-  return example_extended_example_params;
+  ExampleExtendedProtocol *self = (ExampleExtendedProtocol *) base;
+
+  if (self->priv->params == NULL)
+    {
+      self->priv->params = g_ptr_array_new_full (1,
+          (GDestroyNotify) tp_cm_param_spec_unref);
+
+      g_ptr_array_add (self->priv->params,
+          tp_cm_param_spec_new ("account",
+              TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER,
+              g_variant_new_string (""),
+              tp_cm_param_filter_string_nonempty, NULL, NULL));
+    }
+
+  return g_ptr_array_ref (self->priv->params);
 }
 
 static TpBaseConnection *
@@ -151,13 +161,27 @@ get_connection_details (TpBaseProtocol *self G_GNUC_UNUSED,
 }
 
 static void
+finalize (GObject *object)
+{
+  ExampleExtendedProtocol *self = (ExampleExtendedProtocol *) object;
+
+  g_clear_pointer (&self->priv->params, g_ptr_array_unref);
+
+  G_OBJECT_CLASS (example_extended_protocol_parent_class)->finalize (object);
+}
+
+static void
 example_extended_protocol_class_init (
     ExampleExtendedProtocolClass *klass)
 {
-  TpBaseProtocolClass *base_class =
-      (TpBaseProtocolClass *) klass;
+  GObjectClass *oclass = (GObjectClass *) klass;
+  TpBaseProtocolClass *base_class = (TpBaseProtocolClass *) klass;
 
-  base_class->get_parameters = get_parameters;
+  g_type_class_add_private (klass, sizeof (ExampleExtendedProtocolPrivate));
+
+  oclass->finalize = finalize;
+
+  base_class->dup_parameters = dup_parameters;
   base_class->new_connection = new_connection;
 
   base_class->normalize_contact = normalize_contact;

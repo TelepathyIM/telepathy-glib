@@ -21,13 +21,9 @@ typedef struct _ExampleCSHProtocolPrivate
     ExampleCSHProtocolPrivate;
 typedef struct _ExampleCSHProtocolClass
     ExampleCSHProtocolClass;
-typedef struct _ExampleCSHProtocolClassPrivate
-    ExampleCSHProtocolClassPrivate;
 
 struct _ExampleCSHProtocolClass {
     TpBaseProtocolClass parent_class;
-
-    ExampleCSHProtocolClassPrivate *priv;
 };
 
 struct _ExampleCSHProtocol {

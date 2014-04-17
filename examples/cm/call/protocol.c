@@ -18,6 +18,11 @@
 #include "call-manager.h"
 #include "conn.h"
 
+struct _ExampleCallProtocolPrivate
+{
+  GPtrArray *params;
+};
+
 G_DEFINE_TYPE (ExampleCallProtocol,
     example_call_protocol,
     TP_TYPE_BASE_PROTOCOL)
@@ -26,6 +31,8 @@ static void
 example_call_protocol_init (
     ExampleCallProtocol *self)
 {
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, EXAMPLE_TYPE_CALL_PROTOCOL,
+      ExampleCallProtocolPrivate);
 }
 
 gboolean
@@ -48,38 +55,44 @@ example_call_protocol_check_contact_id (const gchar *id,
   return TRUE;
 }
 
-static gboolean
+static GVariant *
 account_param_filter (const TpCMParamSpec *paramspec,
-                      GValue *value,
+                      GVariant *value,
+                      gpointer user_data,
                       GError **error)
 {
-  const gchar *id = g_value_get_string (value);
+  const gchar *id = g_variant_get_string (value, NULL);
 
-  return example_call_protocol_check_contact_id (id, NULL, error);
+  if (example_call_protocol_check_contact_id (id, NULL, error))
+    return value;
+
+  return NULL;
 }
 
-static const TpCMParamSpec example_call_example_params[] = {
-  { "account", "s", G_TYPE_STRING,
-    TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER,
-    NULL,                               /* no default */
-    0,                                  /* unused, formerly struct offset */
-    account_param_filter,
-    NULL,                               /* filter data, unused here */
-    NULL },                             /* setter data, now unused */
-  { "simulation-delay", "u", G_TYPE_UINT,
-    TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT,
-    GUINT_TO_POINTER (1000),            /* default */
-    0,                                  /* unused, formerly struct offset */
-    NULL,                               /* no filter */
-    NULL,                               /* filter data, unused here */
-    NULL },                             /* setter data, now unused */
-  { NULL }
-};
-
-static const TpCMParamSpec *
-get_parameters (TpBaseProtocol *self)
+static GPtrArray *
+dup_parameters (TpBaseProtocol *base)
 {
-  return example_call_example_params;
+  ExampleCallProtocol *self = (ExampleCallProtocol *) base;
+
+  if (self->priv->params == NULL)
+    {
+      self->priv->params = g_ptr_array_new_full (2,
+          (GDestroyNotify) tp_cm_param_spec_unref);
+
+      g_ptr_array_add (self->priv->params,
+          tp_cm_param_spec_new ("account",
+              TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER,
+              g_variant_new_string (""),
+              account_param_filter, NULL, NULL));
+
+      g_ptr_array_add (self->priv->params,
+          tp_cm_param_spec_new ("simulation-delay",
+              TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT,
+              g_variant_new_uint32 (1000),
+              NULL, NULL, NULL));
+    }
+
+  return g_ptr_array_ref (self->priv->params);
 }
 
 static TpBaseConnection *
@@ -167,15 +180,28 @@ get_connection_details (TpBaseProtocol *self G_GNUC_UNUSED,
 }
 
 static void
+finalize (GObject *object)
+{
+  ExampleCallProtocol *self = (ExampleCallProtocol *) object;
+
+  g_clear_pointer (&self->priv->params, g_ptr_array_unref);
+
+  G_OBJECT_CLASS (example_call_protocol_parent_class)->finalize (object);
+}
+
+static void
 example_call_protocol_class_init (
     ExampleCallProtocolClass *klass)
 {
-  TpBaseProtocolClass *base_class =
-      (TpBaseProtocolClass *) klass;
+  GObjectClass *oclass = (GObjectClass *) klass;
+  TpBaseProtocolClass *base_class = (TpBaseProtocolClass *) klass;
 
-  base_class->get_parameters = get_parameters;
+  g_type_class_add_private (klass, sizeof (ExampleCallProtocolPrivate));
+
+  oclass->finalize = finalize;
+
+  base_class->dup_parameters = dup_parameters;
   base_class->new_connection = new_connection;
-
   base_class->normalize_contact = normalize_contact;
   base_class->identify_account = identify_account;
   base_class->get_connection_details = get_connection_details;

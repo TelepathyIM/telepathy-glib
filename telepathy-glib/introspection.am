@@ -59,6 +59,7 @@ TelepathyGLib_1_gir_FILES = \
 	$(srcdir)/observe-channel-context.c $(srcdir)/observe-channel-context.h \
 	$(srcdir)/add-dispatch-operation-context.c $(srcdir)/add-dispatch-operation-context.h \
 	$(srcdir)/protocol.c $(srcdir)/protocol.h \
+	$(srcdir)/base-protocol.c $(srcdir)/base-protocol.h \
 	$(srcdir)/base-connection.c $(srcdir)/base-connection.h \
 	$(srcdir)/handle-repo.c $(srcdir)/handle-repo.h $(srcdir)/handle-set.c \
 	$(srcdir)/stream-tube-channel.c $(srcdir)/stream-tube-channel.h \

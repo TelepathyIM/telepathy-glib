@@ -19,12 +19,9 @@ G_BEGIN_DECLS
 typedef struct _ExampleCallProtocol ExampleCallProtocol;
 typedef struct _ExampleCallProtocolPrivate ExampleCallProtocolPrivate;
 typedef struct _ExampleCallProtocolClass ExampleCallProtocolClass;
-typedef struct _ExampleCallProtocolClassPrivate ExampleCallProtocolClassPrivate;
 
 struct _ExampleCallProtocolClass {
     TpBaseProtocolClass parent_class;
-
-    ExampleCallProtocolClassPrivate *priv;
 };
 
 struct _ExampleCallProtocol {

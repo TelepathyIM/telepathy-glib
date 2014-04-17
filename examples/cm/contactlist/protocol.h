@@ -21,13 +21,9 @@ typedef struct _ExampleContactListProtocolPrivate
     ExampleContactListProtocolPrivate;
 typedef struct _ExampleContactListProtocolClass
     ExampleContactListProtocolClass;
-typedef struct _ExampleContactListProtocolClassPrivate
-    ExampleContactListProtocolClassPrivate;
 
 struct _ExampleContactListProtocolClass {
     TpBaseProtocolClass parent_class;
-
-    ExampleContactListProtocolClassPrivate *priv;
 };
 
 struct _ExampleContactListProtocol {

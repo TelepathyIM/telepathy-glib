@@ -16,6 +16,11 @@
 #include "conn.h"
 #include "im-manager.h"
 
+struct _ExampleEcho2ProtocolPrivate
+{
+  GPtrArray *params;
+};
+
 static void addressing_iface_init (TpProtocolAddressingInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (ExampleEcho2Protocol, example_echo_2_protocol,
@@ -42,23 +47,28 @@ static void
 example_echo_2_protocol_init (
     ExampleEcho2Protocol *self)
 {
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, EXAMPLE_TYPE_ECHO_2_PROTOCOL,
+      ExampleEcho2ProtocolPrivate);
 }
 
-static const TpCMParamSpec example_echo_2_example_params[] = {
-  { "account", "s", G_TYPE_STRING,
-    TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER,
-    NULL, /* no default */
-    0, /* formerly struct offset, now unused */
-    tp_cm_param_filter_string_nonempty, /* filter - empty strings disallowed */
-    NULL, /* filter data, unused for our filter */
-    NULL /* setter data, now unused */ },
-  { NULL }
-};
-
-static const TpCMParamSpec *
-get_parameters (TpBaseProtocol *self)
+static GPtrArray *
+dup_parameters (TpBaseProtocol *base)
 {
-  return example_echo_2_example_params;
+  ExampleEcho2Protocol *self = (ExampleEcho2Protocol *) base;
+
+  if (self->priv->params == NULL)
+    {
+      self->priv->params = g_ptr_array_new_full (1,
+          (GDestroyNotify) tp_cm_param_spec_unref);
+
+      g_ptr_array_add (self->priv->params,
+          tp_cm_param_spec_new ("account",
+              TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER,
+              g_variant_new_string (""),
+              tp_cm_param_filter_string_nonempty, NULL, NULL));
+    }
+
+  return g_ptr_array_ref (self->priv->params);
 }
 
 static TpBaseConnection *
@@ -282,13 +292,27 @@ normalize_contact_uri (TpBaseProtocol *self,
 }
 
 static void
+finalize (GObject *object)
+{
+  ExampleEcho2Protocol *self = (ExampleEcho2Protocol *) object;
+
+  g_clear_pointer (&self->priv->params, g_ptr_array_unref);
+
+  G_OBJECT_CLASS (example_echo_2_protocol_parent_class)->finalize (object);
+}
+
+static void
 example_echo_2_protocol_class_init (
     ExampleEcho2ProtocolClass *klass)
 {
-  TpBaseProtocolClass *base_class =
-      (TpBaseProtocolClass *) klass;
+  GObjectClass *oclass = (GObjectClass *) klass;
+  TpBaseProtocolClass *base_class = (TpBaseProtocolClass *) klass;
 
-  base_class->get_parameters = get_parameters;
+  g_type_class_add_private (klass, sizeof (ExampleEcho2ProtocolPrivate));
+
+  oclass->finalize = finalize;
+
+  base_class->dup_parameters = dup_parameters;
   base_class->new_connection = new_connection;
 
   base_class->normalize_contact = normalize_contact;

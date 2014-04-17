@@ -21,13 +21,9 @@ typedef struct _ExampleEcho2ProtocolPrivate
     ExampleEcho2ProtocolPrivate;
 typedef struct _ExampleEcho2ProtocolClass
     ExampleEcho2ProtocolClass;
-typedef struct _ExampleEcho2ProtocolClassPrivate
-    ExampleEcho2ProtocolClassPrivate;
 
 struct _ExampleEcho2ProtocolClass {
     TpBaseProtocolClass parent_class;
-
-    ExampleEcho2ProtocolClassPrivate *priv;
 };
 
 struct _ExampleEcho2Protocol {

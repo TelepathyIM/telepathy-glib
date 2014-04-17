@@ -65,13 +65,15 @@ TpBaseConnectionPrivate
 <TITLE>TpBaseConnectionManager</TITLE>
 <INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>base-connection-manager</FILE>
+<SUBSECTION>
 TpCMParamFilter
 tp_cm_param_filter_string_nonempty
 tp_cm_param_filter_uint_nonzero
-TpCMParamSetter
-tp_cm_param_setter_offset
 TpCMParamSpec
-TpCMProtocolSpec
+tp_cm_param_spec_new
+tp_cm_param_spec_ref
+tp_cm_param_spec_unref
+<SUBSECTION>
 TpBaseConnectionManager
 TpBaseConnectionManagerClass
 TpBaseConnectionManagerNewConnFunc
@@ -88,6 +90,8 @@ TP_BASE_CONNECTION_MANAGER_CLASS
 TP_IS_BASE_CONNECTION_MANAGER_CLASS
 TP_BASE_CONNECTION_MANAGER_GET_CLASS
 TpBaseConnectionManagerPrivate
+TP_TYPE_CM_PARAM_SPEC
+tp_cm_param_spec_get_type
 </SECTION>
 
 <SECTION>
@@ -4610,12 +4614,12 @@ TpBasePasswordChannelPrivate
 TpBaseProtocol
 tp_base_protocol_get_name
 tp_base_protocol_get_immutable_properties
-tp_base_protocol_get_parameters
+tp_base_protocol_dup_parameters
 tp_base_protocol_get_statuses
 tp_base_protocol_new_connection
 <SUBSECTION>
 TpBaseProtocolClass
-TpBaseProtocolGetParametersFunc
+TpBaseProtocolDupParametersFunc
 TpBaseProtocolNewConnectionFunc
 TpBaseProtocolNormalizeContactFunc
 TpBaseProtocolIdentifyAccountFunc
@@ -4642,6 +4646,8 @@ TpBaseProtocolNormalizeURIFunc
 <SUBSECTION Private>
 TpBaseProtocolPrivate
 TpBaseProtocolClassPrivate
+<SUBSECTION Standard>
+TpProtocolAddressing
 </SECTION>
 
 <SECTION>

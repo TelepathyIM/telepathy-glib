@@ -43,227 +43,183 @@
 /**
  * TpCMParamSpec:
  * @name: Name as passed over D-Bus
- * @dtype: D-Bus type signature. We currently support 16- and 32-bit integers
- *         (@gtype is INT), 16- and 32-bit unsigned integers (gtype is UINT),
- *         strings (gtype is STRING) and booleans (gtype is BOOLEAN).
- * @gtype: GLib type, derived from @dtype as above
+ * @dtype: D-Bus type signature.
  * @flags: Some combination of #TpConnMgrParamFlags
- * @def: Default value, as a (const gchar *) for string parameters, or
-         using #GINT_TO_POINTER or #GUINT_TO_POINTER for integer parameters
- * @offset: Offset of the parameter in the opaque data structure, if
- *          appropriate. The member at that offset is expected to be a gint,
- *          guint, (gchar *) or gboolean, depending on @gtype. The default
- *          parameter setter, #tp_cm_param_setter_offset, uses this field.
- * @filter: A callback which is used to validate or normalize the user-provided
- *          value before it is written into the opaque data structure
- * @filter_data: Arbitrary opaque data intended for use by the filter function
- * @setter_data: Arbitrary opaque data intended for use by the setter function
- *               instead of or in addition to @offset.
+ * @def: Default value, as a #GVariant
  *
  * Structure representing a connection manager parameter, as accepted by
  * RequestConnection.
- *
- * In addition to the fields documented here, there is one gpointer field
- * which must currently be %NULL. A meaning may be defined for it in a
- * future version of telepathy-glib.
  */
 
 /**
  * TpCMParamFilter:
- * @paramspec: The parameter specification. The filter is likely to use
- *  name (for the error message if the value is invalid) and filter_data.
- * @value: The value for that parameter provided by the user.
- *  May be changed to contain a different value of the same type, if
- *  some sort of normalization is required
+ * @paramspec: The parameter specification.
+ * @value: (transfer full): A #GVariant containing the value for that parameter
+ *  provided by the user.
+ * @user_data: data passed to tp_cm_param_spec_new()
  * @error: Used to raise %TP_ERROR_INVALID_ARGUMENT if the given value is
  *  rejected
  *
  * Signature of a callback used to validate and/or normalize user-provided
  * CM parameter values.
  *
- * Returns: %TRUE to accept, %FALSE (with @error set) to reject
- */
-
-/**
- * TpCMParamSetter:
- * @paramspec: The parameter specification.  The setter is likely to use
- *  some combination of the name, offset and setter_data fields.
- * @value: The value for that parameter provided by the user.
- * @params: An opaque data structure, created by
- *  #TpCMProtocolSpec.params_new.
+ * The callback is responsible of unreffing @value if it returns %NULL or
+ * another #GVariant.
  *
- * The signature of a callback used to set a parameter within the opaque
- * data structure used for a protocol.
- *
- * Since: 0.7.0
+ * Returns: (transfer full): @value or another floating #GVariant of the same
+ *  type to accept, %NULL (with @error set) to reject
  */
-
-static GValue *
-param_default_value (const TpCMParamSpec *param)
-{
-  GValue *value;
-
-  value = tp_g_value_slice_new (param->gtype);
-
-  /* If HAS_DEFAULT is false, we don't really care what the value is, so we'll
-   * just use whatever's in the user-supplied param spec. As long as we're
-   * careful to accept NULL, that should be fine. */
-
-  switch (param->dtype[0])
-    {
-      case DBUS_TYPE_STRING:
-        g_assert (param->gtype == G_TYPE_STRING);
-        if (param->def == NULL)
-          g_value_set_static_string (value, "");
-        else
-          g_value_set_static_string (value, param->def);
-        break;
-
-      case DBUS_TYPE_INT16:
-      case DBUS_TYPE_INT32:
-        g_assert (param->gtype == G_TYPE_INT);
-        g_value_set_int (value, GPOINTER_TO_INT (param->def));
-        break;
-
-      case DBUS_TYPE_UINT16:
-      case DBUS_TYPE_UINT32:
-        g_assert (param->gtype == G_TYPE_UINT);
-        g_value_set_uint (value, GPOINTER_TO_UINT (param->def));
-        break;
-
-      case DBUS_TYPE_UINT64:
-        g_assert (param->gtype == G_TYPE_UINT64);
-        g_value_set_uint64 (value, param->def == NULL ? 0
-            : *(const guint64 *) param->def);
-        break;
-
-      case DBUS_TYPE_INT64:
-        g_assert (param->gtype == G_TYPE_INT64);
-        g_value_set_int64 (value, param->def == NULL ? 0
-            : *(const gint64 *) param->def);
-        break;
-
-      case DBUS_TYPE_DOUBLE:
-        g_assert (param->gtype == G_TYPE_DOUBLE);
-        g_value_set_double (value, param->def == NULL ? 0.0
-            : *(const double *) param->def);
-        break;
-
-      case DBUS_TYPE_OBJECT_PATH:
-        g_assert (param->gtype == DBUS_TYPE_G_OBJECT_PATH);
-        g_value_set_static_boxed (value, param->def == NULL ? "/"
-            : param->def);
-        break;
-
-      case DBUS_TYPE_ARRAY:
-        switch (param->dtype[1])
-          {
-          case DBUS_TYPE_STRING:
-            g_assert (param->gtype == G_TYPE_STRV);
-            g_value_set_static_boxed (value, param->def);
-            break;
-
-          case DBUS_TYPE_BYTE:
-            g_assert (param->gtype == DBUS_TYPE_G_UCHAR_ARRAY);
-            if (param->def == NULL)
-              {
-                GArray *array = g_array_new (FALSE, FALSE, sizeof (guint8));
-                g_value_take_boxed (value, array);
-              }
-            else
-              {
-                g_value_set_static_boxed (value, param->def);
-              }
-            break;
-
-          default:
-            ERROR ("encountered unknown type %s on argument %s",
-                param->dtype, param->name);
-          }
-        break;
-
-      case DBUS_TYPE_BOOLEAN:
-        g_assert (param->gtype == G_TYPE_BOOLEAN);
-        g_value_set_boolean (value, GPOINTER_TO_INT (param->def));
-        break;
-
-      default:
-        ERROR ("encountered unknown type %s on argument %s",
-            param->dtype, param->name);
-    }
-
-  return value;
-}
-
-GValueArray *
-_tp_cm_param_spec_to_dbus (const TpCMParamSpec *paramspec)
-{
-  GValueArray *susv;
-  GValue *value = param_default_value (paramspec);
-
-  susv = tp_value_array_build (4,
-      G_TYPE_STRING, paramspec->name,
-      G_TYPE_UINT, paramspec->flags,
-      G_TYPE_STRING, paramspec->dtype,
-      G_TYPE_VALUE, value,
-      G_TYPE_INVALID);
-
-  tp_g_value_slice_free (value);
-
-  return susv;
-}
 
 /**
  * tp_cm_param_filter_uint_nonzero:
  * @paramspec: The parameter specification for a guint parameter
- * @value: A GValue containing a guint, which will not be altered
+ * @value: (transfer full): A #GVariant containing a guint32
+ * @user_data: unused
  * @error: Used to return an error if the guint is 0
  *
  * A #TpCMParamFilter which rejects zero, useful for server port numbers.
  *
- * Returns: %TRUE to accept, %FALSE (with @error set) to reject
+ * Returns: (transfer full): @value to accept, %NULL (with @error set) to reject
  */
-gboolean
+GVariant *
 tp_cm_param_filter_uint_nonzero (const TpCMParamSpec *paramspec,
-                                 GValue *value,
+                                 GVariant *value,
+                                 gpointer user_data,
                                  GError **error)
 {
-  if (g_value_get_uint (value) == 0)
+  if (g_variant_get_uint32 (value) == 0)
     {
       g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Account parameter '%s' may not be set to zero",
           paramspec->name);
-      return FALSE;
+      g_variant_unref (value);
+      return NULL;
     }
-  return TRUE;
+  return value;
 }
 
 /**
  * tp_cm_param_filter_string_nonempty:
  * @paramspec: The parameter specification for a string parameter
- * @value: A GValue containing a string, which will not be altered
+ * @value: (transfer full): A GVariant containing a string
+ * @user_data: unused
  * @error: Used to return an error if the string is empty
  *
  * A #TpCMParamFilter which rejects empty strings.
  *
- * Returns: %TRUE to accept, %FALSE (with @error set) to reject
+ * Returns: (transfer full): @value to accept, %NULL (with @error set) to reject
  */
-gboolean
+GVariant *
 tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
-                                    GValue *value,
+                                    GVariant *value,
+                                    gpointer user_data,
                                     GError **error)
 {
-  const gchar *str = g_value_get_string (value);
+  const gchar *str = g_variant_get_string (value, NULL);
 
-  if (str == NULL || str[0] == '\0')
+  if (tp_str_empty (str))
     {
       g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Account parameter '%s' may not be set to an empty string",
           paramspec->name);
-      return FALSE;
+      g_variant_unref (value);
+      return NULL;
     }
-  return TRUE;
+  return value;
 }
+
+
+/**
+ * tp_cm_param_spec_new:
+ * @name: The parameter's name
+ * @flags: #TpConnMgrParamFlags
+ * @def: A #GVariant for the default value
+ * @filter: (allow-none) (scope notified): A filter function to validate
+ *  parameter's value
+ * @user_data: (allow-none): data to pass to @filter
+ * @destroy: (allow-none): called with @user_data as its argument when the
+ *  #TpCMParamSpec is freed.
+ *
+ * Create a new #TpCMParamSpec. @def must not be %NULL even if
+ * %TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT is not set, in which case any dummy value
+ * of the desired type is fine. If @def is floating, it is consumed.
+ *
+ * Returns: (transfer full): a new #TpCMParamSpec
+ * Since: 0.UNRELEASED
+ */
+TpCMParamSpec *
+tp_cm_param_spec_new (const gchar *name,
+    TpConnMgrParamFlags flags,
+    GVariant *def,
+    TpCMParamFilter filter,
+    gpointer user_data,
+    GDestroyNotify destroy)
+{
+  TpCMParamSpec *self;
+
+  g_return_val_if_fail (!tp_str_empty (name), NULL);
+  g_return_val_if_fail (def != NULL, NULL);
+
+  self = g_slice_new0 (TpCMParamSpec);
+  self->name = g_strdup (name);
+  self->dtype = g_variant_get_type_string (def);
+  self->flags = flags;
+  self->def = g_variant_ref_sink (def);
+
+  self->filter = filter;
+  self->user_data = user_data;
+  self->destroy = destroy;
+
+  self->ref_count = 1;
+
+  return self;
+}
+
+/**
+ * tp_cm_param_spec_ref:
+ * @self: a #TpCMParamSpec
+ *
+ * Increment @self's ref count.
+ *
+ * Returns: (transfer full): @self
+ * Since: 0.UNRELEASED
+ */
+TpCMParamSpec *
+tp_cm_param_spec_ref (TpCMParamSpec *self)
+{
+  g_return_val_if_fail (self != NULL, NULL);
+
+  g_atomic_int_inc (&self->ref_count);
+
+  return self;
+}
+
+/**
+ * tp_cm_param_spec_unref:
+ * @self: a #TpCMParamSpec
+ *
+ * Unref @self and free it if ref count reach 0.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_cm_param_spec_unref (TpCMParamSpec *self)
+{
+  g_return_if_fail (self != NULL);
+
+  if (g_atomic_int_dec_and_test (&self->ref_count))
+    {
+      if (self->destroy != NULL)
+        self->destroy (self->user_data);
+      g_free (self->name);
+      g_variant_unref (self->def);
+      g_slice_free (TpCMParamSpec, self);
+    }
+}
+
+G_DEFINE_BOXED_TYPE (TpCMParamSpec, tp_cm_param_spec,
+    tp_cm_param_spec_ref,
+    tp_cm_param_spec_unref)
 
 /**
  * SECTION:base-protocol
@@ -286,18 +242,17 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  */
 
 /**
- * TpBaseProtocolGetParametersFunc:
+ * TpBaseProtocolDupParametersFunc:
  * @self: a protocol
  *
  * Signature of a virtual method to get the allowed parameters for connections
  * to a protocol.
  *
- * Returns the parameters supported by this protocol, as an array of structs
- * which must remain valid at least as long as @self exists (it will typically
- * be a global static array).
+ * Returns the parameters supported by this protocol, as an array of
+ * #TpCMParamSpec* which must remain valid at least as long as @self exists.
  *
- * Returns: (transfer none) (array zero-terminated=1): a description of the
- *  parameters supported by this protocol
+ * Returns: (transfer container) (element-type TelepathyGLib.CMParamSpec): a
+ *  description of the parameters supported by this protocol
  *
  * Since: 0.11.11
  */
@@ -314,7 +269,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  *
  * Implementations of #TpBaseProtocolClass.new_connection may assume that
  * the parameters in @asv conform to the specifications given by
- * #TpBaseProtocolClass.get_parameters.
+ * #TpBaseProtocolClass.dup_parameters.
  *
  * Returns: (transfer full): a new connection, or %NULL on error
  *
@@ -349,7 +304,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  *
  * Implementations of #TpBaseProtocolClass.identify_account may assume that
  * the parameters in @asv conform to the specifications given by
- * #TpBaseProtocolClass.get_parameters.
+ * #TpBaseProtocolClass.dup_parameters.
  *
  * Returns: (transfer full): a unique name for the account, or %NULL on error
  *
@@ -441,7 +396,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * Signature of a virtual method to get the supported vCard fields supported by
  * #self.
  *
- * Returns: (allow-none) (out) (transfer full): a list of vCard fields in lower
+ * Returns: (allow-none) (transfer full): a list of vCard fields in lower
  * case, e.g. [x-sip, tel]
  *
  * Since: 0.17.2
@@ -454,7 +409,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * Signature of a virtual method to get the supported URI schemes supported by
  * #self.
  *
- * Returns: (allow-none) (out) (transfer full): a list of uri schemes, e.g. [sip, sips, tel]
+ * Returns: (allow-none) (transfer full): a list of uri schemes, e.g. [sip, sips, tel]
  *
  * Since: 0.17.2
  */
@@ -496,9 +451,9 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * @parent_class: the parent class
  * @is_stub: if %TRUE, this protocol will not be advertised on D-Bus (for
  *  internal use by #TpBaseConnection)
- * @get_parameters: a callback used to implement
- *  tp_base_protocol_get_parameters(), which all subclasses must provide;
- *  see the documentation of that method for details
+ * @dup_parameters: a callback used to implement
+ *  tp_base_protocol_dup_parameters(), which all subclasses must provide; see
+ *  the documentation of that method for details
  * @new_connection: a callback used to implement
  *  tp_base_protocol_new_connection(), which all subclasses must provide;
  *  see the documentation of that method for details
@@ -759,9 +714,9 @@ tp_base_protocol_get_name (TpBaseProtocol *self)
  * Note that in particular, tp_asv_set_string() and similar functions should
  * not be used with this hash table.
  *
- * Returns: a hash table mapping (gchar *) fully-qualified property names to
- *          GValues, which must be freed by the caller (at which point its
- *          contents will also be freed).
+ * Returns: (transfer container): a hash table mapping (gchar *) fully-qualified
+ *  property names to GValues, which must be freed by the caller (at which point
+ *  its contents will also be freed).
  *
  * Since: 0.11.11
  */
@@ -1068,17 +1023,26 @@ protocol_properties_getter (GObject *object,
     {
     case PP_PARAMETERS:
         {
-          GPtrArray *ret = g_ptr_array_new ();
-          const TpCMParamSpec *parameter;
+          GVariantBuilder builder;
+          GVariant *variant;
+          GPtrArray *parameters;
+          guint i;
 
-          for (parameter = tp_base_protocol_get_parameters (self);
-                parameter->name != NULL;
-                parameter++)
+          g_variant_builder_init (&builder, G_VARIANT_TYPE ("a(susv)"));
+          parameters = tp_base_protocol_dup_parameters (self);
+          for (i = 0; i < parameters->len; i++)
             {
-              g_ptr_array_add (ret, _tp_cm_param_spec_to_dbus (parameter));
-            }
+              TpCMParamSpec *param = g_ptr_array_index (parameters, i);
 
-          g_value_take_boxed (value, ret);
+              g_variant_builder_add (&builder, "(susv)", param->name,
+                  param->flags, param->dtype, param->def);
+            }
+          g_ptr_array_unref (parameters);
+
+          variant = g_variant_ref_sink (g_variant_builder_end (&builder));
+          g_value_unset (value);
+          dbus_g_value_parse_g_variant (variant, value);
+          g_variant_unref (variant);
         }
       break;
 
@@ -1260,43 +1224,45 @@ tp_base_protocol_get_statuses (TpBaseProtocol *self)
 }
 
 /**
- * tp_base_protocol_get_parameters:
+ * tp_base_protocol_dup_parameters:
  * @self: a Protocol object
  *
  * Returns the parameters supported by this protocol, as an array of structs
  * which must remain valid at least as long as @self exists (it will typically
  * be a global static array).
  *
- * Returns: (transfer none) (array zero-terminated=1): a description of the
- *  parameters supported by this protocol
+ * Returns: (transfer container) (element-type TelepathyGLib.CMParamSpec): a
+ *  description of the parameters supported by this protocol
  *
  * Since: 0.11.11
  */
-const TpCMParamSpec *
-tp_base_protocol_get_parameters (TpBaseProtocol *self)
+GPtrArray *
+tp_base_protocol_dup_parameters (TpBaseProtocol *self)
 {
   TpBaseProtocolClass *cls = TP_BASE_PROTOCOL_GET_CLASS (self);
 
   g_return_val_if_fail (cls != NULL, NULL);
-  g_return_val_if_fail (cls->get_parameters != NULL, NULL);
+  g_return_val_if_fail (cls->dup_parameters != NULL, NULL);
 
-  return cls->get_parameters (self);
+  return cls->dup_parameters (self);
 }
 
 static gboolean
-_tp_cm_param_spec_check_all_allowed (const TpCMParamSpec *parameters,
+_tp_cm_param_spec_check_all_allowed (GPtrArray *parameters,
     GHashTable *asv,
     GError **error)
 {
   GHashTable *tmp = g_hash_table_new (g_str_hash, g_str_equal);
-  const TpCMParamSpec *iter;
+  guint i;
   gboolean ret = TRUE;
 
   tp_g_hash_table_update (tmp, asv, NULL, NULL);
 
-  for (iter = parameters; iter->name != NULL; iter++)
+  for (i = 0; i < parameters->len; i++)
     {
-      g_hash_table_remove (tmp, iter->name);
+      TpCMParamSpec *param = g_ptr_array_index (parameters, i);
+
+      g_hash_table_remove (tmp, param->name);
     }
 
   if (g_hash_table_size (tmp) != 0)
@@ -1328,189 +1294,20 @@ _tp_cm_param_spec_check_all_allowed (const TpCMParamSpec *parameters,
   return ret;
 }
 
-static GValue *
-_tp_cm_param_spec_coerce (const TpCMParamSpec *param_spec,
-    GHashTable *asv,
-    GError **error)
-{
-  const gchar *name = param_spec->name;
-  const GValue *value = tp_asv_lookup (asv, name);
-
-  if (tp_asv_lookup (asv, name) == NULL)
-    {
-      g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-          "%s not found in parameters", name);
-      return NULL;
-    }
-
-  switch (param_spec->dtype[0])
-    {
-    case DBUS_TYPE_BOOLEAN:
-    case DBUS_TYPE_OBJECT_PATH:
-    case DBUS_TYPE_STRING:
-    case DBUS_TYPE_ARRAY:
-        {
-          /* These types only accept an exactly-matching GType. */
-
-          if (G_VALUE_TYPE (value) != param_spec->gtype)
-            {
-              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-                  "%s has type %s, but %s was expected",
-                  name, G_VALUE_TYPE_NAME (value),
-                  g_type_name (param_spec->gtype));
-              return NULL;
-            }
-
-          return tp_g_value_slice_dup (value);
-        }
-
-    case DBUS_TYPE_INT16:
-    case DBUS_TYPE_INT32:
-        {
-          /* Coerce any sensible integer to G_TYPE_INT */
-          gboolean valid;
-          gint i;
-
-          i = tp_asv_get_int32 (asv, name, &valid);
-
-          if (!valid)
-            {
-              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-                  "%s has a non-integer type or is out of range (type=%s)",
-                  name, G_VALUE_TYPE_NAME (value));
-              return NULL;
-            }
-
-          if (param_spec->dtype[0] == DBUS_TYPE_INT16 &&
-              (i < -0x8000 || i > 0x7fff))
-            {
-              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-                  "%s is out of range for a 16-bit signed integer", name);
-              return NULL;
-            }
-
-          return tp_g_value_slice_new_int (i);
-        }
-
-    case DBUS_TYPE_BYTE:
-    case DBUS_TYPE_UINT16:
-    case DBUS_TYPE_UINT32:
-        {
-          /* Coerce any sensible integer to G_TYPE_UINT */
-          gboolean valid;
-          guint i;
-
-          i = tp_asv_get_uint32 (asv, name, &valid);
-
-          if (!valid)
-            {
-              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-                  "%s has a non-integer type or is out of range (type=%s)",
-                  name, G_VALUE_TYPE_NAME (value));
-              return NULL;
-            }
-
-          if (param_spec->dtype[0] == DBUS_TYPE_BYTE && i > 0xff)
-            {
-              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-                  "%s is out of range for a byte", name);
-              return NULL;
-            }
-
-          if (param_spec->dtype[0] == DBUS_TYPE_UINT16 && i > 0xffff)
-            {
-              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-                  "%s is out of range for a 16-bit unsigned integer", name);
-              return NULL;
-            }
-
-          if (param_spec->dtype[0] == DBUS_TYPE_BYTE)
-            return tp_g_value_slice_new_byte (i);
-          else
-            return tp_g_value_slice_new_uint (i);
-        }
-
-    case DBUS_TYPE_INT64:
-        {
-          /* Coerce any sensible integer to G_TYPE_INT64 */
-          gboolean valid;
-          gint64 i;
-
-          i = tp_asv_get_int64 (asv, name, &valid);
-
-          if (!valid)
-            {
-              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-                  "%s is not a valid 64-bit signed integer (type=%s)", name,
-                  G_VALUE_TYPE_NAME (value));
-              return NULL;
-            }
-
-          return tp_g_value_slice_new_int64 (i);
-        }
-
-    case DBUS_TYPE_UINT64:
-        {
-          /* Coerce any sensible integer to G_TYPE_UINT64 */
-          gboolean valid;
-          guint64 i;
-
-          i = tp_asv_get_uint64 (asv, name, &valid);
-
-          if (!valid)
-            {
-              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-                  "%s is not a valid 64-bit unsigned integer (type=%s)", name,
-                  G_VALUE_TYPE_NAME (value));
-              return NULL;
-            }
-
-          return tp_g_value_slice_new_uint64 (i);
-        }
-
-    case DBUS_TYPE_DOUBLE:
-        {
-          /* Coerce any sensible number to G_TYPE_DOUBLE */
-          gboolean valid;
-          gdouble d;
-
-          d = tp_asv_get_double (asv, name, &valid);
-
-          if (!valid)
-            {
-              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-                  "%s is not a valid double (type=%s)", name,
-                  G_VALUE_TYPE_NAME (value));
-              return NULL;
-            }
-
-          return tp_g_value_slice_new_double (d);
-        }
-
-    default:
-        {
-          g_error ("%s: encountered unhandled D-Bus type %s on argument %s",
-              G_STRFUNC, param_spec->dtype, param_spec->name);
-        }
-    }
-
-  g_assert_not_reached ();
-}
-
 static GHashTable *
 tp_base_protocol_sanitize_parameters (TpBaseProtocol *self,
     GHashTable *asv,
     GError **error)
 {
+  GVariantBuilder builder;
+  GVariant *combined_variant;
   GHashTable *combined;
-  const TpCMParamSpec *parameters;
+  GPtrArray *parameters;
   guint i;
   guint mandatory_flag;
 
-  parameters = tp_base_protocol_get_parameters (self);
-
-  combined = g_hash_table_new_full (g_str_hash, g_str_equal,
-      g_free, (GDestroyNotify) tp_g_value_slice_free);
+  g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+  parameters = tp_base_protocol_dup_parameters (self);
 
   if (!_tp_cm_param_spec_check_all_allowed (parameters, asv, error))
     goto except;
@@ -1524,45 +1321,49 @@ tp_base_protocol_sanitize_parameters (TpBaseProtocol *self,
       mandatory_flag = TP_CONN_MGR_PARAM_FLAG_REQUIRED;
     }
 
-  for (i = 0; parameters[i].name != NULL; i++)
+  for (i = 0; i < parameters->len; i++)
     {
-      const gchar *name = parameters[i].name;
+      TpCMParamSpec *param = g_ptr_array_index (parameters, i);
+      const gchar *name = param->name;
+      const GValue *value = tp_asv_lookup (asv, name);
 
-      if (tp_asv_lookup (asv, name) != NULL)
+      if (value != NULL)
         {
+          GVariant *coerced;
+
           /* coerce to the expected type */
-          GValue *coerced = _tp_cm_param_spec_coerce (parameters + i, asv,
-              error);
+          coerced = tp_variant_convert (dbus_g_value_build_g_variant (value),
+              G_VARIANT_TYPE (param->dtype));
 
           if (coerced == NULL)
-            goto except;
-
-          if (G_UNLIKELY (G_VALUE_TYPE (coerced) != parameters[i].gtype))
             {
-              g_error ("parameter %s should have been coerced to %s, got %s",
-                  name, g_type_name (parameters[i].gtype),
-                    G_VALUE_TYPE_NAME (coerced));
+              g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+                  "failed to convert value of parameter '%s' to the expected type '%s'",
+                  name, param->dtype);
+              goto except;
             }
 
-          if (parameters[i].filter != NULL)
+          if (param->filter != NULL)
             {
               GError *error2 = NULL;
 
-              if (!(parameters[i].filter (parameters + i, coerced, &error2)))
+              coerced = param->filter (param, coerced, param->user_data,
+                  &error2);
+
+              if (coerced == NULL)
                 {
                   DEBUG ("parameter %s rejected by filter: %s", name,
                       error2->message);
-                  tp_g_value_slice_free (coerced);
                   g_propagate_error (error, error2);
                   goto except;
                 }
-            }
 
-          if (G_UNLIKELY (G_VALUE_TYPE (coerced) != parameters[i].gtype))
-            {
-              g_error ("parameter %s filter changed its type from %s to %s",
-                  name, g_type_name (parameters[i].gtype),
-                    G_VALUE_TYPE_NAME (coerced));
+              if (!g_variant_is_of_type (coerced,
+                      G_VARIANT_TYPE (param->dtype)))
+                {
+                  g_error ("parameter %s filter changed its type from %s to %s",
+                      name, param->dtype, g_variant_get_type_string (coerced));
+                }
             }
 
           if (DEBUGGING)
@@ -1570,16 +1371,17 @@ tp_base_protocol_sanitize_parameters (TpBaseProtocol *self,
               gchar *to_free = NULL;
               const gchar *contents = "<secret>";
 
-              if (!(parameters[i].flags & TP_CONN_MGR_PARAM_FLAG_SECRET))
-                contents = to_free = g_strdup_value_contents (coerced);
+              if (!(param->flags & TP_CONN_MGR_PARAM_FLAG_SECRET))
+                contents = to_free = g_variant_print (coerced, TRUE);
 
               DEBUG ("using specified value for %s: %s", name, contents);
               g_free (to_free);
             }
 
-          g_hash_table_insert (combined, g_strdup (name), coerced);
+          g_variant_builder_add (&builder, "{sv}", name, coerced);
+          g_variant_unref (coerced);
         }
-      else if ((parameters[i].flags & mandatory_flag) != 0)
+      else if ((param->flags & mandatory_flag) != 0)
         {
           DEBUG ("missing mandatory account parameter %s", name);
           g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
@@ -1587,22 +1389,26 @@ tp_base_protocol_sanitize_parameters (TpBaseProtocol *self,
               name);
           goto except;
         }
-      else if ((parameters[i].flags & TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT) != 0)
+      else if ((param->flags & TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT) != 0)
         {
-          GValue *value = param_default_value (parameters + i);
-
-          g_hash_table_insert (combined, g_strdup (name), value);
+          g_variant_builder_add (&builder, "{sv}", name, param->def);
         }
       else
         {
           /* no default */
         }
     }
+  g_ptr_array_unref (parameters);
+
+  combined_variant = g_variant_ref_sink (g_variant_builder_end (&builder));
+  combined = tp_asv_from_vardict (combined_variant);
+  g_variant_unref (combined_variant);
 
   return combined;
 
 except:
-  g_hash_table_unref (combined);
+  g_ptr_array_unref (parameters);
+  g_variant_builder_clear (&builder);
   return NULL;
 }
 
@@ -1613,11 +1419,11 @@ except:
  *  provided via D-Bus
  * @error: used to return an error if %NULL is returned
  *
- * Create a new connection using the #TpBaseProtocolClass.get_parameters and
+ * Create a new connection using the #TpBaseProtocolClass.dup_parameters and
  * #TpBaseProtocolClass.new_connection implementations provided by a subclass.
  * This is used to implement the RequestConnection() D-Bus method.
  *
- * If the parameters in @asv do not fit the result of @get_parameters (unknown
+ * If the parameters in @asv do not fit the result of @dup_parameters (unknown
  * parameters are given, types are inappropriate, required parameters are
  * not given, or a #TpCMParamSpec.filter fails), then this method raises an
  * error and @new_connection is not called.
@@ -1627,7 +1433,7 @@ except:
  * filled in where available, and parameters' types converted to the #GType
  * specified by #TpCMParamSpec.gtype.
  *
- * Returns: a new connection, or %NULL on error
+ * Returns: (transfer full): a new connection, or %NULL on error
  *
  * Since: 0.11.11
  */
