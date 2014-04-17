@@ -1013,7 +1013,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    *
    * If this property is %NULL or omitted during construction, the object will
    * automatically attempt to connect to the session bus with
-   * g_bus_get_sync() just after it is ; if this fails, this
+   * g_bus_get_sync() just after it is constructed; if this fails, this
    * property will remain %NULL, and tp_base_connection_register() will fail.
    *
    * Since: 0.99.10

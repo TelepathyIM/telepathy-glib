@@ -59,7 +59,7 @@
 
 /**
  * TpPresenceMixinStatusAvailableFunc:
- * @self: A #TpBaseConnection implemeting #TpPresenceMixinInterface
+ * @self: A #TpBaseConnection implementing #TpPresenceMixinInterface
  * @which: An index into the array of #TpPresenceStatusSpec provided to
  *  tp_presence_mixin_class_init()
  *
@@ -82,7 +82,7 @@
 
 /**
  * TpPresenceMixinGetContactStatusFunc:
- * @self: A #TpBaseConnection implemeting #TpPresenceMixinInterface
+ * @self: A #TpBaseConnection implementing #TpPresenceMixinInterface
  * @contact: A #TpHandle of type %TP_ENTITY_TYPE_CONTACT
  *
  * Return the contact's status
@@ -92,7 +92,7 @@
 
 /**
  * TpPresenceMixinSetOwnStatusFunc:
- * @self: A #TpBaseConnection implemeting #TpPresenceMixinInterface
+ * @self: A #TpBaseConnection implementing #TpPresenceMixinInterface
  * @status: The status to set, or NULL for whatever the protocol defines as a
  *  "default" status
  * @error: Used to return a Telepathy D-Bus error if %FALSE is returned
@@ -110,7 +110,7 @@
 
 /**
  * TpPresenceMixinGetMaximumStatusMessageLengthFunc:
- * @self: A #TpBaseConnection implemeting #TpPresenceMixinInterface
+ * @self: A #TpBaseConnection implementing #TpPresenceMixinInterface
  *
  * Signature of a callback used to determine the maximum length of status
  * messages. If this callback is provided and returns non-zero, the
@@ -315,7 +315,7 @@ tp_presence_mixin_init (TpPresenceMixin *self)
 
 /**
  * tp_presence_mixin_emit_presence_update: (skip)
- * @self: A #TpBaseConnection implemeting #TpPresenceMixinInterface
+ * @self: A #TpBaseConnection implementing #TpPresenceMixinInterface
  * @contact_presences: A mapping of contact handles to #TpPresenceStatus
  *  structures with the presence data to emit
  *
@@ -342,7 +342,7 @@ tp_presence_mixin_emit_presence_update (TpPresenceMixin *self,
 
 /**
  * tp_presence_mixin_emit_one_presence_update:
- * @self: A #TpBaseConnection implemeting #TpPresenceMixinInterface
+ * @self: A #TpBaseConnection implementing #TpPresenceMixinInterface
  * @handle: The handle of the contact to emit the signal for
  * @status: The new status to emit
  *

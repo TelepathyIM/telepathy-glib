@@ -25,7 +25,7 @@
  * @short_description: base class for all channel implementations
  * @see_also: #TpSvcChannel
  *
- * This base class makes it easier to write channels
+ * This base class makes it easier to write channel
  * implementations by implementing some of its properties, and defining other
  * relevant properties.
  *
