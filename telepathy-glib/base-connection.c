@@ -1799,6 +1799,11 @@ tp_base_connection_change_status (TpBaseConnection *self,
       if (self->priv->disconnect_requests == NULL)
         self->priv->disconnect_requests = g_ptr_array_sized_new (0);
     }
+  else if (status == TP_CONNECTION_STATUS_CONNECTED)
+    {
+      /* RCC property is immutable after CONNECTED, do a last update now */
+      update_rcc_property (self);
+    }
 
   DEBUG("emitting status-changed to %u, for reason %u", status, reason);
   _tp_gdbus_connection_set_status (self->priv->connection_skeleton, status);
@@ -1824,9 +1829,6 @@ tp_base_connection_change_status (TpBaseConnection *self,
       g_assert (priv->self_handle != 0);
       g_assert (tp_handle_is_valid (priv->handles[TP_ENTITY_TYPE_CONTACT],
                 priv->self_handle, NULL));
-
-      /* RCC property is immutable after CONNECTED, do a last update now */
-      update_rcc_property (self);
 
       if (klass->connected)
         (klass->connected) (self);
