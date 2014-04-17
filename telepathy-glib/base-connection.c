@@ -2633,12 +2633,11 @@ static const gchar * const contacts_always_included_interfaces[] = {
     NULL
 };
 
-/*
- * tp_base_connection_dup_contact_attributes_hash: (skip)
- * @self: A connection instance that uses this mixin. The connection must
- *  be connected.
- * @handles: List of handles to retrieve contacts for. Any invalid handles
- *  will be dropped from the returned mapping.
+/**
+ * tp_base_connection_dup_contact_attributes:
+ * @self: A connection instance. The connection must be connected.
+ * @handles: (element-type guint32): List of handles to retrieve contacts for.
+ *  Any invalid handles will be dropped from the returned mapping.
  * @interfaces: (allow-none) (array zero-terminated=1) (element-type utf8): an
  *  array of user-requested interfaces
  * @assumed_interfaces: (allow-none) (array zero-terminated=1) (element-type utf8):
@@ -2656,7 +2655,7 @@ static const gchar * const contacts_always_included_interfaces[] = {
  * Returns: (transfer full): a #GVariant of type "a{ua{sv}}"
  */
 GVariant *
-_tp_base_connection_dup_contact_attributes (TpBaseConnection *self,
+tp_base_connection_dup_contact_attributes (TpBaseConnection *self,
     const GArray *handles,
     const gchar * const *interfaces,
     const gchar * const *assumed_interfaces)
@@ -2745,7 +2744,7 @@ contacts_get_contact_attributes_impl (_TpGDBusConnection *skeleton,
   array = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n);
   g_array_append_vals (array, c_array, n);
 
-  result = _tp_base_connection_dup_contact_attributes (conn,
+  result = tp_base_connection_dup_contact_attributes (conn,
       array, interfaces, contacts_always_included_interfaces);
 
   _tp_gdbus_connection_complete_get_contact_attributes (skeleton, context,
@@ -2790,7 +2789,7 @@ ensure_handle_cb (GObject *source,
   handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
   g_array_append_val (handles, handle);
 
-  attributes = _tp_base_connection_dup_contact_attributes (self,
+  attributes = tp_base_connection_dup_contact_attributes (self,
       handles, (const gchar * const *) data->interfaces,
       contacts_always_included_interfaces);
   g_variant_get_child (attributes, 0, "{u@a{sv}}", &ret_handle, &ret);

@@ -204,6 +204,11 @@ _TP_AVAILABLE_IN_0_24
 const gchar *tp_base_connection_get_account_path_suffix (
     TpBaseConnection *self);
 
+GVariant *tp_base_connection_dup_contact_attributes (TpBaseConnection *self,
+    const GArray *handles,
+    const gchar * const *interfaces,
+    const gchar * const *assumed_interfaces);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_BASE_CONNECTION_H__*/
