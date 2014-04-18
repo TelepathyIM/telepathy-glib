@@ -71,7 +71,7 @@ quark (void)
  * See whether the given interface has Telepathy code generation data
  * attached.
  *
- * Returns: (transfer null): a #TpSvcInterfaceInfo struct, or %NULL
+ * Returns: (transfer none): a #TpSvcInterfaceInfo struct, or %NULL
  *
  * Since: 0.99.10
  */
