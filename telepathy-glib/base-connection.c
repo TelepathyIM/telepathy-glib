@@ -643,16 +643,20 @@ _tp_base_connection_set_handle_repo (TpBaseConnection *self,
   self->priv->handles[entity_type] = g_object_ref (handle_repo);
 }
 
+/* User data for interface-added and interface-removed signals, with vaguely
+ * mnemonic values */
+#define INTERFACE_ADDED (GINT_TO_POINTER(1))
+#define INTERFACE_REMOVED (GINT_TO_POINTER(-1))
+
 static void
 tp_base_connection_interface_changed_cb (TpBaseConnection *self,
     GDBusInterface *interface,
     gpointer user_data)
 {
   GDBusInterfaceInfo *info = g_dbus_interface_get_info (interface);
-  gint what_happened = GPOINTER_TO_INT (user_data);
-  const gchar *verb = (what_happened == 1 ? "add" : "remove");
+  const gchar *verb = (user_data == INTERFACE_ADDED ? "add" : "remove");
 
-  g_assert (what_happened == 1 || what_happened == -1);
+  g_assert (user_data == INTERFACE_ADDED || user_data == INTERFACE_REMOVED);
 
   if (self->priv->status == TP_CONNECTION_STATUS_CONNECTED)
     {
@@ -763,10 +767,10 @@ tp_base_connection_constructed (GObject *object)
 
   g_signal_connect (self, "interface-added",
       G_CALLBACK (tp_base_connection_interface_changed_cb),
-      GINT_TO_POINTER (+1));
+      INTERFACE_ADDED);
   g_signal_connect (self, "interface-removed",
       G_CALLBACK (tp_base_connection_interface_changed_cb),
-      GINT_TO_POINTER (-1));
+      INTERFACE_REMOVED);
 
   /* We don't have any interfaces yet (except for Connection and Requests)
    * so it's OK that the default for _TpGDBusConnection:interfaces is NULL. */
