@@ -483,6 +483,8 @@ enum {
     N_PROPS
 };
 
+static void _tp_base_contact_list_implement_contact_blocking (
+    TpBaseContactList *self);
 static void
 tp_base_contact_list_contacts_changed_internal (TpBaseContactList *self,
     TpHandleSet *changed, TpHandleSet *removed, gboolean is_initial_roster);
@@ -646,6 +648,10 @@ status_changed_cb (TpBaseConnection *conn,
     {
       update_immutable_contact_list_properties (self);
       update_immutable_contact_groups_properties (self);
+
+      /* last chance to implement blocking */
+      if (tp_base_contact_list_can_block (self))
+        _tp_base_contact_list_implement_contact_blocking (self);
     }
   else if (status == TP_CONNECTION_STATUS_DISCONNECTED)
     {
@@ -656,8 +662,6 @@ status_changed_cb (TpBaseConnection *conn,
 static void _tp_base_contact_list_implement_contact_list (
     TpBaseContactList *self);
 static void _tp_base_contact_list_implement_contact_groups (
-    TpBaseContactList *self);
-static void _tp_base_contact_list_implement_contact_blocking (
     TpBaseContactList *self);
 
 static void
@@ -716,7 +720,10 @@ tp_base_contact_list_constructed (GObject *object)
       g_return_if_fail (iface->unblock_contacts_async != NULL);
       g_return_if_fail (iface->unblock_contacts_finish != NULL);
 
-      _tp_base_contact_list_implement_contact_blocking (self);
+      /* maybe we implement blocking unconditionally? if so,
+       * no need to wait until status-changed */
+      if (tp_base_contact_list_can_block (self))
+        _tp_base_contact_list_implement_contact_blocking (self);
     }
 
   self->priv->contact_repo = tp_base_connection_get_handles (self->priv->conn,
@@ -4927,6 +4934,9 @@ _tp_base_contact_list_implement_contact_blocking (TpBaseContactList *self)
 {
   TpBlockableContactListInterface *iface;
   guint flags = 0;
+
+  if (self->priv->contact_blocking_skeleton != NULL)
+    return;
 
   self->priv->contact_blocking_skeleton =
       _tp_gdbus_connection_interface_contact_blocking1_skeleton_new ();
