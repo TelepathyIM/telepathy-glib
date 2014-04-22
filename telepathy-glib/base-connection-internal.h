@@ -73,6 +73,9 @@ struct _TpBaseConnectionPrivate
   gboolean been_constructed;
   /* TRUE if on D-Bus */
   gboolean been_registered;
+  /* TRUE if CONNECTED has been signalled to D-Bus, so it's too late to
+   * manipulate the list of interfaces */
+  gboolean been_connected;
 
   /* g_strdup (unique name) => owned ClientData struct */
   GHashTable *clients;

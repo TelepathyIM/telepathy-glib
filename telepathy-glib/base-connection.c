@@ -658,7 +658,7 @@ tp_base_connection_interface_changed_cb (TpBaseConnection *self,
 
   g_assert (user_data == INTERFACE_ADDED || user_data == INTERFACE_REMOVED);
 
-  if (self->priv->status == TP_CONNECTION_STATUS_CONNECTED)
+  if (self->priv->been_connected)
     {
       WARNING ("Adding or removing Connection interfaces after CONNECTED "
           "status has been reached is not supported. "
@@ -1810,11 +1810,22 @@ tp_base_connection_change_status (TpBaseConnection *self,
     }
 
   DEBUG("emitting status-changed to %u, for reason %u", status, reason);
-  _tp_gdbus_connection_set_status (self->priv->connection_skeleton, status);
+
   /* Emit status-changed before sending the D-Bus signal, because in practice
    * that's what happened in telepathy-glib 0.x, as demonstrated by Gabble's
-   * regression tests failing otherwise. */
+   * regression tests failing otherwise. Also, connection manager modules
+   * (in particular the TpBaseContactList) need this opportunity to
+   * staple on additional interfaces when we go CONNECTED. */
   g_signal_emit (self, signals[STATUS_CHANGED], 0, status, reason);
+
+  /* Handlers for the status-changed signal is the last possible point at
+   * which we are allowed to add interfaces. Once we've signalled CONNECTED
+   * to D-Bus, it's too late. */
+  if (status == TP_CONNECTION_STATUS_CONNECTED)
+    priv->been_connected = TRUE;
+
+  /* Tell D-Bus what we've done. */
+  _tp_gdbus_connection_set_status (self->priv->connection_skeleton, status);
   _tp_gdbus_connection_emit_status_changed (self->priv->connection_skeleton,
       status, reason);
 
