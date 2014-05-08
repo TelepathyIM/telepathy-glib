@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2
 
 # glib-client-gen.py: "I Can't Believe It's Not dbus-binding-tool"
 #
