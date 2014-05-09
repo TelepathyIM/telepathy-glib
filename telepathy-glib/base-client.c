@@ -197,6 +197,7 @@
 #include <telepathy-glib/_gdbus/Client_Observer.h>
 #include <telepathy-glib/_gdbus/Client_Approver.h>
 #include <telepathy-glib/_gdbus/Client_Handler.h>
+#include <telepathy-glib/_gdbus/Client_Interface_Requests.h>
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/connection-internal.h"
@@ -208,12 +209,10 @@
 static void observer_skeleton_init (TpBaseClient *self);
 static void approver_skeleton_init (TpBaseClient *self);
 static void handler_skeleton_init (TpBaseClient *self);
-static void requests_iface_init (gpointer, gpointer);
+static void requests_skeleton_init (TpBaseClient *self);
 
-G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseClient, tp_base_client,
-    G_TYPE_DBUS_OBJECT_SKELETON,
-    G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_INTERFACE_REQUESTS,
-      requests_iface_init))
+G_DEFINE_ABSTRACT_TYPE(TpBaseClient, tp_base_client,
+    G_TYPE_DBUS_OBJECT_SKELETON)
 
 enum {
     PROP_DBUS_CONNECTION = 1,
@@ -276,6 +275,7 @@ struct _TpBaseClientPrivate
   _TpGDBusClientObserver *observer_skeleton;
   _TpGDBusClientApprover *approver_skeleton;
   _TpGDBusClientHandler *handler_skeleton;
+  _TpGDBusClientInterfaceRequests *requests_skeleton;
 };
 
 /*
@@ -937,6 +937,7 @@ update_interfaces (TpBaseClient *self)
     {
       g_ptr_array_add (arr, TP_IFACE_CLIENT_HANDLER);
       handler_skeleton_init (self);
+      requests_skeleton_init (self);
     }
 
   if (self->priv->flags & CLIENT_HANDLER_WANTS_REQUESTS)
@@ -1163,6 +1164,7 @@ tp_base_client_dispose (GObject *object)
   g_clear_object (&self->priv->observer_skeleton);
   g_clear_object (&self->priv->approver_skeleton);
   g_clear_object (&self->priv->handler_skeleton);
+  g_clear_object (&self->priv->requests_skeleton);
 
   if (dispose != NULL)
     dispose (object);
@@ -1257,22 +1259,6 @@ tp_base_client_set_property (GObject *object,
 }
 
 static void
-object_skeleton_take_interface (GDBusObjectSkeleton *skel,
-    GDBusInterfaceSkeleton *iface)
-{
-  g_dbus_object_skeleton_add_interface (skel, iface);
-  g_object_unref (iface);
-}
-
-static void
-object_skeleton_take_svc_interface (GDBusObjectSkeleton *skel,
-    GType type)
-{
-  object_skeleton_take_interface (skel,
-      tp_svc_interface_skeleton_new (skel, type));
-}
-
-static void
 tp_base_client_constructed (GObject *object)
 {
   TpBaseClient *self = TP_BASE_CLIENT (object);
@@ -1287,9 +1273,6 @@ tp_base_client_constructed (GObject *object)
 
   g_dbus_object_skeleton_add_interface (skel,
       G_DBUS_INTERFACE_SKELETON (self->priv->client_skeleton));
-
-  object_skeleton_take_svc_interface (skel,
-      TP_TYPE_SVC_CLIENT_INTERFACE_REQUESTS);
 
   g_assert (self->priv->factory != NULL);
 
@@ -2312,29 +2295,31 @@ channel_request_account_prepare_cb (GObject *account,
   channel_request_prepare_account_ctx_free (ctx);
 }
 
-static void
+static gboolean
 _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
+    GDBusMethodInvocation *context,
     const gchar *path,
-    GHashTable *properties,
-    GDBusMethodInvocation *context)
+    GVariant *properties,
+    TpBaseClient *self)
 {
-  TpBaseClient *self = TP_BASE_CLIENT (iface);
   TpChannelRequest *request;
   TpAccount *account = NULL;
   GError *error = NULL;
   channel_request_prepare_account_ctx *ctx;
   GArray *account_features;
+  GHashTable *asv;
 
+  asv = tp_asv_from_vardict (properties);
   request = _tp_client_factory_ensure_channel_request (
-      self->priv->factory, path, properties, &error);
+      self->priv->factory, path, asv, &error);
   if (request == NULL)
     {
       DEBUG ("Failed to create TpChannelRequest: %s", error->message);
       goto err;
     }
 
-  path = tp_asv_get_object_path (properties, TP_PROP_CHANNEL_REQUEST_ACCOUNT);
-  if (path == NULL)
+  if (!g_variant_lookup (properties, TP_PROP_CHANNEL_REQUEST_ACCOUNT, "&o",
+        &path))
     {
       error = g_error_new_literal (TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Mandatory 'Account' property is missing");
@@ -2360,24 +2345,27 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
       channel_request_account_prepare_cb, ctx);
 
   g_array_unref (account_features);
+  g_hash_table_unref (asv);
 
   tp_svc_client_interface_requests_return_from_add_request (context);
-  return;
+  return TRUE;
 
 err:
   g_clear_object (&account);
+  g_hash_table_unref (asv);
 
   g_dbus_method_invocation_take_error (context, error);
+  return TRUE;
 }
 
-static void
+static gboolean
 _tp_base_client_remove_request (TpSvcClientInterfaceRequests *iface,
+    GDBusMethodInvocation *context,
     const gchar *path,
     const gchar *error,
     const gchar *reason,
-    GDBusMethodInvocation *context)
+    TpBaseClient *self)
 {
-  TpBaseClient *self = TP_BASE_CLIENT (iface);
   TpChannelRequest *request;
 
   request = find_request_by_path (self, path);
@@ -2385,7 +2373,7 @@ _tp_base_client_remove_request (TpSvcClientInterfaceRequests *iface,
     {
       g_dbus_method_invocation_return_error_literal (context,
           TP_ERROR, TP_ERROR_INVALID_ARGUMENT, "Unknown ChannelRequest");
-      return;
+      return TRUE;
     }
 
   self->priv->pending_requests = g_list_remove (self->priv->pending_requests,
@@ -2395,17 +2383,27 @@ _tp_base_client_remove_request (TpSvcClientInterfaceRequests *iface,
       error, reason);
 
   tp_svc_client_interface_requests_return_from_remove_request (context);
+  return TRUE;
 }
 
 static void
-requests_iface_init (gpointer g_iface,
-    gpointer unused G_GNUC_UNUSED)
+requests_skeleton_init (TpBaseClient *self)
 {
-#define IMPLEMENT(x) tp_svc_client_interface_requests_implement_##x (\
-  g_iface, _tp_base_client_##x)
-  IMPLEMENT (add_request);
-  IMPLEMENT (remove_request);
-#undef IMPLEMENT
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (self);
+
+  self->priv->requests_skeleton =
+    _tp_gdbus_client_interface_requests_skeleton_new ();
+
+  g_dbus_object_skeleton_add_interface (skel,
+      G_DBUS_INTERFACE_SKELETON (self->priv->requests_skeleton));
+
+  /* Methods */
+  g_signal_connect_object (self->priv->requests_skeleton,
+      "handle-add-request", G_CALLBACK (_tp_base_client_add_request),
+      self, 0);
+  g_signal_connect_object (self->priv->requests_skeleton,
+      "handle-remove-request", G_CALLBACK (_tp_base_client_remove_request),
+      self, 0);
 }
 
 /**
