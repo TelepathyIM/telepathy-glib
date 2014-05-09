@@ -357,6 +357,8 @@ gdbus_codegen = \
     _gdbus/Connection_Interface_Requests.h \
     _gdbus/Client.c \
     _gdbus/Client.h \
+    _gdbus/Client_Observer.c \
+    _gdbus/Client_Observer.h \
     $(NULL)
 
 _gdbus/%.c: _gdbus/%-stamp
