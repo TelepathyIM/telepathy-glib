@@ -205,7 +205,8 @@ static void approver_iface_init (gpointer, gpointer);
 static void handler_iface_init (gpointer, gpointer);
 static void requests_iface_init (gpointer, gpointer);
 
-G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseClient, tp_base_client, G_TYPE_OBJECT,
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseClient, tp_base_client,
+    G_TYPE_DBUS_OBJECT_SKELETON,
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT, NULL);
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_OBSERVER, observer_iface_init);
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_APPROVER, approver_iface_init);
@@ -1191,9 +1192,26 @@ tp_base_client_set_property (GObject *object,
 }
 
 static void
+object_skeleton_take_interface (GDBusObjectSkeleton *skel,
+    GDBusInterfaceSkeleton *iface)
+{
+  g_dbus_object_skeleton_add_interface (skel, iface);
+  g_object_unref (iface);
+}
+
+static void
+object_skeleton_take_svc_interface (GDBusObjectSkeleton *skel,
+    GType type)
+{
+  object_skeleton_take_interface (skel,
+      tp_svc_interface_skeleton_new (skel, type));
+}
+
+static void
 tp_base_client_constructed (GObject *object)
 {
   TpBaseClient *self = TP_BASE_CLIENT (object);
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (self);
   void (*chain_up) (GObject *) =
     ((GObjectClass *) tp_base_client_parent_class)->constructed;
   GString *string;
@@ -1201,6 +1219,13 @@ tp_base_client_constructed (GObject *object)
 
   if (chain_up != NULL)
     chain_up (object);
+
+  object_skeleton_take_svc_interface (skel, TP_TYPE_SVC_CLIENT);
+  object_skeleton_take_svc_interface (skel, TP_TYPE_SVC_CLIENT_OBSERVER);
+  object_skeleton_take_svc_interface (skel, TP_TYPE_SVC_CLIENT_APPROVER);
+  object_skeleton_take_svc_interface (skel, TP_TYPE_SVC_CLIENT_HANDLER);
+  object_skeleton_take_svc_interface (skel,
+      TP_TYPE_SVC_CLIENT_INTERFACE_REQUESTS);
 
   g_assert (self->priv->factory != NULL);
 

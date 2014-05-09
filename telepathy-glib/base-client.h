@@ -76,7 +76,7 @@ typedef void (*TpBaseClientClassHandleChannelImpl) (
 
 struct _TpBaseClientClass {
     /*<public>*/
-    GObjectClass parent_class;
+    GDBusObjectSkeletonClass parent_class;
     TpBaseClientClassObserveChannelImpl observe_channel;
     TpBaseClientClassAddDispatchOperationImpl add_dispatch_operation;
     TpBaseClientClassHandleChannelImpl handle_channel;
@@ -87,7 +87,7 @@ struct _TpBaseClientClass {
 
 struct _TpBaseClient {
     /*<private>*/
-    GObject parent;
+    GDBusObjectSkeleton parent;
     TpBaseClientPrivate *priv;
 };
 
