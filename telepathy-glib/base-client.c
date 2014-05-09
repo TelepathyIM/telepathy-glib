@@ -193,6 +193,8 @@
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/value-array.h>
 
+#include <telepathy-glib/_gdbus/Client.h>
+
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/connection-internal.h"
 #include "telepathy-glib/debug-internal.h"
@@ -207,7 +209,6 @@ static void requests_iface_init (gpointer, gpointer);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseClient, tp_base_client,
     G_TYPE_DBUS_OBJECT_SKELETON,
-    G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT, NULL);
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_OBSERVER, observer_iface_init);
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_APPROVER, approver_iface_init);
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_HANDLER, handler_iface_init);
@@ -271,6 +272,8 @@ struct _TpBaseClientPrivate
   TpBaseClientDelegatedChannelsCb delegated_channels_cb;
   gpointer delegated_channels_data;
   GDestroyNotify delegated_channels_destroy;
+
+  _TpGDBusClient *client_skeleton;
 };
 
 /*
@@ -471,6 +474,7 @@ tp_base_client_set_observer_recover (TpBaseClient *self,
       self->priv->flags |= CLIENT_IS_OBSERVER;
       self->priv->flags &= ~CLIENT_OBSERVER_RECOVER;
     }
+
 }
 
 /**
@@ -916,6 +920,26 @@ clients_quark (void)
   return q;
 }
 
+static void
+update_interfaces (TpBaseClient *self)
+{
+  GPtrArray *arr = g_ptr_array_new ();
+
+  if (self->priv->flags & CLIENT_IS_OBSERVER)
+    g_ptr_array_add (arr, TP_IFACE_CLIENT_OBSERVER);
+  if (self->priv->flags & CLIENT_IS_APPROVER)
+    g_ptr_array_add (arr, TP_IFACE_CLIENT_APPROVER);
+  if (self->priv->flags & CLIENT_IS_HANDLER)
+    g_ptr_array_add (arr, TP_IFACE_CLIENT_HANDLER);
+  if (self->priv->flags & CLIENT_HANDLER_WANTS_REQUESTS)
+    g_ptr_array_add (arr, TP_IFACE_CLIENT_INTERFACE_REQUESTS);
+
+  g_ptr_array_add (arr, NULL);
+  _tp_gdbus_client_set_interfaces (self->priv->client_skeleton,
+      (const gchar * const *) arr->pdata);
+  g_ptr_array_unref (arr);
+}
+
 /**
  * tp_base_client_register:
  * @self: a #TpBaseClient, which must not have been registered with
@@ -945,6 +969,8 @@ tp_base_client_register (TpBaseClient *self,
   g_return_val_if_fail (self->priv->flags != 0, FALSE);
 
   DEBUG ("request name %s", self->priv->bus_name);
+
+  update_interfaces (self);
 
   if (!tp_dbus_connection_try_register_object (self->priv->dbus,
         self->priv->object_path, G_OBJECT (self), error))
@@ -1067,6 +1093,8 @@ tp_base_client_init (TpBaseClient *self)
 
   self->priv->my_chans = g_hash_table_new_full (g_str_hash, g_str_equal,
       NULL, g_object_unref);
+
+  self->priv->client_skeleton = _tp_gdbus_client_skeleton_new ();
 }
 
 static void
@@ -1098,6 +1126,8 @@ tp_base_client_dispose (GObject *object)
           self->priv->delegated_channels_data);
       self->priv->delegated_channels_destroy = NULL;
     }
+
+  g_clear_object (&self->priv->client_skeleton);
 
   if (dispose != NULL)
     dispose (object);
@@ -1220,7 +1250,9 @@ tp_base_client_constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 
-  object_skeleton_take_svc_interface (skel, TP_TYPE_SVC_CLIENT);
+  g_dbus_object_skeleton_add_interface (skel,
+      G_DBUS_INTERFACE_SKELETON (self->priv->client_skeleton));
+
   object_skeleton_take_svc_interface (skel, TP_TYPE_SVC_CLIENT_OBSERVER);
   object_skeleton_take_svc_interface (skel, TP_TYPE_SVC_CLIENT_APPROVER);
   object_skeleton_take_svc_interface (skel, TP_TYPE_SVC_CLIENT_HANDLER);
@@ -1263,7 +1295,6 @@ tp_base_client_constructed (GObject *object)
 }
 
 typedef enum {
-    DP_INTERFACES,
     DP_APPROVER_CHANNEL_FILTER,
     DP_HANDLER_CHANNEL_FILTER,
     DP_BYPASS_APPROVAL,
@@ -1286,28 +1317,6 @@ tp_base_client_get_dbus_properties (GObject *object,
 
   switch (which)
     {
-    case DP_INTERFACES:
-        {
-          GPtrArray *arr = g_ptr_array_sized_new (5);
-
-          if (self->priv->flags & CLIENT_IS_OBSERVER)
-            g_ptr_array_add (arr, g_strdup (TP_IFACE_CLIENT_OBSERVER));
-
-          if (self->priv->flags & CLIENT_IS_APPROVER)
-            g_ptr_array_add (arr, g_strdup (TP_IFACE_CLIENT_APPROVER));
-
-          if (self->priv->flags & CLIENT_IS_HANDLER)
-            g_ptr_array_add (arr, g_strdup (TP_IFACE_CLIENT_HANDLER));
-
-          if (self->priv->flags & CLIENT_HANDLER_WANTS_REQUESTS)
-            g_ptr_array_add (arr, g_strdup (
-                  TP_IFACE_CLIENT_INTERFACE_REQUESTS));
-
-          g_ptr_array_add (arr, NULL);
-          g_value_take_boxed (value, g_ptr_array_free (arr, FALSE));
-        }
-      break;
-
     case DP_OBSERVER_CHANNEL_FILTER:
       g_value_set_boxed (value, self->priv->observer_filters);
       break;
@@ -1364,10 +1373,6 @@ static void
 tp_base_client_class_init (TpBaseClientClass *cls)
 {
   GParamSpec *param_spec;
-  static TpDBusPropertiesMixinPropImpl client_properties[] = {
-        { "Interfaces", GINT_TO_POINTER (DP_INTERFACES) },
-        { NULL }
-  };
   static TpDBusPropertiesMixinPropImpl handler_properties[] = {
         { "HandlerChannelFilter",
           GINT_TO_POINTER (DP_HANDLER_CHANNEL_FILTER) },
@@ -1513,9 +1518,6 @@ tp_base_client_class_init (TpBaseClientClass *cls)
       G_TYPE_NONE, 3,
       TP_TYPE_CHANNEL_REQUEST, G_TYPE_STRING, G_TYPE_STRING);
 
-  tp_dbus_properties_mixin_implement_interface (object_class,
-        TP_IFACE_QUARK_CLIENT, tp_base_client_get_dbus_properties,
-        NULL, client_properties);
   tp_dbus_properties_mixin_implement_interface (object_class,
         TP_IFACE_QUARK_CLIENT_OBSERVER, tp_base_client_get_dbus_properties,
         NULL, observer_properties);
