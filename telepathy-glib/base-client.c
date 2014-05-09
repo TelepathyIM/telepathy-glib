@@ -196,6 +196,7 @@
 #include <telepathy-glib/_gdbus/Client.h>
 #include <telepathy-glib/_gdbus/Client_Observer.h>
 #include <telepathy-glib/_gdbus/Client_Approver.h>
+#include <telepathy-glib/_gdbus/Client_Handler.h>
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/connection-internal.h"
@@ -206,12 +207,11 @@
 
 static void observer_skeleton_init (TpBaseClient *self);
 static void approver_skeleton_init (TpBaseClient *self);
-static void handler_iface_init (gpointer, gpointer);
+static void handler_skeleton_init (TpBaseClient *self);
 static void requests_iface_init (gpointer, gpointer);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseClient, tp_base_client,
     G_TYPE_DBUS_OBJECT_SKELETON,
-    G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_HANDLER, handler_iface_init);
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_INTERFACE_REQUESTS,
       requests_iface_init))
 
@@ -254,8 +254,7 @@ struct _TpBaseClientPrivate
    * modified after g_variant_builder_end() has been called. */
   GVariantBuilder *observer_filters;
   GVariantBuilder *approver_filters;
-  /* array of TP_HASH_TYPE_CHANNEL_CLASS */
-  GPtrArray *handler_filters;
+  GVariantBuilder *handler_filters;
   /* array of g_strdup(token), plus NULL included in length */
   GPtrArray *handler_caps;
 
@@ -276,6 +275,7 @@ struct _TpBaseClientPrivate
   _TpGDBusClient *client_skeleton;
   _TpGDBusClientObserver *observer_skeleton;
   _TpGDBusClientApprover *approver_skeleton;
+  _TpGDBusClientHandler *handler_skeleton;
 };
 
 /*
@@ -692,10 +692,8 @@ tp_base_client_add_handler_filter_variant (TpBaseClient *self,
   g_return_if_fail (cls->handle_channel != NULL);
   g_return_if_fail (g_variant_is_of_type (filter, G_VARIANT_TYPE_VARDICT));
 
-  g_variant_ref_sink (filter);
   self->priv->flags |= CLIENT_IS_HANDLER;
-  g_ptr_array_add (self->priv->handler_filters, tp_asv_from_vardict (filter));
-  g_variant_unref (filter);
+  g_variant_builder_add_value (self->priv->handler_filters, filter);
 }
 
 /**
@@ -936,7 +934,11 @@ update_interfaces (TpBaseClient *self)
     }
 
   if (self->priv->flags & CLIENT_IS_HANDLER)
-    g_ptr_array_add (arr, TP_IFACE_CLIENT_HANDLER);
+    {
+      g_ptr_array_add (arr, TP_IFACE_CLIENT_HANDLER);
+      handler_skeleton_init (self);
+    }
+
   if (self->priv->flags & CLIENT_HANDLER_WANTS_REQUESTS)
     g_ptr_array_add (arr, TP_IFACE_CLIENT_INTERFACE_REQUESTS);
 
@@ -944,6 +946,27 @@ update_interfaces (TpBaseClient *self)
   _tp_gdbus_client_set_interfaces (self->priv->client_skeleton,
       (const gchar * const *) arr->pdata);
   g_ptr_array_unref (arr);
+}
+
+static void
+update_handled_channels_prop (TpBaseClient *self)
+{
+  GList *channels;
+  GList *iter;
+  GPtrArray *arr;
+
+  channels = tp_base_client_dup_handled_channels (self);
+  arr = g_ptr_array_sized_new (g_list_length (channels));
+
+  for (iter = channels; iter != NULL; iter = iter->next)
+    g_ptr_array_add (arr, (gpointer) tp_proxy_get_object_path (iter->data));
+  g_ptr_array_add (arr, NULL);
+
+  _tp_gdbus_client_handler_set_handled_channels (self->priv->handler_skeleton,
+      (const gchar * const *) arr->pdata);
+
+  g_ptr_array_unref (arr);
+  g_list_free_full (channels, g_object_unref);
 }
 
 /**
@@ -1013,6 +1036,8 @@ tp_base_client_register (TpBaseClient *self,
     }
 
   g_hash_table_insert (clients, self->priv->object_path, self->priv->my_chans);
+
+  update_handled_channels_prop (self);
 
   return TRUE;
 }
@@ -1093,8 +1118,8 @@ tp_base_client_init (TpBaseClient *self)
       G_VARIANT_TYPE ("aa{sv}"));
   self->priv->approver_filters = g_variant_builder_new (
       G_VARIANT_TYPE ("aa{sv}"));
-  self->priv->handler_filters = g_ptr_array_new_with_free_func (
-      (GDestroyNotify) g_hash_table_unref);
+  self->priv->handler_filters = g_variant_builder_new (
+      G_VARIANT_TYPE ("aa{sv}"));
   self->priv->handler_caps = g_ptr_array_new_with_free_func (g_free);
   g_ptr_array_add (self->priv->handler_caps, NULL);
 
@@ -1137,6 +1162,7 @@ tp_base_client_dispose (GObject *object)
   g_clear_object (&self->priv->client_skeleton);
   g_clear_object (&self->priv->observer_skeleton);
   g_clear_object (&self->priv->approver_skeleton);
+  g_clear_object (&self->priv->handler_skeleton);
 
   if (dispose != NULL)
     dispose (object);
@@ -1153,7 +1179,7 @@ tp_base_client_finalize (GObject *object)
 
   g_variant_builder_unref (self->priv->observer_filters);
   g_variant_builder_unref (self->priv->approver_filters);
-  g_ptr_array_unref (self->priv->handler_filters);
+  g_variant_builder_unref (self->priv->handler_filters);
   g_ptr_array_unref (self->priv->handler_caps);
 
   g_free (self->priv->bus_name);
@@ -1262,7 +1288,6 @@ tp_base_client_constructed (GObject *object)
   g_dbus_object_skeleton_add_interface (skel,
       G_DBUS_INTERFACE_SKELETON (self->priv->client_skeleton));
 
-  object_skeleton_take_svc_interface (skel, TP_TYPE_SVC_CLIENT_HANDLER);
   object_skeleton_take_svc_interface (skel,
       TP_TYPE_SVC_CLIENT_INTERFACE_REQUESTS);
 
@@ -1301,74 +1326,10 @@ tp_base_client_constructed (GObject *object)
   self->priv->bus_name = g_string_free (string, FALSE);
 }
 
-typedef enum {
-    DP_HANDLER_CHANNEL_FILTER,
-    DP_BYPASS_APPROVAL,
-    DP_CAPABILITIES,
-    DP_HANDLED_CHANNELS,
-} ClientDBusProp;
-
-static void
-tp_base_client_get_dbus_properties (GObject *object,
-    GQuark iface,
-    GQuark name,
-    GValue *value,
-    gpointer getter_data)
-{
-  TpBaseClient *self = TP_BASE_CLIENT (object);
-  ClientDBusProp which = GPOINTER_TO_INT (getter_data);
-
-  switch (which)
-    {
-    case DP_HANDLER_CHANNEL_FILTER:
-      g_value_set_boxed (value, self->priv->handler_filters);
-      break;
-
-    case DP_BYPASS_APPROVAL:
-      g_value_set_boolean (value,
-          (self->priv->flags & CLIENT_HANDLER_BYPASSES_APPROVAL) != 0);
-      break;
-
-    case DP_CAPABILITIES:
-      /* this is already NULL-terminated */
-      g_value_set_boxed (value, (GStrv) self->priv->handler_caps->pdata);
-      break;
-
-    case DP_HANDLED_CHANNELS:
-        {
-          GList *channels = tp_base_client_dup_handled_channels (self);
-          GList *iter;
-          GPtrArray *arr = g_ptr_array_sized_new (g_list_length (channels));
-
-          for (iter = channels; iter != NULL; iter = iter->next)
-            g_ptr_array_add (arr,
-                g_strdup (tp_proxy_get_object_path (iter->data)));
-
-          g_value_take_boxed (value, arr);
-          g_list_free_full (channels, g_object_unref);
-        }
-      break;
-
-    default:
-      g_assert_not_reached ();
-    }
-}
-
 static void
 tp_base_client_class_init (TpBaseClientClass *cls)
 {
   GParamSpec *param_spec;
-  static TpDBusPropertiesMixinPropImpl handler_properties[] = {
-        { "HandlerChannelFilter",
-          GINT_TO_POINTER (DP_HANDLER_CHANNEL_FILTER) },
-        { "BypassApproval",
-          GINT_TO_POINTER (DP_BYPASS_APPROVAL) },
-        { "Capabilities",
-          GINT_TO_POINTER (DP_CAPABILITIES) },
-        { "HandledChannels",
-          GINT_TO_POINTER (DP_HANDLED_CHANNELS) },
-        { NULL }
-  };
   GObjectClass *object_class = G_OBJECT_CLASS (cls);
 
   g_type_class_add_private (cls, sizeof (TpBaseClientPrivate));
@@ -1488,10 +1449,6 @@ tp_base_client_class_init (TpBaseClientClass *cls)
       NULL, NULL, NULL,
       G_TYPE_NONE, 3,
       TP_TYPE_CHANNEL_REQUEST, G_TYPE_STRING, G_TYPE_STRING);
-
-  tp_dbus_properties_mixin_implement_interface (object_class,
-        TP_IFACE_QUARK_CLIENT_HANDLER, tp_base_client_get_dbus_properties,
-        NULL, handler_properties);
 }
 
 static GList *
@@ -2023,6 +1980,8 @@ add_handled_channel (TpBaseClient *self,
       tp_g_signal_connect_object (channel, "invalidated",
           G_CALLBACK (chan_invalidated_cb), self, 0);
     }
+
+  update_handled_channels_prop (self);
 }
 
 static void
@@ -2195,18 +2154,18 @@ find_request_by_path (TpBaseClient *self,
   return NULL;
 }
 
-static void
-_tp_base_client_handle_channel (TpSvcClientHandler *iface,
+static gboolean
+_tp_base_client_handle_channel (_TpGDBusClientHandler *skeleton,
+    GDBusMethodInvocation *context,
     const gchar *account_path,
     const gchar *connection_path,
     const gchar *channel_path,
-    GHashTable *channel_props,
-    GHashTable *requests_hash,
+    GVariant *channel_props,
+    GVariant *requests_hash,
     gint64 user_action_time,
-    GHashTable *handler_info,
-    GDBusMethodInvocation *context)
+    GVariant *handler_info,
+    TpBaseClient *self)
 {
-  TpBaseClient *self = TP_BASE_CLIENT (iface);
   TpHandleChannelContext *ctx;
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
   GError *error = NULL;
@@ -2217,16 +2176,7 @@ _tp_base_client_handle_channel (TpSvcClientHandler *iface,
   GArray *account_features;
   GArray *connection_features;
   GArray *channel_features;
-  GHashTableIter iter;
-  gpointer k, v;
-
-  if (!(self->priv->flags & CLIENT_IS_HANDLER))
-    {
-      /* Pretend that the method is not implemented if we are not supposed to
-       * be an Handler. */
-      tp_dbus_g_method_return_not_implemented (context);
-      return;
-    }
+  GHashTable *asv;
 
   if (cls->handle_channel == NULL)
     {
@@ -2234,39 +2184,22 @@ _tp_base_client_handle_channel (TpSvcClientHandler *iface,
           G_OBJECT_TYPE_NAME (self));
 
       tp_dbus_g_method_return_not_implemented (context);
-      return;
+      return TRUE;
     }
 
+  asv = tp_asv_from_vardict (channel_props);
+
   if (!ensure_account_connection_channel (self, account_path,
-      connection_path, channel_path, channel_props, &account, &connection,
+      connection_path, channel_path, asv, &account, &connection,
       &channel, &error))
   if (channel == NULL)
     goto out;
 
-  requests = g_ptr_array_new_full (g_hash_table_size (requests_hash),
-      g_object_unref);
-
-  g_hash_table_iter_init (&iter, requests_hash);
-  while (g_hash_table_iter_next (&iter, &k, &v))
-    {
-      const gchar *req_path = k;
-      GHashTable *props = v;
-      TpChannelRequest *request;
-
-      request = _tp_client_factory_ensure_channel_request (
-          self->priv->factory, req_path, props, &error);
-
-      if (request == NULL)
-        {
-          DEBUG ("Failed to create TpChannelRequest: %s", error->message);
-          goto out;
-        }
-
-      g_ptr_array_add (requests, request);
-    }
+  if (!create_channel_request_array (self, requests_hash, &requests, &error))
+    goto out;
 
   ctx = _tp_handle_channel_context_new (account, connection, channel,
-      requests, user_action_time, tp_asv_to_vardict (handler_info), context);
+      requests, user_action_time, handler_info, context);
 
   account_features = dup_features_for_account (self, account);
   connection_features = dup_features_for_connection (self, connection);
@@ -2282,6 +2215,7 @@ _tp_base_client_handle_channel (TpSvcClientHandler *iface,
   g_array_unref (account_features);
   g_array_unref (connection_features);
   g_array_unref (channel_features);
+  g_clear_pointer (&asv, g_hash_table_unref);
 
 out:
   g_clear_object (&account);
@@ -2292,19 +2226,42 @@ out:
     g_ptr_array_unref (requests);
 
   if (error == NULL)
-    return;
+    return TRUE;
 
   g_dbus_method_invocation_take_error (context, error);
+  return TRUE;
 }
 
 static void
-handler_iface_init (gpointer g_iface,
-    gpointer unused G_GNUC_UNUSED)
+handler_skeleton_init (TpBaseClient *self)
 {
-#define IMPLEMENT(x) tp_svc_client_handler_implement_##x (\
-  g_iface, _tp_base_client_##x)
-  IMPLEMENT (handle_channel);
-#undef IMPLEMENT
+  GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (self);
+  gboolean bypass;
+
+  self->priv->handler_skeleton = _tp_gdbus_client_handler_skeleton_new ();
+
+  g_dbus_object_skeleton_add_interface (skel,
+      G_DBUS_INTERFACE_SKELETON (self->priv->handler_skeleton));
+
+  /* Properties */
+  _tp_gdbus_client_handler_set_handler_channel_filter (
+      self->priv->handler_skeleton,
+      g_variant_builder_end (self->priv->handler_filters));
+
+  bypass = (self->priv->flags & CLIENT_HANDLER_BYPASSES_APPROVAL)
+    != 0;
+  _tp_gdbus_client_handler_set_bypass_approval (self->priv->handler_skeleton,
+      bypass);
+
+  _tp_gdbus_client_handler_set_capabilities (self->priv->handler_skeleton,
+      (const gchar * const *) self->priv->handler_caps->pdata);
+
+  update_handled_channels_prop (self);
+
+  /* Method */
+  g_signal_connect_object (self->priv->handler_skeleton,
+      "handle-handle-channel", G_CALLBACK (_tp_base_client_handle_channel),
+      self, 0);
 }
 
 typedef struct
@@ -2689,6 +2646,16 @@ tp_base_client_unregister (TpBaseClient *self)
           self->priv->approver_skeleton);
 
       reinitialize_channel_filter_builder (self->priv->approver_filters, arr);
+    }
+
+  if (self->priv->handler_skeleton != NULL)
+    {
+      GVariant *arr;
+
+      arr = _tp_gdbus_client_handler_get_handler_channel_filter (
+          self->priv->handler_skeleton);
+
+      reinitialize_channel_filter_builder (self->priv->handler_filters, arr);
     }
 
   self->priv->registered = FALSE;
