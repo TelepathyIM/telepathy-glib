@@ -241,6 +241,7 @@ teardown (Test *test,
   tp_dbus_connection_release_name (test->dbus, TP_CHANNEL_DISPATCHER_BUS_NAME,
       NULL);
 
+  tp_base_client_unregister (test->base_client);
   g_object_unref (test->base_client);
   g_object_unref (test->client);
 
