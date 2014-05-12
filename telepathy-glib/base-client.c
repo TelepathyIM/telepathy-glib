@@ -1534,7 +1534,7 @@ ensure_account_connection_channel (TpBaseClient *self,
     const gchar *account_path,
     const gchar *connection_path,
     const gchar *chan_path,
-    GHashTable *chan_props,
+    GVariant *chan_props,
     TpAccount **account,
     TpConnection **connection,
     TpChannel **channel,
@@ -1563,7 +1563,7 @@ ensure_account_connection_channel (TpBaseClient *self,
   _tp_connection_set_account (*connection, *account);
 
   *channel = tp_client_factory_ensure_channel (self->priv->factory,
-      *connection, chan_path, tp_asv_to_vardict (chan_props), error);
+      *connection, chan_path, chan_props, error);
   if (*channel == NULL)
     goto error;
 
@@ -1636,7 +1636,6 @@ _tp_base_client_observe_channel (_TpGDBusClientObserverSkeleton *skeleton,
   GArray *account_features;
   GArray *connection_features;
   GArray *channel_features;
-  GHashTable *asv = NULL;
 
   if (cls->observe_channel == NULL)
     {
@@ -1647,9 +1646,8 @@ _tp_base_client_observe_channel (_TpGDBusClientObserverSkeleton *skeleton,
       return TRUE;
     }
 
-  asv = tp_asv_from_vardict (channel_props);
   if (!ensure_account_connection_channel (self, account_path,
-      connection_path, channel_path, asv, &account, &connection,
+      connection_path, channel_path, channel_props, &account, &connection,
       &channel, &error))
     goto out;
 
@@ -1695,7 +1693,6 @@ out:
   g_clear_object (&account);
   g_clear_object (&connection);
   g_clear_object (&channel);
-  g_clear_pointer (&asv, g_hash_table_unref);
 
   if (dispatch_operation != NULL)
     g_object_unref (dispatch_operation);
@@ -1794,7 +1791,6 @@ _tp_base_client_add_dispatch_operation (_TpGDBusClientApprover *skeleton,
   const gchar *account_path;
   const gchar *connection_path;
   const gchar *chan_path;
-  GHashTable *chan_props = NULL;
   GError *error = NULL;
   TpAccount *account = NULL;
   TpConnection *connection = NULL;
@@ -1804,7 +1800,7 @@ _tp_base_client_add_dispatch_operation (_TpGDBusClientApprover *skeleton,
   GArray *connection_features;
   GArray *channel_features;
   GVariantDict dict;
-  GVariant *v;
+  GVariant *chan_props;
 
   if (cls->add_dispatch_operation == NULL)
     {
@@ -1845,10 +1841,10 @@ _tp_base_client_add_dispatch_operation (_TpGDBusClientApprover *skeleton,
       goto out;
     }
 
-  v = g_variant_dict_lookup_value (&dict,
+  chan_props = g_variant_dict_lookup_value (&dict,
       TP_PROP_CHANNEL_DISPATCH_OPERATION_CHANNEL_PROPERTIES,
       G_VARIANT_TYPE_VARDICT);
-  if (v == NULL)
+  if (chan_props == NULL)
     {
       g_set_error (&error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Properties doesn't contain 'ChannelProperties'");
@@ -1856,7 +1852,6 @@ _tp_base_client_add_dispatch_operation (_TpGDBusClientApprover *skeleton,
       goto out;
     }
 
-  chan_props = tp_asv_from_vardict (v);
   if (!ensure_account_connection_channel (self, account_path,
       connection_path, chan_path, chan_props, &account, &connection, &channel,
       &error))
@@ -1896,7 +1891,6 @@ out:
   g_clear_object (&connection);
   g_clear_object (&channel);
   g_variant_dict_clear (&dict);
-  g_clear_pointer (&chan_props, g_hash_table_unref);
 
   if (dispatch_operation != NULL)
     g_object_unref (dispatch_operation);
@@ -2157,7 +2151,6 @@ _tp_base_client_handle_channel (_TpGDBusClientHandler *skeleton,
   GArray *account_features;
   GArray *connection_features;
   GArray *channel_features;
-  GHashTable *asv;
 
   if (cls->handle_channel == NULL)
     {
@@ -2168,10 +2161,8 @@ _tp_base_client_handle_channel (_TpGDBusClientHandler *skeleton,
       return TRUE;
     }
 
-  asv = tp_asv_from_vardict (channel_props);
-
   if (!ensure_account_connection_channel (self, account_path,
-      connection_path, channel_path, asv, &account, &connection,
+      connection_path, channel_path, channel_props, &account, &connection,
       &channel, &error))
   if (channel == NULL)
     goto out;
@@ -2196,7 +2187,6 @@ _tp_base_client_handle_channel (_TpGDBusClientHandler *skeleton,
   g_array_unref (account_features);
   g_array_unref (connection_features);
   g_array_unref (channel_features);
-  g_clear_pointer (&asv, g_hash_table_unref);
 
 out:
   g_clear_object (&account);
