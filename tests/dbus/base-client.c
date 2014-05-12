@@ -65,6 +65,7 @@ typedef struct {
     GPtrArray *delegated;
     GHashTable *not_delegated;
     guint nb_delegate_cb;
+    GPtrArray *handled_channels;
 } Test;
 
 #define ACCOUNT_PATH TP_ACCOUNT_OBJECT_PATH_BASE "what/ev/er"
@@ -275,6 +276,7 @@ teardown (Test *test,
 
   tp_clear_pointer (&test->delegated, g_ptr_array_unref);
   tp_clear_pointer (&test->not_delegated, g_hash_table_unref);
+  g_clear_pointer (&test->handled_channels, g_ptr_array_unref);
 }
 
 /* Test Basis */
@@ -710,7 +712,6 @@ get_handler_prop_cb (TpProxy *proxy,
   gboolean bypass;
   gboolean valid;
   const gchar * const * capabilities;
-  GPtrArray *handled;
 
   if (error != NULL)
     {
@@ -736,10 +737,12 @@ get_handler_prop_cb (TpProxy *proxy,
   g_assert (tp_strv_contains (capabilities, "goat"));
   g_assert (tp_strv_contains (capabilities, "pony"));
 
-  handled = tp_asv_get_boxed (properties, "HandledChannels",
+  g_clear_pointer (&test->handled_channels, g_ptr_array_unref);
+  test->handled_channels = tp_asv_get_boxed (properties, "HandledChannels",
       TP_ARRAY_TYPE_OBJECT_PATH_LIST);
-  g_assert (handled != NULL);
-  g_assert_cmpint (handled->len, ==, 0);
+  test->handled_channels = g_boxed_copy (TP_ARRAY_TYPE_OBJECT_PATH_LIST,
+      test->handled_channels);
+  g_assert (test->handled_channels != NULL);
 
 out:
   g_main_loop_quit (test->mainloop);
@@ -834,6 +837,7 @@ test_handler (Test *test,
       TP_IFACE_CLIENT_HANDLER, get_handler_prop_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
+  g_assert_cmpuint (test->handled_channels->len, ==, 0);
 
   g_assert (!tp_base_client_is_handling_channel (test->base_client,
         test->text_chan));
@@ -854,6 +858,13 @@ test_handler (Test *test,
         test->text_chan));
   g_assert (tp_base_client_is_handling_channel (test->base_client,
         test->text_chan_2));
+
+  /* Handler properties are updated */
+  tp_cli_dbus_properties_call_get_all (test->client, -1,
+      TP_IFACE_CLIENT_HANDLER, get_handler_prop_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+  g_assert_cmpuint (test->handled_channels->len, ==, 2);
 
   /* One of the channel is closed */
   g_signal_connect (test->text_chan, "invalidated",
