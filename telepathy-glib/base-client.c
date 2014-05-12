@@ -1579,7 +1579,7 @@ error:
 
 static gboolean
 create_channel_request_array (TpBaseClient *self,
-    GVariant *requests_hash,
+    GVariant *requests_variant,
     GPtrArray **requests,
     GError **error)
 {
@@ -1587,10 +1587,10 @@ create_channel_request_array (TpBaseClient *self,
   const gchar *key;
   GVariant *value;
 
-  *requests = g_ptr_array_new_full (g_variant_n_children (requests_hash),
+  *requests = g_ptr_array_new_full (g_variant_n_children (requests_variant),
       g_object_unref);
 
-  g_variant_iter_init (&iter, requests_hash);
+  g_variant_iter_init (&iter, requests_variant);
   while (g_variant_iter_next (&iter, "{&o@a{sv}}", &key, &value))
     {
       const gchar *req_path = key;
@@ -1621,7 +1621,7 @@ _tp_base_client_observe_channel (_TpGDBusClientObserverSkeleton *skeleton,
     const gchar *channel_path,
     GVariant *channel_props,
     const gchar *dispatch_operation_path,
-    GVariant *requests_hash,
+    GVariant *requests_variant,
     GVariant *observer_info,
     TpBaseClient *self)
 {
@@ -1668,7 +1668,7 @@ _tp_base_client_observe_channel (_TpGDBusClientObserverSkeleton *skeleton,
         }
     }
 
-  if (!create_channel_request_array (self, requests_hash, &requests, &error))
+  if (!create_channel_request_array (self, requests_variant, &requests, &error))
     goto out;
 
   ctx = _tp_observe_channel_context_new (account, connection, channel,
@@ -2142,7 +2142,7 @@ _tp_base_client_handle_channel (_TpGDBusClientHandler *skeleton,
     const gchar *connection_path,
     const gchar *channel_path,
     GVariant *channel_props,
-    GVariant *requests_hash,
+    GVariant *requests_variant,
     gint64 user_action_time,
     GVariant *handler_info,
     TpBaseClient *self)
@@ -2173,7 +2173,7 @@ _tp_base_client_handle_channel (_TpGDBusClientHandler *skeleton,
   if (channel == NULL)
     goto out;
 
-  if (!create_channel_request_array (self, requests_hash, &requests, &error))
+  if (!create_channel_request_array (self, requests_variant, &requests, &error))
     goto out;
 
   ctx = _tp_handle_channel_context_new (account, connection, channel,
