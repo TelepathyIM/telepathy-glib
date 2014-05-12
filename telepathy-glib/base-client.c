@@ -1062,9 +1062,11 @@ tp_base_client_dup_handled_channels (TpBaseClient *self)
 
   g_return_val_if_fail (self->priv->flags & CLIENT_IS_HANDLER, NULL);
 
-  set = g_hash_table_new (g_str_hash, g_str_equal);
-
   clients = g_object_get_qdata (G_OBJECT (self->priv->dbus), clients_quark ());
+  if (clients == NULL)
+    return NULL;
+
+  set = g_hash_table_new (g_str_hash, g_str_equal);
 
   g_hash_table_iter_init (&iter, clients);
   while (g_hash_table_iter_next (&iter, NULL, &value))
