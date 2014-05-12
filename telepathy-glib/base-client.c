@@ -1713,10 +1713,18 @@ observer_skeleton_init (TpBaseClient *self)
   GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (self);
   gboolean delay_approvers, recover;
 
-  self->priv->observer_skeleton = _tp_gdbus_client_observer_skeleton_new ();
+  if (self->priv->observer_skeleton == NULL)
+    {
+      self->priv->observer_skeleton = _tp_gdbus_client_observer_skeleton_new ();
 
-  g_dbus_object_skeleton_add_interface (skel,
-      G_DBUS_INTERFACE_SKELETON (self->priv->observer_skeleton));
+      g_dbus_object_skeleton_add_interface (skel,
+          G_DBUS_INTERFACE_SKELETON (self->priv->observer_skeleton));
+
+      /* Method */
+      g_signal_connect_object (self->priv->observer_skeleton,
+          "handle-observe-channel",
+          G_CALLBACK (_tp_base_client_observe_channel), self, 0);
+    }
 
   /* Properties */
   delay_approvers = ((self->priv->flags & CLIENT_OBSERVER_DELAYS_APPROVERS)
@@ -1732,11 +1740,6 @@ observer_skeleton_init (TpBaseClient *self)
   _tp_gdbus_client_observer_set_observer_channel_filter (
       self->priv->observer_skeleton,
       g_variant_builder_end (self->priv->observer_filters));
-
-  /* Method */
-  g_signal_connect_object (self->priv->observer_skeleton,
-      "handle-observe-channel", G_CALLBACK (_tp_base_client_observe_channel),
-      self, 0);
 }
 
 static void
@@ -1907,20 +1910,23 @@ approver_skeleton_init (TpBaseClient *self)
 {
   GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (self);
 
-  self->priv->approver_skeleton = _tp_gdbus_client_approver_skeleton_new ();
+  if (self->priv->approver_skeleton == NULL)
+    {
+      self->priv->approver_skeleton = _tp_gdbus_client_approver_skeleton_new ();
 
-  g_dbus_object_skeleton_add_interface (skel,
-      G_DBUS_INTERFACE_SKELETON (self->priv->approver_skeleton));
+      g_dbus_object_skeleton_add_interface (skel,
+          G_DBUS_INTERFACE_SKELETON (self->priv->approver_skeleton));
+
+      /* Method */
+      g_signal_connect_object (self->priv->approver_skeleton,
+          "handle-add-dispatch-operation",
+          G_CALLBACK (_tp_base_client_add_dispatch_operation), self, 0);
+    }
 
   /* Property */
   _tp_gdbus_client_approver_set_approver_channel_filter (
       self->priv->approver_skeleton,
       g_variant_builder_end (self->priv->approver_filters));
-
-  /* Method */
-  g_signal_connect_object (self->priv->approver_skeleton,
-      "handle-add-dispatch-operation",
-      G_CALLBACK (_tp_base_client_add_dispatch_operation), self, 0);
 }
 
 static void
@@ -2209,10 +2215,18 @@ handler_skeleton_init (TpBaseClient *self)
   GDBusObjectSkeleton *skel = G_DBUS_OBJECT_SKELETON (self);
   gboolean bypass;
 
-  self->priv->handler_skeleton = _tp_gdbus_client_handler_skeleton_new ();
+  if (self->priv->handler_skeleton == NULL)
+    {
+      self->priv->handler_skeleton = _tp_gdbus_client_handler_skeleton_new ();
 
-  g_dbus_object_skeleton_add_interface (skel,
-      G_DBUS_INTERFACE_SKELETON (self->priv->handler_skeleton));
+      g_dbus_object_skeleton_add_interface (skel,
+          G_DBUS_INTERFACE_SKELETON (self->priv->handler_skeleton));
+
+      /* Method */
+      g_signal_connect_object (self->priv->handler_skeleton,
+          "handle-handle-channel", G_CALLBACK (_tp_base_client_handle_channel),
+          self, 0);
+    }
 
   /* Properties */
   _tp_gdbus_client_handler_set_handler_channel_filter (
@@ -2228,11 +2242,6 @@ handler_skeleton_init (TpBaseClient *self)
       (const gchar * const *) self->priv->handler_caps->pdata);
 
   update_handled_channels_prop (self);
-
-  /* Method */
-  g_signal_connect_object (self->priv->handler_skeleton,
-      "handle-handle-channel", G_CALLBACK (_tp_base_client_handle_channel),
-      self, 0);
 }
 
 typedef struct
