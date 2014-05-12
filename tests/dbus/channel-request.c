@@ -153,7 +153,7 @@ channel_request_new (GDBusConnection *bus_connection,
 
   factory = tp_client_factory_new (bus_connection);
   self = _tp_client_factory_ensure_channel_request (factory, object_path,
-      immutable_properties, error);
+      tp_asv_to_vardict (immutable_properties), error);
 
   g_object_unref (factory);
   g_hash_table_unref (immutable_properties);

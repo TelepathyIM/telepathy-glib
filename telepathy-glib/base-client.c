@@ -1594,12 +1594,10 @@ create_channel_request_array (TpBaseClient *self,
   while (g_variant_iter_next (&iter, "{&o@a{sv}}", &key, &value))
     {
       const gchar *req_path = key;
-      GHashTable *props = tp_asv_from_vardict (value);
       TpChannelRequest *request;
 
       request = _tp_client_factory_ensure_channel_request (
-          self->priv->factory, req_path, props, error);
-      g_hash_table_unref (props);
+          self->priv->factory, req_path, value, error);
       g_variant_unref (value);
 
       if (request == NULL)
@@ -2307,11 +2305,9 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
   GError *error = NULL;
   channel_request_prepare_account_ctx *ctx;
   GArray *account_features;
-  GHashTable *asv;
 
-  asv = tp_asv_from_vardict (properties);
   request = _tp_client_factory_ensure_channel_request (
-      self->priv->factory, path, asv, &error);
+      self->priv->factory, path, properties, &error);
   if (request == NULL)
     {
       DEBUG ("Failed to create TpChannelRequest: %s", error->message);
@@ -2345,14 +2341,12 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
       channel_request_account_prepare_cb, ctx);
 
   g_array_unref (account_features);
-  g_hash_table_unref (asv);
 
   tp_svc_client_interface_requests_return_from_add_request (context);
   return TRUE;
 
 err:
   g_clear_object (&account);
-  g_hash_table_unref (asv);
 
   g_dbus_method_invocation_take_error (context, error);
   return TRUE;

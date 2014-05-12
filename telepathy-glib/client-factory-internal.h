@@ -32,7 +32,7 @@ void _tp_client_factory_insert_proxy (TpClientFactory *self,
 TpChannelRequest *_tp_client_factory_ensure_channel_request (
     TpClientFactory *self,
     const gchar *object_path,
-    GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error);
 
 TpChannelDispatchOperation *

@@ -1410,8 +1410,9 @@ tp_client_factory_add_contact_features_varargs (
  * _tp_client_factory_ensure_channel_request:
  * @self: a #TpClientFactory object
  * @object_path: the object path of a channel request
- * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
- *  the immutable properties of the channel request
+ * @immutable_properties: (allow-none): the immutable properties of the channel
+ *  request as %G_VARIANT_TYPE_VARDICT; ownership is taken
+ *  if floating
  * @error: Used to raise an error if @object_path is not valid
  *
  * Returns a #TpChannelRequest for @object_path. The returned
@@ -1430,11 +1431,10 @@ tp_client_factory_add_contact_features_varargs (
 TpChannelRequest *
 _tp_client_factory_ensure_channel_request (TpClientFactory *self,
     const gchar *object_path,
-    GHashTable *immutable_properties,
+    GVariant *immutable_properties,
     GError **error)
 {
   TpChannelRequest *request;
-  GVariant *props;
 
   g_return_val_if_fail (TP_IS_CLIENT_FACTORY (self), NULL);
   g_return_val_if_fail (g_variant_is_object_path (object_path), NULL);
@@ -1444,11 +1444,10 @@ _tp_client_factory_ensure_channel_request (TpClientFactory *self,
   if (request != NULL)
     return g_object_ref (request);
 
-  props = tp_asv_to_vardict (immutable_properties);
-
-  g_variant_ref_sink (props);
-  request = _tp_channel_request_new (self, object_path, props, error);
-  g_variant_unref (props);
+  g_variant_ref_sink (immutable_properties);
+  request = _tp_channel_request_new (self, object_path, immutable_properties,
+      error);
+  g_variant_unref (immutable_properties);
   insert_proxy (self, request);
 
   return request;

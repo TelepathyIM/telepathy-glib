@@ -825,7 +825,7 @@ acr_request_cb (TpChannelDispatcher *cd,
 
   self->priv->chan_request = _tp_client_factory_ensure_channel_request (
       tp_proxy_get_factory (self->priv->account), channel_request_path,
-      properties, &err);
+      tp_asv_to_vardict (properties), &err);
   if (self->priv->chan_request == NULL)
     {
       DEBUG ("Failed to create ChannelRequest: %s", err->message);
