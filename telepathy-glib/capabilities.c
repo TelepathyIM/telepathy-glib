@@ -910,15 +910,25 @@ tp_capabilities_supports_contact_search (TpCapabilities *self,
         &allowed_properties))
     {
       const gchar *chan_type;
-
-      /* ContactSearch channel should have ChannelType and TargetEntityType=NONE
-       * but CM implementations are wrong and omitted TargetEntityType,
-       * so it's set in stone now.  */
-      if (g_variant_n_children (fixed) != 1)
-        continue;
+      TpEntityType entity_type;
+      gboolean valid;
+      /* ChannelType is mandatory, TargetEntityType is optionnal */
+      guint nb_fixed_props = 1;
 
       chan_type = tp_vardict_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
       if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_CONTACT_SEARCH1))
+        continue;
+
+      entity_type = tp_vardict_get_uint32 (fixed,
+          TP_PROP_CHANNEL_TARGET_ENTITY_TYPE, &valid);
+      /* If TargetEntityType is missing we treat it as NONE */
+      if (valid && entity_type != TP_ENTITY_TYPE_NONE)
+        continue;
+
+      if (valid)
+        nb_fixed_props++;
+
+      if (g_variant_n_children (fixed) != nb_fixed_props)
         continue;
 
       ret = TRUE;
