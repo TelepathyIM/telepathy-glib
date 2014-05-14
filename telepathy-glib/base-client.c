@@ -1258,6 +1258,30 @@ tp_base_client_set_property (GObject *object,
   }
 }
 
+/* User data for interface-added and interface-removed signals, with vaguely
+ * mnemonic values */
+#define INTERFACE_ADDED (GINT_TO_POINTER(1))
+#define INTERFACE_REMOVED (GINT_TO_POINTER(-1))
+
+static void
+tp_base_client_interface_changed_cb (TpBaseClient *self,
+    GDBusInterface *interface,
+    gpointer user_data)
+{
+  GDBusInterfaceInfo *info = g_dbus_interface_get_info (interface);
+  const gchar *verb = (user_data == INTERFACE_ADDED ? "add" : "remove");
+
+  g_assert (user_data == INTERFACE_ADDED || user_data == INTERFACE_REMOVED);
+
+  if (self->priv->registered)
+    {
+      WARNING ("Adding or removing Client interfaces after the client "
+          "has been registered is not supported. "
+          "(Tried to %s %s %p, \"%s\")",
+          verb, G_OBJECT_TYPE_NAME (interface), interface, info->name);
+    }
+}
+
 static void
 tp_base_client_constructed (GObject *object)
 {
@@ -1307,6 +1331,13 @@ tp_base_client_constructed (GObject *object)
   g_strdelimit (self->priv->object_path, ".", '/');
 
   self->priv->bus_name = g_string_free (string, FALSE);
+
+  g_signal_connect (self, "interface-added",
+      G_CALLBACK (tp_base_client_interface_changed_cb),
+      INTERFACE_ADDED);
+  g_signal_connect (self, "interface-removed",
+      G_CALLBACK (tp_base_client_interface_changed_cb),
+      INTERFACE_REMOVED);
 }
 
 static void
