@@ -283,6 +283,10 @@ test_change_inconveniently (Fixture *f,
    * and the self-ID at the same time. */
   g_assert_cmpstr (arg, ==, "round-trip");
 
+  /* TpConnection::constructed does an initial GetAll. We don't want that call
+   * to interfer with our test, so let's wait for the dust to settle first. */
+  tp_tests_proxy_run_until_prepared (f->client_conn, NULL);
+
   g_signal_connect_swapped (f->client_conn, "notify::self-contact",
       G_CALLBACK (swapped_counter_cb), &contact_times);
   filter_id = g_dbus_connection_add_filter (f->dbus,
