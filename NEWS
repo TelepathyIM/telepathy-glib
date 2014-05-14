@@ -89,6 +89,13 @@ API breaks:
 
 • Some unused API has been removed from TpGroupMixin.
 
+• The expected channel class for ContactSearch channels has changed to
+  match the specification (fd.o #77030).
+
+Other significant changes:
+
+• TpWeakRef now uses a GWeakRef internally
+
 telepathy-glib 0.99.10 (2014-04-03)
 ===================================
 
