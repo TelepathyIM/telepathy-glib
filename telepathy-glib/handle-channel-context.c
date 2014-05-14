@@ -160,6 +160,8 @@ tp_handle_channel_context_dispose (GObject *object)
       self->priv->result = NULL;
     }
 
+  g_clear_object (&self->priv->dbus_context);
+
   if (dispose != NULL)
     dispose (object);
 }
@@ -243,7 +245,7 @@ tp_handle_channel_context_set_property (GObject *object,
         break;
 
       case PROP_DBUS_CONTEXT:
-        self->priv->dbus_context = g_value_get_pointer (value);
+        self->priv->dbus_context = g_value_dup_object (value);
         break;
 
       default:
@@ -404,8 +406,9 @@ tp_handle_channel_context_class_init (
    *
    * Since: 0.11.6
    */
-  param_spec = g_param_spec_pointer ("dbus-context", "D-Bus context",
+  param_spec = g_param_spec_object ("dbus-context", "D-Bus context",
       "The GDBusMethodInvocation associated with the HandleChannels call",
+      G_TYPE_DBUS_METHOD_INVOCATION,
       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DBUS_CONTEXT,
       param_spec);
@@ -477,7 +480,7 @@ tp_handle_channel_context_accept (TpHandleChannelContext *self)
   self->priv->state = TP_HANDLE_CHANNEL_CONTEXT_STATE_DONE;
   g_dbus_method_invocation_return_value (self->priv->dbus_context, NULL);
 
-  self->priv->dbus_context = NULL;
+  g_clear_object (&self->priv->dbus_context);
 
   g_signal_emit (self, signals[SIGNAL_DONE], 0);
 }
@@ -503,7 +506,7 @@ tp_handle_channel_context_fail (TpHandleChannelContext *self,
   self->priv->state = TP_HANDLE_CHANNEL_CONTEXT_STATE_FAILED;
   g_dbus_method_invocation_return_gerror (self->priv->dbus_context, error);
 
-  self->priv->dbus_context = NULL;
+  g_clear_object (&self->priv->dbus_context);
 }
 
 /**

@@ -142,6 +142,8 @@ tp_add_dispatch_operation_context_dispose (GObject *object)
       self->priv->result = NULL;
     }
 
+  g_clear_object (&self->priv->dbus_context);
+
   if (dispose != NULL)
     dispose (object);
 }
@@ -207,7 +209,7 @@ tp_add_dispatch_operation_context_set_property (GObject *object,
         break;
 
       case PROP_DBUS_CONTEXT:
-        self->priv->dbus_context = g_value_get_pointer (value);
+        self->priv->dbus_context = g_value_dup_object (value);
         break;
 
       default:
@@ -330,8 +332,9 @@ tp_add_dispatch_operation_context_class_init (
    *
    * Since: 0.11.5
    */
-  param_spec = g_param_spec_pointer ("dbus-context", "D-Bus context",
+  param_spec = g_param_spec_object ("dbus-context", "D-Bus context",
       "The GDBusMethodInvocation associated with the AddDispatchOperation call",
+      G_TYPE_DBUS_METHOD_INVOCATION,
       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DBUS_CONTEXT,
       param_spec);
@@ -374,7 +377,7 @@ tp_add_dispatch_operation_context_accept (TpAddDispatchOperationContext *self)
   self->priv->state = TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_DONE;
   g_dbus_method_invocation_return_value (self->priv->dbus_context, NULL);
 
-  self->priv->dbus_context = NULL;
+  g_clear_object (&self->priv->dbus_context);
 }
 
 /**
@@ -398,7 +401,7 @@ tp_add_dispatch_operation_context_fail (TpAddDispatchOperationContext *self,
   self->priv->state = TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_FAILED;
   g_dbus_method_invocation_return_gerror (self->priv->dbus_context, error);
 
-  self->priv->dbus_context = NULL;
+  g_clear_object (&self->priv->dbus_context);
 }
 
 /**
