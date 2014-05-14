@@ -246,7 +246,7 @@ dnl docs/Makefile.am needs to know whether it's an out of tree build
 dnl (srcdir != builddir)
 AM_CONDITIONAL([OUT_OF_TREE_BUILD], [test "z$ac_srcdir" != z.])
 
-tpglibtestsdir=${libdir}/telepathy-glib-tests
+tpglibtestsdir=${libdir}/telepathy-glib-1-tests
 AC_SUBST(tpglibtestsdir)
 
 dnl Check for Glib

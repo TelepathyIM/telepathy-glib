@@ -40,7 +40,7 @@ tests_PROGRAMS = $(programs_list)
 tests_DATA = tpglib-tests.list
 CLEANFILES += $(tests_DATA)
 
-insttestdir = ${datadir}/installed-tests/telepathy-glib
+insttestdir = ${datadir}/installed-tests/telepathy-glib-1
 insttest_DATA = $(patsubst %,%.test,$(programs_list))
 CLEANFILES += $(insttest_DATA)
 
