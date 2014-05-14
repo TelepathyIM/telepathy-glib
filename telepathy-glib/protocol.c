@@ -287,7 +287,7 @@ tp_protocol_get_property (GObject *object,
       break;
 
     case PROP_AVATAR_REQUIREMENTS:
-      g_value_set_pointer (value, tp_protocol_get_avatar_requirements (self));
+      g_value_set_boxed (value, tp_protocol_get_avatar_requirements (self));
       break;
 
     case PROP_CM_NAME:
@@ -823,9 +823,10 @@ tp_protocol_class_init (TpProtocolClass *klass)
    * Since: 0.15.6
    */
   g_object_class_install_property (object_class, PROP_AVATAR_REQUIREMENTS,
-      g_param_spec_pointer ("avatar-requirements",
+      g_param_spec_boxed ("avatar-requirements",
         "Avatars requirements",
         "Avatars requirements",
+        TP_TYPE_AVATAR_REQUIREMENTS,
         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   /**
