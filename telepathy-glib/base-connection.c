@@ -140,7 +140,7 @@
  * @fill_contact_attributes: If @dbus_interface is recognised by this
  *  object, fill in any contact attribute tokens for @contact in @attributes,
  *  and return. Otherwise, chain up to the superclass' implementation.
- *  Since: 0.UNRELEASED
+ *  Since: 0.99.11
  *
  * The class of a #TpBaseConnection. Many members are virtual methods etc.
  * to be filled in in the subclass' class_init function.
@@ -910,7 +910,7 @@ update_rcc_property (TpBaseConnection *self)
  * attribute tokens for @contact in @attributes, and return. Otherwise,
  * chain up to the superclass' implementation.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.11
  */
 
 static void
@@ -1124,7 +1124,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    * compatibility since #TpBaseConnection doesn't implement #TpSvcConnection
    * interface anymore.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.99.11
    */
   signals[STATUS_CHANGED] =
     g_signal_new ("status-changed",

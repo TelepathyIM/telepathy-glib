@@ -1,5 +1,7 @@
-telepathy-glib 0.99.11 (UNRELEASED)
+telepathy-glib 0.99.11 (2014-05-14)
 ===================================
+
+The “electioneering” release.
 
 API breaks:
 

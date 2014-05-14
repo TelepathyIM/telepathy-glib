@@ -27,7 +27,7 @@
  * #TpBaseConnection subclasses can implement this interface to implement the
  * corresponding DBus interface.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.99.11
  */
 
 /**
