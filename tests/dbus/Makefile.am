@@ -341,7 +341,7 @@ EXTRA_DIST = \
     run-test.sh.in \
     $(NULL)
 
-run-test.sh: run-test.sh.in
+run-test.sh: run-test.sh.in Makefile
 	$(AM_V_GEN)sed \
 		-e "s|[@]tpglibtestsdir[@]|@tpglibtestsdir@|g" \
 		-e "s|[@]libexec[@]|${libexecdir}|g" \
