@@ -77,29 +77,6 @@ tp_handle_set_new (TpHandleRepoIface *repo)
   return set;
 }
 
-/**
- * tp_handle_set_new_from_array: (skip)
- * @repo: #TpHandleRepoIface that holds the handles to be reffed by this set
- * @array: (element-type guint32): array of handles to be referenced by this set
- *
- * Creates a new #TpHandleSet
- *
- * Returns: (transfer full): A new #TpHandleSet
- *
- * Since: 0.11.7
- */
-TpHandleSet *
-tp_handle_set_new_from_array (TpHandleRepoIface *repo,
-    const GArray *array)
-{
-  TpHandleSet *set = tp_handle_set_new (repo);
-  TpIntset *tmp = tp_intset_from_array (array);
-
-  tp_intset_destroy (tp_handle_set_update (set, tmp));
-  tp_intset_destroy (tmp);
-  return set;
-}
-
 static void
 freer (TpHandleSet *set, TpHandle handle, gpointer userdata)
 {

@@ -144,8 +144,6 @@ GArray *tp_handle_set_to_array (const TpHandleSet *set)
   G_GNUC_WARN_UNUSED_RESULT;
 GVariant *tp_handle_set_to_identifier_map (TpHandleSet *self)
     G_GNUC_WARN_UNUSED_RESULT;
-TpHandleSet *tp_handle_set_new_from_array (TpHandleRepoIface *repo,
-    const GArray *array) G_GNUC_WARN_UNUSED_RESULT;
 
 GVariant *tp_handle_set_to_variant (const TpHandleSet *set)
   G_GNUC_WARN_UNUSED_RESULT;

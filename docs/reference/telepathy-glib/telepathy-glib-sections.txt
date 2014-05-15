@@ -207,7 +207,6 @@ TP_TYPE_HANDLE_SET
 TpHandleSetMemberFunc
 tp_handle_set_new
 tp_handle_set_new_containing
-tp_handle_set_new_from_array
 tp_handle_set_new_from_intset
 tp_handle_set_new_from_variant
 tp_handle_set_copy

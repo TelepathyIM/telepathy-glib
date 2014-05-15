@@ -880,7 +880,6 @@ tp_handle_set_is_empty
 tp_handle_set_is_member
 tp_handle_set_new
 tp_handle_set_new_containing
-tp_handle_set_new_from_array
 tp_handle_set_new_from_intset
 tp_handle_set_peek
 tp_handle_set_remove
