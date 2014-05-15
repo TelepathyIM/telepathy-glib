@@ -4003,8 +4003,8 @@ tp_base_contact_list_mixin_request_subscription (
       goto out;
     }
 
-  contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
-      contacts);
+  contacts_set = tp_handle_set_new_from_variant (self->priv->contact_repo,
+      contacts_variant);
   tp_base_contact_list_request_subscription_async (self, contacts_set, message,
       tp_base_contact_list_mixin_request_subscription_cb, context);
   tp_handle_set_destroy (contacts_set);
@@ -4047,8 +4047,8 @@ tp_base_contact_list_mixin_authorize_publication (
       goto out;
     }
 
-  contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
-      contacts);
+  contacts_set = tp_handle_set_new_from_variant (self->priv->contact_repo,
+      contacts_variant);
   tp_base_contact_list_authorize_publication_async (self, contacts_set,
       tp_base_contact_list_mixin_authorize_publication_cb, context);
   tp_handle_set_destroy (contacts_set);
@@ -4091,8 +4091,8 @@ tp_base_contact_list_mixin_remove_contacts (
       goto out;
     }
 
-  contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
-      contacts);
+  contacts_set = tp_handle_set_new_from_variant (self->priv->contact_repo,
+      contacts_variant);
   tp_base_contact_list_remove_contacts_async (self, contacts_set,
       tp_base_contact_list_mixin_remove_contacts_cb, context);
   tp_handle_set_destroy (contacts_set);
@@ -4135,8 +4135,8 @@ tp_base_contact_list_mixin_unsubscribe (
       goto out;
     }
 
-  contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
-      contacts);
+  contacts_set = tp_handle_set_new_from_variant (self->priv->contact_repo,
+      contacts_variant);
   tp_base_contact_list_unsubscribe_async (self, contacts_set,
       tp_base_contact_list_mixin_unsubscribe_cb, context);
   tp_handle_set_destroy (contacts_set);
@@ -4179,8 +4179,8 @@ tp_base_contact_list_mixin_unpublish (
       goto out;
     }
 
-  contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
-      contacts);
+  contacts_set = tp_handle_set_new_from_variant (self->priv->contact_repo,
+      contacts_variant);
   tp_base_contact_list_unpublish_async (self, contacts_set,
       tp_base_contact_list_mixin_unpublish_cb, context);
   tp_handle_set_destroy (contacts_set);
@@ -4508,8 +4508,8 @@ tp_base_contact_list_mixin_set_group_members (
       goto out;
     }
 
-  contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
-      contacts);
+  contacts_set = tp_handle_set_new_from_variant (self->priv->contact_repo,
+      contacts_variant);
   tp_base_contact_list_set_group_members_async (self,
       group, contacts_set, tp_base_contact_list_mixin_set_group_members_cb,
       context);
@@ -4562,8 +4562,8 @@ tp_base_contact_list_mixin_add_to_group (
       goto out;
     }
 
-  contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
-      contacts);
+  contacts_set = tp_handle_set_new_from_variant (self->priv->contact_repo,
+      contacts_variant);
   tp_base_contact_list_add_to_group_async (self, normalized_group,
       contacts_set, tp_base_contact_list_mixin_add_to_group_cb, context);
   tp_handle_set_destroy (contacts_set);
@@ -4617,8 +4617,8 @@ tp_base_contact_list_mixin_remove_from_group (
       goto out;
     }
 
-  contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
-      contacts);
+  contacts_set = tp_handle_set_new_from_variant (self->priv->contact_repo,
+      contacts_variant);
   tp_base_contact_list_remove_from_group_async (self, normalized_group,
       contacts_set, tp_base_contact_list_mixin_remove_from_group_cb, context);
   tp_handle_set_destroy (contacts_set);
