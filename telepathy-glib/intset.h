@@ -56,6 +56,8 @@ void tp_intset_foreach (const TpIntset *set, TpIntFunc func,
 GArray *tp_intset_to_array (const TpIntset *set) G_GNUC_WARN_UNUSED_RESULT;
 TpIntset *tp_intset_from_array (const GArray *array) G_GNUC_WARN_UNUSED_RESULT;
 
+GVariant *tp_intset_to_variant (const TpIntset *set) G_GNUC_WARN_UNUSED_RESULT;
+
 gboolean tp_intset_is_empty (const TpIntset *set) G_GNUC_WARN_UNUSED_RESULT;
 guint tp_intset_size (const TpIntset *set) G_GNUC_WARN_UNUSED_RESULT;
 

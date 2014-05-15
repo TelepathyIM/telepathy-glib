@@ -200,6 +200,20 @@ test (Fixture *f,
     tmp = NULL;
   }
 
+  {
+    GVariant *v;
+
+    v = tp_intset_to_variant (a);
+    g_variant_ref_sink (v);
+    g_assert (g_variant_is_of_type (v, G_VARIANT_TYPE ("au")));
+    g_variant_unref (v);
+
+    v = tp_intset_to_variant (b);
+    g_variant_ref_sink (v);
+    g_assert (g_variant_is_of_type (v, G_VARIANT_TYPE ("au")));
+    g_variant_unref (v);
+  }
+
   value = tp_g_value_slice_new_take_boxed (TP_TYPE_INTSET, a);
   copy = g_value_dup_boxed (value);
 

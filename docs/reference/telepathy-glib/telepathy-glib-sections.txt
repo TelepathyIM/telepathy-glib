@@ -1783,6 +1783,7 @@ tp_intset_is_member
 tp_intset_foreach
 tp_intset_to_array
 tp_intset_from_array
+tp_intset_to_variant
 tp_intset_is_empty
 tp_intset_size
 tp_intset_is_equal

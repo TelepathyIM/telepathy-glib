@@ -355,6 +355,12 @@ tp_intset_to_array (const TpIntset *set)
   return array;
 }
 
+static void
+addint_builder (guint i, gpointer data)
+{
+  GVariantBuilder *builder = (GVariantBuilder *) data;
+  g_variant_builder_add (builder, "u", i);
+}
 
 /**
  * tp_intset_from_array:
@@ -381,6 +387,29 @@ tp_intset_from_array (const GArray *array)
     }
 
   return set;
+}
+
+/**
+ * tp_intset_to_variant:
+ * @set: set to convert
+ *
+ * <!--Returns: says it all-->
+ *
+ * Returns: (transfer none): a new floating #GVariant of type
+ * 'au' (array of uint32) containing the same integers as @set.
+ */
+GVariant *
+tp_intset_to_variant (const TpIntset *set)
+{
+  GVariantBuilder builder;
+
+  g_return_val_if_fail (set != NULL, NULL);
+
+  g_variant_builder_init (&builder, G_VARIANT_TYPE ("au"));
+
+  tp_intset_foreach (set, addint_builder, &builder);
+
+  return g_variant_builder_end (&builder);
 }
 
 /* these magic numbers would need adjusting for 64-bit storage */
