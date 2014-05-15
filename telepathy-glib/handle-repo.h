@@ -87,6 +87,10 @@ gboolean tp_handle_is_valid (TpHandleRepoIface *self,
     TpHandle handle, GError **error);
 gboolean tp_handles_are_valid (TpHandleRepoIface *self,
     const GArray *handles, gboolean allow_zero, GError **error);
+gboolean tp_handles_are_valid_variant (TpHandleRepoIface *self,
+    GVariant *handles,
+    gboolean allow_zero,
+    GError **error);
 
 const char *tp_handle_inspect (TpHandleRepoIface *self,
     TpHandle handle) G_GNUC_WARN_UNUSED_RESULT;

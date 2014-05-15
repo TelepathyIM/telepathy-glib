@@ -86,6 +86,55 @@ tp_handles_are_valid (TpHandleRepoIface *self,
       handles, allow_zero, error);
 }
 
+static GArray *
+handles_variant_to_array (GVariant *variant)
+{
+  const TpHandle *handles;
+  GArray *array;
+  gsize n;
+
+  handles = g_variant_get_fixed_array (variant, &n, sizeof (TpHandle));
+  array = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n);
+  g_array_append_vals (array, handles, n);
+
+  return array;
+}
+
+/**
+ * tp_handles_are_valid_variant:
+ * @self: A handle repository implementation
+ * @handles: a #GVariant of type 'au' (array of uint32) representing handles of
+ * the type stored in the repository @self, consumed if floating
+ * @allow_zero: If %TRUE, zero is treated like a valid handle
+ * @error: Set to InvalidHandle if %FALSE is returned
+ *
+ * <!--Returns: says it all-->
+ *
+ * Returns: %TRUE if the handle is present in the repository, else %FALSE
+ */
+gboolean
+tp_handles_are_valid_variant (TpHandleRepoIface *self,
+    GVariant *handles,
+    gboolean allow_zero,
+    GError **error)
+{
+  GArray *arr;
+  gboolean result;
+
+  g_return_val_if_fail (g_variant_is_of_type (handles, G_VARIANT_TYPE ("au")),
+      FALSE);
+
+  g_variant_ref_sink (handles);
+  arr = handles_variant_to_array (handles);
+
+  result = TP_HANDLE_REPO_IFACE_GET_CLASS (self)->handles_are_valid (self,
+      arr, allow_zero, error);
+
+  g_variant_unref (handles);
+  g_array_unref (arr);
+  return result;
+}
+
 
 /**
  * tp_handle_inspect: (skip)

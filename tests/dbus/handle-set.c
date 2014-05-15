@@ -140,6 +140,13 @@ test (Fixture *f,
         tp_handle_set_peek (other)));
   tp_clear_pointer (&other, tp_handle_set_destroy);
 
+  g_assert (tp_handles_are_valid_variant (repo,
+        g_variant_new_parsed ("[%u, %u]", h1, h2), FALSE, &error));
+  g_assert_no_error (error);
+  g_assert (!tp_handles_are_valid_variant (repo,
+        g_variant_new_parsed ("[%u, %u]", h1, 666), FALSE, &error));
+  g_assert_error (error, TP_ERROR, TP_ERROR_INVALID_HANDLE);
+
   MYASSERT (tp_handle_set_remove (set, h3) == TRUE, "");
 
   tp_handle_set_destroy (set);
