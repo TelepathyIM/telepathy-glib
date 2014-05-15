@@ -127,7 +127,7 @@ typedef void (*TpBaseProtocolGetConnectionDetailsFunc) (TpBaseProtocol *self,
     gchar **english_name,
     gchar **vcard_field);
 
-typedef void (*TpBaseProtocolGetAvatarDetailsFunc) (TpBaseProtocol *self,
+typedef gboolean (*TpBaseProtocolGetAvatarDetailsFunc) (TpBaseProtocol *self,
     GStrv *supported_mime_types,
     guint *min_height,
     guint *min_width,

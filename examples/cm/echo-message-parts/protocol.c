@@ -165,7 +165,7 @@ get_connection_details (TpBaseProtocol *self G_GNUC_UNUSED,
     }
 }
 
-static void
+static gboolean
 get_avatar_details (TpBaseProtocol *self,
     GStrv *supported_mime_types,
     guint *min_height,
@@ -199,6 +199,8 @@ get_avatar_details (TpBaseProtocol *self,
 
   if (max_bytes != NULL)
     *max_bytes = 37748736;
+
+  return TRUE;
 }
 
 static GStrv

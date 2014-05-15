@@ -404,6 +404,8 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * Signature of a virtual method to get the supported avatar details for the
  * protocol implemented by @self.
  *
+ * Returns: %TRUE if @self actually supports avatars and all the variables
+ * have been to set a meaningful value, %FALSE otherwise
  * Since: 0.13.7
  */
 
@@ -682,8 +684,7 @@ tp_base_protocol_constructed (GObject *object)
       self->priv->vcard_field = g_strdup ("");
     }
 
-  if (cls->get_avatar_details != NULL)
-    {
+  if (cls->get_avatar_details != NULL &&
       (cls->get_avatar_details) (self,
           &self->priv->avatar_specs.supported_mime_types,
           &self->priv->avatar_specs.min_height,
@@ -692,8 +693,8 @@ tp_base_protocol_constructed (GObject *object)
           &self->priv->avatar_specs.rec_width,
           &self->priv->avatar_specs.max_height,
           &self->priv->avatar_specs.max_width,
-          &self->priv->avatar_specs.max_bytes);
-
+          &self->priv->avatar_specs.max_bytes))
+    {
       object_skeleton_take_svc_interface (skel,
           TP_TYPE_SVC_PROTOCOL_INTERFACE_AVATARS1);
     }
