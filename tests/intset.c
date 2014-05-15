@@ -202,16 +202,23 @@ test (Fixture *f,
 
   {
     GVariant *v;
+    TpIntset *tmp;
 
     v = tp_intset_to_variant (a);
     g_variant_ref_sink (v);
     g_assert (g_variant_is_of_type (v, G_VARIANT_TYPE ("au")));
+    tmp = tp_intset_from_variant (v);
+    g_assert (tp_intset_is_equal (a, tmp));
     g_variant_unref (v);
+    tp_intset_destroy (tmp);
 
     v = tp_intset_to_variant (b);
     g_variant_ref_sink (v);
     g_assert (g_variant_is_of_type (v, G_VARIANT_TYPE ("au")));
+    tmp = tp_intset_from_variant (v);
+    g_assert (tp_intset_is_equal (b, tmp));
     g_variant_unref (v);
+    tp_intset_destroy (tmp);
   }
 
   value = tp_g_value_slice_new_take_boxed (TP_TYPE_INTSET, a);

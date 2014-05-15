@@ -412,6 +412,39 @@ tp_intset_to_variant (const TpIntset *set)
   return g_variant_builder_end (&builder);
 }
 
+/**
+ * tp_intset_from_variant:
+ * @variant: a #GVariant of type 'au', consumed if floating
+ *
+ * <!--Returns: says it all-->
+ *
+ * Returns: (transfer full): A set containing the same integers as @variant.
+ */
+TpIntset *
+tp_intset_from_variant (GVariant *variant)
+{
+  TpIntset *set;
+  GVariantIter iter;
+  guint32 value;
+
+  g_return_val_if_fail (variant != NULL, NULL);
+  g_return_val_if_fail (g_variant_is_of_type (variant, G_VARIANT_TYPE ("au")),
+      NULL);
+
+  g_variant_ref_sink (variant);
+
+  set = tp_intset_new ();
+
+  g_variant_iter_init (&iter, variant);
+  while (g_variant_iter_loop (&iter, "u", &value))
+    {
+      tp_intset_add (set, value);
+    }
+
+  g_variant_unref (variant);
+  return set;
+}
+
 /* these magic numbers would need adjusting for 64-bit storage */
 G_STATIC_ASSERT (BITFIELD_BITS == 32);
 
