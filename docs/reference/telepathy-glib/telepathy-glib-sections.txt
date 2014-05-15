@@ -208,6 +208,7 @@ tp_handle_set_new
 tp_handle_set_new_containing
 tp_handle_set_new_from_array
 tp_handle_set_new_from_intset
+tp_handle_set_new_from_variant
 tp_handle_set_copy
 tp_handle_set_clear
 tp_handle_set_destroy
@@ -219,6 +220,7 @@ tp_handle_set_foreach
 tp_handle_set_is_empty
 tp_handle_set_size
 tp_handle_set_to_array
+tp_handle_set_to_variant
 tp_handle_set_to_identifier_map
 tp_handle_set_update
 tp_handle_set_difference_update

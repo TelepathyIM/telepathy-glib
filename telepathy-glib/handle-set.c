@@ -294,6 +294,49 @@ tp_handle_set_to_array (const TpHandleSet *set)
 }
 
 /**
+ * tp_handle_set_to_variant:
+ * @set: A handle set
+ *
+ * <!--Returns: says it all, this comment is just to keep gtkdoc happy-->
+ *
+ * Returns: (transfer none): a new floating #GVariant of type
+ * 'au' (array of uint32) representing the handles in the set
+ *
+ * Since: UNRELEASED
+ */
+GVariant *
+tp_handle_set_to_variant (const TpHandleSet *set)
+{
+  g_return_val_if_fail (set != NULL, NULL);
+
+  return tp_intset_to_variant (set->intset);
+}
+
+/**
+ * tp_handle_set_new_from_variant:
+ * @repo: #TpHandleRepoIface that holds the handles to be reffed by this set
+ * @variant: a #GVariant of type 'au' containing the handles to be referenced
+ * by this set, consumed if floating
+ *
+ * Creates a new #TpHandleSet
+ *
+ * Returns: (transfer full): A new #TpHandleSet
+ *
+ * Since: UNRELEASED
+ */
+TpHandleSet *
+tp_handle_set_new_from_variant (TpHandleRepoIface *repo,
+    GVariant *v)
+{
+  TpHandleSet *set = tp_handle_set_new (repo);
+  TpIntset *tmp = tp_intset_from_variant (v);
+
+  tp_intset_destroy (tp_handle_set_update (set, tmp));
+  tp_intset_destroy (tmp);
+  return set;
+}
+
+/**
  * tp_handle_set_to_identifier_map:
  * @self: a handle set
  *

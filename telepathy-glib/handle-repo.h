@@ -143,6 +143,11 @@ GVariant *tp_handle_set_to_identifier_map (TpHandleSet *self)
 TpHandleSet *tp_handle_set_new_from_array (TpHandleRepoIface *repo,
     const GArray *array) G_GNUC_WARN_UNUSED_RESULT;
 
+GVariant *tp_handle_set_to_variant (const TpHandleSet *set)
+  G_GNUC_WARN_UNUSED_RESULT;
+TpHandleSet *tp_handle_set_new_from_variant (TpHandleRepoIface *repo,
+    GVariant *variant) G_GNUC_WARN_UNUSED_RESULT;
+
 TpIntset *tp_handle_set_update (TpHandleSet *set, const TpIntset *add)
   G_GNUC_WARN_UNUSED_RESULT;
 TpIntset *tp_handle_set_difference_update (TpHandleSet *set,

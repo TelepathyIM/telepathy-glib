@@ -34,6 +34,7 @@ test (Fixture *f,
   GError *error = NULL;
   gchar *s;
   GTestDBus *test_dbus;
+  GVariant *v;
 
   TpHandle h1, h2, h3, h4;
 
@@ -131,6 +132,13 @@ test (Fixture *f,
   /* can't really assert about the contents */
   s = tp_handle_set_dump (set);
   g_free (s);
+
+  v = tp_handle_set_to_variant (set);
+  g_assert (g_variant_is_of_type (v, G_VARIANT_TYPE ("au")));
+  other = tp_handle_set_new_from_variant (repo, v);
+  g_assert (tp_intset_is_equal (tp_handle_set_peek (set),
+        tp_handle_set_peek (other)));
+  tp_clear_pointer (&other, tp_handle_set_destroy);
 
   MYASSERT (tp_handle_set_remove (set, h3) == TRUE, "");
 
