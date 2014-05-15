@@ -3889,7 +3889,7 @@ tp_base_contact_list_set_group_members_finish (TpBaseContactList *self,
 
 static gboolean
 tp_base_contact_list_check_change (TpBaseContactList *self,
-    const GArray *contacts_or_null,
+    GVariant *contacts_or_null,
     GError **error)
 {
   g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), FALSE);
@@ -3899,8 +3899,8 @@ tp_base_contact_list_check_change (TpBaseContactList *self,
     return FALSE;
 
   if (contacts_or_null != NULL &&
-      !tp_handles_are_valid (self->priv->contact_repo, contacts_or_null, FALSE,
-        error))
+      !tp_handles_are_valid_variant (self->priv->contact_repo, contacts_or_null,
+        FALSE, error))
     return FALSE;
 
   return TRUE;
@@ -3908,7 +3908,7 @@ tp_base_contact_list_check_change (TpBaseContactList *self,
 
 static gboolean
 tp_base_contact_list_check_list_change (TpBaseContactList *self,
-    const GArray *contacts_or_null,
+    GVariant *contacts_or_null,
     GError **error)
 {
   if (!tp_base_contact_list_check_change (self, contacts_or_null, error))
@@ -3926,7 +3926,7 @@ tp_base_contact_list_check_list_change (TpBaseContactList *self,
 
 static gboolean
 tp_base_contact_list_check_group_change (TpBaseContactList *self,
-    const GArray *contacts_or_null,
+    GVariant *contacts_or_null,
     GError **error)
 {
   if (!tp_base_contact_list_check_change (self, contacts_or_null, error))
@@ -3941,20 +3941,6 @@ tp_base_contact_list_check_group_change (TpBaseContactList *self,
     }
 
   return TRUE;
-}
-
-static GArray *
-handles_variant_to_array (GVariant *variant)
-{
-  const TpHandle *handles;
-  GArray *array;
-  gsize n;
-
-  handles = g_variant_get_fixed_array (variant, &n, sizeof (TpHandle));
-  array = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n);
-  g_array_append_vals (array, handles, n);
-
-  return array;
 }
 
 /* Normally we'd use the return_from functions, but these methods all return
@@ -3992,11 +3978,8 @@ tp_base_contact_list_mixin_request_subscription (
 {
   GError *error = NULL;
   TpHandleSet *contacts_set;
-  GArray *contacts;
 
-  contacts = handles_variant_to_array (contacts_variant);
-
-  if (!tp_base_contact_list_check_list_change (self, contacts, &error))
+  if (!tp_base_contact_list_check_list_change (self, contacts_variant, &error))
     {
       tp_base_contact_list_mixin_return_void (context, error);
       g_clear_error (&error);
@@ -4010,7 +3993,6 @@ tp_base_contact_list_mixin_request_subscription (
   tp_handle_set_destroy (contacts_set);
 
 out:
-  g_array_unref (contacts);
   return TRUE;
 }
 
@@ -4036,11 +4018,8 @@ tp_base_contact_list_mixin_authorize_publication (
 {
   GError *error = NULL;
   TpHandleSet *contacts_set;
-  GArray *contacts;
 
-  contacts = handles_variant_to_array (contacts_variant);
-
-  if (!tp_base_contact_list_check_list_change (self, contacts, &error))
+  if (!tp_base_contact_list_check_list_change (self, contacts_variant, &error))
     {
       tp_base_contact_list_mixin_return_void (context, error);
       g_clear_error (&error);
@@ -4054,7 +4033,6 @@ tp_base_contact_list_mixin_authorize_publication (
   tp_handle_set_destroy (contacts_set);
 
 out:
-  g_array_unref (contacts);
   return TRUE;
 }
 
@@ -4080,11 +4058,8 @@ tp_base_contact_list_mixin_remove_contacts (
 {
   GError *error = NULL;
   TpHandleSet *contacts_set;
-  GArray *contacts;
 
-  contacts = handles_variant_to_array (contacts_variant);
-
-  if (!tp_base_contact_list_check_list_change (self, contacts, &error))
+  if (!tp_base_contact_list_check_list_change (self, contacts_variant, &error))
     {
       tp_base_contact_list_mixin_return_void (context, error);
       g_clear_error (&error);
@@ -4098,7 +4073,6 @@ tp_base_contact_list_mixin_remove_contacts (
   tp_handle_set_destroy (contacts_set);
 
 out:
-  g_array_unref (contacts);
   return TRUE;
 }
 
@@ -4124,11 +4098,8 @@ tp_base_contact_list_mixin_unsubscribe (
 {
   GError *error = NULL;
   TpHandleSet *contacts_set;
-  GArray *contacts;
 
-  contacts = handles_variant_to_array (contacts_variant);
-
-  if (!tp_base_contact_list_check_list_change (self, contacts, &error))
+  if (!tp_base_contact_list_check_list_change (self, contacts_variant, &error))
     {
       tp_base_contact_list_mixin_return_void (context, error);
       g_clear_error (&error);
@@ -4142,7 +4113,6 @@ tp_base_contact_list_mixin_unsubscribe (
   tp_handle_set_destroy (contacts_set);
 
 out:
-  g_array_unref (contacts);
   return TRUE;
 }
 
@@ -4168,11 +4138,8 @@ tp_base_contact_list_mixin_unpublish (
 {
   GError *error = NULL;
   TpHandleSet *contacts_set;
-  GArray *contacts;
 
-  contacts = handles_variant_to_array (contacts_variant);
-
-  if (!tp_base_contact_list_check_list_change (self, contacts, &error))
+  if (!tp_base_contact_list_check_list_change (self, contacts_variant, &error))
     {
       tp_base_contact_list_mixin_return_void (context, error);
       g_clear_error (&error);
@@ -4186,7 +4153,6 @@ tp_base_contact_list_mixin_unpublish (
   tp_handle_set_destroy (contacts_set);
 
 out:
-  g_array_unref (contacts);
   return TRUE;
 }
 
@@ -4497,11 +4463,8 @@ tp_base_contact_list_mixin_set_group_members (
 {
   TpHandleSet *contacts_set = NULL;
   GError *error = NULL;
-  GArray *contacts;
 
-  contacts = handles_variant_to_array (contacts_variant);
-
-  if (!tp_base_contact_list_check_group_change (self, contacts, &error))
+  if (!tp_base_contact_list_check_group_change (self, contacts_variant, &error))
     {
       tp_base_contact_list_mixin_return_void (context, error);
       g_clear_error (&error);
@@ -4516,7 +4479,6 @@ tp_base_contact_list_mixin_set_group_members (
   tp_handle_set_destroy (contacts_set);
 
 out:
-  g_array_unref (contacts);
   return TRUE;
 }
 
@@ -4544,11 +4506,8 @@ tp_base_contact_list_mixin_add_to_group (
   GError *error = NULL;
   gchar *normalized_group = NULL;
   TpHandleSet *contacts_set;
-  GArray *contacts;
 
-  contacts = handles_variant_to_array (contacts_variant);
-
-  if (!tp_base_contact_list_check_group_change (self, contacts, &error))
+  if (!tp_base_contact_list_check_group_change (self, contacts_variant, &error))
     {
       tp_base_contact_list_mixin_return_void (context, error);
       g_clear_error (&error);
@@ -4570,7 +4529,6 @@ tp_base_contact_list_mixin_add_to_group (
   g_free (normalized_group);
 
 out:
-  g_array_unref (contacts);
   return TRUE;
 }
 
@@ -4598,11 +4556,8 @@ tp_base_contact_list_mixin_remove_from_group (
   GError *error = NULL;
   gchar *normalized_group = NULL;
   TpHandleSet *contacts_set;
-  GArray *contacts;
 
-  contacts = handles_variant_to_array (contacts_variant);
-
-  if (!tp_base_contact_list_check_group_change (self, contacts, &error))
+  if (!tp_base_contact_list_check_group_change (self, contacts_variant, &error))
     {
       tp_base_contact_list_mixin_return_void (context, error);
       g_clear_error (&error);
@@ -4625,7 +4580,6 @@ tp_base_contact_list_mixin_remove_from_group (
 
 out:
   g_free (normalized_group);
-  g_array_unref (contacts);
   return TRUE;
 }
 
