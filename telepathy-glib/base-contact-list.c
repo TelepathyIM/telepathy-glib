@@ -2711,7 +2711,8 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
 
   if (actually_removed->len > 0)
     {
-      GArray *members_arr = tp_handle_set_to_array (old_members);
+      GVariant *members_variant = tp_handle_set_to_variant (old_members);
+      g_variant_ref_sink (members_variant);
 
       DEBUG ("GroupsRemoved([%u including '%s'])",
           actually_removed->len,
@@ -2726,24 +2727,23 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
             self->priv->contact_groups_skeleton,
             (const gchar * const *) actually_removed->pdata);
 
-      if (members_arr->len > 0)
+      if (g_variant_n_children (members_variant) > 0)
         {
           const gchar *empty_strv[] = { NULL };
 
           /* we already added NULL to actually_removed, so subtract 1 from its
            * length */
-          DEBUG ("GroupsChanged([%u contacts], [], [%u groups])",
-              members_arr->len, actually_removed->len - 1);
+          DEBUG ("GroupsChanged([%" G_GSIZE_FORMAT " contacts], [], [%u groups])",
+              g_variant_n_children (members_variant),
+              actually_removed->len - 1);
 
           if (self->priv->contact_groups_skeleton != NULL)
             _tp_gdbus_connection_interface_contact_groups1_emit_groups_changed (
-                self->priv->contact_groups_skeleton,
-                g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
-                    members_arr->data, members_arr->len, sizeof (TpHandle)),
+                self->priv->contact_groups_skeleton, members_variant,
                 empty_strv, (const gchar * const *) actually_removed->pdata);
         }
 
-      g_array_unref (members_arr);
+      g_variant_unref (members_variant);
     }
 
   tp_handle_set_destroy (old_members);
@@ -3013,15 +3013,11 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
 
       if (self->priv->contact_groups_skeleton != NULL)
         {
-          GArray *members_arr = tp_handle_set_to_array (contacts);
-
           _tp_gdbus_connection_interface_contact_groups1_emit_groups_changed (
               self->priv->contact_groups_skeleton,
-              g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
-                    members_arr->data, members_arr->len, sizeof (TpHandle)),
+              tp_handle_set_to_variant (contacts),
               (const gchar * const *) really_added->pdata,
               (const gchar * const *) really_removed->pdata);
-          g_array_unref (members_arr);
         }
     }
 
