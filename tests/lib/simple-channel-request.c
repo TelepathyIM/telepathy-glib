@@ -389,15 +389,6 @@ tp_tests_simple_channel_request_class_init (
         { NULL }
   };
 
-  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-        { TP_IFACE_CHANNEL_REQUEST,
-          tp_dbus_properties_mixin_getter_gobject_properties,
-          NULL,
-          am_props
-        },
-        { NULL },
-  };
-
   g_type_class_add_private (klass, sizeof (TpTestsSimpleChannelRequestPrivate));
   object_class->get_property = tp_tests_simple_channel_request_get_property;
   object_class->set_property = tp_tests_simple_channel_request_set_property;
@@ -454,9 +445,10 @@ tp_tests_simple_channel_request_class_init (
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_HINTS, param_spec);
 
-  klass->dbus_props_class.interfaces = prop_interfaces;
-  tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TpTestsSimpleChannelRequestClass, dbus_props_class));
+  tp_dbus_properties_mixin_class_init (object_class, 0);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+        TP_IFACE_QUARK_CHANNEL_REQUEST,
+        tp_dbus_properties_mixin_getter_gobject_properties, NULL, am_props);
 }
 
 TpTestsSimpleChannelRequest *

@@ -26,7 +26,6 @@ typedef struct _TpTestsSimpleChannelRequestPrivate TpTestsSimpleChannelRequestPr
 
 struct _TpTestsSimpleChannelRequestClass {
     GObjectClass parent_class;
-    TpDBusPropertiesMixinClass dbus_props_class;
 };
 
 struct _TpTestsSimpleChannelRequest {
