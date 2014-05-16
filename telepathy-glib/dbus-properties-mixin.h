@@ -110,9 +110,6 @@ struct _TpDBusPropertiesMixinClass {
 
 typedef struct _TpDBusPropertiesMixinClass TpDBusPropertiesMixinClass;
 
-void tp_dbus_properties_mixin_class_init (GObjectClass *cls,
-    gsize offset);
-
 void tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
     GQuark iface, TpDBusPropertiesMixinGetter getter,
     TpDBusPropertiesMixinSetter setter, TpDBusPropertiesMixinPropImpl *props);

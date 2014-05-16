@@ -60,11 +60,6 @@
  * or call tp_svc_interface_set_dbus_properties_info() from a section of the
  * base_init function that only runs once.
  *
- * To use this mixin, include a #TpDBusPropertiesMixinClass somewhere
- * in your class structure, populate it with pointers to statically allocated
- * (or duplicated and never freed) data, and call
- * tp_dbus_properties_mixin_class_init() from your class_init implementation.
- *
  * To use this mixin as the implementation of #TpSvcDBusProperties,
  * call <literal>G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
  * tp_dbus_properties_mixin_iface_init)</literal> in the fourth argument to
@@ -480,95 +475,6 @@ tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
     }
 
 out:
-  g_free (interfaces);
-}
-
-
-/**
- * tp_dbus_properties_mixin_class_init:
- * @cls: a subclass of #GObjectClass
- * @offset: the offset within @cls of a TpDBusPropertiesMixinClass structure
- *
- * Initialize the class @cls to use the D-Bus Properties mixin.
- * The given struct member, of size sizeof(TpDBusPropertiesMixinClass),
- * will be used to store property implementation information.
- *
- * Each property and each interface must have been declared as a member of
- * a GInterface implemented by @cls, using
- * tp_svc_interface_set_dbus_properties_info().
- *
- * Before calling this function, the array @interfaces must have been
- * placed in the #TpDBusPropertiesMixinClass structure; if it would be empty,
- * it may instead be %NULL.
- *
- * This function should be called from the class_init callback in such a way
- * that it will only be called once, even if the class is subclassed.
- *
- * Changed in 0.7.9: TpDBusPropertiesMixinClass::interfaces may now be %NULL,
- * which means that only interfaces whose properties are set up using
- * tp_dbus_properties_mixin_implement_interface() will be used.
- *
- * Changed in 0.7.15: @offset may now be 0, in which case the
- * #TpDBusPropertiesMixinClass can be omitted from @cls.  It is treated as if
- * it were present, but with all fields (including
- * TpDBusPropertiesMixinClass::interfaces) being %NULL, so only interfaces
- * whose properties are set using
- * tp_dbus_properties_mixin_implement_interface() will be used.
- *
- * Since: 0.7.3
- */
-void
-tp_dbus_properties_mixin_class_init (GObjectClass *cls,
-                                     gsize offset)
-{
-  GQuark q = _prop_mixin_offset_quark ();
-  GType type = G_OBJECT_CLASS_TYPE (cls);
-  TpDBusPropertiesMixinClass *mixin;
-  TpDBusPropertiesMixinIfaceImpl *iface_impl;
-  GType *interfaces;
-
-  g_return_if_fail (G_IS_OBJECT_CLASS (cls));
-  g_return_if_fail (g_type_get_qdata (type, q) == NULL);
-  g_type_set_qdata (type, q, GSIZE_TO_POINTER (offset));
-
-  if (offset == 0)
-    return;
-
-  mixin = &G_STRUCT_MEMBER (TpDBusPropertiesMixinClass, cls, offset);
-
-  if (mixin->interfaces == NULL)
-    return;
-
-  interfaces = g_type_interfaces (type, NULL);
-
-  for (iface_impl = mixin->interfaces;
-       iface_impl->name != NULL;
-       iface_impl++)
-    {
-      GQuark iface_quark = g_quark_try_string (iface_impl->name);
-      TpDBusPropertiesMixinIfaceImpl *other_impl;
-
-      if (G_UNLIKELY (!link_interface (type, interfaces, iface_quark,
-              iface_impl)))
-        goto out;
-
-      for (other_impl = mixin->interfaces;
-           other_impl != iface_impl;
-           other_impl++)
-        {
-          TpDBusPropertiesMixinIfaceInfo *other_info = other_impl->mixin_priv;
-
-          if (G_UNLIKELY (iface_quark == other_info->dbus_interface))
-            {
-              CRITICAL ("type %s tried to implement interface %s in static "
-                  "data twice", g_type_name (type), iface_impl->name);
-              goto out;
-            }
-        }
-    }
-
-out:
-
   g_free (interfaces);
 }
 
