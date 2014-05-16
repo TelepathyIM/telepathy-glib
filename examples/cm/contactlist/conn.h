@@ -26,7 +26,6 @@ typedef struct _ExampleContactListConnectionPrivate
 
 struct _ExampleContactListConnectionClass {
     TpBaseConnectionClass parent_class;
-    TpDBusPropertiesMixinClass properties_mixin;
 };
 
 struct _ExampleContactListConnection {

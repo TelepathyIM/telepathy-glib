@@ -413,14 +413,6 @@ example_contact_list_connection_class_init (
     { "AliasFlags", GUINT_TO_POINTER (ALIASING_DP_ALIAS_FLAGS), NULL },
     { NULL }
   };
-  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-        { TP_IFACE_CONNECTION_INTERFACE_ALIASING1,
-          aliasing_get_dbus_property,
-          NULL,
-          aliasing_props,
-        },
-        { NULL }
-  };
 
   object_class->get_property = get_property;
   object_class->set_property = set_property;
@@ -449,9 +441,10 @@ example_contact_list_connection_class_init (
   g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
       param_spec);
 
-  klass->properties_mixin.interfaces = prop_interfaces;
-  tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleContactListConnectionClass, properties_mixin));
+  tp_dbus_properties_mixin_class_init (object_class, 0);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING1,
+        aliasing_get_dbus_property, NULL, aliasing_props);
 }
 
 static void
