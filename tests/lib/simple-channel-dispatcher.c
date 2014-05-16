@@ -364,15 +364,6 @@ tp_tests_simple_channel_dispatcher_class_init (
         { NULL }
   };
 
-  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-        { TP_IFACE_CHANNEL_DISPATCHER,
-          tp_dbus_properties_mixin_getter_gobject_properties,
-          NULL,
-          am_props
-        },
-        { NULL },
-  };
-
   g_type_class_add_private (klass, sizeof (TpTestsSimpleChannelDispatcherPrivate));
   object_class->get_property = tp_tests_simple_channel_dispatcher_get_property;
   object_class->set_property = tp_tests_simple_channel_dispatcher_set_property;
@@ -400,7 +391,8 @@ tp_tests_simple_channel_dispatcher_class_init (
       0, NULL, NULL, NULL,
       G_TYPE_NONE, 1, TP_TESTS_TYPE_SIMPLE_CHANNEL_REQUEST);
 
-  klass->dbus_props_class.interfaces = prop_interfaces;
-  tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TpTestsSimpleChannelDispatcherClass, dbus_props_class));
+  tp_dbus_properties_mixin_class_init (object_class, 0);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+        TP_IFACE_QUARK_CHANNEL_DISPATCHER,
+        tp_dbus_properties_mixin_getter_gobject_properties, NULL, am_props);
 }

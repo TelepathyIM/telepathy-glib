@@ -23,7 +23,6 @@ typedef struct _TpTestsSimpleChannelDispatcherPrivate TpTestsSimpleChannelDispat
 
 struct _TpTestsSimpleChannelDispatcherClass {
     GObjectClass parent_class;
-    TpDBusPropertiesMixinClass dbus_props_class;
 };
 
 struct _TpTestsSimpleChannelDispatcher {
