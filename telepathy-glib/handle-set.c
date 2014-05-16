@@ -30,6 +30,8 @@
 #include <glib.h>
 
 #include <telepathy-glib/intset.h>
+#include "handle-repo-internal.h"
+
 #define DEBUG_FLAG TP_DEBUG_HANDLES
 #include "debug-internal.h"
 
@@ -253,8 +255,8 @@ tp_handle_set_size (const TpHandleSet *set)
   return tp_intset_size (set->intset);
 }
 
-/**
- * tp_handle_set_to_array: (skip)
+/*
+ * _tp_handle_set_to_array: (skip)
  * @set: A handle set
  *
  * <!--Returns: says it all, this comment is just to keep gtkdoc happy-->
@@ -263,7 +265,7 @@ tp_handle_set_size (const TpHandleSet *set)
  * representing the handles in the set
  */
 GArray *
-tp_handle_set_to_array (const TpHandleSet *set)
+_tp_handle_set_to_array (const TpHandleSet *set)
 {
   g_return_val_if_fail (set != NULL, NULL);
 

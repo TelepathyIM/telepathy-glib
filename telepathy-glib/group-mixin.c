@@ -74,6 +74,8 @@
 #include <telepathy-glib/sliced-gvalue.h>
 #include <telepathy-glib/svc-channel.h>
 
+#include "handle-repo-internal.h"
+
 #define DEBUG_FLAG TP_DEBUG_GROUPS
 
 #include "debug-internal.h"
@@ -736,7 +738,7 @@ tp_group_mixin_get_members (GObject *obj,
 {
   TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
 
-  *ret = tp_handle_set_to_array (mixin->members);
+  *ret = _tp_handle_set_to_array (mixin->members);
 
   return TRUE;
 }
@@ -822,7 +824,7 @@ tp_group_mixin_get_remote_pending_members (GObject *obj,
 {
   TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
 
-  *ret = tp_handle_set_to_array (mixin->remote_pending);
+  *ret = _tp_handle_set_to_array (mixin->remote_pending);
 
   return TRUE;
 }

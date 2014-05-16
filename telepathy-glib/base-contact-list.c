@@ -3694,7 +3694,7 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
       GVariant *result;
 
       set = tp_base_contact_list_dup_contacts (self);
-      contacts = tp_handle_set_to_array (set);
+      contacts = _tp_handle_set_to_array (set);
       result = tp_base_connection_dup_contact_attributes (
           self->priv->conn, contacts, interfaces, assumed);
 

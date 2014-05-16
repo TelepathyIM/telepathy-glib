@@ -219,7 +219,6 @@ tp_handle_set_is_member
 tp_handle_set_foreach
 tp_handle_set_is_empty
 tp_handle_set_size
-tp_handle_set_to_array
 tp_handle_set_to_variant
 tp_handle_set_to_identifier_map
 tp_handle_set_update

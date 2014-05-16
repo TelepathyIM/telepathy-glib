@@ -96,6 +96,9 @@ void _tp_dynamic_handle_repo_set_normalization_data (TpHandleRepoIface *irepo,
     gpointer data,
     GDestroyNotify destroy);
 
+GArray *_tp_handle_set_to_array (const TpHandleSet *set)
+  G_GNUC_WARN_UNUSED_RESULT;
+
 G_END_DECLS
 
 #endif /*__TP_INTERNAL_HANDLE_REPO_H__ */
