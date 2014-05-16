@@ -26,7 +26,6 @@ typedef struct _TestProperties {
 } TestProperties;
 typedef struct _TestPropertiesClass {
     GObjectClass parent;
-    TpDBusPropertiesMixinClass props;
 } TestPropertiesClass;
 
 GType test_properties_get_type (void);
@@ -90,22 +89,18 @@ prop_setter (GObject *object,
 static void
 test_properties_class_init (TestPropertiesClass *cls)
 {
+  GObjectClass *object_class = G_OBJECT_CLASS (cls);
   static TpDBusPropertiesMixinPropImpl with_properties_props[] = {
         { "ReadOnly", "read", "READ" },
         { "ReadWrite", "full-access", "FULL ACCESS" },
         { "WriteOnly", "black-hole", "BLACK HOLE" },
         { NULL }
   };
-  static TpDBusPropertiesMixinIfaceImpl interfaces[] = {
-      { WITH_PROPERTIES_IFACE, prop_getter, prop_setter,
-        with_properties_props },
-      { NULL }
-  };
 
-  cls->props.interfaces = interfaces;
-
-  tp_dbus_properties_mixin_class_init (G_OBJECT_CLASS (cls),
-      G_STRUCT_OFFSET (TestPropertiesClass, props));
+  tp_dbus_properties_mixin_class_init (object_class, 0);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+        g_quark_from_static_string (WITH_PROPERTIES_IFACE),
+        prop_getter, prop_setter, with_properties_props);
 }
 
 static void
