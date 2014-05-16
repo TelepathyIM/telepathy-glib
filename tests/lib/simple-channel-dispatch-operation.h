@@ -25,7 +25,6 @@ typedef struct _SimpleChannelDispatchOperationPrivate TpTestsSimpleChannelDispat
 
 struct _SimpleChannelDispatchOperationClass {
     GObjectClass parent_class;
-    TpDBusPropertiesMixinClass dbus_props_class;
 };
 
 struct _SimpleChannelDispatchOperation {
