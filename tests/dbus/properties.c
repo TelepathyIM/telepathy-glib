@@ -97,7 +97,6 @@ test_properties_class_init (TestPropertiesClass *cls)
         { NULL }
   };
 
-  tp_dbus_properties_mixin_class_init (object_class, 0);
   tp_dbus_properties_mixin_implement_interface (object_class,
         g_quark_from_static_string (WITH_PROPERTIES_IFACE),
         prop_getter, prop_setter, with_properties_props);

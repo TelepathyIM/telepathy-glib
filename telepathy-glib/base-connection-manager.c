@@ -459,7 +459,6 @@ tp_base_connection_manager_class_init (TpBaseConnectionManagerClass *klass)
                   NULL, NULL, NULL,
                   G_TYPE_NONE, 0);
 
-  tp_dbus_properties_mixin_class_init (object_class, 0);
   tp_dbus_properties_mixin_implement_interface (object_class,
       TP_IFACE_QUARK_CONNECTION_MANAGER,
       tp_dbus_properties_mixin_getter_gobject_properties, NULL,

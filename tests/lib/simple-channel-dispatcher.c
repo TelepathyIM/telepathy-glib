@@ -391,7 +391,6 @@ tp_tests_simple_channel_dispatcher_class_init (
       0, NULL, NULL, NULL,
       G_TYPE_NONE, 1, TP_TESTS_TYPE_SIMPLE_CHANNEL_REQUEST);
 
-  tp_dbus_properties_mixin_class_init (object_class, 0);
   tp_dbus_properties_mixin_implement_interface (object_class,
         TP_IFACE_QUARK_CHANNEL_DISPATCHER,
         tp_dbus_properties_mixin_getter_gobject_properties, NULL, am_props);

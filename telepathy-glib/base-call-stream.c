@@ -454,7 +454,6 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *klass)
   g_object_class_install_property (object_class, PROP_CAN_REQUEST_RECEIVING,
       param_spec);
 
-  tp_dbus_properties_mixin_class_init (object_class, 0);
   tp_dbus_properties_mixin_implement_interface (object_class,
       TP_IFACE_QUARK_CALL1_STREAM,
       tp_dbus_properties_mixin_getter_gobject_properties, NULL, stream_props);

@@ -276,7 +276,6 @@ tp_debug_sender_class_init (TpDebugSenderClass *klass)
           FALSE,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  tp_dbus_properties_mixin_class_init (object_class, 0);
   tp_dbus_properties_mixin_implement_interface (object_class,
       TP_IFACE_QUARK_DEBUG1,
       tp_dbus_properties_mixin_getter_gobject_properties,

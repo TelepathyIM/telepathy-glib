@@ -1207,7 +1207,6 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
           TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
-  tp_dbus_properties_mixin_class_init (object_class, 0);
   tp_dbus_properties_mixin_implement_interface (object_class,
       TP_IFACE_QUARK_PROTOCOL, protocol_properties_getter, NULL,
       channel_props);

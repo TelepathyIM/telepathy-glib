@@ -357,7 +357,6 @@ tp_base_password_channel_class_init (TpBasePasswordChannelClass *tp_base_passwor
       G_TYPE_NONE, 4,
       G_TYPE_GSTRING, G_TYPE_UINT, G_TYPE_INT, G_TYPE_STRING);
 
-  tp_dbus_properties_mixin_class_init (object_class, 0);
   tp_dbus_properties_mixin_implement_interface (object_class,
       TP_IFACE_QUARK_CHANNEL_TYPE_SERVER_AUTHENTICATION1,
       /* this only has one property so we recycle the getter function from

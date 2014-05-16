@@ -528,7 +528,6 @@ tp_base_call_content_class_init (TpBaseCallContentClass *klass)
   g_object_class_install_property (object_class, PROP_DEFERRED_TONES,
       param_spec);
 
-  tp_dbus_properties_mixin_class_init (object_class, 0);
   tp_dbus_properties_mixin_implement_interface (object_class,
       TP_IFACE_QUARK_CALL1_CONTENT,
       tp_dbus_properties_mixin_getter_gobject_properties, NULL, content_props);

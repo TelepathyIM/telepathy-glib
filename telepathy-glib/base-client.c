@@ -1479,7 +1479,6 @@ tp_base_client_class_init (TpBaseClientClass *cls)
       G_TYPE_NONE, 3,
       TP_TYPE_CHANNEL_REQUEST, G_TYPE_STRING, G_TYPE_STRING);
 
-  tp_dbus_properties_mixin_class_init (object_class, 0);
   tp_dbus_properties_mixin_implement_interface (object_class,
         TP_IFACE_QUARK_CLIENT, tp_base_client_get_dbus_properties,
         NULL, client_properties);

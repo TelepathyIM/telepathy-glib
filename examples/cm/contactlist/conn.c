@@ -441,7 +441,6 @@ example_contact_list_connection_class_init (
   g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
       param_spec);
 
-  tp_dbus_properties_mixin_class_init (object_class, 0);
   tp_dbus_properties_mixin_implement_interface (object_class,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING1,
         aliasing_get_dbus_property, NULL, aliasing_props);

@@ -239,7 +239,6 @@ tp_tests_tls_certificate_class_init (TpTestsTLSCertificateClass *klass)
       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (oclass, PROP_DBUS_CONNECTION, pspec);
 
-  tp_dbus_properties_mixin_class_init (oclass, 0);
   tp_dbus_properties_mixin_implement_interface (oclass,
         TP_IFACE_QUARK_AUTHENTICATION_TLS_CERTIFICATE,
         tp_dbus_properties_mixin_getter_gobject_properties, NULL, object_props);

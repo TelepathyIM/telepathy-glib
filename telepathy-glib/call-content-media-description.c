@@ -618,7 +618,6 @@ tp_call_content_media_description_class_init (
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ENABLE_METRICS, spec);
 
-  tp_dbus_properties_mixin_class_init (object_class, 0);
   tp_dbus_properties_mixin_implement_interface (object_class,
       TP_IFACE_QUARK_CALL1_CONTENT_MEDIA_DESCRIPTION,
       tp_dbus_properties_mixin_getter_gobject_properties, NULL,
