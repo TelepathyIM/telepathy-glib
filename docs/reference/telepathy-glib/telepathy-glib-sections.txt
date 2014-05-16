@@ -4930,6 +4930,7 @@ tp_base_contact_list_unpublish_async
 tp_base_contact_list_unpublish_finish
 <SUBSECTION groups>
 TP_TYPE_CONTACT_GROUP_LIST
+TpContactGroupList
 TpContactGroupListInterface
 TpBaseContactListNormalizeFunc
 tp_base_contact_list_normalize_group
@@ -4997,6 +4998,7 @@ TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE
 tp_blockable_contact_list_get_type
 TP_IS_CONTACT_GROUP_LIST
 TP_CONTACT_GROUP_LIST_GET_INTERFACE
+TP_CONTACT_GROUP_LIST
 tp_contact_group_list_get_type
 TP_IS_MUTABLE_CONTACT_GROUP_LIST
 TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE

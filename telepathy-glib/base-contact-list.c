@@ -416,6 +416,15 @@ G_DEFINE_INTERFACE (TpBlockableContactList, tp_blockable_contact_list,
  * Since: 0.13.0
  */
 
+/**
+ * TpContactGroupList:
+ *
+ * Opaque structure representing an object implementing
+ * TpContactGroupListInterface.
+ *
+ * Since: UNRELEASED
+ */
+
 G_DEFINE_INTERFACE (TpContactGroupList, tp_contact_group_list,
     TP_TYPE_BASE_CONTACT_LIST)
 

@@ -372,6 +372,8 @@ struct _TpBlockableContactListInterface {
 
 /* ---- Called by subclasses for ContactGroups ---- */
 
+typedef struct _TpContactGroupList TpContactGroupList;
+
 void tp_base_contact_list_groups_created (TpBaseContactList *self,
     const gchar * const *created, gssize n_created);
 
@@ -426,6 +428,10 @@ gchar *tp_base_contact_list_normalize_group (
 #define TP_TYPE_CONTACT_GROUP_LIST \
   (tp_contact_group_list_get_type ())
 GType tp_contact_group_list_get_type (void) G_GNUC_CONST;
+
+#define TP_CONTACT_GROUP_LIST(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_CONTACT_GROUP_LIST, \
+  TpContactGroupList))
 
 #define TP_IS_CONTACT_GROUP_LIST(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
