@@ -34,8 +34,6 @@ typedef struct _TpTestsTLSCertificatePrivate TpTestsTLSCertificatePrivate;
 
 struct _TpTestsTLSCertificateClass {
   GObjectClass parent_class;
-
-  TpDBusPropertiesMixinClass dbus_props_class;
 };
 
 struct _TpTestsTLSCertificate {
