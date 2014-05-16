@@ -1027,7 +1027,7 @@ example_contact_list_dup_contacts (TpBaseContactList *contact_list)
 }
 
 static TpHandleSet *
-example_contact_list_dup_group_members (TpBaseContactList *contact_list,
+example_contact_list_dup_group_members (TpContactGroupList *contact_list,
     const gchar *group)
 {
   ExampleContactList *self = EXAMPLE_CONTACT_LIST (contact_list);
@@ -1529,7 +1529,7 @@ example_contact_list_get_group_storage (
 }
 
 static GStrv
-example_contact_list_dup_groups (TpBaseContactList *contact_list)
+example_contact_list_dup_groups (TpContactGroupList *contact_list)
 {
   ExampleContactList *self = EXAMPLE_CONTACT_LIST (contact_list);
   GPtrArray *tags = g_ptr_array_sized_new (
@@ -1547,10 +1547,10 @@ example_contact_list_dup_groups (TpBaseContactList *contact_list)
 }
 
 static GStrv
-example_contact_list_dup_contact_groups (TpBaseContactList *contact_list,
+example_contact_list_dup_contact_groups (TpContactGroupList *group_list,
     TpHandle contact)
 {
-  ExampleContactList *self = EXAMPLE_CONTACT_LIST (contact_list);
+  ExampleContactList *self = EXAMPLE_CONTACT_LIST (group_list);
   GPtrArray *tags = g_ptr_array_sized_new (
       g_hash_table_size (self->priv->all_tags) + 1);
   ExampleContactDetails *d = lookup_contact (self, contact);

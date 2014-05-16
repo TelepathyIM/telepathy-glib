@@ -189,7 +189,7 @@ contact_list_dup_states (TpBaseContactList *base,
 }
 
 static GStrv
-contact_list_dup_groups (TpBaseContactList *base)
+contact_list_dup_groups (TpContactGroupList *base)
 {
   TpTestsContactListManager *self = TP_TESTS_CONTACT_LIST_MANAGER (base);
   GPtrArray *ret;
@@ -218,10 +218,10 @@ contact_list_dup_groups (TpBaseContactList *base)
 }
 
 static GStrv
-contact_list_dup_contact_groups (TpBaseContactList *base,
+contact_list_dup_contact_groups (TpContactGroupList *group_list,
     TpHandle contact)
 {
-  TpTestsContactListManager *self = TP_TESTS_CONTACT_LIST_MANAGER (base);
+  TpTestsContactListManager *self = TP_TESTS_CONTACT_LIST_MANAGER (group_list);
   ContactDetails *d = lookup_contact (self, contact);
   GPtrArray *ret;
 
@@ -249,7 +249,7 @@ contact_list_dup_contact_groups (TpBaseContactList *base,
 }
 
 static TpHandleSet *
-contact_list_dup_group_members (TpBaseContactList *base,
+contact_list_dup_group_members (TpContactGroupList *base,
     const gchar *group)
 {
   TpTestsContactListManager *self = TP_TESTS_CONTACT_LIST_MANAGER (base);

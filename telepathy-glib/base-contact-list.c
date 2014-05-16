@@ -824,7 +824,7 @@ tp_blockable_contact_list_default_init (TpBlockableContactListInterface *iface)
 static void
 tp_contact_group_list_default_init (TpContactGroupListInterface *iface)
 {
-  iface->has_disjoint_groups = tp_base_contact_list_false_func;
+  iface->has_disjoint_groups = tp_contact_group_list_false_func;
   /* there's no default for the other virtual methods */
 }
 
@@ -3079,6 +3079,34 @@ tp_base_contact_list_one_contact_groups_changed (TpBaseContactList *self,
 }
 
 /**
+ * TpContactGroupListBooleanFunc:
+ * @self: a contact list manager implementing TpContactGroupListInterface
+ *
+ * Signature of a virtual method that returns a boolean result.
+ *
+ * Returns: a boolean result
+ *
+ * Since: UNRELEASED
+ */
+
+/**
+ * tp_contact_group_list_false_func:
+ * @self: ignored
+ *
+ * An implementation of #TpContactGroupListBooleanFunc that returns %FALSE,
+ * for use in simple cases.
+ *
+ * Returns: %FALSE
+ *
+ * Since: UNRELEASED
+ */
+gboolean
+tp_contact_group_list_false_func (TpContactGroupList *self G_GNUC_UNUSED)
+{
+  return FALSE;
+}
+
+/**
  * tp_base_contact_list_has_disjoint_groups:
  * @self: a contact list manager
  *
@@ -3118,11 +3146,11 @@ tp_base_contact_list_has_disjoint_groups (TpBaseContactList *self)
   g_return_val_if_fail (iface != NULL, FALSE);
   g_return_val_if_fail (iface->has_disjoint_groups != NULL, FALSE);
 
-  return iface->has_disjoint_groups (self);
+  return iface->has_disjoint_groups (TP_CONTACT_GROUP_LIST (self));
 }
 
 /**
- * TpBaseContactListDupGroupsFunc:
+ * TpContactGroupListDupGroupsFunc:
  * @self: a contact list manager
  *
  * Signature of a virtual method that lists every group that exists on a
@@ -3163,11 +3191,11 @@ tp_base_contact_list_dup_groups (TpBaseContactList *self)
   g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
       TP_CONTACT_LIST_STATE_SUCCESS, NULL);
 
-  return iface->dup_groups (self);
+  return iface->dup_groups (TP_CONTACT_GROUP_LIST (self));
 }
 
 /**
- * TpBaseContactListDupContactGroupsFunc:
+ * TpContactGroupListDupContactGroupsFunc:
  * @self: a contact list manager
  * @contact: a non-zero contact handle
  *
@@ -3217,11 +3245,11 @@ tp_base_contact_list_dup_contact_groups (TpBaseContactList *self,
   g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
       TP_CONTACT_LIST_STATE_SUCCESS, NULL);
 
-  return iface->dup_contact_groups (self, contact);
+  return iface->dup_contact_groups (TP_CONTACT_GROUP_LIST (self), contact);
 }
 
 /**
- * TpBaseContactListDupGroupMembersFunc:
+ * TpContactGroupListDupGroupMembersFunc:
  * @self: a contact list manager
  * @group: a normalized group name
  *
@@ -3265,7 +3293,7 @@ tp_base_contact_list_dup_group_members (TpBaseContactList *self,
   g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
       TP_CONTACT_LIST_STATE_SUCCESS, NULL);
 
-  return iface->dup_group_members (self, group);
+  return iface->dup_group_members (TP_CONTACT_GROUP_LIST (self), group);
 }
 
 /**
