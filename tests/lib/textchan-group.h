@@ -44,7 +44,6 @@ struct _TpTestsTextChannelGroupClass {
     TpBaseChannelClass parent_class;
 
     TpGroupMixinClass group_class;
-    TpDBusPropertiesMixinClass dbus_properties_class;
 };
 
 struct _TpTestsTextChannelGroup {

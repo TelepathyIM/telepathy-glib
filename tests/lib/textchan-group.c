@@ -202,8 +202,7 @@ tp_tests_text_channel_group_class_init (TpTestsTextChannelGroupClass *klass)
 
   tp_group_mixin_class_allow_self_removal (object_class);
 
-  tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TpTestsTextChannelGroupClass, dbus_properties_class));
+  tp_dbus_properties_mixin_class_init (object_class, 0);
 
   tp_group_mixin_init_dbus_properties (object_class);
 
