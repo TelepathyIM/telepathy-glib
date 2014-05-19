@@ -2709,7 +2709,7 @@ static const gchar * const contacts_always_included_interfaces[] = {
 /**
  * tp_base_connection_dup_contact_attributes:
  * @self: A connection instance. The connection must be connected.
- * @handles: (element-type guint32): List of handles to retrieve contacts for.
+ * @handles: List of handles to retrieve contacts for.
  *  Any invalid handles will be dropped from the returned mapping.
  * @interfaces: (allow-none) (array zero-terminated=1) (element-type utf8): an
  *  array of user-requested interfaces
@@ -2729,7 +2729,7 @@ static const gchar * const contacts_always_included_interfaces[] = {
  */
 GVariant *
 tp_base_connection_dup_contact_attributes (TpBaseConnection *self,
-    const GArray *handles,
+    TpHandleSet *handles,
     const gchar * const *interfaces,
     const gchar * const *assumed_interfaces)
 {
@@ -2737,12 +2737,18 @@ tp_base_connection_dup_contact_attributes (TpBaseConnection *self,
   TpHandleRepoIface *contact_repo;
   GVariantBuilder builder;
   guint i;
+  gchar *tmp;
+  TpIntset *intset;
+  TpIntsetFastIter iter;
+  TpHandle h;
 
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
   g_return_val_if_fail (tp_base_connection_check_connected (self, NULL), NULL);
   g_return_val_if_fail (klass->fill_contact_attributes != NULL, NULL);
 
-  DEBUG ("%u contact(s)", handles->len);
+  tmp = tp_handle_set_dump (handles);
+  DEBUG ("Contacts: %s", tmp);
+  g_free (tmp);
 
   for (i = 0; assumed_interfaces != NULL && assumed_interfaces[i] != NULL; i++)
     {
@@ -2757,9 +2763,12 @@ tp_base_connection_dup_contact_attributes (TpBaseConnection *self,
   contact_repo = tp_base_connection_get_handles (self, TP_ENTITY_TYPE_CONTACT);
   g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{ua{sv}}"));
 
-  for (i = 0; i < handles->len; i++)
+  intset = tp_handle_set_peek (handles);
+
+  tp_intset_fast_iter_init (&iter, intset);
+
+  while (tp_intset_fast_iter_next (&iter, &h))
     {
-      TpHandle h = g_array_index (handles, TpHandle, i);
       GVariantDict dict;
       guint j;
 
@@ -2798,32 +2807,22 @@ contacts_get_contact_attributes_impl (_TpGDBusConnection *skeleton,
   const gchar * const *interfaces,
   TpBaseConnection *conn)
 {
-  const TpHandle *c_array;
-  GArray *array;
-  gsize n;
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
+      TP_ENTITY_TYPE_CONTACT);
+  TpHandleSet *set;
   GVariant *result;
-  /* In principle C does not guarantee that TpHandle (which is an
-   * unsigned int) is exactly 32 bits. In practice, int is 32-bit on
-   * every relevant platform.
-   *
-   * If this assertion fails, the g_variant_get_fixed_array() call
-   * will fail at runtime too, and we'll have to change the code to copy
-   * handles into @array one at a time. */
-  G_STATIC_ASSERT (sizeof (TpHandle) == sizeof (guint32));
 
   _TP_GDBUS_ERROR_IF_NOT_CONNECTED (conn, context);
 
-  c_array = g_variant_get_fixed_array (handles, &n, sizeof (TpHandle));
-  array = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n);
-  g_array_append_vals (array, c_array, n);
+  set = tp_handle_set_new_from_variant (contact_repo, handles);
 
   result = tp_base_connection_dup_contact_attributes (conn,
-      array, interfaces, contacts_always_included_interfaces);
+      set, interfaces, contacts_always_included_interfaces);
 
   _tp_gdbus_connection_complete_get_contact_attributes (skeleton, context,
       result);
 
-  g_array_unref (array);
+  tp_handle_set_destroy (set);
   g_variant_unref (result);
 
   return TRUE;
@@ -2845,7 +2844,7 @@ ensure_handle_cb (GObject *source,
   GetContactByIdData *data = user_data;
   TpBaseConnection *self = data->conn;
   TpHandle handle;
-  GArray *handles;
+  TpHandleSet *set;
   GVariant *attributes;
   GVariant *ret;
   TpHandle ret_handle;
@@ -2859,11 +2858,11 @@ ensure_handle_cb (GObject *source,
       goto out;
     }
 
-  handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
-  g_array_append_val (handles, handle);
+  set = tp_handle_set_new (contact_repo);
+  tp_handle_set_add (set, handle);
 
   attributes = tp_base_connection_dup_contact_attributes (self,
-      handles, (const gchar * const *) data->interfaces,
+      set, (const gchar * const *) data->interfaces,
       contacts_always_included_interfaces);
   g_variant_get_child (attributes, 0, "{u@a{sv}}", &ret_handle, &ret);
   g_assert (ret_handle == handle);
@@ -2871,8 +2870,8 @@ ensure_handle_cb (GObject *source,
   _tp_gdbus_connection_complete_get_contact_by_id (
       self->priv->connection_skeleton, data->context, handle, ret);
 
-  g_array_unref (handles);
   g_variant_unref (attributes);
+  tp_handle_set_destroy (set);
 
 out:
   g_object_unref (data->conn);

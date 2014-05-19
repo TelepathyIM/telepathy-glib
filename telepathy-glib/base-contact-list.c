@@ -3688,20 +3688,18 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
   else
     {
       TpHandleSet *set;
-      GArray *contacts;
       const gchar *assumed[] = { TP_IFACE_CONNECTION,
           TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST1, NULL };
       GVariant *result;
 
       set = tp_base_contact_list_dup_contacts (self);
-      contacts = _tp_handle_set_to_array (set);
+
       result = tp_base_connection_dup_contact_attributes (
-          self->priv->conn, contacts, interfaces, assumed);
+          self->priv->conn, set, interfaces, assumed);
 
       _tp_gdbus_connection_interface_contact_list1_complete_get_contact_list_attributes (
           skeleton, context, result);
 
-      g_array_unref (contacts);
       tp_handle_set_destroy (set);
       g_variant_unref (result);
     }
