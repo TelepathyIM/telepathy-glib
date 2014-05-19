@@ -1063,7 +1063,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
       TpContactGroupList *contact_group = TP_CONTACT_GROUP_LIST (self);
       GStrv groups = tp_base_contact_list_dup_groups (contact_group);
 
-      tp_base_contact_list_groups_created (self,
+      tp_base_contact_list_groups_created (contact_group,
           (const gchar * const *) groups, -1);
 
       for (i = 0; groups != NULL && groups[i] != NULL; i++)
@@ -1071,7 +1071,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
           TpHandleSet *members = tp_base_contact_list_dup_group_members (
               contact_group, groups[i]);
 
-          tp_base_contact_list_groups_changed (self, members,
+          tp_base_contact_list_groups_changed (contact_group, members,
               (const gchar * const *) groups + i, 1, NULL, 0);
           tp_handle_set_destroy (members);
         }
@@ -2554,7 +2554,7 @@ update_groups_property (TpBaseContactList *self)
 
 /**
  * tp_base_contact_list_groups_created:
- * @self: a contact list manager
+ * @self: a contact list manager implementing #TP_TYPE_CONTACT_GROUP_LIST
  * @created: (array length=n_created) (element-type utf8) (allow-none): zero
  *  or more groups that were created
  * @n_created: the number of groups created, or -1 if @created is
@@ -2570,17 +2570,20 @@ update_groups_property (TpBaseContactList *self)
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_groups_created (TpBaseContactList *self,
+tp_base_contact_list_groups_created (TpContactGroupList *contact_group,
     const gchar * const *created,
     gssize n_created)
 {
+  TpBaseContactList *self;
   GPtrArray *actually_created;
   gssize i;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
-  g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (contact_group));
+  g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (contact_group));
   g_return_if_fail (n_created >= -1);
   g_return_if_fail (n_created <= 0 || created != NULL);
+
+  self = TP_BASE_CONTACT_LIST (contact_group);
 
   if (n_created == 0 || created == NULL)
     return;
@@ -2605,7 +2608,7 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
   for (i = 0; i < n_created; i++)
     {
       gchar *normalized_group = tp_base_contact_list_normalize_group (
-          TP_CONTACT_GROUP_LIST (self), created[i]);
+          contact_group, created[i]);
 
       if (g_hash_table_lookup (self->priv->groups, normalized_group) == NULL)
         {
@@ -2640,7 +2643,7 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
 
 /**
  * tp_base_contact_list_groups_removed:
- * @self: a contact list manager
+ * @self: a contact list manager implementing #TP_TYPE_CONTACT_GROUP_LIST
  * @removed: (array length=n_removed) (element-type utf8) (allow-none): zero
  *  or more groups that were removed
  * @n_removed: the number of groups removed, or -1 if @removed is
@@ -2659,19 +2662,22 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_groups_removed (TpBaseContactList *self,
+tp_base_contact_list_groups_removed (TpContactGroupList *contact_group,
     const gchar * const *removed,
     gssize n_removed)
 {
+  TpBaseContactList *self;
   GPtrArray *actually_removed;
   gssize i;
   TpHandleSet *old_members;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
-  g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (contact_group));
+  g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (contact_group));
   g_return_if_fail (removed != NULL);
   g_return_if_fail (n_removed >= -1);
   g_return_if_fail (n_removed <= 0 || removed != NULL);
+
+  self = (TpBaseContactList *) contact_group;
 
   if (n_removed == 0 || removed == NULL)
     return;
@@ -2762,7 +2768,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
 
 /**
  * tp_base_contact_list_group_renamed:
- * @self: a contact list manager
+ * @self: a contact list manager implementing #TP_TYPE_CONTACT_GROUP_LIST
  * @old_name: the group's old name
  * @new_name: the group's new name
  *
@@ -2779,17 +2785,20 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_group_renamed (TpBaseContactList *self,
+tp_base_contact_list_group_renamed (TpContactGroupList *contact_group,
     const gchar *old_name,
     const gchar *new_name)
 {
+  TpBaseContactList *self;
   const gchar *old_names[] = { old_name, NULL };
   const gchar *new_names[] = { new_name, NULL };
   const TpIntset *set;
   TpHandleSet *old_members;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
-  g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (contact_group));
+  g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (contact_group));
+
+  self = (TpBaseContactList *) contact_group;
 
   if (self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS)
     return;
@@ -2865,7 +2874,7 @@ remove_contacts_from_handle_set (TpHandleSet *set,
 
 /**
  * tp_base_contact_list_groups_changed:
- * @self: a contact list manager
+ * @self: a contact list manager implementing #TP_TYPE_CONTACT_GROUP_LIST
  * @contacts: a set containing one or more contacts
  * @added: (array length=n_added) (element-type utf8) (allow-none): zero or
  *  more groups to which the @contacts were added, or %NULL (which has the
@@ -2889,24 +2898,26 @@ remove_contacts_from_handle_set (TpHandleSet *set,
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_groups_changed (TpBaseContactList *self,
+tp_base_contact_list_groups_changed (TpContactGroupList *contact_group,
     TpHandleSet *contacts,
     const gchar * const *added,
     gssize n_added,
     const gchar * const *removed,
     gssize n_removed)
 {
+  TpBaseContactList *self;
   gssize i;
   GPtrArray *really_added, *really_removed;
-  TpContactGroupList *contact_group;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
-  g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (contact_group));
+  g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (contact_group));
   g_return_if_fail (contacts != NULL);
   g_return_if_fail (n_added >= -1);
   g_return_if_fail (n_removed >= -1);
   g_return_if_fail (n_added <= 0 || added != NULL);
   g_return_if_fail (n_removed <= 0 || removed != NULL);
+
+  self = (TpBaseContactList *) contact_group;
 
   if (tp_handle_set_is_empty (contacts))
     {
@@ -2951,14 +2962,12 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
       " groups, removing %" G_GSSIZE_FORMAT,
       tp_handle_set_size (contacts), n_added, n_removed);
 
-  tp_base_contact_list_groups_created (self, added, n_added);
+  tp_base_contact_list_groups_created (contact_group, added, n_added);
 
   /* These two arrays are lists of the groups whose members really changed;
    * groups where the change was a no-op are skipped. */
   really_added = g_ptr_array_sized_new (n_added);
   really_removed = g_ptr_array_sized_new (n_removed);
-
-  contact_group = TP_CONTACT_GROUP_LIST (self);
 
   for (i = 0; i < n_added; i++)
     {
@@ -3041,7 +3050,7 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
 
 /**
  * tp_base_contact_list_one_contact_groups_changed:
- * @self: the contact list manager
+ * @self: the contact list manager implementing #TP_TYPE_CONTACT_GROUP_LIST
  * @contact: a contact handle
  * @added: (array length=n_added) (element-type utf8) (allow-none): zero or
  *  more groups to which @contact was added, or %NULL
@@ -3058,19 +3067,26 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
  * contents, because you can already use <code>NULL, 0</code> for an empty
  * list or <code>&group_name, 1</code> for a single group.)
  *
+ * It is an error to call this function if @self does not implement
+ * %TP_TYPE_CONTACT_GROUP_LIST.
+ *
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_one_contact_groups_changed (TpBaseContactList *self,
+tp_base_contact_list_one_contact_groups_changed (
+    TpContactGroupList *contact_group,
     TpHandle contact,
     const gchar * const *added,
     gssize n_added,
     const gchar * const *removed,
     gssize n_removed)
 {
+  TpBaseContactList *self;
   TpHandleSet *set;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (contact_group));
+
+  self = (TpBaseContactList *) contact_group;
 
   /* if we're disconnecting, we might not have a handle repository any more:
    * tp_base_contact_list_groups_changed does nothing in that situation */
@@ -3078,8 +3094,8 @@ tp_base_contact_list_one_contact_groups_changed (TpBaseContactList *self,
     return;
 
   set = tp_handle_set_new_containing (self->priv->contact_repo, contact);
-  tp_base_contact_list_groups_changed (self, set, added, n_added, removed,
-      n_removed);
+  tp_base_contact_list_groups_changed (TP_CONTACT_GROUP_LIST (self), set, added,
+      n_added, removed, n_removed);
   tp_handle_set_destroy (set);
 }
 

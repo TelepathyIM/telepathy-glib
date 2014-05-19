@@ -374,22 +374,22 @@ struct _TpBlockableContactListInterface {
 
 typedef struct _TpContactGroupList TpContactGroupList;
 
-void tp_base_contact_list_groups_created (TpBaseContactList *self,
+void tp_base_contact_list_groups_created (TpContactGroupList *self,
     const gchar * const *created, gssize n_created);
 
-void tp_base_contact_list_groups_removed (TpBaseContactList *self,
+void tp_base_contact_list_groups_removed (TpContactGroupList *self,
     const gchar * const *removed, gssize n_removed);
 
-void tp_base_contact_list_group_renamed (TpBaseContactList *self,
+void tp_base_contact_list_group_renamed (TpContactGroupList *self,
     const gchar *old_name,
     const gchar *new_name);
 
-void tp_base_contact_list_groups_changed (TpBaseContactList *self,
+void tp_base_contact_list_groups_changed (TpContactGroupList *self,
     TpHandleSet *contacts,
     const gchar * const *added, gssize n_added,
     const gchar * const *removed, gssize n_removed);
 
-void tp_base_contact_list_one_contact_groups_changed (TpBaseContactList *self,
+void tp_base_contact_list_one_contact_groups_changed (TpContactGroupList *self,
     TpHandle contact,
     const gchar * const *added, gssize n_added,
     const gchar * const *removed, gssize n_removed);

@@ -330,7 +330,7 @@ contact_list_set_contact_groups_async (TpBaseContactList *base,
 
   if (new_groups->len > 0)
     {
-      tp_base_contact_list_groups_created ((TpBaseContactList *) self,
+      tp_base_contact_list_groups_created ((TpContactGroupList *) self,
           (const gchar * const *) new_groups->pdata, new_groups->len);
     }
 
@@ -348,7 +348,8 @@ contact_list_set_contact_groups_async (TpBaseContactList *base,
   /* signal the change */
   if (added->len > 0 || removed->len > 0)
     {
-      tp_base_contact_list_one_contact_groups_changed (base, contact,
+      tp_base_contact_list_one_contact_groups_changed (
+          TP_CONTACT_GROUP_LIST (base), contact,
           (const gchar * const *) added->pdata, added->len,
           (const gchar * const *) removed->pdata, removed->len);
     }
@@ -628,12 +629,12 @@ tp_tests_contact_list_manager_add_to_group (TpTestsContactListManager *self,
     {
       g_hash_table_insert (self->priv->groups, g_strdup (group_name),
           GUINT_TO_POINTER (1));
-      tp_base_contact_list_groups_created ((TpBaseContactList *) self,
+      tp_base_contact_list_groups_created ((TpContactGroupList *) self,
           &group_name, 1);
     }
 
-  tp_base_contact_list_one_contact_groups_changed (base, member,
-      &group_name, 1, NULL, 0);
+  tp_base_contact_list_one_contact_groups_changed (TP_CONTACT_GROUP_LIST (base),
+      member, &group_name, 1, NULL, 0);
 }
 
 void
@@ -648,8 +649,8 @@ tp_tests_contact_list_manager_remove_from_group (TpTestsContactListManager *self
 
   g_hash_table_remove (d->groups, group_name);
 
-  tp_base_contact_list_one_contact_groups_changed (base, member,
-      NULL, 0, &group_name, 1);
+  tp_base_contact_list_one_contact_groups_changed (TP_CONTACT_GROUP_LIST (base),
+      member, NULL, 0, &group_name, 1);
 }
 
 typedef struct {
