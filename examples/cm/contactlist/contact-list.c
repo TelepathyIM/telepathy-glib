@@ -279,7 +279,7 @@ ensure_tag (ExampleContactList *self,
       g_hash_table_insert (self->priv->all_tags, r, r);
 
       if (emit_signal)
-        tp_base_contact_list_groups_created ((TpContactGroupList *) self,
+        tp_contact_group_list_groups_created ((TpContactGroupList *) self,
             &s, 1);
     }
 
@@ -305,7 +305,7 @@ example_contact_list_set_contact_groups_async (TpBaseContactList *contact_list,
   for (i = 0; i < n; i++)
     ensure_tag (self, names[i], FALSE);
 
-  tp_base_contact_list_groups_created (TP_CONTACT_GROUP_LIST (contact_list),
+  tp_contact_group_list_groups_created (TP_CONTACT_GROUP_LIST (contact_list),
       names, n);
 
   d = ensure_contact (self, contact, &created);
@@ -349,7 +349,7 @@ next_hash_element:
       continue;
     }
 
-  tp_base_contact_list_one_contact_groups_changed (
+  tp_contact_group_list_one_contact_groups_changed (
       TP_CONTACT_GROUP_LIST (contact_list), contact,
       (const gchar * const *) new_names->pdata, new_names->len,
       (const gchar * const *) old_names->pdata, old_names->len);
@@ -661,11 +661,11 @@ example_contact_list_set_group_members_async (TpBaseContactList *contact_list,
     tp_base_contact_list_contacts_changed (contact_list, new_contacts, NULL);
 
   if (!tp_handle_set_is_empty (added))
-    tp_base_contact_list_groups_changed (contact_group, added, &group, 1,
+    tp_contact_group_list_groups_changed (contact_group, added, &group, 1,
         NULL, 0);
 
   if (!tp_handle_set_is_empty (removed))
-    tp_base_contact_list_groups_changed (contact_group, removed, NULL, 0,
+    tp_contact_group_list_groups_changed (contact_group, removed, NULL, 0,
         &group, 1);
 
   tp_handle_set_destroy (added);
@@ -720,7 +720,7 @@ example_contact_list_add_to_group_async (TpBaseContactList *contact_list,
     tp_base_contact_list_contacts_changed (contact_list, new_contacts, NULL);
 
   if (!tp_handle_set_is_empty (new_to_group))
-    tp_base_contact_list_groups_changed (contact_group, new_to_group, &group, 1,
+    tp_contact_group_list_groups_changed (contact_group, new_to_group, &group, 1,
         NULL, 0);
 
   tp_handle_set_destroy (new_to_group);
@@ -757,7 +757,7 @@ example_contact_list_remove_from_group_async (TpBaseContactList *contact_list,
     }
 
   if (!tp_handle_set_is_empty (changed))
-    tp_base_contact_list_groups_changed (contact_group, changed, NULL, 0,
+    tp_contact_group_list_groups_changed (contact_group, changed, NULL, 0,
         &group, 1);
 
   tp_handle_set_destroy (changed);
@@ -1587,7 +1587,7 @@ example_contact_list_remove_group_async (TpBaseContactList *contact_list,
 
   /* signal the deletion */
   g_message ("deleting group %s", group);
-  tp_base_contact_list_groups_removed (TP_CONTACT_GROUP_LIST (contact_list),
+  tp_contact_group_list_groups_removed (TP_CONTACT_GROUP_LIST (contact_list),
       &group, 1);
 
   /* apply the change to our model of the contacts too; we don't need to signal
@@ -1631,7 +1631,7 @@ example_contact_list_rename_group_async (TpBaseContactList *contact_list,
 
   /* signal the rename */
   g_print ("renaming group %s to %s", old_name, new_name);
-  tp_base_contact_list_group_renamed (TP_CONTACT_GROUP_LIST (contact_list),
+  tp_contact_group_list_group_renamed (TP_CONTACT_GROUP_LIST (contact_list),
       old_name, new_name);
 
   /* update our model (this doesn't need to signal anything because

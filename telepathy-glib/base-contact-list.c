@@ -397,16 +397,16 @@ G_DEFINE_INTERFACE (TpBlockableContactList, tp_blockable_contact_list,
  * TpContactGroupListInterface:
  * @parent: the parent interface
  * @dup_groups: the implementation of
- *  tp_base_contact_list_dup_groups(); must always be implemented
+ *  tp_contact_group_list_dup_groups(); must always be implemented
  * @dup_group_members: the implementation of
- *  tp_base_contact_list_dup_group_members(); must always be implemented
+ *  tp_contact_group_list_dup_group_members(); must always be implemented
  * @dup_contact_groups: the implementation of
- *  tp_base_contact_list_dup_contact_groups(); must always be implemented
+ *  tp_contact_group_list_dup_contact_groups(); must always be implemented
  * @has_disjoint_groups: the implementation of
- *  tp_base_contact_list_has_disjoint_groups(); if not reimplemented,
+ *  tp_contact_group_list_has_disjoint_groups(); if not reimplemented,
  *  the default implementation always returns %FALSE
  * @normalize_group: the implementation of
- *  tp_base_contact_list_normalize_group(); if not reimplemented,
+ *  tp_contact_group_list_normalize_group(); if not reimplemented,
  *  the default implementation is %NULL, which allows any UTF-8 string
  *  as a group name (including the empty string) and assumes that any distinct
  *  group names can coexist
@@ -644,7 +644,7 @@ update_immutable_contact_groups_properties (TpBaseContactList *self)
 
   _tp_gdbus_connection_interface_contact_groups1_set_disjoint_groups (
       self->priv->contact_groups_skeleton,
-      tp_base_contact_list_has_disjoint_groups (contact_group));
+      tp_contact_group_list_has_disjoint_groups (contact_group));
 
   _tp_gdbus_connection_interface_contact_groups1_set_group_storage (
       self->priv->contact_groups_skeleton,
@@ -1061,17 +1061,17 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
   if (TP_IS_CONTACT_GROUP_LIST (self))
     {
       TpContactGroupList *contact_group = TP_CONTACT_GROUP_LIST (self);
-      GStrv groups = tp_base_contact_list_dup_groups (contact_group);
+      GStrv groups = tp_contact_group_list_dup_groups (contact_group);
 
-      tp_base_contact_list_groups_created (contact_group,
+      tp_contact_group_list_groups_created (contact_group,
           (const gchar * const *) groups, -1);
 
       for (i = 0; groups != NULL && groups[i] != NULL; i++)
         {
-          TpHandleSet *members = tp_base_contact_list_dup_group_members (
+          TpHandleSet *members = tp_contact_group_list_dup_group_members (
               contact_group, groups[i]);
 
-          tp_base_contact_list_groups_changed (contact_group, members,
+          tp_contact_group_list_groups_changed (contact_group, members,
               (const gchar * const *) groups + i, 1, NULL, 0);
           tp_handle_set_destroy (members);
         }
@@ -2497,7 +2497,7 @@ tp_base_contact_list_unblock_contacts_finish (TpBaseContactList *self,
  */
 
 /**
- * tp_base_contact_list_normalize_group:
+ * tp_contact_group_list_normalize_group:
  * @self: a contact list manager implementing #TP_TYPE_CONTACT_GROUP_LIST
  * @s: a non-%NULL group name to normalize
  *
@@ -2521,7 +2521,7 @@ tp_base_contact_list_unblock_contacts_finish (TpBaseContactList *self,
  * Since: 0.13.0
  */
 gchar *
-tp_base_contact_list_normalize_group (TpContactGroupList *self,
+tp_contact_group_list_normalize_group (TpContactGroupList *self,
     const gchar *s)
 {
   TpContactGroupListInterface *iface;
@@ -2546,14 +2546,14 @@ update_groups_property (TpBaseContactList *self)
   if (self->priv->contact_groups_skeleton == NULL)
     return;
 
-  groups = tp_base_contact_list_dup_groups (TP_CONTACT_GROUP_LIST (self));
+  groups = tp_contact_group_list_dup_groups (TP_CONTACT_GROUP_LIST (self));
   _tp_gdbus_connection_interface_contact_groups1_set_groups (
       self->priv->contact_groups_skeleton, (const gchar * const *) groups);
   g_strfreev (groups);
 }
 
 /**
- * tp_base_contact_list_groups_created:
+ * tp_contact_group_list_groups_created:
  * @self: a contact list manager implementing #TP_TYPE_CONTACT_GROUP_LIST
  * @created: (array length=n_created) (element-type utf8) (allow-none): zero
  *  or more groups that were created
@@ -2561,7 +2561,7 @@ update_groups_property (TpBaseContactList *self)
  *  %NULL-terminated
  *
  * Called by subclasses when new groups have been created. This will typically
- * be followed by a call to tp_base_contact_list_groups_changed() to add
+ * be followed by a call to tp_contact_group_list_groups_changed() to add
  * some members to those groups.
  *
  * It is an error to call this method on a contact list that
@@ -2570,7 +2570,7 @@ update_groups_property (TpBaseContactList *self)
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_groups_created (TpContactGroupList *contact_group,
+tp_contact_group_list_groups_created (TpContactGroupList *contact_group,
     const gchar * const *created,
     gssize n_created)
 {
@@ -2607,7 +2607,7 @@ tp_base_contact_list_groups_created (TpContactGroupList *contact_group,
 
   for (i = 0; i < n_created; i++)
     {
-      gchar *normalized_group = tp_base_contact_list_normalize_group (
+      gchar *normalized_group = tp_contact_group_list_normalize_group (
           contact_group, created[i]);
 
       if (g_hash_table_lookup (self->priv->groups, normalized_group) == NULL)
@@ -2642,7 +2642,7 @@ tp_base_contact_list_groups_created (TpContactGroupList *contact_group,
 }
 
 /**
- * tp_base_contact_list_groups_removed:
+ * tp_contact_group_list_groups_removed:
  * @self: a contact list manager implementing #TP_TYPE_CONTACT_GROUP_LIST
  * @removed: (array length=n_removed) (element-type utf8) (allow-none): zero
  *  or more groups that were removed
@@ -2651,9 +2651,9 @@ tp_base_contact_list_groups_created (TpContactGroupList *contact_group,
  *
  * Called by subclasses when groups have been removed.
  *
- * Calling tp_base_contact_list_dup_group_members() during this method should
+ * Calling tp_contact_group_list_dup_group_members() during this method should
  * return the groups' old members. If this is done correctly by a subclass,
- * then tp_base_contact_list_groups_changed() will automatically be emitted
+ * then tp_contact_group_list_groups_changed() will automatically be emitted
  * for the old members, and the subclass does not need to do so.
  *
  * It is an error to call this method on a contact list that
@@ -2662,7 +2662,7 @@ tp_base_contact_list_groups_created (TpContactGroupList *contact_group,
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_groups_removed (TpContactGroupList *contact_group,
+tp_contact_group_list_groups_removed (TpContactGroupList *contact_group,
     const gchar * const *removed,
     gssize n_removed)
 {
@@ -2702,7 +2702,7 @@ tp_base_contact_list_groups_removed (TpContactGroupList *contact_group,
 
   for (i = 0; i < n_removed; i++)
     {
-      gchar *normalized_group = tp_base_contact_list_normalize_group (
+      gchar *normalized_group = tp_contact_group_list_normalize_group (
           TP_CONTACT_GROUP_LIST (self), removed[i]);
       TpHandleSet *group_members = g_hash_table_lookup (self->priv->groups,
           normalized_group);
@@ -2767,16 +2767,16 @@ tp_base_contact_list_groups_removed (TpContactGroupList *contact_group,
 }
 
 /**
- * tp_base_contact_list_group_renamed:
+ * tp_contact_group_list_group_renamed:
  * @self: a contact list manager implementing #TP_TYPE_CONTACT_GROUP_LIST
  * @old_name: the group's old name
  * @new_name: the group's new name
  *
  * Called by subclasses when a group has been renamed.
  *
- * Calling tp_base_contact_list_dup_group_members() for @old_name during this
+ * Calling tp_contact_group_list_dup_group_members() for @old_name during this
  * method should return the group's old members. If this is done correctly by
- * a subclass, then tp_base_contact_list_groups_changed() will automatically
+ * a subclass, then tp_contact_group_list_groups_changed() will automatically
  * be emitted for the members, and the subclass does not need to do so.
  *
  * It is an error to call this method on a contact list that
@@ -2785,7 +2785,7 @@ tp_base_contact_list_groups_removed (TpContactGroupList *contact_group,
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_group_renamed (TpContactGroupList *contact_group,
+tp_contact_group_list_group_renamed (TpContactGroupList *contact_group,
     const gchar *old_name,
     const gchar *new_name)
 {
@@ -2819,7 +2819,7 @@ tp_base_contact_list_group_renamed (TpContactGroupList *contact_group,
           self->priv->contact_groups_skeleton, old_names);
     }
 
-  old_members = tp_base_contact_list_dup_group_members (
+  old_members = tp_contact_group_list_dup_group_members (
       TP_CONTACT_GROUP_LIST (self), old_name);
   set = tp_handle_set_peek (old_members);
 
@@ -2873,7 +2873,7 @@ remove_contacts_from_handle_set (TpHandleSet *set,
 }
 
 /**
- * tp_base_contact_list_groups_changed:
+ * tp_contact_group_list_groups_changed:
  * @self: a contact list manager implementing #TP_TYPE_CONTACT_GROUP_LIST
  * @contacts: a set containing one or more contacts
  * @added: (array length=n_added) (element-type utf8) (allow-none): zero or
@@ -2890,7 +2890,7 @@ remove_contacts_from_handle_set (TpHandleSet *set,
  *
  * If any of the groups in @added are not already known to exist,
  * this method also signals that they were created, as if
- * tp_base_contact_list_groups_created() had been called first.
+ * tp_contact_group_list_groups_created() had been called first.
  *
  * It is an error to call this method on a contact list that
  * does not implement %TP_TYPE_CONTACT_GROUP_LIST.
@@ -2898,7 +2898,7 @@ remove_contacts_from_handle_set (TpHandleSet *set,
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_groups_changed (TpContactGroupList *contact_group,
+tp_contact_group_list_groups_changed (TpContactGroupList *contact_group,
     TpHandleSet *contacts,
     const gchar * const *added,
     gssize n_added,
@@ -2962,7 +2962,7 @@ tp_base_contact_list_groups_changed (TpContactGroupList *contact_group,
       " groups, removing %" G_GSSIZE_FORMAT,
       tp_handle_set_size (contacts), n_added, n_removed);
 
-  tp_base_contact_list_groups_created (contact_group, added, n_added);
+  tp_contact_group_list_groups_created (contact_group, added, n_added);
 
   /* These two arrays are lists of the groups whose members really changed;
    * groups where the change was a no-op are skipped. */
@@ -2971,7 +2971,7 @@ tp_base_contact_list_groups_changed (TpContactGroupList *contact_group,
 
   for (i = 0; i < n_added; i++)
     {
-      gchar *normalized_group = tp_base_contact_list_normalize_group (
+      gchar *normalized_group = tp_contact_group_list_normalize_group (
           contact_group, added[i]);
       TpHandleSet *contacts_in_group = g_hash_table_lookup (self->priv->groups,
           normalized_group);
@@ -2998,7 +2998,7 @@ tp_base_contact_list_groups_changed (TpContactGroupList *contact_group,
 
   for (i = 0; i < n_removed; i++)
     {
-      gchar *normalized_group = tp_base_contact_list_normalize_group (
+      gchar *normalized_group = tp_contact_group_list_normalize_group (
           contact_group, removed[i]);
       TpHandleSet *contacts_in_group = g_hash_table_lookup (self->priv->groups,
           normalized_group);
@@ -3049,7 +3049,7 @@ tp_base_contact_list_groups_changed (TpContactGroupList *contact_group,
 }
 
 /**
- * tp_base_contact_list_one_contact_groups_changed:
+ * tp_contact_group_list_one_contact_groups_changed:
  * @self: the contact list manager implementing #TP_TYPE_CONTACT_GROUP_LIST
  * @contact: a contact handle
  * @added: (array length=n_added) (element-type utf8) (allow-none): zero or
@@ -3060,7 +3060,7 @@ tp_base_contact_list_groups_changed (TpContactGroupList *contact_group,
  * @n_removed: the number of groups removed, or -1 if @removed is
  *  %NULL-terminated
  *
- * Convenience wrapper around tp_base_contact_list_groups_changed() for a
+ * Convenience wrapper around tp_contact_group_list_groups_changed() for a
  * single handle in the 'contacts' set.
  *
  * (There is no equivalent function for @added and @removed having trivial
@@ -3073,7 +3073,7 @@ tp_base_contact_list_groups_changed (TpContactGroupList *contact_group,
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_one_contact_groups_changed (
+tp_contact_group_list_one_contact_groups_changed (
     TpContactGroupList *contact_group,
     TpHandle contact,
     const gchar * const *added,
@@ -3089,12 +3089,12 @@ tp_base_contact_list_one_contact_groups_changed (
   self = (TpBaseContactList *) contact_group;
 
   /* if we're disconnecting, we might not have a handle repository any more:
-   * tp_base_contact_list_groups_changed does nothing in that situation */
+   * tp_contact_group_list_groups_changed does nothing in that situation */
   if (self->priv->contact_repo == NULL)
     return;
 
   set = tp_handle_set_new_containing (self->priv->contact_repo, contact);
-  tp_base_contact_list_groups_changed (TP_CONTACT_GROUP_LIST (self), set, added,
+  tp_contact_group_list_groups_changed (TP_CONTACT_GROUP_LIST (self), set, added,
       n_added, removed, n_removed);
   tp_handle_set_destroy (set);
 }
@@ -3128,13 +3128,13 @@ tp_contact_group_list_false_func (TpContactGroupList *self G_GNUC_UNUSED)
 }
 
 /**
- * tp_base_contact_list_has_disjoint_groups:
+ * tp_contact_group_list_has_disjoint_groups:
  * @self: a contact list manager implementing #TP_TYPE_CONTACT_GROUP_LIST
  *
  * Return whether groups in this protocol are disjoint
  * (i.e. each contact can be in at most one group).
  * This is merely informational: subclasses are responsible for making
- * appropriate calls to tp_base_contact_list_groups_changed(), etc.
+ * appropriate calls to tp_contact_group_list_groups_changed(), etc.
  *
  * It is an error to call this function if @self does not implement
  * %TP_TYPE_CONTACT_GROUP_LIST.
@@ -3153,7 +3153,7 @@ tp_contact_group_list_false_func (TpContactGroupList *self G_GNUC_UNUSED)
  * Since: 0.13.0
  */
 gboolean
-tp_base_contact_list_has_disjoint_groups (TpContactGroupList *self)
+tp_contact_group_list_has_disjoint_groups (TpContactGroupList *self)
 {
   TpContactGroupListInterface *iface;
 
@@ -3180,7 +3180,7 @@ tp_base_contact_list_has_disjoint_groups (TpContactGroupList *self)
  */
 
 /**
- * tp_base_contact_list_dup_groups:
+ * tp_contact_group_list_dup_groups:
  * @self: a contact list manager implementing #TP_TYPE_CONTACT_GROUP_LIST
  *
  * Return a list of all groups on this connection. It is incorrect to call
@@ -3198,7 +3198,7 @@ tp_base_contact_list_has_disjoint_groups (TpContactGroupList *self)
  * Since: 0.13.0
  */
 GStrv
-tp_base_contact_list_dup_groups (TpContactGroupList *self)
+tp_contact_group_list_dup_groups (TpContactGroupList *self)
 {
   TpContactGroupListInterface *iface =
     TP_CONTACT_GROUP_LIST_GET_INTERFACE (self);
@@ -3230,7 +3230,7 @@ tp_base_contact_list_dup_groups (TpContactGroupList *self)
  */
 
 /**
- * tp_base_contact_list_dup_contact_groups:
+ * tp_contact_group_list_dup_contact_groups:
  * @self: a contact list manager
  * @contact: a contact handle
  *
@@ -3252,7 +3252,7 @@ tp_base_contact_list_dup_groups (TpContactGroupList *self)
  * Since: 0.13.0
  */
 GStrv
-tp_base_contact_list_dup_contact_groups (TpContactGroupList *self,
+tp_contact_group_list_dup_contact_groups (TpContactGroupList *self,
     TpHandle contact)
 {
   TpContactGroupListInterface *iface =
@@ -3280,7 +3280,7 @@ tp_base_contact_list_dup_contact_groups (TpContactGroupList *self,
  */
 
 /**
- * tp_base_contact_list_dup_group_members:
+ * tp_contact_group_list_dup_group_members:
  * @self: a contact list manager
  * @group: a normalized group name
  *
@@ -3301,7 +3301,7 @@ tp_base_contact_list_dup_contact_groups (TpContactGroupList *self,
  * Since: 0.13.0
  */
 TpHandleSet *
-tp_base_contact_list_dup_group_members (TpContactGroupList *self,
+tp_contact_group_list_dup_group_members (TpContactGroupList *self,
     const gchar *group)
 {
   TpContactGroupListInterface *iface =
@@ -3348,7 +3348,7 @@ tp_base_contact_list_dup_group_members (TpContactGroupList *self,
  * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
  * virtual method which must be implemented, using
  * #TpMutableContactGroupListInterface.add_to_group_async.
- * The implementation should call tp_base_contact_list_groups_changed()
+ * The implementation should call tp_contact_group_list_groups_changed()
  * for any changes it successfully made, before calling @callback.
  *
  * Since: 0.13.0
@@ -3442,7 +3442,7 @@ tp_base_contact_list_add_to_group_finish (TpBaseContactList *self,
  * members to it, and removing the old group: this is appropriate for protocols
  * like XMPP, in which groups behave more like tags.
  *
- * The implementation should call tp_base_contact_list_group_renamed() before
+ * The implementation should call tp_contact_group_list_group_renamed() before
  * calling @callback.
  *
  * Since: 0.13.0
@@ -3526,7 +3526,7 @@ tp_base_contact_list_emulate_rename_group (TpBaseContactList *self,
   g_simple_async_result_set_op_res_gpointer (result, g_strdup (old_name),
       g_free);
 
-  old_members = tp_base_contact_list_dup_group_members (
+  old_members = tp_contact_group_list_dup_group_members (
       TP_CONTACT_GROUP_LIST (self), old_name);
   tp_base_contact_list_add_to_group_async (self, new_name, old_members,
       emulate_rename_group_add_cb, g_object_ref (result));
@@ -3587,7 +3587,7 @@ tp_base_contact_list_rename_group_finish (TpBaseContactList *self,
  * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
  * virtual method which must be implemented, using
  * #TpMutableContactGroupListInterface.remove_from_group_async.
- * The implementation should call tp_base_contact_list_groups_changed()
+ * The implementation should call tp_contact_group_list_groups_changed()
  * for any changes it successfully made, before calling @callback.
  *
  * Since: 0.13.0
@@ -3671,7 +3671,7 @@ tp_base_contact_list_remove_from_group_finish (TpBaseContactList *self,
  * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
  * virtual method which must be implemented, using
  * #TpMutableContactGroupListInterface.remove_group_async.
- * The implementation should call tp_base_contact_list_groups_removed()
+ * The implementation should call tp_contact_group_list_groups_removed()
  * for any groups it successfully removed, before calling @callback.
  *
  * Since: 0.13.0
@@ -3802,7 +3802,7 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
  * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
  * virtual method which must be implemented, using
  * #TpMutableContactGroupListInterface.set_contact_groups_async.
- * The implementation should call tp_base_contact_list_groups_changed()
+ * The implementation should call tp_contact_group_list_groups_changed()
  * for any changes it successfully made, before returning.
  *
  * Since: 0.13.0
@@ -3882,7 +3882,7 @@ tp_base_contact_list_set_contact_groups_finish (TpBaseContactList *self,
  * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
  * virtual method which must be implemented, using
  * #TpMutableContactGroupListInterface.set_group_members_async.
- * The implementation should call tp_base_contact_list_groups_changed()
+ * The implementation should call tp_contact_group_list_groups_changed()
  * for any changes it successfully made, before calling @callback.
  *
  * Since: 0.13.0
@@ -4275,7 +4275,7 @@ tp_base_contact_list_fill_contact_attributes (TpBaseContactList *self,
         {
           gchar **groups;
 
-          groups = tp_base_contact_list_dup_contact_groups (
+          groups = tp_contact_group_list_dup_contact_groups (
               TP_CONTACT_GROUP_LIST (self), contact);
           g_variant_dict_insert (attributes,
               TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS1_GROUPS,
@@ -4466,7 +4466,7 @@ tp_base_contact_list_mixin_set_contact_groups (
 
   for (; groups != NULL && *groups != NULL; groups++)
     {
-      gchar *normalized = tp_base_contact_list_normalize_group (
+      gchar *normalized = tp_contact_group_list_normalize_group (
           TP_CONTACT_GROUP_LIST (self), *groups);
 
       if (normalized != NULL)
@@ -4570,7 +4570,7 @@ tp_base_contact_list_mixin_add_to_group (
       goto out;
     }
 
-  normalized_group = tp_base_contact_list_normalize_group (
+  normalized_group = tp_contact_group_list_normalize_group (
       TP_CONTACT_GROUP_LIST (self), group);
   if (normalized_group == NULL)
     {
@@ -4621,7 +4621,7 @@ tp_base_contact_list_mixin_remove_from_group (
       goto out;
     }
 
-  normalized_group = tp_base_contact_list_normalize_group (
+  normalized_group = tp_contact_group_list_normalize_group (
       TP_CONTACT_GROUP_LIST (self), group);
   if (normalized_group == NULL
       || g_hash_table_lookup (self->priv->groups, normalized_group) == NULL)
@@ -4671,7 +4671,7 @@ tp_base_contact_list_mixin_remove_group (
       goto out;
     }
 
-  normalized_group = tp_base_contact_list_normalize_group (
+  normalized_group = tp_contact_group_list_normalize_group (
       TP_CONTACT_GROUP_LIST (self), group);
   if (normalized_group == NULL
       || g_hash_table_lookup (self->priv->groups, normalized_group) == NULL)
@@ -4722,7 +4722,7 @@ tp_base_contact_list_mixin_rename_group (
     }
 
   /* todo: just use the normalize func directly */
-  old_normalized = tp_base_contact_list_normalize_group (contact_group, before);
+  old_normalized = tp_contact_group_list_normalize_group (contact_group, before);
   if (g_hash_table_lookup (self->priv->groups, old_normalized) == NULL)
     {
       g_set_error (&error, TP_ERROR, TP_ERROR_DOES_NOT_EXIST,
@@ -4732,7 +4732,7 @@ tp_base_contact_list_mixin_rename_group (
       goto out;
     }
 
-  new_normalized = tp_base_contact_list_normalize_group (contact_group, after);
+  new_normalized = tp_contact_group_list_normalize_group (contact_group, after);
   if (g_hash_table_lookup (self->priv->groups, new_normalized) != NULL)
     {
       g_set_error (&error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,

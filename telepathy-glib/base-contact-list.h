@@ -374,22 +374,22 @@ struct _TpBlockableContactListInterface {
 
 typedef struct _TpContactGroupList TpContactGroupList;
 
-void tp_base_contact_list_groups_created (TpContactGroupList *self,
+void tp_contact_group_list_groups_created (TpContactGroupList *self,
     const gchar * const *created, gssize n_created);
 
-void tp_base_contact_list_groups_removed (TpContactGroupList *self,
+void tp_contact_group_list_groups_removed (TpContactGroupList *self,
     const gchar * const *removed, gssize n_removed);
 
-void tp_base_contact_list_group_renamed (TpContactGroupList *self,
+void tp_contact_group_list_group_renamed (TpContactGroupList *self,
     const gchar *old_name,
     const gchar *new_name);
 
-void tp_base_contact_list_groups_changed (TpContactGroupList *self,
+void tp_contact_group_list_groups_changed (TpContactGroupList *self,
     TpHandleSet *contacts,
     const gchar * const *added, gssize n_added,
     const gchar * const *removed, gssize n_removed);
 
-void tp_base_contact_list_one_contact_groups_changed (TpContactGroupList *self,
+void tp_contact_group_list_one_contact_groups_changed (TpContactGroupList *self,
     TpHandle contact,
     const gchar * const *added, gssize n_added,
     const gchar * const *removed, gssize n_removed);
@@ -402,32 +402,32 @@ typedef gboolean (*TpContactGroupListBooleanFunc) (
 gboolean tp_contact_group_list_false_func (
     TpContactGroupList *self G_GNUC_UNUSED);
 
-gboolean tp_base_contact_list_has_disjoint_groups (TpContactGroupList *self);
+gboolean tp_contact_group_list_has_disjoint_groups (TpContactGroupList *self);
 
 typedef GStrv (*TpContactGroupListDupGroupsFunc) (
     TpContactGroupList *self);
 
-GStrv tp_base_contact_list_dup_groups (TpContactGroupList *self);
+GStrv tp_contact_group_list_dup_groups (TpContactGroupList *self);
 
 typedef GStrv (*TpContactGroupListDupContactGroupsFunc) (
     TpContactGroupList *self,
     TpHandle contact);
 
-GStrv tp_base_contact_list_dup_contact_groups (TpContactGroupList *self,
+GStrv tp_contact_group_list_dup_contact_groups (TpContactGroupList *self,
     TpHandle contact);
 
 typedef TpHandleSet *(*TpContactGroupListDupGroupMembersFunc) (
     TpContactGroupList *self,
     const gchar *group);
 
-TpHandleSet *tp_base_contact_list_dup_group_members (TpContactGroupList *self,
+TpHandleSet *tp_contact_group_list_dup_group_members (TpContactGroupList *self,
     const gchar *group);
 
 typedef gchar *(*TpContactGroupListNormalizeFunc) (
     TpContactGroupList *self,
     const gchar *s);
 
-gchar *tp_base_contact_list_normalize_group (
+gchar *tp_contact_group_list_normalize_group (
     TpContactGroupList *self,
     const gchar *s);
 
