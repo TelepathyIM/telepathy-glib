@@ -635,12 +635,16 @@ update_immutable_contact_list_properties (TpBaseContactList *self)
 static void
 update_immutable_contact_groups_properties (TpBaseContactList *self)
 {
+  TpContactGroupList *contact_group;
+
   if (self->priv->contact_groups_skeleton == NULL)
     return;
 
+  contact_group = TP_CONTACT_GROUP_LIST (self);
+
   _tp_gdbus_connection_interface_contact_groups1_set_disjoint_groups (
       self->priv->contact_groups_skeleton,
-      tp_base_contact_list_has_disjoint_groups (self));
+      tp_base_contact_list_has_disjoint_groups (contact_group));
 
   _tp_gdbus_connection_interface_contact_groups1_set_group_storage (
       self->priv->contact_groups_skeleton,
@@ -1056,15 +1060,16 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
    * to emit one signal per group - that's probably fewer. */
   if (TP_IS_CONTACT_GROUP_LIST (self))
     {
-      GStrv groups = tp_base_contact_list_dup_groups (self);
+      TpContactGroupList *contact_group = TP_CONTACT_GROUP_LIST (self);
+      GStrv groups = tp_base_contact_list_dup_groups (contact_group);
 
       tp_base_contact_list_groups_created (self,
           (const gchar * const *) groups, -1);
 
       for (i = 0; groups != NULL && groups[i] != NULL; i++)
         {
-          TpHandleSet *members = tp_base_contact_list_dup_group_members (self,
-              groups[i]);
+          TpHandleSet *members = tp_base_contact_list_dup_group_members (
+              contact_group, groups[i]);
 
           tp_base_contact_list_groups_changed (self, members,
               (const gchar * const *) groups + i, 1, NULL, 0);
@@ -2479,7 +2484,7 @@ tp_base_contact_list_unblock_contacts_finish (TpBaseContactList *self,
 }
 
 /**
- * TpBaseContactListNormalizeFunc:
+ * TpContactGroupListNormalizeFunc:
  * @self: a contact list manager
  * @s: a non-%NULL name to normalize
  *
@@ -2493,15 +2498,14 @@ tp_base_contact_list_unblock_contacts_finish (TpBaseContactList *self,
 
 /**
  * tp_base_contact_list_normalize_group:
- * @self: a contact list manager
+ * @self: a contact list manager implementing #TP_TYPE_CONTACT_GROUP_LIST
  * @s: a non-%NULL group name to normalize
  *
  * Return a normalized form of the group name @s, or %NULL if a group of a
  * sufficiently similar name cannot be created.
  *
- * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_CONTACT_GROUP_LIST, this method is meaningless, and always
- * returns %NULL.
+ * It is an error to call this function if @self does not implement
+ * %TP_TYPE_CONTACT_GROUP_LIST.
  *
  * For implementations of %TP_TYPE_CONTACT_GROUP_LIST, this is a virtual
  * method, implemented using #TpContactGroupListInterface.normalize_group.
@@ -2517,16 +2521,13 @@ tp_base_contact_list_unblock_contacts_finish (TpBaseContactList *self,
  * Since: 0.13.0
  */
 gchar *
-tp_base_contact_list_normalize_group (TpBaseContactList *self,
+tp_base_contact_list_normalize_group (TpContactGroupList *self,
     const gchar *s)
 {
   TpContactGroupListInterface *iface;
 
-  g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), NULL);
+  g_return_val_if_fail (TP_IS_CONTACT_GROUP_LIST (self), NULL);
   g_return_val_if_fail (s != NULL, NULL);
-
-  if (!TP_IS_CONTACT_GROUP_LIST (self))
-    return NULL;
 
   iface = TP_CONTACT_GROUP_LIST_GET_INTERFACE (self);
   g_return_val_if_fail (iface != NULL, FALSE);
@@ -2545,7 +2546,7 @@ update_groups_property (TpBaseContactList *self)
   if (self->priv->contact_groups_skeleton == NULL)
     return;
 
-  groups = tp_base_contact_list_dup_groups (self);
+  groups = tp_base_contact_list_dup_groups (TP_CONTACT_GROUP_LIST (self));
   _tp_gdbus_connection_interface_contact_groups1_set_groups (
       self->priv->contact_groups_skeleton, (const gchar * const *) groups);
   g_strfreev (groups);
@@ -2604,7 +2605,7 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
   for (i = 0; i < n_created; i++)
     {
       gchar *normalized_group = tp_base_contact_list_normalize_group (
-          self, created[i]);
+          TP_CONTACT_GROUP_LIST (self), created[i]);
 
       if (g_hash_table_lookup (self->priv->groups, normalized_group) == NULL)
         {
@@ -2696,7 +2697,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
   for (i = 0; i < n_removed; i++)
     {
       gchar *normalized_group = tp_base_contact_list_normalize_group (
-          self, removed[i]);
+          TP_CONTACT_GROUP_LIST (self), removed[i]);
       TpHandleSet *group_members = g_hash_table_lookup (self->priv->groups,
           normalized_group);
       TpHandle contact;
@@ -2809,7 +2810,8 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
           self->priv->contact_groups_skeleton, old_names);
     }
 
-  old_members = tp_base_contact_list_dup_group_members (self, old_name);
+  old_members = tp_base_contact_list_dup_group_members (
+      TP_CONTACT_GROUP_LIST (self), old_name);
   set = tp_handle_set_peek (old_members);
 
   if (tp_intset_size (set) > 0)
@@ -2896,6 +2898,7 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
 {
   gssize i;
   GPtrArray *really_added, *really_removed;
+  TpContactGroupList *contact_group;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
@@ -2955,10 +2958,12 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
   really_added = g_ptr_array_sized_new (n_added);
   really_removed = g_ptr_array_sized_new (n_removed);
 
+  contact_group = TP_CONTACT_GROUP_LIST (self);
+
   for (i = 0; i < n_added; i++)
     {
       gchar *normalized_group = tp_base_contact_list_normalize_group (
-          self, added[i]);
+          contact_group, added[i]);
       TpHandleSet *contacts_in_group = g_hash_table_lookup (self->priv->groups,
           normalized_group);
 
@@ -2985,7 +2990,7 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
   for (i = 0; i < n_removed; i++)
     {
       gchar *normalized_group = tp_base_contact_list_normalize_group (
-          self, removed[i]);
+          contact_group, removed[i]);
       TpHandleSet *contacts_in_group = g_hash_table_lookup (self->priv->groups,
           normalized_group);
 
@@ -3108,16 +3113,15 @@ tp_contact_group_list_false_func (TpContactGroupList *self G_GNUC_UNUSED)
 
 /**
  * tp_base_contact_list_has_disjoint_groups:
- * @self: a contact list manager
+ * @self: a contact list manager implementing #TP_TYPE_CONTACT_GROUP_LIST
  *
  * Return whether groups in this protocol are disjoint
  * (i.e. each contact can be in at most one group).
  * This is merely informational: subclasses are responsible for making
  * appropriate calls to tp_base_contact_list_groups_changed(), etc.
  *
- * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_CONTACT_GROUP_LIST, this method is meaningless, and always
- * returns %FALSE.
+ * It is an error to call this function if @self does not implement
+ * %TP_TYPE_CONTACT_GROUP_LIST.
  *
  * For implementations of %TP_TYPE_CONTACT_GROUP_LIST, this is a virtual
  * method, implemented using #TpContactGroupListInterface.has_disjoint_groups.
@@ -3133,14 +3137,11 @@ tp_contact_group_list_false_func (TpContactGroupList *self G_GNUC_UNUSED)
  * Since: 0.13.0
  */
 gboolean
-tp_base_contact_list_has_disjoint_groups (TpBaseContactList *self)
+tp_base_contact_list_has_disjoint_groups (TpContactGroupList *self)
 {
   TpContactGroupListInterface *iface;
 
-  g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), FALSE);
-
-  if (!TP_IS_CONTACT_GROUP_LIST (self))
-    return FALSE;
+  g_return_val_if_fail (TP_IS_CONTACT_GROUP_LIST (self), FALSE);
 
   iface = TP_CONTACT_GROUP_LIST_GET_INTERFACE (self);
   g_return_val_if_fail (iface != NULL, FALSE);
@@ -3164,7 +3165,7 @@ tp_base_contact_list_has_disjoint_groups (TpBaseContactList *self)
 
 /**
  * tp_base_contact_list_dup_groups:
- * @self: a contact list manager
+ * @self: a contact list manager implementing #TP_TYPE_CONTACT_GROUP_LIST
  *
  * Return a list of all groups on this connection. It is incorrect to call
  * this method before tp_base_contact_list_set_list_received() has been
@@ -3181,17 +3182,18 @@ tp_base_contact_list_has_disjoint_groups (TpBaseContactList *self)
  * Since: 0.13.0
  */
 GStrv
-tp_base_contact_list_dup_groups (TpBaseContactList *self)
+tp_base_contact_list_dup_groups (TpContactGroupList *self)
 {
   TpContactGroupListInterface *iface =
     TP_CONTACT_GROUP_LIST_GET_INTERFACE (self);
 
   g_return_val_if_fail (iface != NULL, NULL);
   g_return_val_if_fail (iface->dup_groups != NULL, NULL);
-  g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
-      TP_CONTACT_LIST_STATE_SUCCESS, NULL);
+  g_return_val_if_fail (tp_base_contact_list_get_state (
+        TP_BASE_CONTACT_LIST (self), NULL) == TP_CONTACT_LIST_STATE_SUCCESS,
+      NULL);
 
-  return iface->dup_groups (TP_CONTACT_GROUP_LIST (self));
+  return iface->dup_groups (self);
 }
 
 /**
@@ -3234,7 +3236,7 @@ tp_base_contact_list_dup_groups (TpBaseContactList *self)
  * Since: 0.13.0
  */
 GStrv
-tp_base_contact_list_dup_contact_groups (TpBaseContactList *self,
+tp_base_contact_list_dup_contact_groups (TpContactGroupList *self,
     TpHandle contact)
 {
   TpContactGroupListInterface *iface =
@@ -3242,10 +3244,11 @@ tp_base_contact_list_dup_contact_groups (TpBaseContactList *self,
 
   g_return_val_if_fail (iface != NULL, NULL);
   g_return_val_if_fail (iface->dup_contact_groups != NULL, NULL);
-  g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
-      TP_CONTACT_LIST_STATE_SUCCESS, NULL);
+  g_return_val_if_fail (tp_base_contact_list_get_state (
+        TP_BASE_CONTACT_LIST (self), NULL) == TP_CONTACT_LIST_STATE_SUCCESS,
+      NULL);
 
-  return iface->dup_contact_groups (TP_CONTACT_GROUP_LIST (self), contact);
+  return iface->dup_contact_groups (self, contact);
 }
 
 /**
@@ -3282,7 +3285,7 @@ tp_base_contact_list_dup_contact_groups (TpBaseContactList *self,
  * Since: 0.13.0
  */
 TpHandleSet *
-tp_base_contact_list_dup_group_members (TpBaseContactList *self,
+tp_base_contact_list_dup_group_members (TpContactGroupList *self,
     const gchar *group)
 {
   TpContactGroupListInterface *iface =
@@ -3290,10 +3293,11 @@ tp_base_contact_list_dup_group_members (TpBaseContactList *self,
 
   g_return_val_if_fail (iface != NULL, NULL);
   g_return_val_if_fail (iface->dup_group_members != NULL, NULL);
-  g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
-      TP_CONTACT_LIST_STATE_SUCCESS, NULL);
+  g_return_val_if_fail (tp_base_contact_list_get_state (
+        TP_BASE_CONTACT_LIST (self), NULL) == TP_CONTACT_LIST_STATE_SUCCESS,
+      NULL);
 
-  return iface->dup_group_members (TP_CONTACT_GROUP_LIST (self), group);
+  return iface->dup_group_members (self, group);
 }
 
 /**
@@ -3506,7 +3510,8 @@ tp_base_contact_list_emulate_rename_group (TpBaseContactList *self,
   g_simple_async_result_set_op_res_gpointer (result, g_strdup (old_name),
       g_free);
 
-  old_members = tp_base_contact_list_dup_group_members (self, old_name);
+  old_members = tp_base_contact_list_dup_group_members (
+      TP_CONTACT_GROUP_LIST (self), old_name);
   tp_base_contact_list_add_to_group_async (self, new_name, old_members,
       emulate_rename_group_add_cb, g_object_ref (result));
   g_object_unref (result);
@@ -4254,7 +4259,8 @@ tp_base_contact_list_fill_contact_attributes (TpBaseContactList *self,
         {
           gchar **groups;
 
-          groups = tp_base_contact_list_dup_contact_groups (self, contact);
+          groups = tp_base_contact_list_dup_contact_groups (
+              TP_CONTACT_GROUP_LIST (self), contact);
           g_variant_dict_insert (attributes,
               TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS1_GROUPS,
               "^a&s", groups);
@@ -4444,7 +4450,8 @@ tp_base_contact_list_mixin_set_contact_groups (
 
   for (; groups != NULL && *groups != NULL; groups++)
     {
-      gchar *normalized = tp_base_contact_list_normalize_group (self, *groups);
+      gchar *normalized = tp_base_contact_list_normalize_group (
+          TP_CONTACT_GROUP_LIST (self), *groups);
 
       if (normalized != NULL)
         {
@@ -4547,7 +4554,8 @@ tp_base_contact_list_mixin_add_to_group (
       goto out;
     }
 
-  normalized_group = tp_base_contact_list_normalize_group (self, group);
+  normalized_group = tp_base_contact_list_normalize_group (
+      TP_CONTACT_GROUP_LIST (self), group);
   if (normalized_group == NULL)
     {
       tp_base_contact_list_mixin_return_void (context, NULL);
@@ -4597,7 +4605,8 @@ tp_base_contact_list_mixin_remove_from_group (
       goto out;
     }
 
-  normalized_group = tp_base_contact_list_normalize_group (self, group);
+  normalized_group = tp_base_contact_list_normalize_group (
+      TP_CONTACT_GROUP_LIST (self), group);
   if (normalized_group == NULL
       || g_hash_table_lookup (self->priv->groups, normalized_group) == NULL)
     {
@@ -4646,7 +4655,8 @@ tp_base_contact_list_mixin_remove_group (
       goto out;
     }
 
-  normalized_group = tp_base_contact_list_normalize_group (self, group);
+  normalized_group = tp_base_contact_list_normalize_group (
+      TP_CONTACT_GROUP_LIST (self), group);
   if (normalized_group == NULL
       || g_hash_table_lookup (self->priv->groups, normalized_group) == NULL)
     {
@@ -4686,6 +4696,7 @@ tp_base_contact_list_mixin_rename_group (
   GError *error = NULL;
   gchar *old_normalized = NULL;
   gchar *new_normalized = NULL;
+  TpContactGroupList *contact_group = TP_CONTACT_GROUP_LIST (self);
 
   if (!tp_base_contact_list_check_group_change (self, NULL, &error))
     {
@@ -4695,7 +4706,7 @@ tp_base_contact_list_mixin_rename_group (
     }
 
   /* todo: just use the normalize func directly */
-  old_normalized = tp_base_contact_list_normalize_group (self, before);
+  old_normalized = tp_base_contact_list_normalize_group (contact_group, before);
   if (g_hash_table_lookup (self->priv->groups, old_normalized) == NULL)
     {
       g_set_error (&error, TP_ERROR, TP_ERROR_DOES_NOT_EXIST,
@@ -4705,7 +4716,7 @@ tp_base_contact_list_mixin_rename_group (
       goto out;
     }
 
-  new_normalized = tp_base_contact_list_normalize_group (self, after);
+  new_normalized = tp_base_contact_list_normalize_group (contact_group, after);
   if (g_hash_table_lookup (self->priv->groups, new_normalized) != NULL)
     {
       g_set_error (&error, TP_ERROR, TP_ERROR_NOT_AVAILABLE,

@@ -1602,7 +1602,7 @@ example_contact_list_remove_group_async (TpBaseContactList *contact_list,
 }
 
 static gchar *
-example_contact_list_normalize_group (TpBaseContactList *contact_list,
+example_contact_list_normalize_group (TpContactGroupList *contact_list,
     const gchar *id)
 {
   if (id[0] == '\0')
