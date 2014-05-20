@@ -146,6 +146,23 @@
  */
 
 /**
+ * TpBlockableContactListDupContactsFunc:
+ * @self: the contact list manager implementing
+ * #TP_TYPE_BLOCKABLE_CONTACT_LIST
+ *
+ * Signature of a virtual method to list contacts with a particular state;
+ * the required state is defined by the particular virtual method being
+ * implemented.
+ *
+ * The implementation is expected to have a cache of contacts on the contact
+ * list, which is updated based on protocol events.
+ *
+ * Returns: (transfer full): a set of contacts with the desired state
+ *
+ * Since: UNRELEASED
+ */
+
+/**
  * TpBaseContactListDupStatesFunc:
  * @self: the contact list manager
  * @contact: the contact
@@ -179,7 +196,8 @@
 
 /**
  * TpBaseContactListActOnContactsFunc:
- * @self: the contact list manager
+ * @self: the contact list manager implementing
+ * #TP_TYPE_BLOCKABLE_CONTACT_LIST
  * @contacts: the contacts on which to act
  * @callback: a callback to call on success, failure or disconnection
  * @user_data: user data for the callback
@@ -193,6 +211,21 @@
  * for any contacts it has changed, before returning.
  *
  * Since: 0.13.0
+ */
+
+/**
+ * TpBlockableContactListActOnContactsFunc:
+ * @self: the contact list manager
+ * @contacts: the contacts on which to act
+ * @callback: a callback to call on success, failure or disconnection
+ * @user_data: user data for the callback
+ *
+ * Signature of a virtual method that acts on a set of contacts and needs no
+ * additional information, such as removing contacts, approving or cancelling
+ * presence publication, cancelling presence subscription, or removing
+ * contacts.
+ *
+ * Since: UNRELEASED
  */
 
 /**
@@ -224,6 +257,21 @@
  *
  * Since: 0.13.0
  */
+
+/**
+ * TpBlockableContactListAsyncFinishFunc:
+ * @self: the contact list manager implementing
+ * #TP_TYPE_BLOCKABLE_CONTACT_LIST
+ * @result: the result of the asynchronous operation
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Signature of a virtual method to finish an async operation.
+ *
+ * Returns: %TRUE on success, or %FALSE if @error is set
+ *
+ * Since: UNRELEASED
+ */
+
 
 #include "config.h"
 
@@ -824,13 +872,26 @@ tp_mutable_contact_list_default_init (TpMutableContactListInterface *iface)
   /* there's no default for the other virtual methods */
 }
 
+static gboolean
+tp_blockable_contact_list_simple_finish (TpBlockableContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple = (GSimpleAsyncResult *) result;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (
+      result, G_OBJECT (self), NULL), FALSE);
+
+  return !g_simple_async_result_propagate_error (simple, error);
+}
+
 static void
 tp_blockable_contact_list_default_init (TpBlockableContactListInterface *iface)
 {
-  iface->block_contacts_finish = tp_base_contact_list_simple_finish;
-  iface->unblock_contacts_finish = tp_base_contact_list_simple_finish;
+  iface->block_contacts_finish = tp_blockable_contact_list_simple_finish;
+  iface->unblock_contacts_finish = tp_blockable_contact_list_simple_finish;
 
-  iface->can_block = tp_base_contact_list_true_func;
+  iface->can_block = tp_blockable_contact_list_true_func;
   /* there's no default for the other virtual methods */
 }
 
@@ -1899,6 +1960,24 @@ tp_base_contact_list_unpublish_finish (TpBaseContactList *self,
  */
 
 /**
+ * TpBlockableContactListBooleanFunc:
+ * @self: a contact list manager implementing
+ * #TP_TYPE_BLOCKABLE_CONTACT_LIST
+ *
+ * Signature of a virtual method that returns a boolean result. These are used
+ * for feature-discovery.
+ *
+ * For the simple cases of a constant result, use
+ * tp_blockable_contact_list_true_func() or
+ * tp_blockable_contact_list_false_func().
+ *
+ * Returns: a boolean result
+ *
+ * Since: UNRELEASED
+ */
+
+
+/**
  * tp_base_contact_list_true_func:
  * @self: ignored
  *
@@ -1931,6 +2010,42 @@ tp_base_contact_list_false_func (TpBaseContactList *self G_GNUC_UNUSED)
 {
   return FALSE;
 }
+
+/**
+ * tp_blockable_contact_list_true_func:
+ * @self: ignored
+ *
+ * An implementation of #TpBlockableContactListBooleanFunc that returns %TRUE,
+ * for use in simple cases.
+ *
+ * Returns: %TRUE
+ *
+ * Since: UNRELEASED
+ */
+gboolean
+tp_blockable_contact_list_true_func (TpBlockableContactList *self G_GNUC_UNUSED)
+{
+  return TRUE;
+}
+
+/**
+ * tp_blockable_contact_list_false_func:
+ * @self: ignored
+ *
+ * An implementation of #TpBlockableContactListBooleanFunc that returns %FALSE,
+ * for use in simple cases.
+ *
+ * Returns: %FALSE
+ *
+ * Since: 0.13.0
+ */
+gboolean
+tp_blockable_contact_list_false_func (
+    TpBlockableContactList *self G_GNUC_UNUSED)
+{
+  return FALSE;
+}
+
 
 /**
  * tp_base_contact_list_can_change_contact_list:
@@ -2130,7 +2245,7 @@ tp_base_contact_list_get_request_uses_message (TpBaseContactList *self)
 }
 
 /**
- * TpBaseContactListBlockContactsWithAbuseFunc:
+ * TpBlockableContactListBlockContactsWithAbuseFunc:
  * @self: the contact list manager
  * @contacts: the contacts to block
  * @report_abusive: whether to report the contacts as abusive to the server
@@ -2141,7 +2256,7 @@ tp_base_contact_list_get_request_uses_message (TpBaseContactList *self)
  * Signature of a virtual method that blocks a set of contacts, optionally
  * reporting them to the server operator as abusive.
  *
- * Since: 0.15.1
+ * Since: UNRELEASED
  */
 
 /**
@@ -2186,7 +2301,7 @@ tp_base_contact_list_can_block (TpBaseContactList *self)
   g_return_val_if_fail (iface != NULL, FALSE);
   g_return_val_if_fail (iface->can_block != NULL, FALSE);
 
-  return iface->can_block (self);
+  return iface->can_block (TP_BLOCKABLE_CONTACT_LIST (self));
 }
 
 /**
@@ -2225,7 +2340,7 @@ tp_base_contact_list_is_blocked (TpBaseContactList *self,
   g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
       TP_CONTACT_LIST_STATE_SUCCESS, FALSE);
 
-  return iface->is_blocked (self, contact);
+  return iface->is_blocked (TP_BLOCKABLE_CONTACT_LIST (self), contact);
 }
 
 /**
@@ -2257,7 +2372,7 @@ tp_base_contact_list_dup_blocked_contacts (TpBaseContactList *self)
   g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
       TP_CONTACT_LIST_STATE_SUCCESS, NULL);
 
-  return iface->dup_blocked_contacts (self);
+  return iface->dup_blocked_contacts (TP_BLOCKABLE_CONTACT_LIST (self));
 }
 
 /**
@@ -2338,10 +2453,12 @@ tp_base_contact_list_block_contacts_with_abuse_async (TpBaseContactList *self,
   g_return_if_fail (blockable_iface != NULL);
 
   if (blockable_iface->block_contacts_async != NULL)
-    blockable_iface->block_contacts_async (self, contacts, callback, user_data);
+    blockable_iface->block_contacts_async (TP_BLOCKABLE_CONTACT_LIST (self),
+        contacts, callback, user_data);
   else if (blockable_iface->block_contacts_with_abuse_async != NULL)
-    blockable_iface->block_contacts_with_abuse_async (self, contacts,
-        report_abusive, callback, user_data);
+    blockable_iface->block_contacts_with_abuse_async (
+        TP_BLOCKABLE_CONTACT_LIST (self), contacts, report_abusive, callback,
+        user_data);
   else
     g_critical ("neither block_contacts_async nor "
         "block_contacts_with_abuse_async is implemented");
@@ -2380,7 +2497,8 @@ tp_base_contact_list_block_contacts_finish (TpBaseContactList *self,
   g_return_val_if_fail (blockable_iface != NULL, FALSE);
   g_return_val_if_fail (blockable_iface->block_contacts_finish != NULL, FALSE);
 
-  return blockable_iface->block_contacts_finish (self, result, error);
+  return blockable_iface->block_contacts_finish (
+      TP_BLOCKABLE_CONTACT_LIST (self), result, error);
 }
 
 /**
@@ -2416,7 +2534,8 @@ tp_base_contact_list_block_contacts_with_abuse_finish (TpBaseContactList *self,
   g_return_val_if_fail (blockable_iface != NULL, FALSE);
   g_return_val_if_fail (blockable_iface->block_contacts_finish != NULL, FALSE);
 
-  return blockable_iface->block_contacts_finish (self, result, error);
+  return blockable_iface->block_contacts_finish (
+      TP_BLOCKABLE_CONTACT_LIST (self), result, error);
 }
 
 /**
@@ -2452,7 +2571,8 @@ tp_base_contact_list_unblock_contacts_async (TpBaseContactList *self,
   g_return_if_fail (blockable_iface != NULL);
   g_return_if_fail (blockable_iface->unblock_contacts_async != NULL);
 
-  blockable_iface->unblock_contacts_async (self, contacts, callback, user_data);
+  blockable_iface->unblock_contacts_async (TP_BLOCKABLE_CONTACT_LIST (self),
+      contacts, callback, user_data);
 }
 
 /**
@@ -2489,7 +2609,8 @@ tp_base_contact_list_unblock_contacts_finish (TpBaseContactList *self,
   g_return_val_if_fail (blockable_iface->unblock_contacts_finish != NULL,
       FALSE);
 
-  return blockable_iface->unblock_contacts_finish (self, result, error);
+  return blockable_iface->unblock_contacts_finish (
+      TP_BLOCKABLE_CONTACT_LIST (self), result, error);
 }
 
 /**

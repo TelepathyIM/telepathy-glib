@@ -1449,7 +1449,7 @@ example_contact_list_unpublish_async (TpBaseContactList *contact_list,
 }
 
 static gboolean
-example_contact_list_is_blocked (TpBaseContactList *contact_list,
+example_contact_list_is_blocked (TpBlockableContactList *contact_list,
     TpHandle contact)
 {
   ExampleContactList *self = EXAMPLE_CONTACT_LIST (contact_list);
@@ -1458,7 +1458,7 @@ example_contact_list_is_blocked (TpBaseContactList *contact_list,
 }
 
 static TpHandleSet *
-example_contact_list_dup_blocked_contacts (TpBaseContactList *contact_list)
+example_contact_list_dup_blocked_contacts (TpBlockableContactList *contact_list)
 {
   ExampleContactList *self = EXAMPLE_CONTACT_LIST (contact_list);
 
@@ -1467,7 +1467,7 @@ example_contact_list_dup_blocked_contacts (TpBaseContactList *contact_list)
 
 static void
 example_contact_list_block_contacts_with_abuse_async (
-    TpBaseContactList *contact_list,
+    TpBlockableContactList *contact_list,
     TpHandleSet *contacts,
     gboolean report_abusive,
     GAsyncReadyCallback callback,
@@ -1491,14 +1491,16 @@ example_contact_list_block_contacts_with_abuse_async (
         }
     }
 
-  tp_base_contact_list_contact_blocking_changed (contact_list, changed);
+  tp_base_contact_list_contact_blocking_changed (
+      TP_BASE_CONTACT_LIST (contact_list), changed);
   tp_handle_set_destroy (changed);
   tp_simple_async_report_success_in_idle ((GObject *) self, callback,
       user_data, example_contact_list_block_contacts_with_abuse_async);
 }
 
 static void
-example_contact_list_unblock_contacts_async (TpBaseContactList *contact_list,
+example_contact_list_unblock_contacts_async (
+    TpBlockableContactList *contact_list,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1520,7 +1522,8 @@ example_contact_list_unblock_contacts_async (TpBaseContactList *contact_list,
         }
     }
 
-  tp_base_contact_list_contact_blocking_changed (contact_list, changed);
+  tp_base_contact_list_contact_blocking_changed (
+      TP_BASE_CONTACT_LIST (contact_list), changed);
   tp_handle_set_destroy (changed);
   tp_simple_async_report_success_in_idle ((GObject *) self, callback,
       user_data, example_contact_list_unblock_contacts_async);
@@ -1711,7 +1714,7 @@ mutable_contact_list_iface_init (TpMutableContactListInterface *iface)
 static void
 blockable_contact_list_iface_init (TpBlockableContactListInterface *iface)
 {
-  iface->can_block = tp_base_contact_list_true_func;
+  iface->can_block = tp_blockable_contact_list_true_func;
   iface->is_blocked = example_contact_list_is_blocked;
   iface->dup_blocked_contacts = example_contact_list_dup_blocked_contacts;
   iface->block_contacts_with_abuse_async =

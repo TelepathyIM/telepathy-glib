@@ -342,38 +342,58 @@ gboolean tp_base_contact_list_unblock_contacts_finish (TpBaseContactList *self,
     GAsyncResult *result,
     GError **error);
 
-typedef void (*TpBaseContactListBlockContactsWithAbuseFunc) (
-    TpBaseContactList *self,
+typedef void (*TpBlockableContactListBlockContactsWithAbuseFunc) (
+    TpBlockableContactList *self,
     TpHandleSet *contacts,
     gboolean report_abusive,
     GAsyncReadyCallback callback,
     gpointer user_data);
+
+typedef TpHandleSet *(*TpBlockableContactListDupContactsFunc) (
+    TpBlockableContactList *self);
+
+typedef void (*TpBlockableContactListActOnContactsFunc) (
+    TpBlockableContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+typedef gboolean (*TpBlockableContactListAsyncFinishFunc) (
+    TpBlockableContactList *self,
+    GAsyncResult *result,
+    GError **error);
+
+typedef gboolean (*TpBlockableContactListBooleanFunc) (
+    TpBlockableContactList *self);
+
+gboolean tp_blockable_contact_list_true_func (TpBlockableContactList *self);
+gboolean tp_blockable_contact_list_false_func (TpBlockableContactList *self);
 
 struct _TpBlockableContactListInterface {
     GTypeInterface parent;
 
     /* mandatory to implement */
 
-    gboolean (*is_blocked) (TpBaseContactList *self,
+    gboolean (*is_blocked) (TpBlockableContactList *self,
         TpHandle contact);
-    TpBaseContactListDupContactsFunc dup_blocked_contacts;
+    TpBlockableContactListDupContactsFunc dup_blocked_contacts;
 
     /* unblock_contacts_async is mandatory to implement; either
      * block_contacts_async or block_contacts_with_abuse_async (but not both!)
      * must also be implemented. _finish have default implementations
      * suitable for a GSimpleAsyncResult */
 
-    TpBaseContactListActOnContactsFunc block_contacts_async;
-    TpBaseContactListAsyncFinishFunc block_contacts_finish;
-    TpBaseContactListActOnContactsFunc unblock_contacts_async;
-    TpBaseContactListAsyncFinishFunc unblock_contacts_finish;
+    TpBlockableContactListActOnContactsFunc block_contacts_async;
+    TpBlockableContactListAsyncFinishFunc block_contacts_finish;
+    TpBlockableContactListActOnContactsFunc unblock_contacts_async;
+    TpBlockableContactListAsyncFinishFunc unblock_contacts_finish;
 
     /* optional to implement */
-    TpBaseContactListBooleanFunc can_block;
+    TpBlockableContactListBooleanFunc can_block;
 
     /* see above. block_contacts_finish is the corresponding _finish function.
      */
-    TpBaseContactListBlockContactsWithAbuseFunc block_contacts_with_abuse_async;
+    TpBlockableContactListBlockContactsWithAbuseFunc block_contacts_with_abuse_async;
 };
 
 /* ---- Called by subclasses for ContactGroups ---- */
