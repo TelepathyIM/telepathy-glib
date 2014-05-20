@@ -297,7 +297,7 @@ group_difference (GHashTable *left,
 }
 
 static void
-contact_list_set_contact_groups_async (TpBaseContactList *base,
+contact_list_set_contact_groups_async (TpMutableContactGroupList *base,
     TpHandle contact,
     const gchar * const *names,
     gsize n,
@@ -363,7 +363,7 @@ contact_list_set_contact_groups_async (TpBaseContactList *base,
 }
 
 static void
-contact_list_set_group_members_async (TpBaseContactList *base,
+contact_list_set_group_members_async (TpMutableContactGroupList *base,
     const gchar *normalized_group,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
@@ -378,7 +378,7 @@ contact_list_set_group_members_async (TpBaseContactList *base,
 }
 
 static void
-contact_list_add_to_group_async (TpBaseContactList *base,
+contact_list_add_to_group_async (TpMutableContactGroupList *base,
     const gchar *group,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
@@ -393,7 +393,7 @@ contact_list_add_to_group_async (TpBaseContactList *base,
 }
 
 static void
-contact_list_remove_from_group_async (TpBaseContactList *base,
+contact_list_remove_from_group_async (TpMutableContactGroupList *base,
     const gchar *group,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
@@ -408,7 +408,7 @@ contact_list_remove_from_group_async (TpBaseContactList *base,
 }
 
 static void
-contact_list_remove_group_async (TpBaseContactList *base,
+contact_list_remove_group_async (TpMutableContactGroupList *base,
     const gchar *group,
     GAsyncReadyCallback callback,
     gpointer user_data)

@@ -287,7 +287,8 @@ ensure_tag (ExampleContactList *self,
 }
 
 static void
-example_contact_list_set_contact_groups_async (TpBaseContactList *contact_list,
+example_contact_list_set_contact_groups_async (
+    TpMutableContactGroupList *contact_list,
     TpHandle contact,
     const gchar * const *names,
     gsize n,
@@ -311,7 +312,8 @@ example_contact_list_set_contact_groups_async (TpBaseContactList *contact_list,
   d = ensure_contact (self, contact, &created);
 
   if (created)
-    tp_base_contact_list_one_contact_changed (contact_list, contact);
+    tp_base_contact_list_one_contact_changed (
+        TP_BASE_CONTACT_LIST (contact_list), contact);
 
   if (d->tags == NULL)
     d->tags = g_hash_table_new (g_str_hash, g_str_equal);
@@ -601,7 +603,8 @@ send_updated_roster (ExampleContactList *self,
 }
 
 static void
-example_contact_list_set_group_members_async (TpBaseContactList *contact_list,
+example_contact_list_set_group_members_async (
+    TpMutableContactGroupList *contact_list,
     const gchar *group,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
@@ -658,7 +661,8 @@ example_contact_list_set_group_members_async (TpBaseContactList *contact_list,
     }
 
   if (!tp_handle_set_is_empty (new_contacts))
-    tp_base_contact_list_contacts_changed (contact_list, new_contacts, NULL);
+    tp_base_contact_list_contacts_changed (TP_BASE_CONTACT_LIST (contact_list),
+        new_contacts, NULL);
 
   if (!tp_handle_set_is_empty (added))
     tp_contact_group_list_groups_changed (contact_group, added, &group, 1,
@@ -676,7 +680,8 @@ example_contact_list_set_group_members_async (TpBaseContactList *contact_list,
 }
 
 static void
-example_contact_list_add_to_group_async (TpBaseContactList *contact_list,
+example_contact_list_add_to_group_async (
+    TpMutableContactGroupList *contact_list,
     const gchar *group,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
@@ -717,7 +722,8 @@ example_contact_list_add_to_group_async (TpBaseContactList *contact_list,
     }
 
   if (!tp_handle_set_is_empty (new_contacts))
-    tp_base_contact_list_contacts_changed (contact_list, new_contacts, NULL);
+    tp_base_contact_list_contacts_changed (TP_BASE_CONTACT_LIST (contact_list),
+        new_contacts, NULL);
 
   if (!tp_handle_set_is_empty (new_to_group))
     tp_contact_group_list_groups_changed (contact_group, new_to_group, &group, 1,
@@ -730,7 +736,8 @@ example_contact_list_add_to_group_async (TpBaseContactList *contact_list,
 }
 
 static void
-example_contact_list_remove_from_group_async (TpBaseContactList *contact_list,
+example_contact_list_remove_from_group_async (
+    TpMutableContactGroupList *contact_list,
     const gchar *group,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
@@ -1577,7 +1584,8 @@ example_contact_list_dup_contact_groups (TpContactGroupList *group_list,
 }
 
 static void
-example_contact_list_remove_group_async (TpBaseContactList *contact_list,
+example_contact_list_remove_group_async (
+    TpMutableContactGroupList *contact_list,
     const gchar *group,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1619,7 +1627,8 @@ example_contact_list_normalize_group (TpContactGroupList *contact_list,
 }
 
 static void
-example_contact_list_rename_group_async (TpBaseContactList *contact_list,
+example_contact_list_rename_group_async (
+    TpMutableContactGroupList *contact_list,
     const gchar *old_name,
     const gchar *new_name,
     GAsyncReadyCallback callback,

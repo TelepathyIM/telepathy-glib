@@ -272,6 +272,19 @@
  * Since: UNRELEASED
  */
 
+/**
+ * TpMutableContactGroupListAsyncFinishFunc:
+ * @self: the contact list manager implementing
+ * #TP_TYPE_MUTABLE_CONTACT_GROUP_LIST
+ * @result: the result of the asynchronous operation
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Signature of a virtual method to finish an async operation.
+ *
+ * Returns: %TRUE on success, or %FALSE if @error is set
+ *
+ * Since: UNRELEASED
+ */
 
 #include "config.h"
 
@@ -911,8 +924,22 @@ tp_contact_group_list_default_init (TpContactGroupListInterface *iface)
   /* there's no default for the other virtual methods */
 }
 
-static void tp_base_contact_list_emulate_rename_group (TpBaseContactList *,
-    const gchar *, const gchar *, GAsyncReadyCallback, gpointer);
+static void tp_base_contact_list_emulate_rename_group (
+    TpMutableContactGroupList *, const gchar *, const gchar *,
+    GAsyncReadyCallback, gpointer);
+
+static gboolean
+tp_mutable_contact_group_list_simple_finish (TpMutableContactGroupList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple = (GSimpleAsyncResult *) result;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (
+      result, G_OBJECT (self), NULL), FALSE);
+
+  return !g_simple_async_result_propagate_error (simple, error);
+}
 
 static void
 tp_mutable_contact_group_list_default_init (
@@ -920,12 +947,12 @@ tp_mutable_contact_group_list_default_init (
 {
   iface->rename_group_async = tp_base_contact_list_emulate_rename_group;
 
-  iface->add_to_group_finish = tp_base_contact_list_simple_finish;
-  iface->remove_from_group_finish = tp_base_contact_list_simple_finish;
-  iface->set_contact_groups_finish = tp_base_contact_list_simple_finish;
-  iface->remove_group_finish = tp_base_contact_list_simple_finish;
-  iface->rename_group_finish = tp_base_contact_list_simple_finish;
-  iface->set_group_members_finish = tp_base_contact_list_simple_finish;
+  iface->add_to_group_finish = tp_mutable_contact_group_list_simple_finish;
+  iface->remove_from_group_finish = tp_mutable_contact_group_list_simple_finish;
+  iface->set_contact_groups_finish = tp_mutable_contact_group_list_simple_finish;
+  iface->remove_group_finish = tp_mutable_contact_group_list_simple_finish;
+  iface->rename_group_finish = tp_mutable_contact_group_list_simple_finish;
+  iface->set_group_members_finish = tp_mutable_contact_group_list_simple_finish;
 }
 
 static void
@@ -3461,7 +3488,7 @@ tp_contact_group_list_dup_group_members (TpContactGroupList *self,
 }
 
 /**
- * TpBaseContactListGroupContactsFunc:
+ * TpMutableContactGroupListGroupContactsFunc:
  * @self: a contact list manager
  * @group: a group
  * @contacts: a set of contact handles
@@ -3510,7 +3537,8 @@ tp_base_contact_list_add_to_group_async (TpBaseContactList *self,
   g_return_if_fail (iface != NULL);
   g_return_if_fail (iface->add_to_group_async != NULL);
 
-  iface->add_to_group_async (self, group, contacts, callback, user_data);
+  iface->add_to_group_async (TP_MUTABLE_CONTACT_GROUP_LIST (self), group,
+      contacts, callback, user_data);
 }
 
 /**
@@ -3547,11 +3575,12 @@ tp_base_contact_list_add_to_group_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_groups_iface->add_to_group_finish != NULL,
       FALSE);
 
-  return mutable_groups_iface->add_to_group_finish (self, result, error);
+  return mutable_groups_iface->add_to_group_finish (
+      TP_MUTABLE_CONTACT_GROUP_LIST (self), result, error);
 }
 
 /**
- * TpBaseContactListRenameGroupFunc:
+ * TpMutableContactGroupListRenameGroupFunc:
  * @self: a contact list manager
  * @old_name: a group
  * @new_name: a new name for the group
@@ -3605,8 +3634,8 @@ tp_base_contact_list_rename_group_async (TpBaseContactList *self,
   g_return_if_fail (iface != NULL);
   g_return_if_fail (iface->rename_group_async != NULL);
 
-  iface->rename_group_async (self, old_name, new_name, callback,
-      user_data);
+  iface->rename_group_async (TP_MUTABLE_CONTACT_GROUP_LIST (self), old_name,
+      new_name, callback, user_data);
 }
 
 static void
@@ -3654,7 +3683,7 @@ out:
 }
 
 static void
-tp_base_contact_list_emulate_rename_group (TpBaseContactList *self,
+tp_base_contact_list_emulate_rename_group (TpMutableContactGroupList *self,
     const gchar *old_name,
     const gchar *new_name,
     GAsyncReadyCallback callback,
@@ -3672,8 +3701,9 @@ tp_base_contact_list_emulate_rename_group (TpBaseContactList *self,
 
   old_members = tp_contact_group_list_dup_group_members (
       TP_CONTACT_GROUP_LIST (self), old_name);
-  tp_base_contact_list_add_to_group_async (self, new_name, old_members,
-      emulate_rename_group_add_cb, g_object_ref (result));
+  tp_base_contact_list_add_to_group_async (TP_BASE_CONTACT_LIST (self),
+      new_name, old_members, emulate_rename_group_add_cb,
+      g_object_ref (result));
   g_object_unref (result);
   tp_handle_set_destroy (old_members);
 }
@@ -3712,7 +3742,8 @@ tp_base_contact_list_rename_group_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_groups_iface->rename_group_finish != NULL,
       FALSE);
 
-  return mutable_groups_iface->rename_group_finish (self, result, error);
+  return mutable_groups_iface->rename_group_finish (
+      TP_MUTABLE_CONTACT_GROUP_LIST (self), result, error);
 }
 
 /**
@@ -3748,7 +3779,8 @@ void tp_base_contact_list_remove_from_group_async (TpBaseContactList *self,
   g_return_if_fail (iface != NULL);
   g_return_if_fail (iface->remove_from_group_async != NULL);
 
-  iface->remove_from_group_async (self, group, contacts, callback, user_data);
+  iface->remove_from_group_async (TP_MUTABLE_CONTACT_GROUP_LIST (self), group,
+      contacts, callback, user_data);
 }
 
 /**
@@ -3785,11 +3817,12 @@ tp_base_contact_list_remove_from_group_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_groups_iface->remove_from_group_finish != NULL,
       FALSE);
 
-  return mutable_groups_iface->remove_from_group_finish (self, result, error);
+  return mutable_groups_iface->remove_from_group_finish (
+      TP_MUTABLE_CONTACT_GROUP_LIST (self), result, error);
 }
 
 /**
- * TpBaseContactListRemoveGroupFunc:
+ * TpMutableContactGroupListRemoveGroupFunc:
  * @self: a contact list manager
  * @group: the normalized name of a group
  * @callback: a callback to call on success, failure or disconnection
@@ -3832,7 +3865,8 @@ tp_base_contact_list_remove_group_async (TpBaseContactList *self,
   g_return_if_fail (mutable_group_iface != NULL);
   g_return_if_fail (mutable_group_iface->remove_group_async != NULL);
 
-  mutable_group_iface->remove_group_async (self, group, callback, user_data);
+  mutable_group_iface->remove_group_async (TP_MUTABLE_CONTACT_GROUP_LIST (self),
+      group, callback, user_data);
 }
 
 /**
@@ -3869,7 +3903,8 @@ tp_base_contact_list_remove_group_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_groups_iface->remove_group_finish != NULL,
       FALSE);
 
-  return mutable_groups_iface->remove_group_finish (self, result, error);
+  return mutable_groups_iface->remove_group_finish (
+      TP_MUTABLE_CONTACT_GROUP_LIST (self), result, error);
 }
 
 static gboolean
@@ -3912,7 +3947,7 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
 }
 
 /**
- * TpBaseContactListSetContactGroupsFunc:
+ * TpMutableContactGroupListSetContactGroupsFunc:
  * @self: a contact list manager
  * @contact: a contact handle
  * @normalized_names: (array length=n_names): the normalized names of some
@@ -3964,8 +3999,9 @@ void tp_base_contact_list_set_contact_groups_async (TpBaseContactList *self,
   g_return_if_fail (mutable_groups_iface != NULL);
   g_return_if_fail (mutable_groups_iface->set_contact_groups_async != NULL);
 
-  mutable_groups_iface->set_contact_groups_async (self, contact,
-      normalized_names, n_names, callback, user_data);
+  mutable_groups_iface->set_contact_groups_async (
+      TP_MUTABLE_CONTACT_GROUP_LIST (self), contact, normalized_names, n_names,
+      callback, user_data);
 }
 
 /**
@@ -4003,7 +4039,8 @@ tp_base_contact_list_set_contact_groups_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_groups_iface->set_contact_groups_finish !=
       NULL, FALSE);
 
-  return mutable_groups_iface->set_contact_groups_finish (self, result, error);
+  return mutable_groups_iface->set_contact_groups_finish (
+      TP_MUTABLE_CONTACT_GROUP_LIST (self), result, error);
 }
 
 /**
@@ -4044,8 +4081,9 @@ tp_base_contact_list_set_group_members_async (TpBaseContactList *self,
   g_return_if_fail (mutable_groups_iface != NULL);
   g_return_if_fail (mutable_groups_iface->set_group_members_async != NULL);
 
-  mutable_groups_iface->set_group_members_async (self, normalized_group,
-      contacts, callback, user_data);
+  mutable_groups_iface->set_group_members_async (
+      TP_MUTABLE_CONTACT_GROUP_LIST (self), normalized_group, contacts,
+      callback, user_data);
 }
 
 /**
@@ -4082,7 +4120,8 @@ tp_base_contact_list_set_group_members_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_groups_iface->set_group_members_finish !=
       NULL, FALSE);
 
-  return mutable_groups_iface->set_group_members_finish (self, result, error);
+  return mutable_groups_iface->set_group_members_finish (
+      TP_MUTABLE_CONTACT_GROUP_LIST (self), result, error);
 }
 
 static gboolean
