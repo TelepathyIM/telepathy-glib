@@ -4950,6 +4950,7 @@ tp_contact_group_list_groups_removed
 tp_contact_group_list_has_disjoint_groups
 <SUBSECTION mutable-groups>
 TP_TYPE_MUTABLE_CONTACT_GROUP_LIST
+TpMutableContactGroupList
 TpMutableContactGroupListInterface
 TpBaseContactListSetContactGroupsFunc
 tp_base_contact_list_set_contact_groups_async
@@ -5013,6 +5014,7 @@ tp_contact_group_list_get_type
 TP_IS_MUTABLE_CONTACT_GROUP_LIST
 TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE
 tp_mutable_contact_group_list_get_type
+TP_MUTABLE_CONTACT_GROUP_LIST
 </SECTION>
 
 <SECTION>

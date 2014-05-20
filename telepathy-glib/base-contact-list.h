@@ -491,6 +491,8 @@ struct _TpContactGroupListInterface {
 
 /* ---- Implemented by subclasses for mutable ContactGroups ---- */
 
+typedef struct _TpMutableContactGroupList TpMutableContactGroupList;
+
 typedef guint (*TpBaseContactListUIntFunc) (
     TpBaseContactList *self);
 
@@ -596,6 +598,10 @@ GType tp_mutable_contact_group_list_get_type (void) G_GNUC_CONST;
 #define TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE(obj) \
   (G_TYPE_INSTANCE_GET_INTERFACE ((obj), \
   TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, TpMutableContactGroupListInterface))
+
+#define TP_MUTABLE_CONTACT_GROUP_LIST(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, \
+  TpMutableContactGroupList))
 
 typedef struct _TpMutableContactGroupListInterface
     TpMutableContactGroupListInterface;

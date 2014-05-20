@@ -540,6 +540,15 @@ G_DEFINE_INTERFACE (TpContactGroupList, tp_contact_group_list,
  * Since: 0.13.0
  */
 
+/**
+ * TpMutableContactGroupList:
+ *
+ * Opaque structure representing an object implementing
+ * TpMutableContactGroupListInterface.
+ *
+ * Since: UNRELEASED
+ */
+
 G_DEFINE_INTERFACE (TpMutableContactGroupList, tp_mutable_contact_group_list,
     TP_TYPE_CONTACT_GROUP_LIST)
 
