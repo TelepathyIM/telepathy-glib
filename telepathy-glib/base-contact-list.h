@@ -290,8 +290,14 @@ GType tp_blockable_contact_list_get_type (void) G_GNUC_CONST;
   (G_TYPE_INSTANCE_GET_INTERFACE ((obj), \
   TP_TYPE_BLOCKABLE_CONTACT_LIST, TpBlockableContactListInterface))
 
+#define TP_BLOCKABLE_CONTACT_LIST(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_BLOCKABLE_CONTACT_LIST, \
+  TpBlockableContactList))
+
 typedef struct _TpBlockableContactListInterface
     TpBlockableContactListInterface;
+
+typedef struct _TpBlockableContactList TpBlockableContactList;
 
 void tp_base_contact_list_contact_blocking_changed (
     TpBaseContactList *self,

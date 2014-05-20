@@ -4971,6 +4971,7 @@ tp_base_contact_list_get_group_storage
 <SUBSECTION blocking>
 TP_TYPE_BLOCKABLE_CONTACT_LIST
 TpBlockableContactListInterface
+TpBlockableContactList
 TpBaseContactListBlockContactsWithAbuseFunc
 tp_base_contact_list_can_block
 tp_base_contact_list_is_blocked
@@ -4996,6 +4997,7 @@ TP_IS_MUTABLE_CONTACT_LIST
 TP_MUTABLE_CONTACT_LIST_GET_INTERFACE
 tp_mutable_contact_list_get_type
 TP_IS_BLOCKABLE_CONTACT_LIST
+TP_BLOCKABLE_CONTACT_LIST
 TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE
 tp_blockable_contact_list_get_type
 TP_IS_CONTACT_GROUP_LIST
