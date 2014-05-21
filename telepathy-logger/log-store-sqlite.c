@@ -534,8 +534,8 @@ out:
     sqlite3_finalize (sql);
 
   /* check that we set an error if appropriate */
-  g_assert ((retval == TRUE && *error == NULL) ||
-            (retval == FALSE && *error != NULL));
+  g_assert ((retval == TRUE && (error == NULL || *error == NULL)) ||
+            (retval == FALSE && (error == NULL || *error != NULL)));
 
   return retval;
 }
@@ -579,8 +579,8 @@ tpl_log_store_sqlite_add_event (TplLogStore *self,
 
 out:
   /* check that we set an error if appropriate */
-  g_assert ((retval == TRUE && *error == NULL) ||
-            (retval == FALSE && *error != NULL));
+  g_assert ((retval == TRUE && (error == NULL || *error == NULL)) ||
+            (retval == FALSE && (error == NULL || *error != NULL)));
 
   DEBUG ("returning with %d", retval);
   return retval;
@@ -746,7 +746,8 @@ out:
   /* check that we set an error if appropriate
    * NOTE: retval == NULL && *error !=
    * NULL doesn't apply to this method, since NULL is also for an empty list */
-  g_assert ((retval != NULL && *error == NULL) || retval == NULL);
+  g_assert ((retval != NULL && (error == NULL || *error == NULL)) ||
+      retval == NULL);
 
   return retval;
 }
@@ -903,8 +904,8 @@ out:
     sqlite3_finalize (sql);
 
   /* check that we set an error if appropriate */
-  g_assert ((retval == TRUE && *error == NULL) ||
-            (retval == FALSE && *error != NULL));
+  g_assert ((retval == TRUE && (error == NULL || *error == NULL)) ||
+            (retval == FALSE && (error == NULL || *error != NULL)));
 
   return retval;
 }

@@ -451,7 +451,8 @@ add_text_event (TplLogStoreXml *self,
   bus_connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, error);
   if (bus_connection == NULL)
     {
-      DEBUG ("Error acquiring bus connection: %s", (*error)->message);
+      DEBUG ("Error acquiring bus connection: %s",
+          error != NULL ? (*error)->message : "(no GError available)");
       goto out;
     }
 
