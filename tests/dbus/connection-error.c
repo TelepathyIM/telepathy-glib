@@ -214,11 +214,7 @@ test_registered_error (Test *test,
       "com.example.DomainSpecificError");
   g_assert (asv != NULL);
 
-  g_assert_cmpstr (g_quark_to_string (error->domain), ==,
-      g_quark_to_string (example_com_error_quark ()));
-  g_assert_cmpuint (error->code, ==, DOMAIN_SPECIFIC_ERROR);
-  g_error_free (error);
-  error = NULL;
+  g_clear_error (&error);
 }
 
 static void
@@ -370,11 +366,7 @@ test_detailed_error (Test *test,
   g_assert (ok);
   g_assert_cmpint (bees, ==, 2342);
 
-  g_assert_cmpstr (g_quark_to_string (error->domain), ==,
-      g_quark_to_string (example_com_error_quark ()));
-  g_assert_cmpuint (error->code, ==, DOMAIN_SPECIFIC_ERROR);
-  g_error_free (error);
-  error = NULL;
+  g_clear_error (&error);
 }
 
 int
