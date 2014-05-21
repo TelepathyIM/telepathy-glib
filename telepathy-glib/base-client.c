@@ -415,6 +415,7 @@ tp_base_client_add_observer_filter_variant (TpBaseClient *self,
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (cls != NULL);
   g_return_if_fail (!self->priv->registered);
   g_return_if_fail (cls->observe_channel != NULL);
   g_return_if_fail (g_variant_is_of_type (filter, G_VARIANT_TYPE_VARDICT));
@@ -456,6 +457,7 @@ tp_base_client_set_observer_recover (TpBaseClient *self,
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (cls != NULL);
   g_return_if_fail (!self->priv->registered);
   g_return_if_fail (cls->observe_channel != NULL);
 
@@ -496,6 +498,7 @@ tp_base_client_set_observer_delay_approvers (TpBaseClient *self,
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (cls != NULL);
   g_return_if_fail (!self->priv->registered);
   g_return_if_fail (cls->observe_channel != NULL);
 
@@ -589,6 +592,7 @@ tp_base_client_add_approver_filter_variant (TpBaseClient *self,
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (cls != NULL);
   g_return_if_fail (!self->priv->registered);
   g_return_if_fail (cls->add_dispatch_operation != NULL);
   g_return_if_fail (g_variant_is_of_type (filter, G_VARIANT_TYPE_VARDICT));
@@ -619,6 +623,7 @@ tp_base_client_be_a_handler (TpBaseClient *self)
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (cls != NULL);
   g_return_if_fail (!self->priv->registered);
   g_return_if_fail (cls->handle_channel != NULL);
 
@@ -679,6 +684,7 @@ tp_base_client_add_handler_filter_variant (TpBaseClient *self,
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (cls != NULL);
   g_return_if_fail (!self->priv->registered);
   g_return_if_fail (cls->handle_channel != NULL);
   g_return_if_fail (g_variant_is_of_type (filter, G_VARIANT_TYPE_VARDICT));
@@ -736,6 +742,7 @@ tp_base_client_set_handler_bypass_approval (TpBaseClient *self,
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (cls != NULL);
   g_return_if_fail (!self->priv->registered);
   g_return_if_fail (cls->handle_channel != NULL);
 
@@ -773,6 +780,7 @@ tp_base_client_set_handler_request_notification (TpBaseClient *self)
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (cls != NULL);
   g_return_if_fail (!self->priv->registered);
   g_return_if_fail (cls->handle_channel != NULL);
 
@@ -819,6 +827,7 @@ tp_base_client_add_handler_capability (TpBaseClient *self,
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (cls != NULL);
   g_return_if_fail (!self->priv->registered);
   g_return_if_fail (cls->handle_channel != NULL);
 

@@ -1263,6 +1263,7 @@ tp_base_connection_register (TpBaseConnection *self,
   guint prefix_length;
   const guint dbus_max_name_length = 255;
 
+  g_return_val_if_fail (cls != NULL, FALSE);
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), FALSE);
   g_return_val_if_fail (cm_name != NULL, FALSE);
   g_return_val_if_fail (!self->priv->been_registered, FALSE);
@@ -1421,6 +1422,7 @@ tp_base_connection_connect (_TpGDBusConnection *skeleton,
   GError *error = NULL;
 
   g_assert (TP_IS_BASE_CONNECTION (self));
+  g_assert (cls != NULL);
 
   if (self->priv->status == TP_INTERNAL_CONNECTION_STATUS_NEW)
     {
@@ -2739,6 +2741,7 @@ tp_base_connection_dup_contact_attributes (TpBaseConnection *self,
   guint i;
 
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
+  g_return_val_if_fail (klass != NULL, NULL);
   g_return_val_if_fail (tp_base_connection_check_connected (self, NULL), NULL);
   g_return_val_if_fail (klass->fill_contact_attributes != NULL, NULL);
 

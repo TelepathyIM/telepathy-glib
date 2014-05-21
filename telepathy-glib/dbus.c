@@ -807,6 +807,7 @@ _tp_dbus_connection_gather_gdbus_skeletons (GDBusObject *object,
       GDBusInterface *iface = list_iter->data;
       const gchar *iface_name = g_dbus_interface_get_info (iface)->name;
 
+      g_assert (iface != NULL);
       if (!G_IS_DBUS_INTERFACE_SKELETON (iface))
         {
           DEBUG ("- not a GDBusInterfaceSkeleton: %s %p",
