@@ -525,6 +525,7 @@ tp_connection_get_rcc_cb (TpProxy *proxy,
       goto finally;
     }
 
+  g_return_if_fail (value != NULL);
   g_assert (self->priv->capabilities == NULL);
 
   if (!G_VALUE_HOLDS (value, TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST))

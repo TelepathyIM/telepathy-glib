@@ -268,6 +268,8 @@ got_enabled_cb (
 {
   TpDebugClient *self = TP_DEBUG_CLIENT (proxy);
 
+  g_return_if_fail (error != NULL || value != NULL);
+
   if (error != NULL)
     {
       tp_proxy_invalidate (proxy, error);

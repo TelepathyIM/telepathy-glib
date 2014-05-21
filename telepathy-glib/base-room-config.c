@@ -759,6 +759,8 @@ validate_property_type (
   static TpDBusPropertiesMixinIfaceInfo *iface_info = NULL;
   TpDBusPropertiesMixinPropInfo *prop_info;
 
+  g_return_val_if_fail (value != NULL, FALSE);
+
   if (G_UNLIKELY (iface_info == NULL))
     iface_info = tp_svc_interface_get_dbus_properties_info (
           TP_TYPE_SVC_CHANNEL_INTERFACE_ROOM_CONFIG1);

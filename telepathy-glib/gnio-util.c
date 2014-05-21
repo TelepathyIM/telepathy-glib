@@ -82,6 +82,8 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
 {
   GSocketAddress *addr;
 
+  g_return_val_if_fail (variant != NULL, NULL);
+
   switch (type)
     {
 #ifdef HAVE_GIO_UNIX

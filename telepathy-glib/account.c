@@ -3306,21 +3306,23 @@ tp_account_get_supersedes (TpAccount *self)
 
 static void
 _tp_account_got_avatar_cb (TpProxy *proxy,
-    const GValue *out_Value,
+    const GValue *value,
     const GError *error,
     gpointer user_data,
     GObject *weak_object)
 {
   GTask *task = user_data;
 
+  g_return_if_fail (error != NULL || value != NULL);
+
   if (error != NULL)
     {
       DEBUG ("Failed to get avatar: %s", error->message);
       g_task_return_error (task, g_error_copy (error));
     }
-  else if (!G_VALUE_HOLDS (out_Value, TP_STRUCT_TYPE_AVATAR))
+  else if (!G_VALUE_HOLDS (value, TP_STRUCT_TYPE_AVATAR))
     {
-      DEBUG ("Avatar had wrong type: %s", G_VALUE_TYPE_NAME (out_Value));
+      DEBUG ("Avatar had wrong type: %s", G_VALUE_TYPE_NAME (value));
       g_task_return_new_error (task, TP_ERROR, TP_ERROR_CONFUSED,
           "Incorrect type for Avatar property");
     }
@@ -3328,7 +3330,7 @@ _tp_account_got_avatar_cb (TpProxy *proxy,
     {
       /* we just put the GValueArray in the task, and use a non-trivial
        * finish function to split it into data and MIME type */
-      g_task_return_pointer (task, g_value_dup_boxed (out_Value),
+      g_task_return_pointer (task, g_value_dup_boxed (value),
           (GDestroyNotify) tp_value_array_free);
     }
 
