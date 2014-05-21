@@ -1093,9 +1093,10 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
 
   if (tp_base_contact_list_can_block (self))
     {
+      TpBlockableContactList *blockable = TP_BLOCKABLE_CONTACT_LIST (self);
       TpHandleSet *blocked;
 
-      blocked = tp_base_contact_list_dup_blocked_contacts (self);
+      blocked = tp_base_contact_list_dup_blocked_contacts (blockable);
 
       if (DEBUGGING)
         {
@@ -1105,7 +1106,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
           g_free (tmp);
         }
 
-      tp_base_contact_list_contact_blocking_changed (self, blocked);
+      tp_base_contact_list_contact_blocking_changed (blockable, blocked);
 
       if (self->priv->contact_blocking_skeleton != NULL &&
           self->priv->blocked_contact_requests.length > 0)
@@ -1369,16 +1370,20 @@ tp_base_contact_list_one_contact_removed (TpBaseContactList *self,
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
+tp_base_contact_list_contact_blocking_changed (
+    TpBlockableContactList *blockable,
     TpHandleSet *changed)
 {
+  TpBaseContactList *self;
   TpHandleSet *now_blocked;
   GVariantBuilder blocked_contacts, unblocked_contacts;
   TpIntsetFastIter iter;
   TpHandle handle;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (blockable));
   g_return_if_fail (changed != NULL);
+
+  self = (TpBaseContactList *) blockable;
 
   /* don't do anything if we're disconnecting, or if we haven't had the
    * initial contact list yet */
@@ -1390,7 +1395,7 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
 
   g_return_if_fail (tp_base_contact_list_can_block (self));
 
-  now_blocked = tp_base_contact_list_dup_blocked_contacts (self);
+  now_blocked = tp_base_contact_list_dup_blocked_contacts (blockable);
 
   g_variant_builder_init (&blocked_contacts, G_VARIANT_TYPE ("a{us}"));
   g_variant_builder_init (&unblocked_contacts, G_VARIANT_TYPE ("a{us}"));
@@ -2329,7 +2334,7 @@ tp_base_contact_list_can_block (TpBaseContactList *self)
  * Since: 0.99.6
  */
 gboolean
-tp_base_contact_list_is_blocked (TpBaseContactList *self,
+tp_base_contact_list_is_blocked (TpBlockableContactList *self,
     TpHandle contact)
 {
   TpBlockableContactListInterface *iface =
@@ -2337,10 +2342,11 @@ tp_base_contact_list_is_blocked (TpBaseContactList *self,
 
   g_return_val_if_fail (iface != NULL, FALSE);
   g_return_val_if_fail (iface->is_blocked != NULL, FALSE);
-  g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
-      TP_CONTACT_LIST_STATE_SUCCESS, FALSE);
+  g_return_val_if_fail (tp_base_contact_list_get_state (
+        TP_BASE_CONTACT_LIST (self), NULL) == TP_CONTACT_LIST_STATE_SUCCESS,
+      FALSE);
 
-  return iface->is_blocked (TP_BLOCKABLE_CONTACT_LIST (self), contact);
+  return iface->is_blocked (self, contact);
 }
 
 /**
@@ -2362,17 +2368,18 @@ tp_base_contact_list_is_blocked (TpBaseContactList *self,
  * Since: 0.13.0
  */
 TpHandleSet *
-tp_base_contact_list_dup_blocked_contacts (TpBaseContactList *self)
+tp_base_contact_list_dup_blocked_contacts (TpBlockableContactList *self)
 {
   TpBlockableContactListInterface *iface =
     TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
 
   g_return_val_if_fail (iface != NULL, NULL);
   g_return_val_if_fail (iface->dup_blocked_contacts != NULL, NULL);
-  g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
-      TP_CONTACT_LIST_STATE_SUCCESS, NULL);
+  g_return_val_if_fail (tp_base_contact_list_get_state (
+        TP_BASE_CONTACT_LIST (self), NULL) == TP_CONTACT_LIST_STATE_SUCCESS,
+      NULL);
 
-  return iface->dup_blocked_contacts (TP_BLOCKABLE_CONTACT_LIST (self));
+  return iface->dup_blocked_contacts (self);
 }
 
 /**
@@ -2402,7 +2409,7 @@ tp_base_contact_list_dup_blocked_contacts (TpBaseContactList *self)
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_block_contacts_async (TpBaseContactList *self,
+tp_base_contact_list_block_contacts_async (TpBlockableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -2441,7 +2448,8 @@ tp_base_contact_list_block_contacts_async (TpBaseContactList *self,
  * Since: 0.15.1
  */
 void
-tp_base_contact_list_block_contacts_with_abuse_async (TpBaseContactList *self,
+tp_base_contact_list_block_contacts_with_abuse_async (
+    TpBlockableContactList *self,
     TpHandleSet *contacts,
     gboolean report_abusive,
     GAsyncReadyCallback callback,
@@ -2453,12 +2461,10 @@ tp_base_contact_list_block_contacts_with_abuse_async (TpBaseContactList *self,
   g_return_if_fail (blockable_iface != NULL);
 
   if (blockable_iface->block_contacts_async != NULL)
-    blockable_iface->block_contacts_async (TP_BLOCKABLE_CONTACT_LIST (self),
-        contacts, callback, user_data);
+    blockable_iface->block_contacts_async (self, contacts, callback, user_data);
   else if (blockable_iface->block_contacts_with_abuse_async != NULL)
-    blockable_iface->block_contacts_with_abuse_async (
-        TP_BLOCKABLE_CONTACT_LIST (self), contacts, report_abusive, callback,
-        user_data);
+    blockable_iface->block_contacts_with_abuse_async (self, contacts,
+        report_abusive, callback, user_data);
   else
     g_critical ("neither block_contacts_async nor "
         "block_contacts_with_abuse_async is implemented");
@@ -2487,7 +2493,7 @@ tp_base_contact_list_block_contacts_with_abuse_async (TpBaseContactList *self,
  * Since: 0.13.0
  */
 gboolean
-tp_base_contact_list_block_contacts_finish (TpBaseContactList *self,
+tp_base_contact_list_block_contacts_finish (TpBlockableContactList *self,
     GAsyncResult *result,
     GError **error)
 {
@@ -2498,7 +2504,7 @@ tp_base_contact_list_block_contacts_finish (TpBaseContactList *self,
   g_return_val_if_fail (blockable_iface->block_contacts_finish != NULL, FALSE);
 
   return blockable_iface->block_contacts_finish (
-      TP_BLOCKABLE_CONTACT_LIST (self), result, error);
+      self, result, error);
 }
 
 /**
@@ -2524,7 +2530,8 @@ tp_base_contact_list_block_contacts_finish (TpBaseContactList *self,
  * Since: 0.15.1
  */
 gboolean
-tp_base_contact_list_block_contacts_with_abuse_finish (TpBaseContactList *self,
+tp_base_contact_list_block_contacts_with_abuse_finish (
+    TpBlockableContactList *self,
     GAsyncResult *result,
     GError **error)
 {
@@ -2535,7 +2542,7 @@ tp_base_contact_list_block_contacts_with_abuse_finish (TpBaseContactList *self,
   g_return_val_if_fail (blockable_iface->block_contacts_finish != NULL, FALSE);
 
   return blockable_iface->block_contacts_finish (
-      TP_BLOCKABLE_CONTACT_LIST (self), result, error);
+      self, result, error);
 }
 
 /**
@@ -2560,7 +2567,7 @@ tp_base_contact_list_block_contacts_with_abuse_finish (TpBaseContactList *self,
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_unblock_contacts_async (TpBaseContactList *self,
+tp_base_contact_list_unblock_contacts_async (TpBlockableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -2571,8 +2578,7 @@ tp_base_contact_list_unblock_contacts_async (TpBaseContactList *self,
   g_return_if_fail (blockable_iface != NULL);
   g_return_if_fail (blockable_iface->unblock_contacts_async != NULL);
 
-  blockable_iface->unblock_contacts_async (TP_BLOCKABLE_CONTACT_LIST (self),
-      contacts, callback, user_data);
+  blockable_iface->unblock_contacts_async (self, contacts, callback, user_data);
 }
 
 /**
@@ -2598,7 +2604,7 @@ tp_base_contact_list_unblock_contacts_async (TpBaseContactList *self,
  * Since: 0.13.0
  */
 gboolean
-tp_base_contact_list_unblock_contacts_finish (TpBaseContactList *self,
+tp_base_contact_list_unblock_contacts_finish (TpBlockableContactList *self,
     GAsyncResult *result,
     GError **error)
 {
@@ -2609,8 +2615,7 @@ tp_base_contact_list_unblock_contacts_finish (TpBaseContactList *self,
   g_return_val_if_fail (blockable_iface->unblock_contacts_finish != NULL,
       FALSE);
 
-  return blockable_iface->unblock_contacts_finish (
-      TP_BLOCKABLE_CONTACT_LIST (self), result, error);
+  return blockable_iface->unblock_contacts_finish (self, result, error);
 }
 
 /**
@@ -4425,7 +4430,8 @@ tp_base_contact_list_fill_contact_attributes (TpBaseContactList *self,
         {
           g_variant_dict_insert (attributes,
               TP_TOKEN_CONNECTION_INTERFACE_CONTACT_BLOCKING1_BLOCKED,
-              "b", tp_base_contact_list_is_blocked (self, contact));
+              "b", tp_base_contact_list_is_blocked (
+                TP_BLOCKABLE_CONTACT_LIST (self), contact));
         }
       /* else just omit the attributes */
 
@@ -4953,7 +4959,8 @@ tp_base_contact_list_mixin_request_blocked_contacts (
 
     case TP_CONTACT_LIST_STATE_SUCCESS:
       {
-        TpHandleSet *blocked = tp_base_contact_list_dup_blocked_contacts (self);
+        TpHandleSet *blocked = tp_base_contact_list_dup_blocked_contacts (
+            TP_BLOCKABLE_CONTACT_LIST (self));
 
         _tp_gdbus_connection_interface_contact_blocking1_complete_request_blocked_contacts (
             skeleton, context, tp_handle_set_to_identifier_map (blocked));
@@ -4985,8 +4992,8 @@ blocked_cb (
   GDBusMethodInvocation *context = user_data;
   GError *error = NULL;
 
-  if (tp_base_contact_list_block_contacts_with_abuse_finish (self, result,
-          &error))
+  if (tp_base_contact_list_block_contacts_with_abuse_finish (
+        TP_BLOCKABLE_CONTACT_LIST (self), result, &error))
     {
       _tp_gdbus_connection_interface_contact_blocking1_complete_block_contacts (
           self->priv->contact_blocking_skeleton, context);
@@ -5017,8 +5024,9 @@ tp_base_contact_list_mixin_block_contacts (
   while (g_variant_iter_loop (&iter, "u", &contact))
     tp_handle_set_add (contacts, contact);
 
-  tp_base_contact_list_block_contacts_with_abuse_async (self, contacts,
-      report_abusive, blocked_cb, context);
+  tp_base_contact_list_block_contacts_with_abuse_async (
+      TP_BLOCKABLE_CONTACT_LIST (self), contacts, report_abusive, blocked_cb,
+      context);
 
   tp_handle_set_destroy (contacts);
 
@@ -5035,7 +5043,8 @@ unblocked_cb (
   GDBusMethodInvocation *context = user_data;
   GError *error = NULL;
 
-  if (tp_base_contact_list_unblock_contacts_finish (self, result, &error))
+  if (tp_base_contact_list_unblock_contacts_finish (
+        TP_BLOCKABLE_CONTACT_LIST (self), result, &error))
     {
       _tp_gdbus_connection_interface_contact_blocking1_complete_unblock_contacts (
           self->priv->contact_blocking_skeleton, context);
@@ -5065,8 +5074,8 @@ tp_base_contact_list_mixin_unblock_contacts (
   while (g_variant_iter_loop (&iter, "u", &contact))
     tp_handle_set_add (contacts, contact);
 
-  tp_base_contact_list_unblock_contacts_async (self, contacts, unblocked_cb,
-      context);
+  tp_base_contact_list_unblock_contacts_async (TP_BLOCKABLE_CONTACT_LIST (self),
+      contacts, unblocked_cb, context);
 
   tp_handle_set_destroy (contacts);
 

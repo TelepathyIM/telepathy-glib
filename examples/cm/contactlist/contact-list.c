@@ -1491,8 +1491,7 @@ example_contact_list_block_contacts_with_abuse_async (
         }
     }
 
-  tp_base_contact_list_contact_blocking_changed (
-      TP_BASE_CONTACT_LIST (contact_list), changed);
+  tp_base_contact_list_contact_blocking_changed (contact_list, changed);
   tp_handle_set_destroy (changed);
   tp_simple_async_report_success_in_idle ((GObject *) self, callback,
       user_data, example_contact_list_block_contacts_with_abuse_async);
@@ -1522,8 +1521,7 @@ example_contact_list_unblock_contacts_async (
         }
     }
 
-  tp_base_contact_list_contact_blocking_changed (
-      TP_BASE_CONTACT_LIST (contact_list), changed);
+  tp_base_contact_list_contact_blocking_changed (contact_list, changed);
   tp_handle_set_destroy (changed);
   tp_simple_async_report_success_in_idle ((GObject *) self, callback,
       user_data, example_contact_list_unblock_contacts_async);

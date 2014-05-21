@@ -300,45 +300,47 @@ typedef struct _TpBlockableContactListInterface
 typedef struct _TpBlockableContactList TpBlockableContactList;
 
 void tp_base_contact_list_contact_blocking_changed (
-    TpBaseContactList *self,
+    TpBlockableContactList *self,
     TpHandleSet *changed);
 
 gboolean tp_base_contact_list_can_block (TpBaseContactList *self);
 
 _TP_AVAILABLE_IN_1_0
-gboolean tp_base_contact_list_is_blocked (TpBaseContactList *self,
+gboolean tp_base_contact_list_is_blocked (TpBlockableContactList *self,
     TpHandle contact);
 TpHandleSet *tp_base_contact_list_dup_blocked_contacts (
-    TpBaseContactList *self);
+    TpBlockableContactList *self);
 
-void tp_base_contact_list_block_contacts_async (TpBaseContactList *self,
+void tp_base_contact_list_block_contacts_async (TpBlockableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_block_contacts_finish (TpBaseContactList *self,
+gboolean tp_base_contact_list_block_contacts_finish (
+    TpBlockableContactList *self,
     GAsyncResult *result,
     GError **error);
 
 _TP_AVAILABLE_IN_0_16
 void tp_base_contact_list_block_contacts_with_abuse_async (
-    TpBaseContactList *self,
+    TpBlockableContactList *self,
     TpHandleSet *contacts,
     gboolean report_abusive,
     GAsyncReadyCallback callback,
     gpointer user_data);
 _TP_AVAILABLE_IN_0_16
 gboolean tp_base_contact_list_block_contacts_with_abuse_finish (
-    TpBaseContactList *self,
+    TpBlockableContactList *self,
     GAsyncResult *result,
     GError **error);
 
-void tp_base_contact_list_unblock_contacts_async (TpBaseContactList *self,
+void tp_base_contact_list_unblock_contacts_async (TpBlockableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_unblock_contacts_finish (TpBaseContactList *self,
+gboolean tp_base_contact_list_unblock_contacts_finish (
+    TpBlockableContactList *self,
     GAsyncResult *result,
     GError **error);
 
