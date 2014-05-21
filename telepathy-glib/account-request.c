@@ -1340,13 +1340,9 @@ tp_account_request_create_account_async (TpAccountRequest *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TpAccountRequestPrivate *priv = self->priv;
-
   g_return_if_fail (TP_IS_ACCOUNT_REQUEST (self));
 
-  priv = self->priv;
-
-  if (priv->result != NULL)
+  if (self->priv->result != NULL)
     {
       g_simple_async_report_error_in_idle (G_OBJECT (self),
           callback, user_data,
@@ -1356,7 +1352,7 @@ tp_account_request_create_account_async (TpAccountRequest *self,
       return;
     }
 
-  if (priv->created)
+  if (self->priv->created)
     {
       g_simple_async_report_error_in_idle (G_OBJECT (self),
           callback, user_data,
@@ -1365,12 +1361,12 @@ tp_account_request_create_account_async (TpAccountRequest *self,
       return;
     }
 
-  priv->result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-      tp_account_request_create_account_async);
+  self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_account_request_create_account_async);
 
-  tp_cli_account_manager_call_create_account (priv->account_manager,
-      -1, priv->cm_name, priv->proto_name, priv->display_name,
-      priv->parameters, priv->properties,
+  tp_cli_account_manager_call_create_account (self->priv->account_manager,
+      -1, self->priv->cm_name, self->priv->proto_name, self->priv->display_name,
+      self->priv->parameters, self->priv->properties,
       tp_account_request_create_account_cb, NULL, NULL, G_OBJECT (self));
 }
 
