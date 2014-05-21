@@ -331,7 +331,8 @@ _tf_call_stream_push_remote_candidates (TfCallStream *self,
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_MEDIA_STREAMING_ERROR,
-          "Error setting the remote candidates: %s", error->message);
+          "Error setting the remote candidates: %s",
+          error != NULL ? error->message : "invalid transport type");
       g_clear_error (&error);
     }
   fs_candidate_list_destroy (fscandidates);
