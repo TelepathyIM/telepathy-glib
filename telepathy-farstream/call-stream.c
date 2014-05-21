@@ -1552,6 +1552,7 @@ cb_fs_component_state_changed (TfCallStream *stream, guint component,
       break;
     case FS_STREAM_STATE_CONNECTED:
       state = TP_STREAM_ENDPOINT_STATE_PROVISIONALLY_CONNECTED;
+      break;
     case FS_STREAM_STATE_READY:
       state = TP_STREAM_ENDPOINT_STATE_FULLY_CONNECTED;
       break;
