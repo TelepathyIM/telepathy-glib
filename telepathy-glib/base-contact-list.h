@@ -299,47 +299,47 @@ typedef struct _TpBlockableContactListInterface
 
 typedef struct _TpBlockableContactList TpBlockableContactList;
 
-void tp_base_contact_list_contact_blocking_changed (
+void tp_blockable_contact_list_contact_blocking_changed (
     TpBlockableContactList *self,
     TpHandleSet *changed);
 
 gboolean tp_base_contact_list_can_block (TpBaseContactList *self);
 
 _TP_AVAILABLE_IN_1_0
-gboolean tp_base_contact_list_is_blocked (TpBlockableContactList *self,
+gboolean tp_blockable_contact_list_is_blocked (TpBlockableContactList *self,
     TpHandle contact);
-TpHandleSet *tp_base_contact_list_dup_blocked_contacts (
+TpHandleSet *tp_blockable_contact_list_dup_blocked_contacts (
     TpBlockableContactList *self);
 
-void tp_base_contact_list_block_contacts_async (TpBlockableContactList *self,
+void tp_blockable_contact_list_block_contacts_async (TpBlockableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_block_contacts_finish (
+gboolean tp_blockable_contact_list_block_contacts_finish (
     TpBlockableContactList *self,
     GAsyncResult *result,
     GError **error);
 
 _TP_AVAILABLE_IN_0_16
-void tp_base_contact_list_block_contacts_with_abuse_async (
+void tp_blockable_contact_list_block_contacts_with_abuse_async (
     TpBlockableContactList *self,
     TpHandleSet *contacts,
     gboolean report_abusive,
     GAsyncReadyCallback callback,
     gpointer user_data);
 _TP_AVAILABLE_IN_0_16
-gboolean tp_base_contact_list_block_contacts_with_abuse_finish (
+gboolean tp_blockable_contact_list_block_contacts_with_abuse_finish (
     TpBlockableContactList *self,
     GAsyncResult *result,
     GError **error);
 
-void tp_base_contact_list_unblock_contacts_async (TpBlockableContactList *self,
+void tp_blockable_contact_list_unblock_contacts_async (TpBlockableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_unblock_contacts_finish (
+gboolean tp_blockable_contact_list_unblock_contacts_finish (
     TpBlockableContactList *self,
     GAsyncResult *result,
     GError **error);

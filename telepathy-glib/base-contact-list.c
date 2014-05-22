@@ -399,25 +399,25 @@ G_DEFINE_INTERFACE (TpMutableContactList, tp_mutable_contact_list,
  * TpBlockableContactListInterface:
  * @parent: the parent interface
  * @is_blocked: the implementation of
- *  tp_base_contact_list_is_blocked(); must always be provided
+ *  tp_blockable_contact_list_is_blocked(); must always be provided
  * @dup_blocked_contacts: the implementation of
- *  tp_base_contact_list_dup_blocked_contacts(); must always be provided
+ *  tp_blockable_contact_list_dup_blocked_contacts(); must always be provided
  * @block_contacts_async: the implementation of
- *  tp_base_contact_list_block_contacts_async(); either this or
+ *  tp_blockable_contact_list_block_contacts_async(); either this or
  *  @block_contacts_with_abuse_async must always be provided
  * @block_contacts_finish: the implementation of
- *  tp_base_contact_list_block_contacts_finish(); the default
+ *  tp_blockable_contact_list_block_contacts_finish(); the default
  *  implementation may be used if @result is a #GSimpleAsyncResult
  * @unblock_contacts_async: the implementation of
- *  tp_base_contact_list_unblock_contacts_async(); must always be provided
+ *  tp_blockable_contact_list_unblock_contacts_async(); must always be provided
  * @unblock_contacts_finish: the implementation of
- *  tp_base_contact_list_unblock_contacts_finish(); the default
+ *  tp_blockable_contact_list_unblock_contacts_finish(); the default
  *  implementation may be used if @result is a #GSimpleAsyncResult
  * @can_block: the implementation of
  *  tp_base_contact_list_can_block(); if not reimplemented,
  *  the default implementation always returns %TRUE
  * @block_contacts_with_abuse_async: the implementation of
- *  tp_base_contact_list_block_contacts_async(); either this or
+ *  tp_blockable_contact_list_block_contacts_async(); either this or
  *  @block_contacts_async must always be provided. If the underlying protocol
  *  does not support reporting contacts as abusive, implement
  *  @block_contacts_async instead. Since: 0.15.1
@@ -1052,7 +1052,7 @@ tp_base_contact_list_set_list_failed (TpBaseContactList *self,
  * #TpBaseContactListDupStatesFunc must already give correct
  * results when entering this method.
  *
- * If implemented, tp_base_contact_list_dup_blocked_contacts() must also
+ * If implemented, tp_blockable_contact_list_dup_blocked_contacts() must also
  * give correct results when entering this method.
  *
  * Since: 0.13.0
@@ -1096,7 +1096,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
       TpBlockableContactList *blockable = TP_BLOCKABLE_CONTACT_LIST (self);
       TpHandleSet *blocked;
 
-      blocked = tp_base_contact_list_dup_blocked_contacts (blockable);
+      blocked = tp_blockable_contact_list_dup_blocked_contacts (blockable);
 
       if (DEBUGGING)
         {
@@ -1106,7 +1106,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
           g_free (tmp);
         }
 
-      tp_base_contact_list_contact_blocking_changed (blockable, blocked);
+      tp_blockable_contact_list_contact_blocking_changed (blockable, blocked);
 
       if (self->priv->contact_blocking_skeleton != NULL &&
           self->priv->blocked_contact_requests.length > 0)
@@ -1353,13 +1353,13 @@ tp_base_contact_list_one_contact_removed (TpBaseContactList *self,
 }
 
 /**
- * tp_base_contact_list_contact_blocking_changed:
+ * tp_blockable_contact_list_contact_blocking_changed:
  * @self: the contact list manager
  * @changed: a set of contacts who were blocked or unblocked
  *
  * Emit signals for a change to the blocked contacts list.
  *
- * tp_base_contact_list_dup_blocked_contacts()
+ * tp_blockable_contact_list_dup_blocked_contacts()
  * must already reflect the contacts' new statuses when entering this method
  * (in practice, this means that implementations must update their own cache
  * of contacts before calling this method).
@@ -1370,7 +1370,7 @@ tp_base_contact_list_one_contact_removed (TpBaseContactList *self,
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_contact_blocking_changed (
+tp_blockable_contact_list_contact_blocking_changed (
     TpBlockableContactList *blockable,
     TpHandleSet *changed)
 {
@@ -1395,7 +1395,7 @@ tp_base_contact_list_contact_blocking_changed (
 
   g_return_if_fail (tp_base_contact_list_can_block (self));
 
-  now_blocked = tp_base_contact_list_dup_blocked_contacts (blockable);
+  now_blocked = tp_blockable_contact_list_dup_blocked_contacts (blockable);
 
   g_variant_builder_init (&blocked_contacts, G_VARIANT_TYPE ("a{us}"));
   g_variant_builder_init (&unblocked_contacts, G_VARIANT_TYPE ("a{us}"));
@@ -2310,7 +2310,7 @@ tp_base_contact_list_can_block (TpBaseContactList *self)
 }
 
 /**
- * tp_base_contact_list_is_blocked:
+ * tp_blockable_contact_list_is_blocked:
  * @self: a contact list manager
  * @contact: a contact
  *
@@ -2325,16 +2325,16 @@ tp_base_contact_list_can_block (TpBaseContactList *self)
  * It must always be implemented.
  *
  * The result of this method must always be consistent with the result
- * of tp_base_contact_list_dup_blocked_contacts(). It can usually
+ * of tp_blockable_contact_list_dup_blocked_contacts(). It can usually
  * use a more efficient implementation that does not require copying
  * a handle-set.
  *
  * Returns: %TRUE if @contact would be in
- *  tp_base_contact_list_dup_blocked_contacts()
+ *  tp_blockable_contact_list_dup_blocked_contacts()
  * Since: 0.99.6
  */
 gboolean
-tp_base_contact_list_is_blocked (TpBlockableContactList *self,
+tp_blockable_contact_list_is_blocked (TpBlockableContactList *self,
     TpHandle contact)
 {
   TpBlockableContactListInterface *iface =
@@ -2350,7 +2350,7 @@ tp_base_contact_list_is_blocked (TpBlockableContactList *self,
 }
 
 /**
- * tp_base_contact_list_dup_blocked_contacts:
+ * tp_blockable_contact_list_dup_blocked_contacts:
  * @self: a contact list manager
  *
  * Return the list of blocked contacts. It is incorrect to call this method
@@ -2368,7 +2368,7 @@ tp_base_contact_list_is_blocked (TpBlockableContactList *self,
  * Since: 0.13.0
  */
 TpHandleSet *
-tp_base_contact_list_dup_blocked_contacts (TpBlockableContactList *self)
+tp_blockable_contact_list_dup_blocked_contacts (TpBlockableContactList *self)
 {
   TpBlockableContactListInterface *iface =
     TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
@@ -2383,7 +2383,7 @@ tp_base_contact_list_dup_blocked_contacts (TpBlockableContactList *self)
 }
 
 /**
- * tp_base_contact_list_block_contacts_async:
+ * tp_blockable_contact_list_block_contacts_async:
  * @self: a contact list manager
  * @contacts: contacts whose communications should be blocked
  * @callback: a callback to call when the operation succeeds or fails
@@ -2392,7 +2392,7 @@ tp_base_contact_list_dup_blocked_contacts (TpBlockableContactList *self)
  * Request that the given contacts are prevented from communicating with the
  * user, and that presence is not sent to them even if they have a valid
  * presence subscription, if possible. This is equivalent to calling
- * tp_base_contact_list_block_contacts_with_abuse_async(), passing #FALSE as
+ * tp_blockable_contact_list_block_contacts_with_abuse_async(), passing #FALSE as
  * the report_abusive argument.
  *
  * If the #TpBaseContactList subclass does not implement
@@ -2403,23 +2403,23 @@ tp_base_contact_list_dup_blocked_contacts (TpBlockableContactList *self)
  * #TpBlockableContactListInterface.block_contacts_async or
  * #TpBlockableContactListInterface.block_contacts_with_abuse_async.
  * The implementation should call
- * tp_base_contact_list_contact_blocking_changed()
+ * tp_blockable_contact_list_contact_blocking_changed()
  * for any contacts it has changed, before calling @callback.
  *
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_block_contacts_async (TpBlockableContactList *self,
+tp_blockable_contact_list_block_contacts_async (TpBlockableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  tp_base_contact_list_block_contacts_with_abuse_async (self, contacts, FALSE,
+  tp_blockable_contact_list_block_contacts_with_abuse_async (self, contacts, FALSE,
       callback, user_data);
 }
 
 /**
- * tp_base_contact_list_block_contacts_with_abuse_async:
+ * tp_blockable_contact_list_block_contacts_with_abuse_async:
  * @self: a contact list manager
  * @contacts: contacts whose communications should be blocked
  * @report_abusive: whether to report the contacts as abusive to the server
@@ -2442,13 +2442,13 @@ tp_base_contact_list_block_contacts_async (TpBlockableContactList *self,
  * #TpBlockableContactListInterface.block_contacts_async or
  * #TpBlockableContactListInterface.block_contacts_with_abuse_async.
  * The implementation should call
- * tp_base_contact_list_contact_blocking_changed()
+ * tp_blockable_contact_list_contact_blocking_changed()
  * for any contacts it has changed, before calling @callback.
  *
  * Since: 0.15.1
  */
 void
-tp_base_contact_list_block_contacts_with_abuse_async (
+tp_blockable_contact_list_block_contacts_with_abuse_async (
     TpBlockableContactList *self,
     TpHandleSet *contacts,
     gboolean report_abusive,
@@ -2471,14 +2471,14 @@ tp_base_contact_list_block_contacts_with_abuse_async (
 }
 
 /**
- * tp_base_contact_list_block_contacts_finish:
+ * tp_blockable_contact_list_block_contacts_finish:
  * @self: a contact list manager
  * @result: the result passed to @callback by an implementation of
- *  tp_base_contact_list_block_contacts_async()
+ *  tp_blockable_contact_list_block_contacts_async()
  * @error: used to raise an error if %FALSE is returned
  *
  * Interpret the result of an asynchronous call to
- * tp_base_contact_list_block_contacts_async().
+ * tp_blockable_contact_list_block_contacts_async().
  *
  * If the #TpBaseContactList subclass does not implement
  * %TP_TYPE_BLOCKABLE_CONTACT_LIST, it is an error to call this method.
@@ -2493,7 +2493,7 @@ tp_base_contact_list_block_contacts_with_abuse_async (
  * Since: 0.13.0
  */
 gboolean
-tp_base_contact_list_block_contacts_finish (TpBlockableContactList *self,
+tp_blockable_contact_list_block_contacts_finish (TpBlockableContactList *self,
     GAsyncResult *result,
     GError **error)
 {
@@ -2508,14 +2508,14 @@ tp_base_contact_list_block_contacts_finish (TpBlockableContactList *self,
 }
 
 /**
- * tp_base_contact_list_block_contacts_with_abuse_finish:
+ * tp_blockable_contact_list_block_contacts_with_abuse_finish:
  * @self: a contact list manager
  * @result: the result passed to @callback by an implementation of
- *  tp_base_contact_list_block_contacts_with_abuse_async()
+ *  tp_blockable_contact_list_block_contacts_with_abuse_async()
  * @error: used to raise an error if %FALSE is returned
  *
  * Interpret the result of an asynchronous call to
- * tp_base_contact_list_block_contacts_with_abuse_async().
+ * tp_blockable_contact_list_block_contacts_with_abuse_async().
  *
  * If the #TpBaseContactList subclass does not implement
  * %TP_TYPE_BLOCKABLE_CONTACT_LIST, it is an error to call this method.
@@ -2530,7 +2530,7 @@ tp_base_contact_list_block_contacts_finish (TpBlockableContactList *self,
  * Since: 0.15.1
  */
 gboolean
-tp_base_contact_list_block_contacts_with_abuse_finish (
+tp_blockable_contact_list_block_contacts_with_abuse_finish (
     TpBlockableContactList *self,
     GAsyncResult *result,
     GError **error)
@@ -2546,13 +2546,13 @@ tp_base_contact_list_block_contacts_with_abuse_finish (
 }
 
 /**
- * tp_base_contact_list_unblock_contacts_async:
+ * tp_blockable_contact_list_unblock_contacts_async:
  * @self: a contact list manager
  * @contacts: contacts whose communications should no longer be blocked
  * @callback: a callback to call when the operation succeeds or fails
  * @user_data: optional data to pass to @callback
  *
- * Reverse the effects of tp_base_contact_list_block_contacts_async().
+ * Reverse the effects of tp_blockable_contact_list_block_contacts_async().
  *
  * If the #TpBaseContactList subclass does not implement
  * %TP_TYPE_BLOCKABLE_CONTACT_LIST, this method does nothing.
@@ -2561,13 +2561,13 @@ tp_base_contact_list_block_contacts_with_abuse_finish (
  * method which must be implemented, using
  * #TpBlockableContactListInterface.unblock_contacts_async.
  * The implementation should call
- * tp_base_contact_list_contact_blocking_changed()
+ * tp_blockable_contact_list_contact_blocking_changed()
  * for any contacts it has changed, before calling @callback.
  *
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_unblock_contacts_async (TpBlockableContactList *self,
+tp_blockable_contact_list_unblock_contacts_async (TpBlockableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -2582,14 +2582,14 @@ tp_base_contact_list_unblock_contacts_async (TpBlockableContactList *self,
 }
 
 /**
- * tp_base_contact_list_unblock_contacts_finish:
+ * tp_blockable_contact_list_unblock_contacts_finish:
  * @self: a contact list manager
  * @result: the result passed to @callback by an implementation of
- *  tp_base_contact_list_unblock_contacts_async()
+ *  tp_blockable_contact_list_unblock_contacts_async()
  * @error: used to raise an error if %FALSE is returned
  *
  * Interpret the result of an asynchronous call to
- * tp_base_contact_list_unblock_contacts_async().
+ * tp_blockable_contact_list_unblock_contacts_async().
  *
  * If the #TpBaseContactList subclass does not implement
  * %TP_TYPE_BLOCKABLE_CONTACT_LIST, it is an error to call this method.
@@ -2604,7 +2604,7 @@ tp_base_contact_list_unblock_contacts_async (TpBlockableContactList *self,
  * Since: 0.13.0
  */
 gboolean
-tp_base_contact_list_unblock_contacts_finish (TpBlockableContactList *self,
+tp_blockable_contact_list_unblock_contacts_finish (TpBlockableContactList *self,
     GAsyncResult *result,
     GError **error)
 {
@@ -4430,7 +4430,7 @@ tp_base_contact_list_fill_contact_attributes (TpBaseContactList *self,
         {
           g_variant_dict_insert (attributes,
               TP_TOKEN_CONNECTION_INTERFACE_CONTACT_BLOCKING1_BLOCKED,
-              "b", tp_base_contact_list_is_blocked (
+              "b", tp_blockable_contact_list_is_blocked (
                 TP_BLOCKABLE_CONTACT_LIST (self), contact));
         }
       /* else just omit the attributes */
@@ -4959,7 +4959,7 @@ tp_base_contact_list_mixin_request_blocked_contacts (
 
     case TP_CONTACT_LIST_STATE_SUCCESS:
       {
-        TpHandleSet *blocked = tp_base_contact_list_dup_blocked_contacts (
+        TpHandleSet *blocked = tp_blockable_contact_list_dup_blocked_contacts (
             TP_BLOCKABLE_CONTACT_LIST (self));
 
         _tp_gdbus_connection_interface_contact_blocking1_complete_request_blocked_contacts (
@@ -4992,7 +4992,7 @@ blocked_cb (
   GDBusMethodInvocation *context = user_data;
   GError *error = NULL;
 
-  if (tp_base_contact_list_block_contacts_with_abuse_finish (
+  if (tp_blockable_contact_list_block_contacts_with_abuse_finish (
         TP_BLOCKABLE_CONTACT_LIST (self), result, &error))
     {
       _tp_gdbus_connection_interface_contact_blocking1_complete_block_contacts (
@@ -5024,7 +5024,7 @@ tp_base_contact_list_mixin_block_contacts (
   while (g_variant_iter_loop (&iter, "u", &contact))
     tp_handle_set_add (contacts, contact);
 
-  tp_base_contact_list_block_contacts_with_abuse_async (
+  tp_blockable_contact_list_block_contacts_with_abuse_async (
       TP_BLOCKABLE_CONTACT_LIST (self), contacts, report_abusive, blocked_cb,
       context);
 
@@ -5043,7 +5043,7 @@ unblocked_cb (
   GDBusMethodInvocation *context = user_data;
   GError *error = NULL;
 
-  if (tp_base_contact_list_unblock_contacts_finish (
+  if (tp_blockable_contact_list_unblock_contacts_finish (
         TP_BLOCKABLE_CONTACT_LIST (self), result, &error))
     {
       _tp_gdbus_connection_interface_contact_blocking1_complete_unblock_contacts (
@@ -5074,7 +5074,7 @@ tp_base_contact_list_mixin_unblock_contacts (
   while (g_variant_iter_loop (&iter, "u", &contact))
     tp_handle_set_add (contacts, contact);
 
-  tp_base_contact_list_unblock_contacts_async (TP_BLOCKABLE_CONTACT_LIST (self),
+  tp_blockable_contact_list_unblock_contacts_async (TP_BLOCKABLE_CONTACT_LIST (self),
       contacts, unblocked_cb, context);
 
   tp_handle_set_destroy (contacts);
