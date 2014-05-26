@@ -838,8 +838,12 @@ receive_auth_request (ExampleContactList *self,
       g_message ("From server: %s has cancelled their publish request",
           tp_handle_inspect (self->priv->contact_repo, contact));
 
-      d->publish = FALSE;
-      d->pre_approved = FALSE;
+      if (d)
+        {
+          d->publish = FALSE;
+          d->pre_approved = FALSE;
+        }
+
       g_hash_table_remove (self->priv->publish_requests,
           GUINT_TO_POINTER (contact));
       tp_handle_set_add (self->priv->cancelled_publish_requests, contact);

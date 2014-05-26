@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2
 # Check if all the errors have been added to
 # docs/reference/telepathy-glib/telepathy-glib-sections.txt
 
