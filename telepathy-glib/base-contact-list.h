@@ -166,7 +166,12 @@ struct _TpBaseContactListClass {
   (G_TYPE_INSTANCE_GET_INTERFACE ((obj), \
   TP_TYPE_MUTABLE_CONTACT_LIST, TpMutableContactListInterface))
 
+#define TP_MUTABLE_CONTACT_LIST(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_MUTABLE_CONTACT_LIST, \
+  TpMutableContactList))
+
 typedef struct _TpMutableContactListInterface TpMutableContactListInterface;
+typedef struct _TpMutableContactList TpMutableContactList;
 
 typedef void (*TpBaseContactListRequestSubscriptionFunc) (
     TpBaseContactList *self,

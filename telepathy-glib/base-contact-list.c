@@ -396,6 +396,15 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseContactList,
  * Since: 0.13.0
  */
 
+/**
+ * TpMutableContactList:
+ *
+ * Opaque structure representing an object implementing
+ * TpMutableContactListInterface.
+ *
+ * Since: UNRELEASED
+ */
+
 G_DEFINE_INTERFACE (TpMutableContactList, tp_mutable_contact_list,
     TP_TYPE_BASE_CONTACT_LIST)
 
