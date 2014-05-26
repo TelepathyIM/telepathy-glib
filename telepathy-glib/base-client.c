@@ -2604,7 +2604,7 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
 {
   TpBaseClient *self = TP_BASE_CLIENT (iface);
   TpChannelRequest *request;
-  TpAccount *account;
+  TpAccount *account = NULL;
   GError *error = NULL;
   channel_request_prepare_account_ctx *ctx;
   GArray *account_features;
