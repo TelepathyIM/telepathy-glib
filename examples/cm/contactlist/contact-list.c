@@ -1116,7 +1116,7 @@ example_contact_list_dup_states (TpBaseContactList *contact_list,
 
 static void
 example_contact_list_request_subscription_async (
-    TpBaseContactList *contact_list,
+    TpMutableContactList *contact_list,
     TpHandleSet *contacts,
     const gchar *message,
     GAsyncReadyCallback callback,
@@ -1174,7 +1174,8 @@ example_contact_list_request_subscription_async (
       g_free (message_lc);
     }
 
-  tp_base_contact_list_contacts_changed (contact_list, changed, NULL);
+  tp_base_contact_list_contacts_changed (TP_BASE_CONTACT_LIST (contact_list),
+      changed, NULL);
 
   tp_simple_async_report_success_in_idle ((GObject *) self, callback,
       user_data, example_contact_list_request_subscription_async);
@@ -1182,7 +1183,7 @@ example_contact_list_request_subscription_async (
 
 static void
 example_contact_list_authorize_publication_async (
-    TpBaseContactList *contact_list,
+    TpMutableContactList *contact_list,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1221,7 +1222,8 @@ example_contact_list_authorize_publication_async (
         }
     }
 
-  tp_base_contact_list_contacts_changed (contact_list, changed, NULL);
+  tp_base_contact_list_contacts_changed (TP_BASE_CONTACT_LIST (contact_list),
+      changed, NULL);
 
   tp_simple_async_report_success_in_idle ((GObject *) self, callback,
       user_data, example_contact_list_authorize_publication_async);
@@ -1229,7 +1231,7 @@ example_contact_list_authorize_publication_async (
 
 static void
 example_contact_list_store_contacts_async (
-    TpBaseContactList *contact_list,
+    TpMutableContactList *contact_list,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1260,14 +1262,15 @@ example_contact_list_store_contacts_async (
         }
     }
 
-  tp_base_contact_list_contacts_changed (contact_list, changed, NULL);
+  tp_base_contact_list_contacts_changed (TP_BASE_CONTACT_LIST (contact_list),
+      changed, NULL);
 
   tp_simple_async_report_success_in_idle ((GObject *) self, callback,
       user_data, example_contact_list_store_contacts_async);
 }
 
 static void
-example_contact_list_remove_contacts_async (TpBaseContactList *contact_list,
+example_contact_list_remove_contacts_async (TpMutableContactList *contact_list,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1307,14 +1310,15 @@ example_contact_list_remove_contacts_async (TpBaseContactList *contact_list,
         }
     }
 
-  tp_base_contact_list_contacts_changed (contact_list, NULL, removed);
+  tp_base_contact_list_contacts_changed (TP_BASE_CONTACT_LIST (contact_list),
+      NULL, removed);
 
   tp_simple_async_report_success_in_idle ((GObject *) self, callback,
       user_data, example_contact_list_remove_contacts_async);
 }
 
 static void
-example_contact_list_unsubscribe_async (TpBaseContactList *contact_list,
+example_contact_list_unsubscribe_async (TpMutableContactList *contact_list,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1371,14 +1375,15 @@ example_contact_list_unsubscribe_async (TpBaseContactList *contact_list,
         }
     }
 
-  tp_base_contact_list_contacts_changed (contact_list, changed, NULL);
+  tp_base_contact_list_contacts_changed (TP_BASE_CONTACT_LIST (contact_list),
+      changed, NULL);
 
   tp_simple_async_report_success_in_idle ((GObject *) self, callback,
       user_data, example_contact_list_unsubscribe_async);
 }
 
 static void
-example_contact_list_unpublish_async (TpBaseContactList *contact_list,
+example_contact_list_unpublish_async (TpMutableContactList *contact_list,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1449,7 +1454,8 @@ example_contact_list_unpublish_async (TpBaseContactList *contact_list,
         }
     }
 
-  tp_base_contact_list_contacts_changed (contact_list, changed, removed);
+  tp_base_contact_list_contacts_changed (TP_BASE_CONTACT_LIST (contact_list),
+      changed, removed);
 
   tp_simple_async_report_success_in_idle ((GObject *) self, callback,
       user_data, example_contact_list_unpublish_async);
@@ -1706,8 +1712,8 @@ example_contact_list_class_init (ExampleContactListClass *klass)
 static void
 mutable_contact_list_iface_init (TpMutableContactListInterface *iface)
 {
-  iface->can_change_contact_list = tp_base_contact_list_true_func;
-  iface->get_request_uses_message = tp_base_contact_list_true_func;
+  iface->can_change_contact_list = tp_mutable_contact_list_true_func;
+  iface->get_request_uses_message = tp_mutable_contact_list_true_func;
   iface->request_subscription_async =
     example_contact_list_request_subscription_async;
   iface->authorize_publication_async =

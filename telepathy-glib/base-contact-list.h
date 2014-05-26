@@ -173,18 +173,29 @@ struct _TpBaseContactListClass {
 typedef struct _TpMutableContactListInterface TpMutableContactListInterface;
 typedef struct _TpMutableContactList TpMutableContactList;
 
-typedef void (*TpBaseContactListRequestSubscriptionFunc) (
-    TpBaseContactList *self,
+typedef void (*TpMutableContactListRequestSubscriptionFunc) (
+    TpMutableContactList *self,
     TpHandleSet *contacts,
     const gchar *message,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-typedef void (*TpBaseContactListActOnContactsFunc) (
-    TpBaseContactList *self,
+typedef void (*TpMutableContactListActOnContactsFunc) (
+    TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
+
+typedef gboolean (*TpMutableContactListAsyncFinishFunc) (
+    TpMutableContactList *self,
+    GAsyncResult *result,
+    GError **error);
+
+typedef gboolean (*TpMutableContactListBooleanFunc) (
+    TpMutableContactList *self);
+
+gboolean tp_mutable_contact_list_true_func (TpMutableContactList *self);
+gboolean tp_mutable_contact_list_false_func (TpMutableContactList *self);
 
 struct _TpMutableContactListInterface {
     GTypeInterface parent;
@@ -192,28 +203,28 @@ struct _TpMutableContactListInterface {
     /* _async mandatory-to-implement, _finish has a default implementation
      * suitable for a GSimpleAsyncResult */
 
-    TpBaseContactListRequestSubscriptionFunc request_subscription_async;
-    TpBaseContactListAsyncFinishFunc request_subscription_finish;
+    TpMutableContactListRequestSubscriptionFunc request_subscription_async;
+    TpMutableContactListAsyncFinishFunc request_subscription_finish;
 
-    TpBaseContactListActOnContactsFunc authorize_publication_async;
-    TpBaseContactListAsyncFinishFunc authorize_publication_finish;
+    TpMutableContactListActOnContactsFunc authorize_publication_async;
+    TpMutableContactListAsyncFinishFunc authorize_publication_finish;
 
-    TpBaseContactListActOnContactsFunc remove_contacts_async;
-    TpBaseContactListAsyncFinishFunc remove_contacts_finish;
+    TpMutableContactListActOnContactsFunc remove_contacts_async;
+    TpMutableContactListAsyncFinishFunc remove_contacts_finish;
 
-    TpBaseContactListActOnContactsFunc unsubscribe_async;
-    TpBaseContactListAsyncFinishFunc unsubscribe_finish;
+    TpMutableContactListActOnContactsFunc unsubscribe_async;
+    TpMutableContactListAsyncFinishFunc unsubscribe_finish;
 
-    TpBaseContactListActOnContactsFunc unpublish_async;
-    TpBaseContactListAsyncFinishFunc unpublish_finish;
+    TpMutableContactListActOnContactsFunc unpublish_async;
+    TpMutableContactListAsyncFinishFunc unpublish_finish;
 
     /* optional-to-implement */
 
-    TpBaseContactListActOnContactsFunc store_contacts_async;
-    TpBaseContactListAsyncFinishFunc store_contacts_finish;
+    TpMutableContactListActOnContactsFunc store_contacts_async;
+    TpMutableContactListAsyncFinishFunc store_contacts_finish;
 
-    TpBaseContactListBooleanFunc can_change_contact_list;
-    TpBaseContactListBooleanFunc get_request_uses_message;
+    TpMutableContactListBooleanFunc can_change_contact_list;
+    TpMutableContactListBooleanFunc get_request_uses_message;
 };
 
 GType tp_mutable_contact_list_get_type (void) G_GNUC_CONST;

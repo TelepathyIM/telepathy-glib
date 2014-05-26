@@ -195,7 +195,7 @@
  */
 
 /**
- * TpBaseContactListActOnContactsFunc:
+ * TpMutableContactListActOnContactsFunc:
  * @self: the contact list manager implementing
  * #TP_TYPE_BLOCKABLE_CONTACT_LIST
  * @contacts: the contacts on which to act
@@ -229,7 +229,7 @@
  */
 
 /**
- * TpBaseContactListRequestSubscriptionFunc:
+ * TpMutableContactListRequestSubscriptionFunc:
  * @self: the contact list manager
  * @contacts: the contacts whose subscription is to be requested
  * @message: an optional human-readable message from the user
@@ -256,6 +256,20 @@
  * Returns: %TRUE on success, or %FALSE if @error is set
  *
  * Since: 0.13.0
+ */
+
+/**
+ * TpMutableContactListAsyncFinishFunc:
+ * @self: the contact list manager implementing
+ * #TP_TYPE_MUTABLE_CONTACT_LIST
+ * @result: the result of the asynchronous operation
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Signature of a virtual method to finish an async operation.
+ *
+ * Returns: %TRUE on success, or %FALSE if @error is set
+ *
+ * Since: UNRELEASED
  */
 
 /**
@@ -888,18 +902,31 @@ tp_base_contact_list_download_async_default (TpBaseContactList *self,
       "This CM does not implement Download");
 }
 
+static gboolean
+tp_mutable_contact_list_simple_finish (TpMutableContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple = (GSimpleAsyncResult *) result;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (
+      result, G_OBJECT (self), NULL), FALSE);
+
+  return !g_simple_async_result_propagate_error (simple, error);
+}
+
 static void
 tp_mutable_contact_list_default_init (TpMutableContactListInterface *iface)
 {
-  iface->request_subscription_finish = tp_base_contact_list_simple_finish;
-  iface->authorize_publication_finish = tp_base_contact_list_simple_finish;
-  iface->unsubscribe_finish = tp_base_contact_list_simple_finish;
-  iface->unpublish_finish = tp_base_contact_list_simple_finish;
-  iface->store_contacts_finish = tp_base_contact_list_simple_finish;
-  iface->remove_contacts_finish = tp_base_contact_list_simple_finish;
+  iface->request_subscription_finish = tp_mutable_contact_list_simple_finish;
+  iface->authorize_publication_finish = tp_mutable_contact_list_simple_finish;
+  iface->unsubscribe_finish = tp_mutable_contact_list_simple_finish;
+  iface->unpublish_finish = tp_mutable_contact_list_simple_finish;
+  iface->store_contacts_finish = tp_mutable_contact_list_simple_finish;
+  iface->remove_contacts_finish = tp_mutable_contact_list_simple_finish;
 
-  iface->can_change_contact_list = tp_base_contact_list_true_func;
-  iface->get_request_uses_message = tp_base_contact_list_true_func;
+  iface->can_change_contact_list = tp_mutable_contact_list_true_func;
+  iface->get_request_uses_message = tp_mutable_contact_list_true_func;
   /* there's no default for the other virtual methods */
 }
 
@@ -1538,8 +1565,8 @@ tp_base_contact_list_request_subscription_async (TpBaseContactList *self,
   g_return_if_fail (mutable_iface != NULL);
   g_return_if_fail (mutable_iface->request_subscription_async != NULL);
 
-  mutable_iface->request_subscription_async (self, contacts, message, callback,
-      user_data);
+  mutable_iface->request_subscription_async (TP_MUTABLE_CONTACT_LIST (self),
+      contacts, message, callback, user_data);
 }
 
 /**
@@ -1576,7 +1603,8 @@ tp_base_contact_list_request_subscription_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_iface->request_subscription_finish != NULL,
       FALSE);
 
-  return mutable_iface->request_subscription_finish (self, result, error);
+  return mutable_iface->request_subscription_finish (
+      TP_MUTABLE_CONTACT_LIST (self), result, error);
 }
 
 /**
@@ -1654,8 +1682,8 @@ tp_base_contact_list_authorize_publication_async (TpBaseContactList *self,
   g_return_if_fail (mutable_iface != NULL);
   g_return_if_fail (mutable_iface->authorize_publication_async != NULL);
 
-  mutable_iface->authorize_publication_async (self, contacts, callback,
-      user_data);
+  mutable_iface->authorize_publication_async (
+      TP_MUTABLE_CONTACT_LIST (self), contacts, callback, user_data);
 }
 
 /**
@@ -1692,7 +1720,8 @@ tp_base_contact_list_authorize_publication_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_iface->authorize_publication_finish != NULL,
       FALSE);
 
-  return mutable_iface->authorize_publication_finish (self, result, error);
+  return mutable_iface->authorize_publication_finish (
+      TP_MUTABLE_CONTACT_LIST (self), result, error);
 }
 
 /**
@@ -1736,8 +1765,8 @@ tp_base_contact_list_store_contacts_async (TpBaseContactList *self,
     tp_simple_async_report_success_in_idle ((GObject *) self,
         callback, user_data, NULL);
   else
-    mutable_iface->store_contacts_async (self, contacts, callback,
-        user_data);
+    mutable_iface->store_contacts_async (
+        TP_MUTABLE_CONTACT_LIST (self), contacts, callback, user_data);
 }
 
 /**
@@ -1773,7 +1802,8 @@ tp_base_contact_list_store_contacts_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_iface != NULL, FALSE);
   g_return_val_if_fail (mutable_iface->store_contacts_finish != NULL, FALSE);
 
-  return mutable_iface->store_contacts_finish (self, result, error);
+  return mutable_iface->store_contacts_finish (TP_MUTABLE_CONTACT_LIST (self),
+      result, error);
 }
 
 /**
@@ -1811,7 +1841,8 @@ tp_base_contact_list_remove_contacts_async (TpBaseContactList *self,
   g_return_if_fail (mutable_iface != NULL);
   g_return_if_fail (mutable_iface->remove_contacts_async != NULL);
 
-  mutable_iface->remove_contacts_async (self, contacts, callback, user_data);
+  mutable_iface->remove_contacts_async (TP_MUTABLE_CONTACT_LIST (self),
+      contacts, callback, user_data);
 }
 
 /**
@@ -1847,7 +1878,8 @@ tp_base_contact_list_remove_contacts_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_iface != NULL, FALSE);
   g_return_val_if_fail (mutable_iface->remove_contacts_finish != NULL, FALSE);
 
-  return mutable_iface->remove_contacts_finish (self, result, error);
+  return mutable_iface->remove_contacts_finish (TP_MUTABLE_CONTACT_LIST (self),
+      result, error);
 }
 
 /**
@@ -1883,7 +1915,8 @@ tp_base_contact_list_unsubscribe_async (TpBaseContactList *self,
   g_return_if_fail (mutable_iface != NULL);
   g_return_if_fail (mutable_iface->unsubscribe_async != NULL);
 
-  mutable_iface->unsubscribe_async (self, contacts, callback, user_data);
+  mutable_iface->unsubscribe_async (TP_MUTABLE_CONTACT_LIST (self),
+      contacts, callback, user_data);
 }
 
 /**
@@ -1919,7 +1952,8 @@ tp_base_contact_list_unsubscribe_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_iface != NULL, FALSE);
   g_return_val_if_fail (mutable_iface->unsubscribe_finish != NULL, FALSE);
 
-  return mutable_iface->unsubscribe_finish (self, result, error);
+  return mutable_iface->unsubscribe_finish (TP_MUTABLE_CONTACT_LIST (self),
+      result, error);
 }
 
 /**
@@ -1955,7 +1989,8 @@ tp_base_contact_list_unpublish_async (TpBaseContactList *self,
   g_return_if_fail (mutable_iface != NULL);
   g_return_if_fail (mutable_iface->unpublish_async != NULL);
 
-  mutable_iface->unpublish_async (self, contacts, callback, user_data);
+  mutable_iface->unpublish_async (
+      TP_MUTABLE_CONTACT_LIST (self), contacts, callback, user_data);
 }
 
 /**
@@ -1991,7 +2026,8 @@ tp_base_contact_list_unpublish_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_iface != NULL, FALSE);
   g_return_val_if_fail (mutable_iface->unpublish_finish != NULL, FALSE);
 
-  return mutable_iface->unpublish_finish (self, result, error);
+  return mutable_iface->unpublish_finish (TP_MUTABLE_CONTACT_LIST (self),
+      result, error);
 }
 
 /**
@@ -2026,6 +2062,22 @@ tp_base_contact_list_unpublish_finish (TpBaseContactList *self,
  * Since: UNRELEASED
  */
 
+/**
+ * TpMutableContactListBooleanFunc:
+ * @self: a contact list manager implementing
+ * #TP_TYPE_MUTABLE_CONTACT_LIST
+ *
+ * Signature of a virtual method that returns a boolean result. These are used
+ * for feature-discovery.
+ *
+ * For the simple cases of a constant result, use
+ * tp_mutable_contact_list_true_func() or
+ * tp_mutable_contact_list_false_func().
+ *
+ * Returns: a boolean result
+ *
+ * Since: UNRELEASED
+ */
 
 /**
  * tp_base_contact_list_true_func:
@@ -2096,6 +2148,39 @@ tp_blockable_contact_list_false_func (
   return FALSE;
 }
 
+/**
+ * tp_mutable_contact_list_true_func:
+ * @self: ignored
+ *
+ * An implementation of #TpMutableContactListBooleanFunc that returns %TRUE,
+ * for use in simple cases.
+ *
+ * Returns: %TRUE
+ *
+ * Since: UNRELEASED
+ */
+gboolean
+tp_mutable_contact_list_true_func (TpMutableContactList *self G_GNUC_UNUSED)
+{
+  return TRUE;
+}
+
+/**
+ * tp_mutable_contact_list_false_func:
+ * @self: ignored
+ *
+ * An implementation of #TpMutableContactListBooleanFunc that returns %FALSE,
+ * for use in simple cases.
+ *
+ * Returns: %TRUE
+ *
+ * Since: UNRELEASED
+ */
+gboolean
+tp_mutable_contact_list_false_func (TpMutableContactList *self G_GNUC_UNUSED)
+{
+  return TRUE;
+}
 
 /**
  * tp_base_contact_list_can_change_contact_list:
@@ -2140,7 +2225,7 @@ tp_base_contact_list_can_change_contact_list (TpBaseContactList *self)
   g_return_val_if_fail (iface != NULL, FALSE);
   g_return_val_if_fail (iface->can_change_contact_list != NULL, FALSE);
 
-  return iface->can_change_contact_list (self);
+  return iface->can_change_contact_list (TP_MUTABLE_CONTACT_LIST (self));
 }
 
 /**
@@ -2291,7 +2376,7 @@ tp_base_contact_list_get_request_uses_message (TpBaseContactList *self)
   g_return_val_if_fail (iface != NULL, FALSE);
   g_return_val_if_fail (iface->get_request_uses_message != NULL, FALSE);
 
-  return iface->get_request_uses_message (self);
+  return iface->get_request_uses_message (TP_MUTABLE_CONTACT_LIST (self));
 }
 
 /**
