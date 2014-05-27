@@ -166,7 +166,7 @@ static void
 complete_operation (TpDBusTubeChannel *self)
 {
   TpDBusTubeChannelPrivate *priv = self->priv;
-  GSimpleAsyncResult *result = priv->result;
+  GSimpleAsyncResult *result;
 
   /* This dance is to ensure that we don't accidentally manipulate priv->result
    * while calling out to user code. For instance, someone might call
