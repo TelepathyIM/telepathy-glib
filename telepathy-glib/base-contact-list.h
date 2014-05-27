@@ -532,7 +532,7 @@ typedef void (*TpMutableContactGroupListSetContactGroupsFunc) (
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-void tp_base_contact_list_set_contact_groups_async (
+void tp_mutable_contact_group_list_set_contact_groups_async (
     TpMutableContactGroupList *self,
     TpHandle contact,
     const gchar * const *normalized_names,
@@ -540,7 +540,7 @@ void tp_base_contact_list_set_contact_groups_async (
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_set_contact_groups_finish (
+gboolean tp_mutable_contact_group_list_set_contact_groups_finish (
     TpMutableContactGroupList *self,
     GAsyncResult *result,
     GError **error);
@@ -552,37 +552,38 @@ typedef void (*TpMutableContactGroupListGroupContactsFunc) (
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-void tp_base_contact_list_add_to_group_async (TpMutableContactGroupList *self,
-    const gchar *group,
-    TpHandleSet *contacts,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-
-gboolean tp_base_contact_list_add_to_group_finish (
-    TpMutableContactGroupList *self,
-    GAsyncResult *result,
-    GError **error);
-
-void tp_base_contact_list_remove_from_group_async (
+void tp_mutable_contact_group_list_add_to_group_async (
     TpMutableContactGroupList *self,
     const gchar *group,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_remove_from_group_finish (
+gboolean tp_mutable_contact_group_list_add_to_group_finish (
     TpMutableContactGroupList *self,
     GAsyncResult *result,
     GError **error);
 
-void tp_base_contact_list_set_group_members_async (
+void tp_mutable_contact_group_list_remove_from_group_async (
+    TpMutableContactGroupList *self,
+    const gchar *group,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_mutable_contact_group_list_remove_from_group_finish (
+    TpMutableContactGroupList *self,
+    GAsyncResult *result,
+    GError **error);
+
+void tp_mutable_contact_group_list_set_group_members_async (
     TpMutableContactGroupList *self,
     const gchar *normalized_group,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_set_group_members_finish (
+gboolean tp_mutable_contact_group_list_set_group_members_finish (
     TpMutableContactGroupList *self,
     GAsyncResult *result,
     GError **error);
@@ -593,12 +594,13 @@ typedef void (*TpMutableContactGroupListRemoveGroupFunc) (
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-void tp_base_contact_list_remove_group_async (TpMutableContactGroupList *self,
+void tp_mutable_contact_group_list_remove_group_async (
+    TpMutableContactGroupList *self,
     const gchar *group,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_remove_group_finish (
+gboolean tp_mutable_contact_group_list_remove_group_finish (
     TpMutableContactGroupList *self,
     GAsyncResult *result,
     GError **error);
@@ -610,13 +612,14 @@ typedef void (*TpMutableContactGroupListRenameGroupFunc) (
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-void tp_base_contact_list_rename_group_async (TpMutableContactGroupList *self,
+void tp_mutable_contact_group_list_rename_group_async (
+    TpMutableContactGroupList *self,
     const gchar *old_name,
     const gchar *new_name,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_rename_group_finish (
+gboolean tp_mutable_contact_group_list_rename_group_finish (
     TpMutableContactGroupList *self,
     GAsyncResult *result,
     GError **error);
