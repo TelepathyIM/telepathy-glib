@@ -178,6 +178,9 @@ tp_handle_ensure (TpHandleRepoIface *self,
                   gpointer context,
                   GError **error)
 {
+  g_return_val_if_fail (TP_IS_HANDLE_REPO_IFACE (self), 0);
+  g_return_val_if_fail (id != NULL, 0);
+
   return TP_HANDLE_REPO_IFACE_GET_CLASS (self)->ensure_handle (self,
       id, context, error);
 }
