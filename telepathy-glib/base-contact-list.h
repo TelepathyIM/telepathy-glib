@@ -518,8 +518,8 @@ typedef gboolean (*TpMutableContactGroupListAsyncFinishFunc) (
     GAsyncResult *result,
     GError **error);
 
-typedef guint (*TpBaseContactListUIntFunc) (
-    TpBaseContactList *self);
+typedef guint (*TpMutableContactGroupListUIntFunc) (
+    TpMutableContactGroupList *self);
 
 TpContactMetadataStorageType tp_base_contact_list_get_group_storage (
     TpBaseContactList *self);
@@ -668,7 +668,7 @@ struct _TpMutableContactGroupListInterface {
 
     TpMutableContactGroupListRenameGroupFunc rename_group_async;
     TpMutableContactGroupListAsyncFinishFunc rename_group_finish;
-    TpBaseContactListUIntFunc get_group_storage;
+    TpMutableContactGroupListUIntFunc get_group_storage;
 };
 
 _TP_AVAILABLE_IN_1_0

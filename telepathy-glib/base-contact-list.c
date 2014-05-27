@@ -4635,7 +4635,7 @@ _tp_base_contact_list_implement_contact_list (TpBaseContactList *self)
 }
 
 /**
- * TpBaseContactListUIntFunc:
+ * TpMutableContactGroupListUIntFunc:
  * @self: a contact list manager
  *
  * Signature of a virtual method that returns an unsigned integer result.
@@ -4687,7 +4687,7 @@ tp_base_contact_list_get_group_storage (TpBaseContactList *self)
   if (iface->get_group_storage == NULL)
     return TP_CONTACT_METADATA_STORAGE_TYPE_ANYONE;
 
-  return iface->get_group_storage (self);
+  return iface->get_group_storage (TP_MUTABLE_CONTACT_GROUP_LIST (self));
 }
 
 static void

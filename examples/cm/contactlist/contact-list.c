@@ -1542,7 +1542,7 @@ example_contact_list_unblock_contacts_async (
 
 static guint
 example_contact_list_get_group_storage (
-    TpBaseContactList *contact_list G_GNUC_UNUSED)
+    TpMutableContactGroupList *contact_list G_GNUC_UNUSED)
 {
   return TP_CONTACT_METADATA_STORAGE_TYPE_ANYONE;
 }
