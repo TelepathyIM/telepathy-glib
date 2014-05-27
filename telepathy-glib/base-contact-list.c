@@ -4121,15 +4121,15 @@ tp_mutable_contact_group_list_set_contact_groups_finish (TpMutableContactGroupLi
 /**
  * tp_mutable_contact_group_list_set_group_members_async:
  * @self: a contact list manager
- * @normalized_group: the normalized name of a group
+ * @group: the normalized name of a group
  * @contacts: the contacts who should be in the group
  * @callback: a callback to call on success, failure or disconnection
  * @user_data: user data for the callback
  *
- * Set the members of @normalized_group to be exactly @contacts (i.e.
+ * Set the members of @group to be exactly @contacts (i.e.
  * add @contacts, and simultaneously remove all members not in @contacts).
  *
- * If @normalized_group does not exist, the implementation should create it,
+ * If @group does not exist, the implementation should create it,
  * even if @contacts is empty.
  *
  * If the #TpBaseContactList subclass does not implement
@@ -4145,7 +4145,7 @@ tp_mutable_contact_group_list_set_contact_groups_finish (TpMutableContactGroupLi
  */
 void
 tp_mutable_contact_group_list_set_group_members_async (TpMutableContactGroupList *self,
-    const gchar *normalized_group,
+    const gchar *group,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -4156,7 +4156,7 @@ tp_mutable_contact_group_list_set_group_members_async (TpMutableContactGroupList
   g_return_if_fail (mutable_groups_iface != NULL);
   g_return_if_fail (mutable_groups_iface->set_group_members_async != NULL);
 
-  mutable_groups_iface->set_group_members_async (self, normalized_group,
+  mutable_groups_iface->set_group_members_async (self, group,
       contacts, callback, user_data);
 }
 

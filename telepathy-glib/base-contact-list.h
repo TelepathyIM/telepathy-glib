@@ -578,7 +578,7 @@ gboolean tp_mutable_contact_group_list_remove_from_group_finish (
 
 void tp_mutable_contact_group_list_set_group_members_async (
     TpMutableContactGroupList *self,
-    const gchar *normalized_group,
+    const gchar *group,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
