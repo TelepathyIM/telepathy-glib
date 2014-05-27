@@ -1027,7 +1027,11 @@ tp_connection_status_changed_cb (TpConnection *self,
 }
 
 static void
-tp_connection_invalidated (TpConnection *self)
+tp_connection_invalidated (TpConnection *self,
+    guint domain,
+    gint code,
+    gchar *message,
+    gpointer user_data)
 {
   if (self->priv->introspection_call != NULL)
     {

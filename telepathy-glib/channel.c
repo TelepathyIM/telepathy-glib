@@ -880,7 +880,7 @@ tp_channel_closed_cb (TpChannel *self,
 static void
 tp_channel_connection_invalidated_cb (TpConnection *conn,
                                       guint domain,
-                                      guint code,
+                                      gint code,
                                       gchar *message,
                                       TpChannel *self)
 {
