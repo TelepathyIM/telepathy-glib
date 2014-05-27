@@ -162,7 +162,7 @@ tp_handle_inspect (TpHandleRepoIface *self,
  * tp_handle_ensure:
  * @self: A handle repository implementation
  * @id: A string whose handle is required
- * @context: User data to be passed to the normalization callback
+ * @context: (nullable): User data to be passed to the normalization callback
  * @error: Used to return an error if 0 is returned
  *
  * Return a handle for the given string, creating one if necessary. The string
