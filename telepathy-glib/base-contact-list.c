@@ -1553,7 +1553,7 @@ tp_base_contact_list_dup_contacts (TpBaseContactList *self)
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_request_subscription_async (TpBaseContactList *self,
+tp_base_contact_list_request_subscription_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     const gchar *message,
     GAsyncReadyCallback callback,
@@ -1565,8 +1565,7 @@ tp_base_contact_list_request_subscription_async (TpBaseContactList *self,
   g_return_if_fail (mutable_iface != NULL);
   g_return_if_fail (mutable_iface->request_subscription_async != NULL);
 
-  mutable_iface->request_subscription_async (TP_MUTABLE_CONTACT_LIST (self),
-      contacts, message, callback, user_data);
+  mutable_iface->request_subscription_async (self, contacts, message, callback, user_data);
 }
 
 /**
@@ -1592,7 +1591,7 @@ tp_base_contact_list_request_subscription_async (TpBaseContactList *self,
  * Since: 0.13.0
  */
 gboolean
-tp_base_contact_list_request_subscription_finish (TpBaseContactList *self,
+tp_base_contact_list_request_subscription_finish (TpMutableContactList *self,
     GAsyncResult *result,
     GError **error)
 {
@@ -1603,8 +1602,7 @@ tp_base_contact_list_request_subscription_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_iface->request_subscription_finish != NULL,
       FALSE);
 
-  return mutable_iface->request_subscription_finish (
-      TP_MUTABLE_CONTACT_LIST (self), result, error);
+  return mutable_iface->request_subscription_finish (self, result, error);
 }
 
 /**
@@ -1671,7 +1669,7 @@ tp_base_contact_list_dup_states (TpBaseContactList *self,
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_authorize_publication_async (TpBaseContactList *self,
+tp_base_contact_list_authorize_publication_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1682,8 +1680,8 @@ tp_base_contact_list_authorize_publication_async (TpBaseContactList *self,
   g_return_if_fail (mutable_iface != NULL);
   g_return_if_fail (mutable_iface->authorize_publication_async != NULL);
 
-  mutable_iface->authorize_publication_async (
-      TP_MUTABLE_CONTACT_LIST (self), contacts, callback, user_data);
+  mutable_iface->authorize_publication_async (self, contacts, callback,
+      user_data);
 }
 
 /**
@@ -1709,7 +1707,7 @@ tp_base_contact_list_authorize_publication_async (TpBaseContactList *self,
  * Since: 0.13.0
  */
 gboolean
-tp_base_contact_list_authorize_publication_finish (TpBaseContactList *self,
+tp_base_contact_list_authorize_publication_finish (TpMutableContactList *self,
     GAsyncResult *result,
     GError **error)
 {
@@ -1720,8 +1718,7 @@ tp_base_contact_list_authorize_publication_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_iface->authorize_publication_finish != NULL,
       FALSE);
 
-  return mutable_iface->authorize_publication_finish (
-      TP_MUTABLE_CONTACT_LIST (self), result, error);
+  return mutable_iface->authorize_publication_finish (self, result, error);
 }
 
 /**
@@ -1751,7 +1748,7 @@ tp_base_contact_list_authorize_publication_finish (TpBaseContactList *self,
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_store_contacts_async (TpBaseContactList *self,
+tp_base_contact_list_store_contacts_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1765,8 +1762,7 @@ tp_base_contact_list_store_contacts_async (TpBaseContactList *self,
     tp_simple_async_report_success_in_idle ((GObject *) self,
         callback, user_data, NULL);
   else
-    mutable_iface->store_contacts_async (
-        TP_MUTABLE_CONTACT_LIST (self), contacts, callback, user_data);
+    mutable_iface->store_contacts_async (self, contacts, callback, user_data);
 }
 
 /**
@@ -1792,7 +1788,7 @@ tp_base_contact_list_store_contacts_async (TpBaseContactList *self,
  * Since: 0.13.0
  */
 gboolean
-tp_base_contact_list_store_contacts_finish (TpBaseContactList *self,
+tp_base_contact_list_store_contacts_finish (TpMutableContactList *self,
     GAsyncResult *result,
     GError **error)
 {
@@ -1802,8 +1798,7 @@ tp_base_contact_list_store_contacts_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_iface != NULL, FALSE);
   g_return_val_if_fail (mutable_iface->store_contacts_finish != NULL, FALSE);
 
-  return mutable_iface->store_contacts_finish (TP_MUTABLE_CONTACT_LIST (self),
-      result, error);
+  return mutable_iface->store_contacts_finish (self, result, error);
 }
 
 /**
@@ -1830,7 +1825,7 @@ tp_base_contact_list_store_contacts_finish (TpBaseContactList *self,
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_remove_contacts_async (TpBaseContactList *self,
+tp_base_contact_list_remove_contacts_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1841,8 +1836,7 @@ tp_base_contact_list_remove_contacts_async (TpBaseContactList *self,
   g_return_if_fail (mutable_iface != NULL);
   g_return_if_fail (mutable_iface->remove_contacts_async != NULL);
 
-  mutable_iface->remove_contacts_async (TP_MUTABLE_CONTACT_LIST (self),
-      contacts, callback, user_data);
+  mutable_iface->remove_contacts_async (self, contacts, callback, user_data);
 }
 
 /**
@@ -1868,7 +1862,7 @@ tp_base_contact_list_remove_contacts_async (TpBaseContactList *self,
  * Since: 0.13.0
  */
 gboolean
-tp_base_contact_list_remove_contacts_finish (TpBaseContactList *self,
+tp_base_contact_list_remove_contacts_finish (TpMutableContactList *self,
     GAsyncResult *result,
     GError **error)
 {
@@ -1878,8 +1872,7 @@ tp_base_contact_list_remove_contacts_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_iface != NULL, FALSE);
   g_return_val_if_fail (mutable_iface->remove_contacts_finish != NULL, FALSE);
 
-  return mutable_iface->remove_contacts_finish (TP_MUTABLE_CONTACT_LIST (self),
-      result, error);
+  return mutable_iface->remove_contacts_finish (self, result, error);
 }
 
 /**
@@ -1904,7 +1897,7 @@ tp_base_contact_list_remove_contacts_finish (TpBaseContactList *self,
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_unsubscribe_async (TpBaseContactList *self,
+tp_base_contact_list_unsubscribe_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1915,8 +1908,7 @@ tp_base_contact_list_unsubscribe_async (TpBaseContactList *self,
   g_return_if_fail (mutable_iface != NULL);
   g_return_if_fail (mutable_iface->unsubscribe_async != NULL);
 
-  mutable_iface->unsubscribe_async (TP_MUTABLE_CONTACT_LIST (self),
-      contacts, callback, user_data);
+  mutable_iface->unsubscribe_async (self, contacts, callback, user_data);
 }
 
 /**
@@ -1942,7 +1934,7 @@ tp_base_contact_list_unsubscribe_async (TpBaseContactList *self,
  * Since: 0.13.0
  */
 gboolean
-tp_base_contact_list_unsubscribe_finish (TpBaseContactList *self,
+tp_base_contact_list_unsubscribe_finish (TpMutableContactList *self,
     GAsyncResult *result,
     GError **error)
 {
@@ -1952,8 +1944,7 @@ tp_base_contact_list_unsubscribe_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_iface != NULL, FALSE);
   g_return_val_if_fail (mutable_iface->unsubscribe_finish != NULL, FALSE);
 
-  return mutable_iface->unsubscribe_finish (TP_MUTABLE_CONTACT_LIST (self),
-      result, error);
+  return mutable_iface->unsubscribe_finish (self, result, error);
 }
 
 /**
@@ -1978,7 +1969,7 @@ tp_base_contact_list_unsubscribe_finish (TpBaseContactList *self,
  * Since: 0.13.0
  */
 void
-tp_base_contact_list_unpublish_async (TpBaseContactList *self,
+tp_base_contact_list_unpublish_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1989,8 +1980,7 @@ tp_base_contact_list_unpublish_async (TpBaseContactList *self,
   g_return_if_fail (mutable_iface != NULL);
   g_return_if_fail (mutable_iface->unpublish_async != NULL);
 
-  mutable_iface->unpublish_async (
-      TP_MUTABLE_CONTACT_LIST (self), contacts, callback, user_data);
+  mutable_iface->unpublish_async (self, contacts, callback, user_data);
 }
 
 /**
@@ -2016,7 +2006,7 @@ tp_base_contact_list_unpublish_async (TpBaseContactList *self,
  * Since: 0.13.0
  */
 gboolean
-tp_base_contact_list_unpublish_finish (TpBaseContactList *self,
+tp_base_contact_list_unpublish_finish (TpMutableContactList *self,
     GAsyncResult *result,
     GError **error)
 {
@@ -2026,8 +2016,7 @@ tp_base_contact_list_unpublish_finish (TpBaseContactList *self,
   g_return_val_if_fail (mutable_iface != NULL, FALSE);
   g_return_val_if_fail (mutable_iface->unpublish_finish != NULL, FALSE);
 
-  return mutable_iface->unpublish_finish (TP_MUTABLE_CONTACT_LIST (self),
-      result, error);
+  return mutable_iface->unpublish_finish (self, result, error);
 }
 
 /**
@@ -4291,7 +4280,7 @@ tp_base_contact_list_mixin_request_subscription_cb (GObject *source,
     GAsyncResult *result,
     gpointer context)
 {
-  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  TpMutableContactList *self = TP_MUTABLE_CONTACT_LIST (source);
   GError *error = NULL;
 
   tp_base_contact_list_request_subscription_finish (self, result, &error);
@@ -4319,7 +4308,8 @@ tp_base_contact_list_mixin_request_subscription (
 
   contacts_set = tp_handle_set_new_from_variant (self->priv->contact_repo,
       contacts_variant);
-  tp_base_contact_list_request_subscription_async (self, contacts_set, message,
+  tp_base_contact_list_request_subscription_async (
+      TP_MUTABLE_CONTACT_LIST (self), contacts_set, message,
       tp_base_contact_list_mixin_request_subscription_cb, context);
   tp_handle_set_destroy (contacts_set);
 
@@ -4332,7 +4322,7 @@ tp_base_contact_list_mixin_authorize_publication_cb (GObject *source,
     GAsyncResult *result,
     gpointer context)
 {
-  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  TpMutableContactList *self = TP_MUTABLE_CONTACT_LIST (source);
   GError *error = NULL;
 
   tp_base_contact_list_authorize_publication_finish (self, result, &error);
@@ -4359,7 +4349,8 @@ tp_base_contact_list_mixin_authorize_publication (
 
   contacts_set = tp_handle_set_new_from_variant (self->priv->contact_repo,
       contacts_variant);
-  tp_base_contact_list_authorize_publication_async (self, contacts_set,
+  tp_base_contact_list_authorize_publication_async (
+      TP_MUTABLE_CONTACT_LIST (self), contacts_set,
       tp_base_contact_list_mixin_authorize_publication_cb, context);
   tp_handle_set_destroy (contacts_set);
 
@@ -4372,7 +4363,7 @@ tp_base_contact_list_mixin_remove_contacts_cb (GObject *source,
     GAsyncResult *result,
     gpointer context)
 {
-  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  TpMutableContactList *self = TP_MUTABLE_CONTACT_LIST (source);
   GError *error = NULL;
 
   tp_base_contact_list_remove_contacts_finish (self, result, &error);
@@ -4399,7 +4390,8 @@ tp_base_contact_list_mixin_remove_contacts (
 
   contacts_set = tp_handle_set_new_from_variant (self->priv->contact_repo,
       contacts_variant);
-  tp_base_contact_list_remove_contacts_async (self, contacts_set,
+  tp_base_contact_list_remove_contacts_async (
+      TP_MUTABLE_CONTACT_LIST (self), contacts_set,
       tp_base_contact_list_mixin_remove_contacts_cb, context);
   tp_handle_set_destroy (contacts_set);
 
@@ -4412,7 +4404,7 @@ tp_base_contact_list_mixin_unsubscribe_cb (GObject *source,
     GAsyncResult *result,
     gpointer context)
 {
-  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  TpMutableContactList *self = TP_MUTABLE_CONTACT_LIST (source);
   GError *error = NULL;
 
   tp_base_contact_list_unsubscribe_finish (self, result, &error);
@@ -4439,8 +4431,8 @@ tp_base_contact_list_mixin_unsubscribe (
 
   contacts_set = tp_handle_set_new_from_variant (self->priv->contact_repo,
       contacts_variant);
-  tp_base_contact_list_unsubscribe_async (self, contacts_set,
-      tp_base_contact_list_mixin_unsubscribe_cb, context);
+  tp_base_contact_list_unsubscribe_async (TP_MUTABLE_CONTACT_LIST (self),
+      contacts_set, tp_base_contact_list_mixin_unsubscribe_cb, context);
   tp_handle_set_destroy (contacts_set);
 
 out:
@@ -4452,7 +4444,7 @@ tp_base_contact_list_mixin_unpublish_cb (GObject *source,
     GAsyncResult *result,
     gpointer context)
 {
-  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  TpMutableContactList *self = TP_MUTABLE_CONTACT_LIST (source);
   GError *error = NULL;
 
   tp_base_contact_list_unpublish_finish (self, result, &error);
@@ -4479,8 +4471,8 @@ tp_base_contact_list_mixin_unpublish (
 
   contacts_set = tp_handle_set_new_from_variant (self->priv->contact_repo,
       contacts_variant);
-  tp_base_contact_list_unpublish_async (self, contacts_set,
-      tp_base_contact_list_mixin_unpublish_cb, context);
+  tp_base_contact_list_unpublish_async (TP_MUTABLE_CONTACT_LIST (self),
+      contacts_set, tp_base_contact_list_mixin_unpublish_cb, context);
   tp_handle_set_destroy (contacts_set);
 
 out:
