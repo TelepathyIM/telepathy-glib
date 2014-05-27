@@ -235,63 +235,64 @@ gboolean tp_base_contact_list_can_change_contact_list (
 gboolean tp_base_contact_list_get_request_uses_message (
     TpBaseContactList *self);
 
-void tp_base_contact_list_request_subscription_async (
+void tp_mutable_contact_list_request_subscription_async (
     TpMutableContactList *self,
     TpHandleSet *contacts,
     const gchar *message,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_request_subscription_finish (
+gboolean tp_mutable_contact_list_request_subscription_finish (
     TpMutableContactList *self,
     GAsyncResult *result,
     GError **error);
 
-void tp_base_contact_list_authorize_publication_async (
+void tp_mutable_contact_list_authorize_publication_async (
     TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_authorize_publication_finish (
+gboolean tp_mutable_contact_list_authorize_publication_finish (
     TpMutableContactList *self,
     GAsyncResult *result,
     GError **error);
 
-void tp_base_contact_list_store_contacts_async (TpMutableContactList *self,
+void tp_mutable_contact_list_store_contacts_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_store_contacts_finish (TpMutableContactList *self,
-    GAsyncResult *result,
-    GError **error);
-
-void tp_base_contact_list_remove_contacts_async (TpMutableContactList *self,
-    TpHandleSet *contacts,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-
-gboolean tp_base_contact_list_remove_contacts_finish (
+gboolean tp_mutable_contact_list_store_contacts_finish (
     TpMutableContactList *self,
     GAsyncResult *result,
     GError **error);
 
-void tp_base_contact_list_unsubscribe_async (TpMutableContactList *self,
+void tp_mutable_contact_list_remove_contacts_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_unsubscribe_finish (TpMutableContactList *self,
+gboolean tp_mutable_contact_list_remove_contacts_finish (
+    TpMutableContactList *self,
     GAsyncResult *result,
     GError **error);
 
-void tp_base_contact_list_unpublish_async (TpMutableContactList *self,
+void tp_mutable_contact_list_unsubscribe_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_unpublish_finish (TpMutableContactList *self,
+gboolean tp_mutable_contact_list_unsubscribe_finish (TpMutableContactList *self,
+    GAsyncResult *result,
+    GError **error);
+
+void tp_mutable_contact_list_unpublish_async (TpMutableContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_mutable_contact_list_unpublish_finish (TpMutableContactList *self,
     GAsyncResult *result,
     GError **error);
 
