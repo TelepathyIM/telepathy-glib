@@ -752,9 +752,9 @@ tp_weak_ref_destroy (TpWeakRef *self)
 
 /**
  * tp_simple_async_report_success_in_idle:
- * @source: (allow-none): the source object
+ * @source: (nullable): the source object
  * @callback: (scope async): the callback
- * @user_data: (closure): user data for @callback
+ * @user_data: (nullable) (closure): user data for @callback
  * @source_tag: (nullable): the source tag for the #GSimpleAsyncResult
  *
  * Create a new #GSimpleAsyncResult with no operation result, and call
