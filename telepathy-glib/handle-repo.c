@@ -121,6 +121,8 @@ tp_handles_are_valid_variant (TpHandleRepoIface *self,
   GArray *arr;
   gboolean result;
 
+  g_return_val_if_fail (TP_IS_HANDLE_REPO_IFACE (self), FALSE);
+  g_return_val_if_fail (handles != NULL, FALSE);
   g_return_val_if_fail (g_variant_is_of_type (handles, G_VARIANT_TYPE ("au")),
       FALSE);
 
