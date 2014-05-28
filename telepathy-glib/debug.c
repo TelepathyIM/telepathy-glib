@@ -146,8 +146,8 @@ static DebugKeyToDomain key_to_domain[] = {
 
 /**
  * tp_debug_set_flags:
- * @flags_string: The flags to set, comma-separated. If %NULL or empty,
- *  no additional flags are set.
+ * @flags_string: (nullable): The flags to set, comma-separated. If %NULL or
+ * empty, no additional flags are set.
  *
  * Set the debug flags indicated by @flags_string, in addition to any already
  * set.
@@ -345,7 +345,7 @@ tp_debug_divert_messages (const gchar *filename)
  * @log_domain: the message's log domain
  * @log_level: the log level of the message
  * @message: the message to process
- * @ignored: not used
+ * @ignored: (nullable): not used
  *
  * A #GLogFunc that prepends the UTC time (currently in ISO 8601 format,
  * with microsecond resolution) to the message, then calls
