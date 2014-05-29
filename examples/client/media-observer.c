@@ -51,7 +51,9 @@ observe_channel_cb (TpSimpleObserver *self,
       requested? "to": "from",
       tp_channel_get_identifier (channel));
 
-  g_signal_connect (g_object_ref (channel), "invalidated",
+  g_object_ref (channel);
+
+  g_signal_connect (channel, "invalidated",
       G_CALLBACK (chan_invalidated_cb), NULL);
 
   tp_observe_channel_context_accept (context);
