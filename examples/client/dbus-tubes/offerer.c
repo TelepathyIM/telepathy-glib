@@ -56,7 +56,7 @@ handle_method_call (
     }
   else /* hooray! */
     {
-      guint x, y;
+      gint x, y;
       gboolean ret;
 
       g_variant_get (parameters, "(ii)", &x, &y);
