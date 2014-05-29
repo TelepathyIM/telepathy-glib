@@ -154,9 +154,9 @@ test_get_times_notified (Test *test,
 }
 
 static void
-test_notify_cb (Test *test,
+test_notify_cb (TpAccount *account,
     GParamSpec *pspec,
-    TpAccount *account)
+    Test *test)
 {
   guint counter = test_get_times_notified (test, pspec->name);
 
@@ -176,7 +176,7 @@ test_set_up_account_notify (Test *test)
       g_signal_handler_disconnect (test->account, test->notify_id);
     }
 
-  test->notify_id = g_signal_connect_swapped (test->account, "notify",
+  test->notify_id = g_signal_connect (test->account, "notify",
       G_CALLBACK (test_notify_cb), test);
 }
 
