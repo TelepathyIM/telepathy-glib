@@ -210,13 +210,26 @@ check_invalidated_unknown_error_cb (TpProxy *proxy,
 }
 
 static void
+quit_cb (TpChannel *chan_,
+    GPtrArray *added,
+    GPtrArray *removed,
+    GPtrArray *local_pending,
+    GPtrArray *remote_pending,
+    TpContact *actor,
+    GVariant *details,
+    GMainLoop *loop)
+{
+  g_main_loop_quit (loop);
+}
+
+static void
 run_until_members_changed (TpChannel *channel)
 {
   GMainLoop *loop = g_main_loop_new (NULL, FALSE);
   gulong id;
 
-  id = g_signal_connect_swapped (channel, "group-members-changed",
-      G_CALLBACK (g_main_loop_quit), loop);
+  id = g_signal_connect (channel, "group-members-changed",
+      G_CALLBACK (quit_cb), loop);
 
   g_main_loop_run (loop);
 
