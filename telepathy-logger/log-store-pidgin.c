@@ -500,16 +500,15 @@ log_store_pidgin_dup_account (TplLogStorePidgin *self,
     {
       TpAccount *acc = (TpAccount *) l->data;
       GVariant *params;
-      const gchar *account_param, *server_param;
+      const gchar *account_param = NULL, *server_param = NULL;
 
       if (tp_strdiff (tp_account_get_protocol_name (acc), protocol))
         continue;
 
       params = tp_account_dup_parameters (acc);
 
-      g_variant_lookup (params,
-          "account", "&s", &account_param,
-          "server", "&s", &server_param);
+      g_variant_lookup (params, "account", "&s", &account_param);
+      g_variant_lookup (params, "server", "&s", &server_param);
 
       if (!tp_strdiff (username, account_param))
         {

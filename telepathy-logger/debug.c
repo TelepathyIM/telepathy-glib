@@ -41,6 +41,18 @@ static GDebugKey keys[] = {
   { 0, },
 };
 
+/**
+ * tpl_debug_set_flags:
+ * @flags_string: (nullable): The flags to set, comma-separated.
+ * If %NULL or empty, no additional flags are set.
+ *
+ * Set the debug flags indicated by flags_string, in addition to any
+ * already set.
+ *
+ * The parsing matches that of g_parse_debug_string().
+ *
+ * Since: UNRELEASED
+ */
 void
 tpl_debug_set_flags (const gchar *flags_string)
 {

@@ -395,8 +395,9 @@ tp_account_init (TpAccount *self)
 static void
 _tp_account_invalidated_cb (TpAccount *self,
     guint domain,
-    guint code,
-    gchar *message)
+    gint code,
+    gchar *message,
+    gpointer user_data)
 {
   TpAccountPrivate *priv = self->priv;
 

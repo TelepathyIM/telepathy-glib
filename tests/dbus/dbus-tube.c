@@ -265,7 +265,7 @@ handle_double_call (GDBusConnection       *connection,
 {
   if (!tp_strdiff (method_name, "Double"))
     {
-      guint value;
+      gint value;
 
       g_variant_get (parameters, "(i)", &value);
 

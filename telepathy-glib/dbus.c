@@ -527,6 +527,7 @@ tp_dbus_connection_request_name (GDBusConnection *dbus_connection,
   guint32 result;
 
   g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus_connection), FALSE);
+  g_return_val_if_fail (well_known_name != NULL, FALSE);
   g_return_val_if_fail (tp_dbus_check_valid_bus_name (well_known_name,
         TP_DBUS_NAME_TYPE_WELL_KNOWN, error), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -609,6 +610,7 @@ tp_dbus_connection_release_name (GDBusConnection *dbus_connection,
   GVariant *tuple;
 
   g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus_connection), FALSE);
+  g_return_val_if_fail (well_known_name != NULL, FALSE);
   g_return_val_if_fail (tp_dbus_check_valid_bus_name (well_known_name,
         TP_DBUS_NAME_TYPE_WELL_KNOWN, error), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -777,6 +779,10 @@ tp_dbus_connection_register_object (GDBusConnection *dbus_connection,
 {
   GError *error = NULL;
 
+  g_return_if_fail (G_IS_DBUS_CONNECTION (dbus_connection));
+  g_return_if_fail (object_path != NULL);
+  g_return_if_fail (object != NULL);
+
   if (!tp_dbus_connection_try_register_object (dbus_connection, object_path,
           object, &error))
     {
@@ -909,6 +915,7 @@ tp_dbus_connection_try_register_object (GDBusConnection *dbus_connection,
   gpointer iface_name_p;
 
   g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus_connection), FALSE);
+  g_return_val_if_fail (object_path != NULL, FALSE);
   g_return_val_if_fail (tp_dbus_check_valid_object_path (object_path, error),
       FALSE);
   g_return_val_if_fail (G_IS_OBJECT (object), FALSE);

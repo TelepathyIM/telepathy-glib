@@ -121,6 +121,8 @@ tp_handles_are_valid_variant (TpHandleRepoIface *self,
   GArray *arr;
   gboolean result;
 
+  g_return_val_if_fail (TP_IS_HANDLE_REPO_IFACE (self), FALSE);
+  g_return_val_if_fail (handles != NULL, FALSE);
   g_return_val_if_fail (g_variant_is_of_type (handles, G_VARIANT_TYPE ("au")),
       FALSE);
 
@@ -162,7 +164,7 @@ tp_handle_inspect (TpHandleRepoIface *self,
  * tp_handle_ensure:
  * @self: A handle repository implementation
  * @id: A string whose handle is required
- * @context: User data to be passed to the normalization callback
+ * @context: (nullable): User data to be passed to the normalization callback
  * @error: Used to return an error if 0 is returned
  *
  * Return a handle for the given string, creating one if necessary. The string
@@ -178,6 +180,9 @@ tp_handle_ensure (TpHandleRepoIface *self,
                   gpointer context,
                   GError **error)
 {
+  g_return_val_if_fail (TP_IS_HANDLE_REPO_IFACE (self), 0);
+  g_return_val_if_fail (id != NULL, 0);
+
   return TP_HANDLE_REPO_IFACE_GET_CLASS (self)->ensure_handle (self,
       id, context, error);
 }
