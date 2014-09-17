@@ -166,20 +166,36 @@ struct _TpBaseContactListClass {
   (G_TYPE_INSTANCE_GET_INTERFACE ((obj), \
   TP_TYPE_MUTABLE_CONTACT_LIST, TpMutableContactListInterface))
 
-typedef struct _TpMutableContactListInterface TpMutableContactListInterface;
+#define TP_MUTABLE_CONTACT_LIST(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_MUTABLE_CONTACT_LIST, \
+  TpMutableContactList))
 
-typedef void (*TpBaseContactListRequestSubscriptionFunc) (
-    TpBaseContactList *self,
+typedef struct _TpMutableContactListInterface TpMutableContactListInterface;
+typedef struct _TpMutableContactList TpMutableContactList;
+
+typedef void (*TpMutableContactListRequestSubscriptionFunc) (
+    TpMutableContactList *self,
     TpHandleSet *contacts,
     const gchar *message,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-typedef void (*TpBaseContactListActOnContactsFunc) (
-    TpBaseContactList *self,
+typedef void (*TpMutableContactListActOnContactsFunc) (
+    TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
+
+typedef gboolean (*TpMutableContactListAsyncFinishFunc) (
+    TpMutableContactList *self,
+    GAsyncResult *result,
+    GError **error);
+
+typedef gboolean (*TpMutableContactListBooleanFunc) (
+    TpMutableContactList *self);
+
+gboolean tp_mutable_contact_list_true_func (TpMutableContactList *self);
+gboolean tp_mutable_contact_list_false_func (TpMutableContactList *self);
 
 struct _TpMutableContactListInterface {
     GTypeInterface parent;
@@ -187,28 +203,28 @@ struct _TpMutableContactListInterface {
     /* _async mandatory-to-implement, _finish has a default implementation
      * suitable for a GSimpleAsyncResult */
 
-    TpBaseContactListRequestSubscriptionFunc request_subscription_async;
-    TpBaseContactListAsyncFinishFunc request_subscription_finish;
+    TpMutableContactListRequestSubscriptionFunc request_subscription_async;
+    TpMutableContactListAsyncFinishFunc request_subscription_finish;
 
-    TpBaseContactListActOnContactsFunc authorize_publication_async;
-    TpBaseContactListAsyncFinishFunc authorize_publication_finish;
+    TpMutableContactListActOnContactsFunc authorize_publication_async;
+    TpMutableContactListAsyncFinishFunc authorize_publication_finish;
 
-    TpBaseContactListActOnContactsFunc remove_contacts_async;
-    TpBaseContactListAsyncFinishFunc remove_contacts_finish;
+    TpMutableContactListActOnContactsFunc remove_contacts_async;
+    TpMutableContactListAsyncFinishFunc remove_contacts_finish;
 
-    TpBaseContactListActOnContactsFunc unsubscribe_async;
-    TpBaseContactListAsyncFinishFunc unsubscribe_finish;
+    TpMutableContactListActOnContactsFunc unsubscribe_async;
+    TpMutableContactListAsyncFinishFunc unsubscribe_finish;
 
-    TpBaseContactListActOnContactsFunc unpublish_async;
-    TpBaseContactListAsyncFinishFunc unpublish_finish;
+    TpMutableContactListActOnContactsFunc unpublish_async;
+    TpMutableContactListAsyncFinishFunc unpublish_finish;
 
     /* optional-to-implement */
 
-    TpBaseContactListActOnContactsFunc store_contacts_async;
-    TpBaseContactListAsyncFinishFunc store_contacts_finish;
+    TpMutableContactListActOnContactsFunc store_contacts_async;
+    TpMutableContactListAsyncFinishFunc store_contacts_finish;
 
-    TpBaseContactListBooleanFunc can_change_contact_list;
-    TpBaseContactListBooleanFunc get_request_uses_message;
+    TpMutableContactListBooleanFunc can_change_contact_list;
+    TpMutableContactListBooleanFunc get_request_uses_message;
 };
 
 GType tp_mutable_contact_list_get_type (void) G_GNUC_CONST;
@@ -219,60 +235,64 @@ gboolean tp_base_contact_list_can_change_contact_list (
 gboolean tp_base_contact_list_get_request_uses_message (
     TpBaseContactList *self);
 
-void tp_base_contact_list_request_subscription_async (TpBaseContactList *self,
+void tp_mutable_contact_list_request_subscription_async (
+    TpMutableContactList *self,
     TpHandleSet *contacts,
     const gchar *message,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_request_subscription_finish (
-    TpBaseContactList *self,
+gboolean tp_mutable_contact_list_request_subscription_finish (
+    TpMutableContactList *self,
     GAsyncResult *result,
     GError **error);
 
-void tp_base_contact_list_authorize_publication_async (TpBaseContactList *self,
+void tp_mutable_contact_list_authorize_publication_async (
+    TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_authorize_publication_finish (
-    TpBaseContactList *self,
+gboolean tp_mutable_contact_list_authorize_publication_finish (
+    TpMutableContactList *self,
     GAsyncResult *result,
     GError **error);
 
-void tp_base_contact_list_store_contacts_async (TpBaseContactList *self,
+void tp_mutable_contact_list_store_contacts_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_store_contacts_finish (TpBaseContactList *self,
+gboolean tp_mutable_contact_list_store_contacts_finish (
+    TpMutableContactList *self,
     GAsyncResult *result,
     GError **error);
 
-void tp_base_contact_list_remove_contacts_async (TpBaseContactList *self,
+void tp_mutable_contact_list_remove_contacts_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_remove_contacts_finish (TpBaseContactList *self,
+gboolean tp_mutable_contact_list_remove_contacts_finish (
+    TpMutableContactList *self,
     GAsyncResult *result,
     GError **error);
 
-void tp_base_contact_list_unsubscribe_async (TpBaseContactList *self,
+void tp_mutable_contact_list_unsubscribe_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_unsubscribe_finish (TpBaseContactList *self,
+gboolean tp_mutable_contact_list_unsubscribe_finish (TpMutableContactList *self,
     GAsyncResult *result,
     GError **error);
 
-void tp_base_contact_list_unpublish_async (TpBaseContactList *self,
+void tp_mutable_contact_list_unpublish_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_unpublish_finish (TpBaseContactList *self,
+gboolean tp_mutable_contact_list_unpublish_finish (TpMutableContactList *self,
     GAsyncResult *result,
     GError **error);
 
@@ -498,8 +518,8 @@ typedef gboolean (*TpMutableContactGroupListAsyncFinishFunc) (
     GAsyncResult *result,
     GError **error);
 
-typedef guint (*TpBaseContactListUIntFunc) (
-    TpBaseContactList *self);
+typedef guint (*TpMutableContactGroupListUIntFunc) (
+    TpMutableContactGroupList *self);
 
 TpContactMetadataStorageType tp_base_contact_list_get_group_storage (
     TpBaseContactList *self);
@@ -512,15 +532,16 @@ typedef void (*TpMutableContactGroupListSetContactGroupsFunc) (
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-void tp_base_contact_list_set_contact_groups_async (TpBaseContactList *self,
+void tp_mutable_contact_group_list_set_contact_groups_async (
+    TpMutableContactGroupList *self,
     TpHandle contact,
     const gchar * const *normalized_names,
     gsize n_names,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_set_contact_groups_finish (
-    TpBaseContactList *self,
+gboolean tp_mutable_contact_group_list_set_contact_groups_finish (
+    TpMutableContactGroupList *self,
     GAsyncResult *result,
     GError **error);
 
@@ -531,36 +552,39 @@ typedef void (*TpMutableContactGroupListGroupContactsFunc) (
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-void tp_base_contact_list_add_to_group_async (TpBaseContactList *self,
+void tp_mutable_contact_group_list_add_to_group_async (
+    TpMutableContactGroupList *self,
     const gchar *group,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_add_to_group_finish (
-    TpBaseContactList *self,
+gboolean tp_mutable_contact_group_list_add_to_group_finish (
+    TpMutableContactGroupList *self,
     GAsyncResult *result,
     GError **error);
 
-void tp_base_contact_list_remove_from_group_async (TpBaseContactList *self,
+void tp_mutable_contact_group_list_remove_from_group_async (
+    TpMutableContactGroupList *self,
     const gchar *group,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_remove_from_group_finish (
-    TpBaseContactList *self,
+gboolean tp_mutable_contact_group_list_remove_from_group_finish (
+    TpMutableContactGroupList *self,
     GAsyncResult *result,
     GError **error);
 
-void tp_base_contact_list_set_group_members_async (TpBaseContactList *self,
-    const gchar *normalized_group,
+void tp_mutable_contact_group_list_set_group_members_async (
+    TpMutableContactGroupList *self,
+    const gchar *group,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_set_group_members_finish (
-    TpBaseContactList *self,
+gboolean tp_mutable_contact_group_list_set_group_members_finish (
+    TpMutableContactGroupList *self,
     GAsyncResult *result,
     GError **error);
 
@@ -570,12 +594,14 @@ typedef void (*TpMutableContactGroupListRemoveGroupFunc) (
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-void tp_base_contact_list_remove_group_async (TpBaseContactList *self,
+void tp_mutable_contact_group_list_remove_group_async (
+    TpMutableContactGroupList *self,
     const gchar *group,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_remove_group_finish (TpBaseContactList *self,
+gboolean tp_mutable_contact_group_list_remove_group_finish (
+    TpMutableContactGroupList *self,
     GAsyncResult *result,
     GError **error);
 
@@ -586,13 +612,15 @@ typedef void (*TpMutableContactGroupListRenameGroupFunc) (
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-void tp_base_contact_list_rename_group_async (TpBaseContactList *self,
+void tp_mutable_contact_group_list_rename_group_async (
+    TpMutableContactGroupList *self,
     const gchar *old_name,
     const gchar *new_name,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_base_contact_list_rename_group_finish (TpBaseContactList *self,
+gboolean tp_mutable_contact_group_list_rename_group_finish (
+    TpMutableContactGroupList *self,
     GAsyncResult *result,
     GError **error);
 
@@ -640,7 +668,7 @@ struct _TpMutableContactGroupListInterface {
 
     TpMutableContactGroupListRenameGroupFunc rename_group_async;
     TpMutableContactGroupListAsyncFinishFunc rename_group_finish;
-    TpBaseContactListUIntFunc get_group_storage;
+    TpMutableContactGroupListUIntFunc get_group_storage;
 };
 
 _TP_AVAILABLE_IN_1_0

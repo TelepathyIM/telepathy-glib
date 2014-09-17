@@ -422,7 +422,7 @@ contact_list_remove_group_async (TpMutableContactGroupList *base,
 }
 
 static void
-contact_list_request_subscription_async (TpBaseContactList *self,
+contact_list_request_subscription_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     const gchar *message,
     GAsyncReadyCallback callback,
@@ -446,7 +446,7 @@ contact_list_request_subscription_async (TpBaseContactList *self,
 }
 
 static void
-contact_list_authorize_publication_async (TpBaseContactList *self,
+contact_list_authorize_publication_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -467,7 +467,7 @@ contact_list_authorize_publication_async (TpBaseContactList *self,
 }
 
 static void
-contact_list_remove_contacts_async (TpBaseContactList *self,
+contact_list_remove_contacts_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -488,7 +488,7 @@ contact_list_remove_contacts_async (TpBaseContactList *self,
 }
 
 static void
-contact_list_unsubscribe_async (TpBaseContactList *self,
+contact_list_unsubscribe_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -508,7 +508,7 @@ contact_list_unsubscribe_async (TpBaseContactList *self,
 }
 
 static void
-contact_list_unpublish_async (TpBaseContactList *self,
+contact_list_unpublish_async (TpMutableContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
     gpointer user_data)
