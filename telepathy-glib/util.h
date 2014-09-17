@@ -30,9 +30,10 @@
 #include <gio/gio.h>
 
 #include <telepathy-glib/defs.h>
-#include <telepathy-glib/verify.h>
 
-#define tp_verify_statement(R) ((void) tp_verify_true (R))
+#define tp_verify_statement(R)  ((void) G_STATIC_ASSERT_EXPR (R))
+#define tp_verify_true(R)       (((void) G_STATIC_ASSERT_EXPR (R)), 1)
+#define tp_verify(R)            G_STATIC_ASSERT (R)
 
 G_BEGIN_DECLS
 
