@@ -85,16 +85,18 @@ handle_channel_cb (TpSimpleHandler *self,
     TpHandleChannelContext *context,
     gpointer user_data)
 {
+  TpTextChannel *text_chan = TP_TEXT_CHANNEL (channel);
+
   g_print ("Handling text channel with %s\n",
       tp_channel_get_identifier (channel));
 
-  g_signal_connect (channel, "message-received",
+  g_signal_connect (text_chan, "message-received",
       G_CALLBACK (message_received_cb), NULL);
 
   /* The default TpAutomaticClientFactory used by
    * tp_account_manager_dup() has already prepared
    * TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, if possible. */
-  display_pending_messages (TP_TEXT_CHANNEL (channel));
+  display_pending_messages (text_chan);
 
   tp_handle_channel_context_accept (context);
 }
