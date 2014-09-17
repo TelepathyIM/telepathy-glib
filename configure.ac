@@ -87,7 +87,7 @@ PKG_PROG_PKG_CONFIG([0.21])
 
 GTK_DOC_CHECK([1.17],[--flavour no-tmpl])
 
-GOBJECT_INTROSPECTION_CHECK([1.30])
+GOBJECT_INTROSPECTION_CHECK([1.41])
 
 TP_MAJOR_VERSION=tp_glib_major_version
 TP_MINOR_VERSION=tp_glib_minor_version
