@@ -273,9 +273,6 @@ test_change_inconveniently (Fixture *f,
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
   guint filter_id;
 
-  g_test_skip ("race condition, https://bugs.freedesktop.org/show_bug.cgi?id=78593");
-  return;
-
   /* This test exercises what happens if the self-contact changes
    * between obtaining its handle for the first time and having the
    * TpContact fully prepared. In Telepathy 1.0, that can only happen
