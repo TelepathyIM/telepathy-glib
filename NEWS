@@ -1,7 +1,11 @@
-telepathy-glib 0.24.1 (UNRELEASED)
+telepathy-glib 0.24.1 (2014-08-25)
 ==================================
 
-...
+Fixes:
+
+• base-client: fix potential uninitialized variable bug (Guillaume)
+• Fix a potential crash in contact-list example (fd.o #79006, Guillaume)
+
 
 telepathy-glib 0.24.0 (2014-03-26)
 ==================================
