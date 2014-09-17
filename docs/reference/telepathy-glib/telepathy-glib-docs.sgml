@@ -9,7 +9,7 @@
     <releaseinfo>
       This manual documents telepathy-glib version &tpglibversion;.
       The latest development version of this documentation can be found here:
-      <ulink role="online-location" url="http://telepathy.freedesktop.org/doc/telepathy-glib/">online copy of the telepathy-glib API Reference Manual</ulink>.
+      <ulink role="online-location" url="http://telepathy.freedesktop.org/doc/telepathy-glib-1/">online copy of the telepathy-glib API Reference Manual</ulink>.
     </releaseinfo>
   </bookinfo>
 
