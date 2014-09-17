@@ -1085,7 +1085,6 @@ tp_base_client_init (TpBaseClient *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_BASE_CLIENT,
       TpBaseClientPrivate);
 
-  /* wild guess: most clients won't need more than one of each filter */
   self->priv->observer_filters = g_variant_builder_new (
       G_VARIANT_TYPE ("aa{sv}"));
   self->priv->approver_filters = g_ptr_array_new_with_free_func (
