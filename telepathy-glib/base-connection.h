@@ -205,7 +205,7 @@ const gchar *tp_base_connection_get_account_path_suffix (
     TpBaseConnection *self);
 
 GVariant *tp_base_connection_dup_contact_attributes (TpBaseConnection *self,
-    const GArray *handles,
+    TpHandleSet *handles,
     const gchar * const *interfaces,
     const gchar * const *assumed_interfaces);
 
