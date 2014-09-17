@@ -1,10 +1,168 @@
-telepathy-glib 0.23.0 (UNRELEASED)
+telepathy-glib 0.24.1 (2014-08-25)
 ==================================
 
 Fixes:
 
+• base-client: fix potential uninitialized variable bug (Guillaume)
+• Fix a potential crash in contact-list example (fd.o #79006, Guillaume)
+
+
+telepathy-glib 0.24.0 (2014-03-26)
+==================================
+
+The “space Tolkien” release.
+
+Fixes since 0.23.3:
+
+• don't leak every D-Bus method call result, a regression in 0.23.1 (Simon)
+
+telepathy-glib 0.23.3 (2014-03-18)
+==================================
+
+This is the release candidate for the future 0.24.0 stable release.
+
+Enhancements:
+
+• TpProtocol gained API to access to its immutable properties as a
+  GVariant. (fd.o #55108, Guillaume)
+
+• TpCallStream and TpCallContent now inherit the factory from their
+  TpCallChannel. (fd.o #76168, Guillaume)
+
+Fixes:
+
+• fix a memory leak when cleaning up TpProxy "prepare" requests
+  (fd.o #76000, Simon)
+
+• fix a memory leak for paths to contacts' avatar data (fd.o #76000, Simon)
+
+• fix crashes in TpFileTransferChannel with GLib 2.39 (fd.o #72319, Xavier)
+
+• fix some paths memory leaks (fd.o #76119, Guillaume)
+
+• tp_list_connection_managers_async() now terminates properly if there is no
+  CM installed. (fd.o #68892, Guillaume)
+
+telepathy-glib 0.23.2 (2014-02-26)
+==================================
+
+Enhancements:
+
+• TpBaseConnection now has an "account-path-suffix" property
+  (fd.o #74030, Xavier)
+
+• New high level TpAccountChannelRequest API, including tubes, Conference and
+  SMSChannel. (fd.o #75450, Guillaume)
+
+• 'TargetHandleType: None' is now automatically added when requesting a
+  channel with TpAccountChannelRequest if no handle type has been defined.
+  (fd.o #75450, Guillaume)
+
+telepathy-glib 0.23.1 (2014-02-04)
+==================================
+
+The “undead space elves” release.
+
+Dependencies:
+
+• GLib 2.36 or later is required
+
+Deprecations:
+
+• TpPresenceMixin: optional arguments are deprecated, apart from a
+  string named "message". This matches our current D-Bus API.
+
+Enhancements:
+
+• tp_protocol_normalize_contact_async(),
+  tp_protocol_identify_account_async(), and high-level API for
+  the Protocol Addressing and Presence interfaces (fd.o #71048, Simon)
+
+• More accessors for TpPresenceStatusSpec, which is now a boxed type
+  (fd.o #71048, Simon)
+
+• tp_connection_manager_param_dup_variant_type() (fd.o #71093, Simon)
+
+• Better debug output (fd.o #68390, #71048; Simon)
+
+Fixes:
+
+• In the examples, specifically ask for "TelepathyGlib-0.12" (this API
+  version), not Telepathy 1.0 (fd.o #49737, Simon)
+
+• Improve tests' isolation from the real session bus (Xavier)
+
+• Fix a critical warning for each new connection under GLib 2.39
+  (fd.o #72303, Xavier)
+
+• Fix some possible crashes in file transfer channels, particularly
+  under GLib 2.39 (fd.o #72319, Xavier)
+
+• Correct tp_account_request_set_avatar documentation (Xavier)
+
+• Fix a TpConnection reference-leak in TpBaseClient (Guillaume)
+
+telepathy-glib 0.23.0 (2013-10-28)
+==================================
+
+We no longer guarantee compatible upgrades within a development (odd) branch,
+see README for details.
+
+Dependencies:
+
+• GLib 2.34 or later is required.
+
+Enhancements:
+
+• Spec 0.27.3
+  · added Conn.I.Sidecars1
+  · added Conn.I.Renaming
+  · added CD.I.Messages1
+
+• TpAccount::avatar-changed signal (fd.o #52938, Guillaume)
+
+• tp_value_array_free: equivalent of g_value_array_free but does not provoke
+  deprecation warnings from GLib (fd.o #69849, Simon)
+
+• tp_account_is_prepared and tp_account_manager_is_prepared are now deprecated
+  (Guillaume)
+
+Fixes:
+
+• tp_contact_set_attributes: don't warn on genuinely absent interfaces
+  (fd.o #68149, Simon)
+
+• channel-group: don't crash if no message has been provided (Guillaume)
+
+telepathy-glib 0.22.0 (2013-10-02)
+==================================
+
+The “don't starve” release.
+
+This is a new stable branch, recommended for use with GNOME 3.10.
+
+Fixes since 0.21.2:
+
+• When an avatar is downloaded, announce the change to the avatar token
+  immediately; if the avatar changes from A to B while we're still doing the
+  asynchronous file saving, don't set A as the new avatar when it has been
+  saved. Regression in 0.21.2. (fd.o #70010, Simon)
+
 • Don't crash if the AccountManager returns an incorrect type for the
   Avatar (fd.o #69849, Simon)
+
+Significant changes since the previous stable branch, 0.20.x:
+
+• tp_connection_get_self_contact() now returns NULL if the contact's
+  connection has been invalidated, in order to break a reference cycle
+
+• Avatars are saved to the cache asynchronously
+
+• TpBaseConnection implements SelfID, SelfContactChanged according to
+  telepathy-spec 0.27.2
+
+• TpAccount:uri-schemes property, with change notification requiring
+  Mission Control 5.15+
 
 telepathy-glib 0.21.2 (2013-09-24)
 ==================================
@@ -300,7 +458,7 @@ Fixes:
 • Fix generation of reentrant-methods.list in highly parallel builds
   (fd.o #52480, Ross Burton)
 
-• TpBaseChannel: assert that the subclass sets TargetEntityType. (Will)
+• TpBaseChannel: assert that the subclass sets TargetHandleType. (Will)
 
 telepathy-glib 0.19.5 (2012-07-24)
 ==================================
