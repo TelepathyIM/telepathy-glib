@@ -117,8 +117,7 @@ TP_COMPILER_WARNINGS([ERROR_CFLAGS], [test "x$enable_fatal_warnings" = xyes],
    format-security \
    init-self],
   [missing-field-initializers \
-   unused-parameter \
-   deprecated-declarations])
+   unused-parameter])
 AC_SUBST([ERROR_CFLAGS])
 
 # these aren't really error flags but they serve a similar purpose for us -
