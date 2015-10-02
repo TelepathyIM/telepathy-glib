@@ -505,7 +505,7 @@ test_is_blocked (Test *test,
 
 static void
 test_contact_list_properties (Test *test,
-    gconstpointer data G_GNUC_UNUSED)
+    gconstpointer data)
 {
   gboolean props_only = GPOINTER_TO_UINT (data);
   GQuark conn_features[] = { 0, 0 };
