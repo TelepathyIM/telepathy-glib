@@ -1,6 +1,13 @@
 #!/bin/sh
 set -e
 
+test -n "$srcdir" || srcdir=$(dirname "$0")
+test -n "$srcdir" || srcdir=.
+
+olddir=$(pwd)
+
+cd $srcdir
+
 gtkdocize
 
 if test -n "$AUTOMAKE"; then
@@ -34,6 +41,8 @@ else
     run_configure=false
 fi
 
+cd "$olddir"
+
 if test $run_configure = true; then
-    ./configure "$@"
+    $srcdir/configure "$@"
 fi
