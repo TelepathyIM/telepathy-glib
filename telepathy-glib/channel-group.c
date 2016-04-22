@@ -1385,6 +1385,11 @@ _tp_channel_get_group_properties (TpChannel *self)
   if (priv->handle_owners_changed_sig == NULL)
     DIE ("HandleOwnersChanged");
 
+  /* First try the 0.17 API (properties). If this fails we'll fall back */
+  tp_cli_dbus_properties_call_get_all (self, -1,
+      TP_IFACE_CHANNEL_INTERFACE_GROUP, tp_channel_got_group_properties_cb,
+      NULL, NULL, NULL);
+
   priv->handle_owners_changed_detailed_sig =
       tp_cli_channel_interface_group_connect_to_handle_owners_changed_detailed (
           self, tp_channel_handle_owners_changed_detailed_cb, NULL, NULL, NULL,
@@ -1392,11 +1397,6 @@ _tp_channel_get_group_properties (TpChannel *self)
 
   if (priv->handle_owners_changed_detailed_sig == NULL)
     DIE ("HandleOwnersChangedDetailed");
-
-  /* First try the 0.17 API (properties). If this fails we'll fall back */
-  tp_cli_dbus_properties_call_get_all (self, -1,
-      TP_IFACE_CHANNEL_INTERFACE_GROUP, tp_channel_got_group_properties_cb,
-      NULL, NULL, NULL);
 }
 
 G_GNUC_END_IGNORE_DEPRECATIONS
