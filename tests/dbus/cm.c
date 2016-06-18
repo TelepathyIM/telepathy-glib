@@ -1187,7 +1187,7 @@ main (int argc,
 
   g_test_add ("/cm/list", Test, GINT_TO_POINTER (0),
       setup, test_list, teardown);
-  g_test_add ("/cm/list", Test, GINT_TO_POINTER (USE_OLD_LIST),
+  g_test_add ("/cm/list/old", Test, GINT_TO_POINTER (USE_OLD_LIST),
       setup, test_list, teardown);
 
   return tp_tests_run_with_bus ();

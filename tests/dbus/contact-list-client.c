@@ -577,7 +577,7 @@ main (int argc,
 
   g_test_add ("/contact-list-client/contact-list/properties", Test,
       GUINT_TO_POINTER (FALSE), setup, test_contact_list_properties, teardown);
-  g_test_add ("/contact-list-client/contact-list/properties", Test,
+  g_test_add ("/contact-list-client/contact-list/properties/props-only", Test,
       GUINT_TO_POINTER (TRUE), setup, test_contact_list_properties, teardown);
 
   return tp_tests_run_with_bus ();
