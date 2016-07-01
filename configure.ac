@@ -46,7 +46,7 @@ AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([1.11 -Wno-portability subdir-objects])
 AC_CONFIG_HEADERS(config.h)
 
-AM_SILENT_RULES
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 dnl check for tools
 AC_PROG_CC
