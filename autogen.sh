@@ -1,14 +1,8 @@
 #!/bin/sh
 set -e
 
-test -n "$srcdir" || srcdir=$(dirname "$0")
+test -n "$srcdir" || srcdir=`dirname "$0"`
 test -n "$srcdir" || srcdir=.
-
-olddir=$(pwd)
-
-cd $srcdir
-
-gtkdocize
 
 if test -n "$AUTOMAKE"; then
     : # don't override an explicit user request
@@ -23,7 +17,11 @@ elif automake-1.11 --version >/dev/null 2>/dev/null && \
     export ACLOCAL
 fi
 
-autoreconf -i -f
+(
+    cd "$srcdir"
+    gtkdocize
+    autoreconf -i -f
+)
 
 # Honor NOCONFIGURE for compatibility with gnome-autogen.sh
 if test x"$NOCONFIGURE" = x; then
@@ -41,8 +39,6 @@ else
     run_configure=false
 fi
 
-cd "$olddir"
-
 if test $run_configure = true; then
-    $srcdir/configure "$@"
+    "$srcdir/configure" "$@"
 fi
