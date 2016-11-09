@@ -82,6 +82,7 @@ struct _TpDebugSenderPrivate
   gboolean enabled;
   gboolean timestamps;
   GQueue *messages;
+  GMutex messages_lock;
 };
 
 typedef struct {
@@ -192,7 +193,9 @@ tp_debug_sender_finalize (GObject *object)
 {
   TpDebugSender *self = TP_DEBUG_SENDER (object);
 
+  g_mutex_lock (&self->priv->messages_lock);
   g_queue_foreach (self->priv->messages, (GFunc) debug_message_free, NULL);
+  g_mutex_unlock (&self->priv->messages_lock);
   g_queue_free (self->priv->messages);
   self->priv->messages = NULL;
 
@@ -288,6 +291,7 @@ get_messages (TpSvcDebug *self,
   GList *i;
   guint j;
 
+  g_mutex_lock (&dbg->priv->messages_lock);
   messages = g_ptr_array_sized_new (g_queue_get_length (dbg->priv->messages));
 
   for (i = dbg->priv->messages->head; i; i = i->next)
@@ -306,6 +310,7 @@ get_messages (TpSvcDebug *self,
           G_MAXUINT);
       g_ptr_array_add (messages, g_value_get_boxed (&gvalue));
     }
+  g_mutex_unlock (&dbg->priv->messages_lock);
 
   tp_svc_debug_return_from_get_messages (context, messages);
 
@@ -360,6 +365,7 @@ _tp_debug_sender_take (TpDebugSender *self,
     DebugMessage *new_msg)
 {
 #ifdef ENABLE_DEBUG_CACHE
+  g_mutex_lock (&self->priv->messages_lock);
   if (g_queue_get_length (self->priv->messages) >= DEBUG_MESSAGE_LIMIT)
     {
       DebugMessage *old_head =
@@ -369,6 +375,7 @@ _tp_debug_sender_take (TpDebugSender *self,
     }
 
   g_queue_push_tail (self->priv->messages, new_msg);
+  g_mutex_unlock (&self->priv->messages_lock);
 #endif
 
   if (self->priv->enabled)
