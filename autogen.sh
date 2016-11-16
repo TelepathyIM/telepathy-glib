@@ -1,9 +1,15 @@
 #!/bin/sh
 set -e
 
-intltoolize --force --copy --automake
-gtkdocize
-autoreconf -i -f
+test -n "$srcdir" || srcdir=`dirname "$0"`
+test -n "$srcdir" || srcdir=.
+
+(
+    cd "$srcdir"
+    intltoolize --force --copy --automake
+    gtkdocize
+    autoreconf -i -f
+)
 
 # Honor NOCONFIGURE for compatibility with gnome-autogen.sh
 if test x"$NOCONFIGURE" = x; then
@@ -22,5 +28,5 @@ else
 fi
 
 if test $run_configure = true; then
-    ./configure "$@"
+    "$srcdir/configure" "$@"
 fi

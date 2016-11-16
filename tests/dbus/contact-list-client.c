@@ -494,7 +494,7 @@ test_is_blocked (Test *test,
 
 static void
 test_contact_list_properties (Test *test,
-    gconstpointer data G_GNUC_UNUSED)
+    gconstpointer data)
 {
   gboolean props_only = GPOINTER_TO_UINT (data);
   GQuark conn_features[] = { 0, 0 };
@@ -566,7 +566,7 @@ main (int argc,
 
   g_test_add ("/contact-list-client/contact-list/properties", Test,
       GUINT_TO_POINTER (FALSE), setup, test_contact_list_properties, teardown);
-  g_test_add ("/contact-list-client/contact-list/properties", Test,
+  g_test_add ("/contact-list-client/contact-list/properties/props-only", Test,
       GUINT_TO_POINTER (TRUE), setup, test_contact_list_properties, teardown);
 
   return tp_tests_run_with_bus ();
