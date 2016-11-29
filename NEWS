@@ -1,13 +1,34 @@
 telepathy-glib 0.99.12 (UNRELEASED)
 ===================================
 
+API breaks:
+
+• TpBaseClient is now a subclasses of GDBusObjectSkeleton and no
+  longer implements any TpSvc* interfaces (fd.o #77882, Guillaume Desmottes)
+• TpHandleSet now has a GVariant conversion API instead of a GArray one
+  (fd.o #77773, Guillaume Desmottes)
+• tp_base_connection_dup_contact_attributes now takes a TpHandleSet
+  instead of a GArray (fd.o #77773, Guillaume Desmottes)
+• made TpBaseContactList GInterfaces introspectable by adding proper typedefs
+  and renaming/adjusting their functions (fd.o #77772, Guillaume Desmottes)
+• removed tp_dbus_properties_mixin_class_init() together with the ability to
+  use TpDBusPropertiesMixin by putting it in the class struct
+  (fd.o #78376, Guillaume Desmottes)
+• changed some POINTER properties to BOXED/OBJECT appropriately
+  (fd.o #77143, Guillaume Desmottes)
+
 Fixes:
 
-• stop hardcoding python's path in .py scripts (fd.o #76495, Guillaume)
+• stop hardcoding python's path in .py scripts
+  (fd.o #76495, Guillaume Desmottes)
 • fixed some code issues discovered by compiling with clang
-  (fd.o #79006, Guillaume)
+  (fd.o #79006, Guillaume Desmottes)
 • replaced tp_verify_* with G_STATIC_ASSERTs, fixing the build with
-  more recent gtk-doc (Simon)
+  more recent gtk-doc (Simon McVittie)
+• tests: fixed race condition in test-self-handle
+  (fd.o #78593, Simon McVittie)
+• fixed a series of issues discovered with static analysis by Tartan
+  (fd.o #79361, Guillaume Desmottes)
 • autogen.sh: run gtkdocize from $srcdir in out-of-source builds
   (fd.o #94391, Philip Withnall)
 • tests: fix build failure with glib >= 2.46 due to duplicate test paths
