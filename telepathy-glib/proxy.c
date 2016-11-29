@@ -1467,7 +1467,7 @@ prepare_depends (TpProxy *self,
 /**
  * tp_proxy_prepare_async:
  * @self: an instance of a #TpProxy subclass
- * @features: (transfer none) (array zero-terminated=1) (allow-none): an array
+ * @features: (array zero-terminated=1) (allow-none): an array
  *  of desired features, ending with 0; %NULL is equivalent to an array
  *  containing only 0
  * @callback: if not %NULL, called exactly once, when the features have all

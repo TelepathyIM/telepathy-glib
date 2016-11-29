@@ -3331,7 +3331,7 @@ got_contact_by_id_cb (TpConnection *self,
  * @id: A strings representing the desired contact by its
  *  identifier in the IM protocol (an XMPP JID, SIP URI, MSN Passport,
  *  AOL screen-name etc.)
- * @features: (transfer none) (array zero-terminated=1) (allow-none) (element-type GLib.Quark):
+ * @features: (array zero-terminated=1) (allow-none):
  *  An array of features that must be ready for
  * @callback: A user callback to call when the contact is ready
  * @user_data: Data to pass to the callback
@@ -3460,7 +3460,7 @@ got_contact_attributes_cb (TpConnection *self,
  * @n_contacts: The number of contacts in @contacts (must be at least 1)
  * @contacts: (array length=n_contacts): An array of #TpContact objects
  *  associated with @self
- * @features: (transfer none) (array zero-terminated=1) (allow-none) (element-type GLib.Quark):
+ * @features: (array zero-terminated=1) (allow-none):
  *  An array of features that must be ready for
  * @callback: A user callback to call when the contacts are ready
  * @user_data: Data to pass to the callback

@@ -766,7 +766,7 @@ tp_client_factory_dup_account_features (TpClientFactory *self,
 /**
  * tp_client_factory_add_account_features:
  * @self: a #TpClientFactory object
- * @features: (transfer none) (array zero-terminated=1) (allow-none): an array
+ * @features: (array zero-terminated=1) (allow-none): an array
  *  of desired features, ending with 0; %NULL is equivalent to an array
  *  containing only 0
  *
@@ -907,7 +907,7 @@ tp_client_factory_dup_connection_features (TpClientFactory *self,
 /**
  * tp_client_factory_add_connection_features:
  * @self: a #TpClientFactory object
- * @features: (transfer none) (array zero-terminated=1) (allow-none): an array
+ * @features: (array zero-terminated=1) (allow-none): an array
  *  of desired features, ending with 0; %NULL is equivalent to an array
  *  containing only 0
  *
@@ -1053,7 +1053,7 @@ tp_client_factory_dup_channel_features (TpClientFactory *self,
 /**
  * tp_client_factory_add_channel_features:
  * @self: a #TpClientFactory object
- * @features: (transfer none) (array zero-terminated=1) (allow-none): an array
+ * @features: (array zero-terminated=1) (allow-none): an array
  *  of desired features, ending with 0; %NULL is equivalent to an array
  *  containing only 0
  *
@@ -1358,7 +1358,7 @@ tp_client_factory_dup_contact_features (TpClientFactory *self,
 /**
  * tp_client_factory_add_contact_features:
  * @self: a #TpClientFactory object
- * @features: (transfer none) (array zero-terminated=1) (allow-none):
+ * @features: (array zero-terminated=1) (allow-none):
  *  an array of desired features
  *
  * Add @features to the desired features to be prepared on #TpContact
@@ -1607,7 +1607,7 @@ tp_client_factory_dup_protocol_features (TpClientFactory *self,
 /**
  * tp_client_factory_add_protocol_features:
  * @self: a #TpClientFactory object
- * @features: (transfer none) (array zero-terminated=1) (allow-none): an array
+ * @features: (array zero-terminated=1) (allow-none): an array
  *  of desired features, ending with 0; %NULL is equivalent to an array
  *  containing only 0
  *
@@ -1736,7 +1736,7 @@ tp_client_factory_dup_tls_certificate_features (TpClientFactory *self,
 /**
  * tp_client_factory_add_tls_certificate_features:
  * @self: a #TpClientFactory object
- * @features: (transfer none) (array zero-terminated=1) (allow-none): an array
+ * @features: (array zero-terminated=1) (allow-none): an array
  *  of desired features, ending with 0; %NULL is equivalent to an array
  *  containing only 0
  *
