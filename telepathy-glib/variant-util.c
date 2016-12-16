@@ -104,14 +104,20 @@ _tp_variant_convert_double (GVariant *variant,
       case G_VARIANT_CLASS_BYTE:
         return g_variant_get_byte (variant);
 
-      case G_VARIANT_CLASS_UINT32:
-        return g_variant_get_uint32 (variant);
+      case G_VARIANT_CLASS_INT16:
+        return g_variant_get_int16 (variant);
 
       case G_VARIANT_CLASS_INT32:
         return g_variant_get_int32 (variant);
 
       case G_VARIANT_CLASS_INT64:
         return g_variant_get_int64 (variant);
+
+      case G_VARIANT_CLASS_UINT16:
+        return g_variant_get_uint16 (variant);
+
+      case G_VARIANT_CLASS_UINT32:
+        return g_variant_get_uint32 (variant);
 
       case G_VARIANT_CLASS_UINT64:
         return g_variant_get_uint64 (variant);
@@ -122,6 +128,61 @@ _tp_variant_convert_double (GVariant *variant,
 
   *valid = FALSE;
   return 0.0;
+}
+
+static gint16
+_tp_variant_convert_int16 (GVariant *variant,
+    gboolean *valid)
+{
+  gint64 i;
+  guint64 u;
+
+  *valid = TRUE;
+
+  switch (g_variant_classify (variant))
+    {
+      case G_VARIANT_CLASS_BYTE:
+        return g_variant_get_byte (variant);
+
+      case G_VARIANT_CLASS_INT16:
+        return g_variant_get_int16 (variant);
+
+      case G_VARIANT_CLASS_INT32:
+        i = g_variant_get_int32 (variant);
+        if (G_LIKELY (i >= G_MININT16 && i <= G_MAXINT16))
+          return i;
+        break;
+
+      case G_VARIANT_CLASS_INT64:
+        i = g_variant_get_int64 (variant);
+        if (G_LIKELY (i >= G_MININT16 && i <= G_MAXINT16))
+          return i;
+        break;
+
+      case G_VARIANT_CLASS_UINT16:
+        u = g_variant_get_uint16 (variant);
+        if (G_LIKELY (u <= G_MAXINT16))
+          return u;
+        break;
+
+      case G_VARIANT_CLASS_UINT32:
+        u = g_variant_get_uint32 (variant);
+        if (G_LIKELY (u <= G_MAXINT16))
+          return u;
+        break;
+
+      case G_VARIANT_CLASS_UINT64:
+        u = g_variant_get_uint64 (variant);
+        if (G_LIKELY (u <= G_MAXINT16))
+          return u;
+        break;
+
+      default:
+        break;
+    }
+
+  *valid = FALSE;
+  return 0;
 }
 
 static gint32
@@ -138,11 +199,8 @@ _tp_variant_convert_int32 (GVariant *variant,
       case G_VARIANT_CLASS_BYTE:
         return g_variant_get_byte (variant);
 
-      case G_VARIANT_CLASS_UINT32:
-        u = g_variant_get_uint32 (variant);
-        if (G_LIKELY (u <= G_MAXINT32))
-          return u;
-        break;
+      case G_VARIANT_CLASS_INT16:
+        return g_variant_get_int16 (variant);
 
       case G_VARIANT_CLASS_INT32:
         return g_variant_get_int32 (variant);
@@ -151,6 +209,15 @@ _tp_variant_convert_int32 (GVariant *variant,
         i = g_variant_get_int64 (variant);
         if (G_LIKELY (i >= G_MININT32 && i <= G_MAXINT32))
           return i;
+        break;
+
+      case G_VARIANT_CLASS_UINT16:
+        return g_variant_get_uint16 (variant);
+
+      case G_VARIANT_CLASS_UINT32:
+        u = g_variant_get_uint32 (variant);
+        if (G_LIKELY (u <= G_MAXINT32))
+          return u;
         break;
 
       case G_VARIANT_CLASS_UINT64:
@@ -180,8 +247,8 @@ _tp_variant_convert_int64 (GVariant *variant,
       case G_VARIANT_CLASS_BYTE:
         return g_variant_get_byte (variant);
 
-      case G_VARIANT_CLASS_UINT32:
-        return g_variant_get_uint32 (variant);
+      case G_VARIANT_CLASS_INT16:
+        return g_variant_get_int16 (variant);
 
       case G_VARIANT_CLASS_INT32:
         return g_variant_get_int32 (variant);
@@ -189,9 +256,70 @@ _tp_variant_convert_int64 (GVariant *variant,
       case G_VARIANT_CLASS_INT64:
         return g_variant_get_int64 (variant);
 
+      case G_VARIANT_CLASS_UINT16:
+        return g_variant_get_uint16 (variant);
+
+      case G_VARIANT_CLASS_UINT32:
+        return g_variant_get_uint32 (variant);
+
       case G_VARIANT_CLASS_UINT64:
         u = g_variant_get_uint64 (variant);
         if (G_LIKELY (u <= G_MAXINT64))
+          return u;
+        break;
+
+      default:
+        break;
+    }
+
+  *valid = FALSE;
+  return 0;
+}
+
+static guint16
+_tp_variant_convert_uint16 (GVariant *variant,
+    gboolean *valid)
+{
+  gint64 i;
+  guint64 u;
+
+  *valid = TRUE;
+
+  switch (g_variant_classify (variant))
+    {
+      case G_VARIANT_CLASS_BYTE:
+        return g_variant_get_byte (variant);
+
+      case G_VARIANT_CLASS_INT16:
+        i = g_variant_get_int16 (variant);
+        if (G_LIKELY (i >= 0))
+          return i;
+        break;
+
+      case G_VARIANT_CLASS_INT32:
+        i = g_variant_get_int32 (variant);
+        if (G_LIKELY (i >= 0 && i <= G_MAXUINT16))
+          return i;
+        break;
+
+      case G_VARIANT_CLASS_INT64:
+        i = g_variant_get_int64 (variant);
+        if (G_LIKELY (i >= 0 && i <= G_MAXUINT16))
+          return i;
+        break;
+
+      case G_VARIANT_CLASS_UINT16:
+        return g_variant_get_uint16 (variant);
+
+      case G_VARIANT_CLASS_UINT32:
+        u = g_variant_get_uint32 (variant);
+        if (G_LIKELY (u <= G_MAXUINT16))
+          return u;
+        break;
+
+      case G_VARIANT_CLASS_UINT64:
+        u = g_variant_get_uint64 (variant);
+        if (G_LIKELY (u <= G_MAXUINT16))
           return u;
         break;
 
@@ -217,8 +345,11 @@ _tp_variant_convert_uint32 (GVariant *variant,
       case G_VARIANT_CLASS_BYTE:
         return g_variant_get_byte (variant);
 
-      case G_VARIANT_CLASS_UINT32:
-        return g_variant_get_uint32 (variant);
+      case G_VARIANT_CLASS_INT16:
+        i = g_variant_get_int16 (variant);
+        if (G_LIKELY (i >= 0))
+          return i;
+        break;
 
       case G_VARIANT_CLASS_INT32:
         i = g_variant_get_int32 (variant);
@@ -231,6 +362,12 @@ _tp_variant_convert_uint32 (GVariant *variant,
         if (G_LIKELY (i >= 0 && i <= G_MAXUINT32))
           return i;
         break;
+
+      case G_VARIANT_CLASS_UINT16:
+        return g_variant_get_uint16 (variant);
+
+      case G_VARIANT_CLASS_UINT32:
+        return g_variant_get_uint32 (variant);
 
       case G_VARIANT_CLASS_UINT64:
         u = g_variant_get_uint64 (variant);
@@ -259,8 +396,11 @@ _tp_variant_convert_uint64 (GVariant *variant,
       case G_VARIANT_CLASS_BYTE:
         return g_variant_get_byte (variant);
 
-      case G_VARIANT_CLASS_UINT32:
-        return g_variant_get_uint32 (variant);
+      case G_VARIANT_CLASS_INT16:
+        tmp = g_variant_get_int16 (variant);
+        if (G_LIKELY (tmp >= 0))
+          return tmp;
+        break;
 
       case G_VARIANT_CLASS_INT32:
         tmp = g_variant_get_int32 (variant);
@@ -273,6 +413,12 @@ _tp_variant_convert_uint64 (GVariant *variant,
         if (G_LIKELY (tmp >= 0))
           return tmp;
         break;
+
+      case G_VARIANT_CLASS_UINT16:
+        return g_variant_get_uint16 (variant);
+
+      case G_VARIANT_CLASS_UINT32:
+        return g_variant_get_uint32 (variant);
 
       case G_VARIANT_CLASS_UINT64:
         return g_variant_get_uint64 (variant);
@@ -324,12 +470,20 @@ tp_variant_convert (GVariant *variant,
         CASE (double);
         break;
 
+      case G_VARIANT_CLASS_INT16:
+        CASE (int16);
+        break;
+
       case G_VARIANT_CLASS_INT32:
         CASE (int32);
         break;
 
       case G_VARIANT_CLASS_INT64:
         CASE (int64);
+        break;
+
+      case G_VARIANT_CLASS_UINT16:
+        CASE (uint16);
         break;
 
       case G_VARIANT_CLASS_UINT32:
