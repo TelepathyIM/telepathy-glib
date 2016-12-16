@@ -35,7 +35,7 @@ typedef struct _TpBaseRoomConfigPrivate TpBaseRoomConfigPrivate;
 
 typedef void (*TpBaseRoomConfigUpdateAsync) (
     TpBaseRoomConfig *self,
-    GHashTable *validated_properties,
+    GVariant *validated_properties,
     GAsyncReadyCallback callback,
     gpointer user_data);
 typedef gboolean (*TpBaseRoomConfigUpdateFinish) (

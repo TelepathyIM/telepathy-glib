@@ -89,9 +89,9 @@
 /**
  * TpBaseRoomConfigUpdateAsync:
  * @self: a #TpBaseRoomConfig
- * @validated_properties: a mapping from #TpBaseRoomConfigProperty to #GVariant,
- *  whose types have already been validated. The function should not modify
- *  this hash table.
+ * @validated_properties: a #G_VARIANT_TYPE_VARDICT mapping from #TpBaseRoomConfig
+ *  property names to #GVariant, whose types have already been validated.
+ *  The function should not modify this variant.
  * @callback: a callback to call on success, failure or disconnection
  * @user_data: user data for the callback
  *
@@ -154,7 +154,7 @@ struct _TpBaseRoomConfigPrivate {
      * UpdateConfiguration is in progress.
      */
     GDBusMethodInvocation *update_configuration_ctx;
-    GHashTable *validated_properties;
+    GVariant *validated_properties;
 };
 
 enum {
@@ -518,7 +518,7 @@ validate_property_type (TpBaseRoomConfig *self,
 
 static gboolean
 validate_property (TpBaseRoomConfig *self,
-    GHashTable *validated_properties,
+    GVariantDict *validated_properties,
     const gchar *property_name,
     GVariant *value,
     GError **error)
@@ -544,8 +544,8 @@ validate_property (TpBaseRoomConfig *self,
   if (!validate_property_type (self, property_name, value, error))
     return FALSE;
 
-  g_hash_table_insert (validated_properties,
-      GUINT_TO_POINTER (property_id), g_variant_ref (value));
+  g_variant_dict_insert_value (validated_properties,
+      room_config_properties[property_id], value);
   return TRUE;
 }
 
@@ -558,31 +558,33 @@ validate_property (TpBaseRoomConfig *self,
  *
  * Validates the names and types and mutability of @properties.
  *
- * Returns: a mapping from TpBaseRoomConfigProperty elements to corresponding
- *          new GVariant.
+ * Returns: a new a{sv} GVariant containing the mappings from
+ *          TpBaseRoomConfig property names to their new values,
+ *          or NULL if validation failed
  */
-static GHashTable *
+static GVariant *
 validate_properties (TpBaseRoomConfig *self,
     GVariant *properties,
     GError **error)
 {
-  GHashTable *validated_properties = g_hash_table_new_full (
-      NULL, NULL, NULL, (GDestroyNotify) g_variant_unref);
+  GVariantDict validated_properties;
   GVariantIter iter;
   const gchar *k;
   GVariant *v;
 
+  g_variant_dict_init (&validated_properties, NULL);
+
   g_variant_iter_init (&iter, properties);
   while (g_variant_iter_loop (&iter, "{&sv}", &k, &v))
     {
-      if (!validate_property (self, validated_properties, k, v, error))
+      if (!validate_property (self, &validated_properties, k, v, error))
         {
-          g_hash_table_unref (validated_properties);
+          g_variant_dict_clear (&validated_properties);
           return NULL;
         }
     }
 
-  return validated_properties;
+  return g_variant_dict_end (&validated_properties);
 }
 
 static void
@@ -601,24 +603,19 @@ update_cb (GObject *source,
   if (TP_BASE_ROOM_CONFIG_GET_CLASS (self)->update_finish (
         self, result, &error))
     {
-      GHashTableIter iter;
-      gpointer k, v;
+      GVariantIter iter;
+      const gchar *k;
+      GVariant *v;
 
-      g_hash_table_iter_init (&iter, priv->validated_properties);
-      while (g_hash_table_iter_next (&iter, &k, &v))
+      g_variant_iter_init (&iter, priv->validated_properties);
+      while (g_variant_iter_next (&iter, "{&sv}", &k, &v))
         {
-          TpBaseRoomConfigProperty property_id = GPOINTER_TO_UINT (k);
-          GVariant *variant = v;
           GValue value = G_VALUE_INIT;
-          const gchar *g_property_name;
 
-          g_assert (property_id < TP_NUM_BASE_ROOM_CONFIG_PROPERTIES);
-          g_property_name = room_config_properties[property_id];
-          g_assert (g_property_name != NULL);
-
-          g_dbus_gvariant_to_gvalue (variant, &value);
-          g_object_set_property (G_OBJECT (priv->skeleton), g_property_name,
-              &value);
+          g_dbus_gvariant_to_gvalue (v, &value);
+          /* set properties on 'self' instead of 'self->skeleton'
+           * to emit the notify signal properly */
+          g_object_set_property (G_OBJECT (self), k, &value);
           g_value_unset (&value);
         }
 
@@ -632,7 +629,7 @@ update_cb (GObject *source,
     }
 
   priv->update_configuration_ctx = NULL;
-  tp_clear_pointer (&priv->validated_properties, g_hash_table_unref);
+  tp_clear_pointer (&priv->validated_properties, g_variant_unref);
   g_object_unref (channel);
 }
 
