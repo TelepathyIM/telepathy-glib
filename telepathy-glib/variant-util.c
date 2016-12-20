@@ -433,7 +433,7 @@ _tp_variant_convert_uint64 (GVariant *variant,
 
 /**
  * tp_variant_convert:
- * @variant: (transfer full): a #GVariant to convert
+ * @variant: (transfer floating): a #GVariant to convert
  * @type: a #GVariantType @variant must be converted to
  *
  * Convert the type of @variant to @type if possible. This takes ownership of
