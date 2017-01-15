@@ -73,7 +73,7 @@
 /**
  * tp_cm_param_filter_uint_nonzero:
  * @paramspec: The parameter specification for a guint parameter
- * @value: (transfer full): A #GVariant containing a guint32
+ * @value: (transfer full): A #GVariant containing an guint16/32/64
  * @user_data: unused
  * @error: Used to return an error if the guint is 0
  *
@@ -87,14 +87,24 @@ tp_cm_param_filter_uint_nonzero (const TpCMParamSpec *paramspec,
                                  gpointer user_data,
                                  GError **error)
 {
-  if (g_variant_get_uint32 (value) == 0)
+  GVariant *uint64variant;
+
+  if (g_variant_is_floating (value))
+    g_variant_ref_sink (value);
+
+  uint64variant = tp_variant_convert (value, G_VARIANT_TYPE_UINT64);
+  g_assert (uint64variant);
+
+  if (g_variant_get_uint64 (uint64variant) == 0)
     {
       g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
           "Account parameter '%s' may not be set to zero",
           paramspec->name);
+      g_variant_unref (uint64variant);
       g_variant_unref (value);
       return NULL;
     }
+  g_variant_unref (uint64variant);
   return value;
 }
 
