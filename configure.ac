@@ -58,6 +58,9 @@ AC_PROG_MKDIR_P
 # pkg-config 0.21 adds CFLAGS from Requires.private, which we need
 PKG_PROG_PKG_CONFIG([0.21])
 
+AC_ARG_ENABLE([gtk-doc],
+  AS_HELP_STRING([--disable-gtk-doc], [Disable API documentation generation]))
+
 AM_CONDITIONAL(ENABLE_GTK_DOC, test "x$enable_gtk_doc" = xyes)
 AM_CONDITIONAL(DISABLE_GTK_DOC, test "x$disable_gtk_doc" = xno)
 # Check for GTK_DOC_CHECK availability. The GTK_DOC_CHECK invocation
