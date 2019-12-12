@@ -5,6 +5,16 @@
  */
 
 GType
+the_prefix_type_dbus_hash_sv (void)
+{
+  static GType t = 0;
+
+  if (G_UNLIKELY (t == 0))
+    t = dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE);
+  return t;
+}
+
+GType
 the_prefix_type_dbus_hash_ss (void)
 {
   static GType t = 0;
@@ -21,16 +31,6 @@ the_prefix_type_dbus_hash_sa_7bsv_7d (void)
 
   if (G_UNLIKELY (t == 0))
     t = dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE)));
-  return t;
-}
-
-GType
-the_prefix_type_dbus_hash_sv (void)
-{
-  static GType t = 0;
-
-  if (G_UNLIKELY (t == 0))
-    t = dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE);
   return t;
 }
 
@@ -69,6 +69,16 @@ the_prefix_type_dbus_array_isu (void)
 }
 
 GType
+the_prefix_type_dbus_array_of_a_7bsaa_7bsv_7d_7d (void)
+{
+  static GType t = 0;
+
+  if (G_UNLIKELY (t == 0))
+    t = dbus_g_type_get_collection ("GPtrArray", the_prefix_type_dbus_hash_saa_7bsv_7d ());
+  return t;
+}
+
+GType
 the_prefix_type_dbus_array_of_a_7bsa_7bsv_7d_7d (void)
 {
   static GType t = 0;
@@ -85,16 +95,6 @@ the_prefix_type_dbus_array_of_a_7bsv_7d (void)
 
   if (G_UNLIKELY (t == 0))
     t = dbus_g_type_get_collection ("GPtrArray", the_prefix_type_dbus_hash_sv ());
-  return t;
-}
-
-GType
-the_prefix_type_dbus_array_of_a_7bsaa_7bsv_7d_7d (void)
-{
-  static GType t = 0;
-
-  if (G_UNLIKELY (t == 0))
-    t = dbus_g_type_get_collection ("GPtrArray", the_prefix_type_dbus_hash_saa_7bsv_7d ());
   return t;
 }
 
