@@ -5,22 +5,12 @@
  */
 
 GType
-the_prefix_type_dbus_hash_sv (void)
+the_prefix_type_dbus_hash_saa_7bsv_7d (void)
 {
   static GType t = 0;
 
   if (G_UNLIKELY (t == 0))
-    t = dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE);
-  return t;
-}
-
-GType
-the_prefix_type_dbus_hash_ss (void)
-{
-  static GType t = 0;
-
-  if (G_UNLIKELY (t == 0))
-    t = dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_STRING);
+    t = dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, (dbus_g_type_get_collection ("GPtrArray", (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE)))));
   return t;
 }
 
@@ -35,12 +25,22 @@ the_prefix_type_dbus_hash_sa_7bsv_7d (void)
 }
 
 GType
-the_prefix_type_dbus_hash_saa_7bsv_7d (void)
+the_prefix_type_dbus_hash_ss (void)
 {
   static GType t = 0;
 
   if (G_UNLIKELY (t == 0))
-    t = dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, (dbus_g_type_get_collection ("GPtrArray", (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE)))));
+    t = dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_STRING);
+  return t;
+}
+
+GType
+the_prefix_type_dbus_hash_sv (void)
+{
+  static GType t = 0;
+
+  if (G_UNLIKELY (t == 0))
+    t = dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE);
   return t;
 }
 

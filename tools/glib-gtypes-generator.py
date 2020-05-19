@@ -213,7 +213,7 @@ class GTypesGenerator(object):
         for mapping in mappings:
             self.do_mapping_header(mapping)
 
-        for sig in self.need_mappings:
+        for sig in sorted(self.need_mappings):
             self.h('GType %stype_dbus_hash_%s (void);\n\n' %
                               (self.prefix_, self.need_mappings[sig]))
             self.c('GType\n%stype_dbus_hash_%s (void)\n{\n' %
