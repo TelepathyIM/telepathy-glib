@@ -10,9 +10,9 @@ gi.require_version('TelepathyGLib', '0.12')
 from gi.repository import TelepathyGLib
 
 def usage():
-    print "%s ACCOUNT [text|audio|video] CONTACT" % sys.argv[0]
-    print "ACCOUNT is a Telepathy account name, use 'mc-tool list' to list all your accounts"
-    print "CONTACT is a contact id such as badger@gmail.com"
+    print("%s ACCOUNT [text|audio|video] CONTACT" % sys.argv[0])
+    print("ACCOUNT is a Telepathy account name, use 'mc-tool list' to list all your accounts")
+    print("CONTACT is a contact id such as badger@gmail.com")
 
     sys.exit(1)
 

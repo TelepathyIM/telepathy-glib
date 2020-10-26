@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import sys
 import os
 
@@ -9,31 +10,31 @@ gi.require_version('TelepathyGLib', '0.12')
 from gi.repository import TelepathyGLib as Tp
 
 def usage():
-    print "%s ACCOUNT CONTACT" % sys.argv[0]
-    print "ACCOUNT is a Telepathy account name, use 'mc-tool list' to list all your accounts"
-    print "CONTACT is a contact id such as badger@nyan.cat"
+    print("%s ACCOUNT CONTACT" % sys.argv[0])
+    print("ACCOUNT is a Telepathy account name, use 'mc-tool list' to list all your accounts")
+    print("CONTACT is a contact id such as badger@nyan.cat")
 
     sys.exit(1)
 
 def offer_channel_cb(tube, result, loop):
     try:
         tube.offer_finish(result)
-        print "tube offered"
+        print("tube offered")
 
-    except GObject.GError, e:
-        print "Failed to offer tube: %s" % e
+    except GObject.GError as e:
+        print("Failed to offer tube: %s" % e)
         sys.exit(1)
 
 def tube_conn_closed(tube, error):
-    print "Tube connection has been closed", error.message
+    print("Tube connection has been closed", error.message)
 
 def channel_close_cb(tube, result, loop):
     try:
         tube.close_finish(result)
-        print "tube channel closed"
+        print("tube channel closed")
 
-    except GObject.GError, e:
-        print "Failed to close tube channel: %s" % e
+    except GObject.GError as e:
+        print("Failed to close tube channel: %s" % e)
         sys.exit(1)
 
 def tube_incoming_cb(tube, tube_conn, loop):
@@ -41,7 +42,7 @@ def tube_incoming_cb(tube, tube_conn, loop):
 
     contact = tube_conn.get_contact();
 
-    print "Got IOStream from", contact.get_identifier()
+    print("Got IOStream from", contact.get_identifier())
 
     conn = tube_conn.get_socket_connection();
 
@@ -51,15 +52,15 @@ def tube_incoming_cb(tube, tube_conn, loop):
     out_stream = conn.get_output_stream()
 
     buf, len = in_stream.read_line_utf8(None)
-    print "Received:", buf
+    print("Received:", buf)
 
-    print "Sending: Pong"
+    print("Sending: Pong")
     out_stream.write("Pong\n", None)
 
     tube.close_async(channel_close_cb, contact)
 
 def tube_invalidated_cb(tube, domain, code, message, loop):
-    print "tube has been invalidated:", message
+    print("tube has been invalidated:", message)
     loop.quit()
 
 def create_channel_cb(request, result, loop):
@@ -71,8 +72,8 @@ def create_channel_cb(request, result, loop):
 
         chan.offer_async({}, offer_channel_cb, loop)
 
-    except GObject.GError, e:
-        print "Failed to create channel: %s" % e
+    except GObject.GError as e:
+        print("Failed to create channel: %s" % e)
         sys.exit(1)
 
 if __name__ == '__main__':

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import sys
 
 import gi
@@ -11,18 +12,18 @@ gi.require_version('TelepathyGLib', '0.12')
 from gi.repository import TelepathyGLib
 
 def usage():
-    print "%s FILE" % sys.argv[0]
-    print "FILE is a path to the location you want the file saved to"
+    print("%s FILE" % sys.argv[0])
+    print("FILE is a path to the location you want the file saved to")
 
     sys.exit(1)
 
 def state_changed_cb(channel, pspec, data):
     state, _ = channel.get_state()
-    print 'State is now:', state
+    print('State is now:', state)
 
 def accept_cb(channel, result, data):
     if not channel.accept_file_finish(result):
-        print 'Failed to accept file'
+        print('Failed to accept file')
 
 def handle_channels_cb(handler, account, connection, channels, requests,
                        user_action_time, context, filename):
@@ -33,7 +34,7 @@ def handle_channels_cb(handler, account, connection, channels, requests,
 
         chan.connect('notify::state', state_changed_cb, None)
 
-        print 'Handling FileTransfer channel:', chan.get_identifier()
+        print('Handling FileTransfer channel:', chan.get_identifier())
 
         file = Gio.File.new_for_path(filename)
         chan.accept_file_async(file, 0, accept_cb, None)
