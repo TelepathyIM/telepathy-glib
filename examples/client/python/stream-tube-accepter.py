@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import os
 
 import gi
@@ -8,20 +9,20 @@ gi.require_version('TelepathyGLib', '0.12')
 from gi.repository import TelepathyGLib as Tp
 
 def tube_conn_closed(tube, error):
-    print "Tube connection has been closed", error.message
+    print("Tube connection has been closed", error.message)
 
 def tube_accept_cb(tube, result, loop):
     try:
         tube_conn = tube.accept_finish(result)
-    except GObject.GError, e:
-        print "Failed to accept tube: %s" % e
+    except GObject.GError as e:
+        print("Failed to accept tube: %s" % e)
         sys.exit(1)
 
     tube_conn.connect('closed', tube_conn_closed)
 
     contact = tube_conn.get_contact();
 
-    print "Got IOStream to", contact.get_identifier()
+    print("Got IOStream to", contact.get_identifier())
 
     conn = tube_conn.get_socket_connection();
 
@@ -30,14 +31,14 @@ def tube_accept_cb(tube, result, loop):
     in_stream = Gio.DataInputStream (base_stream=conn.get_input_stream())
     out_stream = conn.get_output_stream()
 
-    print "Sending: Ping"
+    print("Sending: Ping")
     out_stream.write("Ping\n", None)
 
     buf, len = in_stream.read_line_utf8(None)
-    print "Received:", buf
+    print("Received:", buf)
 
 def tube_invalidated_cb(tube, domain, code, message, loop):
-    print "tube has been invalidated:", message
+    print("tube has been invalidated:", message)
     loop.quit()
 
 def handle_channels_cb(handler, account, connection, channels, requests,
@@ -46,7 +47,7 @@ def handle_channels_cb(handler, account, connection, channels, requests,
         if not isinstance(channel, Tp.StreamTubeChannel):
             continue
 
-        print "Accepting tube"
+        print("Accepting tube")
 
         channel.connect('invalidated', tube_invalidated_cb, loop)
 
@@ -71,5 +72,5 @@ if __name__ == '__main__':
 
     handler.register()
 
-    print "Waiting for tube offer"
+    print("Waiting for tube offer")
     loop.run()

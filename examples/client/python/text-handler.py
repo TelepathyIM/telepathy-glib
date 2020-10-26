@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import gi
 
 from gi.repository import GObject
@@ -12,9 +13,9 @@ def echo_message(channel, msg, pending):
     text, flags = msg.to_text()
 
     if pending:
-        print "pending: %s" % (text)
+        print("pending: %s" % (text))
     else:
-        print "received: %s" % (text)
+        print("received: %s" % (text))
 
     reply = TelepathyGLib.ClientMessage.new_text(
         TelepathyGLib.ChannelTextMessageType.NORMAL, text.upper())
@@ -42,7 +43,7 @@ def handle_channels_cb(handler, account, connection, channels, requests,
         if not isinstance(channel, TelepathyGLib.TextChannel):
             continue
 
-        print "Handling text channel with", channel.get_identifier()
+        print("Handling text channel with", channel.get_identifier())
 
         channel.connect('message-received', message_received_cb)
 
