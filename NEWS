@@ -1,5 +1,7 @@
-telepathy-glib 0.24.2 (UNRELEASED)
+telepathy-glib 0.24.2 (2021-02-03)
 ==================================
+
+The "Ages Later" release.
 
 Enhancements:
 
@@ -24,6 +26,7 @@ Fixes:
 • TpBasePasswordChannel: fix gtk-doc comment for finished signal
   (Ting-Wei Lan)
 • protocol: fix a memory leak (Ivaylo Dimitrov)
+• Fix a crash when creating a conference call (Martin Jones)
 
 
 telepathy-glib 0.24.1 (2014-08-25)
