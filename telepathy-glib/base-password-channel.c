@@ -387,11 +387,12 @@ tp_base_password_channel_class_init (TpBasePasswordChannelClass *tp_base_passwor
 
   /**
    * TpBasePasswordChannel::finished:
+   * @self: the #TpBasePasswordChannel
    * @password: the password provided by the user, or %NULL if the
    * authentication has been aborted
    * @domain: domain of a #GError indicating why the authentication has been
    * aborted, or 0
-   * @code: error code of a GError indicating why the authentication has been
+   * @code: error code of a #GError indicating why the authentication has been
    * aborted, or 0
    * @message: a message associated with the error, or %NULL
    *

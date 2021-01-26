@@ -980,7 +980,7 @@ main (int argc,
 
   g_test_add ("/account/reconnect", Test, NULL, setup_service, test_reconnect,
       teardown_service);
-  g_test_add ("/account/reconnect", Test, "vardict", setup_service,
+  g_test_add ("/account/reconnect/vardict", Test, "vardict", setup_service,
       test_reconnect, teardown_service);
 
   g_test_add ("/account/prepare/success", Test, NULL, setup_service,
@@ -991,15 +991,15 @@ main (int argc,
 
   g_test_add ("/account/storage", Test, "first", setup_service, test_storage,
       teardown_service);
-  g_test_add ("/account/storage", Test, "later", setup_service, test_storage,
-      teardown_service);
+  g_test_add ("/account/storage/later", Test, "later", setup_service,
+      test_storage, teardown_service);
 
   g_test_add ("/account/avatar", Test, NULL, setup_service, test_avatar,
       teardown_service);
 
   g_test_add ("/account/addressing", Test, "first", setup_service,
       test_addressing, teardown_service);
-  g_test_add ("/account/addressing", Test, "later", setup_service,
+  g_test_add ("/account/addressing/later", Test, "later", setup_service,
       test_addressing, teardown_service);
 
   return tp_tests_run_with_bus ();

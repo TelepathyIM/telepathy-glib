@@ -144,7 +144,7 @@ our_headers = \
 
 tpginclude_HEADERS = \
     $(our_headers) \
-    verify.h
+    $(NULL)
 
 BUILT_SOURCES = $(codegen_sources)
 
