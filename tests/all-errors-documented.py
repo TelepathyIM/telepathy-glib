@@ -24,7 +24,7 @@ def check_all_errors_documented(abs_top_srcdir):
                 error.getAttribute('name').replace('.', '_').replace(' ', '_').upper())
 
         if '%s\n' % name not in sections:
-            print "'%s' is missing in %s" % (name, sections_path)
+            print("'%s' is missing in %s" % (name, sections_path))
             sys.exit(1)
 
 if __name__ == '__main__':

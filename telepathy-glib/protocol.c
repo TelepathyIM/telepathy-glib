@@ -1791,7 +1791,7 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
         i++;
     }
 
-  param_specs = g_ptr_array_sized_new (i);
+  param_specs = g_ptr_array_new_full (i, tp_value_array_free);
 
   for (key = keys; key != NULL && *key != NULL; key++)
     {
@@ -1885,6 +1885,8 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
   immutables = tp_asv_new (
       TP_PROP_PROTOCOL_PARAMETERS, TP_ARRAY_TYPE_PARAM_SPEC_LIST, param_specs,
       NULL);
+
+  g_ptr_array_unref(param_specs);
 
   tp_asv_take_boxed (immutables, TP_PROP_PROTOCOL_INTERFACES, G_TYPE_STRV,
       g_key_file_get_string_list (file, group, "Interfaces", NULL, NULL));

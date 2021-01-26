@@ -2788,7 +2788,7 @@ main (int argc,
 
   g_test_add ("/contact-lists/cancelled-publish-request",
       Test, NULL, setup, test_cancelled_publish_request, teardown);
-  g_test_add ("/contact-lists/cancelled-publish-request",
+  g_test_add ("/contact-lists/cancelled-publish-request/remove-after",
       Test, "remove-after", setup, test_cancelled_publish_request, teardown);
 
   g_test_add ("/contact-lists/add-to-stored",

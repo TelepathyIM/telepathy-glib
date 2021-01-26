@@ -342,7 +342,7 @@ run-test.sh: run-test.sh.in
 		$< > $@
 	@chmod +x $@
 
-service_files = services/dbus-1/spurious.service
+service_files = dbus-1/services/spurious.service
 
 if ENABLE_INSTALLED_TESTS
 dbusservicedir = @tpglibtestsdir@/dbus-1/services

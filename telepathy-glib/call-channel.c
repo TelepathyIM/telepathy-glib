@@ -525,6 +525,8 @@ update_call_members (TpCallChannel *self,
 
   _tp_channel_contacts_queue_prepare_async ((TpChannel *) self,
       contacts, update_call_members_prepared_cb, data);
+
+  g_ptr_array_unref (contacts);
 }
 
 static void

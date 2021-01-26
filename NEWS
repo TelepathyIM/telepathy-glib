@@ -1,3 +1,21 @@
+telepathy-glib 0.25.0 (UNRELEASED)
+==================================
+
+Fixes:
+
+• stop hardcoding python's path in .py scripts (fd.o #76495, Guillaume)
+• fixed some code issues discovered by compiling with clang
+  (fd.o #79006, Guillaume)
+• replaced tp_verify_* with G_STATIC_ASSERTs, fixing the build with
+  more recent gtk-doc (Simon)
+• autogen.sh: run gtkdocize from $srcdir in out-of-source builds
+  (fd.o #94391, Philip Withnall)
+• tests: fix build failure with glib >= 2.46 due to duplicate test paths
+  (fd.o #92245, George Kiagiadakis)
+• tests: Fix a service file path to fix the build with installed tests
+  (fd.o #90991, Philip Withnall)
+
+
 telepathy-glib 0.24.1 (2014-08-25)
 ==================================
 
