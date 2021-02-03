@@ -733,6 +733,9 @@ _tp_channel_contacts_handle_owners_changed (TpChannel *self,
   if (self->priv->cm_too_old_for_contacts)
       return;
 
+  if (!self->priv->group_contact_owners)
+      return;
+
   g_assert (self->priv->group_contact_owners != NULL);
 
   data = g_slice_new (HandleOwnersChangedData);
