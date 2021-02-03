@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/python
 
 from sys import argv, stdout, stderr
 import xml.dom.minidom

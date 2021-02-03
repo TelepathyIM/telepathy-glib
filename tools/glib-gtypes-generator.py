@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/python
 
 # Generate GLib GInterfaces from the Telepathy specification.
 # The master copy of this program is in the telepathy-glib repository -

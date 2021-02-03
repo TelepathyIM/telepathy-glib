@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/python
 
 # glib-ginterface-gen.py: service-side interface generator
 #

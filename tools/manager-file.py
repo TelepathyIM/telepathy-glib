@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/python
 
 # manager-file.py: generate .manager files and TpCMParamSpec arrays from the
 # same data (should be suitable for all connection managers that don't have

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/python
 
 """Construct a GNU ld or Debian dpkg version-script from a set of
 RFC822-style symbol lists.

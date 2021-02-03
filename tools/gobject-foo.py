@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/python
 
 # gobject-foo.py: generate standard GObject type macros etc.
 #
