@@ -1791,7 +1791,7 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
         i++;
     }
 
-  param_specs = g_ptr_array_new_full (i, tp_value_array_free);
+  param_specs = g_ptr_array_new_full (i, (GDestroyNotify) tp_value_array_free);
 
   for (key = keys; key != NULL && *key != NULL; key++)
     {
